@@ -53,7 +53,16 @@ jobs:
             - 인디케이터 초기 구간(period 미만)은 반드시 null 반환 (0, NaN 금지)
             - 도메인 함수는 순수 함수여야 함 (fetch, console.log, Date.now() 등 사이드 이펙트 금지)
             - 도메인 함수 반환 타입 명시 필수
-
+            
+            ## 상세 규칙
+            - docs/ARCHITECTURE.md: 레이어 구조, 폴더 구조, 데이터 흐름
+            - docs/DOMAIN.md: 인디케이터 계산 명세, 타입 정의
+            - docs/API.md: Alpaca API, 내부 Route 명세
+            - docs/CONVENTIONS.md: 네이밍, 코딩 규칙, 자주 하는 실수
+            - docs/FF.md: FF 4원칙 (Readability, Predictability, Cohesion, Coupling)
+            - docs/DESIGN.md: 컬러 시스템, MA/EMA 라인 스타일, 차트 컬러 상수
+            - docs/GIT_CONVENTION.md: 브랜치 네이밍, 커밋 메시지, PR 규칙
+            
             ## 디자인 규칙 (docs/DESIGN.md 참고)
             - 컬러는 반드시 CHART_COLORS 상수 또는 Tailwind 토큰 사용 (하드코딩 금지)
             - MA는 실선(lineStyle: 0), EMA는 점선(lineStyle: 1)

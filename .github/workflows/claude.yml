@@ -71,6 +71,7 @@ jobs:
             - docs/CONVENTIONS.md: 네이밍, 코딩 규칙, 자주 하는 실수
             - docs/FF.md: FF 4원칙 (Readability, Predictability, Cohesion, Coupling)
             - docs/DESIGN.md: 컬러 시스템, MA/EMA 라인 스타일, 차트 컬러 상수
+            - docs/GIT_CONVENTION.md: 브랜치 네이밍, 커밋 메시지, PR 규칙
 
             ## 디자인 규칙 요약
             - 컬러는 반드시 CHART_COLORS 상수 또는 Tailwind 토큰 사용 (하드코딩 금지)
@@ -86,12 +87,22 @@ jobs:
             - Coupling: 단일 책임, 섣부른 추상화 금지 (3회 반복 후 추상화), Props Drilling 제거
             - 레이어별 우선순위: domain=Predictability, components=Readability, infrastructure=Cohesion
 
-            ## PR 오픈 전 완료 조건 (반드시 모두 통과해야 PR 오픈 가능)
-            아래 명령어를 순서대로 실행하고, 모두 통과한 경우에만 PR을 오픈해줘.
-            하나라도 실패하면 수정 후 재실행해줘. 통과 전에는 PR을 오픈하지 않는다.
+            ## 코드 구현 작업 절차 (docs/GIT_CONVENTION.md 참고)
+            코드 구현 요청을 처리할 때 반드시 아래 순서를 따른다.
 
-            1. yarn lint        → ESLint 오류 없음
-            2. yarn test        → 테스트 전체 통과
-            3. yarn build       → 빌드 성공
+            1. 브랜치 생성 (master 기준)
+               git checkout master && git pull origin master
+               git checkout -b {type}/{이슈 번호}/{이슈 한줄 요약}
+               브랜치 타입: feat, fix, chore, style, refactor, test, docs
 
-            모두 통과하면 PR을 오픈하고 각 명령어의 실행 결과를 PR 본문에 포함해줘.
+            2. 구현 + 테스트 작성
+
+            3. 완료 조건 확인 (모두 통과해야 PR 오픈 가능)
+               yarn lint   → ESLint 오류 없음
+               yarn test   → 테스트 전체 통과
+               yarn build  → 빌드 성공
+               하나라도 실패하면 수정 후 재실행. 통과 전 PR 오픈 금지.
+
+            4. master <- 새 브랜치 방향으로 PR 오픈
+               제목: {type}: {이슈 제목}
+               본문: closes #{이슈 번호} + 각 명령어 실행 결과 포함
