@@ -1,0 +1,69 @@
+name: Claude Code
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+  issues:
+    types: [opened, assigned]
+  pull_request_review:
+    types: [submitted]
+
+jobs:
+  claude:
+    if: |
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+      actions: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Run Claude Code
+        id: claude
+        uses: anthropics/claude-code-action@v1
+        with:
+          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          additional_permissions: |
+            actions: read
+          prompt: |
+            다음 Siglens 프로젝트 컨텍스트를 숙지하고 요청을 처리해줘.
+
+            ## 프로젝트 개요
+            - 미국 주식 AI 분석 플랫폼 (분석 전용, 주문 없음)
+            - Next.js 16.2 (App Router + Turbopack), React 19.2, TypeScript
+            - yarn 패키지 매니저, Node.js 25.2.1
+            - Layered Architecture: domain / infrastructure / app / components
+
+            ## 레이어 의존성 규칙 (절대 위반 금지)
+            - domain/: 외부 라이브러리 import 금지. 순수 TypeScript 함수만.
+            - infrastructure/: domain만 import 가능.
+            - components/: domain만 import 가능. infrastructure 직접 import 금지.
+            - app/: infrastructure, domain 모두 import 가능.
+
+            ## 핵심 규칙
+            - 인디케이터 초기 구간은 반드시 null (0, NaN 금지)
+            - any 타입 사용 금지
+            - 도메인 함수는 순수 함수 (사이드 이펙트 금지)
+            - 구현 시 반드시 테스트 파일 함께 작성 (domain/, infrastructure/ 커버리지 100%)
+            - 타임프레임은 클라이언트 상태로만 관리 (URL 변경 없음)
+            - Lightweight Charts는 components/chart/ 에서만 사용
+
+            ## 상세 규칙
+            - docs/ARCHITECTURE.md: 레이어 구조, 폴더 구조, 데이터 흐름
+            - docs/DOMAIN.md: 인디케이터 계산 명세, 타입 정의
+            - docs/API.md: Alpaca API, 내부 Route 명세
+            - docs/CONVENTIONS.md: 네이밍, 코딩 규칙, 자주 하는 실수
