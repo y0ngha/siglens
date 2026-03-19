@@ -70,6 +70,14 @@ jobs:
             - docs/API.md: Alpaca API, 내부 Route 명세
             - docs/CONVENTIONS.md: 네이밍, 코딩 규칙, 자주 하는 실수
             - docs/FF.md: FF 4원칙 (Readability, Predictability, Cohesion, Coupling)
+            - docs/DESIGN.md: 컬러 시스템, MA/EMA 라인 스타일, 차트 컬러 상수
+
+            ## 디자인 규칙 요약
+            - 컬러는 반드시 CHART_COLORS 상수 또는 Tailwind 토큰 사용 (하드코딩 금지)
+            - MA는 실선(lineStyle: 0), EMA는 점선(lineStyle: 1)
+            - MA/EMA 기간별 색상: 5=#ef4444, 10=#f97316, 20=#eab308, 60=#22c55e, 120=#3b82f6, 200=#a855f7
+            - 상승=#26a69a, 하락=#ef5350 고정 (임의 변경 금지)
+            - 다크 모드 전용
 
             ## FF 원칙 요약
             - Readability: 동시에 실행되지 않는 코드 분리, 복잡한 조건에 이름 부여, 매직 넘버 상수화
