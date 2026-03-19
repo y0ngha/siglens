@@ -45,7 +45,7 @@ describe('AlpacaProvider', () => {
 
       expect(bars).toHaveLength(1);
       expect(bars[0]).toEqual({
-        timestamp: '2024-01-15T09:30:00Z',
+        time: Math.floor(new Date('2024-01-15T09:30:00Z').getTime() / 1000),
         open: 100,
         high: 105,
         low: 99,

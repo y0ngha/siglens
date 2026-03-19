@@ -1,9 +1,4 @@
-export type MACDResult = {
-  macd: number;
-  signal: number;
-  histogram: number;
-  timestamp: string;
-};
+import type { MACDResult } from '@/domain/types';
 
 export function calculateMACD(
   closes: number[],

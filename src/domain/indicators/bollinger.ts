@@ -1,9 +1,4 @@
-export type BollingerResult = {
-  upper: number;
-  middle: number;
-  lower: number;
-  timestamp: string;
-};
+import type { BollingerResult } from '@/domain/types';
 
 export function calculateBollinger(
   closes: number[],

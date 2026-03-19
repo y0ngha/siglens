@@ -1,19 +1,10 @@
-import type { Bar } from '@/domain/types';
-import type { Pattern } from '@/domain/patterns/detect';
-
-export type IndicatorSnapshot = {
-  rsi?: number;
-  macd?: { macd: number; signal: number; histogram: number };
-  bollinger?: { upper: number; middle: number; lower: number };
-  adx?: number;
-  vwap?: number;
-};
+import type { Bar, IndicatorResult, PatternResult } from '@/domain/types';
 
 export function buildAnalysisPrompt(
   symbol: string,
   bars: Bar[],
-  indicators: IndicatorSnapshot,
-  patterns: Pattern[],
+  indicators: IndicatorResult,
+  patterns: PatternResult[],
 ): string {
   // TODO: implement
   void symbol;
