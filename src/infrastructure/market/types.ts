@@ -1,4 +1,6 @@
-export type { Bar, Timeframe } from '@/domain/types';
+import type { Bar, Timeframe } from '@/domain/types';
+
+export type { Bar, Timeframe };
 
 export type GetBarsOptions = {
   symbol: string;

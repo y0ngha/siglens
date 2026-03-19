@@ -5,7 +5,9 @@ const nextConfig: NextConfig = {
   reactCompiler: true,
 
   // Turbopack (Next.js 16 기본값이나 명시)
-  turbopack: {},
+  turbopack: {
+    root: import.meta.dirname,
+  },
 };
 
 export default nextConfig;
