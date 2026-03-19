@@ -132,6 +132,7 @@ jobs:
             4. master <- 새 브랜치 방향으로 PR 오픈 (gh pr create 사용)
                제목: {type}: {이슈 제목}
                본문: closes #상단에서_전달받은_이슈번호 + 각 명령어 실행 결과 포함
+               구현 내용 요약(Summary), 생성/수정/삭제된 파일 정리
 
       - name: Post failure comment if Claude fails
         if: failure()
