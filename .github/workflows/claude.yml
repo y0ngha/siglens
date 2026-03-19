@@ -39,13 +39,15 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           additional_permissions: |
             actions: read
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(gh issue comment:*),Bash(gh issue view:*)"
           prompt: |
             다음 Siglens 프로젝트 컨텍스트를 숙지하고 요청을 처리해줘.
 
             ## 프로젝트 개요
             - 미국 주식 AI 분석 플랫폼 (분석 전용, 주문 없음)
             - Next.js 16.2 (App Router + Turbopack), React 19.2, TypeScript
-            - yarn 패키지 매니저, Node.js 25.2.1
+            - yarn 4.12.0, Node.js 25.2.1
             - Layered Architecture: domain / infrastructure / app / components
 
             ## 레이어 의존성 규칙 (절대 위반 금지)
