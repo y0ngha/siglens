@@ -42,8 +42,8 @@ jobs:
           additional_permissions: |
             actions: read
           prompt: |
-            너는 지금 이슈/PR #${{ github.event.issue.number || github.event.pull_request.number }} 에서 호출되었어.
-            가장 먼저 할 일은 사용자의 다음 요청을 분석하고, `gh issue view ${{ github.event.issue.number || github.event.pull_request.number }}`를 실행해 전체 내용을 파악하는 거야.
+            너는 지금 발생한 이벤트(${{ github.event_name }})의 #${{ github.event.issue.number || github.event.pull_request.number }} 에서 호출되었어.
+            가장 먼저 할 일은 사용자의 다음 요청을 분석하고, 현재 컨텍스트가 이슈라면 `gh issue view`, PR이라면 `gh pr view` 명령어를 실행해 전체 내용을 파악하는 거야.
             사용자 호출 코멘트: "${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}"
 
             ---
