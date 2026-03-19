@@ -1,5 +1,120 @@
 # Conventions
 
+## 코딩 패러다임
+
+Siglens는 **선언형(Declarative)** 코드와 **함수형 프로그래밍(Functional Programming)** 패러다임을 지향한다.
+
+### 선언형 코드
+
+"어떻게"가 아닌 "무엇을"에 집중한다.
+
+```typescript
+// ❌ 명령형 (어떻게)
+const result = [];
+for (let i = 0; i < closes.length; i++) {
+    if (closes[i] > 0) {
+        result.push(closes[i] * 2);
+    }
+}
+
+// ✅ 선언형 (무엇을)
+const result = closes
+    .filter(close => close > 0)
+    .map(close => close * 2);
+```
+
+```typescript
+// ❌ 명령형 조건 분기
+let label;
+if (trend === 'bullish') {
+    label = '상승';
+} else if (trend === 'bearish') {
+    label = '하락';
+} else {
+    label = '중립';
+}
+
+// ✅ 선언형 객체 맵
+const TREND_LABEL: Record<Trend, string> = {
+    bullish: '상승',
+    bearish: '하락',
+    neutral: '중립',
+};
+const label = TREND_LABEL[trend];
+```
+
+### 함수형 프로그래밍
+
+```typescript
+// ✅ 순수 함수 (동일 입력 → 동일 출력, 사이드 이펙트 없음)
+function calculateRSI(closes: number[], period: number): (number | null)[] {
+    // 외부 상태 읽기/쓰기 없음
+    // fetch, console.log, Date.now() 등 금지
+}
+
+// ✅ 불변성 (원본 데이터 변경 금지)
+// ❌ bars.push(newBar)         → 원본 변경
+// ✅ [...bars, newBar]         → 새 배열 반환
+// ❌ bar.close = 100           → 원본 변경
+// ✅ { ...bar, close: 100 }   → 새 객체 반환
+
+// ✅ 함수 합성 (pipe/compose 패턴)
+const analyze = (bars: Bar[]) =>
+    pipe(
+        bars,
+        extractCloses,
+        closes => calculateRSI(closes, 14),
+        filterNulls,
+    );
+
+// ✅ 고차 함수 활용
+const withPeriodColor = (period: number) =>
+    (series: ISeriesApi<'Line'>) => {
+        series.applyOptions({ color: CHART_COLORS[`period${period}`] });
+        return series;
+    };
+```
+
+### 적용 우선순위
+
+```
+domain/         함수형 필수
+                순수 함수, 불변성, 고차 함수
+
+infrastructure/ 함수형 권장
+                외부 API 호출 특성상 사이드 이펙트 불가피하나
+                내부 로직은 순수 함수로 분리
+
+components/     선언형 필수
+                JSX는 본질적으로 선언형
+                조건 분기는 객체 맵 또는 컴포넌트 분리로 처리
+
+app/            선언형 권장
+                RSC의 async/await 패턴과 자연스럽게 맞음
+```
+
+### 자주 하는 실수
+
+```
+1. for/while 루프 사용
+   → map, filter, reduce, flatMap으로 대체
+
+2. 변수 재할당 (let)
+   → const로 선언, 새 값이 필요하면 새 변수
+
+3. 원본 배열/객체 직접 변경
+   → spread 연산자 또는 구조 분해로 새 값 반환
+
+4. 조건문 중첩
+   → 객체 맵, 얼리 리턴, 컴포넌트 분리로 대체
+
+5. 클래스 기반 로직 (domain에서)
+   → 순수 함수로 대체
+   → 단, infrastructure의 Provider는 클래스 허용
+```
+
+---
+
 ## 파일 네이밍
 
 ```
@@ -200,11 +315,11 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
 
 ```json
 {
-    "compilerOptions": {
-        "paths": {
-            "@/*": ["./src/*"]
-        }
+  "compilerOptions": {
+    "paths": {
+      "@/*": ["./src/*"]
     }
+  }
 }
 ```
 
