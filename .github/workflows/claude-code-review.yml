@@ -3,21 +3,9 @@ name: Claude Code Review
 on:
   pull_request:
     types: [opened, synchronize, ready_for_review, reopened]
-    # Optional: Only run on specific file changes
-    # paths:
-    #   - "src/**/*.ts"
-    #   - "src/**/*.tsx"
-    #   - "src/**/*.js"
-    #   - "src/**/*.jsx"
 
 jobs:
   claude-review:
-    # Optional: Filter by PR author
-    # if: |
-    #   github.event.pull_request.user.login == 'external-contributor' ||
-    #   github.event.pull_request.user.login == 'new-developer' ||
-    #   github.event.pull_request.author_association == 'FIRST_TIME_CONTRIBUTOR'
-
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -38,7 +26,41 @@ jobs:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
-          prompt: '/code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}'
-          # See https://github.com/anthropics/claude-code-action/blob/main/docs/usage.md
-          # or https://code.claude.com/docs/en/cli-reference for available options
+          prompt: |
+            /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}
 
+            아래 Siglens 프로젝트 규칙을 기준으로 추가 리뷰해줘.
+
+            ## 프로젝트 개요
+            - 미국 주식 AI 분석 플랫폼 (분석 전용, 주문 없음)
+            - Next.js 16.2 (App Router + Turbopack), React 19.2, TypeScript
+            - Layered Architecture: domain / infrastructure / app / components
+
+            ## 레이어 의존성 규칙 (위반 시 반드시 지적)
+            - domain/: 외부 라이브러리 import 금지. 순수 TypeScript 함수만.
+            - infrastructure/: domain만 import 가능.
+            - components/: domain만 import 가능. infrastructure 직접 import 금지.
+            - app/: infrastructure, domain 모두 import 가능.
+
+            ## 도메인 규칙
+            - 인디케이터 초기 구간(period 미만)은 반드시 null 반환 (0, NaN 금지)
+            - 도메인 함수는 순수 함수여야 함 (fetch, console.log, Date.now() 등 사이드 이펙트 금지)
+            - 도메인 함수 반환 타입 명시 필수
+
+            ## 코드 품질
+            - any 타입 사용 금지
+            - Props는 inline type 금지, 별도 interface로 정의
+            - 컴포넌트는 named export (page/layout만 default export)
+            - 'use client' 누락 여부 확인 (useState, useEffect 사용 시 필수)
+            - 타임프레임은 URL 쿼리 파라미터가 아닌 클라이언트 상태로 관리
+
+            ## Lightweight Charts
+            - components/chart/ 밖에서 import 금지
+            - useEffect cleanup에서 chart.remove() 호출 여부 확인
+            - 실시간 업데이트는 setData가 아닌 series.update() 사용
+            - 거래량, RSI 등 별도 pane(index 1, 2...)에 배치 여부 확인
+
+            ## 테스트
+            - domain/, infrastructure/ 구현 파일에 대응하는 테스트 파일 누락 여부 확인
+            - 테스트 구조: describe → describe(context) → it
+            - 커버리지 100% 목표이므로 엣지 케이스 테스트 누락 지적
