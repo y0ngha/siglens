@@ -85,3 +85,13 @@ jobs:
             - Cohesion: 함께 수정되는 파일은 같은 디렉토리, 관련 상수 한 곳에서 관리
             - Coupling: 단일 책임, 섣부른 추상화 금지 (3회 반복 후 추상화), Props Drilling 제거
             - 레이어별 우선순위: domain=Predictability, components=Readability, infrastructure=Cohesion
+
+            ## PR 오픈 전 완료 조건 (반드시 모두 통과해야 PR 오픈 가능)
+            아래 명령어를 순서대로 실행하고, 모두 통과한 경우에만 PR을 오픈해줘.
+            하나라도 실패하면 수정 후 재실행해줘. 통과 전에는 PR을 오픈하지 않는다.
+
+            1. yarn lint        → ESLint 오류 없음
+            2. yarn test        → 테스트 전체 통과
+            3. yarn build       → 빌드 성공
+
+            모두 통과하면 PR을 오픈하고 각 명령어의 실행 결과를 PR 본문에 포함해줘.
