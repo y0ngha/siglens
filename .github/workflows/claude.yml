@@ -30,29 +30,36 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1
+          fetch-depth: 0
 
       - name: Run Claude Code
         id: claude
         uses: anthropics/claude-code-action@v1
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           additional_permissions: |
             actions: read
           prompt: |
+            너는 지금 이슈/PR #${{ github.event.issue.number || github.event.pull_request.number }} 에서 호출되었어.
+            가장 먼저 할 일은 사용자의 다음 요청을 분석하고, `gh issue view ${{ github.event.issue.number || github.event.pull_request.number }}`를 실행해 전체 내용을 파악하는 거야.
+            사용자 호출 코멘트: "${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}"
+
+            ---
             다음 Siglens 프로젝트 컨텍스트를 숙지하고 요청을 처리해줘.
 
             ## 작업 상태 코멘트 규칙
-            작업을 시작할 때, 완료됐을 때, 실패했을 때 반드시 이슈 또는 PR에 코멘트를 남겨줘.
+            작업을 시작할 때, 완료됐을 때, 실패했을 때 반드시 터미널에서 `gh` 명령어를 사용해 코멘트를 남겨줘.
 
             시작 시:
-            gh issue comment {이슈 번호} --body "🔨 작업을 시작합니다."
+            gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "🔨 작업을 시작합니다."
 
             완료 시:
-            gh issue comment {이슈 번호} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
+            gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
 
             실패 시:
-            gh issue comment {이슈 번호} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
+            gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
 
             ## 프로젝트 개요
             - 미국 주식 AI 분석 플랫폼 (분석 전용, 주문 없음)
@@ -111,7 +118,7 @@ jobs:
 
             1. 브랜치 생성 (master 기준)
                git checkout master && git pull origin master
-               git checkout -b {type}/{이슈 번호}/{이슈 한줄 요약}
+               git checkout -b {type}/상단에서_전달받은_이슈번호/{이슈 한줄 요약}
                브랜치 타입: feat, fix, chore, style, refactor, test, docs
 
             2. 구현 + 테스트 작성
@@ -122,6 +129,6 @@ jobs:
                yarn build  → 빌드 성공
                하나라도 실패하면 수정 후 재실행. 통과 전 PR 오픈 금지.
 
-            4. master <- 새 브랜치 방향으로 PR 오픈
+            4. master <- 새 브랜치 방향으로 PR 오픈 (gh pr create 사용)
                제목: {type}: {이슈 제목}
-               본문: closes #{이슈 번호} + 각 명령어 실행 결과 포함
+               본문: closes #상단에서_전달받은_이슈번호 + 각 명령어 실행 결과 포함
