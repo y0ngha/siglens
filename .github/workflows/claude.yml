@@ -132,3 +132,10 @@ jobs:
             4. master <- 새 브랜치 방향으로 PR 오픈 (gh pr create 사용)
                제목: {type}: {이슈 제목}
                본문: closes #상단에서_전달받은_이슈번호 + 각 명령어 실행 결과 포함
+
+      - name: Post failure comment if Claude fails
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "❌ 시스템 에러 또는 API 한도 초과로 Claude 작업을 시작하지 못했습니다."
