@@ -63,9 +63,12 @@ import { claudeClient } from '@/infrastructure/ai/claude'; // 금지
 
 ## 폴더 구조
 
+**중요: `domain/`, `infrastructure/`, `components/`, `__tests__/`는 `src/app/` 안에 있지 않다.**
+Next.js의 `app/`은 라우팅 전용이며, 나머지 레이어는 `src/` 바로 아래에 위치한다.
+
 ```
 src/
-├── app/                              ← Next.js App Router
+├── app/                              ← Next.js App Router (라우팅 전용)
 │   ├── [symbol]/
 │   │   └── page.tsx                  ← RSC (최초 진입)
 │   ├── api/
@@ -75,6 +78,8 @@ src/
 │   │       └── route.ts              ← AI 재분석 버튼
 │   ├── layout.tsx
 │   └── page.tsx                      ← 종목 검색 메인
+│
+│   ↑ app/ 끝. 아래는 모두 src/ 바로 아래에 위치 ↓
 │
 ├── domain/                           ← 순수 TS (외부 의존성 없음)
 │   ├── indicators/
