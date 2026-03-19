@@ -60,6 +60,13 @@ jobs:
             - 실시간 업데이트는 setData가 아닌 series.update() 사용
             - 거래량, RSI 등 별도 pane(index 1, 2...)에 배치 여부 확인
 
+            ## FF 원칙 (docs/FF.md 참고)
+            - Readability: 동시에 실행되지 않는 코드 분리, 복잡한 조건에 이름 부여, 매직 넘버 상수화, 중첩 삼항 금지
+            - Predictability: 같은 계열 함수 반환 타입 통일, 이름 중복 금지, 숨은 로직 드러내기
+            - Cohesion: 함께 수정되는 파일은 같은 디렉토리, 관련 상수 한 곳에서 관리
+            - Coupling: 단일 책임, 섣부른 추상화 금지 (3회 반복 후 추상화), Props Drilling 제거
+            - 레이어별 우선순위: domain=Predictability, components=Readability, infrastructure=Cohesion
+
             ## 테스트
             - domain/, infrastructure/ 구현 파일에 대응하는 테스트 파일 누락 여부 확인
             - 테스트 구조: describe → describe(context) → it

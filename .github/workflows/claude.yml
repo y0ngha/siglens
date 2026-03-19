@@ -67,3 +67,11 @@ jobs:
             - docs/DOMAIN.md: 인디케이터 계산 명세, 타입 정의
             - docs/API.md: Alpaca API, 내부 Route 명세
             - docs/CONVENTIONS.md: 네이밍, 코딩 규칙, 자주 하는 실수
+            - docs/FF.md: FF 4원칙 (Readability, Predictability, Cohesion, Coupling)
+
+            ## FF 원칙 요약
+            - Readability: 동시에 실행되지 않는 코드 분리, 복잡한 조건에 이름 부여, 매직 넘버 상수화
+            - Predictability: 같은 계열 함수 반환 타입 통일, 이름 중복 금지, 숨은 로직 드러내기
+            - Cohesion: 함께 수정되는 파일은 같은 디렉토리, 관련 상수 한 곳에서 관리
+            - Coupling: 단일 책임, 섣부른 추상화 금지 (3회 반복 후 추상화), Props Drilling 제거
+            - 레이어별 우선순위: domain=Predictability, components=Readability, infrastructure=Cohesion
