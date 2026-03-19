@@ -41,7 +41,7 @@ Next.js     16.2  (App Router + Turbopack)
 React       19.2
 TypeScript  최신
 Node.js     25.2.1
-패키지 매니저 yarn
+yarn        4.12.0
 ```
 
 ```
@@ -49,6 +49,36 @@ Node.js     25.2.1
 스타일      Tailwind CSS
 린트        ESLint + Stylelint + Prettier
 테스트      Jest (domain, infrastructure만. UI 테스트 없음)
+```
+
+---
+
+## 명령어
+
+패키지 설치 시 반드시 `yarn`을 사용한다. `npm`, `pnpm` 사용 금지.
+
+```bash
+# 개발 서버 (포트 4200)
+yarn dev
+
+# 빌드
+yarn build
+
+# 린트
+yarn lint
+yarn lint:fix
+yarn lint:style
+yarn lint:style-fix
+
+# 테스트
+yarn test
+yarn test-watch
+yarn test-coverage
+yarn test-coverage-watch
+yarn test-coverage-report
+
+# 포맷
+yarn format
 ```
 
 ---
