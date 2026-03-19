@@ -136,10 +136,6 @@ function calculateRSI(closes: number[], period = 14): (number | null)[] {
 
 ## 테스트 규칙
 
-> **필수 원칙**: 구현 코드와 테스트 코드는 항상 함께 작성한다.
-> `domain/` 또는 `infrastructure/` 파일을 새로 만들거나 수정했다면,
-> 반드시 대응하는 테스트 파일도 같은 커밋에 포함해야 한다.
-
 ### 파일 위치
 
 ```
@@ -240,8 +236,6 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
 
 8. 테스트 없이 구현 완료 선언
    → 구현과 테스트는 항상 함께 작성
-   → domain/, infrastructure/ 코드를 작성했다면 반드시 해당 테스트 파일도 작성할 것
-   → "일단 구현하고 나중에 테스트" 금지 — 커밋 전 테스트 파일 존재 여부 확인
 
 9. Lightweight Charts를 components/chart/ 밖에서 import
    → domain, infrastructure, app에서 사용 금지
@@ -380,11 +374,4 @@ candleSeries.setData(allBars);
 
 ## 커밋 메시지
 
-```
-feat: StockChart 컴포넌트 구현
-fix: RSI 초기 구간 null 처리 오류 수정
-test: calculateMACD 테스트 추가
-docs: DOMAIN.md 인디케이터 명세 업데이트
-refactor: AlpacaProvider 에러 처리 개선
-chore: jest 설정 업데이트
-```
+docs/GIT_CONVENTION.md 참고.
