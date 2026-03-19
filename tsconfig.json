@@ -21,10 +21,7 @@
       }
     ],
     "paths": {
-      "@/*": ["./app/*"],
-      "@infrastructure/*": ["./app/infrastructure/*"],
-      "@global/*": ["./app/global/*"],
-      "@domain/*": ["./app/domain/*"]
+      "@/*": ["./src/*"]
     }
   },
   "include": [
