@@ -56,6 +56,16 @@ jobs:
             - components/: domain만 import 가능. infrastructure 직접 import 금지.
             - app/: infrastructure, domain 모두 import 가능.
 
+            ## 코딩 패러다임 (절대 원칙)
+            - 선언형 코드: "어떻게"가 아닌 "무엇을"에 집중
+            - 함수형 프로그래밍: 순수 함수, 불변성, 고차 함수
+            - for/while 루프 금지 → map, filter, reduce 사용
+            - let 재할당 금지 → const + 새 변수
+            - 원본 배열/객체 직접 변경 금지 → spread 연산자
+            - 조건 중첩 금지 → 객체 맵, 얼리 리턴으로 대체
+            - domain/에서 클래스 금지 → 순수 함수만 허용
+              (infrastructure의 Provider 클래스는 예외)
+
             ## 핵심 규칙
             - 인디케이터 초기 구간은 반드시 null (0, NaN 금지)
             - any 타입 사용 금지
@@ -71,7 +81,6 @@ jobs:
             - docs/CONVENTIONS.md: 네이밍, 코딩 규칙, 자주 하는 실수
             - docs/FF.md: FF 4원칙 (Readability, Predictability, Cohesion, Coupling)
             - docs/DESIGN.md: 컬러 시스템, MA/EMA 라인 스타일, 차트 컬러 상수
-            - docs/GIT_CONVENTION.md: 브랜치 네이밍, 커밋 메시지, PR 규칙
 
             ## 디자인 규칙 요약
             - 컬러는 반드시 CHART_COLORS 상수 또는 Tailwind 토큰 사용 (하드코딩 금지)
