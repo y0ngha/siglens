@@ -3,16 +3,16 @@
 ## 브랜치 네이밍
 
 ```
-{type}/{이슈 번호}/{이슈 한줄 요약}
+{type}/#{이슈 번호}/{이슈 한줄 요약}
 ```
 
 **예시**
 ```
-feature/2/도메인-공통-타입-정의
-feature/4/alpaca-provider-구현
-fix/8/rsi-초기구간-null-처리
-chore/1/프로젝트-초기-환경-설정
-style/22/ma-ema-오버레이-컴포넌트
+feat/#2/도메인-공통-타입-정의
+feat/#4/alpaca-provider-구현
+fix/#8/rsi-초기구간-null-처리
+chore/#1/프로젝트-초기-환경-설정
+style/#22/ma-ema-오버레이-컴포넌트
 ```
 
 **규칙**
@@ -69,7 +69,7 @@ docs: DOMAIN.md VWAP 명세 추가
 
 ```
 base 브랜치: master
-head 브랜치: {type}/{이슈 번호}/{이슈 한줄 요약}
+head 브랜치: {type}/#{이슈 번호}/{이슈 한줄 요약}
 
 제목: {type}: {이슈 제목}
 예시: feat: 도메인 공통 타입 정의
@@ -91,7 +91,7 @@ head 브랜치: {type}/{이슈 번호}/{이슈 한줄 요약}
 1. master 브랜치 기준으로 브랜치 생성
    git checkout master
    git pull origin master
-   git checkout -b {type}/{이슈 번호}/{이슈 한줄 요약}
+   git checkout -b {type}/#{이슈 번호}/{이슈 한줄 요약}
 
 2. 구현 + 테스트 작성
 
