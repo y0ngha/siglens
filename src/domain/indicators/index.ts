@@ -4,3 +4,4 @@ export * from './bollinger';
 export * from './dmi';
 export * from './vwap';
 export * from './ema';
+export * from './ma';
