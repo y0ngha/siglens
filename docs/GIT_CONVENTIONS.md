@@ -96,7 +96,9 @@ head 브랜치: {type}/#{이슈 번호}/{이슈 한줄 요약}
 2. 구현 + 테스트 작성
 
 3. 완료 조건 확인 (모두 통과해야 PR 오픈 가능)
+   yarn format
    yarn lint
+   yarn lint:style
    yarn test
    yarn build
 
