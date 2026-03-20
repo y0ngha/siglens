@@ -143,7 +143,7 @@ jobs:
 
             1. 브랜치 생성 (master 기준)
                git checkout master && git pull origin master
-               git checkout -b {type}/상단에서_전달받은_이슈번호/{이슈 한줄 요약}
+               git checkout -b {type}/#{상단에서_전달받은_이슈번호}/{이슈 한줄 요약}
                브랜치 타입: feat, fix, chore, style, refactor, test, docs
 
             2. 구현 + 테스트 작성
