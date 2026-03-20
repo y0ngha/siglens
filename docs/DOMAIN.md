@@ -27,8 +27,8 @@ export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
     dmi: DMIResult[];
-    ma: Record<number, (number | null)[]>;
-    ema: Record<number, (number | null)[]>;
+    rsi: (number | null)[];
+    vwap: (number | null)[];
 }
 
 export interface MACDResult {

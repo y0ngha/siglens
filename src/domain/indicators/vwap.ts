@@ -7,7 +7,6 @@ export function calculateVWAP(
   // TODO: implement
   void highs;
   void lows;
-  void closes;
   void volumes;
-  return [];
+  return closes.map(() => null);
 }

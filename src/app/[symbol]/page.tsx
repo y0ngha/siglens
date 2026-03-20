@@ -1,6 +1,6 @@
 import { AlpacaProvider } from '@/infrastructure/market/alpaca';
 import { ClaudeProvider } from '@/infrastructure/ai/claude';
-import { calculateMACD, calculateBollinger, calculateDMI } from '@/domain/indicators';
+import { calculateMACD, calculateBollinger, calculateDMI, calculateRSI, calculateVWAP } from '@/domain/indicators';
 import { detectPatterns } from '@/domain/patterns';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { StockChart } from '@/components/chart/StockChart';
@@ -22,13 +22,14 @@ export default async function SymbolPage({ params }: Props) {
   const closes = bars.map((b) => b.close);
   const highs = bars.map((b) => b.high);
   const lows = bars.map((b) => b.low);
+  const volumes = bars.map((b) => b.volume);
 
   const indicators: IndicatorResult = {
     macd: calculateMACD(closes),
     bollinger: calculateBollinger(closes),
     dmi: calculateDMI(highs, lows, closes),
-    ma: {}, // TODO: #9 (MA 계산 구현) 완료 후 채워질 예정
-    ema: {}, // TODO: #9 (EMA 계산 구현) 완료 후 채워질 예정
+    rsi: calculateRSI(closes),
+    vwap: calculateVWAP(highs, lows, closes, volumes),
   };
 
   const patterns = detectPatterns(bars);

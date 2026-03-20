@@ -47,6 +47,7 @@ jobs:
             2. AGENTS.md와 docs/*.md 문서를 읽고 프로젝트 규칙을 숙지한 뒤 리뷰한다.
             3. 문제가 있으면 mcp__github_inline_comment__create_inline_comment로 인라인 코멘트 + gh pr comment로 전체 요약을 달아줘.
             4. 문제가 없으면 gh pr comment로 "리뷰할 내용이 없습니다." 를 달아줘.
+            5. 이미 리뷰한 PR이라 스킵하는 경우에도 gh pr comment로 스킵 사유를 반드시 알려줘.
 
             ## 리뷰 체크리스트 (위반 시 반드시 지적)
 
@@ -95,3 +96,23 @@ jobs:
             - Predictability: 같은 계열 함수 반환 타입 통일
             - Cohesion: 함께 수정되는 파일 같은 디렉토리
             - Coupling: 섣부른 추상화 금지 (3회 반복 후 추상화)
+
+      - name: Post skip comment if review was skipped
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REVIEW_OUTPUT: ${{ steps.claude-review.outputs.execution_file }}
+        run: |
+          if [ -f "$REVIEW_OUTPUT" ]; then
+            SKIPPED=$(grep -c "중복 리뷰\|이미 리뷰\|already reviewed\|skip" "$REVIEW_OUTPUT" 2>/dev/null || echo "0")
+            if [ "$SKIPPED" -gt "0" ]; then
+              gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "ℹ️ 이미 리뷰된 PR입니다. 새 커밋이 푸시되면 자동으로 재리뷰됩니다."
+            fi
+          fi
+
+      - name: Post failure comment if review fails
+        if: failure()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "❌ 시스템 에러 또는 API 한도 초과로 코드 리뷰를 시작하지 못했습니다."
