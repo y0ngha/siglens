@@ -72,6 +72,7 @@ Siglens는 이 복잡한 과정을 AI가 대신 처리해준다.
 | `docs/FF.md` | FF 4원칙 상세 가이드 (Readability, Predictability, Cohesion, Coupling) |
 | `docs/DESIGN.md` | 컬러 시스템, Tailwind 설정, 차트 컬러 상수 |
 | `docs/GIT_CONVENTION.md` | 브랜치 네이밍, 커밋 메시지, PR 규칙 |
+| `docs/CLAUDE_CODE_PROD_FLOW_GUIDE.md` | Claude Code 작업 플로우 가이드 |
 
 **태스크를 받으면 반드시 위 문서를 먼저 읽고 시작한다.**
 문서에 명시된 규칙은 어떤 경우에도 위반하지 않는다.
