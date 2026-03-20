@@ -1,9 +1,4 @@
-export type DMIResult = {
-  plusDI: number;
-  minusDI: number;
-  adx: number;
-  timestamp: string;
-};
+import type { DMIResult } from '@/domain/types';
 
 export function calculateDMI(
   highs: number[],

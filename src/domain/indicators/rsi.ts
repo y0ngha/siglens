@@ -1,11 +1,5 @@
-export type RSIResult = {
-  value: number;
-  timestamp: string;
-};
-
-export function calculateRSI(closes: number[], period = 14): RSIResult[] {
+export function calculateRSI(closes: number[], period = 14): (number | null)[] {
   // TODO: implement
-  void closes;
   void period;
-  return [];
+  return closes.map(() => null);
 }

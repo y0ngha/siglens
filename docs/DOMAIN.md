@@ -24,13 +24,11 @@ export interface Bar {
 }
 
 export interface IndicatorResult {
-    rsi: (number | null)[];
     macd: MACDResult[];
     bollinger: BollingerResult[];
     dmi: DMIResult[];
+    rsi: (number | null)[];
     vwap: (number | null)[];
-    ema20: (number | null)[];
-    ema60: (number | null)[];
 }
 
 export interface MACDResult {
@@ -260,4 +258,39 @@ interface Signal {
 1Day   → 500봉 (약 2년)
 
 스크롤 추가 로딩: 매번 200봉씩 prepend
+```
+
+---
+
+## IndicatorResult 타입 규칙
+
+### IndicatorResult 필드 추가 규칙
+
+IndicatorResult에 새 인디케이터 필드를 추가하는 시점은
+해당 인디케이터의 계산 함수 구현이 완료된 이후다.
+
+❌ 금지
+- 계산 함수 없이 타입 필드만 먼저 추가
+- 빈 배열(`[]`) 또는 빈 객체(`{}`)로 하드코딩
+- TODO 주석으로 대체
+
+✅ 올바른 순서
+1. 계산 함수 구현 (예: calculateRSI)
+2. 테스트 작성 및 통과 확인
+3. IndicatorResult에 필드 추가
+4. 호출부에서 실제 계산 결과 연결
+
+### MA/EMA 기간별 결과 구조
+
+MA/EMA 기간을 `ma20`, `ema60` 등 고정 필드로 정의하지 않는다.
+기간별 데이터는 `Record<number, (number | null)[]>` 구조로 관리한다.
+
+```typescript
+// ❌ 금지
+ema20: (number | null)[];
+ema60: (number | null)[];
+
+// ✅ 올바른 구조
+ma: Record<number, (number | null)[]>;
+ema: Record<number, (number | null)[]>;
 ```

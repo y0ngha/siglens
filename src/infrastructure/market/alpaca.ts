@@ -18,7 +18,7 @@ type AlpacaBarsResponse = {
 
 function toBar(raw: AlpacaBar): Bar {
   return {
-    timestamp: raw.t,
+    time: Math.floor(new Date(raw.t).getTime() / 1000),
     open: raw.o,
     high: raw.h,
     low: raw.l,

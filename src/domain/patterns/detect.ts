@@ -1,12 +1,6 @@
-import type { Bar } from '@/domain/types';
+import type { Bar, PatternResult } from '@/domain/types';
 
-export type Pattern = {
-  name: string;
-  timestamp: string;
-  direction: 'bullish' | 'bearish' | 'neutral';
-};
-
-export function detectPatterns(bars: Bar[]): Pattern[] {
+export function detectPatterns(bars: Bar[]): PatternResult[] {
   // TODO: implement
   void bars;
   return [];
