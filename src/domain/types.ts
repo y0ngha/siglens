@@ -34,8 +34,8 @@ export type IndicatorResult = {
   bollinger: BollingerResult[];
   dmi: DMIResult[];
   vwap: (number | null)[];
-  ema20: (number | null)[];
-  ema60: (number | null)[];
+  ma: Record<number, (number | null)[]>;
+  ema: Record<number, (number | null)[]>; // #9 구현 후 채워질 예정
 };
 
 export type PatternType =

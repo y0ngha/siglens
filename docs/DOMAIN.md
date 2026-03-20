@@ -29,8 +29,8 @@ export interface IndicatorResult {
     bollinger: BollingerResult[];
     dmi: DMIResult[];
     vwap: (number | null)[];
-    ema20: (number | null)[];
-    ema60: (number | null)[];
+    ma: Record<number, (number | null)[]>;
+    ema: Record<number, (number | null)[]>;
 }
 
 export interface MACDResult {
@@ -260,4 +260,35 @@ interface Signal {
 1Day   → 500봉 (약 2년)
 
 스크롤 추가 로딩: 매번 200봉씩 prepend
+```
+
+---
+
+## IndicatorResult 타입 규칙
+
+### MA/EMA는 Record<number, ...> 구조를 사용할 것
+
+MA/EMA 기간을 `ma20`, `ema60` 등 고정 필드로 정의하지 않는다.
+기간별 데이터는 `Record<number, (number | null)[]>` 구조로 관리한다.
+
+```typescript
+// ❌ 금지
+ma20: (number | null)[];
+ema60: (number | null)[];
+
+// ✅ 올바른 방식
+ma: Record<number, (number | null)[]>;
+ema: Record<number, (number | null)[]>;
+```
+
+### 계산 함수가 없는 상태에서 타입에 필드를 미리 추가하지 말 것
+
+계산 함수 구현이 완료된 후 타입에 필드를 추가한다.
+구현되지 않은 함수를 위해 빈 배열(`[]`)이나 빈 객체(`{}`)를 하드코딩하는 것은
+TODO 주석과 함께 이슈 번호를 명시해야 한다.
+
+```typescript
+// ✅ 구현 전 임시 처리 방식
+ma: {}, // TODO: #9 (MA 계산 구현) 완료 후 채워질 예정
+ema: {}, // TODO: #9 (EMA 계산 구현) 완료 후 채워질 예정
 ```
