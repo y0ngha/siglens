@@ -30,24 +30,20 @@ jobs:
           show_full_output: true
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
           base_branch: master
-          plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
-          plugins: 'code-review@claude-code-plugins'
-          claude_args: |
-            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)" --dangerously-skip-permissions
+          claude_args: --dangerously-skip-permissions
           allowed_bots: "claude[bot]"
           prompt: |
             REPO: ${{ github.repository }}
             PR NUMBER: ${{ github.event.pull_request.number }}
 
-            /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}
-
             ## 리뷰 절차
 
-            1. 리뷰 시작 시 gh pr comment로 "리뷰를 진행 중입니다." 코멘트를 달아줘.
-            2. AGENTS.md와 docs/*.md 문서를 읽고 프로젝트 규칙을 숙지한 뒤 리뷰한다.
-            3. 문제가 있으면 mcp__github_inline_comment__create_inline_comment로 인라인 코멘트 + gh pr comment로 전체 요약을 달아줘.
-            4. 문제가 없으면 gh pr comment로 "리뷰할 내용이 없습니다." 를 달아줘.
-            5. 이미 리뷰한 PR이라 스킵하는 경우에도 gh pr comment로 스킵 사유를 반드시 알려줘.
+            1. gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "🔍 리뷰를 진행 중입니다." 실행
+            2. gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} 로 변경 코드 확인
+            3. AGENTS.md와 docs/*.md 읽고 프로젝트 규칙 숙지
+            4. 아래 체크리스트 기준으로 리뷰
+            5. 문제 있으면 gh api 로 인라인 코멘트 + gh pr comment 로 전체 요약
+            6. 문제 없으면 gh pr comment --body "리뷰할 내용이 없습니다. 👍" 달기
 
             ## 리뷰 체크리스트 (위반 시 반드시 지적)
 
@@ -60,7 +56,7 @@ jobs:
             - 도메인 함수 순수 함수 여부 (fetch, console.log, Date.now() 금지)
             - 도메인 함수 반환 타입 명시
             - IndicatorResult 필드는 계산 함수 구현 완료 후 추가
-            - MA/EMA는 Record<number, (number | null)[]> 구조 사용
+            - MA/EMA는 Record<number, (number | null)[]> 구조 사용 (IndicatorResult 필드에 한함)
 
             코딩 패러다임
             - for/while → map/filter/reduce
@@ -90,25 +86,13 @@ jobs:
             - domain/, infrastructure/ 파일에 대응하는 테스트 누락 여부
             - 반환 타입 변경 시 테스트 갱신 여부
             - 초기 구간 null 케이스 테스트 포함 여부
+            - 테스트 구조: describe → describe(context) → it
 
             FF 원칙 (상세 내용은 docs/FF.md 참고)
             - Readability: 매직 넘버 상수화, 중첩 삼항 금지
             - Predictability: 같은 계열 함수 반환 타입 통일
             - Cohesion: 함께 수정되는 파일 같은 디렉토리
             - Coupling: 섣부른 추상화 금지 (3회 반복 후 추상화)
-
-#      - name: Post skip comment if review was skipped
-#        if: success()
-#        env:
-#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-#          REVIEW_OUTPUT: ${{ steps.claude-review.outputs.execution_file }}
-#        run: |
-#          if [ -f "$REVIEW_OUTPUT" ]; then
-#            SKIPPED=$(grep -c "중복 리뷰\|이미 리뷰\|already reviewed\|skip" "$REVIEW_OUTPUT" 2>/dev/null || echo "0")
-#            if [ "$SKIPPED" -gt "0" ]; then
-#              gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "ℹ️ 이미 리뷰된 PR입니다. 새 커밋이 푸시되면 자동으로 재리뷰됩니다."
-#            fi
-#          fi
 
       - name: Post failure comment if review fails
         if: failure()
