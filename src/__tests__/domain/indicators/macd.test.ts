@@ -4,7 +4,7 @@ import {
     MACD_SIGNAL_PERIOD,
     MACD_SLOW_PERIOD,
 } from '@/domain/indicators/constants';
-import type { Bar } from '@/domain/types';
+import type { Bar, MACDResult } from '@/domain/types';
 
 function makeBars(closes: number[]): Bar[] {
     return closes.map((close, i) => ({
@@ -32,7 +32,7 @@ describe('calculateMACD', () => {
             const result = calculateMACD(bars);
             expect(
                 result.every(
-                    r =>
+                    (r: MACDResult) =>
                         r.macd === null &&
                         r.signal === null &&
                         r.histogram === null
@@ -75,7 +75,7 @@ describe('calculateMACD', () => {
             expect(
                 result
                     .slice(0, MACD_SLOW_PERIOD - 1)
-                    .every(r => r.macd === null)
+                    .every((r: MACDResult) => r.macd === null)
             ).toBe(true);
         });
 
@@ -87,7 +87,10 @@ describe('calculateMACD', () => {
             expect(
                 result
                     .slice(0, NULL_COUNT)
-                    .every(r => r.signal === null && r.histogram === null)
+                    .every(
+                        (r: MACDResult) =>
+                            r.signal === null && r.histogram === null
+                    )
             ).toBe(true);
         });
 
@@ -96,7 +99,7 @@ describe('calculateMACD', () => {
                 Array.from({ length: 50 }, (_, i) => 100 + i)
             );
             const result = calculateMACD(bars);
-            result.slice(NULL_COUNT).forEach(r => {
+            result.slice(NULL_COUNT).forEach((r: MACDResult) => {
                 expect(typeof r.macd).toBe('number');
                 expect(typeof r.signal).toBe('number');
                 expect(typeof r.histogram).toBe('number');
@@ -108,7 +111,7 @@ describe('calculateMACD', () => {
                 Array.from({ length: 50 }, (_, i) => 100 + Math.sin(i) * 10)
             );
             const result = calculateMACD(bars);
-            result.slice(NULL_COUNT).forEach(r => {
+            result.slice(NULL_COUNT).forEach((r: MACDResult) => {
                 expect(r.histogram).toBeCloseTo(
                     (r.macd as number) - (r.signal as number),
                     10
@@ -135,7 +138,7 @@ describe('calculateMACD', () => {
                 Array.from({ length: 50 }, (_, i) => 100 + i)
             );
             const result = calculateMACD(bars);
-            result.forEach(r => {
+            result.forEach((r: MACDResult) => {
                 expect(r).toHaveProperty('macd');
                 expect(r).toHaveProperty('signal');
                 expect(r).toHaveProperty('histogram');
@@ -145,7 +148,7 @@ describe('calculateMACD', () => {
         it('가격이 일정할 때 macdLine은 0에 수렴한다', () => {
             const bars = makeBars(Array.from({ length: 100 }, () => 100));
             const result = calculateMACD(bars);
-            result.slice(NULL_COUNT).forEach(r => {
+            result.slice(NULL_COUNT).forEach((r: MACDResult) => {
                 expect(r.macd as number).toBeCloseTo(0, 10);
             });
         });

@@ -35,10 +35,12 @@ export function calculateMACD(
     const fastEMA = calculateEMA(bars, fastPeriod);
     const slowEMA = calculateEMA(bars, slowPeriod);
 
-    const macdLine: (number | null)[] = fastEMA.map((fast, i) => {
-        const slow = slowEMA[i];
-        return fast !== null && slow !== null ? fast - slow : null;
-    });
+    const macdLine: (number | null)[] = fastEMA.map(
+        (fast: number | null, i: number) => {
+            const slow = slowEMA[i];
+            return fast !== null && slow !== null ? fast - slow : null;
+        }
+    );
 
     const macdNonNull = macdLine.filter((v): v is number => v !== null);
     const signalValues = computeSignalEMA(macdNonNull, signalPeriod);
