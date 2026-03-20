@@ -97,18 +97,18 @@ jobs:
             - Cohesion: 함께 수정되는 파일 같은 디렉토리
             - Coupling: 섣부른 추상화 금지 (3회 반복 후 추상화)
 
-      - name: Post skip comment if review was skipped
-        if: success()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          REVIEW_OUTPUT: ${{ steps.claude-review.outputs.execution_file }}
-        run: |
-          if [ -f "$REVIEW_OUTPUT" ]; then
-            SKIPPED=$(grep -c "중복 리뷰\|이미 리뷰\|already reviewed\|skip" "$REVIEW_OUTPUT" 2>/dev/null || echo "0")
-            if [ "$SKIPPED" -gt "0" ]; then
-              gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "ℹ️ 이미 리뷰된 PR입니다. 새 커밋이 푸시되면 자동으로 재리뷰됩니다."
-            fi
-          fi
+#      - name: Post skip comment if review was skipped
+#        if: success()
+#        env:
+#          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+#          REVIEW_OUTPUT: ${{ steps.claude-review.outputs.execution_file }}
+#        run: |
+#          if [ -f "$REVIEW_OUTPUT" ]; then
+#            SKIPPED=$(grep -c "중복 리뷰\|이미 리뷰\|already reviewed\|skip" "$REVIEW_OUTPUT" 2>/dev/null || echo "0")
+#            if [ "$SKIPPED" -gt "0" ]; then
+#              gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "ℹ️ 이미 리뷰된 PR입니다. 새 커밋이 푸시되면 자동으로 재리뷰됩니다."
+#            fi
+#          fi
 
       - name: Post failure comment if review fails
         if: failure()
