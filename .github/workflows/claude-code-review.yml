@@ -7,6 +7,9 @@ on:
 jobs:
   claude-review:
     runs-on: ubuntu-latest
+    concurrency:
+      group: claude-review-${{ github.event.pull_request.number }}
+      cancel-in-progress: true
     permissions:
       contents: read
       pull-requests: write
@@ -26,6 +29,7 @@ jobs:
         with:
           show_full_output: true
           claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+          base_branch: master
           plugin_marketplaces: 'https://github.com/anthropics/claude-code.git'
           plugins: 'code-review@claude-code-plugins'
           claude_args: |
@@ -38,9 +42,10 @@ jobs:
             /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}
 
             아래 Siglens 프로젝트 규칙을 기준으로 추가 리뷰해줘.
+            리뷰를 시작할 때 gh pr comment로 리뷰를 진행중이라고 달아줘.
             코드 문제가 있으면 mcp__github_inline_comment__create_inline_comment로 인라인 코멘트를 달아줘.
-            지적할 문제가 3개 이상이면 gh pr comment로 전체 요약도 달아줘.
-            리뷰할 내용이 없으면 리뷰할 내용이 없다고 달아줘.
+            지적할 문제가 1개 이상이면 gh pr comment로 전체 요약도 달아줘.
+            리뷰할 내용이 없으면 gh pr comment로 리뷰할 내용이 없다고 달아줘.
 
             ## 프로젝트 개요
             - 미국 주식 AI 분석 플랫폼 (분석 전용, 주문 없음)
