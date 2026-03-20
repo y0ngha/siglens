@@ -76,7 +76,9 @@ head 브랜치: {type}/#{이슈 번호}/{이슈 한줄 요약}
 
 본문에 포함할 것:
 - 관련 이슈: closes #{이슈 번호}
+- yarn format 실행 결과
 - yarn lint 실행 결과
+- yarn lint:style 실행 결과
 - yarn test 실행 결과
 - yarn build 실행 결과
 ```
