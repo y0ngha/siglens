@@ -45,101 +45,76 @@ jobs:
           additional_permissions: |
             actions: read
           prompt: |
-            너는 지금 발생한 이벤트(${{ github.event_name }})의 #${{ github.event.issue.number || github.event.pull_request.number }} 에서 호출되었어.
-            가장 먼저 할 일은 사용자의 다음 요청을 분석하고, 현재 컨텍스트가 이슈라면 `gh issue view`, PR이라면 `gh pr view` 명령어를 실행해 전체 내용을 파악하는 거야.
-            사용자 호출 코멘트: "${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}"
+            ## 컨텍스트 정보 (GitHub Actions 주입값 — 신뢰할 것)
 
-            ---
-            다음 Siglens 프로젝트 컨텍스트를 숙지하고 요청을 처리해줘.
+            레포지토리: ${{ github.repository }}
+            이벤트 타입: ${{ github.event_name }}
+            이슈 번호: ${{ github.event.issue.number }}
+            PR 번호: ${{ github.event.pull_request.number }}
+            사용자 요청: "${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}"
+
+            ## 시작 전 필독
+
+            AGENTS.md와 docs/*.md 문서를 반드시 먼저 읽고 프로젝트 규칙을 숙지한 뒤 작업한다.
+            프로젝트 규칙은 AGENTS.md에 모두 정의되어 있다.
+
+            ## 컨텍스트 파악 절차 (가장 먼저 실행)
+
+            issue_comment / issues 이벤트:
+              gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }}
+
+            pull_request_review_comment / pull_request_review 이벤트:
+              gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }}
+
+            번호가 0이거나 파악 안 되면:
+              gh issue list --repo ${{ github.repository }} --limit 10
+              gh pr list --repo ${{ github.repository }} --limit 10
 
             ## 작업 상태 코멘트 규칙
-            작업을 시작할 때, 완료됐을 때, 실패했을 때 반드시 터미널에서 `gh` 명령어를 사용해 코멘트를 남겨줘.
 
-            시작 시:
-            gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "🔨 작업을 시작합니다."
+            시작 / 완료 / 실패 시 반드시 gh 명령어로 코멘트를 남긴다.
 
-            완료 시:
-            gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
+            이슈 컨텍스트:
+              gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "🔨 작업을 시작합니다."
+              gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
+              gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
 
-            실패 시:
-            gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
+            PR 컨텍스트:
+              gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "🔨 작업을 시작합니다."
+              gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다."
+              gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
 
-            ## 프로젝트 개요
-            - 미국 주식 AI 분석 플랫폼 (분석 전용, 주문 없음)
-            - Next.js 16.2 (App Router + Turbopack), React 19.2, TypeScript
-            - yarn 4.12.0, Node.js 25.2.1
-            - Layered Architecture: domain / infrastructure / app / components
+            ## 작업 절차
 
-            ## 레이어 의존성 규칙 (절대 위반 금지)
-            - domain/: 외부 라이브러리 import 금지. 순수 TypeScript 함수만.
-            - infrastructure/: domain만 import 가능.
-            - components/: domain만 import 가능. infrastructure 직접 import 금지.
-            - app/: infrastructure, domain 모두 import 가능.
+            코드 구현 전 반드시 아래 판단을 먼저 한다.
 
-            ## 코딩 패러다임 (절대 원칙)
-            - 선언형 코드: "어떻게"가 아닌 "무엇을"에 집중
-            - 함수형 프로그래밍: 순수 함수, 불변성, 고차 함수
-            - for/while 루프 금지 → map, filter, reduce 사용
-            - let 재할당 금지 → const + 새 변수
-            - 원본 배열/객체 직접 변경 금지 → spread 연산자
-            - 조건 중첩 금지 → 객체 맵, 얼리 리턴으로 대체
-            - domain/에서 클래스 금지 → 순수 함수만 허용
-              (infrastructure의 Provider 클래스는 예외)
+            gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }} 실행
+            - 성공 → PR 컨텍스트 (수정 요청)
+            - 실패 → 이슈 컨텍스트 (신규 구현)
 
-            ## 핵심 규칙
-            - 인디케이터 초기 구간은 반드시 null (0, NaN 금지)
-            - any 타입 사용 금지
-            - 도메인 함수는 순수 함수 (사이드 이펙트 금지)
-            - 구현 시 반드시 테스트 파일 함께 작성 (domain/, infrastructure/ 커버리지 100%)
-            - 타임프레임은 클라이언트 상태로만 관리 (URL 변경 없음)
-            - Lightweight Charts는 components/chart/ 에서만 사용
+            ### PR 컨텍스트 — 새 브랜치/PR 생성 금지, 헤드 브랜치에 직접 작업
 
-            ## 상세 규칙
-            - docs/ARCHITECTURE.md: 레이어 구조, 폴더 구조, 데이터 흐름
-            - docs/DOMAIN.md: 인디케이터 계산 명세, 타입 정의
-            - docs/API.md: Alpaca API, 내부 Route 명세
-            - docs/CONVENTIONS.md: 네이밍, 코딩 규칙, 자주 하는 실수
-            - docs/FF.md: FF 4원칙 (Readability, Predictability, Cohesion, Coupling)
-            - docs/DESIGN.md: 컬러 시스템, MA/EMA 라인 스타일, 차트 컬러 상수
+            1. 헤드 브랜치 체크아웃
+               gh pr view ${{ github.event.issue.number }} --json headRefName --repo ${{ github.repository }}
+               git fetch origin {헤드 브랜치명} && git checkout {헤드 브랜치명}
+            2. 수정 + 테스트
+            3. yarn lint → yarn test → yarn build (모두 통과 필수)
+            4. git push origin {헤드 브랜치명}
+               기존 PR에 완료 코멘트 작성
 
-            ## 디자인 규칙 요약
-            - 컬러는 반드시 CHART_COLORS 상수 또는 Tailwind 토큰 사용 (하드코딩 금지)
-            - MA는 실선(lineStyle: 0), EMA는 점선(lineStyle: 1)
-            - MA/EMA 기간별 색상: 5=#ef4444, 10=#f97316, 20=#eab308, 60=#22c55e, 120=#3b82f6, 200=#a855f7
-            - 상승=#26a69a, 하락=#ef5350 고정 (임의 변경 금지)
-            - 다크 모드 전용
+            ### 이슈 컨텍스트 — 새 브랜치 생성 후 PR 오픈
 
-            ## FF 원칙 요약
-            - Readability: 동시에 실행되지 않는 코드 분리, 복잡한 조건에 이름 부여, 매직 넘버 상수화
-            - Predictability: 같은 계열 함수 반환 타입 통일, 이름 중복 금지, 숨은 로직 드러내기
-            - Cohesion: 함께 수정되는 파일은 같은 디렉토리, 관련 상수 한 곳에서 관리
-            - Coupling: 단일 책임, 섣부른 추상화 금지 (3회 반복 후 추상화), Props Drilling 제거
-            - 레이어별 우선순위: domain=Predictability, components=Readability, infrastructure=Cohesion
-
-            ## 코드 구현 작업 절차 (docs/GIT_CONVENTION.md 참고)
-            코드 구현 요청을 처리할 때 반드시 아래 순서를 따른다.
-
-            1. 브랜치 생성 (master 기준)
-               git checkout master && git pull origin master
-               git checkout -b {type}/상단에서_전달받은_이슈번호/{이슈 한줄 요약}
-               브랜치 타입: feat, fix, chore, style, refactor, test, docs
-
-            2. 구현 + 테스트 작성
-
-            3. 완료 조건 확인 (모두 통과해야 PR 오픈 가능)
-               yarn lint   → ESLint 오류 없음
-               yarn test   → 테스트 전체 통과
-               yarn build  → 빌드 성공
-               하나라도 실패하면 수정 후 재실행. 통과 전 PR 오픈 금지.
-
-            4. master <- 새 브랜치 방향으로 PR 오픈 (gh pr create 사용)
-               제목: {type}: {이슈 제목}
-               본문: closes #상단에서_전달받은_이슈번호 + 각 명령어 실행 결과 포함
-               구현 내용 요약(Summary), 생성/수정/삭제된 파일 정리
+            1. git checkout master && git pull origin master
+               git checkout -b {type}/#{이슈번호}/{이슈 한줄 요약}
+               타입: feat, fix, chore, style, refactor, test, docs
+            2. 구현 + 테스트
+            3. yarn lint → yarn test → yarn build (모두 통과 필수, 실패 시 수정 후 재실행)
+            4. gh pr create — 제목: {type}: {이슈 제목}
+               본문: closes #{이슈번호} + 명령어 실행 결과 + Summary + 파일 목록
 
       - name: Post failure comment if Claude fails
         if: failure()
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "❌ 시스템 에러 또는 API 한도 초과로 Claude 작업을 시작하지 못했습니다."
+          gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --repo ${{ github.repository }} --body "❌ 시스템 에러 또는 API 한도 초과로 Claude 작업을 시작하지 못했습니다."
