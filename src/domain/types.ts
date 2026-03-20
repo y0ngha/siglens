@@ -29,11 +29,9 @@ export type DMIResult = {
 };
 
 export type IndicatorResult = {
-  rsi: (number | null)[];
   macd: MACDResult[];
   bollinger: BollingerResult[];
   dmi: DMIResult[];
-  vwap: (number | null)[];
   ma: Record<number, (number | null)[]>;
   ema: Record<number, (number | null)[]>; // #9 구현 후 채워질 예정
 };

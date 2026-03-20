@@ -24,11 +24,9 @@ export interface Bar {
 }
 
 export interface IndicatorResult {
-    rsi: (number | null)[];
     macd: MACDResult[];
     bollinger: BollingerResult[];
     dmi: DMIResult[];
-    vwap: (number | null)[];
     ma: Record<number, (number | null)[]>;
     ema: Record<number, (number | null)[]>;
 }
@@ -266,29 +264,33 @@ interface Signal {
 
 ## IndicatorResult 타입 규칙
 
-### MA/EMA는 Record<number, ...> 구조를 사용할 것
+### IndicatorResult 필드 추가 규칙
+
+IndicatorResult에 새 인디케이터 필드를 추가하는 시점은
+해당 인디케이터의 계산 함수 구현이 완료된 이후다.
+
+❌ 금지
+- 계산 함수 없이 타입 필드만 먼저 추가
+- 빈 배열(`[]`) 또는 빈 객체(`{}`)로 하드코딩
+- TODO 주석으로 대체
+
+✅ 올바른 순서
+1. 계산 함수 구현 (예: calculateRSI)
+2. 테스트 작성 및 통과 확인
+3. IndicatorResult에 필드 추가
+4. 호출부에서 실제 계산 결과 연결
+
+### MA/EMA 기간별 결과 구조
 
 MA/EMA 기간을 `ma20`, `ema60` 등 고정 필드로 정의하지 않는다.
 기간별 데이터는 `Record<number, (number | null)[]>` 구조로 관리한다.
 
 ```typescript
 // ❌ 금지
-ma20: (number | null)[];
+ema20: (number | null)[];
 ema60: (number | null)[];
 
-// ✅ 올바른 방식
+// ✅ 올바른 구조
 ma: Record<number, (number | null)[]>;
 ema: Record<number, (number | null)[]>;
-```
-
-### 계산 함수가 없는 상태에서 타입에 필드를 미리 추가하지 말 것
-
-계산 함수 구현이 완료된 후 타입에 필드를 추가한다.
-구현되지 않은 함수를 위해 빈 배열(`[]`)이나 빈 객체(`{}`)를 하드코딩하는 것은
-TODO 주석과 함께 이슈 번호를 명시해야 한다.
-
-```typescript
-// ✅ 구현 전 임시 처리 방식
-ma: {}, // TODO: #9 (MA 계산 구현) 완료 후 채워질 예정
-ema: {}, // TODO: #9 (EMA 계산 구현) 완료 후 채워질 예정
 ```
