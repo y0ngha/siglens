@@ -2,9 +2,7 @@ module.exports = {
     cacheDirectory: './.jest/cache',
     testEnvironment: 'node',
     setupFiles: ['<rootDir>/jest.setup.ts'],
-    testMatch: [
-        '<rootDir>/src/__tests__/**/*.+(test|spec).+(ts|tsx)',
-    ],
+    testMatch: ['<rootDir>/src/__tests__/**/*.+(test|spec).+(ts|tsx)'],
     transform: {
         '^.+\\.(t|j)sx?$': [
             'ts-jest',
