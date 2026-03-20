@@ -24,7 +24,7 @@ describe('calculateRSI', () => {
     });
   });
 
-  describe('입력 배열 길이가 period 이상일 때', () => {
+  describe('입력 배열 길이가 period를 초과할 때', () => {
     it('입력과 동일한 길이의 배열을 반환한다', () => {
       const closes = Array.from({ length: 20 }, (_, i) => 100 + i);
       const result = calculateRSI(closes, RSI_DEFAULT_PERIOD);
@@ -86,15 +86,15 @@ describe('calculateRSI', () => {
     });
 
     it('Wilder smoothing이 올바르게 적용된다', () => {
+      // avgGain = 3.53 / 14 ≈ 0.2521, avgLoss = 3.87 / 14 ≈ 0.2764
+      // RS ≈ 0.9121 → RSI ≈ 47.7
       const closes = [
         44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.1, 45.15, 43.61, 44.33,
         44.83, 45.1, 45.15, 43.61, 44.0,
       ];
       const result = calculateRSI(closes, RSI_DEFAULT_PERIOD);
       const rsiValue = result[RSI_DEFAULT_PERIOD] as number;
-      expect(typeof rsiValue).toBe('number');
-      expect(rsiValue).toBeGreaterThanOrEqual(0);
-      expect(rsiValue).toBeLessThanOrEqual(100);
+      expect(rsiValue).toBeCloseTo(47.7, 1);
     });
   });
 });
