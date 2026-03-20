@@ -35,7 +35,7 @@ export default async function SymbolPage({ params }: Props) {
     const volumes = bars.map(b => b.volume);
 
     const indicators: IndicatorResult = {
-        macd: calculateMACD(closes),
+        macd: calculateMACD(bars),
         bollinger: calculateBollinger(closes),
         dmi: calculateDMI(highs, lows, closes),
         rsi: calculateRSI(closes),
