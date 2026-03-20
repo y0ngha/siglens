@@ -32,6 +32,8 @@ export type IndicatorResult = {
   macd: MACDResult[];
   bollinger: BollingerResult[];
   dmi: DMIResult[];
+  rsi: (number | null)[];
+  vwap: (number | null)[];
 };
 
 export type PatternType =

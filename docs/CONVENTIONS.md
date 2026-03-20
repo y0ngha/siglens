@@ -364,6 +364,16 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
 12. 반환 타입 변경 시 테스트 미갱신
     → 함수 반환 타입이 바뀌면 반드시 대응하는 테스트도 함께 수정
     → 특히 nullable 변경(T[] → (T | null)[])은 초기 구간 null 케이스 테스트 필수
+
+13. 테스트 describe 설명을 코드 표현식으로 작성
+    → 예: describe('closes.length < period', ...) 금지
+    → 자연어 문장으로 작성: describe('입력 배열 길이가 period 미만일 때', ...)
+    → it 설명도 마찬가지: it('null 반환') 금지 → it('전부 null인 배열을 반환한다')
+
+14. period 기반 인디케이터에서 초기 구간 null 테스트 케이스 누락
+    → RSI, MACD, Bollinger, DMI 등 period가 있는 인디케이터는
+      반드시 '처음 period개의 값은 null이다' 케이스를 별도 it으로 작성
+    → 스텁 단계에서 추가해두면 실제 구현 후 회귀 방어 가능
 ```
 
 ---
