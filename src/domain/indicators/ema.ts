@@ -1,7 +1,7 @@
 import type { Bar } from '@/domain/types';
 
 export function calculateEMA(bars: Bar[], period: number): (number | null)[] {
-  if (bars.length === 0) return [];
+  if (bars.length === 0 || period <= 0) return [];
 
   const closes = bars.map((bar) => bar.close);
 
