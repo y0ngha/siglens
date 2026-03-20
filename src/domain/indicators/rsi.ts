@@ -19,24 +19,20 @@ export function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (nu
 
   type WilderState = { avgGain: number; avgLoss: number };
 
-  const allStates = diffs.slice(period).reduce<WilderState[]>(
-    (acc, diff) => {
+  const { rsiValues } = diffs.slice(period).reduce<{ state: WilderState; rsiValues: number[] }>(
+    ({ state, rsiValues }, diff) => {
       const gain = diff > 0 ? diff : 0;
       const loss = diff < 0 ? -diff : 0;
-      const prev = acc[acc.length - 1];
-      return [
-        ...acc,
-        {
-          avgGain: (prev.avgGain * (period - 1) + gain) / period,
-          avgLoss: (prev.avgLoss * (period - 1) + loss) / period,
-        },
-      ];
+      const next = {
+        avgGain: (state.avgGain * (period - 1) + gain) / period,
+        avgLoss: (state.avgLoss * (period - 1) + loss) / period,
+      };
+      return { state: next, rsiValues: [...rsiValues, toRSI(next.avgGain, next.avgLoss)] };
     },
-    [{ avgGain: initialAvgGain, avgLoss: initialAvgLoss }],
-  );
-
-  const rsiValues = allStates.map(({ avgGain, avgLoss }) =>
-    toRSI(avgGain, avgLoss),
+    {
+      state: { avgGain: initialAvgGain, avgLoss: initialAvgLoss },
+      rsiValues: [toRSI(initialAvgGain, initialAvgLoss)],
+    },
   );
 
   return [...new Array(period).fill(null), ...rsiValues];
