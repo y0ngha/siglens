@@ -1,0 +1,1 @@
+export const RSI_DEFAULT_PERIOD = 14;

@@ -9,8 +9,9 @@ describe('calculateRSI', () => {
 
   describe('입력 배열 길이가 period 미만일 때', () => {
     it('전부 null인 배열을 반환한다', () => {
-      const result = calculateRSI([100, 101, 102], 14);
-      expect(result).toEqual([null, null, null]);
+      const closes = Array.from({ length: 5 }, (_, i) => 100 + i);
+      const result = calculateRSI(closes, 14);
+      expect(result.every((v) => v === null)).toBe(true);
     });
   });
 

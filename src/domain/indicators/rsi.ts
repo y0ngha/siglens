@@ -1,4 +1,6 @@
-export function calculateRSI(closes: number[], period = 14): (number | null)[] {
+import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+
+export function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (number | null)[] {
   if (closes.length === 0) return [];
   if (closes.length <= period) return closes.map(() => null);
 
