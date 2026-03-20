@@ -379,6 +379,11 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
     → RSI, MACD, Bollinger, DMI 등 period가 있는 인디케이터는
       반드시 '처음 period개의 값은 null이다' 케이스를 별도 it으로 작성
     → 스텁 단계에서 추가해두면 실제 구현 후 회귀 방어 가능
+
+16. 함수 내부에서 type 선언
+    → type은 파일 최상단(함수 외부)에 선언한다
+    → 함수 내부 type 선언은 가독성을 낮추고, 동일 타입을 다른 함수에서 재사용할 수 없게 만든다
+    → 예: calculateRSI 내부의 type WilderState (❌) → 파일 최상단으로 이동 (✅)
 ```
 
 ---

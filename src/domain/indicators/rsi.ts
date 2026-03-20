@@ -1,5 +1,7 @@
 import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
 
+type WilderState = { avgGain: number; avgLoss: number };
+
 export function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (number | null)[] {
   if (closes.length === 0) return [];
   if (closes.length <= period) return closes.map(() => null);
@@ -16,8 +18,6 @@ export function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (nu
 
   const toRSI = (avgGain: number, avgLoss: number): number =>
     avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
-
-  type WilderState = { avgGain: number; avgLoss: number };
 
   const { rsiValues } = diffs.slice(period).reduce<{ state: WilderState; rsiValues: number[] }>(
     ({ state, rsiValues }, diff) => {

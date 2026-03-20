@@ -86,15 +86,16 @@ describe('calculateRSI', () => {
     });
 
     it('Wilder smoothing이 올바르게 적용된다', () => {
-      // avgGain = 3.53 / 14 ≈ 0.2521, avgLoss = 3.87 / 14 ≈ 0.2764
-      // RS ≈ 0.9121 → RSI ≈ 47.7
+      // period + 2개 데이터 필요 (diffs.slice(period)가 최소 1회 실행되어야 Wilder 공식 검증 가능)
+      // initialAvgGain = 3.53/14 ≈ 0.2521, initialAvgLoss = 3.87/14 ≈ 0.2764
+      // 16번째 close = 44.50 → diff = +0.50
+      // avgGain_new = (0.2521 * 13 + 0.50) / 14 ≈ 0.2698 → RSI[15] ≈ 51.25
       const closes = [
         44.34, 44.09, 44.15, 43.61, 44.33, 44.83, 45.1, 45.15, 43.61, 44.33,
-        44.83, 45.1, 45.15, 43.61, 44.0,
+        44.83, 45.1, 45.15, 43.61, 44.0, 44.5,
       ];
       const result = calculateRSI(closes, RSI_DEFAULT_PERIOD);
-      const rsiValue = result[RSI_DEFAULT_PERIOD] as number;
-      expect(rsiValue).toBeCloseTo(47.7, 1);
+      expect(result[RSI_DEFAULT_PERIOD + 1]).toBeCloseTo(51.25, 1);
     });
   });
 });
