@@ -41,72 +41,57 @@ jobs:
 
             /code-review:code-review ${{ github.repository }}/pull/${{ github.event.pull_request.number }}
 
-            아래 Siglens 프로젝트 규칙을 기준으로 추가 리뷰해줘.
-            리뷰를 시작할 때 gh pr comment로 리뷰를 진행중이라고 달아줘.
-            코드 문제가 있으면 mcp__github_inline_comment__create_inline_comment로 인라인 코멘트를 달아줘.
-            지적할 문제가 1개 이상이면 gh pr comment로 전체 요약도 달아줘.
-            리뷰할 내용이 없으면 gh pr comment로 리뷰할 내용이 없다고 달아줘.
+            ## 리뷰 절차
 
-            ## 프로젝트 개요
-            - 미국 주식 AI 분석 플랫폼 (분석 전용, 주문 없음)
-            - Next.js 16.2 (App Router + Turbopack), React 19.2, TypeScript
-            - Layered Architecture: domain / infrastructure / app / components
+            1. 리뷰 시작 시 gh pr comment로 "리뷰를 진행 중입니다." 코멘트를 달아줘.
+            2. AGENTS.md와 docs/*.md 문서를 읽고 프로젝트 규칙을 숙지한 뒤 리뷰한다.
+            3. 문제가 있으면 mcp__github_inline_comment__create_inline_comment로 인라인 코멘트 + gh pr comment로 전체 요약을 달아줘.
+            4. 문제가 없으면 gh pr comment로 "리뷰할 내용이 없습니다." 를 달아줘.
 
-            ## 레이어 의존성 규칙 (위반 시 반드시 지적)
-            - domain/: 외부 라이브러리 import 금지. 순수 TypeScript 함수만.
-            - infrastructure/: domain만 import 가능.
-            - components/: domain만 import 가능. infrastructure 직접 import 금지.
-            - app/: infrastructure, domain 모두 import 가능.
+            ## 리뷰 체크리스트 (위반 시 반드시 지적)
 
-            ## 도메인 규칙
-            - 인디케이터 초기 구간(period 미만)은 반드시 null 반환 (0, NaN 금지)
-            - 도메인 함수는 순수 함수여야 함 (fetch, console.log, Date.now() 등 사이드 이펙트 금지)
-            - 도메인 함수 반환 타입 명시 필수
-            
-            ## 상세 규칙
-            - docs/ARCHITECTURE.md: 레이어 구조, 폴더 구조, 데이터 흐름
-            - docs/DOMAIN.md: 인디케이터 계산 명세, 타입 정의
-            - docs/API.md: Alpaca API, 내부 Route 명세
-            - docs/CONVENTIONS.md: 네이밍, 코딩 규칙, 자주 하는 실수
-            - docs/FF.md: FF 4원칙 (Readability, Predictability, Cohesion, Coupling)
-            - docs/DESIGN.md: 컬러 시스템, MA/EMA 라인 스타일, 차트 컬러 상수
-            - docs/GIT_CONVENTION.md: 브랜치 네이밍, 커밋 메시지, PR 규칙
-            
-            ## 디자인 규칙 (docs/DESIGN.md 참고)
-            - 컬러는 반드시 CHART_COLORS 상수 또는 Tailwind 토큰 사용 (하드코딩 금지)
-            - MA는 실선(lineStyle: 0), EMA는 점선(lineStyle: 1)
-            - MA/EMA 기간별 색상: 5=#ef4444, 10=#f97316, 20=#eab308, 60=#22c55e, 120=#3b82f6, 200=#a855f7
-            - 상승=#26a69a, 하락=#ef5350 고정 (임의 변경 금지)
-            - 다크 모드 전용 (라이트 모드 분기 불필요)
+            레이어 의존성
+            - domain/: 외부 라이브러리 import 금지
+            - components/: infrastructure 직접 import 금지
 
-            ## 코딩 패러다임 (위반 시 반드시 지적)
-            - for/while 루프 → map, filter, reduce로 대체됐는지 확인
-            - let 재할당 → const로 선언됐는지 확인
-            - 원본 배열/객체 직접 변경 → spread 연산자 사용 여부 확인
-            - 조건 중첩/삼항 중첩 → 객체 맵 또는 얼리 리턴으로 대체됐는지 확인
-            - domain/에서 클래스 사용 → 순수 함수로 대체됐는지 확인
+            도메인 규칙
+            - 인디케이터 초기 구간 null 반환 (0, NaN 금지)
+            - 도메인 함수 순수 함수 여부 (fetch, console.log, Date.now() 금지)
+            - 도메인 함수 반환 타입 명시
+            - IndicatorResult 필드는 계산 함수 구현 완료 후 추가
+            - MA/EMA는 Record<number, (number | null)[]> 구조 사용
 
-            ## 코드 품질
-            - any 타입 사용 금지
-            - Props는 inline type 금지, 별도 interface로 정의
-            - 컴포넌트는 named export (page/layout만 default export)
-            - 'use client' 누락 여부 확인 (useState, useEffect 사용 시 필수)
-            - 타임프레임은 URL 쿼리 파라미터가 아닌 클라이언트 상태로 관리
+            코딩 패러다임
+            - for/while → map/filter/reduce
+            - let 재할당 → const
+            - 원본 변경 → spread
+            - 조건/삼항 중첩 → 객체 맵 또는 얼리 리턴
+            - domain/에서 클래스 사용 금지
 
-            ## Lightweight Charts
+            코드 품질
+            - any 타입 금지
+            - Props inline type 금지 (별도 interface)
+            - 컴포넌트 named export (page/layout만 default)
+            - useState/useEffect 사용 시 'use client' 필수
+            - 타임프레임은 클라이언트 상태로만 관리
+
+            디자인
+            - 컬러 하드코딩 금지 (CHART_COLORS 또는 Tailwind 토큰)
+            - MA 실선(lineStyle: 0), EMA 점선(lineStyle: 1)
+            - 상승=#26a69a, 하락=#ef5350 고정
+
+            Lightweight Charts
             - components/chart/ 밖에서 import 금지
-            - useEffect cleanup에서 chart.remove() 호출 여부 확인
-            - 실시간 업데이트는 setData가 아닌 series.update() 사용
-            - 거래량, RSI 등 별도 pane(index 1, 2...)에 배치 여부 확인
+            - useEffect cleanup에서 chart.remove() 필수
+            - 업데이트는 series.update() 사용
 
-            ## FF 원칙 (docs/FF.md 참고)
-            - Readability: 동시에 실행되지 않는 코드 분리, 복잡한 조건에 이름 부여, 매직 넘버 상수화, 중첩 삼항 금지
-            - Predictability: 같은 계열 함수 반환 타입 통일, 이름 중복 금지, 숨은 로직 드러내기
-            - Cohesion: 함께 수정되는 파일은 같은 디렉토리, 관련 상수 한 곳에서 관리
-            - Coupling: 단일 책임, 섣부른 추상화 금지 (3회 반복 후 추상화), Props Drilling 제거
-            - 레이어별 우선순위: domain=Predictability, components=Readability, infrastructure=Cohesion
+            테스트
+            - domain/, infrastructure/ 파일에 대응하는 테스트 누락 여부
+            - 반환 타입 변경 시 테스트 갱신 여부
+            - 초기 구간 null 케이스 테스트 포함 여부
 
-            ## 테스트
-            - domain/, infrastructure/ 구현 파일에 대응하는 테스트 파일 누락 여부 확인
-            - 테스트 구조: describe → describe(context) → it
-            - 커버리지 100% 목표이므로 엣지 케이스 테스트 누락 지적
+            FF 원칙 (상세 내용은 docs/FF.md 참고)
+            - Readability: 매직 넘버 상수화, 중첩 삼항 금지
+            - Predictability: 같은 계열 함수 반환 타입 통일
+            - Cohesion: 함께 수정되는 파일 같은 디렉토리
+            - Coupling: 섣부른 추상화 금지 (3회 반복 후 추상화)
