@@ -32,8 +32,6 @@ export type IndicatorResult = {
   macd: MACDResult[];
   bollinger: BollingerResult[];
   dmi: DMIResult[];
-  ma: Record<number, (number | null)[]>;
-  ema: Record<number, (number | null)[]>; // #9 구현 후 채워질 예정
 };
 
 export type PatternType =

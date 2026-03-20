@@ -357,6 +357,13 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
 
 10. chart.remove() cleanup 누락
     → useEffect return에서 반드시 호출
+
+11. 새 파일 생성 시 테스트 파일 동시 생성 누락
+    → domain/, infrastructure/ 파일 생성과 테스트 파일은 항상 같은 커밋에 포함
+
+12. 반환 타입 변경 시 테스트 미갱신
+    → 함수 반환 타입이 바뀌면 반드시 대응하는 테스트도 함께 수정
+    → 특히 nullable 변경(T[] → (T | null)[])은 초기 구간 null 케이스 테스트 필수
 ```
 
 ---

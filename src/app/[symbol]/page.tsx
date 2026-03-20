@@ -27,8 +27,6 @@ export default async function SymbolPage({ params }: Props) {
     macd: calculateMACD(closes),
     bollinger: calculateBollinger(closes),
     dmi: calculateDMI(highs, lows, closes),
-    ma: {}, // TODO: #9 (MA 계산 구현) 완료 후 채워질 예정
-    ema: {}, // TODO: #9 (EMA 계산 구현) 완료 후 채워질 예정
   };
 
   const patterns = detectPatterns(bars);
