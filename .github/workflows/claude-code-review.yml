@@ -1,102 +1,102 @@
 name: Claude Code Review
 
 on:
-  pull_request:
-    types: [opened, synchronize, ready_for_review, reopened]
+    pull_request:
+        types: [opened, synchronize, ready_for_review, reopened]
 
 jobs:
-  claude-review:
-    runs-on: ubuntu-latest
-    concurrency:
-      group: claude-review-${{ github.event.pull_request.number }}
-      cancel-in-progress: true
-    permissions:
-      contents: read
-      pull-requests: write
-      id-token: write
+    claude-review:
+        runs-on: ubuntu-latest
+        concurrency:
+            group: claude-review-${{ github.event.pull_request.number }}
+            cancel-in-progress: true
+        permissions:
+            contents: read
+            pull-requests: write
+            id-token: write
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 1
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 1
 
-      - name: Run Claude Code Review
-        id: claude-review
-        uses: anthropics/claude-code-action@v1
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          show_full_output: true
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          base_branch: master
-          claude_args: --dangerously-skip-permissions
-          allowed_bots: "claude[bot]"
-          prompt: |
-            REPO: ${{ github.repository }}
-            PR NUMBER: ${{ github.event.pull_request.number }}
+            - name: Run Claude Code Review
+              id: claude-review
+              uses: anthropics/claude-code-action@v1
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  show_full_output: true
+                  claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+                  base_branch: master
+                  claude_args: --dangerously-skip-permissions
+                  allowed_bots: 'claude[bot]'
+                  prompt: |
+                      REPO: ${{ github.repository }}
+                      PR NUMBER: ${{ github.event.pull_request.number }}
 
-            ## 리뷰 절차
+                      ## 리뷰 절차
 
-            1. gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "🔍 리뷰를 진행 중입니다." 실행
-            2. gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} 로 변경 코드 확인
-            3. AGENTS.md와 docs/*.md 읽고 프로젝트 규칙 숙지
-            4. 아래 체크리스트 기준으로 리뷰
-            5. 문제 있으면 gh api 로 인라인 코멘트 + gh pr comment 로 전체 요약
-            6. 문제 없으면 gh pr comment --body "리뷰할 내용이 없습니다. 👍" 달기
+                      1. gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "🔍 리뷰를 진행 중입니다." 실행
+                      2. gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} 로 변경 코드 확인
+                      3. AGENTS.md와 docs/*.md 읽고 프로젝트 규칙 숙지
+                      4. 아래 체크리스트 기준으로 리뷰
+                      5. 문제 있으면 gh api 로 인라인 코멘트 + gh pr comment 로 전체 요약
+                      6. 문제 없으면 gh pr comment --body "리뷰할 내용이 없습니다. 👍" 달기
 
-            ## 리뷰 체크리스트 (위반 시 반드시 지적)
+                      ## 리뷰 체크리스트 (위반 시 반드시 지적)
 
-            레이어 의존성
-            - domain/: 외부 라이브러리 import 금지
-            - components/: infrastructure 직접 import 금지
+                      레이어 의존성
+                      - domain/: 외부 라이브러리 import 금지
+                      - components/: infrastructure 직접 import 금지
 
-            도메인 규칙
-            - 인디케이터 초기 구간 null 반환 (0, NaN 금지)
-            - 도메인 함수 순수 함수 여부 (fetch, console.log, Date.now() 금지)
-            - 도메인 함수 반환 타입 명시
-            - IndicatorResult 필드는 계산 함수 구현 완료 후 추가
-            - MA/EMA는 Record<number, (number | null)[]> 구조 사용 (IndicatorResult 필드에 한함)
+                      도메인 규칙
+                      - 인디케이터 초기 구간 null 반환 (0, NaN 금지)
+                      - 도메인 함수 순수 함수 여부 (fetch, console.log, Date.now() 금지)
+                      - 도메인 함수 반환 타입 명시
+                      - IndicatorResult 필드는 계산 함수 구현 완료 후 추가
+                      - MA/EMA는 Record<number, (number | null)[]> 구조 사용 (IndicatorResult 필드에 한함)
 
-            코딩 패러다임
-            - for/while → map/filter/reduce
-            - let 재할당 → const
-            - 원본 변경 → spread
-            - 조건/삼항 중첩 → 객체 맵 또는 얼리 리턴
-            - domain/에서 클래스 사용 금지
+                      코딩 패러다임
+                      - for/while → map/filter/reduce
+                      - let 재할당 → const
+                      - 원본 변경 → spread
+                      - 조건/삼항 중첩 → 객체 맵 또는 얼리 리턴
+                      - domain/에서 클래스 사용 금지
 
-            코드 품질
-            - any 타입 금지
-            - Props inline type 금지 (별도 interface)
-            - 컴포넌트 named export (page/layout만 default)
-            - useState/useEffect 사용 시 'use client' 필수
-            - 타임프레임은 클라이언트 상태로만 관리
+                      코드 품질
+                      - any 타입 금지
+                      - Props inline type 금지 (별도 interface)
+                      - 컴포넌트 named export (page/layout만 default)
+                      - useState/useEffect 사용 시 'use client' 필수
+                      - 타임프레임은 클라이언트 상태로만 관리
 
-            디자인
-            - 컬러 하드코딩 금지 (CHART_COLORS 또는 Tailwind 토큰)
-            - MA 실선(lineStyle: 0), EMA 점선(lineStyle: 1)
-            - 상승=#26a69a, 하락=#ef5350 고정
+                      디자인
+                      - 컬러 하드코딩 금지 (CHART_COLORS 또는 Tailwind 토큰)
+                      - MA 실선(lineStyle: 0), EMA 점선(lineStyle: 1)
+                      - 상승=#26a69a, 하락=#ef5350 고정
 
-            Lightweight Charts
-            - components/chart/ 밖에서 import 금지
-            - useEffect cleanup에서 chart.remove() 필수
-            - 업데이트는 series.update() 사용
+                      Lightweight Charts
+                      - components/chart/ 밖에서 import 금지
+                      - useEffect cleanup에서 chart.remove() 필수
+                      - 업데이트는 series.update() 사용
 
-            테스트
-            - domain/, infrastructure/ 파일에 대응하는 테스트 누락 여부
-            - 반환 타입 변경 시 테스트 갱신 여부
-            - 초기 구간 null 케이스 테스트 포함 여부
-            - 테스트 구조: describe → describe(context) → it
+                      테스트
+                      - domain/, infrastructure/ 파일에 대응하는 테스트 누락 여부
+                      - 반환 타입 변경 시 테스트 갱신 여부
+                      - 초기 구간 null 케이스 테스트 포함 여부
+                      - 테스트 구조: describe → describe(context) → it
 
-            FF 원칙 (상세 내용은 docs/FF.md 참고)
-            - Readability: 매직 넘버 상수화, 중첩 삼항 금지
-            - Predictability: 같은 계열 함수 반환 타입 통일
-            - Cohesion: 함께 수정되는 파일 같은 디렉토리
-            - Coupling: 섣부른 추상화 금지 (3회 반복 후 추상화)
+                      FF 원칙 (상세 내용은 docs/FF.md 참고)
+                      - Readability: 매직 넘버 상수화, 중첩 삼항 금지
+                      - Predictability: 같은 계열 함수 반환 타입 통일
+                      - Cohesion: 함께 수정되는 파일 같은 디렉토리
+                      - Coupling: 섣부른 추상화 금지 (3회 반복 후 추상화)
 
-      - name: Post failure comment if review fails
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "❌ 시스템 에러 또는 API 한도 초과로 코드 리뷰를 시작하지 못했습니다."
+            - name: Post failure comment if review fails
+              if: failure()
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "❌ 시스템 에러 또는 API 한도 초과로 코드 리뷰를 시작하지 못했습니다."

@@ -1,118 +1,118 @@
 name: Claude Code
 
 on:
-  issue_comment:
-    types: [created]
-  pull_request_review_comment:
-    types: [created]
-  issues:
-    types: [opened, assigned]
-  pull_request_review:
-    types: [submitted]
+    issue_comment:
+        types: [created]
+    pull_request_review_comment:
+        types: [created]
+    issues:
+        types: [opened, assigned]
+    pull_request_review:
+        types: [submitted]
 
 jobs:
-  claude:
-    if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+    claude:
+        if: |
+            (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
+            (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
+            (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
+            (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
 
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      id-token: write
-      actions: read
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Run Claude Code
-        id: claude
-        uses: anthropics/claude-code-action@v1
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          show_full_output: true
-          claude_args: --dangerously-skip-permissions
-          claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
-          base_branch: master
-          additional_permissions: |
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            pull-requests: write
+            issues: write
+            id-token: write
             actions: read
-          prompt: |
-            ## 컨텍스트 정보 (GitHub Actions 주입값 — 신뢰할 것)
 
-            레포지토리: ${{ github.repository }}
-            이벤트 타입: ${{ github.event_name }}
-            이벤트 번호: ${{ github.event.issue.number }}
-            사용자 요청: "${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}"
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
+              with:
+                  fetch-depth: 0
 
-            주의: issue_comment 이벤트는 PR 코멘트도 포함한다.
-            github.event.issue.number 는 이슈/PR 모두에서 올바른 번호를 가진다.
-            github.event.pull_request.number 는 issue_comment 이벤트에서 항상 0이므로 사용하지 않는다.
+            - name: Run Claude Code
+              id: claude
+              uses: anthropics/claude-code-action@v1
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  show_full_output: true
+                  claude_args: --dangerously-skip-permissions
+                  claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+                  base_branch: master
+                  additional_permissions: |
+                      actions: read
+                  prompt: |
+                      ## 컨텍스트 정보 (GitHub Actions 주입값 — 신뢰할 것)
 
-            ## 시작 전 필독
+                      레포지토리: ${{ github.repository }}
+                      이벤트 타입: ${{ github.event_name }}
+                      이벤트 번호: ${{ github.event.issue.number }}
+                      사용자 요청: "${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}"
 
-            AGENTS.md와 docs/*.md 문서를 반드시 먼저 읽고 프로젝트 규칙을 숙지한 뒤 작업한다.
+                      주의: issue_comment 이벤트는 PR 코멘트도 포함한다.
+                      github.event.issue.number 는 이슈/PR 모두에서 올바른 번호를 가진다.
+                      github.event.pull_request.number 는 issue_comment 이벤트에서 항상 0이므로 사용하지 않는다.
 
-            ## 컨텍스트 파악 절차 (가장 먼저 실행)
+                      ## 시작 전 필독
 
-            아래 명령어로 번호가 이슈인지 PR인지 판단한다.
+                      AGENTS.md와 docs/*.md 문서를 반드시 먼저 읽고 프로젝트 규칙을 숙지한 뒤 작업한다.
 
-            gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }}
-            - 성공 → PR 컨텍스트
-            - 실패 → 이슈 컨텍스트
+                      ## 컨텍스트 파악 절차 (가장 먼저 실행)
 
-            이슈/PR 전체 내용 확인:
-              PR 컨텍스트: gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }}
-              이슈 컨텍스트: gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }}
+                      아래 명령어로 번호가 이슈인지 PR인지 판단한다.
 
-            ## 작업 상태 코멘트 규칙
+                      gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }}
+                      - 성공 → PR 컨텍스트
+                      - 실패 → 이슈 컨텍스트
 
-            컨텍스트 판단 후 반드시 아래 명령어로 코멘트를 남긴다.
-            이슈/PR 모두 번호는 ${{ github.event.issue.number }} 를 사용한다.
+                      이슈/PR 전체 내용 확인:
+                        PR 컨텍스트: gh pr view ${{ github.event.issue.number }} --repo ${{ github.repository }}
+                        이슈 컨텍스트: gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }}
 
-            PR 컨텍스트일 때:
-              시작: gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "🔨 작업을 시작합니다."
-              완료: gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다."
-              실패: gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
+                      ## 작업 상태 코멘트 규칙
 
-            이슈 컨텍스트일 때:
-              시작: gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "🔨 작업을 시작합니다."
-              완료: gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
-              실패: gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
+                      컨텍스트 판단 후 반드시 아래 명령어로 코멘트를 남긴다.
+                      이슈/PR 모두 번호는 ${{ github.event.issue.number }} 를 사용한다.
 
-            ## 작업 절차
+                      PR 컨텍스트일 때:
+                        시작: gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "🔨 작업을 시작합니다."
+                        완료: gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다."
+                        실패: gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
 
-            ### PR 컨텍스트 — 새 브랜치/PR 생성 금지, 헤드 브랜치에 직접 작업
+                      이슈 컨텍스트일 때:
+                        시작: gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "🔨 작업을 시작합니다."
+                        완료: gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
+                        실패: gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
 
-            1. 헤드 브랜치 확인 및 체크아웃
-               gh pr view ${{ github.event.issue.number }} --json headRefName --repo ${{ github.repository }}
-               git fetch origin {헤드 브랜치명} && git checkout {헤드 브랜치명}
-            2. 수정 + 테스트
-            3. yarn lint → yarn test → yarn build (모두 통과 필수)
-            4. git push origin {헤드 브랜치명}
-               gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다."
+                      ## 작업 절차
 
-            ### 이슈 컨텍스트 — 새 브랜치 생성 후 PR 오픈
+                      ### PR 컨텍스트 — 새 브랜치/PR 생성 금지, 헤드 브랜치에 직접 작업
 
-            1. git checkout master && git pull origin master
-               git checkout -b {type}/#{이슈번호}/{이슈 한줄 요약}
-               타입: feat, fix, chore, style, refactor, test, docs
-            2. 구현 + 테스트
-            3. yarn lint → yarn test → yarn build (모두 통과 필수, 실패 시 수정 후 재실행)
-            4. gh pr create — 제목: {type}: {이슈 제목}
-               본문: closes #{이슈번호} + 명령어 실행 결과 + Summary + 파일 목록
-               gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
+                      1. 헤드 브랜치 확인 및 체크아웃
+                         gh pr view ${{ github.event.issue.number }} --json headRefName --repo ${{ github.repository }}
+                         git fetch origin {헤드 브랜치명} && git checkout {헤드 브랜치명}
+                      2. 수정 + 테스트
+                      3. yarn lint → yarn test → yarn build (모두 통과 필수)
+                      4. git push origin {헤드 브랜치명}
+                         gh pr comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다."
 
-      - name: Post failure comment if Claude fails
-        if: failure()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ 시스템 에러 또는 API 한도 초과로 Claude 작업을 시작하지 못했습니다."
+                      ### 이슈 컨텍스트 — 새 브랜치 생성 후 PR 오픈
+
+                      1. git checkout master && git pull origin master
+                         git checkout -b {type}/#{이슈번호}/{이슈 한줄 요약}
+                         타입: feat, fix, chore, style, refactor, test, docs
+                      2. 구현 + 테스트
+                      3. yarn lint → yarn test → yarn build (모두 통과 필수, 실패 시 수정 후 재실행)
+                      4. gh pr create — 제목: {type}: {이슈 제목}
+                         본문: closes #{이슈번호} + 명령어 실행 결과 + Summary + 파일 목록
+                         gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
+
+            - name: Post failure comment if Claude fails
+              if: failure()
+              env:
+                  GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              run: |
+                  gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ 시스템 에러 또는 API 한도 초과로 Claude 작업을 시작하지 못했습니다."

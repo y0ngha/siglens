@@ -140,10 +140,12 @@ describe('calculateMA', () => {
 
 ## 6. 완료 조건 확인
 
-세 명령어 모두 통과해야 PR 오픈 가능.
+다섯 명령어 모두 통과해야 PR 오픈 가능.
 
 ```bash
+yarn format
 yarn lint
+yarn lint:style
 yarn test
 yarn build
 ```

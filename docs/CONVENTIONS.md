@@ -358,22 +358,32 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
 10. chart.remove() cleanup 누락
     → useEffect return에서 반드시 호출
 
-11. 새 파일 생성 시 테스트 파일 동시 생성 누락
+11. 인디케이터 기본값(period 등)을 함수 시그니처에 매직 넘버로 작성
+    → `domain/indicators/constants.ts`에 상수로 추출해 사용
+    → 예: `period = 14` (❌) → `period = RSI_DEFAULT_PERIOD` (✅)
+    → 같은 값이 여러 인디케이터에서 참조될 경우 한 곳에서 관리하지 않으면 변경 시 누락 발생
+
+12. 새 파일 생성 시 테스트 파일 동시 생성 누락
     → domain/, infrastructure/ 파일 생성과 테스트 파일은 항상 같은 커밋에 포함
 
-12. 반환 타입 변경 시 테스트 미갱신
+13. 반환 타입 변경 시 테스트 미갱신
     → 함수 반환 타입이 바뀌면 반드시 대응하는 테스트도 함께 수정
     → 특히 nullable 변경(T[] → (T | null)[])은 초기 구간 null 케이스 테스트 필수
 
-13. 테스트 describe 설명을 코드 표현식으로 작성
+14. 테스트 describe 설명을 코드 표현식으로 작성
     → 예: describe('closes.length < period', ...) 금지
     → 자연어 문장으로 작성: describe('입력 배열 길이가 period 미만일 때', ...)
     → it 설명도 마찬가지: it('null 반환') 금지 → it('전부 null인 배열을 반환한다')
 
-14. period 기반 인디케이터에서 초기 구간 null 테스트 케이스 누락
+15. period 기반 인디케이터에서 초기 구간 null 테스트 케이스 누락
     → RSI, MACD, Bollinger, DMI 등 period가 있는 인디케이터는
       반드시 '처음 period개의 값은 null이다' 케이스를 별도 it으로 작성
     → 스텁 단계에서 추가해두면 실제 구현 후 회귀 방어 가능
+
+16. 함수 내부에서 type 선언
+    → type은 파일 최상단(함수 외부)에 선언한다
+    → 함수 내부 type 선언은 가독성을 낮추고, 동일 타입을 다른 함수에서 재사용할 수 없게 만든다
+    → 예: calculateRSI 내부의 type WilderState (❌) → 파일 최상단으로 이동 (✅)
 ```
 
 ---
