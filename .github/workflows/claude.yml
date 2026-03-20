@@ -45,24 +45,46 @@ jobs:
           additional_permissions: |
             actions: read
           prompt: |
-            너는 지금 발생한 이벤트(${{ github.event_name }})의 #${{ github.event.issue.number || github.event.pull_request.number }} 에서 호출되었어.
-            가장 먼저 할 일은 사용자의 다음 요청을 분석하고, 현재 컨텍스트가 이슈라면 `gh issue view`, PR이라면 `gh pr view` 명령어를 실행해 전체 내용을 파악하는 거야.
-            사용자 호출 코멘트: "${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}"
+            ## 컨텍스트 정보 (GitHub Actions가 주입한 값 — 신뢰할 것)
+
+            레포지토리: ${{ github.repository }}
+            이벤트 타입: ${{ github.event_name }}
+            이슈 번호: ${{ github.event.issue.number }}
+            PR 번호: ${{ github.event.pull_request.number }}
+            사용자 요청: "${{ github.event.comment.body || github.event.review.body || github.event.issue.body }}"
+
+            ## 컨텍스트 파악 절차 (가장 먼저 실행)
+
+            이벤트 타입에 따라 아래 명령어로 전체 내용을 파악한다.
+
+            issue_comment 또는 issues 이벤트인 경우:
+              gh issue view ${{ github.event.issue.number }} --repo ${{ github.repository }}
+
+            pull_request_review_comment 또는 pull_request_review 이벤트인 경우:
+              gh pr view ${{ github.event.pull_request.number }} --repo ${{ github.repository }}
+
+            번호가 0이거나 파악이 안 되면:
+              gh issue list --repo ${{ github.repository }} --limit 10
+              gh pr list --repo ${{ github.repository }} --limit 10
 
             ---
             다음 Siglens 프로젝트 컨텍스트를 숙지하고 요청을 처리해줘.
 
             ## 작업 상태 코멘트 규칙
             작업을 시작할 때, 완료됐을 때, 실패했을 때 반드시 터미널에서 `gh` 명령어를 사용해 코멘트를 남겨줘.
+            이슈 코멘트인 경우 gh issue comment, PR 코멘트인 경우 gh pr comment 사용.
 
             시작 시:
-            gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "🔨 작업을 시작합니다."
-
+              이벤트 타입이 이슈인 경우: gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "🔨 작업을 시작합니다."
+              이벤트 타입이 PR인 경우: gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "🔨 작업을 시작합니다."
+            
             완료 시:
-            gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
+              이벤트 타입이 이슈인 경우: gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}" 
+              이벤트 타입이 PR인 경우: gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
 
             실패 시:
-            gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
+              이벤트 타입이 이슈인 경우: gh issue comment ${{ github.event.issue.number }} --repo ${{ github.repository }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}" 
+              이벤트 타입이 PR인 경우: gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
 
             ## 프로젝트 개요
             - 미국 주식 AI 분석 플랫폼 (분석 전용, 주문 없음)
@@ -142,4 +164,4 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --body "❌ 시스템 에러 또는 API 한도 초과로 Claude 작업을 시작하지 못했습니다."
+          gh issue comment ${{ github.event.issue.number || github.event.pull_request.number }} --repo ${{ github.repository }} --body "❌ 시스템 에러 또는 API 한도 초과로 Claude 작업을 시작하지 못했습니다."
