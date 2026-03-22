@@ -49,20 +49,6 @@ export interface DMIResult {
     adx: number | null;
 }
 
-export interface PatternResult {
-    type: PatternType;
-    confidence: number;       // 0 ~ 1
-    startIndex: number;
-    endIndex: number;
-}
-
-export type PatternType =
-    | 'head_and_shoulders'
-    | 'inverse_head_and_shoulders'
-    | 'ascending_wedge'
-    | 'descending_wedge'
-    | 'double_top'
-    | 'double_bottom';
 ```
 
 ---
@@ -236,7 +222,6 @@ interface AnalysisInput {
     timeframe: string;
     bars: Bar[];              // 최근 N개
     indicators: IndicatorResult;
-    patterns: PatternResult[];
 }
 ```
 
@@ -245,7 +230,7 @@ interface AnalysisInput {
 ```
 1. 현재 시장 상황 요약 (현재가, 변화율, 거래량)
 2. 인디케이터 수치 (RSI, MACD, 볼린저, DMI)
-3. 감지된 패턴 (confidence 0.5 이상만)
+3. skill 기반 패턴 분석 (skills/*.md 내용 포함, AI가 직접 감지)
 4. 분석 요청
 ```
 

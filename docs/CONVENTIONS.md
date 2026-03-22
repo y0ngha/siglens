@@ -341,11 +341,24 @@ import { calculateRSI } from './rsi';
 export * from './rsi';
 ```
 
+### eol-last (EOF 개행)
+
+모든 파일은 마지막 줄에 개행 문자로 끝나야 한다. Prettier와 ESLint `eol-last` 규칙이 함께 강제한다.
+
+```
+❌ 파일 끝에 개행 없음
+✅ 파일 마지막 줄 뒤에 \n 한 줄
+```
+
+코드 파일뿐 아니라 `.md`, `.yml`, `.json` 등 모든 텍스트 파일에 동일하게 적용된다.
+
 ### ❌ 자주 하는 실수
 
 ```
 1. import/first 위반 — barrel 파일(index.ts)에서 export *를 먼저 쓰고 import를 아래에 작성
    → import를 파일 최상단으로 이동한다
+2. EOF 개행 누락 — 특히 수동으로 작성한 .md 파일에서 자주 발생
+   → yarn format 실행으로 자동 교정된다
 ```
 
 ---
