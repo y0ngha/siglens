@@ -30,16 +30,13 @@ export default async function SymbolPage({ params }: Props) {
     });
 
     const closes = bars.map(b => b.close);
-    const highs = bars.map(b => b.high);
-    const lows = bars.map(b => b.low);
-    const volumes = bars.map(b => b.volume);
 
     const indicators: IndicatorResult = {
         macd: calculateMACD(bars),
         bollinger: calculateBollinger(bars),
         dmi: calculateDMI(bars),
         rsi: calculateRSI(closes),
-        vwap: calculateVWAP(highs, lows, closes, volumes),
+        vwap: calculateVWAP(bars),
     };
 
     const patterns = detectPatterns(bars);
