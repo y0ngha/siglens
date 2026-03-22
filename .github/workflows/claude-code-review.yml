@@ -40,10 +40,16 @@ jobs:
 
                       1. gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "🔍 리뷰를 진행 중입니다." 실행
                       2. gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} 로 변경 코드 확인
-                      3. 아래 체크리스트 기준으로 리뷰
-                      4. 코드 지적사항이 있다면, gh api를 이용해 인라인 코멘트를 남긴다. 이후 gh pr comment 로 전체 요약 진행
-                      5. 문제 없으면 gh pr comment --body "리뷰할 내용이 없습니다. 👍" 달기
-
+                      3. 아래 체크리스트 기준과, 프로젝트 원칙문서 기반으로 리뷰
+                      4. 코드 지적사항이 있다면, gh api를 이용해 인라인 코멘트를 남긴다. 이후 gh pr comment 로 전체 요약 후 REQUEST_CHANGES 상태로 리뷰 제출
+                      5. 문제 없으면 아래 명령어로 APPROVE 후 코멘트 생략
+                      ```bash
+                      gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
+                      --method POST \
+                      -f body="LGTM 👍" \
+                      -f event="APPROVE"
+                      ```
+                      
                       ## 프로젝트 원칙 문서 (반드시 숙지)
 
                       1. AGENTS.md를 읽어 프로젝트 규칙 숙지
