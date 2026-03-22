@@ -365,6 +365,8 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
 
 12. 새 파일 생성 시 테스트 파일 동시 생성 누락
     → domain/, infrastructure/ 파일 생성과 테스트 파일은 항상 같은 커밋에 포함
+    → 기존 파일에서 새 함수를 export할 때도 해당 함수를 직접 테스트하는 케이스를 추가해야 한다
+    → 리팩토링으로 추출된 함수라도 간접 검증(상위 래퍼 테스트)만으로는 부족하다
 
 13. 반환 타입 변경 시 테스트 미갱신
     → 함수 반환 타입이 바뀌면 반드시 대응하는 테스트도 함께 수정
@@ -384,6 +386,17 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
     → type은 파일 최상단(함수 외부)에 선언한다
     → 함수 내부 type 선언은 가독성을 낮추고, 동일 타입을 다른 함수에서 재사용할 수 없게 만든다
     → 예: calculateRSI 내부의 type WilderState (❌) → 파일 최상단으로 이동 (✅)
+
+17. reduce 콜백 내부에서 외부 배열에 push (함수형 패러다임 위반)
+    → reduce 콜백 안에서 외부 변수를 변경하는 것은 사이드 이펙트이며 불변성 원칙 위반이다
+    → accumulator에 spread로 새 값을 추가해 순수하게 처리한다
+    → 예: result.push(ema) (❌) → return [...acc, ema] (✅)
+
+18. 이미 존재하는 함수와 동일한 알고리즘을 별도 함수로 중복 구현
+    → 도메인 함수는 number[] 기반 헬퍼와 Bar[] 기반 래퍼를 분리해 재사용 가능하게 설계한다
+    → 예: EMA가 필요한 곳마다 별도로 EMA 로직 구현 (❌)
+         → computeEMAValues(number[])를 ema.ts에서 export해 공유 (✅)
+    → 새 인디케이터 구현 전 기존 domain/indicators에 재사용 가능한 헬퍼가 있는지 먼저 확인한다
 ```
 
 ---

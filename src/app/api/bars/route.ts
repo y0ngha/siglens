@@ -28,7 +28,7 @@ export async function GET(request: NextRequest) {
     const lows = bars.map(b => b.low);
 
     const indicators = {
-        macd: calculateMACD(closes),
+        macd: calculateMACD(bars),
         bollinger: calculateBollinger(closes),
         dmi: calculateDMI(highs, lows, closes),
     };
