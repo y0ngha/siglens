@@ -1,6 +1,6 @@
 ## 관련 이슈
 
-closes #
+closes #{이슈}
 
 ## 구현 내용
 
@@ -8,6 +8,8 @@ closes #
 
 ## 레이어 및 코드 품질 체크
 
+- [ ] @docs/CONVENTIONS.md 준수 확인
+- [ ] @docs/FF.md 준수 확인
 - [ ] domain/: 외부 라이브러리 import 없음, 순수 함수만
 - [ ] 인디케이터 초기 구간 null 반환 (0, NaN 없음)
 - [ ] 반환 타입 명시
@@ -20,38 +22,14 @@ closes #
 
 ## 변경 파일 목록
 
-생성:
-- 
+[생성]
 
-수정:
-- 
+[수정] 
 
-## yarn format
+## CI Check lists
 
-```
-(실행 결과)
-```
-
-## yarn lint
-
-```
-(실행 결과)
-```
-
-## yarn lint:style
-
-```
-(실행 결과)
-```
-
-## yarn test
-
-```
-(실행 결과)
-```
-
-## yarn build
-
-```
-(실행 결과)
-```
+- [ ] yarn format
+- [ ] yarn lint
+- [ ] yarn lint:style
+- [ ] yarn test
+- [ ] yarn build

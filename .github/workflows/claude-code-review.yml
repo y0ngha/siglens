@@ -40,10 +40,18 @@ jobs:
 
                       1. gh pr comment ${{ github.event.pull_request.number }} --repo ${{ github.repository }} --body "🔍 리뷰를 진행 중입니다." 실행
                       2. gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} 로 변경 코드 확인
-                      3. AGENTS.md와 docs/*.md 읽고 프로젝트 규칙 숙지
-                      4. 아래 체크리스트 기준으로 리뷰
-                      5. 문제 있으면 gh api 로 인라인 코멘트 + gh pr comment 로 전체 요약
-                      6. 문제 없으면 gh pr comment --body "리뷰할 내용이 없습니다. 👍" 달기
+                      3. 아래 체크리스트 기준으로 리뷰
+                      4. 문제 있으면 gh api 로 인라인 코멘트 + gh pr comment 로 전체 요약
+                      5. 문제 없으면 gh pr comment --body "리뷰할 내용이 없습니다. 👍" 달기
+
+                      ## 프로젝트 원칙 문서 (반드시 숙지)
+                      
+                      1. AGENTS.md를 읽어 프로젝트 규칙 숙지
+                      2. /docs/CONVENTIONS.md 를 읽어 프로젝트 컨벤션 숙지
+                      3. /docs/FF.md 를 읽어 프론트엔드 원칙 숙지
+                      4. /docs/ARCHITECTURE.md 를 읽어 프로젝트 아키텍처 숙지
+                      5. /docs/DOMAIN.md 를 읽어 프로젝트 도메인 숙지
+                      6. 필요한 경우 AGENTS.md에 있는 /docs/*.md 참조하여 리뷰 진행
 
                       ## 리뷰 체크리스트 (위반 시 반드시 지적)
 
