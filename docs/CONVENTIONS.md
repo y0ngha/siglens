@@ -125,35 +125,39 @@ interface Skill {
 4. 함수 내부에서 type 선언 → 파일 최상단으로 이동
   ❌ calculateRSI 내부의 type WilderState
   ✅ 파일 최상단에 선언해 다른 함수에서도 재사용 가능하게
-5. 상수를 하드코딩하지 않기(매직 넘버에 이름 붙이기) (구현 코드 및 테스트 코드 모두 해당)
+5. interface 필드에 union 타입을 인라인으로 작성 → 별도 type alias로 분리
+  interface 필드에 union 리터럴이 2개 이상이면 반드시 type alias로 추출한다.
+  ❌ interface Signal { strength: 'strong' | 'moderate' | 'weak'; }
+  ✅ type SignalStrength = 'strong' | 'moderate' | 'weak';
+     interface Signal { strength: SignalStrength; }
+  → 이름이 생기면 다른 모듈에서 재사용 가능하고, 변경 시 한 곳만 수정하면 된다.
+6. 구현 코드에서 리터럴 하드코딩 금지 — string, number 등 모든 타입에 적용
   ❌ period = 14
   ✅ RSI_DEFAULT_PERIOD = 14; period = RSI_DEFAULT_PERIOD; (domain/indicators/constants.ts)
   ❌ Array.from({ length: 10 }, ...)
   ✅ Array.from({ length: RSI_DEFAULT_PERIOD - 1 }, ...)
-  → 세 가지 패턴 모두 매직 넘버다. 상수가 이미 import되어 있어도 숫자를 직접 쓰면 위반이다.
-  [패턴 A] 새 숫자를 선언할 때
+  → 세 가지 패턴 모두 하드코딩된 리터럴이다. 상수가 이미 import되어 있어도 값을 직접 쓰면 위반이다.
+  [패턴 A] 새 값을 선언할 때
     ❌ period = 14   ✅ const period = RSI_DEFAULT_PERIOD;
   [패턴 B] import된 배열·Record 상수의 특정 값을 꺼내 쓸 때
     ❌ result.ma[20]               ✅ result.ma[MA_DEFAULT_PERIODS[0]]
     ❌ calculateMA(bars, 20)       ✅ calculateMA(bars, MA_DEFAULT_PERIODS[0])
     ❌ result.ema[9]               ✅ const period = EMA_DEFAULT_PERIODS[0]; result.ema[period]
-  [패턴 C] 테스트 입력 크기(makeBars 인자 등)
+  [패턴 C] 테스트 입력값 — 맥락 파악에 필요한 값만 상수로 분리
     ❌ makeBars(100)               ✅ const TEST_BAR_COUNT = 100; makeBars(TEST_BAR_COUNT)
-    → 왜: 100이 어떤 의미의 숫자인지 알 수 없다. 상수 이름이 의도를 설명한다.
-6. 상수에서 파생한 포맷팅 결과를 문자열 리터럴로 다시 하드코딩
-  상수를 정의했더라도, 그 값을 toFixed() 등으로 포맷팅한 결과를 문자열 리터럴로 쓰면 매직 넘버다.
-  상수 값이 바뀌어도 문자열 리터럴은 자동으로 갱신되지 않아 테스트가 silent하게 깨진다.
-  ❌ expect(result).toContain('150.00')  // TEST_CLOSE_PRICE = 150.0이 정의되어 있어도
-  ✅ expect(result).toContain(TEST_CLOSE_PRICE.toFixed(2))
-  계산이 필요한 파생 값은 상수에서 직접 계산해 상수로 추출한다.
-  ❌ expect(result).toContain('10.00%')
-  ✅ const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT - TEST_PREV) / TEST_PREV) * 100).toFixed(2)}%`;
-     expect(result).toContain(TEST_CHANGE_RATE_FORMATTED);
-7. 구조적 위치를 나타내는 배열 인덱스 하드코딩
+    → 100이 어떤 의미인지 알 수 없을 때. 단순 scaffolding 값(더미 입력 등)은 허용.
+    ✅ provider.analyze('test prompt')  // 의미 없는 scaffolding값 → 리터럴 허용
+7. 구현 코드에서 상수 파생 값을 리터럴로 재작성 금지 (테스트 검증값은 허용)
+  구현 코드에서 상수를 정의한 뒤 그 파생 값을 리터럴로 다시 쓰면 상수 변경 시 함께 갱신되지 않는다.
+  테스트 코드의 expect(...).toContain/toEqual 등 검증 구문에서는 리터럴을 직접 써도 된다.
+  ❌ (구현 코드) if (label === '150.00') { ... }  // PRICE 상수가 있어도
+  ✅ (테스트 코드) expect(result).toContain('150.00')  // 단순 결과 검증 → 허용
+  ✅ (테스트 코드) expect(result).toEqual('neutral')   // 단순 결과 검증 → 허용
+8. 구조적 위치를 나타내는 배열 인덱스 하드코딩 (구현 코드)
   배열을 split/slice 등으로 분해한 뒤 특정 위치를 숫자 리터럴로 참조하면 의미를 알 수 없다.
   ❌ result.split('\n\n')[1]
-  ✅ const TEST_MARKET_SECTION_INDEX = 1; result.split('\n\n')[TEST_MARKET_SECTION_INDEX]
-8. 브라우저/Node 전역 객체명을 변수명으로 사용 → 예약어 충돌 및 ESLint no-shadow 에러 발생
+  ✅ const MARKET_SECTION_INDEX = 1; result.split('\n\n')[MARKET_SECTION_INDEX]
+9. 브라우저/Node 전역 객체명을 변수명으로 사용 → 예약어 충돌 및 ESLint no-shadow 에러 발생
   ❌ const window = closes.slice(...)   ✅ const priceWindow = closes.slice(...)
   → 충돌 주의 대상: window, document, location, event, name, length, screen
 ```

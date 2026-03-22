@@ -11,10 +11,16 @@ export type SignalType =
     | 'pattern'
     | 'skill';
 
+export type SignalStrength = 'strong' | 'moderate' | 'weak';
+
+export type Trend = 'bullish' | 'bearish' | 'neutral';
+
+export type RiskLevel = 'low' | 'medium' | 'high';
+
 export interface Signal {
     type: SignalType;
     description: string;
-    strength: 'strong' | 'moderate' | 'weak';
+    strength: SignalStrength;
 }
 
 export interface SkillSignal {
@@ -29,10 +35,10 @@ export interface KeyLevels {
 
 export interface AnalysisResponse {
     summary: string;
-    trend: 'bullish' | 'bearish' | 'neutral';
+    trend: Trend;
     signals: Signal[];
     skillSignals: SkillSignal[];
-    riskLevel: 'low' | 'medium' | 'high';
+    riskLevel: RiskLevel;
     keyLevels: KeyLevels;
 }
 
