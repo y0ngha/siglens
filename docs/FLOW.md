@@ -83,7 +83,7 @@ yarn build
 
 ```bash
 git add {변경된 파일들}
-git commit -m "feat: MA 인디케이터 구현
+git commit -m "{type}: {변경 내용}
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
@@ -91,7 +91,8 @@ git push -u origin {브랜치명}
 gh pr create --title "{type}: {이슈 제목}" --body "..." --base master
 ```
 
-PR 본문 형식 → `docs/GIT_CONVENTIONS.md` 참고
+PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md`가 자동 적용된다.
+`closes #{이슈번호}`와 구현 내용 요약, 체크리스트, 변경 파일 목록, yarn 실행 결과를 채워서 작성한다.
 
 ---
 

@@ -64,22 +64,4 @@ base 브랜치: master
 제목: {type}: {이슈 제목}
 ```
 
-**본문에 포함할 것**
-```
-closes #{이슈 번호}
-
-## yarn format
-(실행 결과)
-
-## yarn lint
-(실행 결과)
-
-## yarn lint:style
-(실행 결과)
-
-## yarn test
-(실행 결과)
-
-## yarn build
-(실행 결과)
-```
+**본문 템플릿**: `.github/PULL_REQUEST_TEMPLATE.md` 자동 적용됨.
