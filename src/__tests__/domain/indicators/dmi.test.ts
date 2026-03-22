@@ -142,6 +142,30 @@ describe('calculateDMI', () => {
             });
         });
 
+        it('첫 번째 유효값이 명세와 일치한다', () => {
+            // period=3, 일정 상승 패턴으로 수동 계산 가능한 케이스
+            // bars[i]: high=10+i, low=8+i, close=9+i
+            // raw(bars[i] vs bars[i-1]): TR=2, +DM=1, -DM=0
+            // firstSmoothed(period=3개 합): TR=6, +DM=3, -DM=0
+            // smoothedValues[k]: Wilder 후에도 TR=6, +DM=3, -DM=0 유지
+            // +DI=100*3/6=50, -DI=0, DX=100
+            // firstADX=avg([100,100,100])=100
+            // 첫 유효값(index 2*3-1=5): { diPlus:50, diMinus:0, adx:100 }
+            const p = 3;
+            const bars = makeBars(
+                Array.from({ length: p * 2 }, (_, i) => ({
+                    high: 10 + i,
+                    low: 8 + i,
+                    close: 9 + i,
+                }))
+            );
+            const result = calculateDMI(bars, p);
+            const firstValid = result[p * 2 - 1];
+            expect(firstValid.diPlus).toBeCloseTo(50, 10);
+            expect(firstValid.diMinus).toBeCloseTo(0, 10);
+            expect(firstValid.adx).toBeCloseTo(100, 10);
+        });
+
         it('기본값은 period=14다', () => {
             const bars = makeUniformBars(barCount);
             expect(calculateDMI(bars)).toEqual(

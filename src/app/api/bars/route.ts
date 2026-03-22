@@ -23,10 +23,6 @@ export async function GET(request: NextRequest) {
     const market = new AlpacaProvider();
     const bars = await market.getBars({ symbol, timeframe, before });
 
-    const closes = bars.map(b => b.close);
-    const highs = bars.map(b => b.high);
-    const lows = bars.map(b => b.low);
-
     const indicators = {
         macd: calculateMACD(bars),
         bollinger: calculateBollinger(bars),
