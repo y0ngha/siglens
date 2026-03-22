@@ -110,8 +110,12 @@ const result: (number | null)[] = new Array(period - 1).fill(null);
 - 함수 내부에서 type 선언 → 파일 최상단으로 이동
   ❌ calculateRSI 내부의 type WilderState
   ✅ 파일 최상단에 선언해 다른 함수에서도 재사용 가능하게
-- 인디케이터 기본값을 매직 넘버로 작성
+- 인디케이터 기본값을 매직 넘버로 작성 (구현 코드 및 테스트 코드 모두 해당)
   ❌ period = 14   ✅ period = RSI_DEFAULT_PERIOD (domain/indicators/constants.ts)
+  ❌ Array.from({ length: 10 }, ...)   ✅ Array.from({ length: RSI_DEFAULT_PERIOD - 1 }, ...)
+- 브라우저/Node 전역 객체명을 변수명으로 사용 → 예약어 충돌 및 ESLint no-shadow 에러 발생
+  ❌ const window = closes.slice(...)   ✅ const priceWindow = closes.slice(...)
+  충돌 주의 대상: window, document, location, event, name, length, screen
 ```
 
 ---
