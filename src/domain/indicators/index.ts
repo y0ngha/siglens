@@ -1,11 +1,3 @@
-export * from './rsi';
-export * from './macd';
-export * from './bollinger';
-export * from './dmi';
-export * from './vwap';
-export * from './ema';
-export * from './ma';
-
 import type { Bar, IndicatorResult } from '@/domain/types';
 import { calculateRSI } from './rsi';
 import { calculateMACD } from './macd';
@@ -15,6 +7,14 @@ import { calculateVWAP } from './vwap';
 import { calculateEMA } from './ema';
 import { calculateMA } from './ma';
 import { MA_DEFAULT_PERIODS, EMA_DEFAULT_PERIODS } from './constants';
+
+export * from './rsi';
+export * from './macd';
+export * from './bollinger';
+export * from './dmi';
+export * from './vwap';
+export * from './ema';
+export * from './ma';
 
 export function calculateIndicators(bars: Bar[]): IndicatorResult {
     const closes = bars.map(b => b.close);

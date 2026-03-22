@@ -325,6 +325,31 @@ candleSeries.setData([...newOlderBars, ...existingBars]);
 
 ---
 
+## ESLint 규칙
+
+### import/first
+
+모든 `import` 구문은 파일 최상단에 위치해야 한다. `export *` 또는 다른 구문 뒤에 `import`를 쓰면 `import/first` 규칙 위반이다.
+
+```typescript
+// ❌ export * 뒤에 import
+export * from './rsi';
+import { calculateRSI } from './rsi'; // 위반
+
+// ✅ import를 모두 먼저, export는 그 다음
+import { calculateRSI } from './rsi';
+export * from './rsi';
+```
+
+### ❌ 자주 하는 실수
+
+```
+1. import/first 위반 — barrel 파일(index.ts)에서 export *를 먼저 쓰고 import를 아래에 작성
+   → import를 파일 최상단으로 이동한다
+```
+
+---
+
 ## 레이어 의존성 규칙
 
 ```
