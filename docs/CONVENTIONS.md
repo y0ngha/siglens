@@ -106,6 +106,16 @@ function calculateRSI(closes: number[], period: number): (number | null)[] { ...
 const result: (number | null)[] = new Array(period - 1).fill(null);
 ```
 
+```typescript
+// ✅ interface 필드는 camelCase
+interface Skill {
+    confidenceWeight: number;  // ✅
+    // confidence_weight: number; // ❌ snake_case 금지
+}
+// 외부 소스(YAML frontmatter 등) 값이 snake_case여도 domain 타입은 camelCase로 정의하고
+// infrastructure 레이어에서 변환한다.
+```
+
 ### ❌ 자주 하는 실수
 
 ```
@@ -130,7 +140,20 @@ const result: (number | null)[] = new Array(period - 1).fill(null);
   [패턴 C] 테스트 입력 크기(makeBars 인자 등)
     ❌ makeBars(100)               ✅ const TEST_BAR_COUNT = 100; makeBars(TEST_BAR_COUNT)
     → 왜: 100이 어떤 의미의 숫자인지 알 수 없다. 상수 이름이 의도를 설명한다.
-6. 브라우저/Node 전역 객체명을 변수명으로 사용 → 예약어 충돌 및 ESLint no-shadow 에러 발생
+6. 상수에서 파생한 포맷팅 결과를 문자열 리터럴로 다시 하드코딩
+  상수를 정의했더라도, 그 값을 toFixed() 등으로 포맷팅한 결과를 문자열 리터럴로 쓰면 매직 넘버다.
+  상수 값이 바뀌어도 문자열 리터럴은 자동으로 갱신되지 않아 테스트가 silent하게 깨진다.
+  ❌ expect(result).toContain('150.00')  // TEST_CLOSE_PRICE = 150.0이 정의되어 있어도
+  ✅ expect(result).toContain(TEST_CLOSE_PRICE.toFixed(2))
+  계산이 필요한 파생 값은 상수에서 직접 계산해 상수로 추출한다.
+  ❌ expect(result).toContain('10.00%')
+  ✅ const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT - TEST_PREV) / TEST_PREV) * 100).toFixed(2)}%`;
+     expect(result).toContain(TEST_CHANGE_RATE_FORMATTED);
+7. 구조적 위치를 나타내는 배열 인덱스 하드코딩
+  배열을 split/slice 등으로 분해한 뒤 특정 위치를 숫자 리터럴로 참조하면 의미를 알 수 없다.
+  ❌ result.split('\n\n')[1]
+  ✅ const TEST_MARKET_SECTION_INDEX = 1; result.split('\n\n')[TEST_MARKET_SECTION_INDEX]
+8. 브라우저/Node 전역 객체명을 변수명으로 사용 → 예약어 충돌 및 ESLint no-shadow 에러 발생
   ❌ const window = closes.slice(...)   ✅ const priceWindow = closes.slice(...)
   → 충돌 주의 대상: window, document, location, event, name, length, screen
 ```
