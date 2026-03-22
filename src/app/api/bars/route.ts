@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
     const indicators = {
         macd: calculateMACD(bars),
         bollinger: calculateBollinger(bars),
-        dmi: calculateDMI(highs, lows, closes),
+        dmi: calculateDMI(bars),
     };
 
     return NextResponse.json({ bars, indicators });

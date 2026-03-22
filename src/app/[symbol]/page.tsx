@@ -37,7 +37,7 @@ export default async function SymbolPage({ params }: Props) {
     const indicators: IndicatorResult = {
         macd: calculateMACD(bars),
         bollinger: calculateBollinger(bars),
-        dmi: calculateDMI(highs, lows, closes),
+        dmi: calculateDMI(bars),
         rsi: calculateRSI(closes),
         vwap: calculateVWAP(highs, lows, closes, volumes),
     };
