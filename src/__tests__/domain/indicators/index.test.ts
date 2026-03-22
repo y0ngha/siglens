@@ -167,6 +167,28 @@ describe('calculateIndicators', () => {
                 true
             );
         });
+
+        it('ma의 각 기간별 처음 period - 1개의 값은 null이다', () => {
+            const result = calculateIndicators(bars);
+            MA_DEFAULT_PERIODS.forEach(period => {
+                expect(
+                    result.ma[period]
+                        .slice(0, period - 1)
+                        .every(v => v === null)
+                ).toBe(true);
+            });
+        });
+
+        it('ema의 각 기간별 처음 period - 1개의 값은 null이다', () => {
+            const result = calculateIndicators(bars);
+            EMA_DEFAULT_PERIODS.forEach(period => {
+                expect(
+                    result.ema[period]
+                        .slice(0, period - 1)
+                        .every(v => v === null)
+                ).toBe(true);
+            });
+        });
     });
 
     describe('개별 인디케이터 함수와 결과가 일치할 때', () => {

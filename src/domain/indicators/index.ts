@@ -29,12 +29,12 @@ export function calculateIndicators(bars: Bar[]): IndicatorResult {
                 period,
                 calculateMA(bars, period),
             ])
-        ),
+        ) as Record<number, (number | null)[]>,
         ema: Object.fromEntries(
             EMA_DEFAULT_PERIODS.map(period => [
                 period,
                 calculateEMA(bars, period),
             ])
-        ),
+        ) as Record<number, (number | null)[]>,
     };
 }
