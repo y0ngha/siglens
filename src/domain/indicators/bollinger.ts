@@ -17,10 +17,10 @@ export function calculateBollinger(
     return closes.map((_, i) => {
         if (i < period - 1) return { upper: null, middle: null, lower: null };
 
-        const window = closes.slice(i - period + 1, i + 1);
-        const middle = window.reduce((sum, v) => sum + v, 0) / period;
+        const priceWindow = closes.slice(i - period + 1, i + 1);
+        const middle = priceWindow.reduce((sum, v) => sum + v, 0) / period;
         const variance =
-            window.reduce((sum, v) => sum + (v - middle) ** 2, 0) / period;
+            priceWindow.reduce((sum, v) => sum + (v - middle) ** 2, 0) / period;
         const std = Math.sqrt(variance);
 
         return {
