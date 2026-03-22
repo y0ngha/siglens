@@ -12,6 +12,11 @@ import {
 import {
     MA_DEFAULT_PERIODS,
     EMA_DEFAULT_PERIODS,
+    RSI_DEFAULT_PERIOD,
+    MACD_SLOW_PERIOD,
+    MACD_SIGNAL_PERIOD,
+    BOLLINGER_DEFAULT_PERIOD,
+    DMI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 import type { Bar } from '@/domain/types';
 
@@ -125,6 +130,42 @@ describe('calculateIndicators', () => {
             EMA_DEFAULT_PERIODS.forEach(period => {
                 expect(result.ema[period]).toHaveLength(bars.length);
             });
+        });
+    });
+
+    describe('초기 구간이 null일 때', () => {
+        const bars = makeBars(100);
+
+        it('rsi의 처음 RSI_DEFAULT_PERIOD - 1개의 값은 null이다', () => {
+            const { rsi } = calculateIndicators(bars);
+            expect(
+                rsi.slice(0, RSI_DEFAULT_PERIOD - 1).every(v => v === null)
+            ).toBe(true);
+        });
+
+        it('macd의 처음 MACD_SLOW_PERIOD + MACD_SIGNAL_PERIOD - 2개의 값은 모두 histogram이 null이다', () => {
+            const { macd } = calculateIndicators(bars);
+            const nullCount = MACD_SLOW_PERIOD + MACD_SIGNAL_PERIOD - 2;
+            expect(
+                macd.slice(0, nullCount).every(v => v.histogram === null)
+            ).toBe(true);
+        });
+
+        it('bollinger의 처음 BOLLINGER_DEFAULT_PERIOD - 1개의 값은 middle이 null이다', () => {
+            const { bollinger } = calculateIndicators(bars);
+            expect(
+                bollinger
+                    .slice(0, BOLLINGER_DEFAULT_PERIOD - 1)
+                    .every(v => v.middle === null)
+            ).toBe(true);
+        });
+
+        it('dmi의 처음 DMI_DEFAULT_PERIOD * 2 - 1개의 값은 adx가 null이다', () => {
+            const { dmi } = calculateIndicators(bars);
+            const nullCount = DMI_DEFAULT_PERIOD * 2 - 1;
+            expect(dmi.slice(0, nullCount).every(v => v.adx === null)).toBe(
+                true
+            );
         });
     });
 
