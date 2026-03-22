@@ -27,13 +27,13 @@ export function calculateMACD(
     const macdNonNull = macdLine.filter((v): v is number => v !== null);
     const signalValues = computeEMAValues(macdNonNull, signalPeriod);
 
-    const slowStart = slowPeriod - 1;
+    const firstMacdIdx = Math.max(fastPeriod, slowPeriod) - 1;
 
     return bars.map((_, i) => {
         const macd = macdLine[i];
         if (macd === null) return { macd: null, signal: null, histogram: null };
 
-        const signalIdx = i - slowStart;
+        const signalIdx = i - firstMacdIdx;
         const signal =
             signalIdx >= 0 && signalIdx < signalValues.length
                 ? signalValues[signalIdx]

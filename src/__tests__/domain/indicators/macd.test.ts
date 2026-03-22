@@ -154,4 +154,29 @@ describe('calculateMACD', () => {
             });
         });
     });
+
+    describe('fastPeriod > slowPeriod인 커스텀 파라미터일 때', () => {
+        it('signal과 histogram이 null로 오염되지 않는다', () => {
+            // fastPeriod=30, slowPeriod=10: firstMacdIdx = Math.max(30, 10) - 1 = 29
+            const fastPeriod = 30;
+            const slowPeriod = 10;
+            const signalPeriod = 9;
+            const nullCount =
+                Math.max(fastPeriod, slowPeriod) - 1 + (signalPeriod - 1); // 29 + 8 = 37
+            const bars = makeBars(
+                Array.from({ length: 60 }, (_, i) => 100 + i)
+            );
+            const result = calculateMACD(
+                bars,
+                fastPeriod,
+                slowPeriod,
+                signalPeriod
+            );
+            result.slice(nullCount).forEach((r: MACDResult) => {
+                expect(typeof r.macd).toBe('number');
+                expect(typeof r.signal).toBe('number');
+                expect(typeof r.histogram).toBe('number');
+            });
+        });
+    });
 });

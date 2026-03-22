@@ -24,7 +24,6 @@ export function computeEMAValues(
 }
 
 export function calculateEMA(bars: Bar[], period: number): (number | null)[] {
-    if (bars.length === 0 || period <= 0) return [];
     return computeEMAValues(
         bars.map(bar => bar.close),
         period
