@@ -38,6 +38,16 @@ export interface IndicatorResult {
     ema: Record<number, (number | null)[]>;
 }
 
+export interface Skill {
+    name: string;
+    description: string;
+    type?: string;
+    pattern?: string;
+    indicators: string[];
+    confidence_weight: number;
+    content: string;
+}
+
 export type Signal = {
     type: string; // 예: "RSI 과매수", "MACD 골든크로스"
     description: string;
