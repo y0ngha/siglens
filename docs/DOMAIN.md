@@ -101,7 +101,7 @@ export type PatternType =
 4. signalLine = EMA(macdLine, 9)
 5. histogram = macdLine - signalLine
 
-초기 slowPeriod + signalPeriod - 1개 구간 = null
+초기 slowPeriod + signalPeriod - 2개 구간 = null
 ```
 
 ### Bollinger Bands
