@@ -188,8 +188,8 @@ skills/*.md (type: pattern) 파싱
   → AnalysisResponse에 결과 포함
 ```
 
-`detectPatterns(bars, activePatterns)` 는 인터페이스 계약만 제공하며 항상 빈 배열을 반환한다.
-실제 패턴 결과는 AI 응답(`AnalysisResponse.signals`)에서 도출된다.
+패턴 결과는 AI 응답(`AnalysisResponse.signals`)에서 도출된다.
+별도의 도메인 감지 함수는 존재하지 않는다.
 
 패턴 skill 파일 예시 (`skills/pattern-double-top.md`):
 
