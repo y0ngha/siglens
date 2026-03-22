@@ -24,7 +24,7 @@ export default async function SymbolPage({ params }: Props) {
 
     const indicators = calculateIndicators(bars);
 
-    const patterns = detectPatterns(bars);
+    const patterns = detectPatterns(bars, []);
 
     const prompt = buildAnalysisPrompt(symbol, bars, indicators, patterns);
 

@@ -14,7 +14,7 @@ export async function POST(request: NextRequest) {
     const body: RequestBody = await request.json();
     const { symbol, bars, indicators } = body;
 
-    const patterns = detectPatterns(bars);
+    const patterns = detectPatterns(bars, []);
     const prompt = buildAnalysisPrompt(symbol, bars, indicators, patterns);
 
     const ai = new ClaudeProvider();
