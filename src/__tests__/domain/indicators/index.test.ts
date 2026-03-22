@@ -20,6 +20,8 @@ import {
 } from '@/domain/indicators/constants';
 import type { Bar } from '@/domain/types';
 
+const TEST_BAR_COUNT = 100;
+
 function makeBar(overrides: Partial<Bar> & { time: number }): Bar {
     return {
         open: 100,
@@ -80,7 +82,7 @@ describe('calculateIndicators', () => {
     });
 
     describe('정상 입력일 때', () => {
-        const bars = makeBars(100);
+        const bars = makeBars(TEST_BAR_COUNT);
 
         it('rsi의 길이가 bars.length와 같다', () => {
             expect(calculateIndicators(bars).rsi).toHaveLength(bars.length);
@@ -134,7 +136,7 @@ describe('calculateIndicators', () => {
     });
 
     describe('초기 구간이 null일 때', () => {
-        const bars = makeBars(100);
+        const bars = makeBars(TEST_BAR_COUNT);
 
         it('rsi의 처음 RSI_DEFAULT_PERIOD - 1개의 값은 null이다', () => {
             const { rsi } = calculateIndicators(bars);
@@ -192,7 +194,7 @@ describe('calculateIndicators', () => {
     });
 
     describe('개별 인디케이터 함수와 결과가 일치할 때', () => {
-        const bars = makeBars(100);
+        const bars = makeBars(TEST_BAR_COUNT);
         const closes = bars.map(b => b.close);
 
         it('rsi가 calculateRSI 결과와 같다', () => {
@@ -217,15 +219,17 @@ describe('calculateIndicators', () => {
             expect(calculateIndicators(bars).vwap).toEqual(calculateVWAP(bars));
         });
 
-        it('ma[20]이 calculateMA(bars, 20) 결과와 같다', () => {
-            expect(calculateIndicators(bars).ma[20]).toEqual(
-                calculateMA(bars, 20)
+        it('ma[MA_DEFAULT_PERIODS[0]]이 calculateMA 결과와 같다', () => {
+            const period = MA_DEFAULT_PERIODS[0];
+            expect(calculateIndicators(bars).ma[period]).toEqual(
+                calculateMA(bars, period)
             );
         });
 
-        it('ema[9]가 calculateEMA(bars, 9) 결과와 같다', () => {
-            expect(calculateIndicators(bars).ema[9]).toEqual(
-                calculateEMA(bars, 9)
+        it('ema[EMA_DEFAULT_PERIODS[0]]이 calculateEMA 결과와 같다', () => {
+            const period = EMA_DEFAULT_PERIODS[0];
+            expect(calculateIndicators(bars).ema[period]).toEqual(
+                calculateEMA(bars, period)
             );
         });
     });

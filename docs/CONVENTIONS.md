@@ -116,10 +116,20 @@ const result: (number | null)[] = new Array(period - 1).fill(null);
   ❌ calculateRSI 내부의 type WilderState
   ✅ 파일 최상단에 선언해 다른 함수에서도 재사용 가능하게
 5. 상수를 하드코딩하지 않기(매직 넘버에 이름 붙이기) (구현 코드 및 테스트 코드 모두 해당)
-  ❌ period = 14   
+  ❌ period = 14
   ✅ RSI_DEFAULT_PERIOD = 14; period = RSI_DEFAULT_PERIOD; (domain/indicators/constants.ts)
-  ❌ Array.from({ length: 10 }, ...)   
+  ❌ Array.from({ length: 10 }, ...)
   ✅ Array.from({ length: RSI_DEFAULT_PERIOD - 1 }, ...)
+  → 세 가지 패턴 모두 매직 넘버다. 상수가 이미 import되어 있어도 숫자를 직접 쓰면 위반이다.
+  [패턴 A] 새 숫자를 선언할 때
+    ❌ period = 14   ✅ const period = RSI_DEFAULT_PERIOD;
+  [패턴 B] import된 배열·Record 상수의 특정 값을 꺼내 쓸 때
+    ❌ result.ma[20]               ✅ result.ma[MA_DEFAULT_PERIODS[0]]
+    ❌ calculateMA(bars, 20)       ✅ calculateMA(bars, MA_DEFAULT_PERIODS[0])
+    ❌ result.ema[9]               ✅ const period = EMA_DEFAULT_PERIODS[0]; result.ema[period]
+  [패턴 C] 테스트 입력 크기(makeBars 인자 등)
+    ❌ makeBars(100)               ✅ const TEST_BAR_COUNT = 100; makeBars(TEST_BAR_COUNT)
+    → 왜: 100이 어떤 의미의 숫자인지 알 수 없다. 상수 이름이 의도를 설명한다.
 6. 브라우저/Node 전역 객체명을 변수명으로 사용 → 예약어 충돌 및 ESLint no-shadow 에러 발생
   ❌ const window = closes.slice(...)   ✅ const priceWindow = closes.slice(...)
   → 충돌 주의 대상: window, document, location, event, name, length, screen
