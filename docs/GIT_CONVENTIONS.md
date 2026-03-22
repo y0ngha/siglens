@@ -1,180 +1,85 @@
-# Claude Code 작업 플로우
+# Git Conventions
 
-## 전체 흐름
+## 브랜치 네이밍
 
 ```
-이슈 파악 → 참고 문서 확인 → 브랜치 생성 → 구현 → 테스트 → 완료 조건 확인 → PR 생성
+{type}/#{이슈 번호}/{이슈 한줄 요약}
 ```
+
+```
+feat/#2/도메인-공통-타입-정의
+feat/#4/alpaca-provider-구현
+fix/#8/rsi-초기구간-null-처리
+chore/#1/프로젝트-초기-환경-설정
+```
+
+**규칙**
+- base 브랜치: master
+- 한글 허용, 공백은 하이픈(-)으로 대체
+- 영문은 소문자 kebab-case
+- 이슈 번호 필수
 
 ---
 
-## 1. 이슈 → PR 절차
+## 커밋 타입
 
-### 1-1. 이슈 파악
-
-이슈에서 확인할 것:
-- **구현 범위**: 어떤 레이어(domain, infrastructure, app, components)를 건드리는지
-- **파일**: 생성/수정할 파일 경로
-- **구현 내용**: 함수 시그니처, 기능 명세
-- **참고 문서**: 체크된(`[x]`) 항목만 읽는다
-- **완료 조건**: 구현, 테스트, docs 업데이트 여부
-
-### 1-2. 참고 문서 확인
-
-이슈 본문의 참고 문서 중 체크된 항목만 읽는다.
-
-```
-docs/DOMAIN.md       인디케이터 계산 명세, 타입 정의, IndicatorResult 규칙
-docs/CONVENTIONS.md  코딩 패러다임, 테스트 규칙, import 경로 규칙
-docs/ARCHITECTURE.md 레이어 구조
-docs/API.md          Route Handler 명세
-```
-
-기존 유사 구현도 함께 읽는다 (패턴 파악용).
-```
-# 예: MA 구현 시 EMA 구현을 먼저 확인
-src/domain/indicators/ema.ts
-src/__tests__/domain/indicators/ema.test.ts
-```
-
-### 1-3. 브랜치 생성
-
-```bash
-git checkout master && git pull origin master
-git checkout -b {type}/#{이슈 번호}/{이슈 한줄 요약}
-```
-
-브랜치/커밋 규칙 → `docs/GIT_CONVENTIONS.md` 참고
-
-### 1-4. 구현
-
-코딩 규칙 → `docs/CONVENTIONS.md` 참고
-
-**domain 레이어 체크리스트**
-- [ ] 외부 라이브러리 import 없음
-- [ ] 순수 함수 (fetch/console.log/Date.now() 금지)
-- [ ] 반환 타입 명시
-- [ ] 초기 구간 `null` (0/NaN 금지)
-- [ ] 함수형 스타일 (for/while 금지)
-- [ ] 불변성 유지 (원본 배열/객체 변경 금지)
-- [ ] path alias 사용 (`@/domain/...`)
-
-새 파일 생성 시 `src/domain/indicators/index.ts`에 export 추가.
-
-### 1-5. 테스트 작성
-
-테스트 규칙 → `docs/CONVENTIONS.md` 참고
-
-새 파일 생성과 테스트 파일은 반드시 같은 커밋에 포함.
-
-### 1-6. 완료 조건 확인
-
-모두 통과해야 PR 오픈 가능. 하나라도 실패 시 수정 후 재실행.
-
-```bash
-yarn format
-yarn lint
-yarn lint:style
-yarn test
-yarn build
-```
-
-### 1-7. 커밋 및 PR 생성
-
-```bash
-git add {변경된 파일들}
-git commit -m "feat: MA 인디케이터 구현
-
-Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
-
-git push -u origin {브랜치명}
-gh pr create --title "{type}: {이슈 제목}" --body "..." --base master
-```
-
-PR 본문 형식 → `docs/GIT_CONVENTIONS.md` 참고
+| 타입 | 설명 | 예시 |
+|------|------|------|
+| `feat` | 새로운 기능 | `feat: RSI 인디케이터 구현` |
+| `fix` | 버그 수정 | `fix: RSI 초기 구간 null 처리 오류` |
+| `chore` | 빌드, 설정, 패키지 | `chore: jest 설정 업데이트` |
+| `style` | 코드 포맷, 스타일 | `style: MA 오버레이 컬러 수정` |
+| `refactor` | 리팩토링 | `refactor: AlpacaProvider 에러 처리 개선` |
+| `test` | 테스트 추가/수정 | `test: calculateMACD 엣지 케이스 추가` |
+| `docs` | 문서 수정 | `docs: DOMAIN.md RSI 명세 업데이트` |
 
 ---
 
-## 2. PR 리뷰 수정 절차
+## 커밋 메시지 형식
 
-PR 코멘트에서 수정 요청을 받았을 때.
-
-**새 브랜치/PR 생성 금지. 기존 PR 브랜치에서 직접 수정.**
-
-### 2-1. 헤드 브랜치 체크아웃
-
-```bash
-gh pr view {PR 번호} --json headRefName --repo {repo}
-git fetch origin {헤드 브랜치명} && git checkout {헤드 브랜치명}
+```
+{type}: {변경 내용}
 ```
 
-### 2-2. 수정
-
-리뷰 내용을 하나의 코멘트에 모아서 요청한다.
-(여러 코멘트로 나눠 요청 시 같은 브랜치에서 충돌 발생)
-
-### 2-3. 완료 조건 확인
-
-```bash
-yarn format && yarn lint && yarn lint:style && yarn test && yarn build
+**예시**
+```
+feat: 도메인 공통 타입 정의
+fix: RSI 초기 구간 null 처리 오류 수정
+test: calculateRSI 엣지 케이스 테스트 추가
+docs: DOMAIN.md VWAP 명세 추가
 ```
 
-### 2-4. 푸시
-
-```bash
-git push origin {헤드 브랜치명}
-```
-
-기존 PR에 완료 코멘트 작성. 새 PR 오픈 금지.
+**규칙**
+- 한글 사용 가능
+- 마침표 없음
+- 50자 이내
+- 명령형 현재 시제
 
 ---
 
-## 3. 공통 처리 절차
+## PR 규칙
 
-### 컨텍스트 파악
-
-작업 시작 전 반드시 이슈 또는 PR 전체 내용을 파악한다.
-
-```bash
-# 이슈인 경우
-gh issue view {번호} --repo {repo}
-
-# PR인 경우
-gh pr view {번호} --repo {repo}
+```
+base 브랜치: master
+제목: {type}: {이슈 제목}
 ```
 
-번호가 이슈인지 PR인지 모를 때:
-```bash
-gh pr view {번호} --repo {repo}
-# 성공 → PR 컨텍스트 (리뷰 수정 절차 따름)
-# 실패 → 이슈 컨텍스트 (이슈→PR 절차 따름)
+**본문에 포함할 것**
 ```
+closes #{이슈 번호}
 
-### 작업 상태 코멘트
+## yarn format
+(실행 결과)
 
-시작/완료/실패 시 반드시 코멘트를 남긴다.
+## yarn lint
+(실행 결과)
 
-**이슈 컨텍스트**
-```bash
-gh issue comment {번호} --repo {repo} --body "🔨 작업을 시작합니다."
-gh issue comment {번호} --repo {repo} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
-gh issue comment {번호} --repo {repo} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
+## yarn lint:style
+(실행 결과)
+
+## yarn test
+(실행 결과)
+
+## yarn build
+(실행 결과)
 ```
-
-**PR 컨텍스트**
-```bash
-gh pr comment {번호} --repo {repo} --body "🔨 작업을 시작합니다."
-gh pr comment {번호} --repo {repo} --body "✅ 작업이 완료됐습니다."
-gh pr comment {번호} --repo {repo} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
-```
-
----
-
-## 빠른 참조
-
-| 항목 | 문서 |
-|------|------|
-| 코딩 규칙, 자주 하는 실수 | `docs/CONVENTIONS.md` |
-| 도메인 인디케이터 명세 | `docs/DOMAIN.md` |
-| 브랜치/커밋/PR 규칙 | `docs/GIT_CONVENTIONS.md` |
-| 레이어 구조 | `docs/ARCHITECTURE.md` |
