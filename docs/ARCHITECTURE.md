@@ -67,6 +67,12 @@ import { claudeClient } from '@/infrastructure/ai/claude'; // 금지
 Next.js의 `app/`은 라우팅 전용이며, 나머지 레이어는 `src/` 바로 아래에 위치한다.
 
 ```
+skills/                               ← 분석 기법 정의 (자연어 Markdown)
+│                                       코드 수정 없이 파일 추가만으로 새 분석 기법 적용
+├── rsi-divergence.md
+├── volume-spread.md
+└── ...
+
 src/
 ├── app/                              ← Next.js App Router (라우팅 전용)
 │   ├── [symbol]/

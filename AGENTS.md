@@ -156,3 +156,23 @@ yarn format
 3. 구현 후 반드시 테스트 파일을 함께 작성한다.
 4. 레이어 의존성 방향을 위반하지 않는다.
 5. `domain/`에는 외부 라이브러리 import를 넣지 않는다.
+
+---
+
+## Skills 시스템
+
+Siglens는 `/skills/*.md` 파일을 통해 분석 기법을 확장한다.
+코드 수정 없이 Markdown 파일 추가만으로 새로운 분석 기법이 적용된다.
+
+```
+skills/
+├── rsi-divergence.md
+├── volume-spread.md
+└── ...
+```
+
+**Skills 관련 태스크를 받으면:**
+- `skills/` 디렉토리의 모든 `.md` 파일을 읽는다
+- frontmatter의 `indicators` 필드를 확인해 필요한 인디케이터를 파악한다
+- AI 프롬프트 구성 시 활성화된 skill 내용을 포함한다
+- skill 파일 형식은 `docs/DOMAIN.md`의 Skills 시스템 섹션을 참고한다

@@ -294,3 +294,75 @@ ema60: (number | null)[];
 ma: Record<number, (number | null)[]>;
 ema: Record<number, (number | null)[]>;
 ```
+---
+
+## Skills 시스템
+
+### 개요
+
+`/skills/*.md` 파일을 추가하는 것만으로 새로운 분석 기법을 정의할 수 있다.
+코드 수정 없이 자연어로 작성된 파일만으로 AI가 해당 기법에 맞춰 기술적 분석을 수행한다.
+
+### 파일 구조
+
+```
+skills/
+├── rsi-divergence.md       RSI 다이버전스 분석
+├── volume-spread.md        거래량 스프레드 분석
+├── wyckoff.md              와이코프 이론
+└── my-strategy.md          커스텀 전략
+```
+
+### 파일 형식
+
+```markdown
+---
+name: RSI 다이버전스
+description: 가격과 RSI의 방향이 반대일 때 추세 전환 신호를 감지한다
+indicators: [rsi]
+confidence_weight: 0.8
+---
+
+## 분석 기준
+
+### 강세 다이버전스 (매수 신호)
+- 가격이 더 낮은 저점을 만들지만 RSI는 더 높은 저점을 만들 때
+- 신뢰도: 직전 저점 대비 RSI 차이가 클수록 높음
+
+### 약세 다이버전스 (매도 신호)
+- 가격이 더 높은 고점을 만들지만 RSI는 더 낮은 고점을 만들 때
+- 신뢰도: 직전 고점 대비 RSI 차이가 클수록 높음
+
+## AI 분석 지시
+
+위 조건 충족 시 다음을 포함해 분석한다:
+- 다이버전스 발생 시점과 강도
+- 추세 전환 가능성 (높음/중간/낮음)
+- 진입 시 참고할 지지/저항 레벨
+```
+
+### Skills 적용 흐름
+
+```
+/skills/*.md 파일 읽기
+  → frontmatter에서 필요한 인디케이터 목록 파악
+  → 해당 인디케이터 계산 (domain/indicators/)
+  → AI 프롬프트에 skill 내용 + 계산 결과 포함
+  → AI가 skill 기준에 맞춰 분석 수행
+  → AnalysisResponse에 skill별 결과 포함
+```
+
+### 신뢰도 개선 계획
+
+```
+1단계: 분석 결과 수집
+   → 분석 시점의 bars, indicators, 분석 결과를 저장
+
+2단계: 정확도 측정
+   → 분석 이후 실제 가격 움직임과 예측 방향 비교
+   → skill별 적중률 산출
+
+3단계: 피드백 반영
+   → 적중률 낮은 skill의 기준값 조정 제안
+   → 커뮤니티 리뷰를 통한 skill 업데이트
+```
