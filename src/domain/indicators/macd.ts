@@ -1,28 +1,10 @@
 import type { Bar, MACDResult } from '@/domain/types';
-import { calculateEMA } from '@/domain/indicators/ema';
+import { calculateEMA, computeEMAValues } from '@/domain/indicators/ema';
 import {
     MACD_FAST_PERIOD,
     MACD_SIGNAL_PERIOD,
     MACD_SLOW_PERIOD,
 } from '@/domain/indicators/constants';
-
-function computeSignalEMA(values: number[], period: number): (number | null)[] {
-    if (values.length <= period) return values.map(() => null);
-
-    const multiplier = 2 / (period + 1);
-    const initialSMA =
-        values.slice(0, period).reduce((sum, v) => sum + v, 0) / period;
-
-    const result: (number | null)[] = new Array(period).fill(null);
-
-    values.slice(period).reduce((prev, v) => {
-        const ema = v * multiplier + prev * (1 - multiplier);
-        result.push(ema);
-        return ema;
-    }, initialSMA);
-
-    return result;
-}
 
 export function calculateMACD(
     bars: Bar[],
@@ -43,7 +25,7 @@ export function calculateMACD(
     );
 
     const macdNonNull = macdLine.filter((v): v is number => v !== null);
-    const signalValues = computeSignalEMA(macdNonNull, signalPeriod);
+    const signalValues = computeEMAValues(macdNonNull, signalPeriod);
 
     const slowStart = slowPeriod - 1;
 

@@ -49,16 +49,17 @@ describe('calculateMACD', () => {
                 Array.from({ length: 30 }, (_, i) => 100 + i)
             );
             const result = calculateMACD(bars);
-            // index 25 이후는 macd 값이 있어야 함
-            expect(result[MACD_SLOW_PERIOD - 1].macd).not.toBeNull();
-            // signal은 아직 null
-            expect(result[MACD_SLOW_PERIOD - 1].signal).toBeNull();
-            expect(result[MACD_SLOW_PERIOD - 1].histogram).toBeNull();
+            result.slice(MACD_SLOW_PERIOD - 1).forEach((r: MACDResult) => {
+                expect(r.macd).not.toBeNull();
+                expect(r.signal).toBeNull();
+                expect(r.histogram).toBeNull();
+            });
         });
     });
 
     describe('입력 배열 길이가 slowPeriod+signalPeriod-1 이상일 때', () => {
-        const NULL_COUNT = MACD_SLOW_PERIOD + MACD_SIGNAL_PERIOD - 1; // 34
+        const FIRST_MACD_IDX = MACD_SLOW_PERIOD - 1; // 25: slowPeriod-1개 null 이후 첫 MACD
+        const NULL_COUNT = FIRST_MACD_IDX + (MACD_SIGNAL_PERIOD - 1); // 33: SMA 포함 EMA는 signalPeriod-1개 이후 첫 signal
 
         it('입력과 동일한 길이의 배열을 반환한다', () => {
             const bars = makeBars(
