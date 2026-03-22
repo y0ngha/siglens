@@ -1,6 +1,6 @@
 'use client';
 
-import type { AnalysisResponse } from '@/infrastructure/ai/types';
+import type { AnalysisResponse } from '@/domain/types';
 
 type AnalysisPanelProps = {
     initialAnalysis: AnalysisResponse;
