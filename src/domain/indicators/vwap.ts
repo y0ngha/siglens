@@ -1,3 +1,4 @@
+import { SECONDS_PER_DAY } from '@/domain/constants/time';
 import type { Bar } from '@/domain/types';
 
 type VWAPState = {
@@ -12,7 +13,7 @@ export function calculateVWAP(bars: Bar[]): (number | null)[] {
 
     return bars.reduce<VWAPState>(
         (acc, bar) => {
-            const dayKey = Math.floor(bar.time / 86400);
+            const dayKey = Math.floor(bar.time / SECONDS_PER_DAY);
             const reset = dayKey !== acc.dayKey;
             const cumulativeTPV = reset ? 0 : acc.cumulativeTPV;
             const cumulativeVolume = reset ? 0 : acc.cumulativeVolume;

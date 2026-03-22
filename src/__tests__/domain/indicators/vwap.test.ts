@@ -1,7 +1,6 @@
+import { SECONDS_PER_DAY } from '@/domain/constants/time';
 import { calculateVWAP } from '@/domain/indicators/vwap';
 import type { Bar } from '@/domain/types';
-
-const DAY = 86400; // 하루 초
 
 function makeBar(overrides: Partial<Bar> & { time: number }): Bar {
     return {
@@ -25,7 +24,7 @@ function makeBars(
 ): Bar[] {
     return values.map((v, i) =>
         makeBar({
-            time: (v.time ?? i) * DAY,
+            time: (v.time ?? i) * SECONDS_PER_DAY,
             high: v.high,
             low: v.low,
             close: v.close,
@@ -116,14 +115,14 @@ describe('calculateVWAP', () => {
             // day2: bar1 typicalPrice = 110, volume = 2000 → 새 누적 시작 → vwap = 110
             const bars = [
                 makeBar({
-                    time: 1 * DAY,
+                    time: 1 * SECONDS_PER_DAY,
                     high: 105,
                     low: 95,
                     close: 100,
                     volume: 1000,
                 }),
                 makeBar({
-                    time: 2 * DAY,
+                    time: 2 * SECONDS_PER_DAY,
                     high: 115,
                     low: 105,
                     close: 110,
@@ -141,21 +140,21 @@ describe('calculateVWAP', () => {
             // day2: bar2 typicalPrice = 120, volume = 1000 → vwap = (110+120)/2 = 115
             const bars = [
                 makeBar({
-                    time: 1 * DAY,
+                    time: 1 * SECONDS_PER_DAY,
                     high: 105,
                     low: 95,
                     close: 100,
                     volume: 1000,
                 }),
                 makeBar({
-                    time: 2 * DAY,
+                    time: 2 * SECONDS_PER_DAY,
                     high: 115,
                     low: 105,
                     close: 110,
                     volume: 1000,
                 }),
                 makeBar({
-                    time: 2 * DAY + 3600,
+                    time: 2 * SECONDS_PER_DAY + 3600,
                     high: 125,
                     low: 115,
                     close: 120,
