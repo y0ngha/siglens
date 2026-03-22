@@ -1,9 +1,5 @@
-export type AnalysisResult = {
-    summary: string;
-    signals: string[];
-    risk: 'low' | 'medium' | 'high';
-};
+import type { AnalysisResponse } from '@/domain/types';
 
 export interface AIProvider {
-    analyze(prompt: string): Promise<AnalysisResult>;
+    analyze(prompt: string): Promise<AnalysisResponse>;
 }

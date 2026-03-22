@@ -1,9 +1,9 @@
 'use client';
 
-import type { AnalysisResult } from '@/infrastructure/ai/types';
+import type { AnalysisResponse } from '@/domain/types';
 
 type AnalysisPanelProps = {
-    initialAnalysis: AnalysisResult;
+    initialAnalysis: AnalysisResponse;
 };
 
 export function AnalysisPanel({ initialAnalysis }: AnalysisPanelProps) {
