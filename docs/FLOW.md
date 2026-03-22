@@ -91,8 +91,7 @@ git push -u origin {브랜치명}
 gh pr create --title "{type}: {이슈 제목}" --body "..." --base master
 ```
 
-PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md`가 자동 적용된다.
-`closes #{이슈번호}`와 구현 내용 요약, 체크리스트, 변경 파일 목록, yarn 실행 결과를 채워서 작성한다.
+PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md`를 참고하여 작성한다.
 
 ---
 
