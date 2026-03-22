@@ -6,3 +6,5 @@ export const MACD_SIGNAL_PERIOD = 9;
 
 export const BOLLINGER_DEFAULT_PERIOD = 20;
 export const BOLLINGER_DEFAULT_STD_DEV = 2;
+
+export const DMI_DEFAULT_PERIOD = 14;
