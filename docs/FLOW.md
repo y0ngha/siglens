@@ -91,7 +91,7 @@ git push -u origin {브랜치명}
 gh pr create --title "{type}: {이슈 제목}" --body "..." --base master
 ```
 
-PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md`를 참고하여 작성한다.
+PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md`가 적용되는데, 템플릿의 헤드에 맞게 결과와 내용을 작성한다.
 
 ---
 
