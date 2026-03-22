@@ -23,7 +23,12 @@ const TEST_DI_MINUS = 18.0;
 const TEST_ADX_VALUE = 30.0;
 const TEST_HIGH_CONFIDENCE = 0.8;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
+const TEST_MIN_CONFIDENCE_WEIGHT = 0.5;
+const TEST_ABOVE_MIN_CONFIDENCE = 0.6;
 const TEST_BELOW_MIN_CONFIDENCE = 0.4;
+const TEST_LOW_CONFIDENCE = 0.3;
+const TEST_MARKET_SECTION_INDEX = 1;
+const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT_CLOSE - TEST_PREV_CLOSE) / TEST_PREV_CLOSE) * 100).toFixed(2)}%`;
 
 const makeBar = (i: number, close?: number): Bar => ({
     time: TEST_BAR_BASE_TIME + i * TEST_BAR_INTERVAL,
@@ -90,7 +95,8 @@ describe('buildAnalysisPrompt', () => {
                     makeIndicators(),
                     []
                 );
-                const marketSection = result.split('\n\n')[1];
+                const marketSection =
+                    result.split('\n\n')[TEST_MARKET_SECTION_INDEX];
                 expect(marketSection).toContain('현재가: N/A');
                 expect(marketSection).toContain('변화율: N/A');
                 expect(marketSection).toContain('거래량: N/A');
@@ -106,7 +112,7 @@ describe('buildAnalysisPrompt', () => {
                     makeIndicators(),
                     []
                 );
-                expect(result).toContain('150.00');
+                expect(result).toContain(TEST_CLOSE_PRICE.toFixed(2));
             });
 
             it('봉이 2개 이상일 때 변화율을 포함한다', () => {
@@ -120,7 +126,7 @@ describe('buildAnalysisPrompt', () => {
                     makeIndicators(),
                     []
                 );
-                expect(result).toContain('10.00%');
+                expect(result).toContain(TEST_CHANGE_RATE_FORMATTED);
             });
 
             it('봉이 1개일 때 변화율은 N/A다', () => {
@@ -163,7 +169,7 @@ describe('buildAnalysisPrompt', () => {
                 rsi: [null, null, TEST_RSI_VALUE],
             });
             const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
-            expect(result).toContain('65.50');
+            expect(result).toContain(TEST_RSI_VALUE.toFixed(2));
         });
 
         it('전부 null인 RSI 배열일 때 N/A를 표시한다', () => {
@@ -193,9 +199,9 @@ describe('buildAnalysisPrompt', () => {
                 ],
             });
             const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
-            expect(result).toContain('1.23');
-            expect(result).toContain('0.98');
-            expect(result).toContain('0.25');
+            expect(result).toContain(TEST_MACD_VALUE.toFixed(2));
+            expect(result).toContain(TEST_SIGNAL_VALUE.toFixed(2));
+            expect(result).toContain(TEST_HISTOGRAM_VALUE.toFixed(2));
         });
 
         it('볼린저 밴드 배열이 비어있을 때 N/A를 포함한다', () => {
@@ -219,9 +225,9 @@ describe('buildAnalysisPrompt', () => {
                 ],
             });
             const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
-            expect(result).toContain('155.00');
-            expect(result).toContain('150.00');
-            expect(result).toContain('145.00');
+            expect(result).toContain(TEST_BOLLINGER_UPPER.toFixed(2));
+            expect(result).toContain(TEST_BOLLINGER_MIDDLE.toFixed(2));
+            expect(result).toContain(TEST_BOLLINGER_LOWER.toFixed(2));
         });
 
         it('DMI 배열이 비어있을 때 N/A를 포함한다', () => {
@@ -245,9 +251,9 @@ describe('buildAnalysisPrompt', () => {
                 ],
             });
             const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
-            expect(result).toContain('25.00');
-            expect(result).toContain('18.00');
-            expect(result).toContain('30.00');
+            expect(result).toContain(TEST_DI_PLUS.toFixed(2));
+            expect(result).toContain(TEST_DI_MINUS.toFixed(2));
+            expect(result).toContain(TEST_ADX_VALUE.toFixed(2));
         });
     });
 
@@ -292,7 +298,7 @@ describe('buildAnalysisPrompt', () => {
             it('confidence_weight가 정확히 0.5일 때 포함된다', () => {
                 const skill = makeSkill({
                     name: '경계값 스킬',
-                    confidence_weight: 0.5,
+                    confidence_weight: TEST_MIN_CONFIDENCE_WEIGHT,
                 });
                 const result = buildAnalysisPrompt(
                     TEST_SYMBOL,
@@ -306,7 +312,7 @@ describe('buildAnalysisPrompt', () => {
             it('confidence_weight가 0.5 이상인 skill은 포함된다', () => {
                 const skill = makeSkill({
                     name: '포함될 스킬',
-                    confidence_weight: 0.6,
+                    confidence_weight: TEST_ABOVE_MIN_CONFIDENCE,
                 });
                 const result = buildAnalysisPrompt(
                     TEST_SYMBOL,
@@ -319,8 +325,8 @@ describe('buildAnalysisPrompt', () => {
 
             it('낮은 신뢰도 skill만 있을 때 skill 섹션이 포함되지 않는다', () => {
                 const skills = [
-                    makeSkill({ confidence_weight: 0.3 }),
-                    makeSkill({ confidence_weight: 0.4 }),
+                    makeSkill({ confidence_weight: TEST_LOW_CONFIDENCE }),
+                    makeSkill({ confidence_weight: TEST_BELOW_MIN_CONFIDENCE }),
                 ];
                 const result = buildAnalysisPrompt(
                     TEST_SYMBOL,
@@ -398,7 +404,9 @@ describe('buildAnalysisPrompt', () => {
             });
 
             it('confidence_weight가 정확히 0.8이면 높은 신뢰도로 표시된다', () => {
-                const skill = makeSkill({ confidence_weight: 0.8 });
+                const skill = makeSkill({
+                    confidence_weight: TEST_HIGH_CONFIDENCE,
+                });
                 const result = buildAnalysisPrompt(
                     TEST_SYMBOL,
                     [],
@@ -485,8 +493,14 @@ describe('buildAnalysisPrompt', () => {
 
             it('높은 신뢰도와 낮은 신뢰도 skill이 섞여있을 때 낮은 것은 제외된다', () => {
                 const skills = [
-                    makeSkill({ name: '포함될 스킬', confidence_weight: 0.8 }),
-                    makeSkill({ name: '제외될 스킬', confidence_weight: 0.3 }),
+                    makeSkill({
+                        name: '포함될 스킬',
+                        confidence_weight: TEST_HIGH_CONFIDENCE,
+                    }),
+                    makeSkill({
+                        name: '제외될 스킬',
+                        confidence_weight: TEST_LOW_CONFIDENCE,
+                    }),
                 ];
                 const result = buildAnalysisPrompt(
                     TEST_SYMBOL,
