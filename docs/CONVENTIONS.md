@@ -106,6 +106,16 @@ function calculateRSI(closes: number[], period: number): (number | null)[] { ...
 const result: (number | null)[] = new Array(period - 1).fill(null);
 ```
 
+```typescript
+// ✅ interface 필드는 camelCase
+interface Skill {
+    confidenceWeight: number;  // ✅
+    // confidence_weight: number; // ❌ snake_case 금지
+}
+// 외부 소스(YAML frontmatter 등) 값이 snake_case여도 domain 타입은 camelCase로 정의하고
+// infrastructure 레이어에서 변환한다.
+```
+
 ### ❌ 자주 하는 실수
 
 ```

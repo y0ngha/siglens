@@ -43,7 +43,7 @@ export interface Skill {
     description: string;
     type?: 'pattern';
     indicators: string[];
-    confidence_weight: number;
+    confidenceWeight: number;
     content: string;
 }
 

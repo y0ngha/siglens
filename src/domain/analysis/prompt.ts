@@ -1,3 +1,4 @@
+import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
 import type { Bar, IndicatorResult, Skill } from '@/domain/types';
 
 const MIN_CONFIDENCE_WEIGHT = 0.5;
@@ -51,7 +52,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
 
     return [
         '## 인디케이터 수치',
-        `- RSI(14): ${fmt(lastRSI)}`,
+        `- RSI(${RSI_DEFAULT_PERIOD}): ${fmt(lastRSI)}`,
         `- MACD: ${fmt(lastMACD?.macd ?? null)} / Signal ${fmt(lastMACD?.signal ?? null)} / Histogram ${fmt(lastMACD?.histogram ?? null)}`,
         `- 볼린저 밴드: Upper ${fmt(lastBollinger?.upper ?? null)} / Middle ${fmt(lastBollinger?.middle ?? null)} / Lower ${fmt(lastBollinger?.lower ?? null)}`,
         `- DMI: +DI ${fmt(lastDMI?.diPlus ?? null)} / -DI ${fmt(lastDMI?.diMinus ?? null)} / ADX ${fmt(lastDMI?.adx ?? null)}`,
@@ -62,7 +63,7 @@ const confidenceLabel = (weight: number): string =>
     weight >= HIGH_CONFIDENCE_WEIGHT ? '[높은 신뢰도]' : '[중간 신뢰도]';
 
 const buildSkillBlock = (skill: Skill): string =>
-    `### ${skill.name} ${confidenceLabel(skill.confidence_weight)}\n${skill.content}`;
+    `### ${skill.name} ${confidenceLabel(skill.confidenceWeight)}\n${skill.content}`;
 
 const ANALYSIS_REQUEST = [
     '## 분석 요청',
@@ -83,7 +84,7 @@ export function buildAnalysisPrompt(
     skills: Skill[] = []
 ): string {
     const activeSkills = skills.filter(
-        s => s.confidence_weight >= MIN_CONFIDENCE_WEIGHT
+        s => s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT
     );
     const patternSkills = activeSkills.filter(s => s.type === 'pattern');
     const regularSkills = activeSkills.filter(s => s.type !== 'pattern');
