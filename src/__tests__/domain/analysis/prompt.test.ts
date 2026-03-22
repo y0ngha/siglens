@@ -4,7 +4,7 @@ import type { Bar, IndicatorResult, Skill } from '@/domain/types';
 const TEST_SYMBOL = 'AAPL';
 const TEST_BAR_BASE_TIME = 1700000000;
 const TEST_BAR_INTERVAL = 60;
-const TEST_BAR_BASE_CLOSE = 100;
+const TEST_BAR_BASE_PRICE = 100;
 const TEST_BAR_BASE_HIGH = 110;
 const TEST_BAR_BASE_LOW = 90;
 const TEST_BAR_BASE_VOLUME = 1000;
@@ -33,10 +33,10 @@ const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT_CLOSE - TEST_PREV_CLOSE) / TE
 
 const makeBar = (i: number, close?: number): Bar => ({
     time: TEST_BAR_BASE_TIME + i * TEST_BAR_INTERVAL,
-    open: TEST_BAR_BASE_CLOSE + i,
+    open: TEST_BAR_BASE_PRICE + i,
     high: TEST_BAR_BASE_HIGH + i,
     low: TEST_BAR_BASE_LOW + i,
-    close: close ?? TEST_BAR_BASE_CLOSE + i,
+    close: close ?? TEST_BAR_BASE_PRICE + i,
     volume: TEST_BAR_BASE_VOLUME,
 });
 

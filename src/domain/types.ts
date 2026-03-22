@@ -41,7 +41,7 @@ export interface IndicatorResult {
 export interface Skill {
     name: string;
     description: string;
-    type?: string;
+    type?: 'pattern';
     indicators: string[];
     confidence_weight: number;
     content: string;
