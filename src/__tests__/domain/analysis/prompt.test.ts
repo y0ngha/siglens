@@ -190,6 +190,14 @@ describe('buildAnalysisPrompt', () => {
             expect(result).toContain('MACD: N/A');
         });
 
+        it('마지막 MACD 요소의 모든 필드가 null일 때 N/A를 표시한다', () => {
+            const indicators = makeIndicators({
+                macd: [{ macd: null, signal: null, histogram: null }],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain('MACD: N/A');
+        });
+
         it('MACD 값을 포함한다', () => {
             const indicators = makeIndicators({
                 macd: [
@@ -216,6 +224,14 @@ describe('buildAnalysisPrompt', () => {
             expect(result).toContain('볼린저 밴드: Upper N/A');
         });
 
+        it('마지막 볼린저 밴드 요소의 모든 필드가 null일 때 N/A를 표시한다', () => {
+            const indicators = makeIndicators({
+                bollinger: [{ upper: null, middle: null, lower: null }],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain('볼린저 밴드: Upper N/A');
+        });
+
         it('볼린저 밴드 값을 포함한다', () => {
             const indicators = makeIndicators({
                 bollinger: [
@@ -239,6 +255,14 @@ describe('buildAnalysisPrompt', () => {
                 makeIndicators({ dmi: [] }),
                 []
             );
+            expect(result).toContain('DMI: +DI N/A');
+        });
+
+        it('마지막 DMI 요소의 모든 필드가 null일 때 N/A를 표시한다', () => {
+            const indicators = makeIndicators({
+                dmi: [{ diPlus: null, diMinus: null, adx: null }],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
             expect(result).toContain('DMI: +DI N/A');
         });
 
