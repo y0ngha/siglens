@@ -1,15 +1,13 @@
-import type { Bar, IndicatorResult, PatternResult } from '@/domain/types';
+import type { Bar, IndicatorResult } from '@/domain/types';
 
 export function buildAnalysisPrompt(
     symbol: string,
     bars: Bar[],
-    indicators: IndicatorResult,
-    patterns: PatternResult[]
+    indicators: IndicatorResult
 ): string {
     // TODO: implement
     void symbol;
     void bars;
     void indicators;
-    void patterns;
     return '';
 }

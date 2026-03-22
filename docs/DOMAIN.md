@@ -49,20 +49,6 @@ export interface DMIResult {
     adx: number | null;
 }
 
-export interface PatternResult {
-    type: PatternType;
-    confidence: number;       // 0 ~ 1
-    startIndex: number;
-    endIndex: number;
-}
-
-export type PatternType =
-    | 'head_and_shoulders'
-    | 'inverse_head_and_shoulders'
-    | 'ascending_wedge'
-    | 'descending_wedge'
-    | 'double_top'
-    | 'double_bottom';
 ```
 
 ---
@@ -176,6 +162,46 @@ double_top                  이중천장 (하락 반전)
 double_bottom               이중바닥 (상승 반전)
 ```
 
+### 감지 방식
+
+패턴 감지는 알고리즘이 아닌 AI + skills 파일 기반으로 수행한다.
+
+```
+skills/*.md (type: pattern) 파싱
+  → frontmatter의 pattern 필드로 activePatterns[] 결정
+  → buildAnalysisPrompt에 skill 본문(분석 기준 + AI 분석 지시) 포함
+  → AI가 bars 데이터와 skill 기준을 대조하여 패턴 감지
+  → AnalysisResponse에 결과 포함
+```
+
+패턴 결과는 AI 응답(`AnalysisResponse.signals`)에서 도출된다.
+별도의 도메인 감지 함수는 존재하지 않는다.
+
+패턴 skill 파일 예시 (`skills/pattern-double-top.md`):
+
+```markdown
+---
+name: 이중천장
+type: pattern
+pattern: double_top
+indicators: []
+confidence_weight: 0.75
+---
+
+## 분석 기준
+
+- 비슷한 가격대에서 두 번의 고점이 형성된다 (3% 이내)
+- 두 고점 사이에 뚜렷한 저점(넥라인)이 있어야 한다
+- 두 번째 고점에서 거래량 감소 여부 (신뢰도 보강 요소)
+
+## AI 분석 지시
+
+패턴 감지 시 다음을 포함해 분석한다:
+- 두 고점 가격 수준과 차이 비율
+- 넥라인 위치와 현재 가격 대비 이탈 여부
+- 목표 하락폭
+```
+
 ### confidence 기준
 
 ```
@@ -196,7 +222,6 @@ interface AnalysisInput {
     timeframe: string;
     bars: Bar[];              // 최근 N개
     indicators: IndicatorResult;
-    patterns: PatternResult[];
 }
 ```
 
@@ -205,7 +230,7 @@ interface AnalysisInput {
 ```
 1. 현재 시장 상황 요약 (현재가, 변화율, 거래량)
 2. 인디케이터 수치 (RSI, MACD, 볼린저, DMI)
-3. 감지된 패턴 (confidence 0.5 이상만)
+3. skill 기반 패턴 분석 (skills/*.md 내용 포함, AI가 직접 감지)
 4. 분석 요청
 ```
 

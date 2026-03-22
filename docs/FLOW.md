@@ -140,11 +140,15 @@ git fetch origin {헤드 브랜치명} && git checkout {헤드 브랜치명}
 
 ### 2-4. 완료 조건 확인
 
-```bash
-yarn format && yarn lint && yarn lint:style && yarn test && yarn build
-```
+모두 통과해야 푸시 가능. 하나라도 실패 시 수정 후 재실행.
 
-모두 통과 필수. 실패 시 수정 후 재실행.
+```bash
+yarn format
+yarn lint
+yarn lint:style
+yarn test
+yarn build
+```
 
 ### 2-5. 푸시
 
