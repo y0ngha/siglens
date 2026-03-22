@@ -9,7 +9,6 @@ export function calculateBollinger(
     period = BOLLINGER_DEFAULT_PERIOD,
     stdDev = BOLLINGER_DEFAULT_STD_DEV
 ): BollingerResult[] {
-    if (bars.length === 0) return [];
     if (bars.length < period)
         return bars.map(() => ({ upper: null, middle: null, lower: null }));
 

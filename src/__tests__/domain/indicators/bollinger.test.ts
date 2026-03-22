@@ -26,9 +26,13 @@ describe('calculateBollinger', () => {
     describe('입력 배열 길이가 period 미만일 때', () => {
         it('전부 null인 배열을 반환한다', () => {
             const bars = makeBars(
-                Array.from({ length: 10 }, (_, i) => 100 + i)
+                Array.from(
+                    { length: BOLLINGER_DEFAULT_PERIOD - 1 },
+                    (_, i) => 100 + i
+                )
             );
             const result = calculateBollinger(bars);
+            expect(result).toHaveLength(bars.length);
             expect(
                 result.every(
                     (r: BollingerResult) =>
