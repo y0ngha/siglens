@@ -28,13 +28,15 @@ export type DMIResult = {
     adx: number | null;
 };
 
-export type IndicatorResult = {
+export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
     dmi: DMIResult[];
     rsi: (number | null)[];
     vwap: (number | null)[];
-};
+    ma: Record<number, (number | null)[]>;
+    ema: Record<number, (number | null)[]>;
+}
 
 export type PatternType =
     | 'head_and_shoulders'
