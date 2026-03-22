@@ -42,7 +42,6 @@ export interface Skill {
     name: string;
     description: string;
     type?: string;
-    pattern?: string;
     indicators: string[];
     confidence_weight: number;
     content: string;

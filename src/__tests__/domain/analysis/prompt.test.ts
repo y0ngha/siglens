@@ -22,6 +22,7 @@ const TEST_DI_PLUS = 25.0;
 const TEST_DI_MINUS = 18.0;
 const TEST_ADX_VALUE = 30.0;
 const TEST_HIGH_CONFIDENCE = 0.8;
+const TEST_ABOVE_HIGH_CONFIDENCE = 0.9;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
 const TEST_MIN_CONFIDENCE_WEIGHT = 0.5;
 const TEST_ABOVE_MIN_CONFIDENCE = 0.6;
@@ -392,7 +393,7 @@ describe('buildAnalysisPrompt', () => {
         describe('신뢰도 레이블', () => {
             it('confidence_weight가 0.8 이상이면 높은 신뢰도로 표시된다', () => {
                 const skill = makeSkill({
-                    confidence_weight: TEST_HIGH_CONFIDENCE,
+                    confidence_weight: TEST_ABOVE_HIGH_CONFIDENCE,
                 });
                 const result = buildAnalysisPrompt(
                     TEST_SYMBOL,
