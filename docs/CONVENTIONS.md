@@ -9,32 +9,24 @@ Siglens는 **선언형(Declarative)** 코드와 **함수형 프로그래밍(Func
 "어떻게"가 아닌 "무엇을"에 집중한다.
 
 ```typescript
-// ❌ 명령형 (어떻게)
+// ❌ 명령형
 const result = [];
 for (let i = 0; i < closes.length; i++) {
-    if (closes[i] > 0) {
-        result.push(closes[i] * 2);
-    }
+    if (closes[i] > 0) result.push(closes[i] * 2);
 }
 
-// ✅ 선언형 (무엇을)
-const result = closes
-    .filter(close => close > 0)
-    .map(close => close * 2);
+// ✅ 선언형
+const result = closes.filter(c => c > 0).map(c => c * 2);
 ```
 
 ```typescript
-// ❌ 명령형 조건 분기
+// ❌ 조건 분기 중첩
 let label;
-if (trend === 'bullish') {
-    label = '상승';
-} else if (trend === 'bearish') {
-    label = '하락';
-} else {
-    label = '중립';
-}
+if (trend === 'bullish') label = '상승';
+else if (trend === 'bearish') label = '하락';
+else label = '중립';
 
-// ✅ 선언형 객체 맵
+// ✅ 객체 맵
 const TREND_LABEL: Record<Trend, string> = {
     bullish: '상승',
     bearish: '하락',
@@ -46,190 +38,108 @@ const label = TREND_LABEL[trend];
 ### 함수형 프로그래밍
 
 ```typescript
-// ✅ 순수 함수 (동일 입력 → 동일 출력, 사이드 이펙트 없음)
-function calculateRSI(closes: number[], period: number): (number | null)[] {
-    // 외부 상태 읽기/쓰기 없음
-    // fetch, console.log, Date.now() 등 금지
-}
+// ✅ 순수 함수 — 동일 입력 → 동일 출력, 사이드 이펙트 없음
+function calculateRSI(closes: number[], period: number): (number | null)[] { ... }
 
-// ✅ 불변성 (원본 데이터 변경 금지)
-// ❌ bars.push(newBar)         → 원본 변경
-// ✅ [...bars, newBar]         → 새 배열 반환
-// ❌ bar.close = 100           → 원본 변경
-// ✅ { ...bar, close: 100 }   → 새 객체 반환
-
-// ✅ 함수 합성 (pipe/compose 패턴)
-const analyze = (bars: Bar[]) =>
-    pipe(
-        bars,
-        extractCloses,
-        closes => calculateRSI(closes, 14),
-        filterNulls,
-    );
-
-// ✅ 고차 함수 활용
-const withPeriodColor = (period: number) =>
-    (series: ISeriesApi<'Line'>) => {
-        series.applyOptions({ color: CHART_COLORS[`period${period}`] });
-        return series;
-    };
+// ✅ 불변성
+// ❌ bars.push(newBar)       ✅ [...bars, newBar]
+// ❌ bar.close = 100         ✅ { ...bar, close: 100 }
 ```
 
 ### 적용 우선순위
 
 ```
-domain/         함수형 필수
-                순수 함수, 불변성, 고차 함수
-
-infrastructure/ 함수형 권장
-                외부 API 호출 특성상 사이드 이펙트 불가피하나
-                내부 로직은 순수 함수로 분리
-
-components/     선언형 필수
-                JSX는 본질적으로 선언형
-                조건 분기는 객체 맵 또는 컴포넌트 분리로 처리
-
-app/            선언형 권장
-                RSC의 async/await 패턴과 자연스럽게 맞음
+domain/         함수형 필수 — 순수 함수, 불변성, 고차 함수
+infrastructure/ 함수형 권장 — 내부 로직은 순수 함수로 분리
+components/     선언형 필수 — 조건 분기는 객체 맵 또는 컴포넌트 분리
+app/            선언형 권장 — RSC async/await 패턴과 자연스럽게 맞음
 ```
 
-### 자주 하는 실수
+### ❌ 자주 하는 실수
 
 ```
-1. for/while 루프 사용
-   → map, filter, reduce, flatMap으로 대체
-
-2. 변수 재할당 (let)
-   → const로 선언, 새 값이 필요하면 새 변수
-
-3. 원본 배열/객체 직접 변경
-   → spread 연산자 또는 구조 분해로 새 값 반환
-
-4. 조건문 중첩
-   → 객체 맵, 얼리 리턴, 컴포넌트 분리로 대체
-
-5. 클래스 기반 로직 (domain에서)
-   → 순수 함수로 대체
-   → 단, infrastructure의 Provider는 클래스 허용
+- for/while 루프 → map, filter, reduce, flatMap으로 대체
+- let 재할당 → const + 새 변수
+- 원본 배열/객체 직접 변경 → spread 연산자
+- 조건 중첩/삼항 중첩 → 객체 맵 또는 얼리 리턴
+- domain에서 클래스 사용 → 순수 함수로 대체 (infrastructure Provider는 예외)
+- reduce 콜백 안에서 외부 배열 push → accumulator에 spread로 처리
+  ❌ result.push(ema)   ✅ return [...acc, ema]
+- 동일 알고리즘 중복 구현 → 새 인디케이터 구현 전 기존 헬퍼 먼저 확인
+  number[] 기반 헬퍼와 Bar[] 기반 래퍼를 분리해 재사용
 ```
 
 ---
 
-## 파일 네이밍
+## 파일 / 디렉토리 네이밍
 
 ```
-컴포넌트 파일    PascalCase    StockChart.tsx
-훅 파일          camelCase     useStockData.ts
-유틸/함수 파일   camelCase     calculateRSI.ts
-타입 파일        camelCase     types.ts
-테스트 파일      원본명.test   rsi.test.ts
-```
-
----
-
-## 디렉토리 네이밍
-
-```
-모두 소문자 kebab-case
-
-✅ indicators/
-✅ stock-chart/
-❌ Indicators/
-❌ stockChart/
+컴포넌트 파일    PascalCase      StockChart.tsx
+훅 파일          camelCase       useStockData.ts
+유틸/함수 파일   camelCase       calculateRSI.ts
+타입 파일        camelCase       types.ts
+테스트 파일      원본명.test     rsi.test.ts
+디렉토리         소문자 kebab    indicators/, stock-chart/
 ```
 
 ---
 
 ## TypeScript 규칙
 
-### 타입 정의
-
 ```typescript
-// ✅ interface 우선 사용
-interface Bar {
-    time: number;
-    open: number;
-}
-
-// ✅ union type은 type alias
+// ✅ interface 우선, union은 type alias
+interface Bar { time: number; open: number; }
 type Timeframe = '1Min' | '5Min' | '15Min' | '1Hour' | '1Day';
 
-// ❌ any 사용 금지
-const data: any = response; // 금지
+// ❌ any 금지
+const data: any = response;
+
+// ✅ 도메인 함수 반환 타입 명시 필수
+function calculateRSI(closes: number[], period: number): (number | null)[] { ... }
+
+// ✅ 초기 구간은 null (0, NaN 금지 — 차트에서 null은 렌더링 생략, 0은 잘못된 값으로 표시)
+const result: (number | null)[] = new Array(period - 1).fill(null);
 ```
 
-### 함수 시그니처
+### ❌ 자주 하는 실수
 
-```typescript
-// ✅ 반환 타입 명시
-function calculateRSI(closes: number[], period: number): (number | null)[] {
-    // ...
-}
-
-// ❌ 반환 타입 생략 금지 (도메인 함수에서)
-function calculateRSI(closes: number[], period: number) {
-    // ...
-}
 ```
-
-### null 처리
-
-```typescript
-// ✅ 초기 구간은 null 반환
-// ❌ 0 또는 NaN으로 채우지 않는다
-// 이유: 차트에서 null은 렌더링 생략, 0은 잘못된 값으로 표시됨
-
-function calculateRSI(closes: number[], period = 14): (number | null)[] {
-    const result: (number | null)[] = new Array(period).fill(null);
-    // ...
-    return result;
-}
+- any 타입 사용 → 컴파일 에러 수준으로 금지
+- 도메인 함수 반환 타입 생략 → 반드시 명시
+- 인디케이터 초기 구간을 0 또는 NaN으로 채우기 → null로 채울 것
+- 함수 내부에서 type 선언 → 파일 최상단으로 이동
+  ❌ calculateRSI 내부의 type WilderState
+  ✅ 파일 최상단에 선언해 다른 함수에서도 재사용 가능하게
+- 인디케이터 기본값을 매직 넘버로 작성
+  ❌ period = 14   ✅ period = RSI_DEFAULT_PERIOD (domain/indicators/constants.ts)
 ```
 
 ---
 
 ## 컴포넌트 규칙
 
-### 'use client' 표기
-
 ```typescript
-// ✅ 파일 최상단에 명시
+// ✅ 'use client' — 파일 최상단, useState/useEffect 사용 시 필수
 'use client';
 
-import { useState } from 'react';
-
-// ❌ 누락 금지 (useState, useEffect 사용 시 반드시 필요)
-```
-
-### Props 타입 정의
-
-```typescript
 // ✅ Props 인터페이스를 컴포넌트 바로 위에 정의
-interface StockChartProps {
-    initialBars: Bar[];
-    symbol: string;
-}
-
-export function StockChart({ initialBars, symbol }: StockChartProps) {
-    // ...
-}
+interface StockChartProps { initialBars: Bar[]; symbol: string; }
+export function StockChart({ initialBars, symbol }: StockChartProps) { ... }
 
 // ❌ inline type 금지
-export function StockChart({ initialBars, symbol }: { initialBars: Bar[]; symbol: string }) {
-    // ...
-}
+export function StockChart({ initialBars, symbol }: { initialBars: Bar[]; symbol: string }) { ... }
+
+// ✅ named export (page/layout만 default export)
+export function StockChart() {}
+export default function Page() {}
 ```
 
-### default export vs named export
+### ❌ 자주 하는 실수
 
-```typescript
-// ✅ 컴포넌트는 named export
-export function StockChart() {}
-
-// ✅ Next.js page/layout은 default export (Next.js 규칙)
-export default function Page() {}
-
-// ❌ 컴포넌트에 default export 혼용 금지
+```
+- 'use client' 누락 → Next.js 16 App Router에서 빌드 에러
+- Props inline type → 별도 interface로 정의
+- 타임프레임을 URL 쿼리 파라미터로 관리 → 클라이언트 상태로만 관리
 ```
 
 ---
@@ -237,14 +147,18 @@ export default function Page() {}
 ## 도메인 함수 규칙
 
 ```typescript
-// ✅ 순수 함수로 작성 (사이드 이펙트 없음)
-// ✅ 동일 입력 → 동일 출력
-// ✅ 외부 상태 읽기/쓰기 없음
-
+// ✅ 순수 함수만 허용
 // ❌ fetch, console.log, Date.now() 등 사이드 이펙트 금지
-function calculateRSI(closes: number[], period = 14): (number | null)[] {
+function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (number | null)[] {
     // 순수 계산만
 }
+```
+
+### ❌ 자주 하는 실수
+
+```
+- 외부 라이브러리 import → technicalindicators, lodash 등 일체 금지
+- Route Handler에서 인디케이터 계산 직접 작성 → domain/indicators에서 import해서 사용
 ```
 
 ---
@@ -255,28 +169,7 @@ function calculateRSI(closes: number[], period = 14): (number | null)[] {
 
 ```
 src/__tests__/domain/indicators/rsi.test.ts
-src/__tests__/domain/indicators/macd.test.ts
 src/__tests__/infrastructure/market/alpaca.test.ts
-```
-
-### 테스트 구조
-
-```typescript
-// ✅ describe → context → it 구조
-describe('calculateRSI', () => {
-    describe('입력 데이터가 period보다 적을 때', () => {
-        it('null 배열을 반환한다', () => {
-            const result = calculateRSI([100, 101], 14);
-            expect(result).toEqual([null, null]);
-        });
-    });
-
-    describe('정상 입력일 때', () => {
-        it('0 ~ 100 사이 값을 반환한다', () => {
-            // ...
-        });
-    });
-});
 ```
 
 ### 커버리지 목표
@@ -288,14 +181,57 @@ components/     제외
 app/            제외
 ```
 
+### 테스트 구조
+
+```typescript
+// ✅ describe → describe(context) → it
+describe('calculateRSI', () => {
+    describe('입력 배열 길이가 period 미만일 때', () => {
+        it('전부 null인 배열을 반환한다', () => {
+            expect(calculateRSI([100, 101], 14)).toEqual([null, null]);
+        });
+    });
+    describe('정상 입력일 때', () => {
+        it('처음 period - 1개의 값은 null이다', () => { ... });
+        it('0 ~ 100 사이 값을 반환한다', () => { ... });
+    });
+});
+```
+
+### period 기반 인디케이터 필수 테스트 케이스
+
+| 케이스 | it 설명 |
+|--------|---------|
+| 빈 배열 | 빈 배열을 반환한다 |
+| period 미만 입력 | 전부 null인 배열을 반환한다 |
+| 초기 null 구간 | 처음 period - 1개의 값은 null이다 |
+| 정상값 구간 | period번째 이후 값은 null이 아닌 숫자다 |
+| 계산 정확성 | 첫 번째 값이 명세와 일치한다 |
+
 ### 외부 API 모킹
 
 ```typescript
-// infrastructure 테스트에서 fetch 모킹
 jest.mock('node-fetch');
-
-// Alpaca API 응답 픽스처는 __tests__/fixtures/ 에 보관
 import { mockAlpacaBarsResponse } from '@/__tests__/fixtures/alpaca';
+```
+
+### ❌ 자주 하는 실수
+
+```
+- 구현 완료 후 테스트 작성 → 새 파일 생성과 테스트 파일은 항상 같은 커밋에 포함
+  → domain/, infrastructure/ 파일 생성과 테스트 파일은 항상 같은 커밋에 포함
+  → 기존 파일에서 새 함수를 export할 때도 해당 함수를 직접 테스트하는 케이스를 추가해야 한다
+  → 리팩토링으로 추출된 함수라도 간접 검증(상위 래퍼 테스트)만으로는 부족하다
+- 반환 타입 변경 시 테스트 미갱신
+  → 타입이 바뀌면 테스트도 반드시 함께 수정
+  → nullable 변경(T[] → (T | null)[])은 초기 구간 null 케이스 테스트 필수
+- describe/it 설명을 코드 표현식으로 작성
+  ❌ describe('closes.length < period', ...)
+  ✅ describe('입력 배열 길이가 period 미만일 때', ...)
+  ❌ it('null 반환')
+  ✅ it('전부 null인 배열을 반환한다')
+- period 기반 인디케이터에서 초기 구간 null 테스트 케이스 누락
+  → 스텁 단계에서 추가해두면 실제 구현 후 회귀 방어 가능
 ```
 
 ---
@@ -305,209 +241,50 @@ import { mockAlpacaBarsResponse } from '@/__tests__/fixtures/alpaca';
 ```typescript
 // ✅ path alias 사용
 import { calculateRSI } from '@/domain/indicators/rsi';
-import { AlpacaProvider } from '@/infrastructure/market/alpaca';
 
-// ❌ 상대 경로 금지 (depth가 깊어질수록 가독성 저하)
+// ❌ 상대 경로 금지
 import { calculateRSI } from '../../../domain/indicators/rsi';
 ```
 
-**tsconfig.json paths 설정**
-
-```json
-{
-  "compilerOptions": {
-    "paths": {
-      "@/*": ["./src/*"]
-    }
-  }
-}
-```
-
 ---
 
-## 자주 하는 실수 (하지 말 것)
-
-```
-1. domain에서 외부 라이브러리 import
-   → technicalindicators, lodash 등 일체 금지
-
-2. components에서 infrastructure import
-   → AlpacaProvider, claudeClient 등 금지
-
-3. 인디케이터 초기 구간을 0 또는 NaN으로 채우기
-   → 반드시 null로 채울 것
-
-4. 'use client' 없이 useState/useEffect 사용
-   → Next.js 16 App Router에서 빌드 에러 발생
-
-5. Route Handler에서 인디케이터 계산 직접 작성
-   → 반드시 domain/indicators에서 import해서 사용
-
-6. 타임프레임을 URL 쿼리 파라미터로 관리
-   → 클라이언트 상태로만 관리 (URL 변경 없음)
-
-7. any 타입 사용
-   → 컴파일 에러 수준으로 금지
-
-8. 테스트 없이 구현 완료 선언
-   → 구현과 테스트는 항상 함께 작성
-
-9. Lightweight Charts를 components/chart/ 밖에서 import
-   → domain, infrastructure, app에서 사용 금지
-
-10. chart.remove() cleanup 누락
-    → useEffect return에서 반드시 호출
-
-11. 인디케이터 기본값(period 등)을 함수 시그니처에 매직 넘버로 작성
-    → `domain/indicators/constants.ts`에 상수로 추출해 사용
-    → 예: `period = 14` (❌) → `period = RSI_DEFAULT_PERIOD` (✅)
-    → 같은 값이 여러 인디케이터에서 참조될 경우 한 곳에서 관리하지 않으면 변경 시 누락 발생
-
-12. 새 파일 생성 시 테스트 파일 동시 생성 누락
-    → domain/, infrastructure/ 파일 생성과 테스트 파일은 항상 같은 커밋에 포함
-    → 기존 파일에서 새 함수를 export할 때도 해당 함수를 직접 테스트하는 케이스를 추가해야 한다
-    → 리팩토링으로 추출된 함수라도 간접 검증(상위 래퍼 테스트)만으로는 부족하다
-
-13. 반환 타입 변경 시 테스트 미갱신
-    → 함수 반환 타입이 바뀌면 반드시 대응하는 테스트도 함께 수정
-    → 특히 nullable 변경(T[] → (T | null)[])은 초기 구간 null 케이스 테스트 필수
-
-14. 테스트 describe 설명을 코드 표현식으로 작성
-    → 예: describe('closes.length < period', ...) 금지
-    → 자연어 문장으로 작성: describe('입력 배열 길이가 period 미만일 때', ...)
-    → it 설명도 마찬가지: it('null 반환') 금지 → it('전부 null인 배열을 반환한다')
-
-15. period 기반 인디케이터에서 초기 구간 null 테스트 케이스 누락
-    → RSI, MACD, Bollinger, DMI 등 period가 있는 인디케이터는
-      반드시 '처음 period개의 값은 null이다' 케이스를 별도 it으로 작성
-    → 스텁 단계에서 추가해두면 실제 구현 후 회귀 방어 가능
-
-16. 함수 내부에서 type 선언
-    → type은 파일 최상단(함수 외부)에 선언한다
-    → 함수 내부 type 선언은 가독성을 낮추고, 동일 타입을 다른 함수에서 재사용할 수 없게 만든다
-    → 예: calculateRSI 내부의 type WilderState (❌) → 파일 최상단으로 이동 (✅)
-
-17. reduce 콜백 내부에서 외부 배열에 push (함수형 패러다임 위반)
-    → reduce 콜백 안에서 외부 변수를 변경하는 것은 사이드 이펙트이며 불변성 원칙 위반이다
-    → accumulator에 spread로 새 값을 추가해 순수하게 처리한다
-    → 예: result.push(ema) (❌) → return [...acc, ema] (✅)
-
-18. 이미 존재하는 함수와 동일한 알고리즘을 별도 함수로 중복 구현
-    → 도메인 함수는 number[] 기반 헬퍼와 Bar[] 기반 래퍼를 분리해 재사용 가능하게 설계한다
-    → 예: EMA가 필요한 곳마다 별도로 EMA 로직 구현 (❌)
-         → computeEMAValues(number[])를 ema.ts에서 export해 공유 (✅)
-    → 새 인디케이터 구현 전 기존 domain/indicators에 재사용 가능한 헬퍼가 있는지 먼저 확인한다
-```
-
----
-
-## Lightweight Charts 사용 규칙
+## Lightweight Charts 규칙
 
 공식 문서: https://tradingview.github.io/lightweight-charts/docs
-
-### 사용 위치
 
 ```
 ✅ components/chart/ 에서만 사용
 ❌ app/, domain/, infrastructure/ 에서 import 금지
 ```
 
-### 차트 초기화 및 정리
-
 ```typescript
-'use client';
+// ✅ 차트 초기화 + cleanup 필수
+useEffect(() => {
+    const chart = createChart(containerRef.current, { ... });
+    const series = chart.addSeries(CandlestickSeries);
+    series.setData(data);
+    return () => { chart.remove(); }; // ✅ 반드시 호출
+}, []);
 
-import { useEffect, useRef } from 'react';
-import { createChart, CandlestickSeries } from 'lightweight-charts';
+// ✅ 거래량, RSI 등 별도 pane
+chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' } }, 1); // pane index 1
+chart.addSeries(LineSeries, {}, 2); // pane index 2
 
-export function StockChart() {
-    const containerRef = useRef<HTMLDivElement>(null);
+// ✅ null 값은 WhitespaceData로 변환 (domain의 null을 그대로 전달 금지)
+// ❌ { time: '2024-01-01', value: null }
+// ✅ { time: '2024-01-01' }  ← WhitespaceData
 
-    useEffect(() => {
-        if (!containerRef.current) return;
-
-        const chart = createChart(containerRef.current, {
-            // 옵션
-        });
-
-        const series = chart.addSeries(CandlestickSeries);
-        series.setData(data);
-
-        // ✅ 반드시 cleanup에서 chart.remove() 호출
-        return () => {
-            chart.remove();
-        };
-    }, []);
-
-    return <div ref={containerRef} />;
-}
+// ✅ 과거 데이터 추가 로딩 (prepend API 없음)
+candleSeries.setData([...newOlderBars, ...existingBars]);
 ```
 
-### 시리즈 타입별 사용 규칙
-
-```typescript
-// ✅ 캔들 차트
-const candleSeries = chart.addSeries(CandlestickSeries);
-
-// ✅ 거래량 (별도 pane)
-const volumeSeries = chart.addSeries(HistogramSeries, {
-    priceFormat: { type: 'volume' },
-}, 1); // pane index 1
-
-// ✅ 인디케이터 라인 (메인 pane 오버레이)
-const emaSeries = chart.addSeries(LineSeries, {
-    color: '#f59e0b',
-    lineWidth: 1,
-});
-
-// ✅ RSI, MACD 등 별도 pane
-const rsiSeries = chart.addSeries(LineSeries, {}, 2); // pane index 2
-```
-
-### 데이터 포맷
-
-```typescript
-// ✅ 캔들 데이터 — time은 'YYYY-MM-DD' 또는 Unix timestamp(초)
-candleSeries.setData([
-    { time: '2024-01-15', open: 185.2, high: 186.1, low: 184.9, close: 185.7 },
-]);
-
-// ✅ 라인 데이터
-emaSeries.setData([
-    { time: '2024-01-15', value: 183.5 },
-]);
-
-// ✅ null 값은 WhitespaceData로 처리 (초기 구간)
-emaSeries.setData([
-    { time: '2024-01-01' },        // WhitespaceData (렌더링 생략)
-    { time: '2024-01-02', value: 183.5 },
-]);
-```
-
-### 스크롤 과거 데이터 추가 로딩
-
-```typescript
-// ✅ 과거 데이터는 setData가 아닌 신규 setData(전체)로 교체
-// 이유: Lightweight Charts는 prepend API가 없음
-// 기존 데이터 + 새 데이터를 합쳐서 setData 재호출
-const allBars = [...newOlderBars, ...existingBars];
-candleSeries.setData(allBars);
-```
-
-### 자주 하는 실수
+### ❌ 자주 하는 실수
 
 ```
-1. useEffect cleanup에서 chart.remove() 누락
-   → 컴포넌트 재마운트 시 canvas 중복 생성
-
-2. setData를 실시간 업데이트에 사용
-   → 성능 저하. 실시간은 series.update() 사용
-
-3. domain/indicators의 null을 그대로 setData에 전달
-   → WhitespaceData 형식({ time })으로 변환 필요
-
-4. pane index 없이 모든 시리즈를 메인 pane에 추가
-   → 거래량, RSI 등은 반드시 별도 pane(index 1, 2...)에 추가
+- chart.remove() cleanup 누락 → 컴포넌트 재마운트 시 canvas 중복 생성
+- setData를 실시간 업데이트에 사용 → series.update() 사용
+- domain의 null을 그대로 setData에 전달 → WhitespaceData({ time })으로 변환
+- 거래량/RSI를 메인 pane에 추가 → 반드시 별도 pane(index 1, 2...)에 추가
 ```
 
 ---
@@ -515,18 +292,31 @@ candleSeries.setData(allBars);
 ## Tailwind CSS 규칙
 
 ```typescript
-// ✅ className에 Tailwind 클래스 직접 사용
+// ✅ Tailwind 클래스 사용
 <div className="flex items-center gap-4 p-4 bg-gray-900">
 
 // ❌ 인라인 style 금지 (Tailwind로 표현 가능한 경우)
 <div style={{ display: 'flex', padding: '16px' }}>
 
-// ✅ 조건부 클래스는 clsx 또는 cn 유틸 사용
+// ✅ 조건부 클래스는 cn 유틸 사용
 <div className={cn('base-class', isActive && 'active-class')}>
 ```
 
 ---
 
-## 커밋 메시지
+## 레이어 의존성 규칙
 
-docs/GIT_CONVENTION.md 참고.
+```
+domain/         외부 라이브러리 import 금지 — 순수 TypeScript 함수만
+infrastructure/ domain만 import 가능
+components/     domain만 import 가능 — infrastructure 직접 import 금지
+app/            infrastructure, domain 모두 import 가능
+```
+
+### ❌ 자주 하는 실수
+
+```
+- domain에서 외부 라이브러리 import → technicalindicators, lodash 등 일체 금지
+- components에서 infrastructure import → AlpacaProvider, claudeClient 등 금지
+- Lightweight Charts를 components/chart/ 밖에서 import
+```

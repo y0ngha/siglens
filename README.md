@@ -122,6 +122,7 @@ yarn test rsi.test.ts
 | [CONVENTIONS.md](./docs/CONVENTIONS.md)         | 코딩 컨벤션, 네이밍, 자주 하는 실수                                          |
 | [FF.md](./docs/FF.md)                           | 개발 원칙 (Frontend Fundementals)                                  |
 | [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 깃 브랜치, 커밋 메시지, PR 규칙                                       |
+| [FLOW.md](./docs/FLOW.md) | 이슈→PR, PR 리뷰 수정, 공통 처리 절차 |
 | [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수                                       |
 ---
 
