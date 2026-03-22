@@ -45,7 +45,7 @@ jobs:
                       5. 문제 없으면 gh pr comment --body "리뷰할 내용이 없습니다. 👍" 달기
 
                       ## 프로젝트 원칙 문서 (반드시 숙지)
-                      
+
                       1. AGENTS.md를 읽어 프로젝트 규칙 숙지
                       2. /docs/CONVENTIONS.md 를 읽어 프로젝트 컨벤션 숙지
                       3. /docs/FF.md 를 읽어 프론트엔드 원칙 숙지
