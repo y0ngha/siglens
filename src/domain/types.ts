@@ -38,21 +38,6 @@ export interface IndicatorResult {
     ema: Record<number, (number | null)[]>;
 }
 
-export type PatternType =
-    | 'head_and_shoulders'
-    | 'inverse_head_and_shoulders'
-    | 'ascending_wedge'
-    | 'descending_wedge'
-    | 'double_top'
-    | 'double_bottom';
-
-export type PatternResult = {
-    type: PatternType;
-    confidence: number; // 0 ~ 1
-    startIndex: number;
-    endIndex: number;
-};
-
 export type Signal = {
     type: string; // 예: "RSI 과매수", "MACD 골든크로스"
     description: string;

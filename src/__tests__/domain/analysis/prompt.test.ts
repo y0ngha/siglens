@@ -18,13 +18,13 @@ const indicators: IndicatorResult = {
 
 describe('buildAnalysisPrompt', () => {
     it('문자열을 반환한다', () => {
-        const result = buildAnalysisPrompt('AAPL', [], indicators, []);
+        const result = buildAnalysisPrompt('AAPL', [], indicators);
         expect(typeof result).toBe('string');
     });
 
-    it('bars와 patterns가 있어도 문자열 반환', () => {
+    it('bars가 있어도 문자열 반환', () => {
         const bars = Array.from({ length: 3 }, (_, i) => makeBar(i));
-        const result = buildAnalysisPrompt('TSLA', bars, indicators, []);
+        const result = buildAnalysisPrompt('TSLA', bars, indicators);
         expect(typeof result).toBe('string');
     });
 });
