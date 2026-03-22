@@ -36,6 +36,16 @@ export type IndicatorResult = {
     vwap: (number | null)[];
 };
 
+export type AllIndicators = {
+    rsi: (number | null)[];
+    macd: MACDResult[];
+    bollinger: BollingerResult[];
+    dmi: DMIResult[];
+    vwap: (number | null)[];
+    ma: Record<number, (number | null)[]>;
+    ema: Record<number, (number | null)[]>;
+};
+
 export type PatternType =
     | 'head_and_shoulders'
     | 'inverse_head_and_shoulders'
