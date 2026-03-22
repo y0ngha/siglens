@@ -21,14 +21,19 @@ import {
 import type { Bar } from '@/domain/types';
 
 const TEST_BAR_COUNT = 100;
+const DEFAULT_OPEN = 100;
+const DEFAULT_HIGH = 105;
+const DEFAULT_LOW = 95;
+const DEFAULT_CLOSE = 100;
+const DEFAULT_VOLUME = 1000;
 
 function makeBar(overrides: Partial<Bar> & { time: number }): Bar {
     return {
-        open: 100,
-        high: 105,
-        low: 95,
-        close: 100,
-        volume: 1000,
+        open: DEFAULT_OPEN,
+        high: DEFAULT_HIGH,
+        low: DEFAULT_LOW,
+        close: DEFAULT_CLOSE,
+        volume: DEFAULT_VOLUME,
         ...overrides,
     };
 }
@@ -37,9 +42,9 @@ function makeBars(count: number): Bar[] {
     return Array.from({ length: count }, (_, i) =>
         makeBar({
             time: i * SECONDS_PER_DAY,
-            close: 100 + i,
-            high: 105 + i,
-            low: 95 + i,
+            close: DEFAULT_CLOSE + i,
+            high: DEFAULT_HIGH + i,
+            low: DEFAULT_LOW + i,
         })
     );
 }
