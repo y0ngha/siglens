@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
 
     const indicators = {
         macd: calculateMACD(bars),
-        bollinger: calculateBollinger(closes),
+        bollinger: calculateBollinger(bars),
         dmi: calculateDMI(highs, lows, closes),
     };
 

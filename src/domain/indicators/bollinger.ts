@@ -1,13 +1,33 @@
-import type { BollingerResult } from '@/domain/types';
+import type { Bar, BollingerResult } from '@/domain/types';
+import {
+    BOLLINGER_DEFAULT_PERIOD,
+    BOLLINGER_DEFAULT_STD_DEV,
+} from '@/domain/indicators/constants';
 
 export function calculateBollinger(
-    closes: number[],
-    period = 20,
-    stdDev = 2
+    bars: Bar[],
+    period = BOLLINGER_DEFAULT_PERIOD,
+    stdDev = BOLLINGER_DEFAULT_STD_DEV
 ): BollingerResult[] {
-    // TODO: implement
-    void closes;
-    void period;
-    void stdDev;
-    return [];
+    if (bars.length === 0) return [];
+    if (bars.length < period)
+        return bars.map(() => ({ upper: null, middle: null, lower: null }));
+
+    const closes = bars.map(bar => bar.close);
+
+    return closes.map((_, i) => {
+        if (i < period - 1) return { upper: null, middle: null, lower: null };
+
+        const window = closes.slice(i - period + 1, i + 1);
+        const middle = window.reduce((sum, v) => sum + v, 0) / period;
+        const variance =
+            window.reduce((sum, v) => sum + (v - middle) ** 2, 0) / period;
+        const std = Math.sqrt(variance);
+
+        return {
+            upper: middle + stdDev * std,
+            middle,
+            lower: middle - stdDev * std,
+        };
+    });
 }
