@@ -49,7 +49,7 @@ jobs:
                       -f body="LGTM 👍" \
                       -f event="APPROVE"
                       ```
-
+                      
                       ## 프로젝트 원칙 문서 (반드시 숙지)
 
                       1. AGENTS.md를 읽어 프로젝트 규칙 숙지
