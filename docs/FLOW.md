@@ -175,19 +175,15 @@ gh pr view {번호} --repo {repo}
 
 ### 작업 상태 코멘트
 
-시작/완료/실패 시 반드시 코멘트를 남긴다.
+실패 시 반드시 코멘트를 남긴다.
 
 **이슈 컨텍스트**
 ```bash
-gh issue comment {번호} --repo {repo} --body "🔨 작업을 시작합니다."
-gh issue comment {번호} --repo {repo} --body "✅ 작업이 완료됐습니다. PR을 확인해주세요: {PR URL}"
 gh issue comment {번호} --repo {repo} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
 ```
 
 **PR 컨텍스트**
 ```bash
-gh pr comment {번호} --repo {repo} --body "🔨 작업을 시작합니다."
-gh pr comment {번호} --repo {repo} --body "✅ 작업이 완료됐습니다."
 gh pr comment {번호} --repo {repo} --body "❌ 작업이 실패했습니다. 사유: {실패 원인}"
 ```
 
