@@ -96,6 +96,14 @@ describe('FileSkillsLoader', () => {
             });
         });
 
+        describe('readdir 에러', () => {
+            it('readdir가 실패하면 에러를 전파한다', async () => {
+                mockReaddir.mockRejectedValue(new Error('ENOENT: no such file or directory'));
+
+                await expect(loader.loadSkills()).rejects.toThrow('ENOENT');
+            });
+        });
+
         describe('frontmatter 파싱 실패', () => {
             it('frontmatter가 없는 파일은 결과에서 제외된다', async () => {
                 mockReaddir.mockResolvedValue(['bad.md', 'good.md']);

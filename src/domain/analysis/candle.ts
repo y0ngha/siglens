@@ -456,7 +456,7 @@ function detect3CandlePattern(
         aBear &&
         bBear &&
         cBull &&
-        isLongBody(b) &&
+        bLong &&
         b.open < a.open &&
         b.open > a.close &&
         c.open > b.open &&

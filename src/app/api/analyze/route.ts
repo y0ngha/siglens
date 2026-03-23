@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
     }
 
     const skillsLoader = new FileSkillsLoader();
-    const skills = await skillsLoader.loadSkills();
+    const skills = await skillsLoader.loadSkills().catch(() => []);
     const prompt = buildAnalysisPrompt(symbol, bars, indicators, skills);
 
     const ai = new ClaudeProvider();
