@@ -73,6 +73,7 @@ const SPINNING_TOP_BODY_RATIO = 0.4;
 const LONG_DAY_BODY_RATIO = 0.6;
 const BELT_HOLD_TAIL_RATIO = 0.1;
 const NEAR_PRICE_TOLERANCE = 0.002;
+const MIN_PRICE_DENOMINATOR = 1;
 const MIDPOINT_PENETRATION = 0.5;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -99,7 +100,8 @@ const midpoint = (bar: Bar): number => (bar.open + bar.close) / 2;
 const hasGapUp = (prev: Bar, curr: Bar): boolean => curr.low > prev.high;
 const hasGapDown = (prev: Bar, curr: Bar): boolean => curr.high < prev.low;
 const isNearPrice = (a: number, b: number): boolean =>
-    Math.abs(a - b) / Math.max(Math.abs(a), Math.abs(b), 1) <=
+    Math.abs(a - b) /
+        Math.max(Math.abs(a), Math.abs(b), MIN_PRICE_DENOMINATOR) <=
     NEAR_PRICE_TOLERANCE;
 
 // ─── Single Candle Pattern ────────────────────────────────────────────────────

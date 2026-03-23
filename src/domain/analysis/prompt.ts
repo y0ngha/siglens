@@ -10,6 +10,7 @@ const HIGH_CONFIDENCE_WEIGHT = 0.8;
 const INDICATOR_DECIMAL_PLACES = 2;
 const RECENT_BARS_COUNT = 30;
 const DATETIME_DISPLAY_LENGTH = 16;
+const PERCENTAGE_FACTOR = 100;
 
 const fmt = (n: number | null): string =>
     n === null ? 'N/A' : n.toFixed(INDICATOR_DECIMAL_PLACES);
@@ -88,7 +89,8 @@ const formatVolumeSection = (bars: Bar[]): string => {
     const avgVolume =
         recentBars.reduce((acc, b) => acc + b.volume, 0) / recentBars.length;
     const lastBar = recentBars[recentBars.length - 1];
-    const volumeRatio = avgVolume > 0 ? (lastBar.volume / avgVolume) * 100 : 0;
+    const volumeRatio =
+        avgVolume > 0 ? (lastBar.volume / avgVolume) * PERCENTAGE_FACTOR : 0;
 
     return [
         '## 거래량 분석',
