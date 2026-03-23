@@ -29,6 +29,7 @@ docs/CONVENTIONS.md  코딩 패러다임, 테스트 규칙, import 경로 규칙
 docs/ARCHITECTURE.md 레이어 구조
 docs/API.md          Alpaca API 엔드포인트, 요청/응답 스키마
 docs/MISTAKES.md     코드 작업시 자주하는 실수 목록
+docs/SIGLENS_API.md  우리 프로젝트(SIGLENS)의 API 엔드포인트, 요청/응답 스키마
 ```
 
 기존 유사 구현도 함께 읽는다 (패턴 파악용).
