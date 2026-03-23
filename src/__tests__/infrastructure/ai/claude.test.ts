@@ -1,24 +1,65 @@
+import Anthropic from '@anthropic-ai/sdk';
 import { ClaudeProvider } from '@/infrastructure/ai/claude';
+import type { AnalysisResponse } from '@/domain/types';
+
+jest.mock('@anthropic-ai/sdk');
 
 describe('ClaudeProvider', () => {
-    let provider: ClaudeProvider;
+    let mockCreate: jest.Mock;
+
+    const mockAnalysisResponse: AnalysisResponse = {
+        summary: 'Test summary',
+        trend: 'bullish',
+        signals: [],
+        skillSignals: [],
+        riskLevel: 'low',
+        keyLevels: { support: [100], resistance: [110] },
+    };
 
     beforeEach(() => {
-        provider = new ClaudeProvider();
+        mockCreate = jest.fn();
+        (Anthropic as jest.MockedClass<typeof Anthropic>).mockImplementation(
+            () =>
+                ({
+                    messages: { create: mockCreate },
+                }) as unknown as Anthropic
+        );
+    });
+
+    describe('ANTHROPIC_API_KEY가 설정되지 않은 경우', () => {
+        it('생성자에서 에러를 던진다', () => {
+            const original = process.env.ANTHROPIC_API_KEY;
+            delete process.env.ANTHROPIC_API_KEY;
+
+            try {
+                expect(() => new ClaudeProvider()).toThrow(
+                    'ANTHROPIC_API_KEY must be set'
+                );
+            } finally {
+                process.env.ANTHROPIC_API_KEY = original;
+            }
+        });
     });
 
     describe('정상 입력으로 analyze를 호출하면', () => {
+        let provider: ClaudeProvider;
+
+        beforeEach(() => {
+            mockCreate.mockResolvedValue({
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(mockAnalysisResponse),
+                    },
+                ],
+            });
+            provider = new ClaudeProvider();
+        });
+
         it('AnalysisResponse 형태의 값을 반환한다', async () => {
             const result = await provider.analyze('test prompt');
 
-            expect(result).toHaveProperty('summary');
-            expect(result).toHaveProperty('trend');
-            expect(result).toHaveProperty('signals');
-            expect(result).toHaveProperty('skillSignals');
-            expect(result).toHaveProperty('riskLevel');
-            expect(result).toHaveProperty('keyLevels');
-            expect(result.keyLevels).toHaveProperty('support');
-            expect(result.keyLevels).toHaveProperty('resistance');
+            expect(result).toEqual(mockAnalysisResponse);
         });
 
         it('trend는 bullish | bearish | neutral 중 하나다', async () => {
@@ -50,6 +91,32 @@ describe('ClaudeProvider', () => {
 
             expect(Array.isArray(result.keyLevels.support)).toBe(true);
             expect(Array.isArray(result.keyLevels.resistance)).toBe(true);
+        });
+    });
+
+    describe('API 응답의 content type이 text가 아니면', () => {
+        it('에러를 던진다', async () => {
+            const provider = new ClaudeProvider();
+            mockCreate.mockResolvedValue({
+                content: [
+                    { type: 'tool_use', id: 'tool-1', name: 'foo', input: {} },
+                ],
+            });
+
+            await expect(provider.analyze('test prompt')).rejects.toThrow(
+                'Unexpected response type from Claude API'
+            );
+        });
+    });
+
+    describe('API 호출이 실패하면', () => {
+        it('에러를 던진다', async () => {
+            const provider = new ClaudeProvider();
+            mockCreate.mockRejectedValue(new Error('Network error'));
+
+            await expect(provider.analyze('test prompt')).rejects.toThrow(
+                'Network error'
+            );
         });
     });
 });
