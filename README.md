@@ -158,16 +158,18 @@ yarn test rsi.test.ts
 
 ## Docs
 
-| 문서                                              | 내용                                                             |
-|-------------------------------------------------|----------------------------------------------------------------|
-| [ARCHITECTURE.md](./docs/ARCHITECTURE.md)       | 레이어 구조, 의존성 규칙, 데이터 흐름                                         |
-| [DOMAIN.md](./docs/DOMAIN.md)                   | 인디케이터 계산 명세, 타입 정의                                             |
-| [API.md](./docs/API.md)                         | Alpaca API, 내부 Route 명세                                        |
-| [CONVENTIONS.md](./docs/CONVENTIONS.md)         | 코딩 컨벤션, 네이밍, 자주 하는 실수                                          |
-| [FF.md](./docs/FF.md)                           | 개발 원칙 (Frontend Fundementals)                                  |
-| [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 깃 브랜치, 커밋 메시지, PR 규칙                                       |
-| [FLOW.md](./docs/FLOW.md) | 이슈→PR, PR 리뷰 수정, 공통 처리 절차 |
-| [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수                                       |
+| 문서                                              | 내용                           |
+|-------------------------------------------------|------------------------------|
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md)       | 레이어 구조, 의존성 규칙, 데이터 흐름       |
+| [DOMAIN.md](./docs/DOMAIN.md)                   | 인디케이터 계산 명세, 타입 정의           |
+| [API.md](./docs/API.md)                         | Alpaca API, Claude API 명세    |
+| [CONVENTIONS.md](./docs/CONVENTIONS.md)         | 코딩 컨벤션, 네이밍, 자주 하는 실수        |
+| [FF.md](./docs/FF.md)                           | 개발 원칙 (Frontend Fundementals) |
+| [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 깃 브랜치, 커밋 메시지, PR 규칙         |
+| [FLOW.md](./docs/FLOW.md)                       | 이슈→PR, PR 리뷰 수정, 공통 처리 절차    |
+| [DESIGN.md](./docs/DESIGN.md)                   | 컬러 시스템, Tailwind 설정, 차트 컬러 상수 |
+| [SIGLENS_API.md](./docs/SIGLENS_API.md)         | SIGLENS API 명세               |
+
 ---
 
 ## Data Source

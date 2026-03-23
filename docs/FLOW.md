@@ -29,6 +29,7 @@ docs/CONVENTIONS.md  코딩 패러다임, 테스트 규칙, import 경로 규칙
 docs/ARCHITECTURE.md 레이어 구조
 docs/API.md          Alpaca API 엔드포인트, 요청/응답 스키마
 docs/MISTAKES.md     코드 작업시 자주하는 실수 목록
+docs/SIGLENS_API.md  우리 프로젝트(SIGLENS)의 API 엔드포인트, 요청/응답 스키마
 ```
 
 기존 유사 구현도 함께 읽는다 (패턴 파악용).
@@ -197,6 +198,21 @@ gh pr view {번호} --repo {repo}
 # 성공 → PR 컨텍스트 (리뷰 수정 절차 따름)
 # 실패 → 이슈 컨텍스트 (이슈→PR 절차 따름)
 ```
+
+### 문서 업데이트
+
+구현 내용이 아래 중 하나에 해당하면 관련 문서를 함께 수정한다.
+
+| 변경 내용 | 수정할 문서 |
+|-----------|------------|
+| 새 타입/인터페이스 추가 또는 변경 | `docs/DOMAIN.md` |
+| 내부 API 엔드포인트 추가 또는 변경 | `docs/SIGLENS_API.md` |
+| 외부 API(Alpaca, Claude) 사용 방식 변경 | `docs/API.md` |
+| 레이어 구조 또는 데이터 흐름 변경 | `docs/ARCHITECTURE.md` |
+| 코딩 패러다임 또는 컨벤션 변경 | `docs/CONVENTIONS.md` |
+| 자주 하는 실수 패턴 발견 | `docs/MISTAKES.md` |
+
+문서 수정은 구현 커밋과 같은 커밋에 포함하거나 별도 `docs:` 커밋으로 분리한다.
 
 ### 작업 상태 코멘트
 

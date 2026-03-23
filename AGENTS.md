@@ -63,17 +63,18 @@ Siglens는 이 복잡한 과정을 AI가 대신 처리해준다.
 
 ## 작업 시작 전 반드시 읽을 것
 
-| 문서                        | 내용                                                              |
-|---------------------------|-----------------------------------------------------------------|
-| `docs/ARCHITECTURE.md`    | 레이어 구조, 의존성 방향 규칙, 폴더 구조                                        |
-| `docs/DOMAIN.md`          | 인디케이터 계산 명세, 비즈니스 규칙                                            |
-| `docs/API.md`             | Alpaca API 엔드포인트, 요청/응답 스키마                                     |
-| `docs/CONVENTIONS.md`     | 코딩 컨벤션, 네이밍                                                     |
+| 문서                        | 내용                                                             |
+|---------------------------|----------------------------------------------------------------|
+| `docs/ARCHITECTURE.md`    | 레이어 구조, 의존성 방향 규칙, 폴더 구조                                       |
+| `docs/DOMAIN.md`          | 인디케이터 계산 명세, 비즈니스 규칙                                           |
+| `docs/API.md`             | Alpaca, Claude API 엔드포인트, 요청/응답 스키마                            |
+| `docs/CONVENTIONS.md`     | 코딩 컨벤션, 네이밍                                                    |
 | `docs/FF.md`              | FF 4원칙 상세 가이드 (Readability, Predictability, Cohesion, Coupling) |
-| `docs/DESIGN.md`          | 컬러 시스템, Tailwind 설정, 차트 컬러 상수                                   |
-| `docs/GIT_CONVENTIONS.md` | 브랜치 네이밍, 커밋 메시지, PR 규칙                                          |
-| `docs/FLOW.md`            | 이슈→PR, PR 리뷰 수정, 공통 처리 절차                                       |
-| `docs/MISTAKES.md`        | 자주 하는 실수                                                        |
+| `docs/DESIGN.md`          | 컬러 시스템, Tailwind 설정, 차트 컬러 상수                                  |
+| `docs/GIT_CONVENTIONS.md` | 브랜치 네이밍, 커밋 메시지, PR 규칙                                         |
+| `docs/FLOW.md`            | 이슈→PR, PR 리뷰 수정, 공통 처리 절차                                      |
+| `docs/MISTAKES.md`        | 자주 하는 실수                                                       |
+| `docs/SIGLENS_API.md`        | SIGLENS 엔드포인트, 요청/응답 스키마                                       |
 
 **태스크를 받으면 반드시 위 문서를 먼저 읽고 시작한다.**
 문서에 명시된 규칙은 어떤 경우에도 위반하지 않는다.
