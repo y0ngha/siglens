@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
-import type { UTCTimestamp } from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar } from '@/domain/types';
 
@@ -12,11 +12,14 @@ interface StockChartProps {
 
 export function StockChart({ initialBars }: StockChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const chartRef = useRef<IChartApi | null>(null);
+    const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
 
         const chart = createChart(containerRef.current, {
+            autoSize: true,
             layout: {
                 background: { color: CHART_COLORS.background },
                 textColor: CHART_COLORS.text,
@@ -27,7 +30,8 @@ export function StockChart({ initialBars }: StockChartProps) {
             },
         });
 
-        const series = chart.addSeries(CandlestickSeries, {
+        chartRef.current = chart;
+        seriesRef.current = chart.addSeries(CandlestickSeries, {
             upColor: CHART_COLORS.bullish,
             downColor: CHART_COLORS.bearish,
             borderUpColor: CHART_COLORS.bullish,
@@ -36,7 +40,17 @@ export function StockChart({ initialBars }: StockChartProps) {
             wickDownColor: CHART_COLORS.bearish,
         });
 
-        series.setData(
+        return () => {
+            chart.remove();
+            chartRef.current = null;
+            seriesRef.current = null;
+        };
+    }, []);
+
+    useEffect(() => {
+        if (!seriesRef.current || !chartRef.current) return;
+
+        seriesRef.current.setData(
             initialBars.map(({ time, open, high, low, close }) => ({
                 time: time as UTCTimestamp,
                 open,
@@ -46,11 +60,7 @@ export function StockChart({ initialBars }: StockChartProps) {
             }))
         );
 
-        chart.timeScale().fitContent();
-
-        return () => {
-            chart.remove();
-        };
+        chartRef.current.timeScale().fitContent();
     }, [initialBars]);
 
     return <div ref={containerRef} className="h-full w-full" />;
