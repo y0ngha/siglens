@@ -108,6 +108,18 @@ interface AnalysisResponse {
         resistance: number[];
     };
 }
+
+interface Signal {
+    type: SignalType;
+    description: string;
+    strength: 'strong' | 'moderate' | 'weak';
+}
+
+// skill 기반 분석 결과. skill 이름과 해당 skill이 감지한 Signal 목록을 묶는다.
+interface SkillSignal {
+    skillName: string;
+    signals: Signal[];
+}
 ```
 
 ```json

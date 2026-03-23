@@ -241,6 +241,7 @@ interface AnalysisResponse {
     summary: string;          // 종합 분석 요약
     trend: 'bullish' | 'bearish' | 'neutral';
     signals: Signal[];
+    skillSignals: SkillSignal[];
     riskLevel: 'low' | 'medium' | 'high';
     keyLevels: {
         support: number[];
@@ -249,9 +250,15 @@ interface AnalysisResponse {
 }
 
 interface Signal {
-    type: string;             // 예: "RSI 과매수", "MACD 골든크로스"
+    type: SignalType;
     description: string;
     strength: 'strong' | 'moderate' | 'weak';
+}
+
+// skill 기반 분석 결과. skill 이름과 해당 skill이 감지한 Signal 목록을 묶는다.
+interface SkillSignal {
+    skillName: string;
+    signals: Signal[];
 }
 ```
 
