@@ -540,6 +540,111 @@ describe('buildAnalysisPrompt', () => {
         });
     });
 
+    describe('최근 봉 데이터 섹션', () => {
+        describe('bars가 비어있을 때', () => {
+            it('데이터 없음을 표시한다', () => {
+                const result = buildAnalysisPrompt(
+                    TEST_SYMBOL,
+                    [],
+                    makeIndicators(),
+                    []
+                );
+                expect(result).toContain('최근 봉 데이터');
+                expect(result).toContain('데이터 없음');
+            });
+        });
+
+        describe('bars가 있을 때', () => {
+            it('OHLCV 형식 레이블이 포함된다', () => {
+                const bars = [makeBar(0, TEST_CLOSE_PRICE)];
+                const result = buildAnalysisPrompt(
+                    TEST_SYMBOL,
+                    bars,
+                    makeIndicators(),
+                    []
+                );
+                expect(result).toContain('O:');
+                expect(result).toContain('H:');
+                expect(result).toContain('L:');
+                expect(result).toContain('C:');
+                expect(result).toContain('V:');
+            });
+
+            it('캔들패턴이 대괄호 형식으로 포함된다', () => {
+                const bars = [makeBar(0)];
+                const result = buildAnalysisPrompt(
+                    TEST_SYMBOL,
+                    bars,
+                    makeIndicators(),
+                    []
+                );
+                expect(result).toMatch(/\[.+\]/);
+            });
+
+            it('30개를 초과하는 봉이 있을 때 최근 30봉만 포함한다', () => {
+                const bars = Array.from({ length: 31 }, (_, i) => makeBar(i));
+                const result = buildAnalysisPrompt(
+                    TEST_SYMBOL,
+                    bars,
+                    makeIndicators(),
+                    []
+                );
+                expect(result).toContain('최근 30봉');
+            });
+
+            it('봉이 30개 이하일 때 실제 봉 수를 표시한다', () => {
+                const bars = Array.from({ length: 5 }, (_, i) => makeBar(i));
+                const result = buildAnalysisPrompt(
+                    TEST_SYMBOL,
+                    bars,
+                    makeIndicators(),
+                    []
+                );
+                expect(result).toContain('최근 5봉');
+            });
+        });
+    });
+
+    describe('거래량 분석 섹션', () => {
+        describe('bars가 비어있을 때', () => {
+            it('데이터 없음을 표시한다', () => {
+                const result = buildAnalysisPrompt(
+                    TEST_SYMBOL,
+                    [],
+                    makeIndicators(),
+                    []
+                );
+                expect(result).toContain('거래량 분석');
+                expect(result).toContain('데이터 없음');
+            });
+        });
+
+        describe('bars가 있을 때', () => {
+            it('봉 평균과 현재 거래량이 포함된다', () => {
+                const bars = [makeBar(0)];
+                const result = buildAnalysisPrompt(
+                    TEST_SYMBOL,
+                    bars,
+                    makeIndicators(),
+                    []
+                );
+                expect(result).toContain('봉 평균');
+                expect(result).toContain('현재 거래량');
+            });
+
+            it('평균 대비 비율이 포함된다', () => {
+                const bars = [makeBar(0)];
+                const result = buildAnalysisPrompt(
+                    TEST_SYMBOL,
+                    bars,
+                    makeIndicators(),
+                    []
+                );
+                expect(result).toContain('평균 대비');
+            });
+        });
+    });
+
     describe('분석 요청 섹션', () => {
         it('JSON 형식 응답을 요청한다', () => {
             const result = buildAnalysisPrompt(
@@ -569,6 +674,16 @@ describe('buildAnalysisPrompt', () => {
                 []
             );
             expect(result).toContain('signals');
+        });
+
+        it('skillSignals 필드가 요청에 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('skillSignals');
         });
 
         it('keyLevels 필드가 요청에 포함된다', () => {
