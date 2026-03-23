@@ -5,7 +5,8 @@ import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import type { Bar, IndicatorResult } from '@/domain/types';
 
-const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_INTERNAL_SERVER_ERROR } = constants;
+const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_INTERNAL_SERVER_ERROR } =
+    constants;
 
 interface AnalyzeRequest {
     symbol: string;
