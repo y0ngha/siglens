@@ -9,6 +9,10 @@ export const CHART_COLORS = {
     bearish: '#ef5350',
     neutral: '#94a3b8',
 
+    // 거래량 (50% 투명도)
+    volumeBullish: '#26a69a80',
+    volumeBearish: '#ef535080',
+
     // MA / EMA 기간별 컬러 (MA 실선, EMA 점선 공용)
     period5: '#ef4444',
     period10: '#f97316',

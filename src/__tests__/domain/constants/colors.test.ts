@@ -29,6 +29,16 @@ describe('CHART_COLORS', () => {
         });
     });
 
+    describe('거래량 컬러', () => {
+        it('volumeBullish는 50% 투명도 틸 그린(#26a69a80)이다', () => {
+            expect(CHART_COLORS.volumeBullish).toBe('#26a69a80');
+        });
+
+        it('volumeBearish는 50% 투명도 레드(#ef535080)이다', () => {
+            expect(CHART_COLORS.volumeBearish).toBe('#ef535080');
+        });
+    });
+
     describe('MA/EMA 기간별 컬러', () => {
         it('period5는 레드(#ef4444)이다', () => {
             expect(CHART_COLORS.period5).toBe('#ef4444');
