@@ -68,7 +68,11 @@ describe('FileSkillsLoader', () => {
             });
 
             it('.md가 아닌 파일은 무시한다', async () => {
-                mockReaddir.mockResolvedValue(['test.md', 'readme.txt', '.DS_Store']);
+                mockReaddir.mockResolvedValue([
+                    'test.md',
+                    'readme.txt',
+                    '.DS_Store',
+                ]);
                 mockReadFile.mockResolvedValue(VALID_SKILL_MD);
 
                 const skills = await loader.loadSkills();
@@ -98,7 +102,9 @@ describe('FileSkillsLoader', () => {
 
         describe('readdir 에러', () => {
             it('readdir가 실패하면 에러를 전파한다', async () => {
-                mockReaddir.mockRejectedValue(new Error('ENOENT: no such file or directory'));
+                mockReaddir.mockRejectedValue(
+                    new Error('ENOENT: no such file or directory')
+                );
 
                 await expect(loader.loadSkills()).rejects.toThrow('ENOENT');
             });

@@ -200,6 +200,46 @@ import { calculateRSI } from '../../../domain/indicators/rsi';
 
 ---
 
+## useEffect 사이드이펙트 격리
+
+`useEffect` 안에서 발생하는 사이드이펙트는 **책임별로 분리**한다.
+하나의 `useEffect`에 초기화 로직과 데이터 동기화 로직을 혼재시키지 않는다.
+
+```typescript
+// ❌ 초기화 + 데이터 세팅을 하나의 useEffect에 혼재
+useEffect(() => {
+    const chart = createChart(containerRef.current, { ... });
+    const series = chart.addSeries(CandlestickSeries, { ... });
+    series.setData(bars); // 데이터 변경 시 차트 전체 재생성
+    return () => { chart.remove(); };
+}, [bars]);
+
+// ✅ 초기화([]): 마운트 시 1회만 실행, ref에 인스턴스 보관
+useEffect(() => {
+    const chart = createChart(containerRef.current, { ... });
+    chartRef.current = chart;
+    seriesRef.current = chart.addSeries(CandlestickSeries, { ... });
+    return () => {
+        chart.remove();
+        chartRef.current = null;
+        seriesRef.current = null;
+    };
+}, []);
+
+// ✅ 데이터 동기화([deps]): 데이터 변경 시 인스턴스 재사용
+useEffect(() => {
+    if (!seriesRef.current || !chartRef.current) return;
+    seriesRef.current.setData(mappedBars);
+    chartRef.current.timeScale().fitContent();
+}, [bars]);
+```
+
+**원칙**
+- 외부 라이브러리 인스턴스 생성/파괴(`[]`) 와 데이터 동기화(`[deps]`)는 별도 `useEffect`로 분리
+- 초기화 `useEffect`의 cleanup에서 ref를 `null`로 초기화하여 다음 데이터 effect가 stale 인스턴스에 접근하지 않도록 보호
+
+---
+
 ## Lightweight Charts 규칙
 
 공식 문서: https://tradingview.github.io/lightweight-charts/docs

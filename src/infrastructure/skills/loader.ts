@@ -40,7 +40,9 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
     name: String(data.name ?? ''),
     description: String(data.description ?? ''),
     type: data.type === 'pattern' ? 'pattern' : undefined,
-    indicators: Array.isArray(data.indicators) ? (data.indicators as string[]) : [],
+    indicators: Array.isArray(data.indicators)
+        ? (data.indicators as string[])
+        : [],
     confidenceWeight:
         typeof data.confidence_weight === 'number' ? data.confidence_weight : 0,
     content,

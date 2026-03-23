@@ -1,4 +1,9 @@
 export const CHART_COLORS = {
+    // 차트 배경 / 그리드 / 텍스트
+    background: '#0f172a',
+    grid: '#1e293b',
+    text: '#94a3b8',
+
     // 상승 / 하락 / 중립
     bullish: '#26a69a',
     bearish: '#ef5350',
