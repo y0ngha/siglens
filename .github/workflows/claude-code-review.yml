@@ -111,6 +111,9 @@ jobs:
                       ## 테스트 환경 주의사항
                       - jest.setup.ts가 존재하면 환경변수 미설정 버그로 지적하지 않는다.
                         모든 테스트 환경변수는 jest.setup.ts에서 전역으로 설정된다.
+                      
+                      ## 리뷰 주의사항
+                      - 코드 리뷰는 /src/* 내에 있는 파일만 진행한다.
 
             - name: Post failure comment if review fails
               if: failure()
