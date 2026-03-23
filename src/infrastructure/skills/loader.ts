@@ -23,14 +23,15 @@ const parseFrontmatter = (
     const match = /^---\n([\s\S]*?)\n---\n?([\s\S]*)$/.exec(raw);
     if (!match) return null;
 
-    const data: Record<string, unknown> = {};
-    for (const line of match[1].split('\n')) {
-        const colonIdx = line.indexOf(':');
-        if (colonIdx === -1) continue;
-        const key = line.slice(0, colonIdx).trim();
-        const val = line.slice(colonIdx + 1).trim();
-        data[key] = parseYamlValue(val);
-    }
+    const data = match[1]
+        .split('\n')
+        .filter(line => line.includes(':'))
+        .reduce<Record<string, unknown>>((acc, line) => {
+            const colonIdx = line.indexOf(':');
+            const key = line.slice(0, colonIdx).trim();
+            const val = line.slice(colonIdx + 1).trim();
+            return { ...acc, [key]: parseYamlValue(val) };
+        }, {});
 
     return { data, content: match[2].trim() };
 };

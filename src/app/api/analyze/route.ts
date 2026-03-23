@@ -14,15 +14,14 @@ interface AnalyzeRequest {
 }
 
 export async function POST(request: NextRequest) {
-    let body: AnalyzeRequest;
-    try {
-        body = await request.json();
-    } catch {
+    const bodyResult = await request.json().catch(() => null);
+    if (bodyResult === null) {
         return NextResponse.json(
             { error: 'Invalid JSON body' },
             { status: HTTP_STATUS_BAD_REQUEST }
         );
     }
+    const body: AnalyzeRequest = bodyResult;
 
     const { symbol, bars, indicators } = body;
 

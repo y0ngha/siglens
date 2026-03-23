@@ -74,7 +74,7 @@ const LONG_DAY_BODY_RATIO = 0.6;
 const BELT_HOLD_TAIL_RATIO = 0.1;
 const NEAR_PRICE_TOLERANCE = 0.002;
 const MIN_PRICE_DENOMINATOR = 1;
-const MIDPOINT_PENETRATION = 0.5;
+const IN_NECK_RATIO = 0.05;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -235,7 +235,7 @@ function detect2CandlePattern(prev: Bar, curr: Bar): MultiCandlePattern | null {
         if (isNearPrice(curr.close, prev.low)) return 'on_neck';
         if (
             curr.close > prev.low &&
-            curr.close < prev.close * (1 + MIDPOINT_PENETRATION * 0.1)
+            curr.close < prev.close * (1 + IN_NECK_RATIO)
         )
             return 'in_neck';
     }
