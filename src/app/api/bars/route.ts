@@ -23,7 +23,8 @@ export async function GET(request: NextRequest) {
     const symbol = searchParams.get('symbol');
     const timeframeParam = searchParams.get('timeframe');
     const before = searchParams.get('before') ?? undefined;
-    const limit = Number(searchParams.get('limit')) || DEFAULT_LIMIT;
+    const rawLimit = Number(searchParams.get('limit'));
+    const limit = rawLimit > 0 ? rawLimit : DEFAULT_LIMIT;
 
     if (!symbol || !timeframeParam) {
         return NextResponse.json(

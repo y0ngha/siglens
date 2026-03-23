@@ -237,22 +237,40 @@ interface AnalysisInput {
 ### 응답 형식 (JSON)
 
 ```typescript
+type Trend = 'bullish' | 'bearish' | 'neutral';
+type RiskLevel = 'low' | 'medium' | 'high';
+type SignalStrength = 'strong' | 'moderate' | 'weak';
+type SignalType =
+    | 'rsi_overbought'
+    | 'rsi_oversold'
+    | 'macd_golden_cross'
+    | 'macd_dead_cross'
+    | 'bollinger_upper_breakout'
+    | 'bollinger_lower_breakout'
+    | 'bollinger_squeeze'
+    | 'dmi_bullish_trend'
+    | 'dmi_bearish_trend'
+    | 'pattern'
+    | 'skill';
+
+interface KeyLevels {
+    support: number[];
+    resistance: number[];
+}
+
 interface AnalysisResponse {
     summary: string;          // 종합 분석 요약
-    trend: 'bullish' | 'bearish' | 'neutral';
+    trend: Trend;
     signals: Signal[];
     skillSignals: SkillSignal[];
-    riskLevel: 'low' | 'medium' | 'high';
-    keyLevels: {
-        support: number[];
-        resistance: number[];
-    };
+    riskLevel: RiskLevel;
+    keyLevels: KeyLevels;
 }
 
 interface Signal {
     type: SignalType;
     description: string;
-    strength: 'strong' | 'moderate' | 'weak';
+    strength: SignalStrength;
 }
 
 // skill 기반 분석 결과. skill 이름과 해당 skill이 감지한 Signal 목록을 묶는다.
