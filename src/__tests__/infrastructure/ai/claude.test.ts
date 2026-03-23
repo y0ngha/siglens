@@ -36,7 +36,11 @@ describe('ClaudeProvider', () => {
                     'ANTHROPIC_API_KEY must be set'
                 );
             } finally {
-                process.env.ANTHROPIC_API_KEY = original;
+                if (original === undefined) {
+                    delete process.env.ANTHROPIC_API_KEY;
+                } else {
+                    process.env.ANTHROPIC_API_KEY = original;
+                }
             }
         });
     });
@@ -105,6 +109,19 @@ describe('ClaudeProvider', () => {
 
             await expect(provider.analyze('test prompt')).rejects.toThrow(
                 'Unexpected response type from Claude API'
+            );
+        });
+    });
+
+    describe('응답이 유효한 JSON이 아니면', () => {
+        it('에러를 던진다', async () => {
+            const provider = new ClaudeProvider();
+            mockCreate.mockResolvedValue({
+                content: [{ type: 'text', text: 'invalid json' }],
+            });
+
+            await expect(provider.analyze('test prompt')).rejects.toThrow(
+                'Failed to parse Claude API response as JSON'
             );
         });
     });

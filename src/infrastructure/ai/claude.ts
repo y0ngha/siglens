@@ -28,6 +28,10 @@ export class ClaudeProvider implements AIProvider {
             throw new Error('Unexpected response type from Claude API');
         }
 
-        return JSON.parse(content.text) as AnalysisResponse;
+        try {
+            return JSON.parse(content.text) as AnalysisResponse;
+        } catch {
+            throw new Error('Failed to parse Claude API response as JSON');
+        }
     }
 }
