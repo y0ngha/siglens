@@ -113,7 +113,13 @@ jobs:
                         모든 테스트 환경변수는 jest.setup.ts에서 전역으로 설정된다.
                       
                       ## 리뷰 주의사항
-                      - 코드 리뷰는 /src/* 내에 있는 파일만 진행한다.
+                      - 코드 리뷰 진행시 아래 폴더는 제외하고 전체 리뷰를 진행한다.
+                        /docs/
+                        /refs/
+                        /.github/
+                        /refs/
+                        /.yarn/
+                        /public/
 
             - name: Post failure comment if review fails
               if: failure()
