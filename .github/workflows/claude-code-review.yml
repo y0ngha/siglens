@@ -107,6 +107,10 @@ jobs:
                       - Predictability: 같은 계열 함수 반환 타입 통일
                       - Cohesion: 함께 수정되는 파일 같은 디렉토리
                       - Coupling: 섣부른 추상화 금지 (3회 반복 후 추상화)
+                      
+                      ## 테스트 환경 주의사항
+                      - jest.setup.ts가 존재하면 환경변수 미설정 버그로 지적하지 않는다.
+                        모든 테스트 환경변수는 jest.setup.ts에서 전역으로 설정된다.
 
             - name: Post failure comment if review fails
               if: failure()
