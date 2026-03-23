@@ -33,8 +33,7 @@ export function VolumeChart({ bars }: VolumeChartProps) {
         chartRef.current = chart;
         seriesRef.current = chart.addSeries(
             HistogramSeries,
-            { priceFormat: { type: 'volume' } },
-            1
+            { priceFormat: { type: 'volume' } }
         );
 
         return () => {
