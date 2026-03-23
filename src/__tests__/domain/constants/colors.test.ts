@@ -1,6 +1,20 @@
 import { CHART_COLORS, getPeriodColor } from '@/domain/constants/colors';
 
 describe('CHART_COLORS', () => {
+    describe('차트 배경 / 그리드 / 텍스트 컬러', () => {
+        it('background는 네이비(#0f172a)이다', () => {
+            expect(CHART_COLORS.background).toBe('#0f172a');
+        });
+
+        it('grid는 다크 슬레이트(#1e293b)이다', () => {
+            expect(CHART_COLORS.grid).toBe('#1e293b');
+        });
+
+        it('text는 슬레이트(#94a3b8)이다', () => {
+            expect(CHART_COLORS.text).toBe('#94a3b8');
+        });
+    });
+
     describe('상승/하락/중립 컬러', () => {
         it('bullish는 틸 그린(#26a69a)이다', () => {
             expect(CHART_COLORS.bullish).toBe('#26a69a');
