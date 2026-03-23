@@ -263,6 +263,22 @@ EOF 개행: 모든 파일은 마지막 줄에 `\n`으로 끝나야 한다. `yarn
 
 ---
 
+## HTTP 상태 코드
+
+```typescript
+// ✅ node:http2 내장 상수 사용 — 외부 패키지 불필요, Node.js 공식 모듈
+import { constants } from 'node:http2';
+const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_NOT_FOUND } = constants;
+
+// ❌ 로컬 상수 재정의 금지 — node:http2가 이미 표준 상수를 제공함
+const HTTP_STATUS = { BAD_REQUEST: 400 };
+
+// ❌ 리터럴 하드코딩 금지
+return NextResponse.json({ error: '...' }, { status: 400 });
+```
+
+---
+
 ## 레이어 의존성 규칙
 
 ```

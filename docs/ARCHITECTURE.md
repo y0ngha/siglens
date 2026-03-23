@@ -144,10 +144,12 @@ src/
 ```
 사용자 클릭 → 클라이언트 상태 변경 (URL 변경 없음)
   → GET /api/bars?symbol=AAPL&timeframe=5Min
-    → infrastructure/market/alpaca.ts → Alpaca API
-    → domain/indicators/* → 인디케이터 재계산
+    → infrastructure/market/alpaca.ts → Alpaca API (bars만 반환)
+  → domain/indicators/* → 인디케이터 재계산 (app에서 직접 호출)
   → 차트 데이터만 교체
 ```
+
+> `/api/bars`는 bars 데이터 전달만 담당한다. 인디케이터 계산은 app 레이어에서 domain을 직접 호출한다.
 
 ### 스크롤 과거 데이터 추가 로딩
 
