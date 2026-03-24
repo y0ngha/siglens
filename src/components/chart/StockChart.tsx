@@ -7,6 +7,8 @@ import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
+import { useBollingerOverlay } from '@/components/chart/hooks/useBollingerOverlay';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
 const EMPTY_INDICATORS: IndicatorResult = {
     macd: [],
@@ -80,9 +82,24 @@ export function StockChart({
     }, [initialBars]);
 
     // togglePeriod는 향후 MA/EMA 토글 UI 연결 시 사용 예정
-    // TODO: lineWidth를 사용자 설정으로 연결
-    useMAOverlay({ chartRef, bars: initialBars, indicators, lineWidth: 1 });
-    useEMAOverlay({ chartRef, bars: initialBars, indicators, lineWidth: 1 });
+    useMAOverlay({
+        chartRef,
+        bars: initialBars,
+        indicators,
+        lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
+    });
+    useEMAOverlay({
+        chartRef,
+        bars: initialBars,
+        indicators,
+        lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
+    });
+    useBollingerOverlay({
+        chartRef,
+        bars: initialBars,
+        indicators,
+        lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
+    });
 
     return <div ref={containerRef} className="h-full w-full" />;
 }
