@@ -1,11 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { getPeriodColor } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 
 interface UseEMAOverlayParams {
-    chart: IChartApi | null;
+    chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
     indicators: IndicatorResult;
     defaultPeriods?: number[];
@@ -17,7 +18,7 @@ interface UseEMAOverlayReturn {
 }
 
 export function useEMAOverlay({
-    chart,
+    chartRef,
     bars,
     indicators,
     defaultPeriods = [],
@@ -36,7 +37,11 @@ export function useEMAOverlay({
     }, []);
 
     // 시리즈 생성/제거 관리
+    // StockChart의 차트 생성 effect가 선언 순서상 앞에 있으므로
+    // 이 effect 실행 시점에 chartRef.current는 이미 설정된 상태
     useEffect(() => {
+        const chart = chartRef.current;
+
         // chart 인스턴스가 바뀌면 이전 시리즈 refs 초기화
         // 이전 chart 소멸은 부모가 담당하므로 removeSeries 호출 불필요
         if (prevChartRef.current !== chart) {
@@ -70,7 +75,7 @@ export function useEMAOverlay({
                 });
         });
         seriesRef.current = nextSeries;
-    }, [chart, visiblePeriods]);
+    }, [chartRef, visiblePeriods]);
 
     // 데이터 동기화
     // bars와 emaData의 정합성 보장을 위해 Math.min으로 길이를 맞춰 매핑

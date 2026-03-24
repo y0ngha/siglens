@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
@@ -30,7 +30,6 @@ export function StockChart({
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
-    const [chartInstance, setChartInstance] = useState<IChartApi | null>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -57,13 +56,10 @@ export function StockChart({
             wickDownColor: CHART_COLORS.bearish,
         });
 
-        setChartInstance(chart);
-
         return () => {
             chart.remove();
             chartRef.current = null;
             seriesRef.current = null;
-            setChartInstance(null);
         };
     }, []);
 
@@ -83,20 +79,9 @@ export function StockChart({
         chartRef.current.timeScale().fitContent();
     }, [initialBars]);
 
-    const { togglePeriod: toggleMA } = useMAOverlay({
-        chart: chartInstance,
-        bars: initialBars,
-        indicators,
-    });
-
-    const { togglePeriod: toggleEMA } = useEMAOverlay({
-        chart: chartInstance,
-        bars: initialBars,
-        indicators,
-    });
-
-    void toggleMA;
-    void toggleEMA;
+    // togglePeriod는 향후 MA/EMA 토글 UI 연결 시 사용 예정
+    useMAOverlay({ chartRef, bars: initialBars, indicators });
+    useEMAOverlay({ chartRef, bars: initialBars, indicators });
 
     return <div ref={containerRef} className="h-full w-full" />;
 }
