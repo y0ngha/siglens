@@ -346,6 +346,54 @@ ema: Record<number, (number | null)[]>;
 ```
 ---
 
+## 차트 오버레이 훅 규칙
+
+보조지표 오버레이는 React 컴포넌트가 아닌 **커스텀 훅**으로 구현한다.
+
+### 이유
+
+오버레이는 DOM 요소를 렌더링하지 않는다.
+기존 차트 인스턴스(`IChartApi`)에 시리즈를 추가/제거하는 사이드이펙트만 수행하므로 `return null` 컴포넌트보다 훅이 적합하다.
+
+### 위치
+
+```
+src/components/chart/hooks/
+```
+
+### 훅 파라미터 패턴
+
+```typescript
+interface UseXxxOverlayParams {
+    chart: IChartApi | null;    // 기존 차트 인스턴스 (부모가 생성/소멸 담당)
+    bars: Bar[];                 // 타임스탬프 매핑용
+    indicators: IndicatorResult;
+}
+```
+
+### 구현 규칙
+
+```
+- chart 소멸은 부모가 담당 → 훅에서 chart.remove() 호출 금지
+- prevChartRef로 chart 인스턴스 변경 감지 → 변경 시 시리즈 refs 초기화
+- Math.min(bars.length, data.length)로 인덱스 정합성 보장
+- null 값은 WhitespaceData({ time })으로 변환
+- 시리즈별 ON/OFF는 훅이 반환하는 toggle 함수로 제어
+```
+
+### 오버레이 목록
+
+| 훅 | pane | 설명 |
+|----|------|------|
+| `useMAOverlay` | 0 | MA 실선 (기간별 ON/OFF) |
+| `useEMAOverlay` | 0 | EMA 점선 (기간별 ON/OFF) |
+| `useBollingerOverlay` | 0 | 볼린저 밴드 (3선 + 배경) |
+| `useRSIChart` | 2 | RSI + 과매수/과매도선 |
+| `useMACDChart` | 3 | MACD 라인 + 시그널 + 히스토그램 |
+| `useDMIChart` | 4 | +DI / -DI / ADX |
+
+---
+
 ## Skills 시스템
 
 ### 개요
