@@ -1,7 +1,12 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import type {
+    IChartApi,
+    ISeriesApi,
+    LineWidth,
+    UTCTimestamp,
+} from 'lightweight-charts';
 import { getPeriodColor } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 
@@ -10,6 +15,7 @@ interface UseMAOverlayParams {
     bars: Bar[];
     indicators: IndicatorResult;
     defaultPeriods?: number[];
+    lineWidth?: LineWidth;
 }
 
 interface UseMAOverlayReturn {
@@ -22,6 +28,7 @@ export function useMAOverlay({
     bars,
     indicators,
     defaultPeriods = [],
+    lineWidth = 1,
 }: UseMAOverlayParams): UseMAOverlayReturn {
     const [visiblePeriods, setVisiblePeriods] =
         useState<number[]>(defaultPeriods);
@@ -69,13 +76,13 @@ export function useMAOverlay({
                 chart.addSeries(LineSeries, {
                     color: getPeriodColor(period),
                     lineStyle: LineStyle.Solid,
-                    lineWidth: 1,
+                    lineWidth,
                     priceLineVisible: false,
                     lastValueVisible: false,
                 });
         });
         seriesRef.current = nextSeries;
-    }, [chartRef, visiblePeriods]);
+    }, [chartRef, visiblePeriods, lineWidth]);
 
     // 데이터 동기화
     // bars와 maData의 정합성 보장을 위해 Math.min으로 길이를 맞춰 매핑
