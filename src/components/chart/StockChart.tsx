@@ -80,9 +80,18 @@ export function StockChart({
     }, [initialBars]);
 
     // togglePeriod는 향후 MA/EMA 토글 UI 연결 시 사용 예정
-    // TODO: lineWidth를 사용자 설정으로 연결
-    useMAOverlay({ chartRef, bars: initialBars, indicators, lineWidth: 1 });
-    useEMAOverlay({ chartRef, bars: initialBars, indicators, lineWidth: 1 });
+    useMAOverlay({
+        chartRef,
+        bars: initialBars,
+        indicators,
+        lineWidth: 1 /* TODO: 사용자 설정으로 연결, 임시로 매직넘버 사용 */,
+    });
+    useEMAOverlay({
+        chartRef,
+        bars: initialBars,
+        indicators,
+        lineWidth: 1 /* TODO: 사용자 설정으로 연결, 임시로 매직넘버 사용 */,
+    });
 
     return <div ref={containerRef} className="h-full w-full" />;
 }
