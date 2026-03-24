@@ -9,7 +9,6 @@ import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import type {
     IChartApi,
-    IPriceLine,
     ISeriesApi,
     LineWidth,
     UTCTimestamp,
@@ -46,8 +45,6 @@ export function useRSIChart({
     const [isVisible, setIsVisible] = useState(false);
     const prevChartRef = useRef<IChartApi | null>(null);
     const rsiSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-    const overboughtLineRef = useRef<IPriceLine | null>(null);
-    const oversoldLineRef = useRef<IPriceLine | null>(null);
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);
@@ -56,8 +53,6 @@ export function useRSIChart({
     // chart 인스턴스 교체 시 ref만 초기화 (removeSeries 불필요 — 이전 chart는 부모가 소멸)
     const clearSeriesRefs = useEffectEvent(() => {
         rsiSeriesRef.current = null;
-        overboughtLineRef.current = null;
-        oversoldLineRef.current = null;
     });
 
     // isVisible false 시 시리즈 제거 및 ref 초기화
@@ -65,8 +60,6 @@ export function useRSIChart({
         if (rsiSeriesRef.current) {
             chart.removeSeries(rsiSeriesRef.current);
             rsiSeriesRef.current = null;
-            overboughtLineRef.current = null;
-            oversoldLineRef.current = null;
         }
     });
 
@@ -101,7 +94,7 @@ export function useRSIChart({
                 RSI_PANE_INDEX
             );
 
-            overboughtLineRef.current = rsiSeriesRef.current.createPriceLine({
+            rsiSeriesRef.current.createPriceLine({
                 price: RSI_OVERBOUGHT_LEVEL,
                 color: CHART_COLORS.rsiOverbought,
                 lineWidth,
@@ -110,7 +103,7 @@ export function useRSIChart({
                 title: '',
             });
 
-            oversoldLineRef.current = rsiSeriesRef.current.createPriceLine({
+            rsiSeriesRef.current.createPriceLine({
                 price: RSI_OVERSOLD_LEVEL,
                 color: CHART_COLORS.rsiOversold,
                 lineWidth,
