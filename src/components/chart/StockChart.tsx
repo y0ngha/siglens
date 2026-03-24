@@ -1,19 +1,36 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
-import type { Bar } from '@/domain/types';
+import type { Bar, IndicatorResult } from '@/domain/types';
+import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
+import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
+
+const EMPTY_INDICATORS: IndicatorResult = {
+    macd: [],
+    bollinger: [],
+    dmi: [],
+    rsi: [],
+    vwap: [],
+    ma: {},
+    ema: {},
+};
 
 interface StockChartProps {
     initialBars: Bar[];
+    indicators?: IndicatorResult;
 }
 
-export function StockChart({ initialBars }: StockChartProps) {
+export function StockChart({
+    initialBars,
+    indicators = EMPTY_INDICATORS,
+}: StockChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+    const [chartInstance, setChartInstance] = useState<IChartApi | null>(null);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -40,10 +57,13 @@ export function StockChart({ initialBars }: StockChartProps) {
             wickDownColor: CHART_COLORS.bearish,
         });
 
+        setChartInstance(chart);
+
         return () => {
             chart.remove();
             chartRef.current = null;
             seriesRef.current = null;
+            setChartInstance(null);
         };
     }, []);
 
@@ -62,6 +82,21 @@ export function StockChart({ initialBars }: StockChartProps) {
 
         chartRef.current.timeScale().fitContent();
     }, [initialBars]);
+
+    const { togglePeriod: toggleMA } = useMAOverlay({
+        chart: chartInstance,
+        bars: initialBars,
+        indicators,
+    });
+
+    const { togglePeriod: toggleEMA } = useEMAOverlay({
+        chart: chartInstance,
+        bars: initialBars,
+        indicators,
+    });
+
+    void toggleMA;
+    void toggleEMA;
 
     return <div ref={containerRef} className="h-full w-full" />;
 }
