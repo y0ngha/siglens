@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useRef,
+    useState,
+} from 'react';
 import type { RefObject } from 'react';
 import { AreaSeries, LineSeries } from 'lightweight-charts';
 import type {
