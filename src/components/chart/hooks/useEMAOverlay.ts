@@ -9,6 +9,7 @@ import type {
 } from 'lightweight-charts';
 import { getPeriodColor } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
 interface UseEMAOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -28,7 +29,7 @@ export function useEMAOverlay({
     bars,
     indicators,
     defaultPeriods = [],
-    lineWidth = 1,
+    lineWidth = DEFAULT_LINE_WIDTH,
 }: UseEMAOverlayParams): UseEMAOverlayReturn {
     const [visiblePeriods, setVisiblePeriods] =
         useState<number[]>(defaultPeriods);
