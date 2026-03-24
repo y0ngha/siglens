@@ -9,6 +9,7 @@ import type {
 } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, BollingerResult, IndicatorResult } from '@/domain/types';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
 interface UseBollingerOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -40,7 +41,7 @@ export function useBollingerOverlay({
     chartRef,
     bars,
     indicators,
-    lineWidth = 1, // TODO: 사용자 설정으로 연결
+    lineWidth = DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
 }: UseBollingerOverlayParams): UseBollingerOverlayReturn {
     const [isVisible, setIsVisible] = useState(false);
     const prevChartRef = useRef<IChartApi | null>(null);
@@ -104,6 +105,8 @@ export function useBollingerOverlay({
                 lastValueVisible: false,
             });
         }
+        upperSeriesRef.current.applyOptions({ lineWidth });
+
         if (!middleSeriesRef.current) {
             middleSeriesRef.current = chart.addSeries(LineSeries, {
                 color: CHART_COLORS.bollingerMiddle,
@@ -112,6 +115,8 @@ export function useBollingerOverlay({
                 lastValueVisible: false,
             });
         }
+        middleSeriesRef.current.applyOptions({ lineWidth });
+
         if (!lowerSeriesRef.current) {
             lowerSeriesRef.current = chart.addSeries(AreaSeries, {
                 topColor: CHART_COLORS.background,
@@ -122,6 +127,7 @@ export function useBollingerOverlay({
                 lastValueVisible: false,
             });
         }
+        lowerSeriesRef.current.applyOptions({ lineWidth });
     }, [chartRef, isVisible, lineWidth]);
 
     // 데이터 동기화: 시리즈가 보이는 동안 bars/indicators 변경 시 업데이트

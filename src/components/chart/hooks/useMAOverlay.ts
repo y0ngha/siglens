@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useEffectEvent, useRef, useState } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import type {
@@ -44,16 +44,19 @@ export function useMAOverlay({
         );
     }, []);
 
+    // chart 인스턴스 교체 시 ref만 초기화 (removeSeries 불필요 — 이전 chart는 부모가 소멸)
+    const clearSeriesRefs = useEffectEvent(() => {
+        seriesRef.current = {};
+    });
+
     // 시리즈 생성/제거 관리
     // StockChart의 차트 생성 effect가 선언 순서상 앞에 있으므로
     // 이 effect 실행 시점에 chartRef.current는 이미 설정된 상태
     useEffect(() => {
         const chart = chartRef.current;
 
-        // chart 인스턴스가 바뀌면 이전 시리즈 refs 초기화
-        // 이전 chart 소멸은 부모가 담당하므로 removeSeries 호출 불필요
         if (prevChartRef.current !== chart) {
-            seriesRef.current = {};
+            clearSeriesRefs();
             prevChartRef.current = chart;
         }
 
@@ -70,9 +73,10 @@ export function useMAOverlay({
         });
 
         // 기존 시리즈 유지 + 새 기간 시리즈 추가로 refs 재구성
+        // applyOptions로 lineWidth 변경을 기존 시리즈에도 반영
         const nextSeries: Record<number, ISeriesApi<'Line'>> = {};
         visiblePeriods.forEach(period => {
-            nextSeries[period] =
+            const series =
                 seriesRef.current[period] ??
                 chart.addSeries(LineSeries, {
                     color: getPeriodColor(period),
@@ -81,6 +85,8 @@ export function useMAOverlay({
                     priceLineVisible: false,
                     lastValueVisible: false,
                 });
+            series.applyOptions({ lineWidth });
+            nextSeries[period] = series;
         });
         seriesRef.current = nextSeries;
     }, [chartRef, visiblePeriods, lineWidth]);
