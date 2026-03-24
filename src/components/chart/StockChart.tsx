@@ -93,10 +93,15 @@ export function StockChart({
         chartRef,
         bars: initialBars,
         indicators,
-        lineWidth: 1 /* TODO: 사용자 설정으로 연결, 임시로 매직넘버 사용 */,
         lineWidth:
             DEFAULT_LINE_WIDTH /* TODO: 사용자 설정으로 연결, 임시로 매직넘버 사용 */,
     });
+    useBollingerOverlay({
+        chartRef,
+        bars: initialBars,
+        indicators,
+        lineWidth:
+            DEFAULT_LINE_WIDTH /* TODO: 사용자 설정으로 연결, 임시로 매직넘버 사용 */,
     });
 
     return <div ref={containerRef} className="h-full w-full" />;
