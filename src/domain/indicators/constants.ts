@@ -1,4 +1,6 @@
 export const RSI_DEFAULT_PERIOD = 14;
+export const RSI_OVERBOUGHT_LEVEL = 70;
+export const RSI_OVERSOLD_LEVEL = 30;
 
 export const MACD_FAST_PERIOD = 12;
 export const MACD_SLOW_PERIOD = 26;
