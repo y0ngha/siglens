@@ -4,13 +4,29 @@ import { useEffect, useRef } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
-import type { Bar } from '@/domain/types';
+import type { Bar, IndicatorResult } from '@/domain/types';
+import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
+import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
+
+const EMPTY_INDICATORS: IndicatorResult = {
+    macd: [],
+    bollinger: [],
+    dmi: [],
+    rsi: [],
+    vwap: [],
+    ma: {},
+    ema: {},
+};
 
 interface StockChartProps {
     initialBars: Bar[];
+    indicators?: IndicatorResult;
 }
 
-export function StockChart({ initialBars }: StockChartProps) {
+export function StockChart({
+    initialBars,
+    indicators = EMPTY_INDICATORS,
+}: StockChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -62,6 +78,11 @@ export function StockChart({ initialBars }: StockChartProps) {
 
         chartRef.current.timeScale().fitContent();
     }, [initialBars]);
+
+    // togglePeriod는 향후 MA/EMA 토글 UI 연결 시 사용 예정
+    // TODO: lineWidth를 사용자 설정으로 연결
+    useMAOverlay({ chartRef, bars: initialBars, indicators, lineWidth: 1 });
+    useEMAOverlay({ chartRef, bars: initialBars, indicators, lineWidth: 1 });
 
     return <div ref={containerRef} className="h-full w-full" />;
 }

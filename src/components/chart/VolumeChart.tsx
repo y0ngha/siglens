@@ -31,10 +31,9 @@ export function VolumeChart({ bars }: VolumeChartProps) {
         });
 
         chartRef.current = chart;
-        seriesRef.current = chart.addSeries(
-            HistogramSeries,
-            { priceFormat: { type: 'volume' } }
-        );
+        seriesRef.current = chart.addSeries(HistogramSeries, {
+            priceFormat: { type: 'volume' },
+        });
 
         return () => {
             chart.remove();
