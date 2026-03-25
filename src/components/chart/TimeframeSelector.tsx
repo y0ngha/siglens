@@ -36,7 +36,7 @@ export function TimeframeSelector({ value, onChange }: TimeframeSelectorProps) {
                         'rounded border px-3 py-1 text-sm font-medium transition-colors',
                         timeframe === value
                             ? 'border-blue-400 text-blue-400'
-                            : 'border-transparent text-slate-400 hover:text-slate-200',
+                            : 'border-transparent text-slate-400 hover:text-slate-200'
                     )}
                 >
                     {TIMEFRAME_LABEL[timeframe]}

@@ -190,4 +190,8 @@ Claude Code가 자주 발생시키는 실수 목록.
    → AlpacaProvider, claudeClient 등 금지
 
 3. Lightweight Charts를 components/chart/ 밖에서 import
+
+4. components/에서 @/lib/* import는 허용
+   → lib/는 외부 UI 유틸리티 래퍼 레이어 (cn 등)
+   → infrastructure와 달리 components에서 import 가능
 ```

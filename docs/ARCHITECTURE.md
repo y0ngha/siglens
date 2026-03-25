@@ -17,6 +17,8 @@ Layered Architecture를 기반으로 한다.
 ├─────────────────────────────────────────┤
 │          infrastructure (외부)          │  Alpaca, AI Provider
 ├─────────────────────────────────────────┤
+│          lib (UI 유틸리티)              │  외부 패키지 래퍼 (clsx 등)
+├─────────────────────────────────────────┤
 │             domain (순수)              │  인디케이터, 패턴, 프롬프트
 └─────────────────────────────────────────┘
 ```
@@ -35,11 +37,15 @@ infrastructure ← domain import 가능
                  외부 API (Alpaca, Claude) 호출 담당
                  인터페이스(types.ts)를 반드시 먼저 정의
 
-app            ← infrastructure, domain import 가능
+lib            ← 외부 UI 유틸리티를 wrapping하는 순수 함수 레이어
+                 domain에 넣을 수 없는 외부 패키지만 허용 (clsx, tailwind-merge 등)
+                 사이드 이펙트 없는 순수 함수 형태로만 작성
+
+app            ← infrastructure, domain, lib import 가능
                  RSC에서 데이터 fetch 및 조합
                  Route Handler에서 클라이언트 요청 처리
 
-components     ← domain import 가능
+components     ← domain, lib import 가능
                  infrastructure 직접 import 금지
                  'use client' 필수 표기
 ```
@@ -116,6 +122,9 @@ src/
 │   │   └── IndicatorChart.tsx
 │   └── analysis/
 │       └── AnalysisPanel.tsx
+│
+├── lib/                              ← UI 유틸리티 래퍼
+│   └── cn.ts                         ← clsx + tailwind-merge 조합
 │
 └── __tests__/                        ← 테스트
     ├── domain/
