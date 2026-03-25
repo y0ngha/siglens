@@ -64,14 +64,17 @@ git push -u origin {브랜치명}
 
 ### 4. PR 생성
 
+`.github/PULL_REQUEST_TEMPLATE.md`를 먼저 읽고, 템플릿의 각 섹션을 구현 내용에 맞게 채운 뒤 PR을 생성한다. 템플릿을 그대로 body로 넣지 않는다.
 ```bash
+# 1. 템플릿 확인
+cat .github/PULL_REQUEST_TEMPLATE.md
+
+# 2. 내용 채워서 PR 생성
 gh pr create \
   --title "{type}: {이슈 제목}" \
-  --body "$(cat .github/PULL_REQUEST_TEMPLATE.md)" \
+  --body "{템플릿 섹션을 채운 전체 본문}" \
   --base master
 ```
-
-PR 본문은 `.github/PULL_REQUEST_TEMPLATE.md` 템플릿을 기반으로 구현 내용에 맞게 작성한다.
 
 ---
 
