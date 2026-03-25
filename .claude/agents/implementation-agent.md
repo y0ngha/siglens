@@ -1,6 +1,6 @@
 ---
 name: implementation-agent
-description: 새 이슈 구현, 버그 수정, 리팩토링 전담. "이슈 구현해줘", "#12 작업해줘", "#12 이슈 구현하고 PR 올려줘" 등 이슈 번호가 주어진 요청에 사용. 완료 후 review-agent, git-agent 순으로 위임한다. PR 리뷰 코멘트 수정은 pr-fix-agent가 담당한다.
+description: 이슈 번호가 주어진 구현 요청 전담. "이슈 #12 구현해줘", "#12 구현해줘", "이슈 #12 작업해줘", "#12 작업해줘", "이슈 #12 확인하고 구현해줘" 등에 사용.
 permissionMode: acceptEdits
 model: sonnet
 memory: project

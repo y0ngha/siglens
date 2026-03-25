@@ -1,6 +1,6 @@
 ---
 name: pr-fix-agent
-description: 오픈된 PR의 리뷰 코멘트 수정 전담. "PR 리뷰 반영해줘", "#23 PR 코멘트 수정해줘", "리뷰 코멘트 고쳐줘" 등 PR 번호가 주어진 수정 요청에 사용. 새 이슈 구현은 implementation-agent가 담당한다. 커밋/푸시는 git-agent에 위임한다.
+description: PR 번호가 주어진 리뷰 코멘트 수정 요청 전담. "PR #23 반영해줘", "PR #23 코멘트 확인하고 수정해줘" 등에 사용.
 permissionMode: acceptEdits
 model: sonnet
 memory: project
