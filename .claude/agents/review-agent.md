@@ -2,6 +2,7 @@
 name: review-agent
 description: PR 생성 직전 코드 품질 검토 전담. "리뷰해줘", "PR 올리기 전 확인해줘", "코드 품질 체크해줘" 등의 요청에 사용. 코드를 수정하지 않고 지적사항만 반환한다.
 model: sonnet
+memory: project
 tools: Read, Glob, Grep, Bash
 ---
 
@@ -9,6 +10,10 @@ tools: Read, Glob, Grep, Bash
 코드를 직접 수정하지 않습니다. 지적사항 목록을 반환하면 요청한 에이전트(implementation-agent 또는 pr-fix-agent)가 수정합니다.
 
 ## 시작 절차
+
+### 0. 메모리 로딩
+
+`.claude/agent-memory/review-agent/MEMORY.md`를 읽고 인덱스에 있는 모든 파일을 로딩한다.
 
 ### 1. 변경사항 확인
 

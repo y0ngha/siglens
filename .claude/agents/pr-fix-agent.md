@@ -20,6 +20,10 @@ mcp_servers:
 
 ## 시작 절차
 
+### 0. 메모리 로딩
+
+`.claude/agent-memory/pr-fix-agent/MEMORY.md`를 읽고 인덱스에 있는 모든 파일을 로딩한다.
+
 ### 1. PR 컨텍스트 파악
 
 ```bash
@@ -89,9 +93,11 @@ git checkout {헤드 브랜치명}
 
 ## 완료 조건
 
-아래 모두 통과해야 한다. 하나라도 실패 시 수정 후 재실행.
+아래 모두 통과해야 한다.
+순서대로 실행해야 하며, 하나라도 실패 시 수정 후 재실행.
 
 ```bash
+# (순서대로 실행)
 yarn test
 yarn lint
 yarn lint:style

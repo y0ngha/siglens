@@ -324,6 +324,9 @@ return NextResponse.json({ error: '...' }, { status: 400 });
 ```
 domain/         외부 라이브러리 import 금지 — 순수 TypeScript 함수만
 infrastructure/ domain만 import 가능
-components/     domain만 import 가능 — infrastructure 직접 import 금지
-app/            infrastructure, domain 모두 import 가능
+components/     domain, lib import 가능 — infrastructure 직접 import 금지
+app/            infrastructure, domain, lib 모두 import 가능
+lib/            외부 UI 유틸리티 래퍼 (clsx, tailwind-merge 등)
+                domain에 넣을 수 없는 외부 패키지 wrapping 전용
+                순수 함수 형태로 작성 — 사이드 이펙트 없음
 ```

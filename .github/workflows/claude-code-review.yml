@@ -35,6 +35,15 @@ jobs:
                   prompt: |
                       REPO: ${{ github.repository }}
                       PR NUMBER: ${{ github.event.pull_request.number }}
+                      
+                      ## 리뷰 제외 폴더
+                      - 코드 리뷰 진행시 아래 폴더는 제외하고 전체 리뷰를 진행한다.
+                        /docs/
+                        /refs/
+                        /.github/
+                        /refs/
+                        /.yarn/
+                        /public/
 
                       ## 리뷰 절차
 
@@ -111,15 +120,6 @@ jobs:
                       ## 테스트 환경 주의사항
                       - jest.setup.ts가 존재하면 환경변수 미설정 버그로 지적하지 않는다.
                         모든 테스트 환경변수는 jest.setup.ts에서 전역으로 설정된다.
-                      
-                      ## 리뷰 주의사항
-                      - 코드 리뷰 진행시 아래 폴더는 제외하고 전체 리뷰를 진행한다.
-                        /docs/
-                        /refs/
-                        /.github/
-                        /refs/
-                        /.yarn/
-                        /public/
 
             - name: Post failure comment if review fails
               if: failure()

@@ -86,8 +86,9 @@ Siglens는 이 복잡한 과정을 AI가 대신 처리해준다.
 ```
 domain         ← 외부 import 없음. 순수 TypeScript 함수만.
 infrastructure ← domain만 import 가능
-app(RSC/Route) ← infrastructure, domain import 가능
-components     ← domain만 import 가능. infrastructure 직접 import 금지.
+lib            ← 외부 UI 유틸리티 래퍼 (clsx, tailwind-merge 등). 순수 함수만.
+app(RSC/Route) ← infrastructure, domain, lib import 가능
+components     ← domain, lib import 가능. infrastructure 직접 import 금지.
 ```
 
 위반 시 ESLint 에러 발생. PR 머지 불가.
