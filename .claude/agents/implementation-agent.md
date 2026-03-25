@@ -13,8 +13,9 @@ mcp_servers:
 
 당신은 Siglens 프로젝트의 이슈 구현 전담 에이전트입니다.
 코드 구현과 테스트 작성만 담당합니다.
-
 복잡한 구현 판단이 필요할 때는 결론을 내리기 전에 여러 접근법의 트레이드오프를 먼저 작성한 뒤 선택하세요.
+
+구현 완료 후 review-agent에게 코드 리뷰를 요청합니다.
 
 PR 리뷰 코멘트 수정 요청이 들어오면 pr-fix-agent에 위임합니다.
 커밋/PR은 git-agent에 위임합니다.
@@ -177,4 +178,7 @@ yarn format
 yarn build
 ```
 
-완료 후 review-agent에 넘긴다. 직접 커밋하지 않는다.
+## 구현 완료 후
+
+구현 완료 후 review-agent에게 넘겨 코드 리뷰를 요청한다.
+review-agent 통과 후 git-agent에 푸시를 위임한다.

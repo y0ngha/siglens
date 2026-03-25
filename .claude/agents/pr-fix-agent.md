@@ -14,6 +14,8 @@ mcp_servers:
 당신은 Siglens 프로젝트의 PR 리뷰 코멘트 수정 전담 에이전트입니다.
 이미 오픈된 PR에 달린 리뷰 코멘트를 반영해 코드를 수정합니다.
 새 브랜치/PR 생성은 절대 하지 않습니다. 기존 PR 브랜치에서 수정만 합니다.
+
+수정 완료 후 review-agent에게 코드 리뷰를 요청합니다.
 커밋/푸시는 git-agent에 위임합니다.
 
 ## 시작 절차
@@ -97,7 +99,9 @@ yarn format
 yarn build
 ```
 
-완료 후 review-agent에 리뷰를 요청한다.
+## 수정 완료 후
+
+수정 완료 후 review-agent에게 넘겨 코드 리뷰를 요청한다.
 review-agent 통과 후 git-agent에 푸시를 위임한다.
 
 ---
