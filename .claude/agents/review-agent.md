@@ -11,6 +11,10 @@ tools: Read, Glob, Grep, Bash
 
 ## 시작 절차
 
+### 0. 메모리 로딩
+
+`.claude/agent-memory/review-agent/MEMORY.md`를 읽고 인덱스에 있는 모든 파일을 로딩한다.
+
 ### 1. 변경사항 확인
 
 ```bash
