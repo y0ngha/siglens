@@ -34,7 +34,15 @@ Everything after that (review, commit, push) is handled by other agents via the 
 
 Read `.claude/agent-memory/implementation-agent/MEMORY.md` and load all files listed in the index.
 
-### 1. Determine Invocation Type
+### 1. Repository
+
+```
+REPO=y0ngha/siglens
+```
+
+Use this value directly in all `gh` commands. Never derive the repo from `git remote get-url` or any shell command.
+
+### 2. Determine Invocation Type
 
 You are invoked in one of two ways. Check which applies:
 
@@ -55,10 +63,10 @@ git fetch origin {branch}
 git checkout {branch}
 ```
 
-### 2. Understand the Issue (Type A only)
+### 3. Understand the Issue (Type A only)
 
 ```bash
-gh issue view {number} --repo {repo}
+gh issue view {number} --repo y0ngha/siglens
 ```
 
 **If the issue cannot be found, emit a `failed` exit signal and stop.**
@@ -70,7 +78,7 @@ Things to verify:
 - Reference docs: read only items checked (`[x]`) in the issue body
 - Completion criteria
 
-### 3. Create Branch (Type A only)
+### 4. Create Branch (Type A only)
 
 ```bash
 git checkout master && git pull origin master
@@ -90,7 +98,7 @@ Determine `{type}` from the issue content:
 | `test` | Test additions or fixes |
 | `style` | Formatting, naming, no logic change |
 
-### 4. Load Required Documents
+### 5. Load Required Documents
 
 Always read:
 - docs/MISTAKES.md

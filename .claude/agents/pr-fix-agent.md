@@ -35,7 +35,15 @@ Everything after that (review, commit, push) is handled by other agents via the 
 
 Read `.claude/agent-memory/pr-fix-agent/MEMORY.md` and load all files listed in the index.
 
-### 1. Determine Invocation Type
+### 1. Repository
+
+```
+REPO=y0ngha/siglens
+```
+
+Use this value directly in all `gh` commands. Never derive the repo from `git remote get-url` or any shell command.
+
+### 2. Determine Invocation Type
 
 You are invoked in one of two ways. Check which applies:
 
@@ -50,43 +58,43 @@ The message will say something like "These are internal review findings — appl
 → Do not fetch PR comments from GitHub. Apply only the findings provided.
 → The branch is already checked out — do not switch branches.
 
-### 2. Understand PR Context (Type A only)
+### 3. Understand PR Context (Type A only)
 
 ```bash
-gh pr view {PR number} --repo {repo}
+gh pr view {PR number} --repo y0ngha/siglens
 ```
 
 **If the PR cannot be found, emit a `failed` exit signal and stop.**
 
-### 3. Check Out Head Branch (Type A only)
+### 4. Check Out Head Branch (Type A only)
 
 ```bash
 # Get head branch name
-gh pr view {PR number} --json headRefName --repo {repo} | jq -r '.headRefName'
+gh pr view {PR number} --json headRefName --repo y0ngha/siglens | jq -r '.headRefName'
 
 git fetch origin '{head branch name}'
 git checkout '{head branch name}'
 ```
 
-### 3a. Fetch All Review Comments (Type A only)
+### 4a. Fetch All Review Comments (Type A only)
 
 Always use `jq`. Never use Python or other interpreters.
 
 ```bash
 # All inline comments across the PR
-gh api repos/{repo}/pulls/{PR number}/comments \
+gh api repos/y0ngha/siglens/pulls/{PR number}/comments \
   | jq '.[] | {id: .id, path: .path, line: .line, body: .body}'
 
 # All reviews with their state
-gh api repos/{repo}/pulls/{PR number}/reviews \
+gh api repos/y0ngha/siglens/pulls/{PR number}/reviews \
   | jq '[.[] | {id: .id, state: .state, submitted_at: .submitted_at}]'
 
 # Inline comments for a specific review
-gh api repos/{repo}/pulls/{PR number}/reviews/{review_id}/comments \
+gh api repos/y0ngha/siglens/pulls/{PR number}/reviews/{review_id}/comments \
   | jq '.[] | {path: .path, line: .line, body: .body}'
 ```
 
-### 4. Load Required Documents
+### 5. Load Required Documents
 
 Always read:
 - docs/MISTAKES.md
