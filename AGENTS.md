@@ -72,7 +72,6 @@ Siglens는 이 복잡한 과정을 AI가 대신 처리해준다.
 | `docs/FF.md`              | FF 4원칙 상세 가이드 (Readability, Predictability, Cohesion, Coupling) |
 | `docs/DESIGN.md`          | 컬러 시스템, Tailwind 설정, 차트 컬러 상수                                  |
 | `docs/GIT_CONVENTIONS.md` | 브랜치 네이밍, 커밋 메시지, PR 규칙                                         |
-| `docs/FLOW.md`            | 이슈→PR, PR 리뷰 수정, 공통 처리 절차                                      |
 | `docs/MISTAKES.md`        | 자주 하는 실수                                                       |
 | `docs/SIGLENS_API.md`        | SIGLENS 엔드포인트, 요청/응답 스키마                                       |
 
