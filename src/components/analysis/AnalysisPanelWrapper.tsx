@@ -11,7 +11,6 @@ interface AnalysisPanelWrapperProps {
 export function AnalysisPanelWrapper({
     initialAnalysis,
 }: AnalysisPanelWrapperProps) {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const [analysis, _setAnalysis] =
         useState<AnalysisResponse>(initialAnalysis);
 
