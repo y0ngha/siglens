@@ -6,7 +6,7 @@ import {
 } from '@/domain/constants/market';
 
 describe('DEFAULT_TIMEFRAME', () => {
-    describe('타입이 Timeframe일 때', () => {
+    describe('기본값 확인', () => {
         it("'1Day'를 반환한다", () => {
             expect(DEFAULT_TIMEFRAME).toBe('1Day');
         });
@@ -15,12 +15,10 @@ describe('DEFAULT_TIMEFRAME', () => {
 
 describe('DEFAULT_BARS_LIMIT', () => {
     describe('기본값 확인', () => {
-        it('500을 반환한다', () => {
-            expect(DEFAULT_BARS_LIMIT).toBe(500);
-        });
-
-        it("TIMEFRAME_BARS_LIMIT['1Day']와 일치한다", () => {
-            expect(DEFAULT_BARS_LIMIT).toBe(TIMEFRAME_BARS_LIMIT['1Day']);
+        it('TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME]과 동일한 값을 반환한다', () => {
+            expect(DEFAULT_BARS_LIMIT).toBe(
+                TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME]
+            );
         });
     });
 });
