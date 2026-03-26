@@ -81,7 +81,6 @@ export function StockChart({
         chartRef.current.timeScale().fitContent();
     }, [bars]);
 
-    // togglePeriod는 향후 MA/EMA 토글 UI 연결 시 사용 예정
     useMAOverlay({
         chartRef,
         bars,
