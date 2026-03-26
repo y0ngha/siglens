@@ -12,6 +12,7 @@ export interface Bar {
 
 export interface BarsResponse {
     bars: Bar[];
+    hasMore: boolean;
 }
 
 export interface MACDResult {

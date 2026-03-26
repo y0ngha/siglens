@@ -66,6 +66,8 @@ export function useAnalysis({
 
             const nextAnalysis: AnalysisResponse = await res.json();
             setAnalysis(nextAnalysis);
+        } catch (_err) {
+            setAnalysisError('분석 요청에 실패했습니다');
         } finally {
             setIsAnalyzing(false);
         }

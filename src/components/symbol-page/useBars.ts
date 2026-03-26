@@ -66,6 +66,8 @@ export function useBars({
                 setTimeframe(nextTimeframe);
                 setBars(nextBars);
                 setIndicators(nextIndicators);
+            } catch (_err) {
+                setBarsError('데이터를 불러오지 못했습니다');
             } finally {
                 setIsLoadingBars(false);
             }
