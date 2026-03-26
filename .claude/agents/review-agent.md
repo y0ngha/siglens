@@ -29,11 +29,13 @@ Routing to the next agent is handled by the main orchestrator — not by you.
 
 Read `.claude/agent-memory/review-agent/MEMORY.md` and load all files listed in the index.
 
-### 1. Check Changes
+### 1. Identify Changed Files
 
 ```bash
-git diff master
+git diff master --name-only
 ```
+
+This gives you the list of changed files. Then **read each file directly** using the Read tool — do not rely on `git diff` output for the actual file content. The diff may show stale hunks from earlier commits and will not reflect the current state of the file.
 
 ### Excluded Directories
 
