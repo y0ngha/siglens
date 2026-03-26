@@ -12,7 +12,8 @@ export function AnalysisPanelWrapper({
     initialAnalysis,
 }: AnalysisPanelWrapperProps) {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const [analysis, _setAnalysis] = useState<AnalysisResponse>(initialAnalysis);
+    const [analysis, _setAnalysis] =
+        useState<AnalysisResponse>(initialAnalysis);
 
     // TODO: 재분석 시 서버 액션 또는 API 라우트 호출로 대체
     // _setAnalysis(newAnalysis) 로 상태 갱신
