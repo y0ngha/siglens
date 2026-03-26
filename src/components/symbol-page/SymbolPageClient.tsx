@@ -1,21 +1,12 @@
 'use client';
 
-import { useState } from 'react';
-import { calculateIndicators } from '@/domain/indicators';
-import type {
-    AnalysisResponse,
-    Bar,
-    IndicatorResult,
-    Timeframe,
-} from '@/domain/types';
+import type { AnalysisResponse, Bar, IndicatorResult } from '@/domain/types';
 import { StockChart } from '@/components/chart/StockChart';
 import { VolumeChart } from '@/components/chart/VolumeChart';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
-import {
-    DEFAULT_TIMEFRAME,
-    TIMEFRAME_BARS_LIMIT,
-} from '@/domain/constants/market';
+import { useBars } from './useBars';
+import { useAnalysis } from './useAnalysis';
 
 interface SymbolPageClientProps {
     symbol: string;
@@ -30,54 +21,21 @@ export function SymbolPageClient({
     initialIndicators,
     initialAnalysis,
 }: SymbolPageClientProps) {
-    const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
-    const [bars, setBars] = useState<Bar[]>(initialBars);
-    const [indicators, setIndicators] =
-        useState<IndicatorResult>(initialIndicators);
-    const [analysis, setAnalysis] = useState<AnalysisResponse>(initialAnalysis);
-    const [isLoadingBars, setIsLoadingBars] = useState(false);
-    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const {
+        bars,
+        indicators,
+        timeframe,
+        isLoadingBars,
+        handleTimeframeChange,
+    } = useBars({ symbol, initialBars, initialIndicators });
 
-    const handleTimeframeChange = async (nextTimeframe: Timeframe) => {
-        if (nextTimeframe === timeframe) return;
-        setIsLoadingBars(true);
-
-        try {
-            const limit = TIMEFRAME_BARS_LIMIT[nextTimeframe];
-            const res = await fetch(
-                `/api/bars?symbol=${encodeURIComponent(symbol)}&timeframe=${nextTimeframe}&limit=${limit}`
-            );
-            if (!res.ok) return;
-
-            const data: { bars: Bar[] } = await res.json();
-            const nextBars = data.bars;
-            const nextIndicators = calculateIndicators(nextBars);
-
-            setTimeframe(nextTimeframe);
-            setBars(nextBars);
-            setIndicators(nextIndicators);
-        } finally {
-            setIsLoadingBars(false);
-        }
-    };
-
-    const handleReanalyze = async () => {
-        setIsAnalyzing(true);
-
-        try {
-            const res = await fetch('/api/analyze', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ symbol, bars, indicators }),
-            });
-            if (!res.ok) return;
-
-            const nextAnalysis: AnalysisResponse = await res.json();
-            setAnalysis(nextAnalysis);
-        } finally {
-            setIsAnalyzing(false);
-        }
-    };
+    const { analysis, isAnalyzing, handleReanalyze } = useAnalysis({
+        symbol,
+        initialAnalysis,
+        timeframe,
+        bars,
+        indicators,
+    });
 
     return (
         <div className="bg-secondary-900 text-secondary-200 flex h-full min-h-screen flex-col">
