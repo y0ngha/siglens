@@ -24,7 +24,7 @@ const TREND_LABEL: Record<Trend, string> = {
 
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
     low: 'text-teal-400',
-    medium: 'text-yellow-400',
+    medium: 'text-chart-signal',
     high: 'text-red-400',
 };
 
@@ -36,7 +36,7 @@ const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
 
 const SIGNAL_STRENGTH_COLOR: Record<SignalStrength, string> = {
     strong: 'text-teal-400',
-    moderate: 'text-yellow-400',
+    moderate: 'text-chart-signal',
     weak: 'text-secondary-400',
 };
 
@@ -93,14 +93,9 @@ interface AnalysisPanelProps {
 }
 
 export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
-    const allSignals = [
-        ...analysis.signals,
-        ...analysis.skillSignals.flatMap(s => s.signals),
-    ];
-
     return (
         <div className="bg-secondary-800 flex flex-col gap-4 rounded-lg p-4">
-            {/* 전체 시그널 */}
+            {/* 헤더 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <span className="text-secondary-200 text-sm font-semibold">
@@ -136,20 +131,45 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
 
             <div className="border-secondary-700 border-t" />
 
-            {/* 시그널 목록 */}
-            {allSignals.length > 0 && (
+            {/* 인디케이터 시그널 */}
+            {analysis.signals.length > 0 && (
                 <div className="flex flex-col gap-2">
                     <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                         시그널
                     </span>
                     <div className="flex flex-col gap-1.5">
-                        {allSignals.map(signal => (
+                        {analysis.signals.map(signal => (
                             <SignalItem
                                 key={`${signal.type}-${signal.description}`}
                                 signal={signal}
                             />
                         ))}
                     </div>
+                </div>
+            )}
+
+            {/* 스킬 시그널 (skillName별 그룹핑) */}
+            {analysis.skillSignals.length > 0 && (
+                <div className="flex flex-col gap-3">
+                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                        패턴 / 스킬
+                    </span>
+                    {analysis.skillSignals.map(skillSignal => (
+                        <div
+                            key={skillSignal.skillName}
+                            className="flex flex-col gap-1.5"
+                        >
+                            <span className="text-secondary-400 text-xs font-medium">
+                                {skillSignal.skillName}
+                            </span>
+                            {skillSignal.signals.map(signal => (
+                                <SignalItem
+                                    key={`${signal.type}-${signal.description}`}
+                                    signal={signal}
+                                />
+                            ))}
+                        </div>
+                    ))}
                 </div>
             )}
 
@@ -168,7 +188,7 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                                 </span>
                                 {analysis.keyLevels.resistance.map(level => (
                                     <span
-                                        key={level}
+                                        key={`resistance-${level}`}
                                         className="text-sm font-medium text-red-400"
                                     >
                                         {level.toLocaleString()}
@@ -183,7 +203,7 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                                 </span>
                                 {analysis.keyLevels.support.map(level => (
                                     <span
-                                        key={level}
+                                        key={`support-${level}`}
                                         className="text-sm font-medium text-teal-400"
                                     >
                                         {level.toLocaleString()}

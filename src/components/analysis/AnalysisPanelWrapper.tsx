@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 import type { AnalysisResponse } from '@/domain/types';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 
@@ -11,12 +11,12 @@ interface AnalysisPanelWrapperProps {
 export function AnalysisPanelWrapper({
     initialAnalysis,
 }: AnalysisPanelWrapperProps) {
-    const [analysis] = useState<AnalysisResponse>(initialAnalysis);
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const [analysis, _setAnalysis] = useState<AnalysisResponse>(initialAnalysis);
 
     // TODO: 재분석 시 서버 액션 또는 API 라우트 호출로 대체
-    const handleReanalyze = useCallback(() => {
-        // TODO: 재분석 API 호출 후 setAnalysis(newAnalysis) 로 상태 갱신
-    }, []);
+    // _setAnalysis(newAnalysis) 로 상태 갱신
+    const handleReanalyze = () => {};
 
     return <AnalysisPanel analysis={analysis} onReanalyze={handleReanalyze} />;
 }

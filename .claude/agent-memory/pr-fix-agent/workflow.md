@@ -1,10 +1,5 @@
 # PR Fix Flow
 
-## When This Flow Applies
-
-Triggered when the user's request contains a PR number and a fix intent —
-e.g. `PR #17 코멘트 확인하고 수정해줘`, `#17 PR 코멘트 확인하고 수정해줘`, or any message combining `[PR, 수정, 확인, #{N}]`.
-
 ## Flow
 
 ```

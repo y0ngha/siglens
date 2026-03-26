@@ -1,10 +1,5 @@
 # Issue Implementation Flow
 
-## When This Flow Applies
-
-Triggered when the user's request contains an issue number and an implementation intent —
-e.g. `이슈 #17 확인하고 구현해줘`, `#17 이슈 확인하고 구현해줘`, or any message combining `[이슈, 구현, 확인, #{N}]`.
-
 ## Flow
 
 ```
