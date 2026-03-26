@@ -11,7 +11,7 @@ interface AnalysisPanelWrapperProps {
 export function AnalysisPanelWrapper({
     initialAnalysis,
 }: AnalysisPanelWrapperProps) {
-    const [analysis, setAnalysis] = useState<AnalysisResponse>(initialAnalysis);
+    const [analysis] = useState<AnalysisResponse>(initialAnalysis);
 
     // TODO: 재분석 시 서버 액션 또는 API 라우트 호출로 대체
     const handleReanalyze = useCallback(() => {
