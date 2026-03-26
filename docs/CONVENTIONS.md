@@ -152,6 +152,11 @@ components/     제외
 app/            제외
 ```
 
+**`components/` and `app/` are intentionally excluded from test coverage.**
+Do not request or write test files for files under `components/` or `app/`.
+UI rendering logic is verified manually or via integration tests, not unit tests.
+Test files exist only for `domain/` and `infrastructure/`.
+
 ### 테스트 구조
 
 ```typescript
