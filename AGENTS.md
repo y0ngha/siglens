@@ -43,7 +43,8 @@ Investors who want a single, consolidated interpretation of multiple indicators.
 2. Chart + indicators render automatically
 3. AI comprehensive analysis report generated automatically
    - Indicator interpretation (RSI overbought/oversold, MACD cross, etc.)
-   - Pattern detection (head and shoulders, wedge, etc.)
+   - Candle pattern detection (15 types of single candles + 30 types of multi candles)
+   - Pattern detection via Skills (head and shoulders, wedge, etc.)
    - Support/resistance levels
    - Overall market direction (bullish / bearish / neutral)
 4. Timeframe switching (1-minute to daily)
@@ -67,7 +68,7 @@ Read the relevant documents before beginning. Rules defined in these documents m
 | Document | Contents |
 |---|---|
 | `docs/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
-| `docs/DOMAIN.md` | Indicator calculation specs, business rules, Skills system |
+| `docs/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
 | `docs/API.md` | Alpaca and Claude API endpoints, request/response schemas |
 | `docs/SIGLENS_API.md` | Internal Next.js Route Handler endpoints, request/response schemas |
 | `docs/CONVENTIONS.md` | Coding conventions, naming rules, paradigm guidelines |
@@ -102,9 +103,9 @@ For the standard flows triggered by user commands, see:
 
 ```
 domain         ← No external imports. Pure TypeScript functions only.
-infrastructure ← May import from domain only
+infrastructure ← May import from domain only. Handles file I/O (Skills) and API calls.
 lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.
-app (RSC/Route)← May import from infrastructure, domain, lib. Reads skills/*.md files.
+app (RSC/Route)← May import from infrastructure, domain, lib.
 components     ← May import from domain, lib. Direct imports from infrastructure are prohibited.
 ```
 
@@ -187,29 +188,39 @@ New analysis techniques are applied simply by adding a Markdown file — no code
 ### Directory Location
 
 `/skills/` lives at the **project root**, not inside `src/`. Skills are declarative configuration
-files, not source code. They are read at runtime by the RSC layer (`app/`).
+files, not source code.
 
 ```
 skills/                        ← project root (not src/)
-├── rsi-divergence.md
-├── volume-spread.md
+├── pattern-head-and-shoulders.md
+├── pattern-inverse-head-and-shoulders.md
 ├── pattern-double-top.md
+├── pattern-double-bottom.md
+├── pattern-ascending-wedge.md
+├── pattern-descending-wedge.md
 └── ...
 ```
 
 ### Layer Responsibility
 
 Skills files are **not** read by `domain/` — domain has no file I/O.
-Reading and parsing `skills/*.md` is the responsibility of the **`app/` layer (RSC)**.
-The parsed skill content is passed into `domain/analysis/prompt.ts` as a plain data structure.
+Reading and parsing `skills/*.md` is the responsibility of **`infrastructure/skills/loader.ts`** (`FileSkillsLoader`).
+The parsed `Skill[]` is passed into `domain/analysis/prompt.ts` as a plain data structure.
 
 ```
-app/[symbol]/page.tsx (RSC)
-  → reads skills/*.md            (file I/O — allowed in app layer)
+infrastructure/skills/loader.ts (FileSkillsLoader)
+  → reads skills/*.md            (file I/O — allowed in infrastructure layer)
   → parses frontmatter + body
-  → filters by confidence_weight (< 0.5 excluded)
-  → passes SkillDefinition[] to domain/analysis/prompt.ts
-  → domain builds the prompt     (pure function, no file access)
+  → returns Skill[]
+
+app/api/analyze/route.ts (or app/[symbol]/page.tsx)
+  → calls FileSkillsLoader.loadSkills()
+  → passes Skill[] to domain/analysis/prompt.ts
+
+domain/analysis/prompt.ts
+  → buildAnalysisPrompt(symbol, bars, indicators, skills)
+  → filters by confidenceWeight (< 0.5 excluded)
+  → builds the prompt     (pure function, no file access)
 ```
 
 ### When Working on Skills-related Tasks
@@ -218,4 +229,4 @@ app/[symbol]/page.tsx (RSC)
 - Check the `indicators` field in each file's frontmatter to identify required indicators
 - Skills with `confidence_weight < 0.5` are excluded from the prompt entirely
 - Refer to the Skills System section in `docs/DOMAIN.md` for the full file format spec,
-  type definitions, and `SkillDefinition` interface
+  type definitions, and `Skill` interface
