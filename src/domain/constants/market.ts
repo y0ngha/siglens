@@ -22,4 +22,4 @@ export const TIMEFRAME_BARS_LIMIT: Record<Timeframe, number> = {
  * DEFAULT_BARS_LIMIT: 1Day 기준으로 약 2년치 거래일(500)에 해당하는 기본 조회 수.
  * bars route handler와 symbol page 서버 컴포넌트에서 공유한다.
  */
-export const DEFAULT_BARS_LIMIT = TIMEFRAME_BARS_LIMIT['1Day'];
+export const DEFAULT_BARS_LIMIT = TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME];

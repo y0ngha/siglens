@@ -2,17 +2,17 @@ import { constants } from 'node:http2';
 import { NextRequest, NextResponse } from 'next/server';
 import { AlpacaProvider } from '@/infrastructure/market/alpaca';
 import type { Timeframe } from '@/domain/types';
-import { DEFAULT_BARS_LIMIT } from '@/domain/constants/market';
+import {
+    DEFAULT_BARS_LIMIT,
+    TIMEFRAME_BARS_LIMIT,
+} from '@/domain/constants/market';
 
 const { HTTP_STATUS_BAD_REQUEST } = constants;
 
-const VALID_TIMEFRAMES: Timeframe[] = [
-    '1Min',
-    '5Min',
-    '15Min',
-    '1Hour',
-    '1Day',
-];
+const VALID_TIMEFRAMES = Object.keys(TIMEFRAME_BARS_LIMIT) as Timeframe[];
+
+/** hasMore 판단을 위해 limit보다 1개 더 요청하는 수 */
+const LOOK_AHEAD_COUNT = 1;
 
 function isValidTimeframe(value: string): value is Timeframe {
     return (VALID_TIMEFRAMES as string[]).includes(value);
@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
     const bars = await market.getBars({
         symbol,
         timeframe: timeframeParam,
-        limit: limit + 1,
+        limit: limit + LOOK_AHEAD_COUNT,
         before,
     });
 

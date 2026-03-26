@@ -21,12 +21,12 @@ const EMPTY_INDICATORS: IndicatorResult = {
 };
 
 interface StockChartProps {
-    initialBars: Bar[];
+    bars: Bar[];
     indicators?: IndicatorResult;
 }
 
 export function StockChart({
-    initialBars,
+    bars,
     indicators = EMPTY_INDICATORS,
 }: StockChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -69,7 +69,7 @@ export function StockChart({
         if (!seriesRef.current || !chartRef.current) return;
 
         seriesRef.current.setData(
-            initialBars.map(({ time, open, high, low, close }) => ({
+            bars.map(({ time, open, high, low, close }) => ({
                 time: time as UTCTimestamp,
                 open,
                 high,
@@ -79,24 +79,24 @@ export function StockChart({
         );
 
         chartRef.current.timeScale().fitContent();
-    }, [initialBars]);
+    }, [bars]);
 
     // togglePeriod는 향후 MA/EMA 토글 UI 연결 시 사용 예정
     useMAOverlay({
         chartRef,
-        bars: initialBars,
+        bars,
         indicators,
         lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
     });
     useEMAOverlay({
         chartRef,
-        bars: initialBars,
+        bars,
         indicators,
         lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
     });
     useBollingerOverlay({
         chartRef,
-        bars: initialBars,
+        bars,
         indicators,
         lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
     });

@@ -6,7 +6,7 @@ import {
 } from '@/domain/constants/market';
 
 describe('DEFAULT_TIMEFRAME', () => {
-    describe('기본 타임프레임 확인', () => {
+    describe('타입이 Timeframe일 때', () => {
         it("'1Day'를 반환한다", () => {
             expect(DEFAULT_TIMEFRAME).toBe('1Day');
         });

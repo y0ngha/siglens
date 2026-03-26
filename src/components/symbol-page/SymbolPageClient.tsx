@@ -5,8 +5,8 @@ import { StockChart } from '@/components/chart/StockChart';
 import { VolumeChart } from '@/components/chart/VolumeChart';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
-import { useBars } from './useBars';
-import { useAnalysis } from './useAnalysis';
+import { useBars } from '@/components/symbol-page/useBars';
+import { useAnalysis } from '@/components/symbol-page/useAnalysis';
 
 interface SymbolPageClientProps {
     symbol: string;
@@ -57,7 +57,7 @@ export function SymbolPageClient({
                 {/* 차트 영역 */}
                 <div className="flex flex-1 flex-col overflow-hidden">
                     {/* 캔들 차트 */}
-                    <div className="relative flex-3">
+                    <div className="relative flex-[3]">
                         {isLoadingBars && (
                             <div className="bg-secondary-900/60 absolute inset-0 z-10 flex items-center justify-center">
                                 <span className="text-secondary-400 text-sm">
@@ -72,10 +72,7 @@ export function SymbolPageClient({
                                 </span>
                             </div>
                         )}
-                        <StockChart
-                            initialBars={bars}
-                            indicators={indicators}
-                        />
+                        <StockChart bars={bars} indicators={indicators} />
                     </div>
 
                     {/* 거래량 차트 */}

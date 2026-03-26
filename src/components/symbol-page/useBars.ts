@@ -39,11 +39,16 @@ export function useBars({
         useState<IndicatorResult>(initialIndicators);
     const [isLoadingBars, setIsLoadingBars] = useState(false);
     const isLoadingBarsRef = useRef(false);
+    const timeframeRef = useRef<Timeframe>(DEFAULT_TIMEFRAME);
     const [barsError, setBarsError] = useState<string | null>(null);
 
     const handleTimeframeChange = useCallback(
         async (nextTimeframe: Timeframe): Promise<void> => {
-            if (nextTimeframe === timeframe || isLoadingBarsRef.current) return;
+            if (
+                nextTimeframe === timeframeRef.current ||
+                isLoadingBarsRef.current
+            )
+                return;
             isLoadingBarsRef.current = true;
             setIsLoadingBars(true);
             setBarsError(null);
@@ -65,6 +70,7 @@ export function useBars({
                 const nextBars = data.bars;
                 const nextIndicators = calculateIndicators(nextBars);
 
+                timeframeRef.current = nextTimeframe;
                 setTimeframe(nextTimeframe);
                 setBars(nextBars);
                 setIndicators(nextIndicators);
@@ -75,7 +81,7 @@ export function useBars({
                 setIsLoadingBars(false);
             }
         },
-        [symbol, timeframe]
+        [symbol]
     );
 
     return {
