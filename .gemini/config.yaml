@@ -1,18 +1,18 @@
 have_fun: false
 
 code_review:
-  comment_severity_threshold: MEDIUM
-  disable: false
+    comment_severity_threshold: MEDIUM
+    disable: false
 
 ignore_patterns:
-  - "docs/**"
-  - "refs/**"
-  - ".github/**"
-  - ".yarn/**"
-  - "public/**"
-  - "*.config.js"
-  - "*.config.ts"
-  - "*.config.mjs"
-  - "**/*.spec.ts"
-  - "**/*.bench.ts"
-  - "**/*.bundle-size.spec.ts"
+    - 'docs/**'
+    - 'refs/**'
+    - '.github/**'
+    - '.yarn/**'
+    - 'public/**'
+    - '*.config.js'
+    - '*.config.ts'
+    - '*.config.mjs'
+    - '**/*.spec.ts'
+    - '**/*.bench.ts'
+    - '**/*.bundle-size.spec.ts'
