@@ -94,7 +94,7 @@ export function SymbolPageClient({
                         </div>
                     )}
                     {analysisError && (
-                        <div className="mb-3 rounded px-3 py-2">
+                        <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
                             <span className="text-sm text-red-400">
                                 {analysisError}
                             </span>

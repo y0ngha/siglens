@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { calculateIndicators } from '@/domain/indicators';
 import type {
     Bar,
@@ -38,11 +38,13 @@ export function useBars({
     const [indicators, setIndicators] =
         useState<IndicatorResult>(initialIndicators);
     const [isLoadingBars, setIsLoadingBars] = useState(false);
+    const isLoadingBarsRef = useRef(false);
     const [barsError, setBarsError] = useState<string | null>(null);
 
     const handleTimeframeChange = useCallback(
         async (nextTimeframe: Timeframe): Promise<void> => {
-            if (nextTimeframe === timeframe || isLoadingBars) return;
+            if (nextTimeframe === timeframe || isLoadingBarsRef.current) return;
+            isLoadingBarsRef.current = true;
             setIsLoadingBars(true);
             setBarsError(null);
 
@@ -69,10 +71,11 @@ export function useBars({
             } catch (_err) {
                 setBarsError('데이터를 불러오지 못했습니다');
             } finally {
+                isLoadingBarsRef.current = false;
                 setIsLoadingBars(false);
             }
         },
-        [symbol, timeframe, isLoadingBars]
+        [symbol, timeframe]
     );
 
     return {

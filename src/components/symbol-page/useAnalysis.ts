@@ -31,7 +31,7 @@ export function useAnalysis({
     indicators,
 }: UseAnalysisOptions): UseAnalysisResult {
     const initialAnalysisRef = useRef(initialAnalysis);
-    const isMountedRef = useRef(false);
+    const prevTimeframeRef = useRef<Timeframe | null>(null);
     const [analysis, setAnalysis] = useState<AnalysisResponse>(initialAnalysis);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisError, setAnalysisError] = useState<string | null>(null);
@@ -39,14 +39,16 @@ export function useAnalysis({
     // 타임프레임이 변경되면 이전 타임프레임 기준의 분석 결과를 무효화한다.
     // initialAnalysisRef는 항상 최초 SSR 분석 결과를 가리키며, 이후 변경되지 않는다.
     // 따라서 타임프레임 전환 시 SSR 분석으로 초기화함으로써 오래된 분석이 표시되는 것을 방지한다.
-    // isMountedRef로 마운트 시 최초 실행은 건너뛰고, 실제 타임프레임 변경 시에만 무효화한다.
+    // prevTimeframeRef로 이전 값과 비교하여 실제 변경 시에만 무효화하고, 초기 마운트는 건너뛴다.
     useEffect(() => {
-        if (!isMountedRef.current) {
-            isMountedRef.current = true;
-            return;
+        if (
+            prevTimeframeRef.current !== null &&
+            prevTimeframeRef.current !== timeframe
+        ) {
+            setAnalysis(initialAnalysisRef.current);
+            setAnalysisError(null);
         }
-        setAnalysis(initialAnalysisRef.current);
-        setAnalysisError(null);
+        prevTimeframeRef.current = timeframe;
     }, [timeframe]);
 
     const handleReanalyze = useCallback(async (): Promise<void> => {
