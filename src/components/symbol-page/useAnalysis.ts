@@ -31,7 +31,7 @@ export function useAnalysis({
     indicators,
 }: UseAnalysisOptions): UseAnalysisResult {
     const initialAnalysisRef = useRef(initialAnalysis);
-    const prevTimeframeRef = useRef<Timeframe | null>(null);
+    const isMountedRef = useRef(false);
     // 렌더 함수 본문에서 직접 할당하여 useEffect 비동기 실행으로 인한 stale 참조를 방지한다
     const barsRef = useRef(bars);
     const indicatorsRef = useRef(indicators);
@@ -41,17 +41,17 @@ export function useAnalysis({
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisError, setAnalysisError] = useState<string | null>(null);
 
+    // 초기화: 마운트 완료 여부를 기록한다.
+    useEffect(() => {
+        isMountedRef.current = true;
+    }, []);
+
     // 데이터 동기화: 타임프레임이 변경되면 이전 타임프레임 기준의 분석 결과를 무효화한다.
     // initialAnalysisRef는 항상 최초 SSR 분석 결과를 가리키며, 이후 변경되지 않는다.
     // 따라서 타임프레임 전환 시 SSR 분석으로 초기화함으로써 오래된 분석이 표시되는 것을 방지한다.
-    // prevTimeframeRef로 실제 타임프레임 변경 여부를 확인하여 초기 마운트 시 실행을 건너뛴다.
+    // isMountedRef로 초기 마운트 시 실행을 건너뛴다.
     useEffect(() => {
-        if (prevTimeframeRef.current === null) {
-            prevTimeframeRef.current = timeframe;
-            return;
-        }
-        if (prevTimeframeRef.current === timeframe) return;
-        prevTimeframeRef.current = timeframe;
+        if (!isMountedRef.current) return;
         setAnalysis(initialAnalysisRef.current);
         setAnalysisError(null);
     }, [timeframe]);
