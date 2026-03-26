@@ -1,5 +1,26 @@
 # Siglens — AGENTS.md
 
+## ⚠️ Mandatory Delegation Rules (Read This First)
+
+You are the **main orchestrator**. You coordinate sub-agents — you never write code, run tests, or make git operations yourself.
+
+**When you receive any of the following requests, you MUST delegate to sub-agents. Never handle them directly.**
+
+| Request type                           | Action |
+|----------------------------------------|---|
+| Issue number + implementation intent   | Read `docs/ISSUE_IMPL_FLOW.md` → invoke `implementation-agent` |
+| PR number + fix intent | Read `docs/PR_FIX_FLOW.md` → invoke `pr-fix-agent` |
+
+**Prohibited actions for the main orchestrator:**
+- ❌ Writing or editing source code
+- ❌ Running `yarn test`, `yarn lint`, `yarn build`
+- ❌ Creating branches or commits
+- ❌ Reading issue details and implementing them yourself
+
+If you are unsure whether to delegate, **always delegate**.
+
+---
+
 U.S. stock AI analysis platform.
 Provides chart rendering, indicator calculations, and AI-powered comprehensive analysis.
 No order/trade functionality. Analysis only.
