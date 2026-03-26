@@ -162,8 +162,8 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 ### Workflow Reference
 
 For the full step-by-step flow, **read the relevant doc before invoking any agent**:
-- `.claude/docs/ISSUE_IMPL_FLOW.md` — issue number + implementation request
-- `.claude/docs/PR_FIX_FLOW.md` — PR number + fix request
+- `docs/ISSUE_IMPL_FLOW.md` — issue number + implementation request
+- `docs/PR_FIX_FLOW.md` — PR number + fix request
 
 ---
 
