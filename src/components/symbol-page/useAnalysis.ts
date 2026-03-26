@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type {
     AnalysisResponse,
     Bar,
@@ -34,11 +34,13 @@ export function useAnalysis({
     const [isAnalyzing, setIsAnalyzing] = useState(false);
 
     // 타임프레임이 변경되면 이전 타임프레임 기준의 분석 결과를 무효화한다.
+    // initialAnalysisRef는 항상 최초 SSR 분석 결과를 가리키며, 이후 변경되지 않는다.
+    // 따라서 타임프레임 전환 시 SSR 분석으로 초기화함으로써 오래된 분석이 표시되는 것을 방지한다.
     useEffect(() => {
         setAnalysis(initialAnalysisRef.current);
     }, [timeframe]);
 
-    const handleReanalyze = async (): Promise<void> => {
+    const handleReanalyze = useCallback(async (): Promise<void> => {
         setIsAnalyzing(true);
 
         try {
@@ -54,7 +56,7 @@ export function useAnalysis({
         } finally {
             setIsAnalyzing(false);
         }
-    };
+    }, [symbol, bars, indicators]);
 
     return { analysis, isAnalyzing, handleReanalyze };
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { calculateIndicators } from '@/domain/indicators';
 import type {
     Bar,
@@ -24,6 +24,7 @@ interface UseBarsResult {
     indicators: IndicatorResult;
     timeframe: Timeframe;
     isLoadingBars: boolean;
+    barsError: string | null;
     handleTimeframeChange: (nextTimeframe: Timeframe) => Promise<void>;
 }
 
@@ -37,37 +38,47 @@ export function useBars({
     const [indicators, setIndicators] =
         useState<IndicatorResult>(initialIndicators);
     const [isLoadingBars, setIsLoadingBars] = useState(false);
+    const [barsError, setBarsError] = useState<string | null>(null);
 
-    const handleTimeframeChange = async (
-        nextTimeframe: Timeframe
-    ): Promise<void> => {
-        if (nextTimeframe === timeframe) return;
-        setIsLoadingBars(true);
+    const handleTimeframeChange = useCallback(
+        async (nextTimeframe: Timeframe): Promise<void> => {
+            if (nextTimeframe === timeframe) return;
+            setIsLoadingBars(true);
+            setBarsError(null);
 
-        try {
-            const limit = TIMEFRAME_BARS_LIMIT[nextTimeframe];
-            const res = await fetch(
-                `/api/bars?symbol=${encodeURIComponent(symbol)}&timeframe=${nextTimeframe}&limit=${limit}`
-            );
-            if (!res.ok) return;
+            try {
+                const limit = TIMEFRAME_BARS_LIMIT[nextTimeframe];
+                const res = await fetch(
+                    `/api/bars?symbol=${encodeURIComponent(symbol)}&timeframe=${nextTimeframe}&limit=${limit}`
+                );
+                if (!res.ok) {
+                    // 요청 실패 시 에러 상태를 노출하고 기존 데이터를 유지한다.
+                    setBarsError(
+                        `데이터를 불러오지 못했습니다 (${res.status})`
+                    );
+                    return;
+                }
 
-            const data: BarsResponse = await res.json();
-            const nextBars = data.bars;
-            const nextIndicators = calculateIndicators(nextBars);
+                const data: BarsResponse = await res.json();
+                const nextBars = data.bars;
+                const nextIndicators = calculateIndicators(nextBars);
 
-            setTimeframe(nextTimeframe);
-            setBars(nextBars);
-            setIndicators(nextIndicators);
-        } finally {
-            setIsLoadingBars(false);
-        }
-    };
+                setTimeframe(nextTimeframe);
+                setBars(nextBars);
+                setIndicators(nextIndicators);
+            } finally {
+                setIsLoadingBars(false);
+            }
+        },
+        [symbol, timeframe]
+    );
 
     return {
         bars,
         indicators,
         timeframe,
         isLoadingBars,
+        barsError,
         handleTimeframeChange,
     };
 }
