@@ -81,6 +81,23 @@ Read the relevant documents before beginning. Rules defined in these documents m
 
 ## Agent System
 
+### Your Role: Main Orchestrator
+
+You are the main orchestrator. Sub-agents do not call each other.
+You invoke sub-agents one at a time, read their exit signal, and decide what to invoke next.
+**Never ask the user for confirmation between steps — route automatically.**
+
+```
+User request
+  → you read the relevant FLOW doc
+  → invoke sub-agent
+  → sub-agent emits exit signal and stops
+  → you read the signal and route to the next sub-agent
+  → repeat until the workflow is complete
+```
+
+### Sub-agents
+
 Specialized sub-agents are defined in `.claude/agents/`. Each agent has a distinct responsibility
 and must not perform work outside its scope.
 
@@ -91,9 +108,60 @@ and must not perform work outside its scope.
 | `pr-fix-agent` | Sonnet | Applying PR review comment fixes |
 | `git-agent` | Haiku | Commits, pushes, PR creation — never modifies code |
 
+### Routing Table
+
+When you receive an exit signal, route as follows:
+
+| Signal | Route to |
+|---|---|
+| `implementation-agent` · `status: done` | `review-agent` |
+| `pr-fix-agent` · `status: done` | `review-agent` |
+| `review-agent` · `status: approved` | `git-agent` |
+| `review-agent` · `status: changes_requested` (from issue flow) | `implementation-agent` with findings |
+| `review-agent` · `status: changes_requested` (from PR fix flow) | `pr-fix-agent` with findings |
+| `review-agent` · `status: loop_limit_reached` | Stop — report to user |
+| `git-agent` · `status: done` | Stop — report result to user |
+| Any · `status: failed` | Stop — report failure reason to user |
+
+### Exit Signal Contract
+
+Every sub-agent ends its response with a JSON exit signal and nothing else.
+
+```json
+// implementation-agent — success
+{ "agent": "implementation-agent", "status": "done", "branch": "..." }
+
+// implementation-agent — failure
+{ "agent": "implementation-agent", "status": "failed", "reason": "..." }
+
+// pr-fix-agent — success
+{ "agent": "pr-fix-agent", "status": "done", "pr": 23, "branch": "..." }
+
+// pr-fix-agent — failure
+{ "agent": "pr-fix-agent", "status": "failed", "reason": "..." }
+
+// review-agent — approved
+{ "agent": "review-agent", "status": "approved" }
+
+// review-agent — findings exist
+{ "agent": "review-agent", "status": "changes_requested", "round": 1, "findings": { "required": [...], "recommended": [...] } }
+
+// review-agent — loop limit reached
+{ "agent": "review-agent", "status": "loop_limit_reached", "round": 3, "message": "..." }
+
+// git-agent — new PR created
+{ "agent": "git-agent", "status": "done", "action": "pr_created", "pr_url": "..." }
+
+// git-agent — existing PR updated
+{ "agent": "git-agent", "status": "done", "action": "pr_updated", "pr": 23 }
+
+// git-agent — failure
+{ "agent": "git-agent", "status": "failed", "reason": "..." }
+```
+
 ### Workflow Reference
 
-For the standard flows triggered by user commands, see:
+For the full step-by-step flow, **read the relevant doc before invoking any agent**:
 - `.claude/docs/ISSUE_IMPL_FLOW.md` — issue number + implementation request
 - `.claude/docs/PR_FIX_FLOW.md` — PR number + fix request
 
