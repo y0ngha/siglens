@@ -30,13 +30,14 @@ export function SymbolPageClient({
         handleTimeframeChange,
     } = useBars({ symbol, initialBars, initialIndicators });
 
-    const { analysis, isAnalyzing, handleReanalyze } = useAnalysis({
-        symbol,
-        initialAnalysis,
-        timeframe,
-        bars,
-        indicators,
-    });
+    const { analysis, isAnalyzing, analysisError, handleReanalyze } =
+        useAnalysis({
+            symbol,
+            initialAnalysis,
+            timeframe,
+            bars,
+            indicators,
+        });
 
     return (
         <div className="bg-secondary-900 text-secondary-200 flex h-full min-h-screen flex-col">
@@ -56,7 +57,7 @@ export function SymbolPageClient({
                 {/* 차트 영역 */}
                 <div className="flex flex-1 flex-col overflow-hidden">
                     {/* 캔들 차트 */}
-                    <div className="relative flex-[3]">
+                    <div className="relative flex-3">
                         {isLoadingBars && (
                             <div className="bg-secondary-900/60 absolute inset-0 z-10 flex items-center justify-center">
                                 <span className="text-secondary-400 text-sm">
@@ -89,6 +90,13 @@ export function SymbolPageClient({
                         <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
                             <span className="text-secondary-400 text-sm">
                                 AI 분석 중...
+                            </span>
+                        </div>
+                    )}
+                    {analysisError && (
+                        <div className="mb-3 rounded px-3 py-2">
+                            <span className="text-sm text-red-400">
+                                {analysisError}
                             </span>
                         </div>
                     )}
