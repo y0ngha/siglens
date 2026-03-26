@@ -63,9 +63,7 @@ function getLastAssistantContent(transcript) {
                     ? entry.content
                     : JSON.stringify(entry.content);
             }
-        } catch {
-
-        }
+        } catch {}
     }
 
     return null;
