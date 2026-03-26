@@ -19,8 +19,12 @@ When complete, you output an exit signal and stop — you do not call other agen
 ## Non-Negotiable Rules
 
 - **Always use `jq` for JSON parsing.** Never use Python, Node, or any other interpreter to parse `gh` JSON output.
+- **Never run `git commit`, `git push`, or any git write operation.** Committing and pushing is git-agent's responsibility.
 - **Never call review-agent, git-agent, or any other agent.** Routing is handled by the main orchestrator.
 - **Always end with the exit signal JSON.** No summaries, no questions, no confirmations after it.
+
+Your job ends when validation scripts pass and the exit signal is emitted.
+Everything after that (review, commit, push) is handled by other agents via the main orchestrator.
 
 ---
 
@@ -47,8 +51,8 @@ The message will say something like "These are review findings to fix — do not
 
 ```bash
 # Type B: check out the existing branch passed by orchestrator
-git fetch origin '{branch}'
-git checkout '{branch}'
+git fetch origin {branch}
+git checkout {branch}
 ```
 
 ### 2. Understand the Issue (Type A only)
@@ -70,7 +74,7 @@ Things to verify:
 
 ```bash
 git checkout master && git pull origin master
-git checkout -b '{type}/{issue number}/{one-line summary}'
+git checkout -b {type}/{issue number}/{one-line summary}
 ```
 
 Branch naming: `feat/2/도메인-공통-타입-정의` format. Korean allowed, spaces replaced with hyphens.

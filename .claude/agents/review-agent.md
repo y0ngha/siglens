@@ -18,6 +18,7 @@ Routing to the next agent is handled by the main orchestrator — not by you.
 ## Non-Negotiable Rules
 
 - **Never modify code.** Read-only. If you find yourself wanting to fix something, put it in findings instead.
+- **Never run `git diff` without `--name-only`.** Full diff output is stale and unreliable — always read actual file content using the Read tool.
 - **Never call implementation-agent, pr-fix-agent, git-agent, or any other agent.** Routing is handled by the main orchestrator.
 - **Always end with the exit signal JSON.** No prose after it.
 
@@ -29,13 +30,25 @@ Routing to the next agent is handled by the main orchestrator — not by you.
 
 Read `.claude/agent-memory/review-agent/MEMORY.md` and load all files listed in the index.
 
-### 1. Identify Changed Files
+### 1. Identify Changed Files and Read Them
+
+**Step 1 — Get the list of changed files only:**
 
 ```bash
 git diff master --name-only
 ```
 
-This gives you the list of changed files. Then **read each file directly** using the Read tool — do not rely on `git diff` output for the actual file content. The diff may show stale hunks from earlier commits and will not reflect the current state of the file.
+**Step 2 — Read each file using the Read tool:**
+
+Use the Read tool to open each changed file directly. Do this for every file in the list.
+
+```
+❌ Never run: git diff master
+❌ Never run: git diff master -- {file}
+❌ Never use diff output as a substitute for actual file content
+```
+
+`git diff` full output reflects what changed relative to master, not the current state of the file. Stale hunks from earlier commits will cause you to review code that no longer exists. Always read the live file content.
 
 ### Excluded Directories
 

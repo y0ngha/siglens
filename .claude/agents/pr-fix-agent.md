@@ -20,8 +20,12 @@ When complete, you output an exit signal and stop — you do not call other agen
 
 - **Always use `jq` for JSON parsing.** Never use Python, Node, or any other interpreter to parse `gh` JSON output.
 - **Never create new branches or PRs.** Work only on the existing PR branch.
+- **Never run `git commit`, `git push`, or any git write operation.** Committing and pushing is git-agent's responsibility.
 - **Never call review-agent, git-agent, or any other agent.** Routing is handled by the main orchestrator.
 - **Always end with the exit signal JSON.** No summaries, no questions, no confirmations after it.
+
+Your job ends when validation scripts pass and the exit signal is emitted.
+Everything after that (review, commit, push) is handled by other agents via the main orchestrator.
 
 ---
 
