@@ -70,7 +70,7 @@ gh issue view {번호} --repo {repo}
 
 ```bash
 git checkout master && git pull origin master
-git checkout -b {type}/#{이슈 번호}/{이슈 한줄 요약}
+git checkout -b '{type}/#{이슈 번호}/{이슈 한줄 요약}'
 ```
 
 브랜치 네이밍: `feat/#2/도메인-공통-타입-정의` 형식. 한글 허용, 공백은 하이픈.
