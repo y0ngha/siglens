@@ -3,8 +3,6 @@ name: git-agent
 description: Handles Git operations — commits, pushes, PR creation, and branch management. Triggered when the user asks to commit, push, or open a PR. Does not modify code.
 model: haiku
 tools: Bash, Read
-mcp_servers:
-  - github
 ---
 
 ## Overview
