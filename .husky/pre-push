@@ -1,0 +1,16 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+echo "🎨 Running prettier before push..."
+
+yarn format
+
+# 포맷 후 변경된 파일이 있는지 확인
+if ! git diff --quiet; then
+  echo "✅ Prettier made changes. Committing as 'style: apply prettier'..."
+  git add -A
+  git commit -m "style: apply prettier"
+  echo "📦 Style commit added. Continuing push..."
+else
+  echo "✨ No formatting changes detected."
+fi
