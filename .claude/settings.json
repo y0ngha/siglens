@@ -1,14 +1,14 @@
 {
-  "hooks": {
-    "SubagentStop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-exit-signal.js"
-          }
+    "hooks": {
+        "SubagentStop": [
+            {
+                "hooks": [
+                    {
+                        "type": "command",
+                        "command": "node \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/validate-exit-signal.js"
+                    }
+                ]
+            }
         ]
-      }
-    ]
-  }
+    }
 }

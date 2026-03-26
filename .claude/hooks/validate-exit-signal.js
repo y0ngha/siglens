@@ -76,29 +76,37 @@ function parseSignal(content) {
     if (!jsonMatch) {
         exitWithError(
             '[hook] ⚠️  Sub-agent did not emit a valid exit signal.\n' +
-            'Expected a JSON object with "agent" and "status" fields as the final output.\n' +
-            'Example: { "agent": "implementation-agent", "status": "done", "branch": "feat/#1/..." }'
+                'Expected a JSON object with "agent" and "status" fields as the final output.\n' +
+                'Example: { "agent": "implementation-agent", "status": "done", "branch": "feat/#1/..." }'
         );
     }
 
     try {
         return JSON.parse(jsonMatch[0]);
     } catch {
-        exitWithError('[hook] ⚠️  Exit signal JSON is malformed. Fix the JSON syntax and retry.');
+        exitWithError(
+            '[hook] ⚠️  Exit signal JSON is malformed. Fix the JSON syntax and retry.'
+        );
     }
 }
 
 function validateSignal(signal) {
     if (!signal.agent || !signal.status) {
-        exitWithError('[hook] ⚠️  Exit signal is missing required fields: "agent" and/or "status".');
+        exitWithError(
+            '[hook] ⚠️  Exit signal is missing required fields: "agent" and/or "status".'
+        );
     }
 
     if (!KNOWN_AGENTS.includes(signal.agent)) {
-        exitWithError(`[hook] ⚠️  Unknown agent name: "${signal.agent}". Expected one of: ${KNOWN_AGENTS.join(', ')}`);
+        exitWithError(
+            `[hook] ⚠️  Unknown agent name: "${signal.agent}". Expected one of: ${KNOWN_AGENTS.join(', ')}`
+        );
     }
 
     if (!VALID_STATUSES.includes(signal.status)) {
-        exitWithError(`[hook] ⚠️  Invalid status: "${signal.status}". Expected one of: ${VALID_STATUSES.join(', ')}`);
+        exitWithError(
+            `[hook] ⚠️  Invalid status: "${signal.status}". Expected one of: ${VALID_STATUSES.join(', ')}`
+        );
     }
 }
 
@@ -126,7 +134,9 @@ function main() {
 
     validateSignal(signal);
 
-    console.log(`[hook] ✅ Exit signal valid: agent=${signal.agent} status=${signal.status}`);
+    console.log(
+        `[hook] ✅ Exit signal valid: agent=${signal.agent} status=${signal.status}`
+    );
     process.exit(0);
 }
 
