@@ -42,7 +42,7 @@ export function useBars({
 
     const handleTimeframeChange = useCallback(
         async (nextTimeframe: Timeframe): Promise<void> => {
-            if (nextTimeframe === timeframe) return;
+            if (nextTimeframe === timeframe || isLoadingBars) return;
             setIsLoadingBars(true);
             setBarsError(null);
 
@@ -70,7 +70,7 @@ export function useBars({
                 setIsLoadingBars(false);
             }
         },
-        [symbol, timeframe]
+        [symbol, timeframe, isLoadingBars]
     );
 
     return {
