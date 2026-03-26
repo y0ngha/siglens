@@ -10,6 +10,11 @@ export interface Bar {
     vwap?: number; // Alpaca 제공
 }
 
+export interface BarsResponse {
+    bars: Bar[];
+    hasMore: boolean;
+}
+
 export interface MACDResult {
     macd: number | null;
     signal: number | null;

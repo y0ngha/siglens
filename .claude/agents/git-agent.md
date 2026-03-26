@@ -116,7 +116,7 @@ gh pr create \
 ### 1. Check Out Head Branch
 
 ```bash
-gh pr view {PR number} --json headRefName --repo {repo} | jq -r '.headRefName'
+gh pr view {PR number} --json headRefName --repo y0ngha/siglens | jq -r '.headRefName'
 git fetch origin '{head branch name}'
 git checkout '{head branch name}'
 ```
@@ -137,7 +137,7 @@ Do not open a new PR. Push to the existing PR branch only.
 ### 3. Post PR Completion Comment
 
 ```bash
-gh pr comment {PR number} --repo {repo} --body "{수정 요약}"
+gh pr comment {PR number} --repo y0ngha/siglens --body "{수정 요약}"
 ```
 
 Comment format:

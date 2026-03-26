@@ -1,0 +1,98 @@
+'use client';
+
+import { useCallback, useEffect, useRef, useState } from 'react';
+import type {
+    AnalysisResponse,
+    Bar,
+    IndicatorResult,
+    Timeframe,
+} from '@/domain/types';
+
+interface UseAnalysisOptions {
+    symbol: string;
+    initialAnalysis: AnalysisResponse;
+    timeframe: Timeframe;
+    /**
+     * stale ref 갱신 전용 채널.
+     * 렌더 함수 본문에서 barsRef.current에 직접 할당되며, state나 렌더링에는 사용되지 않는다.
+     * handleReanalyze가 최신 bars 값을 읽을 수 있도록 stale 클로저를 방지하는 역할이다.
+     */
+    bars: Bar[];
+    /**
+     * stale ref 갱신 전용 채널.
+     * 렌더 함수 본문에서 indicatorsRef.current에 직접 할당되며, state나 렌더링에는 사용되지 않는다.
+     * handleReanalyze가 최신 indicators 값을 읽을 수 있도록 stale 클로저를 방지하는 역할이다.
+     */
+    indicators: IndicatorResult;
+}
+
+interface UseAnalysisResult {
+    analysis: AnalysisResponse;
+    isAnalyzing: boolean;
+    analysisError: string | null;
+    handleReanalyze: () => Promise<void>;
+}
+
+export function useAnalysis({
+    symbol,
+    initialAnalysis,
+    timeframe,
+    bars,
+    indicators,
+}: UseAnalysisOptions): UseAnalysisResult {
+    const initialAnalysisRef = useRef(initialAnalysis);
+    const isMountedRef = useRef(false);
+    // 렌더 함수 본문에서 직접 할당하여 useEffect 비동기 실행으로 인한 stale 참조를 방지한다
+    const barsRef = useRef(bars);
+    const indicatorsRef = useRef(indicators);
+    barsRef.current = bars;
+    indicatorsRef.current = indicators;
+    const [analysis, setAnalysis] = useState<AnalysisResponse>(initialAnalysis);
+    const [isAnalyzing, setIsAnalyzing] = useState(false);
+    const [analysisError, setAnalysisError] = useState<string | null>(null);
+
+    // 초기화: 마운트 완료 여부를 기록한다.
+    useEffect(() => {
+        isMountedRef.current = true;
+    }, []);
+
+    // 데이터 동기화: 타임프레임이 변경되면 이전 타임프레임 기준의 분석 결과를 무효화한다.
+    // initialAnalysisRef는 항상 최초 SSR 분석 결과를 가리키며, 이후 변경되지 않는다.
+    // 따라서 타임프레임 전환 시 SSR 분석으로 초기화함으로써 오래된 분석이 표시되는 것을 방지한다.
+    // isMountedRef로 초기 마운트 시 실행을 건너뛴다.
+    useEffect(() => {
+        if (!isMountedRef.current) return;
+        setAnalysis(initialAnalysisRef.current);
+        setAnalysisError(null);
+    }, [timeframe]);
+
+    const handleReanalyze = useCallback(async (): Promise<void> => {
+        setIsAnalyzing(true);
+        setAnalysisError(null);
+
+        try {
+            const res = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symbol,
+                    bars: barsRef.current,
+                    indicators: indicatorsRef.current,
+                }),
+            });
+            if (!res.ok) {
+                setAnalysisError(`분석 요청에 실패했습니다 (${res.status})`);
+                return;
+            }
+
+            const nextAnalysis: AnalysisResponse = await res.json();
+            setAnalysis(nextAnalysis);
+        } catch (_err) {
+            setAnalysisError('분석 요청에 실패했습니다');
+        } finally {
+            setIsAnalyzing(false);
+        }
+    }, [symbol]);
+
+    return { analysis, isAnalyzing, analysisError, handleReanalyze };
+}

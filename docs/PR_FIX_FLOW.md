@@ -71,6 +71,8 @@ status: failed → stop, report to user
 3rd review → "이번이 3라운드야"
 ```
 
+**Loop detection:** After each `changes_requested` signal, compare the new findings against the previous round's findings. If the same `required` finding (same file + same issue description) appears in two consecutive rounds, stop immediately and report to the user — do not invoke pr-fix-agent again. This indicates a false positive loop where review-agent is repeatedly flagging already-fixed code without reading the actual file state.
+
 ### Step 3 — Invoke git-agent (Case 2)
 
 ```

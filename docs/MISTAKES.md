@@ -134,6 +134,7 @@ Review before implementation and ensure these are not repeated.
    → domain/ and infrastructure/ files must always be committed with their test files
    → Add direct test cases when exporting a new function from an existing file
    → Indirect verification alone is insufficient even for refactored functions
+   → components/ and app/ are explicitly excluded — do NOT request or write test files for them
 
 2. Not updating tests when return type changes
    → Tests must be updated whenever types change

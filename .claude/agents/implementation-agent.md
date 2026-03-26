@@ -19,8 +19,12 @@ When complete, you output an exit signal and stop — you do not call other agen
 ## Non-Negotiable Rules
 
 - **Always use `jq` for JSON parsing.** Never use Python, Node, or any other interpreter to parse `gh` JSON output.
+- **Never run `git commit`, `git push`, or any git write operation.** Committing and pushing is git-agent's responsibility.
 - **Never call review-agent, git-agent, or any other agent.** Routing is handled by the main orchestrator.
 - **Always end with the exit signal JSON.** No summaries, no questions, no confirmations after it.
+
+Your job ends when validation scripts pass and the exit signal is emitted.
+Everything after that (review, commit, push) is handled by other agents via the main orchestrator.
 
 ---
 
@@ -30,7 +34,15 @@ When complete, you output an exit signal and stop — you do not call other agen
 
 Read `.claude/agent-memory/implementation-agent/MEMORY.md` and load all files listed in the index.
 
-### 1. Determine Invocation Type
+### 1. Repository
+
+```
+REPO=y0ngha/siglens
+```
+
+Use this value directly in all `gh` commands. Never derive the repo from `git remote get-url` or any shell command.
+
+### 2. Determine Invocation Type
 
 You are invoked in one of two ways. Check which applies:
 
@@ -47,14 +59,14 @@ The message will say something like "These are review findings to fix — do not
 
 ```bash
 # Type B: check out the existing branch passed by orchestrator
-git fetch origin '{branch}'
-git checkout '{branch}'
+git fetch origin {branch}
+git checkout {branch}
 ```
 
-### 2. Understand the Issue (Type A only)
+### 3. Understand the Issue (Type A only)
 
 ```bash
-gh issue view {number} --repo {repo}
+gh issue view {number} --repo y0ngha/siglens
 ```
 
 **If the issue cannot be found, emit a `failed` exit signal and stop.**
@@ -66,16 +78,27 @@ Things to verify:
 - Reference docs: read only items checked (`[x]`) in the issue body
 - Completion criteria
 
-### 3. Create Branch (Type A only)
+### 4. Create Branch (Type A only)
 
 ```bash
 git checkout master && git pull origin master
-git checkout -b '{type}/#{issue number}/{one-line summary}'
+git checkout -b {type}/{issue number}/{one-line summary}
 ```
 
-Branch naming: `feat/#2/도메인-공통-타입-정의` format. Korean allowed, spaces replaced with hyphens.
+Branch naming: `feat/2/도메인-공통-타입-정의`, `refactor/32/candlestick-pattern-domain-분리` format. Korean allowed, spaces replaced with hyphens.
 
-### 4. Load Required Documents
+Determine `{type}` from the issue content:
+
+| Type | When to use |
+|---|---|
+| `feat` | New feature or capability |
+| `refactor` | Code restructuring without behavior change |
+| `chore` | Build, config, dependency changes |
+| `docs` | Documentation only |
+| `test` | Test additions or fixes |
+| `style` | Formatting, naming, no logic change |
+
+### 5. Load Required Documents
 
 Always read:
 - docs/MISTAKES.md
