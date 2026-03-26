@@ -1,12 +1,12 @@
 import { SECONDS_PER_DAY } from '@/domain/constants/time';
 import type { Bar } from '@/domain/types';
 
-type VWAPState = {
+interface VWAPState {
     cumulativeTPV: number;
     cumulativeVolume: number;
     dayKey: number;
     results: (number | null)[];
-};
+}
 
 export function calculateVWAP(bars: Bar[]): (number | null)[] {
     if (bars.length === 0) return [];

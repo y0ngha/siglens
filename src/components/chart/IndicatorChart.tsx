@@ -1,9 +1,9 @@
 'use client';
 
-type IndicatorChartProps = {
+interface IndicatorChartProps {
     label: string;
     data: { timestamp: string; value: number }[];
-};
+}
 
 export function IndicatorChart({ label, data }: IndicatorChartProps) {
     // TODO: implement

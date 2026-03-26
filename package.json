@@ -16,7 +16,8 @@
         "test-coverage": "jest --coverage",
         "test-coverage-watch": "jest --coverage --watch",
         "test-coverage-report": "jest --coverage --coverageReporters=text-summary",
-        "format": "prettier --write ."
+        "format": "prettier --write .",
+        "prepare": "husky"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.80.0",
@@ -38,6 +39,7 @@
         "eslint": "^9",
         "eslint-config-next": "16.2.0",
         "eslint-plugin-react-compiler": "^19.1.0-rc.2",
+        "husky": "^9.1.7",
         "jest": "^30.2.0",
         "postcss-html": "^1.8.0",
         "prettier": "^3.7.4",

@@ -5,17 +5,17 @@ import { DMI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
 // RawDM은 한 봉의 원시 TR/DM 값이고,
 // SmoothedDM은 Wilder Smoothing이 누적 적용된 값이다.
 // 하나로 합치면 reduce 콜백 안에서 raw와 smoothed를 타입으로 구분할 수 없어 가독성이 떨어진다.
-type RawDM = {
+interface RawDM {
     tr: number;
     dmPlus: number;
     dmMinus: number;
-};
+}
 
-type SmoothedDM = {
+interface SmoothedDM {
     tr: number;
     dmPlus: number;
     dmMinus: number;
-};
+}
 
 function calcRaw(bar: Bar, prev: Bar): RawDM {
     const tr = Math.max(

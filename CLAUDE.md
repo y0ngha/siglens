@@ -1,3 +1,3 @@
 # CLAUDE.md
 
-AGENTS.md를 읽고 따라줘.
+Please read and follow [AGENTS.md](AGENTS.md).

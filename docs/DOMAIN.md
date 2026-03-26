@@ -13,6 +13,8 @@
 ```typescript
 // domain/types.ts
 
+export type Timeframe = '1Min' | '5Min' | '15Min' | '1Hour' | '1Day';
+
 export interface Bar {
     time: number;   // Unix timestamp (초)
     open: number;
@@ -29,6 +31,8 @@ export interface IndicatorResult {
     dmi: DMIResult[];
     rsi: (number | null)[];
     vwap: (number | null)[];
+    ma: Record<number, (number | null)[]>;
+    ema: Record<number, (number | null)[]>;
 }
 
 export interface MACDResult {
@@ -48,7 +52,30 @@ export interface DMIResult {
     diMinus: number | null;
     adx: number | null;
 }
+```
 
+---
+
+## 인디케이터 상수
+
+```typescript
+// domain/indicators/constants.ts
+
+export const RSI_DEFAULT_PERIOD = 14;
+export const RSI_OVERBOUGHT_LEVEL = 70;
+export const RSI_OVERSOLD_LEVEL = 30;
+
+export const MACD_FAST_PERIOD = 12;
+export const MACD_SLOW_PERIOD = 26;
+export const MACD_SIGNAL_PERIOD = 9;
+
+export const BOLLINGER_DEFAULT_PERIOD = 20;
+export const BOLLINGER_DEFAULT_STD_DEV = 2;
+
+export const DMI_DEFAULT_PERIOD = 14;
+
+export const MA_DEFAULT_PERIODS = [20] as const;
+export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
 ```
 
 ---
@@ -139,6 +166,8 @@ export interface DMIResult {
 ### EMA (Exponential Moving Average)
 
 ```
+기본 기간: [9, 20, 21, 60]
+
 알고리즘:
 1. 첫 번째 값 = 초기 period개의 SMA
 2. multiplier = 2 / (period + 1)
@@ -147,68 +176,147 @@ export interface DMIResult {
 초기 period - 1개 구간 = null
 ```
 
+### MA (Simple Moving Average)
+
+```
+기본 기간: [20]
+
+알고리즘:
+1. MA = 최근 period개 close의 단순 평균
+
+초기 period - 1개 구간 = null
+```
+
+### calculateIndicators 통합 함수
+
+```typescript
+// domain/indicators/index.ts
+
+function calculateIndicators(bars: Bar[]): IndicatorResult {
+    // MA_DEFAULT_PERIODS, EMA_DEFAULT_PERIODS 상수를 사용해
+    // 각 기간별로 계산 후 Record<number, (number | null)[]> 형태로 반환
+}
+```
+
 ---
 
-## 패턴 감지 명세
+## 캔들 패턴 감지 명세
 
-### 감지 대상 패턴
+### 위치
+
+`domain/analysis/candle.ts` — 순수 함수로 구현, 외부 의존성 없음.
+
+### 단봉 패턴 (CandlePattern)
+
+```typescript
+type CandlePattern =
+    // Doji 계열
+    | 'flat'              // 시고저종 동일
+    | 'gravestone_doji'   // 위꼬리만 긴 도지
+    | 'dragonfly_doji'    // 아래꼬리만 긴 도지
+    | 'doji'              // 일반 도지
+    // Marubozu 계열
+    | 'bullish_marubozu'  // 상승 마루보주 (몸통 90% 이상)
+    | 'bearish_marubozu'  // 하락 마루보주
+    // 반전 패턴
+    | 'shooting_star'     // 유성형 (위꼬리 긴 하락 전환)
+    | 'inverted_hammer'   // 역망치 (위꼬리 긴 상승 전환)
+    | 'hammer'            // 망치형 (아래꼬리 긴 상승 전환)
+    | 'hanging_man'       // 교수형 (아래꼬리 긴 하락 전환)
+    | 'bullish_belt_hold' // 상승 벨트홀드
+    | 'bearish_belt_hold' // 하락 벨트홀드
+    // 기본 형태
+    | 'spinning_top'      // 팽이형 (몸통 작고 꼬리 양쪽)
+    | 'bullish'           // 일반 양봉
+    | 'bearish';          // 일반 음봉
+```
+
+### 다봉 패턴 (MultiCandlePattern)
+
+```typescript
+type MultiCandlePattern =
+    // 상승 반전 (15종)
+    | 'bullish_engulfing'        // 상승 장악형
+    | 'bullish_harami'           // 상승 잉태형
+    | 'bullish_harami_cross'     // 상승 십자 잉태형
+    | 'piercing_line'            // 관통형
+    | 'bullish_counterattack_line' // 상승 반격선
+    | 'morning_star'             // 샛별형
+    | 'morning_doji_star'        // 도지 샛별형
+    | 'bullish_abandoned_baby'   // 상승 버려진 아기
+    | 'three_white_soldiers'     // 적삼병
+    | 'three_inside_up'          // 상승 삼내형
+    | 'three_outside_up'         // 상승 삼외형
+    | 'bullish_triple_star'      // 상승 삼성형
+    | 'ladder_bottom'            // 사다리바닥
+    | 'tweezers_bottom'          // 족집게 바닥
+    | 'downside_gap_two_rabbits' // 하락갭 투래빗
+    // 하락 반전 (15종)
+    | 'bearish_engulfing'        // 하락 장악형
+    | 'bearish_harami'           // 하락 잉태형
+    | 'bearish_harami_cross'     // 하락 십자 잉태형
+    | 'dark_cloud_cover'         // 먹구름형
+    | 'bearish_counterattack_line' // 하락 반격선
+    | 'evening_star'             // 석별형
+    | 'evening_doji_star'        // 도지 석별형
+    | 'bearish_abandoned_baby'   // 하락 버려진 아기
+    | 'three_black_crows'        // 흑삼병
+    | 'three_inside_down'        // 하락 삼내형
+    | 'three_outside_down'       // 하락 삼외형
+    | 'bearish_triple_star'      // 하락 삼성형
+    | 'advance_block'            // 전진 저지형
+    | 'tweezers_top'             // 족집게 천장
+    | 'upside_gap_two_crows'     // 상승갭 까마귀 2마리
+    // 지속 패턴 (4종)
+    | 'upside_gap_tasuki'        // 상승갭 타스키
+    | 'downside_gap_tasuki'      // 하락갭 타스키
+    | 'on_neck'                  // 온넥
+    | 'in_neck';                 // 인넥
+```
+
+### 감지 함수
+
+```typescript
+// 단봉: 현재 봉 1개로 판별
+detectCandlePattern(bar: Bar): CandlePattern
+
+// 다봉: 최근 2~3봉으로 판별 (감지 안 되면 null)
+detectMultiCandlePattern(bars: Bar[]): MultiCandlePattern | null
+```
+
+### 감지 기준 상수
 
 ```
-head_and_shoulders          헤드앤숄더 (하락 반전)
-inverse_head_and_shoulders  역헤드앤숄더 (상승 반전)
-ascending_wedge             상승쐐기 (하락 반전)
-descending_wedge            하락쐐기 (상승 반전)
-double_top                  이중천장 (하락 반전)
-double_bottom               이중바닥 (상승 반전)
+DOJI_BODY_RATIO = 0.1       — 몸통이 전체의 10% 이하이면 도지
+DOJI_TAIL_RATIO = 0.1       — 꼬리 최소 비율
+LONG_SHADOW_RATIO = 2       — 긴 꼬리 판정 배율
+SHORT_SHADOW_RATIO = 1      — 짧은 꼬리 판정 배율
+MARUBOZU_BODY_RATIO = 0.9   — 몸통이 90% 이상이면 마루보주
+SPINNING_TOP_BODY_RATIO = 0.4 — 몸통 40% 이하이면 팽이
+LONG_DAY_BODY_RATIO = 0.6   — 몸통 60% 이상이면 장대봉
+BELT_HOLD_TAIL_RATIO = 0.1  — 벨트홀드 꼬리 허용 비율
+NEAR_PRICE_TOLERANCE = 0.002 — 가격 근접 판정 허용오차 (0.2%)
+IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 ```
 
-### 감지 방식
+---
 
-패턴 감지는 알고리즘이 아닌 AI + skills 파일 기반으로 수행한다.
+## 대규모 패턴 감지 (Skills 기반)
 
-```
-skills/*.md (type: pattern) 파싱
-  → frontmatter의 pattern 필드로 activePatterns[] 결정
-  → buildAnalysisPrompt에 skill 본문(분석 기준 + AI 분석 지시) 포함
-  → AI가 bars 데이터와 skill 기준을 대조하여 패턴 감지
-  → AnalysisResponse에 결과 포함
-```
-
-패턴 결과는 AI 응답(`AnalysisResponse.signals`)에서 도출된다.
+헤드앤숄더, 이중천장 등 대규모 차트 패턴은 알고리즘이 아닌 **AI + Skills 파일** 기반으로 수행한다.
+`type: pattern`인 skill 파일이 활성화되면 AI가 해당 패턴 기준에 따라 직접 감지한다.
 별도의 도메인 감지 함수는 존재하지 않는다.
 
-패턴 skill 파일 예시 (`skills/pattern-double-top.md`):
+### 현재 등록된 패턴 Skills
 
-```markdown
----
-name: 이중천장
-type: pattern
-pattern: double_top
-indicators: []
-confidence_weight: 0.75
----
-
-## 분석 기준
-
-- 비슷한 가격대에서 두 번의 고점이 형성된다 (3% 이내)
-- 두 고점 사이에 뚜렷한 저점(넥라인)이 있어야 한다
-- 두 번째 고점에서 거래량 감소 여부 (신뢰도 보강 요소)
-
-## AI 분석 지시
-
-패턴 감지 시 다음을 포함해 분석한다:
-- 두 고점 가격 수준과 차이 비율
-- 넥라인 위치와 현재 가격 대비 이탈 여부
-- 목표 하락폭
-```
-
-### confidence 기준
-
-```
-0.8 이상  → 높은 신뢰도 (AI 분석에 강조 포함)
-0.5 ~ 0.8 → 중간 신뢰도 (AI 분석에 참고로 포함)
-0.5 미만  → 낮은 신뢰도 (AI 분석에 미포함)
-```
+| skill 파일 | 패턴 | 신뢰도 |
+|---|---|---|
+| `pattern-head-and-shoulders.md` | head_and_shoulders (하락 반전) | 0.8 |
+| `pattern-inverse-head-and-shoulders.md` | inverse_head_and_shoulders (상승 반전) | 0.8 |
+| `pattern-double-top.md` | double_top (하락 반전) | 0.75 |
+| `pattern-double-bottom.md` | double_bottom (상승 반전) | 0.75 |
+| `pattern-ascending-wedge.md` | ascending_wedge (하락 반전) | 0.7 |
+| `pattern-descending-wedge.md` | descending_wedge (상승 반전) | 0.7 |
 
 ---
 
@@ -217,21 +325,26 @@ confidence_weight: 0.75
 ### 입력 데이터
 
 ```typescript
-interface AnalysisInput {
-    symbol: string;
-    timeframe: string;
-    bars: Bar[];              // 최근 N개
-    indicators: IndicatorResult;
-}
+// buildAnalysisPrompt 파라미터
+function buildAnalysisPrompt(
+    symbol: string,
+    bars: Bar[],
+    indicators: IndicatorResult,
+    skills: Skill[] = []
+): string
 ```
 
 ### 프롬프트 구조
 
 ```
-1. 현재 시장 상황 요약 (현재가, 변화율, 거래량)
-2. 인디케이터 수치 (RSI, MACD, 볼린저, DMI)
-3. skill 기반 패턴 분석 (skills/*.md 내용 포함, AI가 직접 감지)
-4. 분석 요청
+1. 종목명
+2. 현재 시장 상황 요약 (현재가, 변화율, 거래량)
+3. 최근 봉 데이터 (최근 30봉) — 각 봉에 캔들 패턴 태깅 + 다봉 패턴 감지
+4. 거래량 분석 (평균 대비 비율)
+5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI)
+6. 패턴 분석 (type='pattern' skills, confidence >= 0.5)
+7. 활성화된 Skills (type!='pattern' skills, confidence >= 0.5)
+8. 분석 요청 및 JSON 응답 형식 지시
 ```
 
 ### 응답 형식 (JSON)
@@ -253,31 +366,41 @@ type SignalType =
     | 'pattern'
     | 'skill';
 
-interface KeyLevels {
-    support: number[];
-    resistance: number[];
-}
-
-interface AnalysisResponse {
-    summary: string;          // 종합 분석 요약
-    trend: Trend;
-    signals: Signal[];
-    skillSignals: SkillSignal[];
-    riskLevel: RiskLevel;
-    keyLevels: KeyLevels;
-}
-
 interface Signal {
     type: SignalType;
     description: string;
     strength: SignalStrength;
 }
 
-// skill 기반 분석 결과. skill 이름과 해당 skill이 감지한 Signal 목록을 묶는다.
 interface SkillSignal {
     skillName: string;
     signals: Signal[];
 }
+
+interface KeyLevels {
+    support: number[];
+    resistance: number[];
+}
+
+interface AnalysisResponse {
+    summary: string;
+    trend: Trend;
+    signals: Signal[];         // 인디케이터 기반 신호 (skill 무관)
+    skillSignals: SkillSignal[]; // skill 기반 신호 (skill별로 그룹핑)
+    riskLevel: RiskLevel;
+    keyLevels: KeyLevels;
+}
+```
+
+### signals vs skillSignals 구분 기준
+
+```
+signals[]      → 인디케이터 수치 자체에서 도출되는 신호
+                 (RSI 과매수, MACD 크로스 등 skill 없이도 판단 가능한 것)
+
+skillSignals[] → skill 파일의 분석 기준을 적용해야만 도출되는 신호
+                 (RSI 다이버전스, 볼린저 스퀴즈 전략, 패턴 감지 등)
+                 skill 이름(skillName)으로 그룹핑
 ```
 
 ---
@@ -344,6 +467,37 @@ ema60: (number | null)[];
 ma: Record<number, (number | null)[]>;
 ema: Record<number, (number | null)[]>;
 ```
+
+---
+
+## domain/constants
+
+### colors.ts
+
+차트에서 사용하는 모든 색상 상수를 정의한다.
+
+```typescript
+export const CHART_COLORS = {
+    background, grid, text,
+    bullish, bearish, neutral,
+    volumeBullish, volumeBearish,
+    period5, period10, period20, period60, period120, period200,
+    bollingerUpper, bollingerMiddle, bollingerLower, bollingerBackground,
+    macdLine, macdSignal, macdHistogramBullish, macdHistogramBearish,
+    rsiLine, rsiOverbought, rsiOversold,
+    dmiPlus, dmiMinus, dmiAdx,
+    vwap,
+} as const;
+
+export function getPeriodColor(period: number): string;
+```
+
+### time.ts
+
+```typescript
+export const SECONDS_PER_DAY = 86400;
+```
+
 ---
 
 ## 차트 오버레이 훅 규칙
@@ -365,8 +519,8 @@ src/components/chart/hooks/
 
 ```typescript
 interface UseXxxOverlayParams {
-    chart: IChartApi | null;    // 기존 차트 인스턴스 (부모가 생성/소멸 담당)
-    bars: Bar[];                 // 타임스탬프 매핑용
+    chartRef: RefObject<IChartApi | null>;
+    bars: Bar[];
     indicators: IndicatorResult;
 }
 ```
@@ -401,53 +555,143 @@ interface UseXxxOverlayParams {
 `/skills/*.md` 파일을 추가하는 것만으로 새로운 분석 기법을 정의할 수 있다.
 코드 수정 없이 자연어로 작성된 파일만으로 AI가 해당 기법에 맞춰 기술적 분석을 수행한다.
 
+**디렉토리 위치**: 프로젝트 루트의 `/skills/` (src/ 밖)
+**파일 읽기 책임**: `infrastructure/skills/loader.ts` (`FileSkillsLoader`). `domain/`은 파일 I/O를 하지 않는다.
+
 ### 파일 구조
 
 ```
 skills/
-├── rsi-divergence.md       RSI 다이버전스 분석
-├── volume-spread.md        거래량 스프레드 분석
-├── wyckoff.md              와이코프 이론
-└── my-strategy.md          커스텀 전략
+├── pattern-head-and-shoulders.md
+├── pattern-inverse-head-and-shoulders.md
+├── pattern-double-top.md
+├── pattern-double-bottom.md
+├── pattern-ascending-wedge.md
+├── pattern-descending-wedge.md
+└── ...
 ```
+
+### Skill 타입
+
+현재 `type` 필드는 `'pattern'`만 정의되어 있다.
+`type`이 `'pattern'`이 아닌 경우 `undefined`로 처리된다.
+
+| type | 설명 | 프롬프트 섹션 |
+|---|---|---|
+| `pattern` | 차트 패턴 감지 (헤드앤숄더, 이중천장 등) | "패턴 분석" |
+| (없음) | 인디케이터 해석, 전략 등 | "활성화된 Skills" |
 
 ### 파일 형식
 
 ```markdown
 ---
-name: RSI 다이버전스
-description: 가격과 RSI의 방향이 반대일 때 추세 전환 신호를 감지한다
-indicators: [rsi]
-confidence_weight: 0.8
+name: string                  # skill 표시 이름 (SkillSignal.skillName에 사용)
+description: string           # skill 설명
+type: pattern                 # 선택. 현재 pattern만 존재
+pattern: string               # type: pattern일 때 패턴 식별자
+indicators: string[]          # 이 skill이 필요로 하는 인디케이터 목록
+confidence_weight: number     # 0.0 ~ 1.0. 프롬프트 포함 여부와 강조도 결정
 ---
 
 ## 분석 기준
 
-### 강세 다이버전스 (매수 신호)
-- 가격이 더 낮은 저점을 만들지만 RSI는 더 높은 저점을 만들 때
-- 신뢰도: 직전 저점 대비 RSI 차이가 클수록 높음
-
-### 약세 다이버전스 (매도 신호)
-- 가격이 더 높은 고점을 만들지만 RSI는 더 낮은 고점을 만들 때
-- 신뢰도: 직전 고점 대비 RSI 차이가 클수록 높음
+(AI가 적용할 분석 기준을 자연어로 서술)
 
 ## AI 분석 지시
 
-위 조건 충족 시 다음을 포함해 분석한다:
-- 다이버전스 발생 시점과 강도
-- 추세 전환 가능성 (높음/중간/낮음)
-- 진입 시 참고할 지지/저항 레벨
+(AI에게 이 skill 적용 시 응답에 포함해야 할 내용 지시)
+```
+
+### confidence_weight 적용 규칙
+
+| 범위 | 프롬프트 처리 |
+|---|---|
+| `< 0.5` | 프롬프트에서 **완전 제외** |
+| `0.5 ~ 0.8` | 프롬프트에 포함, `[중간 신뢰도]` 라벨 |
+| `>= 0.8` | 프롬프트에 포함, `[높은 신뢰도]` 라벨로 강조 |
+
+### Skill 타입 (domain)
+
+infrastructure 레이어가 파싱한 skill 파일을 domain에 전달할 때 사용하는 타입.
+domain은 이 타입만 받고 파일 경로나 원본 Markdown은 알지 못한다.
+
+```typescript
+// domain/types.ts
+
+interface Skill {
+    name: string;
+    description: string;
+    type?: 'pattern';           // pattern일 때만 존재
+    indicators: string[];
+    confidenceWeight: number;
+    content: string;            // frontmatter 제거 후 순수 Markdown 본문
+}
 ```
 
 ### Skills 적용 흐름
 
 ```
-/skills/*.md 파일 읽기
-  → frontmatter에서 필요한 인디케이터 목록 파악
-  → 해당 인디케이터 계산 (domain/indicators/)
-  → AI 프롬프트에 skill 내용 + 계산 결과 포함
-  → AI가 skill 기준에 맞춰 분석 수행
-  → AnalysisResponse에 skill별 결과 포함
+infrastructure/skills/loader.ts (FileSkillsLoader)
+  → fs.readdir('skills/')로 모든 .md 파일 목록 확인
+  → 각 파일 파싱: YAML frontmatter → Skill 객체
+  → Skill[] 반환
+
+app/api/analyze/route.ts (또는 app/[symbol]/page.tsx)
+  → FileSkillsLoader.loadSkills() 호출
+  → Skill[]를 buildAnalysisPrompt()에 전달
+
+domain/analysis/prompt.ts
+  → buildAnalysisPrompt(symbol, bars, indicators, skills)
+  → confidenceWeight < 0.5인 항목 필터링
+  → type='pattern' skills → "패턴 분석" 섹션
+  → 나머지 skills → "활성화된 Skills" 섹션
+  → confidenceWeight >= 0.8이면 "[높은 신뢰도]" 라벨 추가
+  → 순수 함수 — 파일 접근 없음
+
+infrastructure/ai/claude.ts
+  → 완성된 프롬프트로 Claude API 호출
+  → AnalysisResponse 파싱 후 반환
+```
+
+### indicators 필드와 계산 흐름의 관계
+
+skill의 `indicators` 필드는 **해당 skill이 분석에 필요로 하는 인디케이터 목록**이다.
+app 레이어는 활성화된 모든 skill의 `indicators`를 합산해
+불필요한 인디케이터를 계산하지 않도록 최적화할 수 있다.
+
+```typescript
+// 예시
+const activeSkills = allSkills.filter(s => s.confidenceWeight >= 0.5);
+const requiredIndicators = new Set(activeSkills.flatMap(s => s.indicators));
+
+// requiredIndicators에 없는 인디케이터는 계산 생략 가능
+// (현재는 전체 계산 후 전달하는 단순 구현도 허용)
+```
+
+### 패턴 skill 예시
+
+```markdown
+---
+name: 이중고점
+description: 비슷한 가격대에서 두 번의 고점이 형성되는 하락 반전 패턴
+type: pattern
+pattern: double_top
+indicators: []
+confidence_weight: 0.75
+---
+
+## 분석 기준
+
+- 비슷한 가격대에서 두 번의 고점이 형성된다 (3% 이내)
+- 두 고점 사이에 뚜렷한 저점(넥라인)이 있어야 한다
+- 두 번째 고점에서 거래량 감소 여부 (신뢰도 보강 요소)
+
+## AI 분석 지시
+
+패턴 감지 시 다음을 포함해 분석한다:
+- 두 고점 가격 수준과 차이 비율
+- 넥라인 위치와 현재 가격 대비 이탈 여부
+- 목표 하락폭
 ```
 
 ### 신뢰도 개선 계획
@@ -461,6 +705,6 @@ confidence_weight: 0.8
    → skill별 적중률 산출
 
 3단계: 피드백 반영
-   → 적중률 낮은 skill의 기준값 조정 제안
+   → 적중률 낮은 skill의 confidence_weight 조정 제안
    → 커뮤니티 리뷰를 통한 skill 업데이트
 ```

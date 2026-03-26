@@ -5,9 +5,9 @@ import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { StockChart } from '@/components/chart/StockChart';
 import { AnalysisPanelWrapper } from '@/components/analysis/AnalysisPanelWrapper';
 
-type Props = {
+interface Props {
     params: Promise<{ symbol: string }>;
-};
+}
 
 export default async function SymbolPage({ params }: Props) {
     const { symbol } = await params;
