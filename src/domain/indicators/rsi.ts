@@ -1,6 +1,9 @@
 import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
 
-type WilderState = { avgGain: number; avgLoss: number };
+interface WilderState {
+    avgGain: number;
+    avgLoss: number;
+}
 
 export function calculateRSI(
     closes: number[],

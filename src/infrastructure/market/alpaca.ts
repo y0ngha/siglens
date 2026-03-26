@@ -2,19 +2,19 @@ import type { MarketDataProvider, GetBarsOptions, Bar } from './types';
 
 const BASE_URL = 'https://data.alpaca.markets/v2';
 
-type AlpacaBar = {
+interface AlpacaBar {
     t: string; // timestamp (RFC3339)
     o: number; // open
     h: number; // high
     l: number; // low
     c: number; // close
     v: number; // volume
-};
+}
 
-type AlpacaBarsResponse = {
+interface AlpacaBarsResponse {
     bars: AlpacaBar[];
     next_page_token: string | null;
-};
+}
 
 function toBar(raw: AlpacaBar): Bar {
     return {

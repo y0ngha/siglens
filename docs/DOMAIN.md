@@ -15,7 +15,7 @@
 
 export type Timeframe = '1Min' | '5Min' | '15Min' | '1Hour' | '1Day';
 
-export type Bar = {
+export interface Bar {
     time: number;   // Unix timestamp (초)
     open: number;
     high: number;
@@ -23,7 +23,7 @@ export type Bar = {
     close: number;
     volume: number;
     vwap?: number;  // Alpaca 제공
-};
+}
 
 export interface IndicatorResult {
     macd: MACDResult[];
@@ -35,23 +35,23 @@ export interface IndicatorResult {
     ema: Record<number, (number | null)[]>;
 }
 
-export type MACDResult = {
+export interface MACDResult {
     macd: number | null;
     signal: number | null;
     histogram: number | null;
-};
+}
 
-export type BollingerResult = {
+export interface BollingerResult {
     upper: number | null;
     middle: number | null;
     lower: number | null;
-};
+}
 
-export type DMIResult = {
+export interface DMIResult {
     diPlus: number | null;
     diMinus: number | null;
     adx: number | null;
-};
+}
 ```
 
 ---
