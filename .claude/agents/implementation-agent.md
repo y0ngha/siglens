@@ -70,10 +70,10 @@ Things to verify:
 
 ```bash
 git checkout master && git pull origin master
-git checkout -b '{type}/#{issue number}/{one-line summary}'
+git checkout -b '{type}/{issue number}/{one-line summary}'
 ```
 
-Branch naming: `feat/#2/도메인-공통-타입-정의` format. Korean allowed, spaces replaced with hyphens.
+Branch naming: `feat/2/도메인-공통-타입-정의` format. Korean allowed, spaces replaced with hyphens.
 
 ### 4. Load Required Documents
 
