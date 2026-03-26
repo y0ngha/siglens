@@ -66,7 +66,7 @@ interface SignalItemProps {
 
 function SignalItem({ signal }: SignalItemProps) {
     return (
-        <div className="flex items-start gap-2 rounded bg-secondary-700/40 px-3 py-2">
+        <div className="bg-secondary-700/40 flex items-start gap-2 rounded px-3 py-2">
             <span
                 className={cn(
                     'mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold',
@@ -76,10 +76,10 @@ function SignalItem({ signal }: SignalItemProps) {
                 {SIGNAL_STRENGTH_LABEL[signal.strength]}
             </span>
             <div className="min-w-0 flex-1">
-                <span className="block text-xs font-medium text-secondary-300">
+                <span className="text-secondary-300 block text-xs font-medium">
                     {SIGNAL_TYPE_LABEL[signal.type]}
                 </span>
-                <span className="block text-xs text-secondary-400">
+                <span className="text-secondary-400 block text-xs">
                     {signal.description}
                 </span>
             </div>
@@ -99,11 +99,11 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
     ];
 
     return (
-        <div className="flex flex-col gap-4 rounded-lg bg-secondary-800 p-4">
+        <div className="bg-secondary-800 flex flex-col gap-4 rounded-lg p-4">
             {/* 전체 시그널 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                    <span className="text-sm font-semibold text-secondary-200">
+                    <span className="text-secondary-200 text-sm font-semibold">
                         AI 분석
                     </span>
                     <span
@@ -116,7 +116,7 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                         {TREND_LABEL[analysis.trend]}
                     </span>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-secondary-400">
+                <div className="text-secondary-400 flex items-center gap-1.5 text-xs">
                     <span>리스크</span>
                     <span
                         className={cn(
@@ -130,22 +130,22 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
             </div>
 
             {/* 요약 */}
-            <p className="text-sm leading-relaxed text-secondary-300">
+            <p className="text-secondary-300 text-sm leading-relaxed">
                 {analysis.summary}
             </p>
 
-            <div className="border-t border-secondary-700" />
+            <div className="border-secondary-700 border-t" />
 
             {/* 시그널 목록 */}
             {allSignals.length > 0 && (
                 <div className="flex flex-col gap-2">
-                    <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                         시그널
                     </span>
                     <div className="flex flex-col gap-1.5">
-                        {allSignals.map((signal, index) => (
+                        {allSignals.map(signal => (
                             <SignalItem
-                                key={`${signal.type}-${index}`}
+                                key={`${signal.type}-${signal.description}`}
                                 signal={signal}
                             />
                         ))}
@@ -157,13 +157,13 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
             {(analysis.keyLevels.support.length > 0 ||
                 analysis.keyLevels.resistance.length > 0) && (
                 <div className="flex flex-col gap-2">
-                    <span className="text-xs font-semibold tracking-wide text-secondary-500 uppercase">
+                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                         주요 레벨
                     </span>
                     <div className="grid grid-cols-2 gap-3">
                         {analysis.keyLevels.resistance.length > 0 && (
                             <div className="flex flex-col gap-1">
-                                <span className="text-xs text-secondary-500">
+                                <span className="text-secondary-500 text-xs">
                                     저항
                                 </span>
                                 {analysis.keyLevels.resistance.map(level => (
@@ -178,7 +178,7 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                         )}
                         {analysis.keyLevels.support.length > 0 && (
                             <div className="flex flex-col gap-1">
-                                <span className="text-xs text-secondary-500">
+                                <span className="text-secondary-500 text-xs">
                                     지지
                                 </span>
                                 {analysis.keyLevels.support.map(level => (

@@ -11,13 +11,12 @@ interface AnalysisPanelWrapperProps {
 export function AnalysisPanelWrapper({
     initialAnalysis,
 }: AnalysisPanelWrapperProps) {
-    const [analysis, setAnalysis] =
-        useState<AnalysisResponse>(initialAnalysis);
+    const [analysis, setAnalysis] = useState<AnalysisResponse>(initialAnalysis);
 
     // TODO: 재분석 시 서버 액션 또는 API 라우트 호출로 대체
-    const handleReanalyze = useCallback(async () => {
+    const handleReanalyze = useCallback(() => {
         // TODO: 재분석 API 호출 후 setAnalysis(newAnalysis) 로 상태 갱신
-    }, [setAnalysis]);
+    }, []);
 
     return <AnalysisPanel analysis={analysis} onReanalyze={handleReanalyze} />;
 }
