@@ -70,7 +70,7 @@ git commit -m "docs: DOMAIN.md RSI 명세 업데이트"
 ### 3. Push
 
 ```bash
-git push -u origin {branch name}
+git push -u origin '{branch name}'
 ```
 
 ### 4. Create PR
@@ -97,8 +97,8 @@ When pr-fix-agent has applied review comments and passed review-agent.
 
 ```bash
 gh pr view {PR number} --json headRefName --repo {repo}
-git fetch origin {head branch name}
-git checkout {head branch name}
+git fetch origin '{head branch name}'
+git checkout '{head branch name}'
 ```
 
 ### 2. Commit and Push
@@ -109,7 +109,7 @@ git commit -m "{type}: {수정 내용}
 
 Co-Authored-By: Claude Sonnet 4.6 <noreply@anthropic.com>"
 
-git push origin {head branch name}
+git push origin '{head branch name}'
 ```
 
 Do not open a new PR. Update by pushing to the existing PR branch.

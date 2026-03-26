@@ -45,8 +45,8 @@ Read the full PR content, list of review comments, and current head branch name.
 # Get head branch name
 gh pr view {PR number} --json headRefName --repo {repo} | jq -r '.headRefName'
 
-git fetch origin {head branch name}
-git checkout {head branch name}
+git fetch origin '{head branch name}'
+git checkout '{head branch name}'
 ```
 
 ### 3. Fetch All Review Comments
