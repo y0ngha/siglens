@@ -36,7 +36,7 @@ export function SymbolSearch({ className }: SymbolSearchProps) {
             <button
                 type="button"
                 onClick={handleSubmit}
-                className="rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                className="rounded bg-primary-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-primary-700"
             >
                 검색
             </button>

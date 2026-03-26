@@ -12,6 +12,7 @@
  * (stderr is fed back to the sub-agent as an error message)
  */
 
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 const fs = require('fs');
 
 const KNOWN_AGENTS = [
@@ -63,7 +64,7 @@ function getLastAssistantContent(transcript) {
                     : JSON.stringify(entry.content);
             }
         } catch {
-            continue;
+
         }
     }
 
@@ -71,7 +72,7 @@ function getLastAssistantContent(transcript) {
 }
 
 function parseSignal(content) {
-    const jsonMatch = content.match(/\{[\s\S]*?"agent"[\s\S]*?\}/);
+    const jsonMatch = content.match(/\{[\s\S]*?"agent"[\s\S]*?}/);
 
     if (!jsonMatch) {
         exitWithError(
