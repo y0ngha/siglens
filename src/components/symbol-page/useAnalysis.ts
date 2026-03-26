@@ -32,17 +32,14 @@ export function useAnalysis({
 }: UseAnalysisOptions): UseAnalysisResult {
     const initialAnalysisRef = useRef(initialAnalysis);
     const prevTimeframeRef = useRef<Timeframe | null>(null);
+    // 렌더 함수 본문에서 직접 할당하여 useEffect 비동기 실행으로 인한 stale 참조를 방지한다
     const barsRef = useRef(bars);
     const indicatorsRef = useRef(indicators);
+    barsRef.current = bars;
+    indicatorsRef.current = indicators;
     const [analysis, setAnalysis] = useState<AnalysisResponse>(initialAnalysis);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [analysisError, setAnalysisError] = useState<string | null>(null);
-
-    // 최신 bars/indicators를 ref에 동기화한다 (handleReanalyze가 항상 최신값을 참조하도록)
-    useEffect(() => {
-        barsRef.current = bars;
-        indicatorsRef.current = indicators;
-    }, [bars, indicators]);
 
     // 데이터 동기화: 타임프레임이 변경되면 이전 타임프레임 기준의 분석 결과를 무효화한다.
     // initialAnalysisRef는 항상 최초 SSR 분석 결과를 가리키며, 이후 변경되지 않는다.

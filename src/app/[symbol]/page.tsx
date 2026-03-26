@@ -7,7 +7,17 @@ import {
     DEFAULT_TIMEFRAME,
     DEFAULT_BARS_LIMIT,
 } from '@/domain/constants/market';
+import type { AnalysisResponse } from '@/domain/types';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
+
+const FALLBACK_ANALYSIS: AnalysisResponse = {
+    summary: 'AI 분석을 일시적으로 사용할 수 없습니다.',
+    trend: 'neutral',
+    signals: [],
+    skillSignals: [],
+    riskLevel: 'medium',
+    keyLevels: { support: [], resistance: [] },
+};
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -31,7 +41,7 @@ export default async function SymbolPage({ params }: Props) {
 
     const indicators = calculateIndicators(bars);
     const prompt = buildAnalysisPrompt(symbol, bars, indicators, skills);
-    const analysis = await ai.analyze(prompt);
+    const analysis = await ai.analyze(prompt).catch(() => FALLBACK_ANALYSIS);
 
     return (
         <SymbolPageClient

@@ -7,7 +7,8 @@ import {
     TIMEFRAME_BARS_LIMIT,
 } from '@/domain/constants/market';
 
-const { HTTP_STATUS_BAD_REQUEST } = constants;
+const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_INTERNAL_SERVER_ERROR } =
+    constants;
 
 const VALID_TIMEFRAMES = Object.keys(TIMEFRAME_BARS_LIMIT) as Timeframe[];
 
@@ -23,8 +24,7 @@ export async function GET(request: NextRequest) {
     const symbol = searchParams.get('symbol');
     const timeframeParam = searchParams.get('timeframe');
     const before = searchParams.get('before') ?? undefined;
-    const rawLimit = Number(searchParams.get('limit'));
-    const limit = rawLimit > 0 ? rawLimit : DEFAULT_BARS_LIMIT;
+    const limit = Number(searchParams.get('limit')) || DEFAULT_BARS_LIMIT;
 
     if (!symbol || !timeframeParam) {
         return NextResponse.json(
@@ -43,17 +43,25 @@ export async function GET(request: NextRequest) {
     }
 
     const market = new AlpacaProvider();
-    const bars = await market.getBars({
-        symbol,
-        timeframe: timeframeParam,
-        limit: limit + LOOK_AHEAD_COUNT,
-        before,
-    });
 
-    const hasMore = bars.length > limit;
+    try {
+        const bars = await market.getBars({
+            symbol,
+            timeframe: timeframeParam,
+            limit: limit + LOOK_AHEAD_COUNT,
+            before,
+        });
 
-    return NextResponse.json({
-        bars: hasMore ? bars.slice(0, limit) : bars,
-        hasMore,
-    });
+        const hasMore = bars.length > limit;
+
+        return NextResponse.json({
+            bars: hasMore ? bars.slice(0, limit) : bars,
+            hasMore,
+        });
+    } catch {
+        return NextResponse.json(
+            { error: 'Failed to fetch bars from market data provider' },
+            { status: HTTP_STATUS_INTERNAL_SERVER_ERROR }
+        );
+    }
 }

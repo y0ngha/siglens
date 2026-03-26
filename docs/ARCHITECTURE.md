@@ -74,104 +74,33 @@ import { claudeClient } from '@/infrastructure/ai/claude'; // 금지
 Next.js의 `app/`은 라우팅 전용이며, 나머지 레이어는 `src/` 바로 아래에 위치한다.
 
 ```
-skills/                               ← 분석 기법 정의 (자연어 Markdown)
-│                                       코드 수정 없이 파일 추가만으로 새 분석 기법 적용
-├── pattern-head-and-shoulders.md
-├── pattern-double-top.md
-├── pattern-double-bottom.md
-├── pattern-ascending-wedge.md
-├── pattern-descending-wedge.md
-├── pattern-inverse-head-and-shoulders.md
-└── ...
-
-src/
-├── app/                              ← Next.js App Router (라우팅 전용)
-│   ├── [symbol]/
-│   │   └── page.tsx                  ← RSC (최초 진입)
-│   ├── api/
-│   │   ├── bars/
-│   │   │   └── route.ts              ← 스크롤 시 과거 데이터 추가 로딩
-│   │   └── analyze/
-│   │       └── route.ts              ← AI 재분석 버튼
-│   ├── layout.tsx
-│   ├── globals.css
-│   └── page.tsx                      ← 종목 검색 메인
-│
-│   ↑ app/ 끝. 아래는 모두 src/ 바로 아래에 위치 ↓
-│
-├── domain/                           ← 순수 TS (외부 의존성 없음)
-│   ├── types.ts                      ← 공통 타입 (Bar, IndicatorResult, Skill, AnalysisResponse 등)
-│   ├── constants/
-│   │   ├── colors.ts                 ← 차트 색상 상수 (CHART_COLORS) + getPeriodColor()
-│   │   └── time.ts                   ← SECONDS_PER_DAY 상수
-│   ├── indicators/
-│   │   ├── constants.ts              ← 인디케이터 기본 매개변수 (기간, 임계값)
-│   │   ├── rsi.ts
-│   │   ├── macd.ts
-│   │   ├── bollinger.ts
-│   │   ├── dmi.ts
-│   │   ├── vwap.ts
-│   │   ├── ema.ts
-│   │   ├── ma.ts
-│   │   └── index.ts                  ← calculateIndicators() 통합 함수
-│   └── analysis/
-│       ├── candle.ts                 ← 캔들 패턴 감지 (단봉 15종 + 다봉 30종)
-│       └── prompt.ts                 ← AI 프롬프트 구성
-│
-├── infrastructure/                   ← 외부 의존성 (교체 가능)
-│   ├── market/
-│   │   ├── types.ts                  ← MarketDataProvider 인터페이스
-│   │   └── alpaca.ts                 ← AlpacaProvider 구현체
-│   ├── ai/
-│   │   ├── types.ts                  ← AIProvider 인터페이스
-│   │   └── claude.ts                 ← ClaudeProvider 구현체
-│   └── skills/
-│       ├── types.ts                  ← SkillsProvider 인터페이스
-│       └── loader.ts                 ← FileSkillsLoader (Markdown 파싱, 파일 I/O)
-│
-├── components/                       ← UI 컴포넌트 (Client)
-│   ├── chart/
-│   │   ├── StockChart.tsx            ← Lightweight Charts 래퍼
-│   │   ├── VolumeChart.tsx           ← 거래량 히스토그램
-│   │   ├── IndicatorChart.tsx        ← 보조지표 차트 컨테이너
-│   │   ├── TimeframeSelector.tsx     ← 타임프레임 전환 버튼 UI
-│   │   ├── constants.ts              ← 차트 관련 상수
-│   │   └── hooks/                    ← 차트 오버레이 훅
-│   │       ├── useMAOverlay.ts       ← MA 실선 오버레이
-│   │       ├── useEMAOverlay.ts      ← EMA 점선 오버레이
-│   │       ├── useBollingerOverlay.ts ← 볼린저 밴드 오버레이
-│   │       ├── useRSIChart.ts        ← RSI 별도 패널
-│   │       ├── useMACDChart.ts       ← MACD 별도 패널
-│   │       └── useDMIChart.ts        ← DMI 별도 패널
-│   └── analysis/
-│       └── AnalysisPanel.tsx         ← AI 분석 결과 표시
-│
-├── lib/                              ← UI 유틸리티 래퍼
-│   └── cn.ts                         ← clsx + tailwind-merge 조합
-│
-└── __tests__/                        ← 테스트
-    ├── domain/
-    │   ├── indicators/
-    │   │   ├── index.test.ts         ← calculateIndicators 통합 테스트
-    │   │   ├── rsi.test.ts
-    │   │   ├── ema.test.ts
-    │   │   ├── ma.test.ts
-    │   │   ├── macd.test.ts
-    │   │   ├── bollinger.test.ts
-    │   │   ├── dmi.test.ts
-    │   │   └── vwap.test.ts
-    │   ├── analysis/
-    │   │   ├── candle.test.ts        ← 캔들 패턴 감지 테스트
-    │   │   └── prompt.test.ts        ← 프롬프트 구성 테스트
-    │   ├── constants/
-    │   │   └── colors.test.ts        ← 색상 상수 테스트
-    │   └── indicators.test.ts
-    └── infrastructure/
-        ├── alpaca.test.ts
-        ├── ai/
-        │   └── claude.test.ts
-        └── skills/
-            └── loader.test.ts        ← Skills 파싱 테스트
+# tree -d -L 3 -I "node_modules|.next|public"
+.
+├── docs
+│   └── __ko_kr__
+├── refs
+├── skills
+└── src
+    ├── __tests__
+    │   ├── domain
+    │   └── infrastructure
+    ├── app
+    │   ├── [symbol]
+    │   └── api
+    ├── components
+    │   ├── analysis
+    │   ├── chart
+    │   ├── search
+    │   └── symbol-page
+    ├── domain
+    │   ├── analysis
+    │   ├── constants
+    │   └── indicators
+    ├── infrastructure
+    │   ├── ai
+    │   ├── market
+    │   └── skills
+    └── lib
 ```
 
 ---

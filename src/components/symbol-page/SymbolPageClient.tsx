@@ -57,7 +57,7 @@ export function SymbolPageClient({
                 {/* 차트 영역 */}
                 <div className="flex flex-1 flex-col overflow-hidden">
                     {/* 캔들 차트 */}
-                    <div className="relative flex-[3]">
+                    <div className="relative flex-3">
                         {isLoadingBars && (
                             <div className="bg-secondary-900/60 absolute inset-0 z-10 flex items-center justify-center">
                                 <span className="text-secondary-400 text-sm">
