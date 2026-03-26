@@ -10,7 +10,14 @@ if ! git diff --quiet; then
   echo "✅ Prettier made changes. Committing as 'style: apply prettier'..."
   git add -A
   git commit -m "style: apply prettier"
-  echo "📦 Style commit added. Continuing push..."
+
+  # 현재 브랜치 이름 가져오기
+  CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+
+  # 무한 루프 방지를 위해 --no-verify 옵션 사용
+  git push --no-verify origin "$CURRENT_BRANCH"
+
+  echo "📦 Style commit added and pushed. Continuing original push..."
 else
   echo "✨ No formatting changes detected."
 fi
