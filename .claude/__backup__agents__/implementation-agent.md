@@ -167,6 +167,23 @@ New implementation files and test files must be included in the same commit.
 
 ---
 
+## Documentation Updates
+
+After implementation, update the relevant docs if the change falls into any of the following categories.
+Do not update docs that are unrelated to the change.
+
+| Change Type | Document to Update |
+|---|---|
+| New type or interface added | `docs/DOMAIN.md` |
+| New indicator implemented | `docs/DOMAIN.md` |
+| Internal Route Handler changed | `docs/SIGLENS_API.md` |
+| External API usage changed | `docs/API.md` |
+| Layer structure or folder layout changed | `docs/ARCHITECTURE.md` |
+| New coding convention established | `docs/CONVENTIONS.md` |
+| New recurring mistake pattern identified | `docs/MISTAKES.md` |
+
+---
+
 ## Completion Criteria
 
 Once implementation is complete, follow these steps in order.
