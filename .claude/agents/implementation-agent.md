@@ -77,7 +77,18 @@ git checkout master && git pull origin master
 git checkout -b {type}/{issue number}/{one-line summary}
 ```
 
-Branch naming: `feat/2/도메인-공통-타입-정의` format. Korean allowed, spaces replaced with hyphens.
+Branch naming: `feat/2/도메인-공통-타입-정의`, `refactor/32/candlestick-pattern-domain-분리` format. Korean allowed, spaces replaced with hyphens.
+
+Determine `{type}` from the issue content:
+
+| Type | When to use |
+|---|---|
+| `feat` | New feature or capability |
+| `refactor` | Code restructuring without behavior change |
+| `chore` | Build, config, dependency changes |
+| `docs` | Documentation only |
+| `test` | Test additions or fixes |
+| `style` | Formatting, naming, no logic change |
 
 ### 4. Load Required Documents
 
