@@ -118,6 +118,19 @@ Never create new branches or PRs. Make all changes directly on the existing PR b
 Read all comments/findings first, then apply all fixes in a single pass.
 Processing them one by one risks conflicts on the same branch.
 
+### Mark Resolved Comments with a Reaction
+
+After applying fixes for a comment, add a 👍 reaction to that comment.
+This makes it visually clear which comments have been addressed.
+
+```bash
+gh api repos/y0ngha/siglens/pulls/comments/{comment_id}/reactions \
+  --method POST \
+  -f content="+1"
+```
+
+Apply this for every inline comment that was addressed. Use the `id` field collected in Step 4a.
+
 ### Domain Layer Fix Checklist
 
 - [ ] No external library imports

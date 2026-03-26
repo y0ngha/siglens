@@ -12,7 +12,17 @@ interface UseAnalysisOptions {
     symbol: string;
     initialAnalysis: AnalysisResponse;
     timeframe: Timeframe;
+    /**
+     * stale ref 갱신 전용 채널.
+     * 렌더 함수 본문에서 barsRef.current에 직접 할당되며, state나 렌더링에는 사용되지 않는다.
+     * handleReanalyze가 최신 bars 값을 읽을 수 있도록 stale 클로저를 방지하는 역할이다.
+     */
     bars: Bar[];
+    /**
+     * stale ref 갱신 전용 채널.
+     * 렌더 함수 본문에서 indicatorsRef.current에 직접 할당되며, state나 렌더링에는 사용되지 않는다.
+     * handleReanalyze가 최신 indicators 값을 읽을 수 있도록 stale 클로저를 방지하는 역할이다.
+     */
     indicators: IndicatorResult;
 }
 
