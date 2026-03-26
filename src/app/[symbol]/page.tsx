@@ -1,9 +1,13 @@
 import { AlpacaProvider } from '@/infrastructure/market/alpaca';
 import { ClaudeProvider } from '@/infrastructure/ai/claude';
+import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { calculateIndicators } from '@/domain/indicators';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
-import { StockChart } from '@/components/chart/StockChart';
-import { AnalysisPanelWrapper } from '@/components/analysis/AnalysisPanelWrapper';
+import {
+    DEFAULT_TIMEFRAME,
+    DEFAULT_BARS_LIMIT,
+} from '@/domain/constants/market';
+import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -14,24 +18,27 @@ export default async function SymbolPage({ params }: Props) {
 
     const market = new AlpacaProvider();
     const ai = new ClaudeProvider();
+    const skillsLoader = new FileSkillsLoader();
 
-    const bars = await market.getBars({
-        symbol,
-        timeframe: '1Min',
-        limit: 500,
-    });
+    const [bars, skills] = await Promise.all([
+        market.getBars({
+            symbol,
+            timeframe: DEFAULT_TIMEFRAME,
+            limit: DEFAULT_BARS_LIMIT,
+        }),
+        skillsLoader.loadSkills().catch(() => []),
+    ]);
 
     const indicators = calculateIndicators(bars);
-
-    const prompt = buildAnalysisPrompt(symbol, bars, indicators);
-
+    const prompt = buildAnalysisPrompt(symbol, bars, indicators, skills);
     const analysis = await ai.analyze(prompt);
 
     return (
-        <main>
-            <h1>{symbol}</h1>
-            <StockChart initialBars={bars} />
-            <AnalysisPanelWrapper initialAnalysis={analysis} />
-        </main>
+        <SymbolPageClient
+            symbol={symbol}
+            initialBars={bars}
+            initialIndicators={indicators}
+            initialAnalysis={analysis}
+        />
     );
 }

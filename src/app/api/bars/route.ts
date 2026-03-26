@@ -2,6 +2,7 @@ import { constants } from 'node:http2';
 import { NextRequest, NextResponse } from 'next/server';
 import { AlpacaProvider } from '@/infrastructure/market/alpaca';
 import type { Timeframe } from '@/domain/types';
+import { DEFAULT_BARS_LIMIT } from '@/domain/constants/market';
 
 const { HTTP_STATUS_BAD_REQUEST } = constants;
 
@@ -12,7 +13,6 @@ const VALID_TIMEFRAMES: Timeframe[] = [
     '1Hour',
     '1Day',
 ];
-const DEFAULT_LIMIT = 500;
 
 function isValidTimeframe(value: string): value is Timeframe {
     return (VALID_TIMEFRAMES as string[]).includes(value);
@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
     const timeframeParam = searchParams.get('timeframe');
     const before = searchParams.get('before') ?? undefined;
     const rawLimit = Number(searchParams.get('limit'));
-    const limit = rawLimit > 0 ? rawLimit : DEFAULT_LIMIT;
+    const limit = rawLimit > 0 ? rawLimit : DEFAULT_BARS_LIMIT;
 
     if (!symbol || !timeframeParam) {
         return NextResponse.json(
