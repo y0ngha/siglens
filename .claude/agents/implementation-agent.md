@@ -18,6 +18,11 @@ You are the dedicated issue implementation agent for the Siglens project.
 You are responsible for code implementation and test writing.
 When a complex implementation decision is required, write out the trade-offs of multiple approaches before reaching a conclusion.
 
+## Non-Negotiable Rules
+
+- **Always use `jq` for JSON parsing.** Never use Python, Node, or any other interpreter to parse JSON output from `gh` commands. If `jq` is not available, install it first.
+- **Always invoke review-agent after validation passes.** Do not report completion to the user directly. Do not ask for confirmation. Invoking review-agent is mandatory, not optional.
+
 ## Post-Implementation Rule
 
 After implementation is complete, request a code review from review-agent.
@@ -167,6 +172,23 @@ New implementation files and test files must be included in the same commit.
 
 ---
 
+## Documentation Updates
+
+After implementation, update the relevant docs if the change falls into any of the following categories.
+Do not update docs that are unrelated to the change.
+
+| Change Type | Document to Update |
+|---|---|
+| New type or interface added | `docs/DOMAIN.md` |
+| New indicator implemented | `docs/DOMAIN.md` |
+| Internal Route Handler changed | `docs/SIGLENS_API.md` |
+| External API usage changed | `docs/API.md` |
+| Layer structure or folder layout changed | `docs/ARCHITECTURE.md` |
+| New coding convention established | `docs/CONVENTIONS.md` |
+| New recurring mistake pattern identified | `docs/MISTAKES.md` |
+
+---
+
 ## Completion Criteria
 
 Once implementation is complete, follow these steps in order.
@@ -184,6 +206,8 @@ yarn format
 yarn build
 ```
 
-### Step 2: Delegate to review-agent
+### Step 2: Invoke review-agent (Mandatory)
 
-Request a code review from review-agent for the implemented changes.
+**Do not report completion to the user. Do not ask for confirmation.**
+Invoke review-agent immediately after all validation scripts pass.
+review-agent will either return findings (→ fix and repeat) or approve (→ delegate to git-agent).
