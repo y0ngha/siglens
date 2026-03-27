@@ -1,5 +1,9 @@
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { TIMEFRAME_BARS_LIMIT } from '@/domain/constants/market';
+import {
+    MA_DEFAULT_PERIODS,
+    EMA_DEFAULT_PERIODS,
+} from '@/domain/indicators/constants';
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
@@ -29,7 +33,21 @@ describe('fetchBarsWithIndicators 함수는', () => {
 
             expect(result.bars).toHaveLength(1);
             expect(result.bars[0]).toEqual(mockBar);
-            expect(result.indicators).toBeDefined();
+            expect(Array.isArray(result.indicators.rsi)).toBe(true);
+            expect(Array.isArray(result.indicators.macd)).toBe(true);
+            expect(Array.isArray(result.indicators.bollinger)).toBe(true);
+            expect(Array.isArray(result.indicators.dmi)).toBe(true);
+            expect(Array.isArray(result.indicators.vwap)).toBe(true);
+            expect(Array.isArray(result.indicators.ma)).toBe(false);
+            expect(typeof result.indicators.ma).toBe('object');
+            MA_DEFAULT_PERIODS.forEach(period => {
+                expect(result.indicators.ma).toHaveProperty(String(period));
+            });
+            expect(Array.isArray(result.indicators.ema)).toBe(false);
+            expect(typeof result.indicators.ema).toBe('object');
+            EMA_DEFAULT_PERIODS.forEach(period => {
+                expect(result.indicators.ema).toHaveProperty(String(period));
+            });
         });
 
         it('symbol과 timeframe으로 올바른 URL을 요청한다', async () => {
