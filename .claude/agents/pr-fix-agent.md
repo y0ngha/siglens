@@ -108,6 +108,7 @@ If no comments exist after the latest commit, emit a `done` exit signal and stop
 Always read:
 - docs/MISTAKES.md
 - docs/CONVENTIONS.md
+- docs/FF.md
 
 Additional documents based on fix scope:
 - domain/ related      → docs/DOMAIN.md

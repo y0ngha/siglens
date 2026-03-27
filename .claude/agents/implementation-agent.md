@@ -103,6 +103,7 @@ Determine `{type}` from the issue content:
 Always read:
 - docs/MISTAKES.md
 - docs/CONVENTIONS.md
+- docs/FF.md
 
 Additional documents by issue type:
 - domain/ related      → docs/DOMAIN.md
