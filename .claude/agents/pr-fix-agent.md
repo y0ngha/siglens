@@ -1,7 +1,7 @@
 ---
 name: pr-fix-agent
 description: Handles PR review comment fixes. Triggered when the user provides a PR number and asks to apply, reflect, or fix review comments. Never creates new branches or PRs.
-permissionMode: bypassPermissions
+permissionMode: acceptEdits
 model: sonnet
 memory: project
 tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
@@ -79,24 +79,22 @@ git checkout '{head branch name}'
 ### 4a. Fetch Review Comments After the Latest Commit (Type A only)
 
 Always use `jq`. Never use Python or other interpreters.
-
-First, get the timestamp of the latest commit on the PR branch.
-Only fetch review comments created **after** that timestamp — earlier comments have already been addressed.
+Never use `$()` command substitution — store intermediate values to a temp file instead.
 
 ```bash
-# Step 1: Get the latest commit timestamp on the PR branch
-LATEST_COMMIT_DATE=$(gh api repos/y0ngha/siglens/pulls/{PR number}/commits \
-  | jq -r '.[-1].commit.committer.date')
+# Step 1: Save the latest commit timestamp to a temp file
+gh api repos/y0ngha/siglens/pulls/{PR number}/commits \
+  | jq -r '.[-1].commit.committer.date' > /tmp/latest_commit_date.txt
 
-# Step 2: Fetch only inline comments created after the latest commit
+# Step 2: Filter inline comments created after the latest commit
 gh api repos/y0ngha/siglens/pulls/{PR number}/comments \
-  | jq --arg since "$LATEST_COMMIT_DATE" \
-    '[.[] | select(.created_at > $since) | {id: .id, path: .path, line: .line, body: .body}]'
+  | jq --rawfile since /tmp/latest_commit_date.txt \
+    '[.[] | select(.created_at > ($since | rtrimstr("\n"))) | {id: .id, path: .path, line: .line, body: .body}]'
 
-# Step 3: Fetch reviews created after the latest commit
+# Step 3: Filter reviews submitted after the latest commit
 gh api repos/y0ngha/siglens/pulls/{PR number}/reviews \
-  | jq --arg since "$LATEST_COMMIT_DATE" \
-    '[.[] | select(.submitted_at > $since) | {id: .id, state: .state, submitted_at: .submitted_at}]'
+  | jq --rawfile since /tmp/latest_commit_date.txt \
+    '[.[] | select(.submitted_at > ($since | rtrimstr("\n"))) | {id: .id, state: .state, submitted_at: .submitted_at}]'
 
 # Step 4: If needed, fetch inline comments for a specific review
 gh api repos/y0ngha/siglens/pulls/{PR number}/reviews/{review_id}/comments \
