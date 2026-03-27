@@ -11,15 +11,18 @@ type SeriesPoint =
  * SingleValueData({ time, value }) 형태로 반환한다.
  * colorFn을 전달하면 각 포인트에 color 필드를 추가한다 (히스토그램 등에 활용).
  */
-export function buildSeriesData<T>(
+export function buildSeriesData<
+    K extends string,
+    T extends Record<K, number | null | undefined>,
+>(
     bars: Bar[],
     indicatorData: T[],
-    key: keyof T,
+    key: K,
     colorFn?: (value: number) => string
 ): SeriesPoint[] {
     const count = Math.min(bars.length, indicatorData.length);
     return bars.slice(0, count).map((bar, i) => {
-        const value = indicatorData[i]?.[key] as number | null | undefined;
+        const value = indicatorData[i]?.[key];
         if (value === null || value === undefined) {
             return { time: bar.time as UTCTimestamp };
         }
