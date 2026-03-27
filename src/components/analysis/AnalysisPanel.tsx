@@ -11,8 +11,8 @@ import type {
 import { cn } from '@/lib/cn';
 
 const TREND_COLOR: Record<Trend, string> = {
-    bullish: 'text-teal-400',
-    bearish: 'text-red-400',
+    bullish: 'text-chart-bullish',
+    bearish: 'text-chart-bearish',
     neutral: 'text-secondary-400',
 };
 
@@ -23,9 +23,9 @@ const TREND_LABEL: Record<Trend, string> = {
 };
 
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
-    low: 'text-teal-400',
+    low: 'text-chart-bullish',
     medium: 'text-chart-signal',
-    high: 'text-red-400',
+    high: 'text-chart-bearish',
 };
 
 const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
@@ -35,7 +35,7 @@ const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
 };
 
 const SIGNAL_STRENGTH_COLOR: Record<SignalStrength, string> = {
-    strong: 'text-teal-400',
+    strong: 'text-chart-bullish',
     moderate: 'text-chart-signal',
     weak: 'text-secondary-400',
 };
@@ -89,10 +89,15 @@ function SignalItem({ signal }: SignalItemProps) {
 
 interface AnalysisPanelProps {
     analysis: AnalysisResponse;
+    isAnalyzing: boolean;
     onReanalyze: () => void;
 }
 
-export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
+export function AnalysisPanel({
+    analysis,
+    isAnalyzing,
+    onReanalyze,
+}: AnalysisPanelProps) {
     return (
         <div className="bg-secondary-800 flex flex-col gap-4 rounded-lg p-4">
             {/* 헤더 */}
@@ -189,7 +194,7 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                                 {analysis.keyLevels.resistance.map(level => (
                                     <span
                                         key={`resistance-${level}`}
-                                        className="text-sm font-medium text-red-400"
+                                        className="text-chart-bearish text-sm font-medium"
                                     >
                                         {level.toLocaleString()}
                                     </span>
@@ -204,7 +209,7 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                                 {analysis.keyLevels.support.map(level => (
                                     <span
                                         key={`support-${level}`}
-                                        className="text-sm font-medium text-teal-400"
+                                        className="text-chart-bullish text-sm font-medium"
                                     >
                                         {level.toLocaleString()}
                                     </span>
@@ -219,9 +224,10 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
             <button
                 type="button"
                 onClick={onReanalyze}
-                className="mt-1 w-full rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
+                disabled={isAnalyzing}
+                className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed"
             >
-                재분석
+                {isAnalyzing ? '분석 중…' : '재분석'}
             </button>
         </div>
     );

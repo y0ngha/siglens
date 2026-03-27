@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import './globals.css';
@@ -18,6 +18,10 @@ export const metadata: Metadata = {
     description: '주식 종목 분석 및 차트 뷰어',
 };
 
+export const viewport: Viewport = {
+    themeColor: '#0f172a',
+};
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -26,6 +30,7 @@ export default function RootLayout({
     return (
         <html
             lang="ko"
+            style={{ colorScheme: 'dark' }}
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
         >
             <body className="flex min-h-full flex-col">

@@ -83,11 +83,11 @@ body {
     mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black, transparent);
 }
 
-.hero-glow {
-    background: radial-gradient(
-        ellipse 50% 40% at 50% 45%,
-        color-mix(in oklch, var(--color-primary-600) 12%, transparent),
-        transparent
+.hero-ambient {
+    background: linear-gradient(
+        180deg,
+        color-mix(in oklch, var(--color-primary-900) 20%, transparent) 0%,
+        transparent 50%
     );
 }
 

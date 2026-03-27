@@ -1,12 +1,15 @@
-import { Fragment } from 'react';
+import Link from 'next/link';
 
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearch } from '@/components/search/SymbolSearch';
 
-const steps = [
-    { title: '티커 입력', description: '분석할 종목을 검색하세요' },
-    { title: '자동 분석', description: 'AI가 차트와 지표를 분석합니다' },
-    { title: '인사이트 확인', description: '매매 신호와 패턴을 확인하세요' },
+const POPULAR_TICKERS = [
+    'AAPL',
+    'TSLA',
+    'NVDA',
+    'MSFT',
+    'GOOGL',
+    'AMZN',
 ] as const;
 
 const features = [
@@ -49,13 +52,13 @@ export default function Home() {
                     />
                     <div
                         aria-hidden="true"
-                        className="hero-glow pointer-events-none absolute inset-0"
+                        className="hero-ambient pointer-events-none absolute inset-0"
                     />
                     <div className="relative">
                         <p className="text-secondary-400 mb-6 font-mono text-xs tracking-[0.3em] uppercase">
                             SIGLENS
                         </p>
-                        <h1 className="text-secondary-100 text-3xl leading-tight font-bold tracking-tight [text-wrap:balance] sm:text-5xl lg:text-6xl">
+                        <h1 className="text-secondary-100 text-3xl leading-tight font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
                             AI가 분석하는 미국 주식{' '}
                             <span className="text-primary-400">
                                 기술적 분석
@@ -70,57 +73,47 @@ export default function Home() {
                         >
                             <SymbolSearch size="lg" />
                         </div>
-                        <p className="text-secondary-500 mt-3 font-mono text-sm">
-                            예: AAPL, TSLA, NVDA, MSFT
-                        </p>
-                    </div>
-                </section>
-                <section className="px-6 py-16">
-                    <div className="mx-auto flex max-w-3xl flex-col items-center gap-8 sm:flex-row sm:gap-0">
-                        {steps.map((step, index) => (
-                            <Fragment key={step.title}>
-                                <div className="flex flex-col items-center text-center">
-                                    <div className="border-primary-600/40 text-primary-400 flex h-10 w-10 items-center justify-center rounded-full border text-sm font-semibold">
-                                        {index + 1}
-                                    </div>
-                                    <p className="text-secondary-200 mt-3 text-sm font-medium">
-                                        {step.title}
-                                    </p>
-                                    <p className="text-secondary-500 mt-1 text-xs">
-                                        {step.description}
-                                    </p>
-                                </div>
-                                {index < steps.length - 1 && (
-                                    <div
-                                        className="from-primary-600/20 via-primary-600/40 to-primary-600/20 hidden h-px flex-1 bg-gradient-to-r sm:block"
-                                        aria-hidden="true"
-                                    />
-                                )}
-                            </Fragment>
-                        ))}
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                            <span className="text-secondary-500 text-xs">
+                                인기 종목
+                            </span>
+                            {POPULAR_TICKERS.map(ticker => (
+                                <Link
+                                    key={ticker}
+                                    href={`/${ticker}`}
+                                    className="border-secondary-700 text-secondary-300 hover:border-primary-600/40 hover:text-primary-400 rounded-full border px-3 py-1 text-xs transition-colors"
+                                >
+                                    {ticker}
+                                </Link>
+                            ))}
+                        </div>
                     </div>
                 </section>
                 <section className="pb-24">
                     <hr className="border-secondary-800 mx-auto mb-16 max-w-4xl px-6 lg:px-[15vw]" />
                     <div className="mx-auto grid max-w-4xl grid-cols-1 gap-x-16 gap-y-10 px-6 md:grid-cols-2 lg:px-[15vw]">
                         {features.map((feature, index) => {
-                            const isOffsetRow = index % 2 !== 0;
+                            const isOddIndex = index % 2 !== 0;
                             return (
                                 <div
                                     key={feature.number}
                                     className={
-                                        isOffsetRow ? 'md:mt-8' : undefined
+                                        isOddIndex ? 'md:mt-8' : undefined
                                     }
                                 >
-                                    <p className="text-primary-600/60 font-mono text-xs">
-                                        {feature.number}
-                                    </p>
-                                    <h2 className="text-secondary-200 border-primary-600/30 mt-1 border-l-2 pl-4 text-sm font-semibold tracking-wider uppercase">
-                                        {feature.title}
-                                    </h2>
-                                    <p className="text-secondary-400 mt-2 text-sm leading-relaxed">
-                                        {feature.description}
-                                    </p>
+                                    <div className="flex items-start gap-4">
+                                        <span className="text-primary-600/25 font-mono text-3xl leading-none font-bold">
+                                            {feature.number}
+                                        </span>
+                                        <div>
+                                            <h2 className="text-secondary-200 text-sm font-semibold tracking-wider uppercase">
+                                                {feature.title}
+                                            </h2>
+                                            <p className="text-secondary-400 mt-1 text-sm leading-relaxed">
+                                                {feature.description}
+                                            </p>
+                                        </div>
+                                    </div>
                                 </div>
                             );
                         })}

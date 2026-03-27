@@ -41,6 +41,9 @@ export function SymbolSearch({ className, size = 'sm' }: SymbolSearchProps) {
     return (
         <div className={cn('flex items-center gap-2', className)}>
             <input
+                name="symbol"
+                autoComplete="off"
+                aria-label="종목 티커 검색"
                 type="text"
                 value={value}
                 onChange={e => setValue(e.target.value)}

@@ -18,5 +18,11 @@ export function AnalysisPanelWrapper({
     // _setAnalysis(newAnalysis) 로 상태 갱신
     const handleReanalyze = () => {};
 
-    return <AnalysisPanel analysis={analysis} onReanalyze={handleReanalyze} />;
+    return (
+        <AnalysisPanel
+            analysis={analysis}
+            isAnalyzing={false}
+            onReanalyze={handleReanalyze}
+        />
+    );
 }

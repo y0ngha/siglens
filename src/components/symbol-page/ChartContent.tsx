@@ -25,7 +25,7 @@ interface AnalysisStatusBannerProps {
 function AnalyzingBanner() {
     return (
         <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
-            <span className="text-secondary-400 text-sm">AI 분석 중...</span>
+            <span className="text-secondary-400 text-sm">AI 분석 중…</span>
         </div>
     );
 }
@@ -108,9 +108,9 @@ export function ChartContent({
     return (
         <>
             {/* 차트 영역 */}
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex h-[60vh] flex-col overflow-hidden md:h-auto md:flex-1">
                 {/* 캔들 차트 */}
-                <div className="relative flex-3">
+                <div className="relative flex-[3]">
                     <StockChart bars={bars} indicators={indicators} />
                 </div>
 
@@ -121,10 +121,14 @@ export function ChartContent({
             </div>
 
             {/* AI 분석 패널 */}
-            <aside className="border-secondary-700 w-80 shrink-0 overflow-y-auto border-l p-4">
+            <aside
+                className="border-secondary-700 overflow-y-auto border-t p-4 md:w-80 md:shrink-0 md:border-t-0 md:border-l"
+                aria-live="polite"
+            >
                 <AnalysisStatusBanner status={analysisStatus} />
                 <AnalysisPanel
                     analysis={analysis}
+                    isAnalyzing={isAnalyzing}
                     onReanalyze={handleReanalyze}
                 />
             </aside>
