@@ -12,16 +12,17 @@ import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
 
+type AnalysisStatus =
+    | { type: 'idle' }
+    | { type: 'analyzing' }
+    | { type: 'error'; message: string };
+
 interface AnalysisStatusBannerProps {
-    isAnalyzing: boolean;
-    analysisError: string | null;
+    status: AnalysisStatus;
 }
 
-function AnalysisStatusBanner({
-    isAnalyzing,
-    analysisError,
-}: AnalysisStatusBannerProps) {
-    if (isAnalyzing) {
+function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
+    if (status.type === 'analyzing') {
         return (
             <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
                 <span className="text-secondary-400 text-sm">
@@ -31,10 +32,10 @@ function AnalysisStatusBanner({
         );
     }
 
-    if (analysisError) {
+    if (status.type === 'error') {
         return (
             <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
-                <span className="text-sm text-red-400">{analysisError}</span>
+                <span className="text-sm text-red-400">{status.message}</span>
             </div>
         );
     }
@@ -91,8 +92,13 @@ export function ChartContent({
             {/* AI 분석 패널 */}
             <aside className="border-secondary-700 w-80 shrink-0 overflow-y-auto border-l p-4">
                 <AnalysisStatusBanner
-                    isAnalyzing={isAnalyzing}
-                    analysisError={analysisError}
+                    status={
+                        isAnalyzing
+                            ? { type: 'analyzing' }
+                            : analysisError !== null
+                              ? { type: 'error', message: analysisError }
+                              : { type: 'idle' }
+                    }
                 />
                 <AnalysisPanel
                     analysis={analysis}

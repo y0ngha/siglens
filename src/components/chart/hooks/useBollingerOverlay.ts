@@ -9,15 +9,11 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 import { AreaSeries, LineSeries } from 'lightweight-charts';
-import type {
-    IChartApi,
-    ISeriesApi,
-    LineWidth,
-    UTCTimestamp,
-} from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
-import type { Bar, BollingerResult, IndicatorResult } from '@/domain/types';
+import type { Bar, IndicatorResult } from '@/domain/types';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { buildSeriesData } from '@/components/chart/hooks/seriesDataUtils';
 
 interface UseBollingerOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -29,20 +25,6 @@ interface UseBollingerOverlayParams {
 interface UseBollingerOverlayReturn {
     isVisible: boolean;
     toggle: () => void;
-}
-
-function buildSeriesData(
-    bars: Bar[],
-    bollinger: BollingerResult[],
-    key: keyof BollingerResult
-) {
-    const count = Math.min(bars.length, bollinger.length);
-    return bars.slice(0, count).map((bar, i) => {
-        const value = bollinger[i]?.[key];
-        return value !== null && value !== undefined
-            ? { time: bar.time as UTCTimestamp, value }
-            : { time: bar.time as UTCTimestamp };
-    });
 }
 
 export function useBollingerOverlay({

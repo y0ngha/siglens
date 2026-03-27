@@ -21,6 +21,7 @@ import {
     DEFAULT_LINE_WIDTH,
     MACD_PANE_INDEX,
 } from '@/components/chart/constants';
+import { buildSeriesData } from '@/components/chart/hooks/seriesDataUtils';
 
 interface UseMACDChartParams {
     chartRef: RefObject<IChartApi | null>;
@@ -148,19 +149,8 @@ export function useMACDChart({
 
         const count = Math.min(bars.length, macd.length);
 
-        const macdLineData = bars.slice(0, count).map((bar, i) => {
-            const value = macd[i]?.macd;
-            return value !== null && value !== undefined
-                ? { time: bar.time as UTCTimestamp, value }
-                : { time: bar.time as UTCTimestamp };
-        });
-
-        const signalLineData = bars.slice(0, count).map((bar, i) => {
-            const value = macd[i]?.signal;
-            return value !== null && value !== undefined
-                ? { time: bar.time as UTCTimestamp, value }
-                : { time: bar.time as UTCTimestamp };
-        });
+        const macdLineData = buildSeriesData(bars, macd, 'macd');
+        const signalLineData = buildSeriesData(bars, macd, 'signal');
 
         const histogramData = bars.slice(0, count).map((bar, i) => {
             const value = macd[i]?.histogram;

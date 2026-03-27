@@ -27,7 +27,7 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
                 setTimeframe(nextTimeframe);
             });
         },
-        [timeframe, queryClient, symbol, startTransition]
+        [timeframe, queryClient, symbol]
     );
 
     return { timeframe, handleTimeframeChange };

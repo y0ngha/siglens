@@ -39,7 +39,10 @@ export function SymbolPageClient({
 
             {/* 메인 레이아웃 */}
             <div className="relative flex flex-1 overflow-hidden">
-                <ErrorBoundary FallbackComponent={ChartErrorFallback}>
+                <ErrorBoundary
+                    FallbackComponent={ChartErrorFallback}
+                    resetKeys={[timeframe, symbol]}
+                >
                     <Suspense fallback={<ChartSkeleton />}>
                         <ChartContent
                             symbol={symbol}

@@ -9,18 +9,14 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries } from 'lightweight-charts';
-import type {
-    IChartApi,
-    ISeriesApi,
-    LineWidth,
-    UTCTimestamp,
-} from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import {
     DEFAULT_LINE_WIDTH,
     DMI_PANE_INDEX,
 } from '@/components/chart/constants';
+import { buildSeriesData } from '@/components/chart/hooks/seriesDataUtils';
 
 interface UseDMIChartParams {
     chartRef: RefObject<IChartApi | null>;
@@ -149,28 +145,9 @@ export function useDMIChart({
         )
             return;
 
-        const count = Math.min(bars.length, dmi.length);
-
-        const diPlusData = bars.slice(0, count).map((bar, i) => {
-            const value = dmi[i]?.diPlus;
-            return value !== null && value !== undefined
-                ? { time: bar.time as UTCTimestamp, value }
-                : { time: bar.time as UTCTimestamp };
-        });
-
-        const diMinusData = bars.slice(0, count).map((bar, i) => {
-            const value = dmi[i]?.diMinus;
-            return value !== null && value !== undefined
-                ? { time: bar.time as UTCTimestamp, value }
-                : { time: bar.time as UTCTimestamp };
-        });
-
-        const adxData = bars.slice(0, count).map((bar, i) => {
-            const value = dmi[i]?.adx;
-            return value !== null && value !== undefined
-                ? { time: bar.time as UTCTimestamp, value }
-                : { time: bar.time as UTCTimestamp };
-        });
+        const diPlusData = buildSeriesData(bars, dmi, 'diPlus');
+        const diMinusData = buildSeriesData(bars, dmi, 'diMinus');
+        const adxData = buildSeriesData(bars, dmi, 'adx');
 
         diPlusSeriesRef.current.setData(diPlusData);
         diMinusSeriesRef.current.setData(diMinusData);
