@@ -497,6 +497,184 @@ lib/            External UI utility wrappers (clsx, tailwind-merge, etc.)
 
 ---
 
+## Iteration Protocol
+
+Use JavaScript's iteration protocol (`Symbol.iterator`) and generators to compose data pipelines.
+
+### When to Use
+
+| Situation | Approach |
+|---|---|
+| Applying multiple transforms in a single pass over an array | Generator pipeline |
+| Making a custom data structure consumable with `for...of` | Implement `Symbol.iterator` |
+| Exposing domain data as an iterable to external consumers | `Iterable` interface |
+| Processing thousands of Bar records step by step | Lazy evaluation (see section below) |
+
+### Symbol.iterator — Custom Iterables
+
+```typescript
+// ✅ Custom iterable — expose results as an iterable from pure domain/indicators/ functions
+class SlidingWindow<T> implements Iterable<T[]> {
+    constructor(private items: T[], private size: number) {}
+
+    [Symbol.iterator](): Iterator<T[]> {
+        let index = 0;
+        const { items, size } = this;
+        return {
+            next(): IteratorResult<T[]> {
+                if (index + size > items.length) return { done: true, value: undefined };
+                return { done: false, value: items.slice(index++, index + size - 1) };
+            },
+        };
+    }
+}
+
+// ✅ Consume naturally with for...of
+for (const window of new SlidingWindow(closes, 14)) {
+    // window: number[]
+}
+```
+
+### Generator Functions
+
+```typescript
+// ✅ Express a sliding window as a generator — used purely in the domain layer
+function* slidingWindow<T>(items: T[], size: number): Generator<T[]> {
+    for (let i = 0; i + size <= items.length; i++) {
+        yield items.slice(i, i + size);
+    }
+}
+
+// ✅ Compose generators — iterable pipeline with no intermediate arrays
+function* map<T, U>(iter: Iterable<T>, fn: (v: T) => U): Generator<U> {
+    for (const item of iter) yield fn(item);
+}
+
+function* filter<T>(iter: Iterable<T>, pred: (v: T) => boolean): Generator<T> {
+    for (const item of iter) if (pred(item)) yield item;
+}
+
+// ✅ Usage — pipeline with no intermediate arrays
+const gains = filter(
+    map(slidingWindow(closes, 2), ([prev, curr]) => curr - prev),
+    (delta) => delta > 0,
+);
+```
+
+### Pitfalls
+
+```typescript
+// ❌ Do not define generators directly in infrastructure/ or components/
+//    Generator-based iterables belong in domain/ pure functions only.
+
+// ❌ Do not consume a generator more than once — iterators are one-shot
+const gen = slidingWindow(closes, 14);
+const a = [...gen]; // consumed
+const b = [...gen]; // ❌ b is always an empty array
+
+// ✅ When reuse is needed, materialize to an array or wrap in a factory function
+const windows = () => slidingWindow(closes, 14); // new generator on each call
+```
+
+---
+
+## Lazy Evaluation
+
+Use lazy evaluation when data is large (thousands of Bars or more) or when multiple transformation stages would create many intermediate arrays.
+
+### When to Choose Lazy Evaluation
+
+```
+✅ Use lazy evaluation when:
+- The Bar array has 1,000+ items and requires multi-stage transforms (filter → map → reduce)
+- Only the first N results are needed — generators short-circuit without processing the rest
+- Computing streaming indicators one value at a time
+
+❌ Skip lazy evaluation when:
+- There is only one transformation stage or the dataset is small (a few hundred items or fewer)
+  → plain .map() / .filter() is more readable
+- The result must be shared across multiple consumers
+  → materialize to an array first, then share
+```
+
+### Pattern 1 — Generator Pipeline
+
+```typescript
+// ✅ domain/indicators/utils.ts — reusable lazy utilities
+function* lazyMap<T, U>(iter: Iterable<T>, fn: (v: T) => U): Generator<U> {
+    for (const item of iter) yield fn(item);
+}
+
+function* lazyFilter<T>(iter: Iterable<T>, pred: (v: T) => boolean): Generator<T> {
+    for (const item of iter) if (pred(item)) yield item;
+}
+
+function* lazyTake<T>(iter: Iterable<T>, n: number): Generator<T> {
+    let count = 0;
+    for (const item of iter) {
+        if (count++ >= n) return;
+        yield item;
+    }
+}
+
+// ✅ Extract the first N closing prices from bullish candles — no intermediate arrays
+function getFirstNBullishCloses(bars: Bar[], n: number): number[] {
+    const bullish = lazyFilter(bars, (b) => b.close > b.open);
+    const closes = lazyMap(bullish, (b) => b.close);
+    return [...lazyTake(closes, n)];
+}
+```
+
+### Pattern 2 — Streaming Accumulation
+
+```typescript
+// ✅ Compute a cumulative average in a single pass over the input
+function* cumulativeAverage(values: Iterable<number>): Generator<number> {
+    let sum = 0;
+    let count = 0;
+    for (const v of values) {
+        sum += v;
+        count++;
+        yield sum / count;
+    }
+}
+```
+
+### Pattern 3 — Explicit Materialization Point
+
+```typescript
+// ✅ Define the pipeline lazily; materialize only at the final consumption point
+function calculateLazyRSI(closes: number[], period: number): (number | null)[] {
+    // Pipeline definition — nothing runs yet
+    const windows = slidingWindow(closes, period);
+    const rsiValues = lazyMap(windows, computeRSIFromWindow);
+
+    // Materialize here — actual computation happens at this point
+    const prefix: null[] = new Array(period - 1).fill(null);
+    return [...prefix, ...rsiValues];
+}
+
+// ❌ Do not create an intermediate array at every stage
+function calculateEagerRSI(closes: number[], period: number): (number | null)[] {
+    const windows = closes                     // intermediate array
+        .map((_, i) => closes.slice(i, i + period))
+        .filter((w) => w.length === period);   // intermediate array
+    return windows.map(computeRSIFromWindow);  // intermediate array
+}
+```
+
+### Lazy Evaluation and Layer Rules
+
+```
+domain/         Lazy pipeline definitions allowed (pure generator functions)
+                Materialize (spread / Array.from) only as the last step inside the function
+infrastructure/ Call domain generator functions and consume their results
+components/     Do not define lazy pipelines directly
+                Receive already-materialized arrays via domain functions
+```
+
+---
+
 ## React Query and Server State Rules
 
 Manage server state on the client using React Query.
