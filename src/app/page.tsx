@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearch } from '@/components/search/SymbolSearch';
+import { cn } from '@/lib/cn';
 
 const POPULAR_TICKERS = [
     'AAPL',
@@ -97,9 +98,7 @@ export default function Home() {
                             return (
                                 <div
                                     key={feature.number}
-                                    className={
-                                        isOddIndex ? 'md:mt-8' : undefined
-                                    }
+                                    className={cn(isOddIndex && 'md:mt-8')}
                                 >
                                     <div className="flex items-start gap-4">
                                         <span className="text-primary-600/25 font-mono text-3xl leading-none font-bold">

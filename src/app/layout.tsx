@@ -30,8 +30,7 @@ export default function RootLayout({
     return (
         <html
             lang="ko"
-            style={{ colorScheme: 'dark' }}
-            className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+            className={`${geistSans.variable} ${geistMono.variable} h-full antialiased [color-scheme:dark]`}
         >
             <body className="flex min-h-full flex-col">
                 <ReactQueryProvider>{children}</ReactQueryProvider>
