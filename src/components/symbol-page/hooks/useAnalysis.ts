@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation } from '@tanstack/react-query';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import type {
     AnalysisResponse,
     AnalyzeVariables,
@@ -34,7 +34,7 @@ export function useAnalysis({
     indicators,
 }: UseAnalysisOptions): UseAnalysisResult {
     // Refs
-    // 최신 렌더의 값을 ref에 동기화하여 mutation 호출 시점에 stale closure를 방지한다.
+    // symbol, bars, indicators의 최신 렌더 값을 ref에 동기화하여 mutation 호출 시점에 stale closure를 방지한다.
     const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
 
     // Query hooks
@@ -51,9 +51,10 @@ export function useAnalysis({
     const analysisError = error?.message ?? null;
 
     // Handlers
-    const handleReanalyze = (): void => {
+    // latestRef 패턴을 사용하므로 deps 없이 안정적인 함수 참조를 유지한다.
+    const handleReanalyze = useCallback((): void => {
         mutate(latestRef.current);
-    };
+    }, [mutate]);
 
     // Effects
     useEffect(() => {

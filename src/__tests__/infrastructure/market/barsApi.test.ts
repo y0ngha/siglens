@@ -43,9 +43,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(url).toContain('symbol=TSLA');
             expect(url).toContain('timeframe=1Day');
-            expect(url).toContain(
-                `limit=${TIMEFRAME_BARS_LIMIT['1Day'].toString()}`
-            );
+            expect(url).toContain(`limit=${TIMEFRAME_BARS_LIMIT['1Day']}`);
         });
 
         it('symbol을 URL 인코딩하여 요청한다', async () => {
