@@ -50,7 +50,6 @@ export function useAnalysis({
     const analysisError = error?.message ?? null;
 
     // Handlers
-    // latestRef 패턴을 사용하므로 deps 없이 안정적인 함수 참조를 유지한다.
     const handleReanalyze = useCallback((): void => {
         mutate(latestRef.current);
     }, [mutate]);
