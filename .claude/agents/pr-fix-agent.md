@@ -1,7 +1,7 @@
 ---
 name: pr-fix-agent
 description: Handles PR review comment fixes. Triggered when the user provides a PR number and asks to apply, reflect, or fix review comments. Never creates new branches or PRs.
-permissionMode: acceptEdits
+permissionMode: bypassPermissions
 model: sonnet
 memory: project
 tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
