@@ -25,6 +25,7 @@ export function useBars({
     initialBars,
     initialIndicators,
 }: UseBarsOptions): UseBarsResult {
+    // State
     // 컴포넌트 마운트 시각을 한 번만 캡처하여 initialDataUpdatedAt에 사용한다.
     // useQuery 옵션 내에서 Date.now()를 직접 호출하면 매 렌더마다 다른 값을 반환하여
     // useQuery options의 referential equality를 깨뜨리므로

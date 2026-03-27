@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useState } from 'react';
+import { Suspense, useCallback, useState, useTransition } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
 import { useQueryClient } from '@tanstack/react-query';
 import type {
@@ -30,17 +30,21 @@ export function SymbolPageClient({
     initialAnalysis,
 }: SymbolPageClientProps) {
     const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
+    const [, startTransition] = useTransition();
     const queryClient = useQueryClient();
 
     const handleTimeframeChange = useCallback(
         (nextTimeframe: Timeframe): void => {
             if (nextTimeframe === timeframe) return;
+            // 이전 타임프레임 쿼리 취소 — 불필요한 네트워크 요청 방지
             void queryClient.cancelQueries({
                 queryKey: QUERY_KEYS.bars(symbol, timeframe),
             });
-            setTimeframe(nextTimeframe);
+            startTransition(() => {
+                setTimeframe(nextTimeframe);
+            });
         },
-        [timeframe, queryClient, symbol]
+        [timeframe, queryClient, symbol, startTransition]
     );
 
     return (
@@ -57,7 +61,7 @@ export function SymbolPageClient({
             </header>
 
             {/* 메인 레이아웃 */}
-            <div className="flex flex-1 overflow-hidden">
+            <div className="relative flex flex-1 overflow-hidden">
                 <ErrorBoundary FallbackComponent={ChartErrorFallback}>
                     <Suspense fallback={<ChartSkeleton />}>
                         <ChartContent

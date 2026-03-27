@@ -20,6 +20,36 @@ interface ChartContentProps {
     initialAnalysis: AnalysisResponse;
 }
 
+interface AnalysisStatusBannerProps {
+    isAnalyzing: boolean;
+    analysisError: string | null;
+}
+
+function AnalysisStatusBanner({
+    isAnalyzing,
+    analysisError,
+}: AnalysisStatusBannerProps) {
+    if (isAnalyzing) {
+        return (
+            <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
+                <span className="text-secondary-400 text-sm">
+                    AI 분석 중...
+                </span>
+            </div>
+        );
+    }
+
+    if (analysisError) {
+        return (
+            <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
+                <span className="text-sm text-red-400">{analysisError}</span>
+            </div>
+        );
+    }
+
+    return null;
+}
+
 export function ChartContent({
     symbol,
     timeframe,
@@ -60,20 +90,10 @@ export function ChartContent({
 
             {/* AI 분석 패널 */}
             <aside className="border-secondary-700 w-80 shrink-0 overflow-y-auto border-l p-4">
-                {isAnalyzing && (
-                    <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
-                        <span className="text-secondary-400 text-sm">
-                            AI 분석 중...
-                        </span>
-                    </div>
-                )}
-                {analysisError && (
-                    <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
-                        <span className="text-sm text-red-400">
-                            {analysisError}
-                        </span>
-                    </div>
-                )}
+                <AnalysisStatusBanner
+                    isAnalyzing={isAnalyzing}
+                    analysisError={analysisError}
+                />
                 <AnalysisPanel
                     analysis={analysis}
                     onReanalyze={handleReanalyze}
