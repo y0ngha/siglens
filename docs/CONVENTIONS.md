@@ -102,6 +102,52 @@ interface Signal { strength: SignalStrength; }
 
 ---
 
+## 커스텀 훅 내부 선언 순서
+
+커스텀 훅 내부는 다음 순서로 선언한다. `useState`는 로컬 상태가 필요한 경우에만 포함하며, 불필요하면 생략한다.
+
+1. `useState` — 로컬 상태 (필요 시)
+2. `useRef` — ref 선언
+3. `useQuery` / `useMutation` 등 외부 훅 — 서버 상태 및 비동기 작업
+4. 파생 변수(derived variables) — `mutation.data` 등에서 계산된 값
+5. 이벤트 핸들러 및 함수 — `handle*`, 내부 유틸 함수
+6. `useEffect` — 모두 한 곳에 모음. 책임별로 분리하되 Effects 블록 안에 순서대로 나열
+7. `return`
+
+같은 종류끼리 묶어서 선언한다. 종류 경계는 주석으로 구분할 수 있다.
+
+```typescript
+export function useExample(props: ExampleOptions): ExampleResult {
+    // Refs
+    const ref = useRef<HTMLDivElement>(null);
+
+    // Query hooks
+    const mutation = useMutation({ mutationFn: postSomething });
+
+    // Derived variables
+    const value = mutation.data ?? initialValue;
+    const error = mutation.error?.message ?? null;
+
+    // Handlers
+    const handleSubmit = (): void => {
+        mutation.mutate(ref.current);
+    };
+
+    // Effects
+    useEffect(() => {
+        ref.current = someValue;
+    }, [someValue]);
+
+    useEffect(() => {
+        mutation.reset();
+    }, [dep, mutation]);
+
+    return { value, error, handleSubmit };
+}
+```
+
+---
+
 ## 컴포넌트 폴더 구조 규칙
 
 컴포넌트 폴더 내 커스텀 훅은 반드시 `hooks/` 서브폴더에 위치해야 한다.
@@ -322,6 +368,8 @@ candleSeries.setData([...newOlderBars, ...existingBars]);
 
 ## ESLint 규칙
 
+`eslint-disable`, `eslint-disable-next-line` 주석은 사용하지 않는다. eslint 규칙이 경고를 발생시키는 경우, 규칙을 끄는 대신 근본 원인을 해결하는 방식으로 코드를 수정해야 한다.
+
 ```typescript
 // ✅ import/first — import는 파일 최상단에
 import { calculateRSI } from './rsi';
@@ -357,9 +405,49 @@ return NextResponse.json({ error: '...' }, { status: 400 });
 ```
 domain/         외부 라이브러리 import 금지 — 순수 TypeScript 함수만
 infrastructure/ domain만 import 가능
-components/     domain, lib import 가능 — infrastructure 직접 import 금지
+components/     domain, lib import 가능
+                컴포넌트 파일(.tsx): infrastructure 직접 import 금지
+                훅 파일(hooks/): infrastructure의 fetch 함수만 import 가능
+                  → useQuery/useMutation의 queryFn/mutationFn 연결 목적에 한함
 app/            infrastructure, domain, lib 모두 import 가능
 lib/            외부 UI 유틸리티 래퍼 (clsx, tailwind-merge 등)
                 domain에 넣을 수 없는 외부 패키지 wrapping 전용
                 순수 함수 형태로 작성 — 사이드 이펙트 없음
+                React Query 키 팩토리(QUERY_KEYS 등) 포함 — 앱 전역에서 공유되는
+                React Query 관련 설정 파일도 lib/에 위치할 수 있다
+```
+
+---
+
+## React Query와 서버 상태 관리 규칙
+
+클라이언트에서는 React Query를 이용해 서버 상태를 관리하고, 서버 데이터를 fetch하는 로직은 반드시 infrastructure layer에 위치해야 한다. component hooks는 infrastructure의 fetch 함수를 useQuery/useMutation의 queryFn/mutationFn으로 연결하는 역할만 담당한다.
+
+```typescript
+// ✅ infrastructure layer — fetch 로직
+// src/infrastructure/market/barsApi.ts
+export async function fetchBarsWithIndicators(
+    symbol: string,
+    timeframe: Timeframe,
+    signal?: AbortSignal
+): Promise<BarsData> {
+    const res = await fetch(`/api/bars?symbol=${symbol}&timeframe=${timeframe}`);
+    // ...
+}
+
+// ✅ component hook — queryFn 연결 역할만
+// src/components/symbol-page/hooks/useBars.ts
+const { data } = useQuery({
+    queryKey: QUERY_KEYS.bars(symbol, timeframe),
+    queryFn: ({ signal }) => fetchBarsWithIndicators(symbol, timeframe, signal),
+});
+
+// ❌ component hook 내부에 fetch 로직 인라인 금지
+const { data } = useQuery({
+    queryKey: QUERY_KEYS.bars(symbol, timeframe),
+    queryFn: async ({ signal }) => {
+        const res = await fetch(`/api/bars?symbol=${symbol}`); // 금지
+        return res.json();
+    },
+});
 ```
