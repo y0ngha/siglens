@@ -1,22 +1,16 @@
 'use client';
 
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
+    keepPreviousData,
+    useQuery,
+    useQueryClient,
+} from '@tanstack/react-query';
 import { useState } from 'react';
-import type { Bar, IndicatorResult, Timeframe } from '@/domain/types';
+import type { Bar, BarsData, IndicatorResult, Timeframe } from '@/domain/types';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
+import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
-import type { BarsData } from '@/infrastructure/market/barsApi';
 import { QUERY_KEYS } from '@/lib/queryKeys';
-
-const EMPTY_INDICATOR_RESULT: IndicatorResult = {
-    macd: [],
-    bollinger: [],
-    dmi: [],
-    rsi: [],
-    vwap: [],
-    ma: {},
-    ema: {},
-};
 
 interface UseBarsOptions {
     symbol: string;
@@ -45,6 +39,7 @@ export function useBars({
         queryKey: QUERY_KEYS.bars(symbol, timeframe),
         queryFn: ({ signal }) =>
             fetchBarsWithIndicators(symbol, timeframe, signal),
+        placeholderData: keepPreviousData,
         ...(timeframe === DEFAULT_TIMEFRAME
             ? {
                   initialData: {

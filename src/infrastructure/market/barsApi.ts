@@ -1,16 +1,6 @@
 import { calculateIndicators } from '@/domain/indicators';
-import type {
-    Bar,
-    BarsResponse,
-    IndicatorResult,
-    Timeframe,
-} from '@/domain/types';
+import type { BarsData, BarsResponse, Timeframe } from '@/domain/types';
 import { TIMEFRAME_BARS_LIMIT } from '@/domain/constants/market';
-
-export interface BarsData {
-    bars: Bar[];
-    indicators: IndicatorResult;
-}
 
 export async function fetchBarsWithIndicators(
     symbol: string,

@@ -2,9 +2,7 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useState } from 'react';
-
-const QUERY_STALE_TIME_MS = 60 * 1000;
-const QUERY_GC_TIME_MS = 5 * 60 * 1000;
+import { QUERY_GC_TIME_MS, QUERY_STALE_TIME_MS } from '@/lib/queryKeys';
 
 interface ReactQueryProviderProps {
     children: React.ReactNode;

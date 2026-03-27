@@ -4,14 +4,12 @@ import { useMutation } from '@tanstack/react-query';
 import { useEffect, useRef } from 'react';
 import type {
     AnalysisResponse,
+    AnalyzeVariables,
     Bar,
     IndicatorResult,
     Timeframe,
 } from '@/domain/types';
-import {
-    postAnalyze,
-    type AnalyzeVariables,
-} from '@/infrastructure/market/analysisApi';
+import { postAnalyze } from '@/infrastructure/market/analysisApi';
 
 interface UseAnalysisOptions {
     symbol: string;

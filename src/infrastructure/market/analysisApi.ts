@@ -1,10 +1,4 @@
-import type { AnalysisResponse, Bar, IndicatorResult } from '@/domain/types';
-
-export interface AnalyzeVariables {
-    symbol: string;
-    bars: Bar[];
-    indicators: IndicatorResult;
-}
+import type { AnalysisResponse, AnalyzeVariables } from '@/domain/types';
 
 export async function postAnalyze({
     symbol,
