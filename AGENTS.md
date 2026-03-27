@@ -188,6 +188,29 @@ For the full step-by-step flow, **read the relevant doc before invoking any agen
 
 ---
 
+### MISTAKES.md Update Rule
+
+After every `review-agent` response that contains `findings.required`, you **must** evaluate each finding against `docs/MISTAKES.md`.
+
+**Trigger condition:** a finding qualifies for MISTAKES.md when **either** of the following is true:
+- The same finding appeared in a `review-agent` response in a **previous** flow (i.e., it has been flagged before).
+- The same finding appeared **more than once** across rounds within the current flow (round 2+ still flags the same issue).
+
+**When the condition is met:**
+
+1. Open `docs/MISTAKES.md`.
+2. Check whether the finding is already documented. If it is, skip.
+3. If it is not, append it under the most relevant section in the same style as existing entries.
+   - Follow the English-only rule stated at the top of `docs/MISTAKES.md`.
+   - Use the concise `problem → fix` format used by existing entries.
+4. Continue routing as normal (do not stop the workflow to update the file — update it in the same step before invoking the next agent).
+
+**What does NOT qualify:**
+- First-time findings in the current flow (round 1, never seen before) — add to MISTAKES.md only after a recurrence is confirmed.
+- Findings in the `recommended` list — only `required` findings are tracked.
+
+---
+
 ## Layer Dependency Rules (Never Violate)
 
 ```
