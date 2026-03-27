@@ -193,10 +193,71 @@ import { useState, useEffect } from 'react';
 
 ## Component Rules
 
-```typescript
-// ✅ 'use client' — at the top of the file, required when using useState/useEffect
-'use client';
+### 'use client' Declaration
 
+Add `'use client'` **only** when the component meets at least one of the following conditions:
+
+| Condition | Examples |
+|---|---|
+| Uses React state or lifecycle hooks | `useState`, `useReducer`, `useContext`, `useEffect`, `useLayoutEffect` |
+| Uses custom hooks from `components/*/hooks/` | `useBars`, `useAnalysis`, `useTimeframeChange` |
+| Registers event handlers | `onClick`, `onChange`, `onSubmit` |
+| Accesses browser APIs | `window`, `document`, `localStorage` |
+| Is a `FallbackComponent` for `ErrorBoundary` | receives `resetErrorBoundary` and calls it |
+
+Do **not** add `'use client'` to components that only render static JSX with no interactivity.
+Keeping components as Server Components by default minimizes the client bundle.
+
+```typescript
+// ✅ Required — uses useState and event handler
+'use client';
+export function TimeframeSelector({ onChange }: TimeframeSelectorProps) {
+    const [selected, setSelected] = useState<Timeframe>('1Day');
+    // ...
+}
+
+// ✅ Required — FallbackComponent receives resetErrorBoundary (client-only callback)
+'use client';
+export function ChartErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
+    return <button onClick={resetErrorBoundary}>다시 시도</button>;
+}
+
+// ✅ Not required — pure static JSX, no hooks or handlers
+// ChartSkeleton renders a loading placeholder with no interactivity
+export function ChartSkeleton() {
+    return <div className="animate-pulse bg-gray-800 rounded" />;
+}
+```
+
+### RSC → Client Boundary: Minimize Serialized Data
+
+When a Server Component passes data to a `'use client'` component, only the props cross the boundary as serialized JSON embedded in the HTML response. Pass only the fields the client component actually uses.
+
+```typescript
+// ❌ Serializes all 50 fields of User
+async function Page() {
+    const user = await fetchUser();
+    return <Profile user={user} />;
+}
+'use client'
+function Profile({ user }: { user: User }) {
+    return <div>{user.name}</div>;
+}
+
+// ✅ Serializes only the one field used
+async function Page() {
+    const user = await fetchUser();
+    return <Profile name={user.name} />;
+}
+'use client'
+function Profile({ name }: { name: string }) {
+    return <div>{name}</div>;
+}
+```
+
+### Other Component Rules
+
+```typescript
 // ✅ Define Props interface directly above the component
 interface StockChartProps { initialBars: Bar[]; symbol: string; }
 export function StockChart({ initialBars, symbol }: StockChartProps) { ... }
