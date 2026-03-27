@@ -1,3 +1,5 @@
+'use client';
+
 import {
     useCallback,
     useEffect,
@@ -7,15 +9,11 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
-import type {
-    IChartApi,
-    ISeriesApi,
-    LineWidth,
-    UTCTimestamp,
-} from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { getPeriodColor } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { buildSeriesDataFromValues } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseEMAOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -73,15 +71,15 @@ export function useEMAOverlay({
             .map(Number)
             .filter(period => !visiblePeriods.includes(period));
 
-        periodsToRemove.forEach(period => {
+        for (const period of periodsToRemove) {
             const series = seriesRef.current[period];
             if (series) chart.removeSeries(series);
-        });
+        }
 
         // 기존 시리즈 유지 + 새 기간 시리즈 추가로 refs 재구성
         // applyOptions로 lineWidth 변경을 기존 시리즈에도 반영
         const nextSeries: Record<number, ISeriesApi<'Line'>> = {};
-        visiblePeriods.forEach(period => {
+        for (const period of visiblePeriods) {
             const series =
                 seriesRef.current[period] ??
                 chart.addSeries(LineSeries, {
@@ -93,28 +91,20 @@ export function useEMAOverlay({
                 });
             series.applyOptions({ lineWidth });
             nextSeries[period] = series;
-        });
+        }
         seriesRef.current = nextSeries;
     }, [chartRef, visiblePeriods, lineWidth]);
 
     // 데이터 동기화
     // bars와 emaData의 정합성 보장을 위해 Math.min으로 길이를 맞춰 매핑
     useEffect(() => {
-        visiblePeriods.forEach(period => {
+        for (const period of visiblePeriods) {
             const series = seriesRef.current[period];
             const emaData = indicators.ema[period];
-            if (!series || !emaData) return;
+            if (!series || !emaData) continue;
 
-            const count = Math.min(bars.length, emaData.length);
-            series.setData(
-                bars.slice(0, count).map((bar, i) => {
-                    const value = emaData[i];
-                    return value !== null && value !== undefined
-                        ? { time: bar.time as UTCTimestamp, value }
-                        : { time: bar.time as UTCTimestamp };
-                })
-            );
-        });
+            series.setData(buildSeriesDataFromValues(bars, emaData));
+        }
     }, [indicators, bars, visiblePeriods]);
 
     return { visiblePeriods, togglePeriod };

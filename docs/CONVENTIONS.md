@@ -117,26 +117,19 @@ Include `useState` only when local state is needed; omit otherwise.
 7. `useEffect` — group all effects here, separated by responsibility, listed in order
 8. `return`
 
-Group declarations by kind. Use comments to mark boundaries between groups.
-
 ```typescript
 export function useExample(props: ExampleOptions): ExampleResult {
-    // Refs
     const ref = useRef<HTMLDivElement>(null);
 
-    // Query hooks
     const mutation = useMutation({ mutationFn: postSomething });
 
-    // Derived variables
     const value = mutation.data ?? initialValue;
     const error = mutation.error?.message ?? null;
 
-    // Handlers
     const handleSubmit = (): void => {
         mutation.mutate(ref.current);
     };
 
-    // Effects
     useLayoutEffect(() => {
         ref.current = someValue;
     });
@@ -153,8 +146,9 @@ export function useExample(props: ExampleOptions): ExampleResult {
 
 ## Component Folder Structure
 
-Custom hooks inside a component folder must always be placed in a `hooks/` subfolder.
-Never mix component files and hook files at the same directory level.
+Custom hooks must always be placed in a `hooks/` subfolder.
+Pure utility functions (non-hook helpers) must always be placed in a `utils/` subfolder.
+Never mix component files, hook files, or utility files at the same directory level.
 
 ```
 # ✅ Correct structure
@@ -163,6 +157,8 @@ src/components/
 │   ├── hooks/
 │   │   ├── useBollingerOverlay.ts
 │   │   └── useChartData.ts
+│   ├── utils/
+│   │   └── seriesDataUtils.ts
 │   └── StockChart.tsx
 └── symbol-page/
     ├── hooks/
@@ -170,21 +166,98 @@ src/components/
     │   └── useBars.ts
     └── SymbolPageClient.tsx
 
-# ❌ Incorrect structure — hooks at the same level as components
-src/components/symbol-page/
-├── SymbolPageClient.tsx
-├── useAnalysis.ts  ← prohibited
-└── useBars.ts      ← prohibited
+# ❌ Incorrect — hooks or utils at the same level as components
+src/components/chart/
+├── StockChart.tsx
+├── useChartData.ts     ← prohibited (must be in hooks/)
+└── seriesDataUtils.ts  ← prohibited (must be in utils/)
+```
+
+**`hooks/` vs `utils/`**
+- `hooks/`: files that call React hooks (`useState`, `useEffect`, `useQuery`, etc.)
+- `utils/`: pure functions with no React hook calls — helper transformations, mappers, formatters
+
+---
+
+## Custom Hook Rules
+
+```typescript
+// ✅ 'use client' — required at the top of every custom hook file
+// Custom hooks in components/ always run on the client; declare 'use client' unconditionally.
+'use client';
+
+import { useState, useEffect } from 'react';
 ```
 
 ---
 
 ## Component Rules
 
-```typescript
-// ✅ 'use client' — at the top of the file, required when using useState/useEffect
-'use client';
+### 'use client' Declaration
 
+Add `'use client'` **only** when the component meets at least one of the following conditions:
+
+| Condition | Examples |
+|---|---|
+| Uses React state or lifecycle hooks | `useState`, `useReducer`, `useContext`, `useEffect`, `useLayoutEffect` |
+| Uses custom hooks from `components/*/hooks/` | `useBars`, `useAnalysis`, `useTimeframeChange` |
+| Registers event handlers | `onClick`, `onChange`, `onSubmit` |
+| Accesses browser APIs | `window`, `document`, `localStorage` |
+| Is a `FallbackComponent` for `ErrorBoundary` | receives `resetErrorBoundary` and calls it |
+
+Do **not** add `'use client'` to components that only render static JSX with no interactivity.
+Keeping components as Server Components by default minimizes the client bundle.
+
+```typescript
+// ✅ Required — uses useState and event handler
+'use client';
+export function TimeframeSelector({ onChange }: TimeframeSelectorProps) {
+    const [selected, setSelected] = useState<Timeframe>('1Day');
+    // ...
+}
+
+// ✅ Required — FallbackComponent receives resetErrorBoundary (client-only callback)
+'use client';
+export function ChartErrorFallback({ error, resetErrorBoundary }: FallbackProps) {
+    return <button onClick={resetErrorBoundary}>다시 시도</button>;
+}
+
+// ✅ Not required — pure static JSX, no hooks or handlers
+// ChartSkeleton renders a loading placeholder with no interactivity
+export function ChartSkeleton() {
+    return <div className="animate-pulse bg-gray-800 rounded" />;
+}
+```
+
+### RSC → Client Boundary: Minimize Serialized Data
+
+When a Server Component passes data to a `'use client'` component, only the props cross the boundary as serialized JSON embedded in the HTML response. Pass only the fields the client component actually uses.
+
+```typescript
+// ❌ Serializes all 50 fields of User
+async function Page() {
+    const user = await fetchUser();
+    return <Profile user={user} />;
+}
+'use client'
+function Profile({ user }: { user: User }) {
+    return <div>{user.name}</div>;
+}
+
+// ✅ Serializes only the one field used
+async function Page() {
+    const user = await fetchUser();
+    return <Profile name={user.name} />;
+}
+'use client'
+function Profile({ name }: { name: string }) {
+    return <div>{name}</div>;
+}
+```
+
+### Other Component Rules
+
+```typescript
 // ✅ Define Props interface directly above the component
 interface StockChartProps { initialBars: Bar[]; symbol: string; }
 export function StockChart({ initialBars, symbol }: StockChartProps) { ... }

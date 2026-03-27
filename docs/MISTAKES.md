@@ -10,27 +10,40 @@ Review before implementation and ensure these are not repeated.
 ## Coding Paradigm
 
 ```
-1. Using for/while loops
+1. Using for/while/forEach loops for data transformation
    → Replace with map, filter, reduce, flatMap
+   → Exception: side-effect-only iteration (e.g. calling a chart API on each element
+     with no return value) may use forEach or for...of
+   → Prefer for...of over forEach when the loop body is non-trivial or has multiple statements
+   ❌ for (let i = 0; i < closes.length; i++) result.push(closes[i] * 2)
+   ✅ closes.map(c => c * 2)
+   ✅ periodsToRemove.forEach(p => chart.removeSeries(seriesRef.current[p]))  // side-effect only
+   ✅ for (const p of periodsToRemove) { chart.removeSeries(seriesRef.current[p]); }  // preferred for multi-statement
 
-2. let reassignment
+2. Using reduce for side-effect-only iteration (no accumulator)
+   → reduce<void> with an unused accumulator is semantically misleading
+   → Use forEach or for...of instead
+   ❌ items.reduce<void>((_acc, item) => { sideEffect(item); }, undefined)
+   ✅ for (const item of items) { sideEffect(item); }
+
+3. let reassignment
    → Use const + new variable
 
-3. Directly mutating original arrays/objects
+4. Directly mutating original arrays/objects
    → Use spread operator
    ❌ bars.push(newBar)     ✅ [...bars, newBar]
 
-4. Nested conditionals / nested ternaries
+5. Nested conditionals / nested ternaries
    → Use object map or early return
 
-5. Using classes in domain
+6. Using classes in domain
    → Replace with pure functions (infrastructure Provider is the exception)
 
-6. Pushing to external array inside reduce callback
+7. Pushing to external array inside reduce callback
    → Spread into accumulator instead
    ❌ result.push(ema)      ✅ return [...acc, ema]
 
-7. Reimplementing the same algorithm
+8. Reimplementing the same algorithm
    → Check for existing helpers before writing a new function
    → Separate number[]-based helpers from Bar[]-based wrappers for reuse
 ```

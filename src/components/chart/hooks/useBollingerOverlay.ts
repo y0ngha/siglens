@@ -1,3 +1,5 @@
+'use client';
+
 import {
     useCallback,
     useEffect,
@@ -7,15 +9,11 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 import { AreaSeries, LineSeries } from 'lightweight-charts';
-import type {
-    IChartApi,
-    ISeriesApi,
-    LineWidth,
-    UTCTimestamp,
-} from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
-import type { Bar, BollingerResult, IndicatorResult } from '@/domain/types';
+import type { Bar, IndicatorResult } from '@/domain/types';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseBollingerOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -27,20 +25,6 @@ interface UseBollingerOverlayParams {
 interface UseBollingerOverlayReturn {
     isVisible: boolean;
     toggle: () => void;
-}
-
-function buildSeriesData(
-    bars: Bar[],
-    bollinger: BollingerResult[],
-    key: keyof BollingerResult
-) {
-    const count = Math.min(bars.length, bollinger.length);
-    return bars.slice(0, count).map((bar, i) => {
-        const value = bollinger[i]?.[key];
-        return value !== null && value !== undefined
-            ? { time: bar.time as UTCTimestamp, value }
-            : { time: bar.time as UTCTimestamp };
-    });
 }
 
 export function useBollingerOverlay({
@@ -144,21 +128,20 @@ export function useBollingerOverlay({
         const { bollinger } = indicators;
         if (!bollinger.length) return;
 
-        if (upperSeriesRef.current) {
-            upperSeriesRef.current.setData(
-                buildSeriesData(bars, bollinger, 'upper')
-            );
-        }
-        if (middleSeriesRef.current) {
-            middleSeriesRef.current.setData(
-                buildSeriesData(bars, bollinger, 'middle')
-            );
-        }
-        if (lowerSeriesRef.current) {
-            lowerSeriesRef.current.setData(
-                buildSeriesData(bars, bollinger, 'lower')
-            );
-        }
+        if (
+            !upperSeriesRef.current ||
+            !middleSeriesRef.current ||
+            !lowerSeriesRef.current
+        )
+            return;
+
+        const upperData = buildSeriesData(bars, bollinger, 'upper');
+        const middleData = buildSeriesData(bars, bollinger, 'middle');
+        const lowerData = buildSeriesData(bars, bollinger, 'lower');
+
+        upperSeriesRef.current.setData(upperData);
+        middleSeriesRef.current.setData(middleData);
+        lowerSeriesRef.current.setData(lowerData);
     }, [indicators, bars, isVisible]);
 
     return { isVisible, toggle };
