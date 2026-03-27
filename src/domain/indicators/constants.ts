@@ -1,3 +1,15 @@
+import type { IndicatorResult } from '@/domain/types';
+
+export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
+    macd: [],
+    bollinger: [],
+    dmi: [],
+    rsi: [],
+    vwap: [],
+    ma: {},
+    ema: {},
+};
+
 export const RSI_DEFAULT_PERIOD = 14;
 export const RSI_OVERBOUGHT_LEVEL = 70;
 export const RSI_OVERSOLD_LEVEL = 30;

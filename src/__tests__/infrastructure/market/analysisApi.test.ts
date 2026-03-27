@@ -1,5 +1,5 @@
 import { postAnalyze } from '@/infrastructure/market/analysisApi';
-import type { AnalyzeVariables } from '@/infrastructure/market/analysisApi';
+import type { AnalyzeVariables } from '@/domain/types';
 
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
@@ -40,7 +40,7 @@ beforeEach(() => {
     mockFetch.mockReset();
 });
 
-describe('postAnalyze', () => {
+describe('postAnalyze 함수는', () => {
     describe('정상 응답일 때', () => {
         it('AnalysisResponse를 반환한다', async () => {
             mockFetch.mockResolvedValueOnce({

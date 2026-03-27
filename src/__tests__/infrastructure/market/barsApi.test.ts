@@ -17,7 +17,7 @@ beforeEach(() => {
     mockFetch.mockReset();
 });
 
-describe('fetchBarsWithIndicators', () => {
+describe('fetchBarsWithIndicators 함수는', () => {
     describe('정상 응답일 때', () => {
         it('bars와 indicators를 포함한 BarsData를 반환한다', async () => {
             mockFetch.mockResolvedValueOnce({
