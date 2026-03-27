@@ -110,7 +110,7 @@ export function ChartContent({
             {/* 차트 영역 */}
             <div className="flex h-[60vh] flex-col overflow-hidden md:h-auto md:flex-1">
                 {/* 캔들 차트 */}
-                <div className="relative flex-[3]">
+                <div className="relative flex-3">
                     <StockChart bars={bars} indicators={indicators} />
                 </div>
 
