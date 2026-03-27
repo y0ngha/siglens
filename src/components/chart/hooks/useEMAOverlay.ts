@@ -78,9 +78,8 @@ export function useEMAOverlay({
 
         // 기존 시리즈 유지 + 새 기간 시리즈 추가로 refs 재구성
         // applyOptions로 lineWidth 변경을 기존 시리즈에도 반영
-        const nextSeries = visiblePeriods.reduce<
-            Record<number, ISeriesApi<'Line'>>
-        >((acc, period) => {
+        const nextSeries: Record<number, ISeriesApi<'Line'>> = {};
+        for (const period of visiblePeriods) {
             const series =
                 seriesRef.current[period] ??
                 chart.addSeries(LineSeries, {
@@ -91,8 +90,8 @@ export function useEMAOverlay({
                     lastValueVisible: false,
                 });
             series.applyOptions({ lineWidth });
-            return { ...acc, [period]: series };
-        }, {});
+            nextSeries[period] = series;
+        }
         seriesRef.current = nextSeries;
     }, [chartRef, visiblePeriods, lineWidth]);
 

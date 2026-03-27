@@ -33,16 +33,15 @@ export function useBars({
     const [mountedAt] = useState<number>(() => Date.now());
 
     // Query hooks
+    const isDefaultTimeframe = timeframe === DEFAULT_TIMEFRAME;
     const { data } = useSuspenseQuery<BarsData, Error>({
         queryKey: QUERY_KEYS.bars(symbol, timeframe),
         queryFn: ({ signal }) =>
             fetchBarsWithIndicators(symbol, timeframe, signal),
-        initialData:
-            timeframe === DEFAULT_TIMEFRAME
-                ? { bars: initialBars, indicators: initialIndicators }
-                : undefined,
-        initialDataUpdatedAt:
-            timeframe === DEFAULT_TIMEFRAME ? mountedAt : undefined,
+        initialData: isDefaultTimeframe
+            ? { bars: initialBars, indicators: initialIndicators }
+            : undefined,
+        initialDataUpdatedAt: isDefaultTimeframe ? mountedAt : undefined,
     });
 
     // Derived variables

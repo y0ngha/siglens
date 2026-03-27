@@ -128,21 +128,20 @@ export function useBollingerOverlay({
         const { bollinger } = indicators;
         if (!bollinger.length) return;
 
-        if (upperSeriesRef.current) {
-            upperSeriesRef.current.setData(
-                buildSeriesData(bars, bollinger, 'upper')
-            );
-        }
-        if (middleSeriesRef.current) {
-            middleSeriesRef.current.setData(
-                buildSeriesData(bars, bollinger, 'middle')
-            );
-        }
-        if (lowerSeriesRef.current) {
-            lowerSeriesRef.current.setData(
-                buildSeriesData(bars, bollinger, 'lower')
-            );
-        }
+        if (
+            !upperSeriesRef.current ||
+            !middleSeriesRef.current ||
+            !lowerSeriesRef.current
+        )
+            return;
+
+        const upperData = buildSeriesData(bars, bollinger, 'upper');
+        const middleData = buildSeriesData(bars, bollinger, 'middle');
+        const lowerData = buildSeriesData(bars, bollinger, 'lower');
+
+        upperSeriesRef.current.setData(upperData);
+        middleSeriesRef.current.setData(middleData);
+        lowerSeriesRef.current.setData(lowerData);
     }, [indicators, bars, isVisible]);
 
     return { isVisible, toggle };

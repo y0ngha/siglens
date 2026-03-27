@@ -21,25 +21,30 @@ interface AnalysisStatusBannerProps {
     status: AnalysisStatus;
 }
 
+function AnalyzingBanner() {
+    return (
+        <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
+            <span className="text-secondary-400 text-sm">AI 분석 중...</span>
+        </div>
+    );
+}
+
+interface ErrorBannerProps {
+    message: string;
+}
+
+function ErrorBanner({ message }: ErrorBannerProps) {
+    return (
+        <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
+            <span className="text-sm text-red-400">{message}</span>
+        </div>
+    );
+}
+
 function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
-    if (status.type === 'analyzing') {
-        return (
-            <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
-                <span className="text-secondary-400 text-sm">
-                    AI 분석 중...
-                </span>
-            </div>
-        );
-    }
-
-    if (status.type === 'error') {
-        return (
-            <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
-                <span className="text-sm text-red-400">{status.message}</span>
-            </div>
-        );
-    }
-
+    if (status.type === 'analyzing') return <AnalyzingBanner />;
+    if (status.type === 'error')
+        return <ErrorBanner message={status.message} />;
     return null;
 }
 
