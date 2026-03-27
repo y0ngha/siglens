@@ -17,7 +17,7 @@ export function ChartErrorFallback({
             <button
                 type="button"
                 onClick={resetErrorBoundary}
-                className="bg-secondary-700 hover:bg-secondary-600 text-secondary-200 rounded px-3 py-1.5 text-xs transition-colors"
+                className="bg-primary-600 hover:bg-primary-700 rounded px-3 py-1.5 text-xs text-white transition-colors"
             >
                 다시 시도
             </button>

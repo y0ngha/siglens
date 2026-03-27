@@ -1,20 +1,13 @@
 'use client';
 
-import { Suspense, useCallback, useState, useTransition } from 'react';
+import { Suspense } from 'react';
 import { ErrorBoundary } from 'react-error-boundary';
-import { useQueryClient } from '@tanstack/react-query';
-import type {
-    AnalysisResponse,
-    Bar,
-    IndicatorResult,
-    Timeframe,
-} from '@/domain/types';
-import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
+import type { AnalysisResponse, Bar, IndicatorResult } from '@/domain/types';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
 import { ChartContent } from '@/components/symbol-page/ChartContent';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { useTimeframeChange } from '@/components/symbol-page/hooks/useTimeframeChange';
 
 interface SymbolPageClientProps {
     symbol: string;
@@ -29,23 +22,7 @@ export function SymbolPageClient({
     initialIndicators,
     initialAnalysis,
 }: SymbolPageClientProps) {
-    const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
-    const [, startTransition] = useTransition();
-    const queryClient = useQueryClient();
-
-    const handleTimeframeChange = useCallback(
-        (nextTimeframe: Timeframe): void => {
-            if (nextTimeframe === timeframe) return;
-            // 이전 타임프레임 쿼리 취소 — 불필요한 네트워크 요청 방지
-            void queryClient.cancelQueries({
-                queryKey: QUERY_KEYS.bars(symbol, timeframe),
-            });
-            startTransition(() => {
-                setTimeframe(nextTimeframe);
-            });
-        },
-        [timeframe, queryClient, symbol, startTransition]
-    );
+    const { timeframe, handleTimeframeChange } = useTimeframeChange(symbol);
 
     return (
         <div className="bg-secondary-900 text-secondary-200 flex h-full min-h-screen flex-col">

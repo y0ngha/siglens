@@ -12,14 +12,6 @@ import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
 
-interface ChartContentProps {
-    symbol: string;
-    timeframe: Timeframe;
-    initialBars: Bar[];
-    initialIndicators: IndicatorResult;
-    initialAnalysis: AnalysisResponse;
-}
-
 interface AnalysisStatusBannerProps {
     isAnalyzing: boolean;
     analysisError: string | null;
@@ -48,6 +40,14 @@ function AnalysisStatusBanner({
     }
 
     return null;
+}
+
+interface ChartContentProps {
+    symbol: string;
+    timeframe: Timeframe;
+    initialBars: Bar[];
+    initialIndicators: IndicatorResult;
+    initialAnalysis: AnalysisResponse;
 }
 
 export function ChartContent({
