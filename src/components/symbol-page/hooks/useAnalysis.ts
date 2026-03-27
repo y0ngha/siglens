@@ -15,7 +15,9 @@ interface UseAnalysisOptions {
     symbol: string;
     initialAnalysis: AnalysisResponse;
     timeframe: Timeframe;
+    /** latestRef를 통해 handleReanalyze 호출 시 최신 값을 읽기 위한 채널 */
     bars: Bar[];
+    /** latestRef를 통해 handleReanalyze 호출 시 최신 값을 읽기 위한 채널 */
     indicators: IndicatorResult;
 }
 
