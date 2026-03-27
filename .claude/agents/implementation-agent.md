@@ -1,7 +1,7 @@
 ---
 name: implementation-agent
 description: Handles issue implementation. Triggered when the user provides an issue number and asks to implement or work on it.
-permissionMode: acceptEdits
+permissionMode: bypassPermissions
 model: sonnet
 memory: project
 tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
