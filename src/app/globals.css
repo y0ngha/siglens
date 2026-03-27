@@ -1,4 +1,4 @@
-@import url('tailwindcss');
+@import 'tailwindcss';
 
 @theme {
     /* Primary — Trust Blue */
@@ -70,17 +70,25 @@ body {
     background-image:
         linear-gradient(
             to right,
-            var(--color-secondary-800) 1px,
+            var(--color-secondary-700) 1px,
             transparent 1px
         ),
         linear-gradient(
             to bottom,
-            var(--color-secondary-800) 1px,
+            var(--color-secondary-700) 1px,
             transparent 1px
         );
-    background-size: 64px 64px;
-    opacity: 0.4;
+    background-size: 48px 48px;
+    opacity: 0.5;
     mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black, transparent);
+}
+
+.hero-glow {
+    background: radial-gradient(
+        ellipse 50% 40% at 50% 45%,
+        color-mix(in oklch, var(--color-primary-600) 12%, transparent),
+        transparent
+    );
 }
 
 @media (prefers-reduced-motion: no-preference) {
@@ -91,10 +99,15 @@ body {
 
 @keyframes grid-fade {
     from {
-        opacity: 0.3;
+        opacity: 0.4;
     }
 
     to {
-        opacity: 0.6;
+        opacity: 0.7;
     }
+}
+
+.focus-glow:focus {
+    box-shadow: 0 0 20px
+        color-mix(in oklch, var(--color-primary-600) 30%, transparent);
 }

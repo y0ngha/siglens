@@ -1,7 +1,7 @@
 export function Footer() {
     return (
         <footer className="border-secondary-800 border-t">
-            <div className="flex items-center justify-between px-6 py-6 lg:px-[15vw]">
+            <div className="flex flex-col items-center gap-2 px-6 py-6 sm:flex-row sm:justify-between lg:px-[15vw]">
                 <p className="text-secondary-600 text-sm">© 2025 Siglens</p>
                 <a
                     href="https://github.com/y0ngha/siglens"
