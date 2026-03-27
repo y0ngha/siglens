@@ -9,12 +9,7 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
-import type {
-    IChartApi,
-    ISeriesApi,
-    LineWidth,
-    UTCTimestamp,
-} from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import {
@@ -25,6 +20,7 @@ import {
     RSI_OVERBOUGHT_LEVEL,
     RSI_OVERSOLD_LEVEL,
 } from '@/domain/indicators/constants';
+import { buildSeriesDataFromValues } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseRSIChartParams {
     chartRef: RefObject<IChartApi | null>;
@@ -127,15 +123,7 @@ export function useRSIChart({
 
         if (!rsiSeriesRef.current) return;
 
-        const count = Math.min(bars.length, rsi.length);
-        const data = bars.slice(0, count).map((bar, i) => {
-            const value = rsi[i];
-            return value !== null && value !== undefined
-                ? { time: bar.time as UTCTimestamp, value }
-                : { time: bar.time as UTCTimestamp };
-        });
-
-        rsiSeriesRef.current.setData(data);
+        rsiSeriesRef.current.setData(buildSeriesDataFromValues(bars, rsi));
     }, [indicators, bars, isVisible]);
 
     return { isVisible, toggle };

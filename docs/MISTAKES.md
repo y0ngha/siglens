@@ -10,10 +10,23 @@ Review before implementation and ensure these are not repeated.
 ## Coding Paradigm
 
 ```
-1. Using for/while loops
+1. Using for/while/forEach loops for data transformation
    → Replace with map, filter, reduce, flatMap
+   → Exception: side-effect-only iteration (e.g. calling a chart API on each element
+     with no return value) may use forEach or for...of
+   → Prefer for...of over forEach when the loop body is non-trivial or has multiple statements
+   ❌ for (let i = 0; i < closes.length; i++) result.push(closes[i] * 2)
+   ✅ closes.map(c => c * 2)
+   ✅ periodsToRemove.forEach(p => chart.removeSeries(seriesRef.current[p]))  // side-effect only
+   ✅ for (const p of periodsToRemove) { chart.removeSeries(seriesRef.current[p]); }  // preferred for multi-statement
 
-2. let reassignment
+2. Using reduce for side-effect-only iteration (no accumulator)
+   → reduce<void> with an unused accumulator is semantically misleading
+   → Use forEach or for...of instead
+   ❌ items.reduce<void>((_acc, item) => { sideEffect(item); }, undefined)
+   ✅ for (const item of items) { sideEffect(item); }
+
+3. let reassignment
    → Use const + new variable
 
 3. Directly mutating original arrays/objects

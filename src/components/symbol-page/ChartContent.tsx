@@ -43,6 +43,16 @@ function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
     return null;
 }
 
+function getAnalysisStatus(
+    isAnalyzing: boolean,
+    analysisError: string | null
+): AnalysisStatus {
+    if (isAnalyzing) return { type: 'analyzing' };
+    if (analysisError !== null)
+        return { type: 'error', message: analysisError };
+    return { type: 'idle' };
+}
+
 interface ChartContentProps {
     symbol: string;
     timeframe: Timeframe;
@@ -74,11 +84,7 @@ export function ChartContent({
             indicators,
         });
 
-    const analysisStatus: AnalysisStatus = isAnalyzing
-        ? { type: 'analyzing' }
-        : analysisError !== null
-          ? { type: 'error', message: analysisError }
-          : { type: 'idle' };
+    const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
 
     return (
         <>

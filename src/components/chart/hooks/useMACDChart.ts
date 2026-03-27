@@ -9,12 +9,7 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 import { HistogramSeries, LineSeries } from 'lightweight-charts';
-import type {
-    IChartApi,
-    ISeriesApi,
-    LineWidth,
-    UTCTimestamp,
-} from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import {
@@ -147,25 +142,13 @@ export function useMACDChart({
         )
             return;
 
-        const count = Math.min(bars.length, macd.length);
-
         const macdLineData = buildSeriesData(bars, macd, 'macd');
         const signalLineData = buildSeriesData(bars, macd, 'signal');
-
-        const histogramData = bars.slice(0, count).map((bar, i) => {
-            const value = macd[i]?.histogram;
-            if (value === null || value === undefined) {
-                return { time: bar.time as UTCTimestamp };
-            }
-            return {
-                time: bar.time as UTCTimestamp,
-                value,
-                color:
-                    value >= 0
-                        ? CHART_COLORS.macdHistogramBullish
-                        : CHART_COLORS.macdHistogramBearish,
-            };
-        });
+        const histogramData = buildSeriesData(bars, macd, 'histogram', value =>
+            value >= 0
+                ? CHART_COLORS.macdHistogramBullish
+                : CHART_COLORS.macdHistogramBearish
+        );
 
         macdLineSeriesRef.current.setData(macdLineData);
         signalLineSeriesRef.current.setData(signalLineData);
