@@ -1,5 +1,8 @@
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
-import { TIMEFRAME_BARS_LIMIT } from '@/domain/constants/market';
+import {
+    DEFAULT_TIMEFRAME,
+    TIMEFRAME_BARS_LIMIT,
+} from '@/domain/constants/market';
 import {
     MA_DEFAULT_PERIODS,
     EMA_DEFAULT_PERIODS,
@@ -29,7 +32,10 @@ describe('fetchBarsWithIndicators 함수는', () => {
                 json: async () => ({ bars: [mockBar], hasMore: false }),
             });
 
-            const result = await fetchBarsWithIndicators('AAPL', '1Day');
+            const result = await fetchBarsWithIndicators(
+                'AAPL',
+                DEFAULT_TIMEFRAME
+            );
 
             expect(result.bars).toHaveLength(1);
             expect(result.bars[0]).toEqual(mockBar);
@@ -56,12 +62,14 @@ describe('fetchBarsWithIndicators 함수는', () => {
                 json: async () => ({ bars: [], hasMore: false }),
             });
 
-            await fetchBarsWithIndicators('TSLA', '1Day');
+            await fetchBarsWithIndicators('TSLA', DEFAULT_TIMEFRAME);
 
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(url).toContain('symbol=TSLA');
             expect(url).toContain('timeframe=1Day');
-            expect(url).toContain(`limit=${TIMEFRAME_BARS_LIMIT['1Day']}`);
+            expect(url).toContain(
+                `limit=${TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME]}`
+            );
         });
 
         it('symbol을 URL 인코딩하여 요청한다', async () => {
@@ -70,7 +78,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
                 json: async () => ({ bars: [], hasMore: false }),
             });
 
-            await fetchBarsWithIndicators('BRK A', '1Day');
+            await fetchBarsWithIndicators('BRK A', DEFAULT_TIMEFRAME);
 
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(url).toContain('symbol=BRK%20A');
@@ -83,7 +91,11 @@ describe('fetchBarsWithIndicators 함수는', () => {
             });
 
             const controller = new AbortController();
-            await fetchBarsWithIndicators('AAPL', '1Day', controller.signal);
+            await fetchBarsWithIndicators(
+                'AAPL',
+                DEFAULT_TIMEFRAME,
+                controller.signal
+            );
 
             const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(init.signal).toBe(controller.signal);
@@ -98,7 +110,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
             });
 
             await expect(
-                fetchBarsWithIndicators('AAPL', '1Day')
+                fetchBarsWithIndicators('AAPL', DEFAULT_TIMEFRAME)
             ).rejects.toThrow('데이터를 불러오지 못했습니다 (500)');
         });
     });
