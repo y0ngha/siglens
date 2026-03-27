@@ -76,23 +76,34 @@ git fetch origin '{head branch name}'
 git checkout '{head branch name}'
 ```
 
-### 4a. Fetch All Review Comments (Type A only)
+### 4a. Fetch Review Comments After the Latest Commit (Type A only)
 
 Always use `jq`. Never use Python or other interpreters.
 
+First, get the timestamp of the latest commit on the PR branch.
+Only fetch review comments created **after** that timestamp — earlier comments have already been addressed.
+
 ```bash
-# All inline comments across the PR
+# Step 1: Get the latest commit timestamp on the PR branch
+LATEST_COMMIT_DATE=$(gh api repos/y0ngha/siglens/pulls/{PR number}/commits \
+  | jq -r '.[-1].commit.committer.date')
+
+# Step 2: Fetch only inline comments created after the latest commit
 gh api repos/y0ngha/siglens/pulls/{PR number}/comments \
-  | jq '.[] | {id: .id, path: .path, line: .line, body: .body}'
+  | jq --arg since "$LATEST_COMMIT_DATE" \
+    '[.[] | select(.created_at > $since) | {id: .id, path: .path, line: .line, body: .body}]'
 
-# All reviews with their state
+# Step 3: Fetch reviews created after the latest commit
 gh api repos/y0ngha/siglens/pulls/{PR number}/reviews \
-  | jq '[.[] | {id: .id, state: .state, submitted_at: .submitted_at}]'
+  | jq --arg since "$LATEST_COMMIT_DATE" \
+    '[.[] | select(.submitted_at > $since) | {id: .id, state: .state, submitted_at: .submitted_at}]'
 
-# Inline comments for a specific review
+# Step 4: If needed, fetch inline comments for a specific review
 gh api repos/y0ngha/siglens/pulls/{PR number}/reviews/{review_id}/comments \
   | jq '.[] | {path: .path, line: .line, body: .body}'
 ```
+
+If no comments exist after the latest commit, emit a `done` exit signal and stop — there is nothing to fix.
 
 ### 5. Load Required Documents
 
@@ -117,19 +128,6 @@ Never create new branches or PRs. Make all changes directly on the existing PR b
 
 Read all comments/findings first, then apply all fixes in a single pass.
 Processing them one by one risks conflicts on the same branch.
-
-### Mark Resolved Comments with a Reaction
-
-After applying fixes for a comment, add a 👍 reaction to that comment.
-This makes it visually clear which comments have been addressed.
-
-```bash
-gh api repos/y0ngha/siglens/pulls/comments/{comment_id}/reactions \
-  --method POST \
-  -f content="+1"
-```
-
-Apply this for every inline comment that was addressed. Use the `id` field collected in Step 4a.
 
 ### Domain Layer Fix Checklist
 
