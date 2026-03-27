@@ -1,40 +1,40 @@
 {
-  "version": 1,
-  "skills": {
-    "domain-driven-design": {
-      "source": "wondelai/skills",
-      "sourceType": "github",
-      "computedHash": "01ae2a9d33c87237a174a36e2b9d2f34f796398a2b6ff6ea9d08076417c83545"
-    },
-    "frontend-design": {
-      "source": "pbakaus/impeccable",
-      "sourceType": "github",
-      "computedHash": "f8ecd3028ae60e1b710a9e1c13a43ddfb3a9d4bf67df99209a1855297c1ea2bd"
-    },
-    "next-best-practices": {
-      "source": "vercel-labs/next-skills",
-      "sourceType": "github",
-      "computedHash": "515ba75178bd44875812d9a560bdf14651f86709f89cf1d4f209638e879807f3"
-    },
-    "next-cache-components": {
-      "source": "vercel-labs/next-skills",
-      "sourceType": "github",
-      "computedHash": "a94b83ddcd2ff1c30722577f693b1bfe32f2e1a83abdd6c08c2d6cc6753b53c8"
-    },
-    "typescript-advanced-types": {
-      "source": "wshobson/agents",
-      "sourceType": "github",
-      "computedHash": "3a3be8c925f96ac4e1280db28a01677e7ca5197f3792de2bbf35ab3bb324b6dd"
-    },
-    "vercel-react-best-practices": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "computedHash": "bbc31a48537b473ff4feea6360ef0de3bfdcbef26c14f4967a5deefe8ca801d3"
-    },
-    "web-design-guidelines": {
-      "source": "vercel-labs/agent-skills",
-      "sourceType": "github",
-      "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
+    "version": 1,
+    "skills": {
+        "domain-driven-design": {
+            "source": "wondelai/skills",
+            "sourceType": "github",
+            "computedHash": "01ae2a9d33c87237a174a36e2b9d2f34f796398a2b6ff6ea9d08076417c83545"
+        },
+        "frontend-design": {
+            "source": "pbakaus/impeccable",
+            "sourceType": "github",
+            "computedHash": "f8ecd3028ae60e1b710a9e1c13a43ddfb3a9d4bf67df99209a1855297c1ea2bd"
+        },
+        "next-best-practices": {
+            "source": "vercel-labs/next-skills",
+            "sourceType": "github",
+            "computedHash": "515ba75178bd44875812d9a560bdf14651f86709f89cf1d4f209638e879807f3"
+        },
+        "next-cache-components": {
+            "source": "vercel-labs/next-skills",
+            "sourceType": "github",
+            "computedHash": "a94b83ddcd2ff1c30722577f693b1bfe32f2e1a83abdd6c08c2d6cc6753b53c8"
+        },
+        "typescript-advanced-types": {
+            "source": "wshobson/agents",
+            "sourceType": "github",
+            "computedHash": "3a3be8c925f96ac4e1280db28a01677e7ca5197f3792de2bbf35ab3bb324b6dd"
+        },
+        "vercel-react-best-practices": {
+            "source": "vercel-labs/agent-skills",
+            "sourceType": "github",
+            "computedHash": "bbc31a48537b473ff4feea6360ef0de3bfdcbef26c14f4967a5deefe8ca801d3"
+        },
+        "web-design-guidelines": {
+            "source": "vercel-labs/agent-skills",
+            "sourceType": "github",
+            "computedHash": "a6a44d5498f7e8f68289902f3dedfc6f38ae0cee1e96527c80724cf27f727c2a"
+        }
     }
-  }
 }
