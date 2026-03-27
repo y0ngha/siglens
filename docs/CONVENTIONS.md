@@ -179,6 +179,18 @@ src/components/symbol-page/
 
 ---
 
+## Custom Hook Rules
+
+```typescript
+// ✅ 'use client' — required at the top of every custom hook file
+// Custom hooks in components/ always run on the client; declare 'use client' unconditionally.
+'use client';
+
+import { useState, useEffect } from 'react';
+```
+
+---
+
 ## Component Rules
 
 ```typescript

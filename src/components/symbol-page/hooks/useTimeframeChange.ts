@@ -1,3 +1,5 @@
+'use client';
+
 import { useCallback, useState, useTransition } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { Timeframe } from '@/domain/types';
