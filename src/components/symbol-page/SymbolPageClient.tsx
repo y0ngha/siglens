@@ -1,12 +1,20 @@
 'use client';
 
-import type { AnalysisResponse, Bar, IndicatorResult } from '@/domain/types';
-import { StockChart } from '@/components/chart/StockChart';
-import { VolumeChart } from '@/components/chart/VolumeChart';
+import { Suspense, useCallback, useState } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
+import { useQueryClient } from '@tanstack/react-query';
+import type {
+    AnalysisResponse,
+    Bar,
+    IndicatorResult,
+    Timeframe,
+} from '@/domain/types';
+import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
-import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
-import { useBars } from '@/components/symbol-page/hooks/useBars';
-import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
+import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
+import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
+import { ChartContent } from '@/components/symbol-page/ChartContent';
+import { QUERY_KEYS } from '@/lib/queryConfig';
 
 interface SymbolPageClientProps {
     symbol: string;
@@ -21,23 +29,19 @@ export function SymbolPageClient({
     initialIndicators,
     initialAnalysis,
 }: SymbolPageClientProps) {
-    const {
-        bars,
-        indicators,
-        timeframe,
-        isLoadingBars,
-        barsError,
-        handleTimeframeChange,
-    } = useBars({ symbol, initialBars, initialIndicators });
+    const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
+    const queryClient = useQueryClient();
 
-    const { analysis, isAnalyzing, analysisError, handleReanalyze } =
-        useAnalysis({
-            symbol,
-            initialAnalysis,
-            timeframe,
-            bars,
-            indicators,
-        });
+    const handleTimeframeChange = useCallback(
+        (nextTimeframe: Timeframe): void => {
+            if (nextTimeframe === timeframe) return;
+            void queryClient.cancelQueries({
+                queryKey: QUERY_KEYS.bars(symbol, timeframe),
+            });
+            setTimeframe(nextTimeframe);
+        },
+        [timeframe, queryClient, symbol]
+    );
 
     return (
         <div className="bg-secondary-900 text-secondary-200 flex h-full min-h-screen flex-col">
@@ -54,54 +58,17 @@ export function SymbolPageClient({
 
             {/* 메인 레이아웃 */}
             <div className="flex flex-1 overflow-hidden">
-                {/* 차트 영역 */}
-                <div className="flex flex-1 flex-col overflow-hidden">
-                    {/* 캔들 차트 */}
-                    <div className="relative flex-3">
-                        {isLoadingBars && (
-                            <div className="bg-secondary-900/60 absolute inset-0 z-10 flex items-center justify-center">
-                                <span className="text-secondary-400 text-sm">
-                                    데이터 로딩 중...
-                                </span>
-                            </div>
-                        )}
-                        {barsError && (
-                            <div className="bg-secondary-900/60 absolute inset-0 z-10 flex items-center justify-center">
-                                <span className="text-sm text-red-400">
-                                    {barsError}
-                                </span>
-                            </div>
-                        )}
-                        <StockChart bars={bars} indicators={indicators} />
-                    </div>
-
-                    {/* 거래량 차트 */}
-                    <div className="border-secondary-700 flex-1 border-t">
-                        <VolumeChart bars={bars} />
-                    </div>
-                </div>
-
-                {/* AI 분석 패널 */}
-                <aside className="border-secondary-700 w-80 shrink-0 overflow-y-auto border-l p-4">
-                    {isAnalyzing && (
-                        <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
-                            <span className="text-secondary-400 text-sm">
-                                AI 분석 중...
-                            </span>
-                        </div>
-                    )}
-                    {analysisError && (
-                        <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
-                            <span className="text-sm text-red-400">
-                                {analysisError}
-                            </span>
-                        </div>
-                    )}
-                    <AnalysisPanel
-                        analysis={analysis}
-                        onReanalyze={handleReanalyze}
-                    />
-                </aside>
+                <ErrorBoundary FallbackComponent={ChartErrorFallback}>
+                    <Suspense fallback={<ChartSkeleton />}>
+                        <ChartContent
+                            symbol={symbol}
+                            timeframe={timeframe}
+                            initialBars={initialBars}
+                            initialIndicators={initialIndicators}
+                            initialAnalysis={initialAnalysis}
+                        />
+                    </Suspense>
+                </ErrorBoundary>
             </div>
         </div>
     );
