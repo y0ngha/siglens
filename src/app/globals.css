@@ -62,7 +62,39 @@
 }
 
 body {
-    font-family: Arial, Helvetica, sans-serif;
     color: var(--color-secondary-50);
     background-color: var(--color-secondary-900);
+}
+
+.hero-grid {
+    background-image:
+        linear-gradient(
+            to right,
+            var(--color-secondary-800) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            to bottom,
+            var(--color-secondary-800) 1px,
+            transparent 1px
+        );
+    background-size: 64px 64px;
+    opacity: 0.4;
+    mask-image: radial-gradient(ellipse 60% 50% at 50% 50%, black, transparent);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+    .hero-grid {
+        animation: grid-fade 8s ease-in-out infinite alternate;
+    }
+}
+
+@keyframes grid-fade {
+    from {
+        opacity: 0.3;
+    }
+
+    to {
+        opacity: 0.6;
+    }
 }
