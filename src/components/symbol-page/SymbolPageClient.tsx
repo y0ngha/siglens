@@ -5,8 +5,8 @@ import { StockChart } from '@/components/chart/StockChart';
 import { VolumeChart } from '@/components/chart/VolumeChart';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
-import { useBars } from '@/components/symbol-page/useBars';
-import { useAnalysis } from '@/components/symbol-page/useAnalysis';
+import { useBars } from '@/components/symbol-page/hooks/useBars';
+import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
 
 interface SymbolPageClientProps {
     symbol: string;

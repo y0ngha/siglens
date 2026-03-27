@@ -102,6 +102,34 @@ interface Signal { strength: SignalStrength; }
 
 ---
 
+## 컴포넌트 폴더 구조 규칙
+
+컴포넌트 폴더 내 커스텀 훅은 반드시 `hooks/` 서브폴더에 위치해야 한다.
+컴포넌트 파일과 훅 파일을 같은 레벨에 혼재하지 않는다.
+
+```
+# ✅ 올바른 구조
+src/components/
+├── chart/
+│   ├── hooks/
+│   │   ├── useBollingerOverlay.ts
+│   │   └── useChartData.ts
+│   └── StockChart.tsx
+└── symbol-page/
+    ├── hooks/
+    │   ├── useAnalysis.ts
+    │   └── useBars.ts
+    └── SymbolPageClient.tsx
+
+# ❌ 잘못된 구조 — 훅이 컴포넌트와 같은 레벨에 위치
+src/components/symbol-page/
+├── SymbolPageClient.tsx
+├── useAnalysis.ts  ← 금지
+└── useBars.ts      ← 금지
+```
+
+---
+
 ## 컴포넌트 규칙
 
 ```typescript
