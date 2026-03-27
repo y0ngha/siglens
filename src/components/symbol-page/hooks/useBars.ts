@@ -38,8 +38,9 @@ export function useBars({
     // useQuery options의 referential equality를 깨뜨리므로
     // useState 지연 초기화를 통해 렌더 외부에서 값을 얻는다.
     const [mountedAt] = useState<number>(() => Date.now());
-    const queryClient = useQueryClient();
 
+    // Query hooks
+    const queryClient = useQueryClient();
     const { data, isFetching, error } = useQuery<BarsData, Error>({
         queryKey: QUERY_KEYS.bars(symbol, timeframe),
         queryFn: ({ signal }) =>
