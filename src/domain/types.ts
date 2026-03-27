@@ -95,3 +95,14 @@ export interface AnalysisResponse {
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
 }
+
+export interface BarsData {
+    bars: Bar[];
+    indicators: IndicatorResult;
+}
+
+export interface AnalyzeVariables {
+    symbol: string;
+    bars: Bar[];
+    indicators: IndicatorResult;
+}

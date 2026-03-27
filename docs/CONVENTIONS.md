@@ -1,32 +1,32 @@
 # Conventions
 
-## 코딩 패러다임
+## Coding Paradigm
 
-Siglens는 **선언형(Declarative)** 코드와 **함수형 프로그래밍(Functional Programming)** 패러다임을 지향한다.
+Siglens follows **Declarative** and **Functional Programming** paradigms.
 
-### 선언형 코드
+### Declarative Code
 
-"어떻게"가 아닌 "무엇을"에 집중한다.
+Focus on "what" rather than "how".
 
 ```typescript
-// ❌ 명령형
+// ❌ Imperative
 const result = [];
 for (let i = 0; i < closes.length; i++) {
     if (closes[i] > 0) result.push(closes[i] * 2);
 }
 
-// ✅ 선언형
+// ✅ Declarative
 const result = closes.filter(c => c > 0).map(c => c * 2);
 ```
 
 ```typescript
-// ❌ 조건 분기 중첩
+// ❌ Nested conditionals
 let label;
 if (trend === 'bullish') label = '상승';
 else if (trend === 'bearish') label = '하락';
 else label = '중립';
 
-// ✅ 객체 맵
+// ✅ Object map
 const TREND_LABEL: Record<Trend, string> = {
     bullish: '상승',
     bearish: '하락',
@@ -35,80 +35,129 @@ const TREND_LABEL: Record<Trend, string> = {
 const label = TREND_LABEL[trend];
 ```
 
-### 함수형 프로그래밍
+### Functional Programming
 
 ```typescript
-// ✅ 순수 함수 — 동일 입력 → 동일 출력, 사이드 이펙트 없음
+// ✅ Pure function — same input → same output, no side effects
 function calculateRSI(closes: number[], period: number): (number | null)[] { ... }
 
-// ✅ 불변성
+// ✅ Immutability
 // ❌ bars.push(newBar)       ✅ [...bars, newBar]
 // ❌ bar.close = 100         ✅ { ...bar, close: 100 }
 ```
 
-### 적용 우선순위
+### Priority by Layer
 
 ```
-domain/         함수형 필수 — 순수 함수, 불변성, 고차 함수
-infrastructure/ 함수형 권장 — 내부 로직은 순수 함수로 분리
-components/     선언형 필수 — 조건 분기는 객체 맵 또는 컴포넌트 분리
-app/            선언형 권장 — RSC async/await 패턴과 자연스럽게 맞음
-```
-
----
-
-## 파일 / 디렉토리 네이밍
-
-```
-컴포넌트 파일    PascalCase      StockChart.tsx
-훅 파일          camelCase       useStockData.ts
-유틸/함수 파일   camelCase       calculateRSI.ts
-타입 파일        camelCase       types.ts
-테스트 파일      원본명.test     rsi.test.ts
-디렉토리         소문자 kebab    indicators/, stock-chart/
+domain/         Functional required — pure functions, immutability, higher-order functions
+infrastructure/ Functional recommended — separate internal logic into pure functions
+components/     Declarative required — replace conditionals with object maps or component splits
+app/            Declarative recommended — aligns naturally with RSC async/await patterns
 ```
 
 ---
 
-## TypeScript 규칙
+## File / Directory Naming
+
+```
+Component files   PascalCase      StockChart.tsx
+Hook files        camelCase       useStockData.ts
+Util/function     camelCase       calculateRSI.ts
+Type files        camelCase       types.ts
+Test files        original.test   rsi.test.ts
+Directories       lowercase kebab indicators/, stock-chart/
+```
+
+---
+
+## TypeScript Rules
 
 ```typescript
-// ✅ interface 우선, union은 type alias
+// ✅ Prefer interface; use type alias for unions
 interface Bar { time: number; open: number; }
 type Timeframe = '1Min' | '5Min' | '15Min' | '1Hour' | '1Day';
 
-// ❌ any 금지
+// ❌ No any
 const data: any = response;
 
-// ✅ 도메인 함수 반환 타입 명시 필수
+// ✅ Return types must be explicitly declared on domain functions
 function calculateRSI(closes: number[], period: number): (number | null)[] { ... }
 
-// ✅ 초기 구간은 null (0, NaN 금지 — 차트에서 null은 렌더링 생략, 0은 잘못된 값으로 표시)
+// ✅ Initial period values must be null
+// (null = skip rendering, 0 = renders as invalid data in charts)
 const result: (number | null)[] = new Array(period - 1).fill(null);
 
-// ✅ interface 필드는 camelCase
-// 외부 소스(YAML frontmatter 등) 값이 snake_case여도 domain 타입은 camelCase로 정의하고
-// infrastructure 레이어에서 변환한다.
+// ✅ Interface fields must be camelCase
+// Even if the external source (e.g. YAML frontmatter) uses snake_case,
+// define domain types in camelCase and transform in the infrastructure layer.
 interface Skill { confidenceWeight: number; }
 
-// ✅ interface 필드에 union 리터럴 2개 이상이면 type alias로 분리
+// ✅ Extract union literals with 2+ members into a type alias
 type SignalStrength = 'strong' | 'moderate' | 'weak';
 interface Signal { strength: SignalStrength; }
 
-// ✅ 리터럴 하드코딩 금지 — 상수로 추출
+// ✅ No hardcoded literals — extract to constants
 // ❌ period = 14
 // ✅ period = RSI_DEFAULT_PERIOD  (domain/indicators/constants.ts)
 ```
 
 ---
 
-## 컴포넌트 폴더 구조 규칙
+## Custom Hook Declaration Order
 
-컴포넌트 폴더 내 커스텀 훅은 반드시 `hooks/` 서브폴더에 위치해야 한다.
-컴포넌트 파일과 훅 파일을 같은 레벨에 혼재하지 않는다.
+Declare items inside a custom hook in the following order.
+Include `useState` only when local state is needed; omit otherwise.
+
+1. `useState` — local state (if needed)
+2. `useRef` — ref declarations
+3. `useQuery` / `useMutation` etc. — server state and async operations
+4. Derived variables — values computed from `mutation.data` etc.
+5. Event handlers and functions — `handle*`, internal utilities
+6. `useLayoutEffect` — runs before `useEffect`, place immediately before it (if needed)
+7. `useEffect` — group all effects here, separated by responsibility, listed in order
+8. `return`
+
+Group declarations by kind. Use comments to mark boundaries between groups.
+
+```typescript
+export function useExample(props: ExampleOptions): ExampleResult {
+    // Refs
+    const ref = useRef<HTMLDivElement>(null);
+
+    // Query hooks
+    const mutation = useMutation({ mutationFn: postSomething });
+
+    // Derived variables
+    const value = mutation.data ?? initialValue;
+    const error = mutation.error?.message ?? null;
+
+    // Handlers
+    const handleSubmit = (): void => {
+        mutation.mutate(ref.current);
+    };
+
+    // Effects
+    useLayoutEffect(() => {
+        ref.current = someValue;
+    });
+
+    useEffect(() => {
+        mutation.reset();
+    }, [dep, mutation]);
+
+    return { value, error, handleSubmit };
+}
+```
+
+---
+
+## Component Folder Structure
+
+Custom hooks inside a component folder must always be placed in a `hooks/` subfolder.
+Never mix component files and hook files at the same directory level.
 
 ```
-# ✅ 올바른 구조
+# ✅ Correct structure
 src/components/
 ├── chart/
 │   ├── hooks/
@@ -121,63 +170,63 @@ src/components/
     │   └── useBars.ts
     └── SymbolPageClient.tsx
 
-# ❌ 잘못된 구조 — 훅이 컴포넌트와 같은 레벨에 위치
+# ❌ Incorrect structure — hooks at the same level as components
 src/components/symbol-page/
 ├── SymbolPageClient.tsx
-├── useAnalysis.ts  ← 금지
-└── useBars.ts      ← 금지
+├── useAnalysis.ts  ← prohibited
+└── useBars.ts      ← prohibited
 ```
 
 ---
 
-## 컴포넌트 규칙
+## Component Rules
 
 ```typescript
-// ✅ 'use client' — 파일 최상단, useState/useEffect 사용 시 필수
+// ✅ 'use client' — at the top of the file, required when using useState/useEffect
 'use client';
 
-// ✅ Props 인터페이스를 컴포넌트 바로 위에 정의
+// ✅ Define Props interface directly above the component
 interface StockChartProps { initialBars: Bar[]; symbol: string; }
 export function StockChart({ initialBars, symbol }: StockChartProps) { ... }
 
-// ❌ inline type 금지
+// ❌ No inline prop types
 export function StockChart({ initialBars, symbol }: { initialBars: Bar[]; symbol: string }) { ... }
 
-// ✅ named export (page/layout만 default export)
+// ✅ Named exports (only page/layout use default export)
 export function StockChart() {}
 export default function Page() {}
 ```
 
 ---
 
-## 도메인 함수 규칙
+## Domain Function Rules
 
 ```typescript
-// ✅ 순수 함수만 허용
-// ❌ fetch, console.log, Date.now() 등 사이드 이펙트 금지
+// ✅ Pure functions only
+// ❌ No side effects: fetch, console.log, Date.now() are all prohibited
 function calculateRSI(closes: number[], period = RSI_DEFAULT_PERIOD): (number | null)[] {
-    // 순수 계산만
+    // pure calculation only
 }
 ```
 
 ---
 
-## 테스트 규칙
+## Test Rules
 
-### 파일 위치
+### File Locations
 
 ```
 src/__tests__/domain/indicators/rsi.test.ts
 src/__tests__/infrastructure/market/alpaca.test.ts
 ```
 
-### 커버리지 목표
+### Coverage Targets
 
 ```
 domain/         100%
 infrastructure/ 100%
-components/     제외
-app/            제외
+components/     excluded
+app/            excluded
 ```
 
 **`components/` and `app/` are intentionally excluded from test coverage.**
@@ -185,7 +234,7 @@ Do not request or write test files for files under `components/` or `app/`.
 UI rendering logic is verified manually or via integration tests, not unit tests.
 Test files exist only for `domain/` and `infrastructure/`.
 
-### 테스트 구조
+### Test Structure
 
 ```typescript
 // ✅ describe → describe(context) → it
@@ -202,17 +251,17 @@ describe('calculateRSI', () => {
 });
 ```
 
-### period 기반 인디케이터 필수 테스트 케이스
+### Required Test Cases for Period-Based Indicators
 
-| 케이스 | it 설명 |
-|--------|---------|
-| 빈 배열 | 빈 배열을 반환한다 |
-| period 미만 입력 | 전부 null인 배열을 반환한다 |
-| 초기 null 구간 | 처음 period - 1개의 값은 null이다 |
-| 정상값 구간 | period번째 이후 값은 null이 아닌 숫자다 |
-| 계산 정확성 | 첫 번째 값이 명세와 일치한다 |
+| Case | it description |
+|------|----------------|
+| Empty array | 빈 배열을 반환한다 |
+| Input shorter than period | 전부 null인 배열을 반환한다 |
+| Initial null range | 처음 period - 1개의 값은 null이다 |
+| Valid value range | period번째 이후 값은 null이 아닌 숫자다 |
+| Calculation accuracy | 첫 번째 값이 명세와 일치한다 |
 
-### 외부 API 모킹
+### External API Mocking
 
 ```typescript
 jest.mock('node-fetch');
@@ -221,33 +270,33 @@ import { mockAlpacaBarsResponse } from '@/__tests__/fixtures/alpaca';
 
 ---
 
-## import 경로 규칙
+## Import Path Rules
 
 ```typescript
-// ✅ path alias 사용
+// ✅ Use path aliases
 import { calculateRSI } from '@/domain/indicators/rsi';
 
-// ❌ 상대 경로 금지
+// ❌ No relative paths
 import { calculateRSI } from '../../../domain/indicators/rsi';
 ```
 
 ---
 
-## useEffect 사이드이펙트 격리
+## useEffect Side Effect Isolation
 
-`useEffect` 안에서 발생하는 사이드이펙트는 **책임별로 분리**한다.
-하나의 `useEffect`에 초기화 로직과 데이터 동기화 로직을 혼재시키지 않는다.
+Separate side effects inside `useEffect` by responsibility.
+Never mix initialization logic and data synchronization logic in a single `useEffect`.
 
 ```typescript
-// ❌ 초기화 + 데이터 세팅을 하나의 useEffect에 혼재
+// ❌ Initialization + data setup mixed in one useEffect
 useEffect(() => {
     const chart = createChart(containerRef.current, { ... });
     const series = chart.addSeries(CandlestickSeries, { ... });
-    series.setData(bars); // 데이터 변경 시 차트 전체 재생성
+    series.setData(bars); // recreates the entire chart on every data change
     return () => { chart.remove(); };
 }, [bars]);
 
-// ✅ 초기화([]): 마운트 시 1회만 실행, ref에 인스턴스 보관
+// ✅ Initialization ([]): runs once on mount, stores instance in ref
 useEffect(() => {
     const chart = createChart(containerRef.current, { ... });
     chartRef.current = chart;
@@ -259,7 +308,7 @@ useEffect(() => {
     };
 }, []);
 
-// ✅ 데이터 동기화([deps]): 데이터 변경 시 인스턴스 재사용
+// ✅ Data sync ([deps]): reuses instance on data change
 useEffect(() => {
     if (!seriesRef.current || !chartRef.current) return;
     seriesRef.current.setData(mappedBars);
@@ -267,23 +316,23 @@ useEffect(() => {
 }, [bars]);
 ```
 
-**원칙**
-- 외부 라이브러리 인스턴스 생성/파괴(`[]`) 와 데이터 동기화(`[deps]`)는 별도 `useEffect`로 분리
-- 초기화 `useEffect`의 cleanup에서 ref를 `null`로 초기화하여 다음 데이터 effect가 stale 인스턴스에 접근하지 않도록 보호
+**Principles**
+- Separate instance creation/destruction (`[]`) from data synchronization (`[deps]`) into distinct `useEffect` calls
+- Reset refs to `null` in the initialization cleanup to prevent the data effect from accessing a stale instance
 
 ---
 
-## Lightweight Charts 규칙
+## Lightweight Charts Rules
 
-공식 문서: https://tradingview.github.io/lightweight-charts/docs
+Official docs: https://tradingview.github.io/lightweight-charts/docs
 
 ```
-✅ components/chart/ 에서만 사용
-❌ app/, domain/, infrastructure/ 에서 import 금지
+✅ Use only inside components/chart/
+❌ No imports from app/, domain/, or infrastructure/
 ```
 
 ```typescript
-// ✅ 차트 초기화 + cleanup 필수
+// ✅ Chart initialization + cleanup required
 useEffect(() => {
     const chart = createChart(containerRef.current, { ... });
     const series = chart.addSeries(CandlestickSeries);
@@ -291,75 +340,122 @@ useEffect(() => {
     return () => { chart.remove(); };
 }, []);
 
-// ✅ 거래량, RSI 등 별도 pane
+// ✅ Volume, RSI etc. go in separate panes
 chart.addSeries(HistogramSeries, { priceFormat: { type: 'volume' } }, 1);
 chart.addSeries(LineSeries, {}, 2);
 
-// ✅ null 값은 WhitespaceData로 변환
+// ✅ Convert null values to WhitespaceData
 // ❌ { time: '2024-01-01', value: null }
 // ✅ { time: '2024-01-01' }
 
-// ✅ 과거 데이터 추가 로딩
+// ✅ Prepend historical data
 candleSeries.setData([...newOlderBars, ...existingBars]);
 ```
 
 ---
 
-## Tailwind CSS 규칙
+## Tailwind CSS Rules
 
 ```typescript
-// ✅ Tailwind 클래스 사용
+// ✅ Use Tailwind classes
 <div className="flex items-center gap-4 p-4 bg-gray-900">
 
-// ❌ 인라인 style 금지
+// ❌ No inline styles
 <div style={{ display: 'flex', padding: '16px' }}>
 
-// ✅ 조건부 클래스는 cn 유틸 사용
+// ✅ Use cn utility for conditional classes
 <div className={cn('base-class', isActive && 'active-class')}>
 ```
 
 ---
 
-## ESLint 규칙
+## ESLint Rules
+
+Never use `eslint-disable` or `eslint-disable-next-line` comments.
+When a rule produces a warning, fix the root cause in the code rather than suppressing the rule.
 
 ```typescript
-// ✅ import/first — import는 파일 최상단에
+// ✅ import/first — imports must be at the top of the file
 import { calculateRSI } from './rsi';
 export * from './rsi';
 
-// ❌ export * 뒤에 import 금지
+// ❌ No imports after export *
 export * from './rsi';
 import { calculateRSI } from './rsi';
 ```
 
-EOF 개행: 모든 파일은 마지막 줄에 `\n`으로 끝나야 한다. `yarn format`으로 자동 교정.
+EOF newline: every file must end with `\n`. Auto-fixed by `yarn format`.
 
 ---
 
-## HTTP 상태 코드
+## HTTP Status Codes
 
 ```typescript
-// ✅ node:http2 내장 상수 사용 — 외부 패키지 불필요, Node.js 공식 모듈
+// ✅ Use built-in node:http2 constants — no external packages needed
 import { constants } from 'node:http2';
 const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_NOT_FOUND } = constants;
 
-// ❌ 로컬 상수 재정의 금지 — node:http2가 이미 표준 상수를 제공함
+// ❌ No local constant redefinition — node:http2 already provides standard constants
 const HTTP_STATUS = { BAD_REQUEST: 400 };
 
-// ❌ 리터럴 하드코딩 금지
+// ❌ No hardcoded literals
 return NextResponse.json({ error: '...' }, { status: 400 });
 ```
 
 ---
 
-## 레이어 의존성 규칙
+## Layer Dependency Rules
 
 ```
-domain/         외부 라이브러리 import 금지 — 순수 TypeScript 함수만
-infrastructure/ domain만 import 가능
-components/     domain, lib import 가능 — infrastructure 직접 import 금지
-app/            infrastructure, domain, lib 모두 import 가능
-lib/            외부 UI 유틸리티 래퍼 (clsx, tailwind-merge 등)
-                domain에 넣을 수 없는 외부 패키지 wrapping 전용
-                순수 함수 형태로 작성 — 사이드 이펙트 없음
+domain/         No external library imports — pure TypeScript functions only
+infrastructure/ May import from domain only
+components/     May import from domain and lib
+                Component files (.tsx): no direct imports from infrastructure
+                Hook files (hooks/): may import fetch functions from infrastructure
+                  → only for connecting queryFn/mutationFn in useQuery/useMutation
+app/            May import from infrastructure, domain, and lib
+lib/            External UI utility wrappers (clsx, tailwind-merge, etc.)
+                For wrapping external packages that cannot go in domain
+                Pure functions only — no side effects
+                May include React Query key factories (QUERY_KEYS etc.)
+                React Query config files shared across the app may also live in lib/
+                May import domain types (e.g. Timeframe) for type-safe key factories
+```
+
+---
+
+## React Query and Server State Rules
+
+Manage server state on the client using React Query.
+Fetch logic must always live in the infrastructure layer.
+Component hooks are responsible only for connecting infrastructure fetch functions
+to `useQuery`/`useMutation` as `queryFn`/`mutationFn`.
+
+```typescript
+// ✅ infrastructure layer — fetch logic
+// src/infrastructure/market/barsApi.ts
+export async function fetchBarsWithIndicators(
+    symbol: string,
+    timeframe: Timeframe,
+    signal?: AbortSignal
+): Promise<BarsData> {
+    const res = await fetch(`/api/bars?symbol=${symbol}&timeframe=${timeframe}`);
+    // ...
+}
+
+// ✅ component hook — connects queryFn only
+// src/components/symbol-page/hooks/useBars.ts
+const { data } = useQuery({
+    queryKey: QUERY_KEYS.bars(symbol, timeframe),
+    queryFn: ({ signal }) => fetchBarsWithIndicators(symbol, timeframe, signal),
+});
+
+// ❌ No inline fetch logic inside component hooks
+const { data: barsData } = useQuery({
+    queryKey: QUERY_KEYS.bars(symbol, timeframe),
+    queryFn: async ({ signal }) => {
+        const res = await fetch(`/api/bars?symbol=${symbol}`); // prohibited
+        return res.json();
+    },
+});
 ```

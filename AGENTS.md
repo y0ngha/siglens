@@ -195,7 +195,15 @@ domain         ← No external imports. Pure TypeScript functions only.
 infrastructure ← May import from domain only. Handles file I/O (Skills) and API calls.
 lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.
 app (RSC/Route)← May import from infrastructure, domain, lib.
-components     ← May import from domain, lib. Direct imports from infrastructure are prohibited.
+components     ← May import from domain, lib.
+               Component files (.tsx): Direct imports from infrastructure are prohibited.
+               Hook files (hooks/): May import fetch functions from infrastructure only
+                 → Limited to queryFn/mutationFn connection purpose
+                 → Type imports must be from @/domain/types
+
+lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.
+               May import types from domain (e.g. Timeframe) when needed for React Query key factories.
+               React Query key factories (QUERY_KEYS) and config constants belong in lib/.
 ```
 
 Violations trigger ESLint errors. PRs cannot be merged.

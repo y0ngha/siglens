@@ -1694,6 +1694,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@tanstack/query-core@npm:5.95.2":
+  version: 5.95.2
+  resolution: "@tanstack/query-core@npm:5.95.2"
+  checksum: 10c0/6559483b30dd9ce7fc5d466d54a7ebfe4ca5b5d7f8ce37833a4048516b55565d3072526d74264fa974afbe49a0ae11c9a99ecc1d9ab525966360565ebc600083
+  languageName: node
+  linkType: hard
+
 "@tanstack/query-devtools@npm:5.93.0":
   version: 5.93.0
   resolution: "@tanstack/query-devtools@npm:5.93.0"
@@ -1710,6 +1717,17 @@ __metadata:
     "@tanstack/react-query": ^5.90.20
     react: ^18 || ^19
   checksum: 10c0/cbd9ce85698511e80955f2c7d0fa7395f3230b34a8cbfb6be1712d49393fc4e06a0a2b5ecd734dff9e803834a7c2c347c954ca4b76f961ccf4c31be39e7ac0bc
+  languageName: node
+  linkType: hard
+
+"@tanstack/react-query@npm:^5.95.2":
+  version: 5.95.2
+  resolution: "@tanstack/react-query@npm:5.95.2"
+  dependencies:
+    "@tanstack/query-core": "npm:5.95.2"
+  peerDependencies:
+    react: ^18 || ^19
+  checksum: 10c0/d0e3d3601ccc839043ce7351c369f8826c7363e753db4fec59d07bee0d62efdfa606baf8227597eb54c4d4eb18ab3f594f0cd4e164721acb79ab3628115d72d8
   languageName: node
   linkType: hard
 
@@ -7030,6 +7048,7 @@ __metadata:
   dependencies:
     "@anthropic-ai/sdk": "npm:^0.80.0"
     "@tailwindcss/postcss": "npm:^4"
+    "@tanstack/react-query": "npm:^5.95.2"
     "@tanstack/react-query-devtools": "npm:5"
     "@types/jest": "npm:^30.0.0"
     "@types/node": "npm:^20"
