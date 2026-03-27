@@ -8,6 +8,7 @@ tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
 skills:
   - frontend-design
   - vercel-react-best-practices
+  - web-design-guidelines
 ---
 
 ## Overview
