@@ -9,6 +9,9 @@ skills:
   - frontend-design
   - vercel-react-best-practices
   - web-design-guidelines
+  - typescript-advanced-types
+  - next-cache-components
+  - next-best-practices
 ---
 
 ## Overview
