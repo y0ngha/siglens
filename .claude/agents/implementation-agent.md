@@ -34,10 +34,6 @@ Everything after that (review, commit, push) is handled by other agents via the 
 
 ## Startup Procedure
 
-### 0. Load Memory
-
-Read `.claude/agent-memory/implementation-agent/MEMORY.md` and load all files listed in the index.
-
 ### 1. Repository
 
 ```
@@ -46,63 +42,7 @@ REPO=y0ngha/siglens
 
 Use this value directly in all `gh` commands. Never derive the repo from `git remote get-url` or any shell command.
 
-### 2. Determine Invocation Type
-
-You are invoked in one of two ways. Check which applies:
-
-**Type A — New issue implementation**
-The user/orchestrator passes an issue number.
-→ Follow the full startup procedure (Steps 2–4 below).
-
-**Type B — Review findings fix**
-The orchestrator passes a `findings` JSON from review-agent along with an existing branch name.
-The message will say something like "These are review findings to fix — do not re-read the original issue."
-→ **Skip Steps 2 and 3. Go directly to Step 4.**
-→ Do not run `gh issue view`. Do not create a new branch.
-→ Check out the existing branch and apply only the findings.
-
-```bash
-# Type B: check out the existing branch passed by orchestrator
-git fetch origin {branch}
-git checkout {branch}
-```
-
-### 3. Understand the Issue (Type A only)
-
-```bash
-gh issue view {number} --repo y0ngha/siglens
-```
-
-**If the issue cannot be found, emit a `failed` exit signal and stop.**
-
-Things to verify:
-- Implementation scope: which layers are touched (domain, infrastructure, app, components)
-- File paths to create or modify
-- Function signatures and feature specifications
-- Reference docs: read only items checked (`[x]`) in the issue body
-- Completion criteria
-
-### 4. Create Branch (Type A only)
-
-```bash
-git checkout master && git pull origin master
-git checkout -b {type}/{issue number}/{one-line summary}
-```
-
-Branch naming: `feat/2/도메인-공통-타입-정의`, `refactor/32/candlestick-pattern-domain-분리` format. Korean allowed, spaces replaced with hyphens.
-
-Determine `{type}` from the issue content:
-
-| Type | When to use |
-|---|---|
-| `feat` | New feature or capability |
-| `refactor` | Code restructuring without behavior change |
-| `chore` | Build, config, dependency changes |
-| `docs` | Documentation only |
-| `test` | Test additions or fixes |
-| `style` | Formatting, naming, no logic change |
-
-### 5. Load Required Documents
+### 2. Load Required Documents
 
 Always read:
 - docs/MISTAKES.md
@@ -121,6 +61,62 @@ For Type A only — always read existing similar implementations first (for patt
 # src/domain/indicators/ema.ts
 # src/__tests__/domain/indicators/ema.test.ts
 ```
+
+### 3. Determine Invocation Type
+
+You are invoked in one of two ways. Check which applies:
+
+**Type A — New issue implementation**
+The user/orchestrator passes an issue number.
+→ Follow the full startup procedure (Steps 3–5 below).
+
+**Type B — Review findings fix**
+The orchestrator passes a `findings` JSON from review-agent along with an existing branch name.
+The message will say something like "These are review findings to fix — do not re-read the original issue."
+→ **Skip Steps 3 and 4. Go directly to Step 5.**
+→ Do not run `gh issue view`. Do not create a new branch.
+→ Check out the existing branch and apply only the findings.
+
+```bash
+# Type B: check out the existing branch passed by orchestrator
+git fetch origin {branch}
+git checkout {branch}
+```
+
+### 4. Understand the Issue (Type A only)
+
+```bash
+gh issue view {number} --repo y0ngha/siglens
+```
+
+**If the issue cannot be found, emit a `failed` exit signal and stop.**
+
+Things to verify:
+- Implementation scope: which layers are touched (domain, infrastructure, app, components)
+- File paths to create or modify
+- Function signatures and feature specifications
+- Reference docs: read only items checked (`[x]`) in the issue body
+- Completion criteria
+
+### 5. Create Branch (Type A only)
+
+```bash
+git checkout master && git pull origin master
+git checkout -b {type}/{issue number}/{one-line summary}
+```
+
+Branch naming: `feat/2/도메인-공통-타입-정의`, `refactor/32/candlestick-pattern-domain-분리` format. Korean allowed, spaces replaced with hyphens.
+
+Determine `{type}` from the issue content:
+
+| Type | When to use |
+|---|---|
+| `feat` | New feature or capability |
+| `refactor` | Code restructuring without behavior change |
+| `chore` | Build, config, dependency changes |
+| `docs` | Documentation only |
+| `test` | Test additions or fixes |
+| `style` | Formatting, naming, no logic change |
 
 ---
 

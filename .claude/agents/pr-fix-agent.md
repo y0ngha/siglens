@@ -35,10 +35,6 @@ Everything after that (review, commit, push) is handled by other agents via the 
 
 ## Startup Procedure
 
-### 0. Load Memory
-
-Read `.claude/agent-memory/pr-fix-agent/MEMORY.md` and load all files listed in the index.
-
 ### 1. Repository
 
 ```
@@ -47,22 +43,34 @@ REPO=y0ngha/siglens
 
 Use this value directly in all `gh` commands. Never derive the repo from `git remote get-url` or any shell command.
 
-### 2. Determine Invocation Type
+### 2. Load Required Documents
+
+Always read:
+- docs/MISTAKES.md
+- docs/CONVENTIONS.md
+- docs/FF.md
+
+Additional documents based on fix scope:
+- domain/ related      → docs/DOMAIN.md
+- infrastructure/      → docs/API.md + docs/SIGLENS_API.md
+- components/          → docs/DESIGN.md
+
+### 3. Determine Invocation Type
 
 You are invoked in one of two ways. Check which applies:
 
 **Type A — External PR review comments**
 The orchestrator passes a PR number.
-→ Follow the full startup procedure (Steps 2–4 below).
+→ Follow the full startup procedure (Steps 3–4 below).
 
 **Type B — Internal review findings**
 The orchestrator passes a `findings` JSON from review-agent along with an existing branch name.
 The message will say something like "These are internal review findings — apply them on the existing branch."
-→ **Skip Steps 2 and 3. Go directly to Step 4.**
+→ **Skip Steps 3 and 4. Go directly to Step 5.**
 → Do not fetch PR comments from GitHub. Apply only the findings provided.
 → The branch is already checked out — do not switch branches.
 
-### 3. Understand PR Context (Type A only)
+### 4. Understand PR Context (Type A only)
 
 ```bash
 gh pr view {PR number} --repo y0ngha/siglens
@@ -70,7 +78,7 @@ gh pr view {PR number} --repo y0ngha/siglens
 
 **If the PR cannot be found, emit a `failed` exit signal and stop.**
 
-### 4. Check Out Head Branch (Type A only)
+### 5. Check Out Head Branch (Type A only)
 
 ```bash
 # Get head branch name
@@ -80,7 +88,7 @@ git fetch origin '{head branch name}'
 git checkout '{head branch name}'
 ```
 
-### 4a. Fetch Review Comments After the Latest Commit (Type A only)
+### 5a. Fetch Review Comments After the Latest Commit (Type A only)
 
 Always use `jq`. Never use Python or other interpreters.
 Never use `$()` command substitution — store intermediate values to a temp file instead.
@@ -106,18 +114,6 @@ gh api repos/y0ngha/siglens/pulls/{PR number}/reviews/{review_id}/comments \
 ```
 
 If no comments exist after the latest commit, emit a `done` exit signal and stop — there is nothing to fix.
-
-### 5. Load Required Documents
-
-Always read:
-- docs/MISTAKES.md
-- docs/CONVENTIONS.md
-- docs/FF.md
-
-Additional documents based on fix scope:
-- domain/ related      → docs/DOMAIN.md
-- infrastructure/      → docs/API.md + docs/SIGLENS_API.md
-- components/          → docs/DESIGN.md
 
 ---
 
