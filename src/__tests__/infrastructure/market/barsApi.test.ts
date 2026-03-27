@@ -6,6 +6,10 @@ import {
 import {
     MA_DEFAULT_PERIODS,
     EMA_DEFAULT_PERIODS,
+    RSI_DEFAULT_PERIOD,
+    MACD_SLOW_PERIOD,
+    BOLLINGER_DEFAULT_PERIOD,
+    DMI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 
 const mockFetch = jest.fn();
@@ -46,14 +50,132 @@ describe('fetchBarsWithIndicators 함수는', () => {
             expect(Array.isArray(result.indicators.vwap)).toBe(true);
             expect(Array.isArray(result.indicators.ma)).toBe(false);
             expect(typeof result.indicators.ma).toBe('object');
-            MA_DEFAULT_PERIODS.forEach(period => {
-                expect(result.indicators.ma).toHaveProperty(String(period));
-            });
+            expect(
+                MA_DEFAULT_PERIODS.every(period =>
+                    Object.prototype.hasOwnProperty.call(
+                        result.indicators.ma,
+                        String(period)
+                    )
+                )
+            ).toBe(true);
             expect(Array.isArray(result.indicators.ema)).toBe(false);
             expect(typeof result.indicators.ema).toBe('object');
-            EMA_DEFAULT_PERIODS.forEach(period => {
-                expect(result.indicators.ema).toHaveProperty(String(period));
+            expect(
+                EMA_DEFAULT_PERIODS.every(period =>
+                    Object.prototype.hasOwnProperty.call(
+                        result.indicators.ema,
+                        String(period)
+                    )
+                )
+            ).toBe(true);
+        });
+
+        it('bar가 1개일 때 기간 기반 인디케이터의 첫 번째 값은 null이다', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ bars: [mockBar], hasMore: false }),
             });
+
+            const result = await fetchBarsWithIndicators(
+                'AAPL',
+                DEFAULT_TIMEFRAME
+            );
+
+            expect(result.indicators.rsi[0]).toBeNull();
+            expect(result.indicators.macd[0].macd).toBeNull();
+            expect(result.indicators.macd[0].signal).toBeNull();
+            expect(result.indicators.bollinger[0].upper).toBeNull();
+            expect(result.indicators.bollinger[0].middle).toBeNull();
+            expect(result.indicators.dmi[0].diPlus).toBeNull();
+            expect(result.indicators.dmi[0].adx).toBeNull();
+            expect(
+                MA_DEFAULT_PERIODS.every(
+                    period => result.indicators.ma[period]?.[0] === null
+                )
+            ).toBe(true);
+            expect(
+                EMA_DEFAULT_PERIODS.every(
+                    period => result.indicators.ema[period]?.[0] === null
+                )
+            ).toBe(true);
+        });
+
+        it('bars가 RSI_DEFAULT_PERIOD - 1개일 때 모든 rsi 값은 null이다', async () => {
+            const shortBars = Array.from(
+                { length: RSI_DEFAULT_PERIOD - 1 },
+                (_, i) => ({ ...mockBar, time: mockBar.time + i * 60 })
+            );
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ bars: shortBars, hasMore: false }),
+            });
+
+            const result = await fetchBarsWithIndicators(
+                'AAPL',
+                DEFAULT_TIMEFRAME
+            );
+
+            expect(result.indicators.rsi.every(v => v === null)).toBe(true);
+        });
+
+        it('bars가 MACD_SLOW_PERIOD - 1개일 때 모든 macd 값은 null이다', async () => {
+            const shortBars = Array.from(
+                { length: MACD_SLOW_PERIOD - 1 },
+                (_, i) => ({ ...mockBar, time: mockBar.time + i * 60 })
+            );
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ bars: shortBars, hasMore: false }),
+            });
+
+            const result = await fetchBarsWithIndicators(
+                'AAPL',
+                DEFAULT_TIMEFRAME
+            );
+
+            expect(result.indicators.macd.every(v => v.macd === null)).toBe(
+                true
+            );
+        });
+
+        it('bars가 BOLLINGER_DEFAULT_PERIOD - 1개일 때 모든 bollinger 값은 null이다', async () => {
+            const shortBars = Array.from(
+                { length: BOLLINGER_DEFAULT_PERIOD - 1 },
+                (_, i) => ({ ...mockBar, time: mockBar.time + i * 60 })
+            );
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ bars: shortBars, hasMore: false }),
+            });
+
+            const result = await fetchBarsWithIndicators(
+                'AAPL',
+                DEFAULT_TIMEFRAME
+            );
+
+            expect(
+                result.indicators.bollinger.every(v => v.upper === null)
+            ).toBe(true);
+        });
+
+        it('bars가 DMI_DEFAULT_PERIOD - 1개일 때 모든 dmi 값은 null이다', async () => {
+            const shortBars = Array.from(
+                { length: DMI_DEFAULT_PERIOD - 1 },
+                (_, i) => ({ ...mockBar, time: mockBar.time + i * 60 })
+            );
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ bars: shortBars, hasMore: false }),
+            });
+
+            const result = await fetchBarsWithIndicators(
+                'AAPL',
+                DEFAULT_TIMEFRAME
+            );
+
+            expect(result.indicators.dmi.every(v => v.diPlus === null)).toBe(
+                true
+            );
         });
 
         it('symbol과 timeframe으로 올바른 URL을 요청한다', async () => {

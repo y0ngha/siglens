@@ -37,25 +37,27 @@ describe('EMPTY_INDICATOR_RESULT', () => {
         });
 
         it('ma에 MA_DEFAULT_PERIODS 키가 존재하지 않는다', () => {
-            MA_DEFAULT_PERIODS.forEach(period => {
-                expect(
-                    Object.prototype.hasOwnProperty.call(
-                        EMPTY_INDICATOR_RESULT.ma,
-                        period
-                    )
-                ).toBe(false);
-            });
+            expect(
+                MA_DEFAULT_PERIODS.every(
+                    period =>
+                        !Object.prototype.hasOwnProperty.call(
+                            EMPTY_INDICATOR_RESULT.ma,
+                            period
+                        )
+                )
+            ).toBe(true);
         });
 
         it('ema에 EMA_DEFAULT_PERIODS 키가 존재하지 않는다', () => {
-            EMA_DEFAULT_PERIODS.forEach(period => {
-                expect(
-                    Object.prototype.hasOwnProperty.call(
-                        EMPTY_INDICATOR_RESULT.ema,
-                        period
-                    )
-                ).toBe(false);
-            });
+            expect(
+                EMA_DEFAULT_PERIODS.every(
+                    period =>
+                        !Object.prototype.hasOwnProperty.call(
+                            EMPTY_INDICATOR_RESULT.ema,
+                            period
+                        )
+                )
+            ).toBe(true);
         });
     });
 });
