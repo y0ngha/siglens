@@ -27,7 +27,7 @@ export function SymbolSearch({ className, size = 'sm' }: SymbolSearchProps) {
     };
 
     const inputClass = cn(
-        'bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-600 rounded-lg border transition-colors outline-none focus:ring-1',
+        'bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1',
         size === 'lg'
             ? 'focus-glow w-full px-4 py-3 text-base sm:w-96'
             : 'px-3 py-2 text-sm'
