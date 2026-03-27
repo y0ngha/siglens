@@ -10,7 +10,7 @@ import type { Bar, BarsData, IndicatorResult, Timeframe } from '@/domain/types';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
-import { QUERY_KEYS } from '@/lib/queryKeys';
+import { QUERY_KEYS } from '@/lib/queryConfig';
 
 interface UseBarsOptions {
     symbol: string;
@@ -53,6 +53,13 @@ export function useBars({
             timeframe === DEFAULT_TIMEFRAME ? mountedAt : undefined,
     });
 
+    // Derived variables
+    const bars = data?.bars ?? [];
+    const indicators = data?.indicators ?? EMPTY_INDICATOR_RESULT;
+    const isLoadingBars = isFetching;
+    const barsError = error?.message ?? null;
+
+    // Handlers
     const handleTimeframeChange = useCallback(
         (nextTimeframe: Timeframe): void => {
             if (nextTimeframe === timeframe) return;
@@ -65,11 +72,11 @@ export function useBars({
     );
 
     return {
-        bars: data?.bars ?? [],
-        indicators: data?.indicators ?? EMPTY_INDICATOR_RESULT,
+        bars,
+        indicators,
         timeframe,
-        isLoadingBars: isFetching,
-        barsError: error?.message ?? null,
+        isLoadingBars,
+        barsError,
         handleTimeframeChange,
     };
 }
