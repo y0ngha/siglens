@@ -47,7 +47,10 @@ app            ← infrastructure, domain, lib import 가능
                  Route Handler에서 클라이언트 요청 처리
 
 components     ← domain, lib import 가능
-                 infrastructure 직접 import 금지
+                 컴포넌트 파일(.tsx): infrastructure 직접 import 금지
+                 훅 파일(hooks/): infrastructure의 fetch 함수만 import 가능
+                   → useQuery/useMutation의 queryFn/mutationFn 연결 목적에 한함
+                   → 타입 import는 @/domain/types에서 수행
                  'use client' 필수 표기
 ```
 

@@ -111,8 +111,9 @@ interface Signal { strength: SignalStrength; }
 3. `useQuery` / `useMutation` 등 외부 훅 — 서버 상태 및 비동기 작업
 4. 파생 변수(derived variables) — `mutation.data` 등에서 계산된 값
 5. 이벤트 핸들러 및 함수 — `handle*`, 내부 유틸 함수
-6. `useEffect` — 모두 한 곳에 모음. 책임별로 분리하되 Effects 블록 안에 순서대로 나열
-7. `return`
+6. `useLayoutEffect` — `useEffect`보다 먼저 실행되므로 바로 앞에 위치 (필요 시)
+7. `useEffect` — 모두 한 곳에 모음. 책임별로 분리하되 Effects 블록 안에 순서대로 나열
+8. `return`
 
 같은 종류끼리 묶어서 선언한다. 종류 경계는 주석으로 구분할 수 있다.
 
@@ -134,9 +135,9 @@ export function useExample(props: ExampleOptions): ExampleResult {
     };
 
     // Effects
-    useEffect(() => {
+    useLayoutEffect(() => {
         ref.current = someValue;
-    }, [someValue]);
+    });
 
     useEffect(() => {
         mutation.reset();
