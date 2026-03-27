@@ -40,7 +40,11 @@ export function useAnalysis({
     const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
 
     // Query hooks
-    const { data, error, isPending, reset, mutate } = useMutation<AnalysisResponse, Error, AnalyzeVariables>({
+    const { data, error, isPending, reset, mutate } = useMutation<
+        AnalysisResponse,
+        Error,
+        AnalyzeVariables
+    >({
         mutationFn: postAnalyze,
     });
 
