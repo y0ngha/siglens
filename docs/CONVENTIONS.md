@@ -117,26 +117,19 @@ Include `useState` only when local state is needed; omit otherwise.
 7. `useEffect` — group all effects here, separated by responsibility, listed in order
 8. `return`
 
-Group declarations by kind. Use comments to mark boundaries between groups.
-
 ```typescript
 export function useExample(props: ExampleOptions): ExampleResult {
-    // Refs
     const ref = useRef<HTMLDivElement>(null);
 
-    // Query hooks
     const mutation = useMutation({ mutationFn: postSomething });
 
-    // Derived variables
     const value = mutation.data ?? initialValue;
     const error = mutation.error?.message ?? null;
 
-    // Handlers
     const handleSubmit = (): void => {
         mutation.mutate(ref.current);
     };
 
-    // Effects
     useLayoutEffect(() => {
         ref.current = someValue;
     });
@@ -153,8 +146,9 @@ export function useExample(props: ExampleOptions): ExampleResult {
 
 ## Component Folder Structure
 
-Custom hooks inside a component folder must always be placed in a `hooks/` subfolder.
-Never mix component files and hook files at the same directory level.
+Custom hooks must always be placed in a `hooks/` subfolder.
+Pure utility functions (non-hook helpers) must always be placed in a `utils/` subfolder.
+Never mix component files, hook files, or utility files at the same directory level.
 
 ```
 # ✅ Correct structure
@@ -163,6 +157,8 @@ src/components/
 │   ├── hooks/
 │   │   ├── useBollingerOverlay.ts
 │   │   └── useChartData.ts
+│   ├── utils/
+│   │   └── seriesDataUtils.ts
 │   └── StockChart.tsx
 └── symbol-page/
     ├── hooks/
@@ -170,12 +166,16 @@ src/components/
     │   └── useBars.ts
     └── SymbolPageClient.tsx
 
-# ❌ Incorrect structure — hooks at the same level as components
-src/components/symbol-page/
-├── SymbolPageClient.tsx
-├── useAnalysis.ts  ← prohibited
-└── useBars.ts      ← prohibited
+# ❌ Incorrect — hooks or utils at the same level as components
+src/components/chart/
+├── StockChart.tsx
+├── useChartData.ts     ← prohibited (must be in hooks/)
+└── seriesDataUtils.ts  ← prohibited (must be in utils/)
 ```
+
+**`hooks/` vs `utils/`**
+- `hooks/`: files that call React hooks (`useState`, `useEffect`, `useQuery`, etc.)
+- `utils/`: pure functions with no React hook calls — helper transformations, mappers, formatters
 
 ---
 

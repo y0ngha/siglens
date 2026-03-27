@@ -12,10 +12,14 @@ interface UseTimeframeChangeResult {
 }
 
 export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
+    // State
     const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
     const [, startTransition] = useTransition();
+
+    // Query hooks
     const queryClient = useQueryClient();
 
+    // Handlers
     const handleTimeframeChange = useCallback(
         (nextTimeframe: Timeframe): void => {
             if (nextTimeframe === timeframe) return;

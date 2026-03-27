@@ -21,7 +21,7 @@ import {
     DEFAULT_LINE_WIDTH,
     MACD_PANE_INDEX,
 } from '@/components/chart/constants';
-import { buildSeriesData } from '@/components/chart/hooks/seriesDataUtils';
+import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseMACDChartParams {
     chartRef: RefObject<IChartApi | null>;

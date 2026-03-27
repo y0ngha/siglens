@@ -13,7 +13,7 @@ import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
-import { buildSeriesData } from '@/components/chart/hooks/seriesDataUtils';
+import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseBollingerOverlayParams {
     chartRef: RefObject<IChartApi | null>;

@@ -74,6 +74,12 @@ export function ChartContent({
             indicators,
         });
 
+    const analysisStatus: AnalysisStatus = isAnalyzing
+        ? { type: 'analyzing' }
+        : analysisError !== null
+          ? { type: 'error', message: analysisError }
+          : { type: 'idle' };
+
     return (
         <>
             {/* 차트 영역 */}
@@ -91,15 +97,7 @@ export function ChartContent({
 
             {/* AI 분석 패널 */}
             <aside className="border-secondary-700 w-80 shrink-0 overflow-y-auto border-l p-4">
-                <AnalysisStatusBanner
-                    status={
-                        isAnalyzing
-                            ? { type: 'analyzing' }
-                            : analysisError !== null
-                              ? { type: 'error', message: analysisError }
-                              : { type: 'idle' }
-                    }
-                />
+                <AnalysisStatusBanner status={analysisStatus} />
                 <AnalysisPanel
                     analysis={analysis}
                     onReanalyze={handleReanalyze}

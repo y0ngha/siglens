@@ -46,8 +46,7 @@ export function useBars({
     });
 
     // Derived variables
-    const bars = data.bars;
-    const indicators = data.indicators;
+    const { bars, indicators } = data;
 
     return {
         bars,

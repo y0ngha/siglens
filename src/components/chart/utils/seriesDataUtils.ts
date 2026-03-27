@@ -1,5 +1,3 @@
-'use client';
-
 import type { Bar } from '@/domain/types';
 import type { UTCTimestamp } from 'lightweight-charts';
 
