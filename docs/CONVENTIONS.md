@@ -416,6 +416,7 @@ lib/            외부 UI 유틸리티 래퍼 (clsx, tailwind-merge 등)
                 순수 함수 형태로 작성 — 사이드 이펙트 없음
                 React Query 키 팩토리(QUERY_KEYS 등) 포함 — 앱 전역에서 공유되는
                 React Query 관련 설정 파일도 lib/에 위치할 수 있다
+                domain 타입(Timeframe 등) import 허용 — 키 팩토리 타입 안전성 확보 목적
 ```
 
 ---
@@ -444,7 +445,7 @@ const { data } = useQuery({
 });
 
 // ❌ component hook 내부에 fetch 로직 인라인 금지
-const { data } = useQuery({
+const { data: barsData } = useQuery({
     queryKey: QUERY_KEYS.bars(symbol, timeframe),
     queryFn: async ({ signal }) => {
         const res = await fetch(`/api/bars?symbol=${symbol}`); // 금지

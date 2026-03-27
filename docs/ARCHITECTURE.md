@@ -41,6 +41,8 @@ infrastructure ← domain import 가능
 lib            ← 외부 UI 유틸리티를 wrapping하는 순수 함수 레이어
                  domain에 넣을 수 없는 외부 패키지만 허용 (clsx, tailwind-merge 등)
                  사이드 이펙트 없는 순수 함수 형태로만 작성
+                 React Query 키 팩토리(QUERY_KEYS) 및 설정 상수 포함
+                 domain 타입(Timeframe 등) import 허용 — 키 팩토리 타입 안전성 확보 목적
 
 app            ← infrastructure, domain, lib import 가능
                  RSC에서 데이터 fetch 및 조합

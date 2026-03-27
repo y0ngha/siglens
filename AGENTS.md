@@ -200,6 +200,10 @@ components     ← May import from domain, lib.
                Hook files (hooks/): May import fetch functions from infrastructure only
                  → Limited to queryFn/mutationFn connection purpose
                  → Type imports must be from @/domain/types
+
+lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.
+               May import types from domain (e.g. Timeframe) when needed for React Query key factories.
+               React Query key factories (QUERY_KEYS) and config constants belong in lib/.
 ```
 
 Violations trigger ESLint errors. PRs cannot be merged.
