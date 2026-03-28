@@ -161,6 +161,24 @@ VWAP             #e879f9   (퍼플)
 
 ---
 
+## UI Color — 심각도 표시
+
+UI 상태 심각도를 표현한다. 차트 컬러와 구분되는 UI 전용 토큰이다.
+
+```
+--color-ui-warning: #f59e0b   (앰버)
+```
+
+**사용처**
+```
+medium risk 표시      text-ui-warning
+moderate strength     text-ui-warning
+```
+
+참고: `#f59e0b`는 `chart.signal`(MACD 시그널 라인)과 동일한 값이지만, UI 상태 표시 목적으로 별도 토큰(`ui-warning`)을 분리한다. 차트 시그널 렌더링에는 `chart-signal`을 사용하고, UI 심각도 표시에는 `ui-warning`을 사용한다.
+
+---
+
 ## Tailwind CSS 버전
 
 이 프로젝트는 **Tailwind CSS v4**를 사용한다.
