@@ -90,7 +90,7 @@ function SignalItem({ signal }: SignalItemProps) {
 interface AnalysisPanelProps {
     analysis: AnalysisResponse;
     isAnalyzing: boolean;
-    onReanalyze: () => void;
+    onReanalyze?: () => void;
 }
 
 export function AnalysisPanel({
@@ -221,14 +221,16 @@ export function AnalysisPanel({
             )}
 
             {/* 재분석 버튼 */}
-            <button
-                type="button"
-                onClick={onReanalyze}
-                disabled={isAnalyzing}
-                className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed"
-            >
-                {isAnalyzing ? '분석 중…' : '재분석'}
-            </button>
+            {onReanalyze !== undefined && (
+                <button
+                    type="button"
+                    onClick={onReanalyze}
+                    disabled={isAnalyzing}
+                    className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed"
+                >
+                    {isAnalyzing ? '분석 중…' : '재분석'}
+                </button>
+            )}
         </div>
     );
 }
