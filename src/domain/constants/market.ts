@@ -23,3 +23,20 @@ export const TIMEFRAME_BARS_LIMIT: Record<Timeframe, number> = {
  * bars route handler와 symbol page 서버 컴포넌트에서 공유한다.
  */
 export const DEFAULT_BARS_LIMIT = TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME];
+
+/**
+ * TIMEFRAME_LOOKBACK_DAYS: 타임프레임별 조회 시작일 기준(캘린더 일수).
+ * 주말·공휴일을 포함해도 limit만큼의 거래 바가 확보되도록 여유분을 포함한다.
+ * - '1Min':   5일  → 200봉 ≈ 0.5 거래일, 넉넉히 5일
+ * - '5Min':  10일  → 288봉 ≈ 3.7 거래일, 넉넉히 10일
+ * - '15Min': 20일  → 200봉 ≈ 7.7 거래일, 넉넉히 20일
+ * - '1Hour': 60일  → 200봉 ≈ 31 거래일, 넉넉히 60일
+ * - '1Day':  800일 → 500봉 ≈ 2년, 넉넉히 800일
+ */
+export const TIMEFRAME_LOOKBACK_DAYS: Record<Timeframe, number> = {
+    '1Min': 5,
+    '5Min': 10,
+    '15Min': 20,
+    '1Hour': 60,
+    '1Day': 800,
+};
