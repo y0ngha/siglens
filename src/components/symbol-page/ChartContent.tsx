@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import type {
     AnalysisResponse,
     Bar,
@@ -16,6 +17,8 @@ type AnalysisStatus =
     | { type: 'idle' }
     | { type: 'analyzing' }
     | { type: 'error'; message: string };
+
+type BannerRenderer = (status: AnalysisStatus) => ReactNode;
 
 interface AnalysisStatusBannerProps {
     status: AnalysisStatus;
@@ -41,11 +44,18 @@ function ErrorBanner({ message }: ErrorBannerProps) {
     );
 }
 
+const STATUS_BANNER: Record<AnalysisStatus['type'], BannerRenderer> = {
+    idle: () => null,
+    analyzing: () => <AnalyzingBanner />,
+    error: s => (
+        <ErrorBanner
+            message={(s as Extract<AnalysisStatus, { type: 'error' }>).message}
+        />
+    ),
+};
+
 function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
-    if (status.type === 'analyzing') return <AnalyzingBanner />;
-    if (status.type === 'error')
-        return <ErrorBanner message={status.message} />;
-    return null;
+    return STATUS_BANNER[status.type](status);
 }
 
 function getAnalysisStatus(
