@@ -88,9 +88,9 @@
 하락 캔들          #ef5350
 거래량 상승        #26a69a80  (50% 투명도)
 거래량 하락        #ef535080  (50% 투명도)
-AI 분석 bullish    text-teal-400
-AI 분석 bearish    text-red-400
-AI 분석 neutral    text-slate-400
+AI 분석 bullish    text-chart-bullish
+AI 분석 bearish    text-chart-bearish
+AI 분석 neutral    text-secondary-400
 ```
 
 ---

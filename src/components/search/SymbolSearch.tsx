@@ -16,14 +16,11 @@ export function SymbolSearch({ className, size = 'sm' }: SymbolSearchProps) {
     const router = useRouter();
     const [value, setValue] = useState('');
 
-    const handleSubmit = () => {
+    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault();
         const trimmed = value.trim().toUpperCase();
         if (!trimmed) return;
         router.push(`/${trimmed}`);
-    };
-
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (e.key === 'Enter') handleSubmit();
     };
 
     const inputClass = cn(
@@ -39,7 +36,10 @@ export function SymbolSearch({ className, size = 'sm' }: SymbolSearchProps) {
     );
 
     return (
-        <div className={cn('flex items-center gap-2', className)}>
+        <form
+            onSubmit={handleSubmit}
+            className={cn('flex items-center gap-2', className)}
+        >
             <input
                 name="symbol"
                 autoComplete="off"
@@ -47,17 +47,12 @@ export function SymbolSearch({ className, size = 'sm' }: SymbolSearchProps) {
                 type="text"
                 value={value}
                 onChange={e => setValue(e.target.value)}
-                onKeyDown={handleKeyDown}
                 placeholder="티커 입력 (예: AAPL)"
                 className={inputClass}
             />
-            <button
-                type="button"
-                onClick={handleSubmit}
-                className={buttonClass}
-            >
+            <button type="submit" className={buttonClass}>
                 검색
             </button>
-        </div>
+        </form>
     );
 }

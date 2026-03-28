@@ -24,7 +24,7 @@ const TREND_LABEL: Record<Trend, string> = {
 
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
     low: 'text-chart-bullish',
-    medium: 'text-chart-signal',
+    medium: 'text-ui-warning',
     high: 'text-chart-bearish',
 };
 
@@ -36,7 +36,7 @@ const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
 
 const SIGNAL_STRENGTH_COLOR: Record<SignalStrength, string> = {
     strong: 'text-chart-bullish',
-    moderate: 'text-chart-signal',
+    moderate: 'text-ui-warning',
     weak: 'text-secondary-400',
 };
 

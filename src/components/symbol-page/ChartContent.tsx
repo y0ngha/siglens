@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import type {
     AnalysisResponse,
     Bar,
@@ -42,24 +41,15 @@ function ErrorBanner({ message }: ErrorBannerProps) {
     );
 }
 
-const ANALYSIS_STATUS_BANNER: {
-    [K in AnalysisStatus['type']]: (
-        status: Extract<AnalysisStatus, { type: K }>
-    ) => ReactNode;
-} = {
-    idle: () => null,
-    analyzing: () => <AnalyzingBanner />,
-    error: status => <ErrorBanner message={status.message} />,
-};
-
 function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
-    // `status as never` is required because TypeScript cannot narrow the mapped-type
-    // lookup: ANALYSIS_STATUS_BANNER[status.type] expects
-    // Extract<AnalysisStatus, { type: typeof status.type }>, but after indexing with
-    // the union key the inferred parameter type widens to the full union. Casting to
-    // `never` satisfies the per-key function signature without losing type safety
-    // elsewhere, since the map itself is exhaustively typed above.
-    return ANALYSIS_STATUS_BANNER[status.type](status as never);
+    switch (status.type) {
+        case 'analyzing':
+            return <AnalyzingBanner />;
+        case 'error':
+            return <ErrorBanner message={status.message} />;
+        case 'idle':
+            return null;
+    }
 }
 
 function getAnalysisStatus(
