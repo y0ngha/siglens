@@ -138,11 +138,33 @@ When you receive an exit signal, route as follows:
 | `implementation-agent` · `status: done` | `review-agent` |
 | `pr-fix-agent` · `status: done` | `review-agent` |
 | `review-agent` · `status: approved` | `git-agent` |
-| `review-agent` · `status: changes_requested` (from issue flow) | `implementation-agent` with findings |
-| `review-agent` · `status: changes_requested` (from PR fix flow) | `pr-fix-agent` with findings |
+| `review-agent` · `status: changes_requested` · `required` is non-empty | fix agent (see below) |
+| `review-agent` · `status: changes_requested` · `required` is empty, `recommended` only | evaluate and decide (see below) |
 | `review-agent` · `status: loop_limit_reached` | Stop — report to user |
 | `git-agent` · `status: done` | Stop — report result to user |
 | Any · `status: failed` | Stop — report failure reason to user |
+
+Fix agent selection:
+- From issue flow → `implementation-agent` with findings
+- From PR fix flow → `pr-fix-agent` with findings
+
+### Handling Recommended-Only Findings
+
+When `review-agent` returns `status: changes_requested` with an empty `required` list and only `recommended` findings, do **not** automatically pass to `git-agent`. Instead, evaluate each recommended finding yourself:
+
+**Pass to fix agent** if the finding is:
+- A clear improvement with an obvious fix (naming, magic number, missing constant, etc.)
+- Consistent with `docs/CONVENTIONS.md` or `docs/FF.md` rules
+- Something that would be flagged in a human code review
+
+**Skip and proceed to `git-agent`** if the finding is:
+- A false positive (the code is correct and the concern doesn't apply in context)
+- A matter of pure style preference with no rule backing
+- Already addressed in a previous round and re-flagged incorrectly
+- Too trivial to justify another fix cycle (e.g. minor comment wording)
+
+If **any** recommended finding passes the above judgment, invoke the fix agent with only those findings (exclude the skipped ones).
+If **all** recommended findings are skipped, proceed directly to `git-agent`.
 
 ### Exit Signal Contract
 
@@ -201,8 +223,8 @@ After every `review-agent` response that contains `findings.required`, you **mus
 1. Open `docs/MISTAKES.md`.
 2. Check whether the finding is already documented. If it is, skip.
 3. If it is not, append it under the most relevant section in the same style as existing entries.
-   - Follow the English-only rule stated at the top of `docs/MISTAKES.md`.
-   - Use the concise `problem → fix` format used by existing entries.
+    - Follow the English-only rule stated at the top of `docs/MISTAKES.md`.
+    - Use the concise `problem → fix` format used by existing entries.
 4. Continue routing as normal (do not stop the workflow to update the file — update it in the same step before invoking the next agent).
 
 **What does NOT qualify:**
