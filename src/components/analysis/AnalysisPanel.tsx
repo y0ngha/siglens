@@ -89,7 +89,7 @@ function SignalItem({ signal }: SignalItemProps) {
 
 interface AnalysisPanelProps {
     analysis: AnalysisResponse;
-    isAnalyzing: boolean;
+    isAnalyzing?: boolean;
     onReanalyze?: () => void;
 }
 
