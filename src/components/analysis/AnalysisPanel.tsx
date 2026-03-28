@@ -143,9 +143,9 @@ export function AnalysisPanel({
                         시그널
                     </span>
                     <div className="flex flex-col gap-1.5">
-                        {analysis.signals.map(signal => (
+                        {analysis.signals.map((signal, index) => (
                             <SignalItem
-                                key={`${signal.type}-${signal.description}`}
+                                key={`${signal.type}-${index}`}
                                 signal={signal}
                             />
                         ))}
@@ -167,9 +167,9 @@ export function AnalysisPanel({
                             <span className="text-secondary-400 text-xs font-medium">
                                 {skillSignal.skillName}
                             </span>
-                            {skillSignal.signals.map(signal => (
+                            {skillSignal.signals.map((signal, index) => (
                                 <SignalItem
-                                    key={`${signal.type}-${signal.description}`}
+                                    key={`${signal.type}-${index}`}
                                     signal={signal}
                                 />
                             ))}

@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import type {
     AnalysisResponse,
     Bar,
@@ -12,13 +11,8 @@ import { VolumeChart } from '@/components/chart/VolumeChart';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
-
-type AnalysisStatus =
-    | { type: 'idle' }
-    | { type: 'analyzing' }
-    | { type: 'error'; message: string };
-
-type BannerRenderer = (status: AnalysisStatus) => ReactNode;
+import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
+import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 
 interface AnalysisStatusBannerProps {
     status: AnalysisStatus;
@@ -44,28 +38,11 @@ function ErrorBanner({ message }: ErrorBannerProps) {
     );
 }
 
-const STATUS_BANNER: Record<AnalysisStatus['type'], BannerRenderer> = {
-    idle: () => null,
-    analyzing: () => <AnalyzingBanner />,
-    error: s => (
-        <ErrorBanner
-            message={(s as Extract<AnalysisStatus, { type: 'error' }>).message}
-        />
-    ),
-};
-
 function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
-    return STATUS_BANNER[status.type](status);
-}
-
-function getAnalysisStatus(
-    isAnalyzing: boolean,
-    analysisError: string | null
-): AnalysisStatus {
-    if (isAnalyzing) return { type: 'analyzing' };
-    if (analysisError !== null)
-        return { type: 'error', message: analysisError };
-    return { type: 'idle' };
+    if (status.type === 'analyzing') return <AnalyzingBanner />;
+    if (status.type === 'error')
+        return <ErrorBanner message={status.message} />;
+    return null;
 }
 
 interface ChartContentProps {
