@@ -15,6 +15,8 @@ describe('ClaudeProvider', () => {
         skillSignals: [],
         riskLevel: 'low',
         keyLevels: { support: [100], resistance: [110] },
+        patternSummaries: [],
+        skillResults: [],
     };
 
     beforeEach(() => {

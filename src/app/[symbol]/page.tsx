@@ -17,6 +17,8 @@ const FALLBACK_ANALYSIS: AnalysisResponse = {
     skillSignals: [],
     riskLevel: 'medium',
     keyLevels: { support: [], resistance: [] },
+    patternSummaries: [],
+    skillResults: [],
 };
 
 interface Props {

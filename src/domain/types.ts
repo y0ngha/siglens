@@ -87,6 +87,20 @@ export interface KeyLevels {
     resistance: number[];
 }
 
+export interface PatternSummary {
+    patternName: string;
+    skillName: string;
+    detected: boolean;
+    trend: Trend;
+    summary: string;
+}
+
+export interface SkillResult {
+    skillName: string;
+    trend: Trend;
+    summary: string;
+}
+
 export interface AnalysisResponse {
     summary: string;
     trend: Trend;
@@ -94,6 +108,8 @@ export interface AnalysisResponse {
     skillSignals: SkillSignal[];
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
+    patternSummaries: PatternSummary[];
+    skillResults: SkillResult[];
 }
 
 export interface BarsData {
