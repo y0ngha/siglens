@@ -42,7 +42,7 @@ export function useAnalysis({
 }: UseAnalysisOptions): UseAnalysisResult {
     // Refs
     const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
-    const prevTimeframeChangeCountRef = useRef(timeframeChangeCount);
+    const prevTimeframeChangeCountRef = useRef(0);
 
     // Query hooks
     const { data, error, isPending, reset, mutate } = useMutation<
@@ -77,8 +77,9 @@ export function useAnalysis({
     // useSuspenseQuery로 인해 ChartContent가 remount될 때 isInitialMount ref가 초기화되는
     // 문제를 피하기 위해, Suspense 바깥의 SymbolPageClient에서 변경 횟수를 추적한다.
     // timeframeChangeCount > 0이면 타임프레임 변경으로 인한 마운트이므로 즉시 분석을 실행한다.
-    // latestRef는 useLayoutEffect에 의해 이 useEffect보다 먼저 최신 값으로 갱신되므로
-    // bars·indicators는 현재 타임프레임의 값이 보장된다.
+    // latestRef는 useLayoutEffect에 의해 이 useEffect보다 먼저 현재 렌더의 props로 갱신된다.
+    // 단, 새 타임프레임의 bars 데이터가 아직 로드 중일 수 있으므로
+    // 이 시점의 bars·indicators는 이전 타임프레임의 값일 수 있다.
     useEffect(() => {
         if (timeframeChangeCount === prevTimeframeChangeCountRef.current) {
             return;
