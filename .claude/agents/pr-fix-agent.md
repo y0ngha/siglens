@@ -171,7 +171,7 @@ yarn build
 
 ### Step 2: Record to Fix Log
 
-After validation passes, append each fix applied in this session to `.claude/fix-log.md`.
+After validation passes, append each fix applied in this session to `docs/__agents_only__/fix-log.md`.
 Create the file if it does not exist.
 
 **Type A — External PR review comments:**

@@ -125,13 +125,13 @@ User request
 Specialized sub-agents are defined in `.claude/agents/`. Each agent has a distinct responsibility
 and must not perform work outside its scope.
 
-| Agent | Model | Responsibility |
-|---|---|---|
-| `implementation-agent` | Sonnet | Issue implementation and test writing |
-| `review-agent` | Sonnet | Code review — returns findings only, never modifies code |
-| `pr-fix-agent` | Sonnet | Applying PR review comment fixes |
-| `mistake-managing-agent` | Sonnet | Reads fix-log.md, promotes recurring violations to MISTAKES.md |
-| `git-agent` | Haiku | Commits, pushes, PR creation — never modifies code |
+| Agent | Model | Responsibility                                                                      |
+|---|---|-------------------------------------------------------------------------------------|
+| `implementation-agent` | Sonnet | Issue implementation and test writing                                               |
+| `review-agent` | Sonnet | Code review — returns findings only, never modifies code                            |
+| `pr-fix-agent` | Sonnet | Applying PR review comment fixes                                                    |
+| `mistake-managing-agent` | Sonnet | Reads docs/__agents_only__/fix-log.md, promotes recurring violations to MISTAKES.md |
+| `git-agent` | Haiku | Commits, pushes, PR creation — never modifies code                                  |
 
 ### Routing Table
 

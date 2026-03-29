@@ -229,7 +229,7 @@ yarn build
 
 ### Step 2: Record to Fix Log (Type B only)
 
-If invoked as Type B (review findings fix), append each fix to `.claude/fix-log.md`.
+If invoked as Type B (review findings fix), append each fix to `docs/__agents_only__/fix-log.md`.
 Create the file if it does not exist.
 **Skip this step for Type A** — fix-log tracks rule violations, not new implementations.
 
