@@ -43,13 +43,28 @@ export interface IndicatorResult {
     ema: Record<number, (number | null)[]>;
 }
 
+export type ChartDisplayType = 'line' | 'marker' | 'region';
+
+export interface SkillChartDisplay {
+    show: boolean;
+    type: ChartDisplayType;
+    color: string;
+    label: string;
+}
+
+export interface SkillDisplay {
+    chart: SkillChartDisplay;
+}
+
 export interface Skill {
     name: string;
     description: string;
     type?: 'pattern';
+    pattern?: string;
     indicators: string[];
     confidenceWeight: number;
     content: string;
+    display?: SkillDisplay;
 }
 
 export type SignalType =
@@ -93,6 +108,10 @@ export interface PatternSummary {
     detected: boolean;
     trend: Trend;
     summary: string;
+}
+
+export interface PatternResult extends PatternSummary {
+    renderConfig?: SkillChartDisplay;
 }
 
 export interface SkillResult {
