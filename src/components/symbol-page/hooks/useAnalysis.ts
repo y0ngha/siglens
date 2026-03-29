@@ -78,8 +78,8 @@ export function useAnalysis({
     // 문제를 피하기 위해, Suspense 바깥의 SymbolPageClient에서 변경 횟수를 추적한다.
     // timeframeChangeCount > 0이면 타임프레임 변경으로 인한 마운트이므로 즉시 분석을 실행한다.
     // latestRef는 useLayoutEffect에 의해 이 useEffect보다 먼저 현재 렌더의 props로 갱신된다.
-    // 단, 새 타임프레임의 bars 데이터가 아직 로드 중일 수 있으므로
-    // 이 시점의 bars·indicators는 이전 타임프레임의 값일 수 있다.
+    // ChartContent는 Suspense 경계 내에서 bars 로드가 완료된 후에만 remount되므로,
+    // 이 시점의 latestRef.current.bars는 항상 새 타임프레임의 데이터다.
     useEffect(() => {
         if (timeframeChangeCount === prevTimeframeChangeCountRef.current) {
             return;
