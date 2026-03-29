@@ -197,9 +197,9 @@ ALPACA_API_KEY=
 ALPACA_API_SECRET=
 
 # AI Provider (필수)
-AI_PROVIDER=claude          # claude | openai
-ANTHROPIC_API_KEY=          # claude 사용 시
-OPENAI_API_KEY=             # openai 사용 시
+AI_PROVIDER=claude          # claude | gemini (기본값: claude)
+ANTHROPIC_API_KEY=          # claude 사용 시 필수
+GEMINI_API_KEY=             # gemini 사용 시 필수
 ```
 
 `.env.local`에 작성. 절대 커밋하지 않는다.
