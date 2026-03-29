@@ -66,10 +66,13 @@ export function useAnalysis({
         latestRef.current = { symbol, bars, indicators };
     });
 
-    // 타임프레임 변경 시 이전 mutation 상태를 초기화한다.
+    // 타임프레임 변경 시 이전 mutation 상태를 초기화하고 새 분석을 자동 실행한다.
+    // useLayoutEffect가 먼저 실행되어 latestRef.current에 최신 bars·indicators가 담겨 있으므로
+    // mutate(latestRef.current)는 새 타임프레임 데이터를 기반으로 분석을 실행한다.
     useEffect(() => {
         reset();
-    }, [timeframe, reset]);
+        mutate(latestRef.current);
+    }, [timeframe, reset, mutate]);
 
     return {
         analysis,
