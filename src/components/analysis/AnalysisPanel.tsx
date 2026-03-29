@@ -178,6 +178,31 @@ function EyeIcon({ isVisible }: EyeIconProps) {
     );
 }
 
+const DETECTED_BADGE_CONFIG: Record<
+    'detected' | 'undetected',
+    { className: string; label: string }
+> = {
+    detected: {
+        className: 'text-chart-bullish text-xs font-medium',
+        label: '감지됨',
+    },
+    undetected: { className: 'text-secondary-500 text-xs', label: '미감지' },
+};
+
+interface DetectedBadgeProps {
+    detected: boolean;
+}
+
+function DetectedBadge({ detected }: DetectedBadgeProps) {
+    const key = detected ? 'detected' : 'undetected';
+    const { className, label } = DETECTED_BADGE_CONFIG[key];
+    return (
+        <div className="mb-2 flex items-center gap-1.5">
+            <span className={className}>{label}</span>
+        </div>
+    );
+}
+
 interface PatternAccordionItemProps {
     pattern: PatternSummary;
     isVisible: boolean;
@@ -205,6 +230,7 @@ function PatternAccordionItem({
             <div
                 role="button"
                 tabIndex={0}
+                aria-expanded={isOpen}
                 onClick={handleToggleOpen}
                 onKeyDown={(e: React.KeyboardEvent) => {
                     if (e.key === 'Enter' || e.key === ' ') {
@@ -234,26 +260,14 @@ function PatternAccordionItem({
                 <ChevronIcon isOpen={isOpen} />
             </div>
 
-            {isOpen && (
+            {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
-                    {pattern.detected ? (
-                        <div className="mb-2 flex items-center gap-1.5">
-                            <span className="text-chart-bullish text-xs font-medium">
-                                감지됨
-                            </span>
-                        </div>
-                    ) : (
-                        <div className="mb-2 flex items-center gap-1.5">
-                            <span className="text-secondary-500 text-xs">
-                                미감지
-                            </span>
-                        </div>
-                    )}
+                    <DetectedBadge detected={pattern.detected} />
                     <p className="text-secondary-400 text-xs leading-relaxed">
                         {pattern.summary}
                     </p>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }
@@ -273,6 +287,7 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
         <div className="border-secondary-700 overflow-hidden rounded-md border">
             <button
                 type="button"
+                aria-expanded={isOpen}
                 onClick={handleToggleOpen}
                 className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors"
             >
@@ -283,13 +298,13 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
                 <ChevronIcon isOpen={isOpen} />
             </button>
 
-            {isOpen && (
+            {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
                     <p className="text-secondary-400 text-xs leading-relaxed">
                         {skill.summary}
                     </p>
                 </div>
-            )}
+            ) : null}
         </div>
     );
 }
@@ -316,13 +331,15 @@ export function AnalysisPanel({
 
     const handleTogglePatternVisibility = (patternName: string): void => {
         const willBeVisible = !visiblePatterns.has(patternName);
-        const next = new Set(visiblePatterns);
-        if (willBeVisible) {
-            next.add(patternName);
-        } else {
-            next.delete(patternName);
-        }
-        setVisiblePatterns(next);
+        setVisiblePatterns(prev => {
+            const next = new Set(prev);
+            if (prev.has(patternName)) {
+                next.delete(patternName);
+            } else {
+                next.add(patternName);
+            }
+            return next;
+        });
         onPatternVisibilityChange?.(patternName, willBeVisible);
     };
 
