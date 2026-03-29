@@ -1,6 +1,6 @@
 import { constants } from 'node:http2';
 import { NextRequest, NextResponse } from 'next/server';
-import { ClaudeProvider } from '@/infrastructure/ai/claude';
+import { createAIProvider } from '@/infrastructure/ai/factory';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import type { AnalysisResponse, AnalyzeVariables, Skill } from '@/domain/types';
@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
         });
     const prompt = buildAnalysisPrompt(symbol, bars, indicators, skills);
 
-    const ai = new ClaudeProvider();
+    const ai = createAIProvider();
     try {
         const analysis = await ai.analyze(prompt);
         const response: AnalyzeRouteResponse = { ...analysis, skillsDegraded };
