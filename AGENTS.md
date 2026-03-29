@@ -138,8 +138,7 @@ When you receive an exit signal, route as follows:
 | `implementation-agent` · `status: done` | `review-agent` |
 | `pr-fix-agent` · `status: done` | `review-agent` |
 | `review-agent` · `status: approved` | `git-agent` |
-| `review-agent` · `status: changes_requested` · `required` is non-empty | fix agent (see below) |
-| `review-agent` · `status: changes_requested` · `required` is empty, `recommended` only | evaluate and decide (see below) |
+| `review-agent` · `status: changes_requested` | fix agent (see below) |
 | `review-agent` · `status: loop_limit_reached` | Stop — report to user |
 | `git-agent` · `status: done` | Stop — report result to user |
 | Any · `status: failed` | Stop — report failure reason to user |
@@ -148,23 +147,17 @@ Fix agent selection:
 - From issue flow → `implementation-agent` with findings
 - From PR fix flow → `pr-fix-agent` with findings
 
-### Handling Recommended-Only Findings
+### Handling Findings
 
-When `review-agent` returns `status: changes_requested` with an empty `required` list and only `recommended` findings, do **not** automatically pass to `git-agent`. Instead, evaluate each recommended finding yourself:
+When passing findings to a fix agent, always include both `required` and `recommended` findings — fix all of them.
 
-**Pass to fix agent** if the finding is:
-- A clear improvement with an obvious fix (naming, magic number, missing constant, etc.)
-- Consistent with `docs/CONVENTIONS.md` or `docs/FF.md` rules
-- Something that would be flagged in a human code review
+**Skip a finding (and do not pass to fix agent) only if it is:**
+- A false positive — the code is correct and the concern does not apply in context
+- Too trivial to justify a fix — e.g. minor comment wording with no functional or readability impact
 
-**Skip and proceed to `git-agent`** if the finding is:
-- A false positive (the code is correct and the concern doesn't apply in context)
-- A matter of pure style preference with no rule backing
-- Already addressed in a previous round and re-flagged incorrectly
-- Too trivial to justify another fix cycle (e.g. minor comment wording)
+All other findings should be fixed. When in doubt, fix it.
 
-If **any** recommended finding passes the above judgment, invoke the fix agent with only those findings (exclude the skipped ones).
-If **all** recommended findings are skipped, proceed directly to `git-agent`.
+If **all** findings (required and recommended) are skipped, proceed directly to `git-agent`.
 
 ### Exit Signal Contract
 
