@@ -166,7 +166,15 @@ export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
 ### EMA (Exponential Moving Average)
 
 ```
-기본 기간: [9, 20, 21, 60]
+기본 기간: [9, 20, 21, 60]  ← EMA_DEFAULT_PERIODS (전체 상수)
+
+타임프레임별 실제 사용 기간:
+- 1Min       → [9, 21]   (EMA_DEFAULT_PERIODS에서 9, 21만 선택)
+- 5Min~1Day  → [20, 60]  (EMA_DEFAULT_PERIODS에서 20, 60만 선택)
+
+EMA_DEFAULT_PERIODS는 모든 타임프레임에서 사용 가능한 기간의 합집합이다.
+구현체는 EMA_DEFAULT_PERIODS 전체를 계산하지 않고,
+타임프레임별 인디케이터 설정표에 따라 해당 기간만 필터링하여 계산한다.
 
 알고리즘:
 1. 첫 번째 값 = 초기 period개의 SMA
@@ -661,6 +669,7 @@ interface Skill {
     name: string;
     description: string;
     type?: 'pattern';           // pattern일 때만 존재
+    pattern?: string;           // type='pattern'일 때 패턴 식별자 (예: 'double_top')
     indicators: string[];
     confidenceWeight: number;
     content: string;            // frontmatter 제거 후 순수 Markdown 본문
@@ -669,12 +678,8 @@ interface Skill {
 
 // PatternResult: AI 분석 응답에서 패턴 감지 결과와 렌더링 설정을 함께 담는 타입
 // skill의 display 설정이 renderConfig에 반영된다
-interface PatternResult {
-    patternName: string;        // 패턴 식별자 (예: 'double_top')
-    skillName: string;          // skill 표시 이름
-    detected: boolean;
-    trend: Trend;
-    summary: string;
+// PatternSummary를 extends하여 중복 필드 선언 방지
+interface PatternResult extends PatternSummary {
     renderConfig?: SkillChartDisplay;  // skill의 display.chart 설정이 그대로 복사됨
 }
 ```
