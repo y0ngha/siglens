@@ -6,11 +6,6 @@
 - Context: `analysisApi.test.ts`의 `mockFetch.mockReset()` beforeEach가 최상위에 있었으며, 가장 가까운 `describe('postAnalyze 함수는')` 블록 내부로 이동하여 해결
 
 ## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
-- Violation: `patternSummaries`와 `skillResults` 신규 필드가 fixture에만 추가되고 배열 반환 검증 테스트 케이스가 누락됨
-- Rule: CONVENTIONS.md — Tests: "Not updating tests when return type changes: Tests must be updated whenever types change"
-- Context: `AnalysisResponse`에 `patternSummaries`와 `skillResults` 필드가 추가되었으나 `signals`, `skillSignals`와 달리 배열 여부를 검증하는 `it` 케이스가 없었음; `정상 입력으로 analyze를 호출하면` describe 블록에 두 케이스를 추가하여 해결
-
-## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
 - Violation: `PatternAccordionItem` 트리거(`role="button"`)와 `SkillAccordionItem` 버튼에 `aria-expanded` 속성 누락
 - Rule: ARIA 명세 — 아코디언 트리거는 `aria-expanded` 속성으로 패널의 열림/닫힘 상태를 스크린 리더에 노출해야 함
 - Context: `PatternAccordionItem`의 `div[role="button"]`과 `SkillAccordionItem`의 `<button>` 모두 `isOpen` 상태를 갖고 있으나 `aria-expanded` 속성이 없어 접근성 미충족
@@ -39,6 +34,36 @@
 - Violation: `DetectedBadge` 컴포넌트가 자신의 외부 마진 `mb-2`를 내부 wrapper에 하드코딩하여 재사용 시 레이아웃 조정 불가
 - Rule: DESIGN.md / Component 설계 원칙 — 컴포넌트는 자신의 외부 여백(margin)을 직접 관리하지 않아야 하며, 호출 측에서 레이아웃을 제어해야 한다
 - Context: `DetectedBadge` 내부 `div`에 `mb-2`가 있어 컴포넌트가 배치되는 컨텍스트에 관계없이 항상 하단 마진이 적용됨; `mb-2`를 제거하고 호출 측인 `PatternAccordionItem`의 wrapper `div`로 이동하여 해결
+
+## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
+- Violation: `skillsLoader.loadSkills()` 실패 시 에러 로깅 없이 빈 배열로 fallback 처리됨
+- Rule: CONVENTIONS.md — 에러 로깅 개선이 브랜치 목적임에도 skills 로딩 실패는 조용히 무시되어 디버깅 시 원인 추적이 어려움
+- Context: `route.ts`의 `.catch(() => [])` 핸들러가 AI 분석 실패와 달리 `console.error` 없이 처리되고 있었으며, `.catch((error: unknown) => { console.error(...); return []; })`로 수정하여 skills 로딩 실패도 로그가 남도록 통일
+
+## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
+- Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
+- Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
+- Context: `route.ts`의 입력 검증에서 `!bars`만으로는 빈 배열을 거르지 못하여, `bars.length === 0` 조건을 추가하여 빈 bars도 400 응답으로 처리
+
+## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | review fix | 2026-03-29]
+- Violation: skills 로딩 실패 시 빈 배열로 fallback되었으나 응답 JSON에 그 사실이 반영되지 않아 호출 측에서 degraded 상태를 알 수 없음
+- Rule: FF.md Predictability 2-C — 숨겨진 로직을 명시적으로 드러내야 한다
+- Context: `route.ts`에서 skills 로딩이 실패해도 클라이언트에 반환되는 분석 결과에 표시가 없었음; `AnalysisResponse`에 optional `skillsDegraded` 필드를 추가하고 route.ts에서 `skillsDegraded: true`를 포함해 반환하도록 수정
+
+## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | review fix | 2026-03-29]
+- Violation: `type이 pattern이 아닌 skill` 테스트에서 `makeSkill({ name: 'RSI 다이버전스' })`처럼 type 생략으로 `undefined !== 'pattern'`이라는 암묵적 사실에 의존함
+- Rule: FF.md Readability 1-B — 구현 의도를 명확하게 표현해야 한다
+- Context: `makeSkill`의 기본 `type` 값이 없으므로 생략 시 undefined가 되는데, 이 암묵적 동작에 의존하기보다 `type: undefined`를 명시하여 테스트 의도를 명확히 함
+
+## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | review fix 2 | 2026-03-29]
+- Violation: `let skillsDegraded = false`로 선언 후 `.catch()` 내부에서 `skillsDegraded = true`로 재할당하는 패턴 사용
+- Rule: MISTAKES.md Coding Paradigm Rule 3 — let reassignment → Use const + new variable
+- Context: `route.ts`의 skills 로딩 로직에서 `let` 재할당 패턴이 사용되었으며, `.then(loadedSkills => ({ skills: loadedSkills, skillsDegraded: false })).catch(...)` 패턴으로 변경하여 `const` 구조 분해로 두 값을 동시에 획득하도록 수정
+
+## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | review fix 3 | 2026-03-29]
+- Violation: `AnalyzeRequest` 인터페이스가 `domain/types.ts`의 `AnalyzeVariables`와 동일한 구조를 `app/api/analyze/route.ts`에서 중복 정의하고 있었음
+- Rule: FF.md Cohesion 3-A — 함께 변경되어야 하는 코드는 함께 위치해야 한다. `AnalyzeVariables`에 필드가 추가/변경될 때 `AnalyzeRequest`도 동기화되어야 하는 암묵적 결합이 발생함
+- Context: `app` 레이어는 `domain` 타입 import가 허용되므로, `AnalyzeRequest`를 제거하고 `AnalyzeVariables`를 직접 재사용하도록 수정하여 암묵적 결합을 제거
 
 ## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그

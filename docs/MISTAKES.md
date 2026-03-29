@@ -208,13 +208,20 @@ Review before implementation and ensure these are not repeated.
    → Tests must be updated whenever types change
    → Nullable changes (T[] → (T | null)[]) require a null initial-period test case
 
-3. Writing describe/it descriptions as code expressions
+3. Adding a new field to a type/interface without a corresponding test case
+   → Every new field must have at least one it() case that verifies its presence or value
+   → Applies to both domain types and API response types
+   ❌ Add patternSummaries/skillResults to AnalysisResponse with no array-verification test
+   ❌ Add riskLevel to ANALYSIS_REQUEST schema with no field-inclusion test
+   ✅ it('patternSummaries 배열을 반환한다', () => { expect(Array.isArray(result.patternSummaries)).toBe(true); })
+
+4. Writing describe/it descriptions as code expressions
    ❌ describe('closes.length < period', ...)
    ✅ describe('입력 배열 길이가 period 미만일 때', ...)
    ❌ it('null 반환')
    ✅ it('전부 null인 배열을 반환한다')
 
-4. Missing initial-period null test case for period-based indicators
+5. Missing initial-period null test case for period-based indicators
    → Adding it at the stub stage guards against regressions after real implementation
 ```
 
