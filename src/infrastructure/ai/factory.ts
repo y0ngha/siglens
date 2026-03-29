@@ -10,8 +10,10 @@ const AI_PROVIDER_MAP: Record<AIProviderType, () => AIProvider> = {
 const DEFAULT_AI_PROVIDER: AIProviderType = 'claude';
 
 export function createAIProvider(): AIProvider {
-    const raw = process.env.AI_PROVIDER ?? DEFAULT_AI_PROVIDER;
+    const raw = process.env.AI_PROVIDER;
     const providerType =
-        raw in AI_PROVIDER_MAP ? (raw as AIProviderType) : DEFAULT_AI_PROVIDER;
+        raw && raw in AI_PROVIDER_MAP
+            ? (raw as AIProviderType)
+            : DEFAULT_AI_PROVIDER;
     return AI_PROVIDER_MAP[providerType]();
 }

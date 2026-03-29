@@ -4,27 +4,6 @@ import type { AnalysisResponse } from '@/domain/types';
 
 jest.mock('@google/generative-ai');
 
-describe('GeminiProvider — GEMINI_API_KEY가 설정되지 않은 경우', () => {
-    describe('생성자를 호출하면', () => {
-        it('에러를 던진다', () => {
-            const original = process.env.GEMINI_API_KEY;
-            delete process.env.GEMINI_API_KEY;
-
-            try {
-                expect(() => new GeminiProvider()).toThrow(
-                    'GEMINI_API_KEY must be set'
-                );
-            } finally {
-                if (original === undefined) {
-                    delete process.env.GEMINI_API_KEY;
-                } else {
-                    process.env.GEMINI_API_KEY = original;
-                }
-            }
-        });
-    });
-});
-
 describe('GeminiProvider', () => {
     let mockGenerateContent: jest.Mock;
     let provider: GeminiProvider;
@@ -54,6 +33,27 @@ describe('GeminiProvider', () => {
                 }) as unknown as GoogleGenerativeAI
         );
         provider = new GeminiProvider();
+    });
+
+    describe('GEMINI_API_KEY가 설정되지 않은 경우', () => {
+        describe('생성자를 호출하면', () => {
+            it('에러를 던진다', () => {
+                const original = process.env.GEMINI_API_KEY;
+                delete process.env.GEMINI_API_KEY;
+
+                try {
+                    expect(() => new GeminiProvider()).toThrow(
+                        'GEMINI_API_KEY must be set'
+                    );
+                } finally {
+                    if (original === undefined) {
+                        delete process.env.GEMINI_API_KEY;
+                    } else {
+                        process.env.GEMINI_API_KEY = original;
+                    }
+                }
+            });
+        });
     });
 
     describe('정상 입력으로 analyze를 호출하면', () => {
@@ -113,6 +113,12 @@ describe('GeminiProvider', () => {
             expect(Array.isArray(result.keyLevels.support)).toBe(true);
             expect(Array.isArray(result.keyLevels.resistance)).toBe(true);
         });
+
+        it('skillsDegraded 필드를 포함하지 않는다', async () => {
+            const result = await provider.analyze('test prompt');
+
+            expect('skillsDegraded' in result).toBe(false);
+        });
     });
 
     describe('응답이 마크다운 코드 블록으로 감싸진 경우', () => {
@@ -144,16 +150,34 @@ describe('GeminiProvider', () => {
     });
 
     describe('응답이 유효한 JSON이 아니면', () => {
-        it('에러를 던진다', async () => {
+        beforeEach(() => {
             mockGenerateContent.mockResolvedValue({
                 response: {
                     text: () => 'invalid json',
                 },
             });
+        });
 
+        it('에러를 던진다', async () => {
             await expect(provider.analyze('test prompt')).rejects.toThrow(
                 'Failed to parse Gemini API response as JSON'
             );
+        });
+
+        it('console.error로 raw text를 기록한다', async () => {
+            const consoleSpy = jest
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            try {
+                await provider.analyze('test prompt').catch(() => {});
+                expect(consoleSpy).toHaveBeenCalledWith(
+                    'Failed to parse Gemini API response. Raw text:',
+                    'invalid json'
+                );
+            } finally {
+                consoleSpy.mockRestore();
+            }
         });
     });
 

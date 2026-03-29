@@ -27,8 +27,14 @@ export class GeminiProvider implements AIProvider {
 
         try {
             return JSON.parse(stripMarkdownCodeBlock(text)) as AnalysisResponse;
-        } catch {
-            throw new Error('Failed to parse Gemini API response as JSON');
+        } catch (error) {
+            console.error(
+                'Failed to parse Gemini API response. Raw text:',
+                text
+            );
+            throw new Error('Failed to parse Gemini API response as JSON', {
+                cause: error,
+            });
         }
     }
 }

@@ -207,6 +207,22 @@ describe('ClaudeProvider', () => {
                 'Failed to parse Claude API response as JSON'
             );
         });
+
+        it('console.error로 raw text를 기록한다', async () => {
+            const consoleSpy = jest
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            try {
+                await provider.analyze('test prompt').catch(() => {});
+                expect(consoleSpy).toHaveBeenCalledWith(
+                    'Failed to parse Claude API response. Raw text:',
+                    'invalid json'
+                );
+            } finally {
+                consoleSpy.mockRestore();
+            }
+        });
     });
 
     describe('API 호출이 실패하면', () => {

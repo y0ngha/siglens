@@ -34,8 +34,14 @@ export class ClaudeProvider implements AIProvider {
             return JSON.parse(
                 stripMarkdownCodeBlock(content.text)
             ) as AnalysisResponse;
-        } catch {
-            throw new Error('Failed to parse Claude API response as JSON');
+        } catch (error) {
+            console.error(
+                'Failed to parse Claude API response. Raw text:',
+                content.text
+            );
+            throw new Error('Failed to parse Claude API response as JSON', {
+                cause: error,
+            });
         }
     }
 }

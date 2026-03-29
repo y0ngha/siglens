@@ -30,4 +30,20 @@ describe('stripMarkdownCodeBlock', () => {
             expect(stripMarkdownCodeBlock(input)).toBe('{"key": "value"}');
         });
     });
+
+    describe('코드 블록 앞에 일반 텍스트가 있는 경우', () => {
+        it('앞의 텍스트를 무시하고 코드 블록 내용을 반환한다', () => {
+            const input = '다음과 같습니다:\n```json\n{"key": "value"}\n```';
+
+            expect(stripMarkdownCodeBlock(input)).toBe('{"key": "value"}');
+        });
+    });
+
+    describe('코드 블록 뒤에 일반 텍스트가 있는 경우', () => {
+        it('뒤의 텍스트를 무시하고 코드 블록 내용을 반환한다', () => {
+            const input = '```json\n{"key": "value"}\n```\n이상입니다.';
+
+            expect(stripMarkdownCodeBlock(input)).toBe('{"key": "value"}');
+        });
+    });
 });
