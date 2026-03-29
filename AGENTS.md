@@ -127,6 +127,7 @@ and must not perform work outside its scope.
 | `implementation-agent` | Sonnet | Issue implementation and test writing |
 | `review-agent` | Sonnet | Code review — returns findings only, never modifies code |
 | `pr-fix-agent` | Sonnet | Applying PR review comment fixes |
+| `mistake-managing-agent` | Sonnet | Reads fix-log.md, promotes recurring violations to MISTAKES.md |
 | `git-agent` | Haiku | Commits, pushes, PR creation — never modifies code |
 
 ### Routing Table
@@ -137,9 +138,10 @@ When you receive an exit signal, route as follows:
 |---|---|
 | `implementation-agent` · `status: done` | `review-agent` |
 | `pr-fix-agent` · `status: done` | `review-agent` |
-| `review-agent` · `status: approved` | `git-agent` |
+| `review-agent` · `status: approved` | `mistake-managing-agent` |
 | `review-agent` · `status: changes_requested` | fix agent (see below) |
 | `review-agent` · `status: loop_limit_reached` | Stop — report to user |
+| `mistake-managing-agent` · `status: done` | `git-agent` |
 | `git-agent` · `status: done` | Stop — report result to user |
 | Any · `status: failed` | Stop — report failure reason to user |
 
@@ -157,7 +159,7 @@ When passing findings to a fix agent, always include both `required` and `recomm
 
 All other findings should be fixed. When in doubt, fix it.
 
-If **all** findings (required and recommended) are skipped, proceed directly to `git-agent`.
+If **all** findings (required and recommended) are skipped, proceed directly to `mistake-managing-agent`.
 
 ### Exit Signal Contract
 
@@ -185,6 +187,12 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 // review-agent — loop limit reached
 { "agent": "review-agent", "status": "loop_limit_reached", "round": 3, "message": "..." }
 
+// mistake-managing-agent — success
+{ "agent": "mistake-managing-agent", "status": "done", "promoted": 2 }
+
+// mistake-managing-agent — failure
+{ "agent": "mistake-managing-agent", "status": "failed", "reason": "..." }
+
 // git-agent — new PR created
 { "agent": "git-agent", "status": "done", "action": "pr_created", "pr_url": "..." }
 
@@ -200,29 +208,6 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 For the full step-by-step flow, **read the relevant doc before invoking any agent**:
 - `docs/ISSUE_IMPL_FLOW.md` — issue number + implementation request
 - `docs/PR_FIX_FLOW.md` — PR number + fix request
-
----
-
-### MISTAKES.md Update Rule
-
-After every `review-agent` response that contains `findings.required`, you **must** evaluate each finding against `docs/MISTAKES.md`.
-
-**Trigger condition:** a finding qualifies for MISTAKES.md when **either** of the following is true:
-- The same finding appeared in a `review-agent` response in a **previous** flow (i.e., it has been flagged before).
-- The same finding appeared **more than once** across rounds within the current flow (round 2+ still flags the same issue).
-
-**When the condition is met:**
-
-1. Open `docs/MISTAKES.md`.
-2. Check whether the finding is already documented. If it is, skip.
-3. If it is not, append it under the most relevant section in the same style as existing entries.
-    - Follow the English-only rule stated at the top of `docs/MISTAKES.md`.
-    - Use the concise `problem → fix` format used by existing entries.
-4. Continue routing as normal (do not stop the workflow to update the file — update it in the same step before invoking the next agent).
-
-**What does NOT qualify:**
-- First-time findings in the current flow (round 1, never seen before) — add to MISTAKES.md only after a recurrence is confirmed.
-- Findings in the `recommended` list — only `required` findings are tracked.
 
 ---
 

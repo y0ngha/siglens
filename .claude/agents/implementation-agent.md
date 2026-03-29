@@ -227,7 +227,24 @@ yarn format
 yarn build
 ```
 
-### Step 2: Emit Exit Signal
+### Step 2: Record to Fix Log (Type B only)
+
+If invoked as Type B (review findings fix), append each fix to `.claude/fix-log.md`.
+Create the file if it does not exist.
+**Skip this step for Type A** — fix-log tracks rule violations, not new implementations.
+
+Format each entry as follows:
+
+```md
+## [Issue #{number} | {branch name} | {date YYYY-MM-DD}]
+- Violation: {short description of what rule was violated}
+- Rule: {which rule from CONVENTIONS.md / MISTAKES.md / FF.md was violated}
+- Context: {one sentence describing where and why this happened in the code}
+```
+
+Record one entry per distinct violation. Do not record findings that were skipped (false positives or trivial items).
+
+### Step 3: Emit Exit Signal
 
 After all validation scripts pass, output the following JSON as the **final output** and stop.
 Do not add any text after the JSON.
