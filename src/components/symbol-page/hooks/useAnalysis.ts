@@ -37,6 +37,7 @@ export function useAnalysis({
 }: UseAnalysisOptions): UseAnalysisResult {
     // Refs
     const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
+    const isInitialMount = useRef(true);
 
     // Query hooks
     const { data, error, isPending, reset, mutate } = useMutation<
@@ -69,7 +70,12 @@ export function useAnalysis({
     // 타임프레임 변경 시 이전 mutation 상태를 초기화하고 새 분석을 자동 실행한다.
     // useLayoutEffect가 먼저 실행되어 latestRef.current에 최신 bars·indicators가 담겨 있으므로
     // mutate(latestRef.current)는 새 타임프레임 데이터를 기반으로 분석을 실행한다.
+    // 초기 마운트 시에는 initialAnalysis가 이미 있으므로 API를 중복 호출하지 않도록 건너뛴다.
     useEffect(() => {
+        if (isInitialMount.current) {
+            isInitialMount.current = false;
+            return;
+        }
         reset();
         mutate(latestRef.current);
     }, [timeframe, reset, mutate]);
