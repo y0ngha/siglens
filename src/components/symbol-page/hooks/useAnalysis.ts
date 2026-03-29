@@ -7,14 +7,19 @@ import type {
     AnalyzeVariables,
     Bar,
     IndicatorResult,
-    Timeframe,
 } from '@/domain/types';
 import { postAnalyze } from '@/infrastructure/market/analysisApi';
 
 interface UseAnalysisOptions {
     symbol: string;
     initialAnalysis: AnalysisResponse;
-    timeframe: Timeframe;
+    /**
+     * 타임프레임이 변경된 누적 횟수. SymbolPageClient에서 추적하여 전달한다.
+     * Suspense remount 시 isInitialMount ref가 초기화되는 문제를 우회하기 위해
+     * 마운트 바깥에서 변경 여부를 추적한다.
+     * 0이면 초기 마운트, 1 이상이면 타임프레임 변경으로 인한 마운트다.
+     */
+    timeframeChangeCount: number;
     /** latestRef를 통해 handleReanalyze 호출 시 최신 값을 읽기 위한 채널 */
     bars: Bar[];
     /** latestRef를 통해 handleReanalyze 호출 시 최신 값을 읽기 위한 채널 */
@@ -31,13 +36,13 @@ interface UseAnalysisResult {
 export function useAnalysis({
     symbol,
     initialAnalysis,
-    timeframe,
+    timeframeChangeCount,
     bars,
     indicators,
 }: UseAnalysisOptions): UseAnalysisResult {
     // Refs
     const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
-    const isInitialMount = useRef(true);
+    const prevTimeframeChangeCountRef = useRef(timeframeChangeCount);
 
     // Query hooks
     const { data, error, isPending, reset, mutate } = useMutation<
@@ -68,17 +73,20 @@ export function useAnalysis({
     });
 
     // 타임프레임 변경 시 이전 mutation 상태를 초기화하고 새 분석을 자동 실행한다.
-    // useLayoutEffect가 먼저 실행되어 latestRef.current에 최신 bars·indicators가 담겨 있으므로
-    // mutate(latestRef.current)는 새 타임프레임 데이터를 기반으로 분석을 실행한다.
-    // 초기 마운트 시에는 initialAnalysis가 이미 있으므로 API를 중복 호출하지 않도록 건너뛴다.
+    // timeframeChangeCount를 활용하여 초기 마운트와 타임프레임 변경을 구분한다.
+    // useSuspenseQuery로 인해 ChartContent가 remount될 때 isInitialMount ref가 초기화되는
+    // 문제를 피하기 위해, Suspense 바깥의 SymbolPageClient에서 변경 횟수를 추적한다.
+    // timeframeChangeCount > 0이면 타임프레임 변경으로 인한 마운트이므로 즉시 분석을 실행한다.
+    // latestRef는 useLayoutEffect에 의해 이 useEffect보다 먼저 최신 값으로 갱신되므로
+    // bars·indicators는 현재 타임프레임의 값이 보장된다.
     useEffect(() => {
-        if (isInitialMount.current) {
-            isInitialMount.current = false;
+        if (timeframeChangeCount === prevTimeframeChangeCountRef.current) {
             return;
         }
+        prevTimeframeChangeCountRef.current = timeframeChangeCount;
         reset();
         mutate(latestRef.current);
-    }, [timeframe, reset, mutate]);
+    }, [timeframeChangeCount, reset, mutate]);
 
     return {
         analysis,

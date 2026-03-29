@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { AnalysisResponse, Bar, IndicatorResult } from '@/domain/types';
@@ -24,6 +24,15 @@ export function SymbolPageClient({
     initialAnalysis,
 }: SymbolPageClientProps) {
     const { timeframe, handleTimeframeChange } = useTimeframeChange(symbol);
+    // Suspense로 인해 ChartContent가 remount될 때 타임프레임 변경 여부를 전달한다.
+    // timeframe 변경 횟수를 카운트하여 ChartContent가 타임프레임 변경으로 인해
+    // mount된 것인지 초기 mount인지를 구분한다.
+    const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
+    const [prevTimeframe, setPrevTimeframe] = useState(timeframe);
+    if (prevTimeframe !== timeframe) {
+        setTimeframeChangeCount(c => c + 1);
+        setPrevTimeframe(timeframe);
+    }
 
     return (
         <div className="bg-secondary-900 text-secondary-200 flex h-full min-h-screen flex-col">
@@ -67,6 +76,7 @@ export function SymbolPageClient({
                         <ChartContent
                             symbol={symbol}
                             timeframe={timeframe}
+                            timeframeChangeCount={timeframeChangeCount}
                             initialBars={initialBars}
                             initialIndicators={initialIndicators}
                             initialAnalysis={initialAnalysis}
