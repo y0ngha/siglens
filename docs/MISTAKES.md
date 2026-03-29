@@ -109,6 +109,18 @@ Review before implementation and ensure these are not repeated.
     → Type assertion required when Record<K, V> is needed
     ❌ Object.fromEntries(pairs)
     ✅ Object.fromEntries(pairs) as Record<number, (number | null)[]>
+
+11. Missing fields in domain interface that exist in the data source (e.g. YAML frontmatter)
+    → Rule: CONVENTIONS.md TypeScript Rules — interface fields must faithfully represent the data structure
+    → When a new field is parsed in infrastructure (e.g. pattern, display), add it to the domain interface immediately
+    ❌ interface Skill { id: string; type: string; }  // missing pattern?, display?
+    ✅ interface Skill { id: string; type: string; pattern?: string; display?: SkillDisplay; }
+
+12. Related interfaces with shared fields not linked by extends
+    → Rule: FF.md Cohesion 3-A — code that changes together must stay together
+    → If interface B contains all fields of interface A plus extras, declare B extends A
+    ❌ interface PatternResult { patternName: string; skillName: string; ...; renderConfig: ... }
+    ✅ interface PatternResult extends PatternSummary { renderConfig: ... }
 ```
 
 ---
@@ -131,6 +143,21 @@ Review before implementation and ensure these are not repeated.
      always read on the client, or add suppressHydrationWarning to the wrapper element
    ❌ (RSC) <span>{new Date().getFullYear()}</span>
    ✅ (client component) export default function CurrentYear() { return <>{new Date().getFullYear()}</>; }
+
+5. Calling side effects inside setState updater functions
+   → Updaters run twice in React Strict Mode; side effects must be placed outside the updater
+   → Rule: FF.md Predictability 2-C — updater functions must be pure
+   ❌ setVisiblePatterns(prev => { onCallback?.(); return next; })
+   ✅ const willBeVisible = !visiblePatterns.has(id);
+      setVisiblePatterns(prev => { ... return next; });
+      onCallback?.(willBeVisible);
+
+6. Reading stale closure state instead of using functional setState
+   → Deriving next state from a closed-over variable risks stale state on rapid updates
+   → Rule: Vercel React Best Practices — rerender-functional-setstate
+   → Also ensure willBeVisible / derived values are computed before the setState call
+   ❌ const next = new Set(visiblePatterns); setVisiblePatterns(next);
+   ✅ setVisiblePatterns(prev => { const next = new Set(prev); ...; return next; });
 ```
 
 ---
