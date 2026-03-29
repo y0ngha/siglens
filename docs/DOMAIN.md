@@ -166,7 +166,15 @@ export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
 ### EMA (Exponential Moving Average)
 
 ```
-기본 기간: [9, 20, 21, 60]
+기본 기간: [9, 20, 21, 60]  ← EMA_DEFAULT_PERIODS (전체 상수)
+
+타임프레임별 실제 사용 기간:
+- 1Min       → [9, 21]   (EMA_DEFAULT_PERIODS에서 9, 21만 선택)
+- 5Min~1Day  → [20, 60]  (EMA_DEFAULT_PERIODS에서 20, 60만 선택)
+
+EMA_DEFAULT_PERIODS는 모든 타임프레임에서 사용 가능한 기간의 합집합이다.
+구현체는 EMA_DEFAULT_PERIODS 전체를 계산하지 않고,
+타임프레임별 인디케이터 설정표에 따라 해당 기간만 필터링하여 계산한다.
 
 알고리즘:
 1. 첫 번째 값 = 초기 period개의 SMA
@@ -382,13 +390,31 @@ interface KeyLevels {
     resistance: number[];
 }
 
+// 감지된 패턴별 개별 요약 (type='pattern' skill 결과)
+interface PatternSummary {
+    patternName: string;   // skill의 pattern 식별자 (예: 'double_top')
+    skillName: string;     // skill 표시 이름 (예: '이중고점')
+    detected: boolean;     // 현재 차트에서 감지 여부
+    trend: Trend;          // 해당 패턴이 시사하는 방향
+    summary: string;       // AI가 작성한 패턴별 요약
+}
+
+// skill별 분석 결과
+interface SkillResult {
+    skillName: string;     // skill 표시 이름
+    trend: Trend;          // 해당 skill 분석이 시사하는 방향
+    summary: string;       // AI가 작성한 skill별 요약
+}
+
 interface AnalysisResponse {
     summary: string;
     trend: Trend;
-    signals: Signal[];         // 인디케이터 기반 신호 (skill 무관)
-    skillSignals: SkillSignal[]; // skill 기반 신호 (skill별로 그룹핑)
+    signals: Signal[];              // 인디케이터 기반 신호 (skill 무관)
+    skillSignals: SkillSignal[];    // skill 기반 신호 (skill별로 그룹핑)
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
+    patternSummaries: PatternSummary[]; // 감지된 패턴별 개별 요약 (type='pattern' skill)
+    skillResults: SkillResult[];        // skill별 분석 결과 (type!='pattern' skill)
 }
 ```
 
@@ -591,6 +617,12 @@ type: pattern                 # 선택. 현재 pattern만 존재
 pattern: string               # type: pattern일 때 패턴 식별자
 indicators: string[]          # 이 skill이 필요로 하는 인디케이터 목록
 confidence_weight: number     # 0.0 ~ 1.0. 프롬프트 포함 여부와 강조도 결정
+display:                      # 선택. 차트 표시 설정
+  chart:
+    show: boolean             # 기본 show/hide 여부 (기본값: false)
+    type: line | marker | region  # 차트 표시 형태
+    color: string             # 표시 색상 (CSS 색상값)
+    label: string             # 차트에 표시할 라벨
 ---
 
 ## 분석 기준
@@ -618,13 +650,37 @@ domain은 이 타입만 받고 파일 경로나 원본 Markdown은 알지 못한
 ```typescript
 // domain/types.ts
 
+type ChartDisplayType = 'line' | 'marker' | 'region';
+
+// skill frontmatter의 display.chart 설정을 담는 타입
+interface SkillChartDisplay {
+    show: boolean;
+    type: ChartDisplayType;
+    color: string;
+    label: string;
+}
+
+// skill의 차트 표시 설정 (display 필드가 없는 경우 undefined)
+interface SkillDisplay {
+    chart: SkillChartDisplay;
+}
+
 interface Skill {
     name: string;
     description: string;
     type?: 'pattern';           // pattern일 때만 존재
+    pattern?: string;           // type='pattern'일 때 패턴 식별자 (예: 'double_top')
     indicators: string[];
     confidenceWeight: number;
     content: string;            // frontmatter 제거 후 순수 Markdown 본문
+    display?: SkillDisplay;     // 차트 표시 설정 (선택)
+}
+
+// PatternResult: AI 분석 응답에서 패턴 감지 결과와 렌더링 설정을 함께 담는 타입
+// skill의 display 설정이 renderConfig에 반영된다
+// PatternSummary를 extends하여 중복 필드 선언 방지
+interface PatternResult extends PatternSummary {
+    renderConfig?: SkillChartDisplay;  // skill의 display.chart 설정이 그대로 복사됨
 }
 ```
 
@@ -678,6 +734,12 @@ type: pattern
 pattern: double_top
 indicators: []
 confidence_weight: 0.75
+display:
+  chart:
+    show: false
+    type: marker
+    color: '#ef4444'
+    label: 이중고점
 ---
 
 ## 분석 기준

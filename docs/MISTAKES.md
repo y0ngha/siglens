@@ -143,6 +143,17 @@ Review before implementation and ensure these are not repeated.
 
 2. Writing indicator calculations directly in Route Handlers
    → Import and use from domain/indicators
+
+3. Hidden selection/filtering rules left implicit in specs or comments
+   → FF.md Predictability 2-C: expose hidden logic explicitly
+   → If a constant (e.g. EMA_DEFAULT_PERIODS) is a superset and only a subset
+     is used per timeframe, state that rule in the spec
+   → If a comment describes when/why code runs, it must match the actual runtime
+     behavior (e.g. do not say "may still be loading" when the data is guaranteed loaded)
+   ❌ EMA_DEFAULT_PERIODS = [9, 20, 21, 60] with no note on per-timeframe filtering
+   ✅ Spec explicitly states: 1Min uses [9, 21]; 5Min–1Day uses [20, 60]
+   ❌ // bars may still be loading  (written inside a Suspense-guaranteed mount)
+   ✅ // bars are guaranteed loaded because this component only mounts after useSuspenseQuery resolves
 ```
 
 ---
