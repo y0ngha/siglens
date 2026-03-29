@@ -1,66 +1,126 @@
-import Image from 'next/image';
+import Link from 'next/link';
+
+import { Footer } from '@/components/layout/Footer';
+import { SymbolSearch } from '@/components/search/SymbolSearch';
+import { cn } from '@/lib/cn';
+
+const POPULAR_TICKERS = [
+    'AAPL',
+    'TSLA',
+    'NVDA',
+    'MSFT',
+    'GOOGL',
+    'AMZN',
+] as const;
+
+const features = [
+    {
+        number: '01',
+        title: '실시간 차트',
+        description: '캔들스틱, 거래량, 이동평균선을 한 화면에.',
+        offset: false,
+    },
+    {
+        number: '02',
+        title: '기술적 지표',
+        description: 'RSI, MACD, 볼린저 밴드, DMI — 자동 계산.',
+        offset: true,
+    },
+    {
+        number: '03',
+        title: 'AI 패턴 분석',
+        description: 'Claude AI가 차트 패턴과 매매 신호를 해석합니다.',
+        offset: false,
+    },
+    {
+        number: '04',
+        title: '지지/저항 레벨',
+        description: '핵심 가격대를 자동으로 식별합니다.',
+        offset: true,
+    },
+] as const;
 
 export default function Home() {
     return (
-        <div className="flex flex-1 flex-col items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-            <main className="flex w-full max-w-3xl flex-1 flex-col items-center justify-between bg-white px-16 py-32 sm:items-start dark:bg-black">
-                <Image
-                    className="dark:invert"
-                    src="/next.svg"
-                    alt="Next.js logo"
-                    width={100}
-                    height={20}
-                    priority
-                />
-                <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-                    <h1 className="max-w-xs text-3xl leading-10 font-semibold tracking-tight text-black dark:text-zinc-50">
-                        To get started, edit the page.tsx file.
-                    </h1>
-                    <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-                        Looking for a starting point or more instructions? Head
-                        over to{' '}
-                        <a
-                            href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                            className="font-medium text-zinc-950 dark:text-zinc-50"
+        <>
+            <a
+                href="#search"
+                className="focus-visible:bg-primary-600 sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"
+            >
+                검색으로 건너뛰기
+            </a>
+            <main className="flex flex-1 flex-col">
+                <section className="relative flex flex-1 flex-col items-center justify-center px-6 py-20 text-center lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
+                    <div
+                        aria-hidden="true"
+                        className="hero-grid pointer-events-none absolute inset-0"
+                    />
+                    <div
+                        aria-hidden="true"
+                        className="hero-ambient pointer-events-none absolute inset-0"
+                    />
+                    <div className="relative">
+                        <p className="text-secondary-400 mb-6 font-mono text-xs tracking-[0.3em] uppercase">
+                            SIGLENS
+                        </p>
+                        <h1 className="text-secondary-100 text-3xl leading-tight font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+                            AI가 분석하는 미국 주식{' '}
+                            <span className="text-primary-400">
+                                기술적 분석
+                            </span>
+                        </h1>
+                        <p className="text-secondary-400 mx-auto mt-4 max-w-lg text-lg leading-relaxed sm:text-xl lg:mx-0">
+                            종목 티커를 입력하면 차트와 지표를 즉시 분석합니다.
+                        </p>
+                        <div
+                            id="search"
+                            className="mt-8 flex justify-center lg:justify-start"
                         >
-                            Templates
-                        </a>{' '}
-                        or the{' '}
-                        <a
-                            href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                            className="font-medium text-zinc-950 dark:text-zinc-50"
-                        >
-                            Learning
-                        </a>{' '}
-                        center.
-                    </p>
-                </div>
-                <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-                    <a
-                        className="bg-foreground text-background flex h-12 w-full items-center justify-center gap-2 rounded-full px-5 transition-colors hover:bg-[#383838] md:w-[158px] dark:hover:bg-[#ccc]"
-                        href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        <Image
-                            className="dark:invert"
-                            src="/vercel.svg"
-                            alt="Vercel logomark"
-                            width={16}
-                            height={16}
-                        />
-                        Deploy Now
-                    </a>
-                    <a
-                        className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] md:w-[158px] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-                        href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                    >
-                        Documentation
-                    </a>
-                </div>
+                            <SymbolSearch size="lg" />
+                        </div>
+                        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+                            <span className="text-secondary-500 text-xs">
+                                인기 종목
+                            </span>
+                            {POPULAR_TICKERS.map(ticker => (
+                                <Link
+                                    key={ticker}
+                                    href={`/${ticker}`}
+                                    className="border-secondary-700 text-secondary-300 hover:border-primary-600/40 hover:text-primary-400 rounded-full border px-3 py-1 text-xs transition-colors"
+                                >
+                                    {ticker}
+                                </Link>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+                <section className="pb-24">
+                    <hr className="border-secondary-800 mx-auto mb-16 max-w-4xl px-6 lg:px-[15vw]" />
+                    <div className="mx-auto grid max-w-4xl grid-cols-1 gap-x-16 gap-y-10 px-6 md:grid-cols-2 lg:px-[15vw]">
+                        {features.map(feature => (
+                            <div
+                                key={feature.number}
+                                className={cn(feature.offset && 'md:mt-8')}
+                            >
+                                <div className="flex items-start gap-4">
+                                    <span className="text-primary-600/25 font-mono text-3xl leading-none font-bold">
+                                        {feature.number}
+                                    </span>
+                                    <div>
+                                        <h2 className="text-secondary-200 text-sm font-semibold tracking-wider uppercase">
+                                            {feature.title}
+                                        </h2>
+                                        <p className="text-secondary-400 mt-1 text-sm leading-relaxed">
+                                            {feature.description}
+                                        </p>
+                                    </div>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
             </main>
-        </div>
+            <Footer />
+        </>
     );
 }

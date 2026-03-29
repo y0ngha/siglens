@@ -438,6 +438,14 @@ candleSeries.setData([...newOlderBars, ...existingBars]);
 
 // ✅ Use cn utility for conditional classes
 <div className={cn('base-class', isActive && 'active-class')}>
+
+// ✅ Tailwind v4 supports numeric flex utilities directly — no arbitrary value needed
+<div className="flex-3">     // ✅ correct — Tailwind v4 generates flex: 3
+<div className="flex-[3]">   // ❌ unnecessary arbitrary syntax
+
+// ✅ Arbitrary CSS properties — use bracket notation for non-utility CSS
+<html className="[color-scheme:dark]">   // ✅ correct
+<html style={{ colorScheme: 'dark' }}>  // ❌ inline style (prohibited)
 ```
 
 ---

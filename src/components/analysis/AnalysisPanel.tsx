@@ -11,8 +11,8 @@ import type {
 import { cn } from '@/lib/cn';
 
 const TREND_COLOR: Record<Trend, string> = {
-    bullish: 'text-teal-400',
-    bearish: 'text-red-400',
+    bullish: 'text-chart-bullish',
+    bearish: 'text-chart-bearish',
     neutral: 'text-secondary-400',
 };
 
@@ -23,9 +23,9 @@ const TREND_LABEL: Record<Trend, string> = {
 };
 
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
-    low: 'text-teal-400',
-    medium: 'text-chart-signal',
-    high: 'text-red-400',
+    low: 'text-chart-bullish',
+    medium: 'text-ui-warning',
+    high: 'text-chart-bearish',
 };
 
 const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
@@ -35,8 +35,8 @@ const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
 };
 
 const SIGNAL_STRENGTH_COLOR: Record<SignalStrength, string> = {
-    strong: 'text-teal-400',
-    moderate: 'text-chart-signal',
+    strong: 'text-chart-bullish',
+    moderate: 'text-ui-warning',
     weak: 'text-secondary-400',
 };
 
@@ -89,10 +89,15 @@ function SignalItem({ signal }: SignalItemProps) {
 
 interface AnalysisPanelProps {
     analysis: AnalysisResponse;
-    onReanalyze: () => void;
+    isAnalyzing?: boolean;
+    onReanalyze?: () => void;
 }
 
-export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
+export function AnalysisPanel({
+    analysis,
+    isAnalyzing,
+    onReanalyze,
+}: AnalysisPanelProps) {
     return (
         <div className="bg-secondary-800 flex flex-col gap-4 rounded-lg p-4">
             {/* 헤더 */}
@@ -138,9 +143,9 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                         시그널
                     </span>
                     <div className="flex flex-col gap-1.5">
-                        {analysis.signals.map(signal => (
+                        {analysis.signals.map((signal, index) => (
                             <SignalItem
-                                key={`${signal.type}-${signal.description}`}
+                                key={`${signal.type}-${index}`}
                                 signal={signal}
                             />
                         ))}
@@ -162,9 +167,9 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                             <span className="text-secondary-400 text-xs font-medium">
                                 {skillSignal.skillName}
                             </span>
-                            {skillSignal.signals.map(signal => (
+                            {skillSignal.signals.map((signal, index) => (
                                 <SignalItem
-                                    key={`${signal.type}-${signal.description}`}
+                                    key={`${signal.type}-${index}`}
                                     signal={signal}
                                 />
                             ))}
@@ -189,7 +194,7 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                                 {analysis.keyLevels.resistance.map(level => (
                                     <span
                                         key={`resistance-${level}`}
-                                        className="text-sm font-medium text-red-400"
+                                        className="text-chart-bearish text-sm font-medium"
                                     >
                                         {level.toLocaleString()}
                                     </span>
@@ -204,7 +209,7 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
                                 {analysis.keyLevels.support.map(level => (
                                     <span
                                         key={`support-${level}`}
-                                        className="text-sm font-medium text-teal-400"
+                                        className="text-chart-bullish text-sm font-medium"
                                     >
                                         {level.toLocaleString()}
                                     </span>
@@ -216,13 +221,16 @@ export function AnalysisPanel({ analysis, onReanalyze }: AnalysisPanelProps) {
             )}
 
             {/* 재분석 버튼 */}
-            <button
-                type="button"
-                onClick={onReanalyze}
-                className="mt-1 w-full rounded bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-blue-700"
-            >
-                재분석
-            </button>
+            {onReanalyze !== undefined && (
+                <button
+                    type="button"
+                    onClick={onReanalyze}
+                    disabled={isAnalyzing}
+                    className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed"
+                >
+                    {isAnalyzing ? '분석 중…' : '재분석'}
+                </button>
+            )}
         </div>
     );
 }

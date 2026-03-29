@@ -124,6 +124,13 @@ Review before implementation and ensure these are not repeated.
 
 3. Managing timeframe as a URL query parameter
    → Manage as client state only
+
+4. Using new Date() directly in a Server Component
+   → Server renders at request time; client hydrates later — year/time can mismatch
+   → Extract into a 'use client' component (e.g. <CurrentYear />) so the value is
+     always read on the client, or add suppressHydrationWarning to the wrapper element
+   ❌ (RSC) <span>{new Date().getFullYear()}</span>
+   ✅ (client component) export default function CurrentYear() { return <>{new Date().getFullYear()}</>; }
 ```
 
 ---

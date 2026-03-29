@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactNode } from 'react';
 import type {
     AnalysisResponse,
     Bar,
@@ -12,11 +11,8 @@ import { VolumeChart } from '@/components/chart/VolumeChart';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
-
-type AnalysisStatus =
-    | { type: 'idle' }
-    | { type: 'analyzing' }
-    | { type: 'error'; message: string };
+import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
+import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 
 interface AnalysisStatusBannerProps {
     status: AnalysisStatus;
@@ -25,7 +21,7 @@ interface AnalysisStatusBannerProps {
 function AnalyzingBanner() {
     return (
         <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
-            <span className="text-secondary-400 text-sm">AI 분석 중...</span>
+            <span className="text-secondary-400 text-sm">AI 분석 중…</span>
         </div>
     );
 }
@@ -37,39 +33,16 @@ interface ErrorBannerProps {
 function ErrorBanner({ message }: ErrorBannerProps) {
     return (
         <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
-            <span className="text-sm text-red-400">{message}</span>
+            <span className="text-chart-bearish text-sm">{message}</span>
         </div>
     );
 }
 
-const ANALYSIS_STATUS_BANNER: {
-    [K in AnalysisStatus['type']]: (
-        status: Extract<AnalysisStatus, { type: K }>
-    ) => ReactNode;
-} = {
-    idle: () => null,
-    analyzing: () => <AnalyzingBanner />,
-    error: status => <ErrorBanner message={status.message} />,
-};
-
 function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
-    // `status as never` is required because TypeScript cannot narrow the mapped-type
-    // lookup: ANALYSIS_STATUS_BANNER[status.type] expects
-    // Extract<AnalysisStatus, { type: typeof status.type }>, but after indexing with
-    // the union key the inferred parameter type widens to the full union. Casting to
-    // `never` satisfies the per-key function signature without losing type safety
-    // elsewhere, since the map itself is exhaustively typed above.
-    return ANALYSIS_STATUS_BANNER[status.type](status as never);
-}
-
-function getAnalysisStatus(
-    isAnalyzing: boolean,
-    analysisError: string | null
-): AnalysisStatus {
-    if (isAnalyzing) return { type: 'analyzing' };
-    if (analysisError !== null)
-        return { type: 'error', message: analysisError };
-    return { type: 'idle' };
+    if (status.type === 'analyzing') return <AnalyzingBanner />;
+    if (status.type === 'error')
+        return <ErrorBanner message={status.message} />;
+    return null;
 }
 
 interface ChartContentProps {
@@ -108,7 +81,7 @@ export function ChartContent({
     return (
         <>
             {/* 차트 영역 */}
-            <div className="flex flex-1 flex-col overflow-hidden">
+            <div className="flex h-[60vh] flex-col overflow-hidden md:h-auto md:flex-1">
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
                     <StockChart bars={bars} indicators={indicators} />
@@ -121,10 +94,14 @@ export function ChartContent({
             </div>
 
             {/* AI 분석 패널 */}
-            <aside className="border-secondary-700 w-80 shrink-0 overflow-y-auto border-l p-4">
+            <aside
+                className="border-secondary-700 overflow-y-auto border-t p-4 md:w-80 md:shrink-0 md:border-t-0 md:border-l"
+                aria-live="polite"
+            >
                 <AnalysisStatusBanner status={analysisStatus} />
                 <AnalysisPanel
                     analysis={analysis}
+                    isAnalyzing={isAnalyzing}
                     onReanalyze={handleReanalyze}
                 />
             </aside>

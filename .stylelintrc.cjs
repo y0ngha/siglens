@@ -34,6 +34,9 @@ module.exports = {
         // CSS Modules camelCase 허용
         'selector-class-pattern': null,
 
+        // Tailwind v4 uses @import 'tailwindcss' (string notation)
+        'import-notation': null,
+
         'rule-empty-line-before': [
             'always',
             {
