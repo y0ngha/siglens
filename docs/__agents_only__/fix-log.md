@@ -65,6 +65,26 @@
 - Rule: MISTAKES.md Tests Rule 3 — 새 필드가 추가되면 그 존재 여부나 값을 검증하는 it() 케이스가 최소 하나 있어야 한다
 - Context: `skillsDegraded`가 domain 타입에 optional로 있었으나 `ClaudeProvider.analyze()`가 이 필드를 포함하지 않는다는 사실을 검증하는 케이스가 없었음; `'skillsDegraded' in result`가 `false`임을 검증하는 테스트를 추가
 
+## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
+- Violation: `MARKDOWN_CODE_BLOCK_PATTERN`과 `stripMarkdownCodeBlock`이 `claude.ts`와 `gemini.ts`에 동일하게 중복 정의됨
+- Rule: MISTAKES.md Coding Paradigm #8 — 같은 알고리즘을 재구현하지 말 것. 새 함수를 작성하기 전에 기존 헬퍼를 확인할 것.
+- Context: 두 AI provider 파일에 동일한 정규식 패턴과 헬퍼 함수가 각각 선언되어 있었으며, `src/infrastructure/ai/utils.ts`로 추출하고 양쪽에서 임포트하도록 수정
+
+## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | review fix | 2026-03-30]
+- Violation: `gemini.ts`의 상수명 `GEMINI_SYSTEM_INSTRUCTION`이 `claude.ts`의 `CLAUDE_SYSTEM_PROMPT`와 다른 어휘를 사용함
+- Rule: FF.md Predictability 2-A — 같은 역할을 하는 상수는 같은 네이밍 컨벤션을 따라야 한다
+- Context: 두 provider 모두 AI에 전달하는 시스템 지시문 상수를 가지고 있으나 `INSTRUCTION` vs `PROMPT`로 다르게 명명되어 있었으며, `GEMINI_SYSTEM_PROMPT`로 통일하여 독자가 두 파일을 비교할 때 정신적 매핑이 필요 없도록 수정
+
+## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | review fix 2 | 2026-03-30]
+- Violation: `describe('GeminiProvider — GEMINI_API_KEY가 설정되지 않은 경우', ...)` 아래에 `it`이 중간 컨텍스트 `describe` 없이 직접 위치함
+- Rule: CONVENTIONS.md Test Structure — describe → describe(context) → it 3단계 구조가 필수
+- Context: `gemini.test.ts`의 API 키 미설정 케이스가 `describe → it` 2단계 구조로 작성되어 있었으며, `describe('생성자를 호출하면', ...)` 중간 컨텍스트 블록을 추가하여 3단계 구조로 수정
+
+## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | review fix 2 | 2026-03-30]
+- Violation: `GEMINI_SYSTEM_PROMPT`와 `CLAUDE_SYSTEM_PROMPT`가 동일한 문자열 값을 각 파일에 별도로 선언함
+- Rule: FF.md Cohesion 3-B — 동일한 값이 두 파일에 분산되면 한쪽만 수정될 위험이 있음; 단일 지점에서 관리해야 함
+- Context: `claude.ts`와 `gemini.ts` 각각에 동일한 system prompt 상수가 중복 선언되어 있었으며, `utils.ts`에 `AI_SYSTEM_PROMPT` 공통 상수를 추출하고 두 파일에서 import하도록 수정
+
 ## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그
 - Rule: MISTAKES.md — Components: Managing timeframe as URL query parameter / useEffect Side Effect Isolation (올바른 초기값으로 ref를 초기화해야 함)
