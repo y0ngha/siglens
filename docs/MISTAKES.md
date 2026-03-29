@@ -158,6 +158,16 @@ Review before implementation and ensure these are not repeated.
    → Also ensure willBeVisible / derived values are computed before the setState call
    ❌ const next = new Set(visiblePatterns); setVisiblePatterns(next);
    ✅ setVisiblePatterns(prev => { const next = new Set(prev); ...; return next; });
+
+7. Nesting interactive elements (button-in-button / interactive-in-interactive)
+   → HTML spec: interactive content cannot be placed inside <button>
+   → WAI-ARIA: an element with an interactive role cannot contain other interactive elements
+   → Browser auto-corrects the DOM, causing unexpected event behavior
+   → Fix: make the outer wrapper a non-interactive container (e.g. flex div) and place
+     each interactive element (accordion toggle, eye icon) as siblings
+   ❌ <button onClick={handleToggle}><button onClick={handleEye}>...</button></button>
+   ❌ <div role="button" onClick={handleToggle}><button onClick={handleEye}>...</button></div>
+   ✅ <div className="flex"><button onClick={handleToggle}>...</button><button onClick={handleEye}>...</button></div>
 ```
 
 ---

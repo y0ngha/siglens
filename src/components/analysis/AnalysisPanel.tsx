@@ -143,25 +143,21 @@ interface EyeIconProps {
 }
 
 function EyeIcon({ isVisible }: EyeIconProps) {
-    if (isVisible) {
-        return (
-            <svg
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 20 20"
-                fill="currentColor"
-                className="h-3.5 w-3.5"
-            >
-                <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
-                <path
-                    fillRule="evenodd"
-                    d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
-                    clipRule="evenodd"
-                />
-            </svg>
-        );
-    }
-
-    return (
+    return isVisible ? (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="h-3.5 w-3.5"
+        >
+            <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+            <path
+                fillRule="evenodd"
+                d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
+                clipRule="evenodd"
+            />
+        </svg>
+    ) : (
         <svg
             xmlns="http://www.w3.org/2000/svg"
             viewBox="0 0 20 20"
@@ -178,8 +174,10 @@ function EyeIcon({ isVisible }: EyeIconProps) {
     );
 }
 
+type DetectionStatus = 'detected' | 'undetected';
+
 const DETECTED_BADGE_CONFIG: Record<
-    'detected' | 'undetected',
+    DetectionStatus,
     { className: string; label: string }
 > = {
     detected: {
@@ -197,7 +195,7 @@ function DetectedBadge({ detected }: DetectedBadgeProps) {
     const key = detected ? 'detected' : 'undetected';
     const { className, label } = DETECTED_BADGE_CONFIG[key];
     return (
-        <div className="mb-2 flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5">
             <span className={className}>{label}</span>
         </div>
     );
@@ -220,35 +218,30 @@ function PatternAccordionItem({
         setIsOpen(prev => !prev);
     };
 
-    const handleToggleVisibility = (e: React.MouseEvent): void => {
-        e.stopPropagation();
+    const handleToggleVisibility = (): void => {
         onToggleVisibility(pattern.patternName);
     };
 
     return (
         <div className="border-secondary-700 overflow-hidden rounded-md border">
-            <div
-                role="button"
-                tabIndex={0}
-                aria-expanded={isOpen}
-                onClick={handleToggleOpen}
-                onKeyDown={(e: React.KeyboardEvent) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                        e.preventDefault();
-                        handleToggleOpen();
-                    }
-                }}
-                className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left transition-colors"
-            >
-                <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
-                    {pattern.skillName}
-                </span>
-                <TrendBadge trend={pattern.trend} />
+            <div className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center transition-colors">
+                <button
+                    type="button"
+                    aria-expanded={isOpen}
+                    onClick={handleToggleOpen}
+                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left"
+                >
+                    <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
+                        {pattern.skillName}
+                    </span>
+                    <TrendBadge trend={pattern.trend} />
+                    <ChevronIcon isOpen={isOpen} />
+                </button>
                 <button
                     type="button"
                     onClick={handleToggleVisibility}
                     className={cn(
-                        'shrink-0 rounded p-1 transition-colors',
+                        'shrink-0 rounded p-1 pr-3 transition-colors',
                         isVisible
                             ? 'text-primary-400 hover:text-primary-300'
                             : 'text-secondary-600 hover:text-secondary-400'
@@ -257,12 +250,13 @@ function PatternAccordionItem({
                 >
                     <EyeIcon isVisible={isVisible} />
                 </button>
-                <ChevronIcon isOpen={isOpen} />
             </div>
 
             {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
-                    <DetectedBadge detected={pattern.detected} />
+                    <div className="mb-2">
+                        <DetectedBadge detected={pattern.detected} />
+                    </div>
                     <p className="text-secondary-400 text-xs leading-relaxed">
                         {pattern.summary}
                     </p>
