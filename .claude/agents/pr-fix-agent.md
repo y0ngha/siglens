@@ -169,9 +169,31 @@ yarn format
 yarn build
 ```
 
-### Step 2: Emit Exit Signal
+### Step 2: Record to Fix Log
 
-After all validation scripts pass, output the following JSON as the **final output** and stop.
+After validation passes, append each fix applied in this session to `.claude/fix-log.md`.
+Create the file if it does not exist.
+
+**Type A — External PR review comments:**
+Record each GitHub review comment that was addressed. The violation is the issue raised in the comment.
+
+**Type B — Internal review findings:**
+Record each finding from review-agent that was addressed. Use the `issue` and `reason` fields from the findings JSON as the basis for the entry.
+
+Format each entry as follows:
+
+```md
+## [PR #{number} | {branch name} | {date YYYY-MM-DD}]
+- Violation: {short description of what rule was violated}
+- Rule: {which rule from CONVENTIONS.md / MISTAKES.md / FF.md was violated}
+- Context: {one sentence describing where and why this happened in the code}
+```
+
+Record one entry per distinct violation. Do not record findings that were skipped (false positives or trivial items).
+
+### Step 3: Emit Exit Signal
+
+After fix-log is updated, output the following JSON as the **final output** and stop.
 Do not add any text after the JSON.
 
 #### On success
