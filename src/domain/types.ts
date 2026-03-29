@@ -129,8 +129,6 @@ export interface AnalysisResponse {
     keyLevels: KeyLevels;
     patternSummaries: PatternSummary[];
     skillResults: SkillResult[];
-    /** skills 로딩 실패로 인해 skills 없이 수행된 분석 여부 */
-    skillsDegraded?: boolean;
 }
 
 export interface BarsData {

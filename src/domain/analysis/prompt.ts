@@ -3,7 +3,12 @@ import {
     detectCandlePattern,
     detectMultiCandlePattern,
 } from '@/domain/analysis/candle';
-import type { Bar, IndicatorResult, Skill } from '@/domain/types';
+import type {
+    AnalysisResponse,
+    Bar,
+    IndicatorResult,
+    Skill,
+} from '@/domain/types';
 
 const MIN_CONFIDENCE_WEIGHT = 0.5;
 const HIGH_CONFIDENCE_WEIGHT = 0.8;
@@ -120,19 +125,36 @@ const confidenceLabel = (weight: number): string =>
 const buildSkillBlock = (skill: Skill): string =>
     `### ${skill.name} ${confidenceLabel(skill.confidenceWeight)}\n${skill.content}`;
 
+/**
+ * AnalysisResponse의 모든 키에 대한 JSON 스키마 예시를 정의합니다.
+ * Record<keyof AnalysisResponse, string> 타입이 AnalysisResponse 필드 변경 시
+ * 컴파일 타임 오류를 발생시켜 ANALYSIS_REQUEST와의 동기화를 강제합니다.
+ */
+const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
+    summary: '"종합 분석 요약"',
+    trend: '"bullish | bearish | neutral"',
+    signals:
+        '[{ "type": "...", "description": "...", "strength": "strong | moderate | weak" }]',
+    skillSignals: '[{ "skillName": "...", "signals": [...] }]',
+    riskLevel: '"low | medium | high"',
+    keyLevels: '{ "support": [], "resistance": [] }',
+    patternSummaries:
+        '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "..." }]',
+    skillResults:
+        '[{ "skillName": "...", "trend": "bullish | bearish | neutral", "summary": "..." }]',
+};
+
+const buildSchemaBody = (): string => {
+    const entries = Object.entries(ANALYSIS_RESPONSE_SCHEMA)
+        .map(([key, value]) => `  "${key}": ${value}`)
+        .join(',\n');
+    return `{\n${entries}\n}`;
+};
+
 const ANALYSIS_REQUEST = [
     '## 분석 요청',
     '위 데이터를 기반으로 기술적 분석을 수행하고 다음 JSON 형식으로 응답해주세요:',
-    '{',
-    '  "summary": "종합 분석 요약",',
-    '  "trend": "bullish | bearish | neutral",',
-    '  "signals": [{ "type": "...", "description": "...", "strength": "strong | moderate | weak" }],',
-    '  "skillSignals": [{ "skillName": "...", "signals": [...] }],',
-    '  "riskLevel": "low | medium | high",',
-    '  "keyLevels": { "support": [], "resistance": [] },',
-    '  "patternSummaries": [{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "..." }],',
-    '  "skillResults": [{ "skillName": "...", "trend": "bullish | bearish | neutral", "summary": "..." }]',
-    '}',
+    buildSchemaBody(),
 ].join('\n');
 
 export function buildAnalysisPrompt(

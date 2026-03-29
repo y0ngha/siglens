@@ -60,10 +60,10 @@
 - Rule: MISTAKES.md Coding Paradigm Rule 3 — let reassignment → Use const + new variable
 - Context: `route.ts`의 skills 로딩 로직에서 `let` 재할당 패턴이 사용되었으며, `.then(loadedSkills => ({ skills: loadedSkills, skillsDegraded: false })).catch(...)` 패턴으로 변경하여 `const` 구조 분해로 두 값을 동시에 획득하도록 수정
 
-## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | review fix 3 | 2026-03-29]
-- Violation: `AnalyzeRequest` 인터페이스가 `domain/types.ts`의 `AnalyzeVariables`와 동일한 구조를 `app/api/analyze/route.ts`에서 중복 정의하고 있었음
-- Rule: FF.md Cohesion 3-A — 함께 변경되어야 하는 코드는 함께 위치해야 한다. `AnalyzeVariables`에 필드가 추가/변경될 때 `AnalyzeRequest`도 동기화되어야 하는 암묵적 결합이 발생함
-- Context: `app` 레이어는 `domain` 타입 import가 허용되므로, `AnalyzeRequest`를 제거하고 `AnalyzeVariables`를 직접 재사용하도록 수정하여 암묵적 결합을 제거
+## [PR #80 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
+- Violation: `ClaudeProvider.analyze()` 반환 결과에서 `skillsDegraded` 필드 부재를 검증하는 테스트 케이스 누락
+- Rule: MISTAKES.md Tests Rule 3 — 새 필드가 추가되면 그 존재 여부나 값을 검증하는 it() 케이스가 최소 하나 있어야 한다
+- Context: `skillsDegraded`가 domain 타입에 optional로 있었으나 `ClaudeProvider.analyze()`가 이 필드를 포함하지 않는다는 사실을 검증하는 케이스가 없었음; `'skillsDegraded' in result`가 `false`임을 검증하는 테스트를 추가
 
 ## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그

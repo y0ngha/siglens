@@ -3,7 +3,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { ClaudeProvider } from '@/infrastructure/ai/claude';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
-import type { AnalyzeVariables, Skill } from '@/domain/types';
+import type { AnalysisResponse, AnalyzeVariables, Skill } from '@/domain/types';
+
+/** app 레이어 전용 응답 타입 — skills 로딩 실패 여부를 포함한 분석 결과 */
+interface AnalyzeRouteResponse extends AnalysisResponse {
+    skillsDegraded: boolean;
+}
 
 const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_INTERNAL_SERVER_ERROR } =
     constants;
@@ -40,7 +45,8 @@ export async function POST(request: NextRequest) {
     const ai = new ClaudeProvider();
     try {
         const analysis = await ai.analyze(prompt);
-        return NextResponse.json({ ...analysis, skillsDegraded });
+        const response: AnalyzeRouteResponse = { ...analysis, skillsDegraded };
+        return NextResponse.json(response);
     } catch (error) {
         console.error('[/api/analyze] AI analysis failed:', error);
         return NextResponse.json(

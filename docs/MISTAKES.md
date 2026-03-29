@@ -121,6 +121,18 @@ Review before implementation and ensure these are not repeated.
     → If interface B contains all fields of interface A plus extras, declare B extends A
     ❌ interface PatternResult { patternName: string; skillName: string; ...; renderConfig: ... }
     ✅ interface PatternResult extends PatternSummary { renderConfig: ... }
+
+13. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
+    → Rule: FF.md Cohesion 3-A — code that changes together must stay together
+    → If a type in layer A is structurally identical to a type in layer B, do not redefine it; import and reuse it
+    → If a string array or object must stay in sync with an interface, use Record<keyof Interface, ...> to enforce the relationship at compile time
+    → If a field belongs to a specific layer's concern (e.g. route-level degradation flag), do not put it on a shared domain type; extend the domain type in that layer instead
+    ❌ interface AnalyzeRequest { bars: Bar[]; timeframe: string }  // duplicates AnalyzeVariables in app layer
+    ❌ const ANALYSIS_REQUEST = ['patterns', 'skills', ...]         // manually synced string array
+    ❌ interface AnalysisResponse { skillsDegraded?: boolean }      // route-layer concern on a domain type
+    ✅ use AnalyzeVariables directly in route.ts
+    ✅ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = { ... }
+    ✅ interface AnalyzeRouteResponse extends AnalysisResponse { skillsDegraded?: boolean }
 ```
 
 ---
