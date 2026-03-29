@@ -121,6 +121,18 @@ Review before implementation and ensure these are not repeated.
     → If interface B contains all fields of interface A plus extras, declare B extends A
     ❌ interface PatternResult { patternName: string; skillName: string; ...; renderConfig: ... }
     ✅ interface PatternResult extends PatternSummary { renderConfig: ... }
+
+13. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
+    → Rule: FF.md Cohesion 3-A — code that changes together must stay together
+    → If a type in layer A is structurally identical to a type in layer B, do not redefine it; import and reuse it
+    → If a string array or object must stay in sync with an interface, use Record<keyof Interface, ...> to enforce the relationship at compile time
+    → If a field belongs to a specific layer's concern (e.g. route-level degradation flag), do not put it on a shared domain type; extend the domain type in that layer instead
+    ❌ interface AnalyzeRequest { bars: Bar[]; timeframe: string }  // duplicates AnalyzeVariables in app layer
+    ❌ const ANALYSIS_REQUEST = ['patterns', 'skills', ...]         // manually synced string array
+    ❌ interface AnalysisResponse { skillsDegraded?: boolean }      // route-layer concern on a domain type
+    ✅ use AnalyzeVariables directly in route.ts
+    ✅ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = { ... }
+    ✅ interface AnalyzeRouteResponse extends AnalysisResponse { skillsDegraded?: boolean }
 ```
 
 ---
@@ -208,13 +220,20 @@ Review before implementation and ensure these are not repeated.
    → Tests must be updated whenever types change
    → Nullable changes (T[] → (T | null)[]) require a null initial-period test case
 
-3. Writing describe/it descriptions as code expressions
+3. Adding a new field to a type/interface without a corresponding test case
+   → Every new field must have at least one it() case that verifies its presence or value
+   → Applies to both domain types and API response types
+   ❌ Add patternSummaries/skillResults to AnalysisResponse with no array-verification test
+   ❌ Add riskLevel to ANALYSIS_REQUEST schema with no field-inclusion test
+   ✅ it('patternSummaries 배열을 반환한다', () => { expect(Array.isArray(result.patternSummaries)).toBe(true); })
+
+4. Writing describe/it descriptions as code expressions
    ❌ describe('closes.length < period', ...)
    ✅ describe('입력 배열 길이가 period 미만일 때', ...)
    ❌ it('null 반환')
    ✅ it('전부 null인 배열을 반환한다')
 
-4. Missing initial-period null test case for period-based indicators
+5. Missing initial-period null test case for period-based indicators
    → Adding it at the stub stage guards against regressions after real implementation
 ```
 

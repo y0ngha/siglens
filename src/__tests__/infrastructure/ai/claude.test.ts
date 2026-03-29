@@ -109,6 +109,12 @@ describe('ClaudeProvider', () => {
             expect(Array.isArray(result.keyLevels.support)).toBe(true);
             expect(Array.isArray(result.keyLevels.resistance)).toBe(true);
         });
+
+        it('skillsDegraded 필드를 포함하지 않는다', async () => {
+            const result = await provider.analyze('test prompt');
+
+            expect('skillsDegraded' in result).toBe(false);
+        });
     });
 
     describe('API 응답의 content type이 text가 아니면', () => {
