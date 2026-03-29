@@ -99,27 +99,73 @@ describe('ClaudeProvider', () => {
     });
 
     describe('API 응답의 content type이 text가 아니면', () => {
-        it('에러를 던진다', async () => {
-            const provider = new ClaudeProvider();
+        let provider: ClaudeProvider;
+
+        beforeEach(() => {
             mockCreate.mockResolvedValue({
                 content: [
                     { type: 'tool_use', id: 'tool-1', name: 'foo', input: {} },
                 ],
             });
+            provider = new ClaudeProvider();
+        });
 
+        it('에러를 던진다', async () => {
             await expect(provider.analyze('test prompt')).rejects.toThrow(
                 'Unexpected response type from Claude API'
             );
         });
     });
 
+    describe('응답이 마크다운 코드 블록으로 감싸진 경우', () => {
+        let provider: ClaudeProvider;
+
+        beforeEach(() => {
+            provider = new ClaudeProvider();
+        });
+
+        it('코드 블록을 제거하고 JSON을 파싱한다', async () => {
+            mockCreate.mockResolvedValue({
+                content: [
+                    {
+                        type: 'text',
+                        text: `\`\`\`json\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
+                    },
+                ],
+            });
+
+            const result = await provider.analyze('test prompt');
+
+            expect(result).toEqual(mockAnalysisResponse);
+        });
+
+        it('json 태그 없는 코드 블록도 처리한다', async () => {
+            mockCreate.mockResolvedValue({
+                content: [
+                    {
+                        type: 'text',
+                        text: `\`\`\`\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
+                    },
+                ],
+            });
+
+            const result = await provider.analyze('test prompt');
+
+            expect(result).toEqual(mockAnalysisResponse);
+        });
+    });
+
     describe('응답이 유효한 JSON이 아니면', () => {
-        it('에러를 던진다', async () => {
-            const provider = new ClaudeProvider();
+        let provider: ClaudeProvider;
+
+        beforeEach(() => {
             mockCreate.mockResolvedValue({
                 content: [{ type: 'text', text: 'invalid json' }],
             });
+            provider = new ClaudeProvider();
+        });
 
+        it('에러를 던진다', async () => {
             await expect(provider.analyze('test prompt')).rejects.toThrow(
                 'Failed to parse Claude API response as JSON'
             );
@@ -127,10 +173,14 @@ describe('ClaudeProvider', () => {
     });
 
     describe('API 호출이 실패하면', () => {
-        it('에러를 던진다', async () => {
-            const provider = new ClaudeProvider();
-            mockCreate.mockRejectedValue(new Error('Network error'));
+        let provider: ClaudeProvider;
 
+        beforeEach(() => {
+            mockCreate.mockRejectedValue(new Error('Network error'));
+            provider = new ClaudeProvider();
+        });
+
+        it('에러를 던진다', async () => {
             await expect(provider.analyze('test prompt')).rejects.toThrow(
                 'Network error'
             );
