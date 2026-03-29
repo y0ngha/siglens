@@ -48,6 +48,8 @@ function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
 interface ChartContentProps {
     symbol: string;
     timeframe: Timeframe;
+    /** 타임프레임이 변경된 누적 횟수. Suspense remount 시 초기 마운트와 타임프레임 변경을 구분한다. */
+    timeframeChangeCount: number;
     initialBars: Bar[];
     initialIndicators: IndicatorResult;
     initialAnalysis: AnalysisResponse;
@@ -56,6 +58,7 @@ interface ChartContentProps {
 export function ChartContent({
     symbol,
     timeframe,
+    timeframeChangeCount,
     initialBars,
     initialIndicators,
     initialAnalysis,
@@ -71,7 +74,7 @@ export function ChartContent({
         useAnalysis({
             symbol,
             initialAnalysis,
-            timeframe,
+            timeframeChangeCount,
             bars,
             indicators,
         });
