@@ -15,6 +15,8 @@ describe('ClaudeProvider', () => {
         skillSignals: [],
         riskLevel: 'low',
         keyLevels: { support: [100], resistance: [110] },
+        patternSummaries: [],
+        skillResults: [],
     };
 
     beforeEach(() => {
@@ -87,6 +89,18 @@ describe('ClaudeProvider', () => {
             const result = await provider.analyze('test prompt');
 
             expect(Array.isArray(result.skillSignals)).toBe(true);
+        });
+
+        it('patternSummaries는 배열을 반환한다', async () => {
+            const result = await provider.analyze('test prompt');
+
+            expect(Array.isArray(result.patternSummaries)).toBe(true);
+        });
+
+        it('skillResults는 배열을 반환한다', async () => {
+            const result = await provider.analyze('test prompt');
+
+            expect(Array.isArray(result.skillResults)).toBe(true);
         });
 
         it('keyLevels.support와 keyLevels.resistance는 배열을 반환한다', async () => {

@@ -34,13 +34,15 @@ const mockAnalysisResponse = {
     skillSignals: [],
     riskLevel: 'low' as const,
     keyLevels: { support: [], resistance: [] },
+    patternSummaries: [],
+    skillResults: [],
 };
 
-beforeEach(() => {
-    mockFetch.mockReset();
-});
-
 describe('postAnalyze 함수는', () => {
+    beforeEach(() => {
+        mockFetch.mockReset();
+    });
+
     describe('정상 응답일 때', () => {
         it('AnalysisResponse를 반환한다', async () => {
             mockFetch.mockResolvedValueOnce({
