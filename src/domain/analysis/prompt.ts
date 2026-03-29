@@ -129,7 +129,9 @@ const ANALYSIS_REQUEST = [
     '  "signals": [{ "type": "...", "description": "...", "strength": "strong | moderate | weak" }],',
     '  "skillSignals": [{ "skillName": "...", "signals": [...] }],',
     '  "riskLevel": "low | medium | high",',
-    '  "keyLevels": { "support": [], "resistance": [] }',
+    '  "keyLevels": { "support": [], "resistance": [] },',
+    '  "patternSummaries": [{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "..." }],',
+    '  "skillResults": [{ "skillName": "...", "trend": "bullish | bearish | neutral", "summary": "..." }]',
     '}',
 ].join('\n');
 

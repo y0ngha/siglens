@@ -392,7 +392,10 @@ describe('buildAnalysisPrompt', () => {
 
         describe('type이 pattern이 아닌 skill', () => {
             it('활성화된 Skills 섹션에 포함된다', () => {
-                const skill = makeSkill({ name: 'RSI 다이버전스' });
+                const skill = makeSkill({
+                    name: 'RSI 다이버전스',
+                    type: undefined,
+                });
                 const result = buildAnalysisPrompt(
                     TEST_SYMBOL,
                     [],
@@ -404,7 +407,10 @@ describe('buildAnalysisPrompt', () => {
             });
 
             it('패턴 분석 섹션에는 포함되지 않는다', () => {
-                const skill = makeSkill({ name: 'RSI 다이버전스' });
+                const skill = makeSkill({
+                    name: 'RSI 다이버전스',
+                    type: undefined,
+                });
                 const result = buildAnalysisPrompt(
                     TEST_SYMBOL,
                     [],
@@ -694,6 +700,46 @@ describe('buildAnalysisPrompt', () => {
                 []
             );
             expect(result).toContain('keyLevels');
+        });
+
+        it('patternSummaries 필드가 요청에 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('patternSummaries');
+        });
+
+        it('skillResults 필드가 요청에 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('skillResults');
+        });
+
+        it('riskLevel 필드가 요청에 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('riskLevel');
+        });
+
+        it('patternSummaries 스키마에 detected 필드가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('detected');
         });
     });
 
