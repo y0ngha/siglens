@@ -2,13 +2,19 @@ import {
     EMA_DEFAULT_PERIODS,
     EMA_SUPPORT_RESISTANCE_LONG_INDEX,
     EMA_SUPPORT_RESISTANCE_SHORT_INDEX,
+    HIGH_CONFIDENCE_WEIGHT,
     MA_DEFAULT_PERIODS,
+    MIN_CONFIDENCE_WEIGHT,
     RSI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 import {
     detectCandlePattern,
     detectMultiCandlePattern,
 } from '@/domain/analysis/candle';
+import {
+    getCandlePatternLabel,
+    getMultiCandlePatternLabel,
+} from '@/domain/analysis/candle-labels';
 import type {
     AnalysisResponse,
     Bar,
@@ -16,8 +22,6 @@ import type {
     Skill,
 } from '@/domain/types';
 
-const MIN_CONFIDENCE_WEIGHT = 0.5;
-const HIGH_CONFIDENCE_WEIGHT = 0.8;
 const INDICATOR_DECIMAL_PLACES = 2;
 const RECENT_BARS_COUNT = 30;
 const DATETIME_DISPLAY_LENGTH = 16;
@@ -68,7 +72,7 @@ const formatBarRow = (bar: Bar): string => {
         .replace('T', ' ')
         .slice(0, DATETIME_DISPLAY_LENGTH);
     const pattern = detectCandlePattern(bar);
-    return `${datetime} | O:${fmt(bar.open)} H:${fmt(bar.high)} L:${fmt(bar.low)} C:${fmt(bar.close)} V:${formatVolume(bar.volume)} [${pattern}]`;
+    return `${datetime} | O:${fmt(bar.open)} H:${fmt(bar.high)} L:${fmt(bar.low)} C:${fmt(bar.close)} V:${formatVolume(bar.volume)} [${getCandlePatternLabel(pattern)}]`;
 };
 
 const formatRecentBarsSection = (bars: Bar[]): string => {
@@ -85,7 +89,9 @@ const formatRecentBarsSection = (bars: Bar[]): string => {
         '형식: 날짜·시간(UTC) | O:시가 H:고가 L:저가 C:종가 V:거래량 [캔들패턴]',
         ...recentBars.map(formatBarRow),
         ...(multiPattern !== null
-            ? [`- 감지된 다봉 패턴: ${multiPattern}`]
+            ? [
+                  `- 감지된 다봉 패턴: ${getMultiCandlePatternLabel(multiPattern)}`,
+              ]
             : []),
     ].join('\n');
 };

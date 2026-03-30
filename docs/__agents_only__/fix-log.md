@@ -1,5 +1,40 @@
 # Fix Log
 
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `MIN_CONFIDENCE_WEIGHT = 0.5`가 `prompt.ts`에 모듈 레벨 로컬 상수로 선언되어 `domain/indicators/constants.ts`에 속해야 할 도메인 경계값이 분리됨
+- Rule: MISTAKES.md TypeScript Rule 6 — 도메인 경계값(임계값, 기본값)은 `domain/indicators/constants.ts`에 추출해야 함. `HIGH_CONFIDENCE_WEIGHT`가 이미 그곳에 있으므로 `MIN_CONFIDENCE_WEIGHT`도 함께 위치해야 함
+- Context: `prompt.ts`의 skills 필터링에 사용하는 최소 신뢰도 임계값을 `constants.ts`로 이동하고, `prompt.ts`에서 import하도록 수정
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `prompt.test.ts`에서 `const TEST_MIN_CONFIDENCE_WEIGHT = 0.5`로 경계값을 로컬 재선언
+- Rule: MISTAKES.md Tests Rule 8 — 경계값 테스트 상수는 소스 상수에서 import해야 하며 재선언하지 않음
+- Context: `MIN_CONFIDENCE_WEIGHT`가 `constants.ts`로 승격된 후 테스트에서 해당 값을 import하여 사용하도록 수정
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `confidence.ts`에서 매칭되지 않는 skill의 기본 `confidenceWeight`로 `?? 0` 리터럴을 두 곳에서 중복 사용
+- Rule: MISTAKES.md TypeScript Rule 6 — 구현 코드의 하드코딩된 리터럴은 named constant로 추출해야 함
+- Context: `UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0` 상수를 `constants.ts`에 추가하고 `confidence.ts`의 두 `?? 0`을 교체하여 의도를 명시적으로 표현
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `enrichAnalysisWithConfidence`의 입력 타입이 `AnalysisResponse`로 선언되어, AI 원시 응답(confidenceWeight 없음)과 타입 불일치 발생
+- Rule: MISTAKES.md TypeScript Rule 13 — 타입은 실제 데이터 구조와 일치해야 하며, 레이어 관심사에 따라 올바른 위치에 정의해야 함
+- Context: AI가 반환하는 raw response에는 confidenceWeight가 없으므로 입력 타입을 RawAnalysisResponse(Omit<AnalysisResponse, 'patternSummaries' | 'skillResults'>)로 분리하여 타입 안전성 확보
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `confidence.test.ts`가 4단계 describe 구조 사용 (describe → describe → describe → it)
+- Rule: MISTAKES.md Tests Rule 7 — 정확히 3단계 구조 필수: describe(subject) → describe(context) → it(behavior)
+- Context: `describe('enrichAnalysisWithConfidence')` 중간 계층이 불필요하게 추가되어 4단계가 됨. 해당 계층을 제거하여 context describe 블록들을 최상위 describe 바로 아래로 이동
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `prompt.test.ts`가 4단계 describe 구조 사용 (describe → describe → describe → it)
+- Rule: MISTAKES.md Tests Rule 7 — 정확히 3단계 구조 필수: describe(subject) → describe(context) → it(behavior)
+- Context: `describe('buildAnalysisPrompt')` 중간 계층이 불필요하게 추가되어 4단계가 됨. 해당 계층을 제거하여 context describe 블록들을 최상위 describe 바로 아래로 이동
+
+## [Issue #85 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `enrichAnalysisWithConfidence`가 `prompt.ts`에 동거하여 단일 책임 원칙 위반
+- Rule: FF.md Coupling 4-A (독립적으로 변경될 수 있는 두 함수는 분리)
+- Context: AI 프롬프트 생성(`buildAnalysisPrompt`)과 신뢰도 데이터 주입(`enrichAnalysisWithConfidence`)은 독립적으로 변경되는 관심사이므로, `domain/analysis/confidence.ts`로 분리하여 해결
+
 ## [Issue #74 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
 - Violation: `beforeEach`가 `describe` 블록 바깥 최상위 레벨에 위치하여 테스트 구조 규칙 위반
 - Rule: CONVENTIONS.md — Test Rules: 모든 setup 코드는 해당 describe 블록 내부에 위치해야 일관성 유지
@@ -159,15 +194,7 @@
 - Context: `@/components/chart/constants`에 이미 `DEFAULT_LINE_WIDTH = 1` 상수가 정의되어 있으며, `useMAOverlay`, `useEMAOverlay`, `useBollingerOverlay`가 모두 사용 중. `usePatternOverlay`에서도 동일하게 import하여 사용하도록 수정
 
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 3 | 2026-03-30]
-- Violation: `loader.test.ts`의 테스트 구조가 `describe(subject) → describe(loadSkills) → describe(context) → it(behavior)` 4단계로 구성되어 규칙 위반
-- Rule: CONVENTIONS.md Test Structure / MISTAKES.md Test Rule 6 — 테스트 구조는 반드시 3단계(describe → describe(context) → it)여야 한다
-- Context: `FileSkillsLoader`가 `loadSkills` 단일 메서드만 가지므로 중간의 `describe('loadSkills')` 계층이 불필요. `category 파싱`, `display 파싱` 등 context describe 블록을 최상위 `describe('FileSkillsLoader')` 바로 아래로 올려 3단계 구조로 정리
-
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 4 | 2026-03-30]
-- Violation: `prompt.test.ts`에서 `describe('buildAnalysisPrompt') → describe(섹션) → describe(context) → it(behavior)` 4단계 구조가 반복됨
-- Rule: MISTAKES.md Tests Rule 6 — 테스트 구조는 반드시 `describe(subject) → describe(context) → it(behavior)` 3단계여야 한다
-- Context: `현재 시장 상황 섹션`, `최근 봉 데이터 섹션`, `거래량 분석 섹션`, `Skills 섹션` 등 여러 곳에서 섹션 describe 아래에 context describe가 추가되어 4단계가 됨. 섹션명과 context를 `'현재 시장 상황 섹션 - bars가 비어있을 때'` 형식으로 합쳐 3단계로 통일
-
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 4 | 2026-03-30]
 - Violation: `StockChart.tsx`의 `useEffect` dependency 배열에 `togglePattern`이 포함되어 있으나, `togglePattern`은 `useCallback([], [])`으로 항상 안정적인 함수 참조라 실질적으로 effect 재실행에 영향을 주지 않음
 - Rule: FF.md Readability — 불필요한 dependency는 코드 독자에게 'togglePattern이 변경될 수 있다'는 오해를 줄 수 있어 가독성 위반
@@ -198,3 +225,18 @@
 - Rule: CONVENTIONS.md — 문서는 실제 구현과 일치해야 한다
 - Context: `domain/types.ts`의 `AnalysisResponse`에는 `patternSummaries: PatternSummary[]`, `skillResults: SkillResult[]`가 정의되어 있으나 SIGLENS_API.md에는 없었음; `PatternSummary`, `SkillResult` 인터페이스 정의와 함께 두 필드를 추가하고 JSON 예시에도 빈 배열로 반영
 
+## [Issue #85 | feat/85/신뢰도-배지-및-한국어-패턴명 | review fix 2 | 2026-03-30]
+- Violation: `prompt.test.ts`의 최상위 `describe`가 함수명(`buildAnalysisPrompt`)으로 시작하여 3레벨 구조(모듈 → 함수 → 케이스)를 위반함
+- Rule: CONVENTIONS.md / 테스트 레이어 규칙 — `describe(모듈명)` → `describe(함수명)` → `it(케이스)` 3레벨 구조 필수
+- Context: 같은 디렉토리의 `confidence.test.ts`는 `describe('confidence')` → `describe('enrichAnalysisWithConfidence')` 구조를 올바르게 사용했으나 `prompt.test.ts`는 `describe('buildAnalysisPrompt')`로 2레벨만 사용했음; `describe('prompt', () => { ... })`로 감싸 3레벨 구조로 수정
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-31]
+- Violation: `AIProvider.analyze()`의 반환 타입이 `AnalysisResponse`로 선언되어 있으나 AI 원시 응답에는 `confidenceWeight` 필드가 없어 실제 데이터와 불일치; `route.ts`에서 `as unknown as RawAnalysisResponse` 이중 타입 단언으로 우회함
+- Rule: infrastructure CLAUDE.md — "Overusing `as` type assertions → use type guards or generics"
+- Context: `AIProvider` 인터페이스의 반환 타입을 `RawAnalysisResponse`로 변경하고, `ClaudeProvider`/`GeminiProvider` 구현체 및 테스트 파일의 타입 선언을 동기화; `page.tsx`에서도 `enrichAnalysisWithConfidence` 호출을 추가하여 `AnalysisResponse`로 변환하는 흐름을 통일
+
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `app/[symbol]/page.tsx`에서 `new ClaudeProvider()`를 직접 인스턴스화하여 `AI_PROVIDER` 환경변수를 무시하고 항상 Claude를 사용
+- Rule: FF.md Predictability 2-C — 숨겨진 로직은 노출해야 함. `AI_PROVIDER=gemini`로 설정한 호출자는 모든 곳에서 Gemini가 사용되길 기대하지만, 초기 페이지 로드에서만 Claude가 묵시적으로 사용됨
+- Context: `route.ts`와 동일하게 `createAIProvider()`를 사용하도록 교체하여 환경변수 기반 프로바이더 선택이 일관되게 적용됨

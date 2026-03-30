@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { ClaudeProvider } from '@/infrastructure/ai/claude';
-import type { AnalysisResponse } from '@/domain/types';
+import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
 
 jest.mock('@anthropic-ai/sdk');
 
@@ -8,7 +8,7 @@ describe('ClaudeProvider', () => {
     let mockCreate: jest.Mock;
     let provider: ClaudeProvider;
 
-    const mockAnalysisResponse: AnalysisResponse = {
+    const mockAnalysisResponse: RawAnalysisResponse = {
         summary: 'Test summary',
         trend: 'bullish',
         signals: [],

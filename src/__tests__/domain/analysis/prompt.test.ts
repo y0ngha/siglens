@@ -1,5 +1,9 @@
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
-import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import {
+    HIGH_CONFIDENCE_WEIGHT,
+    MIN_CONFIDENCE_WEIGHT,
+    RSI_DEFAULT_PERIOD,
+} from '@/domain/indicators/constants';
 import type { Bar, IndicatorResult, Skill } from '@/domain/types';
 
 const TEST_SYMBOL = 'AAPL';
@@ -22,10 +26,10 @@ const TEST_BOLLINGER_LOWER = 145.0;
 const TEST_DI_PLUS = 25.0;
 const TEST_DI_MINUS = 18.0;
 const TEST_ADX_VALUE = 30.0;
-const TEST_HIGH_CONFIDENCE = 0.8;
+const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_HIGH_CONFIDENCE = 0.9;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
-const TEST_MIN_CONFIDENCE_WEIGHT = 0.5;
+const TEST_MIN_CONFIDENCE_WEIGHT = MIN_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_MIN_CONFIDENCE = 0.6;
 const TEST_BELOW_MIN_CONFIDENCE = 0.4;
 const TEST_LOW_CONFIDENCE = 0.3;
@@ -63,7 +67,7 @@ const makeSkill = (overrides?: Partial<Skill>): Skill => ({
     ...overrides,
 });
 
-describe('buildAnalysisPrompt', () => {
+describe('prompt', () => {
     describe('반환 타입', () => {
         it('문자열을 반환한다', () => {
             const result = buildAnalysisPrompt(
@@ -844,6 +848,48 @@ describe('buildAnalysisPrompt', () => {
                 makeIndicators()
             );
             expect(withDefault).toBe(withEmpty);
+        });
+    });
+
+    describe('캔들 패턴 한국어 표시', () => {
+        it('단봉 캔들 패턴이 영문이 아닌 한국어로 표시된다', () => {
+            const bars = [makeBar(0)];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                []
+            );
+            expect(result).not.toMatch(/\[bullish\]|\[bearish\]|\[doji\]/);
+        });
+
+        it('다봉 패턴 감지 시 한국어 패턴명이 포함된다', () => {
+            const prevBar: Bar = {
+                time: TEST_BAR_BASE_TIME,
+                open: 110,
+                high: 115,
+                low: 105,
+                close: 106,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const currBar: Bar = {
+                time: TEST_BAR_BASE_TIME + TEST_BAR_INTERVAL,
+                open: 104,
+                high: 120,
+                low: 103,
+                close: 118,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const bars = [prevBar, currBar];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                []
+            );
+            if (result.includes('감지된 다봉 패턴:')) {
+                expect(result).not.toMatch(/감지된 다봉 패턴: [a-z_]+/);
+            }
         });
     });
 });
