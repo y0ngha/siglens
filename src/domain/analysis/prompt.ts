@@ -1,5 +1,7 @@
 import {
     EMA_DEFAULT_PERIODS,
+    EMA_SUPPORT_RESISTANCE_LONG_INDEX,
+    EMA_SUPPORT_RESISTANCE_SHORT_INDEX,
     MA_DEFAULT_PERIODS,
     RSI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
@@ -162,7 +164,7 @@ const ANALYSIS_GUIDELINES = [
     '## 분석 가이드라인',
     '',
     '### 지지/저항 판단',
-    `- 이동평균선(MA ${MA_DEFAULT_PERIODS.join(',')}, EMA ${EMA_DEFAULT_PERIODS[1]}/${EMA_DEFAULT_PERIODS[3]}) 수렴 지점을 우선 확인`,
+    `- 이동평균선(MA ${MA_DEFAULT_PERIODS.join(',')}, EMA ${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_SHORT_INDEX]}/${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_LONG_INDEX]}) 수렴 지점을 우선 확인`,
     '- 최근 30봉의 거래량 분포에서 PoC(거래 집중 가격대) 식별',
     '- 거래량 급증 봉의 고가/저가를 매물대로 판단',
     '- 이전 swing high/low와 볼린저 밴드 경계 참고',

@@ -122,10 +122,6 @@
 - Rule: MISTAKES.md Tests Rule 3 — 타입에 존재하는 필드는 검증 케이스를 가져야 한다
 - Context: `VALID_SKILL_MD` 픽스처에는 `category`, `pattern`, `display` 필드가 없으므로 `toSkill`이 이들을 `undefined`로 반환해야 하며, `toEqual` 기대값에 `category: undefined, pattern: undefined, display: undefined`를 명시적으로 추가하여 향후 `toSkill` 변경 시 회귀를 탐지할 수 있도록 수정
 
-## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분석강화 | review fix | 2026-03-30]
-- Violation: `ANALYSIS_GUIDELINES`의 지지/저항 가이드라인 문자열에 MA/EMA 기간이 `'20'`, `'20/60'` 리터럴로 하드코딩됨
-- Rule: MISTAKES.md TypeScript Rule 7 — 상수에서 파생되는 값을 구현 코드에서 리터럴로 재작성하지 말 것; 상수가 변경되어도 텍스트가 자동으로 갱신되어야 함
-- Context: `domain/analysis/prompt.ts`의 `ANALYSIS_GUIDELINES` 배열에 `'MA 20, EMA 20/60'`이 하드코딩되어 있었으며, `MA_DEFAULT_PERIODS.join(',')` 및 `` `${EMA_DEFAULT_PERIODS[1]}/${EMA_DEFAULT_PERIODS[3]}` `` 템플릿 리터럴로 교체하여 상수 참조로 수정
 
 ## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그
