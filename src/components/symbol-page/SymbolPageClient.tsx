@@ -15,6 +15,7 @@ interface SymbolPageClientProps {
     initialBars: Bar[];
     initialIndicators: IndicatorResult;
     initialAnalysis: AnalysisResponse;
+    initialAnalysisFailed: boolean;
 }
 
 export function SymbolPageClient({
@@ -22,6 +23,7 @@ export function SymbolPageClient({
     initialBars,
     initialIndicators,
     initialAnalysis,
+    initialAnalysisFailed,
 }: SymbolPageClientProps) {
     const { timeframe, handleTimeframeChange } = useTimeframeChange(symbol);
     // Suspense로 인해 ChartContent가 remount될 때 타임프레임 변경 여부를 전달한다.
@@ -80,6 +82,7 @@ export function SymbolPageClient({
                             initialBars={initialBars}
                             initialIndicators={initialIndicators}
                             initialAnalysis={initialAnalysis}
+                            initialAnalysisFailed={initialAnalysisFailed}
                         />
                     </Suspense>
                 </ErrorBoundary>
