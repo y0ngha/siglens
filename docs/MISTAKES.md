@@ -15,8 +15,11 @@ Review before implementation and ensure these are not repeated.
    → Exception: side-effect-only iteration (e.g. calling a chart API on each element
      with no return value) may use forEach or for...of
    → Prefer for...of over forEach when the loop body is non-trivial or has multiple statements
+   → Avoid imperative loops with index reassignment (let i = 0; while (i < length) i++) even when building complex state machines
    ❌ for (let i = 0; i < closes.length; i++) result.push(closes[i] * 2)
    ✅ closes.map(c => c * 2)
+   ❌ let i = 0; while (i < lines.length) { ... i++; }
+   ✅ lines.reduce((acc, line, idx) => { ... }, initialState)
    ✅ periodsToRemove.forEach(p => chart.removeSeries(seriesRef.current[p]))  // side-effect only
    ✅ for (const p of periodsToRemove) { chart.removeSeries(seriesRef.current[p]); }  // preferred for multi-statement
 
@@ -46,6 +49,9 @@ Review before implementation and ensure these are not repeated.
 8. Reimplementing the same algorithm
    → Check for existing helpers before writing a new function
    → Separate number[]-based helpers from Bar[]-based wrappers for reuse
+   → Across provider pairs (ClaudeProvider, GeminiProvider): Extract shared logic to infrastructure/ai/utils.ts
+   ❌ MARKDOWN_CODE_BLOCK_PATTERN defined in both claude.ts and gemini.ts
+   ✅ Define once in infrastructure/ai/utils.ts and import in both providers
 
 9. Discarding the callback parameter and re-accessing the same element via external array index
    → Rule: FF.md Readability 1-G — viewpoint shift forces the reader to track two locations simultaneously
@@ -82,18 +88,22 @@ Review before implementation and ensure these are not repeated.
       interface Signal { strength: SignalStrength; }
 
 6. Hardcoding literals in implementation code
-   → Extract to constants (domain/indicators/constants.ts)
+   → Extract to constants (domain/indicators/constants.ts or @/components/chart/constants)
    ❌ period = 14
    ✅ period = RSI_DEFAULT_PERIOD
 
    [Pattern A] Declaring a new value
    ❌ period = 14                    ✅ const period = RSI_DEFAULT_PERIOD
+   ❌ const MIN_CONFIDENCE = 0.5     ✅ const MIN_CONFIDENCE_WEIGHT = 0.5  // at module level in utils.ts, not local to function
 
    [Pattern B] Referencing a specific value from an array or Record constant
    ❌ result.ma[20]                  ✅ result.ma[MA_DEFAULT_PERIODS[0]]
    ❌ calculateMA(bars, 20)          ✅ calculateMA(bars, MA_DEFAULT_PERIODS[0])
 
-   [Pattern C] Test input values (only extract constants when context matters)
+   [Pattern C] Chart styling constants
+   ❌ lineWidth: 1                   ✅ lineWidth: DEFAULT_LINE_WIDTH  // import from @/components/chart/constants
+
+   [Pattern D] Test input values (only extract constants when context matters)
    ❌ makeBars(100)                  ✅ const TEST_BAR_COUNT = 100; makeBars(TEST_BAR_COUNT)
    ✅ provider.analyze('test prompt') // meaningless scaffolding → literal allowed
 
@@ -135,12 +145,16 @@ Review before implementation and ensure these are not repeated.
     → If a type in layer A is structurally identical to a type in layer B, do not redefine it; import and reuse it
     → If a string array or object must stay in sync with an interface, use Record<keyof Interface, ...> to enforce the relationship at compile time
     → If a field belongs to a specific layer's concern (e.g. route-level degradation flag), do not put it on a shared domain type; extend the domain type in that layer instead
+    → When domain types have raw vs. enriched variants (e.g. AnalysisResponse with/without confidence), use separate types to reflect actual API contracts
     ❌ interface AnalyzeRequest { bars: Bar[]; timeframe: string }  // duplicates AnalyzeVariables in app layer
     ❌ const ANALYSIS_REQUEST = ['patterns', 'skills', ...]         // manually synced string array
     ❌ interface AnalysisResponse { skillsDegraded?: boolean }      // route-layer concern on a domain type
+    ❌ interface AIProvider { analyze(): AnalysisResponse }         // AI returns raw response without confidenceWeight
     ✅ use AnalyzeVariables directly in route.ts
     ✅ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = { ... }
     ✅ interface AnalyzeRouteResponse extends AnalysisResponse { skillsDegraded?: boolean }
+    ✅ type RawAnalysisResponse = Omit<AnalysisResponse, 'confidenceWeight'>
+       interface AIProvider { analyze(): RawAnalysisResponse }
 ```
 
 ---
@@ -231,9 +245,12 @@ Review before implementation and ensure these are not repeated.
 3. Adding a new field to a type/interface without a corresponding test case
    → Every new field must have at least one it() case that verifies its presence or value
    → Applies to both domain types and API response types
+   → When a field is optional, explicitly verify both the presence and absence cases
    ❌ Add patternSummaries/skillResults to AnalysisResponse with no array-verification test
    ❌ Add riskLevel to ANALYSIS_REQUEST schema with no field-inclusion test
+   ❌ interface Skill { pattern?: string }  // added but test only checks populated case, not undefined case
    ✅ it('patternSummaries 배열을 반환한다', () => { expect(Array.isArray(result.patternSummaries)).toBe(true); })
+   ✅ it('pattern: 미존재 시 undefined를 반환한다', () => { expect(result.pattern).toBeUndefined(); })
 
 4. Writing describe/it descriptions as code expressions
    ❌ describe('closes.length < period', ...)
@@ -250,14 +267,22 @@ Review before implementation and ensure these are not repeated.
    ❌ describe('GeminiProvider — API 키 미설정', () => { it('throws', ...) })
    ✅ describe('GeminiProvider', () => { describe('API 키 미설정 상태에서', () => { it('throws', ...) }) })
 
+7. Test file structure lacks module-level wrapper (2-level instead of 3-level)
+   → Rule: CONVENTIONS.md Test Structure — describe(module/subject name) → describe(function/context) → it(behavior) is required
+   ❌ describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) })  // missing module wrapper
+   ✅ describe('prompt', () => { describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) }) })  // 3 levels
+
 7. Test file exceeds 3-level structure (describe → describe → describe → it) with unnecessary intermediate layers
    → Rule: CONVENTIONS.md Test Structure — exactly 3 levels required: describe(subject) → describe(context) → it(behavior)
    → Adding extra describe layers between required levels creates nesting that obscures the test intent
    → Common offenders: adding describe(methodName) when method is the only one in the class, or describe(sectionName) between subject and context
+   → When context is inherently coupled with subject, merge it into the context describe text instead of adding a separate layer
    ❌ describe('FileSkillsLoader') { describe('loadSkills') { describe('파일이 없을 때') { it('에러를 던진다') } } }  // 4 levels
    ✅ describe('FileSkillsLoader') { describe('파일이 없을 때') { it('에러를 던진다') } }  // 3 levels
    ❌ describe('buildAnalysisPrompt') { describe('현재 시장 상황 섹션') { describe('bars가 비어있을 때') { it('섹션이 생성된다') } } }  // 4 levels
    ✅ describe('buildAnalysisPrompt') { describe('현재 시장 상황 섹션 - bars가 비어있을 때') { it('섹션이 생성된다') } }  // merge context into describe text
+   ❌ describe('생성자를 호출하면') { describe('API 키 미설정 상태에서') { it('에러를 던진다') } }  // separate describe for action when it's the only action tested
+   ✅ describe('API 키 미설정 상태에서') { it('생성자를 호출하면 에러를 던진다') }  // merge into it description
 
 8. Boundary test constant redefined locally instead of imported from source
    → Rule: MISTAKES.md TypeScript Rule 6 — hardcoded boundary values must be extracted to constants.ts
@@ -278,9 +303,20 @@ Review before implementation and ensure these are not repeated.
    → Rule: FF.md Predictability 2-B — sibling classes in the same family must have symmetric test coverage
    → When a new Provider is added, all it() cases present in the existing Provider must be replicated
    → Applies to field-presence checks (e.g. 'skillsDegraded' in result), error cases, and structural assertions
+   → Common gap: markdown code block stripping edge cases (text before/after the block)
    ❌ ClaudeProvider: it('skillsDegraded 필드를 포함하지 않는다', ...)
       GeminiProvider: (missing)
    ✅ Both Providers have identical test cases covering the same behaviors and field assertions
+
+11. Provider pair has inconsistent naming conventions
+   → Rule: FF.md Predictability 2-A — sibling classes must use consistent terminology
+   → When two Providers define the same concept (e.g. system instructions), use identical naming
+   ❌ claude.ts: const CLAUDE_SYSTEM_PROMPT
+      gemini.ts: const GEMINI_SYSTEM_INSTRUCTION  // different term ("PROMPT" vs "INSTRUCTION")
+   ✅ claude.ts: const CLAUDE_SYSTEM_PROMPT
+      gemini.ts: const GEMINI_SYSTEM_PROMPT  // consistent term
+   ❌ Define identical string in both files
+   ✅ Extract to infrastructure/ai/utils.ts as AI_SYSTEM_PROMPT and import in both
 ```
 
 ---
