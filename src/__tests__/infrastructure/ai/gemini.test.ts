@@ -36,23 +36,21 @@ describe('GeminiProvider', () => {
     });
 
     describe('GEMINI_API_KEY가 설정되지 않은 경우', () => {
-        describe('생성자를 호출하면', () => {
-            it('에러를 던진다', () => {
-                const original = process.env.GEMINI_API_KEY;
-                delete process.env.GEMINI_API_KEY;
+        it('생성자를 호출하면 에러를 던진다', () => {
+            const original = process.env.GEMINI_API_KEY;
+            delete process.env.GEMINI_API_KEY;
 
-                try {
-                    expect(() => new GeminiProvider()).toThrow(
-                        'GEMINI_API_KEY must be set'
-                    );
-                } finally {
-                    if (original === undefined) {
-                        delete process.env.GEMINI_API_KEY;
-                    } else {
-                        process.env.GEMINI_API_KEY = original;
-                    }
+            try {
+                expect(() => new GeminiProvider()).toThrow(
+                    'GEMINI_API_KEY must be set'
+                );
+            } finally {
+                if (original === undefined) {
+                    delete process.env.GEMINI_API_KEY;
+                } else {
+                    process.env.GEMINI_API_KEY = original;
                 }
-            });
+            }
         });
     });
 

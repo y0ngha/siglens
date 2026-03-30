@@ -105,6 +105,11 @@
 - Rule: FF.md Cohesion 3-A — 함께 변경되는 코드는 같은 위치에 있어야 한다. 함수의 엣지 케이스 커버리지는 해당 함수가 위치한 파일의 테스트에 있어야 함
 - Context: 코드 블록 앞/뒤 텍스트 처리는 `claude.test.ts`의 provider 레벨에서만 검증되고 있었으나, `stripMarkdownCodeBlock`이 `utils.ts`로 이동했으므로 해당 케이스를 `utils.test.ts`에 직접 추가
 
+## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
+- Violation: `describe('생성자를 호출하면')` 중간 계층이 추가되어 테스트 구조가 4단계(describe → describe → describe → it)가 됨
+- Rule: MISTAKES.md Tests Rule 6 — `describe(subject) → describe(context) → it(behavior)` 3단계 구조가 필수이며, 4단계 중첩은 규칙 위반
+- Context: `gemini.test.ts`의 `GEMINI_API_KEY가 설정되지 않은 경우` describe 블록 안에 불필요한 `생성자를 호출하면` describe 계층이 있었음; `describe('생성자를 호출하면')` 계층을 제거하고 해당 내용을 `it('생성자를 호출하면 에러를 던진다')` 설명에 통합하여 3단계로 통일
+
 ## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그
 - Rule: MISTAKES.md — Components: Managing timeframe as URL query parameter / useEffect Side Effect Isolation (올바른 초기값으로 ref를 초기화해야 함)
