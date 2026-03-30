@@ -352,7 +352,8 @@ function buildAnalysisPrompt(
 5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI)
 6. 패턴 분석 (type='pattern' skills, confidence >= 0.5)
 7. 활성화된 Skills (type!='pattern' skills, confidence >= 0.5)
-8. 분석 요청 및 JSON 응답 형식 지시
+8. 분석 가이드라인 (지지/저항 판단 기준, 가격 목표 산출 기준)
+9. 분석 요청 및 JSON 응답 형식 지시
 ```
 
 ### 응답 형식 (JSON)
@@ -385,9 +386,30 @@ interface SkillSignal {
     signals: Signal[];
 }
 
+interface KeyLevel {
+    price: number;
+    reason: string;         // 해당 가격이 지지/저항인 근거
+}
+
 interface KeyLevels {
-    support: number[];
-    resistance: number[];
+    support: KeyLevel[];
+    resistance: KeyLevel[];
+    poc?: KeyLevel;         // Point of Control (거래 집중 가격대, 선택적)
+}
+
+interface PriceTarget {
+    price: number;
+    basis: string;          // 목표가 산출 근거
+}
+
+interface PriceScenario {
+    targets: PriceTarget[];
+    condition: string;      // 해당 시나리오의 전제 조건 (예: '110 돌파 시')
+}
+
+interface PriceTargets {
+    bullish: PriceScenario;
+    bearish: PriceScenario;
 }
 
 // 감지된 패턴별 개별 요약 (type='pattern' skill 결과)
@@ -413,6 +435,7 @@ interface AnalysisResponse {
     skillSignals: SkillSignal[];    // skill 기반 신호 (skill별로 그룹핑)
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
+    priceTargets: PriceTargets;     // 강세/약세 시나리오별 가격 목표
     patternSummaries: PatternSummary[]; // 감지된 패턴별 개별 요약 (type='pattern' skill)
     skillResults: SkillResult[];        // skill별 분석 결과 (type!='pattern' skill)
 }

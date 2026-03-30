@@ -17,6 +17,10 @@ const FALLBACK_ANALYSIS: AnalysisResponse = {
     skillSignals: [],
     riskLevel: 'medium',
     keyLevels: { support: [], resistance: [] },
+    priceTargets: {
+        bullish: { targets: [], condition: '' },
+        bearish: { targets: [], condition: '' },
+    },
     patternSummaries: [],
     skillResults: [],
 };

@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type {
     AnalysisResponse,
     PatternSummary,
+    PriceScenario,
     RiskLevel,
     Signal,
     SignalStrength,
@@ -303,6 +304,43 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
     );
 }
 
+interface PriceScenarioSectionProps {
+    label: string;
+    scenario: PriceScenario;
+    colorClass: string;
+}
+
+function PriceScenarioSection({
+    label,
+    scenario,
+    colorClass,
+}: PriceScenarioSectionProps) {
+    if (scenario.targets.length === 0) return null;
+    return (
+        <div className="flex flex-col gap-1.5">
+            <span className={cn('text-xs font-medium', colorClass)}>
+                {label}
+            </span>
+            <span className="text-secondary-500 text-xs">
+                {scenario.condition}
+            </span>
+            {scenario.targets.map((target, index) => (
+                <div
+                    key={`target-${index}-${target.price}`}
+                    className="flex items-baseline gap-2"
+                >
+                    <span className={cn('text-sm font-medium', colorClass)}>
+                        {target.price.toLocaleString()}
+                    </span>
+                    <span className="text-secondary-500 text-xs">
+                        {target.basis}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 interface AnalysisPanelProps {
     analysis: AnalysisResponse;
     isAnalyzing?: boolean;
@@ -466,12 +504,17 @@ export function AnalysisPanel({
                                     저항
                                 </span>
                                 {analysis.keyLevels.resistance.map(level => (
-                                    <span
-                                        key={`resistance-${level}`}
-                                        className="text-chart-bearish text-sm font-medium"
+                                    <div
+                                        key={`resistance-${level.price}`}
+                                        className="flex flex-col"
                                     >
-                                        {level.toLocaleString()}
-                                    </span>
+                                        <span className="text-chart-bearish text-sm font-medium">
+                                            {level.price.toLocaleString()}
+                                        </span>
+                                        <span className="text-secondary-600 text-xs">
+                                            {level.reason}
+                                        </span>
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -481,15 +524,55 @@ export function AnalysisPanel({
                                     지지
                                 </span>
                                 {analysis.keyLevels.support.map(level => (
-                                    <span
-                                        key={`support-${level}`}
-                                        className="text-chart-bullish text-sm font-medium"
+                                    <div
+                                        key={`support-${level.price}`}
+                                        className="flex flex-col"
                                     >
-                                        {level.toLocaleString()}
-                                    </span>
+                                        <span className="text-chart-bullish text-sm font-medium">
+                                            {level.price.toLocaleString()}
+                                        </span>
+                                        <span className="text-secondary-600 text-xs">
+                                            {level.reason}
+                                        </span>
+                                    </div>
                                 ))}
                             </div>
                         )}
+                    </div>
+                    {analysis.keyLevels.poc !== undefined && (
+                        <div className="flex flex-col">
+                            <span className="text-secondary-500 text-xs">
+                                PoC
+                            </span>
+                            <span className="text-sm font-medium">
+                                {analysis.keyLevels.poc.price.toLocaleString()}
+                            </span>
+                            <span className="text-secondary-600 text-xs">
+                                {analysis.keyLevels.poc.reason}
+                            </span>
+                        </div>
+                    )}
+                </div>
+            )}
+
+            {/* 가격 목표 */}
+            {(analysis.priceTargets.bullish.targets.length > 0 ||
+                analysis.priceTargets.bearish.targets.length > 0) && (
+                <div className="flex flex-col gap-2">
+                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                        가격 목표
+                    </span>
+                    <div className="grid grid-cols-2 gap-3">
+                        <PriceScenarioSection
+                            label="상승"
+                            scenario={analysis.priceTargets.bullish}
+                            colorClass="text-chart-bullish"
+                        />
+                        <PriceScenarioSection
+                            label="하락"
+                            scenario={analysis.priceTargets.bearish}
+                            colorClass="text-chart-bearish"
+                        />
                     </div>
                 </div>
             )}

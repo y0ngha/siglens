@@ -105,9 +105,30 @@ export interface SkillSignal {
     signals: Signal[];
 }
 
+export interface KeyLevel {
+    price: number;
+    reason: string;
+}
+
 export interface KeyLevels {
-    support: number[];
-    resistance: number[];
+    support: KeyLevel[];
+    resistance: KeyLevel[];
+    poc?: KeyLevel;
+}
+
+export interface PriceTarget {
+    price: number;
+    basis: string;
+}
+
+export interface PriceScenario {
+    targets: PriceTarget[];
+    condition: string;
+}
+
+export interface PriceTargets {
+    bullish: PriceScenario;
+    bearish: PriceScenario;
 }
 
 export interface PatternSummary {
@@ -137,6 +158,7 @@ export interface AnalysisResponse {
     skillSignals: SkillSignal[];
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
+    priceTargets: PriceTargets;
     patternSummaries: PatternSummary[];
     skillResults: SkillResult[];
 }
