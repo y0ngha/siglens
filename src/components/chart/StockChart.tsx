@@ -119,7 +119,7 @@ export function StockChart({
 
     useEffect(() => {
         notifyPatternOverlayChange();
-    }, [visiblePatterns, togglePattern]);
+    }, [visiblePatterns]);
 
     return <div ref={containerRef} className="h-full w-full" />;
 }

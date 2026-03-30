@@ -12,6 +12,7 @@ import type { RefObject } from 'react';
 import { LineSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import type { Bar, PatternResult } from '@/domain/types';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
 interface UsePatternOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -113,7 +114,7 @@ export function usePatternOverlay({
 
             const series = chart.addSeries(LineSeries, {
                 color: config.color,
-                lineWidth: 1,
+                lineWidth: DEFAULT_LINE_WIDTH,
                 priceLineVisible: false,
                 lastValueVisible: false,
                 title: config.label,
