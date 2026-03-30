@@ -45,6 +45,13 @@ export interface IndicatorResult {
 
 export type ChartDisplayType = 'line' | 'marker' | 'region';
 
+export type SkillCategory =
+    | 'reversal_bullish'
+    | 'reversal_bearish'
+    | 'continuation_bullish'
+    | 'continuation_bearish'
+    | 'neutral';
+
 export interface SkillChartDisplay {
     show: boolean;
     type: ChartDisplayType;
@@ -60,6 +67,7 @@ export interface Skill {
     name: string;
     description: string;
     type?: 'pattern';
+    category?: SkillCategory;
     pattern?: string;
     indicators: string[];
     confidenceWeight: number;
@@ -108,6 +116,8 @@ export interface PatternSummary {
     detected: boolean;
     trend: Trend;
     summary: string;
+    keyPrices?: number[];
+    timeRange?: { start: number; end: number };
 }
 
 export interface PatternResult extends PatternSummary {
