@@ -152,3 +152,23 @@
 - Rule: MISTAKES.md Components Rule — 외부 콜백 prop은 useEffectEvent로 래핑하여 dependency에서 제외해야 한다; FF.md Predictability 2-C(hidden behavior) 위반
 - Context: `onPatternOverlayChange`를 `useEffectEvent`로 래핑하여 `notifyPatternOverlayChange`로 만들고, `useEffect`의 dependency 배열에서 해당 prop을 제거하여 안정적인 effect 실행을 보장
 
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 3 | 2026-03-30]
+- Violation: `usePatternOverlay.ts`에서 `lineWidth: 1`을 하드코딩하여 기존 오버레이 훅들과 일관성이 없음
+- Rule: MISTAKES.md TypeScript Rule 6 — 하드코딩된 리터럴은 상수로 추출해야 한다; 다른 오버레이 훅은 모두 `DEFAULT_LINE_WIDTH` 상수를 사용
+- Context: `@/components/chart/constants`에 이미 `DEFAULT_LINE_WIDTH = 1` 상수가 정의되어 있으며, `useMAOverlay`, `useEMAOverlay`, `useBollingerOverlay`가 모두 사용 중. `usePatternOverlay`에서도 동일하게 import하여 사용하도록 수정
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 3 | 2026-03-30]
+- Violation: `loader.test.ts`의 테스트 구조가 `describe(subject) → describe(loadSkills) → describe(context) → it(behavior)` 4단계로 구성되어 규칙 위반
+- Rule: CONVENTIONS.md Test Structure / MISTAKES.md Test Rule 6 — 테스트 구조는 반드시 3단계(describe → describe(context) → it)여야 한다
+- Context: `FileSkillsLoader`가 `loadSkills` 단일 메서드만 가지므로 중간의 `describe('loadSkills')` 계층이 불필요. `category 파싱`, `display 파싱` 등 context describe 블록을 최상위 `describe('FileSkillsLoader')` 바로 아래로 올려 3단계 구조로 정리
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 4 | 2026-03-30]
+- Violation: `prompt.test.ts`에서 `describe('buildAnalysisPrompt') → describe(섹션) → describe(context) → it(behavior)` 4단계 구조가 반복됨
+- Rule: MISTAKES.md Tests Rule 6 — 테스트 구조는 반드시 `describe(subject) → describe(context) → it(behavior)` 3단계여야 한다
+- Context: `현재 시장 상황 섹션`, `최근 봉 데이터 섹션`, `거래량 분석 섹션`, `Skills 섹션` 등 여러 곳에서 섹션 describe 아래에 context describe가 추가되어 4단계가 됨. 섹션명과 context를 `'현재 시장 상황 섹션 - bars가 비어있을 때'` 형식으로 합쳐 3단계로 통일
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 4 | 2026-03-30]
+- Violation: `StockChart.tsx`의 `useEffect` dependency 배열에 `togglePattern`이 포함되어 있으나, `togglePattern`은 `useCallback([], [])`으로 항상 안정적인 함수 참조라 실질적으로 effect 재실행에 영향을 주지 않음
+- Rule: FF.md Readability — 불필요한 dependency는 코드 독자에게 'togglePattern이 변경될 수 있다'는 오해를 줄 수 있어 가독성 위반
+- Context: `[visiblePatterns, togglePattern]` dependency 중 `togglePattern`을 제거하고 `[visiblePatterns]`만 남겨 의도를 명확히 함
+
