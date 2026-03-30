@@ -172,6 +172,13 @@ Review before implementation and ensure these are not repeated.
    ❌ type Props = {...}; function ComponentA() {...} function ComponentB() {...} function MyComponent(props: Props) {...}
    ✅ type Props = {...}; function MyComponent(props: Props) {...}
 
+3. Props interface separated from component by other definitions (type aliases, helpers, sub-components)
+   → Props interface must be immediately above the component function it describes
+   → Rule: FF.md 1-G — viewpoint shift when readers must jump past intermediate definitions to find component
+   → Rule: CONVENTIONS.md — all supporting types/helpers go above the Props interface, not between Props and component
+   ❌ type PropsType = {...}; function Helper() {...} function MyComponent(props: PropsType) {...}  // Helper interrupts the Props-Component relationship
+   ✅ function Helper() {...}; type PropsType = {...}; function MyComponent(props: PropsType) {...}  // Props immediately precedes component
+
 3. Managing timeframe as a URL query parameter
    → Manage as client state only
 

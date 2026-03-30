@@ -75,7 +75,18 @@
 - Rule: CONVENTIONS.md — 반복 패턴은 전역 스타일로 추출해야 한다; AHA 원칙 — 세 번 반복되면 추상화
 - Context: 모든 `<button>` 요소에 동일하게 필요한 `cursor-pointer`를 `globals.css`의 `@layer base`에서 전역으로 선언하고, 각 컴포넌트의 className에서 `cursor-pointer` 및 `disabled:cursor-not-allowed`를 제거하여 중앙 관리
 
-## [Issue #86 | fix/86/초기-페이지-로딩-AI-분석-오류 | 2026-03-31]
-- Violation: `AnalysisStatusBannerProps` 인터페이스가 `AnalysisStatusBanner` 컴포넌트와 직접 인접하지 않고, 사이에 `AnalyzingBanner`와 `ErrorBanner` 컴포넌트 두 개가 삽입되어 있었음
-- Rule: CONVENTIONS.md — Props interface는 컴포넌트 바로 위에 정의해야 함. FF.md 1-G — 인터페이스와 컴포넌트 사이에 다른 정의가 끼어들면 독자가 viewpoint shift를 경험함
-- Context: `ChartContent.tsx`에서 `AnalysisStatusBannerProps`를 파일 상단에 배치했으나 해당 인터페이스를 사용하는 컴포넌트는 중간의 다른 두 컴포넌트 아래에 있었음. 인터페이스를 컴포넌트 직전으로 이동하여 수정
+## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
+- Violation: `IndicatorToolbar.tsx`에서 active/inactive 버튼 className ternary가 6곳에 동일하게 복사됨
+- Rule: FF.md Readability 1-A — 동일한 결과를 내는 반복 조건 로직은 추출 필수; CONVENTIONS.md — cn()으로 조건부 클래스 처리; AHA(3회 이상 반복 시 추상화)
+- Context: MA, EMA, BB, MACD, RSI, DMI 버튼 모두 동일한 ternary를 사용했으므로 `indicatorButtonClass(active: boolean)` 헬퍼로 추출하고 6곳 모두 교체
+
+## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
+- Violation: `IndicatorToolbarProps`에 `xyzVisible + onXYZToggle` 플랫 props 12개가 나열되어 새 지표 추가 시 props 2개씩 증가
+- Rule: FF.md Coupling 4-A — 함께 변경되는 props는 묶어야 한다; 새 지표마다 interface와 호출 사이트 양쪽을 수정해야 하는 tight coupling
+- Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
+
+## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | review fix | 2026-03-31]
+- Violation: MA/EMA 드롭다운 period 버튼의 className에 `cn()` 대신 template literal + inline ternary 사용
+- Rule: CONVENTIONS.md — 조건부 클래스는 반드시 `cn()`으로 처리해야 함
+- Context: `IndicatorToolbar.tsx` line 94, 130의 period 버튼에서 `` `flex ... ${condition ? '...' : '...'}` `` 패턴 사용. 위 코드의 `indicatorButtonClass` 헬퍼가 `cn()`을 올바르게 사용하는 것과 불일치함. `cn(...)` 호출로 교체하여 해결
+
