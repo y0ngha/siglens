@@ -306,12 +306,23 @@ Review before implementation and ensure these are not repeated.
    ❌ describe('GeminiProvider — API 키 미설정', () => { it('throws', ...) })
    ✅ describe('GeminiProvider', () => { describe('API 키 미설정 상태에서', () => { it('throws', ...) }) })
 
-7. Test file structure lacks module-level wrapper (2-level instead of 3-level)
+7. beforeEach/beforeAll placed at module level instead of inside describe block
+   → Rule: CONVENTIONS.md Test Rules — all setup code must be inside the relevant describe block for consistency
+   → Module-level setup (outside describe) is invisible to readers scanning the test structure
+   → Violates test cohesion principle: setup should be near its corresponding test cases
+   ❌ beforeEach(() => { mockFetch.mockReset(); });
+      describe('postAnalyze 함수는', () => { it('...', ...) })
+   ✅ describe('postAnalyze 함수는', () => {
+        beforeEach(() => { mockFetch.mockReset(); });
+        it('...', ...)
+      })
+
+8. Test file structure lacks module-level wrapper (2-level instead of 3-level)
    → Rule: CONVENTIONS.md Test Structure — describe(module/subject name) → describe(function/context) → it(behavior) is required
    ❌ describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) })  // missing module wrapper
    ✅ describe('prompt', () => { describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) }) })  // 3 levels
 
-7. Test file exceeds 3-level structure (describe → describe → describe → it) with unnecessary intermediate layers
+9. Test file exceeds 3-level structure (describe → describe → describe → it) with unnecessary intermediate layers
    → Rule: CONVENTIONS.md Test Structure — exactly 3 levels required: describe(subject) → describe(context) → it(behavior)
    → Adding extra describe layers between required levels creates nesting that obscures the test intent
    → Common offenders: adding describe(methodName) when method is the only one in the class, or describe(sectionName) between subject and context
@@ -323,7 +334,7 @@ Review before implementation and ensure these are not repeated.
    ❌ describe('생성자를 호출하면') { describe('API 키 미설정 상태에서') { it('에러를 던진다') } }  // separate describe for action when it's the only action tested
    ✅ describe('API 키 미설정 상태에서') { it('생성자를 호출하면 에러를 던진다') }  // merge into it description
 
-8. Boundary test constant redefined locally instead of imported from source
+10. Boundary test constant redefined locally instead of imported from source
    → Rule: MISTAKES.md TypeScript Rule 6 — hardcoded boundary values must be extracted to constants.ts
    → When a test file uses a boundary value (e.g. RSI_DEFAULT_PERIOD = 14, HIGH_CONFIDENCE_WEIGHT = 0.8),
      it must import the constant from domain, not redeclare it locally
@@ -331,14 +342,14 @@ Review before implementation and ensure these are not repeated.
    ❌ (confidence.test.ts) const TEST_HIGH_CONFIDENCE = 0.8; // then expect(result.confidence >= TEST_HIGH_CONFIDENCE)
    ✅ (confidence.test.ts) import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants'; expect(result.confidence >= HIGH_CONFIDENCE_WEIGHT)
 
-9. Provider pair has asymmetric error handling or logging behavior
+11. Provider pair has asymmetric error handling or logging behavior
    → Rule: FF.md Predictability 2-B — sibling functions/classes in the same family must behave consistently
    → When one Provider adds error detail (cause, console.error), apply the same change to all Providers
    ❌ GeminiProvider: catch (error) { throw new Error('...', { cause: error }); console.error(...) }
       ClaudeProvider: catch { throw new Error('...') }  // cause and console.error missing
    ✅ Both Providers use identical catch patterns with cause and console.error
 
-10. New Provider implementation missing test cases that exist in sibling Provider
+12. New Provider implementation missing test cases that exist in sibling Provider
    → Rule: FF.md Predictability 2-B — sibling classes in the same family must have symmetric test coverage
    → When a new Provider is added, all it() cases present in the existing Provider must be replicated
    → Applies to field-presence checks (e.g. 'skillsDegraded' in result), error cases, and structural assertions
@@ -347,7 +358,7 @@ Review before implementation and ensure these are not repeated.
       GeminiProvider: (missing)
    ✅ Both Providers have identical test cases covering the same behaviors and field assertions
 
-11. Provider pair has inconsistent naming conventions
+13. Provider pair has inconsistent naming conventions
    → Rule: FF.md Predictability 2-A — sibling classes must use consistent terminology
    → When two Providers define the same concept (e.g. system instructions), use identical naming
    ❌ claude.ts: const CLAUDE_SYSTEM_PROMPT

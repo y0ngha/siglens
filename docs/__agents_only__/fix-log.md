@@ -5,11 +5,6 @@
 - Rule: FF.md Coupling 4-A (독립적으로 변경될 수 있는 두 함수는 분리)
 - Context: AI 프롬프트 생성(`buildAnalysisPrompt`)과 신뢰도 데이터 주입(`enrichAnalysisWithConfidence`)은 독립적으로 변경되는 관심사이므로, `domain/analysis/confidence.ts`로 분리하여 해결
 
-## [Issue #74 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
-- Violation: `beforeEach`가 `describe` 블록 바깥 최상위 레벨에 위치하여 테스트 구조 규칙 위반
-- Rule: CONVENTIONS.md — Test Rules: 모든 setup 코드는 해당 describe 블록 내부에 위치해야 일관성 유지
-- Context: `analysisApi.test.ts`의 `mockFetch.mockReset()` beforeEach가 최상위에 있었으며, 가장 가까운 `describe('postAnalyze 함수는')` 블록 내부로 이동하여 해결
-
 ## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
 - Violation: `PatternAccordionItem` 트리거(`role="button"`)와 `SkillAccordionItem` 버튼에 `aria-expanded` 속성 누락
 - Rule: ARIA 명세 — 아코디언 트리거는 `aria-expanded` 속성으로 패널의 열림/닫힘 상태를 스크린 리더에 노출해야 함
@@ -63,11 +58,6 @@
 
 
 ## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
-- Violation: `factory.test.ts`의 `beforeEach`에서 `jest.resetModules()`를 호출하지만, 모든 import가 모듈 로드 시점에 이미 바인딩되어 있어 reset이 실제로 아무 효과도 없음
-- Rule: FF.md Readability — 오해를 유발하는 코드는 가독성을 떨어뜨림; 미래 독자가 모듈 캐시가 격리된다고 잘못 이해할 수 있음
-- Context: `factory.test.ts`는 `process.env`를 호출 시점에 읽는 factory 함수를 테스트하므로 모듈 캐시 격리가 불필요하며, 의미 없는 `jest.resetModules()` 호출을 제거하여 혼란 방지
-
-## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
 - Violation: `utils.test.ts`의 `stripMarkdownCodeBlock` 테스트가 코드 블록 앞/뒤에 일반 텍스트가 있는 경우를 커버하지 않음
 - Rule: FF.md Cohesion 3-A — 함께 변경되는 코드는 같은 위치에 있어야 한다. 함수의 엣지 케이스 커버리지는 해당 함수가 위치한 파일의 테스트에 있어야 함
 - Context: 코드 블록 앞/뒤 텍스트 처리는 `claude.test.ts`의 provider 레벨에서만 검증되고 있었으나, `stripMarkdownCodeBlock`이 `utils.ts`로 이동했으므로 해당 케이스를 `utils.test.ts`에 직접 추가
@@ -103,6 +93,11 @@
 - Rule: CONVENTIONS.md — 문서는 실제 구현과 일치해야 한다
 - Context: `domain/types.ts`의 `AnalysisResponse`에는 `patternSummaries: PatternSummary[]`, `skillResults: SkillResult[]`가 정의되어 있으나 SIGLENS_API.md에는 없었음; `PatternSummary`, `SkillResult` 인터페이스 정의와 함께 두 필드를 추가하고 JSON 예시에도 빈 배열로 반영
 
+
+## [PR #97 | feat/87/인터랙티브-요소-커서-스타일-UX-개선 | 2026-03-31]
+- Violation: `cursor-pointer`를 AnalysisPanel, TimeframeSelector, SymbolSearch 각 컴포넌트에 개별적으로 추가하여 중복 발생
+- Rule: CONVENTIONS.md — 반복 패턴은 전역 스타일로 추출해야 한다; AHA 원칙 — 세 번 반복되면 추상화
+- Context: 모든 `<button>` 요소에 동일하게 필요한 `cursor-pointer`를 `globals.css`의 `@layer base`에서 전역으로 선언하고, 각 컴포넌트의 className에서 `cursor-pointer` 및 `disabled:cursor-not-allowed`를 제거하여 중앙 관리
 
 ## [Issue #86 | fix/86/초기-페이지-로딩-AI-분석-오류 | 2026-03-31]
 - Violation: `AnalysisStatusBannerProps` 인터페이스가 `AnalysisStatusBanner` 컴포넌트와 직접 인접하지 않고, 사이에 `AnalyzingBanner`와 `ErrorBanner` 컴포넌트 두 개가 삽입되어 있었음
