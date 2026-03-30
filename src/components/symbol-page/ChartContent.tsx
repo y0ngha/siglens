@@ -86,7 +86,7 @@ export function ChartContent({
     const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
 
     return (
-        <>
+        <div className="flex h-full w-full flex-col md:flex-row">
             {/* 차트 영역 */}
             <div className="flex h-[60vh] min-h-0 flex-col overflow-hidden md:h-auto md:flex-1">
                 {/* 캔들 차트 */}
@@ -112,6 +112,6 @@ export function ChartContent({
                     onReanalyze={handleReanalyze}
                 />
             </aside>
-        </>
+        </div>
     );
 }
