@@ -88,7 +88,7 @@ export function ChartContent({
     return (
         <>
             {/* 차트 영역 */}
-            <div className="flex h-[60vh] flex-col overflow-hidden md:h-auto md:flex-1">
+            <div className="flex h-[60vh] min-h-0 flex-col overflow-hidden md:h-auto md:flex-1">
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
                     <StockChart bars={bars} indicators={indicators} />
@@ -102,7 +102,7 @@ export function ChartContent({
 
             {/* AI 분석 패널 */}
             <aside
-                className="border-secondary-700 overflow-y-auto border-t p-4 md:w-80 md:shrink-0 md:border-t-0 md:border-l"
+                className="border-secondary-700 min-h-0 flex-1 overflow-y-auto border-t p-4 md:w-80 md:flex-none md:border-t-0 md:border-l"
                 aria-live="polite"
             >
                 <AnalysisStatusBanner status={analysisStatus} />

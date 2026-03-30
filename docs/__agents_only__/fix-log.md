@@ -5,25 +5,6 @@
 - Rule: FF.md Coupling 4-A (독립적으로 변경될 수 있는 두 함수는 분리)
 - Context: AI 프롬프트 생성(`buildAnalysisPrompt`)과 신뢰도 데이터 주입(`enrichAnalysisWithConfidence`)은 독립적으로 변경되는 관심사이므로, `domain/analysis/confidence.ts`로 분리하여 해결
 
-## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
-- Violation: `PatternAccordionItem` 트리거(`role="button"`)와 `SkillAccordionItem` 버튼에 `aria-expanded` 속성 누락
-- Rule: ARIA 명세 — 아코디언 트리거는 `aria-expanded` 속성으로 패널의 열림/닫힘 상태를 스크린 리더에 노출해야 함
-- Context: `PatternAccordionItem`의 `div[role="button"]`과 `SkillAccordionItem`의 `<button>` 모두 `isOpen` 상태를 갖고 있으나 `aria-expanded` 속성이 없어 접근성 미충족
-
-## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
-- Violation: `PatternAccordionItem`과 `SkillAccordionItem`에서 `isOpen && (...)` 패턴으로 조건부 렌더링을 구현함
-- Rule: CONVENTIONS.md / vercel-react-best-practices `rendering-conditional-render` — `&&`보다 삼항 연산자(`condition ? <A /> : null`)를 사용하는 것이 권장됨
-- Context: 두 아코디언 컴포넌트의 콘텐츠 패널이 모두 `isOpen && (<div>...)` 패턴을 사용하고 있었으며, `isOpen ? (<div>...) : null`로 수정하여 규칙을 준수
-
-## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
-- Violation: `pattern.detected`에 따라 '감지됨'/'미감지' 텍스트를 if/else 분기(`? ... : ...`)로 렌더링하여 동시에 실행되지 않는 상태가 한 컴포넌트 안에 혼재함
-- Rule: FF.md 1-A — 동시에 실행되지 않는 상태는 분리하거나 객체 맵으로 선언적으로 표현하는 것이 가독성을 높임
-- Context: `PatternAccordionItem` 내부에서 `pattern.detected`에 따라 다른 className과 label을 렌더링하는 로직을 `DETECTED_BADGE_CONFIG` 객체 맵과 `DetectedBadge` 컴포넌트로 분리하여 선언적으로 표현
-
-## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
-- Violation: `EyeIcon` 컴포넌트에서 `if (isVisible)` 조기 반환 패턴(명령형)을 사용하여 컴포넌트 선언적 스타일 규칙 위반
-- Rule: CONVENTIONS.md — Declarative required for components: 컴포넌트는 선언적 스타일을 필수로 사용해야 함
-- Context: `EyeIcon`이 `isVisible` 값에 따라 if/return 분기로 두 개의 SVG 중 하나를 반환하고 있었으며, 삼항 연산자(`isVisible ? <svg>...</svg> : <svg>...</svg>`)로 변경하여 선언적 스타일을 준수
 
 ## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
 - Violation: `DETECTED_BADGE_CONFIG`의 `Record` 키 타입에 인라인 유니온 리터럴 `'detected' | 'undetected'`(2개 멤버)가 직접 작성됨

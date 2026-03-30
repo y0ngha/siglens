@@ -230,6 +230,15 @@ Review before implementation and ensure these are not repeated.
         setVisible(new Set(props.items.filter(item => item.detected).map(item => item.id)));
       }, [props.items]);
       // or use useReducer with dispatch({ type: 'reset', payload: newItems })
+
+10. Missing aria-expanded attribute on accordion triggers
+    → Accordion toggle elements (role="button" or <button>) must declare aria-expanded when managing hidden content
+    → Rule: ARIA spec — interactive controls that toggle visibility must expose state to screen readers
+    → Applies to both custom div[role="button"] and native <button> accordion triggers
+    ❌ <div role="button" onClick={toggle}>Trigger</div><div className={isOpen ? '' : 'hidden'}>Content</div>
+    ✅ <div role="button" onClick={toggle} aria-expanded={isOpen}>Trigger</div><div hidden={!isOpen}>Content</div>
+    ❌ <button onClick={toggle}>Trigger</button><div className={isOpen ? '' : 'hidden'}>Content</div>
+    ✅ <button onClick={toggle} aria-expanded={isOpen}>Trigger</button><div hidden={!isOpen}>Content</div>
 ```
 
 ---
