@@ -741,6 +741,26 @@ describe('buildAnalysisPrompt', () => {
             );
             expect(result).toContain('detected');
         });
+
+        it('patternSummaries 스키마에 keyPrices 필드가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('keyPrices');
+        });
+
+        it('patternSummaries 스키마에 timeRange 필드가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('timeRange');
+        });
     });
 
     describe('skills 기본값', () => {

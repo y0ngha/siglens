@@ -139,7 +139,7 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
     riskLevel: '"low | medium | high"',
     keyLevels: '{ "support": [], "resistance": [] }',
     patternSummaries:
-        '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "..." }]',
+        '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "...", "keyPrices": [150.00], "timeRange": { "start": 1700000000, "end": 1700100000 } }]',
     skillResults:
         '[{ "skillName": "...", "trend": "bullish | bearish | neutral", "summary": "..." }]',
 };
