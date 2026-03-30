@@ -6,3 +6,4 @@ process.env.ALPACA_API_KEY = 'test-alpaca-key';
 process.env.ALPACA_API_SECRET = 'test-alpaca-secret';
 process.env.AI_PROVIDER = 'claude';
 process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
+process.env.GEMINI_API_KEY = 'test-gemini-key';

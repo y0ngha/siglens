@@ -161,7 +161,8 @@ interface AnalysisResponse {
 ```
 POST /api/analyze
   → domain/analysis/prompt.ts → 프롬프트 구성
-  → infrastructure/ai/claude.ts → Claude API 호출
+  → infrastructure/ai/factory.ts → AI_PROVIDER 환경변수로 프로바이더 선택 (claude | gemini)
+  → infrastructure/ai/{claude|gemini}.ts → AI API 호출
   → AnalysisResponse 반환
 ```
 

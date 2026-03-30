@@ -235,6 +235,19 @@ Review before implementation and ensure these are not repeated.
 
 5. Missing initial-period null test case for period-based indicators
    → Adding it at the stub stage guards against regressions after real implementation
+
+6. Test file uses only 2-level structure (describe → it) instead of required 3 levels
+   → Rule: CONVENTIONS.md Test Structure — describe(subject) → describe(context) → it(behavior) is mandatory
+   → Add an intermediate context describe block between the top-level describe and its it() cases
+   ❌ describe('GeminiProvider — API 키 미설정', () => { it('throws', ...) })
+   ✅ describe('GeminiProvider', () => { describe('API 키 미설정 상태에서', () => { it('throws', ...) }) })
+
+7. Provider pair has asymmetric error handling or logging behavior
+   → Rule: FF.md Predictability 2-B — sibling functions/classes in the same family must behave consistently
+   → When one Provider adds error detail (cause, console.error), apply the same change to all Providers
+   ❌ GeminiProvider: catch (error) { throw new Error('...', { cause: error }); console.error(...) }
+      ClaudeProvider: catch { throw new Error('...') }  // cause and console.error missing
+   ✅ Both Providers use identical catch patterns with cause and console.error
 ```
 
 ---

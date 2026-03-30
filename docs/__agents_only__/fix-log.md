@@ -65,6 +65,51 @@
 - Rule: MISTAKES.md Tests Rule 3 — 새 필드가 추가되면 그 존재 여부나 값을 검증하는 it() 케이스가 최소 하나 있어야 한다
 - Context: `skillsDegraded`가 domain 타입에 optional로 있었으나 `ClaudeProvider.analyze()`가 이 필드를 포함하지 않는다는 사실을 검증하는 케이스가 없었음; `'skillsDegraded' in result`가 `false`임을 검증하는 테스트를 추가
 
+## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
+- Violation: `MARKDOWN_CODE_BLOCK_PATTERN`과 `stripMarkdownCodeBlock`이 `claude.ts`와 `gemini.ts`에 동일하게 중복 정의됨
+- Rule: MISTAKES.md Coding Paradigm #8 — 같은 알고리즘을 재구현하지 말 것. 새 함수를 작성하기 전에 기존 헬퍼를 확인할 것.
+- Context: 두 AI provider 파일에 동일한 정규식 패턴과 헬퍼 함수가 각각 선언되어 있었으며, `src/infrastructure/ai/utils.ts`로 추출하고 양쪽에서 임포트하도록 수정
+
+## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | review fix | 2026-03-30]
+- Violation: `gemini.ts`의 상수명 `GEMINI_SYSTEM_INSTRUCTION`이 `claude.ts`의 `CLAUDE_SYSTEM_PROMPT`와 다른 어휘를 사용함
+- Rule: FF.md Predictability 2-A — 같은 역할을 하는 상수는 같은 네이밍 컨벤션을 따라야 한다
+- Context: 두 provider 모두 AI에 전달하는 시스템 지시문 상수를 가지고 있으나 `INSTRUCTION` vs `PROMPT`로 다르게 명명되어 있었으며, `GEMINI_SYSTEM_PROMPT`로 통일하여 독자가 두 파일을 비교할 때 정신적 매핑이 필요 없도록 수정
+
+## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | review fix 2 | 2026-03-30]
+- Violation: `GEMINI_SYSTEM_PROMPT`와 `CLAUDE_SYSTEM_PROMPT`가 동일한 문자열 값을 각 파일에 별도로 선언함
+- Rule: FF.md Cohesion 3-B — 동일한 값이 두 파일에 분산되면 한쪽만 수정될 위험이 있음; 단일 지점에서 관리해야 함
+- Context: `claude.ts`와 `gemini.ts` 각각에 동일한 system prompt 상수가 중복 선언되어 있었으며, `utils.ts`에 `AI_SYSTEM_PROMPT` 공통 상수를 추출하고 두 파일에서 import하도록 수정
+
+## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
+- Violation: `process.env.AI_PROVIDER ?? DEFAULT_AI_PROVIDER`로 기본값을 먼저 할당한 뒤 `in` 연산자로 재검증하여 `undefined`인 경우를 올바르게 처리하지 못함
+- Rule: CONVENTIONS.md Coding Paradigm — 중복 로직을 제거하고 단일 확인으로 단순화해야 함
+- Context: `factory.ts`의 `createAIProvider`에서 `raw`에 기본값을 먼저 할당하면 `undefined` 케이스가 `in` 연산자 이전에 이미 처리되어 논리가 불명확해짐; `raw && raw in AI_PROVIDER_MAP` 패턴으로 단순화
+
+## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
+- Violation: `gemini.ts`의 JSON 파싱 실패 `catch` 블록에서 원본 에러를 무시하고 새 에러만 throw함
+- Rule: FF.md Predictability 2-C — 숨겨진 정보(원본 에러)를 명시적으로 드러내야 디버깅이 가능함
+- Context: `catch {}` 블록에서 에러 인자를 받지 않고 새 Error만 throw하여 원본 파싱 에러와 실패한 raw text가 손실됨; `cause: error` 옵션과 `console.error`로 원본 에러 및 텍스트를 포함하도록 수정
+
+## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
+- Violation: `GeminiProvider`의 `skillsDegraded` 필드 부재를 검증하는 테스트 케이스 누락
+- Rule: MISTAKES.md Tests Rule 3 — 새 필드가 추가되면 그 존재 여부나 값을 검증하는 it() 케이스가 최소 하나 있어야 함; FF.md Predictability 2-B — 같은 패밀리의 Provider는 동일한 테스트 패턴을 따라야 함
+- Context: `ClaudeProvider`에 `skillsDegraded 필드를 포함하지 않는다` 테스트가 있었으나 `GeminiProvider`에는 동일한 케이스가 없었음; `'skillsDegraded' in result`가 `false`임을 검증하는 테스트를 추가
+
+## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
+- Violation: `factory.test.ts`의 `beforeEach`에서 `jest.resetModules()`를 호출하지만, 모든 import가 모듈 로드 시점에 이미 바인딩되어 있어 reset이 실제로 아무 효과도 없음
+- Rule: FF.md Readability — 오해를 유발하는 코드는 가독성을 떨어뜨림; 미래 독자가 모듈 캐시가 격리된다고 잘못 이해할 수 있음
+- Context: `factory.test.ts`는 `process.env`를 호출 시점에 읽는 factory 함수를 테스트하므로 모듈 캐시 격리가 불필요하며, 의미 없는 `jest.resetModules()` 호출을 제거하여 혼란 방지
+
+## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
+- Violation: `utils.test.ts`의 `stripMarkdownCodeBlock` 테스트가 코드 블록 앞/뒤에 일반 텍스트가 있는 경우를 커버하지 않음
+- Rule: FF.md Cohesion 3-A — 함께 변경되는 코드는 같은 위치에 있어야 한다. 함수의 엣지 케이스 커버리지는 해당 함수가 위치한 파일의 테스트에 있어야 함
+- Context: 코드 블록 앞/뒤 텍스트 처리는 `claude.test.ts`의 provider 레벨에서만 검증되고 있었으나, `stripMarkdownCodeBlock`이 `utils.ts`로 이동했으므로 해당 케이스를 `utils.test.ts`에 직접 추가
+
+## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
+- Violation: `describe('생성자를 호출하면')` 중간 계층이 추가되어 테스트 구조가 4단계(describe → describe → describe → it)가 됨
+- Rule: MISTAKES.md Tests Rule 6 — `describe(subject) → describe(context) → it(behavior)` 3단계 구조가 필수이며, 4단계 중첩은 규칙 위반
+- Context: `gemini.test.ts`의 `GEMINI_API_KEY가 설정되지 않은 경우` describe 블록 안에 불필요한 `생성자를 호출하면` describe 계층이 있었음; `describe('생성자를 호출하면')` 계층을 제거하고 해당 내용을 `it('생성자를 호출하면 에러를 던진다')` 설명에 통합하여 3단계로 통일
+
 ## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그
 - Rule: MISTAKES.md — Components: Managing timeframe as URL query parameter / useEffect Side Effect Isolation (올바른 초기값으로 ref를 초기화해야 함)
