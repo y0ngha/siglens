@@ -38,7 +38,7 @@ export const fetchBars = async (...) => { ... }
 
 ### market/ (Alpaca API)
 
-- **Auth**: `ALPACA_API_KEY`, `ALPACA_SECRET_KEY` (env vars)
+- **Auth**: `ALPACA_API_KEY`, `ALPACA_API_SECRET` (env vars)
 - **Base URL**: `https://data.alpaca.markets`
 - **Rate Limit**: Free plan 200 req/min
 - **Data Delay**: 15 min (free plan, no SIP feed)
@@ -62,7 +62,7 @@ APCA-API-SECRET-KEY: {SECRET_KEY}
 
 | Parameter | Required | Description |
 |---|---|---|
-| timeframe | Y | `1Min`, `5Min`, `15Min`, `30Min`, `1Hour`, `1Day` |
+| timeframe | Y | `1Min`, `5Min`, `15Min`, `1Hour`, `1Day` |
 | start | N | RFC 3339 (bar start time) |
 | end | N | RFC 3339 (bar end time) |
 | limit | N | max 10000, default 1000 |

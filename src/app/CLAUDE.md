@@ -28,7 +28,7 @@ This folder is **routing only** — do not implement business logic or UI compon
 ```
 /AAPL request
   → app/[symbol]/page.tsx (RSC)
-    → infrastructure/market/alpaca.ts → Alpaca API (last 500 bars)
+    → infrastructure/market/alpaca.ts → Alpaca API (bars, count varies by timeframe)
     → domain/indicators/* → indicator calculations
     → domain/analysis/prompt.ts → AI prompt construction
     → infrastructure/ai → AI analysis
@@ -78,7 +78,6 @@ Handles AI re-analysis requests.
   symbol: string;
   bars: Bar[];
   indicators: IndicatorResult;
-  timeframe: Timeframe;
 }
 ```
 
@@ -87,7 +86,7 @@ Handles AI re-analysis requests.
 2. `domain/analysis/prompt.ts` → construct prompt (with Skills)
 3. `infrastructure/ai` → call AI analysis
 
-**Response:** `{ analysis: string }`
+**Response:** `AnalyzeRouteResponse` (extends `AnalysisResponse` with `skillsDegraded: boolean`)
 
 ---
 

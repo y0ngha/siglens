@@ -23,12 +23,16 @@ React Client Components layer. Handles UI rendering and user interactions.
 - All files must have `'use client'` directive
 - Use `export function` (named function declaration)
 - No `export default`, `React.FC`, or `React.memo()`
-- Define Props inline (no separate type alias needed)
+- Define Props interface directly above the component (not inline)
 
 ```typescript
 'use client';
 
-// ✅ Correct
+// ✅ Correct — Props interface above the component
+interface StockChartProps { symbol: string; bars: Bar[]; }
+export function StockChart({ symbol, bars }: StockChartProps) { ... }
+
+// ❌ Forbidden — inline prop types
 export function StockChart({ symbol, bars }: { symbol: string; bars: Bar[] }) { ... }
 
 // ❌ Forbidden
@@ -115,7 +119,7 @@ See `docs/DESIGN.md` for the full color system, indicator line colors, and Tailw
 
 ## Common Mistakes
 
-- Using `React.FC` → use inline Props type
+- Using `React.FC` → use Props interface + named function
 - Using `export default` → use `export function`
 - Direct infrastructure import → access via hooks/
 - Missing `'use client'` → required in all component files

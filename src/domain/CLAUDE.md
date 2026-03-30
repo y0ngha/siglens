@@ -27,7 +27,7 @@ Indicator calculations must be **implemented from scratch** without external lib
 
 ```typescript
 // ✅ Correct
-export function calculateRSI(closes: number[], period: number): number[] { ... }
+export function calculateRSI(closes: number[], period: number): (number | null)[] { ... }
 
 // ❌ Forbidden
 export default function calculateRSI(...) { ... }
@@ -50,41 +50,47 @@ export const calculateRSI = (...) => { ... }
 
 ```typescript
 interface Bar {
-  time: string;    // ISO 8601
+  time: number;    // Unix timestamp (seconds)
   open: number;
   high: number;
   low: number;
   close: number;
   volume: number;
+  vwap?: number;   // Alpaca 제공
 }
 
-type Timeframe = '1Min' | '5Min' | '15Min' | '30Min' | '1Hour' | '1Day';
+type Timeframe = '1Min' | '5Min' | '15Min' | '1Hour' | '1Day';
 ```
 
-### Timeframe-specific Settings
+### Indicator Constants
 
-| Indicator | 1Day | 1Hour | 30Min | 15Min | 5Min | 1Min |
-|---|---|---|---|---|---|---|
-| RSI period | 14 | 14 | 14 | 10 | 10 | 7 |
-| MACD (f,s,sig) | 12,26,9 | 12,26,9 | 12,26,9 | 8,17,9 | 8,17,9 | 6,13,5 |
-| BB period | 20 | 20 | 20 | 15 | 15 | 10 |
-| BB stdDev | 2 | 2 | 2 | 2 | 2 | 2 |
-| MA periods | 5,10,20,60,120 | 5,10,20,50 | 5,10,20,50 | 5,10,20 | 5,10,20 | 5,10,20 |
-| EMA periods | 5,10,20,60,120 | 5,10,20,50 | 5,10,20,50 | 5,10,20 | 5,10,20 | 5,10,20 |
-| DMI period | 14 | 14 | 14 | 10 | 10 | 7 |
-| DMI ADX smooth | 14 | 14 | 14 | 10 | 10 | 7 |
-| VWAP reset | daily | daily | daily | daily | daily | daily |
+All timeframes share the same indicator settings:
+
+```
+RSI_DEFAULT_PERIOD = 14
+MACD: fast=12, slow=26, signal=9
+Bollinger: period=20, stdDev=2
+DMI_DEFAULT_PERIOD = 14
+MA_DEFAULT_PERIODS = [20]
+EMA_DEFAULT_PERIODS = [9, 20, 21, 60]
+```
+
+Timeframe-specific EMA selection is handled at the call site (see `docs/DOMAIN.md`).
 
 ### IndicatorResult Rules
 
 - Calculation results are unified into `IndicatorResult` type
-- Each indicator function returns **raw arrays** (number[])
+- Each indicator function returns **raw arrays** (`(number | null)[]`)
 - IndicatorResult assembly happens at the call site (infrastructure or app)
 - Domain functions must not directly construct IndicatorResult
 
 ### Bar Count
 
-All timeframes: 500 bars.
+Varies by timeframe (defined in `domain/constants/market.ts`):
+
+```
+1Min: 200, 5Min: 288, 15Min: 200, 1Hour: 200, 1Day: 500
+```
 
 ---
 
