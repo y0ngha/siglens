@@ -33,7 +33,7 @@ export function TimeframeSelector({ value, onChange }: TimeframeSelectorProps) {
                     type="button"
                     onClick={() => onChange(timeframe)}
                     className={cn(
-                        'focus-visible:ring-primary-500 rounded border px-3 py-1 text-sm font-medium transition-colors focus-visible:ring-1',
+                        'focus-visible:ring-primary-500 cursor-pointer rounded border px-3 py-1 text-sm font-medium transition-colors focus-visible:ring-1',
                         timeframe === value
                             ? 'border-primary-400 text-primary-400'
                             : 'text-secondary-400 hover:text-secondary-200 border-transparent'
