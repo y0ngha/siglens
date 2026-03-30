@@ -250,14 +250,31 @@ Review before implementation and ensure these are not repeated.
    ❌ describe('GeminiProvider — API 키 미설정', () => { it('throws', ...) })
    ✅ describe('GeminiProvider', () => { describe('API 키 미설정 상태에서', () => { it('throws', ...) }) })
 
-7. Provider pair has asymmetric error handling or logging behavior
+7. Test file exceeds 3-level structure (describe → describe → describe → it) with unnecessary intermediate layers
+   → Rule: CONVENTIONS.md Test Structure — exactly 3 levels required: describe(subject) → describe(context) → it(behavior)
+   → Adding extra describe layers between required levels creates nesting that obscures the test intent
+   → Common offenders: adding describe(methodName) when method is the only one in the class, or describe(sectionName) between subject and context
+   ❌ describe('FileSkillsLoader') { describe('loadSkills') { describe('파일이 없을 때') { it('에러를 던진다') } } }  // 4 levels
+   ✅ describe('FileSkillsLoader') { describe('파일이 없을 때') { it('에러를 던진다') } }  // 3 levels
+   ❌ describe('buildAnalysisPrompt') { describe('현재 시장 상황 섹션') { describe('bars가 비어있을 때') { it('섹션이 생성된다') } } }  // 4 levels
+   ✅ describe('buildAnalysisPrompt') { describe('현재 시장 상황 섹션 - bars가 비어있을 때') { it('섹션이 생성된다') } }  // merge context into describe text
+
+8. Boundary test constant redefined locally instead of imported from source
+   → Rule: MISTAKES.md TypeScript Rule 6 — hardcoded boundary values must be extracted to constants.ts
+   → When a test file uses a boundary value (e.g. RSI_DEFAULT_PERIOD = 14, HIGH_CONFIDENCE_WEIGHT = 0.8),
+     it must import the constant from domain, not redeclare it locally
+   → Local redeclaration breaks when the constant changes; importing ensures test stays in sync
+   ❌ (confidence.test.ts) const TEST_HIGH_CONFIDENCE = 0.8; // then expect(result.confidence >= TEST_HIGH_CONFIDENCE)
+   ✅ (confidence.test.ts) import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants'; expect(result.confidence >= HIGH_CONFIDENCE_WEIGHT)
+
+9. Provider pair has asymmetric error handling or logging behavior
    → Rule: FF.md Predictability 2-B — sibling functions/classes in the same family must behave consistently
    → When one Provider adds error detail (cause, console.error), apply the same change to all Providers
    ❌ GeminiProvider: catch (error) { throw new Error('...', { cause: error }); console.error(...) }
       ClaudeProvider: catch { throw new Error('...') }  // cause and console.error missing
    ✅ Both Providers use identical catch patterns with cause and console.error
 
-8. New Provider implementation missing test cases that exist in sibling Provider
+10. New Provider implementation missing test cases that exist in sibling Provider
    → Rule: FF.md Predictability 2-B — sibling classes in the same family must have symmetric test coverage
    → When a new Provider is added, all it() cases present in the existing Provider must be replicated
    → Applies to field-presence checks (e.g. 'skillsDegraded' in result), error cases, and structural assertions
