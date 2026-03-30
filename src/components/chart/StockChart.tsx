@@ -1,8 +1,14 @@
 'use client';
 
 import { useEffect, useEffectEvent, useRef } from 'react';
+import type { RefObject } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import type {
+    IChartApi,
+    ISeriesApi,
+    LineWidth,
+    UTCTimestamp,
+} from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult, PatternResult } from '@/domain/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
@@ -18,6 +24,13 @@ import {
     MA_DEFAULT_PERIODS,
     EMA_DEFAULT_PERIODS,
 } from '@/domain/indicators/constants';
+
+interface CommonHookParams {
+    chartRef: RefObject<IChartApi | null>;
+    bars: Bar[];
+    indicators: IndicatorResult;
+    lineWidth: LineWidth;
+}
 
 const EMPTY_INDICATORS: IndicatorResult = {
     macd: [],
@@ -97,50 +110,30 @@ export function StockChart({
         chartRef.current.timeScale().fitContent();
     }, [bars]);
 
+    const commonHookParams: CommonHookParams = {
+        chartRef,
+        bars,
+        indicators,
+        lineWidth: DEFAULT_LINE_WIDTH,
+    };
+
     const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
-        useMAOverlay({
-            chartRef,
-            bars,
-            indicators,
-            lineWidth: DEFAULT_LINE_WIDTH,
-        });
+        useMAOverlay(commonHookParams);
 
     const { visiblePeriods: emaVisiblePeriods, togglePeriod: toggleEMAPeriod } =
-        useEMAOverlay({
-            chartRef,
-            bars,
-            indicators,
-            lineWidth: DEFAULT_LINE_WIDTH,
-        });
+        useEMAOverlay(commonHookParams);
 
     const { isVisible: bollingerVisible, toggle: toggleBollinger } =
-        useBollingerOverlay({
-            chartRef,
-            bars,
-            indicators,
-            lineWidth: DEFAULT_LINE_WIDTH,
-        });
+        useBollingerOverlay(commonHookParams);
 
-    const { isVisible: macdVisible, toggle: toggleMACD } = useMACDChart({
-        chartRef,
-        bars,
-        indicators,
-        lineWidth: DEFAULT_LINE_WIDTH,
-    });
+    const { isVisible: macdVisible, toggle: toggleMACD } =
+        useMACDChart(commonHookParams);
 
-    const { isVisible: rsiVisible, toggle: toggleRSI } = useRSIChart({
-        chartRef,
-        bars,
-        indicators,
-        lineWidth: DEFAULT_LINE_WIDTH,
-    });
+    const { isVisible: rsiVisible, toggle: toggleRSI } =
+        useRSIChart(commonHookParams);
 
-    const { isVisible: dmiVisible, toggle: toggleDMI } = useDMIChart({
-        chartRef,
-        bars,
-        indicators,
-        lineWidth: DEFAULT_LINE_WIDTH,
-    });
+    const { isVisible: dmiVisible, toggle: toggleDMI } =
+        useDMIChart(commonHookParams);
 
     const { visiblePatterns, togglePattern } = usePatternOverlay({
         chartRef,
