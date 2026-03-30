@@ -126,3 +126,29 @@
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그
 - Rule: MISTAKES.md — Components: Managing timeframe as URL query parameter / useEffect Side Effect Isolation (올바른 초기값으로 ref를 초기화해야 함)
 - Context: `useBars`가 `useSuspenseQuery`를 사용하기 때문에 캐시 miss 시 ChartContent가 remount되는데, 이때 `useRef(timeframeChangeCount)`로 초기화하면 ref.current가 현재 count 값과 동일해져서 useEffect에서 조기 반환이 발생하여 분석이 실행되지 않음. `useRef(0)`으로 초기화해야 remount 시에도 올바르게 동작함.
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `useState` lazy initializer로 `patterns` prop으로부터 초기 `visiblePatterns`를 계산하여 이후 prop 변경 시 동기화되지 않는 버그
+- Rule: MISTAKES.md Components Rule 6 — stale closure state 사용 금지; `useState` initializer는 초기 렌더링에만 실행되므로 이후 prop 변경이 반영되지 않음
+- Context: `usePatternOverlay`에서 `patterns`가 비동기로 로드되는 경우 lazy initializer가 빈 배열로 실행되어 패턴이 차트에 표시되지 않는 버그 발생. `useReducer`와 `dispatch({ type: 'reset' })`으로 prop 변경 시 동기화
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `useEffect` 두 곳에서 `patterns.filter(p => p.detected && p.renderConfig)` 중복 계산
+- Rule: FF.md Cohesion 3-B — 같은 값이 여러 곳에 흩어지면 변경 시 누락 위험; `useMemo`로 단일 출처(single source of truth) 유지
+- Context: `usePatternOverlay`의 시리즈 lifecycle 관리 effect와 데이터 동기화 effect 양쪽에서 동일한 필터링이 반복됨. `detectedPatterns` useMemo로 추출하여 두 effect에서 공유
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `loader.ts` `parseYamlBlock`에서 `let i = 0; while (i < lines.length)` + `i++` 패턴 사용
+- Rule: MISTAKES.md Coding Paradigm Rule 1, 3 — 데이터 변환에 for/while 금지; let 재할당 금지
+- Context: YAML 중첩 블록 파싱 함수에서 명령형 루프와 let 재할당으로 구현됨. `reduce` 기반 선언적 구현으로 교체하고 라인 분류 로직을 `classifyLine` 순수 함수로 추출
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `StockChart.tsx`의 `onPatternOverlayReady` prop 이름이 실제 동작(반복 호출)을 오해하게 만듦
+- Rule: FF.md Predictability 2-C — 이름, 파라미터, 반환값만으로 동작을 예측할 수 있어야 함
+- Context: prop이 초기화 완료 시 한 번만 호출되는 이벤트처럼 읽히나 실제로는 `visiblePatterns`나 `togglePattern` 변경 시마다 반복 호출됨. `onPatternOverlayChange`로 변경
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 2 | 2026-03-30]
+- Violation: `StockChart.tsx`의 `useEffect`에서 `onPatternOverlayChange` 콜백 prop이 dependency 배열에 포함되어, 호출자가 인라인 함수로 전달하면 매 렌더마다 effect가 재실행되는 무한 루프 위험
+- Rule: MISTAKES.md Components Rule — 외부 콜백 prop은 useEffectEvent로 래핑하여 dependency에서 제외해야 한다; FF.md Predictability 2-C(hidden behavior) 위반
+- Context: `onPatternOverlayChange`를 `useEffectEvent`로 래핑하여 `notifyPatternOverlayChange`로 만들고, `useEffect`의 dependency 배열에서 해당 prop을 제거하여 안정적인 effect 실행을 보장
+
