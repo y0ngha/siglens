@@ -14,10 +14,6 @@ import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 
-interface AnalysisStatusBannerProps {
-    status: AnalysisStatus;
-}
-
 function AnalyzingBanner() {
     return (
         <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
@@ -38,6 +34,10 @@ function ErrorBanner({ message }: ErrorBannerProps) {
     );
 }
 
+interface AnalysisStatusBannerProps {
+    status: AnalysisStatus;
+}
+
 function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
     if (status.type === 'analyzing') return <AnalyzingBanner />;
     if (status.type === 'error')
@@ -53,6 +53,8 @@ interface ChartContentProps {
     initialBars: Bar[];
     initialIndicators: IndicatorResult;
     initialAnalysis: AnalysisResponse;
+    /** 서버에서 초기 AI 분석이 실패했는지 여부. true이면 마운트 시 자동으로 재분석을 실행한다. */
+    initialAnalysisFailed: boolean;
 }
 
 export function ChartContent({
@@ -62,6 +64,7 @@ export function ChartContent({
     initialBars,
     initialIndicators,
     initialAnalysis,
+    initialAnalysisFailed,
 }: ChartContentProps) {
     const { bars, indicators } = useBars({
         symbol,
@@ -74,6 +77,7 @@ export function ChartContent({
         useAnalysis({
             symbol,
             initialAnalysis,
+            initialAnalysisFailed,
             timeframeChangeCount,
             bars,
             indicators,

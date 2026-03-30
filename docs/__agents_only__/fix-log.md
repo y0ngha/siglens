@@ -1,36 +1,6 @@
 # Fix Log
 
 ## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
-- Violation: `MIN_CONFIDENCE_WEIGHT = 0.5`가 `prompt.ts`에 모듈 레벨 로컬 상수로 선언되어 `domain/indicators/constants.ts`에 속해야 할 도메인 경계값이 분리됨
-- Rule: MISTAKES.md TypeScript Rule 6 — 도메인 경계값(임계값, 기본값)은 `domain/indicators/constants.ts`에 추출해야 함. `HIGH_CONFIDENCE_WEIGHT`가 이미 그곳에 있으므로 `MIN_CONFIDENCE_WEIGHT`도 함께 위치해야 함
-- Context: `prompt.ts`의 skills 필터링에 사용하는 최소 신뢰도 임계값을 `constants.ts`로 이동하고, `prompt.ts`에서 import하도록 수정
-
-## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
-- Violation: `prompt.test.ts`에서 `const TEST_MIN_CONFIDENCE_WEIGHT = 0.5`로 경계값을 로컬 재선언
-- Rule: MISTAKES.md Tests Rule 8 — 경계값 테스트 상수는 소스 상수에서 import해야 하며 재선언하지 않음
-- Context: `MIN_CONFIDENCE_WEIGHT`가 `constants.ts`로 승격된 후 테스트에서 해당 값을 import하여 사용하도록 수정
-
-## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
-- Violation: `confidence.ts`에서 매칭되지 않는 skill의 기본 `confidenceWeight`로 `?? 0` 리터럴을 두 곳에서 중복 사용
-- Rule: MISTAKES.md TypeScript Rule 6 — 구현 코드의 하드코딩된 리터럴은 named constant로 추출해야 함
-- Context: `UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0` 상수를 `constants.ts`에 추가하고 `confidence.ts`의 두 `?? 0`을 교체하여 의도를 명시적으로 표현
-
-## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
-- Violation: `enrichAnalysisWithConfidence`의 입력 타입이 `AnalysisResponse`로 선언되어, AI 원시 응답(confidenceWeight 없음)과 타입 불일치 발생
-- Rule: MISTAKES.md TypeScript Rule 13 — 타입은 실제 데이터 구조와 일치해야 하며, 레이어 관심사에 따라 올바른 위치에 정의해야 함
-- Context: AI가 반환하는 raw response에는 confidenceWeight가 없으므로 입력 타입을 RawAnalysisResponse(Omit<AnalysisResponse, 'patternSummaries' | 'skillResults'>)로 분리하여 타입 안전성 확보
-
-## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
-- Violation: `confidence.test.ts`가 4단계 describe 구조 사용 (describe → describe → describe → it)
-- Rule: MISTAKES.md Tests Rule 7 — 정확히 3단계 구조 필수: describe(subject) → describe(context) → it(behavior)
-- Context: `describe('enrichAnalysisWithConfidence')` 중간 계층이 불필요하게 추가되어 4단계가 됨. 해당 계층을 제거하여 context describe 블록들을 최상위 describe 바로 아래로 이동
-
-## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
-- Violation: `prompt.test.ts`가 4단계 describe 구조 사용 (describe → describe → describe → it)
-- Rule: MISTAKES.md Tests Rule 7 — 정확히 3단계 구조 필수: describe(subject) → describe(context) → it(behavior)
-- Context: `describe('buildAnalysisPrompt')` 중간 계층이 불필요하게 추가되어 4단계가 됨. 해당 계층을 제거하여 context describe 블록들을 최상위 describe 바로 아래로 이동
-
-## [Issue #85 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
 - Violation: `enrichAnalysisWithConfidence`가 `prompt.ts`에 동거하여 단일 책임 원칙 위반
 - Rule: FF.md Coupling 4-A (독립적으로 변경될 수 있는 두 함수는 분리)
 - Context: AI 프롬프트 생성(`buildAnalysisPrompt`)과 신뢰도 데이터 주입(`enrichAnalysisWithConfidence`)은 독립적으로 변경되는 관심사이므로, `domain/analysis/confidence.ts`로 분리하여 해결
@@ -90,27 +60,6 @@
 - Rule: FF.md Readability 1-B — 구현 의도를 명확하게 표현해야 한다
 - Context: `makeSkill`의 기본 `type` 값이 없으므로 생략 시 undefined가 되는데, 이 암묵적 동작에 의존하기보다 `type: undefined`를 명시하여 테스트 의도를 명확히 함
 
-## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | review fix 2 | 2026-03-29]
-- Violation: `let skillsDegraded = false`로 선언 후 `.catch()` 내부에서 `skillsDegraded = true`로 재할당하는 패턴 사용
-- Rule: MISTAKES.md Coding Paradigm Rule 3 — let reassignment → Use const + new variable
-- Context: `route.ts`의 skills 로딩 로직에서 `let` 재할당 패턴이 사용되었으며, `.then(loadedSkills => ({ skills: loadedSkills, skillsDegraded: false })).catch(...)` 패턴으로 변경하여 `const` 구조 분해로 두 값을 동시에 획득하도록 수정
-
-
-## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
-- Violation: `MARKDOWN_CODE_BLOCK_PATTERN`과 `stripMarkdownCodeBlock`이 `claude.ts`와 `gemini.ts`에 동일하게 중복 정의됨
-- Rule: MISTAKES.md Coding Paradigm #8 — 같은 알고리즘을 재구현하지 말 것. 새 함수를 작성하기 전에 기존 헬퍼를 확인할 것.
-- Context: 두 AI provider 파일에 동일한 정규식 패턴과 헬퍼 함수가 각각 선언되어 있었으며, `src/infrastructure/ai/utils.ts`로 추출하고 양쪽에서 임포트하도록 수정
-
-## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | review fix | 2026-03-30]
-- Violation: `gemini.ts`의 상수명 `GEMINI_SYSTEM_INSTRUCTION`이 `claude.ts`의 `CLAUDE_SYSTEM_PROMPT`와 다른 어휘를 사용함
-- Rule: FF.md Predictability 2-A — 같은 역할을 하는 상수는 같은 네이밍 컨벤션을 따라야 한다
-- Context: 두 provider 모두 AI에 전달하는 시스템 지시문 상수를 가지고 있으나 `INSTRUCTION` vs `PROMPT`로 다르게 명명되어 있었으며, `GEMINI_SYSTEM_PROMPT`로 통일하여 독자가 두 파일을 비교할 때 정신적 매핑이 필요 없도록 수정
-
-## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | review fix 2 | 2026-03-30]
-- Violation: `GEMINI_SYSTEM_PROMPT`와 `CLAUDE_SYSTEM_PROMPT`가 동일한 문자열 값을 각 파일에 별도로 선언함
-- Rule: FF.md Cohesion 3-B — 동일한 값이 두 파일에 분산되면 한쪽만 수정될 위험이 있음; 단일 지점에서 관리해야 함
-- Context: `claude.ts`와 `gemini.ts` 각각에 동일한 system prompt 상수가 중복 선언되어 있었으며, `utils.ts`에 `AI_SYSTEM_PROMPT` 공통 상수를 추출하고 두 파일에서 import하도록 수정
-
 ## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
 - Violation: `process.env.AI_PROVIDER ?? DEFAULT_AI_PROVIDER`로 기본값을 먼저 할당한 뒤 `in` 연산자로 재검증하여 `undefined`인 경우를 올바르게 처리하지 못함
 - Rule: CONVENTIONS.md Coding Paradigm — 중복 로직을 제거하고 단일 확인으로 단순화해야 함
@@ -121,7 +70,6 @@
 - Rule: FF.md Predictability 2-C — 숨겨진 정보(원본 에러)를 명시적으로 드러내야 디버깅이 가능함
 - Context: `catch {}` 블록에서 에러 인자를 받지 않고 새 Error만 throw하여 원본 파싱 에러와 실패한 raw text가 손실됨; `cause: error` 옵션과 `console.error`로 원본 에러 및 텍스트를 포함하도록 수정
 
-
 ## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
 - Violation: `factory.test.ts`의 `beforeEach`에서 `jest.resetModules()`를 호출하지만, 모든 import가 모듈 로드 시점에 이미 바인딩되어 있어 reset이 실제로 아무 효과도 없음
 - Rule: FF.md Readability — 오해를 유발하는 코드는 가독성을 떨어뜨림; 미래 독자가 모듈 캐시가 격리된다고 잘못 이해할 수 있음
@@ -131,11 +79,6 @@
 - Violation: `utils.test.ts`의 `stripMarkdownCodeBlock` 테스트가 코드 블록 앞/뒤에 일반 텍스트가 있는 경우를 커버하지 않음
 - Rule: FF.md Cohesion 3-A — 함께 변경되는 코드는 같은 위치에 있어야 한다. 함수의 엣지 케이스 커버리지는 해당 함수가 위치한 파일의 테스트에 있어야 함
 - Context: 코드 블록 앞/뒤 텍스트 처리는 `claude.test.ts`의 provider 레벨에서만 검증되고 있었으나, `stripMarkdownCodeBlock`이 `utils.ts`로 이동했으므로 해당 케이스를 `utils.test.ts`에 직접 추가
-
-## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
-- Violation: `describe('생성자를 호출하면')` 중간 계층이 추가되어 테스트 구조가 4단계(describe → describe → describe → it)가 됨
-- Rule: MISTAKES.md Tests Rule 6 — `describe(subject) → describe(context) → it(behavior)` 3단계 구조가 필수이며, 4단계 중첩은 규칙 위반
-- Context: `gemini.test.ts`의 `GEMINI_API_KEY가 설정되지 않은 경우` describe 블록 안에 불필요한 `생성자를 호출하면` describe 계층이 있었음; `describe('생성자를 호출하면')` 계층을 제거하고 해당 내용을 `it('생성자를 호출하면 에러를 던진다')` 설명에 통합하여 3단계로 통일
 
 ## [Issue #83 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
 - Violation: `toSkill` 함수에서 `Skill.pattern?` 필드를 파싱하지 않아 domain interface와 infrastructure 파서 간 불일치 발생
@@ -157,7 +100,6 @@
 - Rule: MISTAKES.md Tests Rule 3 — 타입에 존재하는 필드는 검증 케이스를 가져야 한다
 - Context: `VALID_SKILL_MD` 픽스처에는 `category`, `pattern`, `display` 필드가 없으므로 `toSkill`이 이들을 `undefined`로 반환해야 하며, `toEqual` 기대값에 `category: undefined, pattern: undefined, display: undefined`를 명시적으로 추가하여 향후 `toSkill` 변경 시 회귀를 탐지할 수 있도록 수정
 
-
 ## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그
 - Rule: MISTAKES.md — Components: Managing timeframe as URL query parameter / useEffect Side Effect Isolation (올바른 초기값으로 ref를 초기화해야 함)
@@ -174,11 +116,6 @@
 - Context: `usePatternOverlay`의 시리즈 lifecycle 관리 effect와 데이터 동기화 effect 양쪽에서 동일한 필터링이 반복됨. `detectedPatterns` useMemo로 추출하여 두 effect에서 공유
 
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
-- Violation: `loader.ts` `parseYamlBlock`에서 `let i = 0; while (i < lines.length)` + `i++` 패턴 사용
-- Rule: MISTAKES.md Coding Paradigm Rule 1, 3 — 데이터 변환에 for/while 금지; let 재할당 금지
-- Context: YAML 중첩 블록 파싱 함수에서 명령형 루프와 let 재할당으로 구현됨. `reduce` 기반 선언적 구현으로 교체하고 라인 분류 로직을 `classifyLine` 순수 함수로 추출
-
-## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
 - Violation: `StockChart.tsx`의 `onPatternOverlayReady` prop 이름이 실제 동작(반복 호출)을 오해하게 만듦
 - Rule: FF.md Predictability 2-C — 이름, 파라미터, 반환값만으로 동작을 예측할 수 있어야 함
 - Context: prop이 초기화 완료 시 한 번만 호출되는 이벤트처럼 읽히나 실제로는 `visiblePatterns`나 `togglePattern` 변경 시마다 반복 호출됨. `onPatternOverlayChange`로 변경
@@ -188,13 +125,6 @@
 - Rule: MISTAKES.md Components Rule — 외부 콜백 prop은 useEffectEvent로 래핑하여 dependency에서 제외해야 한다; FF.md Predictability 2-C(hidden behavior) 위반
 - Context: `onPatternOverlayChange`를 `useEffectEvent`로 래핑하여 `notifyPatternOverlayChange`로 만들고, `useEffect`의 dependency 배열에서 해당 prop을 제거하여 안정적인 effect 실행을 보장
 
-## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 3 | 2026-03-30]
-- Violation: `usePatternOverlay.ts`에서 `lineWidth: 1`을 하드코딩하여 기존 오버레이 훅들과 일관성이 없음
-- Rule: MISTAKES.md TypeScript Rule 6 — 하드코딩된 리터럴은 상수로 추출해야 한다; 다른 오버레이 훅은 모두 `DEFAULT_LINE_WIDTH` 상수를 사용
-- Context: `@/components/chart/constants`에 이미 `DEFAULT_LINE_WIDTH = 1` 상수가 정의되어 있으며, `useMAOverlay`, `useEMAOverlay`, `useBollingerOverlay`가 모두 사용 중. `usePatternOverlay`에서도 동일하게 import하여 사용하도록 수정
-
-## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 3 | 2026-03-30]
-## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 4 | 2026-03-30]
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 4 | 2026-03-30]
 - Violation: `StockChart.tsx`의 `useEffect` dependency 배열에 `togglePattern`이 포함되어 있으나, `togglePattern`은 `useCallback([], [])`으로 항상 안정적인 함수 참조라 실질적으로 effect 재실행에 영향을 주지 않음
 - Rule: FF.md Readability — 불필요한 dependency는 코드 독자에게 'togglePattern이 변경될 수 있다'는 오해를 줄 수 있어 가독성 위반
@@ -216,27 +146,16 @@
 - Context: `AnalysisPanel.tsx`의 PoC div 부모(line 496)는 `flex flex-col`이고 `grid grid-cols-2`(line 500)는 형제 div이므로 `col-span-2`가 적용될 그리드 컨텍스트가 없었음; `col-span-2`를 제거하여 해결
 
 ## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분석강화 | review fix 2 | 2026-03-30]
-- Violation: `gemini.test.ts`의 '응답이 마크다운 코드 블록으로 감싸진 경우' describe 블록에 '코드 블록 뒤에 후행 텍스트' 및 '코드 블록 앞에 설명 텍스트' 케이스가 누락됨
-- Rule: MISTAKES.md Tests Rule 8 — sibling Provider 쌍은 대칭적인 테스트 커버리지를 가져야 한다
-- Context: `claude.test.ts`의 동일한 describe 블록에는 4개의 it() 케이스가 있으나 `gemini.test.ts`에는 2개만 존재했음; 누락된 두 케이스를 추가하여 대칭 커버리지를 확보
-
-## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분析강화 | review fix 2 | 2026-03-30]
 - Violation: `SIGLENS_API.md`의 `AnalysisResponse` 인터페이스 정의에 `patternSummaries`와 `skillResults` 필드가 누락되어 `domain/types.ts`와 불일치
 - Rule: CONVENTIONS.md — 문서는 실제 구현과 일치해야 한다
 - Context: `domain/types.ts`의 `AnalysisResponse`에는 `patternSummaries: PatternSummary[]`, `skillResults: SkillResult[]`가 정의되어 있으나 SIGLENS_API.md에는 없었음; `PatternSummary`, `SkillResult` 인터페이스 정의와 함께 두 필드를 추가하고 JSON 예시에도 빈 배열로 반영
 
-## [Issue #85 | feat/85/신뢰도-배지-및-한국어-패턴명 | review fix 2 | 2026-03-30]
-- Violation: `prompt.test.ts`의 최상위 `describe`가 함수명(`buildAnalysisPrompt`)으로 시작하여 3레벨 구조(모듈 → 함수 → 케이스)를 위반함
-- Rule: CONVENTIONS.md / 테스트 레이어 규칙 — `describe(모듈명)` → `describe(함수명)` → `it(케이스)` 3레벨 구조 필수
-- Context: 같은 디렉토리의 `confidence.test.ts`는 `describe('confidence')` → `describe('enrichAnalysisWithConfidence')` 구조를 올바르게 사용했으나 `prompt.test.ts`는 `describe('buildAnalysisPrompt')`로 2레벨만 사용했음; `describe('prompt', () => { ... })`로 감싸 3레벨 구조로 수정
-
 ## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-31]
-- Violation: `AIProvider.analyze()`의 반환 타입이 `AnalysisResponse`로 선언되어 있으나 AI 원시 응답에는 `confidenceWeight` 필드가 없어 실제 데이터와 불일치; `route.ts`에서 `as unknown as RawAnalysisResponse` 이중 타입 단언으로 우회함
-- Rule: infrastructure CLAUDE.md — "Overusing `as` type assertions → use type guards or generics"
-- Context: `AIProvider` 인터페이스의 반환 타입을 `RawAnalysisResponse`로 변경하고, `ClaudeProvider`/`GeminiProvider` 구현체 및 테스트 파일의 타입 선언을 동기화; `page.tsx`에서도 `enrichAnalysisWithConfidence` 호출을 추가하여 `AnalysisResponse`로 변환하는 흐름을 통일
-
-
-## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
 - Violation: `app/[symbol]/page.tsx`에서 `new ClaudeProvider()`를 직접 인스턴스화하여 `AI_PROVIDER` 환경변수를 무시하고 항상 Claude를 사용
 - Rule: FF.md Predictability 2-C — 숨겨진 로직은 노출해야 함. `AI_PROVIDER=gemini`로 설정한 호출자는 모든 곳에서 Gemini가 사용되길 기대하지만, 초기 페이지 로드에서만 Claude가 묵시적으로 사용됨
 - Context: `route.ts`와 동일하게 `createAIProvider()`를 사용하도록 교체하여 환경변수 기반 프로바이더 선택이 일관되게 적용됨
+
+## [Issue #86 | fix/86/초기-페이지-로딩-AI-분석-오류 | 2026-03-31]
+- Violation: `AnalysisStatusBannerProps` 인터페이스가 `AnalysisStatusBanner` 컴포넌트와 직접 인접하지 않고, 사이에 `AnalyzingBanner`와 `ErrorBanner` 컴포넌트 두 개가 삽입되어 있었음
+- Rule: CONVENTIONS.md — Props interface는 컴포넌트 바로 위에 정의해야 함. FF.md 1-G — 인터페이스와 컴포넌트 사이에 다른 정의가 끼어들면 독자가 viewpoint shift를 경험함
+- Context: `ChartContent.tsx`에서 `AnalysisStatusBannerProps`를 파일 상단에 배치했으나 해당 인터페이스를 사용하는 컴포넌트는 중간의 다른 두 컴포넌트 아래에 있었음. 인터페이스를 컴포넌트 직전으로 이동하여 수정

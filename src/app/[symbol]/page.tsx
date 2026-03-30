@@ -49,9 +49,10 @@ export default async function SymbolPage({ params }: Props) {
     const indicators = calculateIndicators(bars);
     const prompt = buildAnalysisPrompt(symbol, bars, indicators, skills);
     const rawAnalysis = await ai.analyze(prompt).catch(() => null);
-    const analysis = rawAnalysis
-        ? enrichAnalysisWithConfidence(rawAnalysis, skills)
-        : FALLBACK_ANALYSIS;
+    const analysisFailed = rawAnalysis === null;
+    const analysis = analysisFailed
+        ? FALLBACK_ANALYSIS
+        : enrichAnalysisWithConfidence(rawAnalysis, skills);
 
     return (
         <SymbolPageClient
@@ -59,6 +60,7 @@ export default async function SymbolPage({ params }: Props) {
             initialBars={bars}
             initialIndicators={indicators}
             initialAnalysis={analysis}
+            initialAnalysisFailed={analysisFailed}
         />
     );
 }

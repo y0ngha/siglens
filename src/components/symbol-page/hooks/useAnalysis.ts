@@ -14,6 +14,11 @@ interface UseAnalysisOptions {
     symbol: string;
     initialAnalysis: AnalysisResponse;
     /**
+     * 서버에서 초기 AI 분석이 실패했는지 여부.
+     * true이면 마운트 시 자동으로 재분석을 실행한다.
+     */
+    initialAnalysisFailed: boolean;
+    /**
      * 타임프레임이 변경된 누적 횟수. SymbolPageClient에서 추적하여 전달한다.
      * Suspense remount 시 isInitialMount ref가 초기화되는 문제를 우회하기 위해
      * 마운트 바깥에서 변경 여부를 추적한다.
@@ -36,6 +41,7 @@ interface UseAnalysisResult {
 export function useAnalysis({
     symbol,
     initialAnalysis,
+    initialAnalysisFailed,
     timeframeChangeCount,
     bars,
     indicators,
@@ -43,6 +49,9 @@ export function useAnalysis({
     // Refs
     const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
     const prevTimeframeChangeCountRef = useRef(0);
+    // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
+    // 이후 렌더링에서 이 값이 변경되더라도 마운트 시 한 번만 사용된다.
+    const initialAnalysisFailedRef = useRef(initialAnalysisFailed);
 
     // Query hooks
     const { data, error, isPending, reset, mutate } = useMutation<
@@ -71,6 +80,14 @@ export function useAnalysis({
     useLayoutEffect(() => {
         latestRef.current = { symbol, bars, indicators };
     });
+
+    // 서버에서 초기 AI 분석이 실패한 경우 마운트 직후 자동으로 재분석을 실행한다.
+    // initialAnalysisFailedRef는 초기 마운트 시 값을 캡처하므로 이후 변경에 영향받지 않는다.
+    // latestRef는 useLayoutEffect에 의해 이 useEffect보다 먼저 현재 렌더의 props로 갱신된다.
+    useEffect(() => {
+        if (!initialAnalysisFailedRef.current) return;
+        mutate(latestRef.current);
+    }, [mutate]);
 
     // 타임프레임 변경 시 이전 mutation 상태를 초기화하고 새 분석을 자동 실행한다.
     // timeframeChangeCount를 활용하여 초기 마운트와 타임프레임 변경을 구분한다.
