@@ -2,9 +2,16 @@
 name: 이중천장
 description: 두 개의 고점이 거의 같은 가격 수준에서 형성되는 하락 반전 신호
 type: pattern
+category: reversal_bearish
 pattern: double_top
 indicators: []
 confidence_weight: 0.75
+display:
+  chart:
+    show: true
+    type: line
+    color: "#ef5350"
+    label: "넥라인"
 ---
 
 ## 분석 기준
@@ -22,3 +29,4 @@ confidence_weight: 0.75
 - 넥라인 위치와 현재 가격 대비 이탈 여부
 - 목표 하락폭 (두 고점 평균에서 넥라인까지의 거리를 넥라인 아래로 투영)
 - 두 번째 고점에서 거래량 감소 여부 (신뢰도 보강 요소)
+- keyPrices에 넥라인 가격을 포함한다
