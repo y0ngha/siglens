@@ -4,8 +4,9 @@ import {
     useCallback,
     useEffect,
     useEffectEvent,
+    useMemo,
+    useReducer,
     useRef,
-    useState,
 } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries } from 'lightweight-charts';
@@ -23,6 +24,24 @@ interface UsePatternOverlayReturn {
     togglePattern: (patternName: string) => void;
 }
 
+type VisiblePatternsAction =
+    | { type: 'reset'; detected: Set<string> }
+    | { type: 'toggle'; patternName: string };
+
+const visiblePatternsReducer = (
+    state: Set<string>,
+    action: VisiblePatternsAction
+): Set<string> => {
+    if (action.type === 'reset') return action.detected;
+    const next = new Set(state);
+    if (next.has(action.patternName)) {
+        next.delete(action.patternName);
+    } else {
+        next.add(action.patternName);
+    }
+    return next;
+};
+
 /**
  * PatternResult 배열을 받아 detected === true인 패턴을 차트에 렌더링한다.
  * renderConfig.type에 따라 line / marker / region 타입을 구분하여 처리한다.
@@ -33,22 +52,22 @@ export function usePatternOverlay({
     bars,
     patterns,
 }: UsePatternOverlayParams): UsePatternOverlayReturn {
-    const [visiblePatterns, setVisiblePatterns] = useState<Set<string>>(
-        () => new Set(patterns.filter(p => p.detected).map(p => p.patternName))
+    const [visiblePatterns, dispatch] = useReducer(
+        visiblePatternsReducer,
+        patterns,
+        initial =>
+            new Set(initial.filter(p => p.detected).map(p => p.patternName))
     );
     const prevChartRef = useRef<IChartApi | null>(null);
     const seriesMapRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
 
+    const detectedPatterns = useMemo(
+        () => patterns.filter(p => p.detected && p.renderConfig),
+        [patterns]
+    );
+
     const togglePattern = useCallback((patternName: string) => {
-        setVisiblePatterns(prev => {
-            const next = new Set(prev);
-            if (next.has(patternName)) {
-                next.delete(patternName);
-            } else {
-                next.add(patternName);
-            }
-            return next;
-        });
+        dispatch({ type: 'toggle', patternName });
     }, []);
 
     // chart 인스턴스 교체 시 ref만 초기화
@@ -56,7 +75,16 @@ export function usePatternOverlay({
         seriesMapRef.current = new Map();
     });
 
+    useEffect(() => {
+        const detected = new Set(
+            patterns.filter(p => p.detected).map(p => p.patternName)
+        );
+        dispatch({ type: 'reset', detected });
+    }, [patterns]);
+
     // 시리즈 lifecycle 관리 (생성/제거)
+    // chartRef는 RefObject로 동일 참조를 유지하므로 dependency에 포함해도 교체를 감지하지 않는다.
+    // chart 인스턴스 교체는 prevChartRef 비교로 감지한다.
     useEffect(() => {
         const chart = chartRef.current;
 
@@ -66,10 +94,6 @@ export function usePatternOverlay({
         }
 
         if (!chart) return;
-
-        const detectedPatterns = patterns.filter(
-            p => p.detected && p.renderConfig
-        );
 
         // visiblePatterns에서 제거된 시리즈 삭제
         for (const [name, series] of seriesMapRef.current.entries()) {
@@ -96,15 +120,13 @@ export function usePatternOverlay({
             });
             seriesMapRef.current.set(pattern.patternName, series);
         }
-    }, [chartRef, visiblePatterns, patterns]);
+        // chartRef(RefObject)는 항상 동일 참조를 유지하므로 이 dependency는
+        // 실제로 chart 교체를 감지하지 않는다. chart 교체 감지는 prevChartRef 비교로 처리한다.
+    }, [chartRef, visiblePatterns, detectedPatterns]);
 
     // 데이터 동기화
     useEffect(() => {
         if (bars.length === 0) return;
-
-        const detectedPatterns = patterns.filter(
-            p => p.detected && p.renderConfig
-        );
 
         for (const pattern of detectedPatterns) {
             if (!visiblePatterns.has(pattern.patternName)) continue;
@@ -124,7 +146,7 @@ export function usePatternOverlay({
             }));
             series.setData(lineData);
         }
-    }, [bars, patterns, visiblePatterns]);
+    }, [bars, detectedPatterns, visiblePatterns]);
 
     return { visiblePatterns, togglePattern };
 }

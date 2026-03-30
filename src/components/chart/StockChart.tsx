@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
@@ -25,7 +25,7 @@ interface StockChartProps {
     bars: Bar[];
     indicators?: IndicatorResult;
     patterns?: PatternResult[];
-    onPatternOverlayReady?: (
+    onPatternOverlayChange?: (
         visiblePatterns: Set<string>,
         togglePattern: (patternName: string) => void
     ) => void;
@@ -35,7 +35,7 @@ export function StockChart({
     bars,
     indicators = EMPTY_INDICATORS,
     patterns = [],
-    onPatternOverlayReady,
+    onPatternOverlayChange,
 }: StockChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
@@ -113,9 +113,13 @@ export function StockChart({
         patterns,
     });
 
+    const notifyPatternOverlayChange = useEffectEvent(() => {
+        onPatternOverlayChange?.(visiblePatterns, togglePattern);
+    });
+
     useEffect(() => {
-        onPatternOverlayReady?.(visiblePatterns, togglePattern);
-    }, [visiblePatterns, togglePattern, onPatternOverlayReady]);
+        notifyPatternOverlayChange();
+    }, [visiblePatterns, togglePattern]);
 
     return <div ref={containerRef} className="h-full w-full" />;
 }

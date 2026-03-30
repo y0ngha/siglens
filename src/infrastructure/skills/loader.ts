@@ -34,58 +34,74 @@ const parseYamlValue = (value: string): unknown => {
 
 type YamlNode = Record<string, unknown>;
 
+type ParsedLine =
+    | { kind: 'skip' }
+    | { kind: 'deeper' }
+    | { kind: 'break' }
+    | { kind: 'leaf'; key: string; value: unknown }
+    | { kind: 'block'; key: string };
+
+const classifyLine = (line: string, baseIndent: number): ParsedLine => {
+    const trimmed = line.trimStart();
+    if (trimmed === '' || !trimmed.includes(':')) return { kind: 'skip' };
+
+    const indent = line.length - trimmed.length;
+    if (indent < baseIndent) return { kind: 'break' };
+    if (indent > baseIndent) return { kind: 'deeper' };
+
+    const colonIdx = trimmed.indexOf(':');
+    const key = trimmed.slice(0, colonIdx).trim();
+    const rawVal = trimmed.slice(colonIdx + 1).trim();
+
+    if (rawVal !== '')
+        return { kind: 'leaf', key, value: parseYamlValue(rawVal) };
+    return { kind: 'block', key };
+};
+
 /**
  * 중첩 YAML 블록을 재귀적으로 파싱한다.
  * 들여쓰기(2칸)를 기준으로 depth를 결정한다.
  */
-const parseYamlBlock = (lines: string[], baseIndent: number): YamlNode => {
-    const result: YamlNode = {};
-    let i = 0;
+const parseYamlBlock = (lines: string[], baseIndent: number): YamlNode =>
+    lines.reduce<{ result: YamlNode; skip: number }>(
+        ({ result, skip }, line, idx) => {
+            if (skip > 0) return { result, skip: skip - 1 };
 
-    while (i < lines.length) {
-        const line = lines[i];
-        const trimmed = line.trimStart();
-        if (trimmed === '' || !trimmed.includes(':')) {
-            i++;
-            continue;
-        }
+            const classified = classifyLine(line, baseIndent);
 
-        const indent = line.length - trimmed.length;
-        if (indent < baseIndent) break;
-        if (indent > baseIndent) {
-            i++;
-            continue;
-        }
-
-        const colonIdx = trimmed.indexOf(':');
-        const key = trimmed.slice(0, colonIdx).trim();
-        const rawVal = trimmed.slice(colonIdx + 1).trim();
-
-        if (rawVal === '') {
-            // 값이 없으면 다음 줄들이 하위 블록
-            const childLines: string[] = [];
-            let j = i + 1;
-            while (j < lines.length) {
-                const childTrimmed = lines[j].trimStart();
-                if (childTrimmed === '') {
-                    j++;
-                    continue;
-                }
-                const childIndent = lines[j].length - childTrimmed.length;
-                if (childIndent <= baseIndent) break;
-                childLines.push(lines[j]);
-                j++;
+            if (classified.kind === 'skip' || classified.kind === 'deeper') {
+                return { result, skip: 0 };
             }
-            result[key] = parseYamlBlock(childLines, baseIndent + 2);
-            i = j;
-        } else {
-            result[key] = parseYamlValue(rawVal);
-            i++;
-        }
-    }
+            if (classified.kind === 'break') {
+                return { result, skip: lines.length };
+            }
+            if (classified.kind === 'leaf') {
+                return {
+                    result: { ...result, [classified.key]: classified.value },
+                    skip: 0,
+                };
+            }
 
-    return result;
-};
+            // block kind
+            const { key } = classified;
+
+            const childLines = lines.slice(idx + 1).filter(childLine => {
+                const childTrimmed = childLine.trimStart();
+                if (childTrimmed === '') return true;
+                const childIndent = childLine.length - childTrimmed.length;
+                return childIndent > baseIndent;
+            });
+
+            return {
+                result: {
+                    ...result,
+                    [key]: parseYamlBlock(childLines, baseIndent + 2),
+                },
+                skip: childLines.length,
+            };
+        },
+        { result: {}, skip: 0 }
+    ).result;
 
 const parseFrontmatter = (
     raw: string
