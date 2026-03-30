@@ -337,6 +337,17 @@ confidence_weight: 0.8
         });
     });
 
+    describe('readFile 에러', () => {
+        it('readFile이 실패하면 에러를 전파한다', async () => {
+            mockReaddir.mockResolvedValue(['skill.md']);
+            mockReadFile.mockRejectedValue(
+                new Error('EACCES: permission denied')
+            );
+
+            await expect(loader.loadSkills()).rejects.toThrow('EACCES');
+        });
+    });
+
     describe('frontmatter 파싱 실패', () => {
         it('frontmatter가 없는 파일은 결과에서 제외된다', async () => {
             mockReaddir.mockResolvedValue(['bad.md', 'good.md']);

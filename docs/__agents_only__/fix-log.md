@@ -172,3 +172,8 @@
 - Rule: FF.md Readability — 불필요한 dependency는 코드 독자에게 'togglePattern이 변경될 수 있다'는 오해를 줄 수 있어 가독성 위반
 - Context: `[visiblePatterns, togglePattern]` dependency 중 `togglePattern`을 제거하고 `[visiblePatterns]`만 남겨 의도를 명확히 함
 
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 5 | 2026-03-30]
+- Violation: `readFile`이 `Promise.all` 내부에서 rejection될 때 에러가 올바르게 전파되는지 검증하는 테스트 케이스 누락
+- Rule: CONVENTIONS.md Test Rules — infrastructure/ 커버리지 목표 100%; readFile rejection 경로가 미검증 상태
+- Context: `loader.ts`의 `loadSkills()`가 `Promise.all`을 사용하여 여러 파일을 병렬 로드하므로, readFile이 실패할 경우 Promise.all 전체가 reject되어야 함. `readFile 에러` describe 블록과 `readFile이 실패하면 에러를 전파한다` it 케이스를 추가하여 EACCES 에러 전파를 검증
+
