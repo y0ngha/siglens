@@ -1,8 +1,9 @@
 import { AlpacaProvider } from '@/infrastructure/market/alpaca';
-import { ClaudeProvider } from '@/infrastructure/ai/claude';
+import { createAIProvider } from '@/infrastructure/ai/factory';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { calculateIndicators } from '@/domain/indicators';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
+import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import {
     DEFAULT_TIMEFRAME,
     DEFAULT_BARS_LIMIT,
@@ -33,7 +34,7 @@ export default async function SymbolPage({ params }: Props) {
     const { symbol } = await params;
 
     const market = new AlpacaProvider();
-    const ai = new ClaudeProvider();
+    const ai = createAIProvider();
     const skillsLoader = new FileSkillsLoader();
 
     const [bars, skills] = await Promise.all([
@@ -47,7 +48,10 @@ export default async function SymbolPage({ params }: Props) {
 
     const indicators = calculateIndicators(bars);
     const prompt = buildAnalysisPrompt(symbol, bars, indicators, skills);
-    const analysis = await ai.analyze(prompt).catch(() => FALLBACK_ANALYSIS);
+    const rawAnalysis = await ai.analyze(prompt).catch(() => null);
+    const analysis = rawAnalysis
+        ? enrichAnalysisWithConfidence(rawAnalysis, skills)
+        : FALLBACK_ANALYSIS;
 
     return (
         <SymbolPageClient

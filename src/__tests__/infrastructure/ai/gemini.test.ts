@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GeminiProvider } from '@/infrastructure/ai/gemini';
-import type { AnalysisResponse } from '@/domain/types';
+import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
 
 jest.mock('@google/generative-ai');
 
@@ -8,7 +8,7 @@ describe('GeminiProvider', () => {
     let mockGenerateContent: jest.Mock;
     let provider: GeminiProvider;
 
-    const mockAnalysisResponse: AnalysisResponse = {
+    const mockAnalysisResponse: RawAnalysisResponse = {
         summary: 'Test summary',
         trend: 'bullish',
         signals: [],

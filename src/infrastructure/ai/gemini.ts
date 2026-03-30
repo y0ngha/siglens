@@ -1,5 +1,5 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import type { AnalysisResponse } from '@/domain/types';
+import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
 import type { AIProvider } from './types';
 import { AI_SYSTEM_PROMPT, stripMarkdownCodeBlock } from './utils';
 
@@ -16,7 +16,7 @@ export class GeminiProvider implements AIProvider {
         this.client = new GoogleGenerativeAI(apiKey);
     }
 
-    async analyze(prompt: string): Promise<AnalysisResponse> {
+    async analyze(prompt: string): Promise<RawAnalysisResponse> {
         const model = this.client.getGenerativeModel({
             model: GEMINI_MODEL,
             systemInstruction: AI_SYSTEM_PROMPT,
@@ -26,7 +26,9 @@ export class GeminiProvider implements AIProvider {
         const text = result.response.text();
 
         try {
-            return JSON.parse(stripMarkdownCodeBlock(text)) as AnalysisResponse;
+            return JSON.parse(
+                stripMarkdownCodeBlock(text)
+            ) as RawAnalysisResponse;
         } catch (error) {
             console.error(
                 'Failed to parse Gemini API response. Raw text:',

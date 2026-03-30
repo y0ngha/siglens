@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { AnalysisResponse } from '@/domain/types';
+import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
 import type { AIProvider } from './types';
 import { AI_SYSTEM_PROMPT, stripMarkdownCodeBlock } from './utils';
 
@@ -17,7 +17,7 @@ export class ClaudeProvider implements AIProvider {
         this.client = new Anthropic({ apiKey });
     }
 
-    async analyze(prompt: string): Promise<AnalysisResponse> {
+    async analyze(prompt: string): Promise<RawAnalysisResponse> {
         const message = await this.client.messages.create({
             model: CLAUDE_MODEL,
             max_tokens: CLAUDE_MAX_TOKENS,
@@ -33,7 +33,7 @@ export class ClaudeProvider implements AIProvider {
         try {
             return JSON.parse(
                 stripMarkdownCodeBlock(content.text)
-            ) as AnalysisResponse;
+            ) as RawAnalysisResponse;
         } catch (error) {
             console.error(
                 'Failed to parse Claude API response. Raw text:',

@@ -230,3 +230,13 @@
 - Rule: CONVENTIONS.md / 테스트 레이어 규칙 — `describe(모듈명)` → `describe(함수명)` → `it(케이스)` 3레벨 구조 필수
 - Context: 같은 디렉토리의 `confidence.test.ts`는 `describe('confidence')` → `describe('enrichAnalysisWithConfidence')` 구조를 올바르게 사용했으나 `prompt.test.ts`는 `describe('buildAnalysisPrompt')`로 2레벨만 사용했음; `describe('prompt', () => { ... })`로 감싸 3레벨 구조로 수정
 
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-31]
+- Violation: `AIProvider.analyze()`의 반환 타입이 `AnalysisResponse`로 선언되어 있으나 AI 원시 응답에는 `confidenceWeight` 필드가 없어 실제 데이터와 불일치; `route.ts`에서 `as unknown as RawAnalysisResponse` 이중 타입 단언으로 우회함
+- Rule: infrastructure CLAUDE.md — "Overusing `as` type assertions → use type guards or generics"
+- Context: `AIProvider` 인터페이스의 반환 타입을 `RawAnalysisResponse`로 변경하고, `ClaudeProvider`/`GeminiProvider` 구현체 및 테스트 파일의 타입 선언을 동기화; `page.tsx`에서도 `enrichAnalysisWithConfidence` 호출을 추가하여 `AnalysisResponse`로 변환하는 흐름을 통일
+
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `app/[symbol]/page.tsx`에서 `new ClaudeProvider()`를 직접 인스턴스화하여 `AI_PROVIDER` 환경변수를 무시하고 항상 Claude를 사용
+- Rule: FF.md Predictability 2-C — 숨겨진 로직은 노출해야 함. `AI_PROVIDER=gemini`로 설정한 호출자는 모든 곳에서 Gemini가 사용되길 기대하지만, 초기 페이지 로드에서만 Claude가 묵시적으로 사용됨
+- Context: `route.ts`와 동일하게 `createAIProvider()`를 사용하도록 교체하여 환경변수 기반 프로바이더 선택이 일관되게 적용됨
