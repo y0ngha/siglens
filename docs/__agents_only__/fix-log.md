@@ -1,5 +1,35 @@
 # Fix Log
 
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `MIN_CONFIDENCE_WEIGHT = 0.5`가 `prompt.ts`에 모듈 레벨 로컬 상수로 선언되어 `domain/indicators/constants.ts`에 속해야 할 도메인 경계값이 분리됨
+- Rule: MISTAKES.md TypeScript Rule 6 — 도메인 경계값(임계값, 기본값)은 `domain/indicators/constants.ts`에 추출해야 함. `HIGH_CONFIDENCE_WEIGHT`가 이미 그곳에 있으므로 `MIN_CONFIDENCE_WEIGHT`도 함께 위치해야 함
+- Context: `prompt.ts`의 skills 필터링에 사용하는 최소 신뢰도 임계값을 `constants.ts`로 이동하고, `prompt.ts`에서 import하도록 수정
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `prompt.test.ts`에서 `const TEST_MIN_CONFIDENCE_WEIGHT = 0.5`로 경계값을 로컬 재선언
+- Rule: MISTAKES.md Tests Rule 8 — 경계값 테스트 상수는 소스 상수에서 import해야 하며 재선언하지 않음
+- Context: `MIN_CONFIDENCE_WEIGHT`가 `constants.ts`로 승격된 후 테스트에서 해당 값을 import하여 사용하도록 수정
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `confidence.ts`에서 매칭되지 않는 skill의 기본 `confidenceWeight`로 `?? 0` 리터럴을 두 곳에서 중복 사용
+- Rule: MISTAKES.md TypeScript Rule 6 — 구현 코드의 하드코딩된 리터럴은 named constant로 추출해야 함
+- Context: `UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0` 상수를 `constants.ts`에 추가하고 `confidence.ts`의 두 `?? 0`을 교체하여 의도를 명시적으로 표현
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `enrichAnalysisWithConfidence`의 입력 타입이 `AnalysisResponse`로 선언되어, AI 원시 응답(confidenceWeight 없음)과 타입 불일치 발생
+- Rule: MISTAKES.md TypeScript Rule 13 — 타입은 실제 데이터 구조와 일치해야 하며, 레이어 관심사에 따라 올바른 위치에 정의해야 함
+- Context: AI가 반환하는 raw response에는 confidenceWeight가 없으므로 입력 타입을 RawAnalysisResponse(Omit<AnalysisResponse, 'patternSummaries' | 'skillResults'>)로 분리하여 타입 안전성 확보
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `confidence.test.ts`가 4단계 describe 구조 사용 (describe → describe → describe → it)
+- Rule: MISTAKES.md Tests Rule 7 — 정확히 3단계 구조 필수: describe(subject) → describe(context) → it(behavior)
+- Context: `describe('enrichAnalysisWithConfidence')` 중간 계층이 불필요하게 추가되어 4단계가 됨. 해당 계층을 제거하여 context describe 블록들을 최상위 describe 바로 아래로 이동
+
+## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
+- Violation: `prompt.test.ts`가 4단계 describe 구조 사용 (describe → describe → describe → it)
+- Rule: MISTAKES.md Tests Rule 7 — 정확히 3단계 구조 필수: describe(subject) → describe(context) → it(behavior)
+- Context: `describe('buildAnalysisPrompt')` 중간 계층이 불필요하게 추가되어 4단계가 됨. 해당 계층을 제거하여 context describe 블록들을 최상위 describe 바로 아래로 이동
+
 ## [Issue #85 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
 - Violation: `enrichAnalysisWithConfidence`가 `prompt.ts`에 동거하여 단일 책임 원칙 위반
 - Rule: FF.md Coupling 4-A (독립적으로 변경될 수 있는 두 함수는 분리)

@@ -4,6 +4,7 @@ import {
     EMA_SUPPORT_RESISTANCE_SHORT_INDEX,
     HIGH_CONFIDENCE_WEIGHT,
     MA_DEFAULT_PERIODS,
+    MIN_CONFIDENCE_WEIGHT,
     RSI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 import {
@@ -21,7 +22,6 @@ import type {
     Skill,
 } from '@/domain/types';
 
-const MIN_CONFIDENCE_WEIGHT = 0.5;
 const INDICATOR_DECIMAL_PLACES = 2;
 const RECENT_BARS_COUNT = 30;
 const DATETIME_DISPLAY_LENGTH = 16;
