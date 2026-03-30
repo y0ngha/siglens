@@ -76,6 +76,9 @@ export const DMI_DEFAULT_PERIOD = 14;
 
 export const MA_DEFAULT_PERIODS = [20] as const;
 export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
+
+export const EMA_SUPPORT_RESISTANCE_SHORT_INDEX = 1; // 20기간 EMA
+export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3;  // 60기간 EMA
 ```
 
 ---
@@ -637,6 +640,7 @@ skills/
 name: string                  # skill 표시 이름 (SkillSignal.skillName에 사용)
 description: string           # skill 설명
 type: pattern                 # 선택. 현재 pattern만 존재
+category: string              # 선택. reversal_bullish | reversal_bearish | continuation_bullish | continuation_bearish | neutral
 pattern: string               # type: pattern일 때 패턴 식별자
 indicators: string[]          # 이 skill이 필요로 하는 인디케이터 목록
 confidence_weight: number     # 0.0 ~ 1.0. 프롬프트 포함 여부와 강조도 결정
@@ -688,10 +692,18 @@ interface SkillDisplay {
     chart: SkillChartDisplay;
 }
 
+type SkillCategory =
+    | 'reversal_bullish'
+    | 'reversal_bearish'
+    | 'continuation_bullish'
+    | 'continuation_bearish'
+    | 'neutral';
+
 interface Skill {
     name: string;
     description: string;
     type?: 'pattern';           // pattern일 때만 존재
+    category?: SkillCategory;   // skill 분류 (선택)
     pattern?: string;           // type='pattern'일 때 패턴 식별자 (예: 'double_top')
     indicators: string[];
     confidenceWeight: number;
