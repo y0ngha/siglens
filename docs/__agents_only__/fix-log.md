@@ -1,5 +1,15 @@
 # Fix Log
 
+## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
+- Violation: `DropdownIndicatorConfig.type` field inlined a 2-member union literal `'ma' | 'ema'` directly in the interface
+- Rule: MISTAKES.md TypeScript Rule 5 — union literals with 2+ members must not be inlined in interface fields; extract to a named type alias
+- Context: Both `DropdownType` and `DropdownIndicatorConfig.type` used `'ma' | 'ema'` inline; extracted to `type IndicatorType = 'ma' | 'ema'` and updated both usages
+
+## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
+- Violation: `commonHookParams` 변수에 객체 타입이 함수 바디 내에 인라인으로 선언됨
+- Rule: MISTAKES.md TypeScript Rule 4 — 함수 내부에 타입 선언 금지; 파일 상단 named interface로 추출
+- Context: `StockChart` 컴포넌트 내부에서 `commonHookParams: { chartRef: ...; bars: ...; indicators: ...; lineWidth: ... }`와 같이 객체 리터럴 타입을 인라인으로 작성하고 있었으며, `interface CommonHookParams`로 파일 상단에 추출하여 해결
+
 ## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
 - Violation: `enrichAnalysisWithConfidence`가 `prompt.ts`에 동거하여 단일 책임 원칙 위반
 - Rule: FF.md Coupling 4-A (독립적으로 변경될 수 있는 두 함수는 분리)
@@ -42,11 +52,6 @@
 
 
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
-- Violation: `useEffect` 두 곳에서 `patterns.filter(p => p.detected && p.renderConfig)` 중복 계산
-- Rule: FF.md Cohesion 3-B — 같은 값이 여러 곳에 흩어지면 변경 시 누락 위험; `useMemo`로 단일 출처(single source of truth) 유지
-- Context: `usePatternOverlay`의 시리즈 lifecycle 관리 effect와 데이터 동기화 effect 양쪽에서 동일한 필터링이 반복됨. `detectedPatterns` useMemo로 추출하여 두 effect에서 공유
-
-## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
 - Violation: `StockChart.tsx`의 `onPatternOverlayReady` prop 이름이 실제 동작(반복 호출)을 오해하게 만듦
 - Rule: FF.md Predictability 2-C — 이름, 파라미터, 반환값만으로 동작을 예측할 수 있어야 함
 - Context: prop이 초기화 완료 시 한 번만 호출되는 이벤트처럼 읽히나 실제로는 `visiblePatterns`나 `togglePattern` 변경 시마다 반복 호출됨. `onPatternOverlayChange`로 변경
@@ -76,17 +81,12 @@
 - Context: 모든 `<button>` 요소에 동일하게 필요한 `cursor-pointer`를 `globals.css`의 `@layer base`에서 전역으로 선언하고, 각 컴포넌트의 className에서 `cursor-pointer` 및 `disabled:cursor-not-allowed`를 제거하여 중앙 관리
 
 ## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
-- Violation: `IndicatorToolbar.tsx`에서 active/inactive 버튼 className ternary가 6곳에 동일하게 복사됨
-- Rule: FF.md Readability 1-A — 동일한 결과를 내는 반복 조건 로직은 추출 필수; CONVENTIONS.md — cn()으로 조건부 클래스 처리; AHA(3회 이상 반복 시 추상화)
-- Context: MA, EMA, BB, MACD, RSI, DMI 버튼 모두 동일한 ternary를 사용했으므로 `indicatorButtonClass(active: boolean)` 헬퍼로 추출하고 6곳 모두 교체
-
-## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
 - Violation: `IndicatorToolbarProps`에 `xyzVisible + onXYZToggle` 플랫 props 12개가 나열되어 새 지표 추가 시 props 2개씩 증가
 - Rule: FF.md Coupling 4-A — 함께 변경되는 props는 묶어야 한다; 새 지표마다 interface와 호출 사이트 양쪽을 수정해야 하는 tight coupling
 - Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
 
-## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | review fix | 2026-03-31]
-- Violation: MA/EMA 드롭다운 period 버튼의 className에 `cn()` 대신 template literal + inline ternary 사용
-- Rule: CONVENTIONS.md — 조건부 클래스는 반드시 `cn()`으로 처리해야 함
-- Context: `IndicatorToolbar.tsx` line 94, 130의 period 버튼에서 `` `flex ... ${condition ? '...' : '...'}` `` 패턴 사용. 위 코드의 `indicatorButtonClass` 헬퍼가 `cn()`을 올바르게 사용하는 것과 불일치함. `cn(...)` 호출로 교체하여 해결
+## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
+- Violation: `StockChart.tsx`에서 6개의 인디케이터 훅에 동일한 파라미터 객체(`chartRef, bars, indicators, lineWidth`)가 반복 전달됨
+- Rule: FF.md Readability 1-A — 동일한 값을 반복 작성하지 않고 공통 상수로 추출; AHA 원칙
+- Context: `commonHookParams` 객체를 `LineWidth` 타입을 명시하여 선언하고 6개 훅(`useMAOverlay`, `useEMAOverlay`, `useBollingerOverlay`, `useMACDChart`, `useRSIChart`, `useDMIChart`) 호출에서 spread 대신 직접 전달
 
