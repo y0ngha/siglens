@@ -1,7 +1,7 @@
 ---
 name: mistake-managing-agent
 description: Manages docs/__agents_only__/fix-log.md and updates MISTAKES.md with recurring violation patterns found during code review fix cycles.
-model: sonnet
+model: haiku
 tools: Read, Write, Edit, Bash, Glob
 ---
 
