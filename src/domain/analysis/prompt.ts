@@ -1,4 +1,8 @@
-import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import {
+    EMA_DEFAULT_PERIODS,
+    MA_DEFAULT_PERIODS,
+    RSI_DEFAULT_PERIOD,
+} from '@/domain/indicators/constants';
 import {
     detectCandlePattern,
     detectMultiCandlePattern,
@@ -137,7 +141,10 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
         '[{ "type": "...", "description": "...", "strength": "strong | moderate | weak" }]',
     skillSignals: '[{ "skillName": "...", "signals": [...] }]',
     riskLevel: '"low | medium | high"',
-    keyLevels: '{ "support": [], "resistance": [] }',
+    keyLevels:
+        '{ "support": [{ "price": 150.00, "reason": "..." }], "resistance": [{ "price": 160.00, "reason": "..." }], "poc": { "price": 155.00, "reason": "..." } }',
+    priceTargets:
+        '{ "bullish": { "targets": [{ "price": 165.00, "basis": "..." }], "condition": "..." }, "bearish": { "targets": [{ "price": 145.00, "basis": "..." }], "condition": "..." } }',
     patternSummaries:
         '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "...", "keyPrices": [150.00], "timeRange": { "start": 1700000000, "end": 1700100000 } }]',
     skillResults:
@@ -150,6 +157,23 @@ const buildSchemaBody = (): string => {
         .join(',\n');
     return `{\n${entries}\n}`;
 };
+
+const ANALYSIS_GUIDELINES = [
+    '## 분석 가이드라인',
+    '',
+    '### 지지/저항 판단',
+    `- 이동평균선(MA ${MA_DEFAULT_PERIODS.join(',')}, EMA ${EMA_DEFAULT_PERIODS[1]}/${EMA_DEFAULT_PERIODS[3]}) 수렴 지점을 우선 확인`,
+    '- 최근 30봉의 거래량 분포에서 PoC(거래 집중 가격대) 식별',
+    '- 거래량 급증 봉의 고가/저가를 매물대로 판단',
+    '- 이전 swing high/low와 볼린저 밴드 경계 참고',
+    '- 각 레벨에 반드시 근거(reason)를 포함',
+    '',
+    '### 가격 목표 산출',
+    '- 감지된 패턴의 측정 규칙(패턴 높이 투영)을 적용',
+    '- 1차 목표는 가장 가까운 지지/저항선, 2차 목표는 패턴 측정치 기반',
+    '- 각 시나리오의 전제 조건(브레이크아웃/브레이크다운 기준선)을 명시',
+    '- 보조지표(RSI 극단값, 볼린저 밴드 도달, MACD 추세)로 목표 도달 가능성 보강',
+].join('\n');
 
 const ANALYSIS_REQUEST = [
     '## 분석 요청',
@@ -185,6 +209,7 @@ export function buildAnalysisPrompt(
                   `## 활성화된 Skills\n${regularSkills.map(buildSkillBlock).join('\n\n')}`,
               ]
             : []),
+        ANALYSIS_GUIDELINES,
         ANALYSIS_REQUEST,
     ];
 
