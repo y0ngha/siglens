@@ -10,7 +10,6 @@ skills:
   - vercel-react-best-practices
   - web-design-guidelines
   - typescript-advanced-types
-  - next-cache-components
   - next-best-practices
 ---
 
@@ -45,10 +44,12 @@ Use this value directly in all `gh` commands. Never derive the repo from `git re
 
 ### 2. Load Required Documents
 
+FF principles and coding conventions are already loaded from memory as condensed summaries.
+Do not re-read the full `docs/FF.md` or `docs/CONVENTIONS.md`.
+The memory versions contain all rules; only verbose code examples are omitted.
+
 Always read:
 - docs/MISTAKES.md
-- docs/CONVENTIONS.md
-- docs/FF.md
 
 Additional documents based on fix scope:
 - domain/ related      → docs/DOMAIN.md

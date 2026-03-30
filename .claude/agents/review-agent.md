@@ -5,12 +5,7 @@ model: sonnet
 memory: project
 tools: Read, Glob, Grep, Bash
 skills:
-  - frontend-design
-  - vercel-react-best-practices
-  - web-design-guidelines
   - typescript-advanced-types
-  - next-cache-components
-  - next-best-practices
 ---
 
 ## Overview
@@ -72,22 +67,25 @@ Files and directories listed in `.gitignore` are also excluded.
 
 ### 2. Load Required Documents
 
+FF principles and coding conventions are already loaded from memory (Step 0) as condensed summaries.
+Do not re-read the full `docs/FF.md` or `docs/CONVENTIONS.md`.
+The memory versions contain all rules; only verbose code examples are omitted.
+
 Always read:
 ```
-docs/FF.md
 docs/MISTAKES.md
-docs/CONVENTIONS.md
 docs/ARCHITECTURE.md
 ```
 
 Additionally, based on changed file locations:
 
-| Changed files include | Also read |
+| Condition | Also read |
 |---|---|
-| `domain/` | `docs/DOMAIN.md` |
-| `components/` | `docs/DESIGN.md` |
-| `infrastructure/` | `docs/API.md` + `docs/SIGLENS_API.md` |
-| `app/` | `docs/SIGLENS_API.md` |
+| `src/domain/` changed (excluding `__tests__/` only changes) | `docs/DOMAIN.md` |
+| `src/components/*.tsx` changed | `docs/DESIGN.md` |
+| `src/infrastructure/ai/` or `src/infrastructure/market/` changed | `docs/API.md` |
+| `src/infrastructure/` or `src/app/api/` changed | `docs/SIGLENS_API.md` |
+| Only `src/__tests__/` files changed, no source files | Skip all conditional docs |
 
 ---
 
