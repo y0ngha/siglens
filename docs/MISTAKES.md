@@ -167,6 +167,10 @@ Review before implementation and ensure these are not repeated.
 
 2. Inline prop types
    → Define as a separate interface
+   → Props interface must be placed directly above the component function
+   → Rule: CONVENTIONS.md — maintains viewpoint locality; FF.md 1-G
+   ❌ type Props = {...}; function ComponentA() {...} function ComponentB() {...} function MyComponent(props: Props) {...}
+   ✅ type Props = {...}; function MyComponent(props: Props) {...}
 
 3. Managing timeframe as a URL query parameter
    → Manage as client state only
@@ -202,6 +206,30 @@ Review before implementation and ensure these are not repeated.
    ❌ <button onClick={handleToggle}><button onClick={handleEye}>...</button></button>
    ❌ <div role="button" onClick={handleToggle}><button onClick={handleEye}>...</button></div>
    ✅ <div className="flex"><button onClick={handleToggle}>...</button><button onClick={handleEye}>...</button></div>
+
+8. External callback prop in useEffect dependency array causes infinite loops
+   → useEffectEvent is required to prevent re-execution when callback reference changes
+   → Rule: FF.md Predictability 2-C — hidden behavior (infinite loop on callback change) must be explicit
+   → Rule: CONVENTIONS.md Custom Hook Rules — callback props must be wrapped in useEffectEvent
+   ❌ const StockChart = ({ onPatternOverlay }) => {
+         useEffect(() => { onPatternOverlay(...); }, [onPatternOverlay]); // loop if caller passes inline function
+      };
+   ✅ const StockChart = ({ onPatternOverlay }) => {
+         const notifyPatternOverlay = useEffectEvent((info) => onPatternOverlay?.(info));
+         useEffect(() => { notifyPatternOverlay(...); }, [visiblePatterns]); // callback excluded
+      };
+
+9. useState lazy initializer derives value from props
+   → Initializer only runs once; prop changes are not reflected in state
+   → Use useEffect to synchronize state when prop-derived initial values are needed
+   → Rule: FF.md Predictability 2-C — state should match props after prop update
+   ❌ const [visible, setVisible] = useState(() => computeFromProps(props.items));
+      // if props.items changes, visible remains stale
+   ✅ const [visible, setVisible] = useState<Set<string>>(new Set());
+      useEffect(() => {
+        setVisible(new Set(props.items.filter(item => item.detected).map(item => item.id)));
+      }, [props.items]);
+      // or use useReducer with dispatch({ type: 'reset', payload: newItems })
 ```
 
 ---
@@ -225,6 +253,17 @@ Review before implementation and ensure these are not repeated.
    ✅ Spec explicitly states: 1Min uses [9, 21]; 5Min–1Day uses [20, 60]
    ❌ // bars may still be loading  (written inside a Suspense-guaranteed mount)
    ✅ // bars are guaranteed loaded because this component only mounts after useSuspenseQuery resolves
+
+4. Silent fallback without exposing degradation to caller
+   → Rule: FF.md Predictability 2-C — hidden failures must be explicit
+   → If a critical operation fails silently (e.g. skills loading, provider instantiation),
+     caller must be informed via response field or error thrown
+   → .catch(() => []) hides the failure; caller has no way to know degraded state occurred
+   ❌ skillsLoader.loadSkills().catch(() => [])  // caller doesn't know skills failed to load
+   ✅ .catch((error) => { console.error('Skills load failed', error); return []; })
+      + include skillsDegraded: true in response for route handlers
+   ❌ new ClaudeProvider() directly instantiated when AI_PROVIDER env says to use Gemini
+   ✅ createAIProvider() helper that respects environment variable
 ```
 
 ---
@@ -267,12 +306,23 @@ Review before implementation and ensure these are not repeated.
    ❌ describe('GeminiProvider — API 키 미설정', () => { it('throws', ...) })
    ✅ describe('GeminiProvider', () => { describe('API 키 미설정 상태에서', () => { it('throws', ...) }) })
 
-7. Test file structure lacks module-level wrapper (2-level instead of 3-level)
+7. beforeEach/beforeAll placed at module level instead of inside describe block
+   → Rule: CONVENTIONS.md Test Rules — all setup code must be inside the relevant describe block for consistency
+   → Module-level setup (outside describe) is invisible to readers scanning the test structure
+   → Violates test cohesion principle: setup should be near its corresponding test cases
+   ❌ beforeEach(() => { mockFetch.mockReset(); });
+      describe('postAnalyze 함수는', () => { it('...', ...) })
+   ✅ describe('postAnalyze 함수는', () => {
+        beforeEach(() => { mockFetch.mockReset(); });
+        it('...', ...)
+      })
+
+8. Test file structure lacks module-level wrapper (2-level instead of 3-level)
    → Rule: CONVENTIONS.md Test Structure — describe(module/subject name) → describe(function/context) → it(behavior) is required
    ❌ describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) })  // missing module wrapper
    ✅ describe('prompt', () => { describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) }) })  // 3 levels
 
-7. Test file exceeds 3-level structure (describe → describe → describe → it) with unnecessary intermediate layers
+9. Test file exceeds 3-level structure (describe → describe → describe → it) with unnecessary intermediate layers
    → Rule: CONVENTIONS.md Test Structure — exactly 3 levels required: describe(subject) → describe(context) → it(behavior)
    → Adding extra describe layers between required levels creates nesting that obscures the test intent
    → Common offenders: adding describe(methodName) when method is the only one in the class, or describe(sectionName) between subject and context
@@ -284,7 +334,7 @@ Review before implementation and ensure these are not repeated.
    ❌ describe('생성자를 호출하면') { describe('API 키 미설정 상태에서') { it('에러를 던진다') } }  // separate describe for action when it's the only action tested
    ✅ describe('API 키 미설정 상태에서') { it('생성자를 호출하면 에러를 던진다') }  // merge into it description
 
-8. Boundary test constant redefined locally instead of imported from source
+10. Boundary test constant redefined locally instead of imported from source
    → Rule: MISTAKES.md TypeScript Rule 6 — hardcoded boundary values must be extracted to constants.ts
    → When a test file uses a boundary value (e.g. RSI_DEFAULT_PERIOD = 14, HIGH_CONFIDENCE_WEIGHT = 0.8),
      it must import the constant from domain, not redeclare it locally
@@ -292,14 +342,14 @@ Review before implementation and ensure these are not repeated.
    ❌ (confidence.test.ts) const TEST_HIGH_CONFIDENCE = 0.8; // then expect(result.confidence >= TEST_HIGH_CONFIDENCE)
    ✅ (confidence.test.ts) import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants'; expect(result.confidence >= HIGH_CONFIDENCE_WEIGHT)
 
-9. Provider pair has asymmetric error handling or logging behavior
+11. Provider pair has asymmetric error handling or logging behavior
    → Rule: FF.md Predictability 2-B — sibling functions/classes in the same family must behave consistently
    → When one Provider adds error detail (cause, console.error), apply the same change to all Providers
    ❌ GeminiProvider: catch (error) { throw new Error('...', { cause: error }); console.error(...) }
       ClaudeProvider: catch { throw new Error('...') }  // cause and console.error missing
    ✅ Both Providers use identical catch patterns with cause and console.error
 
-10. New Provider implementation missing test cases that exist in sibling Provider
+12. New Provider implementation missing test cases that exist in sibling Provider
    → Rule: FF.md Predictability 2-B — sibling classes in the same family must have symmetric test coverage
    → When a new Provider is added, all it() cases present in the existing Provider must be replicated
    → Applies to field-presence checks (e.g. 'skillsDegraded' in result), error cases, and structural assertions
@@ -308,7 +358,7 @@ Review before implementation and ensure these are not repeated.
       GeminiProvider: (missing)
    ✅ Both Providers have identical test cases covering the same behaviors and field assertions
 
-11. Provider pair has inconsistent naming conventions
+13. Provider pair has inconsistent naming conventions
    → Rule: FF.md Predictability 2-A — sibling classes must use consistent terminology
    → When two Providers define the same concept (e.g. system instructions), use identical naming
    ❌ claude.ts: const CLAUDE_SYSTEM_PROMPT

@@ -626,7 +626,7 @@ export function AnalysisPanel({
                     type="button"
                     onClick={onReanalyze}
                     disabled={isAnalyzing}
-                    className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed"
+                    className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
                 >
                     {isAnalyzing ? '분석 중…' : '재분석'}
                 </button>
