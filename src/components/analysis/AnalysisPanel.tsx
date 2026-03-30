@@ -269,7 +269,7 @@ function PatternAccordionItem({
                     type="button"
                     aria-expanded={isOpen}
                     onClick={handleToggleOpen}
-                    className="flex min-w-0 flex-1 cursor-pointer items-center gap-2 px-3 py-2.5 text-left"
+                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left"
                 >
                     <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
                         {pattern.skillName}
@@ -284,7 +284,7 @@ function PatternAccordionItem({
                     type="button"
                     onClick={handleToggleVisibility}
                     className={cn(
-                        'shrink-0 cursor-pointer rounded p-1 pr-3 transition-colors',
+                        'shrink-0 rounded p-1 pr-3 transition-colors',
                         isVisible
                             ? 'text-primary-400 hover:text-primary-300'
                             : 'text-secondary-600 hover:text-secondary-400'
@@ -326,7 +326,7 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
                 type="button"
                 aria-expanded={isOpen}
                 onClick={handleToggleOpen}
-                className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full cursor-pointer items-center gap-2 px-3 py-2.5 text-left transition-colors"
+                className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors"
             >
                 <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
                     {skill.skillName}
@@ -626,7 +626,7 @@ export function AnalysisPanel({
                     type="button"
                     onClick={onReanalyze}
                     disabled={isAnalyzing}
-                    className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 mt-1 w-full cursor-pointer rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors disabled:cursor-not-allowed"
+                    className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
                 >
                     {isAnalyzing ? '분석 중…' : '재분석'}
                 </button>

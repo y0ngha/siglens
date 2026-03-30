@@ -110,6 +110,22 @@ body {
     }
 }
 
+@layer base {
+    button,
+    [type='button'],
+    [type='reset'],
+    [type='submit'] {
+        cursor: pointer;
+    }
+
+    button:disabled,
+    [type='button']:disabled,
+    [type='reset']:disabled,
+    [type='submit']:disabled {
+        cursor: not-allowed;
+    }
+}
+
 .focus-glow:focus-visible {
     box-shadow: 0 0 20px
         color-mix(in oklch, var(--color-primary-600) 30%, transparent);
