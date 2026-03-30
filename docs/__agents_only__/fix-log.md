@@ -60,10 +60,6 @@
 - Rule: MISTAKES.md Coding Paradigm Rule 3 — let reassignment → Use const + new variable
 - Context: `route.ts`의 skills 로딩 로직에서 `let` 재할당 패턴이 사용되었으며, `.then(loadedSkills => ({ skills: loadedSkills, skillsDegraded: false })).catch(...)` 패턴으로 변경하여 `const` 구조 분해로 두 값을 동시에 획득하도록 수정
 
-## [PR #80 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
-- Violation: `ClaudeProvider.analyze()` 반환 결과에서 `skillsDegraded` 필드 부재를 검증하는 테스트 케이스 누락
-- Rule: MISTAKES.md Tests Rule 3 — 새 필드가 추가되면 그 존재 여부나 값을 검증하는 it() 케이스가 최소 하나 있어야 한다
-- Context: `skillsDegraded`가 domain 타입에 optional로 있었으나 `ClaudeProvider.analyze()`가 이 필드를 포함하지 않는다는 사실을 검증하는 케이스가 없었음; `'skillsDegraded' in result`가 `false`임을 검증하는 테스트를 추가
 
 ## [Issue #81 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
 - Violation: `MARKDOWN_CODE_BLOCK_PATTERN`과 `stripMarkdownCodeBlock`이 `claude.ts`와 `gemini.ts`에 동일하게 중복 정의됨
@@ -90,10 +86,6 @@
 - Rule: FF.md Predictability 2-C — 숨겨진 정보(원본 에러)를 명시적으로 드러내야 디버깅이 가능함
 - Context: `catch {}` 블록에서 에러 인자를 받지 않고 새 Error만 throw하여 원본 파싱 에러와 실패한 raw text가 손실됨; `cause: error` 옵션과 `console.error`로 원본 에러 및 텍스트를 포함하도록 수정
 
-## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
-- Violation: `GeminiProvider`의 `skillsDegraded` 필드 부재를 검증하는 테스트 케이스 누락
-- Rule: MISTAKES.md Tests Rule 3 — 새 필드가 추가되면 그 존재 여부나 값을 검증하는 it() 케이스가 최소 하나 있어야 함; FF.md Predictability 2-B — 같은 패밀리의 Provider는 동일한 테스트 패턴을 따라야 함
-- Context: `ClaudeProvider`에 `skillsDegraded 필드를 포함하지 않는다` 테스트가 있었으나 `GeminiProvider`에는 동일한 케이스가 없었음; `'skillsDegraded' in result`가 `false`임을 검증하는 테스트를 추가
 
 ## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
 - Violation: `factory.test.ts`의 `beforeEach`에서 `jest.resetModules()`를 호출하지만, 모든 import가 모듈 로드 시점에 이미 바인딩되어 있어 reset이 실제로 아무 효과도 없음
@@ -110,7 +102,78 @@
 - Rule: MISTAKES.md Tests Rule 6 — `describe(subject) → describe(context) → it(behavior)` 3단계 구조가 필수이며, 4단계 중첩은 규칙 위반
 - Context: `gemini.test.ts`의 `GEMINI_API_KEY가 설정되지 않은 경우` describe 블록 안에 불필요한 `생성자를 호출하면` describe 계층이 있었음; `describe('생성자를 호출하면')` 계층을 제거하고 해당 내용을 `it('생성자를 호출하면 에러를 던진다')` 설명에 통합하여 3단계로 통일
 
+## [Issue #83 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `toSkill` 함수에서 `Skill.pattern?` 필드를 파싱하지 않아 domain interface와 infrastructure 파서 간 불일치 발생
+- Rule: MISTAKES.md TypeScript #11 — domain 인터페이스에 필드가 존재하면 infrastructure 파서에서 반드시 해당 필드를 파싱해야 한다
+- Context: `loader.ts`의 `toSkill`에 `pattern` 파싱 라인이 누락되어 있었으며, `data.pattern != null ? String(data.pattern) : undefined`를 추가하여 skills MD의 `pattern` frontmatter 필드를 올바르게 파싱하도록 수정
+
+## [Issue #83 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `Skill.pattern` 필드가 domain 타입에 있지만 loader 테스트에서 해당 필드를 전혀 검증하지 않음
+- Rule: MISTAKES.md Tests #3 — 타입/인터페이스에 새 필드가 추가될 때 반드시 해당 필드의 존재 여부 또는 값을 검증하는 it() 케이스가 있어야 한다
+- Context: `loader.test.ts`에 `SKILL_WITH_PATTERN_MD` 픽스처와 `pattern 파싱` describe 블록을 추가하여 `pattern: 'head_and_shoulders'` 파싱과 pattern 미존재 시 undefined 반환을 검증
+
+## [Issue #83 | feat/83/skills-category-display-chart-overlay | review fix | 2026-03-30]
+- Violation: `usePatternOverlay`의 초기 `visiblePatterns`가 빈 Set으로 설정되어 detected 패턴이 기본적으로 차트에 표시되지 않음; `StockChart`에서 반환값(`visiblePatterns`, `togglePattern`)을 무시하여 toggle 기능이 외부에 노출되지 않음
+- Rule: FF.md Predictability 2-C — 숨겨진 상태(초기 empty Set으로 인한 영구 비표시)를 명시적으로 드러내야 한다; CONVENTIONS.md Custom Hook Rules — 훅의 반환값은 사용되어야 한다
+- Context: `usePatternOverlay`가 `useState(new Set())`으로 초기화되어 있어 detected 패턴들이 기본 표시되지 않았음; lazy initializer로 `new Set(patterns.filter(p => p.detected).map(p => p.patternName))`를 사용하고, `StockChart`에 `onPatternOverlayReady` prop을 추가하여 `visiblePatterns`와 `togglePattern`을 상위로 전달 가능하게 수정
+
+## [Issue #83 | feat/83/skills-category-display-chart-overlay | review fix | 2026-03-30]
+- Violation: 첫 번째 정상 케이스 `toEqual`에서 `category`, `pattern`, `display` 필드가 `undefined`임을 명시적으로 검증하지 않음
+- Rule: MISTAKES.md Tests Rule 3 — 타입에 존재하는 필드는 검증 케이스를 가져야 한다
+- Context: `VALID_SKILL_MD` 픽스처에는 `category`, `pattern`, `display` 필드가 없으므로 `toSkill`이 이들을 `undefined`로 반환해야 하며, `toEqual` 기대값에 `category: undefined, pattern: undefined, display: undefined`를 명시적으로 추가하여 향후 `toSkill` 변경 시 회귀를 탐지할 수 있도록 수정
+
 ## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그
 - Rule: MISTAKES.md — Components: Managing timeframe as URL query parameter / useEffect Side Effect Isolation (올바른 초기값으로 ref를 초기화해야 함)
 - Context: `useBars`가 `useSuspenseQuery`를 사용하기 때문에 캐시 miss 시 ChartContent가 remount되는데, 이때 `useRef(timeframeChangeCount)`로 초기화하면 ref.current가 현재 count 값과 동일해져서 useEffect에서 조기 반환이 발생하여 분석이 실행되지 않음. `useRef(0)`으로 초기화해야 remount 시에도 올바르게 동작함.
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `useState` lazy initializer로 `patterns` prop으로부터 초기 `visiblePatterns`를 계산하여 이후 prop 변경 시 동기화되지 않는 버그
+- Rule: MISTAKES.md Components Rule 6 — stale closure state 사용 금지; `useState` initializer는 초기 렌더링에만 실행되므로 이후 prop 변경이 반영되지 않음
+- Context: `usePatternOverlay`에서 `patterns`가 비동기로 로드되는 경우 lazy initializer가 빈 배열로 실행되어 패턴이 차트에 표시되지 않는 버그 발생. `useReducer`와 `dispatch({ type: 'reset' })`으로 prop 변경 시 동기화
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `useEffect` 두 곳에서 `patterns.filter(p => p.detected && p.renderConfig)` 중복 계산
+- Rule: FF.md Cohesion 3-B — 같은 값이 여러 곳에 흩어지면 변경 시 누락 위험; `useMemo`로 단일 출처(single source of truth) 유지
+- Context: `usePatternOverlay`의 시리즈 lifecycle 관리 effect와 데이터 동기화 effect 양쪽에서 동일한 필터링이 반복됨. `detectedPatterns` useMemo로 추출하여 두 effect에서 공유
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `loader.ts` `parseYamlBlock`에서 `let i = 0; while (i < lines.length)` + `i++` 패턴 사용
+- Rule: MISTAKES.md Coding Paradigm Rule 1, 3 — 데이터 변환에 for/while 금지; let 재할당 금지
+- Context: YAML 중첩 블록 파싱 함수에서 명령형 루프와 let 재할당으로 구현됨. `reduce` 기반 선언적 구현으로 교체하고 라인 분류 로직을 `classifyLine` 순수 함수로 추출
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
+- Violation: `StockChart.tsx`의 `onPatternOverlayReady` prop 이름이 실제 동작(반복 호출)을 오해하게 만듦
+- Rule: FF.md Predictability 2-C — 이름, 파라미터, 반환값만으로 동작을 예측할 수 있어야 함
+- Context: prop이 초기화 완료 시 한 번만 호출되는 이벤트처럼 읽히나 실제로는 `visiblePatterns`나 `togglePattern` 변경 시마다 반복 호출됨. `onPatternOverlayChange`로 변경
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 2 | 2026-03-30]
+- Violation: `StockChart.tsx`의 `useEffect`에서 `onPatternOverlayChange` 콜백 prop이 dependency 배열에 포함되어, 호출자가 인라인 함수로 전달하면 매 렌더마다 effect가 재실행되는 무한 루프 위험
+- Rule: MISTAKES.md Components Rule — 외부 콜백 prop은 useEffectEvent로 래핑하여 dependency에서 제외해야 한다; FF.md Predictability 2-C(hidden behavior) 위반
+- Context: `onPatternOverlayChange`를 `useEffectEvent`로 래핑하여 `notifyPatternOverlayChange`로 만들고, `useEffect`의 dependency 배열에서 해당 prop을 제거하여 안정적인 effect 실행을 보장
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 3 | 2026-03-30]
+- Violation: `usePatternOverlay.ts`에서 `lineWidth: 1`을 하드코딩하여 기존 오버레이 훅들과 일관성이 없음
+- Rule: MISTAKES.md TypeScript Rule 6 — 하드코딩된 리터럴은 상수로 추출해야 한다; 다른 오버레이 훅은 모두 `DEFAULT_LINE_WIDTH` 상수를 사용
+- Context: `@/components/chart/constants`에 이미 `DEFAULT_LINE_WIDTH = 1` 상수가 정의되어 있으며, `useMAOverlay`, `useEMAOverlay`, `useBollingerOverlay`가 모두 사용 중. `usePatternOverlay`에서도 동일하게 import하여 사용하도록 수정
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 3 | 2026-03-30]
+- Violation: `loader.test.ts`의 테스트 구조가 `describe(subject) → describe(loadSkills) → describe(context) → it(behavior)` 4단계로 구성되어 규칙 위반
+- Rule: CONVENTIONS.md Test Structure / MISTAKES.md Test Rule 6 — 테스트 구조는 반드시 3단계(describe → describe(context) → it)여야 한다
+- Context: `FileSkillsLoader`가 `loadSkills` 단일 메서드만 가지므로 중간의 `describe('loadSkills')` 계층이 불필요. `category 파싱`, `display 파싱` 등 context describe 블록을 최상위 `describe('FileSkillsLoader')` 바로 아래로 올려 3단계 구조로 정리
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 4 | 2026-03-30]
+- Violation: `prompt.test.ts`에서 `describe('buildAnalysisPrompt') → describe(섹션) → describe(context) → it(behavior)` 4단계 구조가 반복됨
+- Rule: MISTAKES.md Tests Rule 6 — 테스트 구조는 반드시 `describe(subject) → describe(context) → it(behavior)` 3단계여야 한다
+- Context: `현재 시장 상황 섹션`, `최근 봉 데이터 섹션`, `거래량 분석 섹션`, `Skills 섹션` 등 여러 곳에서 섹션 describe 아래에 context describe가 추가되어 4단계가 됨. 섹션명과 context를 `'현재 시장 상황 섹션 - bars가 비어있을 때'` 형식으로 합쳐 3단계로 통일
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 4 | 2026-03-30]
+- Violation: `StockChart.tsx`의 `useEffect` dependency 배열에 `togglePattern`이 포함되어 있으나, `togglePattern`은 `useCallback([], [])`으로 항상 안정적인 함수 참조라 실질적으로 effect 재실행에 영향을 주지 않음
+- Rule: FF.md Readability — 불필요한 dependency는 코드 독자에게 'togglePattern이 변경될 수 있다'는 오해를 줄 수 있어 가독성 위반
+- Context: `[visiblePatterns, togglePattern]` dependency 중 `togglePattern`을 제거하고 `[visiblePatterns]`만 남겨 의도를 명확히 함
+
+## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 5 | 2026-03-30]
+- Violation: `readFile`이 `Promise.all` 내부에서 rejection될 때 에러가 올바르게 전파되는지 검증하는 테스트 케이스 누락
+- Rule: CONVENTIONS.md Test Rules — infrastructure/ 커버리지 목표 100%; readFile rejection 경로가 미검증 상태
+- Context: `loader.ts`의 `loadSkills()`가 `Promise.all`을 사용하여 여러 파일을 병렬 로드하므로, readFile이 실패할 경우 Promise.all 전체가 reject되어야 함. `readFile 에러` describe 블록과 `readFile이 실패하면 에러를 전파한다` it 케이스를 추가하여 EACCES 에러 전파를 검증
+

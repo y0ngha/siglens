@@ -2,9 +2,16 @@
 name: 역헤드앤숄더
 description: 세 개의 저점 중 가운데가 가장 낮은 형태로 상승 반전 신호
 type: pattern
+category: reversal_bullish
 pattern: inverse_head_and_shoulders
 indicators: []
 confidence_weight: 0.8
+display:
+  chart:
+    show: true
+    type: line
+    color: "#26a69a"
+    label: "넥라인"
 ---
 
 ## 분석 기준
@@ -23,3 +30,4 @@ confidence_weight: 0.8
 - 목표 상승 폭 (머리에서 넥라인까지의 거리를 넥라인 위로 투영)
 - 오른쪽 어깨 형성 후 거래량 증가 여부 (신뢰도 보강 요소)
 - 패턴 완성 여부 (오른쪽 어깨 진행 중인지, 완성됐는지)
+- keyPrices에 넥라인 가격을 포함한다

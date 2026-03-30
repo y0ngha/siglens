@@ -2,9 +2,16 @@
 name: 헤드앤숄더
 description: 세 개의 고점 중 가운데가 가장 높은 형태로 하락 반전 신호
 type: pattern
+category: reversal_bearish
 pattern: head_and_shoulders
 indicators: []
 confidence_weight: 0.8
+display:
+  chart:
+    show: true
+    type: line
+    color: "#ef5350"
+    label: "넥라인"
 ---
 
 ## 분석 기준
@@ -23,3 +30,4 @@ confidence_weight: 0.8
 - 목표 하락 폭 (머리에서 넥라인까지의 거리를 넥라인 아래로 투영)
 - 오른쪽 어깨 형성 후 거래량 감소 여부 (신뢰도 보강 요소)
 - 패턴 완성 여부 (오른쪽 어깨 진행 중인지, 완성됐는지)
+- keyPrices에 넥라인 가격을 포함한다

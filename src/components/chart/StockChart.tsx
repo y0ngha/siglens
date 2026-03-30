@@ -1,13 +1,14 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
-import type { Bar, IndicatorResult } from '@/domain/types';
+import type { Bar, IndicatorResult, PatternResult } from '@/domain/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
 import { useBollingerOverlay } from '@/components/chart/hooks/useBollingerOverlay';
+import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
 const EMPTY_INDICATORS: IndicatorResult = {
@@ -23,11 +24,18 @@ const EMPTY_INDICATORS: IndicatorResult = {
 interface StockChartProps {
     bars: Bar[];
     indicators?: IndicatorResult;
+    patterns?: PatternResult[];
+    onPatternOverlayChange?: (
+        visiblePatterns: Set<string>,
+        togglePattern: (patternName: string) => void
+    ) => void;
 }
 
 export function StockChart({
     bars,
     indicators = EMPTY_INDICATORS,
+    patterns = [],
+    onPatternOverlayChange,
 }: StockChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
@@ -99,6 +107,19 @@ export function StockChart({
         indicators,
         lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
     });
+    const { visiblePatterns, togglePattern } = usePatternOverlay({
+        chartRef,
+        bars,
+        patterns,
+    });
+
+    const notifyPatternOverlayChange = useEffectEvent(() => {
+        onPatternOverlayChange?.(visiblePatterns, togglePattern);
+    });
+
+    useEffect(() => {
+        notifyPatternOverlayChange();
+    }, [visiblePatterns]);
 
     return <div ref={containerRef} className="h-full w-full" />;
 }

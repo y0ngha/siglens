@@ -46,6 +46,14 @@ Review before implementation and ensure these are not repeated.
 8. Reimplementing the same algorithm
    → Check for existing helpers before writing a new function
    → Separate number[]-based helpers from Bar[]-based wrappers for reuse
+
+9. Discarding the callback parameter and re-accessing the same element via external array index
+   → Rule: FF.md Readability 1-G — viewpoint shift forces the reader to track two locations simultaneously
+   → map/filter/reduce callbacks already receive the current element as a parameter; use it directly
+   ❌ lines.reduce((acc, _line, idx) => { const line = lines[idx]; ... })
+   ❌ items.filter((_, ci) => { const item = outerArray[offset + ci]; ... })
+   ✅ lines.reduce((acc, line) => { ... })
+   ✅ items.filter(item => { ... })
 ```
 
 ---
@@ -248,6 +256,14 @@ Review before implementation and ensure these are not repeated.
    ❌ GeminiProvider: catch (error) { throw new Error('...', { cause: error }); console.error(...) }
       ClaudeProvider: catch { throw new Error('...') }  // cause and console.error missing
    ✅ Both Providers use identical catch patterns with cause and console.error
+
+8. New Provider implementation missing test cases that exist in sibling Provider
+   → Rule: FF.md Predictability 2-B — sibling classes in the same family must have symmetric test coverage
+   → When a new Provider is added, all it() cases present in the existing Provider must be replicated
+   → Applies to field-presence checks (e.g. 'skillsDegraded' in result), error cases, and structural assertions
+   ❌ ClaudeProvider: it('skillsDegraded 필드를 포함하지 않는다', ...)
+      GeminiProvider: (missing)
+   ✅ Both Providers have identical test cases covering the same behaviors and field assertions
 ```
 
 ---

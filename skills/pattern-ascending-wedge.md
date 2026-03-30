@@ -2,9 +2,16 @@
 name: 상승쐐기
 description: 고점과 저점이 모두 상승하지만 폭이 좁아지는 형태로 하락 반전 신호
 type: pattern
+category: continuation_bearish
 pattern: ascending_wedge
 indicators: []
 confidence_weight: 0.7
+display:
+  chart:
+    show: true
+    type: line
+    color: "#ef5350"
+    label: "추세선"
 ---
 
 ## 분석 기준
@@ -23,3 +30,4 @@ confidence_weight: 0.7
 - 하단 지지선 이탈 여부와 이탈 시 목표 하락폭
 - 패턴 진행 기간 (기간이 길수록 반전 폭도 커질 수 있음)
 - 거래량 감소 추세 여부 (신뢰도 보강 요소)
+- keyPrices에 추세선 주요 가격을 포함한다
