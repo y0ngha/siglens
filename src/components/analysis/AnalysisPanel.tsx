@@ -12,6 +12,7 @@ import type {
     SkillResult,
     Trend,
 } from '@/domain/types';
+import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
 import { cn } from '@/lib/cn';
 
 const TREND_COLOR: Record<Trend, string> = {
@@ -175,6 +176,44 @@ function EyeIcon({ isVisible }: EyeIconProps) {
     );
 }
 
+type ConfidenceLevel = 'high' | 'medium';
+
+const CONFIDENCE_BADGE_CONFIG: Record<
+    ConfidenceLevel,
+    { className: string; label: string }
+> = {
+    high: {
+        className:
+            'text-chart-bullish bg-chart-bullish/10 border border-chart-bullish/30',
+        label: '높은 신뢰도',
+    },
+    medium: {
+        className:
+            'text-ui-warning bg-ui-warning/10 border border-ui-warning/30',
+        label: '중간 신뢰도',
+    },
+};
+
+interface ConfidenceBadgeProps {
+    confidenceWeight: number;
+}
+
+function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
+    const level: ConfidenceLevel =
+        confidenceWeight >= HIGH_CONFIDENCE_WEIGHT ? 'high' : 'medium';
+    const { className, label } = CONFIDENCE_BADGE_CONFIG[level];
+    return (
+        <span
+            className={cn(
+                'rounded px-1.5 py-0.5 text-xs font-medium',
+                className
+            )}
+        >
+            {label}
+        </span>
+    );
+}
+
 type DetectionStatus = 'detected' | 'undetected';
 
 const DETECTED_BADGE_CONFIG: Record<
@@ -236,6 +275,9 @@ function PatternAccordionItem({
                         {pattern.skillName}
                     </span>
                     <TrendBadge trend={pattern.trend} />
+                    <ConfidenceBadge
+                        confidenceWeight={pattern.confidenceWeight}
+                    />
                     <ChevronIcon isOpen={isOpen} />
                 </button>
                 <button
@@ -290,6 +332,7 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
                     {skill.skillName}
                 </span>
                 <TrendBadge trend={skill.trend} />
+                <ConfidenceBadge confidenceWeight={skill.confidenceWeight} />
                 <ChevronIcon isOpen={isOpen} />
             </button>
 
