@@ -139,6 +139,7 @@ export interface PatternSummary {
     summary: string;
     keyPrices?: number[];
     timeRange?: { start: number; end: number };
+    confidenceWeight: number;
 }
 
 export interface PatternResult extends PatternSummary {
@@ -149,6 +150,7 @@ export interface SkillResult {
     skillName: string;
     trend: Trend;
     summary: string;
+    confidenceWeight: number;
 }
 
 export interface AnalysisResponse {

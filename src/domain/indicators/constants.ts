@@ -28,3 +28,5 @@ export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
 
 export const EMA_SUPPORT_RESISTANCE_SHORT_INDEX = 1; // 20-period EMA
 export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3; // 60-period EMA
+
+export const HIGH_CONFIDENCE_WEIGHT = 0.8;
