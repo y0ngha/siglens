@@ -239,6 +239,17 @@ Review before implementation and ensure these are not repeated.
     ✅ <div role="button" onClick={toggle} aria-expanded={isOpen}>Trigger</div><div hidden={!isOpen}>Content</div>
     ❌ <button onClick={toggle}>Trigger</button><div className={isOpen ? '' : 'hidden'}>Content</div>
     ✅ <button onClick={toggle} aria-expanded={isOpen}>Trigger</button><div hidden={!isOpen}>Content</div>
+
+11. Component managing its own external margin or parent depending on child's internal layout
+    → Components must not hardcode their own external margins (margin, mb-2, etc.)
+    → Parents must not depend on children's internal structure or layout direction
+    → Rule: DESIGN.md — each component is responsible for its own internal layout; external spacing belongs to the caller
+    → Rule: FF.md Coupling 4-A — components should not create tight coupling through layout expectations
+    ❌ export function DetectedBadge() { return <div className="mb-2">...</div>; }  // hardcodes external margin
+    ❌ <div className="flex-col md:flex-row"><ChartContent /></div>  // parent controls child's internal layout
+    ✅ export function DetectedBadge() { return <div>...</div>; }  // layout is caller's responsibility
+    ✅ export function ChartContent() { return <div className="flex-col md:flex-row">...</div>; }  // child owns its layout
+       <SymbolPageClient />  // caller adds margin as needed
 ```
 
 ---
