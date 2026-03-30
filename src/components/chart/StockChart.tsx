@@ -8,8 +8,16 @@ import type { Bar, IndicatorResult, PatternResult } from '@/domain/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
 import { useBollingerOverlay } from '@/components/chart/hooks/useBollingerOverlay';
+import { useMACDChart } from '@/components/chart/hooks/useMACDChart';
+import { useRSIChart } from '@/components/chart/hooks/useRSIChart';
+import { useDMIChart } from '@/components/chart/hooks/useDMIChart';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
+import {
+    MA_DEFAULT_PERIODS,
+    EMA_DEFAULT_PERIODS,
+} from '@/domain/indicators/constants';
 
 const EMPTY_INDICATORS: IndicatorResult = {
     macd: [],
@@ -89,24 +97,51 @@ export function StockChart({
         chartRef.current.timeScale().fitContent();
     }, [bars]);
 
-    useMAOverlay({
+    const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
+        useMAOverlay({
+            chartRef,
+            bars,
+            indicators,
+            lineWidth: DEFAULT_LINE_WIDTH,
+        });
+
+    const { visiblePeriods: emaVisiblePeriods, togglePeriod: toggleEMAPeriod } =
+        useEMAOverlay({
+            chartRef,
+            bars,
+            indicators,
+            lineWidth: DEFAULT_LINE_WIDTH,
+        });
+
+    const { isVisible: bollingerVisible, toggle: toggleBollinger } =
+        useBollingerOverlay({
+            chartRef,
+            bars,
+            indicators,
+            lineWidth: DEFAULT_LINE_WIDTH,
+        });
+
+    const { isVisible: macdVisible, toggle: toggleMACD } = useMACDChart({
         chartRef,
         bars,
         indicators,
-        lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
+        lineWidth: DEFAULT_LINE_WIDTH,
     });
-    useEMAOverlay({
+
+    const { isVisible: rsiVisible, toggle: toggleRSI } = useRSIChart({
         chartRef,
         bars,
         indicators,
-        lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
+        lineWidth: DEFAULT_LINE_WIDTH,
     });
-    useBollingerOverlay({
+
+    const { isVisible: dmiVisible, toggle: toggleDMI } = useDMIChart({
         chartRef,
         bars,
         indicators,
-        lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
+        lineWidth: DEFAULT_LINE_WIDTH,
     });
+
     const { visiblePatterns, togglePattern } = usePatternOverlay({
         chartRef,
         bars,
@@ -121,5 +156,26 @@ export function StockChart({
         notifyPatternOverlayChange();
     }, [visiblePatterns]);
 
-    return <div ref={containerRef} className="h-full w-full" />;
+    return (
+        <div className="relative h-full w-full">
+            <div ref={containerRef} className="h-full w-full" />
+            <div className="absolute top-2 left-2 z-10">
+                <IndicatorToolbar
+                    maVisiblePeriods={maVisiblePeriods}
+                    maAvailablePeriods={MA_DEFAULT_PERIODS}
+                    onMAToggle={toggleMAPeriod}
+                    emaVisiblePeriods={emaVisiblePeriods}
+                    emaAvailablePeriods={EMA_DEFAULT_PERIODS}
+                    onEMAToggle={toggleEMAPeriod}
+                    bollinger={{
+                        visible: bollingerVisible,
+                        onToggle: toggleBollinger,
+                    }}
+                    macd={{ visible: macdVisible, onToggle: toggleMACD }}
+                    rsi={{ visible: rsiVisible, onToggle: toggleRSI }}
+                    dmi={{ visible: dmiVisible, onToggle: toggleDMI }}
+                />
+            </div>
+        </div>
+    );
 }
