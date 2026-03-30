@@ -167,6 +167,10 @@ Review before implementation and ensure these are not repeated.
 
 2. Inline prop types
    → Define as a separate interface
+   → Props interface must be placed directly above the component function
+   → Rule: CONVENTIONS.md — maintains viewpoint locality; FF.md 1-G
+   ❌ type Props = {...}; function ComponentA() {...} function ComponentB() {...} function MyComponent(props: Props) {...}
+   ✅ type Props = {...}; function MyComponent(props: Props) {...}
 
 3. Managing timeframe as a URL query parameter
    → Manage as client state only
@@ -202,6 +206,30 @@ Review before implementation and ensure these are not repeated.
    ❌ <button onClick={handleToggle}><button onClick={handleEye}>...</button></button>
    ❌ <div role="button" onClick={handleToggle}><button onClick={handleEye}>...</button></div>
    ✅ <div className="flex"><button onClick={handleToggle}>...</button><button onClick={handleEye}>...</button></div>
+
+8. External callback prop in useEffect dependency array causes infinite loops
+   → useEffectEvent is required to prevent re-execution when callback reference changes
+   → Rule: FF.md Predictability 2-C — hidden behavior (infinite loop on callback change) must be explicit
+   → Rule: CONVENTIONS.md Custom Hook Rules — callback props must be wrapped in useEffectEvent
+   ❌ const StockChart = ({ onPatternOverlay }) => {
+         useEffect(() => { onPatternOverlay(...); }, [onPatternOverlay]); // loop if caller passes inline function
+      };
+   ✅ const StockChart = ({ onPatternOverlay }) => {
+         const notifyPatternOverlay = useEffectEvent((info) => onPatternOverlay?.(info));
+         useEffect(() => { notifyPatternOverlay(...); }, [visiblePatterns]); // callback excluded
+      };
+
+9. useState lazy initializer derives value from props
+   → Initializer only runs once; prop changes are not reflected in state
+   → Use useEffect to synchronize state when prop-derived initial values are needed
+   → Rule: FF.md Predictability 2-C — state should match props after prop update
+   ❌ const [visible, setVisible] = useState(() => computeFromProps(props.items));
+      // if props.items changes, visible remains stale
+   ✅ const [visible, setVisible] = useState<Set<string>>(new Set());
+      useEffect(() => {
+        setVisible(new Set(props.items.filter(item => item.detected).map(item => item.id)));
+      }, [props.items]);
+      // or use useReducer with dispatch({ type: 'reset', payload: newItems })
 ```
 
 ---
@@ -225,6 +253,17 @@ Review before implementation and ensure these are not repeated.
    ✅ Spec explicitly states: 1Min uses [9, 21]; 5Min–1Day uses [20, 60]
    ❌ // bars may still be loading  (written inside a Suspense-guaranteed mount)
    ✅ // bars are guaranteed loaded because this component only mounts after useSuspenseQuery resolves
+
+4. Silent fallback without exposing degradation to caller
+   → Rule: FF.md Predictability 2-C — hidden failures must be explicit
+   → If a critical operation fails silently (e.g. skills loading, provider instantiation),
+     caller must be informed via response field or error thrown
+   → .catch(() => []) hides the failure; caller has no way to know degraded state occurred
+   ❌ skillsLoader.loadSkills().catch(() => [])  // caller doesn't know skills failed to load
+   ✅ .catch((error) => { console.error('Skills load failed', error); return []; })
+      + include skillsDegraded: true in response for route handlers
+   ❌ new ClaudeProvider() directly instantiated when AI_PROVIDER env says to use Gemini
+   ✅ createAIProvider() helper that respects environment variable
 ```
 
 ---

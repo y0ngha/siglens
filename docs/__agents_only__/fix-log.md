@@ -50,10 +50,6 @@
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
 - Context: `route.ts`의 입력 검증에서 `!bars`만으로는 빈 배열을 거르지 못하여, `bars.length === 0` 조건을 추가하여 빈 bars도 400 응답으로 처리
 
-## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | review fix | 2026-03-29]
-- Violation: skills 로딩 실패 시 빈 배열로 fallback되었으나 응답 JSON에 그 사실이 반영되지 않아 호출 측에서 degraded 상태를 알 수 없음
-- Rule: FF.md Predictability 2-C — 숨겨진 로직을 명시적으로 드러내야 한다
-- Context: `route.ts`에서 skills 로딩이 실패해도 클라이언트에 반환되는 분석 결과에 표시가 없었음; `AnalysisResponse`에 optional `skillsDegraded` 필드를 추가하고 route.ts에서 `skillsDegraded: true`를 포함해 반환하도록 수정
 
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | review fix | 2026-03-29]
 - Violation: `type이 pattern이 아닌 skill` 테스트에서 `makeSkill({ name: 'RSI 다이버전스' })`처럼 type 생략으로 `undefined !== 'pattern'`이라는 암묵적 사실에 의존함
@@ -65,10 +61,6 @@
 - Rule: CONVENTIONS.md Coding Paradigm — 중복 로직을 제거하고 단일 확인으로 단순화해야 함
 - Context: `factory.ts`의 `createAIProvider`에서 `raw`에 기본값을 먼저 할당하면 `undefined` 케이스가 `in` 연산자 이전에 이미 처리되어 논리가 불명확해짐; `raw && raw in AI_PROVIDER_MAP` 패턴으로 단순화
 
-## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
-- Violation: `gemini.ts`의 JSON 파싱 실패 `catch` 블록에서 원본 에러를 무시하고 새 에러만 throw함
-- Rule: FF.md Predictability 2-C — 숨겨진 정보(원본 에러)를 명시적으로 드러내야 디버깅이 가능함
-- Context: `catch {}` 블록에서 에러 인자를 받지 않고 새 Error만 throw하여 원본 파싱 에러와 실패한 raw text가 손실됨; `cause: error` 옵션과 `console.error`로 원본 에러 및 텍스트를 포함하도록 수정
 
 ## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
 - Violation: `factory.test.ts`의 `beforeEach`에서 `jest.resetModules()`를 호출하지만, 모든 import가 모듈 로드 시점에 이미 바인딩되어 있어 reset이 실제로 아무 효과도 없음
@@ -80,35 +72,8 @@
 - Rule: FF.md Cohesion 3-A — 함께 변경되는 코드는 같은 위치에 있어야 한다. 함수의 엣지 케이스 커버리지는 해당 함수가 위치한 파일의 테스트에 있어야 함
 - Context: 코드 블록 앞/뒤 텍스트 처리는 `claude.test.ts`의 provider 레벨에서만 검증되고 있었으나, `stripMarkdownCodeBlock`이 `utils.ts`로 이동했으므로 해당 케이스를 `utils.test.ts`에 직접 추가
 
-## [Issue #83 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
-- Violation: `toSkill` 함수에서 `Skill.pattern?` 필드를 파싱하지 않아 domain interface와 infrastructure 파서 간 불일치 발생
-- Rule: MISTAKES.md TypeScript #11 — domain 인터페이스에 필드가 존재하면 infrastructure 파서에서 반드시 해당 필드를 파싱해야 한다
-- Context: `loader.ts`의 `toSkill`에 `pattern` 파싱 라인이 누락되어 있었으며, `data.pattern != null ? String(data.pattern) : undefined`를 추가하여 skills MD의 `pattern` frontmatter 필드를 올바르게 파싱하도록 수정
 
-## [Issue #83 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
-- Violation: `Skill.pattern` 필드가 domain 타입에 있지만 loader 테스트에서 해당 필드를 전혀 검증하지 않음
-- Rule: MISTAKES.md Tests #3 — 타입/인터페이스에 새 필드가 추가될 때 반드시 해당 필드의 존재 여부 또는 값을 검증하는 it() 케이스가 있어야 한다
-- Context: `loader.test.ts`에 `SKILL_WITH_PATTERN_MD` 픽스처와 `pattern 파싱` describe 블록을 추가하여 `pattern: 'head_and_shoulders'` 파싱과 pattern 미존재 시 undefined 반환을 검증
 
-## [Issue #83 | feat/83/skills-category-display-chart-overlay | review fix | 2026-03-30]
-- Violation: `usePatternOverlay`의 초기 `visiblePatterns`가 빈 Set으로 설정되어 detected 패턴이 기본적으로 차트에 표시되지 않음; `StockChart`에서 반환값(`visiblePatterns`, `togglePattern`)을 무시하여 toggle 기능이 외부에 노출되지 않음
-- Rule: FF.md Predictability 2-C — 숨겨진 상태(초기 empty Set으로 인한 영구 비표시)를 명시적으로 드러내야 한다; CONVENTIONS.md Custom Hook Rules — 훅의 반환값은 사용되어야 한다
-- Context: `usePatternOverlay`가 `useState(new Set())`으로 초기화되어 있어 detected 패턴들이 기본 표시되지 않았음; lazy initializer로 `new Set(patterns.filter(p => p.detected).map(p => p.patternName))`를 사용하고, `StockChart`에 `onPatternOverlayReady` prop을 추가하여 `visiblePatterns`와 `togglePattern`을 상위로 전달 가능하게 수정
-
-## [Issue #83 | feat/83/skills-category-display-chart-overlay | review fix | 2026-03-30]
-- Violation: 첫 번째 정상 케이스 `toEqual`에서 `category`, `pattern`, `display` 필드가 `undefined`임을 명시적으로 검증하지 않음
-- Rule: MISTAKES.md Tests Rule 3 — 타입에 존재하는 필드는 검증 케이스를 가져야 한다
-- Context: `VALID_SKILL_MD` 픽스처에는 `category`, `pattern`, `display` 필드가 없으므로 `toSkill`이 이들을 `undefined`로 반환해야 하며, `toEqual` 기대값에 `category: undefined, pattern: undefined, display: undefined`를 명시적으로 추가하여 향후 `toSkill` 변경 시 회귀를 탐지할 수 있도록 수정
-
-## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
-- Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그
-- Rule: MISTAKES.md — Components: Managing timeframe as URL query parameter / useEffect Side Effect Isolation (올바른 초기값으로 ref를 초기화해야 함)
-- Context: `useBars`가 `useSuspenseQuery`를 사용하기 때문에 캐시 miss 시 ChartContent가 remount되는데, 이때 `useRef(timeframeChangeCount)`로 초기화하면 ref.current가 현재 count 값과 동일해져서 useEffect에서 조기 반환이 발생하여 분석이 실행되지 않음. `useRef(0)`으로 초기화해야 remount 시에도 올바르게 동작함.
-
-## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
-- Violation: `useState` lazy initializer로 `patterns` prop으로부터 초기 `visiblePatterns`를 계산하여 이후 prop 변경 시 동기화되지 않는 버그
-- Rule: MISTAKES.md Components Rule 6 — stale closure state 사용 금지; `useState` initializer는 초기 렌더링에만 실행되므로 이후 prop 변경이 반영되지 않음
-- Context: `usePatternOverlay`에서 `patterns`가 비동기로 로드되는 경우 lazy initializer가 빈 배열로 실행되어 패턴이 차트에 표시되지 않는 버그 발생. `useReducer`와 `dispatch({ type: 'reset' })`으로 prop 변경 시 동기화
 
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
 - Violation: `useEffect` 두 곳에서 `patterns.filter(p => p.detected && p.renderConfig)` 중복 계산
@@ -120,25 +85,13 @@
 - Rule: FF.md Predictability 2-C — 이름, 파라미터, 반환값만으로 동작을 예측할 수 있어야 함
 - Context: prop이 초기화 완료 시 한 번만 호출되는 이벤트처럼 읽히나 실제로는 `visiblePatterns`나 `togglePattern` 변경 시마다 반복 호출됨. `onPatternOverlayChange`로 변경
 
-## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 2 | 2026-03-30]
-- Violation: `StockChart.tsx`의 `useEffect`에서 `onPatternOverlayChange` 콜백 prop이 dependency 배열에 포함되어, 호출자가 인라인 함수로 전달하면 매 렌더마다 effect가 재실행되는 무한 루프 위험
-- Rule: MISTAKES.md Components Rule — 외부 콜백 prop은 useEffectEvent로 래핑하여 dependency에서 제외해야 한다; FF.md Predictability 2-C(hidden behavior) 위반
-- Context: `onPatternOverlayChange`를 `useEffectEvent`로 래핑하여 `notifyPatternOverlayChange`로 만들고, `useEffect`의 dependency 배열에서 해당 prop을 제거하여 안정적인 effect 실행을 보장
 
-## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 4 | 2026-03-30]
-- Violation: `StockChart.tsx`의 `useEffect` dependency 배열에 `togglePattern`이 포함되어 있으나, `togglePattern`은 `useCallback([], [])`으로 항상 안정적인 함수 참조라 실질적으로 effect 재실행에 영향을 주지 않음
-- Rule: FF.md Readability — 불필요한 dependency는 코드 독자에게 'togglePattern이 변경될 수 있다'는 오해를 줄 수 있어 가독성 위반
-- Context: `[visiblePatterns, togglePattern]` dependency 중 `togglePattern`을 제거하고 `[visiblePatterns]`만 남겨 의도를 명확히 함
 
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 5 | 2026-03-30]
 - Violation: `readFile`이 `Promise.all` 내부에서 rejection될 때 에러가 올바르게 전파되는지 검증하는 테스트 케이스 누락
 - Rule: CONVENTIONS.md Test Rules — infrastructure/ 커버리지 목표 100%; readFile rejection 경로가 미검증 상태
 - Context: `loader.ts`의 `loadSkills()`가 `Promise.all`을 사용하여 여러 파일을 병렬 로드하므로, readFile이 실패할 경우 Promise.all 전체가 reject되어야 함. `readFile 에러` describe 블록과 `readFile이 실패하면 에러를 전파한다` it 케이스를 추가하여 EACCES 에러 전파를 검증
 
-## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분석강화 | review fix | 2026-03-30]
-- Violation: `priceTargets.bullish.targets` 배열 항목의 `price`, `basis` 필드와 시나리오의 `condition` 필드를 검증하는 테스트 케이스 누락
-- Rule: MISTAKES.md Tests Rule 3 — 타입/인터페이스에 새 필드가 추가될 때 반드시 해당 필드의 존재 여부 또는 값을 검증하는 it() 케이스가 있어야 한다
-- Context: `PriceTarget.price/basis`와 `PriceScenario.condition`은 이번 PR에서 새로 추가된 필드이나 `claude.test.ts`와 `gemini.test.ts` 모두 필드 존재 여부를 검증하지 않았음; 두 파일에 `priceTargets.bullish.targets 항목에 price와 basis 필드가 포함된다`와 `priceTargets.bullish와 bearish에 condition 필드가 포함된다` it 케이스를 각각 추가
 
 ## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분석강화 | review fix | 2026-03-30]
 - Violation: PoC div에 `col-span-2` 클래스가 적용되어 있으나 부모 컨테이너가 flex이므로 아무 효과가 없는 dead CSS
@@ -150,10 +103,6 @@
 - Rule: CONVENTIONS.md — 문서는 실제 구현과 일치해야 한다
 - Context: `domain/types.ts`의 `AnalysisResponse`에는 `patternSummaries: PatternSummary[]`, `skillResults: SkillResult[]`가 정의되어 있으나 SIGLENS_API.md에는 없었음; `PatternSummary`, `SkillResult` 인터페이스 정의와 함께 두 필드를 추가하고 JSON 예시에도 빈 배열로 반영
 
-## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-31]
-- Violation: `app/[symbol]/page.tsx`에서 `new ClaudeProvider()`를 직접 인스턴스화하여 `AI_PROVIDER` 환경변수를 무시하고 항상 Claude를 사용
-- Rule: FF.md Predictability 2-C — 숨겨진 로직은 노출해야 함. `AI_PROVIDER=gemini`로 설정한 호출자는 모든 곳에서 Gemini가 사용되길 기대하지만, 초기 페이지 로드에서만 Claude가 묵시적으로 사용됨
-- Context: `route.ts`와 동일하게 `createAIProvider()`를 사용하도록 교체하여 환경변수 기반 프로바이더 선택이 일관되게 적용됨
 
 ## [Issue #86 | fix/86/초기-페이지-로딩-AI-분석-오류 | 2026-03-31]
 - Violation: `AnalysisStatusBannerProps` 인터페이스가 `AnalysisStatusBanner` 컴포넌트와 직접 인접하지 않고, 사이에 `AnalyzingBanner`와 `ErrorBanner` 컴포넌트 두 개가 삽입되어 있었음
