@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-    title: 'Siglens',
+    title: 'Siglens | 기술적 주가 분석 with AI',
     description: '주식 종목 분석 및 차트 뷰어',
 };
 
