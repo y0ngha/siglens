@@ -230,6 +230,26 @@ Review before implementation and ensure these are not repeated.
         setVisible(new Set(props.items.filter(item => item.detected).map(item => item.id)));
       }, [props.items]);
       // or use useReducer with dispatch({ type: 'reset', payload: newItems })
+
+10. Missing aria-expanded attribute on accordion triggers
+    → Accordion toggle elements (role="button" or <button>) must declare aria-expanded when managing hidden content
+    → Rule: ARIA spec — interactive controls that toggle visibility must expose state to screen readers
+    → Applies to both custom div[role="button"] and native <button> accordion triggers
+    ❌ <div role="button" onClick={toggle}>Trigger</div><div className={isOpen ? '' : 'hidden'}>Content</div>
+    ✅ <div role="button" onClick={toggle} aria-expanded={isOpen}>Trigger</div><div hidden={!isOpen}>Content</div>
+    ❌ <button onClick={toggle}>Trigger</button><div className={isOpen ? '' : 'hidden'}>Content</div>
+    ✅ <button onClick={toggle} aria-expanded={isOpen}>Trigger</button><div hidden={!isOpen}>Content</div>
+
+11. Component managing its own external margin or parent depending on child's internal layout
+    → Components must not hardcode their own external margins (margin, mb-2, etc.)
+    → Parents must not depend on children's internal structure or layout direction
+    → Rule: DESIGN.md — each component is responsible for its own internal layout; external spacing belongs to the caller
+    → Rule: FF.md Coupling 4-A — components should not create tight coupling through layout expectations
+    ❌ export function DetectedBadge() { return <div className="mb-2">...</div>; }  // hardcodes external margin
+    ❌ <div className="flex-col md:flex-row"><ChartContent /></div>  // parent controls child's internal layout
+    ✅ export function DetectedBadge() { return <div>...</div>; }  // layout is caller's responsibility
+    ✅ export function ChartContent() { return <div className="flex-col md:flex-row">...</div>; }  // child owns its layout
+       <SymbolPageClient />  // caller adds margin as needed
 ```
 
 ---
