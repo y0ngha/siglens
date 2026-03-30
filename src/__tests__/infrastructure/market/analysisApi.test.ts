@@ -34,6 +34,10 @@ const mockAnalysisResponse = {
     skillSignals: [],
     riskLevel: 'low' as const,
     keyLevels: { support: [], resistance: [] },
+    priceTargets: {
+        bullish: { targets: [], condition: '' },
+        bearish: { targets: [], condition: '' },
+    },
     patternSummaries: [],
     skillResults: [],
 };

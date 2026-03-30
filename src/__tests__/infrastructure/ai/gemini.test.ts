@@ -14,7 +14,20 @@ describe('GeminiProvider', () => {
         signals: [],
         skillSignals: [],
         riskLevel: 'low',
-        keyLevels: { support: [100], resistance: [110] },
+        keyLevels: {
+            support: [{ price: 100, reason: '이전 저점' }],
+            resistance: [{ price: 110, reason: '이전 고점' }],
+        },
+        priceTargets: {
+            bullish: {
+                targets: [{ price: 115, basis: '이중바닥 목표가' }],
+                condition: '110 돌파 시',
+            },
+            bearish: {
+                targets: [{ price: 95, basis: '지지선 이탈' }],
+                condition: '100 이탈 시',
+            },
+        },
         patternSummaries: [],
         skillResults: [],
     };
@@ -112,6 +125,52 @@ describe('GeminiProvider', () => {
             expect(Array.isArray(result.keyLevels.resistance)).toBe(true);
         });
 
+        it('keyLevels 항목에 price와 reason이 포함된다', async () => {
+            const result = await provider.analyze('test prompt');
+
+            expect(result.keyLevels.support[0]).toHaveProperty('price');
+            expect(result.keyLevels.support[0]).toHaveProperty('reason');
+            expect(result.keyLevels.resistance[0]).toHaveProperty('price');
+            expect(result.keyLevels.resistance[0]).toHaveProperty('reason');
+        });
+
+        it('priceTargets에 bullish와 bearish 시나리오가 포함된다', async () => {
+            const result = await provider.analyze('test prompt');
+
+            expect(result.priceTargets).toHaveProperty('bullish');
+            expect(result.priceTargets).toHaveProperty('bearish');
+            expect(Array.isArray(result.priceTargets.bullish.targets)).toBe(
+                true
+            );
+            expect(Array.isArray(result.priceTargets.bearish.targets)).toBe(
+                true
+            );
+        });
+
+        it('priceTargets.bullish.targets 항목에 price와 basis 필드가 포함된다', async () => {
+            const result = await provider.analyze('test prompt');
+
+            expect(result.priceTargets.bullish.targets[0]).toHaveProperty(
+                'price'
+            );
+            expect(result.priceTargets.bullish.targets[0]).toHaveProperty(
+                'basis'
+            );
+            expect(result.priceTargets.bearish.targets[0]).toHaveProperty(
+                'price'
+            );
+            expect(result.priceTargets.bearish.targets[0]).toHaveProperty(
+                'basis'
+            );
+        });
+
+        it('priceTargets.bullish와 bearish에 condition 필드가 포함된다', async () => {
+            const result = await provider.analyze('test prompt');
+
+            expect(result.priceTargets.bullish).toHaveProperty('condition');
+            expect(result.priceTargets.bearish).toHaveProperty('condition');
+        });
+
         it('skillsDegraded 필드를 포함하지 않는다', async () => {
             const result = await provider.analyze('test prompt');
 
@@ -138,6 +197,32 @@ describe('GeminiProvider', () => {
                 response: {
                     text: () =>
                         `\`\`\`\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
+                },
+            });
+
+            const result = await provider.analyze('test prompt');
+
+            expect(result).toEqual(mockAnalysisResponse);
+        });
+
+        it('코드 블록 뒤에 후행 텍스트가 있어도 JSON을 파싱한다', async () => {
+            mockGenerateContent.mockResolvedValueOnce({
+                response: {
+                    text: () =>
+                        `\`\`\`json\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\`\n이상입니다.`,
+                },
+            });
+
+            const result = await provider.analyze('test prompt');
+
+            expect(result).toEqual(mockAnalysisResponse);
+        });
+
+        it('코드 블록 앞에 설명 텍스트가 있어도 JSON을 파싱한다', async () => {
+            mockGenerateContent.mockResolvedValueOnce({
+                response: {
+                    text: () =>
+                        `다음과 같습니다:\n\`\`\`json\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
                 },
             });
 

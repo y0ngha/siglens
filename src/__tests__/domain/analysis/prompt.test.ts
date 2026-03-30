@@ -643,6 +643,40 @@ describe('buildAnalysisPrompt', () => {
         });
     });
 
+    describe('분석 가이드라인 섹션', () => {
+        it('지지/저항 판단 가이드라인이 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('지지/저항 판단');
+        });
+
+        it('가격 목표 산출 가이드라인이 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('가격 목표 산출');
+        });
+
+        it('가이드라인 섹션은 분석 요청 섹션보다 앞에 위치한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            const guidelineIndex = result.indexOf('분석 가이드라인');
+            const requestIndex = result.indexOf('분석 요청');
+            expect(guidelineIndex).toBeLessThan(requestIndex);
+        });
+    });
+
     describe('분석 요청 섹션', () => {
         it('JSON 형식 응답을 요청한다', () => {
             const result = buildAnalysisPrompt(
@@ -752,6 +786,47 @@ describe('buildAnalysisPrompt', () => {
                 []
             );
             expect(result).toContain('timeRange');
+        });
+
+        it('keyLevels 스키마에 reason 필드가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('"reason"');
+        });
+
+        it('keyLevels 스키마에 poc 필드가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('"poc"');
+        });
+
+        it('priceTargets 필드가 요청에 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('priceTargets');
+        });
+
+        it('priceTargets 스키마에 bullish와 bearish 시나리오가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('"bullish"');
+            expect(result).toContain('"bearish"');
         });
     });
 
