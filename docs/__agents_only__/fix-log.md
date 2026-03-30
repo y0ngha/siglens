@@ -122,6 +122,11 @@
 - Rule: MISTAKES.md Tests Rule 3 — 타입에 존재하는 필드는 검증 케이스를 가져야 한다
 - Context: `VALID_SKILL_MD` 픽스처에는 `category`, `pattern`, `display` 필드가 없으므로 `toSkill`이 이들을 `undefined`로 반환해야 하며, `toEqual` 기대값에 `category: undefined, pattern: undefined, display: undefined`를 명시적으로 추가하여 향후 `toSkill` 변경 시 회귀를 탐지할 수 있도록 수정
 
+## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분석강화 | review fix | 2026-03-30]
+- Violation: `ANALYSIS_GUIDELINES`의 지지/저항 가이드라인 문자열에 MA/EMA 기간이 `'20'`, `'20/60'` 리터럴로 하드코딩됨
+- Rule: MISTAKES.md TypeScript Rule 7 — 상수에서 파생되는 값을 구현 코드에서 리터럴로 재작성하지 말 것; 상수가 변경되어도 텍스트가 자동으로 갱신되어야 함
+- Context: `domain/analysis/prompt.ts`의 `ANALYSIS_GUIDELINES` 배열에 `'MA 20, EMA 20/60'`이 하드코딩되어 있었으며, `MA_DEFAULT_PERIODS.join(',')` 및 `` `${EMA_DEFAULT_PERIODS[1]}/${EMA_DEFAULT_PERIODS[3]}` `` 템플릿 리터럴로 교체하여 상수 참조로 수정
+
 ## [PR #76 | fix/72/타임프레임-변경-시-AI-분석-자동-업데이트 | 2026-03-29]
 - Violation: `useRef(timeframeChangeCount)`로 초기화하여 Suspense remount 시 ref가 현재 count 값으로 초기화되어 타임프레임 변경 분석이 실행되지 않는 버그
 - Rule: MISTAKES.md — Components: Managing timeframe as URL query parameter / useEffect Side Effect Isolation (올바른 초기값으로 ref를 초기화해야 함)
@@ -176,4 +181,24 @@
 - Violation: `readFile`이 `Promise.all` 내부에서 rejection될 때 에러가 올바르게 전파되는지 검증하는 테스트 케이스 누락
 - Rule: CONVENTIONS.md Test Rules — infrastructure/ 커버리지 목표 100%; readFile rejection 경로가 미검증 상태
 - Context: `loader.ts`의 `loadSkills()`가 `Promise.all`을 사용하여 여러 파일을 병렬 로드하므로, readFile이 실패할 경우 Promise.all 전체가 reject되어야 함. `readFile 에러` describe 블록과 `readFile이 실패하면 에러를 전파한다` it 케이스를 추가하여 EACCES 에러 전파를 검증
+
+## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분석강화 | review fix | 2026-03-30]
+- Violation: `priceTargets.bullish.targets` 배열 항목의 `price`, `basis` 필드와 시나리오의 `condition` 필드를 검증하는 테스트 케이스 누락
+- Rule: MISTAKES.md Tests Rule 3 — 타입/인터페이스에 새 필드가 추가될 때 반드시 해당 필드의 존재 여부 또는 값을 검증하는 it() 케이스가 있어야 한다
+- Context: `PriceTarget.price/basis`와 `PriceScenario.condition`은 이번 PR에서 새로 추가된 필드이나 `claude.test.ts`와 `gemini.test.ts` 모두 필드 존재 여부를 검증하지 않았음; 두 파일에 `priceTargets.bullish.targets 항목에 price와 basis 필드가 포함된다`와 `priceTargets.bullish와 bearish에 condition 필드가 포함된다` it 케이스를 각각 추가
+
+## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분석강화 | review fix | 2026-03-30]
+- Violation: PoC div에 `col-span-2` 클래스가 적용되어 있으나 부모 컨테이너가 flex이므로 아무 효과가 없는 dead CSS
+- Rule: CONVENTIONS.md — 불필요한 클래스는 제거해야 한다
+- Context: `AnalysisPanel.tsx`의 PoC div 부모(line 496)는 `flex flex-col`이고 `grid grid-cols-2`(line 500)는 형제 div이므로 `col-span-2`가 적용될 그리드 컨텍스트가 없었음; `col-span-2`를 제거하여 해결
+
+## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분석강화 | review fix 2 | 2026-03-30]
+- Violation: `gemini.test.ts`의 '응답이 마크다운 코드 블록으로 감싸진 경우' describe 블록에 '코드 블록 뒤에 후행 텍스트' 및 '코드 블록 앞에 설명 텍스트' 케이스가 누락됨
+- Rule: MISTAKES.md Tests Rule 8 — sibling Provider 쌍은 대칭적인 테스트 커버리지를 가져야 한다
+- Context: `claude.test.ts`의 동일한 describe 블록에는 4개의 it() 케이스가 있으나 `gemini.test.ts`에는 2개만 존재했음; 누락된 두 케이스를 추가하여 대칭 커버리지를 확보
+
+## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분析강화 | review fix 2 | 2026-03-30]
+- Violation: `SIGLENS_API.md`의 `AnalysisResponse` 인터페이스 정의에 `patternSummaries`와 `skillResults` 필드가 누락되어 `domain/types.ts`와 불일치
+- Rule: CONVENTIONS.md — 문서는 실제 구현과 일치해야 한다
+- Context: `domain/types.ts`의 `AnalysisResponse`에는 `patternSummaries: PatternSummary[]`, `skillResults: SkillResult[]`가 정의되어 있으나 SIGLENS_API.md에는 없었음; `PatternSummary`, `SkillResult` 인터페이스 정의와 함께 두 필드를 추가하고 JSON 예시에도 빈 배열로 반영
 

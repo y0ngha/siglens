@@ -113,9 +113,30 @@ type SignalType =
     | 'pattern'
     | 'skill';
 
+interface KeyLevel {
+    price: number;
+    reason: string;
+}
+
 interface KeyLevels {
-    support: number[];
-    resistance: number[];
+    support: KeyLevel[];
+    resistance: KeyLevel[];
+    poc?: KeyLevel;
+}
+
+interface PriceTarget {
+    price: number;
+    basis: string;
+}
+
+interface PriceScenario {
+    targets: PriceTarget[];
+    condition: string;
+}
+
+interface PriceTargets {
+    bullish: PriceScenario;
+    bearish: PriceScenario;
 }
 
 interface Signal {
@@ -130,6 +151,24 @@ interface SkillSignal {
     signals: Signal[];
 }
 
+// 차트 패턴 감지 결과 요약. skills/*.md 기반 패턴 분석 결과를 나타낸다.
+interface PatternSummary {
+    patternName: string;
+    skillName: string;
+    detected: boolean;
+    trend: Trend;
+    summary: string;
+    keyPrices?: number[];
+    timeRange?: { start: number; end: number };
+}
+
+// skill 기반 종합 분석 결과. 패턴 이외의 skill 분석 결과를 나타낸다.
+interface SkillResult {
+    skillName: string;
+    trend: Trend;
+    summary: string;
+}
+
 interface AnalysisResponse {
     summary: string;
     trend: Trend;
@@ -137,6 +176,9 @@ interface AnalysisResponse {
     skillSignals: SkillSignal[];
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
+    priceTargets: PriceTargets;
+    patternSummaries: PatternSummary[];
+    skillResults: SkillResult[];
 }
 ```
 
@@ -150,9 +192,22 @@ interface AnalysisResponse {
     "skillSignals": [],
     "riskLevel": "medium",
     "keyLevels": {
-        "support": [182.5, 180.0],
-        "resistance": [188.0, 190.5]
-    }
+        "support": [{ "price": 182.5, "reason": "이전 저점 지지선" }],
+        "resistance": [{ "price": 188.0, "reason": "MA20 저항선" }],
+        "poc": { "price": 185.0, "reason": "거래량 집중 구간" }
+    },
+    "priceTargets": {
+        "bullish": {
+            "targets": [{ "price": 192.0, "basis": "헤드앤숄더 패턴 목표가" }],
+            "condition": "188.0 돌파 시"
+        },
+        "bearish": {
+            "targets": [{ "price": 178.0, "basis": "지지선 이탈 후 다음 지지" }],
+            "condition": "182.5 이탈 시"
+        }
+    },
+    "patternSummaries": [],
+    "skillResults": []
 }
 ```
 
