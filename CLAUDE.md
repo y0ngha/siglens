@@ -164,6 +164,23 @@ All other findings should be fixed. When in doubt, fix it.
 
 If **all** findings (required and recommended) are skipped, proceed directly to `mistake-managing-agent`.
 
+### Invoking review-agent (Round 2+)
+
+review-agent runs in an independent context each round — it has no memory of previous rounds.
+To prevent redundant re-reading of already-reviewed files, pass the previous round's findings when invoking round 2 or later:
+
+```
+현재 브랜치 {branch}의 코드를 리뷰해줘. 이번이 {N}라운드야.
+
+이전 라운드 findings (이미 수정 완료):
+{previous findings JSON}
+
+위 findings에서 수정된 파일들 위주로 집중 검토하고,
+이전 라운드에서 이미 OK였던 파일은 변경이 없으면 재검토하지 않아도 돼.
+```
+
+This reduces the number of files review-agent reads per round from the full changed file list to only the files that were actually modified by the fix agent.
+
 ### Exit Signal Contract
 
 Every sub-agent ends its response with a JSON exit signal and nothing else.
