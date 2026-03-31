@@ -1,16 +1,23 @@
 'use client';
 
+import type React from 'react';
 import type {
     AnalysisResponse,
     Bar,
     IndicatorResult,
     Timeframe,
 } from '@/domain/types';
+import { cn } from '@/lib/cn';
 import { StockChart } from '@/components/chart/StockChart';
 import { VolumeChart } from '@/components/chart/VolumeChart';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
+import {
+    usePanelResize,
+    PANEL_MIN_WIDTH,
+    PANEL_MAX_WIDTH,
+} from '@/components/symbol-page/hooks/usePanelResize';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 
@@ -96,6 +103,8 @@ export function ChartContent({
             indicators,
         });
 
+    const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
+        usePanelResize();
     const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
 
     return (
@@ -119,9 +128,31 @@ export function ChartContent({
 
             {/* AI 분석 패널 */}
             <aside
-                className="border-secondary-700 min-h-0 flex-1 overflow-y-auto border-t p-4 md:w-80 md:flex-none md:border-t-0 md:border-l"
+                className="border-secondary-700 relative min-h-0 flex-1 overflow-y-auto border-t p-4 md:w-[var(--panel-width)] md:flex-none md:border-t-0 md:border-l"
+                style={
+                    {
+                        // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가
+                        '--panel-width': `${panelWidth}px`,
+                    } as React.CSSProperties
+                }
                 aria-live="polite"
             >
+                {/* 드래그 핸들 */}
+                <div
+                    role="separator"
+                    tabIndex={0}
+                    aria-orientation="vertical"
+                    aria-label="패널 너비 조절"
+                    aria-valuenow={panelWidth}
+                    aria-valuemin={PANEL_MIN_WIDTH}
+                    aria-valuemax={PANEL_MAX_WIDTH}
+                    className={cn(
+                        'border-secondary-700 hover:border-primary-600 focus-visible:border-primary-600 absolute top-0 bottom-0 left-0 hidden w-1 cursor-col-resize border-l transition-colors outline-none md:block',
+                        isDragging && 'border-primary-500'
+                    )}
+                    onMouseDown={handleDragStart}
+                    onKeyDown={handleKeyDown}
+                />
                 <AnalysisStatusBanner
                     status={analysisStatus}
                     className="mb-3"
@@ -132,6 +163,11 @@ export function ChartContent({
                     onReanalyze={handleReanalyze}
                 />
             </aside>
+
+            {/* 드래그 중 전체 화면 오버레이 — 텍스트 선택 방지 */}
+            {isDragging && (
+                <div className="fixed inset-0 z-50 cursor-col-resize" />
+            )}
         </div>
     );
 }
