@@ -84,3 +84,8 @@
 - Rule: MISTAKES.md Tests Rule 10 — boundary value that is defined as a named constant in the domain must be imported rather than redeclared or inlined
 - Context: `UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0`이 `domain/indicators/constants.ts`에 이미 정의되어 있으나 테스트에서 리터럴 `0`을 직접 사용함; 상수 값이 변경될 경우 테스트 기대값이 구현과 무관하게 `0`에 고정되어 silently diverge될 수 있음
 
+## [PR #100 | feat/91/candle-pattern-summary-ui | 2026-03-31]
+- Violation: `findCandlePatternLabel`에서 `in` 연산자로 패턴명 존재 여부를 확인하여 프로토타입 체인(`toString` 등)에 있는 속성에 대해 `true`를 반환할 수 있는 위험이 있었음
+- Rule: FF.md Predictability 2-C — 외부 입력값(AI 응답)에 기반한 객체 조회는 프로토타입 오염에 안전한 방식을 사용해야 함
+- Context: `candle-labels.ts`의 `findCandlePatternLabel`에서 `in` 연산자 대신 직접 인덱스 접근 `(obj as Record<string, string>)[key]`를 사용하는 방식으로 변경하여 프로토타입 체인 조회 위험 제거
+
