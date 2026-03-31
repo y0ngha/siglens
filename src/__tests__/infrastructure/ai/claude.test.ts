@@ -30,6 +30,7 @@ describe('ClaudeProvider', () => {
         },
         patternSummaries: [],
         skillResults: [],
+        candlePatterns: [],
     };
 
     beforeEach(() => {
@@ -114,6 +115,12 @@ describe('ClaudeProvider', () => {
             const result = await provider.analyze('test prompt');
 
             expect(Array.isArray(result.skillResults)).toBe(true);
+        });
+
+        it('candlePatterns는 배열을 반환한다', async () => {
+            const result = await provider.analyze('test prompt');
+
+            expect(Array.isArray(result.candlePatterns)).toBe(true);
         });
 
         it('keyLevels.support와 keyLevels.resistance는 배열을 반환한다', async () => {
