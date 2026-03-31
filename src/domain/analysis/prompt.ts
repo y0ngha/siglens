@@ -30,11 +30,11 @@ const PERCENTAGE_FACTOR = 100;
 
 type CandlePatternEntryType = 'single' | 'multi';
 
-type CandlePatternEntry = {
+interface CandlePatternEntry {
     barsAgo: number;
     patternType: CandlePatternEntryType;
     patternName: string;
-};
+}
 
 const fmt = (n: number | null): string =>
     n === null ? 'N/A' : n.toFixed(INDICATOR_DECIMAL_PLACES);
@@ -117,7 +117,12 @@ const buildCandlePatternEntries = (bars: Bar[]): CandlePatternEntry[] => {
                 ) === idx
         );
 
-    return [...singleEntries, ...multiEntries].sort(
+    const multiBarPositions = new Set(multiEntries.map(e => e.barsAgo));
+    const filteredSingleEntries = singleEntries.filter(
+        e => !multiBarPositions.has(e.barsAgo)
+    );
+
+    return [...filteredSingleEntries, ...multiEntries].sort(
         (a, b) => b.barsAgo - a.barsAgo
     );
 };

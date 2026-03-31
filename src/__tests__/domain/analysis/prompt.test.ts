@@ -1136,6 +1136,39 @@ describe('prompt', () => {
             expect((patternMatches ?? []).length).toBeGreaterThanOrEqual(1);
         });
 
+        it('같은 barsAgo 위치에 다봉 패턴이 있을 때 단봉 패턴은 제외된다', () => {
+            // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 반드시 감지됨
+            // currBar(barsAgo=0)에는 다봉 패턴이 감지되므로 단봉 패턴은 출력되지 않아야 함
+            const prevBar: Bar = {
+                time: TEST_BAR_BASE_TIME,
+                open: 110,
+                high: 115,
+                low: 105,
+                close: 106,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const currBar: Bar = {
+                time: TEST_BAR_BASE_TIME + TEST_BAR_INTERVAL,
+                open: 104,
+                high: 120,
+                low: 103,
+                close: 118,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const bars = [prevBar, currBar];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                []
+            );
+            const patternLines = result
+                .split('\n')
+                .filter(line => line.includes('[0 bars ago]'));
+            expect(patternLines.length).toBe(1);
+            expect(patternLines[0]).toContain('Multi-candle pattern');
+        });
+
         it('최근 15봉 이전에만 존재하는 다봉 패턴은 감지 결과에 포함되지 않는다', () => {
             // bars[3], bars[4]: bullish_engulfing (bearish then engulfing bullish)
             // bars[5] ~ bars[19]: 15 neutral bars with no detectable pattern

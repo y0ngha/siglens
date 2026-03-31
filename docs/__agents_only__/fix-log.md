@@ -104,3 +104,13 @@
 - Violation: 다봉 패턴 감지 테스트 2건에서 `if (result.includes('Multi-candle pattern:'))` 조건부 assertion 패턴을 사용하여 패턴이 미감지될 경우 테스트가 assertion 없이 통과됨
 - Rule: FF.md Predictability 2-C, CONVENTIONS.md 테스트 규칙 — 각 it 블록은 정확히 하나의 동작을 무조건적으로 검증해야 함
 - Context: `prompt.test.ts`의 두 다봉 패턴 테스트에서 사용한 봉 데이터(음봉→양봉 장악형 조건 충족)는 반드시 `bullish_engulfing`을 감지하므로 if 가드 없이 직접 assertion 가능; if 조건문 제거 후 unconditional `expect(result).toMatch(...)` 패턴으로 변경
+
+## [PR #116 | fix/114/캔들-패턴-감지-범위-최근-15봉으로-제한 | review fix | 2026-04-01]
+- Violation: `buildCandlePatternEntries`에서 `singleEntries`와 `multiEntries`를 단순 concat하여 같은 `barsAgo` 위치에 단봉+다봉 패턴이 동시에 출력됨
+- Rule: domain/CLAUDE.md Pattern Priority — 같은 봉에 다봉 패턴이 감지되면 단봉 패턴은 출력하지 않아야 한다
+- Context: `prompt.ts`의 `buildCandlePatternEntries`에서 `multiBarPositions` Set을 생성하여 다봉 패턴이 있는 `barsAgo` 위치의 단봉 패턴을 필터링하도록 수정
+
+## [PR #116 | fix/114/캔들-패턴-감지-범위-최근-15봉으로-제한 | review fix | 2026-04-01]
+- Violation: `type CandlePatternEntry = { ... }` 객체 형상을 type alias로 선언
+- Rule: CONVENTIONS.md TypeScript Rules — 객체 형상(object shape)은 `interface`로 선언해야 한다
+- Context: `prompt.ts`의 `CandlePatternEntry`가 `type` 키워드로 선언되어 있었음; `interface CandlePatternEntry`로 변경
