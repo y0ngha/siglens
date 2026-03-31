@@ -36,18 +36,22 @@ function ErrorBanner({ message }: ErrorBannerProps) {
 
 interface AnalysisStatusBannerProps {
     status: AnalysisStatus;
+    className?: string;
 }
 
-function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
+function AnalysisStatusBanner({
+    status,
+    className,
+}: AnalysisStatusBannerProps) {
     if (status.type === 'analyzing')
         return (
-            <div className="mb-3">
+            <div className={className}>
                 <AnalyzingBanner />
             </div>
         );
     if (status.type === 'error')
         return (
-            <div className="mb-3">
+            <div className={className}>
                 <ErrorBanner message={status.message} />
             </div>
         );
@@ -118,7 +122,10 @@ export function ChartContent({
                 className="border-secondary-700 min-h-0 flex-1 overflow-y-auto border-t p-4 md:w-80 md:flex-none md:border-t-0 md:border-l"
                 aria-live="polite"
             >
-                <AnalysisStatusBanner status={analysisStatus} />
+                <AnalysisStatusBanner
+                    status={analysisStatus}
+                    className="mb-3"
+                />
                 <AnalysisPanel
                     analysis={analysis}
                     isAnalyzing={isAnalyzing}

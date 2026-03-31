@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
+import type { RawAnalysisResponse } from '@/domain/types';
 import type { AIProvider } from './types';
 import { AI_SYSTEM_PROMPT, stripMarkdownCodeBlock } from './utils';
 

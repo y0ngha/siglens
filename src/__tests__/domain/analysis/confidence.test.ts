@@ -2,9 +2,10 @@ import {
     enrichAnalysisWithConfidence,
     filterPatterns,
 } from '@/domain/analysis/confidence';
-import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
+import type { RawAnalysisResponse } from '@/domain/types';
 import {
     HIGH_CONFIDENCE_WEIGHT,
+    MEDIUM_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
@@ -14,8 +15,6 @@ import type {
     Skill,
     SkillChartDisplay,
 } from '@/domain/types';
-
-const TEST_MEDIUM_CONFIDENCE = 0.7;
 
 const makeSkillChartDisplay = (
     overrides?: Partial<SkillChartDisplay>
@@ -228,12 +227,12 @@ describe('confidence', () => {
             const skills = [
                 makeSkill({
                     name: 'RSI 다이버전스',
-                    confidenceWeight: TEST_MEDIUM_CONFIDENCE,
+                    confidenceWeight: MEDIUM_CONFIDENCE_WEIGHT,
                 }),
             ];
             const result = enrichAnalysisWithConfidence(analysis, skills);
             expect(result.skillResults[0].confidenceWeight).toBe(
-                TEST_MEDIUM_CONFIDENCE
+                MEDIUM_CONFIDENCE_WEIGHT
             );
         });
 

@@ -1,6 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { GeminiProvider } from '@/infrastructure/ai/gemini';
-import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
+import type { RawAnalysisResponse } from '@/domain/types';
 
 jest.mock('@google/generative-ai');
 

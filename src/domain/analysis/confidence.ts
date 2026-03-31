@@ -5,18 +5,9 @@ import {
 import type {
     AnalysisResponse,
     PatternResult,
-    PatternSummary,
+    RawAnalysisResponse,
     Skill,
-    SkillResult,
 } from '@/domain/types';
-
-export type RawAnalysisResponse = Omit<
-    AnalysisResponse,
-    'patternSummaries' | 'skillResults'
-> & {
-    patternSummaries: Omit<PatternSummary, 'confidenceWeight'>[];
-    skillResults: Omit<SkillResult, 'confidenceWeight'>[];
-};
 
 export function filterPatterns(patterns: PatternResult[]): PatternResult[] {
     return patterns.filter(p => p.confidenceWeight >= MIN_CONFIDENCE_WEIGHT);

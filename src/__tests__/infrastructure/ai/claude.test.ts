@@ -1,6 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { ClaudeProvider } from '@/infrastructure/ai/claude';
-import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
+import type { RawAnalysisResponse } from '@/domain/types';
 
 jest.mock('@anthropic-ai/sdk');
 

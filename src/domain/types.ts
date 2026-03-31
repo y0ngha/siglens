@@ -183,3 +183,11 @@ export interface AnalyzeVariables {
     bars: Bar[];
     indicators: IndicatorResult;
 }
+
+export type RawAnalysisResponse = Omit<
+    AnalysisResponse,
+    'patternSummaries' | 'skillResults'
+> & {
+    patternSummaries: Omit<PatternSummary, 'confidenceWeight'>[];
+    skillResults: Omit<SkillResult, 'confidenceWeight'>[];
+};

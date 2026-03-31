@@ -102,5 +102,15 @@
 ## [PR #101 | feat/92/PatternResult-변환-및-patterns-prop-전달 | 2026-03-31]
 - Violation: `AnalyzingBanner`와 `ErrorBanner` 컴포넌트가 자신의 외부 여백(`mb-3`)을 직접 하드코딩
 - Rule: MISTAKES.md Components Rule 11 — 컴포넌트는 자신의 외부 마진을 직접 선언해서는 안 됨; 외부 간격은 호출자가 관리해야 함
-- Context: `ChartContent.tsx`에서 두 배너 컴포넌트의 `mb-3` 클래스를 제거하고, `AnalysisStatusBanner`의 반환부에서 래퍼 `div.mb-3`으로 간격을 관리하도록 이동
+- Context: `ChartContent.tsx`에서 두 배너 컴포넌트의 `mb-3` 클래스를 제거하고, `AnalysisStatusBanner`에 `className` prop을 추가하여 호출자인 `ChartContent`가 `mb-3`을 직접 전달하도록 이동
+
+## [PR #101 | feat/92/PatternResult-변환-및-patterns-prop-전달 | 2026-03-31]
+- Violation: `RawAnalysisResponse` 타입이 `confidence.ts`에 정의되어 관련 도메인 타입들(`AnalysisResponse`, `PatternSummary`, `SkillResult`)과 분리된 위치에 있어 응집도 저하
+- Rule: FF.md Cohesion 3-A — 함께 변경되는 코드는 같은 위치에 있어야 한다
+- Context: `RawAnalysisResponse`를 `domain/types.ts`로 이동하고, 이를 import하던 `confidence.ts`, `infrastructure/ai/claude.ts`, `infrastructure/ai/gemini.ts`, `infrastructure/ai/types.ts`, 및 관련 테스트 파일들의 import 경로를 `@/domain/types`로 업데이트
+
+## [PR #101 | feat/92/PatternResult-변환-및-patterns-prop-전달 | review fix 2 | 2026-03-31]
+- Violation: `confidence.test.ts`에서 `TEST_MEDIUM_CONFIDENCE = 0.7` 상수를 로컬에서 재선언하여 사용함
+- Rule: MISTAKES.md Tests Rule 10 — boundary test constants must be imported from the source module, not redeclared locally
+- Context: `0.7`은 confidence 범위의 경계값으로 constants.ts에서 관리되어야 함; `MEDIUM_CONFIDENCE_WEIGHT = 0.7`을 constants.ts에 추가하고 테스트에서 import하도록 변경
 
