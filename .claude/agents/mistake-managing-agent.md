@@ -75,17 +75,17 @@ If all entries were removed, leave the file with only the header:
 #### On success
 ```json
 {
-  "agent": "mistake-managing-agent",
-  "status": "done",
-  "promoted": {number of violations added to MISTAKES.md}
+   "agent": "mistake-managing-agent",
+   "status": "done",
+   "promoted": {number of violations added to MISTAKES.md}
 }
 ```
 
 #### On failure
 ```json
 {
-  "agent": "mistake-managing-agent",
-  "status": "failed",
-  "reason": "{specific failure reason}"
+   "agent": "mistake-managing-agent",
+   "status": "failed",
+   "reason": "{specific failure reason}"
 }
 ```
