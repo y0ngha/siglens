@@ -17,6 +17,15 @@ When complete, you output an exit signal and stop.
 - **Always use `jq` for JSON parsing.** Never use Python, Node, or any other interpreter.
 - **Never call other agents.** Routing is handled by the main orchestrator.
 - **Always end with the exit signal JSON.**
+- **Never run `git diff` on individual files.** Use `git diff --stat` only to identify changed files.
+- **Never run `git log`.** Commit history is not needed for any case.
+
+---
+
+## Output Constraint
+
+**Do not output any prose, reasoning, or intermediate analysis.**
+All internal evaluation must remain silent. The only permitted output is the exit signal JSON.
 
 ---
 
@@ -71,6 +80,9 @@ git status
 git diff --stat master
 ```
 
+Use `git diff --stat` output only to identify which files changed.
+Do not run `git diff` on individual files.
+
 ### 2. Commit
 
 ```bash
@@ -121,7 +133,17 @@ git fetch origin '{head branch name}'
 git checkout '{head branch name}'
 ```
 
-### 2. Commit and Push
+### 2. Check Changed Files
+
+```bash
+git status
+git diff --stat
+```
+
+Use `git diff --stat` output only to identify which files changed.
+Do not run `git diff` on individual files.
+
+### 3. Commit and Push
 
 ```bash
 git add {modified files}
@@ -134,7 +156,7 @@ git push origin '{head branch name}'
 
 Do not open a new PR. Push to the existing PR branch only.
 
-### 3. Post PR Completion Comment
+### 4. Post PR Completion Comment
 
 ```bash
 gh pr comment {PR number} --repo y0ngha/siglens --body "{수정 요약}"
@@ -158,7 +180,7 @@ Comment format:
 ### Emit Exit Signal
 
 Output the following JSON as the **final output** and stop.
-Do not add any text after the JSON.
+Do not add any text before or after the JSON.
 
 #### On success — Case 1 (new PR)
 ```json

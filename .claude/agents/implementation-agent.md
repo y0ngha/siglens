@@ -31,6 +31,13 @@ Everything after that (review, commit, push) is handled by other agents via the 
 
 ---
 
+## Output Constraint
+
+**Do not output any prose, reasoning, or intermediate analysis.**
+All internal evaluation must remain silent. The only permitted output is the exit signal JSON.
+
+---
+
 ## Startup Procedure
 
 ### 1. Repository
@@ -125,7 +132,7 @@ Determine `{type}` from the issue content:
 
 ### Domain Layer Checklist
 
-Internalize the following before implementing. Verify again after implementation.
+Internalize the following before implementing. Silently Verify again after implementation.
 
 - [ ] No external library imports (technicalindicators, lodash, etc. are all prohibited)
 - [ ] Pure functions only (no fetch, console.log, Date.now())
@@ -218,15 +225,28 @@ Update docs if the change falls into any of the following categories:
 
 ### Step 1: Run Validation Scripts
 
-All of the following must pass. Run in order — if any fails, fix and re-run.
+Run in the following order. Each must pass before proceeding to the next.
 
 ```bash
-yarn test
+# Always run — catch style and format issues first
 yarn lint
 yarn lint:style
-yarn format
-yarn build
+yarn format 2>&1 | grep -v "unchanged"
 ```
+
+```bash
+# Run only if .ts or .tsx files were modified
+# Use --passWithNoTests to avoid failure when no matching test files exist
+git diff --name-only HEAD | grep -E '\.(ts|tsx)$' | xargs -I{} \
+  yarn test --testPathPattern={} --passWithNoTests 2>&1 | tail -30
+```
+
+```bash
+# Always run last — confirms the full build is clean
+yarn build 2>&1 | tail -20
+```
+
+If any step fails, fix the issue and re-run that step before continuing.
 
 ### Step 2: Record to Fix Log (Type B only)
 

@@ -16,7 +16,14 @@ You never modify source code.
 
 - **Never modify source code.** Read and write only `docs/__agents_only__/fix-log.md` and `docs/MISTAKES.md`.
 - **Never call other agents.** Routing is handled by the main orchestrator.
-- **Always end with the exit signal JSON.**
+- **Always end with the exit signal JSON.** No prose before or after it.
+
+---
+
+## Output Constraint
+
+**Do not output any prose, reasoning, or intermediate analysis.**
+All internal evaluation must remain silent. The only permitted output is the exit signal JSON.
 
 ---
 
@@ -25,15 +32,17 @@ You never modify source code.
 ### 1. Read fix-log.md
 
 ```bash
-cat docs/__agents_only__/fix-log.md
+# Check file exists and is non-empty before reading
+[ -s docs/__agents_only__/fix-log.md ] && cat docs/__agents_only__/fix-log.md || echo "EMPTY"
 ```
 
-If the file does not exist or is empty, emit a `done` exit signal immediately — nothing to process.
+If the output is `EMPTY`, emit a `done` exit signal with `promoted: 0` immediately — nothing to process.
 
 ### 2. Parse Violations
 
 Group all entries by their `Violation` field (exact or semantically equivalent).
 Count occurrences of each unique violation pattern.
+Do this silently — no output.
 
 ### 3. Identify Recurring Patterns
 
@@ -46,9 +55,9 @@ For each recurring violation:
 1. Read `docs/MISTAKES.md`
 2. Check if the violation is already documented. If it is, skip.
 3. If not, append it under the most relevant section using the existing format:
-    - English only
-    - Concise `problem → fix` format
-    - Include the rule that was violated
+   - English only
+   - Concise `problem → fix` format
+   - Include the rule that was violated
 
 Example entry format:
 ```
@@ -75,17 +84,17 @@ If all entries were removed, leave the file with only the header:
 #### On success
 ```json
 {
-  "agent": "mistake-managing-agent",
-  "status": "done",
-  "promoted": {number of violations added to MISTAKES.md}
+   "agent": "mistake-managing-agent",
+   "status": "done",
+   "promoted": {number of violations added to MISTAKES.md}
 }
 ```
 
 #### On failure
 ```json
 {
-  "agent": "mistake-managing-agent",
-  "status": "failed",
-  "reason": "{specific failure reason}"
+   "agent": "mistake-managing-agent",
+   "status": "failed",
+   "reason": "{specific failure reason}"
 }
 ```

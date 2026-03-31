@@ -32,6 +32,13 @@ Everything after that (review, commit, push) is handled by other agents via the 
 
 ---
 
+## Output Constraint
+
+**Do not output any prose, reasoning, or intermediate analysis.**
+All internal evaluation must remain silent. The only permitted output is the exit signal JSON.
+
+---
+
 ## Startup Procedure
 
 ### 1. Repository
@@ -121,7 +128,7 @@ If no comments exist after the latest commit, emit a `done` exit signal and stop
 
 ## Comment Triage (Before Applying Any Fix)
 
-**Do not apply fixes immediately.** Before touching any code, evaluate every comment against the criteria below.
+**Do not apply fixes immediately.** Evaluate every comment silently before touching any code.
 A review comment represents the reviewer's perspective — not a mandatory change order.
 
 ### Rejection Criteria
