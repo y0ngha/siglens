@@ -79,11 +79,6 @@
 - Rule: CONVENTIONS.md — `as` type assertions are discouraged; use type guards or typed helpers instead
 - Context: `AnalysisPanel.tsx`의 `patternLabel` 계산에서 `CandlePattern` 또는 `MultiCandlePattern` 중 어느 것인지 불명확한 `string` 패턴명을 처리하기 위해 `as` 단언을 사용함; `candle-labels.ts`에 `findCandlePatternLabel(patternName: string)` 헬퍼를 추가하여 `in` 연산자 기반 타입 가드로 안전하게 처리
 
-## [Issue #91 | feat/91/candle-pattern-summary-ui | review fix 2 | 2026-03-31]
-- Violation: `confidence.test.ts`에서 매칭되지 않는 skill의 confidenceWeight 기대값 `0`을 리터럴로 하드코딩 (lines 100, 101, 131, 133, 149, 150)
-- Rule: MISTAKES.md Tests Rule 10 — boundary value that is defined as a named constant in the domain must be imported rather than redeclared or inlined
-- Context: `UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0`이 `domain/indicators/constants.ts`에 이미 정의되어 있으나 테스트에서 리터럴 `0`을 직접 사용함; 상수 값이 변경될 경우 테스트 기대값이 구현과 무관하게 `0`에 고정되어 silently diverge될 수 있음
-
 ## [PR #100 | feat/91/candle-pattern-summary-ui | 2026-03-31]
 - Violation: `findCandlePatternLabel`에서 `in` 연산자로 패턴명 존재 여부를 확인하여 프로토타입 체인(`toString` 등)에 있는 속성에 대해 `true`를 반환할 수 있는 위험이 있었음
 - Rule: FF.md Predictability 2-C — 외부 입력값(AI 응답)에 기반한 객체 조회는 프로토타입 오염에 안전한 방식을 사용해야 함
@@ -94,8 +89,18 @@
 - Rule: FF.md Predictability 2-C — 코드의 동작 의도가 구현에서 명확히 드러나야 한다
 - Context: `candle-labels.ts`의 `findCandlePatternLabel`에서 객체 인덱스 접근 결과가 `undefined`일 때만 fallback하는 의도를 표현하기 위해 `||`를 `??`(nullish coalescing)으로 교체
 
-## [Issue #92 | feat/92/PatternResult-변환-및-patterns-prop-전달 | review fix | 2026-03-31]
-- Violation: `confidence.test.ts`에서 `const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT`로 도메인 상수를 로컬 alias로 재선언하여 테스트 기대값과 소스 상수 간 추적성이 끊김
-- Rule: MISTAKES.md Tests Rule 10 — boundary constants must be imported from domain and used directly in expectations, not re-aliased locally
-- Context: `makeSkill`의 `confidenceWeight` 기본값과 테스트 기대값에서 `HIGH_CONFIDENCE_WEIGHT`를 직접 사용하도록 `TEST_HIGH_CONFIDENCE` alias 제거
+## [PR #101 | feat/92/PatternResult-변환-및-patterns-prop-전달 | 2026-03-31]
+- Violation: PR 설명에 명시된 `filterPatterns` 함수(confidenceWeight 0.5 이상 필터링)가 실제 코드에 구현되지 않음
+- Rule: CONVENTIONS.md — 구현 설명과 실제 코드 사이에 불일치가 있어서는 안 된다
+- Context: `confidence.ts`에 `filterPatterns(patterns: PatternResult[]): PatternResult[]` 함수를 추가하고, `MIN_CONFIDENCE_WEIGHT` 상수로 필터링 기준을 표현; 대응 테스트 케이스 3개 추가
+
+## [PR #101 | feat/92/PatternResult-변환-및-patterns-prop-전달 | 2026-03-31]
+- Violation: `enrichAnalysisWithConfidence`의 `patternSummaries.map` 콜백에서 `skillByName.get(p.skillName)`을 두 번 호출하여 동일 맵 조회가 중복됨
+- Rule: FF.md Readability 1-A — 동일한 값을 두 번 계산하면 가독성과 효율성이 저하된다
+- Context: `confidence.ts`의 `patternSummaries.map` 콜백에서 `const skill = skillByName.get(p.skillName)` 변수로 추출하여 한 번만 조회하도록 리팩토링
+
+## [PR #101 | feat/92/PatternResult-변환-및-patterns-prop-전달 | 2026-03-31]
+- Violation: `AnalyzingBanner`와 `ErrorBanner` 컴포넌트가 자신의 외부 여백(`mb-3`)을 직접 하드코딩
+- Rule: MISTAKES.md Components Rule 11 — 컴포넌트는 자신의 외부 마진을 직접 선언해서는 안 됨; 외부 간격은 호출자가 관리해야 함
+- Context: `ChartContent.tsx`에서 두 배너 컴포넌트의 `mb-3` 클래스를 제거하고, `AnalysisStatusBanner`의 반환부에서 래퍼 `div.mb-3`으로 간격을 관리하도록 이동
 
