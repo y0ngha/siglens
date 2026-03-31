@@ -40,19 +40,6 @@ interface ToggleIndicatorConfig {
     onToggle: () => void;
 }
 
-interface IndicatorToolbarProps {
-    maVisiblePeriods: number[];
-    maAvailablePeriods: readonly number[];
-    onMAToggle: (period: number) => void;
-    emaVisiblePeriods: number[];
-    emaAvailablePeriods: readonly number[];
-    onEMAToggle: (period: number) => void;
-    bollinger: IndicatorToggleGroup;
-    macd: IndicatorToggleGroup;
-    rsi: IndicatorToggleGroup;
-    dmi: IndicatorToggleGroup;
-}
-
 interface DropdownPosition {
     top: number;
     left: number;
@@ -100,6 +87,19 @@ function DropdownPortal({
         </div>,
         document.body
     );
+}
+
+interface IndicatorToolbarProps {
+    maVisiblePeriods: number[];
+    maAvailablePeriods: readonly number[];
+    onMAToggle: (period: number) => void;
+    emaVisiblePeriods: number[];
+    emaAvailablePeriods: readonly number[];
+    onEMAToggle: (period: number) => void;
+    bollinger: IndicatorToggleGroup;
+    macd: IndicatorToggleGroup;
+    rsi: IndicatorToggleGroup;
+    dmi: IndicatorToggleGroup;
 }
 
 export function IndicatorToolbar({
