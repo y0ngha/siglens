@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/domain/constants/colors';
@@ -43,6 +43,33 @@ interface ToggleIndicatorConfig {
 interface DropdownPosition {
     top: number;
     left: number;
+}
+
+interface PeriodLabelProps {
+    indicatorName: string;
+    visiblePeriods: number[];
+}
+
+function PeriodLabels({ indicatorName, visiblePeriods }: PeriodLabelProps) {
+    if (visiblePeriods.length === 0) return null;
+
+    return (
+        <div className="flex flex-wrap gap-1">
+            {visiblePeriods.map(period => (
+                <span
+                    key={period}
+                    className="text-secondary-300 flex items-center gap-1 text-xs"
+                >
+                    {/* getPeriodColor는 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)를 반환하므로 style prop 사용 허용 */}
+                    <span
+                        className="inline-block h-1.5 w-3 shrink-0 rounded-sm"
+                        style={{ backgroundColor: getPeriodColor(period) }}
+                    />
+                    {indicatorName}({period})
+                </span>
+            ))}
+        </div>
+    );
 }
 
 interface DropdownPortalProps {
@@ -123,13 +150,13 @@ export function IndicatorToolbar({
     const emaButtonRef = useRef<HTMLButtonElement>(null);
     const portalRef = useRef<HTMLDivElement>(null);
 
-    const buttonRefMap: Record<
-        IndicatorType,
-        React.RefObject<HTMLButtonElement | null>
-    > = {
-        ma: maButtonRef,
-        ema: emaButtonRef,
-    };
+    const buttonRefMap = useMemo(
+        () => ({
+            ma: maButtonRef,
+            ema: emaButtonRef,
+        }),
+        []
+    );
 
     useOnClickOutside(toolbarRef, event => {
         if (!openDropdown) return;
@@ -191,16 +218,21 @@ export function IndicatorToolbar({
     return (
         <div ref={toolbarRef} className="flex flex-col gap-1">
             {dropdownIndicators.map(indicator => (
-                <button
-                    key={indicator.type}
-                    ref={buttonRefMap[indicator.type]}
-                    type="button"
-                    onClick={() => toggleDropdown(indicator.type)}
-                    aria-expanded={openDropdown === indicator.type}
-                    className={indicatorButtonClass(indicator.active)}
-                >
-                    {indicator.label}
-                </button>
+                <div key={indicator.type} className="flex flex-col gap-0.5">
+                    <button
+                        ref={buttonRefMap[indicator.type]}
+                        type="button"
+                        onClick={() => toggleDropdown(indicator.type)}
+                        aria-expanded={openDropdown === indicator.type}
+                        className={indicatorButtonClass(indicator.active)}
+                    >
+                        {indicator.label}
+                    </button>
+                    <PeriodLabels
+                        indicatorName={indicator.label}
+                        visiblePeriods={indicator.visiblePeriods}
+                    />
+                </div>
             ))}
 
             {openDropdown && dropdownPosition && activeDropdownIndicator && (

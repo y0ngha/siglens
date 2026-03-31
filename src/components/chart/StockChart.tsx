@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef } from 'react';
 import type { RefObject } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
 import type {
@@ -18,11 +18,22 @@ import { useMACDChart } from '@/components/chart/hooks/useMACDChart';
 import { useRSIChart } from '@/components/chart/hooks/useRSIChart';
 import { useDMIChart } from '@/components/chart/hooks/useDMIChart';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
-import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
+import {
+    DEFAULT_LINE_WIDTH,
+    RSI_PANE_INDEX,
+    MACD_PANE_INDEX,
+    DMI_PANE_INDEX,
+} from '@/components/chart/constants';
 import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
 import {
     MA_DEFAULT_PERIODS,
     EMA_DEFAULT_PERIODS,
+    RSI_DEFAULT_PERIOD,
+    MACD_FAST_PERIOD,
+    MACD_SLOW_PERIOD,
+    MACD_SIGNAL_PERIOD,
+    DMI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 
 interface CommonHookParams {
@@ -58,6 +69,7 @@ export function StockChart({
     patterns = [],
     onPatternOverlayChange,
 }: StockChartProps) {
+    const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
@@ -149,8 +161,44 @@ export function StockChart({
         notifyPatternOverlayChange();
     }, [visiblePatterns]);
 
+    const paneLabels = useMemo(
+        () => [
+            ...(rsiVisible
+                ? [
+                      {
+                          paneIndex: RSI_PANE_INDEX,
+                          text: `RSI(${RSI_DEFAULT_PERIOD})`,
+                      },
+                  ]
+                : []),
+            ...(macdVisible
+                ? [
+                      {
+                          paneIndex: MACD_PANE_INDEX,
+                          text: `MACD(${MACD_FAST_PERIOD},${MACD_SLOW_PERIOD},${MACD_SIGNAL_PERIOD})`,
+                      },
+                  ]
+                : []),
+            ...(dmiVisible
+                ? [
+                      {
+                          paneIndex: DMI_PANE_INDEX,
+                          text: `DMI(${DMI_DEFAULT_PERIOD})`,
+                      },
+                  ]
+                : []),
+        ],
+        [rsiVisible, macdVisible, dmiVisible]
+    );
+
+    usePaneLabels({
+        chartRef,
+        containerRef: wrapperRef,
+        labels: paneLabels,
+    });
+
     return (
-        <div className="relative h-full w-full">
+        <div ref={wrapperRef} className="relative h-full w-full">
             <div ref={containerRef} className="h-full w-full" />
             <div className="absolute top-2 left-2 z-10">
                 <IndicatorToolbar

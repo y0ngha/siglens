@@ -40,7 +40,8 @@ If the output is `EMPTY`, emit a `done` exit signal with `promoted: 0` immediate
 
 ### 2. Parse Violations
 
-Group all entries by their `Violation` field (exact or semantically equivalent).
+Group entries only when the `Violation` field is **exactly identical** (word-for-word match).
+Do NOT group based on semantic similarity, topic proximity, or category.
 Count occurrences of each unique violation pattern.
 Do this silently — no output.
 
@@ -67,10 +68,19 @@ Example entry format:
 
 ### 5. Clean fix-log.md
 
-Remove all entries whose `Violation` was promoted to MISTAKES.md in Step 4.
-Entries for violations that did not meet the 2-occurrence threshold remain in the log.
+**CRITICAL: Surgical deletion only. Never overwrite or truncate the file.**
 
-If all entries were removed, leave the file with only the header:
+Remove ONLY the specific `## [...]` entry blocks that were **newly promoted** to MISTAKES.md in Step 4 of this session.
+Every other entry MUST remain in the file untouched — including:
+- Entries below the 2-occurrence threshold
+- Entries skipped because they were already documented in MISTAKES.md
+- Entries with no exact match to any other entry
+
+**How to delete:** Use the Edit tool to remove each promoted entry block individually.
+Do NOT use the Write tool to rewrite the entire file — this risks losing non-promoted entries.
+When in doubt, do NOT remove.
+
+If all entries happen to be promoted, leave the file with only the header:
 ```md
 # Fix Log
 ```
@@ -81,15 +91,12 @@ If all entries were removed, leave the file with only the header:
 
 ### Emit Exit Signal
 
-Output the following JSON as the **final output** and stop.
-Do not add any text before or after the JSON.
-
 #### On success
 ```json
 {
-   "agent": "mistake-managing-agent",
-   "status": "done",
-   "promoted": {number of violations added to MISTAKES.md}
+  "agent": "mistake-managing-agent",
+  "status": "done",
+  "promoted": {number of violations added to MISTAKES.md}
 }
 ```
 

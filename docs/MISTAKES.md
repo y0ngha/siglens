@@ -56,10 +56,13 @@ Review before implementation and ensure these are not repeated.
 9. Discarding the callback parameter and re-accessing the same element via external array index
    → Rule: FF.md Readability 1-G — viewpoint shift forces the reader to track two locations simultaneously
    → map/filter/reduce callbacks already receive the current element as a parameter; use it directly
+   → Also applies to addEventListener callbacks: avoid iterating over external array with index when the callback param already provides the element
    ❌ lines.reduce((acc, _line, idx) => { const line = lines[idx]; ... })
    ❌ items.filter((_, ci) => { const item = outerArray[offset + ci]; ... })
+   ❌ newElements.forEach((_, idx) => { const label = labels[idx]; ... })  // ResizeObserver callback
    ✅ lines.reduce((acc, line) => { ... })
    ✅ items.filter(item => { ... })
+   ✅ for (const [label, element] of labelPairs) { ... }  // pre-zip arrays and use for...of
 
 10. Repeating identical filtering/calculation logic across multiple blocks
     → Rule: FF.md Cohesion 3-B — same values computed in multiple places must be extracted to single source of truth
@@ -88,6 +91,15 @@ Review before implementation and ensure these are not repeated.
     → Mixing `` `... ${condition ? '...' : '...'}` `` and cn() patterns creates inconsistency
     ❌ className={`flex ... ${period === 20 ? 'bg-blue' : 'bg-gray'}`}
     ✅ className={cn('flex ...', period === 20 ? 'bg-blue' : 'bg-gray')}
+
+13. Derived constants (objects, maps) recreated on every render without memoization
+    → Rule: FF.md Cohesion 3-B — constants that never change should be extracted or memoized
+    → If a value is derived from props/state but its identity doesn't need to change (only content does),
+      wrap with useMemo to avoid unnecessary re-creation and triggering dependent effects
+    ❌ const buttonRefMap = { indicator1: useRef(), indicator2: useRef() };  // recreated every render
+    ✅ const buttonRefMap = useMemo(() => ({ indicator1: useRef(), indicator2: useRef() }), [])
+    ❌ const handlers = { onClick: handleClick, onChange: handleChange };  // recreated every render
+    ✅ const handlers = useMemo(() => ({ onClick: handleClick, onChange: handleChange }), [])
 ```
 
 ---
