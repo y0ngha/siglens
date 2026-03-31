@@ -268,7 +268,7 @@ Record one entry per distinct violation. Do not record findings that were skippe
 ### Step 3: Emit Exit Signal
 
 After all validation scripts pass, output the following JSON as the **final output** and stop.
-Do not add any text after the JSON.
+Do not add any text before or after the JSON.
 
 #### On success
 ```json

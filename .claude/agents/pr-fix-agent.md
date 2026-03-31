@@ -264,7 +264,7 @@ Record one entry per distinct violation. Rejected comments are not recorded in t
 ### Step 3: Emit Exit Signal
 
 After fix-log is updated, output the following JSON as the **final output** and stop.
-Do not add any text after the JSON.
+Do not add any text before or after the JSON.
 
 #### On success
 ```json

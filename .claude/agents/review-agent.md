@@ -152,7 +152,7 @@ Check docs/MISTAKES.md against the changed code for known repeated patterns.
 ### Emit Exit Signal
 
 Output the following JSON as the **final output** and stop.
-Do not add any text after the JSON.
+Do not add any text before or after the JSON.
 
 #### When findings exist
 ```json
