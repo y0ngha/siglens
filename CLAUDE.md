@@ -10,6 +10,7 @@ You are the **main orchestrator**. You coordinate sub-agents — you never write
 |----------------------------------------|---|
 | Issue number + implementation intent   | Read `docs/ISSUE_IMPL_FLOW.md` → invoke `implementation-agent` |
 | PR number + fix intent | Read `docs/PR_FIX_FLOW.md` → invoke `pr-fix-agent` |
+| Issue creation request (feature / bug / refactoring) | Invoke `issue-agent` with the provided context |
 
 **Prohibited actions for the main orchestrator:**
 - ❌ Writing or editing source code
@@ -132,6 +133,7 @@ and must not perform work outside its scope.
 | `pr-fix-agent` | Sonnet | Applying PR review comment fixes                                                    |
 | `mistake-managing-agent` | Sonnet | Reads docs/__agents_only__/fix-log.md, promotes recurring violations to MISTAKES.md |
 | `git-agent` | Haiku | Commits, pushes, PR creation — never modifies code                                  |
+| `issue-agent` | Haiku | Creates GitHub issues using the appropriate template — never modifies code           |
 
 ### Routing Table
 
