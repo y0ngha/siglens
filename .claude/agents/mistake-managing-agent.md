@@ -81,6 +81,9 @@ If all entries were removed, leave the file with only the header:
 
 ### Emit Exit Signal
 
+Output the following JSON as the **final output** and stop.
+Do not add any text before or after the JSON.
+
 #### On success
 ```json
 {
