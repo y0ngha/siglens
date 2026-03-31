@@ -1,5 +1,6 @@
 'use client';
 
+import type React from 'react';
 import { useCallback, useRef, useState } from 'react';
 import { useDragListener } from '@/components/symbol-page/hooks/useDragListener';
 
@@ -21,6 +22,7 @@ export function usePanelResize(): UsePanelResizeResult {
 
     const handleDragStart = useCallback(
         (e: React.MouseEvent): void => {
+            if (e.button !== 0) return;
             e.preventDefault();
             dragStartXRef.current = e.clientX;
             dragStartWidthRef.current = panelWidth;
@@ -29,18 +31,18 @@ export function usePanelResize(): UsePanelResizeResult {
         [panelWidth]
     );
 
-    const handleMouseMove = useCallback((e: MouseEvent): void => {
+    const handleMouseMove = (e: MouseEvent): void => {
         const delta = dragStartXRef.current - e.clientX;
         const nextWidth = Math.min(
             PANEL_MAX_WIDTH,
             Math.max(PANEL_MIN_WIDTH, dragStartWidthRef.current + delta)
         );
         setPanelWidth(nextWidth);
-    }, []);
+    };
 
-    const handleMouseUp = useCallback((): void => {
+    const handleMouseUp = (): void => {
         setIsDragging(false);
-    }, []);
+    };
 
     useDragListener({
         isDragging,

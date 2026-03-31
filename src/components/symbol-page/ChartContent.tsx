@@ -134,10 +134,14 @@ export function ChartContent({
                 {/* 드래그 핸들 */}
                 <div
                     role="separator"
+                    tabIndex={0}
                     aria-orientation="vertical"
                     aria-label="패널 너비 조절"
+                    aria-valuenow={panelWidth}
+                    aria-valuemin={240}
+                    aria-valuemax={640}
                     className={cn(
-                        'border-secondary-700 hover:border-primary-600 absolute top-0 bottom-0 left-0 hidden w-1 cursor-col-resize border-l transition-colors md:block',
+                        'border-secondary-700 hover:border-primary-600 focus-visible:border-primary-600 absolute top-0 bottom-0 left-0 hidden w-1 cursor-col-resize border-l transition-colors outline-none md:block',
                         isDragging && 'border-primary-500'
                     )}
                     onMouseDown={handleDragStart}
