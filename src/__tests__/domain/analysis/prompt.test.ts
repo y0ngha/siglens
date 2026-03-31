@@ -834,6 +834,30 @@ describe('prompt', () => {
         });
     });
 
+    describe('candlePatterns 스키마', () => {
+        it('candlePatterns 스키마 키가 프롬프트에 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('candlePatterns');
+        });
+
+        it('가이드라인에 patternSummaries는 Skills 전용이라는 안내 문구가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain(
+                'skills/*.md에 정의된 차트 패턴만 여기에 작성'
+            );
+        });
+    });
+
     describe('skills 기본값', () => {
         it('skills 파라미터를 생략하면 빈 배열과 동일하게 동작한다', () => {
             const withEmpty = buildAnalysisPrompt(
