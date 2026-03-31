@@ -200,6 +200,7 @@ const buildAnalysisRequest = (patternSkills: Skill[]): string => {
                   '- patternSummaries에는 아래 나열된 Skills 패턴에 대한 감지 여부를 **반드시 항목별로 모두** 포함해야 합니다.',
                   '- 각 Skills 패턴에 대해 현재 차트 데이터에서 해당 패턴이 감지되는지 판단하고 detected 값을 설정하세요.',
                   '- 감지되지 않은 패턴도 detected: false로 반드시 포함해야 합니다.',
+                  '- **목록에 나열되지 않은 다른 패턴은 patternSummaries에 포함하지 마세요.**',
                   '- **캔들 패턴(단봉/다봉)은 patternSummaries에 포함하지 마세요.** 캔들 패턴은 candlePatterns에만 작성합니다.',
                   '',
                   '분석 대상 Skills 패턴 목록:',
