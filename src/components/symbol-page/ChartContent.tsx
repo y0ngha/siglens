@@ -91,7 +91,11 @@ export function ChartContent({
             <div className="flex h-[60vh] min-h-0 flex-col overflow-hidden md:h-auto md:flex-1">
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
-                    <StockChart bars={bars} indicators={indicators} />
+                    <StockChart
+                        bars={bars}
+                        indicators={indicators}
+                        patterns={analysis.patternSummaries}
+                    />
                 </div>
 
                 {/* 거래량 차트 */}

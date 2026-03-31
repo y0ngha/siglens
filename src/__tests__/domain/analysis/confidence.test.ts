@@ -4,16 +4,29 @@ import {
     HIGH_CONFIDENCE_WEIGHT,
     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
-import type { CandlePatternSummary, Skill } from '@/domain/types';
+import type {
+    CandlePatternSummary,
+    Skill,
+    SkillChartDisplay,
+} from '@/domain/types';
 
-const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
+
+const makeSkillChartDisplay = (
+    overrides?: Partial<SkillChartDisplay>
+): SkillChartDisplay => ({
+    show: false,
+    type: 'marker',
+    color: '#ef4444',
+    label: '테스트 라벨',
+    ...overrides,
+});
 
 const makeSkill = (overrides?: Partial<Skill>): Skill => ({
     name: '테스트 스킬',
     description: '테스트 설명',
     indicators: [],
-    confidenceWeight: TEST_HIGH_CONFIDENCE,
+    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
     content: '## 분석 기준\n- 테스트 내용',
     ...overrides,
 });
@@ -78,12 +91,12 @@ describe('confidence', () => {
             const skills = [
                 makeSkill({
                     name: '헤드앤숄더',
-                    confidenceWeight: TEST_HIGH_CONFIDENCE,
+                    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
                 }),
             ];
             const result = enrichAnalysisWithConfidence(analysis, skills);
             expect(result.patternSummaries[0].confidenceWeight).toBe(
-                TEST_HIGH_CONFIDENCE
+                HIGH_CONFIDENCE_WEIGHT
             );
         });
 
@@ -96,13 +109,60 @@ describe('confidence', () => {
             const skills = [
                 makeSkill({
                     name: '다른스킬',
-                    confidenceWeight: TEST_HIGH_CONFIDENCE,
+                    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
                 }),
             ];
             const result = enrichAnalysisWithConfidence(analysis, skills);
             expect(result.patternSummaries[0].confidenceWeight).toBe(
                 UNMATCHED_SKILL_CONFIDENCE_WEIGHT
             );
+        });
+    });
+
+    describe('patternSummaries renderConfig 채우기', () => {
+        it('매칭되는 skill의 display.chart가 있을 때 renderConfig에 채운다', () => {
+            const chartDisplay = makeSkillChartDisplay();
+            const analysis = makeAnalysisResponse({
+                patternSummaries: [
+                    makePatternSummary({ skillName: '헤드앤숄더' }),
+                ],
+            });
+            const skills = [
+                makeSkill({
+                    name: '헤드앤숄더',
+                    display: { chart: chartDisplay },
+                }),
+            ];
+            const result = enrichAnalysisWithConfidence(analysis, skills);
+            expect(result.patternSummaries[0].renderConfig).toEqual(
+                chartDisplay
+            );
+        });
+
+        it('skill에 display 필드가 없을 때 renderConfig는 undefined다', () => {
+            const analysis = makeAnalysisResponse({
+                patternSummaries: [
+                    makePatternSummary({ skillName: '헤드앤숄더' }),
+                ],
+            });
+            const skills = [
+                makeSkill({
+                    name: '헤드앤숄더',
+                    display: undefined,
+                }),
+            ];
+            const result = enrichAnalysisWithConfidence(analysis, skills);
+            expect(result.patternSummaries[0].renderConfig).toBeUndefined();
+        });
+
+        it('매칭되는 skill이 없을 때 renderConfig는 undefined다', () => {
+            const analysis = makeAnalysisResponse({
+                patternSummaries: [
+                    makePatternSummary({ skillName: '없는스킬' }),
+                ],
+            });
+            const result = enrichAnalysisWithConfidence(analysis, []);
+            expect(result.patternSummaries[0].renderConfig).toBeUndefined();
         });
     });
 
@@ -132,7 +192,7 @@ describe('confidence', () => {
             const skills = [
                 makeSkill({
                     name: '다른스킬',
-                    confidenceWeight: TEST_HIGH_CONFIDENCE,
+                    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
                 }),
             ];
             const result = enrichAnalysisWithConfidence(analysis, skills);
@@ -195,7 +255,7 @@ describe('confidence', () => {
             const skills = [
                 makeSkill({
                     name: '헤드앤숄더',
-                    confidenceWeight: TEST_HIGH_CONFIDENCE,
+                    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
                 }),
             ];
             enrichAnalysisWithConfidence(analysis, skills);

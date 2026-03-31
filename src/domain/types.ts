@@ -168,7 +168,7 @@ export interface AnalysisResponse {
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
     priceTargets: PriceTargets;
-    patternSummaries: PatternSummary[];
+    patternSummaries: PatternResult[];
     skillResults: SkillResult[];
     candlePatterns: CandlePatternSummary[];
 }
