@@ -148,3 +148,8 @@
 - Rule: FF.md Predictability 2-C — behavior must be predictable from the name and direction; ArrowLeft should narrow the panel, ArrowRight should widen it
 - Context: 우측 패널에서 ArrowLeft는 패널을 좁히는(decrease) 동작이 공간 직관에 맞으나, 기존 코드는 `prev + KEYBOARD_RESIZE_STEP`으로 증가시켰음; 부호를 교정하여 ArrowLeft → 감소, ArrowRight → 증가로 수정
 
+## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 6 | 2026-03-31]
+- Violation: `usePanelResize.ts`에서 `useRef(panelWidthAtDragStartRef)`가 `useState(panelWidth)`보다 앞에 선언되어 CONVENTIONS.md Custom Hook Declaration Order 위반
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — useState (1) must precede useRef (2) inside custom hooks
+- Context: `usePanelResize` 훅 내부에서 `const panelWidthAtDragStartRef = useRef(...)` 선언이 `const [panelWidth, setPanelWidth] = useState(...)` 선언보다 앞에 위치해 있었음; 순서를 교체하여 useState → useRef 순으로 수정
+

@@ -17,8 +17,8 @@ interface UsePanelResizeResult {
 }
 
 export function usePanelResize(): UsePanelResizeResult {
-    const panelWidthAtDragStartRef = useRef<number>(PANEL_DEFAULT_WIDTH);
     const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_WIDTH);
+    const panelWidthAtDragStartRef = useRef<number>(PANEL_DEFAULT_WIDTH);
 
     const { isDragging, handleDragStart: startDrag } = useDragListener({
         onResize: (deltaX: number): void => {
