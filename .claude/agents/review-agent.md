@@ -58,16 +58,16 @@ Use the Read tool to open each changed file directly. Do this for every file in 
 
 ### Excluded Directories
 
-The following directories are excluded from review:
+Never read files under these directories — even if they appear in `git diff master --name-only`:
 
 ```
-/docs/
-/refs/
-/public/
-/.github/
-/.yarn/
-/.agents/
-/.claude/
+/docs/**
+/refs/**
+/public/**
+/.github/**
+/.yarn/**
+/.agents/**
+/.claude/**
 ```
 
 Files and directories listed in `.gitignore` are also excluded.
