@@ -119,3 +119,23 @@
 - Violation: ResizeObserver callback used forEach with multiple statements and re-accessed external array via index instead of using the callback parameter directly
 - Rule: MISTAKES.md Coding Paradigm #1 (prefer for...of over forEach for multi-statement loop bodies) and MISTAKES.md Coding Paradigm #9 (do not discard callback parameter and re-access same element via external array index)
 - Context: In usePaneLabels.ts, the ResizeObserver callback iterated newElements with forEach and used labels[index] to get paneIndex, creating a viewpoint shift; fixed by pre-zipping labels and newElements into labelPairs and iterating with for...of
+
+## [PR #105 | refactor/104/AI-프롬프트-문자열-영어로-변환 | 2026-03-31]
+- Violation: Using `getMultiCandlePatternLabel(multiPattern)` instead of the identifier `multiPattern` directly in English prompt string
+- Rule: Prompt language consistency — all English prompt strings should use identifiers directly rather than calling a label function that may return different language labels
+- Context: In `src/domain/analysis/prompt.ts` line 96, the multi-candle pattern was displayed using `getMultiCandlePatternLabel()` which is inconsistent with the all-English prompt approach; replaced with direct use of `multiPattern` identifier and removed the now-unused import
+
+## [PR #105 | refactor/104/AI-프롬프트-문자열-영어로-변환 | 2026-03-31]
+- Violation: Test file structure exceeded 3 levels (4 levels: describe('prompt') > describe('buildAnalysisPrompt') > describe(context) > it(behavior))
+- Rule: MISTAKES.md Test Rule 9 — test file must use exactly 3 levels: describe(subject) > describe(context) > it(behavior)
+- Context: In `src/__tests__/domain/analysis/prompt.test.ts`, the `describe('buildAnalysisPrompt')` wrapper was an unnecessary intermediate layer; removed it so all context describe blocks are directly under `describe('prompt')`
+
+## [Issue #107 | fix/107/보조지표-드롭다운-잘림 | 2026-03-31]
+- Violation: buttonRefMap declared as a plain object literal inside the component body on every render without memoization
+- Rule: FF.md Cohesion 3-B — derived constants that never change should be extracted outside the component or wrapped in useMemo to make their static nature explicit
+- Context: buttonRefMap in IndicatorToolbar.tsx maps IndicatorType keys to useRef values; wrapped with useMemo to avoid unnecessary re-creation on each render
+
+## [PR #111 | feat/108/보조지표-레이블-표시 | 2026-03-31]
+- Violation: ResizeObserver callback used forEach with multiple statements and re-accessed external array via index instead of using the callback parameter directly
+- Rule: MISTAKES.md Coding Paradigm #1 (prefer for...of over forEach for multi-statement loop bodies) and MISTAKES.md Coding Paradigm #9 (do not discard callback parameter and re-access same element via external array index)
+- Context: In usePaneLabels.ts, the ResizeObserver callback iterated newElements with forEach and used labels[index] to get paneIndex, creating a viewpoint shift; fixed by pre-zipping labels and newElements into labelPairs and iterating with for...of
