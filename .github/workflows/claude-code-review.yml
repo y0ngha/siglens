@@ -30,8 +30,6 @@ jobs:
                   show_full_output: true
                   claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
                   base_branch: master
-                  claude_args: --dangerously-skip-permissions
-                  allowed_bots: 'claude[bot]'
                   prompt: |
                       REPO: ${{ github.repository }}
                       PR NUMBER: ${{ github.event.pull_request.number }}
