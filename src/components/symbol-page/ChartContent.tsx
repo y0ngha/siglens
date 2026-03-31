@@ -13,7 +13,11 @@ import { VolumeChart } from '@/components/chart/VolumeChart';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
-import { usePanelResize } from '@/components/symbol-page/hooks/usePanelResize';
+import {
+    usePanelResize,
+    PANEL_MIN_WIDTH,
+    PANEL_MAX_WIDTH,
+} from '@/components/symbol-page/hooks/usePanelResize';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 
@@ -138,8 +142,8 @@ export function ChartContent({
                     aria-orientation="vertical"
                     aria-label="패널 너비 조절"
                     aria-valuenow={panelWidth}
-                    aria-valuemin={240}
-                    aria-valuemax={640}
+                    aria-valuemin={PANEL_MIN_WIDTH}
+                    aria-valuemax={PANEL_MAX_WIDTH}
                     className={cn(
                         'border-secondary-700 hover:border-primary-600 focus-visible:border-primary-600 absolute top-0 bottom-0 left-0 hidden w-1 cursor-col-resize border-l transition-colors outline-none md:block',
                         isDragging && 'border-primary-500'

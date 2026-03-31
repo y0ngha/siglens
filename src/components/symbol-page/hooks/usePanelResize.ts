@@ -4,8 +4,8 @@ import type React from 'react';
 import { useCallback, useRef, useState } from 'react';
 import { useDragListener } from '@/components/symbol-page/hooks/useDragListener';
 
-const PANEL_MIN_WIDTH = 240;
-const PANEL_MAX_WIDTH = 640;
+export const PANEL_MIN_WIDTH = 240;
+export const PANEL_MAX_WIDTH = 640;
 const PANEL_DEFAULT_WIDTH = 320;
 
 interface UsePanelResizeResult {
