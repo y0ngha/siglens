@@ -69,3 +69,18 @@
 - Rule: FF.md Readability 1-B — 불필요한 추상화 레이어는 노이즈를 추가하고 의도를 모호하게 만든다
 - Context: `useOnClickOutside`가 내부적으로 `useEffectEvent`를 통해 핸들러 참조 안정성을 보장하므로, 콜 사이트에서 `useCallback`을 감쌀 이유가 없음; `useCallback` 제거 후 인라인 콜백으로 단순화
 
+## [Issue #91 | feat/91/candle-pattern-summary-ui | 2026-03-31]
+- Violation: `skillsLoader.loadSkills().catch(() => [])` 패턴으로 skills 로딩 실패 시 에러를 로깅하지 않고 조용히 빈 배열로 fallback
+- Rule: MISTAKES.md Domain Functions Rule 4 — `.catch(() => [])` hides the failure from the caller; at minimum `console.error` must be added inside the catch
+- Context: `app/[symbol]/page.tsx`의 `Promise.all` 내 skills 로딩에서 에러 발생 시 caller가 degraded state 여부를 알 수 없었음; catch 블록에 `console.error('Skills load failed', error)` 추가
+
+## [Issue #91 | feat/91/candle-pattern-summary-ui | 2026-03-31]
+- Violation: `CandlePatternAccordionItem`에서 `CANDLE_PATTERN_LABELS as Record<string, string>` 타입 단언을 사용해 레이블 맵의 타입 안전성 우회
+- Rule: CONVENTIONS.md — `as` type assertions are discouraged; use type guards or typed helpers instead
+- Context: `AnalysisPanel.tsx`의 `patternLabel` 계산에서 `CandlePattern` 또는 `MultiCandlePattern` 중 어느 것인지 불명확한 `string` 패턴명을 처리하기 위해 `as` 단언을 사용함; `candle-labels.ts`에 `findCandlePatternLabel(patternName: string)` 헬퍼를 추가하여 `in` 연산자 기반 타입 가드로 안전하게 처리
+
+## [Issue #91 | feat/91/candle-pattern-summary-ui | review fix 2 | 2026-03-31]
+- Violation: `confidence.test.ts`에서 매칭되지 않는 skill의 confidenceWeight 기대값 `0`을 리터럴로 하드코딩 (lines 100, 101, 131, 133, 149, 150)
+- Rule: MISTAKES.md Tests Rule 10 — boundary value that is defined as a named constant in the domain must be imported rather than redeclared or inlined
+- Context: `UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0`이 `domain/indicators/constants.ts`에 이미 정의되어 있으나 테스트에서 리터럴 `0`을 직접 사용함; 상수 값이 변경될 경우 테스트 기대값이 구현과 무관하게 `0`에 고정되어 silently diverge될 수 있음
+
