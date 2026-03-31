@@ -31,7 +31,8 @@ jobs:
                   claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
                   base_branch: master
                   claude_args: |
-                      --allowedTools "Read,Glob,Grep,LS,Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh api:*)"
+                        --allowedTools "Read,Glob,Grep,LS,Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh api:*)"
+                        --dangerously-skip-permissions
                   prompt: |
                       REPO: ${{ github.repository }}
                       PR NUMBER: ${{ github.event.pull_request.number }}
