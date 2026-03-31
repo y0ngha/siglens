@@ -154,9 +154,13 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
     priceTargets:
         '{ "bullish": { "targets": [{ "price": 165.00, "basis": "..." }], "condition": "..." }, "bearish": { "targets": [{ "price": 145.00, "basis": "..." }], "condition": "..." } }',
     patternSummaries:
+        // skills/*.md에 정의된 차트 패턴만 여기에 작성. 캔들 패턴은 candlePatterns에 작성
         '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "...", "keyPrices": [150.00], "timeRange": { "start": 1700000000, "end": 1700100000 } }]',
     skillResults:
         '[{ "skillName": "...", "trend": "bullish | bearish | neutral", "summary": "..." }]',
+    candlePatterns:
+        // 봉 데이터에서 감지된 캔들 패턴만 여기에 작성. Skills 패턴은 patternSummaries에 작성
+        '[{ "patternName": "three_outside_down", "detected": true, "trend": "bearish", "summary": "..." }]',
 };
 
 const buildSchemaBody = (): string => {
@@ -168,6 +172,10 @@ const buildSchemaBody = (): string => {
 
 const ANALYSIS_GUIDELINES = [
     '## 분석 가이드라인',
+    '',
+    '### 캔들 패턴 vs 차트 패턴 구분',
+    '- candlePatterns: 봉 데이터에서 감지된 캔들 패턴(단봉/다봉)만 작성. skills/*.md에 정의된 차트 패턴은 patternSummaries에 작성',
+    '- patternSummaries: skills/*.md에 정의된 차트 패턴만 여기에 작성. 캔들 패턴은 candlePatterns에 작성',
     '',
     '### 지지/저항 판단',
     `- 이동평균선(MA ${MA_DEFAULT_PERIODS.join(',')}, EMA ${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_SHORT_INDEX]}/${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_LONG_INDEX]}) 수렴 지점을 우선 확인`,

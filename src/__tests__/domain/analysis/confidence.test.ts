@@ -1,7 +1,10 @@
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
-import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
-import type { Skill } from '@/domain/types';
+import {
+    HIGH_CONFIDENCE_WEIGHT,
+    UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
+} from '@/domain/indicators/constants';
+import type { CandlePatternSummary, Skill } from '@/domain/types';
 
 const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
@@ -35,6 +38,16 @@ const makeSkillResult = (
     ...overrides,
 });
 
+const makeCandlePatternSummary = (
+    overrides?: Partial<CandlePatternSummary>
+): CandlePatternSummary => ({
+    patternName: 'three_outside_down',
+    detected: true,
+    trend: 'bearish',
+    summary: '캔들 패턴 테스트 요약',
+    ...overrides,
+});
+
 const makeAnalysisResponse = (
     overrides?: Partial<RawAnalysisResponse>
 ): RawAnalysisResponse => ({
@@ -50,6 +63,7 @@ const makeAnalysisResponse = (
     },
     patternSummaries: [],
     skillResults: [],
+    candlePatterns: [],
     ...overrides,
 });
 
@@ -86,7 +100,9 @@ describe('confidence', () => {
                 }),
             ];
             const result = enrichAnalysisWithConfidence(analysis, skills);
-            expect(result.patternSummaries[0].confidenceWeight).toBe(0);
+            expect(result.patternSummaries[0].confidenceWeight).toBe(
+                UNMATCHED_SKILL_CONFIDENCE_WEIGHT
+            );
         });
     });
 
@@ -120,7 +136,9 @@ describe('confidence', () => {
                 }),
             ];
             const result = enrichAnalysisWithConfidence(analysis, skills);
-            expect(result.skillResults[0].confidenceWeight).toBe(0);
+            expect(result.skillResults[0].confidenceWeight).toBe(
+                UNMATCHED_SKILL_CONFIDENCE_WEIGHT
+            );
         });
     });
 
@@ -135,8 +153,34 @@ describe('confidence', () => {
                 ],
             });
             const result = enrichAnalysisWithConfidence(analysis, []);
-            expect(result.patternSummaries[0].confidenceWeight).toBe(0);
-            expect(result.skillResults[0].confidenceWeight).toBe(0);
+            expect(result.patternSummaries[0].confidenceWeight).toBe(
+                UNMATCHED_SKILL_CONFIDENCE_WEIGHT
+            );
+            expect(result.skillResults[0].confidenceWeight).toBe(
+                UNMATCHED_SKILL_CONFIDENCE_WEIGHT
+            );
+        });
+    });
+
+    describe('candlePatterns 필드 통과', () => {
+        it('candlePatterns가 있을 때 enrichment 후에도 동일하게 유지된다', () => {
+            const candlePattern = makeCandlePatternSummary({
+                patternName: 'morning_star',
+                detected: true,
+                trend: 'bullish',
+                summary: '샛별형 패턴 감지',
+            });
+            const analysis = makeAnalysisResponse({
+                candlePatterns: [candlePattern],
+            });
+            const result = enrichAnalysisWithConfidence(analysis, []);
+            expect(result.candlePatterns).toEqual([candlePattern]);
+        });
+
+        it('candlePatterns가 빈 배열일 때 빈 배열을 유지한다', () => {
+            const analysis = makeAnalysisResponse({ candlePatterns: [] });
+            const result = enrichAnalysisWithConfidence(analysis, []);
+            expect(result.candlePatterns).toEqual([]);
         });
     });
 

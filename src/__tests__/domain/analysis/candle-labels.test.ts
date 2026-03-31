@@ -3,6 +3,7 @@ import {
     MULTI_CANDLE_PATTERN_LABELS,
     getCandlePatternLabel,
     getMultiCandlePatternLabel,
+    findCandlePatternLabel,
 } from '@/domain/analysis/candle-labels';
 import type {
     CandlePattern,
@@ -172,6 +173,26 @@ describe('candle-labels', () => {
                     getMultiCandlePatternLabel(pattern).length
                 ).toBeGreaterThan(0);
             });
+        });
+    });
+
+    describe('findCandlePatternLabel', () => {
+        it('단일 캔들 패턴 이름에 해당하는 한국어 레이블을 반환한다', () => {
+            expect(findCandlePatternLabel('hammer')).toBe('망치형');
+            expect(findCandlePatternLabel('doji')).toBe('도지');
+        });
+
+        it('복합 캔들 패턴 이름에 해당하는 한국어 레이블을 반환한다', () => {
+            expect(findCandlePatternLabel('bullish_engulfing')).toBe(
+                '상승 장악형'
+            );
+            expect(findCandlePatternLabel('morning_star')).toBe('샛별형');
+        });
+
+        it('알 수 없는 패턴 이름은 입력값을 그대로 반환한다', () => {
+            expect(findCandlePatternLabel('unknown_pattern')).toBe(
+                'unknown_pattern'
+            );
         });
     });
 });

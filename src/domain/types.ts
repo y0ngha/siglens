@@ -153,6 +153,13 @@ export interface SkillResult {
     confidenceWeight: number;
 }
 
+export interface CandlePatternSummary {
+    patternName: string;
+    detected: boolean;
+    trend: Trend;
+    summary: string;
+}
+
 export interface AnalysisResponse {
     summary: string;
     trend: Trend;
@@ -163,6 +170,7 @@ export interface AnalysisResponse {
     priceTargets: PriceTargets;
     patternSummaries: PatternSummary[];
     skillResults: SkillResult[];
+    candlePatterns: CandlePatternSummary[];
 }
 
 export interface BarsData {

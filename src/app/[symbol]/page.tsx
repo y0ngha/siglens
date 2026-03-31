@@ -24,6 +24,7 @@ const FALLBACK_ANALYSIS: AnalysisResponse = {
     },
     patternSummaries: [],
     skillResults: [],
+    candlePatterns: [],
 };
 
 interface Props {
@@ -43,7 +44,10 @@ export default async function SymbolPage({ params }: Props) {
             timeframe: DEFAULT_TIMEFRAME,
             limit: DEFAULT_BARS_LIMIT,
         }),
-        skillsLoader.loadSkills().catch(() => []),
+        skillsLoader.loadSkills().catch((error: unknown) => {
+            console.error('Skills load failed', error);
+            return [];
+        }),
     ]);
 
     const indicators = calculateIndicators(bars);
