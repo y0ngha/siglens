@@ -858,6 +858,109 @@ describe('prompt', () => {
         });
     });
 
+    describe('분석 요청 섹션 - Skills 패턴 목록 지시', () => {
+        it('패턴 skill이 있을 때 patternSummaries 작성 규칙 안내가 포함된다', () => {
+            const skill = makeSkill({ type: 'pattern', name: '헤드앤숄더' });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('patternSummaries 작성 규칙');
+        });
+
+        it('패턴 skill이 있을 때 해당 패턴명이 분석 대상 목록에 포함된다', () => {
+            const skill = makeSkill({ type: 'pattern', name: '헤드앤숄더' });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('분석 대상 Skills 패턴 목록');
+            expect(result).toContain('- 헤드앤숄더');
+        });
+
+        it('여러 패턴 skill이 있을 때 모든 패턴명이 목록에 포함된다', () => {
+            const skills = [
+                makeSkill({ type: 'pattern', name: '이중천장' }),
+                makeSkill({ type: 'pattern', name: '이중바닥' }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                skills
+            );
+            expect(result).toContain('- 이중천장');
+            expect(result).toContain('- 이중바닥');
+        });
+
+        it('패턴 skill이 없을 때 patternSummaries 작성 규칙 안내가 포함되지 않는다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).not.toContain('patternSummaries 작성 규칙');
+        });
+
+        it('패턴 skill이 있을 때 캔들 패턴을 patternSummaries에 포함하지 말라는 지시가 포함된다', () => {
+            const skill = makeSkill({ type: 'pattern', name: '헤드앤숄더' });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain(
+                '캔들 패턴(단봉/다봉)은 patternSummaries에 포함하지 마세요'
+            );
+        });
+
+        it('패턴 skill이 있을 때 감지되지 않은 패턴도 detected: false로 포함하라는 지시가 있다', () => {
+            const skill = makeSkill({ type: 'pattern', name: '헤드앤숄더' });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('detected: false');
+        });
+
+        it('일반 skill만 있을 때 patternSummaries 작성 규칙 안내가 포함되지 않는다', () => {
+            const skill = makeSkill({
+                name: 'RSI 다이버전스',
+                type: undefined,
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('patternSummaries 작성 규칙');
+        });
+
+        it('confidenceWeight 미달 패턴 skill은 목록에 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'pattern',
+                name: '제외될 패턴',
+                confidenceWeight: TEST_BELOW_MIN_CONFIDENCE,
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('- 제외될 패턴');
+        });
+    });
+
     describe('skills 기본값', () => {
         it('skills 파라미터를 생략하면 빈 배열과 동일하게 동작한다', () => {
             const withEmpty = buildAnalysisPrompt(
