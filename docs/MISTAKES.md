@@ -325,6 +325,28 @@ Review before implementation and ensure these are not repeated.
          }, [callback]);
        };
        // Usage: useOnClickOutside(ref, onClose);
+
+14. Inline styles used for dynamic runtime values without CSS custom properties
+    → Rule: DESIGN.md and CONVENTIONS.md — inline styles are prohibited unless for dynamic domain values impossible to express in Tailwind
+    → For runtime-determined pixel values or chart colors (CHART_COLORS), use CSS custom properties with Tailwind arbitrary-value syntax
+    → Always add a comment explaining why the exception is necessary
+    ❌ <aside style={{ width: `${panelWidth}px` }} />
+    ✅ <aside style={{ '--panel-width': `${panelWidth}px` } as React.CSSProperties} className="md:w-[var(--panel-width)]">
+       // width is runtime-determined from drag state, cannot be expressed as static Tailwind class
+
+15. Custom hook hook declaration order violation in component files
+    → Rule: CONVENTIONS.md Custom Hook Declaration Order — hooks must be called in this order:
+       1. useState / useReducer
+       2. useRef
+       3. useCallback / useMemo
+       4. External custom hooks (useQuery, useOnClickOutside, etc.)
+       5. useEffect
+    → When external custom hooks are called after useState/useCallback, their dependencies on state become implicit and order-dependent
+    → Common violation: usePanelResize() called after getAnalysisStatus() derived value calculation
+    ❌ const status = getAnalysisStatus(); const { ... } = usePanelResize();  // derived calc before custom hook
+    ✅ const { ... } = usePanelResize(); const status = getAnalysisStatus();  // custom hook first, then derivations
+    ❌ const state = useState(...); const handler = useCallback(...); useDragListener(...); useEffect(...)  // listener hook order wrong
+    ✅ const state = useState(...); useDragListener(...); const handler = useCallback(...); useEffect(...)  // listener hook before useCallback
 ```
 
 ---
@@ -437,14 +459,24 @@ Review before implementation and ensure these are not repeated.
    ❌ (confidence.test.ts) const TEST_HIGH_CONFIDENCE = 0.8; // then expect(result.confidence >= TEST_HIGH_CONFIDENCE)
    ✅ (confidence.test.ts) import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants'; expect(result.confidence >= HIGH_CONFIDENCE_WEIGHT)
 
-11. Provider pair has asymmetric error handling or logging behavior
+11. Missing edge case test coverage when refactoring or moving functions
+   → Rule: Tests Rule 1 — domain/ and infrastructure/ code must always have direct test coverage
+   → When a function is refactored or moved to a different file, all edge cases tested upstream must also be verified directly in its new test file
+   → Indirect testing through upstream consumers is insufficient; each module must test its own edge cases
+   → Common patterns: function moved from module A to module B, but edge case tests remain only in A.test.ts
+   ❌ stripMarkdownCodeBlock moved to utils.ts, but text-before/after edge case only tested in claude.test.ts
+   ❌ readFile rejection path in Promise.all context, but rejection case not tested in loader.test.ts
+   ✅ (utils.test.ts) it('코드 블록 앞뒤의 텍스트를 제거한다', () => { expect(stripMarkdownCodeBlock('text```code```text')).toBe('code'); })
+   ✅ (loader.test.ts) describe('readFile 에러 발생 시', () => { it('에러를 전파한다', () => { ... expect(loadSkills()).rejects.toThrow() }) })
+
+12. Provider pair has asymmetric error handling or logging behavior
    → Rule: FF.md Predictability 2-B — sibling functions/classes in the same family must behave consistently
    → When one Provider adds error detail (cause, console.error), apply the same change to all Providers
    ❌ GeminiProvider: catch (error) { throw new Error('...', { cause: error }); console.error(...) }
       ClaudeProvider: catch { throw new Error('...') }  // cause and console.error missing
    ✅ Both Providers use identical catch patterns with cause and console.error
 
-12. New Provider implementation missing test cases that exist in sibling Provider
+13. New Provider implementation missing test cases that exist in sibling Provider
    → Rule: FF.md Predictability 2-B — sibling classes in the same family must have symmetric test coverage
    → When a new Provider is added, all it() cases present in the existing Provider must be replicated
    → Applies to field-presence checks (e.g. 'skillsDegraded' in result), error cases, and structural assertions
@@ -453,7 +485,7 @@ Review before implementation and ensure these are not repeated.
       GeminiProvider: (missing)
    ✅ Both Providers have identical test cases covering the same behaviors and field assertions
 
-13. Provider pair has inconsistent naming conventions
+14. Provider pair has inconsistent naming conventions
    → Rule: FF.md Predictability 2-A — sibling classes must use consistent terminology
    → When two Providers define the same concept (e.g. system instructions), use identical naming
    ❌ claude.ts: const CLAUDE_SYSTEM_PROMPT
@@ -463,7 +495,7 @@ Review before implementation and ensure these are not repeated.
    ❌ Define identical string in both files
    ✅ Extract to infrastructure/ai/utils.ts as AI_SYSTEM_PROMPT and import in both
 
-14. Repeated identical parameter object passed to multiple function calls
+15. Repeated identical parameter object passed to multiple function calls
    → Rule: FF.md Readability 1-A — identical values computed multiple times should be extracted
    → Rule: FF.md Cohesion 3-B — shared parameters should be a single source of truth
    → When the same parameter object is passed to 2+ functions, extract to const (regular code) or useMemo (hooks)

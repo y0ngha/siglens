@@ -17,12 +17,6 @@
 - Context: `factory.ts`의 `createAIProvider`에서 `raw`에 기본값을 먼저 할당하면 `undefined` 케이스가 `in` 연산자 이전에 이미 처리되어 논리가 불명확해짐; `raw && raw in AI_PROVIDER_MAP` 패턴으로 단순화
 
 
-## [PR #82 | feat/81/gemini-ai-provider-지원-추가 | 2026-03-30]
-- Violation: `utils.test.ts`의 `stripMarkdownCodeBlock` 테스트가 코드 블록 앞/뒤에 일반 텍스트가 있는 경우를 커버하지 않음
-- Rule: FF.md Cohesion 3-A — 함께 변경되는 코드는 같은 위치에 있어야 한다. 함수의 엣지 케이스 커버리지는 해당 함수가 위치한 파일의 테스트에 있어야 함
-- Context: 코드 블록 앞/뒤 텍스트 처리는 `claude.test.ts`의 provider 레벨에서만 검증되고 있었으나, `stripMarkdownCodeBlock`이 `utils.ts`로 이동했으므로 해당 케이스를 `utils.test.ts`에 직접 추가
-
-
 
 
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
@@ -30,12 +24,6 @@
 - Rule: FF.md Predictability 2-C — 이름, 파라미터, 반환값만으로 동작을 예측할 수 있어야 함
 - Context: prop이 초기화 완료 시 한 번만 호출되는 이벤트처럼 읽히나 실제로는 `visiblePatterns`나 `togglePattern` 변경 시마다 반복 호출됨. `onPatternOverlayChange`로 변경
 
-
-
-## [PR #90 | feat/83/skills-category-display-chart-overlay | review fix 5 | 2026-03-30]
-- Violation: `readFile`이 `Promise.all` 내부에서 rejection될 때 에러가 올바르게 전파되는지 검증하는 테스트 케이스 누락
-- Rule: CONVENTIONS.md Test Rules — infrastructure/ 커버리지 목표 100%; readFile rejection 경로가 미검증 상태
-- Context: `loader.ts`의 `loadSkills()`가 `Promise.all`을 사용하여 여러 파일을 병렬 로드하므로, readFile이 실패할 경우 Promise.all 전체가 reject되어야 함. `readFile 에러` describe 블록과 `readFile이 실패하면 에러를 전파한다` it 케이스를 추가하여 EACCES 에러 전파를 검증
 
 
 ## [Issue #84 | feat/84/AI-프롬프트-구체화-가격목표-핵심레벨-분석강화 | review fix | 2026-03-30]
@@ -126,11 +114,6 @@
 - Context: In `src/__tests__/domain/analysis/prompt.test.ts`, the `describe('buildAnalysisPrompt')` wrapper was an unnecessary intermediate layer; removed it so all context describe blocks are directly under `describe('prompt')`
 
 ## [Issue #109 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
-- Violation: Inline `style={{ width: panelWidth > 0 ? \`${panelWidth}px\` : undefined }}` used on the aside element in ChartContent.tsx
-- Rule: CONVENTIONS.md and DESIGN.md — inline styles are prohibited; dynamic values must be applied via CSS custom properties with Tailwind arbitrary-value syntax
-- Context: `panelWidth` is a runtime-determined pixel value that cannot be expressed as a static Tailwind class; fixed by using `style={{ '--panel-width': \`${panelWidth}px\` } as React.CSSProperties}` with `md:w-[var(--panel-width)]` Tailwind class
-
-## [Issue #109 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
 - Violation: DOM event listeners (`mousemove`, `mouseup`) added directly inside a `useEffect` in `usePanelResize.ts` instead of being extracted to a custom hook
 - Rule: MISTAKES.md Components Rule 13 — reusable DOM event listener patterns must be extracted to custom hooks (useOnClickOutside, useEscapeKey pattern)
 - Context: The mousemove/mouseup drag tracking pattern in `usePanelResize` was extracted to a new `useDragListener` hook in `hooks/useDragListener.ts`, keeping the useEffect logic isolated and reusable
@@ -146,11 +129,6 @@
 - Context: `useDragListener` 내부에서 두 콜백을 `useEffectEvent`로 감싸고 `useEffect` 의존성 배열에서 제거하여 호출자의 메모이제이션 여부와 무관하게 안전하게 동작하도록 수정
 
 ## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 2 | 2026-03-31]
-- Violation: `usePanelResize.ts`에서 hook 선언 순서 위반 — `useEffect`(panelWidthRef sync)가 `useCallback` 블록보다 앞에 위치하여 CONVENTIONS.md의 순서(useState → useRef → useCallback → useEffect)를 위반
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — useCallback must precede useEffect
-- Context: `panelWidthRef`를 `panelWidth` state와 동기화하는 전용 `useEffect`를 제거하고, `handleDragStart`의 `useCallback` 의존성 배열에 `panelWidth`를 직접 포함시켜 stale closure 문제를 해결하면서 선언 순서도 정규화
-
-## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 2 | 2026-03-31]
 - Violation: `usePanelResize.ts`에서 `panelWidthRef` + 전용 `useEffect`로 state를 ref에 sync하는 패턴 — 단일 목적 side effect가 추가되어 FF.md Cohesion 3-A를 위반
 - Rule: FF.md Cohesion 3-A — side effect must have single responsibility; a useEffect whose sole purpose is to sync state into a ref adds unnecessary indirection
 - Context: `panelWidthRef.current = panelWidth` sync effect 제거 후 `handleDragStart` useCallback deps에 `panelWidth` 추가로 대체; `handleMouseMove`/`handleMouseUp`의 불필요한 `useCallback` 래핑도 제거(useDragListener가 내부적으로 useEffectEvent로 안정화하므로 중복 안정화 불필요)
@@ -159,4 +137,14 @@
 - Violation: `ChartContent.tsx`의 드래그 핸들 `aria-valuemin={240}`, `aria-valuemax={640}`에 리터럴 값이 하드코딩되어 `usePanelResize.ts`의 `PANEL_MIN_WIDTH`, `PANEL_MAX_WIDTH`와 독립적으로 관리됨
 - Rule: MISTAKES.md TypeScript Rule 6 — 하드코딩된 리터럴은 상수로 추출해야 함; FF.md Cohesion 3-B — 같은 값이 두 곳에 정의되면 한쪽만 변경될 위험이 있음
 - Context: `PANEL_MIN_WIDTH`, `PANEL_MAX_WIDTH`를 `usePanelResize.ts`에서 `export`하고 `ChartContent.tsx`에서 import하여 참조하도록 수정
+
+## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 4 | 2026-03-31]
+- Violation: focusable `role="separator"` 드래그 핸들에 `onKeyDown` 핸들러가 없어 키보드 사용자가 패널 너비를 조절할 수 없는 접근성 미구현
+- Rule: WAI-ARIA spec — focusable separator must support ArrowLeft/ArrowRight key adjustment
+- Context: `usePanelResize`에 `handleKeyDown` 핸들러를 추가하여 ArrowLeft/ArrowRight로 `KEYBOARD_RESIZE_STEP(10px)` 단위 너비 조절 지원; `ChartContent.tsx` 드래그 핸들에 `onKeyDown={handleKeyDown}` 연결
+
+## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 5 | 2026-03-31]
+- Violation: `usePanelResize.ts`의 `handleKeyDown`에서 ArrowLeft가 패널 너비를 증가시키고 ArrowRight가 감소시키는 방향이 의미상 반전되어 있었음
+- Rule: FF.md Predictability 2-C — behavior must be predictable from the name and direction; ArrowLeft should narrow the panel, ArrowRight should widen it
+- Context: 우측 패널에서 ArrowLeft는 패널을 좁히는(decrease) 동작이 공간 직관에 맞으나, 기존 코드는 `prev + KEYBOARD_RESIZE_STEP`으로 증가시켰음; 부호를 교정하여 ArrowLeft → 감소, ArrowRight → 증가로 수정
 
