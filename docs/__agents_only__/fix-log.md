@@ -135,3 +135,23 @@
 - Rule: MISTAKES.md Components Rule 13 — reusable DOM event listener patterns must be extracted to custom hooks (useOnClickOutside, useEscapeKey pattern)
 - Context: The mousemove/mouseup drag tracking pattern in `usePanelResize` was extracted to a new `useDragListener` hook in `hooks/useDragListener.ts`, keeping the useEffect logic isolated and reusable
 
+## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
+- Violation: `usePanelResize.ts`에서 `React.MouseEvent` 타입을 사용하면서 `React` import가 누락되어 TypeScript 컴파일 오류 발생
+- Rule: TypeScript — 사용하는 모든 타입의 import가 명시되어야 한다
+- Context: `import type React from 'react'`를 추가하고, `handleDragStart`가 `panelWidth` state에 의존하여 불필요하게 재생성되는 문제를 `panelWidthRef` + `useEffect` 패턴으로 해결하여 함수를 안정화
+
+## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
+- Violation: `useDragListener.ts`에서 `onMouseMove`와 `onMouseUp` 외부 콜백 prop이 `useEffect` 의존성 배열에 포함되어 호출자가 `useCallback` 없이 인라인 함수를 전달할 경우 무한 루프 위험이 있었음
+- Rule: MISTAKES.md Components Rule 8 — 외부 콜백 prop은 `useEffectEvent`로 래핑하여 의존성 배열에서 제외해야 한다
+- Context: `useDragListener` 내부에서 두 콜백을 `useEffectEvent`로 감싸고 `useEffect` 의존성 배열에서 제거하여 호출자의 메모이제이션 여부와 무관하게 안전하게 동작하도록 수정
+
+## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 2 | 2026-03-31]
+- Violation: `usePanelResize.ts`에서 hook 선언 순서 위반 — `useEffect`(panelWidthRef sync)가 `useCallback` 블록보다 앞에 위치하여 CONVENTIONS.md의 순서(useState → useRef → useCallback → useEffect)를 위반
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — useCallback must precede useEffect
+- Context: `panelWidthRef`를 `panelWidth` state와 동기화하는 전용 `useEffect`를 제거하고, `handleDragStart`의 `useCallback` 의존성 배열에 `panelWidth`를 직접 포함시켜 stale closure 문제를 해결하면서 선언 순서도 정규화
+
+## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 2 | 2026-03-31]
+- Violation: `usePanelResize.ts`에서 `panelWidthRef` + 전용 `useEffect`로 state를 ref에 sync하는 패턴 — 단일 목적 side effect가 추가되어 FF.md Cohesion 3-A를 위반
+- Rule: FF.md Cohesion 3-A — side effect must have single responsibility; a useEffect whose sole purpose is to sync state into a ref adds unnecessary indirection
+- Context: `panelWidthRef.current = panelWidth` sync effect 제거 후 `handleDragStart` useCallback deps에 `panelWidth` 추가로 대체; `handleMouseMove`/`handleMouseUp`의 불필요한 `useCallback` 래핑도 제거(useDragListener가 내부적으로 useEffectEvent로 안정화하므로 중복 안정화 불필요)
+
