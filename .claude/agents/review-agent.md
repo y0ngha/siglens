@@ -1,7 +1,7 @@
 ---
 name: review-agent
 description: Handles pre-PR code quality review. Triggered when the user asks to review code, check quality, or verify before opening a PR. Returns findings only without modifying code.
-model: sonnet
+model: opus
 memory: project
 tools: Read, Glob, Grep, Bash
 skills:

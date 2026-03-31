@@ -114,3 +114,18 @@
 - Violation: `type CandlePatternEntry = { ... }` 객체 형상을 type alias로 선언
 - Rule: CONVENTIONS.md TypeScript Rules — 객체 형상(object shape)은 `interface`로 선언해야 한다
 - Context: `prompt.ts`의 `CandlePatternEntry`가 `type` 키워드로 선언되어 있었음; `interface CandlePatternEntry`로 변경
+
+## [PR #116 | fix/114/캔들-패턴-감지-범위-최근-15봉으로-제한 | review fix 2 | 2026-04-01]
+- Violation: `buildCandlePatternEntries`의 `multiEntries` 생성 후 `.filter(findIndex === idx)` 중복 제거 필터가 dead code로 존재
+- Rule: FF.md Readability 1-B — 실질적 효과가 없는 불필요한 로직 레이어는 노이즈를 추가하고 코드 파악을 어렵게 만든다
+- Context: `flatMap`에서 `barsAgo = totalBars - 1 - i`로 각 엔트리의 `barsAgo` 값이 고유하게 생성되므로 동일한 `(patternName, barsAgo)` 쌍이 중복될 수 없음; `.filter()` 블록 전체 제거
+
+## [PR #116 | fix/114/캔들-패턴-감지-범위-최근-15봉으로-제한 | review fix 2 | 2026-04-01]
+- Violation: `'여러 봉에서 감지된 패턴이 모두 포함된다'` 테스트에서 `toBeGreaterThanOrEqual(1)` assertion이 불충분하여 "최소 1개"만 검증
+- Rule: FF.md Predictability 2-C, CONVENTIONS.md Test Rules — 테스트 설명("모두 포함")과 실제 assertion이 일치해야 한다
+- Context: 테스트 데이터(음봉 prevBar + 장악형 양봉 currBar)는 반드시 2개 엔트리(barsAgo=1 단봉 + barsAgo=0 다봉)를 생성하므로 `toBeGreaterThanOrEqual(2)`로 강화
+
+## [PR #116 | fix/114/캔들-패턴-감지-범위-최근-15봉으로-제한 | review fix 2 | 2026-04-01]
+- Violation: 동일한 장악형(engulfing) 봉 데이터가 4개 테스트에서 반복 정의됨
+- Rule: FF.md Cohesion 3-B — 같은 값이 두 곳 이상에 정의되면 한쪽만 변경될 위험이 있음; AHA 원칙 — 3회 이상 반복 시 추상화
+- Context: `prompt.test.ts`에서 `prevBar`/`currBar` 리터럴 4개를 `makeEngulfingBars()` 헬퍼로 추출하여 단일 정의로 통합

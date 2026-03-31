@@ -62,6 +62,25 @@ const makeIndicators = (
     ...overrides,
 });
 
+const makeEngulfingBars = (): [Bar, Bar] => [
+    {
+        time: TEST_BAR_BASE_TIME,
+        open: 110,
+        high: 115,
+        low: 105,
+        close: 106,
+        volume: TEST_BAR_BASE_VOLUME,
+    },
+    {
+        time: TEST_BAR_BASE_TIME + TEST_BAR_INTERVAL,
+        open: 104,
+        high: 120,
+        low: 103,
+        close: 118,
+        volume: TEST_BAR_BASE_VOLUME,
+    },
+];
+
 const makeSkill = (overrides?: Partial<Skill>): Skill => ({
     name: 'Test Skill',
     description: 'Test description',
@@ -1038,23 +1057,7 @@ describe('prompt', () => {
 
         it('다봉 패턴 감지 시 패턴명이 포함된다', () => {
             // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 반드시 감지됨
-            const prevBar: Bar = {
-                time: TEST_BAR_BASE_TIME,
-                open: 110,
-                high: 115,
-                low: 105,
-                close: 106,
-                volume: TEST_BAR_BASE_VOLUME,
-            };
-            const currBar: Bar = {
-                time: TEST_BAR_BASE_TIME + TEST_BAR_INTERVAL,
-                open: 104,
-                high: 120,
-                low: 103,
-                close: 118,
-                volume: TEST_BAR_BASE_VOLUME,
-            };
-            const bars = [prevBar, currBar];
+            const bars = makeEngulfingBars();
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
@@ -1066,23 +1069,7 @@ describe('prompt', () => {
 
         it('슬라이딩 윈도우로 감지된 다봉 패턴은 봉 위치와 함께 포함된다', () => {
             // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 반드시 감지됨
-            const prevBar: Bar = {
-                time: TEST_BAR_BASE_TIME,
-                open: 110,
-                high: 115,
-                low: 105,
-                close: 106,
-                volume: TEST_BAR_BASE_VOLUME,
-            };
-            const currBar: Bar = {
-                time: TEST_BAR_BASE_TIME + TEST_BAR_INTERVAL,
-                open: 104,
-                high: 120,
-                low: 103,
-                close: 118,
-                volume: TEST_BAR_BASE_VOLUME,
-            };
-            const bars = [prevBar, currBar];
+            const bars = makeEngulfingBars();
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
@@ -1106,23 +1093,7 @@ describe('prompt', () => {
         });
 
         it('여러 봉에서 감지된 패턴이 모두 포함된다', () => {
-            const engulfingPrev: Bar = {
-                time: TEST_BAR_BASE_TIME,
-                open: 110,
-                high: 115,
-                low: 105,
-                close: 106,
-                volume: TEST_BAR_BASE_VOLUME,
-            };
-            const engulfingCurr: Bar = {
-                time: TEST_BAR_BASE_TIME + TEST_BAR_INTERVAL,
-                open: 104,
-                high: 120,
-                low: 103,
-                close: 118,
-                volume: TEST_BAR_BASE_VOLUME,
-            };
-            const bars = [engulfingPrev, engulfingCurr];
+            const bars = makeEngulfingBars();
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
@@ -1133,29 +1104,13 @@ describe('prompt', () => {
                 /\[\d+ bars ago\] (Single candle|Multi-candle) pattern: .+/g
             );
             expect(patternMatches).not.toBeNull();
-            expect((patternMatches ?? []).length).toBeGreaterThanOrEqual(1);
+            expect((patternMatches ?? []).length).toBeGreaterThanOrEqual(2);
         });
 
         it('같은 barsAgo 위치에 다봉 패턴이 있을 때 단봉 패턴은 제외된다', () => {
             // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 반드시 감지됨
             // currBar(barsAgo=0)에는 다봉 패턴이 감지되므로 단봉 패턴은 출력되지 않아야 함
-            const prevBar: Bar = {
-                time: TEST_BAR_BASE_TIME,
-                open: 110,
-                high: 115,
-                low: 105,
-                close: 106,
-                volume: TEST_BAR_BASE_VOLUME,
-            };
-            const currBar: Bar = {
-                time: TEST_BAR_BASE_TIME + TEST_BAR_INTERVAL,
-                open: 104,
-                high: 120,
-                low: 103,
-                close: 118,
-                volume: TEST_BAR_BASE_VOLUME,
-            };
-            const bars = [prevBar, currBar];
+            const bars = makeEngulfingBars();
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,

@@ -94,28 +94,19 @@ const buildCandlePatternEntries = (bars: Bar[]): CandlePatternEntry[] => {
         patternName: detectCandlePattern(bar),
     }));
 
-    const multiEntries: CandlePatternEntry[] = patternBars
-        .flatMap((_, i) => {
-            const windowEnd = i + 1;
-            const candleWindow = patternBars.slice(0, windowEnd);
-            const detected = detectMultiCandlePattern(candleWindow);
-            if (detected === null) return [];
-            return [
-                {
-                    barsAgo: totalBars - 1 - i,
-                    patternType: 'multi' as const,
-                    patternName: detected,
-                },
-            ];
-        })
-        .filter(
-            (entry, idx, arr) =>
-                arr.findIndex(
-                    e =>
-                        e.patternName === entry.patternName &&
-                        e.barsAgo === entry.barsAgo
-                ) === idx
-        );
+    const multiEntries: CandlePatternEntry[] = patternBars.flatMap((_, i) => {
+        const windowEnd = i + 1;
+        const candleWindow = patternBars.slice(0, windowEnd);
+        const detected = detectMultiCandlePattern(candleWindow);
+        if (detected === null) return [];
+        return [
+            {
+                barsAgo: totalBars - 1 - i,
+                patternType: 'multi' as const,
+                patternName: detected,
+            },
+        ];
+    });
 
     const multiBarPositions = new Set(multiEntries.map(e => e.barsAgo));
     const filteredSingleEntries = singleEntries.filter(
