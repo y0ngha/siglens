@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/domain/constants/colors';
@@ -150,13 +150,13 @@ export function IndicatorToolbar({
     const emaButtonRef = useRef<HTMLButtonElement>(null);
     const portalRef = useRef<HTMLDivElement>(null);
 
-    const buttonRefMap: Record<
-        IndicatorType,
-        React.RefObject<HTMLButtonElement | null>
-    > = {
-        ma: maButtonRef,
-        ema: emaButtonRef,
-    };
+    const buttonRefMap = useMemo(
+        () => ({
+            ma: maButtonRef,
+            ema: emaButtonRef,
+        }),
+        []
+    );
 
     useOnClickOutside(toolbarRef, event => {
         if (!openDropdown) return;

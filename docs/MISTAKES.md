@@ -91,6 +91,15 @@ Review before implementation and ensure these are not repeated.
     → Mixing `` `... ${condition ? '...' : '...'}` `` and cn() patterns creates inconsistency
     ❌ className={`flex ... ${period === 20 ? 'bg-blue' : 'bg-gray'}`}
     ✅ className={cn('flex ...', period === 20 ? 'bg-blue' : 'bg-gray')}
+
+13. Derived constants (objects, maps) recreated on every render without memoization
+    → Rule: FF.md Cohesion 3-B — constants that never change should be extracted or memoized
+    → If a value is derived from props/state but its identity doesn't need to change (only content does),
+      wrap with useMemo to avoid unnecessary re-creation and triggering dependent effects
+    ❌ const buttonRefMap = { indicator1: useRef(), indicator2: useRef() };  // recreated every render
+    ✅ const buttonRefMap = useMemo(() => ({ indicator1: useRef(), indicator2: useRef() }), [])
+    ❌ const handlers = { onClick: handleClick, onChange: handleChange };  // recreated every render
+    ✅ const handlers = useMemo(() => ({ onClick: handleClick, onChange: handleChange }), [])
 ```
 
 ---
