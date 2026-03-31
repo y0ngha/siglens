@@ -1,3 +1,6 @@
+// IMPORTANT: All AI-facing prompt strings in this file must be written in English.
+// Korean or other languages reduce analysis quality and consistency.
+
 import {
     EMA_DEFAULT_PERIODS,
     EMA_SUPPORT_RESISTANCE_LONG_INDEX,
@@ -44,10 +47,10 @@ const lastOf = <T>(arr: T[]): T | null =>
 const formatMarketSection = (bars: Bar[]): string => {
     if (bars.length === 0) {
         return [
-            '## 현재 시장 상황',
-            '- 현재가: N/A',
-            '- 변화율: N/A',
-            '- 거래량: N/A',
+            '## Current Market Status',
+            '- Current Price: N/A',
+            '- Price Change %: N/A',
+            '- Volume: N/A',
         ].join('\n');
     }
 
@@ -59,10 +62,10 @@ const formatMarketSection = (bars: Bar[]): string => {
             : 'N/A';
 
     return [
-        '## 현재 시장 상황',
-        `- 현재가: ${fmt(last.close)}`,
-        `- 변화율: ${changeRate}`,
-        `- 거래량: ${formatVolume(last.volume)}`,
+        '## Current Market Status',
+        `- Current Price: ${fmt(last.close)}`,
+        `- Price Change %: ${changeRate}`,
+        `- Volume: ${formatVolume(last.volume)}`,
     ].join('\n');
 };
 
@@ -79,18 +82,18 @@ const formatRecentBarsSection = (bars: Bar[]): string => {
     const recentBars = bars.slice(-RECENT_BARS_COUNT);
 
     if (recentBars.length === 0) {
-        return ['## 최근 봉 데이터', '- 데이터 없음'].join('\n');
+        return ['## Recent Bar Data', '- No data available'].join('\n');
     }
 
     const multiPattern = detectMultiCandlePattern(recentBars);
 
     return [
-        `## 최근 봉 데이터 (최근 ${recentBars.length}봉)`,
-        '형식: 날짜·시간(UTC) | O:시가 H:고가 L:저가 C:종가 V:거래량 [캔들패턴]',
+        `## Recent Bar Data (Last ${recentBars.length} bars)`,
+        'Format: Date/Time(UTC) | O:Open H:High L:Low C:Close V:Volume [CandlePattern]',
         ...recentBars.map(formatBarRow),
         ...(multiPattern !== null
             ? [
-                  `- 감지된 다봉 패턴: ${getMultiCandlePatternLabel(multiPattern)}`,
+                  `- Detected multi-candle pattern: ${getMultiCandlePatternLabel(multiPattern)}`,
               ]
             : []),
     ].join('\n');
@@ -100,7 +103,7 @@ const formatVolumeSection = (bars: Bar[]): string => {
     const recentBars = bars.slice(-RECENT_BARS_COUNT);
 
     if (recentBars.length === 0) {
-        return ['## 거래량 분석', '- 데이터 없음'].join('\n');
+        return ['## Volume Analysis', '- No data available'].join('\n');
     }
 
     const avgVolume =
@@ -110,9 +113,9 @@ const formatVolumeSection = (bars: Bar[]): string => {
         avgVolume > 0 ? (lastBar.volume / avgVolume) * PERCENTAGE_FACTOR : 0;
 
     return [
-        '## 거래량 분석',
-        `- 최근 ${recentBars.length}봉 평균: ${formatVolume(avgVolume)}`,
-        `- 현재 거래량: ${formatVolume(lastBar.volume)} (평균 대비 ${volumeRatio.toFixed(INDICATOR_DECIMAL_PLACES)}%)`,
+        '## Volume Analysis',
+        `- Last ${recentBars.length}-bar average: ${formatVolume(avgVolume)}`,
+        `- Current volume: ${formatVolume(lastBar.volume)} (${volumeRatio.toFixed(INDICATOR_DECIMAL_PLACES)}% of average)`,
     ].join('\n');
 };
 
@@ -123,27 +126,29 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastDMI = lastOf(indicators.dmi);
 
     return [
-        '## 인디케이터 수치',
+        '## Indicator Values',
         `- RSI(${RSI_DEFAULT_PERIOD}): ${fmt(lastRSI)}`,
         `- MACD: ${fmt(lastMACD?.macd ?? null)} / Signal ${fmt(lastMACD?.signal ?? null)} / Histogram ${fmt(lastMACD?.histogram ?? null)}`,
-        `- 볼린저 밴드: Upper ${fmt(lastBollinger?.upper ?? null)} / Middle ${fmt(lastBollinger?.middle ?? null)} / Lower ${fmt(lastBollinger?.lower ?? null)}`,
+        `- Bollinger Bands: Upper ${fmt(lastBollinger?.upper ?? null)} / Middle ${fmt(lastBollinger?.middle ?? null)} / Lower ${fmt(lastBollinger?.lower ?? null)}`,
         `- DMI: +DI ${fmt(lastDMI?.diPlus ?? null)} / -DI ${fmt(lastDMI?.diMinus ?? null)} / ADX ${fmt(lastDMI?.adx ?? null)}`,
     ].join('\n');
 };
 
 const confidenceLabel = (weight: number): string =>
-    weight >= HIGH_CONFIDENCE_WEIGHT ? '[높은 신뢰도]' : '[중간 신뢰도]';
+    weight >= HIGH_CONFIDENCE_WEIGHT
+        ? '[High Confidence]'
+        : '[Medium Confidence]';
 
 const buildSkillBlock = (skill: Skill): string =>
     `### ${skill.name} ${confidenceLabel(skill.confidenceWeight)}\n${skill.content}`;
 
 /**
- * AnalysisResponse의 모든 키에 대한 JSON 스키마 예시를 정의합니다.
- * Record<keyof AnalysisResponse, string> 타입이 AnalysisResponse 필드 변경 시
- * 컴파일 타임 오류를 발생시켜 ANALYSIS_REQUEST와의 동기화를 강제합니다.
+ * Defines the JSON schema example for all keys of AnalysisResponse.
+ * The Record<keyof AnalysisResponse, string> type enforces compile-time synchronization
+ * with AnalysisResponse — changes to the interface will produce a compile error here.
  */
 const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
-    summary: '"종합 분석 요약"',
+    summary: '"Overall analysis summary"',
     trend: '"bullish | bearish | neutral"',
     signals:
         '[{ "type": "...", "description": "...", "strength": "strong | moderate | weak" }]',
@@ -154,12 +159,12 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
     priceTargets:
         '{ "bullish": { "targets": [{ "price": 165.00, "basis": "..." }], "condition": "..." }, "bearish": { "targets": [{ "price": 145.00, "basis": "..." }], "condition": "..." } }',
     patternSummaries:
-        // skills/*.md에 정의된 차트 패턴만 여기에 작성. 캔들 패턴은 candlePatterns에 작성
+        // Only chart patterns defined in skills/*.md. Candle patterns go in candlePatterns.
         '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "...", "keyPrices": [150.00], "timeRange": { "start": 1700000000, "end": 1700100000 } }]',
     skillResults:
         '[{ "skillName": "...", "trend": "bullish | bearish | neutral", "summary": "..." }]',
     candlePatterns:
-        // 봉 데이터에서 감지된 캔들 패턴만 여기에 작성. Skills 패턴은 patternSummaries에 작성
+        // Only candle patterns detected from bar data. Skills patterns go in patternSummaries.
         '[{ "patternName": "three_outside_down", "detected": true, "trend": "bearish", "summary": "..." }]',
 };
 
@@ -171,46 +176,50 @@ const buildSchemaBody = (): string => {
 };
 
 const ANALYSIS_GUIDELINES = [
-    '## 분석 가이드라인',
+    '## Analysis Guidelines',
     '',
-    '### 캔들 패턴 vs 차트 패턴 구분',
-    '- candlePatterns: 봉 데이터에서 감지된 캔들 패턴(단봉/다봉)만 작성. skills/*.md에 정의된 차트 패턴은 patternSummaries에 작성',
-    '- patternSummaries: skills/*.md에 정의된 차트 패턴만 여기에 작성. 캔들 패턴은 candlePatterns에 작성',
+    '### Candle Patterns vs Chart Patterns',
+    '- candlePatterns: Only include candle patterns (single/multi candle) detected from bar data. Chart patterns defined in skills/*.md go in patternSummaries.',
+    '- patternSummaries: Only include chart patterns defined in skills/*.md. Candle patterns go in candlePatterns.',
     '',
-    '### 지지/저항 판단',
-    `- 이동평균선(MA ${MA_DEFAULT_PERIODS.join(',')}, EMA ${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_SHORT_INDEX]}/${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_LONG_INDEX]}) 수렴 지점을 우선 확인`,
-    '- 최근 30봉의 거래량 분포에서 PoC(거래 집중 가격대) 식별',
-    '- 거래량 급증 봉의 고가/저가를 매물대로 판단',
-    '- 이전 swing high/low와 볼린저 밴드 경계 참고',
-    '- 각 레벨에 반드시 근거(reason)를 포함',
+    '### Support/Resistance Assessment',
+    `- Check convergence points of moving averages (MA ${MA_DEFAULT_PERIODS.join(',')}, EMA ${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_SHORT_INDEX]}/${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_LONG_INDEX]}) first`,
+    '- Identify PoC (Point of Control — highest volume price area) from the last 30 bars',
+    '- Treat high/low of high-volume bars as supply/demand zones',
+    '- Reference prior swing highs/lows and Bollinger Band boundaries',
+    '- Each level must include a reason',
     '',
-    '### 가격 목표 산출',
-    '- 감지된 패턴의 측정 규칙(패턴 높이 투영)을 적용',
-    '- 1차 목표는 가장 가까운 지지/저항선, 2차 목표는 패턴 측정치 기반',
-    '- 각 시나리오의 전제 조건(브레이크아웃/브레이크다운 기준선)을 명시',
-    '- 보조지표(RSI 극단값, 볼린저 밴드 도달, MACD 추세)로 목표 도달 가능성 보강',
+    '### Price Target Calculation',
+    '- Apply the measured move rule (project pattern height) for detected patterns',
+    '- First target: nearest support/resistance; second target: based on pattern measurement',
+    '- State the trigger condition (breakout/breakdown reference level) for each scenario',
+    '- Strengthen target viability with supporting indicators (RSI extremes, Bollinger Band touch, MACD trend)',
 ].join('\n');
+
+const RESPONSE_LANGUAGE_INSTRUCTION =
+    'IMPORTANT: All text field values in the JSON response (summary, description, reason, basis, condition, etc.) must be written in Korean (한국어). Do not use English for any response content.';
 
 const buildAnalysisRequest = (patternSkills: Skill[]): string => {
     const patternListInstruction =
         patternSkills.length > 0
             ? [
                   '',
-                  '### patternSummaries 작성 규칙',
-                  '- patternSummaries에는 아래 나열된 Skills 패턴에 대한 감지 여부를 **반드시 항목별로 모두** 포함해야 합니다.',
-                  '- 각 Skills 패턴에 대해 현재 차트 데이터에서 해당 패턴이 감지되는지 판단하고 detected 값을 설정하세요.',
-                  '- 감지되지 않은 패턴도 detected: false로 반드시 포함해야 합니다.',
-                  '- **목록에 나열되지 않은 다른 패턴은 patternSummaries에 포함하지 마세요.**',
-                  '- **캔들 패턴(단봉/다봉)은 patternSummaries에 포함하지 마세요.** 캔들 패턴은 candlePatterns에만 작성합니다.',
+                  '### patternSummaries Writing Rules',
+                  '- patternSummaries must include detection results for **every** Skills pattern listed below.',
+                  '- For each Skills pattern, assess whether it is detected in the current chart data and set the detected value accordingly.',
+                  '- Patterns that are not detected must still be included with detected: false.',
+                  '- **Do not include any patterns not listed below in patternSummaries.**',
+                  '- **Do not include candle patterns (single/multi candle) in patternSummaries.** Candle patterns belong only in candlePatterns.',
                   '',
-                  '분석 대상 Skills 패턴 목록:',
+                  'Skills pattern list to analyze:',
                   ...patternSkills.map(s => `- ${s.name}`),
               ].join('\n')
             : '';
 
     return [
-        '## 분석 요청',
-        '위 데이터를 기반으로 기술적 분석을 수행하고 다음 JSON 형식으로 응답해주세요:',
+        '## Analysis Request',
+        RESPONSE_LANGUAGE_INSTRUCTION,
+        'Based on the data above, perform technical analysis and respond in the following JSON format:',
         buildSchemaBody(),
         patternListInstruction,
     ]
@@ -231,19 +240,19 @@ export function buildAnalysisPrompt(
     const regularSkills = activeSkills.filter(s => s.type !== 'pattern');
 
     const sections = [
-        `종목: ${symbol}`,
+        `Symbol: ${symbol}`,
         formatMarketSection(bars),
         formatRecentBarsSection(bars),
         formatVolumeSection(bars),
         formatIndicatorSection(indicators),
         ...(patternSkills.length > 0
             ? [
-                  `## 패턴 분석\n${patternSkills.map(buildSkillBlock).join('\n\n')}`,
+                  `## Pattern Analysis\n${patternSkills.map(buildSkillBlock).join('\n\n')}`,
               ]
             : []),
         ...(regularSkills.length > 0
             ? [
-                  `## 활성화된 Skills\n${regularSkills.map(buildSkillBlock).join('\n\n')}`,
+                  `## Active Skills\n${regularSkills.map(buildSkillBlock).join('\n\n')}`,
               ]
             : []),
         ANALYSIS_GUIDELINES,
