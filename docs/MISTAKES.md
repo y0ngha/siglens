@@ -450,6 +450,18 @@ Review before implementation and ensure these are not repeated.
       gemini.ts: const GEMINI_SYSTEM_PROMPT  // consistent term
    ❌ Define identical string in both files
    ✅ Extract to infrastructure/ai/utils.ts as AI_SYSTEM_PROMPT and import in both
+
+14. Repeated identical parameter object passed to multiple function calls
+   → Rule: FF.md Readability 1-A — identical values computed multiple times should be extracted
+   → Rule: FF.md Cohesion 3-B — shared parameters should be a single source of truth
+   → When the same parameter object is passed to 2+ functions, extract to const (regular code) or useMemo (hooks)
+   ❌ useMAOverlay({ chartRef, bars, indicators, lineWidth })
+      useEMAOverlay({ chartRef, bars, indicators, lineWidth })
+      useBollingerOverlay({ chartRef, bars, indicators, lineWidth })
+   ✅ const commonHookParams = { chartRef, bars, indicators, lineWidth };
+      useMAOverlay(commonHookParams)
+      useEMAOverlay(commonHookParams)
+      useBollingerOverlay(commonHookParams)
 ```
 
 ---

@@ -1,31 +1,5 @@
 # Fix Log
 
-## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
-- Violation: `DropdownIndicatorConfig.type` field inlined a 2-member union literal `'ma' | 'ema'` directly in the interface
-- Rule: MISTAKES.md TypeScript Rule 5 — union literals with 2+ members must not be inlined in interface fields; extract to a named type alias
-- Context: Both `DropdownType` and `DropdownIndicatorConfig.type` used `'ma' | 'ema'` inline; extracted to `type IndicatorType = 'ma' | 'ema'` and updated both usages
-
-## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
-- Violation: `commonHookParams` 변수에 객체 타입이 함수 바디 내에 인라인으로 선언됨
-- Rule: MISTAKES.md TypeScript Rule 4 — 함수 내부에 타입 선언 금지; 파일 상단 named interface로 추출
-- Context: `StockChart` 컴포넌트 내부에서 `commonHookParams: { chartRef: ...; bars: ...; indicators: ...; lineWidth: ... }`와 같이 객체 리터럴 타입을 인라인으로 작성하고 있었으며, `interface CommonHookParams`로 파일 상단에 추출하여 해결
-
-## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
-- Violation: `enrichAnalysisWithConfidence`가 `prompt.ts`에 동거하여 단일 책임 원칙 위반
-- Rule: FF.md Coupling 4-A (독립적으로 변경될 수 있는 두 함수는 분리)
-- Context: AI 프롬프트 생성(`buildAnalysisPrompt`)과 신뢰도 데이터 주입(`enrichAnalysisWithConfidence`)은 독립적으로 변경되는 관심사이므로, `domain/analysis/confidence.ts`로 분리하여 해결
-
-
-## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
-- Violation: `DETECTED_BADGE_CONFIG`의 `Record` 키 타입에 인라인 유니온 리터럴 `'detected' | 'undetected'`(2개 멤버)가 직접 작성됨
-- Rule: MISTAKES.md TypeScript Rule 5 — 2개 이상의 유니온 리터럴은 인라인으로 작성하지 않고 별도 type alias로 추출한다
-- Context: `DETECTED_BADGE_CONFIG`의 Record 키 타입에 인라인으로 유니온을 선언하고 있었으며, `type DetectionStatus = 'detected' | 'undetected'`로 추출하여 규칙을 준수
-
-## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
-- Violation: `skillsLoader.loadSkills()` 실패 시 에러 로깅 없이 빈 배열로 fallback 처리됨
-- Rule: CONVENTIONS.md — 에러 로깅 개선이 브랜치 목적임에도 skills 로딩 실패는 조용히 무시되어 디버깅 시 원인 추적이 어려움
-- Context: `route.ts`의 `.catch(() => [])` 핸들러가 AI 분석 실패와 달리 `console.error` 없이 처리되고 있었으며, `.catch((error: unknown) => { console.error(...); return []; })`로 수정하여 skills 로딩 실패도 로그가 남도록 통일
-
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
@@ -86,7 +60,12 @@
 - Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
 
 ## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
-- Violation: `StockChart.tsx`에서 6개의 인디케이터 훅에 동일한 파라미터 객체(`chartRef, bars, indicators, lineWidth`)가 반복 전달됨
-- Rule: FF.md Readability 1-A — 동일한 값을 반복 작성하지 않고 공통 상수로 추출; AHA 원칙
-- Context: `commonHookParams` 객체를 `LineWidth` 타입을 명시하여 선언하고 6개 훅(`useMAOverlay`, `useEMAOverlay`, `useBollingerOverlay`, `useMACDChart`, `useRSIChart`, `useDMIChart`) 호출에서 spread 대신 직접 전달
+- Violation: `IndicatorToolbar.tsx`에서 `getPeriodColor(period)` 반환값을 `style` prop으로 적용하는 코드에 허용 사유 주석이 없어 DESIGN.md 인라인 스타일 금지 규칙 위반 여부가 불명확했음
+- Rule: DESIGN.md — 인라인 스타일은 금지; 단 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)는 Tailwind 임의값으로 표현 불가능하므로 예외 허용, 주석으로 명시 필요
+- Context: `getPeriodColor`는 `CHART_COLORS` 기반 상수를 반환하는 런타임 동적 색상으로, Tailwind 임의값 문법으로 대체 불가능함을 주석으로 명시하여 의도를 문서화
+
+## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
+- Violation: `IndicatorToolbar.tsx`에서 `handleClickOutside`를 `useCallback`으로 래핑하여 `useOnClickOutside`에 전달함
+- Rule: FF.md Readability 1-B — 불필요한 추상화 레이어는 노이즈를 추가하고 의도를 모호하게 만든다
+- Context: `useOnClickOutside`가 내부적으로 `useEffectEvent`를 통해 핸들러 참조 안정성을 보장하므로, 콜 사이트에서 `useCallback`을 감쌀 이유가 없음; `useCallback` 제거 후 인라인 콜백으로 단순화
 
