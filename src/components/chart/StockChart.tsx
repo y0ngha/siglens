@@ -1,15 +1,36 @@
 'use client';
 
 import { useEffect, useEffectEvent, useRef } from 'react';
+import type { RefObject } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import type {
+    IChartApi,
+    ISeriesApi,
+    LineWidth,
+    UTCTimestamp,
+} from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult, PatternResult } from '@/domain/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
 import { useBollingerOverlay } from '@/components/chart/hooks/useBollingerOverlay';
+import { useMACDChart } from '@/components/chart/hooks/useMACDChart';
+import { useRSIChart } from '@/components/chart/hooks/useRSIChart';
+import { useDMIChart } from '@/components/chart/hooks/useDMIChart';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
+import {
+    MA_DEFAULT_PERIODS,
+    EMA_DEFAULT_PERIODS,
+} from '@/domain/indicators/constants';
+
+interface CommonHookParams {
+    chartRef: RefObject<IChartApi | null>;
+    bars: Bar[];
+    indicators: IndicatorResult;
+    lineWidth: LineWidth;
+}
 
 const EMPTY_INDICATORS: IndicatorResult = {
     macd: [],
@@ -89,24 +110,31 @@ export function StockChart({
         chartRef.current.timeScale().fitContent();
     }, [bars]);
 
-    useMAOverlay({
+    const commonHookParams: CommonHookParams = {
         chartRef,
         bars,
         indicators,
-        lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
-    });
-    useEMAOverlay({
-        chartRef,
-        bars,
-        indicators,
-        lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
-    });
-    useBollingerOverlay({
-        chartRef,
-        bars,
-        indicators,
-        lineWidth: DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
-    });
+        lineWidth: DEFAULT_LINE_WIDTH,
+    };
+
+    const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
+        useMAOverlay(commonHookParams);
+
+    const { visiblePeriods: emaVisiblePeriods, togglePeriod: toggleEMAPeriod } =
+        useEMAOverlay(commonHookParams);
+
+    const { isVisible: bollingerVisible, toggle: toggleBollinger } =
+        useBollingerOverlay(commonHookParams);
+
+    const { isVisible: macdVisible, toggle: toggleMACD } =
+        useMACDChart(commonHookParams);
+
+    const { isVisible: rsiVisible, toggle: toggleRSI } =
+        useRSIChart(commonHookParams);
+
+    const { isVisible: dmiVisible, toggle: toggleDMI } =
+        useDMIChart(commonHookParams);
+
     const { visiblePatterns, togglePattern } = usePatternOverlay({
         chartRef,
         bars,
@@ -121,5 +149,26 @@ export function StockChart({
         notifyPatternOverlayChange();
     }, [visiblePatterns]);
 
-    return <div ref={containerRef} className="h-full w-full" />;
+    return (
+        <div className="relative h-full w-full">
+            <div ref={containerRef} className="h-full w-full" />
+            <div className="absolute top-2 left-2 z-10">
+                <IndicatorToolbar
+                    maVisiblePeriods={maVisiblePeriods}
+                    maAvailablePeriods={MA_DEFAULT_PERIODS}
+                    onMAToggle={toggleMAPeriod}
+                    emaVisiblePeriods={emaVisiblePeriods}
+                    emaAvailablePeriods={EMA_DEFAULT_PERIODS}
+                    onEMAToggle={toggleEMAPeriod}
+                    bollinger={{
+                        visible: bollingerVisible,
+                        onToggle: toggleBollinger,
+                    }}
+                    macd={{ visible: macdVisible, onToggle: toggleMACD }}
+                    rsi={{ visible: rsiVisible, onToggle: toggleRSI }}
+                    dmi={{ visible: dmiVisible, onToggle: toggleDMI }}
+                />
+            </div>
+        </div>
+    );
 }

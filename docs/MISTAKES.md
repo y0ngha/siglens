@@ -60,6 +60,34 @@ Review before implementation and ensure these are not repeated.
    ❌ items.filter((_, ci) => { const item = outerArray[offset + ci]; ... })
    ✅ lines.reduce((acc, line) => { ... })
    ✅ items.filter(item => { ... })
+
+10. Repeating identical filtering/calculation logic across multiple blocks
+    → Rule: FF.md Cohesion 3-B — same values computed in multiple places must be extracted to single source of truth
+    → When the same filter, map, or computation appears 2+ times, extract to useMemo (hooks) or const (regular code)
+    ❌ useEffect(() => { const filtered = items.filter(x => x.active); ... }, []);
+       useEffect(() => { const filtered = items.filter(x => x.active); setOther(filtered); }, []);
+    ✅ const filtered = useMemo(() => items.filter(x => x.active), [items]);
+       useEffect(() => { ... filtered ... }, [filtered]);
+       useEffect(() => { setOther(filtered); }, [filtered]);
+
+11. Repeating identical className ternary or computed styles across multiple elements
+    → Rule: FF.md Readability 1-A — identical results computed multiple times should be extracted
+    → When the same cn() or style computation appears 3+ times, extract to a helper function
+    ❌ <button className={active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}>MA</button>
+       <button className={active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}>EMA</button>
+       <button className={active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black'}>BB</button>
+    ✅ const buttonClass = (active: boolean) => cn(active ? 'bg-blue-500 text-white' : 'bg-gray-200 text-black');
+       <button className={buttonClass(active)}>MA</button>
+       <button className={buttonClass(active)}>EMA</button>
+       <button className={buttonClass(active)}>BB</button>
+```
+
+12. Using template literals with inline ternary for conditional classes instead of cn()
+    → Rule: CONVENTIONS.md — conditional classNames must use cn() utility
+    → Rule: FF.md Predictability 2-A — consistent pattern for all conditional styling
+    → Mixing `` `... ${condition ? '...' : '...'}` `` and cn() patterns creates inconsistency
+    ❌ className={`flex ... ${period === 20 ? 'bg-blue' : 'bg-gray'}`}
+    ✅ className={cn('flex ...', period === 20 ? 'bg-blue' : 'bg-gray')}
 ```
 
 ---
@@ -172,6 +200,13 @@ Review before implementation and ensure these are not repeated.
    ❌ type Props = {...}; function ComponentA() {...} function ComponentB() {...} function MyComponent(props: Props) {...}
    ✅ type Props = {...}; function MyComponent(props: Props) {...}
 
+3. Props interface separated from component by other definitions (type aliases, helpers, sub-components)
+   → Props interface must be immediately above the component function it describes
+   → Rule: FF.md 1-G — viewpoint shift when readers must jump past intermediate definitions to find component
+   → Rule: CONVENTIONS.md — all supporting types/helpers go above the Props interface, not between Props and component
+   ❌ type PropsType = {...}; function Helper() {...} function MyComponent(props: PropsType) {...}  // Helper interrupts the Props-Component relationship
+   ✅ function Helper() {...}; type PropsType = {...}; function MyComponent(props: PropsType) {...}  // Props immediately precedes component
+
 3. Managing timeframe as a URL query parameter
    → Manage as client state only
 
@@ -250,6 +285,34 @@ Review before implementation and ensure these are not repeated.
     ✅ export function DetectedBadge() { return <div>...</div>; }  // layout is caller's responsibility
     ✅ export function ChartContent() { return <div className="flex-col md:flex-row">...</div>; }  // child owns its layout
        <SymbolPageClient />  // caller adds margin as needed
+
+12. Repeating identical JSX structure across multiple render blocks
+    → Rule: FF.md Readability 1-A — identical JSX repeated 2+ times should be data-driven
+    → Extract to a data array + .map() pattern instead of hardcoding duplicates
+    → Rule: FF.md Cohesion 3-B — related JSX structures belong in single rendering logic
+    ❌ <div>{dropdownA && <Dropdown config={configA} />}</div>
+       <div>{dropdownB && <Dropdown config={configB} />}</div>
+       <div>{dropdownC && <Dropdown config={configC} />}</div>
+    ✅ const dropdowns = [configA, configB, configC];
+       {dropdowns.map(config => <div key={config.id}>{config.visible && <Dropdown config={config} />}</div>)}
+
+13. Implementing DOM event listener logic directly in useEffect instead of extracting to custom hook
+    → Rule: FF.md Cohesion 3-A — reusable patterns must be extracted to custom hooks
+    → Rule: CONVENTIONS.md Custom Hook Rules — event listener patterns (click outside, escape key, etc.) must be custom hooks
+    → useOnClickOutside, useEscapeKey, etc. are common abstractions that belong in hooks/
+    ❌ useEffect(() => {
+         const handler = (e: MouseEvent) => { if (!ref.current?.contains(e.target)) close(); };
+         document.addEventListener('mousedown', handler);
+         return () => document.removeEventListener('mousedown', handler);
+       }, []);
+    ✅ const useOnClickOutside = (ref: RefObject<HTMLElement>, callback: () => void) => {
+         useEffect(() => {
+           const handler = (e: MouseEvent) => { if (!ref.current?.contains(e.target)) callback(); };
+           document.addEventListener('mousedown', handler);
+           return () => document.removeEventListener('mousedown', handler);
+         }, [callback]);
+       };
+       // Usage: useOnClickOutside(ref, onClose);
 ```
 
 ---
@@ -387,6 +450,18 @@ Review before implementation and ensure these are not repeated.
       gemini.ts: const GEMINI_SYSTEM_PROMPT  // consistent term
    ❌ Define identical string in both files
    ✅ Extract to infrastructure/ai/utils.ts as AI_SYSTEM_PROMPT and import in both
+
+14. Repeated identical parameter object passed to multiple function calls
+   → Rule: FF.md Readability 1-A — identical values computed multiple times should be extracted
+   → Rule: FF.md Cohesion 3-B — shared parameters should be a single source of truth
+   → When the same parameter object is passed to 2+ functions, extract to const (regular code) or useMemo (hooks)
+   ❌ useMAOverlay({ chartRef, bars, indicators, lineWidth })
+      useEMAOverlay({ chartRef, bars, indicators, lineWidth })
+      useBollingerOverlay({ chartRef, bars, indicators, lineWidth })
+   ✅ const commonHookParams = { chartRef, bars, indicators, lineWidth };
+      useMAOverlay(commonHookParams)
+      useEMAOverlay(commonHookParams)
+      useBollingerOverlay(commonHookParams)
 ```
 
 ---

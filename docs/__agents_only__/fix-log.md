@@ -1,21 +1,5 @@
 # Fix Log
 
-## [PR #95 | feat/85/신뢰도-배지-및-한국어-패턴명 | 2026-03-30]
-- Violation: `enrichAnalysisWithConfidence`가 `prompt.ts`에 동거하여 단일 책임 원칙 위반
-- Rule: FF.md Coupling 4-A (독립적으로 변경될 수 있는 두 함수는 분리)
-- Context: AI 프롬프트 생성(`buildAnalysisPrompt`)과 신뢰도 데이터 주입(`enrichAnalysisWithConfidence`)은 독립적으로 변경되는 관심사이므로, `domain/analysis/confidence.ts`로 분리하여 해결
-
-
-## [PR #78 | feat/74/AnalysisPanel-개선-아코디언-토글 | 2026-03-29]
-- Violation: `DETECTED_BADGE_CONFIG`의 `Record` 키 타입에 인라인 유니온 리터럴 `'detected' | 'undetected'`(2개 멤버)가 직접 작성됨
-- Rule: MISTAKES.md TypeScript Rule 5 — 2개 이상의 유니온 리터럴은 인라인으로 작성하지 않고 별도 type alias로 추출한다
-- Context: `DETECTED_BADGE_CONFIG`의 Record 키 타입에 인라인으로 유니온을 선언하고 있었으며, `type DetectionStatus = 'detected' | 'undetected'`로 추출하여 규칙을 준수
-
-## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
-- Violation: `skillsLoader.loadSkills()` 실패 시 에러 로깅 없이 빈 배열로 fallback 처리됨
-- Rule: CONVENTIONS.md — 에러 로깅 개선이 브랜치 목적임에도 skills 로딩 실패는 조용히 무시되어 디버깅 시 원인 추적이 어려움
-- Context: `route.ts`의 `.catch(() => [])` 핸들러가 AI 분석 실패와 달리 `console.error` 없이 처리되고 있었으며, `.catch((error: unknown) => { console.error(...); return []; })`로 수정하여 skills 로딩 실패도 로그가 남도록 통일
-
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
@@ -40,11 +24,6 @@
 
 
 
-
-## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
-- Violation: `useEffect` 두 곳에서 `patterns.filter(p => p.detected && p.renderConfig)` 중복 계산
-- Rule: FF.md Cohesion 3-B — 같은 값이 여러 곳에 흩어지면 변경 시 누락 위험; `useMemo`로 단일 출처(single source of truth) 유지
-- Context: `usePatternOverlay`의 시리즈 lifecycle 관리 effect와 데이터 동기화 effect 양쪽에서 동일한 필터링이 반복됨. `detectedPatterns` useMemo로 추출하여 두 effect에서 공유
 
 ## [PR #90 | feat/83/skills-category-display-chart-overlay | 2026-03-30]
 - Violation: `StockChart.tsx`의 `onPatternOverlayReady` prop 이름이 실제 동작(반복 호출)을 오해하게 만듦
@@ -75,7 +54,18 @@
 - Rule: CONVENTIONS.md — 반복 패턴은 전역 스타일로 추출해야 한다; AHA 원칙 — 세 번 반복되면 추상화
 - Context: 모든 `<button>` 요소에 동일하게 필요한 `cursor-pointer`를 `globals.css`의 `@layer base`에서 전역으로 선언하고, 각 컴포넌트의 className에서 `cursor-pointer` 및 `disabled:cursor-not-allowed`를 제거하여 중앙 관리
 
-## [Issue #86 | fix/86/초기-페이지-로딩-AI-분석-오류 | 2026-03-31]
-- Violation: `AnalysisStatusBannerProps` 인터페이스가 `AnalysisStatusBanner` 컴포넌트와 직접 인접하지 않고, 사이에 `AnalyzingBanner`와 `ErrorBanner` 컴포넌트 두 개가 삽입되어 있었음
-- Rule: CONVENTIONS.md — Props interface는 컴포넌트 바로 위에 정의해야 함. FF.md 1-G — 인터페이스와 컴포넌트 사이에 다른 정의가 끼어들면 독자가 viewpoint shift를 경험함
-- Context: `ChartContent.tsx`에서 `AnalysisStatusBannerProps`를 파일 상단에 배치했으나 해당 인터페이스를 사용하는 컴포넌트는 중간의 다른 두 컴포넌트 아래에 있었음. 인터페이스를 컴포넌트 직전으로 이동하여 수정
+## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
+- Violation: `IndicatorToolbarProps`에 `xyzVisible + onXYZToggle` 플랫 props 12개가 나열되어 새 지표 추가 시 props 2개씩 증가
+- Rule: FF.md Coupling 4-A — 함께 변경되는 props는 묶어야 한다; 새 지표마다 interface와 호출 사이트 양쪽을 수정해야 하는 tight coupling
+- Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
+
+## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
+- Violation: `IndicatorToolbar.tsx`에서 `getPeriodColor(period)` 반환값을 `style` prop으로 적용하는 코드에 허용 사유 주석이 없어 DESIGN.md 인라인 스타일 금지 규칙 위반 여부가 불명확했음
+- Rule: DESIGN.md — 인라인 스타일은 금지; 단 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)는 Tailwind 임의값으로 표현 불가능하므로 예외 허용, 주석으로 명시 필요
+- Context: `getPeriodColor`는 `CHART_COLORS` 기반 상수를 반환하는 런타임 동적 색상으로, Tailwind 임의값 문법으로 대체 불가능함을 주석으로 명시하여 의도를 문서화
+
+## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
+- Violation: `IndicatorToolbar.tsx`에서 `handleClickOutside`를 `useCallback`으로 래핑하여 `useOnClickOutside`에 전달함
+- Rule: FF.md Readability 1-B — 불필요한 추상화 레이어는 노이즈를 추가하고 의도를 모호하게 만든다
+- Context: `useOnClickOutside`가 내부적으로 `useEffectEvent`를 통해 핸들러 참조 안정성을 보장하므로, 콜 사이트에서 `useCallback`을 감쌀 이유가 없음; `useCallback` 제거 후 인라인 콜백으로 단순화
+
