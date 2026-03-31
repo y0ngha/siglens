@@ -105,16 +105,65 @@ gh api repos/y0ngha/siglens/pulls/{PR number}/comments \
     '[.[] | select(.created_at > ($since | rtrimstr("\n"))) | {id: .id, path: .path, line: .line, body: .body}]'
 
 # Step 3: Filter reviews submitted after the latest commit
+# body is included here — do NOT make a separate per-review comments call unless inline comment paths are needed
 gh api repos/y0ngha/siglens/pulls/{PR number}/reviews \
   | jq --rawfile since /tmp/latest_commit_date.txt \
-    '[.[] | select(.submitted_at > ($since | rtrimstr("\n"))) | {id: .id, state: .state, submitted_at: .submitted_at}]'
+    '[.[] | select(.submitted_at > ($since | rtrimstr("\n"))) | {id: .id, state: .state, submitted_at: .submitted_at, body: .body}]'
 
-# Step 4: If needed, fetch inline comments for a specific review
+# Step 4: Only fetch per-review inline comments when Step 3 body is empty AND inline context (path/line) is required
 gh api repos/y0ngha/siglens/pulls/{PR number}/reviews/{review_id}/comments \
-  | jq '.[] | {path: .path, line: .line, body: .body}'
+  | jq '[.[] | {path: .path, line: .line, body: .body}]'
 ```
 
 If no comments exist after the latest commit, emit a `done` exit signal and stop — there is nothing to fix.
+
+---
+
+## Comment Triage (Before Applying Any Fix)
+
+**Do not apply fixes immediately.** Before touching any code, evaluate every comment against the criteria below.
+A review comment represents the reviewer's perspective — not a mandatory change order.
+
+### Rejection Criteria
+
+Reject a comment (do not apply the fix) if any of the following is true:
+
+**1. Conflicts with CONVENTIONS.md**
+The requested change contradicts an explicit rule in `docs/CONVENTIONS.md`.
+→ Convention takes precedence. Reject.
+
+**2. Violates FF Principles**
+Applying the change would degrade any of the four FF dimensions: Readability, Predictability, Cohesion, or Coupling.
+→ FF principles take precedence. Reject.
+
+**3. Breaks Layer Architecture**
+The requested change would violate the layered dependency rules defined in `docs/ARCHITECTURE.md`
+(UI → Application → Domain → Infrastructure).
+→ Architecture takes precedence. Reject.
+
+**4. Matches a Known Mistake Pattern**
+The change the reviewer is asking for is already documented in `docs/MISTAKES.md` as a pattern to avoid.
+→ Reject.
+
+**5. Reviewer Lacks Project Context**
+The reviewer appears unaware of an intentional design decision, domain constraint, or deliberate tradeoff.
+→ Reject. If the intent is unclear from the code, adding a clarifying comment to the source is allowed.
+
+If none of the above applies, proceed with the fix.
+
+### When Rejecting a Comment
+
+For every rejected comment, post a reply on GitHub explaining the decision:
+
+```bash
+gh api repos/y0ngha/siglens/pulls/comments/{comment_id}/replies \
+  -X POST \
+  -f body="해당 리뷰는 반영하지 않겠습니다. {거절 이유}"
+```
+
+The reply must state:
+- Which rule, document, or principle justifies the rejection
+- Why the existing code is intentionally written that way (if applicable)
 
 ---
 
@@ -160,15 +209,28 @@ If the fix falls into any of the following categories, update the related docs a
 
 ### Step 1: Run Validation Scripts
 
-All of the following must pass. Run in order — if any fails, fix and re-run.
+Run in the following order. Each must pass before proceeding to the next.
 
 ```bash
-yarn test
+# Always run — catch style and format issues first
 yarn lint
 yarn lint:style
-yarn format
+yarn format 2>&1 | grep -v "unchanged"
+```
+
+```bash
+# Run only if .ts or .tsx files were modified
+# Use --passWithNoTests to avoid failure when no matching test files exist
+git diff --name-only HEAD | grep -E '\.(ts|tsx)$' | xargs -I{} \
+  yarn test --testPathPattern={} --passWithNoTests 2>&1 | tail -30
+```
+
+```bash
+# Always run last — confirms the full build is clean
 yarn build
 ```
+
+If any step fails, fix the issue and re-run that step before continuing.
 
 ### Step 2: Record to Fix Log
 
@@ -190,7 +252,7 @@ Format each entry as follows:
 - Context: {one sentence describing where and why this happened in the code}
 ```
 
-Record one entry per distinct violation. Do not record findings that were skipped (false positives or trivial items).
+Record one entry per distinct violation. Rejected comments are not recorded in the fix log And Do not record findings that were skipped (false positives or trivial items).
 
 ### Step 3: Emit Exit Signal
 
@@ -203,9 +265,17 @@ Do not add any text after the JSON.
   "agent": "pr-fix-agent",
   "status": "done",
   "pr": {PR number},
-  "branch": "{current branch name}"
+  "branch": "{current branch name}",
+  "rejected_comments": [
+    {
+      "comment_id": "{comment id}",
+      "reason": "{which rule or document justified the rejection}"
+    }
+  ]
 }
 ```
+
+Omit the `rejected_comments` field entirely if no comments were rejected.
 
 #### On failure
 ```json
