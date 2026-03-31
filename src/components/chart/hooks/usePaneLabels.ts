@@ -20,6 +20,8 @@ const PANE_LABEL_CLASS = 'pane-indicator-label';
 const LABEL_OFFSET_PX = 8;
 const LABEL_FONT_SIZE = '11px';
 const LABEL_Z_INDEX = '5';
+const LABEL_FONT_FAMILY = 'monospace';
+const LABEL_LINE_HEIGHT = '1';
 
 function getTopOffset(chart: IChartApi, paneIndex: number): number {
     const panes = chart.panes();
@@ -39,8 +41,8 @@ function createLabelElement(text: string, top: number): HTMLDivElement {
     el.style.color = CHART_COLORS.neutral;
     el.style.pointerEvents = 'none';
     el.style.zIndex = LABEL_Z_INDEX;
-    el.style.fontFamily = 'monospace';
-    el.style.lineHeight = '1';
+    el.style.fontFamily = LABEL_FONT_FAMILY;
+    el.style.lineHeight = LABEL_LINE_HEIGHT;
     return el;
 }
 
