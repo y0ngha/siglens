@@ -94,3 +94,8 @@
 - Rule: FF.md Predictability 2-C — 코드의 동작 의도가 구현에서 명확히 드러나야 한다
 - Context: `candle-labels.ts`의 `findCandlePatternLabel`에서 객체 인덱스 접근 결과가 `undefined`일 때만 fallback하는 의도를 표현하기 위해 `||`를 `??`(nullish coalescing)으로 교체
 
+## [Issue #92 | feat/92/PatternResult-변환-및-patterns-prop-전달 | review fix | 2026-03-31]
+- Violation: `confidence.test.ts`에서 `const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT`로 도메인 상수를 로컬 alias로 재선언하여 테스트 기대값과 소스 상수 간 추적성이 끊김
+- Rule: MISTAKES.md Tests Rule 10 — boundary constants must be imported from domain and used directly in expectations, not re-aliased locally
+- Context: `makeSkill`의 `confidenceWeight` 기본값과 테스트 기대값에서 `HIGH_CONFIDENCE_WEIGHT`를 직접 사용하도록 `TEST_HIGH_CONFIDENCE` alias 제거
+
