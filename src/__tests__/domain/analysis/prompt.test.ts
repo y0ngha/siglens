@@ -34,6 +34,7 @@ const TEST_ABOVE_MIN_CONFIDENCE = 0.6;
 const TEST_BELOW_MIN_CONFIDENCE = 0.4;
 const TEST_LOW_CONFIDENCE = 0.3;
 const TEST_MARKET_SECTION_INDEX = 1;
+// expected value: ((110 - 100) / 100) * 100 = 10.00%
 const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT_CLOSE - TEST_PREV_CLOSE) / TEST_PREV_CLOSE) * 100).toFixed(2)}%`;
 
 const makeBar = (i: number, close?: number): Bar => ({
@@ -59,11 +60,11 @@ const makeIndicators = (
 });
 
 const makeSkill = (overrides?: Partial<Skill>): Skill => ({
-    name: '테스트 스킬',
-    description: '테스트 설명',
+    name: 'Test Skill',
+    description: 'Test description',
     indicators: [],
     confidenceWeight: TEST_HIGH_CONFIDENCE,
-    content: '## 분석 기준\n- 테스트 내용',
+    content: '## Analysis Criteria\n- Test content',
     ...overrides,
 });
 
@@ -102,9 +103,9 @@ describe('prompt', () => {
             );
             const marketSection =
                 result.split('\n\n')[TEST_MARKET_SECTION_INDEX];
-            expect(marketSection).toContain('현재가: N/A');
-            expect(marketSection).toContain('변화율: N/A');
-            expect(marketSection).toContain('거래량: N/A');
+            expect(marketSection).toContain('Current Price: N/A');
+            expect(marketSection).toContain('Price Change %: N/A');
+            expect(marketSection).toContain('Volume: N/A');
         });
     });
 
@@ -142,7 +143,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('변화율: N/A');
+            expect(result).toContain('Price Change %: N/A');
         });
 
         it('거래량을 포함한다', () => {
@@ -153,7 +154,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('거래량:');
+            expect(result).toContain('Volume:');
         });
     });
 
@@ -223,7 +224,7 @@ describe('prompt', () => {
                 makeIndicators({ bollinger: [] }),
                 []
             );
-            expect(result).toContain('볼린저 밴드: Upper N/A');
+            expect(result).toContain('Bollinger Bands: Upper N/A');
         });
 
         it('마지막 볼린저 밴드 요소의 모든 필드가 null일 때 N/A를 표시한다', () => {
@@ -231,7 +232,7 @@ describe('prompt', () => {
                 bollinger: [{ upper: null, middle: null, lower: null }],
             });
             const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
-            expect(result).toContain('볼린저 밴드: Upper N/A');
+            expect(result).toContain('Bollinger Bands: Upper N/A');
         });
 
         it('볼린저 밴드 값을 포함한다', () => {
@@ -293,7 +294,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).not.toContain('패턴 분석');
+            expect(result).not.toContain('Pattern Analysis');
         });
 
         it('활성화된 Skills 섹션이 포함되지 않는다', () => {
@@ -303,14 +304,14 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).not.toContain('활성화된 Skills');
+            expect(result).not.toContain('Active Skills');
         });
     });
 
     describe('Skills 섹션 - confidenceWeight 필터링', () => {
         it('confidenceWeight가 0.5 미만인 skill은 포함되지 않는다', () => {
             const skill = makeSkill({
-                name: '제외될 스킬',
+                name: 'Excluded Skill',
                 confidenceWeight: TEST_BELOW_MIN_CONFIDENCE,
             });
             const result = buildAnalysisPrompt(
@@ -319,12 +320,12 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('제외될 스킬');
+            expect(result).not.toContain('Excluded Skill');
         });
 
         it('confidenceWeight가 정확히 0.5일 때 포함된다', () => {
             const skill = makeSkill({
-                name: '경계값 스킬',
+                name: 'Boundary Skill',
                 confidenceWeight: TEST_MIN_CONFIDENCE_WEIGHT,
             });
             const result = buildAnalysisPrompt(
@@ -333,12 +334,12 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('경계값 스킬');
+            expect(result).toContain('Boundary Skill');
         });
 
         it('confidenceWeight가 0.5 이상인 skill은 포함된다', () => {
             const skill = makeSkill({
-                name: '포함될 스킬',
+                name: 'Included Skill',
                 confidenceWeight: TEST_ABOVE_MIN_CONFIDENCE,
             });
             const result = buildAnalysisPrompt(
@@ -347,7 +348,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('포함될 스킬');
+            expect(result).toContain('Included Skill');
         });
 
         it('낮은 신뢰도 skill만 있을 때 skill 섹션이 포함되지 않는다', () => {
@@ -361,40 +362,46 @@ describe('prompt', () => {
                 makeIndicators(),
                 skills
             );
-            expect(result).not.toContain('활성화된 Skills');
-            expect(result).not.toContain('패턴 분석');
+            expect(result).not.toContain('Active Skills');
+            expect(result).not.toContain('Pattern Analysis');
         });
     });
 
     describe('Skills 섹션 - type이 pattern인 skill일 때', () => {
         it('패턴 분석 섹션에 포함된다', () => {
-            const skill = makeSkill({ type: 'pattern', name: '이중천장' });
+            const skill = makeSkill({
+                type: 'pattern',
+                name: 'Double Top',
+            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('패턴 분석');
-            expect(result).toContain('이중천장');
+            expect(result).toContain('Pattern Analysis');
+            expect(result).toContain('Double Top');
         });
 
         it('활성화된 Skills 섹션에는 포함되지 않는다', () => {
-            const skill = makeSkill({ type: 'pattern', name: '이중천장' });
+            const skill = makeSkill({
+                type: 'pattern',
+                name: 'Double Top',
+            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('활성화된 Skills');
+            expect(result).not.toContain('Active Skills');
         });
     });
 
     describe('Skills 섹션 - type이 pattern이 아닌 skill일 때', () => {
         it('활성화된 Skills 섹션에 포함된다', () => {
             const skill = makeSkill({
-                name: 'RSI 다이버전스',
+                name: 'RSI Divergence',
                 type: undefined,
             });
             const result = buildAnalysisPrompt(
@@ -403,13 +410,13 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('활성화된 Skills');
-            expect(result).toContain('RSI 다이버전스');
+            expect(result).toContain('Active Skills');
+            expect(result).toContain('RSI Divergence');
         });
 
         it('패턴 분석 섹션에는 포함되지 않는다', () => {
             const skill = makeSkill({
-                name: 'RSI 다이버전스',
+                name: 'RSI Divergence',
                 type: undefined,
             });
             const result = buildAnalysisPrompt(
@@ -418,7 +425,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('패턴 분석');
+            expect(result).not.toContain('Pattern Analysis');
         });
     });
 
@@ -433,7 +440,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('[높은 신뢰도]');
+            expect(result).toContain('[High Confidence]');
         });
 
         it('confidenceWeight가 정확히 0.8이면 높은 신뢰도로 표시된다', () => {
@@ -446,7 +453,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('[높은 신뢰도]');
+            expect(result).toContain('[High Confidence]');
         });
 
         it('confidenceWeight가 0.5 이상 0.8 미만이면 중간 신뢰도로 표시된다', () => {
@@ -459,25 +466,25 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('[중간 신뢰도]');
+            expect(result).toContain('[Medium Confidence]');
         });
     });
 
     describe('Skills 섹션 - skill 내용 포함', () => {
         it('skill의 name이 포함된다', () => {
-            const skill = makeSkill({ name: '와이코프 이론' });
+            const skill = makeSkill({ name: 'Wyckoff Theory' });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('와이코프 이론');
+            expect(result).toContain('Wyckoff Theory');
         });
 
         it('skill의 content가 포함된다', () => {
             const skill = makeSkill({
-                content: '## 특별한 분석 기준\n- 고유한 내용',
+                content: '## Special Analysis Criteria\n- Unique content',
             });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
@@ -485,8 +492,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('특별한 분석 기준');
-            expect(result).toContain('고유한 내용');
+            expect(result).toContain('Special Analysis Criteria');
+            expect(result).toContain('Unique content');
         });
     });
 
@@ -494,25 +501,25 @@ describe('prompt', () => {
         it('패턴과 일반 skill이 각자 해당 섹션에 포함된다', () => {
             const patternSkill = makeSkill({
                 type: 'pattern',
-                name: '헤드앤숄더',
+                name: 'Head and Shoulders',
             });
-            const regularSkill = makeSkill({ name: 'RSI 다이버전스' });
+            const regularSkill = makeSkill({ name: 'RSI Divergence' });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
                 [patternSkill, regularSkill]
             );
-            expect(result).toContain('패턴 분석');
-            expect(result).toContain('헤드앤숄더');
-            expect(result).toContain('활성화된 Skills');
-            expect(result).toContain('RSI 다이버전스');
+            expect(result).toContain('Pattern Analysis');
+            expect(result).toContain('Head and Shoulders');
+            expect(result).toContain('Active Skills');
+            expect(result).toContain('RSI Divergence');
         });
 
         it('여러 패턴 skill이 모두 패턴 분석 섹션에 포함된다', () => {
             const skills = [
-                makeSkill({ type: 'pattern', name: '이중천장' }),
-                makeSkill({ type: 'pattern', name: '이중바닥' }),
+                makeSkill({ type: 'pattern', name: 'Double Top' }),
+                makeSkill({ type: 'pattern', name: 'Double Bottom' }),
             ];
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
@@ -520,18 +527,18 @@ describe('prompt', () => {
                 makeIndicators(),
                 skills
             );
-            expect(result).toContain('이중천장');
-            expect(result).toContain('이중바닥');
+            expect(result).toContain('Double Top');
+            expect(result).toContain('Double Bottom');
         });
 
         it('높은 신뢰도와 낮은 신뢰도 skill이 섞여있을 때 낮은 것은 제외된다', () => {
             const skills = [
                 makeSkill({
-                    name: '포함될 스킬',
+                    name: 'Included Skill',
                     confidenceWeight: TEST_HIGH_CONFIDENCE,
                 }),
                 makeSkill({
-                    name: '제외될 스킬',
+                    name: 'Excluded Skill',
                     confidenceWeight: TEST_LOW_CONFIDENCE,
                 }),
             ];
@@ -541,8 +548,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 skills
             );
-            expect(result).toContain('포함될 스킬');
-            expect(result).not.toContain('제외될 스킬');
+            expect(result).toContain('Included Skill');
+            expect(result).not.toContain('Excluded Skill');
         });
     });
 
@@ -554,8 +561,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('최근 봉 데이터');
-            expect(result).toContain('데이터 없음');
+            expect(result).toContain('Recent Bar Data');
+            expect(result).toContain('No data available');
         });
     });
 
@@ -594,7 +601,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('최근 30봉');
+            expect(result).toContain('Last 30 bars');
         });
 
         it('봉이 30개 이하일 때 실제 봉 수를 표시한다', () => {
@@ -605,7 +612,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('최근 5봉');
+            expect(result).toContain('Last 5 bars');
         });
     });
 
@@ -617,8 +624,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('거래량 분석');
-            expect(result).toContain('데이터 없음');
+            expect(result).toContain('Volume Analysis');
+            expect(result).toContain('No data available');
         });
     });
 
@@ -631,8 +638,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('봉 평균');
-            expect(result).toContain('현재 거래량');
+            expect(result).toContain('bar average');
+            expect(result).toContain('Current volume');
         });
 
         it('평균 대비 비율이 포함된다', () => {
@@ -643,7 +650,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('평균 대비');
+            expect(result).toContain('% of average');
         });
     });
 
@@ -655,7 +662,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('지지/저항 판단');
+            expect(result).toContain('Support/Resistance Assessment');
         });
 
         it('가격 목표 산출 가이드라인이 포함된다', () => {
@@ -665,7 +672,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('가격 목표 산출');
+            expect(result).toContain('Price Target Calculation');
         });
 
         it('가이드라인 섹션은 분석 요청 섹션보다 앞에 위치한다', () => {
@@ -675,8 +682,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            const guidelineIndex = result.indexOf('분석 가이드라인');
-            const requestIndex = result.indexOf('분석 요청');
+            const guidelineIndex = result.indexOf('Analysis Guidelines');
+            const requestIndex = result.indexOf('Analysis Request');
             expect(guidelineIndex).toBeLessThan(requestIndex);
         });
     });
@@ -853,39 +860,45 @@ describe('prompt', () => {
                 []
             );
             expect(result).toContain(
-                'skills/*.md에 정의된 차트 패턴만 여기에 작성'
+                'Only include chart patterns defined in skills/*.md'
             );
         });
     });
 
     describe('분석 요청 섹션 - Skills 패턴 목록 지시', () => {
         it('패턴 skill이 있을 때 patternSummaries 작성 규칙 안내가 포함된다', () => {
-            const skill = makeSkill({ type: 'pattern', name: '헤드앤숄더' });
+            const skill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('patternSummaries 작성 규칙');
+            expect(result).toContain('patternSummaries Writing Rules');
         });
 
         it('패턴 skill이 있을 때 해당 패턴명이 분석 대상 목록에 포함된다', () => {
-            const skill = makeSkill({ type: 'pattern', name: '헤드앤숄더' });
+            const skill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('분석 대상 Skills 패턴 목록');
-            expect(result).toContain('- 헤드앤숄더');
+            expect(result).toContain('Skills pattern list to analyze');
+            expect(result).toContain('- Head and Shoulders');
         });
 
         it('여러 패턴 skill이 있을 때 모든 패턴명이 목록에 포함된다', () => {
             const skills = [
-                makeSkill({ type: 'pattern', name: '이중천장' }),
-                makeSkill({ type: 'pattern', name: '이중바닥' }),
+                makeSkill({ type: 'pattern', name: 'Double Top' }),
+                makeSkill({ type: 'pattern', name: 'Double Bottom' }),
             ];
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
@@ -893,8 +906,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 skills
             );
-            expect(result).toContain('- 이중천장');
-            expect(result).toContain('- 이중바닥');
+            expect(result).toContain('- Double Top');
+            expect(result).toContain('- Double Bottom');
         });
 
         it('패턴 skill이 없을 때 patternSummaries 작성 규칙 안내가 포함되지 않는다', () => {
@@ -904,11 +917,14 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).not.toContain('patternSummaries 작성 규칙');
+            expect(result).not.toContain('patternSummaries Writing Rules');
         });
 
         it('패턴 skill이 있을 때 캔들 패턴을 patternSummaries에 포함하지 말라는 지시가 포함된다', () => {
-            const skill = makeSkill({ type: 'pattern', name: '헤드앤숄더' });
+            const skill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
@@ -916,12 +932,15 @@ describe('prompt', () => {
                 [skill]
             );
             expect(result).toContain(
-                '캔들 패턴(단봉/다봉)은 patternSummaries에 포함하지 마세요'
+                'Do not include candle patterns (single/multi candle) in patternSummaries'
             );
         });
 
         it('패턴 skill이 있을 때 감지되지 않은 패턴도 detected: false로 포함하라는 지시가 있다', () => {
-            const skill = makeSkill({ type: 'pattern', name: '헤드앤숄더' });
+            const skill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
@@ -933,7 +952,7 @@ describe('prompt', () => {
 
         it('일반 skill만 있을 때 patternSummaries 작성 규칙 안내가 포함되지 않는다', () => {
             const skill = makeSkill({
-                name: 'RSI 다이버전스',
+                name: 'RSI Divergence',
                 type: undefined,
             });
             const result = buildAnalysisPrompt(
@@ -942,13 +961,13 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('patternSummaries 작성 규칙');
+            expect(result).not.toContain('patternSummaries Writing Rules');
         });
 
         it('confidenceWeight 미달 패턴 skill은 목록에 포함되지 않는다', () => {
             const skill = makeSkill({
                 type: 'pattern',
-                name: '제외될 패턴',
+                name: 'Excluded Pattern',
                 confidenceWeight: TEST_BELOW_MIN_CONFIDENCE,
             });
             const result = buildAnalysisPrompt(
@@ -957,7 +976,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('- 제외될 패턴');
+            expect(result).not.toContain('- Excluded Pattern');
         });
     });
 
@@ -978,8 +997,32 @@ describe('prompt', () => {
         });
     });
 
-    describe('캔들 패턴 한국어 표시', () => {
-        it('단봉 캔들 패턴이 영문이 아닌 한국어로 표시된다', () => {
+    describe('한국어 응답 지시', () => {
+        it('분석 요청 섹션에 한국어 응답 지시가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('Korean');
+        });
+
+        it('한국어 응답 지시는 JSON 스키마보다 앞에 위치한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            const koreanInstructionIndex = result.indexOf('Korean');
+            const schemaIndex = result.indexOf('"summary"');
+            expect(koreanInstructionIndex).toBeLessThan(schemaIndex);
+        });
+    });
+
+    describe('캔들 패턴 레이블', () => {
+        it('단봉 캔들 패턴 레이블이 대괄호 형식으로 bar row에 포함된다', () => {
             const bars = [makeBar(0)];
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
@@ -987,10 +1030,10 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).not.toMatch(/\[bullish\]|\[bearish\]|\[doji\]/);
+            expect(result).toMatch(/\[.+\]/);
         });
 
-        it('다봉 패턴 감지 시 한국어 패턴명이 포함된다', () => {
+        it('다봉 패턴 감지 시 패턴명이 포함된다', () => {
             const prevBar: Bar = {
                 time: TEST_BAR_BASE_TIME,
                 open: 110,
@@ -1014,8 +1057,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            if (result.includes('감지된 다봉 패턴:')) {
-                expect(result).not.toMatch(/감지된 다봉 패턴: [a-z_]+/);
+            if (result.includes('Detected multi-candle pattern:')) {
+                expect(result).toMatch(/Detected multi-candle pattern: .+/);
             }
         });
     });
