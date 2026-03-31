@@ -168,7 +168,7 @@ export interface AnalysisResponse {
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
     priceTargets: PriceTargets;
-    patternSummaries: PatternSummary[];
+    patternSummaries: PatternResult[];
     skillResults: SkillResult[];
     candlePatterns: CandlePatternSummary[];
 }
@@ -183,3 +183,11 @@ export interface AnalyzeVariables {
     bars: Bar[];
     indicators: IndicatorResult;
 }
+
+export type RawAnalysisResponse = Omit<
+    AnalysisResponse,
+    'patternSummaries' | 'skillResults'
+> & {
+    patternSummaries: Omit<PatternSummary, 'confidenceWeight'>[];
+    skillResults: Omit<SkillResult, 'confidenceWeight'>[];
+};

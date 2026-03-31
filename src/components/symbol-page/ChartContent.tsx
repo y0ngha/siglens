@@ -16,7 +16,7 @@ import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus
 
 function AnalyzingBanner() {
     return (
-        <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
+        <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
             <span className="text-secondary-400 text-sm">AI 분석 중…</span>
         </div>
     );
@@ -28,7 +28,7 @@ interface ErrorBannerProps {
 
 function ErrorBanner({ message }: ErrorBannerProps) {
     return (
-        <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
+        <div className="bg-secondary-700/40 rounded px-3 py-2">
             <span className="text-chart-bearish text-sm">{message}</span>
         </div>
     );
@@ -36,12 +36,25 @@ function ErrorBanner({ message }: ErrorBannerProps) {
 
 interface AnalysisStatusBannerProps {
     status: AnalysisStatus;
+    className?: string;
 }
 
-function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
-    if (status.type === 'analyzing') return <AnalyzingBanner />;
+function AnalysisStatusBanner({
+    status,
+    className,
+}: AnalysisStatusBannerProps) {
+    if (status.type === 'analyzing')
+        return (
+            <div className={className}>
+                <AnalyzingBanner />
+            </div>
+        );
     if (status.type === 'error')
-        return <ErrorBanner message={status.message} />;
+        return (
+            <div className={className}>
+                <ErrorBanner message={status.message} />
+            </div>
+        );
     return null;
 }
 
@@ -91,7 +104,11 @@ export function ChartContent({
             <div className="flex h-[60vh] min-h-0 flex-col overflow-hidden md:h-auto md:flex-1">
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
-                    <StockChart bars={bars} indicators={indicators} />
+                    <StockChart
+                        bars={bars}
+                        indicators={indicators}
+                        patterns={analysis.patternSummaries}
+                    />
                 </div>
 
                 {/* 거래량 차트 */}
@@ -105,7 +122,10 @@ export function ChartContent({
                 className="border-secondary-700 min-h-0 flex-1 overflow-y-auto border-t p-4 md:w-80 md:flex-none md:border-t-0 md:border-l"
                 aria-live="polite"
             >
-                <AnalysisStatusBanner status={analysisStatus} />
+                <AnalysisStatusBanner
+                    status={analysisStatus}
+                    className="mb-3"
+                />
                 <AnalysisPanel
                     analysis={analysis}
                     isAnalyzing={isAnalyzing}

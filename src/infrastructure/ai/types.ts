@@ -1,4 +1,4 @@
-import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
+import type { RawAnalysisResponse } from '@/domain/types';
 
 export type AIProviderType = 'claude' | 'gemini';
 
