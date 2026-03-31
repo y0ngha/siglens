@@ -155,3 +155,8 @@
 - Rule: FF.md Cohesion 3-A — side effect must have single responsibility; a useEffect whose sole purpose is to sync state into a ref adds unnecessary indirection
 - Context: `panelWidthRef.current = panelWidth` sync effect 제거 후 `handleDragStart` useCallback deps에 `panelWidth` 추가로 대체; `handleMouseMove`/`handleMouseUp`의 불필요한 `useCallback` 래핑도 제거(useDragListener가 내부적으로 useEffectEvent로 안정화하므로 중복 안정화 불필요)
 
+## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 3 | 2026-03-31]
+- Violation: `ChartContent.tsx`의 드래그 핸들 `aria-valuemin={240}`, `aria-valuemax={640}`에 리터럴 값이 하드코딩되어 `usePanelResize.ts`의 `PANEL_MIN_WIDTH`, `PANEL_MAX_WIDTH`와 독립적으로 관리됨
+- Rule: MISTAKES.md TypeScript Rule 6 — 하드코딩된 리터럴은 상수로 추출해야 함; FF.md Cohesion 3-B — 같은 값이 두 곳에 정의되면 한쪽만 변경될 위험이 있음
+- Context: `PANEL_MIN_WIDTH`, `PANEL_MAX_WIDTH`를 `usePanelResize.ts`에서 `export`하고 `ChartContent.tsx`에서 import하여 참조하도록 수정
+
