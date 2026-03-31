@@ -99,3 +99,8 @@
 - Violation: `ChartContent.tsx`의 `aside` style prop에서 `--panel-width` CSS 커스텀 프로퍼티를 인라인 스타일로 사용하면서 예외 사유 주석이 누락됨
 - Rule: MISTAKES.md Components Rule 14 — 인라인 스타일은 원칙적으로 금지되며, 런타임에 결정되는 동적 값으로 불가피하게 사용할 경우 반드시 주석으로 그 이유를 명시해야 한다
 - Context: `panelWidth`는 드래그 상태에서 런타임에 결정되어 정적 Tailwind 클래스로 표현 불가능하다는 설명 주석을 인라인 스타일 객체 내에 추가
+
+## [PR #116 | fix/114/캔들-패턴-감지-범위-최근-15봉으로-제한 | 2026-04-01]
+- Violation: 다봉 패턴 감지 테스트 2건에서 `if (result.includes('Multi-candle pattern:'))` 조건부 assertion 패턴을 사용하여 패턴이 미감지될 경우 테스트가 assertion 없이 통과됨
+- Rule: FF.md Predictability 2-C, CONVENTIONS.md 테스트 규칙 — 각 it 블록은 정확히 하나의 동작을 무조건적으로 검증해야 함
+- Context: `prompt.test.ts`의 두 다봉 패턴 테스트에서 사용한 봉 데이터(음봉→양봉 장악형 조건 충족)는 반드시 `bullish_engulfing`을 감지하므로 if 가드 없이 직접 assertion 가능; if 조건문 제거 후 unconditional `expect(result).toMatch(...)` 패턴으로 변경

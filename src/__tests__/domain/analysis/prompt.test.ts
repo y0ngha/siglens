@@ -1037,6 +1037,7 @@ describe('prompt', () => {
         });
 
         it('다봉 패턴 감지 시 패턴명이 포함된다', () => {
+            // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 반드시 감지됨
             const prevBar: Bar = {
                 time: TEST_BAR_BASE_TIME,
                 open: 110,
@@ -1060,12 +1061,11 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            if (result.includes('Multi-candle pattern:')) {
-                expect(result).toMatch(/Multi-candle pattern: .+/);
-            }
+            expect(result).toMatch(/Multi-candle pattern: .+/);
         });
 
         it('슬라이딩 윈도우로 감지된 다봉 패턴은 봉 위치와 함께 포함된다', () => {
+            // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 반드시 감지됨
             const prevBar: Bar = {
                 time: TEST_BAR_BASE_TIME,
                 open: 110,
@@ -1089,11 +1089,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            if (result.includes('Multi-candle pattern:')) {
-                expect(result).toMatch(
-                    /\[\d+ bars ago\] Multi-candle pattern: .+/
-                );
-            }
+            expect(result).toMatch(/\[\d+ bars ago\] Multi-candle pattern: .+/);
         });
 
         it('단봉 패턴은 봉 위치 정보와 함께 패턴 섹션에 포함된다', () => {
