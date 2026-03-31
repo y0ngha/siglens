@@ -125,3 +125,13 @@
 - Rule: MISTAKES.md Test Rule 9 — test file must use exactly 3 levels: describe(subject) > describe(context) > it(behavior)
 - Context: In `src/__tests__/domain/analysis/prompt.test.ts`, the `describe('buildAnalysisPrompt')` wrapper was an unnecessary intermediate layer; removed it so all context describe blocks are directly under `describe('prompt')`
 
+## [Issue #109 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
+- Violation: Inline `style={{ width: panelWidth > 0 ? \`${panelWidth}px\` : undefined }}` used on the aside element in ChartContent.tsx
+- Rule: CONVENTIONS.md and DESIGN.md — inline styles are prohibited; dynamic values must be applied via CSS custom properties with Tailwind arbitrary-value syntax
+- Context: `panelWidth` is a runtime-determined pixel value that cannot be expressed as a static Tailwind class; fixed by using `style={{ '--panel-width': \`${panelWidth}px\` } as React.CSSProperties}` with `md:w-[var(--panel-width)]` Tailwind class
+
+## [Issue #109 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
+- Violation: DOM event listeners (`mousemove`, `mouseup`) added directly inside a `useEffect` in `usePanelResize.ts` instead of being extracted to a custom hook
+- Rule: MISTAKES.md Components Rule 13 — reusable DOM event listener patterns must be extracted to custom hooks (useOnClickOutside, useEscapeKey pattern)
+- Context: The mousemove/mouseup drag tracking pattern in `usePanelResize` was extracted to a new `useDragListener` hook in `hooks/useDragListener.ts`, keeping the useEffect logic isolated and reusable
+
