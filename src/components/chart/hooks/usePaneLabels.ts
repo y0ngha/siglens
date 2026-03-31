@@ -46,6 +46,12 @@ function createLabelElement(text: string, top: number): HTMLDivElement {
     return el;
 }
 
+function clearLabelElements(elements: HTMLDivElement[]): void {
+    for (const el of elements) {
+        el.remove();
+    }
+}
+
 export function usePaneLabels({
     chartRef,
     containerRef,
@@ -57,26 +63,19 @@ export function usePaneLabels({
         const container = containerRef.current;
         const chart = chartRef.current;
 
-        for (const el of labelElementsRef.current) {
-            el.remove();
-        }
+        clearLabelElements(labelElementsRef.current);
         labelElementsRef.current = [];
 
         if (!container || !chart || labels.length === 0) return;
 
-        const newElements = labels.map(({ paneIndex, text }) => {
-            const top = getTopOffset(chart, paneIndex);
-            const el = createLabelElement(text, top);
+        const labelPairs = labels.map(config => {
+            const top = getTopOffset(chart, config.paneIndex);
+            const el = createLabelElement(config.text, top);
             container.appendChild(el);
-            return el;
+            return { config, el };
         });
 
-        labelElementsRef.current = newElements;
-
-        const labelPairs = labels.map((config, i) => ({
-            config,
-            el: newElements[i]!,
-        }));
+        labelElementsRef.current = labelPairs.map(({ el }) => el);
 
         const observer = new ResizeObserver(() => {
             for (const { config, el } of labelPairs) {
@@ -89,9 +88,7 @@ export function usePaneLabels({
 
         return () => {
             observer.disconnect();
-            for (const el of newElements) {
-                el.remove();
-            }
+            clearLabelElements(labelPairs.map(({ el }) => el));
             labelElementsRef.current = [];
         };
     }, [chartRef, containerRef, labels]);

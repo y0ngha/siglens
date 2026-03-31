@@ -68,12 +68,19 @@ Example entry format:
 
 ### 5. Clean fix-log.md
 
-Remove ONLY entries that were **newly written** to MISTAKES.md in Step 4 of this session.
-Entries that were skipped — because they were already documented, below the 2-occurrence threshold, or had no exact match — must NOT be removed.
-When in doubt, do NOT remove.
-Entries for violations that did not meet the 2-occurrence threshold remain in the log.
+**CRITICAL: Surgical deletion only. Never overwrite or truncate the file.**
 
-If all entries were removed, leave the file with only the header:
+Remove ONLY the specific `## [...]` entry blocks that were **newly promoted** to MISTAKES.md in Step 4 of this session.
+Every other entry MUST remain in the file untouched — including:
+- Entries below the 2-occurrence threshold
+- Entries skipped because they were already documented in MISTAKES.md
+- Entries with no exact match to any other entry
+
+**How to delete:** Use the Edit tool to remove each promoted entry block individually.
+Do NOT use the Write tool to rewrite the entire file — this risks losing non-promoted entries.
+When in doubt, do NOT remove.
+
+If all entries happen to be promoted, leave the file with only the header:
 ```md
 # Fix Log
 ```

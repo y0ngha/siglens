@@ -56,10 +56,13 @@ Review before implementation and ensure these are not repeated.
 9. Discarding the callback parameter and re-accessing the same element via external array index
    → Rule: FF.md Readability 1-G — viewpoint shift forces the reader to track two locations simultaneously
    → map/filter/reduce callbacks already receive the current element as a parameter; use it directly
+   → Also applies to addEventListener callbacks: avoid iterating over external array with index when the callback param already provides the element
    ❌ lines.reduce((acc, _line, idx) => { const line = lines[idx]; ... })
    ❌ items.filter((_, ci) => { const item = outerArray[offset + ci]; ... })
+   ❌ newElements.forEach((_, idx) => { const label = labels[idx]; ... })  // ResizeObserver callback
    ✅ lines.reduce((acc, line) => { ... })
    ✅ items.filter(item => { ... })
+   ✅ for (const [label, element] of labelPairs) { ... }  // pre-zip arrays and use for...of
 
 10. Repeating identical filtering/calculation logic across multiple blocks
     → Rule: FF.md Cohesion 3-B — same values computed in multiple places must be extracted to single source of truth
