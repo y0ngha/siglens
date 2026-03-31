@@ -37,7 +37,7 @@ export function SymbolPageClient({
     }
 
     return (
-        <div className="bg-secondary-900 text-secondary-200 flex h-full min-h-screen flex-col">
+        <div className="bg-secondary-900 text-secondary-200 flex h-screen flex-col overflow-hidden">
             {/* 헤더 */}
             <header className="border-secondary-700 border-b px-4 py-3">
                 <div className="flex items-center justify-between">
