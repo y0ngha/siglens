@@ -72,7 +72,7 @@ function DropdownPortal({
     return createPortal(
         <div
             ref={portalRef}
-            className="border-secondary-700 bg-secondary-800 absolute z-50 flex flex-col gap-0.5 rounded border p-1 shadow-lg"
+            className="border-secondary-700 bg-secondary-800 fixed z-50 flex flex-col gap-0.5 rounded border p-1 shadow-lg"
             style={{ top: position.top, left: position.left }}
         >
             {indicator.availablePeriods.map(period => (
