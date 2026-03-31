@@ -12,11 +12,11 @@
 
 **미국 주식 AI 기술적 분석 플랫폼**
 
-[![Website](https://img.shields.io/badge/Website-siglens.io-blue?style=for-the-badge)](https://siglens.com)
+[![Website](https://img.shields.io/badge/Website-siglens.io-blue?style=for-the-badge)](https://siglens.io)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-7289da?style=for-the-badge&logo=discord)](https://discord.gg/siglens)
 
-[![Docs](https://img.shields.io/badge/Docs-Read%20Docs-green?style=for-the-badge)](./docs)
-[![Issues](https://img.shields.io/badge/Issues-Report%20Bug-red?style=for-the-badge)](https://github.com/your-username/siglens/issues)
+[![Docs](https://img.shields.io/badge/Docs-Read%20Docs-green?style=for-the-badge)](https://github.com/y0ngha/siglens/tree/master/docs)
+[![Issues](https://img.shields.io/badge/Issues-Report%20Bug-red?style=for-the-badge)](https://github.com/y0ngha/siglens/issues)
 
 </div>
 
@@ -74,7 +74,7 @@ yarn
 ### Installation
 
 ```bash
-git clone https://github.com/your-username/siglens.git
+git clone https://github.com/y0ngha/siglens.git
 cd siglens
 yarn install
 ```
@@ -202,9 +202,9 @@ yarn test rsi.test.ts
 
 아직 기여할 수 있는 프로세스가 정해지지 않아, 지금은 어렵습니다.
 
-[//]: # (1. **버그 리포트**: [Issues]&#40;https://github.com/your-username/siglens/issues&#41;에서 보고)
+[//]: # (1. **버그 리포트**: [Issues]&#40;https://github.com/y0ngha/siglens/issues&#41;에서 보고)
 
-[//]: # (2. **기능 제안**: [Discussions]&#40;https://github.com/your-username/siglens/discussions&#41;에서 논의)
+[//]: # (2. **기능 제안**: [Discussions]&#40;https://github.com/y0ngha/siglens/discussions&#41;에서 논의)
 
 [//]: # (3. **분석 기법 기여**: [CONTRIBUTING.md]&#40;./CONTRIBUTING.md&#41; 참고)
 
