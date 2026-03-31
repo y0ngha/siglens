@@ -30,9 +30,27 @@ jobs:
                   show_full_output: true
                   claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
                   base_branch: master
+                  claude_args: |
+                      --allowedTools "Read,Glob,Grep,LS,Bash(gh pr diff:*),Bash(gh pr comment:*),Bash(gh pr view:*),Bash(gh api:*)"
                   prompt: |
                       REPO: ${{ github.repository }}
                       PR NUMBER: ${{ github.event.pull_request.number }}
+
+                      ## STRICT CONSTRAINTS — READ FIRST
+
+                      You are a **read-only code reviewer**. Your ONLY permitted actions are:
+                      1. Read files (Read, Glob, Grep, LS)
+                      2. Read PR diff (gh pr diff)
+                      3. Post review comments (gh pr comment, gh api)
+
+                      **ABSOLUTELY FORBIDDEN:**
+                      - DO NOT modify, create, or delete any files
+                      - DO NOT run git add, git commit, git push, or any git write commands
+                      - DO NOT run npm, yarn, bun, or any package manager commands
+                      - DO NOT attempt to fix code — only report findings
+                      - DO NOT create branches or tags
+
+                      If you feel the urge to fix something, describe the fix in a review comment instead.
 
                       ## Output Language
 
@@ -54,7 +72,7 @@ jobs:
                       2. Check changed code: gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }}
                       3. Load project principle documents (see section below)
                       4. Review the diff against all loaded rules
-                      5. If findings exist, leave inline comments via gh api, then submit a summary comment via gh pr comment with REQUEST_CHANGES status
+                      5. If findings exist, leave inline comments via gh api, then submit a summary review via gh api with REQUEST_CHANGES event
                       6. If no issues, approve with the command below and omit the comment
                       ```bash
                       gh api repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}/reviews \
