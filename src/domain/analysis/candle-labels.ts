@@ -73,3 +73,13 @@ export function getMultiCandlePatternLabel(
 ): string {
     return MULTI_CANDLE_PATTERN_LABELS[pattern];
 }
+
+export function findCandlePatternLabel(patternName: string): string {
+    if (patternName in CANDLE_PATTERN_LABELS) {
+        return CANDLE_PATTERN_LABELS[patternName as CandlePattern];
+    }
+    if (patternName in MULTI_CANDLE_PATTERN_LABELS) {
+        return MULTI_CANDLE_PATTERN_LABELS[patternName as MultiCandlePattern];
+    }
+    return patternName;
+}

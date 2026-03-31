@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type {
     AnalysisResponse,
+    CandlePatternSummary,
     PatternSummary,
     PriceScenario,
     RiskLevel,
@@ -12,6 +13,7 @@ import type {
     SkillResult,
     Trend,
 } from '@/domain/types';
+import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
 import { cn } from '@/lib/cn';
 
@@ -234,11 +236,7 @@ interface DetectedBadgeProps {
 function DetectedBadge({ detected }: DetectedBadgeProps) {
     const key = detected ? 'detected' : 'undetected';
     const { className, label } = DETECTED_BADGE_CONFIG[key];
-    return (
-        <div className="flex items-center gap-1.5">
-            <span className={className}>{label}</span>
-        </div>
-    );
+    return <span className={className}>{label}</span>;
 }
 
 interface PatternAccordionItemProps {
@@ -294,6 +292,50 @@ function PatternAccordionItem({
                     <EyeIcon isVisible={isVisible} />
                 </button>
             </div>
+
+            {isOpen ? (
+                <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
+                    <div className="mb-2">
+                        <DetectedBadge detected={pattern.detected} />
+                    </div>
+                    <p className="text-secondary-400 text-xs leading-relaxed">
+                        {pattern.summary}
+                    </p>
+                </div>
+            ) : null}
+        </div>
+    );
+}
+
+interface CandlePatternAccordionItemProps {
+    pattern: CandlePatternSummary;
+}
+
+function CandlePatternAccordionItem({
+    pattern,
+}: CandlePatternAccordionItemProps) {
+    const [isOpen, setIsOpen] = useState(false);
+
+    const handleToggleOpen = (): void => {
+        setIsOpen(prev => !prev);
+    };
+
+    const patternLabel = findCandlePatternLabel(pattern.patternName);
+
+    return (
+        <div className="border-secondary-700 overflow-hidden rounded-md border">
+            <button
+                type="button"
+                aria-expanded={isOpen}
+                onClick={handleToggleOpen}
+                className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors"
+            >
+                <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
+                    {patternLabel}
+                </span>
+                <TrendBadge trend={pattern.trend} />
+                <ChevronIcon isOpen={isOpen} />
+            </button>
 
             {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
@@ -420,6 +462,7 @@ export function AnalysisPanel({
 
     const hasPatterns = analysis.patternSummaries.length > 0;
     const hasSkillResults = analysis.skillResults.length > 0;
+    const hasCandlePatterns = analysis.candlePatterns.length > 0;
 
     return (
         <div className="bg-secondary-800 flex flex-col gap-4 rounded-lg p-4">
@@ -490,6 +533,23 @@ export function AnalysisPanel({
                             ))}
                         </div>
                     ))}
+                </div>
+            )}
+
+            {/* 캔들 패턴 (아코디언) */}
+            {hasCandlePatterns && (
+                <div className="flex flex-col gap-2">
+                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                        캔들 패턴
+                    </span>
+                    <div className="flex flex-col gap-1.5">
+                        {analysis.candlePatterns.map(pattern => (
+                            <CandlePatternAccordionItem
+                                key={pattern.patternName}
+                                pattern={pattern}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
 
