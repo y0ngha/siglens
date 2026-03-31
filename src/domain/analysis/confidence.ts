@@ -1,4 +1,7 @@
-import { UNMATCHED_SKILL_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
+import {
+    MIN_CONFIDENCE_WEIGHT,
+    UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
+} from '@/domain/indicators/constants';
 import type {
     AnalysisResponse,
     PatternResult,
@@ -15,6 +18,10 @@ export type RawAnalysisResponse = Omit<
     skillResults: Omit<SkillResult, 'confidenceWeight'>[];
 };
 
+export function filterPatterns(patterns: PatternResult[]): PatternResult[] {
+    return patterns.filter(p => p.confidenceWeight >= MIN_CONFIDENCE_WEIGHT);
+}
+
 export function enrichAnalysisWithConfidence(
     analysis: RawAnalysisResponse,
     skills: Skill[]
@@ -22,15 +29,16 @@ export function enrichAnalysisWithConfidence(
     const skillByName = new Map(skills.map(s => [s.name, s]));
     return {
         ...analysis,
-        patternSummaries: analysis.patternSummaries.map(
-            (p): PatternResult => ({
+        patternSummaries: analysis.patternSummaries.map((p): PatternResult => {
+            const skill = skillByName.get(p.skillName);
+            return {
                 ...p,
                 confidenceWeight:
-                    skillByName.get(p.skillName)?.confidenceWeight ??
+                    skill?.confidenceWeight ??
                     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
-                renderConfig: skillByName.get(p.skillName)?.display?.chart,
-            })
-        ),
+                renderConfig: skill?.display?.chart,
+            };
+        }),
         skillResults: analysis.skillResults.map(r => ({
             ...r,
             confidenceWeight:

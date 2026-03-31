@@ -1,11 +1,16 @@
-import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
+import {
+    enrichAnalysisWithConfidence,
+    filterPatterns,
+} from '@/domain/analysis/confidence';
 import type { RawAnalysisResponse } from '@/domain/analysis/confidence';
 import {
     HIGH_CONFIDENCE_WEIGHT,
+    MIN_CONFIDENCE_WEIGHT,
     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
 import type {
     CandlePatternSummary,
+    PatternResult,
     Skill,
     SkillChartDisplay,
 } from '@/domain/types';
@@ -51,6 +56,18 @@ const makeSkillResult = (
     ...overrides,
 });
 
+const makePatternResult = (
+    overrides?: Partial<PatternResult>
+): PatternResult => ({
+    patternName: '테스트 패턴',
+    skillName: '테스트 스킬',
+    detected: true,
+    trend: 'bullish',
+    summary: '테스트 요약',
+    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
+    ...overrides,
+});
+
 const makeCandlePatternSummary = (
     overrides?: Partial<CandlePatternSummary>
 ): CandlePatternSummary => ({
@@ -81,6 +98,41 @@ const makeAnalysisResponse = (
 });
 
 describe('confidence', () => {
+    describe('filterPatterns', () => {
+        it('confidenceWeight가 MIN_CONFIDENCE_WEIGHT 이상인 패턴만 반환한다', () => {
+            const patterns = [
+                makePatternResult({ confidenceWeight: MIN_CONFIDENCE_WEIGHT }),
+                makePatternResult({
+                    confidenceWeight: MIN_CONFIDENCE_WEIGHT - 0.1,
+                }),
+                makePatternResult({ confidenceWeight: HIGH_CONFIDENCE_WEIGHT }),
+            ];
+            const result = filterPatterns(patterns);
+            expect(result).toHaveLength(2);
+            expect(
+                result.every(p => p.confidenceWeight >= MIN_CONFIDENCE_WEIGHT)
+            ).toBe(true);
+        });
+
+        it('모든 패턴이 MIN_CONFIDENCE_WEIGHT 미만이면 빈 배열을 반환한다', () => {
+            const patterns = [
+                makePatternResult({
+                    confidenceWeight: MIN_CONFIDENCE_WEIGHT - 0.1,
+                }),
+                makePatternResult({
+                    confidenceWeight: UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
+                }),
+            ];
+            const result = filterPatterns(patterns);
+            expect(result).toHaveLength(0);
+        });
+
+        it('빈 배열을 입력하면 빈 배열을 반환한다', () => {
+            const result = filterPatterns([]);
+            expect(result).toHaveLength(0);
+        });
+    });
+
     describe('patternSummaries confidenceWeight 채우기', () => {
         it('patternSummaries에 skillName과 일치하는 skill의 confidenceWeight를 채운다', () => {
             const analysis = makeAnalysisResponse({

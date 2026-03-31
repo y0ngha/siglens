@@ -16,7 +16,7 @@ import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus
 
 function AnalyzingBanner() {
     return (
-        <div className="bg-secondary-700/40 mb-3 flex items-center gap-2 rounded px-3 py-2">
+        <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
             <span className="text-secondary-400 text-sm">AI 분석 중…</span>
         </div>
     );
@@ -28,7 +28,7 @@ interface ErrorBannerProps {
 
 function ErrorBanner({ message }: ErrorBannerProps) {
     return (
-        <div className="bg-secondary-700/40 mb-3 rounded px-3 py-2">
+        <div className="bg-secondary-700/40 rounded px-3 py-2">
             <span className="text-chart-bearish text-sm">{message}</span>
         </div>
     );
@@ -39,9 +39,18 @@ interface AnalysisStatusBannerProps {
 }
 
 function AnalysisStatusBanner({ status }: AnalysisStatusBannerProps) {
-    if (status.type === 'analyzing') return <AnalyzingBanner />;
+    if (status.type === 'analyzing')
+        return (
+            <div className="mb-3">
+                <AnalyzingBanner />
+            </div>
+        );
     if (status.type === 'error')
-        return <ErrorBanner message={status.message} />;
+        return (
+            <div className="mb-3">
+                <ErrorBanner message={status.message} />
+            </div>
+        );
     return null;
 }
 
