@@ -24,6 +24,7 @@ import type {
 
 const INDICATOR_DECIMAL_PLACES = 2;
 const RECENT_BARS_COUNT = 30;
+const CANDLE_PATTERN_DETECTION_BARS = 15;
 const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
 
@@ -82,7 +83,8 @@ const formatRecentBarsSection = (bars: Bar[]): string => {
         return ['## Recent Bar Data', '- No data available'].join('\n');
     }
 
-    const multiPattern = detectMultiCandlePattern(recentBars);
+    const patternBars = bars.slice(-CANDLE_PATTERN_DETECTION_BARS);
+    const multiPattern = detectMultiCandlePattern(patternBars);
 
     return [
         `## Recent Bar Data (Last ${recentBars.length} bars)`,

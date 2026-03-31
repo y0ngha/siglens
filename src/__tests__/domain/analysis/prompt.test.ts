@@ -1061,5 +1061,55 @@ describe('prompt', () => {
                 expect(result).toMatch(/Detected multi-candle pattern: .+/);
             }
         });
+
+        it('최근 15봉 이전에만 존재하는 다봉 패턴은 감지 결과에 포함되지 않는다', () => {
+            // bars[3], bars[4]: bullish_engulfing (bearish then engulfing bullish)
+            // bars[5] ~ bars[19]: 15 neutral bars with no detectable pattern
+            const engulfingPrev: Bar = {
+                time: TEST_BAR_BASE_TIME + 3 * TEST_BAR_INTERVAL,
+                open: 105,
+                high: 106,
+                low: 99,
+                close: 100,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const engulfingCurr: Bar = {
+                time: TEST_BAR_BASE_TIME + 4 * TEST_BAR_INTERVAL,
+                open: 99,
+                high: 108,
+                low: 98,
+                close: 107,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const neutralBars: Bar[] = Array.from({ length: 15 }, (_, i) => ({
+                time: TEST_BAR_BASE_TIME + (5 + i) * TEST_BAR_INTERVAL,
+                open: 103,
+                high: 104,
+                low: 102,
+                close: 103,
+                volume: TEST_BAR_BASE_VOLUME,
+            }));
+            const leadingBars: Bar[] = Array.from({ length: 3 }, (_, i) => ({
+                time: TEST_BAR_BASE_TIME + i * TEST_BAR_INTERVAL,
+                open: 103,
+                high: 104,
+                low: 102,
+                close: 103,
+                volume: TEST_BAR_BASE_VOLUME,
+            }));
+            const bars = [
+                ...leadingBars,
+                engulfingPrev,
+                engulfingCurr,
+                ...neutralBars,
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                []
+            );
+            expect(result).not.toContain('bullish_engulfing');
+        });
     });
 });
