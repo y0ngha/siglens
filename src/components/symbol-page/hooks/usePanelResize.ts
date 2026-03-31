@@ -7,48 +7,53 @@ import { useDragListener } from '@/components/symbol-page/hooks/useDragListener'
 export const PANEL_MIN_WIDTH = 240;
 export const PANEL_MAX_WIDTH = 640;
 const PANEL_DEFAULT_WIDTH = 320;
+const KEYBOARD_RESIZE_STEP = 10;
 
 interface UsePanelResizeResult {
     panelWidth: number;
     isDragging: boolean;
     handleDragStart: (e: React.MouseEvent) => void;
+    handleKeyDown: (e: React.KeyboardEvent) => void;
 }
 
 export function usePanelResize(): UsePanelResizeResult {
+    const panelWidthAtDragStartRef = useRef<number>(PANEL_DEFAULT_WIDTH);
     const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_WIDTH);
-    const [isDragging, setIsDragging] = useState(false);
-    const dragStartXRef = useRef<number>(0);
-    const dragStartWidthRef = useRef<number>(PANEL_DEFAULT_WIDTH);
+
+    const { isDragging, handleDragStart: startDrag } = useDragListener({
+        onResize: (deltaX: number): void => {
+            const nextWidth = Math.min(
+                PANEL_MAX_WIDTH,
+                Math.max(
+                    PANEL_MIN_WIDTH,
+                    panelWidthAtDragStartRef.current + deltaX
+                )
+            );
+            setPanelWidth(nextWidth);
+        },
+    });
 
     const handleDragStart = useCallback(
         (e: React.MouseEvent): void => {
-            if (e.button !== 0) return;
-            e.preventDefault();
-            dragStartXRef.current = e.clientX;
-            dragStartWidthRef.current = panelWidth;
-            setIsDragging(true);
+            panelWidthAtDragStartRef.current = panelWidth;
+            startDrag(e);
         },
-        [panelWidth]
+        [panelWidth, startDrag]
     );
 
-    const handleMouseMove = (e: MouseEvent): void => {
-        const delta = dragStartXRef.current - e.clientX;
-        const nextWidth = Math.min(
-            PANEL_MAX_WIDTH,
-            Math.max(PANEL_MIN_WIDTH, dragStartWidthRef.current + delta)
-        );
-        setPanelWidth(nextWidth);
-    };
+    const handleKeyDown = useCallback((e: React.KeyboardEvent): void => {
+        if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
 
-    const handleMouseUp = (): void => {
-        setIsDragging(false);
-    };
+        if (e.key === 'ArrowLeft') {
+            setPanelWidth(prev =>
+                Math.max(PANEL_MIN_WIDTH, prev - KEYBOARD_RESIZE_STEP)
+            );
+        } else {
+            setPanelWidth(prev =>
+                Math.min(PANEL_MAX_WIDTH, prev + KEYBOARD_RESIZE_STEP)
+            );
+        }
+    }, []);
 
-    useDragListener({
-        isDragging,
-        onMouseMove: handleMouseMove,
-        onMouseUp: handleMouseUp,
-    });
-
-    return { panelWidth, isDragging, handleDragStart };
+    return { panelWidth, isDragging, handleDragStart, handleKeyDown };
 }

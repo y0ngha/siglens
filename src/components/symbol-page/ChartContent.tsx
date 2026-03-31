@@ -103,8 +103,9 @@ export function ChartContent({
             indicators,
         });
 
+    const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
+        usePanelResize();
     const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
-    const { panelWidth, isDragging, handleDragStart } = usePanelResize();
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
@@ -149,6 +150,7 @@ export function ChartContent({
                         isDragging && 'border-primary-500'
                     )}
                     onMouseDown={handleDragStart}
+                    onKeyDown={handleKeyDown}
                 />
                 <AnalysisStatusBanner
                     status={analysisStatus}

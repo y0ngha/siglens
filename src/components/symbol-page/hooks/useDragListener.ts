@@ -1,24 +1,42 @@
 'use client';
 
-import { useEffect, useEffectEvent } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useRef,
+    useState,
+} from 'react';
+import type React from 'react';
 
 interface UseDragListenerOptions {
+    onResize: (deltaX: number) => void;
+}
+
+interface UseDragListenerResult {
     isDragging: boolean;
-    onMouseMove: (e: MouseEvent) => void;
-    onMouseUp: () => void;
+    handleDragStart: (e: React.MouseEvent) => void;
 }
 
 export function useDragListener({
-    isDragging,
-    onMouseMove,
-    onMouseUp,
-}: UseDragListenerOptions): void {
+    onResize,
+}: UseDragListenerOptions): UseDragListenerResult {
+    const [isDragging, setIsDragging] = useState(false);
+    const dragStartXRef = useRef<number>(0);
+
+    const handleDragStart = useCallback((e: React.MouseEvent): void => {
+        if (e.button !== 0) return;
+        e.preventDefault();
+        dragStartXRef.current = e.clientX;
+        setIsDragging(true);
+    }, []);
+
     const handleMouseMove = useEffectEvent((e: MouseEvent) => {
-        onMouseMove(e);
+        onResize(dragStartXRef.current - e.clientX);
     });
 
     const handleMouseUp = useEffectEvent(() => {
-        onMouseUp();
+        setIsDragging(false);
     });
 
     useEffect(() => {
@@ -32,4 +50,6 @@ export function useDragListener({
             document.removeEventListener('mouseup', handleMouseUp);
         };
     }, [isDragging]);
+
+    return { isDragging, handleDragStart };
 }
