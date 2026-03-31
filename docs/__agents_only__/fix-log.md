@@ -89,3 +89,8 @@
 - Rule: FF.md Predictability 2-C — 외부 입력값(AI 응답)에 기반한 객체 조회는 프로토타입 오염에 안전한 방식을 사용해야 함
 - Context: `candle-labels.ts`의 `findCandlePatternLabel`에서 `in` 연산자 대신 직접 인덱스 접근 `(obj as Record<string, string>)[key]`를 사용하는 방식으로 변경하여 프로토타입 체인 조회 위험 제거
 
+## [PR #100 | feat/91/candle-pattern-summary-ui | review fix 2 | 2026-03-31]
+- Violation: `findCandlePatternLabel`에서 `||` 연산자를 사용하여 레이블 fallback을 처리함으로써 빈 문자열도 falsy로 처리되어 의도가 불명확했음
+- Rule: FF.md Predictability 2-C — 코드의 동작 의도가 구현에서 명확히 드러나야 한다
+- Context: `candle-labels.ts`의 `findCandlePatternLabel`에서 객체 인덱스 접근 결과가 `undefined`일 때만 fallback하는 의도를 표현하기 위해 `||`를 `??`(nullish coalescing)으로 교체
+
