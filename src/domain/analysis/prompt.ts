@@ -24,9 +24,17 @@ import type {
 
 const INDICATOR_DECIMAL_PLACES = 2;
 const RECENT_BARS_COUNT = 30;
-const CANDLE_PATTERN_DETECTION_BARS = 15;
+export const CANDLE_PATTERN_DETECTION_BARS = 15;
 const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
+
+type CandlePatternEntryType = 'single' | 'multi';
+
+type CandlePatternEntry = {
+    barsAgo: number;
+    patternType: CandlePatternEntryType;
+    patternName: string;
+};
 
 const fmt = (n: number | null): string =>
     n === null ? 'N/A' : n.toFixed(INDICATOR_DECIMAL_PLACES);
@@ -76,6 +84,47 @@ const formatBarRow = (bar: Bar): string => {
     return `${datetime} | O:${fmt(bar.open)} H:${fmt(bar.high)} L:${fmt(bar.low)} C:${fmt(bar.close)} V:${formatVolume(bar.volume)} [${getCandlePatternLabel(pattern)}]`;
 };
 
+const buildCandlePatternEntries = (bars: Bar[]): CandlePatternEntry[] => {
+    const patternBars = bars.slice(-CANDLE_PATTERN_DETECTION_BARS);
+    const totalBars = patternBars.length;
+
+    const singleEntries: CandlePatternEntry[] = patternBars.map((bar, i) => ({
+        barsAgo: totalBars - 1 - i,
+        patternType: 'single',
+        patternName: detectCandlePattern(bar),
+    }));
+
+    const multiEntries: CandlePatternEntry[] = patternBars
+        .flatMap((_, i) => {
+            const windowEnd = i + 1;
+            const candleWindow = patternBars.slice(0, windowEnd);
+            const detected = detectMultiCandlePattern(candleWindow);
+            if (detected === null) return [];
+            return [
+                {
+                    barsAgo: totalBars - 1 - i,
+                    patternType: 'multi' as const,
+                    patternName: detected,
+                },
+            ];
+        })
+        .filter(
+            (entry, idx, arr) =>
+                arr.findIndex(
+                    e =>
+                        e.patternName === entry.patternName &&
+                        e.barsAgo === entry.barsAgo
+                ) === idx
+        );
+
+    return [...singleEntries, ...multiEntries].sort(
+        (a, b) => b.barsAgo - a.barsAgo
+    );
+};
+
+const formatPatternEntry = (entry: CandlePatternEntry): string =>
+    `- [${entry.barsAgo} bars ago] ${entry.patternType === 'single' ? 'Single candle pattern' : 'Multi-candle pattern'}: ${entry.patternName}`;
+
 const formatRecentBarsSection = (bars: Bar[]): string => {
     const recentBars = bars.slice(-RECENT_BARS_COUNT);
 
@@ -83,15 +132,17 @@ const formatRecentBarsSection = (bars: Bar[]): string => {
         return ['## Recent Bar Data', '- No data available'].join('\n');
     }
 
-    const patternBars = bars.slice(-CANDLE_PATTERN_DETECTION_BARS);
-    const multiPattern = detectMultiCandlePattern(patternBars);
+    const patternEntries = buildCandlePatternEntries(bars);
 
     return [
         `## Recent Bar Data (Last ${recentBars.length} bars)`,
         'Format: Date/Time(UTC) | O:Open H:High L:Low C:Close V:Volume [CandlePattern]',
         ...recentBars.map(formatBarRow),
-        ...(multiPattern !== null
-            ? ['- Detected multi-candle pattern: ' + multiPattern]
+        ...(patternEntries.length > 0
+            ? [
+                  `## Detected Candle Patterns (Last ${CANDLE_PATTERN_DETECTION_BARS} bars)`,
+                  ...patternEntries.map(formatPatternEntry),
+              ]
             : []),
     ].join('\n');
 };

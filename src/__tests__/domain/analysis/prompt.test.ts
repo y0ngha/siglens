@@ -1,4 +1,7 @@
-import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
+import {
+    buildAnalysisPrompt,
+    CANDLE_PATTERN_DETECTION_BARS,
+} from '@/domain/analysis/prompt';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
@@ -1057,9 +1060,84 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            if (result.includes('Detected multi-candle pattern:')) {
-                expect(result).toMatch(/Detected multi-candle pattern: .+/);
+            if (result.includes('Multi-candle pattern:')) {
+                expect(result).toMatch(/Multi-candle pattern: .+/);
             }
+        });
+
+        it('슬라이딩 윈도우로 감지된 다봉 패턴은 봉 위치와 함께 포함된다', () => {
+            const prevBar: Bar = {
+                time: TEST_BAR_BASE_TIME,
+                open: 110,
+                high: 115,
+                low: 105,
+                close: 106,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const currBar: Bar = {
+                time: TEST_BAR_BASE_TIME + TEST_BAR_INTERVAL,
+                open: 104,
+                high: 120,
+                low: 103,
+                close: 118,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const bars = [prevBar, currBar];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                []
+            );
+            if (result.includes('Multi-candle pattern:')) {
+                expect(result).toMatch(
+                    /\[\d+ bars ago\] Multi-candle pattern: .+/
+                );
+            }
+        });
+
+        it('단봉 패턴은 봉 위치 정보와 함께 패턴 섹션에 포함된다', () => {
+            const bars = [makeBar(0)];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                []
+            );
+            expect(result).toMatch(
+                /\[\d+ bars ago\] Single candle pattern: .+/
+            );
+        });
+
+        it('여러 봉에서 감지된 패턴이 모두 포함된다', () => {
+            const engulfingPrev: Bar = {
+                time: TEST_BAR_BASE_TIME,
+                open: 110,
+                high: 115,
+                low: 105,
+                close: 106,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const engulfingCurr: Bar = {
+                time: TEST_BAR_BASE_TIME + TEST_BAR_INTERVAL,
+                open: 104,
+                high: 120,
+                low: 103,
+                close: 118,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const bars = [engulfingPrev, engulfingCurr];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                []
+            );
+            const patternMatches = result.match(
+                /\[\d+ bars ago\] (Single candle|Multi-candle) pattern: .+/g
+            );
+            expect(patternMatches).not.toBeNull();
+            expect((patternMatches ?? []).length).toBeGreaterThanOrEqual(1);
         });
 
         it('최근 15봉 이전에만 존재하는 다봉 패턴은 감지 결과에 포함되지 않는다', () => {
@@ -1081,14 +1159,17 @@ describe('prompt', () => {
                 close: 107,
                 volume: TEST_BAR_BASE_VOLUME,
             };
-            const neutralBars: Bar[] = Array.from({ length: 15 }, (_, i) => ({
-                time: TEST_BAR_BASE_TIME + (5 + i) * TEST_BAR_INTERVAL,
-                open: 103,
-                high: 104,
-                low: 102,
-                close: 103,
-                volume: TEST_BAR_BASE_VOLUME,
-            }));
+            const neutralBars: Bar[] = Array.from(
+                { length: CANDLE_PATTERN_DETECTION_BARS },
+                (_, i) => ({
+                    time: TEST_BAR_BASE_TIME + (5 + i) * TEST_BAR_INTERVAL,
+                    open: 103,
+                    high: 104,
+                    low: 102,
+                    close: 103,
+                    volume: TEST_BAR_BASE_VOLUME,
+                })
+            );
             const leadingBars: Bar[] = Array.from({ length: 3 }, (_, i) => ({
                 time: TEST_BAR_BASE_TIME + i * TEST_BAR_INTERVAL,
                 open: 103,
