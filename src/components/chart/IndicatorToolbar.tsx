@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/domain/constants/colors';
@@ -14,6 +14,8 @@ interface IndicatorToggleGroup {
 type IndicatorType = 'ma' | 'ema';
 
 type DropdownType = IndicatorType | null;
+
+const DROPDOWN_OFFSET_PX = 4;
 
 const indicatorButtonClass = (active: boolean): string =>
     cn(
@@ -70,7 +72,7 @@ function DropdownPortal({
     return createPortal(
         <div
             ref={portalRef}
-            className="border-secondary-700 bg-secondary-800 fixed z-50 flex flex-col gap-0.5 rounded border p-1 shadow-lg"
+            className="border-secondary-700 bg-secondary-800 absolute z-50 flex flex-col gap-0.5 rounded border p-1 shadow-lg"
             style={{ top: position.top, left: position.left }}
         >
             {indicator.availablePeriods.map(period => (
@@ -121,6 +123,14 @@ export function IndicatorToolbar({
     const emaButtonRef = useRef<HTMLButtonElement>(null);
     const portalRef = useRef<HTMLDivElement>(null);
 
+    const buttonRefMap: Record<
+        IndicatorType,
+        React.RefObject<HTMLButtonElement | null>
+    > = {
+        ma: maButtonRef,
+        ema: emaButtonRef,
+    };
+
     useOnClickOutside(toolbarRef, event => {
         if (!openDropdown) return;
         const isInsidePortal = portalRef.current?.contains(
@@ -130,17 +140,6 @@ export function IndicatorToolbar({
             setOpenDropdown(null);
         }
     });
-
-    const buttonRefMap: Record<
-        IndicatorType,
-        React.RefObject<HTMLButtonElement | null>
-    > = useMemo(
-        () => ({
-            ma: maButtonRef,
-            ema: emaButtonRef,
-        }),
-        [maButtonRef, emaButtonRef]
-    );
 
     const toggleDropdown = (type: IndicatorType): void => {
         if (openDropdown === type) {
@@ -153,7 +152,7 @@ export function IndicatorToolbar({
 
         const rect = buttonRef.current.getBoundingClientRect();
         setDropdownPosition({
-            top: rect.bottom + window.scrollY + 4,
+            top: rect.bottom + window.scrollY + DROPDOWN_OFFSET_PX,
             left: rect.left + window.scrollX,
         });
         setOpenDropdown(type);
@@ -204,16 +203,13 @@ export function IndicatorToolbar({
                 </button>
             ))}
 
-            {openDropdown &&
-                dropdownPosition &&
-                activeDropdownIndicator &&
-                typeof window !== 'undefined' && (
-                    <DropdownPortal
-                        position={dropdownPosition}
-                        indicator={activeDropdownIndicator}
-                        portalRef={portalRef}
-                    />
-                )}
+            {openDropdown && dropdownPosition && activeDropdownIndicator && (
+                <DropdownPortal
+                    position={dropdownPosition}
+                    indicator={activeDropdownIndicator}
+                    portalRef={portalRef}
+                />
+            )}
 
             {toggleIndicators.map(indicator => (
                 <button
