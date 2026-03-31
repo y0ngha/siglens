@@ -71,13 +71,16 @@ export function usePaneLabels({
 
         labelElementsRef.current = newElements;
 
+        const labelPairs = labels.map((config, i) => ({
+            config,
+            el: newElements[i]!,
+        }));
+
         const observer = new ResizeObserver(() => {
-            newElements.forEach((el, index) => {
-                const labelConfig = labels[index];
-                if (!labelConfig) return;
-                const top = getTopOffset(chart, labelConfig.paneIndex);
+            for (const { config, el } of labelPairs) {
+                const top = getTopOffset(chart, config.paneIndex);
                 el.style.top = `${top + LABEL_OFFSET_PX}px`;
-            });
+            }
         });
 
         observer.observe(container);
