@@ -40,7 +40,8 @@ If the output is `EMPTY`, emit a `done` exit signal with `promoted: 0` immediate
 
 ### 2. Parse Violations
 
-Group all entries by their `Violation` field (exact or semantically equivalent).
+Group entries only when the `Violation` field is **exactly identical** (word-for-word match).
+Do NOT group based on semantic similarity, topic proximity, or category.
 Count occurrences of each unique violation pattern.
 Do this silently — no output.
 
@@ -67,7 +68,9 @@ Example entry format:
 
 ### 5. Clean fix-log.md
 
-Remove all entries whose `Violation` was promoted to MISTAKES.md in Step 4.
+Remove ONLY entries that were **newly written** to MISTAKES.md in Step 4 of this session.
+Entries that were skipped — because they were already documented, below the 2-occurrence threshold, or had no exact match — must NOT be removed.
+When in doubt, do NOT remove.
 Entries for violations that did not meet the 2-occurrence threshold remain in the log.
 
 If all entries were removed, leave the file with only the header:
@@ -81,15 +84,12 @@ If all entries were removed, leave the file with only the header:
 
 ### Emit Exit Signal
 
-Output the following JSON as the **final output** and stop.
-Do not add any text before or after the JSON.
-
 #### On success
 ```json
 {
-   "agent": "mistake-managing-agent",
-   "status": "done",
-   "promoted": {number of violations added to MISTAKES.md}
+  "agent": "mistake-managing-agent",
+  "status": "done",
+  "promoted": {number of violations added to MISTAKES.md}
 }
 ```
 
