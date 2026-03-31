@@ -26,6 +26,7 @@ jobs:
               uses: anthropics/claude-code-action@v1
               env:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+                  ANTHROPIC_MODEL: opus
               with:
                   show_full_output: true
                   claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
