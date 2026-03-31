@@ -14,10 +14,7 @@ import {
     detectCandlePattern,
     detectMultiCandlePattern,
 } from '@/domain/analysis/candle';
-import {
-    getCandlePatternLabel,
-    getMultiCandlePatternLabel,
-} from '@/domain/analysis/candle-labels';
+import { getCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import type {
     AnalysisResponse,
     Bar,
@@ -92,9 +89,7 @@ const formatRecentBarsSection = (bars: Bar[]): string => {
         'Format: Date/Time(UTC) | O:Open H:High L:Low C:Close V:Volume [CandlePattern]',
         ...recentBars.map(formatBarRow),
         ...(multiPattern !== null
-            ? [
-                  `- Detected multi-candle pattern: ${getMultiCandlePatternLabel(multiPattern)}`,
-              ]
+            ? ['- Detected multi-candle pattern: ' + multiPattern]
             : []),
     ].join('\n');
 };
