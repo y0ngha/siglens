@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/domain/constants/colors';
 import { useOnClickOutside } from '@/components/chart/hooks/useOnClickOutside';
@@ -65,11 +65,7 @@ export function IndicatorToolbar({
     const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
     const toolbarRef = useRef<HTMLDivElement>(null);
 
-    const handleClickOutside = useCallback(() => {
-        setOpenDropdown(null);
-    }, []);
-
-    useOnClickOutside(toolbarRef, handleClickOutside);
+    useOnClickOutside(toolbarRef, () => setOpenDropdown(null));
 
     const toggleDropdown = (type: DropdownType) => {
         setOpenDropdown(prev => (prev === type ? null : type));
@@ -129,6 +125,7 @@ export function IndicatorToolbar({
                                             : 'text-secondary-400 hover:bg-secondary-700 hover:text-white'
                                     )}
                                 >
+                                    {/* getPeriodColor는 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)를 반환하므로 style prop 사용 허용 */}
                                     <span
                                         className="h-2 w-2 shrink-0 rounded-full"
                                         style={{
