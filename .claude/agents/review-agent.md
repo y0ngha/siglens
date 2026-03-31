@@ -23,6 +23,13 @@ Routing to the next agent is handled by the main orchestrator — not by you.
 
 ---
 
+## Output Constraint
+
+**Do not output any prose, reasoning, checklists, or intermediate analysis.**
+All internal evaluation must remain silent. The only permitted output is the exit signal JSON.
+
+---
+
 ## Startup Procedure
 
 ### 0. Load Memory
@@ -93,6 +100,8 @@ Additionally, based on changed file locations:
 
 ### Step 1. Siglens Rule Check (Checklist)
 
+Evaluate each item silently. Do not output results — violations go into findings only.
+
 **Layer Dependencies**
 - [ ] domain/: no external library imports (technicalindicators, lodash, etc.)
 - [ ] components/: no direct imports from infrastructure (AlpacaProvider, claudeClient, etc.)
@@ -119,6 +128,8 @@ Additionally, based on changed file locations:
 
 ### Step 2. Software Engineering Judgment (Open Review)
 
+Evaluate silently. Do not output reasoning — violations go into findings only.
+
 Using the 4 principles from docs/FF.md, look for **code that will become hard to change**.
 
 - **Readability**: Can someone reading this code for the first time immediately understand the intent?
@@ -129,6 +140,8 @@ Using the 4 principles from docs/FF.md, look for **code that will become hard to
 ---
 
 ### Step 3. Repeated Mistake Pattern Check
+
+Evaluate silently. Do not output reasoning — violations go into findings only.
 
 Check docs/MISTAKES.md against the changed code for known repeated patterns.
 
