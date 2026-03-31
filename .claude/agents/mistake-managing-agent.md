@@ -16,14 +16,7 @@ You never modify source code.
 
 - **Never modify source code.** Read and write only `docs/__agents_only__/fix-log.md` and `docs/MISTAKES.md`.
 - **Never call other agents.** Routing is handled by the main orchestrator.
-- **Always end with the exit signal JSON.** No prose before or after it.
-
----
-
-## Output Constraint
-
-**Do not output any prose, reasoning, or intermediate analysis.**
-All internal evaluation must remain silent. The only permitted output is the exit signal JSON.
+- **Always end with the exit signal JSON.**
 
 ---
 
@@ -32,18 +25,15 @@ All internal evaluation must remain silent. The only permitted output is the exi
 ### 1. Read fix-log.md
 
 ```bash
-# Check file exists and is non-empty before reading
-[ -s docs/__agents_only__/fix-log.md ] && cat docs/__agents_only__/fix-log.md || echo "EMPTY"
+cat docs/__agents_only__/fix-log.md
 ```
 
-If the output is `EMPTY`, emit a `done` exit signal with `promoted: 0` immediately — nothing to process.
+If the file does not exist or is empty, emit a `done` exit signal immediately — nothing to process.
 
 ### 2. Parse Violations
 
-Group entries only when the `Violation` field is **exactly identical** (word-for-word match).
-Do NOT group based on semantic similarity, topic proximity, or category.
+Group all entries by their `Violation` field (exact or semantically equivalent).
 Count occurrences of each unique violation pattern.
-Do this silently — no output.
 
 ### 3. Identify Recurring Patterns
 
@@ -68,19 +58,10 @@ Example entry format:
 
 ### 5. Clean fix-log.md
 
-**CRITICAL: Surgical deletion only. Never overwrite or truncate the file.**
+Remove all entries whose `Violation` was promoted to MISTAKES.md in Step 4.
+Entries for violations that did not meet the 2-occurrence threshold remain in the log.
 
-Remove ONLY the specific `## [...]` entry blocks that were **newly promoted** to MISTAKES.md in Step 4 of this session.
-Every other entry MUST remain in the file untouched — including:
-- Entries below the 2-occurrence threshold
-- Entries skipped because they were already documented in MISTAKES.md
-- Entries with no exact match to any other entry
-
-**How to delete:** Use the Edit tool to remove each promoted entry block individually.
-Do NOT use the Write tool to rewrite the entire file — this risks losing non-promoted entries.
-When in doubt, do NOT remove.
-
-If all entries happen to be promoted, leave the file with only the header:
+If all entries were removed, leave the file with only the header:
 ```md
 # Fix Log
 ```
@@ -103,8 +84,8 @@ If all entries happen to be promoted, leave the file with only the header:
 #### On failure
 ```json
 {
-   "agent": "mistake-managing-agent",
-   "status": "failed",
-   "reason": "{specific failure reason}"
+  "agent": "mistake-managing-agent",
+  "status": "failed",
+  "reason": "{specific failure reason}"
 }
 ```
