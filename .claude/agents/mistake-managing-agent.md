@@ -73,7 +73,7 @@ If **no group reaches the threshold of 2**, set `promoted = 0` and **skip direct
 For each recurring group:
 
 1. Read `docs/MISTAKES.md`
-2. Check if the rule violation is already documented. If it is, skip.
+2. Check if the rule violation is already documented. If it is, mark the group as **already-documented** (skip adding to MISTAKES.md, but still clean fix-log in Step 5).
 3. If not, append it under the most relevant section using the existing format:
    - English only
    - Concise `problem → fix` format
@@ -87,13 +87,14 @@ Example entry format:
 ```
 
 Record the count of **newly added** entries as `promoted`.
+Also track **already-documented** groups separately — these entries must be cleaned from fix-log in Step 5 even though they were not newly promoted.
 
 ### 5. Clean fix-log.md
 
 ## ⛔ HARD GUARD — READ THIS FIRST
 
 ```
-IF promoted == 0 THEN:
+IF promoted == 0 AND no already-documented groups THEN:
     DO NOT open, read, edit, or write fix-log.md.
     DO NOT use the Edit tool on fix-log.md.
     DO NOT use the Write tool on fix-log.md.
@@ -104,16 +105,17 @@ IF promoted == 0 THEN:
 
 ---
 
-If and only if `promoted > 0`:
+If `promoted > 0` OR there are already-documented groups:
 
 **Surgical deletion only. Never overwrite or truncate the file.**
 
-Remove ONLY the specific `## [...]` entry blocks whose **group was newly promoted** to MISTAKES.md in Step 4 of this session.
+Remove the specific `## [...]` entry blocks that belong to either:
+- Groups **newly promoted** to MISTAKES.md in Step 4 of this session, OR
+- Groups **already documented** in MISTAKES.md (already-documented groups identified in Step 4)
 
 Every other entry MUST remain in the file untouched — including:
 - Entries in groups below the 2-occurrence threshold
-- Entries skipped because they were already documented in MISTAKES.md
-- Entries with no group match to any promoted group
+- Entries with no group match to any promoted or already-documented group
 
 **How to delete:** Use the Edit tool to remove each promoted entry block individually.
 
