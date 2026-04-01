@@ -75,7 +75,7 @@ const getPatternBarCount = (pattern: MultiCandlePattern): number =>
  * Shared by prompt construction and chart marker rendering.
  */
 export function getDetectionBars(bars: Bar[]): Bar[] {
-    return bars.slice(-Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS));
+    return bars.slice(-CANDLE_PATTERN_DETECTION_BARS);
 }
 
 // ─── Detection ───────────────────────────────────────────────────────────────
@@ -104,11 +104,11 @@ export function detectCandlePatternEntries(bars: Bar[]): CandlePatternEntry[] {
         { pattern: MultiCandlePattern; involvedIndices: number[] }
     >();
 
-    extendedBars.forEach((_, i) => {
-        if (i < detectionStartIndex) return;
+    for (const [i] of extendedBars.entries()) {
+        if (i < detectionStartIndex) continue;
         const candleWindow = extendedBars.slice(0, i + 1);
         const detected = detectMultiCandlePattern(candleWindow);
-        if (detected === null) return;
+        if (detected === null) continue;
 
         const patternBarCount = getPatternBarCount(detected);
         const startIdx = Math.max(0, i - patternBarCount + 1);
@@ -118,13 +118,15 @@ export function detectCandlePatternEntries(bars: Bar[]): CandlePatternEntry[] {
         );
 
         multiEntryMap.set(i, { pattern: detected, involvedIndices });
-    });
+    }
 
     // Collect all bar indices involved in any multi-candle pattern
     const multiInvolvedIndices = new Set<number>();
-    multiEntryMap.forEach(({ involvedIndices }) => {
-        involvedIndices.forEach(idx => multiInvolvedIndices.add(idx));
-    });
+    for (const { involvedIndices } of multiEntryMap.values()) {
+        for (const idx of involvedIndices) {
+            multiInvolvedIndices.add(idx);
+        }
+    }
 
     // Build multi entries (only for bars in detection window)
     const multiEntries: CandlePatternEntry[] = Array.from(

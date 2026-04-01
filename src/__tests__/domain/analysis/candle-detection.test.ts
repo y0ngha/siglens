@@ -272,6 +272,18 @@ describe('candle-detection', () => {
                 const multiResult = result.find(e => e.patternType === 'multi');
                 expect(multiResult).toBeDefined();
                 expect(multiResult?.barIndex).toBe(4);
+
+                const singleResults = result.filter(
+                    e => e.patternType === 'single'
+                );
+                expect(singleResults.length).toBeGreaterThanOrEqual(1);
+                singleResults.forEach(single => {
+                    expect(single.barIndex).toBeLessThanOrEqual(4);
+                    expect(single.barIndex).toBeGreaterThanOrEqual(
+                        Math.max(0, 4 - MULTI_CANDLE_PATTERN_BUFFER)
+                    );
+                });
+
                 expect(result[result.length - 1].patternType).toBe('multi');
             });
         });
