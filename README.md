@@ -5,12 +5,16 @@
 ![Status](https://img.shields.io/badge/status-MVP-yellow)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
+![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white)
+![Upstash](https://img.shields.io/badge/Upstash-00E9A3?style=flat&logo=upstash&logoColor=white)
+![Cloudflare](https://img.shields.io/badge/Cloudflare-F38020?style=flat&logo=cloudflare&logoColor=white)
+
 ![Next.js](https://img.shields.io/badge/Next.js-16.2-black)
 ![React](https://img.shields.io/badge/React-19.2-61dafb?logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 ![Node.js](https://img.shields.io/badge/node-%3E%3D25.2.1-green)
 
-**미국 주식 AI 기술적 분석 플랫폼**
+## Siglens - 미국 주식 AI 기술적 분석 플랫폼
 
 [![Website](https://img.shields.io/badge/Website-siglens.io-blue?style=for-the-badge)](https://siglens.io)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-7289da?style=for-the-badge&logo=discord)](https://discord.gg/siglens)
