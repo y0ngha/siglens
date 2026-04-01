@@ -19,12 +19,7 @@ const ALL_INACTIVE: PaneIndices = {
 describe('buildPaneLabels', () => {
     describe('모든 지표가 비활성일 때', () => {
         it('빈 배열을 반환한다', () => {
-            const result = buildPaneLabels({
-                rsiVisible: false,
-                macdVisible: false,
-                dmiVisible: false,
-                paneIndices: ALL_INACTIVE,
-            });
+            const result = buildPaneLabels(ALL_INACTIVE);
 
             expect(result).toEqual([]);
         });
@@ -39,12 +34,7 @@ describe('buildPaneLabels', () => {
         };
 
         it('RSI pane 라벨 1개와 서브 라벨 1개를 반환한다', () => {
-            const result = buildPaneLabels({
-                rsiVisible: true,
-                macdVisible: false,
-                dmiVisible: false,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(1);
             expect(result[0].paneIndex).toBe(RSI_PANE_INDEX);
@@ -65,12 +55,7 @@ describe('buildPaneLabels', () => {
         };
 
         it('MACD pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
-            const result = buildPaneLabels({
-                rsiVisible: false,
-                macdVisible: true,
-                dmiVisible: false,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(1);
             expect(result[0].paneIndex).toBe(MACD_PANE_INDEX);
@@ -78,12 +63,7 @@ describe('buildPaneLabels', () => {
         });
 
         it('MACD Line, Signal, Histogram 순서로 서브 라벨이 구성된다', () => {
-            const result = buildPaneLabels({
-                rsiVisible: false,
-                macdVisible: true,
-                dmiVisible: false,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             const [macdLine, signal, histogram] = result[0].subLabels;
 
@@ -109,12 +89,7 @@ describe('buildPaneLabels', () => {
         };
 
         it('DMI pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
-            const result = buildPaneLabels({
-                rsiVisible: false,
-                macdVisible: false,
-                dmiVisible: true,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(1);
             expect(result[0].paneIndex).toBe(DMI_PANE_INDEX);
@@ -122,12 +97,7 @@ describe('buildPaneLabels', () => {
         });
 
         it('+DI, -DI, ADX 순서로 서브 라벨이 구성된다', () => {
-            const result = buildPaneLabels({
-                rsiVisible: false,
-                macdVisible: false,
-                dmiVisible: true,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             const [diPlus, diMinus, adx] = result[0].subLabels;
 
@@ -146,12 +116,7 @@ describe('buildPaneLabels', () => {
         const paneIndices: PaneIndices = { rsi: 1, macd: 2, dmi: 3 };
 
         it('RSI, MACD, DMI 순서로 3개의 pane 라벨을 반환한다', () => {
-            const result = buildPaneLabels({
-                rsiVisible: true,
-                macdVisible: true,
-                dmiVisible: true,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(3);
             expect(result[0].paneIndex).toBe(1);
@@ -160,12 +125,7 @@ describe('buildPaneLabels', () => {
         });
 
         it('각 pane의 서브 라벨 개수가 올바르다 (RSI:1, MACD:3, DMI:3)', () => {
-            const result = buildPaneLabels({
-                rsiVisible: true,
-                macdVisible: true,
-                dmiVisible: true,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             expect(result[0].subLabels).toHaveLength(1);
             expect(result[1].subLabels).toHaveLength(3);
@@ -176,12 +136,7 @@ describe('buildPaneLabels', () => {
     describe('각 서브 라벨의 색상이 CHART_COLORS와 일치하는지 확인', () => {
         it('모든 서브 라벨의 색상이 올바르다', () => {
             const paneIndices: PaneIndices = { rsi: 1, macd: 2, dmi: 3 };
-            const result = buildPaneLabels({
-                rsiVisible: true,
-                macdVisible: true,
-                dmiVisible: true,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             const allColors = result.flatMap(label =>
                 label.subLabels.map(sub => sub.color)
@@ -206,12 +161,7 @@ describe('buildPaneLabels', () => {
                 macd: INACTIVE_PANE_INDEX,
                 dmi: 2,
             };
-            const result = buildPaneLabels({
-                rsiVisible: true,
-                macdVisible: false,
-                dmiVisible: true,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(2);
             expect(result[0].paneIndex).toBe(1);
@@ -224,12 +174,7 @@ describe('buildPaneLabels', () => {
                 macd: 1,
                 dmi: 2,
             };
-            const result = buildPaneLabels({
-                rsiVisible: false,
-                macdVisible: true,
-                dmiVisible: true,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(2);
             expect(result[0].paneIndex).toBe(1);
@@ -244,12 +189,7 @@ describe('buildPaneLabels', () => {
                 macd: 2,
                 dmi: INACTIVE_PANE_INDEX,
             };
-            const result = buildPaneLabels({
-                rsiVisible: true,
-                macdVisible: true,
-                dmiVisible: false,
-                paneIndices,
-            });
+            const result = buildPaneLabels(paneIndices);
 
             expect(result).toHaveLength(2);
             expect(result[0].paneIndex).toBe(1);

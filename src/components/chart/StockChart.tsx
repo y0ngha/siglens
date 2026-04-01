@@ -75,14 +75,14 @@ export function StockChart({
     patterns = [],
     onPatternOverlayChange,
 }: StockChartProps) {
+    const [rsiVisible, setRsiVisible] = useState(false);
+    const [macdVisible, setMacdVisible] = useState(false);
+    const [dmiVisible, setDmiVisible] = useState(false);
+
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
-
-    const [rsiVisible, setRsiVisible] = useState(false);
-    const [macdVisible, setMacdVisible] = useState(false);
-    const [dmiVisible, setDmiVisible] = useState(false);
 
     const toggleRSI = useCallback(() => {
         setRsiVisible(prev => !prev);
@@ -97,13 +97,16 @@ export function StockChart({
     }, []);
 
     const paneIndices: PaneIndices = useMemo(() => {
-        let next = FIRST_INDICATOR_PANE_INDEX;
-
-        return {
-            rsi: rsiVisible ? next++ : INACTIVE_PANE_INDEX,
-            macd: macdVisible ? next++ : INACTIVE_PANE_INDEX,
-            dmi: dmiVisible ? next++ : INACTIVE_PANE_INDEX,
+        const visibles = [rsiVisible, macdVisible, dmiVisible];
+        const indexFor = (pos: number): number => {
+            const precedingActive = visibles
+                .slice(0, pos)
+                .filter(Boolean).length;
+            return visibles[pos]
+                ? FIRST_INDICATOR_PANE_INDEX + precedingActive
+                : INACTIVE_PANE_INDEX;
         };
+        return { rsi: indexFor(0), macd: indexFor(1), dmi: indexFor(2) };
     }, [rsiVisible, macdVisible, dmiVisible]);
 
     useEffect(() => {
@@ -206,14 +209,8 @@ export function StockChart({
     }, [visiblePatterns]);
 
     const paneLabels = useMemo(
-        () =>
-            buildPaneLabels({
-                rsiVisible,
-                macdVisible,
-                dmiVisible,
-                paneIndices,
-            }),
-        [rsiVisible, macdVisible, dmiVisible, paneIndices]
+        () => buildPaneLabels(paneIndices),
+        [paneIndices]
     );
 
     usePaneLabels({
@@ -229,19 +226,19 @@ export function StockChart({
         if (!chart) return;
 
         const activePaneCount =
-            [rsiVisible, macdVisible, dmiVisible].filter(Boolean).length +
-            FIRST_INDICATOR_PANE_INDEX;
+            Math.max(CANDLESTICK_PANE_INDEX, ...Object.values(paneIndices)) + 1;
 
         const panes = chart.panes();
 
-        for (
-            let i = panes.length - 1;
-            i >= activePaneCount && i > CANDLESTICK_PANE_INDEX;
-            i--
-        ) {
+        const indicesToRemove = panes
+            .map((_, i) => i)
+            .filter(i => i >= activePaneCount && i > CANDLESTICK_PANE_INDEX)
+            .reverse();
+
+        for (const i of indicesToRemove) {
             chart.removePane(i);
         }
-    }, [rsiVisible, macdVisible, dmiVisible]);
+    }, [paneIndices]);
 
     return (
         <div ref={wrapperRef} className="relative h-full w-full">

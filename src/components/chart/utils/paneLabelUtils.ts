@@ -12,21 +12,9 @@ import { INACTIVE_PANE_INDEX } from '@/components/chart/constants';
 const MACD_SIGNAL_LABEL = 'Signal';
 const MACD_HISTOGRAM_LABEL = 'Histogram';
 
-interface PaneVisibility {
-    rsiVisible: boolean;
-    macdVisible: boolean;
-    dmiVisible: boolean;
-    paneIndices: PaneIndices;
-}
-
-export function buildPaneLabels({
-    rsiVisible,
-    macdVisible,
-    dmiVisible,
-    paneIndices,
-}: PaneVisibility): PaneLabelConfig[] {
+export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
     const rsiLabel: PaneLabelConfig[] =
-        rsiVisible && paneIndices.rsi !== INACTIVE_PANE_INDEX
+        paneIndices.rsi !== INACTIVE_PANE_INDEX
             ? [
                   {
                       paneIndex: paneIndices.rsi,
@@ -41,7 +29,7 @@ export function buildPaneLabels({
             : [];
 
     const macdLabel: PaneLabelConfig[] =
-        macdVisible && paneIndices.macd !== INACTIVE_PANE_INDEX
+        paneIndices.macd !== INACTIVE_PANE_INDEX
             ? [
                   {
                       paneIndex: paneIndices.macd,
@@ -64,7 +52,7 @@ export function buildPaneLabels({
             : [];
 
     const dmiLabel: PaneLabelConfig[] =
-        dmiVisible && paneIndices.dmi !== INACTIVE_PANE_INDEX
+        paneIndices.dmi !== INACTIVE_PANE_INDEX
             ? [
                   {
                       paneIndex: paneIndices.dmi,
