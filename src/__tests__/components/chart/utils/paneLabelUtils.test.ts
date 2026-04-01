@@ -1,0 +1,165 @@
+import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
+import { CHART_COLORS } from '@/domain/constants/colors';
+import {
+    RSI_DEFAULT_PERIOD,
+    MACD_FAST_PERIOD,
+    MACD_SLOW_PERIOD,
+    MACD_SIGNAL_PERIOD,
+    DMI_DEFAULT_PERIOD,
+} from '@/domain/indicators/constants';
+import {
+    RSI_PANE_INDEX,
+    MACD_PANE_INDEX,
+    DMI_PANE_INDEX,
+} from '@/components/chart/constants';
+
+describe('buildPaneLabels', () => {
+    describe('모든 지표가 비활성일 때', () => {
+        it('빈 배열을 반환한다', () => {
+            const result = buildPaneLabels({
+                rsiVisible: false,
+                macdVisible: false,
+                dmiVisible: false,
+            });
+
+            expect(result).toEqual([]);
+        });
+    });
+
+    describe('RSI만 활성일 때', () => {
+        it('RSI pane 라벨 1개와 서브 라벨 1개를 반환한다', () => {
+            const result = buildPaneLabels({
+                rsiVisible: true,
+                macdVisible: false,
+                dmiVisible: false,
+            });
+
+            expect(result).toHaveLength(1);
+            expect(result[0].paneIndex).toBe(RSI_PANE_INDEX);
+            expect(result[0].subLabels).toHaveLength(1);
+            expect(result[0].subLabels[0].name).toBe(
+                `RSI(${RSI_DEFAULT_PERIOD})`
+            );
+            expect(result[0].subLabels[0].color).toBe(CHART_COLORS.rsiLine);
+        });
+    });
+
+    describe('MACD만 활성일 때', () => {
+        it('MACD pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
+            const result = buildPaneLabels({
+                rsiVisible: false,
+                macdVisible: true,
+                dmiVisible: false,
+            });
+
+            expect(result).toHaveLength(1);
+            expect(result[0].paneIndex).toBe(MACD_PANE_INDEX);
+            expect(result[0].subLabels).toHaveLength(3);
+        });
+
+        it('MACD Line, Signal, Histogram 순서로 서브 라벨이 구성된다', () => {
+            const result = buildPaneLabels({
+                rsiVisible: false,
+                macdVisible: true,
+                dmiVisible: false,
+            });
+
+            const [macdLine, signal, histogram] = result[0].subLabels;
+
+            expect(macdLine.name).toBe(
+                `MACD(${MACD_FAST_PERIOD},${MACD_SLOW_PERIOD},${MACD_SIGNAL_PERIOD})`
+            );
+            expect(macdLine.color).toBe(CHART_COLORS.macdLine);
+
+            expect(signal.name).toBe('Signal');
+            expect(signal.color).toBe(CHART_COLORS.macdSignal);
+
+            expect(histogram.name).toBe('Histogram');
+            expect(histogram.color).toBe(CHART_COLORS.macdHistogramBullish);
+        });
+    });
+
+    describe('DMI만 활성일 때', () => {
+        it('DMI pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
+            const result = buildPaneLabels({
+                rsiVisible: false,
+                macdVisible: false,
+                dmiVisible: true,
+            });
+
+            expect(result).toHaveLength(1);
+            expect(result[0].paneIndex).toBe(DMI_PANE_INDEX);
+            expect(result[0].subLabels).toHaveLength(3);
+        });
+
+        it('+DI, -DI, ADX 순서로 서브 라벨이 구성된다', () => {
+            const result = buildPaneLabels({
+                rsiVisible: false,
+                macdVisible: false,
+                dmiVisible: true,
+            });
+
+            const [diPlus, diMinus, adx] = result[0].subLabels;
+
+            expect(diPlus.name).toBe(`+DI(${DMI_DEFAULT_PERIOD})`);
+            expect(diPlus.color).toBe(CHART_COLORS.dmiPlus);
+
+            expect(diMinus.name).toBe(`-DI(${DMI_DEFAULT_PERIOD})`);
+            expect(diMinus.color).toBe(CHART_COLORS.dmiMinus);
+
+            expect(adx.name).toBe(`ADX(${DMI_DEFAULT_PERIOD})`);
+            expect(adx.color).toBe(CHART_COLORS.dmiAdx);
+        });
+    });
+
+    describe('모든 지표가 활성일 때', () => {
+        it('RSI, MACD, DMI 순서로 3개의 pane 라벨을 반환한다', () => {
+            const result = buildPaneLabels({
+                rsiVisible: true,
+                macdVisible: true,
+                dmiVisible: true,
+            });
+
+            expect(result).toHaveLength(3);
+            expect(result[0].paneIndex).toBe(RSI_PANE_INDEX);
+            expect(result[1].paneIndex).toBe(MACD_PANE_INDEX);
+            expect(result[2].paneIndex).toBe(DMI_PANE_INDEX);
+        });
+
+        it('각 pane의 서브 라벨 개수가 올바르다 (RSI:1, MACD:3, DMI:3)', () => {
+            const result = buildPaneLabels({
+                rsiVisible: true,
+                macdVisible: true,
+                dmiVisible: true,
+            });
+
+            expect(result[0].subLabels).toHaveLength(1);
+            expect(result[1].subLabels).toHaveLength(3);
+            expect(result[2].subLabels).toHaveLength(3);
+        });
+    });
+
+    describe('각 서브 라벨의 색상이 CHART_COLORS와 일치하는지 확인', () => {
+        it('모든 서브 라벨의 색상이 올바르다', () => {
+            const result = buildPaneLabels({
+                rsiVisible: true,
+                macdVisible: true,
+                dmiVisible: true,
+            });
+
+            const allColors = result.flatMap(label =>
+                label.subLabels.map(sub => sub.color)
+            );
+
+            expect(allColors).toEqual([
+                CHART_COLORS.rsiLine,
+                CHART_COLORS.macdLine,
+                CHART_COLORS.macdSignal,
+                CHART_COLORS.macdHistogramBullish,
+                CHART_COLORS.dmiPlus,
+                CHART_COLORS.dmiMinus,
+                CHART_COLORS.dmiAdx,
+            ]);
+        });
+    });
+});

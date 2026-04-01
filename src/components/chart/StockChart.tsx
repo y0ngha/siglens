@@ -20,21 +20,12 @@ import { useDMIChart } from '@/components/chart/hooks/useDMIChart';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
-import {
-    DEFAULT_LINE_WIDTH,
-    RSI_PANE_INDEX,
-    MACD_PANE_INDEX,
-    DMI_PANE_INDEX,
-} from '@/components/chart/constants';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
+import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
 import {
     MA_DEFAULT_PERIODS,
     EMA_DEFAULT_PERIODS,
-    RSI_DEFAULT_PERIOD,
-    MACD_FAST_PERIOD,
-    MACD_SLOW_PERIOD,
-    MACD_SIGNAL_PERIOD,
-    DMI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 
 interface CommonHookParams {
@@ -166,32 +157,7 @@ export function StockChart({
     }, [visiblePatterns]);
 
     const paneLabels = useMemo(
-        () => [
-            ...(rsiVisible
-                ? [
-                      {
-                          paneIndex: RSI_PANE_INDEX,
-                          text: `RSI(${RSI_DEFAULT_PERIOD})`,
-                      },
-                  ]
-                : []),
-            ...(macdVisible
-                ? [
-                      {
-                          paneIndex: MACD_PANE_INDEX,
-                          text: `MACD(${MACD_FAST_PERIOD},${MACD_SLOW_PERIOD},${MACD_SIGNAL_PERIOD})`,
-                      },
-                  ]
-                : []),
-            ...(dmiVisible
-                ? [
-                      {
-                          paneIndex: DMI_PANE_INDEX,
-                          text: `DMI(${DMI_DEFAULT_PERIOD})`,
-                      },
-                  ]
-                : []),
-        ],
+        () => buildPaneLabels({ rsiVisible, macdVisible, dmiVisible }),
         [rsiVisible, macdVisible, dmiVisible]
     );
 
