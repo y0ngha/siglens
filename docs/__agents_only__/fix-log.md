@@ -75,3 +75,18 @@
 - Rule: MISTAKES.md TypeScript Rule 5 — 2개 이상 멤버의 union literal은 별도 type alias로 추출
 - Context: `prompt.ts`에서 `type PatternEntryType = 'single' | 'multi'`로 추출하여 interface 필드에서 참조
 
+## [Issue #132 | fix/132/pane-indicator-label-표시-수정 | 2026-04-01]
+- Violation: `buildPaneLabels`에서 `result.push()`로 배열을 명령형 빌드
+- Rule: CONVENTIONS.md Coding Paradigm — mutation 금지, `[...arr, item]` 패턴 사용
+- Context: `paneLabelUtils.ts`에서 조건별 빈 배열/단일 요소 배열을 생성 후 스프레드로 병합하는 패턴으로 변경
+
+## [Issue #132 | fix/132/pane-indicator-label-표시-수정 | 2026-04-01]
+- Violation: `PaneLabelConfig`, `PaneSubLabel` 타입이 hooks/ 파일에서 정의되고 utils/에서 import하여 역방향 의존성 발생
+- Rule: CONVENTIONS.md Component Folder Structure — hooks/는 React hook 파일, utils/는 순수 함수; utils가 hooks를 import하면 안 됨
+- Context: `chart/types.ts`로 공유 타입을 추출하여 hooks/와 utils/ 모두 types.ts에서 import하도록 변경
+
+## [Issue #132 | fix/132/pane-indicator-label-표시-수정 | 2026-04-01]
+- Violation: MACD sub-label에 'Signal', 'Histogram' 하드코딩 문자열 사용
+- Rule: MISTAKES.md TypeScript #6 — 구현 코드의 하드코딩 리터럴은 상수로 추출
+- Context: `paneLabelUtils.ts`에 `MACD_SIGNAL_LABEL`, `MACD_HISTOGRAM_LABEL` 상수로 추출
+
