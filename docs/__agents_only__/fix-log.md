@@ -25,11 +25,6 @@
 - Rule: WAI-ARIA spec — focusable separator must support ArrowLeft/ArrowRight key adjustment
 - Context: `usePanelResize`에 `handleKeyDown` 핸들러를 추가하여 ArrowLeft/ArrowRight로 `KEYBOARD_RESIZE_STEP(10px)` 단위 너비 조절 지원; `ChartContent.tsx` 드래그 핸들에 `onKeyDown={handleKeyDown}` 연결
 
-## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 6 | 2026-03-31]
-- Violation: `usePanelResize.ts`에서 `useRef(panelWidthAtDragStartRef)`가 `useState(panelWidth)`보다 앞에 선언되어 CONVENTIONS.md Custom Hook Declaration Order 위반
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — useState (1) must precede useRef (2) inside custom hooks
-- Context: `usePanelResize` 훅 내부에서 `const panelWidthAtDragStartRef = useRef(...)` 선언이 `const [panelWidth, setPanelWidth] = useState(...)` 선언보다 앞에 위치해 있었음; 순서를 교체하여 useState → useRef 순으로 수정
-
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: 패턴 trend 분류 로직(BULLISH/BEARISH Sets, getSinglePatternTrend 등)이 components 레이어에 위치하여 테스트 불가 및 재사용 불가
 - Rule: ARCHITECTURE.md Layer Rules — UI 비의존 순수 비즈니스 로직은 domain 레이어에 위치해야 함
@@ -44,11 +39,6 @@
 - Violation: useEffect에서 plugin 초기화(createSeriesMarkers)와 데이터 동기화(setMarkers)가 혼합되어 있고, cleanup이 별도 useEffect로 분리
 - Rule: CONVENTIONS.md Custom Hook Rules — instance creation/destruction([])와 data synchronization([deps])을 별도 useEffect로 분리해야 함
 - Context: `useCandlePatternMarkers.ts`에서 초기화+cleanup을 `useEffect([seriesRef])`로, 데이터 동기화를 `useEffect([markers, isVisible])`로 분리
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `extendedBars.forEach((_, i) => {...})`에서 비단순 로직을 forEach로 처리
-- Rule: MISTAKES.md 1 예외 조항 — 비단순(non-trivial) 로직은 for...of 사용 권장
-- Context: `detectCandlePatternEntries`의 다봉 패턴 감지 루프와 involvedIndices 수집 루프를 `for...of`로 변경
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: 다봉 패턴 제외 테스트에서 동일한 봉 데이터(makeBar)로 생성하여 다봉 패턴이 감지되지 않아 forEach assertion이 실행되지 않음
@@ -74,4 +64,14 @@
 - Violation: `INACTIVE_PANE_INDEX = -1`이 StockChart.tsx, paneLabelUtils.ts, 테스트 파일 3곳에서 각각 별도 정의
 - Rule: MISTAKES.md #0 / FF.md Cohesion 3-B — 동일 값이 여러 위치에 정의되면 단일 상수로 추출해야 함
 - Context: `components/chart/constants.ts`에 `INACTIVE_PANE_INDEX`를 단일 정의하고, StockChart.tsx, paneLabelUtils.ts, paneLabelUtils.test.ts에서 import하도록 변경
+
+## [PR #138 | fix/132/pane-indicator-동적-index-계산 | 2026-04-01]
+- Violation: `paneIndices` useMemo 내부에서 `let next` + `next++` 재할당 사용
+- Rule: MISTAKES.md #3 — let 재할당 금지, const + 새 변수 사용
+- Context: `StockChart.tsx`의 `paneIndices` useMemo에서 `let next`를 `visibles.slice(0, pos).filter(Boolean).length` 기반의 순수 함수 `indexFor`로 교체
+
+## [PR #138 | fix/132/pane-indicator-동적-index-계산 | 2026-04-01]
+- Violation: `buildPaneLabels`에서 `rsiVisible && paneIndices.rsi !== INACTIVE_PANE_INDEX` 이중 조건 — visibility가 true면 paneIndex는 항상 active이므로 효과 없는 중복 로직
+- Rule: MISTAKES.md #9.5 — 효과 없는 로직은 노이즈이므로 제거
+- Context: `paneLabelUtils.ts`에서 `PaneVisibility` 인터페이스의 visibility 플래그를 제거하고 `paneIndices`만으로 활성 여부를 판단하도록 단순화
 
