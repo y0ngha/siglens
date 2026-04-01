@@ -10,33 +10,12 @@ import type {
     SingleCandlePatternEntry,
     MultiCandlePatternEntry,
 } from '@/domain/analysis/candle-detection';
+import {
+    makeBar,
+    makeEngulfingPair,
+    makeHammerBar,
+} from '@/__tests__/fixtures/candle';
 import type { Bar } from '@/domain/types';
-
-const TEST_BAR_BASE_TIME = 1700000000;
-const TEST_BAR_INTERVAL = 60;
-const TEST_BAR_BASE_PRICE = 100;
-const TEST_BAR_VOLUME = 1000;
-const HAMMER_BODY_OFFSET = 3;
-const HAMMER_HIGH_OFFSET = 5;
-const HAMMER_LOW_OFFSET = -15;
-
-const makeBar = (i: number, overrides?: Partial<Bar>): Bar => ({
-    time: TEST_BAR_BASE_TIME + i * TEST_BAR_INTERVAL,
-    open: TEST_BAR_BASE_PRICE,
-    high: TEST_BAR_BASE_PRICE + 1,
-    low: TEST_BAR_BASE_PRICE - 1,
-    close: TEST_BAR_BASE_PRICE + 0.5,
-    volume: TEST_BAR_VOLUME,
-    ...overrides,
-});
-
-const makeHammerBar = (i: number): Bar =>
-    makeBar(i, {
-        open: TEST_BAR_BASE_PRICE,
-        high: TEST_BAR_BASE_PRICE + HAMMER_HIGH_OFFSET,
-        low: TEST_BAR_BASE_PRICE + HAMMER_LOW_OFFSET,
-        close: TEST_BAR_BASE_PRICE + HAMMER_BODY_OFFSET,
-    });
 
 describe('candle-detection', () => {
     describe('detectCandlePatternEntries', () => {
@@ -131,19 +110,25 @@ describe('candle-detection', () => {
 
         describe('다봉 패턴 관련 모든 봉에서 단봉 패턴 제외', () => {
             it('다봉 패턴에 포함된 봉은 단봉 결과에서 제외된다', () => {
-                const bars: Bar[] = Array.from(
-                    {
-                        length:
-                            CANDLE_PATTERN_DETECTION_BARS +
-                            MULTI_CANDLE_PATTERN_BUFFER,
-                    },
+                const totalLength =
+                    CANDLE_PATTERN_DETECTION_BARS + MULTI_CANDLE_PATTERN_BUFFER;
+                const normalBars: Bar[] = Array.from(
+                    { length: totalLength - 2 },
                     (_, i) => makeBar(i)
                 );
+                // Place a bullish engulfing pair at the end to guarantee multi-candle detection
+                const [bearish, bullish] = makeEngulfingPair(totalLength - 2);
+                const bars: Bar[] = [...normalBars, bearish, bullish];
+
                 const result: CandlePatternEntry[] =
                     detectCandlePatternEntries(bars);
                 const multiEntries = result.filter(
                     e => e.patternType === 'multi'
                 );
+
+                // Unconditional assertion: engulfing pair guarantees at least one multi entry
+                expect(multiEntries.length).toBeGreaterThanOrEqual(1);
+
                 const singleBarIndices = new Set(
                     result
                         .filter(e => e.patternType === 'single')
@@ -226,14 +211,7 @@ describe('candle-detection', () => {
                     makeSingleEntry(3, 'doji'),
                     makeSingleEntry(7, 'shooting_star'),
                 ];
-                const detectionBars: Bar[] = Array.from(
-                    { length: CANDLE_PATTERN_DETECTION_BARS },
-                    (_, i) => makeBar(i)
-                );
-                const result = selectLastCandlePatternEntries(
-                    entries,
-                    detectionBars
-                );
+                const result = selectLastCandlePatternEntries(entries, entries);
                 expect(result).toHaveLength(1);
                 expect(result[0].barIndex).toBe(7);
                 expect(result[0].singlePattern).toBe('shooting_star');
@@ -243,14 +221,7 @@ describe('candle-detection', () => {
                 const entries: CandlePatternEntry[] = [
                     makeSingleEntry(5, 'hammer'),
                 ];
-                const detectionBars: Bar[] = Array.from(
-                    { length: CANDLE_PATTERN_DETECTION_BARS },
-                    (_, i) => makeBar(i)
-                );
-                const result = selectLastCandlePatternEntries(
-                    entries,
-                    detectionBars
-                );
+                const result = selectLastCandlePatternEntries(entries, entries);
                 expect(result).toHaveLength(1);
                 expect(result[0]).toEqual(makeSingleEntry(5, 'hammer'));
             });
@@ -258,16 +229,19 @@ describe('candle-detection', () => {
 
         describe('다봉 패턴만 존재할 때', () => {
             it('마지막 다봉 패턴과 관련 봉의 단봉 패턴을 반환한다', () => {
+                // allEntries includes single patterns for involved bars
+                const allEntries: CandlePatternEntry[] = [
+                    makeSingleEntry(2, 'hammer'),
+                    makeSingleEntry(3, 'doji'),
+                    makeSingleEntry(4, 'shooting_star'),
+                    makeMultiEntry(4, 'bullish_engulfing'),
+                ];
                 const entries: CandlePatternEntry[] = [
                     makeMultiEntry(4, 'bullish_engulfing'),
                 ];
-                const detectionBars: Bar[] = Array.from(
-                    { length: CANDLE_PATTERN_DETECTION_BARS },
-                    (_, i) => makeHammerBar(i)
-                );
                 const result = selectLastCandlePatternEntries(
                     entries,
-                    detectionBars
+                    allEntries
                 );
                 const multiResult = result.find(e => e.patternType === 'multi');
                 expect(multiResult).toBeDefined();
@@ -293,16 +267,11 @@ describe('candle-detection', () => {
                 const entries: CandlePatternEntry[] = [
                     makeSingleEntry(0, 'hammer'),
                     makeSingleEntry(5, 'doji'),
+                    makeSingleEntry(8, 'hammer'),
+                    makeSingleEntry(9, 'doji'),
                     makeMultiEntry(10, 'bullish_engulfing'),
                 ];
-                const detectionBars: Bar[] = Array.from(
-                    { length: CANDLE_PATTERN_DETECTION_BARS },
-                    (_, i) => makeHammerBar(i)
-                );
-                const result = selectLastCandlePatternEntries(
-                    entries,
-                    detectionBars
-                );
+                const result = selectLastCandlePatternEntries(entries, entries);
                 const multiResult = result.find(e => e.patternType === 'multi');
                 expect(multiResult).toBeDefined();
                 expect(multiResult?.barIndex).toBe(10);
@@ -311,16 +280,11 @@ describe('candle-detection', () => {
             it('결과가 barIndex 오름차순으로 정렬된다', () => {
                 const entries: CandlePatternEntry[] = [
                     makeSingleEntry(2, 'hammer'),
+                    makeSingleEntry(4, 'doji'),
+                    makeSingleEntry(5, 'shooting_star'),
                     makeMultiEntry(6, 'morning_star'),
                 ];
-                const detectionBars: Bar[] = Array.from(
-                    { length: CANDLE_PATTERN_DETECTION_BARS },
-                    (_, i) => makeHammerBar(i)
-                );
-                const result = selectLastCandlePatternEntries(
-                    entries,
-                    detectionBars
-                );
+                const result = selectLastCandlePatternEntries(entries, entries);
                 const indices = result.map(e => e.barIndex);
                 const sorted = [...indices].sort((a, b) => a - b);
                 expect(indices).toEqual(sorted);
@@ -329,16 +293,16 @@ describe('candle-detection', () => {
 
         describe('다봉 패턴이 barIndex 0에 위치할 때', () => {
             it('startBarIndex가 0 미만으로 내려가지 않는다', () => {
+                const allEntries: CandlePatternEntry[] = [
+                    makeSingleEntry(0, 'hammer'),
+                    makeMultiEntry(0, 'bullish_engulfing'),
+                ];
                 const entries: CandlePatternEntry[] = [
                     makeMultiEntry(0, 'bullish_engulfing'),
                 ];
-                const detectionBars: Bar[] = Array.from(
-                    { length: CANDLE_PATTERN_DETECTION_BARS },
-                    (_, i) => makeHammerBar(i)
-                );
                 const result = selectLastCandlePatternEntries(
                     entries,
-                    detectionBars
+                    allEntries
                 );
                 const allIndices = result.map(e => e.barIndex);
                 allIndices.forEach(idx => {

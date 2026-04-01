@@ -168,13 +168,18 @@ export function detectCandlePatternEntries(bars: Bar[]): CandlePatternEntry[] {
 /**
  * Selects only the last detected candle pattern entries:
  * - If a multi-candle pattern exists: the multi pattern + single patterns for involved bars
+ *   (reuses already-detected single patterns from allEntries instead of re-calling detectCandlePattern)
  * - If only single patterns exist: only the last single pattern
+ *
+ * @param entries - Subset of entries to select from (e.g. filtered by caller)
+ * @param allEntries - Full detection result from detectCandlePatternEntries, used to look up
+ *                     single patterns for bars involved in a multi-candle pattern without re-detection
  *
  * Shared by prompt construction and chart marker rendering.
  */
 export function selectLastCandlePatternEntries(
     entries: CandlePatternEntry[],
-    detectionBars: Bar[]
+    allEntries: CandlePatternEntry[]
 ): CandlePatternEntry[] {
     if (entries.length === 0) return [];
 
@@ -188,24 +193,14 @@ export function selectLastCandlePatternEntries(
             0,
             multiBarIndex - MULTI_CANDLE_PATTERN_BUFFER
         );
-        const involvedIndices = Array.from(
-            { length: multiBarIndex - startBarIndex + 1 },
-            (_, offset) => startBarIndex + offset
-        );
 
-        const involvedSingles = involvedIndices
-            .map((idx): SingleCandlePatternEntry | null => {
-                const bar = detectionBars[idx];
-                const pattern = detectCandlePattern(bar);
-                if (EXCLUDED_SINGLE_PATTERNS.has(pattern)) return null;
-                return {
-                    barIndex: idx,
-                    patternType: 'single',
-                    singlePattern: pattern,
-                    multiPattern: null,
-                };
-            })
-            .filter((e): e is SingleCandlePatternEntry => e !== null);
+        // Reuse single patterns already detected in allEntries for involved bars
+        const involvedSingles = allEntries.filter(
+            (e): e is SingleCandlePatternEntry =>
+                e.patternType === 'single' &&
+                e.barIndex >= startBarIndex &&
+                e.barIndex <= multiBarIndex
+        );
 
         return [...involvedSingles, lastMultiEntry].sort(
             (a, b) => a.barIndex - b.barIndex

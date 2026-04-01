@@ -56,11 +56,6 @@
 - Context: `detectCandlePatternEntries`에서 multi 패턴 감지 시 인덱스를 `multiEntryMap`에 함께 수집하여 별도 findIndex 호출 제거
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: AI 프롬프트에 최근 15봉의 모든 캔들 패턴을 포함하여 차트 마커와 범위 불일치
-- Rule: FF.md Cohesion 3-B — 동일 데이터(마지막 캔들 패턴)를 차트 마커와 프롬프트에서 서로 다른 범위로 사용하면 일관성 부족
-- Context: `prompt.ts`의 `buildCandlePatternEntries`에 `selectLastPatternEntries` 함수를 추가하여 차트 마커와 동일하게 마지막 다봉 패턴 + 관련 봉 단봉만 프롬프트에 포함; 섹션 제목을 "Short-term Trend Signal"로 변경하여 단기 추세 맥락으로 프레이밍
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: candle-detection.ts와 prompt.ts 간 순환 의존성 — CANDLE_PATTERN_DETECTION_BARS를 prompt.ts에서 정의하고 candle-detection.ts에서 import, 반대로 prompt.ts가 candle-detection.ts에서 import
 - Rule: FF.md Coupling 4-A — 순환 의존성은 모듈 초기화 순서를 취약하게 만들고 결합도를 높임
 - Context: CANDLE_PATTERN_DETECTION_BARS를 candle-detection.ts로 이동하여 순환 의존 해소; prompt.ts와 테스트 파일의 import 경로를 candle-detection으로 변경
@@ -86,11 +81,6 @@
 - Context: `useCandlePatternMarkers.ts`에서 초기화+cleanup을 `useEffect([seriesRef])`로, 데이터 동기화를 `useEffect([markers, isVisible])`로 분리
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `bars.slice(-Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS))` 동일 계산이 prompt.ts와 useCandlePatternMarkers.ts에서 중복
-- Rule: FF.md Cohesion 3-B — 동일 값이 두 곳에 정의되면 한쪽만 변경될 위험
-- Context: `candle-detection.ts`에 `getDetectionBars` 헬퍼를 추출하고 prompt.ts와 useCandlePatternMarkers.ts에서 import하여 사용
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: `getDetectionBars`에서 `Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS)`가 실질적 효과 없음
 - Rule: MISTAKES.md 9.5 — 실질적 효과가 없는 로직은 노이즈를 추가하고 의도를 모호하게 만듦
 - Context: `Array.slice(-n)`은 `n > array.length`일 때 자동으로 전체 배열을 반환하므로 `Math.min` 불필요; `bars.slice(-CANDLE_PATTERN_DETECTION_BARS)`로 단순화
@@ -104,4 +94,9 @@
 - Violation: `selectLastCandlePatternEntries` 테스트에서 describe 설명이 관련 봉의 단봉 패턴 검증을 약속하지만 assertion 미포함
 - Rule: FF.md Predictability 2-C — describe 설명이 약속하는 동작을 assertion에서 모두 검증해야 함
 - Context: 다봉 패턴만 존재 시 관련 봉의 단봉 패턴(singleResults) 존재 여부와 barIndex 범위를 검증하는 assertion 추가
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: 다봉 패턴 제외 테스트에서 동일한 봉 데이터(makeBar)로 생성하여 다봉 패턴이 감지되지 않아 forEach assertion이 실행되지 않음
+- Rule: MISTAKES.md Tests Rule 11.7 — 보장된 테스트 데이터에 대한 무조건적 assertion 필요
+- Context: `candle-detection.test.ts`에서 makeEngulfingPair로 bullish_engulfing 감지를 보장하고 `expect(multiEntries.length).toBeGreaterThanOrEqual(1)` 무조건 assertion 추가
 

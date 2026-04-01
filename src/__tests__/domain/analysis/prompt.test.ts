@@ -5,6 +5,11 @@ import {
     MIN_CONFIDENCE_WEIGHT,
     RSI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
+import {
+    HAMMER_BODY_OFFSET,
+    HAMMER_HIGH_OFFSET,
+    HAMMER_LOW_OFFSET,
+} from '@/__tests__/fixtures/candle';
 import type { Bar, IndicatorResult, Skill } from '@/domain/types';
 
 const TEST_SYMBOL = 'AAPL';
@@ -35,9 +40,6 @@ const TEST_ABOVE_MIN_CONFIDENCE = 0.6;
 const TEST_BELOW_MIN_CONFIDENCE = 0.4;
 const TEST_LOW_CONFIDENCE = 0.3;
 const TEST_MARKET_SECTION_INDEX = 1;
-const HAMMER_BODY_OFFSET = 3;
-const HAMMER_HIGH_OFFSET = 5;
-const HAMMER_LOW_OFFSET = -15;
 // expected value: ((110 - 100) / 100) * 100 = 10.00%
 const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT_CLOSE - TEST_PREV_CLOSE) / TEST_PREV_CLOSE) * 100).toFixed(2)}%`;
 

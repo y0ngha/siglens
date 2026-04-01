@@ -88,7 +88,7 @@ const buildCandlePatternEntries = (bars: Bar[]): PromptCandlePatternEntry[] => {
     const entries = detectCandlePatternEntries(bars);
     const detectionBars = getDetectionBars(bars);
     const totalBars = detectionBars.length;
-    const lastEntries = selectLastCandlePatternEntries(entries, detectionBars);
+    const lastEntries = selectLastCandlePatternEntries(entries, entries);
 
     return lastEntries
         .map((entry: CandlePatternEntry) => ({
