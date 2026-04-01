@@ -479,11 +479,7 @@ Review before implementation and ensure these are not repeated.
 5. Missing initial-period null test case for period-based indicators
    → Adding it at the stub stage guards against regressions after real implementation
 
-6. Test file uses only 2-level structure (describe → it) instead of required 3 levels
-   → Rule: CONVENTIONS.md Test Structure — describe(subject) → describe(context) → it(behavior) is mandatory
-   → Add an intermediate context describe block between the top-level describe and its it() cases
-   ❌ describe('GeminiProvider — API 키 미설정', () => { it('throws', ...) })
-   ✅ describe('GeminiProvider', () => { describe('API 키 미설정 상태에서', () => { it('throws', ...) }) })
+6. [REMOVED — no longer a violation. Test structure allows 2–5 levels per CONVENTIONS.md]
 
 7. beforeEach/beforeAll placed at module level instead of inside describe block
    → Rule: CONVENTIONS.md Test Rules — all setup code must be inside the relevant describe block for consistency
@@ -496,22 +492,14 @@ Review before implementation and ensure these are not repeated.
         it('...', ...)
       })
 
-8. Test file structure lacks module-level wrapper (2-level instead of 3-level)
-   → Rule: CONVENTIONS.md Test Structure — describe(module/subject name) → describe(function/context) → it(behavior) is required
-   ❌ describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) })  // missing module wrapper
-   ✅ describe('prompt', () => { describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) }) })  // 3 levels
+8. [REMOVED — no longer a violation. Test structure allows 2–5 levels per CONVENTIONS.md]
 
-9. Test file exceeds 3-level structure (describe → describe → describe → it) with unnecessary intermediate layers
-   → Rule: CONVENTIONS.md Test Structure — exactly 3 levels required: describe(subject) → describe(context) → it(behavior)
-   → Adding extra describe layers between required levels creates nesting that obscures the test intent
-   → Common offenders: adding describe(methodName) when method is the only one in the class, or describe(sectionName) between subject and context
-   → When context is inherently coupled with subject, merge it into the context describe text instead of adding a separate layer
-   ❌ describe('FileSkillsLoader') { describe('loadSkills') { describe('파일이 없을 때') { it('에러를 던진다') } } }  // 4 levels
-   ✅ describe('FileSkillsLoader') { describe('파일이 없을 때') { it('에러를 던진다') } }  // 3 levels
-   ❌ describe('buildAnalysisPrompt') { describe('현재 시장 상황 섹션') { describe('bars가 비어있을 때') { it('섹션이 생성된다') } } }  // 4 levels
-   ✅ describe('buildAnalysisPrompt') { describe('현재 시장 상황 섹션 - bars가 비어있을 때') { it('섹션이 생성된다') } }  // merge context into describe text
-   ❌ describe('생성자를 호출하면') { describe('API 키 미설정 상태에서') { it('에러를 던진다') } }  // separate describe for action when it's the only action tested
-   ✅ describe('API 키 미설정 상태에서') { it('생성자를 호출하면 에러를 던진다') }  // merge into it description
+9. Test file exceeds 5-level describe nesting
+   → Rule: CONVENTIONS.md Test Structure — 2 to 5 levels allowed, 6+ levels prohibited
+   → Excessive nesting obscures test intent
+   → When context is tightly coupled with subject, merge into describe text instead of adding a separate layer
+   ❌ describe('a') { describe('b') { describe('c') { describe('d') { describe('e') { describe('f') { it('...') } } } } } }  // 6 levels
+   ✅ Keep at 5 levels or fewer by merging context into describe text
 
 10. Boundary test constant redefined locally instead of imported from source
    → Rule: MISTAKES.md TypeScript Rule 6 — hardcoded boundary values must be extracted to constants.ts

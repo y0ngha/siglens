@@ -58,7 +58,7 @@ type: reference
 ## Test Rules
 - `domain/` and `infrastructure/` only — 100% coverage target
 - `components/` and `app/` are excluded from tests
-- 3-level structure: `describe(module)` → `describe(context)` → `it(behavior)`
+- Test structure: 2–5 levels allowed (6+ prohibited). Choose depth based on module complexity.
 - One behavior per `it` block
 - `toBe` for primitives, `toEqual` for objects/arrays, `toBeCloseTo` for floats
 - Mock external dependencies only (API calls, file I/O); never mock domain functions

@@ -310,19 +310,48 @@ Test files exist only for `domain/` and `infrastructure/`.
 ### Test Structure
 
 ```typescript
-// ✅ describe → describe(context) → it
+// ✅ 2 levels: describe → it (simple cases)
+describe('formatVolume', () => {
+    it('returns "1.2M" for 1200000', () => { ... });
+    it('returns "0" for 0', () => { ... });
+});
+
+// ✅ 3 levels: describe → describe(context) → it
 describe('calculateRSI', () => {
-    describe('입력 배열 길이가 period 미만일 때', () => {
-        it('전부 null인 배열을 반환한다', () => {
+    describe('when input length is less than period', () => {
+        it('returns an all-null array', () => {
             expect(calculateRSI([100, 101], 14)).toEqual([null, null]);
         });
     });
-    describe('정상 입력일 때', () => {
-        it('처음 period - 1개의 값은 null이다', () => { ... });
-        it('0 ~ 100 사이 값을 반환한다', () => { ... });
+    describe('when input is valid', () => {
+        it('returns null for the first period - 1 values', () => { ... });
+        it('returns values between 0 and 100', () => { ... });
+    });
+});
+
+// ✅ 4 levels: describe(module) → describe(function) → describe(context) → it
+describe('prompt', () => {
+    describe('buildAnalysisPrompt', () => {
+        describe('current market section', () => {
+            it('includes "No data available" when bars is empty', () => { ... });
+        });
+    });
+});
+
+// ✅ 5 levels: for complex modules requiring fine-grained context separation
+describe('candle-detection', () => {
+    describe('detectCandlePatternEntries', () => {
+        describe('multi-candle pattern detection', () => {
+            describe('when a 3-bar pattern exists', () => {
+                it('excludes single patterns on involved bars', () => { ... });
+            });
+        });
     });
 });
 ```
+
+Test structure allows **2 to 5 levels**. Choose the appropriate depth based on module complexity.
+6+ levels are prohibited — merge context into describe text to reduce nesting.
 
 ### Required Test Cases for Period-Based Indicators
 
