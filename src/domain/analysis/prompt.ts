@@ -13,8 +13,8 @@ import {
 import { detectCandlePattern } from '@/domain/analysis/candle';
 import { getCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import {
-    CANDLE_PATTERN_DETECTION_BARS,
     detectCandlePatternEntries,
+    getDetectionBars,
     selectLastCandlePatternEntries,
     type CandlePatternEntry,
 } from '@/domain/analysis/candle-detection';
@@ -86,10 +86,8 @@ const formatBarRow = (bar: Bar): string => {
 
 const buildCandlePatternEntries = (bars: Bar[]): PromptCandlePatternEntry[] => {
     const entries = detectCandlePatternEntries(bars);
-    const totalBars = Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS);
-    const detectionBars = bars.slice(
-        -Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS)
-    );
+    const detectionBars = getDetectionBars(bars);
+    const totalBars = detectionBars.length;
     const lastEntries = selectLastCandlePatternEntries(entries, detectionBars);
 
     return lastEntries

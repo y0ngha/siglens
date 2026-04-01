@@ -1,6 +1,7 @@
 import {
     CANDLE_PATTERN_DETECTION_BARS,
     detectCandlePatternEntries,
+    getDetectionBars,
     MULTI_CANDLE_PATTERN_BUFFER,
     selectLastCandlePatternEntries,
 } from '@/domain/analysis/candle-detection';
@@ -153,6 +154,39 @@ describe('candle-detection', () => {
                 multiEntries.forEach(multi => {
                     expect(singleBarIndices.has(multi.barIndex)).toBe(false);
                 });
+            });
+        });
+    });
+
+    describe('getDetectionBars', () => {
+        describe('bars가 비어있을 때', () => {
+            it('빈 배열을 반환한다', () => {
+                expect(getDetectionBars([])).toEqual([]);
+            });
+        });
+
+        describe('bars가 CANDLE_PATTERN_DETECTION_BARS보다 적을 때', () => {
+            it('전체 bars를 반환한다', () => {
+                const TEST_BAR_COUNT = 5;
+                const bars = Array.from({ length: TEST_BAR_COUNT }, (_, i) =>
+                    makeBar(i)
+                );
+                const result = getDetectionBars(bars);
+                expect(result).toHaveLength(TEST_BAR_COUNT);
+                expect(result).toEqual(bars);
+            });
+        });
+
+        describe('bars가 CANDLE_PATTERN_DETECTION_BARS보다 많을 때', () => {
+            it('마지막 CANDLE_PATTERN_DETECTION_BARS개의 bars를 반환한다', () => {
+                const EXTRA_BARS = 10;
+                const totalCount = CANDLE_PATTERN_DETECTION_BARS + EXTRA_BARS;
+                const bars = Array.from({ length: totalCount }, (_, i) =>
+                    makeBar(i)
+                );
+                const result = getDetectionBars(bars);
+                expect(result).toHaveLength(CANDLE_PATTERN_DETECTION_BARS);
+                expect(result[0].time).toBe(bars[EXTRA_BARS].time);
             });
         });
     });

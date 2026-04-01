@@ -13,8 +13,8 @@ import type {
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar } from '@/domain/types';
 import {
-    CANDLE_PATTERN_DETECTION_BARS,
     detectCandlePatternEntries,
+    getDetectionBars,
     selectLastCandlePatternEntries,
 } from '@/domain/analysis/candle-detection';
 import type { CandlePatternEntry } from '@/domain/analysis/candle-detection';
@@ -125,9 +125,7 @@ export function useCandlePatternMarkers({
 
     const markers = useMemo(() => {
         const entries = detectCandlePatternEntries(bars);
-        const detectionBars = bars.slice(
-            -Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS)
-        );
+        const detectionBars = getDetectionBars(bars);
         return toMarkerEntries(entries, detectionBars);
     }, [bars]);
 
@@ -135,29 +133,23 @@ export function useCandlePatternMarkers({
         setIsVisible(prev => !prev);
     }, []);
 
+    // Initialization + cleanup (mount/unmount)
     useEffect(() => {
         if (!seriesRef.current) return;
-
-        if (!markersPluginRef.current) {
-            markersPluginRef.current = createSeriesMarkers(
-                seriesRef.current,
-                []
-            );
-        }
-
-        if (isVisible) {
-            markersPluginRef.current.setMarkers(markers.map(toMarker));
-        } else {
-            markersPluginRef.current.setMarkers([]);
-        }
-    }, [seriesRef, markers, isVisible]);
-
-    useEffect(() => {
+        markersPluginRef.current = createSeriesMarkers(seriesRef.current, []);
         return () => {
             markersPluginRef.current?.detach();
             markersPluginRef.current = null;
         };
-    }, []);
+    }, [seriesRef]);
+
+    // Data synchronization
+    useEffect(() => {
+        if (!markersPluginRef.current) return;
+        markersPluginRef.current.setMarkers(
+            isVisible ? markers.map(toMarker) : []
+        );
+    }, [markers, isVisible]);
 
     return { isVisible, toggle };
 }

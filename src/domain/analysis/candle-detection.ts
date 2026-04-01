@@ -70,6 +70,14 @@ const getPatternBarCount = (pattern: MultiCandlePattern): number =>
         ? THREE_BAR_PATTERN_COUNT
         : TWO_BAR_PATTERN_COUNT;
 
+/**
+ * Extracts the last CANDLE_PATTERN_DETECTION_BARS bars from the input array.
+ * Shared by prompt construction and chart marker rendering.
+ */
+export function getDetectionBars(bars: Bar[]): Bar[] {
+    return bars.slice(-Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS));
+}
+
 // ─── Detection ───────────────────────────────────────────────────────────────
 
 /**

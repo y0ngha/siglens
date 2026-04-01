@@ -90,3 +90,13 @@
 - Rule: MISTAKES.md Test Rule 6 / __tests__/CLAUDE.md — 테스트는 반드시 `describe(module) → describe(function) → describe(context) → it(behavior)` 3단계 describe + it 구조를 따라야 함
 - Context: `candle-trend.test.ts`의 `getSinglePatternTrend`, `getMultiPatternTrend`, `EXCLUDED_SINGLE_PATTERNS` 세 describe 블록 모두 context describe 레벨 추가
 
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: useEffect에서 plugin 초기화(createSeriesMarkers)와 데이터 동기화(setMarkers)가 혼합되어 있고, cleanup이 별도 useEffect로 분리
+- Rule: CONVENTIONS.md Custom Hook Rules — instance creation/destruction([])와 data synchronization([deps])을 별도 useEffect로 분리해야 함
+- Context: `useCandlePatternMarkers.ts`에서 초기화+cleanup을 `useEffect([seriesRef])`로, 데이터 동기화를 `useEffect([markers, isVisible])`로 분리
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: `bars.slice(-Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS))` 동일 계산이 prompt.ts와 useCandlePatternMarkers.ts에서 중복
+- Rule: FF.md Cohesion 3-B — 동일 값이 두 곳에 정의되면 한쪽만 변경될 위험
+- Context: `candle-detection.ts`에 `getDetectionBars` 헬퍼를 추출하고 prompt.ts와 useCandlePatternMarkers.ts에서 import하여 사용
+
