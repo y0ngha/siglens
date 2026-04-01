@@ -100,3 +100,13 @@
 - Rule: MISTAKES.md Tests Rule 11.7 — 보장된 테스트 데이터에 대한 무조건적 assertion 필요
 - Context: `candle-detection.test.ts`에서 makeEngulfingPair로 bullish_engulfing 감지를 보장하고 `expect(multiEntries.length).toBeGreaterThanOrEqual(1)` 무조건 assertion 추가
 
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: `selectLastCandlePatternEntries`의 `involvedSingles` 필터가 실질적으로 빈 배열만 반환하는 dead code path
+- Rule: MISTAKES.md 9.5 — 실질적 효과가 없는 로직은 노이즈를 추가하고 의도를 모호하게 만듦
+- Context: `detectCandlePatternEntries`가 이미 다봉 관련 봉의 단봉을 제외하므로 `allEntries` 매개변수와 `involvedSingles` 필터를 제거하고 함수를 단순화; 모든 caller와 테스트 업데이트
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: `prompt.test.ts`의 테스트 설명 '다봉 패턴이 있을 때 해당 봉의 단봉 패턴도 함께 포함된다'가 실제 assertion과 불일치
+- Rule: FF.md Predictability 2-C — 테스트 설명이 약속하는 동작을 assertion에서 검증해야 함
+- Context: 테스트 설명을 실제 동작에 맞게 수정하고 단봉 패턴이 포함되지 않음을 검증하는 assertion 추가
+
