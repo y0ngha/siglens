@@ -14,7 +14,10 @@ import type {
     Trend,
 } from '@/domain/types';
 import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
-import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
+import {
+    HIGH_CONFIDENCE_WEIGHT,
+    MIN_CONFIDENCE_WEIGHT,
+} from '@/domain/indicators/constants';
 import { cn } from '@/lib/cn';
 
 const TREND_COLOR: Record<Trend, string> = {
@@ -460,8 +463,27 @@ export function AnalysisPanel({
         onPatternVisibilityChange?.(patternName, willBeVisible);
     };
 
-    const hasPatterns = analysis.patternSummaries.length > 0;
-    const hasSkillResults = analysis.skillResults.length > 0;
+    const detectedPatterns = analysis.patternSummaries.filter(p => p.detected);
+    const hasDetectedPatterns = detectedPatterns.length > 0;
+
+    const patternSkillNames = new Set(
+        analysis.patternSummaries.map(p => p.skillName)
+    );
+
+    const detectedSkillResults = analysis.skillResults.filter(
+        s =>
+            s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT &&
+            !patternSkillNames.has(s.skillName)
+    );
+
+    const detectedSkillNames = new Set(
+        detectedSkillResults.map(s => s.skillName)
+    );
+
+    const detectedSkillSignals = analysis.skillSignals.filter(s =>
+        detectedSkillNames.has(s.skillName)
+    );
+
     const hasCandlePatterns = analysis.candlePatterns.length > 0;
 
     return (
@@ -511,13 +533,13 @@ export function AnalysisPanel({
                 </div>
             )}
 
-            {/* 스킬 시그널 (skillName별 그룹핑) */}
-            {analysis.skillSignals.length > 0 && (
+            {/* 스킬 시그널 (skillName별 그룹핑) — 감지된 스킬만 표시 */}
+            {detectedSkillSignals.length > 0 && (
                 <div className="flex flex-col gap-3">
                     <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                         패턴 / 스킬
                     </span>
-                    {analysis.skillSignals.map(skillSignal => (
+                    {detectedSkillSignals.map(skillSignal => (
                         <div
                             key={skillSignal.skillName}
                             className="flex flex-col gap-1.5"
@@ -553,14 +575,14 @@ export function AnalysisPanel({
                 </div>
             )}
 
-            {/* 패턴 상세 (아코디언) */}
-            {hasPatterns && (
-                <div className="flex flex-col gap-2">
-                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                        차트 패턴
-                    </span>
+            {/* 패턴 상세 (아코디언) — 감지된 패턴만 표시, 없으면 안내 메시지 */}
+            <div className="flex flex-col gap-2">
+                <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                    차트 패턴
+                </span>
+                {hasDetectedPatterns ? (
                     <div className="flex flex-col gap-1.5">
-                        {analysis.patternSummaries.map(pattern => (
+                        {detectedPatterns.map(pattern => (
                             <PatternAccordionItem
                                 key={pattern.patternName}
                                 pattern={pattern}
@@ -573,17 +595,21 @@ export function AnalysisPanel({
                             />
                         ))}
                     </div>
-                </div>
-            )}
+                ) : (
+                    <p className="text-secondary-500 text-sm">
+                        감지된 패턴 없음
+                    </p>
+                )}
+            </div>
 
-            {/* 스킬 상세 (아코디언) */}
-            {hasSkillResults && (
+            {/* 스킬 상세 (아코디언) — 감지된 스킬만 표시 */}
+            {detectedSkillResults.length > 0 && (
                 <div className="flex flex-col gap-2">
                     <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                         스킬 분석
                     </span>
                     <div className="flex flex-col gap-1.5">
-                        {analysis.skillResults.map(skill => (
+                        {detectedSkillResults.map(skill => (
                             <SkillAccordionItem
                                 key={skill.skillName}
                                 skill={skill}
