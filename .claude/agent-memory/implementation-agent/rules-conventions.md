@@ -57,7 +57,7 @@ type: reference
 
 ## Test Rules
 - `domain/` and `infrastructure/` only — 100% coverage target
-- `components/` and `app/` are excluded from tests
+- `components/` and `app/` are not required to have tests, but writing tests for them is allowed
 - Test structure: 2–5 levels allowed (6+ prohibited). Choose depth based on module complexity.
 - One behavior per `it` block
 - `toBe` for primitives, `toEqual` for objects/arrays, `toBeCloseTo` for floats
