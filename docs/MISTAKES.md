@@ -210,6 +210,22 @@ Review before implementation and ensure these are not repeated.
     ❌ interface Skill { id: string; type: string; }  // missing pattern?, display?
     ✅ interface Skill { id: string; type: string; pattern?: string; display?: SkillDisplay; }
 
+11.5. Object shapes declared as type instead of interface
+     → Rule: CONVENTIONS.md TypeScript Rules — object shapes must use interface
+     → interface is structural and extensible; type is nominal and rigid
+     → When describing an object shape (even a simple one), use interface
+     ❌ type CandlePatternEntry = { patternType: 'single' | 'multi'; barIndex: number; ... }
+     ✅ interface CandlePatternEntry { patternType: 'single' | 'multi'; barIndex: number; ... }
+
+11.6. Missing explicit type annotations on callback parameters
+     → Rule: CONVENTIONS.md TypeScript Rules — all parameters must have explicit types
+     → Callback parameters (in map, filter, reduce, sort, forEach) often trigger implicit any errors
+     → Even if callback is simple, declare parameter types explicitly
+     ❌ buildCandlePatternEntries.map(entry => { ... })  // entry has implicit any
+     ✅ buildCandlePatternEntries.map((entry: CandlePatternEntry) => { ... })
+     ❌ entries.sort((a, b) => a.barIndex - b.barIndex)  // a, b have implicit any
+     ✅ entries.sort((a: PromptCandlePatternEntry, b: PromptCandlePatternEntry) => a.barIndex - b.barIndex)
+
 12. Related interfaces with shared fields not linked by extends
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
     → If interface B contains all fields of interface A plus extras, declare B extends A

@@ -40,11 +40,6 @@
 - Rule: CONVENTIONS.md Custom Hook Declaration Order — useState (1) must precede useRef (2) inside custom hooks
 - Context: `usePanelResize` 훅 내부에서 `const panelWidthAtDragStartRef = useRef(...)` 선언이 `const [panelWidth, setPanelWidth] = useState(...)` 선언보다 앞에 위치해 있었음; 순서를 교체하여 useState → useRef 순으로 수정
 
-## [PR #116 | fix/114/캔들-패턴-감지-범위-최근-15봉으로-제한 | review fix | 2026-04-01]
-- Violation: `type CandlePatternEntry = { ... }` 객체 형상을 type alias로 선언
-- Rule: CONVENTIONS.md TypeScript Rules — 객체 형상(object shape)은 `interface`로 선언해야 한다
-- Context: `prompt.ts`의 `CandlePatternEntry`가 `type` 키워드로 선언되어 있었음; `interface CandlePatternEntry`로 변경
-
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: 패턴 trend 분류 로직(BULLISH/BEARISH Sets, getSinglePatternTrend 등)이 components 레이어에 위치하여 테스트 불가 및 재사용 불가
 - Rule: ARCHITECTURE.md Layer Rules — UI 비의존 순수 비즈니스 로직은 domain 레이어에 위치해야 함
@@ -76,11 +71,6 @@
 - Context: CandlePatternEntry를 SingleCandlePatternEntry | MultiCandlePatternEntry discriminated union으로 재구성하여 patternType 분기 시 ! 없이 타입 안전 접근 보장
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `prompt.ts`의 `buildCandlePatternEntries`에서 `.map(entry => ...)` 및 `.sort((a, b) => ...)` 콜백 파라미터에 타입 미명시로 TS7006 implicit any 에러 3건 발생
-- Rule: CONVENTIONS.md TypeScript Rules — 모든 파라미터에 명시적 타입 선언 필요; `any` 타입 사용 금지
-- Context: `entry`에 `CandlePatternEntry` 타입, `a`/`b`에 `PromptCandlePatternEntry` 타입을 명시하여 implicit any 해소
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: `selectLastCandlePatternEntries`에 대한 직접 단위 테스트 누락
 - Rule: __tests__/CLAUDE.md — 커버리지 타겟 100%; export된 domain 함수는 edge cases 포함 테스트 필수
 - Context: `candle-detection.test.ts`에 `selectLastCandlePatternEntries` 테스트 describe 블록 추가; empty entries, single-only, multi-only, mixed entries, boundary(barIndex 0) 케이스 커버
@@ -99,4 +89,19 @@
 - Violation: `bars.slice(-Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS))` 동일 계산이 prompt.ts와 useCandlePatternMarkers.ts에서 중복
 - Rule: FF.md Cohesion 3-B — 동일 값이 두 곳에 정의되면 한쪽만 변경될 위험
 - Context: `candle-detection.ts`에 `getDetectionBars` 헬퍼를 추출하고 prompt.ts와 useCandlePatternMarkers.ts에서 import하여 사용
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: `getDetectionBars`에서 `Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS)`가 실질적 효과 없음
+- Rule: MISTAKES.md 9.5 — 실질적 효과가 없는 로직은 노이즈를 추가하고 의도를 모호하게 만듦
+- Context: `Array.slice(-n)`은 `n > array.length`일 때 자동으로 전체 배열을 반환하므로 `Math.min` 불필요; `bars.slice(-CANDLE_PATTERN_DETECTION_BARS)`로 단순화
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: `extendedBars.forEach((_, i) => {...})`에서 비단순 로직을 forEach로 처리
+- Rule: MISTAKES.md 1 예외 조항 — 비단순(non-trivial) 로직은 for...of 사용 권장
+- Context: `detectCandlePatternEntries`의 다봉 패턴 감지 루프와 involvedIndices 수집 루프를 `for...of`로 변경
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: `selectLastCandlePatternEntries` 테스트에서 describe 설명이 관련 봉의 단봉 패턴 검증을 약속하지만 assertion 미포함
+- Rule: FF.md Predictability 2-C — describe 설명이 약속하는 동작을 assertion에서 모두 검증해야 함
+- Context: 다봉 패턴만 존재 시 관련 봉의 단봉 패턴(singleResults) 존재 여부와 barIndex 범위를 검증하는 assertion 추가
 
