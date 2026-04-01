@@ -82,6 +82,15 @@ Review before implementation and ensure these are not repeated.
    ✅ items.filter(item => { ... })
    ✅ for (const [label, element] of labelPairs) { ... }  // pre-zip arrays and use for...of
 
+9.5. Leaving logic that has no effect
+   → Rule: FF.md Readability 1-B — logic with no practical effect adds noise and obscures intent
+   → Common pattern: filter/map operations that don't change the result, catch-all conditions that never execute, redundant assignments
+   → Each code layer should contribute meaningful logic; remove anything that has no functional impact
+   ❌ const results = data.flatMap(...).filter(x => x.id === uniqueId);  // uniqueId is guaranteed from flatMap
+   ✅ const results = data.flatMap(...)  // remove the .filter() that never filters
+   ❌ try { ... } catch (e) { logError(e); }  // error is never expected and catch adds confusion
+   ✅ Remove the catch block if it doesn't serve error recovery
+
 10. Repeating identical filtering/calculation logic across multiple blocks
     → Rule: FF.md Cohesion 3-B — same values computed in multiple places must be extracted to single source of truth
     → When the same filter, map, or computation appears 2+ times, extract to useMemo (hooks) or const (regular code)

@@ -40,30 +40,10 @@
 - Rule: CONVENTIONS.md Custom Hook Declaration Order — useState (1) must precede useRef (2) inside custom hooks
 - Context: `usePanelResize` 훅 내부에서 `const panelWidthAtDragStartRef = useRef(...)` 선언이 `const [panelWidth, setPanelWidth] = useState(...)` 선언보다 앞에 위치해 있었음; 순서를 교체하여 useState → useRef 순으로 수정
 
-## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 7 | 2026-03-31]
-- Violation: `ChartContent.tsx`의 `aside` style prop에서 `--panel-width` CSS 커스텀 프로퍼티를 인라인 스타일로 사용하면서 예외 사유 주석이 누락됨
-- Rule: MISTAKES.md Components Rule 14 — 인라인 스타일은 원칙적으로 금지되며, 런타임에 결정되는 동적 값으로 불가피하게 사용할 경우 반드시 주석으로 그 이유를 명시해야 한다
-- Context: `panelWidth`는 드래그 상태에서 런타임에 결정되어 정적 Tailwind 클래스로 표현 불가능하다는 설명 주석을 인라인 스타일 객체 내에 추가
-
 ## [PR #116 | fix/114/캔들-패턴-감지-범위-최근-15봉으로-제한 | review fix | 2026-04-01]
 - Violation: `type CandlePatternEntry = { ... }` 객체 형상을 type alias로 선언
 - Rule: CONVENTIONS.md TypeScript Rules — 객체 형상(object shape)은 `interface`로 선언해야 한다
 - Context: `prompt.ts`의 `CandlePatternEntry`가 `type` 키워드로 선언되어 있었음; `interface CandlePatternEntry`로 변경
-
-## [PR #116 | fix/114/캔들-패턴-감지-범위-최근-15봉으로-제한 | review fix 2 | 2026-04-01]
-- Violation: `buildCandlePatternEntries`의 `multiEntries` 생성 후 `.filter(findIndex === idx)` 중복 제거 필터가 dead code로 존재
-- Rule: FF.md Readability 1-B — 실질적 효과가 없는 불필요한 로직 레이어는 노이즈를 추가하고 코드 파악을 어렵게 만든다
-- Context: `flatMap`에서 `barsAgo = totalBars - 1 - i`로 각 엔트리의 `barsAgo` 값이 고유하게 생성되므로 동일한 `(patternName, barsAgo)` 쌍이 중복될 수 없음; `.filter()` 블록 전체 제거
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `detectPatternEntries`가 `prompt.ts`의 `buildCandlePatternEntries`와 동일한 감지 로직을 중복 구현
-- Rule: MISTAKES.md Coding Paradigm 8 — 동일 알고리즘 중복 구현 금지; 기존 헬퍼를 확인하고 공통 함수로 추출해야 함
-- Context: `useCandlePatternMarkers.ts`와 `prompt.ts` 모두 bars.slice(-15) + multi 우선 감지 + single 필터링이라는 동일 알고리즘을 사용; `domain/analysis/candle-detection.ts`에 `detectCandlePatternEntries` 순수 함수로 추출하여 양쪽에서 import
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `flatMap((_, i) => { ... patternBars[i].time ... })` — callback 파라미터를 무시하고 외부 배열 인덱스로 재접근
-- Rule: MISTAKES.md Coding Paradigm 9 — callback 파라미터를 직접 사용해야 함
-- Context: `useCandlePatternMarkers.ts`의 `multiEntries` 생성 flatMap에서 `_` 파라미터 대신 `patternBars[i]`로 접근; 공통 함수 추출 과정에서 해소됨
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: 패턴 trend 분류 로직(BULLISH/BEARISH Sets, getSinglePatternTrend 등)이 components 레이어에 위치하여 테스트 불가 및 재사용 불가
@@ -96,11 +76,6 @@
 - Context: CandlePatternEntry를 SingleCandlePatternEntry | MultiCandlePatternEntry discriminated union으로 재구성하여 patternType 분기 시 ! 없이 타입 안전 접근 보장
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: selectLastPatternMarkers (hook)와 selectLastPatternEntries (prompt.ts)가 동일한 알고리즘을 중복 구현
-- Rule: MISTAKES.md Coding Paradigm 8 — 동일 알고리즘 재구현 금지, 기존 헬퍼를 확인하고 공유 함수로 추출
-- Context: candle-detection.ts에 selectLastCandlePatternEntries 공통 함수를 추출하여 prompt.ts와 useCandlePatternMarkers.ts 모두 이 함수를 호출하도록 변경; 미사용 CandlePatternEntryType export도 함께 제거
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: `prompt.ts`의 `buildCandlePatternEntries`에서 `.map(entry => ...)` 및 `.sort((a, b) => ...)` 콜백 파라미터에 타입 미명시로 TS7006 implicit any 에러 3건 발생
 - Rule: CONVENTIONS.md TypeScript Rules — 모든 파라미터에 명시적 타입 선언 필요; `any` 타입 사용 금지
 - Context: `entry`에 `CandlePatternEntry` 타입, `a`/`b`에 `PromptCandlePatternEntry` 타입을 명시하여 implicit any 해소
@@ -109,4 +84,9 @@
 - Violation: `selectLastCandlePatternEntries`에 대한 직접 단위 테스트 누락
 - Rule: __tests__/CLAUDE.md — 커버리지 타겟 100%; export된 domain 함수는 edge cases 포함 테스트 필수
 - Context: `candle-detection.test.ts`에 `selectLastCandlePatternEntries` 테스트 describe 블록 추가; empty entries, single-only, multi-only, mixed entries, boundary(barIndex 0) 케이스 커버
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: 테스트 구조가 `describe(module) → describe(function) → it(behavior)` 2단계로 3레벨 미달
+- Rule: MISTAKES.md Test Rule 6 / __tests__/CLAUDE.md — 테스트는 반드시 `describe(module) → describe(function) → describe(context) → it(behavior)` 3단계 describe + it 구조를 따라야 함
+- Context: `candle-trend.test.ts`의 `getSinglePatternTrend`, `getMultiPatternTrend`, `EXCLUDED_SINGLE_PATTERNS` 세 describe 블록 모두 context describe 레벨 추가
 
