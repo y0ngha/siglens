@@ -10,6 +10,15 @@ Review before implementation and ensure these are not repeated.
 ## Coding Paradigm
 
 ```
+0. Repeating hardcoded literals and values in multiple locations
+   → Extract to a single const and reference it in all places
+   → Rule: FF.md Cohesion 3-B — same values defined in multiple places create maintenance risk
+   → Common pattern: min/max values, array indices, magic numbers, CSS custom property defaults
+   ❌ aria-valuemin={240} in component A, aria-valuemin={240} in component B, but PANEL_MIN_WIDTH = 240 in utils
+   ✅ export const PANEL_MIN_WIDTH = 240; import and use in both places
+   ❌ const arr = [1, 2, 3]; const first = arr[0]; const last = arr[2];  // indices hardcoded
+   ✅ const INDEX_FIRST = 0; const INDEX_LAST = 2; const first = arr[INDEX_FIRST]; const last = arr[INDEX_LAST];
+
 1. Using for/while/forEach loops for data transformation
    → Replace with map, filter, reduce, flatMap
    → Exception: side-effect-only iteration (e.g. calling a chart API on each element
@@ -52,6 +61,15 @@ Review before implementation and ensure these are not repeated.
    → Across provider pairs (ClaudeProvider, GeminiProvider): Extract shared logic to infrastructure/ai/utils.ts
    ❌ MARKDOWN_CODE_BLOCK_PATTERN defined in both claude.ts and gemini.ts
    ✅ Define once in infrastructure/ai/utils.ts and import in both providers
+
+8.5. Identical values queried or computed multiple times in a single function
+   → Extract to a local const or assign once before using repeatedly
+   → Rule: FF.md Readability 1-A — computing the same value twice reduces readability and adds unnecessary expense
+   → Common pattern: map.get(key) called twice, function called twice, selector result reused
+   ❌ const skill1 = skillByName.get(p.skillName); ... ; const skill2 = skillByName.get(p.skillName); // same key, two calls
+   ✅ const skill = skillByName.get(p.skillName); ... ; // one call, reused
+   ❌ items.map(item => { const val = compute(item); return val || compute(item); })  // compute called twice
+   ✅ items.map(item => { const val = compute(item); return val || fallback; })
 
 9. Discarding the callback parameter and re-accessing the same element via external array index
    → Rule: FF.md Readability 1-G — viewpoint shift forces the reader to track two locations simultaneously
@@ -297,6 +315,24 @@ Review before implementation and ensure these are not repeated.
     ✅ export function DetectedBadge() { return <div>...</div>; }  // layout is caller's responsibility
     ✅ export function ChartContent() { return <div className="flex-col md:flex-row">...</div>; }  // child owns its layout
        <SymbolPageClient />  // caller adds margin as needed
+
+11.5. Unused Tailwind classes (dead CSS)
+    → Remove classes that have no effect in the current DOM context
+    → Rule: CONVENTIONS.md — unnecessary classes clutter code and reduce readability
+    → grid classes (col-span-2, grid-cols-3, etc.) have no effect on flex containers
+    → Always verify the parent container's layout model before applying layout-specific classes
+    ❌ <div className="flex flex-col"><div className="col-span-2">Content</div></div>  // col-span-2 has no effect on flex
+    ✅ <div className="flex flex-col"><div>Content</div></div>  // remove grid-specific classes from flex children
+
+11.6. Repeated cursor/interaction styling classes across components
+    → Extract repeated cursor and interaction patterns to global styles
+    → Rule: CONVENTIONS.md — repeated patterns must be globalized (AHA principle: 2+ repetitions = extract)
+    → Rule: FF.md Cohesion 3-B — same styling logic defined in multiple places creates maintenance burden
+    ❌ AnalysisPanel: className="cursor-pointer"
+       TimeframeSelector: className="cursor-pointer"
+       SymbolSearch: className="cursor-pointer"
+    ✅ (globals.css) @layer base { button { @apply cursor-pointer disabled:cursor-not-allowed; } }
+       Remove cursor-pointer from individual components
 
 12. Repeating identical JSX structure across multiple render blocks
     → Rule: FF.md Readability 1-A — identical JSX repeated 2+ times should be data-driven
