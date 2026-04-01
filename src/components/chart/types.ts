@@ -7,3 +7,9 @@ export interface PaneLabelConfig {
     paneIndex: number;
     subLabels: PaneSubLabel[];
 }
+
+export interface PaneIndices {
+    rsi: number;
+    macd: number;
+    dmi: number;
+}

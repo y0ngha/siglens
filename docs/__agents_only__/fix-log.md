@@ -15,11 +15,6 @@
 - Rule: DESIGN.md — 인라인 스타일은 금지; 단 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)는 Tailwind 임의값으로 표현 불가능하므로 예외 허용, 주석으로 명시 필요
 - Context: `getPeriodColor`는 `CHART_COLORS` 기반 상수를 반환하는 런타임 동적 색상으로, Tailwind 임의값 문법으로 대체 불가능함을 주석으로 명시하여 의도를 문서화
 
-## [PR #105 | refactor/104/AI-프롬프트-문자열-영어로-변환 | 2026-03-31]
-- Violation: Test file structure exceeded 3 levels (4 levels: describe('prompt') > describe('buildAnalysisPrompt') > describe(context) > it(behavior))
-- Rule: MISTAKES.md Test Rule 9 — test file must use exactly 3 levels: describe(subject) > describe(context) > it(behavior)
-- Context: In `src/__tests__/domain/analysis/prompt.test.ts`, the `describe('buildAnalysisPrompt')` wrapper was an unnecessary intermediate layer; removed it so all context describe blocks are directly under `describe('prompt')`
-
 ## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
 - Violation: `usePanelResize.ts`에서 `React.MouseEvent` 타입을 사용하면서 `React` import가 누락되어 TypeScript 컴파일 오류 발생
 - Rule: TypeScript — 사용하는 모든 타입의 import가 명시되어야 한다
@@ -29,11 +24,6 @@
 - Violation: focusable `role="separator"` 드래그 핸들에 `onKeyDown` 핸들러가 없어 키보드 사용자가 패널 너비를 조절할 수 없는 접근성 미구현
 - Rule: WAI-ARIA spec — focusable separator must support ArrowLeft/ArrowRight key adjustment
 - Context: `usePanelResize`에 `handleKeyDown` 핸들러를 추가하여 ArrowLeft/ArrowRight로 `KEYBOARD_RESIZE_STEP(10px)` 단위 너비 조절 지원; `ChartContent.tsx` 드래그 핸들에 `onKeyDown={handleKeyDown}` 연결
-
-## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 6 | 2026-03-31]
-- Violation: `usePanelResize.ts`에서 `useRef(panelWidthAtDragStartRef)`가 `useState(panelWidth)`보다 앞에 선언되어 CONVENTIONS.md Custom Hook Declaration Order 위반
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — useState (1) must precede useRef (2) inside custom hooks
-- Context: `usePanelResize` 훅 내부에서 `const panelWidthAtDragStartRef = useRef(...)` 선언이 `const [panelWidth, setPanelWidth] = useState(...)` 선언보다 앞에 위치해 있었음; 순서를 교체하여 useState → useRef 순으로 수정
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: 패턴 trend 분류 로직(BULLISH/BEARISH Sets, getSinglePatternTrend 등)이 components 레이어에 위치하여 테스트 불가 및 재사용 불가
@@ -46,19 +36,9 @@
 - Context: `detectCandlePatternEntries`에서 `CANDLE_PATTERN_DETECTION_BARS + MULTI_CANDLE_PATTERN_BUFFER(2)`개 데이터를 확보하여 감지, 결과는 마지막 15봉에 대해서만 반환
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: 테스트 구조가 `describe(module) → describe(function) → it(behavior)` 2단계로 3레벨 미달
-- Rule: MISTAKES.md Test Rule 6 / __tests__/CLAUDE.md — 테스트는 반드시 `describe(module) → describe(function) → describe(context) → it(behavior)` 3단계 describe + it 구조를 따라야 함
-- Context: `candle-trend.test.ts`의 `getSinglePatternTrend`, `getMultiPatternTrend`, `EXCLUDED_SINGLE_PATTERNS` 세 describe 블록 모두 context describe 레벨 추가
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: useEffect에서 plugin 초기화(createSeriesMarkers)와 데이터 동기화(setMarkers)가 혼합되어 있고, cleanup이 별도 useEffect로 분리
 - Rule: CONVENTIONS.md Custom Hook Rules — instance creation/destruction([])와 data synchronization([deps])을 별도 useEffect로 분리해야 함
 - Context: `useCandlePatternMarkers.ts`에서 초기화+cleanup을 `useEffect([seriesRef])`로, 데이터 동기화를 `useEffect([markers, isVisible])`로 분리
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `extendedBars.forEach((_, i) => {...})`에서 비단순 로직을 forEach로 처리
-- Rule: MISTAKES.md 1 예외 조항 — 비단순(non-trivial) 로직은 for...of 사용 권장
-- Context: `detectCandlePatternEntries`의 다봉 패턴 감지 루프와 involvedIndices 수집 루프를 `for...of`로 변경
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: 다봉 패턴 제외 테스트에서 동일한 봉 데이터(makeBar)로 생성하여 다봉 패턴이 감지되지 않아 forEach assertion이 실행되지 않음
@@ -79,4 +59,19 @@
 - Violation: MACD sub-label에 'Signal', 'Histogram' 하드코딩 문자열 사용
 - Rule: MISTAKES.md TypeScript #6 — 구현 코드의 하드코딩 리터럴은 상수로 추출
 - Context: `paneLabelUtils.ts`에 `MACD_SIGNAL_LABEL`, `MACD_HISTOGRAM_LABEL` 상수로 추출
+
+## [Issue #132 | fix/132/pane-indicator-동적-index-계산 | 2026-04-01]
+- Violation: `INACTIVE_PANE_INDEX = -1`이 StockChart.tsx, paneLabelUtils.ts, 테스트 파일 3곳에서 각각 별도 정의
+- Rule: MISTAKES.md #0 / FF.md Cohesion 3-B — 동일 값이 여러 위치에 정의되면 단일 상수로 추출해야 함
+- Context: `components/chart/constants.ts`에 `INACTIVE_PANE_INDEX`를 단일 정의하고, StockChart.tsx, paneLabelUtils.ts, paneLabelUtils.test.ts에서 import하도록 변경
+
+## [PR #138 | fix/132/pane-indicator-동적-index-계산 | 2026-04-01]
+- Violation: `paneIndices` useMemo 내부에서 `let next` + `next++` 재할당 사용
+- Rule: MISTAKES.md #3 — let 재할당 금지, const + 새 변수 사용
+- Context: `StockChart.tsx`의 `paneIndices` useMemo에서 `let next`를 `visibles.slice(0, pos).filter(Boolean).length` 기반의 순수 함수 `indexFor`로 교체
+
+## [PR #138 | fix/132/pane-indicator-동적-index-계산 | 2026-04-01]
+- Violation: `buildPaneLabels`에서 `rsiVisible && paneIndices.rsi !== INACTIVE_PANE_INDEX` 이중 조건 — visibility가 true면 paneIndex는 항상 active이므로 효과 없는 중복 로직
+- Rule: MISTAKES.md #9.5 — 효과 없는 로직은 노이즈이므로 제거
+- Context: `paneLabelUtils.ts`에서 `PaneVisibility` 인터페이스의 visibility 플래그를 제거하고 `paneIndices`만으로 활성 여부를 판단하도록 단순화
 

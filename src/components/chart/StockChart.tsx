@@ -1,6 +1,13 @@
 'use client';
 
-import { useEffect, useEffectEvent, useMemo, useRef } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useEffectEvent,
+    useMemo,
+    useRef,
+    useState,
+} from 'react';
 import type { RefObject } from 'react';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
 import type {
@@ -11,6 +18,7 @@ import type {
 } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult, PatternResult } from '@/domain/types';
+import type { PaneIndices } from '@/components/chart/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
 import { useBollingerOverlay } from '@/components/chart/hooks/useBollingerOverlay';
@@ -20,13 +28,19 @@ import { useDMIChart } from '@/components/chart/hooks/useDMIChart';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
-import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import {
+    DEFAULT_LINE_WIDTH,
+    INACTIVE_PANE_INDEX,
+} from '@/components/chart/constants';
 import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
 import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
 import {
     MA_DEFAULT_PERIODS,
     EMA_DEFAULT_PERIODS,
 } from '@/domain/indicators/constants';
+
+const CANDLESTICK_PANE_INDEX = 0;
+const FIRST_INDICATOR_PANE_INDEX = 1;
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -61,10 +75,39 @@ export function StockChart({
     patterns = [],
     onPatternOverlayChange,
 }: StockChartProps) {
+    const [rsiVisible, setRsiVisible] = useState(false);
+    const [macdVisible, setMacdVisible] = useState(false);
+    const [dmiVisible, setDmiVisible] = useState(false);
+
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+
+    const toggleRSI = useCallback(() => {
+        setRsiVisible(prev => !prev);
+    }, []);
+
+    const toggleMACD = useCallback(() => {
+        setMacdVisible(prev => !prev);
+    }, []);
+
+    const toggleDMI = useCallback(() => {
+        setDmiVisible(prev => !prev);
+    }, []);
+
+    const paneIndices: PaneIndices = useMemo(() => {
+        const visibles = [rsiVisible, macdVisible, dmiVisible];
+        const indexFor = (pos: number): number => {
+            const precedingActive = visibles
+                .slice(0, pos)
+                .filter(Boolean).length;
+            return visibles[pos]
+                ? FIRST_INDICATOR_PANE_INDEX + precedingActive
+                : INACTIVE_PANE_INDEX;
+        };
+        return { rsi: indexFor(0), macd: indexFor(1), dmi: indexFor(2) };
+    }, [rsiVisible, macdVisible, dmiVisible]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -130,14 +173,23 @@ export function StockChart({
     const { isVisible: bollingerVisible, toggle: toggleBollinger } =
         useBollingerOverlay(commonHookParams);
 
-    const { isVisible: macdVisible, toggle: toggleMACD } =
-        useMACDChart(commonHookParams);
+    useMACDChart({
+        ...commonHookParams,
+        isVisible: macdVisible,
+        paneIndex: paneIndices.macd,
+    });
 
-    const { isVisible: rsiVisible, toggle: toggleRSI } =
-        useRSIChart(commonHookParams);
+    useRSIChart({
+        ...commonHookParams,
+        isVisible: rsiVisible,
+        paneIndex: paneIndices.rsi,
+    });
 
-    const { isVisible: dmiVisible, toggle: toggleDMI } =
-        useDMIChart(commonHookParams);
+    useDMIChart({
+        ...commonHookParams,
+        isVisible: dmiVisible,
+        paneIndex: paneIndices.dmi,
+    });
 
     const { isVisible: candlePatternsVisible, toggle: toggleCandlePatterns } =
         useCandlePatternMarkers({ seriesRef, bars });
@@ -157,8 +209,8 @@ export function StockChart({
     }, [visiblePatterns]);
 
     const paneLabels = useMemo(
-        () => buildPaneLabels({ rsiVisible, macdVisible, dmiVisible }),
-        [rsiVisible, macdVisible, dmiVisible]
+        () => buildPaneLabels(paneIndices),
+        [paneIndices]
     );
 
     usePaneLabels({
@@ -166,6 +218,27 @@ export function StockChart({
         containerRef: wrapperRef,
         labels: paneLabels,
     });
+
+    // 빈 pane 정리: indicator가 꺼지면 남은 빈 pane을 역순으로 제거
+    // pane 0(캔들스틱)은 보호
+    useEffect(() => {
+        const chart = chartRef.current;
+        if (!chart) return;
+
+        const activePaneCount =
+            Math.max(CANDLESTICK_PANE_INDEX, ...Object.values(paneIndices)) + 1;
+
+        const panes = chart.panes();
+
+        const indicesToRemove = panes
+            .map((_, i) => i)
+            .filter(i => i >= activePaneCount && i > CANDLESTICK_PANE_INDEX)
+            .reverse();
+
+        for (const i of indicesToRemove) {
+            chart.removePane(i);
+        }
+    }, [paneIndices]);
 
     return (
         <div ref={wrapperRef} className="relative h-full w-full">
