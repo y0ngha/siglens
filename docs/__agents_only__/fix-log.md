@@ -80,3 +80,48 @@
 - Rule: FF.md Predictability 2-C, CONVENTIONS.md Test Rules — 테스트 설명("모두 포함")과 실제 assertion이 일치해야 한다
 - Context: 테스트 데이터(음봉 prevBar + 장악형 양봉 currBar)는 반드시 2개 엔트리(barsAgo=1 단봉 + barsAgo=0 다봉)를 생성하므로 `toBeGreaterThanOrEqual(2)`로 강화
 
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: `detectPatternEntries`가 `prompt.ts`의 `buildCandlePatternEntries`와 동일한 감지 로직을 중복 구현
+- Rule: MISTAKES.md Coding Paradigm 8 — 동일 알고리즘 중복 구현 금지; 기존 헬퍼를 확인하고 공통 함수로 추출해야 함
+- Context: `useCandlePatternMarkers.ts`와 `prompt.ts` 모두 bars.slice(-15) + multi 우선 감지 + single 필터링이라는 동일 알고리즘을 사용; `domain/analysis/candle-detection.ts`에 `detectCandlePatternEntries` 순수 함수로 추출하여 양쪽에서 import
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: `flatMap((_, i) => { ... patternBars[i].time ... })` — callback 파라미터를 무시하고 외부 배열 인덱스로 재접근
+- Rule: MISTAKES.md Coding Paradigm 9 — callback 파라미터를 직접 사용해야 함
+- Context: `useCandlePatternMarkers.ts`의 `multiEntries` 생성 flatMap에서 `_` 파라미터 대신 `patternBars[i]`로 접근; 공통 함수 추출 과정에서 해소됨
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: 패턴 trend 분류 로직(BULLISH/BEARISH Sets, getSinglePatternTrend 등)이 components 레이어에 위치하여 테스트 불가 및 재사용 불가
+- Rule: ARCHITECTURE.md Layer Rules — UI 비의존 순수 비즈니스 로직은 domain 레이어에 위치해야 함
+- Context: `domain/analysis/candle-trend.ts`로 분리하여 100% 테스트 커버리지 대상으로 전환; components에서는 domain import로 사용
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: 3봉 패턴 감지 시 detection window 시작 부분에서 이전 데이터 부족으로 미감지 가능
+- Rule: domain/CLAUDE.md Candle Pattern Detection — multi-candle 패턴은 2~3봉이 필요하므로 충분한 데이터 확보 필요
+- Context: `detectCandlePatternEntries`에서 `CANDLE_PATTERN_DETECTION_BARS + MULTI_CANDLE_PATTERN_BUFFER(2)`개 데이터를 확보하여 감지, 결과는 마지막 15봉에 대해서만 반환
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: 다봉 패턴의 끝 봉만 단봉 제외하고 중간 봉은 단봉 마커가 중복 표시됨
+- Rule: domain/CLAUDE.md Pattern Priority — 다봉 패턴에 포함된 모든 봉에서 단봉 패턴을 제외해야 함
+- Context: `detectCandlePatternEntries`에서 multi-candle 패턴의 실제 봉 수(2봉/3봉)를 `THREE_BAR_PATTERNS` Set으로 판별하여 관련된 모든 봉 인덱스를 `multiInvolvedIndices`에 수집, 단봉 감지에서 제외
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: `multiEntries` 생성 시 `findIndex`를 별도 호출하여 O(N^2) 비효율
+- Rule: FF.md Readability 1-A — 이미 알고 있는 인덱스를 재계산하지 않아야 함
+- Context: `detectCandlePatternEntries`에서 multi 패턴 감지 시 인덱스를 `multiEntryMap`에 함께 수집하여 별도 findIndex 호출 제거
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: AI 프롬프트에 최근 15봉의 모든 캔들 패턴을 포함하여 차트 마커와 범위 불일치
+- Rule: FF.md Cohesion 3-B — 동일 데이터(마지막 캔들 패턴)를 차트 마커와 프롬프트에서 서로 다른 범위로 사용하면 일관성 부족
+- Context: `prompt.ts`의 `buildCandlePatternEntries`에 `selectLastPatternEntries` 함수를 추가하여 차트 마커와 동일하게 마지막 다봉 패턴 + 관련 봉 단봉만 프롬프트에 포함; 섹션 제목을 "Short-term Trend Signal"로 변경하여 단기 추세 맥락으로 프레이밍
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: candle-detection.ts와 prompt.ts 간 순환 의존성 — CANDLE_PATTERN_DETECTION_BARS를 prompt.ts에서 정의하고 candle-detection.ts에서 import, 반대로 prompt.ts가 candle-detection.ts에서 import
+- Rule: FF.md Coupling 4-A — 순환 의존성은 모듈 초기화 순서를 취약하게 만들고 결합도를 높임
+- Context: CANDLE_PATTERN_DETECTION_BARS를 candle-detection.ts로 이동하여 순환 의존 해소; prompt.ts와 테스트 파일의 import 경로를 candle-detection으로 변경
+
+## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
+- Violation: CandlePatternEntry의 singlePattern/multiPattern이 nullable로 정의되어 non-null assertion(!) 사용 필요
+- Rule: FF.md Predictability 2-B — discriminated union으로 타입을 구조화하면 타입 가드만으로 안전하게 접근 가능
+- Context: CandlePatternEntry를 SingleCandlePatternEntry | MultiCandlePatternEntry discriminated union으로 재구성하여 patternType 분기 시 ! 없이 타입 안전 접근 보장
+

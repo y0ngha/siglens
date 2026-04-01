@@ -12,23 +12,25 @@ import type {
 } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar } from '@/domain/types';
-import type {
-    CandlePattern,
-    MultiCandlePattern,
-} from '@/domain/analysis/candle';
 import {
-    detectCandlePattern,
-    detectMultiCandlePattern,
-} from '@/domain/analysis/candle';
+    CANDLE_PATTERN_DETECTION_BARS,
+    detectCandlePatternEntries,
+    MULTI_CANDLE_PATTERN_BUFFER,
+} from '@/domain/analysis/candle-detection';
+import type { CandlePatternEntry } from '@/domain/analysis/candle-detection';
+import { detectCandlePattern } from '@/domain/analysis/candle';
 import {
     getCandlePatternLabel,
     getMultiCandlePatternLabel,
 } from '@/domain/analysis/candle-labels';
-import { CANDLE_PATTERN_DETECTION_BARS } from '@/domain/analysis/prompt';
+import {
+    getSinglePatternTrend,
+    getMultiPatternTrend,
+    EXCLUDED_SINGLE_PATTERNS,
+} from '@/domain/analysis/candle-trend';
+import type { PatternTrend } from '@/domain/analysis/candle-trend';
 
 // --- Types -------------------------------------------------------------------
-
-type PatternTrend = 'bullish' | 'bearish' | 'neutral';
 
 interface CandlePatternMarkerEntry {
     time: number;
@@ -52,80 +54,7 @@ interface UseCandlePatternMarkersReturn {
     toggle: () => void;
 }
 
-// --- Pattern Trend Classification -------------------------------------------
-
-const BULLISH_SINGLE_PATTERNS: ReadonlySet<CandlePattern> = new Set([
-    'hammer',
-    'inverted_hammer',
-    'bullish_marubozu',
-    'bullish_belt_hold',
-    'dragonfly_doji',
-]);
-
-const BEARISH_SINGLE_PATTERNS: ReadonlySet<CandlePattern> = new Set([
-    'shooting_star',
-    'hanging_man',
-    'bearish_marubozu',
-    'bearish_belt_hold',
-    'gravestone_doji',
-]);
-
-const BULLISH_MULTI_PATTERNS: ReadonlySet<MultiCandlePattern> = new Set([
-    'bullish_engulfing',
-    'bullish_harami',
-    'bullish_harami_cross',
-    'piercing_line',
-    'bullish_counterattack_line',
-    'morning_star',
-    'morning_doji_star',
-    'bullish_abandoned_baby',
-    'three_white_soldiers',
-    'three_inside_up',
-    'three_outside_up',
-    'bullish_triple_star',
-    'ladder_bottom',
-    'tweezers_bottom',
-    'downside_gap_two_rabbits',
-]);
-
-const BEARISH_MULTI_PATTERNS: ReadonlySet<MultiCandlePattern> = new Set([
-    'bearish_engulfing',
-    'bearish_harami',
-    'bearish_harami_cross',
-    'dark_cloud_cover',
-    'bearish_counterattack_line',
-    'evening_star',
-    'evening_doji_star',
-    'bearish_abandoned_baby',
-    'three_black_crows',
-    'three_inside_down',
-    'three_outside_down',
-    'bearish_triple_star',
-    'advance_block',
-    'tweezers_top',
-    'upside_gap_two_crows',
-]);
-
-const EXCLUDED_SINGLE_PATTERNS: ReadonlySet<CandlePattern> = new Set([
-    'bullish',
-    'bearish',
-    'flat',
-    'spinning_top',
-]);
-
 // --- Helpers -----------------------------------------------------------------
-
-const getSinglePatternTrend = (pattern: CandlePattern): PatternTrend => {
-    if (BULLISH_SINGLE_PATTERNS.has(pattern)) return 'bullish';
-    if (BEARISH_SINGLE_PATTERNS.has(pattern)) return 'bearish';
-    return 'neutral';
-};
-
-const getMultiPatternTrend = (pattern: MultiCandlePattern): PatternTrend => {
-    if (BULLISH_MULTI_PATTERNS.has(pattern)) return 'bullish';
-    if (BEARISH_MULTI_PATTERNS.has(pattern)) return 'bearish';
-    return 'neutral';
-};
 
 const MARKER_STYLE_MAP: Record<PatternTrend, MarkerStyle> = {
     bullish: {
@@ -156,33 +85,36 @@ const toMarker = (entry: CandlePatternMarkerEntry): SeriesMarkerBar<Time> => {
     };
 };
 
-// --- Entry Detection (mirrors buildCandlePatternEntries from prompt.ts) ------
+const entryToMarkerEntry = (
+    entry: CandlePatternEntry,
+    detectionBars: Bar[]
+): CandlePatternMarkerEntry => {
+    const bar = detectionBars[entry.barIndex];
+    if (entry.patternType === 'multi') {
+        return {
+            time: bar.time,
+            trend: getMultiPatternTrend(entry.multiPattern),
+            label: getMultiCandlePatternLabel(entry.multiPattern),
+        };
+    }
+    return {
+        time: bar.time,
+        trend: getSinglePatternTrend(entry.singlePattern),
+        label: getCandlePatternLabel(entry.singlePattern),
+    };
+};
 
-const detectPatternEntries = (bars: Bar[]): CandlePatternMarkerEntry[] => {
-    const patternBars = bars.slice(-CANDLE_PATTERN_DETECTION_BARS);
-
-    const multiEntries: CandlePatternMarkerEntry[] = patternBars.flatMap(
-        (_, i) => {
-            const candleWindow = patternBars.slice(0, i + 1);
-            const detected = detectMultiCandlePattern(candleWindow);
-            if (detected === null) return [];
-            return [
-                {
-                    time: patternBars[i].time,
-                    trend: getMultiPatternTrend(detected),
-                    label: getMultiCandlePatternLabel(detected),
-                },
-            ];
-        }
-    );
-
-    const multiBarIndices = new Set(
-        multiEntries.map(e => patternBars.findIndex(bar => bar.time === e.time))
-    );
-
-    const singleEntries: CandlePatternMarkerEntry[] = patternBars
-        .map((bar, i) => {
-            if (multiBarIndices.has(i)) return null;
+/**
+ * Creates single-candle markers for specific bars (used for bars involved in a multi-candle pattern).
+ * Excluded single patterns (bullish, bearish, flat, spinning_top) are skipped.
+ */
+const createSingleMarkersForBars = (
+    detectionBars: Bar[],
+    barIndices: number[]
+): CandlePatternMarkerEntry[] =>
+    barIndices
+        .map(idx => {
+            const bar = detectionBars[idx];
             const pattern = detectCandlePattern(bar);
             if (EXCLUDED_SINGLE_PATTERNS.has(pattern)) return null;
             return {
@@ -193,7 +125,45 @@ const detectPatternEntries = (bars: Bar[]): CandlePatternMarkerEntry[] => {
         })
         .filter((entry): entry is CandlePatternMarkerEntry => entry !== null);
 
-    return [...singleEntries, ...multiEntries].sort((a, b) => a.time - b.time);
+/**
+ * Selects markers for the last detected pattern only:
+ * - If a multi-candle pattern exists: show the multi pattern marker + single pattern markers
+ *   for each bar involved in that multi-candle pattern
+ * - If only single patterns exist: show the last single pattern marker only (1 bar)
+ */
+const selectLastPatternMarkers = (
+    entries: CandlePatternEntry[],
+    detectionBars: Bar[]
+): CandlePatternMarkerEntry[] => {
+    if (entries.length === 0) return [];
+
+    const lastMultiEntry = [...entries]
+        .reverse()
+        .find(e => e.patternType === 'multi');
+
+    if (lastMultiEntry !== undefined) {
+        const multiMarker = entryToMarkerEntry(lastMultiEntry, detectionBars);
+        // Get single markers for each bar in the multi pattern range
+        const multiBarIndex = lastMultiEntry.barIndex;
+        const startBarIndex = Math.max(
+            0,
+            multiBarIndex - MULTI_CANDLE_PATTERN_BUFFER
+        );
+        const involvedIndices = Array.from(
+            { length: multiBarIndex - startBarIndex + 1 },
+            (_, offset) => startBarIndex + offset
+        );
+        const singleMarkers = createSingleMarkersForBars(
+            detectionBars,
+            involvedIndices
+        );
+
+        return [...singleMarkers, multiMarker].sort((a, b) => a.time - b.time);
+    }
+
+    // Only single patterns: show the last one
+    const lastSingleEntry = entries[entries.length - 1];
+    return [entryToMarkerEntry(lastSingleEntry, detectionBars)];
 };
 
 // --- Hook --------------------------------------------------------------------
@@ -206,7 +176,13 @@ export function useCandlePatternMarkers({
 
     const markersPluginRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
 
-    const entries = useMemo(() => detectPatternEntries(bars), [bars]);
+    const markers = useMemo(() => {
+        const entries = detectCandlePatternEntries(bars);
+        const detectionBars = bars.slice(
+            -Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS)
+        );
+        return selectLastPatternMarkers(entries, detectionBars);
+    }, [bars]);
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);
@@ -223,11 +199,11 @@ export function useCandlePatternMarkers({
         }
 
         if (isVisible) {
-            markersPluginRef.current.setMarkers(entries.map(toMarker));
+            markersPluginRef.current.setMarkers(markers.map(toMarker));
         } else {
             markersPluginRef.current.setMarkers([]);
         }
-    }, [seriesRef, entries, isVisible]);
+    }, [seriesRef, markers, isVisible]);
 
     useEffect(() => {
         return () => {
