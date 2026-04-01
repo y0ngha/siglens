@@ -127,6 +127,7 @@ interface IndicatorToolbarProps {
     macd: IndicatorToggleGroup;
     rsi: IndicatorToggleGroup;
     dmi: IndicatorToggleGroup;
+    candlePatterns?: IndicatorToggleGroup;
 }
 
 export function IndicatorToolbar({
@@ -140,6 +141,7 @@ export function IndicatorToolbar({
     macd,
     rsi,
     dmi,
+    candlePatterns,
 }: IndicatorToolbarProps) {
     const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
     const [dropdownPosition, setDropdownPosition] =
@@ -209,6 +211,7 @@ export function IndicatorToolbar({
         { label: 'MACD', ...macd },
         { label: 'RSI', ...rsi },
         { label: 'DMI', ...dmi },
+        ...(candlePatterns ? [{ label: '캔들', ...candlePatterns }] : []),
     ];
 
     const activeDropdownIndicator = dropdownIndicators.find(
