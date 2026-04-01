@@ -14,7 +14,10 @@ import type {
     Trend,
 } from '@/domain/types';
 import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
-import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
+import {
+    HIGH_CONFIDENCE_WEIGHT,
+    MIN_CONFIDENCE_WEIGHT,
+} from '@/domain/indicators/constants';
 import { cn } from '@/lib/cn';
 
 const TREND_COLOR: Record<Trend, string> = {
@@ -463,11 +466,21 @@ export function AnalysisPanel({
     const detectedPatterns = analysis.patternSummaries.filter(p => p.detected);
     const hasDetectedPatterns = detectedPatterns.length > 0;
 
-    const detectedSkillNames = new Set(detectedPatterns.map(p => p.skillName));
-    const detectedSkillSignals = analysis.skillSignals.filter(s =>
-        detectedSkillNames.has(s.skillName)
+    const patternSkillNames = new Set(
+        analysis.patternSummaries.map(p => p.skillName)
     );
-    const detectedSkillResults = analysis.skillResults.filter(s =>
+
+    const detectedSkillResults = analysis.skillResults.filter(
+        s =>
+            s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT &&
+            !patternSkillNames.has(s.skillName)
+    );
+
+    const detectedSkillNames = new Set(
+        detectedSkillResults.map(s => s.skillName)
+    );
+
+    const detectedSkillSignals = analysis.skillSignals.filter(s =>
         detectedSkillNames.has(s.skillName)
     );
 
