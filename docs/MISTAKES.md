@@ -145,6 +145,15 @@ Review before implementation and ensure these are not repeated.
    ✅ type SignalStrength = 'strong' | 'moderate' | 'weak';
       interface Signal { strength: SignalStrength; }
 
+5.5. Using `as` type assertions instead of type guards
+   → Rule: CONVENTIONS.md — type assertions bypass type safety and hide assumptions
+   → Use narrowing with `typeof`, `in`, `instanceof`, or discriminated unions instead
+   → Exception: DOM element types where runtime narrowing is infeasible (e.g. HTMLCanvasElement)
+   ❌ (CANDLE_PATTERN_LABELS as Record<string, string>)[patternName]  // assertion bypasses type safety
+   ✅ findCandlePatternLabel(patternName) with `in` operator checks for single/multi pattern membership
+   ❌ const label = map as Map<string, string>  // assertion without verification
+   ✅ if (map instanceof Map) { ... use map as Map ... }  // type guard + usage together
+
 6. Hardcoding literals in implementation code
    → Extract to constants (domain/indicators/constants.ts or @/components/chart/constants)
    ❌ period = 14
@@ -417,6 +426,14 @@ Review before implementation and ensure these are not repeated.
       + include skillsDegraded: true in response for route handlers
    ❌ new ClaudeProvider() directly instantiated when AI_PROVIDER env says to use Gemini
    ✅ createAIProvider() helper that respects environment variable
+
+5. Multi-candle and single-candle patterns both shown for the same bar
+   → Rule: FF.md Cohesion 3-B — related data should use consistent filtering rules
+   → When a multi-candle pattern (bullish_engulfing, morning_star, etc.) is detected on a bar,
+     single-candle patterns (hammer, doji, etc.) on the same bar or bars involved in the multi-candle should be suppressed
+   → This prevents visual/text clutter where one bar is annotated with both pattern types
+   ❌ buildCandlePatternEntries returns entries where barsAgo=0 has both singlePattern ('hammer') and multiPattern ('bullish_engulfing')
+   ✅ Filter out single-candle entries whose barsAgo matches any bar involved in a detected multi-candle pattern
 ```
 
 ---
@@ -504,6 +521,14 @@ Review before implementation and ensure these are not repeated.
    ❌ readFile rejection path in Promise.all context, but rejection case not tested in loader.test.ts
    ✅ (utils.test.ts) it('코드 블록 앞뒤의 텍스트를 제거한다', () => { expect(stripMarkdownCodeBlock('text```code```text')).toBe('code'); })
    ✅ (loader.test.ts) describe('readFile 에러 발생 시', () => { it('에러를 전파한다', () => { ... expect(loadSkills()).rejects.toThrow() }) })
+
+11.7. Unconditional assertion in test when expected data is guaranteed to be detected
+   → Rule: FF.md Predictability 2-C — each it block must verify its behavior unconditionally
+   → When test data is constructed to guarantee a specific outcome (e.g. bullish_engulfing pattern formation),
+     assertion should not be wrapped in a conditional that allows the test to pass without verification
+   → If statement guards hide incomplete test execution; the test should fail if the expected behavior doesn't occur
+   ❌ if (result.includes('Multi-candle pattern:')) { expect(result).toMatch('bullish_engulfing'); }  // test passes without assertion if pattern not detected
+   ✅ expect(result).toMatch('bullish_engulfing');  // unconditional assertion; test fails if pattern missing
 
 12. Provider pair has asymmetric error handling or logging behavior
    → Rule: FF.md Predictability 2-B — sibling functions/classes in the same family must behave consistently
