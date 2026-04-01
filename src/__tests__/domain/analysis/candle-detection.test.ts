@@ -199,7 +199,7 @@ describe('candle-detection', () => {
 
         describe('entries가 비어있을 때', () => {
             it('빈 배열을 반환한다', () => {
-                const result = selectLastCandlePatternEntries([], []);
+                const result = selectLastCandlePatternEntries([]);
                 expect(result).toEqual([]);
             });
         });
@@ -211,7 +211,7 @@ describe('candle-detection', () => {
                     makeSingleEntry(3, 'doji'),
                     makeSingleEntry(7, 'shooting_star'),
                 ];
-                const result = selectLastCandlePatternEntries(entries, entries);
+                const result = selectLastCandlePatternEntries(entries);
                 expect(result).toHaveLength(1);
                 expect(result[0].barIndex).toBe(7);
                 expect(result[0].singlePattern).toBe('shooting_star');
@@ -221,49 +221,28 @@ describe('candle-detection', () => {
                 const entries: CandlePatternEntry[] = [
                     makeSingleEntry(5, 'hammer'),
                 ];
-                const result = selectLastCandlePatternEntries(entries, entries);
+                const result = selectLastCandlePatternEntries(entries);
                 expect(result).toHaveLength(1);
                 expect(result[0]).toEqual(makeSingleEntry(5, 'hammer'));
             });
         });
 
-        describe('다봉 패턴만 존재할 때', () => {
-            it('마지막 다봉 패턴과 관련 봉의 단봉 패턴을 반환한다', () => {
-                // allEntries includes single patterns for involved bars
-                const allEntries: CandlePatternEntry[] = [
-                    makeSingleEntry(2, 'hammer'),
-                    makeSingleEntry(3, 'doji'),
-                    makeSingleEntry(4, 'shooting_star'),
-                    makeMultiEntry(4, 'bullish_engulfing'),
-                ];
+        describe('다봉 패턴이 존재할 때', () => {
+            it('마지막 다봉 패턴만 반환한다', () => {
                 const entries: CandlePatternEntry[] = [
+                    makeSingleEntry(2, 'hammer'),
                     makeMultiEntry(4, 'bullish_engulfing'),
+                    makeMultiEntry(8, 'morning_star'),
                 ];
-                const result = selectLastCandlePatternEntries(
-                    entries,
-                    allEntries
-                );
-                const multiResult = result.find(e => e.patternType === 'multi');
-                expect(multiResult).toBeDefined();
-                expect(multiResult?.barIndex).toBe(4);
-
-                const singleResults = result.filter(
-                    e => e.patternType === 'single'
-                );
-                expect(singleResults.length).toBeGreaterThanOrEqual(1);
-                singleResults.forEach(single => {
-                    expect(single.barIndex).toBeLessThanOrEqual(4);
-                    expect(single.barIndex).toBeGreaterThanOrEqual(
-                        Math.max(0, 4 - MULTI_CANDLE_PATTERN_BUFFER)
-                    );
-                });
-
-                expect(result[result.length - 1].patternType).toBe('multi');
+                const result = selectLastCandlePatternEntries(entries);
+                expect(result).toHaveLength(1);
+                expect(result[0].patternType).toBe('multi');
+                expect(result[0].barIndex).toBe(8);
             });
         });
 
         describe('단봉과 다봉 패턴이 혼합되어 있을 때', () => {
-            it('마지막 다봉 패턴 기준으로 관련 엔트리를 반환한다', () => {
+            it('마지막 다봉 패턴만 반환한다', () => {
                 const entries: CandlePatternEntry[] = [
                     makeSingleEntry(0, 'hammer'),
                     makeSingleEntry(5, 'doji'),
@@ -271,43 +250,10 @@ describe('candle-detection', () => {
                     makeSingleEntry(9, 'doji'),
                     makeMultiEntry(10, 'bullish_engulfing'),
                 ];
-                const result = selectLastCandlePatternEntries(entries, entries);
-                const multiResult = result.find(e => e.patternType === 'multi');
-                expect(multiResult).toBeDefined();
-                expect(multiResult?.barIndex).toBe(10);
-            });
-
-            it('결과가 barIndex 오름차순으로 정렬된다', () => {
-                const entries: CandlePatternEntry[] = [
-                    makeSingleEntry(2, 'hammer'),
-                    makeSingleEntry(4, 'doji'),
-                    makeSingleEntry(5, 'shooting_star'),
-                    makeMultiEntry(6, 'morning_star'),
-                ];
-                const result = selectLastCandlePatternEntries(entries, entries);
-                const indices = result.map(e => e.barIndex);
-                const sorted = [...indices].sort((a, b) => a - b);
-                expect(indices).toEqual(sorted);
-            });
-        });
-
-        describe('다봉 패턴이 barIndex 0에 위치할 때', () => {
-            it('startBarIndex가 0 미만으로 내려가지 않는다', () => {
-                const allEntries: CandlePatternEntry[] = [
-                    makeSingleEntry(0, 'hammer'),
-                    makeMultiEntry(0, 'bullish_engulfing'),
-                ];
-                const entries: CandlePatternEntry[] = [
-                    makeMultiEntry(0, 'bullish_engulfing'),
-                ];
-                const result = selectLastCandlePatternEntries(
-                    entries,
-                    allEntries
-                );
-                const allIndices = result.map(e => e.barIndex);
-                allIndices.forEach(idx => {
-                    expect(idx).toBeGreaterThanOrEqual(0);
-                });
+                const result = selectLastCandlePatternEntries(entries);
+                expect(result).toHaveLength(1);
+                expect(result[0].patternType).toBe('multi');
+                expect(result[0].barIndex).toBe(10);
             });
         });
     });

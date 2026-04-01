@@ -1122,9 +1122,9 @@ describe('prompt', () => {
             expect(patternSection).not.toContain('Hammer');
         });
 
-        it('다봉 패턴이 있을 때 해당 봉의 단봉 패턴도 함께 포함된다', () => {
-            // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 반드시 감지됨
-            // 마지막 다봉 패턴 + 관련 봉의 단봉 패턴이 함께 포함되어야 함
+        it('다봉 패턴만 존재할 때 해당 다봉 패턴만 포함된다', () => {
+            // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 감지
+            // 다봉 패턴에 관련된 봉의 단봉 패턴은 detectCandlePatternEntries에서 이미 제외됨
             const bars = makeEngulfingBars();
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
@@ -1132,12 +1132,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            const patternLines = result
-                .split('\n')
-                .filter(line => line.includes('[0 bars ago]'));
-            expect(
-                patternLines.some(l => l.includes('Multi-candle pattern'))
-            ).toBe(true);
+            expect(result).toMatch(/Multi-candle pattern/);
+            expect(result).not.toMatch(/Single candle pattern/);
         });
 
         it('최근 15봉 이전에만 존재하는 다봉 패턴은 감지 결과에 포함되지 않는다', () => {

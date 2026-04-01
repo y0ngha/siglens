@@ -109,7 +109,7 @@ const toMarkerEntries = (
     entries: CandlePatternEntry[],
     detectionBars: Bar[]
 ): CandlePatternMarkerEntry[] =>
-    selectLastCandlePatternEntries(entries, entries).map(entry =>
+    selectLastCandlePatternEntries(entries).map(entry =>
         entryToMarkerEntry(entry, detectionBars)
     );
 

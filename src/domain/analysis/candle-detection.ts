@@ -167,19 +167,14 @@ export function detectCandlePatternEntries(bars: Bar[]): CandlePatternEntry[] {
 
 /**
  * Selects only the last detected candle pattern entries:
- * - If a multi-candle pattern exists: the multi pattern + single patterns for involved bars
- *   (reuses already-detected single patterns from allEntries instead of re-calling detectCandlePattern)
- * - If only single patterns exist: only the last single pattern
- *
- * @param entries - Subset of entries to select from (e.g. filtered by caller)
- * @param allEntries - Full detection result from detectCandlePatternEntries, used to look up
- *                     single patterns for bars involved in a multi-candle pattern without re-detection
+ * - If a multi-candle pattern exists: returns only the last multi pattern
+ *   (single patterns for involved bars are already excluded by detectCandlePatternEntries)
+ * - If only single patterns exist: returns only the last single pattern
  *
  * Shared by prompt construction and chart marker rendering.
  */
 export function selectLastCandlePatternEntries(
-    entries: CandlePatternEntry[],
-    allEntries: CandlePatternEntry[]
+    entries: CandlePatternEntry[]
 ): CandlePatternEntry[] {
     if (entries.length === 0) return [];
 
@@ -188,23 +183,7 @@ export function selectLastCandlePatternEntries(
         .find(e => e.patternType === 'multi');
 
     if (lastMultiEntry !== undefined) {
-        const multiBarIndex = lastMultiEntry.barIndex;
-        const startBarIndex = Math.max(
-            0,
-            multiBarIndex - MULTI_CANDLE_PATTERN_BUFFER
-        );
-
-        // Reuse single patterns already detected in allEntries for involved bars
-        const involvedSingles = allEntries.filter(
-            (e): e is SingleCandlePatternEntry =>
-                e.patternType === 'single' &&
-                e.barIndex >= startBarIndex &&
-                e.barIndex <= multiBarIndex
-        );
-
-        return [...involvedSingles, lastMultiEntry].sort(
-            (a, b) => a.barIndex - b.barIndex
-        );
+        return [lastMultiEntry];
     }
 
     // Only single patterns: return the last one
