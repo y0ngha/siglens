@@ -31,7 +31,6 @@ export function buildPaneLabels({
         ? [
               {
                   paneIndex: RSI_PANE_INDEX,
-                  title: `RSI(${RSI_DEFAULT_PERIOD})`,
                   subLabels: [
                       {
                           name: `RSI(${RSI_DEFAULT_PERIOD})`,
@@ -46,7 +45,6 @@ export function buildPaneLabels({
         ? [
               {
                   paneIndex: MACD_PANE_INDEX,
-                  title: `MACD(${MACD_FAST_PERIOD},${MACD_SLOW_PERIOD},${MACD_SIGNAL_PERIOD})`,
                   subLabels: [
                       {
                           name: `MACD(${MACD_FAST_PERIOD},${MACD_SLOW_PERIOD},${MACD_SIGNAL_PERIOD})`,
@@ -69,7 +67,6 @@ export function buildPaneLabels({
         ? [
               {
                   paneIndex: DMI_PANE_INDEX,
-                  title: `DMI(${DMI_DEFAULT_PERIOD})`,
                   subLabels: [
                       {
                           name: `+DI(${DMI_DEFAULT_PERIOD})`,

@@ -5,6 +5,5 @@ export interface PaneSubLabel {
 
 export interface PaneLabelConfig {
     paneIndex: number;
-    title: string;
     subLabels: PaneSubLabel[];
 }

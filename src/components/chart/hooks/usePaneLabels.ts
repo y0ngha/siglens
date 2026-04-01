@@ -106,5 +106,3 @@ export function usePaneLabels({
         };
     }, [chartRef, containerRef, labels]);
 }
-
-export type { PaneLabelConfig, PaneSubLabel } from '@/components/chart/types';
