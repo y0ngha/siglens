@@ -10,11 +10,14 @@ import {
     MIN_CONFIDENCE_WEIGHT,
     RSI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
-import {
-    detectCandlePattern,
-    detectMultiCandlePattern,
-} from '@/domain/analysis/candle';
+import { detectCandlePattern } from '@/domain/analysis/candle';
 import { getCandlePatternLabel } from '@/domain/analysis/candle-labels';
+import {
+    detectCandlePatternEntries,
+    getDetectionBars,
+    selectLastCandlePatternEntries,
+    type CandlePatternEntry,
+} from '@/domain/analysis/candle-detection';
 import type {
     AnalysisResponse,
     Bar,
@@ -24,15 +27,14 @@ import type {
 
 const INDICATOR_DECIMAL_PLACES = 2;
 const RECENT_BARS_COUNT = 30;
-export const CANDLE_PATTERN_DETECTION_BARS = 15;
 const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
 
-type CandlePatternEntryType = 'single' | 'multi';
+type PatternEntryType = 'single' | 'multi';
 
-interface CandlePatternEntry {
+interface PromptCandlePatternEntry {
     barsAgo: number;
-    patternType: CandlePatternEntryType;
+    patternType: PatternEntryType;
     patternName: string;
 }
 
@@ -84,41 +86,28 @@ const formatBarRow = (bar: Bar): string => {
     return `${datetime} | O:${fmt(bar.open)} H:${fmt(bar.high)} L:${fmt(bar.low)} C:${fmt(bar.close)} V:${formatVolume(bar.volume)} [${getCandlePatternLabel(pattern)}]`;
 };
 
-const buildCandlePatternEntries = (bars: Bar[]): CandlePatternEntry[] => {
-    const patternBars = bars.slice(-CANDLE_PATTERN_DETECTION_BARS);
-    const totalBars = patternBars.length;
+const buildCandlePatternEntries = (bars: Bar[]): PromptCandlePatternEntry[] => {
+    const entries = detectCandlePatternEntries(bars);
+    const detectionBars = getDetectionBars(bars);
+    const totalBars = detectionBars.length;
+    const lastEntries = selectLastCandlePatternEntries(entries);
 
-    const singleEntries: CandlePatternEntry[] = patternBars.map((bar, i) => ({
-        barsAgo: totalBars - 1 - i,
-        patternType: 'single',
-        patternName: detectCandlePattern(bar),
-    }));
-
-    const multiEntries: CandlePatternEntry[] = patternBars.flatMap((_, i) => {
-        const windowEnd = i + 1;
-        const candleWindow = patternBars.slice(0, windowEnd);
-        const detected = detectMultiCandlePattern(candleWindow);
-        if (detected === null) return [];
-        return [
-            {
-                barsAgo: totalBars - 1 - i,
-                patternType: 'multi' as const,
-                patternName: detected,
-            },
-        ];
-    });
-
-    const multiBarPositions = new Set(multiEntries.map(e => e.barsAgo));
-    const filteredSingleEntries = singleEntries.filter(
-        e => !multiBarPositions.has(e.barsAgo)
-    );
-
-    return [...filteredSingleEntries, ...multiEntries].sort(
-        (a, b) => b.barsAgo - a.barsAgo
-    );
+    return lastEntries
+        .map((entry: CandlePatternEntry) => ({
+            barsAgo: totalBars - 1 - entry.barIndex,
+            patternType: entry.patternType,
+            patternName:
+                entry.patternType === 'multi'
+                    ? entry.multiPattern
+                    : entry.singlePattern,
+        }))
+        .sort(
+            (a: PromptCandlePatternEntry, b: PromptCandlePatternEntry) =>
+                b.barsAgo - a.barsAgo
+        );
 };
 
-const formatPatternEntry = (entry: CandlePatternEntry): string =>
+const formatPatternEntry = (entry: PromptCandlePatternEntry): string =>
     `- [${entry.barsAgo} bars ago] ${entry.patternType === 'single' ? 'Single candle pattern' : 'Multi-candle pattern'}: ${entry.patternName}`;
 
 const formatRecentBarsSection = (bars: Bar[]): string => {
@@ -136,7 +125,8 @@ const formatRecentBarsSection = (bars: Bar[]): string => {
         ...recentBars.map(formatBarRow),
         ...(patternEntries.length > 0
             ? [
-                  `## Detected Candle Patterns (Last ${CANDLE_PATTERN_DETECTION_BARS} bars)`,
+                  `## Detected Candle Patterns (Short-term Trend Signal)`,
+                  'These patterns represent the most recent candle formation and should be interpreted as short-term trend signals.',
                   ...patternEntries.map(formatPatternEntry),
               ]
             : []),

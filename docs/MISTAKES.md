@@ -10,6 +10,15 @@ Review before implementation and ensure these are not repeated.
 ## Coding Paradigm
 
 ```
+0. Repeating hardcoded literals and values in multiple locations
+   → Extract to a single const and reference it in all places
+   → Rule: FF.md Cohesion 3-B — same values defined in multiple places create maintenance risk
+   → Common pattern: min/max values, array indices, magic numbers, CSS custom property defaults
+   ❌ aria-valuemin={240} in component A, aria-valuemin={240} in component B, but PANEL_MIN_WIDTH = 240 in utils
+   ✅ export const PANEL_MIN_WIDTH = 240; import and use in both places
+   ❌ const arr = [1, 2, 3]; const first = arr[0]; const last = arr[2];  // indices hardcoded
+   ✅ const INDEX_FIRST = 0; const INDEX_LAST = 2; const first = arr[INDEX_FIRST]; const last = arr[INDEX_LAST];
+
 1. Using for/while/forEach loops for data transformation
    → Replace with map, filter, reduce, flatMap
    → Exception: side-effect-only iteration (e.g. calling a chart API on each element
@@ -53,6 +62,15 @@ Review before implementation and ensure these are not repeated.
    ❌ MARKDOWN_CODE_BLOCK_PATTERN defined in both claude.ts and gemini.ts
    ✅ Define once in infrastructure/ai/utils.ts and import in both providers
 
+8.5. Identical values queried or computed multiple times in a single function
+   → Extract to a local const or assign once before using repeatedly
+   → Rule: FF.md Readability 1-A — computing the same value twice reduces readability and adds unnecessary expense
+   → Common pattern: map.get(key) called twice, function called twice, selector result reused
+   ❌ const skill1 = skillByName.get(p.skillName); ... ; const skill2 = skillByName.get(p.skillName); // same key, two calls
+   ✅ const skill = skillByName.get(p.skillName); ... ; // one call, reused
+   ❌ items.map(item => { const val = compute(item); return val || compute(item); })  // compute called twice
+   ✅ items.map(item => { const val = compute(item); return val || fallback; })
+
 9. Discarding the callback parameter and re-accessing the same element via external array index
    → Rule: FF.md Readability 1-G — viewpoint shift forces the reader to track two locations simultaneously
    → map/filter/reduce callbacks already receive the current element as a parameter; use it directly
@@ -63,6 +81,15 @@ Review before implementation and ensure these are not repeated.
    ✅ lines.reduce((acc, line) => { ... })
    ✅ items.filter(item => { ... })
    ✅ for (const [label, element] of labelPairs) { ... }  // pre-zip arrays and use for...of
+
+9.5. Leaving logic that has no effect
+   → Rule: FF.md Readability 1-B — logic with no practical effect adds noise and obscures intent
+   → Common pattern: filter/map operations that don't change the result, catch-all conditions that never execute, redundant assignments
+   → Each code layer should contribute meaningful logic; remove anything that has no functional impact
+   ❌ const results = data.flatMap(...).filter(x => x.id === uniqueId);  // uniqueId is guaranteed from flatMap
+   ✅ const results = data.flatMap(...)  // remove the .filter() that never filters
+   ❌ try { ... } catch (e) { logError(e); }  // error is never expected and catch adds confusion
+   ✅ Remove the catch block if it doesn't serve error recovery
 
 10. Repeating identical filtering/calculation logic across multiple blocks
     → Rule: FF.md Cohesion 3-B — same values computed in multiple places must be extracted to single source of truth
@@ -127,6 +154,15 @@ Review before implementation and ensure these are not repeated.
    ✅ type SignalStrength = 'strong' | 'moderate' | 'weak';
       interface Signal { strength: SignalStrength; }
 
+5.5. Using `as` type assertions instead of type guards
+   → Rule: CONVENTIONS.md — type assertions bypass type safety and hide assumptions
+   → Use narrowing with `typeof`, `in`, `instanceof`, or discriminated unions instead
+   → Exception: DOM element types where runtime narrowing is infeasible (e.g. HTMLCanvasElement)
+   ❌ (CANDLE_PATTERN_LABELS as Record<string, string>)[patternName]  // assertion bypasses type safety
+   ✅ findCandlePatternLabel(patternName) with `in` operator checks for single/multi pattern membership
+   ❌ const label = map as Map<string, string>  // assertion without verification
+   ✅ if (map instanceof Map) { ... use map as Map ... }  // type guard + usage together
+
 6. Hardcoding literals in implementation code
    → Extract to constants (domain/indicators/constants.ts or @/components/chart/constants)
    ❌ period = 14
@@ -173,6 +209,22 @@ Review before implementation and ensure these are not repeated.
     → When a new field is parsed in infrastructure (e.g. pattern, display), add it to the domain interface immediately
     ❌ interface Skill { id: string; type: string; }  // missing pattern?, display?
     ✅ interface Skill { id: string; type: string; pattern?: string; display?: SkillDisplay; }
+
+11.5. Object shapes declared as type instead of interface
+     → Rule: CONVENTIONS.md TypeScript Rules — object shapes must use interface
+     → interface is structural and extensible; type is nominal and rigid
+     → When describing an object shape (even a simple one), use interface
+     ❌ type CandlePatternEntry = { patternType: 'single' | 'multi'; barIndex: number; ... }
+     ✅ interface CandlePatternEntry { patternType: 'single' | 'multi'; barIndex: number; ... }
+
+11.6. Missing explicit type annotations on callback parameters
+     → Rule: CONVENTIONS.md TypeScript Rules — all parameters must have explicit types
+     → Callback parameters (in map, filter, reduce, sort, forEach) often trigger implicit any errors
+     → Even if callback is simple, declare parameter types explicitly
+     ❌ buildCandlePatternEntries.map(entry => { ... })  // entry has implicit any
+     ✅ buildCandlePatternEntries.map((entry: CandlePatternEntry) => { ... })
+     ❌ entries.sort((a, b) => a.barIndex - b.barIndex)  // a, b have implicit any
+     ✅ entries.sort((a: PromptCandlePatternEntry, b: PromptCandlePatternEntry) => a.barIndex - b.barIndex)
 
 12. Related interfaces with shared fields not linked by extends
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
@@ -298,6 +350,24 @@ Review before implementation and ensure these are not repeated.
     ✅ export function ChartContent() { return <div className="flex-col md:flex-row">...</div>; }  // child owns its layout
        <SymbolPageClient />  // caller adds margin as needed
 
+11.5. Unused Tailwind classes (dead CSS)
+    → Remove classes that have no effect in the current DOM context
+    → Rule: CONVENTIONS.md — unnecessary classes clutter code and reduce readability
+    → grid classes (col-span-2, grid-cols-3, etc.) have no effect on flex containers
+    → Always verify the parent container's layout model before applying layout-specific classes
+    ❌ <div className="flex flex-col"><div className="col-span-2">Content</div></div>  // col-span-2 has no effect on flex
+    ✅ <div className="flex flex-col"><div>Content</div></div>  // remove grid-specific classes from flex children
+
+11.6. Repeated cursor/interaction styling classes across components
+    → Extract repeated cursor and interaction patterns to global styles
+    → Rule: CONVENTIONS.md — repeated patterns must be globalized (AHA principle: 2+ repetitions = extract)
+    → Rule: FF.md Cohesion 3-B — same styling logic defined in multiple places creates maintenance burden
+    ❌ AnalysisPanel: className="cursor-pointer"
+       TimeframeSelector: className="cursor-pointer"
+       SymbolSearch: className="cursor-pointer"
+    ✅ (globals.css) @layer base { button { @apply cursor-pointer disabled:cursor-not-allowed; } }
+       Remove cursor-pointer from individual components
+
 12. Repeating identical JSX structure across multiple render blocks
     → Rule: FF.md Readability 1-A — identical JSX repeated 2+ times should be data-driven
     → Extract to a data array + .map() pattern instead of hardcoding duplicates
@@ -381,6 +451,14 @@ Review before implementation and ensure these are not repeated.
       + include skillsDegraded: true in response for route handlers
    ❌ new ClaudeProvider() directly instantiated when AI_PROVIDER env says to use Gemini
    ✅ createAIProvider() helper that respects environment variable
+
+5. Multi-candle and single-candle patterns both shown for the same bar
+   → Rule: FF.md Cohesion 3-B — related data should use consistent filtering rules
+   → When a multi-candle pattern (bullish_engulfing, morning_star, etc.) is detected on a bar,
+     single-candle patterns (hammer, doji, etc.) on the same bar or bars involved in the multi-candle should be suppressed
+   → This prevents visual/text clutter where one bar is annotated with both pattern types
+   ❌ buildCandlePatternEntries returns entries where barsAgo=0 has both singlePattern ('hammer') and multiPattern ('bullish_engulfing')
+   ✅ Filter out single-candle entries whose barsAgo matches any bar involved in a detected multi-candle pattern
 ```
 
 ---
@@ -417,11 +495,7 @@ Review before implementation and ensure these are not repeated.
 5. Missing initial-period null test case for period-based indicators
    → Adding it at the stub stage guards against regressions after real implementation
 
-6. Test file uses only 2-level structure (describe → it) instead of required 3 levels
-   → Rule: CONVENTIONS.md Test Structure — describe(subject) → describe(context) → it(behavior) is mandatory
-   → Add an intermediate context describe block between the top-level describe and its it() cases
-   ❌ describe('GeminiProvider — API 키 미설정', () => { it('throws', ...) })
-   ✅ describe('GeminiProvider', () => { describe('API 키 미설정 상태에서', () => { it('throws', ...) }) })
+6. [REMOVED — no longer a violation. Test structure allows 2–5 levels per CONVENTIONS.md]
 
 7. beforeEach/beforeAll placed at module level instead of inside describe block
    → Rule: CONVENTIONS.md Test Rules — all setup code must be inside the relevant describe block for consistency
@@ -434,22 +508,14 @@ Review before implementation and ensure these are not repeated.
         it('...', ...)
       })
 
-8. Test file structure lacks module-level wrapper (2-level instead of 3-level)
-   → Rule: CONVENTIONS.md Test Structure — describe(module/subject name) → describe(function/context) → it(behavior) is required
-   ❌ describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) })  // missing module wrapper
-   ✅ describe('prompt', () => { describe('buildAnalysisPrompt', () => { describe('current market section', () => { it(...) }) }) })  // 3 levels
+8. [REMOVED — no longer a violation. Test structure allows 2–5 levels per CONVENTIONS.md]
 
-9. Test file exceeds 3-level structure (describe → describe → describe → it) with unnecessary intermediate layers
-   → Rule: CONVENTIONS.md Test Structure — exactly 3 levels required: describe(subject) → describe(context) → it(behavior)
-   → Adding extra describe layers between required levels creates nesting that obscures the test intent
-   → Common offenders: adding describe(methodName) when method is the only one in the class, or describe(sectionName) between subject and context
-   → When context is inherently coupled with subject, merge it into the context describe text instead of adding a separate layer
-   ❌ describe('FileSkillsLoader') { describe('loadSkills') { describe('파일이 없을 때') { it('에러를 던진다') } } }  // 4 levels
-   ✅ describe('FileSkillsLoader') { describe('파일이 없을 때') { it('에러를 던진다') } }  // 3 levels
-   ❌ describe('buildAnalysisPrompt') { describe('현재 시장 상황 섹션') { describe('bars가 비어있을 때') { it('섹션이 생성된다') } } }  // 4 levels
-   ✅ describe('buildAnalysisPrompt') { describe('현재 시장 상황 섹션 - bars가 비어있을 때') { it('섹션이 생성된다') } }  // merge context into describe text
-   ❌ describe('생성자를 호출하면') { describe('API 키 미설정 상태에서') { it('에러를 던진다') } }  // separate describe for action when it's the only action tested
-   ✅ describe('API 키 미설정 상태에서') { it('생성자를 호출하면 에러를 던진다') }  // merge into it description
+9. Test file exceeds 5-level describe nesting
+   → Rule: CONVENTIONS.md Test Structure — 2 to 5 levels allowed, 6+ levels prohibited
+   → Excessive nesting obscures test intent
+   → When context is tightly coupled with subject, merge into describe text instead of adding a separate layer
+   ❌ describe('a') { describe('b') { describe('c') { describe('d') { describe('e') { describe('f') { it('...') } } } } } }  // 6 levels
+   ✅ Keep at 5 levels or fewer by merging context into describe text
 
 10. Boundary test constant redefined locally instead of imported from source
    → Rule: MISTAKES.md TypeScript Rule 6 — hardcoded boundary values must be extracted to constants.ts
@@ -468,6 +534,14 @@ Review before implementation and ensure these are not repeated.
    ❌ readFile rejection path in Promise.all context, but rejection case not tested in loader.test.ts
    ✅ (utils.test.ts) it('코드 블록 앞뒤의 텍스트를 제거한다', () => { expect(stripMarkdownCodeBlock('text```code```text')).toBe('code'); })
    ✅ (loader.test.ts) describe('readFile 에러 발생 시', () => { it('에러를 전파한다', () => { ... expect(loadSkills()).rejects.toThrow() }) })
+
+11.7. Unconditional assertion in test when expected data is guaranteed to be detected
+   → Rule: FF.md Predictability 2-C — each it block must verify its behavior unconditionally
+   → When test data is constructed to guarantee a specific outcome (e.g. bullish_engulfing pattern formation),
+     assertion should not be wrapped in a conditional that allows the test to pass without verification
+   → If statement guards hide incomplete test execution; the test should fail if the expected behavior doesn't occur
+   ❌ if (result.includes('Multi-candle pattern:')) { expect(result).toMatch('bullish_engulfing'); }  // test passes without assertion if pattern not detected
+   ✅ expect(result).toMatch('bullish_engulfing');  // unconditional assertion; test fails if pattern missing
 
 12. Provider pair has asymmetric error handling or logging behavior
    → Rule: FF.md Predictability 2-B — sibling functions/classes in the same family must behave consistently
@@ -506,6 +580,39 @@ Review before implementation and ensure these are not repeated.
       useMAOverlay(commonHookParams)
       useEMAOverlay(commonHookParams)
       useBollingerOverlay(commonHookParams)
+
+16. Mixing imperative for loops and functional transforms in same function
+   → Rule: FF.md Readability 1-A — consistent paradigm reduces cognitive load
+   → When a function performs data transformation, use map/filter/reduce throughout; do not mix with imperative loops
+   → Exception: separate setup phase (object construction for side effects) from transform phase (data mapping)
+   ❌ const multiEntryMap = {}; for (const entry of entries) { multiEntryMap[key] = value; }  // then extends.map()
+   ✅ const multiEntryMap = extendedBars.reduce((acc, bar, idx) => { ... }, {})  // consistent transform
+
+17. Test describe text promises assertions that are not verified
+   → Rule: FF.md Predictability 2-C — each describe's implied contract must be honored by all its it() cases
+   → When a describe block name asserts an expectation (e.g. "관련 봉의 단봉 패턴도 함께 포함된다"),
+     every it() case inside must verify that exact behavior
+   → If an it() tests a different behavior, move it to a new describe block or correct the describe text
+   ❌ describe('다봉 패턴이 있을 때 해당 봉의 단봉 패턴도 함께 포함된다', () => {
+        it('결과를 반환한다', () => { expect(result).toBeDefined(); })  // not testing single-pattern inclusion
+      })
+   ✅ describe('다봉 패턴이 있을 때', () => {
+        describe('해당 봉의 단봉 패턴도 함께 포함되는 경우', () => {
+          it('단봉 패턴이 제외된다', () => { expect(result.singlePatterns).toBeUndefined(); })
+        })
+      })
+
+18. Circular dependency between modules
+   → Rule: FF.md Coupling 4-A — circular dependencies create initialization order brittleness and hidden coupling
+   → When module A imports from B and B imports from A, refactor to break the cycle:
+     1. Extract shared constant to a third file
+     2. Move one dependency to infrastructure/utils layer
+     3. Defer import to function call time (only as last resort)
+   ❌ candle-detection.ts imports CANDLE_PATTERN_DETECTION_BARS from prompt.ts
+      prompt.ts imports { detectCandlePatternEntries } from candle-detection.ts
+   ✅ Move CANDLE_PATTERN_DETECTION_BARS to candle-detection.ts; prompt.ts imports from there
+   ❌ indexA.ts imports { funcA } from indexB.ts and exports it; indexB.ts imports { funcB } from indexA.ts
+   ✅ Extract shared definitions to common.ts; both import from common.ts
 ```
 
 ---

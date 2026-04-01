@@ -18,6 +18,7 @@ import { useMACDChart } from '@/components/chart/hooks/useMACDChart';
 import { useRSIChart } from '@/components/chart/hooks/useRSIChart';
 import { useDMIChart } from '@/components/chart/hooks/useDMIChart';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
+import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import {
     DEFAULT_LINE_WIDTH,
@@ -147,6 +148,9 @@ export function StockChart({
     const { isVisible: dmiVisible, toggle: toggleDMI } =
         useDMIChart(commonHookParams);
 
+    const { isVisible: candlePatternsVisible, toggle: toggleCandlePatterns } =
+        useCandlePatternMarkers({ seriesRef, bars });
+
     const { visiblePatterns, togglePattern } = usePatternOverlay({
         chartRef,
         bars,
@@ -215,6 +219,10 @@ export function StockChart({
                     macd={{ visible: macdVisible, onToggle: toggleMACD }}
                     rsi={{ visible: rsiVisible, onToggle: toggleRSI }}
                     dmi={{ visible: dmiVisible, onToggle: toggleDMI }}
+                    candlePatterns={{
+                        visible: candlePatternsVisible,
+                        onToggle: toggleCandlePatterns,
+                    }}
                 />
             </div>
         </div>

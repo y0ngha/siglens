@@ -1,12 +1,15 @@
-import {
-    buildAnalysisPrompt,
-    CANDLE_PATTERN_DETECTION_BARS,
-} from '@/domain/analysis/prompt';
+import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
+import { CANDLE_PATTERN_DETECTION_BARS } from '@/domain/analysis/candle-detection';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
     RSI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
+import {
+    HAMMER_BODY_OFFSET,
+    HAMMER_HIGH_OFFSET,
+    HAMMER_LOW_OFFSET,
+} from '@/__tests__/fixtures/candle';
 import type { Bar, IndicatorResult, Skill } from '@/domain/types';
 
 const TEST_SYMBOL = 'AAPL';
@@ -1092,24 +1095,36 @@ describe('prompt', () => {
             );
         });
 
-        it('여러 봉에서 감지된 패턴이 모두 포함된다', () => {
-            const bars = makeEngulfingBars();
+        it('다봉 패턴이 있으면 해당 다봉 패턴과 관련 봉의 단봉 패턴만 포함된다', () => {
+            // hammer bar (단봉) + engulfing pair (다봉)
+            // 마지막 패턴(다봉)과 그 관련 봉의 단봉만 포함되어야 함
+            const hammerBar: Bar = {
+                time: TEST_BAR_BASE_TIME - TEST_BAR_INTERVAL,
+                open: TEST_BAR_BASE_PRICE,
+                high: TEST_BAR_BASE_PRICE + HAMMER_HIGH_OFFSET,
+                low: TEST_BAR_BASE_PRICE + HAMMER_LOW_OFFSET,
+                close: TEST_BAR_BASE_PRICE + HAMMER_BODY_OFFSET,
+                volume: TEST_BAR_BASE_VOLUME,
+            };
+            const [engulfingPrev, engulfingCurr] = makeEngulfingBars();
+            const bars = [hammerBar, engulfingPrev, engulfingCurr];
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
                 makeIndicators(),
                 []
             );
-            const patternMatches = result.match(
-                /\[\d+ bars ago\] (Single candle|Multi-candle) pattern: .+/g
-            );
-            expect(patternMatches).not.toBeNull();
-            expect((patternMatches ?? []).length).toBeGreaterThanOrEqual(2);
+            // Multi-candle pattern should be included
+            expect(result).toMatch(/Multi-candle pattern: .+/);
+            // Hammer bar is NOT involved in the multi pattern, so it should be excluded
+            const patternSection =
+                result.split('Short-term Trend Signal')[1] ?? '';
+            expect(patternSection).not.toContain('Hammer');
         });
 
-        it('같은 barsAgo 위치에 다봉 패턴이 있을 때 단봉 패턴은 제외된다', () => {
-            // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 반드시 감지됨
-            // currBar(barsAgo=0)에는 다봉 패턴이 감지되므로 단봉 패턴은 출력되지 않아야 함
+        it('다봉 패턴만 존재할 때 해당 다봉 패턴만 포함된다', () => {
+            // prevBar(음봉) → currBar(양봉, 장악형 조건 충족) → bullish_engulfing 감지
+            // 다봉 패턴에 관련된 봉의 단봉 패턴은 detectCandlePatternEntries에서 이미 제외됨
             const bars = makeEngulfingBars();
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
@@ -1117,11 +1132,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            const patternLines = result
-                .split('\n')
-                .filter(line => line.includes('[0 bars ago]'));
-            expect(patternLines.length).toBe(1);
-            expect(patternLines[0]).toContain('Multi-candle pattern');
+            expect(result).toMatch(/Multi-candle pattern/);
+            expect(result).not.toMatch(/Single candle pattern/);
         });
 
         it('최근 15봉 이전에만 존재하는 다봉 패턴은 감지 결과에 포함되지 않는다', () => {
