@@ -129,9 +129,7 @@ const selectLastPatternEntries = (
                     multiPattern: null,
                 };
             })
-            .filter(
-                (e): e is SingleCandlePatternEntry => e !== null
-            );
+            .filter((e): e is SingleCandlePatternEntry => e !== null);
 
         return [...involvedSingles, lastMultiEntry].sort(
             (a, b) => a.barIndex - b.barIndex
