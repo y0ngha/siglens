@@ -1,21 +1,12 @@
 'use client';
 
-import {
-    useCallback,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-} from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
-import {
-    DEFAULT_LINE_WIDTH,
-    RSI_PANE_INDEX,
-} from '@/components/chart/constants';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import {
     RSI_OVERBOUGHT_LEVEL,
     RSI_OVERSOLD_LEVEL,
@@ -27,11 +18,8 @@ interface UseRSIChartParams {
     bars: Bar[];
     indicators: IndicatorResult;
     lineWidth?: LineWidth;
-}
-
-interface UseRSIChartReturn {
     isVisible: boolean;
-    toggle: () => void;
+    paneIndex: number;
 }
 
 export function useRSIChart({
@@ -39,21 +27,19 @@ export function useRSIChart({
     bars,
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
-}: UseRSIChartParams): UseRSIChartReturn {
-    const [isVisible, setIsVisible] = useState(false);
+    isVisible,
+    paneIndex,
+}: UseRSIChartParams): void {
     const prevChartRef = useRef<IChartApi | null>(null);
+    const prevPaneIndexRef = useRef<number>(paneIndex);
     const rsiSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-
-    const toggle = useCallback(() => {
-        setIsVisible(prev => !prev);
-    }, []);
 
     // chart 인스턴스 교체 시 ref만 초기화 (removeSeries 불필요 — 이전 chart는 부모가 소멸)
     const clearSeriesRefs = useEffectEvent(() => {
         rsiSeriesRef.current = null;
     });
 
-    // isVisible false 시 시리즈 제거 및 ref 초기화
+    // isVisible false 또는 paneIndex 변경 시 시리즈 제거 및 ref 초기화
     const removeAllSeries = useEffectEvent((chart: IChartApi) => {
         if (rsiSeriesRef.current) {
             chart.removeSeries(rsiSeriesRef.current);
@@ -80,6 +66,12 @@ export function useRSIChart({
             return;
         }
 
+        // paneIndex 변경 시 시리즈 제거 후 재생성
+        if (prevPaneIndexRef.current !== paneIndex && rsiSeriesRef.current) {
+            removeAllSeries(chart);
+        }
+        prevPaneIndexRef.current = paneIndex;
+
         if (!rsiSeriesRef.current) {
             rsiSeriesRef.current = chart.addSeries(
                 LineSeries,
@@ -89,7 +81,7 @@ export function useRSIChart({
                     priceLineVisible: false,
                     lastValueVisible: false,
                 },
-                RSI_PANE_INDEX
+                paneIndex
             );
 
             rsiSeriesRef.current.createPriceLine({
@@ -111,7 +103,7 @@ export function useRSIChart({
             });
         }
         rsiSeriesRef.current.applyOptions({ lineWidth });
-    }, [chartRef, isVisible, lineWidth]);
+    }, [chartRef, isVisible, lineWidth, paneIndex]);
 
     // 데이터 동기화: 시리즈가 보이는 동안 bars/indicators 변경 시 업데이트
     // isVisible이 true로 바뀔 때도 실행되어 새로 생성된 시리즈에 초기 데이터를 세팅함
@@ -124,7 +116,5 @@ export function useRSIChart({
         if (!rsiSeriesRef.current) return;
 
         rsiSeriesRef.current.setData(buildSeriesDataFromValues(bars, rsi));
-    }, [indicators, bars, isVisible]);
-
-    return { isVisible, toggle };
+    }, [indicators, bars, isVisible, paneIndex]);
 }

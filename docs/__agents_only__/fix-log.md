@@ -15,11 +15,6 @@
 - Rule: DESIGN.md — 인라인 스타일은 금지; 단 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)는 Tailwind 임의값으로 표현 불가능하므로 예외 허용, 주석으로 명시 필요
 - Context: `getPeriodColor`는 `CHART_COLORS` 기반 상수를 반환하는 런타임 동적 색상으로, Tailwind 임의값 문법으로 대체 불가능함을 주석으로 명시하여 의도를 문서화
 
-## [PR #105 | refactor/104/AI-프롬프트-문자열-영어로-변환 | 2026-03-31]
-- Violation: Test file structure exceeded 3 levels (4 levels: describe('prompt') > describe('buildAnalysisPrompt') > describe(context) > it(behavior))
-- Rule: MISTAKES.md Test Rule 9 — test file must use exactly 3 levels: describe(subject) > describe(context) > it(behavior)
-- Context: In `src/__tests__/domain/analysis/prompt.test.ts`, the `describe('buildAnalysisPrompt')` wrapper was an unnecessary intermediate layer; removed it so all context describe blocks are directly under `describe('prompt')`
-
 ## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
 - Violation: `usePanelResize.ts`에서 `React.MouseEvent` 타입을 사용하면서 `React` import가 누락되어 TypeScript 컴파일 오류 발생
 - Rule: TypeScript — 사용하는 모든 타입의 import가 명시되어야 한다
@@ -44,11 +39,6 @@
 - Violation: 3봉 패턴 감지 시 detection window 시작 부분에서 이전 데이터 부족으로 미감지 가능
 - Rule: domain/CLAUDE.md Candle Pattern Detection — multi-candle 패턴은 2~3봉이 필요하므로 충분한 데이터 확보 필요
 - Context: `detectCandlePatternEntries`에서 `CANDLE_PATTERN_DETECTION_BARS + MULTI_CANDLE_PATTERN_BUFFER(2)`개 데이터를 확보하여 감지, 결과는 마지막 15봉에 대해서만 반환
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: 테스트 구조가 `describe(module) → describe(function) → it(behavior)` 2단계로 3레벨 미달
-- Rule: MISTAKES.md Test Rule 6 / __tests__/CLAUDE.md — 테스트는 반드시 `describe(module) → describe(function) → describe(context) → it(behavior)` 3단계 describe + it 구조를 따라야 함
-- Context: `candle-trend.test.ts`의 `getSinglePatternTrend`, `getMultiPatternTrend`, `EXCLUDED_SINGLE_PATTERNS` 세 describe 블록 모두 context describe 레벨 추가
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: useEffect에서 plugin 초기화(createSeriesMarkers)와 데이터 동기화(setMarkers)가 혼합되어 있고, cleanup이 별도 useEffect로 분리
@@ -79,4 +69,9 @@
 - Violation: MACD sub-label에 'Signal', 'Histogram' 하드코딩 문자열 사용
 - Rule: MISTAKES.md TypeScript #6 — 구현 코드의 하드코딩 리터럴은 상수로 추출
 - Context: `paneLabelUtils.ts`에 `MACD_SIGNAL_LABEL`, `MACD_HISTOGRAM_LABEL` 상수로 추출
+
+## [Issue #132 | fix/132/pane-indicator-동적-index-계산 | 2026-04-01]
+- Violation: `INACTIVE_PANE_INDEX = -1`이 StockChart.tsx, paneLabelUtils.ts, 테스트 파일 3곳에서 각각 별도 정의
+- Rule: MISTAKES.md #0 / FF.md Cohesion 3-B — 동일 값이 여러 위치에 정의되면 단일 상수로 추출해야 함
+- Context: `components/chart/constants.ts`에 `INACTIVE_PANE_INDEX`를 단일 정의하고, StockChart.tsx, paneLabelUtils.ts, paneLabelUtils.test.ts에서 import하도록 변경
 

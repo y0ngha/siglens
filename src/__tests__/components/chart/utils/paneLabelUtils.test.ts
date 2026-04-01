@@ -7,11 +7,14 @@ import {
     MACD_SIGNAL_PERIOD,
     DMI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
-import {
-    RSI_PANE_INDEX,
-    MACD_PANE_INDEX,
-    DMI_PANE_INDEX,
-} from '@/components/chart/constants';
+import type { PaneIndices } from '@/components/chart/types';
+import { INACTIVE_PANE_INDEX } from '@/components/chart/constants';
+
+const ALL_INACTIVE: PaneIndices = {
+    rsi: INACTIVE_PANE_INDEX,
+    macd: INACTIVE_PANE_INDEX,
+    dmi: INACTIVE_PANE_INDEX,
+};
 
 describe('buildPaneLabels', () => {
     describe('모든 지표가 비활성일 때', () => {
@@ -20,6 +23,7 @@ describe('buildPaneLabels', () => {
                 rsiVisible: false,
                 macdVisible: false,
                 dmiVisible: false,
+                paneIndices: ALL_INACTIVE,
             });
 
             expect(result).toEqual([]);
@@ -27,11 +31,19 @@ describe('buildPaneLabels', () => {
     });
 
     describe('RSI만 활성일 때', () => {
+        const RSI_PANE_INDEX = 1;
+        const paneIndices: PaneIndices = {
+            rsi: RSI_PANE_INDEX,
+            macd: INACTIVE_PANE_INDEX,
+            dmi: INACTIVE_PANE_INDEX,
+        };
+
         it('RSI pane 라벨 1개와 서브 라벨 1개를 반환한다', () => {
             const result = buildPaneLabels({
                 rsiVisible: true,
                 macdVisible: false,
                 dmiVisible: false,
+                paneIndices,
             });
 
             expect(result).toHaveLength(1);
@@ -45,11 +57,19 @@ describe('buildPaneLabels', () => {
     });
 
     describe('MACD만 활성일 때', () => {
+        const MACD_PANE_INDEX = 1;
+        const paneIndices: PaneIndices = {
+            rsi: INACTIVE_PANE_INDEX,
+            macd: MACD_PANE_INDEX,
+            dmi: INACTIVE_PANE_INDEX,
+        };
+
         it('MACD pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
             const result = buildPaneLabels({
                 rsiVisible: false,
                 macdVisible: true,
                 dmiVisible: false,
+                paneIndices,
             });
 
             expect(result).toHaveLength(1);
@@ -62,6 +82,7 @@ describe('buildPaneLabels', () => {
                 rsiVisible: false,
                 macdVisible: true,
                 dmiVisible: false,
+                paneIndices,
             });
 
             const [macdLine, signal, histogram] = result[0].subLabels;
@@ -80,11 +101,19 @@ describe('buildPaneLabels', () => {
     });
 
     describe('DMI만 활성일 때', () => {
+        const DMI_PANE_INDEX = 1;
+        const paneIndices: PaneIndices = {
+            rsi: INACTIVE_PANE_INDEX,
+            macd: INACTIVE_PANE_INDEX,
+            dmi: DMI_PANE_INDEX,
+        };
+
         it('DMI pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
             const result = buildPaneLabels({
                 rsiVisible: false,
                 macdVisible: false,
                 dmiVisible: true,
+                paneIndices,
             });
 
             expect(result).toHaveLength(1);
@@ -97,6 +126,7 @@ describe('buildPaneLabels', () => {
                 rsiVisible: false,
                 macdVisible: false,
                 dmiVisible: true,
+                paneIndices,
             });
 
             const [diPlus, diMinus, adx] = result[0].subLabels;
@@ -113,17 +143,20 @@ describe('buildPaneLabels', () => {
     });
 
     describe('모든 지표가 활성일 때', () => {
+        const paneIndices: PaneIndices = { rsi: 1, macd: 2, dmi: 3 };
+
         it('RSI, MACD, DMI 순서로 3개의 pane 라벨을 반환한다', () => {
             const result = buildPaneLabels({
                 rsiVisible: true,
                 macdVisible: true,
                 dmiVisible: true,
+                paneIndices,
             });
 
             expect(result).toHaveLength(3);
-            expect(result[0].paneIndex).toBe(RSI_PANE_INDEX);
-            expect(result[1].paneIndex).toBe(MACD_PANE_INDEX);
-            expect(result[2].paneIndex).toBe(DMI_PANE_INDEX);
+            expect(result[0].paneIndex).toBe(1);
+            expect(result[1].paneIndex).toBe(2);
+            expect(result[2].paneIndex).toBe(3);
         });
 
         it('각 pane의 서브 라벨 개수가 올바르다 (RSI:1, MACD:3, DMI:3)', () => {
@@ -131,6 +164,7 @@ describe('buildPaneLabels', () => {
                 rsiVisible: true,
                 macdVisible: true,
                 dmiVisible: true,
+                paneIndices,
             });
 
             expect(result[0].subLabels).toHaveLength(1);
@@ -141,10 +175,12 @@ describe('buildPaneLabels', () => {
 
     describe('각 서브 라벨의 색상이 CHART_COLORS와 일치하는지 확인', () => {
         it('모든 서브 라벨의 색상이 올바르다', () => {
+            const paneIndices: PaneIndices = { rsi: 1, macd: 2, dmi: 3 };
             const result = buildPaneLabels({
                 rsiVisible: true,
                 macdVisible: true,
                 dmiVisible: true,
+                paneIndices,
             });
 
             const allColors = result.flatMap(label =>
@@ -160,6 +196,66 @@ describe('buildPaneLabels', () => {
                 CHART_COLORS.dmiMinus,
                 CHART_COLORS.dmiAdx,
             ]);
+        });
+    });
+
+    describe('부분 활성 조합일 때', () => {
+        it('RSI+DMI만 활성이면 연속적인 pane index를 사용한다', () => {
+            const paneIndices: PaneIndices = {
+                rsi: 1,
+                macd: INACTIVE_PANE_INDEX,
+                dmi: 2,
+            };
+            const result = buildPaneLabels({
+                rsiVisible: true,
+                macdVisible: false,
+                dmiVisible: true,
+                paneIndices,
+            });
+
+            expect(result).toHaveLength(2);
+            expect(result[0].paneIndex).toBe(1);
+            expect(result[1].paneIndex).toBe(2);
+        });
+
+        it('MACD+DMI만 활성이면 pane 1, 2에 할당된다', () => {
+            const paneIndices: PaneIndices = {
+                rsi: INACTIVE_PANE_INDEX,
+                macd: 1,
+                dmi: 2,
+            };
+            const result = buildPaneLabels({
+                rsiVisible: false,
+                macdVisible: true,
+                dmiVisible: true,
+                paneIndices,
+            });
+
+            expect(result).toHaveLength(2);
+            expect(result[0].paneIndex).toBe(1);
+            expect(result[0].subLabels).toHaveLength(3);
+            expect(result[1].paneIndex).toBe(2);
+            expect(result[1].subLabels).toHaveLength(3);
+        });
+
+        it('RSI+MACD만 활성이면 pane 1, 2에 할당된다', () => {
+            const paneIndices: PaneIndices = {
+                rsi: 1,
+                macd: 2,
+                dmi: INACTIVE_PANE_INDEX,
+            };
+            const result = buildPaneLabels({
+                rsiVisible: true,
+                macdVisible: true,
+                dmiVisible: false,
+                paneIndices,
+            });
+
+            expect(result).toHaveLength(2);
+            expect(result[0].paneIndex).toBe(1);
+            expect(result[0].subLabels).toHaveLength(1);
+            expect(result[1].paneIndex).toBe(2);
+            expect(result[1].subLabels).toHaveLength(3);
         });
     });
 });

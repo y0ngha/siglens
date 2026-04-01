@@ -1,21 +1,12 @@
 'use client';
 
-import {
-    useCallback,
-    useEffect,
-    useEffectEvent,
-    useRef,
-    useState,
-} from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
-import {
-    DEFAULT_LINE_WIDTH,
-    DMI_PANE_INDEX,
-} from '@/components/chart/constants';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseDMIChartParams {
@@ -23,11 +14,8 @@ interface UseDMIChartParams {
     bars: Bar[];
     indicators: IndicatorResult;
     lineWidth?: LineWidth;
-}
-
-interface UseDMIChartReturn {
     isVisible: boolean;
-    toggle: () => void;
+    paneIndex: number;
 }
 
 export function useDMIChart({
@@ -35,16 +23,14 @@ export function useDMIChart({
     bars,
     indicators,
     lineWidth = DEFAULT_LINE_WIDTH,
-}: UseDMIChartParams): UseDMIChartReturn {
-    const [isVisible, setIsVisible] = useState(false);
+    isVisible,
+    paneIndex,
+}: UseDMIChartParams): void {
     const prevChartRef = useRef<IChartApi | null>(null);
+    const prevPaneIndexRef = useRef<number>(paneIndex);
     const diPlusSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const diMinusSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
     const adxSeriesRef = useRef<ISeriesApi<'Line'> | null>(null);
-
-    const toggle = useCallback(() => {
-        setIsVisible(prev => !prev);
-    }, []);
 
     // chart 인스턴스 교체 시 ref만 초기화 (removeSeries 불필요 — 이전 chart는 부모가 소멸)
     const clearSeriesRefs = useEffectEvent(() => {
@@ -53,7 +39,7 @@ export function useDMIChart({
         adxSeriesRef.current = null;
     });
 
-    // isVisible false 시 시리즈 제거 및 ref 초기화
+    // isVisible false 또는 paneIndex 변경 시 시리즈 제거 및 ref 초기화
     const removeAllSeries = useEffectEvent((chart: IChartApi) => {
         if (diPlusSeriesRef.current) {
             chart.removeSeries(diPlusSeriesRef.current);
@@ -86,6 +72,12 @@ export function useDMIChart({
             return;
         }
 
+        // paneIndex 변경 시 시리즈 제거 후 재생성
+        if (prevPaneIndexRef.current !== paneIndex && diPlusSeriesRef.current) {
+            removeAllSeries(chart);
+        }
+        prevPaneIndexRef.current = paneIndex;
+
         if (!diPlusSeriesRef.current) {
             diPlusSeriesRef.current = chart.addSeries(
                 LineSeries,
@@ -95,7 +87,7 @@ export function useDMIChart({
                     priceLineVisible: false,
                     lastValueVisible: false,
                 },
-                DMI_PANE_INDEX
+                paneIndex
             );
         }
 
@@ -108,7 +100,7 @@ export function useDMIChart({
                     priceLineVisible: false,
                     lastValueVisible: false,
                 },
-                DMI_PANE_INDEX
+                paneIndex
             );
         }
 
@@ -121,14 +113,14 @@ export function useDMIChart({
                     priceLineVisible: false,
                     lastValueVisible: false,
                 },
-                DMI_PANE_INDEX
+                paneIndex
             );
         }
 
         diPlusSeriesRef.current.applyOptions({ lineWidth });
         diMinusSeriesRef.current.applyOptions({ lineWidth });
         adxSeriesRef.current.applyOptions({ lineWidth });
-    }, [chartRef, isVisible, lineWidth]);
+    }, [chartRef, isVisible, lineWidth, paneIndex]);
 
     // 데이터 동기화: 시리즈가 보이는 동안 bars/indicators 변경 시 업데이트
     // isVisible이 true로 바뀔 때도 실행되어 새로 생성된 시리즈에 초기 데이터를 세팅함
@@ -152,7 +144,5 @@ export function useDMIChart({
         diPlusSeriesRef.current.setData(diPlusData);
         diMinusSeriesRef.current.setData(diMinusData);
         adxSeriesRef.current.setData(adxData);
-    }, [indicators, bars, isVisible]);
-
-    return { isVisible, toggle };
+    }, [indicators, bars, isVisible, paneIndex]);
 }

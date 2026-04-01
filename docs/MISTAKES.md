@@ -495,6 +495,16 @@ Review before implementation and ensure these are not repeated.
 5. Missing initial-period null test case for period-based indicators
    → Adding it at the stub stage guards against regressions after real implementation
 
+5.5. Test structure not following describe(subject) → describe(context) → it(behavior) nesting
+   → Rule: CONVENTIONS.md Test Rules — each test file must use exactly 3 levels of describe blocks before it()
+   → subject (module/function name) at level 1, context (condition/scenario) at level 2, behavior (expected outcome) at level 3
+   → Fewer levels (subject → behavior, skipping context) requires adding a context layer
+   → Additional intermediate wrappers (e.g. describe('buildAnalysisPrompt') between subject and context) must be removed
+   ❌ describe('prompt') { describe('buildAnalysisPrompt') { describe(context) { it(...) } } }  // 4 levels, intermediate wrapper
+   ✅ describe('prompt') { describe(context) { it(...) } }  // 3 levels: subject implicit in file, context explicit, behavior
+   ❌ describe('subject') { it('behavior') }  // 2 levels, missing context layer
+   ✅ describe('subject') { describe('when context') { it('behavior') } }  // 3 levels
+
 6. [REMOVED — no longer a violation. Test structure allows 2–5 levels per CONVENTIONS.md]
 
 7. beforeEach/beforeAll placed at module level instead of inside describe block
