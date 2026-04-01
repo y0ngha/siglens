@@ -30,9 +30,11 @@ const RECENT_BARS_COUNT = 30;
 const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
 
+type PatternEntryType = 'single' | 'multi';
+
 interface PromptCandlePatternEntry {
     barsAgo: number;
-    patternType: 'single' | 'multi';
+    patternType: PatternEntryType;
     patternName: string;
 }
 

@@ -51,26 +51,6 @@
 - Context: `detectCandlePatternEntries`에서 `CANDLE_PATTERN_DETECTION_BARS + MULTI_CANDLE_PATTERN_BUFFER(2)`개 데이터를 확보하여 감지, 결과는 마지막 15봉에 대해서만 반환
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `multiEntries` 생성 시 `findIndex`를 별도 호출하여 O(N^2) 비효율
-- Rule: FF.md Readability 1-A — 이미 알고 있는 인덱스를 재계산하지 않아야 함
-- Context: `detectCandlePatternEntries`에서 multi 패턴 감지 시 인덱스를 `multiEntryMap`에 함께 수집하여 별도 findIndex 호출 제거
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: candle-detection.ts와 prompt.ts 간 순환 의존성 — CANDLE_PATTERN_DETECTION_BARS를 prompt.ts에서 정의하고 candle-detection.ts에서 import, 반대로 prompt.ts가 candle-detection.ts에서 import
-- Rule: FF.md Coupling 4-A — 순환 의존성은 모듈 초기화 순서를 취약하게 만들고 결합도를 높임
-- Context: CANDLE_PATTERN_DETECTION_BARS를 candle-detection.ts로 이동하여 순환 의존 해소; prompt.ts와 테스트 파일의 import 경로를 candle-detection으로 변경
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: CandlePatternEntry의 singlePattern/multiPattern이 nullable로 정의되어 non-null assertion(!) 사용 필요
-- Rule: FF.md Predictability 2-B — discriminated union으로 타입을 구조화하면 타입 가드만으로 안전하게 접근 가능
-- Context: CandlePatternEntry를 SingleCandlePatternEntry | MultiCandlePatternEntry discriminated union으로 재구성하여 patternType 분기 시 ! 없이 타입 안전 접근 보장
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `selectLastCandlePatternEntries`에 대한 직접 단위 테스트 누락
-- Rule: __tests__/CLAUDE.md — 커버리지 타겟 100%; export된 domain 함수는 edge cases 포함 테스트 필수
-- Context: `candle-detection.test.ts`에 `selectLastCandlePatternEntries` 테스트 describe 블록 추가; empty entries, single-only, multi-only, mixed entries, boundary(barIndex 0) 케이스 커버
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: 테스트 구조가 `describe(module) → describe(function) → it(behavior)` 2단계로 3레벨 미달
 - Rule: MISTAKES.md Test Rule 6 / __tests__/CLAUDE.md — 테스트는 반드시 `describe(module) → describe(function) → describe(context) → it(behavior)` 3단계 describe + it 구조를 따라야 함
 - Context: `candle-trend.test.ts`의 `getSinglePatternTrend`, `getMultiPatternTrend`, `EXCLUDED_SINGLE_PATTERNS` 세 describe 블록 모두 context describe 레벨 추가
@@ -81,19 +61,9 @@
 - Context: `useCandlePatternMarkers.ts`에서 초기화+cleanup을 `useEffect([seriesRef])`로, 데이터 동기화를 `useEffect([markers, isVisible])`로 분리
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `getDetectionBars`에서 `Math.min(bars.length, CANDLE_PATTERN_DETECTION_BARS)`가 실질적 효과 없음
-- Rule: MISTAKES.md 9.5 — 실질적 효과가 없는 로직은 노이즈를 추가하고 의도를 모호하게 만듦
-- Context: `Array.slice(-n)`은 `n > array.length`일 때 자동으로 전체 배열을 반환하므로 `Math.min` 불필요; `bars.slice(-CANDLE_PATTERN_DETECTION_BARS)`로 단순화
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: `extendedBars.forEach((_, i) => {...})`에서 비단순 로직을 forEach로 처리
 - Rule: MISTAKES.md 1 예외 조항 — 비단순(non-trivial) 로직은 for...of 사용 권장
 - Context: `detectCandlePatternEntries`의 다봉 패턴 감지 루프와 involvedIndices 수집 루프를 `for...of`로 변경
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `selectLastCandlePatternEntries` 테스트에서 describe 설명이 관련 봉의 단봉 패턴 검증을 약속하지만 assertion 미포함
-- Rule: FF.md Predictability 2-C — describe 설명이 약속하는 동작을 assertion에서 모두 검증해야 함
-- Context: 다봉 패턴만 존재 시 관련 봉의 단봉 패턴(singleResults) 존재 여부와 barIndex 범위를 검증하는 assertion 추가
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: 다봉 패턴 제외 테스트에서 동일한 봉 데이터(makeBar)로 생성하여 다봉 패턴이 감지되지 않아 forEach assertion이 실행되지 않음
@@ -101,12 +71,7 @@
 - Context: `candle-detection.test.ts`에서 makeEngulfingPair로 bullish_engulfing 감지를 보장하고 `expect(multiEntries.length).toBeGreaterThanOrEqual(1)` 무조건 assertion 추가
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `selectLastCandlePatternEntries`의 `involvedSingles` 필터가 실질적으로 빈 배열만 반환하는 dead code path
-- Rule: MISTAKES.md 9.5 — 실질적 효과가 없는 로직은 노이즈를 추가하고 의도를 모호하게 만듦
-- Context: `detectCandlePatternEntries`가 이미 다봉 관련 봉의 단봉을 제외하므로 `allEntries` 매개변수와 `involvedSingles` 필터를 제거하고 함수를 단순화; 모든 caller와 테스트 업데이트
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `prompt.test.ts`의 테스트 설명 '다봉 패턴이 있을 때 해당 봉의 단봉 패턴도 함께 포함된다'가 실제 assertion과 불일치
-- Rule: FF.md Predictability 2-C — 테스트 설명이 약속하는 동작을 assertion에서 검증해야 함
-- Context: 테스트 설명을 실제 동작에 맞게 수정하고 단봉 패턴이 포함되지 않음을 검증하는 assertion 추가
+- Violation: `PromptCandlePatternEntry.patternType`에 인라인 union literal `'single' | 'multi'` 사용
+- Rule: MISTAKES.md TypeScript Rule 5 — 2개 이상 멤버의 union literal은 별도 type alias로 추출
+- Context: `prompt.ts`에서 `type PatternEntryType = 'single' | 'multi'`로 추출하여 interface 필드에서 참조
 

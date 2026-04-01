@@ -580,6 +580,39 @@ Review before implementation and ensure these are not repeated.
       useMAOverlay(commonHookParams)
       useEMAOverlay(commonHookParams)
       useBollingerOverlay(commonHookParams)
+
+16. Mixing imperative for loops and functional transforms in same function
+   → Rule: FF.md Readability 1-A — consistent paradigm reduces cognitive load
+   → When a function performs data transformation, use map/filter/reduce throughout; do not mix with imperative loops
+   → Exception: separate setup phase (object construction for side effects) from transform phase (data mapping)
+   ❌ const multiEntryMap = {}; for (const entry of entries) { multiEntryMap[key] = value; }  // then extends.map()
+   ✅ const multiEntryMap = extendedBars.reduce((acc, bar, idx) => { ... }, {})  // consistent transform
+
+17. Test describe text promises assertions that are not verified
+   → Rule: FF.md Predictability 2-C — each describe's implied contract must be honored by all its it() cases
+   → When a describe block name asserts an expectation (e.g. "관련 봉의 단봉 패턴도 함께 포함된다"),
+     every it() case inside must verify that exact behavior
+   → If an it() tests a different behavior, move it to a new describe block or correct the describe text
+   ❌ describe('다봉 패턴이 있을 때 해당 봉의 단봉 패턴도 함께 포함된다', () => {
+        it('결과를 반환한다', () => { expect(result).toBeDefined(); })  // not testing single-pattern inclusion
+      })
+   ✅ describe('다봉 패턴이 있을 때', () => {
+        describe('해당 봉의 단봉 패턴도 함께 포함되는 경우', () => {
+          it('단봉 패턴이 제외된다', () => { expect(result.singlePatterns).toBeUndefined(); })
+        })
+      })
+
+18. Circular dependency between modules
+   → Rule: FF.md Coupling 4-A — circular dependencies create initialization order brittleness and hidden coupling
+   → When module A imports from B and B imports from A, refactor to break the cycle:
+     1. Extract shared constant to a third file
+     2. Move one dependency to infrastructure/utils layer
+     3. Defer import to function call time (only as last resort)
+   ❌ candle-detection.ts imports CANDLE_PATTERN_DETECTION_BARS from prompt.ts
+      prompt.ts imports { detectCandlePatternEntries } from candle-detection.ts
+   ✅ Move CANDLE_PATTERN_DETECTION_BARS to candle-detection.ts; prompt.ts imports from there
+   ❌ indexA.ts imports { funcA } from indexB.ts and exports it; indexB.ts imports { funcB } from indexA.ts
+   ✅ Extract shared definitions to common.ts; both import from common.ts
 ```
 
 ---

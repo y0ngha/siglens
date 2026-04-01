@@ -99,16 +99,13 @@ export function detectCandlePatternEntries(bars: Bar[]): CandlePatternEntry[] {
     );
 
     // Detect multi-candle patterns and collect involved bar indices
-    const multiEntryMap = new Map<
-        number,
-        { pattern: MultiCandlePattern; involvedIndices: number[] }
-    >();
-
-    for (const [i] of extendedBars.entries()) {
-        if (i < detectionStartIndex) continue;
+    const multiEntryMap = extendedBars.reduce<
+        Map<number, { pattern: MultiCandlePattern; involvedIndices: number[] }>
+    >((acc, _, i) => {
+        if (i < detectionStartIndex) return acc;
         const candleWindow = extendedBars.slice(0, i + 1);
         const detected = detectMultiCandlePattern(candleWindow);
-        if (detected === null) continue;
+        if (detected === null) return acc;
 
         const patternBarCount = getPatternBarCount(detected);
         const startIdx = Math.max(0, i - patternBarCount + 1);
@@ -117,16 +114,15 @@ export function detectCandlePatternEntries(bars: Bar[]): CandlePatternEntry[] {
             (__, offset) => startIdx + offset
         );
 
-        multiEntryMap.set(i, { pattern: detected, involvedIndices });
-    }
+        return new Map([...acc, [i, { pattern: detected, involvedIndices }]]);
+    }, new Map());
 
     // Collect all bar indices involved in any multi-candle pattern
-    const multiInvolvedIndices = new Set<number>();
-    for (const { involvedIndices } of multiEntryMap.values()) {
-        for (const idx of involvedIndices) {
-            multiInvolvedIndices.add(idx);
-        }
-    }
+    const multiInvolvedIndices = new Set(
+        Array.from(multiEntryMap.values()).flatMap(
+            ({ involvedIndices }) => involvedIndices
+        )
+    );
 
     // Build multi entries (only for bars in detection window)
     const multiEntries: CandlePatternEntry[] = Array.from(
@@ -178,9 +174,7 @@ export function selectLastCandlePatternEntries(
 ): CandlePatternEntry[] {
     if (entries.length === 0) return [];
 
-    const lastMultiEntry = [...entries]
-        .reverse()
-        .find(e => e.patternType === 'multi');
+    const lastMultiEntry = entries.findLast(e => e.patternType === 'multi');
 
     if (lastMultiEntry !== undefined) {
         return [lastMultiEntry];
