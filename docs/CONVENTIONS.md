@@ -296,16 +296,15 @@ src/__tests__/infrastructure/market/alpaca.test.ts
 ### Coverage Targets
 
 ```
-domain/         100%
-infrastructure/ 100%
-components/     excluded
-app/            excluded
+domain/         100% (필수)
+infrastructure/ 100% (필수)
+components/     optional
+app/            optional
 ```
 
-**`components/` and `app/` are intentionally excluded from test coverage.**
-Do not request or write test files for files under `components/` or `app/`.
-UI rendering logic is verified manually or via integration tests, not unit tests.
-Test files exist only for `domain/` and `infrastructure/`.
+`domain/` and `infrastructure/` require 100% coverage.
+`components/` and `app/` are not required to have tests, but writing tests for them is allowed.
+Pure utility functions and other units that benefit from testing may be freely tested.
 
 ### Test Structure
 
