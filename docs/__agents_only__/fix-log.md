@@ -10,11 +10,6 @@
 - Rule: FF.md Coupling 4-A — 함께 변경되는 props는 묶어야 한다; 새 지표마다 interface와 호출 사이트 양쪽을 수정해야 하는 tight coupling
 - Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
 
-## [PR #99 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
-- Violation: `IndicatorToolbar.tsx`에서 `getPeriodColor(period)` 반환값을 `style` prop으로 적용하는 코드에 허용 사유 주석이 없어 DESIGN.md 인라인 스타일 금지 규칙 위반 여부가 불명확했음
-- Rule: DESIGN.md — 인라인 스타일은 금지; 단 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)는 Tailwind 임의값으로 표현 불가능하므로 예외 허용, 주석으로 명시 필요
-- Context: `getPeriodColor`는 `CHART_COLORS` 기반 상수를 반환하는 런타임 동적 색상으로, Tailwind 임의값 문법으로 대체 불가능함을 주석으로 명시하여 의도를 문서화
-
 ## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
 - Violation: `usePanelResize.ts`에서 `React.MouseEvent` 타입을 사용하면서 `React` import가 누락되어 TypeScript 컴파일 오류 발생
 - Rule: TypeScript — 사용하는 모든 타입의 import가 명시되어야 한다
@@ -40,28 +35,18 @@
 - Rule: CONVENTIONS.md Custom Hook Rules — instance creation/destruction([])와 data synchronization([deps])을 별도 useEffect로 분리해야 함
 - Context: `useCandlePatternMarkers.ts`에서 초기화+cleanup을 `useEffect([seriesRef])`로, 데이터 동기화를 `useEffect([markers, isVisible])`로 분리
 
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: `PromptCandlePatternEntry.patternType`에 인라인 union literal `'single' | 'multi'` 사용
-- Rule: MISTAKES.md TypeScript Rule 5 — 2개 이상 멤버의 union literal은 별도 type alias로 추출
-- Context: `prompt.ts`에서 `type PatternEntryType = 'single' | 'multi'`로 추출하여 interface 필드에서 참조
-
 ## [Issue #132 | fix/132/pane-indicator-label-표시-수정 | 2026-04-01]
 - Violation: `PaneLabelConfig`, `PaneSubLabel` 타입이 hooks/ 파일에서 정의되고 utils/에서 import하여 역방향 의존성 발생
 - Rule: CONVENTIONS.md Component Folder Structure — hooks/는 React hook 파일, utils/는 순수 함수; utils가 hooks를 import하면 안 됨
 - Context: `chart/types.ts`로 공유 타입을 추출하여 hooks/와 utils/ 모두 types.ts에서 import하도록 변경
 
-## [PR #138 | fix/132/pane-indicator-동적-index-계산 | 2026-04-01]
-- Violation: `paneIndices` useMemo 내부에서 `let next` + `next++` 재할당 사용
-- Rule: MISTAKES.md #3 — let 재할당 금지, const + 새 변수 사용
-- Context: `StockChart.tsx`의 `paneIndices` useMemo에서 `let next`를 `visibles.slice(0, pos).filter(Boolean).length` 기반의 순수 함수 `indexFor`로 교체
+## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
+- Violation: `src/infrastructure/CLAUDE.md` skills 섹션이 `FileSkillsLoader`의 재귀 탐색 변경을 반영하지 않아 에이전트가 잘못된 정보를 읽는 상태
+- Rule: FF.md Cohesion 3-A — 함께 변경되어야 할 문서는 함께 변경되어야 한다
+- Context: `FileSkillsLoader`가 `skills/*.md`만 읽는 방식에서 하위 디렉토리 재귀 탐색 방식으로 변경되었으나 `src/infrastructure/CLAUDE.md`가 갱신되지 않았음; "Reads `skills/*.md` files" → "Recursively scans `skills/` subdirectories for `.md` files"로 수정
 
-## [PR #152 | feat/120/CCI-구현 | 2026-04-02]
-- Violation: `cci.ts` line 23에서 `smaValue === null` 체크가 도달 불가능한 dead code — MISTAKES.md #9.5 위반
-- Rule: MISTAKES.md #9.5 — logic with no practical effect adds noise and obscures intent
-- Context: `Array.from` 내부에서 `tpSlice`는 항상 정확히 `period`개 원소를 가지므로 `sma(tpSlice, period)`가 null을 반환할 수 없음; null 체크를 제거하고 non-null 단언(`!`)으로 의도를 명시
-
-## [PR #152 | feat/120/CCI-구현 | 2026-04-02]
-- Violation: `cci.test.ts` line 29에서 매직 넘버 `5` 리터럴 사용 — MISTAKES.md TypeScript #6 Pattern D 위반
-- Rule: MISTAKES.md #0 — 같은 파일 내 `TEST_BAR_COUNT = 30`은 상수로 추출했으나 `5`는 리터럴로 남아 일관성이 없음
-- Context: `BELOW_PERIOD_COUNT = 5`로 추출하고 주석으로 CCI_DEFAULT_PERIOD(20) 미만임을 명시하여 맥락을 드러냄
+## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
+- Violation: `collectMdFiles`에서 entry마다 별도 `stat()` 호출로 I/O 낭비 — 파일 시스템 성능 비효율
+- Rule: CONVENTIONS.md Infrastructure Performance — 불필요한 시스템 콜 제거; `readdir({ withFileTypes: true })`로 `Dirent` 객체를 직접 받아 `stat` 호출 없이 디렉토리 여부 확인 가능
+- Context: `loader.ts`에서 `stat` import 제거, `readdir(dir, { withFileTypes: true })` 사용으로 `entry.isDirectory()`로 분기; 테스트에서 `mockStat` 제거 후 `fileDirent`/`dirDirent` 헬퍼로 교체
 

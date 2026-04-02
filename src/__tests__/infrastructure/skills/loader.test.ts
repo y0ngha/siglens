@@ -3,16 +3,22 @@ import path from 'node:path';
 
 const mockReaddir = jest.fn();
 const mockReadFile = jest.fn();
-const mockStat = jest.fn();
 
 jest.mock('node:fs/promises', () => ({
     readdir: (...args: unknown[]) => mockReaddir(...args),
     readFile: (...args: unknown[]) => mockReadFile(...args),
-    stat: (...args: unknown[]) => mockStat(...args),
 }));
 
-const fileStatResult = { isDirectory: () => false };
-const dirStatResult = { isDirectory: () => true };
+const fileDirent = (name: string) => ({
+    name,
+    isDirectory: () => false,
+    isFile: () => true,
+});
+const dirDirent = (name: string) => ({
+    name,
+    isDirectory: () => true,
+    isFile: () => false,
+});
 
 const VALID_SKILL_MD = `---
 name: 테스트 스킬
@@ -134,13 +140,11 @@ describe('FileSkillsLoader', () => {
         loader = new FileSkillsLoader();
         mockReaddir.mockReset();
         mockReadFile.mockReset();
-        mockStat.mockReset();
     });
 
     describe('정상 케이스', () => {
         it('skills/ 디렉토리의 .md 파일을 읽어 Skill 배열로 반환한다', async () => {
-            mockReaddir.mockResolvedValue(['test.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('test.md')]);
             mockReadFile.mockResolvedValue(VALID_SKILL_MD);
 
             const skills = await loader.loadSkills();
@@ -169,11 +173,10 @@ describe('FileSkillsLoader', () => {
 
         it('.md가 아닌 파일은 무시한다', async () => {
             mockReaddir.mockResolvedValue([
-                'test.md',
-                'readme.txt',
-                '.DS_Store',
+                fileDirent('test.md'),
+                fileDirent('readme.txt'),
+                fileDirent('.DS_Store'),
             ]);
-            mockStat.mockResolvedValue(fileStatResult);
             mockReadFile.mockResolvedValue(VALID_SKILL_MD);
 
             const skills = await loader.loadSkills();
@@ -183,8 +186,7 @@ describe('FileSkillsLoader', () => {
         });
 
         it('type 필드가 없으면 type이 undefined이다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(NO_TYPE_SKILL_MD);
 
             const skills = await loader.loadSkills();
@@ -193,8 +195,7 @@ describe('FileSkillsLoader', () => {
         });
 
         it('indicators가 빈 배열이면 빈 배열로 변환한다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(NO_TYPE_SKILL_MD);
 
             const skills = await loader.loadSkills();
@@ -210,15 +211,13 @@ describe('FileSkillsLoader', () => {
             const skillFile = path.join(patternsDir, 'head-and-shoulders.md');
 
             mockReaddir.mockImplementation((dir: string) => {
-                if (dir === skillsDir) return Promise.resolve(['patterns']);
+                if (dir === skillsDir)
+                    return Promise.resolve([dirDirent('patterns')]);
                 if (dir === patternsDir)
-                    return Promise.resolve(['head-and-shoulders.md']);
+                    return Promise.resolve([
+                        fileDirent('head-and-shoulders.md'),
+                    ]);
                 return Promise.resolve([]);
-            });
-            mockStat.mockImplementation((p: string) => {
-                if (p === path.join(skillsDir, 'patterns'))
-                    return Promise.resolve(dirStatResult);
-                return Promise.resolve(fileStatResult);
             });
             mockReadFile.mockImplementation((p: string) => {
                 if (p === skillFile) return Promise.resolve(VALID_SKILL_MD);
@@ -239,14 +238,13 @@ describe('FileSkillsLoader', () => {
 
             mockReaddir.mockImplementation((dir: string) => {
                 if (dir === skillsDir)
-                    return Promise.resolve(['root.md', 'patterns']);
-                if (dir === patternsDir) return Promise.resolve(['sub.md']);
+                    return Promise.resolve([
+                        fileDirent('root.md'),
+                        dirDirent('patterns'),
+                    ]);
+                if (dir === patternsDir)
+                    return Promise.resolve([fileDirent('sub.md')]);
                 return Promise.resolve([]);
-            });
-            mockStat.mockImplementation((p: string) => {
-                if (p === path.join(skillsDir, 'patterns'))
-                    return Promise.resolve(dirStatResult);
-                return Promise.resolve(fileStatResult);
             });
             mockReadFile.mockImplementation((p: string) => {
                 if (p === rootFile) return Promise.resolve(VALID_SKILL_MD);
@@ -265,14 +263,10 @@ describe('FileSkillsLoader', () => {
             const indicatorsDir = path.join(skillsDir, 'indicators');
 
             mockReaddir.mockImplementation((dir: string) => {
-                if (dir === skillsDir) return Promise.resolve(['indicators']);
+                if (dir === skillsDir)
+                    return Promise.resolve([dirDirent('indicators')]);
                 if (dir === indicatorsDir) return Promise.resolve([]);
                 return Promise.resolve([]);
-            });
-            mockStat.mockImplementation((p: string) => {
-                if (p === path.join(skillsDir, 'indicators'))
-                    return Promise.resolve(dirStatResult);
-                return Promise.resolve(fileStatResult);
             });
 
             const skills = await loader.loadSkills();
@@ -283,8 +277,7 @@ describe('FileSkillsLoader', () => {
 
     describe('category 파싱', () => {
         it('category 필드가 있으면 SkillCategory로 파싱한다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(SKILL_WITH_CATEGORY_MD);
 
             const skills = await loader.loadSkills();
@@ -293,8 +286,7 @@ describe('FileSkillsLoader', () => {
         });
 
         it('category 필드가 없으면 category가 undefined이다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(VALID_SKILL_MD);
 
             const skills = await loader.loadSkills();
@@ -313,8 +305,7 @@ confidence_weight: 0.8
 ---
 
 내용`;
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(invalidCategoryMd);
 
             const skills = await loader.loadSkills();
@@ -323,8 +314,7 @@ confidence_weight: 0.8
         });
 
         it('reversal_bullish category를 파싱한다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(SKILL_WITH_BULLISH_CATEGORY_MD);
 
             const skills = await loader.loadSkills();
@@ -333,8 +323,7 @@ confidence_weight: 0.8
         });
 
         it('continuation_bearish category를 파싱한다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(SKILL_WITH_CONTINUATION_MD);
 
             const skills = await loader.loadSkills();
@@ -345,8 +334,7 @@ confidence_weight: 0.8
 
     describe('display 파싱', () => {
         it('중첩 display.chart 필드를 올바르게 파싱한다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(SKILL_WITH_DISPLAY_MD);
 
             const skills = await loader.loadSkills();
@@ -362,8 +350,7 @@ confidence_weight: 0.8
         });
 
         it('display 필드가 없으면 display가 undefined이다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(VALID_SKILL_MD);
 
             const skills = await loader.loadSkills();
@@ -372,8 +359,7 @@ confidence_weight: 0.8
         });
 
         it('상승 패턴의 display.chart.color를 올바르게 파싱한다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(SKILL_WITH_BULLISH_CATEGORY_MD);
 
             const skills = await loader.loadSkills();
@@ -382,8 +368,7 @@ confidence_weight: 0.8
         });
 
         it('continuation 패턴의 display.chart.label을 올바르게 파싱한다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(SKILL_WITH_CONTINUATION_MD);
 
             const skills = await loader.loadSkills();
@@ -394,8 +379,7 @@ confidence_weight: 0.8
 
     describe('category와 display를 함께 파싱', () => {
         it('category와 display가 모두 파싱된다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(SKILL_WITH_DISPLAY_MD);
 
             const skills = await loader.loadSkills();
@@ -408,8 +392,7 @@ confidence_weight: 0.8
 
     describe('pattern 파싱', () => {
         it('pattern 필드가 있으면 pattern 문자열로 파싱한다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(SKILL_WITH_PATTERN_MD);
 
             const skills = await loader.loadSkills();
@@ -418,8 +401,7 @@ confidence_weight: 0.8
         });
 
         it('pattern 필드가 없으면 pattern이 undefined이다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockResolvedValue(NO_TYPE_SKILL_MD);
 
             const skills = await loader.loadSkills();
@@ -440,8 +422,7 @@ confidence_weight: 0.8
 
     describe('readFile 에러', () => {
         it('readFile이 실패하면 에러를 전파한다', async () => {
-            mockReaddir.mockResolvedValue(['skill.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
             mockReadFile.mockRejectedValue(
                 new Error('EACCES: permission denied')
             );
@@ -452,8 +433,10 @@ confidence_weight: 0.8
 
     describe('frontmatter 파싱 실패', () => {
         it('frontmatter가 없는 파일은 결과에서 제외된다', async () => {
-            mockReaddir.mockResolvedValue(['bad.md', 'good.md']);
-            mockStat.mockResolvedValue(fileStatResult);
+            mockReaddir.mockResolvedValue([
+                fileDirent('bad.md'),
+                fileDirent('good.md'),
+            ]);
             mockReadFile
                 .mockResolvedValueOnce('frontmatter 없는 파일입니다')
                 .mockResolvedValueOnce(VALID_SKILL_MD);
