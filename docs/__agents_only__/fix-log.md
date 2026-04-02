@@ -70,3 +70,8 @@
 - Rule: MISTAKES.md #6 / FF Readability — named constants는 모듈 스코프에 선언해야 함
 - Context: stochastic.ts의 calculateFastPercentK 내 .map() 콜백에서 MIDPOINT_PERCENTAGE를 모듈 최상위로 호이스팅
 
+## [PR #140 | feat/118/stochastic-오실레이터-구현 | 2026-04-02]
+- Violation: reduce + spread 패턴으로 매 반복마다 배열 복제하여 O(N^2) 시간 복잡도 발생
+- Rule: FF.md Readability — 불필요한 배열 복제는 성능과 가독성 모두 저하; map 기반 파이프라인이 더 선언적
+- Context: calculateStochastic에서 reduce + `[...acc.results, item]` 패턴을 filter → map → map 파이프라인으로 리팩토링하여 O(N) 달성
+

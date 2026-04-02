@@ -47,6 +47,16 @@ function calculateFastPercentK(
  *   - Slow %K (%K displayed): SMA(Fast %K, smoothing=3)
  *   - Slow %D (%D displayed): SMA(Slow %K, dPeriod=3)
  */
+/**
+ * Clamp a value to [PERCENTAGE_LOWER_BOUND, PERCENTAGE_UPPER_BOUND].
+ */
+function clampPercentage(value: number): number {
+    return Math.min(
+        PERCENTAGE_UPPER_BOUND,
+        Math.max(PERCENTAGE_LOWER_BOUND, value)
+    );
+}
+
 export function calculateStochastic(
     bars: Bar[],
     kPeriod = STOCHASTIC_K_PERIOD,
@@ -57,66 +67,40 @@ export function calculateStochastic(
 
     const fastK = calculateFastPercentK(bars, kPeriod);
 
-    // Build Slow %K and %D using reduce to accumulate non-null Fast %K values
-    const { results } = fastK.reduce<{
-        fastKBuffer: number[];
-        slowKBuffer: number[];
-        results: StochasticResult[];
-    }>(
-        (acc, fk) => {
-            if (fk === null) {
-                return {
-                    ...acc,
-                    results: [
-                        ...acc.results,
-                        { percentK: null, percentD: null },
-                    ],
-                };
-            }
-
-            const nextFastKBuffer = [...acc.fastKBuffer, fk];
-            const slowK = sma(nextFastKBuffer, smoothing);
-
-            if (slowK === null) {
-                return {
-                    fastKBuffer: nextFastKBuffer,
-                    slowKBuffer: acc.slowKBuffer,
-                    results: [
-                        ...acc.results,
-                        { percentK: null, percentD: null },
-                    ],
-                };
-            }
-
-            const clampedSlowK = Math.min(
-                PERCENTAGE_UPPER_BOUND,
-                Math.max(PERCENTAGE_LOWER_BOUND, slowK)
-            );
-            const nextSlowKBuffer = [...acc.slowKBuffer, clampedSlowK];
-            const percentD = sma(nextSlowKBuffer, dPeriod);
-
-            const clampedPercentD =
-                percentD !== null
-                    ? Math.min(
-                          PERCENTAGE_UPPER_BOUND,
-                          Math.max(PERCENTAGE_LOWER_BOUND, percentD)
-                      )
-                    : null;
-
-            return {
-                fastKBuffer: nextFastKBuffer,
-                slowKBuffer: nextSlowKBuffer,
-                results: [
-                    ...acc.results,
-                    {
-                        percentK: clampedSlowK,
-                        percentD: clampedPercentD,
-                    },
-                ],
-            };
-        },
-        { fastKBuffer: [], slowKBuffer: [], results: [] }
+    // Extract non-null Fast %K values, then compute Slow %K via SMA
+    const validFastK = fastK.filter((v): v is number => v !== null);
+    const slowKValues: (number | null)[] = validFastK.map((_, i, arr) =>
+        sma(arr.slice(Math.max(0, i - smoothing + 1), i + 1), smoothing)
+    );
+    const clampedSlowK: (number | null)[] = slowKValues.map(v =>
+        v !== null ? clampPercentage(v) : null
     );
 
-    return results;
+    // Extract non-null Slow %K values, then compute %D via SMA
+    const numericSlowK = clampedSlowK.filter((v): v is number => v !== null);
+    const percentDValues: (number | null)[] = numericSlowK.map((_, i, arr) =>
+        sma(arr.slice(Math.max(0, i - dPeriod + 1), i + 1), dPeriod)
+    );
+    const clampedPercentD: (number | null)[] = percentDValues.map(v =>
+        v !== null ? clampPercentage(v) : null
+    );
+
+    // Map back to original bar indices
+    const nullOffset = kPeriod - 1;
+    const slowKOffset = smoothing - 1;
+
+    return fastK.map((fk, i): StochasticResult => {
+        if (fk === null) return { percentK: null, percentD: null };
+
+        const validIndex = i - nullOffset;
+        const percentK = clampedSlowK[validIndex] ?? null;
+
+        if (percentK === null) return { percentK: null, percentD: null };
+
+        const slowKIndex = validIndex - slowKOffset;
+        const percentD =
+            slowKIndex >= 0 ? (clampedPercentD[slowKIndex] ?? null) : null;
+
+        return { percentK, percentD };
+    });
 }
