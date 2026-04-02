@@ -1,4 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
 import { join } from 'node:path';
 import type { Skill, SkillCategory, SkillDisplay } from '@/domain/types';
 import type { SkillsProvider } from './types';
@@ -166,7 +167,7 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
 const collectMdFiles = async (dir: string): Promise<string[]> => {
     const entries = await readdir(dir, { withFileTypes: true });
     const results = await Promise.all(
-        entries.map(async entry => {
+        entries.map(async (entry: Dirent) => {
             const fullPath = join(dir, entry.name);
             if (entry.isDirectory()) return collectMdFiles(fullPath);
             if (entry.name.endsWith('.md')) return [fullPath];

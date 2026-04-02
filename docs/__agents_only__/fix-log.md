@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
+- Violation: `collectMdFiles` 함수 내 `.map()` 콜백 파라미터 `entry`에 명시적 타입 어노테이션 누락
+- Rule: MISTAKES.md #11.6 — 콜백 파라미터(map, filter, reduce, sort, forEach)는 TypeScript가 추론 가능하더라도 명시적 타입을 선언해야 한다
+- Context: `readdir(dir, { withFileTypes: true })` 반환값 덕분에 `entry`가 `Dirent`로 추론되지만, 규칙은 추론 가능 여부와 무관하게 명시적 선언을 요구하므로 `(entry: Dirent)` 어노테이션 및 `import type { Dirent } from 'node:fs'` 추가
+
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
