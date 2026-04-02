@@ -80,3 +80,23 @@
 - Rule: Test Layer Rules — 각 `it` 블록은 정확히 하나의 동작을 테스트하며, 중복 테스트는 noise 없는 커버리지를 저해함
 - Context: `기본 파라미터 테스트` describe 블록 전체를 제거하여 중복 제거
 
+## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
+- Violation: `ichimoku.ts` line 66에서 `senkouBSourceIndex = i - displacement`가 line 48의 `senkouASourceIndex`와 동일한 표현식을 중복 계산
+- Rule: MISTAKES.md rule 8.5 — 동일한 값을 한 함수 내에서 두 번 이상 계산/조회하면 단일 const로 추출해야 함
+- Context: `senkouASourceIndex`와 `senkouBSourceIndex`를 `sourceIndex`로 통합하고 senkouA 계산을 `calculateSenkouA` named helper로 추출
+
+## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
+- Violation: `useIchimokuOverlay.ts` line 173에서 `lineStyle: 2` 매직 넘버 사용
+- Rule: MISTAKES.md rule 6 — 하드코딩된 리터럴은 named constant로 교체해야 함; 다른 훅 파일들은 모두 `LineStyle.Dashed` 사용
+- Context: `LineStyle` import를 추가하고 `LineStyle.Dashed`로 교체하여 기존 패턴과 일관성 확보
+
+## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
+- Violation: `useIchimokuOverlay.ts` line 30에서 객체 형태에 `type` alias 사용
+- Rule: MISTAKES.md rule 11.5, CONVENTIONS.md — 객체 형태는 `interface`를 사용해야 함
+- Context: `type IchimokuCloudPoint = { ... }`를 `interface IchimokuCloudPoint { ... }`로 변경
+
+## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
+- Violation: `ichimoku.test.ts` line 31에서 `BELOW_PERIOD_COUNT = 5` 리터럴이 `ICHIMOKU_CONVERSION_PERIOD`와의 관계를 암묵적으로만 표현
+- Rule: MISTAKES.md rule 6 Pattern D — 맥락이 중요한 테스트 입력값은 의도가 드러나도록 상수로 추출해야 함
+- Context: `BELOW_PERIOD_COUNT = ICHIMOKU_CONVERSION_PERIOD - 4`로 도출하여 conversion period 미만임을 명시적으로 표현
+
