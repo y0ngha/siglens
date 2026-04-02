@@ -38,11 +38,17 @@ export interface StochasticResult {
     percentD: number | null;
 }
 
+export interface StochRSIResult {
+    k: number | null;
+    d: number | null;
+}
+
 export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
     dmi: DMIResult[];
     stochastic: StochasticResult[];
+    stochRsi: StochRSIResult[];
     rsi: (number | null)[];
     vwap: (number | null)[];
     ma: Record<number, (number | null)[]>;
