@@ -29,6 +29,7 @@ import { useStochasticChart } from '@/components/chart/hooks/useStochasticChart'
 import { useStochRSIChart } from '@/components/chart/hooks/useStochRSIChart';
 import { useCCIChart } from '@/components/chart/hooks/useCCIChart';
 import { useVolumeProfileOverlay } from '@/components/chart/hooks/useVolumeProfileOverlay';
+import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
@@ -207,6 +208,9 @@ export function StockChart({
     const { isVisible: vpVisible, toggle: toggleVP } =
         useVolumeProfileOverlay(commonHookParams);
 
+    const { isVisible: ichimokuVisible, toggle: toggleIchimoku } =
+        useIchimokuOverlay(commonHookParams);
+
     useMACDChart({
         ...commonHookParams,
         isVisible: macdVisible,
@@ -320,6 +324,10 @@ export function StockChart({
                     }}
                     cci={{ visible: cciVisible, onToggle: toggleCCI }}
                     volumeProfile={{ visible: vpVisible, onToggle: toggleVP }}
+                    ichimoku={{
+                        visible: ichimokuVisible,
+                        onToggle: toggleIchimoku,
+                    }}
                     candlePatterns={{
                         visible: candlePatternsVisible,
                         onToggle: toggleCandlePatterns,

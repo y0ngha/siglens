@@ -17,6 +17,9 @@ import {
     STOCH_RSI_K_PERIOD,
     STOCH_RSI_D_PERIOD,
     CCI_DEFAULT_PERIOD,
+    ICHIMOKU_CONVERSION_PERIOD,
+    ICHIMOKU_BASE_PERIOD,
+    ICHIMOKU_SPAN_B_PERIOD,
 } from '@/domain/indicators/constants';
 import { detectCandlePattern } from '@/domain/analysis/candle';
 import { getCandlePatternLabel } from '@/domain/analysis/candle-labels';
@@ -169,6 +172,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastStochastic = lastOf(indicators.stochastic);
     const lastStochRSI = lastOf(indicators.stochRsi);
     const lastCCI = lastNonNull(indicators.cci);
+    const lastIchimoku = lastOf(indicators.ichimoku);
 
     return [
         '## Indicator Values',
@@ -180,6 +184,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
         `- StochRSI(${STOCH_RSI_RSI_PERIOD},${STOCH_RSI_STOCH_PERIOD},${STOCH_RSI_K_PERIOD},${STOCH_RSI_D_PERIOD}): K ${fmt(lastStochRSI?.k ?? null)} / D ${fmt(lastStochRSI?.d ?? null)}`,
         `- CCI(${CCI_DEFAULT_PERIOD}): ${fmt(lastCCI)}`,
         `- Volume Profile: POC ${fmt(indicators.volumeProfile?.poc ?? null)} / VAH ${fmt(indicators.volumeProfile?.vah ?? null)} / VAL ${fmt(indicators.volumeProfile?.val ?? null)}`,
+        `- Ichimoku(${ICHIMOKU_CONVERSION_PERIOD},${ICHIMOKU_BASE_PERIOD},${ICHIMOKU_SPAN_B_PERIOD}): Tenkan ${fmt(lastIchimoku?.tenkan ?? null)} / Kijun ${fmt(lastIchimoku?.kijun ?? null)} / SpanA ${fmt(lastIchimoku?.senkouA ?? null)} / SpanB ${fmt(lastIchimoku?.senkouB ?? null)} / Chikou ${fmt(lastIchimoku?.chikou ?? null)}`,
     ].join('\n');
 };
 
@@ -239,6 +244,12 @@ const ANALYSIS_GUIDELINES = [
     '- Treat high/low of high-volume bars as supply/demand zones',
     '- Reference prior swing highs/lows and Bollinger Band boundaries',
     '- Each level must include a reason',
+    '',
+    '### Ichimoku Cloud Interpretation',
+    '- Price above the cloud (Kumo): bullish trend; price below: bearish trend; price inside: neutral/consolidation',
+    '- Tenkan-sen crossing above Kijun-sen is a bullish signal (TK cross); crossing below is bearish',
+    '- Chikou Span above price from 26 periods ago confirms bullish momentum; below confirms bearish',
+    '- Thick cloud ahead indicates strong support/resistance; thin cloud suggests a potential breakout zone',
     '',
     '### Price Target Calculation',
     '- Apply the measured move rule (project pattern height) for detected patterns',

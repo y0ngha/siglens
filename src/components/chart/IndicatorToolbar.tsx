@@ -131,6 +131,7 @@ interface IndicatorToolbarProps {
     stochRsi: IndicatorToggleGroup;
     cci: IndicatorToggleGroup;
     volumeProfile: IndicatorToggleGroup;
+    ichimoku: IndicatorToggleGroup;
     candlePatterns?: IndicatorToggleGroup;
 }
 
@@ -149,6 +150,7 @@ export function IndicatorToolbar({
     stochRsi,
     cci,
     volumeProfile,
+    ichimoku,
     candlePatterns,
 }: IndicatorToolbarProps) {
     const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
@@ -223,6 +225,7 @@ export function IndicatorToolbar({
         { label: 'StochRSI', ...stochRsi },
         { label: 'CCI', ...cci },
         { label: 'VP', ...volumeProfile },
+        { label: 'Ichimoku', ...ichimoku },
         ...(candlePatterns ? [{ label: '캔들', ...candlePatterns }] : []),
     ];
 
