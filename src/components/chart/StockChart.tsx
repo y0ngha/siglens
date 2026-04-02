@@ -25,6 +25,7 @@ import { useBollingerOverlay } from '@/components/chart/hooks/useBollingerOverla
 import { useMACDChart } from '@/components/chart/hooks/useMACDChart';
 import { useRSIChart } from '@/components/chart/hooks/useRSIChart';
 import { useDMIChart } from '@/components/chart/hooks/useDMIChart';
+import { useStochasticChart } from '@/components/chart/hooks/useStochasticChart';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
@@ -53,6 +54,7 @@ const EMPTY_INDICATORS: IndicatorResult = {
     macd: [],
     bollinger: [],
     dmi: [],
+    stochastic: [],
     rsi: [],
     vwap: [],
     ma: {},
@@ -78,6 +80,7 @@ export function StockChart({
     const [rsiVisible, setRsiVisible] = useState(false);
     const [macdVisible, setMacdVisible] = useState(false);
     const [dmiVisible, setDmiVisible] = useState(false);
+    const [stochasticVisible, setStochasticVisible] = useState(false);
 
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -96,8 +99,17 @@ export function StockChart({
         setDmiVisible(prev => !prev);
     }, []);
 
+    const toggleStochastic = useCallback(() => {
+        setStochasticVisible(prev => !prev);
+    }, []);
+
     const paneIndices: PaneIndices = useMemo(() => {
-        const visibles = [rsiVisible, macdVisible, dmiVisible];
+        const visibles = [
+            rsiVisible,
+            macdVisible,
+            dmiVisible,
+            stochasticVisible,
+        ];
         const indexFor = (pos: number): number => {
             const precedingActive = visibles
                 .slice(0, pos)
@@ -106,8 +118,13 @@ export function StockChart({
                 ? FIRST_INDICATOR_PANE_INDEX + precedingActive
                 : INACTIVE_PANE_INDEX;
         };
-        return { rsi: indexFor(0), macd: indexFor(1), dmi: indexFor(2) };
-    }, [rsiVisible, macdVisible, dmiVisible]);
+        return {
+            rsi: indexFor(0),
+            macd: indexFor(1),
+            dmi: indexFor(2),
+            stochastic: indexFor(3),
+        };
+    }, [rsiVisible, macdVisible, dmiVisible, stochasticVisible]);
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -191,6 +208,12 @@ export function StockChart({
         paneIndex: paneIndices.dmi,
     });
 
+    useStochasticChart({
+        ...commonHookParams,
+        isVisible: stochasticVisible,
+        paneIndex: paneIndices.stochastic,
+    });
+
     const { isVisible: candlePatternsVisible, toggle: toggleCandlePatterns } =
         useCandlePatternMarkers({ seriesRef, bars });
 
@@ -258,6 +281,10 @@ export function StockChart({
                     macd={{ visible: macdVisible, onToggle: toggleMACD }}
                     rsi={{ visible: rsiVisible, onToggle: toggleRSI }}
                     dmi={{ visible: dmiVisible, onToggle: toggleDMI }}
+                    stochastic={{
+                        visible: stochasticVisible,
+                        onToggle: toggleStochastic,
+                    }}
                     candlePatterns={{
                         visible: candlePatternsVisible,
                         onToggle: toggleCandlePatterns,

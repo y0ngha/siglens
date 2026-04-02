@@ -5,6 +5,9 @@ import {
     MACD_SLOW_PERIOD,
     MACD_SIGNAL_PERIOD,
     DMI_DEFAULT_PERIOD,
+    STOCHASTIC_K_PERIOD,
+    STOCHASTIC_D_PERIOD,
+    STOCHASTIC_SMOOTHING,
 } from '@/domain/indicators/constants';
 import type { PaneLabelConfig, PaneIndices } from '@/components/chart/types';
 import { INACTIVE_PANE_INDEX } from '@/components/chart/constants';
@@ -74,5 +77,24 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
               ]
             : [];
 
-    return [...rsiLabel, ...macdLabel, ...dmiLabel];
+    const stochasticLabel: PaneLabelConfig[] =
+        paneIndices.stochastic !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.stochastic,
+                      subLabels: [
+                          {
+                              name: `%K(${STOCHASTIC_K_PERIOD},${STOCHASTIC_D_PERIOD},${STOCHASTIC_SMOOTHING})`,
+                              color: CHART_COLORS.stochasticK,
+                          },
+                          {
+                              name: `%D`,
+                              color: CHART_COLORS.stochasticD,
+                          },
+                      ],
+                  },
+              ]
+            : [];
+
+    return [...rsiLabel, ...macdLabel, ...dmiLabel, ...stochasticLabel];
 }
