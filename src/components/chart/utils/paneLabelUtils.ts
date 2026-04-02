@@ -8,6 +8,10 @@ import {
     STOCHASTIC_K_PERIOD,
     STOCHASTIC_D_PERIOD,
     STOCHASTIC_SMOOTHING,
+    STOCH_RSI_RSI_PERIOD,
+    STOCH_RSI_STOCH_PERIOD,
+    STOCH_RSI_K_PERIOD,
+    STOCH_RSI_D_PERIOD,
 } from '@/domain/indicators/constants';
 import type { PaneLabelConfig, PaneIndices } from '@/components/chart/types';
 import { INACTIVE_PANE_INDEX } from '@/components/chart/constants';
@@ -96,5 +100,30 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
               ]
             : [];
 
-    return [...rsiLabel, ...macdLabel, ...dmiLabel, ...stochasticLabel];
+    const stochRsiLabel: PaneLabelConfig[] =
+        paneIndices.stochRsi !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.stochRsi,
+                      subLabels: [
+                          {
+                              name: `StochRSI(${STOCH_RSI_RSI_PERIOD},${STOCH_RSI_STOCH_PERIOD},${STOCH_RSI_K_PERIOD},${STOCH_RSI_D_PERIOD})`,
+                              color: CHART_COLORS.stochRsiK,
+                          },
+                          {
+                              name: `%D`,
+                              color: CHART_COLORS.stochRsiD,
+                          },
+                      ],
+                  },
+              ]
+            : [];
+
+    return [
+        ...rsiLabel,
+        ...macdLabel,
+        ...dmiLabel,
+        ...stochasticLabel,
+        ...stochRsiLabel,
+    ];
 }

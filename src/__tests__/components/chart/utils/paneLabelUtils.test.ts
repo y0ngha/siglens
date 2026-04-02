@@ -9,6 +9,10 @@ import {
     STOCHASTIC_K_PERIOD,
     STOCHASTIC_D_PERIOD,
     STOCHASTIC_SMOOTHING,
+    STOCH_RSI_RSI_PERIOD,
+    STOCH_RSI_STOCH_PERIOD,
+    STOCH_RSI_K_PERIOD,
+    STOCH_RSI_D_PERIOD,
 } from '@/domain/indicators/constants';
 import type { PaneIndices } from '@/components/chart/types';
 import { INACTIVE_PANE_INDEX } from '@/components/chart/constants';
@@ -18,6 +22,7 @@ const ALL_INACTIVE: PaneIndices = {
     macd: INACTIVE_PANE_INDEX,
     dmi: INACTIVE_PANE_INDEX,
     stochastic: INACTIVE_PANE_INDEX,
+    stochRsi: INACTIVE_PANE_INDEX,
 };
 
 describe('buildPaneLabels', () => {
@@ -36,6 +41,7 @@ describe('buildPaneLabels', () => {
             macd: INACTIVE_PANE_INDEX,
             dmi: INACTIVE_PANE_INDEX,
             stochastic: INACTIVE_PANE_INDEX,
+            stochRsi: INACTIVE_PANE_INDEX,
         };
 
         it('RSI pane 라벨 1개와 서브 라벨 1개를 반환한다', () => {
@@ -58,6 +64,7 @@ describe('buildPaneLabels', () => {
             macd: MACD_PANE_INDEX,
             dmi: INACTIVE_PANE_INDEX,
             stochastic: INACTIVE_PANE_INDEX,
+            stochRsi: INACTIVE_PANE_INDEX,
         };
 
         it('MACD pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
@@ -93,6 +100,7 @@ describe('buildPaneLabels', () => {
             macd: INACTIVE_PANE_INDEX,
             dmi: DMI_PANE_INDEX,
             stochastic: INACTIVE_PANE_INDEX,
+            stochRsi: INACTIVE_PANE_INDEX,
         };
 
         it('DMI pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
@@ -125,6 +133,7 @@ describe('buildPaneLabels', () => {
             macd: 2,
             dmi: 3,
             stochastic: INACTIVE_PANE_INDEX,
+            stochRsi: INACTIVE_PANE_INDEX,
         };
 
         it('RSI, MACD, DMI 순서로 3개의 pane 라벨을 반환한다', () => {
@@ -151,25 +160,28 @@ describe('buildPaneLabels', () => {
             macd: 2,
             dmi: 3,
             stochastic: 4,
+            stochRsi: 5,
         };
 
-        it('RSI, MACD, DMI, Stochastic 순서로 4개의 pane 라벨을 반환한다', () => {
+        it('RSI, MACD, DMI, Stochastic, StochRSI 순서로 5개의 pane 라벨을 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
 
-            expect(result).toHaveLength(4);
+            expect(result).toHaveLength(5);
             expect(result[0].paneIndex).toBe(1);
             expect(result[1].paneIndex).toBe(2);
             expect(result[2].paneIndex).toBe(3);
             expect(result[3].paneIndex).toBe(4);
+            expect(result[4].paneIndex).toBe(5);
         });
 
-        it('각 pane의 서브 라벨 개수가 올바르다 (RSI:1, MACD:3, DMI:3, Stochastic:2)', () => {
+        it('각 pane의 서브 라벨 개수가 올바르다 (RSI:1, MACD:3, DMI:3, Stochastic:2, StochRSI:2)', () => {
             const result = buildPaneLabels(paneIndices);
 
             expect(result[0].subLabels).toHaveLength(1);
             expect(result[1].subLabels).toHaveLength(3);
             expect(result[2].subLabels).toHaveLength(3);
             expect(result[3].subLabels).toHaveLength(2);
+            expect(result[4].subLabels).toHaveLength(2);
         });
     });
 
@@ -180,6 +192,7 @@ describe('buildPaneLabels', () => {
             macd: INACTIVE_PANE_INDEX,
             dmi: INACTIVE_PANE_INDEX,
             stochastic: STOCHASTIC_PANE_INDEX,
+            stochRsi: INACTIVE_PANE_INDEX,
         };
 
         it('Stochastic pane 라벨 1개와 서브 라벨 2개를 반환한다', () => {
@@ -205,6 +218,39 @@ describe('buildPaneLabels', () => {
         });
     });
 
+    describe('StochRSI만 활성일 때', () => {
+        const STOCH_RSI_PANE_INDEX = 1;
+        const paneIndices: PaneIndices = {
+            rsi: INACTIVE_PANE_INDEX,
+            macd: INACTIVE_PANE_INDEX,
+            dmi: INACTIVE_PANE_INDEX,
+            stochastic: INACTIVE_PANE_INDEX,
+            stochRsi: STOCH_RSI_PANE_INDEX,
+        };
+
+        it('StochRSI pane 라벨 1개와 서브 라벨 2개를 반환한다', () => {
+            const result = buildPaneLabels(paneIndices);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].paneIndex).toBe(STOCH_RSI_PANE_INDEX);
+            expect(result[0].subLabels).toHaveLength(2);
+        });
+
+        it('StochRSI, %D 순서로 서브 라벨이 구성된다', () => {
+            const result = buildPaneLabels(paneIndices);
+
+            const [stochRsiK, stochRsiD] = result[0].subLabels;
+
+            expect(stochRsiK.name).toBe(
+                `StochRSI(${STOCH_RSI_RSI_PERIOD},${STOCH_RSI_STOCH_PERIOD},${STOCH_RSI_K_PERIOD},${STOCH_RSI_D_PERIOD})`
+            );
+            expect(stochRsiK.color).toBe(CHART_COLORS.stochRsiK);
+
+            expect(stochRsiD.name).toBe('%D');
+            expect(stochRsiD.color).toBe(CHART_COLORS.stochRsiD);
+        });
+    });
+
     describe('각 서브 라벨의 색상이 CHART_COLORS와 일치하는지 확인', () => {
         it('모든 서브 라벨의 색상이 올바르다', () => {
             const paneIndices: PaneIndices = {
@@ -212,6 +258,7 @@ describe('buildPaneLabels', () => {
                 macd: 2,
                 dmi: 3,
                 stochastic: 4,
+                stochRsi: 5,
             };
             const result = buildPaneLabels(paneIndices);
 
@@ -229,6 +276,8 @@ describe('buildPaneLabels', () => {
                 CHART_COLORS.dmiAdx,
                 CHART_COLORS.stochasticK,
                 CHART_COLORS.stochasticD,
+                CHART_COLORS.stochRsiK,
+                CHART_COLORS.stochRsiD,
             ]);
         });
     });
@@ -240,6 +289,7 @@ describe('buildPaneLabels', () => {
                 macd: INACTIVE_PANE_INDEX,
                 dmi: 2,
                 stochastic: INACTIVE_PANE_INDEX,
+                stochRsi: INACTIVE_PANE_INDEX,
             };
             const result = buildPaneLabels(paneIndices);
 
@@ -254,6 +304,7 @@ describe('buildPaneLabels', () => {
                 macd: 1,
                 dmi: 2,
                 stochastic: INACTIVE_PANE_INDEX,
+                stochRsi: INACTIVE_PANE_INDEX,
             };
             const result = buildPaneLabels(paneIndices);
 
@@ -270,6 +321,7 @@ describe('buildPaneLabels', () => {
                 macd: 2,
                 dmi: INACTIVE_PANE_INDEX,
                 stochastic: INACTIVE_PANE_INDEX,
+                stochRsi: INACTIVE_PANE_INDEX,
             };
             const result = buildPaneLabels(paneIndices);
 
