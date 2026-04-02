@@ -5,6 +5,7 @@ export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
     bollinger: [],
     dmi: [],
     stochastic: [],
+    stochRsi: [],
     rsi: [],
     vwap: [],
     ma: {},
@@ -29,6 +30,13 @@ export const STOCHASTIC_D_PERIOD = 3;
 export const STOCHASTIC_SMOOTHING = 3;
 export const STOCHASTIC_OVERBOUGHT_LEVEL = 80;
 export const STOCHASTIC_OVERSOLD_LEVEL = 20;
+
+export const STOCH_RSI_RSI_PERIOD = 14;
+export const STOCH_RSI_STOCH_PERIOD = 14;
+export const STOCH_RSI_K_PERIOD = 3;
+export const STOCH_RSI_D_PERIOD = 3;
+export const STOCH_RSI_OVERBOUGHT_LEVEL = 0.8;
+export const STOCH_RSI_OVERSOLD_LEVEL = 0.2;
 
 export const MA_DEFAULT_PERIODS = [20] as const;
 export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
