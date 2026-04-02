@@ -455,12 +455,12 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 
 | skill 파일 | 패턴 | 신뢰도 |
 |---|---|---|
-| `pattern-head-and-shoulders.md` | head_and_shoulders (하락 반전) | 0.8 |
-| `pattern-inverse-head-and-shoulders.md` | inverse_head_and_shoulders (상승 반전) | 0.8 |
-| `pattern-double-top.md` | double_top (하락 반전) | 0.75 |
-| `pattern-double-bottom.md` | double_bottom (상승 반전) | 0.75 |
-| `pattern-ascending-wedge.md` | ascending_wedge (하락 반전) | 0.7 |
-| `pattern-descending-wedge.md` | descending_wedge (상승 반전) | 0.7 |
+| `patterns/head-and-shoulders.md` | head_and_shoulders (하락 반전) | 0.8 |
+| `patterns/inverse-head-and-shoulders.md` | inverse_head_and_shoulders (상승 반전) | 0.8 |
+| `patterns/double-top.md` | double_top (하락 반전) | 0.75 |
+| `patterns/double-bottom.md` | double_bottom (상승 반전) | 0.75 |
+| `patterns/ascending-wedge.md` | ascending_wedge (하락 반전) | 0.7 |
+| `patterns/descending-wedge.md` | descending_wedge (상승 반전) | 0.7 |
 
 ---
 
@@ -740,7 +740,7 @@ interface UseXxxOverlayParams {
 
 ### 개요
 
-`/skills/*.md` 파일을 추가하는 것만으로 새로운 분석 기법을 정의할 수 있다.
+`/skills/` 디렉토리(및 하위 폴더)에 `.md` 파일을 추가하는 것만으로 새로운 분석 기법을 정의할 수 있다.
 코드 수정 없이 자연어로 작성된 파일만으로 AI가 해당 기법에 맞춰 기술적 분석을 수행한다.
 
 **디렉토리 위치**: 프로젝트 루트의 `/skills/` (src/ 밖)
@@ -750,13 +750,17 @@ interface UseXxxOverlayParams {
 
 ```
 skills/
-├── pattern-head-and-shoulders.md
-├── pattern-inverse-head-and-shoulders.md
-├── pattern-double-top.md
-├── pattern-double-bottom.md
-├── pattern-ascending-wedge.md
-├── pattern-descending-wedge.md
-└── ...
+├── patterns/
+│   ├── head-and-shoulders.md
+│   ├── inverse-head-and-shoulders.md
+│   ├── double-top.md
+│   ├── double-bottom.md
+│   ├── ascending-wedge.md
+│   └── descending-wedge.md
+├── indicators/
+│   └── (향후 보조지표 시그널 스킬)
+└── strategies/
+    └── (향후 대순환 분석 등)
 ```
 
 ### Skill 타입
@@ -859,7 +863,7 @@ interface PatternResult extends PatternSummary {
 
 ```
 infrastructure/skills/loader.ts (FileSkillsLoader)
-  → fs.readdir('skills/')로 모든 .md 파일 목록 확인
+  → skills/ 디렉토리를 재귀적으로 탐색하여 모든 .md 파일 수집
   → 각 파일 파싱: YAML frontmatter → Skill 객체
   → Skill[] 반환
 
