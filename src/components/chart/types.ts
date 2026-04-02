@@ -14,4 +14,5 @@ export interface PaneIndices {
     dmi: number;
     stochastic: number;
     stochRsi: number;
+    cci: number;
 }

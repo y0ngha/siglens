@@ -7,6 +7,7 @@ export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
     stochastic: [],
     stochRsi: [],
     rsi: [],
+    cci: [],
     vwap: [],
     ma: {},
     ema: {},
@@ -37,6 +38,12 @@ export const STOCH_RSI_K_PERIOD = 3;
 export const STOCH_RSI_D_PERIOD = 3;
 export const STOCH_RSI_OVERBOUGHT_LEVEL = 0.8;
 export const STOCH_RSI_OVERSOLD_LEVEL = 0.2;
+
+export const CCI_DEFAULT_PERIOD = 20;
+export const CCI_NORMALIZATION_CONSTANT = 0.015;
+export const CCI_OVERBOUGHT_LEVEL = 100;
+export const CCI_OVERSOLD_LEVEL = -100;
+export const CCI_ZERO_LEVEL = 0;
 
 export const MA_DEFAULT_PERIODS = [20] as const;
 export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;

@@ -16,6 +16,7 @@ import {
     STOCH_RSI_STOCH_PERIOD,
     STOCH_RSI_K_PERIOD,
     STOCH_RSI_D_PERIOD,
+    CCI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 import { detectCandlePattern } from '@/domain/analysis/candle';
 import { getCandlePatternLabel } from '@/domain/analysis/candle-labels';
@@ -167,6 +168,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastDMI = lastOf(indicators.dmi);
     const lastStochastic = lastOf(indicators.stochastic);
     const lastStochRSI = lastOf(indicators.stochRsi);
+    const lastCCI = lastNonNull(indicators.cci);
 
     return [
         '## Indicator Values',
@@ -176,6 +178,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
         `- DMI: +DI ${fmt(lastDMI?.diPlus ?? null)} / -DI ${fmt(lastDMI?.diMinus ?? null)} / ADX ${fmt(lastDMI?.adx ?? null)}`,
         `- Stochastic(${STOCHASTIC_K_PERIOD},${STOCHASTIC_D_PERIOD},${STOCHASTIC_SMOOTHING}): %K ${fmt(lastStochastic?.percentK ?? null)} / %D ${fmt(lastStochastic?.percentD ?? null)}`,
         `- StochRSI(${STOCH_RSI_RSI_PERIOD},${STOCH_RSI_STOCH_PERIOD},${STOCH_RSI_K_PERIOD},${STOCH_RSI_D_PERIOD}): K ${fmt(lastStochRSI?.k ?? null)} / D ${fmt(lastStochRSI?.d ?? null)}`,
+        `- CCI(${CCI_DEFAULT_PERIOD}): ${fmt(lastCCI)}`,
     ].join('\n');
 };
 

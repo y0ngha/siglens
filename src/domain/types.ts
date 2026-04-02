@@ -50,6 +50,7 @@ export interface IndicatorResult {
     stochastic: StochasticResult[];
     stochRsi: StochRSIResult[];
     rsi: (number | null)[];
+    cci: (number | null)[];
     vwap: (number | null)[];
     ma: Record<number, (number | null)[]>;
     ema: Record<number, (number | null)[]>;

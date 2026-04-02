@@ -1,5 +1,6 @@
 import { SECONDS_PER_DAY } from '@/domain/constants/time';
 import type { Bar } from '@/domain/types';
+import { typicalPrice } from './utils';
 
 interface VWAPState {
     cumulativeTPV: number;
@@ -17,8 +18,8 @@ export function calculateVWAP(bars: Bar[]): (number | null)[] {
             const reset = dayKey !== acc.dayKey;
             const cumulativeTPV = reset ? 0 : acc.cumulativeTPV;
             const cumulativeVolume = reset ? 0 : acc.cumulativeVolume;
-            const typicalPrice = (bar.high + bar.low + bar.close) / 3;
-            const newTPV = cumulativeTPV + typicalPrice * bar.volume;
+            const tp = typicalPrice(bar.high, bar.low, bar.close);
+            const newTPV = cumulativeTPV + tp * bar.volume;
             const newVolume = cumulativeVolume + bar.volume;
             const vwap = newVolume === 0 ? null : newTPV / newVolume;
             return {

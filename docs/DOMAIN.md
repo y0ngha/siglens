@@ -32,6 +32,7 @@ export interface IndicatorResult {
     stochastic: StochasticResult[];
     stochRsi: StochRSIResult[];
     rsi: (number | null)[];
+    cci: (number | null)[];
     vwap: (number | null)[];
     ma: Record<number, (number | null)[]>;
     ema: Record<number, (number | null)[]>;
@@ -98,6 +99,12 @@ export const STOCH_RSI_K_PERIOD = 3;
 export const STOCH_RSI_D_PERIOD = 3;
 export const STOCH_RSI_OVERBOUGHT_LEVEL = 0.8;
 export const STOCH_RSI_OVERSOLD_LEVEL = 0.2;
+
+export const CCI_DEFAULT_PERIOD = 20;
+export const CCI_NORMALIZATION_CONSTANT = 0.015;
+export const CCI_OVERBOUGHT_LEVEL = 100;
+export const CCI_OVERSOLD_LEVEL = -100;
+export const CCI_ZERO_LEVEL = 0;
 
 export const MA_DEFAULT_PERIODS = [20] as const;
 export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
@@ -212,6 +219,31 @@ RSI range가 0이면 Stochastic RSI = 0
 초기 위 + dPeriod - 1개 구간의 D = null
 
 StochRSIResult: { k: number | null; d: number | null }
+```
+
+### CCI (Commodity Channel Index)
+
+```
+기본 설정: period=20
+표준화 상수: 0.015
+
+알고리즘:
+1. TP (Typical Price) = (고가 + 저가 + 종가) / 3
+2. SMA(TP, period) = period개 TP의 단순이동평균
+3. Mean Deviation = 평균(|TP - SMA(TP)|)
+4. CCI = (TP - SMA(TP, period)) / (0.015 × Mean Deviation)
+
+경계값:
+- Mean Deviation === 0 이면 CCI = 0
+- 초기 period - 1개 구간 = null
+- 비한정형 오실레이터 (범위 제한 없음, 일반적으로 ±300 이내)
+
+시그널:
+- +100 이상: 과매수 / 강한 상승 추세
+- -100 이하: 과매도 / 강한 하락 추세
+- 0선 돌파: 추세 전환 초기 신호
+
+반환 타입: (number | null)[]
 ```
 
 ### VWAP (Volume Weighted Average Price)
@@ -414,7 +446,7 @@ function buildAnalysisPrompt(
 2. 현재 시장 상황 요약 (현재가, 변화율, 거래량)
 3. 최근 봉 데이터 (최근 30봉) — 각 봉에 캔들 패턴 태깅 + 다봉 패턴 감지
 4. 거래량 분석 (평균 대비 비율)
-5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI, Stochastic, StochRSI)
+5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI, Stochastic, StochRSI, CCI)
 6. 패턴 분석 (type='pattern' skills, confidence >= 0.5)
 7. 활성화된 Skills (type!='pattern' skills, confidence >= 0.5)
 8. 분석 가이드라인 (지지/저항 판단 기준, 가격 목표 산출 기준)
@@ -661,6 +693,7 @@ interface UseXxxOverlayParams {
 | `useDMIChart` | 4 | +DI / -DI / ADX |
 | `useStochasticChart` | 5 | %K / %D + 과매수/과매도선 |
 | `useStochRSIChart` | 6 | K / D + 과매수(0.8)/과매도(0.2)선 |
+| `useCCIChart` | 7 | CCI + 과매수(+100)/과매도(-100)/중앙(0)선 |
 
 ---
 

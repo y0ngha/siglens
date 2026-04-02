@@ -30,6 +30,10 @@ describe('EMPTY_INDICATOR_RESULT', () => {
             expect(EMPTY_INDICATOR_RESULT.stochRsi).toEqual([]);
         });
 
+        it('cci가 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.cci).toEqual([]);
+        });
+
         it('vwap이 빈 배열이다', () => {
             expect(EMPTY_INDICATOR_RESULT.vwap).toEqual([]);
         });

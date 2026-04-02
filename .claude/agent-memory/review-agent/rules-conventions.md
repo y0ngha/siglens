@@ -9,7 +9,10 @@ type: reference
 ## Paradigm
 - `domain/`: Functional required — pure functions, immutability, higher-order functions
 - `components/`: Declarative required — object maps over if/else, component splits over branching
-- No for/while loops for data transformation → use map, filter, reduce, flatMap
+- Prefer map, filter, reduce, flatMap for data transformation over for/while loops
+- `for (let i = 0; ...)` is allowed when it provides a clear advantage: sliding window algorithms (avoids O(n²) from .slice() inside .map()), index-arithmetic-heavy logic, or cases where functional style is less readable; also acceptable when index access is needed alongside iteration
+- `while` loops with index reassignment remain discouraged in all cases
+- Do NOT flag `for (let i = 0; ...)` as a violation when any of the above exceptions apply
 - No mutation: `[...arr, item]` not `arr.push(item)`; `{ ...obj, key: val }` not `obj.key = val`
 
 ## File / Directory Naming

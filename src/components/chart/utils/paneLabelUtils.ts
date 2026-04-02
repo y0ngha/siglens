@@ -12,6 +12,7 @@ import {
     STOCH_RSI_STOCH_PERIOD,
     STOCH_RSI_K_PERIOD,
     STOCH_RSI_D_PERIOD,
+    CCI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 import type { PaneLabelConfig, PaneIndices } from '@/components/chart/types';
 import { INACTIVE_PANE_INDEX } from '@/components/chart/constants';
@@ -119,11 +120,27 @@ export function buildPaneLabels(paneIndices: PaneIndices): PaneLabelConfig[] {
               ]
             : [];
 
+    const cciLabel: PaneLabelConfig[] =
+        paneIndices.cci !== INACTIVE_PANE_INDEX
+            ? [
+                  {
+                      paneIndex: paneIndices.cci,
+                      subLabels: [
+                          {
+                              name: `CCI(${CCI_DEFAULT_PERIOD})`,
+                              color: CHART_COLORS.cciLine,
+                          },
+                      ],
+                  },
+              ]
+            : [];
+
     return [
         ...rsiLabel,
         ...macdLabel,
         ...dmiLabel,
         ...stochasticLabel,
         ...stochRsiLabel,
+        ...cciLabel,
     ];
 }
