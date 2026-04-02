@@ -65,3 +65,18 @@
 - Rule: MISTAKES.md #0 — 같은 파일 내 `TEST_BAR_COUNT = 30`은 상수로 추출했으나 `5`는 리터럴로 남아 일관성이 없음
 - Context: `BELOW_PERIOD_COUNT = 5`로 추출하고 주석으로 CCI_DEFAULT_PERIOD(20) 미만임을 명시하여 맥락을 드러냄
 
+## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
+- Violation: `bucketVolumes[i] += bar.volume * ratio` — 로컬 배열이지만 index assignment로 직접 변경
+- Rule: CONVENTIONS.md — 불변성 원칙; 로컬 스코프 배열이라도 index 기반 mutation 금지
+- Context: `bars.reduce` + `acc.map`으로 교체하여 각 bar의 기여분을 새로운 배열로 accumulate
+
+## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
+- Violation: `while` 루프 내부에서 `vahIndex += 1`, `valIndex -= 1` index 재할당
+- Rule: MISTAKES.md #1 — while 루프 + index 재할당은 모든 경우에서 금지
+- Context: `expandValueArea` 재귀 함수로 교체하여 state를 immutable하게 전달; 타입 `ValueAreaState`를 파일 최상단으로 추출
+
+## [Issue #121 | feat/121/volume-profile-indicator | review fix | 2026-04-02]
+- Violation: `volume-profile.test.ts` line 188에서 "rowSize 미지정 시 VP_DEFAULT_ROW_SIZE 크기의 profile을 반환한다" 테스트가 line 65의 "profile 길이는 기본 rowSize(VP_DEFAULT_ROW_SIZE)와 같다"와 동일한 assertion을 중복으로 검증
+- Rule: Test Layer Rules — 각 `it` 블록은 정확히 하나의 동작을 테스트하며, 중복 테스트는 noise 없는 커버리지를 저해함
+- Context: `기본 파라미터 테스트` describe 블록 전체를 제거하여 중복 제거
+
