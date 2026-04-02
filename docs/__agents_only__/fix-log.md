@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
+- Violation: `IndicatorResult` 타입에 `volumeProfile` 필드가 추가되었으나 테스트 픽스처에 반영되지 않아 TypeScript 컴파일 에러 발생
+- Rule: CONVENTIONS.md — 타입 변경 시 모든 사용 지점(테스트 픽스처 포함)을 함께 업데이트해야 함
+- Context: `src/__tests__/domain/analysis/prompt.test.ts`와 `src/__tests__/infrastructure/market/analysisApi.test.ts`의 `IndicatorResult` 목 객체에 `volumeProfile: null` 필드 누락
+
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
@@ -84,4 +89,14 @@
 - Violation: `const result: VolumeProfileResult | null = calculateVolumeProfile(bars)` 형태로 명시적 타입 어노테이션이 남아 있어 `VolumeProfileResult` import가 불필요하게 유지됨
 - Rule: MISTAKES.md #11.7 — TypeScript가 함수 반환 타입으로 자동 추론할 수 있을 때 명시적 어노테이션은 제거
 - Context: `volume-profile.test.ts`에서 `VolumeProfileResult` import 제거 및 `const result: VolumeProfileResult | null` 어노테이션을 `const result`로 변경하여 TypeScript 추론에 위임
+
+## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
+- Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
+- Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation: smaller value (boundary) on left, larger on right
+- Context: `src/domain/indicators/volume-profile.ts` L87에서 `state.valIndex - 1 >= 0`을 `0 <= state.valIndex - 1`으로 수정하여 경계값을 왼쪽에 배치
+
+## [PR #153 | feat/121/volume-profile-indicator | internal review round 6 | 2026-04-03]
+- Violation: `expandValueArea`가 `calculateVolumeProfile` 내부 중첩 함수로 선언되어 `rowSize`, `bucketVolumes`, `targetVolume`을 클로저로 암묵적으로 캡처 — 함수 시그니처만으로 동작을 예측 불가
+- Rule: FF.md Predictability 2-C — hidden logic should be exposed; implicit closure dependencies should be explicit parameters
+- Context: `expandValueArea`를 `calculateVolumeProfile` 외부 모듈 레벨 함수로 추출하고 `bucketVolumes`, `rowSize`, `targetVolume`을 명시적 파라미터로 추가하여 독립적으로 테스트 가능한 자기완결 함수로 변경
 
