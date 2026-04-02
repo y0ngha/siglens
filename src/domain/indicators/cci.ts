@@ -19,8 +19,7 @@ export function calculateCCI(
         { length: typicalPrices.length - period + 1 },
         (_, i) => {
             const tpSlice = typicalPrices.slice(i, i + period);
-            const smaValue = sma(tpSlice, period);
-            if (smaValue === null) return null;
+            const smaValue = sma(tpSlice, period)!;
             const meanDeviation =
                 tpSlice.reduce((sum, tp) => sum + Math.abs(tp - smaValue), 0) /
                 period;

@@ -26,7 +26,8 @@ describe('calculateCCI', () => {
 
     describe('입력 배열 길이가 period 미만일 때', () => {
         it('전부 null인 배열을 반환한다', () => {
-            const bars = makeBars(5);
+            const BELOW_PERIOD_COUNT = 5; // CCI_DEFAULT_PERIOD(20) 미만
+            const bars = makeBars(BELOW_PERIOD_COUNT);
             const result = calculateCCI(bars, CCI_DEFAULT_PERIOD);
             expect(result.every(v => v === null)).toBe(true);
         });

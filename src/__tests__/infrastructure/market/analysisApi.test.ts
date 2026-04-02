@@ -23,6 +23,7 @@ const mockVariables: AnalyzeVariables = {
         stochastic: [],
         stochRsi: [],
         rsi: [],
+        cci: [],
         vwap: [],
         ma: {},
         ema: {},

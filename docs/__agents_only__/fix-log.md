@@ -55,13 +55,13 @@
 - Rule: MISTAKES.md #3 — let 재할당 금지, const + 새 변수 사용
 - Context: `StockChart.tsx`의 `paneIndices` useMemo에서 `let next`를 `visibles.slice(0, pos).filter(Boolean).length` 기반의 순수 함수 `indexFor`로 교체
 
-## [Issue #119 | feat/119/stochastic-rsi-구현 | review fix | 2026-04-02]
-- Violation: 새로 생성한 domain/indicators/utils.ts에 대한 테스트 파일이 누락
-- Rule: __tests__/CLAUDE.md — domain 레이어 100% 테스트 커버리지 필수; 새 파일 생성 시 테스트 파일도 함께 작성
-- Context: src/__tests__/domain/indicators/utils.test.ts를 추가하여 sma 함수의 빈 배열, period 미만, 정확한 계산 등 7개 케이스 커버
+## [PR #152 | feat/120/CCI-구현 | 2026-04-02]
+- Violation: `cci.ts` line 23에서 `smaValue === null` 체크가 도달 불가능한 dead code — MISTAKES.md #9.5 위반
+- Rule: MISTAKES.md #9.5 — logic with no practical effect adds noise and obscures intent
+- Context: `Array.from` 내부에서 `tpSlice`는 항상 정확히 `period`개 원소를 가지므로 `sma(tpSlice, period)`가 null을 반환할 수 없음; null 체크를 제거하고 non-null 단언(`!`)으로 의도를 명시
 
-## [Issue #120 | feat/120/CCI-구현 | review fix | 2026-04-02]
-- Violation: CCI가 formatIndicatorSection에 추가되었으나 prompt.test.ts에 CCI 테스트 케이스 누락
-- Rule: __tests__/CLAUDE.md — domain 레이어 100% 테스트 커버리지 필수; 다른 지표(RSI, MACD, Bollinger, DMI, Stochastic, StochRSI)와 동일한 3가지 케이스(빈 배열, 전부 null, 유효값) 필요
-- Context: prompt.test.ts에 '지표 섹션 - CCI' describe 블록을 추가하여 빈 배열→N/A, 모두 null→N/A, 유효값 포함 3개 테스트 케이스 작성
+## [PR #152 | feat/120/CCI-구현 | 2026-04-02]
+- Violation: `cci.test.ts` line 29에서 매직 넘버 `5` 리터럴 사용 — MISTAKES.md TypeScript #6 Pattern D 위반
+- Rule: MISTAKES.md #0 — 같은 파일 내 `TEST_BAR_COUNT = 30`은 상수로 추출했으나 `5`는 리터럴로 남아 일관성이 없음
+- Context: `BELOW_PERIOD_COUNT = 5`로 추출하고 주석으로 CCI_DEFAULT_PERIOD(20) 미만임을 명시하여 맥락을 드러냄
 
