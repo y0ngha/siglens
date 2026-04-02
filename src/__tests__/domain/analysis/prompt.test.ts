@@ -11,6 +11,7 @@ import {
     STOCH_RSI_STOCH_PERIOD,
     STOCH_RSI_K_PERIOD,
     STOCH_RSI_D_PERIOD,
+    CCI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 import {
     HAMMER_BODY_OFFSET,
@@ -43,6 +44,7 @@ const TEST_STOCHASTIC_K = 75.5;
 const TEST_STOCHASTIC_D = 68.3;
 const TEST_STOCH_RSI_K = 0.65;
 const TEST_STOCH_RSI_D = 0.52;
+const TEST_CCI_VALUE = 125.5;
 const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_HIGH_CONFIDENCE = 0.9;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
@@ -67,6 +69,7 @@ const makeIndicators = (
     overrides?: Partial<IndicatorResult>
 ): IndicatorResult => ({
     rsi: [],
+    cci: [],
     vwap: [],
     macd: [],
     bollinger: [],
@@ -393,6 +396,34 @@ describe('prompt', () => {
             const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
             expect(result).toContain(TEST_STOCH_RSI_K.toFixed(2));
             expect(result).toContain(TEST_STOCH_RSI_D.toFixed(2));
+        });
+    });
+
+    describe('지표 섹션 - CCI', () => {
+        it('CCI 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ cci: [] }),
+                []
+            );
+            expect(result).toContain(`CCI(${CCI_DEFAULT_PERIOD}): N/A`);
+        });
+
+        it('CCI 배열이 모두 null일 때 N/A를 표시한다', () => {
+            const indicators = makeIndicators({
+                cci: [null, null, null],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(`CCI(${CCI_DEFAULT_PERIOD}): N/A`);
+        });
+
+        it('CCI 값을 포함한다', () => {
+            const indicators = makeIndicators({
+                cci: [null, TEST_CCI_VALUE],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(TEST_CCI_VALUE.toFixed(2));
         });
     });
 
