@@ -324,7 +324,7 @@ yarn format
 
 ## Skills System
 
-Siglens extends its analysis capabilities through `/skills/*.md` files.
+Siglens extends its analysis capabilities through `.md` files inside `/skills/` and its subdirectories.
 New analysis techniques are applied simply by adding a Markdown file — no code changes required.
 
 ### Directory Location
@@ -334,24 +334,28 @@ files, not source code.
 
 ```
 skills/                        ← project root (not src/)
-├── pattern-head-and-shoulders.md
-├── pattern-inverse-head-and-shoulders.md
-├── pattern-double-top.md
-├── pattern-double-bottom.md
-├── pattern-ascending-wedge.md
-├── pattern-descending-wedge.md
-└── ...
+├── patterns/
+│   ├── head-and-shoulders.md
+│   ├── inverse-head-and-shoulders.md
+│   ├── double-top.md
+│   ├── double-bottom.md
+│   ├── ascending-wedge.md
+│   └── descending-wedge.md
+├── indicators/
+│   └── (향후 보조지표 시그널 스킬)
+└── strategies/
+    └── (향후 대순환 분석 등)
 ```
 
 ### Layer Responsibility
 
 Skills files are **not** read by `domain/` — domain has no file I/O.
-Reading and parsing `skills/*.md` is the responsibility of **`infrastructure/skills/loader.ts`** (`FileSkillsLoader`).
+Reading and parsing skills `.md` files is the responsibility of **`infrastructure/skills/loader.ts`** (`FileSkillsLoader`).
 The parsed `Skill[]` is passed into `domain/analysis/prompt.ts` as a plain data structure.
 
 ```
 infrastructure/skills/loader.ts (FileSkillsLoader)
-  → reads skills/*.md            (file I/O — allowed in infrastructure layer)
+  → recursively scans skills/ subdirectories for .md files (file I/O — allowed in infrastructure layer)
   → parses frontmatter + body
   → returns Skill[]
 
