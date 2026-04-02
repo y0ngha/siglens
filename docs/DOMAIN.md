@@ -29,6 +29,7 @@ export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
     dmi: DMIResult[];
+    stochastic: StochasticResult[];
     rsi: (number | null)[];
     vwap: (number | null)[];
     ma: Record<number, (number | null)[]>;
@@ -52,6 +53,11 @@ export interface DMIResult {
     diMinus: number | null;
     adx: number | null;
 }
+
+export interface StochasticResult {
+    percentK: number | null;
+    percentD: number | null;
+}
 ```
 
 ---
@@ -73,6 +79,12 @@ export const BOLLINGER_DEFAULT_PERIOD = 20;
 export const BOLLINGER_DEFAULT_STD_DEV = 2;
 
 export const DMI_DEFAULT_PERIOD = 14;
+
+export const STOCHASTIC_K_PERIOD = 14;
+export const STOCHASTIC_D_PERIOD = 3;
+export const STOCHASTIC_SMOOTHING = 3;
+export const STOCHASTIC_OVERBOUGHT_LEVEL = 80;
+export const STOCHASTIC_OVERSOLD_LEVEL = 20;
 
 export const MA_DEFAULT_PERIODS = [20] as const;
 export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
@@ -150,6 +162,23 @@ export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3;  // 60기간 EMA
 8. ADX = Wilder Smoothing(DX, period=14)
 
 초기 period * 2 - 1개 구간 = null
+```
+
+### Stochastic Oscillator
+
+```
+기본 설정: kPeriod=14, dPeriod=3, smoothing=3
+
+알고리즘 (Slow Stochastic):
+1. Fast %K = (close - lowest_low_N) / (highest_high_N - lowest_low_N) * 100
+   (N = kPeriod = 14)
+2. Slow %K = SMA(Fast %K, smoothing=3)
+3. %D = SMA(Slow %K, dPeriod=3)
+
+범위: 0 ~ 100
+과매수: 80 이상, 과매도: 20 이하
+초기 kPeriod + smoothing - 2개 구간의 %K = null
+초기 kPeriod + smoothing + dPeriod - 3개 구간의 %D = null
 ```
 
 ### VWAP (Volume Weighted Average Price)
@@ -352,7 +381,7 @@ function buildAnalysisPrompt(
 2. 현재 시장 상황 요약 (현재가, 변화율, 거래량)
 3. 최근 봉 데이터 (최근 30봉) — 각 봉에 캔들 패턴 태깅 + 다봉 패턴 감지
 4. 거래량 분석 (평균 대비 비율)
-5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI)
+5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI, Stochastic)
 6. 패턴 분석 (type='pattern' skills, confidence >= 0.5)
 7. 활성화된 Skills (type!='pattern' skills, confidence >= 0.5)
 8. 분석 가이드라인 (지지/저항 판단 기준, 가격 목표 산출 기준)
@@ -597,6 +626,7 @@ interface UseXxxOverlayParams {
 | `useRSIChart` | 2 | RSI + 과매수/과매도선 |
 | `useMACDChart` | 3 | MACD 라인 + 시그널 + 히스토그램 |
 | `useDMIChart` | 4 | +DI / -DI / ADX |
+| `useStochasticChart` | 5 | %K / %D + 과매수/과매도선 |
 
 ---
 

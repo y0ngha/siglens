@@ -65,13 +65,8 @@
 - Rule: MISTAKES.md #3 — let 재할당 금지, const + 새 변수 사용
 - Context: `StockChart.tsx`의 `paneIndices` useMemo에서 `let next`를 `visibles.slice(0, pos).filter(Boolean).length` 기반의 순수 함수 `indexFor`로 교체
 
-## [PR #139 | feat/136/미감지-스킬-숨기기 | 2026-04-02]
-- Violation: 스킬 분석 섹션이 차트 패턴 섹션과 동일한 항목을 중복 표시 — 모든 스킬이 type: pattern이므로 patternSummaries와 skillResults가 같은 스킬을 보여줌
-- Rule: FF.md Cohesion 3-B — 동일한 데이터가 두 섹션에서 중복 표시되면 사용자에게 혼동을 주고 UI 정보의 단일 출처 원칙 위반
-- Context: `AnalysisPanel.tsx`에서 `patternSkillNames` Set을 생성하여 `detectedSkillResults`와 `detectedSkillSignals` 필터링 시 patternSummaries에 이미 포함된 스킬을 제외
-
-## [PR #139 | feat/136/미감지-스킬-숨기기 | 2026-04-02]
-- Violation: `detectedSkillSignals` 필터에서 `!patternSkillNames.has(s.skillName)` 조건이 중복 — `detectedSkillNames`는 이미 `patternSkillNames`를 제외한 `detectedSkillResults`에서 생성되므로 효과 없는 로직
-- Rule: MISTAKES.md Coding Paradigm #9.5 — 실질적 효과 없는 로직은 노이즈이므로 제거
-- Context: `AnalysisPanel.tsx`의 `detectedSkillSignals` 필터에서 `&& !patternSkillNames.has(s.skillName)` 조건을 제거하고 `detectedSkillNames.has(s.skillName)` 단일 조건으로 단순화
+## [Issue #118 | feat/118/stochastic-오실레이터-구현 | review fix 2 | 2026-04-02]
+- Violation: MIDPOINT_PERCENTAGE 상수가 .map() 콜백 내부에서 선언되어 매 반복마다 재선언됨
+- Rule: MISTAKES.md #6 / FF Readability — named constants는 모듈 스코프에 선언해야 함
+- Context: stochastic.ts의 calculateFastPercentK 내 .map() 콜백에서 MIDPOINT_PERCENTAGE를 모듈 최상위로 호이스팅
 

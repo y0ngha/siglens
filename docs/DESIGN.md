@@ -153,6 +153,15 @@ DMI -DI          #ef5350   (레드)
 DMI ADX          #f59e0b   (앰버)
 ```
 
+### Stochastic
+
+```
+Stochastic %K    #f472b6   (핑크)
+Stochastic %D    #38bdf8   (스카이블루)
+과매수선(80)     #ef535060 (레드 40% 투명도)
+과매도선(20)     #26a69a60 (틸 40% 투명도)
+```
+
 ### VWAP
 
 ```
@@ -255,6 +264,9 @@ const config: Config = {
                     dmiPlus:   '#26a69a',
                     dmiMinus:  '#ef5350',
                     dmiAdx:    '#f59e0b',
+                    // Stochastic
+                    stochasticK: '#f472b6',
+                    stochasticD: '#38bdf8',
                     // VWAP
                     vwap:      '#e879f9',
                 },
