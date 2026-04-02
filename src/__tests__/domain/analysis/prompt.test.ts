@@ -45,6 +45,9 @@ const TEST_STOCHASTIC_D = 68.3;
 const TEST_STOCH_RSI_K = 0.65;
 const TEST_STOCH_RSI_D = 0.52;
 const TEST_CCI_VALUE = 125.5;
+const TEST_VP_POC = 150.0;
+const TEST_VP_VAH = 160.0;
+const TEST_VP_VAL = 140.0;
 const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_HIGH_CONFIDENCE = 0.9;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
@@ -428,6 +431,35 @@ describe('prompt', () => {
         });
     });
 
+    describe('지표 섹션 - Volume Profile', () => {
+        it('volumeProfile이 null일 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ volumeProfile: null }),
+                []
+            );
+            expect(result).toContain(
+                'Volume Profile: POC N/A / VAH N/A / VAL N/A'
+            );
+        });
+
+        it('volumeProfile 값이 있을 때 POC/VAH/VAL 값을 포함한다', () => {
+            const indicators = makeIndicators({
+                volumeProfile: {
+                    poc: TEST_VP_POC,
+                    vah: TEST_VP_VAH,
+                    val: TEST_VP_VAL,
+                    profile: [],
+                },
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(TEST_VP_POC.toFixed(2));
+            expect(result).toContain(TEST_VP_VAH.toFixed(2));
+            expect(result).toContain(TEST_VP_VAL.toFixed(2));
+        });
+    });
+
     describe('Skills 섹션 - skills가 비어있을 때', () => {
         it('패턴 분석 섹션이 포함되지 않는다', () => {
             const result = buildAnalysisPrompt(
@@ -732,7 +764,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toMatch(/\[.+\]/);
+            expect(result).toMatch(/\[.+]/);
         });
 
         it('30개를 초과하는 봉이 있을 때 최근 30봉만 포함한다', () => {
@@ -1172,7 +1204,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toMatch(/\[.+\]/);
+            expect(result).toMatch(/\[.+]/);
         });
 
         it('다봉 패턴 감지 시 패턴명이 포함된다', () => {
@@ -1196,7 +1228,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toMatch(/\[\d+ bars ago\] Multi-candle pattern: .+/);
+            expect(result).toMatch(/\[\d+ bars ago] Multi-candle pattern: .+/);
         });
 
         it('단봉 패턴은 봉 위치 정보와 함께 패턴 섹션에 포함된다', () => {
@@ -1207,9 +1239,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toMatch(
-                /\[\d+ bars ago\] Single candle pattern: .+/
-            );
+            expect(result).toMatch(/\[\d+ bars ago] Single candle pattern: .+/);
         });
 
         it('다봉 패턴이 있으면 해당 다봉 패턴과 관련 봉의 단봉 패턴만 포함된다', () => {

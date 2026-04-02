@@ -1,6 +1,19 @@
 # Fix Log
 
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
+- Violation: `calculateIndicators`에 `volumeProfile` 필드가 추가되었으나 `index.test.ts`에 해당 필드 검증 테스트가 없음
+- Rule: MISTAKES.md Tests #3, #3.5 — 새 인디케이터 추가 시 모든 연관 함수(계산 함수 + 통합 함수)에 테스트가 있어야 함
+- Context: `src/__tests__/domain/indicators/index.test.ts`에 `volumeProfile` null 케이스 및 `calculateVolumeProfile` 결과 일치 테스트 추가
+
+- Violation: `formatIndicatorSection`이 VP 데이터를 프롬프트에 포함하지만 관련 테스트가 없음
+- Rule: MISTAKES.md Tests #3.5 — 새 인디케이터 포맷팅 로직은 기존 패턴(RSI, MACD, Bollinger)과 동일하게 null/값 있을 때 케이스 모두 테스트해야 함
+- Context: `src/__tests__/domain/analysis/prompt.test.ts`에 `volumeProfile null` 시 N/A 표시 및 POC/VAH/VAL 값 포함 테스트 추가
+
+- Violation: `CHART_COLORS`에 `vpPoc`, `vpVah`, `vpVal` 항목이 추가되었으나 `colors.test.ts`가 업데이트되지 않음
+- Rule: MISTAKES.md Tests #3 — 새로 추가된 상수는 기존 패턴(vwap, bollinger, dmi 등)과 동일하게 개별 테스트 케이스를 가져야 함
+- Context: `src/__tests__/domain/constants/colors.test.ts`에 Volume Profile 컬러 describe 블록 추가
+
+## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
 - Violation: `IndicatorResult` 타입에 `volumeProfile` 필드가 추가되었으나 테스트 픽스처에 반영되지 않아 TypeScript 컴파일 에러 발생
 - Rule: CONVENTIONS.md — 타입 변경 시 모든 사용 지점(테스트 픽스처 포함)을 함께 업데이트해야 함
 - Context: `src/__tests__/domain/analysis/prompt.test.ts`와 `src/__tests__/infrastructure/market/analysisApi.test.ts`의 `IndicatorResult` 목 객체에 `volumeProfile: null` 필드 누락
@@ -53,6 +66,19 @@
 - Violation: `colors.ts`에서 `vpVah`와 `vpVal`이 동일한 색상값 `#8b5cf6`으로 설정되어 차트에서 두 선을 시각적으로 구별 불가
 - Rule: DESIGN.md — VAH와 VAL은 서로 다른 가격 경계를 나타내므로 구별 가능한 색상이 필요
 - Context: `vpVal`을 `#34d399`(mint green)으로 변경하여 `vpVah`(purple)와 시각적으로 구별 가능하게 함
+
+## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
+- Violation: `src/__tests__/domain/indicators/index.test.ts`에서 `calculateVolumeProfile`을 `@/domain/indicators/volume-profile`에서 별도 import하여 중복 import 경로 존재
+- Rule: FF.md Cohesion 3-A — 동일 심볼은 단일 import 경로에서 가져와야 한다; `@/domain/indicators`에서 이미 re-export되므로 별도 import 불필요
+- Context: line 12의 별도 import를 제거하고 `calculateVolumeProfile`을 기존 `@/domain/indicators` import 블록에 추가
+
+- Violation: `src/__tests__/domain/analysis/prompt.test.ts`에서 RegExp 패턴 `/\[.+\]/`의 `\]`가 불필요한 이스케이프
+- Rule: ESLint `no-useless-escape` — 정규식 문자 클래스 외부에서 `]`는 이스케이프 불필요
+- Context: lines 767, 1207, 1231, 1243의 4개 RegExp 패턴에서 `\]`를 `]`로 수정
+
+- Violation: `expandValueArea`에서 sentinel 값 `-1`이 3곳(lines 27, 29, 31)에 하드코딩되어 반복 사용
+- Rule: MISTAKES.md #0 — 동일한 리터럴 값은 하나의 named const로 추출해야 한다; FF.md Cohesion 3-B
+- Context: `NO_ADJACENT_BUCKET = -1` 상수를 추출하여 `volume-profile.ts`의 3개 사용 지점 모두 교체
 
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `volume-profile.ts`의 `ValueAreaState`가 `type`으로 선언되어 있어 MISTAKES.md #11.5 위반

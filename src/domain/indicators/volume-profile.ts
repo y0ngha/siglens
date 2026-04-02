@@ -9,6 +9,8 @@ import {
     VP_VALUE_AREA_PERCENTAGE,
 } from './constants';
 
+const NO_ADJACENT_BUCKET = -1;
+
 interface ValueAreaState {
     vahIndex: number;
     valIndex: number;
@@ -24,11 +26,16 @@ function expandValueArea(
     if (state.accumulatedVolume >= targetVolume) return state;
 
     const nextAbove =
-        state.vahIndex + 1 < rowSize ? bucketVolumes[state.vahIndex + 1] : -1;
+        state.vahIndex + 1 < rowSize
+            ? bucketVolumes[state.vahIndex + 1]
+            : NO_ADJACENT_BUCKET;
     const nextBelow =
-        0 <= state.valIndex - 1 ? bucketVolumes[state.valIndex - 1] : -1;
+        0 <= state.valIndex - 1
+            ? bucketVolumes[state.valIndex - 1]
+            : NO_ADJACENT_BUCKET;
 
-    if (nextAbove === -1 && nextBelow === -1) return state;
+    if (nextAbove === NO_ADJACENT_BUCKET && nextBelow === NO_ADJACENT_BUCKET)
+        return state;
 
     if (nextAbove >= nextBelow) {
         const newVahIndex = state.vahIndex + 1;
