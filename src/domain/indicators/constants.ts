@@ -11,6 +11,7 @@ export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
     vwap: [],
     ma: {},
     ema: {},
+    volumeProfile: null,
 };
 
 export const RSI_DEFAULT_PERIOD = 14;
@@ -50,6 +51,10 @@ export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
 
 export const EMA_SUPPORT_RESISTANCE_SHORT_INDEX = 1; // 20-period EMA
 export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3; // 60-period EMA
+
+export const VP_DEFAULT_ROW_SIZE = 24;
+export const VP_VALUE_AREA_PERCENTAGE = 0.7;
+export const VP_MIN_BARS = 30;
 
 export const HIGH_CONFIDENCE_WEIGHT = 0.8;
 export const MEDIUM_CONFIDENCE_WEIGHT = 0.7;

@@ -134,6 +134,20 @@ describe('CHART_COLORS', () => {
             expect(CHART_COLORS.vwap).toBe('#e879f9');
         });
     });
+
+    describe('Volume Profile 컬러', () => {
+        it('vpPoc는 앰버(#f59e0b)이다', () => {
+            expect(CHART_COLORS.vpPoc).toBe('#f59e0b');
+        });
+
+        it('vpVah는 바이올렛(#8b5cf6)이다', () => {
+            expect(CHART_COLORS.vpVah).toBe('#8b5cf6');
+        });
+
+        it('vpVal은 에메랄드(#34d399)이다', () => {
+            expect(CHART_COLORS.vpVal).toBe('#34d399');
+        });
+    });
 });
 
 describe('getPeriodColor', () => {

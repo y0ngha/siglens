@@ -95,6 +95,17 @@ Review before implementation and ensure these are not repeated.
    ❌ try { ... } catch (e) { logError(e); }  // error is never expected and catch adds confusion
    ✅ Remove the catch block if it doesn't serve error recovery
 
+9.6. Range condition written with variable on left and boundary on right (e.g. bar.low >= bucketLow)
+   → Rule: FF.md 1-F — range conditions must follow mathematical notation: smaller value on left, larger on right
+   → Order value comparisons to match number line: value <= item <= value (left to right, increasing)
+   → This makes the code self-documenting and parallels mathematical notation (a ≤ x ≤ b)
+   ❌ bar.low >= bucketLow          // variable on left, boundary on right
+   ✅ bucketLow <= bar.low          // boundary on left, variable on right
+   ❌ row.price >= result.val       // value on left, boundary on right
+   ✅ result.val <= row.price       // boundary on left, value on right
+   ❌ if (bar.close < minPrice || bar.close > maxPrice) {}  // mixed order
+   ✅ if (minPrice > bar.close || bar.close > maxPrice) {}  // consistent order
+
 10. Repeating identical filtering/calculation logic across multiple blocks
     → Rule: FF.md Cohesion 3-B — same values computed in multiple places must be extracted to single source of truth
     → When the same filter, map, or computation appears 2+ times, extract to useMemo (hooks) or const (regular code)
@@ -229,6 +240,25 @@ Review before implementation and ensure these are not repeated.
      ✅ buildCandlePatternEntries.map((entry: CandlePatternEntry) => { ... })
      ❌ entries.sort((a, b) => a.barIndex - b.barIndex)  // a, b have implicit any
      ✅ entries.sort((a: PromptCandlePatternEntry, b: PromptCandlePatternEntry) => a.barIndex - b.barIndex)
+
+11.7. Unused type imports and missing type imports
+     → Rule: TypeScript — imports must match actual usage
+     → Type that is declared in import but never used in code triggers TS6196 (unused import)
+     → Type that is used in annotation but not imported triggers TS2304 (not found) or TS7044 (implicit any)
+     → When using explicit type annotations in callbacks or variables, the type must be imported
+     → When a type is imported but TypeScript infers the type automatically, remove the unnecessary import
+     ❌ import type { VolumeProfileResult } from '...'; // declared but never used in variable/parameter annotations
+     ✅ Remove the unused import
+     ❌ const result: VolumeProfileResult | null  // but VolumeProfileResult not imported
+     ✅ import type { VolumeProfileResult } from '@/domain/...'
+
+11.8. Missing type import for types used in annotations
+     → Rule: TypeScript — all types used in explicit annotations must be imported
+     → When a callback's implicit type matches the parameter, the import is unnecessary (TypeScript infers automatically)
+     → When forcing explicit type annotations on a variable or parameter, the type must be imported
+     ❌ const result: VolumeProfileResult | null  // TS2304: VolumeProfileResult not found
+     ✅ import type { VolumeProfileResult } from '@/domain/indicators/volume-profile';
+        const result: VolumeProfileResult | null = calculateVolumeProfile(bars);
 
 12. Related interfaces with shared fields not linked by extends
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
@@ -421,6 +451,17 @@ Review before implementation and ensure these are not repeated.
     ✅ const { ... } = usePanelResize(); const status = getAnalysisStatus();  // custom hook first, then derivations
     ❌ const state = useState(...); const handler = useCallback(...); useDragListener(...); useEffect(...)  // listener hook order wrong
     ✅ const state = useState(...); useDragListener(...); const handler = useCallback(...); useEffect(...)  // listener hook before useCallback
+
+15.5. Custom hook params missing optional properties that are used in composition
+     → Rule: CONVENTIONS.md Custom Hook Rules — all overlay and chart interaction hooks must accept consistent parameter patterns
+     → When multiple hooks in the same family (e.g. overlay hooks: useMAOverlay, useBollingerOverlay, useVolumeProfileOverlay)
+       accept the same optional parameters (e.g. lineWidth), all hooks must declare the parameter in their interface
+     → Absence of a parameter in one hook while present in others breaks DRY and creates inconsistent API
+     ❌ UseBollingerOverlayParams { lineWidth?: LineWidth } but UseVolumeProfileOverlayParams { } (missing lineWidth)
+     ✅ All overlay hook params include lineWidth?: LineWidth with DEFAULT_LINE_WIDTH as function default
+     ❌ useMAOverlay receives { lineWidth?: LineWidth } param
+        useVolumeProfileOverlay hardcodes DEFAULT_LINE_WIDTH without accepting param
+     ✅ useVolumeProfileOverlay({ ..., lineWidth = DEFAULT_LINE_WIDTH }) matches useMAOverlay pattern
 ```
 
 ---
@@ -565,14 +606,31 @@ Review before implementation and ensure these are not repeated.
    ❌ if (result.includes('Multi-candle pattern:')) { expect(result).toMatch('bullish_engulfing'); }  // test passes without assertion if pattern not detected
    ✅ expect(result).toMatch('bullish_engulfing');  // unconditional assertion; test fails if pattern missing
 
-12. Provider pair has asymmetric error handling or logging behavior
+12. Test duplication or incomplete coverage of edge cases
+   → Rule: Test Layer Rules — each it() block must test exactly one behavior; avoid duplicate assertion blocks
+   → Rule: CONVENTIONS.md — domain/ layer requires 100% branch coverage, including all edge cases
+   → When a function has multiple branches or boundary conditions, each branch must be tested directly
+   → Duplicate tests that verify identical behavior consume coverage budget and obscure intent
+   ❌ describe('기본 파라미터') { 
+        it('profile 길이는 기본 rowSize와 같다', () => { expect(result).toHaveLength(VP_DEFAULT_ROW_SIZE); });
+        it('rowSize 미지정 시 기본값 반환', () => { expect(result).toHaveLength(VP_DEFAULT_ROW_SIZE); });  // identical assertion
+      }
+   ✅ describe('기본 파라미터') {
+        it('rowSize 미지정 시 VP_DEFAULT_ROW_SIZE 크기의 profile을 반환한다', () => { expect(result).toHaveLength(VP_DEFAULT_ROW_SIZE); });
+      }
+   ❌ Branch with priceRange === 0 has no test coverage despite existing in implementation
+   ✅ describe('모든 bars의 high와 low가 동일할 때') {
+        it('null을 반환한다', () => { expect(calculateVolumeProfile(...)).toBeNull(); });
+      }
+
+13. Provider pair has asymmetric error handling or logging behavior
    → Rule: FF.md Predictability 2-B — sibling functions/classes in the same family must behave consistently
    → When one Provider adds error detail (cause, console.error), apply the same change to all Providers
    ❌ GeminiProvider: catch (error) { throw new Error('...', { cause: error }); console.error(...) }
       ClaudeProvider: catch { throw new Error('...') }  // cause and console.error missing
    ✅ Both Providers use identical catch patterns with cause and console.error
 
-13. New Provider implementation missing test cases that exist in sibling Provider
+14. New Provider implementation missing test cases that exist in sibling Provider
    → Rule: FF.md Predictability 2-B — sibling classes in the same family must have symmetric test coverage
    → When a new Provider is added, all it() cases present in the existing Provider must be replicated
    → Applies to field-presence checks (e.g. 'skillsDegraded' in result), error cases, and structural assertions
@@ -581,7 +639,7 @@ Review before implementation and ensure these are not repeated.
       GeminiProvider: (missing)
    ✅ Both Providers have identical test cases covering the same behaviors and field assertions
 
-14. Provider pair has inconsistent naming conventions
+15. Provider pair has inconsistent naming conventions
    → Rule: FF.md Predictability 2-A — sibling classes must use consistent terminology
    → When two Providers define the same concept (e.g. system instructions), use identical naming
    ❌ claude.ts: const CLAUDE_SYSTEM_PROMPT
@@ -591,7 +649,7 @@ Review before implementation and ensure these are not repeated.
    ❌ Define identical string in both files
    ✅ Extract to infrastructure/ai/utils.ts as AI_SYSTEM_PROMPT and import in both
 
-15. Repeated identical parameter object passed to multiple function calls
+16. Repeated identical parameter object passed to multiple function calls
    → Rule: FF.md Readability 1-A — identical values computed multiple times should be extracted
    → Rule: FF.md Cohesion 3-B — shared parameters should be a single source of truth
    → When the same parameter object is passed to 2+ functions, extract to const (regular code) or useMemo (hooks)
@@ -603,7 +661,7 @@ Review before implementation and ensure these are not repeated.
       useEMAOverlay(commonHookParams)
       useBollingerOverlay(commonHookParams)
 
-16. Mixing imperative for loops and functional transforms in same function
+17. Mixing imperative for loops and functional transforms in same function
    → Rule: FF.md Readability 1-A — consistent paradigm reduces cognitive load
    → When a function performs data transformation, use map/filter/reduce throughout; do not mix with imperative loops
    → Exception: separate setup phase (object construction for side effects) from transform phase (data mapping)

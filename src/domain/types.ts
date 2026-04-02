@@ -43,6 +43,18 @@ export interface StochRSIResult {
     d: number | null;
 }
 
+export interface VolumeProfileRow {
+    price: number;
+    volume: number;
+}
+
+export interface VolumeProfileResult {
+    poc: number;
+    vah: number;
+    val: number;
+    profile: VolumeProfileRow[];
+}
+
 export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
@@ -54,6 +66,7 @@ export interface IndicatorResult {
     vwap: (number | null)[];
     ma: Record<number, (number | null)[]>;
     ema: Record<number, (number | null)[]>;
+    volumeProfile: VolumeProfileResult | null;
 }
 
 export type ChartDisplayType = 'line' | 'marker' | 'region';

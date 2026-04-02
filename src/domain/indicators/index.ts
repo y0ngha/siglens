@@ -9,6 +9,7 @@ import { calculateMA } from './ma';
 import { calculateStochastic } from './stochastic';
 import { calculateStochRSI } from './stochastic-rsi';
 import { calculateCCI } from './cci';
+import { calculateVolumeProfile } from './volume-profile';
 import { MA_DEFAULT_PERIODS, EMA_DEFAULT_PERIODS } from './constants';
 
 export * from './rsi';
@@ -21,6 +22,7 @@ export * from './ma';
 export * from './stochastic';
 export * from './stochastic-rsi';
 export * from './cci';
+export * from './volume-profile';
 
 export function calculateIndicators(bars: Bar[]): IndicatorResult {
     const closes = bars.map(b => b.close);
@@ -45,5 +47,6 @@ export function calculateIndicators(bars: Bar[]): IndicatorResult {
                 calculateEMA(bars, period),
             ])
         ) as Record<number, (number | null)[]>,
+        volumeProfile: calculateVolumeProfile(bars),
     };
 }
