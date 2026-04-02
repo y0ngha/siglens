@@ -27,6 +27,7 @@ import { useRSIChart } from '@/components/chart/hooks/useRSIChart';
 import { useDMIChart } from '@/components/chart/hooks/useDMIChart';
 import { useStochasticChart } from '@/components/chart/hooks/useStochasticChart';
 import { useStochRSIChart } from '@/components/chart/hooks/useStochRSIChart';
+import { useCCIChart } from '@/components/chart/hooks/useCCIChart';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
@@ -73,6 +74,7 @@ export function StockChart({
     const [dmiVisible, setDmiVisible] = useState(false);
     const [stochasticVisible, setStochasticVisible] = useState(false);
     const [stochRsiVisible, setStochRsiVisible] = useState(false);
+    const [cciVisible, setCciVisible] = useState(false);
 
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -99,6 +101,10 @@ export function StockChart({
         setStochRsiVisible(prev => !prev);
     }, []);
 
+    const toggleCCI = useCallback(() => {
+        setCciVisible(prev => !prev);
+    }, []);
+
     const paneIndices: PaneIndices = useMemo(() => {
         const visibles = [
             rsiVisible,
@@ -106,6 +112,7 @@ export function StockChart({
             dmiVisible,
             stochasticVisible,
             stochRsiVisible,
+            cciVisible,
         ];
         const indexFor = (pos: number): number => {
             const precedingActive = visibles
@@ -121,6 +128,7 @@ export function StockChart({
             dmi: indexFor(2),
             stochastic: indexFor(3),
             stochRsi: indexFor(4),
+            cci: indexFor(5),
         };
     }, [
         rsiVisible,
@@ -128,6 +136,7 @@ export function StockChart({
         dmiVisible,
         stochasticVisible,
         stochRsiVisible,
+        cciVisible,
     ]);
 
     useEffect(() => {
@@ -224,6 +233,12 @@ export function StockChart({
         paneIndex: paneIndices.stochRsi,
     });
 
+    useCCIChart({
+        ...commonHookParams,
+        isVisible: cciVisible,
+        paneIndex: paneIndices.cci,
+    });
+
     const { isVisible: candlePatternsVisible, toggle: toggleCandlePatterns } =
         useCandlePatternMarkers({ seriesRef, bars });
 
@@ -299,6 +314,7 @@ export function StockChart({
                         visible: stochRsiVisible,
                         onToggle: toggleStochRSI,
                     }}
+                    cci={{ visible: cciVisible, onToggle: toggleCCI }}
                     candlePatterns={{
                         visible: candlePatternsVisible,
                         onToggle: toggleCandlePatterns,
