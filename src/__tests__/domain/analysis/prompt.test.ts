@@ -7,6 +7,10 @@ import {
     STOCHASTIC_K_PERIOD,
     STOCHASTIC_D_PERIOD,
     STOCHASTIC_SMOOTHING,
+    STOCH_RSI_RSI_PERIOD,
+    STOCH_RSI_STOCH_PERIOD,
+    STOCH_RSI_K_PERIOD,
+    STOCH_RSI_D_PERIOD,
 } from '@/domain/indicators/constants';
 import {
     HAMMER_BODY_OFFSET,
@@ -37,6 +41,8 @@ const TEST_DI_MINUS = 18.0;
 const TEST_ADX_VALUE = 30.0;
 const TEST_STOCHASTIC_K = 75.5;
 const TEST_STOCHASTIC_D = 68.3;
+const TEST_STOCH_RSI_K = 0.65;
+const TEST_STOCH_RSI_D = 0.52;
 const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_HIGH_CONFIDENCE = 0.9;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
@@ -66,6 +72,7 @@ const makeIndicators = (
     bollinger: [],
     dmi: [],
     stochastic: [],
+    stochRsi: [],
     ma: {},
     ema: {},
     ...overrides,
@@ -350,6 +357,42 @@ describe('prompt', () => {
             const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
             expect(result).toContain(TEST_STOCHASTIC_K.toFixed(2));
             expect(result).toContain(TEST_STOCHASTIC_D.toFixed(2));
+        });
+
+        it('StochRSI 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ stochRsi: [] }),
+                []
+            );
+            expect(result).toContain(
+                `StochRSI(${STOCH_RSI_RSI_PERIOD},${STOCH_RSI_STOCH_PERIOD},${STOCH_RSI_K_PERIOD},${STOCH_RSI_D_PERIOD}): K N/A`
+            );
+        });
+
+        it('마지막 StochRSI 요소의 모든 필드가 null일 때 N/A를 표시한다', () => {
+            const indicators = makeIndicators({
+                stochRsi: [{ k: null, d: null }],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(
+                `StochRSI(${STOCH_RSI_RSI_PERIOD},${STOCH_RSI_STOCH_PERIOD},${STOCH_RSI_K_PERIOD},${STOCH_RSI_D_PERIOD}): K N/A`
+            );
+        });
+
+        it('StochRSI 값을 포함한다', () => {
+            const indicators = makeIndicators({
+                stochRsi: [
+                    {
+                        k: TEST_STOCH_RSI_K,
+                        d: TEST_STOCH_RSI_D,
+                    },
+                ],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(TEST_STOCH_RSI_K.toFixed(2));
+            expect(result).toContain(TEST_STOCH_RSI_D.toFixed(2));
         });
     });
 
