@@ -50,30 +50,15 @@
 - Rule: CONVENTIONS.md Component Folder Structure — hooks/는 React hook 파일, utils/는 순수 함수; utils가 hooks를 import하면 안 됨
 - Context: `chart/types.ts`로 공유 타입을 추출하여 hooks/와 utils/ 모두 types.ts에서 import하도록 변경
 
-## [PR #138 | fix/132/pane-indicator-동적-index-계산 | 2026-04-01]
-- Violation: `paneIndices` useMemo 내부에서 `let next` + `next++` 재할당 사용
-- Rule: MISTAKES.md #3 — let 재할당 금지, const + 새 변수 사용
-- Context: `StockChart.tsx`의 `paneIndices` useMemo에서 `let next`를 `visibles.slice(0, pos).filter(Boolean).length` 기반의 순수 함수 `indexFor`로 교체
-
 ## [PR #152 | feat/120/CCI-구현 | 2026-04-02]
 - Violation: `cci.ts` line 23에서 `smaValue === null` 체크가 도달 불가능한 dead code — MISTAKES.md #9.5 위반
 - Rule: MISTAKES.md #9.5 — logic with no practical effect adds noise and obscures intent
 - Context: `Array.from` 내부에서 `tpSlice`는 항상 정확히 `period`개 원소를 가지므로 `sma(tpSlice, period)`가 null을 반환할 수 없음; null 체크를 제거하고 non-null 단언(`!`)으로 의도를 명시
 
-## [PR #152 | feat/120/CCI-구현 | 2026-04-02]
-- Violation: `cci.test.ts` line 29에서 매직 넘버 `5` 리터럴 사용 — MISTAKES.md TypeScript #6 Pattern D 위반
-- Rule: MISTAKES.md #0 — 같은 파일 내 `TEST_BAR_COUNT = 30`은 상수로 추출했으나 `5`는 리터럴로 남아 일관성이 없음
-- Context: `BELOW_PERIOD_COUNT = 5`로 추출하고 주석으로 CCI_DEFAULT_PERIOD(20) 미만임을 명시하여 맥락을 드러냄
-
 ## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `bucketVolumes[i] += bar.volume * ratio` — 로컬 배열이지만 index assignment로 직접 변경
 - Rule: CONVENTIONS.md — 불변성 원칙; 로컬 스코프 배열이라도 index 기반 mutation 금지
 - Context: `bars.reduce` + `acc.map`으로 교체하여 각 bar의 기여분을 새로운 배열로 accumulate
-
-## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `while` 루프 내부에서 `vahIndex += 1`, `valIndex -= 1` index 재할당
-- Rule: MISTAKES.md #1 — while 루프 + index 재할당은 모든 경우에서 금지
-- Context: `expandValueArea` 재귀 함수로 교체하여 state를 immutable하게 전달; 타입 `ValueAreaState`를 파일 최상단으로 추출
 
 ## [Issue #121 | feat/121/volume-profile-indicator | review fix | 2026-04-02]
 - Violation: `volume-profile.test.ts` line 188에서 "rowSize 미지정 시 VP_DEFAULT_ROW_SIZE 크기의 profile을 반환한다" 테스트가 line 65의 "profile 길이는 기본 rowSize(VP_DEFAULT_ROW_SIZE)와 같다"와 동일한 assertion을 중복으로 검증
@@ -86,17 +71,22 @@
 - Context: `senkouASourceIndex`와 `senkouBSourceIndex`를 `sourceIndex`로 통합하고 senkouA 계산을 `calculateSenkouA` named helper로 추출
 
 ## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
-- Violation: `useIchimokuOverlay.ts` line 173에서 `lineStyle: 2` 매직 넘버 사용
-- Rule: MISTAKES.md rule 6 — 하드코딩된 리터럴은 named constant로 교체해야 함; 다른 훅 파일들은 모두 `LineStyle.Dashed` 사용
-- Context: `LineStyle` import를 추가하고 `LineStyle.Dashed`로 교체하여 기존 패턴과 일관성 확보
-
-## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
 - Violation: `useIchimokuOverlay.ts` line 30에서 객체 형태에 `type` alias 사용
 - Rule: MISTAKES.md rule 11.5, CONVENTIONS.md — 객체 형태는 `interface`를 사용해야 함
 - Context: `type IchimokuCloudPoint = { ... }`를 `interface IchimokuCloudPoint { ... }`로 변경
 
-## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
-- Violation: `ichimoku.test.ts` line 31에서 `BELOW_PERIOD_COUNT = 5` 리터럴이 `ICHIMOKU_CONVERSION_PERIOD`와의 관계를 암묵적으로만 표현
-- Rule: MISTAKES.md rule 6 Pattern D — 맥락이 중요한 테스트 입력값은 의도가 드러나도록 상수로 추출해야 함
-- Context: `BELOW_PERIOD_COUNT = ICHIMOKU_CONVERSION_PERIOD - 4`로 도출하여 conversion period 미만임을 명시적으로 표현
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-02]
+- Violation: `useIchimokuOverlay.ts`의 `cloudLowerRef`가 `CHART_COLORS.background`(불투명 배경색)를 fill 색상으로 사용하여 cloudLower 아래의 다른 차트 시리즈(캔들스틱 등)를 덮어버림
+- Rule: FF.md Readability — 차트 기반 데이터를 숨기는 렌더링은 사용자 경험을 해치며 의도하지 않은 side effect임
+- Context: 두 AreaSeries 방식(cloudUpper + cloudLower masking)을 제거하고, senkouA/B는 LineSeries로, 구름은 `bottomColor: 'transparent'`의 bullish/bearish AreaSeries 2개로 교체하여 하위 차트 데이터를 보존
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-02]
+- Violation: `useIchimokuOverlay.ts`에서 `ichimokuCloudBearish` 색상이 정의되어 있으나 사용되지 않음 — senkouA < senkouB인 의운(bearish cloud) 구간에 bearish 색상이 적용되지 않아 Ichimoku 표준 명세 미충족
+- Rule: DOMAIN.md Ichimoku Cloud spec — bullish cloud(senkouA >= senkouB)와 bearish cloud(senkouA < senkouB)는 각각 다른 색상으로 구분되어야 함
+- Context: bullish/bearish 구름 AreaSeries를 분리하고 각 구간에서 null을 사용하여 bullish 구간은 `ichimokuCloudBullish`, bearish 구간은 `ichimokuCloudBearish` 색상 적용
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-02]
+- Violation: `calculateIchimoku`가 `bars.length`만큼만 결과를 반환하여 차트 우측의 미래 구름(Kumo) 26봉이 표시되지 않음 — Ichimoku 선행스팬 표준 명세 미충족
+- Rule: DOMAIN.md Ichimoku Cloud spec — 선행스팬 A·B는 현재 시점에서 displacement(26)봉 앞으로 투영되어야 함
+- Context: `calculateIchimokuFutureCloud` 함수를 domain에 추출하여 미래 26개 포인트의 senkouA/B를 계산; `useIchimokuOverlay`에서 마지막 두 봉의 interval로 미래 timestamp를 생성하여 senkouA/B 및 bullish/bearish cloud 시리즈에 append
 
