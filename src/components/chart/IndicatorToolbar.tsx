@@ -127,6 +127,7 @@ interface IndicatorToolbarProps {
     macd: IndicatorToggleGroup;
     rsi: IndicatorToggleGroup;
     dmi: IndicatorToggleGroup;
+    stochastic: IndicatorToggleGroup;
     candlePatterns?: IndicatorToggleGroup;
 }
 
@@ -141,6 +142,7 @@ export function IndicatorToolbar({
     macd,
     rsi,
     dmi,
+    stochastic,
     candlePatterns,
 }: IndicatorToolbarProps) {
     const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
@@ -211,6 +213,7 @@ export function IndicatorToolbar({
         { label: 'MACD', ...macd },
         { label: 'RSI', ...rsi },
         { label: 'DMI', ...dmi },
+        { label: 'Stoch', ...stochastic },
         ...(candlePatterns ? [{ label: '캔들', ...candlePatterns }] : []),
     ];
 

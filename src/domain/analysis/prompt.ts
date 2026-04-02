@@ -9,6 +9,9 @@ import {
     MA_DEFAULT_PERIODS,
     MIN_CONFIDENCE_WEIGHT,
     RSI_DEFAULT_PERIOD,
+    STOCHASTIC_K_PERIOD,
+    STOCHASTIC_D_PERIOD,
+    STOCHASTIC_SMOOTHING,
 } from '@/domain/indicators/constants';
 import { detectCandlePattern } from '@/domain/analysis/candle';
 import { getCandlePatternLabel } from '@/domain/analysis/candle-labels';
@@ -158,6 +161,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastMACD = lastOf(indicators.macd);
     const lastBollinger = lastOf(indicators.bollinger);
     const lastDMI = lastOf(indicators.dmi);
+    const lastStochastic = lastOf(indicators.stochastic);
 
     return [
         '## Indicator Values',
@@ -165,6 +169,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
         `- MACD: ${fmt(lastMACD?.macd ?? null)} / Signal ${fmt(lastMACD?.signal ?? null)} / Histogram ${fmt(lastMACD?.histogram ?? null)}`,
         `- Bollinger Bands: Upper ${fmt(lastBollinger?.upper ?? null)} / Middle ${fmt(lastBollinger?.middle ?? null)} / Lower ${fmt(lastBollinger?.lower ?? null)}`,
         `- DMI: +DI ${fmt(lastDMI?.diPlus ?? null)} / -DI ${fmt(lastDMI?.diMinus ?? null)} / ADX ${fmt(lastDMI?.adx ?? null)}`,
+        `- Stochastic(${STOCHASTIC_K_PERIOD},${STOCHASTIC_D_PERIOD},${STOCHASTIC_SMOOTHING}): %K ${fmt(lastStochastic?.percentK ?? null)} / %D ${fmt(lastStochastic?.percentD ?? null)}`,
     ].join('\n');
 };
 

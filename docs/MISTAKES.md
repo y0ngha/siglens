@@ -486,6 +486,14 @@ Review before implementation and ensure these are not repeated.
    ✅ it('patternSummaries 배열을 반환한다', () => { expect(Array.isArray(result.patternSummaries)).toBe(true); })
    ✅ it('pattern: 미존재 시 undefined를 반환한다', () => { expect(result.pattern).toBeUndefined(); })
 
+3.5. New indicator or feature added without corresponding test cases for all calculation/formatting methods
+   → When adding a new domain/infrastructure indicator (e.g. Stochastic), all related functions must have test coverage
+   → Applies to both the calculation function (e.g. calculateStochastic) and integration tests (e.g. formatIndicatorSection)
+   → Rule: CONVENTIONS.md and MISTAKES.md — 100% coverage target for domain and infrastructure
+   ❌ Add calculateStochastic to domain/indicators but no test cases in stochastic.test.ts
+   ❌ Add formatIndicatorSection support for stochastic but no test case in prompt.test.ts for stochastic formatting
+   ✅ When adding a new indicator, write test cases for the calculation function AND any integration points (formatting, pane labeling, etc.)
+
 4. Writing describe/it descriptions as code expressions
    ❌ describe('closes.length < period', ...)
    ✅ describe('입력 배열 길이가 period 미만일 때', ...)

@@ -20,6 +20,7 @@ const mockVariables: AnalyzeVariables = {
         macd: [],
         bollinger: [],
         dmi: [],
+        stochastic: [],
         rsi: [],
         vwap: [],
         ma: {},

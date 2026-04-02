@@ -4,6 +4,9 @@ import {
     HIGH_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
     RSI_DEFAULT_PERIOD,
+    STOCHASTIC_K_PERIOD,
+    STOCHASTIC_D_PERIOD,
+    STOCHASTIC_SMOOTHING,
 } from '@/domain/indicators/constants';
 import {
     HAMMER_BODY_OFFSET,
@@ -32,6 +35,8 @@ const TEST_BOLLINGER_LOWER = 145.0;
 const TEST_DI_PLUS = 25.0;
 const TEST_DI_MINUS = 18.0;
 const TEST_ADX_VALUE = 30.0;
+const TEST_STOCHASTIC_K = 75.5;
+const TEST_STOCHASTIC_D = 68.3;
 const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_HIGH_CONFIDENCE = 0.9;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
@@ -60,6 +65,7 @@ const makeIndicators = (
     macd: [],
     bollinger: [],
     dmi: [],
+    stochastic: [],
     ma: {},
     ema: {},
     ...overrides,
@@ -308,6 +314,42 @@ describe('prompt', () => {
             expect(result).toContain(TEST_DI_PLUS.toFixed(2));
             expect(result).toContain(TEST_DI_MINUS.toFixed(2));
             expect(result).toContain(TEST_ADX_VALUE.toFixed(2));
+        });
+
+        it('Stochastic 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ stochastic: [] }),
+                []
+            );
+            expect(result).toContain(
+                `Stochastic(${STOCHASTIC_K_PERIOD},${STOCHASTIC_D_PERIOD},${STOCHASTIC_SMOOTHING}): %K N/A`
+            );
+        });
+
+        it('마지막 Stochastic 요소의 모든 필드가 null일 때 N/A를 표시한다', () => {
+            const indicators = makeIndicators({
+                stochastic: [{ percentK: null, percentD: null }],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(
+                `Stochastic(${STOCHASTIC_K_PERIOD},${STOCHASTIC_D_PERIOD},${STOCHASTIC_SMOOTHING}): %K N/A`
+            );
+        });
+
+        it('Stochastic 값을 포함한다', () => {
+            const indicators = makeIndicators({
+                stochastic: [
+                    {
+                        percentK: TEST_STOCHASTIC_K,
+                        percentD: TEST_STOCHASTIC_D,
+                    },
+                ],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(TEST_STOCHASTIC_K.toFixed(2));
+            expect(result).toContain(TEST_STOCHASTIC_D.toFixed(2));
         });
     });
 

@@ -55,6 +55,10 @@
     --color-chart-dmi-minus: #ef5350;
     --color-chart-dmi-adx: #f59e0b;
 
+    /* Chart — Stochastic */
+    --color-chart-stochastic-k: #f472b6;
+    --color-chart-stochastic-d: #38bdf8;
+
     /* Chart — VWAP */
     --color-chart-vwap: #e879f9;
 
