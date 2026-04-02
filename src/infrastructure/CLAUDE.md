@@ -77,7 +77,7 @@ APCA-API-SECRET-KEY: {SECRET_KEY}
 
 ### skills/ (Skills Loader)
 
-- Reads `skills/*.md` files and parses into `Skill[]`
+- Recursively scans `skills/` subdirectories for `.md` files and parses into `Skill[]`
 - Handled by `FileSkillsLoader` class
 - File format: YAML frontmatter + Markdown body
 - Parsed `Skill[]` is passed to `domain/analysis/prompt.ts`

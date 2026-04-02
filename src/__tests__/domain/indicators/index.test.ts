@@ -8,6 +8,7 @@ import {
     calculateVWAP,
     calculateEMA,
     calculateMA,
+    calculateVolumeProfile,
 } from '@/domain/indicators';
 import {
     MA_DEFAULT_PERIODS,
@@ -83,6 +84,10 @@ describe('calculateIndicators', () => {
             EMA_DEFAULT_PERIODS.forEach(period => {
                 expect(result.ema[period]).toEqual([]);
             });
+        });
+
+        it('volumeProfile이 null을 반환한다', () => {
+            expect(calculateIndicators([]).volumeProfile).toBeNull();
         });
     });
 
@@ -235,6 +240,12 @@ describe('calculateIndicators', () => {
             const period = EMA_DEFAULT_PERIODS[0];
             expect(calculateIndicators(bars).ema[period]).toEqual(
                 calculateEMA(bars, period)
+            );
+        });
+
+        it('volumeProfile이 calculateVolumeProfile 결과와 같다', () => {
+            expect(calculateIndicators(bars).volumeProfile).toEqual(
+                calculateVolumeProfile(bars)
             );
         });
     });

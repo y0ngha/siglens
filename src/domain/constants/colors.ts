@@ -67,7 +67,7 @@ export const CHART_COLORS = {
     // Volume Profile
     vpPoc: '#f59e0b',
     vpVah: '#8b5cf6',
-    vpVal: '#8b5cf6',
+    vpVal: '#34d399',
 
     // Ichimoku Cloud
     ichimokuTenkan: '#2962ff',
