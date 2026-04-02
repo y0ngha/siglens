@@ -21,6 +21,7 @@ const mockVariables: AnalyzeVariables = {
         bollinger: [],
         dmi: [],
         stochastic: [],
+        stochRsi: [],
         rsi: [],
         vwap: [],
         ma: {},
