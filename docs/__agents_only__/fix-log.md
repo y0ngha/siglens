@@ -55,11 +55,6 @@
 - Rule: MISTAKES.md #3 — let 재할당 금지, const + 새 변수 사용
 - Context: `StockChart.tsx`의 `paneIndices` useMemo에서 `let next`를 `visibles.slice(0, pos).filter(Boolean).length` 기반의 순수 함수 `indexFor`로 교체
 
-## [PR #140 | feat/118/stochastic-오실레이터-구현 | 2026-04-02]
-- Violation: reduce + spread 패턴으로 매 반복마다 배열 복제하여 O(N^2) 시간 복잡도 발생
-- Rule: FF.md Readability — 불필요한 배열 복제는 성능과 가독성 모두 저하; map 기반 파이프라인이 더 선언적
-- Context: calculateStochastic에서 reduce + `[...acc.results, item]` 패턴을 filter → map → map 파이프라인으로 리팩토링하여 O(N) 달성
-
 ## [Issue #119 | feat/119/stochastic-rsi-구현 | review fix | 2026-04-02]
 - Violation: 새로 생성한 domain/indicators/utils.ts에 대한 테스트 파일이 누락
 - Rule: __tests__/CLAUDE.md — domain 레이어 100% 테스트 커버리지 필수; 새 파일 생성 시 테스트 파일도 함께 작성
@@ -69,9 +64,4 @@
 - Violation: CCI가 formatIndicatorSection에 추가되었으나 prompt.test.ts에 CCI 테스트 케이스 누락
 - Rule: __tests__/CLAUDE.md — domain 레이어 100% 테스트 커버리지 필수; 다른 지표(RSI, MACD, Bollinger, DMI, Stochastic, StochRSI)와 동일한 3가지 케이스(빈 배열, 전부 null, 유효값) 필요
 - Context: prompt.test.ts에 '지표 섹션 - CCI' describe 블록을 추가하여 빈 배열→N/A, 모두 null→N/A, 유효값 포함 3개 테스트 케이스 작성
-
-## [PR #152 | feat/120/CCI-구현 | 2026-04-02]
-- Violation: `sma(tpSlice, period) ?? 0` nullish fallback이 dead code — tpSlice는 항상 period개 요소를 가지므로 sma는 null을 반환하지 않음
-- Rule: MISTAKES.md rule 9.5 — 실제로 발생하지 않는 fallback은 코드 의도를 흐리고 독자를 오도한다
-- Context: cci.ts line 22에서 `?? 0`를 제거하고 non-null assertion `!`으로 교체하여 sma가 null이 아님을 명시
 

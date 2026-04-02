@@ -13,22 +13,24 @@ export function calculateCCI(
         typicalPrice(bar.high, bar.low, bar.close)
     );
 
-    const nulls: (number | null)[] = new Array(period - 1).fill(null);
+    const nullPrefix: (number | null)[] = new Array(period - 1).fill(null);
 
-    const cciValues: (number | null)[] = typicalPrices
-        .slice(period - 1)
-        .map((_, i) => {
+    const computedValues: (number | null)[] = Array.from(
+        { length: typicalPrices.length - period + 1 },
+        (_, i) => {
             const tpSlice = typicalPrices.slice(i, i + period);
-            const smaValue = sma(tpSlice, period)!;
+            const smaValue = sma(tpSlice, period);
+            if (smaValue === null) return null;
             const meanDeviation =
                 tpSlice.reduce((sum, tp) => sum + Math.abs(tp - smaValue), 0) /
                 period;
-
+            const currentTP = typicalPrices[i + period - 1];
             return meanDeviation === 0
                 ? 0
-                : (tpSlice[tpSlice.length - 1] - smaValue) /
+                : (currentTP - smaValue) /
                       (CCI_NORMALIZATION_CONSTANT * meanDeviation);
-        });
+        }
+    );
 
-    return [...nulls, ...cciValues];
+    return [...nullPrefix, ...computedValues];
 }
