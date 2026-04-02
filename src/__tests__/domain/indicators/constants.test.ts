@@ -22,6 +22,10 @@ describe('EMPTY_INDICATOR_RESULT', () => {
             expect(EMPTY_INDICATOR_RESULT.dmi).toEqual([]);
         });
 
+        it('stochastic이 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.stochastic).toEqual([]);
+        });
+
         it('vwap이 빈 배열이다', () => {
             expect(EMPTY_INDICATOR_RESULT.vwap).toEqual([]);
         });

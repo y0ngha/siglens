@@ -6,6 +6,7 @@ import { calculateDMI } from './dmi';
 import { calculateVWAP } from './vwap';
 import { calculateEMA } from './ema';
 import { calculateMA } from './ma';
+import { calculateStochastic } from './stochastic';
 import { MA_DEFAULT_PERIODS, EMA_DEFAULT_PERIODS } from './constants';
 
 export * from './rsi';
@@ -15,6 +16,7 @@ export * from './dmi';
 export * from './vwap';
 export * from './ema';
 export * from './ma';
+export * from './stochastic';
 
 export function calculateIndicators(bars: Bar[]): IndicatorResult {
     const closes = bars.map(b => b.close);
@@ -23,6 +25,7 @@ export function calculateIndicators(bars: Bar[]): IndicatorResult {
         macd: calculateMACD(bars),
         bollinger: calculateBollinger(bars),
         dmi: calculateDMI(bars),
+        stochastic: calculateStochastic(bars),
         vwap: calculateVWAP(bars),
         ma: Object.fromEntries(
             MA_DEFAULT_PERIODS.map(period => [
