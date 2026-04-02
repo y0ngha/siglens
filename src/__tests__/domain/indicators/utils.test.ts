@@ -1,4 +1,4 @@
-import { sma } from '@/domain/indicators/utils';
+import { sma, typicalPrice } from '@/domain/indicators/utils';
 
 describe('utils', () => {
     describe('sma', () => {
@@ -41,6 +41,26 @@ describe('utils', () => {
         describe('동일한 값들일 때', () => {
             it('해당 값을 반환한다', () => {
                 expect(sma([50, 50, 50, 50], 3)).toBeCloseTo(50);
+            });
+        });
+    });
+
+    describe('typicalPrice', () => {
+        describe('일반적인 봉 데이터일 때', () => {
+            it('(high + low + close) / 3을 반환한다', () => {
+                expect(typicalPrice(120, 100, 110)).toBeCloseTo(110);
+            });
+        });
+
+        describe('high, low, close가 동일할 때', () => {
+            it('해당 값을 반환한다', () => {
+                expect(typicalPrice(50, 50, 50)).toBeCloseTo(50);
+            });
+        });
+
+        describe('소수점 값일 때', () => {
+            it('정확한 전형 가격을 계산한다', () => {
+                expect(typicalPrice(10.5, 9.5, 10.0)).toBeCloseTo(10.0);
             });
         });
     });
