@@ -95,6 +95,17 @@ Review before implementation and ensure these are not repeated.
    ❌ try { ... } catch (e) { logError(e); }  // error is never expected and catch adds confusion
    ✅ Remove the catch block if it doesn't serve error recovery
 
+9.6. Range condition written with variable on left and boundary on right (e.g. bar.low >= bucketLow)
+   → Rule: FF.md 1-F — range conditions must follow mathematical notation: smaller value on left, larger on right
+   → Order value comparisons to match number line: value <= item <= value (left to right, increasing)
+   → This makes the code self-documenting and parallels mathematical notation (a ≤ x ≤ b)
+   ❌ bar.low >= bucketLow          // variable on left, boundary on right
+   ✅ bucketLow <= bar.low          // boundary on left, variable on right
+   ❌ row.price >= result.val       // value on left, boundary on right
+   ✅ result.val <= row.price       // boundary on left, value on right
+   ❌ if (bar.close < minPrice || bar.close > maxPrice) {}  // mixed order
+   ✅ if (minPrice > bar.close || bar.close > maxPrice) {}  // consistent order
+
 10. Repeating identical filtering/calculation logic across multiple blocks
     → Rule: FF.md Cohesion 3-B — same values computed in multiple places must be extracted to single source of truth
     → When the same filter, map, or computation appears 2+ times, extract to useMemo (hooks) or const (regular code)
@@ -229,6 +240,25 @@ Review before implementation and ensure these are not repeated.
      ✅ buildCandlePatternEntries.map((entry: CandlePatternEntry) => { ... })
      ❌ entries.sort((a, b) => a.barIndex - b.barIndex)  // a, b have implicit any
      ✅ entries.sort((a: PromptCandlePatternEntry, b: PromptCandlePatternEntry) => a.barIndex - b.barIndex)
+
+11.7. Unused type imports and missing type imports
+     → Rule: TypeScript — imports must match actual usage
+     → Type that is declared in import but never used in code triggers TS6196 (unused import)
+     → Type that is used in annotation but not imported triggers TS2304 (not found) or TS7044 (implicit any)
+     → When using explicit type annotations in callbacks or variables, the type must be imported
+     → When a type is imported but TypeScript infers the type automatically, remove the unnecessary import
+     ❌ import type { VolumeProfileResult } from '...'; // declared but never used in variable/parameter annotations
+     ✅ Remove the unused import
+     ❌ const result: VolumeProfileResult | null  // but VolumeProfileResult not imported
+     ✅ import type { VolumeProfileResult } from '@/domain/...'
+
+11.8. Missing type import for types used in annotations
+     → Rule: TypeScript — all types used in explicit annotations must be imported
+     → When a callback's implicit type matches the parameter, the import is unnecessary (TypeScript infers automatically)
+     → When forcing explicit type annotations on a variable or parameter, the type must be imported
+     ❌ const result: VolumeProfileResult | null  // TS2304: VolumeProfileResult not found
+     ✅ import type { VolumeProfileResult } from '@/domain/indicators/volume-profile';
+        const result: VolumeProfileResult | null = calculateVolumeProfile(bars);
 
 12. Related interfaces with shared fields not linked by extends
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
@@ -421,6 +451,17 @@ Review before implementation and ensure these are not repeated.
     ✅ const { ... } = usePanelResize(); const status = getAnalysisStatus();  // custom hook first, then derivations
     ❌ const state = useState(...); const handler = useCallback(...); useDragListener(...); useEffect(...)  // listener hook order wrong
     ✅ const state = useState(...); useDragListener(...); const handler = useCallback(...); useEffect(...)  // listener hook before useCallback
+
+15.5. Custom hook params missing optional properties that are used in composition
+     → Rule: CONVENTIONS.md Custom Hook Rules — all overlay and chart interaction hooks must accept consistent parameter patterns
+     → When multiple hooks in the same family (e.g. overlay hooks: useMAOverlay, useBollingerOverlay, useVolumeProfileOverlay)
+       accept the same optional parameters (e.g. lineWidth), all hooks must declare the parameter in their interface
+     → Absence of a parameter in one hook while present in others breaks DRY and creates inconsistent API
+     ❌ UseBollingerOverlayParams { lineWidth?: LineWidth } but UseVolumeProfileOverlayParams { } (missing lineWidth)
+     ✅ All overlay hook params include lineWidth?: LineWidth with DEFAULT_LINE_WIDTH as function default
+     ❌ useMAOverlay receives { lineWidth?: LineWidth } param
+        useVolumeProfileOverlay hardcodes DEFAULT_LINE_WIDTH without accepting param
+     ✅ useVolumeProfileOverlay({ ..., lineWidth = DEFAULT_LINE_WIDTH }) matches useMAOverlay pattern
 ```
 
 ---

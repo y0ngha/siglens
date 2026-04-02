@@ -1,10 +1,5 @@
 # Fix Log
 
-## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
-- Violation: `collectMdFiles` 함수 내 `.map()` 콜백 파라미터 `entry`에 명시적 타입 어노테이션 누락
-- Rule: MISTAKES.md #11.6 — 콜백 파라미터(map, filter, reduce, sort, forEach)는 TypeScript가 추론 가능하더라도 명시적 타입을 선언해야 한다
-- Context: `readdir(dir, { withFileTypes: true })` 반환값 덕분에 `entry`가 `Dirent`로 추론되지만, 규칙은 추론 가능 여부와 무관하게 명시적 선언을 요구하므로 `(entry: Dirent)` 어노테이션 및 `import type { Dirent } from 'node:fs'` 추가
-
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
@@ -14,11 +9,6 @@
 - Violation: `IndicatorToolbarProps`에 `xyzVisible + onXYZToggle` 플랫 props 12개가 나열되어 새 지표 추가 시 props 2개씩 증가
 - Rule: FF.md Coupling 4-A — 함께 변경되는 props는 묶어야 한다; 새 지표마다 interface와 호출 사이트 양쪽을 수정해야 하는 tight coupling
 - Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
-
-## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | 2026-03-31]
-- Violation: `usePanelResize.ts`에서 `React.MouseEvent` 타입을 사용하면서 `React` import가 누락되어 TypeScript 컴파일 오류 발생
-- Rule: TypeScript — 사용하는 모든 타입의 import가 명시되어야 한다
-- Context: `import type React from 'react'`를 추가하고, `handleDragStart`가 `panelWidth` state에 의존하여 불필요하게 재생성되는 문제를 `panelWidthRef` + `useEffect` 패턴으로 해결하여 함수를 안정화
 
 ## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 4 | 2026-03-31]
 - Violation: focusable `role="separator"` 드래그 핸들에 `onKeyDown` 핸들러가 없어 키보드 사용자가 패널 너비를 조절할 수 없는 접근성 미구현
@@ -34,11 +24,6 @@
 - Violation: 3봉 패턴 감지 시 detection window 시작 부분에서 이전 데이터 부족으로 미감지 가능
 - Rule: domain/CLAUDE.md Candle Pattern Detection — multi-candle 패턴은 2~3봉이 필요하므로 충분한 데이터 확보 필요
 - Context: `detectCandlePatternEntries`에서 `CANDLE_PATTERN_DETECTION_BARS + MULTI_CANDLE_PATTERN_BUFFER(2)`개 데이터를 확보하여 감지, 결과는 마지막 15봉에 대해서만 반환
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: useEffect에서 plugin 초기화(createSeriesMarkers)와 데이터 동기화(setMarkers)가 혼합되어 있고, cleanup이 별도 useEffect로 분리
-- Rule: CONVENTIONS.md Custom Hook Rules — instance creation/destruction([])와 data synchronization([deps])을 별도 useEffect로 분리해야 함
-- Context: `useCandlePatternMarkers.ts`에서 초기화+cleanup을 `useEffect([seriesRef])`로, 데이터 동기화를 `useEffect([markers, isVisible])`로 분리
 
 ## [Issue #132 | fix/132/pane-indicator-label-표시-수정 | 2026-04-01]
 - Violation: `PaneLabelConfig`, `PaneSubLabel` 타입이 hooks/ 파일에서 정의되고 utils/에서 import하여 역방향 의존성 발생
@@ -64,11 +49,6 @@
 - Rule: DESIGN.md — VAH와 VAL은 서로 다른 가격 경계를 나타내므로 구별 가능한 색상이 필요
 - Context: `vpVal`을 `#34d399`(mint green)으로 변경하여 `vpVah`(purple)와 시각적으로 구별 가능하게 함
 
-## [PR #153 | feat/121/volume-profile-indicator | internal review | 2026-04-02]
-- Violation: `useVolumeProfileOverlay.ts`에서 `lineWidth`를 params interface에 포함하지 않고 `DEFAULT_LINE_WIDTH`를 직접 series 생성 시 인라인으로 사용하여 TS6133 발생 및 다른 overlay 훅과 패턴 불일치
-- Rule: CONVENTIONS.md Custom Hook Rules — 모든 overlay 훅은 `lineWidth?: LineWidth`를 params로 수신하고 default 값으로 `DEFAULT_LINE_WIDTH`를 적용해야 함
-- Context: `UseVolumeProfileOverlayParams`에 `lineWidth?: LineWidth` 추가, 함수 시그니처에서 `lineWidth = DEFAULT_LINE_WIDTH` default 적용, series 생성 시 param 값 사용으로 `useBollingerOverlay` 등과 동일한 패턴으로 통일
-
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `volume-profile.ts`의 `ValueAreaState`가 `type`으로 선언되어 있어 MISTAKES.md #11.5 위반
 - Rule: MISTAKES.md #11.5 — 객체 형태(object shape)는 `type` 대신 `interface`로 선언
@@ -78,16 +58,6 @@
 - Violation: `prompt.ts`의 `formatIndicatorSection`에서 `indicators.volumeProfile`에 3회 접근 (MISTAKES.md #8.5 위반)
 - Rule: MISTAKES.md #8.5 — 동일한 값이 같은 함수 안에서 2회 이상 조회될 때는 로컬 const로 추출
 - Context: `const vp = indicators.volumeProfile`를 함수 상단 다른 `last*` 변수들과 함께 추출하여 단일 접근으로 변경
-
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `volume-profile.ts`의 모든 reduce/map 콜백 파라미터에 명시적 타입 어노테이션 누락
-- Rule: MISTAKES.md #11.6 — 콜백 파라미터(map, filter, reduce, sort, forEach)에는 항상 명시적 타입 어노테이션을 선언한다
-- Context: L25, L28, L36, L39, L49, L65, L69, L112 각 콜백에 `(max: number, bar: Bar)`, `(acc: number[], bar: Bar)` 등 명시적 타입 추가; `volume-profile.test.ts`에서도 reduce/filter 콜백 파라미터에 `VolumeProfileRow` 타입 추가
-
-## [PR #153 | feat/121/volume-profile-indicator | internal review | 2026-04-02]
-- Violation: `volume-profile.test.ts`에서 `VolumeProfileRow` import가 선언되어 있으나 reduce/filter 콜백에서 TypeScript가 타입을 자동 추론하여 명시적 어노테이션이 불필요해 TS6196 컴파일 오류 발생
-- Rule: TypeScript — 불필요한 import는 제거하고, TypeScript가 추론할 수 있는 콜백 파라미터 타입은 명시하지 않는다
-- Context: `VolumeProfileRow` import 제거 및 reduce/filter 콜백에서 명시적 타입 어노테이션 제거; `expandValueArea` const arrow function을 named function declaration으로 변경하여 domain 컨벤션 일치
 
 
 ## [PR #153 | feat/121/volume-profile-indicator | external review | 2026-04-02]
