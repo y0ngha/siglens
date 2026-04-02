@@ -63,6 +63,11 @@ export const CHART_COLORS = {
 
     // VWAP
     vwap: '#e879f9',
+
+    // Volume Profile
+    vpPoc: '#f59e0b',
+    vpVah: '#8b5cf6',
+    vpVal: '#8b5cf6',
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {
