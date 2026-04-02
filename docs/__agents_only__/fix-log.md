@@ -90,3 +90,23 @@
 - Rule: MISTAKES.md #8.5 — 동일한 값이 같은 함수 안에서 2회 이상 조회될 때는 로컬 const로 추출
 - Context: `const vp = indicators.volumeProfile`를 함수 상단 다른 `last*` 변수들과 함께 추출하여 단일 접근으로 변경
 
+## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
+- Violation: `volume-profile.ts`의 모든 reduce/map 콜백 파라미터에 명시적 타입 어노테이션 누락
+- Rule: MISTAKES.md #11.6 — 콜백 파라미터(map, filter, reduce, sort, forEach)에는 항상 명시적 타입 어노테이션을 선언한다
+- Context: L25, L28, L36, L39, L49, L65, L69, L112 각 콜백에 `(max: number, bar: Bar)`, `(acc: number[], bar: Bar)` 등 명시적 타입 추가; `volume-profile.test.ts`에서도 reduce/filter 콜백 파라미터에 `VolumeProfileRow` 타입 추가
+
+## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
+- Violation: `volume-profile.test.ts:182`에서 POC 위치 검증 단언 `toBeGreaterThan(100)`이 저가 구간 poc도 통과시키는 약한 단언
+- Rule: MISTAKES.md #12 — 항상 통과할 수 있는 단언은 커버리지를 소비하지만 의도를 드러내지 못한다
+- Context: 고가 구간(150~160)에 거래량이 집중된 테스트 시나리오에서 `toBeGreaterThan(140)`으로 변경하여 POC가 실제 고가 구간에 있음을 검증
+
+## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
+- Violation: `volume-profile.test.ts:215`에서 허용 오차 `0.05` 매직 넘버 인라인 사용
+- Rule: FF.md 1-D — 매직 넘버는 이름을 붙여 의미를 드러낸다
+- Context: `const VALUE_AREA_TOLERANCE = 0.05`로 추출하고 주석으로 bucket 경계 이산화 허용 오차임을 명시
+
+## [PR #153 | feat/121/volume-profile-indicator | internal review | 2026-04-02]
+- Violation: `volume-profile.test.ts`에서 `VolumeProfileRow` import가 선언되어 있으나 reduce/filter 콜백에서 TypeScript가 타입을 자동 추론하여 명시적 어노테이션이 불필요해 TS6196 컴파일 오류 발생
+- Rule: TypeScript — 불필요한 import는 제거하고, TypeScript가 추론할 수 있는 콜백 파라미터 타입은 명시하지 않는다
+- Context: `VolumeProfileRow` import 제거 및 reduce/filter 콜백에서 명시적 타입 어노테이션 제거; `expandValueArea` const arrow function을 named function declaration으로 변경하여 domain 컨벤션 일치
+

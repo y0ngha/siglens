@@ -143,11 +143,13 @@ describe('Volume Profile', () => {
                 const result = calculateVolumeProfile(bars);
                 expect(result).not.toBeNull();
                 if (result) {
-                    for (let i = 1; i < result.profile.length; i++) {
-                        expect(result.profile[i].price).toBeGreaterThan(
-                            result.profile[i - 1].price
-                        );
-                    }
+                    expect(
+                        result.profile.every(
+                            (row, i) =>
+                                i === 0 ||
+                                row.price > result.profile[i - 1].price
+                        )
+                    ).toBe(true);
                 }
             });
         });
@@ -178,8 +180,8 @@ describe('Volume Profile', () => {
                 const result = calculateVolumeProfile(bars);
                 expect(result).not.toBeNull();
                 if (result) {
-                    // POC는 고가 구간에 있어야 함
-                    expect(result.poc).toBeGreaterThan(100);
+                    // POC는 고가 구간(150~160)에 있어야 함
+                    expect(result.poc).toBeGreaterThan(140);
                 }
             });
         });
@@ -198,6 +200,7 @@ describe('Volume Profile', () => {
                 const result = calculateVolumeProfile(bars);
                 expect(result).not.toBeNull();
                 if (result) {
+                    const VALUE_AREA_TOLERANCE = 0.05; // bucket 경계 이산화로 인한 허용 오차
                     const totalVolume = result.profile.reduce(
                         (sum, row) => sum + row.volume,
                         0
@@ -212,7 +215,9 @@ describe('Volume Profile', () => {
 
                     expect(
                         valueAreaVolume / totalVolume
-                    ).toBeGreaterThanOrEqual(VP_VALUE_AREA_PERCENTAGE - 0.05);
+                    ).toBeGreaterThanOrEqual(
+                        VP_VALUE_AREA_PERCENTAGE - VALUE_AREA_TOLERANCE
+                    );
                 }
             });
         });

@@ -22,10 +22,13 @@ export function calculateVolumeProfile(
     if (bars.length < VP_MIN_BARS) return null;
 
     const highMax = bars.reduce(
-        (max, bar) => Math.max(max, bar.high),
+        (max: number, bar: Bar) => Math.max(max, bar.high),
         -Infinity
     );
-    const lowMin = bars.reduce((min, bar) => Math.min(min, bar.low), Infinity);
+    const lowMin = bars.reduce(
+        (min: number, bar: Bar) => Math.min(min, bar.low),
+        Infinity
+    );
     const priceRange = highMax - lowMin;
 
     if (priceRange === 0) return null;
@@ -33,10 +36,10 @@ export function calculateVolumeProfile(
     const bucketSize = priceRange / rowSize;
 
     const bucketVolumes = bars.reduce(
-        (acc, bar) => {
+        (acc: number[], bar: Bar) => {
             const barRange = bar.high - bar.low;
             if (barRange === 0) {
-                return acc.map((vol, i) => {
+                return acc.map((vol: number, i: number) => {
                     const bucketLow = lowMin + i * bucketSize;
                     const bucketHigh = bucketLow + bucketSize;
                     const isLastBucket = i === rowSize - 1;
@@ -46,7 +49,7 @@ export function calculateVolumeProfile(
                     return inBucket ? vol + bar.volume : vol;
                 });
             }
-            return acc.map((vol, i) => {
+            return acc.map((vol: number, i: number) => {
                 const bucketLow = lowMin + i * bucketSize;
                 const bucketHigh = bucketLow + bucketSize;
                 const overlap =
@@ -62,14 +65,18 @@ export function calculateVolumeProfile(
     );
 
     const pocIndex = bucketVolumes.reduce(
-        (maxIdx, vol, idx) => (vol > bucketVolumes[maxIdx] ? idx : maxIdx),
+        (maxIdx: number, vol: number, idx: number) =>
+            vol > bucketVolumes[maxIdx] ? idx : maxIdx,
         0
     );
 
-    const totalVolume = bucketVolumes.reduce((sum, vol) => sum + vol, 0);
+    const totalVolume = bucketVolumes.reduce(
+        (sum: number, vol: number) => sum + vol,
+        0
+    );
     const targetVolume = totalVolume * VP_VALUE_AREA_PERCENTAGE;
 
-    const expandValueArea = (state: ValueAreaState): ValueAreaState => {
+    function expandValueArea(state: ValueAreaState): ValueAreaState {
         if (state.accumulatedVolume >= targetVolume) return state;
 
         const nextAbove =
@@ -98,7 +105,7 @@ export function calculateVolumeProfile(
             accumulatedVolume:
                 state.accumulatedVolume + bucketVolumes[newValIndex],
         });
-    };
+    }
 
     const { vahIndex, valIndex } = expandValueArea({
         vahIndex: pocIndex,
@@ -109,10 +116,12 @@ export function calculateVolumeProfile(
     const bucketCenter = (i: number): number =>
         lowMin + i * bucketSize + bucketSize / 2;
 
-    const profile: VolumeProfileRow[] = bucketVolumes.map((volume, i) => ({
-        price: bucketCenter(i),
-        volume,
-    }));
+    const profile: VolumeProfileRow[] = bucketVolumes.map(
+        (volume: number, i: number) => ({
+            price: bucketCenter(i),
+            volume,
+        })
+    );
 
     return {
         poc: bucketCenter(pocIndex),
