@@ -27,6 +27,8 @@ const mockVariables: AnalyzeVariables = {
         vwap: [],
         ma: {},
         ema: {},
+        volumeProfile: null,
+        ichimoku: [],
     },
 };
 

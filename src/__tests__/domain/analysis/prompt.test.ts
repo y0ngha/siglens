@@ -78,6 +78,8 @@ const makeIndicators = (
     stochRsi: [],
     ma: {},
     ema: {},
+    volumeProfile: null,
+    ichimoku: [],
     ...overrides,
 });
 
