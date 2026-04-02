@@ -55,38 +55,23 @@
 - Rule: CONVENTIONS.md Component Folder Structure — hooks/는 React hook 파일, utils/는 순수 함수; utils가 hooks를 import하면 안 됨
 - Context: `chart/types.ts`로 공유 타입을 추출하여 hooks/와 utils/ 모두 types.ts에서 import하도록 변경
 
-## [Issue #132 | fix/132/pane-indicator-label-표시-수정 | 2026-04-01]
-- Violation: MACD sub-label에 'Signal', 'Histogram' 하드코딩 문자열 사용
-- Rule: MISTAKES.md TypeScript #6 — 구현 코드의 하드코딩 리터럴은 상수로 추출
-- Context: `paneLabelUtils.ts`에 `MACD_SIGNAL_LABEL`, `MACD_HISTOGRAM_LABEL` 상수로 추출
-
 ## [PR #138 | fix/132/pane-indicator-동적-index-계산 | 2026-04-01]
 - Violation: `paneIndices` useMemo 내부에서 `let next` + `next++` 재할당 사용
 - Rule: MISTAKES.md #3 — let 재할당 금지, const + 새 변수 사용
 - Context: `StockChart.tsx`의 `paneIndices` useMemo에서 `let next`를 `visibles.slice(0, pos).filter(Boolean).length` 기반의 순수 함수 `indexFor`로 교체
-
-## [Issue #118 | feat/118/stochastic-오실레이터-구현 | review fix 2 | 2026-04-02]
-- Violation: MIDPOINT_PERCENTAGE 상수가 .map() 콜백 내부에서 선언되어 매 반복마다 재선언됨
-- Rule: MISTAKES.md #6 / FF Readability — named constants는 모듈 스코프에 선언해야 함
-- Context: stochastic.ts의 calculateFastPercentK 내 .map() 콜백에서 MIDPOINT_PERCENTAGE를 모듈 최상위로 호이스팅
 
 ## [PR #140 | feat/118/stochastic-오실레이터-구현 | 2026-04-02]
 - Violation: reduce + spread 패턴으로 매 반복마다 배열 복제하여 O(N^2) 시간 복잡도 발생
 - Rule: FF.md Readability — 불필요한 배열 복제는 성능과 가독성 모두 저하; map 기반 파이프라인이 더 선언적
 - Context: calculateStochastic에서 reduce + `[...acc.results, item]` 패턴을 filter → map → map 파이프라인으로 리팩토링하여 O(N) 달성
 
-## [Issue #119 | feat/119/stochastic-rsi-구현 | 2026-04-02]
-- Violation: sma helper function duplicated verbatim in stochastic.ts and stochastic-rsi.ts
-- Rule: MISTAKES.md #8 — Reimplementing the same algorithm in multiple files
-- Context: Extracted shared `sma` to `domain/indicators/utils.ts` and imported in both stochastic.ts and stochastic-rsi.ts
-
 ## [Issue #119 | feat/119/stochastic-rsi-구현 | review fix | 2026-04-02]
 - Violation: 새로 생성한 domain/indicators/utils.ts에 대한 테스트 파일이 누락
 - Rule: __tests__/CLAUDE.md — domain 레이어 100% 테스트 커버리지 필수; 새 파일 생성 시 테스트 파일도 함께 작성
 - Context: src/__tests__/domain/indicators/utils.test.ts를 추가하여 sma 함수의 빈 배열, period 미만, 정확한 계산 등 7개 케이스 커버
 
-## [Issue #119 | feat/119/stochastic-rsi-구현 | review fix 2 | 2026-04-02]
-- Violation: StockChart.tsx에 EMPTY_INDICATORS 로컬 상수가 domain/indicators/constants.ts의 EMPTY_INDICATOR_RESULT와 중복 정의
-- Rule: MISTAKES.md #8 — 동일한 상수/로직을 여러 파일에 중복 정의 금지
-- Context: StockChart.tsx의 로컬 EMPTY_INDICATORS를 제거하고 domain/indicators/constants.ts의 EMPTY_INDICATOR_RESULT를 import하여 사용
+## [Issue #120 | feat/120/CCI-구현 | review fix | 2026-04-02]
+- Violation: CCI가 formatIndicatorSection에 추가되었으나 prompt.test.ts에 CCI 테스트 케이스 누락
+- Rule: __tests__/CLAUDE.md — domain 레이어 100% 테스트 커버리지 필수; 다른 지표(RSI, MACD, Bollinger, DMI, Stochastic, StochRSI)와 동일한 3가지 케이스(빈 배열, 전부 null, 유효값) 필요
+- Context: prompt.test.ts에 '지표 섹션 - CCI' describe 블록을 추가하여 빈 배열→N/A, 모두 null→N/A, 유효값 포함 3개 테스트 케이스 작성
 
