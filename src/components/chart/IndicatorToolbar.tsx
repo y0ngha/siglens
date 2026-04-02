@@ -230,13 +230,16 @@ export function IndicatorToolbar({
     return (
         <div ref={toolbarRef} className="flex flex-col gap-1">
             {dropdownIndicators.map(indicator => (
-                <div key={indicator.type} className="flex flex-col gap-0.5">
+                <div key={indicator.type} className="flex items-start gap-1">
                     <button
                         ref={buttonRefMap[indicator.type]}
                         type="button"
                         onClick={() => toggleDropdown(indicator.type)}
                         aria-expanded={openDropdown === indicator.type}
-                        className={indicatorButtonClass(indicator.active)}
+                        className={cn(
+                            indicatorButtonClass(indicator.active),
+                            'w-12 shrink-0'
+                        )}
                     >
                         {indicator.label}
                     </button>
