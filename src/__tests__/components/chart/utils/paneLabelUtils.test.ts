@@ -13,6 +13,7 @@ import {
     STOCH_RSI_STOCH_PERIOD,
     STOCH_RSI_K_PERIOD,
     STOCH_RSI_D_PERIOD,
+    CCI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 import type { PaneIndices } from '@/components/chart/types';
 import { INACTIVE_PANE_INDEX } from '@/components/chart/constants';
@@ -23,6 +24,7 @@ const ALL_INACTIVE: PaneIndices = {
     dmi: INACTIVE_PANE_INDEX,
     stochastic: INACTIVE_PANE_INDEX,
     stochRsi: INACTIVE_PANE_INDEX,
+    cci: INACTIVE_PANE_INDEX,
 };
 
 describe('buildPaneLabels', () => {
@@ -42,6 +44,7 @@ describe('buildPaneLabels', () => {
             dmi: INACTIVE_PANE_INDEX,
             stochastic: INACTIVE_PANE_INDEX,
             stochRsi: INACTIVE_PANE_INDEX,
+            cci: INACTIVE_PANE_INDEX,
         };
 
         it('RSI pane 라벨 1개와 서브 라벨 1개를 반환한다', () => {
@@ -65,6 +68,7 @@ describe('buildPaneLabels', () => {
             dmi: INACTIVE_PANE_INDEX,
             stochastic: INACTIVE_PANE_INDEX,
             stochRsi: INACTIVE_PANE_INDEX,
+            cci: INACTIVE_PANE_INDEX,
         };
 
         it('MACD pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
@@ -101,6 +105,7 @@ describe('buildPaneLabels', () => {
             dmi: DMI_PANE_INDEX,
             stochastic: INACTIVE_PANE_INDEX,
             stochRsi: INACTIVE_PANE_INDEX,
+            cci: INACTIVE_PANE_INDEX,
         };
 
         it('DMI pane 라벨 1개와 서브 라벨 3개를 반환한다', () => {
@@ -134,6 +139,7 @@ describe('buildPaneLabels', () => {
             dmi: 3,
             stochastic: INACTIVE_PANE_INDEX,
             stochRsi: INACTIVE_PANE_INDEX,
+            cci: INACTIVE_PANE_INDEX,
         };
 
         it('RSI, MACD, DMI 순서로 3개의 pane 라벨을 반환한다', () => {
@@ -161,20 +167,22 @@ describe('buildPaneLabels', () => {
             dmi: 3,
             stochastic: 4,
             stochRsi: 5,
+            cci: 6,
         };
 
-        it('RSI, MACD, DMI, Stochastic, StochRSI 순서로 5개의 pane 라벨을 반환한다', () => {
+        it('RSI, MACD, DMI, Stochastic, StochRSI, CCI 순서로 6개의 pane 라벨을 반환한다', () => {
             const result = buildPaneLabels(paneIndices);
 
-            expect(result).toHaveLength(5);
+            expect(result).toHaveLength(6);
             expect(result[0].paneIndex).toBe(1);
             expect(result[1].paneIndex).toBe(2);
             expect(result[2].paneIndex).toBe(3);
             expect(result[3].paneIndex).toBe(4);
             expect(result[4].paneIndex).toBe(5);
+            expect(result[5].paneIndex).toBe(6);
         });
 
-        it('각 pane의 서브 라벨 개수가 올바르다 (RSI:1, MACD:3, DMI:3, Stochastic:2, StochRSI:2)', () => {
+        it('각 pane의 서브 라벨 개수가 올바르다 (RSI:1, MACD:3, DMI:3, Stochastic:2, StochRSI:2, CCI:1)', () => {
             const result = buildPaneLabels(paneIndices);
 
             expect(result[0].subLabels).toHaveLength(1);
@@ -182,6 +190,7 @@ describe('buildPaneLabels', () => {
             expect(result[2].subLabels).toHaveLength(3);
             expect(result[3].subLabels).toHaveLength(2);
             expect(result[4].subLabels).toHaveLength(2);
+            expect(result[5].subLabels).toHaveLength(1);
         });
     });
 
@@ -193,6 +202,7 @@ describe('buildPaneLabels', () => {
             dmi: INACTIVE_PANE_INDEX,
             stochastic: STOCHASTIC_PANE_INDEX,
             stochRsi: INACTIVE_PANE_INDEX,
+            cci: INACTIVE_PANE_INDEX,
         };
 
         it('Stochastic pane 라벨 1개와 서브 라벨 2개를 반환한다', () => {
@@ -226,6 +236,7 @@ describe('buildPaneLabels', () => {
             dmi: INACTIVE_PANE_INDEX,
             stochastic: INACTIVE_PANE_INDEX,
             stochRsi: STOCH_RSI_PANE_INDEX,
+            cci: INACTIVE_PANE_INDEX,
         };
 
         it('StochRSI pane 라벨 1개와 서브 라벨 2개를 반환한다', () => {
@@ -259,6 +270,7 @@ describe('buildPaneLabels', () => {
                 dmi: 3,
                 stochastic: 4,
                 stochRsi: 5,
+                cci: 6,
             };
             const result = buildPaneLabels(paneIndices);
 
@@ -278,6 +290,7 @@ describe('buildPaneLabels', () => {
                 CHART_COLORS.stochasticD,
                 CHART_COLORS.stochRsiK,
                 CHART_COLORS.stochRsiD,
+                CHART_COLORS.cciLine,
             ]);
         });
     });
@@ -290,6 +303,7 @@ describe('buildPaneLabels', () => {
                 dmi: 2,
                 stochastic: INACTIVE_PANE_INDEX,
                 stochRsi: INACTIVE_PANE_INDEX,
+                cci: INACTIVE_PANE_INDEX,
             };
             const result = buildPaneLabels(paneIndices);
 
@@ -305,6 +319,7 @@ describe('buildPaneLabels', () => {
                 dmi: 2,
                 stochastic: INACTIVE_PANE_INDEX,
                 stochRsi: INACTIVE_PANE_INDEX,
+                cci: INACTIVE_PANE_INDEX,
             };
             const result = buildPaneLabels(paneIndices);
 
@@ -322,6 +337,7 @@ describe('buildPaneLabels', () => {
                 dmi: INACTIVE_PANE_INDEX,
                 stochastic: INACTIVE_PANE_INDEX,
                 stochRsi: INACTIVE_PANE_INDEX,
+                cci: INACTIVE_PANE_INDEX,
             };
             const result = buildPaneLabels(paneIndices);
 
@@ -330,6 +346,30 @@ describe('buildPaneLabels', () => {
             expect(result[0].subLabels).toHaveLength(1);
             expect(result[1].paneIndex).toBe(2);
             expect(result[1].subLabels).toHaveLength(3);
+        });
+    });
+
+    describe('CCI만 활성일 때', () => {
+        const CCI_PANE_INDEX = 1;
+        const paneIndices: PaneIndices = {
+            rsi: INACTIVE_PANE_INDEX,
+            macd: INACTIVE_PANE_INDEX,
+            dmi: INACTIVE_PANE_INDEX,
+            stochastic: INACTIVE_PANE_INDEX,
+            stochRsi: INACTIVE_PANE_INDEX,
+            cci: CCI_PANE_INDEX,
+        };
+
+        it('CCI pane 라벨 1개와 서브 라벨 1개를 반환한다', () => {
+            const result = buildPaneLabels(paneIndices);
+
+            expect(result).toHaveLength(1);
+            expect(result[0].paneIndex).toBe(CCI_PANE_INDEX);
+            expect(result[0].subLabels).toHaveLength(1);
+            expect(result[0].subLabels[0].name).toBe(
+                `CCI(${CCI_DEFAULT_PERIOD})`
+            );
+            expect(result[0].subLabels[0].color).toBe(CHART_COLORS.cciLine);
         });
     });
 });
