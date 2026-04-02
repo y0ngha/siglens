@@ -41,11 +41,6 @@
 - Context: `useCandlePatternMarkers.ts`에서 초기화+cleanup을 `useEffect([seriesRef])`로, 데이터 동기화를 `useEffect([markers, isVisible])`로 분리
 
 ## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
-- Violation: 다봉 패턴 제외 테스트에서 동일한 봉 데이터(makeBar)로 생성하여 다봉 패턴이 감지되지 않아 forEach assertion이 실행되지 않음
-- Rule: MISTAKES.md Tests Rule 11.7 — 보장된 테스트 데이터에 대한 무조건적 assertion 필요
-- Context: `candle-detection.test.ts`에서 makeEngulfingPair로 bullish_engulfing 감지를 보장하고 `expect(multiEntries.length).toBeGreaterThanOrEqual(1)` 무조건 assertion 추가
-
-## [PR #129 | feat/113/캔들-패턴-차트-시각적-표시 | 2026-04-01]
 - Violation: `PromptCandlePatternEntry.patternType`에 인라인 union literal `'single' | 'multi'` 사용
 - Rule: MISTAKES.md TypeScript Rule 5 — 2개 이상 멤버의 union literal은 별도 type alias로 추출
 - Context: `prompt.ts`에서 `type PatternEntryType = 'single' | 'multi'`로 추출하여 interface 필드에서 참조
@@ -74,4 +69,9 @@
 - Violation: CCI가 formatIndicatorSection에 추가되었으나 prompt.test.ts에 CCI 테스트 케이스 누락
 - Rule: __tests__/CLAUDE.md — domain 레이어 100% 테스트 커버리지 필수; 다른 지표(RSI, MACD, Bollinger, DMI, Stochastic, StochRSI)와 동일한 3가지 케이스(빈 배열, 전부 null, 유효값) 필요
 - Context: prompt.test.ts에 '지표 섹션 - CCI' describe 블록을 추가하여 빈 배열→N/A, 모두 null→N/A, 유효값 포함 3개 테스트 케이스 작성
+
+## [PR #152 | feat/120/CCI-구현 | 2026-04-02]
+- Violation: `sma(tpSlice, period) ?? 0` nullish fallback이 dead code — tpSlice는 항상 period개 요소를 가지므로 sma는 null을 반환하지 않음
+- Rule: MISTAKES.md rule 9.5 — 실제로 발생하지 않는 fallback은 코드 의도를 흐리고 독자를 오도한다
+- Context: cci.ts line 22에서 `?? 0`를 제거하고 non-null assertion `!`으로 교체하여 sma가 null이 아님을 명시
 
