@@ -15,6 +15,50 @@ interface ValueAreaState {
     accumulatedVolume: number;
 }
 
+function expandValueArea(
+    state: ValueAreaState,
+    bucketVolumes: number[],
+    rowSize: number,
+    targetVolume: number
+): ValueAreaState {
+    if (state.accumulatedVolume >= targetVolume) return state;
+
+    const nextAbove =
+        state.vahIndex + 1 < rowSize ? bucketVolumes[state.vahIndex + 1] : -1;
+    const nextBelow =
+        0 <= state.valIndex - 1 ? bucketVolumes[state.valIndex - 1] : -1;
+
+    if (nextAbove === -1 && nextBelow === -1) return state;
+
+    if (nextAbove >= nextBelow) {
+        const newVahIndex = state.vahIndex + 1;
+        return expandValueArea(
+            {
+                vahIndex: newVahIndex,
+                valIndex: state.valIndex,
+                accumulatedVolume:
+                    state.accumulatedVolume + bucketVolumes[newVahIndex],
+            },
+            bucketVolumes,
+            rowSize,
+            targetVolume
+        );
+    }
+
+    const newValIndex = state.valIndex - 1;
+    return expandValueArea(
+        {
+            vahIndex: state.vahIndex,
+            valIndex: newValIndex,
+            accumulatedVolume:
+                state.accumulatedVolume + bucketVolumes[newValIndex],
+        },
+        bucketVolumes,
+        rowSize,
+        targetVolume
+    );
+}
+
 export function calculateVolumeProfile(
     bars: Bar[],
     rowSize: number = VP_DEFAULT_ROW_SIZE
@@ -76,42 +120,16 @@ export function calculateVolumeProfile(
     );
     const targetVolume = totalVolume * VP_VALUE_AREA_PERCENTAGE;
 
-    function expandValueArea(state: ValueAreaState): ValueAreaState {
-        if (state.accumulatedVolume >= targetVolume) return state;
-
-        const nextAbove =
-            state.vahIndex + 1 < rowSize
-                ? bucketVolumes[state.vahIndex + 1]
-                : -1;
-        const nextBelow =
-            state.valIndex - 1 >= 0 ? bucketVolumes[state.valIndex - 1] : -1;
-
-        if (nextAbove === -1 && nextBelow === -1) return state;
-
-        if (nextAbove >= nextBelow) {
-            const newVahIndex = state.vahIndex + 1;
-            return expandValueArea({
-                vahIndex: newVahIndex,
-                valIndex: state.valIndex,
-                accumulatedVolume:
-                    state.accumulatedVolume + bucketVolumes[newVahIndex],
-            });
-        }
-
-        const newValIndex = state.valIndex - 1;
-        return expandValueArea({
-            vahIndex: state.vahIndex,
-            valIndex: newValIndex,
-            accumulatedVolume:
-                state.accumulatedVolume + bucketVolumes[newValIndex],
-        });
-    }
-
-    const { vahIndex, valIndex } = expandValueArea({
-        vahIndex: pocIndex,
-        valIndex: pocIndex,
-        accumulatedVolume: bucketVolumes[pocIndex],
-    });
+    const { vahIndex, valIndex } = expandValueArea(
+        {
+            vahIndex: pocIndex,
+            valIndex: pocIndex,
+            accumulatedVolume: bucketVolumes[pocIndex],
+        },
+        bucketVolumes,
+        rowSize,
+        targetVolume
+    );
 
     const bucketCenter = (i: number): number =>
         lowMin + i * bucketSize + bucketSize / 2;
