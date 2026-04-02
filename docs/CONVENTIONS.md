@@ -9,7 +9,7 @@ Siglens follows **Declarative** and **Functional Programming** paradigms.
 Focus on "what" rather than "how".
 
 ```typescript
-// ❌ Imperative
+// ❌ Imperative — prefer declarative when logic is simple
 const result = [];
 for (let i = 0; i < closes.length; i++) {
     if (closes[i] > 0) result.push(closes[i] * 2);
@@ -18,6 +18,21 @@ for (let i = 0; i < closes.length; i++) {
 // ✅ Declarative
 const result = closes.filter(c => c > 0).map(c => c * 2);
 ```
+
+**Exception — `for (let i = 0; ...)` is allowed when it provides a clear advantage:**
+- Sliding window algorithms (O(n) vs O(n²) with `.slice()` inside `.map()`)
+- Algorithms where index arithmetic is central to the logic
+- Cases where the imperative form is measurably more readable than the functional equivalent
+
+```typescript
+// ✅ Acceptable — sliding window where for-loop is more efficient and readable
+for (let i = 0; i + period <= values.length; i++) {
+    const window = values.slice(i, i + period);
+    results.push(compute(window));
+}
+```
+
+The goal is readable, maintainable code — not mechanical adherence to a style. When `map`/`reduce` produces convoluted code or unnecessary O(n²) complexity, prefer `for (let i = 0; ...)`.
 
 ```typescript
 // ❌ Nested conditionals

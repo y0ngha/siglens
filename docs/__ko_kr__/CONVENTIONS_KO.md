@@ -9,7 +9,7 @@ Siglens는 **선언형(Declarative)** 코드와 **함수형 프로그래밍(Func
 "어떻게"가 아닌 "무엇을"에 집중한다.
 
 ```typescript
-// ❌ 명령형
+// ❌ 명령형 — 단순 변환에는 선언형을 우선
 const result = [];
 for (let i = 0; i < closes.length; i++) {
     if (closes[i] > 0) result.push(closes[i] * 2);
@@ -18,6 +18,21 @@ for (let i = 0; i < closes.length; i++) {
 // ✅ 선언형
 const result = closes.filter(c => c > 0).map(c => c * 2);
 ```
+
+**예외 — `for (let i = 0; ...)` 패턴은 명확한 이점이 있을 때 허용된다:**
+- 슬라이딩 윈도우 알고리즘 (`.map()` 내부에 `.slice()` 사용 시 O(n²)이 되는 경우)
+- 인덱스 산술이 로직의 핵심인 알고리즘
+- 함수형으로 작성하면 오히려 가독성이 떨어지는 경우
+
+```typescript
+// ✅ 허용 — 슬라이딩 윈도우에서 for-loop이 더 효율적이고 읽기 쉬운 경우
+for (let i = 0; i + period <= values.length; i++) {
+    const window = values.slice(i, i + period);
+    results.push(compute(window));
+}
+```
+
+목표는 읽기 쉽고 유지보수 가능한 코드다. `map`/`reduce`가 복잡한 코드나 불필요한 O(n²) 복잡도를 만든다면 `for (let i = 0; ...)`를 사용한다.
 
 ```typescript
 // ❌ 조건 분기 중첩

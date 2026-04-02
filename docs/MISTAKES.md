@@ -20,17 +20,21 @@ Review before implementation and ensure these are not repeated.
    ✅ const INDEX_FIRST = 0; const INDEX_LAST = 2; const first = arr[INDEX_FIRST]; const last = arr[INDEX_LAST];
 
 1. Using for/while/forEach loops for data transformation
-   → Replace with map, filter, reduce, flatMap
+   → Prefer map, filter, reduce, flatMap for simple data transformation
    → Exception: side-effect-only iteration (e.g. calling a chart API on each element
      with no return value) may use forEach or for...of
    → Prefer for...of over forEach when the loop body is non-trivial or has multiple statements
    → Avoid imperative loops with index reassignment (let i = 0; while (i < length) i++) even when building complex state machines
+   → Exception: for (let i = 0; ...) is acceptable when it provides a clear advantage in time complexity,
+     performance, or readability — e.g. sliding window algorithms where .slice() inside .map() produces O(n²),
+     or algorithms where index arithmetic is central to the logic
    ❌ for (let i = 0; i < closes.length; i++) result.push(closes[i] * 2)
    ✅ closes.map(c => c * 2)
    ❌ let i = 0; while (i < lines.length) { ... i++; }
    ✅ lines.reduce((acc, line, idx) => { ... }, initialState)
    ✅ periodsToRemove.forEach(p => chart.removeSeries(seriesRef.current[p]))  // side-effect only
    ✅ for (const p of periodsToRemove) { chart.removeSeries(seriesRef.current[p]); }  // preferred for multi-statement
+   ✅ for (let i = 0; i + period <= values.length; i++) { ... }  // sliding window — O(n) preferred over O(n²) with .slice() in .map()
 
 2. Using reduce for side-effect-only iteration (no accumulator)
    → reduce<void> with an unused accumulator is semantically misleading
