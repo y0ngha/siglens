@@ -55,6 +55,12 @@ export const CHART_COLORS = {
     stochRsiOverbought: '#ef535060',
     stochRsiOversold: '#26a69a60',
 
+    // CCI
+    cciLine: '#fb923c',
+    cciOverbought: '#ef535060',
+    cciOversold: '#26a69a60',
+    cciZero: '#94a3b860',
+
     // VWAP
     vwap: '#e879f9',
 } as const;
