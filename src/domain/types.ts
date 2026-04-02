@@ -33,10 +33,16 @@ export interface DMIResult {
     adx: number | null;
 }
 
+export interface StochasticResult {
+    percentK: number | null;
+    percentD: number | null;
+}
+
 export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
     dmi: DMIResult[];
+    stochastic: StochasticResult[];
     rsi: (number | null)[];
     vwap: (number | null)[];
     ma: Record<number, (number | null)[]>;
