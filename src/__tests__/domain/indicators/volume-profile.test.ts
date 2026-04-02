@@ -6,6 +6,9 @@ import {
 } from '@/domain/indicators/constants';
 import type { Bar } from '@/domain/types';
 
+// bucket 경계 이산화로 인한 허용 오차
+const VALUE_AREA_TOLERANCE = 0.05;
+
 function makeBars(
     count: number,
     options: {
@@ -191,7 +194,6 @@ describe('Volume Profile', () => {
                 const result = calculateVolumeProfile(bars);
                 expect(result).not.toBeNull();
                 if (result) {
-                    const VALUE_AREA_TOLERANCE = 0.05; // bucket 경계 이산화로 인한 허용 오차
                     const totalVolume = result.profile.reduce(
                         (sum, row) => sum + row.volume,
                         0

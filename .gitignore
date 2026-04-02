@@ -44,3 +44,4 @@ next-env.d.ts
 .jest
 /TODO.md
 .vercel
+/.claude/projects/

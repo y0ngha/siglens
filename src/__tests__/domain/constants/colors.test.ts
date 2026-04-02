@@ -140,11 +140,11 @@ describe('CHART_COLORS', () => {
             expect(CHART_COLORS.vpPoc).toBe('#f59e0b');
         });
 
-        it('vpVah는 퍼플(#8b5cf6)이다', () => {
+        it('vpVah는 바이올렛(#8b5cf6)이다', () => {
             expect(CHART_COLORS.vpVah).toBe('#8b5cf6');
         });
 
-        it('vpVal은 민트 그린(#34d399)이다', () => {
+        it('vpVal은 에메랄드(#34d399)이다', () => {
             expect(CHART_COLORS.vpVal).toBe('#34d399');
         });
     });

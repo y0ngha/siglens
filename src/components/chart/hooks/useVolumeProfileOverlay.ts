@@ -15,8 +15,8 @@ import type {
     LineWidth,
     UTCTimestamp,
 } from 'lightweight-charts';
-import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
+import { CHART_COLORS } from '@/domain/constants/colors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
 interface UseVolumeProfileOverlayParams {
@@ -47,6 +47,7 @@ export function useVolumeProfileOverlay({
         setIsVisible(prev => !prev);
     }, []);
 
+    // chart 인스턴스 교체 시 ref만 초기화 (removeSeries 불필요 — 이전 chart는 부모가 소멸)
     const clearSeriesRefs = useEffectEvent(() => {
         pocSeriesRef.current = null;
         vahSeriesRef.current = null;
@@ -68,6 +69,8 @@ export function useVolumeProfileOverlay({
         }
     });
 
+    // 시리즈 lifecycle 관리 (생성/제거)
+    // bars, indicators는 의존하지 않음 — 데이터 세팅은 아래 effect가 단독 담당
     useEffect(() => {
         const chart = chartRef.current;
 
@@ -94,16 +97,21 @@ export function useVolumeProfileOverlay({
         if (!pocSeriesRef.current) {
             pocSeriesRef.current = createLineSeries(CHART_COLORS.vpPoc);
         }
+        pocSeriesRef.current.applyOptions({ lineWidth });
 
         if (!vahSeriesRef.current) {
             vahSeriesRef.current = createLineSeries(CHART_COLORS.vpVah);
         }
+        vahSeriesRef.current.applyOptions({ lineWidth });
 
         if (!valSeriesRef.current) {
             valSeriesRef.current = createLineSeries(CHART_COLORS.vpVal);
         }
+        valSeriesRef.current.applyOptions({ lineWidth });
     }, [chartRef, isVisible, lineWidth]);
 
+    // 데이터 동기화: 시리즈가 보이는 동안 bars/indicators 변경 시 업데이트
+    // isVisible이 true로 바뀔 때도 실행되어 새로 생성된 시리즈에 초기 데이터를 세팅함
     useEffect(() => {
         if (!isVisible) return;
 
