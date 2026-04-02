@@ -6,6 +6,11 @@ import {
     ICHIMOKU_DISPLACEMENT,
 } from '@/domain/indicators/constants';
 
+export interface IchimokuFuturePoint {
+    senkouA: number | null;
+    senkouB: number | null;
+}
+
 function periodMidpoint(
     bars: Bar[],
     endIndex: number,
@@ -76,5 +81,31 @@ export function calculateIchimoku(
             chikouIndex < bars.length ? bars[chikouIndex].close : null;
 
         return { tenkan, kijun, senkouA, senkouB, chikou };
+    });
+}
+
+/**
+ * bars의 마지막 displacement 구간에 해당하는 미래 선행스팬(Senkou Span A·B) 값을 반환한다.
+ * Ichimoku 표준 명세에 따라 선행스팬은 displacement봉 앞(미래)에 투영되므로,
+ * 현재 시점 이후 displacement개의 미래 포인트에 대한 값을 별도로 계산해야 한다.
+ */
+export function calculateIchimokuFutureCloud(
+    bars: Bar[],
+    conversionPeriod = ICHIMOKU_CONVERSION_PERIOD,
+    basePeriod = ICHIMOKU_BASE_PERIOD,
+    spanBPeriod = ICHIMOKU_SPAN_B_PERIOD,
+    displacement = ICHIMOKU_DISPLACEMENT
+): IchimokuFuturePoint[] {
+    if (bars.length === 0) return [];
+    return Array.from({ length: displacement }, (_, j) => {
+        const sourceIndex = bars.length - displacement + j;
+        const senkouA = calculateSenkouA(
+            bars,
+            sourceIndex,
+            conversionPeriod,
+            basePeriod
+        );
+        const senkouB = periodMidpoint(bars, sourceIndex, spanBPeriod);
+        return { senkouA, senkouB };
     });
 }

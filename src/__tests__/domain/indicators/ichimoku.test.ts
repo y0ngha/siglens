@@ -1,4 +1,7 @@
-import { calculateIchimoku } from '@/domain/indicators/ichimoku';
+import {
+    calculateIchimoku,
+    calculateIchimokuFutureCloud,
+} from '@/domain/indicators/ichimoku';
 import {
     ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_BASE_PERIOD,
@@ -236,6 +239,61 @@ describe('Ichimoku', () => {
                 expect(defaultResult[50].tenkan).not.toBe(
                     customResult[50].tenkan
                 );
+            });
+        });
+    });
+
+    describe('calculateIchimokuFutureCloud', () => {
+        describe('입력 배열이 비어있을 때', () => {
+            it('빈 배열을 반환한다', () => {
+                expect(calculateIchimokuFutureCloud([])).toEqual([]);
+            });
+        });
+
+        describe('결과 배열 길이', () => {
+            it('displacement 길이의 배열을 반환한다', () => {
+                const bars = makeBars(200);
+                const result = calculateIchimokuFutureCloud(bars);
+                expect(result).toHaveLength(ICHIMOKU_DISPLACEMENT);
+            });
+        });
+
+        describe('미래 선행스팬 값', () => {
+            it('bars 데이터가 충분하면 senkouA 값이 null이 아니다', () => {
+                const bars = makeBars(200);
+                const result = calculateIchimokuFutureCloud(bars);
+                expect(
+                    result[ICHIMOKU_DISPLACEMENT - 1].senkouA
+                ).not.toBeNull();
+            });
+
+            it('bars 데이터가 충분하면 senkouB 값이 null이 아니다', () => {
+                const bars = makeBars(200);
+                const result = calculateIchimokuFutureCloud(bars);
+                expect(
+                    result[ICHIMOKU_DISPLACEMENT - 1].senkouB
+                ).not.toBeNull();
+            });
+
+            it('미래 선행스팬A는 현재 ichimoku 결과와 연속적이다', () => {
+                const bars = makeBars(200);
+                const present = calculateIchimoku(bars);
+                const future = calculateIchimokuFutureCloud(bars);
+                // future[0].senkouA는 sourceIndex = bars.length - displacement를 기반으로 계산됨
+                // present[bars.length - 1].senkouA는 sourceIndex = bars.length - 1 - displacement를 기반으로 계산됨
+                // 두 값은 다른 sourceIndex를 가지므로 동일하지 않아야 한다
+                expect(future[0].senkouA).not.toBe(
+                    present[bars.length - 1].senkouA
+                );
+            });
+        });
+
+        describe('bars 데이터가 부족할 때', () => {
+            it('spanB period 미만의 sourceIndex를 가질 때 senkouB는 null이다', () => {
+                // bars 길이가 displacement보다 작으면 sourceIndex < 0인 경우 발생
+                const bars = makeBars(ICHIMOKU_DISPLACEMENT - 1);
+                const result = calculateIchimokuFutureCloud(bars);
+                expect(result[0].senkouB).toBeNull();
             });
         });
     });

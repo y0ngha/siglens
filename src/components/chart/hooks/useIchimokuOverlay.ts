@@ -9,9 +9,15 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 import { AreaSeries, LineSeries, LineStyle } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
+import type {
+    IChartApi,
+    ISeriesApi,
+    LineWidth,
+    UTCTimestamp,
+} from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
-import type { Bar, IndicatorResult, IchimokuResult } from '@/domain/types';
+import type { Bar, IndicatorResult } from '@/domain/types';
+import { calculateIchimokuFutureCloud } from '@/domain/indicators/ichimoku';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
 
@@ -30,28 +36,40 @@ interface UseIchimokuOverlayReturn {
 interface IchimokuCloudPoint {
     tenkan: number | null;
     kijun: number | null;
-    cloudUpper: number | null;
-    cloudLower: number | null;
+    senkouA: number | null;
+    senkouB: number | null;
+    cloudBullishUpper: number | null;
+    cloudBearishUpper: number | null;
     chikou: number | null;
 }
 
-function buildCloudData(ichimoku: IchimokuResult[]): IchimokuCloudPoint[] {
+function buildCloudData(
+    ichimoku: {
+        senkouA: number | null;
+        senkouB: number | null;
+        tenkan?: number | null;
+        kijun?: number | null;
+        chikou?: number | null;
+    }[]
+): IchimokuCloudPoint[] {
     return ichimoku.map(point => {
         const { senkouA, senkouB } = point;
+        const isBullish =
+            senkouA !== null && senkouB !== null && senkouA >= senkouB;
+        const isBearish =
+            senkouA !== null && senkouB !== null && senkouA < senkouB;
         const cloudUpper =
             senkouA !== null && senkouB !== null
                 ? Math.max(senkouA, senkouB)
                 : null;
-        const cloudLower =
-            senkouA !== null && senkouB !== null
-                ? Math.min(senkouA, senkouB)
-                : null;
         return {
-            tenkan: point.tenkan,
-            kijun: point.kijun,
-            cloudUpper,
-            cloudLower,
-            chikou: point.chikou,
+            tenkan: point.tenkan ?? null,
+            kijun: point.kijun ?? null,
+            senkouA,
+            senkouB,
+            cloudBullishUpper: isBullish ? cloudUpper : null,
+            cloudBearishUpper: isBearish ? cloudUpper : null,
+            chikou: point.chikou ?? null,
         };
     });
 }
@@ -67,8 +85,10 @@ export function useIchimokuOverlay({
     const tenkanRef = useRef<ISeriesApi<'Line'> | null>(null);
     const kijunRef = useRef<ISeriesApi<'Line'> | null>(null);
     const chikouRef = useRef<ISeriesApi<'Line'> | null>(null);
-    const cloudUpperRef = useRef<ISeriesApi<'Area'> | null>(null);
-    const cloudLowerRef = useRef<ISeriesApi<'Area'> | null>(null);
+    const senkouARef = useRef<ISeriesApi<'Line'> | null>(null);
+    const senkouBRef = useRef<ISeriesApi<'Line'> | null>(null);
+    const cloudBullishRef = useRef<ISeriesApi<'Area'> | null>(null);
+    const cloudBearishRef = useRef<ISeriesApi<'Area'> | null>(null);
 
     const toggle = useCallback(() => {
         setIsVisible(prev => !prev);
@@ -78,8 +98,10 @@ export function useIchimokuOverlay({
         tenkanRef.current = null;
         kijunRef.current = null;
         chikouRef.current = null;
-        cloudUpperRef.current = null;
-        cloudLowerRef.current = null;
+        senkouARef.current = null;
+        senkouBRef.current = null;
+        cloudBullishRef.current = null;
+        cloudBearishRef.current = null;
     });
 
     const removeAllSeries = useEffectEvent((chart: IChartApi) => {
@@ -95,13 +117,21 @@ export function useIchimokuOverlay({
             chart.removeSeries(chikouRef.current);
             chikouRef.current = null;
         }
-        if (cloudUpperRef.current) {
-            chart.removeSeries(cloudUpperRef.current);
-            cloudUpperRef.current = null;
+        if (senkouARef.current) {
+            chart.removeSeries(senkouARef.current);
+            senkouARef.current = null;
         }
-        if (cloudLowerRef.current) {
-            chart.removeSeries(cloudLowerRef.current);
-            cloudLowerRef.current = null;
+        if (senkouBRef.current) {
+            chart.removeSeries(senkouBRef.current);
+            senkouBRef.current = null;
+        }
+        if (cloudBullishRef.current) {
+            chart.removeSeries(cloudBullishRef.current);
+            cloudBullishRef.current = null;
+        }
+        if (cloudBearishRef.current) {
+            chart.removeSeries(cloudBearishRef.current);
+            cloudBearishRef.current = null;
         }
     });
 
@@ -120,29 +150,49 @@ export function useIchimokuOverlay({
             return;
         }
 
-        if (!cloudUpperRef.current) {
-            cloudUpperRef.current = chart.addSeries(AreaSeries, {
+        if (!cloudBullishRef.current) {
+            cloudBullishRef.current = chart.addSeries(AreaSeries, {
                 topColor: CHART_COLORS.ichimokuCloudBullish,
-                bottomColor: CHART_COLORS.ichimokuCloudBullish,
-                lineColor: CHART_COLORS.ichimokuSenkouA,
+                bottomColor: 'transparent',
+                lineColor: 'transparent',
                 lineWidth,
                 priceLineVisible: false,
                 lastValueVisible: false,
             });
         }
-        cloudUpperRef.current.applyOptions({ lineWidth });
+        cloudBullishRef.current.applyOptions({ lineWidth });
 
-        if (!cloudLowerRef.current) {
-            cloudLowerRef.current = chart.addSeries(AreaSeries, {
-                topColor: CHART_COLORS.background,
-                bottomColor: CHART_COLORS.background,
-                lineColor: CHART_COLORS.ichimokuSenkouB,
+        if (!cloudBearishRef.current) {
+            cloudBearishRef.current = chart.addSeries(AreaSeries, {
+                topColor: CHART_COLORS.ichimokuCloudBearish,
+                bottomColor: 'transparent',
+                lineColor: 'transparent',
                 lineWidth,
                 priceLineVisible: false,
                 lastValueVisible: false,
             });
         }
-        cloudLowerRef.current.applyOptions({ lineWidth });
+        cloudBearishRef.current.applyOptions({ lineWidth });
+
+        if (!senkouARef.current) {
+            senkouARef.current = chart.addSeries(LineSeries, {
+                color: CHART_COLORS.ichimokuSenkouA,
+                lineWidth,
+                priceLineVisible: false,
+                lastValueVisible: false,
+            });
+        }
+        senkouARef.current.applyOptions({ lineWidth });
+
+        if (!senkouBRef.current) {
+            senkouBRef.current = chart.addSeries(LineSeries, {
+                color: CHART_COLORS.ichimokuSenkouB,
+                lineWidth,
+                priceLineVisible: false,
+                lastValueVisible: false,
+            });
+        }
+        senkouBRef.current.applyOptions({ lineWidth });
 
         if (!tenkanRef.current) {
             tenkanRef.current = chart.addSeries(LineSeries, {
@@ -186,8 +236,10 @@ export function useIchimokuOverlay({
             !tenkanRef.current ||
             !kijunRef.current ||
             !chikouRef.current ||
-            !cloudUpperRef.current ||
-            !cloudLowerRef.current
+            !senkouARef.current ||
+            !senkouBRef.current ||
+            !cloudBullishRef.current ||
+            !cloudBearishRef.current
         )
             return;
 
@@ -196,14 +248,62 @@ export function useIchimokuOverlay({
         const tenkanData = buildSeriesData(bars, cloudData, 'tenkan');
         const kijunData = buildSeriesData(bars, cloudData, 'kijun');
         const chikouData = buildSeriesData(bars, cloudData, 'chikou');
-        const cloudUpperData = buildSeriesData(bars, cloudData, 'cloudUpper');
-        const cloudLowerData = buildSeriesData(bars, cloudData, 'cloudLower');
+        const senkouAData = buildSeriesData(bars, cloudData, 'senkouA');
+        const senkouBData = buildSeriesData(bars, cloudData, 'senkouB');
+        const cloudBullishData = buildSeriesData(
+            bars,
+            cloudData,
+            'cloudBullishUpper'
+        );
+        const cloudBearishData = buildSeriesData(
+            bars,
+            cloudData,
+            'cloudBearishUpper'
+        );
+
+        // Append future cloud points projected displacement bars ahead
+        const futureCloud = calculateIchimokuFutureCloud(bars);
+        if (bars.length >= 2) {
+            const interval =
+                bars[bars.length - 1].time - bars[bars.length - 2].time;
+            const lastTime = bars[bars.length - 1].time;
+            const futureCloudData = buildCloudData(futureCloud);
+            futureCloudData.forEach((point, j) => {
+                const time = (lastTime + (j + 1) * interval) as UTCTimestamp;
+                const senkouAVal = point.senkouA;
+                const senkouBVal = point.senkouB;
+                if (senkouAVal !== null) {
+                    senkouAData.push({ time, value: senkouAVal });
+                } else {
+                    senkouAData.push({ time });
+                }
+                if (senkouBVal !== null) {
+                    senkouBData.push({ time, value: senkouBVal });
+                } else {
+                    senkouBData.push({ time });
+                }
+                const bullishUpper = point.cloudBullishUpper;
+                if (bullishUpper !== null) {
+                    cloudBullishData.push({ time, value: bullishUpper });
+                } else {
+                    cloudBullishData.push({ time });
+                }
+                const bearishUpper = point.cloudBearishUpper;
+                if (bearishUpper !== null) {
+                    cloudBearishData.push({ time, value: bearishUpper });
+                } else {
+                    cloudBearishData.push({ time });
+                }
+            });
+        }
 
         tenkanRef.current.setData(tenkanData);
         kijunRef.current.setData(kijunData);
         chikouRef.current.setData(chikouData);
-        cloudUpperRef.current.setData(cloudUpperData);
-        cloudLowerRef.current.setData(cloudLowerData);
+        senkouARef.current.setData(senkouAData);
+        senkouBRef.current.setData(senkouBData);
+        cloudBullishRef.current.setData(cloudBullishData);
+        cloudBearishRef.current.setData(cloudBearishData);
     }, [indicators, bars, isVisible]);
 
     return { isVisible, toggle };
