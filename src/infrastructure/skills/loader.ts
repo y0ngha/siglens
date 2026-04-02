@@ -1,4 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises';
+import type { Dirent } from 'node:fs';
 import { join } from 'node:path';
 import type { Skill, SkillCategory, SkillDisplay } from '@/domain/types';
 import type { SkillsProvider } from './types';
@@ -163,14 +164,26 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
     display: parseSkillDisplay(data.display),
 });
 
+const collectMdFiles = async (dir: string): Promise<string[]> => {
+    const entries = await readdir(dir, { withFileTypes: true });
+    const results = await Promise.all(
+        entries.map(async (entry: Dirent) => {
+            const fullPath = join(dir, entry.name);
+            if (entry.isDirectory()) return collectMdFiles(fullPath);
+            if (entry.name.endsWith('.md')) return [fullPath];
+            return [];
+        })
+    );
+    return results.flat();
+};
+
 export class FileSkillsLoader implements SkillsProvider {
     async loadSkills(): Promise<Skill[]> {
-        const files = await readdir(SKILLS_DIR);
-        const mdFiles = files.filter(f => f.endsWith('.md'));
+        const mdFiles = await collectMdFiles(SKILLS_DIR);
 
         const skills = await Promise.all(
             mdFiles.map(async file => {
-                const raw = await readFile(join(SKILLS_DIR, file), 'utf-8');
+                const raw = await readFile(file, 'utf-8');
                 const parsed = parseFrontmatter(raw);
                 if (!parsed) return null;
                 return toSkill(parsed.data, parsed.content);
