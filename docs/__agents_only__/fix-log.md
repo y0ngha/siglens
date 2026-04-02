@@ -1,17 +1,5 @@
 # Fix Log
 
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
-- Violation: `calculateIndicators`에 `volumeProfile` 필드가 추가되었으나 `index.test.ts`에 해당 필드 검증 테스트가 없음
-- Rule: MISTAKES.md Tests #3, #3.5 — 새 인디케이터 추가 시 모든 연관 함수(계산 함수 + 통합 함수)에 테스트가 있어야 함
-- Context: `src/__tests__/domain/indicators/index.test.ts`에 `volumeProfile` null 케이스 및 `calculateVolumeProfile` 결과 일치 테스트 추가
-
-- Violation: `formatIndicatorSection`이 VP 데이터를 프롬프트에 포함하지만 관련 테스트가 없음
-- Rule: MISTAKES.md Tests #3.5 — 새 인디케이터 포맷팅 로직은 기존 패턴(RSI, MACD, Bollinger)과 동일하게 null/값 있을 때 케이스 모두 테스트해야 함
-- Context: `src/__tests__/domain/analysis/prompt.test.ts`에 `volumeProfile null` 시 N/A 표시 및 POC/VAH/VAL 값 포함 테스트 추가
-
-- Violation: `CHART_COLORS`에 `vpPoc`, `vpVah`, `vpVal` 항목이 추가되었으나 `colors.test.ts`가 업데이트되지 않음
-- Rule: MISTAKES.md Tests #3 — 새로 추가된 상수는 기존 패턴(vwap, bollinger, dmi 등)과 동일하게 개별 테스트 케이스를 가져야 함
-- Context: `src/__tests__/domain/constants/colors.test.ts`에 Volume Profile 컬러 describe 블록 추가
 
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
 - Violation: `IndicatorResult` 타입에 `volumeProfile` 필드가 추가되었으나 테스트 픽스처에 반영되지 않아 TypeScript 컴파일 에러 발생
@@ -48,10 +36,6 @@
 - Rule: CONVENTIONS.md Component Folder Structure — hooks/는 React hook 파일, utils/는 순수 함수; utils가 hooks를 import하면 안 됨
 - Context: `chart/types.ts`로 공유 타입을 추출하여 hooks/와 utils/ 모두 types.ts에서 import하도록 변경
 
-## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
-- Violation: `src/infrastructure/CLAUDE.md` skills 섹션이 `FileSkillsLoader`의 재귀 탐색 변경을 반영하지 않아 에이전트가 잘못된 정보를 읽는 상태
-- Rule: FF.md Cohesion 3-A — 함께 변경되어야 할 문서는 함께 변경되어야 한다
-- Context: `FileSkillsLoader`가 `skills/*.md`만 읽는 방식에서 하위 디렉토리 재귀 탐색 방식으로 변경되었으나 `src/infrastructure/CLAUDE.md`가 갱신되지 않았음; "Reads `skills/*.md` files" → "Recursively scans `skills/` subdirectories for `.md` files"로 수정
 
 ## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
 - Violation: `collectMdFiles`에서 entry마다 별도 `stat()` 호출로 I/O 낭비 — 파일 시스템 성능 비효율
@@ -67,10 +51,7 @@
 - Rule: DESIGN.md — VAH와 VAL은 서로 다른 가격 경계를 나타내므로 구별 가능한 색상이 필요
 - Context: `vpVal`을 `#34d399`(mint green)으로 변경하여 `vpVah`(purple)와 시각적으로 구별 가능하게 함
 
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
-- Violation: `src/__tests__/domain/indicators/index.test.ts`에서 `calculateVolumeProfile`을 `@/domain/indicators/volume-profile`에서 별도 import하여 중복 import 경로 존재
-- Rule: FF.md Cohesion 3-A — 동일 심볼은 단일 import 경로에서 가져와야 한다; `@/domain/indicators`에서 이미 re-export되므로 별도 import 불필요
-- Context: line 12의 별도 import를 제거하고 `calculateVolumeProfile`을 기존 `@/domain/indicators` import 블록에 추가
+
 
 - Violation: `src/__tests__/domain/analysis/prompt.test.ts`에서 RegExp 패턴 `/\[.+\]/`의 `\]`가 불필요한 이스케이프
 - Rule: ESLint `no-useless-escape` — 정규식 문자 클래스 외부에서 `]`는 이스케이프 불필요
@@ -96,10 +77,6 @@
 - Rule: 비즈니스 로직 정확성 — -1은 범위 초과, 0은 볼륨 없는 유효 버킷으로 구별해야 함
 - Context: `src/domain/indicators/volume-profile.ts` L89에서 `<= 0` 조건을 `=== -1`로 수정하여 볼륨이 0인 버킷 너머에도 확장이 계속되도록 수정
 
-## [PR #153 | feat/121/volume-profile-indicator | external review | 2026-04-02]
-- Violation: `prompt.ts` Support/Resistance 섹션에 VP 레벨 사용 지침과 AI가 직접 PoC를 식별하라는 기존 지침이 공존하여 상충
-- Rule: FF.md Predictability 2-B — 같은 개념(POC)에 대해 두 개의 상충되는 근거가 존재함
-- Context: `src/domain/analysis/prompt.ts` L239의 `Identify PoC from the last 30 bars` 지침을 제거; VP 인디케이터가 POC를 이미 계산하여 Section 5에 제공하므로 중복 지침 불필요
 
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 2 | 2026-04-02]
 - Violation: `map`/`filter`/`reduce`/`every` 콜백 파라미터와 `Array.from` 매핑 콜백에 명시적 타입 어노테이션 누락
@@ -125,4 +102,9 @@
 - Violation: `expandValueArea`가 `calculateVolumeProfile` 내부 중첩 함수로 선언되어 `rowSize`, `bucketVolumes`, `targetVolume`을 클로저로 암묵적으로 캡처 — 함수 시그니처만으로 동작을 예측 불가
 - Rule: FF.md Predictability 2-C — hidden logic should be exposed; implicit closure dependencies should be explicit parameters
 - Context: `expandValueArea`를 `calculateVolumeProfile` 외부 모듈 레벨 함수로 추출하고 `bucketVolumes`, `rowSize`, `targetVolume`을 명시적 파라미터로 추가하여 독립적으로 테스트 가능한 자기완결 함수로 변경
+
+## [PR #153 | feat/121/volume-profile-indicator | internal review round 7 | 2026-04-03]
+- Violation: VP 색상 상수 `vpPoc`, `vpVah`, `vpVal`이 `components/chart/constants.ts`에 위치하여 domain layer의 `CHART_COLORS`에서 분리됨
+- Rule: ARCHITECTURE.md — 색상 상수는 `domain/constants/colors.ts`의 `CHART_COLORS` 객체 안에 있어야 하며, components layer에서 독립 상수로 선언하면 안 됨
+- Context: `VP_POC_COLOR`, `VP_VAH_COLOR`, `VP_VAL_COLOR`를 `components/chart/constants.ts`에서 제거하고 `domain/constants/colors.ts`의 `CHART_COLORS`에 `vpPoc`, `vpVah`, `vpVal`로 추가; `useVolumeProfileOverlay.ts`를 `CHART_COLORS` import로 변경
 
