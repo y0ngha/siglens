@@ -43,6 +43,12 @@ export const CHART_COLORS = {
     dmiMinus: '#ef5350',
     dmiAdx: '#f59e0b',
 
+    // Stochastic
+    stochasticK: '#f472b6',
+    stochasticD: '#38bdf8',
+    stochasticOverbought: '#ef535060',
+    stochasticOversold: '#26a69a60',
+
     // VWAP
     vwap: '#e879f9',
 } as const;
