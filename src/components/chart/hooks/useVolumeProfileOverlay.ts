@@ -126,7 +126,7 @@ export function useVolumeProfileOverlay({
         const { poc, vah, val } = volumeProfile;
 
         const toLineData = (value: number) =>
-            bars.map(bar => ({ time: bar.time as UTCTimestamp, value }));
+            bars.map((bar: Bar) => ({ time: bar.time as UTCTimestamp, value }));
 
         pocSeriesRef.current.setData(toLineData(poc));
         vahSeriesRef.current.setData(toLineData(vah));

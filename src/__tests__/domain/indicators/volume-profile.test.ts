@@ -4,7 +4,7 @@ import {
     VP_MIN_BARS,
     VP_VALUE_AREA_PERCENTAGE,
 } from '@/domain/indicators/constants';
-import type { Bar, VolumeProfileResult } from '@/domain/types';
+import type { Bar } from '@/domain/types';
 
 function makeBars(
     count: number,
@@ -16,7 +16,7 @@ function makeBars(
         volume?: number;
     } = {}
 ): Bar[] {
-    return Array.from({ length: count }, (_, i) => ({
+    return Array.from({ length: count }, (_: unknown, i: number) => ({
         time: i,
         open: options.open ?? 100,
         high: options.high ?? 110,
@@ -66,13 +66,16 @@ describe('Volume Profile', () => {
         describe('일부 bar의 high와 low가 동일할 때 (barRange === 0 분기)', () => {
             it('barRange가 0인 bar의 거래량을 해당 가격 버킷에 할당하고 null이 아닌 결과를 반환한다', () => {
                 const normalBars = makeBarsWithRange(
-                    Array.from({ length: VP_MIN_BARS - 1 }, (_, i) => ({
-                        open: 100 + i,
-                        high: 110 + i,
-                        low: 90 + i,
-                        close: 100 + i,
-                        volume: 1000,
-                    }))
+                    Array.from(
+                        { length: VP_MIN_BARS - 1 },
+                        (_: unknown, i: number) => ({
+                            open: 100 + i,
+                            high: 110 + i,
+                            low: 90 + i,
+                            close: 100 + i,
+                            volume: 1000,
+                        })
+                    )
                 );
                 const flatBar = makeBarsWithRange([
                     {
@@ -122,8 +125,7 @@ describe('Volume Profile', () => {
 
             it('profile의 price는 오름차순 정렬된다', () => {
                 const bars = makeBars(VP_MIN_BARS);
-                const result: VolumeProfileResult | null =
-                    calculateVolumeProfile(bars);
+                const result = calculateVolumeProfile(bars);
                 expect(result).not.toBeNull();
                 if (result) {
                     expect(
@@ -141,13 +143,16 @@ describe('Volume Profile', () => {
             it('거래량이 특정 가격대에 집중되면 POC가 해당 구간에 위치한다', () => {
                 // 고가 구간(150~160)에 거래량 집중
                 const highVolumeBars = makeBarsWithRange(
-                    Array.from({ length: VP_MIN_BARS }, (_, i) => ({
-                        open: 155,
-                        high: 160,
-                        low: 150,
-                        close: 155,
-                        volume: i < VP_MIN_BARS / 2 ? 10000 : 100,
-                    }))
+                    Array.from(
+                        { length: VP_MIN_BARS },
+                        (_: unknown, i: number) => ({
+                            open: 155,
+                            high: 160,
+                            low: 150,
+                            close: 155,
+                            volume: i < VP_MIN_BARS / 2 ? 10000 : 100,
+                        })
+                    )
                 );
                 // 저가 구간(100~110)에도 몇 개 추가
                 const lowVolumeBars = makeBarsWithRange(
@@ -172,16 +177,18 @@ describe('Volume Profile', () => {
         describe('Value Area 검증', () => {
             it('Value Area는 전체 거래량의 약 70% 이상을 포함한다', () => {
                 const bars = makeBarsWithRange(
-                    Array.from({ length: VP_MIN_BARS }, (_, i) => ({
-                        open: 100 + i,
-                        high: 110 + i,
-                        low: 90 + i,
-                        close: 100 + i,
-                        volume: 1000,
-                    }))
+                    Array.from(
+                        { length: VP_MIN_BARS },
+                        (_: unknown, i: number) => ({
+                            open: 100 + i,
+                            high: 110 + i,
+                            low: 90 + i,
+                            close: 100 + i,
+                            volume: 1000,
+                        })
+                    )
                 );
-                const result: VolumeProfileResult | null =
-                    calculateVolumeProfile(bars);
+                const result = calculateVolumeProfile(bars);
                 expect(result).not.toBeNull();
                 if (result) {
                     const VALUE_AREA_TOLERANCE = 0.05; // bucket 경계 이산화로 인한 허용 오차
