@@ -4,15 +4,7 @@ import {
     STOCHASTIC_D_PERIOD,
     STOCHASTIC_SMOOTHING,
 } from '@/domain/indicators/constants';
-
-/**
- * Simple Moving Average for a number array.
- * Returns null when there are fewer values than the period.
- */
-function sma(values: number[], period: number): number | null {
-    if (values.length < period) return null;
-    return values.slice(-period).reduce((sum, v) => sum + v, 0) / period;
-}
+import { sma } from '@/domain/indicators/utils';
 
 const MIDPOINT_PERCENTAGE = 50;
 const PERCENTAGE_UPPER_BOUND = 100;
