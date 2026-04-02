@@ -9,11 +9,11 @@ import {
     VP_VALUE_AREA_PERCENTAGE,
 } from './constants';
 
-type ValueAreaState = {
+interface ValueAreaState {
     vahIndex: number;
     valIndex: number;
     accumulatedVolume: number;
-};
+}
 
 export function calculateVolumeProfile(
     bars: Bar[],

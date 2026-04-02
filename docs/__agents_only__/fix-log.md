@@ -65,20 +65,10 @@
 - Rule: MISTAKES.md #1 — while 루프 + index 재할당은 모든 경우에서 금지
 - Context: `expandValueArea` 재귀 함수로 교체하여 state를 immutable하게 전달; 타입 `ValueAreaState`를 파일 최상단으로 추출
 
-## [Issue #121 | feat/121/volume-profile-indicator | review fix | 2026-04-02]
-- Violation: `volume-profile.test.ts` line 188에서 "rowSize 미지정 시 VP_DEFAULT_ROW_SIZE 크기의 profile을 반환한다" 테스트가 line 65의 "profile 길이는 기본 rowSize(VP_DEFAULT_ROW_SIZE)와 같다"와 동일한 assertion을 중복으로 검증
-- Rule: Test Layer Rules — 각 `it` 블록은 정확히 하나의 동작을 테스트하며, 중복 테스트는 noise 없는 커버리지를 저해함
-- Context: `기본 파라미터 테스트` describe 블록 전체를 제거하여 중복 제거
-
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `colors.ts`에서 `vpVah`와 `vpVal`이 동일한 색상값 `#8b5cf6`으로 설정되어 차트에서 두 선을 시각적으로 구별 불가
 - Rule: DESIGN.md — VAH와 VAL은 서로 다른 가격 경계를 나타내므로 구별 가능한 색상이 필요
 - Context: `vpVal`을 `#34d399`(mint green)으로 변경하여 `vpVah`(purple)와 시각적으로 구별 가능하게 함
-
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `volume-profile.test.ts`에서 `priceRange === 0`일 때 `null` 반환 케이스 테스트 누락
-- Rule: Test Layer Rules — domain/ 레이어는 100% 커버리지 필수; 구현에 존재하는 모든 분기는 테스트되어야 함
-- Context: `모든 bars의 high와 low가 동일할 때` describe 블록을 추가하여 `priceRange === 0` null 반환 케이스 테스트
 
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `useVolumeProfileOverlay.ts`에서 `bars.map(bar => ({ time: bar.time as UTCTimestamp, value: X }))` 패턴이 poc, vah, val에 걸쳐 3회 반복
@@ -89,4 +79,14 @@
 - Violation: `useVolumeProfileOverlay.ts`에서 `lineWidth`를 params interface에 포함하지 않고 `DEFAULT_LINE_WIDTH`를 직접 series 생성 시 인라인으로 사용하여 TS6133 발생 및 다른 overlay 훅과 패턴 불일치
 - Rule: CONVENTIONS.md Custom Hook Rules — 모든 overlay 훅은 `lineWidth?: LineWidth`를 params로 수신하고 default 값으로 `DEFAULT_LINE_WIDTH`를 적용해야 함
 - Context: `UseVolumeProfileOverlayParams`에 `lineWidth?: LineWidth` 추가, 함수 시그니처에서 `lineWidth = DEFAULT_LINE_WIDTH` default 적용, series 생성 시 param 값 사용으로 `useBollingerOverlay` 등과 동일한 패턴으로 통일
+
+## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
+- Violation: `volume-profile.ts`의 `ValueAreaState`가 `type`으로 선언되어 있어 MISTAKES.md #11.5 위반
+- Rule: MISTAKES.md #11.5 — 객체 형태(object shape)는 `type` 대신 `interface`로 선언
+- Context: `src/domain/indicators/volume-profile.ts`에서 `type ValueAreaState`를 `interface ValueAreaState`로 변경
+
+## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
+- Violation: `prompt.ts`의 `formatIndicatorSection`에서 `indicators.volumeProfile`에 3회 접근 (MISTAKES.md #8.5 위반)
+- Rule: MISTAKES.md #8.5 — 동일한 값이 같은 함수 안에서 2회 이상 조회될 때는 로컬 const로 추출
+- Context: `const vp = indicators.volumeProfile`를 함수 상단 다른 `last*` 변수들과 함께 추출하여 단일 접근으로 변경
 

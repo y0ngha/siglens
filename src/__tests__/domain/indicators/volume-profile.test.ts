@@ -63,6 +63,32 @@ describe('Volume Profile', () => {
             });
         });
 
+        describe('일부 bar의 high와 low가 동일할 때 (barRange === 0 분기)', () => {
+            it('barRange가 0인 bar의 거래량을 해당 가격 버킷에 할당하고 null이 아닌 결과를 반환한다', () => {
+                const normalBars = makeBarsWithRange(
+                    Array.from({ length: VP_MIN_BARS - 1 }, (_, i) => ({
+                        open: 100 + i,
+                        high: 110 + i,
+                        low: 90 + i,
+                        close: 100 + i,
+                        volume: 1000,
+                    }))
+                );
+                const flatBar = makeBarsWithRange([
+                    {
+                        open: 100,
+                        high: 100,
+                        low: 100,
+                        close: 100,
+                        volume: 500,
+                    },
+                ]);
+                const bars = [...normalBars, ...flatBar];
+                const result = calculateVolumeProfile(bars);
+                expect(result).not.toBeNull();
+            });
+        });
+
         describe('정상 입력일 때', () => {
             it('VP_MIN_BARS 이상이면 null이 아닌 결과를 반환한다', () => {
                 const bars = makeBars(VP_MIN_BARS);

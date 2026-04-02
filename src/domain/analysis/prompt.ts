@@ -169,6 +169,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastStochastic = lastOf(indicators.stochastic);
     const lastStochRSI = lastOf(indicators.stochRsi);
     const lastCCI = lastNonNull(indicators.cci);
+    const vp = indicators.volumeProfile;
 
     return [
         '## Indicator Values',
@@ -179,7 +180,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
         `- Stochastic(${STOCHASTIC_K_PERIOD},${STOCHASTIC_D_PERIOD},${STOCHASTIC_SMOOTHING}): %K ${fmt(lastStochastic?.percentK ?? null)} / %D ${fmt(lastStochastic?.percentD ?? null)}`,
         `- StochRSI(${STOCH_RSI_RSI_PERIOD},${STOCH_RSI_STOCH_PERIOD},${STOCH_RSI_K_PERIOD},${STOCH_RSI_D_PERIOD}): K ${fmt(lastStochRSI?.k ?? null)} / D ${fmt(lastStochRSI?.d ?? null)}`,
         `- CCI(${CCI_DEFAULT_PERIOD}): ${fmt(lastCCI)}`,
-        `- Volume Profile: POC ${fmt(indicators.volumeProfile?.poc ?? null)} / VAH ${fmt(indicators.volumeProfile?.vah ?? null)} / VAL ${fmt(indicators.volumeProfile?.val ?? null)}`,
+        `- Volume Profile: POC ${fmt(vp?.poc ?? null)} / VAH ${fmt(vp?.vah ?? null)} / VAL ${fmt(vp?.val ?? null)}`,
     ].join('\n');
 };
 
