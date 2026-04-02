@@ -10,6 +10,7 @@ import { calculateStochastic } from './stochastic';
 import { calculateStochRSI } from './stochastic-rsi';
 import { calculateCCI } from './cci';
 import { calculateVolumeProfile } from './volume-profile';
+import { calculateIchimoku } from './ichimoku';
 import { MA_DEFAULT_PERIODS, EMA_DEFAULT_PERIODS } from './constants';
 
 export * from './rsi';
@@ -23,6 +24,7 @@ export * from './stochastic';
 export * from './stochastic-rsi';
 export * from './cci';
 export * from './volume-profile';
+export * from './ichimoku';
 
 export function calculateIndicators(bars: Bar[]): IndicatorResult {
     const closes = bars.map(b => b.close);
@@ -48,5 +50,6 @@ export function calculateIndicators(bars: Bar[]): IndicatorResult {
             ])
         ) as Record<number, (number | null)[]>,
         volumeProfile: calculateVolumeProfile(bars),
+        ichimoku: calculateIchimoku(bars),
     };
 }

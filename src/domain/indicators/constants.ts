@@ -12,6 +12,7 @@ export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
     ma: {},
     ema: {},
     volumeProfile: null,
+    ichimoku: [],
 };
 
 export const RSI_DEFAULT_PERIOD = 14;
@@ -51,6 +52,11 @@ export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
 
 export const EMA_SUPPORT_RESISTANCE_SHORT_INDEX = 1; // 20-period EMA
 export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3; // 60-period EMA
+
+export const ICHIMOKU_CONVERSION_PERIOD = 9;
+export const ICHIMOKU_BASE_PERIOD = 26;
+export const ICHIMOKU_SPAN_B_PERIOD = 52;
+export const ICHIMOKU_DISPLACEMENT = 26;
 
 export const VP_DEFAULT_ROW_SIZE = 24;
 export const VP_VALUE_AREA_PERCENTAGE = 0.7;

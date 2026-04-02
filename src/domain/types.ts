@@ -55,6 +55,14 @@ export interface VolumeProfileResult {
     profile: VolumeProfileRow[];
 }
 
+export interface IchimokuResult {
+    tenkan: number | null;
+    kijun: number | null;
+    senkouA: number | null;
+    senkouB: number | null;
+    chikou: number | null;
+}
+
 export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
@@ -67,6 +75,7 @@ export interface IndicatorResult {
     ma: Record<number, (number | null)[]>;
     ema: Record<number, (number | null)[]>;
     volumeProfile: VolumeProfileResult | null;
+    ichimoku: IchimokuResult[];
 }
 
 export type ChartDisplayType = 'line' | 'marker' | 'region';
