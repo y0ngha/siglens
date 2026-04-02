@@ -56,6 +56,13 @@ describe('Volume Profile', () => {
             });
         });
 
+        describe('모든 bars의 high와 low가 동일할 때', () => {
+            it('null을 반환한다', () => {
+                const bars = makeBars(VP_MIN_BARS, { high: 100, low: 100 });
+                expect(calculateVolumeProfile(bars)).toBeNull();
+            });
+        });
+
         describe('정상 입력일 때', () => {
             it('VP_MIN_BARS 이상이면 null이 아닌 결과를 반환한다', () => {
                 const bars = makeBars(VP_MIN_BARS);

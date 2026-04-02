@@ -35,6 +35,17 @@ export function calculateVolumeProfile(
     const bucketVolumes = bars.reduce(
         (acc, bar) => {
             const barRange = bar.high - bar.low;
+            if (barRange === 0) {
+                return acc.map((vol, i) => {
+                    const bucketLow = lowMin + i * bucketSize;
+                    const bucketHigh = bucketLow + bucketSize;
+                    const isLastBucket = i === rowSize - 1;
+                    const inBucket =
+                        (bar.low >= bucketLow && bar.low < bucketHigh) ||
+                        (isLastBucket && bar.low === bucketHigh);
+                    return inBucket ? vol + bar.volume : vol;
+                });
+            }
             return acc.map((vol, i) => {
                 const bucketLow = lowMin + i * bucketSize;
                 const bucketHigh = bucketLow + bucketSize;
@@ -42,9 +53,7 @@ export function calculateVolumeProfile(
                     Math.min(bar.high, bucketHigh) -
                     Math.max(bar.low, bucketLow);
                 if (overlap > 0) {
-                    const ratio =
-                        barRange > 0 ? overlap / barRange : 1 / rowSize;
-                    return vol + bar.volume * ratio;
+                    return vol + bar.volume * (overlap / barRange);
                 }
                 return vol;
             });
