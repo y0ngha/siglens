@@ -238,7 +238,7 @@ export function IndicatorToolbar({
                         aria-expanded={openDropdown === indicator.type}
                         className={cn(
                             indicatorButtonClass(indicator.active),
-                            'shrink-0'
+                            'w-12 shrink-0'
                         )}
                     >
                         {indicator.label}
