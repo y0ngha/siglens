@@ -267,6 +267,9 @@ const config: Config = {
                     // Stochastic
                     stochasticK: '#f472b6',
                     stochasticD: '#38bdf8',
+                    // Stochastic RSI
+                    stochRsiK: '#facc15',
+                    stochRsiD: '#60a5fa',
                     // VWAP
                     vwap:      '#e879f9',
                 },

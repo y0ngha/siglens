@@ -30,6 +30,7 @@ export interface IndicatorResult {
     bollinger: BollingerResult[];
     dmi: DMIResult[];
     stochastic: StochasticResult[];
+    stochRsi: StochRSIResult[];
     rsi: (number | null)[];
     vwap: (number | null)[];
     ma: Record<number, (number | null)[]>;
@@ -58,6 +59,11 @@ export interface StochasticResult {
     percentK: number | null;
     percentD: number | null;
 }
+
+export interface StochRSIResult {
+    k: number | null;
+    d: number | null;
+}
 ```
 
 ---
@@ -85,6 +91,13 @@ export const STOCHASTIC_D_PERIOD = 3;
 export const STOCHASTIC_SMOOTHING = 3;
 export const STOCHASTIC_OVERBOUGHT_LEVEL = 80;
 export const STOCHASTIC_OVERSOLD_LEVEL = 20;
+
+export const STOCH_RSI_RSI_PERIOD = 14;
+export const STOCH_RSI_STOCH_PERIOD = 14;
+export const STOCH_RSI_K_PERIOD = 3;
+export const STOCH_RSI_D_PERIOD = 3;
+export const STOCH_RSI_OVERBOUGHT_LEVEL = 0.8;
+export const STOCH_RSI_OVERSOLD_LEVEL = 0.2;
 
 export const MA_DEFAULT_PERIODS = [20] as const;
 export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
@@ -179,6 +192,26 @@ export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3;  // 60기간 EMA
 과매수: 80 이상, 과매도: 20 이하
 초기 kPeriod + smoothing - 2개 구간의 %K = null
 초기 kPeriod + smoothing + dPeriod - 3개 구간의 %D = null
+```
+
+### Stochastic RSI
+
+```
+기본 설정: rsiPeriod=14, stochPeriod=14, kSmoothing=3, dPeriod=3
+
+알고리즘:
+1. RSI = calculateRSI(closes, rsiPeriod=14)
+2. Stochastic RSI = (현재 RSI - stochPeriod 기간 RSI 최저값) / (RSI 최고값 - RSI 최저값)
+3. %K = SMA(Stochastic RSI, kSmoothing=3)
+4. %D = SMA(%K, dPeriod=3)
+
+범위: 0.0 ~ 1.0 (100을 곱하지 않음)
+과매수: 0.8 이상, 과매도: 0.2 이하
+RSI range가 0이면 Stochastic RSI = 0
+초기 rsiPeriod + stochPeriod - 1 + kSmoothing - 1개 구간의 K = null
+초기 위 + dPeriod - 1개 구간의 D = null
+
+StochRSIResult: { k: number | null; d: number | null }
 ```
 
 ### VWAP (Volume Weighted Average Price)
@@ -381,7 +414,7 @@ function buildAnalysisPrompt(
 2. 현재 시장 상황 요약 (현재가, 변화율, 거래량)
 3. 최근 봉 데이터 (최근 30봉) — 각 봉에 캔들 패턴 태깅 + 다봉 패턴 감지
 4. 거래량 분석 (평균 대비 비율)
-5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI, Stochastic)
+5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI, Stochastic, StochRSI)
 6. 패턴 분석 (type='pattern' skills, confidence >= 0.5)
 7. 활성화된 Skills (type!='pattern' skills, confidence >= 0.5)
 8. 분석 가이드라인 (지지/저항 판단 기준, 가격 목표 산출 기준)
@@ -627,6 +660,7 @@ interface UseXxxOverlayParams {
 | `useMACDChart` | 3 | MACD 라인 + 시그널 + 히스토그램 |
 | `useDMIChart` | 4 | +DI / -DI / ADX |
 | `useStochasticChart` | 5 | %K / %D + 과매수/과매도선 |
+| `useStochRSIChart` | 6 | K / D + 과매수(0.8)/과매도(0.2)선 |
 
 ---
 
