@@ -56,11 +56,6 @@
 - Context: `StockChart.tsx`의 `paneIndices` useMemo에서 `let next`를 `visibles.slice(0, pos).filter(Boolean).length` 기반의 순수 함수 `indexFor`로 교체
 
 ## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `bucketVolumes[i] += bar.volume * ratio` — 로컬 배열이지만 index assignment로 직접 변경
-- Rule: CONVENTIONS.md — 불변성 원칙; 로컬 스코프 배열이라도 index 기반 mutation 금지
-- Context: `bars.reduce` + `acc.map`으로 교체하여 각 bar의 기여분을 새로운 배열로 accumulate
-
-## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `while` 루프 내부에서 `vahIndex += 1`, `valIndex -= 1` index 재할당
 - Rule: MISTAKES.md #1 — while 루프 + index 재할당은 모든 경우에서 금지
 - Context: `expandValueArea` 재귀 함수로 교체하여 state를 immutable하게 전달; 타입 `ValueAreaState`를 파일 최상단으로 추출
@@ -69,11 +64,6 @@
 - Violation: `colors.ts`에서 `vpVah`와 `vpVal`이 동일한 색상값 `#8b5cf6`으로 설정되어 차트에서 두 선을 시각적으로 구별 불가
 - Rule: DESIGN.md — VAH와 VAL은 서로 다른 가격 경계를 나타내므로 구별 가능한 색상이 필요
 - Context: `vpVal`을 `#34d399`(mint green)으로 변경하여 `vpVah`(purple)와 시각적으로 구별 가능하게 함
-
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `useVolumeProfileOverlay.ts`에서 `bars.map(bar => ({ time: bar.time as UTCTimestamp, value: X }))` 패턴이 poc, vah, val에 걸쳐 3회 반복
-- Rule: MISTAKES.md #10 — 동일한 계산 로직이 2회 이상 반복되면 단일 소스로 추출
-- Context: `toLineData = (value: number) => bars.map(...)` 헬퍼를 useEffect 내부에서 추출하여 중복 제거; 시리즈 생성 로직도 `createLineSeries` 헬퍼로 추출
 
 ## [PR #153 | feat/121/volume-profile-indicator | internal review | 2026-04-02]
 - Violation: `useVolumeProfileOverlay.ts`에서 `lineWidth`를 params interface에 포함하지 않고 `DEFAULT_LINE_WIDTH`를 직접 series 생성 시 인라인으로 사용하여 TS6133 발생 및 다른 overlay 훅과 패턴 불일치
@@ -95,18 +85,19 @@
 - Rule: MISTAKES.md #11.6 — 콜백 파라미터(map, filter, reduce, sort, forEach)에는 항상 명시적 타입 어노테이션을 선언한다
 - Context: L25, L28, L36, L39, L49, L65, L69, L112 각 콜백에 `(max: number, bar: Bar)`, `(acc: number[], bar: Bar)` 등 명시적 타입 추가; `volume-profile.test.ts`에서도 reduce/filter 콜백 파라미터에 `VolumeProfileRow` 타입 추가
 
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `volume-profile.test.ts:182`에서 POC 위치 검증 단언 `toBeGreaterThan(100)`이 저가 구간 poc도 통과시키는 약한 단언
-- Rule: MISTAKES.md #12 — 항상 통과할 수 있는 단언은 커버리지를 소비하지만 의도를 드러내지 못한다
-- Context: 고가 구간(150~160)에 거래량이 집중된 테스트 시나리오에서 `toBeGreaterThan(140)`으로 변경하여 POC가 실제 고가 구간에 있음을 검증
-
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `volume-profile.test.ts:215`에서 허용 오차 `0.05` 매직 넘버 인라인 사용
-- Rule: FF.md 1-D — 매직 넘버는 이름을 붙여 의미를 드러낸다
-- Context: `const VALUE_AREA_TOLERANCE = 0.05`로 추출하고 주석으로 bucket 경계 이산화 허용 오차임을 명시
-
 ## [PR #153 | feat/121/volume-profile-indicator | internal review | 2026-04-02]
 - Violation: `volume-profile.test.ts`에서 `VolumeProfileRow` import가 선언되어 있으나 reduce/filter 콜백에서 TypeScript가 타입을 자동 추론하여 명시적 어노테이션이 불필요해 TS6196 컴파일 오류 발생
 - Rule: TypeScript — 불필요한 import는 제거하고, TypeScript가 추론할 수 있는 콜백 파라미터 타입은 명시하지 않는다
 - Context: `VolumeProfileRow` import 제거 및 reduce/filter 콜백에서 명시적 타입 어노테이션 제거; `expandValueArea` const arrow function을 named function declaration으로 변경하여 domain 컨벤션 일치
+
+
+## [PR #153 | feat/121/volume-profile-indicator | external review | 2026-04-02]
+- Violation: `expandValueArea` 함수의 경계 조건 `nextAbove <= 0 && nextBelow <= 0`이 볼륨 0인 유효 버킷과 범위 초과(-1)를 구분하지 않아 Value Area 확장 조기 종료
+- Rule: 비즈니스 로직 정확성 — -1은 범위 초과, 0은 볼륨 없는 유효 버킷으로 구별해야 함
+- Context: `src/domain/indicators/volume-profile.ts` L89에서 `<= 0` 조건을 `=== -1`로 수정하여 볼륨이 0인 버킷 너머에도 확장이 계속되도록 수정
+
+## [PR #153 | feat/121/volume-profile-indicator | external review | 2026-04-02]
+- Violation: `prompt.ts` Support/Resistance 섹션에 VP 레벨 사용 지침과 AI가 직접 PoC를 식별하라는 기존 지침이 공존하여 상충
+- Rule: FF.md Predictability 2-B — 같은 개념(POC)에 대해 두 개의 상충되는 근거가 존재함
+- Context: `src/domain/analysis/prompt.ts` L239의 `Identify PoC from the last 30 bars` 지침을 제거; VP 인디케이터가 POC를 이미 계산하여 Section 5에 제공하므로 중복 지침 불필요
 

@@ -236,7 +236,6 @@ const ANALYSIS_GUIDELINES = [
     `- Check convergence points of moving averages (MA ${MA_DEFAULT_PERIODS.join(',')}, EMA ${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_SHORT_INDEX]}/${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_LONG_INDEX]}) first`,
     '- Use Volume Profile levels: POC is the strongest support/resistance, VAH/VAL mark the boundaries of the value area',
     '- Price returning to POC indicates a high-probability reaction zone; breakouts above VAH or below VAL signal potential trend continuation',
-    '- Identify PoC (Point of Control — highest volume price area) from the last 30 bars',
     '- Treat high/low of high-volume bars as supply/demand zones',
     '- Reference prior swing highs/lows and Bollinger Band boundaries',
     '- Each level must include a reason',

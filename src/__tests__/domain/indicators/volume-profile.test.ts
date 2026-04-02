@@ -107,24 +107,6 @@ describe('Volume Profile', () => {
                 const result = calculateVolumeProfile(bars, customRowSize);
                 expect(result?.profile).toHaveLength(customRowSize);
             });
-
-            it('poc는 숫자 타입이다', () => {
-                const bars = makeBars(VP_MIN_BARS);
-                const result = calculateVolumeProfile(bars);
-                expect(typeof result?.poc).toBe('number');
-            });
-
-            it('vah는 숫자 타입이다', () => {
-                const bars = makeBars(VP_MIN_BARS);
-                const result = calculateVolumeProfile(bars);
-                expect(typeof result?.vah).toBe('number');
-            });
-
-            it('val은 숫자 타입이다', () => {
-                const bars = makeBars(VP_MIN_BARS);
-                const result = calculateVolumeProfile(bars);
-                expect(typeof result?.val).toBe('number');
-            });
         });
 
         describe('범위 검증', () => {

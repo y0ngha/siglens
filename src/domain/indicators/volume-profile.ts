@@ -86,7 +86,7 @@ export function calculateVolumeProfile(
         const nextBelow =
             state.valIndex - 1 >= 0 ? bucketVolumes[state.valIndex - 1] : -1;
 
-        if (nextAbove <= 0 && nextBelow <= 0) return state;
+        if (nextAbove === -1 && nextBelow === -1) return state;
 
         if (nextAbove >= nextBelow) {
             const newVahIndex = state.vahIndex + 1;
