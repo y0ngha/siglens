@@ -44,7 +44,7 @@ export function calculateVolumeProfile(
                     const bucketHigh = bucketLow + bucketSize;
                     const isLastBucket = i === rowSize - 1;
                     const inBucket =
-                        (bar.low >= bucketLow && bar.low < bucketHigh) ||
+                        (bucketLow <= bar.low && bar.low < bucketHigh) ||
                         (isLastBucket && bar.low === bucketHigh);
                     return inBucket ? vol + bar.volume : vol;
                 });

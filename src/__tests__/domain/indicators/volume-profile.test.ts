@@ -4,7 +4,7 @@ import {
     VP_MIN_BARS,
     VP_VALUE_AREA_PERCENTAGE,
 } from '@/domain/indicators/constants';
-import type { Bar } from '@/domain/types';
+import type { Bar, VolumeProfileResult } from '@/domain/types';
 
 function makeBars(
     count: number,
@@ -122,7 +122,8 @@ describe('Volume Profile', () => {
 
             it('profile의 price는 오름차순 정렬된다', () => {
                 const bars = makeBars(VP_MIN_BARS);
-                const result = calculateVolumeProfile(bars);
+                const result: VolumeProfileResult | null =
+                    calculateVolumeProfile(bars);
                 expect(result).not.toBeNull();
                 if (result) {
                     expect(
@@ -179,7 +180,8 @@ describe('Volume Profile', () => {
                         volume: 1000,
                     }))
                 );
-                const result = calculateVolumeProfile(bars);
+                const result: VolumeProfileResult | null =
+                    calculateVolumeProfile(bars);
                 expect(result).not.toBeNull();
                 if (result) {
                     const VALUE_AREA_TOLERANCE = 0.05; // bucket 경계 이산화로 인한 허용 오차
@@ -190,7 +192,7 @@ describe('Volume Profile', () => {
                     const valueAreaVolume = result.profile
                         .filter(
                             row =>
-                                row.price >= result.val &&
+                                result.val <= row.price &&
                                 row.price <= result.vah
                         )
                         .reduce((sum, row) => sum + row.volume, 0);
