@@ -1,10 +1,5 @@
 # Fix Log
 
-## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
-- Violation: `path.join(process.cwd(), 'skills')`가 `describe('하위 디렉토리 재귀 탐색')` 블록 내 3개 `it` 케이스에서 각각 로컬 변수로 중복 선언됨
-- Rule: MISTAKES.md #0 — 동일 값을 여러 곳에 반복 선언하지 말고 단일 상수로 추출해야 한다
-- Context: loader.test.ts의 재귀 탐색 테스트 블록에서 `SKILLS_DIR` 상수를 describe 블록 상단에 한 번만 선언하도록 추출
-
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음

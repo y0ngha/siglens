@@ -206,15 +206,15 @@ describe('FileSkillsLoader', () => {
 
     describe('하위 디렉토리 재귀 탐색', () => {
         const SKILLS_DIR = path.join(process.cwd(), 'skills');
+        const PATTERNS_DIR = path.join(SKILLS_DIR, 'patterns');
 
         it('하위 디렉토리의 .md 파일을 재귀적으로 읽는다', async () => {
-            const patternsDir = path.join(SKILLS_DIR, 'patterns');
-            const skillFile = path.join(patternsDir, 'head-and-shoulders.md');
+            const skillFile = path.join(PATTERNS_DIR, 'head-and-shoulders.md');
 
             mockReaddir.mockImplementation((dir: string) => {
                 if (dir === SKILLS_DIR)
                     return Promise.resolve([dirDirent('patterns')]);
-                if (dir === patternsDir)
+                if (dir === PATTERNS_DIR)
                     return Promise.resolve([
                         fileDirent('head-and-shoulders.md'),
                     ]);
@@ -232,9 +232,8 @@ describe('FileSkillsLoader', () => {
         });
 
         it('루트와 하위 디렉토리의 .md 파일을 모두 수집한다', async () => {
-            const patternsDir = path.join(SKILLS_DIR, 'patterns');
             const rootFile = path.join(SKILLS_DIR, 'root.md');
-            const subFile = path.join(patternsDir, 'sub.md');
+            const subFile = path.join(PATTERNS_DIR, 'sub.md');
 
             mockReaddir.mockImplementation((dir: string) => {
                 if (dir === SKILLS_DIR)
@@ -242,7 +241,7 @@ describe('FileSkillsLoader', () => {
                         fileDirent('root.md'),
                         dirDirent('patterns'),
                     ]);
-                if (dir === patternsDir)
+                if (dir === PATTERNS_DIR)
                     return Promise.resolve([fileDirent('sub.md')]);
                 return Promise.resolve([]);
             });
