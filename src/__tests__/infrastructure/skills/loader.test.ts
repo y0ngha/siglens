@@ -205,13 +205,14 @@ describe('FileSkillsLoader', () => {
     });
 
     describe('하위 디렉토리 재귀 탐색', () => {
+        const SKILLS_DIR = path.join(process.cwd(), 'skills');
+
         it('하위 디렉토리의 .md 파일을 재귀적으로 읽는다', async () => {
-            const skillsDir = path.join(process.cwd(), 'skills');
-            const patternsDir = path.join(skillsDir, 'patterns');
+            const patternsDir = path.join(SKILLS_DIR, 'patterns');
             const skillFile = path.join(patternsDir, 'head-and-shoulders.md');
 
             mockReaddir.mockImplementation((dir: string) => {
-                if (dir === skillsDir)
+                if (dir === SKILLS_DIR)
                     return Promise.resolve([dirDirent('patterns')]);
                 if (dir === patternsDir)
                     return Promise.resolve([
@@ -231,13 +232,12 @@ describe('FileSkillsLoader', () => {
         });
 
         it('루트와 하위 디렉토리의 .md 파일을 모두 수집한다', async () => {
-            const skillsDir = path.join(process.cwd(), 'skills');
-            const patternsDir = path.join(skillsDir, 'patterns');
-            const rootFile = path.join(skillsDir, 'root.md');
+            const patternsDir = path.join(SKILLS_DIR, 'patterns');
+            const rootFile = path.join(SKILLS_DIR, 'root.md');
             const subFile = path.join(patternsDir, 'sub.md');
 
             mockReaddir.mockImplementation((dir: string) => {
-                if (dir === skillsDir)
+                if (dir === SKILLS_DIR)
                     return Promise.resolve([
                         fileDirent('root.md'),
                         dirDirent('patterns'),
@@ -259,11 +259,10 @@ describe('FileSkillsLoader', () => {
         });
 
         it('빈 하위 디렉토리는 무시한다', async () => {
-            const skillsDir = path.join(process.cwd(), 'skills');
-            const indicatorsDir = path.join(skillsDir, 'indicators');
+            const indicatorsDir = path.join(SKILLS_DIR, 'indicators');
 
             mockReaddir.mockImplementation((dir: string) => {
-                if (dir === skillsDir)
+                if (dir === SKILLS_DIR)
                     return Promise.resolve([dirDirent('indicators')]);
                 if (dir === indicatorsDir) return Promise.resolve([]);
                 return Promise.resolve([]);
