@@ -179,6 +179,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
         `- Stochastic(${STOCHASTIC_K_PERIOD},${STOCHASTIC_D_PERIOD},${STOCHASTIC_SMOOTHING}): %K ${fmt(lastStochastic?.percentK ?? null)} / %D ${fmt(lastStochastic?.percentD ?? null)}`,
         `- StochRSI(${STOCH_RSI_RSI_PERIOD},${STOCH_RSI_STOCH_PERIOD},${STOCH_RSI_K_PERIOD},${STOCH_RSI_D_PERIOD}): K ${fmt(lastStochRSI?.k ?? null)} / D ${fmt(lastStochRSI?.d ?? null)}`,
         `- CCI(${CCI_DEFAULT_PERIOD}): ${fmt(lastCCI)}`,
+        `- Volume Profile: POC ${fmt(indicators.volumeProfile?.poc ?? null)} / VAH ${fmt(indicators.volumeProfile?.vah ?? null)} / VAL ${fmt(indicators.volumeProfile?.val ?? null)}`,
     ].join('\n');
 };
 
@@ -232,6 +233,8 @@ const ANALYSIS_GUIDELINES = [
     '',
     '### Support/Resistance Assessment',
     `- Check convergence points of moving averages (MA ${MA_DEFAULT_PERIODS.join(',')}, EMA ${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_SHORT_INDEX]}/${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_LONG_INDEX]}) first`,
+    '- Use Volume Profile levels: POC is the strongest support/resistance, VAH/VAL mark the boundaries of the value area',
+    '- Price returning to POC indicates a high-probability reaction zone; breakouts above VAH or below VAL signal potential trend continuation',
     '- Identify PoC (Point of Control — highest volume price area) from the last 30 bars',
     '- Treat high/low of high-volume bars as supply/demand zones',
     '- Reference prior swing highs/lows and Bollinger Band boundaries',
