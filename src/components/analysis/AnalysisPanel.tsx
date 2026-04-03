@@ -19,6 +19,10 @@ import {
     MIN_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
 import { cn } from '@/lib/cn';
+import {
+    parseStructuredSummary,
+    type SkillSummarySection,
+} from '@/components/analysis/utils/parseStructuredSummary';
 
 const TREND_COLOR: Record<Trend, string> = {
     bullish: 'text-chart-bullish',
@@ -325,6 +329,27 @@ function CandlePatternAccordionItem({
     );
 }
 
+interface StructuredSkillSummaryProps {
+    sections: SkillSummarySection[];
+}
+
+function StructuredSkillSummary({ sections }: StructuredSkillSummaryProps) {
+    return (
+        <div className="flex flex-col gap-2">
+            {sections.map(section => (
+                <div key={section.label} className="flex flex-col gap-0.5">
+                    <span className="text-secondary-500 text-[10px] font-semibold tracking-wide uppercase">
+                        {section.label}
+                    </span>
+                    <span className="text-secondary-300 text-xs leading-relaxed">
+                        {section.value}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 interface SkillAccordionItemProps {
     skill: SkillResult;
 }
@@ -335,6 +360,8 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
     const handleToggleOpen = (): void => {
         setIsOpen(prev => !prev);
     };
+
+    const sections = parseStructuredSummary(skill.summary);
 
     return (
         <div className="border-secondary-700 overflow-hidden rounded-md border">
@@ -354,9 +381,13 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
 
             {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
-                    <p className="text-secondary-400 text-xs leading-relaxed">
-                        {skill.summary}
-                    </p>
+                    {sections !== null ? (
+                        <StructuredSkillSummary sections={sections} />
+                    ) : (
+                        <p className="text-secondary-400 text-xs leading-relaxed">
+                            {skill.summary}
+                        </p>
+                    )}
                 </div>
             ) : null}
         </div>
