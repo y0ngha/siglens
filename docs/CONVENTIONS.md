@@ -111,6 +111,12 @@ interface Skill { confidenceWeight: number; }
 type SignalStrength = 'strong' | 'moderate' | 'weak';
 interface Signal { strength: SignalStrength; }
 
+// Callback parameter type annotations are optional.
+// TypeScript inference is sufficient in most cases (e.g. Array.map, filter, reduce).
+// Explicit annotations are allowed when they aid clarity, but never required.
+// bars.map(bar => ...)           ✅ inferred — fine
+// bars.map((bar: Bar) => ...)    ✅ explicit — also fine
+
 // ✅ No hardcoded literals — extract to constants
 // ❌ period = 14
 // ✅ period = RSI_DEFAULT_PERIOD  (domain/indicators/constants.ts)
