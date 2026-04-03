@@ -154,7 +154,11 @@ const parseSkillDisplay = (raw: unknown): SkillDisplay | undefined => {
     };
 };
 
-const SKILL_TYPES: readonly SkillType[] = ['pattern', 'indicator_guide'];
+const SKILL_TYPES: readonly SkillType[] = [
+    'pattern',
+    'indicator_guide',
+    'strategy',
+];
 
 const isSkillType = (value: unknown): value is SkillType =>
     typeof value === 'string' &&
