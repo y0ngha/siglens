@@ -264,7 +264,7 @@ Review before implementation and ensure these are not repeated.
      ✅ import type { VolumeProfileResult } from '@/domain/indicators/volume-profile';
         const result: VolumeProfileResult | null = calculateVolumeProfile(bars);
 
-12. Implementation and documentation changes not synchronized
+13. Implementation and documentation changes not synchronized
     → Rule: CONVENTIONS.md — when implementation changes structure/counts, update docs/DOMAIN.md and docs/DESIGN.md accordingly
     → When new constants are added (colors, dimensions, etc.), verify they are documented in the relevant design docs
     → When function signatures, return types, or component props change, update DOMAIN.md descriptions immediately
@@ -273,13 +273,25 @@ Review before implementation and ensure these are not repeated.
     ❌ Add new color constants for an indicator but forget to list them in DESIGN.md's indicator color reference
     ✅ Update DESIGN.md indicator color section immediately after adding colors.ts constants
 
-13. Related interfaces with shared fields not linked by extends
+14. Related interfaces with shared fields not linked by extends
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
     → If interface B contains all fields of interface A plus extras, declare B extends A
     ❌ interface PatternResult { patternName: string; skillName: string; ...; renderConfig: ... }
     ✅ interface PatternResult extends PatternSummary { renderConfig: ... }
 
-14. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
+14. Callback parameters without explicit type annotations
+    → Rule: CONVENTIONS.md TypeScript Rules — callback parameters must have explicit type annotations
+    → Even if TypeScript can infer the type automatically (e.g. in Array.map, filter, reduce callbacks), explicit annotations improve readability
+    → Exception: when the callback's parameter type is already fixed by the function signature (e.g. map<T>(fn: (item: T) => U)) and the type alias is already in scope
+    → When working with union types, array destructuring, or complex signatures, always annotate callback parameters explicitly
+    ❌ bars.map(bar => ...)  // bar type inferred
+    ✅ bars.map((bar: Bar) => ...)
+    ❌ result.profile.filter(item => item.pct > 50)
+    ✅ result.profile.filter((item: ProfileItem) => item.pct > 50)
+    ❌ Array.from(data, item => item.id)
+    ✅ Array.from(data, (item: DataItem) => item.id)
+
+15. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
     → If a type in layer A is structurally identical to a type in layer B, do not redefine it; import and reuse it
     → If a string array or object must stay in sync with an interface, use Record<keyof Interface, ...> to enforce the relationship at compile time

@@ -12,12 +12,14 @@ import type {
 
 function buildUniqueIds<T, K extends keyof T>(items: T[], key: K): string[] {
     const counter = new Map<string, number>();
-    return items.map(item => {
+    const ids: string[] = [];
+    for (const item of items) {
         const name = String(item[key]);
         const count = counter.get(name) ?? 0;
         counter.set(name, count + 1);
-        return `${name}_${count}`;
-    });
+        ids.push(`${name}_${count}`);
+    }
+    return ids;
 }
 
 export function filterPatterns(patterns: PatternResult[]): PatternResult[] {

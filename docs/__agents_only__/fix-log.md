@@ -1,6 +1,11 @@
 # Fix Log
 
 
+## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
+- Violation: `.map()` callback with side effect mutating a closure variable (`counter`)
+- Rule: MISTAKES.md #1 — when a loop body has multiple statements and maintains accumulated state, `for...of` is preferred over `.map()` with side effects
+- Context: `buildUniqueIds` in `confidence.ts` used `.map()` to both mutate a `Map` counter and return transformed values; replaced with `for...of` loop using a local `ids` array
+
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
 - Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
 - Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage
@@ -72,12 +77,6 @@
 - Rule: 비즈니스 로직 정확성 — -1은 범위 초과, 0은 볼륨 없는 유효 버킷으로 구별해야 함
 - Context: `src/domain/indicators/volume-profile.ts` L89에서 `<= 0` 조건을 `=== -1`로 수정하여 볼륨이 0인 버킷 너머에도 확장이 계속되도록 수정
 
-
-## [PR #153 | feat/121/volume-profile-indicator | external review round 2 | 2026-04-02]
-
-- Violation: `map`/`filter`/`reduce`/`every` 콜백 파라미터와 `Array.from` 매핑 콜백에 명시적 타입 어노테이션 누락
-- Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
-- Context: `useVolumeProfileOverlay.ts`의 `bars.map(bar => ...)` 및 `volume-profile.test.ts` 내 `Array.from`, `prices.map`, `result.profile.every/reduce/filter` 콜백 전체에 명시적 타입 추가; `PriceEntry` 타입 alias 추출 및 `VolumeProfileRow` import 추가
 
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
 - Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
