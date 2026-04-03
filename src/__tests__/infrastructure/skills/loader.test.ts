@@ -408,6 +408,76 @@ confidence_weight: 0.8
         });
     });
 
+    describe('indicator_guide 타입 파싱', () => {
+        const INDICATOR_GUIDE_SKILL_MD = `---
+name: RSI Signal Guide
+description: RSI 시그널 해석 가이드
+type: indicator_guide
+indicators: [rsi]
+confidence_weight: 0.9
+---
+
+## Signal Interpretation
+
+- RSI > 70: 과매수 구간`;
+
+        it('type이 indicator_guide이면 indicator_guide로 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('rsi.md')]);
+            mockReadFile.mockResolvedValue(INDICATOR_GUIDE_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].type).toBe('indicator_guide');
+        });
+
+        it('indicator_guide type의 name, description, indicators를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('rsi.md')]);
+            mockReadFile.mockResolvedValue(INDICATOR_GUIDE_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].name).toBe('RSI Signal Guide');
+            expect(skills[0].description).toBe('RSI 시그널 해석 가이드');
+            expect(skills[0].indicators).toEqual(['rsi']);
+        });
+
+        it('indicator_guide type의 confidenceWeight를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('rsi.md')]);
+            mockReadFile.mockResolvedValue(INDICATOR_GUIDE_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].confidenceWeight).toBe(0.9);
+        });
+
+        it('indicator_guide type의 content를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('rsi.md')]);
+            mockReadFile.mockResolvedValue(INDICATOR_GUIDE_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].content).toContain('Signal Interpretation');
+        });
+
+        it('유효하지 않은 type 값이면 type이 undefined이다', async () => {
+            const invalidTypeMd = `---
+name: 잘못된 타입
+description: 테스트
+type: unknown_type
+indicators: []
+confidence_weight: 0.8
+---
+
+내용`;
+            mockReaddir.mockResolvedValue([fileDirent('skill.md')]);
+            mockReadFile.mockResolvedValue(invalidTypeMd);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].type).toBeUndefined();
+        });
+    });
+
     describe('readdir 에러', () => {
         it('readdir가 실패하면 에러를 전파한다', async () => {
             mockReaddir.mockRejectedValue(

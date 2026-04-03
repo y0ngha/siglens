@@ -538,6 +538,14 @@ Review before implementation and ensure these are not repeated.
    ❌ Cloud color defined but never applied to bullish/bearish segments; all cloud rendered same color
    ✅ calculateIchimokuFutureCloud extends results with displacement (26) future points
    ✅ useIchimokuOverlay separates bullish/bearish AreaSeries with ichimokuCloudBullish/Bearish colors
+
+7. Skill markdown files using invalid `type: indicator_guide` instead of omitting the field
+   → Rule: DOMAIN.md Skill File Format — `type` field is only valid when set to 'pattern'; no other types are defined
+   → When type is not 'pattern', omit the `type` field entirely instead of adding a custom value
+   → Invalid type values cause the loader to treat type as undefined, creating confusion and potential future bugs
+   ❌ skills/strategies/ma-cycle.md: `type: indicator_guide` in frontmatter (undefined behavior)
+   ❌ skills/indicators/*.md (13 files): `type: indicator_guide` in frontmatter (batch inconsistency)
+   ✅ Remove the `type: indicator_guide` line; omit type field when not 'pattern'
 ```
 
 ---
@@ -727,6 +735,15 @@ Review before implementation and ensure these are not repeated.
    ✅ Move CANDLE_PATTERN_DETECTION_BARS to candle-detection.ts; prompt.ts imports from there
    ❌ indexA.ts imports { funcA } from indexB.ts and exports it; indexB.ts imports { funcB } from indexA.ts
    ✅ Extract shared definitions to common.ts; both import from common.ts
+
+19. Type field added but test mock objects not updated
+   → Rule: CONVENTIONS.md — when adding a field to a type/interface, all mock objects and fixtures used in tests must include that field
+   → Test fixture objects must remain structurally compatible with the updated type signature
+   → TypeScript compilation errors (TS error code) indicate incomplete fixture updates
+   ❌ Add volumeProfile field to IndicatorResult interface; test fixtures in prompt.test.ts use old IndicatorResult mock without volumeProfile field
+   ✅ Update all IndicatorResult mock objects in test fixtures to include volumeProfile: null (or appropriate test value)
+   ❌ TypeScript compiler error when running tests: "Property 'volumeProfile' is missing in type ... but required in type 'IndicatorResult'"
+   ✅ Compile succeeds after all test fixtures are updated to match the new interface shape
 ```
 
 ---

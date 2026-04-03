@@ -1,7 +1,12 @@
 import { readdir, readFile } from 'node:fs/promises';
 import type { Dirent } from 'node:fs';
 import { join } from 'node:path';
-import type { Skill, SkillCategory, SkillDisplay } from '@/domain/types';
+import type {
+    Skill,
+    SkillCategory,
+    SkillDisplay,
+    SkillType,
+} from '@/domain/types';
 import type { SkillsProvider } from './types';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
@@ -149,10 +154,16 @@ const parseSkillDisplay = (raw: unknown): SkillDisplay | undefined => {
     };
 };
 
+const SKILL_TYPES: readonly SkillType[] = ['pattern', 'indicator_guide'];
+
+const isSkillType = (value: unknown): value is SkillType =>
+    typeof value === 'string' &&
+    (SKILL_TYPES as readonly string[]).includes(value);
+
 const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
     name: String(data.name ?? ''),
     description: String(data.description ?? ''),
-    type: data.type === 'pattern' ? 'pattern' : undefined,
+    type: isSkillType(data.type) ? data.type : undefined,
     category: isSkillCategory(data.category) ? data.category : undefined,
     pattern: data.pattern != null ? String(data.pattern) : undefined,
     indicators: Array.isArray(data.indicators)

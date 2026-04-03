@@ -6,6 +6,15 @@
 - Rule: MISTAKES.md #1 — when a loop body has multiple statements and maintains accumulated state, `for...of` is preferred over `.map()` with side effects
 - Context: `buildUniqueIds` in `confidence.ts` used `.map()` to both mutate a `Map` counter and return transformed values; replaced with `for...of` loop using a local `ids` array
 
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
+- Violation: 테스트 상수 `BARS_FOR_TENKAN`, `BARS_FOR_KIJUN`, `BARS_FOR_SENKOA`, `BARS_FOR_SENKOB`에 `TEST_` 프리픽스 누락
+- Rule: MISTAKES.md #6 Pattern D — 테스트 입력 상수는 `TEST_` 프리픽스 형식을 사용해야 함
+- Context: `ichimoku.test.ts`의 4개 상수를 `TEST_BARS_FOR_TENKAN` 등으로 전면 rename
+
+- Violation: `calculateIchimokuFutureCloud`에 계산 정확도 테스트(accuracy test) 누락
+- Rule: CONVENTIONS.md Required Test Cases — 주기 기반 인디케이터는 첫 번째 값이 명세와 일치하는지 검증하는 accuracy 테스트가 필수
+- Context: `ichimoku.test.ts`에 `future[0].senkouA`가 sourceIndex = bars.length - displacement 기반 tenkan+kijun 평균과 일치하는지 검증하는 테스트 추가
+
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
 - Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
 - Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage
@@ -87,11 +96,6 @@
 - Violation: `expandValueArea`가 `calculateVolumeProfile` 내부 중첩 함수로 선언되어 `rowSize`, `bucketVolumes`, `targetVolume`을 클로저로 암묵적으로 캡처 — 함수 시그니처만으로 동작을 예측 불가
 - Rule: FF.md Predictability 2-C — hidden logic should be exposed; implicit closure dependencies should be explicit parameters
 - Context: `expandValueArea`를 `calculateVolumeProfile` 외부 모듈 레벨 함수로 추출하고 `bucketVolumes`, `rowSize`, `targetVolume`을 명시적 파라미터로 추가하여 독립적으로 테스트 가능한 자기완결 함수로 변경
-
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 7 | 2026-04-03]
-- Violation: VP 색상 상수 `vpPoc`, `vpVah`, `vpVal`이 `components/chart/constants.ts`에 위치하여 domain layer의 `CHART_COLORS`에서 분리됨
-- Rule: ARCHITECTURE.md — 색상 상수는 `domain/constants/colors.ts`의 `CHART_COLORS` 객체 안에 있어야 하며, components layer에서 독립 상수로 선언하면 안 됨
-- Context: `VP_POC_COLOR`, `VP_VAH_COLOR`, `VP_VAL_COLOR`를 `components/chart/constants.ts`에서 제거하고 `domain/constants/colors.ts`의 `CHART_COLORS`에 `vpPoc`, `vpVah`, `vpVal`로 추가; `useVolumeProfileOverlay.ts`를 `CHART_COLORS` import로 변경
 
 ## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `bucketVolumes[i] += bar.volume * ratio` — 로컬 배열이지만 index assignment로 직접 변경
