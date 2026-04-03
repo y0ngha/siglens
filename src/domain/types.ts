@@ -172,6 +172,7 @@ export interface PriceTargets {
 }
 
 export interface PatternSummary {
+    id: string;
     patternName: string;
     skillName: string;
     detected: boolean;
@@ -194,6 +195,7 @@ export interface SkillResult {
 }
 
 export interface CandlePatternSummary {
+    id: string;
     patternName: string;
     detected: boolean;
     trend: Trend;
@@ -226,8 +228,9 @@ export interface AnalyzeVariables {
 
 export type RawAnalysisResponse = Omit<
     AnalysisResponse,
-    'patternSummaries' | 'skillResults'
+    'patternSummaries' | 'skillResults' | 'candlePatterns'
 > & {
-    patternSummaries: Omit<PatternSummary, 'confidenceWeight'>[];
+    patternSummaries: Omit<PatternSummary, 'confidenceWeight' | 'id'>[];
     skillResults: Omit<SkillResult, 'confidenceWeight'>[];
+    candlePatterns: Omit<CandlePatternSummary, 'id'>[];
 };
