@@ -219,29 +219,6 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
     );
 }
 
-type DetectionStatus = 'detected' | 'undetected';
-
-const DETECTED_BADGE_CONFIG: Record<
-    DetectionStatus,
-    { className: string; label: string }
-> = {
-    detected: {
-        className: 'text-chart-bullish text-xs font-medium',
-        label: '감지됨',
-    },
-    undetected: { className: 'text-secondary-500 text-xs', label: '미감지' },
-};
-
-interface DetectedBadgeProps {
-    detected: boolean;
-}
-
-function DetectedBadge({ detected }: DetectedBadgeProps) {
-    const key = detected ? 'detected' : 'undetected';
-    const { className, label } = DETECTED_BADGE_CONFIG[key];
-    return <span className={className}>{label}</span>;
-}
-
 interface PatternAccordionItemProps {
     pattern: PatternSummary;
     isVisible: boolean;
@@ -298,9 +275,6 @@ function PatternAccordionItem({
 
             {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
-                    <div className="mb-2">
-                        <DetectedBadge detected={pattern.detected} />
-                    </div>
                     <p className="text-secondary-400 text-xs leading-relaxed">
                         {pattern.summary}
                     </p>
@@ -342,9 +316,6 @@ function CandlePatternAccordionItem({
 
             {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
-                    <div className="mb-2">
-                        <DetectedBadge detected={pattern.detected} />
-                    </div>
                     <p className="text-secondary-400 text-xs leading-relaxed">
                         {pattern.summary}
                     </p>
@@ -484,7 +455,10 @@ export function AnalysisPanel({
         detectedSkillNames.has(s.skillName)
     );
 
-    const hasCandlePatterns = analysis.candlePatterns.length > 0;
+    const detectedCandlePatterns = analysis.candlePatterns.filter(
+        p => p.detected
+    );
+    const hasCandlePatterns = detectedCandlePatterns.length > 0;
 
     return (
         <div className="bg-secondary-800 flex flex-col gap-4 rounded-lg p-4">
@@ -565,7 +539,7 @@ export function AnalysisPanel({
                         캔들 패턴
                     </span>
                     <div className="flex flex-col gap-1.5">
-                        {analysis.candlePatterns.map(pattern => (
+                        {detectedCandlePatterns.map(pattern => (
                             <CandlePatternAccordionItem
                                 key={pattern.patternName}
                                 pattern={pattern}
