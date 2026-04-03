@@ -773,7 +773,7 @@ interface UseXxxOverlayParams {
 | `useStochasticChart` | 5 | %K / %D + 과매수/과매도선 |
 | `useStochRSIChart` | 6 | K / D + 과매수(0.8)/과매도(0.2)선 |
 | `useCCIChart` | 7 | CCI + 과매수(+100)/과매도(-100)/중앙(0)선 |
-| `useIchimokuOverlay` | 0 | 전환선/기준선/후행스팬 (LineSeries 3개) + 구름대 (AreaSeries 2개) |
+| `useIchimokuOverlay` | 0 | 전환선/기준선/후행스팬/선행스팬A/선행스팬B (LineSeries 5개) + 구름대 (AreaSeries 2개) |
 
 ---
 

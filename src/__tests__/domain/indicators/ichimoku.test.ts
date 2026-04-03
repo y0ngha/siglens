@@ -54,10 +54,9 @@ describe('Ichimoku', () => {
 
         describe('결과 배열 길이', () => {
             it('bars.length와 동일한 길이의 배열을 반환한다', () => {
-                const BAR_COUNT = 100;
-                const bars = makeBars(BAR_COUNT);
+                const bars = makeBars(BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
-                expect(result).toHaveLength(BAR_COUNT);
+                expect(result).toHaveLength(BARS_FOR_KIJUN);
             });
         });
 
@@ -191,8 +190,7 @@ describe('Ichimoku', () => {
             });
 
             it('senkouA 값은 displacement봉 전 tenkan과 kijun의 평균이다', () => {
-                const BAR_COUNT = 100;
-                const bars = makeBars(BAR_COUNT);
+                const bars = makeBars(BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
 
                 const FIRST_VALID =
