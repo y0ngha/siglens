@@ -10,14 +10,15 @@ import type {
     Skill,
 } from '@/domain/types';
 
-const buildPatternIds = (items: { patternName: string }[]): string[] => {
+function buildUniqueIds<T, K extends keyof T>(items: T[], key: K): string[] {
     const counter = new Map<string, number>();
     return items.map(item => {
-        const count = counter.get(item.patternName) ?? 0;
-        counter.set(item.patternName, count + 1);
-        return `${item.patternName}_${count}`;
+        const name = String(item[key]);
+        const count = counter.get(name) ?? 0;
+        counter.set(name, count + 1);
+        return `${name}_${count}`;
     });
-};
+}
 
 export function filterPatterns(patterns: PatternResult[]): PatternResult[] {
     return patterns.filter(p => p.confidenceWeight >= MIN_CONFIDENCE_WEIGHT);
@@ -28,8 +29,15 @@ export function enrichAnalysisWithConfidence(
     skills: Skill[]
 ): AnalysisResponse {
     const skillByName = new Map(skills.map(s => [s.name, s]));
-    const patternSummaryIds = buildPatternIds(analysis.patternSummaries);
-    const candlePatternIds = buildPatternIds(analysis.candlePatterns);
+    const patternSummaryIds = buildUniqueIds(
+        analysis.patternSummaries,
+        'patternName'
+    );
+    const candlePatternIds = buildUniqueIds(
+        analysis.candlePatterns,
+        'patternName'
+    );
+    const skillResultIds = buildUniqueIds(analysis.skillResults, 'skillName');
     return {
         ...analysis,
         patternSummaries: analysis.patternSummaries.map(
@@ -45,8 +53,9 @@ export function enrichAnalysisWithConfidence(
                 };
             }
         ),
-        skillResults: analysis.skillResults.map(r => ({
+        skillResults: analysis.skillResults.map((r, index) => ({
             ...r,
+            id: skillResultIds[index],
             confidenceWeight:
                 skillByName.get(r.skillName)?.confidenceWeight ??
                 UNMATCHED_SKILL_CONFIDENCE_WEIGHT,

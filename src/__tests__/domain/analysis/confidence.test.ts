@@ -228,6 +228,30 @@ describe('confidence', () => {
             });
         });
 
+        describe('skillResults id 부여', () => {
+            it('단일 skillResult에 id가 부여된다', () => {
+                const analysis = makeAnalysisResponse({
+                    skillResults: [
+                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.skillResults[0].id).toBe('RSI 다이버전스_0');
+            });
+
+            it('동일한 skillName이 여러 개일 때 고유한 id를 부여한다', () => {
+                const analysis = makeAnalysisResponse({
+                    skillResults: [
+                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.skillResults[0].id).toBe('RSI 다이버전스_0');
+                expect(result.skillResults[1].id).toBe('RSI 다이버전스_1');
+            });
+        });
+
         describe('skillResults confidenceWeight 채우기', () => {
             it('skillResults에 skillName과 일치하는 skill의 confidenceWeight를 채운다', () => {
                 const analysis = makeAnalysisResponse({

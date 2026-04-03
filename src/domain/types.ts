@@ -188,6 +188,7 @@ export interface PatternResult extends PatternSummary {
 }
 
 export interface SkillResult {
+    id: string;
     skillName: string;
     trend: Trend;
     summary: string;
@@ -231,6 +232,6 @@ export type RawAnalysisResponse = Omit<
     'patternSummaries' | 'skillResults' | 'candlePatterns'
 > & {
     patternSummaries: Omit<PatternSummary, 'confidenceWeight' | 'id'>[];
-    skillResults: Omit<SkillResult, 'confidenceWeight'>[];
+    skillResults: Omit<SkillResult, 'confidenceWeight' | 'id'>[];
     candlePatterns: Omit<CandlePatternSummary, 'id'>[];
 };

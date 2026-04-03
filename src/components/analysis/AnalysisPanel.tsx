@@ -222,7 +222,7 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
 interface PatternAccordionItemProps {
     pattern: PatternSummary;
     isVisible: boolean;
-    onToggleVisibility: (patternName: string) => void;
+    onToggleVisibility: (patternId: string) => void;
 }
 
 function PatternAccordionItem({
@@ -579,10 +579,7 @@ export function AnalysisPanel({
                     </span>
                     <div className="flex flex-col gap-1.5">
                         {detectedSkillResults.map(skill => (
-                            <SkillAccordionItem
-                                key={skill.skillName}
-                                skill={skill}
-                            />
+                            <SkillAccordionItem key={skill.id} skill={skill} />
                         ))}
                     </div>
                 </div>
