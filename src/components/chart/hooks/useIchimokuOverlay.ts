@@ -20,6 +20,69 @@ import type { Bar, IndicatorResult } from '@/domain/types';
 import { calculateIchimokuFutureCloud } from '@/domain/indicators/ichimoku';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
+import type { SeriesPoint } from '@/components/chart/utils/seriesDataUtils';
+import { buildCloudData } from '@/components/chart/utils/ichimokuUtils';
+import type {
+    IchimokuCloudPoint,
+    IchimokuCloudSeriesAccumulator,
+} from '@/components/chart/utils/ichimokuUtils';
+
+interface FutureCloudBase {
+    senkouAData: SeriesPoint[];
+    senkouBData: SeriesPoint[];
+    cloudBullishData: SeriesPoint[];
+    cloudBearishData: SeriesPoint[];
+}
+
+function extendWithFutureCloud(
+    bars: Bar[],
+    futureCloud: ReturnType<typeof buildCloudData>,
+    base: FutureCloudBase
+): IchimokuCloudSeriesAccumulator {
+    const lastTime = bars[bars.length - 1].time;
+    const interval = lastTime - bars[bars.length - 2].time;
+    return futureCloud.reduce(
+        (
+            acc: IchimokuCloudSeriesAccumulator,
+            point: IchimokuCloudPoint,
+            j: number
+        ) => {
+            const time = (lastTime + (j + 1) * interval) as UTCTimestamp;
+            return {
+                finalSenkouA: [
+                    ...acc.finalSenkouA,
+                    point.senkouA !== null
+                        ? { time, value: point.senkouA }
+                        : { time },
+                ],
+                finalSenkouB: [
+                    ...acc.finalSenkouB,
+                    point.senkouB !== null
+                        ? { time, value: point.senkouB }
+                        : { time },
+                ],
+                finalCloudBullish: [
+                    ...acc.finalCloudBullish,
+                    point.cloudBullishUpper !== null
+                        ? { time, value: point.cloudBullishUpper }
+                        : { time },
+                ],
+                finalCloudBearish: [
+                    ...acc.finalCloudBearish,
+                    point.cloudBearishUpper !== null
+                        ? { time, value: point.cloudBearishUpper }
+                        : { time },
+                ],
+            };
+        },
+        {
+            finalSenkouA: base.senkouAData,
+            finalSenkouB: base.senkouBData,
+            finalCloudBullish: base.cloudBullishData,
+            finalCloudBearish: base.cloudBearishData,
+        }
+    );
+}
 
 interface UseIchimokuOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -31,47 +94,6 @@ interface UseIchimokuOverlayParams {
 interface UseIchimokuOverlayReturn {
     isVisible: boolean;
     toggle: () => void;
-}
-
-interface IchimokuCloudPoint {
-    tenkan: number | null;
-    kijun: number | null;
-    senkouA: number | null;
-    senkouB: number | null;
-    cloudBullishUpper: number | null;
-    cloudBearishUpper: number | null;
-    chikou: number | null;
-}
-
-function buildCloudData(
-    ichimoku: {
-        senkouA: number | null;
-        senkouB: number | null;
-        tenkan?: number | null;
-        kijun?: number | null;
-        chikou?: number | null;
-    }[]
-): IchimokuCloudPoint[] {
-    return ichimoku.map(point => {
-        const { senkouA, senkouB } = point;
-        const isBullish =
-            senkouA !== null && senkouB !== null && senkouA >= senkouB;
-        const isBearish =
-            senkouA !== null && senkouB !== null && senkouA < senkouB;
-        const cloudUpper =
-            senkouA !== null && senkouB !== null
-                ? Math.max(senkouA, senkouB)
-                : null;
-        return {
-            tenkan: point.tenkan ?? null,
-            kijun: point.kijun ?? null,
-            senkouA,
-            senkouB,
-            cloudBullishUpper: isBullish ? cloudUpper : null,
-            cloudBearishUpper: isBearish ? cloudUpper : null,
-            chikou: point.chikou ?? null,
-        };
-    });
 }
 
 export function useIchimokuOverlay({
@@ -263,6 +285,12 @@ export function useIchimokuOverlay({
 
         // Append future cloud points projected displacement bars ahead
         const futureCloud = calculateIchimokuFutureCloud(bars);
+        const base: FutureCloudBase = {
+            senkouAData,
+            senkouBData,
+            cloudBullishData,
+            cloudBearishData,
+        };
         const {
             finalSenkouA,
             finalSenkouB,
@@ -270,55 +298,7 @@ export function useIchimokuOverlay({
             finalCloudBearish,
         } =
             bars.length >= 2
-                ? (() => {
-                      const lastTime = bars[bars.length - 1].time;
-                      const interval = lastTime - bars[bars.length - 2].time;
-                      const futureCloudData = buildCloudData(futureCloud);
-                      return futureCloudData.reduce(
-                          (acc, point, j) => {
-                              const time = (lastTime +
-                                  (j + 1) * interval) as UTCTimestamp;
-                              return {
-                                  finalSenkouA: [
-                                      ...acc.finalSenkouA,
-                                      point.senkouA !== null
-                                          ? { time, value: point.senkouA }
-                                          : { time },
-                                  ],
-                                  finalSenkouB: [
-                                      ...acc.finalSenkouB,
-                                      point.senkouB !== null
-                                          ? { time, value: point.senkouB }
-                                          : { time },
-                                  ],
-                                  finalCloudBullish: [
-                                      ...acc.finalCloudBullish,
-                                      point.cloudBullishUpper !== null
-                                          ? {
-                                                time,
-                                                value: point.cloudBullishUpper,
-                                            }
-                                          : { time },
-                                  ],
-                                  finalCloudBearish: [
-                                      ...acc.finalCloudBearish,
-                                      point.cloudBearishUpper !== null
-                                          ? {
-                                                time,
-                                                value: point.cloudBearishUpper,
-                                            }
-                                          : { time },
-                                  ],
-                              };
-                          },
-                          {
-                              finalSenkouA: senkouAData,
-                              finalSenkouB: senkouBData,
-                              finalCloudBullish: cloudBullishData,
-                              finalCloudBearish: cloudBearishData,
-                          }
-                      );
-                  })()
+                ? extendWithFutureCloud(bars, buildCloudData(futureCloud), base)
                 : {
                       finalSenkouA: senkouAData,
                       finalSenkouB: senkouBData,
