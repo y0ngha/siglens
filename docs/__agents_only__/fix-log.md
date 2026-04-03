@@ -1,6 +1,19 @@
 # Fix Log
 
 
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
+- Violation: `buildCloudData`의 `senkouA !== null && senkouB !== null` 조건이 동일 함수 내에서 3회 반복됨
+- Rule: MISTAKES.md #8.5 — 동일 함수 안에서 동일한 값이 2회 이상 조회/계산되면 로컬 const로 추출해야 함
+- Context: `ichimokuUtils.ts`의 `buildCloudData` map callback에서 `hasValues` const로 추출하여 단일 참조로 통합
+
+- Violation: `extendWithFutureCloud`의 두 번째 파라미터 타입이 `ReturnType<typeof buildCloudData>`로 선언되어 실제 타입을 파악하려면 정의를 찾아야 함
+- Rule: FF.md Readability 1-G — 관점 이동을 최소화해야 함; 직접 타입 명시가 독자 부담을 줄임
+- Context: `useIchimokuOverlay.ts`의 `extendWithFutureCloud` 파라미터를 `IchimokuCloudPoint[]`로 명시
+
+- Violation: `IchimokuCloudInput`이 `IchimokuFuturePoint`의 `senkouA`, `senkouB` 필드를 중복 선언
+- Rule: FF.md Cohesion 3-B — 동일한 필드가 두 타입에 중복 정의되면 유지보수 위험; extends 관계로 표현해야 함
+- Context: `ichimokuUtils.ts`의 `IchimokuCloudInput`을 `IchimokuFuturePoint extends`로 변경하여 중복 필드 제거
+
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
 - Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
 - Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage

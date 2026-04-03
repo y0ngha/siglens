@@ -251,17 +251,6 @@ Review before implementation and ensure these are not repeated.
      ✅ import type { VolumeProfileResult } from '@/domain/indicators/volume-profile';
         const result: VolumeProfileResult | null = calculateVolumeProfile(bars);
 
-11.9. Callback parameters missing explicit type annotations
-     → Rule: MISTAKES.md — all callback parameters (map, filter, reduce, forEach, Array.from, etc.) require explicit type annotations
-     → TypeScript inference is unreliable in callbacks; always declare parameter types explicitly
-     → This applies to: Array methods (map, filter, reduce, every, some), Array.from, setTimeout, event listeners
-     ❌ bars.map(bar => bar.close * 2)  // bar type inferred, not declared
-     ✅ bars.map((bar: Bar) => bar.close * 2)  // type declared explicitly
-     ❌ Array.from(prices, price => price * 2)  // price type inferred
-     ✅ Array.from(prices, (price: number) => price * 2)  // type declared explicitly
-     ❌ futureCloudData.reduce((acc, point, j) => { ... }, [])  // types inferred
-     ✅ futureCloudData.reduce((acc: IchimokuCloudSeriesAccumulator, point: IchimokuCloudInput, j: number) => { ... }, [])
-
 12. Implementation and documentation changes not synchronized
     → Rule: CONVENTIONS.md — when implementation changes structure/counts, update docs/DOMAIN.md and docs/DESIGN.md accordingly
     → When new constants are added (colors, dimensions, etc.), verify they are documented in the relevant design docs
