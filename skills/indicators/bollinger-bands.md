@@ -1,7 +1,6 @@
 ---
 name: Bollinger Bands Signal Guide
 description: Bollinger Bands(20,2) signal interpretation guide — squeeze, band walk, breakout, and mean reversion
-type: indicator_guide
 indicators: ['bollinger']
 confidence_weight: 0.85
 ---

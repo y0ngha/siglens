@@ -1,7 +1,6 @@
 ---
 name: CCI Signal Guide
 description: CCI(20) signal interpretation guide — +100/-100 thresholds, zero-line, and trend persistence signals
-type: indicator_guide
 indicators: ['cci']
 confidence_weight: 0.75
 ---

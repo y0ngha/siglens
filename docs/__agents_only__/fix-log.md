@@ -13,11 +13,13 @@
 - Rule: FF.md Readability 1-D — 의미가 불명확한 숫자 리터럴은 이름 있는 상수로 추출해야 함
 - Context: `parseStructuredSummary`의 `sections.length >= 3`을 `MIN_STRUCTURED_SUMMARY_SECTIONS` 상수로 추출
 
-## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
-- Violation: DOMAIN.md의 `calculateIchimokuFutureCloud` 배열 크기 명세가 "항상 displacement"로 기술되어 빈 배열 입력 시 `[]`를 반환하는 실제 구현과 불일치
-- Rule: MISTAKES.md #12 — 구현과 문서 명세는 항상 동기화되어야 함
-- Context: `docs/DOMAIN.md`의 배열 크기 설명을 "bars가 빈 배열인 경우 빈 배열을 반환. 그 외에는 항상 displacement 길이의 배열"로 수정
 
+## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
+- Violation: `.map()` callback with side effect mutating a closure variable (`counter`)
+- Rule: MISTAKES.md #1 — when a loop body has multiple statements and maintains accumulated state, `for...of` is preferred over `.map()` with side effects
+- Context: `buildUniqueIds` in `confidence.ts` used `.map()` to both mutate a `Map` counter and return transformed values; replaced with `for...of` loop using a local `ids` array
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
 - Violation: 테스트 상수 `BARS_FOR_TENKAN`, `BARS_FOR_KIJUN`, `BARS_FOR_SENKOA`, `BARS_FOR_SENKOB`에 `TEST_` 프리픽스 누락
 - Rule: MISTAKES.md #6 Pattern D — 테스트 입력 상수는 `TEST_` 프리픽스 형식을 사용해야 함
 - Context: `ichimoku.test.ts`의 4개 상수를 `TEST_BARS_FOR_TENKAN` 등으로 전면 rename
@@ -45,6 +47,9 @@
 - Rule: MISTAKES.md #1 — `for...of` preferred when loop body is non-trivial or has multiple statements
 - Context: `useIchimokuOverlay.ts` used `futureCloudData.forEach((point, j) => { ... })` with multiple const declarations and conditional branches
 
+- Violation: `.push()` mutation on local arrays returned from `buildSeriesData()`
+- Rule: MISTAKES.md #4 / CONVENTIONS.md immutability — `.push()` is prohibited; spread operator must be used instead
+- Context: `senkouAData.push(...)`, `senkouBData.push(...)`, etc. in `useIchimokuOverlay.ts` mutated arrays after receiving them from `buildSeriesData()`
 
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
@@ -99,12 +104,6 @@
 - Context: `src/domain/indicators/volume-profile.ts` L89에서 `<= 0` 조건을 `=== -1`로 수정하여 볼륨이 0인 버킷 너머에도 확장이 계속되도록 수정
 
 
-## [PR #153 | feat/121/volume-profile-indicator | external review round 2 | 2026-04-02]
-
-- Violation: `map`/`filter`/`reduce`/`every` 콜백 파라미터와 `Array.from` 매핑 콜백에 명시적 타입 어노테이션 누락
-- Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
-- Context: `useVolumeProfileOverlay.ts`의 `bars.map(bar => ...)` 및 `volume-profile.test.ts` 내 `Array.from`, `prices.map`, `result.profile.every/reduce/filter` 콜백 전체에 명시적 타입 추가; `PriceEntry` 타입 alias 추출 및 `VolumeProfileRow` import 추가
-
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
 - Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
 - Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation: smaller value (boundary) on left, larger on right
@@ -114,11 +113,6 @@
 - Violation: `expandValueArea`가 `calculateVolumeProfile` 내부 중첩 함수로 선언되어 `rowSize`, `bucketVolumes`, `targetVolume`을 클로저로 암묵적으로 캡처 — 함수 시그니처만으로 동작을 예측 불가
 - Rule: FF.md Predictability 2-C — hidden logic should be exposed; implicit closure dependencies should be explicit parameters
 - Context: `expandValueArea`를 `calculateVolumeProfile` 외부 모듈 레벨 함수로 추출하고 `bucketVolumes`, `rowSize`, `targetVolume`을 명시적 파라미터로 추가하여 독립적으로 테스트 가능한 자기완결 함수로 변경
-
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 7 | 2026-04-03]
-- Violation: VP 색상 상수 `vpPoc`, `vpVah`, `vpVal`이 `components/chart/constants.ts`에 위치하여 domain layer의 `CHART_COLORS`에서 분리됨
-- Rule: ARCHITECTURE.md — 색상 상수는 `domain/constants/colors.ts`의 `CHART_COLORS` 객체 안에 있어야 하며, components layer에서 독립 상수로 선언하면 안 됨
-- Context: `VP_POC_COLOR`, `VP_VAH_COLOR`, `VP_VAL_COLOR`를 `components/chart/constants.ts`에서 제거하고 `domain/constants/colors.ts`의 `CHART_COLORS`에 `vpPoc`, `vpVah`, `vpVal`로 추가; `useVolumeProfileOverlay.ts`를 `CHART_COLORS` import로 변경
 
 ## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `bucketVolumes[i] += bar.volume * ratio` — 로컬 배열이지만 index assignment로 직접 변경
@@ -142,7 +136,18 @@
 - Context: 두 AreaSeries 방식(cloudUpper + cloudLower masking)을 제거하고, senkouA/B는 LineSeries로, 구름은 `bottomColor: 'transparent'`의 bullish/bearish AreaSeries 2개로 교체하여 하위 차트 데이터를 보존
 
 
-## [feat/124/엘리어트-파동-스킬-구현 | internal review | 2026-04-03]
+## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
+- Violation: `buildPatternIds`가 const 화살표 함수로 선언되어 domain 레이어 함수 선언 관례 위반
+- Rule: domain/CLAUDE.md — Always use `export function` (named function declaration), no arrow function exports or classes; 비공개 헬퍼도 함수 선언식 사용
+- Context: `src/domain/analysis/confidence.ts`의 `buildPatternIds`를 `function buildUniqueIds<T, K extends keyof T>` 제네릭 함수 선언식으로 변경하여 재사용성과 관례 준수 동시 달성
+
+- Violation: `SkillResult`에 `id` 필드 없어 `SkillAccordionItem` 렌더링 시 `skillName` 중복 가능성 및 React key 불안정
+- Rule: 일관성 — `PatternSummary`와 `CandlePatternSummary`에 `id`를 추가한 것과 동일하게 `SkillResult`도 고유 ID 부여 필요
+- Context: `SkillResult`에 `id: string` 추가, `RawAnalysisResponse`에서 `id` Omit, `enrichAnalysisWithConfidence`에서 `buildUniqueIds(skillResults, 'skillName')` 로 ID 생성, `AnalysisPanel.tsx`에서 `key={skill.id}`로 변경
+
+- Violation: `PatternAccordionItemProps.onToggleVisibility` 파라미터명이 `patternName`으로 실제 전달값(패턴 ID)과 불일치
+- Rule: FF.md Readability 1-A — 파라미터명은 실제 전달되는 값의 의미를 반영해야 함
+- Context: `AnalysisPanel.tsx`의 `PatternAccordionItemProps.onToggleVisibility` 파라미터를 `patternName: string`에서 `patternId: string`으로 변경
 
 ## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03] (Round 2 — external review)
 - Violation: `buildAnalysisRequest`의 `strategyInstruction`에 엘리어트 파동 전용 용어("wave assessment", "motive wave", "corrective wave") 하드코딩
