@@ -22,7 +22,7 @@ import { cn } from '@/lib/cn';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
-} from './utils/parseStructuredSummary';
+} from '@/components/analysis/utils/parseStructuredSummary';
 
 const TREND_COLOR: Record<Trend, string> = {
     bullish: 'text-chart-bullish',
