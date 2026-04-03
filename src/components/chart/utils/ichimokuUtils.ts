@@ -1,3 +1,4 @@
+import type { IchimokuFuturePoint } from '@/domain/types';
 import type { SeriesPoint } from '@/components/chart/utils/seriesDataUtils';
 
 export interface IchimokuCloudPoint {
@@ -17,9 +18,7 @@ export interface IchimokuCloudSeriesAccumulator {
     finalCloudBearish: SeriesPoint[];
 }
 
-interface IchimokuCloudInput {
-    senkouA: number | null;
-    senkouB: number | null;
+interface IchimokuCloudInput extends IchimokuFuturePoint {
     tenkan?: number | null;
     kijun?: number | null;
     chikou?: number | null;
@@ -30,14 +29,10 @@ export function buildCloudData(
 ): IchimokuCloudPoint[] {
     return ichimoku.map((point: IchimokuCloudInput) => {
         const { senkouA, senkouB } = point;
-        const isBullish =
-            senkouA !== null && senkouB !== null && senkouA >= senkouB;
-        const isBearish =
-            senkouA !== null && senkouB !== null && senkouA < senkouB;
-        const cloudUpper =
-            senkouA !== null && senkouB !== null
-                ? Math.max(senkouA, senkouB)
-                : null;
+        const hasValues = senkouA !== null && senkouB !== null;
+        const isBullish = hasValues && senkouA >= senkouB;
+        const isBearish = hasValues && senkouA < senkouB;
+        const cloudUpper = hasValues ? Math.max(senkouA, senkouB) : null;
         return {
             tenkan: point.tenkan ?? null,
             kijun: point.kijun ?? null,

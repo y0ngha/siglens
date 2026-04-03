@@ -36,7 +36,7 @@ interface FutureCloudBase {
 
 function extendWithFutureCloud(
     bars: Bar[],
-    futureCloud: ReturnType<typeof buildCloudData>,
+    futureCloud: IchimokuCloudPoint[],
     base: FutureCloudBase
 ): IchimokuCloudSeriesAccumulator {
     const lastTime = bars[bars.length - 1].time;
