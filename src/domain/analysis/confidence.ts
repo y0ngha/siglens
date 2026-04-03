@@ -13,15 +13,17 @@ import type {
 } from '@/domain/types';
 
 function buildUniqueIds<T, K extends keyof T>(items: T[], key: K): string[] {
-    const counter = new Map<string, number>();
-    const ids: string[] = [];
-    for (const item of items) {
-        const name = String(item[key]);
-        const count = counter.get(name) ?? 0;
-        counter.set(name, count + 1);
-        ids.push(`${name}_${count}`);
-    }
-    return ids;
+    return items.reduce<{ ids: string[]; counter: Map<string, number> }>(
+        ({ ids, counter }, item) => {
+            const name = String(item[key]);
+            const count = counter.get(name) ?? 0;
+            return {
+                ids: [...ids, `${name}_${count}`],
+                counter: new Map(counter).set(name, count + 1),
+            };
+        },
+        { ids: [], counter: new Map() }
+    ).ids;
 }
 
 export function filterPatterns(patterns: PatternResult[]): PatternResult[] {
