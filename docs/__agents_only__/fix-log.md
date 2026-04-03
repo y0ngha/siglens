@@ -1,6 +1,9 @@
 # Fix Log
 
-
+## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-03]
+- Violation: `strength` field missing from stage transition signal instruction in `## AI Analysis Instructions`
+- Rule: Domain type contract — `Signal` interface requires `strength: SignalStrength` as a mandatory field; omitting it causes AI to generate incomplete `Signal` objects
+- Context: `skills/strategies/macd-cycle.md` specified `strength` for entry timing signals but omitted it for stage transition signals, creating inconsistency that could produce invalid output
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
 - Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
