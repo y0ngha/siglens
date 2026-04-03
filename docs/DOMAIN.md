@@ -611,6 +611,7 @@ interface PriceTargets {
 
 // 감지된 패턴별 개별 요약 (type='pattern' skill 결과)
 interface PatternSummary {
+    id: string;            // 고유 ID (patternName_index 형식, React key 및 가시성 제어용)
     patternName: string;   // skill의 pattern 식별자 (예: 'double_top')
     skillName: string;     // skill 표시 이름 (예: '이중고점')
     detected: boolean;     // 현재 차트에서 감지 여부
@@ -618,8 +619,18 @@ interface PatternSummary {
     summary: string;       // AI가 작성한 패턴별 요약
 }
 
+// 캔들 패턴별 감지 결과
+interface CandlePatternSummary {
+    id: string;            // 고유 ID (patternName_index 형식, React key용)
+    patternName: string;   // 캔들 패턴 식별자
+    detected: boolean;     // 현재 차트에서 감지 여부
+    trend: Trend;          // 해당 패턴이 시사하는 방향
+    summary: string;       // AI가 작성한 패턴별 요약
+}
+
 // skill별 분석 결과
 interface SkillResult {
+    id: string;            // 고유 ID (skillName_index 형식, React key용)
     skillName: string;     // skill 표시 이름
     trend: Trend;          // 해당 skill 분석이 시사하는 방향
     summary: string;       // AI가 작성한 skill별 요약
@@ -635,6 +646,7 @@ interface AnalysisResponse {
     priceTargets: PriceTargets;     // 강세/약세 시나리오별 가격 목표
     patternSummaries: PatternSummary[]; // 감지된 패턴별 개별 요약 (type='pattern' skill)
     skillResults: SkillResult[];        // skill별 분석 결과 (type!='pattern' skill)
+    candlePatterns: CandlePatternSummary[]; // 캔들 패턴 감지 결과
 }
 ```
 

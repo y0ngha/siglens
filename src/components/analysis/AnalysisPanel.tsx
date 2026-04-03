@@ -222,7 +222,7 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
 interface PatternAccordionItemProps {
     pattern: PatternSummary;
     isVisible: boolean;
-    onToggleVisibility: (patternName: string) => void;
+    onToggleVisibility: (patternId: string) => void;
 }
 
 function PatternAccordionItem({
@@ -237,7 +237,7 @@ function PatternAccordionItem({
     };
 
     const handleToggleVisibility = (): void => {
-        onToggleVisibility(pattern.patternName);
+        onToggleVisibility(pattern.id);
     };
 
     return (
@@ -404,10 +404,7 @@ interface AnalysisPanelProps {
     analysis: AnalysisResponse;
     isAnalyzing?: boolean;
     onReanalyze?: () => void;
-    onPatternVisibilityChange?: (
-        patternName: string,
-        isVisible: boolean
-    ) => void;
+    onPatternVisibilityChange?: (patternId: string, isVisible: boolean) => void;
 }
 
 export function AnalysisPanel({
@@ -420,18 +417,18 @@ export function AnalysisPanel({
         new Set()
     );
 
-    const handleTogglePatternVisibility = (patternName: string): void => {
-        const willBeVisible = !visiblePatterns.has(patternName);
+    const handleTogglePatternVisibility = (patternId: string): void => {
+        const willBeVisible = !visiblePatterns.has(patternId);
         setVisiblePatterns(prev => {
             const next = new Set(prev);
-            if (prev.has(patternName)) {
-                next.delete(patternName);
+            if (prev.has(patternId)) {
+                next.delete(patternId);
             } else {
-                next.add(patternName);
+                next.add(patternId);
             }
             return next;
         });
-        onPatternVisibilityChange?.(patternName, willBeVisible);
+        onPatternVisibilityChange?.(patternId, willBeVisible);
     };
 
     const detectedPatterns = analysis.patternSummaries.filter(p => p.detected);
@@ -541,7 +538,7 @@ export function AnalysisPanel({
                     <div className="flex flex-col gap-1.5">
                         {detectedCandlePatterns.map(pattern => (
                             <CandlePatternAccordionItem
-                                key={pattern.patternName}
+                                key={pattern.id}
                                 pattern={pattern}
                             />
                         ))}
@@ -558,11 +555,9 @@ export function AnalysisPanel({
                     <div className="flex flex-col gap-1.5">
                         {detectedPatterns.map(pattern => (
                             <PatternAccordionItem
-                                key={pattern.patternName}
+                                key={pattern.id}
                                 pattern={pattern}
-                                isVisible={visiblePatterns.has(
-                                    pattern.patternName
-                                )}
+                                isVisible={visiblePatterns.has(pattern.id)}
                                 onToggleVisibility={
                                     handleTogglePatternVisibility
                                 }
@@ -584,10 +579,7 @@ export function AnalysisPanel({
                     </span>
                     <div className="flex flex-col gap-1.5">
                         {detectedSkillResults.map(skill => (
-                            <SkillAccordionItem
-                                key={skill.skillName}
-                                skill={skill}
-                            />
+                            <SkillAccordionItem key={skill.id} skill={skill} />
                         ))}
                     </div>
                 </div>
