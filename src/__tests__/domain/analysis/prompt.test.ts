@@ -12,6 +12,9 @@ import {
     STOCH_RSI_K_PERIOD,
     STOCH_RSI_D_PERIOD,
     CCI_DEFAULT_PERIOD,
+    ICHIMOKU_CONVERSION_PERIOD,
+    ICHIMOKU_BASE_PERIOD,
+    ICHIMOKU_SPAN_B_PERIOD,
 } from '@/domain/indicators/constants';
 import {
     HAMMER_BODY_OFFSET,
@@ -48,6 +51,11 @@ const TEST_CCI_VALUE = 125.5;
 const TEST_VP_POC = 150.0;
 const TEST_VP_VAH = 160.0;
 const TEST_VP_VAL = 140.0;
+const TEST_ICHIMOKU_TENKAN = 152.5;
+const TEST_ICHIMOKU_KIJUN = 148.0;
+const TEST_ICHIMOKU_SENKOU_A = 155.0;
+const TEST_ICHIMOKU_SENKOU_B = 145.0;
+const TEST_ICHIMOKU_CHIKOU = 151.0;
 const TEST_HIGH_CONFIDENCE = HIGH_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_HIGH_CONFIDENCE = 0.9;
 const TEST_MEDIUM_CONFIDENCE = 0.7;
@@ -458,6 +466,58 @@ describe('prompt', () => {
             expect(result).toContain(TEST_VP_POC.toFixed(2));
             expect(result).toContain(TEST_VP_VAH.toFixed(2));
             expect(result).toContain(TEST_VP_VAL.toFixed(2));
+        });
+    });
+
+    describe('지표 섹션 - Ichimoku', () => {
+        it('ichimoku 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ ichimoku: [] }),
+                []
+            );
+            expect(result).toContain(
+                `Ichimoku(${ICHIMOKU_CONVERSION_PERIOD},${ICHIMOKU_BASE_PERIOD},${ICHIMOKU_SPAN_B_PERIOD}): Tenkan N/A`
+            );
+        });
+
+        it('마지막 ichimoku 요소의 모든 필드가 null일 때 N/A를 표시한다', () => {
+            const indicators = makeIndicators({
+                ichimoku: [
+                    {
+                        tenkan: null,
+                        kijun: null,
+                        senkouA: null,
+                        senkouB: null,
+                        chikou: null,
+                    },
+                ],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(
+                `Ichimoku(${ICHIMOKU_CONVERSION_PERIOD},${ICHIMOKU_BASE_PERIOD},${ICHIMOKU_SPAN_B_PERIOD}): Tenkan N/A`
+            );
+        });
+
+        it('ichimoku 값을 포함한다', () => {
+            const indicators = makeIndicators({
+                ichimoku: [
+                    {
+                        tenkan: TEST_ICHIMOKU_TENKAN,
+                        kijun: TEST_ICHIMOKU_KIJUN,
+                        senkouA: TEST_ICHIMOKU_SENKOU_A,
+                        senkouB: TEST_ICHIMOKU_SENKOU_B,
+                        chikou: TEST_ICHIMOKU_CHIKOU,
+                    },
+                ],
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(TEST_ICHIMOKU_TENKAN.toFixed(2));
+            expect(result).toContain(TEST_ICHIMOKU_KIJUN.toFixed(2));
+            expect(result).toContain(TEST_ICHIMOKU_SENKOU_A.toFixed(2));
+            expect(result).toContain(TEST_ICHIMOKU_SENKOU_B.toFixed(2));
+            expect(result).toContain(TEST_ICHIMOKU_CHIKOU.toFixed(2));
         });
     });
 
