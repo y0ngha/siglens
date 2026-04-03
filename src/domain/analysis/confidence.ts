@@ -6,8 +6,10 @@ import type {
     AnalysisResponse,
     CandlePatternSummary,
     PatternResult,
+    PatternSummary,
     RawAnalysisResponse,
     Skill,
+    SkillResult,
 } from '@/domain/types';
 
 function buildUniqueIds<T, K extends keyof T>(items: T[], key: K): string[] {
@@ -43,7 +45,10 @@ export function enrichAnalysisWithConfidence(
     return {
         ...analysis,
         patternSummaries: analysis.patternSummaries.map(
-            (p, index): PatternResult => {
+            (
+                p: Omit<PatternSummary, 'confidenceWeight' | 'id'>,
+                index: number
+            ): PatternResult => {
                 const skill = skillByName.get(p.skillName);
                 return {
                     ...p,
@@ -55,15 +60,23 @@ export function enrichAnalysisWithConfidence(
                 };
             }
         ),
-        skillResults: analysis.skillResults.map((r, index) => ({
-            ...r,
-            id: skillResultIds[index],
-            confidenceWeight:
-                skillByName.get(r.skillName)?.confidenceWeight ??
-                UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
-        })),
+        skillResults: analysis.skillResults.map(
+            (
+                r: Omit<SkillResult, 'confidenceWeight' | 'id'>,
+                index: number
+            ): SkillResult => ({
+                ...r,
+                id: skillResultIds[index],
+                confidenceWeight:
+                    skillByName.get(r.skillName)?.confidenceWeight ??
+                    UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
+            })
+        ),
         candlePatterns: analysis.candlePatterns.map(
-            (p, index): CandlePatternSummary => ({
+            (
+                p: Omit<CandlePatternSummary, 'id'>,
+                index: number
+            ): CandlePatternSummary => ({
                 ...p,
                 id: candlePatternIds[index],
             })
