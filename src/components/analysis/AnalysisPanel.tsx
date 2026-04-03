@@ -19,6 +19,10 @@ import {
     MIN_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
 import { cn } from '@/lib/cn';
+import {
+    parseStructuredSummary,
+    type SkillSummarySection,
+} from './utils/parseStructuredSummary';
 
 const TREND_COLOR: Record<Trend, string> = {
     bullish: 'text-chart-bullish',
@@ -325,22 +329,6 @@ function CandlePatternAccordionItem({
     );
 }
 
-interface SkillSummarySection {
-    label: string;
-    value: string;
-}
-
-function parseStructuredSummary(summary: string): SkillSummarySection[] | null {
-    const sections = summary
-        .split('\n')
-        .filter(line => line.trim() !== '')
-        .flatMap(line => {
-            const match = /^\*\*(.+?)\*\*:\s*(.+)$/.exec(line);
-            return match ? [{ label: match[1], value: match[2] }] : [];
-        });
-    return sections.length >= 3 ? sections : null;
-}
-
 interface StructuredSkillSummaryProps {
     sections: SkillSummarySection[];
 }
@@ -373,6 +361,8 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
         setIsOpen(prev => !prev);
     };
 
+    const sections = parseStructuredSummary(skill.summary);
+
     return (
         <div className="border-secondary-700 overflow-hidden rounded-md border">
             <button
@@ -391,19 +381,13 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
 
             {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
-                    {(() => {
-                        const sections = parseStructuredSummary(skill.summary);
-                        if (sections !== null) {
-                            return (
-                                <StructuredSkillSummary sections={sections} />
-                            );
-                        }
-                        return (
-                            <p className="text-secondary-400 text-xs leading-relaxed">
-                                {skill.summary}
-                            </p>
-                        );
-                    })()}
+                    {sections !== null ? (
+                        <StructuredSkillSummary sections={sections} />
+                    ) : (
+                        <p className="text-secondary-400 text-xs leading-relaxed">
+                            {skill.summary}
+                        </p>
+                    )}
                 </div>
             ) : null}
         </div>

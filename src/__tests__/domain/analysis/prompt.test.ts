@@ -1634,59 +1634,48 @@ describe('prompt', () => {
     });
 
     describe('Skills 섹션 - type이 strategy인 skill일 때', () => {
+        const strategySkill = makeSkill({
+            type: 'strategy',
+            name: '엘리어트 파동',
+        });
+
         it('Strategy Analysis 섹션에 포함된다', () => {
-            const skill = makeSkill({
-                type: 'strategy',
-                name: '엘리어트 파동',
-            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
-                [skill]
+                [strategySkill]
             );
             expect(result).toContain('Strategy Analysis');
             expect(result).toContain('엘리어트 파동');
         });
 
         it('Active Skills 섹션에는 포함되지 않는다', () => {
-            const skill = makeSkill({
-                type: 'strategy',
-                name: '엘리어트 파동',
-            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
-                [skill]
+                [strategySkill]
             );
             expect(result).not.toContain('Active Skills');
         });
 
         it('Pattern Analysis 섹션에는 포함되지 않는다', () => {
-            const skill = makeSkill({
-                type: 'strategy',
-                name: '엘리어트 파동',
-            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
-                [skill]
+                [strategySkill]
             );
             expect(result).not.toContain('Pattern Analysis');
         });
 
         it('strategy skill에 대한 skillResults Writing Rules 지시사항이 생성된다', () => {
-            const skill = makeSkill({
-                type: 'strategy',
-                name: '엘리어트 파동',
-            });
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
-                [skill]
+                [strategySkill]
             );
             expect(result).toContain(
                 'skillResults Writing Rules for Strategy Skills'
