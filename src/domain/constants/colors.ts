@@ -68,6 +68,15 @@ export const CHART_COLORS = {
     vpPoc: '#f59e0b',
     vpVah: '#8b5cf6',
     vpVal: '#34d399',
+
+    // Ichimoku Cloud
+    ichimokuTenkan: '#2962ff',
+    ichimokuKijun: '#e91e63',
+    ichimokuSenkouA: '#26a69a',
+    ichimokuSenkouB: '#ef5350',
+    ichimokuChikou: '#9c27b0',
+    ichimokuCloudBullish: '#26a69a20',
+    ichimokuCloudBearish: '#ef535020',
 } as const;
 
 const PERIOD_COLOR_MAP: Record<number, string> = {

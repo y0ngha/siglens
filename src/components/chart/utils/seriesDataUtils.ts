@@ -1,7 +1,7 @@
 import type { Bar } from '@/domain/types';
 import type { UTCTimestamp } from 'lightweight-charts';
 
-type SeriesPoint =
+export type SeriesPoint =
     | { time: UTCTimestamp; value: number; color?: string }
     | { time: UTCTimestamp };
 

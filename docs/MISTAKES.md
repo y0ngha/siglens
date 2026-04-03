@@ -74,6 +74,8 @@ Review before implementation and ensure these are not repeated.
    ✅ const skill = skillByName.get(p.skillName); ... ; // one call, reused
    ❌ items.map(item => { const val = compute(item); return val || compute(item); })  // compute called twice
    ✅ items.map(item => { const val = compute(item); return val || fallback; })
+   ❌ map callback computing `senkouA !== null && senkouB !== null` check on every element when identical 3+ times in the same function
+   ✅ const hasValues = senkouA !== null && senkouB !== null; then reference hasValues in all places
 
 9. Discarding the callback parameter and re-accessing the same element via external array index
    → Rule: FF.md Readability 1-G — viewpoint shift forces the reader to track two locations simultaneously
@@ -94,6 +96,8 @@ Review before implementation and ensure these are not repeated.
    ✅ const results = data.flatMap(...)  // remove the .filter() that never filters
    ❌ try { ... } catch (e) { logError(e); }  // error is never expected and catch adds confusion
    ✅ Remove the catch block if it doesn't serve error recovery
+   ❌ if (bars.length < period) return null; // then below in map: sma(tpSlice, period) always succeeds so null check is dead code
+   ✅ Remove the early return if the computation that follows guarantees the condition is impossible
 
 9.6. Range condition written with variable on left and boundary on right (e.g. bar.low >= bucketLow)
    → Rule: FF.md 1-F — range conditions must follow mathematical notation: smaller value on left, larger on right
@@ -125,6 +129,15 @@ Review before implementation and ensure these are not repeated.
        <button className={buttonClass(active)}>MA</button>
        <button className={buttonClass(active)}>EMA</button>
        <button className={buttonClass(active)}>BB</button>
+
+11.4. Pure utility functions (non-hook helpers) defined in hook files instead of utils/ subfolder
+    → Rule: CONVENTIONS.md Component Folder Structure — hooks/ contain React hooks only; pure functions belong in utils/
+    → When a pure function (map callback, build function, transform helper) is defined alongside a hook in the same file, move it to utils/
+    → This enables reuse in other files and maintains clear layer separation: hooks call utils, components import from both
+    ❌ useIchimokuOverlay.ts defines buildCloudData (pure function) alongside hook logic
+    ❌ useVolumeProfileOverlay.ts defines extendWithFutureCloud (non-hook helper) and FutureCloudBase type
+    ✅ Extract buildCloudData, extendWithFutureCloud, and related types to src/components/chart/utils/ichimokuUtils.ts
+    ✅ useIchimokuOverlay.ts imports and calls these utils without defining them
 ```
 
 12. Using template literals with inline ternary for conditional classes instead of cn()
@@ -232,15 +245,6 @@ Review before implementation and ensure these are not repeated.
      ❌ type CandlePatternEntry = { patternType: 'single' | 'multi'; barIndex: number; ... }
      ✅ interface CandlePatternEntry { patternType: 'single' | 'multi'; barIndex: number; ... }
 
-11.6. Missing explicit type annotations on callback parameters
-     → Rule: CONVENTIONS.md TypeScript Rules — all parameters must have explicit types
-     → Callback parameters (in map, filter, reduce, sort, forEach) often trigger implicit any errors
-     → Even if callback is simple, declare parameter types explicitly
-     ❌ buildCandlePatternEntries.map(entry => { ... })  // entry has implicit any
-     ✅ buildCandlePatternEntries.map((entry: CandlePatternEntry) => { ... })
-     ❌ entries.sort((a, b) => a.barIndex - b.barIndex)  // a, b have implicit any
-     ✅ entries.sort((a: PromptCandlePatternEntry, b: PromptCandlePatternEntry) => a.barIndex - b.barIndex)
-
 11.7. Unused type imports and missing type imports
      → Rule: TypeScript — imports must match actual usage
      → Type that is declared in import but never used in code triggers TS6196 (unused import)
@@ -260,13 +264,22 @@ Review before implementation and ensure these are not repeated.
      ✅ import type { VolumeProfileResult } from '@/domain/indicators/volume-profile';
         const result: VolumeProfileResult | null = calculateVolumeProfile(bars);
 
-12. Related interfaces with shared fields not linked by extends
+12. Implementation and documentation changes not synchronized
+    → Rule: CONVENTIONS.md — when implementation changes structure/counts, update docs/DOMAIN.md and docs/DESIGN.md accordingly
+    → When new constants are added (colors, dimensions, etc.), verify they are documented in the relevant design docs
+    → When function signatures, return types, or component props change, update DOMAIN.md descriptions immediately
+    ❌ Ichimoku indicator implementation uses 5 LineSeries but DOMAIN.md documents 3
+    ✅ Update DOMAIN.md to reflect actual implementation: 5 series (Tenkan/Kijun/Senkou A/Senkou B/Chikou)
+    ❌ Add new color constants for an indicator but forget to list them in DESIGN.md's indicator color reference
+    ✅ Update DESIGN.md indicator color section immediately after adding colors.ts constants
+
+13. Related interfaces with shared fields not linked by extends
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
     → If interface B contains all fields of interface A plus extras, declare B extends A
     ❌ interface PatternResult { patternName: string; skillName: string; ...; renderConfig: ... }
     ✅ interface PatternResult extends PatternSummary { renderConfig: ... }
 
-13. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
+14. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
     → If a type in layer A is structurally identical to a type in layer B, do not redefine it; import and reuse it
     → If a string array or object must stay in sync with an interface, use Record<keyof Interface, ...> to enforce the relationship at compile time
@@ -504,6 +517,17 @@ Review before implementation and ensure these are not repeated.
    → This prevents visual/text clutter where one bar is annotated with both pattern types
    ❌ buildCandlePatternEntries returns entries where barsAgo=0 has both singlePattern ('hammer') and multiPattern ('bullish_engulfing')
    ✅ Filter out single-candle entries whose barsAgo matches any bar involved in a detected multi-candle pattern
+
+6. Ichimoku Cloud future projection missing or bullish/bearish distinction ignored
+   → Rule: DOMAIN.md Ichimoku Cloud spec — Kumo (cloud) consists of SenkouA/B projected 26 bars forward (displacement)
+   → Bullish cloud (SenkouA >= SenkouB) and bearish cloud (SenkouA < SenkouB) must be rendered with distinct colors
+   → When adding Ichimoku overlay, ensure both conditions are met:
+     1. Future cloud: append displacement (26) additional points beyond the current bar for forward projection
+     2. Cloud color: filter bullish/bearish segments separately and use distinct fill colors for each
+   ❌ calculateIchimoku returns only bars.length data points; no future cloud rendered
+   ❌ Cloud color defined but never applied to bullish/bearish segments; all cloud rendered same color
+   ✅ calculateIchimokuFutureCloud extends results with displacement (26) future points
+   ✅ useIchimokuOverlay separates bullish/bearish AreaSeries with ichimokuCloudBullish/Bearish colors
 ```
 
 ---

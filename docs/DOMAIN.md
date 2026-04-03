@@ -263,6 +263,67 @@ StochRSIResult: { k: number | null; d: number | null }
 반환 타입: (number | null)[]
 ```
 
+### Ichimoku Cloud (일목균형표)
+
+```
+기본 설정: conversionPeriod=9, basePeriod=26, spanBPeriod=52, displacement=26
+
+구성 요소:
+- 전환선 (Tenkan-sen): N기간(9) 최고가+최저가 / 2
+- 기준선 (Kijun-sen): N기간(26) 최고가+최저가 / 2
+- 선행스팬A (Senkou Span A): (전환선 + 기준선) / 2, 26봉 선행 표시
+- 선행스팬B (Senkou Span B): 52기간 최고가+최저가 / 2, 26봉 선행 표시
+- 후행스팬 (Chikou Span): 현재 종가, 26봉 후행 표시
+
+알고리즘:
+- periodMidpoint(bars, endIndex, period) = 해당 기간 (최고가+최저가) / 2
+- tenkan[i] = periodMidpoint(bars, i, 9)
+- kijun[i] = periodMidpoint(bars, i, 26)
+- senkouA[i] = (tenkan[i-26] + kijun[i-26]) / 2  (소스 인덱스 i-26)
+- senkouB[i] = periodMidpoint(bars, i-26, 52)  (소스 인덱스 i-26)
+- chikou[i] = bars[i+26].close
+
+null 조건:
+- tenkan: i < 8 (conversionPeriod - 1)
+- kijun: i < 25 (basePeriod - 1)
+- senkouA: i < 51 (displacement + basePeriod - 1)
+- senkouB: i < 77 (displacement + spanBPeriod - 1)
+- chikou: i > bars.length - displacement - 1
+
+배열 크기: bars.length (기존 지표와 동일)
+
+반환 타입: IchimokuResult[]
+
+IchimokuResult: {
+  tenkan: number | null;
+  kijun: number | null;
+  senkouA: number | null;
+  senkouB: number | null;
+  chikou: number | null;
+}
+
+calculateIchimokuFutureCloud 함수:
+  목적: 현재 시점 이후 displacement개 미래 포인트의 선행스팬A/B 값을 계산
+        (차트에서 구름대를 displacement봉 앞에 투영하기 위해 사용)
+  시그니처: calculateIchimokuFutureCloud(
+    bars: Bar[],
+    conversionPeriod = 9,
+    basePeriod = 26,
+    spanBPeriod = 52,
+    displacement = 26
+  ): IchimokuFuturePoint[]
+
+  반환 타입: IchimokuFuturePoint[]
+  IchimokuFuturePoint: {
+    senkouA: number | null;
+    senkouB: number | null;
+  }
+
+  배열 크기: bars가 빈 배열인 경우 빈 배열을 반환. 그 외에는 항상 displacement (기본값 26) 길이의 배열
+  계산 방식: bars의 마지막 displacement 구간(bars.length - displacement ~ bars.length - 1)에서
+             각 sourceIndex에 대해 senkouA / senkouB 계산
+```
+
 ### Volume Profile
 
 ```
@@ -485,7 +546,7 @@ function buildAnalysisPrompt(
 2. 현재 시장 상황 요약 (현재가, 변화율, 거래량)
 3. 최근 봉 데이터 (최근 30봉) — 각 봉에 캔들 패턴 태깅 + 다봉 패턴 감지
 4. 거래량 분석 (평균 대비 비율)
-5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI, Stochastic, StochRSI, CCI, Volume Profile POC/VAH/VAL)
+5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI, Stochastic, StochRSI, CCI, Volume Profile POC/VAH/VAL, Ichimoku 전환선/기준선/SpanA/SpanB/후행스팬)
 6. 패턴 분석 (type='pattern' skills, confidence >= 0.5)
 7. 활성화된 Skills (type!='pattern' skills, confidence >= 0.5)
 8. 분석 가이드라인 (지지/저항 판단 기준, 가격 목표 산출 기준)
@@ -733,6 +794,7 @@ interface UseXxxOverlayParams {
 | `useStochasticChart` | 5 | %K / %D + 과매수/과매도선 |
 | `useStochRSIChart` | 6 | K / D + 과매수(0.8)/과매도(0.2)선 |
 | `useCCIChart` | 7 | CCI + 과매수(+100)/과매도(-100)/중앙(0)선 |
+| `useIchimokuOverlay` | 0 | 전환선/기준선/후행스팬/선행스팬A/선행스팬B (LineSeries 5개) + 구름대 (AreaSeries 2개) |
 
 ---
 

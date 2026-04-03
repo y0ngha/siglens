@@ -9,6 +9,7 @@ import {
     calculateEMA,
     calculateMA,
     calculateVolumeProfile,
+    calculateIchimoku,
 } from '@/domain/indicators';
 import {
     MA_DEFAULT_PERIODS,
@@ -18,6 +19,7 @@ import {
     MACD_SIGNAL_PERIOD,
     BOLLINGER_DEFAULT_PERIOD,
     DMI_DEFAULT_PERIOD,
+    ICHIMOKU_BASE_PERIOD,
 } from '@/domain/indicators/constants';
 import type { Bar } from '@/domain/types';
 
@@ -89,6 +91,10 @@ describe('calculateIndicators', () => {
         it('volumeProfile이 null을 반환한다', () => {
             expect(calculateIndicators([]).volumeProfile).toBeNull();
         });
+
+        it('ichimoku가 빈 배열을 반환한다', () => {
+            expect(calculateIndicators([]).ichimoku).toEqual([]);
+        });
     });
 
     describe('정상 입력일 때', () => {
@@ -142,6 +148,12 @@ describe('calculateIndicators', () => {
             EMA_DEFAULT_PERIODS.forEach(period => {
                 expect(result.ema[period]).toHaveLength(bars.length);
             });
+        });
+
+        it('ichimoku의 길이가 bars.length와 같다', () => {
+            expect(calculateIndicators(bars).ichimoku).toHaveLength(
+                bars.length
+            );
         });
     });
 
@@ -201,6 +213,15 @@ describe('calculateIndicators', () => {
                 ).toBe(true);
             });
         });
+
+        it('ichimoku의 처음 ICHIMOKU_BASE_PERIOD - 1개의 값은 kijun이 null이다', () => {
+            const { ichimoku } = calculateIndicators(bars);
+            expect(
+                ichimoku
+                    .slice(0, ICHIMOKU_BASE_PERIOD - 1)
+                    .every(v => v.kijun === null)
+            ).toBe(true);
+        });
     });
 
     describe('개별 인디케이터 함수와 결과가 일치할 때', () => {
@@ -246,6 +267,12 @@ describe('calculateIndicators', () => {
         it('volumeProfile이 calculateVolumeProfile 결과와 같다', () => {
             expect(calculateIndicators(bars).volumeProfile).toEqual(
                 calculateVolumeProfile(bars)
+            );
+        });
+
+        it('ichimoku가 calculateIchimoku 결과와 같다', () => {
+            expect(calculateIndicators(bars).ichimoku).toEqual(
+                calculateIchimoku(bars)
             );
         });
     });

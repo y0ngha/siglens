@@ -6,6 +6,47 @@
 - Rule: CONVENTIONS.md — 타입 변경 시 모든 사용 지점(테스트 픽스처 포함)을 함께 업데이트해야 함
 - Context: `src/__tests__/domain/analysis/prompt.test.ts`와 `src/__tests__/infrastructure/market/analysisApi.test.ts`의 `IndicatorResult` 목 객체에 `volumeProfile: null` 필드 누락
 
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
+- Violation: DOMAIN.md의 `calculateIchimokuFutureCloud` 배열 크기 명세가 "항상 displacement"로 기술되어 빈 배열 입력 시 `[]`를 반환하는 실제 구현과 불일치
+- Rule: MISTAKES.md #12 — 구현과 문서 명세는 항상 동기화되어야 함
+- Context: `docs/DOMAIN.md`의 배열 크기 설명을 "bars가 빈 배열인 경우 빈 배열을 반환. 그 외에는 항상 displacement 길이의 배열"로 수정
+
+- Violation: 테스트 상수 `BARS_FOR_TENKAN`, `BARS_FOR_KIJUN`, `BARS_FOR_SENKOA`, `BARS_FOR_SENKOB`에 `TEST_` 프리픽스 누락
+- Rule: MISTAKES.md #6 Pattern D — 테스트 입력 상수는 `TEST_` 프리픽스 형식을 사용해야 함
+- Context: `ichimoku.test.ts`의 4개 상수를 `TEST_BARS_FOR_TENKAN` 등으로 전면 rename
+
+- Violation: `calculateIchimokuFutureCloud`에 계산 정확도 테스트(accuracy test) 누락
+- Rule: CONVENTIONS.md Required Test Cases — 주기 기반 인디케이터는 첫 번째 값이 명세와 일치하는지 검증하는 accuracy 테스트가 필수
+- Context: `ichimoku.test.ts`에 `future[0].senkouA`가 sourceIndex = bars.length - displacement 기반 tenkan+kijun 평균과 일치하는지 검증하는 테스트 추가
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
+- Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
+- Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage
+- Context: `ichimokuUtils.ts` exported `IchimokuCloudInput` but no other file imported it; removing `export` tightens the module boundary
+
+- Violation: IIFE inside ternary expression for complex multi-field computation
+- Rule: FF Readability (1-E) — complex anonymous expressions should be extracted into named helper functions
+- Context: `useIchimokuOverlay.ts` used an IIFE to compute `finalSenkouA/B/CloudBullish/Bearish`; extracted into `extendWithFutureCloud` named function
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 2)
+- Violation: `let` variables reassigned with spread inside a `for...of` loop, producing O(displacement²) allocations
+- Rule: MISTAKES.md #3 — `let` reassignment should be replaced with `const` + new variable; prefer `reduce` for functional accumulation
+- Context: `useIchimokuOverlay.ts` used four `let` variables (`finalSenkouA`, `finalSenkouB`, `finalCloudBullish`, `finalCloudBearish`) spread-reassigned 26 times inside the future cloud loop
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03]
+- Violation: `forEach` with non-trivial body (multiple statements, const declarations, conditionals) used instead of `for...of`
+- Rule: MISTAKES.md #1 — `for...of` preferred when loop body is non-trivial or has multiple statements
+- Context: `useIchimokuOverlay.ts` used `futureCloudData.forEach((point, j) => { ... })` with multiple const declarations and conditional branches
+
+- Violation: `.push()` mutation on local arrays returned from `buildSeriesData()`
+- Rule: MISTAKES.md #4 / CONVENTIONS.md immutability — `.push()` is prohibited; spread operator must be used instead
+- Context: `senkouAData.push(...)`, `senkouBData.push(...)`, etc. in `useIchimokuOverlay.ts` mutated arrays after receiving them from `buildSeriesData()`
+
+## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
+- Violation: `IndicatorResult` 타입에 `volumeProfile` 필드가 추가되었으나 테스트 픽스처에 반영되지 않아 TypeScript 컴파일 에러 발생
+- Rule: CONVENTIONS.md — 타입 변경 시 모든 사용 지점(테스트 픽스처 포함)을 함께 업데이트해야 함
+- Context: `src/__tests__/domain/analysis/prompt.test.ts`와 `src/__tests__/infrastructure/market/analysisApi.test.ts`의 `IndicatorResult` 목 객체에 `volumeProfile: null` 필드 누락
+
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
@@ -41,35 +82,16 @@
 - Violation: `collectMdFiles`에서 entry마다 별도 `stat()` 호출로 I/O 낭비 — 파일 시스템 성능 비효율
 - Rule: CONVENTIONS.md Infrastructure Performance — 불필요한 시스템 콜 제거; `readdir({ withFileTypes: true })`로 `Dirent` 객체를 직접 받아 `stat` 호출 없이 디렉토리 여부 확인 가능
 - Context: `loader.ts`에서 `stat` import 제거, `readdir(dir, { withFileTypes: true })` 사용으로 `entry.isDirectory()`로 분기; 테스트에서 `mockStat` 제거 후 `fileDirent`/`dirDirent` 헬퍼로 교체
-## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `while` 루프 내부에서 `vahIndex += 1`, `valIndex -= 1` index 재할당
-- Rule: MISTAKES.md #1 — while 루프 + index 재할당은 모든 경우에서 금지
-- Context: `expandValueArea` 재귀 함수로 교체하여 state를 immutable하게 전달; 타입 `ValueAreaState`를 파일 최상단으로 추출
-
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `colors.ts`에서 `vpVah`와 `vpVal`이 동일한 색상값 `#8b5cf6`으로 설정되어 차트에서 두 선을 시각적으로 구별 불가
 - Rule: DESIGN.md — VAH와 VAL은 서로 다른 가격 경계를 나타내므로 구별 가능한 색상이 필요
 - Context: `vpVal`을 `#34d399`(mint green)으로 변경하여 `vpVah`(purple)와 시각적으로 구별 가능하게 함
 
-
-
 - Violation: `src/__tests__/domain/analysis/prompt.test.ts`에서 RegExp 패턴 `/\[.+\]/`의 `\]`가 불필요한 이스케이프
 - Rule: ESLint `no-useless-escape` — 정규식 문자 클래스 외부에서 `]`는 이스케이프 불필요
 - Context: lines 767, 1207, 1231, 1243의 4개 RegExp 패턴에서 `\]`를 `]`로 수정
 
-- Violation: `expandValueArea`에서 sentinel 값 `-1`이 3곳(lines 27, 29, 31)에 하드코딩되어 반복 사용
-- Rule: MISTAKES.md #0 — 동일한 리터럴 값은 하나의 named const로 추출해야 한다; FF.md Cohesion 3-B
-- Context: `NO_ADJACENT_BUCKET = -1` 상수를 추출하여 `volume-profile.ts`의 3개 사용 지점 모두 교체
 
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `volume-profile.ts`의 `ValueAreaState`가 `type`으로 선언되어 있어 MISTAKES.md #11.5 위반
-- Rule: MISTAKES.md #11.5 — 객체 형태(object shape)는 `type` 대신 `interface`로 선언
-- Context: `src/domain/indicators/volume-profile.ts`에서 `type ValueAreaState`를 `interface ValueAreaState`로 변경
-
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `prompt.ts`의 `formatIndicatorSection`에서 `indicators.volumeProfile`에 3회 접근 (MISTAKES.md #8.5 위반)
-- Rule: MISTAKES.md #8.5 — 동일한 값이 같은 함수 안에서 2회 이상 조회될 때는 로컬 const로 추출
-- Context: `const vp = indicators.volumeProfile`를 함수 상단 다른 `last*` 변수들과 함께 추출하여 단일 접근으로 변경
 
 
 ## [PR #153 | feat/121/volume-profile-indicator | external review | 2026-04-02]
@@ -79,6 +101,7 @@
 
 
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 2 | 2026-04-02]
+
 - Violation: `map`/`filter`/`reduce`/`every` 콜백 파라미터와 `Array.from` 매핑 콜백에 명시적 타입 어노테이션 누락
 - Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
 - Context: `useVolumeProfileOverlay.ts`의 `bars.map(bar => ...)` 및 `volume-profile.test.ts` 내 `Array.from`, `prices.map`, `result.profile.every/reduce/filter` 콜백 전체에 명시적 타입 추가; `PriceEntry` 타입 alias 추출 및 `VolumeProfileRow` import 추가
@@ -97,6 +120,28 @@
 - Violation: VP 색상 상수 `vpPoc`, `vpVah`, `vpVal`이 `components/chart/constants.ts`에 위치하여 domain layer의 `CHART_COLORS`에서 분리됨
 - Rule: ARCHITECTURE.md — 색상 상수는 `domain/constants/colors.ts`의 `CHART_COLORS` 객체 안에 있어야 하며, components layer에서 독립 상수로 선언하면 안 됨
 - Context: `VP_POC_COLOR`, `VP_VAH_COLOR`, `VP_VAL_COLOR`를 `components/chart/constants.ts`에서 제거하고 `domain/constants/colors.ts`의 `CHART_COLORS`에 `vpPoc`, `vpVah`, `vpVal`로 추가; `useVolumeProfileOverlay.ts`를 `CHART_COLORS` import로 변경
+
+## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
+- Violation: `bucketVolumes[i] += bar.volume * ratio` — 로컬 배열이지만 index assignment로 직접 변경
+- Rule: CONVENTIONS.md — 불변성 원칙; 로컬 스코프 배열이라도 index 기반 mutation 금지
+- Context: `bars.reduce` + `acc.map`으로 교체하여 각 bar의 기여분을 새로운 배열로 accumulate
+
+## [Issue #121 | feat/121/volume-profile-indicator | review fix | 2026-04-02]
+- Violation: `volume-profile.test.ts` line 188에서 "rowSize 미지정 시 VP_DEFAULT_ROW_SIZE 크기의 profile을 반환한다" 테스트가 line 65의 "profile 길이는 기본 rowSize(VP_DEFAULT_ROW_SIZE)와 같다"와 동일한 assertion을 중복으로 검증
+- Rule: Test Layer Rules — 각 `it` 블록은 정확히 하나의 동작을 테스트하며, 중복 테스트는 noise 없는 커버리지를 저해함
+- Context: `기본 파라미터 테스트` describe 블록 전체를 제거하여 중복 제거
+
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | external review | 2026-04-03]
+- Violation: `IchimokuFuturePoint` 타입이 `ichimoku.ts`에 정의되어 다른 indicator 결과 타입들과 위치 불일치
+- Rule: CONVENTIONS.md 타입 일관성 — 모든 indicator 결과 타입은 `domain/types.ts`에 정의되어야 함
+- Context: `IchimokuFuturePoint`를 `domain/types.ts`로 이동; `ichimoku.ts`는 `domain/types`에서 import
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-02]
+- Violation: `useIchimokuOverlay.ts`의 `cloudLowerRef`가 `CHART_COLORS.background`(불투명 배경색)를 fill 색상으로 사용하여 cloudLower 아래의 다른 차트 시리즈(캔들스틱 등)를 덮어버림
+- Rule: FF.md Readability — 차트 기반 데이터를 숨기는 렌더링은 사용자 경험을 해치며 의도하지 않은 side effect임
+- Context: 두 AreaSeries 방식(cloudUpper + cloudLower masking)을 제거하고, senkouA/B는 LineSeries로, 구름은 `bottomColor: 'transparent'`의 bullish/bearish AreaSeries 2개로 교체하여 하위 차트 데이터를 보존
+
 
 ## [feat/indicator-toolbar-collapse | review fix | 2026-04-03]
 - Violation: `useOnClickOutside` 커스텀 훅이 `useState`로 선언된 `openDropdown`과 `setOpenDropdown`보다 뒤에 위치하여 hook 선언 순서 규칙 위반 — `react-hooks/immutability` ESLint 에러 발생
