@@ -44,11 +44,13 @@ export function usePanelResize(): UsePanelResizeResult {
     const handleKeyDown = useCallback((e: React.KeyboardEvent): void => {
         if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
 
+        e.preventDefault();
+
         if (e.key === 'ArrowLeft') {
             setPanelWidth(prev =>
                 Math.max(PANEL_MIN_WIDTH, prev - KEYBOARD_RESIZE_STEP)
             );
-        } else {
+        } else if (e.key === 'ArrowRight') {
             setPanelWidth(prev =>
                 Math.min(PANEL_MAX_WIDTH, prev + KEYBOARD_RESIZE_STEP)
             );
