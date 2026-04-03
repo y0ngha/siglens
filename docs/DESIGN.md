@@ -177,6 +177,18 @@ CCI 중앙선(0)    #94a3b860 (슬레이트 40% 투명도)
 VWAP             #e879f9   (퍼플)
 ```
 
+### Ichimoku Cloud
+
+```
+전환선 (Tenkan)          #2962ff   (블루)
+기준선 (Kijun)           #e91e63   (핑크)
+선행스팬A (Senkou A)     #26a69a   (틸 그린)
+선행스팬B (Senkou B)     #ef5350   (레드)
+후행스팬 (Chikou)        #9c27b0   (퍼플)
+구름 강세 (Cloud Bullish) #26a69a20 (틸 그린 12% 투명도)
+구름 약세 (Cloud Bearish) #ef535020 (레드 12% 투명도)
+```
+
 ---
 
 ## UI Color — 심각도 표시

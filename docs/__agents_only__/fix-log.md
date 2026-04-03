@@ -1,6 +1,32 @@
 # Fix Log
 
 
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 2)
+- Violation: `let` variables reassigned with spread inside a `for...of` loop, producing O(displacement²) allocations
+- Rule: MISTAKES.md #3 — `let` reassignment should be replaced with `const` + new variable; prefer `reduce` for functional accumulation
+- Context: `useIchimokuOverlay.ts` used four `let` variables (`finalSenkouA`, `finalSenkouB`, `finalCloudBullish`, `finalCloudBearish`) spread-reassigned 26 times inside the future cloud loop
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03]
+- Violation: `forEach` with non-trivial body (multiple statements, const declarations, conditionals) used instead of `for...of`
+- Rule: MISTAKES.md #1 — `for...of` preferred when loop body is non-trivial or has multiple statements
+- Context: `useIchimokuOverlay.ts` used `futureCloudData.forEach((point, j) => { ... })` with multiple const declarations and conditional branches
+
+- Violation: `.push()` mutation on local arrays returned from `buildSeriesData()`
+- Rule: MISTAKES.md #4 / CONVENTIONS.md immutability — `.push()` is prohibited; spread operator must be used instead
+- Context: `senkouAData.push(...)`, `senkouBData.push(...)`, etc. in `useIchimokuOverlay.ts` mutated arrays after receiving them from `buildSeriesData()`
+
+- Violation: `bars[bars.length - 1].time` computed twice in the same scope
+- Rule: MISTAKES.md #8.5 — identical expressions computed multiple times should be extracted to a local const
+- Context: `useIchimokuOverlay.ts` computed `bars[bars.length - 1].time` once for `interval` and again for `lastTime` on the next line
+
+- Violation: Test input `makeBars(N)` calls used as bare literals inconsistently across multiple tests
+- Rule: MISTAKES.md #0 — repeated literal values should be extracted to named consts; Pattern D — test inputs with context should be named consts
+- Context: `ichimoku.test.ts` used `makeBars(50)`, `makeBars(100)`, `makeBars(150)`, `makeBars(200)` as anonymous literals while some tests already used `BAR_COUNT = 100`
+
+- Violation: Ichimoku color constants added to `src/domain/constants/colors.ts` without updating `docs/DESIGN.md`
+- Rule: Documentation update rule — when colors are added, `docs/DESIGN.md` indicator color section must be updated
+- Context: 7 Ichimoku color constants were added but the DESIGN.md indicator color reference section had no Ichimoku entry
+
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
 - Violation: `IndicatorResult` 타입에 `volumeProfile` 필드가 추가되었으나 테스트 픽스처에 반영되지 않아 TypeScript 컴파일 에러 발생
 - Rule: CONVENTIONS.md — 타입 변경 시 모든 사용 지점(테스트 픽스처 포함)을 함께 업데이트해야 함
