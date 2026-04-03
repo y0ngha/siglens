@@ -22,10 +22,8 @@ const makeBars = (count: number, startPrice = 100): Bar[] =>
 
 const BARS_FOR_TENKAN = 50;
 const BARS_FOR_KIJUN = 100;
-const BARS_FOR_KIJUN_CHIKOU = 100;
 const BARS_FOR_SENKOA = 150;
 const BARS_FOR_SENKOB = 200;
-const BARS_FOR_FUTURE_CLOUD = 200;
 
 describe('Ichimoku', () => {
     describe('calculateIchimoku', () => {
@@ -155,7 +153,7 @@ describe('Ichimoku', () => {
 
         describe('chikou 후행 처리', () => {
             it('마지막 displacement개의 chikou 값은 null이다', () => {
-                const bars = makeBars(BARS_FOR_KIJUN_CHIKOU);
+                const bars = makeBars(BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
                 expect(
                     result
@@ -165,7 +163,7 @@ describe('Ichimoku', () => {
             });
 
             it('첫 번째 chikou 값은 displacement번째 봉의 종가다', () => {
-                const bars = makeBars(BARS_FOR_KIJUN_CHIKOU);
+                const bars = makeBars(BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
                 expect(result[0].chikou).toBe(
                     bars[ICHIMOKU_DISPLACEMENT].close
@@ -240,7 +238,7 @@ describe('Ichimoku', () => {
 
         describe('커스텀 파라미터', () => {
             it('커스텀 파라미터를 사용하면 기본 파라미터와 다른 결과를 반환한다', () => {
-                const bars = makeBars(100);
+                const bars = makeBars(BARS_FOR_KIJUN);
                 const defaultResult = calculateIchimoku(bars);
                 const customResult = calculateIchimoku(bars, 7, 22, 44, 22);
                 expect(defaultResult[50].tenkan).not.toBe(
@@ -259,7 +257,7 @@ describe('Ichimoku', () => {
 
         describe('결과 배열 길이', () => {
             it('displacement 길이의 배열을 반환한다', () => {
-                const bars = makeBars(BARS_FOR_FUTURE_CLOUD);
+                const bars = makeBars(BARS_FOR_SENKOB);
                 const result = calculateIchimokuFutureCloud(bars);
                 expect(result).toHaveLength(ICHIMOKU_DISPLACEMENT);
             });
@@ -267,7 +265,7 @@ describe('Ichimoku', () => {
 
         describe('미래 선행스팬 값', () => {
             it('bars 데이터가 충분하면 senkouA 값이 null이 아니다', () => {
-                const bars = makeBars(BARS_FOR_FUTURE_CLOUD);
+                const bars = makeBars(BARS_FOR_SENKOB);
                 const result = calculateIchimokuFutureCloud(bars);
                 expect(
                     result[ICHIMOKU_DISPLACEMENT - 1].senkouA
@@ -275,7 +273,7 @@ describe('Ichimoku', () => {
             });
 
             it('bars 데이터가 충분하면 senkouB 값이 null이 아니다', () => {
-                const bars = makeBars(BARS_FOR_FUTURE_CLOUD);
+                const bars = makeBars(BARS_FOR_SENKOB);
                 const result = calculateIchimokuFutureCloud(bars);
                 expect(
                     result[ICHIMOKU_DISPLACEMENT - 1].senkouB
@@ -283,7 +281,7 @@ describe('Ichimoku', () => {
             });
 
             it('미래 선행스팬A는 현재 ichimoku 결과와 연속적이다', () => {
-                const bars = makeBars(BARS_FOR_FUTURE_CLOUD);
+                const bars = makeBars(BARS_FOR_SENKOB);
                 const present = calculateIchimoku(bars);
                 const future = calculateIchimokuFutureCloud(bars);
                 // future[0].senkouA는 sourceIndex = bars.length - displacement를 기반으로 계산됨
