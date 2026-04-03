@@ -63,15 +63,7 @@
 - Rule: MISTAKES.md #0 — 동일한 리터럴 값은 하나의 named const로 추출해야 한다; FF.md Cohesion 3-B
 - Context: `NO_ADJACENT_BUCKET = -1` 상수를 추출하여 `volume-profile.ts`의 3개 사용 지점 모두 교체
 
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `volume-profile.ts`의 `ValueAreaState`가 `type`으로 선언되어 있어 MISTAKES.md #11.5 위반
-- Rule: MISTAKES.md #11.5 — 객체 형태(object shape)는 `type` 대신 `interface`로 선언
-- Context: `src/domain/indicators/volume-profile.ts`에서 `type ValueAreaState`를 `interface ValueAreaState`로 변경
 
-## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `prompt.ts`의 `formatIndicatorSection`에서 `indicators.volumeProfile`에 3회 접근 (MISTAKES.md #8.5 위반)
-- Rule: MISTAKES.md #8.5 — 동일한 값이 같은 함수 안에서 2회 이상 조회될 때는 로컬 const로 추출
-- Context: `const vp = indicators.volumeProfile`를 함수 상단 다른 `last*` 변수들과 함께 추출하여 단일 접근으로 변경
 
 
 ## [PR #153 | feat/121/volume-profile-indicator | external review | 2026-04-02]
@@ -85,15 +77,6 @@
 - Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
 - Context: `useVolumeProfileOverlay.ts`의 `bars.map(bar => ...)` 및 `volume-profile.test.ts` 내 `Array.from`, `prices.map`, `result.profile.every/reduce/filter` 콜백 전체에 명시적 타입 추가; `PriceEntry` 타입 alias 추출 및 `VolumeProfileRow` import 추가
 
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 3 | 2026-04-02]
-- Violation: `VolumeProfileRow` import와 `PriceEntry` 로컬 타입이 TS6196 (declared but never used)으로 컴파일 에러 발생 — TypeScript가 콜백 파라미터 타입을 자동 추론하므로 명시적 어노테이션이 불필요
-- Rule: MISTAKES.md #11.7 — 타입이 import됐지만 TypeScript가 자동 추론하면 불필요한 import를 제거
-- Context: `volume-profile.test.ts`에서 `VolumeProfileRow` import 및 `PriceEntry` 타입 정의 제거; `result.profile.every/reduce/filter` 콜백 파라미터 어노테이션을 TypeScript 추론에 맡기도록 변경
-
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 4 | 2026-04-02]
-- Violation: `const result: VolumeProfileResult | null = calculateVolumeProfile(bars)` 형태로 명시적 타입 어노테이션이 남아 있어 `VolumeProfileResult` import가 불필요하게 유지됨
-- Rule: MISTAKES.md #11.7 — TypeScript가 함수 반환 타입으로 자동 추론할 수 있을 때 명시적 어노테이션은 제거
-- Context: `volume-profile.test.ts`에서 `VolumeProfileResult` import 제거 및 `const result: VolumeProfileResult | null` 어노테이션을 `const result`로 변경하여 TypeScript 추론에 위임
 
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
 - Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
@@ -134,13 +117,4 @@
 - Rule: FF.md Readability — 차트 기반 데이터를 숨기는 렌더링은 사용자 경험을 해치며 의도하지 않은 side effect임
 - Context: 두 AreaSeries 방식(cloudUpper + cloudLower masking)을 제거하고, senkouA/B는 LineSeries로, 구름은 `bottomColor: 'transparent'`의 bullish/bearish AreaSeries 2개로 교체하여 하위 차트 데이터를 보존
 
-## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-02]
-- Violation: `useIchimokuOverlay.ts`에서 `ichimokuCloudBearish` 색상이 정의되어 있으나 사용되지 않음 — senkouA < senkouB인 의운(bearish cloud) 구간에 bearish 색상이 적용되지 않아 Ichimoku 표준 명세 미충족
-- Rule: DOMAIN.md Ichimoku Cloud spec — bullish cloud(senkouA >= senkouB)와 bearish cloud(senkouA < senkouB)는 각각 다른 색상으로 구분되어야 함
-- Context: bullish/bearish 구름 AreaSeries를 분리하고 각 구간에서 null을 사용하여 bullish 구간은 `ichimokuCloudBullish`, bearish 구간은 `ichimokuCloudBearish` 색상 적용
-
-## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-02]
-- Violation: `calculateIchimoku`가 `bars.length`만큼만 결과를 반환하여 차트 우측의 미래 구름(Kumo) 26봉이 표시되지 않음 — Ichimoku 선행스팬 표준 명세 미충족
-- Rule: DOMAIN.md Ichimoku Cloud spec — 선행스팬 A·B는 현재 시점에서 displacement(26)봉 앞으로 투영되어야 함
-- Context: `calculateIchimokuFutureCloud` 함수를 domain에 추출하여 미래 26개 포인트의 senkouA/B를 계산; `useIchimokuOverlay`에서 마지막 두 봉의 interval로 미래 timestamp를 생성하여 senkouA/B 및 bullish/bearish cloud 시리즈에 append
 

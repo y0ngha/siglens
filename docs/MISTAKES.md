@@ -504,6 +504,17 @@ Review before implementation and ensure these are not repeated.
    → This prevents visual/text clutter where one bar is annotated with both pattern types
    ❌ buildCandlePatternEntries returns entries where barsAgo=0 has both singlePattern ('hammer') and multiPattern ('bullish_engulfing')
    ✅ Filter out single-candle entries whose barsAgo matches any bar involved in a detected multi-candle pattern
+
+6. Ichimoku Cloud future projection missing or bullish/bearish distinction ignored
+   → Rule: DOMAIN.md Ichimoku Cloud spec — Kumo (cloud) consists of SenkouA/B projected 26 bars forward (displacement)
+   → Bullish cloud (SenkouA >= SenkouB) and bearish cloud (SenkouA < SenkouB) must be rendered with distinct colors
+   → When adding Ichimoku overlay, ensure both conditions are met:
+     1. Future cloud: append displacement (26) additional points beyond the current bar for forward projection
+     2. Cloud color: filter bullish/bearish segments separately and use distinct fill colors for each
+   ❌ calculateIchimoku returns only bars.length data points; no future cloud rendered
+   ❌ Cloud color defined but never applied to bullish/bearish segments; all cloud rendered same color
+   ✅ calculateIchimokuFutureCloud extends results with displacement (26) future points
+   ✅ useIchimokuOverlay separates bullish/bearish AreaSeries with ichimokuCloudBullish/Bearish colors
 ```
 
 ---
