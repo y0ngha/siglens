@@ -111,11 +111,12 @@ interface Skill { confidenceWeight: number; }
 type SignalStrength = 'strong' | 'moderate' | 'weak';
 interface Signal { strength: SignalStrength; }
 
-// Callback parameter type annotations are optional.
-// TypeScript inference is sufficient in most cases (e.g. Array.map, filter, reduce).
-// Explicit annotations are allowed when they aid clarity, but never required.
-// bars.map(bar => ...)           ✅ inferred — fine
-// bars.map((bar: Bar) => ...)    ✅ explicit — also fine
+// Callback parameter type annotations are required when TypeScript cannot infer
+// the type from context. When the type is already inferred from the surrounding
+// expression, explicit annotations are optional (but allowed for clarity).
+// bars.map(bar => ...)                   ✅ inferred from Bar[] — annotation optional
+// bars.map((bar: Bar) => ...)            ✅ explicit — also fine
+// items.map((p: Omit<T, 'id'>) => ...)  ✅ required — Omit<> not inferrable from context
 
 // ✅ No hardcoded literals — extract to constants
 // ❌ period = 14

@@ -279,14 +279,13 @@ Review before implementation and ensure these are not repeated.
     ❌ interface PatternResult { patternName: string; skillName: string; ...; renderConfig: ... }
     ✅ interface PatternResult extends PatternSummary { renderConfig: ... }
 
-15. Callback parameters without explicit type annotations
-    → Rule: CONVENTIONS.md TypeScript Rules — all parameters must have explicit type annotations
-    → When TypeScript cannot infer the callback parameter type from context alone, the type must be explicitly declared
-    → Inline Omit<...> types are not named type aliases; they do not satisfy the "type alias already in scope" exception
-    → The exception applies only when a named type alias is imported and used directly (e.g. `(p: PatternSummary)`)
-    → Both the element parameter and the index parameter (if used) must have explicit types
-    ❌ analysis.patternSummaries.map((p, index): PatternResult => { ... })  // p type missing
-    ❌ analysis.skillResults.map((r, index) => ({ ... }))                  // r and index types missing
+15. Callback parameter type annotations missing when TypeScript cannot infer from context
+    → Rule: CONVENTIONS.md TypeScript Rules — explicit type annotation is required when TypeScript cannot infer the callback parameter type from context
+    → When the array element type is a plain named type already in scope, TypeScript infers it — annotation is optional
+    → When the element type is a derived type (Omit<...>, Pick<...>, intersection, etc.), TypeScript cannot infer it — annotation is required
+    → The index parameter must also be annotated (`: number`) when it is used alongside a non-inferrable element type
+    ❌ analysis.patternSummaries.map((p, index): PatternResult => { ... })  // p not inferrable — annotation required
+    ❌ analysis.skillResults.map((r, index) => ({ ... }))                  // r not inferrable — annotation required
     ✅ analysis.patternSummaries.map((p: Omit<PatternSummary, 'confidenceWeight' | 'id'>, index: number): PatternResult => { ... })
     ✅ analysis.skillResults.map((r: Omit<SkillResult, 'confidenceWeight' | 'id'>, index: number): SkillResult => ({ ... }))
 
