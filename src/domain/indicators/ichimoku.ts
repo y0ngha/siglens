@@ -1,15 +1,10 @@
-import type { Bar, IchimokuResult } from '@/domain/types';
+import type { Bar, IchimokuResult, IchimokuFuturePoint } from '@/domain/types';
 import {
     ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_BASE_PERIOD,
     ICHIMOKU_SPAN_B_PERIOD,
     ICHIMOKU_DISPLACEMENT,
 } from '@/domain/indicators/constants';
-
-export interface IchimokuFuturePoint {
-    senkouA: number | null;
-    senkouB: number | null;
-}
 
 function periodMidpoint(
     bars: Bar[],

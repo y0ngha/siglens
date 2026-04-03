@@ -63,6 +63,11 @@ export interface IchimokuResult {
     chikou: number | null;
 }
 
+export interface IchimokuFuturePoint {
+    senkouA: number | null;
+    senkouB: number | null;
+}
+
 export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
