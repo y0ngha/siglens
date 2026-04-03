@@ -12,6 +12,8 @@ import {
     STOCH_RSI_K_PERIOD,
     STOCH_RSI_D_PERIOD,
     CCI_DEFAULT_PERIOD,
+    MA_DEFAULT_PERIODS,
+    EMA_DEFAULT_PERIODS,
 } from '@/domain/indicators/constants';
 import {
     HAMMER_BODY_OFFSET,
@@ -58,6 +60,16 @@ const TEST_LOW_CONFIDENCE = 0.3;
 const TEST_MARKET_SECTION_INDEX = 1;
 // expected value: ((110 - 100) / 100) * 100 = 10.00%
 const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT_CLOSE - TEST_PREV_CLOSE) / TEST_PREV_CLOSE) * 100).toFixed(2)}%`;
+
+const TEST_MA_5_VALUE = 152.3;
+const TEST_MA_20_VALUE = 150.25;
+const TEST_MA_60_VALUE = 148.1;
+const TEST_MA_120_VALUE = 145.5;
+const TEST_MA_200_VALUE = 142.8;
+const TEST_EMA_9_VALUE = 151.3;
+const TEST_EMA_20_VALUE = 150.8;
+const TEST_EMA_21_VALUE = 150.75;
+const TEST_EMA_60_VALUE = 148.9;
 
 const makeBar = (i: number, close?: number): Bar => ({
     time: TEST_BAR_BASE_TIME + i * TEST_BAR_INTERVAL,
@@ -457,6 +469,109 @@ describe('prompt', () => {
             expect(result).toContain(TEST_VP_POC.toFixed(2));
             expect(result).toContain(TEST_VP_VAH.toFixed(2));
             expect(result).toContain(TEST_VP_VAL.toFixed(2));
+        });
+    });
+
+    describe('지표 섹션 - MA', () => {
+        it('ma가 빈 객체일 때 모든 기간이 N/A로 표시된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ ma: {} }),
+                []
+            );
+            MA_DEFAULT_PERIODS.forEach(p => {
+                expect(result).toContain(`MA(${p}): N/A`);
+            });
+        });
+
+        it('MA 배열이 전부 null일 때 N/A로 표시된다', () => {
+            const indicators = makeIndicators({
+                ma: {
+                    5: [null, null],
+                    20: [null, null],
+                    60: [null, null],
+                    120: [null, null],
+                    200: [null, null],
+                },
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            MA_DEFAULT_PERIODS.forEach(p => {
+                expect(result).toContain(`MA(${p}): N/A`);
+            });
+        });
+
+        it('각 기간별 MA 값이 프롬프트에 포함된다', () => {
+            const indicators = makeIndicators({
+                ma: {
+                    5: [null, TEST_MA_5_VALUE],
+                    20: [null, TEST_MA_20_VALUE],
+                    60: [null, TEST_MA_60_VALUE],
+                    120: [null, TEST_MA_120_VALUE],
+                    200: [null, TEST_MA_200_VALUE],
+                },
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(`MA(5): ${TEST_MA_5_VALUE.toFixed(2)}`);
+            expect(result).toContain(`MA(20): ${TEST_MA_20_VALUE.toFixed(2)}`);
+            expect(result).toContain(`MA(60): ${TEST_MA_60_VALUE.toFixed(2)}`);
+            expect(result).toContain(
+                `MA(120): ${TEST_MA_120_VALUE.toFixed(2)}`
+            );
+            expect(result).toContain(
+                `MA(200): ${TEST_MA_200_VALUE.toFixed(2)}`
+            );
+        });
+    });
+
+    describe('지표 섹션 - EMA', () => {
+        it('ema가 빈 객체일 때 모든 기간이 N/A로 표시된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ ema: {} }),
+                []
+            );
+            EMA_DEFAULT_PERIODS.forEach(p => {
+                expect(result).toContain(`EMA(${p}): N/A`);
+            });
+        });
+
+        it('EMA 배열이 전부 null일 때 N/A로 표시된다', () => {
+            const indicators = makeIndicators({
+                ema: {
+                    9: [null, null],
+                    20: [null, null],
+                    21: [null, null],
+                    60: [null, null],
+                },
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            EMA_DEFAULT_PERIODS.forEach(p => {
+                expect(result).toContain(`EMA(${p}): N/A`);
+            });
+        });
+
+        it('각 기간별 EMA 값이 프롬프트에 포함된다', () => {
+            const indicators = makeIndicators({
+                ema: {
+                    9: [null, TEST_EMA_9_VALUE],
+                    20: [null, TEST_EMA_20_VALUE],
+                    21: [null, TEST_EMA_21_VALUE],
+                    60: [null, TEST_EMA_60_VALUE],
+                },
+            });
+            const result = buildAnalysisPrompt(TEST_SYMBOL, [], indicators, []);
+            expect(result).toContain(`EMA(9): ${TEST_EMA_9_VALUE.toFixed(2)}`);
+            expect(result).toContain(
+                `EMA(20): ${TEST_EMA_20_VALUE.toFixed(2)}`
+            );
+            expect(result).toContain(
+                `EMA(21): ${TEST_EMA_21_VALUE.toFixed(2)}`
+            );
+            expect(result).toContain(
+                `EMA(60): ${TEST_EMA_60_VALUE.toFixed(2)}`
+            );
         });
     });
 
