@@ -717,6 +717,15 @@ Review before implementation and ensure these are not repeated.
    ✅ Move CANDLE_PATTERN_DETECTION_BARS to candle-detection.ts; prompt.ts imports from there
    ❌ indexA.ts imports { funcA } from indexB.ts and exports it; indexB.ts imports { funcB } from indexA.ts
    ✅ Extract shared definitions to common.ts; both import from common.ts
+
+19. Type field added but test mock objects not updated
+   → Rule: CONVENTIONS.md — when adding a field to a type/interface, all mock objects and fixtures used in tests must include that field
+   → Test fixture objects must remain structurally compatible with the updated type signature
+   → TypeScript compilation errors (TS error code) indicate incomplete fixture updates
+   ❌ Add volumeProfile field to IndicatorResult interface; test fixtures in prompt.test.ts use old IndicatorResult mock without volumeProfile field
+   ✅ Update all IndicatorResult mock objects in test fixtures to include volumeProfile: null (or appropriate test value)
+   ❌ TypeScript compiler error when running tests: "Property 'volumeProfile' is missing in type ... but required in type 'IndicatorResult'"
+   ✅ Compile succeeds after all test fixtures are updated to match the new interface shape
 ```
 
 ---
