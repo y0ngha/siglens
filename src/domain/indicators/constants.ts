@@ -46,7 +46,7 @@ export const CCI_OVERBOUGHT_LEVEL = 100;
 export const CCI_OVERSOLD_LEVEL = -100;
 export const CCI_ZERO_LEVEL = 0;
 
-export const MA_DEFAULT_PERIODS = [20] as const;
+export const MA_DEFAULT_PERIODS = [5, 20, 60, 120, 200] as const;
 export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
 
 export const EMA_SUPPORT_RESISTANCE_SHORT_INDEX = 1; // 20-period EMA
