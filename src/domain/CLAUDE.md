@@ -71,7 +71,7 @@ RSI_DEFAULT_PERIOD = 14
 MACD: fast=12, slow=26, signal=9
 Bollinger: period=20, stdDev=2
 DMI_DEFAULT_PERIOD = 14
-MA_DEFAULT_PERIODS = [20]
+MA_DEFAULT_PERIODS = [5, 20, 60, 120, 200]
 EMA_DEFAULT_PERIODS = [9, 20, 21, 60]
 ```
 
