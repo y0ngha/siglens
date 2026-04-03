@@ -291,7 +291,7 @@ const buildAnalysisRequest = (
                   '- For each strategy skill listed below, include exactly one entry in skillResults.',
                   "- Follow the summary format specified in each strategy skill's ## AI Analysis Instructions section.",
                   '- The summary field must use the structured markdown format with **label**: value lines.',
-                  '- Set the trend field based on the overall wave assessment (bullish if in motive wave, bearish if in corrective, neutral if unclear).',
+                  "- Set the trend field based on each skill's own analysis instructions (bullish/bearish/neutral).",
                   '',
                   'Strategy skill list to analyze:',
                   ...strategySkills.map(s => `- ${s.name}`),
