@@ -1512,4 +1512,124 @@ describe('prompt', () => {
             expect(result).not.toContain('bullish_engulfing');
         });
     });
+
+    describe('Skills 섹션 - type이 indicator_guide인 skill일 때', () => {
+        it('Indicator Signal Guides 섹션에 포함된다', () => {
+            const skill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('Indicator Signal Guides');
+            expect(result).toContain('RSI Signal Guide');
+        });
+
+        it('패턴 분석 섹션에는 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('Pattern Analysis');
+        });
+
+        it('활성화된 Skills 섹션에는 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('Active Skills');
+        });
+
+        it('indicator_guide skill이 없을 때 Indicator Signal Guides 섹션이 포함되지 않는다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).not.toContain('Indicator Signal Guides');
+        });
+
+        it('여러 indicator_guide skill이 모두 Indicator Signal Guides 섹션에 포함된다', () => {
+            const skills = [
+                makeSkill({
+                    type: 'indicator_guide',
+                    name: 'RSI Signal Guide',
+                }),
+                makeSkill({
+                    type: 'indicator_guide',
+                    name: 'MACD Signal Guide',
+                }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                skills
+            );
+            expect(result).toContain('Indicator Signal Guides');
+            expect(result).toContain('RSI Signal Guide');
+            expect(result).toContain('MACD Signal Guide');
+        });
+
+        it('indicator_guide, pattern, regular skill이 각각 해당 섹션에 포함된다', () => {
+            const indicatorGuideSkill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const patternSkill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
+            const regularSkill = makeSkill({
+                type: undefined,
+                name: 'Wyckoff Theory',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [indicatorGuideSkill, patternSkill, regularSkill]
+            );
+            expect(result).toContain('Indicator Signal Guides');
+            expect(result).toContain('RSI Signal Guide');
+            expect(result).toContain('Pattern Analysis');
+            expect(result).toContain('Head and Shoulders');
+            expect(result).toContain('Active Skills');
+            expect(result).toContain('Wyckoff Theory');
+        });
+
+        it('confidenceWeight가 0.5 미만인 indicator_guide skill은 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'indicator_guide',
+                name: 'Low Confidence Guide',
+                confidenceWeight: TEST_BELOW_MIN_CONFIDENCE,
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('Low Confidence Guide');
+            expect(result).not.toContain('Indicator Signal Guides');
+        });
+    });
 });
