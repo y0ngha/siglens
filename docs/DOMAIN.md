@@ -907,6 +907,8 @@ interface SkillDisplay {
     chart: SkillChartDisplay;
 }
 
+type SkillType = 'pattern' | 'indicator_guide';
+
 type SkillCategory =
     | 'reversal_bullish'
     | 'reversal_bearish'
