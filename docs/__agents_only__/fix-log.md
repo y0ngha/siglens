@@ -123,18 +123,6 @@
 - Context: 두 AreaSeries 방식(cloudUpper + cloudLower masking)을 제거하고, senkouA/B는 LineSeries로, 구름은 `bottomColor: 'transparent'`의 bullish/bearish AreaSeries 2개로 교체하여 하위 차트 데이터를 보존
 
 
-## [PR #164 | feat/127/이동평균선-대순환-분석-skill-작성 | 2026-04-03]
-- Violation: `type: indicator_guide`가 frontmatter에 명시되었으나 DOMAIN.md 기준 `type` 필드는 `'pattern'`만 유효한 값으로 정의되어 있음
-- Rule: DOMAIN.md Skill 파일 형식 — `type` 필드에 미정의 값을 사용하면 로더가 `undefined`로 처리하며 코드 가독성을 저해함
-- Context: `skills/strategies/ma-cycle.md` frontmatter에서 `type: indicator_guide` 라인 삭제; 전략/인디케이터 해석 skill은 `type` 필드 생략이 올바른 규칙
-
-- Violation: Overview 섹션에서 "이 두 이동평균선"이라는 표현이 단기/중기/장기 세 가지 이동평균선이 언급된 뒤 등장하여 지칭 대상 모호
-- Rule: FF.md Readability 1-A — 지칭 대상이 명확하지 않은 표현은 문서 독자에게 혼란을 줌
-- Context: `skills/strategies/ma-cycle.md` line 11에서 "이 두 이동평균선"을 "단기선과 기준선(중기 또는 장기)"으로 명확화
-
-- Violation: "섣불리 포지션 금지" 표현이 구체적인 행동 지침으로서 의미 전달 불명확
-- Rule: FF.md Readability — 행동 지침은 구체적인 동작을 명시해야 함
-- Context: `skills/strategies/ma-cycle.md` line 159에서 "포지션 금지"를 "포지션 진입 금지"로 수정
 
 ## [feat/indicator-toolbar-collapse | review fix | 2026-04-03]
 - Violation: `useOnClickOutside` 커스텀 훅이 `useState`로 선언된 `openDropdown`과 `setOpenDropdown`보다 뒤에 위치하여 hook 선언 순서 규칙 위반 — `react-hooks/immutability` ESLint 에러 발생
