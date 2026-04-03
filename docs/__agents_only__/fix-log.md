@@ -1,5 +1,11 @@
 # Fix Log
 
+
+## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
+- Violation: `.map()` callback with side effect mutating a closure variable (`counter`)
+- Rule: MISTAKES.md #1 — when a loop body has multiple statements and maintains accumulated state, `for...of` is preferred over `.map()` with side effects
+- Context: `buildUniqueIds` in `confidence.ts` used `.map()` to both mutate a `Map` counter and return transformed values; replaced with `for...of` loop using a local `ids` array
+
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
 - Violation: 테스트 상수 `BARS_FOR_TENKAN`, `BARS_FOR_KIJUN`, `BARS_FOR_SENKOA`, `BARS_FOR_SENKOB`에 `TEST_` 프리픽스 누락
 - Rule: MISTAKES.md #6 Pattern D — 테스트 입력 상수는 `TEST_` 프리픽스 형식을 사용해야 함
@@ -24,10 +30,6 @@
 - Context: `useIchimokuOverlay.ts` used four `let` variables (`finalSenkouA`, `finalSenkouB`, `finalCloudBullish`, `finalCloudBearish`) spread-reassigned 26 times inside the future cloud loop
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03]
-- Violation: `forEach` with non-trivial body (multiple statements, const declarations, conditionals) used instead of `for...of`
-- Rule: MISTAKES.md #1 — `for...of` preferred when loop body is non-trivial or has multiple statements
-- Context: `useIchimokuOverlay.ts` used `futureCloudData.forEach((point, j) => { ... })` with multiple const declarations and conditional branches
-
 - Violation: `.push()` mutation on local arrays returned from `buildSeriesData()`
 - Rule: MISTAKES.md #4 / CONVENTIONS.md immutability — `.push()` is prohibited; spread operator must be used instead
 - Context: `senkouAData.push(...)`, `senkouBData.push(...)`, etc. in `useIchimokuOverlay.ts` mutated arrays after receiving them from `buildSeriesData()`
@@ -85,12 +87,6 @@
 - Context: `src/domain/indicators/volume-profile.ts` L89에서 `<= 0` 조건을 `=== -1`로 수정하여 볼륨이 0인 버킷 너머에도 확장이 계속되도록 수정
 
 
-## [PR #153 | feat/121/volume-profile-indicator | external review round 2 | 2026-04-02]
-
-- Violation: `map`/`filter`/`reduce`/`every` 콜백 파라미터와 `Array.from` 매핑 콜백에 명시적 타입 어노테이션 누락
-- Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
-- Context: `useVolumeProfileOverlay.ts`의 `bars.map(bar => ...)` 및 `volume-profile.test.ts` 내 `Array.from`, `prices.map`, `result.profile.every/reduce/filter` 콜백 전체에 명시적 타입 추가; `PriceEntry` 타입 alias 추출 및 `VolumeProfileRow` import 추가
-
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
 - Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
 - Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation: smaller value (boundary) on left, larger on right
@@ -123,6 +119,18 @@
 - Context: 두 AreaSeries 방식(cloudUpper + cloudLower masking)을 제거하고, senkouA/B는 LineSeries로, 구름은 `bottomColor: 'transparent'`의 bullish/bearish AreaSeries 2개로 교체하여 하위 차트 데이터를 보존
 
 
+## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
+- Violation: `buildPatternIds`가 const 화살표 함수로 선언되어 domain 레이어 함수 선언 관례 위반
+- Rule: domain/CLAUDE.md — Always use `export function` (named function declaration), no arrow function exports or classes; 비공개 헬퍼도 함수 선언식 사용
+- Context: `src/domain/analysis/confidence.ts`의 `buildPatternIds`를 `function buildUniqueIds<T, K extends keyof T>` 제네릭 함수 선언식으로 변경하여 재사용성과 관례 준수 동시 달성
+
+- Violation: `SkillResult`에 `id` 필드 없어 `SkillAccordionItem` 렌더링 시 `skillName` 중복 가능성 및 React key 불안정
+- Rule: 일관성 — `PatternSummary`와 `CandlePatternSummary`에 `id`를 추가한 것과 동일하게 `SkillResult`도 고유 ID 부여 필요
+- Context: `SkillResult`에 `id: string` 추가, `RawAnalysisResponse`에서 `id` Omit, `enrichAnalysisWithConfidence`에서 `buildUniqueIds(skillResults, 'skillName')` 로 ID 생성, `AnalysisPanel.tsx`에서 `key={skill.id}`로 변경
+
+- Violation: `PatternAccordionItemProps.onToggleVisibility` 파라미터명이 `patternName`으로 실제 전달값(패턴 ID)과 불일치
+- Rule: FF.md Readability 1-A — 파라미터명은 실제 전달되는 값의 의미를 반영해야 함
+- Context: `AnalysisPanel.tsx`의 `PatternAccordionItemProps.onToggleVisibility` 파라미터를 `patternName: string`에서 `patternId: string`으로 변경
 
 ## [feat/indicator-toolbar-collapse | review fix | 2026-04-03]
 - Violation: `useOnClickOutside` 커스텀 훅이 `useState`로 선언된 `openDropdown`과 `setOpenDropdown`보다 뒤에 위치하여 hook 선언 순서 규칙 위반 — `react-hooks/immutability` ESLint 에러 발생

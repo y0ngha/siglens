@@ -9,12 +9,7 @@ import {
     MIN_CONFIDENCE_WEIGHT,
     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
-import type {
-    CandlePatternSummary,
-    PatternResult,
-    Skill,
-    SkillChartDisplay,
-} from '@/domain/types';
+import type { PatternResult, Skill, SkillChartDisplay } from '@/domain/types';
 
 const makeSkillChartDisplay = (
     overrides?: Partial<SkillChartDisplay>
@@ -58,22 +53,13 @@ const makeSkillResult = (
 const makePatternResult = (
     overrides?: Partial<PatternResult>
 ): PatternResult => ({
+    id: '테스트 패턴_0',
     patternName: '테스트 패턴',
     skillName: '테스트 스킬',
     detected: true,
     trend: 'bullish',
     summary: '테스트 요약',
     confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
-    ...overrides,
-});
-
-const makeCandlePatternSummary = (
-    overrides?: Partial<CandlePatternSummary>
-): CandlePatternSummary => ({
-    patternName: 'three_outside_down',
-    detected: true,
-    trend: 'bearish',
-    summary: '캔들 패턴 테스트 요약',
     ...overrides,
 });
 
@@ -132,200 +118,273 @@ describe('confidence', () => {
         });
     });
 
-    describe('patternSummaries confidenceWeight 채우기', () => {
-        it('patternSummaries에 skillName과 일치하는 skill의 confidenceWeight를 채운다', () => {
-            const analysis = makeAnalysisResponse({
-                patternSummaries: [
-                    makePatternSummary({ skillName: '헤드앤숄더' }),
-                ],
+    describe('enrichAnalysisWithConfidence', () => {
+        describe('patternSummaries id 부여', () => {
+            it('단일 패턴에 id가 부여된다', () => {
+                const analysis = makeAnalysisResponse({
+                    patternSummaries: [
+                        makePatternSummary({ patternName: '헤드앤숄더' }),
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.patternSummaries[0].id).toBe('헤드앤숄더_0');
             });
-            const skills = [
-                makeSkill({
-                    name: '헤드앤숄더',
-                    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
-                }),
-            ];
-            const result = enrichAnalysisWithConfidence(analysis, skills);
-            expect(result.patternSummaries[0].confidenceWeight).toBe(
-                HIGH_CONFIDENCE_WEIGHT
-            );
+
+            it('동일한 patternName이 여러 개일 때 고유한 id를 부여한다', () => {
+                const analysis = makeAnalysisResponse({
+                    patternSummaries: [
+                        makePatternSummary({ patternName: '헤드앤숄더' }),
+                        makePatternSummary({ patternName: '헤드앤숄더' }),
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.patternSummaries[0].id).toBe('헤드앤숄더_0');
+                expect(result.patternSummaries[1].id).toBe('헤드앤숄더_1');
+            });
         });
 
-        it('매칭되지 않는 skillName은 confidenceWeight를 0으로 채운다', () => {
-            const analysis = makeAnalysisResponse({
-                patternSummaries: [
-                    makePatternSummary({ skillName: '존재하지않는스킬' }),
-                ],
+        describe('patternSummaries confidenceWeight 채우기', () => {
+            it('patternSummaries에 skillName과 일치하는 skill의 confidenceWeight를 채운다', () => {
+                const analysis = makeAnalysisResponse({
+                    patternSummaries: [
+                        makePatternSummary({ skillName: '헤드앤숄더' }),
+                    ],
+                });
+                const skills = [
+                    makeSkill({
+                        name: '헤드앤숄더',
+                        confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
+                    }),
+                ];
+                const result = enrichAnalysisWithConfidence(analysis, skills);
+                expect(result.patternSummaries[0].confidenceWeight).toBe(
+                    HIGH_CONFIDENCE_WEIGHT
+                );
             });
-            const skills = [
-                makeSkill({
-                    name: '다른스킬',
-                    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
-                }),
-            ];
-            const result = enrichAnalysisWithConfidence(analysis, skills);
-            expect(result.patternSummaries[0].confidenceWeight).toBe(
-                UNMATCHED_SKILL_CONFIDENCE_WEIGHT
-            );
-        });
-    });
 
-    describe('patternSummaries renderConfig 채우기', () => {
-        it('매칭되는 skill의 display.chart가 있을 때 renderConfig에 채운다', () => {
-            const chartDisplay = makeSkillChartDisplay();
-            const analysis = makeAnalysisResponse({
-                patternSummaries: [
-                    makePatternSummary({ skillName: '헤드앤숄더' }),
-                ],
+            it('매칭되지 않는 skillName은 confidenceWeight를 0으로 채운다', () => {
+                const analysis = makeAnalysisResponse({
+                    patternSummaries: [
+                        makePatternSummary({ skillName: '존재하지않는스킬' }),
+                    ],
+                });
+                const skills = [
+                    makeSkill({
+                        name: '다른스킬',
+                        confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
+                    }),
+                ];
+                const result = enrichAnalysisWithConfidence(analysis, skills);
+                expect(result.patternSummaries[0].confidenceWeight).toBe(
+                    UNMATCHED_SKILL_CONFIDENCE_WEIGHT
+                );
             });
-            const skills = [
-                makeSkill({
-                    name: '헤드앤숄더',
-                    display: { chart: chartDisplay },
-                }),
-            ];
-            const result = enrichAnalysisWithConfidence(analysis, skills);
-            expect(result.patternSummaries[0].renderConfig).toEqual(
-                chartDisplay
-            );
-        });
-
-        it('skill에 display 필드가 없을 때 renderConfig는 undefined다', () => {
-            const analysis = makeAnalysisResponse({
-                patternSummaries: [
-                    makePatternSummary({ skillName: '헤드앤숄더' }),
-                ],
-            });
-            const skills = [
-                makeSkill({
-                    name: '헤드앤숄더',
-                    display: undefined,
-                }),
-            ];
-            const result = enrichAnalysisWithConfidence(analysis, skills);
-            expect(result.patternSummaries[0].renderConfig).toBeUndefined();
         });
 
-        it('매칭되는 skill이 없을 때 renderConfig는 undefined다', () => {
-            const analysis = makeAnalysisResponse({
-                patternSummaries: [
-                    makePatternSummary({ skillName: '없는스킬' }),
-                ],
+        describe('patternSummaries renderConfig 채우기', () => {
+            it('매칭되는 skill의 display.chart가 있을 때 renderConfig에 채운다', () => {
+                const chartDisplay = makeSkillChartDisplay();
+                const analysis = makeAnalysisResponse({
+                    patternSummaries: [
+                        makePatternSummary({ skillName: '헤드앤숄더' }),
+                    ],
+                });
+                const skills = [
+                    makeSkill({
+                        name: '헤드앤숄더',
+                        display: { chart: chartDisplay },
+                    }),
+                ];
+                const result = enrichAnalysisWithConfidence(analysis, skills);
+                expect(result.patternSummaries[0].renderConfig).toEqual(
+                    chartDisplay
+                );
             });
-            const result = enrichAnalysisWithConfidence(analysis, []);
-            expect(result.patternSummaries[0].renderConfig).toBeUndefined();
-        });
-    });
 
-    describe('skillResults confidenceWeight 채우기', () => {
-        it('skillResults에 skillName과 일치하는 skill의 confidenceWeight를 채운다', () => {
-            const analysis = makeAnalysisResponse({
-                skillResults: [
-                    makeSkillResult({ skillName: 'RSI 다이버전스' }),
-                ],
+            it('skill에 display 필드가 없을 때 renderConfig는 undefined다', () => {
+                const analysis = makeAnalysisResponse({
+                    patternSummaries: [
+                        makePatternSummary({ skillName: '헤드앤숄더' }),
+                    ],
+                });
+                const skills = [
+                    makeSkill({
+                        name: '헤드앤숄더',
+                        display: undefined,
+                    }),
+                ];
+                const result = enrichAnalysisWithConfidence(analysis, skills);
+                expect(result.patternSummaries[0].renderConfig).toBeUndefined();
             });
-            const skills = [
-                makeSkill({
-                    name: 'RSI 다이버전스',
-                    confidenceWeight: MEDIUM_CONFIDENCE_WEIGHT,
-                }),
-            ];
-            const result = enrichAnalysisWithConfidence(analysis, skills);
-            expect(result.skillResults[0].confidenceWeight).toBe(
-                MEDIUM_CONFIDENCE_WEIGHT
-            );
-        });
 
-        it('매칭되지 않는 skillName은 confidenceWeight를 0으로 채운다', () => {
-            const analysis = makeAnalysisResponse({
-                skillResults: [makeSkillResult({ skillName: '없는스킬' })],
+            it('매칭되는 skill이 없을 때 renderConfig는 undefined다', () => {
+                const analysis = makeAnalysisResponse({
+                    patternSummaries: [
+                        makePatternSummary({ skillName: '없는스킬' }),
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.patternSummaries[0].renderConfig).toBeUndefined();
             });
-            const skills = [
-                makeSkill({
-                    name: '다른스킬',
-                    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
-                }),
-            ];
-            const result = enrichAnalysisWithConfidence(analysis, skills);
-            expect(result.skillResults[0].confidenceWeight).toBe(
-                UNMATCHED_SKILL_CONFIDENCE_WEIGHT
-            );
-        });
-    });
-
-    describe('skills 빈 배열일 때', () => {
-        it('skills가 빈 배열이면 모든 confidenceWeight를 0으로 채운다', () => {
-            const analysis = makeAnalysisResponse({
-                patternSummaries: [
-                    makePatternSummary({ skillName: '헤드앤숄더' }),
-                ],
-                skillResults: [
-                    makeSkillResult({ skillName: 'RSI 다이버전스' }),
-                ],
-            });
-            const result = enrichAnalysisWithConfidence(analysis, []);
-            expect(result.patternSummaries[0].confidenceWeight).toBe(
-                UNMATCHED_SKILL_CONFIDENCE_WEIGHT
-            );
-            expect(result.skillResults[0].confidenceWeight).toBe(
-                UNMATCHED_SKILL_CONFIDENCE_WEIGHT
-            );
-        });
-    });
-
-    describe('candlePatterns 필드 통과', () => {
-        it('candlePatterns가 있을 때 enrichment 후에도 동일하게 유지된다', () => {
-            const candlePattern = makeCandlePatternSummary({
-                patternName: 'morning_star',
-                detected: true,
-                trend: 'bullish',
-                summary: '샛별형 패턴 감지',
-            });
-            const analysis = makeAnalysisResponse({
-                candlePatterns: [candlePattern],
-            });
-            const result = enrichAnalysisWithConfidence(analysis, []);
-            expect(result.candlePatterns).toEqual([candlePattern]);
         });
 
-        it('candlePatterns가 빈 배열일 때 빈 배열을 유지한다', () => {
-            const analysis = makeAnalysisResponse({ candlePatterns: [] });
-            const result = enrichAnalysisWithConfidence(analysis, []);
-            expect(result.candlePatterns).toEqual([]);
-        });
-    });
+        describe('skillResults id 부여', () => {
+            it('단일 skillResult에 id가 부여된다', () => {
+                const analysis = makeAnalysisResponse({
+                    skillResults: [
+                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.skillResults[0].id).toBe('RSI 다이버전스_0');
+            });
 
-    describe('불변성', () => {
-        it('원본 analysis 객체를 변경하지 않는다', () => {
-            const patternSummary = makePatternSummary({
-                skillName: '헤드앤숄더',
+            it('동일한 skillName이 여러 개일 때 고유한 id를 부여한다', () => {
+                const analysis = makeAnalysisResponse({
+                    skillResults: [
+                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.skillResults[0].id).toBe('RSI 다이버전스_0');
+                expect(result.skillResults[1].id).toBe('RSI 다이버전스_1');
             });
-            const analysis = makeAnalysisResponse({
-                patternSummaries: [patternSummary],
-            });
-            const skills = [
-                makeSkill({
-                    name: '헤드앤숄더',
-                    confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
-                }),
-            ];
-            enrichAnalysisWithConfidence(analysis, skills);
-            expect(
-                (patternSummary as { confidenceWeight?: number })
-                    .confidenceWeight
-            ).toBeUndefined();
         });
 
-        it('patternSummaries와 skillResults 외의 필드는 변경하지 않는다', () => {
-            const analysis = makeAnalysisResponse({
-                summary: '원본 요약',
-                trend: 'bearish',
-                riskLevel: 'high',
+        describe('skillResults confidenceWeight 채우기', () => {
+            it('skillResults에 skillName과 일치하는 skill의 confidenceWeight를 채운다', () => {
+                const analysis = makeAnalysisResponse({
+                    skillResults: [
+                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    ],
+                });
+                const skills = [
+                    makeSkill({
+                        name: 'RSI 다이버전스',
+                        confidenceWeight: MEDIUM_CONFIDENCE_WEIGHT,
+                    }),
+                ];
+                const result = enrichAnalysisWithConfidence(analysis, skills);
+                expect(result.skillResults[0].confidenceWeight).toBe(
+                    MEDIUM_CONFIDENCE_WEIGHT
+                );
             });
-            const result = enrichAnalysisWithConfidence(analysis, []);
-            expect(result.summary).toBe('원본 요약');
-            expect(result.trend).toBe('bearish');
-            expect(result.riskLevel).toBe('high');
+
+            it('매칭되지 않는 skillName은 confidenceWeight를 0으로 채운다', () => {
+                const analysis = makeAnalysisResponse({
+                    skillResults: [makeSkillResult({ skillName: '없는스킬' })],
+                });
+                const skills = [
+                    makeSkill({
+                        name: '다른스킬',
+                        confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
+                    }),
+                ];
+                const result = enrichAnalysisWithConfidence(analysis, skills);
+                expect(result.skillResults[0].confidenceWeight).toBe(
+                    UNMATCHED_SKILL_CONFIDENCE_WEIGHT
+                );
+            });
         });
-    });
+
+        describe('skills 빈 배열일 때', () => {
+            it('skills가 빈 배열이면 모든 confidenceWeight를 0으로 채운다', () => {
+                const analysis = makeAnalysisResponse({
+                    patternSummaries: [
+                        makePatternSummary({ skillName: '헤드앤숄더' }),
+                    ],
+                    skillResults: [
+                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.patternSummaries[0].confidenceWeight).toBe(
+                    UNMATCHED_SKILL_CONFIDENCE_WEIGHT
+                );
+                expect(result.skillResults[0].confidenceWeight).toBe(
+                    UNMATCHED_SKILL_CONFIDENCE_WEIGHT
+                );
+            });
+        });
+
+        describe('candlePatterns id 부여', () => {
+            it('candlePatterns에 id가 부여된다', () => {
+                const analysis = makeAnalysisResponse({
+                    candlePatterns: [
+                        {
+                            patternName: 'morning_star',
+                            detected: true,
+                            trend: 'bullish',
+                            summary: '샛별형 패턴 감지',
+                        },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.candlePatterns[0].id).toBe('morning_star_0');
+            });
+
+            it('동일한 patternName이 여러 개일 때 고유한 id를 부여한다', () => {
+                const analysis = makeAnalysisResponse({
+                    candlePatterns: [
+                        {
+                            patternName: 'three_inside_up',
+                            detected: true,
+                            trend: 'bullish',
+                            summary: '첫 번째 패턴',
+                        },
+                        {
+                            patternName: 'three_inside_up',
+                            detected: true,
+                            trend: 'bullish',
+                            summary: '두 번째 패턴',
+                        },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.candlePatterns[0].id).toBe('three_inside_up_0');
+                expect(result.candlePatterns[1].id).toBe('three_inside_up_1');
+            });
+
+            it('candlePatterns가 빈 배열일 때 빈 배열을 유지한다', () => {
+                const analysis = makeAnalysisResponse({ candlePatterns: [] });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.candlePatterns).toEqual([]);
+            });
+        });
+
+        describe('불변성', () => {
+            it('원본 analysis 객체를 변경하지 않는다', () => {
+                const patternSummary = makePatternSummary({
+                    skillName: '헤드앤숄더',
+                });
+                const analysis = makeAnalysisResponse({
+                    patternSummaries: [patternSummary],
+                });
+                const skills = [
+                    makeSkill({
+                        name: '헤드앤숄더',
+                        confidenceWeight: HIGH_CONFIDENCE_WEIGHT,
+                    }),
+                ];
+                enrichAnalysisWithConfidence(analysis, skills);
+                expect(
+                    (patternSummary as { confidenceWeight?: number })
+                        .confidenceWeight
+                ).toBeUndefined();
+            });
+
+            it('patternSummaries와 skillResults 외의 필드는 변경하지 않는다', () => {
+                const analysis = makeAnalysisResponse({
+                    summary: '원본 요약',
+                    trend: 'bearish',
+                    riskLevel: 'high',
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.summary).toBe('원본 요약');
+                expect(result.trend).toBe('bearish');
+                expect(result.riskLevel).toBe('high');
+            });
+        });
+    }); // enrichAnalysisWithConfidence
 });

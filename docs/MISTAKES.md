@@ -273,13 +273,23 @@ Review before implementation and ensure these are not repeated.
     ❌ Add new color constants for an indicator but forget to list them in DESIGN.md's indicator color reference
     ✅ Update DESIGN.md indicator color section immediately after adding colors.ts constants
 
-13. Related interfaces with shared fields not linked by extends
+14. Related interfaces with shared fields not linked by extends
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
     → If interface B contains all fields of interface A plus extras, declare B extends A
     ❌ interface PatternResult { patternName: string; skillName: string; ...; renderConfig: ... }
     ✅ interface PatternResult extends PatternSummary { renderConfig: ... }
 
-14. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
+15. Callback parameter type annotations missing when TypeScript cannot infer from context
+    → Rule: CONVENTIONS.md TypeScript Rules — explicit type annotation is required when TypeScript cannot infer the callback parameter type from context
+    → When the array element type is a plain named type already in scope, TypeScript infers it — annotation is optional
+    → When the element type is a derived type (Omit<...>, Pick<...>, intersection, etc.), TypeScript cannot infer it — annotation is required
+    → The index parameter must also be annotated (`: number`) when it is used alongside a non-inferrable element type
+    ❌ analysis.patternSummaries.map((p, index): PatternResult => { ... })  // p not inferrable — annotation required
+    ❌ analysis.skillResults.map((r, index) => ({ ... }))                  // r not inferrable — annotation required
+    ✅ analysis.patternSummaries.map((p: Omit<PatternSummary, 'confidenceWeight' | 'id'>, index: number): PatternResult => { ... })
+    ✅ analysis.skillResults.map((r: Omit<SkillResult, 'confidenceWeight' | 'id'>, index: number): SkillResult => ({ ... }))
+
+16. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
     → If a type in layer A is structurally identical to a type in layer B, do not redefine it; import and reuse it
     → If a string array or object must stay in sync with an interface, use Record<keyof Interface, ...> to enforce the relationship at compile time
@@ -318,17 +328,17 @@ Review before implementation and ensure these are not repeated.
    ❌ type PropsType = {...}; function Helper() {...} function MyComponent(props: PropsType) {...}  // Helper interrupts the Props-Component relationship
    ✅ function Helper() {...}; type PropsType = {...}; function MyComponent(props: PropsType) {...}  // Props immediately precedes component
 
-3. Managing timeframe as a URL query parameter
+4. Managing timeframe as a URL query parameter
    → Manage as client state only
 
-4. Using new Date() directly in a Server Component
+5. Using new Date() directly in a Server Component
    → Server renders at request time; client hydrates later — year/time can mismatch
    → Extract into a 'use client' component (e.g. <CurrentYear />) so the value is
      always read on the client, or add suppressHydrationWarning to the wrapper element
    ❌ (RSC) <span>{new Date().getFullYear()}</span>
    ✅ (client component) export default function CurrentYear() { return <>{new Date().getFullYear()}</>; }
 
-5. Calling side effects inside setState updater functions
+6. Calling side effects inside setState updater functions
    → Updaters run twice in React Strict Mode; side effects must be placed outside the updater
    → Rule: FF.md Predictability 2-C — updater functions must be pure
    ❌ setVisiblePatterns(prev => { onCallback?.(); return next; })
@@ -336,14 +346,14 @@ Review before implementation and ensure these are not repeated.
       setVisiblePatterns(prev => { ... return next; });
       onCallback?.(willBeVisible);
 
-6. Reading stale closure state instead of using functional setState
+7. Reading stale closure state instead of using functional setState
    → Deriving next state from a closed-over variable risks stale state on rapid updates
    → Rule: Vercel React Best Practices — rerender-functional-setstate
    → Also ensure willBeVisible / derived values are computed before the setState call
    ❌ const next = new Set(visiblePatterns); setVisiblePatterns(next);
    ✅ setVisiblePatterns(prev => { const next = new Set(prev); ...; return next; });
 
-7. Nesting interactive elements (button-in-button / interactive-in-interactive)
+8. Nesting interactive elements (button-in-button / interactive-in-interactive)
    → HTML spec: interactive content cannot be placed inside <button>
    → WAI-ARIA: an element with an interactive role cannot contain other interactive elements
    → Browser auto-corrects the DOM, causing unexpected event behavior
@@ -353,7 +363,7 @@ Review before implementation and ensure these are not repeated.
    ❌ <div role="button" onClick={handleToggle}><button onClick={handleEye}>...</button></div>
    ✅ <div className="flex"><button onClick={handleToggle}>...</button><button onClick={handleEye}>...</button></div>
 
-8. External callback prop in useEffect dependency array causes infinite loops
+9. External callback prop in useEffect dependency array causes infinite loops
    → useEffectEvent is required to prevent re-execution when callback reference changes
    → Rule: FF.md Predictability 2-C — hidden behavior (infinite loop on callback change) must be explicit
    → Rule: CONVENTIONS.md Custom Hook Rules — callback props must be wrapped in useEffectEvent
@@ -365,7 +375,7 @@ Review before implementation and ensure these are not repeated.
          useEffect(() => { notifyPatternOverlay(...); }, [visiblePatterns]); // callback excluded
       };
 
-9. useState lazy initializer derives value from props
+10. useState lazy initializer derives value from props
    → Initializer only runs once; prop changes are not reflected in state
    → Use useEffect to synchronize state when prop-derived initial values are needed
    → Rule: FF.md Predictability 2-C — state should match props after prop update
@@ -377,7 +387,7 @@ Review before implementation and ensure these are not repeated.
       }, [props.items]);
       // or use useReducer with dispatch({ type: 'reset', payload: newItems })
 
-10. Missing aria-expanded attribute on accordion triggers
+11. Missing aria-expanded attribute on accordion triggers
     → Accordion toggle elements (role="button" or <button>) must declare aria-expanded when managing hidden content
     → Rule: ARIA spec — interactive controls that toggle visibility must expose state to screen readers
     → Applies to both custom div[role="button"] and native <button> accordion triggers
@@ -386,7 +396,7 @@ Review before implementation and ensure these are not repeated.
     ❌ <button onClick={toggle}>Trigger</button><div className={isOpen ? '' : 'hidden'}>Content</div>
     ✅ <button onClick={toggle} aria-expanded={isOpen}>Trigger</button><div hidden={!isOpen}>Content</div>
 
-11. Component managing its own external margin or parent depending on child's internal layout
+12. Component managing its own external margin or parent depending on child's internal layout
     → Components must not hardcode their own external margins (margin, mb-2, etc.)
     → Parents must not depend on children's internal structure or layout direction
     → Rule: DESIGN.md — each component is responsible for its own internal layout; external spacing belongs to the caller
@@ -397,7 +407,7 @@ Review before implementation and ensure these are not repeated.
     ✅ export function ChartContent() { return <div className="flex-col md:flex-row">...</div>; }  // child owns its layout
        <SymbolPageClient />  // caller adds margin as needed
 
-11.5. Unused Tailwind classes (dead CSS)
+12.5. Unused Tailwind classes (dead CSS)
     → Remove classes that have no effect in the current DOM context
     → Rule: CONVENTIONS.md — unnecessary classes clutter code and reduce readability
     → grid classes (col-span-2, grid-cols-3, etc.) have no effect on flex containers
@@ -405,7 +415,7 @@ Review before implementation and ensure these are not repeated.
     ❌ <div className="flex flex-col"><div className="col-span-2">Content</div></div>  // col-span-2 has no effect on flex
     ✅ <div className="flex flex-col"><div>Content</div></div>  // remove grid-specific classes from flex children
 
-11.6. Repeated cursor/interaction styling classes across components
+12.6. Repeated cursor/interaction styling classes across components
     → Extract repeated cursor and interaction patterns to global styles
     → Rule: CONVENTIONS.md — repeated patterns must be globalized (AHA principle: 2+ repetitions = extract)
     → Rule: FF.md Cohesion 3-B — same styling logic defined in multiple places creates maintenance burden
@@ -415,7 +425,7 @@ Review before implementation and ensure these are not repeated.
     ✅ (globals.css) @layer base { button { @apply cursor-pointer disabled:cursor-not-allowed; } }
        Remove cursor-pointer from individual components
 
-12. Repeating identical JSX structure across multiple render blocks
+13. Repeating identical JSX structure across multiple render blocks
     → Rule: FF.md Readability 1-A — identical JSX repeated 2+ times should be data-driven
     → Extract to a data array + .map() pattern instead of hardcoding duplicates
     → Rule: FF.md Cohesion 3-B — related JSX structures belong in single rendering logic
@@ -425,7 +435,7 @@ Review before implementation and ensure these are not repeated.
     ✅ const dropdowns = [configA, configB, configC];
        {dropdowns.map(config => <div key={config.id}>{config.visible && <Dropdown config={config} />}</div>)}
 
-13. Implementing DOM event listener logic directly in useEffect instead of extracting to custom hook
+14. Implementing DOM event listener logic directly in useEffect instead of extracting to custom hook
     → Rule: FF.md Cohesion 3-A — reusable patterns must be extracted to custom hooks
     → Rule: CONVENTIONS.md Custom Hook Rules — event listener patterns (click outside, escape key, etc.) must be custom hooks
     → useOnClickOutside, useEscapeKey, etc. are common abstractions that belong in hooks/
@@ -443,7 +453,7 @@ Review before implementation and ensure these are not repeated.
        };
        // Usage: useOnClickOutside(ref, onClose);
 
-14. Inline styles used for dynamic runtime values without CSS custom properties
+15. Inline styles used for dynamic runtime values without CSS custom properties
     → Rule: DESIGN.md and CONVENTIONS.md — inline styles are prohibited unless for dynamic domain values impossible to express in Tailwind
     → For runtime-determined pixel values or chart colors (CHART_COLORS), use CSS custom properties with Tailwind arbitrary-value syntax
     → Always add a comment explaining why the exception is necessary
@@ -451,7 +461,7 @@ Review before implementation and ensure these are not repeated.
     ✅ <aside style={{ '--panel-width': `${panelWidth}px` } as React.CSSProperties} className="md:w-[var(--panel-width)]">
        // width is runtime-determined from drag state, cannot be expressed as static Tailwind class
 
-15. Custom hook hook declaration order violation in component files
+16. Custom hook hook declaration order violation in component files
     → Rule: CONVENTIONS.md Custom Hook Declaration Order — hooks must be called in this order:
        1. useState / useReducer
        2. useRef
@@ -465,7 +475,7 @@ Review before implementation and ensure these are not repeated.
     ❌ const state = useState(...); const handler = useCallback(...); useDragListener(...); useEffect(...)  // listener hook order wrong
     ✅ const state = useState(...); useDragListener(...); const handler = useCallback(...); useEffect(...)  // listener hook before useCallback
 
-15.5. Custom hook params missing optional properties that are used in composition
+16.5. Custom hook params missing optional properties that are used in composition
      → Rule: CONVENTIONS.md Custom Hook Rules — all overlay and chart interaction hooks must accept consistent parameter patterns
      → When multiple hooks in the same family (e.g. overlay hooks: useMAOverlay, useBollingerOverlay, useVolumeProfileOverlay)
        accept the same optional parameters (e.g. lineWidth), all hooks must declare the parameter in their interface
