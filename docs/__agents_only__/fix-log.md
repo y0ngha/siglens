@@ -132,6 +132,11 @@
 - Context: 두 AreaSeries 방식(cloudUpper + cloudLower masking)을 제거하고, senkouA/B는 LineSeries로, 구름은 `bottomColor: 'transparent'`의 bullish/bearish AreaSeries 2개로 교체하여 하위 차트 데이터를 보존
 
 
+## [feat/124/엘리어트-파동-스킬-구현 | internal review | 2026-04-03]
+- Violation: `parseStructuredSummary`에서 mutable local array에 `.push()`로 결과 누적
+- Rule: CONVENTIONS.md — 직접 mutation 금지; `.push()` 대신 spread 또는 `flatMap` 사용
+- Context: `AnalysisPanel.tsx`의 `parseStructuredSummary` 내 `for...of` + `.push()` 패턴을 `flatMap`으로 교체하여 불변 방식으로 변경
+
 ## [feat/indicator-toolbar-collapse | review fix | 2026-04-03]
 - Violation: `useOnClickOutside` 커스텀 훅이 `useState`로 선언된 `openDropdown`과 `setOpenDropdown`보다 뒤에 위치하여 hook 선언 순서 규칙 위반 — `react-hooks/immutability` ESLint 에러 발생
 - Rule: components/CLAUDE.md Hook 선언 순서 — External hooks → State (useState) → Derived (useMemo) → Callbacks → Effects → Return; 단, 커스텀 훅이 state 변수를 참조할 경우 state 선언이 커스텀 훅 앞에 와야 함 (TDZ 회피)
