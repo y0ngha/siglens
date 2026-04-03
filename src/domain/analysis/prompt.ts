@@ -263,7 +263,10 @@ const ANALYSIS_GUIDELINES = [
 const RESPONSE_LANGUAGE_INSTRUCTION =
     'IMPORTANT: All text field values in the JSON response (summary, description, reason, basis, condition, etc.) must be written in Korean (한국어). Do not use English for any response content.';
 
-const buildAnalysisRequest = (patternSkills: Skill[]): string => {
+const buildAnalysisRequest = (
+    patternSkills: Skill[],
+    strategySkills: Skill[]
+): string => {
     const patternListInstruction =
         patternSkills.length > 0
             ? [
@@ -280,12 +283,28 @@ const buildAnalysisRequest = (patternSkills: Skill[]): string => {
               ].join('\n')
             : '';
 
+    const strategyInstruction =
+        strategySkills.length > 0
+            ? [
+                  '',
+                  '### skillResults Writing Rules for Strategy Skills',
+                  '- For each strategy skill listed below, include exactly one entry in skillResults.',
+                  "- Follow the summary format specified in each strategy skill's ## AI Analysis Instructions section.",
+                  '- The summary field must use the structured markdown format with **label**: value lines.',
+                  '- Set the trend field based on the overall wave assessment (bullish if in motive wave, bearish if in corrective, neutral if unclear).',
+                  '',
+                  'Strategy skill list to analyze:',
+                  ...strategySkills.map(s => `- ${s.name}`),
+              ].join('\n')
+            : '';
+
     return [
         '## Analysis Request',
         RESPONSE_LANGUAGE_INSTRUCTION,
         'Based on the data above, perform technical analysis and respond in the following JSON format:',
         buildSchemaBody(),
         patternListInstruction,
+        strategyInstruction,
     ]
         .filter(s => s !== '')
         .join('\n');
@@ -301,11 +320,15 @@ export function buildAnalysisPrompt(
         s => s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT
     );
     const patternSkills = activeSkills.filter(s => s.type === 'pattern');
+    const strategySkills = activeSkills.filter(s => s.type === 'strategy');
     const indicatorGuideSkills = activeSkills.filter(
         s => s.type === 'indicator_guide'
     );
     const regularSkills = activeSkills.filter(
-        s => s.type !== 'pattern' && s.type !== 'indicator_guide'
+        s =>
+            s.type !== 'pattern' &&
+            s.type !== 'strategy' &&
+            s.type !== 'indicator_guide'
     );
 
     const sections = [
@@ -324,13 +347,18 @@ export function buildAnalysisPrompt(
                   `## Pattern Analysis\n${patternSkills.map(buildSkillBlock).join('\n\n')}`,
               ]
             : []),
+        ...(strategySkills.length > 0
+            ? [
+                  `## Strategy Analysis\n${strategySkills.map(buildSkillBlock).join('\n\n')}`,
+              ]
+            : []),
         ...(regularSkills.length > 0
             ? [
                   `## Active Skills\n${regularSkills.map(buildSkillBlock).join('\n\n')}`,
               ]
             : []),
         ANALYSIS_GUIDELINES,
-        buildAnalysisRequest(patternSkills),
+        buildAnalysisRequest(patternSkills, strategySkills),
     ];
 
     return sections.join('\n\n');

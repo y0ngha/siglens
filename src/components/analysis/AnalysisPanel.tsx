@@ -325,6 +325,43 @@ function CandlePatternAccordionItem({
     );
 }
 
+interface SkillSummarySection {
+    label: string;
+    value: string;
+}
+
+function parseStructuredSummary(summary: string): SkillSummarySection[] | null {
+    const sections = summary
+        .split('\n')
+        .filter(line => line.trim() !== '')
+        .flatMap(line => {
+            const match = /^\*\*(.+?)\*\*:\s*(.+)$/.exec(line);
+            return match ? [{ label: match[1], value: match[2] }] : [];
+        });
+    return sections.length >= 3 ? sections : null;
+}
+
+interface StructuredSkillSummaryProps {
+    sections: SkillSummarySection[];
+}
+
+function StructuredSkillSummary({ sections }: StructuredSkillSummaryProps) {
+    return (
+        <div className="flex flex-col gap-2">
+            {sections.map(section => (
+                <div key={section.label} className="flex flex-col gap-0.5">
+                    <span className="text-secondary-500 text-[10px] font-semibold tracking-wide uppercase">
+                        {section.label}
+                    </span>
+                    <span className="text-secondary-300 text-xs leading-relaxed">
+                        {section.value}
+                    </span>
+                </div>
+            ))}
+        </div>
+    );
+}
+
 interface SkillAccordionItemProps {
     skill: SkillResult;
 }
@@ -354,9 +391,19 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
 
             {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
-                    <p className="text-secondary-400 text-xs leading-relaxed">
-                        {skill.summary}
-                    </p>
+                    {(() => {
+                        const sections = parseStructuredSummary(skill.summary);
+                        if (sections !== null) {
+                            return (
+                                <StructuredSkillSummary sections={sections} />
+                            );
+                        }
+                        return (
+                            <p className="text-secondary-400 text-xs leading-relaxed">
+                                {skill.summary}
+                            </p>
+                        );
+                    })()}
                 </div>
             ) : null}
         </div>

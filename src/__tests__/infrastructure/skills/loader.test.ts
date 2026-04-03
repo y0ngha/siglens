@@ -478,6 +478,85 @@ confidence_weight: 0.8
         });
     });
 
+    describe('strategy 타입 파싱', () => {
+        const STRATEGY_SKILL_MD = `---
+name: 엘리어트 파동
+description: 엘리어트 파동 이론 기반 현재 파동 위치 및 목표가 분석
+type: strategy
+category: neutral
+indicators: []
+confidence_weight: 0.7
+---
+
+## Absolute Rules
+
+Three absolute rules govern all Elliott Wave counts.`;
+
+        it('type이 strategy이면 strategy로 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('elliott-wave.md')]);
+            mockReadFile.mockResolvedValue(STRATEGY_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].type).toBe('strategy');
+        });
+
+        it('strategy type의 name, description, indicators를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('elliott-wave.md')]);
+            mockReadFile.mockResolvedValue(STRATEGY_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].name).toBe('엘리어트 파동');
+            expect(skills[0].description).toBe(
+                '엘리어트 파동 이론 기반 현재 파동 위치 및 목표가 분석'
+            );
+            expect(skills[0].indicators).toEqual([]);
+        });
+
+        it('strategy type의 confidenceWeight를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('elliott-wave.md')]);
+            mockReadFile.mockResolvedValue(STRATEGY_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].confidenceWeight).toBe(0.7);
+        });
+
+        it('strategy type의 content를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('elliott-wave.md')]);
+            mockReadFile.mockResolvedValue(STRATEGY_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].content).toContain('Absolute Rules');
+        });
+
+        it('strategies 하위 디렉토리의 strategy 스킬을 재귀적으로 읽는다', async () => {
+            const SKILLS_DIR = path.join(process.cwd(), 'skills');
+            const STRATEGIES_DIR = path.join(SKILLS_DIR, 'strategies');
+            const strategyFile = path.join(STRATEGIES_DIR, 'elliott-wave.md');
+
+            mockReaddir.mockImplementation((dir: string) => {
+                if (dir === SKILLS_DIR)
+                    return Promise.resolve([dirDirent('strategies')]);
+                if (dir === STRATEGIES_DIR)
+                    return Promise.resolve([fileDirent('elliott-wave.md')]);
+                return Promise.resolve([]);
+            });
+            mockReadFile.mockImplementation((p: string) => {
+                if (p === strategyFile)
+                    return Promise.resolve(STRATEGY_SKILL_MD);
+                return Promise.resolve('');
+            });
+
+            const skills = await loader.loadSkills();
+
+            expect(skills).toHaveLength(1);
+            expect(skills[0].type).toBe('strategy');
+        });
+    });
+
     describe('readdir 에러', () => {
         it('readdir가 실패하면 에러를 전파한다', async () => {
             mockReaddir.mockRejectedValue(

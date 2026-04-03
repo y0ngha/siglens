@@ -103,7 +103,7 @@ export interface SkillDisplay {
     chart: SkillChartDisplay;
 }
 
-export type SkillType = 'pattern' | 'indicator_guide';
+export type SkillType = 'pattern' | 'indicator_guide' | 'strategy';
 
 export interface Skill {
     name: string;
