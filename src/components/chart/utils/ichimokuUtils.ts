@@ -1,4 +1,5 @@
-import type { IchimokuFuturePoint } from '@/domain/types';
+import type { Bar, IchimokuFuturePoint } from '@/domain/types';
+import type { UTCTimestamp } from 'lightweight-charts';
 import type { SeriesPoint } from '@/components/chart/utils/seriesDataUtils';
 
 export interface IchimokuCloudPoint {
@@ -16,6 +17,63 @@ export interface IchimokuCloudSeriesAccumulator {
     finalSenkouB: SeriesPoint[];
     finalCloudBullish: SeriesPoint[];
     finalCloudBearish: SeriesPoint[];
+}
+
+export interface FutureCloudBase {
+    senkouAData: SeriesPoint[];
+    senkouBData: SeriesPoint[];
+    cloudBullishData: SeriesPoint[];
+    cloudBearishData: SeriesPoint[];
+}
+
+export function extendWithFutureCloud(
+    bars: Bar[],
+    futureCloud: IchimokuCloudPoint[],
+    base: FutureCloudBase
+): IchimokuCloudSeriesAccumulator {
+    const lastTime = bars[bars.length - 1].time;
+    const interval = lastTime - bars[bars.length - 2].time;
+    return futureCloud.reduce(
+        (
+            acc: IchimokuCloudSeriesAccumulator,
+            point: IchimokuCloudPoint,
+            j: number
+        ) => {
+            const time = (lastTime + (j + 1) * interval) as UTCTimestamp;
+            return {
+                finalSenkouA: [
+                    ...acc.finalSenkouA,
+                    point.senkouA !== null
+                        ? { time, value: point.senkouA }
+                        : { time },
+                ],
+                finalSenkouB: [
+                    ...acc.finalSenkouB,
+                    point.senkouB !== null
+                        ? { time, value: point.senkouB }
+                        : { time },
+                ],
+                finalCloudBullish: [
+                    ...acc.finalCloudBullish,
+                    point.cloudBullishUpper !== null
+                        ? { time, value: point.cloudBullishUpper }
+                        : { time },
+                ],
+                finalCloudBearish: [
+                    ...acc.finalCloudBearish,
+                    point.cloudBearishUpper !== null
+                        ? { time, value: point.cloudBearishUpper }
+                        : { time },
+                ],
+            };
+        },
+        {
+            finalSenkouA: base.senkouAData,
+            finalSenkouB: base.senkouBData,
+            finalCloudBullish: base.cloudBullishData,
+            finalCloudBearish: base.cloudBearishData,
+        }
+    );
 }
 
 interface IchimokuCloudInput extends IchimokuFuturePoint {

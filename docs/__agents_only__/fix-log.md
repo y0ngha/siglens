@@ -1,18 +1,7 @@
 # Fix Log
 
 
-## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
-- Violation: `buildCloudData`의 `senkouA !== null && senkouB !== null` 조건이 동일 함수 내에서 3회 반복됨
-- Rule: MISTAKES.md #8.5 — 동일 함수 안에서 동일한 값이 2회 이상 조회/계산되면 로컬 const로 추출해야 함
-- Context: `ichimokuUtils.ts`의 `buildCloudData` map callback에서 `hasValues` const로 추출하여 단일 참조로 통합
 
-- Violation: `extendWithFutureCloud`의 두 번째 파라미터 타입이 `ReturnType<typeof buildCloudData>`로 선언되어 실제 타입을 파악하려면 정의를 찾아야 함
-- Rule: FF.md Readability 1-G — 관점 이동을 최소화해야 함; 직접 타입 명시가 독자 부담을 줄임
-- Context: `useIchimokuOverlay.ts`의 `extendWithFutureCloud` 파라미터를 `IchimokuCloudPoint[]`로 명시
-
-- Violation: `IchimokuCloudInput`이 `IchimokuFuturePoint`의 `senkouA`, `senkouB` 필드를 중복 선언
-- Rule: FF.md Cohesion 3-B — 동일한 필드가 두 타입에 중복 정의되면 유지보수 위험; extends 관계로 표현해야 함
-- Context: `ichimokuUtils.ts`의 `IchimokuCloudInput`을 `IchimokuFuturePoint extends`로 변경하여 중복 필드 제거
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
 - Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
@@ -36,10 +25,6 @@
 - Violation: `.push()` mutation on local arrays returned from `buildSeriesData()`
 - Rule: MISTAKES.md #4 / CONVENTIONS.md immutability — `.push()` is prohibited; spread operator must be used instead
 - Context: `senkouAData.push(...)`, `senkouBData.push(...)`, etc. in `useIchimokuOverlay.ts` mutated arrays after receiving them from `buildSeriesData()`
-
-- Violation: `bars[bars.length - 1].time` computed twice in the same scope
-- Rule: MISTAKES.md #8.5 — identical expressions computed multiple times should be extracted to a local const
-- Context: `useIchimokuOverlay.ts` computed `bars[bars.length - 1].time` once for `interval` and again for `lastTime` on the next line
 
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
 - Violation: `IndicatorResult` 타입에 `volumeProfile` 필드가 추가되었으나 테스트 픽스처에 반영되지 않아 TypeScript 컴파일 에러 발생
@@ -76,10 +61,6 @@
 - Rule: CONVENTIONS.md Component Folder Structure — hooks/는 React hook 파일, utils/는 순수 함수; utils가 hooks를 import하면 안 됨
 - Context: `chart/types.ts`로 공유 타입을 추출하여 hooks/와 utils/ 모두 types.ts에서 import하도록 변경
 
-## [PR #152 | feat/120/CCI-구현 | 2026-04-02]
-- Violation: `cci.ts` line 23에서 `smaValue === null` 체크가 도달 불가능한 dead code — MISTAKES.md #9.5 위반
-- Rule: MISTAKES.md #9.5 — logic with no practical effect adds noise and obscures intent
-- Context: `Array.from` 내부에서 `tpSlice`는 항상 정확히 `period`개 원소를 가지므로 `sma(tpSlice, period)`가 null을 반환할 수 없음; null 체크를 제거하고 non-null 단언(`!`)으로 의도를 명시
 
 ## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
 - Violation: `collectMdFiles`에서 entry마다 별도 `stat()` 호출로 I/O 낭비 — 파일 시스템 성능 비효율
@@ -136,10 +117,6 @@
 - Context: `type IchimokuCloudPoint = { ... }`를 `interface IchimokuCloudPoint { ... }`로 변경
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | external review | 2026-04-03]
-- Violation: `buildCloudData` 순수 함수가 hook 파일(`useIchimokuOverlay.ts`)에 정의됨
-- Rule: CONVENTIONS.md — Pure utility functions (non-hook helpers) must always be placed in a `utils/` subfolder
-- Context: `buildCloudData`를 `src/components/chart/utils/ichimokuUtils.ts`로 이동; `IchimokuCloudInput`, `IchimokuCloudPoint`, `IchimokuCloudSeriesAccumulator` 인터페이스도 함께 정의
-
 - Violation: `buildCloudData` 파라미터 타입이 익명 인라인 객체 타입으로 선언됨
 - Rule: MISTAKES.md #11.5 — 객체 형태는 named interface로 선언해야 함
 - Context: 인라인 익명 객체 타입을 `IchimokuCloudInput` named interface로 추출하여 `ichimokuUtils.ts`에 정의

@@ -43,14 +43,6 @@ export function calculateIchimoku(
     displacement = ICHIMOKU_DISPLACEMENT
 ): IchimokuResult[] {
     if (bars.length === 0) return [];
-    if (bars.length < conversionPeriod)
-        return bars.map(() => ({
-            tenkan: null,
-            kijun: null,
-            senkouA: null,
-            senkouB: null,
-            chikou: null,
-        }));
 
     return bars.map((_, i) => {
         const tenkan = periodMidpoint(bars, i, conversionPeriod);

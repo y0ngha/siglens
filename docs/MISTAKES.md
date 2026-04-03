@@ -74,6 +74,8 @@ Review before implementation and ensure these are not repeated.
    ✅ const skill = skillByName.get(p.skillName); ... ; // one call, reused
    ❌ items.map(item => { const val = compute(item); return val || compute(item); })  // compute called twice
    ✅ items.map(item => { const val = compute(item); return val || fallback; })
+   ❌ map callback computing `senkouA !== null && senkouB !== null` check on every element when identical 3+ times in the same function
+   ✅ const hasValues = senkouA !== null && senkouB !== null; then reference hasValues in all places
 
 9. Discarding the callback parameter and re-accessing the same element via external array index
    → Rule: FF.md Readability 1-G — viewpoint shift forces the reader to track two locations simultaneously
@@ -94,6 +96,8 @@ Review before implementation and ensure these are not repeated.
    ✅ const results = data.flatMap(...)  // remove the .filter() that never filters
    ❌ try { ... } catch (e) { logError(e); }  // error is never expected and catch adds confusion
    ✅ Remove the catch block if it doesn't serve error recovery
+   ❌ if (bars.length < period) return null; // then below in map: sma(tpSlice, period) always succeeds so null check is dead code
+   ✅ Remove the early return if the computation that follows guarantees the condition is impossible
 
 9.6. Range condition written with variable on left and boundary on right (e.g. bar.low >= bucketLow)
    → Rule: FF.md 1-F — range conditions must follow mathematical notation: smaller value on left, larger on right
@@ -125,6 +129,15 @@ Review before implementation and ensure these are not repeated.
        <button className={buttonClass(active)}>MA</button>
        <button className={buttonClass(active)}>EMA</button>
        <button className={buttonClass(active)}>BB</button>
+
+11.4. Pure utility functions (non-hook helpers) defined in hook files instead of utils/ subfolder
+    → Rule: CONVENTIONS.md Component Folder Structure — hooks/ contain React hooks only; pure functions belong in utils/
+    → When a pure function (map callback, build function, transform helper) is defined alongside a hook in the same file, move it to utils/
+    → This enables reuse in other files and maintains clear layer separation: hooks call utils, components import from both
+    ❌ useIchimokuOverlay.ts defines buildCloudData (pure function) alongside hook logic
+    ❌ useVolumeProfileOverlay.ts defines extendWithFutureCloud (non-hook helper) and FutureCloudBase type
+    ✅ Extract buildCloudData, extendWithFutureCloud, and related types to src/components/chart/utils/ichimokuUtils.ts
+    ✅ useIchimokuOverlay.ts imports and calls these utils without defining them
 ```
 
 12. Using template literals with inline ternary for conditional classes instead of cn()

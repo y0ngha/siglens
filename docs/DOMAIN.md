@@ -301,6 +301,27 @@ IchimokuResult: {
   senkouB: number | null;
   chikou: number | null;
 }
+
+calculateIchimokuFutureCloud 함수:
+  목적: 현재 시점 이후 displacement개 미래 포인트의 선행스팬A/B 값을 계산
+        (차트에서 구름대를 displacement봉 앞에 투영하기 위해 사용)
+  시그니처: calculateIchimokuFutureCloud(
+    bars: Bar[],
+    conversionPeriod = 9,
+    basePeriod = 26,
+    spanBPeriod = 52,
+    displacement = 26
+  ): IchimokuFuturePoint[]
+
+  반환 타입: IchimokuFuturePoint[]
+  IchimokuFuturePoint: {
+    senkouA: number | null;
+    senkouB: number | null;
+  }
+
+  배열 크기: 항상 displacement (기본값 26)
+  계산 방식: bars의 마지막 displacement 구간(bars.length - displacement ~ bars.length - 1)에서
+             각 sourceIndex에 대해 senkouA / senkouB 계산
 ```
 
 ### Volume Profile

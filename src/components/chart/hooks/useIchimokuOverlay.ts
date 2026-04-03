@@ -9,80 +9,17 @@ import {
 } from 'react';
 import type { RefObject } from 'react';
 import { AreaSeries, LineSeries, LineStyle } from 'lightweight-charts';
-import type {
-    IChartApi,
-    ISeriesApi,
-    LineWidth,
-    UTCTimestamp,
-} from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import { calculateIchimokuFutureCloud } from '@/domain/indicators/ichimoku';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
-import type { SeriesPoint } from '@/components/chart/utils/seriesDataUtils';
-import { buildCloudData } from '@/components/chart/utils/ichimokuUtils';
-import type {
-    IchimokuCloudPoint,
-    IchimokuCloudSeriesAccumulator,
+import {
+    buildCloudData,
+    extendWithFutureCloud,
 } from '@/components/chart/utils/ichimokuUtils';
-
-interface FutureCloudBase {
-    senkouAData: SeriesPoint[];
-    senkouBData: SeriesPoint[];
-    cloudBullishData: SeriesPoint[];
-    cloudBearishData: SeriesPoint[];
-}
-
-function extendWithFutureCloud(
-    bars: Bar[],
-    futureCloud: IchimokuCloudPoint[],
-    base: FutureCloudBase
-): IchimokuCloudSeriesAccumulator {
-    const lastTime = bars[bars.length - 1].time;
-    const interval = lastTime - bars[bars.length - 2].time;
-    return futureCloud.reduce(
-        (
-            acc: IchimokuCloudSeriesAccumulator,
-            point: IchimokuCloudPoint,
-            j: number
-        ) => {
-            const time = (lastTime + (j + 1) * interval) as UTCTimestamp;
-            return {
-                finalSenkouA: [
-                    ...acc.finalSenkouA,
-                    point.senkouA !== null
-                        ? { time, value: point.senkouA }
-                        : { time },
-                ],
-                finalSenkouB: [
-                    ...acc.finalSenkouB,
-                    point.senkouB !== null
-                        ? { time, value: point.senkouB }
-                        : { time },
-                ],
-                finalCloudBullish: [
-                    ...acc.finalCloudBullish,
-                    point.cloudBullishUpper !== null
-                        ? { time, value: point.cloudBullishUpper }
-                        : { time },
-                ],
-                finalCloudBearish: [
-                    ...acc.finalCloudBearish,
-                    point.cloudBearishUpper !== null
-                        ? { time, value: point.cloudBearishUpper }
-                        : { time },
-                ],
-            };
-        },
-        {
-            finalSenkouA: base.senkouAData,
-            finalSenkouB: base.senkouBData,
-            finalCloudBullish: base.cloudBullishData,
-            finalCloudBearish: base.cloudBearishData,
-        }
-    );
-}
+import type { FutureCloudBase } from '@/components/chart/utils/ichimokuUtils';
 
 interface UseIchimokuOverlayParams {
     chartRef: RefObject<IChartApi | null>;
