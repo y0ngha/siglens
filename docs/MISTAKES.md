@@ -232,15 +232,6 @@ Review before implementation and ensure these are not repeated.
      ❌ type CandlePatternEntry = { patternType: 'single' | 'multi'; barIndex: number; ... }
      ✅ interface CandlePatternEntry { patternType: 'single' | 'multi'; barIndex: number; ... }
 
-11.6. Missing explicit type annotations on callback parameters
-     → Rule: CONVENTIONS.md TypeScript Rules — all parameters must have explicit types
-     → Callback parameters (in map, filter, reduce, sort, forEach) often trigger implicit any errors
-     → Even if callback is simple, declare parameter types explicitly
-     ❌ buildCandlePatternEntries.map(entry => { ... })  // entry has implicit any
-     ✅ buildCandlePatternEntries.map((entry: CandlePatternEntry) => { ... })
-     ❌ entries.sort((a, b) => a.barIndex - b.barIndex)  // a, b have implicit any
-     ✅ entries.sort((a: PromptCandlePatternEntry, b: PromptCandlePatternEntry) => a.barIndex - b.barIndex)
-
 11.7. Unused type imports and missing type imports
      → Rule: TypeScript — imports must match actual usage
      → Type that is declared in import but never used in code triggers TS6196 (unused import)
@@ -260,13 +251,33 @@ Review before implementation and ensure these are not repeated.
      ✅ import type { VolumeProfileResult } from '@/domain/indicators/volume-profile';
         const result: VolumeProfileResult | null = calculateVolumeProfile(bars);
 
-12. Related interfaces with shared fields not linked by extends
+11.9. Callback parameters missing explicit type annotations
+     → Rule: MISTAKES.md — all callback parameters (map, filter, reduce, forEach, Array.from, etc.) require explicit type annotations
+     → TypeScript inference is unreliable in callbacks; always declare parameter types explicitly
+     → This applies to: Array methods (map, filter, reduce, every, some), Array.from, setTimeout, event listeners
+     ❌ bars.map(bar => bar.close * 2)  // bar type inferred, not declared
+     ✅ bars.map((bar: Bar) => bar.close * 2)  // type declared explicitly
+     ❌ Array.from(prices, price => price * 2)  // price type inferred
+     ✅ Array.from(prices, (price: number) => price * 2)  // type declared explicitly
+     ❌ futureCloudData.reduce((acc, point, j) => { ... }, [])  // types inferred
+     ✅ futureCloudData.reduce((acc: IchimokuCloudSeriesAccumulator, point: IchimokuCloudInput, j: number) => { ... }, [])
+
+12. Implementation and documentation changes not synchronized
+    → Rule: CONVENTIONS.md — when implementation changes structure/counts, update docs/DOMAIN.md and docs/DESIGN.md accordingly
+    → When new constants are added (colors, dimensions, etc.), verify they are documented in the relevant design docs
+    → When function signatures, return types, or component props change, update DOMAIN.md descriptions immediately
+    ❌ Ichimoku indicator implementation uses 5 LineSeries but DOMAIN.md documents 3
+    ✅ Update DOMAIN.md to reflect actual implementation: 5 series (Tenkan/Kijun/Senkou A/Senkou B/Chikou)
+    ❌ Add new color constants for an indicator but forget to list them in DESIGN.md's indicator color reference
+    ✅ Update DESIGN.md indicator color section immediately after adding colors.ts constants
+
+13. Related interfaces with shared fields not linked by extends
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
     → If interface B contains all fields of interface A plus extras, declare B extends A
     ❌ interface PatternResult { patternName: string; skillName: string; ...; renderConfig: ... }
     ✅ interface PatternResult extends PatternSummary { renderConfig: ... }
 
-13. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
+14. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
     → Rule: FF.md Cohesion 3-A — code that changes together must stay together
     → If a type in layer A is structurally identical to a type in layer B, do not redefine it; import and reuse it
     → If a string array or object must stay in sync with an interface, use Record<keyof Interface, ...> to enforce the relationship at compile time

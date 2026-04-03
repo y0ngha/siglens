@@ -28,14 +28,6 @@
 - Rule: MISTAKES.md #8.5 — identical expressions computed multiple times should be extracted to a local const
 - Context: `useIchimokuOverlay.ts` computed `bars[bars.length - 1].time` once for `interval` and again for `lastTime` on the next line
 
-- Violation: Test input `makeBars(N)` calls used as bare literals inconsistently across multiple tests
-- Rule: MISTAKES.md #0 — repeated literal values should be extracted to named consts; Pattern D — test inputs with context should be named consts
-- Context: `ichimoku.test.ts` used `makeBars(50)`, `makeBars(100)`, `makeBars(150)`, `makeBars(200)` as anonymous literals while some tests already used `BAR_COUNT = 100`
-
-- Violation: Ichimoku color constants added to `src/domain/constants/colors.ts` without updating `docs/DESIGN.md`
-- Rule: Documentation update rule — when colors are added, `docs/DESIGN.md` indicator color section must be updated
-- Context: 7 Ichimoku color constants were added but the DESIGN.md indicator color reference section had no Ichimoku entry
-
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-03]
 - Violation: `IndicatorResult` 타입에 `volumeProfile` 필드가 추가되었으나 테스트 픽스처에 반영되지 않아 TypeScript 컴파일 에러 발생
 - Rule: CONVENTIONS.md — 타입 변경 시 모든 사용 지점(테스트 픽스처 포함)을 함께 업데이트해야 함
@@ -80,11 +72,6 @@
 - Violation: `collectMdFiles`에서 entry마다 별도 `stat()` 호출로 I/O 낭비 — 파일 시스템 성능 비효율
 - Rule: CONVENTIONS.md Infrastructure Performance — 불필요한 시스템 콜 제거; `readdir({ withFileTypes: true })`로 `Dirent` 객체를 직접 받아 `stat` 호출 없이 디렉토리 여부 확인 가능
 - Context: `loader.ts`에서 `stat` import 제거, `readdir(dir, { withFileTypes: true })` 사용으로 `entry.isDirectory()`로 분기; 테스트에서 `mockStat` 제거 후 `fileDirent`/`dirDirent` 헬퍼로 교체
-## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `while` 루프 내부에서 `vahIndex += 1`, `valIndex -= 1` index 재할당
-- Rule: MISTAKES.md #1 — while 루프 + index 재할당은 모든 경우에서 금지
-- Context: `expandValueArea` 재귀 함수로 교체하여 state를 immutable하게 전달; 타입 `ValueAreaState`를 파일 최상단으로 추출
-
 ## [PR #153 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `colors.ts`에서 `vpVah`와 `vpVal`이 동일한 색상값 `#8b5cf6`으로 설정되어 차트에서 두 선을 시각적으로 구별 불가
 - Rule: DESIGN.md — VAH와 VAL은 서로 다른 가격 경계를 나타내므로 구별 가능한 색상이 필요
@@ -93,10 +80,6 @@
 - Violation: `src/__tests__/domain/analysis/prompt.test.ts`에서 RegExp 패턴 `/\[.+\]/`의 `\]`가 불필요한 이스케이프
 - Rule: ESLint `no-useless-escape` — 정규식 문자 클래스 외부에서 `]`는 이스케이프 불필요
 - Context: lines 767, 1207, 1231, 1243의 4개 RegExp 패턴에서 `\]`를 `]`로 수정
-
-- Violation: `expandValueArea`에서 sentinel 값 `-1`이 3곳(lines 27, 29, 31)에 하드코딩되어 반복 사용
-- Rule: MISTAKES.md #0 — 동일한 리터럴 값은 하나의 named const로 추출해야 한다; FF.md Cohesion 3-B
-- Context: `NO_ADJACENT_BUCKET = -1` 상수를 추출하여 `volume-profile.ts`의 3개 사용 지점 모두 교체
 
 
 
@@ -108,10 +91,6 @@
 
 
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 2 | 2026-04-02]
-- Violation: `map`/`filter`/`reduce`/`every` 콜백 파라미터와 `Array.from` 매핑 콜백에 명시적 타입 어노테이션 누락
-- Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
-- Context: `useVolumeProfileOverlay.ts`의 `bars.map(bar => ...)` 및 `volume-profile.test.ts` 내 `Array.from`, `prices.map`, `result.profile.every/reduce/filter` 콜백 전체에 명시적 타입 추가; `PriceEntry` 타입 alias 추출 및 `VolumeProfileRow` import 추가
-
 
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
 - Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
@@ -138,10 +117,6 @@
 - Context: `기본 파라미터 테스트` describe 블록 전체를 제거하여 중복 제거
 
 ## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
-- Violation: `ichimoku.ts` line 66에서 `senkouBSourceIndex = i - displacement`가 line 48의 `senkouASourceIndex`와 동일한 표현식을 중복 계산
-- Rule: MISTAKES.md rule 8.5 — 동일한 값을 한 함수 내에서 두 번 이상 계산/조회하면 단일 const로 추출해야 함
-- Context: `senkouASourceIndex`와 `senkouBSourceIndex`를 `sourceIndex`로 통합하고 senkouA 계산을 `calculateSenkouA` named helper로 추출
-
 ## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
 - Violation: `useIchimokuOverlay.ts` line 30에서 객체 형태에 `type` alias 사용
 - Rule: MISTAKES.md rule 11.5, CONVENTIONS.md — 객체 형태는 `interface`를 사용해야 함
@@ -155,14 +130,6 @@
 - Violation: `buildCloudData` 파라미터 타입이 익명 인라인 객체 타입으로 선언됨
 - Rule: MISTAKES.md #11.5 — 객체 형태는 named interface로 선언해야 함
 - Context: 인라인 익명 객체 타입을 `IchimokuCloudInput` named interface로 추출하여 `ichimokuUtils.ts`에 정의
-
-- Violation: `map`/`reduce` 콜백 파라미터에 명시적 타입 누락
-- Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
-- Context: `buildCloudData`의 `ichimoku.map(point => ...)` 및 `futureCloudData.reduce((acc, point, j) => ...)` 콜백 파라미터에 `IchimokuCloudInput`, `IchimokuCloudSeriesAccumulator`, `IchimokuCloudPoint`, `number` 명시적 타입 추가
-
-- Violation: 테스트 상수 `BARS_FOR_KIJUN_CHIKOU = 100`과 `BARS_FOR_KIJUN = 100`이 동일한 값 중복; `BARS_FOR_FUTURE_CLOUD = 200`과 `BARS_FOR_SENKOB = 200`이 동일한 값 중복
-- Rule: MISTAKES.md #0 — 동일한 리터럴 값은 하나의 named const로 추출해야 함
-- Context: `ichimoku.test.ts`에서 `BARS_FOR_KIJUN_CHIKOU` 제거 후 `BARS_FOR_KIJUN`으로 통합; `BARS_FOR_FUTURE_CLOUD` 제거 후 `BARS_FOR_SENKOB`으로 통합; `makeBars(100)` 리터럴도 `BARS_FOR_KIJUN` 사용으로 변경
 
 - Violation: `IchimokuFuturePoint` 타입이 `ichimoku.ts`에 정의되어 다른 indicator 결과 타입들과 위치 불일치
 - Rule: CONVENTIONS.md 타입 일관성 — 모든 indicator 결과 타입은 `domain/types.ts`에 정의되어야 함
