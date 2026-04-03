@@ -1,5 +1,6 @@
 import type { MarketDataProvider, GetBarsOptions, Bar } from './types';
 import { TIMEFRAME_LOOKBACK_DAYS } from '@/domain/constants/market';
+import { getEasternOffsetHours } from '@/domain/time/eastern';
 
 const BASE_URL = 'https://data.alpaca.markets/v2';
 
@@ -50,14 +51,17 @@ export class AlpacaProvider implements MarketDataProvider {
         const lookbackMs =
             TIMEFRAME_LOOKBACK_DAYS[timeframe] * 24 * 60 * 60 * 1000;
         const endTime = before ? new Date(before) : new Date();
-        const startTime = new Date(endTime.getTime() - lookbackMs);
+        const etOffsetMs = getEasternOffsetHours(endTime) * 3600 * 1000;
+        const endTimeET = new Date(endTime.getTime() + etOffsetMs);
+        const startTimeET = new Date(endTimeET.getTime() - lookbackMs);
+        const startUtc = new Date(startTimeET.getTime() - etOffsetMs);
 
         const params = new URLSearchParams({
             timeframe,
             limit: String(limit),
             adjustment: 'raw',
             feed: 'iex',
-            start: startTime.toISOString(),
+            start: startUtc.toISOString(),
         });
 
         if (before) {

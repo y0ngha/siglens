@@ -115,6 +115,7 @@ export function ChartContent({
                 <div className="relative flex-3">
                     <StockChart
                         bars={bars}
+                        timeframe={timeframe}
                         indicators={indicators}
                         patterns={analysis.patternSummaries}
                     />
