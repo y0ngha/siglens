@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
+- Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
+- Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
+- Context: `skills/strategies/macd-cycle.md` used `indicators:\n  - macd\n  - ema` while every other skill file in the project uses the inline array format
+
+- Violation: Signal field order inconsistent between two signal instructions in `## AI Analysis Instructions`
+- Rule: FF Readability — same `Signal` structure described with different field order (`type → strength → description` vs `type → description → strength`) causes confusion for AI generating structured output
+- Context: Stage transition signal had `type → strength → description` order but entry timing signal had `type → description → strength` order; unified to `type → strength → description`
+
 ## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-03]
 - Violation: `strength` field missing from stage transition signal instruction in `## AI Analysis Instructions`
 - Rule: Domain type contract — `Signal` interface requires `strength: SignalStrength` as a mandatory field; omitting it causes AI to generate incomplete `Signal` objects

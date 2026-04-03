@@ -3,9 +3,7 @@ name: MACD 대순환 분석
 description: 3개의 EMA(단기/중기/장기)와 3개의 MACD를 조합하여 6단계 스테이지 순환을 분석하는 전략
 type: indicator_guide
 category: neutral
-indicators:
-  - macd
-  - ema
+indicators: ['macd', 'ema']
 confidence_weight: 0.75
 ---
 
@@ -117,4 +115,4 @@ Add an entry to skillResults with the following fields:
 Add an entry to skillSignals with skillName: `"MACD 대순환 분석"`. The signals array should include:
 
 - If a stage transition has recently occurred: type `"skill"`, strength `"moderate"`, description in Korean describing the transition (e.g. "Stage 1에서 Stage 2로 전환: EMA(9)이 EMA(21)을 하향 돌파")
-- If an entry timing condition is met: type `"skill"`, description in Korean describing the signal, strength `"strong"` for Normal, `"moderate"` for Early, `"weak"` for Advance
+- If an entry timing condition is met: type `"skill"`, strength `"strong"` for Normal / `"moderate"` for Early / `"weak"` for Advance, description in Korean describing the signal
