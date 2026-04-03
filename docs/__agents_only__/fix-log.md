@@ -9,18 +9,6 @@
 - Rule: FF Readability — same `Signal` structure described with different field order (`type → strength → description` vs `type → description → strength`) causes confusion for AI generating structured output
 - Context: Stage transition signal had `type → strength → description` order but entry timing signal had `type → description → strength` order; unified to `type → strength → description`
 
-## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03]
-- Violation: JSX 내 IIFE 패턴 사용
-- Rule: FF.md Readability 1-A — 동시에 실행되지 않는 분기는 분리해야 함
-- Context: `SkillAccordionItem`의 렌더 블록에서 `sections` 계산을 컴포넌트 바디로 이동하고 단순 조건부 렌더로 교체
-
-- Violation: `parseStructuredSummary` 순수 유틸 함수가 컴포넌트 파일 내부에 위치
-- Rule: CONVENTIONS.md Component Folder Structure — 순수 유틸 함수(non-hook helper)는 `utils/` 서브폴더에 위치해야 함
-- Context: `AnalysisPanel.tsx`에서 `parseStructuredSummary`를 `components/analysis/utils/parseStructuredSummary.ts`로 분리
-
-- Violation: magic number `3` 사용
-- Rule: FF.md Readability 1-D — 의미가 불명확한 숫자 리터럴은 이름 있는 상수로 추출해야 함
-- Context: `parseStructuredSummary`의 `sections.length >= 3`을 `MIN_STRUCTURED_SUMMARY_SECTIONS` 상수로 추출
 
 ## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
 - Violation: `.map()` callback with side effect mutating a closure variable (`counter`)
@@ -38,10 +26,6 @@
 - Context: `skills/strategies/macd-cycle.md` specified `strength` for entry timing signals but omitted it for stage transition signals, creating inconsistency that could produce invalid output
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
-- Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
-- Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage
-- Context: `ichimokuUtils.ts` exported `IchimokuCloudInput` but no other file imported it; removing `export` tightens the module boundary
-
 - Violation: IIFE inside ternary expression for complex multi-field computation
 - Rule: FF Readability (1-E) — complex anonymous expressions should be extracted into named helper functions
 - Context: `useIchimokuOverlay.ts` used an IIFE to compute `finalSenkouA/B/CloudBullish/Bearish`; extracted into `extendWithFutureCloud` named function
@@ -52,10 +36,6 @@
 - Context: `useIchimokuOverlay.ts` used four `let` variables (`finalSenkouA`, `finalSenkouB`, `finalCloudBullish`, `finalCloudBearish`) spread-reassigned 26 times inside the future cloud loop
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03]
-- Violation: `forEach` with non-trivial body (multiple statements, const declarations, conditionals) used instead of `for...of`
-- Rule: MISTAKES.md #1 — `for...of` preferred when loop body is non-trivial or has multiple statements
-- Context: `useIchimokuOverlay.ts` used `futureCloudData.forEach((point, j) => { ... })` with multiple const declarations and conditional branches
-
 - Violation: `.push()` mutation on local arrays returned from `buildSeriesData()`
 - Rule: MISTAKES.md #4 / CONVENTIONS.md immutability — `.push()` is prohibited; spread operator must be used instead
 - Context: `senkouAData.push(...)`, `senkouBData.push(...)`, etc. in `useIchimokuOverlay.ts` mutated arrays after receiving them from `buildSeriesData()`
@@ -64,11 +44,6 @@
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
 - Context: `route.ts`의 입력 검증에서 `!bars`만으로는 빈 배열을 거르지 못하여, `bars.length === 0` 조건을 추가하여 빈 bars도 400 응답으로 처리
-
-## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
-- Violation: `IndicatorToolbarProps`에 `xyzVisible + onXYZToggle` 플랫 props 12개가 나열되어 새 지표 추가 시 props 2개씩 증가
-- Rule: FF.md Coupling 4-A — 함께 변경되는 props는 묶어야 한다; 새 지표마다 interface와 호출 사이트 양쪽을 수정해야 하는 tight coupling
-- Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
 
 ## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 4 | 2026-03-31]
 - Violation: focusable `role="separator"` 드래그 핸들에 `onKeyDown` 핸들러가 없어 키보드 사용자가 패널 너비를 조절할 수 없는 접근성 미구현
@@ -84,12 +59,6 @@
 - Violation: 3봉 패턴 감지 시 detection window 시작 부분에서 이전 데이터 부족으로 미감지 가능
 - Rule: domain/CLAUDE.md Candle Pattern Detection — multi-candle 패턴은 2~3봉이 필요하므로 충분한 데이터 확보 필요
 - Context: `detectCandlePatternEntries`에서 `CANDLE_PATTERN_DETECTION_BARS + MULTI_CANDLE_PATTERN_BUFFER(2)`개 데이터를 확보하여 감지, 결과는 마지막 15봉에 대해서만 반환
-
-## [Issue #132 | fix/132/pane-indicator-label-표시-수정 | 2026-04-01]
-- Violation: `PaneLabelConfig`, `PaneSubLabel` 타입이 hooks/ 파일에서 정의되고 utils/에서 import하여 역방향 의존성 발생
-- Rule: CONVENTIONS.md Component Folder Structure — hooks/는 React hook 파일, utils/는 순수 함수; utils가 hooks를 import하면 안 됨
-- Context: `chart/types.ts`로 공유 타입을 추출하여 hooks/와 utils/ 모두 types.ts에서 import하도록 변경
-
 
 ## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
 - Violation: `collectMdFiles`에서 entry마다 별도 `stat()` 호출로 I/O 낭비 — 파일 시스템 성능 비효율
@@ -153,15 +122,6 @@
 - Violation: `SkillResult`에 `id` 필드 없어 `SkillAccordionItem` 렌더링 시 `skillName` 중복 가능성 및 React key 불안정
 - Rule: 일관성 — `PatternSummary`와 `CandlePatternSummary`에 `id`를 추가한 것과 동일하게 `SkillResult`도 고유 ID 부여 필요
 - Context: `SkillResult`에 `id: string` 추가, `RawAnalysisResponse`에서 `id` Omit, `enrichAnalysisWithConfidence`에서 `buildUniqueIds(skillResults, 'skillName')` 로 ID 생성, `AnalysisPanel.tsx`에서 `key={skill.id}`로 변경
-
-- Violation: `PatternAccordionItemProps.onToggleVisibility` 파라미터명이 `patternName`으로 실제 전달값(패턴 ID)과 불일치
-- Rule: FF.md Readability 1-A — 파라미터명은 실제 전달되는 값의 의미를 반영해야 함
-- Context: `AnalysisPanel.tsx`의 `PatternAccordionItemProps.onToggleVisibility` 파라미터를 `patternName: string`에서 `patternId: string`으로 변경
-
-## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03] (Round 2 — external review)
-- Violation: `buildAnalysisRequest`의 `strategyInstruction`에 엘리어트 파동 전용 용어("wave assessment", "motive wave", "corrective wave") 하드코딩
-- Rule: FF.md Coupling 4-A — prompt builder가 특정 skill의 도메인 언어에 결합되어서는 안 됨; 각 skill의 `## AI Analysis Instructions`가 단일 정보 출처(single source of truth)
-- Context: `src/domain/analysis/prompt.ts` L294에서 Elliott Wave 전용 trend 판단 지시를 범용 지시("Set the trend field based on each skill's own analysis instructions")로 교체
 
 ## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-04] (Round 3 — external review)
 - Violation: `AnalysisPanel.tsx`에서 `parseStructuredSummary` import에 상대 경로(`./utils/parseStructuredSummary`) 사용
