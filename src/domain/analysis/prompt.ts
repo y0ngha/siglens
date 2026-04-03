@@ -301,7 +301,12 @@ export function buildAnalysisPrompt(
         s => s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT
     );
     const patternSkills = activeSkills.filter(s => s.type === 'pattern');
-    const regularSkills = activeSkills.filter(s => s.type !== 'pattern');
+    const indicatorGuideSkills = activeSkills.filter(
+        s => s.type === 'indicator_guide'
+    );
+    const regularSkills = activeSkills.filter(
+        s => s.type !== 'pattern' && s.type !== 'indicator_guide'
+    );
 
     const sections = [
         `Symbol: ${symbol}`,
@@ -309,6 +314,11 @@ export function buildAnalysisPrompt(
         formatRecentBarsSection(bars),
         formatVolumeSection(bars),
         formatIndicatorSection(indicators),
+        ...(indicatorGuideSkills.length > 0
+            ? [
+                  `## Indicator Signal Guides\n${indicatorGuideSkills.map(buildSkillBlock).join('\n\n')}`,
+              ]
+            : []),
         ...(patternSkills.length > 0
             ? [
                   `## Pattern Analysis\n${patternSkills.map(buildSkillBlock).join('\n\n')}`,
