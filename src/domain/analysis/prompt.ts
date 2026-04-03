@@ -277,6 +277,7 @@ const buildAnalysisRequest = (
                   '- Patterns that are not detected must still be included with detected: false.',
                   '- **Do not include any patterns not listed below in patternSummaries.**',
                   '- **Do not include candle patterns (single/multi candle) in patternSummaries.** Candle patterns belong only in candlePatterns.',
+                  '- The "skillName" field in each patternSummaries entry MUST exactly match one of the skill names listed below. Copy the name verbatim — do not translate, abbreviate, or modify it.',
                   '',
                   'Skills pattern list to analyze:',
                   ...patternSkills.map(s => `- ${s.name}`),

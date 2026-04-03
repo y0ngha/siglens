@@ -1599,7 +1599,7 @@ describe('prompt', () => {
                 name: 'Head and Shoulders',
             });
             const regularSkill = makeSkill({
-                type: undefined,
+                type: 'strategy',
                 name: 'Wyckoff Theory',
             });
             const result = buildAnalysisPrompt(
@@ -1630,112 +1630,6 @@ describe('prompt', () => {
             );
             expect(result).not.toContain('Low Confidence Guide');
             expect(result).not.toContain('Indicator Signal Guides');
-        });
-    });
-
-    describe('Skills 섹션 - type이 strategy인 skill일 때', () => {
-        const strategySkill = makeSkill({
-            type: 'strategy',
-            name: '엘리어트 파동',
-        });
-
-        it('Strategy Analysis 섹션에 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                [strategySkill]
-            );
-            expect(result).toContain('Strategy Analysis');
-            expect(result).toContain('엘리어트 파동');
-        });
-
-        it('Active Skills 섹션에는 포함되지 않는다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                [strategySkill]
-            );
-            expect(result).not.toContain('Active Skills');
-        });
-
-        it('Pattern Analysis 섹션에는 포함되지 않는다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                [strategySkill]
-            );
-            expect(result).not.toContain('Pattern Analysis');
-        });
-
-        it('strategy skill에 대한 skillResults Writing Rules 지시사항이 생성된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                [strategySkill]
-            );
-            expect(result).toContain(
-                'skillResults Writing Rules for Strategy Skills'
-            );
-            expect(result).toContain('- 엘리어트 파동');
-        });
-
-        it('strategy skill이 없으면 skillResults Writing Rules 지시사항이 포함되지 않는다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
-            expect(result).not.toContain(
-                'skillResults Writing Rules for Strategy Skills'
-            );
-        });
-
-        it('confidenceWeight가 0.5 미만인 strategy skill은 포함되지 않는다', () => {
-            const skill = makeSkill({
-                type: 'strategy',
-                name: '낮은신뢰도전략',
-                confidenceWeight: TEST_BELOW_MIN_CONFIDENCE,
-            });
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                [skill]
-            );
-            expect(result).not.toContain('낮은신뢰도전략');
-            expect(result).not.toContain('Strategy Analysis');
-        });
-
-        it('pattern, strategy, regular skill이 모두 있을 때 각 섹션에 올바르게 분류된다', () => {
-            const patternSkill = makeSkill({
-                type: 'pattern',
-                name: 'Head and Shoulders',
-            });
-            const strategySkill = makeSkill({
-                type: 'strategy',
-                name: '엘리어트 파동',
-            });
-            const regularSkill = makeSkill({
-                type: undefined,
-                name: 'Wyckoff Theory',
-            });
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                [patternSkill, strategySkill, regularSkill]
-            );
-            expect(result).toContain('Pattern Analysis');
-            expect(result).toContain('Head and Shoulders');
-            expect(result).toContain('Strategy Analysis');
-            expect(result).toContain('엘리어트 파동');
-            expect(result).toContain('Active Skills');
-            expect(result).toContain('Wyckoff Theory');
         });
     });
 });

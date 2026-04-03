@@ -252,6 +252,7 @@ export function StockChart({
 
     const { visiblePatterns, togglePattern } = usePatternOverlay({
         chartRef,
+        seriesRef,
         bars,
         patterns,
     });
