@@ -3,6 +3,19 @@
 
 
 
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
+- Violation: DOMAIN.md의 `calculateIchimokuFutureCloud` 배열 크기 명세가 "항상 displacement"로 기술되어 빈 배열 입력 시 `[]`를 반환하는 실제 구현과 불일치
+- Rule: MISTAKES.md #12 — 구현과 문서 명세는 항상 동기화되어야 함
+- Context: `docs/DOMAIN.md`의 배열 크기 설명을 "bars가 빈 배열인 경우 빈 배열을 반환. 그 외에는 항상 displacement 길이의 배열"로 수정
+
+- Violation: 테스트 상수 `BARS_FOR_TENKAN`, `BARS_FOR_KIJUN`, `BARS_FOR_SENKOA`, `BARS_FOR_SENKOB`에 `TEST_` 프리픽스 누락
+- Rule: MISTAKES.md #6 Pattern D — 테스트 입력 상수는 `TEST_` 프리픽스 형식을 사용해야 함
+- Context: `ichimoku.test.ts`의 4개 상수를 `TEST_BARS_FOR_TENKAN` 등으로 전면 rename
+
+- Violation: `calculateIchimokuFutureCloud`에 계산 정확도 테스트(accuracy test) 누락
+- Rule: CONVENTIONS.md Required Test Cases — 주기 기반 인디케이터는 첫 번째 값이 명세와 일치하는지 검증하는 accuracy 테스트가 필수
+- Context: `ichimoku.test.ts`에 `future[0].senkouA`가 sourceIndex = bars.length - displacement 기반 tenkan+kijun 평균과 일치하는지 검증하는 테스트 추가
+
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
 - Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
 - Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage
@@ -110,17 +123,8 @@
 - Rule: Test Layer Rules — 각 `it` 블록은 정확히 하나의 동작을 테스트하며, 중복 테스트는 noise 없는 커버리지를 저해함
 - Context: `기본 파라미터 테스트` describe 블록 전체를 제거하여 중복 제거
 
-## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
-## [Issue #122 | feat/122/ichimoku-cloud-구현 | review fix | 2026-04-02]
-- Violation: `useIchimokuOverlay.ts` line 30에서 객체 형태에 `type` alias 사용
-- Rule: MISTAKES.md rule 11.5, CONVENTIONS.md — 객체 형태는 `interface`를 사용해야 함
-- Context: `type IchimokuCloudPoint = { ... }`를 `interface IchimokuCloudPoint { ... }`로 변경
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | external review | 2026-04-03]
-- Violation: `buildCloudData` 파라미터 타입이 익명 인라인 객체 타입으로 선언됨
-- Rule: MISTAKES.md #11.5 — 객체 형태는 named interface로 선언해야 함
-- Context: 인라인 익명 객체 타입을 `IchimokuCloudInput` named interface로 추출하여 `ichimokuUtils.ts`에 정의
-
 - Violation: `IchimokuFuturePoint` 타입이 `ichimoku.ts`에 정의되어 다른 indicator 결과 타입들과 위치 불일치
 - Rule: CONVENTIONS.md 타입 일관성 — 모든 indicator 결과 타입은 `domain/types.ts`에 정의되어야 함
 - Context: `IchimokuFuturePoint`를 `domain/types.ts`로 이동; `ichimoku.ts`는 `domain/types`에서 import

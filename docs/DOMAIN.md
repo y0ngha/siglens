@@ -319,7 +319,7 @@ calculateIchimokuFutureCloud 함수:
     senkouB: number | null;
   }
 
-  배열 크기: 항상 displacement (기본값 26)
+  배열 크기: bars가 빈 배열인 경우 빈 배열을 반환. 그 외에는 항상 displacement (기본값 26) 길이의 배열
   계산 방식: bars의 마지막 displacement 구간(bars.length - displacement ~ bars.length - 1)에서
              각 sourceIndex에 대해 senkouA / senkouB 계산
 ```

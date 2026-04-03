@@ -20,10 +20,10 @@ const makeBars = (count: number, startPrice = 100): Bar[] =>
         volume: 1000,
     }));
 
-const BARS_FOR_TENKAN = 50;
-const BARS_FOR_KIJUN = 100;
-const BARS_FOR_SENKOA = 150;
-const BARS_FOR_SENKOB = 200;
+const TEST_BARS_FOR_TENKAN = 50;
+const TEST_BARS_FOR_KIJUN = 100;
+const TEST_BARS_FOR_SENKOA = 150;
+const TEST_BARS_FOR_SENKOB = 200;
 
 describe('Ichimoku', () => {
     describe('calculateIchimoku', () => {
@@ -54,15 +54,15 @@ describe('Ichimoku', () => {
 
         describe('결과 배열 길이', () => {
             it('bars.length와 동일한 길이의 배열을 반환한다', () => {
-                const bars = makeBars(BARS_FOR_KIJUN);
+                const bars = makeBars(TEST_BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
-                expect(result).toHaveLength(BARS_FOR_KIJUN);
+                expect(result).toHaveLength(TEST_BARS_FOR_KIJUN);
             });
         });
 
         describe('tenkan 초기 null 범위', () => {
             it(`처음 ${ICHIMOKU_CONVERSION_PERIOD - 1}개의 tenkan 값은 null이다`, () => {
-                const bars = makeBars(BARS_FOR_TENKAN);
+                const bars = makeBars(TEST_BARS_FOR_TENKAN);
                 const result = calculateIchimoku(bars);
                 expect(
                     result
@@ -72,7 +72,7 @@ describe('Ichimoku', () => {
             });
 
             it(`인덱스 ${ICHIMOKU_CONVERSION_PERIOD - 1}부터 tenkan 값은 숫자다`, () => {
-                const bars = makeBars(BARS_FOR_TENKAN);
+                const bars = makeBars(TEST_BARS_FOR_TENKAN);
                 const result = calculateIchimoku(bars);
                 expect(
                     typeof result[ICHIMOKU_CONVERSION_PERIOD - 1].tenkan
@@ -82,7 +82,7 @@ describe('Ichimoku', () => {
 
         describe('kijun 초기 null 범위', () => {
             it(`처음 ${ICHIMOKU_BASE_PERIOD - 1}개의 kijun 값은 null이다`, () => {
-                const bars = makeBars(BARS_FOR_KIJUN);
+                const bars = makeBars(TEST_BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
                 expect(
                     result
@@ -92,7 +92,7 @@ describe('Ichimoku', () => {
             });
 
             it(`인덱스 ${ICHIMOKU_BASE_PERIOD - 1}부터 kijun 값은 숫자다`, () => {
-                const bars = makeBars(BARS_FOR_KIJUN);
+                const bars = makeBars(TEST_BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
                 expect(typeof result[ICHIMOKU_BASE_PERIOD - 1].kijun).toBe(
                     'number'
@@ -107,7 +107,7 @@ describe('Ichimoku', () => {
                 ICHIMOKU_DISPLACEMENT + ICHIMOKU_BASE_PERIOD - 1;
 
             it(`처음 ${SENKOA_FIRST_VALID}개의 senkouA 값은 null이다`, () => {
-                const bars = makeBars(BARS_FOR_SENKOA);
+                const bars = makeBars(TEST_BARS_FOR_SENKOA);
                 const result = calculateIchimoku(bars);
                 expect(
                     result
@@ -117,7 +117,7 @@ describe('Ichimoku', () => {
             });
 
             it(`인덱스 ${SENKOA_FIRST_VALID}부터 senkouA 값은 숫자다`, () => {
-                const bars = makeBars(BARS_FOR_SENKOA);
+                const bars = makeBars(TEST_BARS_FOR_SENKOA);
                 const result = calculateIchimoku(bars);
                 expect(typeof result[SENKOA_FIRST_VALID].senkouA).toBe(
                     'number'
@@ -132,7 +132,7 @@ describe('Ichimoku', () => {
                 ICHIMOKU_DISPLACEMENT + ICHIMOKU_SPAN_B_PERIOD - 1;
 
             it(`처음 ${SENKOB_FIRST_VALID}개의 senkouB 값은 null이다`, () => {
-                const bars = makeBars(BARS_FOR_SENKOB);
+                const bars = makeBars(TEST_BARS_FOR_SENKOB);
                 const result = calculateIchimoku(bars);
                 expect(
                     result
@@ -142,7 +142,7 @@ describe('Ichimoku', () => {
             });
 
             it(`인덱스 ${SENKOB_FIRST_VALID}부터 senkouB 값은 숫자다`, () => {
-                const bars = makeBars(BARS_FOR_SENKOB);
+                const bars = makeBars(TEST_BARS_FOR_SENKOB);
                 const result = calculateIchimoku(bars);
                 expect(typeof result[SENKOB_FIRST_VALID].senkouB).toBe(
                     'number'
@@ -152,7 +152,7 @@ describe('Ichimoku', () => {
 
         describe('chikou 후행 처리', () => {
             it('마지막 displacement개의 chikou 값은 null이다', () => {
-                const bars = makeBars(BARS_FOR_KIJUN);
+                const bars = makeBars(TEST_BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
                 expect(
                     result
@@ -162,7 +162,7 @@ describe('Ichimoku', () => {
             });
 
             it('첫 번째 chikou 값은 displacement번째 봉의 종가다', () => {
-                const bars = makeBars(BARS_FOR_KIJUN);
+                const bars = makeBars(TEST_BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
                 expect(result[0].chikou).toBe(
                     bars[ICHIMOKU_DISPLACEMENT].close
@@ -190,7 +190,7 @@ describe('Ichimoku', () => {
             });
 
             it('senkouA 값은 displacement봉 전 tenkan과 kijun의 평균이다', () => {
-                const bars = makeBars(BARS_FOR_KIJUN);
+                const bars = makeBars(TEST_BARS_FOR_KIJUN);
                 const result = calculateIchimoku(bars);
 
                 const FIRST_VALID =
@@ -236,7 +236,7 @@ describe('Ichimoku', () => {
 
         describe('커스텀 파라미터', () => {
             it('커스텀 파라미터를 사용하면 기본 파라미터와 다른 결과를 반환한다', () => {
-                const bars = makeBars(BARS_FOR_KIJUN);
+                const bars = makeBars(TEST_BARS_FOR_KIJUN);
                 const defaultResult = calculateIchimoku(bars);
                 const customResult = calculateIchimoku(bars, 7, 22, 44, 22);
                 expect(defaultResult[50].tenkan).not.toBe(
@@ -255,7 +255,7 @@ describe('Ichimoku', () => {
 
         describe('결과 배열 길이', () => {
             it('displacement 길이의 배열을 반환한다', () => {
-                const bars = makeBars(BARS_FOR_SENKOB);
+                const bars = makeBars(TEST_BARS_FOR_SENKOB);
                 const result = calculateIchimokuFutureCloud(bars);
                 expect(result).toHaveLength(ICHIMOKU_DISPLACEMENT);
             });
@@ -263,7 +263,7 @@ describe('Ichimoku', () => {
 
         describe('미래 선행스팬 값', () => {
             it('bars 데이터가 충분하면 senkouA 값이 null이 아니다', () => {
-                const bars = makeBars(BARS_FOR_SENKOB);
+                const bars = makeBars(TEST_BARS_FOR_SENKOB);
                 const result = calculateIchimokuFutureCloud(bars);
                 expect(
                     result[ICHIMOKU_DISPLACEMENT - 1].senkouA
@@ -271,7 +271,7 @@ describe('Ichimoku', () => {
             });
 
             it('bars 데이터가 충분하면 senkouB 값이 null이 아니다', () => {
-                const bars = makeBars(BARS_FOR_SENKOB);
+                const bars = makeBars(TEST_BARS_FOR_SENKOB);
                 const result = calculateIchimokuFutureCloud(bars);
                 expect(
                     result[ICHIMOKU_DISPLACEMENT - 1].senkouB
@@ -279,7 +279,7 @@ describe('Ichimoku', () => {
             });
 
             it('미래 선행스팬A는 현재 ichimoku 결과와 연속적이다', () => {
-                const bars = makeBars(BARS_FOR_SENKOB);
+                const bars = makeBars(TEST_BARS_FOR_SENKOB);
                 const present = calculateIchimoku(bars);
                 const future = calculateIchimokuFutureCloud(bars);
                 // future[0].senkouA는 sourceIndex = bars.length - displacement를 기반으로 계산됨
@@ -288,6 +288,47 @@ describe('Ichimoku', () => {
                 expect(future[0].senkouA).not.toBe(
                     present[bars.length - 1].senkouA
                 );
+            });
+        });
+
+        describe('계산 정확도', () => {
+            it('future[0].senkouA는 sourceIndex=bars.length-displacement에서의 tenkan+kijun 평균이다', () => {
+                const bars = makeBars(TEST_BARS_FOR_SENKOB);
+                const result = calculateIchimokuFutureCloud(bars);
+
+                // future[0] uses sourceIndex = bars.length - displacement
+                const sourceIndex = bars.length - ICHIMOKU_DISPLACEMENT;
+
+                const tenkanSlice = bars.slice(
+                    sourceIndex - ICHIMOKU_CONVERSION_PERIOD + 1,
+                    sourceIndex + 1
+                );
+                const tenkanHigh = tenkanSlice.reduce(
+                    (max, b) => (b.high > max ? b.high : max),
+                    tenkanSlice[0].high
+                );
+                const tenkanLow = tenkanSlice.reduce(
+                    (min, b) => (b.low < min ? b.low : min),
+                    tenkanSlice[0].low
+                );
+                const expectedTenkan = (tenkanHigh + tenkanLow) / 2;
+
+                const kijunSlice = bars.slice(
+                    sourceIndex - ICHIMOKU_BASE_PERIOD + 1,
+                    sourceIndex + 1
+                );
+                const kijunHigh = kijunSlice.reduce(
+                    (max, b) => (b.high > max ? b.high : max),
+                    kijunSlice[0].high
+                );
+                const kijunLow = kijunSlice.reduce(
+                    (min, b) => (b.low < min ? b.low : min),
+                    kijunSlice[0].low
+                );
+                const expectedKijun = (kijunHigh + kijunLow) / 2;
+
+                const expectedSenkouA = (expectedTenkan + expectedKijun) / 2;
+                expect(result[0].senkouA).toBeCloseTo(expectedSenkouA, 6);
             });
         });
 
