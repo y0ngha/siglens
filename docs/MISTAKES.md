@@ -528,6 +528,14 @@ Review before implementation and ensure these are not repeated.
    ❌ Cloud color defined but never applied to bullish/bearish segments; all cloud rendered same color
    ✅ calculateIchimokuFutureCloud extends results with displacement (26) future points
    ✅ useIchimokuOverlay separates bullish/bearish AreaSeries with ichimokuCloudBullish/Bearish colors
+
+7. Skill markdown files using invalid `type: indicator_guide` instead of omitting the field
+   → Rule: DOMAIN.md Skill File Format — `type` field is only valid when set to 'pattern'; no other types are defined
+   → When type is not 'pattern', omit the `type` field entirely instead of adding a custom value
+   → Invalid type values cause the loader to treat type as undefined, creating confusion and potential future bugs
+   ❌ skills/strategies/ma-cycle.md: `type: indicator_guide` in frontmatter (undefined behavior)
+   ❌ skills/indicators/*.md (13 files): `type: indicator_guide` in frontmatter (batch inconsistency)
+   ✅ Remove the `type: indicator_guide` line; omit type field when not 'pattern'
 ```
 
 ---

@@ -1,10 +1,6 @@
 # Fix Log
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
-- Violation: DOMAIN.md의 `calculateIchimokuFutureCloud` 배열 크기 명세가 "항상 displacement"로 기술되어 빈 배열 입력 시 `[]`를 반환하는 실제 구현과 불일치
-- Rule: MISTAKES.md #12 — 구현과 문서 명세는 항상 동기화되어야 함
-- Context: `docs/DOMAIN.md`의 배열 크기 설명을 "bars가 빈 배열인 경우 빈 배열을 반환. 그 외에는 항상 displacement 길이의 배열"로 수정
-
 - Violation: 테스트 상수 `BARS_FOR_TENKAN`, `BARS_FOR_KIJUN`, `BARS_FOR_SENKOA`, `BARS_FOR_SENKOB`에 `TEST_` 프리픽스 누락
 - Rule: MISTAKES.md #6 Pattern D — 테스트 입력 상수는 `TEST_` 프리픽스 형식을 사용해야 함
 - Context: `ichimoku.test.ts`의 4개 상수를 `TEST_BARS_FOR_TENKAN` 등으로 전면 rename
@@ -105,11 +101,6 @@
 - Rule: FF.md Predictability 2-C — hidden logic should be exposed; implicit closure dependencies should be explicit parameters
 - Context: `expandValueArea`를 `calculateVolumeProfile` 외부 모듈 레벨 함수로 추출하고 `bucketVolumes`, `rowSize`, `targetVolume`을 명시적 파라미터로 추가하여 독립적으로 테스트 가능한 자기완결 함수로 변경
 
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 7 | 2026-04-03]
-- Violation: VP 색상 상수 `vpPoc`, `vpVah`, `vpVal`이 `components/chart/constants.ts`에 위치하여 domain layer의 `CHART_COLORS`에서 분리됨
-- Rule: ARCHITECTURE.md — 색상 상수는 `domain/constants/colors.ts`의 `CHART_COLORS` 객체 안에 있어야 하며, components layer에서 독립 상수로 선언하면 안 됨
-- Context: `VP_POC_COLOR`, `VP_VAH_COLOR`, `VP_VAL_COLOR`를 `components/chart/constants.ts`에서 제거하고 `domain/constants/colors.ts`의 `CHART_COLORS`에 `vpPoc`, `vpVah`, `vpVal`로 추가; `useVolumeProfileOverlay.ts`를 `CHART_COLORS` import로 변경
-
 ## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `bucketVolumes[i] += bar.volume * ratio` — 로컬 배열이지만 index assignment로 직접 변경
 - Rule: CONVENTIONS.md — 불변성 원칙; 로컬 스코프 배열이라도 index 기반 mutation 금지
@@ -130,6 +121,7 @@
 - Violation: `useIchimokuOverlay.ts`의 `cloudLowerRef`가 `CHART_COLORS.background`(불투명 배경색)를 fill 색상으로 사용하여 cloudLower 아래의 다른 차트 시리즈(캔들스틱 등)를 덮어버림
 - Rule: FF.md Readability — 차트 기반 데이터를 숨기는 렌더링은 사용자 경험을 해치며 의도하지 않은 side effect임
 - Context: 두 AreaSeries 방식(cloudUpper + cloudLower masking)을 제거하고, senkouA/B는 LineSeries로, 구름은 `bottomColor: 'transparent'`의 bullish/bearish AreaSeries 2개로 교체하여 하위 차트 데이터를 보존
+
 
 
 ## [feat/indicator-toolbar-collapse | review fix | 2026-04-03]
