@@ -83,16 +83,6 @@
 - Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
 - Context: `useVolumeProfileOverlay.ts`의 `bars.map(bar => ...)` 및 `volume-profile.test.ts` 내 `Array.from`, `prices.map`, `result.profile.every/reduce/filter` 콜백 전체에 명시적 타입 추가; `PriceEntry` 타입 alias 추출 및 `VolumeProfileRow` import 추가
 
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 3 | 2026-04-02]
-- Violation: `VolumeProfileRow` import와 `PriceEntry` 로컬 타입이 TS6196 (declared but never used)으로 컴파일 에러 발생 — TypeScript가 콜백 파라미터 타입을 자동 추론하므로 명시적 어노테이션이 불필요
-- Rule: MISTAKES.md #11.7 — 타입이 import됐지만 TypeScript가 자동 추론하면 불필요한 import를 제거
-- Context: `volume-profile.test.ts`에서 `VolumeProfileRow` import 및 `PriceEntry` 타입 정의 제거; `result.profile.every/reduce/filter` 콜백 파라미터 어노테이션을 TypeScript 추론에 맡기도록 변경
-
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 4 | 2026-04-02]
-- Violation: `const result: VolumeProfileResult | null = calculateVolumeProfile(bars)` 형태로 명시적 타입 어노테이션이 남아 있어 `VolumeProfileResult` import가 불필요하게 유지됨
-- Rule: MISTAKES.md #11.7 — TypeScript가 함수 반환 타입으로 자동 추론할 수 있을 때 명시적 어노테이션은 제거
-- Context: `volume-profile.test.ts`에서 `VolumeProfileResult` import 제거 및 `const result: VolumeProfileResult | null` 어노테이션을 `const result`로 변경하여 TypeScript 추론에 위임
-
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
 - Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
 - Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation: smaller value (boundary) on left, larger on right
