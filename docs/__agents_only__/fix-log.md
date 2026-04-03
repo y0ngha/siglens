@@ -83,16 +83,6 @@
 - Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
 - Context: `useVolumeProfileOverlay.ts`의 `bars.map(bar => ...)` 및 `volume-profile.test.ts` 내 `Array.from`, `prices.map`, `result.profile.every/reduce/filter` 콜백 전체에 명시적 타입 추가; `PriceEntry` 타입 alias 추출 및 `VolumeProfileRow` import 추가
 
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 3 | 2026-04-02]
-- Violation: `VolumeProfileRow` import와 `PriceEntry` 로컬 타입이 TS6196 (declared but never used)으로 컴파일 에러 발생 — TypeScript가 콜백 파라미터 타입을 자동 추론하므로 명시적 어노테이션이 불필요
-- Rule: MISTAKES.md #11.7 — 타입이 import됐지만 TypeScript가 자동 추론하면 불필요한 import를 제거
-- Context: `volume-profile.test.ts`에서 `VolumeProfileRow` import 및 `PriceEntry` 타입 정의 제거; `result.profile.every/reduce/filter` 콜백 파라미터 어노테이션을 TypeScript 추론에 맡기도록 변경
-
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 4 | 2026-04-02]
-- Violation: `const result: VolumeProfileResult | null = calculateVolumeProfile(bars)` 형태로 명시적 타입 어노테이션이 남아 있어 `VolumeProfileResult` import가 불필요하게 유지됨
-- Rule: MISTAKES.md #11.7 — TypeScript가 함수 반환 타입으로 자동 추론할 수 있을 때 명시적 어노테이션은 제거
-- Context: `volume-profile.test.ts`에서 `VolumeProfileResult` import 제거 및 `const result: VolumeProfileResult | null` 어노테이션을 `const result`로 변경하여 TypeScript 추론에 위임
-
 ## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
 - Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
 - Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation: smaller value (boundary) on left, larger on right
@@ -107,4 +97,9 @@
 - Violation: VP 색상 상수 `vpPoc`, `vpVah`, `vpVal`이 `components/chart/constants.ts`에 위치하여 domain layer의 `CHART_COLORS`에서 분리됨
 - Rule: ARCHITECTURE.md — 색상 상수는 `domain/constants/colors.ts`의 `CHART_COLORS` 객체 안에 있어야 하며, components layer에서 독립 상수로 선언하면 안 됨
 - Context: `VP_POC_COLOR`, `VP_VAH_COLOR`, `VP_VAL_COLOR`를 `components/chart/constants.ts`에서 제거하고 `domain/constants/colors.ts`의 `CHART_COLORS`에 `vpPoc`, `vpVah`, `vpVal`로 추가; `useVolumeProfileOverlay.ts`를 `CHART_COLORS` import로 변경
+
+## [feat/indicator-toolbar-collapse | review fix | 2026-04-03]
+- Violation: `useOnClickOutside` 커스텀 훅이 `useState`로 선언된 `openDropdown`과 `setOpenDropdown`보다 뒤에 위치하여 hook 선언 순서 규칙 위반 — `react-hooks/immutability` ESLint 에러 발생
+- Rule: components/CLAUDE.md Hook 선언 순서 — External hooks → State (useState) → Derived (useMemo) → Callbacks → Effects → Return; 단, 커스텀 훅이 state 변수를 참조할 경우 state 선언이 커스텀 훅 앞에 와야 함 (TDZ 회피)
+- Context: `IndicatorToolbar.tsx`에서 `useOnClickOutside` 콜백이 `openDropdown`, `setOpenDropdown`을 참조하므로, state 선언을 refs보다 앞으로 이동하고 커스텀 훅을 refs 직후에 배치 (`state → refs → custom hook → derived` 순서로 실용적 변경)
 
