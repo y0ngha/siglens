@@ -1,6 +1,15 @@
 # Fix Log
 
 
+## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
+- Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
+- Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage
+- Context: `ichimokuUtils.ts` exported `IchimokuCloudInput` but no other file imported it; removing `export` tightens the module boundary
+
+- Violation: IIFE inside ternary expression for complex multi-field computation
+- Rule: FF Readability (1-E) — complex anonymous expressions should be extracted into named helper functions
+- Context: `useIchimokuOverlay.ts` used an IIFE to compute `finalSenkouA/B/CloudBullish/Bearish`; extracted into `extendWithFutureCloud` named function
+
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 2)
 - Violation: `let` variables reassigned with spread inside a `for...of` loop, producing O(displacement²) allocations
 - Rule: MISTAKES.md #3 — `let` reassignment should be replaced with `const` + new variable; prefer `reduce` for functional accumulation
@@ -137,6 +146,27 @@
 - Violation: `useIchimokuOverlay.ts` line 30에서 객체 형태에 `type` alias 사용
 - Rule: MISTAKES.md rule 11.5, CONVENTIONS.md — 객체 형태는 `interface`를 사용해야 함
 - Context: `type IchimokuCloudPoint = { ... }`를 `interface IchimokuCloudPoint { ... }`로 변경
+
+## [PR #154 | feat/122/ichimoku-cloud-구현 | external review | 2026-04-03]
+- Violation: `buildCloudData` 순수 함수가 hook 파일(`useIchimokuOverlay.ts`)에 정의됨
+- Rule: CONVENTIONS.md — Pure utility functions (non-hook helpers) must always be placed in a `utils/` subfolder
+- Context: `buildCloudData`를 `src/components/chart/utils/ichimokuUtils.ts`로 이동; `IchimokuCloudInput`, `IchimokuCloudPoint`, `IchimokuCloudSeriesAccumulator` 인터페이스도 함께 정의
+
+- Violation: `buildCloudData` 파라미터 타입이 익명 인라인 객체 타입으로 선언됨
+- Rule: MISTAKES.md #11.5 — 객체 형태는 named interface로 선언해야 함
+- Context: 인라인 익명 객체 타입을 `IchimokuCloudInput` named interface로 추출하여 `ichimokuUtils.ts`에 정의
+
+- Violation: `map`/`reduce` 콜백 파라미터에 명시적 타입 누락
+- Rule: MISTAKES.md #11.6 — 콜백 파라미터는 TypeScript 추론 가능 여부와 무관하게 명시적 타입 선언 필수
+- Context: `buildCloudData`의 `ichimoku.map(point => ...)` 및 `futureCloudData.reduce((acc, point, j) => ...)` 콜백 파라미터에 `IchimokuCloudInput`, `IchimokuCloudSeriesAccumulator`, `IchimokuCloudPoint`, `number` 명시적 타입 추가
+
+- Violation: 테스트 상수 `BARS_FOR_KIJUN_CHIKOU = 100`과 `BARS_FOR_KIJUN = 100`이 동일한 값 중복; `BARS_FOR_FUTURE_CLOUD = 200`과 `BARS_FOR_SENKOB = 200`이 동일한 값 중복
+- Rule: MISTAKES.md #0 — 동일한 리터럴 값은 하나의 named const로 추출해야 함
+- Context: `ichimoku.test.ts`에서 `BARS_FOR_KIJUN_CHIKOU` 제거 후 `BARS_FOR_KIJUN`으로 통합; `BARS_FOR_FUTURE_CLOUD` 제거 후 `BARS_FOR_SENKOB`으로 통합; `makeBars(100)` 리터럴도 `BARS_FOR_KIJUN` 사용으로 변경
+
+- Violation: `IchimokuFuturePoint` 타입이 `ichimoku.ts`에 정의되어 다른 indicator 결과 타입들과 위치 불일치
+- Rule: CONVENTIONS.md 타입 일관성 — 모든 indicator 결과 타입은 `domain/types.ts`에 정의되어야 함
+- Context: `IchimokuFuturePoint`를 `domain/types.ts`로 이동; `ichimoku.ts`는 `domain/types`에서 import
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-02]
 - Violation: `useIchimokuOverlay.ts`의 `cloudLowerRef`가 `CHART_COLORS.background`(불투명 배경색)를 fill 색상으로 사용하여 cloudLower 아래의 다른 차트 시리즈(캔들스틱 등)를 덮어버림
