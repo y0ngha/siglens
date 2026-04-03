@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
+- Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
+- Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
+- Context: `skills/strategies/macd-cycle.md` used `indicators:\n  - macd\n  - ema` while every other skill file in the project uses the inline array format
+
+- Violation: Signal field order inconsistent between two signal instructions in `## AI Analysis Instructions`
+- Rule: FF Readability — same `Signal` structure described with different field order (`type → strength → description` vs `type → description → strength`) causes confusion for AI generating structured output
+- Context: Stage transition signal had `type → strength → description` order but entry timing signal had `type → description → strength` order; unified to `type → strength → description`
+
 ## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03]
 - Violation: JSX 내 IIFE 패턴 사용
 - Rule: FF.md Readability 1-A — 동시에 실행되지 않는 분기는 분리해야 함
@@ -13,7 +22,6 @@
 - Rule: FF.md Readability 1-D — 의미가 불명확한 숫자 리터럴은 이름 있는 상수로 추출해야 함
 - Context: `parseStructuredSummary`의 `sections.length >= 3`을 `MIN_STRUCTURED_SUMMARY_SECTIONS` 상수로 추출
 
-
 ## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
 - Violation: `.map()` callback with side effect mutating a closure variable (`counter`)
 - Rule: MISTAKES.md #1 — when a loop body has multiple statements and maintains accumulated state, `for...of` is preferred over `.map()` with side effects
@@ -24,9 +32,10 @@
 - Rule: MISTAKES.md #6 Pattern D — 테스트 입력 상수는 `TEST_` 프리픽스 형식을 사용해야 함
 - Context: `ichimoku.test.ts`의 4개 상수를 `TEST_BARS_FOR_TENKAN` 등으로 전면 rename
 
-- Violation: `calculateIchimokuFutureCloud`에 계산 정확도 테스트(accuracy test) 누락
-- Rule: CONVENTIONS.md Required Test Cases — 주기 기반 인디케이터는 첫 번째 값이 명세와 일치하는지 검증하는 accuracy 테스트가 필수
-- Context: `ichimoku.test.ts`에 `future[0].senkouA`가 sourceIndex = bars.length - displacement 기반 tenkan+kijun 평균과 일치하는지 검증하는 테스트 추가
+## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-03]
+- Violation: `strength` field missing from stage transition signal instruction in `## AI Analysis Instructions`
+- Rule: Domain type contract — `Signal` interface requires `strength: SignalStrength` as a mandatory field; omitting it causes AI to generate incomplete `Signal` objects
+- Context: `skills/strategies/macd-cycle.md` specified `strength` for entry timing signals but omitted it for stage transition signals, creating inconsistency that could produce invalid output
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
 - Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
@@ -163,4 +172,9 @@
 - Violation: `useOnClickOutside` 커스텀 훅이 `useState`로 선언된 `openDropdown`과 `setOpenDropdown`보다 뒤에 위치하여 hook 선언 순서 규칙 위반 — `react-hooks/immutability` ESLint 에러 발생
 - Rule: components/CLAUDE.md Hook 선언 순서 — External hooks → State (useState) → Derived (useMemo) → Callbacks → Effects → Return; 단, 커스텀 훅이 state 변수를 참조할 경우 state 선언이 커스텀 훅 앞에 와야 함 (TDZ 회피)
 - Context: `IndicatorToolbar.tsx`에서 `useOnClickOutside` 콜백이 `openDropdown`, `setOpenDropdown`을 참조하므로, state 선언을 refs보다 앞으로 이동하고 커스텀 훅을 refs 직후에 배치 (`state → refs → custom hook → derived` 순서로 실용적 변경)
+
+## [Issue #128 | feat/128/macd-cycle-indicator-구현 | 2026-04-03]
+- Violation: `skills/strategies/macd-cycle.md`에서 `type: strategy`를 사용했으나, `SkillType`은 `'pattern' | 'indicator_guide'`만 지원하므로 유효하지 않은 값
+- Rule: DOMAIN.md Skills System — SkillType enum must be one of the defined union type values; invalid strategy value causes type mismatch
+- Context: `skills/strategies/macd-cycle.md`의 frontmatter `type:` 필드를 `type: indicator_guide`로 수정하여 타입 유효성 확보
 
