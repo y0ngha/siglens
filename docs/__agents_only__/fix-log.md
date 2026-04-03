@@ -1,17 +1,6 @@
 # Fix Log
 
-## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
-- Violation: DOMAIN.md의 `calculateIchimokuFutureCloud` 배열 크기 명세가 "항상 displacement"로 기술되어 빈 배열 입력 시 `[]`를 반환하는 실제 구현과 불일치
-- Rule: MISTAKES.md #12 — 구현과 문서 명세는 항상 동기화되어야 함
-- Context: `docs/DOMAIN.md`의 배열 크기 설명을 "bars가 빈 배열인 경우 빈 배열을 반환. 그 외에는 항상 displacement 길이의 배열"로 수정
 
-- Violation: 테스트 상수 `BARS_FOR_TENKAN`, `BARS_FOR_KIJUN`, `BARS_FOR_SENKOA`, `BARS_FOR_SENKOB`에 `TEST_` 프리픽스 누락
-- Rule: MISTAKES.md #6 Pattern D — 테스트 입력 상수는 `TEST_` 프리픽스 형식을 사용해야 함
-- Context: `ichimoku.test.ts`의 4개 상수를 `TEST_BARS_FOR_TENKAN` 등으로 전면 rename
-
-- Violation: `calculateIchimokuFutureCloud`에 계산 정확도 테스트(accuracy test) 누락
-- Rule: CONVENTIONS.md Required Test Cases — 주기 기반 인디케이터는 첫 번째 값이 명세와 일치하는지 검증하는 accuracy 테스트가 필수
-- Context: `ichimoku.test.ts`에 `future[0].senkouA`가 sourceIndex = bars.length - displacement 기반 tenkan+kijun 평균과 일치하는지 검증하는 테스트 추가
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
 - Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file

@@ -108,18 +108,13 @@ System constraint note: This system provides a single MACD(12-26-9) rather than 
 
 ## AI Analysis Instructions
 
-Report the following in skillResults for this skill:
+Add an entry to skillResults with the following fields:
 
 - **skillName**: Must be exactly `"MACD 대순환 분석"`
-- **stage**: Current stage number (1–6) and description (e.g., "Stage 6 — Rise Transition 2")
-- **ema_array**: Current EMA(9), EMA(21), EMA(60) values and their ordering relationship
-- **cycle_direction**: Whether the stage is following forward progression or reverse cycle (with explanation)
-- **long_ema_slope**: EMA(60) direction — rising / flat / declining
-- **macd_momentum**: MACD histogram trend — expanding positive / shrinking / crossing / expanding negative
-- **entry_signal**: If current stage/conditions match any entry timing (Normal/Early/Advance long or short), describe it; if none, state "No entry signal at current stage"
 - **trend**: Set to `"bullish"` for Stages 1/5/6, `"bearish"` for Stages 2/3/4, `"neutral"` for transition points with mixed signals
+- **summary**: A comprehensive Korean-language summary that includes: current stage number (1–6) and description, EMA(9)/EMA(21)/EMA(60) ordering and slope, whether the stage follows forward progression or reverse cycle, EMA(60) slope direction (rising/flat/declining), MACD histogram trend (expanding positive/shrinking/crossing/expanding negative), and any active entry timing signal (Normal/Early/Advance long or short). If no entry signal is present, state so explicitly.
 
-Include in skillSignals:
+Add an entry to skillSignals with skillName: `"MACD 대순환 분석"`. The signals array should include:
 
 - If a stage transition has recently occurred: type `"skill"`, description in Korean describing the transition
 - If an entry timing condition is met: type `"skill"`, description in Korean describing the signal, strength `"strong"` for Normal, `"moderate"` for Early, `"weak"` for Advance

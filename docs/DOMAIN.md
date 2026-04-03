@@ -827,13 +827,14 @@ skills/
 
 ### Skill 타입
 
-현재 `type` 필드는 `'pattern'`만 정의되어 있다.
-`type`이 `'pattern'`이 아닌 경우 `undefined`로 처리된다.
+`type` 필드는 `'pattern'` 또는 `'indicator_guide'` 중 하나다.
+`type`이 없는 경우 `undefined`로 처리된다.
 
 | type | 설명 | 프롬프트 섹션 |
 |---|---|---|
 | `pattern` | 차트 패턴 감지 (헤드앤숄더, 이중천장 등) | "패턴 분석" |
-| (없음) | 인디케이터 해석, 전략 등 | "활성화된 Skills" |
+| `indicator_guide` | 인디케이터 신호 가이드 (MACD 대순환 분석 등) | "활성화된 Skills" |
+| (없음) | 기타 전략 등 | "활성화된 Skills" |
 
 ### 파일 형식
 
@@ -841,7 +842,7 @@ skills/
 ---
 name: string                  # skill 표시 이름 (SkillSignal.skillName에 사용)
 description: string           # skill 설명
-type: pattern                 # 선택. 현재 pattern만 존재
+type: pattern | indicator_guide  # 선택. pattern: 차트 패턴 감지 / indicator_guide: 인디케이터 신호 가이드
 category: string              # 선택. reversal_bullish | reversal_bearish | continuation_bullish | continuation_bearish | neutral
 pattern: string               # type: pattern일 때 패턴 식별자
 indicators: string[]          # 이 skill이 필요로 하는 인디케이터 목록
@@ -904,7 +905,7 @@ type SkillCategory =
 interface Skill {
     name: string;
     description: string;
-    type?: 'pattern';           // pattern일 때만 존재
+    type?: SkillType;           // 'pattern' | 'indicator_guide'
     category?: SkillCategory;   // skill 분류 (선택)
     pattern?: string;           // type='pattern'일 때 패턴 식별자 (예: 'double_top')
     indicators: string[];
