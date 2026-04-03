@@ -1,9 +1,9 @@
-import type { Bar, IchimokuResult, IchimokuFuturePoint } from '@/domain/types';
+import type { Bar, IchimokuFuturePoint, IchimokuResult } from '@/domain/types';
 import {
-    ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_BASE_PERIOD,
-    ICHIMOKU_SPAN_B_PERIOD,
+    ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_DISPLACEMENT,
+    ICHIMOKU_SPAN_B_PERIOD,
 } from '@/domain/indicators/constants';
 
 function periodMidpoint(
@@ -49,19 +49,13 @@ export function calculateIchimoku(
         const kijun = periodMidpoint(bars, i, basePeriod);
 
         const sourceIndex = i - displacement;
-        const senkouA =
-            sourceIndex >= 0
-                ? calculateSenkouA(
-                      bars,
-                      sourceIndex,
-                      conversionPeriod,
-                      basePeriod
-                  )
-                : null;
-        const senkouB =
-            sourceIndex >= 0
-                ? periodMidpoint(bars, sourceIndex, spanBPeriod)
-                : null;
+        const isSourceIndexValid = 0 <= sourceIndex;
+        const senkouA = isSourceIndexValid
+            ? calculateSenkouA(bars, sourceIndex, conversionPeriod, basePeriod)
+            : null;
+        const senkouB = isSourceIndexValid
+            ? periodMidpoint(bars, sourceIndex, spanBPeriod)
+            : null;
 
         const chikouIndex = i + displacement;
         const chikou =
