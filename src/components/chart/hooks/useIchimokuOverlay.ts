@@ -263,47 +263,76 @@ export function useIchimokuOverlay({
 
         // Append future cloud points projected displacement bars ahead
         const futureCloud = calculateIchimokuFutureCloud(bars);
-        if (bars.length >= 2) {
-            const interval =
-                bars[bars.length - 1].time - bars[bars.length - 2].time;
-            const lastTime = bars[bars.length - 1].time;
-            const futureCloudData = buildCloudData(futureCloud);
-            futureCloudData.forEach((point, j) => {
-                const time = (lastTime + (j + 1) * interval) as UTCTimestamp;
-                const senkouAVal = point.senkouA;
-                const senkouBVal = point.senkouB;
-                if (senkouAVal !== null) {
-                    senkouAData.push({ time, value: senkouAVal });
-                } else {
-                    senkouAData.push({ time });
-                }
-                if (senkouBVal !== null) {
-                    senkouBData.push({ time, value: senkouBVal });
-                } else {
-                    senkouBData.push({ time });
-                }
-                const bullishUpper = point.cloudBullishUpper;
-                if (bullishUpper !== null) {
-                    cloudBullishData.push({ time, value: bullishUpper });
-                } else {
-                    cloudBullishData.push({ time });
-                }
-                const bearishUpper = point.cloudBearishUpper;
-                if (bearishUpper !== null) {
-                    cloudBearishData.push({ time, value: bearishUpper });
-                } else {
-                    cloudBearishData.push({ time });
-                }
-            });
-        }
+        const {
+            finalSenkouA,
+            finalSenkouB,
+            finalCloudBullish,
+            finalCloudBearish,
+        } =
+            bars.length >= 2
+                ? (() => {
+                      const lastTime = bars[bars.length - 1].time;
+                      const interval = lastTime - bars[bars.length - 2].time;
+                      const futureCloudData = buildCloudData(futureCloud);
+                      return futureCloudData.reduce(
+                          (acc, point, j) => {
+                              const time = (lastTime +
+                                  (j + 1) * interval) as UTCTimestamp;
+                              return {
+                                  finalSenkouA: [
+                                      ...acc.finalSenkouA,
+                                      point.senkouA !== null
+                                          ? { time, value: point.senkouA }
+                                          : { time },
+                                  ],
+                                  finalSenkouB: [
+                                      ...acc.finalSenkouB,
+                                      point.senkouB !== null
+                                          ? { time, value: point.senkouB }
+                                          : { time },
+                                  ],
+                                  finalCloudBullish: [
+                                      ...acc.finalCloudBullish,
+                                      point.cloudBullishUpper !== null
+                                          ? {
+                                                time,
+                                                value: point.cloudBullishUpper,
+                                            }
+                                          : { time },
+                                  ],
+                                  finalCloudBearish: [
+                                      ...acc.finalCloudBearish,
+                                      point.cloudBearishUpper !== null
+                                          ? {
+                                                time,
+                                                value: point.cloudBearishUpper,
+                                            }
+                                          : { time },
+                                  ],
+                              };
+                          },
+                          {
+                              finalSenkouA: senkouAData,
+                              finalSenkouB: senkouBData,
+                              finalCloudBullish: cloudBullishData,
+                              finalCloudBearish: cloudBearishData,
+                          }
+                      );
+                  })()
+                : {
+                      finalSenkouA: senkouAData,
+                      finalSenkouB: senkouBData,
+                      finalCloudBullish: cloudBullishData,
+                      finalCloudBearish: cloudBearishData,
+                  };
 
         tenkanRef.current.setData(tenkanData);
         kijunRef.current.setData(kijunData);
         chikouRef.current.setData(chikouData);
-        senkouARef.current.setData(senkouAData);
-        senkouBRef.current.setData(senkouBData);
-        cloudBullishRef.current.setData(cloudBullishData);
-        cloudBearishRef.current.setData(cloudBearishData);
+        senkouARef.current.setData(finalSenkouA);
+        senkouBRef.current.setData(finalSenkouB);
+        cloudBullishRef.current.setData(finalCloudBullish);
+        cloudBearishRef.current.setData(finalCloudBearish);
     }, [indicators, bars, isVisible]);
 
     return { isVisible, toggle };
