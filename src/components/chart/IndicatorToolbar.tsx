@@ -17,6 +17,9 @@ type DropdownType = IndicatorType | null;
 
 const DROPDOWN_OFFSET_PX = 4;
 
+const TOOLBAR_LABEL_EXPANDED = 'Hide indicators';
+const TOOLBAR_LABEL_COLLAPSED = 'Show indicators';
+
 const indicatorButtonClass = (active: boolean): string =>
     cn(
         'rounded px-2 py-1 text-xs font-medium transition-colors',
@@ -24,6 +27,8 @@ const indicatorButtonClass = (active: boolean): string =>
             ? 'bg-secondary-700 text-white'
             : 'bg-secondary-800/80 text-secondary-400 hover:bg-secondary-700 hover:text-white'
     );
+
+const COLLAPSE_BUTTON_ACTIVE = false as const;
 
 interface DropdownIndicatorConfig {
     type: IndicatorType;
@@ -116,6 +121,30 @@ function DropdownPortal({
     );
 }
 
+interface CollapseToggleIconProps {
+    isExpanded: boolean;
+}
+
+function CollapseToggleIcon({ isExpanded }: CollapseToggleIconProps) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className={cn(
+                'h-4 w-4 transition-transform duration-200',
+                isExpanded && 'rotate-180'
+            )}
+        >
+            <path
+                fillRule="evenodd"
+                d="M5.22 8.22a.75.75 0 0 1 1.06 0L10 11.94l3.72-3.72a.75.75 0 1 1 1.06 1.06l-4.25 4.25a.75.75 0 0 1-1.06 0L5.22 9.28a.75.75 0 0 1 0-1.06Z"
+                clipRule="evenodd"
+            />
+        </svg>
+    );
+}
+
 interface IndicatorToolbarProps {
     maVisiblePeriods: number[];
     maAvailablePeriods: readonly number[];
@@ -151,6 +180,7 @@ export function IndicatorToolbar({
     volumeProfile,
     candlePatterns,
 }: IndicatorToolbarProps) {
+    const [isExpanded, setIsExpanded] = useState(true);
     const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
     const [dropdownPosition, setDropdownPosition] =
         useState<DropdownPosition | null>(null);
@@ -159,14 +189,6 @@ export function IndicatorToolbar({
     const maButtonRef = useRef<HTMLButtonElement>(null);
     const emaButtonRef = useRef<HTMLButtonElement>(null);
     const portalRef = useRef<HTMLDivElement>(null);
-
-    const buttonRefMap = useMemo(
-        () => ({
-            ma: maButtonRef,
-            ema: emaButtonRef,
-        }),
-        []
-    );
 
     useOnClickOutside(toolbarRef, event => {
         if (!openDropdown) return;
@@ -177,6 +199,21 @@ export function IndicatorToolbar({
             setOpenDropdown(null);
         }
     });
+
+    const buttonRefMap = useMemo(
+        () => ({
+            ma: maButtonRef,
+            ema: emaButtonRef,
+        }),
+        []
+    );
+
+    const toggleExpanded = (): void => {
+        setIsExpanded(prev => !prev);
+        if (openDropdown) {
+            setOpenDropdown(null);
+        }
+    };
 
     const toggleDropdown = (type: IndicatorType): void => {
         if (openDropdown === type) {
@@ -232,45 +269,71 @@ export function IndicatorToolbar({
 
     return (
         <div ref={toolbarRef} className="flex flex-col gap-1">
-            {dropdownIndicators.map(indicator => (
-                <div key={indicator.type} className="flex items-start gap-1">
-                    <button
-                        ref={buttonRefMap[indicator.type]}
-                        type="button"
-                        onClick={() => toggleDropdown(indicator.type)}
-                        aria-expanded={openDropdown === indicator.type}
-                        className={cn(
-                            indicatorButtonClass(indicator.active),
-                            'w-12 shrink-0'
+            <button
+                type="button"
+                onClick={toggleExpanded}
+                aria-expanded={isExpanded}
+                aria-label={
+                    isExpanded
+                        ? TOOLBAR_LABEL_EXPANDED
+                        : TOOLBAR_LABEL_COLLAPSED
+                }
+                className={cn(
+                    indicatorButtonClass(COLLAPSE_BUTTON_ACTIVE),
+                    'flex items-center justify-center'
+                )}
+            >
+                <CollapseToggleIcon isExpanded={isExpanded} />
+            </button>
+
+            {isExpanded && (
+                <>
+                    {dropdownIndicators.map(indicator => (
+                        <div
+                            key={indicator.type}
+                            className="flex items-start gap-1"
+                        >
+                            <button
+                                ref={buttonRefMap[indicator.type]}
+                                type="button"
+                                onClick={() => toggleDropdown(indicator.type)}
+                                aria-expanded={openDropdown === indicator.type}
+                                className={cn(
+                                    indicatorButtonClass(indicator.active),
+                                    'w-12 shrink-0'
+                                )}
+                            >
+                                {indicator.label}
+                            </button>
+                            <PeriodLabels
+                                indicatorName={indicator.label}
+                                visiblePeriods={indicator.visiblePeriods}
+                            />
+                        </div>
+                    ))}
+
+                    {openDropdown &&
+                        dropdownPosition &&
+                        activeDropdownIndicator && (
+                            <DropdownPortal
+                                position={dropdownPosition}
+                                indicator={activeDropdownIndicator}
+                                portalRef={portalRef}
+                            />
                         )}
-                    >
-                        {indicator.label}
-                    </button>
-                    <PeriodLabels
-                        indicatorName={indicator.label}
-                        visiblePeriods={indicator.visiblePeriods}
-                    />
-                </div>
-            ))}
 
-            {openDropdown && dropdownPosition && activeDropdownIndicator && (
-                <DropdownPortal
-                    position={dropdownPosition}
-                    indicator={activeDropdownIndicator}
-                    portalRef={portalRef}
-                />
+                    {toggleIndicators.map(indicator => (
+                        <button
+                            key={indicator.label}
+                            type="button"
+                            onClick={indicator.onToggle}
+                            className={indicatorButtonClass(indicator.visible)}
+                        >
+                            {indicator.label}
+                        </button>
+                    ))}
+                </>
             )}
-
-            {toggleIndicators.map(indicator => (
-                <button
-                    key={indicator.label}
-                    type="button"
-                    onClick={indicator.onToggle}
-                    className={indicatorButtonClass(indicator.visible)}
-                >
-                    {indicator.label}
-                </button>
-            ))}
         </div>
     );
 }
