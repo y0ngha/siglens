@@ -50,7 +50,7 @@ export function usePanelResize(): UsePanelResizeResult {
             setPanelWidth(prev =>
                 Math.max(PANEL_MIN_WIDTH, prev - KEYBOARD_RESIZE_STEP)
             );
-        } else if (e.key === 'ArrowRight') {
+        } else {
             setPanelWidth(prev =>
                 Math.min(PANEL_MAX_WIDTH, prev + KEYBOARD_RESIZE_STEP)
             );

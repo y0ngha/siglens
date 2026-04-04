@@ -32,7 +32,7 @@ export function useDragListener({
     }, []);
 
     const handleMouseMove = useEffectEvent((e: MouseEvent) => {
-        onResize(dragStartXRef.current - e.clientX);
+        onResize(e.clientX - dragStartXRef.current);
     });
 
     const handleMouseUp = useEffectEvent(() => {
