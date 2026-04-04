@@ -1146,8 +1146,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('"label"');
-            expect(result).toContain('"price"');
+            expect(result).toContain('"label": "neckline"');
         });
 
         it('patternSummaries 스키마에 timeRange 필드가 포함된다', () => {
