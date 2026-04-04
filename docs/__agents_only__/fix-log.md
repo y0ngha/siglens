@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 2)
+- Violation: `5 * 24 * 60 * 60 * 1000` 리터럴이 `alpaca.test.ts`의 세 테스트 케이스에 반복 사용 — 두 곳은 인라인, 한 곳은 지역 상수로 개별 선언
+- Rule: MISTAKES.md #0 — same value repeated in multiple locations must be extracted to a single const
+- Context: `alpaca.test.ts` 상단에 `LOOKBACK_1MIN_MS = TIMEFRAME_LOOKBACK_DAYS['1Min'] * 24 * 60 * 60 * 1000` 모듈 레벨 상수를 추출하고 세 테스트 케이스에서 공유
+
+- Violation: 1시간 = 밀리초(`MS_PER_HOUR`) 개념이 `alpaca.ts`와 `timeFormat.ts`에 각각 별도 정의
+- Rule: MISTAKES.md #0 — same concept defined in multiple places; FF.md Cohesion 3-B — shared domain constant belongs in a single source of truth
+- Context: `domain/constants/time.ts`에 `MS_PER_HOUR`, `MS_PER_SECOND`, `SECONDS_PER_HOUR` 추출; `alpaca.ts`와 `timeFormat.ts` 모두 domain import로 교체
+
 ## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-04] (external review)
 - Violation: 테스트 최상위 describe가 모듈명 대신 함수명으로 시작 — `eastern.test.ts`와 `timeFormat.test.ts` 모두 3단계 구조(module > function > case) 미준수
 - Rule: __tests__/CLAUDE.md — Always structure as 3 levels: `describe(module)` > `describe(function)` > `it(case)`
