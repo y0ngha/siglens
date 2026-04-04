@@ -46,7 +46,7 @@ describe('timeFormat', () => {
             });
         });
 
-        describe('EDT → EST DST 경계 케이스', () => {
+        describe('EDT 기간 (DST 활성)', () => {
             it('1Min: EDT(UTC-4) 기간의 UTC 15:00은 ET 11:00으로 포맷된다', () => {
                 const formatter = getTimeFormatter('1Min');
                 expect(formatter(MIDDAY_ET_TIMESTAMP_SECONDS)).toBe('11:00');

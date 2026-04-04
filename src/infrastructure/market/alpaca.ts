@@ -1,6 +1,10 @@
 import type { MarketDataProvider, GetBarsOptions, Bar } from './types';
 import { TIMEFRAME_LOOKBACK_DAYS } from '@/domain/constants/market';
-import { MS_PER_HOUR } from '@/domain/constants/time';
+import {
+    MS_PER_HOUR,
+    MS_PER_SECOND,
+    SECONDS_PER_DAY,
+} from '@/domain/constants/time';
 import { getEasternOffsetHours } from '@/domain/time/eastern';
 
 const BASE_URL = 'https://data.alpaca.markets/v2';
@@ -50,7 +54,9 @@ export class AlpacaProvider implements MarketDataProvider {
         const { symbol, timeframe, limit = 500, before } = options;
 
         const lookbackMs =
-            TIMEFRAME_LOOKBACK_DAYS[timeframe] * 24 * 60 * 60 * 1000;
+            TIMEFRAME_LOOKBACK_DAYS[timeframe] *
+            SECONDS_PER_DAY *
+            MS_PER_SECOND;
         const endTime = before ? new Date(before) : new Date();
         const approxStartUtc = new Date(endTime.getTime() - lookbackMs);
         const startOffsetMs =

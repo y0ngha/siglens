@@ -1,7 +1,13 @@
 import { AlpacaProvider } from '@/infrastructure/market/alpaca';
 import { TIMEFRAME_LOOKBACK_DAYS } from '@/domain/constants/market';
+import {
+    MS_PER_HOUR,
+    MS_PER_SECOND,
+    SECONDS_PER_DAY,
+} from '@/domain/constants/time';
 
-const LOOKBACK_1MIN_MS = TIMEFRAME_LOOKBACK_DAYS['1Min'] * 24 * 60 * 60 * 1000;
+const LOOKBACK_1MIN_MS =
+    TIMEFRAME_LOOKBACK_DAYS['1Min'] * SECONDS_PER_DAY * MS_PER_SECOND;
 
 const mockBar = {
     t: '2024-01-15T09:30:00Z',
@@ -193,8 +199,8 @@ describe('AlpacaProvider', () => {
             expect(startParam).not.toBeNull();
             const endMs = new Date('2024-03-12T10:00:00Z').getTime();
             const lookbackMs = LOOKBACK_1MIN_MS;
-            const endOffsetMs = -4 * 3600 * 1000;
-            const startOffsetMs = -5 * 3600 * 1000;
+            const endOffsetMs = -4 * MS_PER_HOUR;
+            const startOffsetMs = -5 * MS_PER_HOUR;
             const expectedStartMs =
                 endMs + endOffsetMs - lookbackMs - startOffsetMs;
             expect(startParam).toBe(new Date(expectedStartMs).toISOString());

@@ -1,5 +1,22 @@
 # Fix Log
 
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 3)
+- Violation: `alpaca.ts:52`에서 `24 * 60 * 60 * 1000` 리터럴 사용 — 이 PR이 추가한 `MS_PER_SECOND` 및 기존 `SECONDS_PER_DAY` 미사용
+- Rule: MISTAKES.md #0 — same value repeated in multiple locations must be extracted to a single const
+- Context: `TIMEFRAME_LOOKBACK_DAYS[timeframe] * 24 * 60 * 60 * 1000` → `TIMEFRAME_LOOKBACK_DAYS[timeframe] * SECONDS_PER_DAY * MS_PER_SECOND`으로 교체; `alpaca.ts` import에 `SECONDS_PER_DAY`, `MS_PER_SECOND` 추가
+
+- Violation: `alpaca.test.ts:4`의 `LOOKBACK_1MIN_MS` 정의에 `24 * 60 * 60 * 1000` 리터럴 사용
+- Rule: MISTAKES.md #0 — same value repeated in multiple locations must be extracted to a single const
+- Context: `TIMEFRAME_LOOKBACK_DAYS['1Min'] * 24 * 60 * 60 * 1000` → `TIMEFRAME_LOOKBACK_DAYS['1Min'] * SECONDS_PER_DAY * MS_PER_SECOND`으로 교체; `MS_PER_SECOND`, `SECONDS_PER_DAY` import 추가
+
+- Violation: `alpaca.test.ts:196-197`에서 `3600 * 1000` 리터럴 사용 — 이 PR이 추가한 `MS_PER_HOUR` 미사용
+- Rule: MISTAKES.md #0 — same value repeated in multiple locations must be extracted to a single const
+- Context: `-4 * 3600 * 1000` → `-4 * MS_PER_HOUR`, `-5 * 3600 * 1000` → `-5 * MS_PER_HOUR`으로 교체; `MS_PER_HOUR` import 추가
+
+- Violation: `timeFormat.test.ts:49` describe 이름이 실제 테스트 내용과 불일치 — 'EDT → EST DST 경계 케이스'지만 내부는 EDT 활성 기간의 일반 케이스
+- Rule: FF.md Readability 1-A — computing the same value twice reduces readability; misleading name obscures intent
+- Context: `'EDT → EST DST 경계 케이스'` → `'EDT 기간 (DST 활성)'`으로 수정
+
 ## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 2)
 - Violation: `5 * 24 * 60 * 60 * 1000` 리터럴이 `alpaca.test.ts`의 세 테스트 케이스에 반복 사용 — 두 곳은 인라인, 한 곳은 지역 상수로 개별 선언
 - Rule: MISTAKES.md #0 — same value repeated in multiple locations must be extracted to a single const
