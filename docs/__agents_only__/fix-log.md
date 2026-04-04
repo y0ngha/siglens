@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #169 (round 3) | feat/144/차트-패턴-주요-가격대-텍스트-표시 | 2026-04-05]
+- Violation: `docs/DOMAIN.md`의 `PatternSummary` 인터페이스가 `domain/types.ts`에 추가된 `keyPrices`, `timeRange`, `confidenceWeight` 필드를 누락하였고, 신규 `KeyPrice` 인터페이스 정의도 없음
+- Rule: MISTAKES.md TypeScript #12 — When function signatures, return types, or component props change, update DOMAIN.md descriptions immediately
+- Context: PR #169에서 `PatternSummary`에 세 개의 새 필드를 추가했으나 docs/DOMAIN.md의 인터페이스 정의가 동기화되지 않아 문서와 코드가 불일치; `KeyPrice` 인터페이스 및 모든 누락 필드를 추가하여 동기화
+
+- Violation: `prompt.test.ts`의 `keyPrices label/price 구조 검증` 테스트가 `'"price"'`를 확인하지만 해당 문자열은 `keyLevels`, `priceTargets` 등 기존 스키마에도 존재하여 `keyPrices`의 구조 변경을 실제로 검증하지 못함
+- Rule: CONVENTIONS.md 테스트 품질 — 테스트는 검증 대상 필드를 특정할 수 있는 충분히 구체적인 assertion을 사용해야 함
+- Context: `'"price"'` assertion을 `keyPrices` 컨텍스트 내 특정값인 `'"label": "neckline"'`으로 교체하여 keyPrices 구조를 직접 검증
+
 ## [PR #169 | feat/144/차트-패턴-주요-가격대-텍스트-표시 | 2026-04-04]
 - Violation: `seriesList.forEach((series, index) => { const keyPrice = keyPrices[index]; ... })` — external array accessed via index inside forEach with non-trivial body
 - Rule: MISTAKES.md #1 (non-trivial forEach body → prefer for...of) and #9 (external array accessed via index instead of using zip pattern)
