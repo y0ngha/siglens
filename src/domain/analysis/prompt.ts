@@ -223,6 +223,8 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
     candlePatterns:
         // Only candle patterns detected from bar data. Skills patterns go in patternSummaries.
         '[{ "patternName": "three_outside_down", "detected": true, "trend": "bearish", "summary": "..." }]',
+    trendlines:
+        '[{ "direction": "ascending | descending", "start": { "time": 1700000000, "price": 150.00 }, "end": { "time": 1700100000, "price": 155.00 } }]',
 };
 
 const buildSchemaBody = (): string => {
@@ -258,6 +260,14 @@ const ANALYSIS_GUIDELINES = [
     '- First target: nearest support/resistance; second target: based on pattern measurement',
     '- State the trigger condition (breakout/breakdown reference level) for each scenario',
     '- Strengthen target viability with supporting indicators (RSI extremes, Bollinger Band touch, MACD trend)',
+    '',
+    '### Trendline Detection',
+    '- Return 0 to 3 trendlines maximum',
+    '- ascending: connect higher lows (at least 2 clear swing low points)',
+    '- descending: connect lower highs (at least 2 clear swing high points)',
+    '- Use the Unix timestamp values from the provided bar data for the time field',
+    '- Only include a trendline when 2 or more clear swing points are identifiable',
+    '- If no clear trendlines exist, return an empty array',
 ].join('\n');
 
 const RESPONSE_LANGUAGE_INSTRUCTION =

@@ -1215,6 +1215,28 @@ describe('prompt', () => {
         });
     });
 
+    describe('trendlines 스키마', () => {
+        it('trendlines 스키마 키가 프롬프트에 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('trendlines');
+        });
+
+        it('가이드라인에 추세선 감지 지침이 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('Trendline Detection');
+        });
+    });
+
     describe('분석 요청 섹션 - Skills 패턴 목록 지시', () => {
         it('패턴 skill이 있을 때 patternSummaries 작성 규칙 안내가 포함된다', () => {
             const skill = makeSkill({

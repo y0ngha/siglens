@@ -31,6 +31,7 @@ describe('GeminiProvider', () => {
         patternSummaries: [],
         skillResults: [],
         candlePatterns: [],
+        trendlines: [],
     };
 
     beforeEach(() => {

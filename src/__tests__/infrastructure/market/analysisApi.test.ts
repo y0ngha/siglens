@@ -45,6 +45,8 @@ const mockAnalysisResponse = {
     },
     patternSummaries: [],
     skillResults: [],
+    candlePatterns: [],
+    trendlines: [],
 };
 
 describe('postAnalyze 함수는', () => {

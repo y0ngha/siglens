@@ -31,6 +31,7 @@ describe('ClaudeProvider', () => {
         patternSummaries: [],
         skillResults: [],
         candlePatterns: [],
+        trendlines: [],
     };
 
     beforeEach(() => {

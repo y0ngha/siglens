@@ -117,6 +117,7 @@ export function ChartContent({
                         bars={bars}
                         indicators={indicators}
                         patterns={analysis.patternSummaries}
+                        trendlines={analysis.trendlines}
                     />
                 </div>
 
