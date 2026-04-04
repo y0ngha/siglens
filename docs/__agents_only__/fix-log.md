@@ -1,57 +1,20 @@
 # Fix Log
 
-## [PR #166 | feat/134/key-levels-chart-visualization | 2026-04-05] (External Review — Round 6)
-- Violation: `areaSeriesMapRef` variable name implied `AreaSeries` but stored `ISeriesApi<'Line'>[]` after `AreaSeries` was replaced with two `LineSeries` in Round 5
-- Rule: FF.md Readability 1-A — names must reflect the actual value they hold
-- Context: `usePatternOverlay.ts` renamed `areaSeriesMapRef` to `regionSeriesMapRef` (6 occurrences) to accurately describe region-type pattern boundary line series
-
-- Violation: `as unknown as ISeriesApi<'Candlestick', UTCTimestamp>` double cast in `createSeriesMarkers` call because `seriesRef` was typed with default `Time` generic
-- Rule: MISTAKES.md #5.5 — type assertions removable via structural fix should be eliminated; propagating `UTCTimestamp` generic to the ref definition removes the need
-- Context: Updated `seriesRef` in `StockChart.tsx` and `UsePatternOverlayParams`/`UseCandlePatternMarkersParams` interfaces to use `ISeriesApi<'Candlestick', UTCTimestamp>`; `chart.addSeries` return cast added at definition site; double cast in hook removed
-
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (Round 5)
 - Violation: `region` render type used a single `AreaSeries` with only one `value` per bar, rendering as a flat line instead of a price band between upper and lower boundaries
 - Rule: Required finding — AreaSeries `value` is a single scalar; rendering a price band requires two data points (topValue/bottomValue) or two separate series
 - Context: `usePatternOverlay.ts` region branch replaced single `AreaSeries` with two `LineSeries` (upper and lower boundary), each receiving the correct boundary price from `keyPrices`
-
-- Violation: Pure utility function `removeHidden` defined inside a hook file (`usePatternOverlay.ts`) with no React dependency
-- Rule: MISTAKES.md #11.4 — non-hook helpers must live in `utils/` subfolder; also added `removeSeries` helper to keep chart API calls encapsulated
-- Context: `removeHidden` and `removeSeries` moved to `src/components/chart/utils/patternOverlayUtils.ts` with updated signatures; hook imports them
 
 - Violation: `useEffect` with `detectedPatterns` dependency dispatched `reset` action, silently replacing all of `visiblePatterns` and discarding any user-toggled-off state whenever `patterns` changed
 - Rule: FF.md Predictability 2-C — hidden side effect that overrides user toggle state is non-obvious from the hook's contract
 - Context: Replaced `reset` action with `sync` action that preserves existing visible state while adding newly detected patterns; `prevDetectedRef` tracks previously known patterns to distinguish new vs toggled-off
 
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (Round 4)
-- Violation: `seriesList[0]` literal index used in region data sync block while same block already uses `REGION_LOWER_PRICE_INDEX` and `REGION_UPPER_PRICE_INDEX` constants for structural positions
-- Rule: MISTAKES.md #0 — structural array positions must use named constants or destructuring; `areaSeriesMapRef` always stores a single-element array `[series]`, making destructuring the idiomatic form
-- Context: `usePatternOverlay.ts` region data-sync block had `seriesList[0].setData(regionData)`; changed to `const [regionSeries] = seriesList; regionSeries.setData(regionData)`
-
 - Violation: Non-null assertion `s.pattern!` used after `.filter(s => s.pattern)` because TypeScript cannot narrow the type through a plain boolean filter
 - Rule: MISTAKES.md #5.5 — prefer structurally type-safe patterns over type assertions; type predicates achieve the same runtime behavior with full type safety
 - Context: `confidence.ts` `buildSkillLookup` used `.filter(s => s.pattern).map(s => [s.pattern!, s])`; replaced filter with type predicate `(s): s is Skill & { pattern: string } => Boolean(s.pattern)`, eliminating the assertion
 
-- Violation: Magic string literals `'aboveBar'` and `'arrowDown'` used inline in `plugin.setMarkers` call
-- Rule: FF.md 1-D / MISTAKES.md #0 — literal values with semantic meaning must be extracted to named constants; same principle applied earlier in the PR for `AREA_SERIES_ALPHA_HEX`
-- Context: `usePatternOverlay.ts` marker data-sync block; extracted `MARKER_POSITION = 'aboveBar' as const` and `MARKER_SHAPE = 'arrowDown' as const` to `constants.ts`
-
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04] (Round 3)
-- Violation: `AREA_SERIES_ALPHA_HEX = '33'` defined as a magic literal inline at the top of a hook file
-- Rule: CONVENTIONS.md — hardcoded literals must be extracted to named constants with clear semantic names; MISTAKES.md #0 — value intent (opacity level) was not self-evident from the inline string
-- Context: `usePatternOverlay.ts` line 21 declared the constant locally; moved to `@/components/chart/constants` and imported alongside other chart constants
-
-- Violation: Array index literals `keyPrices[0]` and `keyPrices[1]` used to access structural boundary positions
-- Rule: MISTAKES.md #8 — hardcoded array indices that represent structural positions must be extracted to named constants; the indices represent the lower and upper boundary of a price region, not arbitrary positions
-- Context: `usePatternOverlay.ts` region data-sync block; extracted `REGION_LOWER_PRICE_INDEX = 0` and `REGION_UPPER_PRICE_INDEX = 1` to constants
-
-- Violation: Index literal `i === 0` used as a magic number to determine title placement in a `map` callback
-- Rule: MISTAKES.md #8 — the literal `0` represented the structural position "first line gets the label"; extracted to `LABEL_SERIES_INDEX = 0`
-- Context: `usePatternOverlay.ts` line-series creation loop in the series-lifecycle effect
-
-- Violation: Three identical `for...of` cleanup loops iterated over different maps with the same structure (check visibility, call cleanup, delete from map)
-- Rule: MISTAKES.md #10 — repeating identical filtering/iteration logic across multiple blocks; extracted `removeHidden<T>` helper accepting a map and cleanup callback
-- Context: `usePatternOverlay.ts` series-lifecycle effect lines 118–148 had three structurally identical loops for `lineSeriesMapRef`, `areaSeriesMapRef`, and `markerPluginMapRef`
-
 - Violation: Inconsistent local alias `kp` used for `pattern.keyPrices ?? []` in region block while `keyPrices` was used for the same concept in the line and marker blocks
 - Rule: FF.md Readability 1-G — inconsistent naming for the same concept causes unnecessary viewpoint shifts
 - Context: `usePatternOverlay.ts` region branch in series-lifecycle effect used `kp`; renamed to `keyPrices` for consistency with adjacent blocks
@@ -61,26 +24,10 @@
 - Rule: MISTAKES.md #9.5 — logic with no practical effect must be removed; `detectedPatterns` is already filtered by `isDetectedAndVisible` which requires `renderConfig.show` to be truthy
 - Context: `usePatternOverlay.ts` lines 135 and 197 checked `if (!config) continue` after filtering ensured `renderConfig` is always defined; removed both checks and updated `isDetectedAndVisible` to a type predicate returning `p is VisiblePatternResult`
 
-- Violation: Range condition written with variable on left and boundary on right (`bar.time >= timeRange.start`)
-- Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation (boundary on left, variable on right)
-- Context: `usePatternOverlay.ts` region data filter had `bar.time >= timeRange.start && bar.time <= timeRange.end`; rewritten to `timeRange.start <= bar.time && bar.time <= timeRange.end`
-
-- Violation: `as` type assertions (`series as ISeriesApi<'Line'>`, `seriesList[0] as ISeriesApi<'Area'>`) in data sync effect
-- Rule: MISTAKES.md #5.5 — type assertions bypass type safety; prefer structural separation that avoids the need
-- Context: Single `seriesMapRef` held mixed `(ISeriesApi<'Line'> | ISeriesApi<'Area'>)[]` values, requiring assertions at access sites; split into `lineSeriesMapRef` and `areaSeriesMapRef` with separate typed Maps, eliminating all assertions
-
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04]
 - Violation: Inline return type object shape not extracted to interface in `confidence.ts`
 - Rule: CONVENTIONS.md — object shapes must be declared as named interfaces, not inline object types; `findSkill` parameter used `ReturnType<typeof buildSkillLookup>` binding it to the implementation rather than an explicit contract
 - Context: `buildSkillLookup` returned `{ byName: Map<string, Skill>; byPattern: Map<string, Skill>; }` inline; extracted to `SkillLookup` interface and updated `findSkill` parameter type accordingly
-
-- Violation: Pure predicate function `isDetectedAndVisible` defined inside a hook file instead of `utils/`
-- Rule: MISTAKES.md #11.4 — non-hook helper (pure utility) functions must reside in `utils/` subfolder, not inside hook files
-- Context: `isDetectedAndVisible` in `usePatternOverlay.ts` had no React hook calls; moved to `src/components/chart/utils/patternOverlayUtils.ts`
-
-- Violation: Magic string `'33'` used as 16-hex alpha suffix for AreaSeries `bottomColor`
-- Rule: FF.md 1-D / MISTAKES.md #0 — unnamed literal values must be extracted to named constants
-- Context: `bottomColor: \`${config.color}33\`` in `usePatternOverlay.ts`; extracted to `AREA_SERIES_ALPHA_HEX = '33'` with comment explaining ~20% opacity meaning
 
 ## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
 - Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
@@ -164,11 +111,6 @@
 - Rule: 비즈니스 로직 정확성 — -1은 범위 초과, 0은 볼륨 없는 유효 버킷으로 구별해야 함
 - Context: `src/domain/indicators/volume-profile.ts` L89에서 `<= 0` 조건을 `=== -1`로 수정하여 볼륨이 0인 버킷 너머에도 확장이 계속되도록 수정
 
-
-## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
-- Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
-- Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation: smaller value (boundary) on left, larger on right
-- Context: `src/domain/indicators/volume-profile.ts` L87에서 `state.valIndex - 1 >= 0`을 `0 <= state.valIndex - 1`으로 수정하여 경계값을 왼쪽에 배치
 
 ## [PR #153 | feat/121/volume-profile-indicator | internal review round 6 | 2026-04-03]
 - Violation: `expandValueArea`가 `calculateVolumeProfile` 내부 중첩 함수로 선언되어 `rowSize`, `bucketVolumes`, `targetVolume`을 클로저로 암묵적으로 캡처 — 함수 시그니처만으로 동작을 예측 불가

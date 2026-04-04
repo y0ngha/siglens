@@ -50,15 +50,11 @@ const visiblePatternsReducer = (
         // - Keep visible patterns that are still detected.
         // - Add patterns newly detected (not previously tracked via allDetected).
         // - Drop patterns no longer detected.
-        const next = new Set<string>();
-        for (const name of action.detected) {
-            const isNew = !action.allDetected.has(name);
-            const wasVisible = state.has(name);
-            if (isNew || wasVisible) {
-                next.add(name);
-            }
-        }
-        return next;
+        return new Set(
+            [...action.detected].filter(
+                name => !action.allDetected.has(name) || state.has(name)
+            )
+        );
     }
     const next = new Set(state);
     if (next.has(action.patternName)) {
