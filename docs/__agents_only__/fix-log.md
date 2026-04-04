@@ -1,5 +1,23 @@
 # Fix Log
 
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-04]
+- Violation: ET 시간대 변환 산술이 수학적으로 무효(no-op) — endOffsetMs가 더해졌다가 그대로 빠지므로 결과가 이전 코드와 동일
+- Rule: MISTAKES.md #9.5 — Leaving logic that has no effect / FF.md Readability — 효과 없는 변환은 가독성을 해침
+- Context: `alpaca.ts` getBars에서 endTime의 ET 오프셋을 더했다 빼는 방식으로 startUtc를 계산했으나, 동일한 ofsset을 사용해 net effect가 0이었음. DST 경계에서 start/end 오프셋을 각각 계산하도록 수정
+
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-04]
+- Violation: 동일 함수 내에서 `3600 * 1000` 리터럴을 두 번 반복 사용
+- Rule: MISTAKES.md #8.5 — 동일 값을 한 함수 내에서 여러 번 계산하면 named constant로 추출해야 함 / FF.md Cohesion 3-B (magic number 반복)
+- Context: `alpaca.ts` getBars에서 `getEasternOffsetHours` 결과에 밀리초 변환을 위해 `3600 * 1000`을 두 줄에 걸쳐 반복. `MS_PER_HOUR` 상수로 추출하여 단일 정의로 통합
+
+- Violation: 미국 주식 차트의 시간축을 KST(한국 표준시) 기준으로 표시
+- Rule: FF.md Readability — US 주식 플랫폼에서 KST는 사용자에게 혼란을 줌 (마감 시간이 다음날로 표시됨)
+- Context: `timeFormat.ts`의 toKstDate가 UTC+9 오프셋을 하드코딩. domain/time/eastern.ts의 getEasternOffsetHours를 활용하여 ET 기준으로 변경하고 DST 자동 처리
+
+- Violation: DST 전환 경계 케이스에 대한 인프라 레이어 테스트 누락
+- Rule: 테스트 커버리지 100% 필수 — EST/EDT 각 케이스 및 DST 전환 경계 검증 부재
+- Context: `alpaca.test.ts`에 EST 기간, EDT 기간, DST 전환(EST→EDT) 경계를 넘는 lookback 시나리오 테스트 추가
+
 ## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
 - Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
 - Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
@@ -69,9 +87,6 @@
 - Rule: DESIGN.md — VAH와 VAL은 서로 다른 가격 경계를 나타내므로 구별 가능한 색상이 필요
 - Context: `vpVal`을 `#34d399`(mint green)으로 변경하여 `vpVah`(purple)와 시각적으로 구별 가능하게 함
 
-- Violation: `src/__tests__/domain/analysis/prompt.test.ts`에서 RegExp 패턴 `/\[.+\]/`의 `\]`가 불필요한 이스케이프
-- Rule: ESLint `no-useless-escape` — 정규식 문자 클래스 외부에서 `]`는 이스케이프 불필요
-- Context: lines 767, 1207, 1231, 1243의 4개 RegExp 패턴에서 `\]`를 `]`로 수정
 
 
 
