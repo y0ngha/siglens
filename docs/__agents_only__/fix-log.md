@@ -9,6 +9,15 @@
 - Rule: FF.md Readability 1-A — separate code that doesn't run simultaneously via object maps; consistent with the rest of the file's pattern
 - Context: Two inline ternaries on `trendline.direction === 'ascending'` replaced with `TRENDLINE_COLOR` and `TRENDLINE_BG_COLOR` Record maps defined at module level
 
+## [PR #170 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-05]
+- Violation: `resolveTrendlinePrice` pure utility function defined inside `useTrendlineOverlay.ts` (hooks/ file) instead of utils/ subfolder
+- Rule: MISTAKES.md #11.4 / CONVENTIONS.md Component Folder Structure — hooks/ files must contain only React hooks; pure utility functions belong in utils/
+- Context: Moved `resolveTrendlinePrice` to `src/components/chart/utils/trendlineUtils.ts` and updated the import in `useTrendlineOverlay.ts`
+
+- Violation: `docs/DESIGN.md` not updated after adding `trendlineAscending`/`trendlineDescending` color constants in `src/lib/chartColors.ts`, and document still referenced old `@/domain/constants/colors` import path
+- Rule: MISTAKES.md #12 — when new constants are added, verify they are documented in the relevant design docs
+- Context: Added a new `### 추세선` section in docs/DESIGN.md and updated the import example from `@/domain/constants/colors` to `@/lib/chartColors`
+
 - Violation: `trendlineKey(trendline)` computed twice per iteration in the data-sync `useEffect` of `useTrendlineOverlay.ts`
 - Rule: MISTAKES.md #8.5 — identical values queried or computed multiple times in a single function should be extracted to a local const
 - Context: The key was computed inline inside `seriesMapRef.current.get(trendlineKey(trendline))`; extracted to `const key = trendlineKey(trendline)` before use

@@ -177,6 +177,13 @@ CCI 중앙선(0)    #94a3b860 (슬레이트 40% 투명도)
 VWAP             #e879f9   (퍼플)
 ```
 
+### 추세선
+
+```
+상승 추세선 (Ascending)  #26a69a   (틸 그린)
+하락 추세선 (Descending) #ef5350   (레드)
+```
+
 ### Ichimoku Cloud
 
 ```
@@ -312,7 +319,7 @@ export default config;
 <div className="bg-secondary-900 text-primary-400">
 
 ✅ 차트 컬러는 상수로 관리
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/chartColors';
 
 ❌ 하드코딩 금지
 <div style={{ backgroundColor: '#0f172a' }}>
