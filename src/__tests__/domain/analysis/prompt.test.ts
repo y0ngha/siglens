@@ -1139,6 +1139,17 @@ describe('prompt', () => {
             expect(result).toContain('keyPrices');
         });
 
+        it('patternSummaries 스키마의 keyPrices가 label/price 구조를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('"label"');
+            expect(result).toContain('"price"');
+        });
+
         it('patternSummaries 스키마에 timeRange 필드가 포함된다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
