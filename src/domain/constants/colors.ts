@@ -69,6 +69,10 @@ export const CHART_COLORS = {
     vpVah: '#8b5cf6',
     vpVal: '#34d399',
 
+    // 지지/저항선
+    supportLine: '#26a69a',
+    resistanceLine: '#ef5350',
+
     // Ichimoku Cloud
     ichimokuTenkan: '#2962ff',
     ichimokuKijun: '#e91e63',

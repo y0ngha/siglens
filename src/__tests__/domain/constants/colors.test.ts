@@ -148,6 +148,16 @@ describe('CHART_COLORS', () => {
             expect(CHART_COLORS.vpVal).toBe('#34d399');
         });
     });
+
+    describe('지지/저항선 컬러', () => {
+        it('supportLine은 틸 그린(#26a69a)이다', () => {
+            expect(CHART_COLORS.supportLine).toBe('#26a69a');
+        });
+
+        it('resistanceLine은 레드(#ef5350)이다', () => {
+            expect(CHART_COLORS.resistanceLine).toBe('#ef5350');
+        });
+    });
 });
 
 describe('getPeriodColor', () => {
