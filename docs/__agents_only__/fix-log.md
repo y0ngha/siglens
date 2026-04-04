@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-05] (round 5)
+- Violation: `EMPTY_KEY_LEVELS` constant placed between `StockChartProps` interface and `StockChart` function instead of above the Props interface
+- Rule: MISTAKES.md #3 / components/CLAUDE.md — Props interface must be immediately above the component function; all supporting constants/helpers go above the Props interface
+- Context: `EMPTY_KEY_LEVELS` was inserted after `StockChartProps` (line 76) as part of the key levels feature; moved to sit alongside `CANDLESTICK_PANE_INDEX` and `FIRST_INDICATOR_PANE_INDEX` constants above the interface
+
 ## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-05] (round 4)
 - Violation: `useKeyLevelsOverlay` combined series lifecycle (create/remove) and data sync (`setData`) in a single `useEffect`, causing all series to be recreated on every `bars` change (e.g. historical scroll load)
 - Rule: CONVENTIONS.md — One side effect per `useEffect`; components/CLAUDE.md — separate lifecycle and data sync effects
