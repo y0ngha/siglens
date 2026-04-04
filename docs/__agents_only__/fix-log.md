@@ -125,6 +125,11 @@
 - Rule: components/CLAUDE.md Hook 선언 순서 — External hooks → State (useState) → Derived (useMemo) → Callbacks → Effects → Return; 단, 커스텀 훅이 state 변수를 참조할 경우 state 선언이 커스텀 훅 앞에 와야 함 (TDZ 회피)
 - Context: `IndicatorToolbar.tsx`에서 `useOnClickOutside` 콜백이 `openDropdown`, `setOpenDropdown`을 참조하므로, state 선언을 refs보다 앞으로 이동하고 커스텀 훅을 refs 직후에 배치 (`state → refs → custom hook → derived` 순서로 실용적 변경)
 
+## [PR #167 | feat/131/드래그핸들-레이아웃-수정 | 2026-04-04]
+- Violation: `useDragListener.ts`에서 드래그 방향 계산 공식이 `dragStartXRef.current - e.clientX`로 반전되어 오른쪽 드래그 시 패널이 줄어드는 버그
+- Rule: UI 인터랙션 표준 UX — 마우스를 오른쪽으로 이동할 때 clientX가 증가하므로, `e.clientX - dragStartXRef.current`가 올바른 양수 deltaX를 생성하여 패널이 넓어져야 함
+- Context: `src/components/symbol-page/hooks/useDragListener.ts` L35에서 `dragStartXRef.current - e.clientX`를 `e.clientX - dragStartXRef.current`로 수정하여 드래그 방향 복원 (이미 commit 7598370에서 완료)
+
 ## [Issue #128 | feat/128/macd-cycle-indicator-구현 | 2026-04-03]
 - Violation: `skills/strategies/macd-cycle.md`에서 `type: strategy`를 사용했으나, `SkillType`은 `'pattern' | 'indicator_guide'`만 지원하므로 유효하지 않은 값
 - Rule: DOMAIN.md Skills System — SkillType enum must be one of the defined union type values; invalid strategy value causes type mismatch
