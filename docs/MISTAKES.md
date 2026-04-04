@@ -485,6 +485,18 @@ Review before implementation and ensure these are not repeated.
      ❌ useMAOverlay receives { lineWidth?: LineWidth } param
         useVolumeProfileOverlay hardcodes DEFAULT_LINE_WIDTH without accepting param
      ✅ useVolumeProfileOverlay({ ..., lineWidth = DEFAULT_LINE_WIDTH }) matches useMAOverlay pattern
+
+17. Builder or helper functions tightly coupled to specific domain implementations
+    → Rule: FF.md Coupling 4-A — high-level functions must not hard-code domain-specific values or terminology
+    → When a utility function (prompt builder, configuration builder, etc.) contains hard-coded terminology
+      or logic specific to one domain concept (e.g. Elliott Wave wave assessment, specific skill instructions),
+      extract that domain-specific logic to the source (e.g. skill frontmatter) instead
+    → Each domain concept should be the single source of truth (SSOT) for its own rules and terminology
+    ❌ buildAnalysisRequest hardcodes Elliott Wave-specific instructions ("motive wave", "corrective wave")
+    ✅ Each skill's ## AI Analysis Instructions section is the SSOT; builder uses generic approach
+    ❌ IndicatorToolbarProps lists all indicator prop pairs (bollingerVisible/onBollingerToggle, macdVisible/onMacdToggle, ...)
+       adding a new indicator requires changes in 4+ places (interface, component, parent caller, constant arrays)
+    ✅ Group related props: IndicatorToggleGroup { visible, onToggle } then map over indicator list
 ```
 
 ---

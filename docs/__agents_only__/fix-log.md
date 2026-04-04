@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04]
+- Violation: Inline return type object shape not extracted to interface in `confidence.ts`
+- Rule: CONVENTIONS.md — object shapes must be declared as named interfaces, not inline object types; `findSkill` parameter used `ReturnType<typeof buildSkillLookup>` binding it to the implementation rather than an explicit contract
+- Context: `buildSkillLookup` returned `{ byName: Map<string, Skill>; byPattern: Map<string, Skill>; }` inline; extracted to `SkillLookup` interface and updated `findSkill` parameter type accordingly
+
+- Violation: Pure predicate function `isDetectedAndVisible` defined inside a hook file instead of `utils/`
+- Rule: MISTAKES.md #11.4 — non-hook helper (pure utility) functions must reside in `utils/` subfolder, not inside hook files
+- Context: `isDetectedAndVisible` in `usePatternOverlay.ts` had no React hook calls; moved to `src/components/chart/utils/patternOverlayUtils.ts`
+
+- Violation: Magic string `'33'` used as 16-hex alpha suffix for AreaSeries `bottomColor`
+- Rule: FF.md 1-D / MISTAKES.md #0 — unnamed literal values must be extracted to named constants
+- Context: `bottomColor: \`${config.color}33\`` in `usePatternOverlay.ts`; extracted to `AREA_SERIES_ALPHA_HEX = '33'` with comment explaining ~20% opacity meaning
+
 ## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
 - Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
 - Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
@@ -39,11 +52,6 @@
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
 - Context: `route.ts`의 입력 검증에서 `!bars`만으로는 빈 배열을 거르지 못하여, `bars.length === 0` 조건을 추가하여 빈 bars도 400 응답으로 처리
-
-## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
-- Violation: `IndicatorToolbarProps`에 `xyzVisible + onXYZToggle` 플랫 props 12개가 나열되어 새 지표 추가 시 props 2개씩 증가
-- Rule: FF.md Coupling 4-A — 함께 변경되는 props는 묶어야 한다; 새 지표마다 interface와 호출 사이트 양쪽을 수정해야 하는 tight coupling
-- Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
 
 ## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 4 | 2026-03-31]
 - Violation: focusable `role="separator"` 드래그 핸들에 `onKeyDown` 핸들러가 없어 키보드 사용자가 패널 너비를 조절할 수 없는 접근성 미구현
@@ -132,11 +140,6 @@
 - Violation: `PatternAccordionItemProps.onToggleVisibility` 파라미터명이 `patternName`으로 실제 전달값(패턴 ID)과 불일치
 - Rule: FF.md Readability 1-A — 파라미터명은 실제 전달되는 값의 의미를 반영해야 함
 - Context: `AnalysisPanel.tsx`의 `PatternAccordionItemProps.onToggleVisibility` 파라미터를 `patternName: string`에서 `patternId: string`으로 변경
-
-## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03] (Round 2 — external review)
-- Violation: `buildAnalysisRequest`의 `strategyInstruction`에 엘리어트 파동 전용 용어("wave assessment", "motive wave", "corrective wave") 하드코딩
-- Rule: FF.md Coupling 4-A — prompt builder가 특정 skill의 도메인 언어에 결합되어서는 안 됨; 각 skill의 `## AI Analysis Instructions`가 단일 정보 출처(single source of truth)
-- Context: `src/domain/analysis/prompt.ts` L294에서 Elliott Wave 전용 trend 판단 지시를 범용 지시("Set the trend field based on each skill's own analysis instructions")로 교체
 
 ## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-04] (Round 3 — external review)
 - Violation: `AnalysisPanel.tsx`에서 `parseStructuredSummary` import에 상대 경로(`./utils/parseStructuredSummary`) 사용
