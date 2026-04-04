@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useMemo, useRef } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
@@ -11,11 +11,26 @@ import {
     TRENDLINE_DIRECTION_COLOR,
     TRENDLINE_DIRECTION_LABEL,
 } from '@/components/trendline/constants';
+import { trendlineKey } from '@/components/chart/utils/trendlineUtils';
 
 interface UseTrendlineOverlayParams {
     chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
     trendlines: Trendline[];
+}
+
+/**
+ * 추세선의 기준 가격을 실제 바 데이터에서 조회한다.
+ * 상승 추세선은 저가(low), 하락 추세선은 고가(high)를 사용한다.
+ * 해당 타임스탬프의 바가 없으면 AI가 제공한 가격을 그대로 사용한다.
+ */
+function resolveTrendlinePrice(
+    bar: Bar | undefined,
+    direction: Trendline['direction'],
+    fallback: number
+): number {
+    if (!bar) return fallback;
+    return direction === 'ascending' ? bar.low : bar.high;
 }
 
 export function useTrendlineOverlay({
@@ -25,6 +40,11 @@ export function useTrendlineOverlay({
 }: UseTrendlineOverlayParams): void {
     const prevChartRef = useRef<IChartApi | null>(null);
     const seriesMapRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
+
+    const barsMap = useMemo(
+        () => new Map(bars.map(bar => [bar.time, bar])),
+        [bars]
+    );
 
     const clearSeriesRefs = useEffectEvent(() => {
         seriesMapRef.current = new Map();
@@ -41,9 +61,7 @@ export function useTrendlineOverlay({
 
         if (!chart) return;
 
-        const activeKeys = new Set(
-            trendlines.map(t => `${t.direction}:${t.start.time}:${t.end.time}`)
-        );
+        const activeKeys = new Set(trendlines.map(trendlineKey));
 
         // 현재 trendlines에 없는 시리즈 삭제
         for (const [key, series] of seriesMapRef.current.entries()) {
@@ -55,7 +73,7 @@ export function useTrendlineOverlay({
 
         // 새로 표시해야 하는 추세선 시리즈 추가
         for (const trendline of trendlines) {
-            const key = `${trendline.direction}:${trendline.start.time}:${trendline.end.time}`;
+            const key = trendlineKey(trendline);
             if (seriesMapRef.current.has(key)) continue;
 
             const series = chart.addSeries(LineSeries, {
@@ -77,32 +95,55 @@ export function useTrendlineOverlay({
         const lastBar = bars[bars.length - 1];
 
         for (const trendline of trendlines) {
-            const key = `${trendline.direction}:${trendline.start.time}:${trendline.end.time}`;
+            const key = trendlineKey(trendline);
             const series = seriesMapRef.current.get(key);
             if (!series) continue;
 
-            const extended = extendTrendline(trendline, lastBar.time);
+            // 실제 바 데이터에서 가격 조회: 상승 추세선은 저가, 하락 추세선은 고가 사용
+            const startPrice = resolveTrendlinePrice(
+                barsMap.get(trendline.start.time),
+                trendline.direction,
+                trendline.start.price
+            );
+            const endPrice = resolveTrendlinePrice(
+                barsMap.get(trendline.end.time),
+                trendline.direction,
+                trendline.end.price
+            );
+
+            // 실제 바 가격으로 보정된 추세선 데이터
+            const resolvedTrendline: Trendline = {
+                direction: trendline.direction,
+                start: { time: trendline.start.time, price: startPrice },
+                end: { time: trendline.end.time, price: endPrice },
+            };
+
+            const extended = extendTrendline(resolvedTrendline, lastBar.time);
 
             // lightweight-charts는 타임스탬프가 엄격하게 오름차순이어야 하므로 정렬 및 중복 제거
-            const points = [
+            const basePoints = [
                 {
-                    time: trendline.start.time as UTCTimestamp,
-                    value: trendline.start.price,
+                    time: resolvedTrendline.start.time as UTCTimestamp,
+                    value: startPrice,
                 },
                 {
-                    time: trendline.end.time as UTCTimestamp,
-                    value: trendline.end.price,
+                    time: resolvedTrendline.end.time as UTCTimestamp,
+                    value: endPrice,
                 },
             ].sort((a, b) => a.time - b.time);
 
-            if (extended.time > points[points.length - 1].time) {
-                points.push({
-                    time: extended.time as UTCTimestamp,
-                    value: extended.price,
-                });
-            }
+            const allPoints =
+                extended.time > basePoints[basePoints.length - 1].time
+                    ? [
+                          ...basePoints,
+                          {
+                              time: extended.time as UTCTimestamp,
+                              value: extended.price,
+                          },
+                      ]
+                    : basePoints;
 
-            const uniqueData = points.filter(
+            const uniqueData = allPoints.filter(
                 (p, i, arr) => i === 0 || p.time > arr[i - 1].time
             );
 
@@ -110,5 +151,5 @@ export function useTrendlineOverlay({
                 series.setData(uniqueData);
             }
         }
-    }, [bars, trendlines]);
+    }, [bars, barsMap, trendlines]);
 }

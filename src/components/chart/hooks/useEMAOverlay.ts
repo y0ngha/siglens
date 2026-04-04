@@ -10,7 +10,7 @@ import {
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
-import { getPeriodColor } from '@/domain/constants/colors';
+import { getPeriodColor } from '@/lib/chartColors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesDataFromValues } from '@/components/chart/utils/seriesDataUtils';

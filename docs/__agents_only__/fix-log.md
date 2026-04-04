@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #170 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-05]
+- Violation: `CHART_COLORS` and `getPeriodColor` defined in `src/domain/constants/colors.ts`, which is a UI concern and must not live in the domain layer
+- Rule: ARCHITECTURE.md domain layer rule — UI-related constants (colors, styles) do not belong in domain/
+- Context: Chart color constants were placed in domain/ during initial implementation; moved to `src/lib/chartColors.ts` and updated all 19 import sites including test files
+
+- Violation: `TrendlineItem` in `AnalysisPanel.tsx` used inline ternary expressions for `colorClass` and `bgClass` instead of `Record<TrendlineDirection, string>` maps
+- Rule: FF.md Readability 1-A — separate code that doesn't run simultaneously via object maps; consistent with the rest of the file's pattern
+- Context: Two inline ternaries on `trendline.direction === 'ascending'` replaced with `TRENDLINE_COLOR` and `TRENDLINE_BG_COLOR` Record maps defined at module level
+
+- Violation: `trendlineKey(trendline)` computed twice per iteration in the data-sync `useEffect` of `useTrendlineOverlay.ts`
+- Rule: MISTAKES.md #8.5 — identical values queried or computed multiple times in a single function should be extracted to a local const
+- Context: The key was computed inline inside `seriesMapRef.current.get(trendlineKey(trendline))`; extracted to `const key = trendlineKey(trendline)` before use
+
 ## [Issue #133 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-04]
 - Violation: `TRENDLINE_DIRECTION_LABEL` and `TRENDLINE_DIRECTION_COLOR` defined in both `src/components/chart/hooks/useTrendlineOverlay.ts` and `src/components/analysis/AnalysisPanel.tsx`
 - Rule: MISTAKES.md rule 0, FF.md Cohesion 3-B — same values defined in multiple places create maintenance risk; one source of truth required
@@ -21,6 +34,23 @@
 - Violation: `AnalysisPanel.tsx` imported `TRENDLINE_DIRECTION_COLOR` and `TRENDLINE_DIRECTION_LABEL` from `@/components/chart/constants`, coupling an analysis-layer component to a sibling chart component folder
 - Rule: FF.md Cohesion 3-A — constants shared between chart and analysis components should live in a dedicated shared location
 - Context: Moved both constants to `src/components/trendline/constants.ts`; `chart/constants.ts` re-exports them for backward compatibility
+
+## [PR #170 Round 3 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-04]
+- Violation: Unused backward-compatibility re-export of `TRENDLINE_DIRECTION_LABEL` and `TRENDLINE_DIRECTION_COLOR` in `chart/constants.ts` with no importers
+- Rule: CLAUDE.md — avoid backwards-compatibility hacks like re-exporting; if unused, delete completely
+- Context: After moving constants to `components/trendline/constants.ts`, the re-export in `chart/constants.ts` was kept but no file imported from `chart/constants` for these symbols; removed the entire re-export block
+
+- Violation: `const points` array mutated via `.push()` in `useTrendlineOverlay.ts` data sync effect
+- Rule: CONVENTIONS.md immutability — `❌ bars.push(newBar)` / `✅ [...bars, newBar]`; MISTAKES.md rule 4 — directly mutating original arrays/objects
+- Context: `points.push({ time: extended.time, value: extended.price })` replaced with spread into `allPoints` const
+
+- Violation: Template literal `` `${t.direction}:${t.start.time}:${t.end.time}` `` duplicated 3 times in `useTrendlineOverlay.ts`
+- Rule: MISTAKES.md rule 0 — repeating hardcoded literals in multiple locations; extract to single const
+- Context: Key generation pattern appeared at lines 45, 58, 80; extracted to `trendlineKey` function in `src/components/chart/utils/trendlineUtils.ts`
+
+- Violation: Trendline rendering used AI-provided prices directly without grounding to actual bar data, causing wrong direction and wrong price position on chart
+- Rule: FF.md Predictability 2-A — rendering must produce predictable output from the series data; AI prices may not match actual bar OHLC prices at the given timestamps
+- Context: For ascending trendlines, bar.low was used; for descending, bar.high; `barsMap` (useMemo) used for O(1) lookup; `extendTrendline` called with resolved prices
 
 ## [PR #170 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-04]
 - Violation: `VisibleTrendlinesAction` toggle union, `visibleTrendlinesReducer` toggle branch, `useReducer`, reset `useEffect`, and `visibleTrendlines.has()` guards all remained as dead code after toggle was removed externally

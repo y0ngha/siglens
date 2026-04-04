@@ -16,7 +16,7 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@/domain/types';
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
 interface UseVolumeProfileOverlayParams {

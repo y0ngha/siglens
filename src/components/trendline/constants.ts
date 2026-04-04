@@ -1,5 +1,5 @@
 import type { Trendline } from '@/domain/types';
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/chartColors';
 
 export const TRENDLINE_DIRECTION_LABEL: Record<Trendline['direction'], string> =
     {

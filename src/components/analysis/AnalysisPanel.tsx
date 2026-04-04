@@ -396,20 +396,24 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
     );
 }
 
+const TRENDLINE_COLOR: Record<Trendline['direction'], string> = {
+    ascending: 'text-chart-bullish',
+    descending: 'text-chart-bearish',
+};
+
+const TRENDLINE_BG_COLOR: Record<Trendline['direction'], string> = {
+    ascending: 'bg-chart-bullish',
+    descending: 'bg-chart-bearish',
+};
+
 interface TrendlineItemProps {
     trendline: Trendline;
 }
 
 function TrendlineItem({ trendline }: TrendlineItemProps) {
     const label = TRENDLINE_DIRECTION_LABEL[trendline.direction];
-    const colorClass =
-        trendline.direction === 'ascending'
-            ? 'text-chart-bullish'
-            : 'text-chart-bearish';
-    const bgClass =
-        trendline.direction === 'ascending'
-            ? 'bg-chart-bullish'
-            : 'bg-chart-bearish';
+    const colorClass = TRENDLINE_COLOR[trendline.direction];
+    const bgClass = TRENDLINE_BG_COLOR[trendline.direction];
 
     return (
         <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
