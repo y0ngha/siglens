@@ -2,11 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import type { RefObject } from 'react';
-import {
-    AreaSeries,
-    LineSeries,
-    createSeriesMarkers,
-} from 'lightweight-charts';
+import { LineSeries, createSeriesMarkers } from 'lightweight-charts';
 import type {
     IChartApi,
     ISeriesApi,
@@ -15,14 +11,19 @@ import type {
 } from 'lightweight-charts';
 import type { Bar, PatternResult } from '@/domain/types';
 import {
-    AREA_SERIES_ALPHA_HEX,
     DEFAULT_LINE_WIDTH,
     LABEL_SERIES_INDEX,
+    MARKER_POSITION,
+    MARKER_SHAPE,
     REGION_LOWER_PRICE_INDEX,
     REGION_UPPER_PRICE_INDEX,
 } from '@/components/chart/constants';
 import type { VisiblePatternResult } from '@/components/chart/utils/patternOverlayUtils';
-import { isDetectedAndVisible } from '@/components/chart/utils/patternOverlayUtils';
+import {
+    isDetectedAndVisible,
+    removeHidden,
+    removeSeries,
+} from '@/components/chart/utils/patternOverlayUtils';
 
 interface UsePatternOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -37,14 +38,28 @@ interface UsePatternOverlayReturn {
 }
 
 type VisiblePatternsAction =
-    | { type: 'reset'; detected: Set<string> }
+    | { type: 'sync'; detected: Set<string>; allDetected: Set<string> }
     | { type: 'toggle'; patternName: string };
 
 const visiblePatternsReducer = (
     state: Set<string>,
     action: VisiblePatternsAction
 ): Set<string> => {
-    if (action.type === 'reset') return action.detected;
+    if (action.type === 'sync') {
+        // Preserve user toggle state:
+        // - Keep visible patterns that are still detected.
+        // - Add patterns newly detected (not previously tracked via allDetected).
+        // - Drop patterns no longer detected.
+        const next = new Set<string>();
+        for (const name of action.detected) {
+            const isNew = !action.allDetected.has(name);
+            const wasVisible = state.has(name);
+            if (isNew || wasVisible) {
+                next.add(name);
+            }
+        }
+        return next;
+    }
     const next = new Set(state);
     if (next.has(action.patternName)) {
         next.delete(action.patternName);
@@ -59,7 +74,7 @@ const visiblePatternsReducer = (
  * renderConfig.type에 따라 line / marker / region 타입을 구분하여 처리한다.
  * - line: keyPrices의 각 값을 수평선으로 표시한다 (복수 keyPrices 지원).
  * - marker: 캔들스틱 시리즈 위에 마커 플러그인으로 표시한다.
- * - region: AreaSeries로 keyPrices[0]~keyPrices[1] 사이의 구간을 표시한다.
+ * - region: LineSeries 두 개로 keyPrices[0]~keyPrices[1] 사이의 구간 상단/하단 경계를 표시한다.
  */
 export function usePatternOverlay({
     chartRef,
@@ -76,10 +91,11 @@ export function usePatternOverlay({
             )
     );
     const prevChartRef = useRef<IChartApi | null>(null);
+    const prevDetectedRef = useRef<Set<string>>(new Set());
     const lineSeriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(
         new Map()
     );
-    const areaSeriesMapRef = useRef<Map<string, ISeriesApi<'Area'>[]>>(
+    const areaSeriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(
         new Map()
     );
     const markerPluginMapRef = useRef<
@@ -97,7 +113,12 @@ export function usePatternOverlay({
 
     useEffect(() => {
         const detected = new Set(detectedPatterns.map(p => p.patternName));
-        dispatch({ type: 'reset', detected });
+        dispatch({
+            type: 'sync',
+            detected,
+            allDetected: prevDetectedRef.current,
+        });
+        prevDetectedRef.current = detected;
     }, [detectedPatterns]);
 
     // 시리즈 lifecycle 관리 (생성/제거)
@@ -118,30 +139,13 @@ export function usePatternOverlay({
 
         if (!chart) return;
 
-        // visiblePatterns에 포함되지 않는 항목을 맵에서 제거하고 cleanup 콜백을 실행하는 헬퍼
-        const removeHidden = <T>(
-            map: Map<string, T>,
-            cleanup: (value: T) => void
-        ): void => {
-            for (const [name, value] of map.entries()) {
-                if (!visiblePatterns.has(name)) {
-                    cleanup(value);
-                    map.delete(name);
-                }
-            }
-        };
-
-        removeHidden(lineSeriesMapRef.current, seriesList => {
-            for (const s of seriesList) {
-                chart.removeSeries(s);
-            }
-        });
-        removeHidden(areaSeriesMapRef.current, seriesList => {
-            for (const s of seriesList) {
-                chart.removeSeries(s);
-            }
-        });
-        removeHidden(markerPluginMapRef.current, plugin => {
+        removeHidden(lineSeriesMapRef.current, visiblePatterns, seriesList =>
+            removeSeries(chart, seriesList)
+        );
+        removeHidden(areaSeriesMapRef.current, visiblePatterns, seriesList =>
+            removeSeries(chart, seriesList)
+        );
+        removeHidden(markerPluginMapRef.current, visiblePatterns, plugin => {
             plugin.detach();
         });
 
@@ -187,16 +191,27 @@ export function usePatternOverlay({
                 if (areaSeriesMapRef.current.has(pattern.patternName)) continue;
                 const keyPrices = pattern.keyPrices ?? [];
                 if (keyPrices.length < 2) continue;
-                const series = chart.addSeries(AreaSeries, {
-                    topColor: config.color,
-                    bottomColor: `${config.color}${AREA_SERIES_ALPHA_HEX}`,
-                    lineColor: config.color,
+                // region은 두 수평선(상단/하단)으로 구간을 표시한다.
+                // AreaSeries의 value는 단일 값이므로 두 경계를 표현할 수 없다.
+                // 대신 LineSeries 두 개를 사용하여 상단과 하단 경계를 각각 렌더링한다.
+                const upperSeries = chart.addSeries(LineSeries, {
+                    color: config.color,
                     lineWidth: DEFAULT_LINE_WIDTH,
                     priceLineVisible: false,
                     lastValueVisible: false,
                     title: config.label,
                 });
-                areaSeriesMapRef.current.set(pattern.patternName, [series]);
+                const lowerSeries = chart.addSeries(LineSeries, {
+                    color: config.color,
+                    lineWidth: DEFAULT_LINE_WIDTH,
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    title: '',
+                });
+                areaSeriesMapRef.current.set(pattern.patternName, [
+                    upperSeries,
+                    lowerSeries,
+                ]);
             }
         }
         // chartRef(RefObject)는 항상 동일 참조를 유지하므로 이 dependency는
@@ -238,9 +253,9 @@ export function usePatternOverlay({
                 plugin.setMarkers([
                     {
                         time: timeRange.start as UTCTimestamp,
-                        position: 'aboveBar',
+                        position: MARKER_POSITION,
                         color: config.color,
-                        shape: 'arrowDown',
+                        shape: MARKER_SHAPE,
                         text: config.label,
                     },
                 ]);
@@ -248,26 +263,35 @@ export function usePatternOverlay({
                 const seriesList = areaSeriesMapRef.current.get(
                     pattern.patternName
                 );
-                if (!seriesList || seriesList.length === 0) continue;
+                if (!seriesList || seriesList.length < 2) continue;
                 const { timeRange, keyPrices = [] } = pattern;
                 if (!timeRange || keyPrices.length < 2) continue;
                 const upper = Math.max(
                     keyPrices[REGION_LOWER_PRICE_INDEX],
                     keyPrices[REGION_UPPER_PRICE_INDEX]
                 );
-                const regionData = bars
-                    .filter(
-                        bar =>
-                            timeRange.start <= bar.time &&
-                            bar.time <= timeRange.end
-                    )
-                    .map(bar => ({
+                const lower = Math.min(
+                    keyPrices[REGION_LOWER_PRICE_INDEX],
+                    keyPrices[REGION_UPPER_PRICE_INDEX]
+                );
+                const barsInRange = bars.filter(
+                    bar =>
+                        timeRange.start <= bar.time && bar.time <= timeRange.end
+                );
+                if (barsInRange.length === 0) continue;
+                const [upperSeries, lowerSeries] = seriesList;
+                upperSeries.setData(
+                    barsInRange.map(bar => ({
                         time: bar.time as UTCTimestamp,
                         value: upper,
-                    }));
-                if (regionData.length > 0) {
-                    seriesList[0].setData(regionData);
-                }
+                    }))
+                );
+                lowerSeries.setData(
+                    barsInRange.map(bar => ({
+                        time: bar.time as UTCTimestamp,
+                        value: lower,
+                    }))
+                );
             }
         }
     }, [bars, detectedPatterns, visiblePatterns]);

@@ -1,5 +1,31 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (Round 5)
+- Violation: `region` render type used a single `AreaSeries` with only one `value` per bar, rendering as a flat line instead of a price band between upper and lower boundaries
+- Rule: Required finding — AreaSeries `value` is a single scalar; rendering a price band requires two data points (topValue/bottomValue) or two separate series
+- Context: `usePatternOverlay.ts` region branch replaced single `AreaSeries` with two `LineSeries` (upper and lower boundary), each receiving the correct boundary price from `keyPrices`
+
+- Violation: Pure utility function `removeHidden` defined inside a hook file (`usePatternOverlay.ts`) with no React dependency
+- Rule: MISTAKES.md #11.4 — non-hook helpers must live in `utils/` subfolder; also added `removeSeries` helper to keep chart API calls encapsulated
+- Context: `removeHidden` and `removeSeries` moved to `src/components/chart/utils/patternOverlayUtils.ts` with updated signatures; hook imports them
+
+- Violation: `useEffect` with `detectedPatterns` dependency dispatched `reset` action, silently replacing all of `visiblePatterns` and discarding any user-toggled-off state whenever `patterns` changed
+- Rule: FF.md Predictability 2-C — hidden side effect that overrides user toggle state is non-obvious from the hook's contract
+- Context: Replaced `reset` action with `sync` action that preserves existing visible state while adding newly detected patterns; `prevDetectedRef` tracks previously known patterns to distinguish new vs toggled-off
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (Round 4)
+- Violation: `seriesList[0]` literal index used in region data sync block while same block already uses `REGION_LOWER_PRICE_INDEX` and `REGION_UPPER_PRICE_INDEX` constants for structural positions
+- Rule: MISTAKES.md #0 — structural array positions must use named constants or destructuring; `areaSeriesMapRef` always stores a single-element array `[series]`, making destructuring the idiomatic form
+- Context: `usePatternOverlay.ts` region data-sync block had `seriesList[0].setData(regionData)`; changed to `const [regionSeries] = seriesList; regionSeries.setData(regionData)`
+
+- Violation: Non-null assertion `s.pattern!` used after `.filter(s => s.pattern)` because TypeScript cannot narrow the type through a plain boolean filter
+- Rule: MISTAKES.md #5.5 — prefer structurally type-safe patterns over type assertions; type predicates achieve the same runtime behavior with full type safety
+- Context: `confidence.ts` `buildSkillLookup` used `.filter(s => s.pattern).map(s => [s.pattern!, s])`; replaced filter with type predicate `(s): s is Skill & { pattern: string } => Boolean(s.pattern)`, eliminating the assertion
+
+- Violation: Magic string literals `'aboveBar'` and `'arrowDown'` used inline in `plugin.setMarkers` call
+- Rule: FF.md 1-D / MISTAKES.md #0 — literal values with semantic meaning must be extracted to named constants; same principle applied earlier in the PR for `AREA_SERIES_ALPHA_HEX`
+- Context: `usePatternOverlay.ts` marker data-sync block; extracted `MARKER_POSITION = 'aboveBar' as const` and `MARKER_SHAPE = 'arrowDown' as const` to `constants.ts`
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04] (Round 3)
 - Violation: `AREA_SERIES_ALPHA_HEX = '33'` defined as a magic literal inline at the top of a hook file
 - Rule: CONVENTIONS.md — hardcoded literals must be extracted to named constants with clear semantic names; MISTAKES.md #0 — value intent (opacity level) was not self-evident from the inline string

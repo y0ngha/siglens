@@ -20,7 +20,9 @@ interface SkillLookup {
 function buildSkillLookup(skills: Skill[]): SkillLookup {
     const byName = new Map(skills.map(s => [s.name, s]));
     const byPattern = new Map(
-        skills.filter(s => s.pattern).map(s => [s.pattern!, s])
+        skills
+            .filter((s): s is Skill & { pattern: string } => Boolean(s.pattern))
+            .map(s => [s.pattern, s])
     );
     return { byName, byPattern };
 }
