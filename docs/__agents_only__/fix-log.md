@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-05] (round 6)
+- Violation: `domain/analysis/keyLevels.ts`의 `validateKeyLevels` 함수가 `docs/DOMAIN.md`에 문서화되지 않음
+- Rule: MISTAKES.md #12 — 새 도메인 파일/함수 추가 시 DOMAIN.md 즉시 업데이트 필요
+- Context: `keyLevels.ts`는 `domain/analysis/` 레이어에 추가된 새 파일로, 동일 레이어의 `candle.ts`, `prompt.ts`와 달리 DOMAIN.md 내 문서 항목이 없었음; `validateKeyLevels` 시그니처, 동작, 순수 함수 특성을 신규 섹션으로 추가
+
 ## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-05] (round 5)
 - Violation: `EMPTY_KEY_LEVELS` constant placed between `StockChartProps` interface and `StockChart` function instead of above the Props interface
 - Rule: MISTAKES.md #3 / components/CLAUDE.md — Props interface must be immediately above the component function; all supporting constants/helpers go above the Props interface

@@ -405,6 +405,22 @@ function calculateIndicators(bars: Bar[]): IndicatorResult {
 
 ---
 
+## 핵심 레벨 검증 명세
+
+### 위치
+
+`domain/analysis/keyLevels.ts` — 순수 함수로 구현, 외부 의존성 없음.
+
+```typescript
+validateKeyLevels(keyLevels: KeyLevels): KeyLevels
+```
+
+- `price <= 0` 이거나 `reason`이 빈 문자열인 지지/저항 항목을 제거
+- `poc`가 유효하지 않으면 `undefined`로 변환
+- 순수 함수 — 사이드 이펙트 없음
+
+---
+
 ## 캔들 패턴 감지 명세
 
 ### 위치
