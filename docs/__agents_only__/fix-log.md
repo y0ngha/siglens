@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #169 | feat/134/key-levels-chart-visualization | 2026-04-05]
+- Violation: `docs/DOMAIN.md`의 `PatternSummary` 인터페이스가 `keyPrices?: number[]`, `timeRange?`, `confidenceWeight` 필드 추가 후 미업데이트
+- Rule: MISTAKES.md TypeScript #12 — when function signatures, return types, or component props change, update DOMAIN.md descriptions immediately
+- Context: `domain/types.ts`의 `PatternSummary`에 세 필드가 추가되었으나 DOMAIN.md의 인터페이스 정의가 기존 6개 필드 그대로 남아 있었음
+
+- Violation: `prompt.test.ts`의 `keyPrices` 검증이 `toContain('keyPrices')`로 존재 여부만 확인하여 실제 구조를 검증하지 못함
+- Rule: CONVENTIONS.md 테스트 품질 — 테스트는 스키마 컨텍스트 내 실제 구조를 검증해야 함; 범용 문자열 포함 여부 검사는 false positive를 허용
+- Context: `keyPrices` 문자열은 스키마 설명 어디에도 나타날 수 있으므로 `'"keyPrices": [150.00]'` 컨텍스트로 좁혀 검증하도록 수정
+
 ## [PR #170 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-05]
 - Violation: `CHART_COLORS` and `getPeriodColor` defined in `src/domain/constants/colors.ts`, which is a UI concern and must not live in the domain layer
 - Rule: ARCHITECTURE.md domain layer rule — UI-related constants (colors, styles) do not belong in domain/
@@ -251,6 +260,15 @@
 - Violation: `skills/strategies/macd-cycle.md`에서 `type: strategy`를 사용했으나, `SkillType`은 `'pattern' | 'indicator_guide'`만 지원하므로 유효하지 않은 값
 - Rule: DOMAIN.md Skills System — SkillType enum must be one of the defined union type values; invalid strategy value causes type mismatch
 - Context: `skills/strategies/macd-cycle.md`의 frontmatter `type:` 필드를 `type: indicator_guide`로 수정하여 타입 유효성 확보
+
+## [PR #170 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-05]
+- Violation: `docs/DOMAIN.md` `AnalysisResponse` interface not updated after adding `trendlines: Trendline[]` field to `src/domain/types.ts`
+- Rule: MISTAKES.md rule 12 — implementation and documentation changes must be synchronized; type interface additions must be reflected in DOMAIN.md immediately
+- Context: `trendlines: Trendline[]` field was added to `AnalysisResponse` in types.ts but the corresponding DOMAIN.md definition at line 639–650 was not updated; added the field below `candlePatterns`
+
+- Violation: Magic number `2` used in `uniqueData.length >= 2` in `useTrendlineOverlay.ts`
+- Rule: MISTAKES.md TypeScript-6 / FF.md 1-D — hardcoded literals with semantic meaning must be extracted to named constants
+- Context: `2` represents the minimum number of data points required by lightweight-charts to render a LineSeries; extracted to `MIN_TRENDLINE_POINTS` constant at module level
 
 ## [PR #170 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-04]
 - Violation: Inline `style={{ backgroundColor: TRENDLINE_DIRECTION_COLOR[...] }}` used in `TrendlineItem` span inside `AnalysisPanel.tsx`

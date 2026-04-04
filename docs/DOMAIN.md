@@ -617,6 +617,9 @@ interface PatternSummary {
     detected: boolean;     // 현재 차트에서 감지 여부
     trend: Trend;          // 해당 패턴이 시사하는 방향
     summary: string;       // AI가 작성한 패턴별 요약
+    keyPrices?: number[];  // 패턴의 주요 가격대 (예: 고점, 저점, 넥라인 등)
+    timeRange?: { start: number; end: number }; // 패턴이 형성된 시간 범위 (Unix timestamp, seconds)
+    confidenceWeight: number; // skill의 confidenceWeight (렌더링 우선순위 결정용)
 }
 
 // 캔들 패턴별 감지 결과
@@ -647,6 +650,7 @@ interface AnalysisResponse {
     patternSummaries: PatternSummary[]; // 감지된 패턴별 개별 요약 (type='pattern' skill)
     skillResults: SkillResult[];        // skill별 분석 결과 (type!='pattern' skill)
     candlePatterns: CandlePatternSummary[]; // 캔들 패턴 감지 결과
+    trendlines: Trendline[];           // AI가 감지한 추세선 목록 (0~3개)
 }
 ```
 

@@ -16,6 +16,8 @@ import {
     trendlineKey,
 } from '@/components/chart/utils/trendlineUtils';
 
+const MIN_TRENDLINE_POINTS = 2;
+
 interface UseTrendlineOverlayParams {
     chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
@@ -136,7 +138,7 @@ export function useTrendlineOverlay({
                 (p, i, arr) => i === 0 || p.time > arr[i - 1].time
             );
 
-            if (uniqueData.length >= 2) {
+            if (uniqueData.length >= MIN_TRENDLINE_POINTS) {
                 series.setData(uniqueData);
             }
         }

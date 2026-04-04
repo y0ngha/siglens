@@ -1136,7 +1136,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('keyPrices');
+            expect(result).toContain('"keyPrices": [150.00]');
         });
 
         it('patternSummaries 스키마에 timeRange 필드가 포함된다', () => {
