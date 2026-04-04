@@ -1,39 +1,16 @@
 # Fix Log
 
-## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 3)
-- Violation: `alpaca.ts:52`에서 `24 * 60 * 60 * 1000` 리터럴 사용 — 이 PR이 추가한 `MS_PER_SECOND` 및 기존 `SECONDS_PER_DAY` 미사용
-- Rule: MISTAKES.md #0 — same value repeated in multiple locations must be extracted to a single const
-- Context: `TIMEFRAME_LOOKBACK_DAYS[timeframe] * 24 * 60 * 60 * 1000` → `TIMEFRAME_LOOKBACK_DAYS[timeframe] * SECONDS_PER_DAY * MS_PER_SECOND`으로 교체; `alpaca.ts` import에 `SECONDS_PER_DAY`, `MS_PER_SECOND` 추가
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 4)
+- Violation: `eastern.test.ts`의 `연도별 DST 경계 검증` describe에 `getNthSundayOfMonth`의 `dayOfWeek === SUNDAY` 참 분기를 커버하는 테스트 케이스 누락
+- Rule: Coverage target 100% (src/__tests__/CLAUDE.md) — 브랜치 커버리지 100% 달성 필수
+- Context: 2020년 3월 1일이 일요일인 케이스 추가로 `daysUntilFirstSunday = dayOfWeek === SUNDAY ? 0 : 7 - dayOfWeek`의 `? 0` 참 분기가 실행되어 100% 브랜치 커버리지 달성
 
-- Violation: `alpaca.test.ts:4`의 `LOOKBACK_1MIN_MS` 정의에 `24 * 60 * 60 * 1000` 리터럴 사용
-- Rule: MISTAKES.md #0 — same value repeated in multiple locations must be extracted to a single const
-- Context: `TIMEFRAME_LOOKBACK_DAYS['1Min'] * 24 * 60 * 60 * 1000` → `TIMEFRAME_LOOKBACK_DAYS['1Min'] * SECONDS_PER_DAY * MS_PER_SECOND`으로 교체; `MS_PER_SECOND`, `SECONDS_PER_DAY` import 추가
 
-- Violation: `alpaca.test.ts:196-197`에서 `3600 * 1000` 리터럴 사용 — 이 PR이 추가한 `MS_PER_HOUR` 미사용
-- Rule: MISTAKES.md #0 — same value repeated in multiple locations must be extracted to a single const
-- Context: `-4 * 3600 * 1000` → `-4 * MS_PER_HOUR`, `-5 * 3600 * 1000` → `-5 * MS_PER_HOUR`으로 교체; `MS_PER_HOUR` import 추가
-
-- Violation: `timeFormat.test.ts:49` describe 이름이 실제 테스트 내용과 불일치 — 'EDT → EST DST 경계 케이스'지만 내부는 EDT 활성 기간의 일반 케이스
-- Rule: FF.md Readability 1-A — computing the same value twice reduces readability; misleading name obscures intent
-- Context: `'EDT → EST DST 경계 케이스'` → `'EDT 기간 (DST 활성)'`으로 수정
-
-## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 2)
-- Violation: `5 * 24 * 60 * 60 * 1000` 리터럴이 `alpaca.test.ts`의 세 테스트 케이스에 반복 사용 — 두 곳은 인라인, 한 곳은 지역 상수로 개별 선언
-- Rule: MISTAKES.md #0 — same value repeated in multiple locations must be extracted to a single const
-- Context: `alpaca.test.ts` 상단에 `LOOKBACK_1MIN_MS = TIMEFRAME_LOOKBACK_DAYS['1Min'] * 24 * 60 * 60 * 1000` 모듈 레벨 상수를 추출하고 세 테스트 케이스에서 공유
-
-- Violation: 1시간 = 밀리초(`MS_PER_HOUR`) 개념이 `alpaca.ts`와 `timeFormat.ts`에 각각 별도 정의
-- Rule: MISTAKES.md #0 — same concept defined in multiple places; FF.md Cohesion 3-B — shared domain constant belongs in a single source of truth
-- Context: `domain/constants/time.ts`에 `MS_PER_HOUR`, `MS_PER_SECOND`, `SECONDS_PER_HOUR` 추출; `alpaca.ts`와 `timeFormat.ts` 모두 domain import로 교체
 
 ## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-04] (external review)
 - Violation: 테스트 최상위 describe가 모듈명 대신 함수명으로 시작 — `eastern.test.ts`와 `timeFormat.test.ts` 모두 3단계 구조(module > function > case) 미준수
 - Rule: __tests__/CLAUDE.md — Always structure as 3 levels: `describe(module)` > `describe(function)` > `it(case)`
 - Context: `eastern.test.ts`의 최상위 describe를 `'getEasternOffsetHours'`에서 `'eastern'`으로 래핑; `timeFormat.test.ts`의 최상위 describe를 `'getTimeFormatter'`에서 `'timeFormat'`으로 래핑
-
-- Violation: `MS_PER_HOUR = 3600 * 1000` 상수가 `getBars` 함수 내부에 선언되어 호출마다 재생성 — 모듈 레벨 상수 패턴 불일치
-- Rule: MISTAKES.md #0 — same value repeated in multiple locations should be extracted to a single const; DESIGN.md 일관성 — `timeFormat.ts`의 `SECONDS_TO_MS`, `SECONDS_PER_HOUR`와 동일 패턴 적용
-- Context: `alpaca.ts`에서 `MS_PER_HOUR`를 `getBars` 내부에서 모듈 최상위로 이동하여 재사용 가능하게 변경
 
 - Violation: `eastern.ts`의 `DST_TRANSITION_HOUR = 2`가 UTC 02:00으로 사용되나 실제 미국 DST 전환은 현지 02:00(EST→UTC 07:00, EDT→UTC 06:00) 기준이어서 UTC 시각이 부정확
 - Rule: 기술적 정확성 — DST 경계 계산이 실제 미국 규정과 불일치; 테스트도 잘못된 동작 검증

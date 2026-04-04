@@ -57,6 +57,14 @@ describe('eastern', () => {
                 const date = new Date('2023-11-05T06:00:00Z');
                 expect(getEasternOffsetHours(date)).toBe(-5);
             });
+
+            it('월의 1일이 일요일인 연도(2020년)의 DST 경계를 올바르게 계산한다', () => {
+                // 2020-03-01은 일요일 → 두 번째 일요일 = 3월 8일 → UTC 07:00
+                const beforeDst = new Date('2020-03-08T06:59:59Z');
+                const onDstStart = new Date('2020-03-08T07:00:00Z');
+                expect(getEasternOffsetHours(beforeDst)).toBe(-5);
+                expect(getEasternOffsetHours(onDstStart)).toBe(-4);
+            });
         });
     });
 });
