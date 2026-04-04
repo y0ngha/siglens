@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 7)
+- Violation: Range condition `p.confidenceWeight >= MIN_CONFIDENCE_WEIGHT` in `filterPatterns` had variable on the left and boundary on the right
+- Rule: MISTAKES.md #9.6 / FF.md 1-F — range conditions must follow mathematical notation with boundary on the left and variable on the right
+- Context: `confidence.ts` `filterPatterns` function; changed to `MIN_CONFIDENCE_WEIGHT <= p.confidenceWeight` to match the required left-to-right mathematical ordering convention
+
 ## [PR #166 | feat/134/key-levels-chart-visualization | 2026-04-05] (external review — round 6)
 - Violation: `marker` branch in lifecycle effect had no `keyPrices` guard while the data-sync effect skipped `setMarkers` when `keyPrices.length === 0`, creating an asymmetric structure (plugin created but never populated)
 - Rule: FF.md Predictability 2-C — two effects operating on the same concern should behave consistently; hidden asymmetry between lifecycle and data-sync effects is non-obvious

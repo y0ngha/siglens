@@ -46,7 +46,7 @@ function buildUniqueIds<T, K extends keyof T>(items: T[], key: K): string[] {
 }
 
 export function filterPatterns(patterns: PatternResult[]): PatternResult[] {
-    return patterns.filter(p => p.confidenceWeight >= MIN_CONFIDENCE_WEIGHT);
+    return patterns.filter(p => MIN_CONFIDENCE_WEIGHT <= p.confidenceWeight);
 }
 
 export function enrichAnalysisWithConfidence(
