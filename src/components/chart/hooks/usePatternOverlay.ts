@@ -171,6 +171,12 @@ export function usePatternOverlay({
                 if (markerPluginMapRef.current.has(pattern.patternName))
                     continue;
                 if (!seriesRef.current) continue;
+                // marker 표시는 감지된 keyPrice가 최소 1개 있어야 유효로 간주한다.
+                // keyPrices가 빈 배열이면 데이터 동기화 이펙트에서 setMarkers 호출을 건너뛰므로
+                // 플러그인만 생성되고 마커는 렌더링되지 않는 빈 플러그인이 된다.
+                // 라이프사이클 일관성을 위해 이 단계에서도 동일한 조건으로 플러그인 생성을 건너뛴다.
+                const keyPrices = pattern.keyPrices ?? [];
+                if (keyPrices.length === 0) continue;
                 const plugin = createSeriesMarkers(seriesRef.current, []);
                 markerPluginMapRef.current.set(pattern.patternName, plugin);
             } else if (config.type === 'region') {

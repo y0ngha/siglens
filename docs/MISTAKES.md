@@ -186,6 +186,10 @@ Review before implementation and ensure these are not repeated.
    → Rule: CONVENTIONS.md — type assertions bypass type safety and hide assumptions
    → Use narrowing with `typeof`, `in`, `instanceof`, or discriminated unions instead
    → Exception: DOM element types where runtime narrowing is infeasible (e.g. HTMLCanvasElement)
+   → Exception: Third-party library return types where a generic parameter is missing from the library's type
+     definition and runtime narrowing is therefore impossible
+     (e.g. lightweight-charts addSeries() omits the UTCTimestamp generic parameter in its return type —
+      as ISeriesApi<'Candlestick', UTCTimestamp> is acceptable here; add a comment explaining the reason)
    ❌ (CANDLE_PATTERN_LABELS as Record<string, string>)[patternName]  // assertion bypasses type safety
    ✅ findCandlePatternLabel(patternName) with `in` operator checks for single/multi pattern membership
    ❌ const label = map as Map<string, string>  // assertion without verification

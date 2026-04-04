@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #166 | feat/134/key-levels-chart-visualization | 2026-04-05] (external review — round 6)
+- Violation: `marker` branch in lifecycle effect had no `keyPrices` guard while the data-sync effect skipped `setMarkers` when `keyPrices.length === 0`, creating an asymmetric structure (plugin created but never populated)
+- Rule: FF.md Predictability 2-C — two effects operating on the same concern should behave consistently; hidden asymmetry between lifecycle and data-sync effects is non-obvious
+- Context: `usePatternOverlay.ts` marker lifecycle branch; added the same `keyPrices.length === 0` guard as the data-sync effect and added an explanatory comment describing the intent
+
+- Violation: MISTAKES.md #5.5 exception list only covered DOM element types, leaving third-party library generic parameter gaps undocumented
+- Rule: MISTAKES.md #5.5 — exception cases for `as` assertions must be documented for consistent future handling
+- Context: Updated `docs/MISTAKES.md` #5.5 to add a new exception: third-party library return types where a generic parameter is absent from the library's type definition (e.g. lightweight-charts `addSeries()` missing `UTCTimestamp`)
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 5)
 - Violation: Utility functions in `patternOverlayUtils.ts` declared as `export const` arrow functions instead of `export function` named declarations
 - Rule: components/CLAUDE.md — "Use `export function` (named function declaration)"; project convention requires named function declarations for all exports in the components layer
