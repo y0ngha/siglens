@@ -25,6 +25,7 @@ const FALLBACK_ANALYSIS: AnalysisResponse = {
     patternSummaries: [],
     skillResults: [],
     candlePatterns: [],
+    trendlines: [],
 };
 
 interface Props {

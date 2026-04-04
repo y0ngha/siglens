@@ -10,7 +10,7 @@ import {
 import type { RefObject } from 'react';
 import { AreaSeries, LineSeries, LineStyle } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/chartColors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import { calculateIchimokuFutureCloud } from '@/domain/indicators/ichimoku';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';

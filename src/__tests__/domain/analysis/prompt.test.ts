@@ -1136,7 +1136,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('keyPrices');
+            expect(result).toContain('"keyPrices": [150.00]');
         });
 
         it('patternSummaries 스키마의 keyPrices가 label/price 구조를 포함한다', () => {
@@ -1222,6 +1222,28 @@ describe('prompt', () => {
             expect(result).toContain(
                 'Only include chart patterns defined in skills/*.md'
             );
+        });
+    });
+
+    describe('trendlines 스키마', () => {
+        it('trendlines 스키마 키가 프롬프트에 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('"direction": "ascending | descending"');
+        });
+
+        it('가이드라인에 추세선 감지 지침이 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('Trendline Detection');
         });
     });
 

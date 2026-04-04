@@ -16,12 +16,13 @@ import type {
     LineWidth,
     UTCTimestamp,
 } from 'lightweight-charts';
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/chartColors';
 import type {
     Bar,
     IndicatorResult,
     PatternResult,
     Timeframe,
+    Trendline,
 } from '@/domain/types';
 import { getTimeFormatter } from '@/domain/chart/timeFormat';
 import type { PaneIndices } from '@/components/chart/types';
@@ -37,6 +38,7 @@ import { useCCIChart } from '@/components/chart/hooks/useCCIChart';
 import { useVolumeProfileOverlay } from '@/components/chart/hooks/useVolumeProfileOverlay';
 import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
+import { useTrendlineOverlay } from '@/components/chart/hooks/useTrendlineOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import {
@@ -66,6 +68,7 @@ interface StockChartProps {
     timeframe: Timeframe;
     indicators?: IndicatorResult;
     patterns?: PatternResult[];
+    trendlines?: Trendline[];
     onPatternOverlayChange?: (
         visiblePatterns: Set<string>,
         togglePattern: (patternName: string) => void
@@ -77,6 +80,7 @@ export function StockChart({
     timeframe,
     indicators = EMPTY_INDICATOR_RESULT,
     patterns = [],
+    trendlines = [],
     onPatternOverlayChange,
 }: StockChartProps) {
     const [rsiVisible, setRsiVisible] = useState(false);
@@ -277,6 +281,12 @@ export function StockChart({
         seriesRef,
         bars,
         patterns,
+    });
+
+    useTrendlineOverlay({
+        chartRef,
+        bars,
+        trendlines,
     });
 
     const notifyPatternOverlayChange = useEffectEvent(() => {

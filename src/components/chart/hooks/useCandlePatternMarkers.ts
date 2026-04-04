@@ -9,7 +9,7 @@ import type {
     SeriesMarkerBar,
     UTCTimestamp,
 } from 'lightweight-charts';
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/chartColors';
 import type { Bar } from '@/domain/types';
 import {
     detectCandlePatternEntries,

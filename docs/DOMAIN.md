@@ -655,6 +655,7 @@ interface AnalysisResponse {
     patternSummaries: PatternSummary[]; // 감지된 패턴별 개별 요약 (type='pattern' skill)
     skillResults: SkillResult[];        // skill별 분석 결과 (type!='pattern' skill)
     candlePatterns: CandlePatternSummary[]; // 캔들 패턴 감지 결과
+    trendlines: Trendline[];           // AI가 감지한 추세선 목록 (0~3개)
 }
 ```
 

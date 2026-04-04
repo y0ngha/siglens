@@ -79,6 +79,7 @@ const makeAnalysisResponse = (
     patternSummaries: [],
     skillResults: [],
     candlePatterns: [],
+    trendlines: [],
     ...overrides,
 });
 

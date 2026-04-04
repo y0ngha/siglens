@@ -1,4 +1,4 @@
-import { CHART_COLORS, getPeriodColor } from '@/domain/constants/colors';
+import { CHART_COLORS, getPeriodColor } from '@/lib/chartColors';
 
 describe('CHART_COLORS', () => {
     describe('차트 배경 / 그리드 / 텍스트 컬러', () => {

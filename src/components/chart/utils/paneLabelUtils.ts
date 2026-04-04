@@ -1,4 +1,4 @@
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/chartColors';
 import {
     RSI_DEFAULT_PERIOD,
     MACD_FAST_PERIOD,

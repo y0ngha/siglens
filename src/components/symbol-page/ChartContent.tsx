@@ -142,6 +142,7 @@ export function ChartContent({
                         timeframe={timeframe}
                         indicators={indicators}
                         patterns={analysis.patternSummaries}
+                        trendlines={analysis.trendlines}
                         onPatternOverlayChange={handlePatternOverlayChange}
                     />
                 </div>

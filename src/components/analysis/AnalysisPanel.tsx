@@ -12,6 +12,8 @@ import type {
     SignalType,
     SkillResult,
     Trend,
+    Trendline,
+    TrendlineDirection,
 } from '@/domain/types';
 import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import {
@@ -23,6 +25,7 @@ import {
     parseStructuredSummary,
     type SkillSummarySection,
 } from '@/components/analysis/utils/parseStructuredSummary';
+import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
 
 const TREND_COLOR: Record<Trend, string> = {
     bullish: 'text-chart-bullish',
@@ -421,6 +424,44 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
     );
 }
 
+const TRENDLINE_COLOR: Record<TrendlineDirection, string> = {
+    ascending: 'text-chart-bullish',
+    descending: 'text-chart-bearish',
+};
+
+const TRENDLINE_BG_COLOR: Record<TrendlineDirection, string> = {
+    ascending: 'bg-chart-bullish',
+    descending: 'bg-chart-bearish',
+};
+
+interface TrendlineItemProps {
+    trendline: Trendline;
+}
+
+function TrendlineItem({ trendline }: TrendlineItemProps) {
+    const label = TRENDLINE_DIRECTION_LABEL[trendline.direction];
+    const colorClass = TRENDLINE_COLOR[trendline.direction];
+    const bgClass = TRENDLINE_BG_COLOR[trendline.direction];
+
+    return (
+        <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', bgClass)} />
+            <span className={cn('text-xs font-medium', colorClass)}>
+                {label}
+            </span>
+            <span className="text-secondary-500 ml-auto text-xs tabular-nums">
+                {trendline.start.price.toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                })}
+                {' → '}
+                {trendline.end.price.toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                })}
+            </span>
+        </div>
+    );
+}
+
 interface PriceScenarioSectionProps {
     label: string;
     scenario: PriceScenario;
@@ -699,6 +740,23 @@ export function AnalysisPanel({
                             </span>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* 추세선 */}
+            {analysis.trendlines.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                        추세선
+                    </span>
+                    <div className="flex flex-col gap-1.5">
+                        {analysis.trendlines.map(trendline => (
+                            <TrendlineItem
+                                key={`trendline-${trendline.direction}-${trendline.start.time}-${trendline.end.time}`}
+                                trendline={trendline}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
 
