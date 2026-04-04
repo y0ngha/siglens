@@ -138,7 +138,6 @@ export function ChartContent({
         togglePatternRef.current(patternName);
     }, []);
 
-
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
             {/* 차트 영역 */}

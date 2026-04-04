@@ -165,7 +165,10 @@ export function usePatternOverlay({
                         chart.addSeries(LineSeries, {
                             color: config.color,
                             ...BASE_PATTERN_SERIES_OPTIONS,
-                            title: i === LABEL_SERIES_INDEX ? config.label : kp.label,
+                            title:
+                                i === LABEL_SERIES_INDEX
+                                    ? config.label
+                                    : kp.label,
                         })
                 );
                 lineSeriesMapRef.current.set(pattern.patternName, seriesList);
