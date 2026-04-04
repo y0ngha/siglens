@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 4)
+- Violation: `REGION_BOUNDARY_SERIES_COUNT` exported constant in `constants.ts` has no consumers anywhere in the project
+- Rule: MISTAKES.md #9.5 — logic with no practical effect must be removed (FF.md Readability 1-B)
+- Context: Round-3 fix removed the `seriesList.length < REGION_BOUNDARY_SERIES_COUNT` guard and its import, but the constant definition itself remained in `constants.ts`; deleted the now-unused line
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 3)
 - Violation: `seriesList.length < REGION_BOUNDARY_SERIES_COUNT` guard in the data-sync `useEffect` region branch is dead code — `seriesList` is always stored as a 2-element array by the lifecycle effect
 - Rule: MISTAKES.md #9.5 — logic with no practical effect must be removed (FF.md Readability 1-B)
