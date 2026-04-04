@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import type React from 'react';
 import type {
     AnalysisResponse,
@@ -110,9 +110,9 @@ export function ChartContent({
     const [chartVisiblePatterns, setChartVisiblePatterns] = useState<
         Set<string>
     >(new Set());
-    const [togglePattern, setTogglePattern] = useState<
-        (patternName: string) => void
-    >(() => () => undefined);
+    const togglePatternRef = useRef<(patternName: string) => void>(
+        () => undefined
+    );
 
     const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
 
@@ -122,10 +122,14 @@ export function ChartContent({
             toggle: (patternName: string) => void
         ): void => {
             setChartVisiblePatterns(visiblePatterns);
-            setTogglePattern(() => toggle);
+            togglePatternRef.current = toggle;
         },
         []
     );
+
+    const handleTogglePattern = useCallback((patternName: string): void => {
+        togglePatternRef.current(patternName);
+    }, []);
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
@@ -183,7 +187,7 @@ export function ChartContent({
                     isAnalyzing={isAnalyzing}
                     onReanalyze={handleReanalyze}
                     chartVisiblePatterns={chartVisiblePatterns}
-                    onTogglePattern={togglePattern}
+                    onTogglePattern={handleTogglePattern}
                 />
             </aside>
 

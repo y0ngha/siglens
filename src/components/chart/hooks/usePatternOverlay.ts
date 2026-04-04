@@ -48,7 +48,7 @@ const visiblePatternsReducer = (
  * renderConfig.type에 따라 line / marker / region 타입을 구분하여 처리한다.
  * line 타입은 keyPrices의 각 값을 개별 수평선으로 표시한다.
  * 첫 번째 수평선은 renderConfig.label을 타이틀로 사용하고,
- * 이후 수평선은 빈 타이틀로 표시된다.
+ * 이후 수평선은 각 keyPrice의 label을 타이틀로 사용한다.
  */
 export function usePatternOverlay({
     chartRef,
@@ -151,16 +151,16 @@ export function usePatternOverlay({
 
             const keyPrices = pattern.keyPrices ?? [];
 
-            seriesList.forEach((series, index) => {
+            for (const [index, series] of seriesList.entries()) {
                 const keyPrice = keyPrices[index];
-                if (keyPrice === undefined) return;
+                if (keyPrice === undefined) continue;
 
                 const lineData = bars.map(bar => ({
                     time: bar.time as UTCTimestamp,
                     value: keyPrice.price,
                 }));
                 series.setData(lineData);
-            });
+            }
         }
     }, [bars, detectedPatterns, visiblePatterns]);
 

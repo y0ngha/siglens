@@ -302,7 +302,7 @@ function PatternAccordionItem({
                                                 : kp.label}
                                         </span>
                                         <span className="text-secondary-200 text-xs font-medium tabular-nums">
-                                            ${kp.price.toLocaleString()}
+                                            {kp.price.toLocaleString()}
                                         </span>
                                     </div>
                                 ))}
