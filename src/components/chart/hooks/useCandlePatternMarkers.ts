@@ -71,7 +71,9 @@ const MARKER_STYLE_MAP: Record<PatternTrend, MarkerStyle> = {
     },
 };
 
-const toMarker = (entry: CandlePatternMarkerEntry): SeriesMarkerBar<UTCTimestamp> => {
+const toMarker = (
+    entry: CandlePatternMarkerEntry
+): SeriesMarkerBar<UTCTimestamp> => {
     const style = MARKER_STYLE_MAP[entry.trend];
     return {
         time: entry.time as UTCTimestamp,
@@ -120,7 +122,8 @@ export function useCandlePatternMarkers({
 }: UseCandlePatternMarkersParams): UseCandlePatternMarkersReturn {
     const [isVisible, setIsVisible] = useState(false);
 
-    const markersPluginRef = useRef<ISeriesMarkersPluginApi<UTCTimestamp> | null>(null);
+    const markersPluginRef =
+        useRef<ISeriesMarkersPluginApi<UTCTimestamp> | null>(null);
 
     const markers = useMemo(() => {
         const entries = detectCandlePatternEntries(bars);
