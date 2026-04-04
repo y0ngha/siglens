@@ -81,7 +81,9 @@ export function StockChart({
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
-    const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+    const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
+        null
+    );
 
     const toggleRSI = useCallback(() => {
         setRsiVisible(prev => !prev);
@@ -164,7 +166,7 @@ export function StockChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
-        });
+        }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
         return () => {
             chart.remove();

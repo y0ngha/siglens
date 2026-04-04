@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #166 | feat/134/key-levels-chart-visualization | 2026-04-05] (External Review — Round 6)
+- Violation: `areaSeriesMapRef` variable name implied `AreaSeries` but stored `ISeriesApi<'Line'>[]` after `AreaSeries` was replaced with two `LineSeries` in Round 5
+- Rule: FF.md Readability 1-A — names must reflect the actual value they hold
+- Context: `usePatternOverlay.ts` renamed `areaSeriesMapRef` to `regionSeriesMapRef` (6 occurrences) to accurately describe region-type pattern boundary line series
+
+- Violation: `as unknown as ISeriesApi<'Candlestick', UTCTimestamp>` double cast in `createSeriesMarkers` call because `seriesRef` was typed with default `Time` generic
+- Rule: MISTAKES.md #5.5 — type assertions removable via structural fix should be eliminated; propagating `UTCTimestamp` generic to the ref definition removes the need
+- Context: Updated `seriesRef` in `StockChart.tsx` and `UsePatternOverlayParams`/`UseCandlePatternMarkersParams` interfaces to use `ISeriesApi<'Candlestick', UTCTimestamp>`; `chart.addSeries` return cast added at definition site; double cast in hook removed
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (Round 5)
 - Violation: `region` render type used a single `AreaSeries` with only one `value` per bar, rendering as a flat line instead of a price band between upper and lower boundaries
 - Rule: Required finding — AreaSeries `value` is a single scalar; rendering a price band requires two data points (topValue/bottomValue) or two separate series

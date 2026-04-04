@@ -27,7 +27,7 @@ import {
 
 interface UsePatternOverlayParams {
     chartRef: RefObject<IChartApi | null>;
-    seriesRef: RefObject<ISeriesApi<'Candlestick'> | null>;
+    seriesRef: RefObject<ISeriesApi<'Candlestick', UTCTimestamp> | null>;
     bars: Bar[];
     patterns: PatternResult[];
 }
@@ -95,7 +95,7 @@ export function usePatternOverlay({
     const lineSeriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(
         new Map()
     );
-    const areaSeriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(
+    const regionSeriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(
         new Map()
     );
     const markerPluginMapRef = useRef<
@@ -132,7 +132,7 @@ export function usePatternOverlay({
             // 이전 chart는 이미 소멸되어 plugin.detach() 호출 시 에러가 발생할 수 있으므로
             // detach 없이 Map만 교체한다.
             lineSeriesMapRef.current = new Map();
-            areaSeriesMapRef.current = new Map();
+            regionSeriesMapRef.current = new Map();
             markerPluginMapRef.current = new Map();
             prevChartRef.current = chart;
         }
@@ -142,7 +142,7 @@ export function usePatternOverlay({
         removeHidden(lineSeriesMapRef.current, visiblePatterns, seriesList =>
             removeSeries(chart, seriesList)
         );
-        removeHidden(areaSeriesMapRef.current, visiblePatterns, seriesList =>
+        removeHidden(regionSeriesMapRef.current, visiblePatterns, seriesList =>
             removeSeries(chart, seriesList)
         );
         removeHidden(markerPluginMapRef.current, visiblePatterns, plugin => {
@@ -176,19 +176,11 @@ export function usePatternOverlay({
                 if (markerPluginMapRef.current.has(pattern.patternName))
                     continue;
                 if (!seriesRef.current) continue;
-                // ISeriesApi defaults to Time (string|number|BusinessDay) but
-                // createSeriesMarkers needs a matching HorzScaleItem; at runtime
-                // all bars use UTCTimestamp (number), so the cast is safe.
-                const plugin = createSeriesMarkers(
-                    seriesRef.current as unknown as ISeriesApi<
-                        'Candlestick',
-                        UTCTimestamp
-                    >,
-                    []
-                );
+                const plugin = createSeriesMarkers(seriesRef.current, []);
                 markerPluginMapRef.current.set(pattern.patternName, plugin);
             } else if (config.type === 'region') {
-                if (areaSeriesMapRef.current.has(pattern.patternName)) continue;
+                if (regionSeriesMapRef.current.has(pattern.patternName))
+                    continue;
                 const keyPrices = pattern.keyPrices ?? [];
                 if (keyPrices.length < 2) continue;
                 // region은 두 수평선(상단/하단)으로 구간을 표시한다.
@@ -208,7 +200,7 @@ export function usePatternOverlay({
                     lastValueVisible: false,
                     title: '',
                 });
-                areaSeriesMapRef.current.set(pattern.patternName, [
+                regionSeriesMapRef.current.set(pattern.patternName, [
                     upperSeries,
                     lowerSeries,
                 ]);
@@ -260,7 +252,7 @@ export function usePatternOverlay({
                     },
                 ]);
             } else if (config.type === 'region') {
-                const seriesList = areaSeriesMapRef.current.get(
+                const seriesList = regionSeriesMapRef.current.get(
                     pattern.patternName
                 );
                 if (!seriesList || seriesList.length < 2) continue;
