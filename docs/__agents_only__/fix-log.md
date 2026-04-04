@@ -1,5 +1,39 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04] (Round 3)
+- Violation: `AREA_SERIES_ALPHA_HEX = '33'` defined as a magic literal inline at the top of a hook file
+- Rule: CONVENTIONS.md — hardcoded literals must be extracted to named constants with clear semantic names; MISTAKES.md #0 — value intent (opacity level) was not self-evident from the inline string
+- Context: `usePatternOverlay.ts` line 21 declared the constant locally; moved to `@/components/chart/constants` and imported alongside other chart constants
+
+- Violation: Array index literals `keyPrices[0]` and `keyPrices[1]` used to access structural boundary positions
+- Rule: MISTAKES.md #8 — hardcoded array indices that represent structural positions must be extracted to named constants; the indices represent the lower and upper boundary of a price region, not arbitrary positions
+- Context: `usePatternOverlay.ts` region data-sync block; extracted `REGION_LOWER_PRICE_INDEX = 0` and `REGION_UPPER_PRICE_INDEX = 1` to constants
+
+- Violation: Index literal `i === 0` used as a magic number to determine title placement in a `map` callback
+- Rule: MISTAKES.md #8 — the literal `0` represented the structural position "first line gets the label"; extracted to `LABEL_SERIES_INDEX = 0`
+- Context: `usePatternOverlay.ts` line-series creation loop in the series-lifecycle effect
+
+- Violation: Three identical `for...of` cleanup loops iterated over different maps with the same structure (check visibility, call cleanup, delete from map)
+- Rule: MISTAKES.md #10 — repeating identical filtering/iteration logic across multiple blocks; extracted `removeHidden<T>` helper accepting a map and cleanup callback
+- Context: `usePatternOverlay.ts` series-lifecycle effect lines 118–148 had three structurally identical loops for `lineSeriesMapRef`, `areaSeriesMapRef`, and `markerPluginMapRef`
+
+- Violation: Inconsistent local alias `kp` used for `pattern.keyPrices ?? []` in region block while `keyPrices` was used for the same concept in the line and marker blocks
+- Rule: FF.md Readability 1-G — inconsistent naming for the same concept causes unnecessary viewpoint shifts
+- Context: `usePatternOverlay.ts` region branch in series-lifecycle effect used `kp`; renamed to `keyPrices` for consistency with adjacent blocks
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04] (Round 2)
+- Violation: Dead code `if (!config) continue;` guarding `pattern.renderConfig` in both `useEffect` blocks
+- Rule: MISTAKES.md #9.5 — logic with no practical effect must be removed; `detectedPatterns` is already filtered by `isDetectedAndVisible` which requires `renderConfig.show` to be truthy
+- Context: `usePatternOverlay.ts` lines 135 and 197 checked `if (!config) continue` after filtering ensured `renderConfig` is always defined; removed both checks and updated `isDetectedAndVisible` to a type predicate returning `p is VisiblePatternResult`
+
+- Violation: Range condition written with variable on left and boundary on right (`bar.time >= timeRange.start`)
+- Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation (boundary on left, variable on right)
+- Context: `usePatternOverlay.ts` region data filter had `bar.time >= timeRange.start && bar.time <= timeRange.end`; rewritten to `timeRange.start <= bar.time && bar.time <= timeRange.end`
+
+- Violation: `as` type assertions (`series as ISeriesApi<'Line'>`, `seriesList[0] as ISeriesApi<'Area'>`) in data sync effect
+- Rule: MISTAKES.md #5.5 — type assertions bypass type safety; prefer structural separation that avoids the need
+- Context: Single `seriesMapRef` held mixed `(ISeriesApi<'Line'> | ISeriesApi<'Area'>)[]` values, requiring assertions at access sites; split into `lineSeriesMapRef` and `areaSeriesMapRef` with separate typed Maps, eliminating all assertions
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04]
 - Violation: Inline return type object shape not extracted to interface in `confidence.ts`
 - Rule: CONVENTIONS.md — object shapes must be declared as named interfaces, not inline object types; `findSkill` parameter used `ReturnType<typeof buildSkillLookup>` binding it to the implementation rather than an explicit contract

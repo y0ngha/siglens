@@ -116,6 +116,16 @@ describe('confidence', () => {
             const result = filterPatterns([]);
             expect(result).toHaveLength(0);
         });
+
+        it('모든 패턴이 MIN_CONFIDENCE_WEIGHT를 초과하면 전체가 반환된다', () => {
+            const aboveMin = MIN_CONFIDENCE_WEIGHT + 0.1;
+            const patterns = [
+                makePatternResult({ confidenceWeight: aboveMin }),
+                makePatternResult({ confidenceWeight: HIGH_CONFIDENCE_WEIGHT }),
+            ];
+            const result = filterPatterns(patterns);
+            expect(result).toHaveLength(2);
+        });
     });
 
     describe('enrichAnalysisWithConfidence', () => {

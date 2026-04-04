@@ -14,10 +14,15 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import type { Bar, PatternResult } from '@/domain/types';
-import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import {
+    AREA_SERIES_ALPHA_HEX,
+    DEFAULT_LINE_WIDTH,
+    LABEL_SERIES_INDEX,
+    REGION_LOWER_PRICE_INDEX,
+    REGION_UPPER_PRICE_INDEX,
+} from '@/components/chart/constants';
+import type { VisiblePatternResult } from '@/components/chart/utils/patternOverlayUtils';
 import { isDetectedAndVisible } from '@/components/chart/utils/patternOverlayUtils';
-
-const AREA_SERIES_ALPHA_HEX = '33'; // 약 20% 불투명도
 
 interface UsePatternOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -71,14 +76,17 @@ export function usePatternOverlay({
             )
     );
     const prevChartRef = useRef<IChartApi | null>(null);
-    const seriesMapRef = useRef<
-        Map<string, (ISeriesApi<'Line'> | ISeriesApi<'Area'>)[]>
-    >(new Map());
+    const lineSeriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(
+        new Map()
+    );
+    const areaSeriesMapRef = useRef<Map<string, ISeriesApi<'Area'>[]>>(
+        new Map()
+    );
     const markerPluginMapRef = useRef<
         Map<string, ISeriesMarkersPluginApi<UTCTimestamp>>
     >(new Map());
 
-    const detectedPatterns = useMemo(
+    const detectedPatterns = useMemo<VisiblePatternResult[]>(
         () => patterns.filter(isDetectedAndVisible),
         [patterns]
     );
@@ -102,40 +110,49 @@ export function usePatternOverlay({
             // chart 인스턴스 교체 시 ref만 초기화.
             // 이전 chart는 이미 소멸되어 plugin.detach() 호출 시 에러가 발생할 수 있으므로
             // detach 없이 Map만 교체한다.
-            seriesMapRef.current = new Map();
+            lineSeriesMapRef.current = new Map();
+            areaSeriesMapRef.current = new Map();
             markerPluginMapRef.current = new Map();
             prevChartRef.current = chart;
         }
 
         if (!chart) return;
 
-        // visiblePatterns에서 제거된 시리즈 삭제
-        for (const [name, seriesList] of seriesMapRef.current.entries()) {
-            if (!visiblePatterns.has(name)) {
-                for (const s of seriesList) {
-                    chart.removeSeries(s);
+        // visiblePatterns에 포함되지 않는 항목을 맵에서 제거하고 cleanup 콜백을 실행하는 헬퍼
+        const removeHidden = <T>(
+            map: Map<string, T>,
+            cleanup: (value: T) => void
+        ): void => {
+            for (const [name, value] of map.entries()) {
+                if (!visiblePatterns.has(name)) {
+                    cleanup(value);
+                    map.delete(name);
                 }
-                seriesMapRef.current.delete(name);
             }
-        }
+        };
 
-        // visiblePatterns에서 제거된 marker plugin 삭제
-        for (const [name, plugin] of markerPluginMapRef.current.entries()) {
-            if (!visiblePatterns.has(name)) {
-                plugin.detach();
-                markerPluginMapRef.current.delete(name);
+        removeHidden(lineSeriesMapRef.current, seriesList => {
+            for (const s of seriesList) {
+                chart.removeSeries(s);
             }
-        }
+        });
+        removeHidden(areaSeriesMapRef.current, seriesList => {
+            for (const s of seriesList) {
+                chart.removeSeries(s);
+            }
+        });
+        removeHidden(markerPluginMapRef.current, plugin => {
+            plugin.detach();
+        });
 
         // 새로 표시해야 하는 패턴 시리즈 추가
         for (const pattern of detectedPatterns) {
             if (!visiblePatterns.has(pattern.patternName)) continue;
 
             const config = pattern.renderConfig;
-            if (!config) continue;
 
             if (config.type === 'line') {
-                if (seriesMapRef.current.has(pattern.patternName)) continue;
+                if (lineSeriesMapRef.current.has(pattern.patternName)) continue;
 
                 const keyPrices = pattern.keyPrices ?? [];
                 if (keyPrices.length === 0) continue;
@@ -147,10 +164,10 @@ export function usePatternOverlay({
                             lineWidth: DEFAULT_LINE_WIDTH,
                             priceLineVisible: false,
                             lastValueVisible: false,
-                            title: i === 0 ? config.label : '',
+                            title: i === LABEL_SERIES_INDEX ? config.label : '',
                         })
                 );
-                seriesMapRef.current.set(pattern.patternName, seriesList);
+                lineSeriesMapRef.current.set(pattern.patternName, seriesList);
             } else if (config.type === 'marker') {
                 if (markerPluginMapRef.current.has(pattern.patternName))
                     continue;
@@ -167,9 +184,9 @@ export function usePatternOverlay({
                 );
                 markerPluginMapRef.current.set(pattern.patternName, plugin);
             } else if (config.type === 'region') {
-                if (seriesMapRef.current.has(pattern.patternName)) continue;
-                const kp = pattern.keyPrices ?? [];
-                if (kp.length < 2) continue;
+                if (areaSeriesMapRef.current.has(pattern.patternName)) continue;
+                const keyPrices = pattern.keyPrices ?? [];
+                if (keyPrices.length < 2) continue;
                 const series = chart.addSeries(AreaSeries, {
                     topColor: config.color,
                     bottomColor: `${config.color}${AREA_SERIES_ALPHA_HEX}`,
@@ -179,7 +196,7 @@ export function usePatternOverlay({
                     lastValueVisible: false,
                     title: config.label,
                 });
-                seriesMapRef.current.set(pattern.patternName, [series]);
+                areaSeriesMapRef.current.set(pattern.patternName, [series]);
             }
         }
         // chartRef(RefObject)는 항상 동일 참조를 유지하므로 이 dependency는
@@ -194,10 +211,9 @@ export function usePatternOverlay({
             if (!visiblePatterns.has(pattern.patternName)) continue;
 
             const config = pattern.renderConfig;
-            if (!config) continue;
 
             if (config.type === 'line') {
-                const seriesList = seriesMapRef.current.get(
+                const seriesList = lineSeriesMapRef.current.get(
                     pattern.patternName
                 );
                 if (!seriesList) continue;
@@ -210,7 +226,7 @@ export function usePatternOverlay({
                         time: bar.time as UTCTimestamp,
                         value: price,
                     }));
-                    (series as ISeriesApi<'Line'>).setData(lineData);
+                    series.setData(lineData);
                 }
             } else if (config.type === 'marker') {
                 const plugin = markerPluginMapRef.current.get(
@@ -229,17 +245,20 @@ export function usePatternOverlay({
                     },
                 ]);
             } else if (config.type === 'region') {
-                const seriesList = seriesMapRef.current.get(
+                const seriesList = areaSeriesMapRef.current.get(
                     pattern.patternName
                 );
                 if (!seriesList || seriesList.length === 0) continue;
                 const { timeRange, keyPrices = [] } = pattern;
                 if (!timeRange || keyPrices.length < 2) continue;
-                const upper = Math.max(keyPrices[0], keyPrices[1]);
+                const upper = Math.max(
+                    keyPrices[REGION_LOWER_PRICE_INDEX],
+                    keyPrices[REGION_UPPER_PRICE_INDEX]
+                );
                 const regionData = bars
                     .filter(
                         bar =>
-                            bar.time >= timeRange.start &&
+                            timeRange.start <= bar.time &&
                             bar.time <= timeRange.end
                     )
                     .map(bar => ({
@@ -247,7 +266,7 @@ export function usePatternOverlay({
                         value: upper,
                     }));
                 if (regionData.length > 0) {
-                    (seriesList[0] as ISeriesApi<'Area'>).setData(regionData);
+                    seriesList[0].setData(regionData);
                 }
             }
         }

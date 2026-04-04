@@ -1,4 +1,9 @@
-import type { PatternResult } from '@/domain/types';
+import type { PatternResult, SkillChartDisplay } from '@/domain/types';
 
-export const isDetectedAndVisible = (p: PatternResult): boolean =>
-    p.detected && (p.renderConfig?.show ?? false);
+export interface VisiblePatternResult extends PatternResult {
+    renderConfig: SkillChartDisplay;
+}
+
+export const isDetectedAndVisible = (
+    p: PatternResult
+): p is VisiblePatternResult => p.detected && (p.renderConfig?.show ?? false);
