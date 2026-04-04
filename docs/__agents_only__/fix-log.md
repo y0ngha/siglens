@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 5)
+- Violation: Utility functions in `patternOverlayUtils.ts` declared as `export const` arrow functions instead of `export function` named declarations
+- Rule: components/CLAUDE.md — "Use `export function` (named function declaration)"; project convention requires named function declarations for all exports in the components layer
+- Context: Three utility functions (`isDetectedAndVisible`, `removeHidden`, `removeSeries`) in the newly added `patternOverlayUtils.ts` were written as arrow function expressions; converted to named function declarations to match existing utils files (`seriesDataUtils.ts`, `ichimokuUtils.ts`)
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 4)
 - Violation: `REGION_BOUNDARY_SERIES_COUNT` exported constant in `constants.ts` has no consumers anywhere in the project
 - Rule: MISTAKES.md #9.5 — logic with no practical effect must be removed (FF.md Readability 1-B)

@@ -5,28 +5,30 @@ export interface VisiblePatternResult extends PatternResult {
     renderConfig: SkillChartDisplay;
 }
 
-export const isDetectedAndVisible = (
+export function isDetectedAndVisible(
     p: PatternResult
-): p is VisiblePatternResult => p.detected && (p.renderConfig?.show ?? false);
+): p is VisiblePatternResult {
+    return p.detected && (p.renderConfig?.show ?? false);
+}
 
-export const removeHidden = <T>(
+export function removeHidden<T>(
     map: Map<string, T>,
     visiblePatterns: Set<string>,
     cleanup: (value: T) => void
-): void => {
+): void {
     for (const [name, value] of map.entries()) {
         if (!visiblePatterns.has(name)) {
             cleanup(value);
             map.delete(name);
         }
     }
-};
+}
 
-export const removeSeries = (
+export function removeSeries(
     chart: IChartApi,
     seriesList: ISeriesApi<'Line'>[]
-): void => {
+): void {
     for (const s of seriesList) {
         chart.removeSeries(s);
     }
-};
+}
