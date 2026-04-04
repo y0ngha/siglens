@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-04] (external review)
+- Violation: 테스트 최상위 describe가 모듈명 대신 함수명으로 시작 — `eastern.test.ts`와 `timeFormat.test.ts` 모두 3단계 구조(module > function > case) 미준수
+- Rule: __tests__/CLAUDE.md — Always structure as 3 levels: `describe(module)` > `describe(function)` > `it(case)`
+- Context: `eastern.test.ts`의 최상위 describe를 `'getEasternOffsetHours'`에서 `'eastern'`으로 래핑; `timeFormat.test.ts`의 최상위 describe를 `'getTimeFormatter'`에서 `'timeFormat'`으로 래핑
+
+- Violation: `MS_PER_HOUR = 3600 * 1000` 상수가 `getBars` 함수 내부에 선언되어 호출마다 재생성 — 모듈 레벨 상수 패턴 불일치
+- Rule: MISTAKES.md #0 — same value repeated in multiple locations should be extracted to a single const; DESIGN.md 일관성 — `timeFormat.ts`의 `SECONDS_TO_MS`, `SECONDS_PER_HOUR`와 동일 패턴 적용
+- Context: `alpaca.ts`에서 `MS_PER_HOUR`를 `getBars` 내부에서 모듈 최상위로 이동하여 재사용 가능하게 변경
+
+- Violation: `eastern.ts`의 `DST_TRANSITION_HOUR = 2`가 UTC 02:00으로 사용되나 실제 미국 DST 전환은 현지 02:00(EST→UTC 07:00, EDT→UTC 06:00) 기준이어서 UTC 시각이 부정확
+- Rule: 기술적 정확성 — DST 경계 계산이 실제 미국 규정과 불일치; 테스트도 잘못된 동작 검증
+- Context: `eastern.ts`에서 단일 `DST_TRANSITION_HOUR`를 `DST_START_UTC_HOUR = 7`(봄, EST→EDT)와 `DST_END_UTC_HOUR = 6`(가을, EDT→EST)로 분리; `getNthSundayOfMonth`에 `utcHour` 파라미터 추가; `eastern.test.ts` DST 경계 테스트 타임스탬프도 정확한 UTC 시각으로 수정
+
 ## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-04]
 - Violation: ET 시간대 변환 산술이 수학적으로 무효(no-op) — endOffsetMs가 더해졌다가 그대로 빠지므로 결과가 이전 코드와 동일
 - Rule: MISTAKES.md #9.5 — Leaving logic that has no effect / FF.md Readability — 효과 없는 변환은 가독성을 해침
