@@ -177,6 +177,13 @@ CCI 중앙선(0)    #94a3b860 (슬레이트 40% 투명도)
 VWAP             #e879f9   (퍼플)
 ```
 
+### Support / Resistance Lines (지지/저항선)
+
+```
+지지선 (Support)     #26a69a   (틸 그린)
+저항선 (Resistance)  #ef5350   (레드)
+```
+
 ### Ichimoku Cloud
 
 ```
