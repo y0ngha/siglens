@@ -1,7 +1,7 @@
 'use client';
 
-import { useMemo, useState } from 'react';
 import type React from 'react';
+import { useMemo, useState } from 'react';
 import type {
     AnalysisResponse,
     Bar,
