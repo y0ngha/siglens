@@ -18,6 +18,21 @@ export function buildLineData(
     ];
 }
 
+export function createLevelSeries(
+    chart: IChartApi,
+    price: number,
+    color: string,
+    lineWidth: LineWidth
+): ISeriesApi<'Line'> {
+    return chart.addSeries(LineSeries, {
+        color,
+        lineWidth,
+        lineStyle: LineStyle.Dashed,
+        priceLineVisible: false,
+        lastValueVisible: true,
+    });
+}
+
 export function addLevelSeries(
     chart: IChartApi,
     bars: Bar[],
@@ -25,13 +40,7 @@ export function addLevelSeries(
     color: string,
     lineWidth: LineWidth
 ): ISeriesApi<'Line'> {
-    const series = chart.addSeries(LineSeries, {
-        color,
-        lineWidth,
-        lineStyle: LineStyle.Dashed,
-        priceLineVisible: false,
-        lastValueVisible: true,
-    });
+    const series = createLevelSeries(chart, price, color, lineWidth);
     series.setData(buildLineData(bars, price));
     return series;
 }

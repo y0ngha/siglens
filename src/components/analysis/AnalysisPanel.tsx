@@ -625,7 +625,8 @@ export function AnalysisPanel({
 
             {/* 지지/저항 레벨 */}
             {(keyLevels.support.length > 0 ||
-                keyLevels.resistance.length > 0) && (
+                keyLevels.resistance.length > 0 ||
+                keyLevels.poc !== undefined) && (
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                         <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">

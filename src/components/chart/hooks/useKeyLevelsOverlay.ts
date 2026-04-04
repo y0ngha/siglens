@@ -6,7 +6,15 @@ import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import type { Bar, KeyLevels } from '@/domain/types';
 import { CHART_COLORS } from '@/lib/colors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
-import { addLevelSeries } from '@/components/chart/utils/keyLevelsUtils';
+import {
+    buildLineData,
+    createLevelSeries,
+} from '@/components/chart/utils/keyLevelsUtils';
+
+interface LevelSeriesEntry {
+    series: ISeriesApi<'Line'>;
+    price: number;
+}
 
 interface UseKeyLevelsOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -24,24 +32,26 @@ export function useKeyLevelsOverlay({
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseKeyLevelsOverlayParams): void {
     const prevChartRef = useRef<IChartApi | null>(null);
-    const seriesRef = useRef<ISeriesApi<'Line'>[]>([]);
+    const entriesRef = useRef<LevelSeriesEntry[]>([]);
 
-    const clearSeriesRefs = useEffectEvent(() => {
-        seriesRef.current = [];
+    const clearEntriesRef = useEffectEvent(() => {
+        entriesRef.current = [];
     });
 
     const removeAllSeries = useEffectEvent((chart: IChartApi) => {
-        for (const series of seriesRef.current) {
+        for (const { series } of entriesRef.current) {
             chart.removeSeries(series);
         }
-        seriesRef.current = [];
+        entriesRef.current = [];
     });
 
+    // 시리즈 lifecycle 관리 (생성/제거)
+    // bars는 의존하지 않음 — 데이터 세팅은 아래 effect가 단독 담당
     useEffect(() => {
         const chart = chartRef.current;
 
         if (prevChartRef.current !== chart) {
-            clearSeriesRefs();
+            clearEntriesRef();
             prevChartRef.current = chart;
         }
 
@@ -51,41 +61,53 @@ export function useKeyLevelsOverlay({
 
         if (!isVisible) return;
 
-        const supportSeries = keyLevels.support.map(level =>
-            addLevelSeries(
+        const supportEntries = keyLevels.support.map(level => ({
+            series: createLevelSeries(
                 chart,
-                bars,
                 level.price,
                 CHART_COLORS.supportLine,
                 lineWidth
-            )
-        );
-        const resistanceSeries = keyLevels.resistance.map(level =>
-            addLevelSeries(
+            ),
+            price: level.price,
+        }));
+        const resistanceEntries = keyLevels.resistance.map(level => ({
+            series: createLevelSeries(
                 chart,
-                bars,
                 level.price,
                 CHART_COLORS.resistanceLine,
                 lineWidth
-            )
-        );
-        const pocSeries =
+            ),
+            price: level.price,
+        }));
+        const pocEntries =
             keyLevels.poc !== undefined
                 ? [
-                      addLevelSeries(
-                          chart,
-                          bars,
-                          keyLevels.poc.price,
-                          CHART_COLORS.vpPoc,
-                          lineWidth
-                      ),
+                      {
+                          series: createLevelSeries(
+                              chart,
+                              keyLevels.poc.price,
+                              CHART_COLORS.vpPoc,
+                              lineWidth
+                          ),
+                          price: keyLevels.poc.price,
+                      },
                   ]
                 : [];
 
-        seriesRef.current = [
-            ...supportSeries,
-            ...resistanceSeries,
-            ...pocSeries,
+        entriesRef.current = [
+            ...supportEntries,
+            ...resistanceEntries,
+            ...pocEntries,
         ];
-    }, [chartRef, bars, keyLevels, isVisible, lineWidth]);
+    }, [chartRef, keyLevels, isVisible, lineWidth]);
+
+    // 데이터 동기화: 시리즈가 보이는 동안 bars/keyLevels 변경 시 업데이트
+    // isVisible이 true로 바뀔 때도 실행되어 새로 생성된 시리즈에 초기 데이터를 세팅함
+    useEffect(() => {
+        if (!isVisible) return;
+
+        for (const { series, price } of entriesRef.current) {
+            series.setData(buildLineData(bars, price));
+        }
+    }, [bars, keyLevels, isVisible]);
 }
