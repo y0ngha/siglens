@@ -151,8 +151,10 @@ export function usePatternOverlay({
 
             const keyPrices = pattern.keyPrices ?? [];
 
-            for (const [index, series] of seriesList.entries()) {
-                const keyPrice = keyPrices[index];
+            const seriesKeyPricePairs = seriesList.map(
+                (series, i) => [series, keyPrices[i]] as const
+            );
+            for (const [series, keyPrice] of seriesKeyPricePairs) {
                 if (keyPrice === undefined) continue;
 
                 const lineData = bars.map(bar => ({
