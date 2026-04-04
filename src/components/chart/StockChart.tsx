@@ -81,7 +81,9 @@ export function StockChart({
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
-    const seriesRef = useRef<ISeriesApi<'Candlestick'> | null>(null);
+    const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
+        null
+    );
 
     const toggleRSI = useCallback(() => {
         setRsiVisible(prev => !prev);
@@ -164,7 +166,9 @@ export function StockChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
-        });
+            // lightweight-charts의 addSeries() 반환 타입에 UTCTimestamp 제네릭이 포함되지 않아
+            // 타입 가드로 narrowing이 불가능하다. 라이브러리 타입 한계로 인한 assertion이다.
+        }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
         return () => {
             chart.remove();
@@ -252,6 +256,7 @@ export function StockChart({
 
     const { visiblePatterns, togglePattern } = usePatternOverlay({
         chartRef,
+        seriesRef,
         bars,
         patterns,
     });

@@ -1,5 +1,78 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 7)
+- Violation: Range condition `p.confidenceWeight >= MIN_CONFIDENCE_WEIGHT` in `filterPatterns` had variable on the left and boundary on the right
+- Rule: MISTAKES.md #9.6 / FF.md 1-F — range conditions must follow mathematical notation with boundary on the left and variable on the right
+- Context: `confidence.ts` `filterPatterns` function; changed to `MIN_CONFIDENCE_WEIGHT <= p.confidenceWeight` to match the required left-to-right mathematical ordering convention
+
+## [PR #166 | feat/134/key-levels-chart-visualization | 2026-04-05] (external review — round 6)
+- Violation: `marker` branch in lifecycle effect had no `keyPrices` guard while the data-sync effect skipped `setMarkers` when `keyPrices.length === 0`, creating an asymmetric structure (plugin created but never populated)
+- Rule: FF.md Predictability 2-C — two effects operating on the same concern should behave consistently; hidden asymmetry between lifecycle and data-sync effects is non-obvious
+- Context: `usePatternOverlay.ts` marker lifecycle branch; added the same `keyPrices.length === 0` guard as the data-sync effect and added an explanatory comment describing the intent
+
+- Violation: MISTAKES.md #5.5 exception list only covered DOM element types, leaving third-party library generic parameter gaps undocumented
+- Rule: MISTAKES.md #5.5 — exception cases for `as` assertions must be documented for consistent future handling
+- Context: Updated `docs/MISTAKES.md` #5.5 to add a new exception: third-party library return types where a generic parameter is absent from the library's type definition (e.g. lightweight-charts `addSeries()` missing `UTCTimestamp`)
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 5)
+- Violation: Utility functions in `patternOverlayUtils.ts` declared as `export const` arrow functions instead of `export function` named declarations
+- Rule: components/CLAUDE.md — "Use `export function` (named function declaration)"; project convention requires named function declarations for all exports in the components layer
+- Context: Three utility functions (`isDetectedAndVisible`, `removeHidden`, `removeSeries`) in the newly added `patternOverlayUtils.ts` were written as arrow function expressions; converted to named function declarations to match existing utils files (`seriesDataUtils.ts`, `ichimokuUtils.ts`)
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 4)
+- Violation: `REGION_BOUNDARY_SERIES_COUNT` exported constant in `constants.ts` has no consumers anywhere in the project
+- Rule: MISTAKES.md #9.5 — logic with no practical effect must be removed (FF.md Readability 1-B)
+- Context: Round-3 fix removed the `seriesList.length < REGION_BOUNDARY_SERIES_COUNT` guard and its import, but the constant definition itself remained in `constants.ts`; deleted the now-unused line
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 3)
+- Violation: `seriesList.length < REGION_BOUNDARY_SERIES_COUNT` guard in the data-sync `useEffect` region branch is dead code — `seriesList` is always stored as a 2-element array by the lifecycle effect
+- Rule: MISTAKES.md #9.5 — logic with no practical effect must be removed (FF.md Readability 1-B)
+- Context: `usePatternOverlay.ts` data-sync effect region branch; removed the length check and the now-unused `REGION_BOUNDARY_SERIES_COUNT` import
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 2)
+- Violation: Magic number `2` repeated in region guard conditions (`keyPrices.length < 2`, `seriesList.length < 2`) while related index constants `REGION_UPPER_PRICE_INDEX` already existed in `constants.ts`
+- Rule: MISTAKES.md #0 — Repeating hardcoded literals and values in multiple locations; when a constant is defined, all derived values must also be derived from that constant (FF Cohesion 3-B)
+- Context: Added `REGION_KEY_PRICE_MIN_LENGTH = REGION_UPPER_PRICE_INDEX + 1` and `REGION_BOUNDARY_SERIES_COUNT = 2` to `constants.ts`, replaced all three literal `2` usages in `usePatternOverlay.ts` lifecycle and data-sync effects
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review)
+- Violation: `priceLineVisible: false` and `lastValueVisible: false` pair repeated in 3 places across `line` and `region` series creation in `usePatternOverlay.ts`
+- Rule: MISTAKES.md #0 — Repeating hardcoded literals and values in multiple locations; extract to a single const and reference it in all places (FF Cohesion 3-B)
+- Context: Extracted `BASE_PATTERN_SERIES_OPTIONS` constant (including `lineWidth: DEFAULT_LINE_WIDTH`) to `constants.ts` and replaced all three `chart.addSeries(LineSeries, {...})` call-sites with spread of the shared constant
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (TypeScript build fix)
+- Violation: `.map()` callback parameters `_price` and `i` had implicit `any` types, causing `noImplicitAny` TypeScript errors
+- Rule: TypeScript strict mode — all function parameters must have explicit types; implicit `any` is prohibited
+- Context: `usePatternOverlay.ts` line 161 `.map((_price, i) => ...)` callback over `keyPrices: number[]`; added `: number` type annotations to both parameters
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (Round 5)
+- Violation: `region` render type used a single `AreaSeries` with only one `value` per bar, rendering as a flat line instead of a price band between upper and lower boundaries
+- Rule: Required finding — AreaSeries `value` is a single scalar; rendering a price band requires two data points (topValue/bottomValue) or two separate series
+- Context: `usePatternOverlay.ts` region branch replaced single `AreaSeries` with two `LineSeries` (upper and lower boundary), each receiving the correct boundary price from `keyPrices`
+
+- Violation: `useEffect` with `detectedPatterns` dependency dispatched `reset` action, silently replacing all of `visiblePatterns` and discarding any user-toggled-off state whenever `patterns` changed
+- Rule: FF.md Predictability 2-C — hidden side effect that overrides user toggle state is non-obvious from the hook's contract
+- Context: Replaced `reset` action with `sync` action that preserves existing visible state while adding newly detected patterns; `prevDetectedRef` tracks previously known patterns to distinguish new vs toggled-off
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (Round 4)
+- Violation: Non-null assertion `s.pattern!` used after `.filter(s => s.pattern)` because TypeScript cannot narrow the type through a plain boolean filter
+- Rule: MISTAKES.md #5.5 — prefer structurally type-safe patterns over type assertions; type predicates achieve the same runtime behavior with full type safety
+- Context: `confidence.ts` `buildSkillLookup` used `.filter(s => s.pattern).map(s => [s.pattern!, s])`; replaced filter with type predicate `(s): s is Skill & { pattern: string } => Boolean(s.pattern)`, eliminating the assertion
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04] (Round 3)
+- Violation: Inconsistent local alias `kp` used for `pattern.keyPrices ?? []` in region block while `keyPrices` was used for the same concept in the line and marker blocks
+- Rule: FF.md Readability 1-G — inconsistent naming for the same concept causes unnecessary viewpoint shifts
+- Context: `usePatternOverlay.ts` region branch in series-lifecycle effect used `kp`; renamed to `keyPrices` for consistency with adjacent blocks
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04] (Round 2)
+- Violation: Dead code `if (!config) continue;` guarding `pattern.renderConfig` in both `useEffect` blocks
+- Rule: MISTAKES.md #9.5 — logic with no practical effect must be removed; `detectedPatterns` is already filtered by `isDetectedAndVisible` which requires `renderConfig.show` to be truthy
+- Context: `usePatternOverlay.ts` lines 135 and 197 checked `if (!config) continue` after filtering ensured `renderConfig` is always defined; removed both checks and updated `isDetectedAndVisible` to a type predicate returning `p is VisiblePatternResult`
+
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-04]
+- Violation: Inline return type object shape not extracted to interface in `confidence.ts`
+- Rule: CONVENTIONS.md — object shapes must be declared as named interfaces, not inline object types; `findSkill` parameter used `ReturnType<typeof buildSkillLookup>` binding it to the implementation rather than an explicit contract
+- Context: `buildSkillLookup` returned `{ byName: Map<string, Skill>; byPattern: Map<string, Skill>; }` inline; extracted to `SkillLookup` interface and updated `findSkill` parameter type accordingly
+
 ## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
 - Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
 - Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
@@ -9,18 +82,6 @@
 - Rule: FF Readability — same `Signal` structure described with different field order (`type → strength → description` vs `type → description → strength`) causes confusion for AI generating structured output
 - Context: Stage transition signal had `type → strength → description` order but entry timing signal had `type → description → strength` order; unified to `type → strength → description`
 
-## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03]
-- Violation: JSX 내 IIFE 패턴 사용
-- Rule: FF.md Readability 1-A — 동시에 실행되지 않는 분기는 분리해야 함
-- Context: `SkillAccordionItem`의 렌더 블록에서 `sections` 계산을 컴포넌트 바디로 이동하고 단순 조건부 렌더로 교체
-
-- Violation: `parseStructuredSummary` 순수 유틸 함수가 컴포넌트 파일 내부에 위치
-- Rule: CONVENTIONS.md Component Folder Structure — 순수 유틸 함수(non-hook helper)는 `utils/` 서브폴더에 위치해야 함
-- Context: `AnalysisPanel.tsx`에서 `parseStructuredSummary`를 `components/analysis/utils/parseStructuredSummary.ts`로 분리
-
-- Violation: magic number `3` 사용
-- Rule: FF.md Readability 1-D — 의미가 불명확한 숫자 리터럴은 이름 있는 상수로 추출해야 함
-- Context: `parseStructuredSummary`의 `sections.length >= 3`을 `MIN_STRUCTURED_SUMMARY_SECTIONS` 상수로 추출
 
 ## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
 - Violation: `.map()` callback with side effect mutating a closure variable (`counter`)
@@ -42,33 +103,15 @@
 - Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage
 - Context: `ichimokuUtils.ts` exported `IchimokuCloudInput` but no other file imported it; removing `export` tightens the module boundary
 
-- Violation: IIFE inside ternary expression for complex multi-field computation
-- Rule: FF Readability (1-E) — complex anonymous expressions should be extracted into named helper functions
-- Context: `useIchimokuOverlay.ts` used an IIFE to compute `finalSenkouA/B/CloudBullish/Bearish`; extracted into `extendWithFutureCloud` named function
-
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 2)
 - Violation: `let` variables reassigned with spread inside a `for...of` loop, producing O(displacement²) allocations
 - Rule: MISTAKES.md #3 — `let` reassignment should be replaced with `const` + new variable; prefer `reduce` for functional accumulation
 - Context: `useIchimokuOverlay.ts` used four `let` variables (`finalSenkouA`, `finalSenkouB`, `finalCloudBullish`, `finalCloudBearish`) spread-reassigned 26 times inside the future cloud loop
 
-## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03]
-- Violation: `forEach` with non-trivial body (multiple statements, const declarations, conditionals) used instead of `for...of`
-- Rule: MISTAKES.md #1 — `for...of` preferred when loop body is non-trivial or has multiple statements
-- Context: `useIchimokuOverlay.ts` used `futureCloudData.forEach((point, j) => { ... })` with multiple const declarations and conditional branches
-
-- Violation: `.push()` mutation on local arrays returned from `buildSeriesData()`
-- Rule: MISTAKES.md #4 / CONVENTIONS.md immutability — `.push()` is prohibited; spread operator must be used instead
-- Context: `senkouAData.push(...)`, `senkouBData.push(...)`, etc. in `useIchimokuOverlay.ts` mutated arrays after receiving them from `buildSeriesData()`
-
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
 - Context: `route.ts`의 입력 검증에서 `!bars`만으로는 빈 배열을 거르지 못하여, `bars.length === 0` 조건을 추가하여 빈 bars도 400 응답으로 처리
-
-## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
-- Violation: `IndicatorToolbarProps`에 `xyzVisible + onXYZToggle` 플랫 props 12개가 나열되어 새 지표 추가 시 props 2개씩 증가
-- Rule: FF.md Coupling 4-A — 함께 변경되는 props는 묶어야 한다; 새 지표마다 interface와 호출 사이트 양쪽을 수정해야 하는 tight coupling
-- Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
 
 ## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 4 | 2026-03-31]
 - Violation: focusable `role="separator"` 드래그 핸들에 `onKeyDown` 핸들러가 없어 키보드 사용자가 패널 너비를 조절할 수 없는 접근성 미구현
@@ -113,11 +156,6 @@
 - Context: `src/domain/indicators/volume-profile.ts` L89에서 `<= 0` 조건을 `=== -1`로 수정하여 볼륨이 0인 버킷 너머에도 확장이 계속되도록 수정
 
 
-## [PR #153 | feat/121/volume-profile-indicator | external review round 5 | 2026-04-03]
-- Violation: `expandValueArea` 내 `nextBelow` 계산에서 범위 조건이 수학적 표기법을 따르지 않음 (`state.valIndex - 1 >= 0` — 변수가 왼쪽, 경계가 오른쪽)
-- Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation: smaller value (boundary) on left, larger on right
-- Context: `src/domain/indicators/volume-profile.ts` L87에서 `state.valIndex - 1 >= 0`을 `0 <= state.valIndex - 1`으로 수정하여 경계값을 왼쪽에 배치
-
 ## [PR #153 | feat/121/volume-profile-indicator | internal review round 6 | 2026-04-03]
 - Violation: `expandValueArea`가 `calculateVolumeProfile` 내부 중첩 함수로 선언되어 `rowSize`, `bucketVolumes`, `targetVolume`을 클로저로 암묵적으로 캡처 — 함수 시그니처만으로 동작을 예측 불가
 - Rule: FF.md Predictability 2-C — hidden logic should be exposed; implicit closure dependencies should be explicit parameters
@@ -158,15 +196,11 @@
 - Rule: FF.md Readability 1-A — 파라미터명은 실제 전달되는 값의 의미를 반영해야 함
 - Context: `AnalysisPanel.tsx`의 `PatternAccordionItemProps.onToggleVisibility` 파라미터를 `patternName: string`에서 `patternId: string`으로 변경
 
-## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03] (Round 2 — external review)
-- Violation: `buildAnalysisRequest`의 `strategyInstruction`에 엘리어트 파동 전용 용어("wave assessment", "motive wave", "corrective wave") 하드코딩
-- Rule: FF.md Coupling 4-A — prompt builder가 특정 skill의 도메인 언어에 결합되어서는 안 됨; 각 skill의 `## AI Analysis Instructions`가 단일 정보 출처(single source of truth)
-- Context: `src/domain/analysis/prompt.ts` L294에서 Elliott Wave 전용 trend 판단 지시를 범용 지시("Set the trend field based on each skill's own analysis instructions")로 교체
-
 ## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-04] (Round 3 — external review)
 - Violation: `AnalysisPanel.tsx`에서 `parseStructuredSummary` import에 상대 경로(`./utils/parseStructuredSummary`) 사용
 - Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지; 모든 import에 path alias(`@/...`) 사용 필수
 - Context: `src/components/analysis/AnalysisPanel.tsx`의 import를 `@/components/analysis/utils/parseStructuredSummary`로 수정하여 같은 파일의 다른 import들과 일관성 확보
+
 
 ## [feat/indicator-toolbar-collapse | review fix | 2026-04-03]
 - Violation: `useOnClickOutside` 커스텀 훅이 `useState`로 선언된 `openDropdown`과 `setOpenDropdown`보다 뒤에 위치하여 hook 선언 순서 규칙 위반 — `react-hooks/immutability` ESLint 에러 발생

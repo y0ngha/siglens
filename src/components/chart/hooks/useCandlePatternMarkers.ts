@@ -7,7 +7,6 @@ import type {
     ISeriesApi,
     ISeriesMarkersPluginApi,
     SeriesMarkerBar,
-    Time,
     UTCTimestamp,
 } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
@@ -43,7 +42,7 @@ interface MarkerStyle {
 }
 
 interface UseCandlePatternMarkersParams {
-    seriesRef: RefObject<ISeriesApi<'Candlestick'> | null>;
+    seriesRef: RefObject<ISeriesApi<'Candlestick', UTCTimestamp> | null>;
     bars: Bar[];
 }
 
@@ -72,7 +71,9 @@ const MARKER_STYLE_MAP: Record<PatternTrend, MarkerStyle> = {
     },
 };
 
-const toMarker = (entry: CandlePatternMarkerEntry): SeriesMarkerBar<Time> => {
+const toMarker = (
+    entry: CandlePatternMarkerEntry
+): SeriesMarkerBar<UTCTimestamp> => {
     const style = MARKER_STYLE_MAP[entry.trend];
     return {
         time: entry.time as UTCTimestamp,
@@ -121,7 +122,8 @@ export function useCandlePatternMarkers({
 }: UseCandlePatternMarkersParams): UseCandlePatternMarkersReturn {
     const [isVisible, setIsVisible] = useState(false);
 
-    const markersPluginRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null);
+    const markersPluginRef =
+        useRef<ISeriesMarkersPluginApi<UTCTimestamp> | null>(null);
 
     const markers = useMemo(() => {
         const entries = detectCandlePatternEntries(bars);
