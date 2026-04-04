@@ -11,7 +11,7 @@ import type {
 } from 'lightweight-charts';
 import type { Bar, PatternResult } from '@/domain/types';
 import {
-    DEFAULT_LINE_WIDTH,
+    BASE_PATTERN_SERIES_OPTIONS,
     LABEL_SERIES_INDEX,
     MARKER_POSITION,
     MARKER_SHAPE,
@@ -161,9 +161,7 @@ export function usePatternOverlay({
                     (_price: number, i: number) =>
                         chart.addSeries(LineSeries, {
                             color: config.color,
-                            lineWidth: DEFAULT_LINE_WIDTH,
-                            priceLineVisible: false,
-                            lastValueVisible: false,
+                            ...BASE_PATTERN_SERIES_OPTIONS,
                             title: i === LABEL_SERIES_INDEX ? config.label : '',
                         })
                 );
@@ -184,16 +182,12 @@ export function usePatternOverlay({
                 // 대신 LineSeries 두 개를 사용하여 상단과 하단 경계를 각각 렌더링한다.
                 const upperSeries = chart.addSeries(LineSeries, {
                     color: config.color,
-                    lineWidth: DEFAULT_LINE_WIDTH,
-                    priceLineVisible: false,
-                    lastValueVisible: false,
+                    ...BASE_PATTERN_SERIES_OPTIONS,
                     title: config.label,
                 });
                 const lowerSeries = chart.addSeries(LineSeries, {
                     color: config.color,
-                    lineWidth: DEFAULT_LINE_WIDTH,
-                    priceLineVisible: false,
-                    lastValueVisible: false,
+                    ...BASE_PATTERN_SERIES_OPTIONS,
                     title: '',
                 });
                 regionSeriesMapRef.current.set(pattern.patternName, [
