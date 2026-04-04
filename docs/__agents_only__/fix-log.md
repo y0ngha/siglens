@@ -1,5 +1,23 @@
 # Fix Log
 
+## [PR #169 | feat/144/차트-패턴-주요-가격대-텍스트-표시 | 2026-04-04]
+- Violation: `seriesList.forEach((series, index) => { const keyPrice = keyPrices[index]; ... })` — external array accessed via index inside forEach with non-trivial body
+- Rule: MISTAKES.md #1 (non-trivial forEach body → prefer for...of) and #9 (external array accessed via index instead of using zip pattern)
+- Context: In `usePatternOverlay.ts` data-sync effect, each series was matched to its keyPrice via index-based external array access; fixed to `for (const [index, series] of seriesList.entries())` with `continue` instead of `return`.
+
+- Violation: JSDoc comment stated "이후 수평선은 빈 타이틀로 표시된다" but the implementation used `kp.label` as the title for subsequent lines
+- Rule: MISTAKES.md #12 — documentation (including JSDoc) must be synchronized with implementation changes
+- Context: The JSDoc for `usePatternOverlay` was not updated after the keyPrices structure changed from `number[]` to an array of objects with `label` and `price` fields; updated comment to reflect actual behavior.
+
+- Violation: Hardcoded `$` currency symbol in `AnalysisPanel.tsx` key price display, inconsistent with the rest of the project which uses only `toLocaleString()` without a currency prefix
+- Rule: CONVENTIONS.md consistency — UI formatting should follow project-wide conventions; all other price displays in AnalysisPanel use `toLocaleString()` without a `$` prefix
+- Context: `${kp.price.toLocaleString()}` in `PatternAccordionItem` was the only place using a hardcoded `$`; removed to match the established pattern.
+
+## [PR #169 (round 2) | feat/144/차트-패턴-주요-가격대-텍스트-표시 | 2026-04-04]
+- Violation: Storing a function reference in `useState` in `ChartContent.tsx` — `togglePattern` from `usePatternOverlay` was lifted to state and passed sideways to `AnalysisPanel`, creating silent staleness risk if the hook refactors and changes the function identity.
+- Rule: FF.md 4-A (Coupling) — a function owned by StockChart's internal hook should not be stored in sibling state; use `useRef` to hold the latest toggle reference and expose a stable `useCallback` wrapper instead.
+- Context: `setTogglePattern(() => toggle)` in `handlePatternOverlayChange` was replaced with `togglePatternRef.current = toggle` and a stable `handleTogglePattern` callback passed to `AnalysisPanel`.
+
 ## [Issue #144 | feat/144/차트-패턴-주요-가격대-텍스트-표시 | 2026-04-04]
 - Violation: `useEffect` on line 85 of `usePatternOverlay.ts` duplicated the `patterns.filter(p => p.detected && p.renderConfig)` computation already extracted into the `detectedPatterns` useMemo.
 - Rule: MISTAKES.md rule 10 — repeated identical filtering logic across multiple blocks must be extracted to a single source of truth (useMemo). The same filter appeared in the useReducer initializer, the useMemo, and this useEffect.
