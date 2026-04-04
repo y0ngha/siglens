@@ -12,6 +12,7 @@ import type {
     SignalType,
     SkillResult,
     Trend,
+    Trendline,
 } from '@/domain/types';
 import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import {
@@ -23,6 +24,10 @@ import {
     parseStructuredSummary,
     type SkillSummarySection,
 } from '@/components/analysis/utils/parseStructuredSummary';
+import {
+    TRENDLINE_DIRECTION_COLOR,
+    TRENDLINE_DIRECTION_LABEL,
+} from '@/components/chart/constants';
 
 const TREND_COLOR: Record<Trend, string> = {
     bullish: 'text-chart-bullish',
@@ -394,6 +399,42 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
     );
 }
 
+interface TrendlineItemProps {
+    trendline: Trendline;
+}
+
+function TrendlineItem({ trendline }: TrendlineItemProps) {
+    const label = TRENDLINE_DIRECTION_LABEL[trendline.direction];
+    const colorClass =
+        trendline.direction === 'ascending'
+            ? 'text-chart-bullish'
+            : 'text-chart-bearish';
+
+    return (
+        <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
+            <span
+                className="h-2 w-2 shrink-0 rounded-full"
+                style={{
+                    backgroundColor:
+                        TRENDLINE_DIRECTION_COLOR[trendline.direction],
+                }}
+            />
+            <span className={cn('text-xs font-medium', colorClass)}>
+                {label}
+            </span>
+            <span className="text-secondary-500 ml-auto text-xs tabular-nums">
+                {trendline.start.price.toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                })}
+                {' → '}
+                {trendline.end.price.toLocaleString(undefined, {
+                    maximumFractionDigits: 2,
+                })}
+            </span>
+        </div>
+    );
+}
+
 interface PriceScenarioSectionProps {
     label: string;
     scenario: PriceScenario;
@@ -678,6 +719,23 @@ export function AnalysisPanel({
                             </span>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* 추세선 */}
+            {analysis.trendlines.length > 0 && (
+                <div className="flex flex-col gap-2">
+                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                        추세선
+                    </span>
+                    <div className="flex flex-col gap-1.5">
+                        {analysis.trendlines.map((trendline, index) => (
+                            <TrendlineItem
+                                key={`trendline-${index}`}
+                                trendline={trendline}
+                            />
+                        ))}
+                    </div>
                 </div>
             )}
 

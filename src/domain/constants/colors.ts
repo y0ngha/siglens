@@ -69,6 +69,10 @@ export const CHART_COLORS = {
     vpVah: '#8b5cf6',
     vpVal: '#34d399',
 
+    // 추세선
+    trendlineAscending: '#26a69a',
+    trendlineDescending: '#ef5350',
+
     // Ichimoku Cloud
     ichimokuTenkan: '#2962ff',
     ichimokuKijun: '#e91e63',

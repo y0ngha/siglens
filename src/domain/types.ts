@@ -216,6 +216,20 @@ export interface AnalysisResponse {
     patternSummaries: PatternResult[];
     skillResults: SkillResult[];
     candlePatterns: CandlePatternSummary[];
+    trendlines: Trendline[];
+}
+
+export type TrendlineDirection = 'ascending' | 'descending';
+
+export interface TrendlinePoint {
+    time: number; // Unix timestamp (seconds)
+    price: number;
+}
+
+export interface Trendline {
+    direction: TrendlineDirection;
+    start: TrendlinePoint;
+    end: TrendlinePoint;
 }
 
 export interface BarsData {
