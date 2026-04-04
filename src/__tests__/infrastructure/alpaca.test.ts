@@ -1,13 +1,8 @@
 import { AlpacaProvider } from '@/infrastructure/market/alpaca';
 import { TIMEFRAME_LOOKBACK_DAYS } from '@/domain/constants/market';
-import {
-    MS_PER_HOUR,
-    MS_PER_SECOND,
-    SECONDS_PER_DAY,
-} from '@/domain/constants/time';
+import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
 
-const LOOKBACK_1MIN_MS =
-    TIMEFRAME_LOOKBACK_DAYS['1Min'] * SECONDS_PER_DAY * MS_PER_SECOND;
+const LOOKBACK_1MIN_MS = TIMEFRAME_LOOKBACK_DAYS['1Min'] * MS_PER_DAY;
 
 const mockBar = {
     t: '2024-01-15T09:30:00Z',

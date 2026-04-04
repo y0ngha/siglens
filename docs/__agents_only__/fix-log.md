@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 6)
+- Violation: 테스트 파일 `src/__tests__/domain/chart/timeFormat.test.ts`가 `__tests__/domain/` 하위에 위치하나, 소스 파일이 `src/components/chart/utils/timeFormat.ts`에 있어 테스트 구조가 소스 구조를 반영하지 않음
+- Rule: ARCHITECTURE.md / __tests__/CLAUDE.md — `__tests__/domain/`은 `src/domain/` 레이어 테스트만 담아야 함; `timeFormat.ts`는 pure function이므로 domain으로 이동하여 테스트 위치 정합성 확보
+- Context: `src/components/chart/utils/timeFormat.ts`를 `src/domain/chart/timeFormat.ts`로 이동; `StockChart.tsx`와 `timeFormat.test.ts` import 경로를 `@/domain/chart/timeFormat`으로 수정
+
+- Violation: `SECONDS_PER_DAY * MS_PER_SECOND` 표현식이 `alpaca.ts`와 `alpaca.test.ts` 두 곳에서 반복
+- Rule: MISTAKES.md #0 — 동일 값을 여러 곳에 반복하면 single const로 추출해야 함; `MS_PER_HOUR = SECONDS_PER_HOUR * MS_PER_SECOND` 패턴과 일관성 확보
+- Context: `src/domain/constants/time.ts`에 `MS_PER_DAY = SECONDS_PER_DAY * MS_PER_SECOND` 추가; `alpaca.ts`와 `alpaca.test.ts`에서 `SECONDS_PER_DAY * MS_PER_SECOND`를 `MS_PER_DAY`로 교체
+
 ## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 5)
 - Violation: `getTimeFormatter` UI 포맷터 함수가 domain 레이어에 위치
 - Rule: domain/CLAUDE.md — "UI-related constants (colors, styles) do not belong here"; 차트 시간축 표시 포맷터는 UI 관심사이므로 domain 레이어에 위치 불가
