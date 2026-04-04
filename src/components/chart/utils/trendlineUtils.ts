@@ -1,4 +1,4 @@
-import type { Bar, Trendline } from '@/domain/types';
+import type { Bar, Trendline, TrendlineDirection } from '@/domain/types';
 
 export function trendlineKey(trendline: Trendline): string {
     return `${trendline.direction}:${trendline.start.time}:${trendline.end.time}`;
@@ -11,7 +11,7 @@ export function trendlineKey(trendline: Trendline): string {
  */
 export function resolveTrendlinePrice(
     bar: Bar | undefined,
-    direction: Trendline['direction'],
+    direction: TrendlineDirection,
     fallback: number
 ): number {
     if (!bar) return fallback;

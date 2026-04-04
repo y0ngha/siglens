@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #170 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-05]
+- Violation: `prompt.test.ts`의 `trendlines` 검증이 `toContain('trendlines')`로 존재 여부만 확인하여 가이드라인 텍스트와 구분되지 않는 false positive
+- Rule: CONVENTIONS.md 테스트 품질 — 테스트는 스키마 컨텍스트 내 실제 구조를 검증해야 함; 범용 문자열 포함 여부 검사는 false positive를 허용
+- Context: `trendlines` 문자열은 가이드라인 설명 텍스트에도 포함되므로 `'"direction": "ascending | descending"'` 스키마 컨텍스트로 좁혀 검증하도록 수정
+
+- Violation: `Trendline['direction']` indexed access type을 세 파일에서 사용하여 불필요한 viewpoint shift 발생
+- Rule: FF.md 1-G — 독자가 `Trendline` 인터페이스를 조회해야 의미를 알 수 있는 경우 viewpoint shift 발생; 이미 export된 `TrendlineDirection` 타입 에일리어스를 직접 사용해야 함
+- Context: `constants.ts`, `AnalysisPanel.tsx`, `trendlineUtils.ts` 세 파일에서 `Record<Trendline['direction'], string>` 및 `direction: Trendline['direction']`을 `TrendlineDirection`으로 교체
+
 ## [PR #169 | feat/134/key-levels-chart-visualization | 2026-04-05]
 - Violation: `docs/DOMAIN.md`의 `PatternSummary` 인터페이스가 `keyPrices?: number[]`, `timeRange?`, `confidenceWeight` 필드 추가 후 미업데이트
 - Rule: MISTAKES.md TypeScript #12 — when function signatures, return types, or component props change, update DOMAIN.md descriptions immediately

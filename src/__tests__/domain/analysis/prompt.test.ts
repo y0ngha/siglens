@@ -1223,7 +1223,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('trendlines');
+            expect(result).toContain('"direction": "ascending | descending"');
         });
 
         it('가이드라인에 추세선 감지 지침이 포함된다', () => {

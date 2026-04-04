@@ -13,6 +13,7 @@ import type {
     SkillResult,
     Trend,
     Trendline,
+    TrendlineDirection,
 } from '@/domain/types';
 import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import {
@@ -396,12 +397,12 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
     );
 }
 
-const TRENDLINE_COLOR: Record<Trendline['direction'], string> = {
+const TRENDLINE_COLOR: Record<TrendlineDirection, string> = {
     ascending: 'text-chart-bullish',
     descending: 'text-chart-bearish',
 };
 
-const TRENDLINE_BG_COLOR: Record<Trendline['direction'], string> = {
+const TRENDLINE_BG_COLOR: Record<TrendlineDirection, string> = {
     ascending: 'bg-chart-bullish',
     descending: 'bg-chart-bearish',
 };
