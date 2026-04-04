@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback, useRef } from 'react';
 import type React from 'react';
 import type {
     AnalysisResponse,
@@ -105,7 +106,30 @@ export function ChartContent({
 
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
+
+    const [chartVisiblePatterns, setChartVisiblePatterns] = useState<
+        Set<string>
+    >(new Set());
+    const togglePatternRef = useRef<(patternName: string) => void>(
+        () => undefined
+    );
+
     const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
+
+    const handlePatternOverlayChange = useCallback(
+        (
+            visiblePatterns: Set<string>,
+            toggle: (patternName: string) => void
+        ): void => {
+            setChartVisiblePatterns(visiblePatterns);
+            togglePatternRef.current = toggle;
+        },
+        []
+    );
+
+    const handleTogglePattern = useCallback((patternName: string): void => {
+        togglePatternRef.current(patternName);
+    }, []);
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
@@ -118,6 +142,7 @@ export function ChartContent({
                         timeframe={timeframe}
                         indicators={indicators}
                         patterns={analysis.patternSummaries}
+                        onPatternOverlayChange={handlePatternOverlayChange}
                     />
                 </div>
 
@@ -163,6 +188,8 @@ export function ChartContent({
                     analysis={analysis}
                     isAnalyzing={isAnalyzing}
                     onReanalyze={handleReanalyze}
+                    chartVisiblePatterns={chartVisiblePatterns}
+                    onTogglePattern={handleTogglePattern}
                 />
             </aside>
 

@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type {
     AnalysisResponse,
     CandlePatternSummary,
-    PatternSummary,
+    PatternResult,
     PriceScenario,
     RiskLevel,
     Signal,
@@ -224,9 +224,9 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
 }
 
 interface PatternAccordionItemProps {
-    pattern: PatternSummary;
+    pattern: PatternResult;
     isVisible: boolean;
-    onToggleVisibility: (patternId: string) => void;
+    onToggleVisibility: (patternName: string) => void;
 }
 
 function PatternAccordionItem({
@@ -241,8 +241,11 @@ function PatternAccordionItem({
     };
 
     const handleToggleVisibility = (): void => {
-        onToggleVisibility(pattern.id);
+        onToggleVisibility(pattern.patternName);
     };
+
+    const primaryLabel = pattern.renderConfig?.label ?? '주요 가격';
+    const keyPrices = pattern.keyPrices ?? [];
 
     return (
         <div className="border-secondary-700 overflow-hidden rounded-md border">
@@ -278,10 +281,34 @@ function PatternAccordionItem({
             </div>
 
             {isOpen ? (
-                <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
+                <div className="bg-secondary-800/60 border-secondary-700 flex flex-col gap-2.5 border-t px-3 py-2.5">
                     <p className="text-secondary-400 text-xs leading-relaxed">
                         {pattern.summary}
                     </p>
+                    {keyPrices.length > 0 && (
+                        <div className="flex flex-col gap-1">
+                            <span className="text-secondary-500 text-[10px] font-semibold tracking-wide uppercase">
+                                주요 가격대
+                            </span>
+                            <div className="flex flex-col gap-1">
+                                {keyPrices.map((kp, index) => (
+                                    <div
+                                        key={`keyprice-${kp.label}`}
+                                        className="flex items-baseline gap-2"
+                                    >
+                                        <span className="text-secondary-500 w-16 shrink-0 text-xs">
+                                            {index === 0
+                                                ? primaryLabel
+                                                : kp.label}
+                                        </span>
+                                        <span className="text-secondary-200 text-xs font-medium tabular-nums">
+                                            {kp.price.toLocaleString()}
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
             ) : null}
         </div>
@@ -435,31 +462,21 @@ interface AnalysisPanelProps {
     analysis: AnalysisResponse;
     isAnalyzing?: boolean;
     onReanalyze?: () => void;
-    onPatternVisibilityChange?: (patternId: string, isVisible: boolean) => void;
+    /** 차트에서 현재 표시 중인 패턴 이름 집합 (patternName 기준). StockChart가 소유한 상태다. */
+    chartVisiblePatterns?: Set<string>;
+    /** 차트 패턴 표시 여부를 토글한다. patternName을 인자로 받는다. */
+    onTogglePattern?: (patternName: string) => void;
 }
 
 export function AnalysisPanel({
     analysis,
     isAnalyzing = false,
     onReanalyze,
-    onPatternVisibilityChange,
+    chartVisiblePatterns,
+    onTogglePattern,
 }: AnalysisPanelProps) {
-    const [visiblePatterns, setVisiblePatterns] = useState<Set<string>>(
-        new Set()
-    );
-
-    const handleTogglePatternVisibility = (patternId: string): void => {
-        const willBeVisible = !visiblePatterns.has(patternId);
-        setVisiblePatterns(prev => {
-            const next = new Set(prev);
-            if (prev.has(patternId)) {
-                next.delete(patternId);
-            } else {
-                next.add(patternId);
-            }
-            return next;
-        });
-        onPatternVisibilityChange?.(patternId, willBeVisible);
+    const handleTogglePatternVisibility = (patternName: string): void => {
+        onTogglePattern?.(patternName);
     };
 
     const detectedPatterns = analysis.patternSummaries.filter(p => p.detected);
@@ -588,7 +605,11 @@ export function AnalysisPanel({
                             <PatternAccordionItem
                                 key={pattern.id}
                                 pattern={pattern}
-                                isVisible={visiblePatterns.has(pattern.id)}
+                                isVisible={
+                                    chartVisiblePatterns?.has(
+                                        pattern.patternName
+                                    ) ?? false
+                                }
                                 onToggleVisibility={
                                     handleTogglePatternVisibility
                                 }

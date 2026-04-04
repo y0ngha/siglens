@@ -152,6 +152,11 @@ export interface KeyLevel {
     reason: string;
 }
 
+export interface KeyPrice {
+    label: string;
+    price: number;
+}
+
 export interface KeyLevels {
     support: KeyLevel[];
     resistance: KeyLevel[];
@@ -180,7 +185,7 @@ export interface PatternSummary {
     detected: boolean;
     trend: Trend;
     summary: string;
-    keyPrices?: number[];
+    keyPrices?: KeyPrice[];
     timeRange?: { start: number; end: number };
     confidenceWeight: number;
 }

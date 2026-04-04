@@ -217,7 +217,7 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
         '{ "bullish": { "targets": [{ "price": 165.00, "basis": "..." }], "condition": "..." }, "bearish": { "targets": [{ "price": 145.00, "basis": "..." }], "condition": "..." } }',
     patternSummaries:
         // Only chart patterns defined in skills/*.md. Candle patterns go in candlePatterns.
-        '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "...", "keyPrices": [150.00], "timeRange": { "start": 1700000000, "end": 1700100000 } }]',
+        '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "...", "keyPrices": [{ "label": "neckline", "price": 150.00 }], "timeRange": { "start": 1700000000, "end": 1700100000 } }]',
     skillResults:
         '[{ "skillName": "...", "trend": "bullish | bearish | neutral", "summary": "..." }]',
     candlePatterns:

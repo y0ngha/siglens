@@ -583,6 +583,11 @@ interface SkillSignal {
     signals: Signal[];
 }
 
+interface KeyPrice {
+    label: string;          // 가격대 레이블 (예: 'neckline', 'breakout point')
+    price: number;          // 해당 가격
+}
+
 interface KeyLevel {
     price: number;
     reason: string;         // 해당 가격이 지지/저항인 근거
@@ -611,12 +616,15 @@ interface PriceTargets {
 
 // 감지된 패턴별 개별 요약 (type='pattern' skill 결과)
 interface PatternSummary {
-    id: string;            // 고유 ID (patternName_index 형식, React key 및 가시성 제어용)
-    patternName: string;   // skill의 pattern 식별자 (예: 'double_top')
-    skillName: string;     // skill 표시 이름 (예: '이중고점')
-    detected: boolean;     // 현재 차트에서 감지 여부
-    trend: Trend;          // 해당 패턴이 시사하는 방향
-    summary: string;       // AI가 작성한 패턴별 요약
+    id: string;                          // 고유 ID (patternName_index 형식, React key 및 가시성 제어용)
+    patternName: string;                 // skill의 pattern 식별자 (예: 'double_top')
+    skillName: string;                   // skill 표시 이름 (예: '이중고점')
+    detected: boolean;                   // 현재 차트에서 감지 여부
+    trend: Trend;                        // 해당 패턴이 시사하는 방향
+    summary: string;                     // AI가 작성한 패턴별 요약
+    keyPrices?: KeyPrice[];              // 패턴의 주요 가격대 목록 (선택적)
+    timeRange?: { start: number; end: number }; // 패턴이 감지된 시간 범위 (Unix timestamp, 선택적)
+    confidenceWeight: number;            // skill의 confidence_weight 값 (0~1)
 }
 
 // 캔들 패턴별 감지 결과

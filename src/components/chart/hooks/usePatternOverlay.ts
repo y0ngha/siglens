@@ -70,6 +70,8 @@ const visiblePatternsReducer = (
  * PatternResult 배열을 받아 detected === true이고 renderConfig.show === true인 패턴을 차트에 렌더링한다.
  * renderConfig.type에 따라 line / marker / region 타입을 구분하여 처리한다.
  * - line: keyPrices의 각 값을 수평선으로 표시한다 (복수 keyPrices 지원).
+ *   첫 번째 수평선은 renderConfig.label을 타이틀로 사용하고,
+ *   이후 수평선은 각 keyPrice의 label을 타이틀로 사용한다.
  * - marker: 캔들스틱 시리즈 위에 마커 플러그인으로 표시한다.
  * - region: LineSeries 두 개로 keyPrices[0]~keyPrices[1] 사이의 구간 상단/하단 경계를 표시한다.
  */
@@ -159,11 +161,11 @@ export function usePatternOverlay({
                 if (keyPrices.length === 0) continue;
 
                 const seriesList: ISeriesApi<'Line'>[] = keyPrices.map(
-                    (_price: number, i: number) =>
+                    (kp, i: number) =>
                         chart.addSeries(LineSeries, {
                             color: config.color,
                             ...BASE_PATTERN_SERIES_OPTIONS,
-                            title: i === LABEL_SERIES_INDEX ? config.label : '',
+                            title: i === LABEL_SERIES_INDEX ? config.label : kp.label,
                         })
                 );
                 lineSeriesMapRef.current.set(pattern.patternName, seriesList);
@@ -224,11 +226,11 @@ export function usePatternOverlay({
 
                 const keyPrices = pattern.keyPrices ?? [];
                 for (const [i, series] of seriesList.entries()) {
-                    const price = keyPrices[i];
-                    if (price === undefined) continue;
+                    const keyPrice = keyPrices[i];
+                    if (keyPrice === undefined) continue;
                     const lineData = bars.map(bar => ({
                         time: bar.time as UTCTimestamp,
-                        value: price,
+                        value: keyPrice.price,
                     }));
                     series.setData(lineData);
                 }
@@ -260,12 +262,12 @@ export function usePatternOverlay({
                 )
                     continue;
                 const upper = Math.max(
-                    keyPrices[REGION_LOWER_PRICE_INDEX],
-                    keyPrices[REGION_UPPER_PRICE_INDEX]
+                    keyPrices[REGION_LOWER_PRICE_INDEX].price,
+                    keyPrices[REGION_UPPER_PRICE_INDEX].price
                 );
                 const lower = Math.min(
-                    keyPrices[REGION_LOWER_PRICE_INDEX],
-                    keyPrices[REGION_UPPER_PRICE_INDEX]
+                    keyPrices[REGION_LOWER_PRICE_INDEX].price,
+                    keyPrices[REGION_UPPER_PRICE_INDEX].price
                 );
                 const barsInRange = bars.filter(
                     bar =>
