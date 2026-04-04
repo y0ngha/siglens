@@ -15,6 +15,9 @@ import type {
 } from 'lightweight-charts';
 import type { Bar, PatternResult } from '@/domain/types';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { isDetectedAndVisible } from '@/components/chart/utils/patternOverlayUtils';
+
+const AREA_SERIES_ALPHA_HEX = '33'; // 약 20% 불투명도
 
 interface UsePatternOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -45,9 +48,6 @@ const visiblePatternsReducer = (
     }
     return next;
 };
-
-const isDetectedAndVisible = (p: PatternResult): boolean =>
-    p.detected && (p.renderConfig?.show ?? false);
 
 /**
  * PatternResult 배열을 받아 detected === true이고 renderConfig.show === true인 패턴을 차트에 렌더링한다.
@@ -99,7 +99,9 @@ export function usePatternOverlay({
         const chart = chartRef.current;
 
         if (prevChartRef.current !== chart) {
-            // chart 인스턴스 교체 시 ref만 초기화
+            // chart 인스턴스 교체 시 ref만 초기화.
+            // 이전 chart는 이미 소멸되어 plugin.detach() 호출 시 에러가 발생할 수 있으므로
+            // detach 없이 Map만 교체한다.
             seriesMapRef.current = new Map();
             markerPluginMapRef.current = new Map();
             prevChartRef.current = chart;
@@ -170,7 +172,7 @@ export function usePatternOverlay({
                 if (kp.length < 2) continue;
                 const series = chart.addSeries(AreaSeries, {
                     topColor: config.color,
-                    bottomColor: `${config.color}33`,
+                    bottomColor: `${config.color}${AREA_SERIES_ALPHA_HEX}`,
                     lineColor: config.color,
                     lineWidth: DEFAULT_LINE_WIDTH,
                     priceLineVisible: false,
@@ -215,8 +217,8 @@ export function usePatternOverlay({
                     pattern.patternName
                 );
                 if (!plugin) continue;
-                const { timeRange, keyPrices: kp = [] } = pattern;
-                if (!timeRange || kp.length === 0) continue;
+                const { timeRange, keyPrices = [] } = pattern;
+                if (!timeRange || keyPrices.length === 0) continue;
                 plugin.setMarkers([
                     {
                         time: timeRange.start as UTCTimestamp,
@@ -231,9 +233,9 @@ export function usePatternOverlay({
                     pattern.patternName
                 );
                 if (!seriesList || seriesList.length === 0) continue;
-                const { timeRange, keyPrices: kp = [] } = pattern;
-                if (!timeRange || kp.length < 2) continue;
-                const upper = Math.max(kp[0], kp[1]);
+                const { timeRange, keyPrices = [] } = pattern;
+                if (!timeRange || keyPrices.length < 2) continue;
+                const upper = Math.max(keyPrices[0], keyPrices[1]);
                 const regionData = bars
                     .filter(
                         bar =>

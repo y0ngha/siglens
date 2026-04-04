@@ -12,10 +12,12 @@ import type {
     SkillResult,
 } from '@/domain/types';
 
-function buildSkillLookup(skills: Skill[]): {
+interface SkillLookup {
     byName: Map<string, Skill>;
     byPattern: Map<string, Skill>;
-} {
+}
+
+function buildSkillLookup(skills: Skill[]): SkillLookup {
     const byName = new Map(skills.map(s => [s.name, s]));
     const byPattern = new Map(
         skills.filter(s => s.pattern).map(s => [s.pattern!, s])
@@ -23,10 +25,7 @@ function buildSkillLookup(skills: Skill[]): {
     return { byName, byPattern };
 }
 
-function findSkill(
-    lookup: ReturnType<typeof buildSkillLookup>,
-    skillName: string
-): Skill | undefined {
+function findSkill(lookup: SkillLookup, skillName: string): Skill | undefined {
     return lookup.byName.get(skillName) ?? lookup.byPattern.get(skillName);
 }
 
