@@ -15,6 +15,8 @@ import {
     LABEL_SERIES_INDEX,
     MARKER_POSITION,
     MARKER_SHAPE,
+    REGION_BOUNDARY_SERIES_COUNT,
+    REGION_KEY_PRICE_MIN_LENGTH,
     REGION_LOWER_PRICE_INDEX,
     REGION_UPPER_PRICE_INDEX,
 } from '@/components/chart/constants';
@@ -176,7 +178,7 @@ export function usePatternOverlay({
                 if (regionSeriesMapRef.current.has(pattern.patternName))
                     continue;
                 const keyPrices = pattern.keyPrices ?? [];
-                if (keyPrices.length < 2) continue;
+                if (keyPrices.length < REGION_KEY_PRICE_MIN_LENGTH) continue;
                 // region은 두 수평선(상단/하단)으로 구간을 표시한다.
                 // AreaSeries의 value는 단일 값이므로 두 경계를 표현할 수 없다.
                 // 대신 LineSeries 두 개를 사용하여 상단과 하단 경계를 각각 렌더링한다.
@@ -245,9 +247,17 @@ export function usePatternOverlay({
                 const seriesList = regionSeriesMapRef.current.get(
                     pattern.patternName
                 );
-                if (!seriesList || seriesList.length < 2) continue;
+                if (
+                    !seriesList ||
+                    seriesList.length < REGION_BOUNDARY_SERIES_COUNT
+                )
+                    continue;
                 const { timeRange, keyPrices = [] } = pattern;
-                if (!timeRange || keyPrices.length < 2) continue;
+                if (
+                    !timeRange ||
+                    keyPrices.length < REGION_KEY_PRICE_MIN_LENGTH
+                )
+                    continue;
                 const upper = Math.max(
                     keyPrices[REGION_LOWER_PRICE_INDEX],
                     keyPrices[REGION_UPPER_PRICE_INDEX]

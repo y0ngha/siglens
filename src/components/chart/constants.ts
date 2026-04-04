@@ -3,6 +3,8 @@ export const INACTIVE_PANE_INDEX = -1;
 export const LABEL_SERIES_INDEX = 0; // 첫 번째 시리즈에만 label을 표시한다
 export const REGION_LOWER_PRICE_INDEX = 0; // keyPrices[0] = 구간 하단 가격
 export const REGION_UPPER_PRICE_INDEX = 1; // keyPrices[1] = 구간 상단 가격
+export const REGION_KEY_PRICE_MIN_LENGTH = REGION_UPPER_PRICE_INDEX + 1; // region은 최소 상단/하단 두 개의 keyPrice가 필요하다
+export const REGION_BOUNDARY_SERIES_COUNT = 2; // region은 상단/하단 두 개의 LineSeries로 구성된다
 export const MARKER_POSITION = 'aboveBar' as const;
 export const MARKER_SHAPE = 'arrowDown' as const;
 
