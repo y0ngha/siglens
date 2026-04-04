@@ -1,27 +1,5 @@
 # Fix Log
 
-## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
-- Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
-- Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
-- Context: `skills/strategies/macd-cycle.md` used `indicators:\n  - macd\n  - ema` while every other skill file in the project uses the inline array format
-
-- Violation: Signal field order inconsistent between two signal instructions in `## AI Analysis Instructions`
-- Rule: FF Readability — same `Signal` structure described with different field order (`type → strength → description` vs `type → description → strength`) causes confusion for AI generating structured output
-- Context: Stage transition signal had `type → strength → description` order but entry timing signal had `type → description → strength` order; unified to `type → strength → description`
-
-## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03]
-- Violation: JSX 내 IIFE 패턴 사용
-- Rule: FF.md Readability 1-A — 동시에 실행되지 않는 분기는 분리해야 함
-- Context: `SkillAccordionItem`의 렌더 블록에서 `sections` 계산을 컴포넌트 바디로 이동하고 단순 조건부 렌더로 교체
-
-- Violation: `parseStructuredSummary` 순수 유틸 함수가 컴포넌트 파일 내부에 위치
-- Rule: CONVENTIONS.md Component Folder Structure — 순수 유틸 함수(non-hook helper)는 `utils/` 서브폴더에 위치해야 함
-- Context: `AnalysisPanel.tsx`에서 `parseStructuredSummary`를 `components/analysis/utils/parseStructuredSummary.ts`로 분리
-
-- Violation: magic number `3` 사용
-- Rule: FF.md Readability 1-D — 의미가 불명확한 숫자 리터럴은 이름 있는 상수로 추출해야 함
-- Context: `parseStructuredSummary`의 `sections.length >= 3`을 `MIN_STRUCTURED_SUMMARY_SECTIONS` 상수로 추출
-
 ## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
 - Violation: `.map()` callback with side effect mutating a closure variable (`counter`)
 - Rule: MISTAKES.md #1 — when a loop body has multiple statements and maintains accumulated state, `for...of` is preferred over `.map()` with side effects
@@ -36,29 +14,6 @@
 - Violation: `strength` field missing from stage transition signal instruction in `## AI Analysis Instructions`
 - Rule: Domain type contract — `Signal` interface requires `strength: SignalStrength` as a mandatory field; omitting it causes AI to generate incomplete `Signal` objects
 - Context: `skills/strategies/macd-cycle.md` specified `strength` for entry timing signals but omitted it for stage transition signals, creating inconsistency that could produce invalid output
-
-## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
-- Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
-- Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage
-- Context: `ichimokuUtils.ts` exported `IchimokuCloudInput` but no other file imported it; removing `export` tightens the module boundary
-
-- Violation: IIFE inside ternary expression for complex multi-field computation
-- Rule: FF Readability (1-E) — complex anonymous expressions should be extracted into named helper functions
-- Context: `useIchimokuOverlay.ts` used an IIFE to compute `finalSenkouA/B/CloudBullish/Bearish`; extracted into `extendWithFutureCloud` named function
-
-## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 2)
-- Violation: `let` variables reassigned with spread inside a `for...of` loop, producing O(displacement²) allocations
-- Rule: MISTAKES.md #3 — `let` reassignment should be replaced with `const` + new variable; prefer `reduce` for functional accumulation
-- Context: `useIchimokuOverlay.ts` used four `let` variables (`finalSenkouA`, `finalSenkouB`, `finalCloudBullish`, `finalCloudBearish`) spread-reassigned 26 times inside the future cloud loop
-
-## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03]
-- Violation: `forEach` with non-trivial body (multiple statements, const declarations, conditionals) used instead of `for...of`
-- Rule: MISTAKES.md #1 — `for...of` preferred when loop body is non-trivial or has multiple statements
-- Context: `useIchimokuOverlay.ts` used `futureCloudData.forEach((point, j) => { ... })` with multiple const declarations and conditional branches
-
-- Violation: `.push()` mutation on local arrays returned from `buildSeriesData()`
-- Rule: MISTAKES.md #4 / CONVENTIONS.md immutability — `.push()` is prohibited; spread operator must be used instead
-- Context: `senkouAData.push(...)`, `senkouBData.push(...)`, etc. in `useIchimokuOverlay.ts` mutated arrays after receiving them from `buildSeriesData()`
 
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
@@ -118,11 +73,6 @@
 - Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation: smaller value (boundary) on left, larger on right
 - Context: `src/domain/indicators/volume-profile.ts` L87에서 `state.valIndex - 1 >= 0`을 `0 <= state.valIndex - 1`으로 수정하여 경계값을 왼쪽에 배치
 
-## [PR #153 | feat/121/volume-profile-indicator | internal review round 6 | 2026-04-03]
-- Violation: `expandValueArea`가 `calculateVolumeProfile` 내부 중첩 함수로 선언되어 `rowSize`, `bucketVolumes`, `targetVolume`을 클로저로 암묵적으로 캡처 — 함수 시그니처만으로 동작을 예측 불가
-- Rule: FF.md Predictability 2-C — hidden logic should be exposed; implicit closure dependencies should be explicit parameters
-- Context: `expandValueArea`를 `calculateVolumeProfile` 외부 모듈 레벨 함수로 추출하고 `bucketVolumes`, `rowSize`, `targetVolume`을 명시적 파라미터로 추가하여 독립적으로 테스트 가능한 자기완결 함수로 변경
-
 ## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
 - Violation: `bucketVolumes[i] += bar.volume * ratio` — 로컬 배열이지만 index assignment로 직접 변경
 - Rule: CONVENTIONS.md — 불변성 원칙; 로컬 스코프 배열이라도 index 기반 mutation 금지
@@ -133,11 +83,6 @@
 - Rule: Test Layer Rules — 각 `it` 블록은 정확히 하나의 동작을 테스트하며, 중복 테스트는 noise 없는 커버리지를 저해함
 - Context: `기본 파라미터 테스트` describe 블록 전체를 제거하여 중복 제거
 
-
-## [PR #154 | feat/122/ichimoku-cloud-구현 | external review | 2026-04-03]
-- Violation: `IchimokuFuturePoint` 타입이 `ichimoku.ts`에 정의되어 다른 indicator 결과 타입들과 위치 불일치
-- Rule: CONVENTIONS.md 타입 일관성 — 모든 indicator 결과 타입은 `domain/types.ts`에 정의되어야 함
-- Context: `IchimokuFuturePoint`를 `domain/types.ts`로 이동; `ichimoku.ts`는 `domain/types`에서 import
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-02]
 - Violation: `useIchimokuOverlay.ts`의 `cloudLowerRef`가 `CHART_COLORS.background`(불투명 배경색)를 fill 색상으로 사용하여 cloudLower 아래의 다른 차트 시리즈(캔들스틱 등)를 덮어버림
@@ -153,10 +98,6 @@
 - Violation: `SkillResult`에 `id` 필드 없어 `SkillAccordionItem` 렌더링 시 `skillName` 중복 가능성 및 React key 불안정
 - Rule: 일관성 — `PatternSummary`와 `CandlePatternSummary`에 `id`를 추가한 것과 동일하게 `SkillResult`도 고유 ID 부여 필요
 - Context: `SkillResult`에 `id: string` 추가, `RawAnalysisResponse`에서 `id` Omit, `enrichAnalysisWithConfidence`에서 `buildUniqueIds(skillResults, 'skillName')` 로 ID 생성, `AnalysisPanel.tsx`에서 `key={skill.id}`로 변경
-
-- Violation: `PatternAccordionItemProps.onToggleVisibility` 파라미터명이 `patternName`으로 실제 전달값(패턴 ID)과 불일치
-- Rule: FF.md Readability 1-A — 파라미터명은 실제 전달되는 값의 의미를 반영해야 함
-- Context: `AnalysisPanel.tsx`의 `PatternAccordionItemProps.onToggleVisibility` 파라미터를 `patternName: string`에서 `patternId: string`으로 변경
 
 ## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03] (Round 2 — external review)
 - Violation: `buildAnalysisRequest`의 `strategyInstruction`에 엘리어트 파동 전용 용어("wave assessment", "motive wave", "corrective wave") 하드코딩
