@@ -14,7 +14,7 @@ export function buildLineData(
     if (bars.length === 0) return [];
     return [
         { time: bars[0].time as UTCTimestamp, value: price },
-        { time: bars.at(-1)!.time as UTCTimestamp, value: price },
+        { time: bars[bars.length - 1].time as UTCTimestamp, value: price },
     ];
 }
 

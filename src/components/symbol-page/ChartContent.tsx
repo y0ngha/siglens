@@ -105,10 +105,11 @@ export function ChartContent({
             indicators,
         });
 
-    const [keyLevelsVisible, setKeyLevelsVisible] = useState(true);
-
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
+
+    const [keyLevelsVisible, setKeyLevelsVisible] = useState(true);
+
     const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
 
     const validatedKeyLevels = useMemo(
@@ -170,6 +171,7 @@ export function ChartContent({
                 />
                 <AnalysisPanel
                     analysis={analysis}
+                    keyLevels={validatedKeyLevels}
                     isAnalyzing={isAnalyzing}
                     onReanalyze={handleReanalyze}
                     keyLevelsVisible={keyLevelsVisible}

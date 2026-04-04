@@ -4,6 +4,7 @@ import { useState } from 'react';
 import type {
     AnalysisResponse,
     CandlePatternSummary,
+    KeyLevels,
     PatternSummary,
     PriceScenario,
     RiskLevel,
@@ -433,6 +434,7 @@ function PriceScenarioSection({
 
 interface AnalysisPanelProps {
     analysis: AnalysisResponse;
+    keyLevels: KeyLevels;
     isAnalyzing?: boolean;
     onReanalyze?: () => void;
     onPatternVisibilityChange?: (patternId: string, isVisible: boolean) => void;
@@ -442,6 +444,7 @@ interface AnalysisPanelProps {
 
 export function AnalysisPanel({
     analysis,
+    keyLevels,
     isAnalyzing = false,
     onReanalyze,
     onPatternVisibilityChange,
@@ -621,8 +624,8 @@ export function AnalysisPanel({
             )}
 
             {/* 지지/저항 레벨 */}
-            {(analysis.keyLevels.support.length > 0 ||
-                analysis.keyLevels.resistance.length > 0) && (
+            {(keyLevels.support.length > 0 ||
+                keyLevels.resistance.length > 0) && (
                 <div className="flex flex-col gap-2">
                     <div className="flex items-center justify-between">
                         <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
@@ -653,12 +656,12 @@ export function AnalysisPanel({
                         )}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
-                        {analysis.keyLevels.resistance.length > 0 && (
+                        {keyLevels.resistance.length > 0 && (
                             <div className="flex flex-col gap-1">
                                 <span className="text-secondary-500 text-xs">
                                     저항
                                 </span>
-                                {analysis.keyLevels.resistance.map(level => (
+                                {keyLevels.resistance.map(level => (
                                     <div
                                         key={`resistance-${level.price}`}
                                         className="flex flex-col"
@@ -673,12 +676,12 @@ export function AnalysisPanel({
                                 ))}
                             </div>
                         )}
-                        {analysis.keyLevels.support.length > 0 && (
+                        {keyLevels.support.length > 0 && (
                             <div className="flex flex-col gap-1">
                                 <span className="text-secondary-500 text-xs">
                                     지지
                                 </span>
-                                {analysis.keyLevels.support.map(level => (
+                                {keyLevels.support.map(level => (
                                     <div
                                         key={`support-${level.price}`}
                                         className="flex flex-col"
@@ -694,16 +697,16 @@ export function AnalysisPanel({
                             </div>
                         )}
                     </div>
-                    {analysis.keyLevels.poc !== undefined && (
+                    {keyLevels.poc !== undefined && (
                         <div className="flex flex-col">
                             <span className="text-secondary-500 text-xs">
                                 PoC
                             </span>
                             <span className="text-sm font-medium">
-                                {analysis.keyLevels.poc.price.toLocaleString()}
+                                {keyLevels.poc.price.toLocaleString()}
                             </span>
                             <span className="text-secondary-600 text-xs">
-                                {analysis.keyLevels.poc.reason}
+                                {keyLevels.poc.reason}
                             </span>
                         </div>
                     )}
