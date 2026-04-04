@@ -9,6 +9,32 @@
 - Rule: FF.md Readability 1-B — logic with no practical effect adds noise and obscures intent
 - Context: `useTrendlineOverlay` built and returned a toggle API that had no caller; removed the dead return type and changed the function to return `void`
 
+## [PR #170 Round 2 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-04]
+- Violation: Index-based series management in `useTrendlineOverlay.ts` caused stale series with mismatched color/title when a trendline was removed from any position other than the last
+- Rule: FF.md Predictability 2-C — behavior cannot be predicted from the function signature when hidden state diverges from current data; series must be keyed by stable identity
+- Context: `seriesMapRef` used array index as key; removing a non-last trendline left stale series at earlier indices; replaced with stable key `direction:start.time:end.time`
+
+- Violation: `Trendline`, `TrendlineDirection`, `TrendlinePoint` types declared after `AnalysisResponse` which references `Trendline`, violating top-to-bottom readability
+- Rule: FF.md Readability 1-G — types must be declared before use; forward references reduce readability and caused TS2305 errors in consumers
+- Context: Moved the three trendline types to before `AnalysisResponse` in `src/domain/types.ts`
+
+- Violation: `AnalysisPanel.tsx` imported `TRENDLINE_DIRECTION_COLOR` and `TRENDLINE_DIRECTION_LABEL` from `@/components/chart/constants`, coupling an analysis-layer component to a sibling chart component folder
+- Rule: FF.md Cohesion 3-A — constants shared between chart and analysis components should live in a dedicated shared location
+- Context: Moved both constants to `src/components/trendline/constants.ts`; `chart/constants.ts` re-exports them for backward compatibility
+
+## [PR #170 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-04]
+- Violation: `VisibleTrendlinesAction` toggle union, `visibleTrendlinesReducer` toggle branch, `useReducer`, reset `useEffect`, and `visibleTrendlines.has()` guards all remained as dead code after toggle was removed externally
+- Rule: MISTAKES.md 9.5, FF.md Readability 1-B — logic with no practical effect must be removed
+- Context: toggle dispatch was never called anywhere; `visibleTrendlines` was always a full set so guards were always true; entire visibility state management was redundant
+
+- Violation: `lightweight-charts` setData called with unsorted or potentially duplicate timestamps causing runtime error
+- Rule: FF.md Predictability 2-A — library constraints must be respected to prevent runtime errors
+- Context: `lineData` array was built from `start.time`, `end.time`, `extended.time` with no sort or dedup; added sort + dedup logic before calling setData
+
+- Violation: React list key used array index instead of stable unique identifier
+- Rule: FF.md Predictability 2-A — index keys cause incorrect reconciliation when list order changes
+- Context: `analysis.trendlines.map((trendline, index) => <TrendlineItem key={trendline-${index}} ...>` changed to use `direction + start.time + end.time` composite key
+
 ## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
 - Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
 - Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
@@ -186,4 +212,9 @@
 - Violation: `skills/strategies/macd-cycle.md`에서 `type: strategy`를 사용했으나, `SkillType`은 `'pattern' | 'indicator_guide'`만 지원하므로 유효하지 않은 값
 - Rule: DOMAIN.md Skills System — SkillType enum must be one of the defined union type values; invalid strategy value causes type mismatch
 - Context: `skills/strategies/macd-cycle.md`의 frontmatter `type:` 필드를 `type: indicator_guide`로 수정하여 타입 유효성 확보
+
+## [PR #170 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-04]
+- Violation: Inline `style={{ backgroundColor: TRENDLINE_DIRECTION_COLOR[...] }}` used in `TrendlineItem` span inside `AnalysisPanel.tsx`
+- Rule: CONVENTIONS.md / DESIGN.md — inline styles are prohibited; use Tailwind color token classes (`bg-chart-bullish`, `bg-chart-bearish`) instead
+- Context: `src/components/analysis/AnalysisPanel.tsx` TrendlineItem component used an inline style for the direction dot color; replaced with a `bgClass` ternary using `bg-chart-bullish` / `bg-chart-bearish` and removed the now-unused `TRENDLINE_DIRECTION_COLOR` import
 

@@ -205,6 +205,19 @@ export interface CandlePatternSummary {
     summary: string;
 }
 
+export type TrendlineDirection = 'ascending' | 'descending';
+
+export interface TrendlinePoint {
+    time: number; // Unix timestamp (seconds)
+    price: number;
+}
+
+export interface Trendline {
+    direction: TrendlineDirection;
+    start: TrendlinePoint;
+    end: TrendlinePoint;
+}
+
 export interface AnalysisResponse {
     summary: string;
     trend: Trend;
@@ -217,19 +230,6 @@ export interface AnalysisResponse {
     skillResults: SkillResult[];
     candlePatterns: CandlePatternSummary[];
     trendlines: Trendline[];
-}
-
-export type TrendlineDirection = 'ascending' | 'descending';
-
-export interface TrendlinePoint {
-    time: number; // Unix timestamp (seconds)
-    price: number;
-}
-
-export interface Trendline {
-    direction: TrendlineDirection;
-    start: TrendlinePoint;
-    end: TrendlinePoint;
 }
 
 export interface BarsData {

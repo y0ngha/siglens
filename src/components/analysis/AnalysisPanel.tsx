@@ -24,10 +24,7 @@ import {
     parseStructuredSummary,
     type SkillSummarySection,
 } from '@/components/analysis/utils/parseStructuredSummary';
-import {
-    TRENDLINE_DIRECTION_COLOR,
-    TRENDLINE_DIRECTION_LABEL,
-} from '@/components/chart/constants';
+import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
 
 const TREND_COLOR: Record<Trend, string> = {
     bullish: 'text-chart-bullish',
@@ -409,16 +406,14 @@ function TrendlineItem({ trendline }: TrendlineItemProps) {
         trendline.direction === 'ascending'
             ? 'text-chart-bullish'
             : 'text-chart-bearish';
+    const bgClass =
+        trendline.direction === 'ascending'
+            ? 'bg-chart-bullish'
+            : 'bg-chart-bearish';
 
     return (
         <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
-            <span
-                className="h-2 w-2 shrink-0 rounded-full"
-                style={{
-                    backgroundColor:
-                        TRENDLINE_DIRECTION_COLOR[trendline.direction],
-                }}
-            />
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', bgClass)} />
             <span className={cn('text-xs font-medium', colorClass)}>
                 {label}
             </span>
@@ -729,9 +724,9 @@ export function AnalysisPanel({
                         추세선
                     </span>
                     <div className="flex flex-col gap-1.5">
-                        {analysis.trendlines.map((trendline, index) => (
+                        {analysis.trendlines.map(trendline => (
                             <TrendlineItem
-                                key={`trendline-${index}`}
+                                key={`trendline-${trendline.direction}-${trendline.start.time}-${trendline.end.time}`}
                                 trendline={trendline}
                             />
                         ))}

@@ -1,16 +1,16 @@
 'use client';
 
-import { useEffect, useEffectEvent, useReducer, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import type { Bar, Trendline } from '@/domain/types';
 import { extendTrendline } from '@/domain/analysis/trendline';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import {
-    DEFAULT_LINE_WIDTH,
     TRENDLINE_DIRECTION_COLOR,
     TRENDLINE_DIRECTION_LABEL,
-} from '@/components/chart/constants';
+} from '@/components/trendline/constants';
 
 interface UseTrendlineOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -18,46 +18,17 @@ interface UseTrendlineOverlayParams {
     trendlines: Trendline[];
 }
 
-type VisibleTrendlinesAction =
-    | { type: 'reset'; indices: Set<number> }
-    | { type: 'toggle'; index: number };
-
-const visibleTrendlinesReducer = (
-    state: Set<number>,
-    action: VisibleTrendlinesAction
-): Set<number> => {
-    if (action.type === 'reset') return action.indices;
-    const next = new Set(state);
-    if (next.has(action.index)) {
-        next.delete(action.index);
-    } else {
-        next.add(action.index);
-    }
-    return next;
-};
-
 export function useTrendlineOverlay({
     chartRef,
     bars,
     trendlines,
 }: UseTrendlineOverlayParams): void {
-    const [visibleTrendlines, dispatch] = useReducer(
-        visibleTrendlinesReducer,
-        trendlines,
-        initial => new Set(initial.map((_, i) => i))
-    );
-
     const prevChartRef = useRef<IChartApi | null>(null);
-    const seriesMapRef = useRef<Map<number, ISeriesApi<'Line'>>>(new Map());
+    const seriesMapRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
 
     const clearSeriesRefs = useEffectEvent(() => {
         seriesMapRef.current = new Map();
     });
-
-    useEffect(() => {
-        const indices = new Set(trendlines.map((_, i) => i));
-        dispatch({ type: 'reset', indices });
-    }, [trendlines]);
 
     // 시리즈 lifecycle 관리
     useEffect(() => {
@@ -70,18 +41,22 @@ export function useTrendlineOverlay({
 
         if (!chart) return;
 
-        // visibleTrendlines에서 제거된 시리즈 삭제
-        for (const [index, series] of seriesMapRef.current.entries()) {
-            if (!visibleTrendlines.has(index)) {
+        const activeKeys = new Set(
+            trendlines.map(t => `${t.direction}:${t.start.time}:${t.end.time}`)
+        );
+
+        // 현재 trendlines에 없는 시리즈 삭제
+        for (const [key, series] of seriesMapRef.current.entries()) {
+            if (!activeKeys.has(key)) {
                 chart.removeSeries(series);
-                seriesMapRef.current.delete(index);
+                seriesMapRef.current.delete(key);
             }
         }
 
         // 새로 표시해야 하는 추세선 시리즈 추가
-        for (const [index, trendline] of trendlines.entries()) {
-            if (!visibleTrendlines.has(index)) continue;
-            if (seriesMapRef.current.has(index)) continue;
+        for (const trendline of trendlines) {
+            const key = `${trendline.direction}:${trendline.start.time}:${trendline.end.time}`;
+            if (seriesMapRef.current.has(key)) continue;
 
             const series = chart.addSeries(LineSeries, {
                 color: TRENDLINE_DIRECTION_COLOR[trendline.direction],
@@ -91,9 +66,9 @@ export function useTrendlineOverlay({
                 lastValueVisible: false,
                 title: TRENDLINE_DIRECTION_LABEL[trendline.direction],
             });
-            seriesMapRef.current.set(index, series);
+            seriesMapRef.current.set(key, series);
         }
-    }, [chartRef, visibleTrendlines, trendlines]);
+    }, [chartRef, trendlines]);
 
     // 데이터 동기화
     useEffect(() => {
@@ -101,15 +76,15 @@ export function useTrendlineOverlay({
 
         const lastBar = bars[bars.length - 1];
 
-        for (const [index, trendline] of trendlines.entries()) {
-            if (!visibleTrendlines.has(index)) continue;
-
-            const series = seriesMapRef.current.get(index);
+        for (const trendline of trendlines) {
+            const key = `${trendline.direction}:${trendline.start.time}:${trendline.end.time}`;
+            const series = seriesMapRef.current.get(key);
             if (!series) continue;
 
             const extended = extendTrendline(trendline, lastBar.time);
 
-            const lineData = [
+            // lightweight-charts는 타임스탬프가 엄격하게 오름차순이어야 하므로 정렬 및 중복 제거
+            const points = [
                 {
                     time: trendline.start.time as UTCTimestamp,
                     value: trendline.start.price,
@@ -118,13 +93,22 @@ export function useTrendlineOverlay({
                     time: trendline.end.time as UTCTimestamp,
                     value: trendline.end.price,
                 },
-                {
+            ].sort((a, b) => a.time - b.time);
+
+            if (extended.time > points[points.length - 1].time) {
+                points.push({
                     time: extended.time as UTCTimestamp,
                     value: extended.price,
-                },
-            ];
+                });
+            }
 
-            series.setData(lineData);
+            const uniqueData = points.filter(
+                (p, i, arr) => i === 0 || p.time > arr[i - 1].time
+            );
+
+            if (uniqueData.length >= 2) {
+                series.setData(uniqueData);
+            }
         }
-    }, [bars, trendlines, visibleTrendlines]);
+    }, [bars, trendlines]);
 }
