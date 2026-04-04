@@ -17,7 +17,13 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
-import type { Bar, IndicatorResult, PatternResult } from '@/domain/types';
+import type {
+    Bar,
+    IndicatorResult,
+    PatternResult,
+    Timeframe,
+} from '@/domain/types';
+import { getTimeFormatter } from '@/domain/chart/timeFormat';
 import type { PaneIndices } from '@/components/chart/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
@@ -57,6 +63,7 @@ interface CommonHookParams {
 
 interface StockChartProps {
     bars: Bar[];
+    timeframe: Timeframe;
     indicators?: IndicatorResult;
     patterns?: PatternResult[];
     onPatternOverlayChange?: (
@@ -67,6 +74,7 @@ interface StockChartProps {
 
 export function StockChart({
     bars,
+    timeframe,
     indicators = EMPTY_INDICATOR_RESULT,
     patterns = [],
     onPatternOverlayChange,
@@ -176,6 +184,16 @@ export function StockChart({
             seriesRef.current = null;
         };
     }, []);
+
+    useEffect(() => {
+        if (!chartRef.current) return;
+
+        chartRef.current.applyOptions({
+            localization: {
+                timeFormatter: getTimeFormatter(timeframe),
+            },
+        });
+    }, [timeframe]);
 
     useEffect(() => {
         if (!seriesRef.current || !chartRef.current) return;

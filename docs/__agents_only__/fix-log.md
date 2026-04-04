@@ -73,6 +73,54 @@
 - Rule: CONVENTIONS.md — object shapes must be declared as named interfaces, not inline object types; `findSkill` parameter used `ReturnType<typeof buildSkillLookup>` binding it to the implementation rather than an explicit contract
 - Context: `buildSkillLookup` returned `{ byName: Map<string, Skill>; byPattern: Map<string, Skill>; }` inline; extracted to `SkillLookup` interface and updated `findSkill` parameter type accordingly
 
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 6)
+- Violation: 테스트 파일 `src/__tests__/domain/chart/timeFormat.test.ts`가 `__tests__/domain/` 하위에 위치하나, 소스 파일이 `src/components/chart/utils/timeFormat.ts`에 있어 테스트 구조가 소스 구조를 반영하지 않음
+- Rule: ARCHITECTURE.md / __tests__/CLAUDE.md — `__tests__/domain/`은 `src/domain/` 레이어 테스트만 담아야 함; `timeFormat.ts`는 pure function이므로 domain으로 이동하여 테스트 위치 정합성 확보
+- Context: `src/components/chart/utils/timeFormat.ts`를 `src/domain/chart/timeFormat.ts`로 이동; `StockChart.tsx`와 `timeFormat.test.ts` import 경로를 `@/domain/chart/timeFormat`으로 수정
+
+- Violation: `SECONDS_PER_DAY * MS_PER_SECOND` 표현식이 `alpaca.ts`와 `alpaca.test.ts` 두 곳에서 반복
+- Rule: MISTAKES.md #0 — 동일 값을 여러 곳에 반복하면 single const로 추출해야 함; `MS_PER_HOUR = SECONDS_PER_HOUR * MS_PER_SECOND` 패턴과 일관성 확보
+- Context: `src/domain/constants/time.ts`에 `MS_PER_DAY = SECONDS_PER_DAY * MS_PER_SECOND` 추가; `alpaca.ts`와 `alpaca.test.ts`에서 `SECONDS_PER_DAY * MS_PER_SECOND`를 `MS_PER_DAY`로 교체
+
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 5)
+- Violation: `getTimeFormatter` UI 포맷터 함수가 domain 레이어에 위치
+- Rule: domain/CLAUDE.md — "UI-related constants (colors, styles) do not belong here"; 차트 시간축 표시 포맷터는 UI 관심사이므로 domain 레이어에 위치 불가
+- Context: `src/domain/chart/timeFormat.ts`를 `src/components/chart/utils/timeFormat.ts`로 이동; `StockChart.tsx` import 경로 수정; `domain/chart/` 빈 디렉토리 삭제
+
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 4)
+- Violation: `eastern.test.ts`의 `연도별 DST 경계 검증` describe에 `getNthSundayOfMonth`의 `dayOfWeek === SUNDAY` 참 분기를 커버하는 테스트 케이스 누락
+- Rule: Coverage target 100% (src/__tests__/CLAUDE.md) — 브랜치 커버리지 100% 달성 필수
+- Context: 2020년 3월 1일이 일요일인 케이스 추가로 `daysUntilFirstSunday = dayOfWeek === SUNDAY ? 0 : 7 - dayOfWeek`의 `? 0` 참 분기가 실행되어 100% 브랜치 커버리지 달성
+
+
+
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-04] (external review)
+- Violation: 테스트 최상위 describe가 모듈명 대신 함수명으로 시작 — `eastern.test.ts`와 `timeFormat.test.ts` 모두 3단계 구조(module > function > case) 미준수
+- Rule: __tests__/CLAUDE.md — Always structure as 3 levels: `describe(module)` > `describe(function)` > `it(case)`
+- Context: `eastern.test.ts`의 최상위 describe를 `'getEasternOffsetHours'`에서 `'eastern'`으로 래핑; `timeFormat.test.ts`의 최상위 describe를 `'getTimeFormatter'`에서 `'timeFormat'`으로 래핑
+
+- Violation: `eastern.ts`의 `DST_TRANSITION_HOUR = 2`가 UTC 02:00으로 사용되나 실제 미국 DST 전환은 현지 02:00(EST→UTC 07:00, EDT→UTC 06:00) 기준이어서 UTC 시각이 부정확
+- Rule: 기술적 정확성 — DST 경계 계산이 실제 미국 규정과 불일치; 테스트도 잘못된 동작 검증
+- Context: `eastern.ts`에서 단일 `DST_TRANSITION_HOUR`를 `DST_START_UTC_HOUR = 7`(봄, EST→EDT)와 `DST_END_UTC_HOUR = 6`(가을, EDT→EST)로 분리; `getNthSundayOfMonth`에 `utcHour` 파라미터 추가; `eastern.test.ts` DST 경계 테스트 타임스탬프도 정확한 UTC 시각으로 수정
+
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-04]
+- Violation: ET 시간대 변환 산술이 수학적으로 무효(no-op) — endOffsetMs가 더해졌다가 그대로 빠지므로 결과가 이전 코드와 동일
+- Rule: MISTAKES.md #9.5 — Leaving logic that has no effect / FF.md Readability — 효과 없는 변환은 가독성을 해침
+- Context: `alpaca.ts` getBars에서 endTime의 ET 오프셋을 더했다 빼는 방식으로 startUtc를 계산했으나, 동일한 ofsset을 사용해 net effect가 0이었음. DST 경계에서 start/end 오프셋을 각각 계산하도록 수정
+
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-04]
+- Violation: 동일 함수 내에서 `3600 * 1000` 리터럴을 두 번 반복 사용
+- Rule: MISTAKES.md #8.5 — 동일 값을 한 함수 내에서 여러 번 계산하면 named constant로 추출해야 함 / FF.md Cohesion 3-B (magic number 반복)
+- Context: `alpaca.ts` getBars에서 `getEasternOffsetHours` 결과에 밀리초 변환을 위해 `3600 * 1000`을 두 줄에 걸쳐 반복. `MS_PER_HOUR` 상수로 추출하여 단일 정의로 통합
+
+- Violation: 미국 주식 차트의 시간축을 KST(한국 표준시) 기준으로 표시
+- Rule: FF.md Readability — US 주식 플랫폼에서 KST는 사용자에게 혼란을 줌 (마감 시간이 다음날로 표시됨)
+- Context: `timeFormat.ts`의 toKstDate가 UTC+9 오프셋을 하드코딩. domain/time/eastern.ts의 getEasternOffsetHours를 활용하여 ET 기준으로 변경하고 DST 자동 처리
+
+- Violation: DST 전환 경계 케이스에 대한 인프라 레이어 테스트 누락
+- Rule: 테스트 커버리지 100% 필수 — EST/EDT 각 케이스 및 DST 전환 경계 검증 부재
+- Context: `alpaca.test.ts`에 EST 기간, EDT 기간, DST 전환(EST→EDT) 경계를 넘는 lookback 시나리오 테스트 추가
+
 ## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
 - Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
 - Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
@@ -99,6 +147,10 @@
 - Context: `skills/strategies/macd-cycle.md` specified `strength` for entry timing signals but omitted it for stage transition signals, creating inconsistency that could produce invalid output
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 3)
+- Violation: IIFE inside ternary expression for complex multi-field computation
+- Rule: FF Readability (1-E) — complex anonymous expressions should be extracted into named helper functions
+- Context: `useIchimokuOverlay.ts` used an IIFE to compute `finalSenkouA/B/CloudBullish/Bearish`; extracted into `extendWithFutureCloud` named function
+
 - Violation: `export` on `IchimokuCloudInput` interface that is only used within the same file
 - Rule: FF Cohesion — types not consumed externally should not be exported; public surface should reflect actual usage
 - Context: `ichimokuUtils.ts` exported `IchimokuCloudInput` but no other file imported it; removing `export` tightens the module boundary
@@ -142,9 +194,6 @@
 - Rule: DESIGN.md — VAH와 VAL은 서로 다른 가격 경계를 나타내므로 구별 가능한 색상이 필요
 - Context: `vpVal`을 `#34d399`(mint green)으로 변경하여 `vpVah`(purple)와 시각적으로 구별 가능하게 함
 
-- Violation: `src/__tests__/domain/analysis/prompt.test.ts`에서 RegExp 패턴 `/\[.+\]/`의 `\]`가 불필요한 이스케이프
-- Rule: ESLint `no-useless-escape` — 정규식 문자 클래스 외부에서 `]`는 이스케이프 불필요
-- Context: lines 767, 1207, 1231, 1243의 4개 RegExp 패턴에서 `\]`를 `]`로 수정
 
 
 
