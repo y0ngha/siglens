@@ -1,5 +1,14 @@
 # Fix Log
 
+## [Issue #144 | feat/144/차트-패턴-주요-가격대-텍스트-표시 | 2026-04-04]
+- Violation: `useEffect` on line 85 of `usePatternOverlay.ts` duplicated the `patterns.filter(p => p.detected && p.renderConfig)` computation already extracted into the `detectedPatterns` useMemo.
+- Rule: MISTAKES.md rule 10 — repeated identical filtering logic across multiple blocks must be extracted to a single source of truth (useMemo). The same filter appeared in the useReducer initializer, the useMemo, and this useEffect.
+- Context: The useEffect was recomputing the detected set from `patterns` directly instead of consuming `detectedPatterns`; fixed by using `detectedPatterns.map(p => p.patternName)` and updating the dependency to `[detectedPatterns]`.
+
+- Violation: `analysisStatus` derived value declared on line 109 of `ChartContent.tsx` before the two `useState` calls on lines 111–116.
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — `useState` must precede derived values. Placing a derived variable before state declarations violates the required hook declaration order.
+- Context: `getAnalysisStatus(isAnalyzing, analysisError)` was called immediately after `usePanelResize()` before the two `useState` hooks; moved after both `useState` declarations.
+
 ## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
 - Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
 - Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
@@ -14,18 +23,9 @@
 - Rule: FF.md Readability 1-A — 동시에 실행되지 않는 분기는 분리해야 함
 - Context: `SkillAccordionItem`의 렌더 블록에서 `sections` 계산을 컴포넌트 바디로 이동하고 단순 조건부 렌더로 교체
 
-- Violation: `parseStructuredSummary` 순수 유틸 함수가 컴포넌트 파일 내부에 위치
-- Rule: CONVENTIONS.md Component Folder Structure — 순수 유틸 함수(non-hook helper)는 `utils/` 서브폴더에 위치해야 함
-- Context: `AnalysisPanel.tsx`에서 `parseStructuredSummary`를 `components/analysis/utils/parseStructuredSummary.ts`로 분리
-
 - Violation: magic number `3` 사용
 - Rule: FF.md Readability 1-D — 의미가 불명확한 숫자 리터럴은 이름 있는 상수로 추출해야 함
 - Context: `parseStructuredSummary`의 `sections.length >= 3`을 `MIN_STRUCTURED_SUMMARY_SECTIONS` 상수로 추출
-
-## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
-- Violation: `.map()` callback with side effect mutating a closure variable (`counter`)
-- Rule: MISTAKES.md #1 — when a loop body has multiple statements and maintains accumulated state, `for...of` is preferred over `.map()` with side effects
-- Context: `buildUniqueIds` in `confidence.ts` used `.map()` to both mutate a `Map` counter and return transformed values; replaced with `for...of` loop using a local `ids` array
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03] (Round 4 — external review)
 - Violation: 테스트 상수 `BARS_FOR_TENKAN`, `BARS_FOR_KIJUN`, `BARS_FOR_SENKOA`, `BARS_FOR_SENKOB`에 `TEST_` 프리픽스 누락
@@ -52,10 +52,6 @@
 - Context: `useIchimokuOverlay.ts` used four `let` variables (`finalSenkouA`, `finalSenkouB`, `finalCloudBullish`, `finalCloudBearish`) spread-reassigned 26 times inside the future cloud loop
 
 ## [PR #154 | feat/122/ichimoku-cloud-구현 | 2026-04-03]
-- Violation: `forEach` with non-trivial body (multiple statements, const declarations, conditionals) used instead of `for...of`
-- Rule: MISTAKES.md #1 — `for...of` preferred when loop body is non-trivial or has multiple statements
-- Context: `useIchimokuOverlay.ts` used `futureCloudData.forEach((point, j) => { ... })` with multiple const declarations and conditional branches
-
 - Violation: `.push()` mutation on local arrays returned from `buildSeriesData()`
 - Rule: MISTAKES.md #4 / CONVENTIONS.md immutability — `.push()` is prohibited; spread operator must be used instead
 - Context: `senkouAData.push(...)`, `senkouBData.push(...)`, etc. in `useIchimokuOverlay.ts` mutated arrays after receiving them from `buildSeriesData()`
@@ -64,11 +60,6 @@
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
 - Rule: CONVENTIONS.md — 빈 bars 배열은 의미 있는 분석 결과를 기대할 수 없으므로, `!bars` 단독 검증으로는 caller에게 명확한 에러 응답을 줄 수 없음
 - Context: `route.ts`의 입력 검증에서 `!bars`만으로는 빈 배열을 거르지 못하여, `bars.length === 0` 조건을 추가하여 빈 bars도 400 응답으로 처리
-
-## [Issue #89 | feat/89/보조지표-show-hide-토글-UI | 2026-03-31]
-- Violation: `IndicatorToolbarProps`에 `xyzVisible + onXYZToggle` 플랫 props 12개가 나열되어 새 지표 추가 시 props 2개씩 증가
-- Rule: FF.md Coupling 4-A — 함께 변경되는 props는 묶어야 한다; 새 지표마다 interface와 호출 사이트 양쪽을 수정해야 하는 tight coupling
-- Context: `bollingerVisible/onBollingerToggle` 등 4쌍을 `IndicatorToggleGroup { visible, onToggle }` 구조로 묶어 `bollinger`, `macd`, `rsi`, `dmi` 6개 props로 감소; `StockChart.tsx` 호출 사이트 동시 업데이트
 
 ## [PR #112 | feat/109/AI-분석-패널-너비-드래그-조절 | review fix 4 | 2026-03-31]
 - Violation: focusable `role="separator"` 드래그 핸들에 `onKeyDown` 핸들러가 없어 키보드 사용자가 패널 너비를 조절할 수 없는 접근성 미구현
@@ -84,12 +75,6 @@
 - Violation: 3봉 패턴 감지 시 detection window 시작 부분에서 이전 데이터 부족으로 미감지 가능
 - Rule: domain/CLAUDE.md Candle Pattern Detection — multi-candle 패턴은 2~3봉이 필요하므로 충분한 데이터 확보 필요
 - Context: `detectCandlePatternEntries`에서 `CANDLE_PATTERN_DETECTION_BARS + MULTI_CANDLE_PATTERN_BUFFER(2)`개 데이터를 확보하여 감지, 결과는 마지막 15봉에 대해서만 반환
-
-## [Issue #132 | fix/132/pane-indicator-label-표시-수정 | 2026-04-01]
-- Violation: `PaneLabelConfig`, `PaneSubLabel` 타입이 hooks/ 파일에서 정의되고 utils/에서 import하여 역방향 의존성 발생
-- Rule: CONVENTIONS.md Component Folder Structure — hooks/는 React hook 파일, utils/는 순수 함수; utils가 hooks를 import하면 안 됨
-- Context: `chart/types.ts`로 공유 타입을 추출하여 hooks/와 utils/ 모두 types.ts에서 import하도록 변경
-
 
 ## [PR #155 | refactor/142/skills-디렉토리-패턴별-하위폴더-구조정리 | 2026-04-02]
 - Violation: `collectMdFiles`에서 entry마다 별도 `stat()` 호출로 I/O 낭비 — 파일 시스템 성능 비효율
@@ -158,11 +143,6 @@
 - Rule: FF.md Readability 1-A — 파라미터명은 실제 전달되는 값의 의미를 반영해야 함
 - Context: `AnalysisPanel.tsx`의 `PatternAccordionItemProps.onToggleVisibility` 파라미터를 `patternName: string`에서 `patternId: string`으로 변경
 
-## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-03] (Round 2 — external review)
-- Violation: `buildAnalysisRequest`의 `strategyInstruction`에 엘리어트 파동 전용 용어("wave assessment", "motive wave", "corrective wave") 하드코딩
-- Rule: FF.md Coupling 4-A — prompt builder가 특정 skill의 도메인 언어에 결합되어서는 안 됨; 각 skill의 `## AI Analysis Instructions`가 단일 정보 출처(single source of truth)
-- Context: `src/domain/analysis/prompt.ts` L294에서 Elliott Wave 전용 trend 판단 지시를 범용 지시("Set the trend field based on each skill's own analysis instructions")로 교체
-
 ## [PR #163 | feat/124/엘리어트-파동-스킬-구현 | 2026-04-04] (Round 3 — external review)
 - Violation: `AnalysisPanel.tsx`에서 `parseStructuredSummary` import에 상대 경로(`./utils/parseStructuredSummary`) 사용
 - Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지; 모든 import에 path alias(`@/...`) 사용 필수
@@ -177,4 +157,12 @@
 - Violation: `skills/strategies/macd-cycle.md`에서 `type: strategy`를 사용했으나, `SkillType`은 `'pattern' | 'indicator_guide'`만 지원하므로 유효하지 않은 값
 - Rule: DOMAIN.md Skills System — SkillType enum must be one of the defined union type values; invalid strategy value causes type mismatch
 - Context: `skills/strategies/macd-cycle.md`의 frontmatter `type:` 필드를 `type: indicator_guide`로 수정하여 타입 유효성 확보
+
+- Violation: `AnalysisPanel`이 `pattern.id`로 visibility 상태를 관리하고 `onPatternVisibilityChange(pattern.id, ...)`를 호출하지만, `usePatternOverlay.togglePattern`은 `patternName`을 기대하여 키 불일치 발생
+- Rule: FF.md Predictability 2-A — 콜백 시그니처는 소비자의 기대와 일치해야 하며, 다른 타입의 ID를 혼용하면 latent bug를 만든다
+- Context: `AnalysisPanel.tsx`의 `visiblePatterns` 로컬 상태를 제거하고, `chartVisiblePatterns?: Set<string>`과 `onTogglePattern?: (patternName: string) => void` prop으로 교체; `PatternAccordionItemProps.onToggleVisibility`도 `patternName` 기반으로 통일
+
+- Violation: `usePatternOverlay`의 reset effect가 `p.detected`만 필터링하고 `p.renderConfig`는 체크하지 않아 `visiblePatterns`에 렌더링 불가능한 phantom 항목이 포함됨
+- Rule: FF.md Predictability 2-B — 동일한 엔티티를 나타내는 두 derived set은 동일한 필터 기준을 사용해야 한다
+- Context: `usePatternOverlay.ts`의 reset effect 필터를 `p.detected && p.renderConfig`로 수정하여 `detectedPatterns` useMemo와 일치시킴; 초기 상태 initializer도 동일하게 수정
 

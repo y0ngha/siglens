@@ -28,10 +28,15 @@ Review before implementation and ensure these are not repeated.
    → Exception: for (let i = 0; ...) is acceptable when it provides a clear advantage in time complexity,
      performance, or readability — e.g. sliding window algorithms where .slice() inside .map() produces O(n²),
      or algorithms where index arithmetic is central to the logic
+   → Recurring issue: seen at least 2 times in PR #154 (Ichimoku useIchimokuOverlay.ts) and PR #162 (buildUniqueIds in confidence.ts)
    ❌ for (let i = 0; i < closes.length; i++) result.push(closes[i] * 2)
    ✅ closes.map(c => c * 2)
    ❌ let i = 0; while (i < lines.length) { ... i++; }
    ✅ lines.reduce((acc, line, idx) => { ... }, initialState)
+   ❌ futureCloudData.forEach((point, j) => { ... })  // multiple const declarations, conditionals inside — prefer for...of
+   ✅ for (const point of futureCloudData) { ... }
+   ❌ items.map((item) => { mutatingCounter[itemId]++; return transformed(item); })  // side effect mutating closure — prefer for...of
+   ✅ const ids = []; for (const item of items) { ids[itemId]++; } return ids;
    ✅ periodsToRemove.forEach(p => chart.removeSeries(seriesRef.current[p]))  // side-effect only
    ✅ for (const p of periodsToRemove) { chart.removeSeries(seriesRef.current[p]); }  // preferred for multi-statement
    ✅ for (let i = 0; i + period <= values.length; i++) { ... }  // sliding window — O(n) preferred over O(n²) with .slice() in .map()
@@ -134,9 +139,12 @@ Review before implementation and ensure these are not repeated.
     → Rule: CONVENTIONS.md Component Folder Structure — hooks/ contain React hooks only; pure functions belong in utils/
     → When a pure function (map callback, build function, transform helper) is defined alongside a hook in the same file, move it to utils/
     → This enables reuse in other files and maintains clear layer separation: hooks call utils, components import from both
+    → Recurring issue: seen at least 3 times across PR #122 (Ichimoku), PR #121 (VolumeProfile), and PR #124 (SkillPanel) — pure functions always belong in utils/ subfolder
     ❌ useIchimokuOverlay.ts defines buildCloudData (pure function) alongside hook logic
     ❌ useVolumeProfileOverlay.ts defines extendWithFutureCloud (non-hook helper) and FutureCloudBase type
+    ❌ AnalysisPanel.tsx defines parseStructuredSummary (pure function) inside component file
     ✅ Extract buildCloudData, extendWithFutureCloud, and related types to src/components/chart/utils/ichimokuUtils.ts
+    ✅ Extract parseStructuredSummary to src/components/analysis/utils/parseStructuredSummary.ts
     ✅ useIchimokuOverlay.ts imports and calls these utils without defining them
 ```
 
@@ -424,6 +432,16 @@ Review before implementation and ensure these are not repeated.
        SymbolSearch: className="cursor-pointer"
     ✅ (globals.css) @layer base { button { @apply cursor-pointer disabled:cursor-not-allowed; } }
        Remove cursor-pointer from individual components
+
+12.7. Props declared but not connected to callbacks (latent bugs)
+    → Rule: FF.md Coupling 4-A — if a callback prop exists, it must actually be connected and invoked
+    → When props are declared but callbacks are not chained together, the feature is dead code and will confuse maintainers
+    → Recurring issue: seen at least 2 times (PR #144 pattern visibility toggles not wired, PR #128 prompt builder skill coupling)
+    ❌ Component declares onPatternVisibilityChange prop but never calls it anywhere
+    ❌ StockChart accepts onPatternOverlayChange but Parent component doesn't pass it
+    ✅ Declare prop, pass callback from parent, and invoke callback when state changes
+    ❌ prompt.ts includes skill-specific trend instructions hardcoded instead of delegating to skill definitions
+    ✅ prompt.ts includes range-generic instruction; each skill's instructions in skill frontmatter is the source of truth
 
 13. Repeating identical JSX structure across multiple render blocks
     → Rule: FF.md Readability 1-A — identical JSX repeated 2+ times should be data-driven
