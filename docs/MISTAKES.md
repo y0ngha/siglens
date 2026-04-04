@@ -520,6 +520,15 @@ Review before implementation and ensure these are not repeated.
 ## Domain Functions
 
 ```
+0.5. Using const arrow functions for domain exports instead of function declarations
+     → Rule: domain/CLAUDE.md — Always use `export function` (named function declaration)
+     → Arrow function expressions lack hoisting and violate domain layer convention
+     → Applies to both public exports and private module-level helpers
+     ❌ export const buildPatternIds = <T, K extends keyof T>(items: T[], key: K): string[] => { ... }
+     ✅ export function buildPatternIds<T, K extends keyof T>(items: T[], key: K): string[] { ... }
+     ❌ const expandValueArea = (state: State) => { ... }  // private helper with arrow syntax
+     ✅ function expandValueArea(state: State) { ... }    // private helper with declaration
+
 1. Importing external libraries
    → technicalindicators, lodash, etc. are all prohibited
 
@@ -574,6 +583,15 @@ Review before implementation and ensure these are not repeated.
    ❌ skills/strategies/ma-cycle.md: `type: indicator_guide` in frontmatter (undefined behavior)
    ❌ skills/indicators/*.md (13 files): `type: indicator_guide` in frontmatter (batch inconsistency)
    ✅ Remove the `type: indicator_guide` line; omit type field when not 'pattern'
+
+7.5. Missing mandatory fields in skill markdown files
+     → Rule: DOMAIN.md Skill File Format — all required interface fields must be declared in frontmatter and body
+     → When a domain type declares a field as mandatory (not optional), that field must be present in all instances
+     → Skill markdown sections (e.g. `## AI Analysis Instructions`) must include all required fields for nested types
+     ❌ Signal instructions in markdown omit `strength: SignalStrength` field even though Signal interface requires it
+     ✅ Every Signal instruction includes all 3+ fields: signal, direction, strength (and any other mandatory fields)
+     ❌ Pattern type enum accepts only ['pattern'] but instructions use invalid values like 'strategy'
+     ✅ Verify skill type field matches SkillType enum: either 'pattern' or omit the field entirely
 ```
 
 ---

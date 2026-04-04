@@ -14,10 +14,6 @@
 - Rule: FF Cohesion 3-A — code that changes together (key level validation and rendering) should be located together; both chart and panel must use the same validated data
 - Context: Added `keyLevels: KeyLevels` prop to `AnalysisPanelProps`, replaced all `analysis.keyLevels` references in render with the new prop, and passed `validatedKeyLevels` from `ChartContent` to `AnalysisPanel`
 
-- Violation: `bars.at(-1)!` non-null assertion used in `buildLineData` while `bars[0]` index access is used in the line immediately above
-- Rule: FF Readability 1-G — keeping the same access pattern in both places reduces viewpoint shifts and makes the length guard visually self-evident
-- Context: `keyLevelsUtils.ts` `buildLineData` replaced `bars.at(-1)!.time` with `bars[bars.length - 1].time` to match the `bars[0]` access pattern on the preceding line
-
 ## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-04] (round 2)
 - Violation: `useState(true)` for `keyLevelsVisible` declared between two external hook calls (`useAnalysis` and `usePanelResize`), violating hook declaration order
 - Rule: components/CLAUDE.md — hook declaration order: External hooks → State (useState) → Derived (useMemo)
@@ -32,10 +28,6 @@
 - Rule: Test CLAUDE.md Cohesion 3-A — test files must mirror source structure; lib/ is not covered by tests per test scope rules
 - Context: Test file deleted when source file moved to lib/ (lib/ is excluded from test coverage per __tests__/CLAUDE.md)
 
-- Violation: `bars[bars.length - 1]` index arithmetic used for last-element access
-- Rule: FF Readability 1-D — magic index arithmetic should use `at(-1)` for idiomatic last-element access
-- Context: `buildLineData` in `keyLevelsUtils.ts` accessed last bar via index; replaced with `bars.at(-1)!`
-
 - Violation: Missing test case for poc failing both conditions (price=0 AND reason='') simultaneously
 - Rule: Test coverage — edge case where both validation conditions fail together was not tested
 - Context: `keyLevels.test.ts` had separate tests for each condition but not the combination; added combined failure test case
@@ -49,11 +41,6 @@
 - Violation: 테스트 상수 `BARS_FOR_TENKAN`, `BARS_FOR_KIJUN`, `BARS_FOR_SENKOA`, `BARS_FOR_SENKOB`에 `TEST_` 프리픽스 누락
 - Rule: MISTAKES.md #6 Pattern D — 테스트 입력 상수는 `TEST_` 프리픽스 형식을 사용해야 함
 - Context: `ichimoku.test.ts`의 4개 상수를 `TEST_BARS_FOR_TENKAN` 등으로 전면 rename
-
-## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-03]
-- Violation: `strength` field missing from stage transition signal instruction in `## AI Analysis Instructions`
-- Rule: Domain type contract — `Signal` interface requires `strength: SignalStrength` as a mandatory field; omitting it causes AI to generate incomplete `Signal` objects
-- Context: `skills/strategies/macd-cycle.md` specified `strength` for entry timing signals but omitted it for stage transition signals, creating inconsistency that could produce invalid output
 
 ## [Issue #79 | fix/79/프롬프트-스키마-누락-필드-추가-에러-로깅-개선 | 2026-03-29]
 - Violation: `!bars` 검증이 빈 배열 `[]`을 유효한 입력으로 통과시킴
@@ -126,10 +113,6 @@
 
 
 ## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
-- Violation: `buildPatternIds`가 const 화살표 함수로 선언되어 domain 레이어 함수 선언 관례 위반
-- Rule: domain/CLAUDE.md — Always use `export function` (named function declaration), no arrow function exports or classes; 비공개 헬퍼도 함수 선언식 사용
-- Context: `src/domain/analysis/confidence.ts`의 `buildPatternIds`를 `function buildUniqueIds<T, K extends keyof T>` 제네릭 함수 선언식으로 변경하여 재사용성과 관례 준수 동시 달성
-
 - Violation: `SkillResult`에 `id` 필드 없어 `SkillAccordionItem` 렌더링 시 `skillName` 중복 가능성 및 React key 불안정
 - Rule: 일관성 — `PatternSummary`와 `CandlePatternSummary`에 `id`를 추가한 것과 동일하게 `SkillResult`도 고유 ID 부여 필요
 - Context: `SkillResult`에 `id: string` 추가, `RawAnalysisResponse`에서 `id` Omit, `enrichAnalysisWithConfidence`에서 `buildUniqueIds(skillResults, 'skillName')` 로 ID 생성, `AnalysisPanel.tsx`에서 `key={skill.id}`로 변경
@@ -149,9 +132,4 @@
 - Rule: components/CLAUDE.md Hook 선언 순서 — External hooks → State (useState) → Derived (useMemo) → Callbacks → Effects → Return; 단, 커스텀 훅이 state 변수를 참조할 경우 state 선언이 커스텀 훅 앞에 와야 함 (TDZ 회피)
 - Context: `IndicatorToolbar.tsx`에서 `useOnClickOutside` 콜백이 `openDropdown`, `setOpenDropdown`을 참조하므로, state 선언을 refs보다 앞으로 이동하고 커스텀 훅을 refs 직후에 배치 (`state → refs → custom hook → derived` 순서로 실용적 변경)
 
-
-## [Issue #128 | feat/128/macd-cycle-indicator-구현 | 2026-04-03]
-- Violation: `skills/strategies/macd-cycle.md`에서 `type: strategy`를 사용했으나, `SkillType`은 `'pattern' | 'indicator_guide'`만 지원하므로 유효하지 않은 값
-- Rule: DOMAIN.md Skills System — SkillType enum must be one of the defined union type values; invalid strategy value causes type mismatch
-- Context: `skills/strategies/macd-cycle.md`의 frontmatter `type:` 필드를 `type: indicator_guide`로 수정하여 타입 유효성 확보
 

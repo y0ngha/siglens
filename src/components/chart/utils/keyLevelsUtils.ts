@@ -20,7 +20,6 @@ export function buildLineData(
 
 export function createLevelSeries(
     chart: IChartApi,
-    price: number,
     color: string,
     lineWidth: LineWidth
 ): ISeriesApi<'Line'> {
@@ -31,16 +30,4 @@ export function createLevelSeries(
         priceLineVisible: false,
         lastValueVisible: true,
     });
-}
-
-export function addLevelSeries(
-    chart: IChartApi,
-    bars: Bar[],
-    price: number,
-    color: string,
-    lineWidth: LineWidth
-): ISeriesApi<'Line'> {
-    const series = createLevelSeries(chart, price, color, lineWidth);
-    series.setData(buildLineData(bars, price));
-    return series;
 }

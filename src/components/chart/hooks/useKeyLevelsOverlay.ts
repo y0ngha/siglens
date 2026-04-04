@@ -64,7 +64,6 @@ export function useKeyLevelsOverlay({
         const supportEntries = keyLevels.support.map(level => ({
             series: createLevelSeries(
                 chart,
-                level.price,
                 CHART_COLORS.supportLine,
                 lineWidth
             ),
@@ -73,7 +72,6 @@ export function useKeyLevelsOverlay({
         const resistanceEntries = keyLevels.resistance.map(level => ({
             series: createLevelSeries(
                 chart,
-                level.price,
                 CHART_COLORS.resistanceLine,
                 lineWidth
             ),
@@ -85,7 +83,6 @@ export function useKeyLevelsOverlay({
                       {
                           series: createLevelSeries(
                               chart,
-                              keyLevels.poc.price,
                               CHART_COLORS.vpPoc,
                               lineWidth
                           ),
