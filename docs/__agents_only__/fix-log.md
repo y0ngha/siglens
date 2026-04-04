@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-05] (round 4)
+- Violation: `useKeyLevelsOverlay` combined series lifecycle (create/remove) and data sync (`setData`) in a single `useEffect`, causing all series to be recreated on every `bars` change (e.g. historical scroll load)
+- Rule: CONVENTIONS.md — One side effect per `useEffect`; components/CLAUDE.md — separate lifecycle and data sync effects
+- Context: Refactored into two effects: lifecycle effect depends on `[chartRef, keyLevels, isVisible, lineWidth]` and uses new `createLevelSeries` helper; data sync effect depends on `[bars, keyLevels, isVisible]` and calls `setData` on existing series entries
+
+- Violation: `poc` display in `AnalysisPanel` was nested inside the support/resistance outer condition, causing panel/chart inconsistency when only `poc` is present
+- Rule: FF Predictability 2-A — chart and panel should show the same data under the same conditions
+- Context: Added `|| keyLevels.poc !== undefined` to the outer rendering condition so `poc` is displayed whenever it exists, regardless of whether support or resistance arrays are populated
+
 ## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-04] (round 3)
 - Violation: `AnalysisPanel` rendered `analysis.keyLevels` directly without validation, while `ChartContent` computed `validatedKeyLevels` only for the chart — invalid key levels (price=0 or empty reason) could appear in the panel but not the chart
 - Rule: FF Cohesion 3-A — code that changes together (key level validation and rendering) should be located together; both chart and panel must use the same validated data
