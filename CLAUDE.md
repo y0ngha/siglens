@@ -142,17 +142,13 @@ When you receive an exit signal, route as follows:
 | Signal | Route to |
 |---|---|
 | `implementation-agent` · `status: done` | `review-agent` |
-| `pr-fix-agent` · `status: done` | `review-agent` |
+| `pr-fix-agent` · `status: done` | `mistake-managing-agent` |
 | `review-agent` · `status: approved` | `mistake-managing-agent` |
-| `review-agent` · `status: changes_requested` | fix agent (see below) |
+| `review-agent` · `status: changes_requested` | `implementation-agent` with findings |
 | `review-agent` · `status: loop_limit_reached` | Stop — report to user |
 | `mistake-managing-agent` · `status: done` | `git-agent` |
 | `git-agent` · `status: done` | Stop — report result to user |
 | Any · `status: failed` | Stop — report failure reason to user |
-
-Fix agent selection:
-- From issue flow → `implementation-agent` with findings
-- From PR fix flow → `pr-fix-agent` with findings
 
 ### Handling Findings
 
