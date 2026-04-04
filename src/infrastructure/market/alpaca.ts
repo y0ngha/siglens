@@ -51,10 +51,14 @@ export class AlpacaProvider implements MarketDataProvider {
         const lookbackMs =
             TIMEFRAME_LOOKBACK_DAYS[timeframe] * 24 * 60 * 60 * 1000;
         const endTime = before ? new Date(before) : new Date();
-        const etOffsetMs = getEasternOffsetHours(endTime) * 3600 * 1000;
-        const endTimeET = new Date(endTime.getTime() + etOffsetMs);
-        const startTimeET = new Date(endTimeET.getTime() - lookbackMs);
-        const startUtc = new Date(startTimeET.getTime() - etOffsetMs);
+        const approxStartUtc = new Date(endTime.getTime() - lookbackMs);
+        const MS_PER_HOUR = 3600 * 1000;
+        const startOffsetMs =
+            getEasternOffsetHours(approxStartUtc) * MS_PER_HOUR;
+        const endOffsetMs = getEasternOffsetHours(endTime) * MS_PER_HOUR;
+        const startUtc = new Date(
+            endTime.getTime() + endOffsetMs - lookbackMs - startOffsetMs
+        );
 
         const params = new URLSearchParams({
             timeframe,

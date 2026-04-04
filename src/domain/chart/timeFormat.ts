@@ -1,8 +1,8 @@
 import type { Timeframe } from '@/domain/types';
+import { getEasternOffsetHours } from '@/domain/time/eastern';
 
 const SECONDS_TO_MS = 1000;
 const SECONDS_PER_HOUR = 3600;
-const KST_OFFSET_MS = 9 * SECONDS_PER_HOUR * SECONDS_TO_MS;
 
 const MONTH_NAMES = [
     'Jan',
@@ -19,8 +19,11 @@ const MONTH_NAMES = [
     'Dec',
 ] as const;
 
-function toKstDate(timestampSeconds: number): Date {
-    return new Date(timestampSeconds * SECONDS_TO_MS + KST_OFFSET_MS);
+function toEtDate(timestampSeconds: number): Date {
+    const utcDate = new Date(timestampSeconds * SECONDS_TO_MS);
+    const etOffsetMs =
+        getEasternOffsetHours(utcDate) * SECONDS_PER_HOUR * SECONDS_TO_MS;
+    return new Date(utcDate.getTime() + etOffsetMs);
 }
 
 function padZero(n: number): string {
@@ -56,10 +59,10 @@ export function getTimeFormatter(
     timeframe: Timeframe
 ): (timestamp: number) => string {
     if (MINUTE_TIMEFRAMES.has(timeframe)) {
-        return (timestamp: number) => formatTime(toKstDate(timestamp));
+        return (timestamp: number) => formatTime(toEtDate(timestamp));
     }
     if (timeframe === '1Hour') {
-        return (timestamp: number) => formatDateAndTime(toKstDate(timestamp));
+        return (timestamp: number) => formatDateAndTime(toEtDate(timestamp));
     }
-    return (timestamp: number) => formatDate(toKstDate(timestamp));
+    return (timestamp: number) => formatDate(toEtDate(timestamp));
 }

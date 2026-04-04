@@ -116,5 +116,87 @@ describe('AlpacaProvider', () => {
                 provider.getBars({ symbol: 'AAPL', timeframe: '1Min' })
             ).rejects.toThrow('Alpaca API error: 403 Forbidden');
         });
+
+        it('EST 기간(UTC-5)에 start 파라미터를 올바른 오프셋으로 계산한다', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ bars: [], next_page_token: null }),
+            });
+
+            const provider = new AlpacaProvider();
+            // 2024-01-15 (EST, UTC-5) 기준 before
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Min',
+                before: '2024-01-15T20:00:00Z',
+            });
+
+            const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+            expect(url).toContain('start=');
+            const startParam = new URL(url).searchParams.get('start');
+            expect(startParam).not.toBeNull();
+            // EST(UTC-5) 기간이므로 start와 end 오프셋이 동일 → endOffsetMs - startOffsetMs = 0
+            // lookback 5일(1Min), start = endTime - lookbackMs (offset cancels out)
+            const expectedStart = new Date(
+                new Date('2024-01-15T20:00:00Z').getTime() -
+                    5 * 24 * 60 * 60 * 1000
+            ).toISOString();
+            expect(startParam).toBe(expectedStart);
+        });
+
+        it('EDT 기간(UTC-4)에 start 파라미터를 올바른 오프셋으로 계산한다', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ bars: [], next_page_token: null }),
+            });
+
+            const provider = new AlpacaProvider();
+            // 2024-06-15 (EDT, UTC-4) 기준 before
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Min',
+                before: '2024-06-15T20:00:00Z',
+            });
+
+            const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const startParam = new URL(url).searchParams.get('start');
+            expect(startParam).not.toBeNull();
+            // EDT(UTC-4) 기간이므로 start와 end 오프셋이 동일 → offset 차이 = 0
+            const expectedStart = new Date(
+                new Date('2024-06-15T20:00:00Z').getTime() -
+                    5 * 24 * 60 * 60 * 1000
+            ).toISOString();
+            expect(startParam).toBe(expectedStart);
+        });
+
+        it('DST 전환 경계(EST→EDT)에 걸친 lookback은 오프셋 차이를 반영한다', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ bars: [], next_page_token: null }),
+            });
+
+            const provider = new AlpacaProvider();
+            // end: 2024-03-12T10:00:00Z (EDT, UTC-4)
+            // lookback 5일(1Min) → approxStart: 2024-03-07T10:00:00Z (EST, UTC-5)
+            // endOffset = -4h, startOffset = -5h → 차이 = +1h
+            // startUtc = endTime + endOffsetMs - lookbackMs - startOffsetMs
+            //          = endTime + (-4h) - 5d - (-5h) = endTime - 5d + 1h
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Min',
+                before: '2024-03-12T10:00:00Z',
+            });
+
+            const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const startParam = new URL(url).searchParams.get('start');
+            expect(startParam).not.toBeNull();
+            const endMs = new Date('2024-03-12T10:00:00Z').getTime();
+            const lookbackMs = 5 * 24 * 60 * 60 * 1000;
+            const endOffsetMs = -4 * 3600 * 1000;
+            const startOffsetMs = -5 * 3600 * 1000;
+            const expectedStartMs =
+                endMs + endOffsetMs - lookbackMs - startOffsetMs;
+            expect(startParam).toBe(new Date(expectedStartMs).toISOString());
+        });
     });
 });
