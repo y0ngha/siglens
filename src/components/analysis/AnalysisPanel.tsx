@@ -436,6 +436,8 @@ interface AnalysisPanelProps {
     isAnalyzing?: boolean;
     onReanalyze?: () => void;
     onPatternVisibilityChange?: (patternId: string, isVisible: boolean) => void;
+    keyLevelsVisible?: boolean;
+    onKeyLevelsVisibilityChange?: (isVisible: boolean) => void;
 }
 
 export function AnalysisPanel({
@@ -443,6 +445,8 @@ export function AnalysisPanel({
     isAnalyzing = false,
     onReanalyze,
     onPatternVisibilityChange,
+    keyLevelsVisible = true,
+    onKeyLevelsVisibilityChange,
 }: AnalysisPanelProps) {
     const [visiblePatterns, setVisiblePatterns] = useState<Set<string>>(
         new Set()
@@ -620,9 +624,34 @@ export function AnalysisPanel({
             {(analysis.keyLevels.support.length > 0 ||
                 analysis.keyLevels.resistance.length > 0) && (
                 <div className="flex flex-col gap-2">
-                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                        주요 레벨
-                    </span>
+                    <div className="flex items-center justify-between">
+                        <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                            주요 레벨
+                        </span>
+                        {onKeyLevelsVisibilityChange !== undefined && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onKeyLevelsVisibilityChange(
+                                        !keyLevelsVisible
+                                    )
+                                }
+                                className={cn(
+                                    'shrink-0 rounded p-1 transition-colors',
+                                    keyLevelsVisible
+                                        ? 'text-primary-400 hover:text-primary-300'
+                                        : 'text-secondary-600 hover:text-secondary-400'
+                                )}
+                                title={
+                                    keyLevelsVisible
+                                        ? '차트에서 숨기기'
+                                        : '차트에서 보기'
+                                }
+                            >
+                                <EyeIcon isVisible={keyLevelsVisible} />
+                            </button>
+                        )}
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                         {analysis.keyLevels.resistance.length > 0 && (
                             <div className="flex flex-col gap-1">

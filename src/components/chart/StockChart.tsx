@@ -17,7 +17,12 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { CHART_COLORS } from '@/domain/constants/colors';
-import type { Bar, IndicatorResult, PatternResult } from '@/domain/types';
+import type {
+    Bar,
+    IndicatorResult,
+    KeyLevels,
+    PatternResult,
+} from '@/domain/types';
 import type { PaneIndices } from '@/components/chart/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
@@ -32,6 +37,7 @@ import { useVolumeProfileOverlay } from '@/components/chart/hooks/useVolumeProfi
 import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay';
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
+import { useKeyLevelsOverlay } from '@/components/chart/hooks/useKeyLevelsOverlay';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import {
     DEFAULT_LINE_WIDTH,
@@ -59,16 +65,22 @@ interface StockChartProps {
     bars: Bar[];
     indicators?: IndicatorResult;
     patterns?: PatternResult[];
+    keyLevels?: KeyLevels;
+    keyLevelsVisible?: boolean;
     onPatternOverlayChange?: (
         visiblePatterns: Set<string>,
         togglePattern: (patternName: string) => void
     ) => void;
 }
 
+const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
+
 export function StockChart({
     bars,
     indicators = EMPTY_INDICATOR_RESULT,
     patterns = [],
+    keyLevels = EMPTY_KEY_LEVELS,
+    keyLevelsVisible = false,
     onPatternOverlayChange,
 }: StockChartProps) {
     const [rsiVisible, setRsiVisible] = useState(false);
@@ -254,6 +266,14 @@ export function StockChart({
         chartRef,
         bars,
         patterns,
+    });
+
+    useKeyLevelsOverlay({
+        chartRef,
+        bars,
+        keyLevels,
+        isVisible: keyLevelsVisible,
+        lineWidth: DEFAULT_LINE_WIDTH,
     });
 
     const notifyPatternOverlayChange = useEffectEvent(() => {

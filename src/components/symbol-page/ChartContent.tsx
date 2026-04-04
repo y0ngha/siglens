@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import type React from 'react';
 import type {
     AnalysisResponse,
@@ -7,6 +8,7 @@ import type {
     IndicatorResult,
     Timeframe,
 } from '@/domain/types';
+import { validateKeyLevels } from '@/domain/analysis/keyLevels';
 import { cn } from '@/lib/cn';
 import { StockChart } from '@/components/chart/StockChart';
 import { VolumeChart } from '@/components/chart/VolumeChart';
@@ -103,9 +105,16 @@ export function ChartContent({
             indicators,
         });
 
+    const [keyLevelsVisible, setKeyLevelsVisible] = useState(true);
+
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
     const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
+
+    const validatedKeyLevels = useMemo(
+        () => validateKeyLevels(analysis.keyLevels),
+        [analysis.keyLevels]
+    );
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
@@ -117,6 +126,8 @@ export function ChartContent({
                         bars={bars}
                         indicators={indicators}
                         patterns={analysis.patternSummaries}
+                        keyLevels={validatedKeyLevels}
+                        keyLevelsVisible={keyLevelsVisible}
                     />
                 </div>
 
@@ -161,6 +172,8 @@ export function ChartContent({
                     analysis={analysis}
                     isAnalyzing={isAnalyzing}
                     onReanalyze={handleReanalyze}
+                    keyLevelsVisible={keyLevelsVisible}
+                    onKeyLevelsVisibilityChange={setKeyLevelsVisible}
                 />
             </aside>
 
