@@ -53,6 +53,7 @@ import {
 
 const CANDLESTICK_PANE_INDEX = 0;
 const FIRST_INDICATOR_PANE_INDEX = 1;
+const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -72,8 +73,6 @@ interface StockChartProps {
         togglePattern: (patternName: string) => void
     ) => void;
 }
-
-const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
 
 export function StockChart({
     bars,
