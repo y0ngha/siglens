@@ -1,0 +1,37 @@
+import { LineSeries, LineStyle } from 'lightweight-charts';
+import type {
+    IChartApi,
+    ISeriesApi,
+    LineWidth,
+    UTCTimestamp,
+} from 'lightweight-charts';
+import type { Bar } from '@/domain/types';
+
+export function buildLineData(
+    bars: Bar[],
+    price: number
+): { time: UTCTimestamp; value: number }[] {
+    if (bars.length === 0) return [];
+    return [
+        { time: bars[0].time as UTCTimestamp, value: price },
+        { time: bars.at(-1)!.time as UTCTimestamp, value: price },
+    ];
+}
+
+export function addLevelSeries(
+    chart: IChartApi,
+    bars: Bar[],
+    price: number,
+    color: string,
+    lineWidth: LineWidth
+): ISeriesApi<'Line'> {
+    const series = chart.addSeries(LineSeries, {
+        color,
+        lineWidth,
+        lineStyle: LineStyle.Dashed,
+        priceLineVisible: false,
+        lastValueVisible: true,
+    });
+    series.setData(buildLineData(bars, price));
+    return series;
+}

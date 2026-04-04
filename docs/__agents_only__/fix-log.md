@@ -1,5 +1,22 @@
 # Fix Log
 
+## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-04]
+- Violation: `CHART_COLORS` and `getPeriodColor` defined in `domain/constants/colors.ts` — UI color constants placed in the domain layer
+- Rule: domain/CLAUDE.md — `domain/constants/` contains only domain constants (indicator settings, timeframe constants); UI-related constants (colors, styles) do not belong here
+- Context: Colors were used exclusively by chart components (lightweight-charts rendering); moved to `src/lib/colors.ts` and all 19 import paths updated accordingly
+
+- Violation: Test file `src/__tests__/domain/constants/colors.test.ts` mirrored the source file's incorrect location in domain/
+- Rule: Test CLAUDE.md Cohesion 3-A — test files must mirror source structure; lib/ is not covered by tests per test scope rules
+- Context: Test file deleted when source file moved to lib/ (lib/ is excluded from test coverage per __tests__/CLAUDE.md)
+
+- Violation: `bars[bars.length - 1]` index arithmetic used for last-element access
+- Rule: FF Readability 1-D — magic index arithmetic should use `at(-1)` for idiomatic last-element access
+- Context: `buildLineData` in `keyLevelsUtils.ts` accessed last bar via index; replaced with `bars.at(-1)!`
+
+- Violation: Missing test case for poc failing both conditions (price=0 AND reason='') simultaneously
+- Rule: Test coverage — edge case where both validation conditions fail together was not tested
+- Context: `keyLevels.test.ts` had separate tests for each condition but not the combination; added combined failure test case
+
 ## [PR #162 | fix/151/react-key-중복-오류-수정 | 2026-04-03]
 - Violation: `.map()` callback with side effect mutating a closure variable (`counter`)
 - Rule: MISTAKES.md #1 — when a loop body has multiple statements and maintains accumulated state, `for...of` is preferred over `.map()` with side effects
@@ -73,11 +90,6 @@
 - Rule: MISTAKES.md #9.6 — range conditions must follow mathematical notation: smaller value (boundary) on left, larger on right
 - Context: `src/domain/indicators/volume-profile.ts` L87에서 `state.valIndex - 1 >= 0`을 `0 <= state.valIndex - 1`으로 수정하여 경계값을 왼쪽에 배치
 
-## [Issue #121 | feat/121/volume-profile-indicator | 2026-04-02]
-- Violation: `bucketVolumes[i] += bar.volume * ratio` — 로컬 배열이지만 index assignment로 직접 변경
-- Rule: CONVENTIONS.md — 불변성 원칙; 로컬 스코프 배열이라도 index 기반 mutation 금지
-- Context: `bars.reduce` + `acc.map`으로 교체하여 각 bar의 기여분을 새로운 배열로 accumulate
-
 ## [Issue #121 | feat/121/volume-profile-indicator | review fix | 2026-04-02]
 - Violation: `volume-profile.test.ts` line 188에서 "rowSize 미지정 시 VP_DEFAULT_ROW_SIZE 크기의 profile을 반환한다" 테스트가 line 65의 "profile 길이는 기본 rowSize(VP_DEFAULT_ROW_SIZE)와 같다"와 동일한 assertion을 중복으로 검증
 - Rule: Test Layer Rules — 각 `it` 블록은 정확히 하나의 동작을 테스트하며, 중복 테스트는 noise 없는 커버리지를 저해함
@@ -113,6 +125,7 @@
 - Violation: `useOnClickOutside` 커스텀 훅이 `useState`로 선언된 `openDropdown`과 `setOpenDropdown`보다 뒤에 위치하여 hook 선언 순서 규칙 위반 — `react-hooks/immutability` ESLint 에러 발생
 - Rule: components/CLAUDE.md Hook 선언 순서 — External hooks → State (useState) → Derived (useMemo) → Callbacks → Effects → Return; 단, 커스텀 훅이 state 변수를 참조할 경우 state 선언이 커스텀 훅 앞에 와야 함 (TDZ 회피)
 - Context: `IndicatorToolbar.tsx`에서 `useOnClickOutside` 콜백이 `openDropdown`, `setOpenDropdown`을 참조하므로, state 선언을 refs보다 앞으로 이동하고 커스텀 훅을 refs 직후에 배치 (`state → refs → custom hook → derived` 순서로 실용적 변경)
+
 
 ## [Issue #128 | feat/128/macd-cycle-indicator-구현 | 2026-04-03]
 - Violation: `skills/strategies/macd-cycle.md`에서 `type: strategy`를 사용했으나, `SkillType`은 `'pattern' | 'indicator_guide'`만 지원하므로 유효하지 않은 값

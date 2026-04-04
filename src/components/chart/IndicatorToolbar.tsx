@@ -3,7 +3,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
-import { getPeriodColor } from '@/domain/constants/colors';
+import { getPeriodColor } from '@/lib/colors';
 import { useOnClickOutside } from '@/components/chart/hooks/useOnClickOutside';
 
 interface IndicatorToggleGroup {

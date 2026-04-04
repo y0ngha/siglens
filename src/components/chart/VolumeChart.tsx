@@ -3,7 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { HistogramSeries, createChart } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/colors';
 import type { Bar } from '@/domain/types';
 
 interface VolumeChartProps {

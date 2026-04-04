@@ -118,6 +118,16 @@ describe('keyLevels', () => {
                 const result = validateKeyLevels(input);
                 expect(result.poc).toBeUndefined();
             });
+
+            it('price가 0이고 reason이 빈 문자열인 poc는 undefined로 반환한다', () => {
+                const input: KeyLevels = {
+                    support: [],
+                    resistance: [],
+                    poc: { price: 0, reason: '' },
+                };
+                const result = validateKeyLevels(input);
+                expect(result.poc).toBeUndefined();
+            });
         });
 
         describe('빈 배열 입력일 때', () => {

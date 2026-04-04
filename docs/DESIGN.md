@@ -312,7 +312,7 @@ export default config;
 <div className="bg-secondary-900 text-primary-400">
 
 ✅ 차트 컬러는 상수로 관리
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/colors';
 
 ❌ 하드코딩 금지
 <div style={{ backgroundColor: '#0f172a' }}>

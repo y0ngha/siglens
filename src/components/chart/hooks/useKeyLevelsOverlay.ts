@@ -2,16 +2,11 @@
 
 import { useEffect, useEffectEvent, useRef } from 'react';
 import type { RefObject } from 'react';
-import { LineSeries, LineStyle } from 'lightweight-charts';
-import type {
-    IChartApi,
-    ISeriesApi,
-    LineWidth,
-    UTCTimestamp,
-} from 'lightweight-charts';
+import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import type { Bar, KeyLevels } from '@/domain/types';
-import { CHART_COLORS } from '@/domain/constants/colors';
+import { CHART_COLORS } from '@/lib/colors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { addLevelSeries } from '@/components/chart/utils/keyLevelsUtils';
 
 interface UseKeyLevelsOverlayParams {
     chartRef: RefObject<IChartApi | null>;
@@ -56,38 +51,41 @@ export function useKeyLevelsOverlay({
 
         if (!isVisible) return;
 
-        const toLineData = (price: number) =>
-            bars.map((bar: Bar) => ({
-                time: bar.time as UTCTimestamp,
-                value: price,
-            }));
+        const supportSeries = keyLevels.support.map(level =>
+            addLevelSeries(
+                chart,
+                bars,
+                level.price,
+                CHART_COLORS.supportLine,
+                lineWidth
+            )
+        );
+        const resistanceSeries = keyLevels.resistance.map(level =>
+            addLevelSeries(
+                chart,
+                bars,
+                level.price,
+                CHART_COLORS.resistanceLine,
+                lineWidth
+            )
+        );
+        const pocSeries =
+            keyLevels.poc !== undefined
+                ? [
+                      addLevelSeries(
+                          chart,
+                          bars,
+                          keyLevels.poc.price,
+                          CHART_COLORS.vpPoc,
+                          lineWidth
+                      ),
+                  ]
+                : [];
 
-        const collected: ISeriesApi<'Line'>[] = [];
-
-        const createSeries = (price: number, color: string): void => {
-            const series = chart.addSeries(LineSeries, {
-                color,
-                lineWidth,
-                lineStyle: LineStyle.Dashed,
-                priceLineVisible: false,
-                lastValueVisible: true,
-            });
-            series.setData(toLineData(price));
-            collected.push(series);
-        };
-
-        for (const level of keyLevels.support) {
-            createSeries(level.price, CHART_COLORS.supportLine);
-        }
-
-        for (const level of keyLevels.resistance) {
-            createSeries(level.price, CHART_COLORS.resistanceLine);
-        }
-
-        if (keyLevels.poc !== undefined) {
-            createSeries(keyLevels.poc.price, CHART_COLORS.vpPoc);
-        }
-
-        seriesRef.current = collected;
+        seriesRef.current = [
+            ...supportSeries,
+            ...resistanceSeries,
+            ...pocSeries,
+        ];
     }, [chartRef, bars, keyLevels, isVisible, lineWidth]);
 }
