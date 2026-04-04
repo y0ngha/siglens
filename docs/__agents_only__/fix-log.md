@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review)
+- Violation: `priceLineVisible: false` and `lastValueVisible: false` pair repeated in 3 places across `line` and `region` series creation in `usePatternOverlay.ts`
+- Rule: MISTAKES.md #0 — Repeating hardcoded literals and values in multiple locations; extract to a single const and reference it in all places (FF Cohesion 3-B)
+- Context: Extracted `BASE_PATTERN_SERIES_OPTIONS` constant (including `lineWidth: DEFAULT_LINE_WIDTH`) to `constants.ts` and replaced all three `chart.addSeries(LineSeries, {...})` call-sites with spread of the shared constant
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (TypeScript build fix)
 - Violation: `.map()` callback parameters `_price` and `i` had implicit `any` types, causing `noImplicitAny` TypeScript errors
 - Rule: TypeScript strict mode — all function parameters must have explicit types; implicit `any` is prohibited
