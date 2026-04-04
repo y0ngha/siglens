@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 2)
+- Violation: Magic number `2` repeated in region guard conditions (`keyPrices.length < 2`, `seriesList.length < 2`) while related index constants `REGION_UPPER_PRICE_INDEX` already existed in `constants.ts`
+- Rule: MISTAKES.md #0 — Repeating hardcoded literals and values in multiple locations; when a constant is defined, all derived values must also be derived from that constant (FF Cohesion 3-B)
+- Context: Added `REGION_KEY_PRICE_MIN_LENGTH = REGION_UPPER_PRICE_INDEX + 1` and `REGION_BOUNDARY_SERIES_COUNT = 2` to `constants.ts`, replaced all three literal `2` usages in `usePatternOverlay.ts` lifecycle and data-sync effects
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review)
 - Violation: `priceLineVisible: false` and `lastValueVisible: false` pair repeated in 3 places across `line` and `region` series creation in `usePatternOverlay.ts`
 - Rule: MISTAKES.md #0 — Repeating hardcoded literals and values in multiple locations; extract to a single const and reference it in all places (FF Cohesion 3-B)
