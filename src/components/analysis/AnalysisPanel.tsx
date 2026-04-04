@@ -293,7 +293,7 @@ function PatternAccordionItem({
                             <div className="flex flex-col gap-1">
                                 {keyPrices.map((kp, index) => (
                                     <div
-                                        key={`keyprice-${index}`}
+                                        key={`keyprice-${kp.label}`}
                                         className="flex items-baseline gap-2"
                                     >
                                         <span className="text-secondary-500 w-16 shrink-0 text-xs">

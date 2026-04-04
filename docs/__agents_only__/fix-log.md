@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #169 (round 4) | feat/144/차트-패턴-주요-가격대-텍스트-표시 | 2026-04-05]
+- Violation: React key using `index` in `keyPrices.map` inside `AnalysisPanel.tsx` — `key={`keyprice-${index}`}` was used while the rest of the same file uses domain-meaningful values (`resistance-${level.price}`, `support-${level.price}`)
+- Rule: React reconciliation best practice — using array index as key causes incorrect reconciliation when list contents change; use a stable, domain-meaningful identifier instead
+- Context: `keyPrices.map((kp, index) => ... key={`keyprice-${index}`})` replaced with `key={`keyprice-${kp.label}`}` since `kp.label` is unique within a single pattern's key price list
+
 ## [PR #169 (round 3) | feat/144/차트-패턴-주요-가격대-텍스트-표시 | 2026-04-05]
 - Violation: `prompt.test.ts`의 `keyPrices label/price 구조 검증` 테스트가 `'"price"'`를 확인하지만 해당 문자열은 `keyLevels`, `priceTargets` 등 기존 스키마에도 존재하여 `keyPrices`의 구조 변경을 실제로 검증하지 못함
 - Rule: CONVENTIONS.md 테스트 품질 — 테스트는 검증 대상 필드를 특정할 수 있는 충분히 구체적인 assertion을 사용해야 함
