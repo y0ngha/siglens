@@ -46,7 +46,9 @@ const visiblePatternsReducer = (
 /**
  * PatternResult 배열을 받아 detected === true인 패턴을 차트에 렌더링한다.
  * renderConfig.type에 따라 line / marker / region 타입을 구분하여 처리한다.
- * 현재 line 타입은 keyPrices의 첫 번째 값을 수평선으로 표시한다.
+ * line 타입은 keyPrices의 각 값을 개별 수평선으로 표시한다.
+ * 첫 번째 수평선은 renderConfig.label을 타이틀로 사용하고,
+ * 이후 수평선은 빈 타이틀로 표시된다.
  */
 export function usePatternOverlay({
     chartRef,
@@ -57,10 +59,14 @@ export function usePatternOverlay({
         visiblePatternsReducer,
         patterns,
         initial =>
-            new Set(initial.filter(p => p.detected).map(p => p.patternName))
+            new Set(
+                initial
+                    .filter(p => p.detected && p.renderConfig)
+                    .map(p => p.patternName)
+            )
     );
     const prevChartRef = useRef<IChartApi | null>(null);
-    const seriesMapRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
+    const seriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(new Map());
 
     const detectedPatterns = useMemo(
         () => patterns.filter(p => p.detected && p.renderConfig),
@@ -77,11 +83,9 @@ export function usePatternOverlay({
     });
 
     useEffect(() => {
-        const detected = new Set(
-            patterns.filter(p => p.detected).map(p => p.patternName)
-        );
+        const detected = new Set(detectedPatterns.map(p => p.patternName));
         dispatch({ type: 'reset', detected });
-    }, [patterns]);
+    }, [detectedPatterns]);
 
     // 시리즈 lifecycle 관리 (생성/제거)
     // chartRef는 RefObject로 동일 참조를 유지하므로 dependency에 포함해도 교체를 감지하지 않는다.
@@ -97,9 +101,11 @@ export function usePatternOverlay({
         if (!chart) return;
 
         // visiblePatterns에서 제거된 시리즈 삭제
-        for (const [name, series] of seriesMapRef.current.entries()) {
+        for (const [name, seriesList] of seriesMapRef.current.entries()) {
             if (!visiblePatterns.has(name)) {
-                chart.removeSeries(series);
+                for (const series of seriesList) {
+                    chart.removeSeries(series);
+                }
                 seriesMapRef.current.delete(name);
             }
         }
@@ -112,14 +118,19 @@ export function usePatternOverlay({
             const config = pattern.renderConfig;
             if (!config || config.type !== 'line') continue;
 
-            const series = chart.addSeries(LineSeries, {
-                color: config.color,
-                lineWidth: DEFAULT_LINE_WIDTH,
-                priceLineVisible: false,
-                lastValueVisible: false,
-                title: config.label,
-            });
-            seriesMapRef.current.set(pattern.patternName, series);
+            const keyPrices = pattern.keyPrices ?? [];
+            if (keyPrices.length === 0) continue;
+
+            const seriesList = keyPrices.map((kp, index) =>
+                chart.addSeries(LineSeries, {
+                    color: config.color,
+                    lineWidth: DEFAULT_LINE_WIDTH,
+                    priceLineVisible: false,
+                    lastValueVisible: false,
+                    title: index === 0 ? config.label : kp.label,
+                })
+            );
+            seriesMapRef.current.set(pattern.patternName, seriesList);
         }
         // chartRef(RefObject)는 항상 동일 참조를 유지하므로 이 dependency는
         // 실제로 chart 교체를 감지하지 않는다. chart 교체 감지는 prevChartRef 비교로 처리한다.
@@ -132,20 +143,24 @@ export function usePatternOverlay({
         for (const pattern of detectedPatterns) {
             if (!visiblePatterns.has(pattern.patternName)) continue;
 
-            const series = seriesMapRef.current.get(pattern.patternName);
-            if (!series) continue;
+            const seriesList = seriesMapRef.current.get(pattern.patternName);
+            if (!seriesList) continue;
 
             const config = pattern.renderConfig;
             if (!config || config.type !== 'line') continue;
 
-            const keyPrice = pattern.keyPrices?.[0];
-            if (keyPrice === undefined) continue;
+            const keyPrices = pattern.keyPrices ?? [];
 
-            const lineData = bars.map(bar => ({
-                time: bar.time as UTCTimestamp,
-                value: keyPrice,
-            }));
-            series.setData(lineData);
+            seriesList.forEach((series, index) => {
+                const keyPrice = keyPrices[index];
+                if (keyPrice === undefined) return;
+
+                const lineData = bars.map(bar => ({
+                    time: bar.time as UTCTimestamp,
+                    value: keyPrice.price,
+                }));
+                series.setData(lineData);
+            });
         }
     }, [bars, detectedPatterns, visiblePatterns]);
 
