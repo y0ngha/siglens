@@ -1,5 +1,19 @@
 # Fix Log
 
+## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-04] (round 3)
+- Violation: `AnalysisPanel` rendered `analysis.keyLevels` directly without validation, while `ChartContent` computed `validatedKeyLevels` only for the chart — invalid key levels (price=0 or empty reason) could appear in the panel but not the chart
+- Rule: FF Cohesion 3-A — code that changes together (key level validation and rendering) should be located together; both chart and panel must use the same validated data
+- Context: Added `keyLevels: KeyLevels` prop to `AnalysisPanelProps`, replaced all `analysis.keyLevels` references in render with the new prop, and passed `validatedKeyLevels` from `ChartContent` to `AnalysisPanel`
+
+- Violation: `bars.at(-1)!` non-null assertion used in `buildLineData` while `bars[0]` index access is used in the line immediately above
+- Rule: FF Readability 1-G — keeping the same access pattern in both places reduces viewpoint shifts and makes the length guard visually self-evident
+- Context: `keyLevelsUtils.ts` `buildLineData` replaced `bars.at(-1)!.time` with `bars[bars.length - 1].time` to match the `bars[0]` access pattern on the preceding line
+
+## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-04] (round 2)
+- Violation: `useState(true)` for `keyLevelsVisible` declared between two external hook calls (`useAnalysis` and `usePanelResize`), violating hook declaration order
+- Rule: components/CLAUDE.md — hook declaration order: External hooks → State (useState) → Derived (useMemo)
+- Context: `keyLevelsVisible` state was inserted between the two external hook calls without checking whether it was referenced by the second external hook (`usePanelResize`); since it is not, no TDZ exception applies and the state must follow all external hooks
+
 ## [PR #171 | feat/134/key-levels-chart-visualization | 2026-04-04]
 - Violation: `CHART_COLORS` and `getPeriodColor` defined in `domain/constants/colors.ts` — UI color constants placed in the domain layer
 - Rule: domain/CLAUDE.md — `domain/constants/` contains only domain constants (indicator settings, timeframe constants); UI-related constants (colors, styles) do not belong here
