@@ -1,4 +1,7 @@
 import { AlpacaProvider } from '@/infrastructure/market/alpaca';
+import { TIMEFRAME_LOOKBACK_DAYS } from '@/domain/constants/market';
+
+const LOOKBACK_1MIN_MS = TIMEFRAME_LOOKBACK_DAYS['1Min'] * 24 * 60 * 60 * 1000;
 
 const mockBar = {
     t: '2024-01-15T09:30:00Z',
@@ -138,8 +141,7 @@ describe('AlpacaProvider', () => {
             // EST(UTC-5) 기간이므로 start와 end 오프셋이 동일 → endOffsetMs - startOffsetMs = 0
             // lookback 5일(1Min), start = endTime - lookbackMs (offset cancels out)
             const expectedStart = new Date(
-                new Date('2024-01-15T20:00:00Z').getTime() -
-                    5 * 24 * 60 * 60 * 1000
+                new Date('2024-01-15T20:00:00Z').getTime() - LOOKBACK_1MIN_MS
             ).toISOString();
             expect(startParam).toBe(expectedStart);
         });
@@ -163,8 +165,7 @@ describe('AlpacaProvider', () => {
             expect(startParam).not.toBeNull();
             // EDT(UTC-4) 기간이므로 start와 end 오프셋이 동일 → offset 차이 = 0
             const expectedStart = new Date(
-                new Date('2024-06-15T20:00:00Z').getTime() -
-                    5 * 24 * 60 * 60 * 1000
+                new Date('2024-06-15T20:00:00Z').getTime() - LOOKBACK_1MIN_MS
             ).toISOString();
             expect(startParam).toBe(expectedStart);
         });
@@ -191,7 +192,7 @@ describe('AlpacaProvider', () => {
             const startParam = new URL(url).searchParams.get('start');
             expect(startParam).not.toBeNull();
             const endMs = new Date('2024-03-12T10:00:00Z').getTime();
-            const lookbackMs = 5 * 24 * 60 * 60 * 1000;
+            const lookbackMs = LOOKBACK_1MIN_MS;
             const endOffsetMs = -4 * 3600 * 1000;
             const startOffsetMs = -5 * 3600 * 1000;
             const expectedStartMs =

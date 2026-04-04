@@ -1,9 +1,9 @@
 import type { MarketDataProvider, GetBarsOptions, Bar } from './types';
 import { TIMEFRAME_LOOKBACK_DAYS } from '@/domain/constants/market';
+import { MS_PER_HOUR } from '@/domain/constants/time';
 import { getEasternOffsetHours } from '@/domain/time/eastern';
 
 const BASE_URL = 'https://data.alpaca.markets/v2';
-const MS_PER_HOUR = 3600 * 1000;
 
 interface AlpacaBar {
     t: string; // timestamp (RFC3339)

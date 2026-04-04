@@ -1,8 +1,6 @@
 import type { Timeframe } from '@/domain/types';
+import { MS_PER_HOUR, MS_PER_SECOND } from '@/domain/constants/time';
 import { getEasternOffsetHours } from '@/domain/time/eastern';
-
-const SECONDS_TO_MS = 1000;
-const SECONDS_PER_HOUR = 3600;
 
 const MONTH_NAMES = [
     'Jan',
@@ -20,9 +18,8 @@ const MONTH_NAMES = [
 ] as const;
 
 function toEtDate(timestampSeconds: number): Date {
-    const utcDate = new Date(timestampSeconds * SECONDS_TO_MS);
-    const etOffsetMs =
-        getEasternOffsetHours(utcDate) * SECONDS_PER_HOUR * SECONDS_TO_MS;
+    const utcDate = new Date(timestampSeconds * MS_PER_SECOND);
+    const etOffsetMs = getEasternOffsetHours(utcDate) * MS_PER_HOUR;
     return new Date(utcDate.getTime() + etOffsetMs);
 }
 
