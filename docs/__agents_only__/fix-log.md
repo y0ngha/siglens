@@ -1,5 +1,14 @@
 # Fix Log
 
+## [Issue #133 | feat/133/상승-하락-추세선-차트-표시 | 2026-04-04]
+- Violation: `TRENDLINE_DIRECTION_LABEL` and `TRENDLINE_DIRECTION_COLOR` defined in both `src/components/chart/hooks/useTrendlineOverlay.ts` and `src/components/analysis/AnalysisPanel.tsx`
+- Rule: MISTAKES.md rule 0, FF.md Cohesion 3-B — same values defined in multiple places create maintenance risk; one source of truth required
+- Context: Both files independently defined the same direction→label and direction→color mappings; extracted to `src/components/chart/constants.ts` and imported in both files
+
+- Violation: `UseTrendlineOverlayReturn` interface declared `visibleTrendlines` and `toggleTrendline` but `StockChart.tsx` discarded the entire return value
+- Rule: FF.md Readability 1-B — logic with no practical effect adds noise and obscures intent
+- Context: `useTrendlineOverlay` built and returned a toggle API that had no caller; removed the dead return type and changed the function to return `void`
+
 ## [PR #165 | feat/128/macd-대순환-분석-skill | 2026-04-04] (Round 2)
 - Violation: `indicators` field in frontmatter uses block sequence notation instead of inline sequence notation
 - Rule: CONVENTIONS.md consistency — all other skill files use `indicators: ['macd', 'ema']` inline format; inconsistent YAML notation reduces readability
