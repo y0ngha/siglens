@@ -23,7 +23,7 @@ import type {
     PatternResult,
     Timeframe,
 } from '@/domain/types';
-import { getTimeFormatter } from '@/domain/chart/timeFormat';
+import { getTimeFormatter } from '@/components/chart/utils/timeFormat';
 import type { PaneIndices } from '@/components/chart/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';

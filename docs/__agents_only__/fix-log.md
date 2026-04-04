@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 5)
+- Violation: `getTimeFormatter` UI 포맷터 함수가 domain 레이어에 위치
+- Rule: domain/CLAUDE.md — "UI-related constants (colors, styles) do not belong here"; 차트 시간축 표시 포맷터는 UI 관심사이므로 domain 레이어에 위치 불가
+- Context: `src/domain/chart/timeFormat.ts`를 `src/components/chart/utils/timeFormat.ts`로 이동; `StockChart.tsx` import 경로 수정; `domain/chart/` 빈 디렉토리 삭제
+
 ## [PR #168 | feat/148/분봉-차트-시간축-포맷-및-ET-lookback-수정 | 2026-04-05] (external review round 4)
 - Violation: `eastern.test.ts`의 `연도별 DST 경계 검증` describe에 `getNthSundayOfMonth`의 `dayOfWeek === SUNDAY` 참 분기를 커버하는 테스트 케이스 누락
 - Rule: Coverage target 100% (src/__tests__/CLAUDE.md) — 브랜치 커버리지 100% 달성 필수

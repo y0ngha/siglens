@@ -1,4 +1,4 @@
-import { getTimeFormatter } from '@/domain/chart/timeFormat';
+import { getTimeFormatter } from '@/components/chart/utils/timeFormat';
 
 // 2024-03-30 09:30:00 UTC = 2024-03-30 05:30:00 EDT (UTC-4, DST active)
 const UTC_TIMESTAMP_SECONDS = 1711791000;
