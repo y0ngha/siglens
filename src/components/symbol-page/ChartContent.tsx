@@ -140,7 +140,7 @@ export function ChartContent({
 
             {/* AI 분석 패널 */}
             <aside
-                className="border-secondary-700 relative min-h-0 flex-1 overflow-y-auto border-t p-4 md:w-[var(--panel-width)] md:flex-none md:border-t-0 md:border-l"
+                className="border-secondary-700 relative min-h-0 flex-1 overflow-y-auto border-t p-4 md:w-(--panel-width) md:flex-none md:border-t-0 md:border-l"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가
