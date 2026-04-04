@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (TypeScript build fix)
+- Violation: `.map()` callback parameters `_price` and `i` had implicit `any` types, causing `noImplicitAny` TypeScript errors
+- Rule: TypeScript strict mode — all function parameters must have explicit types; implicit `any` is prohibited
+- Context: `usePatternOverlay.ts` line 161 `.map((_price, i) => ...)` callback over `keyPrices: number[]`; added `: number` type annotations to both parameters
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (Round 5)
 - Violation: `region` render type used a single `AreaSeries` with only one `value` per bar, rendering as a flat line instead of a price band between upper and lower boundaries
 - Rule: Required finding — AreaSeries `value` is a single scalar; rendering a price band requires two data points (topValue/bottomValue) or two separate series

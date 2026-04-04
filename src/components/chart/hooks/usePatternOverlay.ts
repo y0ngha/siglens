@@ -158,7 +158,7 @@ export function usePatternOverlay({
                 if (keyPrices.length === 0) continue;
 
                 const seriesList: ISeriesApi<'Line'>[] = keyPrices.map(
-                    (_price, i) =>
+                    (_price: number, i: number) =>
                         chart.addSeries(LineSeries, {
                             color: config.color,
                             lineWidth: DEFAULT_LINE_WIDTH,
