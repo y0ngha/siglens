@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
 import type {
     AnalysisResponse,
@@ -8,6 +8,7 @@ import type {
     IndicatorResult,
     Timeframe,
 } from '@/domain/types';
+import { validateKeyLevels } from '@/domain/analysis/keyLevels';
 import { cn } from '@/lib/cn';
 import { StockChart } from '@/components/chart/StockChart';
 import { VolumeChart } from '@/components/chart/VolumeChart';
@@ -113,8 +114,14 @@ export function ChartContent({
     const togglePatternRef = useRef<(patternName: string) => void>(
         () => undefined
     );
+    const [keyLevelsVisible, setKeyLevelsVisible] = useState(true);
 
     const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
+
+    const validatedKeyLevels = useMemo(
+        () => validateKeyLevels(analysis.keyLevels),
+        [analysis.keyLevels]
+    );
 
     const handlePatternOverlayChange = useCallback(
         (
@@ -131,6 +138,7 @@ export function ChartContent({
         togglePatternRef.current(patternName);
     }, []);
 
+
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
             {/* 차트 영역 */}
@@ -143,6 +151,8 @@ export function ChartContent({
                         indicators={indicators}
                         patterns={analysis.patternSummaries}
                         trendlines={analysis.trendlines}
+                        keyLevels={validatedKeyLevels}
+                        keyLevelsVisible={keyLevelsVisible}
                         onPatternOverlayChange={handlePatternOverlayChange}
                     />
                 </div>
@@ -172,7 +182,7 @@ export function ChartContent({
 
             {/* AI 분석 패널 */}
             <aside
-                className="border-secondary-700 min-h-0 flex-1 overflow-y-auto border-t p-4 md:h-full md:w-(--panel-width) md:flex-none md:border-t-0"
+                className="border-secondary-700 relative min-h-0 flex-1 overflow-y-auto border-t p-4 md:h-full md:w-(--panel-width) md:flex-none md:border-t-0 md:border-l"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가
@@ -187,10 +197,13 @@ export function ChartContent({
                 />
                 <AnalysisPanel
                     analysis={analysis}
+                    keyLevels={validatedKeyLevels}
                     isAnalyzing={isAnalyzing}
                     onReanalyze={handleReanalyze}
                     chartVisiblePatterns={chartVisiblePatterns}
                     onTogglePattern={handleTogglePattern}
+                    keyLevelsVisible={keyLevelsVisible}
+                    onKeyLevelsVisibilityChange={setKeyLevelsVisible}
                 />
             </aside>
 

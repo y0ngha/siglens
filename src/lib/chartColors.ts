@@ -73,6 +73,10 @@ export const CHART_COLORS = {
     trendlineAscending: '#26a69a',
     trendlineDescending: '#ef5350',
 
+    // 지지/저항선
+    supportLine: '#26a69a',
+    resistanceLine: '#ef5350',
+
     // Ichimoku Cloud
     ichimokuTenkan: '#2962ff',
     ichimokuKijun: '#e91e63',

@@ -20,6 +20,7 @@ import { CHART_COLORS } from '@/lib/chartColors';
 import type {
     Bar,
     IndicatorResult,
+    KeyLevels,
     PatternResult,
     Timeframe,
     Trendline,
@@ -40,6 +41,7 @@ import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay'
 import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
 import { useTrendlineOverlay } from '@/components/chart/hooks/useTrendlineOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
+import { useKeyLevelsOverlay } from '@/components/chart/hooks/useKeyLevelsOverlay';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import {
     DEFAULT_LINE_WIDTH,
@@ -55,6 +57,7 @@ import {
 
 const CANDLESTICK_PANE_INDEX = 0;
 const FIRST_INDICATOR_PANE_INDEX = 1;
+const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -69,6 +72,8 @@ interface StockChartProps {
     indicators?: IndicatorResult;
     patterns?: PatternResult[];
     trendlines?: Trendline[];
+    keyLevels?: KeyLevels;
+    keyLevelsVisible?: boolean;
     onPatternOverlayChange?: (
         visiblePatterns: Set<string>,
         togglePattern: (patternName: string) => void
@@ -81,6 +86,8 @@ export function StockChart({
     indicators = EMPTY_INDICATOR_RESULT,
     patterns = [],
     trendlines = [],
+    keyLevels = EMPTY_KEY_LEVELS,
+    keyLevelsVisible = false,
     onPatternOverlayChange,
 }: StockChartProps) {
     const [rsiVisible, setRsiVisible] = useState(false);
@@ -287,6 +294,14 @@ export function StockChart({
         chartRef,
         bars,
         trendlines,
+    });
+
+    useKeyLevelsOverlay({
+        chartRef,
+        bars,
+        keyLevels,
+        isVisible: keyLevelsVisible,
+        lineWidth: DEFAULT_LINE_WIDTH,
     });
 
     const notifyPatternOverlayChange = useEffectEvent(() => {

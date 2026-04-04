@@ -115,6 +115,13 @@ Review before implementation and ensure these are not repeated.
    ❌ if (bar.close < minPrice || bar.close > maxPrice) {}  // mixed order
    ✅ if (minPrice > bar.close || bar.close > maxPrice) {}  // consistent order
 
+9.7. Nested functions inside larger functions that implicitly capture parent scope variables
+   → Rule: FF.md Predictability 2-C — hidden dependencies should be explicit parameters
+   → Extract nested functions to module-level and pass captured variables as explicit parameters so dependencies are visible at call site
+   ❌ function calculateVolumeProfile(...) { function expandValueArea(...) { use bucketVolumes, rowSize, targetVolume from parent scope } ... expandValueArea() }
+   ✅ function expandValueArea(bucketVolumes, rowSize, targetVolume, state) { ... }  // extracted to module level, explicit params
+   ✅ function calculateVolumeProfile(...) { ... expandValueArea(bucketVolumes, rowSize, targetVolume, state) }
+
 10. Repeating identical filtering/calculation logic across multiple blocks
     → Rule: FF.md Cohesion 3-B — same values computed in multiple places must be extracted to single source of truth
     → When the same filter, map, or computation appears 2+ times, extract to useMemo (hooks) or const (regular code)
@@ -146,6 +153,21 @@ Review before implementation and ensure these are not repeated.
     ✅ Extract buildCloudData, extendWithFutureCloud, and related types to src/components/chart/utils/ichimokuUtils.ts
     ✅ Extract parseStructuredSummary to src/components/analysis/utils/parseStructuredSummary.ts
     ✅ useIchimokuOverlay.ts imports and calls these utils without defining them
+
+11.5. Tight coupling between interface props and dependent files due to repeated props pattern
+    → Rule: FF.md Coupling 4-A — when adding a feature, 2+ files must be updated simultaneously
+    → Extract tightly-coupled prop pairs into a single grouped type
+    → Example: Each new indicator required adding 2 props (xyzVisible, onXyzToggle) to IndicatorToolbarProps and updating StockChart.tsx call site; creates maintenance burden where indicator + UI + parent call sites are tightly bonded
+    ❌ IndicatorToolbarProps = { bollingerVisible, onBollingerToggle, macdVisible, onMacdToggle, rsiVisible, onRsiToggle, dmiVisible, onDmiToggle, ... }  // 12 props, 6 pairs
+    ✅ Group into IndicatorToggleGroup = { visible, onToggle }; then IndicatorToolbarProps = { bollinger: IndicatorToggleGroup, macd, rsi, dmi }  // 4 props total
+
+11.6. Extracting complex anonymous expressions into simple named helpers
+    → Rule: FF.md Readability 1-E — extracting an IIFE or complex multi-statement ternary to a named function improves predictability
+    → When computation of final value involves multiple statements, intermediate variables, or conditional branches in a ternary/IIFE, extract to a named helper
+    ❌ const value = (() => { const x = compute1(); const y = compute2(); return x + y; })()  // IIFE: reader must parse multiple lines to understand result
+    ✅ const value = computeValue()  // named function
+    ❌ render = condition ? (() => { ... 10 lines of computation ... })() : null  // IIFE in ternary: hard to scan
+    ✅ render = condition ? renderComplexContent() : null
 ```
 
 12. Using template literals with inline ternary for conditional classes instead of cn()
@@ -202,6 +224,12 @@ Review before implementation and ensure these are not repeated.
    ✅ findCandlePatternLabel(patternName) with `in` operator checks for single/multi pattern membership
    ❌ const label = map as Map<string, string>  // assertion without verification
    ✅ if (map instanceof Map) { ... use map as Map ... }  // type guard + usage together
+
+5.7. Indicator result types defined in indicator files instead of domain/types.ts
+   → Rule: CONVENTIONS.md type co-location — all indicator result types belong in domain/types.ts for consistency
+   → Indicator files should import types from domain/types, not define their own
+   ❌ IchimokuFuturePoint defined in ichimoku.ts
+   ✅ IchimokuFuturePoint moved to domain/types.ts; ichimoku.ts imports from domain/types
 
 6. Hardcoding literals in implementation code
    → Extract to constants (domain/indicators/constants.ts or @/components/chart/constants)
@@ -526,6 +554,15 @@ Review before implementation and ensure these are not repeated.
 ## Domain Functions
 
 ```
+0.5. Using const arrow functions for domain exports instead of function declarations
+     → Rule: domain/CLAUDE.md — Always use `export function` (named function declaration)
+     → Arrow function expressions lack hoisting and violate domain layer convention
+     → Applies to both public exports and private module-level helpers
+     ❌ export const buildPatternIds = <T, K extends keyof T>(items: T[], key: K): string[] => { ... }
+     ✅ export function buildPatternIds<T, K extends keyof T>(items: T[], key: K): string[] { ... }
+     ❌ const expandValueArea = (state: State) => { ... }  // private helper with arrow syntax
+     ✅ function expandValueArea(state: State) { ... }    // private helper with declaration
+
 1. Importing external libraries
    → technicalindicators, lodash, etc. are all prohibited
 
@@ -580,6 +617,15 @@ Review before implementation and ensure these are not repeated.
    ❌ skills/strategies/ma-cycle.md: `type: indicator_guide` in frontmatter (undefined behavior)
    ❌ skills/indicators/*.md (13 files): `type: indicator_guide` in frontmatter (batch inconsistency)
    ✅ Remove the `type: indicator_guide` line; omit type field when not 'pattern'
+
+7.5. Missing mandatory fields in skill markdown files
+     → Rule: DOMAIN.md Skill File Format — all required interface fields must be declared in frontmatter and body
+     → When a domain type declares a field as mandatory (not optional), that field must be present in all instances
+     → Skill markdown sections (e.g. `## AI Analysis Instructions`) must include all required fields for nested types
+     ❌ Signal instructions in markdown omit `strength: SignalStrength` field even though Signal interface requires it
+     ✅ Every Signal instruction includes all 3+ fields: signal, direction, strength (and any other mandatory fields)
+     ❌ Pattern type enum accepts only ['pattern'] but instructions use invalid values like 'strategy'
+     ✅ Verify skill type field matches SkillType enum: either 'pattern' or omit the field entirely
 ```
 
 ---

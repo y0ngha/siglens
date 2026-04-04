@@ -4,7 +4,9 @@ import { useState } from 'react';
 import type {
     AnalysisResponse,
     CandlePatternSummary,
+    KeyLevels,
     PatternResult,
+    PatternSummary,
     PriceScenario,
     RiskLevel,
     Signal,
@@ -501,20 +503,26 @@ function PriceScenarioSection({
 
 interface AnalysisPanelProps {
     analysis: AnalysisResponse;
+    keyLevels: KeyLevels;
     isAnalyzing?: boolean;
     onReanalyze?: () => void;
     /** 차트에서 현재 표시 중인 패턴 이름 집합 (patternName 기준). StockChart가 소유한 상태다. */
     chartVisiblePatterns?: Set<string>;
     /** 차트 패턴 표시 여부를 토글한다. patternName을 인자로 받는다. */
     onTogglePattern?: (patternName: string) => void;
+    keyLevelsVisible?: boolean;
+    onKeyLevelsVisibilityChange?: (isVisible: boolean) => void;
 }
 
 export function AnalysisPanel({
     analysis,
+    keyLevels,
     isAnalyzing = false,
     onReanalyze,
     chartVisiblePatterns,
     onTogglePattern,
+    keyLevelsVisible = true,
+    onKeyLevelsVisibilityChange,
 }: AnalysisPanelProps) {
     const handleTogglePatternVisibility = (patternName: string): void => {
         onTogglePattern?.(patternName);
@@ -679,19 +687,45 @@ export function AnalysisPanel({
             )}
 
             {/* 지지/저항 레벨 */}
-            {(analysis.keyLevels.support.length > 0 ||
-                analysis.keyLevels.resistance.length > 0) && (
+            {(keyLevels.support.length > 0 ||
+                keyLevels.resistance.length > 0 ||
+                keyLevels.poc !== undefined) && (
                 <div className="flex flex-col gap-2">
-                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                        주요 레벨
-                    </span>
+                    <div className="flex items-center justify-between">
+                        <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                            주요 레벨
+                        </span>
+                        {onKeyLevelsVisibilityChange !== undefined && (
+                            <button
+                                type="button"
+                                onClick={() =>
+                                    onKeyLevelsVisibilityChange(
+                                        !keyLevelsVisible
+                                    )
+                                }
+                                className={cn(
+                                    'shrink-0 rounded p-1 transition-colors',
+                                    keyLevelsVisible
+                                        ? 'text-primary-400 hover:text-primary-300'
+                                        : 'text-secondary-600 hover:text-secondary-400'
+                                )}
+                                title={
+                                    keyLevelsVisible
+                                        ? '차트에서 숨기기'
+                                        : '차트에서 보기'
+                                }
+                            >
+                                <EyeIcon isVisible={keyLevelsVisible} />
+                            </button>
+                        )}
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
-                        {analysis.keyLevels.resistance.length > 0 && (
+                        {keyLevels.resistance.length > 0 && (
                             <div className="flex flex-col gap-1">
                                 <span className="text-secondary-500 text-xs">
                                     저항
                                 </span>
-                                {analysis.keyLevels.resistance.map(level => (
+                                {keyLevels.resistance.map(level => (
                                     <div
                                         key={`resistance-${level.price}`}
                                         className="flex flex-col"
@@ -706,12 +740,12 @@ export function AnalysisPanel({
                                 ))}
                             </div>
                         )}
-                        {analysis.keyLevels.support.length > 0 && (
+                        {keyLevels.support.length > 0 && (
                             <div className="flex flex-col gap-1">
                                 <span className="text-secondary-500 text-xs">
                                     지지
                                 </span>
-                                {analysis.keyLevels.support.map(level => (
+                                {keyLevels.support.map(level => (
                                     <div
                                         key={`support-${level.price}`}
                                         className="flex flex-col"
@@ -727,16 +761,16 @@ export function AnalysisPanel({
                             </div>
                         )}
                     </div>
-                    {analysis.keyLevels.poc !== undefined && (
+                    {keyLevels.poc !== undefined && (
                         <div className="flex flex-col">
                             <span className="text-secondary-500 text-xs">
                                 PoC
                             </span>
                             <span className="text-sm font-medium">
-                                {analysis.keyLevels.poc.price.toLocaleString()}
+                                {keyLevels.poc.price.toLocaleString()}
                             </span>
                             <span className="text-secondary-600 text-xs">
-                                {analysis.keyLevels.poc.reason}
+                                {keyLevels.poc.reason}
                             </span>
                         </div>
                     )}

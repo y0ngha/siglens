@@ -184,6 +184,13 @@ VWAP             #e879f9   (퍼플)
 하락 추세선 (Descending) #ef5350   (레드)
 ```
 
+### Support / Resistance Lines (지지/저항선)
+
+```
+지지선 (Support)     #26a69a   (틸 그린)
+저항선 (Resistance)  #ef5350   (레드)
+```
+
 ### Ichimoku Cloud
 
 ```
