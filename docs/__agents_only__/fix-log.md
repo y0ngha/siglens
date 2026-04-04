@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 3)
+- Violation: `seriesList.length < REGION_BOUNDARY_SERIES_COUNT` guard in the data-sync `useEffect` region branch is dead code — `seriesList` is always stored as a 2-element array by the lifecycle effect
+- Rule: MISTAKES.md #9.5 — logic with no practical effect must be removed (FF.md Readability 1-B)
+- Context: `usePatternOverlay.ts` data-sync effect region branch; removed the length check and the now-unused `REGION_BOUNDARY_SERIES_COUNT` import
+
 ## [PR #166 | fix/143/차트-패턴-오버레이-표시-버그-수정 | 2026-04-05] (external review — round 2)
 - Violation: Magic number `2` repeated in region guard conditions (`keyPrices.length < 2`, `seriesList.length < 2`) while related index constants `REGION_UPPER_PRICE_INDEX` already existed in `constants.ts`
 - Rule: MISTAKES.md #0 — Repeating hardcoded literals and values in multiple locations; when a constant is defined, all derived values must also be derived from that constant (FF Cohesion 3-B)

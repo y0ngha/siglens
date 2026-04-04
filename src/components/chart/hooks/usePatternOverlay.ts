@@ -15,7 +15,6 @@ import {
     LABEL_SERIES_INDEX,
     MARKER_POSITION,
     MARKER_SHAPE,
-    REGION_BOUNDARY_SERIES_COUNT,
     REGION_KEY_PRICE_MIN_LENGTH,
     REGION_LOWER_PRICE_INDEX,
     REGION_UPPER_PRICE_INDEX,
@@ -247,11 +246,7 @@ export function usePatternOverlay({
                 const seriesList = regionSeriesMapRef.current.get(
                     pattern.patternName
                 );
-                if (
-                    !seriesList ||
-                    seriesList.length < REGION_BOUNDARY_SERIES_COUNT
-                )
-                    continue;
+                if (!seriesList) continue;
                 const { timeRange, keyPrices = [] } = pattern;
                 if (
                     !timeRange ||
