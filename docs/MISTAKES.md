@@ -68,6 +68,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 1. Declaring types inside functions
    → Move to top of file
 
+1.5. Returning inline object types instead of named interfaces
+   → Define a named interface at the top of the file and use it as the return type
+   → Improves readability, enables reuse, and documents the contract clearly
+   ❌ function getAlpacaCredentials() { return { apiKey, secretKey }; }  // type inferred
+   ✅ interface AlpacaCredentials { apiKey: string; secretKey: string; }
+      function getAlpacaCredentials(): AlpacaCredentials { ... }
+
 2. Using `as` type assertions instead of type guards
    → Use typeof, in, instanceof, or discriminated unions
    → Exception: DOM elements, third-party library return types (add comment explaining why)
