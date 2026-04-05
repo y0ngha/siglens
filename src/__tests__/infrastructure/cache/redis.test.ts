@@ -10,16 +10,19 @@ const mockGet = jest.fn();
 const mockSet = jest.fn();
 const mockDel = jest.fn();
 
-beforeEach(() => {
-    jest.resetAllMocks();
-    MockRedis.mockImplementation(() => ({
-        get: mockGet,
-        set: mockSet,
-        del: mockDel,
-    }));
-});
-
 describe('createCacheProvider 함수는', () => {
+    beforeEach(() => {
+        jest.resetAllMocks();
+        MockRedis.mockImplementation(
+            () =>
+                ({
+                    get: mockGet,
+                    set: mockSet,
+                    del: mockDel,
+                }) as unknown as Redis
+        );
+    });
+
     describe('환경변수가 없을 때', () => {
         it('URL과 토큰이 모두 없으면 null을 반환한다', () => {
             delete process.env.UPSTASH_REDIS_REST_URL;
