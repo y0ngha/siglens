@@ -47,6 +47,8 @@ export default async function SymbolPage({ params }: Props) {
             initialBars={bars}
             initialIndicators={indicators}
             initialAnalysis={FALLBACK_ANALYSIS}
+            // SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트로 위임한다.
+            // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
             initialAnalysisFailed={true}
         />
     );
