@@ -31,8 +31,11 @@ export class GeminiProvider implements AIProvider {
             ) as RawAnalysisResponse;
         } catch (error) {
             console.error(
-                'Failed to parse Gemini API response. Raw text:',
-                text
+                'Failed to parse Gemini API response as JSON.',
+                'Response length:',
+                text.length,
+                'First 100 chars:',
+                text.slice(0, 100)
             );
             throw new Error('Failed to parse Gemini API response as JSON', {
                 cause: error,

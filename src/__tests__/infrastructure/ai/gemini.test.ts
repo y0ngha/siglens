@@ -255,7 +255,7 @@ describe('GeminiProvider', () => {
             );
         });
 
-        it('console.error로 raw text를 기록한다', async () => {
+        it('console.error에 응답 길이와 앞 100자만 기록한다', async () => {
             const consoleSpy = jest
                 .spyOn(console, 'error')
                 .mockImplementation(() => {});
@@ -263,9 +263,35 @@ describe('GeminiProvider', () => {
             try {
                 await provider.analyze('test prompt').catch(() => {});
                 expect(consoleSpy).toHaveBeenCalledWith(
-                    'Failed to parse Gemini API response. Raw text:',
-                    'invalid json'
+                    'Failed to parse Gemini API response as JSON.',
+                    'Response length:',
+                    'invalid json'.length,
+                    'First 100 chars:',
+                    'invalid json'.slice(0, 100)
                 );
+            } finally {
+                consoleSpy.mockRestore();
+            }
+        });
+
+        it('console.error에 raw text 전체가 포함되지 않는다', async () => {
+            const longText = 'a'.repeat(200);
+            mockGenerateContent.mockResolvedValue({
+                response: {
+                    text: () => longText,
+                },
+            });
+
+            const consoleSpy = jest
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            try {
+                await provider.analyze('test prompt').catch(() => {});
+                const calls = consoleSpy.mock.calls;
+                expect(calls.length).toBeGreaterThan(0);
+                const allArgs = calls.flat();
+                expect(allArgs).not.toContain(longText);
             } finally {
                 consoleSpy.mockRestore();
             }

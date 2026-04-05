@@ -36,8 +36,11 @@ export class ClaudeProvider implements AIProvider {
             ) as RawAnalysisResponse;
         } catch (error) {
             console.error(
-                'Failed to parse Claude API response. Raw text:',
-                content.text
+                'Failed to parse Claude API response as JSON.',
+                'Response length:',
+                content.text.length,
+                'First 100 chars:',
+                content.text.slice(0, 100)
             );
             throw new Error('Failed to parse Claude API response as JSON', {
                 cause: error,
