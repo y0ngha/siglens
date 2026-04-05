@@ -87,7 +87,7 @@ describe('createCacheProvider 함수는', () => {
         });
 
         describe('readonly 토큰이 있을 때', () => {
-            it('읽기는 readonly 토큰, 쓰기는 master 토큰을 사용한다', () => {
+            it('writer는 master 토큰, reader는 readonly 토큰으로 Redis 인스턴스를 별도 생성한다', () => {
                 process.env.UPSTASH_REDIS_REST_READONLY_TOKEN =
                     'readonly-token';
 
@@ -104,6 +104,44 @@ describe('createCacheProvider 함수는', () => {
                     url: 'https://test.upstash.io',
                     token: 'readonly-token',
                 });
+            });
+
+            it('get은 reader(readonly) 인스턴스를, set/delete는 writer(master) 인스턴스를 사용한다', async () => {
+                process.env.UPSTASH_REDIS_REST_READONLY_TOKEN =
+                    'readonly-token';
+
+                const mockReaderGet = jest
+                    .fn()
+                    .mockResolvedValueOnce({ data: 1 });
+                const mockWriterSet = jest.fn().mockResolvedValueOnce('OK');
+                const mockWriterDel = jest.fn().mockResolvedValueOnce(1);
+
+                MockRedis.mockImplementationOnce(
+                    () =>
+                        ({
+                            set: mockWriterSet,
+                            del: mockWriterDel,
+                        }) as unknown as Redis
+                ).mockImplementationOnce(
+                    () => ({ get: mockReaderGet }) as unknown as Redis
+                );
+
+                const provider = createCacheProvider()!;
+
+                await provider.get('key');
+                expect(mockReaderGet).toHaveBeenCalledWith('key');
+
+                await provider.set('key', {}, 300);
+                expect(mockWriterSet).toHaveBeenCalledWith(
+                    'key',
+                    {},
+                    {
+                        ex: 300,
+                    }
+                );
+
+                await provider.delete('key');
+                expect(mockWriterDel).toHaveBeenCalledWith('key');
             });
         });
 
