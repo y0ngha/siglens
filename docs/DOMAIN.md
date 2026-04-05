@@ -847,34 +847,13 @@ interface UseXxxOverlayParams {
 **디렉토리 위치**: 프로젝트 루트의 `/skills/` (src/ 밖)
 **파일 읽기 책임**: `infrastructure/skills/loader.ts` (`FileSkillsLoader`). `domain/`은 파일 I/O를 하지 않는다.
 
-### 파일 구조
+### 파일 구조 (실제 파일 없이 폴더만)
 
 ```
 skills/
 ├── patterns/
-│   ├── head-and-shoulders.md
-│   ├── inverse-head-and-shoulders.md
-│   ├── double-top.md
-│   ├── double-bottom.md
-│   ├── ascending-wedge.md
-│   └── descending-wedge.md
 ├── indicators/
-│   ├── rsi.md
-│   ├── macd.md
-│   ├── bollinger-bands.md
-│   ├── dmi.md
-│   ├── adx.md
-│   ├── ema.md
-│   ├── ma.md
-│   ├── vwap.md
-│   ├── stochastic.md
-│   ├── stochastic-rsi.md
-│   ├── cci.md
-│   ├── volume-profile.md
-│   └── ichimoku-cloud.md
 └── strategies/
-    ├── elliott-wave.md
-    └── ma-cycle.md
 ```
 
 ### Skill 타입
