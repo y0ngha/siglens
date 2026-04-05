@@ -43,12 +43,15 @@ import { useTrendlineOverlay } from '@/components/chart/hooks/useTrendlineOverla
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { useKeyLevelsOverlay } from '@/components/chart/hooks/useKeyLevelsOverlay';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
+import { useOverlayLegend } from '@/components/chart/hooks/useOverlayLegend';
 import {
     DEFAULT_LINE_WIDTH,
     INACTIVE_PANE_INDEX,
 } from '@/components/chart/constants';
 import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
+import { OverlayLegend } from '@/components/chart/OverlayLegend';
 import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
+import { buildOverlayLabelConfigs } from '@/components/chart/utils/overlayLabelUtils';
 import {
     MA_DEFAULT_PERIODS,
     EMA_DEFAULT_PERIODS,
@@ -312,6 +315,31 @@ export function StockChart({
         notifyPatternOverlayChange();
     }, [visiblePatterns]);
 
+    const overlayLabelConfigs = useMemo(
+        () =>
+            buildOverlayLabelConfigs({
+                maVisiblePeriods,
+                emaVisiblePeriods,
+                bollingerVisible,
+                ichimokuVisible,
+                vpVisible,
+            }),
+        [
+            maVisiblePeriods,
+            emaVisiblePeriods,
+            bollingerVisible,
+            ichimokuVisible,
+            vpVisible,
+        ]
+    );
+
+    const overlayLegendItems = useOverlayLegend({
+        chartRef,
+        bars,
+        indicators,
+        labelConfigs: overlayLabelConfigs,
+    });
+
     const paneLabels = useMemo(
         () => buildPaneLabels(paneIndices),
         [paneIndices]
@@ -356,40 +384,46 @@ export function StockChart({
     return (
         <div ref={wrapperRef} className="relative h-full w-full">
             <div ref={containerRef} className="h-full w-full" />
-            <div className="absolute top-2 left-2 z-10">
-                <IndicatorToolbar
-                    maVisiblePeriods={maVisiblePeriods}
-                    maAvailablePeriods={MA_DEFAULT_PERIODS}
-                    onMAToggle={toggleMAPeriod}
-                    emaVisiblePeriods={emaVisiblePeriods}
-                    emaAvailablePeriods={EMA_DEFAULT_PERIODS}
-                    onEMAToggle={toggleEMAPeriod}
-                    bollinger={{
-                        visible: bollingerVisible,
-                        onToggle: toggleBollinger,
-                    }}
-                    macd={{ visible: macdVisible, onToggle: toggleMACD }}
-                    rsi={{ visible: rsiVisible, onToggle: toggleRSI }}
-                    dmi={{ visible: dmiVisible, onToggle: toggleDMI }}
-                    stochastic={{
-                        visible: stochasticVisible,
-                        onToggle: toggleStochastic,
-                    }}
-                    stochRsi={{
-                        visible: stochRsiVisible,
-                        onToggle: toggleStochRSI,
-                    }}
-                    cci={{ visible: cciVisible, onToggle: toggleCCI }}
-                    volumeProfile={{ visible: vpVisible, onToggle: toggleVP }}
-                    ichimoku={{
-                        visible: ichimokuVisible,
-                        onToggle: toggleIchimoku,
-                    }}
-                    candlePatterns={{
-                        visible: candlePatternsVisible,
-                        onToggle: toggleCandlePatterns,
-                    }}
-                />
+            <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">
+                <div className="pointer-events-auto">
+                    <IndicatorToolbar
+                        maVisiblePeriods={maVisiblePeriods}
+                        maAvailablePeriods={MA_DEFAULT_PERIODS}
+                        onMAToggle={toggleMAPeriod}
+                        emaVisiblePeriods={emaVisiblePeriods}
+                        emaAvailablePeriods={EMA_DEFAULT_PERIODS}
+                        onEMAToggle={toggleEMAPeriod}
+                        bollinger={{
+                            visible: bollingerVisible,
+                            onToggle: toggleBollinger,
+                        }}
+                        macd={{ visible: macdVisible, onToggle: toggleMACD }}
+                        rsi={{ visible: rsiVisible, onToggle: toggleRSI }}
+                        dmi={{ visible: dmiVisible, onToggle: toggleDMI }}
+                        stochastic={{
+                            visible: stochasticVisible,
+                            onToggle: toggleStochastic,
+                        }}
+                        stochRsi={{
+                            visible: stochRsiVisible,
+                            onToggle: toggleStochRSI,
+                        }}
+                        cci={{ visible: cciVisible, onToggle: toggleCCI }}
+                        volumeProfile={{
+                            visible: vpVisible,
+                            onToggle: toggleVP,
+                        }}
+                        ichimoku={{
+                            visible: ichimokuVisible,
+                            onToggle: toggleIchimoku,
+                        }}
+                        candlePatterns={{
+                            visible: candlePatternsVisible,
+                            onToggle: toggleCandlePatterns,
+                        }}
+                    />
+                </div>
+                <OverlayLegend items={overlayLegendItems} />
             </div>
         </div>
     );

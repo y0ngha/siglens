@@ -1,3 +1,9 @@
+export interface OverlayLegendItem {
+    name: string;
+    color: string;
+    value: number | null;
+}
+
 export interface PaneSubLabel {
     name: string;
     color: string;

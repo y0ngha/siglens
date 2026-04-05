@@ -1,0 +1,61 @@
+'use client';
+
+import { useEffect, useMemo, useRef, useState } from 'react';
+import type { RefObject } from 'react';
+import type { IChartApi } from 'lightweight-charts';
+import type { Bar, IndicatorResult } from '@/domain/types';
+import type { OverlayLegendItem } from '@/components/chart/types';
+import type { OverlayLabelConfig } from '@/components/chart/utils/overlayLabelUtils';
+import {
+    findBarIndex,
+    resolveOverlayValues,
+} from '@/components/chart/utils/overlayLabelUtils';
+
+interface UseOverlayLegendParams {
+    chartRef: RefObject<IChartApi | null>;
+    bars: Bar[];
+    indicators: IndicatorResult;
+    labelConfigs: OverlayLabelConfig[];
+}
+
+export function useOverlayLegend({
+    chartRef,
+    bars,
+    indicators,
+    labelConfigs,
+}: UseOverlayLegendParams): OverlayLegendItem[] {
+    const [crosshairIndex, setCrosshairIndex] = useState<number | null>(null);
+
+    const barsRef = useRef<Bar[]>(bars);
+
+    const barIndex = Math.max(0, crosshairIndex ?? bars.length - 1);
+
+    useEffect(() => {
+        barsRef.current = bars;
+    });
+
+    useEffect(() => {
+        const chart = chartRef.current;
+        if (!chart) return;
+
+        const handler = (param: { time?: unknown }): void => {
+            if (param.time !== undefined && param.time !== null) {
+                const idx = findBarIndex(barsRef.current, param.time as number);
+                setCrosshairIndex(idx);
+            } else {
+                setCrosshairIndex(null);
+            }
+        };
+
+        chart.subscribeCrosshairMove(handler);
+
+        return () => {
+            chart.unsubscribeCrosshairMove(handler);
+        };
+    }, [chartRef]);
+
+    return useMemo(
+        () => resolveOverlayValues(labelConfigs, indicators, barIndex),
+        [labelConfigs, indicators, barIndex]
+    );
+}
