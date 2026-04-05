@@ -12,13 +12,11 @@ import {
     DMI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 
-jest.mock('@/infrastructure/market/alpaca');
+jest.mock('@/infrastructure/market/factory');
 
-import { getBars } from '@/infrastructure/market/alpaca';
+import { createMarketDataProvider } from '@/infrastructure/market/factory';
 
-// jest.mock()으로 모킹된 모듈은 런타임에 MockedFunction으로 교체되지만
-// TypeScript는 원본 타입으로 인식하므로 as 단언 필요
-const mockGetBars = getBars as jest.MockedFunction<typeof getBars>;
+const mockGetBars = jest.fn();
 
 const mockBar = {
     time: 1705312200,
@@ -32,6 +30,11 @@ const mockBar = {
 describe('fetchBarsWithIndicators 함수는', () => {
     beforeEach(() => {
         mockGetBars.mockReset();
+        // jest.mock()으로 모킹된 모듈은 런타임에 MockedFunction으로 교체되지만
+        // TypeScript가 원본 타입을 인식하기 때문에 as jest.Mock assertion 필요
+        (createMarketDataProvider as jest.Mock).mockReturnValue({
+            getBars: mockGetBars,
+        });
     });
     describe('정상 응답일 때', () => {
         it('bars와 indicators를 포함한 BarsData를 반환한다', async () => {

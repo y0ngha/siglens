@@ -1,4 +1,4 @@
-import { getBars } from '@/infrastructure/market/alpaca';
+import { AlpacaProvider } from '@/infrastructure/market/alpaca';
 
 const mockBar = {
     t: '2024-01-15T09:30:00Z',
@@ -12,7 +12,7 @@ const mockBar = {
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-describe('alpaca', () => {
+describe('AlpacaProvider', () => {
     beforeEach(() => {
         process.env.ALPACA_API_KEY = 'test-key';
         process.env.ALPACA_API_SECRET = 'test-secret';
@@ -25,25 +25,29 @@ describe('alpaca', () => {
         delete process.env.ALPACA_SECRET_KEY;
     });
 
-    describe('getBars', () => {
-        it('ALPACA_API_KEY가 없으면 에러를 던진다', async () => {
+    describe('constructor', () => {
+        it('ALPACA_API_KEY가 없으면 에러를 던진다', () => {
             delete process.env.ALPACA_API_KEY;
-            await expect(
-                getBars({ symbol: 'AAPL', timeframe: '1Min' })
-            ).rejects.toThrow(
+            expect(() => new AlpacaProvider()).toThrow(
                 'ALPACA_API_KEY and (ALPACA_API_SECRET or ALPACA_SECRET_KEY) must be set'
             );
         });
 
-        it('ALPACA_API_SECRET과 ALPACA_SECRET_KEY가 모두 없으면 에러를 던진다', async () => {
+        it('ALPACA_API_SECRET과 ALPACA_SECRET_KEY가 모두 없으면 에러를 던진다', () => {
             delete process.env.ALPACA_API_SECRET;
-            await expect(
-                getBars({ symbol: 'AAPL', timeframe: '1Min' })
-            ).rejects.toThrow(
+            expect(() => new AlpacaProvider()).toThrow(
                 'ALPACA_API_KEY and (ALPACA_API_SECRET or ALPACA_SECRET_KEY) must be set'
             );
         });
 
+        it('ALPACA_API_SECRET이 없고 ALPACA_SECRET_KEY가 있으면 정상 생성된다', () => {
+            delete process.env.ALPACA_API_SECRET;
+            process.env.ALPACA_SECRET_KEY = 'legacy-secret';
+            expect(() => new AlpacaProvider()).not.toThrow();
+        });
+    });
+
+    describe('getBars', () => {
         it('정상 응답을 Bar[] 형태로 변환한다', async () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
@@ -54,7 +58,8 @@ describe('alpaca', () => {
                 }),
             });
 
-            const bars = await getBars({
+            const provider = new AlpacaProvider();
+            const bars = await provider.getBars({
                 symbol: 'AAPL',
                 timeframe: '1Min',
             });
@@ -82,7 +87,8 @@ describe('alpaca', () => {
                 }),
             });
 
-            await getBars({
+            const provider = new AlpacaProvider();
+            await provider.getBars({
                 symbol: 'TSLA',
                 timeframe: '5Min',
                 limit: 100,
@@ -116,7 +122,11 @@ describe('alpaca', () => {
             });
 
             const fixedNow = '2024-06-01T12:00:00.000Z';
-            await getBars({ symbol: 'AAPL', timeframe: '1Min' }, fixedNow);
+            const provider = new AlpacaProvider();
+            await provider.getBars(
+                { symbol: 'AAPL', timeframe: '1Min' },
+                fixedNow
+            );
 
             // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
@@ -134,7 +144,8 @@ describe('alpaca', () => {
                 }),
             });
 
-            await getBars({
+            const provider = new AlpacaProvider();
+            await provider.getBars({
                 symbol: 'AAPL',
                 timeframe: '1Min',
                 before: '2024-01-15T09:30:00Z',
@@ -155,7 +166,8 @@ describe('alpaca', () => {
                 }),
             });
 
-            await getBars({ symbol: 'AAPL', timeframe: '1Day' });
+            const provider = new AlpacaProvider();
+            await provider.getBars({ symbol: 'AAPL', timeframe: '1Day' });
 
             // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
@@ -169,12 +181,13 @@ describe('alpaca', () => {
                 statusText: 'Forbidden',
             });
 
+            const provider = new AlpacaProvider();
             await expect(
-                getBars({ symbol: 'AAPL', timeframe: '1Min' })
+                provider.getBars({ symbol: 'AAPL', timeframe: '1Min' })
             ).rejects.toThrow('Alpaca API error: 403 Forbidden');
         });
 
-        it('ALPACA_API_SECRET이 없고 ALPACA_SECRET_KEY가 있으면 정상 동작한다', async () => {
+        it('ALPACA_API_SECRET이 없고 ALPACA_SECRET_KEY가 있으면 legacy-secret으로 요청한다', async () => {
             delete process.env.ALPACA_API_SECRET;
             process.env.ALPACA_SECRET_KEY = 'legacy-secret';
             mockFetch.mockResolvedValueOnce({
@@ -182,7 +195,8 @@ describe('alpaca', () => {
                 json: async () => ({ bars: [], next_page_token: null }),
             });
 
-            await getBars({ symbol: 'AAPL', timeframe: '1Min' });
+            const provider = new AlpacaProvider();
+            await provider.getBars({ symbol: 'AAPL', timeframe: '1Min' });
             const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(
                 (init.headers as Record<string, string>)['APCA-API-SECRET-KEY']
@@ -195,7 +209,8 @@ describe('alpaca', () => {
                 json: async () => ({ symbol: 'AAPL', next_page_token: null }),
             });
 
-            const bars = await getBars({
+            const provider = new AlpacaProvider();
+            const bars = await provider.getBars({
                 symbol: 'AAPL',
                 timeframe: '1Min',
             });

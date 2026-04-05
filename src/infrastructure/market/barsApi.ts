@@ -1,7 +1,7 @@
 import { calculateIndicators } from '@/domain/indicators';
 import type { BarsData, Timeframe } from '@/domain/types';
 import { TIMEFRAME_BARS_LIMIT } from '@/domain/constants/market';
-import { getBars } from '@/infrastructure/market/alpaca';
+import { createMarketDataProvider } from '@/infrastructure/market/factory';
 
 export async function fetchBarsWithIndicators(
     symbol: string,
@@ -9,7 +9,8 @@ export async function fetchBarsWithIndicators(
 ): Promise<BarsData> {
     const limit = TIMEFRAME_BARS_LIMIT[timeframe];
 
-    const bars = await getBars({
+    const provider = createMarketDataProvider();
+    const bars = await provider.getBars({
         symbol,
         timeframe,
         limit,

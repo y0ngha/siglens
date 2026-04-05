@@ -130,10 +130,110 @@ interface AlpacaSnapshotResponse {
 
 ---
 
+---
+
+## FMP (Financial Modeling Prep) Market Data API
+
+공식 문서: https://site.financialmodelingprep.com/developer/docs
+
+Base URL: `https://financialmodelingprep.com/api/v3`
+
+### 인증
+
+```
+Query Parameter: apikey={FMP_API_KEY}
+```
+
+환경변수:
+```
+FMP_API_KEY=
+```
+
+### 플랜 제한 (Free Tier)
+
+```
+지연:     15분
+데이터:   히스토리컬 OHLCV
+```
+
+---
+
+## FMP 사용 엔드포인트
+
+### Historical Chart (Intraday & Daily)
+
+```
+GET /v3/historical-chart/{timeframe}/{symbol}?apikey={key}
+```
+
+**Timeframe 매핑**
+
+| Siglens Timeframe | FMP Timeframe |
+|---|---|
+| 1Min | 1min |
+| 5Min | 5min |
+| 15Min | 15min |
+| 1Hour | 1hour |
+| 1Day | 1day |
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| apikey | string | ✅ | FMP API 키 |
+| to | string | - | YYYY-MM-DD 형식 종료일 |
+
+**Request 예시**
+
+```
+GET /v3/historical-chart/1min/AAPL?apikey={key}&to=2024-01-15
+```
+
+**Response**
+
+```typescript
+interface FmpBar {
+    date: string;    // "2024-01-15 09:30:00" (UTC, timezone 정보 없음)
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+}
+
+// 응답: FmpBar[] (newest-first 정렬 → ascending으로 reverse 필요)
+```
+
+**주의사항**
+- 응답은 newest-first 정렬 → `reverse()` 하여 ascending order 반환
+- `date` 필드는 timezone 정보 없음 → UTC로 간주 (`+ ' UTC'` 파싱)
+- `vwap` 필드 없음 (Alpaca 전용)
+- `before` 파라미터 → `to` 쿼리 파라미터로 변환 (ISO string → "YYYY-MM-DD")
+
+---
+
+## Market Data Provider 선택
+
+```bash
+# MARKET_DATA_PROVIDER 환경변수로 provider 선택
+# 미설정 또는 unknown 값이면 기본값 fmp 사용
+MARKET_DATA_PROVIDER=fmp     # fmp | alpaca (기본값: fmp)
+```
+
+`createMarketDataProvider()` 팩토리 함수가 환경변수를 읽어 적절한 Provider 인스턴스를 반환한다.
+
+---
+
 ## 환경변수 전체 목록
 
 ```bash
-# Alpaca API (필수)
+# Market Data Provider (선택 — 기본값: fmp)
+MARKET_DATA_PROVIDER=        # fmp | alpaca
+
+# FMP API (MARKET_DATA_PROVIDER=fmp 시 필수)
+FMP_API_KEY=
+
+# Alpaca API (MARKET_DATA_PROVIDER=alpaca 시 필수)
 ALPACA_API_KEY=
 ALPACA_API_SECRET=
 

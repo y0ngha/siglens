@@ -15,11 +15,6 @@
 - Rule: CONVENTIONS.md — interface fields must be camelCase; snake_case fields from external APIs must be transformed in infrastructure layer
 - Context: `alpaca.ts` typed the raw Alpaca API response directly as the domain interface without transforming the `next_page_token` field to `nextPageToken`
 
-## [PR #189 Round 2 | fix/176/alpaca-getBars-최신-데이터-반환 | 2026-04-05]
-- Violation: `ALPACA_SECRET_KEY` env var cleanup placed at end of test body instead of `afterEach`, risking test contamination if assertion fails
-- Rule: CONVENTIONS.md Test Rules — test environment teardown must use `afterEach` to guarantee cleanup regardless of assertion outcome
-- Context: `alpaca.test.ts` tested the `ALPACA_SECRET_KEY` fallback path by setting the env var inline and deleting it at the last line, but a failed `expect(...).resolves` would skip the deletion
-
 ## [PR #189 | fix/176/alpaca-getBars-최신-데이터-반환 | 2026-04-05]
 - Violation: `barsApi.test.ts` still referenced removed `AlpacaProvider` class after refactoring to function-based `getBars`
 - Rule: MISTAKES.md Tests rule 15 — test mocks must be updated when the implementation changes; class-based mock must become function mock after class removal
@@ -37,38 +32,9 @@
 - Context: Both are thin wrapper Server Actions in `infrastructure/market/` that delegate to `fetchBarsWithIndicators` and `runAnalysis` respectively; test files added verifying delegation behavior and error propagation
 
 ## [PR #190 | feat/135/redis-ai-analysis-cache | 2026-04-05]
-- Violation: TTL 값이 원시 초 단위 숫자(300, 900...)로 표현되어 의미를 파악하려면 암산이 필요했음
-- Rule: FF.md Readability 1-D — 매직 넘버는 이름을 붙이거나 의미가 드러나는 표현식으로 대체해야 함
-- Context: `config.ts`의 `ANALYSIS_CACHE_TTL` 상수가 `300`, `86400` 같은 원시 숫자를 사용해 각 타임프레임의 TTL이 얼마인지 즉시 파악 불가능했음; `5 * 60`, `24 * 60 * 60` 형식으로 변경
-
-## [PR #190 | feat/135/redis-ai-analysis-cache | 2026-04-05]
 - Violation: `readonlyToken`이 없을 때 동일한 master 토큰으로 Redis 인스턴스를 두 개 생성해 불필요한 리소스 낭비 발생
 - Rule: FF.md Cohesion — 같은 역할을 하는 자원은 중복 생성 없이 재사용해야 함
 - Context: `redis.ts`의 `createCacheProvider()`에서 readonlyToken 부재 시 reader와 writer가 동일 설정으로 각각 `new Redis()`를 호출했음; writer를 먼저 생성 후 readonlyToken 유무에 따라 조건부로 reader를 생성하도록 수정
-
-## [PR #186 | fix/174/symbol-page-initial-loading-performance | 2026-04-05]
-- Violation: 하드코딩된 `initialAnalysisFailed={true}`에 의도 주석 누락
-- Rule: FF.md Readability 1-A — 역할이 다른 코드는 분리, 코드의 의도가 명확히 드러나야 함
-- Context: SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트에 위임하기 위해 `true`로 하드코딩했으나, 코드만으로는 의도를 파악하기 어려워 주석을 추가했다.
-
-## [Issue #175 | feat/175/overlay-legend | 2026-04-05]
-- Violation: `prevChartRef` declared and assigned but never read — dead code in hook
-- Rule: FF.md Readability — dead code that serves no purpose must be removed; variables assigned but never consumed are noise
-- Context: `useOverlayLegend.ts` declared `prevChartRef = useRef<IChartApi | null>(null)` and assigned it inside a `useEffect` branch, but the ref value was never read anywhere; the entire declaration and assignment block was removed
-
-## [PR #191 | feat/175/overlay-legend | 2026-04-05]
-- Violation: `groupItems` utility function in `OverlayLegend.tsx` used `Array.push()` to mutate local arrays inside a `for...of` loop
-- Rule: CONVENTIONS.md Functional Programming — No mutation: `[...arr, item]` not `arr.push(item)`
-- Context: `groupItems` called `groups[existingIdx].items.push(item)` and `groups.push(...)` directly; refactored to `reduce` with spread operators to maintain immutability throughout
-
-## [PR #191 Round 2 | feat/175/overlay-legend | 2026-04-05]
-- Violation: `param.time as number` type assertion used without a type guard in `useOverlayLegend.ts`
-- Rule: MISTAKES.md TypeScript #3 — use type guards instead of `as` assertions; exception applies only to DOM elements and third-party library return types with a comment
-- Context: `crosshairMove` handler cast `param.time` with `as number` despite `Time` being a union (`UTCTimestamp | BusinessDay | string`); replaced with `typeof param.time === 'number'` guard to ensure runtime safety
-
-- Violation: `Math.max(0, crosshairIndex ?? bars.length - 1)` wraps a potential sentinel `-1` value, silently converting it to `0`
-- Rule: MISTAKES.md Domain Functions #9 — sentinel values must propagate unchanged; `Math.max` must not wrap a value that can be `-1`
-- Context: `barIndex` derivation in `useOverlayLegend.ts` used `Math.max(0, crosshairIndex ?? ...)` which converts `crosshairIndex = -1` (returned by `findBarIndex` for empty bars) to `0`, producing a wrong index; replaced with explicit null/negative guard chain
 
 ## [PR #191 Round 4 | feat/175/overlay-legend | 2026-04-06]
 - Violation: `resolveBarIndex` lacked an upper bound guard for `crosshairIndex >= bars.length`, leaving the function contract incomplete
@@ -80,3 +46,21 @@
 - Rule: CONVENTIONS.md Test Rules — each `it()` must accurately describe and verify exactly one behavior; misleading comments and untested edge cases must be corrected
 - Context: `overlayLabelUtils.test.ts` '중간값일 때' block had a comment about equal-distance tie-break but tested an unambiguous `time=260` input; fixed the comment and added a dedicated '두 후보와 거리가 동일할 때' block verifying that `findBarIndex` returns the lower array index (`low`) when distances are equal
 
+## [PR #194 | feat/157/fmp-provider | 2026-04-06]
+- Violation: `factory.test.ts`에서 `MARKET_DATA_PROVIDER=''` 빈 문자열 분기 테스트 케이스 누락
+- Rule: MISTAKES.md Tests #2 — 모든 조건 분기에 전용 테스트 케이스가 있어야 함
+- Context: `factory.ts`의 `raw && isProviderType(raw)` 조건에서 빈 문자열은 falsy로 DEFAULT 분기를 타지만, 기존 테스트에는 `undefined`/`'fmp'`/`'alpaca'`/알 수 없는 값만 있었고 빈 문자열 케이스가 누락되었음
+
+## [feat/157/fmp-provider | 2026-04-06]
+- Violation: `eslint-disable-next-line @typescript-eslint/no-unused-vars` comment used on `_now` parameter in `FmpProvider.getBars`
+- Rule: CONVENTIONS.md — eslint-disable comments are absolutely prohibited; the root cause must be fixed instead
+- Context: `fmp.ts` declared `_now?: string` to match the `MarketDataProvider` interface but never used it; since the parameter is optional in the interface, it can be omitted from the implementation entirely; the parameter was removed to fix the root cause without a suppress comment
+
+- Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
+- Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
+- Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
+
+## [PR #194 Round 2 | feat/157/fmp-provider | 2026-04-06]
+- Violation: `private toBar` methods in `AlpacaProvider` and `FmpProvider` did not use `this` but were declared as class instance methods instead of module-level pure functions
+- Rule: CONVENTIONS.md — infrastructure/ functional recommended; internal logic that does not access instance state must be separated into module-level pure functions
+- Context: Both `alpaca.ts` and `fmp.ts` defined `private toBar(raw): Bar` methods that only transformed a raw API response into a `Bar` shape without accessing any instance properties; extracted to module-level `toAlpacaBar` and `toFmpBar` functions respectively
