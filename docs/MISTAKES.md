@@ -52,6 +52,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 11. Derived constants recreated on every render without memoization
     → Wrap with useMemo for objects/maps derived from props/state
+
+12. Function/interface names become inaccurate after architectural changes
+    → When replacing HTTP calls with Server Actions, renaming patterns, or moving code, update the names
+    ❌ postAnalyze (no longer makes a POST request)
+    ❌ AnalyzeRouteResponse (no longer a Route Handler response)
+    ✅ runAnalysis, RunAnalysisResult (accurate to new implementation)
 ```
 
 ---
@@ -235,3 +241,64 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 15. Type field added but test mock objects not updated
     → All mock/fixture objects must match the updated interface
 ```
+
+---
+
+## Lightweight Charts
+
+1. Missing chart.remove() cleanup
+   → Duplicate canvas on component remount
+
+2. Using setData for real-time updates
+   → Use series.update() instead
+
+3. Passing domain null values directly to setData
+   → Convert to WhitespaceData({ time })
+
+4. Adding volume/RSI to the main pane
+   → Always add to a separate pane (index 1, 2, ...)
+
+---
+
+## ESLint
+
+1. import/first violation
+   → Writing export * before import in barrel files (index.ts)
+   → Move imports to the top of the file
+
+2. Missing EOF newline
+   → Auto-fixed by running yarn format
+
+---
+
+## Layer Dependencies
+
+1. Importing external libraries in domain
+   → technicalindicators, lodash, etc. are all prohibited
+
+2. Importing infrastructure in components
+   → AlpacaProvider, claudeClient, etc. are prohibited
+
+3. Importing Lightweight Charts outside components/chart/
+
+4. Importing @/lib/* in components is allowed
+   → lib/ is the external UI utility wrapper layer (cn, etc.)
+   → Unlike infrastructure, components may import from lib/
+
+5. Lower layers importing from higher layers (infrastructure/hooks importing from app/)
+   → Rule: ARCHITECTURE.md — dependency flow is strictly downward (app → infrastructure → domain)
+   → Reverse imports (infrastructure → app or domain → infrastructure) violate layer boundaries
+   → Infrastructure and domain functions must not depend on app-layer code (Server Actions, RSC logic, API routes)
+   → If infrastructure needs app-level capabilities, extract the logic into infrastructure and call it from app
+   → Hooks in components/ may only import from infrastructure; never import app/ Server Actions directly
+   ❌ // infrastructure/market/barsApi.ts
+      import { getBarsAction } from '@/app/actions'
+      export async function fetchBars() { return getBarsAction(...) }
+   ✅ // infrastructure/market/barsApi.ts
+      'use server'
+      export async function fetchBars() { ... }  // move Server Action logic here
+      // app/ imports and calls this function
+   ❌ // components/symbol-page/hooks/useBars.ts
+      import { getBarsAction } from '@/app/actions'
+   ✅ // components/symbol-page/hooks/useBars.ts
+      import { fetchBars } from '@/infrastructure/market'  // import from infrastructure layer only

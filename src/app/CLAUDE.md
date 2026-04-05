@@ -5,8 +5,14 @@
 Next.js App Router layer. Handles RSC (React Server Components) and Route Handlers.
 This folder is **routing only** — do not implement business logic or UI components here.
 
-**Dependency:** `→ see docs/ARCHITECTURE.md` for full layer dependency rules.
-**Internal API spec:** `→ see docs/SIGLENS_API.md` for request/response schemas.
+---
+
+## Dependency Rules
+
+```
+✅ Allowed: infrastructure, domain, lib imports
+❌ Forbidden: implementing business logic directly in route files
+```
 
 ---
 
@@ -17,28 +23,42 @@ This folder is **routing only** — do not implement business logic or UI compon
 - Indicator calculations → call domain
 - Pass results as props to Client Components (components/)
 
----
+### Data Flow (Initial Page Load)
 
-## Route Handlers (API)
+```
+/AAPL request
+  → app/[symbol]/page.tsx (RSC)
+    → infrastructure/market/alpaca.ts → Alpaca API (bars, count varies by timeframe)
+    → domain/indicators/* → indicator calculations
+    → domain/analysis/prompt.ts → AI prompt construction
+    → infrastructure/ai → AI analysis
+  → StockChart (initialBars)
+  → AnalysisPanel (initialAnalysis)
+```
 
-- `GET /api/bars` — bars + indicators on timeframe switch
-- `POST /api/analyze` — AI re-analysis
-
-`→ see docs/SIGLENS_API.md` for full request/response schemas.
-
----
-
-## Caching
+### Caching
 
 ```typescript
 // fetch caching
-const data = await fetch(url, { next: { revalidate: 60 } });
+const data = await fetch(url, {
+    next: { revalidate: 60 },
+});
 
 // function-level caching (Next.js 16)
 async function fetchBars(symbol: string) {
     'use cache';
+    // ...
 }
 ```
+
+---
+
+## Server Actions
+
+Server Actions are defined in `infrastructure/market/` and called directly from hooks.
+
+- `getBarsAction` — returns bars + indicators for timeframe switch
+- `analyzeAction` — AI re-analysis with skills
 
 ---
 
@@ -46,3 +66,18 @@ async function fetchBars(symbol: string) {
 
 - Use `proxy.ts` instead of `middleware.ts` (if needed)
 - `'use cache'` directive for explicit caching
+- Follow App Router conventions
+
+---
+
+## Design Rules
+
+See `docs/DESIGN.md` for the full color system and Tailwind CSS rules.
+
+---
+
+## Common Mistakes
+
+- Implementing domain logic in route handlers → delegate to domain/
+- No caching strategy, calling API every request → use `revalidate` or `'use cache'`
+- Exposing internal error details in responses → return generic messages to client

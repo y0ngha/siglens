@@ -39,3 +39,4 @@ Define interfaces (`types.ts`) **before** implementation.
 
 - Fetches bars from Alpaca, then calls domain indicator functions
 - `infrastructure → domain` import is allowed by dependency rules
+- Used by `getBarsAction.ts` Server Action

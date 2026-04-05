@@ -59,7 +59,7 @@ Always read:
 
 Additional documents by issue type:
 - domain/ related      → docs/DOMAIN.md + docs/ARCHITECTURE.md
-- infrastructure/      → docs/API.md + docs/SIGLENS_API.md + docs/ARCHITECTURE.md
+- infrastructure/      → docs/API.md + docs/ARCHITECTURE.md
 - components/          → docs/DESIGN.md + docs/ARCHITECTURE.md
 - Layer structure check needed → docs/ARCHITECTURE.md
 
@@ -213,7 +213,6 @@ Update docs if the change falls into any of the following categories:
 |---|---|
 | New type or interface added | `docs/DOMAIN.md` |
 | New indicator implemented | `docs/DOMAIN.md` |
-| Internal Route Handler changed | `docs/SIGLENS_API.md` |
 | External API usage changed | `docs/API.md` |
 | Layer structure or folder layout changed | `docs/ARCHITECTURE.md` |
 | New coding convention established | `docs/CONVENTIONS.md` |
@@ -253,6 +252,10 @@ If any step fails, fix the issue and re-run that step before continuing.
 If invoked as Type B (review findings fix), append each fix to `docs/__agents_only__/fix-log.md`.
 Create the file if it does not exist.
 **Skip this step for Type A** — fix-log tracks rule violations, not new implementations.
+
+**Before recording any entry, check `docs/MISTAKES.md` first.**
+If the violation is already documented there (same rule, same pattern), **skip that entry entirely** — do not write it to fix-log.md.
+Only record violations that are not yet covered by an existing MISTAKES.md rule.
 
 Format each entry as follows:
 
