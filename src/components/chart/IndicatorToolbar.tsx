@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/lib/chartColors';
@@ -202,7 +202,13 @@ export function IndicatorToolbar({
         }
     });
 
-    const buttonRefMap = { ma: maButtonRef, ema: emaButtonRef };
+    const buttonRefMap = useMemo(
+        () => ({
+            ma: maButtonRef,
+            ema: emaButtonRef,
+        }),
+        []
+    );
 
     const toggleExpanded = (): void => {
         setIsExpanded(prev => !prev);
