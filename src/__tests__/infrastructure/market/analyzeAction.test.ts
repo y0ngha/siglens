@@ -155,7 +155,7 @@ describe('analyzeAction 함수는', () => {
     });
 
     describe('캐시 읽기 에러일 때', () => {
-        it('에러를 로깅하고 runAnalysis를 실행한다', async () => {
+        it('에러를 로깅하고 runAnalysis를 실행한 뒤 결과를 캐시에 저장한다', async () => {
             const consoleSpy = jest
                 .spyOn(console, 'error')
                 .mockImplementation(() => {});
@@ -172,6 +172,14 @@ describe('analyzeAction 함수는', () => {
             );
             expect(mockRunAnalysis).toHaveBeenCalledWith(mockVariables);
             expect(result).toBe(mockResult);
+
+            // 읽기 에러 후에도 fire-and-forget으로 캐시 쓰기가 실행되는지 검증
+            await Promise.resolve();
+            expect(mockCacheSet).toHaveBeenCalledWith(
+                'analysis:AAPL:1Day',
+                mockResult,
+                86400
+            );
             consoleSpy.mockRestore();
         });
     });
