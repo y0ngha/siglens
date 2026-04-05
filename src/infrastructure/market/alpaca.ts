@@ -15,6 +15,17 @@ interface AlpacaBarsRawResponse {
     bars?: AlpacaBar[];
 }
 
+function toAlpacaBar(raw: AlpacaBar): Bar {
+    return {
+        time: Math.floor(new Date(raw.t).getTime() / 1000),
+        open: raw.o,
+        high: raw.h,
+        low: raw.l,
+        close: raw.c,
+        volume: raw.v,
+    };
+}
+
 export class AlpacaProvider implements MarketDataProvider {
     private readonly apiKey: string;
     private readonly secretKey: string;
@@ -32,17 +43,6 @@ export class AlpacaProvider implements MarketDataProvider {
 
         this.apiKey = apiKey;
         this.secretKey = secretKey;
-    }
-
-    private toBar(raw: AlpacaBar): Bar {
-        return {
-            time: Math.floor(new Date(raw.t).getTime() / 1000),
-            open: raw.o,
-            high: raw.h,
-            low: raw.l,
-            close: raw.c,
-            volume: raw.v,
-        };
     }
 
     async getBars(
@@ -80,6 +80,6 @@ export class AlpacaProvider implements MarketDataProvider {
         // res.json() returns unknown; asserting shape against Alpaca API contract
         const raw = (await res.json()) as AlpacaBarsRawResponse;
 
-        return (raw.bars ?? []).map(r => this.toBar(r));
+        return (raw.bars ?? []).map(r => toAlpacaBar(r));
     }
 }

@@ -36,11 +36,6 @@
 - Rule: FF.md Cohesion — 같은 역할을 하는 자원은 중복 생성 없이 재사용해야 함
 - Context: `redis.ts`의 `createCacheProvider()`에서 readonlyToken 부재 시 reader와 writer가 동일 설정으로 각각 `new Redis()`를 호출했음; writer를 먼저 생성 후 readonlyToken 유무에 따라 조건부로 reader를 생성하도록 수정
 
-## [Issue #175 | feat/175/overlay-legend | 2026-04-05]
-- Violation: `prevChartRef` declared and assigned but never read — dead code in hook
-- Rule: FF.md Readability — dead code that serves no purpose must be removed; variables assigned but never consumed are noise
-- Context: `useOverlayLegend.ts` declared `prevChartRef = useRef<IChartApi | null>(null)` and assigned it inside a `useEffect` branch, but the ref value was never read anywhere; the entire declaration and assignment block was removed
-
 ## [PR #191 Round 4 | feat/175/overlay-legend | 2026-04-06]
 - Violation: `resolveBarIndex` lacked an upper bound guard for `crosshairIndex >= bars.length`, leaving the function contract incomplete
 - Rule: FF.md Predictability — pure utility functions must handle all valid input ranges explicitly so callers cannot receive out-of-bounds results
@@ -65,6 +60,7 @@
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
 
-- Violation: Two separate `import type` statements from the same `'./types'` module in both `alpaca.ts` and `fmp.ts`
-- Rule: FF.md Readability — redundant import declarations from the same module must be merged into one
-- Context: Both `alpaca.ts` and `fmp.ts` had `import type { GetBarsOptions, Bar } from './types'` and `import type { MarketDataProvider } from './types'` on separate lines; merged into single import statements
+## [PR #194 Round 2 | feat/157/fmp-provider | 2026-04-06]
+- Violation: `private toBar` methods in `AlpacaProvider` and `FmpProvider` did not use `this` but were declared as class instance methods instead of module-level pure functions
+- Rule: CONVENTIONS.md — infrastructure/ functional recommended; internal logic that does not access instance state must be separated into module-level pure functions
+- Context: Both `alpaca.ts` and `fmp.ts` defined `private toBar(raw): Bar` methods that only transformed a raw API response into a `Bar` shape without accessing any instance properties; extracted to module-level `toAlpacaBar` and `toFmpBar` functions respectively

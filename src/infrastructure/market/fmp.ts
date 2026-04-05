@@ -24,6 +24,17 @@ interface FmpBar {
     volume: number;
 }
 
+function toFmpBar(raw: FmpBar): Bar {
+    return {
+        time: Math.floor(new Date(raw.date + ' UTC').getTime() / 1000),
+        open: raw.open,
+        high: raw.high,
+        low: raw.low,
+        close: raw.close,
+        volume: raw.volume,
+    };
+}
+
 export class FmpProvider implements MarketDataProvider {
     private readonly apiKey: string;
 
@@ -35,17 +46,6 @@ export class FmpProvider implements MarketDataProvider {
         }
 
         this.apiKey = apiKey;
-    }
-
-    private toBar(raw: FmpBar): Bar {
-        return {
-            time: Math.floor(new Date(raw.date + ' UTC').getTime() / 1000),
-            open: raw.open,
-            high: raw.high,
-            low: raw.low,
-            close: raw.close,
-            volume: raw.volume,
-        };
     }
 
     private buildUrl(
@@ -89,6 +89,6 @@ export class FmpProvider implements MarketDataProvider {
             return [];
         }
 
-        return [...raw.map(r => this.toBar(r))].reverse();
+        return raw.map(r => toFmpBar(r)).toReversed();
     }
 }
