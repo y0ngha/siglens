@@ -84,6 +84,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 3. Using `as` type assertions instead of type guards
    → Use typeof, in, instanceof, or discriminated unions
    → Exception: DOM elements, third-party library return types (add comment explaining why)
+   → For third-party library assertions, always add a comment explaining why the guard is not possible
 
 4. Indicator result types defined in indicator files instead of domain/types.ts
    → All indicator result types belong in domain/types.ts
