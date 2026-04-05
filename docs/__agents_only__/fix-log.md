@@ -60,3 +60,8 @@
 - Violation: `private toBar` methods in `AlpacaProvider` and `FmpProvider` did not use `this` but were declared as class instance methods instead of module-level pure functions
 - Rule: CONVENTIONS.md — infrastructure/ functional recommended; internal logic that does not access instance state must be separated into module-level pure functions
 - Context: Both `alpaca.ts` and `fmp.ts` defined `private toBar(raw): Bar` methods that only transformed a raw API response into a `Bar` shape without accessing any instance properties; extracted to module-level `toAlpacaBar` and `toFmpBar` functions respectively
+
+## [PR #195 | feat/157/fmp-provider | 2026-04-06]
+- Violation: `docs/ARCHITECTURE.md` "최초 진입" 섹션이 HydrationBoundary 패턴 도입 후에도 이전 props 드릴링 방식(`initialBars`, `initialAnalysis`)을 그대로 기술하고 있었음
+- Rule: MISTAKES.md TypeScript #11 — Implementation and documentation changes not synchronized
+- Context: PR #195에서 `prefetchQuery + HydrationBoundary` 패턴으로 교체했지만 `docs/ARCHITECTURE.md`의 데이터 흐름 다이어그램은 업데이트되지 않아 실제 동작과 불일치; 다이어그램을 HydrationBoundary 패턴에 맞게 수정

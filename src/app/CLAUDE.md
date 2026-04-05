@@ -21,7 +21,7 @@ This folder is **routing only** — do not implement business logic or UI compon
 - Page files like `app/[symbol]/page.tsx` are server components
 - Data fetching → call infrastructure
 - Indicator calculations → call domain
-- Pass results as props to Client Components (components/)
+- 클라이언트로 초기 데이터를 전달할 때는 props 드릴링 대신 HydrationBoundary 패턴을 사용한다 (아래 Data Flow 참고)
 
 ### Data Flow (Initial Page Load)
 
