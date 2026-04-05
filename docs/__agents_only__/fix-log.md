@@ -65,3 +65,8 @@
 - Violation: `docs/ARCHITECTURE.md` "최초 진입" 섹션이 HydrationBoundary 패턴 도입 후에도 이전 props 드릴링 방식(`initialBars`, `initialAnalysis`)을 그대로 기술하고 있었음
 - Rule: MISTAKES.md TypeScript #11 — Implementation and documentation changes not synchronized
 - Context: PR #195에서 `prefetchQuery + HydrationBoundary` 패턴으로 교체했지만 `docs/ARCHITECTURE.md`의 데이터 흐름 다이어그램은 업데이트되지 않아 실제 동작과 불일치; 다이어그램을 HydrationBoundary 패턴에 맞게 수정
+
+## [PR #195 Round 2 | feat/157/fmp-provider | 2026-04-06]
+- Violation: `useBars.ts`에서 `staleTime`과 `gcTime`을 `useSuspenseQuery` 옵션에 중복 명시함
+- Rule: CONVENTIONS.md "React Query and Server State Rules" — 컴포넌트 훅은 `queryKey` + `queryFn` 연결만 담당; 전역 defaultOptions로 이미 처리된 값을 개별 쿼리에 재명시하면 설정 출처가 두 곳이 됨
+- Context: `ReactQueryProvider.tsx`가 이미 `staleTime: QUERY_STALE_TIME_MS`, `gcTime: QUERY_GC_TIME_MS`를 전역 `defaultOptions`으로 등록하고 있음에도 `useBars.ts`가 동일 값을 쿼리 옵션에 재명시하고 있었음; 중복 제거
