@@ -11,10 +11,24 @@ interface AlpacaBar {
     v: number; // volume
 }
 
-interface AlpacaBarsResponse {
+interface AlpacaBarsRawResponse {
     symbol: string;
     bars: AlpacaBar[];
     next_page_token: string | null;
+}
+
+interface AlpacaBarsResponse {
+    symbol: string;
+    bars: AlpacaBar[];
+    nextPageToken: string | null;
+}
+
+function toAlpacaBarsResponse(raw: AlpacaBarsRawResponse): AlpacaBarsResponse {
+    return {
+        symbol: raw.symbol,
+        bars: raw.bars,
+        nextPageToken: raw.next_page_token,
+    };
 }
 
 function toBar(raw: AlpacaBar): Bar {
@@ -30,10 +44,13 @@ function toBar(raw: AlpacaBar): Bar {
 
 function getAlpacaCredentials(): { apiKey: string; secretKey: string } {
     const apiKey = process.env.ALPACA_API_KEY;
-    const secretKey = process.env.ALPACA_API_SECRET;
+    const secretKey =
+        process.env.ALPACA_API_SECRET ?? process.env.ALPACA_SECRET_KEY;
 
     if (!apiKey || !secretKey) {
-        throw new Error('ALPACA_API_KEY and ALPACA_API_SECRET must be set');
+        throw new Error(
+            'ALPACA_API_KEY and (ALPACA_API_SECRET or ALPACA_SECRET_KEY) must be set'
+        );
     }
 
     return { apiKey, secretKey };
@@ -46,7 +63,7 @@ export async function getBars(
     const { symbol, timeframe, limit = 500, before } = options;
     const { apiKey, secretKey } = getAlpacaCredentials();
 
-    const endTime = before ?? now;
+    const endTime = before || now;
 
     const params = new URLSearchParams({
         timeframe,
@@ -70,7 +87,9 @@ export async function getBars(
         throw new Error(`Alpaca API error: ${res.status} ${res.statusText}`);
     }
 
-    const data: AlpacaBarsResponse = await res.json();
+    const data = toAlpacaBarsResponse(
+        (await res.json()) as AlpacaBarsRawResponse
+    );
 
     return (data.bars ?? []).map(toBar);
 }

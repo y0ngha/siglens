@@ -30,7 +30,7 @@ describe('alpaca', () => {
             await expect(
                 getBars({ symbol: 'AAPL', timeframe: '1Min' })
             ).rejects.toThrow(
-                'ALPACA_API_KEY and ALPACA_API_SECRET must be set'
+                'ALPACA_API_KEY and (ALPACA_API_SECRET or ALPACA_SECRET_KEY) must be set'
             );
         });
 
@@ -39,7 +39,7 @@ describe('alpaca', () => {
             await expect(
                 getBars({ symbol: 'AAPL', timeframe: '1Min' })
             ).rejects.toThrow(
-                'ALPACA_API_KEY and ALPACA_API_SECRET must be set'
+                'ALPACA_API_KEY and (ALPACA_API_SECRET or ALPACA_SECRET_KEY) must be set'
             );
         });
 
@@ -171,7 +171,7 @@ describe('alpaca', () => {
         it('bars가 없는 응답에도 빈 배열을 반환한다', async () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
-                json: async () => ({ symbol: 'AAPL', nextPageToken: null }),
+                json: async () => ({ symbol: 'AAPL', next_page_token: null }),
             });
 
             const bars = await getBars({
