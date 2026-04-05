@@ -202,11 +202,16 @@ describe('findBarIndex', () => {
 
     describe('중간값일 때', () => {
         it('가장 가까운 index를 반환한다', () => {
-            // time 250 is between bars[1]=200 and bars[2]=300 — equally distant, lower wins (250-200=50, 300-250=50)
-            // with lowDiff <= highDiff check, low (index 2) wins when equal
+            // 260은 bars[2]=300(diff=40)에 bars[1]=200(diff=60)보다 가깝다 → index 2
             const result = findBarIndex(mockBars, 260);
-            // 260 is closer to 300 (diff=40) than 200 (diff=60), so index 2
             expect(result).toBe(2);
+        });
+    });
+
+    describe('두 후보와 거리가 동일할 때', () => {
+        it('low 인덱스(더 높은 인덱스)를 반환한다', () => {
+            // bars[1]=200, bars[2]=300, time=250 → lowDiff=50, highDiff=50 → low(=2) 반환
+            expect(findBarIndex(mockBars, 250)).toBe(2);
         });
     });
 });

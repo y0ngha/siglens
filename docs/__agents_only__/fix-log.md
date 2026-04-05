@@ -56,11 +56,6 @@
 - Rule: FF.md Readability — dead code that serves no purpose must be removed; variables assigned but never consumed are noise
 - Context: `useOverlayLegend.ts` declared `prevChartRef = useRef<IChartApi | null>(null)` and assigned it inside a `useEffect` branch, but the ref value was never read anywhere; the entire declaration and assignment block was removed
 
-## [Issue #175 | feat/175/overlay-legend | 2026-04-05]
-- Violation: Derived variable `barIndex` declared between two `useEffect` calls, violating hook declaration order
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — order must be: useState → useRef → derived variables → useEffect
-- Context: `useOverlayLegend.ts` placed `const barIndex = ...` between the `barsRef` update effect and the crosshair subscription effect; moved above the first `useEffect` to follow the correct declaration order
-
 ## [PR #191 | feat/175/overlay-legend | 2026-04-05]
 - Violation: `groupItems` utility function in `OverlayLegend.tsx` used `Array.push()` to mutate local arrays inside a `for...of` loop
 - Rule: CONVENTIONS.md Functional Programming — No mutation: `[...arr, item]` not `arr.push(item)`
@@ -74,4 +69,9 @@
 - Violation: `Math.max(0, crosshairIndex ?? bars.length - 1)` wraps a potential sentinel `-1` value, silently converting it to `0`
 - Rule: MISTAKES.md Domain Functions #9 — sentinel values must propagate unchanged; `Math.max` must not wrap a value that can be `-1`
 - Context: `barIndex` derivation in `useOverlayLegend.ts` used `Math.max(0, crosshairIndex ?? ...)` which converts `crosshairIndex = -1` (returned by `findBarIndex` for empty bars) to `0`, producing a wrong index; replaced with explicit null/negative guard chain
+
+## [PR #191 Round 3 | feat/175/overlay-legend | 2026-04-06]
+- Violation: Test comment described `time=250` (tie-break case) but the test body used `time=260` (unambiguous nearest-bar case); the actual tie-break behavior was untested
+- Rule: CONVENTIONS.md Test Rules — each `it()` must accurately describe and verify exactly one behavior; misleading comments and untested edge cases must be corrected
+- Context: `overlayLabelUtils.test.ts` '중간값일 때' block had a comment about equal-distance tie-break but tested an unambiguous `time=260` input; fixed the comment and added a dedicated '두 후보와 거리가 동일할 때' block verifying that `findBarIndex` returns the lower array index (`low`) when distances are equal
 

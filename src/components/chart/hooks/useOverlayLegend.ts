@@ -37,6 +37,11 @@ export function useOverlayLegend({
                 ? 0
                 : crosshairIndex;
 
+    const legendItems = useMemo(
+        () => resolveOverlayValues(labelConfigs, indicators, barIndex),
+        [labelConfigs, indicators, barIndex]
+    );
+
     useEffect(() => {
         barsRef.current = bars;
     });
@@ -60,11 +65,6 @@ export function useOverlayLegend({
             chart.unsubscribeCrosshairMove(handler);
         };
     }, [chartRef]);
-
-    const legendItems = useMemo(
-        () => resolveOverlayValues(labelConfigs, indicators, barIndex),
-        [labelConfigs, indicators, barIndex]
-    );
 
     return legendItems;
 }
