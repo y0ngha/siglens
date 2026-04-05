@@ -1,4 +1,4 @@
-import { AlpacaProvider } from '@/infrastructure/market/alpaca';
+import { getBars } from '@/infrastructure/market/alpaca';
 import { calculateIndicators } from '@/domain/indicators';
 import {
     DEFAULT_TIMEFRAME,
@@ -31,9 +31,7 @@ interface Props {
 export default async function SymbolPage({ params }: Props) {
     const { symbol } = await params;
 
-    const market = new AlpacaProvider();
-
-    const bars = await market.getBars({
+    const bars = await getBars({
         symbol,
         timeframe: DEFAULT_TIMEFRAME,
         limit: DEFAULT_BARS_LIMIT,

@@ -1,6 +1,6 @@
 import { constants } from 'node:http2';
 import { NextRequest, NextResponse } from 'next/server';
-import { AlpacaProvider } from '@/infrastructure/market/alpaca';
+import { getBars } from '@/infrastructure/market/alpaca';
 import type { Timeframe } from '@/domain/types';
 import {
     DEFAULT_BARS_LIMIT,
@@ -43,10 +43,8 @@ export async function GET(request: NextRequest) {
         );
     }
 
-    const market = new AlpacaProvider();
-
     try {
-        const bars = await market.getBars({
+        const bars = await getBars({
             symbol,
             timeframe: timeframeParam,
             limit: limit + LOOK_AHEAD_COUNT,

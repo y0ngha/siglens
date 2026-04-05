@@ -1,7 +1,4 @@
-import type { MarketDataProvider, GetBarsOptions, Bar } from './types';
-import { TIMEFRAME_LOOKBACK_DAYS } from '@/domain/constants/market';
-import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
-import { getEasternOffsetHours } from '@/domain/time/eastern';
+import type { GetBarsOptions, Bar } from './types';
 
 const BASE_URL = 'https://data.alpaca.markets/v2';
 
@@ -15,6 +12,7 @@ interface AlpacaBar {
 }
 
 interface AlpacaBarsResponse {
+    symbol: string;
     bars: AlpacaBar[];
     next_page_token: string | null;
 }
@@ -30,65 +28,49 @@ function toBar(raw: AlpacaBar): Bar {
     };
 }
 
-export class AlpacaProvider implements MarketDataProvider {
-    private readonly apiKey: string;
-    private readonly secretKey: string;
+function getAlpacaCredentials(): { apiKey: string; secretKey: string } {
+    const apiKey = process.env.ALPACA_API_KEY;
+    const secretKey = process.env.ALPACA_API_SECRET;
 
-    constructor() {
-        const apiKey = process.env.ALPACA_API_KEY;
-        const secretKey = process.env.ALPACA_SECRET_KEY;
-
-        if (!apiKey || !secretKey) {
-            throw new Error('ALPACA_API_KEY and ALPACA_SECRET_KEY must be set');
-        }
-
-        this.apiKey = apiKey;
-        this.secretKey = secretKey;
+    if (!apiKey || !secretKey) {
+        throw new Error('ALPACA_API_KEY and ALPACA_API_SECRET must be set');
     }
 
-    async getBars(options: GetBarsOptions): Promise<Bar[]> {
-        const { symbol, timeframe, limit = 500, before } = options;
+    return { apiKey, secretKey };
+}
 
-        const lookbackMs = TIMEFRAME_LOOKBACK_DAYS[timeframe] * MS_PER_DAY;
-        const endTime = before ? new Date(before) : new Date();
-        const approxStartUtc = new Date(endTime.getTime() - lookbackMs);
-        const startOffsetMs =
-            getEasternOffsetHours(approxStartUtc) * MS_PER_HOUR;
-        const endOffsetMs = getEasternOffsetHours(endTime) * MS_PER_HOUR;
-        const startUtc = new Date(
-            endTime.getTime() + endOffsetMs - lookbackMs - startOffsetMs
-        );
+export async function getBars(
+    options: GetBarsOptions,
+    now: string = new Date().toISOString()
+): Promise<Bar[]> {
+    const { symbol, timeframe, limit = 500, before } = options;
+    const { apiKey, secretKey } = getAlpacaCredentials();
 
-        const params = new URLSearchParams({
-            timeframe,
-            limit: String(limit),
-            adjustment: 'raw',
-            feed: 'iex',
-            start: startUtc.toISOString(),
-        });
+    const endTime = before ?? now;
 
-        if (before) {
-            params.set('end', before);
-        }
+    const params = new URLSearchParams({
+        timeframe,
+        limit: String(limit),
+        adjustment: 'raw',
+        feed: 'iex',
+        end: endTime,
+    });
 
-        const url = `${BASE_URL}/stocks/${symbol}/bars?${params}`;
+    const url = `${BASE_URL}/stocks/${symbol}/bars?${params}`;
 
-        const res = await fetch(url, {
-            headers: {
-                'APCA-API-KEY-ID': this.apiKey,
-                'APCA-API-SECRET-KEY': this.secretKey,
-            },
-            next: { revalidate: 60 },
-        });
+    const res = await fetch(url, {
+        headers: {
+            'APCA-API-KEY-ID': apiKey,
+            'APCA-API-SECRET-KEY': secretKey,
+        },
+        next: { revalidate: 60 },
+    });
 
-        if (!res.ok) {
-            throw new Error(
-                `Alpaca API error: ${res.status} ${res.statusText}`
-            );
-        }
-
-        const data: AlpacaBarsResponse = await res.json();
-
-        return (data.bars ?? []).map(toBar);
+    if (!res.ok) {
+        throw new Error(`Alpaca API error: ${res.status} ${res.statusText}`);
     }
+
+    const data: AlpacaBarsResponse = await res.json();
+
+    return (data.bars ?? []).map(toBar);
 }
