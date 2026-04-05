@@ -170,3 +170,14 @@ export function resolveOverlayValues(
         value: config.getValue(indicators, barIndex),
     }));
 }
+
+export function resolveBarIndex(
+    bars: Bar[],
+    crosshairIndex: number | null
+): number {
+    if (bars.length === 0) return -1;
+    if (crosshairIndex === null) return bars.length - 1;
+    if (crosshairIndex < 0) return 0;
+
+    return crosshairIndex;
+}

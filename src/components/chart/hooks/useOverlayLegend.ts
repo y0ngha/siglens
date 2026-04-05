@@ -5,9 +5,10 @@ import type { RefObject } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import type { OverlayLegendItem } from '@/components/chart/types';
-import type { OverlayLabelConfig } from '@/components/chart/utils/overlayLabelUtils';
 import {
     findBarIndex,
+    OverlayLabelConfig,
+    resolveBarIndex,
     resolveOverlayValues,
 } from '@/components/chart/utils/overlayLabelUtils';
 
@@ -28,14 +29,7 @@ export function useOverlayLegend({
 
     const barsRef = useRef<Bar[]>(bars);
 
-    const barIndex =
-        bars.length === 0
-            ? -1
-            : crosshairIndex === null
-              ? bars.length - 1
-              : crosshairIndex < 0
-                ? 0
-                : crosshairIndex;
+    const barIndex = resolveBarIndex(bars, crosshairIndex);
 
     const legendItems = useMemo(
         () => resolveOverlayValues(labelConfigs, indicators, barIndex),
