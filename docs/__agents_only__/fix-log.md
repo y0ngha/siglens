@@ -52,10 +52,6 @@
 - Context: `factory.ts`의 `raw && isProviderType(raw)` 조건에서 빈 문자열은 falsy로 DEFAULT 분기를 타지만, 기존 테스트에는 `undefined`/`'fmp'`/`'alpaca'`/알 수 없는 값만 있었고 빈 문자열 케이스가 누락되었음
 
 ## [feat/157/fmp-provider | 2026-04-06]
-- Violation: `eslint-disable-next-line @typescript-eslint/no-unused-vars` comment used on `_now` parameter in `FmpProvider.getBars`
-- Rule: CONVENTIONS.md — eslint-disable comments are absolutely prohibited; the root cause must be fixed instead
-- Context: `fmp.ts` declared `_now?: string` to match the `MarketDataProvider` interface but never used it; since the parameter is optional in the interface, it can be omitted from the implementation entirely; the parameter was removed to fix the root cause without a suppress comment
-
 - Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
