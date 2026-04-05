@@ -26,7 +26,12 @@ function toBar(raw: AlpacaBar): Bar {
     };
 }
 
-function getAlpacaCredentials() {
+interface AlpacaCredentials {
+    apiKey: string;
+    secretKey: string;
+}
+
+function getAlpacaCredentials(): AlpacaCredentials {
     const apiKey = process.env.ALPACA_API_KEY;
     const secretKey =
         process.env.ALPACA_API_SECRET ?? process.env.ALPACA_SECRET_KEY;

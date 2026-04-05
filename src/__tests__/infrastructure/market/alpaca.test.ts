@@ -182,9 +182,11 @@ describe('alpaca', () => {
                 json: async () => ({ bars: [], next_page_token: null }),
             });
 
-            await expect(
-                getBars({ symbol: 'AAPL', timeframe: '1Min' })
-            ).resolves.toEqual([]);
+            await getBars({ symbol: 'AAPL', timeframe: '1Min' });
+            const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
+            expect(
+                (init.headers as Record<string, string>)['APCA-API-SECRET-KEY']
+            ).toBe('legacy-secret');
         });
 
         it('bars가 없는 응답에도 빈 배열을 반환한다', async () => {
