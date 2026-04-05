@@ -29,22 +29,26 @@ function getGroupKey(name: string): string {
 }
 
 function groupItems(items: OverlayLegendItem[]): OverlayGroup[] {
-    const groups: OverlayGroup[] = [];
-    const seen = new Map<string, number>();
+    return items.reduce<{ groups: OverlayGroup[]; seen: Map<string, number> }>(
+        ({ groups, seen }, item) => {
+            const key = getGroupKey(item.name);
+            const existingIdx = seen.get(key);
 
-    for (const item of items) {
-        const key = getGroupKey(item.name);
-        const existingIdx = seen.get(key);
+            if (existingIdx !== undefined) {
+                const updatedGroups = groups.map((g, i) =>
+                    i === existingIdx ? { ...g, items: [...g.items, item] } : g
+                );
+                return { groups: updatedGroups, seen };
+            }
 
-        if (existingIdx !== undefined) {
-            groups[existingIdx].items.push(item);
-        } else {
-            seen.set(key, groups.length);
-            groups.push({ key, items: [item] });
-        }
-    }
-
-    return groups;
+            const nextSeen = new Map(seen).set(key, groups.length);
+            return {
+                groups: [...groups, { key, items: [item] }],
+                seen: nextSeen,
+            };
+        },
+        { groups: [], seen: new Map() }
+    ).groups;
 }
 
 function formatValue(value: number | null): string {

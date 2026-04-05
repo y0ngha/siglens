@@ -135,7 +135,7 @@ export function findBarIndex(bars: Bar[], time: number): number {
     let low = 0;
     let high = bars.length - 1;
 
-    for (; low <= high; ) {
+    while (low <= high) {
         const mid = Math.floor((low + high) / 2);
         const midTime = bars[mid].time;
 

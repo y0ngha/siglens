@@ -28,7 +28,8 @@ export function useOverlayLegend({
 
     const barsRef = useRef<Bar[]>(bars);
 
-    const barIndex = Math.max(0, crosshairIndex ?? bars.length - 1);
+    const barIndex =
+        bars.length === 0 ? -1 : Math.max(0, crosshairIndex ?? bars.length - 1);
 
     useEffect(() => {
         barsRef.current = bars;
