@@ -12,8 +12,17 @@ import {
     DMI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 
-const mockFetch = jest.fn();
-global.fetch = mockFetch;
+jest.mock('@/infrastructure/market/alpaca');
+
+import { AlpacaProvider } from '@/infrastructure/market/alpaca';
+
+const mockGetBars = jest.fn();
+(AlpacaProvider as jest.MockedClass<typeof AlpacaProvider>).mockImplementation(
+    () =>
+        ({ getBars: mockGetBars }) as unknown as InstanceType<
+            typeof AlpacaProvider
+        >
+);
 
 const mockBar = {
     time: 1705312200,
@@ -25,16 +34,13 @@ const mockBar = {
 };
 
 beforeEach(() => {
-    mockFetch.mockReset();
+    mockGetBars.mockReset();
 });
 
 describe('fetchBarsWithIndicators 함수는', () => {
     describe('정상 응답일 때', () => {
         it('bars와 indicators를 포함한 BarsData를 반환한다', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ bars: [mockBar], hasMore: false }),
-            });
+            mockGetBars.mockResolvedValueOnce([mockBar]);
 
             const result = await fetchBarsWithIndicators(
                 'AAPL',
@@ -71,10 +77,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
         });
 
         it('bar가 1개일 때 기간 기반 인디케이터의 첫 번째 값은 null이다', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ bars: [mockBar], hasMore: false }),
-            });
+            mockGetBars.mockResolvedValueOnce([mockBar]);
 
             const result = await fetchBarsWithIndicators(
                 'AAPL',
@@ -105,10 +108,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
                 { length: RSI_DEFAULT_PERIOD - 1 },
                 (_, i) => ({ ...mockBar, time: mockBar.time + i * 60 })
             );
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ bars: shortBars, hasMore: false }),
-            });
+            mockGetBars.mockResolvedValueOnce(shortBars);
 
             const result = await fetchBarsWithIndicators(
                 'AAPL',
@@ -123,10 +123,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
                 { length: MACD_SLOW_PERIOD - 1 },
                 (_, i) => ({ ...mockBar, time: mockBar.time + i * 60 })
             );
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ bars: shortBars, hasMore: false }),
-            });
+            mockGetBars.mockResolvedValueOnce(shortBars);
 
             const result = await fetchBarsWithIndicators(
                 'AAPL',
@@ -143,10 +140,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
                 { length: BOLLINGER_DEFAULT_PERIOD - 1 },
                 (_, i) => ({ ...mockBar, time: mockBar.time + i * 60 })
             );
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ bars: shortBars, hasMore: false }),
-            });
+            mockGetBars.mockResolvedValueOnce(shortBars);
 
             const result = await fetchBarsWithIndicators(
                 'AAPL',
@@ -163,10 +157,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
                 { length: DMI_DEFAULT_PERIOD - 1 },
                 (_, i) => ({ ...mockBar, time: mockBar.time + i * 60 })
             );
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ bars: shortBars, hasMore: false }),
-            });
+            mockGetBars.mockResolvedValueOnce(shortBars);
 
             const result = await fetchBarsWithIndicators(
                 'AAPL',
@@ -178,62 +169,30 @@ describe('fetchBarsWithIndicators 함수는', () => {
             );
         });
 
-        it('symbol과 timeframe으로 올바른 URL을 요청한다', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ bars: [], hasMore: false }),
-            });
+        it('symbol과 timeframe으로 올바른 파라미터를 AlpacaProvider에 전달한다', async () => {
+            mockGetBars.mockResolvedValueOnce([]);
 
             await fetchBarsWithIndicators('TSLA', DEFAULT_TIMEFRAME);
 
-            const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
-            expect(url).toContain('symbol=TSLA');
-            expect(url).toContain(`timeframe=${DEFAULT_TIMEFRAME}`);
-            expect(url).toContain(
-                `limit=${TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME]}`
+            expect(mockGetBars).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    symbol: 'TSLA',
+                    timeframe: DEFAULT_TIMEFRAME,
+                    limit: TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME] + 1,
+                })
             );
-        });
-
-        it('symbol을 URL 인코딩하여 요청한다', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ bars: [], hasMore: false }),
-            });
-
-            await fetchBarsWithIndicators('BRK A', DEFAULT_TIMEFRAME);
-
-            const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
-            expect(url).toContain('symbol=BRK%20A');
-        });
-
-        it('signal을 fetch 옵션으로 전달한다', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: true,
-                json: async () => ({ bars: [], hasMore: false }),
-            });
-
-            const controller = new AbortController();
-            await fetchBarsWithIndicators(
-                'AAPL',
-                DEFAULT_TIMEFRAME,
-                controller.signal
-            );
-
-            const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
-            expect(init.signal).toBe(controller.signal);
         });
     });
 
-    describe('응답이 ok가 아닐 때', () => {
-        it('에러를 던진다', async () => {
-            mockFetch.mockResolvedValueOnce({
-                ok: false,
-                status: 500,
-            });
+    describe('AlpacaProvider가 에러를 던질 때', () => {
+        it('에러를 전파한다', async () => {
+            mockGetBars.mockRejectedValueOnce(
+                new Error('Failed to fetch bars')
+            );
 
             await expect(
                 fetchBarsWithIndicators('AAPL', DEFAULT_TIMEFRAME)
-            ).rejects.toThrow('데이터를 불러오지 못했습니다 (500)');
+            ).rejects.toThrow('Failed to fetch bars');
         });
     });
 });

@@ -8,7 +8,7 @@ import type {
     Bar,
     IndicatorResult,
 } from '@/domain/types';
-import { postAnalyze } from '@/infrastructure/market/analysisApi';
+import { analyzeAction } from '@/app/actions/analyzeAction';
 
 interface UseAnalysisOptions {
     symbol: string;
@@ -59,7 +59,7 @@ export function useAnalysis({
         Error,
         AnalyzeVariables
     >({
-        mutationFn: postAnalyze,
+        mutationFn: analyzeAction,
     });
 
     // Derived variables
