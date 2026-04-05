@@ -37,11 +37,10 @@ const mockBarsData: BarsData = {
     },
 };
 
-beforeEach(() => {
-    mockFetchBarsWithIndicators.mockReset();
-});
-
 describe('getBarsAction 함수는', () => {
+    beforeEach(() => {
+        mockFetchBarsWithIndicators.mockReset();
+    });
     describe('정상 응답일 때', () => {
         it('fetchBarsWithIndicators에 올바른 인자를 전달하고 결과를 그대로 반환한다', async () => {
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);

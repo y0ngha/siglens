@@ -61,11 +61,10 @@ const mockResult: RunAnalysisResult = {
     candlePatterns: [],
 };
 
-beforeEach(() => {
-    mockRunAnalysis.mockReset();
-});
-
 describe('analyzeAction 함수는', () => {
+    beforeEach(() => {
+        mockRunAnalysis.mockReset();
+    });
     describe('정상 응답일 때', () => {
         it('runAnalysis에 variables를 그대로 전달하고 결과를 반환한다', async () => {
             mockRunAnalysis.mockResolvedValueOnce(mockResult);

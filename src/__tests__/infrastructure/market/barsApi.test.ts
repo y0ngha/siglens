@@ -33,11 +33,10 @@ const mockBar = {
     volume: 1000000,
 };
 
-beforeEach(() => {
-    mockGetBars.mockReset();
-});
-
 describe('fetchBarsWithIndicators 함수는', () => {
+    beforeEach(() => {
+        mockGetBars.mockReset();
+    });
     describe('정상 응답일 때', () => {
         it('bars와 indicators를 포함한 BarsData를 반환한다', async () => {
             mockGetBars.mockResolvedValueOnce([mockBar]);
