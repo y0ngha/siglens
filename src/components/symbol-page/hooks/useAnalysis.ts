@@ -7,11 +7,13 @@ import type {
     AnalyzeVariables,
     Bar,
     IndicatorResult,
+    Timeframe,
 } from '@/domain/types';
 import { analyzeAction } from '@/infrastructure/market/analyzeAction';
 
 interface UseAnalysisOptions {
     symbol: string;
+    timeframe: Timeframe;
     initialAnalysis: AnalysisResponse;
     /**
      * 서버에서 초기 AI 분석이 실패했는지 여부.
@@ -40,6 +42,7 @@ interface UseAnalysisResult {
 
 export function useAnalysis({
     symbol,
+    timeframe,
     initialAnalysis,
     initialAnalysisFailed,
     timeframeChangeCount,
@@ -48,6 +51,7 @@ export function useAnalysis({
 }: UseAnalysisOptions): UseAnalysisResult {
     // Refs
     const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
+    const latestTimeframeRef = useRef<Timeframe>(timeframe);
     const prevTimeframeChangeCountRef = useRef(0);
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
     // 이후 렌더링에서 이 값이 변경되더라도 마운트 시 한 번만 사용된다.
@@ -59,7 +63,8 @@ export function useAnalysis({
         Error,
         AnalyzeVariables
     >({
-        mutationFn: analyzeAction,
+        mutationFn: variables =>
+            analyzeAction(variables, latestTimeframeRef.current),
     });
 
     // Derived variables
@@ -74,11 +79,12 @@ export function useAnalysis({
 
     // Effects
 
-    // symbol, bars, indicators의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
+    // symbol, bars, indicators, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
     // useLayoutEffect는 페인트 전에 동기적으로 실행되므로 useEffect보다 빠르게 갱신된다.
     useLayoutEffect(() => {
         latestRef.current = { symbol, bars, indicators };
+        latestTimeframeRef.current = timeframe;
     });
 
     // 서버에서 초기 AI 분석이 실패한 경우 마운트 직후 자동으로 재분석을 실행한다.
