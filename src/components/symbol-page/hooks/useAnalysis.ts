@@ -13,6 +13,7 @@ import { analyzeAction } from '@/infrastructure/market/analyzeAction';
 
 interface UseAnalysisOptions {
     symbol: string;
+    /** latestTimeframeRef를 통해 analyzeAction 호출 시 최신 timeframe 값을 읽기 위한 채널 */
     timeframe: Timeframe;
     initialAnalysis: AnalysisResponse;
     /**
