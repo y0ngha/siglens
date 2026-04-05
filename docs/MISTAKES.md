@@ -304,6 +304,16 @@ Review before implementation and ensure these are not repeated.
      ✅ import type { VolumeProfileResult } from '@/domain/indicators/volume-profile';
         const result: VolumeProfileResult | null = calculateVolumeProfile(bars);
 
+11.9. Interface fields declared in snake_case when they must be camelCase
+      → Rule: CONVENTIONS.md — interface fields must use camelCase; never declare external API fields as-is in domain types
+      → Even when API response objects use snake_case (e.g. YAML, JSON), domain interface fields must be transformed to camelCase
+      → Snake_case fields in domain interfaces create inconsistency and require remapping later
+      → Transformation from API snake_case to domain camelCase must happen in the infrastructure layer
+      ❌ interface AlpacaBarsResponse { next_page_token: string | null; ... }  // snake_case in domain interface
+      ✅ interface AlpacaBarsResponse { nextPageToken: string | null; ... }    // camelCase in domain interface
+      ❌ Test mock objects not synchronized after field rename (next_page_token → nextPageToken)
+      ✅ Update all mock objects used in tests to match the renamed field
+
 12. Implementation and documentation changes not synchronized
     → Rule: CONVENTIONS.md — when implementation changes structure/counts, update docs/DOMAIN.md and docs/DESIGN.md accordingly
     → When new constants are added (colors, dimensions, etc.), verify they are documented in the relevant design docs
