@@ -4,4 +4,3 @@
 - Violation: 예시
 - Rule: 예시
 - Context: 예시
-

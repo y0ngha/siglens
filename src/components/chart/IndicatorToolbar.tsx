@@ -303,7 +303,7 @@ export function IndicatorToolbar({
                                 aria-expanded={openDropdown === indicator.type}
                                 className={cn(
                                     indicatorButtonClass(indicator.active),
-                                    'w-12 shrink-0'
+                                    'min-w-12 shrink-0'
                                 )}
                             >
                                 {indicator.label}
@@ -330,7 +330,10 @@ export function IndicatorToolbar({
                             key={indicator.label}
                             type="button"
                             onClick={indicator.onToggle}
-                            className={indicatorButtonClass(indicator.visible)}
+                            className={cn(
+                                indicatorButtonClass(indicator.visible),
+                                'min-w-12 shrink-0'
+                            )}
                         >
                             {indicator.label}
                         </button>
