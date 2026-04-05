@@ -50,6 +50,11 @@
 - Rule: MISTAKES.md Tests rule 6 — `beforeEach/beforeAll` must be placed inside a `describe` block, not at module level
 - Context: `analyzeAction.test.ts`, `getBarsAction.test.ts`, and `barsApi.test.ts` all placed `beforeEach` at module top-level; moved each into the top-level `describe` block
 
+## [PR #187 Round 5 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `BarsResponse` interface remained in `domain/types.ts` after Route Handler deletion; no file imported it
+- Rule: MISTAKES.md Coding Paradigm rule 4 — leaving code that has no effect; orphaned type definitions add noise
+- Context: `BarsResponse` was previously used by the deleted `src/app/api/bars/route.ts`; after Server Action migration removed that file, the interface became unreachable dead code and was deleted from `domain/types.ts`
+
 ## [PR #186 | fix/174/symbol-page-initial-loading-performance | 2026-04-05]
 - Violation: 하드코딩된 `initialAnalysisFailed={true}`에 의도 주석 누락
 - Rule: FF.md Readability 1-A — 역할이 다른 코드는 분리, 코드의 의도가 명확히 드러나야 함
