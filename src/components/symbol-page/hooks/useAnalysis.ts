@@ -8,7 +8,7 @@ import type {
     Bar,
     IndicatorResult,
 } from '@/domain/types';
-import { analyzeAction } from '@/app/actions/analyzeAction';
+import { analyzeAction } from '@/infrastructure/market/analyzeAction';
 
 interface UseAnalysisOptions {
     symbol: string;
