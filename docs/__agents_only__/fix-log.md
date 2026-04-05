@@ -10,10 +10,6 @@
 - Rule: `src/__tests__/CLAUDE.md` — "Never mock domain functions — test them directly with real inputs"
 - Context: `analysisApi.test.ts` mocked the domain analysis functions to control test output; since domain functions are pure with no side effects, they must be called with real inputs and only external dependencies (AI API, file I/O) should be mocked
 
-## [PR #187 | refactor/130/server-action-migration | 2026-04-05]
-- Violation: `MODULE_LOAD_TIME` module-level constant used as `initialDataUpdatedAt` causing stale data in SPA navigation
-- Rule: FF.md Predictability — data freshness must be computed per component mount, not frozen at module load time
-
 ## [PR #189 | fix/176/alpaca-getBars-최신-데이터-반환 | 2026-04-05]
 - Violation: `AlpacaBarsResponse` interface declared `next_page_token` in snake_case instead of camelCase
 - Rule: CONVENTIONS.md — interface fields must be camelCase; snake_case fields from external APIs must be transformed in infrastructure layer
@@ -54,4 +50,33 @@
 - Violation: 하드코딩된 `initialAnalysisFailed={true}`에 의도 주석 누락
 - Rule: FF.md Readability 1-A — 역할이 다른 코드는 분리, 코드의 의도가 명확히 드러나야 함
 - Context: SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트에 위임하기 위해 `true`로 하드코딩했으나, 코드만으로는 의도를 파악하기 어려워 주석을 추가했다.
+
+## [Issue #175 | feat/175/overlay-legend | 2026-04-05]
+- Violation: `prevChartRef` declared and assigned but never read — dead code in hook
+- Rule: FF.md Readability — dead code that serves no purpose must be removed; variables assigned but never consumed are noise
+- Context: `useOverlayLegend.ts` declared `prevChartRef = useRef<IChartApi | null>(null)` and assigned it inside a `useEffect` branch, but the ref value was never read anywhere; the entire declaration and assignment block was removed
+
+## [PR #191 | feat/175/overlay-legend | 2026-04-05]
+- Violation: `groupItems` utility function in `OverlayLegend.tsx` used `Array.push()` to mutate local arrays inside a `for...of` loop
+- Rule: CONVENTIONS.md Functional Programming — No mutation: `[...arr, item]` not `arr.push(item)`
+- Context: `groupItems` called `groups[existingIdx].items.push(item)` and `groups.push(...)` directly; refactored to `reduce` with spread operators to maintain immutability throughout
+
+## [PR #191 Round 2 | feat/175/overlay-legend | 2026-04-05]
+- Violation: `param.time as number` type assertion used without a type guard in `useOverlayLegend.ts`
+- Rule: MISTAKES.md TypeScript #3 — use type guards instead of `as` assertions; exception applies only to DOM elements and third-party library return types with a comment
+- Context: `crosshairMove` handler cast `param.time` with `as number` despite `Time` being a union (`UTCTimestamp | BusinessDay | string`); replaced with `typeof param.time === 'number'` guard to ensure runtime safety
+
+- Violation: `Math.max(0, crosshairIndex ?? bars.length - 1)` wraps a potential sentinel `-1` value, silently converting it to `0`
+- Rule: MISTAKES.md Domain Functions #9 — sentinel values must propagate unchanged; `Math.max` must not wrap a value that can be `-1`
+- Context: `barIndex` derivation in `useOverlayLegend.ts` used `Math.max(0, crosshairIndex ?? ...)` which converts `crosshairIndex = -1` (returned by `findBarIndex` for empty bars) to `0`, producing a wrong index; replaced with explicit null/negative guard chain
+
+## [PR #191 Round 4 | feat/175/overlay-legend | 2026-04-06]
+- Violation: `resolveBarIndex` lacked an upper bound guard for `crosshairIndex >= bars.length`, leaving the function contract incomplete
+- Rule: FF.md Predictability — pure utility functions must handle all valid input ranges explicitly so callers cannot receive out-of-bounds results
+- Context: `overlayLabelUtils.ts` `resolveBarIndex` guarded for null and negative indices but not for indices beyond array bounds; added `if (crosshairIndex >= bars.length) return bars.length - 1` to complete the guard chain
+
+## [PR #191 Round 3 | feat/175/overlay-legend | 2026-04-06]
+- Violation: Test comment described `time=250` (tie-break case) but the test body used `time=260` (unambiguous nearest-bar case); the actual tie-break behavior was untested
+- Rule: CONVENTIONS.md Test Rules — each `it()` must accurately describe and verify exactly one behavior; misleading comments and untested edge cases must be corrected
+- Context: `overlayLabelUtils.test.ts` '중간값일 때' block had a comment about equal-distance tie-break but tested an unambiguous `time=260` input; fixed the comment and added a dedicated '두 후보와 거리가 동일할 때' block verifying that `findBarIndex` returns the lower array index (`low`) when distances are equal
 

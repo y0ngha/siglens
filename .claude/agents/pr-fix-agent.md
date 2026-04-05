@@ -5,12 +5,6 @@ permissionMode: bypassPermissions
 model: sonnet
 memory: project
 tools: Read, Write, Edit, Bash, Glob, Grep, WebFetch
-skills:
-  - frontend-design
-  - vercel-react-best-practices
-  - web-design-guidelines
-  - typescript-advanced-types
-  - next-best-practices
 ---
 
 ## Overview

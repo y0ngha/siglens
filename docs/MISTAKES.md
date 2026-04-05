@@ -129,51 +129,57 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 1. Props interface separated from component by other definitions
    → Props interface must be immediately above the component function
 
-2. Managing timeframe as a URL query parameter
+2. Hook declaration order violated
+   → Custom hooks must follow: useState → useRef → derived variables (useMemo/const) → useEffect
+   → Placing useMemo or derived const between useEffect blocks breaks the convention
+   ❌ useState(...); useEffect(...); const derived = ...; useEffect(...);
+   ✅ useState(...); useRef(...); const derived = ...; useEffect(...); useEffect(...);
+
+3. Managing timeframe as a URL query parameter
    → Manage as client state only
 
-3. new Date() in Server Component → hydration mismatch
+4. new Date() in Server Component → hydration mismatch
    → Extract into a 'use client' component or add suppressHydrationWarning
 
-4. Side effects inside setState updater functions
+5. Side effects inside setState updater functions
    → Updaters run twice in Strict Mode; side effects must be placed outside
 
-5. Stale closure state instead of functional setState
+6. Stale closure state instead of functional setState
    ❌ const next = new Set(visiblePatterns); setVisiblePatterns(next);
    ✅ setVisiblePatterns(prev => { const next = new Set(prev); ...; return next; });
 
-6. Nesting interactive elements (button-in-button)
+7. Nesting interactive elements (button-in-button)
    → HTML spec prohibits interactive content inside interactive content
 
-7. External callback prop in useEffect dependency array → infinite loops
+8. External callback prop in useEffect dependency array → infinite loops
    → Use useEffectEvent to wrap callback props
 
-8. useState lazy initializer derives value from props
+9. useState lazy initializer derives value from props
    → Initializer runs only once; use useEffect to sync when props change
 
-9. Missing aria-expanded on accordion triggers
+10. Missing aria-expanded on accordion triggers
 
-10. Component managing its own external margin
+11. Component managing its own external margin
     → External spacing belongs to the caller, not the component
 
-11. Unused Tailwind classes (e.g. grid classes on flex containers)
+12. Unused Tailwind classes (e.g. grid classes on flex containers)
     → Verify parent layout model before applying layout-specific classes
 
-12. Props declared but not connected to callbacks (latent bugs)
+13. Props declared but not connected to callbacks (latent bugs)
     → If a callback prop exists, it must actually be invoked
 
-13. Repeating identical JSX structure 2+ times
+14. Repeating identical JSX structure 2+ times
     → Extract to a data array + .map() pattern
 
-14. DOM event listener in useEffect instead of custom hook
+15. DOM event listener in useEffect instead of custom hook
     → Extract to useOnClickOutside, useEscapeKey, etc.
 
-15. Inline styles for dynamic runtime values
+16. Inline styles for dynamic runtime values
     → Use CSS custom properties with Tailwind arbitrary-value syntax
     ❌ style={{ width: `${px}px` }}
     ✅ style={{ '--w': `${px}px` }} className="md:w-[var(--w)]"
 
-16. Custom hook params missing optional properties present in sibling hooks
+17. Custom hook params missing optional properties present in sibling hooks
     → All hooks in the same family must accept consistent parameter patterns
 ```
 
@@ -203,6 +209,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 7. Missing mandatory fields in skill markdown files
    → All required interface fields must be present in frontmatter and body
+
+8. Module-level constants frozen at load time instead of computed per mount
+   → Data freshness requires per-component timestamps, not frozen module-load values
+   ❌ const MODULE_LOAD_TIME = Date.now();  // SPA nav: all mounts see the same old timestamp
+   ✅ const time = useState(() => Date.now())[0];  // each mount captures its own timestamp
+
+9. Sentinel values wrapped in functions that silently break the contract
+   → Sentinel values (-1, null, undefined) must propagate unchanged through call chains
+   ❌ Math.max(0, sentinel ?? fallback)  // Math.max converts -1 to 0, breaking sentinel behavior
+   ✅ sentinel === -1 ? -1 : Math.max(0, sentinel)  // explicit guard before wrapping
 ```
 
 ---
