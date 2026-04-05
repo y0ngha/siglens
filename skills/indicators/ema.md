@@ -1,6 +1,7 @@
 ---
 name: EMA Signal Guide
 description: EMA signal interpretation guide — support/resistance, slope, crossover, and multi-period alignment
+type: indicator_guide
 indicators: ['ema']
 confidence_weight: 0.8
 ---

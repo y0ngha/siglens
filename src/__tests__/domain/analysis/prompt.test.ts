@@ -1665,6 +1665,100 @@ describe('prompt', () => {
         });
     });
 
+    describe('분석 요청 섹션 - Indicator Guide Writing Rules', () => {
+        it('indicator_guide skill이 있을 때 signals Writing Rules for Indicator Guides 섹션이 포함된다', () => {
+            const skill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain(
+                'signals Writing Rules for Indicator Guides'
+            );
+        });
+
+        it('indicator_guide skill이 없을 때 signals Writing Rules for Indicator Guides 섹션이 포함되지 않는다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).not.toContain(
+                'signals Writing Rules for Indicator Guides'
+            );
+        });
+
+        it('indicator_guide skill 이름 목록이 분석 요청에 포함된다', () => {
+            const skills = [
+                makeSkill({
+                    type: 'indicator_guide',
+                    name: 'RSI Signal Guide',
+                }),
+                makeSkill({
+                    type: 'indicator_guide',
+                    name: 'MACD Signal Guide',
+                }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                skills
+            );
+            expect(result).toContain('Indicator guide list to apply:');
+            expect(result).toContain('- RSI Signal Guide');
+            expect(result).toContain('- MACD Signal Guide');
+        });
+
+        it('indicator_guide Writing Rules는 pattern Writing Rules보다 앞에 위치한다', () => {
+            const indicatorGuideSkill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const patternSkill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [indicatorGuideSkill, patternSkill]
+            );
+            const indicatorGuideIndex = result.indexOf(
+                'signals Writing Rules for Indicator Guides'
+            );
+            const patternWritingRulesIndex = result.indexOf(
+                'patternSummaries Writing Rules'
+            );
+            expect(indicatorGuideIndex).toBeLessThan(patternWritingRulesIndex);
+        });
+
+        it('confidenceWeight가 0.5 미만인 indicator_guide skill은 Writing Rules 목록에 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'indicator_guide',
+                name: 'Low Confidence Guide',
+                confidenceWeight: TEST_BELOW_MIN_CONFIDENCE,
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain(
+                'signals Writing Rules for Indicator Guides'
+            );
+            expect(result).not.toContain('- Low Confidence Guide');
+        });
+    });
+
     describe('Skills 섹션 - type이 strategy인 skill일 때', () => {
         const strategySkill = makeSkill({
             type: 'strategy',

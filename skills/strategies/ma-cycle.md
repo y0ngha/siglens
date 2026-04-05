@@ -1,6 +1,7 @@
 ---
 name: 이동평균선 대순환 분석
 description: 단기/중기/장기 이동평균선 배열로 스테이지를 판별하고 그랜빌의 법칙에 따른 매매 신호를 분석하는 전략
+type: strategy
 indicators: ['ma']
 confidence_weight: 0.8
 ---

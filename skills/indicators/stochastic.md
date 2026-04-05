@@ -1,6 +1,7 @@
 ---
 name: Stochastic Signal Guide
 description: Stochastic(14,3,3) signal interpretation guide — overbought/oversold, %K/%D crossover, and divergence
+type: indicator_guide
 indicators: ['stochastic']
 confidence_weight: 0.8
 ---
