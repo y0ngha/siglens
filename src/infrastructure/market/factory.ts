@@ -12,11 +12,13 @@ const MARKET_PROVIDER_MAP: Record<
 
 const DEFAULT_MARKET_PROVIDER: MarketDataProviderType = 'fmp';
 
+function isProviderType(raw: string): raw is MarketDataProviderType {
+    return raw in MARKET_PROVIDER_MAP;
+}
+
 export function createMarketDataProvider(): MarketDataProvider {
     const raw = process.env.MARKET_DATA_PROVIDER;
     const providerType =
-        raw && raw in MARKET_PROVIDER_MAP
-            ? (raw as MarketDataProviderType)
-            : DEFAULT_MARKET_PROVIDER;
+        raw && isProviderType(raw) ? raw : DEFAULT_MARKET_PROVIDER;
     return MARKET_PROVIDER_MAP[providerType]();
 }

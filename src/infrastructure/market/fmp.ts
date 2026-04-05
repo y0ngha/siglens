@@ -64,6 +64,8 @@ export class FmpProvider implements MarketDataProvider {
         return `${FMP_BASE_URL}/historical-chart/${fmpTimeframe}/${symbol}?${params}`;
     }
 
+    // FMP API는 limit 파라미터를 지원하지 않습니다.
+    // before 파라미터만 to 쿼리로 변환합니다.
     async getBars(options: GetBarsOptions): Promise<Bar[]> {
         const { before } = options;
 
@@ -83,6 +85,10 @@ export class FmpProvider implements MarketDataProvider {
         // res.json() returns unknown; asserting shape against FMP API contract
         const raw = (await res.json()) as FmpBar[];
 
-        return raw.map(r => this.toBar(r)).toReversed();
+        if (!Array.isArray(raw)) {
+            return [];
+        }
+
+        return [...raw.map(r => this.toBar(r))].reverse();
     }
 }
