@@ -537,21 +537,7 @@ return NextResponse.json({ error: '...' }, { status: 400 });
 
 ## Layer Dependency Rules
 
-```
-domain/         No external library imports — pure TypeScript functions only
-infrastructure/ May import from domain only
-components/     May import from domain and lib
-                Component files (.tsx): no direct imports from infrastructure
-                Hook files (hooks/): may import fetch functions from infrastructure
-                  → only for connecting queryFn/mutationFn in useQuery/useMutation
-app/            May import from infrastructure, domain, and lib
-lib/            External UI utility wrappers (clsx, tailwind-merge, etc.)
-                For wrapping external packages that cannot go in domain
-                Pure functions only — no side effects
-                May include React Query key factories (QUERY_KEYS etc.)
-                React Query config files shared across the app may also live in lib/
-                May import domain types (e.g. Timeframe) for type-safe key factories
-```
+`→ see docs/ARCHITECTURE.md` for the authoritative layer dependency rules and folder structure.
 
 ---
 
