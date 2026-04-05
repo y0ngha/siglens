@@ -1,4 +1,4 @@
-import { getBars } from '@/infrastructure/market/alpaca';
+import { createMarketDataProvider } from '@/infrastructure/market/factory';
 import { calculateIndicators } from '@/domain/indicators';
 import {
     DEFAULT_TIMEFRAME,
@@ -31,7 +31,8 @@ interface Props {
 export default async function SymbolPage({ params }: Props) {
     const { symbol } = await params;
 
-    const bars = await getBars({
+    const provider = createMarketDataProvider();
+    const bars = await provider.getBars({
         symbol,
         timeframe: DEFAULT_TIMEFRAME,
         limit: DEFAULT_BARS_LIMIT,
