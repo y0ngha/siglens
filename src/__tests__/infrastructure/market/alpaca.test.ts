@@ -12,18 +12,18 @@ const mockBar = {
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-beforeEach(() => {
-    process.env.ALPACA_API_KEY = 'test-key';
-    process.env.ALPACA_API_SECRET = 'test-secret';
-    mockFetch.mockReset();
-});
-
-afterEach(() => {
-    delete process.env.ALPACA_API_KEY;
-    delete process.env.ALPACA_API_SECRET;
-});
-
 describe('alpaca', () => {
+    beforeEach(() => {
+        process.env.ALPACA_API_KEY = 'test-key';
+        process.env.ALPACA_API_SECRET = 'test-secret';
+        mockFetch.mockReset();
+    });
+
+    afterEach(() => {
+        delete process.env.ALPACA_API_KEY;
+        delete process.env.ALPACA_API_SECRET;
+    });
+
     describe('getBars', () => {
         it('ALPACA_API_KEY가 없으면 에러를 던진다', async () => {
             delete process.env.ALPACA_API_KEY;
@@ -34,7 +34,7 @@ describe('alpaca', () => {
             );
         });
 
-        it('ALPACA_API_SECRET이 없으면 에러를 던진다', async () => {
+        it('ALPACA_API_SECRET과 ALPACA_SECRET_KEY가 모두 없으면 에러를 던진다', async () => {
             delete process.env.ALPACA_API_SECRET;
             await expect(
                 getBars({ symbol: 'AAPL', timeframe: '1Min' })

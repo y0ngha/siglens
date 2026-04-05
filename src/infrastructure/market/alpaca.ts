@@ -17,20 +17,6 @@ interface AlpacaBarsRawResponse {
     next_page_token: string | null;
 }
 
-interface AlpacaBarsResponse {
-    symbol: string;
-    bars: AlpacaBar[];
-    nextPageToken: string | null;
-}
-
-function toAlpacaBarsResponse(raw: AlpacaBarsRawResponse): AlpacaBarsResponse {
-    return {
-        symbol: raw.symbol,
-        bars: raw.bars,
-        nextPageToken: raw.next_page_token,
-    };
-}
-
 function toBar(raw: AlpacaBar): Bar {
     return {
         time: Math.floor(new Date(raw.t).getTime() / 1000),
@@ -87,9 +73,8 @@ export async function getBars(
         throw new Error(`Alpaca API error: ${res.status} ${res.statusText}`);
     }
 
-    const data = toAlpacaBarsResponse(
-        (await res.json()) as AlpacaBarsRawResponse
-    );
+    // res.json() returns unknown; asserting shape against Alpaca API contract
+    const raw = (await res.json()) as AlpacaBarsRawResponse;
 
-    return (data.bars ?? []).map(toBar);
+    return (raw.bars ?? []).map(toBar);
 }
