@@ -56,11 +56,6 @@
 - Rule: FF.md Readability — dead code that serves no purpose must be removed; variables assigned but never consumed are noise
 - Context: `useOverlayLegend.ts` declared `prevChartRef = useRef<IChartApi | null>(null)` and assigned it inside a `useEffect` branch, but the ref value was never read anywhere; the entire declaration and assignment block was removed
 
-## [PR #191 | feat/175/overlay-legend | 2026-04-05]
-- Violation: `groupItems` utility function in `OverlayLegend.tsx` used `Array.push()` to mutate local arrays inside a `for...of` loop
-- Rule: CONVENTIONS.md Functional Programming — No mutation: `[...arr, item]` not `arr.push(item)`
-- Context: `groupItems` called `groups[existingIdx].items.push(item)` and `groups.push(...)` directly; refactored to `reduce` with spread operators to maintain immutability throughout
-
 ## [PR #191 Round 2 | feat/175/overlay-legend | 2026-04-05]
 - Violation: `param.time as number` type assertion used without a type guard in `useOverlayLegend.ts`
 - Rule: MISTAKES.md TypeScript #3 — use type guards instead of `as` assertions; exception applies only to DOM elements and third-party library return types with a comment
@@ -79,4 +74,21 @@
 - Violation: Test comment described `time=250` (tie-break case) but the test body used `time=260` (unambiguous nearest-bar case); the actual tie-break behavior was untested
 - Rule: CONVENTIONS.md Test Rules — each `it()` must accurately describe and verify exactly one behavior; misleading comments and untested edge cases must be corrected
 - Context: `overlayLabelUtils.test.ts` '중간값일 때' block had a comment about equal-distance tie-break but tested an unambiguous `time=260` input; fixed the comment and added a dedicated '두 후보와 거리가 동일할 때' block verifying that `findBarIndex` returns the lower array index (`low`) when distances are equal
+
+## [feat/157/fmp-provider | 2026-04-06]
+- Violation: `eslint-disable-next-line @typescript-eslint/no-unused-vars` comment used on `_now` parameter in `FmpProvider.getBars`
+- Rule: CONVENTIONS.md — eslint-disable comments are absolutely prohibited; the root cause must be fixed instead
+- Context: `fmp.ts` declared `_now?: string` to match the `MarketDataProvider` interface but never used it; since the parameter is optional in the interface, it can be omitted from the implementation entirely; the parameter was removed to fix the root cause without a suppress comment
+
+- Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
+- Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
+- Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
+
+- Violation: Two separate `import type` statements from the same `'./types'` module in both `alpaca.ts` and `fmp.ts`
+- Rule: FF.md Readability — redundant import declarations from the same module must be merged into one
+- Context: Both `alpaca.ts` and `fmp.ts` had `import type { GetBarsOptions, Bar } from './types'` and `import type { MarketDataProvider } from './types'` on separate lines; merged into single import statements
+
+- Violation: Module-level `(createMarketDataProvider as jest.Mock).mockReturnValue(...)` duplicated the identical setup already present in `beforeEach` in `barsApi.test.ts`
+- Rule: CONVENTIONS.md Test Rules — mock setup belongs in `beforeEach` only; module-level setup creates hidden duplicate state that is redundant after `beforeEach` runs
+- Context: `barsApi.test.ts` called `mockReturnValue` both at module level (lines 22–24) and inside `beforeEach` (lines 38–40); removed the module-level call, leaving `beforeEach` as the single source of mock initialization
 

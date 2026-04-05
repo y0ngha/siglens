@@ -58,6 +58,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ fetchBars (no longer a fetch — now a Server Action)
     ❌ ApiResponse (no longer an API route response)
     ✅ getBarsAction, ActionResult (accurate to new implementation)
+
+13. Mutating arrays or objects instead of creating new copies
+    → Use spread operators, .map(), .filter(), .reduce(), or immutable methods (.toReversed())
+    ❌ groups.push(...); groups[idx].items.push(item); arr.reverse()
+    ✅ [...groups, newItem]; groups.map((g, i) => i === idx ? { ...g, items: [...g.items, item] } : g); arr.toReversed()
+    → Applies to all array mutations: push, pop, shift, unshift, splice, reverse, sort
 ```
 
 ---
