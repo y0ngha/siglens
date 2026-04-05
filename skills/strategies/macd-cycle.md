@@ -1,7 +1,7 @@
 ---
 name: MACD 대순환 분석
 description: 3개의 EMA(단기/중기/장기)와 3개의 MACD를 조합하여 6단계 스테이지 순환을 분석하는 전략
-type: indicator_guide
+type: strategy
 category: neutral
 indicators: ['macd', 'ema']
 confidence_weight: 0.75
