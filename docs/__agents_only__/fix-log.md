@@ -55,3 +55,18 @@
 - Rule: FF.md Readability 1-A — 역할이 다른 코드는 분리, 코드의 의도가 명확히 드러나야 함
 - Context: SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트에 위임하기 위해 `true`로 하드코딩했으나, 코드만으로는 의도를 파악하기 어려워 주석을 추가했다.
 
+## [Issue #175 | feat/175/overlay-legend | 2026-04-05]
+- Violation: `while` loop with `let` index variables (`low`, `high`) reassigned in loop body instead of `for` loop
+- Rule: CONVENTIONS.md — use `for` loops instead of `while` with mutable index variables; iteration structure should be expressed in the loop header
+- Context: `findBarIndex` binary search in `overlayLabelUtils.ts` used a `while` loop with separately declared `let low`/`let high` and index reassignment inside the body; converted to `for (; low <= high; )` with the boundary approximation logic preserved after the loop
+
+## [Issue #175 | feat/175/overlay-legend | 2026-04-05]
+- Violation: `prevChartRef` declared and assigned but never read — dead code in hook
+- Rule: FF.md Readability — dead code that serves no purpose must be removed; variables assigned but never consumed are noise
+- Context: `useOverlayLegend.ts` declared `prevChartRef = useRef<IChartApi | null>(null)` and assigned it inside a `useEffect` branch, but the ref value was never read anywhere; the entire declaration and assignment block was removed
+
+## [Issue #175 | feat/175/overlay-legend | 2026-04-05]
+- Violation: Derived variable `barIndex` declared between two `useEffect` calls, violating hook declaration order
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — order must be: useState → useRef → derived variables → useEffect
+- Context: `useOverlayLegend.ts` placed `const barIndex = ...` between the `barsRef` update effect and the crosshair subscription effect; moved above the first `useEffect` to follow the correct declaration order
+
