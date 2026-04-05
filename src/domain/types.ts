@@ -127,17 +127,6 @@ export type SignalType =
     | 'bollinger_squeeze'
     | 'dmi_bullish_trend'
     | 'dmi_bearish_trend'
-    | 'stochastic_overbought'
-    | 'stochastic_oversold'
-    | 'stoch_rsi_overbought'
-    | 'stoch_rsi_oversold'
-    | 'cci_overbought'
-    | 'cci_oversold'
-    | 'ichimoku_bullish'
-    | 'ichimoku_bearish'
-    | 'ichimoku_cloud_breakout'
-    | 'volume_profile_poc_support'
-    | 'volume_profile_poc_resistance'
     | 'pattern'
     | 'skill';
 
