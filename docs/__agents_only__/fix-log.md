@@ -20,6 +20,21 @@
 - Rule: MISTAKES.md rule 12 — implementation changes must be accompanied by documentation updates
 - Context: Data flow section in ARCHITECTURE.md still showed `/api/bars` and `/api/analyze` HTTP calls; SIGLENS_API.md still documented GET/POST Route Handler specs; both updated to reflect Server Action architecture
 
+## [PR #187 Round 2 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `LOOK_AHEAD_COUNT` + `trimmedBars` + `resolvedLimit` fallback in `barsApi.ts` are dead code after `hasMore` was removed
+- Rule: MISTAKES.md 9.5 — logic with no practical effect adds noise and obscures intent
+- Context: After Server Action migration removed `hasMore` from the response, the code requesting `limit + 1` bars and then slicing back to `limit` served no purpose; simplified to request `limit` directly
+
+## [PR #187 Round 2 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `postAnalyze` function name retained after HTTP POST was replaced by Server Action
+- Rule: FF.md Predictability 2-A — function names must accurately reflect what the function does
+- Context: `analysisApi.ts` no longer performs an HTTP POST; renamed to `runAnalysis` and updated all call sites in `analyzeAction.ts` and `analysisApi.test.ts`
+
+## [PR #187 Round 2 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: Missing test for `indicators` undefined case in `analysisApi.test.ts`
+- Rule: CONVENTIONS.md — 100% coverage required for infrastructure layer
+- Context: Validation guard in `runAnalysis` checked `!indicators` but no test exercised that branch; added the missing `it` case
+
 ## [PR #186 | fix/174/symbol-page-initial-loading-performance | 2026-04-05]
 - Violation: 하드코딩된 `initialAnalysisFailed={true}`에 의도 주석 누락
 - Rule: FF.md Readability 1-A — 역할이 다른 코드는 분리, 코드의 의도가 명확히 드러나야 함

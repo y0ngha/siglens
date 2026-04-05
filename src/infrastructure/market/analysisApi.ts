@@ -9,7 +9,7 @@ export interface AnalyzeRouteResponse extends AnalysisResponse {
     skillsDegraded: boolean;
 }
 
-export async function postAnalyze({
+export async function runAnalysis({
     symbol,
     bars,
     indicators,
@@ -23,7 +23,7 @@ export async function postAnalyze({
         .loadSkills()
         .then(loadedSkills => ({ skills: loadedSkills, skillsDegraded: false }))
         .catch((error: unknown) => {
-            console.error('[postAnalyze] Skills loading failed:', error);
+            console.error('[runAnalysis] Skills loading failed:', error);
             return { skills: [] as Skill[], skillsDegraded: true };
         });
 

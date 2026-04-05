@@ -1,5 +1,9 @@
-import { postAnalyze } from '@/infrastructure/market/analysisApi';
-import type { AnalyzeVariables, RawAnalysisResponse } from '@/domain/types';
+import { runAnalysis } from '@/infrastructure/market/analysisApi';
+import type {
+    AnalyzeVariables,
+    IndicatorResult,
+    RawAnalysisResponse,
+} from '@/domain/types';
 
 jest.mock('@/infrastructure/ai/factory');
 jest.mock('@/infrastructure/skills/loader');
@@ -69,7 +73,7 @@ const mockRawAnalysis: RawAnalysisResponse = {
     trendlines: [],
 };
 
-describe('postAnalyze 함수는', () => {
+describe('runAnalysis', () => {
     beforeEach(() => {
         mockAnalyze.mockReset();
         mockLoadSkills.mockReset();
@@ -80,7 +84,7 @@ describe('postAnalyze 함수는', () => {
             mockLoadSkills.mockResolvedValueOnce([]);
             mockAnalyze.mockResolvedValueOnce(mockRawAnalysis);
 
-            const result = await postAnalyze(mockVariables);
+            const result = await runAnalysis(mockVariables);
 
             expect(result.summary).toBe(mockRawAnalysis.summary);
             expect(result.trend).toBe(mockRawAnalysis.trend);
@@ -91,7 +95,7 @@ describe('postAnalyze 함수는', () => {
             mockLoadSkills.mockResolvedValueOnce([]);
             mockAnalyze.mockResolvedValueOnce(mockRawAnalysis);
 
-            await postAnalyze(mockVariables);
+            await runAnalysis(mockVariables);
 
             expect(mockAnalyze).toHaveBeenCalledTimes(1);
             const [prompt] = mockAnalyze.mock.calls[0] as [string];
@@ -113,7 +117,7 @@ describe('postAnalyze 함수는', () => {
             mockLoadSkills.mockResolvedValueOnce(mockSkills);
             mockAnalyze.mockResolvedValueOnce(mockRawAnalysis);
 
-            await postAnalyze(mockVariables);
+            await runAnalysis(mockVariables);
 
             const [prompt] = mockAnalyze.mock.calls[0] as [string];
             expect(prompt).toContain('Test Skill');
@@ -123,7 +127,7 @@ describe('postAnalyze 함수는', () => {
             mockLoadSkills.mockResolvedValueOnce([]);
             mockAnalyze.mockResolvedValueOnce(mockRawAnalysis);
 
-            const result = await postAnalyze(mockVariables);
+            const result = await runAnalysis(mockVariables);
 
             expect(result.skillsDegraded).toBe(false);
         });
@@ -136,7 +140,7 @@ describe('postAnalyze 함수는', () => {
             );
             mockAnalyze.mockResolvedValueOnce(mockRawAnalysis);
 
-            const result = await postAnalyze(mockVariables);
+            const result = await runAnalysis(mockVariables);
 
             expect(result.skillsDegraded).toBe(true);
         });
@@ -147,7 +151,7 @@ describe('postAnalyze 함수는', () => {
             );
             mockAnalyze.mockResolvedValueOnce(mockRawAnalysis);
 
-            await postAnalyze(mockVariables);
+            await runAnalysis(mockVariables);
 
             expect(mockAnalyze).toHaveBeenCalledTimes(1);
         });
@@ -156,13 +160,22 @@ describe('postAnalyze 함수는', () => {
     describe('필수 파라미터가 누락된 경우', () => {
         it('symbol이 없으면 에러를 던진다', async () => {
             await expect(
-                postAnalyze({ ...mockVariables, symbol: '' })
+                runAnalysis({ ...mockVariables, symbol: '' })
             ).rejects.toThrow('symbol, bars, and indicators are required');
         });
 
         it('bars가 비어있으면 에러를 던진다', async () => {
             await expect(
-                postAnalyze({ ...mockVariables, bars: [] })
+                runAnalysis({ ...mockVariables, bars: [] })
+            ).rejects.toThrow('symbol, bars, and indicators are required');
+        });
+
+        it('indicators가 없으면 에러를 던진다', async () => {
+            await expect(
+                runAnalysis({
+                    ...mockVariables,
+                    indicators: undefined as unknown as IndicatorResult,
+                })
             ).rejects.toThrow('symbol, bars, and indicators are required');
         });
     });
@@ -172,7 +185,7 @@ describe('postAnalyze 함수는', () => {
             mockLoadSkills.mockResolvedValueOnce([]);
             mockAnalyze.mockRejectedValueOnce(new Error('AI analysis failed'));
 
-            await expect(postAnalyze(mockVariables)).rejects.toThrow(
+            await expect(runAnalysis(mockVariables)).rejects.toThrow(
                 'AI analysis failed'
             );
         });

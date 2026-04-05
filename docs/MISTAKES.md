@@ -9,7 +9,7 @@ Review before implementation and ensure these are not repeated.
 
 ## Coding Paradigm
 
-```
+
 0. Repeating hardcoded literals and values in multiple locations
    → Extract to a single const and reference it in all places
    → Rule: FF.md Cohesion 3-B — same values defined in multiple places create maintenance risk
@@ -168,7 +168,7 @@ Review before implementation and ensure these are not repeated.
     ✅ const value = computeValue()  // named function
     ❌ render = condition ? (() => { ... 10 lines of computation ... })() : null  // IIFE in ternary: hard to scan
     ✅ render = condition ? renderComplexContent() : null
-```
+
 
 12. Using template literals with inline ternary for conditional classes instead of cn()
     → Rule: CONVENTIONS.md — conditional classNames must use cn() utility
@@ -185,13 +185,13 @@ Review before implementation and ensure these are not repeated.
     ✅ const buttonRefMap = useMemo(() => ({ indicator1: useRef(), indicator2: useRef() }), [])
     ❌ const handlers = { onClick: handleClick, onChange: handleChange };  // recreated every render
     ✅ const handlers = useMemo(() => ({ onClick: handleClick, onChange: handleChange }), [])
-```
+
 
 ---
 
 ## TypeScript
 
-```
+
 1. Using any type
    → Prohibited at compile-error level
 
@@ -344,13 +344,12 @@ Review before implementation and ensure these are not repeated.
     ✅ interface AnalyzeRouteResponse extends AnalysisResponse { skillsDegraded?: boolean }
     ✅ type RawAnalysisResponse = Omit<AnalysisResponse, 'confidenceWeight'>
        interface AIProvider { analyze(): RawAnalysisResponse }
-```
+
 
 ---
 
 ## Components
 
-```
 1. Missing 'use client'
    → Next.js 16 build error when useState/useEffect is used
 
@@ -547,13 +546,11 @@ Review before implementation and ensure these are not repeated.
     ❌ IndicatorToolbarProps lists all indicator prop pairs (bollingerVisible/onBollingerToggle, macdVisible/onMacdToggle, ...)
        adding a new indicator requires changes in 4+ places (interface, component, parent caller, constant arrays)
     ✅ Group related props: IndicatorToggleGroup { visible, onToggle } then map over indicator list
-```
 
 ---
 
 ## Domain Functions
 
-```
 0.5. Using const arrow functions for domain exports instead of function declarations
      → Rule: domain/CLAUDE.md — Always use `export function` (named function declaration)
      → Arrow function expressions lack hoisting and violate domain layer convention
@@ -626,13 +623,11 @@ Review before implementation and ensure these are not repeated.
      ✅ Every Signal instruction includes all 3+ fields: signal, direction, strength (and any other mandatory fields)
      ❌ Pattern type enum accepts only ['pattern'] but instructions use invalid values like 'strategy'
      ✅ Verify skill type field matches SkillType enum: either 'pattern' or omit the field entirely
-```
 
 ---
 
 ## Tests
 
-```
 1. Missing test file when creating a new file
    → domain/ and infrastructure/ files must always be committed with their test files
    → Add direct test cases when exporting a new function from an existing file
@@ -824,13 +819,11 @@ Review before implementation and ensure these are not repeated.
    ✅ Update all IndicatorResult mock objects in test fixtures to include volumeProfile: null (or appropriate test value)
    ❌ TypeScript compiler error when running tests: "Property 'volumeProfile' is missing in type ... but required in type 'IndicatorResult'"
    ✅ Compile succeeds after all test fixtures are updated to match the new interface shape
-```
 
 ---
 
 ## Lightweight Charts
 
-```
 1. Missing chart.remove() cleanup
    → Duplicate canvas on component remount
 
@@ -842,26 +835,22 @@ Review before implementation and ensure these are not repeated.
 
 4. Adding volume/RSI to the main pane
    → Always add to a separate pane (index 1, 2, ...)
-```
 
 ---
 
 ## ESLint
 
-```
 1. import/first violation
    → Writing export * before import in barrel files (index.ts)
    → Move imports to the top of the file
 
 2. Missing EOF newline
    → Auto-fixed by running yarn format
-```
 
 ---
 
 ## Layer Dependencies
 
-```
 1. Importing external libraries in domain
    → technicalindicators, lodash, etc. are all prohibited
 
@@ -891,4 +880,3 @@ Review before implementation and ensure these are not repeated.
       import { getBarsAction } from '@/app/actions'
    ✅ // components/symbol-page/hooks/useBars.ts
       import { fetchBars } from '@/infrastructure/market'  // import from infrastructure layer only
-```

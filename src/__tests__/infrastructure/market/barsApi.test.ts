@@ -178,7 +178,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
                 expect.objectContaining({
                     symbol: 'TSLA',
                     timeframe: DEFAULT_TIMEFRAME,
-                    limit: TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME] + 1,
+                    limit: TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME],
                 })
             );
         });
