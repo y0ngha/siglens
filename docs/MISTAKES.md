@@ -55,9 +55,9 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 12. Function/interface names become inaccurate after architectural changes
     → When replacing HTTP calls with Server Actions, renaming patterns, or moving code, update the names
-    ❌ postAnalyze (no longer makes a POST request)
-    ❌ AnalyzeRouteResponse (no longer a Route Handler response)
-    ✅ runAnalysis, RunAnalysisResult (accurate to new implementation)
+    ❌ fetchBars (no longer a fetch — now a Server Action)
+    ❌ ApiResponse (no longer an API route response)
+    ✅ getBarsAction, ActionResult (accurate to new implementation)
 ```
 
 ---
@@ -68,53 +68,53 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 1. Declaring types inside functions
    → Move to top of file
 
-1.5. Returning inline object types instead of named interfaces
+2. Returning inline object types instead of named interfaces
    → Define a named interface at the top of the file and use it as the return type
    → Improves readability, enables reuse, and documents the contract clearly
    ❌ function getAlpacaCredentials() { return { apiKey, secretKey }; }  // type inferred
    ✅ interface AlpacaCredentials { apiKey: string; secretKey: string; }
       function getAlpacaCredentials(): AlpacaCredentials { ... }
 
-2. Using `as` type assertions instead of type guards
+3. Using `as` type assertions instead of type guards
    → Use typeof, in, instanceof, or discriminated unions
    → Exception: DOM elements, third-party library return types (add comment explaining why)
 
-3. Indicator result types defined in indicator files instead of domain/types.ts
+4. Indicator result types defined in indicator files instead of domain/types.ts
    → All indicator result types belong in domain/types.ts
 
-4. Rewriting constant-derived values as literals in implementation code
+5. Rewriting constant-derived values as literals in implementation code
    → They won't update when the constant changes
    → expect() values in tests may use literals
 
-5. Hardcoding array indices that represent structural positions
+6. Hardcoding array indices that represent structural positions
    ❌ result.split('\n\n')[1]
    ✅ const SECTION_INDEX = 1; result.split('\n\n')[SECTION_INDEX]
 
-6. Using browser/Node global names as variable names (ESLint no-shadow)
+7. Using browser/Node global names as variable names (ESLint no-shadow)
    → window, document, location, event, name, length, screen
 
-7. Object.fromEntries return type mismatch
+8. Object.fromEntries return type mismatch
    → Type assertion required: Object.fromEntries(pairs) as Record<K, V>
 
-8. Missing fields in domain interface that exist in data source
+9. Missing fields in domain interface that exist in data source
    → When parsing new fields in infrastructure, add them to the domain interface immediately
 
-9. Unused/missing type imports
-   → Remove unused type imports; add missing ones for explicit annotations
-   → When TypeScript infers automatically, the import is unnecessary
+10. Unused/missing type imports
+    → Remove unused type imports; add missing ones for explicit annotations
+    → When TypeScript infers automatically, the import is unnecessary
 
-10. Implementation and documentation changes not synchronized
+11. Implementation and documentation changes not synchronized
     → When implementation changes, update docs/DOMAIN.md and docs/DESIGN.md
 
-11. Related interfaces with shared fields not linked by extends
+12. Related interfaces with shared fields not linked by extends
     ❌ interface B { ...all fields of A...; extra: string }
     ✅ interface B extends A { extra: string }
 
-12. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
+13. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
     → Use Record<keyof Interface, ...> to enforce sync at compile time
     → Route-layer concerns stay in route layer (e.g. skillsDegraded)
 
-13. Interface field declaration does not match runtime behavior
+14. Interface field declaration does not match runtime behavior
     → Required fields marked `?` in the interface or absent fields declared as required
     → When tests and implementation show a field is optional, update interface to `fieldName?`
     ❌ interface Bars { bars: BarData[] }  // but implementation checks bars ?? []
@@ -213,51 +213,51 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 1. Missing test file when creating a new domain/infrastructure file
    → Direct test cases required; indirect verification alone is insufficient
 
-1.5. Infrastructure file with 100% branch coverage not achieved
+2. Infrastructure file with 100% branch coverage not achieved
    → All conditional branches must have dedicated test cases
    → Check: optional chaining (?.),  nullish coalescing (??), if/else branches
    ❌ const secret = process.env.SECRET ?? process.env.SECRET_ALT;  // ALT-only path untested
    ✅ Add a test case that sets only the fallback path and verifies it
 
-2. Not updating tests when return type changes
+3. Not updating tests when return type changes
    → Nullable changes (T[] → (T | null)[]) require a null test case
 
-3. New field/indicator without corresponding test cases
+4. New field/indicator without corresponding test cases
    → Every new field needs at least one it() verifying its presence
 
-4. Test describe/it descriptions as code expressions
+5. Test describe/it descriptions as code expressions
    ❌ describe('closes.length < period', ...)
    ✅ describe('입력 배열 길이가 period 미만일 때', ...)
 
-5. Missing initial-period null test case for period-based indicators
+6. Missing initial-period null test case for period-based indicators
 
-6. beforeEach/beforeAll at module level instead of inside describe block
+7. beforeEach/beforeAll at module level instead of inside describe block
 
-7. Boundary test constant redefined locally instead of imported from source
+8. Boundary test constant redefined locally instead of imported from source
    ❌ const TEST_PERIOD = 14;
    ✅ import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
 
-8. Missing edge case coverage when refactoring or moving functions
+9. Missing edge case coverage when refactoring or moving functions
    → Each module must test its own edge cases directly
 
-9. Unconditional assertion required — no if-guarded assertions
-   ❌ if (result.includes('pattern')) { expect(result).toMatch('bullish_engulfing'); }
-   ✅ expect(result).toMatch('bullish_engulfing');
+10. Unconditional assertion required — no if-guarded assertions
+    ❌ if (result.includes('pattern')) { expect(result).toMatch('bullish_engulfing'); }
+    ✅ expect(result).toMatch('bullish_engulfing');
 
-10. Test duplication — each it() must test exactly one unique behavior
+11. Test duplication — each it() must test exactly one unique behavior
 
-11. Provider pair must have symmetric error handling, test coverage, and naming
+12. Provider pair must have symmetric error handling, test coverage, and naming
     → When one Provider changes, apply the same change to all Providers
 
-12. Repeated identical parameter object passed to multiple function calls
+13. Repeated identical parameter object passed to multiple function calls
     → Extract to const (regular code) or useMemo (hooks)
 
-13. Test describe text promises assertions not verified by its it() cases
+14. Test describe text promises assertions not verified by its it() cases
 
-14. Circular dependency between modules
+15. Circular dependency between modules
     → Extract shared constant to a third file to break the cycle
 
-15. Type field added but test mock objects not updated
+16. Type field added but test mock objects not updated
     → All mock/fixture objects must match the updated interface
 ```
 
@@ -268,13 +268,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 1. Missing chart.remove() cleanup
    → Duplicate canvas on component remount
 
-2. Using setData for real-time updates
-   → Use series.update() instead
-
-3. Passing domain null values directly to setData
+2. Passing domain null values directly to setData
    → Convert to WhitespaceData({ time })
 
-4. Adding volume/RSI to the main pane
+3. Adding volume/RSI to the main pane
    → Always add to a separate pane (index 1, 2, ...)
 
 ---
