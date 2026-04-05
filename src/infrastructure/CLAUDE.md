@@ -40,3 +40,13 @@ Define interfaces (`types.ts`) **before** implementation.
 - Fetches bars from Alpaca, then calls domain indicator functions
 - `infrastructure → domain` import is allowed by dependency rules
 - Used by `getBarsAction.ts` Server Action
+
+### cache/ (Redis Cache Provider)
+
+- `types.ts` — `CacheProvider` interface (`get`, `set`, `delete`)
+- `config.ts` — `ANALYSIS_CACHE_TTL` (per-timeframe TTL constants) + `buildAnalysisCacheKey()`
+- `redis.ts` — `createCacheProvider()` factory using Upstash Redis
+  - Returns `null` when env vars are missing (graceful degradation)
+  - Reads with readonly token if `UPSTASH_REDIS_REST_READONLY_TOKEN` is set; falls back to master token
+  - Write operations always use master token (`UPSTASH_REDIS_REST_TOKEN`)
+- Used by `analyzeAction.ts` for AI analysis result caching

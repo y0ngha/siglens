@@ -98,6 +98,7 @@ export function ChartContent({
     const { analysis, isAnalyzing, analysisError, handleReanalyze } =
         useAnalysis({
             symbol,
+            timeframe,
             initialAnalysis,
             initialAnalysisFailed,
             timeframeChangeCount,
