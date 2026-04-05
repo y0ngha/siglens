@@ -1,7 +1,4 @@
-import type { MarketDataProvider, GetBarsOptions, Bar } from './types';
-import { TIMEFRAME_LOOKBACK_DAYS } from '@/domain/constants/market';
-import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
-import { getEasternOffsetHours } from '@/domain/time/eastern';
+import type { GetBarsOptions, Bar } from './types';
 
 const BASE_URL = 'https://data.alpaca.markets/v2';
 
@@ -14,9 +11,8 @@ interface AlpacaBar {
     v: number; // volume
 }
 
-interface AlpacaBarsResponse {
-    bars: AlpacaBar[];
-    next_page_token: string | null;
+interface AlpacaBarsRawResponse {
+    bars?: AlpacaBar[];
 }
 
 function toBar(raw: AlpacaBar): Bar {
@@ -30,65 +26,58 @@ function toBar(raw: AlpacaBar): Bar {
     };
 }
 
-export class AlpacaProvider implements MarketDataProvider {
-    private readonly apiKey: string;
-    private readonly secretKey: string;
+interface AlpacaCredentials {
+    apiKey: string;
+    secretKey: string;
+}
 
-    constructor() {
-        const apiKey = process.env.ALPACA_API_KEY;
-        const secretKey = process.env.ALPACA_SECRET_KEY;
+function getAlpacaCredentials(): AlpacaCredentials {
+    const apiKey = process.env.ALPACA_API_KEY;
+    const secretKey =
+        process.env.ALPACA_API_SECRET ?? process.env.ALPACA_SECRET_KEY;
 
-        if (!apiKey || !secretKey) {
-            throw new Error('ALPACA_API_KEY and ALPACA_SECRET_KEY must be set');
-        }
-
-        this.apiKey = apiKey;
-        this.secretKey = secretKey;
-    }
-
-    async getBars(options: GetBarsOptions): Promise<Bar[]> {
-        const { symbol, timeframe, limit = 500, before } = options;
-
-        const lookbackMs = TIMEFRAME_LOOKBACK_DAYS[timeframe] * MS_PER_DAY;
-        const endTime = before ? new Date(before) : new Date();
-        const approxStartUtc = new Date(endTime.getTime() - lookbackMs);
-        const startOffsetMs =
-            getEasternOffsetHours(approxStartUtc) * MS_PER_HOUR;
-        const endOffsetMs = getEasternOffsetHours(endTime) * MS_PER_HOUR;
-        const startUtc = new Date(
-            endTime.getTime() + endOffsetMs - lookbackMs - startOffsetMs
+    if (!apiKey || !secretKey) {
+        throw new Error(
+            'ALPACA_API_KEY and (ALPACA_API_SECRET or ALPACA_SECRET_KEY) must be set'
         );
-
-        const params = new URLSearchParams({
-            timeframe,
-            limit: String(limit),
-            adjustment: 'raw',
-            feed: 'iex',
-            start: startUtc.toISOString(),
-        });
-
-        if (before) {
-            params.set('end', before);
-        }
-
-        const url = `${BASE_URL}/stocks/${symbol}/bars?${params}`;
-
-        const res = await fetch(url, {
-            headers: {
-                'APCA-API-KEY-ID': this.apiKey,
-                'APCA-API-SECRET-KEY': this.secretKey,
-            },
-            next: { revalidate: 60 },
-        });
-
-        if (!res.ok) {
-            throw new Error(
-                `Alpaca API error: ${res.status} ${res.statusText}`
-            );
-        }
-
-        const data: AlpacaBarsResponse = await res.json();
-
-        return (data.bars ?? []).map(toBar);
     }
+
+    return { apiKey, secretKey };
+}
+
+export async function getBars(
+    options: GetBarsOptions,
+    now: string = new Date().toISOString()
+): Promise<Bar[]> {
+    const { symbol, timeframe, limit = 500, before } = options;
+    const { apiKey, secretKey } = getAlpacaCredentials();
+
+    const endTime = before ?? now;
+
+    const params = new URLSearchParams({
+        timeframe,
+        limit: String(limit),
+        adjustment: 'raw',
+        feed: 'iex',
+        end: endTime,
+    });
+
+    const url = `${BASE_URL}/stocks/${symbol}/bars?${params}`;
+
+    const res = await fetch(url, {
+        headers: {
+            'APCA-API-KEY-ID': apiKey,
+            'APCA-API-SECRET-KEY': secretKey,
+        },
+        next: { revalidate: 60 },
+    });
+
+    if (!res.ok) {
+        throw new Error(`Alpaca API error: ${res.status} ${res.statusText}`);
+    }
+
+    // res.json() returns unknown; asserting shape against Alpaca API contract
+    const raw = (await res.json()) as AlpacaBarsRawResponse;
+
+    return (raw.bars ?? []).map(toBar);
 }

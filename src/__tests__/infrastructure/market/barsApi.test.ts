@@ -14,15 +14,11 @@ import {
 
 jest.mock('@/infrastructure/market/alpaca');
 
-import { AlpacaProvider } from '@/infrastructure/market/alpaca';
+import { getBars } from '@/infrastructure/market/alpaca';
 
-const mockGetBars = jest.fn();
-(AlpacaProvider as jest.MockedClass<typeof AlpacaProvider>).mockImplementation(
-    () =>
-        ({ getBars: mockGetBars }) as unknown as InstanceType<
-            typeof AlpacaProvider
-        >
-);
+// jest.mock()으로 모킹된 모듈은 런타임에 MockedFunction으로 교체되지만
+// TypeScript는 원본 타입으로 인식하므로 as 단언 필요
+const mockGetBars = getBars as jest.MockedFunction<typeof getBars>;
 
 const mockBar = {
     time: 1705312200,
@@ -168,7 +164,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
             );
         });
 
-        it('symbol과 timeframe으로 올바른 파라미터를 AlpacaProvider에 전달한다', async () => {
+        it('symbol과 timeframe으로 올바른 파라미터를 getBars에 전달한다', async () => {
             mockGetBars.mockResolvedValueOnce([]);
 
             await fetchBarsWithIndicators('TSLA', DEFAULT_TIMEFRAME);
@@ -183,7 +179,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
         });
     });
 
-    describe('AlpacaProvider가 에러를 던질 때', () => {
+    describe('getBars가 에러를 던질 때', () => {
         it('에러를 전파한다', async () => {
             mockGetBars.mockRejectedValueOnce(
                 new Error('Failed to fetch bars')

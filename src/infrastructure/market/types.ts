@@ -8,7 +8,3 @@ export interface GetBarsOptions {
     limit?: number;
     before?: string;
 }
-
-export interface MarketDataProvider {
-    getBars(options: GetBarsOptions): Promise<Bar[]>;
-}
