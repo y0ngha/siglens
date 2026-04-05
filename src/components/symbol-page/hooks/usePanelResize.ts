@@ -6,8 +6,18 @@ import { useDragListener } from '@/components/symbol-page/hooks/useDragListener'
 
 export const PANEL_MIN_WIDTH = 240;
 export const PANEL_MAX_WIDTH = 640;
-const PANEL_DEFAULT_WIDTH = 320;
+const PANEL_DEFAULT_FRACTION = 1 / 3;
 const KEYBOARD_RESIZE_STEP = 10;
+
+function getDefaultPanelWidth(): number {
+    return Math.min(
+        PANEL_MAX_WIDTH,
+        Math.max(
+            PANEL_MIN_WIDTH,
+            Math.round(window.innerWidth * PANEL_DEFAULT_FRACTION)
+        )
+    );
+}
 
 interface UsePanelResizeResult {
     panelWidth: number;
@@ -17,8 +27,8 @@ interface UsePanelResizeResult {
 }
 
 export function usePanelResize(): UsePanelResizeResult {
-    const [panelWidth, setPanelWidth] = useState(PANEL_DEFAULT_WIDTH);
-    const panelWidthAtDragStartRef = useRef<number>(PANEL_DEFAULT_WIDTH);
+    const [panelWidth, setPanelWidth] = useState(getDefaultPanelWidth);
+    const panelWidthAtDragStartRef = useRef<number>(getDefaultPanelWidth());
 
     const { isDragging, handleDragStart: startDrag } = useDragListener({
         onResize: (deltaX: number): void => {
