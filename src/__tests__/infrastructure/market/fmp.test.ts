@@ -71,6 +71,7 @@ describe('FmpProvider', () => {
                 timeframe: '5Min',
             });
 
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(url).toContain(
                 'financialmodelingprep.com/api/v3/historical-chart/5min/TSLA'
@@ -90,6 +91,7 @@ describe('FmpProvider', () => {
                 timeframe: '1Day',
             });
 
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(url).toContain('historical-chart/1day/AAPL');
         });
@@ -107,6 +109,7 @@ describe('FmpProvider', () => {
                 before: '2024-01-15T09:30:00Z',
             });
 
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(url).toContain('to=2024-01-15');
         });
@@ -123,6 +126,7 @@ describe('FmpProvider', () => {
                 timeframe: '1Min',
             });
 
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(new URL(url).searchParams.has('to')).toBe(false);
         });
@@ -160,6 +164,21 @@ describe('FmpProvider', () => {
             await expect(
                 provider.getBars({ symbol: 'AAPL', timeframe: '1Min' })
             ).rejects.toThrow('FMP API error: 401 Unauthorized');
+        });
+
+        it('API가 배열이 아닌 객체를 반환하면 빈 배열을 반환한다', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ error: 'Invalid ticker' }),
+            });
+
+            const provider = new FmpProvider();
+            const bars = await provider.getBars({
+                symbol: 'INVALID',
+                timeframe: '1Min',
+            });
+
+            expect(bars).toEqual([]);
         });
 
         it('빈 응답이면 빈 배열을 반환한다', async () => {

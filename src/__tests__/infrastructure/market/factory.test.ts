@@ -55,4 +55,14 @@ describe('createMarketDataProvider', () => {
             expect(provider).toBeInstanceOf(FmpProvider);
         });
     });
+
+    describe('MARKET_DATA_PROVIDER가 빈 문자열로 설정된 경우', () => {
+        it('기본값인 FmpProvider를 반환한다', () => {
+            process.env.MARKET_DATA_PROVIDER = '';
+
+            const provider = createMarketDataProvider();
+
+            expect(provider).toBeInstanceOf(FmpProvider);
+        });
+    });
 });

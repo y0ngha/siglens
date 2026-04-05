@@ -30,6 +30,8 @@ const mockBar = {
 describe('fetchBarsWithIndicators 함수는', () => {
     beforeEach(() => {
         mockGetBars.mockReset();
+        // jest.mock()으로 모킹된 모듈은 런타임에 MockedFunction으로 교체되지만
+        // TypeScript가 원본 타입을 인식하기 때문에 as jest.Mock assertion 필요
         (createMarketDataProvider as jest.Mock).mockReturnValue({
             getBars: mockGetBars,
         });
