@@ -5,21 +5,58 @@
 - Rule: 예시
 - Context: 예시
 
-## [Issue #176 | fix/176/alpaca-getBars-최신-데이터-반환 | 2026-04-05]
-- Violation: 환경변수명 불일치 — `ALPACA_SECRET_KEY` 사용 (올바른 이름: `ALPACA_API_SECRET`)
-- Rule: Infrastructure CLAUDE.md — Auth env vars are `ALPACA_API_KEY`, `ALPACA_API_SECRET`
-- Context: alpaca.ts 생성 시 docs/API.md 및 infrastructure CLAUDE.md에 정의된 환경변수명을 확인하지 않고 임의로 `ALPACA_SECRET_KEY`를 사용해 런타임에서 항상 undefined가 반환됐다.
+## [PR #187 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `mockResult` spread `mockRawAnalysis` without overriding `skillResults`, causing `Omit<SkillResult, 'confidenceWeight' | 'id'>[]` to be assigned where `SkillResult[]` was required
+- Rule: TypeScript strict typing — spread from `RawAnalysisResponse` does not satisfy `RunAnalysisResult` for fields with incompatible Omit types; explicit override is required
+- Context: `analyzeAction.test.ts` constructed `mockResult: RunAnalysisResult` by spreading `mockRawAnalysis: RawAnalysisResponse`, but `skillResults` in `RawAnalysisResponse` uses `Omit<SkillResult, 'confidenceWeight' | 'id'>[]` while `RunAnalysisResult` (via `AnalysisResponse`) requires `SkillResult[]`
 
-- Violation: `AlpacaProvider` 클래스 사용 — 일반 market data provider에 class 사용
-- Rule: Infrastructure CLAUDE.md — Always use `export function`. Classes allowed only for special cases (e.g., Skills Loader).
-- Context: infrastructure 레이어에서 `export function` 규칙을 따르지 않고 `export class AlpacaProvider`를 작성했다. Skills Loader처럼 특별한 이유가 없는 한 class는 금지된다.
+## [Issue #130 Round 2 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: Domain functions `buildAnalysisPrompt` and `enrichAnalysisWithConfidence` were mocked with `jest.mock()` in an infrastructure test
+- Rule: `src/__tests__/CLAUDE.md` — "Never mock domain functions — test them directly with real inputs"
+- Context: `analysisApi.test.ts` mocked the domain analysis functions to control test output; since domain functions are pure with no side effects, they must be called with real inputs and only external dependencies (AI API, file I/O) should be mocked
 
-## [Issue #176 Round 2 | fix/176/alpaca-getBars-최신-데이터-반환 | 2026-04-05]
-- Violation: 테스트 파일 위치가 소스 디렉토리 구조를 미러링하지 않음 — `src/__tests__/infrastructure/alpaca.test.ts` 위치 사용 (올바른 위치: `src/__tests__/infrastructure/market/alpaca.test.ts`)
-- Rule: CONVENTIONS.md Test Rules — test file must mirror source directory structure. infrastructure/market/alpaca.test.ts, not infrastructure/alpaca.test.ts.
-- Context: `src/infrastructure/market/alpaca.ts` 소스 파일을 위한 테스트를 작성할 때 `market/` 서브디렉토리를 생략하고 `infrastructure/` 바로 아래에 파일을 위치시켰다.
+## [PR #187 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `MODULE_LOAD_TIME` module-level constant used as `initialDataUpdatedAt` causing stale data in SPA navigation
+- Rule: FF.md Predictability — data freshness must be computed per component mount, not frozen at module load time
+- Context: In SPA symbol navigation, `useBars` shared a single module-load timestamp across all mounts, causing React Query to treat fresh server data as stale; fixed by replacing `MODULE_LOAD_TIME` with `useState(() => Date.now())` so each mount captures its own timestamp
+
+## [PR #187 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: docs/ARCHITECTURE.md and docs/SIGLENS_API.md still referenced deleted Route Handlers after migration to Server Actions
+- Rule: MISTAKES.md rule 12 — implementation changes must be accompanied by documentation updates
+- Context: Data flow section in ARCHITECTURE.md still showed `/api/bars` and `/api/analyze` HTTP calls; SIGLENS_API.md still documented GET/POST Route Handler specs; both updated to reflect Server Action architecture
+
+## [PR #187 Round 2 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `LOOK_AHEAD_COUNT` + `trimmedBars` + `resolvedLimit` fallback in `barsApi.ts` are dead code after `hasMore` was removed
+- Rule: MISTAKES.md 9.5 — logic with no practical effect adds noise and obscures intent
+- Context: After Server Action migration removed `hasMore` from the response, the code requesting `limit + 1` bars and then slicing back to `limit` served no purpose; simplified to request `limit` directly
+
+## [PR #187 Round 2 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: Missing test for `indicators` undefined case in `analysisApi.test.ts`
+- Rule: CONVENTIONS.md — 100% coverage required for infrastructure layer
+- Context: Validation guard in `runAnalysis` checked `!indicators` but no test exercised that branch; added the missing `it` case
+
+## [PR #187 Round 3 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `getBarsAction.ts` and `analyzeAction.ts` were added without corresponding test files
+- Rule: CONVENTIONS.md — infrastructure/ coverage 100% required; MISTAKES.md Tests rule 1 — missing test file when creating a new infrastructure file
+- Context: Both are thin wrapper Server Actions in `infrastructure/market/` that delegate to `fetchBarsWithIndicators` and `runAnalysis` respectively; test files added verifying delegation behavior and error propagation
+
+## [PR #187 Round 3 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `[] as Skill[]` type assertion used where an explicit typed variable is clearer and safer
+- Rule: MISTAKES.md TypeScript rule 2 — use type guards or explicit type declarations instead of `as` assertions
+- Context: In `analysisApi.ts` skills loading error fallback, empty array was cast with `as Skill[]`; replaced with `const emptySkills: Skill[] = []` for explicit type annotation without assertion
+
+## [PR #187 Round 4 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `beforeEach` declared at module top-level (outside `describe`) in three test files
+- Rule: MISTAKES.md Tests rule 6 — `beforeEach/beforeAll` must be placed inside a `describe` block, not at module level
+- Context: `analyzeAction.test.ts`, `getBarsAction.test.ts`, and `barsApi.test.ts` all placed `beforeEach` at module top-level; moved each into the top-level `describe` block
+
+## [PR #187 Round 5 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `BarsResponse` interface remained in `domain/types.ts` after Route Handler deletion; no file imported it
+- Rule: MISTAKES.md Coding Paradigm rule 4 — leaving code that has no effect; orphaned type definitions add noise
+- Context: `BarsResponse` was previously used by the deleted `src/app/api/bars/route.ts`; after Server Action migration removed that file, the interface became unreachable dead code and was deleted from `domain/types.ts`
 
 ## [PR #186 | fix/174/symbol-page-initial-loading-performance | 2026-04-05]
 - Violation: 하드코딩된 `initialAnalysisFailed={true}`에 의도 주석 누락
 - Rule: FF.md Readability 1-A — 역할이 다른 코드는 분리, 코드의 의도가 명확히 드러나야 함
 - Context: SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트에 위임하기 위해 `true`로 하드코딩했으나, 코드만으로는 의도를 파악하기 어려워 주석을 추가했다.
+

@@ -4,7 +4,7 @@ import { useEffect, useEffectEvent, useRef } from 'react';
 import type { RefObject } from 'react';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import type { Bar, KeyLevels } from '@/domain/types';
-import { CHART_COLORS } from '@/lib/colors';
+import { CHART_COLORS } from '@/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import {
     buildLineData,

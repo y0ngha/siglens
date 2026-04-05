@@ -59,7 +59,7 @@ Always read:
 
 Additional documents by issue type:
 - domain/ related      → docs/DOMAIN.md + docs/ARCHITECTURE.md
-- infrastructure/      → docs/API.md + docs/SIGLENS_API.md + docs/ARCHITECTURE.md
+- infrastructure/      → docs/API.md + docs/ARCHITECTURE.md
 - components/          → docs/DESIGN.md + docs/ARCHITECTURE.md
 - Layer structure check needed → docs/ARCHITECTURE.md
 
@@ -213,7 +213,6 @@ Update docs if the change falls into any of the following categories:
 |---|---|
 | New type or interface added | `docs/DOMAIN.md` |
 | New indicator implemented | `docs/DOMAIN.md` |
-| Internal Route Handler changed | `docs/SIGLENS_API.md` |
 | External API usage changed | `docs/API.md` |
 | Layer structure or folder layout changed | `docs/ARCHITECTURE.md` |
 | New coding convention established | `docs/CONVENTIONS.md` |
@@ -223,7 +222,21 @@ Update docs if the change falls into any of the following categories:
 
 ## Completion
 
-### Step 1: Run Validation Scripts
+### Step 1: MISTAKES.md Self-Review
+
+Before running any validation scripts, review the implemented code against `docs/MISTAKES.md`.
+
+Go through each section in docs/MISTAKES.md and silently check whether the current implementation violates any rule.
+
+For each violation found:
+1. Fix it immediately in place.
+2. Do not proceed to Step 1 until all violations are resolved.
+
+If no violations are found, proceed to Step 1 without any output.
+
+---
+
+### Step 2: Run Validation Scripts
 
 Run in the following order. Each must pass before proceeding to the next.
 
@@ -248,11 +261,15 @@ yarn build 2>&1 | tail -20
 
 If any step fails, fix the issue and re-run that step before continuing.
 
-### Step 2: Record to Fix Log (Type B only)
+### Step 3: Record to Fix Log (Type B only)
 
 If invoked as Type B (review findings fix), append each fix to `docs/__agents_only__/fix-log.md`.
 Create the file if it does not exist.
 **Skip this step for Type A** — fix-log tracks rule violations, not new implementations.
+
+**Before recording any entry, check `docs/MISTAKES.md` first.**
+If the violation is already documented there (same rule, same pattern), **skip that entry entirely** — do not write it to fix-log.md.
+Only record violations that are not yet covered by an existing MISTAKES.md rule.
 
 Format each entry as follows:
 
@@ -265,7 +282,7 @@ Format each entry as follows:
 
 Record one entry per distinct violation. Do not record findings that were skipped (false positives or trivial items).
 
-### Step 3: Emit Exit Signal
+### Step 4: Emit Exit Signal
 
 After all validation scripts pass, output the following JSON as the **final output** and stop.
 Do not add any text before or after the JSON.

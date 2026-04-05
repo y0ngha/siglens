@@ -48,7 +48,6 @@ assignees: y0ngha
 - [ ] `docs/CONVENTIONS.md`
 - [ ] `docs/FF.md`
 - [ ] `docs/DESIGN.md`
-- [ ] `docs/SIGLENS_API.md`
 
 ## 완료 조건
 

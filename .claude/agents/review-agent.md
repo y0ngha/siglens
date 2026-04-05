@@ -91,7 +91,6 @@ Additionally, based on changed file locations:
 | `src/domain/` changed (excluding `__tests__/` only changes) | `docs/DOMAIN.md` |
 | `src/components/*.tsx` changed | `docs/DESIGN.md` |
 | `src/infrastructure/ai/` or `src/infrastructure/market/` changed | `docs/API.md` |
-| `src/infrastructure/` or `src/app/api/` changed | `docs/SIGLENS_API.md` |
 | Only `src/__tests__/` files changed, no source files | Skip all conditional docs |
 
 ---

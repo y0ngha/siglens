@@ -53,50 +53,12 @@ async function fetchBars(symbol: string) {
 
 ---
 
-## Route Handlers (API)
+## Server Actions
 
-### GET /api/bars
+Server Actions are defined in `infrastructure/market/` and called directly from hooks.
 
-Returns bars + indicators on timeframe switch.
-
-**Query Parameters:**
-| Parameter | Required | Type | Description |
-|---|---|---|---|
-| symbol | Y | string | Ticker symbol |
-| timeframe | Y | Timeframe | Timeframe |
-| before | N | string (ISO 8601) | Cursor for historical data |
-
-**Response:** `{ bars: Bar[], indicators: IndicatorResult }`
-
-### POST /api/analyze
-
-Handles AI re-analysis requests.
-
-**Request Body:**
-```typescript
-{
-  symbol: string;
-  bars: Bar[];
-  indicators: IndicatorResult;
-}
-```
-
-**Processing Flow:**
-1. `infrastructure/skills/loader.ts` → load Skills files
-2. `domain/analysis/prompt.ts` → construct prompt (with Skills)
-3. `infrastructure/ai` → call AI analysis
-
-**Response:** `AnalyzeRouteResponse` (extends `AnalysisResponse` with `skillsDegraded: boolean`)
-
----
-
-## HTTP Status Codes
-
-| Code | Usage |
-|---|---|
-| 200 | Success |
-| 400 | Bad request (missing/invalid parameters) |
-| 500 | Server error |
+- `getBarsAction` — returns bars + indicators for timeframe switch
+- `analyzeAction` — AI re-analysis with skills
 
 ---
 

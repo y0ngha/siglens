@@ -95,7 +95,6 @@ Read the relevant documents before beginning. Rules defined in these documents m
 | `docs/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
 | `docs/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
 | `docs/API.md` | Alpaca and Claude API endpoints, request/response schemas |
-| `docs/SIGLENS_API.md` | Internal Next.js Route Handler endpoints, request/response schemas |
 | `docs/CONVENTIONS.md` | Coding conventions, naming rules, paradigm guidelines |
 | `docs/FF.md` | FF 4 principles in detail (Readability, Predictability, Cohesion, Coupling) |
 | `docs/DESIGN.md` | Color system, Tailwind config, chart color constants |
