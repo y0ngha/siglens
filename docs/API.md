@@ -141,6 +141,11 @@ ALPACA_API_SECRET=
 AI_PROVIDER=claude          # claude | gemini (기본값: claude)
 ANTHROPIC_API_KEY=          # claude 사용 시 필수
 GEMINI_API_KEY=             # gemini 사용 시 필수
+
+# Upstash Redis (선택 — 미설정 시 캐시 없이 동작)
+UPSTASH_REDIS_REST_URL=             # Upstash Redis REST URL
+UPSTASH_REDIS_REST_TOKEN=           # master 토큰 (읽기/쓰기)
+UPSTASH_REDIS_REST_READONLY_TOKEN=  # readonly 토큰 (읽기 전용, 없으면 master 토큰 사용)
 ```
 
 `.env.local`에 작성. 절대 커밋하지 않는다.
