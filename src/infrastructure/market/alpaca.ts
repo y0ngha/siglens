@@ -12,7 +12,7 @@ interface AlpacaBar {
 }
 
 interface AlpacaBarsRawResponse {
-    bars: AlpacaBar[];
+    bars?: AlpacaBar[];
 }
 
 function toBar(raw: AlpacaBar): Bar {

@@ -173,6 +173,21 @@ describe('alpaca', () => {
             ).rejects.toThrow('Alpaca API error: 403 Forbidden');
         });
 
+        it('ALPACA_API_SECRET이 없고 ALPACA_SECRET_KEY가 있으면 정상 동작한다', async () => {
+            delete process.env.ALPACA_API_SECRET;
+            process.env.ALPACA_SECRET_KEY = 'legacy-secret';
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({ bars: [], next_page_token: null }),
+            });
+
+            await expect(
+                getBars({ symbol: 'AAPL', timeframe: '1Min' })
+            ).resolves.toEqual([]);
+
+            delete process.env.ALPACA_SECRET_KEY;
+        });
+
         it('bars가 없는 응답에도 빈 배열을 반환한다', async () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
