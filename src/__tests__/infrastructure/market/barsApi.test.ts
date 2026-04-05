@@ -16,6 +16,8 @@ jest.mock('@/infrastructure/market/alpaca');
 
 import { getBars } from '@/infrastructure/market/alpaca';
 
+// jest.mock()으로 모킹된 모듈은 런타임에 MockedFunction으로 교체되지만
+// TypeScript는 원본 타입으로 인식하므로 as 단언 필요
 const mockGetBars = getBars as jest.MockedFunction<typeof getBars>;
 
 const mockBar = {

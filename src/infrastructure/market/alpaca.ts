@@ -26,7 +26,7 @@ function toBar(raw: AlpacaBar): Bar {
     };
 }
 
-function getAlpacaCredentials(): { apiKey: string; secretKey: string } {
+function getAlpacaCredentials() {
     const apiKey = process.env.ALPACA_API_KEY;
     const secretKey =
         process.env.ALPACA_API_SECRET ?? process.env.ALPACA_SECRET_KEY;
@@ -47,7 +47,7 @@ export async function getBars(
     const { symbol, timeframe, limit = 500, before } = options;
     const { apiKey, secretKey } = getAlpacaCredentials();
 
-    const endTime = before || now;
+    const endTime = before ?? now;
 
     const params = new URLSearchParams({
         timeframe,

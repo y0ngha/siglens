@@ -22,6 +22,7 @@ describe('alpaca', () => {
     afterEach(() => {
         delete process.env.ALPACA_API_KEY;
         delete process.env.ALPACA_API_SECRET;
+        delete process.env.ALPACA_SECRET_KEY;
     });
 
     describe('getBars', () => {
@@ -184,8 +185,6 @@ describe('alpaca', () => {
             await expect(
                 getBars({ symbol: 'AAPL', timeframe: '1Min' })
             ).resolves.toEqual([]);
-
-            delete process.env.ALPACA_SECRET_KEY;
         });
 
         it('bars가 없는 응답에도 빈 배열을 반환한다', async () => {
