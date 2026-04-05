@@ -325,23 +325,32 @@ export function StockChart({
 
     // 빈 pane 정리: indicator가 꺼지면 남은 빈 pane을 역순으로 제거
     // pane 0(캔들스틱)은 보호
+    // requestAnimationFrame으로 감싸 removeSeries() 후 lightweight-charts 내부 상태가
+    // 갱신된 뒤 removePane()이 호출되도록 한다 (첫 번째 토글 시 pane 제거 실패 버그 수정)
     useEffect(() => {
         const chart = chartRef.current;
         if (!chart) return;
 
-        const activePaneCount =
-            Math.max(CANDLESTICK_PANE_INDEX, ...Object.values(paneIndices)) + 1;
+        const rafId = requestAnimationFrame(() => {
+            const activePaneCount =
+                Math.max(
+                    CANDLESTICK_PANE_INDEX,
+                    ...Object.values(paneIndices)
+                ) + 1;
 
-        const panes = chart.panes();
+            const panes = chart.panes();
 
-        const indicesToRemove = panes
-            .map((_, i) => i)
-            .filter(i => i >= activePaneCount && i > CANDLESTICK_PANE_INDEX)
-            .reverse();
+            const indicesToRemove = panes
+                .map((_, i) => i)
+                .filter(i => i >= activePaneCount && i > CANDLESTICK_PANE_INDEX)
+                .reverse();
 
-        for (const i of indicesToRemove) {
-            chart.removePane(i);
-        }
+            for (const i of indicesToRemove) {
+                chart.removePane(i);
+            }
+        });
+
+        return () => cancelAnimationFrame(rafId);
     }, [paneIndices]);
 
     return (
