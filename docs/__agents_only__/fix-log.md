@@ -30,11 +30,6 @@
 - Context: `fetchBarsWithIndicators` was refactored to import `getBars` directly, but the test file kept `AlpacaProvider` class instantiation mock from the old class-based pattern
 - Context: In SPA symbol navigation, `useBars` shared a single module-load timestamp across all mounts, causing React Query to treat fresh server data as stale; fixed by replacing `MODULE_LOAD_TIME` with `useState(() => Date.now())` so each mount captures its own timestamp
 
-## [PR #187 | refactor/130/server-action-migration | 2026-04-05]
-- Violation: docs/ARCHITECTURE.md and docs/SIGLENS_API.md still referenced deleted Route Handlers after migration to Server Actions
-- Rule: MISTAKES.md rule 12 — implementation changes must be accompanied by documentation updates
-- Context: Data flow section in ARCHITECTURE.md still showed `/api/bars` and `/api/analyze` HTTP calls; SIGLENS_API.md still documented GET/POST Route Handler specs; both updated to reflect Server Action architecture
-
 ## [PR #187 Round 2 | refactor/130/server-action-migration | 2026-04-05]
 - Violation: `LOOK_AHEAD_COUNT` + `trimmedBars` + `resolvedLimit` fallback in `barsApi.ts` are dead code after `hasMore` was removed
 - Rule: MISTAKES.md 9.5 — logic with no practical effect adds noise and obscures intent
@@ -45,10 +40,15 @@
 - Rule: CONVENTIONS.md — infrastructure/ coverage 100% required; MISTAKES.md Tests rule 1 — missing test file when creating a new infrastructure file
 - Context: Both are thin wrapper Server Actions in `infrastructure/market/` that delegate to `fetchBarsWithIndicators` and `runAnalysis` respectively; test files added verifying delegation behavior and error propagation
 
-## [PR #187 Round 3 | refactor/130/server-action-migration | 2026-04-05]
-- Violation: `[] as Skill[]` type assertion used where an explicit typed variable is clearer and safer
-- Rule: MISTAKES.md TypeScript rule 2 — use type guards or explicit type declarations instead of `as` assertions
-- Context: In `analysisApi.ts` skills loading error fallback, empty array was cast with `as Skill[]`; replaced with `const emptySkills: Skill[] = []` for explicit type annotation without assertion
+## [PR #190 | feat/135/redis-ai-analysis-cache | 2026-04-05]
+- Violation: TTL 값이 원시 초 단위 숫자(300, 900...)로 표현되어 의미를 파악하려면 암산이 필요했음
+- Rule: FF.md Readability 1-D — 매직 넘버는 이름을 붙이거나 의미가 드러나는 표현식으로 대체해야 함
+- Context: `config.ts`의 `ANALYSIS_CACHE_TTL` 상수가 `300`, `86400` 같은 원시 숫자를 사용해 각 타임프레임의 TTL이 얼마인지 즉시 파악 불가능했음; `5 * 60`, `24 * 60 * 60` 형식으로 변경
+
+## [PR #190 | feat/135/redis-ai-analysis-cache | 2026-04-05]
+- Violation: `readonlyToken`이 없을 때 동일한 master 토큰으로 Redis 인스턴스를 두 개 생성해 불필요한 리소스 낭비 발생
+- Rule: FF.md Cohesion — 같은 역할을 하는 자원은 중복 생성 없이 재사용해야 함
+- Context: `redis.ts`의 `createCacheProvider()`에서 readonlyToken 부재 시 reader와 writer가 동일 설정으로 각각 `new Redis()`를 호출했음; writer를 먼저 생성 후 readonlyToken 유무에 따라 조건부로 reader를 생성하도록 수정
 
 ## [PR #186 | fix/174/symbol-page-initial-loading-performance | 2026-04-05]
 - Violation: 하드코딩된 `initialAnalysisFailed={true}`에 의도 주석 누락

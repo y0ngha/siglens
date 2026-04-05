@@ -155,27 +155,47 @@ describe('analyzeAction 함수는', () => {
     });
 
     describe('캐시 읽기 에러일 때', () => {
-        it('에러를 무시하고 runAnalysis를 실행한다', async () => {
-            mockCacheGet.mockRejectedValueOnce(new Error('Redis 연결 실패'));
+        it('에러를 로깅하고 runAnalysis를 실행한다', async () => {
+            const consoleSpy = jest
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const cacheError = new Error('Redis 연결 실패');
+            mockCacheGet.mockRejectedValueOnce(cacheError);
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
             mockCacheSet.mockResolvedValueOnce(undefined);
 
             const result = await analyzeAction(mockVariables, mockTimeframe);
 
+            expect(consoleSpy).toHaveBeenCalledWith(
+                '[Cache] 캐시 읽기 실패:',
+                cacheError
+            );
             expect(mockRunAnalysis).toHaveBeenCalledWith(mockVariables);
             expect(result).toBe(mockResult);
+            consoleSpy.mockRestore();
         });
     });
 
     describe('캐시 쓰기 에러일 때', () => {
-        it('에러를 무시하고 runAnalysis 결과를 반환한다', async () => {
+        it('에러를 로깅하고 runAnalysis 결과를 반환한다', async () => {
+            const consoleSpy = jest
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const cacheError = new Error('Redis 쓰기 실패');
             mockCacheGet.mockResolvedValueOnce(null);
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
-            mockCacheSet.mockRejectedValueOnce(new Error('Redis 쓰기 실패'));
+            mockCacheSet.mockRejectedValueOnce(cacheError);
 
             const result = await analyzeAction(mockVariables, mockTimeframe);
 
             expect(result).toBe(mockResult);
+
+            await Promise.resolve();
+            expect(consoleSpy).toHaveBeenCalledWith(
+                '[Cache] 캐시 쓰기 실패:',
+                cacheError
+            );
+            consoleSpy.mockRestore();
         });
     });
 

@@ -11,15 +11,17 @@ export function createCacheProvider(): CacheProvider | null {
 
     const readonlyToken = process.env.UPSTASH_REDIS_REST_READONLY_TOKEN;
 
-    const reader = new Redis({
-        url,
-        token: readonlyToken ?? masterToken,
-    });
-
     const writer = new Redis({
         url,
         token: masterToken,
     });
+
+    const reader = readonlyToken
+        ? new Redis({
+              url,
+              token: readonlyToken,
+          })
+        : writer;
 
     return {
         async get<T>(key: string): Promise<T | null> {

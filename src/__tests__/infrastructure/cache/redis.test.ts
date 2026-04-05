@@ -74,17 +74,12 @@ describe('createCacheProvider 함수는', () => {
         });
 
         describe('readonly 토큰이 없을 때', () => {
-            it('읽기와 쓰기 모두 master 토큰으로 생성된 Redis 클라이언트를 사용한다', () => {
+            it('Redis 인스턴스를 한 번만 생성하고 읽기와 쓰기에 모두 재사용한다', () => {
                 createCacheProvider();
 
-                expect(MockRedis).toHaveBeenCalledTimes(2);
-                // reader: readonly 토큰 없으므로 master 토큰 사용
+                expect(MockRedis).toHaveBeenCalledTimes(1);
+                // writer(=reader): master 토큰으로 한 번만 생성
                 expect(MockRedis).toHaveBeenNthCalledWith(1, {
-                    url: 'https://test.upstash.io',
-                    token: 'master-token',
-                });
-                // writer: master 토큰 사용
-                expect(MockRedis).toHaveBeenNthCalledWith(2, {
                     url: 'https://test.upstash.io',
                     token: 'master-token',
                 });
@@ -99,15 +94,15 @@ describe('createCacheProvider 함수는', () => {
                 createCacheProvider();
 
                 expect(MockRedis).toHaveBeenCalledTimes(2);
-                // reader: readonly 토큰 사용
+                // writer: master 토큰 사용 (먼저 생성)
                 expect(MockRedis).toHaveBeenNthCalledWith(1, {
                     url: 'https://test.upstash.io',
-                    token: 'readonly-token',
+                    token: 'master-token',
                 });
-                // writer: master 토큰 사용
+                // reader: readonly 토큰 사용
                 expect(MockRedis).toHaveBeenNthCalledWith(2, {
                     url: 'https://test.upstash.io',
-                    token: 'master-token',
+                    token: 'readonly-token',
                 });
             });
         });

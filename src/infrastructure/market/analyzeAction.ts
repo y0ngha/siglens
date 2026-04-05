@@ -24,8 +24,8 @@ export async function analyzeAction(
             if (cached !== null) {
                 return cached;
             }
-        } catch {
-            // 캐시 읽기 실패 시 runAnalysis로 진행
+        } catch (error) {
+            console.error('[Cache] 캐시 읽기 실패:', error);
         }
     }
 
@@ -34,7 +34,7 @@ export async function analyzeAction(
     if (cache !== null) {
         cache
             .set(cacheKey, result, ANALYSIS_CACHE_TTL[timeframe])
-            .catch(() => undefined);
+            .catch(error => console.error('[Cache] 캐시 쓰기 실패:', error));
     }
 
     return result;
