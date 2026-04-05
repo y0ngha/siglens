@@ -106,6 +106,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 12. Type or schema defined in the wrong layer, or duplicated without compile-time enforcement
     → Use Record<keyof Interface, ...> to enforce sync at compile time
     → Route-layer concerns stay in route layer (e.g. skillsDegraded)
+
+13. Interface field declaration does not match runtime behavior
+    → Required fields marked `?` in the interface or absent fields declared as required
+    → When tests and implementation show a field is optional, update interface to `fieldName?`
+    ❌ interface Bars { bars: BarData[] }  // but implementation checks bars ?? []
+    ✅ interface Bars { bars?: BarData[] }  // interface reflects runtime reality
 ```
 
 ---
@@ -199,6 +205,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ```
 1. Missing test file when creating a new domain/infrastructure file
    → Direct test cases required; indirect verification alone is insufficient
+
+1.5. Infrastructure file with 100% branch coverage not achieved
+   → All conditional branches must have dedicated test cases
+   → Check: optional chaining (?.),  nullish coalescing (??), if/else branches
+   ❌ const secret = process.env.SECRET ?? process.env.SECRET_ALT;  // ALT-only path untested
+   ✅ Add a test case that sets only the fallback path and verifies it
 
 2. Not updating tests when return type changes
    → Nullable changes (T[] → (T | null)[]) require a null test case
