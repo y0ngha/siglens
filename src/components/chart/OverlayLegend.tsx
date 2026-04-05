@@ -1,10 +1,6 @@
 import type React from 'react';
 import type { OverlayLegendItem } from '@/components/chart/types';
 
-interface OverlayLegendProps {
-    items: OverlayLegendItem[];
-}
-
 interface OverlayGroup {
     key: string;
     items: OverlayLegendItem[];
@@ -54,6 +50,10 @@ function groupItems(items: OverlayLegendItem[]): OverlayGroup[] {
 function formatValue(value: number | null): string {
     if (value === null) return '-';
     return value.toFixed(2);
+}
+
+interface OverlayLegendProps {
+    items: OverlayLegendItem[];
 }
 
 export function OverlayLegend({ items }: OverlayLegendProps) {

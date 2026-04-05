@@ -1,10 +1,11 @@
 import { CHART_COLORS, getPeriodColor } from '@/lib/chartColors';
 import type { Bar, IndicatorResult } from '@/domain/types';
-import type { OverlayLegendItem } from '@/components/chart/types';
+import type {
+    OverlayItemBase,
+    OverlayLegendItem,
+} from '@/components/chart/types';
 
-export interface OverlayLabelConfig {
-    name: string;
-    color: string;
+export interface OverlayLabelConfig extends OverlayItemBase {
     getValue: (indicators: IndicatorResult, barIndex: number) => number | null;
 }
 

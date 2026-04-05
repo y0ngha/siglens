@@ -44,7 +44,7 @@ export function useOverlayLegend({
 
     useEffect(() => {
         barsRef.current = bars;
-    });
+    }, [bars]);
 
     useEffect(() => {
         const chart = chartRef.current;

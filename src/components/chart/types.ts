@@ -1,6 +1,9 @@
-export interface OverlayLegendItem {
+export interface OverlayItemBase {
     name: string;
     color: string;
+}
+
+export interface OverlayLegendItem extends OverlayItemBase {
     value: number | null;
 }
 
