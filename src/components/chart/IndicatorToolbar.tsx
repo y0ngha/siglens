@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/lib/chartColors';
@@ -202,13 +202,7 @@ export function IndicatorToolbar({
         }
     });
 
-    const buttonRefMap = useMemo(
-        () => ({
-            ma: maButtonRef,
-            ema: emaButtonRef,
-        }),
-        []
-    );
+    const buttonRefMap = { ma: maButtonRef, ema: emaButtonRef };
 
     const toggleExpanded = (): void => {
         setIsExpanded(prev => !prev);
@@ -303,7 +297,7 @@ export function IndicatorToolbar({
                                 aria-expanded={openDropdown === indicator.type}
                                 className={cn(
                                     indicatorButtonClass(indicator.active),
-                                    'w-12 shrink-0'
+                                    'min-w-12 shrink-0'
                                 )}
                             >
                                 {indicator.label}
@@ -330,7 +324,10 @@ export function IndicatorToolbar({
                             key={indicator.label}
                             type="button"
                             onClick={indicator.onToggle}
-                            className={indicatorButtonClass(indicator.visible)}
+                            className={cn(
+                                indicatorButtonClass(indicator.visible),
+                                'min-w-12 shrink-0'
+                            )}
                         >
                             {indicator.label}
                         </button>
