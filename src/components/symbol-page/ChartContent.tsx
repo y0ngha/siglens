@@ -2,12 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
-import type {
-    AnalysisResponse,
-    Bar,
-    IndicatorResult,
-    Timeframe,
-} from '@/domain/types';
+import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { validateKeyLevels } from '@/domain/analysis/keyLevels';
 import { cn } from '@/lib/cn';
 import { StockChart } from '@/components/chart/StockChart';
@@ -72,8 +67,6 @@ interface ChartContentProps {
     timeframe: Timeframe;
     /** 타임프레임이 변경된 누적 횟수. Suspense remount 시 초기 마운트와 타임프레임 변경을 구분한다. */
     timeframeChangeCount: number;
-    initialBars: Bar[];
-    initialIndicators: IndicatorResult;
     initialAnalysis: AnalysisResponse;
     /** 서버에서 초기 AI 분석이 실패했는지 여부. true이면 마운트 시 자동으로 재분석을 실행한다. */
     initialAnalysisFailed: boolean;
@@ -83,17 +76,10 @@ export function ChartContent({
     symbol,
     timeframe,
     timeframeChangeCount,
-    initialBars,
-    initialIndicators,
     initialAnalysis,
     initialAnalysisFailed,
 }: ChartContentProps) {
-    const { bars, indicators } = useBars({
-        symbol,
-        timeframe,
-        initialBars,
-        initialIndicators,
-    });
+    const { bars, indicators } = useBars({ symbol, timeframe });
 
     const { analysis, isAnalyzing, analysisError, handleReanalyze } =
         useAnalysis({

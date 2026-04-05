@@ -3,7 +3,7 @@
 import { Suspense, useState } from 'react';
 import Link from 'next/link';
 import { ErrorBoundary } from 'react-error-boundary';
-import type { AnalysisResponse, Bar, IndicatorResult } from '@/domain/types';
+import type { AnalysisResponse } from '@/domain/types';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
@@ -12,16 +12,12 @@ import { useTimeframeChange } from '@/components/symbol-page/hooks/useTimeframeC
 
 interface SymbolPageClientProps {
     symbol: string;
-    initialBars: Bar[];
-    initialIndicators: IndicatorResult;
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
 }
 
 export function SymbolPageClient({
     symbol,
-    initialBars,
-    initialIndicators,
     initialAnalysis,
     initialAnalysisFailed,
 }: SymbolPageClientProps) {
@@ -79,8 +75,6 @@ export function SymbolPageClient({
                             symbol={symbol}
                             timeframe={timeframe}
                             timeframeChangeCount={timeframeChangeCount}
-                            initialBars={initialBars}
-                            initialIndicators={initialIndicators}
                             initialAnalysis={initialAnalysis}
                             initialAnalysisFailed={initialAnalysisFailed}
                         />
