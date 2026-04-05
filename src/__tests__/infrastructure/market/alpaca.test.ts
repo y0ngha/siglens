@@ -87,6 +87,7 @@ describe('alpaca', () => {
                 limit: 100,
             });
 
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url, init] = mockFetch.mock.calls[0] as [
                 string,
                 RequestInit,
@@ -94,6 +95,7 @@ describe('alpaca', () => {
             expect(url).toContain('data.alpaca.markets/v2/stocks/TSLA/bars');
             expect(url).toContain('timeframe=5Min');
             expect(url).toContain('limit=100');
+            // RequestInit.headers는 HeadersInit union 타입이므로 Record로 narrowing
             expect(
                 (init.headers as Record<string, string>)['APCA-API-KEY-ID']
             ).toBe('test-key');
@@ -115,6 +117,7 @@ describe('alpaca', () => {
             const fixedNow = '2024-06-01T12:00:00.000Z';
             await getBars({ symbol: 'AAPL', timeframe: '1Min' }, fixedNow);
 
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             const endParam = new URL(url).searchParams.get('end');
             expect(endParam).toBe(fixedNow);
@@ -136,6 +139,7 @@ describe('alpaca', () => {
                 before: '2024-01-15T09:30:00Z',
             });
 
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(url).toContain('end=2024-01-15T09%3A30%3A00Z');
         });
@@ -152,6 +156,7 @@ describe('alpaca', () => {
 
             await getBars({ symbol: 'AAPL', timeframe: '1Day' });
 
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(new URL(url).searchParams.has('start')).toBe(false);
         });

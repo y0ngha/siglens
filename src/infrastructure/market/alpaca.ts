@@ -12,9 +12,7 @@ interface AlpacaBar {
 }
 
 interface AlpacaBarsRawResponse {
-    symbol: string;
     bars: AlpacaBar[];
-    next_page_token: string | null;
 }
 
 function toBar(raw: AlpacaBar): Bar {
