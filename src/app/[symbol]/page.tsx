@@ -1,9 +1,5 @@
 import { AlpacaProvider } from '@/infrastructure/market/alpaca';
-import { createAIProvider } from '@/infrastructure/ai/factory';
-import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { calculateIndicators } from '@/domain/indicators';
-import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
-import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import {
     DEFAULT_TIMEFRAME,
     DEFAULT_BARS_LIMIT,
@@ -36,36 +32,24 @@ export default async function SymbolPage({ params }: Props) {
     const { symbol } = await params;
 
     const market = new AlpacaProvider();
-    const ai = createAIProvider();
-    const skillsLoader = new FileSkillsLoader();
 
-    const [bars, skills] = await Promise.all([
-        market.getBars({
-            symbol,
-            timeframe: DEFAULT_TIMEFRAME,
-            limit: DEFAULT_BARS_LIMIT,
-        }),
-        skillsLoader.loadSkills().catch((error: unknown) => {
-            console.error('Skills load failed', error);
-            return [];
-        }),
-    ]);
+    const bars = await market.getBars({
+        symbol,
+        timeframe: DEFAULT_TIMEFRAME,
+        limit: DEFAULT_BARS_LIMIT,
+    });
 
     const indicators = calculateIndicators(bars);
-    const prompt = buildAnalysisPrompt(symbol, bars, indicators, skills);
-    const rawAnalysis = await ai.analyze(prompt).catch(() => null);
-    const analysisFailed = rawAnalysis === null;
-    const analysis = analysisFailed
-        ? FALLBACK_ANALYSIS
-        : enrichAnalysisWithConfidence(rawAnalysis, skills);
 
     return (
         <SymbolPageClient
             symbol={symbol}
             initialBars={bars}
             initialIndicators={indicators}
-            initialAnalysis={analysis}
-            initialAnalysisFailed={analysisFailed}
+            initialAnalysis={FALLBACK_ANALYSIS}
+            // SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트로 위임한다.
+            // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
+            initialAnalysisFailed={true}
         />
     );
 }
