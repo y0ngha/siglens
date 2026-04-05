@@ -21,6 +21,11 @@
             "sourceType": "github",
             "computedHash": "a94b83ddcd2ff1c30722577f693b1bfe32f2e1a83abdd6c08c2d6cc6753b53c8"
         },
+        "seo-audit": {
+            "source": "coreyhaines31/marketingskills",
+            "sourceType": "github",
+            "computedHash": "1eef04180a5278a6869fab117c75fa2acf512bfda0a4b16569409b88b7bcb343"
+        },
         "typescript-advanced-types": {
             "source": "wshobson/agents",
             "sourceType": "github",

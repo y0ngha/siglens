@@ -4,3 +4,5 @@ npx skills add https://github.com/vercel-labs/next-skills --skill next-cache-com
 npx skills add https://github.com/wshobson/agents --skill typescript-advanced-types
 npx skills add https://github.com/vercel-labs/agent-skills --skill web-design-guidelines
 npx skills add https://github.com/anthropics/skills --skill frontend-design
+
+npx skills add https://github.com/coreyhaines31/marketingskills --skill seo-audit
