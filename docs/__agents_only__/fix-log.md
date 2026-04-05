@@ -24,10 +24,6 @@
 - Rule: CONVENTIONS.md Test Rules — test environment teardown must use `afterEach` to guarantee cleanup regardless of assertion outcome
 - Context: `alpaca.test.ts` tested the `ALPACA_SECRET_KEY` fallback path by setting the env var inline and deleting it at the last line, but a failed `expect(...).resolves` would skip the deletion
 
-- Violation: Inline object return type `{ apiKey: string; secretKey: string }` used instead of named interface for `getAlpacaCredentials()`
-- Rule: CONVENTIONS.md — prefer `interface` over inline object type annotations; named interfaces improve readability and reusability
-- Context: `alpaca.ts` declared the return type of `getAlpacaCredentials` as an anonymous object literal when a named `AlpacaCredentials` interface would be consistent with other interfaces in the file
-
 ## [PR #189 | fix/176/alpaca-getBars-최신-데이터-반환 | 2026-04-05]
 - Violation: `barsApi.test.ts` still referenced removed `AlpacaProvider` class after refactoring to function-based `getBars`
 - Rule: MISTAKES.md Tests rule 15 — test mocks must be updated when the implementation changes; class-based mock must become function mock after class removal
