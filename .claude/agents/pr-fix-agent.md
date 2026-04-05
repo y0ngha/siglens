@@ -249,6 +249,10 @@ Record each GitHub review comment that was addressed. The violation is the issue
 **Type B — Internal review findings:**
 Record each finding from review-agent that was addressed. Use the `issue` and `reason` fields from the findings JSON as the basis for the entry.
 
+**Before recording any entry, check `docs/MISTAKES.md` first.**
+If the violation is already documented there (same rule, same pattern), **skip that entry entirely** — do not write it to fix-log.md.
+Only record violations that are not yet covered by an existing MISTAKES.md rule.
+
 Format each entry as follows:
 
 ```md
@@ -258,7 +262,7 @@ Format each entry as follows:
 - Context: {one sentence describing where and why this happened in the code}
 ```
 
-Record one entry per distinct violation. Rejected comments are not recorded in the fix log And Do not record findings that were skipped (false positives or trivial items).
+Record one entry per distinct violation. Rejected comments are not recorded in the fix log. Do not record findings that were skipped (false positives or trivial items).
 
 ### Step 3: Emit Exit Signal
 

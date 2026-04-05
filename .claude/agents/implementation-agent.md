@@ -253,6 +253,10 @@ If invoked as Type B (review findings fix), append each fix to `docs/__agents_on
 Create the file if it does not exist.
 **Skip this step for Type A** — fix-log tracks rule violations, not new implementations.
 
+**Before recording any entry, check `docs/MISTAKES.md` first.**
+If the violation is already documented there (same rule, same pattern), **skip that entry entirely** — do not write it to fix-log.md.
+Only record violations that are not yet covered by an existing MISTAKES.md rule.
+
 Format each entry as follows:
 
 ```md

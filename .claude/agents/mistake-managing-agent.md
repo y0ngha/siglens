@@ -73,8 +73,8 @@ If **no group reaches the threshold of 2**, set `promoted = 0` and **skip direct
 For each recurring group:
 
 1. Read `docs/MISTAKES.md`
-2. Check if the rule violation is already documented. If it is, mark the group as **already-documented** (skip adding to MISTAKES.md, but still clean fix-log in Step 5).
-3. If not, append it under the most relevant section using the existing format:
+2. Check if the rule violation is already documented. If it is, mark the group as **already-documented** — skip adding it to MISTAKES.md, but **still remove its entries from fix-log in Step 5**. Do not add duplicate rules under any circumstances.
+3. If not already documented, append it under the most relevant section using the existing format:
    - English only
    - Concise `problem → fix` format
    - Include the rule that was violated
