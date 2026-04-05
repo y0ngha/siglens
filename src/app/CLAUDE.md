@@ -25,15 +25,18 @@ This folder is **routing only** — do not implement business logic or UI compon
 
 ### Data Flow (Initial Page Load)
 
+서버(RSC)에서 클라이언트로 초기 데이터를 주입할 때는 props 드릴링 대신
+`queryClient.prefetchQuery()` + `dehydrate()` + `HydrationBoundary` 패턴을 사용한다.
+
 ```
 /AAPL request
   → app/[symbol]/page.tsx (RSC)
-    → infrastructure/market/alpaca.ts → Alpaca API (bars, count varies by timeframe)
-    → domain/indicators/* → indicator calculations
-    → domain/analysis/prompt.ts → AI prompt construction
-    → infrastructure/ai → AI analysis
-  → StockChart (initialBars)
-  → AnalysisPanel (initialAnalysis)
+    → QueryClient (per-request, server-only) 생성
+    → queryClient.prefetchQuery(bars) → infrastructure/market/barsApi.ts → Market API
+    → dehydrate(queryClient) → HydrationBoundary로 클라이언트에 전달
+  → SymbolPageClient (HydrationBoundary 안)
+    → useBars: hydrated 캐시에서 즉시 읽기
+    → useAnalysis: 마운트 시 자동 AI 분석 트리거
 ```
 
 ### Caching
