@@ -1136,7 +1136,9 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('"keyPrices": [150.00]');
+            expect(result).toContain(
+                '"keyPrices": [{ "label": "neckline", "price": 150.00 }]'
+            );
         });
 
         it('patternSummaries 스키마의 keyPrices가 label/price 구조를 포함한다', () => {
@@ -1714,6 +1716,38 @@ describe('prompt', () => {
             expect(result).toContain('Indicator guide list to apply:');
             expect(result).toContain('- RSI Signal Guide');
             expect(result).toContain('- MACD Signal Guide');
+        });
+
+        it('indicator_guide Writing Rules에 시그널 type을 "skill"로 사용하도록 지시한다', () => {
+            const skill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain(
+                'The type field of each signal entry MUST be "skill"'
+            );
+        });
+
+        it('indicator_guide Writing Rules에 description 필드 작성 형식 지시가 포함된다', () => {
+            const skill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain(
+                'The description field must be written in Korean and include the indicator name and specific condition'
+            );
         });
 
         it('indicator_guide Writing Rules는 pattern Writing Rules보다 앞에 위치한다', () => {

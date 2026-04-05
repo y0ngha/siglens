@@ -563,10 +563,12 @@ function buildAnalysisPrompt(
 3. 최근 봉 데이터 (최근 30봉) — 각 봉에 캔들 패턴 태깅 + 다봉 패턴 감지
 4. 거래량 분석 (평균 대비 비율)
 5. 인디케이터 수치 (RSI, MACD, 볼린저, DMI, Stochastic, StochRSI, CCI, Volume Profile POC/VAH/VAL, Ichimoku 전환선/기준선/SpanA/SpanB/후행스팬)
-6. 패턴 분석 (type='pattern' skills, confidence >= 0.5)
-7. 활성화된 Skills (type!='pattern' skills, confidence >= 0.5)
-8. 분석 가이드라인 (지지/저항 판단 기준, 가격 목표 산출 기준)
-9. 분석 요청 및 JSON 응답 형식 지시
+6. 인디케이터 신호 가이드 (type='indicator_guide' skills, confidence >= 0.5)
+7. 패턴 분석 (type='pattern' skills, confidence >= 0.5)
+8. 전략 분석 (type='strategy' skills, confidence >= 0.5)
+9. 활성화된 Skills (type 없는 skills, confidence >= 0.5)
+10. 분석 가이드라인 (지지/저항 판단 기준, 가격 목표 산출 기준)
+11. 분석 요청 및 JSON 응답 형식 지시
 ```
 
 ### 응답 형식 (JSON)
@@ -857,21 +859,35 @@ skills/
 │   ├── ascending-wedge.md
 │   └── descending-wedge.md
 ├── indicators/
-│   └── (향후 보조지표 시그널 스킬)
+│   ├── rsi.md
+│   ├── macd.md
+│   ├── bollinger-bands.md
+│   ├── dmi.md
+│   ├── adx.md
+│   ├── ema.md
+│   ├── ma.md
+│   ├── vwap.md
+│   ├── stochastic.md
+│   ├── stochastic-rsi.md
+│   ├── cci.md
+│   ├── volume-profile.md
+│   └── ichimoku-cloud.md
 └── strategies/
-    └── (향후 대순환 분석 등)
+    ├── elliott-wave.md
+    └── ma-cycle.md
 ```
 
 ### Skill 타입
 
-`type` 필드는 `'pattern'` 또는 `'indicator_guide'` 중 하나다.
+`type` 필드는 `'pattern'`, `'indicator_guide'`, `'strategy'` 중 하나다.
 `type`이 없는 경우 `undefined`로 처리된다.
 
 | type | 설명 | 프롬프트 섹션 |
 |---|---|---|
-| `pattern` | 차트 패턴 감지 (헤드앤숄더, 이중천장 등) | "패턴 분석" |
-| `indicator_guide` | 인디케이터 신호 가이드 (MACD 대순환 분석 등) | "활성화된 Skills" |
-| (없음) | 기타 전략 등 | "활성화된 Skills" |
+| `pattern` | 차트 패턴 감지 (헤드앤숄더, 이중천장 등) | "Pattern Analysis" |
+| `indicator_guide` | 인디케이터 신호 가이드 | "Indicator Signal Guides" |
+| `strategy` | 투자 전략 분석 (엘리어트 파동, 이동평균선 대순환 등) | "Strategy Analysis" |
+| (없음) | 기타 | "Active Skills" |
 
 ### 파일 형식
 
@@ -879,7 +895,7 @@ skills/
 ---
 name: string                  # skill 표시 이름 (SkillSignal.skillName에 사용)
 description: string           # skill 설명
-type: pattern | indicator_guide  # 선택. pattern: 차트 패턴 감지 / indicator_guide: 인디케이터 신호 가이드
+type: pattern | indicator_guide | strategy  # 선택. pattern: 차트 패턴 감지 / indicator_guide: 인디케이터 신호 가이드 / strategy: 투자 전략 분석
 category: string              # 선택. reversal_bullish | reversal_bearish | continuation_bullish | continuation_bearish | neutral
 pattern: string               # type: pattern일 때 패턴 식별자
 indicators: string[]          # 이 skill이 필요로 하는 인디케이터 목록
@@ -932,7 +948,7 @@ interface SkillDisplay {
     chart: SkillChartDisplay;
 }
 
-type SkillType = 'pattern' | 'indicator_guide';
+type SkillType = 'pattern' | 'indicator_guide' | 'strategy';
 
 type SkillCategory =
     | 'reversal_bullish'
@@ -944,7 +960,7 @@ type SkillCategory =
 interface Skill {
     name: string;
     description: string;
-    type?: SkillType;           // 'pattern' | 'indicator_guide'
+    type?: SkillType;           // 'pattern' | 'indicator_guide' | 'strategy'
     category?: SkillCategory;   // skill 분류 (선택)
     pattern?: string;           // type='pattern'일 때 패턴 식별자 (예: 'double_top')
     indicators: string[];
@@ -976,8 +992,10 @@ app/api/analyze/route.ts (또는 app/[symbol]/page.tsx)
 domain/analysis/prompt.ts
   → buildAnalysisPrompt(symbol, bars, indicators, skills)
   → confidenceWeight < 0.5인 항목 필터링
-  → type='pattern' skills → "패턴 분석" 섹션
-  → 나머지 skills → "활성화된 Skills" 섹션
+  → type='indicator_guide' skills → "Indicator Signal Guides" 섹션
+  → type='pattern' skills → "Pattern Analysis" 섹션
+  → type='strategy' skills → "Strategy Analysis" 섹션
+  → 나머지 skills (type 없음) → "Active Skills" 섹션
   → confidenceWeight >= 0.8이면 "[높은 신뢰도]" 라벨 추가
   → 순수 함수 — 파일 접근 없음
 
