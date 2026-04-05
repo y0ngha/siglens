@@ -5,6 +5,11 @@
 - Rule: 예시
 - Context: 예시
 
+## [PR #187 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `mockResult` spread `mockRawAnalysis` without overriding `skillResults`, causing `Omit<SkillResult, 'confidenceWeight' | 'id'>[]` to be assigned where `SkillResult[]` was required
+- Rule: TypeScript strict typing — spread from `RawAnalysisResponse` does not satisfy `RunAnalysisResult` for fields with incompatible Omit types; explicit override is required
+- Context: `analyzeAction.test.ts` constructed `mockResult: RunAnalysisResult` by spreading `mockRawAnalysis: RawAnalysisResponse`, but `skillResults` in `RawAnalysisResponse` uses `Omit<SkillResult, 'confidenceWeight' | 'id'>[]` while `RunAnalysisResult` (via `AnalysisResponse`) requires `SkillResult[]`
+
 ## [Issue #130 Round 2 | refactor/130/server-action-migration | 2026-04-05]
 - Violation: Domain functions `buildAnalysisPrompt` and `enrichAnalysisWithConfidence` were mocked with `jest.mock()` in an infrastructure test
 - Rule: `src/__tests__/CLAUDE.md` — "Never mock domain functions — test them directly with real inputs"
@@ -26,14 +31,19 @@
 - Context: After Server Action migration removed `hasMore` from the response, the code requesting `limit + 1` bars and then slicing back to `limit` served no purpose; simplified to request `limit` directly
 
 ## [PR #187 Round 2 | refactor/130/server-action-migration | 2026-04-05]
-- Violation: `postAnalyze` function name retained after HTTP POST was replaced by Server Action
-- Rule: FF.md Predictability 2-A — function names must accurately reflect what the function does
-- Context: `analysisApi.ts` no longer performs an HTTP POST; renamed to `runAnalysis` and updated all call sites in `analyzeAction.ts` and `analysisApi.test.ts`
-
-## [PR #187 Round 2 | refactor/130/server-action-migration | 2026-04-05]
 - Violation: Missing test for `indicators` undefined case in `analysisApi.test.ts`
 - Rule: CONVENTIONS.md — 100% coverage required for infrastructure layer
 - Context: Validation guard in `runAnalysis` checked `!indicators` but no test exercised that branch; added the missing `it` case
+
+## [PR #187 Round 3 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `getBarsAction.ts` and `analyzeAction.ts` were added without corresponding test files
+- Rule: CONVENTIONS.md — infrastructure/ coverage 100% required; MISTAKES.md Tests rule 1 — missing test file when creating a new infrastructure file
+- Context: Both are thin wrapper Server Actions in `infrastructure/market/` that delegate to `fetchBarsWithIndicators` and `runAnalysis` respectively; test files added verifying delegation behavior and error propagation
+
+## [PR #187 Round 3 | refactor/130/server-action-migration | 2026-04-05]
+- Violation: `[] as Skill[]` type assertion used where an explicit typed variable is clearer and safer
+- Rule: MISTAKES.md TypeScript rule 2 — use type guards or explicit type declarations instead of `as` assertions
+- Context: In `analysisApi.ts` skills loading error fallback, empty array was cast with `as Skill[]`; replaced with `const emptySkills: Skill[] = []` for explicit type annotation without assertion
 
 ## [PR #186 | fix/174/symbol-page-initial-loading-performance | 2026-04-05]
 - Violation: 하드코딩된 `initialAnalysisFailed={true}`에 의도 주석 누락

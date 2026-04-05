@@ -166,7 +166,6 @@ Claude Code가 이슈를 받아 브랜치 생성 → 코드 작성 → 테스트
 | [FF.md](./docs/FF.md) | 개발 원칙 (Frontend Fundamentals) |
 | [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 깃 브랜치, 커밋 메시지, PR 규칙 |
 | [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수 |
-| [SIGLENS_API.md](./docs/SIGLENS_API.md) | SIGLENS API 명세 |
 
 ---
 

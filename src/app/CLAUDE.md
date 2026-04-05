@@ -56,7 +56,6 @@ async function fetchBars(symbol: string) {
 ## Server Actions
 
 Server Actions are defined in `infrastructure/market/` and called directly from hooks.
-See `docs/SIGLENS_API.md` for full specifications.
 
 - `getBarsAction` — returns bars + indicators for timeframe switch
 - `analyzeAction` — AI re-analysis with skills

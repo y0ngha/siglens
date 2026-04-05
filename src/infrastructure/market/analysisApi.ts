@@ -5,7 +5,7 @@ import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import type { AnalysisResponse, AnalyzeVariables, Skill } from '@/domain/types';
 
 /** infrastructure 레이어 전용 응답 타입 — skills 로딩 실패 여부를 포함한 분석 결과 */
-export interface AnalyzeRouteResponse extends AnalysisResponse {
+export interface RunAnalysisResult extends AnalysisResponse {
     skillsDegraded: boolean;
 }
 
@@ -13,7 +13,7 @@ export async function runAnalysis({
     symbol,
     bars,
     indicators,
-}: AnalyzeVariables): Promise<AnalyzeRouteResponse> {
+}: AnalyzeVariables): Promise<RunAnalysisResult> {
     if (!symbol || !bars || bars.length === 0 || !indicators) {
         throw new Error('symbol, bars, and indicators are required');
     }
@@ -24,7 +24,8 @@ export async function runAnalysis({
         .then(loadedSkills => ({ skills: loadedSkills, skillsDegraded: false }))
         .catch((error: unknown) => {
             console.error('[runAnalysis] Skills loading failed:', error);
-            return { skills: [] as Skill[], skillsDegraded: true };
+            const emptySkills: Skill[] = [];
+            return { skills: emptySkills, skillsDegraded: true };
         });
 
     const prompt = buildAnalysisPrompt(symbol, bars, indicators, skills);

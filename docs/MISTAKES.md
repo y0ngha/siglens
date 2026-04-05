@@ -52,6 +52,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 11. Derived constants recreated on every render without memoization
     → Wrap with useMemo for objects/maps derived from props/state
+
+12. Function/interface names become inaccurate after architectural changes
+    → When replacing HTTP calls with Server Actions, renaming patterns, or moving code, update the names
+    ❌ postAnalyze (no longer makes a POST request)
+    ❌ AnalyzeRouteResponse (no longer a Route Handler response)
+    ✅ runAnalysis, RunAnalysisResult (accurate to new implementation)
 ```
 
 ---

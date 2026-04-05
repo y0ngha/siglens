@@ -59,7 +59,7 @@ Always read:
 
 Additional documents by issue type:
 - domain/ related      → docs/DOMAIN.md + docs/ARCHITECTURE.md
-- infrastructure/      → docs/API.md + docs/SIGLENS_API.md + docs/ARCHITECTURE.md
+- infrastructure/      → docs/API.md + docs/ARCHITECTURE.md
 - components/          → docs/DESIGN.md + docs/ARCHITECTURE.md
 - Layer structure check needed → docs/ARCHITECTURE.md
 
@@ -213,7 +213,6 @@ Update docs if the change falls into any of the following categories:
 |---|---|
 | New type or interface added | `docs/DOMAIN.md` |
 | New indicator implemented | `docs/DOMAIN.md` |
-| Internal Route Handler changed | `docs/SIGLENS_API.md` |
 | External API usage changed | `docs/API.md` |
 | Layer structure or folder layout changed | `docs/ARCHITECTURE.md` |
 | New coding convention established | `docs/CONVENTIONS.md` |

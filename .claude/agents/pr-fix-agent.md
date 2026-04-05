@@ -60,7 +60,7 @@ Always read:
 
 Additional documents based on fix scope:
 - domain/ related      → docs/DOMAIN.md
-- infrastructure/      → docs/API.md + docs/SIGLENS_API.md
+- infrastructure/      → docs/API.md
 - components/          → docs/DESIGN.md
 
 ### 3. Determine Invocation Type
@@ -204,7 +204,6 @@ If the fix falls into any of the following categories, update the related docs a
 | Change Type | Document to Update |
 |---|---|
 | New type/interface changed | docs/DOMAIN.md |
-| Internal API changed | docs/SIGLENS_API.md |
 | External API usage changed | docs/API.md |
 | Layer structure changed | docs/ARCHITECTURE.md |
 | Convention changed | docs/CONVENTIONS.md |

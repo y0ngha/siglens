@@ -80,7 +80,7 @@ describe('runAnalysis', () => {
     });
 
     describe('정상 응답일 때', () => {
-        it('AnalyzeRouteResponse를 반환한다', async () => {
+        it('RunAnalysisResult를 반환한다', async () => {
             mockLoadSkills.mockResolvedValueOnce([]);
             mockAnalyze.mockResolvedValueOnce(mockRawAnalysis);
 
