@@ -8,3 +8,9 @@ export interface GetBarsOptions {
     limit?: number;
     before?: string;
 }
+
+export type MarketDataProviderType = 'alpaca' | 'fmp';
+
+export interface MarketDataProvider {
+    getBars(options: GetBarsOptions, now?: string): Promise<Bar[]>;
+}
