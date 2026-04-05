@@ -29,7 +29,13 @@ export function useOverlayLegend({
     const barsRef = useRef<Bar[]>(bars);
 
     const barIndex =
-        bars.length === 0 ? -1 : Math.max(0, crosshairIndex ?? bars.length - 1);
+        bars.length === 0
+            ? -1
+            : crosshairIndex === null
+              ? bars.length - 1
+              : crosshairIndex < 0
+                ? 0
+                : crosshairIndex;
 
     useEffect(() => {
         barsRef.current = bars;
@@ -40,8 +46,8 @@ export function useOverlayLegend({
         if (!chart) return;
 
         const handler = (param: { time?: unknown }): void => {
-            if (param.time !== undefined && param.time !== null) {
-                const idx = findBarIndex(barsRef.current, param.time as number);
+            if (typeof param.time === 'number') {
+                const idx = findBarIndex(barsRef.current, param.time);
                 setCrosshairIndex(idx);
             } else {
                 setCrosshairIndex(null);
@@ -55,8 +61,10 @@ export function useOverlayLegend({
         };
     }, [chartRef]);
 
-    return useMemo(
+    const legendItems = useMemo(
         () => resolveOverlayValues(labelConfigs, indicators, barIndex),
         [labelConfigs, indicators, barIndex]
     );
+
+    return legendItems;
 }

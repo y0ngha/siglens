@@ -32,7 +32,22 @@ for (let i = 0; i + period <= values.length; i++) {
 }
 ```
 
-The goal is readable, maintainable code — not mechanical adherence to a style. When `map`/`reduce` produces convoluted code or unnecessary O(n²) complexity, prefer `for (let i = 0; ...)`.
+**Exception — `while` is allowed when the algorithm's termination condition is naturally expressed as a predicate, not as a counter:**
+- Binary search (convergent boundary `low`/`high` pointers)
+- Pointer-convergence loops (two pointers approaching each other)
+- Cases where a `for` header equivalent would be an empty `for (; condition; )` — use `while` instead for clarity
+
+```typescript
+// ✅ Acceptable — binary search where while expresses the convergence condition directly
+while (low <= high) {
+    const mid = Math.floor((low + high) / 2);
+    if (bars[mid].time === time) return mid;
+    if (bars[mid].time < time) low = mid + 1;
+    else high = mid - 1;
+}
+```
+
+The goal is readable, maintainable code — not mechanical adherence to a style. When `map`/`reduce` produces convoluted code or unnecessary O(n²) complexity, prefer `for (let i = 0; ...)`. When the loop condition is a convergence predicate rather than a counter, prefer `while`.
 
 ```typescript
 // ❌ Nested conditionals
