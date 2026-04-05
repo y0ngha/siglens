@@ -10,10 +10,6 @@
 - Rule: `src/__tests__/CLAUDE.md` — "Never mock domain functions — test them directly with real inputs"
 - Context: `analysisApi.test.ts` mocked the domain analysis functions to control test output; since domain functions are pure with no side effects, they must be called with real inputs and only external dependencies (AI API, file I/O) should be mocked
 
-## [PR #187 | refactor/130/server-action-migration | 2026-04-05]
-- Violation: `MODULE_LOAD_TIME` module-level constant used as `initialDataUpdatedAt` causing stale data in SPA navigation
-- Rule: FF.md Predictability — data freshness must be computed per component mount, not frozen at module load time
-
 ## [PR #189 | fix/176/alpaca-getBars-최신-데이터-반환 | 2026-04-05]
 - Violation: `AlpacaBarsResponse` interface declared `next_page_token` in snake_case instead of camelCase
 - Rule: CONVENTIONS.md — interface fields must be camelCase; snake_case fields from external APIs must be transformed in infrastructure layer
@@ -69,4 +65,9 @@
 - Violation: Derived variable `barIndex` declared between two `useEffect` calls, violating hook declaration order
 - Rule: CONVENTIONS.md Custom Hook Declaration Order — order must be: useState → useRef → derived variables → useEffect
 - Context: `useOverlayLegend.ts` placed `const barIndex = ...` between the `barsRef` update effect and the crosshair subscription effect; moved above the first `useEffect` to follow the correct declaration order
+
+## [PR #191 | feat/175/overlay-legend | 2026-04-05]
+- Violation: `groupItems` utility function in `OverlayLegend.tsx` used `Array.push()` to mutate local arrays inside a `for...of` loop
+- Rule: CONVENTIONS.md Functional Programming — No mutation: `[...arr, item]` not `arr.push(item)`
+- Context: `groupItems` called `groups[existingIdx].items.push(item)` and `groups.push(...)` directly; refactored to `reduce` with spread operators to maintain immutability throughout
 

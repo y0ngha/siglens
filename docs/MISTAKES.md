@@ -203,6 +203,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 7. Missing mandatory fields in skill markdown files
    → All required interface fields must be present in frontmatter and body
+
+8. Module-level constants frozen at load time instead of computed per mount
+   → Data freshness requires per-component timestamps, not frozen module-load values
+   ❌ const MODULE_LOAD_TIME = Date.now();  // SPA nav: all mounts see the same old timestamp
+   ✅ const time = useState(() => Date.now())[0];  // each mount captures its own timestamp
+
+9. Sentinel values wrapped in functions that silently break the contract
+   → Sentinel values (-1, null, undefined) must propagate unchanged through call chains
+   ❌ Math.max(0, sentinel ?? fallback)  // Math.max converts -1 to 0, breaking sentinel behavior
+   ✅ sentinel === -1 ? -1 : Math.max(0, sentinel)  // explicit guard before wrapping
 ```
 
 ---
