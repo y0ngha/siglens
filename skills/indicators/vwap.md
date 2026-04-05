@@ -1,6 +1,7 @@
 ---
 name: VWAP Signal Guide
 description: VWAP signal interpretation guide — intraday fair value, support/resistance, and breakout signals
+type: indicator_guide
 indicators: ['vwap']
 confidence_weight: 0.8
 ---

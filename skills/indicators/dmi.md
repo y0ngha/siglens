@@ -1,6 +1,7 @@
 ---
 name: DMI Signal Guide
 description: DMI signal interpretation guide — +DI/-DI directional pressure, crossover signals, and trend dominance
+type: indicator_guide
 indicators: ['dmi']
 confidence_weight: 0.85
 ---

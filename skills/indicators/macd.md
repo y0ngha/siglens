@@ -1,6 +1,7 @@
 ---
 name: MACD Signal Guide
 description: MACD(12,26,9) signal interpretation guide — line crossover, histogram, zero-line, and divergence
+type: indicator_guide
 indicators: ['macd']
 confidence_weight: 0.9
 ---

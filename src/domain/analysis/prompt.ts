@@ -275,7 +275,8 @@ const RESPONSE_LANGUAGE_INSTRUCTION =
 
 const buildAnalysisRequest = (
     patternSkills: Skill[],
-    strategySkills: Skill[]
+    strategySkills: Skill[],
+    indicatorGuideSkills: Skill[]
 ): string => {
     const patternListInstruction =
         patternSkills.length > 0
@@ -309,11 +310,34 @@ const buildAnalysisRequest = (
               ].join('\n')
             : '';
 
+    const indicatorGuideInstruction =
+        indicatorGuideSkills.length > 0
+            ? [
+                  '',
+                  '### signals Writing Rules for Indicator Guides',
+                  '- Use the Indicator Signal Guides above to interpret the current indicator values in ## Indicator Values.',
+                  '- For each indicator guide, evaluate whether the current values meet any signal condition described in its Signal Interpretation section.',
+                  '- When a signal condition is met, include a corresponding entry in the signals array.',
+                  '- The type field of each signal entry MUST be "skill". Do not use indicator-specific type values.',
+                  '- The description field must be written in Korean and include the indicator name and specific condition (e.g., "Stochastic %K 82 — 과매수 구간 진입, ADX 18로 레인지 환경에서 신뢰도 높음").',
+                  '- Signal strength guidelines:',
+                  '  - strong: value is in an extreme zone (e.g., RSI > 80 or < 20, Stochastic > 90 or < 10, CCI > +200 or < -200) OR multiple indicators confirm the same direction',
+                  '  - moderate: value is in a standard threshold zone (e.g., RSI 70–80, Stochastic 80–90, CCI ±100–200) with single-indicator confirmation',
+                  '  - weak: value is approaching a threshold but not yet crossed, or the signal conflicts with the prevailing trend',
+                  '- When the Key Combinations section of a guide identifies a multi-indicator confluence that is currently active, increase the signal strength by one level and note the confluence in the description.',
+                  "- Respect each guide's Caveats section: do not generate a signal if the caveats indicate it would be unreliable in the current market context (e.g., Stochastic overbought in a strong uptrend with ADX > 25 should not automatically produce a bearish signal).",
+                  '',
+                  'Indicator guide list to apply:',
+                  ...indicatorGuideSkills.map(s => `- ${s.name}`),
+              ].join('\n')
+            : '';
+
     return [
         '## Analysis Request',
         RESPONSE_LANGUAGE_INSTRUCTION,
         'Based on the data above, perform technical analysis and respond in the following JSON format:',
         buildSchemaBody(),
+        indicatorGuideInstruction,
         patternListInstruction,
         strategyInstruction,
     ]
@@ -369,7 +393,11 @@ export function buildAnalysisPrompt(
               ]
             : []),
         ANALYSIS_GUIDELINES,
-        buildAnalysisRequest(patternSkills, strategySkills),
+        buildAnalysisRequest(
+            patternSkills,
+            strategySkills,
+            indicatorGuideSkills
+        ),
     ];
 
     return sections.join('\n\n');

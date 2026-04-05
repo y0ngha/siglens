@@ -6,7 +6,6 @@ import type {
     CandlePatternSummary,
     KeyLevels,
     PatternResult,
-    PatternSummary,
     PriceScenario,
     RiskLevel,
     Signal,

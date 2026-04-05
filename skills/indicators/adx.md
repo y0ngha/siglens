@@ -1,6 +1,7 @@
 ---
 name: ADX Signal Guide
 description: ADX signal interpretation guide — trend strength levels, rising/falling ADX, and regime identification
+type: indicator_guide
 indicators: ['dmi']
 confidence_weight: 0.85
 ---

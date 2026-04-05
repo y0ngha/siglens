@@ -1,6 +1,7 @@
 ---
 name: Volume Profile Signal Guide
 description: Volume Profile signal interpretation guide — POC, VAH/VAL, value area, and thin volume zones
+type: indicator_guide
 indicators: ['volumeProfile']
 confidence_weight: 0.85
 ---
