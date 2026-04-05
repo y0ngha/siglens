@@ -70,6 +70,11 @@
 - Rule: MISTAKES.md Domain Functions #9 — sentinel values must propagate unchanged; `Math.max` must not wrap a value that can be `-1`
 - Context: `barIndex` derivation in `useOverlayLegend.ts` used `Math.max(0, crosshairIndex ?? ...)` which converts `crosshairIndex = -1` (returned by `findBarIndex` for empty bars) to `0`, producing a wrong index; replaced with explicit null/negative guard chain
 
+## [PR #191 Round 4 | feat/175/overlay-legend | 2026-04-06]
+- Violation: `resolveBarIndex` lacked an upper bound guard for `crosshairIndex >= bars.length`, leaving the function contract incomplete
+- Rule: FF.md Predictability — pure utility functions must handle all valid input ranges explicitly so callers cannot receive out-of-bounds results
+- Context: `overlayLabelUtils.ts` `resolveBarIndex` guarded for null and negative indices but not for indices beyond array bounds; added `if (crosshairIndex >= bars.length) return bars.length - 1` to complete the guard chain
+
 ## [PR #191 Round 3 | feat/175/overlay-legend | 2026-04-06]
 - Violation: Test comment described `time=250` (tie-break case) but the test body used `time=260` (unambiguous nearest-bar case); the actual tie-break behavior was untested
 - Rule: CONVENTIONS.md Test Rules — each `it()` must accurately describe and verify exactly one behavior; misleading comments and untested edge cases must be corrected

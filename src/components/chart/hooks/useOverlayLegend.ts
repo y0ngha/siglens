@@ -7,7 +7,7 @@ import type { Bar, IndicatorResult } from '@/domain/types';
 import type { OverlayLegendItem } from '@/components/chart/types';
 import {
     findBarIndex,
-    OverlayLabelConfig,
+    type OverlayLabelConfig,
     resolveBarIndex,
     resolveOverlayValues,
 } from '@/components/chart/utils/overlayLabelUtils';
