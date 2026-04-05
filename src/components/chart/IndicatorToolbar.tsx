@@ -182,7 +182,7 @@ export function IndicatorToolbar({
     ichimoku,
     candlePatterns,
 }: IndicatorToolbarProps) {
-    const [isExpanded, setIsExpanded] = useState(true);
+    const [isExpanded, setIsExpanded] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
     const [dropdownPosition, setDropdownPosition] =
         useState<DropdownPosition | null>(null);
@@ -283,7 +283,7 @@ export function IndicatorToolbar({
                 }
                 className={cn(
                     indicatorButtonClass(COLLAPSE_BUTTON_ACTIVE),
-                    'flex items-center justify-center'
+                    'flex w-12 items-center justify-center'
                 )}
             >
                 <CollapseToggleIcon isExpanded={isExpanded} />
@@ -294,7 +294,7 @@ export function IndicatorToolbar({
                     {dropdownIndicators.map(indicator => (
                         <div
                             key={indicator.type}
-                            className="flex items-start gap-1"
+                            className="flex min-w-12 items-start gap-1"
                         >
                             <button
                                 ref={buttonRefMap[indicator.type]}
@@ -303,7 +303,7 @@ export function IndicatorToolbar({
                                 aria-expanded={openDropdown === indicator.type}
                                 className={cn(
                                     indicatorButtonClass(indicator.active),
-                                    'min-w-12 shrink-0'
+                                    'shrink-0'
                                 )}
                             >
                                 {indicator.label}
@@ -326,17 +326,21 @@ export function IndicatorToolbar({
                         )}
 
                     {toggleIndicators.map(indicator => (
-                        <button
+                        <div
                             key={indicator.label}
-                            type="button"
-                            onClick={indicator.onToggle}
-                            className={cn(
-                                indicatorButtonClass(indicator.visible),
-                                'min-w-12 shrink-0'
-                            )}
+                            className="flex min-w-12 items-start gap-1"
                         >
-                            {indicator.label}
-                        </button>
+                            <button
+                                type="button"
+                                onClick={indicator.onToggle}
+                                className={cn(
+                                    indicatorButtonClass(indicator.visible),
+                                    'shrink-0'
+                                )}
+                            >
+                                {indicator.label}
+                            </button>
+                        </div>
                     ))}
                 </>
             )}
