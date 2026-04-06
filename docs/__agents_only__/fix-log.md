@@ -33,6 +33,16 @@
 - Rule: CONVENTIONS.md Convention 2-B (Predictability) — useState lazy initializer and useRef initial value must share the same source of truth to prevent divergence
 - Context: `usePanelResize.ts` called `getDefaultPanelWidth()` eagerly in `useRef` on line 34; fixed by initializing the ref to `0` since it is always overwritten in `handleDragStart` before being read in `onResize`
 
+## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
+- Violation: `cache !== null` 조건을 `cache !== null && force`와 `cache !== null && !force`로 두 블록에 중복 체크
+- Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값을 여러 번 계산하거나 조회하는 코드는 단일 블록으로 통합해야 함
+- Context: `analyzeAction.ts`에서 캐시 프로바이더 존재 여부를 두 개의 분리된 if 블록에서 각각 확인했음; 단일 `if (cache !== null)` 블록 안에 `if (force) { ... } else { ... }`로 통합하여 중복 제거
+
+## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
+- Violation: force=true 테스트 케이스에서 `mockCacheSet` 검증 assertion 누락
+- Rule: MISTAKES.md Tests #2 — 인프라 파일은 100% 브랜치 커버리지 필수; 모든 코드 경로에 전용 테스트 케이스가 있어야 함
+- Context: `analyzeAction.test.ts` force=true 케이스에서 캐시 삭제 후 runAnalysis 결과가 캐시에 다시 저장되는 경로가 검증되지 않았음; `expect(mockCacheSet).toHaveBeenCalledWith(...)` assertion 추가
+
 ## [fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
 - Violation: `mutationFn` passed `AnalyzeMutationVariables` (which includes `force: boolean`) directly to `analyzeAction`, whose first parameter is typed as `AnalyzeVariables` (no `force` field), causing a TypeScript excess property error
 - Rule: CONVENTIONS.md — UI-layer concerns must not bleed into infrastructure-layer types; Server Action parameters must match declared types exactly
