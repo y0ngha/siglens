@@ -9,7 +9,6 @@ import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import {
     QUERY_KEYS,
     QUERY_STALE_TIME_MS,
-    QUERY_GC_TIME_MS,
 } from '@/lib/queryConfig';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 
@@ -41,7 +40,6 @@ export default async function SymbolPage({ params }: Props) {
         defaultOptions: {
             queries: {
                 staleTime: QUERY_STALE_TIME_MS,
-                gcTime: QUERY_GC_TIME_MS,
             },
         },
     });
