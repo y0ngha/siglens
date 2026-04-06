@@ -112,6 +112,11 @@ export function ChartContent({
 
     const handleVolumeChartReady = useCallback((chart: IChartApi): void => {
         volumeChartRef.current = chart;
+        chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+            if (range !== null && stockChartRef.current !== null) {
+                stockChartRef.current.timeScale().setVisibleLogicalRange(range);
+            }
+        });
     }, []);
 
     const [chartVisiblePatterns, setChartVisiblePatterns] = useState<

@@ -228,7 +228,7 @@ describe('analyzeAction 함수는', () => {
     });
 
     describe('force가 true일 때', () => {
-        it('캐시를 삭제하고 runAnalysis를 호출한 뒤 결과를 반환한다', async () => {
+        it('캐시를 삭제하고 runAnalysis를 호출한 뒤 결과를 캐시에 저장하고 반환한다', async () => {
             mockCacheDelete.mockResolvedValueOnce(undefined);
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
             mockCacheSet.mockResolvedValueOnce(undefined);
@@ -246,6 +246,14 @@ describe('analyzeAction 함수는', () => {
                 mockTimeframe
             );
             expect(result).toBe(mockResult);
+
+            // 강제 재분석 후에도 결과가 캐시에 저장되어야 한다
+            await Promise.resolve();
+            expect(mockCacheSet).toHaveBeenCalledWith(
+                'analysis:AAPL:1Day',
+                mockResult,
+                86400
+            );
         });
 
         it('캐시 삭제 실패 시 에러를 로깅하고 runAnalysis를 호출한다', async () => {
