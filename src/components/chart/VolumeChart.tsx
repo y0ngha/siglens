@@ -43,16 +43,12 @@ export function VolumeChart({ bars }: VolumeChartProps) {
     }, []);
 
     useEffect(() => {
+        if (!seriesRef.current || !chartRef.current) return;
+
         if (bars.length === 0) {
-            if (chartRef.current) {
-                chartRef.current.remove();
-                chartRef.current = null;
-                seriesRef.current = null;
-            }
+            seriesRef.current.setData([]);
             return;
         }
-
-        if (!seriesRef.current || !chartRef.current) return;
 
         seriesRef.current.setData(
             bars.map(({ time, open, close, volume }) => ({
@@ -67,16 +63,6 @@ export function VolumeChart({ bars }: VolumeChartProps) {
 
         chartRef.current.timeScale().fitContent();
     }, [bars]);
-
-    if (bars.length === 0) {
-        return (
-            <div className="flex h-full w-full items-center justify-center">
-                <p className="text-secondary-500 text-sm">
-                    차트 데이터가 없습니다
-                </p>
-            </div>
-        );
-    }
 
     return <div ref={containerRef} className="h-full w-full" />;
 }

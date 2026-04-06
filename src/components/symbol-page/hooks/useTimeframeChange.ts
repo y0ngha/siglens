@@ -8,11 +8,14 @@ import { QUERY_KEYS } from '@/lib/queryConfig';
 
 interface UseTimeframeChangeResult {
     timeframe: Timeframe;
+    /** 타임프레임이 변경된 누적 횟수. 0이면 초기 마운트, 1 이상이면 타임프레임 변경으로 인한 마운트다. */
+    timeframeChangeCount: number;
     handleTimeframeChange: (nextTimeframe: Timeframe) => void;
 }
 
 export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
     const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
+    const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
     const [, startTransition] = useTransition();
 
     const queryClient = useQueryClient();
@@ -24,6 +27,7 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
             void queryClient.cancelQueries({
                 queryKey: QUERY_KEYS.bars(symbol, timeframe),
             });
+            setTimeframeChangeCount(c => c + 1);
             startTransition(() => {
                 setTimeframe(nextTimeframe);
             });
@@ -31,5 +35,5 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
         [timeframe, queryClient, symbol]
     );
 
-    return { timeframe, handleTimeframeChange };
+    return { timeframe, timeframeChangeCount, handleTimeframeChange };
 }

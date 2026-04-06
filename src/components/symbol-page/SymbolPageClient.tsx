@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense } from 'react';
 import Link from 'next/link';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { AnalysisResponse } from '@/domain/types';
@@ -22,16 +22,13 @@ export function SymbolPageClient({
     initialAnalysis,
     initialAnalysisFailed,
 }: SymbolPageClientProps) {
-    const { timeframe, handleTimeframeChange } = useTimeframeChange(symbol);
     // Suspense로 인해 ChartContent가 remount될 때 타임프레임 변경 여부를 전달한다.
     // timeframe 변경 횟수를 카운트하여 ChartContent가 타임프레임 변경으로 인해
     // mount된 것인지 초기 mount인지를 구분한다.
-    const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
-    const [prevTimeframe, setPrevTimeframe] = useState(timeframe);
-    if (prevTimeframe !== timeframe) {
-        setTimeframeChangeCount(c => c + 1);
-        setPrevTimeframe(timeframe);
-    }
+    // render 중 setState를 호출하는 패턴은 React 19 concurrent mode에서 Router 업데이트
+    // 충돌을 유발할 수 있으므로, handleTimeframeChange 이벤트 핸들러 안에서 카운터를 갱신한다.
+    const { timeframe, timeframeChangeCount, handleTimeframeChange } =
+        useTimeframeChange(symbol);
 
     return (
         <div className="bg-secondary-900 text-secondary-200 flex h-screen flex-col overflow-hidden">
