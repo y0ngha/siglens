@@ -226,4 +226,87 @@ describe('analyzeAction 함수는', () => {
             ).rejects.toThrow('Analysis failed');
         });
     });
+
+    describe('force가 true일 때', () => {
+        it('캐시를 삭제하고 runAnalysis를 호출한 뒤 결과를 캐시에 저장하고 반환한다', async () => {
+            mockCacheDelete.mockResolvedValueOnce(undefined);
+            mockRunAnalysis.mockResolvedValueOnce(mockResult);
+            mockCacheSet.mockResolvedValueOnce(undefined);
+
+            const result = await analyzeAction(
+                mockVariables,
+                mockTimeframe,
+                true
+            );
+
+            expect(mockCacheDelete).toHaveBeenCalledWith('analysis:AAPL:1Day');
+            expect(mockCacheGet).not.toHaveBeenCalled();
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
+                mockVariables,
+                mockTimeframe
+            );
+            expect(result).toBe(mockResult);
+
+            // 강제 재분석 후에도 결과가 캐시에 저장되어야 한다
+            await Promise.resolve();
+            expect(mockCacheSet).toHaveBeenCalledWith(
+                'analysis:AAPL:1Day',
+                mockResult,
+                86400
+            );
+        });
+
+        it('캐시 삭제 실패 시 에러를 로깅하고 runAnalysis를 호출한다', async () => {
+            const consoleSpy = jest
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            const deleteError = new Error('Redis 삭제 실패');
+            mockCacheDelete.mockRejectedValueOnce(deleteError);
+            mockRunAnalysis.mockResolvedValueOnce(mockResult);
+            mockCacheSet.mockResolvedValueOnce(undefined);
+
+            const result = await analyzeAction(
+                mockVariables,
+                mockTimeframe,
+                true
+            );
+
+            expect(consoleSpy).toHaveBeenCalledWith(
+                '[Cache] 캐시 삭제 실패:',
+                deleteError
+            );
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
+                mockVariables,
+                mockTimeframe
+            );
+            expect(result).toBe(mockResult);
+
+            // 삭제 실패 후에도 runAnalysis 결과가 캐시에 저장되어야 한다
+            await Promise.resolve();
+            expect(mockCacheSet).toHaveBeenCalledWith(
+                'analysis:AAPL:1Day',
+                mockResult,
+                86400
+            );
+            consoleSpy.mockRestore();
+        });
+
+        it('캐시 프로바이더가 없을 때 runAnalysis를 직접 호출한다', async () => {
+            mockCreateCacheProvider.mockReturnValue(null);
+            mockRunAnalysis.mockResolvedValueOnce(mockResult);
+
+            const result = await analyzeAction(
+                mockVariables,
+                mockTimeframe,
+                true
+            );
+
+            expect(mockCacheDelete).not.toHaveBeenCalled();
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
+                mockVariables,
+                mockTimeframe
+            );
+            expect(result).toBe(mockResult);
+        });
+    });
 });

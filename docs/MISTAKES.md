@@ -329,6 +329,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## Design & Cohesion
+
+```
+1. Related data with shared keys/dependencies scattered into multiple constants
+   → Data that must be updated together should live in a single object/constant
+   ❌ const CONFIG = { level: [...], icon: [...] };  const TOOLTIP = { level: [...], text: [...] };
+   ✅ const BADGE_DATA = { level: [{ icon, tooltip }, ...] };
+   → When a new level is added, only one constant needs updating
+
+2. Same resource created multiple times when a single instance would suffice
+   → Cache resource creation or check for duplicates before creating
+   ❌ const reader = new Redis(config); const writer = new Redis(config);
+   ✅ const writer = new Redis(config); const reader = !token ? writer : new Redis(altConfig);
+```
+
+---
+
 ## Layer Dependencies
 
 1. Importing external libraries in domain

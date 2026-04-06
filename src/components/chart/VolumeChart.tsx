@@ -8,12 +8,19 @@ import type { Bar } from '@/domain/types';
 
 interface VolumeChartProps {
     bars: Bar[];
+    /** 차트 인스턴스가 준비되면 호출된다. 캔들차트와 visible range 동기화에 사용된다. */
+    onChartReady?: (chart: IChartApi) => void;
 }
 
-export function VolumeChart({ bars }: VolumeChartProps) {
+export function VolumeChart({ bars, onChartReady }: VolumeChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
+    const onChartReadyRef = useRef(onChartReady);
+
+    useEffect(() => {
+        onChartReadyRef.current = onChartReady;
+    });
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -34,6 +41,8 @@ export function VolumeChart({ bars }: VolumeChartProps) {
         seriesRef.current = chart.addSeries(HistogramSeries, {
             priceFormat: { type: 'volume' },
         });
+
+        onChartReadyRef.current?.(chart);
 
         return () => {
             chart.remove();

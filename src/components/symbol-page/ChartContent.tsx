@@ -15,6 +15,7 @@ import {
     PANEL_MIN_WIDTH,
     PANEL_MAX_WIDTH,
 } from '@/components/symbol-page/hooks/usePanelResize';
+import { useChartSync } from '@/components/chart/hooks/useChartSync';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 
@@ -95,6 +96,8 @@ export function ChartContent({
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
 
+    const { handleStockChartReady, handleVolumeChartReady } = useChartSync();
+
     const [chartVisiblePatterns, setChartVisiblePatterns] = useState<
         Set<string>
     >(new Set());
@@ -142,12 +145,16 @@ export function ChartContent({
                         keyLevels={validatedKeyLevels}
                         keyLevelsVisible={keyLevelsVisible}
                         onPatternOverlayChange={handlePatternOverlayChange}
+                        onChartReady={handleStockChartReady}
                     />
                 </div>
 
                 {/* 거래량 차트 */}
                 <div className="border-secondary-700 flex-1 border-t">
-                    <VolumeChart bars={bars} />
+                    <VolumeChart
+                        bars={bars}
+                        onChartReady={handleVolumeChartReady}
+                    />
                 </div>
             </div>
 
