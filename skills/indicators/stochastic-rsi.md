@@ -1,6 +1,6 @@
 ---
 name: Stochastic RSI Signal Guide
-description: StochRSI(14,14,3,3) signal interpretation guide — extreme momentum detection, %K/%D crossover, and divergence
+description: 스토캐스틱 RSI(14,14,3,3) 신호 해석 가이드 — 극단 모멘텀 감지, %K/%D 크로스오버, 다이버전스
 type: indicator_guide
 indicators: ['stochRsi']
 confidence_weight: 0.8

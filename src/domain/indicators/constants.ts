@@ -66,3 +66,9 @@ export const HIGH_CONFIDENCE_WEIGHT = 0.8;
 export const MEDIUM_CONFIDENCE_WEIGHT = 0.7;
 export const MIN_CONFIDENCE_WEIGHT = 0.5;
 export const UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0;
+
+/**
+ * INDICATOR_KIND_COUNT: 지원하는 보조지표 종류 수.
+ * AnalysisPanel, HowItWorks 등 UI 텍스트에서 공유한다.
+ */
+export const INDICATOR_KIND_COUNT = 13;

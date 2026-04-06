@@ -1,6 +1,6 @@
 ---
 name: Stochastic Signal Guide
-description: Stochastic(14,3,3) signal interpretation guide — overbought/oversold, %K/%D crossover, and divergence
+description: 스토캐스틱(14,3,3) 신호 해석 가이드 — 과매수/과매도, %K/%D 크로스오버, 다이버전스
 type: indicator_guide
 indicators: ['stochastic']
 confidence_weight: 0.8

@@ -1,6 +1,6 @@
 ---
 name: RSI Signal Guide
-description: RSI(14) signal interpretation guide — overbought/oversold thresholds, divergence, and mid-line crossover
+description: RSI(14) 신호 해석 가이드 — 과매수/과매도 기준선, 다이버전스, 중심선 크로스오버
 type: indicator_guide
 indicators: ['rsi']
 confidence_weight: 0.9

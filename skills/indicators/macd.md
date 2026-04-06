@@ -1,6 +1,6 @@
 ---
 name: MACD Signal Guide
-description: MACD(12,26,9) signal interpretation guide — line crossover, histogram, zero-line, and divergence
+description: MACD(12,26,9) 신호 해석 가이드 — 라인 크로스오버, 히스토그램, 제로라인, 다이버전스
 type: indicator_guide
 indicators: ['macd']
 confidence_weight: 0.9

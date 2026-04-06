@@ -19,6 +19,7 @@ import type {
 import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import {
     HIGH_CONFIDENCE_WEIGHT,
+    INDICATOR_KIND_COUNT,
     MIN_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
 import { cn } from '@/lib/cn';
@@ -575,6 +576,10 @@ export function AnalysisPanel({
                     </span>
                 </div>
             </div>
+            <p className="text-secondary-500 font-mono text-xs">
+                {detectedPatterns.length + detectedSkillResults.length}개 스킬
+                감지 · {INDICATOR_KIND_COUNT}종 인디케이터 적용
+            </p>
 
             {/* 요약 */}
             <p className="text-secondary-300 text-sm leading-relaxed">

@@ -1,8 +1,12 @@
 import Link from 'next/link';
 
+import { FileSkillsLoader } from '@/infrastructure/skills/loader';
+import type { SkillShowcaseItem } from '@/domain/types';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearch } from '@/components/search/SymbolSearch';
-import { cn } from '@/lib/cn';
+import { StatsBar } from '@/components/home/StatsBar';
+import { HowItWorks } from '@/components/home/HowItWorks';
+import { SkillsShowcase } from '@/components/home/SkillsShowcase';
 
 const POPULAR_TICKERS = [
     'AAPL',
@@ -13,34 +17,16 @@ const POPULAR_TICKERS = [
     'AMZN',
 ] as const;
 
-const features = [
-    {
-        number: '01',
-        title: '실시간 차트',
-        description: '캔들스틱, 거래량, 이동평균선을 한 화면에.',
-        offset: false,
-    },
-    {
-        number: '02',
-        title: '기술적 지표',
-        description: 'RSI, MACD, 볼린저 밴드, DMI — 자동 계산.',
-        offset: true,
-    },
-    {
-        number: '03',
-        title: 'AI 패턴 분석',
-        description: 'Claude AI가 차트 패턴과 매매 신호를 해석합니다.',
-        offset: false,
-    },
-    {
-        number: '04',
-        title: '지지/저항 레벨',
-        description: '핵심 가격대를 자동으로 식별합니다.',
-        offset: true,
-    },
-] as const;
+export default async function Home() {
+    const loader = new FileSkillsLoader();
+    const skills = await loader.loadSkills();
+    const showcaseSkills: SkillShowcaseItem[] = skills.map(s => ({
+        name: s.name,
+        description: s.description,
+        type: s.type,
+        confidenceWeight: s.confidenceWeight,
+    }));
 
-export default function Home() {
     return (
         <>
             <a
@@ -92,32 +78,12 @@ export default function Home() {
                                 </Link>
                             ))}
                         </div>
+                        <StatsBar skills={showcaseSkills} />
                     </div>
                 </section>
-                <section className="pb-24">
-                    <hr className="border-secondary-800 mx-auto mb-16 max-w-4xl px-6 lg:px-[15vw]" />
-                    <div className="mx-auto grid max-w-4xl grid-cols-1 gap-x-16 gap-y-10 px-6 md:grid-cols-2 lg:px-[15vw]">
-                        {features.map(feature => (
-                            <div
-                                key={feature.number}
-                                className={cn(feature.offset && 'md:mt-8')}
-                            >
-                                <div className="flex items-start gap-4">
-                                    <span className="text-primary-600/25 font-mono text-3xl leading-none font-bold">
-                                        {feature.number}
-                                    </span>
-                                    <div>
-                                        <h2 className="text-secondary-200 text-sm font-semibold tracking-wider uppercase">
-                                            {feature.title}
-                                        </h2>
-                                        <p className="text-secondary-400 mt-1 text-sm leading-relaxed">
-                                            {feature.description}
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
+                <HowItWorks />
+                <section className="pb-16">
+                    <SkillsShowcase skills={showcaseSkills} />
                 </section>
             </main>
             <Footer />
