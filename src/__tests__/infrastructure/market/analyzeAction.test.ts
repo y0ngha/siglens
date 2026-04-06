@@ -101,7 +101,10 @@ describe('analyzeAction 함수는', () => {
 
             const result = await analyzeAction(mockVariables, mockTimeframe);
 
-            expect(mockRunAnalysis).toHaveBeenCalledWith(mockVariables, mockTimeframe);
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
+                mockVariables,
+                mockTimeframe
+            );
             expect(result).toBe(mockResult);
         });
     });
@@ -126,7 +129,10 @@ describe('analyzeAction 함수는', () => {
 
             const result = await analyzeAction(mockVariables, mockTimeframe);
 
-            expect(mockRunAnalysis).toHaveBeenCalledWith(mockVariables, mockTimeframe);
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
+                mockVariables,
+                mockTimeframe
+            );
             expect(result).toBe(mockResult);
 
             // fire-and-forget이므로 await 후 set 호출 여부 확인
@@ -170,7 +176,10 @@ describe('analyzeAction 함수는', () => {
                 '[Cache] 캐시 읽기 실패:',
                 cacheError
             );
-            expect(mockRunAnalysis).toHaveBeenCalledWith(mockVariables, mockTimeframe);
+            expect(mockRunAnalysis).toHaveBeenCalledWith(
+                mockVariables,
+                mockTimeframe
+            );
             expect(result).toBe(mockResult);
 
             // 읽기 에러 후에도 fire-and-forget으로 캐시 쓰기가 실행되는지 검증
