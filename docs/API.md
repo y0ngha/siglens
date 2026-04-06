@@ -136,7 +136,7 @@ interface AlpacaSnapshotResponse {
 
 공식 문서: https://site.financialmodelingprep.com/developer/docs
 
-Base URL: `https://financialmodelingprep.com/api/v3`
+Base URL: `https://financialmodelingprep.com/stable`
 
 ### 인증
 
@@ -160,10 +160,10 @@ FMP_API_KEY=
 
 ## FMP 사용 엔드포인트
 
-### Historical Chart (Intraday & Daily)
+### 1. Historical Chart (Intraday: 1Min ~ 1Hour)
 
 ```
-GET /v3/historical-chart/{timeframe}/{symbol}?apikey={key}
+GET /stable/historical-chart/{timeframe}?symbol={symbol}&apikey={key}
 ```
 
 **Timeframe 매핑**
@@ -174,19 +174,20 @@ GET /v3/historical-chart/{timeframe}/{symbol}?apikey={key}
 | 5Min | 5min |
 | 15Min | 15min |
 | 1Hour | 1hour |
-| 1Day | 1day |
 
 **Query Parameters**
 
 | 파라미터 | 타입 | 필수 | 설명 |
 |----------|------|------|------|
+| symbol | string | ✅ | 종목 심볼 (path가 아닌 query param) |
 | apikey | string | ✅ | FMP API 키 |
+| from | string | - | YYYY-MM-DD 형식 시작일 |
 | to | string | - | YYYY-MM-DD 형식 종료일 |
 
 **Request 예시**
 
 ```
-GET /v3/historical-chart/1min/AAPL?apikey={key}&to=2024-01-15
+GET /stable/historical-chart/1min?symbol=AAPL&apikey={key}&from=2024-01-01&to=2024-01-15
 ```
 
 **Response**
@@ -205,10 +206,53 @@ interface FmpBar {
 ```
 
 **주의사항**
-- 응답은 newest-first 정렬 → `reverse()` 하여 ascending order 반환
+- 응답은 newest-first 정렬 → `toReversed()` 하여 ascending order 반환
 - `date` 필드는 timezone 정보 없음 → UTC로 간주 (`+ ' UTC'` 파싱)
 - `vwap` 필드 없음 (Alpaca 전용)
 - `before` 파라미터 → `to` 쿼리 파라미터로 변환 (ISO string → "YYYY-MM-DD")
+
+---
+
+### 2. Historical Price EOD Full (Daily: 1Day)
+
+```
+GET /stable/historical-price-eod/full?symbol={symbol}&apikey={key}
+```
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| symbol | string | ✅ | 종목 심볼 |
+| apikey | string | ✅ | FMP API 키 |
+| from | string | - | YYYY-MM-DD 형식 시작일 |
+| to | string | - | YYYY-MM-DD 형식 종료일 |
+
+**Request 예시**
+
+```
+GET /stable/historical-price-eod/full?symbol=AAPL&apikey={key}&from=2023-01-01&to=2024-01-15
+```
+
+**Response**
+
+```typescript
+interface FmpDailyBar {
+    date: string;    // "2025-02-04" (YYYY-MM-DD)
+    open: number;
+    high: number;
+    low: number;
+    close: number;
+    volume: number;
+}
+
+// 응답: FmpDailyBar[] (newest-first 정렬 → ascending으로 reverse 필요)
+```
+
+**주의사항**
+- Daily 전용 엔드포인트 — intraday(`historical-chart`) 와는 별도
+- `date` 필드는 `YYYY-MM-DD` 형식 (시간 없음)
+- 응답은 newest-first 정렬 → `toReversed()` 하여 ascending order 반환
 
 ---
 
