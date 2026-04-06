@@ -48,6 +48,16 @@
 - Rule: CONVENTIONS.md — UI-layer concerns must not bleed into infrastructure-layer types; Server Action parameters must match declared types exactly
 - Context: `useAnalysis.ts` passed the full mutation variable object (including `force`) directly to `analyzeAction`; fixed by destructuring `{ force, ...analyzeVars }` and passing `analyzeVars` as the first argument
 
+## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
+- Violation: `ConfidenceBadge` 컴포넌트에서 `useState`가 derived 변수(`level`, `className`, `label`, `tooltip`) 이후에 선언됨
+- Rule: MISTAKES.md Components #2 — Hook 선언 순서는 `useState → useRef → derived variables → useEffect` 순서를 따라야 함
+- Context: `AnalysisPanel.tsx`의 `ConfidenceBadge` 함수 컴포넌트에서 `const level = ...` 등 derived 상수를 먼저 선언한 뒤 `useState`를 아래에 배치했음; `useState`를 derived 변수보다 위로 이동하여 수정
+
+## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
+- Violation: `ChartContent.tsx`(`components/symbol-page/`)에서 `lightweight-charts`의 `IChartApi` 타입을 직접 import하여 `symbol-page` 레이어가 차트 라이브러리에 직접 커플링됨
+- Rule: MISTAKES.md Layer Dependencies #3 — `lightweight-charts` import(타입 포함)는 `components/chart/` 내부로 제한됨
+- Context: visible range 동기화를 위해 `stockChartRef`, `volumeChartRef`, 콜백 2개가 모두 `IChartApi`에 의존했음; `components/chart/hooks/useChartSync.ts`로 추출하여 `ChartContent.tsx`에서 `IChartApi` import 제거
+
 ## [fix/bars-null-and-ssr-window-error (FMP API spec fix) | 2026-04-06]
 - Violation: `console.log(url)` left in `fmp.ts` `getBars()` — debug artifact shipped to infrastructure
 - Rule: CONVENTIONS.md — infrastructure functions must be pure side-effect-free except for the single external I/O they are responsible for; debug logging is a prohibited side effect

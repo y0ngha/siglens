@@ -183,12 +183,12 @@ interface ConfidenceBadgeProps {
 }
 
 function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
+    const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+
     const level: ConfidenceLevel =
         confidenceWeight >= HIGH_CONFIDENCE_WEIGHT ? 'high' : 'medium';
     const { className, label } = CONFIDENCE_BADGE_CONFIG[level];
     const tooltip = CONFIDENCE_TOOLTIP[level];
-
-    const [isTooltipVisible, setIsTooltipVisible] = useState(false);
 
     const handleClick = (): void => {
         setIsTooltipVisible(prev => !prev);

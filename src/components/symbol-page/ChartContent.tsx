@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
-import type { IChartApi } from 'lightweight-charts';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { validateKeyLevels } from '@/domain/analysis/keyLevels';
 import { cn } from '@/lib/cn';
@@ -16,6 +15,7 @@ import {
     PANEL_MIN_WIDTH,
     PANEL_MAX_WIDTH,
 } from '@/components/symbol-page/hooks/usePanelResize';
+import { useChartSync } from '@/components/chart/hooks/useChartSync';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 
@@ -96,28 +96,7 @@ export function ChartContent({
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
 
-    const stockChartRef = useRef<IChartApi | null>(null);
-    const volumeChartRef = useRef<IChartApi | null>(null);
-
-    const handleStockChartReady = useCallback((chart: IChartApi): void => {
-        stockChartRef.current = chart;
-        chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
-            if (range !== null && volumeChartRef.current !== null) {
-                volumeChartRef.current
-                    .timeScale()
-                    .setVisibleLogicalRange(range);
-            }
-        });
-    }, []);
-
-    const handleVolumeChartReady = useCallback((chart: IChartApi): void => {
-        volumeChartRef.current = chart;
-        chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
-            if (range !== null && stockChartRef.current !== null) {
-                stockChartRef.current.timeScale().setVisibleLogicalRange(range);
-            }
-        });
-    }, []);
+    const { handleStockChartReady, handleVolumeChartReady } = useChartSync();
 
     const [chartVisiblePatterns, setChartVisiblePatterns] = useState<
         Set<string>
