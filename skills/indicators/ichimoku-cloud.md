@@ -1,6 +1,6 @@
 ---
 name: Ichimoku Cloud Signal Guide
-description: Ichimoku Cloud(9,26,52) signal interpretation guide — cloud position, TK cross, Kumo breakout, and Chikou confirmation
+description: 일목균형표(9,26,52) 신호 해석 가이드 — 구름 위치, TK 크로스, 구모 브레이크아웃, 치코우 확인
 type: indicator_guide
 indicators: ['ichimoku']
 confidence_weight: 0.85

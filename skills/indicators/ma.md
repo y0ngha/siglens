@@ -1,6 +1,6 @@
 ---
 name: MA Signal Guide
-description: MA signal interpretation guide — golden/dead cross, support/resistance levels, and multi-MA alignment
+description: MA 신호 해석 가이드 — 골든/데드 크로스, 지지/저항 수준, 다중 MA 정렬
 type: indicator_guide
 indicators: ['ma']
 confidence_weight: 0.8

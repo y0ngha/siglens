@@ -5,7 +5,7 @@ import type {
     MarketDataProvider,
 } from './types';
 
-const FMP_BASE_URL = 'https://financialmodelingprep.com/api/v3';
+const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 
 const FMP_TIMEFRAME_MAP: Record<Timeframe, string> = {
     '1Min': '1min',

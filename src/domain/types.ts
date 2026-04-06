@@ -112,6 +112,11 @@ export interface Skill {
     display?: SkillDisplay;
 }
 
+export type SkillShowcaseItem = Pick<
+    Skill,
+    'name' | 'description' | 'type' | 'confidenceWeight'
+>;
+
 export type SignalType =
     | 'rsi_overbought'
     | 'rsi_oversold'

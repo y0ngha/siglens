@@ -45,6 +45,11 @@ export function VolumeChart({ bars }: VolumeChartProps) {
     useEffect(() => {
         if (!seriesRef.current || !chartRef.current) return;
 
+        if (bars.length === 0) {
+            seriesRef.current.setData([]);
+            return;
+        }
+
         seriesRef.current.setData(
             bars.map(({ time, open, close, volume }) => ({
                 time: time as UTCTimestamp,

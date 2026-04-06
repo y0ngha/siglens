@@ -1,6 +1,6 @@
 ---
 name: ADX Signal Guide
-description: ADX signal interpretation guide — trend strength levels, rising/falling ADX, and regime identification
+description: ADX 신호 해석 가이드 — 추세 강도 수준, 상승/하락 ADX, 시장 국면 식별
 type: indicator_guide
 indicators: ['dmi']
 confidence_weight: 0.85

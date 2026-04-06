@@ -1,6 +1,6 @@
 ---
 name: CCI Signal Guide
-description: CCI(20) signal interpretation guide — +100/-100 thresholds, zero-line, and trend persistence signals
+description: CCI(20) 신호 해석 가이드 — +100/-100 기준선, 제로라인, 추세 지속 신호
 type: indicator_guide
 indicators: ['cci']
 confidence_weight: 0.75

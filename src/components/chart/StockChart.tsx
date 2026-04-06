@@ -107,30 +107,6 @@ export function StockChart({
         null
     );
 
-    const toggleRSI = useCallback(() => {
-        setRsiVisible(prev => !prev);
-    }, []);
-
-    const toggleMACD = useCallback(() => {
-        setMacdVisible(prev => !prev);
-    }, []);
-
-    const toggleDMI = useCallback(() => {
-        setDmiVisible(prev => !prev);
-    }, []);
-
-    const toggleStochastic = useCallback(() => {
-        setStochasticVisible(prev => !prev);
-    }, []);
-
-    const toggleStochRSI = useCallback(() => {
-        setStochRsiVisible(prev => !prev);
-    }, []);
-
-    const toggleCCI = useCallback(() => {
-        setCciVisible(prev => !prev);
-    }, []);
-
     const paneIndices: PaneIndices = useMemo(() => {
         const visibles = [
             rsiVisible,
@@ -164,6 +140,37 @@ export function StockChart({
         stochRsiVisible,
         cciVisible,
     ]);
+
+    const toggleRSI = useCallback(() => {
+        setRsiVisible(prev => !prev);
+    }, []);
+
+    const toggleMACD = useCallback(() => {
+        setMacdVisible(prev => !prev);
+    }, []);
+
+    const toggleDMI = useCallback(() => {
+        setDmiVisible(prev => !prev);
+    }, []);
+
+    const toggleStochastic = useCallback(() => {
+        setStochasticVisible(prev => !prev);
+    }, []);
+
+    const toggleStochRSI = useCallback(() => {
+        setStochRsiVisible(prev => !prev);
+    }, []);
+
+    const toggleCCI = useCallback(() => {
+        setCciVisible(prev => !prev);
+    }, []);
+
+    const commonHookParams: CommonHookParams = {
+        chartRef,
+        bars,
+        indicators,
+        lineWidth: DEFAULT_LINE_WIDTH,
+    };
 
     useEffect(() => {
         if (!containerRef.current) return;
@@ -224,13 +231,6 @@ export function StockChart({
 
         chartRef.current.timeScale().fitContent();
     }, [bars]);
-
-    const commonHookParams: CommonHookParams = {
-        chartRef,
-        bars,
-        indicators,
-        lineWidth: DEFAULT_LINE_WIDTH,
-    };
 
     const { visiblePeriods: maVisiblePeriods, togglePeriod: toggleMAPeriod } =
         useMAOverlay(commonHookParams);
@@ -307,6 +307,36 @@ export function StockChart({
         lineWidth: DEFAULT_LINE_WIDTH,
     });
 
+    // 빈 pane 정리: indicator가 꺼지면 남은 빈 pane을 역순으로 제거
+    // pane 0(캔들스틱)은 보호
+    // requestAnimationFrame으로 감싸 removeSeries() 후 lightweight-charts 내부 상태가
+    // 갱신된 뒤 removePane()이 호출되도록 한다 (첫 번째 토글 시 pane 제거 실패 버그 수정)
+    useEffect(() => {
+        const chart = chartRef.current;
+        if (!chart) return;
+
+        const rafId = requestAnimationFrame(() => {
+            const activePaneCount =
+                Math.max(
+                    CANDLESTICK_PANE_INDEX,
+                    ...Object.values(paneIndices)
+                ) + 1;
+
+            const panes = chart.panes();
+
+            const indicesToRemove = panes
+                .map((_, i) => i)
+                .filter(i => i >= activePaneCount && i > CANDLESTICK_PANE_INDEX)
+                .reverse();
+
+            for (const i of indicesToRemove) {
+                chart.removePane(i);
+            }
+        });
+
+        return () => cancelAnimationFrame(rafId);
+    }, [paneIndices]);
+
     const notifyPatternOverlayChange = useEffectEvent(() => {
         onPatternOverlayChange?.(visiblePatterns, togglePattern);
     });
@@ -351,35 +381,15 @@ export function StockChart({
         labels: paneLabels,
     });
 
-    // 빈 pane 정리: indicator가 꺼지면 남은 빈 pane을 역순으로 제거
-    // pane 0(캔들스틱)은 보호
-    // requestAnimationFrame으로 감싸 removeSeries() 후 lightweight-charts 내부 상태가
-    // 갱신된 뒤 removePane()이 호출되도록 한다 (첫 번째 토글 시 pane 제거 실패 버그 수정)
-    useEffect(() => {
-        const chart = chartRef.current;
-        if (!chart) return;
-
-        const rafId = requestAnimationFrame(() => {
-            const activePaneCount =
-                Math.max(
-                    CANDLESTICK_PANE_INDEX,
-                    ...Object.values(paneIndices)
-                ) + 1;
-
-            const panes = chart.panes();
-
-            const indicesToRemove = panes
-                .map((_, i) => i)
-                .filter(i => i >= activePaneCount && i > CANDLESTICK_PANE_INDEX)
-                .reverse();
-
-            for (const i of indicesToRemove) {
-                chart.removePane(i);
-            }
-        });
-
-        return () => cancelAnimationFrame(rafId);
-    }, [paneIndices]);
+    if (bars.length === 0) {
+        return (
+            <div className="flex h-full w-full items-center justify-center">
+                <p className="text-secondary-500 text-sm">
+                    차트 데이터가 없습니다
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div ref={wrapperRef} className="relative h-full w-full">
