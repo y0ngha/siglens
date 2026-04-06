@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
-
-const MIN_CONFIDENCE_HIGH = 0.8;
+import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
 
 type ActiveTab = 'all' | SkillType;
 
@@ -49,7 +48,7 @@ interface SkillCardProps {
 
 function SkillCard({ skill }: SkillCardProps) {
     const badge = skill.type != null ? TYPE_BADGE[skill.type] : null;
-    const isHighConfidence = skill.confidenceWeight >= MIN_CONFIDENCE_HIGH;
+    const isHighConfidence = skill.confidenceWeight >= HIGH_CONFIDENCE_WEIGHT;
 
     return (
         <div className="bg-secondary-800/50 border-secondary-700 rounded-lg border p-4">

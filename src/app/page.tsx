@@ -1,7 +1,6 @@
 import Link from 'next/link';
 
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
-import type { SkillShowcaseItem } from '@/domain/types';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearch } from '@/components/search/SymbolSearch';
 import { StatsBar } from '@/components/home/StatsBar';
@@ -20,12 +19,6 @@ const POPULAR_TICKERS = [
 export default async function Home() {
     const loader = new FileSkillsLoader();
     const skills = await loader.loadSkills();
-    const showcaseSkills: SkillShowcaseItem[] = skills.map(s => ({
-        name: s.name,
-        description: s.description,
-        type: s.type,
-        confidenceWeight: s.confidenceWeight,
-    }));
 
     return (
         <>
@@ -78,12 +71,12 @@ export default async function Home() {
                                 </Link>
                             ))}
                         </div>
-                        <StatsBar skills={showcaseSkills} />
+                        <StatsBar skills={skills} />
                     </div>
                 </section>
                 <HowItWorks />
                 <section className="pb-16">
-                    <SkillsShowcase skills={showcaseSkills} />
+                    <SkillsShowcase skills={skills} />
                 </section>
             </main>
             <Footer />

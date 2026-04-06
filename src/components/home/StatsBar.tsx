@@ -5,11 +5,19 @@ interface StatsBarProps {
 }
 
 export function StatsBar({ skills }: StatsBarProps) {
-    const indicatorCount = skills.filter(
-        s => s.type === 'indicator_guide'
-    ).length;
-    const patternCount = skills.filter(s => s.type === 'pattern').length;
-    const strategyCount = skills.filter(s => s.type === 'strategy').length;
+    const { indicatorCount, patternCount, strategyCount } = skills.reduce(
+        (counts, skill) => {
+            if (skill.type === 'indicator_guide') {
+                counts.indicatorCount++;
+            } else if (skill.type === 'pattern') {
+                counts.patternCount++;
+            } else if (skill.type === 'strategy') {
+                counts.strategyCount++;
+            }
+            return counts;
+        },
+        { indicatorCount: 0, patternCount: 0, strategyCount: 0 }
+    );
 
     return (
         <div className="text-secondary-500 mt-6 flex flex-wrap items-center justify-center gap-x-2 font-mono text-xs lg:justify-start">
