@@ -280,6 +280,14 @@ describe('analyzeAction 함수는', () => {
                 mockTimeframe
             );
             expect(result).toBe(mockResult);
+
+            // 삭제 실패 후에도 runAnalysis 결과가 캐시에 저장되어야 한다
+            await Promise.resolve();
+            expect(mockCacheSet).toHaveBeenCalledWith(
+                'analysis:AAPL:1Day',
+                mockResult,
+                86400
+            );
             consoleSpy.mockRestore();
         });
 

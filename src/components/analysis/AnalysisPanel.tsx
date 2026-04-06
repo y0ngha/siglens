@@ -155,27 +155,64 @@ function ChevronIcon({ isOpen }: ChevronIconProps) {
     );
 }
 
+interface EyeIconProps {
+    isVisible: boolean;
+}
+
+/**
+ * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
+ */
+function EyeIcon({ isVisible }: EyeIconProps) {
+    return isVisible ? (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="h-3.5 w-3.5"
+        >
+            <path d="M10 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5Z" />
+            <path
+                fillRule="evenodd"
+                d="M.664 10.59a1.651 1.651 0 0 1 0-1.186A10.004 10.004 0 0 1 10 3c4.257 0 7.893 2.66 9.336 6.41.147.381.146.804 0 1.186A10.004 10.004 0 0 1 10 17c-4.257 0-7.893-2.66-9.336-6.41ZM14 10a4 4 0 1 1-8 0 4 4 0 0 1 8 0Z"
+                clipRule="evenodd"
+            />
+        </svg>
+    ) : (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 20 20"
+            fill="currentColor"
+            className="h-3.5 w-3.5"
+        >
+            <path
+                fillRule="evenodd"
+                d="M3.28 2.22a.75.75 0 0 0-1.06 1.06l14.5 14.5a.75.75 0 1 0 1.06-1.06l-1.745-1.745a10.029 10.029 0 0 0 3.3-4.38 1.651 1.651 0 0 0 0-1.185A10.004 10.004 0 0 0 9.999 3a9.956 9.956 0 0 0-4.744 1.194L3.28 2.22ZM7.752 6.69l1.092 1.092a2.5 2.5 0 0 1 3.374 3.373l1.091 1.092a4 4 0 0 0-5.557-5.557Z"
+                clipRule="evenodd"
+            />
+            <path d="M10.748 13.93l2.523 2.523a10.003 10.003 0 0 1-3.27.547c-4.258 0-7.894-2.66-9.337-6.41a1.651 1.651 0 0 1 0-1.186A10.007 10.007 0 0 1 2.839 6.02L6.07 9.252a4 4 0 0 0 4.678 4.678Z" />
+        </svg>
+    );
+}
+
 type ConfidenceLevel = 'high' | 'medium';
 
 const CONFIDENCE_BADGE_CONFIG: Record<
     ConfidenceLevel,
-    { className: string; label: string }
+    { className: string; label: string; tooltip: string }
 > = {
     high: {
         className:
             'text-chart-bullish bg-chart-bullish/10 border border-chart-bullish/30',
         label: '높은 신뢰도',
+        tooltip:
+            '신뢰도가 높은 패턴입니다. AI가 해당 패턴을 명확하게 감지했습니다.',
     },
     medium: {
         className:
             'text-ui-warning bg-ui-warning/10 border border-ui-warning/30',
         label: '중간 신뢰도',
+        tooltip: '신뢰도가 중간인 패턴입니다. 다른 지표와 함께 참고하세요.',
     },
-};
-
-const CONFIDENCE_TOOLTIP: Record<ConfidenceLevel, string> = {
-    high: '신뢰도가 높은 패턴입니다. AI가 해당 패턴을 명확하게 감지했습니다.',
-    medium: '신뢰도가 중간인 패턴입니다. 다른 지표와 함께 참고하세요.',
 };
 
 interface ConfidenceBadgeProps {
@@ -187,8 +224,7 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
 
     const level: ConfidenceLevel =
         confidenceWeight >= HIGH_CONFIDENCE_WEIGHT ? 'high' : 'medium';
-    const { className, label } = CONFIDENCE_BADGE_CONFIG[level];
-    const tooltip = CONFIDENCE_TOOLTIP[level];
+    const { className, label, tooltip } = CONFIDENCE_BADGE_CONFIG[level];
 
     const handleClick = (): void => {
         setIsTooltipVisible(prev => !prev);
