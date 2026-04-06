@@ -13,12 +13,22 @@ import {
 
 export async function analyzeAction(
     variables: AnalyzeVariables,
-    timeframe: Timeframe
+    timeframe: Timeframe,
+    force: boolean = false
 ): Promise<RunAnalysisResult> {
     const cache = createCacheProvider();
     const cacheKey = buildAnalysisCacheKey(variables.symbol, timeframe);
 
-    if (cache !== null) {
+    if (cache !== null && force) {
+        try {
+            await cache.delete(cacheKey);
+            console.log('[Cache] 재분석 요청으로 캐시 삭제:', cacheKey);
+        } catch (error) {
+            console.error('[Cache] 캐시 삭제 실패:', error);
+        }
+    }
+
+    if (cache !== null && !force) {
         try {
             const cached = await cache.get<RunAnalysisResult>(cacheKey);
             if (cached !== null) {

@@ -2,6 +2,7 @@
 
 import { useState, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
+import type { IChartApi } from 'lightweight-charts';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { validateKeyLevels } from '@/domain/analysis/keyLevels';
 import { cn } from '@/lib/cn';
@@ -95,6 +96,24 @@ export function ChartContent({
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
 
+    const stockChartRef = useRef<IChartApi | null>(null);
+    const volumeChartRef = useRef<IChartApi | null>(null);
+
+    const handleStockChartReady = useCallback((chart: IChartApi): void => {
+        stockChartRef.current = chart;
+        chart.timeScale().subscribeVisibleLogicalRangeChange(range => {
+            if (range !== null && volumeChartRef.current !== null) {
+                volumeChartRef.current
+                    .timeScale()
+                    .setVisibleLogicalRange(range);
+            }
+        });
+    }, []);
+
+    const handleVolumeChartReady = useCallback((chart: IChartApi): void => {
+        volumeChartRef.current = chart;
+    }, []);
+
     const [chartVisiblePatterns, setChartVisiblePatterns] = useState<
         Set<string>
     >(new Set());
@@ -142,12 +161,16 @@ export function ChartContent({
                         keyLevels={validatedKeyLevels}
                         keyLevelsVisible={keyLevelsVisible}
                         onPatternOverlayChange={handlePatternOverlayChange}
+                        onChartReady={handleStockChartReady}
                     />
                 </div>
 
                 {/* 거래량 차트 */}
                 <div className="border-secondary-700 flex-1 border-t">
-                    <VolumeChart bars={bars} />
+                    <VolumeChart
+                        bars={bars}
+                        onChartReady={handleVolumeChartReady}
+                    />
                 </div>
             </div>
 

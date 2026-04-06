@@ -38,15 +38,10 @@ import {
     DEFAULT_LINE_WIDTH,
     INACTIVE_PANE_INDEX,
 } from '@/components/chart/constants';
-import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
 import { OverlayLegend } from '@/components/chart/OverlayLegend';
 import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
 import { buildOverlayLabelConfigs } from '@/components/chart/utils/overlayLabelUtils';
-import {
-    EMA_DEFAULT_PERIODS,
-    EMPTY_INDICATOR_RESULT,
-    MA_DEFAULT_PERIODS,
-} from '@/domain/indicators/constants';
+import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 
 const CANDLESTICK_PANE_INDEX = 0;
 const FIRST_INDICATOR_PANE_INDEX = 1;
@@ -72,6 +67,8 @@ interface StockChartProps {
         visiblePatterns: Set<string>,
         togglePattern: (patternName: string) => void
     ) => void;
+    /** 차트 인스턴스가 준비되면 호출된다. 거래량 차트와 visible range 동기화에 사용된다. */
+    onChartReady?: (chart: IChartApi) => void;
 }
 
 export function StockChart({
@@ -81,12 +78,13 @@ export function StockChart({
     /**
      * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
      */
-    patterns = [],
-    trendlines = [],
-    trendlinesVisible = false,
-    keyLevels = EMPTY_KEY_LEVELS,
-    keyLevelsVisible = false,
-    onPatternOverlayChange,
+    patterns: _patterns = [],
+    trendlines: _trendlines = [],
+    trendlinesVisible: _trendlinesVisible = false,
+    keyLevels: _keyLevels = EMPTY_KEY_LEVELS,
+    keyLevelsVisible: _keyLevelsVisible = false,
+    onPatternOverlayChange: _onPatternOverlayChange,
+    onChartReady,
 }: StockChartProps) {
     const [rsiVisible, setRsiVisible] = useState(false);
     const [macdVisible, setMacdVisible] = useState(false);
@@ -101,6 +99,7 @@ export function StockChart({
     const seriesRef = useRef<ISeriesApi<'Candlestick', UTCTimestamp> | null>(
         null
     );
+    const onChartReadyRef = useRef(onChartReady);
 
     const paneIndices: PaneIndices = useMemo(() => {
         const visibles = [
@@ -168,6 +167,10 @@ export function StockChart({
     };
 
     useEffect(() => {
+        onChartReadyRef.current = onChartReady;
+    });
+
+    useEffect(() => {
         if (!containerRef.current) return;
 
         const chart = createChart(containerRef.current, {
@@ -193,6 +196,8 @@ export function StockChart({
             // lightweight-charts의 addSeries() 반환 타입에 UTCTimestamp 제네릭이 포함되지 않아
             // 타입 가드로 narrowing이 불가능하다. 라이브러리 타입 한계로 인한 assertion이다.
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
+
+        onChartReadyRef.current?.(chart);
 
         return () => {
             chart.remove();
