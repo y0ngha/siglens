@@ -70,3 +70,8 @@
 - Violation: `useBars.ts`에서 `staleTime`과 `gcTime`을 `useSuspenseQuery` 옵션에 중복 명시함
 - Rule: CONVENTIONS.md "React Query and Server State Rules" — 컴포넌트 훅은 `queryKey` + `queryFn` 연결만 담당; 전역 defaultOptions로 이미 처리된 값을 개별 쿼리에 재명시하면 설정 출처가 두 곳이 됨
 - Context: `ReactQueryProvider.tsx`가 이미 `staleTime: QUERY_STALE_TIME_MS`, `gcTime: QUERY_GC_TIME_MS`를 전역 `defaultOptions`으로 등록하고 있음에도 `useBars.ts`가 동일 값을 쿼리 옵션에 재명시하고 있었음; 중복 제거
+
+## [Issue #172 Round 2 | feat/172/메인-페이지-리디자인-브랜딩-변경 | 2026-04-06]
+- Violation: `AnalysisPanel.tsx`와 `HowItWorks.tsx`에서 인디케이터 수(13)를 UI 문자열에 하드코딩
+- Rule: CONVENTIONS.md — No hardcoded literals; extract to a named constant
+- Context: 두 파일이 각각 `'13종 인디케이터 적용'`, `'13종 보조지표 자동 계산 + 패턴 감지'` 문자열을 하드코딩하여, 지원 인디케이터 수가 변경될 때 두 곳을 동시에 수정해야 하는 묵시적 결합이 생겼음; `INDICATOR_KIND_COUNT = 13`을 `domain/indicators/constants.ts`에 추가하고 양쪽에서 import하여 해결
