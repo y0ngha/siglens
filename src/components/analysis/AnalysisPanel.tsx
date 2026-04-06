@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import type React from 'react';
 import type {
     AnalysisResponse,
     CandlePatternSummary,
@@ -197,17 +198,20 @@ type ConfidenceLevel = 'high' | 'medium';
 
 const CONFIDENCE_BADGE_CONFIG: Record<
     ConfidenceLevel,
-    { className: string; label: string }
+    { className: string; label: string; tooltip: string }
 > = {
     high: {
         className:
             'text-chart-bullish bg-chart-bullish/10 border border-chart-bullish/30',
         label: '높은 신뢰도',
+        tooltip:
+            '신뢰도가 높은 패턴입니다. AI가 해당 패턴을 명확하게 감지했습니다.',
     },
     medium: {
         className:
             'text-ui-warning bg-ui-warning/10 border border-ui-warning/30',
         label: '중간 신뢰도',
+        tooltip: '신뢰도가 중간인 패턴입니다. 다른 지표와 함께 참고하세요.',
     },
 };
 
@@ -216,17 +220,64 @@ interface ConfidenceBadgeProps {
 }
 
 function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
+    const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+
     const level: ConfidenceLevel =
         confidenceWeight >= HIGH_CONFIDENCE_WEIGHT ? 'high' : 'medium';
-    const { className, label } = CONFIDENCE_BADGE_CONFIG[level];
+    const { className, label, tooltip } = CONFIDENCE_BADGE_CONFIG[level];
+
+    const handleClick = (): void => {
+        setIsTooltipVisible(prev => !prev);
+    };
+
+    const handleMouseEnter = (): void => {
+        setIsTooltipVisible(true);
+    };
+
+    const handleMouseLeave = (): void => {
+        setIsTooltipVisible(false);
+    };
+
+    const handlePointerEnter = (
+        e: React.PointerEvent<HTMLSpanElement>
+    ): void => {
+        // 터치 기기에서는 hover를 비활성화한다. 클릭(handleClick)만으로 토글한다.
+        if (e.pointerType === 'touch') return;
+        handleMouseEnter();
+    };
+
+    const handlePointerLeave = (
+        e: React.PointerEvent<HTMLSpanElement>
+    ): void => {
+        if (e.pointerType === 'touch') return;
+        handleMouseLeave();
+    };
+
     return (
         <span
-            className={cn(
-                'rounded px-1.5 py-0.5 text-xs font-medium',
-                className
-            )}
+            className="relative"
+            onPointerEnter={handlePointerEnter}
+            onPointerLeave={handlePointerLeave}
         >
-            {label}
+            <button
+                type="button"
+                onClick={handleClick}
+                className={cn(
+                    'cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium',
+                    className
+                )}
+            >
+                {label}
+            </button>
+            {isTooltipVisible && (
+                <div
+                    role="tooltip"
+                    className="bg-secondary-800 border-secondary-600 absolute bottom-full left-1/2 z-50 mb-1 w-48 -translate-x-1/2 rounded border p-2 text-xs leading-relaxed shadow-lg"
+                >
+                    <span className="text-secondary-300">{tooltip}</span>
+                    <span className="border-t-secondary-600 absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent" />
+                </div>
+            )}
         </span>
     );
 }
@@ -271,11 +322,13 @@ function PatternAccordionItem({
                         {pattern.skillName}
                     </span>
                     <TrendBadge trend={pattern.trend} />
+                    <ChevronIcon isOpen={isOpen} />
+                </button>
+                <span className="shrink-0 pr-2">
                     <ConfidenceBadge
                         confidenceWeight={pattern.confidenceWeight}
                     />
-                    <ChevronIcon isOpen={isOpen} />
-                </button>
+                </span>
                 {/*<button*/}
                 {/*    type="button"*/}
                 {/*    onClick={handleToggleVisibility}*/}
@@ -415,19 +468,25 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
 
     return (
         <div className="border-secondary-700 overflow-hidden rounded-md border">
-            <button
-                type="button"
-                aria-expanded={isOpen}
-                onClick={handleToggleOpen}
-                className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors"
-            >
-                <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
-                    {skill.skillName}
+            <div className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center transition-colors">
+                <button
+                    type="button"
+                    aria-expanded={isOpen}
+                    onClick={handleToggleOpen}
+                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left"
+                >
+                    <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
+                        {skill.skillName}
+                    </span>
+                    <TrendBadge trend={skill.trend} />
+                    <ChevronIcon isOpen={isOpen} />
+                </button>
+                <span className="shrink-0 pr-2">
+                    <ConfidenceBadge
+                        confidenceWeight={skill.confidenceWeight}
+                    />
                 </span>
-                <TrendBadge trend={skill.trend} />
-                <ConfidenceBadge confidenceWeight={skill.confidenceWeight} />
-                <ChevronIcon isOpen={isOpen} />
-            </button>
+            </div>
 
             {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
@@ -608,7 +667,7 @@ export function AnalysisPanel({
 
             {/* 요약 */}
             <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
-                {analysis.summary}
+                {isAnalyzing ? '분석 중입니다…' : analysis.summary}
             </p>
 
             <div className="border-secondary-700 border-t" />

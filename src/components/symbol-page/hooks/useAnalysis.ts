@@ -11,6 +11,10 @@ import type {
 } from '@/domain/types';
 import { analyzeAction } from '@/infrastructure/market/analyzeAction';
 
+interface AnalyzeMutationVariables extends AnalyzeVariables {
+    force: boolean;
+}
+
 interface UseAnalysisOptions {
     symbol: string;
     /** latestTimeframeRef를 통해 analyzeAction 호출 시 최신 timeframe 값을 읽기 위한 채널 */
@@ -62,10 +66,10 @@ export function useAnalysis({
     const { data, error, isPending, reset, mutate } = useMutation<
         AnalysisResponse,
         Error,
-        AnalyzeVariables
+        AnalyzeMutationVariables
     >({
-        mutationFn: variables =>
-            analyzeAction(variables, latestTimeframeRef.current),
+        mutationFn: ({ force, ...analyzeVars }) =>
+            analyzeAction(analyzeVars, latestTimeframeRef.current, force),
     });
 
     // Derived variables
@@ -75,8 +79,9 @@ export function useAnalysis({
     // Handlers
     // latestRef 패턴을 사용하므로 symbol·bars·indicators를 deps에서 제외하고 안정적인 함수 참조를 유지한다.
     const handleReanalyze = useCallback((): void => {
-        mutate(latestRef.current);
-    }, [mutate]);
+        reset();
+        mutate({ ...latestRef.current, force: true });
+    }, [reset, mutate]);
 
     // Effects
 
@@ -94,7 +99,7 @@ export function useAnalysis({
     useEffect(() => {
         if (!initialAnalysisFailedRef.current) return;
         if (latestRef.current.bars.length === 0) return;
-        mutate(latestRef.current);
+        mutate({ ...latestRef.current, force: false });
     }, [mutate]);
 
     // 타임프레임 변경 시 이전 mutation 상태를 초기화하고 새 분석을 자동 실행한다.
@@ -112,7 +117,7 @@ export function useAnalysis({
         prevTimeframeChangeCountRef.current = timeframeChangeCount;
         reset();
         if (latestRef.current.bars.length === 0) return;
-        mutate(latestRef.current);
+        mutate({ ...latestRef.current, force: false });
     }, [timeframeChangeCount, reset, mutate]);
 
     return {
