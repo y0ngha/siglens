@@ -10,6 +10,9 @@ const PANEL_DEFAULT_FRACTION = 1 / 3;
 const KEYBOARD_RESIZE_STEP = 10;
 
 function getDefaultPanelWidth(): number {
+    if (typeof window === 'undefined') {
+        return PANEL_MIN_WIDTH;
+    }
     return Math.min(
         PANEL_MAX_WIDTH,
         Math.max(
@@ -28,7 +31,7 @@ interface UsePanelResizeResult {
 
 export function usePanelResize(): UsePanelResizeResult {
     const [panelWidth, setPanelWidth] = useState(getDefaultPanelWidth);
-    const panelWidthAtDragStartRef = useRef<number>(getDefaultPanelWidth());
+    const panelWidthAtDragStartRef = useRef<number>(0);
 
     const { isDragging, handleDragStart: startDrag } = useDragListener({
         onResize: (deltaX: number): void => {
@@ -36,7 +39,7 @@ export function usePanelResize(): UsePanelResizeResult {
                 PANEL_MAX_WIDTH,
                 Math.max(
                     PANEL_MIN_WIDTH,
-                    panelWidthAtDragStartRef.current + deltaX
+                    panelWidthAtDragStartRef.current - deltaX
                 )
             );
             setPanelWidth(nextWidth);
