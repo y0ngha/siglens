@@ -71,6 +71,11 @@
 - Rule: CONVENTIONS.md "React Query and Server State Rules" — 컴포넌트 훅은 `queryKey` + `queryFn` 연결만 담당; 전역 defaultOptions로 이미 처리된 값을 개별 쿼리에 재명시하면 설정 출처가 두 곳이 됨
 - Context: `ReactQueryProvider.tsx`가 이미 `staleTime: QUERY_STALE_TIME_MS`, `gcTime: QUERY_GC_TIME_MS`를 전역 `defaultOptions`으로 등록하고 있음에도 `useBars.ts`가 동일 값을 쿼리 옵션에 재명시하고 있었음; 중복 제거
 
+## [Issue #172 Round 3 | feat/172/메인-페이지-리디자인-브랜딩-변경 | 2026-04-06]
+- Violation: `VolumeChart.tsx`의 bars useEffect가 `bars.length === 0`으로 전환될 때 chart 캔버스를 cleanup하지 않음
+- Rule: Lightweight Charts rule 1 — missing chart.remove() cleanup causes duplicate canvas on remount
+- Context: `bars` prop이 비어 있는 상태로 전환될 때 이전에 생성된 chart 인스턴스가 DOM에 남아 있어 다음 mount 시 캔버스가 중복될 수 있었음; `bars.length === 0` 분기에서 `chartRef.current.remove()` 후 두 ref를 null로 리셋하도록 수정
+
 ## [Issue #172 Round 2 | feat/172/메인-페이지-리디자인-브랜딩-변경 | 2026-04-06]
 - Violation: `AnalysisPanel.tsx`와 `HowItWorks.tsx`에서 인디케이터 수(13)를 UI 문자열에 하드코딩
 - Rule: CONVENTIONS.md — No hardcoded literals; extract to a named constant
