@@ -31,12 +31,12 @@ export const DEFAULT_BARS_LIMIT = TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME];
  * - '5Min':  10일  → 288봉 ≈ 3.7 거래일, 넉넉히 10일
  * - '15Min': 20일  → 200봉 ≈ 7.7 거래일, 넉넉히 20일
  * - '1Hour': 60일  → 200봉 ≈ 31 거래일, 넉넉히 60일
- * - '1Day':  800일 → 500봉 ≈ 2년, 넉넉히 800일
+ * - '1Day':  730일 → 500봉 ≈ 2년, 넉넉히 730일
  */
 export const TIMEFRAME_LOOKBACK_DAYS: Record<Timeframe, number> = {
     '1Min': 5,
     '5Min': 10,
     '15Min': 20,
     '1Hour': 60,
-    '1Day': 800,
+    '1Day': 730,
 };

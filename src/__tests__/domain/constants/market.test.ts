@@ -113,8 +113,8 @@ describe('TIMEFRAME_LOOKBACK_DAYS', () => {
             expect(TIMEFRAME_LOOKBACK_DAYS['1Hour']).toBe(60);
         });
 
-        it("'1Day'에 대해 800을 반환한다", () => {
-            expect(TIMEFRAME_LOOKBACK_DAYS['1Day']).toBe(800);
+        it("'1Day'에 대해 730을 반환한다", () => {
+            expect(TIMEFRAME_LOOKBACK_DAYS['1Day']).toBe(730);
         });
     });
 });

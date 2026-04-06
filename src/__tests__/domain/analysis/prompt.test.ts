@@ -65,7 +65,7 @@ const TEST_MIN_CONFIDENCE_WEIGHT = MIN_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_MIN_CONFIDENCE = 0.6;
 const TEST_BELOW_MIN_CONFIDENCE = 0.4;
 const TEST_LOW_CONFIDENCE = 0.3;
-const TEST_MARKET_SECTION_INDEX = 1;
+const TEST_MARKET_SECTION_INDEX = 2;
 // expected value: ((110 - 100) / 100) * 100 = 10.00%
 const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT_CLOSE - TEST_PREV_CLOSE) / TEST_PREV_CLOSE) * 100).toFixed(2)}%`;
 
@@ -1136,9 +1136,20 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain(
-                '"keyPrices": [{ "label": "neckline", "price": 150.00 }]'
+            expect(result).toContain('"keyPrices"');
+            expect(result).toContain('"label": "넥라인"');
+        });
+
+        it('patternSummaries 스키마에 patternLines 필드가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
             );
+            expect(result).toContain('"patternLines"');
+            expect(result).toContain('"label": "상단 추세선"');
+            expect(result).toContain('"label": "하단 추세선"');
         });
 
         it('patternSummaries 스키마의 keyPrices가 label/price 구조를 포함한다', () => {
@@ -1148,7 +1159,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('"label": "neckline"');
+            expect(result).toContain('"label": "넥라인"');
         });
 
         it('patternSummaries 스키마에 timeRange 필드가 포함된다', () => {

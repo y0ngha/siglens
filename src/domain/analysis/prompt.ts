@@ -34,12 +34,38 @@ import type {
     Bar,
     IndicatorResult,
     Skill,
+    Timeframe,
 } from '@/domain/types';
 
 const INDICATOR_DECIMAL_PLACES = 2;
 const RECENT_BARS_COUNT = 30;
 const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
+const INDICATOR_TREND_SAMPLE_COUNT = 5;
+
+const TIMEFRAME_LABEL: Record<Timeframe, string> = {
+    '1Min': '1-Minute',
+    '5Min': '5-Minute',
+    '15Min': '15-Minute',
+    '1Hour': '1-Hour',
+    '1Day': 'Daily',
+};
+
+type IndicatorTrend = 'rising' | 'falling' | 'flat';
+
+const detectTrend = (values: (number | null)[]): IndicatorTrend | null => {
+    const nonNull = values
+        .slice(-INDICATOR_TREND_SAMPLE_COUNT)
+        .filter((v): v is number => v !== null);
+    if (nonNull.length < 2) return null;
+    const first = nonNull[0];
+    const last = nonNull[nonNull.length - 1];
+    const diff = last - first;
+    const threshold = Math.abs(first) * 0.01;
+    if (diff > threshold) return 'rising';
+    if (diff < -threshold) return 'falling';
+    return 'flat';
+};
 
 type PatternEntryType = 'single' | 'multi';
 
@@ -88,13 +114,40 @@ const formatMarketSection = (bars: Bar[]): string => {
     ].join('\n');
 };
 
+const formatLongTermContext = (bars: Bar[]): string => {
+    if (bars.length === 0) {
+        return ['## Long-term Context', '- No data available'].join('\n');
+    }
+
+    const highs = bars.map(b => b.high);
+    const lows = bars.map(b => b.low);
+    const periodHigh = Math.max(...highs);
+    const periodLow = Math.min(...lows);
+    const firstClose = bars[0].close;
+    const lastClose = bars[bars.length - 1].close;
+    const periodReturn =
+        firstClose > 0
+            ? ((lastClose - firstClose) / firstClose) * PERCENTAGE_FACTOR
+            : 0;
+
+    return [
+        `## Long-term Context (${bars.length} bars total)`,
+        `- Period High: ${fmt(periodHigh)}`,
+        `- Period Low: ${fmt(periodLow)}`,
+        `- Price Range: ${fmt(periodHigh)} ~ ${fmt(periodLow)}`,
+        `- Period Return: ${periodReturn.toFixed(INDICATOR_DECIMAL_PLACES)}%`,
+        `- Current vs High: ${((lastClose / periodHigh) * PERCENTAGE_FACTOR).toFixed(INDICATOR_DECIMAL_PLACES)}%`,
+        `- Current vs Low: ${((lastClose / periodLow) * PERCENTAGE_FACTOR).toFixed(INDICATOR_DECIMAL_PLACES)}%`,
+    ].join('\n');
+};
+
 const formatBarRow = (bar: Bar): string => {
     const datetime = new Date(bar.time * 1000)
         .toISOString()
         .replace('T', ' ')
         .slice(0, DATETIME_DISPLAY_LENGTH);
     const pattern = detectCandlePattern(bar);
-    return `${datetime} | O:${fmt(bar.open)} H:${fmt(bar.high)} L:${fmt(bar.low)} C:${fmt(bar.close)} V:${formatVolume(bar.volume)} [${getCandlePatternLabel(pattern)}]`;
+    return `[ts:${bar.time}] ${datetime} | O:${fmt(bar.open)} H:${fmt(bar.high)} L:${fmt(bar.low)} C:${fmt(bar.close)} V:${formatVolume(bar.volume)} [${getCandlePatternLabel(pattern)}]`;
 };
 
 const buildCandlePatternEntries = (bars: Bar[]): PromptCandlePatternEntry[] => {
@@ -164,6 +217,9 @@ const formatVolumeSection = (bars: Bar[]): string => {
     ].join('\n');
 };
 
+const trendLabel = (trend: IndicatorTrend | null): string =>
+    trend === null ? '' : ` [${trend}]`;
+
 const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastRSI = lastNonNull(indicators.rsi);
     const lastMACD = lastOf(indicators.macd);
@@ -172,18 +228,26 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastStochastic = lastOf(indicators.stochastic);
     const lastStochRSI = lastOf(indicators.stochRsi);
     const lastCCI = lastNonNull(indicators.cci);
+    const lastVWAP = lastNonNull(indicators.vwap);
     const vp = indicators.volumeProfile;
     const lastIchimoku = lastOf(indicators.ichimoku);
 
+    const rsiTrend = detectTrend(indicators.rsi);
+    const cciTrend = detectTrend(indicators.cci);
+    const macdTrend = detectTrend(
+        indicators.macd.map(m => m.histogram ?? null)
+    );
+
     return [
         '## Indicator Values',
-        `- RSI(${RSI_DEFAULT_PERIOD}): ${fmt(lastRSI)}`,
-        `- MACD: ${fmt(lastMACD?.macd ?? null)} / Signal ${fmt(lastMACD?.signal ?? null)} / Histogram ${fmt(lastMACD?.histogram ?? null)}`,
+        `- RSI(${RSI_DEFAULT_PERIOD}): ${fmt(lastRSI)}${trendLabel(rsiTrend)}`,
+        `- MACD: ${fmt(lastMACD?.macd ?? null)} / Signal ${fmt(lastMACD?.signal ?? null)} / Histogram ${fmt(lastMACD?.histogram ?? null)}${trendLabel(macdTrend)}`,
         `- Bollinger Bands: Upper ${fmt(lastBollinger?.upper ?? null)} / Middle ${fmt(lastBollinger?.middle ?? null)} / Lower ${fmt(lastBollinger?.lower ?? null)}`,
         `- DMI: +DI ${fmt(lastDMI?.diPlus ?? null)} / -DI ${fmt(lastDMI?.diMinus ?? null)} / ADX ${fmt(lastDMI?.adx ?? null)}`,
         `- Stochastic(${STOCHASTIC_K_PERIOD},${STOCHASTIC_D_PERIOD},${STOCHASTIC_SMOOTHING}): %K ${fmt(lastStochastic?.percentK ?? null)} / %D ${fmt(lastStochastic?.percentD ?? null)}`,
         `- StochRSI(${STOCH_RSI_RSI_PERIOD},${STOCH_RSI_STOCH_PERIOD},${STOCH_RSI_K_PERIOD},${STOCH_RSI_D_PERIOD}): K ${fmt(lastStochRSI?.k ?? null)} / D ${fmt(lastStochRSI?.d ?? null)}`,
-        `- CCI(${CCI_DEFAULT_PERIOD}): ${fmt(lastCCI)}`,
+        `- CCI(${CCI_DEFAULT_PERIOD}): ${fmt(lastCCI)}${trendLabel(cciTrend)}`,
+        `- VWAP: ${fmt(lastVWAP)}`,
         `- Volume Profile: POC ${fmt(vp?.poc ?? null)} / VAH ${fmt(vp?.vah ?? null)} / VAL ${fmt(vp?.val ?? null)}`,
         `- MA: ${MA_DEFAULT_PERIODS.map(p => `MA(${p}): ${fmt(lastNonNull(indicators.ma[p] ?? []))}`).join(' / ')}`,
         `- EMA: ${EMA_DEFAULT_PERIODS.map(p => `EMA(${p}): ${fmt(lastNonNull(indicators.ema[p] ?? []))}`).join(' / ')}`,
@@ -217,7 +281,7 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
         '{ "bullish": { "targets": [{ "price": 165.00, "basis": "..." }], "condition": "..." }, "bearish": { "targets": [{ "price": 145.00, "basis": "..." }], "condition": "..." } }',
     patternSummaries:
         // Only chart patterns defined in skills/*.md. Candle patterns go in candlePatterns.
-        '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "...", "keyPrices": [{ "label": "neckline", "price": 150.00 }], "timeRange": { "start": 1700000000, "end": 1700100000 } }]',
+        '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "...", "keyPrices": [{ "label": "넥라인", "price": 150.00 }], "patternLines": [{ "label": "상단 추세선", "start": { "time": 1700000000, "price": 155.00 }, "end": { "time": 1700100000, "price": 152.00 } }, { "label": "하단 추세선", "start": { "time": 1700000000, "price": 148.00 }, "end": { "time": 1700100000, "price": 146.00 } }], "timeRange": { "start": 1700000000, "end": 1700100000 } }]',
     skillResults:
         '[{ "skillName": "...", "trend": "bullish | bearish | neutral", "summary": "..." }]',
     candlePatterns:
@@ -240,6 +304,10 @@ const ANALYSIS_GUIDELINES = [
     '### Candle Patterns vs Chart Patterns',
     '- candlePatterns: Only include candle patterns (single/multi candle) detected from bar data. Chart patterns defined in skills/*.md go in patternSummaries.',
     '- patternSummaries: Only include chart patterns defined in skills/*.md. Candle patterns go in candlePatterns.',
+    '',
+    '### keyPrices Rules',
+    '- keyPrices must only contain actual price levels (numbers that represent a price, e.g. 150.00). Do NOT include bar indices, counts, or any non-price numeric values.',
+    '- All label values in keyPrices must be written in Korean (e.g. "상단 추세선", "하단 추세선", "넥라인", "목표가", "손절선"). Never use English or snake_case identifiers.',
     '',
     '### Support/Resistance Assessment',
     `- Check convergence points of moving averages (MA ${MA_DEFAULT_PERIODS.join(',')}, EMA ${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_SHORT_INDEX]}/${EMA_DEFAULT_PERIODS[EMA_SUPPORT_RESISTANCE_LONG_INDEX]}) first`,
@@ -265,13 +333,27 @@ const ANALYSIS_GUIDELINES = [
     '- Return 0 to 3 trendlines maximum',
     '- ascending: connect higher lows (at least 2 clear swing low points)',
     '- descending: connect lower highs (at least 2 clear swing high points)',
-    '- Use the Unix timestamp values from the provided bar data for the time field',
+    '- Use the Unix timestamp values from the provided bar data for the time field. Each bar row begins with [ts:<unix_timestamp>] — copy this exact integer value into the time field. Do not calculate or guess timestamps.',
     '- Only include a trendline when 2 or more clear swing points are identifiable',
     '- If no clear trendlines exist, return an empty array',
+    '',
+    '### trendlines vs patternLines',
+    '- trendlines: Overall price trendlines visible on the full chart (ascending support / descending resistance). These are independent of any specific pattern.',
+    '- patternLines (inside patternSummaries): Structural lines that define a specific pattern (e.g. wedge upper/lower boundaries, neckline). These belong to a particular pattern and are rendered as part of that pattern overlay.',
+    '- Do not duplicate a trendline in patternLines or vice versa.',
+    '',
+    '### Conflicting Signals',
+    '- When indicators give conflicting signals (e.g. RSI overbought but MACD bullish cross), list each signal individually and then state which side has stronger confluence.',
+    '- Weight signals by the number of confirming indicators and the strength of each signal.',
+    '- Mention the conflict explicitly in the summary so the user understands the mixed picture.',
+    '',
+    '### Insufficient Data',
+    '- If bar data is too short to reliably calculate an indicator or detect a pattern, state "데이터 부족" rather than guessing.',
+    '- Do not fabricate support/resistance levels or patterns when the data does not clearly support them.',
 ].join('\n');
 
 const RESPONSE_LANGUAGE_INSTRUCTION =
-    'IMPORTANT: All text field values in the JSON response (summary, description, reason, basis, condition, etc.) must be written in Korean (한국어). Do not use English for any response content.';
+    'IMPORTANT: All text field values in the JSON response (summary, description, reason, basis, condition, etc.) must be written in Korean (한국어). Do not use English for any response content. Use formal/polite speech level (존댓말, e.g. "~입니다", "~습니다"). For the summary field, use \\n to separate each topic or sentence into its own line — do not write the summary as a single long paragraph. Other text fields (description, reason, basis, condition, etc.) should also use \\n for line breaks where it improves readability.';
 
 const buildAnalysisRequest = (
     patternSkills: Skill[],
@@ -289,6 +371,15 @@ const buildAnalysisRequest = (
                   '- **Do not include any patterns not listed below in patternSummaries.**',
                   '- **Do not include candle patterns (single/multi candle) in patternSummaries.** Candle patterns belong only in candlePatterns.',
                   '- The "skillName" field in each patternSummaries entry MUST exactly match one of the skill names listed below. Copy the name verbatim — do not translate, abbreviate, or modify it.',
+                  '',
+                  '### patternLines Writing Rules',
+                  '- patternLines is an optional field. Include it only when detected: true and the pattern has diagonal trendlines (e.g., wedge upper/lower trendlines, neckline).',
+                  '- Each entry must have: label (Korean, e.g. "상단 추세선", "하단 추세선", "넥라인"), start { time, price }, end { time, price }.',
+                  '- For time values: each bar row begins with [ts:<unix_timestamp>] — copy this exact integer value. Do not calculate or guess.',
+                  '- For wedge patterns (ascending/descending): include upper trendline and lower trendline as two separate entries.',
+                  '- For head-and-shoulders / double-top / double-bottom: include the neckline as one entry.',
+                  '- start and end should span the full visible range of the pattern (from the first swing point to the most recent touch).',
+                  '- If no clear trendlines can be identified, omit patternLines entirely.',
                   '',
                   'Skills pattern list to analyze:',
                   ...patternSkills.map(s => `- ${s.name}`),
@@ -349,7 +440,8 @@ export function buildAnalysisPrompt(
     symbol: string,
     bars: Bar[],
     indicators: IndicatorResult,
-    skills: Skill[] = []
+    skills: Skill[] = [],
+    timeframe: Timeframe = '1Day'
 ): string {
     const activeSkills = skills.filter(
         s => s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT
@@ -368,7 +460,9 @@ export function buildAnalysisPrompt(
 
     const sections = [
         `Symbol: ${symbol}`,
+        `Timeframe: ${TIMEFRAME_LABEL[timeframe]}`,
         formatMarketSection(bars),
+        formatLongTermContext(bars),
         formatRecentBarsSection(bars),
         formatVolumeSection(bars),
         formatIndicatorSection(indicators),

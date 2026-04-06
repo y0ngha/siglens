@@ -1,26 +1,13 @@
 'use client';
 
 import type React from 'react';
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useDragListener } from '@/components/symbol-page/hooks/useDragListener';
 
 export const PANEL_MIN_WIDTH = 240;
 export const PANEL_MAX_WIDTH = 640;
 const PANEL_DEFAULT_FRACTION = 1 / 3;
 const KEYBOARD_RESIZE_STEP = 10;
-
-function getDefaultPanelWidth(): number {
-    if (typeof window === 'undefined') {
-        return PANEL_MIN_WIDTH;
-    }
-    return Math.min(
-        PANEL_MAX_WIDTH,
-        Math.max(
-            PANEL_MIN_WIDTH,
-            Math.round(window.innerWidth * PANEL_DEFAULT_FRACTION)
-        )
-    );
-}
 
 interface UsePanelResizeResult {
     panelWidth: number;
@@ -30,7 +17,19 @@ interface UsePanelResizeResult {
 }
 
 export function usePanelResize(): UsePanelResizeResult {
-    const [panelWidth, setPanelWidth] = useState(getDefaultPanelWidth);
+    const [panelWidth, setPanelWidth] = useState(PANEL_MIN_WIDTH);
+
+    useEffect(() => {
+        setPanelWidth(
+            Math.min(
+                PANEL_MAX_WIDTH,
+                Math.max(
+                    PANEL_MIN_WIDTH,
+                    Math.round(window.innerWidth * PANEL_DEFAULT_FRACTION)
+                )
+            )
+        );
+    }, []);
     const panelWidthAtDragStartRef = useRef<number>(0);
 
     const { isDragging, handleDragStart: startDrag } = useDragListener({

@@ -158,6 +158,9 @@ interface EyeIconProps {
     isVisible: boolean;
 }
 
+/**
+ * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
+ */
 function EyeIcon({ isVisible }: EyeIconProps) {
     return isVisible ? (
         <svg
@@ -236,6 +239,9 @@ interface PatternAccordionItemProps {
 
 function PatternAccordionItem({
     pattern,
+    /**
+     * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
+     */
     isVisible,
     onToggleVisibility,
 }: PatternAccordionItemProps) {
@@ -270,19 +276,19 @@ function PatternAccordionItem({
                     />
                     <ChevronIcon isOpen={isOpen} />
                 </button>
-                <button
-                    type="button"
-                    onClick={handleToggleVisibility}
-                    className={cn(
-                        'shrink-0 rounded p-1 pr-3 transition-colors',
-                        isVisible
-                            ? 'text-primary-400 hover:text-primary-300'
-                            : 'text-secondary-600 hover:text-secondary-400'
-                    )}
-                    title={isVisible ? '차트에서 숨기기' : '차트에서 보기'}
-                >
-                    <EyeIcon isVisible={isVisible} />
-                </button>
+                {/*<button*/}
+                {/*    type="button"*/}
+                {/*    onClick={handleToggleVisibility}*/}
+                {/*    className={cn(*/}
+                {/*        'shrink-0 rounded p-1 pr-3 transition-colors',*/}
+                {/*        isVisible*/}
+                {/*            ? 'text-primary-400 hover:text-primary-300'*/}
+                {/*            : 'text-secondary-600 hover:text-secondary-400'*/}
+                {/*    )}*/}
+                {/*    title={isVisible ? '차트에서 숨기기' : '차트에서 보기'}*/}
+                {/*>*/}
+                {/*    <EyeIcon isVisible={isVisible} />*/}
+                {/*</button>*/}
             </div>
 
             {isOpen ? (
@@ -307,7 +313,13 @@ function PatternAccordionItem({
                                                 : kp.label}
                                         </span>
                                         <span className="text-secondary-200 text-xs font-medium tabular-nums">
-                                            {kp.price.toLocaleString()}
+                                            {kp.price.toLocaleString(
+                                                undefined,
+                                                {
+                                                    minimumFractionDigits: 2,
+                                                    maximumFractionDigits: 2,
+                                                }
+                                            )}
                                         </span>
                                     </div>
                                 ))}
@@ -320,10 +332,16 @@ function PatternAccordionItem({
     );
 }
 
+/**
+ * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
+ */
 interface CandlePatternAccordionItemProps {
     pattern: CandlePatternSummary;
 }
 
+/**
+ * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
+ */
 function CandlePatternAccordionItem({
     pattern,
 }: CandlePatternAccordionItemProps) {
@@ -489,8 +507,16 @@ function PriceScenarioSection({
                     key={`target-${index}-${target.price}`}
                     className="flex items-baseline gap-2"
                 >
-                    <span className={cn('text-sm font-medium', colorClass)}>
-                        {target.price.toLocaleString()}
+                    <span
+                        className={cn(
+                            'text-sm font-medium tabular-nums',
+                            colorClass
+                        )}
+                    >
+                        {target.price.toLocaleString(undefined, {
+                            minimumFractionDigits: 2,
+                            maximumFractionDigits: 2,
+                        })}
                     </span>
                     <span className="text-secondary-500 text-xs">
                         {target.basis}
@@ -512,6 +538,8 @@ interface AnalysisPanelProps {
     onTogglePattern?: (patternName: string) => void;
     keyLevelsVisible?: boolean;
     onKeyLevelsVisibilityChange?: (isVisible: boolean) => void;
+    trendlinesVisible?: boolean;
+    onTrendlinesVisibilityChange?: (isVisible: boolean) => void;
 }
 
 export function AnalysisPanel({
@@ -521,8 +549,10 @@ export function AnalysisPanel({
     onReanalyze,
     chartVisiblePatterns,
     onTogglePattern,
-    keyLevelsVisible = true,
+    keyLevelsVisible = false,
     onKeyLevelsVisibilityChange,
+    trendlinesVisible = false,
+    onTrendlinesVisibilityChange,
 }: AnalysisPanelProps) {
     const handleTogglePatternVisibility = (patternName: string): void => {
         onTogglePattern?.(patternName);
@@ -548,11 +578,6 @@ export function AnalysisPanel({
     const detectedSkillSignals = analysis.skillSignals.filter(s =>
         detectedSkillNames.has(s.skillName)
     );
-
-    const detectedCandlePatterns = analysis.candlePatterns.filter(
-        p => p.detected
-    );
-    const hasCandlePatterns = detectedCandlePatterns.length > 0;
 
     return (
         <div className="bg-secondary-800 flex flex-col gap-4 rounded-lg p-4">
@@ -582,7 +607,7 @@ export function AnalysisPanel({
             </p>
 
             {/* 요약 */}
-            <p className="text-secondary-300 text-sm leading-relaxed">
+            <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
                 {analysis.summary}
             </p>
 
@@ -631,22 +656,6 @@ export function AnalysisPanel({
             )}
 
             {/* 캔들 패턴 (아코디언) */}
-            {hasCandlePatterns && (
-                <div className="flex flex-col gap-2">
-                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                        캔들 패턴
-                    </span>
-                    <div className="flex flex-col gap-1.5">
-                        {detectedCandlePatterns.map(pattern => (
-                            <CandlePatternAccordionItem
-                                key={pattern.id}
-                                pattern={pattern}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
-
             {/* 패턴 상세 (아코디언) — 감지된 패턴만 표시, 없으면 안내 메시지 */}
             <div className="flex flex-col gap-2">
                 <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
@@ -699,29 +708,29 @@ export function AnalysisPanel({
                         <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                             주요 레벨
                         </span>
-                        {onKeyLevelsVisibilityChange !== undefined && (
-                            <button
-                                type="button"
-                                onClick={() =>
-                                    onKeyLevelsVisibilityChange(
-                                        !keyLevelsVisible
-                                    )
-                                }
-                                className={cn(
-                                    'shrink-0 rounded p-1 transition-colors',
-                                    keyLevelsVisible
-                                        ? 'text-primary-400 hover:text-primary-300'
-                                        : 'text-secondary-600 hover:text-secondary-400'
-                                )}
-                                title={
-                                    keyLevelsVisible
-                                        ? '차트에서 숨기기'
-                                        : '차트에서 보기'
-                                }
-                            >
-                                <EyeIcon isVisible={keyLevelsVisible} />
-                            </button>
-                        )}
+                        {/*{onKeyLevelsVisibilityChange !== undefined && (*/}
+                        {/*    <button*/}
+                        {/*        type="button"*/}
+                        {/*        onClick={() =>*/}
+                        {/*            onKeyLevelsVisibilityChange(*/}
+                        {/*                !keyLevelsVisible*/}
+                        {/*            )*/}
+                        {/*        }*/}
+                        {/*        className={cn(*/}
+                        {/*            'shrink-0 rounded p-1 transition-colors',*/}
+                        {/*            keyLevelsVisible*/}
+                        {/*                ? 'text-primary-400 hover:text-primary-300'*/}
+                        {/*                : 'text-secondary-600 hover:text-secondary-400'*/}
+                        {/*        )}*/}
+                        {/*        title={*/}
+                        {/*            keyLevelsVisible*/}
+                        {/*                ? '차트에서 숨기기'*/}
+                        {/*                : '차트에서 보기'*/}
+                        {/*        }*/}
+                        {/*    >*/}
+                        {/*        <EyeIcon isVisible={keyLevelsVisible} />*/}
+                        {/*    </button>*/}
+                        {/*)}*/}
                     </div>
                     <div className="grid grid-cols-2 gap-3">
                         {keyLevels.resistance.length > 0 && (
@@ -784,9 +793,34 @@ export function AnalysisPanel({
             {/* 추세선 */}
             {analysis.trendlines.length > 0 && (
                 <div className="flex flex-col gap-2">
-                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                        추세선
-                    </span>
+                    <div className="flex items-center justify-between">
+                        <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                            추세선
+                        </span>
+                        {/*{onTrendlinesVisibilityChange !== undefined && (*/}
+                        {/*    <button*/}
+                        {/*        type="button"*/}
+                        {/*        onClick={() =>*/}
+                        {/*            onTrendlinesVisibilityChange(*/}
+                        {/*                !trendlinesVisible*/}
+                        {/*            )*/}
+                        {/*        }*/}
+                        {/*        className={cn(*/}
+                        {/*            'shrink-0 rounded p-1 transition-colors',*/}
+                        {/*            trendlinesVisible*/}
+                        {/*                ? 'text-primary-400 hover:text-primary-300'*/}
+                        {/*                : 'text-secondary-600 hover:text-secondary-400'*/}
+                        {/*        )}*/}
+                        {/*        title={*/}
+                        {/*            trendlinesVisible*/}
+                        {/*                ? '차트에서 숨기기'*/}
+                        {/*                : '차트에서 보기'*/}
+                        {/*        }*/}
+                        {/*    >*/}
+                        {/*        <EyeIcon isVisible={trendlinesVisible} />*/}
+                        {/*    </button>*/}
+                        {/*)}*/}
+                    </div>
                     <div className="flex flex-col gap-1.5">
                         {analysis.trendlines.map(trendline => (
                             <TrendlineItem

@@ -178,6 +178,12 @@ export interface PriceTargets {
     bearish: PriceScenario;
 }
 
+export interface PatternLine {
+    label: string;
+    start: TrendlinePoint;
+    end: TrendlinePoint;
+}
+
 export interface PatternSummary {
     id: string;
     patternName: string;
@@ -186,6 +192,7 @@ export interface PatternSummary {
     trend: Trend;
     summary: string;
     keyPrices?: KeyPrice[];
+    patternLines?: PatternLine[];
     timeRange?: { start: number; end: number };
     confidenceWeight: number;
 }

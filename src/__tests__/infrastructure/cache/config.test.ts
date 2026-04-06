@@ -6,16 +6,16 @@ import type { Timeframe } from '@/domain/types';
 
 describe('ANALYSIS_CACHE_TTL 상수는', () => {
     describe('타임프레임별 TTL 값이', () => {
-        it('1Min은 300초(5분)이다', () => {
-            expect(ANALYSIS_CACHE_TTL['1Min']).toBe(300);
+        it('1Min은 60초(1분)이다', () => {
+            expect(ANALYSIS_CACHE_TTL['1Min']).toBe(60);
         });
 
-        it('5Min은 900초(15분)이다', () => {
-            expect(ANALYSIS_CACHE_TTL['5Min']).toBe(900);
+        it('5Min은 300초(5분)이다', () => {
+            expect(ANALYSIS_CACHE_TTL['5Min']).toBe(300);
         });
 
-        it('15Min은 1800초(30분)이다', () => {
-            expect(ANALYSIS_CACHE_TTL['15Min']).toBe(1800);
+        it('15Min은 900초(15분)이다', () => {
+            expect(ANALYSIS_CACHE_TTL['15Min']).toBe(900);
         });
 
         it('1Hour은 3600초(1시간)이다', () => {

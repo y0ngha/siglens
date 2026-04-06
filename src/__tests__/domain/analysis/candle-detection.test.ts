@@ -228,9 +228,22 @@ describe('candle-detection', () => {
         });
 
         describe('다봉 패턴이 존재할 때', () => {
-            it('마지막 다봉 패턴만 반환한다', () => {
+            it('마지막 다봉 패턴과 마지막 단봉 패턴을 함께 반환한다', () => {
                 const entries: CandlePatternEntry[] = [
                     makeSingleEntry(2, 'hammer'),
+                    makeMultiEntry(4, 'bullish_engulfing'),
+                    makeMultiEntry(8, 'morning_star'),
+                ];
+                const result = selectLastCandlePatternEntries(entries);
+                expect(result).toHaveLength(2);
+                expect(result[0].patternType).toBe('single');
+                expect(result[0].barIndex).toBe(2);
+                expect(result[1].patternType).toBe('multi');
+                expect(result[1].barIndex).toBe(8);
+            });
+
+            it('단봉 패턴이 없으면 마지막 다봉 패턴만 반환한다', () => {
+                const entries: CandlePatternEntry[] = [
                     makeMultiEntry(4, 'bullish_engulfing'),
                     makeMultiEntry(8, 'morning_star'),
                 ];
@@ -242,7 +255,7 @@ describe('candle-detection', () => {
         });
 
         describe('단봉과 다봉 패턴이 혼합되어 있을 때', () => {
-            it('마지막 다봉 패턴만 반환한다', () => {
+            it('마지막 다봉 패턴과 마지막 단봉 패턴을 함께 반환한다', () => {
                 const entries: CandlePatternEntry[] = [
                     makeSingleEntry(0, 'hammer'),
                     makeSingleEntry(5, 'doji'),
@@ -251,9 +264,11 @@ describe('candle-detection', () => {
                     makeMultiEntry(10, 'bullish_engulfing'),
                 ];
                 const result = selectLastCandlePatternEntries(entries);
-                expect(result).toHaveLength(1);
-                expect(result[0].patternType).toBe('multi');
-                expect(result[0].barIndex).toBe(10);
+                expect(result).toHaveLength(2);
+                expect(result[0].patternType).toBe('single');
+                expect(result[0].barIndex).toBe(9);
+                expect(result[1].patternType).toBe('multi');
+                expect(result[1].barIndex).toBe(10);
             });
         });
     });

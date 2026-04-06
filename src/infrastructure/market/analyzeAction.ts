@@ -22,6 +22,11 @@ export async function analyzeAction(
         try {
             const cached = await cache.get<RunAnalysisResult>(cacheKey);
             if (cached !== null) {
+                console.log(
+                    '[Cache] 캐시가 존재하여 캐시로 응답합니다:',
+                    cacheKey,
+                    cached
+                );
                 return cached;
             }
         } catch (error) {
@@ -29,11 +34,14 @@ export async function analyzeAction(
         }
     }
 
-    const result = await runAnalysis(variables);
+    const result = await runAnalysis(variables, timeframe);
 
     if (cache !== null) {
         cache
             .set(cacheKey, result, ANALYSIS_CACHE_TTL[timeframe])
+            .then(() =>
+                console.log('[Cache] 캐시 쓰기 성공:', cacheKey, result)
+            )
             .catch(error => console.error('[Cache] 캐시 쓰기 실패:', error));
     }
 

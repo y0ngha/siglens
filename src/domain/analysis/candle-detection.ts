@@ -162,10 +162,9 @@ export function detectCandlePatternEntries(bars: Bar[]): CandlePatternEntry[] {
 // ─── Selection ──────────────────────────────────────────────────────────────
 
 /**
- * Selects only the last detected candle pattern entries:
- * - If a multi-candle pattern exists: returns only the last multi pattern
- *   (single patterns for involved bars are already excluded by detectCandlePatternEntries)
- * - If only single patterns exist: returns only the last single pattern
+ * Selects the last detected candle pattern entries:
+ * - Returns the last multi-candle pattern (if any) + the last single-candle pattern (if any).
+ * - This ensures both pattern types are represented when they co-exist.
  *
  * Shared by prompt construction and chart marker rendering.
  */
@@ -175,11 +174,11 @@ export function selectLastCandlePatternEntries(
     if (entries.length === 0) return [];
 
     const lastMultiEntry = entries.findLast(e => e.patternType === 'multi');
+    const lastSingleEntry = entries.findLast(e => e.patternType === 'single');
 
-    if (lastMultiEntry !== undefined) {
-        return [lastMultiEntry];
-    }
+    const result: CandlePatternEntry[] = [];
+    if (lastMultiEntry !== undefined) result.push(lastMultiEntry);
+    if (lastSingleEntry !== undefined) result.push(lastSingleEntry);
 
-    // Only single patterns: return the last one
-    return [entries[entries.length - 1]];
+    return result.sort((a, b) => a.barIndex - b.barIndex);
 }

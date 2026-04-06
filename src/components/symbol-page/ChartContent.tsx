@@ -101,7 +101,8 @@ export function ChartContent({
     const togglePatternRef = useRef<(patternName: string) => void>(
         () => undefined
     );
-    const [keyLevelsVisible, setKeyLevelsVisible] = useState(true);
+    const [keyLevelsVisible, setKeyLevelsVisible] = useState(false);
+    const [trendlinesVisible, setTrendlinesVisible] = useState(false);
 
     const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
 
@@ -137,6 +138,7 @@ export function ChartContent({
                         indicators={indicators}
                         patterns={analysis.patternSummaries}
                         trendlines={analysis.trendlines}
+                        trendlinesVisible={trendlinesVisible}
                         keyLevels={validatedKeyLevels}
                         keyLevelsVisible={keyLevelsVisible}
                         onPatternOverlayChange={handlePatternOverlayChange}
@@ -190,6 +192,8 @@ export function ChartContent({
                     onTogglePattern={handleTogglePattern}
                     keyLevelsVisible={keyLevelsVisible}
                     onKeyLevelsVisibilityChange={setKeyLevelsVisible}
+                    trendlinesVisible={trendlinesVisible}
+                    onTrendlinesVisibilityChange={setTrendlinesVisible}
                 />
             </aside>
 

@@ -1,21 +1,14 @@
 'use client';
 
-import {
-    useCallback,
-    useEffect,
-    useEffectEvent,
-    useMemo,
-    useRef,
-    useState,
-} from 'react';
 import type { RefObject } from 'react';
-import { CandlestickSeries, createChart } from 'lightweight-charts';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
     IChartApi,
     ISeriesApi,
     LineWidth,
     UTCTimestamp,
 } from 'lightweight-charts';
+import { CandlestickSeries, createChart } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
 import type {
     Bar,
@@ -38,10 +31,7 @@ import { useStochRSIChart } from '@/components/chart/hooks/useStochRSIChart';
 import { useCCIChart } from '@/components/chart/hooks/useCCIChart';
 import { useVolumeProfileOverlay } from '@/components/chart/hooks/useVolumeProfileOverlay';
 import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay';
-import { usePatternOverlay } from '@/components/chart/hooks/usePatternOverlay';
-import { useTrendlineOverlay } from '@/components/chart/hooks/useTrendlineOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
-import { useKeyLevelsOverlay } from '@/components/chart/hooks/useKeyLevelsOverlay';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import { useOverlayLegend } from '@/components/chart/hooks/useOverlayLegend';
 import {
@@ -53,9 +43,9 @@ import { OverlayLegend } from '@/components/chart/OverlayLegend';
 import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
 import { buildOverlayLabelConfigs } from '@/components/chart/utils/overlayLabelUtils';
 import {
-    MA_DEFAULT_PERIODS,
     EMA_DEFAULT_PERIODS,
     EMPTY_INDICATOR_RESULT,
+    MA_DEFAULT_PERIODS,
 } from '@/domain/indicators/constants';
 
 const CANDLESTICK_PANE_INDEX = 0;
@@ -75,6 +65,7 @@ interface StockChartProps {
     indicators?: IndicatorResult;
     patterns?: PatternResult[];
     trendlines?: Trendline[];
+    trendlinesVisible?: boolean;
     keyLevels?: KeyLevels;
     keyLevelsVisible?: boolean;
     onPatternOverlayChange?: (
@@ -87,8 +78,12 @@ export function StockChart({
     bars,
     timeframe,
     indicators = EMPTY_INDICATOR_RESULT,
+    /**
+     * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
+     */
     patterns = [],
     trendlines = [],
+    trendlinesVisible = false,
     keyLevels = EMPTY_KEY_LEVELS,
     keyLevelsVisible = false,
     onPatternOverlayChange,
@@ -247,16 +242,16 @@ export function StockChart({
     const { isVisible: ichimokuVisible, toggle: toggleIchimoku } =
         useIchimokuOverlay(commonHookParams);
 
-    useMACDChart({
-        ...commonHookParams,
-        isVisible: macdVisible,
-        paneIndex: paneIndices.macd,
-    });
-
     useRSIChart({
         ...commonHookParams,
         isVisible: rsiVisible,
         paneIndex: paneIndices.rsi,
+    });
+
+    useMACDChart({
+        ...commonHookParams,
+        isVisible: macdVisible,
+        paneIndex: paneIndices.macd,
     });
 
     useDMIChart({
@@ -286,64 +281,59 @@ export function StockChart({
     const { isVisible: candlePatternsVisible, toggle: toggleCandlePatterns } =
         useCandlePatternMarkers({ seriesRef, bars });
 
-    const { visiblePatterns, togglePattern } = usePatternOverlay({
-        chartRef,
-        seriesRef,
-        bars,
-        patterns,
-    });
+    /**
+     * TODO: 선 그리는 부분에 대해서는 오류가 많아 잠시 주석처리
+     */
 
-    useTrendlineOverlay({
-        chartRef,
-        bars,
-        trendlines,
-    });
+    // const { visiblePatterns, togglePattern } = usePatternOverlay({
+    //     chartRef,
+    //     seriesRef,
+    //     bars,
+    //     patterns,
+    // });
+    //
+    // useTrendlineOverlay({
+    //     chartRef,
+    //     bars,
+    //     trendlines,
+    //     isVisible: trendlinesVisible,
+    // });
+    //
+    // useKeyLevelsOverlay({
+    //     chartRef,
+    //     bars,
+    //     keyLevels,
+    //     isVisible: keyLevelsVisible,
+    //     lineWidth: DEFAULT_LINE_WIDTH,
+    // });
 
-    useKeyLevelsOverlay({
-        chartRef,
-        bars,
-        keyLevels,
-        isVisible: keyLevelsVisible,
-        lineWidth: DEFAULT_LINE_WIDTH,
-    });
-
-    // 빈 pane 정리: indicator가 꺼지면 남은 빈 pane을 역순으로 제거
-    // pane 0(캔들스틱)은 보호
-    // requestAnimationFrame으로 감싸 removeSeries() 후 lightweight-charts 내부 상태가
-    // 갱신된 뒤 removePane()이 호출되도록 한다 (첫 번째 토글 시 pane 제거 실패 버그 수정)
+    // LWC DOM 레이아웃 강제 갱신
+    // indicator hook의 removeSeries 후 LWC가 빈 pane을 내부적으로 제거하지만
+    // DOM 레이아웃(높이 배분)을 즉시 갱신하지 않아 빈 공간이 남는다.
+    // cleanup 없는 RAF로 다음 페인트 직전에 레이아웃을 강제 갱신한다.
+    // cleanup이 있으면 후속 리렌더에 의해 RAF가 취소될 수 있으므로 의도적으로 생략한다.
     useEffect(() => {
         const chart = chartRef.current;
         if (!chart) return;
 
-        const rafId = requestAnimationFrame(() => {
-            const activePaneCount =
-                Math.max(
-                    CANDLESTICK_PANE_INDEX,
-                    ...Object.values(paneIndices)
-                ) + 1;
-
-            const panes = chart.panes();
-
-            const indicesToRemove = panes
-                .map((_, i) => i)
-                .filter(i => i >= activePaneCount && i > CANDLESTICK_PANE_INDEX)
-                .reverse();
-
-            for (const i of indicesToRemove) {
-                chart.removePane(i);
-            }
+        requestAnimationFrame(() => {
+            // chart가 이미 소멸했을 수 있으므로 재확인
+            if (!chartRef.current) return;
+            chartRef.current.timeScale().fitContent();
         });
-
-        return () => cancelAnimationFrame(rafId);
     }, [paneIndices]);
 
-    const notifyPatternOverlayChange = useEffectEvent(() => {
-        onPatternOverlayChange?.(visiblePatterns, togglePattern);
-    });
+    /**
+     * TODO: 선 그리는 부분에 대해서는 오류가 많아 잠시 주석처리
+     */
 
-    useEffect(() => {
-        notifyPatternOverlayChange();
-    }, [visiblePatterns]);
+    // const notifyPatternOverlayChange = useEffectEvent(() => {
+    //     onPatternOverlayChange?.(visiblePatterns, togglePattern);
+    // });
+    //
+    // useEffect(() => {
+    //     notifyPatternOverlayChange();
+    // }, [visiblePatterns]);
 
     const overlayLabelConfigs = useMemo(
         () =>
@@ -395,44 +385,44 @@ export function StockChart({
         <div ref={wrapperRef} className="relative h-full w-full">
             <div ref={containerRef} className="h-full w-full" />
             <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">
-                <div className="pointer-events-auto">
-                    <IndicatorToolbar
-                        maVisiblePeriods={maVisiblePeriods}
-                        maAvailablePeriods={MA_DEFAULT_PERIODS}
-                        onMAToggle={toggleMAPeriod}
-                        emaVisiblePeriods={emaVisiblePeriods}
-                        emaAvailablePeriods={EMA_DEFAULT_PERIODS}
-                        onEMAToggle={toggleEMAPeriod}
-                        bollinger={{
-                            visible: bollingerVisible,
-                            onToggle: toggleBollinger,
-                        }}
-                        macd={{ visible: macdVisible, onToggle: toggleMACD }}
-                        rsi={{ visible: rsiVisible, onToggle: toggleRSI }}
-                        dmi={{ visible: dmiVisible, onToggle: toggleDMI }}
-                        stochastic={{
-                            visible: stochasticVisible,
-                            onToggle: toggleStochastic,
-                        }}
-                        stochRsi={{
-                            visible: stochRsiVisible,
-                            onToggle: toggleStochRSI,
-                        }}
-                        cci={{ visible: cciVisible, onToggle: toggleCCI }}
-                        volumeProfile={{
-                            visible: vpVisible,
-                            onToggle: toggleVP,
-                        }}
-                        ichimoku={{
-                            visible: ichimokuVisible,
-                            onToggle: toggleIchimoku,
-                        }}
-                        candlePatterns={{
-                            visible: candlePatternsVisible,
-                            onToggle: toggleCandlePatterns,
-                        }}
-                    />
-                </div>
+                {/*<div className="pointer-events-auto">*/}
+                    {/*<IndicatorToolbar*/}
+                    {/*    maVisiblePeriods={maVisiblePeriods}*/}
+                    {/*    maAvailablePeriods={MA_DEFAULT_PERIODS}*/}
+                    {/*    onMAToggle={toggleMAPeriod}*/}
+                    {/*    emaVisiblePeriods={emaVisiblePeriods}*/}
+                    {/*    emaAvailablePeriods={EMA_DEFAULT_PERIODS}*/}
+                    {/*    onEMAToggle={toggleEMAPeriod}*/}
+                    {/*    bollinger={{*/}
+                    {/*        visible: bollingerVisible,*/}
+                    {/*        onToggle: toggleBollinger,*/}
+                    {/*    }}*/}
+                    {/*    macd={{ visible: macdVisible, onToggle: toggleMACD }}*/}
+                    {/*    rsi={{ visible: rsiVisible, onToggle: toggleRSI }}*/}
+                    {/*    dmi={{ visible: dmiVisible, onToggle: toggleDMI }}*/}
+                    {/*    stochastic={{*/}
+                    {/*        visible: stochasticVisible,*/}
+                    {/*        onToggle: toggleStochastic,*/}
+                    {/*    }}*/}
+                    {/*    stochRsi={{*/}
+                    {/*        visible: stochRsiVisible,*/}
+                    {/*        onToggle: toggleStochRSI,*/}
+                    {/*    }}*/}
+                    {/*    cci={{ visible: cciVisible, onToggle: toggleCCI }}*/}
+                    {/*    volumeProfile={{*/}
+                    {/*        visible: vpVisible,*/}
+                    {/*        onToggle: toggleVP,*/}
+                    {/*    }}*/}
+                    {/*    ichimoku={{*/}
+                    {/*        visible: ichimokuVisible,*/}
+                    {/*        onToggle: toggleIchimoku,*/}
+                    {/*    }}*/}
+                    {/*    candlePatterns={{*/}
+                    {/*        visible: candlePatternsVisible,*/}
+                    {/*        onToggle: toggleCandlePatterns,*/}
+                    {/*    }}*/}
+                    {/*/>*/}
+                {/*</div>*/}
                 <OverlayLegend items={overlayLegendItems} />
             </div>
         </div>

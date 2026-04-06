@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, useMemo, useRef } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
@@ -17,25 +17,32 @@ import {
 } from '@/components/chart/utils/trendlineUtils';
 
 const MIN_TRENDLINE_POINTS = 2;
+const EXTENSION_BARS = 20;
+
+function calcExtendedTarget(bars: Bar[]): number {
+    if (bars.length < 2) return bars[bars.length - 1]?.time ?? 0;
+    const interval = bars[bars.length - 1].time - bars[bars.length - 2].time;
+    return bars[bars.length - 1].time + interval * EXTENSION_BARS;
+}
 
 interface UseTrendlineOverlayParams {
     chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
     trendlines: Trendline[];
+    isVisible: boolean;
 }
 
 export function useTrendlineOverlay({
     chartRef,
     bars,
     trendlines,
+    isVisible,
 }: UseTrendlineOverlayParams): void {
     const prevChartRef = useRef<IChartApi | null>(null);
     const seriesMapRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
 
-    const barsMap = useMemo(
-        () => new Map(bars.map(bar => [bar.time, bar])),
-        [bars]
-    );
+    const barsMapRef = useRef<Map<number, Bar>>(new Map());
+    barsMapRef.current = new Map(bars.map(bar => [bar.time, bar]));
 
     const clearSeriesRefs = useEffectEvent(() => {
         seriesMapRef.current = new Map();
@@ -51,6 +58,15 @@ export function useTrendlineOverlay({
         }
 
         if (!chart) return;
+
+        // 숨김 상태: 기존 시리즈 모두 제거
+        if (!isVisible) {
+            for (const series of seriesMapRef.current.values()) {
+                chart.removeSeries(series);
+            }
+            seriesMapRef.current = new Map();
+            return;
+        }
 
         const activeKeys = new Set(trendlines.map(trendlineKey));
 
@@ -77,39 +93,38 @@ export function useTrendlineOverlay({
             });
             seriesMapRef.current.set(key, series);
         }
-    }, [chartRef, trendlines]);
+    }, [chartRef, trendlines, isVisible]);
 
     // 데이터 동기화
     useEffect(() => {
-        if (bars.length === 0) return;
+        if (!isVisible || bars.length === 0) return;
 
-        const lastBar = bars[bars.length - 1];
+        const extendedTarget = calcExtendedTarget(bars);
 
         for (const trendline of trendlines) {
             const key = trendlineKey(trendline);
             const series = seriesMapRef.current.get(key);
             if (!series) continue;
 
-            // 실제 바 데이터에서 가격 조회: 상승 추세선은 저가, 하락 추세선은 고가 사용
+            // 상승 추세선은 저가, 하락 추세선은 고가로 스냅
             const startPrice = resolveTrendlinePrice(
-                barsMap.get(trendline.start.time),
+                barsMapRef.current.get(trendline.start.time),
                 trendline.direction,
                 trendline.start.price
             );
             const endPrice = resolveTrendlinePrice(
-                barsMap.get(trendline.end.time),
+                barsMapRef.current.get(trendline.end.time),
                 trendline.direction,
                 trendline.end.price
             );
 
-            // 실제 바 가격으로 보정된 추세선 데이터
             const resolvedTrendline: Trendline = {
                 direction: trendline.direction,
                 start: { time: trendline.start.time, price: startPrice },
                 end: { time: trendline.end.time, price: endPrice },
             };
 
-            const extended = extendTrendline(resolvedTrendline, lastBar.time);
+            const extended = extendTrendline(resolvedTrendline, extendedTarget);
 
             // lightweight-charts는 타임스탬프가 엄격하게 오름차순이어야 하므로 정렬 및 중복 제거
             const basePoints = [
@@ -142,5 +157,5 @@ export function useTrendlineOverlay({
                 series.setData(uniqueData);
             }
         }
-    }, [bars, barsMap, trendlines]);
+    }, [bars, trendlines, isVisible]);
 }

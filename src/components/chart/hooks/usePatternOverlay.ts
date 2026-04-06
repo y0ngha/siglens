@@ -9,7 +9,7 @@ import type {
     ISeriesMarkersPluginApi,
     UTCTimestamp,
 } from 'lightweight-charts';
-import type { Bar, PatternResult } from '@/domain/types';
+import type { Bar, PatternLine, PatternResult } from '@/domain/types';
 import {
     BASE_PATTERN_SERIES_OPTIONS,
     LABEL_SERIES_INDEX,
@@ -51,11 +51,14 @@ const visiblePatternsReducer = (
         // - Keep visible patterns that are still detected.
         // - Add patterns newly detected (not previously tracked via allDetected).
         // - Drop patterns no longer detected.
-        return new Set(
-            [...action.detected].filter(
-                name => !action.allDetected.has(name) || state.has(name)
-            )
+        const kept = [...action.detected].filter(
+            name => !action.allDetected.has(name) || state.has(name)
         );
+        // 내용이 동일하면 같은 참조 반환 → 불필요한 리렌더 방지
+        if (kept.length === state.size && kept.every(n => state.has(n))) {
+            return state;
+        }
+        return new Set(kept);
     }
     const next = new Set(state);
     if (next.has(action.patternName)) {
@@ -83,18 +86,21 @@ export function usePatternOverlay({
 }: UsePatternOverlayParams): UsePatternOverlayReturn {
     const [visiblePatterns, dispatch] = useReducer(
         visiblePatternsReducer,
-        patterns,
-        initial =>
-            new Set(
-                initial.filter(isDetectedAndVisible).map(p => p.patternName)
-            )
+        undefined,
+        () => new Set<string>()
     );
     const prevChartRef = useRef<IChartApi | null>(null);
-    const prevDetectedRef = useRef<Set<string>>(new Set());
+    // 초기 detected 집합으로 초기화하여 첫 sync 시 auto-show 방지
+    const prevDetectedRef = useRef<Set<string>>(
+        new Set(patterns.filter(isDetectedAndVisible).map(p => p.patternName))
+    );
     const lineSeriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(
         new Map()
     );
     const regionSeriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(
+        new Map()
+    );
+    const patternLineSeriesMapRef = useRef<Map<string, ISeriesApi<'Line'>[]>>(
         new Map()
     );
     const markerPluginMapRef = useRef<
@@ -132,6 +138,7 @@ export function usePatternOverlay({
             // detach 없이 Map만 교체한다.
             lineSeriesMapRef.current = new Map();
             regionSeriesMapRef.current = new Map();
+            patternLineSeriesMapRef.current = new Map();
             markerPluginMapRef.current = new Map();
             prevChartRef.current = chart;
         }
@@ -143,6 +150,11 @@ export function usePatternOverlay({
         );
         removeHidden(regionSeriesMapRef.current, visiblePatterns, seriesList =>
             removeSeries(chart, seriesList)
+        );
+        removeHidden(
+            patternLineSeriesMapRef.current,
+            visiblePatterns,
+            seriesList => removeSeries(chart, seriesList)
         );
         removeHidden(markerPluginMapRef.current, visiblePatterns, plugin => {
             plugin.detach();
@@ -206,6 +218,26 @@ export function usePatternOverlay({
                     upperSeries,
                     lowerSeries,
                 ]);
+            }
+
+            // 패턴 대각선 추세선 (patternLines)
+            if (
+                !patternLineSeriesMapRef.current.has(pattern.patternName) &&
+                pattern.patternLines &&
+                pattern.patternLines.length > 0
+            ) {
+                const seriesList: ISeriesApi<'Line'>[] =
+                    pattern.patternLines.map((pl: PatternLine) =>
+                        chart.addSeries(LineSeries, {
+                            color: config.color,
+                            ...BASE_PATTERN_SERIES_OPTIONS,
+                            title: pl.label,
+                        })
+                    );
+                patternLineSeriesMapRef.current.set(
+                    pattern.patternName,
+                    seriesList
+                );
             }
         }
         // chartRef(RefObject)는 항상 동일 참조를 유지하므로 이 dependency는
@@ -290,6 +322,60 @@ export function usePatternOverlay({
                         value: lower,
                     }))
                 );
+            }
+
+            // 패턴 대각선 추세선 데이터 동기화
+            const patternLineSeriesList = patternLineSeriesMapRef.current.get(
+                pattern.patternName
+            );
+            if (patternLineSeriesList && pattern.patternLines) {
+                const lastBar = bars[bars.length - 1];
+                const interval =
+                    bars.length >= 2
+                        ? bars[bars.length - 1].time -
+                          bars[bars.length - 2].time
+                        : 86400;
+                const extendedTarget = lastBar.time + interval * 20;
+                for (const [i, series] of patternLineSeriesList.entries()) {
+                    const pl = pattern.patternLines[i];
+                    if (!pl) continue;
+
+                    const basePoints = [
+                        {
+                            time: pl.start.time as UTCTimestamp,
+                            value: pl.start.price,
+                        },
+                        {
+                            time: pl.end.time as UTCTimestamp,
+                            value: pl.end.price,
+                        },
+                    ].sort((a, b) => a.time - b.time);
+
+                    const timeDelta = pl.end.time - pl.start.time;
+                    const lastPoint = basePoints[basePoints.length - 1];
+                    const allPoints =
+                        timeDelta !== 0 && extendedTarget > lastPoint.time
+                            ? [
+                                  ...basePoints,
+                                  {
+                                      time: extendedTarget as UTCTimestamp,
+                                      value:
+                                          pl.start.price +
+                                          ((pl.end.price - pl.start.price) /
+                                              timeDelta) *
+                                              (extendedTarget - pl.start.time),
+                                  },
+                              ]
+                            : basePoints;
+
+                    const uniqueData = allPoints.filter(
+                        (p, idx, arr) => idx === 0 || p.time > arr[idx - 1].time
+                    );
+
+                    if (uniqueData.length >= 2) {
+                        series.setData(uniqueData);
+                    }
+                }
             }
         }
     }, [bars, detectedPatterns, visiblePatterns]);

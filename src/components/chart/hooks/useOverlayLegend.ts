@@ -47,9 +47,9 @@ export function useOverlayLegend({
         const handler = (param: { time?: unknown }): void => {
             if (typeof param.time === 'number') {
                 const idx = findBarIndex(barsRef.current, param.time);
-                setCrosshairIndex(idx);
+                setCrosshairIndex(prev => (prev === idx ? prev : idx));
             } else {
-                setCrosshairIndex(null);
+                setCrosshairIndex(prev => (prev === null ? prev : null));
             }
         };
 
