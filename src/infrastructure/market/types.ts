@@ -7,6 +7,7 @@ export interface GetBarsOptions {
     timeframe: Timeframe;
     limit?: number;
     before?: string;
+    from?: string;
 }
 
 export type MarketDataProviderType = 'alpaca' | 'fmp';

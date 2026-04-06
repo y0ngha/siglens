@@ -49,7 +49,7 @@ export class AlpacaProvider implements MarketDataProvider {
         options: GetBarsOptions,
         now: string = new Date().toISOString()
     ): Promise<Bar[]> {
-        const { symbol, timeframe, limit = 500, before } = options;
+        const { symbol, timeframe, limit = 500, before, from } = options;
 
         const endTime = before ?? now;
 
@@ -60,6 +60,10 @@ export class AlpacaProvider implements MarketDataProvider {
             feed: 'iex',
             end: endTime,
         });
+
+        if (from !== undefined) {
+            params.set('start', from);
+        }
 
         const url = `${BASE_URL}/stocks/${symbol}/bars?${params}`;
 

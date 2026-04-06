@@ -52,7 +52,6 @@ describe('fetchBarsWithIndicators 함수는', () => {
             expect(Array.isArray(result.indicators.bollinger)).toBe(true);
             expect(Array.isArray(result.indicators.dmi)).toBe(true);
             expect(Array.isArray(result.indicators.vwap)).toBe(true);
-            expect(Array.isArray(result.indicators.ma)).toBe(false);
             expect(typeof result.indicators.ma).toBe('object');
             expect(
                 MA_DEFAULT_PERIODS.every(period =>
@@ -62,7 +61,9 @@ describe('fetchBarsWithIndicators 함수는', () => {
                     )
                 )
             ).toBe(true);
-            expect(Array.isArray(result.indicators.ema)).toBe(false);
+            MA_DEFAULT_PERIODS.forEach(period => {
+                expect(Array.isArray(result.indicators.ma[period])).toBe(true);
+            });
             expect(typeof result.indicators.ema).toBe('object');
             expect(
                 EMA_DEFAULT_PERIODS.every(period =>
@@ -72,6 +73,9 @@ describe('fetchBarsWithIndicators 함수는', () => {
                     )
                 )
             ).toBe(true);
+            EMA_DEFAULT_PERIODS.forEach(period => {
+                expect(Array.isArray(result.indicators.ema[period])).toBe(true);
+            });
         });
 
         it('bar가 1개일 때 기간 기반 인디케이터의 첫 번째 값은 null이다', async () => {
@@ -167,7 +171,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
             );
         });
 
-        it('symbol과 timeframe으로 올바른 파라미터를 getBars에 전달한다', async () => {
+        it('symbol, timeframe, limit, from 파라미터를 getBars에 전달한다', async () => {
             mockGetBars.mockResolvedValueOnce([]);
 
             await fetchBarsWithIndicators('TSLA', DEFAULT_TIMEFRAME);
@@ -177,6 +181,9 @@ describe('fetchBarsWithIndicators 함수는', () => {
                     symbol: 'TSLA',
                     timeframe: DEFAULT_TIMEFRAME,
                     limit: TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME],
+                    from: expect.stringMatching(
+                        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+                    ),
                 })
             );
         });

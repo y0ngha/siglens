@@ -156,7 +156,7 @@ describe('AlpacaProvider', () => {
             expect(url).toContain('end=2024-01-15T09%3A30%3A00Z');
         });
 
-        it('start 파라미터를 포함하지 않는다', async () => {
+        it('from 파라미터가 없으면 start 쿼리 파라미터를 포함하지 않는다', async () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
@@ -172,6 +172,29 @@ describe('AlpacaProvider', () => {
             // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(new URL(url).searchParams.has('start')).toBe(false);
+        });
+
+        it('from 파라미터가 있으면 start 쿼리 파라미터로 전달한다', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => ({
+                    symbol: 'AAPL',
+                    bars: [],
+                    next_page_token: null,
+                }),
+            });
+
+            const provider = new AlpacaProvider();
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                from: '2024-01-01T00:00:00.000Z',
+            });
+
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
+            const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+            const startParam = new URL(url).searchParams.get('start');
+            expect(startParam).toBe('2024-01-01T00:00:00.000Z');
         });
 
         it('API가 ok가 아닌 응답을 반환하면 에러를 던진다', async () => {
