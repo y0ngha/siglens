@@ -50,12 +50,17 @@ export class FmpProvider implements MarketDataProvider {
 
     private buildUrl(
         options: GetBarsOptions,
+        fromDate: string | undefined,
         endDate: string | undefined
     ): string {
         const { symbol, timeframe } = options;
         const fmpTimeframe = FMP_TIMEFRAME_MAP[timeframe];
 
         const params = new URLSearchParams({ apikey: this.apiKey });
+
+        if (fromDate !== undefined) {
+            params.set('from', fromDate);
+        }
 
         if (endDate !== undefined) {
             params.set('to', endDate);
@@ -65,14 +70,15 @@ export class FmpProvider implements MarketDataProvider {
     }
 
     // FMP API는 limit 파라미터를 지원하지 않습니다.
-    // before 파라미터만 to 쿼리로 변환합니다.
+    // from 파라미터는 from 쿼리로, before 파라미터는 to 쿼리로 변환합니다.
     async getBars(options: GetBarsOptions): Promise<Bar[]> {
-        const { before } = options;
+        const { before, from } = options;
 
+        const fromDate = from !== undefined ? from.substring(0, 10) : undefined;
         const endDate =
             before !== undefined ? before.substring(0, 10) : undefined;
 
-        const url = this.buildUrl(options, endDate);
+        const url = this.buildUrl(options, fromDate, endDate);
 
         const res = await fetch(url, {
             next: { revalidate: 60 },

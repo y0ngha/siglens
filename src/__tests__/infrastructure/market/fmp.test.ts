@@ -131,6 +131,41 @@ describe('FmpProvider', () => {
             expect(new URL(url).searchParams.has('to')).toBe(false);
         });
 
+        it('from 파라미터가 있으면 from 쿼리 파라미터로 YYYY-MM-DD 형식으로 전달한다', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => [],
+            });
+
+            const provider = new FmpProvider();
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Min',
+                from: '2024-01-01T00:00:00.000Z',
+            });
+
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
+            const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+            expect(new URL(url).searchParams.get('from')).toBe('2024-01-01');
+        });
+
+        it('from 파라미터가 없으면 from 쿼리 파라미터를 포함하지 않는다', async () => {
+            mockFetch.mockResolvedValueOnce({
+                ok: true,
+                json: async () => [],
+            });
+
+            const provider = new FmpProvider();
+            await provider.getBars({
+                symbol: 'AAPL',
+                timeframe: '1Min',
+            });
+
+            // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
+            const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+            expect(new URL(url).searchParams.has('from')).toBe(false);
+        });
+
         it('FMP 응답은 newest-first이므로 reverse하여 ascending order로 반환한다', async () => {
             const newestFirst = [
                 { ...mockFmpBar, date: '2024-01-15 09:32:00', close: 103 },
