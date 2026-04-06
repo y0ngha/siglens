@@ -166,6 +166,7 @@ export class FmpProvider implements MarketDataProvider {
     ): Promise<Bar[]> {
         const url = this.buildDailyUrl(symbol, fromDate, endDate);
 
+        console.log(url);
         const res = await fetch(url, {
             next: { revalidate: 60 },
         });
