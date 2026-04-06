@@ -5,12 +5,6 @@
 - Rule: 예시
 - Context: 예시
 
-## [PR #190 | feat/135/redis-ai-analysis-cache | 2026-04-05]
-- Violation: `readonlyToken`이 없을 때 동일한 master 토큰으로 Redis 인스턴스를 두 개 생성해 불필요한 리소스 낭비 발생
-- Rule: FF.md Cohesion — 같은 역할을 하는 자원은 중복 생성 없이 재사용해야 함
-- Context: `redis.ts`의 `createCacheProvider()`에서 readonlyToken 부재 시 reader와 writer가 동일 설정으로 각각 `new Redis()`를 호출했음; writer를 먼저 생성 후 readonlyToken 유무에 따라 조건부로 reader를 생성하도록 수정
-
-
 ## [feat/157/fmp-provider | 2026-04-06]
 - Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
@@ -57,6 +51,11 @@
 - Violation: `ChartContent.tsx`(`components/symbol-page/`)에서 `lightweight-charts`의 `IChartApi` 타입을 직접 import하여 `symbol-page` 레이어가 차트 라이브러리에 직접 커플링됨
 - Rule: MISTAKES.md Layer Dependencies #3 — `lightweight-charts` import(타입 포함)는 `components/chart/` 내부로 제한됨
 - Context: visible range 동기화를 위해 `stockChartRef`, `volumeChartRef`, 콜백 2개가 모두 `IChartApi`에 의존했음; `components/chart/hooks/useChartSync.ts`로 추출하여 `ChartContent.tsx`에서 `IChartApi` import 제거
+
+## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
+- Violation: TODO 주석으로 명시적 보존이 지시된 `EyeIcon` 컴포넌트가 삭제됨; commented-out 버튼 코드에서 여전히 `EyeIcon`을 참조하고 있어 주석 해제 시 불일치 발생
+- Rule: FF.md Predictability — TODO로 유지 의도가 명시된 코드를 삭제하면 향후 주석 해제 시 참조 오류가 발생하여 예측 가능성을 해침
+- Context: `AnalysisPanel.tsx`에서 `EyeIcon` 컴포넌트가 제거되었으나 3곳의 commented-out 버튼에서 여전히 `<EyeIcon>`을 참조; 원본 코드를 복원하여 해결
 
 ## [fix/bars-null-and-ssr-window-error (FMP API spec fix) | 2026-04-06]
 - Violation: `console.log(url)` left in `fmp.ts` `getBars()` — debug artifact shipped to infrastructure
