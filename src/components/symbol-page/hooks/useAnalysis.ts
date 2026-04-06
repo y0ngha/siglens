@@ -93,6 +93,7 @@ export function useAnalysis({
     // latestRef는 useLayoutEffect에 의해 이 useEffect보다 먼저 현재 렌더의 props로 갱신된다.
     useEffect(() => {
         if (!initialAnalysisFailedRef.current) return;
+        if (latestRef.current.bars.length === 0) return;
         mutate(latestRef.current);
     }, [mutate]);
 
@@ -110,6 +111,7 @@ export function useAnalysis({
         }
         prevTimeframeChangeCountRef.current = timeframeChangeCount;
         reset();
+        if (latestRef.current.bars.length === 0) return;
         mutate(latestRef.current);
     }, [timeframeChangeCount, reset, mutate]);
 

@@ -52,10 +52,6 @@
 - Context: `factory.ts`의 `raw && isProviderType(raw)` 조건에서 빈 문자열은 falsy로 DEFAULT 분기를 타지만, 기존 테스트에는 `undefined`/`'fmp'`/`'alpaca'`/알 수 없는 값만 있었고 빈 문자열 케이스가 누락되었음
 
 ## [feat/157/fmp-provider | 2026-04-06]
-- Violation: `eslint-disable-next-line @typescript-eslint/no-unused-vars` comment used on `_now` parameter in `FmpProvider.getBars`
-- Rule: CONVENTIONS.md — eslint-disable comments are absolutely prohibited; the root cause must be fixed instead
-- Context: `fmp.ts` declared `_now?: string` to match the `MarketDataProvider` interface but never used it; since the parameter is optional in the interface, it can be omitted from the implementation entirely; the parameter was removed to fix the root cause without a suppress comment
-
 - Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
@@ -64,3 +60,13 @@
 - Violation: `private toBar` methods in `AlpacaProvider` and `FmpProvider` did not use `this` but were declared as class instance methods instead of module-level pure functions
 - Rule: CONVENTIONS.md — infrastructure/ functional recommended; internal logic that does not access instance state must be separated into module-level pure functions
 - Context: Both `alpaca.ts` and `fmp.ts` defined `private toBar(raw): Bar` methods that only transformed a raw API response into a `Bar` shape without accessing any instance properties; extracted to module-level `toAlpacaBar` and `toFmpBar` functions respectively
+
+## [PR #195 | feat/157/fmp-provider | 2026-04-06]
+- Violation: `docs/ARCHITECTURE.md` "최초 진입" 섹션이 HydrationBoundary 패턴 도입 후에도 이전 props 드릴링 방식(`initialBars`, `initialAnalysis`)을 그대로 기술하고 있었음
+- Rule: MISTAKES.md TypeScript #11 — Implementation and documentation changes not synchronized
+- Context: PR #195에서 `prefetchQuery + HydrationBoundary` 패턴으로 교체했지만 `docs/ARCHITECTURE.md`의 데이터 흐름 다이어그램은 업데이트되지 않아 실제 동작과 불일치; 다이어그램을 HydrationBoundary 패턴에 맞게 수정
+
+## [PR #195 Round 2 | feat/157/fmp-provider | 2026-04-06]
+- Violation: `useBars.ts`에서 `staleTime`과 `gcTime`을 `useSuspenseQuery` 옵션에 중복 명시함
+- Rule: CONVENTIONS.md "React Query and Server State Rules" — 컴포넌트 훅은 `queryKey` + `queryFn` 연결만 담당; 전역 defaultOptions로 이미 처리된 값을 개별 쿼리에 재명시하면 설정 출처가 두 곳이 됨
+- Context: `ReactQueryProvider.tsx`가 이미 `staleTime: QUERY_STALE_TIME_MS`, `gcTime: QUERY_GC_TIME_MS`를 전역 `defaultOptions`으로 등록하고 있음에도 `useBars.ts`가 동일 값을 쿼리 옵션에 재명시하고 있었음; 중복 제거

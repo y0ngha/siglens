@@ -308,6 +308,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 2. Missing EOF newline
    → Auto-fixed by running yarn format
 
+3. Using eslint-disable comments instead of fixing root cause
+   → eslint-disable-next-line, eslint-disable comment blocks are prohibited
+   → Always fix the underlying violation instead
+   ❌ // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _unused = getSomething();
+   ✅ // Remove the unused variable; if it's a required interface parameter, omit it from implementation
+
 ---
 
 ## Layer Dependencies
