@@ -10,26 +10,12 @@
 - Rule: `src/__tests__/CLAUDE.md` — "Never mock domain functions — test them directly with real inputs"
 - Context: `analysisApi.test.ts` mocked the domain analysis functions to control test output; since domain functions are pure with no side effects, they must be called with real inputs and only external dependencies (AI API, file I/O) should be mocked
 
-## [PR #189 | fix/176/alpaca-getBars-최신-데이터-반환 | 2026-04-05]
-- Violation: `AlpacaBarsResponse` interface declared `next_page_token` in snake_case instead of camelCase
-- Rule: CONVENTIONS.md — interface fields must be camelCase; snake_case fields from external APIs must be transformed in infrastructure layer
-- Context: `alpaca.ts` typed the raw Alpaca API response directly as the domain interface without transforming the `next_page_token` field to `nextPageToken`
-
-## [PR #189 | fix/176/alpaca-getBars-최신-데이터-반환 | 2026-04-05]
-- Violation: `barsApi.test.ts` still referenced removed `AlpacaProvider` class after refactoring to function-based `getBars`
-- Rule: MISTAKES.md Tests rule 15 — test mocks must be updated when the implementation changes; class-based mock must become function mock after class removal
-- Context: `fetchBarsWithIndicators` was refactored to import `getBars` directly, but the test file kept `AlpacaProvider` class instantiation mock from the old class-based pattern
-- Context: In SPA symbol navigation, `useBars` shared a single module-load timestamp across all mounts, causing React Query to treat fresh server data as stale; fixed by replacing `MODULE_LOAD_TIME` with `useState(() => Date.now())` so each mount captures its own timestamp
 
 ## [PR #187 Round 2 | refactor/130/server-action-migration | 2026-04-05]
 - Violation: `LOOK_AHEAD_COUNT` + `trimmedBars` + `resolvedLimit` fallback in `barsApi.ts` are dead code after `hasMore` was removed
 - Rule: MISTAKES.md 9.5 — logic with no practical effect adds noise and obscures intent
 - Context: After Server Action migration removed `hasMore` from the response, the code requesting `limit + 1` bars and then slicing back to `limit` served no purpose; simplified to request `limit` directly
 
-## [PR #187 Round 3 | refactor/130/server-action-migration | 2026-04-05]
-- Violation: `getBarsAction.ts` and `analyzeAction.ts` were added without corresponding test files
-- Rule: CONVENTIONS.md — infrastructure/ coverage 100% required; MISTAKES.md Tests rule 1 — missing test file when creating a new infrastructure file
-- Context: Both are thin wrapper Server Actions in `infrastructure/market/` that delegate to `fetchBarsWithIndicators` and `runAnalysis` respectively; test files added verifying delegation behavior and error propagation
 
 ## [PR #190 | feat/135/redis-ai-analysis-cache | 2026-04-05]
 - Violation: `readonlyToken`이 없을 때 동일한 master 토큰으로 Redis 인스턴스를 두 개 생성해 불필요한 리소스 낭비 발생
@@ -41,42 +27,22 @@
 - Rule: FF.md Predictability — pure utility functions must handle all valid input ranges explicitly so callers cannot receive out-of-bounds results
 - Context: `overlayLabelUtils.ts` `resolveBarIndex` guarded for null and negative indices but not for indices beyond array bounds; added `if (crosshairIndex >= bars.length) return bars.length - 1` to complete the guard chain
 
-## [PR #191 Round 3 | feat/175/overlay-legend | 2026-04-06]
-- Violation: Test comment described `time=250` (tie-break case) but the test body used `time=260` (unambiguous nearest-bar case); the actual tie-break behavior was untested
-- Rule: CONVENTIONS.md Test Rules — each `it()` must accurately describe and verify exactly one behavior; misleading comments and untested edge cases must be corrected
-- Context: `overlayLabelUtils.test.ts` '중간값일 때' block had a comment about equal-distance tie-break but tested an unambiguous `time=260` input; fixed the comment and added a dedicated '두 후보와 거리가 동일할 때' block verifying that `findBarIndex` returns the lower array index (`low`) when distances are equal
 
-## [PR #194 | feat/157/fmp-provider | 2026-04-06]
-- Violation: `factory.test.ts`에서 `MARKET_DATA_PROVIDER=''` 빈 문자열 분기 테스트 케이스 누락
-- Rule: MISTAKES.md Tests #2 — 모든 조건 분기에 전용 테스트 케이스가 있어야 함
-- Context: `factory.ts`의 `raw && isProviderType(raw)` 조건에서 빈 문자열은 falsy로 DEFAULT 분기를 타지만, 기존 테스트에는 `undefined`/`'fmp'`/`'alpaca'`/알 수 없는 값만 있었고 빈 문자열 케이스가 누락되었음
 
 ## [feat/157/fmp-provider | 2026-04-06]
 - Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
 
-## [PR #194 Round 2 | feat/157/fmp-provider | 2026-04-06]
-- Violation: `private toBar` methods in `AlpacaProvider` and `FmpProvider` did not use `this` but were declared as class instance methods instead of module-level pure functions
-- Rule: CONVENTIONS.md — infrastructure/ functional recommended; internal logic that does not access instance state must be separated into module-level pure functions
-- Context: Both `alpaca.ts` and `fmp.ts` defined `private toBar(raw): Bar` methods that only transformed a raw API response into a `Bar` shape without accessing any instance properties; extracted to module-level `toAlpacaBar` and `toFmpBar` functions respectively
 
 ## [PR #195 | feat/157/fmp-provider | 2026-04-06]
 - Violation: `docs/ARCHITECTURE.md` "최초 진입" 섹션이 HydrationBoundary 패턴 도입 후에도 이전 props 드릴링 방식(`initialBars`, `initialAnalysis`)을 그대로 기술하고 있었음
 - Rule: MISTAKES.md TypeScript #11 — Implementation and documentation changes not synchronized
 - Context: PR #195에서 `prefetchQuery + HydrationBoundary` 패턴으로 교체했지만 `docs/ARCHITECTURE.md`의 데이터 흐름 다이어그램은 업데이트되지 않아 실제 동작과 불일치; 다이어그램을 HydrationBoundary 패턴에 맞게 수정
 
-## [PR #195 Round 2 | feat/157/fmp-provider | 2026-04-06]
-- Violation: `useBars.ts`에서 `staleTime`과 `gcTime`을 `useSuspenseQuery` 옵션에 중복 명시함
-- Rule: CONVENTIONS.md "React Query and Server State Rules" — 컴포넌트 훅은 `queryKey` + `queryFn` 연결만 담당; 전역 defaultOptions로 이미 처리된 값을 개별 쿼리에 재명시하면 설정 출처가 두 곳이 됨
-- Context: `ReactQueryProvider.tsx`가 이미 `staleTime: QUERY_STALE_TIME_MS`, `gcTime: QUERY_GC_TIME_MS`를 전역 `defaultOptions`으로 등록하고 있음에도 `useBars.ts`가 동일 값을 쿼리 옵션에 재명시하고 있었음; 중복 제거
 
 ## [Issue #172 Round 3 | feat/172/메인-페이지-리디자인-브랜딩-변경 | 2026-04-06]
 - Violation: `VolumeChart.tsx`의 bars useEffect가 `bars.length === 0`으로 전환될 때 chart 캔버스를 cleanup하지 않음
 - Rule: Lightweight Charts rule 1 — missing chart.remove() cleanup causes duplicate canvas on remount
 - Context: `bars` prop이 비어 있는 상태로 전환될 때 이전에 생성된 chart 인스턴스가 DOM에 남아 있어 다음 mount 시 캔버스가 중복될 수 있었음; `bars.length === 0` 분기에서 `chartRef.current.remove()` 후 두 ref를 null로 리셋하도록 수정
 
-## [Issue #172 Round 2 | feat/172/메인-페이지-리디자인-브랜딩-변경 | 2026-04-06]
-- Violation: `AnalysisPanel.tsx`와 `HowItWorks.tsx`에서 인디케이터 수(13)를 UI 문자열에 하드코딩
-- Rule: CONVENTIONS.md — No hardcoded literals; extract to a named constant
-- Context: 두 파일이 각각 `'13종 인디케이터 적용'`, `'13종 보조지표 자동 계산 + 패턴 감지'` 문자열을 하드코딩하여, 지원 인디케이터 수가 변경될 때 두 곳을 동시에 수정해야 하는 묵시적 결합이 생겼음; `INDICATOR_KIND_COUNT = 13`을 `domain/indicators/constants.ts`에 추가하고 양쪽에서 import하여 해결
