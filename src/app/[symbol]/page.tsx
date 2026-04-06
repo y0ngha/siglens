@@ -6,10 +6,7 @@ import {
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import type { AnalysisResponse } from '@/domain/types';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
-import {
-    QUERY_KEYS,
-    QUERY_STALE_TIME_MS,
-} from '@/lib/queryConfig';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 
 const FALLBACK_ANALYSIS: AnalysisResponse = {
