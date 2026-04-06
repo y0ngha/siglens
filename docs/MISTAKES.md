@@ -299,6 +299,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## Pure Function Contracts
+
+```
+1. Utility functions must guard all valid input ranges explicitly
+   → Pure functions must handle edge cases so callers cannot receive invalid results
+   → Include guards for both lower bounds (null, negative) and upper bounds (array length, max values)
+   ❌ function resolveBarIndex(index) { if (index < 0) return 0; return index; }  // missing upper bound
+   ✅ function resolveBarIndex(index) { if (index < 0) return 0; if (index >= length) return length - 1; return index; }
+```
+
+---
+
 ## ESLint
 
 1. import/first violation
