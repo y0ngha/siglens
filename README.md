@@ -14,7 +14,7 @@
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 ![Node.js](https://img.shields.io/badge/node-%3E%3D25.2.1-green)
 
-## Siglens - 미국 주식 AI 기술적 분석 플랫폼
+## Siglens — 미국 주식 AI 기술적 분석 플랫폼
 
 [![Website](https://img.shields.io/badge/Website-siglens.io-blue?style=for-the-badge)](https://siglens.io)
 [![Discord](https://img.shields.io/badge/Discord-Join%20Server-7289da?style=for-the-badge&logo=discord)](https://discord.gg/siglens)
@@ -30,11 +30,13 @@
 
 복잡한 기술적 분석을 **AI가 대신 처리**해주는 분석 전용 서비스입니다.
 
-보조지표 추가, 거래량 파악, 캔들 패턴 해석 — 배우기 어렵고 시간이 많이 걸리는 작업들을 없앱니다.
+이동평균, 골든/데드 크로스, MACD, RSI, 볼린저 밴드, DMI — 여러 보조지표를 동시에 읽고,
+타임프레임마다 설정을 바꾸고, 차트 패턴(헤드앤숄더, 쐐기, 이중천장 등)까지 식별해야 하는
+기술적 분석은 진입 장벽이 높고 시간도 많이 듭니다.
 
 ```
-기존 방식     보조지표 수동 추가 → 거래량 분석 → 패턴 해석
-Siglens     → 자동 인디케이터 → AI 종합 분석 리포트
+기존 방식    보조지표 수동 추가 → 거래량 분석 → 패턴 해석 → 종합 판단
+Siglens     → 티커만 입력 → 차트 + 인디케이터 자동 렌더 → AI 종합 분석 리포트
 ```
 
 > 📌 **주문 기능 없음.** 분석 정보만 제공합니다. 투자 결정은 본인의 책임입니다.
@@ -43,11 +45,12 @@ Siglens     → 자동 인디케이터 → AI 종합 분석 리포트
 
 ## ✨ Features
 
-- **📊 차트**: Lightweight Charts 기반 캔들, 거래량, 인디케이터 렌더링
-- **📈 인디케이터**: RSI, MACD, 볼린저 밴드, DMI, VWAP, EMA 자동 계산
-- **🔍 패턴 감지**: 헤드앤숄더, 쐐기, 이중천장/바닥 등 자동 감지
-- **🤖 AI 분석**: 인디케이터 + 패턴 기반 종합 분석 리포트
-- **⏱️ 멀티 타임프레임**: 1분봉 ~ 일봉 지원
+- **📊 차트** — Lightweight Charts 기반 캔들/거래량/인디케이터 렌더링
+- **📈 인디케이터** — RSI, MACD, 볼린저 밴드, DMI, VWAP, EMA 자동 계산
+- **🕯️ 캔들 패턴** — 단일 캔들 15종 + 멀티 캔들 30종 자동 감지
+- **🔍 차트 패턴** — 헤드앤숄더, 쐐기, 이중천장/바닥 등 Skills 기반 감지
+- **🤖 AI 종합 분석** — 인디케이터 해석 + 패턴 + 지지/저항 + 방향성 리포트
+- **♻️ 온디맨드 재분석** — 사용자 요청 시 즉시 재분석
 
 ---
 
@@ -58,11 +61,12 @@ Siglens     → 자동 인디케이터 → AI 종합 분석 리포트
 | Framework | Next.js 16.2 (App Router + Turbopack) |
 | UI | React 19.2, Tailwind CSS |
 | Chart | Lightweight Charts |
-| Data | Alpaca API (Free Tier, 15분 지연) |
-| AI | Claude / GPT-4 |
-| Testing | Jest |
+| Data | FMP (Financial Modeling Prep) API |
+| AI | Claude (Anthropic) / Gemini (Google) |
+| Testing | Jest (domain / infrastructure) |
 | Language | TypeScript |
-| Package Manager | yarn |
+| Package Manager | yarn 4.12.0 |
+| Runtime | Node.js 25.2.1 |
 
 ---
 
@@ -72,7 +76,7 @@ Siglens     → 자동 인디케이터 → AI 종합 분석 리포트
 
 ```bash
 Node.js 25.2.1
-yarn
+yarn 4.12.0
 ```
 
 ### Installation
@@ -90,9 +94,10 @@ cp .env.example .env.local
 ```
 
 필수 환경변수:
-- `ALPACA_API_KEY` / `ALPACA_API_SECRET` — [Alpaca Markets](https://alpaca.markets/data)에서 발급
-- `ANTHROPIC_API_KEY` — [Anthropic](https://console.anthropic.com)에서 발급
-- `AI_PROVIDER` — `claude` (기본값)
+- `FMP_API_KEY` — [Financial Modeling Prep](https://site.financialmodelingprep.com/developer)에서 발급
+- `ANTHROPIC_API_KEY` — [Anthropic Console](https://console.anthropic.com)에서 발급
+- `GEMINI_API_KEY` — [Google AI Studio](https://aistudio.google.com/apikey)에서 발급
+- `AI_PROVIDER` — `claude` 또는 `gemini`
 
 ### Run Development Server
 
@@ -100,25 +105,36 @@ cp .env.example .env.local
 yarn dev
 ```
 
-http://localhost:3000 접속
+http://localhost:4200 접속
 
 ---
 
 ## 🏗️ Architecture
 
 ```
-src/
-├── app/              # Next.js App Router (RSC, Route Handler)
-├── domain/           # 순수 TS 함수 (인디케이터, 패턴, 프롬프트)
-├── infrastructure/   # 외부 의존성 (Alpaca, AI Provider)
-└── components/       # React Client Components
+siglens/
+├── src/
+│   ├── app/              # Next.js App Router (RSC, Route Handler)
+│   ├── domain/           # 순수 TS — 인디케이터, 패턴, 프롬프트 빌더
+│   ├── infrastructure/   # 외부 의존성 — Alpaca, AI Provider, Skills Loader
+│   ├── components/       # React Client Components
+│   └── lib/              # UI 유틸, React Query 키 팩토리
+├── skills/               # 분석 기법 정의 (.md, 코드 아님)
+│   ├── patterns/
+│   ├── indicators/
+│   └── strategies/
+├── docs/                 # 아키텍처/도메인/컨벤션 문서
+└── refs/                 # 보조지표·투자 이론 레퍼런스
 ```
 
 **레이어 의존성 방향**
 
 ```
-domain ← infrastructure ← app
-                       ← components (domain만 허용)
+domain          ← 외부 import 금지. 순수 함수만.
+infrastructure  ← domain만 import 가능. 파일 I/O와 API 호출 담당.
+lib             ← UI 유틸 래퍼. 순수 함수.
+app             ← infrastructure, domain, lib import 가능.
+components      ← domain, lib import 가능. infrastructure 직접 import 금지.
 ```
 
 자세한 내용은 [📖 ARCHITECTURE.md](./docs/ARCHITECTURE.md) 참고.
@@ -143,15 +159,21 @@ Claude Code가 이슈를 받아 브랜치 생성 → 코드 작성 → 테스트
 
 ### Skills: 코드 없이 분석 기법 추가하기
 
-**분석 기법을 코드가 아닌 자연어로 정의합니다.**
+분석 기법을 코드가 아닌 **자연어(.md)로 정의**합니다.
 
 ```
-/skills/my-strategy.md 파일 하나 추가 = 새로운 분석 기법 즉시 적용
+/skills/<category>/my-strategy.md 파일 하나 추가 → 새로운 분석 기법 즉시 적용
 ```
 
-개발자가 아니어도, 트레이더, 투자자, 누구든 자신만의 분석 로직을 기여할 수 있도록 할 것 입니다.
+`infrastructure/skills/loader.ts`가 `skills/` 디렉토리를 재귀적으로 스캔해서 frontmatter와
+본문을 파싱하고, `domain/analysis/prompt.ts`가 이를 AI 프롬프트에 주입합니다.
+도메인 코드를 건드리지 않고 분석 기법을 추가/수정할 수 있다는 의미입니다.
 
-아직 기여할 수 있는 프로세스가 정해지지 않아, 지금은 어렵습니다.
+현재 등록된 카테고리:
+
+- `skills/patterns/` — 차트 패턴 (헤드앤숄더, 쐐기, 이중천장/바닥 등)
+- `skills/indicators/` — 보조지표 시그널 (예정)
+- `skills/strategies/` — 대순환 분석 등 전략 (예정)
 
 ---
 
@@ -160,70 +182,83 @@ Claude Code가 이슈를 받아 브랜치 생성 → 코드 작성 → 테스트
 | 문서 | 내용 |
 |------|------|
 | [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | 레이어 구조, 의존성 규칙, 데이터 흐름 |
-| [DOMAIN.md](./docs/DOMAIN.md) | 인디케이터 계산 명세, 타입 정의 |
+| [DOMAIN.md](./docs/DOMAIN.md) | 인디케이터 계산 명세, 캔들 패턴, Skills 시스템 |
 | [API.md](./docs/API.md) | Alpaca API, Claude API 명세 |
-| [CONVENTIONS.md](./docs/CONVENTIONS.md) | 코딩 컨벤션, 네이밍, 자주 하는 실수 |
-| [FF.md](./docs/FF.md) | 개발 원칙 (Frontend Fundamentals) |
-| [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 깃 브랜치, 커밋 메시지, PR 규칙 |
+| [CONVENTIONS.md](./docs/CONVENTIONS.md) | 코딩 컨벤션, 네이밍, 패러다임 |
+| [FF.md](./docs/FF.md) | FF 4원칙 (Readability, Predictability, Cohesion, Coupling) |
 | [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수 |
+| [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 브랜치, 커밋 메시지, PR 규칙 |
+| [MISTAKES.md](./docs/MISTAKES.md) | 자주 하는 실수 모음 |
 
 ---
 
 ## 🧪 Testing
 
 ```bash
-# 전체 테스트
-yarn test
-
-# 커버리지 포함
-yarn test --coverage
-
-# 특정 파일
-yarn test rsi.test.ts
+yarn test                    # 전체 테스트
+yarn test-watch              # watch
+yarn test-coverage           # 커버리지 포함
+yarn test-coverage-report    # 커버리지 리포트
 ```
 
-**커버리지 목표**: `domain/`, `infrastructure/` 100%
+**커버리지 목표**: `domain/`, `infrastructure/` 100% (UI는 테스트 대상 아님)
+
+---
+
+## 🧰 Commands
+
+```bash
+yarn dev               # 개발 서버 (포트 4200)
+yarn build             # 프로덕션 빌드
+yarn lint              # ESLint
+yarn lint:fix
+yarn lint:style        # Stylelint
+yarn lint:style-fix
+yarn format            # Prettier
+```
+
+패키지 설치는 항상 `yarn`. `npm`/`pnpm`은 사용하지 않습니다.
 
 ---
 
 ## 📊 Data Source
 
-[Alpaca Markets](https://alpaca.markets) Free Tier 기반
+[Financial Modeling Prep (FMP)](https://site.financialmodelingprep.com) 기반
 
 | 항목 | 값 |
 |------|-----|
-| Exchange | IEX |
-| Delay | 15분 |
-| Timeframe | 1분봉 ~ 일봉 |
-| History | 7년+ |
+| Exchange | 미국 전체 시장 |
+| Timeframe | 일봉 (현재 비용 이슈로 일봉만 지원) |
+| History | 다년간 |
 
 ---
 
 ## 🤝 Contributing
 
-기여를 환영합니다! 다음 방법으로 참여할 수 있습니다:
+### 코드 기여
 
-아직 기여할 수 있는 프로세스가 정해지지 않아, 지금은 어렵습니다.
+아직 외부 코드 기여 프로세스가 정해지지 않아, 지금은 받을 수 없습니다.
+버그 리포트나 제안은 [Issues](https://github.com/y0ngha/siglens/issues)로 남겨주세요.
 
-[//]: # (1. **버그 리포트**: [Issues]&#40;https://github.com/y0ngha/siglens/issues&#41;에서 보고)
+### Skills 기여 (분석 기법 추가)
 
-[//]: # (2. **기능 제안**: [Discussions]&#40;https://github.com/y0ngha/siglens/discussions&#41;에서 논의)
+`skills/` 디렉토리에 `.md` 파일 하나만 추가하면 새로운 분석 기법을 적용할 수 있도록 설계되어 있습니다.
+하지만 아직 다음이 정해지지 않았습니다:
 
-[//]: # (3. **분석 기법 기여**: [CONTRIBUTING.md]&#40;./CONTRIBUTING.md&#41; 참고)
+- Skill `.md` 파일의 frontmatter 표준 스펙 공개
+- 신뢰도(`confidence_weight`) 검증 절차
+- 리뷰/머지 워크플로
+- 기여자 가이드
 
-[//]: # (4. **코드 기여**: Fork → Branch → PR)
-
-[//]: # ()
-[//]: # (자세한 내용은 [🤝 CONTRIBUTING.md]&#40;./CONTRIBUTING.md&#41; 참고.)
+따라서 **현재는 외부에서 Skills를 기여하기 어렵습니다.** 틀이 잡히는 대로 이 섹션을 업데이트할 예정입니다.
+관심 있으신 분은 Discord에서 미리 의견을 남겨주세요.
 
 ---
 
 ## 💬 Community
 
-질문, 피드백, 아이디어 공유:
-
-- **[💬 Discord](https://discord.gg/siglens)** — 실시간 대화 
-  - (현재는 MVP 운영중으로 초대받은 유저에게만 초대해드리고 있어요.)
+- **[💬 Discord](https://discord.gg/siglens)** — 실시간 대화
+  - 현재는 MVP 운영 중으로 초대받은 유저에게만 초대해드리고 있어요.
 
 ---
 
