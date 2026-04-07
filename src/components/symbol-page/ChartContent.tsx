@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef } from 'react';
+import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { validateKeyLevels } from '@/domain/analysis/keyLevels';
@@ -82,8 +82,14 @@ export function ChartContent({
 }: ChartContentProps) {
     const { bars, indicators } = useBars({ symbol, timeframe });
 
-    const { analysis, isAnalyzing, analysisError, handleReanalyze } =
-        useAnalysis({
+    const {
+        analysis,
+        isAnalyzing,
+        analysisError,
+        handleReanalyze,
+        reanalyzeCooldownMs,
+        cooldownNotice,
+    } = useAnalysis({
             symbol,
             timeframe,
             initialAnalysis,
@@ -107,7 +113,18 @@ export function ChartContent({
     const [keyLevelsVisible, setKeyLevelsVisible] = useState(false);
     const [trendlinesVisible, setTrendlinesVisible] = useState(false);
 
-    const analysisStatus = getAnalysisStatus(isAnalyzing, analysisError);
+    // 마무리 애니메이션이 모두 끝난 뒤에야 본문/배너가 사라지도록, isAnalyzing보다
+    // 늦게 false로 떨어지는 displayAnalyzing 상태를 둔다. AnalysisPanel(본문)과
+    // AnalysisStatusBanner(상단 배너)가 동일한 타이밍을 공유한다.
+    const [displayAnalyzing, setDisplayAnalyzing] = useState(isAnalyzing);
+    useEffect(() => {
+        if (isAnalyzing) setDisplayAnalyzing(true);
+    }, [isAnalyzing]);
+    const handleProgressFinished = useCallback(() => {
+        setDisplayAnalyzing(false);
+    }, []);
+
+    const analysisStatus = getAnalysisStatus(displayAnalyzing, analysisError);
 
     const validatedKeyLevels = useMemo(
         () => validateKeyLevels(analysis.keyLevels),
@@ -194,7 +211,11 @@ export function ChartContent({
                     analysis={analysis}
                     keyLevels={validatedKeyLevels}
                     isAnalyzing={isAnalyzing}
+                    showProgress={displayAnalyzing}
+                    onProgressFinished={handleProgressFinished}
                     onReanalyze={handleReanalyze}
+                    reanalyzeCooldownMs={reanalyzeCooldownMs}
+                    cooldownNotice={cooldownNotice}
                     chartVisiblePatterns={chartVisiblePatterns}
                     onTogglePattern={handleTogglePattern}
                     _keyLevelsVisible={keyLevelsVisible}

@@ -28,7 +28,17 @@ import {
     parseStructuredSummary,
     type SkillSummarySection,
 } from '@/components/analysis/utils/parseStructuredSummary';
+import { AnalysisProgress } from '@/components/analysis/AnalysisProgress';
+import { AnalysisToast } from '@/components/analysis/AnalysisToast';
+import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis';
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
+
+function formatCooldown(ms: number): string {
+    const totalSec = Math.ceil(ms / 1000);
+    const minutes = Math.floor(totalSec / 60);
+    const seconds = totalSec % 60;
+    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
 
 const TREND_COLOR: Record<Trend, string> = {
     bullish: 'text-chart-bullish',
@@ -590,7 +600,16 @@ interface AnalysisPanelProps {
     analysis: AnalysisResponse;
     keyLevels: KeyLevels;
     isAnalyzing?: boolean;
+    /** 마무리 애니메이션을 포함해 "사용자에게 분석이 진행 중인 것처럼 보이는" 상태.
+     *  AnalysisProgress 표시·본문 섹션 숨김에 사용된다. ChartContent가 소유한다. */
+    showProgress?: boolean;
+    /** AnalysisProgress의 마무리 애니메이션이 모두 끝난 시점에 호출된다. */
+    onProgressFinished?: () => void;
     onReanalyze?: () => void;
+    /** 다음 재분석까지 남은 ms. 0이면 즉시 가능. */
+    reanalyzeCooldownMs?: number;
+    /** 쿨다운 중 재분석 시도를 토스트로 알리기 위한 알림. */
+    cooldownNotice?: CooldownNotice | null;
     /** 차트에서 현재 표시 중인 패턴 이름 집합 (patternName 기준). StockChart가 소유한 상태다. */
     chartVisiblePatterns?: Set<string>;
     /** 차트 패턴 표시 여부를 토글한다. patternName을 인자로 받는다. */
@@ -605,7 +624,11 @@ export function AnalysisPanel({
     analysis,
     keyLevels,
     isAnalyzing = false,
+    showProgress = false,
+    onProgressFinished,
     onReanalyze,
+    reanalyzeCooldownMs = 0,
+    cooldownNotice = null,
     chartVisiblePatterns,
     onTogglePattern,
     _keyLevelsVisible = false,
@@ -616,6 +639,10 @@ export function AnalysisPanel({
     const handleTogglePatternVisibility = (patternName: string): void => {
         onTogglePattern?.(patternName);
     };
+
+    // showProgress와 onProgressFinished는 ChartContent가 관리한다.
+    // 동일한 "마무리 애니메이션 진행 중" 상태를 상단 배너(AnalyzingBanner)와 본문이
+    // 함께 공유해야 하기 때문이다.
 
     const detectedPatterns = analysis.patternSummaries.filter(p => p.detected);
     const hasDetectedPatterns = detectedPatterns.length > 0;
@@ -639,13 +666,20 @@ export function AnalysisPanel({
     );
 
     return (
-        <div className="bg-secondary-800 flex flex-col gap-4 rounded-lg p-4">
+        <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
+            <AnalysisToast notice={cooldownNotice} />
             {/* 헤더 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <span className="text-secondary-200 text-sm font-semibold">
                         AI 분석
                     </span>
+                    {isAnalyzing && (
+                        <span
+                            className="bg-primary-400 inline-block h-1.5 w-1.5 animate-pulse rounded-full"
+                            aria-hidden
+                        />
+                    )}
                     <TrendBadge trend={analysis.trend} />
                 </div>
                 <div className="text-secondary-400 flex items-center gap-1.5 text-xs">
@@ -665,11 +699,26 @@ export function AnalysisPanel({
                 감지 · {INDICATOR_KIND_COUNT}종 인디케이터 적용
             </p>
 
-            {/* 요약 */}
-            <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
-                {isAnalyzing ? '분석 중입니다…' : analysis.summary}
-            </p>
+            {/* 요약 — 분석 중에는 진행 인디케이터로 대체.
+                isAnalyzing이 false로 떨어진 직후에도 마무리 애니메이션이 끝날 때까지
+                showProgress=true가 유지되어 인디케이터가 잠시 더 노출된다. */}
+            {showProgress ? (
+                <AnalysisProgress
+                    isAnalyzing={isAnalyzing}
+                    onFinished={onProgressFinished}
+                />
+            ) : (
+                <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
+                    {analysis.summary}
+                </p>
+            )}
 
+            {/* 인디케이터/패턴/스킬/레벨/추세선/가격목표 등 본문 섹션 —
+                마무리 애니메이션이 끝나기 전(showProgress=true) 동안에는 노출하지 않는다.
+                캐시 히트로 분석 결과가 즉시 도착해도 사용자가 5단계를 모두 본 뒤에야
+                결과가 한 번에 드러나도록 하기 위함이다. */}
+            {!showProgress && (
+                <>
             <div className="border-secondary-700 border-t" />
 
             {/* 인디케이터 시그널 */}
@@ -912,18 +961,43 @@ export function AnalysisPanel({
                     </div>
                 </div>
             )}
-
-            {/* 재분석 버튼 */}
-            {onReanalyze !== undefined && (
-                <button
-                    type="button"
-                    onClick={onReanalyze}
-                    disabled={isAnalyzing}
-                    className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/50 mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white transition-colors"
-                >
-                    {isAnalyzing ? '분석 중…' : '재분석'}
-                </button>
+                </>
             )}
+
+            {/* 재분석 버튼 — 다중 사용자 환경에서 캐시 일관성·동시 재분석 정책이 정리될 때까지
+                사용자에게는 노출하지 않는다. 로직은 보존(useAnalysis/handleReanalyze)되어 있으며
+                정책이 확정되면 아래 블록의 주석을 해제해 다시 노출한다. */}
+            {/*
+            {onReanalyze !== undefined &&
+                (() => {
+                    const isCoolingDown = reanalyzeCooldownMs > 0;
+                    const isDisabled = isAnalyzing || isCoolingDown;
+                    const getLabel = (): string => {
+                        if (isAnalyzing) return '분석 중…';
+                        if (isCoolingDown) {
+                            return `재분석 가능까지 ${formatCooldown(reanalyzeCooldownMs)}`;
+                        }
+                        return '재분석';
+                    };
+                    const label = getLabel();
+                    return (
+                        <button
+                            type="button"
+                            onClick={onReanalyze}
+                            disabled={isDisabled}
+                            aria-disabled={isDisabled}
+                            title={
+                                isCoolingDown
+                                    ? '재분석은 5분에 한 번만 실행할 수 있어요.'
+                                    : undefined
+                            }
+                            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 disabled:cursor-not-allowed mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors"
+                        >
+                            {label}
+                        </button>
+                    );
+                })()}
+            */}
         </div>
     );
 }
