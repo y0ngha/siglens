@@ -2,6 +2,10 @@ import { Redis } from '@upstash/redis';
 import type { CacheProvider } from '@/infrastructure/cache/types';
 
 export function createCacheProvider(): CacheProvider | null {
+    if (process.env.NODE_ENV === 'development') {
+        return null;
+    }
+
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const masterToken = process.env.UPSTASH_REDIS_REST_TOKEN;
 

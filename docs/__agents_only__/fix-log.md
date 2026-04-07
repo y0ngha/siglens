@@ -57,6 +57,16 @@
 - Rule: FF.md Predictability — TODO로 유지 의도가 명시된 코드를 삭제하면 향후 주석 해제 시 참조 오류가 발생하여 예측 가능성을 해침
 - Context: `AnalysisPanel.tsx`에서 `EyeIcon` 컴포넌트가 제거되었으나 3곳의 commented-out 버튼에서 여전히 `<EyeIcon>`을 참조; 원본 코드를 복원하여 해결
 
+## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
+- Violation: `POPULAR_TICKERS` (비즈니스 도메인 지식)가 `src/lib/seo.ts`에 정의되어 lib 레이어 허용 범위를 벗어남
+- Rule: lib/CLAUDE.md — lib 레이어는 utility wrappers, React Query key factories, config constants, chart color constants만 허용; 도메인 비즈니스 상수는 금지
+- Context: `POPULAR_TICKERS`는 `sitemap.ts`에서만 사용되는 상수로 lib이 아닌 사용처(sitemap.ts) 내부로 인라인 이동하여 해결
+
+## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
+- Violation: JSON-LD `description`이 `generateMetadata`와 `jsonLd` 사이에서 불일치 — jsonLd는 짧은 버전, generateMetadata는 전체 문장 사용
+- Rule: FF.md Cohesion — 동일한 도메인 정보(종목 설명)는 코드베이스 전반에서 일관되게 유지되어야 함
+- Context: `[symbol]/page.tsx`에서 `generateMetadata`의 description과 `jsonLd.description`이 서로 다른 문자열을 사용했음; jsonLd를 generateMetadata와 동일한 전체 문장으로 통일하여 해결
+
 ## [fix/bars-null-and-ssr-window-error (FMP API spec fix) | 2026-04-06]
 - Violation: `console.log(url)` left in `fmp.ts` `getBars()` — debug artifact shipped to infrastructure
 - Rule: CONVENTIONS.md — infrastructure functions must be pure side-effect-free except for the single external I/O they are responsible for; debug logging is a prohibited side effect

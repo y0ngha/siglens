@@ -595,10 +595,10 @@ interface AnalysisPanelProps {
     chartVisiblePatterns?: Set<string>;
     /** 차트 패턴 표시 여부를 토글한다. patternName을 인자로 받는다. */
     onTogglePattern?: (patternName: string) => void;
-    keyLevelsVisible?: boolean;
-    onKeyLevelsVisibilityChange?: (isVisible: boolean) => void;
-    trendlinesVisible?: boolean;
-    onTrendlinesVisibilityChange?: (isVisible: boolean) => void;
+    _keyLevelsVisible?: boolean;
+    _onKeyLevelsVisibilityChange?: (isVisible: boolean) => void;
+    _trendlinesVisible?: boolean;
+    _onTrendlinesVisibilityChange?: (isVisible: boolean) => void;
 }
 
 export function AnalysisPanel({
@@ -608,10 +608,10 @@ export function AnalysisPanel({
     onReanalyze,
     chartVisiblePatterns,
     onTogglePattern,
-    keyLevelsVisible = false,
-    onKeyLevelsVisibilityChange,
-    trendlinesVisible = false,
-    onTrendlinesVisibilityChange,
+    _keyLevelsVisible = false,
+    _onKeyLevelsVisibilityChange,
+    _trendlinesVisible = false,
+    _onTrendlinesVisibilityChange,
 }: AnalysisPanelProps) {
     const handleTogglePatternVisibility = (patternName: string): void => {
         onTogglePattern?.(patternName);

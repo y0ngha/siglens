@@ -43,11 +43,12 @@ const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
 const INDICATOR_TREND_SAMPLE_COUNT = 5;
 
+// TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {
-    '1Min': '1-Minute',
-    '5Min': '5-Minute',
-    '15Min': '15-Minute',
-    '1Hour': '1-Hour',
+    // '1Min': '1-Minute',
+    // '5Min': '5-Minute',
+    // '15Min': '15-Minute',
+    // '1Hour': '1-Hour',
     '1Day': 'Daily',
 };
 
@@ -328,6 +329,8 @@ const ANALYSIS_GUIDELINES = [
     '- First target: nearest support/resistance; second target: based on pattern measurement',
     '- State the trigger condition (breakout/breakdown reference level) for each scenario',
     '- Strengthen target viability with supporting indicators (RSI extremes, Bollinger Band touch, MACD trend)',
+    '- Sort targets by proximity to current price: bullish targets in ascending price order (closest first), bearish targets in descending price order (closest first). Never return targets in arbitrary order.',
+    '- Every target MUST include a non-empty basis explaining the rationale (supporting indicator, pattern measurement, swing level, etc.). If a basis cannot be provided, exclude that target entirely instead of returning it with an empty basis.',
     '',
     '### Trendline Detection',
     '- Return 0 to 3 trendlines maximum',

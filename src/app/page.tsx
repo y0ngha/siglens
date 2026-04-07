@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearch } from '@/components/search/SymbolSearch';
@@ -20,8 +21,29 @@ export default async function Home() {
     const loader = new FileSkillsLoader();
     const skills = await loader.loadSkills();
 
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebApplication',
+        name: SITE_NAME,
+        description: SITE_DESCRIPTION,
+        url: SITE_URL,
+        applicationCategory: 'FinanceApplication',
+        operatingSystem: 'Web',
+        offers: {
+            '@type': 'Offer',
+            price: '0',
+            priceCurrency: 'USD',
+        },
+    };
+
     return (
         <>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+                }}
+            />
             <a
                 href="#search"
                 className="focus-visible:bg-primary-600 sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"

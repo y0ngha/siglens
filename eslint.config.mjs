@@ -13,6 +13,14 @@ const eslintConfig = defineConfig([
         'build/**',
         'next-env.d.ts',
     ]),
+    {
+        // JSON-LD structured data injection via dangerouslySetInnerHTML on <script> elements
+        // is a standard Next.js pattern for SEO. The data is server-generated and safe.
+        files: ['src/app/page.tsx', 'src/app/[symbol]/page.tsx'],
+        rules: {
+            'react/no-danger': 'off',
+        },
+    },
 ]);
 
 export default eslintConfig;
