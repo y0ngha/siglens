@@ -1,0 +1,28 @@
+{
+    "git": {
+        "commitMessage": "chore: release v${version}",
+        "tagName": "v${version}"
+    },
+    "github": {
+        "release": true,
+        "releaseName": "v${version}"
+    },
+    "plugins": {
+        "@release-it/conventional-changelog": {
+            "preset": {
+                "name": "angular",
+                "types": [
+                    { "type": "feat", "section": "새 기능" },
+                    { "type": "fix", "section": "버그 수정" },
+                    { "type": "refactor", "section": "리팩토링" },
+                    { "type": "chore", "section": "기타" },
+                    { "type": "docs", "section": "문서" },
+                    { "type": "style", "section": "스타일" },
+                    { "type": "test", "section": "테스트" }
+                ]
+            },
+            "infile": "CHANGELOG.md",
+            "header": "# Changelog"
+        }
+    }
+}
