@@ -1,5 +1,6 @@
 {
     "git": {
+        "requireBranch": "production",
         "commitMessage": "chore: release v${version}",
         "tagName": "v${version}"
     },
