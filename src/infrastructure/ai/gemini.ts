@@ -3,7 +3,8 @@ import type { RawAnalysisResponse } from '@/domain/types';
 import type { AIProvider } from './types';
 import { AI_SYSTEM_PROMPT, stripMarkdownCodeBlock } from './utils';
 
-const GEMINI_MODEL = 'gemini-3-flash-preview';
+const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview';
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL;
 
 export class GeminiProvider implements AIProvider {
     private readonly client: GoogleGenerativeAI;

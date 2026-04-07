@@ -3,8 +3,18 @@ import type { RawAnalysisResponse } from '@/domain/types';
 import type { AIProvider } from './types';
 import { AI_SYSTEM_PROMPT, stripMarkdownCodeBlock } from './utils';
 
-const CLAUDE_MODEL = 'claude-sonnet-4-6';
-const CLAUDE_MAX_TOKENS = 2048;
+const DEFAULT_CLAUDE_MODEL = 'claude-opus-4-6';
+const DEFAULT_CLAUDE_MAX_TOKENS = 8192;
+
+const CLAUDE_MODEL = process.env.CLAUDE_MODEL ?? DEFAULT_CLAUDE_MODEL;
+const CLAUDE_MAX_TOKENS = (() => {
+    const raw = process.env.CLAUDE_MAX_TOKENS;
+    if (raw == null || raw === '') return DEFAULT_CLAUDE_MAX_TOKENS;
+    const parsed = Number.parseInt(raw, 10);
+    return Number.isFinite(parsed) && parsed > 0
+        ? parsed
+        : DEFAULT_CLAUDE_MAX_TOKENS;
+})();
 
 export class ClaudeProvider implements AIProvider {
     private readonly client: Anthropic;
