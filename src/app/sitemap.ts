@@ -1,5 +1,14 @@
 import type { MetadataRoute } from 'next';
-import { POPULAR_TICKERS, SITE_URL } from '@/lib/seo';
+import { SITE_URL } from '@/lib/seo';
+
+const POPULAR_TICKERS = [
+    'AAPL',
+    'TSLA',
+    'NVDA',
+    'MSFT',
+    'GOOGL',
+    'AMZN',
+] as const;
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const now = new Date();
