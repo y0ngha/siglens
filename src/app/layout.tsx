@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import './globals.css';
 
 const geistSans = Geist({
@@ -13,10 +14,33 @@ const geistMono = Geist_Mono({
     subsets: ['latin'],
 });
 
+const ROOT_TITLE = `${SITE_NAME} | AI 기술적 주가 분석`;
+
 export const metadata: Metadata = {
-    title: 'Siglens | AI 기술적 주가 분석',
-    description:
-        '미국 주식 AI 기술적 분석 플랫폼 — 인디케이터, 패턴, 스킬 기반 종합 분석',
+    metadataBase: new URL(SITE_URL),
+    title: {
+        default: ROOT_TITLE,
+        template: `%s | ${SITE_NAME}`,
+    },
+    description: SITE_DESCRIPTION,
+    applicationName: SITE_NAME,
+    openGraph: {
+        type: 'website',
+        siteName: SITE_NAME,
+        title: ROOT_TITLE,
+        description: SITE_DESCRIPTION,
+        url: SITE_URL,
+        locale: 'ko_KR',
+    },
+    twitter: {
+        card: 'summary_large_image',
+        title: ROOT_TITLE,
+        description: SITE_DESCRIPTION,
+    },
+    robots: {
+        index: true,
+        follow: true,
+    },
 };
 
 export const viewport: Viewport = {
