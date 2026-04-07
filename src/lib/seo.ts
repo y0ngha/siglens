@@ -1,5 +1,5 @@
 export const SITE_URL =
-    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.app';
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io';
 
 export const SITE_NAME = 'Siglens';
 
