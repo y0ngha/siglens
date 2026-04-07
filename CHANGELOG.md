@@ -1,5 +1,12 @@
 # Changelog
 
+# [0.3.0](https://github.com/y0ngha/siglens/compare/v0.2.5...v0.3.0) (2026-04-07)
+
+
+### Features
+
+* 최근 검색한 티커 저장 기능 추가 ([97e2b1c](https://github.com/y0ngha/siglens/commit/97e2b1c2076afcb73635c025f773bd790c941628))
+
 ## [0.2.5](https://github.com/y0ngha/siglens/compare/v0.2.4...v0.2.5) (2026-04-07)
 
 
