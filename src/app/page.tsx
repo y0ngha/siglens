@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { Footer } from '@/components/layout/Footer';
-import { SymbolSearch } from '@/components/search/SymbolSearch';
+import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
 import { StatsBar } from '@/components/home/StatsBar';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import { SkillsShowcase } from '@/components/home/SkillsShowcase';
@@ -77,7 +77,7 @@ export default async function Home() {
                             id="search"
                             className="mt-8 flex justify-center lg:justify-start"
                         >
-                            <SymbolSearch size="lg" />
+                            <SymbolSearchPanel />
                         </div>
                         <div className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
                             <span className="text-secondary-500 text-xs">
