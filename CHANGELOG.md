@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.2.2](https://github.com/y0ngha/siglens/compare/v0.2.1...v0.2.2) (2026-04-07)
+
+
+### Bug Fixes
+
+* ai panel 기본 width는 640px로 고정 ([c6d2e59](https://github.com/y0ngha/siglens/commit/c6d2e599c1f5164b674da24c22d3b2d418a69cfd))
+* seo site_url 잘못 되어있는 것 수정 ([c4db441](https://github.com/y0ngha/siglens/commit/c4db44149d5dc4478a12f5a268779267de55a7c8))
+* 재분석 쿨다운 로직 수정 및 분석시 사용자 안내 추가 ([574d1cf](https://github.com/y0ngha/siglens/commit/574d1cf79b66243b9078bc6d7e30a857cd6e5f4b))
+
+## [0.2.1](https://github.com/y0ngha/siglens/compare/v0.2.0...v0.2.1) (2026-04-07)
+
 # 0.2.0 (2026-04-07)
 
 
