@@ -4,5 +4,5 @@
             "master": true
         }
     },
-    "ignoreCommand": "git describe --exact-match --tags HEAD >/dev/null 2>&1 && git log -1 --pretty=%B | grep -q '^chore: release' && exit 1 || exit 0"
+    "ignoreCommand": "git log -1 --pretty=%B | grep -q '^chore: release' && exit 1 || exit 0"
 }
