@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.5](https://github.com/y0ngha/siglens/compare/v0.2.4...v0.2.5) (2026-04-07)
+
+
+### Bug Fixes
+
+* 보조지표 pane 제거 실패 및 label 위치 미갱신 문제 해결 ([512a5fb](https://github.com/y0ngha/siglens/commit/512a5fbdd965b0970d5cbe976052d12ec212a3c9)), closes [#201](https://github.com/y0ngha/siglens/issues/201) [#212](https://github.com/y0ngha/siglens/issues/212)
+
 ## [0.2.4](https://github.com/y0ngha/siglens/compare/v0.2.3...v0.2.4) (2026-04-07)
 
 
