@@ -41,9 +41,13 @@ import {
 import { OverlayLegend } from '@/components/chart/OverlayLegend';
 import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
 import { buildOverlayLabelConfigs } from '@/components/chart/utils/overlayLabelUtils';
-import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
+import {
+    EMA_DEFAULT_PERIODS,
+    EMPTY_INDICATOR_RESULT,
+    MA_DEFAULT_PERIODS,
+} from '@/domain/indicators/constants';
+import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
 
-const CANDLESTICK_PANE_INDEX = 0;
 const FIRST_INDICATOR_PANE_INDEX = 1;
 const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
 
@@ -312,19 +316,33 @@ export function StockChart({
     //     lineWidth: DEFAULT_LINE_WIDTH,
     // });
 
-    // LWC DOM 레이아웃 강제 갱신
-    // indicator hook의 removeSeries 후 LWC가 빈 pane을 내부적으로 제거하지만
-    // DOM 레이아웃(높이 배분)을 즉시 갱신하지 않아 빈 공간이 남는다.
-    // cleanup 없는 RAF로 다음 페인트 직전에 레이아웃을 강제 갱신한다.
+    // 레이아웃 강제 갱신
+    // indicator hook이 removeSeries로 마지막 series를 제거하면 LWC v5는 논리적
+    // pane을 panes() 배열에서 빼지만, 일부 indicator(MACD/Stochastic/CCI 등)에서
+    // DOM 레이아웃 재계산이 트리거되지 않아 빈 공간이 남는다. AI 패널 리사이즈로
+    // wrapper 크기가 변하면 LWC autoSize ResizeObserver가 발화해 정리된다.
+    // autoSize: true 상태에서는 명시 chart.resize() 호출이 무시되므로,
+    // autoSize를 잠시 끄고 → 1px 차이로 강제 resize → autoSize 복원 순서로
+    // ResizeObserver 발화와 동일한 layout invalidate를 일으킨다.
     // cleanup이 있으면 후속 리렌더에 의해 RAF가 취소될 수 있으므로 의도적으로 생략한다.
     useEffect(() => {
         const chart = chartRef.current;
-        if (!chart) return;
+        const wrapper = wrapperRef.current;
+        if (!chart || !wrapper) return;
 
         requestAnimationFrame(() => {
-            // chart가 이미 소멸했을 수 있으므로 재확인
-            if (!chartRef.current) return;
-            chartRef.current.timeScale().fitContent();
+            const currentChart = chartRef.current;
+            const currentWrapper = wrapperRef.current;
+            if (!currentChart || !currentWrapper) return;
+
+            const { clientWidth, clientHeight } = currentWrapper;
+            if (clientWidth === 0 || clientHeight === 0) return;
+
+            currentChart.applyOptions({ autoSize: false });
+            currentChart.resize(clientWidth - 1, clientHeight);
+            currentChart.resize(clientWidth, clientHeight);
+            currentChart.applyOptions({ autoSize: true });
+            currentChart.timeScale().fitContent();
         });
     }, [paneIndices]);
 
@@ -390,44 +408,44 @@ export function StockChart({
         <div ref={wrapperRef} className="relative h-full w-full">
             <div ref={containerRef} className="h-full w-full" />
             <div className="pointer-events-none absolute top-2 left-2 z-10 flex flex-col gap-1">
-                {/*<div className="pointer-events-auto">*/}
-                {/*<IndicatorToolbar*/}
-                {/*    maVisiblePeriods={maVisiblePeriods}*/}
-                {/*    maAvailablePeriods={MA_DEFAULT_PERIODS}*/}
-                {/*    onMAToggle={toggleMAPeriod}*/}
-                {/*    emaVisiblePeriods={emaVisiblePeriods}*/}
-                {/*    emaAvailablePeriods={EMA_DEFAULT_PERIODS}*/}
-                {/*    onEMAToggle={toggleEMAPeriod}*/}
-                {/*    bollinger={{*/}
-                {/*        visible: bollingerVisible,*/}
-                {/*        onToggle: toggleBollinger,*/}
-                {/*    }}*/}
-                {/*    macd={{ visible: macdVisible, onToggle: toggleMACD }}*/}
-                {/*    rsi={{ visible: rsiVisible, onToggle: toggleRSI }}*/}
-                {/*    dmi={{ visible: dmiVisible, onToggle: toggleDMI }}*/}
-                {/*    stochastic={{*/}
-                {/*        visible: stochasticVisible,*/}
-                {/*        onToggle: toggleStochastic,*/}
-                {/*    }}*/}
-                {/*    stochRsi={{*/}
-                {/*        visible: stochRsiVisible,*/}
-                {/*        onToggle: toggleStochRSI,*/}
-                {/*    }}*/}
-                {/*    cci={{ visible: cciVisible, onToggle: toggleCCI }}*/}
-                {/*    volumeProfile={{*/}
-                {/*        visible: vpVisible,*/}
-                {/*        onToggle: toggleVP,*/}
-                {/*    }}*/}
-                {/*    ichimoku={{*/}
-                {/*        visible: ichimokuVisible,*/}
-                {/*        onToggle: toggleIchimoku,*/}
-                {/*    }}*/}
-                {/*    candlePatterns={{*/}
-                {/*        visible: candlePatternsVisible,*/}
-                {/*        onToggle: toggleCandlePatterns,*/}
-                {/*    }}*/}
-                {/*/>*/}
-                {/*</div>*/}
+                <div className="pointer-events-auto">
+                    <IndicatorToolbar
+                        maVisiblePeriods={maVisiblePeriods}
+                        maAvailablePeriods={MA_DEFAULT_PERIODS}
+                        onMAToggle={toggleMAPeriod}
+                        emaVisiblePeriods={emaVisiblePeriods}
+                        emaAvailablePeriods={EMA_DEFAULT_PERIODS}
+                        onEMAToggle={toggleEMAPeriod}
+                        bollinger={{
+                            visible: bollingerVisible,
+                            onToggle: toggleBollinger,
+                        }}
+                        macd={{ visible: macdVisible, onToggle: toggleMACD }}
+                        rsi={{ visible: rsiVisible, onToggle: toggleRSI }}
+                        dmi={{ visible: dmiVisible, onToggle: toggleDMI }}
+                        stochastic={{
+                            visible: stochasticVisible,
+                            onToggle: toggleStochastic,
+                        }}
+                        stochRsi={{
+                            visible: stochRsiVisible,
+                            onToggle: toggleStochRSI,
+                        }}
+                        cci={{ visible: cciVisible, onToggle: toggleCCI }}
+                        volumeProfile={{
+                            visible: vpVisible,
+                            onToggle: toggleVP,
+                        }}
+                        ichimoku={{
+                            visible: ichimokuVisible,
+                            onToggle: toggleIchimoku,
+                        }}
+                        candlePatterns={{
+                            visible: candlePatternsVisible,
+                            onToggle: toggleCandlePatterns,
+                        }}
+                    />
+                </div>
                 <OverlayLegend items={overlayLegendItems} />
             </div>
         </div>
