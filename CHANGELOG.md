@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4](https://github.com/y0ngha/siglens/compare/v0.2.3...v0.2.4) (2026-04-07)
+
+
+### Bug Fixes
+
+* **deploy:** Vercel ignoreCommand에서 git describe 제거 ([74fc36d](https://github.com/y0ngha/siglens/commit/74fc36dd3965a1cc81edb2f3b846acc6e6a028bd))
+
 ## [0.2.3](https://github.com/y0ngha/siglens/compare/v0.2.2...v0.2.3) (2026-04-07)
 
 ## [0.2.2](https://github.com/y0ngha/siglens/compare/v0.2.1...v0.2.2) (2026-04-07)
