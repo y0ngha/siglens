@@ -51,7 +51,7 @@ export default async function Home() {
                 검색으로 건너뛰기
             </a>
             <main className="flex flex-1 flex-col">
-                <section className="relative flex flex-1 flex-col items-center justify-center px-6 py-20 text-center lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
+                <section className="relative flex flex-1 flex-col items-center justify-center px-6 py-14 text-center sm:py-20 lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
                     <div
                         aria-hidden="true"
                         className="hero-grid pointer-events-none absolute inset-0"
@@ -64,13 +64,13 @@ export default async function Home() {
                         <p className="text-secondary-400 mb-6 font-mono text-xs tracking-[0.3em] uppercase">
                             SIGLENS
                         </p>
-                        <h1 className="text-secondary-100 text-3xl leading-tight font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+                        <h1 className="text-secondary-100 text-[2rem] leading-[1.15] font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
                             AI가 분석하는 미국 주식{' '}
-                            <span className="text-primary-400">
+                            <span className="text-primary-400 block sm:inline">
                                 기술적 분석
                             </span>
                         </h1>
-                        <p className="text-secondary-400 mx-auto mt-4 max-w-lg text-lg leading-relaxed sm:text-xl lg:mx-0">
+                        <p className="text-secondary-400 mx-auto mt-4 max-w-lg text-base leading-relaxed text-balance sm:text-xl lg:mx-0">
                             종목 티커를 입력하면 차트와 지표를 즉시 분석합니다.
                         </p>
                         <div

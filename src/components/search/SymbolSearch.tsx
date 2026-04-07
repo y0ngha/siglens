@@ -31,14 +31,18 @@ export function SymbolSearch({ className, size = 'sm' }: SymbolSearchProps) {
     );
 
     const buttonClass = cn(
-        'bg-primary-600 hover:bg-primary-700 rounded-lg font-semibold text-white transition-colors',
+        'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors',
         size === 'lg' ? 'px-6 py-3 text-base' : 'px-4 py-2 text-sm'
     );
 
     return (
         <form
             onSubmit={handleSubmit}
-            className={cn('flex items-center gap-2', className)}
+            className={cn(
+                'flex items-center gap-2',
+                size === 'lg' && 'w-full max-w-md',
+                className
+            )}
         >
             <input
                 name="symbol"

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
 import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
@@ -41,6 +41,56 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
             'bg-ui-warning/10 text-ui-warning border border-ui-warning/30',
     },
 };
+
+function ConfidenceInfoTooltip() {
+    const [open, setOpen] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (!open) return;
+        const handlePointerDown = (event: PointerEvent) => {
+            if (
+                containerRef.current != null &&
+                !containerRef.current.contains(event.target as Node)
+            ) {
+                setOpen(false);
+            }
+        };
+        document.addEventListener('pointerdown', handlePointerDown);
+        return () => {
+            document.removeEventListener('pointerdown', handlePointerDown);
+        };
+    }, [open]);
+
+    return (
+        <div ref={containerRef} className="group relative">
+            <button
+                type="button"
+                aria-label="신뢰도 점수 설명"
+                aria-expanded={open}
+                onClick={() => setOpen(prev => !prev)}
+                className="text-secondary-600 hover:text-secondary-400 cursor-help text-xs leading-none transition-colors"
+            >
+                ⓘ
+            </button>
+            <div
+                role="tooltip"
+                className={cn(
+                    'bg-secondary-800 border-secondary-600 absolute right-0 bottom-full z-10 mb-1.5 w-56 rounded border p-2 text-xs shadow-lg transition-opacity',
+                    'group-hover:opacity-100 sm:pointer-events-none sm:opacity-0',
+                    open
+                        ? 'pointer-events-auto opacity-100'
+                        : 'pointer-events-none opacity-0'
+                )}
+            >
+                <p className="text-secondary-300 leading-relaxed">
+                    분석 기법의 신뢰도 점수입니다. 50% 미만은 분석에서 제외되며,
+                    80% 이상은 높은 신뢰도로 분류됩니다.
+                </p>
+            </div>
+        </div>
+    );
+}
 
 interface SkillCardProps {
     skill: SkillShowcaseItem;
@@ -90,17 +140,7 @@ function SkillCard({ skill }: SkillCardProps) {
                 <span className="text-secondary-500 font-mono text-xs">
                     {Math.round(skill.confidenceWeight * 100)}%
                 </span>
-                <div className="group relative">
-                    <span className="text-secondary-600 hover:text-secondary-400 cursor-help text-xs leading-none transition-colors">
-                        ⓘ
-                    </span>
-                    <div className="bg-secondary-800 border-secondary-600 pointer-events-none absolute right-0 bottom-full z-10 mb-1.5 w-56 rounded border p-2 text-xs opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
-                        <p className="text-secondary-300 leading-relaxed">
-                            분석 기법의 신뢰도 점수입니다. 50% 미만은 분석에서
-                            제외되며, 80% 이상은 높은 신뢰도로 분류됩니다.
-                        </p>
-                    </div>
-                </div>
+                <ConfidenceInfoTooltip />
             </div>
         </div>
     );
