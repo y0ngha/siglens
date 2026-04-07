@@ -54,8 +54,8 @@ export function AnalysisToast({ notice }: AnalysisToastProps) {
                 재분석은 5분에 한 번만 가능해요.
                 <br />
                 <span className="text-secondary-400">
-                    약 {formatRemaining(notice.remainingMs)} 뒤에 다시
-                    시도해 주세요.
+                    약 {formatRemaining(notice.remainingMs)} 뒤에 다시 시도해
+                    주세요.
                 </span>
             </span>
         </div>

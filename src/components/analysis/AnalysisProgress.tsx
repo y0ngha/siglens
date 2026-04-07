@@ -88,9 +88,7 @@ export function AnalysisProgress({
         const advanceFrom = (current: number) => {
             if (cancelled) return;
             if (current >= ANALYSIS_PHASES.length - 1) {
-                timers.push(
-                    window.setTimeout(callFinished, FINISHING_TAIL_MS)
-                );
+                timers.push(window.setTimeout(callFinished, FINISHING_TAIL_MS));
                 return;
             }
             const next = current + 1;
@@ -103,9 +101,7 @@ export function AnalysisProgress({
         // finishing 진입 시점의 phaseIndex를 직접 함수형 setState로 읽어 캡처한다.
         setPhaseIndex(current => {
             if (current >= ANALYSIS_PHASES.length - 1) {
-                timers.push(
-                    window.setTimeout(callFinished, FINISHING_TAIL_MS)
-                );
+                timers.push(window.setTimeout(callFinished, FINISHING_TAIL_MS));
             } else {
                 timers.push(
                     window.setTimeout(
@@ -160,9 +156,7 @@ export function AnalysisProgress({
                                 'h-1 flex-1 rounded-full transition-colors duration-500',
                                 isDone && 'bg-primary-500/70',
                                 isActive && 'bg-primary-400 animate-pulse',
-                                !isDone &&
-                                    !isActive &&
-                                    'bg-secondary-700/70'
+                                !isDone && !isActive && 'bg-secondary-700/70'
                             )}
                         />
                     );

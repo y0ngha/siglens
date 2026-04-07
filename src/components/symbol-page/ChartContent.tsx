@@ -90,14 +90,14 @@ export function ChartContent({
         reanalyzeCooldownMs,
         cooldownNotice,
     } = useAnalysis({
-            symbol,
-            timeframe,
-            initialAnalysis,
-            initialAnalysisFailed,
-            timeframeChangeCount,
-            bars,
-            indicators,
-        });
+        symbol,
+        timeframe,
+        initialAnalysis,
+        initialAnalysisFailed,
+        timeframeChangeCount,
+        bars,
+        indicators,
+    });
 
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();

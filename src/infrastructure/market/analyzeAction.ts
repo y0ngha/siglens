@@ -35,7 +35,7 @@ export async function analyzeAction(
         }
     }
 
-    console.log('[Analysis] Run Analysis:', cacheKey)
+    console.log('[Analysis] Run Analysis:', cacheKey);
     const result = await runAnalysis(variables, timeframe);
 
     if (cache !== null) {

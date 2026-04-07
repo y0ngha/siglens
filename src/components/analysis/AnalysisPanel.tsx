@@ -719,248 +719,253 @@ export function AnalysisPanel({
                 결과가 한 번에 드러나도록 하기 위함이다. */}
             {!showProgress && (
                 <>
-            <div className="border-secondary-700 border-t" />
+                    <div className="border-secondary-700 border-t" />
 
-            {/* 인디케이터 시그널 */}
-            {analysis.signals.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                        시그널
-                    </span>
-                    <div className="flex flex-col gap-1.5">
-                        {analysis.signals.map((signal, index) => (
-                            <SignalItem
-                                key={`${signal.type}-${index}`}
-                                signal={signal}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* 스킬 시그널 (skillName별 그룹핑) — 감지된 스킬만 표시 */}
-            {detectedSkillSignals.length > 0 && (
-                <div className="flex flex-col gap-3">
-                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                        패턴 / 스킬
-                    </span>
-                    {detectedSkillSignals.map(skillSignal => (
-                        <div
-                            key={skillSignal.skillName}
-                            className="flex flex-col gap-1.5"
-                        >
-                            <span className="text-secondary-400 text-xs font-medium">
-                                {skillSignal.skillName}
+                    {/* 인디케이터 시그널 */}
+                    {analysis.signals.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                시그널
                             </span>
-                            {skillSignal.signals.map((signal, index) => (
-                                <SignalItem
-                                    key={`${signal.type}-${index}`}
-                                    signal={signal}
-                                />
-                            ))}
-                        </div>
-                    ))}
-                </div>
-            )}
-
-            {/* 캔들 패턴 (아코디언) */}
-            {/* 패턴 상세 (아코디언) — 감지된 패턴만 표시, 없으면 안내 메시지 */}
-            <div className="flex flex-col gap-2">
-                <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                    차트 패턴
-                </span>
-                {hasDetectedPatterns ? (
-                    <div className="flex flex-col gap-1.5">
-                        {detectedPatterns.map(pattern => (
-                            <PatternAccordionItem
-                                key={pattern.id}
-                                pattern={pattern}
-                                isVisible={
-                                    chartVisiblePatterns?.has(
-                                        pattern.patternName
-                                    ) ?? false
-                                }
-                                onToggleVisibility={
-                                    handleTogglePatternVisibility
-                                }
-                            />
-                        ))}
-                    </div>
-                ) : (
-                    <p className="text-secondary-500 text-sm">
-                        감지된 패턴 없음
-                    </p>
-                )}
-            </div>
-
-            {/* 스킬 상세 (아코디언) — 감지된 스킬만 표시 */}
-            {detectedSkillResults.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                        스킬 분석
-                    </span>
-                    <div className="flex flex-col gap-1.5">
-                        {detectedSkillResults.map(skill => (
-                            <SkillAccordionItem key={skill.id} skill={skill} />
-                        ))}
-                    </div>
-                </div>
-            )}
-
-            {/* 지지/저항 레벨 */}
-            {(keyLevels.support.length > 0 ||
-                keyLevels.resistance.length > 0 ||
-                keyLevels.poc !== undefined) && (
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
-                        <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                            주요 레벨
-                        </span>
-                        {/*{onKeyLevelsVisibilityChange !== undefined && (*/}
-                        {/*    <button*/}
-                        {/*        type="button"*/}
-                        {/*        onClick={() =>*/}
-                        {/*            onKeyLevelsVisibilityChange(*/}
-                        {/*                !keyLevelsVisible*/}
-                        {/*            )*/}
-                        {/*        }*/}
-                        {/*        className={cn(*/}
-                        {/*            'shrink-0 rounded p-1 transition-colors',*/}
-                        {/*            keyLevelsVisible*/}
-                        {/*                ? 'text-primary-400 hover:text-primary-300'*/}
-                        {/*                : 'text-secondary-600 hover:text-secondary-400'*/}
-                        {/*        )}*/}
-                        {/*        title={*/}
-                        {/*            keyLevelsVisible*/}
-                        {/*                ? '차트에서 숨기기'*/}
-                        {/*                : '차트에서 보기'*/}
-                        {/*        }*/}
-                        {/*    >*/}
-                        {/*        <EyeIcon isVisible={keyLevelsVisible} />*/}
-                        {/*    </button>*/}
-                        {/*)}*/}
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                        {keyLevels.resistance.length > 0 && (
-                            <div className="flex flex-col gap-1">
-                                <span className="text-secondary-500 text-xs">
-                                    저항
-                                </span>
-                                {keyLevels.resistance.map(level => (
-                                    <div
-                                        key={`resistance-${level.price}`}
-                                        className="flex flex-col"
-                                    >
-                                        <span className="text-chart-bearish text-sm font-medium">
-                                            {level.price.toLocaleString()}
-                                        </span>
-                                        <span className="text-secondary-600 text-xs">
-                                            {level.reason}
-                                        </span>
-                                    </div>
+                            <div className="flex flex-col gap-1.5">
+                                {analysis.signals.map((signal, index) => (
+                                    <SignalItem
+                                        key={`${signal.type}-${index}`}
+                                        signal={signal}
+                                    />
                                 ))}
                             </div>
-                        )}
-                        {keyLevels.support.length > 0 && (
-                            <div className="flex flex-col gap-1">
-                                <span className="text-secondary-500 text-xs">
-                                    지지
-                                </span>
-                                {keyLevels.support.map(level => (
-                                    <div
-                                        key={`support-${level.price}`}
-                                        className="flex flex-col"
-                                    >
-                                        <span className="text-chart-bullish text-sm font-medium">
-                                            {level.price.toLocaleString()}
-                                        </span>
-                                        <span className="text-secondary-600 text-xs">
-                                            {level.reason}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
-                    </div>
-                    {keyLevels.poc !== undefined && (
-                        <div className="flex flex-col">
-                            <span className="text-secondary-500 text-xs">
-                                PoC
-                            </span>
-                            <span className="text-sm font-medium">
-                                {keyLevels.poc.price.toLocaleString()}
-                            </span>
-                            <span className="text-secondary-600 text-xs">
-                                {keyLevels.poc.reason}
-                            </span>
                         </div>
                     )}
-                </div>
-            )}
 
-            {/* 추세선 */}
-            {analysis.trendlines.length > 0 && (
-                <div className="flex flex-col gap-2">
-                    <div className="flex items-center justify-between">
+                    {/* 스킬 시그널 (skillName별 그룹핑) — 감지된 스킬만 표시 */}
+                    {detectedSkillSignals.length > 0 && (
+                        <div className="flex flex-col gap-3">
+                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                패턴 / 스킬
+                            </span>
+                            {detectedSkillSignals.map(skillSignal => (
+                                <div
+                                    key={skillSignal.skillName}
+                                    className="flex flex-col gap-1.5"
+                                >
+                                    <span className="text-secondary-400 text-xs font-medium">
+                                        {skillSignal.skillName}
+                                    </span>
+                                    {skillSignal.signals.map(
+                                        (signal, index) => (
+                                            <SignalItem
+                                                key={`${signal.type}-${index}`}
+                                                signal={signal}
+                                            />
+                                        )
+                                    )}
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* 캔들 패턴 (아코디언) */}
+                    {/* 패턴 상세 (아코디언) — 감지된 패턴만 표시, 없으면 안내 메시지 */}
+                    <div className="flex flex-col gap-2">
                         <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                            추세선
+                            차트 패턴
                         </span>
-                        {/*{onTrendlinesVisibilityChange !== undefined && (*/}
-                        {/*    <button*/}
-                        {/*        type="button"*/}
-                        {/*        onClick={() =>*/}
-                        {/*            onTrendlinesVisibilityChange(*/}
-                        {/*                !trendlinesVisible*/}
-                        {/*            )*/}
-                        {/*        }*/}
-                        {/*        className={cn(*/}
-                        {/*            'shrink-0 rounded p-1 transition-colors',*/}
-                        {/*            trendlinesVisible*/}
-                        {/*                ? 'text-primary-400 hover:text-primary-300'*/}
-                        {/*                : 'text-secondary-600 hover:text-secondary-400'*/}
-                        {/*        )}*/}
-                        {/*        title={*/}
-                        {/*            trendlinesVisible*/}
-                        {/*                ? '차트에서 숨기기'*/}
-                        {/*                : '차트에서 보기'*/}
-                        {/*        }*/}
-                        {/*    >*/}
-                        {/*        <EyeIcon isVisible={trendlinesVisible} />*/}
-                        {/*    </button>*/}
-                        {/*)}*/}
+                        {hasDetectedPatterns ? (
+                            <div className="flex flex-col gap-1.5">
+                                {detectedPatterns.map(pattern => (
+                                    <PatternAccordionItem
+                                        key={pattern.id}
+                                        pattern={pattern}
+                                        isVisible={
+                                            chartVisiblePatterns?.has(
+                                                pattern.patternName
+                                            ) ?? false
+                                        }
+                                        onToggleVisibility={
+                                            handleTogglePatternVisibility
+                                        }
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-secondary-500 text-sm">
+                                감지된 패턴 없음
+                            </p>
+                        )}
                     </div>
-                    <div className="flex flex-col gap-1.5">
-                        {analysis.trendlines.map(trendline => (
-                            <TrendlineItem
-                                key={`trendline-${trendline.direction}-${trendline.start.time}-${trendline.end.time}`}
-                                trendline={trendline}
-                            />
-                        ))}
-                    </div>
-                </div>
-            )}
 
-            {/* 가격 목표 */}
-            {(analysis.priceTargets.bullish.targets.length > 0 ||
-                analysis.priceTargets.bearish.targets.length > 0) && (
-                <div className="flex flex-col gap-2">
-                    <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                        가격 목표
-                    </span>
-                    <div className="grid grid-cols-2 gap-3">
-                        <PriceScenarioSection
-                            label="상승"
-                            scenario={analysis.priceTargets.bullish}
-                            colorClass="text-chart-bullish"
-                        />
-                        <PriceScenarioSection
-                            label="하락"
-                            scenario={analysis.priceTargets.bearish}
-                            colorClass="text-chart-bearish"
-                        />
-                    </div>
-                </div>
-            )}
+                    {/* 스킬 상세 (아코디언) — 감지된 스킬만 표시 */}
+                    {detectedSkillResults.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                스킬 분석
+                            </span>
+                            <div className="flex flex-col gap-1.5">
+                                {detectedSkillResults.map(skill => (
+                                    <SkillAccordionItem
+                                        key={skill.id}
+                                        skill={skill}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 지지/저항 레벨 */}
+                    {(keyLevels.support.length > 0 ||
+                        keyLevels.resistance.length > 0 ||
+                        keyLevels.poc !== undefined) && (
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                    주요 레벨
+                                </span>
+                                {/*{onKeyLevelsVisibilityChange !== undefined && (*/}
+                                {/*    <button*/}
+                                {/*        type="button"*/}
+                                {/*        onClick={() =>*/}
+                                {/*            onKeyLevelsVisibilityChange(*/}
+                                {/*                !keyLevelsVisible*/}
+                                {/*            )*/}
+                                {/*        }*/}
+                                {/*        className={cn(*/}
+                                {/*            'shrink-0 rounded p-1 transition-colors',*/}
+                                {/*            keyLevelsVisible*/}
+                                {/*                ? 'text-primary-400 hover:text-primary-300'*/}
+                                {/*                : 'text-secondary-600 hover:text-secondary-400'*/}
+                                {/*        )}*/}
+                                {/*        title={*/}
+                                {/*            keyLevelsVisible*/}
+                                {/*                ? '차트에서 숨기기'*/}
+                                {/*                : '차트에서 보기'*/}
+                                {/*        }*/}
+                                {/*    >*/}
+                                {/*        <EyeIcon isVisible={keyLevelsVisible} />*/}
+                                {/*    </button>*/}
+                                {/*)}*/}
+                            </div>
+                            <div className="grid grid-cols-2 gap-3">
+                                {keyLevels.resistance.length > 0 && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-secondary-500 text-xs">
+                                            저항
+                                        </span>
+                                        {keyLevels.resistance.map(level => (
+                                            <div
+                                                key={`resistance-${level.price}`}
+                                                className="flex flex-col"
+                                            >
+                                                <span className="text-chart-bearish text-sm font-medium">
+                                                    {level.price.toLocaleString()}
+                                                </span>
+                                                <span className="text-secondary-600 text-xs">
+                                                    {level.reason}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                {keyLevels.support.length > 0 && (
+                                    <div className="flex flex-col gap-1">
+                                        <span className="text-secondary-500 text-xs">
+                                            지지
+                                        </span>
+                                        {keyLevels.support.map(level => (
+                                            <div
+                                                key={`support-${level.price}`}
+                                                className="flex flex-col"
+                                            >
+                                                <span className="text-chart-bullish text-sm font-medium">
+                                                    {level.price.toLocaleString()}
+                                                </span>
+                                                <span className="text-secondary-600 text-xs">
+                                                    {level.reason}
+                                                </span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                            </div>
+                            {keyLevels.poc !== undefined && (
+                                <div className="flex flex-col">
+                                    <span className="text-secondary-500 text-xs">
+                                        PoC
+                                    </span>
+                                    <span className="text-sm font-medium">
+                                        {keyLevels.poc.price.toLocaleString()}
+                                    </span>
+                                    <span className="text-secondary-600 text-xs">
+                                        {keyLevels.poc.reason}
+                                    </span>
+                                </div>
+                            )}
+                        </div>
+                    )}
+
+                    {/* 추세선 */}
+                    {analysis.trendlines.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                            <div className="flex items-center justify-between">
+                                <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                    추세선
+                                </span>
+                                {/*{onTrendlinesVisibilityChange !== undefined && (*/}
+                                {/*    <button*/}
+                                {/*        type="button"*/}
+                                {/*        onClick={() =>*/}
+                                {/*            onTrendlinesVisibilityChange(*/}
+                                {/*                !trendlinesVisible*/}
+                                {/*            )*/}
+                                {/*        }*/}
+                                {/*        className={cn(*/}
+                                {/*            'shrink-0 rounded p-1 transition-colors',*/}
+                                {/*            trendlinesVisible*/}
+                                {/*                ? 'text-primary-400 hover:text-primary-300'*/}
+                                {/*                : 'text-secondary-600 hover:text-secondary-400'*/}
+                                {/*        )}*/}
+                                {/*        title={*/}
+                                {/*            trendlinesVisible*/}
+                                {/*                ? '차트에서 숨기기'*/}
+                                {/*                : '차트에서 보기'*/}
+                                {/*        }*/}
+                                {/*    >*/}
+                                {/*        <EyeIcon isVisible={trendlinesVisible} />*/}
+                                {/*    </button>*/}
+                                {/*)}*/}
+                            </div>
+                            <div className="flex flex-col gap-1.5">
+                                {analysis.trendlines.map(trendline => (
+                                    <TrendlineItem
+                                        key={`trendline-${trendline.direction}-${trendline.start.time}-${trendline.end.time}`}
+                                        trendline={trendline}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 가격 목표 */}
+                    {(analysis.priceTargets.bullish.targets.length > 0 ||
+                        analysis.priceTargets.bearish.targets.length > 0) && (
+                        <div className="flex flex-col gap-2">
+                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                가격 목표
+                            </span>
+                            <div className="grid grid-cols-2 gap-3">
+                                <PriceScenarioSection
+                                    label="상승"
+                                    scenario={analysis.priceTargets.bullish}
+                                    colorClass="text-chart-bullish"
+                                />
+                                <PriceScenarioSection
+                                    label="하락"
+                                    scenario={analysis.priceTargets.bearish}
+                                    colorClass="text-chart-bearish"
+                                />
+                            </div>
+                        </div>
+                    )}
                 </>
             )}
 
