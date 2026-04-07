@@ -197,10 +197,10 @@ export function ChartContent({
                     onReanalyze={handleReanalyze}
                     chartVisiblePatterns={chartVisiblePatterns}
                     onTogglePattern={handleTogglePattern}
-                    keyLevelsVisible={keyLevelsVisible}
-                    onKeyLevelsVisibilityChange={setKeyLevelsVisible}
-                    trendlinesVisible={trendlinesVisible}
-                    onTrendlinesVisibilityChange={setTrendlinesVisible}
+                    _keyLevelsVisible={keyLevelsVisible}
+                    _onKeyLevelsVisibilityChange={setKeyLevelsVisible}
+                    _trendlinesVisible={trendlinesVisible}
+                    _onTrendlinesVisibilityChange={setTrendlinesVisible}
                 />
             </aside>
 
