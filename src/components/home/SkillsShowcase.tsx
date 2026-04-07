@@ -77,10 +77,10 @@ function ConfidenceInfoTooltip() {
                 role="tooltip"
                 className={cn(
                     'bg-secondary-800 border-secondary-600 absolute right-0 bottom-full z-10 mb-1.5 w-56 rounded border p-2 text-xs shadow-lg transition-opacity',
-                    'group-hover:opacity-100 sm:pointer-events-none sm:opacity-0',
+                    'group-hover:opacity-100',
                     open
                         ? 'pointer-events-auto opacity-100'
-                        : 'pointer-events-none opacity-0'
+                        : 'pointer-events-none opacity-0 sm:pointer-events-none sm:opacity-0'
                 )}
             >
                 <p className="text-secondary-300 leading-relaxed">

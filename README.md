@@ -116,7 +116,7 @@ siglens/
 ├── src/
 │   ├── app/              # Next.js App Router (RSC, Route Handler)
 │   ├── domain/           # 순수 TS — 인디케이터, 패턴, 프롬프트 빌더
-│   ├── infrastructure/   # 외부 의존성 — Alpaca, AI Provider, Skills Loader
+│   ├── infrastructure/   # 외부 의존성 — Alpaca, FMP, AI Provider, Skills Loader
 │   ├── components/       # React Client Components
 │   └── lib/              # UI 유틸, React Query 키 팩토리
 ├── skills/               # 분석 기법 정의 (.md, 코드 아님)
@@ -179,16 +179,16 @@ Claude Code가 이슈를 받아 브랜치 생성 → 코드 작성 → 테스트
 
 ## 📚 Documentation
 
-| 문서 | 내용 |
-|------|------|
-| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | 레이어 구조, 의존성 규칙, 데이터 흐름 |
-| [DOMAIN.md](./docs/DOMAIN.md) | 인디케이터 계산 명세, 캔들 패턴, Skills 시스템 |
-| [API.md](./docs/API.md) | Alpaca API, Claude API 명세 |
-| [CONVENTIONS.md](./docs/CONVENTIONS.md) | 코딩 컨벤션, 네이밍, 패러다임 |
+| 문서 | 내용                                                       |
+|------|----------------------------------------------------------|
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | 레이어 구조, 의존성 규칙, 데이터 흐름                                   |
+| [DOMAIN.md](./docs/DOMAIN.md) | 인디케이터 계산 명세, 캔들 패턴, Skills 시스템                           |
+| [API.md](./docs/API.md) | Alpaca, FMP API, Claude, Gemini API 명세                   |
+| [CONVENTIONS.md](./docs/CONVENTIONS.md) | 코딩 컨벤션, 네이밍, 패러다임                                        |
 | [FF.md](./docs/FF.md) | FF 4원칙 (Readability, Predictability, Cohesion, Coupling) |
-| [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수 |
-| [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 브랜치, 커밋 메시지, PR 규칙 |
-| [MISTAKES.md](./docs/MISTAKES.md) | 자주 하는 실수 모음 |
+| [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수                            |
+| [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 브랜치, 커밋 메시지, PR 규칙                                       |
+| [MISTAKES.md](./docs/MISTAKES.md) | 자주 하는 실수 모음                                              |
 
 ---
 
