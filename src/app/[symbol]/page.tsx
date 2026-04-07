@@ -69,7 +69,7 @@ export default async function SymbolPage({ params }: Props) {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: `${ticker} 기술적 분석 | ${SITE_NAME}`,
-        description: `${ticker} 실시간 차트와 AI 기반 기술적 분석`,
+        description: `${ticker} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`,
         url: `${SITE_URL}/${ticker}`,
         about: {
             '@type': 'FinancialProduct',
@@ -95,8 +95,9 @@ export default async function SymbolPage({ params }: Props) {
         <>
             <script
                 type="application/ld+json"
-                // eslint-disable-next-line react/no-danger
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+                }}
             />
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <SymbolPageClient
