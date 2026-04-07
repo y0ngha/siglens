@@ -329,6 +329,8 @@ const ANALYSIS_GUIDELINES = [
     '- First target: nearest support/resistance; second target: based on pattern measurement',
     '- State the trigger condition (breakout/breakdown reference level) for each scenario',
     '- Strengthen target viability with supporting indicators (RSI extremes, Bollinger Band touch, MACD trend)',
+    '- Sort targets by proximity to current price: bullish targets in ascending price order (closest first), bearish targets in descending price order (closest first). Never return targets in arbitrary order.',
+    '- Every target MUST include a non-empty basis explaining the rationale (supporting indicator, pattern measurement, swing level, etc.). If a basis cannot be provided, exclude that target entirely instead of returning it with an empty basis.',
     '',
     '### Trendline Detection',
     '- Return 0 to 3 trendlines maximum',
