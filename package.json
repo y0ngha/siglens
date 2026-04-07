@@ -18,10 +18,10 @@
         "test-coverage-report": "jest --coverage --coverageReporters=text-summary",
         "format": "prettier --write .",
         "prepare": "husky",
-        "release": "release-it",
-        "release:patch": "release-it patch",
-        "release:minor": "release-it minor",
-        "release:major": "release-it major"
+        "release": "dotenv -e .env.local -- release-it",
+        "release:patch": "dotenv -e .env.local -- release-it patch",
+        "release:minor": "dotenv -e .env.local -- release-it minor",
+        "release:major": "dotenv -e .env.local -- release-it major"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.80.0",
@@ -45,6 +45,7 @@
         "@types/react": "^19",
         "@types/react-dom": "^19",
         "babel-plugin-react-compiler": "1.0.0",
+        "dotenv-cli": "^11.0.0",
         "eslint": "^9",
         "eslint-config-next": "16.2.0",
         "eslint-plugin-react-compiler": "^19.1.0-rc.2",
