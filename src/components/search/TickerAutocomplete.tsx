@@ -31,6 +31,7 @@ export function TickerAutocomplete({
 
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const prefetchedRef = useRef(new Set<string>());
 
     const router = useRouter();
     const { results, isSearching, hasQuery } = useTickerSearch(query);
@@ -67,6 +68,15 @@ export function TickerAutocomplete({
         [onSelect, router]
     );
 
+    const prefetch = useCallback(
+        (symbol: string) => {
+            if (prefetchedRef.current.has(symbol)) return;
+            prefetchedRef.current.add(symbol);
+            router.prefetch(`/${symbol}`);
+        },
+        [router]
+    );
+
     const handleChange = useCallback(
         (e: React.ChangeEvent<HTMLInputElement>) => {
             setQuery(e.target.value);
@@ -88,8 +98,9 @@ export function TickerAutocomplete({
                 setSelectedIndex(prev => Math.max(prev - 1, -1));
             } else if (e.key === 'Enter') {
                 e.preventDefault();
-                if (selectedIndex >= 0 && results[selectedIndex]) {
-                    navigate(results[selectedIndex].symbol);
+                const selected = results[selectedIndex];
+                if (selectedIndex >= 0 && selected) {
+                    navigate(selected.symbol);
                 } else {
                     const trimmed = query.trim().toUpperCase();
                     if (trimmed) navigate(trimmed);
@@ -169,6 +180,7 @@ export function TickerAutocomplete({
                                 result={result}
                                 isSelected={index === selectedIndex}
                                 onSelect={navigate}
+                                onPrefetch={prefetch}
                             />
                         ))}
                     </div>
@@ -190,9 +202,16 @@ interface ResultItemProps {
     result: TickerSearchResult;
     isSelected: boolean;
     onSelect: (symbol: string) => void;
+    onPrefetch: (symbol: string) => void;
 }
 
-function ResultItem({ id, result, isSelected, onSelect }: ResultItemProps) {
+function ResultItem({
+    id,
+    result,
+    isSelected,
+    onSelect,
+    onPrefetch,
+}: ResultItemProps) {
     const displayName = result.koreanName
         ? `${result.name} (${result.koreanName})`
         : result.name;
@@ -204,6 +223,7 @@ function ResultItem({ id, result, isSelected, onSelect }: ResultItemProps) {
             role="option"
             aria-selected={isSelected}
             onClick={() => onSelect(result.symbol)}
+            onMouseEnter={() => onPrefetch(result.symbol)}
             className={cn(
                 'hover:bg-secondary-700 w-full px-4 py-2 text-left transition-colors',
                 isSelected && 'bg-secondary-700'

@@ -228,10 +228,12 @@ describe('searchTickerAction', () => {
             await searchTickerAction('UNKNOWN');
 
             await new Promise(resolve => setTimeout(resolve, 0));
-            const savedEntries = mockSetKoreanTickers.mock.calls[0]?.[0] as
-                | Array<{ symbol: string }>
-                | undefined;
-            expect(savedEntries?.every(e => e.symbol !== 'EXTRA')).toBe(true);
+            expect(mockSetKoreanTickers).toHaveBeenCalledTimes(1);
+            const savedEntries = mockSetKoreanTickers.mock
+                .calls[0][0] as Array<{
+                symbol: string;
+            }>;
+            expect(savedEntries.every(e => e.symbol !== 'EXTRA')).toBe(true);
         });
     });
 

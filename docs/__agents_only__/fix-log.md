@@ -9,11 +9,6 @@
 - Rule: MISTAKES.md Components #11 — props/state에서 파생된 객체는 useMemo로 메모이제이션 필요
 - Context: `TickerAutocomplete.tsx`의 두 className 상수가 `size`에만 의존하므로 `useMemo([size])`로 감쌈
 
-## [PR #216 Round 9 | feat/196/ticker-autocomplete | 2026-04-09]
-- Violation: `US_EXCHANGES` 튜플에 `'NYSEArca'`가 포함되어 있으나 테스트에서 누락
-- Rule: MISTAKES.md Tests #2 — 인프라 파일 100% 브랜치 커버리지 필수; 허용 거래소 상수의 모든 값이 테스트되어야 함
-- Context: `filterUsExchanges` 테스트가 NYSE/NASDAQ/AMEX만 검증하고 NYSEArca를 누락; 4개 모두 포함하도록 수정
-
 ## [PR #216 Round 7 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `{isOpen && ...}` 블록 내부에서 `hasQuery`가 항상 `true`임에도 `&& hasQuery` 조건 유지 (dead code)
 - Rule: MISTAKES.md Coding Paradigm #4 — 결과를 변경하지 않는 조건(효과 없는 로직) 제거
