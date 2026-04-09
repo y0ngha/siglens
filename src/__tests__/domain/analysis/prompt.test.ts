@@ -1815,8 +1815,8 @@ describe('prompt', () => {
             expect(result).toContain('accessible');
         });
 
-        it('핵심 분석 결과 종합 지시가 포함된다', () => {
-            expect(result).toContain('Synthesize the key findings');
+        it('모든 섹션 종합 지시가 포함된다', () => {
+            expect(result).toContain('synthesize ALL');
         });
 
         it('Summary Writing Guidelines 섹션이 포함된다', () => {

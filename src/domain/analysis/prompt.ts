@@ -271,7 +271,7 @@ const buildSkillBlock = (skill: Skill): string =>
  */
 const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
     summary:
-        '"Overall accessible analysis summary (see Summary Writing Guidelines)"',
+        '"A comprehensive, accessible summary that synthesizes ALL findings (indicators, patterns, volume profile, skills, strategies) into plain language a non-technical user can understand. Instead of stating raw indicator values, explain their practical meaning (e.g., instead of RSI is overbought at 75, say the stock has risen quickly and may be due for a pause). Answer: What is happening with this stock and what does it mean for the investor? Use \\n to separate each topic."',
     trend: '"bullish | bearish | neutral"',
     signals:
         '[{ "type": "...", "description": "...", "strength": "strong | moderate | weak" }]',
@@ -354,7 +354,7 @@ const ANALYSIS_GUIDELINES = [
     '- Mention the conflict explicitly in the summary so the user understands the mixed picture.',
     '',
     '### Summary Writing Guidelines',
-    '- Synthesize the key findings from indicators, detected patterns, volume profile, skill results, and strategy outcomes into a cohesive narrative.',
+    '- The summary must synthesize ALL analysis sections: indicator readings, detected patterns, volume profile findings, skill results, and strategy outcomes.',
     '- Write in accessible language that non-technical investors can understand.',
     '- Instead of stating raw indicator values, explain their practical meaning (e.g., "the stock has risen quickly and may be due for a pause" instead of "RSI is overbought at 75").',
     '- When referencing patterns, explain what they typically predict in simple terms.',
