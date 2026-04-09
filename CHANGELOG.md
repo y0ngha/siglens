@@ -1,5 +1,36 @@
 # Changelog
 
+# [0.4.0](https://github.com/y0ngha/siglens/compare/v0.3.0...v0.4.0) (2026-04-09)
+
+
+### Bug Fixes
+
+* cache.get() 에러 처리 및 Korean translator 리팩토링 ([4cd311a](https://github.com/y0ngha/siglens/commit/4cd311a425414da4bfa4f89d849e9fea39d4d849))
+* PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 3차 반영 ([b2efec0](https://github.com/y0ngha/siglens/commit/b2efec046a17020cbb272089fde43851aab4cf66))
+* PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 반영 ([ae74389](https://github.com/y0ngha/siglens/commit/ae743895e0536a0b16077b7dddb68f1a1f2b622d))
+* PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 반영 ([2aa516c](https://github.com/y0ngha/siglens/commit/2aa516cd1da219a8493580cbfe848afe55ecf693))
+* PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 반영 ([f80d269](https://github.com/y0ngha/siglens/commit/f80d2691e528d07695fbea6abdc1944e17ef3844))
+* PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 반영 ([aa6a4f3](https://github.com/y0ngha/siglens/commit/aa6a4f34dc79aef2aed29f4baec39d2b7e93a28f))
+* PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 반영 ([1f8e99a](https://github.com/y0ngha/siglens/commit/1f8e99aef20e1be393b05fd6b2a24ed5f908d8bf))
+* PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 반영 ([98fab19](https://github.com/y0ngha/siglens/commit/98fab19602229fadf374133ea71dd7eacb04e655))
+* PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 반영 ([4b0e197](https://github.com/y0ngha/siglens/commit/4b0e1970b8870298b04c6ce316b3b207bbd702d3))
+* PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 반영 - fetchFmpEndpoint 헬퍼 추출 및 테스트 추가 ([464c8c2](https://github.com/y0ngha/siglens/commit/464c8c24fb894eee7a78584a87455a85f771e34c))
+* **search:** PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 2차 반영 ([d4a4aba](https://github.com/y0ngha/siglens/commit/d4a4abae4226fc82f34fed22536f07a900aaf9a3))
+* **search:** PR [#216](https://github.com/y0ngha/siglens/issues/216) 리뷰 반영 ([b90de27](https://github.com/y0ngha/siglens/commit/b90de277bf539caadd30e74b33ec7fdf23604fc8))
+* useMemo로 inputClass와 buttonClass 감싸기 ([f1b9ce2](https://github.com/y0ngha/siglens/commit/f1b9ce2513255fc95eb4aec10e40e46c0f664558))
+* 재분석 버튼 활성화 및 상태 관리 개선 ([5aef6ee](https://github.com/y0ngha/siglens/commit/5aef6eecf0b61fec6e79439fbc6d0a53da7fabbf))
+
+
+### Features
+
+* ticker 페이지 로딩 성능 개선 ([e1ae8d1](https://github.com/y0ngha/siglens/commit/e1ae8d1cc100a63b8463f3fe6dc98db445f07067))
+* 재분석 버튼 활성화 ([c9b02b9](https://github.com/y0ngha/siglens/commit/c9b02b9edad1377c77c9a325f7f42cf182483a1d))
+* 티커 검색 도메인 타입 및 유틸리티 ([1a4f49d](https://github.com/y0ngha/siglens/commit/1a4f49df9edc5d523d8bcd76505f7478f6846b02))
+* 티커 검색 인프라 레이어 구현 ([48fd0ce](https://github.com/y0ngha/siglens/commit/48fd0ce364975724456d408eba963aef26d76ae5))
+* 티커 검색 캐시 및 쿼리 설정 ([4fcc56c](https://github.com/y0ngha/siglens/commit/4fcc56cf774b24a3dde0e09464bd02a94462dfd6))
+* 티커 자동완성 UI 컴포넌트 ([0c77945](https://github.com/y0ngha/siglens/commit/0c77945905669191282f5de2f09a1c8124aa251a))
+* 한국어 티커 데이터 동기화 스크립트 ([de6a450](https://github.com/y0ngha/siglens/commit/de6a4508ad6a14d54623a1b6eb7157a661973350))
+
 # [0.3.0](https://github.com/y0ngha/siglens/compare/v0.2.5...v0.3.0) (2026-04-07)
 
 
