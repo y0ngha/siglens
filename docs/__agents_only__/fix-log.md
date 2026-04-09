@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #216 Round 6 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: `size?: 'sm' | 'lg'` 인라인 유니온 리터럴 타입을 named type alias로 추출하지 않음
+- Rule: CONVENTIONS.md — 2개 이상 리터럴 유니온은 type alias로 추출 필수
+- Context: `TickerAutocomplete.tsx`의 Props 인터페이스에 `'sm' | 'lg'` 인라인 선언; `TickerAutocompleteSize` 타입으로 추출
+
+- Violation: 검색 버튼 `onClick` 핸들러만 인라인 익명 함수로 선언, 다른 핸들러와 불일치
+- Rule: MISTAKES.md Coding Paradigm #10 — 복잡한 익명 표현식은 named helper로 추출; 동일 컴포넌트 내 핸들러 패턴 일관성 유지
+- Context: `navigate`, `handleChange`, `handleKeyDown`은 모두 `useCallback`으로 추출됐으나 검색 버튼 `onClick`만 인라인; `handleSearchClick`으로 추출
+
 ## [PR #216 Round 5 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `searchBySymbol`과 `searchByName`이 URL 엔드포인트만 다르고 동일한 fetch 로직 중복 구현
 - Rule: MISTAKES.md Coding Paradigm #1 — 동일한 알고리즘 재구현 금지; 공통 헬퍼 추출 필요
