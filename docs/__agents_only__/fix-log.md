@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #216 Round 5 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: `searchBySymbol`과 `searchByName`이 URL 엔드포인트만 다르고 동일한 fetch 로직 중복 구현
+- Rule: MISTAKES.md Coding Paradigm #1 — 동일한 알고리즘 재구현 금지; 공통 헬퍼 추출 필요
+- Context: `fmpTickerApi.ts`의 두 함수가 API 키 검증, URLSearchParams 생성, fetch, 응답 검증, 에러 처리를 모두 중복; `fetchFmpEndpoint('search-symbol'|'search-name', query)` 헬퍼로 추출
+
+- Violation: fire-and-forget `.catch()` 핸들러 브랜치(cache.set 실패, translateAndCache 실패) 테스트 누락
+- Rule: MISTAKES.md Tests #2 — infrastructure 파일의 모든 조건부 브랜치(try/catch 포함) 100% 커버리지 필수
+- Context: `searchTickerAction.ts`에 두 개의 fire-and-forget `.catch()` 블록이 있었으나 `searchTickerAction.test.ts`에 에러 경로 케이스가 없었음; `mockRejectedValueOnce`로 각각 추가
+
 ## [PR #216 Round 4 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: 모듈 레벨 `let cachedClient` 가변 상태로 싱글턴 캐싱
 - Rule: CONVENTIONS.md Functional Programming — 모듈 레벨 가변 변수(`let`) 지양; 생성 비용이 낮은 인스턴스는 매 호출마다 직접 생성
