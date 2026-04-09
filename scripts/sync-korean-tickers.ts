@@ -103,7 +103,7 @@ async function exportToFile(): Promise<void> {
         )
         .join('\n');
 
-    const content = `import type { KoreanTickerEntry } from '../src/domain/types';
+    const content = `import type { KoreanTickerEntry } from '@/domain/types';
 
 /**
  * 주요 US 종목 한국어 이름 seed 데이터.

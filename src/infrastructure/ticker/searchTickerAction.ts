@@ -63,8 +63,12 @@ export async function searchTickerAction(
     const cacheKey = buildTickerSearchCacheKey(trimmed);
 
     if (cache) {
-        const cached = await cache.get<TickerSearchResult[]>(cacheKey);
-        if (cached) return cached;
+        try {
+            const cached = await cache.get<TickerSearchResult[]>(cacheKey);
+            if (cached) return cached;
+        } catch (error) {
+            console.error('Ticker search cache get failed:', error);
+        }
     }
 
     const [symbolResults, nameResults] = await Promise.all([

@@ -1,9 +1,13 @@
 # Fix Log
 
-## [PR #216 Round 2 | feat/196/ticker-autocomplete | 2026-04-09]
-- Violation: 같은 모듈 내 파일을 상대 경로(`./types`)로 import함
-- Rule: CONVENTIONS.md — 상대 경로 import 금지, 항상 `@/` 경로 별칭 사용
-- Context: `fmpTickerApi.ts`에서 인접 파일 `types.ts`를 `./types`로 import했으나, 모든 import는 `@/infrastructure/ticker/types` 형식의 경로 별칭을 사용해야 함
+## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음
+- Rule: 코드베이스에 import되지 않는 파일은 데드 코드 — PR에서 교체 시 구 파일 삭제 필수
+- Context: `SymbolSearch`가 `TickerAutocomplete`로 교체됐지만 `src/components/search/SymbolSearch.tsx`가 미삭제 상태로 남아 있었음
+
+- Violation: `cache.get()` 호출 시 예외 처리 누락으로 Redis 장애 시 액션 전체 실패
+- Rule: CONVENTIONS.md Graceful Degradation — 외부 의존성 호출은 동일 파일 내 다른 패턴과 일관되게 try-catch로 감싸야 함
+- Context: `searchTickerAction.ts`의 캐시 조회는 try-catch 없었으나, 동일 파일의 캐시 set과 `koreanNameStore.ts`의 `loadAllEntries()`는 모두 try-catch 처리됨
 
 ## [PR #216 Round 1 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `getKoreanNames` 반환 타입이 `Record<string, string>`으로 선언되어 누락된 키에 접근 시 `undefined`가 `string`으로 잘못 추론됨

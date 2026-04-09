@@ -48,6 +48,7 @@ export async function searchBySymbol(
             );
             return [];
         }
+        // fetch response 전체 스키마 타입 가드는 불가 — FMP API 계약에 의해 단언
         const raw = (await res.json()) as FmpSearchResult[];
         if (!Array.isArray(raw)) return [];
         return raw;
@@ -80,6 +81,7 @@ export async function searchByName(query: string): Promise<FmpSearchResult[]> {
             );
             return [];
         }
+        // fetch response 전체 스키마 타입 가드는 불가 — FMP API 계약에 의해 단언
         const raw = (await res.json()) as FmpSearchResult[];
         if (!Array.isArray(raw)) return [];
         return raw;

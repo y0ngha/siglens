@@ -16,11 +16,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
 
     return (
         <div className={cn('flex w-full flex-col', className)}>
-            <TickerAutocomplete
-                size="lg"
-                onSelect={addSearch}
-                className="w-full max-w-md"
-            />
+            <TickerAutocomplete size="lg" onSelect={addSearch} />
 
             {recentSearches.length > 0 && (
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
