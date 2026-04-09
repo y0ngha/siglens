@@ -102,7 +102,12 @@ export function ChartContent({
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
 
-    const { handleStockChartReady, handleVolumeChartReady } = useChartSync();
+    const {
+        handleStockChartReady,
+        handleStockChartRemove,
+        handleVolumeChartReady,
+        handleVolumeChartRemove,
+    } = useChartSync();
 
     const [chartVisiblePatterns, setChartVisiblePatterns] = useState<
         Set<string>
@@ -165,6 +170,7 @@ export function ChartContent({
                         keyLevelsVisible={keyLevelsVisible}
                         onPatternOverlayChange={handlePatternOverlayChange}
                         onChartReady={handleStockChartReady}
+                        onChartRemove={handleStockChartRemove}
                     />
                 </div>
 
@@ -173,6 +179,7 @@ export function ChartContent({
                     <VolumeChart
                         bars={bars}
                         onChartReady={handleVolumeChartReady}
+                        onChartRemove={handleVolumeChartRemove}
                     />
                 </div>
             </div>

@@ -10,16 +10,20 @@ interface VolumeChartProps {
     bars: Bar[];
     /** 차트 인스턴스가 준비되면 호출된다. 캔들차트와 visible range 동기화에 사용된다. */
     onChartReady?: (chart: IChartApi) => void;
+    /** 차트가 제거되기 직전에 호출된다. 구독 해제에 사용된다. */
+    onChartRemove?: () => void;
 }
 
-export function VolumeChart({ bars, onChartReady }: VolumeChartProps) {
+export function VolumeChart({ bars, onChartReady, onChartRemove }: VolumeChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
     const onChartReadyRef = useRef(onChartReady);
+    const onChartRemoveRef = useRef(onChartRemove);
 
     useEffect(() => {
         onChartReadyRef.current = onChartReady;
+        onChartRemoveRef.current = onChartRemove;
     });
 
     useEffect(() => {
@@ -45,6 +49,7 @@ export function VolumeChart({ bars, onChartReady }: VolumeChartProps) {
         onChartReadyRef.current?.(chart);
 
         return () => {
+            onChartRemoveRef.current?.();
             chart.remove();
             chartRef.current = null;
             seriesRef.current = null;
