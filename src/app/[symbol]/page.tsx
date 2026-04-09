@@ -34,9 +34,17 @@ interface Props {
 }
 
 function buildDisplayName(assetInfo: AssetInfo, ticker: string): string {
-    return assetInfo.koreanName
-        ? `${assetInfo.koreanName}, ${assetInfo.name} (${ticker})`
-        : `${assetInfo.name} (${ticker})`;
+    const namePart = assetInfo.name !== ticker ? assetInfo.name : null;
+    if (assetInfo.koreanName && namePart) {
+        return `${assetInfo.koreanName}, ${namePart} (${ticker})`;
+    }
+    if (assetInfo.koreanName) {
+        return `${assetInfo.koreanName} (${ticker})`;
+    }
+    if (namePart) {
+        return `${namePart} (${ticker})`;
+    }
+    return ticker;
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
