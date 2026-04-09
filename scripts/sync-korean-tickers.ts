@@ -92,7 +92,7 @@ async function exportToFile(): Promise<void> {
     const entryLines = sorted
         .map(
             e =>
-                `    {\n        symbol: '${e.symbol}',\n        koreanName: '${e.koreanName}',\n        name: '${e.name.replace(/'/g, "\\'")}',\n        exchange: '${e.exchange}',\n        exchangeFullName: '${e.exchangeFullName}',\n    },`
+                `    {\n        symbol: '${e.symbol.replace(/'/g, "\\'")}',\n        koreanName: '${e.koreanName.replace(/'/g, "\\'")}',\n        name: '${e.name.replace(/'/g, "\\'")}',\n        exchange: '${e.exchange.replace(/'/g, "\\'")}',\n        exchangeFullName: '${e.exchangeFullName.replace(/'/g, "\\'")}',\n    },`
         )
         .join('\n');
 

@@ -16,6 +16,7 @@ export function useOnClickOutside(
 
     useEffect(() => {
         function handleMouseDown(e: MouseEvent) {
+            // EventTarget → Node: .contains() requires Node; DOM element cast is safe here
             const target = e.target as Node;
             const isOutside = savedRefs.current.every(
                 ref => !ref.current?.contains(target)

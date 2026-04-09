@@ -10,6 +10,7 @@ import { cn } from '@/lib/cn';
 import type { TickerSearchResult } from '@/domain/types';
 
 const LISTBOX_ID = 'ticker-autocomplete-listbox';
+const OPTION_ID_PREFIX = `${LISTBOX_ID}-option`;
 
 type TickerAutocompleteSize = 'sm' | 'lg';
 
@@ -98,6 +99,8 @@ export function TickerAutocomplete({
         if (trimmed) navigate(trimmed);
     }, [navigate, query]);
 
+    const handleFocus = useCallback(() => setIsClosed(false), []);
+
     useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
 
     return (
@@ -119,11 +122,16 @@ export function TickerAutocomplete({
                     aria-haspopup="listbox"
                     aria-controls={LISTBOX_ID}
                     aria-autocomplete="list"
+                    aria-activedescendant={
+                        selectedIndex >= 0
+                            ? `${OPTION_ID_PREFIX}-${selectedIndex}`
+                            : undefined
+                    }
                     type="text"
                     value={query}
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
-                    onFocus={() => setIsClosed(false)}
+                    onFocus={handleFocus}
                     placeholder="티커 입력 (예: AAPL)"
                     className={inputClass}
                 />
@@ -149,6 +157,7 @@ export function TickerAutocomplete({
                         {results.map((result, index) => (
                             <ResultItem
                                 key={result.symbol}
+                                id={`${OPTION_ID_PREFIX}-${index}`}
                                 result={result}
                                 isSelected={index === selectedIndex}
                                 onSelect={navigate}
@@ -169,18 +178,20 @@ export function TickerAutocomplete({
 }
 
 interface ResultItemProps {
+    id: string;
     result: TickerSearchResult;
     isSelected: boolean;
     onSelect: (symbol: string) => void;
 }
 
-function ResultItem({ result, isSelected, onSelect }: ResultItemProps) {
+function ResultItem({ id, result, isSelected, onSelect }: ResultItemProps) {
     const displayName = result.koreanName
         ? `${result.name} (${result.koreanName})`
         : result.name;
 
     return (
         <button
+            id={id}
             type="button"
             role="option"
             aria-selected={isSelected}
