@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #222 Round 5 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
+- Violation: 테스트에서 `makeFmpResult("AAPL.A")`로 생성 직후 `otherResult.symbol = "AAPL.A"` 재할당 — dead code 뮤테이션
+- Rule: CONVENTIONS.md FP 불변성 — 객체 생성 후 직접 뮤테이션 금지; 이미 설정된 값을 재할당하는 것은 효과 없는 코드
+- Context: `makeFmpResult`가 이미 `symbol: "AAPL.A"`로 생성하므로 다음 줄 재할당은 무의미; 삭제
+
+- Violation: `!!assetInfo?.name`이 `AssetInfo.name`이 required 필드임에도 불필요하게 `.name` 접근
+- Rule: FF.md Predictability — 타입 시스템이 보장하는 사실을 조건식에 명시적으로 표현해야 함
+- Context: `assetInfo`가 정의되어 있으면 `name`은 항상 truthy이므로 `!!assetInfo`로 단순화
+
+- Violation: `AssetInfo` 인터페이스가 `BarsData`와 `TickerBase` 사이에 위치하여 ticker 관련 타입군과 분리됨
+- Rule: FF.md Cohesion — 같은 개념 군의 타입은 인접 배치
+- Context: `AssetInfo`는 ticker 관련 타입(`TickerBase`, `KoreanTickerEntry`, `TickerSearchResult`) 근처로 이동
+
 ## [PR #222 Round 3 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: SymbolPageClient.tsx에서 symbol.toUpperCase()를 3회, assetInfo.name !== symbol.toUpperCase() 조건을 2회 반복
 - Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값은 한 번만 계산하고 const로 추출
@@ -32,10 +45,6 @@
 - Violation: `docs/ARCHITECTURE.md` 폴더 트리에 신규 `infrastructure/ticker/` 디렉터리 미반영
 - Rule: MISTAKES.md TypeScript #11 — 구현 변경 시 문서 동기화 필수
 - Context: PR #216에서 `src/infrastructure/ticker/`가 신규 추가됐으나 ARCHITECTURE.md 폴더 트리에 누락
-
-- Violation: `inputClass`, `buttonClass`가 `size` prop 파생값임에도 useMemo 없이 매 렌더마다 재계산
-- Rule: MISTAKES.md Components #11 — props/state에서 파생된 객체는 useMemo로 메모이제이션 필요
-- Context: `TickerAutocomplete.tsx`의 두 className 상수가 `size`에만 의존하므로 `useMemo([size])`로 감쌈
 
 ## [PR #216 Round 7 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `{isOpen && ...}` 블록 내부에서 `hasQuery`가 항상 `true`임에도 `&& hasQuery` 조건 유지 (dead code)
@@ -74,10 +83,6 @@
 - Rule: MISTAKES.md Components #5 — Side effects inside setState updater functions; 더 나아가 render 중 setState 자체가 React 19 concurrent mode + startTransition 조합에서 Next.js Router 업데이트 충돌을 일으킬 수 있음
 - Context: `useTimeframeChange`의 `startTransition` 내부에서 Suspense가 트리거되는 동안 render-phase setState가 Router context 업데이트와 충돌했음; `timeframeChangeCount` 관리를 `handleTimeframeChange` 이벤트 핸들러 안으로 이동하여 해결
 
-## [fix/bars-null-and-ssr-window-error | 2026-04-06]
-- Violation: `panelWidthAtDragStartRef` was initialized by eagerly calling `getDefaultPanelWidth()` while `panelWidth` state used the lazy initializer form; the two initial values diverge if `getDefaultPanelWidth()` returns different results on successive calls
-- Rule: CONVENTIONS.md Convention 2-B (Predictability) — useState lazy initializer and useRef initial value must share the same source of truth to prevent divergence
-- Context: `usePanelResize.ts` called `getDefaultPanelWidth()` eagerly in `useRef` on line 34; fixed by initializing the ref to `0` since it is always overwritten in `handleDragStart` before being read in `onResize`
 
 ## [fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
 - Violation: `mutationFn` passed `AnalyzeMutationVariables` (which includes `force: boolean`) directly to `analyzeAction`, whose first parameter is typed as `AnalyzeVariables` (no `force` field), causing a TypeScript excess property error
@@ -89,6 +94,10 @@
 - Rule: MISTAKES.md Layer Dependencies #3 — `lightweight-charts` import(타입 포함)는 `components/chart/` 내부로 제한됨
 - Context: visible range 동기화를 위해 `stockChartRef`, `volumeChartRef`, 콜백 2개가 모두 `IChartApi`에 의존했음; `components/chart/hooks/useChartSync.ts`로 추출하여 `ChartContent.tsx`에서 `IChartApi` import 제거
 
+<<<<<<< HEAD
+=======
+
+>>>>>>> master
 ## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
 - Violation: `POPULAR_TICKERS` (비즈니스 도메인 지식)가 `src/lib/seo.ts`에 정의되어 lib 레이어 허용 범위를 벗어남
 - Rule: lib/CLAUDE.md — lib 레이어는 utility wrappers, React Query key factories, config constants, chart color constants만 허용; 도메인 비즈니스 상수는 금지
@@ -99,10 +108,6 @@
 - Rule: FF.md Cohesion — 동일한 도메인 정보(종목 설명)는 코드베이스 전반에서 일관되게 유지되어야 함
 - Context: `[symbol]/page.tsx`에서 `generateMetadata`의 description과 `jsonLd.description`이 서로 다른 문자열을 사용했음; jsonLd를 generateMetadata와 동일한 전체 문장으로 통일하여 해결
 
-## [PR #218 | feat/217/재분석-버튼-활성화 | 2026-04-09]
-- Violation: `ChartContent.tsx`에서 `useEffect` 내 `if (isAnalyzing) setDisplayAnalyzing(true)` 직접 setState 호출이 cascading renders 경고(`react-hooks/set-state-in-effect`)를 유발함
-- Rule: React 공식 권장 — prop 변화에 반응한 state 동기화는 `useEffect` 대신 렌더링 중 state 업데이트 패턴(`prevProp` state로 이전 값 추적)을 사용해야 함
-- Context: `isAnalyzing`이 true로 변할 때 `displayAnalyzing`을 true로 동기화하기 위해 `useEffect`를 사용했으나, `prevIsAnalyzing` state를 추가하고 렌더링 중 비교하는 패턴으로 교체하여 해결
 
 ## [fix/bars-null-and-ssr-window-error (FMP API spec fix) | 2026-04-06]
 - Violation: `console.log(url)` left in `fmp.ts` `getBars()` — debug artifact shipped to infrastructure

@@ -166,14 +166,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ## Lightweight Charts
 
-1. Missing chart.remove() cleanup
-   → Duplicate canvas on component remount
+1. Missing chart.remove() cleanup or listener unsubscribe before chart.remove()
+   → Always call unsubscribeVisibleLogicalRangeChange before chart.remove() to prevent "Object is disposed" errors
+   → Use a ref pattern for onChartRemove callback to capture cleanup logic and guard chartRef.current in ResizeObserver
 
 2. Passing domain null values directly to setData
    → Convert to WhitespaceData({ time })
 
 3. Adding volume/RSI to the main pane
    → Always add to a separate pane (index 1, 2, ...)
+
+4. Derived className or style objects recreated on every render without memoization
+   → Props-derived objects (inputClass, buttonClass computed from size prop) must use useMemo to prevent recreation
+   → Prevents unnecessary re-renders when object identity is compared
 
 ---
 
@@ -213,4 +218,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Cache resource creation or check for duplicates before creating
    ❌ const reader = new Redis(config); const writer = new Redis(config);
    ✅ const writer = new Redis(config); const reader = !token ? writer : new Redis(altConfig);
+
+3. Implicit divergence between ref initialization and state lazy initializer
+   → useState lazy initializer and useRef initial value must share same source of truth
+   ❌ useRef(getDefaultValue()) eager call vs useState(() => getDefaultValue()) lazy call diverges if getDefaultValue() returns different results
+   ✅ If ref is overwritten before read, initialize to null; if read first, share source with useState
+
+4. Deleting code marked with TODO without updating all references
+   → TODO comments indicate intentional preservation for future references
+   → Removing such code breaks commented-out code that still references it; restore or update all references first
 ```
