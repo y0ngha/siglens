@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #216 Round 4 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: 모듈 레벨 `let cachedClient` 가변 상태로 싱글턴 캐싱
+- Rule: CONVENTIONS.md Functional Programming — 모듈 레벨 가변 변수(`let`) 지양; 생성 비용이 낮은 인스턴스는 매 호출마다 직접 생성
+- Context: `koreanTranslator.ts`의 `getClient()` 패턴이 `let cachedClient ??=` 로 캐싱했으나 `GoogleGenerativeAI` 생성 비용이 저렴하므로 함수 내부 인라인으로 변경
+
 ## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음
 - Rule: 코드베이스에 import되지 않는 파일은 데드 코드 — PR에서 교체 시 구 파일 삭제 필수
@@ -45,11 +50,6 @@
 - Violation: `cache !== null` 조건을 `cache !== null && force`와 `cache !== null && !force`로 두 블록에 중복 체크
 - Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값을 여러 번 계산하거나 조회하는 코드는 단일 블록으로 통합해야 함
 - Context: `analyzeAction.ts`에서 캐시 프로바이더 존재 여부를 두 개의 분리된 if 블록에서 각각 확인했음; 단일 `if (cache !== null)` 블록 안에 `if (force) { ... } else { ... }`로 통합하여 중복 제거
-
-## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
-- Violation: force=true 테스트 케이스에서 `mockCacheSet` 검증 assertion 누락
-- Rule: MISTAKES.md Tests #2 — 인프라 파일은 100% 브랜치 커버리지 필수; 모든 코드 경로에 전용 테스트 케이스가 있어야 함
-- Context: `analyzeAction.test.ts` force=true 케이스에서 캐시 삭제 후 runAnalysis 결과가 캐시에 다시 저장되는 경로가 검증되지 않았음; `expect(mockCacheSet).toHaveBeenCalledWith(...)` assertion 추가
 
 ## [fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
 - Violation: `mutationFn` passed `AnalyzeMutationVariables` (which includes `force: boolean`) directly to `analyzeAction`, whose first parameter is typed as `AnalyzeVariables` (no `force` field), causing a TypeScript excess property error
