@@ -180,6 +180,39 @@ describe('runAnalysis', () => {
         });
     });
 
+    describe('actionRecommendation 처리', () => {
+        it('actionRecommendation이 포함된 응답을 올바르게 반환한다', async () => {
+            const analysisWithRecommendation: RawAnalysisResponse = {
+                ...mockRawAnalysis,
+                actionRecommendation: {
+                    positionAnalysis:
+                        '현재가 180은 저항선 181 근처입니다.',
+                    entry: '175~177 구간 매수 검토',
+                    exit: '185 목표, 172 손절',
+                    riskReward: '1:2.5',
+                },
+            };
+            mockLoadSkills.mockResolvedValueOnce([]);
+            mockAnalyze.mockResolvedValueOnce(analysisWithRecommendation);
+
+            const result = await runAnalysis(mockVariables);
+
+            expect(result.actionRecommendation).toBeDefined();
+            expect(result.actionRecommendation?.positionAnalysis).toBe(
+                '현재가 180은 저항선 181 근처입니다.'
+            );
+        });
+
+        it('actionRecommendation이 없는 응답도 정상 처리된다', async () => {
+            mockLoadSkills.mockResolvedValueOnce([]);
+            mockAnalyze.mockResolvedValueOnce(mockRawAnalysis);
+
+            const result = await runAnalysis(mockVariables);
+
+            expect(result.actionRecommendation).toBeUndefined();
+        });
+    });
+
     describe('AI 분석이 에러를 던질 때', () => {
         it('에러를 전파한다', async () => {
             mockLoadSkills.mockResolvedValueOnce([]);
