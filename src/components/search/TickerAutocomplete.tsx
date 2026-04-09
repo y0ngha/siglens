@@ -90,7 +90,10 @@ export function TickerAutocomplete({
         (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                const nextIndex = Math.min(selectedIndex + 1, results.length - 1);
+                const nextIndex = Math.min(
+                    selectedIndex + 1,
+                    results.length - 1
+                );
                 setSelectedIndex(nextIndex);
                 const next = results[nextIndex];
                 if (next) prefetch(next.symbol);
