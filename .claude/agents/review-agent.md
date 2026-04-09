@@ -4,8 +4,6 @@ description: Handles pre-PR code quality review. Triggered when the user asks to
 model: sonnet
 memory: project
 tools: Read, Glob, Grep, Bash
-skills:
-  - typescript-advanced-types
 ---
 
 ## Overview
