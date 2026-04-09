@@ -13,8 +13,12 @@ interface ChartSyncHandlers {
 export function useChartSync(): ChartSyncHandlers {
     const stockChartRef = useRef<IChartApi | null>(null);
     const volumeChartRef = useRef<IChartApi | null>(null);
-    const stockHandlerRef = useRef<((range: LogicalRange | null) => void) | null>(null);
-    const volumeHandlerRef = useRef<((range: LogicalRange | null) => void) | null>(null);
+    const stockHandlerRef = useRef<
+        ((range: LogicalRange | null) => void) | null
+    >(null);
+    const volumeHandlerRef = useRef<
+        ((range: LogicalRange | null) => void) | null
+    >(null);
 
     const handleStockChartReady = useCallback((chart: IChartApi): void => {
         stockChartRef.current = chart;
@@ -43,9 +47,7 @@ export function useChartSync(): ChartSyncHandlers {
         volumeChartRef.current = chart;
         const handler = (range: LogicalRange | null) => {
             if (range !== null && stockChartRef.current !== null) {
-                stockChartRef.current
-                    .timeScale()
-                    .setVisibleLogicalRange(range);
+                stockChartRef.current.timeScale().setVisibleLogicalRange(range);
             }
         };
         volumeHandlerRef.current = handler;

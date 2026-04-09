@@ -14,7 +14,11 @@ interface VolumeChartProps {
     onChartRemove?: () => void;
 }
 
-export function VolumeChart({ bars, onChartReady, onChartRemove }: VolumeChartProps) {
+export function VolumeChart({
+    bars,
+    onChartReady,
+    onChartRemove,
+}: VolumeChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const seriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
