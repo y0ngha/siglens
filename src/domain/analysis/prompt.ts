@@ -378,7 +378,7 @@ const ANALYSIS_GUIDELINES = [
 ].join('\n');
 
 const RESPONSE_LANGUAGE_INSTRUCTION =
-    'IMPORTANT: All text field values in the JSON response (summary, description, reason, basis, condition, positionAnalysis, entry, exit, riskReward, etc.) must be written in Korean (한국어). Do not use English for any response content. Use formal/polite speech level (존댓말, e.g. "~입니다", "~습니다"). For the summary field, use \\n to separate each topic or sentence into its own line — do not write the summary as a single long paragraph. Other text fields (description, reason, basis, condition, etc.) should also use \\n for line breaks where it improves readability.';
+    'IMPORTANT: All text field values in the JSON response (summary, description, reason, basis, condition, positionAnalysis, entry, exit, riskReward, etc.) must be written in Korean (한국어). Do not use English for any response content. Use formal/polite speech level (존댓말, e.g. "~입니다", "~습니다"). For the summary field, use \\n to separate each topic or sentence into its own line — do not write the summary as a single long paragraph. Other text fields (description, reason, basis, condition, positionAnalysis, entry, exit, riskReward, etc.) should also use \\n for line breaks where it improves readability.';
 
 const buildAnalysisRequest = (
     patternSkills: Skill[],

@@ -41,10 +41,12 @@ function formatCooldown(ms: number): string {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-const ACTION_RECOMMENDATION_FIELDS: readonly {
+interface ActionRecommendationField {
     label: string;
     key: keyof ActionRecommendation;
-}[] = [
+}
+
+const ACTION_RECOMMENDATION_FIELDS: readonly ActionRecommendationField[] = [
     { label: '현재 위치', key: 'positionAnalysis' },
     { label: '진입 전략', key: 'entry' },
     { label: '청산 전략', key: 'exit' },
