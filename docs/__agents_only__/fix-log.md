@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #216 Round 8 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: `navigate`에서 `setIsClosed(false)`로 설정해 선택 직후 드롭다운이 잠깐 열린 상태로 남을 수 있음
+- Rule: CONVENTIONS.md Predictability — 사용자 행동(종목 선택) 완료 후 UI 상태는 즉시 닫힘 상태여야 함
+- Context: `debouncedQuery`가 setTimeout으로 비워지기 전까지 `isOpen = !false && hasQuery = true`가 되어 이전 결과가 잠깐 노출; `setIsClosed(true)`로 수정
+
+- Violation: `seed()` 함수에서 `let newCount`, `let updatedCount` 가변 변수 + `for` 루프 + Map mutation 패턴 사용
+- Rule: CONVENTIONS.md Functional Programming — 가변 상태(`let`, push, mutation) 금지; `reduce`/Map 생성자 패턴 사용
+- Context: `scripts/sync-korean-tickers.ts`의 seed 함수가 카운트 집계에 `let` + for 루프, merge에 `entriesMap.set()` mutation 사용; `reduce` + `new Map([...])` 생성자로 교체
+
 ## [PR #216 Round 7 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `{isOpen && ...}` 블록 내부에서 `hasQuery`가 항상 `true`임에도 `&& hasQuery` 조건 유지 (dead code)
 - Rule: MISTAKES.md Coding Paradigm #4 — 결과를 변경하지 않는 조건(효과 없는 로직) 제거
@@ -14,14 +23,6 @@
 - Rule: MISTAKES.md Coding Paradigm #10 — 복잡한 익명 표현식은 named helper로 추출; 동일 컴포넌트 내 핸들러 패턴 일관성 유지
 - Context: `navigate`, `handleChange`, `handleKeyDown`은 모두 `useCallback`으로 추출됐으나 검색 버튼 `onClick`만 인라인; `handleSearchClick`으로 추출
 
-## [PR #216 Round 5 | feat/196/ticker-autocomplete | 2026-04-09]
-- Violation: `searchBySymbol`과 `searchByName`이 URL 엔드포인트만 다르고 동일한 fetch 로직 중복 구현
-- Rule: MISTAKES.md Coding Paradigm #1 — 동일한 알고리즘 재구현 금지; 공통 헬퍼 추출 필요
-- Context: `fmpTickerApi.ts`의 두 함수가 API 키 검증, URLSearchParams 생성, fetch, 응답 검증, 에러 처리를 모두 중복; `fetchFmpEndpoint('search-symbol'|'search-name', query)` 헬퍼로 추출
-
-- Violation: fire-and-forget `.catch()` 핸들러 브랜치(cache.set 실패, translateAndCache 실패) 테스트 누락
-- Rule: MISTAKES.md Tests #2 — infrastructure 파일의 모든 조건부 브랜치(try/catch 포함) 100% 커버리지 필수
-- Context: `searchTickerAction.ts`에 두 개의 fire-and-forget `.catch()` 블록이 있었으나 `searchTickerAction.test.ts`에 에러 경로 케이스가 없었음; `mockRejectedValueOnce`로 각각 추가
 
 ## [PR #216 Round 4 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: 모듈 레벨 `let cachedClient` 가변 상태로 싱글턴 캐싱
@@ -37,11 +38,6 @@
 - Rule: CONVENTIONS.md Graceful Degradation — 외부 의존성 호출은 동일 파일 내 다른 패턴과 일관되게 try-catch로 감싸야 함
 - Context: `searchTickerAction.ts`의 캐시 조회는 try-catch 없었으나, 동일 파일의 캐시 set과 `koreanNameStore.ts`의 `loadAllEntries()`는 모두 try-catch 처리됨
 
-## [PR #216 Round 1 | feat/196/ticker-autocomplete | 2026-04-09]
-- Violation: `getKoreanNames` 반환 타입이 `Record<string, string>`으로 선언되어 누락된 키에 접근 시 `undefined`가 `string`으로 잘못 추론됨
-- Rule: TypeScript: 인터페이스 필드 선언이 런타임 동작과 일치해야 함 (MISTAKES.md TypeScript #14 유사 — 런타임에 없을 수 있는 키는 Partial로 선언해야 함)
-- Context: `koreanNameStore.getKoreanNames`는 매핑이 없는 심볼 키를 반환 객체에 포함하지 않으므로, 반환 타입을 `Partial<Record<string, string>>`으로 선언해야 `searchTickerAction`의 `koreanNames[result.symbol]`이 `string | undefined`로 올바르게 추론됨
-
 ## [예시 항목 | 브랜치명 | 날짜]
 - Violation: 예시
 - Rule: 예시
@@ -53,11 +49,6 @@
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
 
 
-## [PR #195 | feat/157/fmp-provider | 2026-04-06]
-- Violation: `docs/ARCHITECTURE.md` "최초 진입" 섹션이 HydrationBoundary 패턴 도입 후에도 이전 props 드릴링 방식(`initialBars`, `initialAnalysis`)을 그대로 기술하고 있었음
-- Rule: MISTAKES.md TypeScript #11 — Implementation and documentation changes not synchronized
-- Context: PR #195에서 `prefetchQuery + HydrationBoundary` 패턴으로 교체했지만 `docs/ARCHITECTURE.md`의 데이터 흐름 다이어그램은 업데이트되지 않아 실제 동작과 불일치; 다이어그램을 HydrationBoundary 패턴에 맞게 수정
-
 
 ## [Issue #172 버그픽스 | feat/172/메인-페이지-리디자인-브랜딩-변경 | 2026-04-06]
 - Violation: `SymbolPageClient.tsx`에서 render 중 `setTimeframeChangeCount` + `setPrevTimeframe`을 호출하는 패턴이 React 19 concurrent mode에서 "Cannot update a component (Router) while rendering a different component (ChartContent)" 에러를 유발했음
@@ -68,11 +59,6 @@
 - Violation: `panelWidthAtDragStartRef` was initialized by eagerly calling `getDefaultPanelWidth()` while `panelWidth` state used the lazy initializer form; the two initial values diverge if `getDefaultPanelWidth()` returns different results on successive calls
 - Rule: CONVENTIONS.md Convention 2-B (Predictability) — useState lazy initializer and useRef initial value must share the same source of truth to prevent divergence
 - Context: `usePanelResize.ts` called `getDefaultPanelWidth()` eagerly in `useRef` on line 34; fixed by initializing the ref to `0` since it is always overwritten in `handleDragStart` before being read in `onResize`
-
-## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
-- Violation: `cache !== null` 조건을 `cache !== null && force`와 `cache !== null && !force`로 두 블록에 중복 체크
-- Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값을 여러 번 계산하거나 조회하는 코드는 단일 블록으로 통합해야 함
-- Context: `analyzeAction.ts`에서 캐시 프로바이더 존재 여부를 두 개의 분리된 if 블록에서 각각 확인했음; 단일 `if (cache !== null)` 블록 안에 `if (force) { ... } else { ... }`로 통합하여 중복 제거
 
 ## [fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
 - Violation: `mutationFn` passed `AnalyzeMutationVariables` (which includes `force: boolean`) directly to `analyzeAction`, whose first parameter is typed as `AnalyzeVariables` (no `force` field), causing a TypeScript excess property error
