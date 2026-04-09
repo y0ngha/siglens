@@ -18,8 +18,14 @@ import { KOREAN_TICKERS_SEED } from './korean-tickers-data';
 import {
     KOREAN_TICKERS_CACHE_KEY,
     KOREAN_NAMES_CACHE_TTL,
-} from '../src/infrastructure/cache/config';
-import type { KoreanTickerEntry } from '../src/domain/types';
+} from '@/infrastructure/cache/config';
+import type { KoreanTickerEntry } from '@/domain/types';
+
+/**
+ * 사용법:
+ *   npx tsx scripts/sync-korean-tickers.ts seed    # Redis에 업로드
+ *   npx tsx scripts/sync-korean-tickers.ts export  # Redis에서 이 파일로 내보내기
+ */
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
