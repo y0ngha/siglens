@@ -90,12 +90,16 @@ export function TickerAutocomplete({
         (e: React.KeyboardEvent<HTMLInputElement>) => {
             if (e.key === 'ArrowDown') {
                 e.preventDefault();
-                setSelectedIndex(prev =>
-                    Math.min(prev + 1, results.length - 1)
-                );
+                const nextIndex = Math.min(selectedIndex + 1, results.length - 1);
+                setSelectedIndex(nextIndex);
+                const next = results[nextIndex];
+                if (next) prefetch(next.symbol);
             } else if (e.key === 'ArrowUp') {
                 e.preventDefault();
-                setSelectedIndex(prev => Math.max(prev - 1, -1));
+                const prevIndex = Math.max(selectedIndex - 1, -1);
+                setSelectedIndex(prevIndex);
+                const prev = results[prevIndex];
+                if (prev) prefetch(prev.symbol);
             } else if (e.key === 'Enter') {
                 e.preventDefault();
                 const selected = results[selectedIndex];
@@ -110,7 +114,7 @@ export function TickerAutocomplete({
                 setSelectedIndex(-1);
             }
         },
-        [navigate, query, results, selectedIndex]
+        [navigate, prefetch, query, results, selectedIndex]
     );
 
     const handleSearchClick = useCallback(() => {
