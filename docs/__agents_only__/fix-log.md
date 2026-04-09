@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #216 Round 11 | feat/196/ticker-autocomplete | 2026-04-10]
+- Violation: `docs/ARCHITECTURE.md` 폴더 트리에 신규 `infrastructure/ticker/` 디렉터리 미반영
+- Rule: MISTAKES.md TypeScript #11 — 구현 변경 시 문서 동기화 필수
+- Context: PR #216에서 `src/infrastructure/ticker/`가 신규 추가됐으나 ARCHITECTURE.md 폴더 트리에 누락
+
+- Violation: `inputClass`, `buttonClass`가 `size` prop 파생값임에도 useMemo 없이 매 렌더마다 재계산
+- Rule: MISTAKES.md Components #11 — props/state에서 파생된 객체는 useMemo로 메모이제이션 필요
+- Context: `TickerAutocomplete.tsx`의 두 className 상수가 `size`에만 의존하므로 `useMemo([size])`로 감쌈
+
 ## [PR #216 Round 9 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `US_EXCHANGES` 튜플에 `'NYSEArca'`가 포함되어 있으나 테스트에서 누락
 - Rule: MISTAKES.md Tests #2 — 인프라 파일 100% 브랜치 커버리지 필수; 허용 거래소 상수의 모든 값이 테스트되어야 함
