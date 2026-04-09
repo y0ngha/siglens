@@ -596,6 +596,44 @@ function PriceScenarioSection({
     );
 }
 
+function getReanalyzeLabel(isAnalyzing: boolean, cooldownMs: number): string {
+    if (isAnalyzing) return '분석 중…';
+    if (cooldownMs > 0) return `재분석 가능까지 ${formatCooldown(cooldownMs)}`;
+    return '재분석';
+}
+
+interface ReanalyzeButtonProps {
+    isAnalyzing: boolean;
+    reanalyzeCooldownMs: number;
+    onReanalyze: () => void;
+}
+
+function ReanalyzeButton({
+    isAnalyzing,
+    reanalyzeCooldownMs,
+    onReanalyze,
+}: ReanalyzeButtonProps) {
+    const isCoolingDown = reanalyzeCooldownMs > 0;
+    const isDisabled = isAnalyzing || isCoolingDown;
+    const label = getReanalyzeLabel(isAnalyzing, reanalyzeCooldownMs);
+    return (
+        <button
+            type="button"
+            onClick={onReanalyze}
+            disabled={isDisabled}
+            aria-disabled={isDisabled}
+            title={
+                isCoolingDown
+                    ? '재분석은 5분에 한 번만 실행할 수 있어요.'
+                    : undefined
+            }
+            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 disabled:cursor-not-allowed mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors"
+        >
+            {label}
+        </button>
+    );
+}
+
 interface AnalysisPanelProps {
     analysis: AnalysisResponse;
     keyLevels: KeyLevels;
@@ -969,40 +1007,13 @@ export function AnalysisPanel({
                 </>
             )}
 
-            {/* 재분석 버튼 — 다중 사용자 환경에서 캐시 일관성·동시 재분석 정책이 정리될 때까지
-                사용자에게는 노출하지 않는다. 로직은 보존(useAnalysis/handleReanalyze)되어 있으며
-                정책이 확정되면 아래 블록의 주석을 해제해 다시 노출한다. */}
-            {/*
-            {onReanalyze !== undefined &&
-                (() => {
-                    const isCoolingDown = reanalyzeCooldownMs > 0;
-                    const isDisabled = isAnalyzing || isCoolingDown;
-                    const getLabel = (): string => {
-                        if (isAnalyzing) return '분석 중…';
-                        if (isCoolingDown) {
-                            return `재분석 가능까지 ${formatCooldown(reanalyzeCooldownMs)}`;
-                        }
-                        return '재분석';
-                    };
-                    const label = getLabel();
-                    return (
-                        <button
-                            type="button"
-                            onClick={onReanalyze}
-                            disabled={isDisabled}
-                            aria-disabled={isDisabled}
-                            title={
-                                isCoolingDown
-                                    ? '재분석은 5분에 한 번만 실행할 수 있어요.'
-                                    : undefined
-                            }
-                            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 disabled:cursor-not-allowed mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors"
-                        >
-                            {label}
-                        </button>
-                    );
-                })()}
-            */}
+            {onReanalyze !== undefined && (
+                <ReanalyzeButton
+                    isAnalyzing={isAnalyzing}
+                    reanalyzeCooldownMs={reanalyzeCooldownMs}
+                    onReanalyze={onReanalyze}
+                />
+            )}
         </div>
     );
 }
