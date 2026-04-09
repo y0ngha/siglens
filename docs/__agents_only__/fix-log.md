@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #222 Round 3 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
+- Violation: SymbolPageClient.tsx에서 symbol.toUpperCase()를 3회, assetInfo.name !== symbol.toUpperCase() 조건을 2회 반복
+- Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값은 한 번만 계산하고 const로 추출
+- Context: JSX 렌더 함수 내에서 파생 상수를 추출하지 않고 동일 표현식을 인라인으로 반복
+
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: components/hooks/ 파일에 'use client' 선언 누락
 - Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
