@@ -189,6 +189,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## Predictability
+
+```
+1. Including unrelated changes in a PR without documented justification
+   → Each commit/PR should focus on a single concern
+   → Unrelated changes must be moved to separate PRs or reverted
+   → If a related change is necessary, document the reason in a comment or commit message
+```
+
+---
+
 ## Design & Cohesion
 
 ```
