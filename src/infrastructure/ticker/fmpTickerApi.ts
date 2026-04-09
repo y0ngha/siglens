@@ -1,5 +1,5 @@
 import type { TickerSearchResult } from '@/domain/types';
-import type { FmpSearchResult } from './types';
+import type { FmpSearchResult } from '@/infrastructure/ticker/types';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_SEARCH_LIMIT = 20;
