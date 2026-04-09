@@ -5,8 +5,9 @@ import {
     HydrationBoundary,
 } from '@tanstack/react-query';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
-import type { AnalysisResponse } from '@/domain/types';
+import type { AnalysisResponse, AssetInfo } from '@/domain/types';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
+import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import { SITE_NAME, SITE_URL } from '@/lib/seo';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
@@ -32,11 +33,20 @@ interface Props {
     params: Promise<{ symbol: string }>;
 }
 
+function buildDisplayName(assetInfo: AssetInfo, ticker: string): string {
+    return assetInfo.koreanName
+        ? `${assetInfo.koreanName} ${assetInfo.name} (${ticker})`
+        : `${assetInfo.name} (${ticker})`;
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
-    const title = `${ticker} 기술적 분석`;
-    const description = `${ticker} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`;
+    const assetInfo = await getAssetInfoAction(ticker);
+
+    const displayName = buildDisplayName(assetInfo, ticker);
+    const title = `${displayName} 기술적 분석`;
+    const description = `${displayName} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`;
     const url = `${SITE_URL}/${ticker}`;
 
     return {
@@ -64,16 +74,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SymbolPage({ params }: Props) {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
+    const assetInfo = await getAssetInfoAction(ticker);
+
+    const displayName = buildDisplayName(assetInfo, ticker);
 
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: `${ticker} 기술적 분석 | ${SITE_NAME}`,
-        description: `${ticker} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`,
+        name: `${displayName} 기술적 분석 | ${SITE_NAME}`,
+        description: `${displayName} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`,
         url: `${SITE_URL}/${ticker}`,
         about: {
             '@type': 'FinancialProduct',
-            name: ticker,
+            name: displayName,
             category: 'Stock',
         },
     };
@@ -84,6 +97,11 @@ export default async function SymbolPage({ params }: Props) {
                 staleTime: QUERY_STALE_TIME_MS,
             },
         },
+    });
+
+    await queryClient.prefetchQuery({
+        queryKey: QUERY_KEYS.assetInfo(ticker),
+        queryFn: () => getAssetInfoAction(ticker),
     });
 
     await queryClient.prefetchQuery({

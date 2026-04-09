@@ -259,6 +259,12 @@ export interface BarsData {
     indicators: IndicatorResult;
 }
 
+export interface AssetInfo {
+    symbol: string;
+    name: string;
+    koreanName?: string;
+}
+
 export interface TickerBase {
     symbol: string;
     name: string;
