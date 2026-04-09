@@ -1805,95 +1805,53 @@ describe('prompt', () => {
     });
 
     describe('요약 작성 가이드라인', () => {
+        let result: string;
+
+        beforeEach(() => {
+            result = buildAnalysisPrompt(TEST_SYMBOL, [], makeIndicators(), []);
+        });
+
         it('접근 가능한 언어 지시가 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
             expect(result).toContain('accessible');
         });
 
-        it('모든 섹션 통합 지시가 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
-            expect(result).toContain('synthesize');
+        it('핵심 분석 결과 종합 지시가 포함된다', () => {
+            expect(result).toContain('Synthesize the key findings');
         });
 
         it('Summary Writing Guidelines 섹션이 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
             expect(result).toContain('Summary Writing Guidelines');
         });
     });
 
     describe('매매 추천 가이드라인', () => {
+        let result: string;
+
+        beforeEach(() => {
+            result = buildAnalysisPrompt(TEST_SYMBOL, [], makeIndicators(), []);
+        });
+
         it('Action Recommendation Guidelines 섹션이 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
             expect(result).toContain('Action Recommendation Guidelines');
         });
 
         it('actionRecommendation 필드가 스키마에 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
             expect(result).toContain('"actionRecommendation"');
         });
 
         it('actionRecommendation 스키마에 positionAnalysis 필드가 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
             expect(result).toContain('positionAnalysis');
         });
 
         it('actionRecommendation 스키마에 entry 필드가 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
             expect(result).toContain('"entry"');
         });
 
         it('actionRecommendation 스키마에 exit 필드가 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
             expect(result).toContain('"exit"');
         });
 
         it('actionRecommendation 스키마에 riskReward 필드가 포함된다', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                [],
-                makeIndicators(),
-                []
-            );
             expect(result).toContain('riskReward');
         });
     });

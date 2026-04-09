@@ -271,7 +271,7 @@ const buildSkillBlock = (skill: Skill): string =>
  */
 const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
     summary:
-        '"A comprehensive, accessible summary that synthesizes ALL findings (indicators, patterns, volume profile, skills, strategies) into plain language a non-technical user can understand. Instead of stating raw indicator values, explain their practical meaning (e.g., instead of RSI is overbought at 75, say the stock has risen quickly and may be due for a pause). Answer: What is happening with this stock and what does it mean for the investor? Use \\n to separate each topic."',
+        '"Overall accessible analysis summary (see Summary Writing Guidelines)"',
     trend: '"bullish | bearish | neutral"',
     signals:
         '[{ "type": "...", "description": "...", "strength": "strong | moderate | weak" }]',
@@ -354,7 +354,7 @@ const ANALYSIS_GUIDELINES = [
     '- Mention the conflict explicitly in the summary so the user understands the mixed picture.',
     '',
     '### Summary Writing Guidelines',
-    '- The summary must synthesize ALL analysis sections: indicator readings, detected patterns, volume profile findings, skill results, and strategy outcomes.',
+    '- Synthesize the key findings from indicators, detected patterns, volume profile, skill results, and strategy outcomes into a cohesive narrative.',
     '- Write in accessible language that non-technical investors can understand.',
     '- Instead of stating raw indicator values, explain their practical meaning (e.g., "the stock has risen quickly and may be due for a pause" instead of "RSI is overbought at 75").',
     '- When referencing patterns, explain what they typically predict in simple terms.',
@@ -362,14 +362,15 @@ const ANALYSIS_GUIDELINES = [
     '- The summary should answer: "What is happening with this stock and what does it mean for the investor?"',
     '',
     '### Action Recommendation Guidelines',
-    '- positionAnalysis: Compare the current price against ALL identified support/resistance levels from keyLevels, patterns, volume profile (POC/VAH/VAL), and indicator-derived levels. State where the current price sits relative to these levels.',
+    '- actionRecommendation must be consistent with the keyLevels and priceTargets you already computed. Use those values directly — do not re-derive support/resistance from scratch.',
+    '- positionAnalysis: State where the current price sits relative to the keyLevels (support, resistance, POC) you identified above.',
     '- entry: Provide specific entry price ranges with reasoning. Consider:',
     '  - If current price is near resistance, advise waiting for a pullback to support (e.g., "current price 180 is near resistance 181, consider buying at support 175~177")',
     '  - If current price is near support, entry may be favorable (e.g., "current price 166 is near support 167, consider staged entry at 165~167")',
     '  - Always provide specific price ranges, not vague descriptions',
-    '- exit: Provide specific exit price ranges for both profit-taking and stop-loss, referencing resistance levels and pattern targets.',
+    '- exit: Provide specific exit price ranges for both profit-taking and stop-loss, referencing the priceTargets and resistance levels above.',
     '- riskReward: Calculate the risk-reward ratio based on entry, stop-loss, and target prices. Express as a ratio (e.g., "stop-loss 3% vs target 9% → risk:reward = 1:3").',
-    '- All actionRecommendation text must be written in accessible language that non-technical users can understand.',
+    '- Write in accessible language that non-technical users can understand.',
     '',
     '### Insufficient Data',
     '- If bar data is too short to reliably calculate an indicator or detect a pattern, state "데이터 부족" rather than guessing.',
