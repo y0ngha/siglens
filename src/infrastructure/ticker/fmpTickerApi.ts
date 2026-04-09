@@ -23,7 +23,8 @@ export function filterUsExchanges(
     );
 }
 
-export async function searchBySymbol(
+async function fetchFmpEndpoint(
+    endpoint: 'search-symbol' | 'search-name',
     query: string
 ): Promise<FmpSearchResult[]> {
     const apiKey = process.env.FMP_API_KEY;
@@ -38,13 +39,13 @@ export async function searchBySymbol(
         apikey: apiKey,
     });
 
-    const url = `${FMP_BASE_URL}/search-symbol?${params}`;
+    const url = `${FMP_BASE_URL}/${endpoint}?${params}`;
 
     try {
         const res = await fetch(url);
         if (!res.ok) {
             console.error(
-                `FMP search-symbol error: ${res.status} ${res.statusText}`
+                `FMP ${endpoint} error: ${res.status} ${res.statusText}`
             );
             return [];
         }
@@ -53,40 +54,17 @@ export async function searchBySymbol(
         if (!Array.isArray(raw)) return [];
         return raw;
     } catch (error) {
-        console.error('FMP search-symbol fetch failed:', error);
+        console.error(`FMP ${endpoint} fetch failed:`, error);
         return [];
     }
 }
 
+export async function searchBySymbol(
+    query: string
+): Promise<FmpSearchResult[]> {
+    return fetchFmpEndpoint('search-symbol', query);
+}
+
 export async function searchByName(query: string): Promise<FmpSearchResult[]> {
-    const apiKey = process.env.FMP_API_KEY;
-    if (!apiKey) {
-        console.error('FMP_API_KEY is not set');
-        return [];
-    }
-
-    const params = new URLSearchParams({
-        query,
-        limit: String(FMP_SEARCH_LIMIT),
-        apikey: apiKey,
-    });
-
-    const url = `${FMP_BASE_URL}/search-name?${params}`;
-
-    try {
-        const res = await fetch(url);
-        if (!res.ok) {
-            console.error(
-                `FMP search-name error: ${res.status} ${res.statusText}`
-            );
-            return [];
-        }
-        // fetch response 전체 스키마 타입 가드는 불가 — FMP API 계약에 의해 단언
-        const raw = (await res.json()) as FmpSearchResult[];
-        if (!Array.isArray(raw)) return [];
-        return raw;
-    } catch (error) {
-        console.error('FMP search-name fetch failed:', error);
-        return [];
-    }
+    return fetchFmpEndpoint('search-name', query);
 }

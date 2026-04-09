@@ -235,6 +235,36 @@ describe('searchTickerAction', () => {
         });
     });
 
+    describe('캐시 SET 중 에러가 발생할 때', () => {
+        it('에러를 삼키고 결과를 정상 반환한다', async () => {
+            mockCacheGet.mockResolvedValueOnce(null);
+            mockCacheSet.mockRejectedValueOnce(new Error('Redis write error'));
+            const symbolResult = makeResult('AAPL');
+            mockSearchBySymbol.mockResolvedValueOnce([symbolResult]);
+            mockSearchByName.mockResolvedValueOnce([]);
+
+            const result = await searchTickerAction('AAPL');
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(result).toHaveLength(1);
+        });
+    });
+
+    describe('translateAndCache fire-and-forget 중 에러가 발생할 때', () => {
+        it('에러를 삼키고 결과를 정상 반환한다', async () => {
+            mockCacheGet.mockResolvedValueOnce(null);
+            mockSearchBySymbol.mockResolvedValueOnce([makeResult('UNKNOWN')]);
+            mockSearchByName.mockResolvedValueOnce([]);
+            mockGetKoreanNames.mockResolvedValueOnce({});
+            mockTranslateCompanyNames.mockRejectedValueOnce(
+                new Error('translation error')
+            );
+
+            const result = await searchTickerAction('UNKNOWN');
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(result).toHaveLength(1);
+        });
+    });
+
     describe('캐시 provider를 사용할 수 없을 때', () => {
         it('FMP 결과를 직접 반환한다', async () => {
             mockCreateCacheProvider.mockReturnValue(null);
