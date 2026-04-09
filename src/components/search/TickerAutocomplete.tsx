@@ -11,9 +11,11 @@ import type { TickerSearchResult } from '@/domain/types';
 
 const LISTBOX_ID = 'ticker-autocomplete-listbox';
 
+type TickerAutocompleteSize = 'sm' | 'lg';
+
 interface TickerAutocompleteProps {
     className?: string;
-    size?: 'sm' | 'lg';
+    size?: TickerAutocompleteSize;
     onSelect?: (symbol: string) => void;
 }
 
@@ -91,6 +93,11 @@ export function TickerAutocomplete({
         [navigate, query, results, selectedIndex]
     );
 
+    const handleSearchClick = useCallback(() => {
+        const trimmed = query.trim().toUpperCase();
+        if (trimmed) navigate(trimmed);
+    }, [navigate, query]);
+
     useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
 
     return (
@@ -152,10 +159,7 @@ export function TickerAutocomplete({
             </div>
             <button
                 type="button"
-                onClick={() => {
-                    const trimmed = query.trim().toUpperCase();
-                    if (trimmed) navigate(trimmed);
-                }}
+                onClick={handleSearchClick}
                 className={buttonClass}
             >
                 검색
