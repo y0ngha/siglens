@@ -1,5 +1,34 @@
 # Fix Log
 
+## [PR #216 Round 11 | feat/196/ticker-autocomplete | 2026-04-10]
+- Violation: `docs/ARCHITECTURE.md` 폴더 트리에 신규 `infrastructure/ticker/` 디렉터리 미반영
+- Rule: MISTAKES.md TypeScript #11 — 구현 변경 시 문서 동기화 필수
+- Context: PR #216에서 `src/infrastructure/ticker/`가 신규 추가됐으나 ARCHITECTURE.md 폴더 트리에 누락
+
+- Violation: `inputClass`, `buttonClass`가 `size` prop 파생값임에도 useMemo 없이 매 렌더마다 재계산
+- Rule: MISTAKES.md Components #11 — props/state에서 파생된 객체는 useMemo로 메모이제이션 필요
+- Context: `TickerAutocomplete.tsx`의 두 className 상수가 `size`에만 의존하므로 `useMemo([size])`로 감쌈
+
+## [PR #216 Round 7 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: `{isOpen && ...}` 블록 내부에서 `hasQuery`가 항상 `true`임에도 `&& hasQuery` 조건 유지 (dead code)
+- Rule: MISTAKES.md Coding Paradigm #4 — 결과를 변경하지 않는 조건(효과 없는 로직) 제거
+- Context: `isOpen = !isClosed && hasQuery`이므로 해당 블록 진입 시 `hasQuery`는 항상 true; `&& hasQuery` 제거
+
+## [PR #216 Round 6 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: `size?: 'sm' | 'lg'` 인라인 유니온 리터럴 타입을 named type alias로 추출하지 않음
+- Rule: CONVENTIONS.md — 2개 이상 리터럴 유니온은 type alias로 추출 필수
+- Context: `TickerAutocomplete.tsx`의 Props 인터페이스에 `'sm' | 'lg'` 인라인 선언; `TickerAutocompleteSize` 타입으로 추출
+
+
+## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음
+- Rule: 코드베이스에 import되지 않는 파일은 데드 코드 — PR에서 교체 시 구 파일 삭제 필수
+- Context: `SymbolSearch`가 `TickerAutocomplete`로 교체됐지만 `src/components/search/SymbolSearch.tsx`가 미삭제 상태로 남아 있었음
+
+- Violation: `cache.get()` 호출 시 예외 처리 누락으로 Redis 장애 시 액션 전체 실패
+- Rule: CONVENTIONS.md Graceful Degradation — 외부 의존성 호출은 동일 파일 내 다른 패턴과 일관되게 try-catch로 감싸야 함
+- Context: `searchTickerAction.ts`의 캐시 조회는 try-catch 없었으나, 동일 파일의 캐시 set과 `koreanNameStore.ts`의 `loadAllEntries()`는 모두 try-catch 처리됨
+
 ## [예시 항목 | 브랜치명 | 날짜]
 - Violation: 예시
 - Rule: 예시
@@ -10,11 +39,6 @@
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
 
-
-## [PR #195 | feat/157/fmp-provider | 2026-04-06]
-- Violation: `docs/ARCHITECTURE.md` "최초 진입" 섹션이 HydrationBoundary 패턴 도입 후에도 이전 props 드릴링 방식(`initialBars`, `initialAnalysis`)을 그대로 기술하고 있었음
-- Rule: MISTAKES.md TypeScript #11 — Implementation and documentation changes not synchronized
-- Context: PR #195에서 `prefetchQuery + HydrationBoundary` 패턴으로 교체했지만 `docs/ARCHITECTURE.md`의 데이터 흐름 다이어그램은 업데이트되지 않아 실제 동작과 불일치; 다이어그램을 HydrationBoundary 패턴에 맞게 수정
 
 
 ## [Issue #172 버그픽스 | feat/172/메인-페이지-리디자인-브랜딩-변경 | 2026-04-06]
@@ -27,25 +51,10 @@
 - Rule: CONVENTIONS.md Convention 2-B (Predictability) — useState lazy initializer and useRef initial value must share the same source of truth to prevent divergence
 - Context: `usePanelResize.ts` called `getDefaultPanelWidth()` eagerly in `useRef` on line 34; fixed by initializing the ref to `0` since it is always overwritten in `handleDragStart` before being read in `onResize`
 
-## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
-- Violation: `cache !== null` 조건을 `cache !== null && force`와 `cache !== null && !force`로 두 블록에 중복 체크
-- Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값을 여러 번 계산하거나 조회하는 코드는 단일 블록으로 통합해야 함
-- Context: `analyzeAction.ts`에서 캐시 프로바이더 존재 여부를 두 개의 분리된 if 블록에서 각각 확인했음; 단일 `if (cache !== null)` 블록 안에 `if (force) { ... } else { ... }`로 통합하여 중복 제거
-
-## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
-- Violation: force=true 테스트 케이스에서 `mockCacheSet` 검증 assertion 누락
-- Rule: MISTAKES.md Tests #2 — 인프라 파일은 100% 브랜치 커버리지 필수; 모든 코드 경로에 전용 테스트 케이스가 있어야 함
-- Context: `analyzeAction.test.ts` force=true 케이스에서 캐시 삭제 후 runAnalysis 결과가 캐시에 다시 저장되는 경로가 검증되지 않았음; `expect(mockCacheSet).toHaveBeenCalledWith(...)` assertion 추가
-
 ## [fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
 - Violation: `mutationFn` passed `AnalyzeMutationVariables` (which includes `force: boolean`) directly to `analyzeAction`, whose first parameter is typed as `AnalyzeVariables` (no `force` field), causing a TypeScript excess property error
 - Rule: CONVENTIONS.md — UI-layer concerns must not bleed into infrastructure-layer types; Server Action parameters must match declared types exactly
 - Context: `useAnalysis.ts` passed the full mutation variable object (including `force`) directly to `analyzeAction`; fixed by destructuring `{ force, ...analyzeVars }` and passing `analyzeVars` as the first argument
-
-## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
-- Violation: `ConfidenceBadge` 컴포넌트에서 `useState`가 derived 변수(`level`, `className`, `label`, `tooltip`) 이후에 선언됨
-- Rule: MISTAKES.md Components #2 — Hook 선언 순서는 `useState → useRef → derived variables → useEffect` 순서를 따라야 함
-- Context: `AnalysisPanel.tsx`의 `ConfidenceBadge` 함수 컴포넌트에서 `const level = ...` 등 derived 상수를 먼저 선언한 뒤 `useState`를 아래에 배치했음; `useState`를 derived 변수보다 위로 이동하여 수정
 
 ## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
 - Violation: `ChartContent.tsx`(`components/symbol-page/`)에서 `lightweight-charts`의 `IChartApi` 타입을 직접 import하여 `symbol-page` 레이어가 차트 라이브러리에 직접 커플링됨

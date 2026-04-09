@@ -31,8 +31,19 @@ Use this value directly in all `gh` commands.
 
 #### 1-2. Load Required Documents
 
-Always read:
-- `docs/MISTAKES.md`
+Always read (targeted):
+- `docs/MISTAKES.md` — read only the sections relevant to the fix scope:
+
+| Modified layer | MISTAKES.md sections to read |
+|---|---|
+| domain/ | Coding Paradigm, TypeScript, Domain Functions, Pure Function Contracts |
+| infrastructure/ | Coding Paradigm, TypeScript, Layer Dependencies |
+| components/ | Coding Paradigm, Components, Design & Cohesion |
+| components/chart/ | (above) + Lightweight Charts |
+| \_\_tests\_\_/ | Tests |
+| ESLint/format issues | ESLint |
+
+Multiple layers → read the union of their sections.
 
 Additional documents based on fix scope:
 - domain/ related → `docs/DOMAIN.md`
@@ -105,7 +116,59 @@ gh api repos/y0ngha/siglens/pulls/comments/{comment_id}/replies \
 #### 1-7. Apply Fixes
 
 Read all comments first, then apply all fixes in a single pass.
-Follow the same domain layer checklist as in `docs/ISSUE_IMPL_FLOW.md` Step 1-5.
+
+After applying, verify against the checklist matching each modified file type:
+
+**Domain Layer Checklist:**
+- [ ] No external library imports (technicalindicators, lodash, etc.)
+- [ ] Pure functions only (no fetch, console.log, Date.now())
+- [ ] Return types explicitly declared
+- [ ] Initial period values must be null (never 0 or NaN)
+- [ ] No for/while loops → use map, filter, reduce, flatMap
+- [ ] Maintain immutability (no push, reverse, sort — use spread, toReversed)
+- [ ] Path aliases (@/domain/... format)
+- [ ] No hardcoded literals → extract to constants
+
+**Component Layer Checklist:**
+- [ ] Hook declaration order: useState → useRef → useQuery/useMutation → derived (useMemo/const) → handlers → useLayoutEffect → useEffect → return
+- [ ] Props interface directly above component function
+- [ ] 'use client' only when hooks, handlers, or browser APIs are used
+- [ ] No infrastructure imports in .tsx files (hooks/ may import fetch functions only)
+- [ ] No lightweight-charts imports outside components/chart/
+
+**Test Layer Checklist:**
+- [ ] Test file exists for every new domain/infrastructure file
+- [ ] 100% branch coverage for infrastructure (all ?., ??, if/else paths)
+- [ ] describe/it text is human-readable, not code expressions
+- [ ] Period-based indicators include all 5 required test cases
+- [ ] No if-guarded assertions (unconditional expect only)
+
+**Infrastructure Layer Checklist:**
+- [ ] No reverse imports (infrastructure → app or domain → infrastructure)
+- [ ] Type imports from @/domain/types only
+- [ ] No console.log or debug artifacts
+- [ ] All conditional branches have dedicated test cases
+
+Only check the checklists for file types you actually modified.
+
+#### 1-7a. MISTAKES.md Targeted Self-Review
+
+For each file modified during the fix:
+
+1. Re-read the matching MISTAKES.md sections:
+
+   | File type | Sections to read |
+   |---|---|
+   | .tsx (component) | Components, Coding Paradigm |
+   | .ts (domain/) | Domain Functions, TypeScript, Coding Paradigm |
+   | .ts (infrastructure/) | TypeScript, Layer Dependencies |
+   | .test.ts | Tests |
+   | .tsx (chart/) | Components, Lightweight Charts |
+
+2. Verify each rule in those sections against the modified file.
+3. When fixing a pattern violation, verify the entire file for the same pattern —
+   not just the specific location mentioned in the review comment.
+4. Fix any violations found before proceeding to validation.
 
 #### 1-8. Run Validation Scripts
 

@@ -293,3 +293,50 @@ UPSTASH_REDIS_REST_READONLY_TOKEN=  # readonly 토큰 (읽기 전용, 없으면 
 ```
 
 `.env.local`에 작성. 절대 커밋하지 않는다.
+
+---
+
+## FMP (Financial Modeling Prep) API
+
+### 티커 심볼 검색
+
+```
+GET https://financialmodelingprep.com/stable/search-symbol?query={query}&limit=20&apikey={FMP_API_KEY}
+```
+
+### 회사명 검색
+
+```
+GET https://financialmodelingprep.com/stable/search-name?query={query}&limit=20&apikey={FMP_API_KEY}
+```
+
+### 응답 타입
+
+```typescript
+interface FmpSearchResult {
+    symbol: string;
+    name: string;
+    currency: string;
+    exchangeFullName: string;
+    exchange: string;
+}
+```
+
+### 환경변수
+
+```
+FMP_API_KEY=    # 필수. 없으면 검색 결과 빈 배열 반환
+```
+
+---
+
+## Gemini Translation API
+
+한국어 이름 매핑이 없는 종목을 fire-and-forget으로 번역.
+
+### 환경변수
+
+```
+TRANSLATE_API_KEY=              # 필수. 없으면 번역 비활성화
+TRANSLATE_MODEL=gemini-2.5-flash  # 기본값
+```

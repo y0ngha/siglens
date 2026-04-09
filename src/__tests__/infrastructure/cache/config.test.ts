@@ -1,6 +1,7 @@
 import {
     ANALYSIS_CACHE_TTL,
     buildAnalysisCacheKey,
+    buildTickerSearchCacheKey,
 } from '@/infrastructure/cache/config';
 import type { Timeframe } from '@/domain/types';
 
@@ -46,6 +47,25 @@ describe('buildAnalysisCacheKey 함수는', () => {
             testCases.forEach(([symbol, timeframe, expected]) => {
                 expect(buildAnalysisCacheKey(symbol, timeframe)).toBe(expected);
             });
+        });
+    });
+});
+
+describe('buildTickerSearchCacheKey 함수는', () => {
+    describe('정상 입력일 때', () => {
+        it('ticker:search:{query} 형식의 키를 반환한다', () => {
+            const key = buildTickerSearchCacheKey('aapl');
+            expect(key).toBe('ticker:search:aapl');
+        });
+
+        it('대문자 쿼리를 소문자로 변환한다', () => {
+            const key = buildTickerSearchCacheKey('AAPL');
+            expect(key).toBe('ticker:search:aapl');
+        });
+
+        it('혼합 대소문자 쿼리를 소문자로 변환한다', () => {
+            const key = buildTickerSearchCacheKey('Apple');
+            expect(key).toBe('ticker:search:apple');
         });
     });
 });

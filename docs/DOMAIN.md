@@ -15,6 +15,21 @@
 
 export type Timeframe = '1Min' | '5Min' | '15Min' | '1Hour' | '1Day';
 
+export interface TickerBase {
+    symbol: string;
+    name: string;
+    exchange: string;
+    exchangeFullName: string;
+}
+
+export interface KoreanTickerEntry extends TickerBase {
+    koreanName: string;
+}
+
+export interface TickerSearchResult extends TickerBase {
+    koreanName?: string;
+}
+
 export interface Bar {
     time: number;   // Unix timestamp (초)
     open: number;

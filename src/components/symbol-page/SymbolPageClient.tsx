@@ -7,7 +7,7 @@ import type { AnalysisResponse } from '@/domain/types';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
-import { SymbolSearch } from '@/components/search/SymbolSearch';
+import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { ChartContent } from '@/components/symbol-page/ChartContent';
 import { useTimeframeChange } from '@/components/symbol-page/hooks/useTimeframeChange';
 
@@ -49,7 +49,7 @@ export function SymbolPageClient({
                     </div>
                     <div className="flex items-center gap-3">
                         <div className="hidden md:block">
-                            <SymbolSearch size="sm" />
+                            <TickerAutocomplete size="sm" />
                         </div>
                         <div className="hidden sm:block">
                             <TimeframeSelector
