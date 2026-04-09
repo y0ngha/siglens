@@ -27,8 +27,9 @@ describe('filterUsExchanges', () => {
                 makeFmpResult({ exchange: 'NYSE' }),
                 makeFmpResult({ exchange: 'NASDAQ' }),
                 makeFmpResult({ exchange: 'AMEX' }),
+                makeFmpResult({ exchange: 'NYSEArca' }),
             ];
-            expect(filterUsExchanges(results)).toHaveLength(3);
+            expect(filterUsExchanges(results)).toHaveLength(4);
         });
     });
 

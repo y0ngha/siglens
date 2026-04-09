@@ -1,13 +1,14 @@
 # Fix Log
 
+## [PR #216 Round 9 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: `US_EXCHANGES` 튜플에 `'NYSEArca'`가 포함되어 있으나 테스트에서 누락
+- Rule: MISTAKES.md Tests #2 — 인프라 파일 100% 브랜치 커버리지 필수; 허용 거래소 상수의 모든 값이 테스트되어야 함
+- Context: `filterUsExchanges` 테스트가 NYSE/NASDAQ/AMEX만 검증하고 NYSEArca를 누락; 4개 모두 포함하도록 수정
+
 ## [PR #216 Round 8 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `navigate`에서 `setIsClosed(false)`로 설정해 선택 직후 드롭다운이 잠깐 열린 상태로 남을 수 있음
 - Rule: CONVENTIONS.md Predictability — 사용자 행동(종목 선택) 완료 후 UI 상태는 즉시 닫힘 상태여야 함
 - Context: `debouncedQuery`가 setTimeout으로 비워지기 전까지 `isOpen = !false && hasQuery = true`가 되어 이전 결과가 잠깐 노출; `setIsClosed(true)`로 수정
-
-- Violation: `seed()` 함수에서 `let newCount`, `let updatedCount` 가변 변수 + `for` 루프 + Map mutation 패턴 사용
-- Rule: CONVENTIONS.md Functional Programming — 가변 상태(`let`, push, mutation) 금지; `reduce`/Map 생성자 패턴 사용
-- Context: `scripts/sync-korean-tickers.ts`의 seed 함수가 카운트 집계에 `let` + for 루프, merge에 `entriesMap.set()` mutation 사용; `reduce` + `new Map([...])` 생성자로 교체
 
 ## [PR #216 Round 7 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `{isOpen && ...}` 블록 내부에서 `hasQuery`가 항상 `true`임에도 `&& hasQuery` 조건 유지 (dead code)
@@ -23,11 +24,6 @@
 - Rule: MISTAKES.md Coding Paradigm #10 — 복잡한 익명 표현식은 named helper로 추출; 동일 컴포넌트 내 핸들러 패턴 일관성 유지
 - Context: `navigate`, `handleChange`, `handleKeyDown`은 모두 `useCallback`으로 추출됐으나 검색 버튼 `onClick`만 인라인; `handleSearchClick`으로 추출
 
-
-## [PR #216 Round 4 | feat/196/ticker-autocomplete | 2026-04-09]
-- Violation: 모듈 레벨 `let cachedClient` 가변 상태로 싱글턴 캐싱
-- Rule: CONVENTIONS.md Functional Programming — 모듈 레벨 가변 변수(`let`) 지양; 생성 비용이 낮은 인스턴스는 매 호출마다 직접 생성
-- Context: `koreanTranslator.ts`의 `getClient()` 패턴이 `let cachedClient ??=` 로 캐싱했으나 `GoogleGenerativeAI` 생성 비용이 저렴하므로 함수 내부 인라인으로 변경
 
 ## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음
