@@ -117,23 +117,12 @@ Sub-agents do not call each other — you invoke them one at a time.
 ```
 User request
   → you read ISSUE_IMPL_FLOW.md
-  → you directly implement code
-  → invoke review-agent for code review
-  → if changes requested, you fix directly and re-invoke review-agent
-  → record each fix to docs/__agents_only__/fix-log.md
-    (skip if the violation is already documented in MISTAKES.md)
-  → invoke mistake-managing-agent → git-agent
 ```
 
 **PR fix flow** (read `docs/PR_FIX_FLOW.md` first):
 ```
 User request
   → you read PR_FIX_FLOW.md
-  → you fetch PR comments and apply fixes
-  → run yarn lint / yarn lint:style / yarn format / yarn build
-  → record fixes to docs/__agents_only__/fix-log.md
-    (skip if the violation is already documented in MISTAKES.md)
-  → invoke mistake-managing-agent → git-agent
   (review-agent is NOT invoked in PR fix flow)
 ```
 
