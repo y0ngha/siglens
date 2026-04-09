@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 
 import { isKoreanInput } from '@/domain/ticker';
@@ -37,15 +37,23 @@ export function TickerAutocomplete({
 
     const isOpen = !isClosed && hasQuery;
     const isKorean = isKoreanInput(query);
-    const inputClass = cn(
-        'bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1',
-        size === 'lg'
-            ? 'focus-glow w-full px-4 py-3 text-base sm:w-96'
-            : 'px-3 py-2 text-sm'
+    const inputClass = useMemo(
+        () =>
+            cn(
+                'bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1',
+                size === 'lg'
+                    ? 'focus-glow w-full px-4 py-3 text-base sm:w-96'
+                    : 'px-3 py-2 text-sm'
+            ),
+        [size]
     );
-    const buttonClass = cn(
-        'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors',
-        size === 'lg' ? 'px-6 py-3 text-base' : 'px-4 py-2 text-sm'
+    const buttonClass = useMemo(
+        () =>
+            cn(
+                'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors',
+                size === 'lg' ? 'px-6 py-3 text-base' : 'px-4 py-2 text-sm'
+            ),
+        [size]
     );
 
     const navigate = useCallback(
