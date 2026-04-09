@@ -1,5 +1,10 @@
 # Fix Log
 
+## [Issue #221 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
+- Violation: 새 infrastructure Server Action 파일(getAssetInfoAction.ts) 구현 후 테스트 파일 누락
+- Rule: 모든 infrastructure/ 파일은 대응하는 테스트 파일이 있어야 한다 (100% branch coverage target)
+- Context: 동일 패턴의 searchTickerAction.test.ts가 존재함에도 getAssetInfoAction.test.ts 작성을 누락
+
 ## [PR #220 | feat/219/action-recommendation | 2026-04-10]
 - Violation: RESPONSE_LANGUAGE_INSTRUCTION의 "Other text fields" 목록에 새 필드(positionAnalysis, entry, exit, riskReward) 누락
 - Rule: Prompt 일관성 — 한국어 작성 지시와 줄바꿈 지시 목록이 동기화되어야 함
