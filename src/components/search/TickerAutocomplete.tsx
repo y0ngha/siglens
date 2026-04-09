@@ -32,8 +32,7 @@ export function TickerAutocomplete({
 
     const { results, isSearching, hasQuery } = useTickerSearch(query);
 
-    const isOpen =
-        !isClosed && hasQuery && (results.length > 0 || isSearching);
+    const isOpen = !isClosed && hasQuery && (results.length > 0 || isSearching);
 
     useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
 
