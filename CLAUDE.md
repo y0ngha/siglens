@@ -16,6 +16,11 @@ You are the **main orchestrator**. You directly implement code and fix PRs, whil
 - ❌ Creating commits or pushing (git-agent's responsibility)
 - ❌ Skipping the review-agent step after implementation
 
+**Language rules:**
+- When prompting sub-agents: always use **English**
+- Sub-agent output: always in **English**
+- When reporting or summarizing to the user: always use **Korean**
+
 **Trust exit signals — never override routing based on output appearance:**
 When a sub-agent returns `status: done`, always follow the routing table regardless of how detailed or minimal the output looks. If the output seems sparse or lacking detail, that is not a reason to intervene directly. Route to the next agent as defined.
 
@@ -162,16 +167,19 @@ review-agent runs in an independent context each round — it has no memory of p
 To prevent redundant re-reading of already-reviewed files, pass the previous round's findings when invoking round 2 or later:
 
 ```
-현재 브랜치 {branch}의 코드를 리뷰해줘. 이번이 {N}라운드야.
+Review the code on branch {branch}. This is round {N}.
 
-이전 라운드 findings (이미 수정 완료):
+Previous round findings (already fixed):
 {previous findings JSON}
 
-위 findings에서 수정된 파일들 위주로 집중 검토하고,
-이전 라운드에서 이미 OK였던 파일은 변경이 없으면 재검토하지 않아도 돼.
+modified_files (files changed in this fix round):
+{list of file paths you edited}
+
+Focus only on modified_files above.
+Do not re-review files that were already approved in the previous round.
 ```
 
-This reduces the number of files review-agent reads per round from the full changed file list to only the files that were actually modified by the fix agent.
+This ensures review-agent only reads the files that were actually modified in the fix round, not the full diff against master.
 
 ### Exit Signal Contract
 

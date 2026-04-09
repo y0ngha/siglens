@@ -99,7 +99,7 @@ For every rejected comment, post a reply on GitHub:
 ```bash
 gh api repos/y0ngha/siglens/pulls/comments/{comment_id}/replies \
   -X POST \
-  -f body="해당 리뷰는 반영하지 않겠습니다. {거절 이유}"
+  -f body="This review comment will not be applied. {rejection reason}"
 ```
 
 #### 1-7. Apply Fixes
@@ -153,7 +153,7 @@ Record one entry per distinct violation. Rejected comments are not recorded.
 ### Step 2 — Invoke mistake-managing-agent
 
 ```
-"docs/__agents_only__/fix-log.md를 읽고 반복 위반 패턴을 MISTAKES.md에 반영해줘."
+"Read docs/__agents_only__/fix-log.md and promote recurring violation patterns to MISTAKES.md."
 ```
 
 Wait for exit signal.
@@ -166,7 +166,7 @@ status: failed → stop, report to user
 ### Step 3 — Invoke git-agent
 
 ```
-"PR #{N} 브랜치 {branch}에 수정사항을 커밋하고 푸시해줘."
+"Commit and push the fixes on branch {branch} for PR #{N}."
 ```
 
 Wait for exit signal.

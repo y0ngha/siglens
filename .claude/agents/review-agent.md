@@ -34,20 +34,30 @@ All internal evaluation must remain silent. The only permitted output is the exi
 
 Read `.claude/agent-memory/review-agent/MEMORY.md` and load all files listed in the index.
 
-### 1. Identify Changed Files and Read Them
+### 1. Determine Round and Identify Files to Read
 
-**Step 1 — Get the list of changed files only:**
+The orchestrator passes the round number in the prompt. Check which round applies:
+
+**Round 1 — Full review:**
 
 ```bash
 git diff master --name-only
 ```
 
-**Step 2 — Read each file using the Read tool:**
+Read each file using the Read tool. Do this for every file in the list.
 
-Use the Read tool to open each changed file directly. Do this for every file in the list.
+**Round 2+ — Incremental review:**
+
+The orchestrator provides an explicit `modified_files` list in the prompt.
+Read **only** the files in that list. Do not run `git diff master --name-only` again.
+
+If a finding from the previous round references a file not in `modified_files`,
+the file was not changed — skip re-reviewing it.
+
+**Common rules for all rounds:**
 
 ```
-❌ Never run: git diff master
+❌ Never run: git diff master (without --name-only)
 ❌ Never run: git diff master -- {file}
 ❌ Never use diff output as a substitute for actual file content
 ```
@@ -56,7 +66,7 @@ Use the Read tool to open each changed file directly. Do this for every file in 
 
 ### Excluded Directories
 
-Never read files under these directories — even if they appear in `git diff master --name-only`:
+Never read files under these directories — even if they appear in the file list:
 
 ```
 /docs/**
@@ -90,6 +100,8 @@ Additionally, based on changed file locations:
 | `src/components/*.tsx` changed | `docs/DESIGN.md` |
 | `src/infrastructure/ai/` or `src/infrastructure/market/` changed | `docs/API.md` |
 | Only `src/__tests__/` files changed, no source files | Skip all conditional docs |
+
+**Round 2+ note:** On round 2+, "changed file locations" refers to the `modified_files` list provided by the orchestrator, not the full diff.
 
 ---
 

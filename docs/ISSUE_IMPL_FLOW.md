@@ -156,7 +156,7 @@ If any step fails, fix the issue and re-run that step before continuing.
 ### Step 2 — Invoke review-agent (round 1)
 
 ```
-"현재 브랜치 {branch}의 코드를 리뷰해줘. 이번이 1라운드야."
+"Review the code on branch {branch}. This is round 1."
 ```
 
 Wait for exit signal.
@@ -188,16 +188,21 @@ Format:
 - Context: {one sentence describing where and why this happened in the code}
 ```
 
-Then re-invoke review-agent with round incremented:
+Then re-invoke review-agent with round incremented.
+**You must include the explicit `modified_files` list** — the files you actually edited during the fix.
+review-agent will only read these files, not the full diff.
 
 ```
-현재 브랜치 {branch}의 코드를 리뷰해줘. 이번이 {N}라운드야.
+Review the code on branch {branch}. This is round {N}.
 
-이전 라운드 findings (이미 수정 완료):
+Previous round findings (already fixed):
 {previous findings JSON}
 
-위 findings에서 수정된 파일들 위주로 집중 검토하고,
-이전 라운드에서 이미 OK였던 파일은 변경이 없으면 재검토하지 않아도 돼.
+modified_files (files changed in this fix round):
+{list of file paths you edited}
+
+Focus only on modified_files above.
+Do not re-review files that were already approved in the previous round.
 ```
 
 **Loop detection:** After each `changes_requested` signal, compare the new findings against the previous round's findings. If the same `required` finding (same file + same issue description) appears in two consecutive rounds, stop immediately and report to the user.
@@ -207,7 +212,7 @@ Then re-invoke review-agent with round incremented:
 ### Step 3 — Invoke mistake-managing-agent
 
 ```
-"docs/__agents_only__/fix-log.md를 읽고 반복 위반 패턴을 MISTAKES.md에 반영해줘."
+"Read docs/__agents_only__/fix-log.md and promote recurring violation patterns to MISTAKES.md."
 ```
 
 Wait for exit signal.
@@ -220,7 +225,7 @@ status: failed → stop, report to user
 ### Step 4 — Invoke git-agent
 
 ```
-"브랜치 {branch}의 구현을 커밋하고 PR을 열어줘. 이슈 제목: {issue title}"
+"Commit the implementation on branch {branch} and open a PR. Issue title: {issue title}"
 ```
 
 Wait for exit signal.
