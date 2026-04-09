@@ -3,13 +3,6 @@ import { stripMarkdownCodeBlock } from '@/infrastructure/ai/utils';
 
 const DEFAULT_TRANSLATE_MODEL = 'gemini-2.5-flash';
 
-let cachedClient: GoogleGenerativeAI | null = null;
-
-function getClient(apiKey: string): GoogleGenerativeAI {
-    cachedClient ??= new GoogleGenerativeAI(apiKey);
-    return cachedClient;
-}
-
 interface TranslateEntry {
     symbol: string;
     name: string;
@@ -34,7 +27,9 @@ Companies:
 ${entryList}`;
 
     try {
-        const genModel = getClient(apiKey).getGenerativeModel({ model });
+        const genModel = new GoogleGenerativeAI(apiKey).getGenerativeModel({
+            model,
+        });
         const result = await genModel.generateContent(prompt);
         const text = result.response.text();
         // JSON.parse returns `any`; type guard for Record<string, string> is not feasible

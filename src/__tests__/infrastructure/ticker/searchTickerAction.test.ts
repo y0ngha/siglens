@@ -135,6 +135,21 @@ describe('searchTickerAction', () => {
         });
     });
 
+    describe('영어 쿼리이고 캐시 GET 중 에러가 발생할 때', () => {
+        it('에러를 삼키고 FMP API를 호출한다', async () => {
+            mockCacheGet.mockRejectedValueOnce(
+                new Error('Redis connection error')
+            );
+            const symbolResult = makeResult('AAPL');
+            mockSearchBySymbol.mockResolvedValueOnce([symbolResult]);
+            mockSearchByName.mockResolvedValueOnce([]);
+
+            const result = await searchTickerAction('AAPL');
+            expect(result).toHaveLength(1);
+            expect(mockSearchBySymbol).toHaveBeenCalledWith('AAPL');
+        });
+    });
+
     describe('영어 쿼리이고 캐시 미스일 때', () => {
         it('FMP API를 병렬로 호출한다', async () => {
             mockCacheGet.mockResolvedValueOnce(null);
