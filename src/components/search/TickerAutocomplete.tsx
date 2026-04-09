@@ -32,10 +32,10 @@ export function TickerAutocomplete({
     const router = useRouter();
     const { results, isSearching, hasQuery } = useTickerSearch(query);
 
-    useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
-
     const isOpen = !isClosed && hasQuery;
     const isKorean = isKoreanInput(query);
+
+    useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
 
     const navigate = useCallback(
         (symbol: string) => {

@@ -19,13 +19,13 @@ interface UseTickerSearchResult {
 export function useTickerSearch(query: string): UseTickerSearchResult {
     const [debouncedQuery, setDebouncedQuery] = useState('');
 
-    const isDebouncedQueryReady = debouncedQuery.length >= MIN_QUERY_LENGTH;
-
     const { data, isFetching } = useQuery({
         queryKey: QUERY_KEYS.tickerSearch(debouncedQuery),
         queryFn: () => searchTickerAction(debouncedQuery),
-        enabled: isDebouncedQueryReady,
+        enabled: debouncedQuery.length >= MIN_QUERY_LENGTH,
     });
+
+    const isDebouncedQueryReady = debouncedQuery.length >= MIN_QUERY_LENGTH;
 
     useEffect(() => {
         const isLongEnough = query.length >= MIN_QUERY_LENGTH;

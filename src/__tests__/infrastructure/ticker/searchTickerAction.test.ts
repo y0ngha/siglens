@@ -199,6 +199,25 @@ describe('searchTickerAction', () => {
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(mockTranslateCompanyNames).toHaveBeenCalled();
         });
+
+        it('번역 결과에 unmapped에 없는 심볼이 포함되어도 해당 항목을 무시한다', async () => {
+            const symbolResult = makeResult('UNKNOWN');
+            mockSearchBySymbol.mockResolvedValueOnce([symbolResult]);
+            mockSearchByName.mockResolvedValueOnce([]);
+            mockGetKoreanNames.mockResolvedValueOnce({});
+            mockTranslateCompanyNames.mockResolvedValue({
+                UNKNOWN: '언노운',
+                EXTRA: '엑스트라',
+            });
+
+            await searchTickerAction('UNKNOWN');
+
+            await new Promise(resolve => setTimeout(resolve, 0));
+            const savedEntries = mockSetKoreanTickers.mock.calls[0]?.[0] as
+                | Array<{ symbol: string }>
+                | undefined;
+            expect(savedEntries?.every(e => e.symbol !== 'EXTRA')).toBe(true);
+        });
     });
 
     describe('캐시 provider를 사용할 수 없을 때', () => {

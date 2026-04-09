@@ -18,6 +18,7 @@ export function filterUsExchanges(
     results: FmpSearchResult[]
 ): FmpSearchResult[] {
     return results.filter(r =>
+        // TypeScript: readonly tuple의 .includes()는 정확한 literal 타입만 허용하므로 string으로 단언
         (US_EXCHANGES as readonly string[]).includes(r.exchange)
     );
 }

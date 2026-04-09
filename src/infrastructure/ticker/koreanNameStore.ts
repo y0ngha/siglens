@@ -5,7 +5,9 @@ import {
 } from '@/infrastructure/cache/config';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/domain/types';
 
-function toTickerSearchResult(entry: KoreanTickerEntry): TickerSearchResult {
+function koreanEntryToSearchResult(
+    entry: KoreanTickerEntry
+): TickerSearchResult {
     return {
         symbol: entry.symbol,
         name: entry.name,
@@ -39,7 +41,7 @@ export async function searchByKoreanName(
         .filter(entry =>
             entry.koreanName.toLowerCase().includes(normalizedQuery)
         )
-        .map(toTickerSearchResult);
+        .map(koreanEntryToSearchResult);
 }
 
 export async function getKoreanNames(
