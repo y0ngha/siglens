@@ -3,14 +3,14 @@
 ## Orchestration Rules
 
 You (the main orchestrator) own this workflow end-to-end.
-Invoke agents one at a time, read their exit signal, and route accordingly.
+You **directly fix** PR review comments, then invoke sub-agents for mistake management and git operations.
 Never ask the user "shall I proceed?" between steps — route automatically.
 
 ### Routing Table
 
 | Signal received | Next action |
 |---|---|
-| `pr-fix-agent` · `status: done` | Invoke `mistake-managing-agent` |
+| Your fixes complete | Invoke `mistake-managing-agent` |
 | `mistake-managing-agent` · `status: done` | Invoke `git-agent` |
 | `git-agent` · `status: done` | Report completion to user and stop |
 | Any · `status: failed` | Stop and report the failure reason to user |
@@ -19,18 +19,136 @@ Never ask the user "shall I proceed?" between steps — route automatically.
 
 ## Step-by-Step Flow
 
-### Step 1 — Invoke pr-fix-agent
+### Step 1 — Direct PR Fix
+
+#### 1-1. Repository
 
 ```
-"PR #{N}의 리뷰 코멘트를 확인하고 수정해줘."
+REPO=y0ngha/siglens
 ```
 
-Wait for exit signal.
+Use this value directly in all `gh` commands.
 
+#### 1-2. Load Required Documents
+
+Always read:
+- `docs/MISTAKES.md`
+
+Additional documents based on fix scope:
+- domain/ related → `docs/DOMAIN.md`
+- infrastructure/ → `docs/API.md`
+- components/ → `docs/DESIGN.md`
+
+#### 1-3. Understand PR Context
+
+```bash
+gh pr view {PR number} --repo y0ngha/siglens
 ```
-status: done   → proceed to Step 2
-status: failed → stop, report to user
+
+**If the PR cannot be found, stop and report to user.**
+
+#### 1-4. Check Out Head Branch
+
+```bash
+# Get head branch name
+gh pr view {PR number} --json headRefName --repo y0ngha/siglens | jq -r '.headRefName'
+
+git fetch origin '{head branch name}'
+git checkout '{head branch name}'
 ```
+
+#### 1-5. Fetch Review Comments After the Latest Commit
+
+Always use `jq` for JSON parsing. Never use `$()` command substitution — store intermediate values to a temp file instead.
+
+```bash
+# Step 1: Save the latest commit timestamp to a temp file
+gh api repos/y0ngha/siglens/pulls/{PR number}/commits \
+  | jq -r '.[-1].commit.committer.date' > /tmp/latest_commit_date.txt
+
+# Step 2: Filter inline comments created after the latest commit
+gh api repos/y0ngha/siglens/pulls/{PR number}/comments \
+  | jq --rawfile since /tmp/latest_commit_date.txt \
+    '[.[] | select(.created_at > ($since | rtrimstr("\n"))) | {id: .id, path: .path, line: .line, body: .body}]'
+
+# Step 3: Filter reviews submitted after the latest commit
+gh api repos/y0ngha/siglens/pulls/{PR number}/reviews \
+  | jq --rawfile since /tmp/latest_commit_date.txt \
+    '[.[] | select(.submitted_at > ($since | rtrimstr("\n"))) | {id: .id, state: .state, submitted_at: .submitted_at, body: .body}]'
+
+# Step 4: Only fetch per-review inline comments when Step 3 body is empty AND inline context (path/line) is required
+gh api repos/y0ngha/siglens/pulls/{PR number}/reviews/{review_id}/comments \
+  | jq '[.[] | {path: .path, line: .line, body: .body}]'
+```
+
+If no comments exist after the latest commit, stop and report to user — there is nothing to fix.
+
+#### 1-6. Comment Triage
+
+**Do not apply fixes immediately.** Evaluate every comment before touching any code.
+
+Reject a comment (do not apply the fix) if any of the following is true:
+
+1. **Conflicts with CONVENTIONS.md** — Convention takes precedence.
+2. **Violates FF Principles** — Applying the change would degrade Readability, Predictability, Cohesion, or Coupling.
+3. **Breaks Layer Architecture** — Violates dependency rules in `docs/ARCHITECTURE.md`.
+4. **Matches a Known Mistake Pattern** — Already documented in `docs/MISTAKES.md` as a pattern to avoid.
+5. **Reviewer Lacks Project Context** — Unaware of an intentional design decision or constraint.
+
+For every rejected comment, post a reply on GitHub:
+```bash
+gh api repos/y0ngha/siglens/pulls/comments/{comment_id}/replies \
+  -X POST \
+  -f body="해당 리뷰는 반영하지 않겠습니다. {거절 이유}"
+```
+
+#### 1-7. Apply Fixes
+
+Read all comments first, then apply all fixes in a single pass.
+Follow the same domain layer checklist as in `docs/ISSUE_IMPL_FLOW.md` Step 1-5.
+
+#### 1-8. Run Validation Scripts
+
+Run in order. Each must pass before proceeding.
+
+```bash
+# Always run
+yarn lint
+yarn lint:style
+yarn format 2>&1 | grep -v "unchanged"
+```
+
+```bash
+# Run only if .ts or .tsx files were modified
+git diff --name-only HEAD | grep -E '\.(ts|tsx)$' | xargs -I{} \
+  yarn test --testPathPattern={} --passWithNoTests 2>&1 | tail -30
+```
+
+```bash
+# Always run last
+yarn build 2>&1 | tail -20
+```
+
+If any step fails, fix the issue and re-run.
+
+#### 1-9. Record to Fix Log
+
+Append each fix to `docs/__agents_only__/fix-log.md`. Create the file if it does not exist.
+
+**Before recording any entry, check `docs/MISTAKES.md` first.**
+If the violation is already documented there, **skip that entry entirely**.
+
+Format:
+```md
+## [PR #{number} | {branch name} | {date YYYY-MM-DD}]
+- Violation: {short description of what rule was violated}
+- Rule: {which rule from CONVENTIONS.md / MISTAKES.md / FF.md was violated}
+- Context: {one sentence describing where and why this happened in the code}
+```
+
+Record one entry per distinct violation. Rejected comments are not recorded.
+
+---
 
 ### Step 2 — Invoke mistake-managing-agent
 

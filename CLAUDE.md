@@ -1,27 +1,23 @@
 # Siglens — CLAUDE.md
 
-## ⚠️ Mandatory Delegation Rules (Read This First)
+## ⚠️ Mandatory Rules (Read This First)
 
-You are the **main orchestrator**. You coordinate sub-agents — you never write code, run tests, or make git operations yourself.
+You are the **main orchestrator**. You directly implement code and fix PRs, while delegating review, git operations, and other auxiliary tasks to sub-agents.
 
-**When you receive any of the following requests, you MUST delegate to sub-agents. Never handle them directly.**
+**When you receive any of the following requests, follow the corresponding action:**
 
 | Request type                           | Action |
 |----------------------------------------|---|
-| Issue number + implementation intent   | Read `docs/ISSUE_IMPL_FLOW.md` → invoke `implementation-agent` |
-| PR number + fix intent | Read `docs/PR_FIX_FLOW.md` → invoke `pr-fix-agent` |
+| Issue number + implementation intent   | Read `docs/ISSUE_IMPL_FLOW.md` → **directly implement** |
+| PR number + fix intent | Read `docs/PR_FIX_FLOW.md` → **directly fix** |
 | Issue creation request (feature / bug / refactoring) | Invoke `issue-agent` with the provided context |
 
 **Prohibited actions for the main orchestrator:**
-- ❌ Writing or editing source code
-- ❌ Running `yarn test`, `yarn lint`, `yarn build`
-- ❌ Creating branches or commits
-- ❌ Reading issue details and implementing them yourself
+- ❌ Creating commits or pushing (git-agent's responsibility)
+- ❌ Skipping the review-agent step after implementation
 
 **Trust exit signals — never override routing based on output appearance:**
-When a sub-agent returns `status: done`, always follow the routing table regardless of how detailed or minimal the output looks. If the output seems sparse or lacking detail, that is not a reason to intervene directly. Stepping in to fix, edit, or re-check the work yourself is prohibited — route to the next agent as defined.
-
-If you are unsure whether to delegate, **always delegate**.
+When a sub-agent returns `status: done`, always follow the routing table regardless of how detailed or minimal the output looks. If the output seems sparse or lacking detail, that is not a reason to intervene directly. Route to the next agent as defined.
 
 ---
 
@@ -107,16 +103,18 @@ Read the relevant documents before beginning. Rules defined in these documents m
 
 ### Your Role: Main Orchestrator
 
-You are the main orchestrator. Sub-agents do not call each other.
-You invoke sub-agents one at a time, read their exit signal, and decide what to invoke next.
+You are the main orchestrator. You directly implement code and fix PRs.
+Sub-agents handle review, git operations, mistake management, and issue creation.
+Sub-agents do not call each other — you invoke them one at a time.
 **Never ask the user for confirmation between steps — route automatically.**
 
 ```
 User request
   → you read the relevant FLOW doc
-  → invoke sub-agent
-  → sub-agent emits exit signal and stops
-  → you read the signal and route to the next sub-agent
+  → you directly implement / fix code
+  → invoke review-agent for code review
+  → if changes requested, you fix directly and re-invoke review-agent
+  → invoke remaining sub-agents (mistake-managing, git) per routing table
   → repeat until the workflow is complete
 ```
 
@@ -127,9 +125,7 @@ and must not perform work outside its scope.
 
 | Agent | Model  | Responsibility                                                                      |
 |---|--------|-------------------------------------------------------------------------------------|
-| `implementation-agent` | Sonnet | Issue implementation and test writing                                               |
 | `review-agent` | Sonnet | Code review — returns findings only, never modifies code                            |
-| `pr-fix-agent` | Sonnet | Applying PR review comment fixes                                                    |
 | `mistake-managing-agent` | Haiku  | Reads docs/__agents_only__/fix-log.md, promotes recurring violations to MISTAKES.md |
 | `git-agent` | Haiku  | Commits, pushes, PR creation — never modifies code                                  |
 | `issue-agent` | Haiku  | Creates GitHub issues using the appropriate template — never modifies code           |
@@ -140,20 +136,19 @@ When you receive an exit signal, route as follows:
 
 | Signal | Route to |
 |---|---|
-| `implementation-agent` · `status: done` | `review-agent` |
-| `pr-fix-agent` · `status: done` | `mistake-managing-agent` |
-| `review-agent` · `status: approved` | `mistake-managing-agent` |
-| `review-agent` · `status: changes_requested` | `implementation-agent` with findings |
+| Implementation / PR fix complete | Invoke `review-agent` |
+| `review-agent` · `status: approved` | Invoke `mistake-managing-agent` |
+| `review-agent` · `status: changes_requested` | **You** fix the findings directly, then re-invoke `review-agent` |
 | `review-agent` · `status: loop_limit_reached` | Stop — report to user |
-| `mistake-managing-agent` · `status: done` | `git-agent` |
+| `mistake-managing-agent` · `status: done` | Invoke `git-agent` |
 | `git-agent` · `status: done` | Stop — report result to user |
 | Any · `status: failed` | Stop — report failure reason to user |
 
 ### Handling Findings
 
-When passing findings to a fix agent, always include both `required` and `recommended` findings — fix all of them.
+When review-agent returns findings, fix both `required` and `recommended` findings directly.
 
-**Skip a finding (and do not pass to fix agent) only if it is:**
+**Skip a finding only if it is:**
 - A false positive — the code is correct and the concern does not apply in context
 - Too trivial to justify a fix — e.g. minor comment wording with no functional or readability impact
 
@@ -183,18 +178,6 @@ This reduces the number of files review-agent reads per round from the full chan
 Every sub-agent ends its response with a JSON exit signal and nothing else.
 
 ```json
-// implementation-agent — success
-{ "agent": "implementation-agent", "status": "done", "branch": "..." }
-
-// implementation-agent — failure
-{ "agent": "implementation-agent", "status": "failed", "reason": "..." }
-
-// pr-fix-agent — success
-{ "agent": "pr-fix-agent", "status": "done", "pr": 23, "branch": "..." }
-
-// pr-fix-agent — failure
-{ "agent": "pr-fix-agent", "status": "failed", "reason": "..." }
-
 // review-agent — approved
 { "agent": "review-agent", "status": "approved" }
 
@@ -222,7 +205,7 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 
 ### Workflow Reference
 
-For the full step-by-step flow, **read the relevant doc before invoking any agent**:
+For the full step-by-step flow, **read the relevant doc before starting work**:
 - `docs/ISSUE_IMPL_FLOW.md` — issue number + implementation request
 - `docs/PR_FIX_FLOW.md` — PR number + fix request
 

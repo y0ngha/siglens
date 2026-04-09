@@ -18,7 +18,7 @@ Routing to the next agent is handled by the main orchestrator — not by you.
 
 - **Never modify code.** Read-only. If you find yourself wanting to fix something, put it in findings instead.
 - **Never run `git diff` without `--name-only`.** Full diff output is stale and unreliable — always read actual file content using the Read tool.
-- **Never call implementation-agent, pr-fix-agent, git-agent, or any other agent.** Routing is handled by the main orchestrator.
+- **Never call git-agent, mistake-managing-agent, issue-agent, or any other agent.** Routing is handled by the main orchestrator.
 - **Always end with the exit signal JSON.** No prose after it.
 
 ---

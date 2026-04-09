@@ -3,17 +3,18 @@
 ## Orchestration Rules
 
 You (the main orchestrator) own this workflow end-to-end.
-Invoke agents one at a time, read their exit signal, and route accordingly.
+You **directly implement** code, then invoke sub-agents for review and git operations.
 Never ask the user "shall I proceed?" between steps — route automatically.
 
 ### Routing Table
 
 | Signal received | Next action |
 |---|---|
-| `implementation-agent` · `status: done` | Invoke `review-agent` (round 1) |
-| `review-agent` · `status: approved` | Invoke `git-agent` |
-| `review-agent` · `status: changes_requested` | Invoke `implementation-agent` with findings (Type B) |
+| Your implementation complete | Invoke `review-agent` (round 1) |
+| `review-agent` · `status: approved` | Invoke `mistake-managing-agent` |
+| `review-agent` · `status: changes_requested` | **You** fix findings directly, then re-invoke `review-agent` |
 | `review-agent` · `status: loop_limit_reached` | Stop and report to user |
+| `mistake-managing-agent` · `status: done` | Invoke `git-agent` |
 | `git-agent` · `status: done` | Report PR URL to user and stop |
 | Any · `status: failed` | Stop and report the failure reason to user |
 
@@ -21,18 +22,136 @@ Never ask the user "shall I proceed?" between steps — route automatically.
 
 ## Step-by-Step Flow
 
-### Step 1 — Invoke implementation-agent (Type A)
+### Step 1 — Direct Implementation
+
+#### 1-1. Repository
 
 ```
-"이슈 #{N}을 구현해줘."
+REPO=y0ngha/siglens
 ```
 
-Wait for exit signal.
+Use this value directly in all `gh` commands.
 
+#### 1-2. Load Required Documents
+
+Always read:
+- `docs/MISTAKES.md`
+
+Additional documents by scope:
+- domain/ related → `docs/DOMAIN.md` + `docs/ARCHITECTURE.md`
+- infrastructure/ → `docs/API.md` + `docs/ARCHITECTURE.md`
+- components/ → `docs/DESIGN.md` + `docs/ARCHITECTURE.md`
+- Layer structure check needed → `docs/ARCHITECTURE.md`
+
+Read existing similar implementations first for pattern recognition:
+```bash
+# e.g. When implementing MA, check EMA first
+# src/domain/indicators/ema.ts
+# src/__tests__/domain/indicators/ema.test.ts
 ```
-status: done   → proceed to Step 2
-status: failed → stop, report to user
+
+#### 1-3. Understand the Issue
+
+```bash
+gh issue view {number} --repo y0ngha/siglens
 ```
+
+**If the issue cannot be found, stop and report to user.**
+
+Verify:
+- Implementation scope: which layers are touched (domain, infrastructure, app, components)
+- File paths to create or modify
+- Function signatures and feature specifications
+- Reference docs: read only items checked (`[x]`) in the issue body
+- Completion criteria
+
+#### 1-4. Create Branch
+
+```bash
+git checkout master && git pull origin master
+git checkout -b {type}/{issue number}/{one-line summary}
+```
+
+Branch naming: `feat/2/도메인-공통-타입-정의`, `refactor/32/candlestick-pattern-domain-분리` format. Korean allowed, spaces replaced with hyphens.
+
+| Type | When to use |
+|---|---|
+| `feat` | New feature or capability |
+| `refactor` | Code restructuring without behavior change |
+| `chore` | Build, config, dependency changes |
+| `docs` | Documentation only |
+| `test` | Test additions or fixes |
+| `style` | Formatting, naming, no logic change |
+
+#### 1-5. Implement Code + Tests
+
+**Domain Layer Checklist** — verify after implementation:
+- [ ] No external library imports (technicalindicators, lodash, etc. are all prohibited)
+- [ ] Pure functions only (no fetch, console.log, Date.now())
+- [ ] Return types must be explicitly declared
+- [ ] Initial period values must be null (never 0 or NaN — 0 renders as invalid data in charts)
+- [ ] No for/while loops → use map, filter, reduce, flatMap
+- [ ] Maintain immutability (no bars.push → use [...bars, newBar])
+- [ ] Use path aliases (@/domain/... format)
+- [ ] No hardcoded literals → extract to constants (domain/indicators/constants.ts)
+
+**Test writing** — file locations:
+```
+src/__tests__/domain/indicators/rsi.test.ts
+src/__tests__/infrastructure/market/alpaca.test.ts
+```
+
+Required test cases for period-based indicators:
+- Empty array → return empty array
+- Input shorter than period → all null
+- Initial null range → first `period - 1` values are null
+- Valid value range → non-null numbers after the period-th index
+- Calculation accuracy → first computed value matches specification
+
+When creating new files under `domain/indicators/`, add export to `src/domain/indicators/index.ts`.
+
+**Documentation updates** — if the change falls into:
+
+| Change Type | Document to Update |
+|---|---|
+| New type or interface added | `docs/DOMAIN.md` |
+| New indicator implemented | `docs/DOMAIN.md` |
+| External API usage changed | `docs/API.md` |
+| Layer structure or folder layout changed | `docs/ARCHITECTURE.md` |
+| New coding convention established | `docs/CONVENTIONS.md` |
+
+#### 1-6. MISTAKES.md Self-Review
+
+Before running validation, review the implemented code against `docs/MISTAKES.md`.
+Go through each section and check whether the current implementation violates any rule.
+Fix any violations found before proceeding.
+
+#### 1-7. Run Validation Scripts
+
+Run in order. Each must pass before proceeding to the next.
+
+```bash
+# Always run — catch style and format issues first
+yarn lint
+yarn lint:style
+yarn format 2>&1 | grep -v "unchanged"
+```
+
+```bash
+# Run only if .ts or .tsx files were modified
+# Use --passWithNoTests to avoid failure when no matching test files exist
+git diff --name-only HEAD | grep -E '\.(ts|tsx)$' | xargs -I{} \
+  yarn test --testPathPattern={} --passWithNoTests 2>&1 | tail -30
+```
+
+```bash
+# Always run last — confirms the full build is clean
+yarn build 2>&1 | tail -20
+```
+
+If any step fails, fix the issue and re-run that step before continuing.
+
+---
 
 ### Step 2 — Invoke review-agent (round 1)
 
@@ -48,31 +167,57 @@ status: changes_requested  → proceed to Step 2a
 status: loop_limit_reached → stop, report to user
 ```
 
-#### Step 2a — Findings exist: invoke implementation-agent (Type B)
+#### Step 2a — Findings exist: fix directly
+
+Fix both `required` and `recommended` findings directly.
+After fixing, re-run validation (Step 1-7), then record to fix-log (Step 2b).
+
+#### Step 2b — Record to Fix Log
+
+Append each fix to `docs/__agents_only__/fix-log.md`. Create the file if it does not exist.
+
+**Before recording any entry, check `docs/MISTAKES.md` first.**
+If the violation is already documented there (same rule, same pattern), **skip that entry entirely**.
+Only record violations that are not yet covered by an existing MISTAKES.md rule.
+
+Format:
+```md
+## [Issue #{number} | {branch name} | {date YYYY-MM-DD}]
+- Violation: {short description of what rule was violated}
+- Rule: {which rule from CONVENTIONS.md / MISTAKES.md / FF.md was violated}
+- Context: {one sentence describing where and why this happened in the code}
+```
+
+Then re-invoke review-agent with round incremented:
 
 ```
-"리뷰 결과 수정이 필요해. 이슈를 다시 읽지 말고 아래 findings만 수정해줘.
-브랜치: {branch}
-findings: {findings JSON from review-agent}"
+현재 브랜치 {branch}의 코드를 리뷰해줘. 이번이 {N}라운드야.
+
+이전 라운드 findings (이미 수정 완료):
+{previous findings JSON}
+
+위 findings에서 수정된 파일들 위주로 집중 검토하고,
+이전 라운드에서 이미 OK였던 파일은 변경이 없으면 재검토하지 않아도 돼.
+```
+
+**Loop detection:** After each `changes_requested` signal, compare the new findings against the previous round's findings. If the same `required` finding (same file + same issue description) appears in two consecutive rounds, stop immediately and report to the user.
+
+---
+
+### Step 3 — Invoke mistake-managing-agent
+
+```
+"docs/__agents_only__/fix-log.md를 읽고 반복 위반 패턴을 MISTAKES.md에 반영해줘."
 ```
 
 Wait for exit signal.
 
 ```
-status: done   → return to Step 2 with round incremented by 1
+status: done   → proceed to Step 4
 status: failed → stop, report to user
 ```
 
-**Round tracking:** pass the incremented round number each time review-agent is invoked.
-```
-1st review → "이번이 1라운드야"
-2nd review → "이번이 2라운드야"
-3rd review → "이번이 3라운드야"
-```
-
-**Loop detection:** After each `changes_requested` signal, compare the new findings against the previous round's findings. If the same `required` finding (same file + same issue description) appears in two consecutive rounds, stop immediately and report to the user — do not invoke implementation-agent again. This indicates a false positive loop where review-agent is repeatedly flagging already-fixed code without reading the actual file state.
-
-### Step 3 — Invoke git-agent (Case 1)
+### Step 4 — Invoke git-agent
 
 ```
 "브랜치 {branch}의 구현을 커밋하고 PR을 열어줘. 이슈 제목: {issue title}"
