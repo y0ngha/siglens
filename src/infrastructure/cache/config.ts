@@ -26,3 +26,9 @@ export function buildAnalysisCacheKey(
 export function buildTickerSearchCacheKey(query: string): string {
     return `ticker:search:${query.toLowerCase()}`;
 }
+
+export const ASSET_INFO_CACHE_TTL = 365 * 24 * 60 * 60;
+
+export function buildAssetInfoCacheKey(symbol: string): string {
+    return `asset-info:${symbol.toUpperCase()}`;
+}

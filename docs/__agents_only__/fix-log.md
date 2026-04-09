@@ -1,5 +1,33 @@
 # Fix Log
 
+## [PR #222 Round 5 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
+- Violation: 테스트에서 `makeFmpResult("AAPL.A")`로 생성 직후 `otherResult.symbol = "AAPL.A"` 재할당 — dead code 뮤테이션
+- Rule: CONVENTIONS.md FP 불변성 — 객체 생성 후 직접 뮤테이션 금지; 이미 설정된 값을 재할당하는 것은 효과 없는 코드
+- Context: `makeFmpResult`가 이미 `symbol: "AAPL.A"`로 생성하므로 다음 줄 재할당은 무의미; 삭제
+
+- Violation: `!!assetInfo?.name`이 `AssetInfo.name`이 required 필드임에도 불필요하게 `.name` 접근
+- Rule: FF.md Predictability — 타입 시스템이 보장하는 사실을 조건식에 명시적으로 표현해야 함
+- Context: `assetInfo`가 정의되어 있으면 `name`은 항상 truthy이므로 `!!assetInfo`로 단순화
+
+## [PR #222 Round 3 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
+- Violation: SymbolPageClient.tsx에서 symbol.toUpperCase()를 3회, assetInfo.name !== symbol.toUpperCase() 조건을 2회 반복
+- Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값은 한 번만 계산하고 const로 추출
+- Context: JSX 렌더 함수 내에서 파생 상수를 추출하지 않고 동일 표현식을 인라인으로 반복
+
+## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
+- Violation: components/hooks/ 파일에 'use client' 선언 누락
+- Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
+- Context: useAssetInfo.ts 작성 시 useTimeframeChange 등 기존 훅 파일에서 패턴을 확인하지 않아 누락
+
+- Violation: 서버 prefetchQuery 키와 클라이언트 훅 키 불일치 (hydration 캐시 미스)
+- Rule: React Query Hydration 패턴 — prefetchQuery 키와 useQuery 키가 정확히 일치해야 함
+- Context: 서버는 ticker(대문자)로 키를 만들고 클라이언트는 symbol(원본)로 키를 만들어 소문자 URL 진입 시 캐시 미스 발생
+
+## [Issue #221 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
+- Violation: 새 infrastructure Server Action 파일(getAssetInfoAction.ts) 구현 후 테스트 파일 누락
+- Rule: 모든 infrastructure/ 파일은 대응하는 테스트 파일이 있어야 한다 (100% branch coverage target)
+- Context: 동일 패턴의 searchTickerAction.test.ts가 존재함에도 getAssetInfoAction.test.ts 작성을 누락
+
 ## [PR #220 | feat/219/action-recommendation | 2026-04-10]
 - Violation: RESPONSE_LANGUAGE_INSTRUCTION의 "Other text fields" 목록에 새 필드(positionAnalysis, entry, exit, riskReward) 누락
 - Rule: Prompt 일관성 — 한국어 작성 지시와 줄바꿈 지시 목록이 동기화되어야 함
@@ -30,10 +58,6 @@
 - Rule: 코드베이스에 import되지 않는 파일은 데드 코드 — PR에서 교체 시 구 파일 삭제 필수
 - Context: `SymbolSearch`가 `TickerAutocomplete`로 교체됐지만 `src/components/search/SymbolSearch.tsx`가 미삭제 상태로 남아 있었음
 
-- Violation: `cache.get()` 호출 시 예외 처리 누락으로 Redis 장애 시 액션 전체 실패
-- Rule: CONVENTIONS.md Graceful Degradation — 외부 의존성 호출은 동일 파일 내 다른 패턴과 일관되게 try-catch로 감싸야 함
-- Context: `searchTickerAction.ts`의 캐시 조회는 try-catch 없었으나, 동일 파일의 캐시 set과 `koreanNameStore.ts`의 `loadAllEntries()`는 모두 try-catch 처리됨
-
 ## [예시 항목 | 브랜치명 | 날짜]
 - Violation: 예시
 - Rule: 예시
@@ -52,30 +76,18 @@
 - Context: `useTimeframeChange`의 `startTransition` 내부에서 Suspense가 트리거되는 동안 render-phase setState가 Router context 업데이트와 충돌했음; `timeframeChangeCount` 관리를 `handleTimeframeChange` 이벤트 핸들러 안으로 이동하여 해결
 
 
-## [fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
-- Violation: `mutationFn` passed `AnalyzeMutationVariables` (which includes `force: boolean`) directly to `analyzeAction`, whose first parameter is typed as `AnalyzeVariables` (no `force` field), causing a TypeScript excess property error
-- Rule: CONVENTIONS.md — UI-layer concerns must not bleed into infrastructure-layer types; Server Action parameters must match declared types exactly
-- Context: `useAnalysis.ts` passed the full mutation variable object (including `force`) directly to `analyzeAction`; fixed by destructuring `{ force, ...analyzeVars }` and passing `analyzeVars` as the first argument
-
 ## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
 - Violation: `ChartContent.tsx`(`components/symbol-page/`)에서 `lightweight-charts`의 `IChartApi` 타입을 직접 import하여 `symbol-page` 레이어가 차트 라이브러리에 직접 커플링됨
 - Rule: MISTAKES.md Layer Dependencies #3 — `lightweight-charts` import(타입 포함)는 `components/chart/` 내부로 제한됨
 - Context: visible range 동기화를 위해 `stockChartRef`, `volumeChartRef`, 콜백 2개가 모두 `IChartApi`에 의존했음; `components/chart/hooks/useChartSync.ts`로 추출하여 `ChartContent.tsx`에서 `IChartApi` import 제거
-
 
 ## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
 - Violation: `POPULAR_TICKERS` (비즈니스 도메인 지식)가 `src/lib/seo.ts`에 정의되어 lib 레이어 허용 범위를 벗어남
 - Rule: lib/CLAUDE.md — lib 레이어는 utility wrappers, React Query key factories, config constants, chart color constants만 허용; 도메인 비즈니스 상수는 금지
 - Context: `POPULAR_TICKERS`는 `sitemap.ts`에서만 사용되는 상수로 lib이 아닌 사용처(sitemap.ts) 내부로 인라인 이동하여 해결
 
-## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
-- Violation: JSON-LD `description`이 `generateMetadata`와 `jsonLd` 사이에서 불일치 — jsonLd는 짧은 버전, generateMetadata는 전체 문장 사용
-- Rule: FF.md Cohesion — 동일한 도메인 정보(종목 설명)는 코드베이스 전반에서 일관되게 유지되어야 함
-- Context: `[symbol]/page.tsx`에서 `generateMetadata`의 description과 `jsonLd.description`이 서로 다른 문자열을 사용했음; jsonLd를 generateMetadata와 동일한 전체 문장으로 통일하여 해결
-
-
 ## [fix/bars-null-and-ssr-window-error (FMP API spec fix) | 2026-04-06]
 - Violation: `console.log(url)` left in `fmp.ts` `getBars()` — debug artifact shipped to infrastructure
 - Rule: CONVENTIONS.md — infrastructure functions must be pure side-effect-free except for the single external I/O they are responsible for; debug logging is a prohibited side effect
 - Context: `fmp.ts` line 85 had `console.log(url)` after constructing the request URL; removed as part of FMP API spec correction
-
+- 

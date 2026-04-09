@@ -10,6 +10,7 @@ import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { ChartContent } from '@/components/symbol-page/ChartContent';
 import { useTimeframeChange } from '@/components/symbol-page/hooks/useTimeframeChange';
+import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 
 interface SymbolPageClientProps {
     symbol: string;
@@ -29,6 +30,9 @@ export function SymbolPageClient({
     // 충돌을 유발할 수 있으므로, handleTimeframeChange 이벤트 핸들러 안에서 카운터를 갱신한다.
     const { timeframe, timeframeChangeCount, handleTimeframeChange } =
         useTimeframeChange(symbol);
+    const assetInfo = useAssetInfo(symbol);
+    const ticker = symbol.toUpperCase();
+    const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
 
     return (
         <div className="bg-secondary-900 text-secondary-200 flex h-screen flex-col overflow-hidden">
@@ -44,7 +48,18 @@ export function SymbolPageClient({
                         </Link>
                         <span className="text-secondary-700">/</span>
                         <h1 className="text-secondary-100 text-lg font-semibold tracking-wide">
-                            {symbol}
+                            {assetInfo?.koreanName && (
+                                <span className="text-secondary-300">
+                                    {assetInfo.koreanName}
+                                    {hasCompanyName ? ', ' : ' '}
+                                </span>
+                            )}
+                            {assetInfo && hasCompanyName && (
+                                <span className="text-secondary-200">
+                                    {assetInfo.name}{' '}
+                                </span>
+                            )}
+                            ({ticker})
                         </h1>
                     </div>
                     <div className="flex items-center gap-3">

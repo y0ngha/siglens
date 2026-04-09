@@ -274,6 +274,12 @@ export interface TickerSearchResult extends TickerBase {
     koreanName?: string;
 }
 
+export interface AssetInfo {
+    symbol: string;
+    name: string;
+    koreanName?: string;
+}
+
 export interface AnalyzeVariables {
     symbol: string;
     bars: Bar[];

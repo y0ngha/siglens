@@ -190,6 +190,28 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Include guards for both lower bounds (null, negative) and upper bounds (array length, max values)
    ❌ function resolveBarIndex(index) { if (index < 0) return 0; return index; }  // missing upper bound
    ✅ function resolveBarIndex(index) { if (index < 0) return 0; if (index >= length) return length - 1; return index; }
+
+2. External dependencies must fail gracefully consistently across the module
+   → All calls to the same external service should use identical error handling patterns
+   → If one call uses try-catch, all calls to that service should be wrapped identically
+   ❌ cache.get(key)  // no try-catch, but cache.set(key, val) has try-catch
+   ✅ const value = await cache.get(key).catch(error => { console.error(...); return null; });
+```
+
+---
+
+## Predictability
+
+```
+1. Including unrelated changes in a PR without documented justification
+   → Each commit/PR should focus on a single concern
+   → Unrelated changes must be moved to separate PRs or reverted
+   → If a related change is necessary, document the reason in a comment or commit message
+
+2. Conditional checks that duplicate type system guarantees
+   → If a type system guarantees a field is present, do not add optional chaining or truthiness checks
+   ❌ !!assetInfo?.name  // when AssetInfo.name is required
+   ✅ !!assetInfo  // sufficient when name is guaranteed
 ```
 
 ---
@@ -216,4 +238,8 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 4. Deleting code marked with TODO without updating all references
    → TODO comments indicate intentional preservation for future references
    → Removing such code breaks commented-out code that still references it; restore or update all references first
+
+5. Domain logic conditions differ between server and client
+   → When the same business rule applies in both layers, ensure identical conditions on both sides
+   → Example: if client uses `name !== ticker` guard, server `buildDisplayName` must use the same guard
 ```

@@ -7,4 +7,5 @@ export const QUERY_KEYS = {
     bars: (symbol: string, timeframe: Timeframe) =>
         ['bars', symbol, timeframe] as const,
     tickerSearch: (query: string) => ['ticker-search', query] as const,
+    assetInfo: (symbol: string) => ['asset-info', symbol] as const,
 } as const;
