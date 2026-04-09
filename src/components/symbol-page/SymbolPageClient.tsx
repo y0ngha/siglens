@@ -31,6 +31,8 @@ export function SymbolPageClient({
     const { timeframe, timeframeChangeCount, handleTimeframeChange } =
         useTimeframeChange(symbol);
     const assetInfo = useAssetInfo(symbol);
+    const ticker = symbol.toUpperCase();
+    const hasCompanyName = !!assetInfo?.name && assetInfo.name !== ticker;
 
     return (
         <div className="bg-secondary-900 text-secondary-200 flex h-screen flex-col overflow-hidden">
@@ -49,18 +51,15 @@ export function SymbolPageClient({
                             {assetInfo?.koreanName && (
                                 <span className="text-secondary-300">
                                     {assetInfo.koreanName}
-                                    {assetInfo.name !== symbol.toUpperCase()
-                                        ? ', '
-                                        : ' '}
+                                    {hasCompanyName ? ', ' : ' '}
                                 </span>
                             )}
-                            {assetInfo?.name &&
-                                assetInfo.name !== symbol.toUpperCase() && (
-                                    <span className="text-secondary-200">
-                                        {assetInfo.name}{' '}
-                                    </span>
-                                )}
-                            ({symbol.toUpperCase()})
+                            {hasCompanyName && (
+                                <span className="text-secondary-200">
+                                    {assetInfo!.name}{' '}
+                                </span>
+                            )}
+                            ({ticker})
                         </h1>
                     </div>
                     <div className="flex items-center gap-3">

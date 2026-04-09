@@ -99,10 +99,7 @@ export default async function SymbolPage({ params }: Props) {
         },
     });
 
-    await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.assetInfo(symbol),
-        queryFn: () => getAssetInfoAction(ticker),
-    });
+    queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
 
     await queryClient.prefetchQuery({
         queryKey: QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME),
