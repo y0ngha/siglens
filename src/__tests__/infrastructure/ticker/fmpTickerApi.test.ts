@@ -188,4 +188,12 @@ describe('searchByName', () => {
             expect(result).toEqual([]);
         });
     });
+
+    describe('네트워크 에러가 발생할 때', () => {
+        it('빈 배열을 반환한다', async () => {
+            mockFetch.mockRejectedValueOnce(new Error('network error'));
+            const result = await searchByName('Apple');
+            expect(result).toEqual([]);
+        });
+    });
 });

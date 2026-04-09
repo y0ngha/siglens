@@ -19,10 +19,12 @@ interface UseTickerSearchResult {
 export function useTickerSearch(query: string): UseTickerSearchResult {
     const [debouncedQuery, setDebouncedQuery] = useState('');
 
+    const isDebouncedQueryReady = debouncedQuery.length >= MIN_QUERY_LENGTH;
+
     const { data, isFetching } = useQuery({
         queryKey: QUERY_KEYS.tickerSearch(debouncedQuery),
         queryFn: () => searchTickerAction(debouncedQuery),
-        enabled: debouncedQuery.length >= MIN_QUERY_LENGTH,
+        enabled: isDebouncedQueryReady,
     });
 
     useEffect(() => {
@@ -33,8 +35,6 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
         );
         return () => clearTimeout(timer);
     }, [query]);
-
-    const isDebouncedQueryReady = debouncedQuery.length >= MIN_QUERY_LENGTH;
 
     return {
         results: data ?? [],

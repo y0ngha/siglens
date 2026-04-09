@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 
+import { isKoreanInput } from '@/domain/ticker';
 import { useTickerSearch } from '@/components/search/hooks/useTickerSearch';
 import { useOnClickOutside } from '@/components/search/hooks/useOnClickOutside';
 import { cn } from '@/lib/cn';
@@ -32,9 +33,10 @@ export function TickerAutocomplete({
 
     const { results, isSearching, hasQuery } = useTickerSearch(query);
 
-    const isOpen = !isClosed && hasQuery && (results.length > 0 || isSearching);
-
     useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
+
+    const isOpen = !isClosed && hasQuery && (results.length > 0 || isSearching);
+    const isKorean = isKoreanInput(query);
 
     const navigate = useCallback(
         (symbol: string) => {
@@ -135,7 +137,9 @@ export function TickerAutocomplete({
                         )}
                         {!isSearching && hasQuery && results.length === 0 && (
                             <div className="text-secondary-400 px-4 py-3 text-sm">
-                                검색 결과 없음
+                                {isKorean
+                                    ? '검색 결과 없음 — 티커(예: AAPL)로 검색해 보세요'
+                                    : '검색 결과 없음'}
                             </div>
                         )}
                         {results.map((result, index) => (
