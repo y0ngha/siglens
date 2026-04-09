@@ -106,8 +106,8 @@ export function useAnalysis({
         Error,
         AnalyzeMutationVariables
     >({
-        mutationFn: ({ force, ...analyzeVars }) =>
-            analyzeAction(analyzeVars, latestTimeframeRef.current, force),
+        mutationFn: ({ ...analyzeVars }) =>
+            analyzeAction(analyzeVars, latestTimeframeRef.current),
         onSuccess: (_data, variables) => {
             // force=true 경로만 서버 쿨다운(Redis)을 새로 점유하므로,
             // 이때만 클라이언트 카운트다운을 5분으로 리셋한다.

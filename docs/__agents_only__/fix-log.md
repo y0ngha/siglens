@@ -67,6 +67,11 @@
 - Rule: FF.md Cohesion — 동일한 도메인 정보(종목 설명)는 코드베이스 전반에서 일관되게 유지되어야 함
 - Context: `[symbol]/page.tsx`에서 `generateMetadata`의 description과 `jsonLd.description`이 서로 다른 문자열을 사용했음; jsonLd를 generateMetadata와 동일한 전체 문장으로 통일하여 해결
 
+## [PR #218 | feat/217/재분석-버튼-활성화 | 2026-04-09]
+- Violation: `ChartContent.tsx`에서 `useEffect` 내 `if (isAnalyzing) setDisplayAnalyzing(true)` 직접 setState 호출이 cascading renders 경고(`react-hooks/set-state-in-effect`)를 유발함
+- Rule: React 공식 권장 — prop 변화에 반응한 state 동기화는 `useEffect` 대신 렌더링 중 state 업데이트 패턴(`prevProp` state로 이전 값 추적)을 사용해야 함
+- Context: `isAnalyzing`이 true로 변할 때 `displayAnalyzing`을 true로 동기화하기 위해 `useEffect`를 사용했으나, `prevIsAnalyzing` state를 추가하고 렌더링 중 비교하는 패턴으로 교체하여 해결
+
 ## [fix/bars-null-and-ssr-window-error (FMP API spec fix) | 2026-04-06]
 - Violation: `console.log(url)` left in `fmp.ts` `getBars()` — debug artifact shipped to infrastructure
 - Rule: CONVENTIONS.md — infrastructure functions must be pure side-effect-free except for the single external I/O they are responsible for; debug logging is a prohibited side effect
