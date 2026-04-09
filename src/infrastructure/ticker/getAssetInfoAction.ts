@@ -35,6 +35,16 @@ async function translateAndCache(
         exchangeFullName,
     };
     await setKoreanTickers([entry]);
+
+    const cacheProvider = createCacheProvider();
+    if (cacheProvider) {
+        const cacheKey = buildAssetInfoCacheKey(symbol);
+        cacheProvider
+            .set(cacheKey, { symbol, name, koreanName }, ASSET_INFO_CACHE_TTL)
+            .catch(error =>
+                console.error('Asset info cache update after translation failed:', error)
+            );
+    }
 }
 
 const resolveAssetInfo = cache(async (symbol: string): Promise<AssetInfo> => {
@@ -87,5 +97,5 @@ const resolveAssetInfo = cache(async (symbol: string): Promise<AssetInfo> => {
 });
 
 export async function getAssetInfoAction(symbol: string): Promise<AssetInfo> {
-    return resolveAssetInfo(symbol);
+    return resolveAssetInfo(symbol.toUpperCase());
 }

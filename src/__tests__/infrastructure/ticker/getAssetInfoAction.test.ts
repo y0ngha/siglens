@@ -235,6 +235,21 @@ describe('getAssetInfoAction', () => {
             ]);
         });
 
+        it('번역 완료 후 AssetInfo 캐시를 koreanName과 함께 갱신한다', async () => {
+            mockSearchBySymbol.mockResolvedValueOnce([makeFmpResult('IONQ')]);
+            mockGetKoreanNames.mockResolvedValueOnce({});
+            mockTranslateCompanyNames.mockResolvedValue({ IONQ: '아이온큐' });
+
+            await getAssetInfoAction('IONQ');
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(mockCacheSet).toHaveBeenCalledWith(
+                expect.stringContaining('IONQ'),
+                expect.objectContaining({ koreanName: '아이온큐' }),
+                expect.any(Number)
+            );
+        });
+
         it('번역 결과가 비어있으면 setKoreanTickers를 호출하지 않는다', async () => {
             mockSearchBySymbol.mockResolvedValueOnce([makeFmpResult('IONQ')]);
             mockGetKoreanNames.mockResolvedValueOnce({});

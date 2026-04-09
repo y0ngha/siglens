@@ -48,7 +48,10 @@ export function SymbolPageClient({
                         <h1 className="text-secondary-100 text-lg font-semibold tracking-wide">
                             {assetInfo?.koreanName && (
                                 <span className="text-secondary-300">
-                                    {assetInfo.koreanName},{' '}
+                                    {assetInfo.koreanName}
+                                    {assetInfo.name !== symbol.toUpperCase()
+                                        ? ', '
+                                        : ' '}
                                 </span>
                             )}
                             {assetInfo?.name &&

@@ -35,7 +35,7 @@ interface Props {
 
 function buildDisplayName(assetInfo: AssetInfo, ticker: string): string {
     return assetInfo.koreanName
-        ? `${assetInfo.koreanName} ${assetInfo.name} (${ticker})`
+        ? `${assetInfo.koreanName}, ${assetInfo.name} (${ticker})`
         : `${assetInfo.name} (${ticker})`;
 }
 
@@ -100,7 +100,7 @@ export default async function SymbolPage({ params }: Props) {
     });
 
     await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.assetInfo(ticker),
+        queryKey: QUERY_KEYS.assetInfo(symbol),
         queryFn: () => getAssetInfoAction(ticker),
     });
 

@@ -1,3 +1,5 @@
+'use client';
+
 import { useQuery } from '@tanstack/react-query';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
