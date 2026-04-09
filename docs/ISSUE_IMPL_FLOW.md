@@ -34,8 +34,19 @@ Use this value directly in all `gh` commands.
 
 #### 1-2. Load Required Documents
 
-Always read:
-- `docs/MISTAKES.md`
+Always read (targeted):
+- `docs/MISTAKES.md` — read only the sections relevant to the task scope:
+
+| Modified layer | MISTAKES.md sections to read |
+|---|---|
+| domain/ | Coding Paradigm, TypeScript, Domain Functions, Pure Function Contracts |
+| infrastructure/ | Coding Paradigm, TypeScript, Layer Dependencies |
+| components/ | Coding Paradigm, Components, Design & Cohesion |
+| components/chart/ | (above) + Lightweight Charts |
+| \_\_tests\_\_/ | Tests |
+| ESLint/format issues | ESLint |
+
+Multiple layers → read the union of their sections.
 
 Additional documents by scope:
 - domain/ related → `docs/DOMAIN.md` + `docs/ARCHITECTURE.md`
@@ -95,6 +106,28 @@ Branch naming: `feat/2/도메인-공통-타입-정의`, `refactor/32/candlestick
 - [ ] Use path aliases (@/domain/... format)
 - [ ] No hardcoded literals → extract to constants (domain/indicators/constants.ts)
 
+**Component Layer Checklist** — verify after implementation:
+- [ ] Hook declaration order: useState → useRef → useQuery/useMutation → derived (useMemo/const) → handlers → useLayoutEffect → useEffect → return
+- [ ] Props interface directly above component function
+- [ ] 'use client' only when hooks, handlers, or browser APIs are used
+- [ ] No infrastructure imports in .tsx files (hooks/ may import fetch functions only)
+- [ ] No lightweight-charts imports outside components/chart/
+
+**Test Layer Checklist** — verify after implementation:
+- [ ] Test file exists for every new domain/infrastructure file
+- [ ] 100% branch coverage for infrastructure (all ?., ??, if/else paths)
+- [ ] describe/it text is human-readable, not code expressions
+- [ ] Period-based indicators include all 5 required test cases
+- [ ] No if-guarded assertions (unconditional expect only)
+
+**Infrastructure Layer Checklist** — verify after implementation:
+- [ ] No reverse imports (infrastructure → app or domain → infrastructure)
+- [ ] Type imports from @/domain/types only
+- [ ] No console.log or debug artifacts
+- [ ] All conditional branches have dedicated test cases
+
+Only check the checklists for file types you actually modified or created.
+
 **Test writing** — file locations:
 ```
 src/__tests__/domain/indicators/rsi.test.ts
@@ -120,11 +153,27 @@ When creating new files under `domain/indicators/`, add export to `src/domain/in
 | Layer structure or folder layout changed | `docs/ARCHITECTURE.md` |
 | New coding convention established | `docs/CONVENTIONS.md` |
 
-#### 1-6. MISTAKES.md Self-Review
+#### 1-6. MISTAKES.md Targeted Self-Review
 
-Before running validation, review the implemented code against `docs/MISTAKES.md`.
-Go through each section and check whether the current implementation violates any rule.
-Fix any violations found before proceeding.
+Before running validation, re-read the MISTAKES.md sections loaded in Step 1-2.
+For each modified file, verify every rule in the matching section(s):
+
+| File type | Sections to verify |
+|---|---|
+| .tsx (component) | Components, Coding Paradigm |
+| .ts (domain/) | Domain Functions, TypeScript, Coding Paradigm |
+| .ts (infrastructure/) | TypeScript, Layer Dependencies |
+| .test.ts | Tests |
+| .tsx (chart/) | Components, Lightweight Charts |
+
+**Procedure:**
+1. List all files you modified or created.
+2. For each file, re-read the matching MISTAKES.md sections.
+3. Verify each rule in those sections against the file.
+4. Fix any violations found before proceeding.
+
+Do NOT attempt to verify all sections — focus only on the sections
+matching the files you actually touched.
 
 #### 1-7. Run Validation Scripts
 
@@ -169,8 +218,15 @@ status: loop_limit_reached → stop, report to user
 
 #### Step 2a — Findings exist: fix directly
 
-Fix both `required` and `recommended` findings directly.
-After fixing, re-run validation (Step 1-7), then record to fix-log (Step 2b).
+1. Fix both `required` and `recommended` findings directly.
+2. **Post-fix Self-Review**: For each file modified during this fix round:
+   a. Run the matching checklist from Step 1-5 (Domain/Component/Test/Infrastructure).
+   b. Re-read the matching MISTAKES.md sections and verify no new violations
+      were introduced by the fix.
+   c. When fixing a pattern violation (e.g. hook order), verify the entire
+      file for the same pattern — not just the specific line mentioned in the finding.
+3. Re-run validation (Step 1-7).
+4. Record to fix-log (Step 2b).
 
 #### Step 2b — Record to Fix Log
 
