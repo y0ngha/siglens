@@ -57,7 +57,9 @@ async function seed(): Promise<void> {
     }
 
     if (newCount === 0 && updatedCount === 0) {
-        console.log('No new or updated entries to seed. Redis already up to date.');
+        console.log(
+            'No new or updated entries to seed. Redis already up to date.'
+        );
         return;
     }
 
@@ -65,7 +67,9 @@ async function seed(): Promise<void> {
         a.symbol.localeCompare(b.symbol)
     );
 
-    await redis.set(KOREAN_TICKERS_CACHE_KEY, merged, { ex: KOREAN_NAMES_CACHE_TTL });
+    await redis.set(KOREAN_TICKERS_CACHE_KEY, merged, {
+        ex: KOREAN_NAMES_CACHE_TTL,
+    });
     console.log(
         `Seeded ${newCount} new entries, updated ${updatedCount} entries. Total: ${merged.length}`
     );
