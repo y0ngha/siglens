@@ -46,7 +46,7 @@ export async function searchByKoreanName(
 
 export async function getKoreanNames(
     symbols: string[]
-): Promise<Record<string, string>> {
+): Promise<Partial<Record<string, string>>> {
     if (symbols.length === 0) return {};
 
     const entries = await loadAllEntries();
