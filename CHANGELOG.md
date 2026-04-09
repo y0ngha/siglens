@@ -1,5 +1,26 @@
 # Changelog
 
+# [0.5.0](https://github.com/y0ngha/siglens/compare/v0.4.0...v0.5.0) (2026-04-09)
+
+
+### Bug Fixes
+
+* PR [#220](https://github.com/y0ngha/siglens/issues/220) 리뷰 반영 — 프롬프트 필드 목록 동기화, DOMAIN.md 문서 업데이트, 타입 명명화 ([e3c6334](https://github.com/y0ngha/siglens/commit/e3c63345b3b0e9e1df14556beaa4f64dbb892044))
+* PR [#222](https://github.com/y0ngha/siglens/issues/222) 리뷰 반영 — dead code 뮤테이션 제거, hasCompanyName 단순화, AssetInfo 타입 배치 개선 ([1d1c9f0](https://github.com/y0ngha/siglens/commit/1d1c9f0167debfd18279891f3efe0a22f6632588))
+* PR [#222](https://github.com/y0ngha/siglens/issues/222) 리뷰 반영 — 회사명 표시 버그 수정 및 API 캐시 갱신 ([c226134](https://github.com/y0ngha/siglens/commit/c2261344d21107b4bfe23c24f7d26a2283594476))
+* summary 스키마 상세 지시 복원 및 가이드라인 ALL 키워드 유지 ([511c416](https://github.com/y0ngha/siglens/commit/511c4160129c9b07189b760c26941c7aa41797b2))
+* TICKER_SEARCH_CACHE_TTL 24h로 복원, assetInfo 옵셔널 체이닝 적용 ([a7e4464](https://github.com/y0ngha/siglens/commit/a7e446442283efa214424f1b2e792a3675161a18))
+* 뒤로가기 시 Object is disposed 에러 수정 — chart.remove() 전 구독 해제 ([a5447dd](https://github.com/y0ngha/siglens/commit/a5447dd16d9b32a4ed82dd51f0fe494d9c180c98))
+* 심볼 페이지 쿼리 데이터 주입 최적화 및 코드 중복 제거 ([6a538cf](https://github.com/y0ngha/siglens/commit/6a538cfb3e0002044007b95b96f6d2ed0a0c322f))
+* 심볼 페이지 회사명 중복 표시 방지 ([6b9f8b8](https://github.com/y0ngha/siglens/commit/6b9f8b866f161735b6d6e87927f1065900fdfe92))
+* 프롬프트 지시 중복 제거 및 PR [#220](https://github.com/y0ngha/siglens/issues/220) 리뷰 반영 ([16225e2](https://github.com/y0ngha/siglens/commit/16225e2a0fae48d35b6087f617cacb6fbf72a479))
+
+
+### Features
+
+* AI 분석 Summary 접근성 개선 및 매매 전략(actionRecommendation) 필드 추가 ([#219](https://github.com/y0ngha/siglens/issues/219)) ([e910652](https://github.com/y0ngha/siglens/commit/e91065224151a6a2d6085942b6ec860f6400798e))
+* 심볼 페이지 티커에 회사명 표시 ([d433b52](https://github.com/y0ngha/siglens/commit/d433b52517f4164558f0e94f74ebce6ba12704ae))
+
 # [0.4.0](https://github.com/y0ngha/siglens/compare/v0.3.0...v0.4.0) (2026-04-09)
 
 
