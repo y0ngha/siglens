@@ -71,9 +71,17 @@ const label = TREND_LABEL[trend];
 // ✅ Pure function — same input → same output, no side effects
 function calculateRSI(closes: number[], period: number): (number | null)[] { ... }
 
-// ✅ Immutability
+// ✅ Immutability — use immutable methods for all array/object mutations
 // ❌ bars.push(newBar)       ✅ [...bars, newBar]
 // ❌ bar.close = 100         ✅ { ...bar, close: 100 }
+// ❌ arr.reverse()           ✅ arr.toReversed()
+// ❌ arr.sort()              ✅ arr.toSorted()
+// ❌ arr.splice(i, 1)        ✅ arr.filter((_, idx) => idx !== i)
+// Applies to: push, pop, shift, unshift, splice, reverse, sort
+
+// ✅ Extract nested functions to module-level with explicit parameters
+// ❌ function parent() { function child() { uses parentVar } }
+// ✅ function child(parentVar: T) { ... }  // extracted, explicit params
 ```
 
 ### Priority by Layer
@@ -136,6 +144,29 @@ interface Signal { strength: SignalStrength; }
 // ✅ No hardcoded literals — extract to constants
 // ❌ period = 14
 // ✅ period = RSI_DEFAULT_PERIOD  (domain/indicators/constants.ts)
+
+// ✅ Types must be declared at the top of the file, not inside functions
+// ❌ function process() { interface Item { id: string; } ... }
+// ✅ interface Item { id: string; }
+//    function process() { ... }
+
+// ✅ Return named interfaces instead of inline object types
+// ❌ function getCredentials() { return { apiKey, secretKey }; }
+// ✅ interface Credentials { apiKey: string; secretKey: string; }
+//    function getCredentials(): Credentials { ... }
+
+// ✅ Prefer type guards over `as` type assertions
+// ❌ const user = data as User;
+// ✅ if ('name' in data) { /* data is User */ }
+// Exception: DOM elements, third-party library return types (add comment explaining why)
+
+// ✅ Hardcoded array indices → named constants
+// ❌ result.split('\n\n')[1]
+// ✅ const SECTION_INDEX = 1; result.split('\n\n')[SECTION_INDEX]
+
+// ✅ Related interfaces with shared fields must use extends
+// ❌ interface B { ...all fields of A...; extra: string }
+// ✅ interface B extends A { extra: string }
 ```
 
 ---
@@ -305,6 +336,22 @@ export function StockChart({ initialBars, symbol }: { initialBars: Bar[]; symbol
 // ✅ Named exports (only page/layout use default export)
 export function StockChart() {}
 export default function Page() {}
+
+// ✅ new Date() in Server Component → hydration mismatch
+// Extract into a 'use client' component or add suppressHydrationWarning
+
+// ✅ No side effects inside setState updater functions
+// Updaters run twice in React Strict Mode; side effects must be placed outside
+// ❌ setState(prev => { doSideEffect(); return newValue; })
+// ✅ doSideEffect(); setState(prev => newValue);
+
+// ✅ Use functional setState to avoid stale closures
+// ❌ const next = new Set(visiblePatterns); setVisiblePatterns(next);
+// ✅ setVisiblePatterns(prev => { const next = new Set(prev); ...; return next; });
+
+// ✅ Never nest interactive elements (HTML spec)
+// ❌ <button><button>inner</button></button>
+// ❌ <a href="..."><button>click</button></a>
 ```
 
 ---
@@ -511,6 +558,10 @@ candleSeries.setData([...newOlderBars, ...existingBars]);
 // ✅ Arbitrary CSS properties — use bracket notation for non-utility CSS
 <html className="[color-scheme:dark]">   // ✅ correct
 <html style={{ colorScheme: 'dark' }}>  // ❌ inline style (prohibited)
+
+// ✅ Dynamic runtime values → CSS custom properties
+// ❌ style={{ width: `${px}px` }}
+// ✅ style={{ '--w': `${px}px` }} className="md:w-[var(--w)]"
 ```
 
 ---
@@ -528,6 +579,9 @@ export * from './rsi';
 // ❌ No imports after export *
 export * from './rsi';
 import { calculateRSI } from './rsi';
+
+// ✅ no-shadow — do not use browser/Node global names as variable names
+// Prohibited: window, document, location, event, name, length, screen
 ```
 
 EOF newline: every file must end with `\n`. Auto-fixed by `yarn format`.

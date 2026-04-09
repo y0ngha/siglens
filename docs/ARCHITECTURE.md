@@ -72,6 +72,27 @@ import { AlpacaProvider } from '@/infrastructure/market/alpaca'; // 금지
 import { claudeClient } from '@/infrastructure/ai/claude'; // 금지
 ```
 
+**타입 배치 규칙**
+
+```
+인디케이터 결과 타입(MACDResult, BollingerResult 등) → domain/types.ts
+  ❌ 인디케이터 구현 파일(rsi.ts 등)에 정의 금지
+  ✅ domain/types.ts에 정의 후 import하여 사용
+
+타입/스키마는 소속 레이어에서 정의
+  ❌ route 레이어 전용 필드(skillsDegraded)를 domain에 정의
+  ✅ Record<keyof Interface, ...>로 컴파일 타임 동기화 강제
+```
+
+**순환 의존성 금지**
+
+```
+모듈 간 순환 import 금지 (A → B → A)
+  → 공유 상수/타입은 제3 파일로 분리하여 순환 해소
+  ❌ module-a.ts imports module-b.ts, module-b.ts imports module-a.ts
+  ✅ shared.ts에 공유 요소 분리 후 양쪽에서 import
+```
+
 ---
 
 ## 폴더 구조

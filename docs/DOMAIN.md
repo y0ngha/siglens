@@ -337,6 +337,10 @@ calculateIchimokuFutureCloud 함수:
   배열 크기: bars가 빈 배열인 경우 빈 배열을 반환. 그 외에는 항상 displacement (기본값 26) 길이의 배열
   계산 방식: bars의 마지막 displacement 구간(bars.length - displacement ~ bars.length - 1)에서
              각 sourceIndex에 대해 senkouA / senkouB 계산
+
+렌더링 규칙:
+- SenkouA/B는 반드시 displacement(26)봉 미래로 투영하여 표시
+- 구름대(SenkouA~SenkouB 사이)는 bullish(SenkouA > SenkouB)와 bearish(SenkouA < SenkouB)를 구분하여 색상 표시
 ```
 
 ### Volume Profile
@@ -518,6 +522,16 @@ detectCandlePattern(bar: Bar): CandlePattern
 
 // 다봉: 최근 2~3봉으로 판별 (감지 안 되면 null)
 detectMultiCandlePattern(bars: Bar[]): MultiCandlePattern | null
+```
+
+### 다봉 > 단봉 우선순위
+
+동일 봉에서 다봉 패턴과 단봉 패턴이 동시에 감지될 경우, 다봉 패턴이 우선한다.
+다봉 패턴에 관여한 봉들의 단봉 패턴은 억제한다.
+
+```
+예: 봉 A, B, C에서 morning_star(다봉) 감지
+  → 봉 A, B, C의 단봉 패턴(doji, hammer 등)은 표시하지 않음
 ```
 
 ### 감지 기준 상수
@@ -922,6 +936,16 @@ display:                      # 선택. 차트 표시 설정
 ## AI 분석 지시
 
 (AI에게 이 skill 적용 시 응답에 포함해야 할 내용 지시)
+```
+
+### Skill markdown 유효성 규칙
+
+```
+type 필드: 'pattern' | 'indicator_guide' | 'strategy' 중 하나만 유효
+  → 해당하지 않으면 type 필드를 생략 (undefined 처리)
+
+필수 필드: name, description, indicators, confidence_weight
+  → 누락 시 파싱 에러. 모든 필수 필드가 frontmatter와 body에 존재해야 함
 ```
 
 ### confidence_weight 적용 규칙

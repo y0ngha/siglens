@@ -37,11 +37,10 @@ Always read (targeted):
 | Modified layer | MISTAKES.md sections to read |
 |---|---|
 | domain/ | Coding Paradigm, TypeScript, Domain Functions, Pure Function Contracts |
-| infrastructure/ | Coding Paradigm, TypeScript, Layer Dependencies |
+| infrastructure/ | Coding Paradigm, TypeScript |
 | components/ | Coding Paradigm, Components, Design & Cohesion |
 | components/chart/ | (above) + Lightweight Charts |
 | \_\_tests\_\_/ | Tests |
-| ESLint/format issues | ESLint |
 
 Multiple layers → read the union of their sections.
 
@@ -161,7 +160,7 @@ For each file modified during the fix:
    |---|---|
    | .tsx (component) | Components, Coding Paradigm |
    | .ts (domain/) | Domain Functions, TypeScript, Coding Paradigm |
-   | .ts (infrastructure/) | TypeScript, Layer Dependencies |
+   | .ts (infrastructure/) | TypeScript, Coding Paradigm |
    | .test.ts | Tests |
    | .tsx (chart/) | Components, Lightweight Charts |
 

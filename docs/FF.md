@@ -361,7 +361,28 @@ function useIndicators(bars: Bar[]) { ... }
 function useAnalysis(bars: Bar[], indicators: IndicatorResult) { ... }
 ```
 
-### 4-B. Allow duplicate code (connected to the AHA principle)
+### 4-B. External spacing belongs to the caller
+
+A component should not manage its own external margin. Spacing between components is the caller's responsibility.
+
+```typescript
+// ❌ Component defines its own external margin
+function Card({ children }: CardProps) {
+    return <div className="mt-4 p-4 bg-slate-800">{children}</div>;
+}
+
+// ✅ Caller controls external spacing
+function Card({ children }: CardProps) {
+    return <div className="p-4 bg-slate-800">{children}</div>;
+}
+
+// Caller
+<div className="mt-4">
+    <Card>...</Card>
+</div>
+```
+
+### 4-C. Allow duplicate code (connected to the AHA principle)
 
 ```typescript
 // ❌ Premature abstraction increases coupling
@@ -377,7 +398,7 @@ function useVolumeChart() { ... }
 // Abstract only after the common pattern becomes clear
 ```
 
-### 4-C. Remove Props Drilling
+### 4-D. Remove Props Drilling
 
 ```typescript
 // ❌ Intermediate component passes props it doesn't use
