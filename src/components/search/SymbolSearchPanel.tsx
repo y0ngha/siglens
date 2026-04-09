@@ -1,10 +1,9 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { useState } from 'react';
 
 import { useRecentSearches } from '@/components/search/hooks/useRecentSearches';
+import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { cn } from '@/lib/cn';
 
 interface SymbolSearchPanelProps {
@@ -12,42 +11,16 @@ interface SymbolSearchPanelProps {
 }
 
 export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
-    const router = useRouter();
-    const [value, setValue] = useState('');
     const { recentSearches, addSearch, removeSearch, clearAll } =
         useRecentSearches();
 
-    const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-        e.preventDefault();
-        const trimmed = value.trim().toUpperCase();
-        if (!trimmed) return;
-        addSearch(trimmed);
-        router.push(`/${trimmed}`);
-    };
-
     return (
         <div className={cn('flex w-full flex-col', className)}>
-            <form
-                onSubmit={handleSubmit}
-                className="flex w-full max-w-md items-center gap-2"
-            >
-                <input
-                    name="symbol"
-                    autoComplete="off"
-                    aria-label="종목 티커 검색"
-                    type="text"
-                    value={value}
-                    onChange={e => setValue(e.target.value)}
-                    placeholder="티커 입력 (예: AAPL)"
-                    className="bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 focus-glow w-full rounded-lg border px-4 py-3 text-base transition-colors outline-none focus:ring-1 sm:w-96"
-                />
-                <button
-                    type="submit"
-                    className="bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg px-6 py-3 text-base font-semibold whitespace-nowrap text-white transition-colors"
-                >
-                    검색
-                </button>
-            </form>
+            <TickerAutocomplete
+                size="lg"
+                onSelect={addSearch}
+                className="w-full max-w-md"
+            />
 
             {recentSearches.length > 0 && (
                 <div className="mt-4 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
