@@ -22,8 +22,6 @@ export function TickerAutocomplete({
     size = 'sm',
     onSelect,
 }: TickerAutocompleteProps) {
-    const router = useRouter();
-
     const [query, setQuery] = useState('');
     const [isClosed, setIsClosed] = useState(false);
     const [selectedIndex, setSelectedIndex] = useState(-1);
@@ -31,11 +29,12 @@ export function TickerAutocomplete({
     const inputRef = useRef<HTMLInputElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
 
+    const router = useRouter();
     const { results, isSearching, hasQuery } = useTickerSearch(query);
 
     useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
 
-    const isOpen = !isClosed && hasQuery && (results.length > 0 || isSearching);
+    const isOpen = !isClosed && hasQuery;
     const isKorean = isKoreanInput(query);
 
     const navigate = useCallback(

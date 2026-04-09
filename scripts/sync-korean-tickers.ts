@@ -15,12 +15,13 @@ import { writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { config } from 'dotenv';
 import { KOREAN_TICKERS_SEED } from './korean-tickers-data';
+import {
+    KOREAN_TICKERS_CACHE_KEY,
+    KOREAN_NAMES_CACHE_TTL,
+} from '../src/infrastructure/cache/config';
 import type { KoreanTickerEntry } from '../src/domain/types';
 
 config({ path: resolve(process.cwd(), '.env.local') });
-
-const KOREAN_TICKERS_KEY = 'korean:tickers';
-const KOREAN_NAMES_CACHE_TTL = 365 * 24 * 60 * 60;
 
 function createRedis(): Redis {
     const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -37,25 +38,36 @@ async function seed(): Promise<void> {
     const redis = createRedis();
 
     const existing =
-        (await redis.get<KoreanTickerEntry[]>(KOREAN_TICKERS_KEY)) ?? [];
-    const existingSymbols = new Set(existing.map(e => e.symbol));
+        (await redis.get<KoreanTickerEntry[]>(KOREAN_TICKERS_CACHE_KEY)) ?? [];
+    const entriesMap = new Map(existing.map(e => [e.symbol, e]));
 
-    const newEntries = KOREAN_TICKERS_SEED.filter(
-        e => !existingSymbols.has(e.symbol)
-    );
+    let newCount = 0;
+    let updatedCount = 0;
 
-    if (newEntries.length === 0) {
-        console.log('No new entries to seed. Redis already up to date.');
+    for (const seedEntry of KOREAN_TICKERS_SEED) {
+        const existingEntry = entriesMap.get(seedEntry.symbol);
+        if (existingEntry) {
+            if (JSON.stringify(existingEntry) !== JSON.stringify(seedEntry)) {
+                updatedCount++;
+            }
+        } else {
+            newCount++;
+        }
+        entriesMap.set(seedEntry.symbol, seedEntry);
+    }
+
+    if (newCount === 0 && updatedCount === 0) {
+        console.log('No new or updated entries to seed. Redis already up to date.');
         return;
     }
 
-    const merged = [...existing, ...newEntries].sort((a, b) =>
+    const merged = Array.from(entriesMap.values()).sort((a, b) =>
         a.symbol.localeCompare(b.symbol)
     );
 
-    await redis.set(KOREAN_TICKERS_KEY, merged, { ex: KOREAN_NAMES_CACHE_TTL });
+    await redis.set(KOREAN_TICKERS_CACHE_KEY, merged, { ex: KOREAN_NAMES_CACHE_TTL });
     console.log(
-        `Seeded ${newEntries.length} new entries. Total: ${merged.length}`
+        `Seeded ${newCount} new entries, updated ${updatedCount} entries. Total: ${merged.length}`
     );
 }
 
@@ -63,7 +75,7 @@ async function exportToFile(): Promise<void> {
     const redis = createRedis();
 
     const entries =
-        (await redis.get<KoreanTickerEntry[]>(KOREAN_TICKERS_KEY)) ?? [];
+        (await redis.get<KoreanTickerEntry[]>(KOREAN_TICKERS_CACHE_KEY)) ?? [];
 
     if (entries.length === 0) {
         console.log('No entries in Redis. Nothing to export.');

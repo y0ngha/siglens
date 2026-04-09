@@ -29,9 +29,11 @@ async function translateAndCache(
         unmapped.map(r => ({ symbol: r.symbol, name: r.name }))
     );
 
+    const unmappedMap = new Map(unmapped.map(r => [r.symbol, r]));
+
     const entries: KoreanTickerEntry[] = Object.entries(translated)
         .map(([symbol, koreanName]) => {
-            const result = unmapped.find(r => r.symbol === symbol);
+            const result = unmappedMap.get(symbol);
             if (!result) return null;
             return {
                 symbol,

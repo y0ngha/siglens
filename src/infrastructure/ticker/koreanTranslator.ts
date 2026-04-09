@@ -3,6 +3,13 @@ import { stripMarkdownCodeBlock } from '@/infrastructure/ai/utils';
 
 const DEFAULT_TRANSLATE_MODEL = 'gemini-2.5-flash';
 
+let cachedClient: GoogleGenerativeAI | null = null;
+
+function getClient(apiKey: string): GoogleGenerativeAI {
+    cachedClient ??= new GoogleGenerativeAI(apiKey);
+    return cachedClient;
+}
+
 interface TranslateEntry {
     symbol: string;
     name: string;
@@ -27,14 +34,11 @@ Companies:
 ${entryList}`;
 
     try {
-        const client = new GoogleGenerativeAI(apiKey);
-        const genModel = client.getGenerativeModel({ model });
+        const genModel = getClient(apiKey).getGenerativeModel({ model });
         const result = await genModel.generateContent(prompt);
         const text = result.response.text();
-        return JSON.parse(stripMarkdownCodeBlock(text)) as Record<
-            string,
-            string
-        >;
+        // JSON.parse returns `any`; type guard for Record<string, string> is not feasible
+        return JSON.parse(stripMarkdownCodeBlock(text)) as Record<string, string>;
     } catch (error) {
         console.error('Korean name translation failed:', error);
         return {};

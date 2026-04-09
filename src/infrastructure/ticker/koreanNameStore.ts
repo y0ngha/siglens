@@ -52,10 +52,8 @@ export async function getKoreanNames(
 
     return symbols.reduce<Record<string, string>>((acc, symbol) => {
         const koreanName = symbolMap.get(symbol);
-        if (koreanName) {
-            acc[symbol] = koreanName;
-        }
-        return acc;
+        if (!koreanName) return acc;
+        return { ...acc, [symbol]: koreanName };
     }, {});
 }
 
