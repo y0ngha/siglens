@@ -42,7 +42,10 @@ async function translateAndCache(
         cacheProvider
             .set(cacheKey, { symbol, name, koreanName }, ASSET_INFO_CACHE_TTL)
             .catch(error =>
-                console.error('Asset info cache update after translation failed:', error)
+                console.error(
+                    'Asset info cache update after translation failed:',
+                    error
+                )
             );
     }
 }

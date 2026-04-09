@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
+- Violation: components/hooks/ 파일에 'use client' 선언 누락
+- Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
+- Context: useAssetInfo.ts 작성 시 useTimeframeChange 등 기존 훅 파일에서 패턴을 확인하지 않아 누락
+
+- Violation: 서버 prefetchQuery 키와 클라이언트 훅 키 불일치 (hydration 캐시 미스)
+- Rule: React Query Hydration 패턴 — prefetchQuery 키와 useQuery 키가 정확히 일치해야 함
+- Context: 서버는 ticker(대문자)로 키를 만들고 클라이언트는 symbol(원본)로 키를 만들어 소문자 URL 진입 시 캐시 미스 발생
+
 ## [Issue #221 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: 새 infrastructure Server Action 파일(getAssetInfoAction.ts) 구현 후 테스트 파일 누락
 - Rule: 모든 infrastructure/ 파일은 대응하는 테스트 파일이 있어야 한다 (100% branch coverage target)
