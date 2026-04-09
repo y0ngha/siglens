@@ -181,6 +181,7 @@ Claude Code가 이슈를 받아 브랜치 생성 → 코드 작성 → 테스트
 
 | 문서 | 내용                                                       |
 |------|----------------------------------------------------------|
+| [SERVICE.md](./docs/SERVICE.md) | 서비스 개요, 대상 사용자, 기술 스택, Skills 시스템                        |
 | [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | 레이어 구조, 의존성 규칙, 데이터 흐름                                   |
 | [DOMAIN.md](./docs/DOMAIN.md) | 인디케이터 계산 명세, 캔들 패턴, Skills 시스템                           |
 | [API.md](./docs/API.md) | Alpaca, FMP API, Claude, Gemini API 명세                   |

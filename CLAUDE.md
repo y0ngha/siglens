@@ -1,18 +1,26 @@
 # Siglens — CLAUDE.md
 
-## ⚠️ Mandatory Rules (Read This First)
+## ⛔ Request Routing (ALWAYS CHECK FIRST)
+
+**STOP.** Before taking any action, match the user's request against this table.
+If a match is found, read the corresponding document FIRST.
+Do not start implementation, run commands, or invoke agents until you have read the full document.
+
+| User request pattern            | Examples                                                            | FIRST action                   |
+|---------------------------------|---------------------------------------------------------------------|--------------------------------|
+| Issue number + implementation   | "이슈 #42 설계해줘 > (설계 후 승인되면)" "이슈 #42 구현해줘", #42 구현해줘", "이슈 15번 작업해줘" | Read `docs/ISSUE_IMPL_FLOW.md` |
+| PR number + fix/review comments | "PR #216 수정해줘", "#200 코멘트 반영해줘"                                     | Read `docs/PR_FIX_FLOW.md`     |
+| Issue creation                  | "이슈 만들어줘", "버그 리포트 생성해줘"                                            | Invoke `issue-agent`           |
+
+If the request does not match any pattern above, proceed normally.
+
+---
+
+## Role & Constraints
 
 You are the **main orchestrator**. You directly implement code and fix PRs, while delegating review, git operations, and other auxiliary tasks to sub-agents.
 
-**When you receive any of the following requests, follow the corresponding action:**
-
-| Request type                           | Action |
-|----------------------------------------|---|
-| Issue number + implementation intent   | Read `docs/ISSUE_IMPL_FLOW.md` |
-| PR number + fix intent | Read `docs/PR_FIX_FLOW.md` |
-| Issue creation request (feature / bug / refactoring) | Invoke `issue-agent` with the provided context |
-
-**Prohibited actions for the main orchestrator:**
+**Prohibited actions:**
 - ❌ Creating commits or pushing (git-agent's responsibility)
 - ❌ Skipping the review-agent step after implementation
 
@@ -26,119 +34,23 @@ When a sub-agent returns `status: done`, always follow the routing table regardl
 
 ---
 
-U.S. stock AI analysis platform.
-Provides chart rendering, indicator calculations, and AI-powered comprehensive analysis.
-No order/trade functionality. Analysis only.
-
----
-
-## Service Overview
-
-### Why This Exists
-
-Technical analysis is hard to learn and exhausting to perform.
-Moving averages, golden/dead crosses, MACD, RSI, Bollinger Bands, DMI — multiple indicators
-must be read simultaneously, and each indicator's settings change depending on the timeframe
-(daily, minute-level). On top of that, chart patterns (head and shoulders, wedges, double tops, etc.)
-must also be identified — making the barrier to entry high and the process time-consuming.
-
-Siglens automates this entire process with AI.
-
-### Core Value
-
-```
-AI handles complex technical analysis automatically.
-→ The user only needs to enter a ticker symbol.
-```
-
-### Target Users
-
-```
-Investors interested in technical analysis but fatigued by manually configuring
-and interpreting each indicator.
-
-Beginners who have started investing but find chart analysis difficult.
-
-Investors who want a single, consolidated interpretation of multiple indicators.
-```
-
-### Core UX
-
-```
-1. Enter a ticker symbol (e.g. AAPL)
-2. Chart + indicators render automatically
-3. AI comprehensive analysis report generated automatically
-   - Indicator interpretation (RSI overbought/oversold, MACD cross, etc.)
-   - Candle pattern detection (15 types of single candles + 30 types of multi candles)
-   - Pattern detection via Skills (head and shoulders, wedge, etc.)
-   - Support/resistance levels
-   - Overall market direction (bullish / bearish / neutral)
-4. Timeframe switching (1-minute to daily)
-5. On-demand AI re-analysis
-```
-
-### What This Does NOT Provide
-
-```
-❌ Order / trade execution
-❌ Real-time data (15-minute delay)
-❌ Investment advice or buy/sell recommendations
-```
-
----
-
-## Required Reading Before Starting Any Task
-
-Read the relevant documents before beginning. Rules defined in these documents must never be violated.
-
-| Document | Contents |
-|---|---|
-| `docs/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
-| `docs/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
-| `docs/API.md` | Alpaca and Claude API endpoints, request/response schemas |
-| `docs/CONVENTIONS.md` | Coding conventions, naming rules, paradigm guidelines |
-| `docs/FF.md` | FF 4 principles in detail (Readability, Predictability, Cohesion, Coupling) |
-| `docs/DESIGN.md` | Color system, Tailwind config, chart color constants |
-| `docs/GIT_CONVENTIONS.md` | Branch naming, commit message format, PR rules |
-| `docs/MISTAKES.md` | Common mistakes Claude Code repeatedly makes — review before and after implementing |
-
----
-
 ## Agent System
-
-### Your Role: Main Orchestrator
-
-You are the main orchestrator. You directly implement code and fix PRs.
-Sub-agents handle review, git operations, mistake management, and issue creation.
-Sub-agents do not call each other — you invoke them one at a time.
-**Never ask the user for confirmation between steps — route automatically.**
-
-**Issue implementation flow** (read `docs/ISSUE_IMPL_FLOW.md` first):
-```
-User request
-  → you read ISSUE_IMPL_FLOW.md
-```
-
-**PR fix flow** (read `docs/PR_FIX_FLOW.md` first):
-```
-User request
-  → you read PR_FIX_FLOW.md
-  (review-agent is NOT invoked in PR fix flow)
-```
 
 ### Sub-agents
 
 Specialized sub-agents are defined in `.claude/agents/`. Each agent has a distinct responsibility
 and must not perform work outside its scope.
+Sub-agents do not call each other — you invoke them one at a time.
+**Never ask the user for confirmation between steps — route automatically.**
 
-| Agent | Model  | Responsibility                                                                      |
-|---|--------|-------------------------------------------------------------------------------------|
-| `review-agent` | Sonnet | Code review — returns findings only, never modifies code                            |
+| Agent | Model  | Responsibility |
+|---|---|---|
+| `review-agent` | Sonnet | Code review — returns findings only, never modifies code |
 | `mistake-managing-agent` | Haiku  | Reads docs/__agents_only__/fix-log.md, promotes recurring violations to MISTAKES.md |
-| `git-agent` | Haiku  | Commits, pushes, PR creation — never modifies code                                  |
-| `issue-agent` | Haiku  | Creates GitHub issues using the appropriate template — never modifies code           |
+| `git-agent` | Haiku  | Commits, pushes, PR creation — never modifies code |
+| `issue-agent` | Haiku  | Creates GitHub issues using the appropriate template — never modifies code |
 
-### Routing Table
+### Exit Signal Routing Table
 
 When you receive an exit signal, route as follows:
 
@@ -215,12 +127,6 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 { "agent": "git-agent", "status": "failed", "reason": "..." }
 ```
 
-### Workflow Reference
-
-For the full step-by-step flow, **read the relevant doc before starting work**:
-- `docs/ISSUE_IMPL_FLOW.md` — issue number + implementation request
-- `docs/PR_FIX_FLOW.md` — PR number + fix request
-
 ---
 
 ## Layer Dependency Rules (Never Violate)
@@ -245,22 +151,13 @@ Violations trigger ESLint errors. PRs cannot be merged.
 
 ---
 
-## Tech Stack
+## Task Execution Rules
 
-```
-Next.js     16.2  (App Router + Turbopack)
-React       19.2
-TypeScript  latest
-Node.js     25.2.1
-yarn        4.12.0
-```
-
-```
-Charts      lightweight-charts
-Styles      Tailwind CSS
-Linting     ESLint + Stylelint + Prettier
-Tests       Jest (domain and infrastructure only — no UI tests)
-```
+1. Read the relevant `docs/` documents before starting any task.
+2. Define interfaces (`types.ts`) before writing implementations.
+3. Always write test files alongside implementation files.
+4. Never violate layer dependency directions.
+5. Never import external libraries inside `domain/`.
 
 ---
 
@@ -294,75 +191,16 @@ yarn format
 
 ---
 
-## Code Quality Principles
+## Reference Documents
 
-- **FF Principles**: Readability, Predictability, Cohesion, Coupling
-- **AHA**: Abstract after three repetitions. No premature abstraction.
-- Coverage target: 100% (domain and infrastructure)
-
----
-
-## Task Execution Rules
-
-1. Read the relevant `docs/` documents before starting any task.
-2. Define interfaces (`types.ts`) before writing implementations.
-3. Always write test files alongside implementation files.
-4. Never violate layer dependency directions.
-5. Never import external libraries inside `domain/`.
-
----
-
-## Skills System
-
-Siglens extends its analysis capabilities through `.md` files inside `/skills/` and its subdirectories.
-New analysis techniques are applied simply by adding a Markdown file — no code changes required.
-
-### Directory Location
-
-`/skills/` lives at the **project root**, not inside `src/`. Skills are declarative configuration
-files, not source code.
-
-```
-skills/                        ← project root (not src/)
-├── patterns/
-│   ├── head-and-shoulders.md
-│   ├── inverse-head-and-shoulders.md
-│   ├── double-top.md
-│   ├── double-bottom.md
-│   ├── ascending-wedge.md
-│   └── descending-wedge.md
-├── indicators/
-│   └── (향후 보조지표 시그널 스킬)
-└── strategies/
-    └── (향후 대순환 분석 등)
-```
-
-### Layer Responsibility
-
-Skills files are **not** read by `domain/` — domain has no file I/O.
-Reading and parsing skills `.md` files is the responsibility of **`infrastructure/skills/loader.ts`** (`FileSkillsLoader`).
-The parsed `Skill[]` is passed into `domain/analysis/prompt.ts` as a plain data structure.
-
-```
-infrastructure/skills/loader.ts (FileSkillsLoader)
-  → recursively scans skills/ subdirectories for .md files (file I/O — allowed in infrastructure layer)
-  → parses frontmatter + body
-  → returns Skill[]
-
-app/api/analyze/route.ts (or app/[symbol]/page.tsx)
-  → calls FileSkillsLoader.loadSkills()
-  → passes Skill[] to domain/analysis/prompt.ts
-
-domain/analysis/prompt.ts
-  → buildAnalysisPrompt(symbol, bars, indicators, skills)
-  → filters by confidenceWeight (< 0.5 excluded)
-  → builds the prompt     (pure function, no file access)
-```
-
-### When Working on Skills-related Tasks
-
-- Read all `.md` files in the `skills/` directory
-- Check the `indicators` field in each file's frontmatter to identify required indicators
-- Skills with `confidence_weight < 0.5` are excluded from the prompt entirely
-- Refer to the Skills System section in `docs/DOMAIN.md` for the full file format spec,
-  type definitions, and `Skill` interface
+| Document | Contents |
+|---|---|
+| `docs/SERVICE.md` | Product overview, target users, tech stack, Skills system |
+| `docs/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
+| `docs/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
+| `docs/API.md` | Alpaca and Claude API endpoints, request/response schemas |
+| `docs/CONVENTIONS.md` | Coding conventions, naming rules, paradigm guidelines |
+| `docs/FF.md` | FF 4 principles in detail (Readability, Predictability, Cohesion, Coupling) |
+| `docs/DESIGN.md` | Color system, Tailwind config, chart color constants |
+| `docs/GIT_CONVENTIONS.md` | Branch naming, commit message format, PR rules |
+| `docs/MISTAKES.md` | Common mistakes Claude Code repeatedly makes — review before and after implementing |
