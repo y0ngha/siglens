@@ -13,7 +13,7 @@ import {
 
 export async function analyzeAction(
     variables: AnalyzeVariables,
-    timeframe: Timeframe,
+    timeframe: Timeframe
 ): Promise<RunAnalysisResult> {
     const cache = createCacheProvider();
     const cacheKey = buildAnalysisCacheKey(variables.symbol, timeframe);
