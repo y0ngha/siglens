@@ -50,7 +50,7 @@ export function TickerAutocomplete({
     const navigate = useCallback(
         (symbol: string) => {
             setQuery('');
-            setIsClosed(false);
+            setIsClosed(true);
             setSelectedIndex(-1);
             onSelect?.(symbol);
             router.push(`/${symbol}`);

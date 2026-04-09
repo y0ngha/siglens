@@ -39,22 +39,18 @@ async function seed(): Promise<void> {
 
     const existing =
         (await redis.get<KoreanTickerEntry[]>(KOREAN_TICKERS_CACHE_KEY)) ?? [];
-    const entriesMap = new Map(existing.map(e => [e.symbol, e]));
+    const existingMap = new Map(existing.map(e => [e.symbol, e]));
 
-    let newCount = 0;
-    let updatedCount = 0;
-
-    for (const seedEntry of KOREAN_TICKERS_SEED) {
-        const existingEntry = entriesMap.get(seedEntry.symbol);
-        if (existingEntry) {
-            if (JSON.stringify(existingEntry) !== JSON.stringify(seedEntry)) {
-                updatedCount++;
-            }
-        } else {
-            newCount++;
-        }
-        entriesMap.set(seedEntry.symbol, seedEntry);
-    }
+    const { newCount, updatedCount } = KOREAN_TICKERS_SEED.reduce(
+        (acc, entry) => {
+            const prev = existingMap.get(entry.symbol);
+            if (!prev) return { ...acc, newCount: acc.newCount + 1 };
+            if (JSON.stringify(prev) !== JSON.stringify(entry))
+                return { ...acc, updatedCount: acc.updatedCount + 1 };
+            return acc;
+        },
+        { newCount: 0, updatedCount: 0 }
+    );
 
     if (newCount === 0 && updatedCount === 0) {
         console.log(
@@ -63,9 +59,12 @@ async function seed(): Promise<void> {
         return;
     }
 
-    const merged = Array.from(entriesMap.values()).sort((a, b) =>
-        a.symbol.localeCompare(b.symbol)
-    );
+    const merged = Array.from(
+        new Map([
+            ...existingMap,
+            ...KOREAN_TICKERS_SEED.map(e => [e.symbol, e] as const),
+        ]).values()
+    ).sort((a, b) => a.symbol.localeCompare(b.symbol));
 
     await redis.set(KOREAN_TICKERS_CACHE_KEY, merged, {
         ex: KOREAN_NAMES_CACHE_TTL,
