@@ -627,7 +627,7 @@ function ReanalyzeButton({
                     ? '재분석은 5분에 한 번만 실행할 수 있어요.'
                     : undefined
             }
-            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 mt-1 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors disabled:cursor-not-allowed"
+            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 disabled:cursor-not-allowed w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors"
         >
             {label}
         </button>
@@ -1008,11 +1008,13 @@ export function AnalysisPanel({
             )}
 
             {onReanalyze !== undefined && (
-                <ReanalyzeButton
-                    isAnalyzing={isAnalyzing}
-                    reanalyzeCooldownMs={reanalyzeCooldownMs}
-                    onReanalyze={onReanalyze}
-                />
+                <div className="mt-1">
+                    <ReanalyzeButton
+                        isAnalyzing={isAnalyzing}
+                        reanalyzeCooldownMs={reanalyzeCooldownMs}
+                        onReanalyze={onReanalyze}
+                    />
+                </div>
             )}
         </div>
     );

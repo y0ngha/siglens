@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import { useState, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { validateKeyLevels } from '@/domain/analysis/keyLevels';
@@ -117,9 +117,11 @@ export function ChartContent({
     // 늦게 false로 떨어지는 displayAnalyzing 상태를 둔다. AnalysisPanel(본문)과
     // AnalysisStatusBanner(상단 배너)가 동일한 타이밍을 공유한다.
     const [displayAnalyzing, setDisplayAnalyzing] = useState(isAnalyzing);
-    useEffect(() => {
+    const [prevIsAnalyzing, setPrevIsAnalyzing] = useState(isAnalyzing);
+    if (prevIsAnalyzing !== isAnalyzing) {
+        setPrevIsAnalyzing(isAnalyzing);
         if (isAnalyzing) setDisplayAnalyzing(true);
-    }, [isAnalyzing]);
+    }
     const handleProgressFinished = useCallback(() => {
         setDisplayAnalyzing(false);
     }, []);
