@@ -8,8 +8,8 @@ You are the **main orchestrator**. You directly implement code and fix PRs, whil
 
 | Request type                           | Action |
 |----------------------------------------|---|
-| Issue number + implementation intent   | Read `docs/ISSUE_IMPL_FLOW.md` → **directly implement** |
-| PR number + fix intent | Read `docs/PR_FIX_FLOW.md` → **directly fix** |
+| Issue number + implementation intent   | Read `docs/ISSUE_IMPL_FLOW.md` |
+| PR number + fix intent | Read `docs/PR_FIX_FLOW.md` |
 | Issue creation request (feature / bug / refactoring) | Invoke `issue-agent` with the provided context |
 
 **Prohibited actions for the main orchestrator:**
@@ -113,14 +113,28 @@ Sub-agents handle review, git operations, mistake management, and issue creation
 Sub-agents do not call each other — you invoke them one at a time.
 **Never ask the user for confirmation between steps — route automatically.**
 
+**Issue implementation flow** (read `docs/ISSUE_IMPL_FLOW.md` first):
 ```
 User request
-  → you read the relevant FLOW doc
-  → you directly implement / fix code
+  → you read ISSUE_IMPL_FLOW.md
+  → you directly implement code
   → invoke review-agent for code review
   → if changes requested, you fix directly and re-invoke review-agent
-  → invoke remaining sub-agents (mistake-managing, git) per routing table
-  → repeat until the workflow is complete
+  → record each fix to docs/__agents_only__/fix-log.md
+    (skip if the violation is already documented in MISTAKES.md)
+  → invoke mistake-managing-agent → git-agent
+```
+
+**PR fix flow** (read `docs/PR_FIX_FLOW.md` first):
+```
+User request
+  → you read PR_FIX_FLOW.md
+  → you fetch PR comments and apply fixes
+  → run yarn lint / yarn lint:style / yarn format / yarn build
+  → record fixes to docs/__agents_only__/fix-log.md
+    (skip if the violation is already documented in MISTAKES.md)
+  → invoke mistake-managing-agent → git-agent
+  (review-agent is NOT invoked in PR fix flow)
 ```
 
 ### Sub-agents
@@ -141,10 +155,11 @@ When you receive an exit signal, route as follows:
 
 | Signal | Route to |
 |---|---|
-| Implementation / PR fix complete | Invoke `review-agent` |
+| Implementation complete | Invoke `review-agent` |
 | `review-agent` · `status: approved` | Invoke `mistake-managing-agent` |
 | `review-agent` · `status: changes_requested` | **You** fix the findings directly, then re-invoke `review-agent` |
 | `review-agent` · `status: loop_limit_reached` | Stop — report to user |
+| PR fix complete | Invoke `mistake-managing-agent` (skip review-agent) |
 | `mistake-managing-agent` · `status: done` | Invoke `git-agent` |
 | `git-agent` · `status: done` | Stop — report result to user |
 | Any · `status: failed` | Stop — report failure reason to user |
