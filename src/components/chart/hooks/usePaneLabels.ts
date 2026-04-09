@@ -91,8 +91,10 @@ export function usePaneLabels({
         labelElementsRef.current = labelPairs.map(({ el }) => el);
 
         const recomputeTops = () => {
+            const currentChart = chartRef.current;
+            if (!currentChart) return;
             for (const { config, el } of labelPairs) {
-                const top = getTopOffset(chart, config.paneIndex);
+                const top = getTopOffset(currentChart, config.paneIndex);
                 el.style.top = `${top + LABEL_OFFSET_PX}px`;
             }
         };

@@ -14,10 +14,6 @@
 - Rule: MISTAKES.md TypeScript #11 — 구현 변경 시 문서 동기화 필수
 - Context: PR #216에서 `src/infrastructure/ticker/`가 신규 추가됐으나 ARCHITECTURE.md 폴더 트리에 누락
 
-- Violation: `inputClass`, `buttonClass`가 `size` prop 파생값임에도 useMemo 없이 매 렌더마다 재계산
-- Rule: MISTAKES.md Components #11 — props/state에서 파생된 객체는 useMemo로 메모이제이션 필요
-- Context: `TickerAutocomplete.tsx`의 두 className 상수가 `size`에만 의존하므로 `useMemo([size])`로 감쌈
-
 ## [PR #216 Round 7 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `{isOpen && ...}` 블록 내부에서 `hasQuery`가 항상 `true`임에도 `&& hasQuery` 조건 유지 (dead code)
 - Rule: MISTAKES.md Coding Paradigm #4 — 결과를 변경하지 않는 조건(효과 없는 로직) 제거
@@ -55,10 +51,6 @@
 - Rule: MISTAKES.md Components #5 — Side effects inside setState updater functions; 더 나아가 render 중 setState 자체가 React 19 concurrent mode + startTransition 조합에서 Next.js Router 업데이트 충돌을 일으킬 수 있음
 - Context: `useTimeframeChange`의 `startTransition` 내부에서 Suspense가 트리거되는 동안 render-phase setState가 Router context 업데이트와 충돌했음; `timeframeChangeCount` 관리를 `handleTimeframeChange` 이벤트 핸들러 안으로 이동하여 해결
 
-## [fix/bars-null-and-ssr-window-error | 2026-04-06]
-- Violation: `panelWidthAtDragStartRef` was initialized by eagerly calling `getDefaultPanelWidth()` while `panelWidth` state used the lazy initializer form; the two initial values diverge if `getDefaultPanelWidth()` returns different results on successive calls
-- Rule: CONVENTIONS.md Convention 2-B (Predictability) — useState lazy initializer and useRef initial value must share the same source of truth to prevent divergence
-- Context: `usePanelResize.ts` called `getDefaultPanelWidth()` eagerly in `useRef` on line 34; fixed by initializing the ref to `0` since it is always overwritten in `handleDragStart` before being read in `onResize`
 
 ## [fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
 - Violation: `mutationFn` passed `AnalyzeMutationVariables` (which includes `force: boolean`) directly to `analyzeAction`, whose first parameter is typed as `AnalyzeVariables` (no `force` field), causing a TypeScript excess property error
@@ -70,10 +62,6 @@
 - Rule: MISTAKES.md Layer Dependencies #3 — `lightweight-charts` import(타입 포함)는 `components/chart/` 내부로 제한됨
 - Context: visible range 동기화를 위해 `stockChartRef`, `volumeChartRef`, 콜백 2개가 모두 `IChartApi`에 의존했음; `components/chart/hooks/useChartSync.ts`로 추출하여 `ChartContent.tsx`에서 `IChartApi` import 제거
 
-## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
-- Violation: TODO 주석으로 명시적 보존이 지시된 `EyeIcon` 컴포넌트가 삭제됨; commented-out 버튼 코드에서 여전히 `EyeIcon`을 참조하고 있어 주석 해제 시 불일치 발생
-- Rule: FF.md Predictability — TODO로 유지 의도가 명시된 코드를 삭제하면 향후 주석 해제 시 참조 오류가 발생하여 예측 가능성을 해침
-- Context: `AnalysisPanel.tsx`에서 `EyeIcon` 컴포넌트가 제거되었으나 3곳의 commented-out 버튼에서 여전히 `<EyeIcon>`을 참조; 원본 코드를 복원하여 해결
 
 ## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
 - Violation: `POPULAR_TICKERS` (비즈니스 도메인 지식)가 `src/lib/seo.ts`에 정의되어 lib 레이어 허용 범위를 벗어남
@@ -85,10 +73,6 @@
 - Rule: FF.md Cohesion — 동일한 도메인 정보(종목 설명)는 코드베이스 전반에서 일관되게 유지되어야 함
 - Context: `[symbol]/page.tsx`에서 `generateMetadata`의 description과 `jsonLd.description`이 서로 다른 문자열을 사용했음; jsonLd를 generateMetadata와 동일한 전체 문장으로 통일하여 해결
 
-## [PR #218 | feat/217/재분석-버튼-활성화 | 2026-04-09]
-- Violation: `ChartContent.tsx`에서 `useEffect` 내 `if (isAnalyzing) setDisplayAnalyzing(true)` 직접 setState 호출이 cascading renders 경고(`react-hooks/set-state-in-effect`)를 유발함
-- Rule: React 공식 권장 — prop 변화에 반응한 state 동기화는 `useEffect` 대신 렌더링 중 state 업데이트 패턴(`prevProp` state로 이전 값 추적)을 사용해야 함
-- Context: `isAnalyzing`이 true로 변할 때 `displayAnalyzing`을 true로 동기화하기 위해 `useEffect`를 사용했으나, `prevIsAnalyzing` state를 추가하고 렌더링 중 비교하는 패턴으로 교체하여 해결
 
 ## [fix/bars-null-and-ssr-window-error (FMP API spec fix) | 2026-04-06]
 - Violation: `console.log(url)` left in `fmp.ts` `getBars()` — debug artifact shipped to infrastructure

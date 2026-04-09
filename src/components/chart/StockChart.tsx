@@ -73,6 +73,8 @@ interface StockChartProps {
     ) => void;
     /** 차트 인스턴스가 준비되면 호출된다. 거래량 차트와 visible range 동기화에 사용된다. */
     onChartReady?: (chart: IChartApi) => void;
+    /** 차트가 제거되기 직전에 호출된다. 구독 해제에 사용된다. */
+    onChartRemove?: () => void;
 }
 
 export function StockChart({
@@ -89,6 +91,7 @@ export function StockChart({
     keyLevelsVisible: _keyLevelsVisible = false,
     onPatternOverlayChange: _onPatternOverlayChange,
     onChartReady,
+    onChartRemove,
 }: StockChartProps) {
     const [rsiVisible, setRsiVisible] = useState(false);
     const [macdVisible, setMacdVisible] = useState(false);
@@ -104,6 +107,7 @@ export function StockChart({
         null
     );
     const onChartReadyRef = useRef(onChartReady);
+    const onChartRemoveRef = useRef(onChartRemove);
 
     const paneIndices: PaneIndices = useMemo(() => {
         const visibles = [
@@ -172,6 +176,7 @@ export function StockChart({
 
     useEffect(() => {
         onChartReadyRef.current = onChartReady;
+        onChartRemoveRef.current = onChartRemove;
     });
 
     useEffect(() => {
@@ -204,6 +209,7 @@ export function StockChart({
         onChartReadyRef.current?.(chart);
 
         return () => {
+            onChartRemoveRef.current?.();
             chart.remove();
             chartRef.current = null;
             seriesRef.current = null;
