@@ -251,6 +251,22 @@ export interface BarsData {
     indicators: IndicatorResult;
 }
 
+export interface KoreanTickerEntry {
+    symbol: string;
+    koreanName: string;
+    name: string;
+    exchange: string;
+    exchangeFullName: string;
+}
+
+export interface TickerSearchResult {
+    symbol: string;
+    name: string;
+    koreanName?: string;
+    exchange: string;
+    exchangeFullName: string;
+}
+
 export interface AnalyzeVariables {
     symbol: string;
     bars: Bar[];
