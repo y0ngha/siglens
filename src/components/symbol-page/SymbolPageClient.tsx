@@ -54,9 +54,9 @@ export function SymbolPageClient({
                                     {hasCompanyName ? ', ' : ' '}
                                 </span>
                             )}
-                            {hasCompanyName && (
+                            {assetInfo && hasCompanyName && (
                                 <span className="text-secondary-200">
-                                    {assetInfo?.name}{' '}
+                                    {assetInfo.name}{' '}
                                 </span>
                             )}
                             ({ticker})
