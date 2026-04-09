@@ -140,7 +140,6 @@ describe('getAssetInfoAction', () => {
     describe('FMP 결과에 정확히 일치하는 심볼이 없을 때', () => {
         it('첫 번째 US 거래소 결과를 사용한다', async () => {
             const otherResult = makeFmpResult('AAPL.A');
-            otherResult.symbol = 'AAPL.A';
             mockSearchBySymbol.mockResolvedValueOnce([otherResult]);
             mockGetKoreanNames.mockResolvedValueOnce({});
 

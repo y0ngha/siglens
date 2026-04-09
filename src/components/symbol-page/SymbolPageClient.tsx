@@ -32,7 +32,7 @@ export function SymbolPageClient({
         useTimeframeChange(symbol);
     const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
-    const hasCompanyName = !!assetInfo?.name && assetInfo.name !== ticker;
+    const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
 
     return (
         <div className="bg-secondary-900 text-secondary-200 flex h-screen flex-col overflow-hidden">
