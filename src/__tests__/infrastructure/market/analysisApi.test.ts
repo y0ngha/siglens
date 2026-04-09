@@ -185,8 +185,7 @@ describe('runAnalysis', () => {
             const analysisWithRecommendation: RawAnalysisResponse = {
                 ...mockRawAnalysis,
                 actionRecommendation: {
-                    positionAnalysis:
-                        '현재가 180은 저항선 181 근처입니다.',
+                    positionAnalysis: '현재가 180은 저항선 181 근처입니다.',
                     entry: '175~177 구간 매수 검토',
                     exit: '185 목표, 172 손절',
                     riskReward: '1:2.5',

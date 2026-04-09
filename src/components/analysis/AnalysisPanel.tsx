@@ -770,24 +770,22 @@ export function AnalysisPanel({
                                     [
                                         {
                                             label: '현재 위치',
-                                            value: analysis
-                                                .actionRecommendation
+                                            value: analysis.actionRecommendation
                                                 .positionAnalysis,
                                         },
                                         {
                                             label: '진입 전략',
-                                            value: analysis
-                                                .actionRecommendation.entry,
+                                            value: analysis.actionRecommendation
+                                                .entry,
                                         },
                                         {
                                             label: '청산 전략',
-                                            value: analysis
-                                                .actionRecommendation.exit,
+                                            value: analysis.actionRecommendation
+                                                .exit,
                                         },
                                         {
                                             label: '리스크/리워드',
-                                            value: analysis
-                                                .actionRecommendation
+                                            value: analysis.actionRecommendation
                                                 .riskReward,
                                         },
                                     ] as const

@@ -1896,7 +1896,6 @@ describe('prompt', () => {
             );
             expect(result).toContain('riskReward');
         });
-
     });
 
     describe('Skills 섹션 - type이 strategy인 skill일 때', () => {
