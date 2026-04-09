@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #216 Round 7 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: `{isOpen && ...}` 블록 내부에서 `hasQuery`가 항상 `true`임에도 `&& hasQuery` 조건 유지 (dead code)
+- Rule: MISTAKES.md Coding Paradigm #4 — 결과를 변경하지 않는 조건(효과 없는 로직) 제거
+- Context: `isOpen = !isClosed && hasQuery`이므로 해당 블록 진입 시 `hasQuery`는 항상 true; `&& hasQuery` 제거
+
 ## [PR #216 Round 6 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `size?: 'sm' | 'lg'` 인라인 유니온 리터럴 타입을 named type alias로 추출하지 않음
 - Rule: CONVENTIONS.md — 2개 이상 리터럴 유니온은 type alias로 추출 필수

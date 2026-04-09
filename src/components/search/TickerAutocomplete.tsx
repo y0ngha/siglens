@@ -139,7 +139,7 @@ export function TickerAutocomplete({
                                 검색 중...
                             </div>
                         )}
-                        {!isSearching && hasQuery && results.length === 0 && (
+                        {!isSearching && results.length === 0 && (
                             <div className="text-secondary-400 px-4 py-3 text-sm">
                                 {isKorean
                                     ? '검색 결과 없음 — 티커(예: AAPL)로 검색해 보세요'
