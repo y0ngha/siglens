@@ -232,6 +232,13 @@ export interface Trendline {
     end: TrendlinePoint;
 }
 
+export interface ActionRecommendation {
+    positionAnalysis: string;
+    entry: string;
+    exit: string;
+    riskReward: string;
+}
+
 export interface AnalysisResponse {
     summary: string;
     trend: Trend;
@@ -244,6 +251,7 @@ export interface AnalysisResponse {
     skillResults: SkillResult[];
     candlePatterns: CandlePatternSummary[];
     trendlines: Trendline[];
+    actionRecommendation?: ActionRecommendation;
 }
 
 export interface BarsData {

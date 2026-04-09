@@ -456,6 +456,30 @@ describe('confidence', () => {
             });
         });
 
+        describe('actionRecommendation pass-through', () => {
+            it('actionRecommendation이 있으면 enriched 결과에 포함된다', () => {
+                const analysis = makeAnalysisResponse({
+                    actionRecommendation: {
+                        positionAnalysis: '테스트 위치 분석',
+                        entry: '테스트 진입',
+                        exit: '테스트 청산',
+                        riskReward: '테스트 손익비',
+                    },
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.actionRecommendation).toBeDefined();
+                expect(result.actionRecommendation?.positionAnalysis).toBe(
+                    '테스트 위치 분석'
+                );
+            });
+
+            it('actionRecommendation이 없으면 enriched 결과에도 없다', () => {
+                const analysis = makeAnalysisResponse();
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.actionRecommendation).toBeUndefined();
+            });
+        });
+
         describe('불변성', () => {
             it('원본 analysis 객체를 변경하지 않는다', () => {
                 const patternSummary = makePatternSummary({
@@ -478,15 +502,25 @@ describe('confidence', () => {
             });
 
             it('patternSummaries와 skillResults 외의 필드는 변경하지 않는다', () => {
+                const actionRecommendation = {
+                    positionAnalysis: '원본 위치 분석',
+                    entry: '원본 진입',
+                    exit: '원본 청산',
+                    riskReward: '원본 손익비',
+                };
                 const analysis = makeAnalysisResponse({
                     summary: '원본 요약',
                     trend: 'bearish',
                     riskLevel: 'high',
+                    actionRecommendation,
                 });
                 const result = enrichAnalysisWithConfidence(analysis, []);
                 expect(result.summary).toBe('원본 요약');
                 expect(result.trend).toBe('bearish');
                 expect(result.riskLevel).toBe('high');
+                expect(result.actionRecommendation).toEqual(
+                    actionRecommendation
+                );
             });
         });
     }); // enrichAnalysisWithConfidence

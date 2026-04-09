@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type React from 'react';
 import type {
+    ActionRecommendation,
     AnalysisResponse,
     CandlePatternSummary,
     KeyLevels,
@@ -38,6 +39,46 @@ function formatCooldown(ms: number): string {
     const minutes = Math.floor(totalSec / 60);
     const seconds = totalSec % 60;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
+interface ActionRecommendationField {
+    label: string;
+    key: keyof ActionRecommendation;
+}
+
+const ACTION_RECOMMENDATION_FIELDS: readonly ActionRecommendationField[] = [
+    { label: '현재 위치', key: 'positionAnalysis' },
+    { label: '진입 전략', key: 'entry' },
+    { label: '청산 전략', key: 'exit' },
+    { label: '리스크/리워드', key: 'riskReward' },
+];
+
+interface ActionRecommendationSectionProps {
+    rec: ActionRecommendation;
+}
+
+function ActionRecommendationSection({
+    rec,
+}: ActionRecommendationSectionProps) {
+    return (
+        <div className="bg-secondary-700/30 flex flex-col gap-2 rounded-lg p-3">
+            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                매매 전략
+            </span>
+            <div className="flex flex-col gap-2">
+                {ACTION_RECOMMENDATION_FIELDS.map(({ label, key }) => (
+                    <div key={label} className="flex flex-col gap-0.5">
+                        <span className="text-secondary-400 text-xs font-medium">
+                            {label}
+                        </span>
+                        <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
+                            {rec[key]}
+                        </p>
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
 }
 
 const TREND_COLOR: Record<Trend, string> = {
@@ -758,6 +799,13 @@ export function AnalysisPanel({
             {!showProgress && (
                 <>
                     <div className="border-secondary-700 border-t" />
+
+                    {/* 매매 전략 추천 */}
+                    {analysis.actionRecommendation && (
+                        <ActionRecommendationSection
+                            rec={analysis.actionRecommendation}
+                        />
+                    )}
 
                     {/* 인디케이터 시그널 */}
                     {analysis.signals.length > 0 && (

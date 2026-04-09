@@ -678,6 +678,13 @@ interface SkillResult {
     confidenceWeight: number; // skill의 신뢰도 가중치 (0~1)
 }
 
+interface ActionRecommendation {
+    positionAnalysis: string;  // 현재 가격의 지지/저항 대비 위치
+    entry: string;             // 구체적 가격대를 포함한 진입 전략
+    exit: string;              // 익절/손절 가격대를 포함한 청산 전략
+    riskReward: string;        // 손익비 계산 (예: "1:3")
+}
+
 interface AnalysisResponse {
     summary: string;
     trend: Trend;
@@ -690,6 +697,7 @@ interface AnalysisResponse {
     skillResults: SkillResult[];        // skill별 분석 결과 (type!='pattern' skill)
     candlePatterns: CandlePatternSummary[]; // 캔들 패턴 감지 결과
     trendlines: Trendline[];           // AI가 감지한 추세선 목록 (0~3개)
+    actionRecommendation?: ActionRecommendation; // 매매 전략 추천 (optional)
 }
 ```
 

@@ -270,7 +270,8 @@ const buildSkillBlock = (skill: Skill): string =>
  * with AnalysisResponse — changes to the interface will produce a compile error here.
  */
 const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
-    summary: '"Overall analysis summary"',
+    summary:
+        '"A comprehensive, accessible summary that synthesizes ALL findings (indicators, patterns, volume profile, skills, strategies) into plain language a non-technical user can understand. Instead of stating raw indicator values, explain their practical meaning (e.g., instead of RSI is overbought at 75, say the stock has risen quickly and may be due for a pause). Answer: What is happening with this stock and what does it mean for the investor? Use \\n to separate each topic."',
     trend: '"bullish | bearish | neutral"',
     signals:
         '[{ "type": "...", "description": "...", "strength": "strong | moderate | weak" }]',
@@ -290,6 +291,8 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
         '[{ "patternName": "three_outside_down", "detected": true, "trend": "bearish", "summary": "..." }]',
     trendlines:
         '[{ "direction": "ascending | descending", "start": { "time": 1700000000, "price": 150.00 }, "end": { "time": 1700100000, "price": 155.00 } }]',
+    actionRecommendation:
+        '{ "positionAnalysis": "Current price position vs support/resistance analysis", "entry": "Entry strategy with specific price ranges", "exit": "Exit strategy with specific price ranges", "riskReward": "Risk-reward ratio analysis" }',
 };
 
 const buildSchemaBody = (): string => {
@@ -350,13 +353,32 @@ const ANALYSIS_GUIDELINES = [
     '- Weight signals by the number of confirming indicators and the strength of each signal.',
     '- Mention the conflict explicitly in the summary so the user understands the mixed picture.',
     '',
+    '### Summary Writing Guidelines',
+    '- The summary must synthesize ALL analysis sections: indicator readings, detected patterns, volume profile findings, skill results, and strategy outcomes.',
+    '- Write in accessible language that non-technical investors can understand.',
+    '- Instead of stating raw indicator values, explain their practical meaning (e.g., "the stock has risen quickly and may be due for a pause" instead of "RSI is overbought at 75").',
+    '- When referencing patterns, explain what they typically predict in simple terms.',
+    '- If signals conflict, clearly state the mixed picture and which direction has stronger support.',
+    '- The summary should answer: "What is happening with this stock and what does it mean for the investor?"',
+    '',
+    '### Action Recommendation Guidelines',
+    '- actionRecommendation must be consistent with the keyLevels and priceTargets you already computed. Use those values directly — do not re-derive support/resistance from scratch.',
+    '- positionAnalysis: State where the current price sits relative to the keyLevels (support, resistance, POC) you identified above.',
+    '- entry: Provide specific entry price ranges with reasoning. Consider:',
+    '  - If current price is near resistance, advise waiting for a pullback to support (e.g., "current price 180 is near resistance 181, consider buying at support 175~177")',
+    '  - If current price is near support, entry may be favorable (e.g., "current price 166 is near support 167, consider staged entry at 165~167")',
+    '  - Always provide specific price ranges, not vague descriptions',
+    '- exit: Provide specific exit price ranges for both profit-taking and stop-loss, referencing the priceTargets and resistance levels above.',
+    '- riskReward: Calculate the risk-reward ratio based on entry, stop-loss, and target prices. Express as a ratio (e.g., "stop-loss 3% vs target 9% → risk:reward = 1:3").',
+    '- Write in accessible language that non-technical users can understand.',
+    '',
     '### Insufficient Data',
     '- If bar data is too short to reliably calculate an indicator or detect a pattern, state "데이터 부족" rather than guessing.',
     '- Do not fabricate support/resistance levels or patterns when the data does not clearly support them.',
 ].join('\n');
 
 const RESPONSE_LANGUAGE_INSTRUCTION =
-    'IMPORTANT: All text field values in the JSON response (summary, description, reason, basis, condition, etc.) must be written in Korean (한국어). Do not use English for any response content. Use formal/polite speech level (존댓말, e.g. "~입니다", "~습니다"). For the summary field, use \\n to separate each topic or sentence into its own line — do not write the summary as a single long paragraph. Other text fields (description, reason, basis, condition, etc.) should also use \\n for line breaks where it improves readability.';
+    'IMPORTANT: All text field values in the JSON response (summary, description, reason, basis, condition, positionAnalysis, entry, exit, riskReward, etc.) must be written in Korean (한국어). Do not use English for any response content. Use formal/polite speech level (존댓말, e.g. "~입니다", "~습니다"). For the summary field, use \\n to separate each topic or sentence into its own line — do not write the summary as a single long paragraph. Other text fields (description, reason, basis, condition, positionAnalysis, entry, exit, riskReward, etc.) should also use \\n for line breaks where it improves readability.';
 
 const buildAnalysisRequest = (
     patternSkills: Skill[],
