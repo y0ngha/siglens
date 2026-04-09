@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #216 | feat/196/ticker-autocomplete | 2026-04-09]
+- Violation: `getKoreanNames` 반환 타입이 `Record<string, string>`으로 선언되어 누락된 키에 접근 시 `undefined`가 `string`으로 잘못 추론됨
+- Rule: TypeScript: 인터페이스 필드 선언이 런타임 동작과 일치해야 함 (MISTAKES.md TypeScript #14 유사 — 런타임에 없을 수 있는 키는 Partial로 선언해야 함)
+- Context: `koreanNameStore.getKoreanNames`는 매핑이 없는 심볼 키를 반환 객체에 포함하지 않으므로, 반환 타입을 `Partial<Record<string, string>>`으로 선언해야 `searchTickerAction`의 `koreanNames[result.symbol]`이 `string | undefined`로 올바르게 추론됨
+
 ## [예시 항목 | 브랜치명 | 날짜]
 - Violation: 예시
 - Rule: 예시
