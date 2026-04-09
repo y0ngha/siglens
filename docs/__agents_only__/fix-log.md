@@ -5,11 +5,6 @@
 - Rule: MISTAKES.md Tests #2 — 인프라 파일 100% 브랜치 커버리지 필수; 허용 거래소 상수의 모든 값이 테스트되어야 함
 - Context: `filterUsExchanges` 테스트가 NYSE/NASDAQ/AMEX만 검증하고 NYSEArca를 누락; 4개 모두 포함하도록 수정
 
-## [PR #216 Round 8 | feat/196/ticker-autocomplete | 2026-04-09]
-- Violation: `navigate`에서 `setIsClosed(false)`로 설정해 선택 직후 드롭다운이 잠깐 열린 상태로 남을 수 있음
-- Rule: CONVENTIONS.md Predictability — 사용자 행동(종목 선택) 완료 후 UI 상태는 즉시 닫힘 상태여야 함
-- Context: `debouncedQuery`가 setTimeout으로 비워지기 전까지 `isOpen = !false && hasQuery = true`가 되어 이전 결과가 잠깐 노출; `setIsClosed(true)`로 수정
-
 ## [PR #216 Round 7 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: `{isOpen && ...}` 블록 내부에서 `hasQuery`가 항상 `true`임에도 `&& hasQuery` 조건 유지 (dead code)
 - Rule: MISTAKES.md Coding Paradigm #4 — 결과를 변경하지 않는 조건(효과 없는 로직) 제거
@@ -19,10 +14,6 @@
 - Violation: `size?: 'sm' | 'lg'` 인라인 유니온 리터럴 타입을 named type alias로 추출하지 않음
 - Rule: CONVENTIONS.md — 2개 이상 리터럴 유니온은 type alias로 추출 필수
 - Context: `TickerAutocomplete.tsx`의 Props 인터페이스에 `'sm' | 'lg'` 인라인 선언; `TickerAutocompleteSize` 타입으로 추출
-
-- Violation: 검색 버튼 `onClick` 핸들러만 인라인 익명 함수로 선언, 다른 핸들러와 불일치
-- Rule: MISTAKES.md Coding Paradigm #10 — 복잡한 익명 표현식은 named helper로 추출; 동일 컴포넌트 내 핸들러 패턴 일관성 유지
-- Context: `navigate`, `handleChange`, `handleKeyDown`은 모두 `useCallback`으로 추출됐으나 검색 버튼 `onClick`만 인라인; `handleSearchClick`으로 추출
 
 
 ## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
