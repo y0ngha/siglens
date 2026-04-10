@@ -2,7 +2,12 @@
 
 import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
-import type { IPriceLine, ISeriesApi, LineWidth, UTCTimestamp } from 'lightweight-charts';
+import type {
+    IPriceLine,
+    ISeriesApi,
+    LineWidth,
+    UTCTimestamp,
+} from 'lightweight-charts';
 import { LineStyle } from 'lightweight-charts';
 import type { ValidatedActionPrices } from '@/domain/analysis/actionRecommendation';
 import { CHART_COLORS } from '@/lib/chartColors';

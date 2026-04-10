@@ -99,4 +99,9 @@
 - Violation: Component props with leading underscore used in component body (e.g., _recommendedAction used as recommendedAction)
 - Rule: CONVENTIONS.md Naming — underscore prefix reserved for intentionally-unused destructured parameters; consumed props must not have underscore
 - Context: ActionRecommendationField received _recommendedAction but used it in render; removed underscore to indicate the prop is actually consumed
+
+## [PR #229 Round 2 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
+- Violation: StockChart prop default actionPricesVisible = false contradicted the parent ChartContent's intent (initialized to true). Default off-by-default is misleading when caller explicitly enables the feature.
+- Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
+- Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 - 
