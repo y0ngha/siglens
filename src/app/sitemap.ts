@@ -1,14 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { SITE_URL } from '@/lib/seo';
-
-const POPULAR_TICKERS = [
-    'AAPL',
-    'TSLA',
-    'NVDA',
-    'MSFT',
-    'GOOGL',
-    'AMZN',
-] as const;
+import { POPULAR_TICKERS, SITE_URL } from '@/lib/seo';
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const now = new Date();
@@ -23,7 +14,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         ...POPULAR_TICKERS.map(ticker => ({
             url: `${SITE_URL}/${ticker}`,
             lastModified: now,
-            changeFrequency: 'hourly' as const,
+            changeFrequency: 'daily' as const,
             priority: 0.8,
         })),
     ];
