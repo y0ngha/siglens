@@ -6,6 +6,7 @@ import {
     SITE_NAME,
 } from '@/lib/seo';
 import { Footer } from '@/components/layout/Footer';
+import { ContactDialog } from '@/components/layout/ContactDialog';
 
 const SUGGESTED_TICKERS = POPULAR_TICKERS.slice(
     0,
@@ -52,6 +53,19 @@ export default function NotFound() {
                             </Link>
                         ))}
                     </div>
+                </div>
+
+                <div className="border-secondary-800 mt-10 border-t pt-8">
+                    <p className="text-secondary-400 text-sm">
+                        실제로 있는 종목인데 찾을 수 없나요?
+                    </p>
+                    <p className="text-secondary-600 mt-1 text-xs">
+                        시스템 오류일 수 있습니다. 알려주시면 확인하겠습니다.
+                    </p>
+                    <ContactDialog
+                        triggerLabel="오류 제보하기 →"
+                        triggerClassName="text-primary-400 hover:text-primary-300 mt-3 inline-block text-xs transition-colors"
+                    />
                 </div>
             </main>
             <Footer />
