@@ -26,15 +26,17 @@ function clampSARDowntrend(
     return Math.max(sar, prevBar.high, prevPrevBar.high);
 }
 
+interface PSARNextStateResult {
+    state: PSARState;
+    result: ParabolicSARResult;
+}
+
 function nextState(
     bar: Bar,
     prev: PSARState,
     afIncrement: number,
     afMax: number
-): {
-    state: PSARState;
-    result: ParabolicSARResult;
-} {
+): PSARNextStateResult {
     const rawSAR = prev.sar + prev.af * (prev.ep - prev.sar);
 
     if (prev.trend === 'up') {

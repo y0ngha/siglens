@@ -53,6 +53,25 @@ describe('calculateKeltnerChannel', () => {
     });
 
     describe('입력 배열 길이가 충분할 때', () => {
+        it('처음 max(emaPeriod-1, atrPeriod)개의 값은 null이다', () => {
+            const bars = makeUniformBars(30);
+            const result = calculateKeltnerChannel(bars);
+            const nullCount = Math.max(
+                KELTNER_EMA_PERIOD - 1,
+                KELTNER_ATR_PERIOD
+            );
+            expect(
+                result
+                    .slice(0, nullCount)
+                    .every(
+                        (r: KeltnerChannelResult) =>
+                            r.upper === null &&
+                            r.middle === null &&
+                            r.lower === null
+                    )
+            ).toBe(true);
+        });
+
         it('입력과 동일한 길이의 배열을 반환한다', () => {
             const bars = makeUniformBars(30);
             expect(calculateKeltnerChannel(bars)).toHaveLength(30);

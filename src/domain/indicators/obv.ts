@@ -1,6 +1,6 @@
 import type { Bar } from '@/domain/types';
 
-export function calculateOBV(bars: Bar[]): (number | null)[] {
+export function calculateOBV(bars: Bar[]): number[] {
     if (bars.length === 0) return [];
 
     return bars.reduce<number[]>((acc, bar, i) => {

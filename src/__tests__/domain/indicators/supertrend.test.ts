@@ -90,10 +90,11 @@ describe('calculateSupertrend', () => {
             const result = calculateSupertrend(bars);
             result
                 .slice(SUPERTREND_ATR_PERIOD)
-                .forEach((r: SupertrendResult) => {
+                .forEach((r: SupertrendResult, i) => {
                     if (r.trend === 'up') {
+                        const barIdx = SUPERTREND_ATR_PERIOD + i;
                         expect(r.supertrend as number).toBeLessThan(
-                            bars[bars.length - 1].close
+                            bars[barIdx].close
                         );
                     }
                 });

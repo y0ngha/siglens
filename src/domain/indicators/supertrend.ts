@@ -25,7 +25,7 @@ export function calculateSupertrend(
     if (bars.length <= atrPeriod) return bars.map(() => NULL_RESULT);
 
     const firstValidIdx = atrPeriod;
-    const firstATR = atrValues[firstValidIdx] as number;
+    const firstATR = atrValues[firstValidIdx]!;
     const firstBar = bars[firstValidIdx];
     const hl2 = (firstBar.high + firstBar.low) / 2;
 
@@ -49,7 +49,7 @@ export function calculateSupertrend(
     }>(
         (acc, bar, i) => {
             const idx = firstValidIdx + 1 + i;
-            const atr = atrValues[idx] as number;
+            const atr = atrValues[idx]!;
             const currentHL2 = (bar.high + bar.low) / 2;
             const basicUpperBand = currentHL2 + multiplier * atr;
             const basicLowerBand = currentHL2 - multiplier * atr;

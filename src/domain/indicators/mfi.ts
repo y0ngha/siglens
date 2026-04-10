@@ -20,21 +20,13 @@ export function calculateMFI(
         const windowTPs = tps.slice(i - period, i + 1);
         const windowMFs = rawMFs.slice(i - period, i + 1);
 
-        const { positive, negative } = windowTPs.slice(1).reduce(
-            (acc, tp, j) => {
-                const prevTP = windowTPs[j];
-                const mf = windowMFs[j + 1];
-                return tp > prevTP
-                    ? { positive: acc.positive + mf, negative: acc.negative }
-                    : tp < prevTP
-                      ? {
-                            positive: acc.positive,
-                            negative: acc.negative + mf,
-                        }
-                      : acc;
-            },
-            { positive: 0, negative: 0 }
-        );
+        const slicedTPs = windowTPs.slice(1);
+        const positive = slicedTPs
+            .map((tp, j) => (tp > windowTPs[j] ? windowMFs[j + 1] : 0))
+            .reduce((sum, v) => sum + v, 0);
+        const negative = slicedTPs
+            .map((tp, j) => (tp < windowTPs[j] ? windowMFs[j + 1] : 0))
+            .reduce((sum, v) => sum + v, 0);
 
         if (negative === 0) return MFI_MAX;
         const mfRatio = positive / negative;
