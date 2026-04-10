@@ -98,9 +98,10 @@ describe('getAssetInfoAction', () => {
             mockGetKoreanNames.mockResolvedValueOnce({ AAPL: '애플' });
 
             const result = await getAssetInfoAction('AAPL');
-            expect(result.symbol).toBe('AAPL');
-            expect(result.name).toBe('AAPL Inc');
-            expect(result.koreanName).toBe('애플');
+            expect(result).not.toBeNull();
+            expect(result!.symbol).toBe('AAPL');
+            expect(result!.name).toBe('AAPL Inc');
+            expect(result!.koreanName).toBe('애플');
         });
 
         it('한국어명이 없으면 koreanName 없이 반환한다', async () => {
@@ -108,8 +109,9 @@ describe('getAssetInfoAction', () => {
             mockGetKoreanNames.mockResolvedValueOnce({});
 
             const result = await getAssetInfoAction('IONQ');
-            expect(result.symbol).toBe('IONQ');
-            expect(result.koreanName).toBeUndefined();
+            expect(result).not.toBeNull();
+            expect(result!.symbol).toBe('IONQ');
+            expect(result!.koreanName).toBeUndefined();
         });
 
         it('한국어명이 없으면 translateAndCache를 waitUntil로 등록한다', async () => {
@@ -138,7 +140,8 @@ describe('getAssetInfoAction', () => {
             mockGetKoreanNames.mockResolvedValueOnce({});
 
             const result = await getAssetInfoAction('aapl');
-            expect(result.symbol).toBe('AAPL');
+            expect(result).not.toBeNull();
+            expect(result!.symbol).toBe('AAPL');
             expect(mockSearchBySymbol).toHaveBeenCalledWith('AAPL');
         });
     });
@@ -150,24 +153,45 @@ describe('getAssetInfoAction', () => {
             mockGetKoreanNames.mockResolvedValueOnce({});
 
             const result = await getAssetInfoAction('AAPL');
-            expect(result.name).toBe('AAPL.A Inc');
+            expect(result).not.toBeNull();
+            expect(result!.name).toBe('AAPL.A Inc');
         });
     });
 
-    describe('FMP 결과가 없을 때', () => {
-        it('symbol을 name 폴백으로 사용한다', async () => {
+    describe('형식이 유효하지 않은 티커일 때', () => {
+        it('FMP를 호출하지 않고 null을 반환한다', async () => {
+            const result = await getAssetInfoAction('FAVICON.ICO');
+            expect(result).toBeNull();
+            expect(mockSearchBySymbol).not.toHaveBeenCalled();
+        });
+
+        it('캐시를 생성하지 않는다', async () => {
+            await getAssetInfoAction('WP-LOGIN.PHP');
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(mockCacheSet).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('형식은 유효하지만 FMP 결과가 없을 때', () => {
+        it('null을 반환한다', async () => {
             mockSearchBySymbol.mockResolvedValueOnce([]);
 
-            const result = await getAssetInfoAction('UNKNOWN');
-            expect(result.symbol).toBe('UNKNOWN');
-            expect(result.name).toBe('UNKNOWN');
-            expect(result.koreanName).toBeUndefined();
+            const result = await getAssetInfoAction('LAES');
+            expect(result).toBeNull();
+        });
+
+        it('캐시를 생성하지 않는다', async () => {
+            mockSearchBySymbol.mockResolvedValueOnce([]);
+
+            await getAssetInfoAction('LAES');
+            await new Promise(resolve => setTimeout(resolve, 0));
+            expect(mockCacheSet).not.toHaveBeenCalled();
         });
 
         it('translateAndCache를 호출하지 않는다', async () => {
             mockSearchBySymbol.mockResolvedValueOnce([]);
 
-            await getAssetInfoAction('UNKNOWN');
+            await getAssetInfoAction('LAES');
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(mockTranslateCompanyNames).not.toHaveBeenCalled();
         });
@@ -180,8 +204,9 @@ describe('getAssetInfoAction', () => {
             mockGetKoreanNames.mockResolvedValueOnce({ AAPL: '애플' });
 
             const result = await getAssetInfoAction('AAPL');
-            expect(result.symbol).toBe('AAPL');
-            expect(result.koreanName).toBe('애플');
+            expect(result).not.toBeNull();
+            expect(result!.symbol).toBe('AAPL');
+            expect(result!.koreanName).toBe('애플');
         });
     });
 
@@ -192,7 +217,8 @@ describe('getAssetInfoAction', () => {
             mockGetKoreanNames.mockResolvedValueOnce({});
 
             const result = await getAssetInfoAction('AAPL');
-            expect(result.symbol).toBe('AAPL');
+            expect(result).not.toBeNull();
+            expect(result!.symbol).toBe('AAPL');
             expect(mockSearchBySymbol).toHaveBeenCalled();
         });
     });
@@ -205,7 +231,8 @@ describe('getAssetInfoAction', () => {
 
             const result = await getAssetInfoAction('AAPL');
             await new Promise(resolve => setTimeout(resolve, 0));
-            expect(result.symbol).toBe('AAPL');
+            expect(result).not.toBeNull();
+            expect(result!.symbol).toBe('AAPL');
         });
     });
 
@@ -219,7 +246,8 @@ describe('getAssetInfoAction', () => {
 
             const result = await getAssetInfoAction('IONQ');
             await new Promise(resolve => setTimeout(resolve, 0));
-            expect(result.symbol).toBe('IONQ');
+            expect(result).not.toBeNull();
+            expect(result!.symbol).toBe('IONQ');
         });
     });
 

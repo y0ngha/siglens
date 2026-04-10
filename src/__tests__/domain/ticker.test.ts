@@ -1,4 +1,4 @@
-import { isKoreanInput, deduplicateResults } from '@/domain/ticker';
+import { isKoreanInput, deduplicateResults, isValidTickerFormat } from '@/domain/ticker';
 import type { TickerSearchResult } from '@/domain/types';
 
 const makeResult = (symbol: string): TickerSearchResult => ({
@@ -42,6 +42,80 @@ describe('isKoreanInput', () => {
     describe('빈 문자열일 때', () => {
         it('false를 반환한다', () => {
             expect(isKoreanInput('')).toBe(false);
+        });
+    });
+});
+
+describe('isValidTickerFormat', () => {
+    describe('표준 미국 주식 티커일 때', () => {
+        it('단일 알파벳 티커를 허용한다', () => {
+            expect(isValidTickerFormat('A')).toBe(true);
+        });
+
+        it('4자리 티커를 허용한다', () => {
+            expect(isValidTickerFormat('AAPL')).toBe(true);
+        });
+
+        it('5자리 티커를 허용한다', () => {
+            expect(isValidTickerFormat('GOOGL')).toBe(true);
+        });
+    });
+
+    describe('클래스 주식 티커(점 포함)일 때', () => {
+        it('BRK.A 형식을 허용한다', () => {
+            expect(isValidTickerFormat('BRK.A')).toBe(true);
+        });
+
+        it('BRK.B 형식을 허용한다', () => {
+            expect(isValidTickerFormat('BRK.B')).toBe(true);
+        });
+    });
+
+    describe('파일 확장자 형식일 때', () => {
+        it('FAVICON.ICO를 거부한다', () => {
+            expect(isValidTickerFormat('FAVICON.ICO')).toBe(false);
+        });
+
+        it('INDEX.PHP를 거부한다', () => {
+            expect(isValidTickerFormat('INDEX.PHP')).toBe(false);
+        });
+
+        it('XMLRPC.PHP를 거부한다', () => {
+            expect(isValidTickerFormat('XMLRPC.PHP')).toBe(false);
+        });
+
+        it('MANIFEST.WEBMANIFEST를 거부한다', () => {
+            expect(isValidTickerFormat('MANIFEST.WEBMANIFEST')).toBe(false);
+        });
+    });
+
+    describe('하이픈이 포함된 경로 형식일 때', () => {
+        it('WP-LOGIN.PHP를 거부한다', () => {
+            expect(isValidTickerFormat('WP-LOGIN.PHP')).toBe(false);
+        });
+    });
+
+    describe('숫자가 포함된 형식일 때', () => {
+        it('INVALIDTICKER123을 거부한다', () => {
+            expect(isValidTickerFormat('INVALIDTICKER123')).toBe(false);
+        });
+    });
+
+    describe('6자 이상 알파벳 형식일 때', () => {
+        it('6자리 티커를 거부한다', () => {
+            expect(isValidTickerFormat('TOOLNG')).toBe(false);
+        });
+    });
+
+    describe('빈 문자열일 때', () => {
+        it('false를 반환한다', () => {
+            expect(isValidTickerFormat('')).toBe(false);
+        });
+    });
+
+    describe('소문자가 포함될 때', () => {
+        it('소문자 티커를 거부한다', () => {
+            expect(isValidTickerFormat('aapl')).toBe(false);
         });
     });
 });
