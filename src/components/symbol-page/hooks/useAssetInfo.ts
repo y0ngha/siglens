@@ -11,5 +11,5 @@ export function useAssetInfo(symbol: string): AssetInfo | undefined {
         queryFn: () => getAssetInfoAction(symbol),
         staleTime: QUERY_STALE_TIME_MS,
     });
-    return data;
+    return data ?? undefined;
 }
