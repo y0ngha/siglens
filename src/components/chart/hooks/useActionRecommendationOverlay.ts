@@ -62,17 +62,22 @@ export function useActionRecommendationOverlay({
                   ]
                 : [];
 
-        const takeProfitLines = actionPrices.takeProfitPrices.map((price, idx) =>
-            series.createPriceLine({
-                price,
-                color: CHART_COLORS.actionTakeProfit,
-                lineWidth,
-                lineStyle: LineStyle.Dashed,
-                axisLabelVisible: true,
-                title: `청산점 #${idx + 1}`,
-            })
+        const takeProfitLines = actionPrices.takeProfitPrices.map(
+            (price, idx) =>
+                series.createPriceLine({
+                    price,
+                    color: CHART_COLORS.actionTakeProfit,
+                    lineWidth,
+                    lineStyle: LineStyle.Dashed,
+                    axisLabelVisible: true,
+                    title: `청산점 #${idx + 1}`,
+                })
         );
 
-        priceLinesRef.current = [...entryLines, ...stopLossLine, ...takeProfitLines];
+        priceLinesRef.current = [
+            ...entryLines,
+            ...stopLossLine,
+            ...takeProfitLines,
+        ];
     }, [actionPrices, isVisible, lineWidth]);
 }

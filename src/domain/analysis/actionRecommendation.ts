@@ -1,4 +1,7 @@
-import type { ActionRecommendation, ValidatedActionPrices } from '@/domain/types';
+import type {
+    ActionRecommendation,
+    ValidatedActionPrices,
+} from '@/domain/types';
 
 export function validateActionPrices(
     rec: ActionRecommendation | undefined
