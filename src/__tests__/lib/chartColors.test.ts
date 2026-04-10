@@ -148,6 +148,20 @@ describe('CHART_COLORS', () => {
             expect(CHART_COLORS.vpVal).toBe('#34d399');
         });
     });
+
+    describe('Action Recommendation 가격선 컬러', () => {
+        it('actionEntry는 블루(#60a5fa)이다', () => {
+            expect(CHART_COLORS.actionEntry).toBe('#60a5fa');
+        });
+
+        it('actionStopLoss는 밝은 빨강(#f87171)이다', () => {
+            expect(CHART_COLORS.actionStopLoss).toBe('#f87171');
+        });
+
+        it('actionTakeProfit은 밝은 초록(#4ade80)이다', () => {
+            expect(CHART_COLORS.actionTakeProfit).toBe('#4ade80');
+        });
+    });
 });
 
 describe('getPeriodColor', () => {

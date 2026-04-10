@@ -18,6 +18,7 @@ import type {
     Timeframe,
     Trendline,
 } from '@/domain/types';
+import type { ValidatedActionPrices } from '@/domain/analysis/actionRecommendation';
 import { getTimeFormatter } from '@/domain/chart/timeFormat';
 import type { PaneIndices } from '@/components/chart/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
@@ -32,6 +33,7 @@ import { useCCIChart } from '@/components/chart/hooks/useCCIChart';
 import { useVolumeProfileOverlay } from '@/components/chart/hooks/useVolumeProfileOverlay';
 import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
+import { useActionRecommendationOverlay } from '@/components/chart/hooks/useActionRecommendationOverlay';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import { useOverlayLegend } from '@/components/chart/hooks/useOverlayLegend';
 import {
@@ -67,6 +69,8 @@ interface StockChartProps {
     trendlinesVisible?: boolean;
     keyLevels?: KeyLevels;
     keyLevelsVisible?: boolean;
+    actionPrices?: ValidatedActionPrices;
+    actionPricesVisible?: boolean;
     onPatternOverlayChange?: (
         visiblePatterns: Set<string>,
         togglePattern: (patternName: string) => void
@@ -89,6 +93,8 @@ export function StockChart({
     trendlinesVisible: _trendlinesVisible = false,
     keyLevels: _keyLevels = EMPTY_KEY_LEVELS,
     keyLevelsVisible: _keyLevelsVisible = false,
+    actionPrices,
+    actionPricesVisible = false,
     onPatternOverlayChange: _onPatternOverlayChange,
     onChartReady,
     onChartRemove,
@@ -321,6 +327,14 @@ export function StockChart({
     //     isVisible: keyLevelsVisible,
     //     lineWidth: DEFAULT_LINE_WIDTH,
     // });
+
+    useActionRecommendationOverlay({
+        chartRef,
+        bars,
+        actionPrices,
+        isVisible: actionPricesVisible,
+        lineWidth: DEFAULT_LINE_WIDTH,
+    });
 
     // 레이아웃 강제 갱신
     // indicator hook이 removeSeries로 마지막 series를 제거하면 LWC v5는 논리적

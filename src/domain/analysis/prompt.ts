@@ -291,7 +291,7 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
     trendlines:
         '[{ "direction": "ascending | descending", "start": { "time": 1700000000, "price": 150.00 }, "end": { "time": 1700100000, "price": 155.00 } }]',
     actionRecommendation:
-        '{ "positionAnalysis": "Current price position vs support/resistance analysis", "entry": "Entry strategy with specific price ranges", "exit": "Exit strategy with specific price ranges", "riskReward": "Risk-reward ratio analysis" }',
+        '{ "positionAnalysis": "Current price position vs support/resistance analysis", "entry": "Entry strategy with specific price ranges", "exit": "Exit strategy with specific price ranges", "riskReward": "Risk-reward ratio analysis", "entryPrices": [165.00, 167.00], "stopLoss": 160.00, "takeProfitPrices": [180.00, 195.00] }',
 };
 
 const buildSchemaBody = (): string => {
@@ -370,6 +370,10 @@ const ANALYSIS_GUIDELINES = [
     '- exit: Provide specific exit price ranges for both profit-taking and stop-loss, referencing the priceTargets and resistance levels above.',
     '- riskReward: Calculate the risk-reward ratio based on entry, stop-loss, and target prices. Express as a ratio (e.g., "stop-loss 3% vs target 9% → risk:reward = 1:3").',
     '- Write in accessible language that non-technical users can understand.',
+    '- entryPrices: Extract the numeric entry price(s) from your entry analysis. If a range, provide [low, high]. If a single price, provide [price]. Must match the prices mentioned in the entry text field exactly.',
+    '- stopLoss: Extract the stop-loss price from your exit analysis as a single number. Must match the stop-loss price mentioned in the exit text field.',
+    '- takeProfitPrices: Extract the take-profit target price(s) from your exit analysis. Sort ascending (lowest price first). Must match the target prices mentioned in the exit text field.',
+    '- entryPrices, stopLoss, takeProfitPrices must be numerically consistent with the text in entry/exit fields — they are the same prices in structured form for chart rendering.',
     '',
     '### Insufficient Data',
     '- If bar data is too short to reliably calculate an indicator or detect a pattern, state "데이터 부족" rather than guessing.',

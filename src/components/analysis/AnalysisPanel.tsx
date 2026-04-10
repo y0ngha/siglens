@@ -41,9 +41,11 @@ function formatCooldown(ms: number): string {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+type ActionRecommendationTextKey = 'positionAnalysis' | 'entry' | 'exit' | 'riskReward';
+
 interface ActionRecommendationField {
     label: string;
-    key: keyof ActionRecommendation;
+    key: ActionRecommendationTextKey;
 }
 
 const ACTION_RECOMMENDATION_FIELDS: readonly ActionRecommendationField[] = [
@@ -55,16 +57,35 @@ const ACTION_RECOMMENDATION_FIELDS: readonly ActionRecommendationField[] = [
 
 interface ActionRecommendationSectionProps {
     rec: ActionRecommendation;
+    isChartVisible: boolean;
+    onToggleChart: () => void;
 }
 
 function ActionRecommendationSection({
     rec,
+    isChartVisible,
+    onToggleChart,
 }: ActionRecommendationSectionProps) {
     return (
         <div className="bg-secondary-700/30 flex flex-col gap-2 rounded-lg p-3">
-            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                매매 전략
-            </span>
+            <div className="flex items-center justify-between">
+                <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                    매매 전략
+                </span>
+                <button
+                    type="button"
+                    onClick={onToggleChart}
+                    className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors ${
+                        isChartVisible
+                            ? 'text-primary-400 hover:text-primary-300'
+                            : 'text-secondary-500 hover:text-secondary-400'
+                    }`}
+                    aria-label={isChartVisible ? '차트 가격선 숨기기' : '차트 가격선 표시'}
+                >
+                    <EyeIcon isVisible={isChartVisible} />
+                    차트
+                </button>
+            </div>
             <div className="flex flex-col gap-2">
                 {ACTION_RECOMMENDATION_FIELDS.map(({ label, key }) => (
                     <div key={label} className="flex flex-col gap-0.5">
@@ -700,6 +721,8 @@ interface AnalysisPanelProps {
     _onKeyLevelsVisibilityChange?: (isVisible: boolean) => void;
     _trendlinesVisible?: boolean;
     _onTrendlinesVisibilityChange?: (isVisible: boolean) => void;
+    actionPricesVisible?: boolean;
+    onActionPricesVisibilityChange?: (isVisible: boolean) => void;
 }
 
 export function AnalysisPanel({
@@ -717,6 +740,8 @@ export function AnalysisPanel({
     _onKeyLevelsVisibilityChange,
     _trendlinesVisible = false,
     _onTrendlinesVisibilityChange,
+    actionPricesVisible = false,
+    onActionPricesVisibilityChange,
 }: AnalysisPanelProps) {
     const handleTogglePatternVisibility = (patternName: string): void => {
         onTogglePattern?.(patternName);
@@ -810,6 +835,12 @@ export function AnalysisPanel({
                     {analysis.actionRecommendation && (
                         <ActionRecommendationSection
                             rec={analysis.actionRecommendation}
+                            isChartVisible={actionPricesVisible}
+                            onToggleChart={() =>
+                                onActionPricesVisibilityChange?.(
+                                    !actionPricesVisible
+                                )
+                            }
                         />
                     )}
 

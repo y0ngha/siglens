@@ -4,6 +4,7 @@ import { useState, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { validateKeyLevels } from '@/domain/analysis/keyLevels';
+import { validateActionPrices } from '@/domain/analysis/actionRecommendation';
 import { cn } from '@/lib/cn';
 import { StockChart } from '@/components/chart/StockChart';
 import { VolumeChart } from '@/components/chart/VolumeChart';
@@ -117,6 +118,7 @@ export function ChartContent({
     );
     const [keyLevelsVisible, setKeyLevelsVisible] = useState(false);
     const [trendlinesVisible, setTrendlinesVisible] = useState(false);
+    const [actionPricesVisible, setActionPricesVisible] = useState(false);
 
     // 마무리 애니메이션이 모두 끝난 뒤에야 본문/배너가 사라지도록, isAnalyzing보다
     // 늦게 false로 떨어지는 displayAnalyzing 상태를 둔다. AnalysisPanel(본문)과
@@ -136,6 +138,11 @@ export function ChartContent({
     const validatedKeyLevels = useMemo(
         () => validateKeyLevels(analysis.keyLevels),
         [analysis.keyLevels]
+    );
+
+    const validatedActionPrices = useMemo(
+        () => validateActionPrices(analysis.actionRecommendation),
+        [analysis.actionRecommendation]
     );
 
     const handlePatternOverlayChange = useCallback(
@@ -168,6 +175,8 @@ export function ChartContent({
                         trendlinesVisible={trendlinesVisible}
                         keyLevels={validatedKeyLevels}
                         keyLevelsVisible={keyLevelsVisible}
+                        actionPrices={validatedActionPrices}
+                        actionPricesVisible={actionPricesVisible}
                         onPatternOverlayChange={handlePatternOverlayChange}
                         onChartReady={handleStockChartReady}
                         onChartRemove={handleStockChartRemove}
@@ -231,6 +240,8 @@ export function ChartContent({
                     _onKeyLevelsVisibilityChange={setKeyLevelsVisible}
                     _trendlinesVisible={trendlinesVisible}
                     _onTrendlinesVisibilityChange={setTrendlinesVisible}
+                    actionPricesVisible={actionPricesVisible}
+                    onActionPricesVisibilityChange={setActionPricesVisible}
                 />
             </aside>
 
