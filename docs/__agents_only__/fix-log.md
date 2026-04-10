@@ -91,11 +91,12 @@
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
-## [PR #245 | feat/240/9종-보조지표-domain-계산-로직 | 2026-04-11]
-- Violation: `nextState` 함수 반환 타입이 인라인 객체 타입으로 선언됨
-- Rule: CONVENTIONS.md — "Return named interfaces instead of inline object types"
-- Context: `parabolicSar.ts`의 `nextState` 함수가 `{ state: PSARState; result: ParabolicSARResult; }` 인라인 타입 반환; `PSARNextStateResult` 인터페이스로 추출
+## [PR #245 Round 2 | feat/240/9종-보조지표-domain-계산-로직 | 2026-04-11]
+- Violation: `'up' | 'down' | null` 인라인 유니온이 ParabolicSARResult.trend, SupertrendResult.trend 두 곳에 반복 선언됨
+- Rule: CONVENTIONS.md — "Extract union literals with 2+ members into a type alias" / MISTAKES.md TypeScript #5 — 인라인 타입 대신 named type alias 사용
+- Context: `TrendDirection = PriceTrend | null`, `PriceTrend = 'up' | 'down'` 두 타입을 domain/types.ts에 추가하고 모든 참조 교체. 기존 `Trend = 'bullish' | 'bearish' | 'neutral'` 과의 네이밍 충돌로 PriceTrend 이름 채택
 
+## [PR #245 | feat/240/9종-보조지표-domain-계산-로직 | 2026-04-11]
 - Violation: `as number` 타입 단언 사용 (2곳)
 - Rule: CONVENTIONS.md — "Prefer type guards over `as` type assertions"
 - Context: `supertrend.ts`에서 `atrValues[firstValidIdx] as number`, `atrValues[idx] as number` 사용; null이 아님이 로직적으로 보장되는 시점이므로 non-null 단언 연산자(`!`)로 교체
