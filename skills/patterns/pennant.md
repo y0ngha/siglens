@@ -2,7 +2,7 @@
 name: 페넌트
 description: 급격한 움직임 후 수렴하는 삼각형 형태의 조정을 거치는 연속 패턴
 type: pattern
-category: continuation
+category: neutral
 pattern: pennant
 indicators: []
 confidence_weight: 0.7

@@ -2,7 +2,7 @@
 name: 대칭삼각형
 description: 하락하는 저항선과 상승하는 지지선이 수렴하는 중립 연속 패턴
 type: pattern
-category: continuation
+category: neutral
 pattern: symmetrical_triangle
 indicators: []
 confidence_weight: 0.65
@@ -72,7 +72,7 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the current upper trendline value, current lower trendline value, the projected apex price and approximate bar, and the target price in both breakout directions.
+- **keyPrices**: Include the current upper trendline value, current lower trendline value, the projected apex price, and the target price in both breakout directions.
 - **patternSummaries**: Describe the pattern status (forming / approaching apex / broken upward / broken downward), the convergence rate, number of trendline touches on each side, position within the triangle (early, mid, late), and the prior trend direction that informs the likely breakout direction.
 - **Volume context**: State whether volume is declining as expected during formation and whether a volume surge confirmed the breakout. Note the volume level relative to the recent average.
 - **Completion status**: Clearly indicate whether the triangle is still forming, which breakout direction is more likely based on the prior trend, or confirmed by a close outside a trendline.

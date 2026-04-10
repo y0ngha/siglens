@@ -73,7 +73,7 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the horizontal resistance level, the current ascending trendline value, the projected apex price and approximate bar, and the breakout target price if resistance is broken.
+- **keyPrices**: Include the horizontal resistance level, the current ascending trendline value, the projected apex price, and the breakout target price if resistance is broken.
 - **patternSummaries**: Describe the pattern status (forming / approaching apex / resistance broken / trendline broken), the number of touches on resistance and support, the breakout position relative to the apex (early, mid, late), and the prior trend direction.
 - **Volume context**: State whether volume is contracting as expected during formation and whether a volume surge accompanied any breakout or breakdown.
 - **Completion status**: Clearly indicate whether the triangle is still forming or confirmed by a decisive close above the horizontal resistance.

@@ -2,7 +2,7 @@
 name: 직사각형
 description: 수평 지지선과 저항선 사이에서 횡보하는 연속 또는 반전 패턴
 type: pattern
-category: continuation
+category: neutral
 pattern: rectangle
 indicators: []
 confidence_weight: 0.65
@@ -78,7 +78,7 @@ Note: These are analytical reference points for technical analysis, not trading 
 
 When this pattern is detected, include the following in the analysis response:
 
-- **keyPrices**: Include the support level, resistance level, rectangle height, and the projected target prices in both breakout directions.
+- **keyPrices**: Include the support level, resistance level, and the projected target prices in both breakout directions.
 - **patternSummaries**: Describe the rectangle type (Top or Bottom based on prior trend), the pattern status (forming / support broken / resistance broken), the number of touches on each boundary, the rectangle height as a percentage of price, and the pattern duration. Note the prior trend direction and its implication for breakout bias.
 - **Volume context**: State whether volume is declining during formation, whether volume favors one direction (accumulation or distribution), and whether a volume surge confirmed the breakout. Note any false breakout attempts.
 - **Completion status**: Clearly indicate whether the rectangle is still forming or confirmed by a decisive close outside a boundary with volume confirmation.
