@@ -187,9 +187,14 @@ Factors that decrease confidence:
 
 ## AI Analysis Instructions
 
-Analyze the available price data across the timeframes provided. Determine the trend on the highest available timeframe, identify setups on the middle timeframe, and note any entry triggers on the lowest timeframe.
+**Current system limitation**: The system currently provides data for a single timeframe per analysis request. Multi-timeframe data is not yet available simultaneously. When only one timeframe is provided, use the following approach:
 
-If only one timeframe of data is available, analyze that timeframe's trend, support/resistance, and momentum, then recommend what to look for on higher and lower timeframes for confirmation.
+1. Treat the provided timeframe as the **Middle TF (Strategy)** tier
+2. Infer the **Higher TF (Direction)** trend from longer-period indicators (MA50, MA200, long-term context data) and the overall price structure visible in the available bars
+3. Note what **Lower TF (Timing)** confirmation would be needed — recommend the user check a lower timeframe for precise entry triggers
+4. Assess alignment based on what can be determined: indicator trends, moving average positions, and support/resistance levels within the available data
+
+If multiple timeframes of data are available in the future, perform the full three-tier analysis as described above.
 
 Return the summary in **this exact structured format** (one `**label**: value` pair per line):
 

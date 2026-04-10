@@ -4,7 +4,7 @@ description: 수요와 공급의 법칙에 기반하여 축적-마크업-분배-
 type: strategy
 category: neutral
 indicators: []
-confidence_weight: 0.65
+confidence_weight: 0.0
 ---
 
 ## Overview
@@ -133,7 +133,7 @@ Volume-price divergence is central to Wyckoff analysis:
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.65 — Wyckoff analysis requires significant interpretive judgment. Phase identification, especially real-time distinction between Accumulation Phase B and continued range-bound trading, is inherently subjective. The method's strength lies in its comprehensive framework rather than precise entry/exit signals. Combined with other strategies (especially volume-based indicators), reliability increases substantially.
+confidence_weight: 0.00 (disabled) — Wyckoff analysis requires 60-120 bars of detailed OHLCV data for reliable phase identification, but the system currently provides ~30 bars. Disabled until extended bar data is available. Original weight was 0.65, reflecting that Wyckoff analysis requires significant interpretive judgment. Phase identification, especially real-time distinction between Accumulation Phase B and continued range-bound trading, is inherently subjective. The method's strength lies in its comprehensive framework rather than precise entry/exit signals. Combined with other strategies (especially volume-based indicators), reliability increases substantially.
 
 Factors that increase confidence:
 - Volume patterns clearly confirm phase identification (SC/BC with extreme volume)
@@ -160,6 +160,8 @@ Factors that decrease confidence:
 ---
 
 ## AI Analysis Instructions
+
+**This strategy is currently disabled** (confidence_weight set to 0.0) because Wyckoff analysis requires a minimum of 60-120 bars of detailed OHLCV data to identify accumulation/distribution phases and key events (SC, AR, ST, Spring, UTAD). The system currently provides ~30 bars of detailed data, which is insufficient for reliable phase identification. Re-enable this strategy when the system can provide extended bar data without exceeding prompt length limits.
 
 Use the **last 120 bars maximum** for analysis. Focus on identifying the most recent phase and any active Wyckoff events.
 

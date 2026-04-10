@@ -3,7 +3,7 @@ name: 평균 회귀 전략
 description: 가격이 이동평균 또는 통계적 평균에서 과도하게 이탈한 후 평균으로 회귀하는 경향을 이용하여 역추세 진입 시점을 판별하는 전략
 type: strategy
 category: neutral
-indicators: ['rsi', 'bollinger']
+indicators: ['rsi', 'bollinger', 'atr']
 confidence_weight: 0.7
 ---
 
