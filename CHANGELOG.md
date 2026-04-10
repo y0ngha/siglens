@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.6.1](https://github.com/y0ngha/siglens/compare/v0.6.0...v0.6.1) (2026-04-10)
+
+
+### Features
+
+* add contact/error-report dialog to footer and not-found page ([212e8da](https://github.com/y0ngha/siglens/commit/212e8da0f01339d91e1c33aea262354b1bd835a2))
+* add notFound routing for invalid/unknown tickers ([7e060fb](https://github.com/y0ngha/siglens/commit/7e060fbe08fd6a73f48efd391c6c4d5a260297c6))
+* Assets 저장시 한국어가 있을 경우 365일 저장, 없을 경우 12시간 저장으로 변경 ([9a118a3](https://github.com/y0ngha/siglens/commit/9a118a3390e77f9b749fb565d8d7b4cef4b47868))
+* invalid ticker format validation and safe FMP caching ([a09de3c](https://github.com/y0ngha/siglens/commit/a09de3c3e9048118f1478b3e14fcaa0bd8ddf2e3))
+
 # [0.6.0](https://github.com/y0ngha/siglens/compare/v0.5.0...v0.6.0) (2026-04-10)
 
 
