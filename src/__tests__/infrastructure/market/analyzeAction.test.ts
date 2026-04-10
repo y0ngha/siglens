@@ -149,6 +149,7 @@ describe('analyzeAction 함수는', () => {
             );
         });
 
+        // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
         // it('타임프레임에 맞는 TTL로 캐시를 저장한다', async () => {
         //     mockCacheGet.mockResolvedValueOnce(null);
         //     mockRunAnalysis.mockResolvedValueOnce(mockResult);
