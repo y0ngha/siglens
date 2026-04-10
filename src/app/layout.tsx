@@ -1,7 +1,13 @@
 import type { Metadata, Viewport } from 'next';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
+import {
+    ROOT_KEYWORDS,
+    ROOT_TITLE,
+    SITE_DESCRIPTION,
+    SITE_NAME,
+    SITE_URL,
+} from '@/lib/seo';
 import './globals.css';
 
 const geistSans = Geist({
@@ -14,8 +20,6 @@ const geistMono = Geist_Mono({
     subsets: ['latin'],
 });
 
-const ROOT_TITLE = `${SITE_NAME} | AI 기술적 주가 분석`;
-
 export const metadata: Metadata = {
     metadataBase: new URL(SITE_URL),
     title: {
@@ -23,7 +27,10 @@ export const metadata: Metadata = {
         template: `%s | ${SITE_NAME}`,
     },
     description: SITE_DESCRIPTION,
+    keywords: ROOT_KEYWORDS,
     applicationName: SITE_NAME,
+    authors: [{ name: SITE_NAME, url: SITE_URL }],
+    creator: SITE_NAME,
     openGraph: {
         type: 'website',
         siteName: SITE_NAME,
@@ -40,6 +47,16 @@ export const metadata: Metadata = {
     robots: {
         index: true,
         follow: true,
+        googleBot: {
+            index: true,
+            follow: true,
+            'max-video-preview': -1,
+            'max-image-preview': 'large',
+            'max-snippet': -1,
+        },
+    },
+    alternates: {
+        canonical: SITE_URL,
     },
 };
 

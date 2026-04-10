@@ -30,22 +30,29 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ data.flatMap(...).filter(x => x.id === uniqueId)  // uniqueId guaranteed from flatMap
    ✅ data.flatMap(...)
 
-5. Repeating identical filtering/calculation logic across multiple useEffect/useMemo blocks
+5. Array/object mutation via push/splice or direct property assignment
+   → Use spread syntax for arrays; destructure and spread for objects
+   ❌ keywords.push(value)  // direct mutation
+   ❌ obj.property = newValue  // direct mutation of object created moments before
+   ✅ const keywords = [...keywordList, value]
+   ✅ const obj = { ...source, property: newValue }
+
+6. Repeating identical filtering/calculation logic across multiple useEffect/useMemo blocks
    → Extract to useMemo (hooks) or const (regular code)
 
-6. Repeating identical className ternary 3+ times
+7. Repeating identical className ternary 3+ times
    → Extract to a helper function
 
-7. Tight coupling between interface props and dependent files
+8. Tight coupling between interface props and dependent files
    → Group related prop pairs into a single type (e.g. IndicatorToggleGroup { visible, onToggle })
 
-8. Complex anonymous expressions (IIFE, multi-statement ternary)
+9. Complex anonymous expressions (IIFE, multi-statement ternary)
    → Extract to a named helper function
 
-9. Derived constants recreated on every render without memoization
-   → Wrap with useMemo for objects/maps derived from props/state
+10. Derived constants recreated on every render without memoization
+    → Wrap with useMemo for objects/maps derived from props/state
 
-10. Function/interface names become inaccurate after architectural changes
+11. Function/interface names become inaccurate after architectural changes
     → When replacing HTTP calls with Server Actions, renaming patterns, or moving code, update the names
     ❌ fetchBars (no longer a fetch — now a Server Action)
     ✅ getBarsAction (accurate to new implementation)

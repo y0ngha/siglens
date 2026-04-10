@@ -1,6 +1,12 @@
 import Link from 'next/link';
 
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
+import {
+    POPULAR_TICKERS,
+    POPULAR_TICKERS_DISPLAY_COUNT,
+    SITE_DESCRIPTION,
+    SITE_NAME,
+    SITE_URL,
+} from '@/lib/seo';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
@@ -8,14 +14,10 @@ import { StatsBar } from '@/components/home/StatsBar';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import { SkillsShowcase } from '@/components/home/SkillsShowcase';
 
-const POPULAR_TICKERS = [
-    'AAPL',
-    'TSLA',
-    'NVDA',
-    'MSFT',
-    'GOOGL',
-    'AMZN',
-] as const;
+const HOMEPAGE_TICKERS = POPULAR_TICKERS.slice(
+    0,
+    POPULAR_TICKERS_DISPLAY_COUNT
+);
 
 export default async function Home() {
     const loader = new FileSkillsLoader();
@@ -27,6 +29,7 @@ export default async function Home() {
         name: SITE_NAME,
         description: SITE_DESCRIPTION,
         url: SITE_URL,
+        inLanguage: 'ko',
         applicationCategory: 'FinanceApplication',
         operatingSystem: 'Web',
         offers: {
@@ -36,12 +39,31 @@ export default async function Home() {
         },
     };
 
+    const organizationJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Organization',
+        name: SITE_NAME,
+        url: SITE_URL,
+        logo: `${SITE_URL}/icon.png`,
+        description: SITE_DESCRIPTION,
+        sameAs: ['https://github.com/y0ngha/siglens'],
+    };
+
     return (
         <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
                     __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(organizationJsonLd).replace(
+                        /</g,
+                        '\\u003c'
+                    ),
                 }}
             />
             <a
@@ -83,7 +105,7 @@ export default async function Home() {
                             <span className="text-secondary-500 text-xs">
                                 인기 종목
                             </span>
-                            {POPULAR_TICKERS.map(ticker => (
+                            {HOMEPAGE_TICKERS.map(ticker => (
                                 <Link
                                     key={ticker}
                                     href={`/${ticker}`}

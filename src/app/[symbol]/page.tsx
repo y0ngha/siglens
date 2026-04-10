@@ -9,7 +9,7 @@ import type { AnalysisResponse, AssetInfo } from '@/domain/types';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
-import { SITE_NAME, SITE_URL } from '@/lib/seo';
+import { buildSymbolKeywords, SITE_NAME, SITE_URL } from '@/lib/seo';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 
 const FALLBACK_ANALYSIS: AnalysisResponse = {
@@ -56,10 +56,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const title = `${displayName} 기술적 분석`;
     const description = `${displayName} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`;
     const url = `${SITE_URL}/${ticker}`;
+    const keywords = buildSymbolKeywords(
+        ticker,
+        displayName,
+        assetInfo.koreanName
+    );
 
     return {
         title,
         description,
+        keywords,
         alternates: {
             canonical: url,
         },
@@ -92,11 +98,32 @@ export default async function SymbolPage({ params }: Props) {
         name: `${displayName} 기술적 분석 | ${SITE_NAME}`,
         description: `${displayName} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`,
         url: `${SITE_URL}/${ticker}`,
+        inLanguage: 'ko',
         about: {
             '@type': 'FinancialProduct',
             name: displayName,
+            identifier: ticker,
             category: 'Stock',
         },
+    };
+
+    const breadcrumbJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {
+                '@type': 'ListItem',
+                position: 1,
+                name: SITE_NAME,
+                item: SITE_URL,
+            },
+            {
+                '@type': 'ListItem',
+                position: 2,
+                name: `${displayName} 기술적 분석`,
+                item: `${SITE_URL}/${ticker}`,
+            },
+        ],
     };
 
     const queryClient = new QueryClient({
@@ -120,6 +147,15 @@ export default async function SymbolPage({ params }: Props) {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
                     __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(breadcrumbJsonLd).replace(
+                        /</g,
+                        '\\u003c'
+                    ),
                 }}
             />
             <HydrationBoundary state={dehydrate(queryClient)}>

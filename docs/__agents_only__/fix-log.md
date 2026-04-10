@@ -1,10 +1,6 @@
 # Fix Log
 
 ## [PR #222 Round 5 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
-- Violation: 테스트에서 `makeFmpResult("AAPL.A")`로 생성 직후 `otherResult.symbol = "AAPL.A"` 재할당 — dead code 뮤테이션
-- Rule: CONVENTIONS.md FP 불변성 — 객체 생성 후 직접 뮤테이션 금지; 이미 설정된 값을 재할당하는 것은 효과 없는 코드
-- Context: `makeFmpResult`가 이미 `symbol: "AAPL.A"`로 생성하므로 다음 줄 재할당은 무의미; 삭제
-
 - Violation: `!!assetInfo?.name`이 `AssetInfo.name`이 required 필드임에도 불필요하게 `.name` 접근
 - Rule: FF.md Predictability — 타입 시스템이 보장하는 사실을 조건식에 명시적으로 표현해야 함
 - Context: `assetInfo`가 정의되어 있으면 `name`은 항상 truthy이므로 `!!assetInfo`로 단순화
