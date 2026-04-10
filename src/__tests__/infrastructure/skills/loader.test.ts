@@ -557,6 +557,83 @@ Three absolute rules govern all Elliott Wave counts.`;
         });
     });
 
+    describe('candlestick 타입 파싱', () => {
+        const CANDLESTICK_SKILL_MD = `---
+name: Engulfing Pattern Guide
+description: 장악형 캔들 패턴 해석 가이드
+type: candlestick
+category: neutral
+indicators: []
+confidence_weight: 0.8
+---
+
+## Overview
+
+Engulfing은 2봉 반전 패턴이다.`;
+
+        it('type이 candlestick이면 candlestick으로 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('engulfing.md')]);
+            mockReadFile.mockResolvedValue(CANDLESTICK_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].type).toBe('candlestick');
+        });
+
+        it('candlestick type의 name, description, indicators를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('engulfing.md')]);
+            mockReadFile.mockResolvedValue(CANDLESTICK_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].name).toBe('Engulfing Pattern Guide');
+            expect(skills[0].description).toBe('장악형 캔들 패턴 해석 가이드');
+            expect(skills[0].indicators).toEqual([]);
+        });
+
+        it('candlestick type의 confidenceWeight를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('engulfing.md')]);
+            mockReadFile.mockResolvedValue(CANDLESTICK_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].confidenceWeight).toBe(0.8);
+        });
+
+        it('candlestick type의 content를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('engulfing.md')]);
+            mockReadFile.mockResolvedValue(CANDLESTICK_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].content).toContain('Overview');
+        });
+
+        it('candlesticks 하위 디렉토리의 candlestick 스킬을 재귀적으로 읽는다', async () => {
+            const SKILLS_DIR = path.join(process.cwd(), 'skills');
+            const CANDLESTICKS_DIR = path.join(SKILLS_DIR, 'candlesticks');
+            const candlestickFile = path.join(CANDLESTICKS_DIR, 'engulfing.md');
+
+            mockReaddir.mockImplementation((dir: string) => {
+                if (dir === SKILLS_DIR)
+                    return Promise.resolve([dirDirent('candlesticks')]);
+                if (dir === CANDLESTICKS_DIR)
+                    return Promise.resolve([fileDirent('engulfing.md')]);
+                return Promise.resolve([]);
+            });
+            mockReadFile.mockImplementation((p: string) => {
+                if (p === candlestickFile)
+                    return Promise.resolve(CANDLESTICK_SKILL_MD);
+                return Promise.resolve('');
+            });
+
+            const skills = await loader.loadSkills();
+
+            expect(skills).toHaveLength(1);
+            expect(skills[0].type).toBe('candlestick');
+        });
+    });
+
     describe('readdir 에러', () => {
         it('readdir가 실패하면 에러를 전파한다', async () => {
             mockReaddir.mockRejectedValue(

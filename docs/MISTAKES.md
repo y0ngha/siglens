@@ -167,6 +167,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 10. Type field added but test mock objects not updated
     → All mock/fixture objects must match the updated interface
+
+11. External dependencies in production code without corresponding test mocks
+    → When adding external packages (e.g., @vercel/functions) to infrastructure files, mock them in all corresponding test files
+    → jest.mock('@package-name', ...) must be added to every test file that tests the module with the external dependency
 ```
 
 ---

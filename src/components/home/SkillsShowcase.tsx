@@ -17,6 +17,7 @@ const TABS: TabConfig[] = [
     { value: 'indicator_guide', label: '보조지표' },
     { value: 'pattern', label: '차트 패턴' },
     { value: 'strategy', label: '전략' },
+    { value: 'candlestick', label: '캔들 패턴' },
 ];
 
 interface TypeBadgeConfig {
@@ -39,6 +40,11 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
         label: '전략',
         className:
             'bg-ui-warning/10 text-ui-warning border border-ui-warning/30',
+    },
+    candlestick: {
+        label: '캔들',
+        className:
+            'bg-chart-bullish/10 text-chart-bullish border border-chart-bullish/30',
     },
 };
 

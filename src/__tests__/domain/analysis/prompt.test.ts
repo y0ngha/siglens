@@ -1973,4 +1973,196 @@ describe('prompt', () => {
             expect(result).toContain('Wyckoff Theory');
         });
     });
+
+    describe('Skills 섹션 - type이 candlestick인 skill일 때', () => {
+        it('Candlestick Pattern Guides 섹션에 포함된다', () => {
+            const skill = makeSkill({
+                type: 'candlestick',
+                name: 'Engulfing Pattern Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('Candlestick Pattern Guides');
+            expect(result).toContain('Engulfing Pattern Guide');
+        });
+
+        it('패턴 분석 섹션에는 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'candlestick',
+                name: 'Engulfing Pattern Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('Pattern Analysis');
+        });
+
+        it('활성화된 Skills 섹션에는 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'candlestick',
+                name: 'Engulfing Pattern Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('Active Skills');
+        });
+
+        it('candlestick skill이 없을 때 Candlestick Pattern Guides 섹션이 포함되지 않는다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).not.toContain('Candlestick Pattern Guides');
+        });
+
+        it('여러 candlestick skill이 모두 Candlestick Pattern Guides 섹션에 포함된다', () => {
+            const skills = [
+                makeSkill({
+                    type: 'candlestick',
+                    name: 'Engulfing Pattern Guide',
+                }),
+                makeSkill({
+                    type: 'candlestick',
+                    name: 'Doji Pattern Guide',
+                }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                skills
+            );
+            expect(result).toContain('Candlestick Pattern Guides');
+            expect(result).toContain('Engulfing Pattern Guide');
+            expect(result).toContain('Doji Pattern Guide');
+        });
+
+        it('candlestick, pattern, indicator_guide, strategy, regular skill이 각각 해당 섹션에 포함된다', () => {
+            const candlestickSkill = makeSkill({
+                type: 'candlestick',
+                name: 'Engulfing Pattern Guide',
+            });
+            const patternSkill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
+            const indicatorGuideSkill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const strategySkill = makeSkill({
+                type: 'strategy',
+                name: '엘리어트 파동',
+            });
+            const regularSkill = makeSkill({
+                type: undefined,
+                name: 'Wyckoff Theory',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [
+                    candlestickSkill,
+                    patternSkill,
+                    indicatorGuideSkill,
+                    strategySkill,
+                    regularSkill,
+                ]
+            );
+            expect(result).toContain('Candlestick Pattern Guides');
+            expect(result).toContain('Engulfing Pattern Guide');
+            expect(result).toContain('Pattern Analysis');
+            expect(result).toContain('Head and Shoulders');
+            expect(result).toContain('Indicator Signal Guides');
+            expect(result).toContain('RSI Signal Guide');
+            expect(result).toContain('Strategy Analysis');
+            expect(result).toContain('엘리어트 파동');
+            expect(result).toContain('Active Skills');
+            expect(result).toContain('Wyckoff Theory');
+        });
+
+        it('confidenceWeight가 0.5 미만인 candlestick skill은 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'candlestick',
+                name: 'Low Confidence Guide',
+                confidenceWeight: TEST_BELOW_MIN_CONFIDENCE,
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('Low Confidence Guide');
+            expect(result).not.toContain('Candlestick Pattern Guides');
+        });
+    });
+
+    describe('분석 요청 섹션 - Candlestick Writing Rules', () => {
+        it('candlestick skill이 있을 때 candlePatterns Writing Rules 섹션이 포함된다', () => {
+            const skill = makeSkill({
+                type: 'candlestick',
+                name: 'Engulfing Pattern Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain(
+                'candlePatterns Writing Rules for Candlestick Skills'
+            );
+        });
+
+        it('candlestick skill이 없을 때 candlePatterns Writing Rules 섹션이 포함되지 않는다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).not.toContain(
+                'candlePatterns Writing Rules for Candlestick Skills'
+            );
+        });
+
+        it('candlestick skill 이름 목록이 분석 요청에 포함된다', () => {
+            const skills = [
+                makeSkill({
+                    type: 'candlestick',
+                    name: 'Engulfing Pattern Guide',
+                }),
+                makeSkill({
+                    type: 'candlestick',
+                    name: 'Doji Pattern Guide',
+                }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                skills
+            );
+            expect(result).toContain(
+                'Candlestick pattern guide list to apply:'
+            );
+            expect(result).toContain('- Engulfing Pattern Guide');
+            expect(result).toContain('- Doji Pattern Guide');
+        });
+    });
 });
