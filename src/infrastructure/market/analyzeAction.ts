@@ -1,5 +1,6 @@
 'use server';
 
+import { waitUntil } from '@vercel/functions';
 import {
     runAnalysis,
     type RunAnalysisResult,
@@ -34,9 +35,11 @@ export async function analyzeAction(
     const result = await runAnalysis(variables, timeframe);
 
     if (cache !== null) {
-        cache
-            .set(cacheKey, result, ANALYSIS_CACHE_TTL[timeframe])
-            .catch(error => console.error('[Cache] 캐시 쓰기 실패:', error));
+        waitUntil(
+            cache
+                .set(cacheKey, result, ANALYSIS_CACHE_TTL[timeframe])
+                .catch(error => console.error('[Cache] 캐시 쓰기 실패:', error))
+        );
     }
 
     return result;

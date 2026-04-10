@@ -5,6 +5,12 @@ const mockCacheGet = jest.fn();
 const mockCacheSet = jest.fn();
 const mockCacheDelete = jest.fn();
 
+jest.mock('@vercel/functions', () => ({
+    waitUntil: (promise: Promise<unknown>) => {
+        void promise;
+    },
+}));
+
 jest.mock('@/infrastructure/cache/redis', () => ({
     createCacheProvider: jest.fn(),
 }));
@@ -202,7 +208,7 @@ describe('searchTickerAction', () => {
     });
 
     describe('영어 쿼리이고 한국어 매핑이 없는 종목이 있을 때', () => {
-        it('translateCompanyNames를 fire-and-forget으로 호출한다', async () => {
+        it('translateCompanyNames를 waitUntil로 등록한다', async () => {
             const symbolResult = makeResult('UNKNOWN');
             mockSearchBySymbol.mockResolvedValueOnce([symbolResult]);
             mockSearchByName.mockResolvedValueOnce([]);
@@ -251,7 +257,7 @@ describe('searchTickerAction', () => {
         });
     });
 
-    describe('translateAndCache fire-and-forget 중 에러가 발생할 때', () => {
+    describe('waitUntil로 등록된 translateAndCache 중 에러가 발생할 때', () => {
         it('에러를 삼키고 결과를 정상 반환한다', async () => {
             mockCacheGet.mockResolvedValueOnce(null);
             mockSearchBySymbol.mockResolvedValueOnce([makeResult('UNKNOWN')]);

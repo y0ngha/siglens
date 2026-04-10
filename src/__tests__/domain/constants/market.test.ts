@@ -26,11 +26,10 @@ describe('DEFAULT_BARS_LIMIT', () => {
 
 describe('TIMEFRAME_BARS_LIMIT', () => {
     const ALL_TIMEFRAMES: Timeframe[] = [
-        // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-        // '1Min',
-        // '5Min',
-        // '15Min',
-        // '1Hour',
+        '1Min',
+        '5Min',
+        '15Min',
+        '1Hour',
         '1Day',
     ];
 
@@ -49,22 +48,21 @@ describe('TIMEFRAME_BARS_LIMIT', () => {
     });
 
     describe('각 타임프레임별 limit 값', () => {
-        // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-        // it("'1Min'에 대해 200을 반환한다", () => {
-        //     expect(TIMEFRAME_BARS_LIMIT['1Min']).toBe(200);
-        // });
-        //
-        // it("'5Min'에 대해 288을 반환한다", () => {
-        //     expect(TIMEFRAME_BARS_LIMIT['5Min']).toBe(288);
-        // });
-        //
-        // it("'15Min'에 대해 200을 반환한다", () => {
-        //     expect(TIMEFRAME_BARS_LIMIT['15Min']).toBe(200);
-        // });
-        //
-        // it("'1Hour'에 대해 200을 반환한다", () => {
-        //     expect(TIMEFRAME_BARS_LIMIT['1Hour']).toBe(200);
-        // });
+        it("'1Min'에 대해 200을 반환한다", () => {
+            expect(TIMEFRAME_BARS_LIMIT['1Min']).toBe(200);
+        });
+
+        it("'5Min'에 대해 288을 반환한다", () => {
+            expect(TIMEFRAME_BARS_LIMIT['5Min']).toBe(288);
+        });
+
+        it("'15Min'에 대해 200을 반환한다", () => {
+            expect(TIMEFRAME_BARS_LIMIT['15Min']).toBe(200);
+        });
+
+        it("'1Hour'에 대해 200을 반환한다", () => {
+            expect(TIMEFRAME_BARS_LIMIT['1Hour']).toBe(200);
+        });
 
         it("'1Day'에 대해 500을 반환한다", () => {
             expect(TIMEFRAME_BARS_LIMIT['1Day']).toBe(500);
@@ -74,11 +72,10 @@ describe('TIMEFRAME_BARS_LIMIT', () => {
 
 describe('TIMEFRAME_LOOKBACK_DAYS', () => {
     const ALL_TIMEFRAMES: Timeframe[] = [
-        // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-        // '1Min',
-        // '5Min',
-        // '15Min',
-        // '1Hour',
+        '1Min',
+        '5Min',
+        '15Min',
+        '1Hour',
         '1Day',
     ];
 
@@ -100,22 +97,21 @@ describe('TIMEFRAME_LOOKBACK_DAYS', () => {
     });
 
     describe('각 타임프레임별 lookback days 값', () => {
-        // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-        // it("'1Min'에 대해 5를 반환한다", () => {
-        //     expect(TIMEFRAME_LOOKBACK_DAYS['1Min']).toBe(5);
-        // });
-        //
-        // it("'5Min'에 대해 10을 반환한다", () => {
-        //     expect(TIMEFRAME_LOOKBACK_DAYS['5Min']).toBe(10);
-        // });
-        //
-        // it("'15Min'에 대해 20을 반환한다", () => {
-        //     expect(TIMEFRAME_LOOKBACK_DAYS['15Min']).toBe(20);
-        // });
-        //
-        // it("'1Hour'에 대해 60을 반환한다", () => {
-        //     expect(TIMEFRAME_LOOKBACK_DAYS['1Hour']).toBe(60);
-        // });
+        it("'1Min'에 대해 5를 반환한다", () => {
+            expect(TIMEFRAME_LOOKBACK_DAYS['1Min']).toBe(5);
+        });
+
+        it("'5Min'에 대해 10을 반환한다", () => {
+            expect(TIMEFRAME_LOOKBACK_DAYS['5Min']).toBe(10);
+        });
+
+        it("'15Min'에 대해 20을 반환한다", () => {
+            expect(TIMEFRAME_LOOKBACK_DAYS['15Min']).toBe(20);
+        });
+
+        it("'1Hour'에 대해 60을 반환한다", () => {
+            expect(TIMEFRAME_LOOKBACK_DAYS['1Hour']).toBe(60);
+        });
 
         it("'1Day'에 대해 730을 반환한다", () => {
             expect(TIMEFRAME_LOOKBACK_DAYS['1Day']).toBe(730);

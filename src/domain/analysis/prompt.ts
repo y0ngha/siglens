@@ -43,12 +43,11 @@ const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
 const INDICATOR_TREND_SAMPLE_COUNT = 5;
 
-// TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {
-    // '1Min': '1-Minute',
-    // '5Min': '5-Minute',
-    // '15Min': '15-Minute',
-    // '1Hour': '1-Hour',
+    '1Min': '1-Minute',
+    '5Min': '5-Minute',
+    '15Min': '15-Minute',
+    '1Hour': '1-Hour',
     '1Day': 'Daily',
 };
 

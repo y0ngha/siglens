@@ -33,8 +33,7 @@ function formatTime(date: Date): string {
     return `${hours}:${minutes}`;
 }
 
-// TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-function _formatDateAndTime(date: Date): string {
+function formatDateAndTime(date: Date): string {
     const month = date.getUTCMonth() + 1;
     const day = date.getUTCDate();
     const time = formatTime(date);
@@ -47,24 +46,22 @@ function formatDate(date: Date): string {
     return `${month} ${day}`;
 }
 
-// TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-// const MINUTE_TIMEFRAMES: ReadonlySet<Timeframe> = new Set([
-//     '1Min',
-//     '5Min',
-//     '15Min',
-// ]);
+const MINUTE_TIMEFRAMES: ReadonlySet<Timeframe> = new Set([
+    '1Min',
+    '5Min',
+    '15Min',
+]);
 
-// TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
 export function getTimeFormatter(
-    // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-    _timeframe: Timeframe
+    timeframe: Timeframe
 ): (timestamp: number) => string {
-    // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-    // if (MINUTE_TIMEFRAMES.has(timeframe)) {
-    //     return (timestamp: number) => formatTime(toKstDate(timestamp));
-    // }
-    // if (timeframe === '1Hour') {
-    //     return (timestamp: number) => formatDateAndTime(toKstDate(timestamp));
-    // }
+    if (MINUTE_TIMEFRAMES.has(timeframe)) {
+        return (timestamp: number) => formatTime(toKstDate(timestamp));
+    }
+
+    if (timeframe === '1Hour') {
+        return (timestamp: number) => formatDateAndTime(toKstDate(timestamp));
+    }
+
     return (timestamp: number) => formatDate(toKstDate(timestamp));
 }

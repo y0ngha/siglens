@@ -11,11 +11,10 @@ export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
  * - '1Day': 500 = 약 2년치 거래일 (장기 추세 확인)
  */
 export const TIMEFRAME_BARS_LIMIT: Record<Timeframe, number> = {
-    // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-    // '1Min': 200,
-    // '5Min': 288,
-    // '15Min': 200,
-    // '1Hour': 200,
+    '1Min': 200,
+    '5Min': 288,
+    '15Min': 200,
+    '1Hour': 200,
     '1Day': 500,
 };
 
@@ -35,10 +34,9 @@ export const DEFAULT_BARS_LIMIT = TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME];
  * - '1Day':  730일 → 500봉 ≈ 2년, 넉넉히 730일
  */
 export const TIMEFRAME_LOOKBACK_DAYS: Record<Timeframe, number> = {
-    // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-    // '1Min': 5,
-    // '5Min': 10,
-    // '15Min': 20,
-    // '1Hour': 60,
+    '1Min': 5,
+    '5Min': 10,
+    '15Min': 20,
+    '1Hour': 60,
     '1Day': 730,
 };

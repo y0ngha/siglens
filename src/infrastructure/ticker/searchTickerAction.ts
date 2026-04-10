@@ -1,5 +1,6 @@
 'use server';
 
+import { waitUntil } from '@vercel/functions';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     TICKER_SEARCH_CACHE_TTL,
@@ -90,19 +91,23 @@ export async function searchTickerAction(
 
     const unmapped = enriched.filter(r => !r.koreanName);
     if (unmapped.length > 0) {
-        translateAndCache(unmapped).catch(error =>
-            console.error('translateAndCache fire-and-forget failed:', error)
+        waitUntil(
+            translateAndCache(unmapped).catch(error =>
+                console.error('translateAndCache waitUntil failed:', error)
+            )
         );
     }
 
     const final = enriched.slice(0, MAX_SEARCH_RESULTS);
 
     if (cache) {
-        cache
-            .set(cacheKey, final, TICKER_SEARCH_CACHE_TTL)
-            .catch(error =>
-                console.error('Ticker search cache set failed:', error)
-            );
+        waitUntil(
+            cache
+                .set(cacheKey, final, TICKER_SEARCH_CACHE_TTL)
+                .catch(error =>
+                    console.error('Ticker search cache set failed:', error)
+                )
+        );
     }
 
     return final;

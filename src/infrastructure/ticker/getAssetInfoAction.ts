@@ -1,5 +1,6 @@
 'use server';
 
+import { waitUntil } from '@vercel/functions';
 import { cache } from 'react';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
@@ -39,7 +40,7 @@ async function translateAndCache(
     const cacheProvider = createCacheProvider();
     if (cacheProvider) {
         const cacheKey = buildAssetInfoCacheKey(symbol);
-        cacheProvider
+        await cacheProvider
             .set(cacheKey, { symbol, name, koreanName }, ASSET_INFO_CACHE_TTL)
             .catch(error =>
                 console.error(
@@ -82,18 +83,22 @@ const resolveAssetInfo = cache(async (symbol: string): Promise<AssetInfo> => {
     };
 
     if (!koreanName && match) {
-        translateAndCache(upper, name, exchange, exchangeFullName).catch(
-            error =>
-                console.error('Asset info translateAndCache failed:', error)
+        waitUntil(
+            translateAndCache(upper, name, exchange, exchangeFullName).catch(
+                error =>
+                    console.error('Asset info translateAndCache failed:', error)
+            )
         );
     }
 
     if (cacheProvider) {
-        cacheProvider
-            .set(cacheKey, info, ASSET_INFO_CACHE_TTL)
-            .catch(error =>
-                console.error('Asset info cache set failed:', error)
-            );
+        waitUntil(
+            cacheProvider
+                .set(cacheKey, info, ASSET_INFO_CACHE_TTL)
+                .catch(error =>
+                    console.error('Asset info cache set failed:', error)
+                )
+        );
     }
 
     return info;

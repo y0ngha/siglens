@@ -353,6 +353,9 @@ function PatternAccordionItem({
         setIsOpen(prev => !prev);
     };
 
+    /**
+     * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
+     */
     const handleToggleVisibility = (): void => {
         onToggleVisibility(pattern.patternName);
     };
@@ -746,7 +749,10 @@ export function AnalysisPanel({
 
     return (
         <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
-            <AnalysisToast notice={cooldownNotice} />
+            <AnalysisToast
+                key={cooldownNotice?.nonce}
+                notice={cooldownNotice}
+            />
             {/* 헤더 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
