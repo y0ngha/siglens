@@ -1,6 +1,6 @@
 ---
 name: Marubozu Guide
-description: 마루보즈 1봉 추세 지속 확인 패턴 해석 가이드
+description: Single-candle trend continuation confirmation pattern interpretation guide
 type: candlestick
 category: neutral
 indicators: []
@@ -9,44 +9,44 @@ confidence_weight: 0.75
 
 ## Overview
 
-Marubozu는 꼬리가 없거나 극히 짧은(전체 범위의 1% 이내) 긴 캔들로,
-한 방향으로의 압도적인 힘을 나타낸다. 반전 신호가 아닌 **추세 강도 확인** 신호이다.
+Marubozu is a long candle with no shadows or extremely short shadows (within 1% of the total range),
+representing overwhelming force in a single direction. It is a **trend strength confirmation** signal, not a reversal signal.
 
-### Bullish Marubozu (양봉 마루보즈)
-- 시가 = 저가, 종가 = 고가 (또는 매우 근접)
-- 꼬리 없는 긴 양봉
-- 강한 매수 압력, 추세 지속 확인
+### Bullish Marubozu
+- Open = Low, Close = High (or very close)
+- Long bullish candle with no shadows
+- Strong buying pressure — confirms trend continuation
 
-### Bearish Marubozu (음봉 마루보즈)
-- 시가 = 고가, 종가 = 저가 (또는 매우 근접)
-- 꼬리 없는 긴 음봉
-- 강한 매도 압력, 추세 지속 확인
+### Bearish Marubozu
+- Open = High, Close = Low (or very close)
+- Long bearish candle with no shadows
+- Strong selling pressure — confirms trend continuation
 
 ## Signal Interpretation
 
 ### Bullish Marubozu
-- **Strong signal**: 거래량이 평균 대비 150% 이상 + 상승 추세 중 출현 + 주요 저항선 돌파와 동시
-- **Moderate signal**: 평균 이상 거래량 + 상승 추세 중 출현
-- **Weak signal**: 거래량 평균 이하 또는 횡보 구간에서 단발 출현
+- **Strong signal**: Volume ≥ 150% of average + appears during an uptrend + coincides with a breakout above a key resistance level
+- **Moderate signal**: Above-average volume + appears during an uptrend
+- **Weak signal**: Below-average volume or isolated appearance in a sideways range
 
 ### Bearish Marubozu
-- **Strong signal**: 거래량이 평균 대비 150% 이상 + 하락 추세 중 출현 + 주요 지지선 이탈과 동시
-- **Moderate signal**: 평균 이상 거래량 + 하락 추세 중 출현
-- **Weak signal**: 거래량 평균 이하 또는 횡보 구간에서 단발 출현
+- **Strong signal**: Volume ≥ 150% of average + appears during a downtrend + coincides with a breakdown below a key support level
+- **Moderate signal**: Above-average volume + appears during a downtrend
+- **Weak signal**: Below-average volume or isolated appearance in a sideways range
 
 ## Key Combinations
 
-- **Volume + Marubozu**: 거래량이 평균 이상이면 추세 강도 확인, 이하이면 신뢰도 감소
-- **Support/Resistance + Marubozu**: 주요 가격대 돌파/이탈 시 Marubozu 출현은 돌파 유효성 확인
-- **EMA + Marubozu**: EMA(20/60) 돌파와 동시 Marubozu 출현 시 추세 전환 확인
-- **RSI + Marubozu**: 연속 Marubozu + RSI 극단값은 과열/과매도 경고
+- **Volume + Marubozu**: Above-average volume confirms trend strength; below-average volume reduces reliability
+- **Support/Resistance + Marubozu**: Marubozu appearing at a breakout/breakdown of a key price level confirms the breakout's validity
+- **EMA + Marubozu**: Marubozu appearing simultaneously with a breakout of EMA(20/60) confirms a trend shift
+- **RSI + Marubozu**: Consecutive Marubozu candles + RSI at extremes warns of overheating or oversold conditions
 
 ## Caveats
 
-- Marubozu는 반전 신호가 아닌 **추세 강도 확인** 신호로 해석해야 한다
-- 연속 Marubozu 출현 시 오히려 과열/과매도 가능성 경고
-- 단독 Marubozu만으로 진입 판단은 부적절 — 추세 맥락과 거래량 확인 필수
-- 거래량이 평균 이하인 Marubozu는 유동성 부족에 의한 왜곡일 수 있음
+- Marubozu must be interpreted as a **trend strength confirmation** signal, not a reversal signal
+- Consecutive Marubozu candles can instead warn of overheating or oversold conditions
+- Entry decisions based solely on a single Marubozu are inappropriate — trend context and volume confirmation are essential
+- A Marubozu with below-average volume may be distorted by low liquidity
 
 ## AI Analysis Instructions
 
@@ -55,6 +55,6 @@ When a Bullish Marubozu or Bearish Marubozu is detected:
 - Clarify that Marubozu is a trend continuation confirmation, not a reversal signal
 - Evaluate current volume relative to the recent average for confirmation strength
 - Check if the Marubozu coincides with a key level breakout (support/resistance, EMA crossover)
-- If consecutive Marubozu candles appear, warn about potential overextension: "연속 Marubozu 출현으로 과열 가능성 주의"
+- If consecutive Marubozu candles appear, warn about potential overextension: "Consecutive Marubozu detected — caution for potential overheating"
 - Cross-reference with RSI to assess whether the trend is becoming overextended
-- State the interpretation clearly: "Bullish Marubozu는 현재 상승 추세의 강도를 확인하는 신호입니다"
+- State the interpretation clearly: "Bullish Marubozu is a signal confirming the strength of the current uptrend"

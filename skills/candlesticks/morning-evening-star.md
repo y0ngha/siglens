@@ -1,6 +1,6 @@
 ---
 name: Morning/Evening Star Guide
-description: 샛별/석별 3봉 반전 패턴 해석 가이드
+description: 3-candle reversal pattern interpretation guide for Morning Star and Evening Star
 type: candlestick
 category: neutral
 indicators: []
@@ -9,44 +9,44 @@ confidence_weight: 0.8
 
 ## Overview
 
-Morning Star / Evening Star는 3봉 반전 패턴으로, 단일 캔들 패턴보다 높은 신뢰성을 가진다.
-중간 캔들이 Doji인 경우 Morning/Evening Doji Star로 분류되며 신뢰도가 더 높다.
+Morning Star / Evening Star are 3-candle reversal patterns with higher reliability than single-candle patterns.
+When the middle candle is a Doji, the pattern is classified as a Morning/Evening Doji Star and carries even greater reliability.
 
-### Morning Star (샛별)
-1. 긴 음봉 (하락 추세 지속)
-2. 작은 몸통 캔들 (갭 다운, 우유부단)
-3. 긴 양봉 (첫 봉의 50% 이상 회복)
+### Morning Star
+1. Long bearish candle (downtrend continuation)
+2. Small-body candle (gap down, indecision)
+3. Long bullish candle (recovers at least 50% of the first candle)
 
-### Evening Star (석별)
-1. 긴 양봉 (상승 추세 지속)
-2. 작은 몸통 캔들 (갭 업, 우유부단)
-3. 긴 음봉 (첫 봉의 50% 이상 되돌림)
+### Evening Star
+1. Long bullish candle (uptrend continuation)
+2. Small-body candle (gap up, indecision)
+3. Long bearish candle (retraces at least 50% of the first candle)
 
 ## Signal Interpretation
 
 ### Morning Star
-- **Strong signal**: 명확한 하락 추세 + 중간 캔들이 Doji + 세 번째 캔들이 첫 번째의 60% 이상 회복 + 거래량 증가
-- **Moderate signal**: 하락 추세 후 출현, 세 번째 캔들이 50~60% 회복
-- **Weak signal**: 추세 불명확, 세 번째 캔들 회복 비율 50% 미만
+- **Strong signal**: Clear downtrend + middle candle is a Doji + third candle recovers ≥ 60% of the first candle + increased volume
+- **Moderate signal**: Appears after a downtrend, third candle recovers 50–60%
+- **Weak signal**: Trend unclear, third candle recovery ratio below 50%
 
 ### Evening Star
-- **Strong signal**: 명확한 상승 추세 + 중간 캔들이 Doji + 세 번째 캔들이 첫 번째의 60% 이상 되돌림 + 거래량 증가
-- **Moderate signal**: 상승 추세 후 출현, 세 번째 캔들이 50~60% 되돌림
-- **Weak signal**: 추세 불명확, 세 번째 캔들 되돌림 비율 50% 미만
+- **Strong signal**: Clear uptrend + middle candle is a Doji + third candle retraces ≥ 60% of the first candle + increased volume
+- **Moderate signal**: Appears after an uptrend, third candle retraces 50–60%
+- **Weak signal**: Trend unclear, third candle retracement ratio below 50%
 
 ## Key Combinations
 
-- **RSI + Star**: RSI 극단값(과매수/과매도)과 동시 출현 시 반전 신뢰도 크게 상승
-- **MACD + Star**: MACD 히스토그램 방향 전환과 동시 출현 시 강력한 신호
-- **Volume + Star**: 세 번째 캔들의 거래량 급증은 새로운 추세의 강도를 확인
-- **Support/Resistance + Star**: 주요 지지/저항선 부근에서 출현 시 반전 확률 증가
+- **RSI + Star**: Appearing alongside RSI extremes (overbought/oversold) significantly increases reversal reliability
+- **MACD + Star**: Appearing simultaneously with a MACD histogram direction change is a powerful signal
+- **Volume + Star**: A sharp increase in volume on the third candle confirms the strength of the emerging trend
+- **Support/Resistance + Star**: Appearing near key support/resistance levels increases reversal probability
 
 ## Caveats
 
-- 암호화폐/FX 등 24시간 시장에서는 갭이 거의 형성되지 않아, 갭 조건을 완화하여 해석해야 한다
-- 중간 캔들의 몸통이 지나치게 크면 Star 패턴이 아닌 일반 반전 패턴으로 분류해야 한다
-- 단기 타임프레임(1Min, 5Min)에서는 노이즈가 많아 신뢰도가 낮다
-- 3봉 모두의 거래량이 평균 이하이면 패턴 신뢰도 급감
+- In 24-hour markets (crypto, FX), gaps rarely form — gap conditions should be relaxed when interpreting the pattern
+- If the middle candle's body is too large, the pattern should be classified as a general reversal pattern rather than a Star pattern
+- On short-term timeframes (1Min, 5Min), noise is high and reliability is low
+- If all three candles have below-average volume, pattern reliability drops sharply
 
 ## AI Analysis Instructions
 
@@ -57,4 +57,4 @@ When a Morning Star, Evening Star, Morning Doji Star, or Evening Doji Star is de
 - Check if the middle candle is a Doji variant for enhanced reliability
 - Cross-reference with volume changes across all three candles
 - For 24-hour markets (crypto, FX), note that gap conditions are naturally relaxed
-- State the specific variant detected: "Morning Doji Star는 일반 Morning Star보다 신뢰도가 높습니다"
+- State the specific variant detected: "Morning Doji Star has higher reliability than a standard Morning Star"
