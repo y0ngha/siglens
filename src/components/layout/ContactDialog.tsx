@@ -61,7 +61,7 @@ export function ContactDialog({
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="contact-dialog-title"
-                        className="border-secondary-700 bg-secondary-800 w-full max-w-md rounded-xl border shadow-2xl"
+                        className="border-secondary-700 bg-secondary-800 w-full max-w-md rounded-xl border text-left shadow-2xl"
                     >
                         <div className="border-secondary-700 flex items-start justify-between border-b px-6 py-5">
                             <div>
