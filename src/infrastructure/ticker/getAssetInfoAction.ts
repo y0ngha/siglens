@@ -16,6 +16,7 @@ import {
     setKoreanTickers,
 } from '@/infrastructure/ticker/koreanNameStore';
 import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
+import { isValidTickerFormat } from '@/domain/ticker';
 import type { AssetInfo, KoreanTickerEntry } from '@/domain/types';
 
 async function translateAndCache(
@@ -51,59 +52,69 @@ async function translateAndCache(
     }
 }
 
-const resolveAssetInfo = cache(async (symbol: string): Promise<AssetInfo> => {
-    const upper = symbol.toUpperCase();
-    const cacheProvider = createCacheProvider();
-    const cacheKey = buildAssetInfoCacheKey(upper);
+const resolveAssetInfo = cache(
+    async (symbol: string): Promise<AssetInfo | null> => {
+        const upper = symbol.toUpperCase();
 
-    if (cacheProvider) {
-        try {
-            const cached = await cacheProvider.get<AssetInfo>(cacheKey);
-            if (cached) return cached;
-        } catch (error) {
-            console.error('Asset info cache get failed:', error);
+        if (!isValidTickerFormat(upper)) return null;
+
+        const cacheProvider = createCacheProvider();
+        const cacheKey = buildAssetInfoCacheKey(upper);
+
+        if (cacheProvider) {
+            try {
+                const cached = await cacheProvider.get<AssetInfo>(cacheKey);
+                if (cached) return cached;
+            } catch (error) {
+                console.error('Asset info cache get failed:', error);
+            }
         }
-    }
 
-    const fmpResults = await searchBySymbol(upper);
-    const usResults = filterUsExchanges(fmpResults);
-    const match = usResults.find(r => r.symbol === upper) ?? usResults[0];
+        const fmpResults = await searchBySymbol(upper);
+        const usResults = filterUsExchanges(fmpResults);
+        const match = usResults.find(r => r.symbol === upper) ?? usResults[0];
 
-    const name = match?.name ?? upper;
-    const exchange = match?.exchange ?? '';
-    const exchangeFullName = match?.exchangeFullName ?? '';
+        if (!match) return null;
 
-    const koreanNames = await getKoreanNames([upper]);
-    const koreanName = koreanNames[upper];
+        const { name, exchange, exchangeFullName } = match;
 
-    const info: AssetInfo = {
-        symbol: upper,
-        name,
-        ...(koreanName && { koreanName }),
-    };
+        const koreanNames = await getKoreanNames([upper]);
+        const koreanName = koreanNames[upper];
 
-    if (!koreanName && match) {
-        waitUntil(
-            translateAndCache(upper, name, exchange, exchangeFullName).catch(
-                error =>
-                    console.error('Asset info translateAndCache failed:', error)
-            )
-        );
-    }
+        const info: AssetInfo = {
+            symbol: upper,
+            name,
+            ...(koreanName && { koreanName }),
+        };
 
-    if (cacheProvider) {
-        waitUntil(
-            cacheProvider
-                .set(cacheKey, info, ASSET_INFO_CACHE_TTL)
-                .catch(error =>
-                    console.error('Asset info cache set failed:', error)
+        if (!koreanName) {
+            waitUntil(
+                translateAndCache(upper, name, exchange, exchangeFullName).catch(
+                    error =>
+                        console.error(
+                            'Asset info translateAndCache failed:',
+                            error
+                        )
                 )
-        );
+            );
+        }
+
+        if (cacheProvider) {
+            waitUntil(
+                cacheProvider
+                    .set(cacheKey, info, ASSET_INFO_CACHE_TTL)
+                    .catch(error =>
+                        console.error('Asset info cache set failed:', error)
+                    )
+            );
+        }
+
+        return info;
     }
+);
 
-    return info;
-});
-
-export async function getAssetInfoAction(symbol: string): Promise<AssetInfo> {
+export async function getAssetInfoAction(
+    symbol: string
+): Promise<AssetInfo | null> {
     return resolveAssetInfo(symbol.toUpperCase());
 }
