@@ -895,12 +895,14 @@ interface UseXxxOverlayParams {
 skills/
 ├── patterns/
 ├── indicators/
-└── strategies/
+├── strategies/
+├── candlesticks/
+└── support-resistance/
 ```
 
 ### Skill 타입
 
-`type` 필드는 `'pattern'`, `'indicator_guide'`, `'strategy'` 중 하나다.
+`type` 필드는 `'pattern'`, `'indicator_guide'`, `'strategy'`, `'candlestick'`, `'support_resistance'` 중 하나다.
 `type`이 없는 경우 `undefined`로 처리된다.
 
 | type | 설명 | 프롬프트 섹션 |
@@ -908,6 +910,8 @@ skills/
 | `pattern` | 차트 패턴 감지 (헤드앤숄더, 이중천장 등) | "Pattern Analysis" |
 | `indicator_guide` | 인디케이터 신호 가이드 | "Indicator Signal Guides" |
 | `strategy` | 투자 전략 분석 (엘리어트 파동, 이동평균선 대순환 등) | "Strategy Analysis" |
+| `candlestick` | 캔들스틱 패턴 해석 가이드 | "Candlestick Pattern Guides" |
+| `support_resistance` | 지지/저항 분석 도구 (피봇 포인트, 피보나치 등) | "Support/Resistance Tool Guides" |
 | (없음) | 기타 | "Active Skills" |
 
 ### 파일 형식
@@ -916,7 +920,7 @@ skills/
 ---
 name: string                  # skill 표시 이름 (SkillSignal.skillName에 사용)
 description: string           # skill 설명
-type: pattern | indicator_guide | strategy  # 선택. pattern: 차트 패턴 감지 / indicator_guide: 인디케이터 신호 가이드 / strategy: 투자 전략 분석
+type: pattern | indicator_guide | strategy | candlestick | support_resistance  # 선택
 category: string              # 선택. reversal_bullish | reversal_bearish | continuation_bullish | continuation_bearish | neutral
 pattern: string               # type: pattern일 때 패턴 식별자
 indicators: string[]          # 이 skill이 필요로 하는 인디케이터 목록
@@ -941,7 +945,7 @@ display:                      # 선택. 차트 표시 설정
 ### Skill markdown 유효성 규칙
 
 ```
-type 필드: 'pattern' | 'indicator_guide' | 'strategy' 중 하나만 유효
+type 필드: 'pattern' | 'indicator_guide' | 'strategy' | 'candlestick' | 'support_resistance' 중 하나만 유효
   → 해당하지 않으면 type 필드를 생략 (undefined 처리)
 
 필수 필드: name, description, indicators, confidence_weight
@@ -979,7 +983,7 @@ interface SkillDisplay {
     chart: SkillChartDisplay;
 }
 
-type SkillType = 'pattern' | 'indicator_guide' | 'strategy';
+type SkillType = 'pattern' | 'indicator_guide' | 'strategy' | 'candlestick' | 'support_resistance';
 
 type SkillCategory =
     | 'reversal_bullish'
@@ -1025,6 +1029,8 @@ domain/analysis/prompt.ts
   → confidenceWeight < 0.5인 항목 필터링
   → type='indicator_guide' skills → "Indicator Signal Guides" 섹션
   → type='pattern' skills → "Pattern Analysis" 섹션
+  → type='candlestick' skills → "Candlestick Pattern Guides" 섹션
+  → type='support_resistance' skills → "Support/Resistance Tool Guides" 섹션
   → type='strategy' skills → "Strategy Analysis" 섹션
   → 나머지 skills (type 없음) → "Active Skills" 섹션
   → confidenceWeight >= 0.8이면 "[높은 신뢰도]" 라벨 추가

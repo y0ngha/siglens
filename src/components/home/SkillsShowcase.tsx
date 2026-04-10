@@ -18,6 +18,7 @@ const TABS: TabConfig[] = [
     { value: 'pattern', label: '차트 패턴' },
     { value: 'strategy', label: '전략' },
     { value: 'candlestick', label: '캔들 패턴' },
+    { value: 'support_resistance', label: '지지/저항' },
 ];
 
 interface TypeBadgeConfig {
@@ -45,6 +46,11 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
         label: '캔들',
         className:
             'bg-chart-bullish/10 text-chart-bullish border border-chart-bullish/30',
+    },
+    support_resistance: {
+        label: '지지/저항',
+        className:
+            'bg-chart-bollinger/10 text-chart-bollinger border border-chart-bollinger/30',
     },
 };
 
@@ -130,7 +136,7 @@ function SkillCard({ skill }: SkillCardProps) {
                 <div className="bg-secondary-700 h-1.5 flex-1 overflow-hidden rounded-full">
                     <div
                         className={cn(
-                            'h-full w-[var(--confidence-w)] rounded-full',
+                            'h-full w-(--confidence-w) rounded-full',
                             isHighConfidence
                                 ? 'bg-chart-bullish'
                                 : 'bg-ui-warning'

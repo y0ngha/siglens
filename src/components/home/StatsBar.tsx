@@ -1,55 +1,40 @@
 import { Fragment } from 'react';
 
-import type { SkillShowcaseItem } from '@/domain/types';
+import type { SkillShowcaseItem, SkillType } from '@/domain/types';
+
+interface SkillStatConfig {
+    countLabel: string;
+}
+
+const SKILL_STAT_CONFIG: Record<SkillType, SkillStatConfig> = {
+    indicator_guide: { countLabel: '종 보조지표' },
+    pattern: { countLabel: '개 차트 패턴' },
+    strategy: { countLabel: '개 전략 분석' },
+    candlestick: { countLabel: '개 캔들 패턴' },
+    support_resistance: { countLabel: '개 지지/저항 도구' },
+};
+
+const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];
 
 interface StatsBarProps {
     skills: SkillShowcaseItem[];
 }
 
 export function StatsBar({ skills }: StatsBarProps) {
-    const { indicatorCount, patternCount, strategyCount, candlestickCount } =
-        skills.reduce(
-            (counts, skill) => {
-                if (skill.type === 'indicator_guide') {
-                    return {
-                        ...counts,
-                        indicatorCount: counts.indicatorCount + 1,
-                    };
-                }
-                if (skill.type === 'pattern') {
-                    return {
-                        ...counts,
-                        patternCount: counts.patternCount + 1,
-                    };
-                }
-                if (skill.type === 'strategy') {
-                    return {
-                        ...counts,
-                        strategyCount: counts.strategyCount + 1,
-                    };
-                }
-                if (skill.type === 'candlestick') {
-                    return {
-                        ...counts,
-                        candlestickCount: counts.candlestickCount + 1,
-                    };
-                }
-                return counts;
-            },
-            {
-                indicatorCount: 0,
-                patternCount: 0,
-                strategyCount: 0,
-                candlestickCount: 0,
-            }
-        );
+    const typeCounts = skills.reduce<Partial<Record<SkillType, number>>>(
+        (acc, skill) => {
+            if (skill.type == null) return acc;
+            return { ...acc, [skill.type]: (acc[skill.type] ?? 0) + 1 };
+        },
+        {}
+    );
 
     const stats = [
         { value: skills.length, label: '개 분석 스킬' },
-        { value: indicatorCount, label: '종 보조지표' },
-        { value: patternCount, label: '개 차트 패턴' },
-        { value: strategyCount, label: '개 전략 분석' },
-        { value: candlestickCount, label: '개 캔들 패턴' },
+        ...SKILL_TYPES.map(type => ({
+            value: typeCounts[type] ?? 0,
+            label: SKILL_STAT_CONFIG[type].countLabel,
+        })),
     ];
 
     return (
