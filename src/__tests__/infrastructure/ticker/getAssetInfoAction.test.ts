@@ -1,5 +1,11 @@
 import type { AssetInfo } from '@/domain/types';
 
+jest.mock('@vercel/functions', () => ({
+    waitUntil: (promise: Promise<unknown>) => {
+        void promise;
+    },
+}));
+
 jest.mock('react', () => ({
     cache: (fn: unknown) => fn,
 }));
@@ -106,7 +112,7 @@ describe('getAssetInfoAction', () => {
             expect(result.koreanName).toBeUndefined();
         });
 
-        it('한국어명이 없으면 translateAndCache를 fire-and-forget으로 호출한다', async () => {
+        it('한국어명이 없으면 translateAndCache를 waitUntil로 등록한다', async () => {
             mockSearchBySymbol.mockResolvedValueOnce([makeFmpResult('IONQ')]);
             mockGetKoreanNames.mockResolvedValueOnce({});
             mockTranslateCompanyNames.mockResolvedValue({ IONQ: '아이온큐' });

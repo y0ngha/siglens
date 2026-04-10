@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #228 | feat/227/fire-and-forget-waitUntil-migration | 2026-04-10]
+- Violation: 프로덕션 코드에서 외부 패키지(@vercel/functions)를 추가했으나 테스트 파일에서 모킹하지 않음
+- Rule: CONVENTIONS.md Test Rules — "Mock external dependencies only"; @vercel/functions는 외부 패키지이므로 모킹 대상
+- Context: analyzeAction.ts, searchTickerAction.ts, getAssetInfoAction.ts에 waitUntil을 도입하면서 대응 테스트 파일에 jest.mock('@vercel/functions', ...) 추가를 누락
+
 ## [PR #222 Round 5 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: `!!assetInfo?.name`이 `AssetInfo.name`이 required 필드임에도 불필요하게 `.name` 접근
 - Rule: FF.md Predictability — 타입 시스템이 보장하는 사실을 조건식에 명시적으로 표현해야 함

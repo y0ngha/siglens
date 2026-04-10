@@ -6,6 +6,11 @@ import type {
 } from '@/domain/types';
 import type { RunAnalysisResult } from '@/infrastructure/market/analysisApi';
 
+jest.mock('@vercel/functions', () => ({
+    waitUntil: (promise: Promise<unknown>) => {
+        void promise;
+    },
+}));
 jest.mock('@/infrastructure/market/analysisApi');
 jest.mock('@/infrastructure/cache/redis');
 
@@ -135,7 +140,7 @@ describe('analyzeAction 함수는', () => {
             );
             expect(result).toBe(mockResult);
 
-            // fire-and-forget이므로 await 후 set 호출 여부 확인
+            // waitUntil로 등록된 백그라운드 작업이 실행되었는지 확인
             await Promise.resolve();
             expect(mockCacheSet).toHaveBeenCalledWith(
                 'analysis:AAPL:1Day',
@@ -182,7 +187,7 @@ describe('analyzeAction 함수는', () => {
             );
             expect(result).toBe(mockResult);
 
-            // 읽기 에러 후에도 fire-and-forget으로 캐시 쓰기가 실행되는지 검증
+            // 읽기 에러 후에도 waitUntil로 등록된 캐시 쓰기가 실행되는지 검증
             await Promise.resolve();
             expect(mockCacheSet).toHaveBeenCalledWith(
                 'analysis:AAPL:1Day',
