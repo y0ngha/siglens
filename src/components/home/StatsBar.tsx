@@ -1,3 +1,5 @@
+import { Fragment } from 'react';
+
 import type { SkillShowcaseItem } from '@/domain/types';
 
 interface StatsBarProps {
@@ -42,17 +44,25 @@ export function StatsBar({ skills }: StatsBarProps) {
             }
         );
 
+    const stats = [
+        { value: skills.length, label: '개 분석 스킬' },
+        { value: indicatorCount, label: '종 보조지표' },
+        { value: patternCount, label: '개 차트 패턴' },
+        { value: strategyCount, label: '개 전략 분석' },
+        { value: candlestickCount, label: '개 캔들 패턴' },
+    ];
+
     return (
         <div className="text-secondary-500 mt-6 flex flex-wrap items-center justify-center gap-x-2 font-mono text-xs lg:justify-start">
-            <span>{skills.length}개 분석 스킬</span>
-            <span className="text-secondary-700">·</span>
-            <span>{indicatorCount}종 보조지표</span>
-            <span className="text-secondary-700">·</span>
-            <span>{patternCount}개 차트 패턴</span>
-            <span className="text-secondary-700">·</span>
-            <span>{strategyCount}개 전략 분석</span>
-            <span className="text-secondary-700">·</span>
-            <span>{candlestickCount}개 캔들 패턴</span>
+            {stats.map((stat, i) => (
+                <Fragment key={stat.label}>
+                    {i > 0 && <span className="text-secondary-700">·</span>}
+                    <span>
+                        {stat.value}
+                        {stat.label}
+                    </span>
+                </Fragment>
+            ))}
         </div>
     );
 }
