@@ -89,12 +89,13 @@ const resolveAssetInfo = cache(
 
         if (!koreanName) {
             waitUntil(
-                translateAndCache(upper, name, exchange, exchangeFullName).catch(
-                    error =>
-                        console.error(
-                            'Asset info translateAndCache failed:',
-                            error
-                        )
+                translateAndCache(
+                    upper,
+                    name,
+                    exchange,
+                    exchangeFullName
+                ).catch(error =>
+                    console.error('Asset info translateAndCache failed:', error)
                 )
             );
         }

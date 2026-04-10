@@ -1,4 +1,8 @@
-import { isKoreanInput, deduplicateResults, isValidTickerFormat } from '@/domain/ticker';
+import {
+    isKoreanInput,
+    deduplicateResults,
+    isValidTickerFormat,
+} from '@/domain/ticker';
 import type { TickerSearchResult } from '@/domain/types';
 
 const makeResult = (symbol: string): TickerSearchResult => ({
