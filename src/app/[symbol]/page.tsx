@@ -102,7 +102,7 @@ export default async function SymbolPage({ params }: Props) {
         about: {
             '@type': 'FinancialProduct',
             name: displayName,
-            tickerSymbol: ticker,
+            identifier: ticker,
             category: 'Stock',
         },
     };

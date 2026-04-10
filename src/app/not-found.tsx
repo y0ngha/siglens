@@ -1,9 +1,16 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { POPULAR_TICKERS, SITE_NAME } from '@/lib/seo';
+import {
+    POPULAR_TICKERS,
+    POPULAR_TICKERS_DISPLAY_COUNT,
+    SITE_NAME,
+} from '@/lib/seo';
 import { Footer } from '@/components/layout/Footer';
 
-const SUGGESTED_TICKERS = POPULAR_TICKERS.slice(0, 6);
+const SUGGESTED_TICKERS = POPULAR_TICKERS.slice(
+    0,
+    POPULAR_TICKERS_DISPLAY_COUNT
+);
 
 export const metadata: Metadata = {
     title: '페이지를 찾을 수 없습니다',

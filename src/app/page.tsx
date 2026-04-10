@@ -2,6 +2,7 @@ import Link from 'next/link';
 
 import {
     POPULAR_TICKERS,
+    POPULAR_TICKERS_DISPLAY_COUNT,
     SITE_DESCRIPTION,
     SITE_NAME,
     SITE_URL,
@@ -13,8 +14,10 @@ import { StatsBar } from '@/components/home/StatsBar';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import { SkillsShowcase } from '@/components/home/SkillsShowcase';
 
-const HOMEPAGE_TICKER_COUNT = 6;
-const HOMEPAGE_TICKERS = POPULAR_TICKERS.slice(0, HOMEPAGE_TICKER_COUNT);
+const HOMEPAGE_TICKERS = POPULAR_TICKERS.slice(
+    0,
+    POPULAR_TICKERS_DISPLAY_COUNT
+);
 
 export default async function Home() {
     const loader = new FileSkillsLoader();

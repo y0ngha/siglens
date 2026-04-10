@@ -31,20 +31,19 @@ export function buildSymbolKeywords(
     displayName: string,
     koreanName?: string
 ): string[] {
-    const keywords = [
+    return [
         `${displayName} 기술적 분석`,
         `${displayName} 차트 분석`,
         `${ticker} 주가`,
         `${ticker} 기술적 분석`,
         `${ticker} chart analysis`,
+        ...(koreanName
+            ? [`${koreanName} 주가 분석`, `${koreanName} 차트 분석`]
+            : []),
     ];
-
-    if (koreanName) {
-        keywords.push(`${koreanName} 주가 분석`, `${koreanName} 차트 분석`);
-    }
-
-    return keywords;
 }
+
+export const POPULAR_TICKERS_DISPLAY_COUNT = 6;
 
 export const POPULAR_TICKERS = [
     'AAPL',
