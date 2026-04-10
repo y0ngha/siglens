@@ -386,7 +386,8 @@ const RESPONSE_LANGUAGE_INSTRUCTION =
 const buildAnalysisRequest = (
     patternSkills: Skill[],
     strategySkills: Skill[],
-    indicatorGuideSkills: Skill[]
+    indicatorGuideSkills: Skill[],
+    candlestickSkills: Skill[]
 ): string => {
     const patternListInstruction =
         patternSkills.length > 0
@@ -451,6 +452,22 @@ const buildAnalysisRequest = (
               ].join('\n')
             : '';
 
+    const candlestickInstruction =
+        candlestickSkills.length > 0
+            ? [
+                  '',
+                  '### candlePatterns Writing Rules for Candlestick Skills',
+                  '- Use the Candlestick Pattern Guides above to interpret the candle patterns detected in ## Detected Candle Patterns.',
+                  '- For each detected candle pattern, evaluate the trend context, confirmation signals, and statistical reliability as described in the matching guide.',
+                  '- When a pattern matches a guide, enrich the candlePatterns entry with the guide insights: trend context validity, volume confirmation, and recommended indicator cross-checks.',
+                  '- The summary field of each candlePatterns entry must include the guide-informed interpretation, not just pattern name repetition.',
+                  '- If a detected pattern appears in a sideways/range-bound market context and the guide warns about reduced reliability, note this explicitly in the summary.',
+                  '',
+                  'Candlestick pattern guide list to apply:',
+                  ...candlestickSkills.map(s => `- ${s.name}`),
+              ].join('\n')
+            : '';
+
     return [
         '## Analysis Request',
         RESPONSE_LANGUAGE_INSTRUCTION,
@@ -459,6 +476,7 @@ const buildAnalysisRequest = (
         indicatorGuideInstruction,
         patternListInstruction,
         strategyInstruction,
+        candlestickInstruction,
     ]
         .filter(s => s !== '')
         .join('\n');
@@ -479,11 +497,15 @@ export function buildAnalysisPrompt(
     const indicatorGuideSkills = activeSkills.filter(
         s => s.type === 'indicator_guide'
     );
+    const candlestickSkills = activeSkills.filter(
+        s => s.type === 'candlestick'
+    );
     const regularSkills = activeSkills.filter(
         s =>
             s.type !== 'pattern' &&
             s.type !== 'strategy' &&
-            s.type !== 'indicator_guide'
+            s.type !== 'indicator_guide' &&
+            s.type !== 'candlestick'
     );
 
     const sections = [
@@ -504,6 +526,11 @@ export function buildAnalysisPrompt(
                   `## Pattern Analysis\n${patternSkills.map(buildSkillBlock).join('\n\n')}`,
               ]
             : []),
+        ...(candlestickSkills.length > 0
+            ? [
+                  `## Candlestick Pattern Guides\n${candlestickSkills.map(buildSkillBlock).join('\n\n')}`,
+              ]
+            : []),
         ...(strategySkills.length > 0
             ? [
                   `## Strategy Analysis\n${strategySkills.map(buildSkillBlock).join('\n\n')}`,
@@ -518,7 +545,8 @@ export function buildAnalysisPrompt(
         buildAnalysisRequest(
             patternSkills,
             strategySkills,
-            indicatorGuideSkills
+            indicatorGuideSkills,
+            candlestickSkills
         ),
     ];
 

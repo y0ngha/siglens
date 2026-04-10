@@ -1,15 +1,5 @@
 # Fix Log
 
-## [PR #228 | feat/227/fire-and-forget-waitUntil-migration | 2026-04-10]
-- Violation: 프로덕션 코드에서 외부 패키지(@vercel/functions)를 추가했으나 테스트 파일에서 모킹하지 않음
-- Rule: CONVENTIONS.md Test Rules — "Mock external dependencies only"; @vercel/functions는 외부 패키지이므로 모킹 대상
-- Context: analyzeAction.ts, searchTickerAction.ts, getAssetInfoAction.ts에 waitUntil을 도입하면서 대응 테스트 파일에 jest.mock('@vercel/functions', ...) 추가를 누락
-
-## [PR #222 Round 3 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
-- Violation: SymbolPageClient.tsx에서 symbol.toUpperCase()를 3회, assetInfo.name !== symbol.toUpperCase() 조건을 2회 반복
-- Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값은 한 번만 계산하고 const로 추출
-- Context: JSX 렌더 함수 내에서 파생 상수를 추출하지 않고 동일 표현식을 인라인으로 반복
-
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: components/hooks/ 파일에 'use client' 선언 누락
 - Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
@@ -18,11 +8,6 @@
 - Violation: 서버 prefetchQuery 키와 클라이언트 훅 키 불일치 (hydration 캐시 미스)
 - Rule: React Query Hydration 패턴 — prefetchQuery 키와 useQuery 키가 정확히 일치해야 함
 - Context: 서버는 ticker(대문자)로 키를 만들고 클라이언트는 symbol(원본)로 키를 만들어 소문자 URL 진입 시 캐시 미스 발생
-
-## [Issue #221 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
-- Violation: 새 infrastructure Server Action 파일(getAssetInfoAction.ts) 구현 후 테스트 파일 누락
-- Rule: 모든 infrastructure/ 파일은 대응하는 테스트 파일이 있어야 한다 (100% branch coverage target)
-- Context: 동일 패턴의 searchTickerAction.test.ts가 존재함에도 getAssetInfoAction.test.ts 작성을 누락
 
 ## [PR #220 | feat/219/action-recommendation | 2026-04-10]
 - Violation: RESPONSE_LANGUAGE_INSTRUCTION의 "Other text fields" 목록에 새 필드(positionAnalysis, entry, exit, riskReward) 누락
@@ -114,6 +99,3 @@
 - Rule: ARCHITECTURE.md — 도메인 결과 타입은 `domain/types.ts`에 정의해야 함
 - Context: 다른 파일(`StockChart.tsx`, `useActionRecommendationOverlay.ts`)에서도 참조하는 타입을 구현 파일에 배치; `domain/types.ts`로 이동
 
-- Violation: `forEach + push`로 배열을 직접 변경(mutation)
-- Rule: MISTAKES.md Coding Paradigm #5 — Array mutation via push/splice; use spread syntax
-- Context: `useActionRecommendationOverlay`에서 `lines.push()`로 IPriceLine 배열 직접 변경; `map` + spread(`[...entryLines, ...stopLossLine, ...takeProfitLines]`)로 교체
