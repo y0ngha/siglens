@@ -238,10 +238,7 @@ describe('analyzeAction 함수는', () => {
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
             mockCacheSet.mockResolvedValueOnce(undefined);
 
-            const result = await analyzeAction(
-                mockVariables,
-                mockTimeframe
-            );
+            const result = await analyzeAction(mockVariables, mockTimeframe);
 
             expect(mockCacheDelete).toHaveBeenCalledWith('analysis:AAPL:1Day');
             expect(mockCacheGet).not.toHaveBeenCalled();
@@ -269,10 +266,7 @@ describe('analyzeAction 함수는', () => {
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
             mockCacheSet.mockResolvedValueOnce(undefined);
 
-            const result = await analyzeAction(
-                mockVariables,
-                mockTimeframe
-            );
+            const result = await analyzeAction(mockVariables, mockTimeframe);
 
             expect(consoleSpy).toHaveBeenCalledWith(
                 '[Cache] 캐시 삭제 실패:',
@@ -298,10 +292,7 @@ describe('analyzeAction 함수는', () => {
             mockCreateCacheProvider.mockReturnValue(null);
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
 
-            const result = await analyzeAction(
-                mockVariables,
-                mockTimeframe
-            );
+            const result = await analyzeAction(mockVariables, mockTimeframe);
 
             expect(mockCacheDelete).not.toHaveBeenCalled();
             expect(mockRunAnalysis).toHaveBeenCalledWith(
