@@ -49,7 +49,8 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     },
     support_resistance: {
         label: '지지/저항',
-        className: 'bg-chart-bollinger/10 text-chart-bollinger border border-chart-bollinger/30',
+        className:
+            'bg-chart-bollinger/10 text-chart-bollinger border border-chart-bollinger/30',
     },
 };
 
