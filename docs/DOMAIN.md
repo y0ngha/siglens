@@ -570,6 +570,43 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 
 ---
 
+## 인디케이터 신호 가이드 (Skills 기반)
+
+인디케이터의 신호 해석 기준은 **AI + Skills 파일** 기반으로 수행한다.
+`type: indicator_guide`인 skill 파일이 활성화되면 AI가 해당 가이드에 따라 인디케이터 수치를 해석한다.
+
+> **참고**: `indicators` 필드에 명시된 인디케이터가 `IndicatorResult`에서 계산되어 전달되는 경우, AI는 정확한 수치를 기반으로 해석한다.
+> 계산되지 않는 인디케이터의 경우, AI는 raw bar 데이터(OHLCV)에서 근사 분석을 수행할 수 있다.
+
+### 현재 등록된 인디케이터 신호 가이드 Skills
+
+| skill 파일 | 인디케이터 | 용도 | 신뢰도 |
+|---|---|---|---|
+| `indicators/rsi.md` | RSI(14) | 과매수/과매도, 다이버전스 | 0.9 |
+| `indicators/macd.md` | MACD(12,26,9) | 크로스오버, 히스토그램, 다이버전스 | 0.9 |
+| `indicators/bollinger-bands.md` | Bollinger Bands(20,2) | 스퀴즈, 밴드워크, 평균회귀 | 0.85 |
+| `indicators/adx.md` | ADX(14) | 추세 강도 측정, 시장 국면 | 0.85 |
+| `indicators/dmi.md` | DMI(14) | +DI/-DI 크로스, 추세 방향 | 0.85 |
+| `indicators/stochastic.md` | Stochastic(14,3,3) | 과매수/과매도, 크로스오버 | 0.85 |
+| `indicators/stochastic-rsi.md` | StochRSI(14,14,3,3) | RSI 기반 모멘텀 극값 | 0.8 |
+| `indicators/cci.md` | CCI(20) | 과매수/과매도, 추세 | 0.8 |
+| `indicators/ema.md` | EMA | 추세 방향, 동적 지지/저항 | 0.85 |
+| `indicators/ma.md` | MA | 추세 방향, 골든/데드 크로스 | 0.85 |
+| `indicators/vwap.md` | VWAP | 기관 공정가치, 장중 편향 | 0.85 |
+| `indicators/volume-profile.md` | Volume Profile | POC, VAH/VAL, 거래량 분포 | 0.85 |
+| `indicators/ichimoku-cloud.md` | Ichimoku Cloud | 구름, 전환선/기준선 | 0.85 |
+| `indicators/atr.md` | ATR(14) | 변동성 측정, 손절 설정 | 0.85 |
+| `indicators/obv.md` | OBV | 거래량 누적, 다이버전스 | 0.8 |
+| `indicators/parabolic-sar.md` | Parabolic SAR(0.02, 0.20) | 추세 방향, 트레일링 스톱 | 0.8 |
+| `indicators/williams-r.md` | Williams %R(14) | 과매수/과매도, 모멘텀 | 0.8 |
+| `indicators/supertrend.md` | Supertrend(10, 3.0) | ATR 기반 추세 추종 | 0.8 |
+| `indicators/mfi.md` | MFI(14) | 거래량 가중 과매수/과매도 | 0.8 |
+| `indicators/keltner-channel.md` | Keltner Channel(20, 10, 2.0) | ATR 채널, 스퀴즈 | 0.8 |
+| `indicators/cmf.md` | CMF(21) | 자금 흐름 방향/강도 | 0.75 |
+| `indicators/donchian-channel.md` | Donchian Channel(20) | 브레이크아웃, Turtle Trading | 0.8 |
+
+---
+
 ## AI 프롬프트 구성 명세
 
 ### 입력 데이터
