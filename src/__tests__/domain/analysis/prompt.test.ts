@@ -17,6 +17,16 @@ import {
     ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_BASE_PERIOD,
     ICHIMOKU_SPAN_B_PERIOD,
+    ATR_DEFAULT_PERIOD,
+    WILLIAMS_R_DEFAULT_PERIOD,
+    SUPERTREND_ATR_PERIOD,
+    SUPERTREND_MULTIPLIER,
+    MFI_DEFAULT_PERIOD,
+    KELTNER_EMA_PERIOD,
+    KELTNER_ATR_PERIOD,
+    KELTNER_MULTIPLIER,
+    CMF_DEFAULT_PERIOD,
+    DONCHIAN_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 import {
     HAMMER_BODY_OFFSET,
@@ -74,6 +84,20 @@ const TEST_MA_20_VALUE = 150.25;
 const TEST_MA_60_VALUE = 148.1;
 const TEST_MA_120_VALUE = 145.5;
 const TEST_MA_200_VALUE = 142.8;
+const TEST_ATR_VALUE = 2.45;
+const TEST_OBV_VALUE = 1234567;
+const TEST_PSAR_VALUE = 150.0;
+const TEST_WILLIAMS_R_VALUE = -25.5;
+const TEST_SUPERTREND_VALUE = 148.5;
+const TEST_MFI_VALUE = 65.5;
+const TEST_KELTNER_UPPER = 155.0;
+const TEST_KELTNER_MIDDLE = 150.0;
+const TEST_KELTNER_LOWER = 145.0;
+const TEST_CMF_VALUE = 0.15;
+const TEST_DONCHIAN_UPPER = 155.0;
+const TEST_DONCHIAN_MIDDLE = 150.0;
+const TEST_DONCHIAN_LOWER = 145.0;
+
 const TEST_EMA_9_VALUE = 151.3;
 const TEST_EMA_20_VALUE = 150.8;
 const TEST_EMA_21_VALUE = 150.75;
@@ -103,6 +127,15 @@ const makeIndicators = (
     ema: {},
     volumeProfile: null,
     ichimoku: [],
+    atr: [],
+    obv: [],
+    parabolicSar: [],
+    williamsR: [],
+    supertrend: [],
+    mfi: [],
+    keltnerChannel: [],
+    cmf: [],
+    donchianChannel: [],
     ...overrides,
 });
 
@@ -633,6 +666,250 @@ describe('prompt', () => {
             expect(result).toContain(TEST_ICHIMOKU_SENKOU_A.toFixed(2));
             expect(result).toContain(TEST_ICHIMOKU_SENKOU_B.toFixed(2));
             expect(result).toContain(TEST_ICHIMOKU_CHIKOU.toFixed(2));
+        });
+    });
+
+    describe('지표 섹션 - ATR', () => {
+        it('atr 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ atr: [] }),
+                []
+            );
+            expect(result).toContain(`ATR(${ATR_DEFAULT_PERIOD}): N/A`);
+        });
+
+        it('atr 값을 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ atr: [null, TEST_ATR_VALUE] }),
+                []
+            );
+            expect(result).toContain(
+                `ATR(${ATR_DEFAULT_PERIOD}): ${TEST_ATR_VALUE.toFixed(2)}`
+            );
+        });
+    });
+
+    describe('지표 섹션 - OBV', () => {
+        it('obv 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ obv: [] }),
+                []
+            );
+            expect(result).toContain('OBV: N/A');
+        });
+
+        it('obv 값을 comma 포매팅하여 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ obv: [TEST_OBV_VALUE] }),
+                []
+            );
+            expect(result).toContain('OBV: 1,234,567');
+        });
+    });
+
+    describe('지표 섹션 - Parabolic SAR', () => {
+        it('parabolicSar 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ parabolicSar: [] }),
+                []
+            );
+            expect(result).toContain('Parabolic SAR: N/A (N/A)');
+        });
+
+        it('parabolicSar 값과 trend를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({
+                    parabolicSar: [{ sar: TEST_PSAR_VALUE, trend: 'up' }],
+                }),
+                []
+            );
+            expect(result).toContain(
+                `Parabolic SAR: ${TEST_PSAR_VALUE.toFixed(2)} (up)`
+            );
+        });
+    });
+
+    describe('지표 섹션 - Williams %R', () => {
+        it('williamsR 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ williamsR: [] }),
+                []
+            );
+            expect(result).toContain(
+                `Williams %R(${WILLIAMS_R_DEFAULT_PERIOD}): N/A`
+            );
+        });
+
+        it('williamsR 값을 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ williamsR: [null, TEST_WILLIAMS_R_VALUE] }),
+                []
+            );
+            expect(result).toContain(
+                `Williams %R(${WILLIAMS_R_DEFAULT_PERIOD}): ${TEST_WILLIAMS_R_VALUE.toFixed(2)}`
+            );
+        });
+    });
+
+    describe('지표 섹션 - Supertrend', () => {
+        it('supertrend 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ supertrend: [] }),
+                []
+            );
+            expect(result).toContain(
+                `Supertrend(${SUPERTREND_ATR_PERIOD},${SUPERTREND_MULTIPLIER}): N/A (N/A)`
+            );
+        });
+
+        it('supertrend 값과 trend를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({
+                    supertrend: [
+                        { supertrend: TEST_SUPERTREND_VALUE, trend: 'up' },
+                    ],
+                }),
+                []
+            );
+            expect(result).toContain(
+                `Supertrend(${SUPERTREND_ATR_PERIOD},${SUPERTREND_MULTIPLIER}): ${TEST_SUPERTREND_VALUE.toFixed(2)} (up)`
+            );
+        });
+    });
+
+    describe('지표 섹션 - MFI', () => {
+        it('mfi 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ mfi: [] }),
+                []
+            );
+            expect(result).toContain(`MFI(${MFI_DEFAULT_PERIOD}): N/A`);
+        });
+
+        it('mfi 값을 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ mfi: [null, TEST_MFI_VALUE] }),
+                []
+            );
+            expect(result).toContain(
+                `MFI(${MFI_DEFAULT_PERIOD}): ${TEST_MFI_VALUE.toFixed(2)}`
+            );
+        });
+    });
+
+    describe('지표 섹션 - Keltner Channel', () => {
+        it('keltnerChannel 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ keltnerChannel: [] }),
+                []
+            );
+            expect(result).toContain(
+                `Keltner Channel(${KELTNER_EMA_PERIOD},${KELTNER_ATR_PERIOD},${KELTNER_MULTIPLIER}): Upper N/A`
+            );
+        });
+
+        it('keltnerChannel 값을 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({
+                    keltnerChannel: [
+                        {
+                            upper: TEST_KELTNER_UPPER,
+                            middle: TEST_KELTNER_MIDDLE,
+                            lower: TEST_KELTNER_LOWER,
+                        },
+                    ],
+                }),
+                []
+            );
+            expect(result).toContain(TEST_KELTNER_UPPER.toFixed(2));
+            expect(result).toContain(TEST_KELTNER_MIDDLE.toFixed(2));
+            expect(result).toContain(TEST_KELTNER_LOWER.toFixed(2));
+        });
+    });
+
+    describe('지표 섹션 - CMF', () => {
+        it('cmf 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ cmf: [] }),
+                []
+            );
+            expect(result).toContain(`CMF(${CMF_DEFAULT_PERIOD}): N/A`);
+        });
+
+        it('cmf 값을 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ cmf: [null, TEST_CMF_VALUE] }),
+                []
+            );
+            expect(result).toContain(
+                `CMF(${CMF_DEFAULT_PERIOD}): ${TEST_CMF_VALUE.toFixed(2)}`
+            );
+        });
+    });
+
+    describe('지표 섹션 - Donchian Channel', () => {
+        it('donchianChannel 배열이 비어있을 때 N/A를 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({ donchianChannel: [] }),
+                []
+            );
+            expect(result).toContain(
+                `Donchian Channel(${DONCHIAN_DEFAULT_PERIOD}): Upper N/A`
+            );
+        });
+
+        it('donchianChannel 값을 포함한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators({
+                    donchianChannel: [
+                        {
+                            upper: TEST_DONCHIAN_UPPER,
+                            middle: TEST_DONCHIAN_MIDDLE,
+                            lower: TEST_DONCHIAN_LOWER,
+                        },
+                    ],
+                }),
+                []
+            );
+            expect(result).toContain(TEST_DONCHIAN_UPPER.toFixed(2));
+            expect(result).toContain(TEST_DONCHIAN_MIDDLE.toFixed(2));
+            expect(result).toContain(TEST_DONCHIAN_LOWER.toFixed(2));
         });
     });
 

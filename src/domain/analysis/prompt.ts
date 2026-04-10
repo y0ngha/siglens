@@ -20,6 +20,16 @@ import {
     ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_BASE_PERIOD,
     ICHIMOKU_SPAN_B_PERIOD,
+    ATR_DEFAULT_PERIOD,
+    WILLIAMS_R_DEFAULT_PERIOD,
+    SUPERTREND_ATR_PERIOD,
+    SUPERTREND_MULTIPLIER,
+    MFI_DEFAULT_PERIOD,
+    KELTNER_EMA_PERIOD,
+    KELTNER_ATR_PERIOD,
+    KELTNER_MULTIPLIER,
+    CMF_DEFAULT_PERIOD,
+    DONCHIAN_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
 import { detectCandlePattern } from '@/domain/analysis/candle';
 import { getCandlePatternLabel } from '@/domain/analysis/candle-labels';
@@ -231,12 +241,25 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastVWAP = lastNonNull(indicators.vwap);
     const vp = indicators.volumeProfile;
     const lastIchimoku = lastOf(indicators.ichimoku);
+    const lastATR = lastNonNull(indicators.atr);
+    const lastOBV = lastNonNull(indicators.obv);
+    const lastPSAR = lastOf(indicators.parabolicSar);
+    const lastWilliamsR = lastNonNull(indicators.williamsR);
+    const lastSupertrend = lastOf(indicators.supertrend);
+    const lastMFI = lastNonNull(indicators.mfi);
+    const lastKeltner = lastOf(indicators.keltnerChannel);
+    const lastCMF = lastNonNull(indicators.cmf);
+    const lastDonchian = lastOf(indicators.donchianChannel);
 
     const rsiTrend = detectTrend(indicators.rsi);
     const cciTrend = detectTrend(indicators.cci);
     const macdTrend = detectTrend(
         indicators.macd.map(m => m.histogram ?? null)
     );
+    const atrTrend = detectTrend(indicators.atr);
+    const obvTrend = detectTrend(indicators.obv);
+    const mfiTrend = detectTrend(indicators.mfi);
+    const cmfTrend = detectTrend(indicators.cmf);
 
     return [
         '## Indicator Values',
@@ -252,6 +275,15 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
         `- MA: ${MA_DEFAULT_PERIODS.map(p => `MA(${p}): ${fmt(lastNonNull(indicators.ma[p] ?? []))}`).join(' / ')}`,
         `- EMA: ${EMA_DEFAULT_PERIODS.map(p => `EMA(${p}): ${fmt(lastNonNull(indicators.ema[p] ?? []))}`).join(' / ')}`,
         `- Ichimoku(${ICHIMOKU_CONVERSION_PERIOD},${ICHIMOKU_BASE_PERIOD},${ICHIMOKU_SPAN_B_PERIOD}): Tenkan ${fmt(lastIchimoku?.tenkan ?? null)} / Kijun ${fmt(lastIchimoku?.kijun ?? null)} / SpanA ${fmt(lastIchimoku?.senkouA ?? null)} / SpanB ${fmt(lastIchimoku?.senkouB ?? null)} / Chikou ${fmt(lastIchimoku?.chikou ?? null)}`,
+        `- ATR(${ATR_DEFAULT_PERIOD}): ${fmt(lastATR)}${trendLabel(atrTrend)}`,
+        `- OBV: ${lastOBV !== null ? formatVolume(lastOBV) : 'N/A'}${trendLabel(obvTrend)}`,
+        `- Parabolic SAR: ${fmt(lastPSAR?.sar ?? null)} (${lastPSAR?.trend ?? 'N/A'})`,
+        `- Williams %R(${WILLIAMS_R_DEFAULT_PERIOD}): ${fmt(lastWilliamsR)}`,
+        `- Supertrend(${SUPERTREND_ATR_PERIOD},${SUPERTREND_MULTIPLIER}): ${fmt(lastSupertrend?.supertrend ?? null)} (${lastSupertrend?.trend ?? 'N/A'})`,
+        `- MFI(${MFI_DEFAULT_PERIOD}): ${fmt(lastMFI)}${trendLabel(mfiTrend)}`,
+        `- Keltner Channel(${KELTNER_EMA_PERIOD},${KELTNER_ATR_PERIOD},${KELTNER_MULTIPLIER}): Upper ${fmt(lastKeltner?.upper ?? null)} / Middle ${fmt(lastKeltner?.middle ?? null)} / Lower ${fmt(lastKeltner?.lower ?? null)}`,
+        `- CMF(${CMF_DEFAULT_PERIOD}): ${fmt(lastCMF)}${trendLabel(cmfTrend)}`,
+        `- Donchian Channel(${DONCHIAN_DEFAULT_PERIOD}): Upper ${fmt(lastDonchian?.upper ?? null)} / Middle ${fmt(lastDonchian?.middle ?? null)} / Lower ${fmt(lastDonchian?.lower ?? null)}`,
     ].join('\n');
 };
 
@@ -346,6 +378,51 @@ const ANALYSIS_GUIDELINES = [
     '- trendlines: Overall price trendlines visible on the full chart (ascending support / descending resistance). These are independent of any specific pattern.',
     '- patternLines (inside patternSummaries): Structural lines that define a specific pattern (e.g. wedge upper/lower boundaries, neckline). These belong to a particular pattern and are rendered as part of that pattern overlay.',
     '- Do not duplicate a trendline in patternLines or vice versa.',
+    '',
+    '### ATR (Average True Range) Interpretation',
+    '- ATR measures volatility, not price direction — a rising ATR means increasing volatility regardless of trend',
+    '- Use ATR to assess stop-loss distances and position sizing, not to predict direction',
+    '- Compare current ATR to historical average to gauge if volatility is abnormally high or low',
+    '',
+    '### OBV (On-Balance Volume) Interpretation',
+    '- OBV divergence from price is a key signal: rising OBV with falling price suggests accumulation (bullish)',
+    '- Falling OBV with rising price suggests distribution (bearish reversal potential)',
+    '- OBV trend confirmation: OBV should rise with price in a healthy uptrend',
+    '',
+    '### Parabolic SAR Interpretation',
+    '- SAR below price (trend: up) indicates uptrend; SAR above price (trend: down) indicates downtrend',
+    '- Trend reversal occurs when price crosses SAR — potential entry/exit signal',
+    '- Works best in trending markets; in sideways markets, produces frequent false signals',
+    '',
+    '### Supertrend Interpretation',
+    '- Price above Supertrend line (trend: up): bullish; below (trend: down): bearish',
+    '- Trend flip from down to up is a buy signal; up to down is a sell signal',
+    '- Combines price direction with ATR-based volatility for dynamic support/resistance',
+    '',
+    '### MFI (Money Flow Index) Interpretation',
+    '- MFI > 80: overbought (potential reversal down); MFI < 20: oversold (potential reversal up)',
+    '- MFI is a volume-weighted RSI — divergence between MFI and price is significant',
+    '- Rising MFI with rising price confirms strong buying pressure',
+    '',
+    '### Williams %R Interpretation',
+    '- Williams %R > -20: overbought zone; Williams %R < -80: oversold zone',
+    '- Similar to Stochastic but inverted scale (0 to -100)',
+    '- In strong trends, the indicator can remain in overbought/oversold zones for extended periods',
+    '',
+    '### Keltner Channel Interpretation',
+    '- Price above upper band: strong uptrend or overbought; below lower band: strong downtrend or oversold',
+    '- Price returning to middle (EMA) after touching a band is a mean-reversion signal',
+    '- Channel width (driven by ATR) expanding indicates increasing volatility',
+    '',
+    '### CMF (Chaikin Money Flow) Interpretation',
+    '- CMF > 0: buying pressure dominates; CMF < 0: selling pressure dominates',
+    '- CMF crossing zero line is a trend change signal',
+    '- Divergence between CMF and price direction is a strong reversal signal',
+    '',
+    '### Donchian Channel Interpretation',
+    '- Price touching upper band: potential breakout to the upside; touching lower band: potential breakdown',
+    '- Channel width indicates volatility — narrow channel suggests consolidation before a move',
+    '- Middle line acts as dynamic support/resistance',
     '',
     '### Conflicting Signals',
     '- When indicators give conflicting signals (e.g. RSI overbought but MACD bullish cross), list each signal individually and then state which side has stronger confluence.',

@@ -78,6 +78,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → When tests and implementation show a field is optional, update interface to `fieldName?`
    ❌ interface Bars { bars: BarData[] }  // but implementation checks bars ?? []
    ✅ interface Bars { bars?: BarData[] }  // interface reflects runtime reality
+
+5. Inline type annotations used instead of named type aliases
+   → Extract repeated or reusable type patterns to named type aliases
+   → Applies to union literals, object shapes, and field patterns used in component props or constants
+   ❌ interface Props { size?: 'sm' | 'lg'; fields: readonly { label: string; key: string }[] }
+   ✅ type ButtonSize = 'sm' | 'lg'; interface FieldDef { label: string; key: string }; interface Props { size?: ButtonSize; fields: readonly FieldDef[] }
 ```
 
 ---
