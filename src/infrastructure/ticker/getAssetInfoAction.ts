@@ -4,7 +4,8 @@ import { waitUntil } from '@vercel/functions';
 import { cache } from 'react';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
-    ASSET_INFO_CACHE_TTL,
+    ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
+    ASSET_INFO_CACHE_TTL_WITH_KOREAN,
     buildAssetInfoCacheKey,
 } from '@/infrastructure/cache/config';
 import {
@@ -42,7 +43,11 @@ async function translateAndCache(
     if (cacheProvider) {
         const cacheKey = buildAssetInfoCacheKey(symbol);
         await cacheProvider
-            .set(cacheKey, { symbol, name, koreanName }, ASSET_INFO_CACHE_TTL)
+            .set(
+                cacheKey,
+                { symbol, name, koreanName },
+                ASSET_INFO_CACHE_TTL_WITH_KOREAN
+            )
             .catch(error =>
                 console.error(
                     'Asset info cache update after translation failed:',
@@ -101,9 +106,12 @@ const resolveAssetInfo = cache(
         }
 
         if (cacheProvider) {
+            const ttl = koreanName
+                ? ASSET_INFO_CACHE_TTL_WITH_KOREAN
+                : ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN;
             waitUntil(
                 cacheProvider
-                    .set(cacheKey, info, ASSET_INFO_CACHE_TTL)
+                    .set(cacheKey, info, ttl)
                     .catch(error =>
                         console.error('Asset info cache set failed:', error)
                     )
