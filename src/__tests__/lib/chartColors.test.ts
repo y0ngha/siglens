@@ -154,12 +154,12 @@ describe('CHART_COLORS', () => {
             expect(CHART_COLORS.actionEntry).toBe('#60a5fa');
         });
 
-        it('actionStopLoss는 밝은 빨강(#f87171)이다', () => {
-            expect(CHART_COLORS.actionStopLoss).toBe('#f87171');
+        it('actionStopLoss는 bearish 레드(#ef5350)이다', () => {
+            expect(CHART_COLORS.actionStopLoss).toBe('#ef5350');
         });
 
-        it('actionTakeProfit은 밝은 초록(#4ade80)이다', () => {
-            expect(CHART_COLORS.actionTakeProfit).toBe('#4ade80');
+        it('actionTakeProfit은 bullish 틸 그린(#26a69a)이다', () => {
+            expect(CHART_COLORS.actionTakeProfit).toBe('#26a69a');
         });
     });
 });
