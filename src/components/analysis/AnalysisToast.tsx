@@ -8,6 +8,7 @@ import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis'
  * 글로벌 토스트 인프라를 새로 들이지 않고, 패널 우상단에 absolute로 떠올라
  * 일정 시간 후 자연스럽게 사라진다. 화면 전체를 가리지 않는다.
  *
+ * 부모에서 key={notice?.nonce}로 마운트되므로, nonce가 바뀔 때마다 새로 마운트된다.
  * 동일 nonce는 중복 표시되지 않으며, nonce가 갱신될 때마다 다시 보인다.
  */
 
@@ -26,22 +27,18 @@ function formatRemaining(ms: number): string {
 }
 
 export function AnalysisToast({ notice }: AnalysisToastProps) {
-    const [visibleNonce, setVisibleNonce] = useState<number | null>(null);
+    const [isVisible, setIsVisible] = useState(notice !== null);
 
+    // TOAST_VISIBLE_MS 후 토스트를 숨긴다.
     useEffect(() => {
-        if (notice === null) return;
-        setVisibleNonce(notice.nonce);
-        const timeoutId = window.setTimeout(() => {
-            setVisibleNonce(current =>
-                current === notice.nonce ? null : current
-            );
-        }, TOAST_VISIBLE_MS);
+        if (!isVisible) return;
+        const timeoutId = window.setTimeout(() => setIsVisible(false), TOAST_VISIBLE_MS);
         return () => {
             window.clearTimeout(timeoutId);
         };
-    }, [notice]);
+    }, [isVisible]);
 
-    if (notice === null || visibleNonce !== notice.nonce) return null;
+    if (!isVisible || notice === null) return null;
 
     return (
         <div

@@ -44,6 +44,21 @@ export function AnalysisProgress({
 }: AnalysisProgressProps) {
     const [phaseIndex, setPhaseIndex] = useState(0);
     const [finishing, setFinishing] = useState(false);
+    const [prevIsAnalyzing, setPrevIsAnalyzing] = useState(isAnalyzing);
+
+    // 항상 최신 onFinished를 호출하기 위한 ref. 마무리 effect 자체는 한 번만 돌아야 하므로
+    // onFinished를 deps에 넣지 않고 ref로 우회한다.
+    const onFinishedRef = useRef(onFinished);
+
+    // 부모가 isAnalyzing=false로 전환하면 마무리 모드로 진입한다.
+    // 한 번 finishing이 true로 가면 다시 false로 돌아가지 않는다 — 마무리는 단조 진행.
+    // 렌더 중 setState: effect 없이 prop 변화를 즉시 반영하는 React 공식 파생 상태 패턴.
+    if (prevIsAnalyzing !== isAnalyzing) {
+        setPrevIsAnalyzing(isAnalyzing);
+        if (!isAnalyzing && !finishing) {
+            setFinishing(true);
+        }
+    }
 
     // 진행 중에는 평소처럼 일정 간격으로 단계 메시지를 순환시킨다.
     // 마무리 모드(finishing)로 들어가면 이 인터벌은 멈추고 별도 effect가 빠른 진행을 담당한다.
@@ -58,17 +73,6 @@ export function AnalysisProgress({
             window.clearInterval(intervalId);
         };
     }, [isAnalyzing, finishing]);
-
-    // 부모가 isAnalyzing=false로 전환하면 마무리 모드로 진입한다.
-    // 한 번 finishing이 true로 가면 다시 false로 돌아가지 않는다 — 마무리는 단조 진행.
-    useEffect(() => {
-        if (isAnalyzing || finishing) return;
-        setFinishing(true);
-    }, [isAnalyzing, finishing]);
-
-    // 항상 최신 onFinished를 호출하기 위한 ref. 마무리 effect 자체는 한 번만 돌아야 하므로
-    // onFinished를 deps에 넣지 않고 ref로 우회한다.
-    const onFinishedRef = useRef(onFinished);
     useEffect(() => {
         onFinishedRef.current = onFinished;
     });

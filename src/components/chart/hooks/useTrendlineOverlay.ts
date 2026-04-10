@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useEffectEvent, useLayoutEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
@@ -42,11 +42,15 @@ export function useTrendlineOverlay({
     const seriesMapRef = useRef<Map<string, ISeriesApi<'Line'>>>(new Map());
 
     const barsMapRef = useRef<Map<number, Bar>>(new Map());
-    barsMapRef.current = new Map(bars.map(bar => [bar.time, bar]));
 
     const clearSeriesRefs = useEffectEvent(() => {
         seriesMapRef.current = new Map();
     });
+
+    // useLayoutEffect: 렌더 후 useEffect보다 먼저 실행되어 데이터 동기화 effect에서 최신 bars를 참조할 수 있다.
+    useLayoutEffect(() => {
+        barsMapRef.current = new Map(bars.map(bar => [bar.time, bar]));
+    }, [bars]);
 
     // 시리즈 lifecycle 관리
     useEffect(() => {
