@@ -37,6 +37,46 @@ describe('EMPTY_INDICATOR_RESULT', () => {
         it('vwap이 빈 배열이다', () => {
             expect(EMPTY_INDICATOR_RESULT.vwap).toEqual([]);
         });
+
+        it('ichimoku가 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.ichimoku).toEqual([]);
+        });
+
+        it('atr이 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.atr).toEqual([]);
+        });
+
+        it('obv가 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.obv).toEqual([]);
+        });
+
+        it('parabolicSar가 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.parabolicSar).toEqual([]);
+        });
+
+        it('williamsR이 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.williamsR).toEqual([]);
+        });
+
+        it('supertrend가 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.supertrend).toEqual([]);
+        });
+
+        it('mfi가 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.mfi).toEqual([]);
+        });
+
+        it('keltnerChannel이 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.keltnerChannel).toEqual([]);
+        });
+
+        it('cmf가 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.cmf).toEqual([]);
+        });
+
+        it('donchianChannel이 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.donchianChannel).toEqual([]);
+        });
     });
 
     describe('Record 필드일 때', () => {

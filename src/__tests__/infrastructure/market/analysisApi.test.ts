@@ -53,6 +53,15 @@ const mockVariables: AnalyzeVariables = {
         ema: {},
         volumeProfile: null,
         ichimoku: [],
+        atr: [],
+        obv: [],
+        parabolicSar: [],
+        williamsR: [],
+        supertrend: [],
+        mfi: [],
+        keltnerChannel: [],
+        cmf: [],
+        donchianChannel: [],
     },
 };
 

@@ -34,6 +34,15 @@ const mockBarsData: BarsData = {
         ema: {},
         volumeProfile: null,
         ichimoku: [],
+        atr: [],
+        obv: [],
+        parabolicSar: [],
+        williamsR: [],
+        supertrend: [],
+        mfi: [],
+        keltnerChannel: [],
+        cmf: [],
+        donchianChannel: [],
     },
 };
 

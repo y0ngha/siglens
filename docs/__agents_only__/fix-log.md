@@ -14,10 +14,6 @@
 - Rule: Prompt 일관성 — 한국어 작성 지시와 줄바꿈 지시 목록이 동기화되어야 함
 - Context: actionRecommendation 필드 추가 시 첫 번째 필드 목록에만 추가하고 두 번째 목록은 누락
 
-- Violation: 모듈 레벨 상수에 인라인 익명 타입 사용
-- Rule: 타입 명확성 — 재사용 가능한 타입은 명명 인터페이스로 분리
-- Context: ACTION_RECOMMENDATION_FIELDS의 readonly { label: string; key: keyof ActionRecommendation }[]를 명명 인터페이스 ActionRecommendationField로 추출
-
 ## [PR #216 Round 11 | feat/196/ticker-autocomplete | 2026-04-10]
 - Violation: `docs/ARCHITECTURE.md` 폴더 트리에 신규 `infrastructure/ticker/` 디렉터리 미반영
 - Rule: MISTAKES.md TypeScript #11 — 구현 변경 시 문서 동기화 필수
@@ -28,10 +24,6 @@
 - Rule: MISTAKES.md Coding Paradigm #4 — 결과를 변경하지 않는 조건(효과 없는 로직) 제거
 - Context: `isOpen = !isClosed && hasQuery`이므로 해당 블록 진입 시 `hasQuery`는 항상 true; `&& hasQuery` 제거
 
-## [PR #216 Round 6 | feat/196/ticker-autocomplete | 2026-04-09]
-- Violation: `size?: 'sm' | 'lg'` 인라인 유니온 리터럴 타입을 named type alias로 추출하지 않음
-- Rule: CONVENTIONS.md — 2개 이상 리터럴 유니온은 type alias로 추출 필수
-- Context: `TickerAutocomplete.tsx`의 Props 인터페이스에 `'sm' | 'lg'` 인라인 선언; `TickerAutocompleteSize` 타입으로 추출
 
 
 ## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]

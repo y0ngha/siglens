@@ -63,6 +63,28 @@ export interface IchimokuFuturePoint {
     senkouB: number | null;
 }
 
+export interface ParabolicSARResult {
+    sar: number | null;
+    trend: 'up' | 'down' | null;
+}
+
+export interface SupertrendResult {
+    supertrend: number | null;
+    trend: 'up' | 'down' | null;
+}
+
+export interface KeltnerChannelResult {
+    upper: number | null;
+    middle: number | null;
+    lower: number | null;
+}
+
+export interface DonchianChannelResult {
+    upper: number | null;
+    middle: number | null;
+    lower: number | null;
+}
+
 export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
@@ -76,6 +98,15 @@ export interface IndicatorResult {
     ema: Record<number, (number | null)[]>;
     volumeProfile: VolumeProfileResult | null;
     ichimoku: IchimokuResult[];
+    atr: (number | null)[];
+    obv: (number | null)[];
+    parabolicSar: ParabolicSARResult[];
+    williamsR: (number | null)[];
+    supertrend: SupertrendResult[];
+    mfi: (number | null)[];
+    keltnerChannel: KeltnerChannelResult[];
+    cmf: (number | null)[];
+    donchianChannel: DonchianChannelResult[];
 }
 
 export type ChartDisplayType = 'line' | 'marker' | 'region';

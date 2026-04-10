@@ -13,6 +13,15 @@ export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
     ema: {},
     volumeProfile: null,
     ichimoku: [],
+    atr: [],
+    obv: [],
+    parabolicSar: [],
+    williamsR: [],
+    supertrend: [],
+    mfi: [],
+    keltnerChannel: [],
+    cmf: [],
+    donchianChannel: [],
 };
 
 export const RSI_DEFAULT_PERIOD = 14;
@@ -53,6 +62,27 @@ export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
 export const EMA_SUPPORT_RESISTANCE_SHORT_INDEX = 1; // 20-period EMA
 export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3; // 60-period EMA
 
+export const ATR_DEFAULT_PERIOD = 14;
+
+export const WILLIAMS_R_DEFAULT_PERIOD = 14;
+
+export const PSAR_AF_START = 0.02;
+export const PSAR_AF_INCREMENT = 0.02;
+export const PSAR_AF_MAX = 0.2;
+
+export const SUPERTREND_ATR_PERIOD = 10;
+export const SUPERTREND_MULTIPLIER = 3.0;
+
+export const MFI_DEFAULT_PERIOD = 14;
+
+export const KELTNER_EMA_PERIOD = 20;
+export const KELTNER_ATR_PERIOD = 10;
+export const KELTNER_MULTIPLIER = 2.0;
+
+export const CMF_DEFAULT_PERIOD = 21;
+
+export const DONCHIAN_DEFAULT_PERIOD = 20;
+
 export const ICHIMOKU_CONVERSION_PERIOD = 9;
 export const ICHIMOKU_BASE_PERIOD = 26;
 export const ICHIMOKU_SPAN_B_PERIOD = 52;
@@ -71,4 +101,4 @@ export const UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0;
  * INDICATOR_KIND_COUNT: 지원하는 보조지표 종류 수.
  * AnalysisPanel, HowItWorks 등 UI 텍스트에서 공유한다.
  */
-export const INDICATOR_KIND_COUNT = 13;
+export const INDICATOR_KIND_COUNT = 22;
