@@ -1,4 +1,4 @@
-import type { Bar, ParabolicSARResult } from '@/domain/types';
+import type { Bar, ParabolicSARResult, PriceTrend } from '@/domain/types';
 import {
     PSAR_AF_START,
     PSAR_AF_INCREMENT,
@@ -9,7 +9,7 @@ interface PSARState {
     sar: number;
     ep: number;
     af: number;
-    trend: 'up' | 'down';
+    trend: PriceTrend;
 }
 
 const NULL_RESULT: ParabolicSARResult = { sar: null, trend: null };
@@ -29,6 +29,12 @@ function clampSARDowntrend(
 interface PSARNextStateResult {
     state: PSARState;
     result: ParabolicSARResult;
+}
+
+interface PSARReduceAcc {
+    state: PSARState;
+    results: ParabolicSARResult[];
+    prevBars: [Bar, Bar];
 }
 
 function nextState(
@@ -89,7 +95,7 @@ export function calculateParabolicSAR(
     if (bars.length === 0) return [];
     if (bars.length === 1) return [NULL_RESULT];
 
-    const initialTrend: 'up' | 'down' =
+    const initialTrend: PriceTrend =
         bars[1].close >= bars[0].close ? 'up' : 'down';
 
     const initialState: PSARState =
@@ -107,11 +113,7 @@ export function calculateParabolicSAR(
         trend: initialTrend,
     };
 
-    const { results } = bars.slice(2).reduce<{
-        state: PSARState;
-        results: ParabolicSARResult[];
-        prevBars: [Bar, Bar];
-    }>(
+    const { results } = bars.slice(2).reduce<PSARReduceAcc>(
         (acc, bar) => {
             // SAR 클램핑
             const clampedSAR =

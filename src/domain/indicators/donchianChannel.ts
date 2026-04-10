@@ -5,6 +5,7 @@ export function calculateDonchianChannel(
     bars: Bar[],
     period = DONCHIAN_DEFAULT_PERIOD
 ): DonchianChannelResult[] {
+    if (bars.length === 0) return [];
     if (bars.length < period)
         return bars.map(() => ({ upper: null, middle: null, lower: null }));
 

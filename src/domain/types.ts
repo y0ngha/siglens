@@ -63,14 +63,18 @@ export interface IchimokuFuturePoint {
     senkouB: number | null;
 }
 
+export type PriceTrend = 'up' | 'down';
+
+export type TrendDirection = PriceTrend | null;
+
 export interface ParabolicSARResult {
     sar: number | null;
-    trend: 'up' | 'down' | null;
+    trend: TrendDirection;
 }
 
 export interface SupertrendResult {
     supertrend: number | null;
-    trend: 'up' | 'down' | null;
+    trend: TrendDirection;
 }
 
 export interface KeltnerChannelResult {

@@ -1,4 +1,4 @@
-import type { Bar, SupertrendResult } from '@/domain/types';
+import type { Bar, SupertrendResult, PriceTrend } from '@/domain/types';
 import {
     SUPERTREND_ATR_PERIOD,
     SUPERTREND_MULTIPLIER,
@@ -8,7 +8,12 @@ import { calculateATR } from '@/domain/indicators/atr';
 interface SupertrendState {
     finalUpperBand: number;
     finalLowerBand: number;
-    trend: 'up' | 'down';
+    trend: PriceTrend;
+}
+
+interface SupertrendReduceAcc {
+    state: SupertrendState;
+    results: SupertrendResult[];
 }
 
 const NULL_RESULT: SupertrendResult = { supertrend: null, trend: null };
@@ -43,54 +48,54 @@ export function calculateSupertrend(
         trend: initialState.trend,
     };
 
-    const { results } = bars.slice(firstValidIdx + 1).reduce<{
-        state: SupertrendState;
-        results: SupertrendResult[];
-    }>(
-        (acc, bar, i) => {
-            const idx = firstValidIdx + 1 + i;
-            const atr = atrValues[idx]!;
-            const currentHL2 = (bar.high + bar.low) / 2;
-            const basicUpperBand = currentHL2 + multiplier * atr;
-            const basicLowerBand = currentHL2 - multiplier * atr;
-            const prevClose = bars[idx - 1].close;
+    const { results } = bars
+        .slice(firstValidIdx + 1)
+        .reduce<SupertrendReduceAcc>(
+            (acc, bar, i) => {
+                const idx = firstValidIdx + 1 + i;
+                const atr = atrValues[idx]!;
+                const currentHL2 = (bar.high + bar.low) / 2;
+                const basicUpperBand = currentHL2 + multiplier * atr;
+                const basicLowerBand = currentHL2 - multiplier * atr;
+                const prevClose = bars[idx - 1].close;
 
-            const finalUpperBand =
-                basicUpperBand < acc.state.finalUpperBand ||
-                prevClose > acc.state.finalUpperBand
-                    ? basicUpperBand
-                    : acc.state.finalUpperBand;
+                const finalUpperBand =
+                    basicUpperBand < acc.state.finalUpperBand ||
+                    prevClose > acc.state.finalUpperBand
+                        ? basicUpperBand
+                        : acc.state.finalUpperBand;
 
-            const finalLowerBand =
-                basicLowerBand > acc.state.finalLowerBand ||
-                prevClose < acc.state.finalLowerBand
-                    ? basicLowerBand
-                    : acc.state.finalLowerBand;
+                const finalLowerBand =
+                    basicLowerBand > acc.state.finalLowerBand ||
+                    prevClose < acc.state.finalLowerBand
+                        ? basicLowerBand
+                        : acc.state.finalLowerBand;
 
-            const trend: 'up' | 'down' =
-                acc.state.trend === 'up'
-                    ? bar.close < finalLowerBand
-                        ? 'down'
-                        : 'up'
-                    : bar.close > finalUpperBand
-                      ? 'up'
-                      : 'down';
+                const trend: PriceTrend =
+                    acc.state.trend === 'up'
+                        ? bar.close < finalLowerBand
+                            ? 'down'
+                            : 'up'
+                        : bar.close > finalUpperBand
+                          ? 'up'
+                          : 'down';
 
-            const supertrend = trend === 'up' ? finalLowerBand : finalUpperBand;
+                const supertrend =
+                    trend === 'up' ? finalLowerBand : finalUpperBand;
 
-            return {
-                state: { finalUpperBand, finalLowerBand, trend },
-                results: [...acc.results, { supertrend, trend }],
-            };
-        },
-        {
-            state: initialState,
-            results: [
-                ...new Array(firstValidIdx).fill(NULL_RESULT),
-                firstResult,
-            ],
-        }
-    );
+                return {
+                    state: { finalUpperBand, finalLowerBand, trend },
+                    results: [...acc.results, { supertrend, trend }],
+                };
+            },
+            {
+                state: initialState,
+                results: [
+                    ...new Array(firstValidIdx).fill(NULL_RESULT),
+                    firstResult,
+                ],
+            }
+        );
 
     return results;
 }
