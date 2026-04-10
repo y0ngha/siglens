@@ -1,4 +1,5 @@
 import { CurrentYear } from '@/components/layout/CurrentYear';
+import { ContactDialog } from '@/components/layout/ContactDialog';
 
 export function Footer() {
     return (
@@ -7,15 +8,24 @@ export function Footer() {
                 <p className="text-secondary-600 text-sm">
                     © <CurrentYear /> Siglens
                 </p>
-                <a
-                    href="https://github.com/y0ngha/siglens"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label="GitHub 저장소에서 프로젝트에 기여하기"
-                    className="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
-                >
-                    GitHub에서 기여하기 →
-                </a>
+                <div className="flex items-center gap-3">
+                    <ContactDialog
+                        triggerLabel="오류 제보하기"
+                        triggerClassName="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
+                    />
+                    <span className="text-secondary-700" aria-hidden="true">
+                        ·
+                    </span>
+                    <a
+                        href="https://github.com/y0ngha/siglens"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label="GitHub 저장소에서 프로젝트에 기여하기"
+                        className="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
+                    >
+                        GitHub에서 기여하기 →
+                    </a>
+                </div>
             </div>
         </footer>
     );
