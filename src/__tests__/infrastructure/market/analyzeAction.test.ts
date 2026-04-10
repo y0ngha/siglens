@@ -160,7 +160,7 @@ describe('analyzeAction 함수는', () => {
             expect(mockCacheSet).toHaveBeenCalledWith(
                 'analysis:AAPL:1Min',
                 mockResult,
-                60
+                300
             );
         });
     });
