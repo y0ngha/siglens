@@ -1,5 +1,11 @@
 import { Fragment } from 'react';
-import { INDICATOR_KIND_COUNT } from '@/domain/indicators/constants';
+import {
+    CANDLESTICK_SKILL_COUNT,
+    CHART_PATTERN_SKILL_COUNT,
+    INDICATOR_KIND_COUNT,
+    STRATEGY_SKILL_COUNT,
+    SUPPORT_RESISTANCE_SKILL_COUNT,
+} from '@/domain/indicators/constants';
 
 const STEPS = [
     {
@@ -10,13 +16,13 @@ const STEPS = [
     {
         number: '02',
         title: '자동 분석',
-        description: `${INDICATOR_KIND_COUNT}종 보조지표 자동 계산 + 패턴 감지`,
+        description: `보조지표 ${INDICATOR_KIND_COUNT}종 · 캔들 패턴 ${CANDLESTICK_SKILL_COUNT}종 · 차트 패턴 ${CHART_PATTERN_SKILL_COUNT}종 · 전략 ${STRATEGY_SKILL_COUNT}종 · 지지/저항 ${SUPPORT_RESISTANCE_SKILL_COUNT}종 자동 분석`,
     },
     {
         number: '03',
         title: 'AI 리포트',
         description:
-            '인디케이터·패턴·스킬·거래량을 종합한 분석 리포트와 지지/저항 레벨 생성',
+            '추세·리스크·진입 추천 · 시그널 · 차트 패턴 · 전략 분석 · 주요 지지/저항 레벨을 한 화면에서 확인',
     },
 ] as const;
 

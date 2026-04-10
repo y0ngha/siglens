@@ -102,3 +102,15 @@ export const UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0;
  * AnalysisPanel, HowItWorks 등 UI 텍스트에서 공유한다.
  */
 export const INDICATOR_KIND_COUNT = 22;
+
+/** skills/candlesticks/ 파일 수 */
+export const CANDLESTICK_SKILL_COUNT = 7;
+
+/** skills/patterns/ 파일 수 */
+export const CHART_PATTERN_SKILL_COUNT = 17;
+
+/** skills/strategies/ 파일 수 */
+export const STRATEGY_SKILL_COUNT = 9;
+
+/** skills/support-resistance/ 파일 수 */
+export const SUPPORT_RESISTANCE_SKILL_COUNT = 3;
