@@ -2,53 +2,39 @@ import { Fragment } from 'react';
 
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
 
-type CountKey =
-    | 'indicatorCount'
-    | 'patternCount'
-    | 'strategyCount'
-    | 'candlestickCount'
-    | 'supportResistanceCount';
+interface SkillStatConfig {
+    countLabel: string;
+}
 
-const SKILL_TYPE_TO_COUNT_KEY: Record<SkillType, CountKey> = {
-    indicator_guide: 'indicatorCount',
-    pattern: 'patternCount',
-    strategy: 'strategyCount',
-    candlestick: 'candlestickCount',
-    support_resistance: 'supportResistanceCount',
+const SKILL_STAT_CONFIG: Record<SkillType, SkillStatConfig> = {
+    indicator_guide: { countLabel: '종 보조지표' },
+    pattern: { countLabel: '개 차트 패턴' },
+    strategy: { countLabel: '개 전략 분석' },
+    candlestick: { countLabel: '개 캔들 패턴' },
+    support_resistance: { countLabel: '개 지지/저항 도구' },
 };
 
-const INITIAL_COUNTS: Record<CountKey, number> = {
-    indicatorCount: 0,
-    patternCount: 0,
-    strategyCount: 0,
-    candlestickCount: 0,
-    supportResistanceCount: 0,
-};
+const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];
 
 interface StatsBarProps {
     skills: SkillShowcaseItem[];
 }
 
 export function StatsBar({ skills }: StatsBarProps) {
-    const counts = skills.reduce(
+    const typeCounts = skills.reduce<Partial<Record<SkillType, number>>>(
         (acc, skill) => {
-            const key =
-                skill.type != null
-                    ? SKILL_TYPE_TO_COUNT_KEY[skill.type]
-                    : undefined;
-            if (key == null) return acc;
-            return { ...acc, [key]: acc[key] + 1 };
+            if (skill.type == null) return acc;
+            return { ...acc, [skill.type]: (acc[skill.type] ?? 0) + 1 };
         },
-        { ...INITIAL_COUNTS }
+        {}
     );
 
     const stats = [
         { value: skills.length, label: '개 분석 스킬' },
-        { value: counts.indicatorCount, label: '종 보조지표' },
-        { value: counts.patternCount, label: '개 차트 패턴' },
-        { value: counts.strategyCount, label: '개 전략 분석' },
-        { value: counts.candlestickCount, label: '개 캔들 패턴' },
-        { value: counts.supportResistanceCount, label: '개 지지/저항 도구' },
+        ...SKILL_TYPES.map(type => ({
+            value: typeCounts[type] ?? 0,
+            label: SKILL_STAT_CONFIG[type].countLabel,
+        })),
     ];
 
     return (

@@ -100,7 +100,7 @@ Uses a conditional X value based on the relationship between the previous Open a
 
 When analyzing with Pivot Points:
 
-1. Calculate Standard Pivot levels using the previous bar's High, Low, Close from the provided bar data.
+1. Prioritize Standard and Fibonacci Pivot calculations using the previous bar's High, Low, Close from the provided bar data. Woodie, Camarilla, and DeMark are secondary — include them only when the market context favors their use (e.g., Camarilla for scalping setups, Woodie when close-weighted analysis is relevant).
 2. Determine the current price position relative to PP, R1, R2, R3, S1, S2, S3.
 3. Identify which pivot levels are nearest to the current price as immediate support/resistance.
 4. Note any pivot levels that converge with other technical levels (moving averages, Bollinger Bands, Fibonacci levels) — convergence increases reliability.

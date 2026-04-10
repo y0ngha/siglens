@@ -648,44 +648,34 @@ confidence_weight: 0.7
 
 Pivot Points calculate intraday support and resistance levels.`;
 
-        it('type이 support_resistance이면 support_resistance로 파싱한다', async () => {
-            mockReaddir.mockResolvedValue([fileDirent('pivot-points.md')]);
-            mockReadFile.mockResolvedValue(SUPPORT_RESISTANCE_SKILL_MD);
+        describe('단일 파일 파싱', () => {
+            let skills: Awaited<ReturnType<typeof loader.loadSkills>>;
 
-            const skills = await loader.loadSkills();
+            beforeEach(async () => {
+                mockReaddir.mockResolvedValue([fileDirent('pivot-points.md')]);
+                mockReadFile.mockResolvedValue(SUPPORT_RESISTANCE_SKILL_MD);
+                skills = await loader.loadSkills();
+            });
 
-            expect(skills[0].type).toBe('support_resistance');
-        });
+            it('type이 support_resistance이면 support_resistance로 파싱한다', () => {
+                expect(skills[0].type).toBe('support_resistance');
+            });
 
-        it('support_resistance type의 name, description, indicators를 올바르게 파싱한다', async () => {
-            mockReaddir.mockResolvedValue([fileDirent('pivot-points.md')]);
-            mockReadFile.mockResolvedValue(SUPPORT_RESISTANCE_SKILL_MD);
+            it('name, description, indicators를 올바르게 파싱한다', () => {
+                expect(skills[0].name).toBe('피봇 포인트');
+                expect(skills[0].description).toBe(
+                    '전일 가격 데이터를 기반으로 당일의 지지/저항 레벨을 자동 산출'
+                );
+                expect(skills[0].indicators).toEqual([]);
+            });
 
-            const skills = await loader.loadSkills();
+            it('confidenceWeight를 올바르게 파싱한다', () => {
+                expect(skills[0].confidenceWeight).toBe(0.7);
+            });
 
-            expect(skills[0].name).toBe('피봇 포인트');
-            expect(skills[0].description).toBe(
-                '전일 가격 데이터를 기반으로 당일의 지지/저항 레벨을 자동 산출'
-            );
-            expect(skills[0].indicators).toEqual([]);
-        });
-
-        it('support_resistance type의 confidenceWeight를 올바르게 파싱한다', async () => {
-            mockReaddir.mockResolvedValue([fileDirent('pivot-points.md')]);
-            mockReadFile.mockResolvedValue(SUPPORT_RESISTANCE_SKILL_MD);
-
-            const skills = await loader.loadSkills();
-
-            expect(skills[0].confidenceWeight).toBe(0.7);
-        });
-
-        it('support_resistance type의 content를 올바르게 파싱한다', async () => {
-            mockReaddir.mockResolvedValue([fileDirent('pivot-points.md')]);
-            mockReadFile.mockResolvedValue(SUPPORT_RESISTANCE_SKILL_MD);
-
-            const skills = await loader.loadSkills();
-
-            expect(skills[0].content).toContain('Overview');
+            it('content를 올바르게 파싱한다', () => {
+                expect(skills[0].content).toContain('Overview');
+            });
         });
 
         it('support-resistance 하위 디렉토리의 support_resistance 스킬을 재귀적으로 읽는다', async () => {
