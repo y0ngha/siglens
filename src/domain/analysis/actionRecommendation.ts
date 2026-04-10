@@ -1,10 +1,4 @@
-import type { ActionRecommendation } from '@/domain/types';
-
-export interface ValidatedActionPrices {
-    entryPrices: number[];
-    stopLoss: number | undefined;
-    takeProfitPrices: number[];
-}
+import type { ActionRecommendation, ValidatedActionPrices } from '@/domain/types';
 
 export function validateActionPrices(
     rec: ActionRecommendation | undefined

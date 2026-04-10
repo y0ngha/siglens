@@ -230,6 +230,12 @@ export interface Trendline {
     end: TrendlinePoint;
 }
 
+export interface ValidatedActionPrices {
+    entryPrices: number[];
+    stopLoss: number | undefined;
+    takeProfitPrices: number[];
+}
+
 export interface ActionRecommendation {
     positionAnalysis: string;
     entry: string;
