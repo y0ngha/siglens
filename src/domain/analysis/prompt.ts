@@ -387,7 +387,8 @@ const buildAnalysisRequest = (
     patternSkills: Skill[],
     strategySkills: Skill[],
     indicatorGuideSkills: Skill[],
-    candlestickSkills: Skill[]
+    candlestickSkills: Skill[],
+    supportResistanceSkills: Skill[]
 ): string => {
     const patternListInstruction =
         patternSkills.length > 0
@@ -468,6 +469,24 @@ const buildAnalysisRequest = (
               ].join('\n')
             : '';
 
+    const supportResistanceInstruction =
+        supportResistanceSkills.length > 0
+            ? [
+                  '',
+                  '### keyLevels Writing Rules for Support/Resistance Tools',
+                  '- Use the Support/Resistance Tool Guides above to calculate and identify key support and resistance levels.',
+                  '- For Pivot Points: calculate Standard, Woodie, Camarilla, Fibonacci, and DeMark pivot levels using the previous bar data, then assess which levels the current price is nearest to.',
+                  '- For Fibonacci Retracement: identify the most recent significant swing high and swing low, apply retracement levels (23.6%, 38.2%, 50%, 61.8%, 78.6%), and note which levels are acting as support or resistance.',
+                  '- For Fibonacci Extension: if a retracement has completed, calculate extension targets (100%, 127.2%, 161.8%, 200%, 261.8%) for take-profit level assessment.',
+                  '- Integrate calculated levels into the keyLevels field of the response — add pivot points and Fibonacci levels as additional support/resistance entries with their calculation basis as the reason.',
+                  '- When a Fibonacci level or pivot point converges with an existing indicator-based support/resistance level, note the confluence in the reason field to indicate higher reliability.',
+                  '- Include support/resistance tool findings in the summary field, explaining their practical meaning for the investor.',
+                  '',
+                  'Support/Resistance tool list to apply:',
+                  ...supportResistanceSkills.map(s => `- ${s.name}`),
+              ].join('\n')
+            : '';
+
     return [
         '## Analysis Request',
         RESPONSE_LANGUAGE_INSTRUCTION,
@@ -477,6 +496,7 @@ const buildAnalysisRequest = (
         patternListInstruction,
         strategyInstruction,
         candlestickInstruction,
+        supportResistanceInstruction,
     ]
         .filter(s => s !== '')
         .join('\n');
@@ -500,12 +520,16 @@ export function buildAnalysisPrompt(
     const candlestickSkills = activeSkills.filter(
         s => s.type === 'candlestick'
     );
+    const supportResistanceSkills = activeSkills.filter(
+        s => s.type === 'support_resistance'
+    );
     const regularSkills = activeSkills.filter(
         s =>
             s.type !== 'pattern' &&
             s.type !== 'strategy' &&
             s.type !== 'indicator_guide' &&
-            s.type !== 'candlestick'
+            s.type !== 'candlestick' &&
+            s.type !== 'support_resistance'
     );
 
     const sections = [
@@ -531,6 +555,11 @@ export function buildAnalysisPrompt(
                   `## Candlestick Pattern Guides\n${candlestickSkills.map(buildSkillBlock).join('\n\n')}`,
               ]
             : []),
+        ...(supportResistanceSkills.length > 0
+            ? [
+                  `## Support/Resistance Tool Guides\n${supportResistanceSkills.map(buildSkillBlock).join('\n\n')}`,
+              ]
+            : []),
         ...(strategySkills.length > 0
             ? [
                   `## Strategy Analysis\n${strategySkills.map(buildSkillBlock).join('\n\n')}`,
@@ -546,7 +575,8 @@ export function buildAnalysisPrompt(
             patternSkills,
             strategySkills,
             indicatorGuideSkills,
-            candlestickSkills
+            candlestickSkills,
+            supportResistanceSkills
         ),
     ];
 

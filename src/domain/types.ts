@@ -102,7 +102,8 @@ export type SkillType =
     | 'pattern'
     | 'indicator_guide'
     | 'strategy'
-    | 'candlestick';
+    | 'candlestick'
+    | 'support_resistance';
 
 export interface Skill {
     name: string;

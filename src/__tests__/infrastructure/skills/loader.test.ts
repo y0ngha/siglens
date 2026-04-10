@@ -634,6 +634,85 @@ Engulfing은 2봉 반전 패턴이다.`;
         });
     });
 
+    describe('support_resistance 타입 파싱', () => {
+        const SUPPORT_RESISTANCE_SKILL_MD = `---
+name: 피봇 포인트
+description: 전일 가격 데이터를 기반으로 당일의 지지/저항 레벨을 자동 산출
+type: support_resistance
+category: neutral
+indicators: []
+confidence_weight: 0.7
+---
+
+## Overview
+
+Pivot Points calculate intraday support and resistance levels.`;
+
+        it('type이 support_resistance이면 support_resistance로 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('pivot-points.md')]);
+            mockReadFile.mockResolvedValue(SUPPORT_RESISTANCE_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].type).toBe('support_resistance');
+        });
+
+        it('support_resistance type의 name, description, indicators를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('pivot-points.md')]);
+            mockReadFile.mockResolvedValue(SUPPORT_RESISTANCE_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].name).toBe('피봇 포인트');
+            expect(skills[0].description).toBe(
+                '전일 가격 데이터를 기반으로 당일의 지지/저항 레벨을 자동 산출'
+            );
+            expect(skills[0].indicators).toEqual([]);
+        });
+
+        it('support_resistance type의 confidenceWeight를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('pivot-points.md')]);
+            mockReadFile.mockResolvedValue(SUPPORT_RESISTANCE_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].confidenceWeight).toBe(0.7);
+        });
+
+        it('support_resistance type의 content를 올바르게 파싱한다', async () => {
+            mockReaddir.mockResolvedValue([fileDirent('pivot-points.md')]);
+            mockReadFile.mockResolvedValue(SUPPORT_RESISTANCE_SKILL_MD);
+
+            const skills = await loader.loadSkills();
+
+            expect(skills[0].content).toContain('Overview');
+        });
+
+        it('support-resistance 하위 디렉토리의 support_resistance 스킬을 재귀적으로 읽는다', async () => {
+            const SKILLS_DIR = path.join(process.cwd(), 'skills');
+            const SR_DIR = path.join(SKILLS_DIR, 'support-resistance');
+            const srFile = path.join(SR_DIR, 'pivot-points.md');
+
+            mockReaddir.mockImplementation((dir: string) => {
+                if (dir === SKILLS_DIR)
+                    return Promise.resolve([dirDirent('support-resistance')]);
+                if (dir === SR_DIR)
+                    return Promise.resolve([fileDirent('pivot-points.md')]);
+                return Promise.resolve([]);
+            });
+            mockReadFile.mockImplementation((p: string) => {
+                if (p === srFile)
+                    return Promise.resolve(SUPPORT_RESISTANCE_SKILL_MD);
+                return Promise.resolve('');
+            });
+
+            const skills = await loader.loadSkills();
+
+            expect(skills).toHaveLength(1);
+            expect(skills[0].type).toBe('support_resistance');
+        });
+    });
+
     describe('readdir 에러', () => {
         it('readdir가 실패하면 에러를 전파한다', async () => {
             mockReaddir.mockRejectedValue(

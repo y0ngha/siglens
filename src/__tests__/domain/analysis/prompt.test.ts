@@ -2165,4 +2165,135 @@ describe('prompt', () => {
             expect(result).toContain('- Doji Pattern Guide');
         });
     });
+
+    describe('Skills 섹션 - type이 support_resistance인 skill일 때', () => {
+        it('Support/Resistance Tool Guides 섹션에 포함된다', () => {
+            const skill = makeSkill({
+                type: 'support_resistance',
+                name: '피봇 포인트',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('Support/Resistance Tool Guides');
+            expect(result).toContain('피봇 포인트');
+        });
+
+        it('활성화된 Skills 섹션에는 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'support_resistance',
+                name: '피봇 포인트',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('Active Skills');
+        });
+
+        it('support_resistance skill이 없을 때 Support/Resistance Tool Guides 섹션이 포함되지 않는다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).not.toContain('Support/Resistance Tool Guides');
+        });
+
+        it('여러 support_resistance skill이 모두 Support/Resistance Tool Guides 섹션에 포함된다', () => {
+            const skills = [
+                makeSkill({
+                    type: 'support_resistance',
+                    name: '피봇 포인트',
+                }),
+                makeSkill({
+                    type: 'support_resistance',
+                    name: '피보나치 되돌림',
+                }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                skills
+            );
+            expect(result).toContain('Support/Resistance Tool Guides');
+            expect(result).toContain('피봇 포인트');
+            expect(result).toContain('피보나치 되돌림');
+        });
+
+        it('confidenceWeight가 0.5 미만인 support_resistance skill은 포함되지 않는다', () => {
+            const skill = makeSkill({
+                type: 'support_resistance',
+                name: 'Low Confidence SR',
+                confidenceWeight: TEST_BELOW_MIN_CONFIDENCE,
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).not.toContain('Low Confidence SR');
+            expect(result).not.toContain('Support/Resistance Tool Guides');
+        });
+    });
+
+    describe('분석 요청 섹션 - Support/Resistance Writing Rules', () => {
+        it('support_resistance skill이 있을 때 keyLevels Writing Rules 섹션이 포함된다', () => {
+            const skill = makeSkill({
+                type: 'support_resistance',
+                name: '피봇 포인트',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain(
+                'keyLevels Writing Rules for Support/Resistance Tools'
+            );
+        });
+
+        it('support_resistance skill이 없을 때 keyLevels Writing Rules 섹션이 포함되지 않는다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).not.toContain(
+                'keyLevels Writing Rules for Support/Resistance Tools'
+            );
+        });
+
+        it('support_resistance skill 이름 목록이 분석 요청에 포함된다', () => {
+            const skills = [
+                makeSkill({
+                    type: 'support_resistance',
+                    name: '피봇 포인트',
+                }),
+                makeSkill({
+                    type: 'support_resistance',
+                    name: '피보나치 확장',
+                }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                skills
+            );
+            expect(result).toContain('Support/Resistance tool list to apply:');
+            expect(result).toContain('- 피봇 포인트');
+            expect(result).toContain('- 피보나치 확장');
+        });
+    });
 });

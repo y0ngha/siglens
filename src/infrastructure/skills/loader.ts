@@ -159,6 +159,7 @@ const SKILL_TYPES: readonly SkillType[] = [
     'indicator_guide',
     'strategy',
     'candlestick',
+    'support_resistance',
 ];
 
 const isSkillType = (value: unknown): value is SkillType =>
