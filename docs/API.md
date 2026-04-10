@@ -332,7 +332,7 @@ FMP_API_KEY=    # 필수. 없으면 검색 결과 빈 배열 반환
 
 ## Gemini Translation API
 
-한국어 이름 매핑이 없는 종목을 fire-and-forget으로 번역.
+한국어 이름 매핑이 없는 종목을 waitUntil으로 번역.
 
 ### 환경변수
 

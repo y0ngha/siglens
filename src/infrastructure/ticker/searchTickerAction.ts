@@ -93,10 +93,7 @@ export async function searchTickerAction(
     if (unmapped.length > 0) {
         waitUntil(
             translateAndCache(unmapped).catch(error =>
-                console.error(
-                    'translateAndCache fire-and-forget failed:',
-                    error
-                )
+                console.error('translateAndCache waitUntil failed:', error)
             )
         );
     }
