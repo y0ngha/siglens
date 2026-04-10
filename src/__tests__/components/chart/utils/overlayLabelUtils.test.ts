@@ -29,6 +29,15 @@ const mockIndicators: IndicatorResult = {
     ichimoku: [
         { tenkan: 101, kijun: 102, senkouA: 103, senkouB: 104, chikou: 100 },
     ],
+    atr: [],
+    obv: [],
+    parabolicSar: [],
+    williamsR: [],
+    supertrend: [],
+    mfi: [],
+    keltnerChannel: [],
+    cmf: [],
+    donchianChannel: [],
 };
 
 describe('buildOverlayLabelConfigs', () => {
