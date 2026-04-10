@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 import {
     QueryClient,
     dehydrate,
@@ -51,6 +52,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoAction(ticker);
+    if (!assetInfo) return notFound();
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const title = `${displayName} 기술적 분석`;
@@ -89,6 +91,7 @@ export default async function SymbolPage({ params }: Props) {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoAction(ticker);
+    if (!assetInfo) return notFound();
 
     const displayName = buildDisplayName(assetInfo, ticker);
 
