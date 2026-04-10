@@ -9,7 +9,7 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { LineStyle } from 'lightweight-charts';
-import type { ValidatedActionPrices } from '@/domain/analysis/actionRecommendation';
+import type { ValidatedActionPrices } from '@/domain/types';
 import { CHART_COLORS } from '@/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
@@ -32,57 +32,47 @@ export function useActionRecommendationOverlay({
         const series = seriesRef.current;
 
         // 기존 가격선 제거
-        for (const pl of priceLinesRef.current) {
-            series?.removePriceLine(pl);
-        }
+        priceLinesRef.current.forEach(pl => series?.removePriceLine(pl));
         priceLinesRef.current = [];
 
         if (!series || !isVisible || !actionPrices) return;
 
-        const lines: IPriceLine[] = [];
+        const entryLines = actionPrices.entryPrices.map((price, idx) =>
+            series.createPriceLine({
+                price,
+                color: CHART_COLORS.actionEntry,
+                lineWidth,
+                lineStyle: LineStyle.Dashed,
+                axisLabelVisible: true,
+                title: `진입점 #${idx + 1}`,
+            })
+        );
 
-        // 진입점
-        actionPrices.entryPrices.forEach((price, idx) => {
-            lines.push(
-                series.createPriceLine({
-                    price,
-                    color: CHART_COLORS.actionEntry,
-                    lineWidth,
-                    lineStyle: LineStyle.Dashed,
-                    axisLabelVisible: true,
-                    title: `진입점 #${idx + 1}`,
-                })
-            );
-        });
+        const stopLossLine =
+            actionPrices.stopLoss !== undefined
+                ? [
+                      series.createPriceLine({
+                          price: actionPrices.stopLoss,
+                          color: CHART_COLORS.actionStopLoss,
+                          lineWidth,
+                          lineStyle: LineStyle.Dashed,
+                          axisLabelVisible: true,
+                          title: '손절점',
+                      }),
+                  ]
+                : [];
 
-        // 손절점
-        if (actionPrices.stopLoss !== undefined) {
-            lines.push(
-                series.createPriceLine({
-                    price: actionPrices.stopLoss,
-                    color: CHART_COLORS.actionStopLoss,
-                    lineWidth,
-                    lineStyle: LineStyle.Dashed,
-                    axisLabelVisible: true,
-                    title: '손절점',
-                })
-            );
-        }
+        const takeProfitLines = actionPrices.takeProfitPrices.map((price, idx) =>
+            series.createPriceLine({
+                price,
+                color: CHART_COLORS.actionTakeProfit,
+                lineWidth,
+                lineStyle: LineStyle.Dashed,
+                axisLabelVisible: true,
+                title: `청산점 #${idx + 1}`,
+            })
+        );
 
-        // 청산점
-        actionPrices.takeProfitPrices.forEach((price, idx) => {
-            lines.push(
-                series.createPriceLine({
-                    price,
-                    color: CHART_COLORS.actionTakeProfit,
-                    lineWidth,
-                    lineStyle: LineStyle.Dashed,
-                    axisLabelVisible: true,
-                    title: `청산점 #${idx + 1}`,
-                })
-            );
-        });
-
-        priceLinesRef.current = lines;
+        priceLinesRef.current = [...entryLines, ...stopLossLine, ...takeProfitLines];
     }, [actionPrices, isVisible, lineWidth]);
 }

@@ -18,7 +18,7 @@ import type {
     Timeframe,
     Trendline,
 } from '@/domain/types';
-import type { ValidatedActionPrices } from '@/domain/analysis/actionRecommendation';
+import type { ValidatedActionPrices } from '@/domain/types';
 import { getTimeFormatter } from '@/domain/chart/timeFormat';
 import type { PaneIndices } from '@/components/chart/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
