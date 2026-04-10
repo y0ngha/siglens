@@ -1,6 +1,4 @@
-import {
-    validateActionPrices,
-} from '@/domain/analysis/actionRecommendation';
+import { validateActionPrices } from '@/domain/analysis/actionRecommendation';
 import type { ActionRecommendation } from '@/domain/types';
 
 const makeRec = (

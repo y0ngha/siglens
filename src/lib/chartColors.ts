@@ -78,8 +78,8 @@ export const CHART_COLORS = {
     resistanceLine: '#ef5350',
 
     // Action Recommendation 가격선
-    actionEntry: '#60a5fa',      // 진입가 (파란)
-    actionStopLoss: '#f87171',   // 손절가 (밝은 빨강)
+    actionEntry: '#60a5fa', // 진입가 (파란)
+    actionStopLoss: '#f87171', // 손절가 (밝은 빨강)
     actionTakeProfit: '#4ade80', // 목표가 (밝은 초록)
 
     // Ichimoku Cloud

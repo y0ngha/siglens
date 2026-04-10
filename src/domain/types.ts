@@ -236,8 +236,8 @@ export interface ActionRecommendation {
     exit: string;
     riskReward: string;
     // 차트 오버레이용 구조화된 가격
-    entryPrices?: number[];      // 진입가 범위 [low, high] 또는 단일 [price]
-    stopLoss?: number;           // 손절가 (단일)
+    entryPrices?: number[]; // 진입가 범위 [low, high] 또는 단일 [price]
+    stopLoss?: number; // 손절가 (단일)
     takeProfitPrices?: number[]; // 목표가 (복수 가능, 오름차순)
 }
 

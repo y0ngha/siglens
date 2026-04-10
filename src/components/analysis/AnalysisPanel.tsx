@@ -41,7 +41,11 @@ function formatCooldown(ms: number): string {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
-type ActionRecommendationTextKey = 'positionAnalysis' | 'entry' | 'exit' | 'riskReward';
+type ActionRecommendationTextKey =
+    | 'positionAnalysis'
+    | 'entry'
+    | 'exit'
+    | 'riskReward';
 
 interface ActionRecommendationField {
     label: string;
@@ -80,7 +84,11 @@ function ActionRecommendationSection({
                             ? 'text-primary-400 hover:text-primary-300'
                             : 'text-secondary-500 hover:text-secondary-400'
                     }`}
-                    aria-label={isChartVisible ? '차트 가격선 숨기기' : '차트 가격선 표시'}
+                    aria-label={
+                        isChartVisible
+                            ? '차트 가격선 숨기기'
+                            : '차트 가격선 표시'
+                    }
                 >
                     <EyeIcon isVisible={isChartVisible} />
                     차트
