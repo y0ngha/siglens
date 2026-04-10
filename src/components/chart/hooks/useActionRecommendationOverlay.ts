@@ -1,113 +1,83 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
-import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
-import type { Bar } from '@/domain/types';
+import type { IPriceLine, ISeriesApi, LineWidth, UTCTimestamp } from 'lightweight-charts';
+import { LineStyle } from 'lightweight-charts';
 import type { ValidatedActionPrices } from '@/domain/analysis/actionRecommendation';
 import { CHART_COLORS } from '@/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
-import {
-    buildLineData,
-    createLevelSeries,
-} from '@/components/chart/utils/keyLevelsUtils';
-
-interface LevelSeriesEntry {
-    series: ISeriesApi<'Line'>;
-    price: number;
-}
 
 interface UseActionRecommendationOverlayParams {
-    chartRef: RefObject<IChartApi | null>;
-    bars: Bar[];
+    seriesRef: RefObject<ISeriesApi<'Candlestick', UTCTimestamp> | null>;
     actionPrices: ValidatedActionPrices | undefined;
     isVisible: boolean;
     lineWidth?: LineWidth;
 }
 
 export function useActionRecommendationOverlay({
-    chartRef,
-    bars,
+    seriesRef,
     actionPrices,
     isVisible,
     lineWidth = DEFAULT_LINE_WIDTH,
 }: UseActionRecommendationOverlayParams): void {
-    const prevChartRef = useRef<IChartApi | null>(null);
-    const entriesRef = useRef<LevelSeriesEntry[]>([]);
+    const priceLinesRef = useRef<IPriceLine[]>([]);
 
-    const clearEntriesRef = useEffectEvent(() => {
-        entriesRef.current = [];
-    });
-
-    const removeAllSeries = useEffectEvent((chart: IChartApi) => {
-        for (const { series } of entriesRef.current) {
-            chart.removeSeries(series);
-        }
-        entriesRef.current = [];
-    });
-
-    // 시리즈 lifecycle 관리 (생성/제거)
-    // bars는 의존하지 않음 — 데이터 세팅은 아래 effect가 단독 담당
     useEffect(() => {
-        const chart = chartRef.current;
+        const series = seriesRef.current;
 
-        if (prevChartRef.current !== chart) {
-            clearEntriesRef();
-            prevChartRef.current = chart;
+        // 기존 가격선 제거
+        for (const pl of priceLinesRef.current) {
+            series?.removePriceLine(pl);
+        }
+        priceLinesRef.current = [];
+
+        if (!series || !isVisible || !actionPrices) return;
+
+        const lines: IPriceLine[] = [];
+
+        // 진입점
+        actionPrices.entryPrices.forEach((price, idx) => {
+            lines.push(
+                series.createPriceLine({
+                    price,
+                    color: CHART_COLORS.actionEntry,
+                    lineWidth,
+                    lineStyle: LineStyle.Dashed,
+                    axisLabelVisible: true,
+                    title: `진입점 #${idx + 1}`,
+                })
+            );
+        });
+
+        // 손절점
+        if (actionPrices.stopLoss !== undefined) {
+            lines.push(
+                series.createPriceLine({
+                    price: actionPrices.stopLoss,
+                    color: CHART_COLORS.actionStopLoss,
+                    lineWidth,
+                    lineStyle: LineStyle.Dashed,
+                    axisLabelVisible: true,
+                    title: '손절점',
+                })
+            );
         }
 
-        if (!chart) return;
+        // 청산점
+        actionPrices.takeProfitPrices.forEach((price, idx) => {
+            lines.push(
+                series.createPriceLine({
+                    price,
+                    color: CHART_COLORS.actionTakeProfit,
+                    lineWidth,
+                    lineStyle: LineStyle.Dashed,
+                    axisLabelVisible: true,
+                    title: `청산점 #${idx + 1}`,
+                })
+            );
+        });
 
-        removeAllSeries(chart);
-
-        if (!isVisible || !actionPrices) return;
-
-        const entryEntries = actionPrices.entryPrices.map(price => ({
-            series: createLevelSeries(
-                chart,
-                CHART_COLORS.actionEntry,
-                lineWidth
-            ),
-            price,
-        }));
-
-        const stopLossEntries =
-            actionPrices.stopLoss !== undefined
-                ? [
-                      {
-                          series: createLevelSeries(
-                              chart,
-                              CHART_COLORS.actionStopLoss,
-                              lineWidth
-                          ),
-                          price: actionPrices.stopLoss,
-                      },
-                  ]
-                : [];
-
-        const takeProfitEntries = actionPrices.takeProfitPrices.map(price => ({
-            series: createLevelSeries(
-                chart,
-                CHART_COLORS.actionTakeProfit,
-                lineWidth
-            ),
-            price,
-        }));
-
-        entriesRef.current = [
-            ...entryEntries,
-            ...stopLossEntries,
-            ...takeProfitEntries,
-        ];
+        priceLinesRef.current = lines;
     }, [actionPrices, isVisible, lineWidth]);
-
-    // 데이터 동기화: 시리즈가 보이는 동안 bars/actionPrices 변경 시 업데이트
-    // isVisible이 true로 바뀔 때도 실행되어 새로 생성된 시리즈에 초기 데이터를 세팅함
-    useEffect(() => {
-        if (!isVisible) return;
-
-        for (const { series, price } of entriesRef.current) {
-            series.setData(buildLineData(bars, price));
-        }
-    }, [bars, actionPrices, isVisible]);
 }

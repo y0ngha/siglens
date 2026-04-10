@@ -94,7 +94,7 @@ export function StockChart({
     keyLevels: _keyLevels = EMPTY_KEY_LEVELS,
     keyLevelsVisible: _keyLevelsVisible = false,
     actionPrices,
-    actionPricesVisible = false,
+    actionPricesVisible = true,
     onPatternOverlayChange: _onPatternOverlayChange,
     onChartReady,
     onChartRemove,
@@ -329,8 +329,7 @@ export function StockChart({
     // });
 
     useActionRecommendationOverlay({
-        chartRef,
-        bars,
+        seriesRef,
         actionPrices,
         isVisible: actionPricesVisible,
         lineWidth: DEFAULT_LINE_WIDTH,

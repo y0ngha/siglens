@@ -118,7 +118,7 @@ export function ChartContent({
     );
     const [keyLevelsVisible, setKeyLevelsVisible] = useState(false);
     const [trendlinesVisible, setTrendlinesVisible] = useState(false);
-    const [actionPricesVisible, setActionPricesVisible] = useState(false);
+    const [actionPricesVisible, setActionPricesVisible] = useState(true);
 
     // 마무리 애니메이션이 모두 끝난 뒤에야 본문/배너가 사라지도록, isAnalyzing보다
     // 늦게 false로 떨어지는 displayAnalyzing 상태를 둔다. AnalysisPanel(본문)과
