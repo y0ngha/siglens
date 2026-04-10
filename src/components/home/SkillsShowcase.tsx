@@ -49,7 +49,7 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     },
     support_resistance: {
         label: '지지/저항',
-        className: 'bg-chart-rsi/10 text-chart-rsi border border-chart-rsi/30',
+        className: 'bg-chart-bollinger/10 text-chart-bollinger border border-chart-bollinger/30',
     },
 };
 
@@ -135,7 +135,7 @@ function SkillCard({ skill }: SkillCardProps) {
                 <div className="bg-secondary-700 h-1.5 flex-1 overflow-hidden rounded-full">
                     <div
                         className={cn(
-                            'h-full w-[var(--confidence-w)] rounded-full',
+                            'h-full w-(--confidence-w) rounded-full',
                             isHighConfidence
                                 ? 'bg-chart-bullish'
                                 : 'bg-ui-warning'
