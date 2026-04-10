@@ -77,6 +77,11 @@ export const CHART_COLORS = {
     supportLine: '#26a69a',
     resistanceLine: '#ef5350',
 
+    // Action Recommendation 가격선
+    actionEntry: '#60a5fa', // 진입가 (primary-400)
+    actionStopLoss: '#ef5350', // 손절가 (bearish)
+    actionTakeProfit: '#26a69a', // 목표가 (bullish)
+
     // Ichimoku Cloud
     ichimokuTenkan: '#2962ff',
     ichimokuKijun: '#e91e63',

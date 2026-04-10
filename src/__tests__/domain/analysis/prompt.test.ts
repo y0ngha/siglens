@@ -1854,6 +1854,18 @@ describe('prompt', () => {
         it('actionRecommendation 스키마에 riskReward 필드가 포함된다', () => {
             expect(result).toContain('riskReward');
         });
+
+        it('actionRecommendation 스키마에 entryPrices 필드가 포함된다', () => {
+            expect(result).toContain('entryPrices');
+        });
+
+        it('actionRecommendation 스키마에 stopLoss 필드가 포함된다', () => {
+            expect(result).toContain('stopLoss');
+        });
+
+        it('actionRecommendation 스키마에 takeProfitPrices 필드가 포함된다', () => {
+            expect(result).toContain('takeProfitPrices');
+        });
     });
 
     describe('Skills 섹션 - type이 strategy인 skill일 때', () => {

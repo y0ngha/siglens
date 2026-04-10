@@ -5,11 +5,6 @@
 - Rule: CONVENTIONS.md Test Rules — "Mock external dependencies only"; @vercel/functions는 외부 패키지이므로 모킹 대상
 - Context: analyzeAction.ts, searchTickerAction.ts, getAssetInfoAction.ts에 waitUntil을 도입하면서 대응 테스트 파일에 jest.mock('@vercel/functions', ...) 추가를 누락
 
-## [PR #222 Round 5 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
-- Violation: `!!assetInfo?.name`이 `AssetInfo.name`이 required 필드임에도 불필요하게 `.name` 접근
-- Rule: FF.md Predictability — 타입 시스템이 보장하는 사실을 조건식에 명시적으로 표현해야 함
-- Context: `assetInfo`가 정의되어 있으면 `name`은 항상 truthy이므로 `!!assetInfo`로 단순화
-
 ## [PR #222 Round 3 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: SymbolPageClient.tsx에서 symbol.toUpperCase()를 3회, assetInfo.name !== symbol.toUpperCase() 조건을 2회 반복
 - Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값은 한 번만 계산하고 const로 추출
@@ -91,4 +86,34 @@
 - Violation: `console.log(url)` left in `fmp.ts` `getBars()` — debug artifact shipped to infrastructure
 - Rule: CONVENTIONS.md — infrastructure functions must be pure side-effect-free except for the single external I/O they are responsible for; debug logging is a prohibited side effect
 - Context: `fmp.ts` line 85 had `console.log(url)` after constructing the request URL; removed as part of FMP API spec correction
-- 
+
+## [PR #229 Round 1 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
+- Violation: ActionRecommendationField.key typed as keyof ActionRecommendation included numeric optional fields, causing rec[key] to fail JSX child type validation
+- Rule: TypeScript Union Type Safety — string literal unions must be narrowed when accessing object properties that will be used in JSX contexts
+- Context: ActionRecommendationField.key was `keyof ActionRecommendation` which included `count?: number` and `updatedAt?: number`; narrowed to `ActionRecommendationTextKey = 'positionAnalysis' | 'entry' | 'exit' | 'riskReward'` to ensure values are text-like for JSX children
+
+- Violation: chartRef (stable RefObject) included in useEffect dependency array for overlay hook
+- Rule: MISTAKES.md Components #2 — stable RefObject references should not be in dependency arrays; only include deps that actually change
+- Context: useCharacterOverlay hook included chartRef alongside dynamic deps like data; removed to match useChartSync pattern of excluding RefObjects
+
+- Violation: Component props with leading underscore used in component body (e.g., _recommendedAction used as recommendedAction)
+- Rule: CONVENTIONS.md Naming — underscore prefix reserved for intentionally-unused destructured parameters; consumed props must not have underscore
+- Context: ActionRecommendationField received _recommendedAction but used it in render; removed underscore to indicate the prop is actually consumed
+
+## [PR #229 Round 2 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
+- Violation: StockChart prop default actionPricesVisible = false contradicted the parent ChartContent's intent (initialized to true). Default off-by-default is misleading when caller explicitly enables the feature.
+- Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
+- Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
+
+## [PR #230 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
+- Violation: `#f87171`(actionStopLoss)과 `#4ade80`(actionTakeProfit)은 디자인 시스템에 없는 임의 hex 값 사용
+- Rule: DESIGN.md — 상승/하락 색상은 `#26a69a`(bullish) / `#ef5350`(bearish) 고정; 임의 hex 금지
+- Context: actionStopLoss에 Tailwind red-400(#f87171), actionTakeProfit에 green-400(#4ade80) 사용; bearish/bullish 시스템 컬러로 교체
+
+- Violation: `ValidatedActionPrices` 인터페이스를 구현 파일(`actionRecommendation.ts`)에 정의
+- Rule: ARCHITECTURE.md — 도메인 결과 타입은 `domain/types.ts`에 정의해야 함
+- Context: 다른 파일(`StockChart.tsx`, `useActionRecommendationOverlay.ts`)에서도 참조하는 타입을 구현 파일에 배치; `domain/types.ts`로 이동
+
+- Violation: `forEach + push`로 배열을 직접 변경(mutation)
+- Rule: MISTAKES.md Coding Paradigm #5 — Array mutation via push/splice; use spread syntax
+- Context: `useActionRecommendationOverlay`에서 `lines.push()`로 IPriceLine 배열 직접 변경; `map` + spread(`[...entryLines, ...stopLossLine, ...takeProfitLines]`)로 교체
