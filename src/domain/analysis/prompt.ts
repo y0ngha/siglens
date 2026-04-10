@@ -323,7 +323,7 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
     trendlines:
         '[{ "direction": "ascending | descending", "start": { "time": 1700000000, "price": 150.00 }, "end": { "time": 1700100000, "price": 155.00 } }]',
     actionRecommendation:
-        '{ "positionAnalysis": "Current price position vs support/resistance analysis", "entry": "Entry strategy with specific price ranges", "exit": "Exit strategy with specific price ranges", "riskReward": "Risk-reward ratio analysis", "entryPrices": [165.00, 167.00], "stopLoss": 160.00, "takeProfitPrices": [180.00, 195.00] }',
+        '{ "positionAnalysis": "Current price position vs support/resistance analysis", "entry": "Entry strategy with specific price ranges", "exit": "Exit strategy with specific price ranges", "riskReward": "Risk-reward ratio analysis", "entryRecommendation": "enter | wait | avoid", "entryPrices": [165.00, 167.00], "stopLoss": 160.00, "takeProfitPrices": [180.00, 195.00] }',
 };
 
 const buildSchemaBody = (): string => {
@@ -450,6 +450,7 @@ const ANALYSIS_GUIDELINES = [
     '- entryPrices: Extract the numeric entry price(s) from your entry analysis. If a range, provide [low, high]. If a single price, provide [price]. Must match the prices mentioned in the entry text field exactly.',
     '- stopLoss: Extract the stop-loss price from your exit analysis as a single number. Must match the stop-loss price mentioned in the exit text field.',
     '- takeProfitPrices: Extract the take-profit target price(s) from your exit analysis. Sort ascending (lowest price first). Must match the target prices mentioned in the exit text field.',
+    '- entryRecommendation: Assess whether entering a position right now is advisable. Use "enter" when conditions clearly favor immediate entry (e.g., price near support with bullish confluence), "wait" when the setup is forming but not yet confirmed (e.g., approaching a key level, awaiting breakout), or "avoid" when risk outweighs reward (e.g., price extended from support, strong resistance overhead, high risk level).',
     '- entryPrices, stopLoss, takeProfitPrices must be numerically consistent with the text in entry/exit fields — they are the same prices in structured form for chart rendering.',
     '',
     '### Insufficient Data',
@@ -516,7 +517,9 @@ const buildAnalysisRequest = (
                   '- Use the Indicator Signal Guides above to interpret the current indicator values in ## Indicator Values.',
                   '- For each indicator guide, evaluate whether the current values meet any signal condition described in its Signal Interpretation section.',
                   '- When a signal condition is met, include a corresponding entry in the signals array.',
-                  '- The type field of each signal entry MUST be "skill". Do not use indicator-specific type values.',
+                  '- Do NOT add entries to the signals array for indicator guide results. Instead, add them to the skillSignals array.',
+                  '- For each indicator guide that produces a signal, add one entry to skillSignals: { "skillName": "<exact skill name>", "signals": [{ "type": "skill", "description": "...", "strength": "..." }] }.',
+                  '- The skillName field in the skillSignals entry MUST exactly match the skill name from the list below.',
                   '- The description field must be written in Korean and include the indicator name and specific condition (e.g., "Stochastic %K 82 — 과매수 구간 진입, ADX 18로 레인지 환경에서 신뢰도 높음").',
                   '- Signal strength guidelines:',
                   '  - strong: value is in an extreme zone (e.g., RSI > 80 or < 20, Stochastic > 90 or < 10, CCI > +200 or < -200) OR multiple indicators confirm the same direction',

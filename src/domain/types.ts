@@ -276,11 +276,14 @@ export interface ValidatedActionPrices {
     takeProfitPrices: number[];
 }
 
+export type EntryRecommendation = 'enter' | 'wait' | 'avoid';
+
 export interface ActionRecommendation {
     positionAnalysis: string;
     entry: string;
     exit: string;
     riskReward: string;
+    entryRecommendation?: EntryRecommendation;
     // 차트 오버레이용 구조화된 가격
     entryPrices?: number[]; // 진입가 범위 [low, high] 또는 단일 [price]
     stopLoss?: number; // 손절가 (단일)

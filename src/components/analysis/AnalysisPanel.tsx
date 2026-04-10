@@ -6,6 +6,7 @@ import type {
     ActionRecommendation,
     AnalysisResponse,
     CandlePatternSummary,
+    EntryRecommendation,
     KeyLevels,
     PatternResult,
     PriceScenario,
@@ -41,6 +42,18 @@ function formatCooldown(ms: number): string {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+const ENTRY_RECOMMENDATION_LABEL: Record<EntryRecommendation, string> = {
+    enter: '진입 추천',
+    wait: '대기 추천',
+    avoid: '진입 비추천',
+};
+
+const ENTRY_RECOMMENDATION_COLOR: Record<EntryRecommendation, string> = {
+    enter: 'bg-chart-bullish/10 text-chart-bullish border border-chart-bullish/30',
+    wait: 'bg-ui-warning/10 text-ui-warning border border-ui-warning/30',
+    avoid: 'bg-chart-bearish/10 text-chart-bearish border border-chart-bearish/30',
+};
+
 type ActionRecommendationTextKey =
     | 'positionAnalysis'
     | 'entry'
@@ -72,6 +85,21 @@ function ActionRecommendationSection({
 }: ActionRecommendationSectionProps) {
     return (
         <div className="bg-secondary-700/30 flex flex-col gap-2 rounded-lg p-3">
+            {rec.entryRecommendation !== undefined && (
+                <div className="flex items-center gap-2">
+                    <span className="text-secondary-500 text-xs">
+                        진입 추천 여부
+                    </span>
+                    <span
+                        className={cn(
+                            'rounded px-2 py-0.5 text-xs font-semibold',
+                            ENTRY_RECOMMENDATION_COLOR[rec.entryRecommendation]
+                        )}
+                    >
+                        {ENTRY_RECOMMENDATION_LABEL[rec.entryRecommendation]}
+                    </span>
+                </div>
+            )}
             <div className="flex items-center justify-between">
                 <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                     매매 전략
@@ -781,6 +809,12 @@ export function AnalysisPanel({
         detectedSkillNames.has(s.skillName)
     );
 
+    const indicatorSkillSignals = analysis.skillSignals.filter(
+        s =>
+            !patternSkillNames.has(s.skillName) &&
+            !detectedSkillNames.has(s.skillName)
+    );
+
     return (
         <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
             <AnalysisToast
@@ -854,7 +888,8 @@ export function AnalysisPanel({
                     )}
 
                     {/* 인디케이터 시그널 */}
-                    {analysis.signals.length > 0 && (
+                    {(analysis.signals.length > 0 ||
+                        indicatorSkillSignals.length > 0) && (
                         <div className="flex flex-col gap-2">
                             <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                                 시그널
@@ -865,6 +900,24 @@ export function AnalysisPanel({
                                         key={`${signal.type}-${index}`}
                                         signal={signal}
                                     />
+                                ))}
+                                {indicatorSkillSignals.map(skillSignal => (
+                                    <div
+                                        key={skillSignal.skillName}
+                                        className="flex flex-col gap-1"
+                                    >
+                                        <span className="text-secondary-400 text-xs font-medium">
+                                            {skillSignal.skillName}
+                                        </span>
+                                        {skillSignal.signals.map(
+                                            (signal, index) => (
+                                                <SignalItem
+                                                    key={`${signal.type}-${index}`}
+                                                    signal={signal}
+                                                />
+                                            )
+                                        )}
+                                    </div>
                                 ))}
                             </div>
                         </div>
