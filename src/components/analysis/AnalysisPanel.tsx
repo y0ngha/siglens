@@ -749,7 +749,10 @@ export function AnalysisPanel({
 
     return (
         <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
-            <AnalysisToast key={cooldownNotice?.nonce} notice={cooldownNotice} />
+            <AnalysisToast
+                key={cooldownNotice?.nonce}
+                notice={cooldownNotice}
+            />
             {/* 헤더 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">

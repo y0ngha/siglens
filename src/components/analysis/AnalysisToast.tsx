@@ -32,7 +32,10 @@ export function AnalysisToast({ notice }: AnalysisToastProps) {
     // TOAST_VISIBLE_MS 후 토스트를 숨긴다.
     useEffect(() => {
         if (!isVisible) return;
-        const timeoutId = window.setTimeout(() => setIsVisible(false), TOAST_VISIBLE_MS);
+        const timeoutId = window.setTimeout(
+            () => setIsVisible(false),
+            TOAST_VISIBLE_MS
+        );
         return () => {
             window.clearTimeout(timeoutId);
         };
