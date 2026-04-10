@@ -453,7 +453,7 @@ null 없음 (첫 봉부터 값 존재)
 기본 파라미터: afStart=0.02, afIncrement=0.02, afMax=0.20
 
 알고리즘 (상태 기반):
-1. 초기: 상승 추세 가정, SAR = bars[0].low, EP = bars[1].high
+1. 초기: bars[1].close >= bars[0].close이면 상승 추세, 그렇지 않으면 하락 추세로 시작. 상승 추세: SAR = bars[0].low, EP = bars[1].high. 하락 추세: SAR = bars[0].high, EP = bars[1].low
 2. SAR(i+1) = SAR(i) + AF × (EP - SAR(i))
 3. 반전 조건: 상승 추세에서 Low < SAR → 하락 전환, 하락 추세에서 High > SAR → 상승 전환
 4. 새 EP 갱신 시 AF += afIncrement (최대 afMax)
