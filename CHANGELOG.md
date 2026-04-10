@@ -1,5 +1,21 @@
 # Changelog
 
+# [0.6.0](https://github.com/y0ngha/siglens/compare/v0.5.0...v0.6.0) (2026-04-10)
+
+
+### Bug Fixes
+
+* Correct action recommendation colors per DESIGN.md ([3d7c9c8](https://github.com/y0ngha/siglens/commit/3d7c9c88010deaf083ec425234752639b8e2e6b3)), closes [#f87171](https://github.com/y0ngha/siglens/issues/f87171) [#ef5350](https://github.com/y0ngha/siglens/issues/ef5350) [#4ade80](https://github.com/y0ngha/siglens/issues/4ade80) [#26a69a](https://github.com/y0ngha/siglens/issues/26a69a)
+* SEO 개선 사항 적용 (상수 통일, 스키마 수정, PWA 아이콘) ([960e1f3](https://github.com/y0ngha/siglens/commit/960e1f373b1517ab68f5ae41a125012dc989043a))
+
+
+### Features
+
+* ActionRecommendation 차트 가격선 오버레이 추가 ([d67c333](https://github.com/y0ngha/siglens/commit/d67c333883c96da65634e0afc7345dfba92469d0))
+* Replace fire-and-forget patterns with waitUntil ([0f0b008](https://github.com/y0ngha/siglens/commit/0f0b0089184ba046056f5af8bc6ac34f443688bd))
+* SEO 종합 개선 ([5ef8a85](https://github.com/y0ngha/siglens/commit/5ef8a85536137cae26f899584ea0f531e1badefd))
+* Set actionPricesVisible default to true, improve styling ([f9c1d51](https://github.com/y0ngha/siglens/commit/f9c1d513a2ef7e16fdc69680ad78b952ba60ea35))
+
 # [0.5.0](https://github.com/y0ngha/siglens/compare/v0.4.0...v0.5.0) (2026-04-09)
 
 
