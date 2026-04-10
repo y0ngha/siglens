@@ -3,7 +3,7 @@ name: ATR Signal Guide
 description: ATR(14) 신호 해석 가이드 — 변동성 측정, 손절 설정, 포지션 사이징, 브레이크아웃 확인
 type: indicator_guide
 indicators: ['atr']
-confidence_weight: 0.85
+confidence_weight: 0.8
 ---
 
 ## Overview
