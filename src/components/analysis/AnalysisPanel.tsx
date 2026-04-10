@@ -79,11 +79,12 @@ function ActionRecommendationSection({
                 <button
                     type="button"
                     onClick={onToggleChart}
-                    className={`flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors ${
+                    className={cn(
+                        'flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors',
                         isChartVisible
                             ? 'text-primary-400 hover:text-primary-300'
                             : 'text-secondary-500 hover:text-secondary-400'
-                    }`}
+                    )}
                     aria-label={
                         isChartVisible
                             ? '차트 가격선 숨기기'
@@ -748,7 +749,7 @@ export function AnalysisPanel({
     _onKeyLevelsVisibilityChange,
     _trendlinesVisible = false,
     _onTrendlinesVisibilityChange,
-    actionPricesVisible = false,
+    actionPricesVisible = true,
     onActionPricesVisibilityChange,
 }: AnalysisPanelProps) {
     const handleTogglePatternVisibility = (patternName: string): void => {
