@@ -64,7 +64,9 @@ describe('calculateSqueezeMomentum', () => {
                     .slice(0, SQUEEZE_MOMENTUM_MIN_BARS - 1)
                     .every(r => r.momentum === null)
             ).toBe(true);
-            expect(result[SQUEEZE_MOMENTUM_MIN_BARS - 1].momentum).not.toBeNull();
+            expect(
+                result[SQUEEZE_MOMENTUM_MIN_BARS - 1].momentum
+            ).not.toBeNull();
         });
 
         it('충분한 데이터 이후 val은 number다', () => {

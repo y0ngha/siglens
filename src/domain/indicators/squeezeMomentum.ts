@@ -121,7 +121,8 @@ export function calculateSqueezeMomentum(
         const prevMomentum = i > 0 ? intermediate[i - 1].momentum : null;
         return {
             ...r,
-            increasing: prevMomentum !== null ? r.momentum > prevMomentum : null,
+            increasing:
+                prevMomentum !== null ? r.momentum > prevMomentum : null,
         };
     });
 }
