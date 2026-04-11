@@ -2,12 +2,12 @@
 
 import { useState, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
+import dynamic from 'next/dynamic';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { validateKeyLevels } from '@/domain/analysis/keyLevels';
 import { validateActionPrices } from '@/domain/analysis/actionRecommendation';
 import { cn } from '@/lib/cn';
-import { StockChart } from '@/components/chart/StockChart';
-import { VolumeChart } from '@/components/chart/VolumeChart';
+import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
@@ -25,6 +25,16 @@ import {
     SNAP_HALF,
     type SnapPoint,
 } from '@/components/symbol-page/MobileAnalysisSheet';
+
+const StockChart = dynamic(
+    () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
+    { ssr: false, loading: () => <ChartSkeleton /> }
+);
+
+const VolumeChart = dynamic(
+    () => import('@/components/chart/VolumeChart').then(mod => mod.VolumeChart),
+    { ssr: false, loading: () => <ChartSkeleton /> }
+);
 
 function AnalyzingBanner() {
     return (
