@@ -33,7 +33,10 @@ export function HowItWorks() {
                 {STEPS.map((step, idx) => (
                     <Fragment key={step.number}>
                         <div className="bg-secondary-800/50 border-secondary-700 flex-1 rounded-lg border p-6">
-                            <span className="text-primary-600/25 font-mono text-3xl leading-none font-bold">
+                            <span
+                                aria-hidden="true"
+                                className="text-primary-600/25 font-mono text-3xl leading-none font-bold"
+                            >
                                 {step.number}
                             </span>
                             <h2 className="text-secondary-200 mt-4 text-sm font-semibold tracking-wider uppercase">

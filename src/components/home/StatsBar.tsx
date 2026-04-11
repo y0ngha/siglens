@@ -38,7 +38,7 @@ export function StatsBar({ skills }: StatsBarProps) {
     ];
 
     return (
-        <div className="text-secondary-500 mt-6 flex flex-wrap items-center justify-center gap-x-2 font-mono text-xs lg:justify-start">
+        <div className="text-secondary-400 mt-6 flex flex-wrap items-center justify-center gap-x-2 font-mono text-xs lg:justify-start">
             {stats.map((stat, i) => (
                 <Fragment key={stat.label}>
                     {i > 0 && <span className="text-secondary-700">·</span>}
