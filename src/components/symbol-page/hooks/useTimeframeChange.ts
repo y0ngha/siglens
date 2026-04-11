@@ -1,11 +1,13 @@
 'use client';
 
 import { useCallback, useState, useTransition } from 'react';
+import { useRouter } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { BarsData, Timeframe } from '@/domain/types';
-import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';
+
+const TIMEFRAME_QUERY_PARAM = 'tf';
 
 interface UseTimeframeChangeResult {
     timeframe: Timeframe;
@@ -14,12 +16,16 @@ interface UseTimeframeChangeResult {
     handleTimeframeChange: (nextTimeframe: Timeframe) => void;
 }
 
-export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
-    const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
+export function useTimeframeChange(
+    symbol: string,
+    initialTimeframe: Timeframe
+): UseTimeframeChangeResult {
+    const [timeframe, setTimeframe] = useState<Timeframe>(initialTimeframe);
     const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
     const [, startTransition] = useTransition();
 
     const queryClient = useQueryClient();
+    const router = useRouter();
 
     const handleTimeframeChange = useCallback(
         (nextTimeframe: Timeframe): void => {
@@ -36,12 +42,16 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
                 queryKey: QUERY_KEYS.bars(symbol, nextTimeframe),
                 queryFn: () => getBarsAction(symbol, nextTimeframe),
             });
-            setTimeframeChangeCount(c => c + 1);
             startTransition(() => {
+                setTimeframeChangeCount(c => c + 1);
                 setTimeframe(nextTimeframe);
+                router.replace(
+                    `/${symbol}?${TIMEFRAME_QUERY_PARAM}=${nextTimeframe}`,
+                    { scroll: false }
+                );
             });
         },
-        [timeframe, queryClient, symbol]
+        [timeframe, queryClient, symbol, router]
     );
 
     return { timeframe, timeframeChangeCount, handleTimeframeChange };

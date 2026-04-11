@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import Link from 'next/link';
 import { ErrorBoundary } from 'react-error-boundary';
-import type { AnalysisResponse } from '@/domain/types';
+import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
@@ -15,6 +15,7 @@ import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 
 interface SymbolPageClientProps {
     symbol: string;
+    initialTimeframe: Timeframe;
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
     indicatorCount: number;
@@ -22,6 +23,7 @@ interface SymbolPageClientProps {
 
 export function SymbolPageClient({
     symbol,
+    initialTimeframe,
     initialAnalysis,
     initialAnalysisFailed,
     indicatorCount,
@@ -32,7 +34,7 @@ export function SymbolPageClient({
     // render 중 setState를 호출하는 패턴은 React 19 concurrent mode에서 Router 업데이트
     // 충돌을 유발할 수 있으므로, handleTimeframeChange 이벤트 핸들러 안에서 카운터를 갱신한다.
     const { timeframe, timeframeChangeCount, handleTimeframeChange } =
-        useTimeframeChange(symbol);
+        useTimeframeChange(symbol, initialTimeframe);
     const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
