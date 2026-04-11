@@ -6,7 +6,7 @@ import { Drawer } from 'vaul';
 export type SnapPoint = number | string | null;
 
 export const SNAP_PEEK = 0.15; // 15% — 기본 접힘
-export const SNAP_HALF = 0.7; // 60% — 분석 중 배너 노출
+export const SNAP_HALF = 0.55; // 55% — 분석 중 배너 노출
 export const SNAP_FULL = 0.92; // 92% — 전체 열림
 
 export const MOBILE_SNAP_POINTS = [SNAP_PEEK, SNAP_HALF, SNAP_FULL] as const;
@@ -36,7 +36,7 @@ export function MobileAnalysisSheet({
         >
             <Drawer.Portal>
                 <Drawer.Content
-                    className="bg-secondary-900 border-secondary-700 fixed inset-x-0 bottom-0 z-40 flex max-h-[92svh] flex-col overflow-hidden [overscroll-behavior:contain] rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
+                    className="bg-secondary-900 border-secondary-700 fixed inset-x-0 bottom-0 z-40 flex max-h-[92svh] flex-col overflow-hidden overscroll-contain rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
                     aria-live="polite"
                 >
                     <Drawer.Handle
