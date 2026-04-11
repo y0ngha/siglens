@@ -157,7 +157,7 @@ export type SkillShowcaseItem = Pick<
     'name' | 'description' | 'type' | 'confidenceWeight'
 >;
 
-export type SignalType = 'pattern' | 'skill';
+export type SignalType = 'skill';
 
 export type SignalStrength = 'strong' | 'moderate' | 'weak';
 
@@ -171,8 +171,8 @@ export interface Signal {
     strength: SignalStrength;
 }
 
-export interface SkillSignal {
-    skillName: string;
+export interface IndicatorGuideResult {
+    indicatorName: string;
     signals: Signal[];
 }
 
@@ -230,9 +230,9 @@ export interface PatternResult extends PatternSummary {
     renderConfig?: SkillChartDisplay;
 }
 
-export interface SkillResult {
+export interface StrategyResult {
     id: string;
-    skillName: string;
+    strategyName: string;
     trend: Trend;
     summary: string;
     confidenceWeight: number;
@@ -282,12 +282,12 @@ export interface ActionRecommendation {
 export interface AnalysisResponse {
     summary: string;
     trend: Trend;
-    skillSignals: SkillSignal[];
+    indicatorResults: IndicatorGuideResult[];
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
     priceTargets: PriceTargets;
     patternSummaries: PatternResult[];
-    skillResults: SkillResult[];
+    strategyResults: StrategyResult[];
     candlePatterns: CandlePatternSummary[];
     trendlines: Trendline[];
     actionRecommendation?: ActionRecommendation;
@@ -327,9 +327,9 @@ export interface AnalyzeVariables {
 
 export type RawAnalysisResponse = Omit<
     AnalysisResponse,
-    'patternSummaries' | 'skillResults' | 'candlePatterns'
+    'patternSummaries' | 'strategyResults' | 'candlePatterns'
 > & {
     patternSummaries: Omit<PatternSummary, 'confidenceWeight' | 'id'>[];
-    skillResults: Omit<SkillResult, 'confidenceWeight' | 'id'>[];
+    strategyResults: Omit<StrategyResult, 'confidenceWeight' | 'id'>[];
     candlePatterns: Omit<CandlePatternSummary, 'id'>[];
 };

@@ -14,7 +14,7 @@ import type {
     Signal,
     SignalStrength,
     SignalType,
-    SkillResult,
+    StrategyResult,
     Trend,
     Trendline,
     TrendlineDirection,
@@ -182,7 +182,6 @@ const SIGNAL_STRENGTH_LABEL: Record<SignalStrength, string> = {
 };
 
 const SIGNAL_TYPE_LABEL: Record<SignalType, string> = {
-    pattern: '패턴',
     skill: '스킬',
 };
 
@@ -559,18 +558,18 @@ function StructuredSkillSummary({ sections }: StructuredSkillSummaryProps) {
     );
 }
 
-interface SkillAccordionItemProps {
-    skill: SkillResult;
+interface StrategyAccordionItemProps {
+    strategy: StrategyResult;
 }
 
-function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
+function StrategyAccordionItem({ strategy }: StrategyAccordionItemProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
         setIsOpen(prev => !prev);
     };
 
-    const sections = parseStructuredSummary(skill.summary);
+    const sections = parseStructuredSummary(strategy.summary);
 
     return (
         <div className="border-secondary-700 overflow-hidden rounded-md border">
@@ -582,14 +581,14 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
                     className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left"
                 >
                     <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
-                        {skill.skillName}
+                        {strategy.strategyName}
                     </span>
-                    <TrendBadge trend={skill.trend} />
+                    <TrendBadge trend={strategy.trend} />
                     <ChevronIcon isOpen={isOpen} />
                 </button>
                 <span className="shrink-0 pr-2">
                     <ConfidenceBadge
-                        confidenceWeight={skill.confidenceWeight}
+                        confidenceWeight={strategy.confidenceWeight}
                     />
                 </span>
             </div>
@@ -600,7 +599,7 @@ function SkillAccordionItem({ skill }: SkillAccordionItemProps) {
                         <StructuredSkillSummary sections={sections} />
                     ) : (
                         <p className="text-secondary-400 text-xs leading-relaxed">
-                            {skill.summary}
+                            {strategy.summary}
                         </p>
                     )}
                 </div>
@@ -789,25 +788,25 @@ export function AnalysisPanel({
         analysis.patternSummaries.map(p => p.skillName)
     );
 
-    const detectedSkillResults = analysis.skillResults.filter(
+    const detectedStrategyResults = analysis.strategyResults.filter(
         s =>
             s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT &&
-            !patternSkillNames.has(s.skillName)
+            !patternSkillNames.has(s.strategyName)
     );
 
-    const detectedSkillNames = new Set(
-        detectedSkillResults.map(s => s.skillName)
+    const detectedStrategyNames = new Set(
+        detectedStrategyResults.map(s => s.strategyName)
     );
 
-    const detectedSkillSignals = analysis.skillSignals.filter(s =>
-        detectedSkillNames.has(s.skillName)
+    const strategyLinkedIndicatorResults = analysis.indicatorResults.filter(r =>
+        detectedStrategyNames.has(r.indicatorName)
     );
 
-    const indicatorSkillSignals = analysis.skillSignals.filter(
-        s =>
-            s.skillName !== '' &&
-            !patternSkillNames.has(s.skillName) &&
-            !detectedSkillNames.has(s.skillName)
+    const displayedIndicatorResults = analysis.indicatorResults.filter(
+        r =>
+            r.indicatorName !== '' &&
+            !patternSkillNames.has(r.indicatorName) &&
+            !detectedStrategyNames.has(r.indicatorName)
     );
 
     return (
@@ -843,8 +842,8 @@ export function AnalysisPanel({
                 </div>
             </div>
             <p className="text-secondary-500 font-mono text-xs">
-                {detectedPatterns.length + detectedSkillResults.length}개 스킬
-                감지 · {INDICATOR_KIND_COUNT}종 인디케이터 적용
+                {detectedPatterns.length + detectedStrategyResults.length}개
+                스킬 감지 · {INDICATOR_KIND_COUNT}종 인디케이터 적용
             </p>
 
             {/* 요약 — 분석 중에는 진행 인디케이터로 대체.
@@ -880,100 +879,6 @@ export function AnalysisPanel({
                                 )
                             }
                         />
-                    )}
-
-                    {/* 보조지표 시그널 */}
-                    {indicatorSkillSignals.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                                보조지표
-                            </span>
-                            <div className="flex flex-col gap-1.5">
-                                {indicatorSkillSignals.map(skillSignal =>
-                                    skillSignal.signals.map((signal, index) => (
-                                        <SignalItem
-                                            key={`${skillSignal.skillName}-${signal.type}-${index}`}
-                                            signal={signal}
-                                            typeLabel={skillSignal.skillName}
-                                        />
-                                    ))
-                                )}
-                            </div>
-                        </div>
-                    )}
-
-                    {/* 스킬 시그널 (skillName별 그룹핑) — 감지된 스킬만 표시 */}
-                    {detectedSkillSignals.length > 0 && (
-                        <div className="flex flex-col gap-3">
-                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                                패턴 / 스킬
-                            </span>
-                            {detectedSkillSignals.map(skillSignal => (
-                                <div
-                                    key={skillSignal.skillName}
-                                    className="flex flex-col gap-1.5"
-                                >
-                                    <span className="text-secondary-400 text-xs font-medium">
-                                        {skillSignal.skillName}
-                                    </span>
-                                    {skillSignal.signals.map(
-                                        (signal, index) => (
-                                            <SignalItem
-                                                key={`${signal.type}-${index}`}
-                                                signal={signal}
-                                            />
-                                        )
-                                    )}
-                                </div>
-                            ))}
-                        </div>
-                    )}
-
-                    {/* 캔들 패턴 (아코디언) */}
-                    {/* 패턴 상세 (아코디언) — 감지된 패턴만 표시, 없으면 안내 메시지 */}
-                    <div className="flex flex-col gap-2">
-                        <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                            차트 패턴
-                        </span>
-                        {hasDetectedPatterns ? (
-                            <div className="flex flex-col gap-1.5">
-                                {detectedPatterns.map(pattern => (
-                                    <PatternAccordionItem
-                                        key={pattern.id}
-                                        pattern={pattern}
-                                        isVisible={
-                                            chartVisiblePatterns?.has(
-                                                pattern.patternName
-                                            ) ?? false
-                                        }
-                                        onToggleVisibility={
-                                            handleTogglePatternVisibility
-                                        }
-                                    />
-                                ))}
-                            </div>
-                        ) : (
-                            <p className="text-secondary-500 text-sm">
-                                감지된 패턴 없음
-                            </p>
-                        )}
-                    </div>
-
-                    {/* 스킬 상세 (아코디언) — 감지된 스킬만 표시 */}
-                    {detectedSkillResults.length > 0 && (
-                        <div className="flex flex-col gap-2">
-                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                                전략
-                            </span>
-                            <div className="flex flex-col gap-1.5">
-                                {detectedSkillResults.map(skill => (
-                                    <SkillAccordionItem
-                                        key={skill.id}
-                                        skill={skill}
-                                    />
-                                ))}
-                            </div>
-                        </div>
                     )}
 
                     {/* 지지/저항 레벨 */}
@@ -1127,6 +1032,107 @@ export function AnalysisPanel({
                                     scenario={analysis.priceTargets.bearish}
                                     colorClass="text-chart-bearish"
                                 />
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 보조지표 */}
+                    {displayedIndicatorResults.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                보조지표
+                            </span>
+                            <div className="flex flex-col gap-1.5">
+                                {displayedIndicatorResults.map(
+                                    indicatorResult =>
+                                        indicatorResult.signals.map(
+                                            (signal, index) => (
+                                                <SignalItem
+                                                    key={`${indicatorResult.indicatorName}-${signal.type}-${index}`}
+                                                    signal={signal}
+                                                    typeLabel={
+                                                        indicatorResult.indicatorName
+                                                    }
+                                                />
+                                            )
+                                        )
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {/* 전략 연계 보조지표 (strategyResults 이름과 매칭되는 indicatorResults — 엣지 케이스) */}
+                    {strategyLinkedIndicatorResults.length > 0 && (
+                        <div className="flex flex-col gap-3">
+                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                전략 연계 보조지표
+                            </span>
+                            {strategyLinkedIndicatorResults.map(
+                                indicatorResult => (
+                                    <div
+                                        key={indicatorResult.indicatorName}
+                                        className="flex flex-col gap-1.5"
+                                    >
+                                        <span className="text-secondary-400 text-xs font-medium">
+                                            {indicatorResult.indicatorName}
+                                        </span>
+                                        {indicatorResult.signals.map(
+                                            (signal, index) => (
+                                                <SignalItem
+                                                    key={`${signal.type}-${index}`}
+                                                    signal={signal}
+                                                />
+                                            )
+                                        )}
+                                    </div>
+                                )
+                            )}
+                        </div>
+                    )}
+
+                    {/* 캔들 패턴 (아코디언) */}
+                    {/* 패턴 상세 (아코디언) — 감지된 패턴만 표시, 없으면 안내 메시지 */}
+                    <div className="flex flex-col gap-2">
+                        <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                            차트 패턴
+                        </span>
+                        {hasDetectedPatterns ? (
+                            <div className="flex flex-col gap-1.5">
+                                {detectedPatterns.map(pattern => (
+                                    <PatternAccordionItem
+                                        key={pattern.id}
+                                        pattern={pattern}
+                                        isVisible={
+                                            chartVisiblePatterns?.has(
+                                                pattern.patternName
+                                            ) ?? false
+                                        }
+                                        onToggleVisibility={
+                                            handleTogglePatternVisibility
+                                        }
+                                    />
+                                ))}
+                            </div>
+                        ) : (
+                            <p className="text-secondary-500 text-sm">
+                                감지된 패턴 없음
+                            </p>
+                        )}
+                    </div>
+
+                    {/* 전략 상세 (아코디언) — 감지된 전략만 표시 */}
+                    {detectedStrategyResults.length > 0 && (
+                        <div className="flex flex-col gap-2">
+                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
+                                전략
+                            </span>
+                            <div className="flex flex-col gap-1.5">
+                                {detectedStrategyResults.map(strategy => (
+                                    <StrategyAccordionItem
+                                        key={strategy.id}
+                                        strategy={strategy}
+                                    />
+                                ))}
                             </div>
                         </div>
                     )}

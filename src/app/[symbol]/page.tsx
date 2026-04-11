@@ -16,7 +16,7 @@ import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 const FALLBACK_ANALYSIS: AnalysisResponse = {
     summary: 'AI 분석을 일시적으로 사용할 수 없습니다.',
     trend: 'neutral',
-    skillSignals: [],
+    indicatorResults: [],
     riskLevel: 'medium',
     keyLevels: { support: [], resistance: [] },
     priceTargets: {
@@ -24,7 +24,7 @@ const FALLBACK_ANALYSIS: AnalysisResponse = {
         bearish: { targets: [], condition: '' },
     },
     patternSummaries: [],
-    skillResults: [],
+    strategyResults: [],
     candlePatterns: [],
     trendlines: [],
 };

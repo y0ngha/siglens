@@ -41,10 +41,10 @@ const makePatternSummary = (
     ...overrides,
 });
 
-const makeSkillResult = (
-    overrides?: Partial<RawAnalysisResponse['skillResults'][number]>
-): RawAnalysisResponse['skillResults'][number] => ({
-    skillName: '테스트 스킬',
+const makeStrategyResult = (
+    overrides?: Partial<RawAnalysisResponse['strategyResults'][number]>
+): RawAnalysisResponse['strategyResults'][number] => ({
+    strategyName: '테스트 전략',
     trend: 'bullish',
     summary: '테스트 요약',
     ...overrides,
@@ -68,7 +68,7 @@ const makeAnalysisResponse = (
 ): RawAnalysisResponse => ({
     summary: '테스트 종합 분석',
     trend: 'bullish',
-    skillSignals: [],
+    indicatorResults: [],
     riskLevel: 'low',
     keyLevels: { support: [], resistance: [] },
     priceTargets: {
@@ -76,7 +76,7 @@ const makeAnalysisResponse = (
         bearish: { targets: [], condition: '' },
     },
     patternSummaries: [],
-    skillResults: [],
+    strategyResults: [],
     candlePatterns: [],
     trendlines: [],
     ...overrides,
@@ -257,35 +257,35 @@ describe('confidence', () => {
             });
         });
 
-        describe('skillResults id 부여', () => {
-            it('단일 skillResult에 id가 부여된다', () => {
+        describe('strategyResults id 부여', () => {
+            it('단일 strategyResult에 id가 부여된다', () => {
                 const analysis = makeAnalysisResponse({
-                    skillResults: [
-                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    strategyResults: [
+                        makeStrategyResult({ strategyName: 'RSI 다이버전스' }),
                     ],
                 });
                 const result = enrichAnalysisWithConfidence(analysis, []);
-                expect(result.skillResults[0].id).toBe('RSI 다이버전스_0');
+                expect(result.strategyResults[0].id).toBe('RSI 다이버전스_0');
             });
 
-            it('동일한 skillName이 여러 개일 때 고유한 id를 부여한다', () => {
+            it('동일한 strategyName이 여러 개일 때 고유한 id를 부여한다', () => {
                 const analysis = makeAnalysisResponse({
-                    skillResults: [
-                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
-                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    strategyResults: [
+                        makeStrategyResult({ strategyName: 'RSI 다이버전스' }),
+                        makeStrategyResult({ strategyName: 'RSI 다이버전스' }),
                     ],
                 });
                 const result = enrichAnalysisWithConfidence(analysis, []);
-                expect(result.skillResults[0].id).toBe('RSI 다이버전스_0');
-                expect(result.skillResults[1].id).toBe('RSI 다이버전스_1');
+                expect(result.strategyResults[0].id).toBe('RSI 다이버전스_0');
+                expect(result.strategyResults[1].id).toBe('RSI 다이버전스_1');
             });
         });
 
-        describe('skillResults confidenceWeight 채우기', () => {
-            it('skillResults에 skillName과 일치하는 skill의 confidenceWeight를 채운다', () => {
+        describe('strategyResults confidenceWeight 채우기', () => {
+            it('strategyResults에 strategyName과 일치하는 skill의 confidenceWeight를 채운다', () => {
                 const analysis = makeAnalysisResponse({
-                    skillResults: [
-                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    strategyResults: [
+                        makeStrategyResult({ strategyName: 'RSI 다이버전스' }),
                     ],
                 });
                 const skills = [
@@ -295,14 +295,16 @@ describe('confidence', () => {
                     }),
                 ];
                 const result = enrichAnalysisWithConfidence(analysis, skills);
-                expect(result.skillResults[0].confidenceWeight).toBe(
+                expect(result.strategyResults[0].confidenceWeight).toBe(
                     MEDIUM_CONFIDENCE_WEIGHT
                 );
             });
 
-            it('매칭되지 않는 skillName은 confidenceWeight를 0으로 채운다', () => {
+            it('매칭되지 않는 strategyName은 confidenceWeight를 0으로 채운다', () => {
                 const analysis = makeAnalysisResponse({
-                    skillResults: [makeSkillResult({ skillName: '없는스킬' })],
+                    strategyResults: [
+                        makeStrategyResult({ strategyName: '없는스킬' }),
+                    ],
                 });
                 const skills = [
                     makeSkill({
@@ -311,7 +313,7 @@ describe('confidence', () => {
                     }),
                 ];
                 const result = enrichAnalysisWithConfidence(analysis, skills);
-                expect(result.skillResults[0].confidenceWeight).toBe(
+                expect(result.strategyResults[0].confidenceWeight).toBe(
                     UNMATCHED_SKILL_CONFIDENCE_WEIGHT
                 );
             });
@@ -323,22 +325,22 @@ describe('confidence', () => {
                     patternSummaries: [
                         makePatternSummary({ skillName: '헤드앤숄더' }),
                     ],
-                    skillResults: [
-                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    strategyResults: [
+                        makeStrategyResult({ strategyName: 'RSI 다이버전스' }),
                     ],
                 });
                 const result = enrichAnalysisWithConfidence(analysis, []);
                 expect(result.patternSummaries).toHaveLength(0);
             });
 
-            it('skills가 빈 배열이면 skillResults의 confidenceWeight는 0이다', () => {
+            it('skills가 빈 배열이면 strategyResults의 confidenceWeight는 0이다', () => {
                 const analysis = makeAnalysisResponse({
-                    skillResults: [
-                        makeSkillResult({ skillName: 'RSI 다이버전스' }),
+                    strategyResults: [
+                        makeStrategyResult({ strategyName: 'RSI 다이버전스' }),
                     ],
                 });
                 const result = enrichAnalysisWithConfidence(analysis, []);
-                expect(result.skillResults[0].confidenceWeight).toBe(
+                expect(result.strategyResults[0].confidenceWeight).toBe(
                     UNMATCHED_SKILL_CONFIDENCE_WEIGHT
                 );
             });
@@ -500,7 +502,7 @@ describe('confidence', () => {
                 ).toBeUndefined();
             });
 
-            it('patternSummaries와 skillResults 외의 필드는 변경하지 않는다', () => {
+            it('patternSummaries와 strategyResults 외의 필드는 변경하지 않는다', () => {
                 const actionRecommendation = {
                     positionAnalysis: '원본 위치 분석',
                     entry: '원본 진입',

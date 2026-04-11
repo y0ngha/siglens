@@ -11,7 +11,7 @@ describe('ClaudeProvider', () => {
     const mockAnalysisResponse: RawAnalysisResponse = {
         summary: 'Test summary',
         trend: 'bullish',
-        skillSignals: [],
+        indicatorResults: [],
         riskLevel: 'low',
         keyLevels: {
             support: [{ price: 100, reason: '이전 저점' }],
@@ -28,7 +28,7 @@ describe('ClaudeProvider', () => {
             },
         },
         patternSummaries: [],
-        skillResults: [],
+        strategyResults: [],
         candlePatterns: [],
         trendlines: [],
     };
@@ -93,10 +93,10 @@ describe('ClaudeProvider', () => {
             expect(['low', 'medium', 'high']).toContain(result.riskLevel);
         });
 
-        it('skillSignals는 배열을 반환한다', async () => {
+        it('indicatorResults는 배열을 반환한다', async () => {
             const result = await provider.analyze('test prompt');
 
-            expect(Array.isArray(result.skillSignals)).toBe(true);
+            expect(Array.isArray(result.indicatorResults)).toBe(true);
         });
 
         it('patternSummaries는 배열을 반환한다', async () => {
@@ -105,10 +105,10 @@ describe('ClaudeProvider', () => {
             expect(Array.isArray(result.patternSummaries)).toBe(true);
         });
 
-        it('skillResults는 배열을 반환한다', async () => {
+        it('strategyResults는 배열을 반환한다', async () => {
             const result = await provider.analyze('test prompt');
 
-            expect(Array.isArray(result.skillResults)).toBe(true);
+            expect(Array.isArray(result.strategyResults)).toBe(true);
         });
 
         it('candlePatterns는 배열을 반환한다', async () => {

@@ -1344,18 +1344,18 @@ describe('prompt', () => {
                 []
             );
             // signals 필드가 스키마 top-level에 키로 존재하지 않아야 함
-            // (skillSignals 내부의 nested signals는 허용)
+            // (indicatorResults 내부의 nested signals는 허용)
             expect(result).not.toMatch(/^\s*"signals":/m);
         });
 
-        it('skillSignals 필드가 요청에 포함된다', () => {
+        it('indicatorResults 필드가 요청에 포함된다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('skillSignals');
+            expect(result).toContain('indicatorResults');
         });
 
         it('keyLevels 필드가 요청에 포함된다', () => {
@@ -1378,14 +1378,14 @@ describe('prompt', () => {
             expect(result).toContain('patternSummaries');
         });
 
-        it('skillResults 필드가 요청에 포함된다', () => {
+        it('strategyResults 필드가 요청에 포함된다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('skillResults');
+            expect(result).toContain('strategyResults');
         });
 
         it('riskLevel 필드가 요청에 포함된다', () => {
@@ -1958,7 +1958,7 @@ describe('prompt', () => {
     });
 
     describe('분석 요청 섹션 - Indicator Guide Writing Rules', () => {
-        it('indicator_guide skill이 있을 때 skillSignals Writing Rules for Indicator Guides 섹션이 포함된다', () => {
+        it('indicator_guide skill이 있을 때 indicatorResults Writing Rules for Indicator Guides 섹션이 포함된다', () => {
             const skill = makeSkill({
                 type: 'indicator_guide',
                 name: 'RSI Signal Guide',
@@ -1970,11 +1970,11 @@ describe('prompt', () => {
                 [skill]
             );
             expect(result).toContain(
-                'skillSignals Writing Rules for Indicator Guides'
+                'indicatorResults Writing Rules for Indicator Guides'
             );
         });
 
-        it('indicator_guide skill이 없을 때 skillSignals Writing Rules for Indicator Guides 섹션이 포함되지 않는다', () => {
+        it('indicator_guide skill이 없을 때 indicatorResults Writing Rules for Indicator Guides 섹션이 포함되지 않는다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
@@ -1982,7 +1982,7 @@ describe('prompt', () => {
                 []
             );
             expect(result).not.toContain(
-                'skillSignals Writing Rules for Indicator Guides'
+                'indicatorResults Writing Rules for Indicator Guides'
             );
         });
 
@@ -2004,7 +2004,7 @@ describe('prompt', () => {
                 skills
             );
             expect(result).toContain(
-                'Indicator guide list (use these exact names for skillName):'
+                'Indicator guide list (use these exact names for indicatorName):'
             );
             expect(result).toContain('- RSI Signal Guide');
             expect(result).toContain('- MACD Signal Guide');
@@ -2058,7 +2058,7 @@ describe('prompt', () => {
                 [indicatorGuideSkill, patternSkill]
             );
             const indicatorGuideIndex = result.indexOf(
-                'skillSignals Writing Rules for Indicator Guides'
+                'indicatorResults Writing Rules for Indicator Guides'
             );
             const patternWritingRulesIndex = result.indexOf(
                 'patternSummaries Writing Rules'
@@ -2079,12 +2079,12 @@ describe('prompt', () => {
                 [skill]
             );
             expect(result).not.toContain(
-                'skillSignals Writing Rules for Indicator Guides'
+                'indicatorResults Writing Rules for Indicator Guides'
             );
             expect(result).not.toContain('- Low Confidence Guide');
         });
 
-        it('indicator_guide Writing Rules에 skillName 비어있음 금지를 명시한다', () => {
+        it('indicator_guide Writing Rules에 indicatorName 비어있음 금지를 명시한다', () => {
             const skill = makeSkill({
                 type: 'indicator_guide',
                 name: 'RSI Signal Guide',
@@ -2096,7 +2096,7 @@ describe('prompt', () => {
                 [skill]
             );
             expect(result).toContain('non-empty string');
-            expect(result).toContain('Never use an empty string');
+            expect(result).toContain('never use an empty string');
         });
 
         it('indicator_guide Writing Rules에 다중 인디케이터 결합을 금지한다', () => {
@@ -2126,8 +2126,96 @@ describe('prompt', () => {
                 [skill]
             );
             expect(result).toContain(
-                'simply omit that guide from skillSignals'
+                'simply omit that guide from indicatorResults'
             );
+        });
+    });
+
+    describe('분석 가이드라인 - Name Field Matching', () => {
+        let result: string;
+
+        beforeEach(() => {
+            result = buildAnalysisPrompt(TEST_SYMBOL, [], makeIndicators(), []);
+        });
+
+        it('공통 Name Field Matching 섹션이 포함된다', () => {
+            expect(result).toContain(
+                '### Name Field Matching (applies to all identifier fields)'
+            );
+        });
+
+        it('name 필드가 비어있으면 안 된다는 규칙이 명시된다', () => {
+            expect(result).toContain('non-empty string');
+            expect(result).toContain('EXACTLY matches');
+        });
+
+        it('verbatim copy 지시가 포함된다', () => {
+            expect(result).toContain('Copy each skill name verbatim');
+            expect(result).toContain(
+                'Do not translate, abbreviate, paraphrase'
+            );
+        });
+
+        it('적용 대상 필드가 명시된다 (patternSummaries.skillName, strategyResults.strategyName, indicatorResults.indicatorName)', () => {
+            expect(result).toContain('patternSummaries[].skillName');
+            expect(result).toContain('strategyResults[].strategyName');
+            expect(result).toContain('indicatorResults[].indicatorName');
+        });
+
+        it('skill이 없으면 entry를 omit하라는 지시가 포함된다', () => {
+            expect(result).toContain(
+                'omit the entry entirely rather than inventing a name'
+            );
+        });
+    });
+
+    describe('분석 요청 섹션 - patternSummaries trend 규칙', () => {
+        it('detected: false일 때도 trend 필수임을 명시한다', () => {
+            const skill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain(
+                'trend field is REQUIRED for every patternSummaries entry'
+            );
+            expect(result).toContain(
+                'including entries where detected is false'
+            );
+        });
+
+        it('not-detected 패턴의 고유 방향 예시가 포함된다', () => {
+            const skill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('head-and-shoulders → bearish');
+            expect(result).toContain('inverse head-and-shoulders → bullish');
+        });
+
+        it('NEVER omit trend 지시가 포함된다', () => {
+            const skill = makeSkill({
+                type: 'pattern',
+                name: 'Head and Shoulders',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('NEVER omit the trend field');
         });
     });
 
@@ -2232,7 +2320,7 @@ describe('prompt', () => {
             expect(result).not.toContain('Pattern Analysis');
         });
 
-        it('strategy skill에 대한 skillResults Writing Rules 지시사항이 생성된다', () => {
+        it('strategy skill에 대한 strategyResults Writing Rules 지시사항이 생성된다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
@@ -2240,12 +2328,12 @@ describe('prompt', () => {
                 [strategySkill]
             );
             expect(result).toContain(
-                'skillResults Writing Rules for Strategy Skills'
+                'strategyResults Writing Rules for Strategy Skills'
             );
             expect(result).toContain('- 엘리어트 파동');
         });
 
-        it('strategy skill이 없으면 skillResults Writing Rules 지시사항이 포함되지 않는다', () => {
+        it('strategy skill이 없으면 strategyResults Writing Rules 지시사항이 포함되지 않는다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
@@ -2253,7 +2341,7 @@ describe('prompt', () => {
                 []
             );
             expect(result).not.toContain(
-                'skillResults Writing Rules for Strategy Skills'
+                'strategyResults Writing Rules for Strategy Skills'
             );
         });
 
