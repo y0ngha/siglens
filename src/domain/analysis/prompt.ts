@@ -227,7 +227,7 @@ const formatBuySellVolumeSection = (indicators: IndicatorResult): string => {
     const sellRatio =
         totalVolume > 0 ? (totalSell / totalVolume) * PERCENTAGE_FACTOR : 0;
 
-    const last = recentBuySell[recentBuySell.length - 1];
+    const last = lastOf(recentBuySell)!;
     const lastTotal = last.buyVolume + last.sellVolume;
     const lastBuyRatio =
         lastTotal > 0 ? (last.buyVolume / lastTotal) * PERCENTAGE_FACTOR : 0;

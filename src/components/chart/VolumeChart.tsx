@@ -54,12 +54,14 @@ export function VolumeChart({
         totalSeriesRef.current = chart.addSeries(HistogramSeries, {
             color: CHART_COLORS.volumeBearish,
             priceFormat: { type: 'volume' },
+            priceScaleId: 'volume',
         });
 
-        // Buy volume (teal, overlay)
+        // Buy volume (teal, overlay) — shares the same price scale as total volume
         buySeriesRef.current = chart.addSeries(HistogramSeries, {
             color: CHART_COLORS.volumeBullish,
             priceFormat: { type: 'volume' },
+            priceScaleId: 'volume',
         });
 
         onChartReadyRef.current?.(chart);
