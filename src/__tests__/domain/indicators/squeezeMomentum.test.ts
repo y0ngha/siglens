@@ -29,7 +29,10 @@ function makeUniformBars(count: number, price = 100): Bar[] {
     );
 }
 
-const MIN_BARS = Math.max(SQUEEZE_MOMENTUM_BB_LENGTH, SQUEEZE_MOMENTUM_KC_LENGTH);
+const MIN_BARS = Math.max(
+    SQUEEZE_MOMENTUM_BB_LENGTH,
+    SQUEEZE_MOMENTUM_KC_LENGTH
+);
 
 describe('calculateSqueezeMomentum', () => {
     describe('입력 배열이 비어있을 때', () => {

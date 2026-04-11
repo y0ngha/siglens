@@ -31,7 +31,10 @@ export function stdDev(values: number[], period: number): number | null {
  * Rolling maximum of the last `period` values.
  * Returns null when there are fewer values than the period.
  */
-export function rollingHighest(values: number[], period: number): number | null {
+export function rollingHighest(
+    values: number[],
+    period: number
+): number | null {
     if (values.length < period) return null;
     return Math.max(...values.slice(-period));
 }
