@@ -9,6 +9,7 @@ import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { ChartContent } from '@/components/symbol-page/ChartContent';
+import { SymbolPageProvider } from '@/components/symbol-page/SymbolPageContext';
 import { useTimeframeChange } from '@/components/symbol-page/hooks/useTimeframeChange';
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 
@@ -16,12 +17,14 @@ interface SymbolPageClientProps {
     symbol: string;
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
+    indicatorCount: number;
 }
 
 export function SymbolPageClient({
     symbol,
     initialAnalysis,
     initialAnalysisFailed,
+    indicatorCount,
 }: SymbolPageClientProps) {
     // Suspense로 인해 ChartContent가 remount될 때 타임프레임 변경 여부를 전달한다.
     // timeframe 변경 횟수를 카운트하여 ChartContent가 타임프레임 변경으로 인해
@@ -35,70 +38,72 @@ export function SymbolPageClient({
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
 
     return (
-        <div className="bg-secondary-900 text-secondary-200 flex h-screen flex-col overflow-hidden">
-            {/* 헤더 */}
-            <header className="border-secondary-700 border-b px-4 py-3">
-                <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                        <Link
-                            href="/"
-                            className="text-secondary-500 hover:text-secondary-300 font-mono text-xs tracking-[0.2em] uppercase transition-colors"
-                        >
-                            SIGLENS
-                        </Link>
-                        <span className="text-secondary-700">/</span>
-                        <h1 className="text-secondary-100 text-lg font-semibold tracking-wide">
-                            {assetInfo?.koreanName && (
-                                <span className="text-secondary-300">
-                                    {assetInfo.koreanName}
-                                    {hasCompanyName ? ', ' : ' '}
-                                </span>
-                            )}
-                            {assetInfo && hasCompanyName && (
-                                <span className="text-secondary-200">
-                                    {assetInfo.name}{' '}
-                                </span>
-                            )}
-                            ({ticker})
-                        </h1>
-                    </div>
-                    <div className="flex items-center gap-3">
-                        <div className="hidden md:block">
-                            <TickerAutocomplete size="sm" />
+        <SymbolPageProvider indicatorCount={indicatorCount}>
+            <div className="bg-secondary-900 text-secondary-200 flex h-screen flex-col overflow-hidden">
+                {/* 헤더 */}
+                <header className="border-secondary-700 border-b px-4 py-3">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <Link
+                                href="/"
+                                className="text-secondary-500 hover:text-secondary-300 font-mono text-xs tracking-[0.2em] uppercase transition-colors"
+                            >
+                                SIGLENS
+                            </Link>
+                            <span className="text-secondary-700">/</span>
+                            <h1 className="text-secondary-100 text-lg font-semibold tracking-wide">
+                                {assetInfo?.koreanName && (
+                                    <span className="text-secondary-300">
+                                        {assetInfo.koreanName}
+                                        {hasCompanyName ? ', ' : ' '}
+                                    </span>
+                                )}
+                                {assetInfo && hasCompanyName && (
+                                    <span className="text-secondary-200">
+                                        {assetInfo.name}{' '}
+                                    </span>
+                                )}
+                                ({ticker})
+                            </h1>
                         </div>
-                        <div className="hidden sm:block">
-                            <TimeframeSelector
-                                value={timeframe}
-                                onChange={handleTimeframeChange}
-                            />
+                        <div className="flex items-center gap-3">
+                            <div className="hidden md:block">
+                                <TickerAutocomplete size="sm" />
+                            </div>
+                            <div className="hidden sm:block">
+                                <TimeframeSelector
+                                    value={timeframe}
+                                    onChange={handleTimeframeChange}
+                                />
+                            </div>
                         </div>
                     </div>
-                </div>
-                <div className="mt-2 sm:hidden">
-                    <TimeframeSelector
-                        value={timeframe}
-                        onChange={handleTimeframeChange}
-                    />
-                </div>
-            </header>
-
-            {/* 메인 레이아웃 */}
-            <div className="relative flex min-h-0 flex-1 overflow-hidden">
-                <ErrorBoundary
-                    FallbackComponent={ChartErrorFallback}
-                    resetKeys={[timeframe, symbol]}
-                >
-                    <Suspense fallback={<ChartSkeleton />}>
-                        <ChartContent
-                            symbol={symbol}
-                            timeframe={timeframe}
-                            timeframeChangeCount={timeframeChangeCount}
-                            initialAnalysis={initialAnalysis}
-                            initialAnalysisFailed={initialAnalysisFailed}
+                    <div className="mt-2 sm:hidden">
+                        <TimeframeSelector
+                            value={timeframe}
+                            onChange={handleTimeframeChange}
                         />
-                    </Suspense>
-                </ErrorBoundary>
+                    </div>
+                </header>
+
+                {/* 메인 레이아웃 */}
+                <div className="relative flex min-h-0 flex-1 overflow-hidden">
+                    <ErrorBoundary
+                        FallbackComponent={ChartErrorFallback}
+                        resetKeys={[timeframe, symbol]}
+                    >
+                        <Suspense fallback={<ChartSkeleton />}>
+                            <ChartContent
+                                symbol={symbol}
+                                timeframe={timeframe}
+                                timeframeChangeCount={timeframeChangeCount}
+                                initialAnalysis={initialAnalysis}
+                                initialAnalysisFailed={initialAnalysisFailed}
+                            />
+                        </Suspense>
+                    </ErrorBoundary>
+                </div>
             </div>
-        </div>
+        </SymbolPageProvider>
     );
 }

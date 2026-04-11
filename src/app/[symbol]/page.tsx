@@ -9,16 +9,10 @@ import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import type { AnalysisResponse, AssetInfo } from '@/domain/types';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
+import { countSkillFiles } from '@/infrastructure/skills/loader';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import { buildSymbolKeywords, SITE_NAME, SITE_URL } from '@/lib/seo';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
-import {
-    CANDLESTICK_SKILL_COUNT,
-    CHART_PATTERN_SKILL_COUNT,
-    INDICATOR_KIND_COUNT,
-    STRATEGY_SKILL_COUNT,
-    SUPPORT_RESISTANCE_SKILL_COUNT,
-} from '@/domain/indicators/constants';
 
 const INDICATOR_NAMES =
     'RSI(상대강도지수), MACD(이동평균수렴확산), 볼린저밴드, 단순이동평균(SMA), 지수이동평균(EMA), 스토캐스틱, ATR(평균진폭), OBV(거래량균형지수), CCI(상품채널지수), 파라볼릭SAR, 슈퍼트렌드, 켈트너채널, VWAP(거래량가중평균가격)';
@@ -102,7 +96,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 export default async function SymbolPage({ params }: Props) {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
-    const assetInfo = await getAssetInfoAction(ticker);
+    const [assetInfo, skillCounts] = await Promise.all([
+        getAssetInfoAction(ticker),
+        countSkillFiles(),
+    ]);
     if (!assetInfo) return notFound();
 
     const displayName = buildDisplayName(assetInfo, ticker);
@@ -176,19 +173,18 @@ export default async function SymbolPage({ params }: Props) {
                 <p>{displayName} AI 기술적 분석 — 보조지표 및 캔들 패턴</p>
                 <p>
                     {displayName}({ticker}) 종목의 실시간 차트를{' '}
-                    {INDICATOR_KIND_COUNT}종 보조지표로 자동 분석합니다.{' '}
-                    {INDICATOR_NAMES} 등 {INDICATOR_KIND_COUNT}종 지표를
+                    {skillCounts.indicators}종 보조지표로 자동 분석합니다.{' '}
+                    {INDICATOR_NAMES} 등 {skillCounts.indicators}종 지표를
                     분석합니다.
                 </p>
                 <p>
-                    {CANDLESTICK_SKILL_COUNT}종 캔들 패턴 분석:{' '}
+                    {skillCounts.candlesticks}종 캔들 패턴 분석:{' '}
                     {CANDLESTICK_NAMES} 등 주요 캔들 패턴을 자동 감지합니다.
                 </p>
                 <p>
-                    {CHART_PATTERN_SKILL_COUNT}종 차트 패턴,{' '}
-                    {STRATEGY_SKILL_COUNT}종 전략 분석,{' '}
-                    {SUPPORT_RESISTANCE_SKILL_COUNT}종 지지/저항 레벨 분석을
-                    제공합니다.
+                    {skillCounts.patterns}종 차트 패턴, {skillCounts.strategies}
+                    종 전략 분석, {skillCounts.supportResistance}종 지지/저항
+                    레벨 분석을 제공합니다.
                 </p>
             </section>
             <HydrationBoundary state={dehydrate(queryClient)}>
@@ -198,6 +194,7 @@ export default async function SymbolPage({ params }: Props) {
                     // SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트로 위임한다.
                     // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
                     initialAnalysisFailed={true}
+                    indicatorCount={skillCounts.indicators}
                 />
             </HydrationBoundary>
         </>

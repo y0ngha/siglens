@@ -157,6 +157,14 @@ export type SkillShowcaseItem = Pick<
     'name' | 'description' | 'type' | 'confidenceWeight'
 >;
 
+export interface SkillCounts {
+    indicators: number;
+    candlesticks: number;
+    patterns: number;
+    strategies: number;
+    supportResistance: number;
+}
+
 export type SignalType = 'skill';
 
 export type SignalStrength = 'strong' | 'moderate' | 'weak';

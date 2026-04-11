@@ -1,32 +1,37 @@
 import { Fragment } from 'react';
-import {
-    CANDLESTICK_SKILL_COUNT,
-    CHART_PATTERN_SKILL_COUNT,
-    INDICATOR_KIND_COUNT,
-    STRATEGY_SKILL_COUNT,
-    SUPPORT_RESISTANCE_SKILL_COUNT,
-} from '@/domain/indicators/constants';
+import type { SkillCounts } from '@/domain/types';
 
-const STEPS = [
-    {
-        number: '01',
-        title: '티커 입력',
-        description: '종목 심볼을 입력하면 차트가 렌더링됩니다',
-    },
-    {
-        number: '02',
-        title: '자동 분석',
-        description: `보조지표 ${INDICATOR_KIND_COUNT}종 · 캔들 패턴 ${CANDLESTICK_SKILL_COUNT}종 · 차트 패턴 ${CHART_PATTERN_SKILL_COUNT}종 · 전략 ${STRATEGY_SKILL_COUNT}종 · 지지/저항 ${SUPPORT_RESISTANCE_SKILL_COUNT}종 자동 분석`,
-    },
-    {
-        number: '03',
-        title: 'AI 리포트',
-        description:
-            '추세·리스크·진입 추천 · 시그널 · 차트 패턴 · 전략 분석 · 주요 지지/저항 레벨을 한 화면에서 확인',
-    },
-] as const;
+interface HowItWorksProps {
+    skillCounts: SkillCounts;
+}
 
-export function HowItWorks() {
+export function HowItWorks({ skillCounts }: HowItWorksProps) {
+    const {
+        indicators,
+        candlesticks,
+        patterns,
+        strategies,
+        supportResistance,
+    } = skillCounts;
+
+    const STEPS = [
+        {
+            number: '01',
+            title: '티커 입력',
+            description: '종목 심볼을 입력하면 차트가 렌더링됩니다',
+        },
+        {
+            number: '02',
+            title: '자동 분석',
+            description: `보조지표 ${indicators}종, 캔들 패턴 ${candlesticks}종, 차트 패턴 ${patterns}종, 전략 ${strategies}종, 지지/저항 ${supportResistance}종 자동 분석`,
+        },
+        {
+            number: '03',
+            title: 'AI 리포트',
+            description:
+                '추세, 리스크, 진입 추천, 시그널, 차트 패턴, 전략 분석, 주요 지지/저항 레벨을 한 화면에서 확인',
+        },
+    ];
     return (
         <section className="px-6 py-16 lg:px-[15vw]">
             <div className="flex flex-col gap-4 md:flex-row">
