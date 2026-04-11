@@ -1,7 +1,6 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
-
     // React Compiler (Next.js 16 stable)
     reactCompiler: true,
 

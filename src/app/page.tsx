@@ -1,10 +1,6 @@
 import Link from 'next/link';
 
-import {
-    SITE_DESCRIPTION,
-    SITE_NAME,
-    SITE_URL,
-} from '@/lib/seo';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import {
     POPULAR_TICKERS,
     POPULAR_TICKERS_DISPLAY_COUNT,
