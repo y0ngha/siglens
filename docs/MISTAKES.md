@@ -107,30 +107,27 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ## Components
 
 ```
-1. Managing timeframe as a URL query parameter
-   → Manage as client state only
-
-2. External callback prop in useEffect dependency array → infinite loops
+1. External callback prop in useEffect dependency array → infinite loops
    → Use useEffectEvent to wrap callback props
 
-3. useState lazy initializer derives value from props
+2. useState lazy initializer derives value from props
    → Initializer runs only once; use useEffect to sync when props change
 
-4. Missing aria-expanded on accordion triggers
+3. Missing aria-expanded on accordion triggers
 
-5. Unused Tailwind classes (e.g. grid classes on flex containers)
+4. Unused Tailwind classes (e.g. grid classes on flex containers)
    → Verify parent layout model before applying layout-specific classes
 
-6. Props declared but not connected to callbacks (latent bugs)
+5. Props declared but not connected to callbacks (latent bugs)
    → If a callback prop exists, it must actually be invoked
 
-7. Repeating identical JSX structure 2+ times
+6. Repeating identical JSX structure 2+ times
    → Extract to a data array + .map() pattern
 
-8. DOM event listener in useEffect instead of custom hook
+7. DOM event listener in useEffect instead of custom hook
    → Extract to useOnClickOutside, useEscapeKey, etc.
 
-9. Custom hook params missing optional properties present in sibling hooks
+8. Custom hook params missing optional properties present in sibling hooks
    → All hooks in the same family must accept consistent parameter patterns
 ```
 
