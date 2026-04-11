@@ -64,6 +64,7 @@ const mockVariables: AnalyzeVariables = {
         cmf: [],
         donchianChannel: [],
         buySellVolume: [],
+        squeezeMomentum: [],
         smc: EMPTY_SMC_RESULT,
     },
 };

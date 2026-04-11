@@ -138,6 +138,7 @@ const makeIndicators = (
     cmf: [],
     donchianChannel: [],
     buySellVolume: [],
+    squeezeMomentum: [],
     ...overrides,
     smc: overrides?.smc ?? EMPTY_SMC_RESULT,
 });

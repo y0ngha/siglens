@@ -30,6 +30,9 @@ import {
     KELTNER_MULTIPLIER,
     CMF_DEFAULT_PERIOD,
     DONCHIAN_DEFAULT_PERIOD,
+    SQUEEZE_MOMENTUM_BB_LENGTH,
+    SQUEEZE_MOMENTUM_KC_LENGTH,
+    SQUEEZE_MOMENTUM_KC_MULT,
 } from '@/domain/indicators/constants';
 import { detectCandlePattern } from '@/domain/analysis/candle';
 import { getCandlePatternLabel } from '@/domain/analysis/candle-labels';
@@ -242,6 +245,23 @@ const formatBuySellVolumeSection = (indicators: IndicatorResult): string => {
 const trendLabel = (trend: IndicatorTrend | null): string =>
     trend === null ? '' : ` [${trend}]`;
 
+const formatSqueezeMomentumLine = (indicators: IndicatorResult): string => {
+    const last = lastOf(indicators.squeezeMomentum);
+    if (!last || last.val === null) {
+        return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): N/A`;
+    }
+    const state = (() => {
+        if (last.sqzOn) return 'squeeze ON';
+        if (last.sqzOff) return 'squeeze OFF';
+        return 'no squeeze';
+    })();
+    const direction = (() => {
+        if (last.increasing === null) return '';
+        return last.increasing ? ' [rising]' : ' [falling]';
+    })();
+    return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): val ${fmt(last.val)}${direction} / ${state}`;
+};
+
 const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastRSI = lastNonNull(indicators.rsi);
     const lastMACD = lastOf(indicators.macd);
@@ -296,6 +316,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
         `- Keltner Channel(${KELTNER_EMA_PERIOD},${KELTNER_ATR_PERIOD},${KELTNER_MULTIPLIER}): Upper ${fmt(lastKeltner?.upper ?? null)} / Middle ${fmt(lastKeltner?.middle ?? null)} / Lower ${fmt(lastKeltner?.lower ?? null)}`,
         `- CMF(${CMF_DEFAULT_PERIOD}): ${fmt(lastCMF)}${trendLabel(cmfTrend)}`,
         `- Donchian Channel(${DONCHIAN_DEFAULT_PERIOD}): Upper ${fmt(lastDonchian?.upper ?? null)} / Middle ${fmt(lastDonchian?.middle ?? null)} / Lower ${fmt(lastDonchian?.lower ?? null)}`,
+        formatSqueezeMomentumLine(indicators),
     ].join('\n');
 };
 
