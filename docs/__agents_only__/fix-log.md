@@ -1,5 +1,13 @@
 # Fix Log
 
+## [PR #274 | feat/273/buy-sell-volume-인디케이터 | 2026-04-11]
+- Violation: IndicatorResult에 buySellVolume 필드 추가 시 prompt.test.ts makeIndicators 팩토리와 constants.test.ts에 대응 케이스 미추가
+- Rule: MISTAKES.md Tests #10 — "Type field added but test mock objects not updated"; Tests #2 — "New field/indicator without corresponding test cases"
+- Context: buySellVolume을 IndicatorResult에 추가하면서 기존 테스트 픽스처(makeIndicators)와 EMPTY_INDICATOR_RESULT 검증 테스트를 함께 업데이트하지 않아 TS 컴파일 에러 및 assertion 실패 발생
+- Violation: formatVolumeSection → formatBuySellVolumeSection 교체 후 prompt.test.ts의 거래량 섹션 assertion이 구버전 출력 텍스트 기준으로 남음
+- Rule: MISTAKES.md Tests #1 — "Not updating tests when return type changes"
+- Context: 'bar average', 'Current volume', '% of average' assertion이 새 출력('Current bar:', 'cumulative', 'Buy ratio:')으로 업데이트되지 않아 런타임 실패
+
 ## [PR #270 | feat/261/차트-dynamic-import-모바일-TTI-개선 | 2026-04-11]
 - Violation: dynamic import loading 컴포넌트(`ChartSkeleton`)가 `absolute inset-0`을 사용함에도 래퍼 컨테이너에 `relative` 클래스 누락
 - Rule: CSS Positioning — `absolute` 자식이 올바른 영역에 렌더되려면 부모 체인에 `positioned element`(`relative/absolute/fixed/sticky`)가 있어야 함
