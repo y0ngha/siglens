@@ -49,21 +49,30 @@ import { calculateATR } from '@/domain/indicators/atr';
 function detectSwingPoints(bars: Bar[], period: number): SMCSwingPoint[] {
     if (bars.length < period * 2 + 1) return [];
 
-    return bars.reduce<SMCSwingPoint[]>((acc, bar, i) => {
-        if (i < period || i >= bars.length - period) return acc;
+    return bars
+        .map((bar, i) => {
+            if (i < period || i >= bars.length - period) return null;
 
-        const window = bars.slice(i - period, i + period + 1);
-        const maxHigh = window.reduce((m, b) => Math.max(m, b.high), -Infinity);
-        const minLow = window.reduce((m, b) => Math.min(m, b.low), Infinity);
+            const window = bars.slice(i - period, i + period + 1);
+            const maxHigh = window.reduce(
+                (m, b) => Math.max(m, b.high),
+                -Infinity
+            );
+            const minLow = window.reduce(
+                (m, b) => Math.min(m, b.low),
+                Infinity
+            );
 
-        const found: SMCSwingPoint[] = [];
-        if (bar.high === maxHigh)
-            found.push({ index: i, price: bar.high, type: 'high' });
-        if (bar.low === minLow)
-            found.push({ index: i, price: bar.low, type: 'low' });
+            const found: SMCSwingPoint[] = [];
+            if (bar.high === maxHigh)
+                found.push({ index: i, price: bar.high, type: 'high' });
+            if (bar.low === minLow)
+                found.push({ index: i, price: bar.low, type: 'low' });
 
-        return found.length > 0 ? [...acc, ...found] : acc;
-    }, []);
+            return found.length > 0 ? found : null;
+        })
+        .filter((points): points is SMCSwingPoint[] => points !== null)
+        .flat();
 }
 
 // ─── Fair Value Gap detection ─────────────────────────────────────────────────
@@ -82,33 +91,34 @@ function detectSwingPoints(bars: Bar[], period: number): SMCSwingPoint[] {
 function detectFairValueGaps(bars: Bar[]): SMCFairValueGap[] {
     if (bars.length < 3) return [];
 
-    const raw = bars.slice(2).reduce<SMCFairValueGap[]>((acc, bar, idx) => {
-        const i = idx + 2;
-        const anchor = bars[i - 2];
+    const raw = bars
+        .slice(2)
+        .map((bar, idx): SMCFairValueGap | null => {
+            const i = idx + 2;
+            const anchor = bars[i - 2];
 
-        const isBullish = bar.low > anchor.high;
-        const isBearish = bar.high < anchor.low;
+            const isBullish = bar.low > anchor.high;
+            const isBearish = bar.high < anchor.low;
 
-        if (!isBullish && !isBearish) return acc;
+            if (!isBullish && !isBearish) return null;
 
-        const fvg: SMCFairValueGap = isBullish
-            ? {
-                  index: i,
-                  high: bar.low,
-                  low: anchor.high,
-                  type: 'bullish',
-                  isMitigated: false,
-              }
-            : {
-                  index: i,
-                  high: anchor.low,
-                  low: bar.high,
-                  type: 'bearish',
-                  isMitigated: false,
-              };
-
-        return [...acc, fvg];
-    }, []);
+            return isBullish
+                ? {
+                      index: i,
+                      high: bar.low,
+                      low: anchor.high,
+                      type: 'bullish',
+                      isMitigated: false,
+                  }
+                : {
+                      index: i,
+                      high: anchor.low,
+                      low: bar.high,
+                      type: 'bearish',
+                      isMitigated: false,
+                  };
+        })
+        .filter((fvg): fvg is SMCFairValueGap => fvg !== null);
 
     return raw.map(fvg => ({
         ...fvg,
@@ -266,25 +276,19 @@ function detectOrderBlocks(
  *  - bullishBreak → last bearish candle (close < open)
  *  - bearishBreak → last bullish candle (close > open)
  */
+// Note: a for loop is used here for early return — reduceRight cannot short-circuit.
 function findLastOpposingCandle(
     bars: Bar[],
     endIndex: number,
     lookingForBullishBreak: boolean
 ): number | null {
-    return bars
-        .slice(0, endIndex)
-        .reduceRight<number | null>((found, bar, i) => {
-            if (found !== null) return found;
-            const isBearish = bar.close < bar.open;
-            const isBullish = bar.close > bar.open;
-            return lookingForBullishBreak
-                ? isBearish
-                    ? i
-                    : null
-                : isBullish
-                  ? i
-                  : null;
-        }, null);
+    for (let i = endIndex - 1; i >= 0; i--) {
+        const bar = bars[i];
+        const isBearish = bar.close < bar.open;
+        const isBullish = bar.close > bar.open;
+        if (lookingForBullishBreak ? isBearish : isBullish) return i;
+    }
+    return null;
 }
 
 // ─── Equal High / Low detection ───────────────────────────────────────────────
@@ -312,12 +316,12 @@ function findEqualLevels(
     atrValues: (number | null)[],
     type: 'high' | 'low'
 ): SMCEqualLevel[] {
-    return swings.reduce<SMCEqualLevel[]>((acc, swing, i) => {
+    return swings.flatMap((swing, i) => {
         const atr = atrValues[swing.index];
-        if (atr === null) return acc;
+        if (atr === null) return [];
 
         const threshold = SMC_EQUAL_LEVEL_ATR_MULTIPLIER * atr;
-        const newLevels = swings
+        return swings
             .slice(i + 1)
             .filter(other => Math.abs(other.price - swing.price) <= threshold)
             .map<SMCEqualLevel>(other => ({
@@ -326,9 +330,7 @@ function findEqualLevels(
                 secondIndex: other.index,
                 type,
             }));
-
-        return newLevels.length > 0 ? [...acc, ...newLevels] : acc;
-    }, []);
+    });
 }
 
 // ─── Premium / Discount / Equilibrium zones ───────────────────────────────────
