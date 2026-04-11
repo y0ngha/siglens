@@ -182,15 +182,6 @@ const SIGNAL_STRENGTH_LABEL: Record<SignalStrength, string> = {
 };
 
 const SIGNAL_TYPE_LABEL: Record<SignalType, string> = {
-    rsi_overbought: 'RSI 과매수',
-    rsi_oversold: 'RSI 과매도',
-    macd_golden_cross: 'MACD 골든 크로스',
-    macd_dead_cross: 'MACD 데드 크로스',
-    bollinger_upper_breakout: '볼린저 상단 돌파',
-    bollinger_lower_breakout: '볼린저 하단 이탈',
-    bollinger_squeeze: '볼린저 스퀴즈',
-    dmi_bullish_trend: 'DMI 상승 추세',
-    dmi_bearish_trend: 'DMI 하락 추세',
     pattern: '패턴',
     skill: '스킬',
 };
@@ -213,7 +204,7 @@ function SignalItem({ signal, typeLabel }: SignalItemProps) {
             </span>
             <div className="min-w-0 flex-1">
                 <span className="text-secondary-300 block text-xs font-medium">
-                    {typeLabel ?? SIGNAL_TYPE_LABEL[signal.type]}
+                    {typeLabel || SIGNAL_TYPE_LABEL[signal.type]}
                 </span>
                 <span className="text-secondary-400 block text-xs">
                     {signal.description}
@@ -814,6 +805,7 @@ export function AnalysisPanel({
 
     const indicatorSkillSignals = analysis.skillSignals.filter(
         s =>
+            s.skillName !== '' &&
             !patternSkillNames.has(s.skillName) &&
             !detectedSkillNames.has(s.skillName)
     );
@@ -890,22 +882,13 @@ export function AnalysisPanel({
                         />
                     )}
 
-                    {/* 인디케이터 시그널 */}
-                    {(analysis.signals.some(s => s.type !== 'skill') ||
-                        indicatorSkillSignals.length > 0) && (
+                    {/* 보조지표 시그널 */}
+                    {indicatorSkillSignals.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                                 보조지표
                             </span>
                             <div className="flex flex-col gap-1.5">
-                                {analysis.signals
-                                    .filter(s => s.type !== 'skill')
-                                    .map((signal, index) => (
-                                        <SignalItem
-                                            key={`${signal.type}-${index}`}
-                                            signal={signal}
-                                        />
-                                    ))}
                                 {indicatorSkillSignals.map(skillSignal =>
                                     skillSignal.signals.map((signal, index) => (
                                         <SignalItem

@@ -11,7 +11,6 @@ describe('GeminiProvider', () => {
     const mockAnalysisResponse: RawAnalysisResponse = {
         summary: 'Test summary',
         trend: 'bullish',
-        signals: [],
         skillSignals: [],
         riskLevel: 'low',
         keyLevels: {
@@ -94,12 +93,6 @@ describe('GeminiProvider', () => {
             const result = await provider.analyze('test prompt');
 
             expect(['low', 'medium', 'high']).toContain(result.riskLevel);
-        });
-
-        it('signals는 배열을 반환한다', async () => {
-            const result = await provider.analyze('test prompt');
-
-            expect(Array.isArray(result.signals)).toBe(true);
         });
 
         it('skillSignals는 배열을 반환한다', async () => {

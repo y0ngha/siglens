@@ -785,18 +785,7 @@ function buildAnalysisPrompt(
 type Trend = 'bullish' | 'bearish' | 'neutral';
 type RiskLevel = 'low' | 'medium' | 'high';
 type SignalStrength = 'strong' | 'moderate' | 'weak';
-type SignalType =
-    | 'rsi_overbought'
-    | 'rsi_oversold'
-    | 'macd_golden_cross'
-    | 'macd_dead_cross'
-    | 'bollinger_upper_breakout'
-    | 'bollinger_lower_breakout'
-    | 'bollinger_squeeze'
-    | 'dmi_bullish_trend'
-    | 'dmi_bearish_trend'
-    | 'pattern'
-    | 'skill';
+type SignalType = 'pattern' | 'skill';
 
 interface Signal {
     type: SignalType;
@@ -881,8 +870,7 @@ interface ActionRecommendation {
 interface AnalysisResponse {
     summary: string;
     trend: Trend;
-    signals: Signal[];              // 인디케이터 기반 신호 (skill 무관)
-    skillSignals: SkillSignal[];    // skill 기반 신호 (skill별로 그룹핑)
+    skillSignals: SkillSignal[];    // indicator_guide/skill 기반 신호 (skillName별 그룹핑)
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
     priceTargets: PriceTargets;     // 강세/약세 시나리오별 가격 목표

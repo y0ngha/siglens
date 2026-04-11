@@ -16,7 +16,6 @@ import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 const FALLBACK_ANALYSIS: AnalysisResponse = {
     summary: 'AI 분석을 일시적으로 사용할 수 없습니다.',
     trend: 'neutral',
-    signals: [],
     skillSignals: [],
     riskLevel: 'medium',
     keyLevels: { support: [], resistance: [] },

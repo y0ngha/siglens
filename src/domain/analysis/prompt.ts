@@ -304,9 +304,8 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
     summary:
         '"A comprehensive, accessible summary that synthesizes ALL findings (indicators, patterns, volume profile, skills, strategies) into plain language a non-technical user can understand. Instead of stating raw indicator values, explain their practical meaning (e.g., instead of RSI is overbought at 75, say the stock has risen quickly and may be due for a pause). Answer: What is happening with this stock and what does it mean for the investor? Use \\n to separate each topic."',
     trend: '"bullish | bearish | neutral"',
-    signals:
-        '[{ "type": "...", "description": "...", "strength": "strong | moderate | weak" }]',
-    skillSignals: '[{ "skillName": "...", "signals": [...] }]',
+    skillSignals:
+        '[{ "skillName": "RSI Signal Guide", "signals": [{ "type": "skill", "description": "RSI 72.5 — 과매수 임계선에 근접, 단기 조정 가능", "strength": "strong | moderate | weak" }] }]',
     riskLevel: '"low | medium | high"',
     keyLevels:
         '{ "support": [{ "price": 150.00, "reason": "..." }], "resistance": [{ "price": 160.00, "reason": "..." }], "poc": { "price": 155.00, "reason": "..." } }',
@@ -316,7 +315,7 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
         // Only chart patterns defined in skills/*.md. Candle patterns go in candlePatterns.
         '[{ "patternName": "...", "skillName": "...", "detected": true, "trend": "bullish | bearish | neutral", "summary": "...", "keyPrices": [{ "label": "넥라인", "price": 150.00 }], "patternLines": [{ "label": "상단 추세선", "start": { "time": 1700000000, "price": 155.00 }, "end": { "time": 1700100000, "price": 152.00 } }, { "label": "하단 추세선", "start": { "time": 1700000000, "price": 148.00 }, "end": { "time": 1700100000, "price": 146.00 } }], "timeRange": { "start": 1700000000, "end": 1700100000 } }]',
     skillResults:
-        '[{ "skillName": "...", "trend": "bullish | bearish | neutral", "summary": "..." }]',
+        '[{ "skillName": "...", "trend": "bullish | bearish | neutral (REQUIRED — never omit)", "summary": "..." }]',
     candlePatterns:
         // Only candle patterns detected from bar data. Skills patterns go in patternSummaries.
         '[{ "patternName": "three_outside_down", "detected": true, "trend": "bearish", "summary": "..." }]',
@@ -355,7 +354,7 @@ const ANALYSIS_GUIDELINES = [
     '### Ichimoku Cloud Interpretation',
     '- Price above the cloud (Kumo): bullish trend; price below: bearish trend; price inside: neutral/consolidation',
     '- Tenkan-sen crossing above Kijun-sen is a bullish signal (TK cross); crossing below is bearish',
-    '- Chikou Span above price from 26 periods ago confirms bullish momentum; below confirms bearish',
+    `- Chikou Span above price from ${ICHIMOKU_BASE_PERIOD} periods ago confirms bullish momentum; below confirms bearish`,
     '- Thick cloud ahead indicates strong support/resistance; thin cloud suggests a potential breakout zone',
     '',
     '### Price Target Calculation',
@@ -461,6 +460,17 @@ const ANALYSIS_GUIDELINES = [
 const RESPONSE_LANGUAGE_INSTRUCTION =
     'IMPORTANT: All text field values in the JSON response (summary, description, reason, basis, condition, positionAnalysis, entry, exit, riskReward, etc.) must be written in Korean (한국어). Do not use English for any response content. Use formal/polite speech level (존댓말, e.g. "~입니다", "~습니다"). For the summary field, use \\n to separate each topic or sentence into its own line — do not write the summary as a single long paragraph. Other text fields (description, reason, basis, condition, positionAnalysis, entry, exit, riskReward, etc.) should also use \\n for line breaks where it improves readability.';
 
+const CRITICAL_RESPONSE_RULES = [
+    '',
+    '### Critical Response Rules (MUST follow)',
+    '- Return ONLY a single valid JSON object. Do not include any prose, explanation, or commentary before or after the JSON.',
+    '- Do not wrap the JSON in markdown code fences (no ```json ... ```). Output the raw JSON object directly.',
+    '- The JSON must exactly match the schema structure shown below. Do not add extra fields, rename fields, or omit required fields.',
+    '- For array fields that have no results, return an empty array []. Never return null or omit the field.',
+    '- All numeric price values must be plain numbers (e.g., 150.25), not strings.',
+    '- All Unix timestamp values must be integers copied verbatim from the [ts:<number>] markers in the bar data.',
+].join('\n');
+
 const buildAnalysisRequest = (
     patternSkills: Skill[],
     strategySkills: Skill[],
@@ -502,7 +512,10 @@ const buildAnalysisRequest = (
                   '- For each strategy skill listed below, include exactly one entry in skillResults.',
                   "- Follow the summary format specified in each strategy skill's ## AI Analysis Instructions section.",
                   '- The summary field must use the structured markdown format with **label**: value lines.',
-                  "- Set the trend field based on each skill's own analysis instructions (bullish/bearish/neutral).",
+                  '- REQUIRED FIELDS (never omit any):',
+                  '  1. skillName: exactly match one strategy skill name from the list below.',
+                  '  2. trend: one of "bullish", "bearish", "neutral". Set based on the skill\'s own analysis instructions. NEVER omit this field — if the analysis is inconclusive, use "neutral".',
+                  "  3. summary: non-empty Korean markdown text following the skill's format.",
                   '',
                   'Strategy skill list to analyze:',
                   ...strategySkills.map(s => `- ${s.name}`),
@@ -513,22 +526,25 @@ const buildAnalysisRequest = (
         indicatorGuideSkills.length > 0
             ? [
                   '',
-                  '### signals Writing Rules for Indicator Guides',
+                  '### skillSignals Writing Rules for Indicator Guides',
                   '- Use the Indicator Signal Guides above to interpret the current indicator values in ## Indicator Values.',
                   '- For each indicator guide, evaluate whether the current values meet any signal condition described in its Signal Interpretation section.',
-                  '- When a signal condition is met, include a corresponding entry in the signals array.',
-                  '- Do NOT add entries to the signals array for indicator guide results. Instead, add them to the skillSignals array.',
-                  '- For each indicator guide that produces a signal, add one entry to skillSignals: { "skillName": "<exact skill name>", "signals": [{ "type": "skill", "description": "...", "strength": "..." }] }.',
-                  '- The skillName field in the skillSignals entry MUST exactly match the skill name from the list below.',
-                  '- The description field must be written in Korean and include the indicator name and specific condition (e.g., "Stochastic %K 82 — 과매수 구간 진입, ADX 18로 레인지 환경에서 신뢰도 높음").',
-                  '- Signal strength guidelines:',
-                  '  - strong: value is in an extreme zone (e.g., RSI > 80 or < 20, Stochastic > 90 or < 10, CCI > +200 or < -200) OR multiple indicators confirm the same direction',
-                  '  - moderate: value is in a standard threshold zone (e.g., RSI 70–80, Stochastic 80–90, CCI ±100–200) with single-indicator confirmation',
-                  '  - weak: value is approaching a threshold but not yet crossed, or the signal conflicts with the prevailing trend',
-                  '- When the Key Combinations section of a guide identifies a multi-indicator confluence that is currently active, increase the signal strength by one level and note the confluence in the description.',
+                  '- For every detected signal, add one entry to the skillSignals array in the following exact format:',
+                  '    { "skillName": "<exact skill name from the list below>", "signals": [{ "type": "skill", "description": "<Korean explanation>", "strength": "strong | moderate | weak" }] }',
+                  '- CRITICAL RULES (never violate):',
+                  '  1. skillName MUST be a non-empty string that exactly matches one skill name from the list below. Never use an empty string, a translated name, or a generic label.',
+                  '  2. Each skillSignals entry corresponds to EXACTLY ONE indicator guide. Never combine multiple indicators (e.g., "MACD and Bollinger") into one entry. Create separate entries for separate indicators.',
+                  '  3. The type field of each signal entry MUST be "skill". Never use any other value.',
+                  '  4. The description field MUST be written in Korean and MUST include the indicator name and specific numeric condition (e.g., "RSI 72.5 — 과매수 임계선에 근접, 단기 조정 가능").',
+                  '- Signal strength calibration:',
+                  '  - strong: value is in an extreme zone (e.g., RSI > 80 or < 20, Stochastic > 90 or < 10, CCI > +200 or < -200) OR multiple indicators confirm the same direction with high confluence',
+                  '  - moderate: value is in a standard overbought/oversold zone (e.g., RSI 70–80, Stochastic 80–90, CCI ±100–200) with single-indicator confirmation',
+                  '  - weak: value is approaching a threshold but has not yet crossed, or the signal conflicts with the prevailing trend',
+                  '- When the Key Combinations section of a guide identifies a multi-indicator confluence that is currently active, increase the strength by one level AND note the confluence in the description field.',
                   "- Respect each guide's Caveats section: do not generate a signal if the caveats indicate it would be unreliable in the current market context (e.g., Stochastic overbought in a strong uptrend with ADX > 25 should not automatically produce a bearish signal).",
+                  '- If no signal conditions are met for a given indicator guide, simply omit that guide from skillSignals. Do not create placeholder or empty entries.',
                   '',
-                  'Indicator guide list to apply:',
+                  'Indicator guide list (use these exact names for skillName):',
                   ...indicatorGuideSkills.map(s => `- ${s.name}`),
               ].join('\n')
             : '';
@@ -569,6 +585,7 @@ const buildAnalysisRequest = (
 
     return [
         '## Analysis Request',
+        CRITICAL_RESPONSE_RULES,
         RESPONSE_LANGUAGE_INSTRUCTION,
         'Based on the data above, perform technical analysis and respond in the following JSON format:',
         buildSchemaBody(),

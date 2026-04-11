@@ -157,18 +157,7 @@ export type SkillShowcaseItem = Pick<
     'name' | 'description' | 'type' | 'confidenceWeight'
 >;
 
-export type SignalType =
-    | 'rsi_overbought'
-    | 'rsi_oversold'
-    | 'macd_golden_cross'
-    | 'macd_dead_cross'
-    | 'bollinger_upper_breakout'
-    | 'bollinger_lower_breakout'
-    | 'bollinger_squeeze'
-    | 'dmi_bullish_trend'
-    | 'dmi_bearish_trend'
-    | 'pattern'
-    | 'skill';
+export type SignalType = 'pattern' | 'skill';
 
 export type SignalStrength = 'strong' | 'moderate' | 'weak';
 
@@ -293,7 +282,6 @@ export interface ActionRecommendation {
 export interface AnalysisResponse {
     summary: string;
     trend: Trend;
-    signals: Signal[];
     skillSignals: SkillSignal[];
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;

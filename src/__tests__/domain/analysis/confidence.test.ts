@@ -68,7 +68,6 @@ const makeAnalysisResponse = (
 ): RawAnalysisResponse => ({
     summary: '테스트 종합 분석',
     trend: 'bullish',
-    signals: [],
     skillSignals: [],
     riskLevel: 'low',
     keyLevels: { support: [], resistance: [] },
