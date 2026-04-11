@@ -1,10 +1,25 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { RawAnalysisResponse } from '@/domain/types';
 import type { AIProvider } from './types';
-import { AI_SYSTEM_PROMPT, stripMarkdownCodeBlock } from './utils';
+import {
+    AI_SYSTEM_PROMPT,
+    parseNumberEnv,
+    stripMarkdownCodeBlock,
+} from './utils';
 
 const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview';
+const DEFAULT_GEMINI_TEMPERATURE = 0;
+const DEFAULT_GEMINI_TOP_P = 0.95;
+
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL;
+const GEMINI_TEMPERATURE = parseNumberEnv(
+    process.env.GEMINI_TEMPERATURE,
+    DEFAULT_GEMINI_TEMPERATURE
+);
+const GEMINI_TOP_P = parseNumberEnv(
+    process.env.GEMINI_TOP_P,
+    DEFAULT_GEMINI_TOP_P
+);
 
 export class GeminiProvider implements AIProvider {
     private readonly client: GoogleGenerativeAI;
@@ -21,6 +36,11 @@ export class GeminiProvider implements AIProvider {
         const model = this.client.getGenerativeModel({
             model: GEMINI_MODEL,
             systemInstruction: AI_SYSTEM_PROMPT,
+            generationConfig: {
+                temperature: GEMINI_TEMPERATURE,
+                topP: GEMINI_TOP_P,
+                responseMimeType: 'application/json',
+            },
         });
 
         const result = await model.generateContent(prompt);

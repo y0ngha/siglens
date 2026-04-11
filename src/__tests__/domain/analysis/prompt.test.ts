@@ -76,7 +76,7 @@ const TEST_MIN_CONFIDENCE_WEIGHT = MIN_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_MIN_CONFIDENCE = 0.6;
 const TEST_BELOW_MIN_CONFIDENCE = 0.4;
 const TEST_LOW_CONFIDENCE = 0.3;
-const TEST_MARKET_SECTION_INDEX = 2;
+const TEST_MARKET_SECTION_INDEX = 3; // 0:Symbol, 1:Timeframe, 2:AnalysisIntent, 3:MarketStatus
 // expected value: ((110 - 100) / 100) * 100 = 10.00%
 const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT_CLOSE - TEST_PREV_CLOSE) / TEST_PREV_CLOSE) * 100).toFixed(2)}%`;
 
@@ -2766,7 +2766,7 @@ describe('prompt', () => {
             expect(result).toContain('Never return null');
         });
 
-        it('분석 요청에 Critical Response Rules 섹션이 포함된다', () => {
+        it('분析 요청에 Critical Response Rules 섹션이 포함된다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
@@ -2774,6 +2774,141 @@ describe('prompt', () => {
                 []
             );
             expect(result).toContain('Critical Response Rules (MUST follow)');
+        });
+    });
+
+    describe('Analysis Intent 블록', () => {
+        it('프롬프트에 Analysis Intent 블록이 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+
+            expect(result).toContain('## Analysis Intent');
+        });
+
+        it('Analysis Intent 블록에 한국어 출력 지시가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+
+            expect(result).toContain('한국어');
+        });
+
+        it('Analysis Intent 블록이 Timeframe 뒤에 위치한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+
+            const timeframeIndex = result.indexOf('Timeframe:');
+            const intentIndex = result.indexOf('## Analysis Intent');
+
+            expect(timeframeIndex).toBeGreaterThanOrEqual(0);
+            expect(intentIndex).toBeGreaterThan(timeframeIndex);
+        });
+
+        it('Analysis Intent 블록이 Indicator Values 섹션보다 앞에 위치한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+
+            const intentIndex = result.indexOf('## Analysis Intent');
+            const indicatorIndex = result.indexOf('## Indicator Values');
+
+            expect(intentIndex).toBeGreaterThanOrEqual(0);
+            expect(indicatorIndex).toBeGreaterThan(intentIndex);
+        });
+
+        it('스키마에 예시 값 복사 금지 안내가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+
+            expect(result).toContain('DO NOT copy example numbers');
+        });
+    });
+
+    describe('결정성 보장 (Determinism)', () => {
+        it('동일 입력으로 두 번 호출하면 동일한 문자열을 반환한다', () => {
+            const bars = [makeBar(0), makeBar(1)];
+            const indicators = makeIndicators();
+            const skills = [makeSkill({ name: 'Skill A' })];
+
+            const result1 = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                indicators,
+                skills
+            );
+            const result2 = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                indicators,
+                skills
+            );
+
+            expect(result1).toBe(result2);
+        });
+
+        it('skills 배열 순서가 달라도 동일한 문자열을 반환한다', () => {
+            const bars = [makeBar(0)];
+            const indicators = makeIndicators();
+            const skillA = makeSkill({
+                name: 'Zeta Skill',
+                content: '## Zeta\n- content',
+            });
+            const skillB = makeSkill({
+                name: 'Alpha Skill',
+                content: '## Alpha\n- content',
+            });
+
+            const result1 = buildAnalysisPrompt(TEST_SYMBOL, bars, indicators, [
+                skillA,
+                skillB,
+            ]);
+            const result2 = buildAnalysisPrompt(TEST_SYMBOL, bars, indicators, [
+                skillB,
+                skillA,
+            ]);
+
+            expect(result1).toBe(result2);
+        });
+
+        it('skills가 name 기준 오름차순으로 정렬되어 포함된다', () => {
+            const bars = [makeBar(0)];
+            const indicators = makeIndicators();
+            const skillA = makeSkill({
+                name: 'Zebra Skill',
+                content: '## Zebra\n- content',
+            });
+            const skillB = makeSkill({
+                name: 'Apple Skill',
+                content: '## Apple\n- content',
+            });
+
+            const result = buildAnalysisPrompt(TEST_SYMBOL, bars, indicators, [
+                skillA,
+                skillB,
+            ]);
+
+            const zebraIndex = result.indexOf('Zebra Skill');
+            const appleIndex = result.indexOf('Apple Skill');
+
+            expect(appleIndex).toBeLessThan(zebraIndex);
         });
     });
 });

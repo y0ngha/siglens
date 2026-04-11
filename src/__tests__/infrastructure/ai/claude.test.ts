@@ -63,6 +63,35 @@ describe('ClaudeProvider', () => {
         });
     });
 
+    describe('analyze를 호출하면', () => {
+        beforeEach(() => {
+            mockCreate.mockResolvedValue({
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(mockAnalysisResponse),
+                    },
+                ],
+            });
+        });
+
+        it('messages.create에 temperature 0을 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockCreate).toHaveBeenCalledWith(
+                expect.objectContaining({ temperature: 0 })
+            );
+        });
+
+        it('messages.create에 top_p 0.95를 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockCreate).toHaveBeenCalledWith(
+                expect.objectContaining({ top_p: 0.95 })
+            );
+        });
+    });
+
     describe('정상 입력으로 analyze를 호출하면', () => {
         beforeEach(() => {
             mockCreate.mockResolvedValue({

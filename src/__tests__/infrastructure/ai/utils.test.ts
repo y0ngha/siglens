@@ -1,4 +1,64 @@
-import { stripMarkdownCodeBlock } from '@/infrastructure/ai/utils';
+import {
+    AI_SYSTEM_PROMPT,
+    parseNumberEnv,
+    stripMarkdownCodeBlock,
+} from '@/infrastructure/ai/utils';
+
+describe('AI_SYSTEM_PROMPT', () => {
+    it('"deterministic" 키워드를 포함한다', () => {
+        expect(AI_SYSTEM_PROMPT).toContain('Deterministic');
+    });
+
+    it('"한국어" 키워드를 포함한다', () => {
+        expect(AI_SYSTEM_PROMPT).toContain('한국어');
+    });
+
+    it('"single valid JSON object" 지시를 포함한다', () => {
+        expect(AI_SYSTEM_PROMPT).toContain('SINGLE valid JSON object');
+    });
+
+    it('"존댓말" 규칙을 포함한다', () => {
+        expect(AI_SYSTEM_PROMPT).toContain('존댓말');
+    });
+
+    it('"Grounded" 원칙을 포함한다', () => {
+        expect(AI_SYSTEM_PROMPT).toContain('Grounded');
+    });
+});
+
+describe('parseNumberEnv', () => {
+    describe('유효한 숫자 문자열이 주어지면', () => {
+        it('파싱된 숫자를 반환한다', () => {
+            expect(parseNumberEnv('0.5', 1)).toBe(0.5);
+        });
+
+        it('정수도 파싱한다', () => {
+            expect(parseNumberEnv('3', 8192)).toBe(3);
+        });
+
+        it('0을 유효한 값으로 처리한다', () => {
+            expect(parseNumberEnv('0', 1)).toBe(0);
+        });
+    });
+
+    describe('유효하지 않은 입력이 주어지면', () => {
+        it('undefined이면 기본값을 반환한다', () => {
+            expect(parseNumberEnv(undefined, 42)).toBe(42);
+        });
+
+        it('빈 문자열이면 기본값을 반환한다', () => {
+            expect(parseNumberEnv('', 42)).toBe(42);
+        });
+
+        it('NaN이 되는 문자열이면 기본값을 반환한다', () => {
+            expect(parseNumberEnv('abc', 42)).toBe(42);
+        });
+
+        it('Infinity이면 기본값을 반환한다', () => {
+            expect(parseNumberEnv('Infinity', 42)).toBe(42);
+        });
+    });
+});
 
 describe('stripMarkdownCodeBlock', () => {
     describe('입력이 마크다운 코드 블록으로 감싸진 경우', () => {

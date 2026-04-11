@@ -6,6 +6,7 @@ jest.mock('@google/generative-ai');
 
 describe('GeminiProvider', () => {
     let mockGenerateContent: jest.Mock;
+    let mockGetGenerativeModel: jest.Mock;
     let provider: GeminiProvider;
 
     const mockAnalysisResponse: RawAnalysisResponse = {
@@ -35,7 +36,7 @@ describe('GeminiProvider', () => {
 
     beforeEach(() => {
         mockGenerateContent = jest.fn();
-        const mockGetGenerativeModel = jest.fn().mockReturnValue({
+        mockGetGenerativeModel = jest.fn().mockReturnValue({
             generateContent: mockGenerateContent,
         });
         (
@@ -65,6 +66,52 @@ describe('GeminiProvider', () => {
                     process.env.GEMINI_API_KEY = original;
                 }
             }
+        });
+    });
+
+    describe('analyze를 호출하면', () => {
+        beforeEach(() => {
+            mockGenerateContent.mockResolvedValue({
+                response: {
+                    text: () => JSON.stringify(mockAnalysisResponse),
+                },
+            });
+        });
+
+        it('generationConfig에 temperature 0을 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    generationConfig: expect.objectContaining({
+                        temperature: 0,
+                    }),
+                })
+            );
+        });
+
+        it('generationConfig에 topP 0.95를 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    generationConfig: expect.objectContaining({
+                        topP: 0.95,
+                    }),
+                })
+            );
+        });
+
+        it('generationConfig에 responseMimeType application/json을 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    generationConfig: expect.objectContaining({
+                        responseMimeType: 'application/json',
+                    }),
+                })
+            );
         });
     });
 

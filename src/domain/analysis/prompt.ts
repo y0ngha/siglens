@@ -361,6 +361,17 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
         '{ "positionAnalysis": "Current price position vs support/resistance analysis", "entry": "Entry strategy with specific price ranges", "exit": "Exit strategy with specific price ranges", "riskReward": "Risk-reward ratio analysis", "entryRecommendation": "enter | wait | avoid", "entryPrices": [165.00, 167.00], "stopLoss": 160.00, "takeProfitPrices": [180.00, 195.00] }',
 };
 
+const ANALYSIS_INTENT_BLOCK = [
+    '## Analysis Intent',
+    '- Produce a deterministic, data-grounded technical analysis of the symbol below.',
+    '- Use ONLY the numeric values provided in the sections below. Do not fabricate prices, indicators, or patterns.',
+    '- Output a single JSON object that strictly conforms to the schema at the bottom.',
+    '- All text fields MUST be Korean (한국어) in formal speech level (존댓말, e.g. "~입니다", "~습니다").',
+].join('\n');
+
+const SCHEMA_PREFACE =
+    'Schema (field types and example shapes — DO NOT copy example numbers; compute every value from the actual data above):';
+
 const buildSchemaBody = (): string => {
     const entries = Object.entries(ANALYSIS_RESPONSE_SCHEMA)
         .map(([key, value]) => `  "${key}": ${value}`)
@@ -631,6 +642,7 @@ const buildAnalysisRequest = (
         CRITICAL_RESPONSE_RULES,
         RESPONSE_LANGUAGE_INSTRUCTION,
         'Based on the data above, perform technical analysis and respond in the following JSON format:',
+        SCHEMA_PREFACE,
         buildSchemaBody(),
         indicatorGuideInstruction,
         patternListInstruction,
@@ -642,6 +654,8 @@ const buildAnalysisRequest = (
         .join('\n');
 };
 
+const byName = (a: Skill, b: Skill): number => a.name.localeCompare(b.name);
+
 export function buildAnalysisPrompt(
     symbol: string,
     bars: Bar[],
@@ -649,9 +663,10 @@ export function buildAnalysisPrompt(
     skills: Skill[] = [],
     timeframe: Timeframe = '1Day'
 ): string {
-    const activeSkills = skills.filter(
-        s => s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT
-    );
+    const activeSkills = skills
+        .filter(s => s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT)
+        .slice()
+        .sort(byName);
     const patternSkills = activeSkills.filter(s => s.type === 'pattern');
     const strategySkills = activeSkills.filter(s => s.type === 'strategy');
     const indicatorGuideSkills = activeSkills.filter(
@@ -675,6 +690,7 @@ export function buildAnalysisPrompt(
     const sections = [
         `Symbol: ${symbol}`,
         `Timeframe: ${TIMEFRAME_LABEL[timeframe]}`,
+        ANALYSIS_INTENT_BLOCK,
         formatMarketSection(bars),
         formatLongTermContext(bars),
         formatRecentBarsSection(bars),
