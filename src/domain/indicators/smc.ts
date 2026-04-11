@@ -276,19 +276,17 @@ function detectOrderBlocks(
  *  - bullishBreak → last bearish candle (close < open)
  *  - bearishBreak → last bullish candle (close > open)
  */
-// Note: a for loop is used here for early return — reduceRight cannot short-circuit.
 function findLastOpposingCandle(
     bars: Bar[],
     endIndex: number,
     lookingForBullishBreak: boolean
 ): number | null {
-    for (let i = endIndex - 1; i >= 0; i--) {
-        const bar = bars[i];
-        const isBearish = bar.close < bar.open;
-        const isBullish = bar.close > bar.open;
-        if (lookingForBullishBreak ? isBearish : isBullish) return i;
-    }
-    return null;
+    const idx = bars
+        .slice(0, endIndex)
+        .findLastIndex(bar =>
+            lookingForBullishBreak ? bar.close < bar.open : bar.close > bar.open
+        );
+    return idx === -1 ? null : idx;
 }
 
 // ─── Equal High / Low detection ───────────────────────────────────────────────

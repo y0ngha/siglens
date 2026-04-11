@@ -381,9 +381,13 @@ describe('calculateSmc', () => {
         it('Equal Level의 price는 두 스윙 가격의 평균이다', () => {
             const bars = makeUniformBars(ENOUGH_BARS, 100);
             const result = calculateSmc(bars);
-            [...result.equalHighs, ...result.equalLows].forEach(el => {
-                // price should be within the ATR range of both swing prices
-                expect(el.price).toBeGreaterThan(0);
+            // uniform bars (close=100): swing high price=105, swing low price=95
+            // equal high average = (105+105)/2 = 105, equal low average = (95+95)/2 = 95
+            result.equalHighs.forEach(el => {
+                expect(el.price).toBe(105);
+            });
+            result.equalLows.forEach(el => {
+                expect(el.price).toBe(95);
             });
         });
     });
