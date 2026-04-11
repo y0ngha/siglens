@@ -89,6 +89,11 @@ export interface DonchianChannelResult {
     lower: number | null;
 }
 
+export interface BuySellVolumeResult {
+    buyVolume: number;
+    sellVolume: number;
+}
+
 export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
@@ -111,6 +116,7 @@ export interface IndicatorResult {
     keltnerChannel: KeltnerChannelResult[];
     cmf: (number | null)[];
     donchianChannel: DonchianChannelResult[];
+    buySellVolume: BuySellVolumeResult[];
 }
 
 export type ChartDisplayType = 'line' | 'marker' | 'region';
