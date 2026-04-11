@@ -1,4 +1,7 @@
-import { FileSkillsLoader } from '@/infrastructure/skills/loader';
+import {
+    countSkillFiles,
+    FileSkillsLoader,
+} from '@/infrastructure/skills/loader';
 import path from 'node:path';
 
 const mockReaddir = jest.fn();
@@ -739,5 +742,79 @@ Pivot Points calculate intraday support and resistance levels.`;
             expect(skills).toHaveLength(1);
             expect(skills[0].name).toBe('테스트 스킬');
         });
+    });
+});
+
+describe('countSkillFiles', () => {
+    const SKILLS_DIR = path.join(process.cwd(), 'skills');
+
+    beforeEach(() => {
+        mockReaddir.mockReset();
+    });
+
+    it('각 서브디렉토리의 .md 파일 수를 병렬로 카운트한다', async () => {
+        mockReaddir.mockImplementation((dir: string) => {
+            if (dir === path.join(SKILLS_DIR, 'indicators'))
+                return Promise.resolve([
+                    fileDirent('rsi.md'),
+                    fileDirent('macd.md'),
+                    fileDirent('readme.txt'),
+                ]);
+            if (dir === path.join(SKILLS_DIR, 'candlesticks'))
+                return Promise.resolve([fileDirent('engulfing.md')]);
+            if (dir === path.join(SKILLS_DIR, 'patterns'))
+                return Promise.resolve([
+                    fileDirent('head-and-shoulders.md'),
+                    fileDirent('double-top.md'),
+                    fileDirent('double-bottom.md'),
+                ]);
+            if (dir === path.join(SKILLS_DIR, 'strategies'))
+                return Promise.resolve([fileDirent('fibonacci.md')]);
+            if (dir === path.join(SKILLS_DIR, 'support-resistance'))
+                return Promise.resolve([
+                    fileDirent('pivot-points.md'),
+                    fileDirent('fibonacci-retracement.md'),
+                ]);
+            return Promise.resolve([]);
+        });
+
+        const counts = await countSkillFiles();
+
+        expect(counts.indicators).toBe(2);
+        expect(counts.candlesticks).toBe(1);
+        expect(counts.patterns).toBe(3);
+        expect(counts.strategies).toBe(1);
+        expect(counts.supportResistance).toBe(2);
+    });
+
+    it('서브디렉토리의 .md 파일을 재귀적으로 카운트한다', async () => {
+        const indicatorsDir = path.join(SKILLS_DIR, 'indicators');
+        const subDir = path.join(indicatorsDir, 'oscillators');
+
+        mockReaddir.mockImplementation((dir: string) => {
+            if (dir === indicatorsDir)
+                return Promise.resolve([
+                    dirDirent('oscillators'),
+                    fileDirent('ma.md'),
+                ]);
+            if (dir === subDir)
+                return Promise.resolve([
+                    fileDirent('rsi.md'),
+                    fileDirent('macd.md'),
+                ]);
+            return Promise.resolve([]);
+        });
+
+        const counts = await countSkillFiles();
+
+        expect(counts.indicators).toBe(3);
+    });
+
+    it('readdir가 실패하면 에러를 전파한다', async () => {
+        mockReaddir.mockRejectedValue(
+            new Error('ENOENT: no such file or directory')
+        );
+
+        await expect(countSkillFiles()).rejects.toThrow('ENOENT');
     });
 });

@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from 'next';
+import { Suspense } from 'react';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import {
@@ -84,7 +85,9 @@ export default function RootLayout({
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased [color-scheme:dark]`}
         >
             <body className="flex min-h-full flex-col">
-                <ReactQueryProvider>{children}</ReactQueryProvider>
+                <Suspense>
+                    <ReactQueryProvider>{children}</ReactQueryProvider>
+                </Suspense>
             </body>
         </html>
     );

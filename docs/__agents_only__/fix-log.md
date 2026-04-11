@@ -8,6 +8,29 @@
 - Rule: MISTAKES.md Tests #1 — "Not updating tests when return type changes"
 - Context: 'bar average', 'Current volume', '% of average' assertion이 새 출력('Current bar:', 'cumulative', 'Buy ratio:')으로 업데이트되지 않아 런타임 실패
 
+## [PR #272 Round 2 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
+- Violation: `indicatorCount` prop이 `SymbolPageClient` → `ChartContent` → `AnalysisPanel`로 드릴링됨 (두 중간 컴포넌트 모두 미사용)
+- Rule: FF Coupling 4-D — 중간 컴포넌트가 직접 사용하지 않는 prop을 아래로 전달하는 것은 Props Drilling 위반
+- Context: `AnalysisPanel`만 `indicatorCount`를 실제로 사용; `SymbolPageContext` (Provider/hook) 패턴으로 해결
+
+- Violation: `countSkillFiles`에 캐싱 없음 — 페이지 요청마다 skills/ 디렉토리를 다시 스캔
+- Rule: App CLAUDE.md — "infrastructure 함수에는 `'use cache'` 디렉티브로 명시적 캐싱 적용"
+- Context: `'use cache'` 디렉티브 적용; `cacheComponents: true` 활성화 필요
+
+## [PR #272 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
+- Violation: `countMdFiles`가 `readdir`를 1레벨만 호출하여 비재귀적으로 구현됨
+- Rule: 일관성 원칙 — 동일 모듈 내 `collectMdFiles`(재귀 탐색)와 구현 방식이 달라 향후 서브디렉토리 추가 시 카운트 불일치 발생 가능
+- Context: `countSkillFiles` 추가 시 `collectMdFiles` 재활용 없이 단순 `readdir` 사용; `collectMdFiles`를 재활용하도록 수정
+
+- Violation: 새로운 public 함수 `countSkillFiles` 추가 시 테스트 케이스 없음
+- Rule: MISTAKES.md Tests #2 — 새로 추가된 함수는 반드시 최소 하나의 `it()` 케이스가 있어야 함
+- Context: infrastructure 레이어 신규 export 함수에 대한 테스트 누락; 정상 케이스(서브디렉토리 재귀 포함) 및 에러 케이스 추가로 해결
+
+## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
+- Violation: `lib/seo.ts`에 법적 내용 상수(`INVESTMENT_DISCLAIMER`, `LEGAL_EFFECTIVE_DATE`, `PRIVACY_PATH` 등)와 SEO 상수가 혼재
+- Rule: FF Cohesion 3-A — 다른 목적의 상수는 분리된 모듈에 위치해야 함
+- Context: privacy/terms 페이지 추가 시 법적 상수를 seo.ts에 추가; `src/lib/legal.ts`로 분리하여 해결
+
 ## [PR #270 | feat/261/차트-dynamic-import-모바일-TTI-개선 | 2026-04-11]
 - Violation: dynamic import loading 컴포넌트(`ChartSkeleton`)가 `absolute inset-0`을 사용함에도 래퍼 컨테이너에 `relative` 클래스 누락
 - Rule: CSS Positioning — `absolute` 자식이 올바른 영역에 렌더되려면 부모 체인에 `positioned element`(`relative/absolute/fixed/sticky`)가 있어야 함
@@ -39,10 +62,6 @@
 - Context: `SymbolSearch`가 `TickerAutocomplete`로 교체됐지만 `src/components/search/SymbolSearch.tsx`가 미삭제 상태로 남아 있었음
 
 ## [PR #266 | feat/260-259-258-257-255-254-252-250/seo-accessibility | 2026-04-11]
-- Violation: opengraph-image.tsx에서 assetInfo가 null일 때 companyName이 ticker와 동일해져 OG 이미지에 심볼이 중복 노출됨
-- Rule: MISTAKES.md Design & Cohesion #5 — 서버와 클라이언트의 동일 비즈니스 규칙 조건이 일치해야 함; buildDisplayName의 `name !== ticker` 가드와 동일 로직 적용 필요
-- Context: `opengraph-image.tsx`에서 ticker를 큰 폰트로 표시한 후 companyName도 무조건 표시해 assetInfo 없을 때 동일 문자열이 두 번 렌더링됨; `companyName !== ticker` 조건부 렌더링으로 수정
-
 - Violation: app/ 레이어 async 함수에 명시적 반환 타입 누락
 - Rule: CONVENTIONS.md — "Return types must be explicitly declared on domain functions"; app/ 레이어에도 일관성 있게 적용
 - Context: `opengraph-image.tsx`의 `Image()` 함수에 `Promise<ImageResponse>` 반환 타입 누락; ImageResponse import 없이 반환 타입 추론에 의존
@@ -51,9 +70,6 @@
 - Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
-
-
-
 
 ## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
 - Violation: `POPULAR_TICKERS` (비즈니스 도메인 지식)가 `src/lib/seo.ts`에 정의되어 lib 레이어 허용 범위를 벗어남
@@ -96,4 +112,3 @@
 - Violation: `ValidatedActionPrices` 인터페이스를 구현 파일(`actionRecommendation.ts`)에 정의
 - Rule: ARCHITECTURE.md — 도메인 결과 타입은 `domain/types.ts`에 정의해야 함
 - Context: 다른 파일(`StockChart.tsx`, `useActionRecommendationOverlay.ts`)에서도 참조하는 타입을 구현 파일에 배치; `domain/types.ts`로 이동
-

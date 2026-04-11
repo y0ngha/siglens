@@ -22,10 +22,10 @@ import type {
 import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import {
     HIGH_CONFIDENCE_WEIGHT,
-    INDICATOR_KIND_COUNT,
     MIN_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
 import { cn } from '@/lib/cn';
+import { useSymbolPageContext } from '@/components/symbol-page/SymbolPageContext';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -773,6 +773,7 @@ export function AnalysisPanel({
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
 }: AnalysisPanelProps) {
+    const { indicatorCount } = useSymbolPageContext();
     const handleTogglePatternVisibility = (patternName: string): void => {
         onTogglePattern?.(patternName);
     };
@@ -832,7 +833,7 @@ export function AnalysisPanel({
             </div>
             <p className="text-secondary-500 font-mono text-xs">
                 {detectedPatterns.length + detectedStrategyResults.length}개
-                스킬 감지 · {INDICATOR_KIND_COUNT}종 인디케이터 적용
+                스킬 감지 · {indicatorCount}종 인디케이터 적용
             </p>
 
             {/* 요약 — 분석 중에는 진행 인디케이터로 대체.

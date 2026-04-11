@@ -8,13 +8,9 @@ import {
     SITE_URL,
 } from '@/lib/seo';
 import {
-    CANDLESTICK_SKILL_COUNT,
-    CHART_PATTERN_SKILL_COUNT,
-    INDICATOR_KIND_COUNT,
-    STRATEGY_SKILL_COUNT,
-    SUPPORT_RESISTANCE_SKILL_COUNT,
-} from '@/domain/indicators/constants';
-import { FileSkillsLoader } from '@/infrastructure/skills/loader';
+    countSkillFiles,
+    FileSkillsLoader,
+} from '@/infrastructure/skills/loader';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
 import { StatsBar } from '@/components/home/StatsBar';
@@ -28,7 +24,10 @@ const HOMEPAGE_TICKERS = POPULAR_TICKERS.slice(
 
 export default async function Home() {
     const loader = new FileSkillsLoader();
-    const skills = await loader.loadSkills();
+    const [skills, skillCounts] = await Promise.all([
+        loader.loadSkills(),
+        countSkillFiles(),
+    ]);
 
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -60,7 +59,7 @@ export default async function Home() {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
         name: `${SITE_NAME}로 미국 주식 AI 기술적 분석하는 방법`,
-        description: `종목 티커를 입력하면 보조지표 ${INDICATOR_KIND_COUNT}종, 캔들 패턴 ${CANDLESTICK_SKILL_COUNT}종, 차트 패턴 ${CHART_PATTERN_SKILL_COUNT}종, 전략 ${STRATEGY_SKILL_COUNT}종, 지지/저항 ${SUPPORT_RESISTANCE_SKILL_COUNT}종을 자동 분석합니다.`,
+        description: `종목 티커를 입력하면 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지/저항 ${skillCounts.supportResistance}종을 자동 분석합니다.`,
         step: [
             {
                 '@type': 'HowToStep',
@@ -70,7 +69,7 @@ export default async function Home() {
             {
                 '@type': 'HowToStep',
                 name: '자동 분석',
-                text: `보조지표 ${INDICATOR_KIND_COUNT}종, 캔들 패턴 ${CANDLESTICK_SKILL_COUNT}종, 차트 패턴 ${CHART_PATTERN_SKILL_COUNT}종, 전략 ${STRATEGY_SKILL_COUNT}종, 지지/저항 ${SUPPORT_RESISTANCE_SKILL_COUNT}종이 자동으로 분석됩니다.`,
+                text: `보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지/저항 ${skillCounts.supportResistance}종이 자동으로 분석됩니다.`,
             },
             {
                 '@type': 'HowToStep',
@@ -158,7 +157,7 @@ export default async function Home() {
                         <StatsBar skills={skills} />
                     </div>
                 </section>
-                <HowItWorks />
+                <HowItWorks skillCounts={skillCounts} />
                 <section className="pb-16">
                     <SkillsShowcase skills={skills} />
                 </section>

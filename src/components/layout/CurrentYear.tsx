@@ -1,5 +1,5 @@
-'use client';
+'use cache';
 
-export function CurrentYear() {
+export async function CurrentYear() {
     return <>{new Date().getFullYear()}</>;
 }
