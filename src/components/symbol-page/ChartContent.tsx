@@ -78,6 +78,7 @@ interface ChartContentProps {
     initialAnalysis: AnalysisResponse;
     /** 서버에서 초기 AI 분석이 실패했는지 여부. true이면 마운트 시 자동으로 재분석을 실행한다. */
     initialAnalysisFailed: boolean;
+    indicatorCount: number;
 }
 
 export function ChartContent({
@@ -86,6 +87,7 @@ export function ChartContent({
     timeframeChangeCount,
     initialAnalysis,
     initialAnalysisFailed,
+    indicatorCount,
 }: ChartContentProps) {
     const [sheetSnap, setSheetSnap] = useState<SnapPoint>(SNAP_HALF);
 
@@ -190,6 +192,7 @@ export function ChartContent({
                 _onTrendlinesVisibilityChange={setTrendlinesVisible}
                 actionPricesVisible={actionPricesVisible}
                 onActionPricesVisibilityChange={setActionPricesVisible}
+                indicatorCount={indicatorCount}
             />
         </>
     );

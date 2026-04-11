@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import type {
     Skill,
     SkillCategory,
+    SkillCounts,
     SkillDisplay,
     SkillType,
 } from '@/domain/types';
@@ -193,6 +194,23 @@ const collectMdFiles = async (dir: string): Promise<string[]> => {
     );
     return results.flat();
 };
+
+const countMdFiles = async (subdir: string): Promise<number> => {
+    const entries = await readdir(join(SKILLS_DIR, subdir));
+    return entries.filter(f => f.endsWith('.md')).length;
+};
+
+export async function countSkillFiles(): Promise<SkillCounts> {
+    const [indicators, candlesticks, patterns, strategies, supportResistance] =
+        await Promise.all([
+            countMdFiles('indicators'),
+            countMdFiles('candlesticks'),
+            countMdFiles('patterns'),
+            countMdFiles('strategies'),
+            countMdFiles('support-resistance'),
+        ]);
+    return { indicators, candlesticks, patterns, strategies, supportResistance };
+}
 
 export class FileSkillsLoader implements SkillsProvider {
     async loadSkills(): Promise<Skill[]> {

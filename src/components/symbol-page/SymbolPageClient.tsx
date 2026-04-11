@@ -16,12 +16,14 @@ interface SymbolPageClientProps {
     symbol: string;
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
+    indicatorCount: number;
 }
 
 export function SymbolPageClient({
     symbol,
     initialAnalysis,
     initialAnalysisFailed,
+    indicatorCount,
 }: SymbolPageClientProps) {
     // Suspense로 인해 ChartContent가 remount될 때 타임프레임 변경 여부를 전달한다.
     // timeframe 변경 횟수를 카운트하여 ChartContent가 타임프레임 변경으로 인해
@@ -95,6 +97,7 @@ export function SymbolPageClient({
                             timeframeChangeCount={timeframeChangeCount}
                             initialAnalysis={initialAnalysis}
                             initialAnalysisFailed={initialAnalysisFailed}
+                            indicatorCount={indicatorCount}
                         />
                     </Suspense>
                 </ErrorBoundary>

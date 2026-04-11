@@ -97,20 +97,3 @@ export const MEDIUM_CONFIDENCE_WEIGHT = 0.7;
 export const MIN_CONFIDENCE_WEIGHT = 0.5;
 export const UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0;
 
-/**
- * INDICATOR_KIND_COUNT: 지원하는 보조지표 종류 수.
- * AnalysisPanel, HowItWorks 등 UI 텍스트에서 공유한다.
- */
-export const INDICATOR_KIND_COUNT = 22;
-
-/** skills/candlesticks/ 파일 수 */
-export const CANDLESTICK_SKILL_COUNT = 7;
-
-/** skills/patterns/ 파일 수 */
-export const CHART_PATTERN_SKILL_COUNT = 17;
-
-/** skills/strategies/ 파일 수 */
-export const STRATEGY_SKILL_COUNT = 9;
-
-/** skills/support-resistance/ 파일 수 */
-export const SUPPORT_RESISTANCE_SKILL_COUNT = 3;
