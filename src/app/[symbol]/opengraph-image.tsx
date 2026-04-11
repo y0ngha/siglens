@@ -11,7 +11,7 @@ interface Props {
     params: Promise<{ symbol: string }>;
 }
 
-export default async function Image({ params }: Props) {
+export default async function Image({ params }: Props): Promise<ImageResponse> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoAction(ticker);
@@ -22,6 +22,8 @@ export default async function Image({ params }: Props) {
     return new ImageResponse(
         <div
             style={{
+                // ImageResponse는 Tailwind 미지원 — inline style 필수
+                // #0f2a4a: secondary-900(#0f172a)과 secondary-800(#1e293b) 사이 커스텀 그라디언트 중간 색상
                 background:
                     'linear-gradient(135deg, #0f172a 0%, #0f2a4a 50%, #1e293b 100%)',
                 width: '100%',
@@ -82,15 +84,17 @@ export default async function Image({ params }: Props) {
                     {koreanName}
                 </div>
             )}
-            <div
-                style={{
-                    fontSize: 24,
-                    color: '#94a3b8',
-                    marginBottom: 0,
-                }}
-            >
-                {companyName}
-            </div>
+            {companyName !== ticker && (
+                <div
+                    style={{
+                        fontSize: 24,
+                        color: '#94a3b8',
+                        marginBottom: 0,
+                    }}
+                >
+                    {companyName}
+                </div>
+            )}
             <div
                 style={{
                     position: 'absolute',
