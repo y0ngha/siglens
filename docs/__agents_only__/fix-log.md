@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #272 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
+- Violation: `countMdFiles`가 `readdir`를 1레벨만 호출하여 비재귀적으로 구현됨
+- Rule: 일관성 원칙 — 동일 모듈 내 `collectMdFiles`(재귀 탐색)와 구현 방식이 달라 향후 서브디렉토리 추가 시 카운트 불일치 발생 가능
+- Context: `countSkillFiles` 추가 시 `collectMdFiles` 재활용 없이 단순 `readdir` 사용; `collectMdFiles`를 재활용하도록 수정
+
+- Violation: 새로운 public 함수 `countSkillFiles` 추가 시 테스트 케이스 없음
+- Rule: MISTAKES.md Tests #2 — 새로 추가된 함수는 반드시 최소 하나의 `it()` 케이스가 있어야 함
+- Context: infrastructure 레이어 신규 export 함수에 대한 테스트 누락; 정상 케이스(서브디렉토리 재귀 포함) 및 에러 케이스 추가로 해결
+
 ## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
 - Violation: `lib/seo.ts`에 법적 내용 상수(`INVESTMENT_DISCLAIMER`, `LEGAL_EFFECTIVE_DATE`, `PRIVACY_PATH` 등)와 SEO 상수가 혼재
 - Rule: FF Cohesion 3-A — 다른 목적의 상수는 분리된 모듈에 위치해야 함
@@ -39,10 +48,6 @@
 - Context: `MobileAnalysisSheet.tsx`에서 `snapPoints={[...MOBILE_SNAP_POINTS]}`가 매 렌더마다 새 배열을 생성; 모듈 레벨의 `SNAP_POINTS_MUTABLE` 상수로 추출하여 해결
 
 ## [PR #266 | feat/260-259-258-257-255-254-252-250/seo-accessibility | 2026-04-11]
-- Violation: opengraph-image.tsx에서 assetInfo가 null일 때 companyName이 ticker와 동일해져 OG 이미지에 심볼이 중복 노출됨
-- Rule: MISTAKES.md Design & Cohesion #5 — 서버와 클라이언트의 동일 비즈니스 규칙 조건이 일치해야 함; buildDisplayName의 `name !== ticker` 가드와 동일 로직 적용 필요
-- Context: `opengraph-image.tsx`에서 ticker를 큰 폰트로 표시한 후 companyName도 무조건 표시해 assetInfo 없을 때 동일 문자열이 두 번 렌더링됨; `companyName !== ticker` 조건부 렌더링으로 수정
-
 - Violation: app/ 레이어 async 함수에 명시적 반환 타입 누락
 - Rule: CONVENTIONS.md — "Return types must be explicitly declared on domain functions"; app/ 레이어에도 일관성 있게 적용
 - Context: `opengraph-image.tsx`의 `Image()` 함수에 `Promise<ImageResponse>` 반환 타입 누락; ImageResponse import 없이 반환 타입 추론에 의존

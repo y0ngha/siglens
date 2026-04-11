@@ -196,8 +196,8 @@ const collectMdFiles = async (dir: string): Promise<string[]> => {
 };
 
 const countMdFiles = async (subdir: string): Promise<number> => {
-    const entries = await readdir(join(SKILLS_DIR, subdir));
-    return entries.filter(f => f.endsWith('.md')).length;
+    const files = await collectMdFiles(join(SKILLS_DIR, subdir));
+    return files.length;
 };
 
 export async function countSkillFiles(): Promise<SkillCounts> {

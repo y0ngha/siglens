@@ -7,7 +7,10 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
-import { FileSkillsLoader } from '@/infrastructure/skills/loader';
+import {
+    countSkillFiles,
+    FileSkillsLoader,
+} from '@/infrastructure/skills/loader';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
 import { StatsBar } from '@/components/home/StatsBar';
@@ -21,16 +24,10 @@ const HOMEPAGE_TICKERS = POPULAR_TICKERS.slice(
 
 export default async function Home() {
     const loader = new FileSkillsLoader();
-    const skills = await loader.loadSkills();
-
-    const skillCounts = {
-        indicators: skills.filter(s => s.type === 'indicator_guide').length,
-        candlesticks: skills.filter(s => s.type === 'candlestick').length,
-        patterns: skills.filter(s => s.type === 'pattern').length,
-        strategies: skills.filter(s => s.type === 'strategy').length,
-        supportResistance: skills.filter(s => s.type === 'support_resistance')
-            .length,
-    };
+    const [skills, skillCounts] = await Promise.all([
+        loader.loadSkills(),
+        countSkillFiles(),
+    ]);
 
     const jsonLd = {
         '@context': 'https://schema.org',
