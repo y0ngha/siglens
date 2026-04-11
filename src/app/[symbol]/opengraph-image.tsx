@@ -21,8 +21,8 @@ export default async function Image({ params }: Props): Promise<ImageResponse> {
         const assetInfo = await getAssetInfoAction(ticker);
         companyName = assetInfo?.name ?? ticker;
         koreanName = assetInfo?.koreanName;
-    } catch {
-        // fallback: ticker만으로 OG 이미지 생성
+    } catch (error) {
+        console.error('[opengraph-image] getAssetInfoAction failed, falling back to ticker only:', error);
     }
 
     return new ImageResponse(

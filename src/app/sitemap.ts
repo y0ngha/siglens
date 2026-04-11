@@ -1,7 +1,7 @@
 import type { MetadataRoute } from 'next';
 import { PRIVACY_PATH, TERMS_PATH } from '@/lib/legal';
 import { SITE_URL } from '@/lib/seo';
-import { POPULAR_TICKERS } from '@/app/popular-tickers';
+import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 
 function parseBuildDate(): Date {
     const raw = process.env.NEXT_BUILD_DATE;

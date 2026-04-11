@@ -169,16 +169,6 @@ export default async function SymbolPage({ params }: Props) {
                     ),
                 }}
             />
-            <HydrationBoundary state={dehydrate(queryClient)}>
-                <SymbolPageClient
-                    symbol={symbol}
-                    initialAnalysis={FALLBACK_ANALYSIS}
-                    // SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트로 위임한다.
-                    // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
-                    initialAnalysisFailed={true}
-                    indicatorCount={skillCounts.indicators}
-                />
-            </HydrationBoundary>
             <section className="sr-only">
                 <h2>보조지표 분석</h2>
                 <p>
@@ -199,6 +189,16 @@ export default async function SymbolPage({ params }: Props) {
                     레벨 분석을 제공합니다.
                 </p>
             </section>
+            <HydrationBoundary state={dehydrate(queryClient)}>
+                <SymbolPageClient
+                    symbol={symbol}
+                    initialAnalysis={FALLBACK_ANALYSIS}
+                    // SSR 단계에서 AI 분석을 의도적으로 생략하고 클라이언트로 위임한다.
+                    // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
+                    initialAnalysisFailed={true}
+                    indicatorCount={skillCounts.indicators}
+                />
+            </HydrationBoundary>
         </>
     );
 }
