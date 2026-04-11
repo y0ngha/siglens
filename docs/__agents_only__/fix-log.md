@@ -1,12 +1,22 @@
 # Fix Log
 
-## [PR #274 | feat/273/buy-sell-volume-인디케이터 | 2026-04-11]
-- Violation: IndicatorResult에 buySellVolume 필드 추가 시 prompt.test.ts makeIndicators 팩토리와 constants.test.ts에 대응 케이스 미추가
-- Rule: MISTAKES.md Tests #10 — "Type field added but test mock objects not updated"; Tests #2 — "New field/indicator without corresponding test cases"
-- Context: buySellVolume을 IndicatorResult에 추가하면서 기존 테스트 픽스처(makeIndicators)와 EMPTY_INDICATOR_RESULT 검증 테스트를 함께 업데이트하지 않아 TS 컴파일 에러 및 assertion 실패 발생
-- Violation: formatVolumeSection → formatBuySellVolumeSection 교체 후 prompt.test.ts의 거래량 섹션 assertion이 구버전 출력 텍스트 기준으로 남음
-- Rule: MISTAKES.md Tests #1 — "Not updating tests when return type changes"
-- Context: 'bar average', 'Current volume', '% of average' assertion이 새 출력('Current bar:', 'cumulative', 'Buy ratio:')으로 업데이트되지 않아 런타임 실패
+## [PR #278 | feat/squeeze-momentum-indicator | 2026-04-12]
+- Violation: 계산 정확도 테스트 누락 — period-based 인디케이터임에도 val 부호(양수/음수)만 검증하고 수동 계산 레퍼런스 값과의 일치 여부(toBeCloseTo) 테스트 없음
+- Rule: CONVENTIONS.md — Period-Based Indicator 필수 테스트 케이스 표: "첫 번째 값이 명세와 일치한다"
+- Context: squeezeMomentum.test.ts에서 상승/하락 부호 검증만 작성하고 PineScript 원본 알고리즘 기준 수동 계산값(9.5)과 toBeCloseTo 검증 누락
+
+- Violation: 워밍업 기간 상수가 실제 첫 번째 유효 출력 인덱스를 과소평가 — 중첩 윈도우 의존성을 고려하지 않음
+- Rule: MISTAKES.md Tests #4 — 경계 상수는 소스에서 임포트해야 하며, 수동 계산 시 알고리즘 전체 의존성 체인을 반영해야 함
+- Context: MIN_BARS = max(bbLength, kcLength) = 20으로 정의했으나, delta 윈도우가 kcLength 길이의 delta 배열을 필요로 하고 각 delta 값은 kcLength 바가 필요하여 실제 워밍업은 2*kcLength-1 = 39바
+
+- Violation: .map() 외부 변수(let prevVal)로 상태를 누적하여 함수형 패러다임 위반
+- Rule: CONVENTIONS.md Coding Paradigm — "순수 함수 선호; 외부 상태 변이 금지"; 이전 계산에 의존하는 상태 기반 로직은 reduce 또는 두 패스 구조로 구현해야 함
+- Context: calculateSqueezeMomentum의 bars.map() 내부에서 let prevVal = null 외부 변수를 직접 수정하여 increasing 필드를 계산; 두 패스(intermediate 계산 + increasing 추가)로 분리하여 해결
+
+- Violation: 루프마다 전체 배열 슬라이싱(O(n²)) — sma/stdDev는 내부에서 slice(-period)를 수행하므로 전체 배열 전달 불필요
+- Rule: CONVENTIONS.md Performance — 불필요한 배열 복사를 피하고 필요한 윈도우만 전달
+- Context: closes.slice(0, i+1) 전달 대신 closes.slice(Math.max(0, i-maxPeriod+1), i+1)로 좁혀 O(n²) → O(n) 개선
+
 
 ## [PR #272 Round 2 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
 - Violation: `indicatorCount` prop이 `SymbolPageClient` → `ChartContent` → `AnalysisPanel`로 드릴링됨 (두 중간 컴포넌트 모두 미사용)
