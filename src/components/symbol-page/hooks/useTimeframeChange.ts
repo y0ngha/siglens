@@ -4,10 +4,7 @@ import { useCallback, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
 import type { BarsData, Timeframe } from '@/domain/types';
-import {
-    DEFAULT_TIMEFRAME,
-    isValidTimeframe,
-} from '@/domain/constants/market';
+import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 
