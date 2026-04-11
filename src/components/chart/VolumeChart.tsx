@@ -1,10 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { HistogramSeries, createChart } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
 import type { Bar, BuySellVolumeResult } from '@/domain/types';
+import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
+import type { PaneLabelConfig } from '@/components/chart/types';
 
 interface VolumeChartProps {
     bars: Bar[];
@@ -21,6 +23,7 @@ export function VolumeChart({
     onChartReady,
     onChartRemove,
 }: VolumeChartProps) {
+    const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
     const totalSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
@@ -106,5 +109,28 @@ export function VolumeChart({
         chartRef.current.timeScale().fitContent();
     }, [bars, buySellVolume]);
 
-    return <div ref={containerRef} className="h-full w-full" />;
+    const volumeLabels = useMemo<PaneLabelConfig[]>(
+        () => [
+            {
+                paneIndex: 0,
+                subLabels: [
+                    { name: 'Buy', color: CHART_COLORS.bullish },
+                    { name: 'Sell', color: CHART_COLORS.bearish },
+                ],
+            },
+        ],
+        []
+    );
+
+    usePaneLabels({
+        chartRef,
+        containerRef: wrapperRef,
+        labels: volumeLabels,
+    });
+
+    return (
+        <div ref={wrapperRef} className="relative h-full w-full">
+            <div ref={containerRef} className="h-full w-full" />
+        </div>
+    );
 }
