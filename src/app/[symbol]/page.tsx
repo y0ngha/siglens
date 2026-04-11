@@ -68,7 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const title = `${displayName} 기술적 분석`;
-    const description = `${displayName} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`;
+    const description = `${displayName} 실시간 주가 차트와 AI 분석. RSI, MACD, 볼린저밴드 등 보조지표 시그널과 캔들 패턴, 지지·저항 레벨을 자동으로 해석합니다. 무료로 바로 확인하세요.`;
     const url = `${SITE_URL}/${ticker}`;
     const keywords = buildSymbolKeywords(
         ticker,
@@ -111,7 +111,7 @@ export default async function SymbolPage({ params }: Props) {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: `${displayName} 기술적 분석 | ${SITE_NAME}`,
-        description: `${displayName} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`,
+        description: `${displayName} 실시간 주가 차트와 AI 분석. RSI, MACD, 볼린저밴드 등 보조지표 시그널과 캔들 패턴, 지지·저항 레벨을 자동으로 해석합니다. 무료로 바로 확인하세요.`,
         url: `${SITE_URL}/${ticker}`,
         inLanguage: 'ko',
         about: {

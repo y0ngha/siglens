@@ -4,25 +4,31 @@ export const SITE_URL =
 export const SITE_NAME = 'Siglens';
 
 export const SITE_DESCRIPTION =
-    '미국 주식 AI 기술적 분석 — RSI, MACD, 볼린저밴드 등 13종 보조지표와 캔들 패턴을 자동 분석합니다. 무료.';
+    '미국 주식 차트를 AI로 분석하세요. RSI, MACD, 볼린저밴드 등 보조지표 시그널과 캔들 패턴, 지지·저항 레벨을 자동으로 해석합니다. 회원가입 없이 무료로 바로 확인하세요.';
 
 export const ROOT_TITLE = `미국 주식 AI 기술적 분석 — ${SITE_NAME}`;
 
 export const ROOT_KEYWORDS = [
-    '미국 주식 기술적 분석',
-    'AI 주식 분석',
+    'Siglens',
     '미국 주식 차트 분석',
-    '주식 보조지표',
-    '무료 주식 분석',
+    '미국 주식 차트 보는 법',
+    '미국 주식 분석',
+    'AI 주식 분석',
+    '무료 주식 차트',
     'RSI',
+    'RSI 보는 법',
     'MACD',
+    'MACD 보는 법',
     '볼린저밴드',
     '이동평균선',
-    '캔들패턴',
-    '지지 저항',
+    '스토캐스틱',
+    '일목균형표',
+    'VWAP',
+    '캔들 패턴',
     '골든크로스',
     '데드크로스',
-    'AI technical analysis',
+    '지지 저항',
+    'free stock analysis',
     'stock chart analysis',
 ];
 

@@ -61,6 +61,12 @@ export const metadata: Metadata = {
     alternates: {
         canonical: SITE_URL,
     },
+    verification: {
+        other: {
+            'naver-site-verification':
+                '14d27c128365a7edc27cb6fb330aeea2c9760fa2',
+        },
+    },
 };
 
 export const viewport: Viewport = {
