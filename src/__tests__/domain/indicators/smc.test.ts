@@ -7,11 +7,7 @@ import type { Bar, SMCResult } from '@/domain/types';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 
-function makeBar(
-    close: number,
-    overrides: Partial<Bar> = {},
-    index = 0
-): Bar {
+function makeBar(close: number, overrides: Partial<Bar> = {}, index = 0): Bar {
     return {
         time: index * 60,
         open: close,
@@ -198,7 +194,9 @@ describe('calculateSmc', () => {
             const result = calculateSmc(bars);
             // At least one swing should be detected in a long enough uniform series
             // (ties are treated as valid maxima/minima)
-            expect(result.swingHighs.length + result.swingLows.length).toBeGreaterThan(0);
+            expect(
+                result.swingHighs.length + result.swingLows.length
+            ).toBeGreaterThan(0);
         });
     });
 
@@ -206,9 +204,9 @@ describe('calculateSmc', () => {
         it('상승 FVG를 감지한다', () => {
             // Bar i-2 high = 100, bar i low = 105 → bullish FVG
             const bars = makeBars([
-                { high: 100, low: 90, close: 95 },   // i-2: high=100
-                { high: 103, low: 93, close: 98 },   // i-1 (middle bar)
-                { high: 112, low: 105, close: 110 },  // i: low=105 > 100
+                { high: 100, low: 90, close: 95 }, // i-2: high=100
+                { high: 103, low: 93, close: 98 }, // i-1 (middle bar)
+                { high: 112, low: 105, close: 110 }, // i: low=105 > 100
             ]);
             const result = calculateSmc(bars, 1);
             expect(result.fairValueGaps.length).toBe(1);
@@ -220,9 +218,9 @@ describe('calculateSmc', () => {
         it('하락 FVG를 감지한다', () => {
             // Bar i-2 low = 110, bar i high = 105 → bearish FVG
             const bars = makeBars([
-                { high: 120, low: 110, close: 115 },  // i-2: low=110
-                { high: 115, low: 107, close: 111 },  // i-1
-                { high: 105, low: 95, close: 100 },   // i: high=105 < 110
+                { high: 120, low: 110, close: 115 }, // i-2: low=110
+                { high: 115, low: 107, close: 111 }, // i-1
+                { high: 105, low: 95, close: 100 }, // i: high=105 < 110
             ]);
             const result = calculateSmc(bars, 1);
             expect(result.fairValueGaps.length).toBe(1);
@@ -248,10 +246,10 @@ describe('calculateSmc', () => {
 
         it('상승 FVG가 이후 캔들에 의해 침범되면 isMitigated가 true다', () => {
             const bars = makeBars([
-                { high: 100, low: 90, close: 95 },    // anchor: high=100
+                { high: 100, low: 90, close: 95 }, // anchor: high=100
                 { high: 103, low: 93, close: 98 },
-                { high: 112, low: 105, close: 110 },   // bullish FVG: zone [100, 105]
-                { high: 108, low: 104, close: 106 },   // low=104 <= fvg.high=105 → mitigated
+                { high: 112, low: 105, close: 110 }, // bullish FVG: zone [100, 105]
+                { high: 108, low: 104, close: 106 }, // low=104 <= fvg.high=105 → mitigated
             ]);
             const result = calculateSmc(bars, 1);
             const fvg = result.fairValueGaps.find(f => f.type === 'bullish');
@@ -260,10 +258,10 @@ describe('calculateSmc', () => {
 
         it('상승 FVG가 이후에도 유효하면 isMitigated가 false다', () => {
             const bars = makeBars([
-                { high: 100, low: 90, close: 95 },    // anchor: high=100
+                { high: 100, low: 90, close: 95 }, // anchor: high=100
                 { high: 103, low: 93, close: 98 },
-                { high: 112, low: 105, close: 110 },   // bullish FVG
-                { high: 115, low: 106, close: 113 },   // low=106 > fvg.high=105 → not mitigated
+                { high: 112, low: 105, close: 110 }, // bullish FVG
+                { high: 115, low: 106, close: 113 }, // low=106 > fvg.high=105 → not mitigated
             ]);
             const result = calculateSmc(bars, 1);
             const fvg = result.fairValueGaps.find(f => f.type === 'bullish');
@@ -275,14 +273,18 @@ describe('calculateSmc', () => {
         it('스윙 고점을 상향 돌파하면 불리시 구조 이탈을 기록한다', () => {
             const bars = makeBullishBreakSequence();
             const result = calculateSmc(bars, 3);
-            const bullishBreaks = result.structureBreaks.filter(b => b.type === 'bullish');
+            const bullishBreaks = result.structureBreaks.filter(
+                b => b.type === 'bullish'
+            );
             expect(bullishBreaks.length).toBeGreaterThan(0);
         });
 
         it('스윙 저점을 하향 돌파하면 베어리시 구조 이탈을 기록한다', () => {
             const bars = makeBearishBreakSequence();
             const result = calculateSmc(bars, 3);
-            const bearishBreaks = result.structureBreaks.filter(b => b.type === 'bearish');
+            const bearishBreaks = result.structureBreaks.filter(
+                b => b.type === 'bearish'
+            );
             expect(bearishBreaks.length).toBeGreaterThan(0);
         });
 
@@ -409,7 +411,9 @@ describe('calculateSmc', () => {
         it('premium 존의 high는 discount 존의 low보다 크다', () => {
             const result = calculateSmc(makeBullishBreakSequence(), 3);
             // makeBullishBreakSequence guarantees zones are non-null
-            expect(result.premiumZone!.high).toBeGreaterThan(result.discountZone!.low);
+            expect(result.premiumZone!.high).toBeGreaterThan(
+                result.discountZone!.low
+            );
         });
 
         it('존 type 필드가 올바르다', () => {
@@ -440,7 +444,9 @@ describe('calculateSmc', () => {
 
         it('기본 swingPeriod는 SMC_SWING_PERIOD와 동일하다', () => {
             const bars = makeUniformBars(ENOUGH_BARS);
-            expect(calculateSmc(bars)).toEqual(calculateSmc(bars, SMC_SWING_PERIOD));
+            expect(calculateSmc(bars)).toEqual(
+                calculateSmc(bars, SMC_SWING_PERIOD)
+            );
         });
     });
 });

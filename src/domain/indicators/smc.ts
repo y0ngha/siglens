@@ -57,8 +57,10 @@ function detectSwingPoints(bars: Bar[], period: number): SMCSwingPoint[] {
         const minLow = window.reduce((m, b) => Math.min(m, b.low), Infinity);
 
         const found: SMCSwingPoint[] = [];
-        if (bar.high === maxHigh) found.push({ index: i, price: bar.high, type: 'high' });
-        if (bar.low === minLow) found.push({ index: i, price: bar.low, type: 'low' });
+        if (bar.high === maxHigh)
+            found.push({ index: i, price: bar.high, type: 'high' });
+        if (bar.low === minLow)
+            found.push({ index: i, price: bar.low, type: 'low' });
 
         return found.length > 0 ? [...acc, ...found] : acc;
     }, []);
@@ -90,17 +92,31 @@ function detectFairValueGaps(bars: Bar[]): SMCFairValueGap[] {
         if (!isBullish && !isBearish) return acc;
 
         const fvg: SMCFairValueGap = isBullish
-            ? { index: i, high: bar.low, low: anchor.high, type: 'bullish', isMitigated: false }
-            : { index: i, high: anchor.low, low: bar.high, type: 'bearish', isMitigated: false };
+            ? {
+                  index: i,
+                  high: bar.low,
+                  low: anchor.high,
+                  type: 'bullish',
+                  isMitigated: false,
+              }
+            : {
+                  index: i,
+                  high: anchor.low,
+                  low: bar.high,
+                  type: 'bearish',
+                  isMitigated: false,
+              };
 
         return [...acc, fvg];
     }, []);
 
     return raw.map(fvg => ({
         ...fvg,
-        isMitigated: bars.slice(fvg.index + 1).some(b =>
-            fvg.type === 'bullish' ? b.low <= fvg.high : b.high >= fvg.low
-        ),
+        isMitigated: bars
+            .slice(fvg.index + 1)
+            .some(b =>
+                fvg.type === 'bullish' ? b.low <= fvg.high : b.high >= fvg.low
+            ),
     }));
 }
 
@@ -162,11 +178,21 @@ function detectStructureBreaks(
         }
 
         // Bullish break: close crosses above the active swing high
-        if (activeHigh !== null && !highConsumed && bar.close > activeHigh.price) {
-            const breakType: SMCBreakType = trend === 'bearish' ? 'choch' : 'bos';
+        if (
+            activeHigh !== null &&
+            !highConsumed &&
+            bar.close > activeHigh.price
+        ) {
+            const breakType: SMCBreakType =
+                trend === 'bearish' ? 'choch' : 'bos';
             breaks = [
                 ...breaks,
-                { index: i, price: activeHigh.price, type: 'bullish', breakType },
+                {
+                    index: i,
+                    price: activeHigh.price,
+                    type: 'bullish',
+                    breakType,
+                },
             ];
             trend = 'bullish';
             highConsumed = true;
@@ -174,10 +200,16 @@ function detectStructureBreaks(
 
         // Bearish break: close crosses below the active swing low
         if (activeLow !== null && !lowConsumed && bar.close < activeLow.price) {
-            const breakType: SMCBreakType = trend === 'bullish' ? 'choch' : 'bos';
+            const breakType: SMCBreakType =
+                trend === 'bullish' ? 'choch' : 'bos';
             breaks = [
                 ...breaks,
-                { index: i, price: activeLow.price, type: 'bearish', breakType },
+                {
+                    index: i,
+                    price: activeLow.price,
+                    type: 'bearish',
+                    breakType,
+                },
             ];
             trend = 'bearish';
             lowConsumed = true;
@@ -202,7 +234,10 @@ function detectStructureBreaks(
  * Mitigation: price subsequently crosses through the OB zone entirely
  * (low goes below OB.low for bullish OB, high goes above OB.high for bearish OB).
  */
-function detectOrderBlocks(bars: Bar[], structureBreaks: SMCStructureBreak[]): SMCOrderBlock[] {
+function detectOrderBlocks(
+    bars: Bar[],
+    structureBreaks: SMCStructureBreak[]
+): SMCOrderBlock[] {
     return structureBreaks.reduce<SMCOrderBlock[]>((acc, sb) => {
         const isBullishBreak = sb.type === 'bullish';
         const obIndex = findLastOpposingCandle(bars, sb.index, isBullishBreak);
@@ -214,9 +249,11 @@ function detectOrderBlocks(bars: Bar[], structureBreaks: SMCStructureBreak[]): S
             high: obBar.high,
             low: obBar.low,
             type: sb.type,
-            isMitigated: bars.slice(obIndex + 1).some(b =>
-                isBullishBreak ? b.low < obBar.low : b.high > obBar.high
-            ),
+            isMitigated: bars
+                .slice(obIndex + 1)
+                .some(b =>
+                    isBullishBreak ? b.low < obBar.low : b.high > obBar.high
+                ),
         };
 
         return [...acc, ob];
@@ -234,14 +271,20 @@ function findLastOpposingCandle(
     endIndex: number,
     lookingForBullishBreak: boolean
 ): number | null {
-    return bars.slice(0, endIndex).reduceRight<number | null>((found, bar, i) => {
-        if (found !== null) return found;
-        const isBearish = bar.close < bar.open;
-        const isBullish = bar.close > bar.open;
-        return lookingForBullishBreak
-            ? isBearish ? i : null
-            : isBullish ? i : null;
-    }, null);
+    return bars
+        .slice(0, endIndex)
+        .reduceRight<number | null>((found, bar, i) => {
+            if (found !== null) return found;
+            const isBearish = bar.close < bar.open;
+            const isBullish = bar.close > bar.open;
+            return lookingForBullishBreak
+                ? isBearish
+                    ? i
+                    : null
+                : isBullish
+                  ? i
+                  : null;
+        }, null);
 }
 
 // ─── Equal High / Low detection ───────────────────────────────────────────────
@@ -290,7 +333,6 @@ function findEqualLevels(
 
 // ─── Premium / Discount / Equilibrium zones ───────────────────────────────────
 
-
 /**
  * Calculate Premium, Discount, and Equilibrium zones from the most recent
  * swing range (last confirmed swing high and swing low).
@@ -303,7 +345,11 @@ function detectZones(
     swingHighs: SMCSwingPoint[],
     swingLows: SMCSwingPoint[]
 ): Pick<SMCResult, 'premiumZone' | 'discountZone' | 'equilibriumZone'> {
-    const empty = { premiumZone: null, discountZone: null, equilibriumZone: null };
+    const empty = {
+        premiumZone: null,
+        discountZone: null,
+        equilibriumZone: null,
+    };
 
     if (swingHighs.length === 0 || swingLows.length === 0) return empty;
 
@@ -336,7 +382,10 @@ function detectZones(
 
 // ─── Main export ──────────────────────────────────────────────────────────────
 
-export function calculateSmc(bars: Bar[], swingPeriod = SMC_SWING_PERIOD): SMCResult {
+export function calculateSmc(
+    bars: Bar[],
+    swingPeriod = SMC_SWING_PERIOD
+): SMCResult {
     if (bars.length === 0) return EMPTY_SMC_RESULT;
 
     const atrValues = calculateATR(bars, SMC_ATR_PERIOD);
@@ -347,8 +396,15 @@ export function calculateSmc(bars: Bar[], swingPeriod = SMC_SWING_PERIOD): SMCRe
     const fairValueGaps = detectFairValueGaps(bars);
     const structureBreaks = detectStructureBreaks(bars, swingHighs, swingLows);
     const orderBlocks = detectOrderBlocks(bars, structureBreaks);
-    const { equalHighs, equalLows } = detectEqualLevels(swingHighs, swingLows, atrValues);
-    const { premiumZone, discountZone, equilibriumZone } = detectZones(swingHighs, swingLows);
+    const { equalHighs, equalLows } = detectEqualLevels(
+        swingHighs,
+        swingLows,
+        atrValues
+    );
+    const { premiumZone, discountZone, equilibriumZone } = detectZones(
+        swingHighs,
+        swingLows
+    );
 
     return {
         swingHighs,
