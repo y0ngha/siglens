@@ -4,6 +4,9 @@ const nextConfig: NextConfig = {
     // React Compiler (Next.js 16 stable)
     reactCompiler: true,
 
+    // 'use cache' 지시어 활성화 (Next.js 16)
+    cacheComponents: true,
+
     // Turbopack (Next.js 16 기본값이나 명시)
     turbopack: {
         root: import.meta.dirname,

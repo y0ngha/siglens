@@ -226,6 +226,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## Next.js Build & Caching
+
+```
+1. Uncached data (Date.now(), new Date()) called in Provider constructors during prerender
+   → When cacheComponents: true is enabled, all prerendered data must be static
+   → Wrap QueryClient creation or dynamic providers in <Suspense> to defer execution to request time
+   → Do not call uncached functions in module-level code or provider constructors
+
+2. Client Component with new Date() in strict cacheComponents mode
+   → Remove 'use client' and convert to 'use cache' async functions instead
+   → Client Components cannot use Date.now() during prerender; use Cache Components for time-dependent logic
+
+3. Missing 'use cache' directive on infrastructure functions
+   → infrastructure/ functions accessed during prerender must include 'use cache' directive
+   → Explicitly marks the function as safe to cache and enables caching at build time
+```
+
 ## Pure Function Contracts
 
 ```

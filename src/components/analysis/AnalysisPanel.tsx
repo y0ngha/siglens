@@ -25,6 +25,7 @@ import {
     MIN_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
 import { cn } from '@/lib/cn';
+import { useSymbolPageContext } from '@/components/symbol-page/SymbolPageContext';
 import {
     parseStructuredSummary,
     type SkillSummarySection,
@@ -752,7 +753,6 @@ interface AnalysisPanelProps {
     _onTrendlinesVisibilityChange?: (isVisible: boolean) => void;
     actionPricesVisible?: boolean;
     onActionPricesVisibilityChange?: (isVisible: boolean) => void;
-    indicatorCount: number;
 }
 
 export function AnalysisPanel({
@@ -772,8 +772,8 @@ export function AnalysisPanel({
     _onTrendlinesVisibilityChange,
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
-    indicatorCount,
 }: AnalysisPanelProps) {
+    const { indicatorCount } = useSymbolPageContext();
     const handleTogglePatternVisibility = (patternName: string): void => {
         onTogglePattern?.(patternName);
     };
