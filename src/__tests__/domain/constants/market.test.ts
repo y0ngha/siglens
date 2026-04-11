@@ -82,7 +82,9 @@ describe('TIMEFRAMES', () => {
     ];
 
     it('Timeframe 유니언의 모든 값을 포함한다', () => {
-        expect([...TIMEFRAMES].sort()).toEqual([...ALL_TIMEFRAME_VALUES].sort());
+        expect([...TIMEFRAMES].sort()).toEqual(
+            [...ALL_TIMEFRAME_VALUES].sort()
+        );
     });
 });
 

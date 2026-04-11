@@ -5,10 +5,7 @@ import {
     dehydrate,
     HydrationBoundary,
 } from '@tanstack/react-query';
-import {
-    DEFAULT_TIMEFRAME,
-    isValidTimeframe,
-} from '@/domain/constants/market';
+import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import type { AnalysisResponse, AssetInfo } from '@/domain/types';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
