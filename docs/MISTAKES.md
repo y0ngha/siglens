@@ -226,6 +226,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## Documentation Sync
+
+```
+1. Skill document metadata and body content out of sync
+   → Frontmatter indicators list must include all indicators referenced in the document body
+   → AI instructions must reflect the system's actual capabilities, not idealized requirements
+   ❌ mean-reversion.md body uses 2×ATR but frontmatter indicators omits atr
+   ✅ Frontmatter includes all body references; update AI instructions to match actual RECENT_BARS_COUNT=30
+```
+
+---
+
 ## Pure Function Contracts
 
 ```
@@ -286,4 +298,9 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 5. Domain logic conditions differ between server and client
    → When the same business rule applies in both layers, ensure identical conditions on both sides
    → Example: if client uses `name !== ticker` guard, server `buildDisplayName` must use the same guard
+
+6. Unrelated data mixed in a single constant
+   → Constants with different purposes/domains should be in separate modules
+   ❌ src/lib/seo.ts contains both SEO metadata (ogTitle, ogDescription) and legal disclaimers
+   ✅ Separate: src/lib/seo.ts for SEO, src/lib/legal.ts for legal constants
 ```
