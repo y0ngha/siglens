@@ -70,7 +70,7 @@ export function ContactDialog({
                         aria-modal="true"
                         aria-labelledby="contact-dialog-title"
                         tabIndex={-1}
-                        className="border-secondary-700 bg-secondary-800 w-full max-w-md rounded-xl border text-left shadow-2xl outline-none"
+                        className="border-secondary-700 bg-secondary-800 max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border text-left shadow-2xl outline-none"
                     >
                         <div className="border-secondary-700 flex items-start justify-between border-b px-6 py-5">
                             <div>
