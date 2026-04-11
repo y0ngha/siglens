@@ -79,5 +79,5 @@ export function useActionRecommendationOverlay({
             ...stopLossLine,
             ...takeProfitLines,
         ];
-    }, [actionPrices, isVisible, lineWidth]);
+    }, [actionPrices, isVisible, lineWidth, seriesRef]);
 }
