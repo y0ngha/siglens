@@ -37,6 +37,7 @@ export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
     donchianChannel: [],
     buySellVolume: [],
     smc: EMPTY_SMC_RESULT,
+    squeezeMomentum: [],
 };
 
 export const RSI_DEFAULT_PERIOD = 14;
@@ -106,6 +107,13 @@ export const ICHIMOKU_DISPLACEMENT = 26;
 export const VP_DEFAULT_ROW_SIZE = 24;
 export const VP_VALUE_AREA_PERCENTAGE = 0.7;
 export const VP_MIN_BARS = 30;
+
+export const SQUEEZE_MOMENTUM_BB_LENGTH = 20;
+export const SQUEEZE_MOMENTUM_KC_LENGTH = 20;
+export const SQUEEZE_MOMENTUM_KC_MULT = 1.5;
+// Actual warmup: delta window of kcLength requires kcLength delta values,
+// each of which needs kcLength bars → first valid result at index 2*kcLength-2.
+export const SQUEEZE_MOMENTUM_MIN_BARS = 2 * SQUEEZE_MOMENTUM_KC_LENGTH - 1;
 
 export const SMC_SWING_PERIOD = 5;
 export const SMC_EQUAL_LEVEL_ATR_MULTIPLIER = 0.5;

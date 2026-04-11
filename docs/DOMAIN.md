@@ -75,6 +75,8 @@ export interface IndicatorResult {
     cmf: (number | null)[];
     donchianChannel: DonchianChannelResult[];
     buySellVolume: BuySellVolumeResult[];
+    smc: SMCResult;
+    squeezeMomentum: SqueezeMomentumResult[];
 }
 
 export interface MACDResult {
@@ -154,6 +156,16 @@ export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3;  // 60기간 EMA
 export const VP_DEFAULT_ROW_SIZE = 24;
 export const VP_VALUE_AREA_PERCENTAGE = 0.7;
 export const VP_MIN_BARS = 30;
+
+export const SQUEEZE_MOMENTUM_BB_LENGTH = 20;
+export const SQUEEZE_MOMENTUM_KC_LENGTH = 20;
+export const SQUEEZE_MOMENTUM_KC_MULT = 1.5;
+
+export const SMC_SWING_PERIOD = 5;
+export const SMC_EQUAL_LEVEL_ATR_MULTIPLIER = 0.5;
+export const SMC_ATR_PERIOD = 14;
+export const SMC_PREMIUM_RATIO = 0.75;
+export const SMC_DISCOUNT_RATIO = 0.25;
 ```
 
 ---
@@ -567,6 +579,112 @@ null 없음 (첫 봉부터 값 존재)
 초기 null 없음 (모든 봉에 값 반환)
 ```
 
+### SMC (Smart Money Concepts)
+
+```
+참고: ICT (Inner Circle Trader) / Smart Money Concepts 방법론
+원본 TradingView 인디케이터: "Smart Money Concepts [LuxAlgo]" by LuxAlgo
+독립적인 TypeScript 재구현 — PineScript 소스 코드의 직접 포팅 아님
+
+파라미터: swingPeriod=5, atrPeriod=14, equalLevelAtrMult=0.5,
+          premiumRatio=0.75, discountRatio=0.25
+
+반환 타입: SMCResult (단일 객체, 배열 아님)
+
+구성 요소 및 알고리즘:
+
+1. Swing Points (스윙 고점/저점)
+   - 인덱스 i가 스윙 고점: bars[i-period..i+period] 범위에서 high 최댓값
+   - 인덱스 i가 스윙 저점: bars[i-period..i+period] 범위에서 low 최솟값
+   - 양 끝에서 period개 봉은 미확정 → 제외
+   - 결과: swingHighs[], swingLows[] (각각 { index, price, type })
+
+2. Fair Value Gap (공정가치 갭, FVG)
+   - 상승 FVG (bar i): bars[i].low > bars[i-2].high
+     → 갭 구간: [bars[i-2].high, bars[i].low]
+   - 하락 FVG (bar i): bars[i].high < bars[i-2].low
+     → 갭 구간: [bars[i].high, bars[i-2].low]
+   - 완화(mitigation): 이후 봉이 갭 구간을 재진입하면 isMitigated=true
+   - 결과: fairValueGaps[] (각각 { index, high, low, type, isMitigated })
+
+3. Structure Breaks (구조 이탈: BOS / CHoCH)
+   상태머신 방식으로 스윙 레벨 돌파를 추적:
+   - BOS (Break of Structure): 현재 추세 방향의 스윙 레벨 돌파 (추세 지속)
+   - CHoCH (Change of Character): 현재 추세 반대 방향 스윙 레벨 돌파 (추세 전환 가능)
+   - 판단 기준: close 가격이 활성 스윙 레벨을 돌파하면 기록
+   - 결과: structureBreaks[] (각각 { index, price, type, breakType })
+
+4. Order Blocks (주문 블록)
+   - 각 구조 이탈(structureBreak)에 대해:
+     - 상승 이탈: 이탈 직전 마지막 하락 봉 (close < open)
+     - 하락 이탈: 이탈 직전 마지막 상승 봉 (close > open)
+   - 완화(mitigation):
+     - 상승 OB: 이후 봉의 low가 OB.low 하회
+     - 하락 OB: 이후 봉의 high가 OB.high 상회
+   - 결과: orderBlocks[] (각각 { startIndex, high, low, type, isMitigated })
+
+5. Equal Highs / Equal Lows (EQH / EQL)
+   - 두 스윙 고점의 가격 차이 ≤ ATR × equalLevelAtrMult(0.5) → Equal High
+   - 두 스윙 저점의 가격 차이 ≤ ATR × equalLevelAtrMult(0.5) → Equal Low
+   - 가격: 두 피벗의 중간값
+   - 결과: equalHighs[], equalLows[] (각각 { price, firstIndex, secondIndex, type })
+
+6. Premium / Equilibrium / Discount Zones
+   - 가장 최근 스윙 고점과 저점으로 범위 산출
+   - Premium zone:     [rangeTop, rangeBottom + 0.75 × range]  (상단 25%)
+   - Equilibrium zone: [rangeBottom + 0.75 × range, rangeBottom + 0.25 × range]  (중간 50%)
+   - Discount zone:    [rangeBottom + 0.25 × range, rangeBottom]  (하단 25%)
+   - 결과: premiumZone, equilibriumZone, discountZone (각각 { high, low, type } | null)
+
+의존성: calculateATR (swingPeriod × 2 + 1 미만 봉은 빈 결과 반환)
+```
+
+### Squeeze Momentum Indicator
+
+```
+원작자: LazyBear (PineScript "Squeeze Momentum Indicator [LazyBear]")
+출처: https://kr.tradingview.com/script/nqQ1DT5a-Squeeze-Momentum-Indicator-LazyBear/
+독립적인 TypeScript 재구현 — PineScript 소스 코드의 직접 포팅 아님
+
+파라미터: bbLength=20, kcLength=20, kcMult=1.5
+          (주의: BB 표준편차에도 kcMult=1.5 적용 — 원본 스크립트 동일)
+
+반환 타입: SqueezeMomentumResult[]
+
+알고리즘:
+
+1. Bollinger Bands
+   basis = SMA(close, bbLength=20)
+   dev   = kcMult(1.5) × stdDev(close, bbLength)
+   upperBB = basis + dev
+   lowerBB = basis - dev
+
+2. Keltner Channel
+   ma      = SMA(close, kcLength=20)
+   rangema = SMA(trueRange, kcLength)
+   upperKC = ma + rangema × kcMult(1.5)
+   lowerKC = ma - rangema × kcMult(1.5)
+
+3. Squeeze 상태 (세 상태는 상호 배타적)
+   sqzOn  = lowerBB > lowerKC AND upperBB < upperKC  (BB가 KC 안에 압축)
+   sqzOff = lowerBB < lowerKC AND upperBB > upperKC  (BB가 KC 밖으로 팽창)
+   noSqz  = NOT sqzOn AND NOT sqzOff                 (전환 중간 상태)
+
+4. 모멘텀 값 (momentum)
+   delta[i] = close[i] - avg(avg(highest(high, kcLength), lowest(low, kcLength)), SMA(close, kcLength))
+   momentum = linreg(delta_window[i-kcLength+1 .. i], kcLength)
+
+   momentum > 0: 상승 모멘텀, momentum < 0: 하락 모멘텀
+   momentum 부호 전환: 모멘텀 방향 반전 신호
+
+5. increasing
+   momentum > prevMomentum: true (모멘텀 강화)
+   momentum < prevMomentum: false (모멘텀 약화)
+   첫 번째 유효 momentum: null
+
+초기 max(bbLength, kcLength) - 1개 구간 = null
+```
+
 ### calculateIndicators 통합 함수
 
 ```typescript
@@ -576,6 +694,8 @@ function calculateIndicators(bars: Bar[]): IndicatorResult {
     // MA_DEFAULT_PERIODS, EMA_DEFAULT_PERIODS 상수를 사용해
     // 각 기간별로 계산 후 Record<number, (number | null)[]> 형태로 반환
     // volumeProfile: calculateVolumeProfile(bars) — bars < VP_MIN_BARS면 null
+    // smc: calculateSmc(bars) — 단일 SMCResult 객체 (배열 아님)
+    // squeezeMomentum: calculateSqueezeMomentum(bars) — SqueezeMomentumResult[]
 }
 ```
 
@@ -762,6 +882,33 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 | `indicators/cmf.md` | CMF(21) | 자금 흐름 방향/강도 | 0.75 |
 | `indicators/donchian-channel.md` | Donchian Channel(20) | 브레이크아웃, Turtle Trading | 0.8 |
 | `indicators/buy-sell-volume.md` | Buy/Sell Volume | 캔들 내 매수/매도 압력 분해 | 0.75 |
+| `indicators/squeeze-momentum.md` | Squeeze Momentum(BB:20,KC:20,mult:1.5) | BB/KC 스퀴즈 감지, 모멘텀 방향 | 0.8 |
+| `indicators/smart-money-concepts.md` | 스마트 머니 컨셉 (SMC) | BOS/CHoCH 구조, 오더 블록, FVG, 프리미엄·디스카운트 존 해석 | 0.85 |
+
+> **SMC**는 `smc` 필드(`IndicatorResult.smc`)를 참조한다.
+> `indicators: ['atr', 'smc']`로 선언되어 있으며, AI는 Swing Points, Order Blocks, FVG,
+> Structure Breaks, Premium/Discount Zone 데이터를 직접 해석한다.
+
+---
+
+## 전략 Skills (Strategy Skills)
+
+투자 전략 분석은 **AI + Skills 파일** 기반으로 수행한다.
+`type: strategy`인 skill 파일이 활성화되면 AI가 해당 전략 기준에 따라 차트를 해석한다.
+
+### 현재 등록된 전략 Skills
+
+| skill 파일 | 전략 | 신뢰도 |
+|---|---|---|
+| `strategies/ma-cycle.md` | 이동평균선 대순환 분석 | 0.8 |
+| `strategies/macd-cycle.md` | MACD 대순환 분석 | 0.75 |
+| `strategies/multi-timeframe.md` | 다중 시간대 분석 | 0.75 |
+| `strategies/breakout.md` | 브레이크아웃 전략 | 0.7 |
+| `strategies/divergence.md` | 다이버전스 전략 | 0.7 |
+| `strategies/mean-reversion.md` | 평균 회귀 전략 | 0.7 |
+| `strategies/elliott-wave.md` | 엘리어트 파동 | 0.7 |
+| `strategies/fibonacci.md` | 피보나치 전략 | 0.65 |
+| `strategies/wyckoff.md` | 와이코프 방법론 | 0.0 (비활성) |
 
 ---
 
@@ -1232,16 +1379,17 @@ infrastructure/ai/claude.ts
 ### indicators 필드와 계산 흐름의 관계
 
 skill의 `indicators` 필드는 **해당 skill이 분석에 필요로 하는 인디케이터 목록**이다.
-app 레이어는 활성화된 모든 skill의 `indicators`를 합산해
-불필요한 인디케이터를 계산하지 않도록 최적화할 수 있다.
+현재 이 필드는 파싱 후 `Skill.indicators: string[]`에 저장되지만,
+프롬프트 빌드 로직(`buildAnalysisPrompt`)에서 직접 소비되지는 않는다.
+인디케이터 값은 `IndicatorResult` 전체가 프롬프트에 포함되어 AI가 참조한다.
 
 ```typescript
-// 예시
+// 예시 (향후 최적화 용도)
 const activeSkills = allSkills.filter(s => s.confidenceWeight >= 0.5);
 const requiredIndicators = new Set(activeSkills.flatMap(s => s.indicators));
 
 // requiredIndicators에 없는 인디케이터는 계산 생략 가능
-// (현재는 전체 계산 후 전달하는 단순 구현도 허용)
+// (현재는 전체 계산 후 전달하는 단순 구현)
 ```
 
 ### 패턴 skill 예시

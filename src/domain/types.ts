@@ -161,6 +161,26 @@ export interface SMCResult {
     structureBreaks: SMCStructureBreak[];
 }
 
+// ─── Squeeze Momentum Indicator ─────────────────────────────────────────────
+// Original concept: "Squeeze Momentum Indicator [LazyBear]" by LazyBear
+// PineScript source: https://www.tradingview.com/v/4IneGo8h/
+// This is an independent TypeScript implementation based on the publicly
+// documented algorithm. Not a direct port of the PineScript source code.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface SqueezeMomentumResult {
+    /** Momentum value from linear regression. Positive = bullish, negative = bearish. */
+    momentum: number | null;
+    /** BB is inside KC — volatility compressed, breakout imminent */
+    sqzOn: boolean | null;
+    /** BB is outside KC — squeeze released, momentum expanding */
+    sqzOff: boolean | null;
+    /** Neither sqzOn nor sqzOff — transitional state */
+    noSqz: boolean | null;
+    /** momentum is increasing vs previous bar (momentum strengthening) */
+    increasing: boolean | null;
+}
+
 export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
@@ -185,6 +205,7 @@ export interface IndicatorResult {
     donchianChannel: DonchianChannelResult[];
     buySellVolume: BuySellVolumeResult[];
     smc: SMCResult;
+    squeezeMomentum: SqueezeMomentumResult[];
 }
 
 export type ChartDisplayType = 'line' | 'marker' | 'region';

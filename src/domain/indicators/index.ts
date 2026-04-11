@@ -22,6 +22,7 @@ import { calculateCMF } from './cmf';
 import { calculateDonchianChannel } from './donchianChannel';
 import { calculateBuySellVolume } from './buySellVolume';
 import { calculateSmc } from './smc';
+import { calculateSqueezeMomentum } from './squeezeMomentum';
 import { MA_DEFAULT_PERIODS, EMA_DEFAULT_PERIODS } from './constants';
 
 export * from './rsi';
@@ -47,6 +48,7 @@ export * from './cmf';
 export * from './donchianChannel';
 export * from './buySellVolume';
 export * from './smc';
+export * from './squeezeMomentum';
 
 export function calculateIndicators(bars: Bar[]): IndicatorResult {
     const closes = bars.map(b => b.close);
@@ -84,5 +86,6 @@ export function calculateIndicators(bars: Bar[]): IndicatorResult {
         donchianChannel: calculateDonchianChannel(bars),
         buySellVolume: calculateBuySellVolume(bars),
         smc: calculateSmc(bars),
+        squeezeMomentum: calculateSqueezeMomentum(bars),
     };
 }
