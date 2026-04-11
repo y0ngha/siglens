@@ -21,6 +21,7 @@ import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStat
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import {
     MobileAnalysisSheet,
+    SNAP_PEEK,
     SNAP_HALF,
     type SnapPoint,
 } from '@/components/symbol-page/MobileAnalysisSheet';
@@ -195,8 +196,11 @@ export function ChartContent({
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
-            {/* 차트 영역 — 바텀시트는 fixed 오버레이. pb-[15svh]는 Peek(15%) 시 거래량 차트가 가려지지 않도록 한다 */}
-            <div className="flex h-full shrink-0 flex-col overflow-hidden pb-[15svh] md:flex-1 md:pb-0">
+            {/* 차트 영역 — 바텀시트는 fixed 오버레이. pb는 SNAP_PEEK 높이만큼 확보해 Peek 시 거래량 차트가 가려지지 않도록 한다 */}
+            <div
+                style={{ '--snap-peek': SNAP_PEEK } as React.CSSProperties}
+                className="flex h-full shrink-0 flex-col overflow-hidden pb-[calc(var(--snap-peek)*100svh)] md:flex-1 md:pb-0"
+            >
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
                     <StockChart

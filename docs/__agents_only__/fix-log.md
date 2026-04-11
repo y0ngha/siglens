@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #265 | feat/264/모바일-분석패널-바텀시트 | 2026-04-11]
+- Violation: CSS 임의값(pb-[15svh])이 JS 상수(SNAP_PEEK = 0.15)와 의미적으로 연동되어 있으나 코드 레벨 연결 없음
+- Rule: MISTAKES.md Design & Cohesion #1 — 함께 변경되어야 하는 값은 단일 위치에서 관리해야 한다
+- Context: ChartContent.tsx 차트 영역 padding이 MobileAnalysisSheet의 SNAP_PEEK 스냅 높이와 연동되어야 하지만, CSS 클래스에 하드코딩되어 SNAP_PEEK 변경 시 수동 업데이트 필요
+
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: components/hooks/ 파일에 'use client' 선언 누락
 - Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
