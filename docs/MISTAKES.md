@@ -90,6 +90,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → When a union appears in 2+ result types, extract to domain/types.ts
    ❌ ParabolicSARResult { trend: 'up' | 'down' | null }; SupertrendResult { trend: 'up' | 'down' | null }
    ✅ type TrendDirection = 'up' | 'down' | null; ParabolicSARResult { trend: TrendDirection }; SupertrendResult { trend: TrendDirection }
+
+7. Using `as` type assertions instead of type guards or non-null assertion operators
+   → Prefer type guards, `!` operator, or satisfies keyword over `as` casts
+   → `as` casts hide type safety problems; explicit guards expose intent
+   ❌ const value = getValue() as number;  // hides null check
+   ✅ const value = getValue()!;  // non-null assertion when null is logically impossible
+   ✅ const value: number = getValue() ?? 0;  // type guard with fallback
 ```
 
 ---

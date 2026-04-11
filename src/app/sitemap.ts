@@ -1,5 +1,5 @@
 import type { MetadataRoute } from 'next';
-import { POPULAR_TICKERS, SITE_URL } from '@/lib/seo';
+import { POPULAR_TICKERS, PRIVACY_PATH, SITE_URL, TERMS_PATH } from '@/lib/seo';
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const now = new Date();
@@ -8,7 +8,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         {
             url: SITE_URL,
             lastModified: now,
-            changeFrequency: 'daily',
+            changeFrequency: 'daily' as const,
             priority: 1,
         },
         ...POPULAR_TICKERS.map(ticker => ({
@@ -17,5 +17,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: 'daily' as const,
             priority: 0.8,
         })),
+        {
+            url: `${SITE_URL}${PRIVACY_PATH}`,
+            lastModified: now,
+            changeFrequency: 'yearly' as const,
+            priority: 0.3,
+        },
+        {
+            url: `${SITE_URL}${TERMS_PATH}`,
+            lastModified: now,
+            changeFrequency: 'yearly' as const,
+            priority: 0.3,
+        },
     ];
 }

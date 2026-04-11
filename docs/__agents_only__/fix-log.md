@@ -1,5 +1,14 @@
 # Fix Log
 
+## [Issue #256 | feat/256/privacy-terms-pages | 2026-04-11]
+- Violation: `<aside role="note">`로 aside 엘리먼트의 implicit complementary landmark role을 다른 ARIA role로 덮어씀
+- Rule: WAI-ARIA 원칙 — 시맨틱 엘리먼트의 native ARIA role을 다른 role로 덮어쓰지 말 것. role="note"는 `<div>`에 부여하거나 `<aside>`는 role 명시 없이 사용
+- Context: privacy/page.tsx, terms/page.tsx의 투자 면책 고지 박스에서 `<aside role="note">` 사용으로 aside의 implicit complementary role이 note로 교체됨
+
+- Violation: breadcrumb 네비게이션의 현재 페이지 항목에 `aria-current="page"` 누락
+- Rule: WAI-ARIA Breadcrumb Pattern — 브레드크럼의 마지막(현재) 항목에는 반드시 aria-current="page"를 명시해야 함
+- Context: privacy/page.tsx, terms/page.tsx의 breadcrumb `<li>`에 현재 페이지임을 나타내는 속성이 없었음
+
 ## [PR #265 | feat/264/모바일-분석패널-바텀시트 | 2026-04-11]
 - Violation: CSS 임의값(pb-[15svh])이 JS 상수(SNAP_PEEK = 0.15)와 의미적으로 연동되어 있으나 코드 레벨 연결 없음
 - Rule: MISTAKES.md Design & Cohesion #1 — 함께 변경되어야 하는 값은 단일 위치에서 관리해야 한다
@@ -100,10 +109,6 @@
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
 ## [PR #245 | feat/240/9종-보조지표-domain-계산-로직 | 2026-04-11]
-- Violation: `as number` 타입 단언 사용 (2곳)
-- Rule: CONVENTIONS.md — "Prefer type guards over `as` type assertions"
-- Context: `supertrend.ts`에서 `atrValues[firstValidIdx] as number`, `atrValues[idx] as number` 사용; null이 아님이 로직적으로 보장되는 시점이므로 non-null 단언 연산자(`!`)로 교체
-
 - Violation: period 기반 인디케이터 테스트에서 초기 null 범위 케이스 누락
 - Rule: CONVENTIONS.md "Required Test Cases for Period-Based Indicators" — 처음 N개 null 케이스 필수
 - Context: `keltnerChannel.test.ts`에 '처음 max(emaPeriod-1, atrPeriod)개의 값은 null이다' 테스트 케이스 미포함; 추가 시 리뷰어 제안 수식(max(emaPeriod, atrPeriod))이 구현과 불일치하여 실제 null 구간(emaPeriod-1)으로 수정

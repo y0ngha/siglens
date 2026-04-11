@@ -1,11 +1,11 @@
 import type { MetadataRoute } from 'next';
-import { SITE_URL } from '@/lib/seo';
+import { PRIVACY_PATH, SITE_URL, TERMS_PATH } from '@/lib/seo';
 
 export default function robots(): MetadataRoute.Robots {
     return {
         rules: {
             userAgent: '*',
-            allow: '/',
+            allow: ['/', PRIVACY_PATH, TERMS_PATH],
             disallow: '/api/',
         },
         sitemap: `${SITE_URL}/sitemap.xml`,
