@@ -25,6 +25,15 @@
 - Rule: 코드베이스에 import되지 않는 파일은 데드 코드 — PR에서 교체 시 구 파일 삭제 필수
 - Context: `SymbolSearch`가 `TickerAutocomplete`로 교체됐지만 `src/components/search/SymbolSearch.tsx`가 미삭제 상태로 남아 있었음
 
+## [Issue #264 | feat/264/모바일-분석패널-바텀시트 | 2026-04-11]
+- Violation: `useSyncExternalStore`의 `subscribe`와 `getSnapshot`이 각각 별도로 `window.matchMedia(query)`를 호출해 서로 다른 MediaQueryList 인스턴스를 참조함
+- Rule: FF Cohesion 3-B — 같은 리소스는 단일 인스턴스를 공유해야 함; MISTAKES.md Coding Paradigm #2 — 동일 값을 여러 번 계산하지 않는다
+- Context: `useMediaQuery.ts` 초기 작성 시 `subscribe`의 `window.matchMedia(query)` 호출과 `getSnapshot`의 `window.matchMedia(query).matches` 호출이 분리됨; `useRef`로 mql 인스턴스를 캐시하고 `getMql()` 헬퍼를 통해 공유하는 방식으로 수정
+
+- Violation: prop으로 전달하는 `readonly` 배열을 컴포넌트 렌더 안에서 `[...CONST]`로 spread해 매 렌더마다 새 배열 참조를 생성
+- Rule: MISTAKES.md Coding Paradigm #10 — 렌더마다 재생성되는 파생 값은 모듈 레벨 상수 또는 `useMemo`로 추출한다
+- Context: `MobileAnalysisSheet.tsx`에서 `snapPoints={[...MOBILE_SNAP_POINTS]}`가 매 렌더마다 새 배열을 생성; 모듈 레벨의 `SNAP_POINTS_MUTABLE` 상수로 추출하여 해결
+
 ## [예시 항목 | 브랜치명 | 날짜]
 - Violation: 예시
 - Rule: 예시
