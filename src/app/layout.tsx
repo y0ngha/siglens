@@ -44,6 +44,9 @@ export const metadata: Metadata = {
         title: ROOT_TITLE,
         description: SITE_DESCRIPTION,
     },
+    icons: {
+        apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+    },
     robots: {
         index: true,
         follow: true,
@@ -57,6 +60,12 @@ export const metadata: Metadata = {
     },
     alternates: {
         canonical: SITE_URL,
+    },
+    verification: {
+        other: {
+            'naver-site-verification':
+                '14d27c128365a7edc27cb6fb330aeea2c9760fa2',
+        },
     },
 };
 

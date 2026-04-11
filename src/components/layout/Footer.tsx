@@ -59,7 +59,7 @@ export function Footer() {
                             href="https://github.com/y0ngha/siglens"
                             target="_blank"
                             rel="noopener noreferrer"
-                            aria-label="GitHub 저장소에서 프로젝트에 기여하기"
+                            aria-label="GitHub에서 기여하기 →"
                             className="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
                         >
                             GitHub에서 기여하기 →

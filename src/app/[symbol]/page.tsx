@@ -12,6 +12,19 @@ import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import { buildSymbolKeywords, SITE_NAME, SITE_URL } from '@/lib/seo';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
+import {
+    CANDLESTICK_SKILL_COUNT,
+    CHART_PATTERN_SKILL_COUNT,
+    INDICATOR_KIND_COUNT,
+    STRATEGY_SKILL_COUNT,
+    SUPPORT_RESISTANCE_SKILL_COUNT,
+} from '@/domain/indicators/constants';
+
+const INDICATOR_NAMES =
+    'RSI(상대강도지수), MACD(이동평균수렴확산), 볼린저밴드, 단순이동평균(SMA), 지수이동평균(EMA), 스토캐스틱, ATR(평균진폭), OBV(거래량균형지수), CCI(상품채널지수), 파라볼릭SAR, 슈퍼트렌드, 켈트너채널, VWAP(거래량가중평균가격)';
+
+const CANDLESTICK_NAMES =
+    '도지(Doji), 해머(Hammer), 역망치(Inverted Hammer), 교수형(Hanging Man), 유성형(Shooting Star), 불리시 인겔핑(Bullish Engulfing), 베어리시 인겔핑(Bearish Engulfing)';
 
 const FALLBACK_ANALYSIS: AnalysisResponse = {
     summary: 'AI 분석을 일시적으로 사용할 수 없습니다.',
@@ -55,7 +68,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const title = `${displayName} 기술적 분석`;
-    const description = `${displayName} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`;
+    const description = `${displayName} 실시간 주가 차트와 AI 분석. RSI, MACD, 볼린저밴드 등 보조지표 시그널과 캔들 패턴, 지지·저항 레벨을 자동으로 해석합니다. 무료로 바로 확인하세요.`;
     const url = `${SITE_URL}/${ticker}`;
     const keywords = buildSymbolKeywords(
         ticker,
@@ -98,14 +111,13 @@ export default async function SymbolPage({ params }: Props) {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: `${displayName} 기술적 분석 | ${SITE_NAME}`,
-        description: `${displayName} 실시간 차트와 AI 기반 기술적 분석 — 보조지표, 캔들 패턴, 지지/저항 레벨을 한 번에 확인하세요.`,
+        description: `${displayName} 실시간 주가 차트와 AI 분석. RSI, MACD, 볼린저밴드 등 보조지표 시그널과 캔들 패턴, 지지·저항 레벨을 자동으로 해석합니다. 무료로 바로 확인하세요.`,
         url: `${SITE_URL}/${ticker}`,
         inLanguage: 'ko',
         about: {
-            '@type': 'FinancialProduct',
+            '@type': 'Corporation',
             name: displayName,
-            identifier: ticker,
-            category: 'Stock',
+            tickerSymbol: ticker,
         },
     };
 
@@ -160,6 +172,25 @@ export default async function SymbolPage({ params }: Props) {
                     ),
                 }}
             />
+            <section className="sr-only" aria-hidden={'true'}>
+                <p>{displayName} AI 기술적 분석 — 보조지표 및 캔들 패턴</p>
+                <p>
+                    {displayName}({ticker}) 종목의 실시간 차트를{' '}
+                    {INDICATOR_KIND_COUNT}종 보조지표로 자동 분석합니다.{' '}
+                    {INDICATOR_NAMES} 등 {INDICATOR_KIND_COUNT}종 지표를
+                    분석합니다.
+                </p>
+                <p>
+                    {CANDLESTICK_SKILL_COUNT}종 캔들 패턴 분석:{' '}
+                    {CANDLESTICK_NAMES} 등 주요 캔들 패턴을 자동 감지합니다.
+                </p>
+                <p>
+                    {CHART_PATTERN_SKILL_COUNT}종 차트 패턴,{' '}
+                    {STRATEGY_SKILL_COUNT}종 전략 분석,{' '}
+                    {SUPPORT_RESISTANCE_SKILL_COUNT}종 지지/저항 레벨 분석을
+                    제공합니다.
+                </p>
+            </section>
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <SymbolPageClient
                     symbol={symbol}

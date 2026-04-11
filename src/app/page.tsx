@@ -7,6 +7,13 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
+import {
+    CANDLESTICK_SKILL_COUNT,
+    CHART_PATTERN_SKILL_COUNT,
+    INDICATOR_KIND_COUNT,
+    STRATEGY_SKILL_COUNT,
+    SUPPORT_RESISTANCE_SKILL_COUNT,
+} from '@/domain/indicators/constants';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
@@ -49,6 +56,30 @@ export default async function Home() {
         sameAs: ['https://github.com/y0ngha/siglens'],
     };
 
+    const howToJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name: `${SITE_NAME}로 미국 주식 AI 기술적 분석하는 방법`,
+        description: `종목 티커를 입력하면 보조지표 ${INDICATOR_KIND_COUNT}종, 캔들 패턴 ${CANDLESTICK_SKILL_COUNT}종, 차트 패턴 ${CHART_PATTERN_SKILL_COUNT}종, 전략 ${STRATEGY_SKILL_COUNT}종, 지지/저항 ${SUPPORT_RESISTANCE_SKILL_COUNT}종을 자동 분석합니다.`,
+        step: [
+            {
+                '@type': 'HowToStep',
+                name: '티커 입력',
+                text: '분석하고 싶은 미국 주식 종목의 심볼(티커)을 검색창에 입력합니다. 예: AAPL, TSLA, NVDA',
+            },
+            {
+                '@type': 'HowToStep',
+                name: '자동 분석',
+                text: `보조지표 ${INDICATOR_KIND_COUNT}종, 캔들 패턴 ${CANDLESTICK_SKILL_COUNT}종, 차트 패턴 ${CHART_PATTERN_SKILL_COUNT}종, 전략 ${STRATEGY_SKILL_COUNT}종, 지지/저항 ${SUPPORT_RESISTANCE_SKILL_COUNT}종이 자동으로 분석됩니다.`,
+            },
+            {
+                '@type': 'HowToStep',
+                name: 'AI 리포트 확인',
+                text: '추세, 리스크, 진입 추천, 시그널, 차트 패턴, 전략 분석, 주요 지지/저항 레벨을 AI 리포트로 한 화면에서 확인합니다.',
+            },
+        ],
+    };
+
     return (
         <>
             <script
@@ -61,6 +92,15 @@ export default async function Home() {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
                     __html: JSON.stringify(organizationJsonLd).replace(
+                        /</g,
+                        '\\u003c'
+                    ),
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(howToJsonLd).replace(
                         /</g,
                         '\\u003c'
                     ),
