@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #278 Round 2 | feat/squeeze-momentum-indicator | 2026-04-12]
+- Violation: `utils.ts`에서 `const window = values.slice(-period)` — 브라우저 전역 `window` 객체 섀도잉
+- Rule: CONVENTIONS.md ESLint no-shadow — `window`, `document`, `location` 등 전역 이름 사용 금지
+- Context: `stdDev`와 `linreg` 두 함수 모두 지역 변수명으로 `window`를 사용; `vals`로 변경
+
 ## [PR #278 | feat/squeeze-momentum-indicator | 2026-04-12]
 - Violation: 계산 정확도 테스트 누락 — period-based 인디케이터임에도 val 부호(양수/음수)만 검증하고 수동 계산 레퍼런스 값과의 일치 여부(toBeCloseTo) 테스트 없음
 - Rule: CONVENTIONS.md — Period-Based Indicator 필수 테스트 케이스 표: "첫 번째 값이 명세와 일치한다"

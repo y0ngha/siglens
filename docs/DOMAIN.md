@@ -883,7 +883,7 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 | `indicators/donchian-channel.md` | Donchian Channel(20) | 브레이크아웃, Turtle Trading | 0.8 |
 | `indicators/buy-sell-volume.md` | Buy/Sell Volume | 캔들 내 매수/매도 압력 분해 | 0.75 |
 | `indicators/squeeze-momentum.md` | Squeeze Momentum(BB:20,KC:20,mult:1.5) | BB/KC 스퀴즈 감지, 모멘텀 방향 | 0.8 |
-| `indicators/smart-money-concepts.md` | 스마트 머니 컨셉 (SMC) | 0.85 |
+| `indicators/smart-money-concepts.md` | 스마트 머니 컨셉 (SMC) | BOS/CHoCH 구조, 오더 블록, FVG, 프리미엄·디스카운트 존 해석 | 0.85 |
 
 > **SMC**는 `smc` 필드(`IndicatorResult.smc`)를 참조한다.
 > `indicators: ['atr', 'smc']`로 선언되어 있으며, AI는 Swing Points, Order Blocks, FVG,

@@ -3,6 +3,7 @@ import {
     SQUEEZE_MOMENTUM_BB_LENGTH,
     SQUEEZE_MOMENTUM_KC_LENGTH,
     SQUEEZE_MOMENTUM_KC_MULT,
+    SQUEEZE_MOMENTUM_MIN_BARS,
 } from '@/domain/indicators/constants';
 import type { Bar, SqueezeMomentumResult } from '@/domain/types';
 
@@ -35,10 +36,6 @@ const MIN_BARS = Math.max(
     SQUEEZE_MOMENTUM_KC_LENGTH
 );
 
-// Actual warmup: delta window needs kcLength bars that each need kcLength bars,
-// so the first valid val appears at index 2*kcLength - 2.
-const ACTUAL_WARMUP = 2 * SQUEEZE_MOMENTUM_KC_LENGTH - 1;
-
 describe('calculateSqueezeMomentum', () => {
     describe('입력 배열이 비어있을 때', () => {
         it('빈 배열을 반환한다', () => {
@@ -62,12 +59,14 @@ describe('calculateSqueezeMomentum', () => {
         });
 
         it('첫 번째 유효한 val은 실제 워밍업 기간 이후에 나타난다', () => {
-            const bars = makeUniformBars(ACTUAL_WARMUP + 10);
+            const bars = makeUniformBars(SQUEEZE_MOMENTUM_MIN_BARS + 10);
             const result = calculateSqueezeMomentum(bars);
             expect(
-                result.slice(0, ACTUAL_WARMUP - 1).every(r => r.val === null)
+                result
+                    .slice(0, SQUEEZE_MOMENTUM_MIN_BARS - 1)
+                    .every(r => r.val === null)
             ).toBe(true);
-            expect(result[ACTUAL_WARMUP - 1].val).not.toBeNull();
+            expect(result[SQUEEZE_MOMENTUM_MIN_BARS - 1].val).not.toBeNull();
         });
 
         it('충분한 데이터 이후 val은 number다', () => {

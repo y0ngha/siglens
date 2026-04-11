@@ -20,10 +20,9 @@ export function typicalPrice(high: number, low: number, close: number): number {
  */
 export function stdDev(values: number[], period: number): number | null {
     if (values.length < period) return null;
-    const window = values.slice(-period);
-    const mean = window.reduce((sum, v) => sum + v, 0) / period;
-    const variance =
-        window.reduce((sum, v) => sum + (v - mean) ** 2, 0) / period;
+    const vals = values.slice(-period);
+    const mean = vals.reduce((sum, v) => sum + v, 0) / period;
+    const variance = vals.reduce((sum, v) => sum + (v - mean) ** 2, 0) / period;
     return Math.sqrt(variance);
 }
 
@@ -58,13 +57,13 @@ export function rollingLowest(values: number[], period: number): number | null {
  */
 export function linreg(values: number[], period: number): number | null {
     if (values.length < period) return null;
-    const window = values.slice(-period);
+    const vals = values.slice(-period);
     const n = period;
-    // x = [0, 1, ..., n-1], y = window
+    // x = [0, 1, ..., n-1], y = vals
     const sumX = (n * (n - 1)) / 2;
     const sumX2 = (n * (n - 1) * (2 * n - 1)) / 6;
-    const sumY = window.reduce((sum, v) => sum + v, 0);
-    const sumXY = window.reduce((sum, v, i) => sum + i * v, 0);
+    const sumY = vals.reduce((sum, v) => sum + v, 0);
+    const sumXY = vals.reduce((sum, v, i) => sum + i * v, 0);
     const slope = (n * sumXY - sumX * sumY) / (n * sumX2 - sumX * sumX);
     const intercept = (sumY - slope * sumX) / n;
     return intercept + slope * (n - 1);

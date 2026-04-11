@@ -111,6 +111,9 @@ export const VP_MIN_BARS = 30;
 export const SQUEEZE_MOMENTUM_BB_LENGTH = 20;
 export const SQUEEZE_MOMENTUM_KC_LENGTH = 20;
 export const SQUEEZE_MOMENTUM_KC_MULT = 1.5;
+// Actual warmup: delta window of kcLength requires kcLength delta values,
+// each of which needs kcLength bars → first valid result at index 2*kcLength-2.
+export const SQUEEZE_MOMENTUM_MIN_BARS = 2 * SQUEEZE_MOMENTUM_KC_LENGTH - 1;
 
 export const SMC_SWING_PERIOD = 5;
 export const SMC_EQUAL_LEVEL_ATR_MULTIPLIER = 0.5;
