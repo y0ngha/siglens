@@ -194,6 +194,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## Accessibility (WAI-ARIA)
+
+```
+1. Overwriting native ARIA role of semantic elements
+   → Native roles (paragraph, complementary) must not be replaced with role attributes
+   → Use <div role="note"> instead of <p role="note"> or <aside role="note">
+   → Use semantic elements without explicit role unless the role fundamentally differs
+```
+
+---
+
 ## Lightweight Charts
 
 1. Missing chart.remove() cleanup or listener unsubscribe before chart.remove()

@@ -1,19 +1,5 @@
 # Fix Log
 
-## [Issue #256 | feat/256/privacy-terms-pages | 2026-04-11]
-- Violation: `<aside role="note">`로 aside 엘리먼트의 implicit complementary landmark role을 다른 ARIA role로 덮어씀
-- Rule: WAI-ARIA 원칙 — 시맨틱 엘리먼트의 native ARIA role을 다른 role로 덮어쓰지 말 것. role="note"는 `<div>`에 부여하거나 `<aside>`는 role 명시 없이 사용
-- Context: privacy/page.tsx, terms/page.tsx의 투자 면책 고지 박스에서 `<aside role="note">` 사용으로 aside의 implicit complementary role이 note로 교체됨
-
-- Violation: breadcrumb 네비게이션의 현재 페이지 항목에 `aria-current="page"` 누락
-- Rule: WAI-ARIA Breadcrumb Pattern — 브레드크럼의 마지막(현재) 항목에는 반드시 aria-current="page"를 명시해야 함
-- Context: privacy/page.tsx, terms/page.tsx의 breadcrumb `<li>`에 현재 페이지임을 나타내는 속성이 없었음
-
-## [PR #265 | feat/264/모바일-분석패널-바텀시트 | 2026-04-11]
-- Violation: CSS 임의값(pb-[15svh])이 JS 상수(SNAP_PEEK = 0.15)와 의미적으로 연동되어 있으나 코드 레벨 연결 없음
-- Rule: MISTAKES.md Design & Cohesion #1 — 함께 변경되어야 하는 값은 단일 위치에서 관리해야 한다
-- Context: ChartContent.tsx 차트 영역 padding이 MobileAnalysisSheet의 SNAP_PEEK 스냅 높이와 연동되어야 하지만, CSS 클래스에 하드코딩되어 SNAP_PEEK 변경 시 수동 업데이트 필요
-
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: components/hooks/ 파일에 'use client' 선언 누락
 - Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
@@ -28,25 +14,11 @@
 - Rule: Prompt 일관성 — 한국어 작성 지시와 줄바꿈 지시 목록이 동기화되어야 함
 - Context: actionRecommendation 필드 추가 시 첫 번째 필드 목록에만 추가하고 두 번째 목록은 누락
 
-## [PR #216 Round 11 | feat/196/ticker-autocomplete | 2026-04-10]
-- Violation: `docs/ARCHITECTURE.md` 폴더 트리에 신규 `infrastructure/ticker/` 디렉터리 미반영
-- Rule: MISTAKES.md TypeScript #11 — 구현 변경 시 문서 동기화 필수
-- Context: PR #216에서 `src/infrastructure/ticker/`가 신규 추가됐으나 ARCHITECTURE.md 폴더 트리에 누락
-
 
 ## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음
 - Rule: 코드베이스에 import되지 않는 파일은 데드 코드 — PR에서 교체 시 구 파일 삭제 필수
 - Context: `SymbolSearch`가 `TickerAutocomplete`로 교체됐지만 `src/components/search/SymbolSearch.tsx`가 미삭제 상태로 남아 있었음
-
-## [Issue #264 | feat/264/모바일-분석패널-바텀시트 | 2026-04-11]
-- Violation: `useSyncExternalStore`의 `subscribe`와 `getSnapshot`이 각각 별도로 `window.matchMedia(query)`를 호출해 서로 다른 MediaQueryList 인스턴스를 참조함
-- Rule: FF Cohesion 3-B — 같은 리소스는 단일 인스턴스를 공유해야 함; MISTAKES.md Coding Paradigm #2 — 동일 값을 여러 번 계산하지 않는다
-- Context: `useMediaQuery.ts` 초기 작성 시 `subscribe`의 `window.matchMedia(query)` 호출과 `getSnapshot`의 `window.matchMedia(query).matches` 호출이 분리됨; `useRef`로 mql 인스턴스를 캐시하고 `getMql()` 헬퍼를 통해 공유하는 방식으로 수정
-
-- Violation: prop으로 전달하는 `readonly` 배열을 컴포넌트 렌더 안에서 `[...CONST]`로 spread해 매 렌더마다 새 배열 참조를 생성
-- Rule: MISTAKES.md Coding Paradigm #10 — 렌더마다 재생성되는 파생 값은 모듈 레벨 상수 또는 `useMemo`로 추출한다
-- Context: `MobileAnalysisSheet.tsx`에서 `snapPoints={[...MOBILE_SNAP_POINTS]}`가 매 렌더마다 새 배열을 생성; 모듈 레벨의 `SNAP_POINTS_MUTABLE` 상수로 추출하여 해결
 
 ## [예시 항목 | 브랜치명 | 날짜]
 - Violation: 예시
@@ -60,16 +32,6 @@
 
 
 
-## [Issue #172 버그픽스 | feat/172/메인-페이지-리디자인-브랜딩-변경 | 2026-04-06]
-- Violation: `SymbolPageClient.tsx`에서 render 중 `setTimeframeChangeCount` + `setPrevTimeframe`을 호출하는 패턴이 React 19 concurrent mode에서 "Cannot update a component (Router) while rendering a different component (ChartContent)" 에러를 유발했음
-- Rule: MISTAKES.md Components #5 — Side effects inside setState updater functions; 더 나아가 render 중 setState 자체가 React 19 concurrent mode + startTransition 조합에서 Next.js Router 업데이트 충돌을 일으킬 수 있음
-- Context: `useTimeframeChange`의 `startTransition` 내부에서 Suspense가 트리거되는 동안 render-phase setState가 Router context 업데이트와 충돌했음; `timeframeChangeCount` 관리를 `handleTimeframeChange` 이벤트 핸들러 안으로 이동하여 해결
-
-
-## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
-- Violation: `ChartContent.tsx`(`components/symbol-page/`)에서 `lightweight-charts`의 `IChartApi` 타입을 직접 import하여 `symbol-page` 레이어가 차트 라이브러리에 직접 커플링됨
-- Rule: MISTAKES.md Layer Dependencies #3 — `lightweight-charts` import(타입 포함)는 `components/chart/` 내부로 제한됨
-- Context: visible range 동기화를 위해 `stockChartRef`, `volumeChartRef`, 콜백 2개가 모두 `IChartApi`에 의존했음; `components/chart/hooks/useChartSync.ts`로 추출하여 `ChartContent.tsx`에서 `IChartApi` import 제거
 
 ## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
 - Violation: `POPULAR_TICKERS` (비즈니스 도메인 지식)가 `src/lib/seo.ts`에 정의되어 lib 레이어 허용 범위를 벗어남
@@ -121,13 +83,4 @@
 - Violation: `ValidatedActionPrices` 인터페이스를 구현 파일(`actionRecommendation.ts`)에 정의
 - Rule: ARCHITECTURE.md — 도메인 결과 타입은 `domain/types.ts`에 정의해야 함
 - Context: 다른 파일(`StockChart.tsx`, `useActionRecommendationOverlay.ts`)에서도 참조하는 타입을 구현 파일에 배치; `domain/types.ts`로 이동
-
-## [PR #265 Round 3 | feat/263/모바일-UX-개선 | 2026-04-11]
-- Violation: `number | string | null` 인라인 유니온 타입이 MobileAnalysisSheet.tsx(2곳)와 ChartContent.tsx(1곳)에 중복 선언됨
-- Rule: MISTAKES.md TypeScript #5 — 반복 사용되는 타입은 named type alias로 추출
-- Context: MobileAnalysisSheet의 props와 ChartContent의 useState에 동일 인라인 타입 산재; `SnapPoint` 타입 alias로 추출하고 export하여 해결
-
-- Violation: `MOBILE_SNAP_POINTS[1]` 하드코딩 배열 인덱스로 Half 스냅 포인트 참조
-- Rule: CONVENTIONS.md — Hardcoded array indices → named constants
-- Context: ChartContent.tsx 자동 시트 올리기 로직에서 인덱스 1이 "Half 스냅"임을 코드만으로 알 수 없었음; SNAP_HALF 등 named constant로 추출
 
