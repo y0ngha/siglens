@@ -94,6 +94,73 @@ export interface BuySellVolumeResult {
     sellVolume: number;
 }
 
+// ─── Smart Money Concepts ────────────────────────────────────────────────────
+// Concept reference: Smart Money Concepts (SMC) / ICT methodology
+// Original TradingView indicator: "Smart Money Concepts [LuxAlgo]" by LuxAlgo
+// This is an independent TypeScript implementation based on publicly documented
+// SMC trading concepts. Not a port of LuxAlgo's PineScript source code.
+// ─────────────────────────────────────────────────────────────────────────────
+
+export type SMCStructureDirection = 'bullish' | 'bearish';
+export type SMCBreakType = 'bos' | 'choch';
+export type SMCSwingPointType = 'high' | 'low';
+export type SMCZoneType = 'premium' | 'discount' | 'equilibrium';
+
+export interface SMCSwingPoint {
+    index: number;
+    price: number;
+    type: SMCSwingPointType;
+}
+
+export interface SMCOrderBlock {
+    startIndex: number;
+    high: number;
+    low: number;
+    type: SMCStructureDirection;
+    isMitigated: boolean;
+}
+
+export interface SMCFairValueGap {
+    index: number;
+    high: number;
+    low: number;
+    type: SMCStructureDirection;
+    isMitigated: boolean;
+}
+
+export interface SMCEqualLevel {
+    price: number;
+    firstIndex: number;
+    secondIndex: number;
+    type: SMCSwingPointType;
+}
+
+export interface SMCZone {
+    high: number;
+    low: number;
+    type: SMCZoneType;
+}
+
+export interface SMCStructureBreak {
+    index: number;
+    price: number;
+    type: SMCStructureDirection;
+    breakType: SMCBreakType;
+}
+
+export interface SMCResult {
+    swingHighs: SMCSwingPoint[];
+    swingLows: SMCSwingPoint[];
+    orderBlocks: SMCOrderBlock[];
+    fairValueGaps: SMCFairValueGap[];
+    equalHighs: SMCEqualLevel[];
+    equalLows: SMCEqualLevel[];
+    premiumZone: SMCZone | null;
+    discountZone: SMCZone | null;
+    equilibriumZone: SMCZone | null;
+    structureBreaks: SMCStructureBreak[];
+}
+
 export interface IndicatorResult {
     macd: MACDResult[];
     bollinger: BollingerResult[];
@@ -117,6 +184,7 @@ export interface IndicatorResult {
     cmf: (number | null)[];
     donchianChannel: DonchianChannelResult[];
     buySellVolume: BuySellVolumeResult[];
+    smc: SMCResult;
 }
 
 export type ChartDisplayType = 'line' | 'marker' | 'region';

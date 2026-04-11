@@ -4,6 +4,7 @@ import {
     resolveOverlayValues,
 } from '@/components/chart/utils/overlayLabelUtils';
 import { CHART_COLORS, getPeriodColor } from '@/lib/chartColors';
+import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
 import type { Bar, IndicatorResult } from '@/domain/types';
 
 const mockBars: Bar[] = [
@@ -38,6 +39,8 @@ const mockIndicators: IndicatorResult = {
     keltnerChannel: [],
     cmf: [],
     donchianChannel: [],
+    buySellVolume: [],
+    smc: EMPTY_SMC_RESULT,
 };
 
 describe('buildOverlayLabelConfigs', () => {

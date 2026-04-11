@@ -27,6 +27,7 @@ import {
     KELTNER_MULTIPLIER,
     CMF_DEFAULT_PERIOD,
     DONCHIAN_DEFAULT_PERIOD,
+    EMPTY_SMC_RESULT,
 } from '@/domain/indicators/constants';
 import {
     HAMMER_BODY_OFFSET,
@@ -138,6 +139,7 @@ const makeIndicators = (
     donchianChannel: [],
     buySellVolume: [],
     ...overrides,
+    smc: overrides?.smc ?? EMPTY_SMC_RESULT,
 });
 
 const makeEngulfingBars = (): [Bar, Bar] => [

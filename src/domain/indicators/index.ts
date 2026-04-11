@@ -21,6 +21,7 @@ import { calculateKeltnerChannel } from './keltnerChannel';
 import { calculateCMF } from './cmf';
 import { calculateDonchianChannel } from './donchianChannel';
 import { calculateBuySellVolume } from './buySellVolume';
+import { calculateSmc } from './smc';
 import { MA_DEFAULT_PERIODS, EMA_DEFAULT_PERIODS } from './constants';
 
 export * from './rsi';
@@ -45,6 +46,7 @@ export * from './keltnerChannel';
 export * from './cmf';
 export * from './donchianChannel';
 export * from './buySellVolume';
+export * from './smc';
 
 export function calculateIndicators(bars: Bar[]): IndicatorResult {
     const closes = bars.map(b => b.close);
@@ -81,5 +83,6 @@ export function calculateIndicators(bars: Bar[]): IndicatorResult {
         cmf: calculateCMF(bars),
         donchianChannel: calculateDonchianChannel(bars),
         buySellVolume: calculateBuySellVolume(bars),
+        smc: calculateSmc(bars),
     };
 }
