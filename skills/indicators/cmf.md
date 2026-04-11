@@ -56,3 +56,4 @@ CMF (Chaikin Money Flow), developed by Marc Chaikin, measures the accumulation/d
 - CMF does not account for gap moves. A gap up where the close is near the low of a narrow range produces a negative CLV despite overall bullish price action.
 - The standard 21-period lookback is suitable for daily charts. For shorter timeframes, 10-period CMF may be more responsive; for weekly analysis, 40 periods may provide smoother signals.
 - CMF values rarely reach the theoretical extremes of +1 or -1. In practice, values beyond ±0.4 are exceptional.
+- CMF can be distorted on limit-up / limit-down (halt) days: the close is pinned at the locked price while volume accumulates, producing an extreme CLV that does not reflect genuine two-sided trading. Discount CMF readings on halt bars.

@@ -4,7 +4,7 @@ description: ICT/SMC 방법론에 기반하여 기관 자금의 행동 패턴을
 type: indicator_guide
 category: neutral
 indicators: ['atr', 'smc']
-confidence_weight: 0.85
+confidence_weight: 0.8
 ---
 
 ## Overview
@@ -23,6 +23,8 @@ SMC pre-computed values available in the `smc` indicator field:
 | `premiumZone` | Upper 25% of the recent swing range |
 | `equilibriumZone` | Middle 50% of the recent swing range |
 | `discountZone` | Lower 25% of the recent swing range |
+
+Note: `atr` is listed in the `indicators` frontmatter as a **companion indicator** used for proximity thresholds (e.g., EQH/EQL tolerance `0.5 × ATR`, key-level distance filters `2–3 × ATR`). ATR is not part of the `smc` field itself — it is supplied separately and referenced from SMC logic for normalization.
 
 ---
 
@@ -129,7 +131,7 @@ Based on the most recent confirmed swing range (last swing high to last swing lo
 
 ## Confluence Framework
 
-Signals are rated by the number of SMC factors aligning at the same price level:
+Signals are rated by the number of SMC factors aligning at the same price level. These thresholds are a **heuristic calibration**, not an empirically validated rule — SMC in its original ICT form is a discretionary, visual methodology, and confluence counts are a pragmatic simplification for programmatic analysis.
 
 | Confluence Count | Signal Strength |
 |---|---|
@@ -148,6 +150,18 @@ Signals are rated by the number of SMC factors aligning at the same price level:
 - Structure is mixed (no clear BOS sequence)
 - Price is at Equilibrium with no nearby OB or FVG
 - Equal highs/lows targeted but no reversal signal follows the sweep
+
+---
+
+## Failure Modes and Caveats
+
+SMC signals fail in predictable ways. Recognizing these scenarios early avoids trapping into invalidated setups.
+
+- **CHoCH immediately reversed**: A Change of Character followed within 1–3 bars by a break back in the original trend direction is a false signal — the initial CHoCH was likely a liquidity sweep, not a structural shift. Wait for a retest of an order block or FVG in the CHoCH direction before treating it as valid.
+- **Order block mitigated without reaction**: If price enters an unmitigated OB and passes straight through without a meaningful rejection wick or reaction candle, institutions are not defending the zone. Do not continue to treat the OB as active.
+- **FVG filled and overshot**: An FVG that price fills and then closes beyond (rather than respecting the far edge) loses its significance. Subsequent retests of the same zone carry little weight.
+- **Discretionary methodology**: SMC in its original ICT form is fundamentally a visual, discretionary framework. Automated interpretation can miss subtle confluences (narrative context, session timing, higher-timeframe draw on liquidity) and may over-weight mechanically-detected zones that a human trader would dismiss. Treat programmatic SMC output as a shortlist for further discretionary review, not as standalone trading conclusions.
+- **Trend-strength blindness**: SMC does not explicitly measure trend strength. A weak BOS in a choppy market carries far less information than a BOS in a clearly trending environment. Cross-check with ADX or a trend filter before acting on structural breaks.
 
 ---
 

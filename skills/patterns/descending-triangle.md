@@ -5,7 +5,7 @@ type: pattern
 category: continuation_bearish
 pattern: descending_triangle
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.8
 display:
   chart:
     show: true
@@ -26,7 +26,7 @@ display:
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.75 — Descending Triangle is one of the more reliable bearish continuation patterns, with Bulkowski reporting an 87% success rate for downward breakdowns. The horizontal support provides a clear, objective breakdown level. The slightly higher confidence than the Ascending Triangle (0.7) reflects the stronger statistical performance and the psychological weight of repeated lower highs pressing against a flat support.
+confidence_weight: 0.8 — Descending Triangle is one of the more reliable bearish continuation patterns. Bulkowski's Encyclopedia of Chart Patterns reports a breakdown success rate near 87% (downward breakout occurring ~64% of the time, with the breakout reaching target). The horizontal support provides a clear, objective breakdown level, and the psychological weight of repeated lower highs pressing against a flat support adds conviction. The 0.8 weight reflects this strong empirical track record and the pattern's objectivity relative to wedges or symmetrical triangles.
 
 Factors that increase confidence:
 - 3+ touches on the horizontal support

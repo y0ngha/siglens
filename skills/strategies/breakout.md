@@ -4,7 +4,7 @@ description: 주요 지지·저항선, 채널, 차트 패턴의 돌파를 감지
 type: strategy
 category: neutral
 indicators: ['atr']
-confidence_weight: 0.7
+confidence_weight: 0.72
 ---
 
 ## Overview
@@ -143,7 +143,7 @@ False breakouts are the primary risk. Apply these filters to reduce false signal
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.70 — Breakout trading is one of the oldest and most systematically validated strategies, with decades of documented performance (Turtle Trading, channel breakout systems). The systematic nature allows clear rules and backtesting. However, the high false breakout rate (40-50% without filters) means filter application is critical and introduces discretion.
+confidence_weight: 0.72 — Breakout trading is one of the oldest and most systematically validated strategies, with decades of documented performance (Turtle Trading, channel breakout systems). The systematic nature allows clear rules and backtesting. The 0.72 weight reflects the strategy's strong historical track record while acknowledging that the high false breakout rate (40–50% without filters) means filter application is critical and introduces some discretion.
 
 Factors that increase confidence:
 - Volume expansion confirms the breakout (50%+ above average)

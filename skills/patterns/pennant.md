@@ -5,7 +5,7 @@ type: pattern
 category: neutral
 pattern: pennant
 indicators: []
-confidence_weight: 0.7
+confidence_weight: 0.72
 display:
   chart:
     show: true
@@ -21,7 +21,7 @@ display:
 - The pennant must be short in duration relative to the flagpole — typically 1-3 weeks (5-15 daily bars). Pennants that last longer than 3 weeks begin to lose their continuation bias.
 - Volume must decline significantly during the pennant formation, indicating a brief pause rather than a directional shift.
 - Both the upper (descending) and lower (ascending) trendlines of the pennant must have at least 2 touch points each.
-- The pennant should retrace no more than 38.2% of the flagpole at its widest point.
+- The pennant should retrace no more than roughly 38.2% of the flagpole at its widest point. This is a guideline, not a hard limit — some reliable pennants retrace up to 50%, but retracements beyond 50% materially weaken the continuation bias.
 - The pattern is confirmed when price closes outside the pennant in the direction of the flagpole, with volume returning to above-average levels.
 
 ## Distinguishing Pennant from Symmetrical Triangle
@@ -34,7 +34,7 @@ If no clear flagpole precedes the converging trendlines, classify the pattern as
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.7 — Pennant has a similar reliability to the Flag pattern, as both are short-term continuation patterns following a strong impulse move. The pennant's converging (triangular) structure is slightly less defined than the flag's parallel channel, introducing marginally more ambiguity in the breakout direction. However, the mandatory flagpole provides strong momentum context that supports the continuation bias.
+confidence_weight: 0.72 — Pennant has a similar reliability profile to the Flag pattern, as both are short-term continuation patterns following a strong impulse move. Bulkowski reports continuation-direction breakouts for pennants in roughly the 65–75% range. The pennant's converging (triangular) structure is slightly less defined than the flag's parallel channel, introducing marginally more ambiguity in the breakout direction, but the mandatory flagpole provides strong momentum context that supports the continuation bias. The 0.72 weight sits just below Bull/Bear Flag (0.75) to reflect the slightly wider directional variance.
 
 Factors that increase confidence:
 - Flagpole shows a move of at least 10% with significantly above-average volume

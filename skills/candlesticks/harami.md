@@ -4,7 +4,7 @@ description: Harami candlestick pattern (Bullish/Bearish Harami, Harami Cross) i
 type: candlestick
 category: neutral
 indicators: []
-confidence_weight: 0.7
+confidence_weight: 0.72
 ---
 
 ## Overview

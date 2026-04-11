@@ -5,7 +5,7 @@ type: pattern
 category: reversal_bullish
 pattern: triple_bottom
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.78
 display:
   chart:
     show: true
@@ -25,7 +25,7 @@ display:
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.75 — Triple Bottom has a slightly lower confidence weight than Triple Top (0.8) because bottoming patterns generally take longer to confirm and volume patterns at bottoms are less distinct. Bulkowski reports an 80-85% success rate. The three-trough structure still provides more confirmation than a Double Bottom, as three successful defenses of support demonstrate strong accumulation.
+confidence_weight: 0.78 — Triple Bottom is among the more reliable bullish reversal patterns. Bulkowski reports an 80–85% success rate for upside targets once the neckline breaks. The weight sits slightly below Triple Top (0.8) because bottoming patterns generally take longer to confirm and volume patterns at bottoms are less distinct, but the three-trough structure still provides stronger confirmation than a Double Bottom — three successful defenses of support demonstrate persistent accumulation.
 
 Factors that increase confidence:
 - All three trough prices within 1.5% of each other

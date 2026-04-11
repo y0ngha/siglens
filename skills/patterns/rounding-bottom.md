@@ -5,7 +5,7 @@ type: pattern
 category: reversal_bullish
 pattern: rounding_bottom
 indicators: []
-confidence_weight: 0.75
+confidence_weight: 0.78
 display:
   chart:
     show: true
@@ -26,7 +26,7 @@ display:
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.75 — Rounding Bottom (Saucer) is rated by Bulkowski as a "very reliable" reversal pattern. Its gradual formation reflects a slow but steady shift from bearish to bullish sentiment, making it one of the most powerful long-term reversal signals. However, its extended formation period introduces challenges: the pattern may take months to complete, and early identification can be premature. The confidence weight balances the pattern's high reliability when confirmed against the difficulty of timing.
+confidence_weight: 0.78 — Rounding Bottom (Saucer) is rated by Bulkowski as a "very reliable" reversal pattern, with documented success rates in the 75–82% range when confirmed by a rim breakout. Its gradual formation reflects a slow but steady shift from distribution to accumulation — a hallmark of smart-money positioning during periods when the broader market or sector is out of favor. The extended formation period introduces timing challenges (pattern may take months to complete, early identification can be premature), which is why the weight sits at 0.78 rather than higher despite the strong empirical track record.
 
 Factors that increase confidence:
 - Formation period > 3 months (60+ daily bars)

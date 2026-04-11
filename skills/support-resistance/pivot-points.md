@@ -4,7 +4,7 @@ description: 전일 가격 데이터를 기반으로 당일의 지지/저항 레
 type: support_resistance
 category: neutral
 indicators: []
-confidence_weight: 0.7
+confidence_weight: 0.75
 ---
 
 ## Overview

@@ -8,7 +8,7 @@ confidence_weight: 0.8
 
 ## Overview
 
-OBV (On-Balance Volume), developed by Joe Granville in 1963, is a cumulative volume indicator that adds volume on up-close days and subtracts volume on down-close days. The fundamental premise is that volume precedes price — institutional accumulation or distribution shows up in volume flow before it manifests in price movement. OBV has over 60 years of history and is one of the most frequently cited volume indicators in academic research.
+OBV (On-Balance Volume), developed by Joe Granville in 1963, is a cumulative volume indicator that adds volume on up-close days and subtracts volume on down-close days. The fundamental premise is that **changes in accumulation/distribution pattern often precede price reversals** — institutional flows showing up in volume structure (slope changes, divergences, trendline breaks) frequently appear before the corresponding price reversal. Note that this is a pattern-level observation, not a universal "volume leads price" claim; OBV is useful precisely because it can reveal divergence between cumulative flow and price. OBV has over 60 years of history and is one of the most frequently cited volume indicators in academic research.
 
 ## Signal Interpretation
 

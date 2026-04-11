@@ -52,3 +52,4 @@ VWAP (Volume Weighted Average Price) is the cumulative average price weighted by
 - VWAP is session-based. Its value resets each day, making it irrelevant as a multi-day support/resistance level in most cases.
 - On daily bars, VWAP represents the session average rather than a standard chart-based VWAP. Its interpretation differs from intraday use.
 - Do not use VWAP alone as a decision tool. It is most effective when combined with volume analysis and trend context.
+- **Late-session volume sensitivity**: VWAP is an equally weighted volume-price average across the session, so a single high-volume bar late in the day (e.g., a closing auction surge, block print, or news-driven spike) can pull VWAP significantly. This can create a distorted reference level that persists into the next session if an anchored VWAP is carried over. On days with heavy late-session volume, re-assess VWAP reliability before treating it as fair value.

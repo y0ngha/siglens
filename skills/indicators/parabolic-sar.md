@@ -50,3 +50,4 @@ Parabolic SAR (Stop and Reverse), developed by J. Welles Wilder in 1978, plots d
 - SAR is a lagging indicator that follows price action — it does not predict reversals, it confirms them after they begin.
 - In strongly trending markets, SAR can stay on one side for extended periods. Do not exit a position solely because SAR has been running for many bars — let the flip signal determine the exit.
 - Gap openings can cause the SAR to instantly flip, even if the underlying trend is intact. Verify gap-triggered flips with volume and other indicators.
+- **False reversals at trend onset**: The first few bars after a SAR flip are the most vulnerable to whipsaw. Because the AF resets to 0.02 at reversal, the SAR sits close to price and can be re-flipped by a modest retracement. Consider requiring the new trend to hold for 2–3 bars, or adding a volume/momentum filter before committing capital to the reversal.

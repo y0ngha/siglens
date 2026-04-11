@@ -59,6 +59,7 @@ A close near the high implies buyers dominated the bar; a close near the low imp
 ## Caveats
 
 - The indicator is entirely range-based: a narrow-range bar (e.g. doji) produces very small absolute buyVolume and sellVolume even if volume is high. Interpret in conjunction with total volume size.
-- Gaps are not reflected. If price gaps up and the entire bar is near its low, the sell ratio will be high even in a strongly bullish gap scenario.
+- Gaps are not reflected. If price gaps up and the entire bar is near its low, the sell ratio will be high even in a strongly bullish gap scenario. Session opens and gap events are the most common false-signal sources.
 - On very low-volume bars, the absolute split is small and statistically less meaningful. Weight signals from high-volume bars more heavily.
-- The formula treats the close position within the range as a linear proxy for buyer/seller control. This is an approximation — intrabar price paths are not captured.
+- The formula treats the close position within the range as a linear proxy for buyer/seller control. This is an **approximation** — actual intrabar order flow (who initiated each trade) is not captured. True tick-by-tick buy/sell classification requires tape reading, not OHLC decomposition.
+- The buy/sell decomposition via close-position is a heuristic popularized by TradingView-style "BS" indicators; it is not independently validated in academic microstructure literature. Treat it as a directional-bias proxy, not as a measurement of true aggressive buying/selling volume.

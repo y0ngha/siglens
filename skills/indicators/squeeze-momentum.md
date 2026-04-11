@@ -12,6 +12,8 @@ The Squeeze Momentum Indicator, originally developed by LazyBear (PineScript: ht
 
 **Parameters used:** BB length = 20, KC length = 20, KC multiplier = 1.5 (applied to both BB deviation and KC ATR offset).
 
+**Dependency note:** Squeeze Momentum is not a standalone oscillator — it requires both Bollinger Bands and Keltner Channel data to compute its squeeze state. The momentum component itself is derived from a separate linear regression of price deviations. All three inputs (BB, KC, and the regression series) must be available for the indicator to produce a meaningful reading.
+
 ## Signal Interpretation
 
 ### Squeeze State

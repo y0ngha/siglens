@@ -5,7 +5,7 @@ type: pattern
 category: continuation_bullish
 pattern: ascending_triangle
 indicators: []
-confidence_weight: 0.7
+confidence_weight: 0.75
 display:
   chart:
     show: true
@@ -26,7 +26,7 @@ display:
 
 ## Confidence Weight Rationale
 
-confidence_weight: 0.7 — Ascending Triangle breaks upward approximately 75% of the time, making it a moderately reliable bullish continuation pattern. The horizontal resistance provides a clear, objective breakout level. However, the 25% chance of a downward breakdown and the subjectivity in drawing the ascending trendline slightly reduce confidence compared to more definitive patterns like Head and Shoulders.
+confidence_weight: 0.75 — Ascending Triangle is one of the more reliable bullish continuation patterns. Bulkowski's Encyclopedia of Chart Patterns reports an upside breakout rate near 70% with a success rate (target reached) in the 75–87% range depending on market context. The horizontal resistance provides a clear, objective breakout level, and repeated higher lows pressing against a flat resistance reflect persistent buying pressure. The 0.75 weight places it on par with Descending Triangle's bearish mirror at a slightly more conservative level, acknowledging the subjectivity in drawing the ascending trendline compared to the perfectly horizontal support on its bearish counterpart.
 
 Factors that increase confidence:
 - 3+ touches on the horizontal resistance

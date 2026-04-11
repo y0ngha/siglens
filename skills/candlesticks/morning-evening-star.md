@@ -4,7 +4,7 @@ description: 3-candle reversal pattern interpretation guide for Morning Star and
 type: candlestick
 category: neutral
 indicators: []
-confidence_weight: 0.8
+confidence_weight: 0.82
 ---
 
 ## Overview
