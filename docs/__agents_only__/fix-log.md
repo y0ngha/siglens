@@ -22,11 +22,6 @@
 - Rule: 일관성 원칙 — 동일 모듈 내 `collectMdFiles`(재귀 탐색)와 구현 방식이 달라 향후 서브디렉토리 추가 시 카운트 불일치 발생 가능
 - Context: `countSkillFiles` 추가 시 `collectMdFiles` 재활용 없이 단순 `readdir` 사용; `collectMdFiles`를 재활용하도록 수정
 
-## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
-- Violation: `lib/seo.ts`에 법적 내용 상수(`INVESTMENT_DISCLAIMER`, `LEGAL_EFFECTIVE_DATE`, `PRIVACY_PATH` 등)와 SEO 상수가 혼재
-- Rule: FF Cohesion 3-A — 다른 목적의 상수는 분리된 모듈에 위치해야 함
-- Context: privacy/terms 페이지 추가 시 법적 상수를 seo.ts에 추가; `src/lib/legal.ts`로 분리하여 해결
-
 ## [PR #270 | feat/261/차트-dynamic-import-모바일-TTI-개선 | 2026-04-11]
 - Violation: dynamic import loading 컴포넌트(`ChartSkeleton`)가 `absolute inset-0`을 사용함에도 래퍼 컨테이너에 `relative` 클래스 누락
 - Rule: CSS Positioning — `absolute` 자식이 올바른 영역에 렌더되려면 부모 체인에 `positioned element`(`relative/absolute/fixed/sticky`)가 있어야 함
@@ -66,11 +61,6 @@
 - Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
-
-## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
-- Violation: `POPULAR_TICKERS` (비즈니스 도메인 지식)가 `src/lib/seo.ts`에 정의되어 lib 레이어 허용 범위를 벗어남
-- Rule: lib/CLAUDE.md — lib 레이어는 utility wrappers, React Query key factories, config constants, chart color constants만 허용; 도메인 비즈니스 상수는 금지
-- Context: `POPULAR_TICKERS`는 `sitemap.ts`에서만 사용되는 상수로 lib이 아닌 사용처(sitemap.ts) 내부로 인라인 이동하여 해결
 
 ## [fix/bars-null-and-ssr-window-error (FMP API spec fix) | 2026-04-06]
 - Violation: `console.log(url)` left in `fmp.ts` `getBars()` — debug artifact shipped to infrastructure

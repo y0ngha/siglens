@@ -320,4 +320,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Constants with different purposes/domains should be in separate modules
    ❌ src/lib/seo.ts contains both SEO metadata (ogTitle, ogDescription) and legal disclaimers
    ✅ Separate: src/lib/seo.ts for SEO, src/lib/legal.ts for legal constants
+
+7. Business domain constants placed in lib/ (violation of lib/CLAUDE.md scope)
+   → lib/ may contain only utility wrappers, React Query key factories, config constants, chart colors
+   → Business domain knowledge (POPULAR_TICKERS, legal disclaimers) must go to domain/ or sitemap-specific modules
+   ❌ POPULAR_TICKERS defined in src/lib/seo.ts
+   ✅ Inline at usage site (src/app/sitemap.ts) or domain-specific module
 ```
