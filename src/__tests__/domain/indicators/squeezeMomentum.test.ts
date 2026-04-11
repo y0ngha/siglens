@@ -29,10 +29,15 @@ function makeUniformBars(count: number, price = 100): Bar[] {
     );
 }
 
+// Minimum bars for any non-null output in BB/KC (inner indicators warmup)
 const MIN_BARS = Math.max(
     SQUEEZE_MOMENTUM_BB_LENGTH,
     SQUEEZE_MOMENTUM_KC_LENGTH
 );
+
+// Actual warmup: delta window needs kcLength bars that each need kcLength bars,
+// so the first valid val appears at index 2*kcLength - 2.
+const ACTUAL_WARMUP = 2 * SQUEEZE_MOMENTUM_KC_LENGTH - 1;
 
 describe('calculateSqueezeMomentum', () => {
     describe('입력 배열이 비어있을 때', () => {
@@ -56,12 +61,13 @@ describe('calculateSqueezeMomentum', () => {
             expect(calculateSqueezeMomentum(bars)).toHaveLength(50);
         });
 
-        it('처음 period-1개의 val은 null이다', () => {
-            const bars = makeUniformBars(50);
+        it('첫 번째 유효한 val은 실제 워밍업 기간 이후에 나타난다', () => {
+            const bars = makeUniformBars(ACTUAL_WARMUP + 10);
             const result = calculateSqueezeMomentum(bars);
             expect(
-                result.slice(0, MIN_BARS - 1).every(r => r.val === null)
+                result.slice(0, ACTUAL_WARMUP - 1).every(r => r.val === null)
             ).toBe(true);
+            expect(result[ACTUAL_WARMUP - 1].val).not.toBeNull();
         });
 
         it('충분한 데이터 이후 val은 number다', () => {
@@ -126,6 +132,28 @@ describe('calculateSqueezeMomentum', () => {
         });
     });
 
+    describe('계산 정확도', () => {
+        it('첫 번째 유효한 val이 명세와 일치한다', () => {
+            // Linear trend: close[i] = 100 + i, high[i] = 105 + i, low[i] = 95 + i
+            // For any bar at index j >= kcLength - 1:
+            //   highestHigh = 105 + j, lowestLow = 76 + j (= 95 + (j - kcLength + 1) when kcLength=20)
+            //   closeSma over [j-19..j] = 90.5 + j
+            //   delta = close[j] - ((highestHigh + lowestLow)/2 + closeSma)/2
+            //         = (100+j) - ((90.5+j) + (90.5+j))/2 = (100+j) - (90.5+j) = 9.5
+            // linreg([9.5, ..., 9.5], 20) = 9.5 (constant series → slope=0, intercept=9.5)
+            const bars = makeBars(
+                Array.from({ length: 40 }, (_, i) => ({
+                    high: 105 + i,
+                    low: 95 + i,
+                    close: 100 + i,
+                }))
+            );
+            const result = calculateSqueezeMomentum(bars);
+            const firstValid = result.find(r => r.val !== null);
+            expect(firstValid?.val).toBeCloseTo(9.5, 4);
+        });
+    });
+
     describe('상승 추세 데이터일 때', () => {
         it('val이 양수가 된다 (상승 모멘텀)', () => {
             const bars = makeBars(
@@ -137,7 +165,7 @@ describe('calculateSqueezeMomentum', () => {
             );
             const result = calculateSqueezeMomentum(bars);
             const valid = result.filter(r => r.val !== null);
-            const lastVal = valid[valid.length - 1].val as number;
+            const lastVal = valid[valid.length - 1].val!;
             expect(lastVal).toBeGreaterThan(0);
         });
     });
@@ -153,7 +181,7 @@ describe('calculateSqueezeMomentum', () => {
             );
             const result = calculateSqueezeMomentum(bars);
             const valid = result.filter(r => r.val !== null);
-            const lastVal = valid[valid.length - 1].val as number;
+            const lastVal = valid[valid.length - 1].val!;
             expect(lastVal).toBeLessThan(0);
         });
     });

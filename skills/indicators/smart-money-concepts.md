@@ -1,7 +1,7 @@
 ---
 name: 스마트 머니 컨셉 (SMC)
-description: ICT/SMC 방법론에 기반하여 기관 자금의 행동 패턴을 분석 — BOS/CHoCH 구조 이탈, 오더 블록, 공정 가치 갭(FVG), 스윙 포인트, 프리미엄·디스카운트 존을 통해 기관이 축적·청산하는 가격대를 식별하는 전략
-type: strategy
+description: ICT/SMC 방법론에 기반하여 기관 자금의 행동 패턴을 분석 — BOS/CHoCH 구조 이탈, 오더 블록, 공정 가치 갭(FVG), 스윙 포인트, 프리미엄·디스카운트 존을 통해 기관이 축적·청산하는 가격대를 식별하는 보조지표
+type: indicator_guide
 category: neutral
 indicators: ['atr', 'smc']
 confidence_weight: 0.85

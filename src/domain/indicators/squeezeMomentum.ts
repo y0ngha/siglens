@@ -21,14 +21,15 @@ import {
     SQUEEZE_MOMENTUM_KC_LENGTH,
     SQUEEZE_MOMENTUM_KC_MULT,
 } from '@/domain/indicators/constants';
-import { sma, stdDev, linreg } from './utils';
+import { sma, stdDev, linreg, rollingHighest, rollingLowest } from './utils';
 
-const NULL_RESULT: SqueezeMomentumResult = {
+type BarComputed = Omit<SqueezeMomentumResult, 'increasing'>;
+
+const NULL_COMPUTED: BarComputed = {
     val: null,
     sqzOn: null,
     sqzOff: null,
     noSqz: null,
-    increasing: null,
 };
 
 function trueRangeAt(bar: Bar, prev: Bar): number {
@@ -61,39 +62,41 @@ export function calculateSqueezeMomentum(
     // delta[i] = close[i] - avg(avg(highest(high, n), lowest(low, n)), sma(close, n))
     const deltas: (number | null)[] = bars.map((_, i) => {
         if (i < kcLength - 1) return null;
-        const start = i - kcLength + 1;
-        const highestHigh = Math.max(...highs.slice(start, i + 1));
-        const lowestLow = Math.min(...lows.slice(start, i + 1));
-        const closeSma =
-            closes.slice(start, i + 1).reduce((s, v) => s + v, 0) / kcLength;
+        const highestHigh = rollingHighest(
+            highs.slice(i - kcLength + 1, i + 1),
+            kcLength
+        )!;
+        const lowestLow = rollingLowest(
+            lows.slice(i - kcLength + 1, i + 1),
+            kcLength
+        )!;
+        const closeSma = sma(closes.slice(i - kcLength + 1, i + 1), kcLength)!;
         return closes[i] - ((highestHigh + lowestLow) / 2 + closeSma) / 2;
     });
 
-    let prevVal: number | null = null;
+    const maxPeriod = Math.max(bbLength, kcLength);
 
-    return bars.map((_, i) => {
-        const closesWindow = closes.slice(0, i + 1);
+    // Pass 1: compute val + squeeze state for each bar (no increasing yet).
+    const intermediate: BarComputed[] = bars.map((_, i) => {
+        const closesWindow = closes.slice(
+            Math.max(0, i - maxPeriod + 1),
+            i + 1
+        );
         // trValues covers bars[1..n-1]; for bar i we need TR values for bars[1..i],
-        // which is trValues[0..i-1] (length = i).
-        const trWindow = trValues.slice(0, i);
+        // which corresponds to trValues[0..i-1] (length = i).
+        const trWindow = trValues.slice(Math.max(0, i - maxPeriod), i);
 
         // ── Bollinger Bands ──────────────────────────────────────────────────
         const basis = sma(closesWindow, bbLength);
         const sd = stdDev(closesWindow, bbLength);
-        if (basis === null || sd === null) {
-            prevVal = null;
-            return NULL_RESULT;
-        }
+        if (basis === null || sd === null) return NULL_COMPUTED;
         const upperBB = basis + kcMult * sd;
         const lowerBB = basis - kcMult * sd;
 
         // ── Keltner Channel ──────────────────────────────────────────────────
         const ma = sma(closesWindow, kcLength);
         const rangema = sma(trWindow, kcLength);
-        if (ma === null || rangema === null) {
-            prevVal = null;
-            return NULL_RESULT;
-        }
+        if (ma === null || rangema === null) return NULL_COMPUTED;
         const upperKC = ma + rangema * kcMult;
         const lowerKC = ma - rangema * kcMult;
 
@@ -103,24 +106,19 @@ export function calculateSqueezeMomentum(
         const noSqz = !sqzOn && !sqzOff;
 
         // ── Momentum via linreg on delta window ──────────────────────────────
-        if (i < kcLength - 1) {
-            prevVal = null;
-            return NULL_RESULT;
-        }
         const deltaWindow = deltas.slice(i - kcLength + 1, i + 1);
-        if (deltaWindow.some(v => v === null)) {
-            prevVal = null;
-            return NULL_RESULT;
-        }
-        const val = linreg(deltaWindow as number[], kcLength);
-        if (val === null) {
-            prevVal = null;
-            return NULL_RESULT;
-        }
+        if (deltaWindow.some(v => v === null)) return NULL_COMPUTED;
+        const validDeltas = deltaWindow.filter((v): v is number => v !== null);
+        const val = linreg(validDeltas, kcLength);
+        if (val === null) return NULL_COMPUTED;
 
-        const increasing = prevVal !== null ? val > prevVal : null;
-        prevVal = val;
+        return { val, sqzOn, sqzOff, noSqz };
+    });
 
-        return { val, sqzOn, sqzOff, noSqz, increasing };
+    // Pass 2: add increasing field by comparing adjacent val values.
+    return intermediate.map((r, i) => {
+        if (r.val === null) return { ...r, increasing: null };
+        const prevVal = i > 0 ? intermediate[i - 1].val : null;
+        return { ...r, increasing: prevVal !== null ? r.val > prevVal : null };
     });
 }
