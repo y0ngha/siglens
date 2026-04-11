@@ -62,6 +62,7 @@ const mockVariables: AnalyzeVariables = {
         keltnerChannel: [],
         cmf: [],
         donchianChannel: [],
+        buySellVolume: [],
     },
 };
 
