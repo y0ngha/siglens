@@ -1,5 +1,19 @@
 # Fix Log
 
+## [PR #282 Round 2 | fix/seo-audit-282 | 2026-04-12]
+- Violation: `new Date()` called at module level in `next.config.ts` during env config setup — static build cannot support dynamic timestamp
+- Rule: MISTAKES.md Next.js Build & Caching rule 1 — Uncached data must not be called in Provider constructors or module-level code during prerender
+- Context: `next.config.ts` set `NEXT_BUILD_DATE = new Date()` which executes at build time; converted to `NEXT_BUILD_DATE = new Date().toISOString()` with 'use cache' guard where needed
+
+- Violation: `NEXT_BUILD_DATE` env var parsed without `isNaN()` guard — malformed dates pass through silently without validation
+- Rule: MISTAKES.md Pure Function Contracts rule 1 — Utility functions must guard all valid input ranges explicitly
+- Context: Date parsing did not validate `Number.isNaN(new Date(NEXT_BUILD_DATE).getTime())`; added guard to reject invalid date strings
+
+## [PR #282 | fix/seo-audit-282 | 2026-04-12]
+- Violation: `POPULAR_TICKERS` (business domain constant) placed in `src/lib/seo.ts` — violation of lib/ scope
+- Rule: MISTAKES.md Design & Cohesion rule 7 — Business domain constants must not be in lib/; lib/ is for utility wrappers, React Query keys, config, chart colors only
+- Context: `POPULAR_TICKERS` is business domain knowledge used in `sitemap.ts`; belongs in domain-specific module or inlined at usage site
+
 ## [PR #278 Round 2 | feat/squeeze-momentum-indicator | 2026-04-12]
 - Violation: `utils.ts`에서 `const window = values.slice(-period)` — 브라우저 전역 `window` 객체 섀도잉
 - Rule: CONVENTIONS.md ESLint no-shadow — `window`, `document`, `location` 등 전역 이름 사용 금지

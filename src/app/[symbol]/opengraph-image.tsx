@@ -14,10 +14,16 @@ interface Props {
 export default async function Image({ params }: Props): Promise<ImageResponse> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
-    const assetInfo = await getAssetInfoAction(ticker);
 
-    const companyName = assetInfo?.name ?? ticker;
-    const koreanName = assetInfo?.koreanName;
+    let companyName = ticker;
+    let koreanName: string | undefined;
+    try {
+        const assetInfo = await getAssetInfoAction(ticker);
+        companyName = assetInfo?.name ?? ticker;
+        koreanName = assetInfo?.koreanName;
+    } catch {
+        // fallback: ticker만으로 OG 이미지 생성
+    }
 
     return new ImageResponse(
         <div

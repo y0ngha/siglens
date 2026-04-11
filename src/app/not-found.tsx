@@ -1,10 +1,10 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { SITE_NAME } from '@/lib/seo';
 import {
     POPULAR_TICKERS,
     POPULAR_TICKERS_DISPLAY_COUNT,
-    SITE_NAME,
-} from '@/lib/seo';
+} from '@/app/popular-tickers';
 import { Footer } from '@/components/layout/Footer';
 import { ContactDialog } from '@/components/layout/ContactDialog';
 
