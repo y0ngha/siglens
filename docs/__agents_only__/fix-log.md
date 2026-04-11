@@ -19,12 +19,6 @@
 - Rule: MISTAKES.md TypeScript #11 — 구현 변경 시 문서 동기화 필수
 - Context: PR #216에서 `src/infrastructure/ticker/`가 신규 추가됐으나 ARCHITECTURE.md 폴더 트리에 누락
 
-## [PR #216 Round 7 | feat/196/ticker-autocomplete | 2026-04-09]
-- Violation: `{isOpen && ...}` 블록 내부에서 `hasQuery`가 항상 `true`임에도 `&& hasQuery` 조건 유지 (dead code)
-- Rule: MISTAKES.md Coding Paradigm #4 — 결과를 변경하지 않는 조건(효과 없는 로직) 제거
-- Context: `isOpen = !isClosed && hasQuery`이므로 해당 블록 진입 시 `hasQuery`는 항상 true; `&& hasQuery` 제거
-
-
 
 ## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음

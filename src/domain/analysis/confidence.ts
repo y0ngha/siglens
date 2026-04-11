@@ -9,7 +9,7 @@ import type {
     PatternSummary,
     RawAnalysisResponse,
     Skill,
-    SkillResult,
+    StrategyResult,
 } from '@/domain/types';
 
 interface SkillLookup {
@@ -62,7 +62,10 @@ export function enrichAnalysisWithConfidence(
         analysis.candlePatterns,
         'patternName'
     );
-    const skillResultIds = buildUniqueIds(analysis.skillResults, 'skillName');
+    const strategyResultIds = buildUniqueIds(
+        analysis.strategyResults,
+        'strategyName'
+    );
 
     const enrichedPatterns: PatternResult[] = analysis.patternSummaries.map(
         (
@@ -84,15 +87,15 @@ export function enrichAnalysisWithConfidence(
     return {
         ...analysis,
         patternSummaries: filterPatterns(enrichedPatterns),
-        skillResults: analysis.skillResults.map(
+        strategyResults: analysis.strategyResults.map(
             (
-                r: Omit<SkillResult, 'confidenceWeight' | 'id'>,
+                r: Omit<StrategyResult, 'confidenceWeight' | 'id'>,
                 index: number
-            ): SkillResult => ({
+            ): StrategyResult => ({
                 ...r,
-                id: skillResultIds[index],
+                id: strategyResultIds[index],
                 confidenceWeight:
-                    findSkill(lookup, r.skillName)?.confidenceWeight ??
+                    findSkill(lookup, r.strategyName)?.confidenceWeight ??
                     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
             })
         ),

@@ -68,8 +68,7 @@ const mockVariables: AnalyzeVariables = {
 const mockRawAnalysis: RawAnalysisResponse = {
     summary: '테스트 분석 요약',
     trend: 'bullish' as const,
-    signals: [],
-    skillSignals: [],
+    indicatorResults: [],
     riskLevel: 'low' as const,
     keyLevels: { support: [], resistance: [] },
     priceTargets: {
@@ -77,7 +76,7 @@ const mockRawAnalysis: RawAnalysisResponse = {
         bearish: { targets: [], condition: '' },
     },
     patternSummaries: [],
-    skillResults: [],
+    strategyResults: [],
     candlePatterns: [],
     trendlines: [],
 };

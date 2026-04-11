@@ -785,18 +785,7 @@ function buildAnalysisPrompt(
 type Trend = 'bullish' | 'bearish' | 'neutral';
 type RiskLevel = 'low' | 'medium' | 'high';
 type SignalStrength = 'strong' | 'moderate' | 'weak';
-type SignalType =
-    | 'rsi_overbought'
-    | 'rsi_oversold'
-    | 'macd_golden_cross'
-    | 'macd_dead_cross'
-    | 'bollinger_upper_breakout'
-    | 'bollinger_lower_breakout'
-    | 'bollinger_squeeze'
-    | 'dmi_bullish_trend'
-    | 'dmi_bearish_trend'
-    | 'pattern'
-    | 'skill';
+type SignalType = 'skill';
 
 interface Signal {
     type: SignalType;
@@ -804,8 +793,8 @@ interface Signal {
     strength: SignalStrength;
 }
 
-interface SkillSignal {
-    skillName: string;
+interface IndicatorGuideResult {
+    indicatorName: string;     // indicator_guide skill 표시 이름 (예: 'RSI Signal Guide')
     signals: Signal[];
 }
 
@@ -862,13 +851,13 @@ interface CandlePatternSummary {
     summary: string;       // AI가 작성한 패턴별 요약
 }
 
-// skill별 분석 결과
-interface SkillResult {
-    id: string;            // 고유 ID (skillName_index 형식, React key용)
-    skillName: string;     // skill 표시 이름
-    trend: Trend;          // 해당 skill 분석이 시사하는 방향
-    summary: string;       // AI가 작성한 skill별 요약
-    confidenceWeight: number; // skill의 신뢰도 가중치 (0~1)
+// 전략 skill별 분석 결과 (type='strategy' skill)
+interface StrategyResult {
+    id: string;                 // 고유 ID (strategyName_index 형식, React key용)
+    strategyName: string;       // 전략 skill 표시 이름 (예: '엘리어트 파동')
+    trend: Trend;               // 해당 전략 분석이 시사하는 방향
+    summary: string;            // AI가 작성한 전략 요약 (markdown **label**: value 형식)
+    confidenceWeight: number;   // skill의 신뢰도 가중치 (0~1)
 }
 
 interface ActionRecommendation {
@@ -881,28 +870,32 @@ interface ActionRecommendation {
 interface AnalysisResponse {
     summary: string;
     trend: Trend;
-    signals: Signal[];              // 인디케이터 기반 신호 (skill 무관)
-    skillSignals: SkillSignal[];    // skill 기반 신호 (skill별로 그룹핑)
+    indicatorResults: IndicatorGuideResult[]; // indicator_guide skill 기반 신호 (indicatorName별 그룹핑) — "보조지표" 섹션에 렌더링
     riskLevel: RiskLevel;
     keyLevels: KeyLevels;
     priceTargets: PriceTargets;     // 강세/약세 시나리오별 가격 목표
-    patternSummaries: PatternSummary[]; // 감지된 패턴별 개별 요약 (type='pattern' skill)
-    skillResults: SkillResult[];        // skill별 분석 결과 (type!='pattern' skill)
-    candlePatterns: CandlePatternSummary[]; // 캔들 패턴 감지 결과
-    trendlines: Trendline[];           // AI가 감지한 추세선 목록 (0~3개)
+    patternSummaries: PatternSummary[];         // 차트 패턴 결과 (type='pattern' skill) — "차트 패턴" 섹션에 렌더링
+    strategyResults: StrategyResult[];          // 전략 skill 분석 결과 (type='strategy' skill) — "전략" 섹션에 렌더링
+    candlePatterns: CandlePatternSummary[];     // 캔들 패턴 감지 결과
+    trendlines: Trendline[];                    // AI가 감지한 추세선 목록 (0~3개)
     actionRecommendation?: ActionRecommendation; // 매매 전략 추천 (optional)
 }
 ```
 
-### signals vs skillSignals 구분 기준
+### 필드 ↔ UI 렌더링 매핑
 
 ```
-signals[]      → 인디케이터 수치 자체에서 도출되는 신호
-                 (RSI 과매수, MACD 크로스 등 skill 없이도 판단 가능한 것)
+indicatorResults[]  → AnalysisPanel "보조지표" 섹션
+                       indicator_guide skill의 시그널 결과
+                       indicatorName으로 그룹핑 (예: "RSI Signal Guide")
 
-skillSignals[] → skill 파일의 분석 기준을 적용해야만 도출되는 신호
-                 (RSI 다이버전스, 볼린저 스퀴즈 전략, 패턴 감지 등)
-                 skill 이름(skillName)으로 그룹핑
+strategyResults[]   → AnalysisPanel "전략" 섹션
+                       strategy skill의 분석 결과
+                       strategyName으로 식별 (예: "엘리어트 파동")
+
+patternSummaries[]  → AnalysisPanel "차트 패턴" 섹션
+                       pattern skill의 차트 패턴 감지 결과
+                       skillName으로 식별 (예: "Head and Shoulders")
 ```
 
 ---
@@ -1097,7 +1090,7 @@ skills/
 
 ```markdown
 ---
-name: string                  # skill 표시 이름 (SkillSignal.skillName에 사용)
+name: string                  # skill 표시 이름 (indicatorResults[].indicatorName, strategyResults[].strategyName, patternSummaries[].skillName 등 해당 카테고리별 식별자로 사용)
 description: string           # skill 설명
 type: pattern | indicator_guide | strategy | candlestick | support_resistance  # 선택
 category: string              # 선택. reversal_bullish | reversal_bearish | continuation_bullish | continuation_bearish | neutral
