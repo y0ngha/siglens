@@ -29,7 +29,7 @@ export function MobileAnalysisSheet({
         >
             <Drawer.Portal>
                 <Drawer.Content
-                    className="bg-secondary-900 border-secondary-700 fixed inset-x-0 bottom-0 z-40 flex flex-col [overscroll-behavior:contain] rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
+                    className="bg-secondary-900 border-secondary-700 fixed inset-x-0 bottom-0 z-40 flex max-h-[92svh] flex-col overflow-hidden [overscroll-behavior:contain] rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
                     aria-live="polite"
                 >
                     <Drawer.Handle

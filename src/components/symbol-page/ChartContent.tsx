@@ -210,16 +210,12 @@ export function ChartContent({
     );
 
     return (
-        <div
-            className="flex h-full w-full flex-col md:flex-row"
-            style={
-                {
-                    '--mobile-chart-height': mobileChartHeight,
-                } as React.CSSProperties
-            }
-        >
+        <div className="flex h-full w-full flex-col md:flex-row">
             {/* 차트 영역 */}
-            <div className="flex h-[var(--mobile-chart-height,85svh)] shrink-0 flex-col overflow-hidden md:h-full md:flex-1">
+            <div
+                className="flex shrink-0 flex-col overflow-hidden md:h-full md:flex-1"
+                style={isMobile ? { height: mobileChartHeight } : undefined}
+            >
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
                     <StockChart
