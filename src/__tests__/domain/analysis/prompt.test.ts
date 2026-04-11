@@ -136,6 +136,7 @@ const makeIndicators = (
     keltnerChannel: [],
     cmf: [],
     donchianChannel: [],
+    buySellVolume: [],
     ...overrides,
 });
 
@@ -1257,27 +1258,31 @@ describe('prompt', () => {
     });
 
     describe('거래량 분석 섹션 - bars가 있을 때', () => {
-        it('봉 평균과 현재 거래량이 포함된다', () => {
+        it('현재 봉 매수/매도 거래량과 비율이 포함된다', () => {
             const bars = [makeBar(0)];
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
-                makeIndicators(),
+                makeIndicators({
+                    buySellVolume: [{ buyVolume: 600, sellVolume: 400 }],
+                }),
                 []
             );
-            expect(result).toContain('bar average');
-            expect(result).toContain('Current volume');
+            expect(result).toContain('Current bar:');
+            expect(result).toContain('Buy ratio:');
         });
 
-        it('평균 대비 비율이 포함된다', () => {
+        it('누적 매수/매도 비율이 포함된다', () => {
             const bars = [makeBar(0)];
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
-                makeIndicators(),
+                makeIndicators({
+                    buySellVolume: [{ buyVolume: 600, sellVolume: 400 }],
+                }),
                 []
             );
-            expect(result).toContain('% of average');
+            expect(result).toContain('cumulative');
         });
     });
 

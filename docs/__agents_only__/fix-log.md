@@ -1,5 +1,12 @@
 # Fix Log
 
+## [PR #274 | feat/273/buy-sell-volume-인디케이터 | 2026-04-11]
+- Violation: IndicatorResult에 buySellVolume 필드 추가 시 prompt.test.ts makeIndicators 팩토리와 constants.test.ts에 대응 케이스 미추가
+- Rule: MISTAKES.md Tests #10 — "Type field added but test mock objects not updated"; Tests #2 — "New field/indicator without corresponding test cases"
+- Context: buySellVolume을 IndicatorResult에 추가하면서 기존 테스트 픽스처(makeIndicators)와 EMPTY_INDICATOR_RESULT 검증 테스트를 함께 업데이트하지 않아 TS 컴파일 에러 및 assertion 실패 발생
+- Violation: formatVolumeSection → formatBuySellVolumeSection 교체 후 prompt.test.ts의 거래량 섹션 assertion이 구버전 출력 텍스트 기준으로 남음
+- Rule: MISTAKES.md Tests #1 — "Not updating tests when return type changes"
+- Context: 'bar average', 'Current volume', '% of average' assertion이 새 출력('Current bar:', 'cumulative', 'Buy ratio:')으로 업데이트되지 않아 런타임 실패
 
 ## [PR #272 Round 2 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
 - Violation: `indicatorCount` prop이 `SymbolPageClient` → `ChartContent` → `AnalysisPanel`로 드릴링됨 (두 중간 컴포넌트 모두 미사용)
@@ -54,15 +61,6 @@
 - Rule: 코드베이스에 import되지 않는 파일은 데드 코드 — PR에서 교체 시 구 파일 삭제 필수
 - Context: `SymbolSearch`가 `TickerAutocomplete`로 교체됐지만 `src/components/search/SymbolSearch.tsx`가 미삭제 상태로 남아 있었음
 
-## [Issue #264 | feat/264/모바일-분석패널-바텀시트 | 2026-04-11]
-- Violation: `useSyncExternalStore`의 `subscribe`와 `getSnapshot`이 각각 별도로 `window.matchMedia(query)`를 호출해 서로 다른 MediaQueryList 인스턴스를 참조함
-- Rule: FF Cohesion 3-B — 같은 리소스는 단일 인스턴스를 공유해야 함; MISTAKES.md Coding Paradigm #2 — 동일 값을 여러 번 계산하지 않는다
-- Context: `useMediaQuery.ts` 초기 작성 시 `subscribe`의 `window.matchMedia(query)` 호출과 `getSnapshot`의 `window.matchMedia(query).matches` 호출이 분리됨; `useRef`로 mql 인스턴스를 캐시하고 `getMql()` 헬퍼를 통해 공유하는 방식으로 수정
-
-- Violation: prop으로 전달하는 `readonly` 배열을 컴포넌트 렌더 안에서 `[...CONST]`로 spread해 매 렌더마다 새 배열 참조를 생성
-- Rule: MISTAKES.md Coding Paradigm #10 — 렌더마다 재생성되는 파생 값은 모듈 레벨 상수 또는 `useMemo`로 추출한다
-- Context: `MobileAnalysisSheet.tsx`에서 `snapPoints={[...MOBILE_SNAP_POINTS]}`가 매 렌더마다 새 배열을 생성; 모듈 레벨의 `SNAP_POINTS_MUTABLE` 상수로 추출하여 해결
-
 ## [PR #266 | feat/260-259-258-257-255-254-252-250/seo-accessibility | 2026-04-11]
 - Violation: app/ 레이어 async 함수에 명시적 반환 타입 누락
 - Rule: CONVENTIONS.md — "Return types must be explicitly declared on domain functions"; app/ 레이어에도 일관성 있게 적용
@@ -72,9 +70,6 @@
 - Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
-
-
-
 
 ## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
 - Violation: `POPULAR_TICKERS` (비즈니스 도메인 지식)가 `src/lib/seo.ts`에 정의되어 lib 레이어 허용 범위를 벗어남
@@ -117,4 +112,3 @@
 - Violation: `ValidatedActionPrices` 인터페이스를 구현 파일(`actionRecommendation.ts`)에 정의
 - Rule: ARCHITECTURE.md — 도메인 결과 타입은 `domain/types.ts`에 정의해야 함
 - Context: 다른 파일(`StockChart.tsx`, `useActionRecommendationOverlay.ts`)에서도 참조하는 타입을 구현 파일에 배치; `domain/types.ts`로 이동
-

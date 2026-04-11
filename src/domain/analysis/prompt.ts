@@ -207,23 +207,35 @@ const formatRecentBarsSection = (bars: Bar[]): string => {
     ].join('\n');
 };
 
-const formatVolumeSection = (bars: Bar[]): string => {
-    const recentBars = bars.slice(-RECENT_BARS_COUNT);
+const formatBuySellVolumeSection = (indicators: IndicatorResult): string => {
+    const recentBuySell = indicators.buySellVolume.slice(-RECENT_BARS_COUNT);
 
-    if (recentBars.length === 0) {
+    if (recentBuySell.length === 0) {
         return ['## Volume Analysis', '- No data available'].join('\n');
     }
 
-    const avgVolume =
-        recentBars.reduce((acc, b) => acc + b.volume, 0) / recentBars.length;
-    const lastBar = recentBars[recentBars.length - 1];
-    const volumeRatio =
-        avgVolume > 0 ? (lastBar.volume / avgVolume) * PERCENTAGE_FACTOR : 0;
+    const { totalBuy, totalSell } = recentBuySell.reduce(
+        (acc, v) => ({
+            totalBuy: acc.totalBuy + v.buyVolume,
+            totalSell: acc.totalSell + v.sellVolume,
+        }),
+        { totalBuy: 0, totalSell: 0 }
+    );
+    const totalVolume = totalBuy + totalSell;
+    const buyRatio =
+        totalVolume > 0 ? (totalBuy / totalVolume) * PERCENTAGE_FACTOR : 0;
+    const sellRatio =
+        totalVolume > 0 ? (totalSell / totalVolume) * PERCENTAGE_FACTOR : 0;
+
+    const last = lastOf(recentBuySell)!;
+    const lastTotal = last.buyVolume + last.sellVolume;
+    const lastBuyRatio =
+        lastTotal > 0 ? (last.buyVolume / lastTotal) * PERCENTAGE_FACTOR : 0;
 
     return [
-        '## Volume Analysis',
-        `- Last ${recentBars.length}-bar average: ${formatVolume(avgVolume)}`,
-        `- Current volume: ${formatVolume(lastBar.volume)} (${volumeRatio.toFixed(INDICATOR_DECIMAL_PLACES)}% of average)`,
+        '## Volume Analysis (Buy/Sell)',
+        `- Current bar: Buy ${formatVolume(last.buyVolume)} / Sell ${formatVolume(last.sellVolume)} (Buy ratio: ${lastBuyRatio.toFixed(INDICATOR_DECIMAL_PLACES)}%)`,
+        `- Last ${recentBuySell.length}-bar cumulative: Buy ${formatVolume(totalBuy)} (${buyRatio.toFixed(INDICATOR_DECIMAL_PLACES)}%) / Sell ${formatVolume(totalSell)} (${sellRatio.toFixed(INDICATOR_DECIMAL_PLACES)}%)`,
     ].join('\n');
 };
 
@@ -642,7 +654,7 @@ export function buildAnalysisPrompt(
         formatMarketSection(bars),
         formatLongTermContext(bars),
         formatRecentBarsSection(bars),
-        formatVolumeSection(bars),
+        formatBuySellVolumeSection(indicators),
         formatIndicatorSection(indicators),
         ...(indicatorGuideSkills.length > 0
             ? [

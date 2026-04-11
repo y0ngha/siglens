@@ -22,6 +22,7 @@ export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
     keltnerChannel: [],
     cmf: [],
     donchianChannel: [],
+    buySellVolume: [],
 };
 
 export const RSI_DEFAULT_PERIOD = 14;

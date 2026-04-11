@@ -74,6 +74,7 @@ export interface IndicatorResult {
     keltnerChannel: KeltnerChannelResult[];
     cmf: (number | null)[];
     donchianChannel: DonchianChannelResult[];
+    buySellVolume: BuySellVolumeResult[];
 }
 
 export interface MACDResult {
@@ -552,6 +553,20 @@ null 없음 (첫 봉부터 값 존재)
 초기 period - 1개 구간 = null
 ```
 
+### Buy/Sell Volume
+
+```
+출처: TradingView PineScript "BS" 인디케이터 기반
+
+알고리즘:
+1. range = high - low
+2. if range === 0: { buyVolume: 0, sellVolume: 0 }
+3. else: { buyVolume: volume × (close - low) / range, sellVolume: volume × (high - close) / range }
+
+반환 타입: BuySellVolumeResult { buyVolume, sellVolume }
+초기 null 없음 (모든 봉에 값 반환)
+```
+
 ### calculateIndicators 통합 함수
 
 ```typescript
@@ -746,6 +761,7 @@ IN_NECK_RATIO = 0.05        — 인넥 허용 비율
 | `indicators/keltner-channel.md` | Keltner Channel(20, 10, 2.0) | ATR 채널, 스퀴즈 | 0.8 |
 | `indicators/cmf.md` | CMF(21) | 자금 흐름 방향/강도 | 0.75 |
 | `indicators/donchian-channel.md` | Donchian Channel(20) | 브레이크아웃, Turtle Trading | 0.8 |
+| `indicators/buy-sell-volume.md` | Buy/Sell Volume | 캔들 내 매수/매도 압력 분해 | 0.75 |
 
 ---
 
