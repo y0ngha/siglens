@@ -91,8 +91,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ ParabolicSARResult { trend: 'up' | 'down' | null }; SupertrendResult { trend: 'up' | 'down' | null }
    ✅ type TrendDirection = 'up' | 'down' | null; ParabolicSARResult { trend: TrendDirection }; SupertrendResult { trend: TrendDirection }
 
-7. Using `as` type assertions instead of non-null assertions or type guards
+7. Using `as` type assertions instead of type guards or non-null assertion operators
+   → Prefer type guards, `!` operator, or satisfies keyword over `as` casts
    → Prefer `!` operator when null is logically impossible, or narrowing guards for conditional paths
+   → `as` casts hide type safety problems; explicit guards expose intent
+   ❌ const value = getValue() as number;  // hides null check
+   ✅ const value = getValue()!;  // non-null assertion when null is logically impossible
+   ✅ const value: number = getValue() ?? 0;  // type guard with fallback
    ❌ atrValues[idx] as number  // null never occurs due to prior check
    ✅ atrValues[idx]!  // non-null assertion operator
 ```
@@ -188,6 +193,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 11. External dependencies in production code without corresponding test mocks
     → When adding external packages (e.g., @vercel/functions) to infrastructure files, mock them in all corresponding test files
     → jest.mock('@package-name', ...) must be added to every test file that tests the module with the external dependency
+```
+
+---
+
+## Accessibility (WAI-ARIA)
+
+```
+1. Overwriting native ARIA role of semantic elements
+   → Native roles (paragraph, complementary) must not be replaced with role attributes
+   → Use <div role="note"> instead of <p role="note"> or <aside role="note">
+   → Use semantic elements without explicit role unless the role fundamentally differs
 ```
 
 ---

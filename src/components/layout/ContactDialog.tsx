@@ -3,8 +3,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useOnClickOutside } from '@/components/layout/hooks/useOnClickOutside';
 import { useEscapeKey } from '@/components/layout/hooks/useEscapeKey';
+import { CONTACT_EMAIL } from '@/lib/contact';
 
-const EMAIL = 'stock.siglens@gmail.com';
 const GITHUB_ISSUES_URL = 'https://github.com/y0ngha/siglens/issues/new/choose';
 
 interface ContactDialogProps {
@@ -36,7 +36,7 @@ export function ContactDialog({
         if (copyTimeoutRef.current !== null) {
             clearTimeout(copyTimeoutRef.current);
         }
-        await navigator.clipboard.writeText(EMAIL);
+        await navigator.clipboard.writeText(CONTACT_EMAIL);
         setCopied(true);
         copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
     };
@@ -133,7 +133,7 @@ export function ContactDialog({
                                 </div>
                                 <div className="border-secondary-600 bg-secondary-800 flex items-center justify-between rounded-md border px-3 py-2">
                                     <span className="text-secondary-300 font-mono text-sm">
-                                        {EMAIL}
+                                        {CONTACT_EMAIL}
                                     </span>
                                     <button
                                         type="button"

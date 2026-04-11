@@ -1,9 +1,13 @@
 # Fix Log
 
-## [PR #265 | feat/264/모바일-분석패널-바텀시트 | 2026-04-11]
-- Violation: CSS 임의값(pb-[15svh])이 JS 상수(SNAP_PEEK = 0.15)와 의미적으로 연동되어 있으나 코드 레벨 연결 없음
-- Rule: MISTAKES.md Design & Cohesion #1 — 함께 변경되어야 하는 값은 단일 위치에서 관리해야 한다
-- Context: ChartContent.tsx 차트 영역 padding이 MobileAnalysisSheet의 SNAP_PEEK 스냅 높이와 연동되어야 하지만, CSS 클래스에 하드코딩되어 SNAP_PEEK 변경 시 수동 업데이트 필요
+## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
+- Violation: `lib/seo.ts`에 법적 내용 상수(`INVESTMENT_DISCLAIMER`, `LEGAL_EFFECTIVE_DATE`, `PRIVACY_PATH` 등)와 SEO 상수가 혼재
+- Rule: FF Cohesion 3-A — 다른 목적의 상수는 분리된 모듈에 위치해야 함
+- Context: privacy/terms 페이지 추가 시 법적 상수를 seo.ts에 추가; `src/lib/legal.ts`로 분리하여 해결
+
+- Violation: `Footer.tsx`의 `<div role="note">`에 accessible name(`aria-label`) 누락
+- Rule: WAI-ARIA — role="note" 요소에 aria-label로 accessible name을 제공해야 함
+- Context: privacy/page.tsx와 terms/page.tsx의 동일 요소에는 aria-label이 있으나 Footer.tsx에만 누락됨
 
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: components/hooks/ 파일에 'use client' 선언 누락
@@ -18,11 +22,6 @@
 - Violation: RESPONSE_LANGUAGE_INSTRUCTION의 "Other text fields" 목록에 새 필드(positionAnalysis, entry, exit, riskReward) 누락
 - Rule: Prompt 일관성 — 한국어 작성 지시와 줄바꿈 지시 목록이 동기화되어야 함
 - Context: actionRecommendation 필드 추가 시 첫 번째 필드 목록에만 추가하고 두 번째 목록은 누락
-
-## [PR #216 Round 11 | feat/196/ticker-autocomplete | 2026-04-10]
-- Violation: `docs/ARCHITECTURE.md` 폴더 트리에 신규 `infrastructure/ticker/` 디렉터리 미반영
-- Rule: MISTAKES.md TypeScript #11 — 구현 변경 시 문서 동기화 필수
-- Context: PR #216에서 `src/infrastructure/ticker/`가 신규 추가됐으나 ARCHITECTURE.md 폴더 트리에 누락
 
 
 ## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
@@ -48,11 +47,6 @@
 - Rule: CONVENTIONS.md — "Return types must be explicitly declared on domain functions"; app/ 레이어에도 일관성 있게 적용
 - Context: `opengraph-image.tsx`의 `Image()` 함수에 `Promise<ImageResponse>` 반환 타입 누락; ImageResponse import 없이 반환 타입 추론에 의존
 
-## [예시 항목 | 브랜치명 | 날짜]
-- Violation: 예시
-- Rule: 예시
-- Context: 예시
-
 ## [feat/157/fmp-provider | 2026-04-06]
 - Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
@@ -60,16 +54,6 @@
 
 
 
-## [Issue #172 버그픽스 | feat/172/메인-페이지-리디자인-브랜딩-변경 | 2026-04-06]
-- Violation: `SymbolPageClient.tsx`에서 render 중 `setTimeframeChangeCount` + `setPrevTimeframe`을 호출하는 패턴이 React 19 concurrent mode에서 "Cannot update a component (Router) while rendering a different component (ChartContent)" 에러를 유발했음
-- Rule: MISTAKES.md Components #5 — Side effects inside setState updater functions; 더 나아가 render 중 setState 자체가 React 19 concurrent mode + startTransition 조합에서 Next.js Router 업데이트 충돌을 일으킬 수 있음
-- Context: `useTimeframeChange`의 `startTransition` 내부에서 Suspense가 트리거되는 동안 render-phase setState가 Router context 업데이트와 충돌했음; `timeframeChangeCount` 관리를 `handleTimeframeChange` 이벤트 핸들러 안으로 이동하여 해결
-
-
-## [PR #205 | fix/204/모바일-UI-캐시-메시지-버그-수정 | 2026-04-07]
-- Violation: `ChartContent.tsx`(`components/symbol-page/`)에서 `lightweight-charts`의 `IChartApi` 타입을 직접 import하여 `symbol-page` 레이어가 차트 라이브러리에 직접 커플링됨
-- Rule: MISTAKES.md Layer Dependencies #3 — `lightweight-charts` import(타입 포함)는 `components/chart/` 내부로 제한됨
-- Context: visible range 동기화를 위해 `stockChartRef`, `volumeChartRef`, 콜백 2개가 모두 `IChartApi`에 의존했음; `components/chart/hooks/useChartSync.ts`로 추출하여 `ChartContent.tsx`에서 `IChartApi` import 제거
 
 ## [PR #208 | feat/185/seo-최적화 | 2026-04-07]
 - Violation: `POPULAR_TICKERS` (비즈니스 도메인 지식)가 `src/lib/seo.ts`에 정의되어 lib 레이어 허용 범위를 벗어남
@@ -108,6 +92,7 @@
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
+## [PR #245 | feat/240/9종-보조지표-domain-계산-로직 | 2026-04-11]
 - Violation: period 기반 인디케이터 테스트에서 초기 null 범위 케이스 누락
 - Rule: CONVENTIONS.md "Required Test Cases for Period-Based Indicators" — 처음 N개 null 케이스 필수
 - Context: `keltnerChannel.test.ts`에 '처음 max(emaPeriod-1, atrPeriod)개의 값은 null이다' 테스트 케이스 미포함; 추가 시 리뷰어 제안 수식(max(emaPeriod, atrPeriod))이 구현과 불일치하여 실제 null 구간(emaPeriod-1)으로 수정
@@ -120,13 +105,4 @@
 - Violation: `ValidatedActionPrices` 인터페이스를 구현 파일(`actionRecommendation.ts`)에 정의
 - Rule: ARCHITECTURE.md — 도메인 결과 타입은 `domain/types.ts`에 정의해야 함
 - Context: 다른 파일(`StockChart.tsx`, `useActionRecommendationOverlay.ts`)에서도 참조하는 타입을 구현 파일에 배치; `domain/types.ts`로 이동
-
-## [PR #265 Round 3 | feat/263/모바일-UX-개선 | 2026-04-11]
-- Violation: `number | string | null` 인라인 유니온 타입이 MobileAnalysisSheet.tsx(2곳)와 ChartContent.tsx(1곳)에 중복 선언됨
-- Rule: MISTAKES.md TypeScript #5 — 반복 사용되는 타입은 named type alias로 추출
-- Context: MobileAnalysisSheet의 props와 ChartContent의 useState에 동일 인라인 타입 산재; `SnapPoint` 타입 alias로 추출하고 export하여 해결
-
-- Violation: `MOBILE_SNAP_POINTS[1]` 하드코딩 배열 인덱스로 Half 스냅 포인트 참조
-- Rule: CONVENTIONS.md — Hardcoded array indices → named constants
-- Context: ChartContent.tsx 자동 시트 올리기 로직에서 인덱스 1이 "Half 스냅"임을 코드만으로 알 수 없었음; SNAP_HALF 등 named constant로 추출
 
