@@ -172,7 +172,7 @@ export default async function SymbolPage({ params }: Props) {
                     ),
                 }}
             />
-            <section className="sr-only" aria-hidden={"true"}>
+            <section className="sr-only" aria-hidden={'true'}>
                 <p>{displayName} AI 기술적 분석 — 보조지표 및 캔들 패턴</p>
                 <p>
                     {displayName}({ticker}) 종목의 실시간 차트를{' '}
