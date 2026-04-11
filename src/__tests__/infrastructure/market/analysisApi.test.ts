@@ -1,4 +1,5 @@
 import { runAnalysis } from '@/infrastructure/market/analysisApi';
+import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
 import type {
     AnalyzeVariables,
     IndicatorResult,
@@ -63,6 +64,7 @@ const mockVariables: AnalyzeVariables = {
         cmf: [],
         donchianChannel: [],
         buySellVolume: [],
+        smc: EMPTY_SMC_RESULT,
     },
 };
 

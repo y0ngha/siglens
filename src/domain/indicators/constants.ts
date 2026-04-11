@@ -1,4 +1,17 @@
-import type { IndicatorResult } from '@/domain/types';
+import type { IndicatorResult, SMCResult } from '@/domain/types';
+
+export const EMPTY_SMC_RESULT: SMCResult = {
+    swingHighs: [],
+    swingLows: [],
+    orderBlocks: [],
+    fairValueGaps: [],
+    equalHighs: [],
+    equalLows: [],
+    premiumZone: null,
+    discountZone: null,
+    equilibriumZone: null,
+    structureBreaks: [],
+};
 
 export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
     macd: [],
@@ -23,6 +36,7 @@ export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
     cmf: [],
     donchianChannel: [],
     buySellVolume: [],
+    smc: EMPTY_SMC_RESULT,
 };
 
 export const RSI_DEFAULT_PERIOD = 14;
@@ -92,6 +106,12 @@ export const ICHIMOKU_DISPLACEMENT = 26;
 export const VP_DEFAULT_ROW_SIZE = 24;
 export const VP_VALUE_AREA_PERCENTAGE = 0.7;
 export const VP_MIN_BARS = 30;
+
+export const SMC_SWING_PERIOD = 5;
+export const SMC_EQUAL_LEVEL_ATR_MULTIPLIER = 0.5;
+export const SMC_ATR_PERIOD = 14;
+export const SMC_PREMIUM_RATIO = 0.75;
+export const SMC_DISCOUNT_RATIO = 0.25;
 
 export const HIGH_CONFIDENCE_WEIGHT = 0.8;
 export const MEDIUM_CONFIDENCE_WEIGHT = 0.7;

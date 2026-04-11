@@ -22,10 +22,6 @@
 - Rule: 일관성 원칙 — 동일 모듈 내 `collectMdFiles`(재귀 탐색)와 구현 방식이 달라 향후 서브디렉토리 추가 시 카운트 불일치 발생 가능
 - Context: `countSkillFiles` 추가 시 `collectMdFiles` 재활용 없이 단순 `readdir` 사용; `collectMdFiles`를 재활용하도록 수정
 
-- Violation: 새로운 public 함수 `countSkillFiles` 추가 시 테스트 케이스 없음
-- Rule: MISTAKES.md Tests #2 — 새로 추가된 함수는 반드시 최소 하나의 `it()` 케이스가 있어야 함
-- Context: infrastructure 레이어 신규 export 함수에 대한 테스트 누락; 정상 케이스(서브디렉토리 재귀 포함) 및 에러 케이스 추가로 해결
-
 ## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
 - Violation: `lib/seo.ts`에 법적 내용 상수(`INVESTMENT_DISCLAIMER`, `LEGAL_EFFECTIVE_DATE`, `PRIVACY_PATH` 등)와 SEO 상수가 혼재
 - Rule: FF Cohesion 3-A — 다른 목적의 상수는 분리된 모듈에 위치해야 함
@@ -99,11 +95,6 @@
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
-## [PR #245 | feat/240/9종-보조지표-domain-계산-로직 | 2026-04-11]
-- Violation: period 기반 인디케이터 테스트에서 초기 null 범위 케이스 누락
-- Rule: CONVENTIONS.md "Required Test Cases for Period-Based Indicators" — 처음 N개 null 케이스 필수
-- Context: `keltnerChannel.test.ts`에 '처음 max(emaPeriod-1, atrPeriod)개의 값은 null이다' 테스트 케이스 미포함; 추가 시 리뷰어 제안 수식(max(emaPeriod, atrPeriod))이 구현과 불일치하여 실제 null 구간(emaPeriod-1)으로 수정
-
 ## [PR #230 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
 - Violation: `#f87171`(actionStopLoss)과 `#4ade80`(actionTakeProfit)은 디자인 시스템에 없는 임의 hex 값 사용
 - Rule: DESIGN.md — 상승/하락 색상은 `#26a69a`(bullish) / `#ef5350`(bearish) 고정; 임의 hex 금지
@@ -112,3 +103,4 @@
 - Violation: `ValidatedActionPrices` 인터페이스를 구현 파일(`actionRecommendation.ts`)에 정의
 - Rule: ARCHITECTURE.md — 도메인 결과 타입은 `domain/types.ts`에 정의해야 함
 - Context: 다른 파일(`StockChart.tsx`, `useActionRecommendationOverlay.ts`)에서도 참조하는 타입을 구현 파일에 배치; `domain/types.ts`로 이동
+

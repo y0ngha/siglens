@@ -1,4 +1,5 @@
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
+import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
 import type { BarsData, Timeframe } from '@/domain/types';
 
 jest.mock('@/infrastructure/market/barsApi');
@@ -43,6 +44,8 @@ const mockBarsData: BarsData = {
         keltnerChannel: [],
         cmf: [],
         donchianChannel: [],
+        buySellVolume: [],
+        smc: EMPTY_SMC_RESULT,
     },
 };
 

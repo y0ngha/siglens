@@ -1,4 +1,5 @@
 import { analyzeAction } from '@/infrastructure/market/analyzeAction';
+import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
 import type {
     AnalyzeVariables,
     RawAnalysisResponse,
@@ -66,6 +67,8 @@ const mockVariables: AnalyzeVariables = {
         keltnerChannel: [],
         cmf: [],
         donchianChannel: [],
+        buySellVolume: [],
+        smc: EMPTY_SMC_RESULT,
     },
 };
 
