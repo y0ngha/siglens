@@ -90,6 +90,11 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → When a union appears in 2+ result types, extract to domain/types.ts
    ❌ ParabolicSARResult { trend: 'up' | 'down' | null }; SupertrendResult { trend: 'up' | 'down' | null }
    ✅ type TrendDirection = 'up' | 'down' | null; ParabolicSARResult { trend: TrendDirection }; SupertrendResult { trend: TrendDirection }
+
+7. Using `as` type assertions instead of non-null assertions or type guards
+   → Prefer `!` operator when null is logically impossible, or narrowing guards for conditional paths
+   ❌ atrValues[idx] as number  // null never occurs due to prior check
+   ✅ atrValues[idx]!  // non-null assertion operator
 ```
 
 ---

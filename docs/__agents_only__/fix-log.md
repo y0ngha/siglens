@@ -108,11 +108,6 @@
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
-## [PR #245 | feat/240/9종-보조지표-domain-계산-로직 | 2026-04-11]
-- Violation: `as number` 타입 단언 사용 (2곳)
-- Rule: CONVENTIONS.md — "Prefer type guards over `as` type assertions"
-- Context: `supertrend.ts`에서 `atrValues[firstValidIdx] as number`, `atrValues[idx] as number` 사용; null이 아님이 로직적으로 보장되는 시점이므로 non-null 단언 연산자(`!`)로 교체
-
 - Violation: period 기반 인디케이터 테스트에서 초기 null 범위 케이스 누락
 - Rule: CONVENTIONS.md "Required Test Cases for Period-Based Indicators" — 처음 N개 null 케이스 필수
 - Context: `keltnerChannel.test.ts`에 '처음 max(emaPeriod-1, atrPeriod)개의 값은 null이다' 테스트 케이스 미포함; 추가 시 리뷰어 제안 수식(max(emaPeriod, atrPeriod))이 구현과 불일치하여 실제 null 구간(emaPeriod-1)으로 수정
