@@ -16,13 +16,13 @@ import {
     PANEL_MIN_WIDTH,
     PANEL_MAX_WIDTH,
 } from '@/components/symbol-page/hooks/usePanelResize';
-import { useMediaQuery } from '@/components/symbol-page/hooks/useMediaQuery';
 import { useChartSync } from '@/components/chart/hooks/useChartSync';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import {
     MobileAnalysisSheet,
-    MOBILE_SNAP_POINTS,
+    SNAP_HALF,
+    type SnapPoint,
 } from '@/components/symbol-page/MobileAnalysisSheet';
 
 function AnalyzingBanner() {
@@ -86,9 +86,7 @@ export function ChartContent({
     initialAnalysis,
     initialAnalysisFailed,
 }: ChartContentProps) {
-    const [sheetSnap, setSheetSnap] = useState<number | string | null>(
-        MOBILE_SNAP_POINTS[0]
-    );
+    const [sheetSnap, setSheetSnap] = useState<SnapPoint>(SNAP_HALF);
 
     const { bars, indicators } = useBars({ symbol, timeframe });
 
@@ -111,8 +109,6 @@ export function ChartContent({
 
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
-
-    const isDesktop = useMediaQuery('(min-width: 768px)');
 
     const {
         handleStockChartReady,
@@ -140,8 +136,6 @@ export function ChartContent({
         setPrevIsAnalyzing(isAnalyzing);
         if (isAnalyzing) {
             setDisplayAnalyzing(true);
-            // 모바일에서 분석이 시작되면 시트를 Half 스냅으로 올려 '분석 중' 배너를 노출한다
-            if (!isDesktop) setSheetSnap(MOBILE_SNAP_POINTS[1]);
         }
     }
     const handleProgressFinished = useCallback(() => {
@@ -175,16 +169,6 @@ export function ChartContent({
         togglePatternRef.current(patternName);
     }, []);
 
-    const mobileChartHeight = useMemo(
-        () =>
-            typeof sheetSnap === 'number'
-                ? `calc((1 - ${sheetSnap}) * 100svh)`
-                : '85svh',
-        [sheetSnap]
-    );
-
-    const isMobile = !isDesktop;
-
     const analysisContent = (
         <>
             <AnalysisStatusBanner status={analysisStatus} className="mb-3" />
@@ -211,11 +195,8 @@ export function ChartContent({
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
-            {/* 차트 영역 */}
-            <div
-                className="flex shrink-0 flex-col overflow-hidden md:h-full md:flex-1"
-                style={isMobile ? { height: mobileChartHeight } : undefined}
-            >
+            {/* 차트 영역 — 바텀시트는 fixed 오버레이. pb-[15svh]는 Peek(15%) 시 거래량 차트가 가려지지 않도록 한다 */}
+            <div className="flex h-full shrink-0 flex-col overflow-hidden pb-[15svh] md:flex-1 md:pb-0">
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
                     <StockChart
@@ -276,15 +257,13 @@ export function ChartContent({
                 {analysisContent}
             </aside>
 
-            {/* AI 분석 패널 — 모바일 바텀시트 */}
-            {isMobile && (
-                <MobileAnalysisSheet
-                    activeSnap={sheetSnap}
-                    onActiveSnapChange={setSheetSnap}
-                >
-                    {analysisContent}
-                </MobileAnalysisSheet>
-            )}
+            {/* AI 분석 패널 — 모바일 바텀시트 (항상 렌더, Drawer.Content 내부 md:hidden으로 데스크톱에서 숨김) */}
+            <MobileAnalysisSheet
+                activeSnap={sheetSnap}
+                onActiveSnapChange={setSheetSnap}
+            >
+                {analysisContent}
+            </MobileAnalysisSheet>
 
             {/* 드래그 중 전체 화면 오버레이 — 텍스트 선택 방지 */}
             {isDragging && (
