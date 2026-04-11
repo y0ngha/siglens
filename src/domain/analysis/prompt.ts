@@ -47,6 +47,7 @@ import type {
     Bar,
     IndicatorResult,
     Skill,
+    SqueezeMomentumResult,
     Timeframe,
 } from '@/domain/types';
 
@@ -245,21 +246,23 @@ const formatBuySellVolumeSection = (indicators: IndicatorResult): string => {
 const trendLabel = (trend: IndicatorTrend | null): string =>
     trend === null ? '' : ` [${trend}]`;
 
+const sqzStateLabel = (r: SqueezeMomentumResult): string => {
+    if (r.sqzOn) return 'squeeze ON';
+    if (r.sqzOff) return 'squeeze OFF';
+    return 'no squeeze';
+};
+
+const sqzDirectionLabel = (r: SqueezeMomentumResult): string => {
+    if (r.increasing === null) return '';
+    return r.increasing ? ' [rising]' : ' [falling]';
+};
+
 const formatSqueezeMomentumLine = (indicators: IndicatorResult): string => {
     const last = lastOf(indicators.squeezeMomentum);
     if (!last || last.val === null) {
         return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): N/A`;
     }
-    const state = (() => {
-        if (last.sqzOn) return 'squeeze ON';
-        if (last.sqzOff) return 'squeeze OFF';
-        return 'no squeeze';
-    })();
-    const direction = (() => {
-        if (last.increasing === null) return '';
-        return last.increasing ? ' [rising]' : ' [falling]';
-    })();
-    return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): val ${fmt(last.val)}${direction} / ${state}`;
+    return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): val ${fmt(last.val)}${sqzDirectionLabel(last)} / ${sqzStateLabel(last)}`;
 };
 
 const formatIndicatorSection = (indicators: IndicatorResult): string => {
