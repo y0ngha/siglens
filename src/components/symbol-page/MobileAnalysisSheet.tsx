@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useCallback } from 'react';
 import type { ReactNode } from 'react';
 import { Drawer } from 'vaul';
 
@@ -25,9 +26,17 @@ export function MobileAnalysisSheet({
     onActiveSnapChange,
     children,
 }: MobileAnalysisSheetProps) {
+    // Vaul이 최소 스냅 아래 드래그 시 내부적으로 닫으려 할 수 있다. open 상태를
+    // 직접 제어해 즉시 재오픈함으로써 시트가 화면에서 사라지지 않도록 한다.
+    const [isOpen, setIsOpen] = useState(true);
+    const handleOpenChange = useCallback((open: boolean) => {
+        if (!open) setIsOpen(true);
+    }, []);
+
     return (
         <Drawer.Root
-            open
+            open={isOpen}
+            onOpenChange={handleOpenChange}
             modal={false}
             dismissible={false}
             snapPoints={SNAP_POINTS_MUTABLE}
