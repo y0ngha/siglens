@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Footer } from '@/components/layout/Footer';
+import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
 import { PolicySection, type TocItem } from '@/components/legal/PolicySection';
 import { CONTACT_EMAIL } from '@/lib/contact';
 import {
@@ -16,6 +17,39 @@ import {
 } from '@/lib/seo';
 
 const PAGE_URL = `${SITE_URL}${PRIVACY_PATH}`;
+
+const JSON_LD = {
+    '@context': 'https://schema.org',
+    '@type': 'WebPage',
+    name: `${PRIVACY_TITLE} | ${SITE_NAME}`,
+    description: PRIVACY_DESCRIPTION,
+    url: PAGE_URL,
+    inLanguage: 'ko',
+    isPartOf: {
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        url: SITE_URL,
+    },
+};
+
+const BREADCRUMB_JSON_LD = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+        {
+            '@type': 'ListItem',
+            position: 1,
+            name: SITE_NAME,
+            item: SITE_URL,
+        },
+        {
+            '@type': 'ListItem',
+            position: 2,
+            name: PRIVACY_TITLE,
+            item: PAGE_URL,
+        },
+    ],
+};
 
 const TOC: readonly TocItem[] = [
     { id: 'intro', label: '1. 총칙' },
@@ -53,51 +87,18 @@ export const metadata: Metadata = {
 };
 
 export default function PrivacyPage() {
-    const jsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebPage',
-        name: `${PRIVACY_TITLE} | ${SITE_NAME}`,
-        description: PRIVACY_DESCRIPTION,
-        url: PAGE_URL,
-        inLanguage: 'ko',
-        isPartOf: {
-            '@type': 'WebSite',
-            name: SITE_NAME,
-            url: SITE_URL,
-        },
-    };
-
-    const breadcrumbJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-            {
-                '@type': 'ListItem',
-                position: 1,
-                name: SITE_NAME,
-                item: SITE_URL,
-            },
-            {
-                '@type': 'ListItem',
-                position: 2,
-                name: PRIVACY_TITLE,
-                item: PAGE_URL,
-            },
-        ],
-    };
-
     return (
         <>
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+                    __html: JSON.stringify(JSON_LD).replace(/</g, '\\u003c'),
                 }}
             />
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(breadcrumbJsonLd).replace(
+                    __html: JSON.stringify(BREADCRUMB_JSON_LD).replace(
                         /</g,
                         '\\u003c'
                     ),
@@ -105,25 +106,7 @@ export default function PrivacyPage() {
             />
             <main className="flex flex-1 flex-col items-center px-6 py-12 sm:py-16">
                 <article className="w-full max-w-3xl">
-                    <nav aria-label="breadcrumb" className="mb-6 text-xs">
-                        <ol className="text-secondary-500 flex items-center gap-2">
-                            <li>
-                                <Link
-                                    href="/"
-                                    className="hover:text-secondary-300 transition-colors"
-                                >
-                                    {SITE_NAME}
-                                </Link>
-                            </li>
-                            <li aria-hidden="true">/</li>
-                            <li
-                                aria-current="page"
-                                className="text-secondary-400"
-                            >
-                                {PRIVACY_TITLE}
-                            </li>
-                        </ol>
-                    </nav>
+                    <LegalBreadcrumb pageTitle={PRIVACY_TITLE} />
 
                     <header className="border-secondary-800 border-b pb-8">
                         <p className="text-primary-400 font-mono text-xs tracking-widest uppercase">

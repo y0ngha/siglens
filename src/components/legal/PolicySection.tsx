@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 export interface TocItem {
     id: string;
     label: string;
@@ -6,7 +8,7 @@ export interface TocItem {
 interface PolicySectionProps {
     id: string;
     title: string;
-    children: React.ReactNode;
+    children: ReactNode;
 }
 
 export function PolicySection({ id, title, children }: PolicySectionProps) {

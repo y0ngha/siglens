@@ -21,12 +21,12 @@ export function Footer() {
     return (
         <footer className="border-secondary-800 border-t">
             <div className="flex flex-col gap-4 px-6 py-6 lg:px-[15vw]">
-                <p
+                <div
                     role="note"
                     className="text-secondary-500 text-xs leading-relaxed sm:text-sm"
                 >
                     {INVESTMENT_DISCLAIMER}
-                </p>
+                </div>
                 <div className="border-secondary-800 flex flex-col items-center gap-3 border-t pt-4 sm:flex-row sm:justify-between">
                     <p className="text-secondary-600 text-sm">
                         © <CurrentYear /> Siglens

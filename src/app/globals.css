@@ -64,6 +64,7 @@
 
     /* UI Severity — 경고/주의 상태 (medium risk, moderate strength 등 UI 전용) */
     --color-ui-warning: #f59e0b;
+    --color-ui-danger: #ef5350;
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
 }
