@@ -23,7 +23,7 @@ export function VolumeChart({
 }: VolumeChartProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
-    const sellSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
+    const totalSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
     const buySeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
     const onChartReadyRef = useRef(onChartReady);
     const onChartRemoveRef = useRef(onChartRemove);
@@ -50,13 +50,13 @@ export function VolumeChart({
 
         chartRef.current = chart;
 
-        // Sell volume (red, background — total volume)
-        sellSeriesRef.current = chart.addSeries(HistogramSeries, {
+        // Total volume (red, background)
+        totalSeriesRef.current = chart.addSeries(HistogramSeries, {
             color: CHART_COLORS.volumeBearish,
             priceFormat: { type: 'volume' },
         });
 
-        // Buy volume (teal, overlay on top of sell)
+        // Buy volume (teal, overlay)
         buySeriesRef.current = chart.addSeries(HistogramSeries, {
             color: CHART_COLORS.volumeBullish,
             priceFormat: { type: 'volume' },
@@ -68,50 +68,38 @@ export function VolumeChart({
             onChartRemoveRef.current?.();
             chart.remove();
             chartRef.current = null;
-            sellSeriesRef.current = null;
+            totalSeriesRef.current = null;
             buySeriesRef.current = null;
         };
     }, []);
 
     useEffect(() => {
         if (
-            !sellSeriesRef.current ||
+            !totalSeriesRef.current ||
             !buySeriesRef.current ||
             !chartRef.current
         )
             return;
 
         if (bars.length === 0 || buySellVolume.length === 0) {
-            sellSeriesRef.current.setData([]);
+            totalSeriesRef.current.setData([]);
             buySeriesRef.current.setData([]);
             return;
         }
 
-        const { sellData, buyData } = bars.reduce<{
-            sellData: { time: UTCTimestamp; value: number }[];
-            buyData: { time: UTCTimestamp; value: number }[];
-        }>(
-            (acc, { time }, i) => {
-                const bsv = buySellVolume[i]!;
-                return {
-                    sellData: [
-                        ...acc.sellData,
-                        {
-                            time: time as UTCTimestamp,
-                            value: bsv.buyVolume + bsv.sellVolume,
-                        },
-                    ],
-                    buyData: [
-                        ...acc.buyData,
-                        { time: time as UTCTimestamp, value: bsv.buyVolume },
-                    ],
-                };
-            },
-            { sellData: [], buyData: [] }
+        totalSeriesRef.current.setData(
+            bars.map(({ time, volume }) => ({
+                time: time as UTCTimestamp,
+                value: volume,
+            }))
         );
 
-        sellSeriesRef.current.setData(sellData);
-        buySeriesRef.current.setData(buyData);
+        buySeriesRef.current.setData(
+            bars.map(({ time }, i) => ({
+                time: time as UTCTimestamp,
+                value: buySellVolume[i]!.buyVolume,
+            }))
+        );
 
         chartRef.current.timeScale().fitContent();
     }, [bars, buySellVolume]);

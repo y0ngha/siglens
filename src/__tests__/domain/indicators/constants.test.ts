@@ -77,6 +77,10 @@ describe('EMPTY_INDICATOR_RESULT', () => {
         it('donchianChannel이 빈 배열이다', () => {
             expect(EMPTY_INDICATOR_RESULT.donchianChannel).toEqual([]);
         });
+
+        it('buySellVolume이 빈 배열이다', () => {
+            expect(EMPTY_INDICATOR_RESULT.buySellVolume).toEqual([]);
+        });
     });
 
     describe('Record 필드일 때', () => {
