@@ -670,17 +670,17 @@ null 없음 (첫 봉부터 값 존재)
    sqzOff = lowerBB < lowerKC AND upperBB > upperKC  (BB가 KC 밖으로 팽창)
    noSqz  = NOT sqzOn AND NOT sqzOff                 (전환 중간 상태)
 
-4. 모멘텀 값 (val)
+4. 모멘텀 값 (momentum)
    delta[i] = close[i] - avg(avg(highest(high, kcLength), lowest(low, kcLength)), SMA(close, kcLength))
-   val = linreg(delta_window[i-kcLength+1 .. i], kcLength)
+   momentum = linreg(delta_window[i-kcLength+1 .. i], kcLength)
 
-   val > 0: 상승 모멘텀, val < 0: 하락 모멘텀
-   val 부호 전환: 모멘텀 방향 반전 신호
+   momentum > 0: 상승 모멘텀, momentum < 0: 하락 모멘텀
+   momentum 부호 전환: 모멘텀 방향 반전 신호
 
 5. increasing
-   val > prevVal: true (모멘텀 강화)
-   val < prevVal: false (모멘텀 약화)
-   첫 번째 유효 val: null
+   momentum > prevMomentum: true (모멘텀 강화)
+   momentum < prevMomentum: false (모멘텀 약화)
+   첫 번째 유효 momentum: null
 
 초기 max(bbLength, kcLength) - 1개 구간 = null
 ```

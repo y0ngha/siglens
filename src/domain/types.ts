@@ -170,14 +170,14 @@ export interface SMCResult {
 
 export interface SqueezeMomentumResult {
     /** Momentum value from linear regression. Positive = bullish, negative = bearish. */
-    val: number | null;
+    momentum: number | null;
     /** BB is inside KC — volatility compressed, breakout imminent */
     sqzOn: boolean | null;
     /** BB is outside KC — squeeze released, momentum expanding */
     sqzOff: boolean | null;
     /** Neither sqzOn nor sqzOff — transitional state */
     noSqz: boolean | null;
-    /** val is increasing vs previous bar (momentum strengthening) */
+    /** momentum is increasing vs previous bar (momentum strengthening) */
     increasing: boolean | null;
 }
 

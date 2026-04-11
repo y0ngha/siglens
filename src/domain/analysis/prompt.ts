@@ -259,10 +259,10 @@ const sqzDirectionLabel = (r: SqueezeMomentumResult): string => {
 
 const formatSqueezeMomentumLine = (indicators: IndicatorResult): string => {
     const last = lastOf(indicators.squeezeMomentum);
-    if (!last || last.val === null) {
+    if (!last || last.momentum === null) {
         return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): N/A`;
     }
-    return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): val ${fmt(last.val)}${sqzDirectionLabel(last)} / ${sqzStateLabel(last)}`;
+    return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): momentum ${fmt(last.momentum)}${sqzDirectionLabel(last)} / ${sqzStateLabel(last)}`;
 };
 
 const formatIndicatorSection = (indicators: IndicatorResult): string => {

@@ -12,7 +12,7 @@
 //   sqzOn  = lowerBB > lowerKC AND upperBB < upperKC  (BB inside KC)
 //   sqzOff = lowerBB < lowerKC AND upperBB > upperKC  (BB outside KC)
 //   noSqz  = NOT sqzOn AND NOT sqzOff
-//   val    = linreg(close - avg(avg(highest(high, n), lowest(low, n)), SMA(close, n)), n, 0)
+//   momentum = linreg(close - avg(avg(highest(high, n), lowest(low, n)), SMA(close, n)), n, 0)
 // ─────────────────────────────────────────────────────────────────────────────
 
 import type { Bar, SqueezeMomentumResult } from '@/domain/types';
@@ -26,7 +26,7 @@ import { sma, stdDev, linreg, rollingHighest, rollingLowest } from './utils';
 type BarComputed = Omit<SqueezeMomentumResult, 'increasing'>;
 
 const NULL_COMPUTED: BarComputed = {
-    val: null,
+    momentum: null,
     sqzOn: null,
     sqzOff: null,
     noSqz: null,
@@ -76,7 +76,7 @@ export function calculateSqueezeMomentum(
 
     const maxPeriod = Math.max(bbLength, kcLength);
 
-    // Pass 1: compute val + squeeze state for each bar (no increasing yet).
+    // Pass 1: compute momentum + squeeze state for each bar (no increasing yet).
     const intermediate: BarComputed[] = bars.map((_, i) => {
         const closesWindow = closes.slice(
             Math.max(0, i - maxPeriod + 1),
@@ -109,16 +109,19 @@ export function calculateSqueezeMomentum(
         const deltaWindow = deltas.slice(i - kcLength + 1, i + 1);
         if (deltaWindow.some(v => v === null)) return NULL_COMPUTED;
         const validDeltas = deltaWindow.filter((v): v is number => v !== null);
-        const val = linreg(validDeltas, kcLength);
-        if (val === null) return NULL_COMPUTED;
+        const momentum = linreg(validDeltas, kcLength);
+        if (momentum === null) return NULL_COMPUTED;
 
-        return { val, sqzOn, sqzOff, noSqz };
+        return { momentum, sqzOn, sqzOff, noSqz };
     });
 
-    // Pass 2: add increasing field by comparing adjacent val values.
+    // Pass 2: add increasing field by comparing adjacent momentum values.
     return intermediate.map((r, i) => {
-        if (r.val === null) return { ...r, increasing: null };
-        const prevVal = i > 0 ? intermediate[i - 1].val : null;
-        return { ...r, increasing: prevVal !== null ? r.val > prevVal : null };
+        if (r.momentum === null) return { ...r, increasing: null };
+        const prevMomentum = i > 0 ? intermediate[i - 1].momentum : null;
+        return {
+            ...r,
+            increasing: prevMomentum !== null ? r.momentum > prevMomentum : null,
+        };
     });
 }

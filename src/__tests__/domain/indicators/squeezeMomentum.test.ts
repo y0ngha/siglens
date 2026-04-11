@@ -31,10 +31,8 @@ function makeUniformBars(count: number, price = 100): Bar[] {
 }
 
 // Minimum bars for any non-null output in BB/KC (inner indicators warmup)
-const MIN_BARS = Math.max(
-    SQUEEZE_MOMENTUM_BB_LENGTH,
-    SQUEEZE_MOMENTUM_KC_LENGTH
-);
+// BB_LENGTH === KC_LENGTH === 20, so either constant is equivalent here
+const MIN_BARS = SQUEEZE_MOMENTUM_BB_LENGTH;
 
 describe('calculateSqueezeMomentum', () => {
     describe('입력 배열이 비어있을 때', () => {
@@ -48,7 +46,7 @@ describe('calculateSqueezeMomentum', () => {
             const bars = makeUniformBars(MIN_BARS - 1);
             const result = calculateSqueezeMomentum(bars);
             expect(result).toHaveLength(bars.length);
-            expect(result.every(r => r.val === null)).toBe(true);
+            expect(result.every(r => r.momentum === null)).toBe(true);
         });
     });
 
@@ -64,18 +62,18 @@ describe('calculateSqueezeMomentum', () => {
             expect(
                 result
                     .slice(0, SQUEEZE_MOMENTUM_MIN_BARS - 1)
-                    .every(r => r.val === null)
+                    .every(r => r.momentum === null)
             ).toBe(true);
-            expect(result[SQUEEZE_MOMENTUM_MIN_BARS - 1].val).not.toBeNull();
+            expect(result[SQUEEZE_MOMENTUM_MIN_BARS - 1].momentum).not.toBeNull();
         });
 
         it('충분한 데이터 이후 val은 number다', () => {
             const bars = makeUniformBars(50);
             const result = calculateSqueezeMomentum(bars);
-            const valid = result.filter(r => r.val !== null);
+            const valid = result.filter(r => r.momentum !== null);
             expect(valid.length).toBeGreaterThan(0);
             valid.forEach(r => {
-                expect(typeof r.val).toBe('number');
+                expect(typeof r.momentum).toBe('number');
             });
         });
 
@@ -97,9 +95,9 @@ describe('calculateSqueezeMomentum', () => {
             const bars = makeUniformBars(60);
             const result = calculateSqueezeMomentum(bars);
             result
-                .filter(r => r.val !== null)
+                .filter(r => r.momentum !== null)
                 .forEach(r => {
-                    expect(r.val as number).toBeCloseTo(0, 5);
+                    expect(r.momentum as number).toBeCloseTo(0, 5);
                 });
         });
 
@@ -148,8 +146,8 @@ describe('calculateSqueezeMomentum', () => {
                 }))
             );
             const result = calculateSqueezeMomentum(bars);
-            const firstValid = result.find(r => r.val !== null);
-            expect(firstValid?.val).toBeCloseTo(9.5, 4);
+            const firstValid = result.find(r => r.momentum !== null);
+            expect(firstValid?.momentum).toBeCloseTo(9.5, 4);
         });
     });
 
@@ -163,8 +161,8 @@ describe('calculateSqueezeMomentum', () => {
                 }))
             );
             const result = calculateSqueezeMomentum(bars);
-            const valid = result.filter(r => r.val !== null);
-            const lastVal = valid[valid.length - 1].val!;
+            const valid = result.filter(r => r.momentum !== null);
+            const lastVal = valid[valid.length - 1].momentum!;
             expect(lastVal).toBeGreaterThan(0);
         });
     });
@@ -179,8 +177,8 @@ describe('calculateSqueezeMomentum', () => {
                 }))
             );
             const result = calculateSqueezeMomentum(bars);
-            const valid = result.filter(r => r.val !== null);
-            const lastVal = valid[valid.length - 1].val!;
+            const valid = result.filter(r => r.momentum !== null);
+            const lastVal = valid[valid.length - 1].momentum!;
             expect(lastVal).toBeLessThan(0);
         });
     });
@@ -189,7 +187,7 @@ describe('calculateSqueezeMomentum', () => {
         it('첫 번째 유효한 val은 increasing이 null이다', () => {
             const bars = makeUniformBars(50);
             const result = calculateSqueezeMomentum(bars);
-            const firstValid = result.find(r => r.val !== null);
+            const firstValid = result.find(r => r.momentum !== null);
             expect(firstValid?.increasing).toBeNull();
         });
 
@@ -202,7 +200,7 @@ describe('calculateSqueezeMomentum', () => {
                 }))
             );
             const result = calculateSqueezeMomentum(bars);
-            const valid = result.filter(r => r.val !== null);
+            const valid = result.filter(r => r.momentum !== null);
             // Skip the first valid entry (increasing === null)
             valid.slice(1).forEach(r => {
                 expect(typeof r.increasing).toBe('boolean');
