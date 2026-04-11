@@ -84,6 +84,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Applies to union literals, object shapes, and field patterns used in component props or constants
    ❌ interface Props { size?: 'sm' | 'lg'; fields: readonly { label: string; key: string }[] }
    ✅ type ButtonSize = 'sm' | 'lg'; interface FieldDef { label: string; key: string }; interface Props { size?: ButtonSize; fields: readonly FieldDef[] }
+
+6. Union literals with 3+ occurrences in different files → not extracted to named type
+   → Domain indicators frequently repeat trend/direction unions across result types
+   → When a union appears in 2+ result types, extract to domain/types.ts
+   ❌ ParabolicSARResult { trend: 'up' | 'down' | null }; SupertrendResult { trend: 'up' | 'down' | null }
+   ✅ type TrendDirection = 'up' | 'down' | null; ParabolicSARResult { trend: TrendDirection }; SupertrendResult { trend: TrendDirection }
 ```
 
 ---

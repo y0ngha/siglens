@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #265 | feat/264/모바일-분석패널-바텀시트 | 2026-04-11]
+- Violation: CSS 임의값(pb-[15svh])이 JS 상수(SNAP_PEEK = 0.15)와 의미적으로 연동되어 있으나 코드 레벨 연결 없음
+- Rule: MISTAKES.md Design & Cohesion #1 — 함께 변경되어야 하는 값은 단일 위치에서 관리해야 한다
+- Context: ChartContent.tsx 차트 영역 padding이 MobileAnalysisSheet의 SNAP_PEEK 스냅 높이와 연동되어야 하지만, CSS 클래스에 하드코딩되어 SNAP_PEEK 변경 시 수동 업데이트 필요
+
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: components/hooks/ 파일에 'use client' 선언 누락
 - Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
@@ -24,6 +29,15 @@
 - Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음
 - Rule: 코드베이스에 import되지 않는 파일은 데드 코드 — PR에서 교체 시 구 파일 삭제 필수
 - Context: `SymbolSearch`가 `TickerAutocomplete`로 교체됐지만 `src/components/search/SymbolSearch.tsx`가 미삭제 상태로 남아 있었음
+
+## [Issue #264 | feat/264/모바일-분석패널-바텀시트 | 2026-04-11]
+- Violation: `useSyncExternalStore`의 `subscribe`와 `getSnapshot`이 각각 별도로 `window.matchMedia(query)`를 호출해 서로 다른 MediaQueryList 인스턴스를 참조함
+- Rule: FF Cohesion 3-B — 같은 리소스는 단일 인스턴스를 공유해야 함; MISTAKES.md Coding Paradigm #2 — 동일 값을 여러 번 계산하지 않는다
+- Context: `useMediaQuery.ts` 초기 작성 시 `subscribe`의 `window.matchMedia(query)` 호출과 `getSnapshot`의 `window.matchMedia(query).matches` 호출이 분리됨; `useRef`로 mql 인스턴스를 캐시하고 `getMql()` 헬퍼를 통해 공유하는 방식으로 수정
+
+- Violation: prop으로 전달하는 `readonly` 배열을 컴포넌트 렌더 안에서 `[...CONST]`로 spread해 매 렌더마다 새 배열 참조를 생성
+- Rule: MISTAKES.md Coding Paradigm #10 — 렌더마다 재생성되는 파생 값은 모듈 레벨 상수 또는 `useMemo`로 추출한다
+- Context: `MobileAnalysisSheet.tsx`에서 `snapPoints={[...MOBILE_SNAP_POINTS]}`가 매 렌더마다 새 배열을 생성; 모듈 레벨의 `SNAP_POINTS_MUTABLE` 상수로 추출하여 해결
 
 ## [예시 항목 | 브랜치명 | 날짜]
 - Violation: 예시
@@ -85,11 +99,6 @@
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
-## [PR #245 Round 2 | feat/240/9종-보조지표-domain-계산-로직 | 2026-04-11]
-- Violation: `'up' | 'down' | null` 인라인 유니온이 ParabolicSARResult.trend, SupertrendResult.trend 두 곳에 반복 선언됨
-- Rule: CONVENTIONS.md — "Extract union literals with 2+ members into a type alias" / MISTAKES.md TypeScript #5 — 인라인 타입 대신 named type alias 사용
-- Context: `TrendDirection = PriceTrend | null`, `PriceTrend = 'up' | 'down'` 두 타입을 domain/types.ts에 추가하고 모든 참조 교체. 기존 `Trend = 'bullish' | 'bearish' | 'neutral'` 과의 네이밍 충돌로 PriceTrend 이름 채택
-
 ## [PR #245 | feat/240/9종-보조지표-domain-계산-로직 | 2026-04-11]
 - Violation: `as number` 타입 단언 사용 (2곳)
 - Rule: CONVENTIONS.md — "Prefer type guards over `as` type assertions"
@@ -107,4 +116,13 @@
 - Violation: `ValidatedActionPrices` 인터페이스를 구현 파일(`actionRecommendation.ts`)에 정의
 - Rule: ARCHITECTURE.md — 도메인 결과 타입은 `domain/types.ts`에 정의해야 함
 - Context: 다른 파일(`StockChart.tsx`, `useActionRecommendationOverlay.ts`)에서도 참조하는 타입을 구현 파일에 배치; `domain/types.ts`로 이동
+
+## [PR #265 Round 3 | feat/263/모바일-UX-개선 | 2026-04-11]
+- Violation: `number | string | null` 인라인 유니온 타입이 MobileAnalysisSheet.tsx(2곳)와 ChartContent.tsx(1곳)에 중복 선언됨
+- Rule: MISTAKES.md TypeScript #5 — 반복 사용되는 타입은 named type alias로 추출
+- Context: MobileAnalysisSheet의 props와 ChartContent의 useState에 동일 인라인 타입 산재; `SnapPoint` 타입 alias로 추출하고 export하여 해결
+
+- Violation: `MOBILE_SNAP_POINTS[1]` 하드코딩 배열 인덱스로 Half 스냅 포인트 참조
+- Rule: CONVENTIONS.md — Hardcoded array indices → named constants
+- Context: ChartContent.tsx 자동 시트 올리기 로직에서 인덱스 1이 "Half 스냅"임을 코드만으로 알 수 없었음; SNAP_HALF 등 named constant로 추출
 

@@ -19,6 +19,12 @@ import {
 import { useChartSync } from '@/components/chart/hooks/useChartSync';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
+import {
+    MobileAnalysisSheet,
+    SNAP_PEEK,
+    SNAP_HALF,
+    type SnapPoint,
+} from '@/components/symbol-page/MobileAnalysisSheet';
 
 function AnalyzingBanner() {
     return (
@@ -81,6 +87,8 @@ export function ChartContent({
     initialAnalysis,
     initialAnalysisFailed,
 }: ChartContentProps) {
+    const [sheetSnap, setSheetSnap] = useState<SnapPoint>(SNAP_HALF);
+
     const { bars, indicators } = useBars({ symbol, timeframe });
 
     const {
@@ -127,7 +135,9 @@ export function ChartContent({
     const [prevIsAnalyzing, setPrevIsAnalyzing] = useState(isAnalyzing);
     if (prevIsAnalyzing !== isAnalyzing) {
         setPrevIsAnalyzing(isAnalyzing);
-        if (isAnalyzing) setDisplayAnalyzing(true);
+        if (isAnalyzing) {
+            setDisplayAnalyzing(true);
+        }
     }
     const handleProgressFinished = useCallback(() => {
         setDisplayAnalyzing(false);
@@ -160,10 +170,37 @@ export function ChartContent({
         togglePatternRef.current(patternName);
     }, []);
 
+    const analysisContent = (
+        <>
+            <AnalysisStatusBanner status={analysisStatus} className="mb-3" />
+            <AnalysisPanel
+                analysis={analysis}
+                keyLevels={validatedKeyLevels}
+                isAnalyzing={isAnalyzing}
+                showProgress={displayAnalyzing}
+                onProgressFinished={handleProgressFinished}
+                onReanalyze={handleReanalyze}
+                reanalyzeCooldownMs={reanalyzeCooldownMs}
+                cooldownNotice={cooldownNotice}
+                chartVisiblePatterns={chartVisiblePatterns}
+                onTogglePattern={handleTogglePattern}
+                _keyLevelsVisible={keyLevelsVisible}
+                _onKeyLevelsVisibilityChange={setKeyLevelsVisible}
+                _trendlinesVisible={trendlinesVisible}
+                _onTrendlinesVisibilityChange={setTrendlinesVisible}
+                actionPricesVisible={actionPricesVisible}
+                onActionPricesVisibilityChange={setActionPricesVisible}
+            />
+        </>
+    );
+
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
-            {/* 차트 영역 */}
-            <div className="flex h-[60vh] shrink-0 flex-col overflow-hidden md:h-full md:flex-1">
+            {/* 차트 영역 — 바텀시트는 fixed 오버레이. pb는 SNAP_PEEK 높이만큼 확보해 Peek 시 거래량 차트가 가려지지 않도록 한다 */}
+            <div
+                style={{ '--snap-peek': SNAP_PEEK } as React.CSSProperties}
+                className="flex h-full shrink-0 flex-col overflow-hidden pb-[calc(var(--snap-peek)*100svh)] md:flex-1 md:pb-0"
+            >
                 {/* 캔들 차트 */}
                 <div className="relative flex-3">
                     <StockChart
@@ -193,7 +230,7 @@ export function ChartContent({
                 </div>
             </div>
 
-            {/* 드래그 핸들 — flex 형제로 배치 */}
+            {/* 드래그 핸들 — flex 형제로 배치 (데스크톱 전용) */}
             <div
                 role="separator"
                 tabIndex={0}
@@ -210,9 +247,9 @@ export function ChartContent({
                 onKeyDown={handleKeyDown}
             />
 
-            {/* AI 분석 패널 */}
+            {/* AI 분석 패널 — 데스크톱 */}
             <aside
-                className="border-secondary-700 relative min-h-0 flex-1 overflow-y-auto border-t p-4 md:h-full md:w-(--panel-width) md:flex-none md:border-t-0 md:border-l"
+                className="border-secondary-700 relative hidden min-h-0 flex-none overflow-y-auto border-l p-4 md:flex md:h-full md:w-(--panel-width) md:flex-col"
                 style={
                     {
                         // panelWidth는 드래그 상태에서 런타임에 결정되므로 정적 Tailwind 클래스로 표현 불가
@@ -221,29 +258,16 @@ export function ChartContent({
                 }
                 aria-live="polite"
             >
-                <AnalysisStatusBanner
-                    status={analysisStatus}
-                    className="mb-3"
-                />
-                <AnalysisPanel
-                    analysis={analysis}
-                    keyLevels={validatedKeyLevels}
-                    isAnalyzing={isAnalyzing}
-                    showProgress={displayAnalyzing}
-                    onProgressFinished={handleProgressFinished}
-                    onReanalyze={handleReanalyze}
-                    reanalyzeCooldownMs={reanalyzeCooldownMs}
-                    cooldownNotice={cooldownNotice}
-                    chartVisiblePatterns={chartVisiblePatterns}
-                    onTogglePattern={handleTogglePattern}
-                    _keyLevelsVisible={keyLevelsVisible}
-                    _onKeyLevelsVisibilityChange={setKeyLevelsVisible}
-                    _trendlinesVisible={trendlinesVisible}
-                    _onTrendlinesVisibilityChange={setTrendlinesVisible}
-                    actionPricesVisible={actionPricesVisible}
-                    onActionPricesVisibilityChange={setActionPricesVisible}
-                />
+                {analysisContent}
             </aside>
+
+            {/* AI 분석 패널 — 모바일 바텀시트 (항상 렌더, Drawer.Content 내부 md:hidden으로 데스크톱에서 숨김) */}
+            <MobileAnalysisSheet
+                activeSnap={sheetSnap}
+                onActiveSnapChange={setSheetSnap}
+            >
+                {analysisContent}
+            </MobileAnalysisSheet>
 
             {/* 드래그 중 전체 화면 오버레이 — 텍스트 선택 방지 */}
             {isDragging && (
