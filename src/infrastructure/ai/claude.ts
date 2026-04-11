@@ -13,9 +13,11 @@ const DEFAULT_CLAUDE_TEMPERATURE = 0;
 const DEFAULT_CLAUDE_TOP_P = 0.95;
 
 const CLAUDE_MODEL = process.env.CLAUDE_MODEL ?? DEFAULT_CLAUDE_MODEL;
-const CLAUDE_MAX_TOKENS = Math.trunc(
+const rawMaxTokens = Math.trunc(
     parseNumberEnv(process.env.CLAUDE_MAX_TOKENS, DEFAULT_CLAUDE_MAX_TOKENS)
 );
+const CLAUDE_MAX_TOKENS =
+    rawMaxTokens > 0 ? rawMaxTokens : DEFAULT_CLAUDE_MAX_TOKENS;
 const CLAUDE_TEMPERATURE = parseNumberEnv(
     process.env.CLAUDE_TEMPERATURE,
     DEFAULT_CLAUDE_TEMPERATURE

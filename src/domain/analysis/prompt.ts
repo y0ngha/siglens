@@ -654,7 +654,9 @@ const buildAnalysisRequest = (
         .join('\n');
 };
 
-const byName = (a: Skill, b: Skill): number => a.name.localeCompare(b.name);
+function byName(a: Skill, b: Skill): number {
+    return a.name.localeCompare(b.name, 'en');
+}
 
 export function buildAnalysisPrompt(
     symbol: string,
@@ -665,8 +667,7 @@ export function buildAnalysisPrompt(
 ): string {
     const activeSkills = skills
         .filter(s => s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT)
-        .slice()
-        .sort(byName);
+        .toSorted(byName);
     const patternSkills = activeSkills.filter(s => s.type === 'pattern');
     const strategySkills = activeSkills.filter(s => s.type === 'strategy');
     const indicatorGuideSkills = activeSkills.filter(

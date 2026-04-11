@@ -2766,7 +2766,7 @@ describe('prompt', () => {
             expect(result).toContain('Never return null');
         });
 
-        it('분析 요청에 Critical Response Rules 섹션이 포함된다', () => {
+        it('분석 요청에 Critical Response Rules 섹션이 포함된다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
