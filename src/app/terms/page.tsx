@@ -9,12 +9,11 @@ import {
     LEGAL_EFFECTIVE_DATE,
     PRIVACY_PATH,
     PRIVACY_TITLE,
-    SITE_NAME,
-    SITE_URL,
     TERMS_DESCRIPTION,
     TERMS_PATH,
     TERMS_TITLE,
-} from '@/lib/seo';
+} from '@/lib/legal';
+import { SITE_NAME, SITE_URL } from '@/lib/seo';
 
 const PAGE_URL = `${SITE_URL}${TERMS_PATH}`;
 

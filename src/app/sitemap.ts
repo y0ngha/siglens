@@ -1,5 +1,6 @@
 import type { MetadataRoute } from 'next';
-import { POPULAR_TICKERS, PRIVACY_PATH, SITE_URL, TERMS_PATH } from '@/lib/seo';
+import { PRIVACY_PATH, TERMS_PATH } from '@/lib/legal';
+import { POPULAR_TICKERS, SITE_URL } from '@/lib/seo';
 
 export default function sitemap(): MetadataRoute.Sitemap {
     const now = new Date();

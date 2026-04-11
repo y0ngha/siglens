@@ -7,7 +7,7 @@ import {
     PRIVACY_TITLE,
     TERMS_PATH,
     TERMS_TITLE,
-} from '@/lib/seo';
+} from '@/lib/legal';
 
 function FooterSeparator() {
     return (
@@ -23,6 +23,7 @@ export function Footer() {
             <div className="flex flex-col gap-4 px-6 py-6 lg:px-[15vw]">
                 <div
                     role="note"
+                    aria-label="투자 면책 고지"
                     className="text-secondary-500 text-xs leading-relaxed sm:text-sm"
                 >
                     {INVESTMENT_DISCLAIMER}
