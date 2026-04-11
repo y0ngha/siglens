@@ -203,7 +203,7 @@ function SignalItem({ signal, typeLabel }: SignalItemProps) {
             </span>
             <div className="min-w-0 flex-1">
                 <span className="text-secondary-300 block text-xs font-medium">
-                    {typeLabel || SIGNAL_TYPE_LABEL[signal.type]}
+                    {typeLabel ?? SIGNAL_TYPE_LABEL[signal.type]}
                 </span>
                 <span className="text-secondary-400 block text-xs">
                     {signal.description}
@@ -794,19 +794,8 @@ export function AnalysisPanel({
             !patternSkillNames.has(s.strategyName)
     );
 
-    const detectedStrategyNames = new Set(
-        detectedStrategyResults.map(s => s.strategyName)
-    );
-
-    const strategyLinkedIndicatorResults = analysis.indicatorResults.filter(r =>
-        detectedStrategyNames.has(r.indicatorName)
-    );
-
     const displayedIndicatorResults = analysis.indicatorResults.filter(
-        r =>
-            r.indicatorName !== '' &&
-            !patternSkillNames.has(r.indicatorName) &&
-            !detectedStrategyNames.has(r.indicatorName)
+        r => r.indicatorName !== '' && !patternSkillNames.has(r.indicatorName)
     );
 
     return (
@@ -1058,35 +1047,6 @@ export function AnalysisPanel({
                                         )
                                 )}
                             </div>
-                        </div>
-                    )}
-
-                    {/* 전략 연계 보조지표 (strategyResults 이름과 매칭되는 indicatorResults — 엣지 케이스) */}
-                    {strategyLinkedIndicatorResults.length > 0 && (
-                        <div className="flex flex-col gap-3">
-                            <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                                전략 연계 보조지표
-                            </span>
-                            {strategyLinkedIndicatorResults.map(
-                                indicatorResult => (
-                                    <div
-                                        key={indicatorResult.indicatorName}
-                                        className="flex flex-col gap-1.5"
-                                    >
-                                        <span className="text-secondary-400 text-xs font-medium">
-                                            {indicatorResult.indicatorName}
-                                        </span>
-                                        {indicatorResult.signals.map(
-                                            (signal, index) => (
-                                                <SignalItem
-                                                    key={`${signal.type}-${index}`}
-                                                    signal={signal}
-                                                />
-                                            )
-                                        )}
-                                    </div>
-                                )
-                            )}
                         </div>
                     )}
 
