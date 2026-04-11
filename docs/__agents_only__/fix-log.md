@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #270 | feat/261/차트-dynamic-import-모바일-TTI-개선 | 2026-04-11]
+- Violation: dynamic import loading 컴포넌트(`ChartSkeleton`)가 `absolute inset-0`을 사용함에도 래퍼 컨테이너에 `relative` 클래스 누락
+- Rule: CSS Positioning — `absolute` 자식이 올바른 영역에 렌더되려면 부모 체인에 `positioned element`(`relative/absolute/fixed/sticky`)가 있어야 함
+- Context: StockChart 컨테이너(`<div className="relative flex-3">`)는 기존에 `relative`가 있었으나, VolumeChart 컨테이너는 정적 import에서 로딩 상태가 없어 `relative`가 없었음; dynamic import 전환으로 loading prop이 생기면서 문제가 드러남
+
 ## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
 - Violation: `Footer.tsx`의 `<div role="note">`에 accessible name(`aria-label`) 누락
 - Rule: WAI-ARIA — role="note" 요소에 aria-label로 accessible name을 제공해야 함

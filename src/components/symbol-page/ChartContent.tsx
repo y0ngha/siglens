@@ -231,7 +231,7 @@ export function ChartContent({
                 </div>
 
                 {/* 거래량 차트 */}
-                <div className="border-secondary-700 flex-1 border-t">
+                <div className="border-secondary-700 relative flex-1 border-t">
                     <VolumeChart
                         bars={bars}
                         onChartReady={handleVolumeChartReady}
