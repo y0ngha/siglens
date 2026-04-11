@@ -22,7 +22,10 @@ export default async function Image({ params }: Props): Promise<ImageResponse> {
         companyName = assetInfo?.name ?? ticker;
         koreanName = assetInfo?.koreanName;
     } catch (error) {
-        console.error('[opengraph-image] getAssetInfoAction failed, falling back to ticker only:', error);
+        console.error(
+            '[opengraph-image] getAssetInfoAction failed, falling back to ticker only:',
+            error
+        );
     }
 
     return new ImageResponse(
