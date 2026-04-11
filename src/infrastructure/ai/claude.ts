@@ -18,14 +18,18 @@ const rawMaxTokens = Math.trunc(
 );
 const CLAUDE_MAX_TOKENS =
     rawMaxTokens > 0 ? rawMaxTokens : DEFAULT_CLAUDE_MAX_TOKENS;
-const CLAUDE_TEMPERATURE = parseNumberEnv(
+const rawTemperature = parseNumberEnv(
     process.env.CLAUDE_TEMPERATURE,
     DEFAULT_CLAUDE_TEMPERATURE
 );
-const CLAUDE_TOP_P = parseNumberEnv(
-    process.env.CLAUDE_TOP_P,
-    DEFAULT_CLAUDE_TOP_P
-);
+const CLAUDE_TEMPERATURE =
+    rawTemperature >= 0 && rawTemperature <= 1
+        ? rawTemperature
+        : DEFAULT_CLAUDE_TEMPERATURE;
+
+const rawTopP = parseNumberEnv(process.env.CLAUDE_TOP_P, DEFAULT_CLAUDE_TOP_P);
+const CLAUDE_TOP_P =
+    rawTopP > 0 && rawTopP <= 1 ? rawTopP : DEFAULT_CLAUDE_TOP_P;
 
 export class ClaudeProvider implements AIProvider {
     private readonly client: Anthropic;

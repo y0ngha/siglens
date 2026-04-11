@@ -12,14 +12,18 @@ const DEFAULT_GEMINI_TEMPERATURE = 0;
 const DEFAULT_GEMINI_TOP_P = 0.95;
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? DEFAULT_GEMINI_MODEL;
-const GEMINI_TEMPERATURE = parseNumberEnv(
+const rawTemperature = parseNumberEnv(
     process.env.GEMINI_TEMPERATURE,
     DEFAULT_GEMINI_TEMPERATURE
 );
-const GEMINI_TOP_P = parseNumberEnv(
-    process.env.GEMINI_TOP_P,
-    DEFAULT_GEMINI_TOP_P
-);
+const GEMINI_TEMPERATURE =
+    rawTemperature >= 0 && rawTemperature <= 1
+        ? rawTemperature
+        : DEFAULT_GEMINI_TEMPERATURE;
+
+const rawTopP = parseNumberEnv(process.env.GEMINI_TOP_P, DEFAULT_GEMINI_TOP_P);
+const GEMINI_TOP_P =
+    rawTopP > 0 && rawTopP <= 1 ? rawTopP : DEFAULT_GEMINI_TOP_P;
 
 export class GeminiProvider implements AIProvider {
     private readonly client: GoogleGenerativeAI;
