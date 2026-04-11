@@ -209,7 +209,13 @@ export async function countSkillFiles(): Promise<SkillCounts> {
             countMdFiles('strategies'),
             countMdFiles('support-resistance'),
         ]);
-    return { indicators, candlesticks, patterns, strategies, supportResistance };
+    return {
+        indicators,
+        candlesticks,
+        patterns,
+        strategies,
+        supportResistance,
+    };
 }
 
 export class FileSkillsLoader implements SkillsProvider {

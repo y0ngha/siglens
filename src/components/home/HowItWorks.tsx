@@ -6,8 +6,13 @@ interface HowItWorksProps {
 }
 
 export function HowItWorks({ skillCounts }: HowItWorksProps) {
-    const { indicators, candlesticks, patterns, strategies, supportResistance } =
-        skillCounts;
+    const {
+        indicators,
+        candlesticks,
+        patterns,
+        strategies,
+        supportResistance,
+    } = skillCounts;
 
     const STEPS = [
         {

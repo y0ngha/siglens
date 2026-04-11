@@ -182,10 +182,9 @@ export default async function SymbolPage({ params }: Props) {
                     {CANDLESTICK_NAMES} 등 주요 캔들 패턴을 자동 감지합니다.
                 </p>
                 <p>
-                    {skillCounts.patterns}종 차트 패턴,{' '}
-                    {skillCounts.strategies}종 전략 분석,{' '}
-                    {skillCounts.supportResistance}종 지지/저항 레벨 분석을
-                    제공합니다.
+                    {skillCounts.patterns}종 차트 패턴, {skillCounts.strategies}
+                    종 전략 분석, {skillCounts.supportResistance}종 지지/저항
+                    레벨 분석을 제공합니다.
                 </p>
             </section>
             <HydrationBoundary state={dehydrate(queryClient)}>
