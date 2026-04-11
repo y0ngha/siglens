@@ -197,9 +197,10 @@ const SIGNAL_TYPE_LABEL: Record<SignalType, string> = {
 
 interface SignalItemProps {
     signal: Signal;
+    typeLabel?: string;
 }
 
-function SignalItem({ signal }: SignalItemProps) {
+function SignalItem({ signal, typeLabel }: SignalItemProps) {
     return (
         <div className="bg-secondary-700/40 flex items-start gap-2 rounded px-3 py-2">
             <span
@@ -212,7 +213,7 @@ function SignalItem({ signal }: SignalItemProps) {
             </span>
             <div className="min-w-0 flex-1">
                 <span className="text-secondary-300 block text-xs font-medium">
-                    {SIGNAL_TYPE_LABEL[signal.type]}
+                    {typeLabel ?? SIGNAL_TYPE_LABEL[signal.type]}
                 </span>
                 <span className="text-secondary-400 block text-xs">
                     {signal.description}
@@ -227,6 +228,8 @@ interface TrendBadgeProps {
 }
 
 function TrendBadge({ trend }: TrendBadgeProps) {
+    const label = TREND_LABEL[trend];
+    if (!label) return null;
     return (
         <span
             className={cn(
@@ -235,7 +238,7 @@ function TrendBadge({ trend }: TrendBadgeProps) {
                 TREND_BG_COLOR[trend]
             )}
         >
-            {TREND_LABEL[trend]}
+            {label}
         </span>
     );
 }
@@ -888,37 +891,30 @@ export function AnalysisPanel({
                     )}
 
                     {/* 인디케이터 시그널 */}
-                    {(analysis.signals.length > 0 ||
+                    {(analysis.signals.some(s => s.type !== 'skill') ||
                         indicatorSkillSignals.length > 0) && (
                         <div className="flex flex-col gap-2">
                             <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                                시그널
+                                보조지표
                             </span>
                             <div className="flex flex-col gap-1.5">
-                                {analysis.signals.map((signal, index) => (
-                                    <SignalItem
-                                        key={`${signal.type}-${index}`}
-                                        signal={signal}
-                                    />
-                                ))}
-                                {indicatorSkillSignals.map(skillSignal => (
-                                    <div
-                                        key={skillSignal.skillName}
-                                        className="flex flex-col gap-1"
-                                    >
-                                        <span className="text-secondary-400 text-xs font-medium">
-                                            {skillSignal.skillName}
-                                        </span>
-                                        {skillSignal.signals.map(
-                                            (signal, index) => (
-                                                <SignalItem
-                                                    key={`${signal.type}-${index}`}
-                                                    signal={signal}
-                                                />
-                                            )
-                                        )}
-                                    </div>
-                                ))}
+                                {analysis.signals
+                                    .filter(s => s.type !== 'skill')
+                                    .map((signal, index) => (
+                                        <SignalItem
+                                            key={`${signal.type}-${index}`}
+                                            signal={signal}
+                                        />
+                                    ))}
+                                {indicatorSkillSignals.map(skillSignal =>
+                                    skillSignal.signals.map((signal, index) => (
+                                        <SignalItem
+                                            key={`${skillSignal.skillName}-${signal.type}-${index}`}
+                                            signal={signal}
+                                            typeLabel={skillSignal.skillName}
+                                        />
+                                    ))
+                                )}
                             </div>
                         </div>
                     )}
@@ -984,7 +980,7 @@ export function AnalysisPanel({
                     {detectedSkillResults.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
-                                스킬 분석
+                                전략
                             </span>
                             <div className="flex flex-col gap-1.5">
                                 {detectedSkillResults.map(skill => (
