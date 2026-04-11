@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useOnClickOutside } from '@/components/layout/hooks/useOnClickOutside';
 import { useEscapeKey } from '@/components/layout/hooks/useEscapeKey';
+import { useFocusTrap } from '@/components/layout/hooks/useFocusTrap';
 import { CONTACT_EMAIL } from '@/lib/contact';
 
 const GITHUB_ISSUES_URL = 'https://github.com/y0ngha/siglens/issues/new/choose';
@@ -23,6 +24,13 @@ export function ContactDialog({
 
     useOnClickOutside([dialogRef], () => setOpen(false));
     useEscapeKey(() => setOpen(false));
+    useFocusTrap(dialogRef, open);
+
+    useEffect(() => {
+        if (open) {
+            dialogRef.current?.focus();
+        }
+    }, [open]);
 
     useEffect(() => {
         return () => {
@@ -53,7 +61,7 @@ export function ContactDialog({
 
             {open && (
                 <div
-                    className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+                    className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
                     role="presentation"
                 >
                     <div
@@ -61,7 +69,8 @@ export function ContactDialog({
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="contact-dialog-title"
-                        className="border-secondary-700 bg-secondary-800 w-full max-w-md rounded-xl border text-left shadow-2xl"
+                        tabIndex={-1}
+                        className="border-secondary-700 bg-secondary-800 w-full max-w-md rounded-xl border text-left shadow-2xl outline-none"
                     >
                         <div className="border-secondary-700 flex items-start justify-between border-b px-6 py-5">
                             <div>

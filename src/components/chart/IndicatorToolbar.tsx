@@ -22,7 +22,7 @@ const TOOLBAR_LABEL_COLLAPSED = 'Show indicators';
 
 const indicatorButtonClass = (active: boolean): string =>
     cn(
-        'rounded px-2 py-1 text-xs font-medium transition-colors',
+        'rounded px-2 py-1 text-xs font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500',
         active
             ? 'bg-secondary-700 text-white'
             : 'bg-secondary-800/80 text-secondary-400 hover:bg-secondary-700 hover:text-white'
