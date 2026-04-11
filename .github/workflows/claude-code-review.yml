@@ -29,7 +29,7 @@ jobs:
                   GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
                   ANTHROPIC_MODEL: sonnet
               with:
-                  show_full_output: true
+                  show_full_output: false
                   claude_code_oauth_token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
                   base_branch: master
                   claude_args: |
@@ -89,7 +89,7 @@ jobs:
                       These documents define the authoritative rules for this project.
                       Do not rely on general knowledge — always derive review criteria from these files.
 
-                      1. Read AGENTS.md — project overview, layer dependency rules, agent system
+                      1. Read CLAUDE.md — project overview, layer dependency rules, agent system
                       2. Read /docs/MISTAKES.md — common mistakes to flag (highest priority, read carefully)
                       3. Read /docs/CONVENTIONS.md — coding conventions, naming, paradigm rules
                       4. Read /docs/FF.md — frontend principles (Readability, Predictability, Cohesion, Coupling)
