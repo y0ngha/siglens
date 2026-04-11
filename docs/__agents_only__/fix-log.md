@@ -1,10 +1,11 @@
 # Fix Log
 
-## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
-- Violation: `lib/seo.ts`에 법적 내용 상수(`INVESTMENT_DISCLAIMER`, `LEGAL_EFFECTIVE_DATE`, `PRIVACY_PATH` 등)와 SEO 상수가 혼재
-- Rule: FF Cohesion 3-A — 다른 목적의 상수는 분리된 모듈에 위치해야 함
-- Context: privacy/terms 페이지 추가 시 법적 상수를 seo.ts에 추가; `src/lib/legal.ts`로 분리하여 해결
+## [PR #270 | feat/261/차트-dynamic-import-모바일-TTI-개선 | 2026-04-11]
+- Violation: dynamic import loading 컴포넌트(`ChartSkeleton`)가 `absolute inset-0`을 사용함에도 래퍼 컨테이너에 `relative` 클래스 누락
+- Rule: CSS Positioning — `absolute` 자식이 올바른 영역에 렌더되려면 부모 체인에 `positioned element`(`relative/absolute/fixed/sticky`)가 있어야 함
+- Context: StockChart 컨테이너(`<div className="relative flex-3">`)는 기존에 `relative`가 있었으나, VolumeChart 컨테이너는 정적 import에서 로딩 상태가 없어 `relative`가 없었음; dynamic import 전환으로 loading prop이 생기면서 문제가 드러남
 
+## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
 - Violation: `Footer.tsx`의 `<div role="note">`에 accessible name(`aria-label`) 누락
 - Rule: WAI-ARIA — role="note" 요소에 aria-label로 accessible name을 제공해야 함
 - Context: privacy/page.tsx와 terms/page.tsx의 동일 요소에는 aria-label이 있으나 Footer.tsx에만 누락됨
@@ -77,15 +78,6 @@
 - Violation: Component props with leading underscore used in component body (e.g., _recommendedAction used as recommendedAction)
 - Rule: CONVENTIONS.md Naming — underscore prefix reserved for intentionally-unused destructured parameters; consumed props must not have underscore
 - Context: ActionRecommendationField received _recommendedAction but used it in render; removed underscore to indicate the prop is actually consumed
-
-## [PR #242 | feat/236/strategies-스킬-추가 | 2026-04-10]
-- Violation: 전략 스킬 frontmatter의 indicators 목록이 본문에서 참조하는 지표(ATR)를 누락
-- Rule: 스킬 문서 일관성 — indicators 목록은 본문에서 참조하는 모든 지표를 포함해야 함
-- Context: mean-reversion.md가 손절선 규칙에서 2 × ATR을 사용하지만 indicators에 atr 미포함
-
-- Violation: AI Analysis Instructions가 시스템이 실제로 제공하지 않는 데이터 범위(120봉, 다중 시간대)를 전제로 작성됨
-- Rule: AI 지침은 시스템의 실제 데이터 제공 범위와 일치해야 함
-- Context: wyckoff.md는 120봉 필요하나 RECENT_BARS_COUNT=30; multi-timeframe.md는 3-Tier 분석 전제하나 단일 타임프레임만 제공
 
 ## [PR #229 Round 2 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
 - Violation: StockChart prop default actionPricesVisible = false contradicted the parent ChartContent's intent (initialized to true). Default off-by-default is misleading when caller explicitly enables the feature.
