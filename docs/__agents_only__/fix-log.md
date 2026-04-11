@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
+- Violation: `lib/seo.ts`에 법적 내용 상수(`INVESTMENT_DISCLAIMER`, `LEGAL_EFFECTIVE_DATE`, `PRIVACY_PATH` 등)와 SEO 상수가 혼재
+- Rule: FF Cohesion 3-A — 다른 목적의 상수는 분리된 모듈에 위치해야 함
+- Context: privacy/terms 페이지 추가 시 법적 상수를 seo.ts에 추가; `src/lib/legal.ts`로 분리하여 해결
+
+- Violation: `Footer.tsx`의 `<div role="note">`에 accessible name(`aria-label`) 누락
+- Rule: WAI-ARIA — role="note" 요소에 aria-label로 accessible name을 제공해야 함
+- Context: privacy/page.tsx와 terms/page.tsx의 동일 요소에는 aria-label이 있으나 Footer.tsx에만 누락됨
+
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: components/hooks/ 파일에 'use client' 선언 누락
 - Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
