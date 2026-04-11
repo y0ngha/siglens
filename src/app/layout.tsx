@@ -44,6 +44,9 @@ export const metadata: Metadata = {
         title: ROOT_TITLE,
         description: SITE_DESCRIPTION,
     },
+    icons: {
+        apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],
+    },
     robots: {
         index: true,
         follow: true,
