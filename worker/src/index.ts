@@ -2,6 +2,9 @@ import express from 'express';
 import { Redis } from '@upstash/redis';
 import { config } from './config.js';
 import { callGemini } from './gemini.js';
+import { callClaude } from './claude.js';
+
+const callAI = config.aiProvider === 'claude' ? callClaude : callGemini;
 
 const JOB_TTL_SECONDS = 600;
 
@@ -52,7 +55,7 @@ async function processJob(jobId: string, prompt: string): Promise<void> {
     });
 
     try {
-        const result = await callGemini(prompt);
+        const result = await callAI(prompt);
 
         // result를 먼저 저장한 후 status를 업데이트한다.
         // 순서가 바뀌면 poller가 done을 보고 result를 읽기 전에 빈 값을 만날 수 있다.

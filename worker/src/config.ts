@@ -6,14 +6,24 @@ function requireEnv(name: string): string {
     return value;
 }
 
+export type AIProviderType = 'gemini' | 'claude';
+
+const aiProvider = (process.env.AI_PROVIDER ?? 'gemini') as AIProviderType;
+
 export const config = {
     port: Number(process.env.PORT ?? '3000'),
+    aiProvider,
     redis: {
         url: requireEnv('UPSTASH_REDIS_REST_URL'),
         token: requireEnv('UPSTASH_REDIS_REST_TOKEN'),
     },
     gemini: {
-        apiKey: requireEnv('GEMINI_API_KEY'),
+        apiKey: aiProvider === 'gemini' ? requireEnv('GEMINI_API_KEY') : '',
         model: process.env.GEMINI_MODEL ?? 'gemini-3-flash-preview',
+    },
+    claude: {
+        apiKey: aiProvider === 'claude' ? requireEnv('ANTHROPIC_API_KEY') : '',
+        model: process.env.CLAUDE_MODEL ?? 'claude-opus-4-6',
+        maxTokens: Number(process.env.CLAUDE_MAX_TOKENS ?? '8192'),
     },
 } as const;

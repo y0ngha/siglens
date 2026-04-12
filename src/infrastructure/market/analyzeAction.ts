@@ -12,6 +12,7 @@ import {
     ANALYSIS_CACHE_TTL,
 } from '@/infrastructure/cache/config';
 
+/** @deprecated submitAnalysisAction + pollAnalysisAction으로 대체됨. 로컬 개발 폴백용으로만 유지. */
 export async function analyzeAction(
     variables: AnalyzeVariables,
     timeframe: Timeframe

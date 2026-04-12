@@ -14,6 +14,7 @@ export interface RunAnalysisResult extends AnalysisResponse {
     skillsDegraded: boolean;
 }
 
+/** @deprecated AI 호출은 Cloud Run worker에서 처리. 로컬 개발 폴백용으로만 유지. */
 export async function runAnalysis(
     { symbol, bars, indicators }: AnalyzeVariables,
     timeframe: Timeframe = '1Day'
