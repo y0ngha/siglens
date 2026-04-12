@@ -190,6 +190,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     const [activeTab, setActiveTab] = useState<ActiveTab>('all');
     const [showAll, setShowAll] = useState(false);
     const baseId = useId();
+    const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
     const handleTabSelect = (value: ActiveTab): void => {
         setActiveTab(value);
@@ -198,13 +199,14 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
 
     const handleTablistKeyDown = (e: React.KeyboardEvent): void => {
         const currentIdx = TABS.findIndex(t => t.value === activeTab);
-        if (e.key === 'ArrowRight') {
-            handleTabSelect(TABS[(currentIdx + 1) % TABS.length].value);
-        } else if (e.key === 'ArrowLeft') {
-            handleTabSelect(
-                TABS[(currentIdx - 1 + TABS.length) % TABS.length].value
-            );
-        }
+        let nextIdx = currentIdx;
+        if (e.key === 'ArrowRight') nextIdx = (currentIdx + 1) % TABS.length;
+        else if (e.key === 'ArrowLeft')
+            nextIdx = (currentIdx - 1 + TABS.length) % TABS.length;
+        else return;
+        e.preventDefault();
+        handleTabSelect(TABS[nextIdx].value);
+        tabButtonRefs.current[nextIdx]?.focus();
     };
 
     return (
@@ -218,11 +220,14 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                 className="mb-6 flex flex-wrap gap-2"
                 onKeyDown={handleTablistKeyDown}
             >
-                {TABS.map(tab => {
+                {TABS.map((tab, idx) => {
                     const isActive = activeTab === tab.value;
                     return (
                         <button
                             key={tab.value}
+                            ref={el => {
+                                tabButtonRefs.current[idx] = el;
+                            }}
                             id={`${baseId}-tab-${tab.value}`}
                             type="button"
                             role="tab"

@@ -23,28 +23,28 @@ const CATEGORY_STYLES: Record<CategoryId, CategoryStyle> = {
         textColor: 'text-primary-300',
     },
     'fintech-crypto': {
-        borderColor: 'border-l-chart-period10',
-        textColor: 'text-chart-period10',
+        borderColor: 'border-l-primary-500',
+        textColor: 'text-primary-500',
     },
     'leveraged-etf': {
         borderColor: 'border-l-ui-warning',
         textColor: 'text-ui-warning',
     },
     'healthcare-bio': {
-        borderColor: 'border-l-chart-rsi',
-        textColor: 'text-chart-rsi',
+        borderColor: 'border-l-secondary-400',
+        textColor: 'text-secondary-400',
     },
     'quantum-computing': {
-        borderColor: 'border-l-chart-bollinger',
-        textColor: 'text-chart-bollinger',
+        borderColor: 'border-l-primary-200',
+        textColor: 'text-primary-200',
     },
     'ev-mobility': {
-        borderColor: 'border-l-chart-period60',
-        textColor: 'text-chart-period60',
+        borderColor: 'border-l-secondary-300',
+        textColor: 'text-secondary-300',
     },
     'energy-industrial': {
-        borderColor: 'border-l-chart-period5',
-        textColor: 'text-chart-period5',
+        borderColor: 'border-l-chart-bearish',
+        textColor: 'text-chart-bearish',
     },
 };
 
