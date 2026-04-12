@@ -1,15 +1,15 @@
 import { constants } from 'node:http2';
 import express from 'express';
 import { Redis } from '@upstash/redis';
+import { config } from './config.js';
+import { callGemini } from './gemini.js';
+import { callClaude } from './claude.js';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
     HTTP_STATUS_UNAUTHORIZED,
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
 } = constants;
-import { config } from './config.js';
-import { callGemini } from './gemini.js';
-import { callClaude } from './claude.js';
 
 const callAI = config.aiProvider === 'claude' ? callClaude : callGemini;
 
@@ -38,6 +38,7 @@ app.post('/analyze', (req, res) => {
         return;
     }
 
+    // express req.body는 any 타입; 실제 필드는 아래 if문에서 검증
     const { jobId, prompt } = req.body as AnalyzeRequest;
 
     if (!jobId || !prompt) {
