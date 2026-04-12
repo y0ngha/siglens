@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #292 | feat/291/cloud-run-worker | 2026-04-12]
+- Violation: Worker에서 Promise.all로 result와 status를 동시 저장 — poller가 done 상태를 보고 result가 아직 없을 수 있는 레이스 컨디션
+- Rule: 데이터 의존 관계가 있는 Redis 쓰기는 순차 실행
+- Context: `worker/src/index.ts`에서 `Promise.all([set result, set status])` → `await set result; await set status`로 순차 실행
+
+- Violation: 타임프레임 변경 시 analysisResult(useState)를 null로 초기화하지 않아 이전 결과가 남음
+- Rule: 상태 일관성 — reset() 호출 시 관련 useState도 함께 초기화해야 함
+- Context: `useAnalysis.ts`에서 reset()은 useMutation data만 초기화하고, 별도 useState인 analysisResult는 그대로 유지
+
+- Violation: sleep 유틸리티 함수가 hooks/ 파일 내 직접 정의
+- Rule: CONVENTIONS.md — 비훅 순수 유틸리티 함수는 utils/ 서브폴더에 분리
+- Context: `useAnalysis.ts`에서 `sleep` 함수를 인라인 정의; `symbol-page/utils/sleep.ts`로 분리
+
 ## [PR #290 Round 5 | refactor/289/코드-정리-상수통합-복잡도개선-중복제거 | 2026-04-12]
 - Violation: `parseJsonResponse`의 `JSON.parse(...) as T` 단언에 이유 주석 누락
 - Rule: MISTAKES.md TypeScript #8 — `as` 단언 사용 시 이유를 주석으로 명시
@@ -13,10 +26,6 @@
 - Violation: 테스트 파일의 한글 문자열에 깨진 UTF-8 바이트 포함
 - Rule: CONVENTIONS.md — 테스트 설명 문구는 사람이 읽기 쉬운 한국어 텍스트여야 함
 - Context: `src/__tests__/domain/constants/time.test.ts`의 describe/it 텍스트가 잘못된 인코딩으로 저장되어 의미 불명 문자 포함
-
-- Violation: useEffectEvent로 만든 `stableGetIndicatorData`가 첫 번째 useEffect 블록 이후에 선언
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — 이벤트 핸들러/유틸(5단계)은 모든 useEffect(7단계)보다 앞에 선언
-- Context: `useMovingAverageOverlay.ts`에서 두 번째 useEffect 직전에 배치하여 선언 순서 위반
 
 - Violation: lib 레이어에서 domain 런타임 상수(`MS_PER_MINUTE`) import
 - Rule: ARCHITECTURE.md — lib는 domain에서 타입만 import 가능, 런타임 상수 값은 금지
