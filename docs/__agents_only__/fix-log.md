@@ -22,10 +22,6 @@
 - Rule: 보안 — 외부 노출 엔드포인트는 인증 필수
 - Context: `--allow-unauthenticated`로 배포 + 인증 없는 POST 핸들러; `X-Worker-Secret` 헤더 검증 추가
 
-- Violation: `parseJsonResponse` 호출에 try-catch 없음 — 비정상 JSON 시 처리되지 않은 에러
-- Rule: MISTAKES.md Pure Function Contracts #2 — 외부 의존성은 일관된 실패 처리
-- Context: `pollAnalysisAction.ts`에서 Worker가 비정상 응답 반환 시 에러 미처리; try-catch 추가
-
 ## [PR #292 | feat/291/cloud-run-worker | 2026-04-12]
 - Violation: Worker에서 Promise.all로 result와 status를 동시 저장 — poller가 done 상태를 보고 result가 아직 없을 수 있는 레이스 컨디션
 - Rule: 데이터 의존 관계가 있는 Redis 쓰기는 순차 실행
@@ -40,10 +36,6 @@
 - Context: `useAnalysis.ts`에서 `sleep` 함수를 인라인 정의; `symbol-page/utils/sleep.ts`로 분리
 
 ## [PR #290 Round 5 | refactor/289/코드-정리-상수통합-복잡도개선-중복제거 | 2026-04-12]
-- Violation: `parseJsonResponse`의 `JSON.parse(...) as T` 단언에 이유 주석 누락
-- Rule: MISTAKES.md TypeScript #8 — `as` 단언 사용 시 이유를 주석으로 명시
-- Context: `src/infrastructure/ai/utils.ts`에서 `JSON.parse`가 `any`를 반환하여 불가피한 단언임을 주석 없이 사용
-
 - Violation: `buildLastOpposingIndices`의 `.map()` 콜백 내 외부 `let` 변수 변이 — 비순수 콜백
 - Rule: CONVENTIONS.md — map 콜백은 순수 변환이어야 함; 상태 스캔에는 generator 패턴 사용
 - Context: `bull = i` 클로저 변이를 포함한 map 콜백, `scanLastIndex` generator로 교체
@@ -84,11 +76,6 @@
 - Violation: `prompt.ts` `classifyPriceZone` 함수의 설계 의도가 코드에 주석 없이 노출 — premium 존 상단 경계(high) 미검사가 의도적임에도 불명확
 - Rule: CONVENTIONS.md — 도메인 로직의 비직관적 결정은 주석으로 명시
 - Context: SMC 이론상 premium zone 위도 premium territory(과매수 구간)이므로 price >= premium.low만 체크하는 것이 정확한 설계. 주석 추가로 명시.
-
-## [PR #280 | refactor/279/ai-prompt-consistency | 2026-04-12]
-- Violation: `infrastructure/ai/claude.ts`에서 IIFE 파서를 `parseNumberEnv` 헬퍼로 교체할 때 기존 `parsed > 0` 양수 검증 가드가 누락 — `CLAUDE_MAX_TOKENS=0` 또는 음수 환경변수 설정 시 API 호출 실패
-- Rule: MISTAKES.md Pure Function Contracts #1 — "Utility functions must guard all valid input ranges explicitly"
-- Context: 기존 IIFE의 `&& parsed > 0` 조건을 `parseNumberEnv`가 대체했으나, 헬퍼 함수는 0도 유효값으로 통과시키므로 호출부에서 별도로 `> 0` 가드를 추가해야 했음
 
 ## [PR #278 Round 2 | feat/squeeze-momentum-indicator | 2026-04-12]
 - Violation: `utils.ts`에서 `const window = values.slice(-period)` — 브라우저 전역 `window` 객체 섀도잉
