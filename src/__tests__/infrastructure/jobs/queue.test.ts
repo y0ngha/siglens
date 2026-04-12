@@ -88,11 +88,9 @@ describe('jobs/queue 모듈은', () => {
 
             await setJobMeta('job-2', meta);
 
-            expect(mockSet).toHaveBeenCalledWith(
-                'job:job-2:meta',
-                meta,
-                { ex: 3600 }
-            );
+            expect(mockSet).toHaveBeenCalledWith('job:job-2:meta', meta, {
+                ex: 3600,
+            });
         });
 
         it('getJobStatus는 status 키 값을 반환한다', async () => {
