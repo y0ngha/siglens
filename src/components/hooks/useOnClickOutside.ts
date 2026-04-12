@@ -9,6 +9,7 @@ export function useOnClickOutside(
 ): void {
     const handlePointerDown = useEffectEvent((event: PointerEvent) => {
         const refsArray = Array.isArray(refs) ? refs : [refs];
+        // EventTarget → Node: .contains() requires Node; DOM element cast is safe here
         const target = event.target as Node;
         const isOutside = refsArray.every(
             ref => !ref.current?.contains(target)

@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
 import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
@@ -191,10 +191,21 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     const [showAll, setShowAll] = useState(false);
     const baseId = useId();
 
-    function handleTabSelect(value: ActiveTab) {
+    const handleTabSelect = (value: ActiveTab): void => {
         setActiveTab(value);
         setShowAll(false);
-    }
+    };
+
+    const handleTablistKeyDown = (e: React.KeyboardEvent): void => {
+        const currentIdx = TABS.findIndex(t => t.value === activeTab);
+        if (e.key === 'ArrowRight') {
+            handleTabSelect(TABS[(currentIdx + 1) % TABS.length].value);
+        } else if (e.key === 'ArrowLeft') {
+            handleTabSelect(
+                TABS[(currentIdx - 1 + TABS.length) % TABS.length].value
+            );
+        }
+    };
 
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
@@ -205,6 +216,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                 role="tablist"
                 aria-label="스킬 카테고리 탭"
                 className="mb-6 flex flex-wrap gap-2"
+                onKeyDown={handleTablistKeyDown}
             >
                 {TABS.map(tab => {
                     const isActive = activeTab === tab.value;
