@@ -134,6 +134,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 8. Custom hook params missing optional properties present in sibling hooks
    → All hooks in the same family must accept consistent parameter patterns
+
+9. Custom hooks in components/ without 'use client' directive
+   → Every hook file under components/ must declare 'use client' at the top
+   → Hooks are Client Components and will fail without the directive when parent is async Server Component
 ```
 
 ---

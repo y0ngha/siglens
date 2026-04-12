@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #286 Round 4 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: `app/page.tsx`에서 `countSkillFiles()`와 `loadSkills()` blocking await로 페이지 전체 렌더링을 지연
+- Rule: Next.js Suspense 패턴 — 느린 데이터 fetch는 async 서버 컴포넌트 + Suspense fallback으로 스트리밍 처리
+- Context: B1 아키텍처 수정 시 Suspense를 제거하고 Promise.all로 동기 fetch하도록 변경했으나, 원래 의도는 스켈레톤 로딩. `cache()`로 중복 호출 제거하고 `AsyncStatsBar`, `SkillsShowcaseServer`, `HowItWorksServer`, `HowToJsonLdServer` 인라인 async 컴포넌트로 분리하여 Suspense 복원.
+
 ## [PR #286 Round 3 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
 - Violation: `prompt.ts` `classifyPriceZone` 함수의 설계 의도가 코드에 주석 없이 노출 — premium 존 상단 경계(high) 미검사가 의도적임에도 불명확
 - Rule: CONVENTIONS.md — 도메인 로직의 비직관적 결정은 주석으로 명시
@@ -53,10 +58,6 @@
 - Context: privacy/page.tsx와 terms/page.tsx의 동일 요소에는 aria-label이 있으나 Footer.tsx에만 누락됨
 
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
-- Violation: components/hooks/ 파일에 'use client' 선언 누락
-- Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
-- Context: useAssetInfo.ts 작성 시 useTimeframeChange 등 기존 훅 파일에서 패턴을 확인하지 않아 누락
-
 - Violation: 서버 prefetchQuery 키와 클라이언트 훅 키 불일치 (hydration 캐시 미스)
 - Rule: React Query Hydration 패턴 — prefetchQuery 키와 useQuery 키가 정확히 일치해야 함
 - Context: 서버는 ticker(대문자)로 키를 만들고 클라이언트는 symbol(원본)로 키를 만들어 소문자 URL 진입 시 캐시 미스 발생
@@ -113,9 +114,5 @@
 - Violation: SkillsShowcase.tsx — all tabpanels rendered in DOM simultaneously but shared `visibleSkills` computed from activeTab state, so inactive panels showed wrong content
 - Rule: ARIA tablist pattern — each tabpanel must compute its own filtered content independently, not share state with other panels
 - Context: filteredSkills and visibleSkills were computed outside the TABS.map loop based on activeTab, causing all panels to render the active tab's data; moved computation inside each panel's render scope
-
-- Violation: SkillsShowcase.tsx — DOM event listener (pointerdown) registered directly in useEffect inside ConfidenceInfoTooltip instead of extracting to useOnClickOutside hook
-- Rule: MISTAKES.md Components — DOM event listeners in useEffect must be extracted to custom hooks (useOnClickOutside, useEscapeKey, etc.)
-- Context: ConfidenceInfoTooltip had inline useEffect + document.addEventListener('pointerdown'); created src/components/home/hooks/useOnClickOutside.ts and replaced inline logic
 
 
