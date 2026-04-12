@@ -120,7 +120,7 @@ function extractExistingTickers(fileContent: string): Set<string> {
     if (arrayStart === -1) return new Set();
 
     const popularSection = fileContent.slice(arrayStart);
-    const matches = popularSection.match(/'([A-Z][A-Z0-9.]+)'/g);
+    const matches = popularSection.match(/['"]([A-Z][A-Z0-9.]+)['"]/g);
     return new Set(matches ? matches.map(m => m.slice(1, -1)) : []);
 }
 
@@ -141,7 +141,16 @@ function insertTrendingSection(
     const tickerLines = newTickers.map(t => `    '${t}',`).join('\n');
     const section = `\n    ${sectionHeader}\n${tickerLines}\n`;
 
-    return fileContent.replace(/] as const;/, `${section}] as const;`);
+    const insertionPoint = fileContent.lastIndexOf('] as const;');
+    if (insertionPoint === -1) {
+        throw new Error('Could not find "] as const;" in popular-tickers.ts');
+    }
+
+    return (
+        fileContent.slice(0, insertionPoint) +
+        section +
+        fileContent.slice(insertionPoint)
+    );
 }
 
 // --- FMP API ---
@@ -172,6 +181,7 @@ async function fetchScreenerResults(
         throw new Error(`Screener API error: ${res.status} ${res.statusText}`);
     }
 
+    // FMP API returns unvalidated JSON; shape is consistent with ScreenerResult contract
     const raw = (await res.json()) as ScreenerResult[];
 
     if (!Array.isArray(raw)) return [];
@@ -199,6 +209,7 @@ async function fetchEodBars(
         return [];
     }
 
+    // FMP API returns unvalidated JSON; shape is consistent with EodBar contract
     const raw = (await res.json()) as EodBar[];
 
     if (!Array.isArray(raw)) return [];
@@ -289,24 +300,26 @@ async function main(): Promise<void> {
         `\nFetching EOD data for ${cappedCandidates.length} candidates (${from} ~ ${to})...`
     );
 
-    const weeklyVolumes: TickerWeeklyVolume[] = [];
-
-    for (const candidate of cappedCandidates) {
-        const bars = await fetchEodBars(apiKey, candidate.symbol, from, to);
-
-        if (bars.length > 0) {
-            weeklyVolumes.push({
-                symbol: candidate.symbol,
-                companyName: candidate.companyName,
-                weeklyVolume: calculateWeeklyVolume(bars),
-                price: candidate.price,
-                marketCap: candidate.marketCap,
-                maxDailyChangePct: calculateMaxDailyChangePct(bars),
-            });
-        }
-
-        await sleep(REQUEST_DELAY_MS);
-    }
+    const weeklyVolumes = await cappedCandidates.reduce(
+        async (accPromise, candidate) => {
+            const acc = await accPromise;
+            const bars = await fetchEodBars(apiKey, candidate.symbol, from, to);
+            await sleep(REQUEST_DELAY_MS);
+            if (bars.length === 0) return acc;
+            return [
+                ...acc,
+                {
+                    symbol: candidate.symbol,
+                    companyName: candidate.companyName,
+                    weeklyVolume: calculateWeeklyVolume(bars),
+                    price: candidate.price,
+                    marketCap: candidate.marketCap,
+                    maxDailyChangePct: calculateMaxDailyChangePct(bars),
+                },
+            ];
+        },
+        Promise.resolve([] as TickerWeeklyVolume[])
+    );
 
     console.log(`EOD data fetched for ${weeklyVolumes.length} tickers`);
 
@@ -336,7 +349,7 @@ async function main(): Promise<void> {
     // 8. Format
     try {
         console.log('Running prettier...');
-        execSync(`npx prettier --write "${POPULAR_TICKERS_PATH}"`, {
+        execSync(`yarn prettier --write "${POPULAR_TICKERS_PATH}"`, {
             stdio: 'inherit',
         });
     } catch {
