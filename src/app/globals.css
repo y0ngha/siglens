@@ -135,3 +135,12 @@ body {
     box-shadow: 0 0 20px
         color-mix(in oklch, var(--color-primary-600) 30%, transparent);
 }
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}

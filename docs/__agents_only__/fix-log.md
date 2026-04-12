@@ -1,10 +1,41 @@
 # Fix Log
 
-## [PR #290 Round 5 | refactor/289/코드-정리-상수통합-복잡도개선-중복제거 | 2026-04-12]
-- Violation: `parseJsonResponse`의 `JSON.parse(...) as T` 단언에 이유 주석 누락
-- Rule: MISTAKES.md TypeScript #8 — `as` 단언 사용 시 이유를 주석으로 명시
-- Context: `src/infrastructure/ai/utils.ts`에서 `JSON.parse`가 `any`를 반환하여 불가피한 단언임을 주석 없이 사용
+## [PR #292 Round 3 | feat/291/cloud-run-worker | 2026-04-13]
+- Violation: domain 타입에 인프라 전용 필드(skillsDegraded) 포함
+- Rule: ARCHITECTURE.md — domain 타입에 route/infra 전용 필드 정의 금지
+- Context: SubmitAnalysisResult/PollAnalysisResult에서 skillsDegraded 제거, JobMeta로 이동
 
+- Violation: setJobMeta가 환경변수 검증보다 먼저 실행 — 고아 Redis 레코드 발생 가능
+- Rule: 환경변수 사전 검증은 함수 최상단에서 수행
+- Context: submitAnalysisAction에서 WORKER_URL/WORKER_SECRET 검증을 함수 최상단으로 이동
+
+- Violation: Skills 로딩 실패 시 skillsDegraded가 submitted 경로에서 전파되지 않음
+- Rule: MISTAKES.md Domain Functions #2 — 저하 정보를 호출자에게 전파
+- Context: submitAnalysisAction에서 skillsDegraded를 JobMeta에 저장, pollAnalysisAction에서 OR 연산으로 반영
+
+## [PR #292 Round 2 | feat/291/cloud-run-worker | 2026-04-13]
+- Violation: 훅 파일에서 `@/infrastructure/jobs/types` 타입 import — 아키텍처 위반
+- Rule: ARCHITECTURE.md — 훅 파일(hooks/)에서 타입 import는 @/domain/types에서만 수행
+- Context: `useAnalysis.ts`에서 `SubmitAnalysisResult`를 infrastructure에서 import; domain/types.ts로 이동
+
+- Violation: Worker `/analyze` 엔드포인트에 인증 없음 — 무제한 AI API 호출 가능
+- Rule: 보안 — 외부 노출 엔드포인트는 인증 필수
+- Context: `--allow-unauthenticated`로 배포 + 인증 없는 POST 핸들러; `X-Worker-Secret` 헤더 검증 추가
+
+## [PR #292 | feat/291/cloud-run-worker | 2026-04-12]
+- Violation: Worker에서 Promise.all로 result와 status를 동시 저장 — poller가 done 상태를 보고 result가 아직 없을 수 있는 레이스 컨디션
+- Rule: 데이터 의존 관계가 있는 Redis 쓰기는 순차 실행
+- Context: `worker/src/index.ts`에서 `Promise.all([set result, set status])` → `await set result; await set status`로 순차 실행
+
+- Violation: 타임프레임 변경 시 analysisResult(useState)를 null로 초기화하지 않아 이전 결과가 남음
+- Rule: 상태 일관성 — reset() 호출 시 관련 useState도 함께 초기화해야 함
+- Context: `useAnalysis.ts`에서 reset()은 useMutation data만 초기화하고, 별도 useState인 analysisResult는 그대로 유지
+
+- Violation: sleep 유틸리티 함수가 hooks/ 파일 내 직접 정의
+- Rule: CONVENTIONS.md — 비훅 순수 유틸리티 함수는 utils/ 서브폴더에 분리
+- Context: `useAnalysis.ts`에서 `sleep` 함수를 인라인 정의; `symbol-page/utils/sleep.ts`로 분리
+
+## [PR #290 Round 5 | refactor/289/코드-정리-상수통합-복잡도개선-중복제거 | 2026-04-12]
 - Violation: `buildLastOpposingIndices`의 `.map()` 콜백 내 외부 `let` 변수 변이 — 비순수 콜백
 - Rule: CONVENTIONS.md — map 콜백은 순수 변환이어야 함; 상태 스캔에는 generator 패턴 사용
 - Context: `bull = i` 클로저 변이를 포함한 map 콜백, `scanLastIndex` generator로 교체
@@ -13,10 +44,6 @@
 - Violation: 테스트 파일의 한글 문자열에 깨진 UTF-8 바이트 포함
 - Rule: CONVENTIONS.md — 테스트 설명 문구는 사람이 읽기 쉬운 한국어 텍스트여야 함
 - Context: `src/__tests__/domain/constants/time.test.ts`의 describe/it 텍스트가 잘못된 인코딩으로 저장되어 의미 불명 문자 포함
-
-- Violation: useEffectEvent로 만든 `stableGetIndicatorData`가 첫 번째 useEffect 블록 이후에 선언
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — 이벤트 핸들러/유틸(5단계)은 모든 useEffect(7단계)보다 앞에 선언
-- Context: `useMovingAverageOverlay.ts`에서 두 번째 useEffect 직전에 배치하여 선언 순서 위반
 
 - Violation: lib 레이어에서 domain 런타임 상수(`MS_PER_MINUTE`) import
 - Rule: ARCHITECTURE.md — lib는 domain에서 타입만 import 가능, 런타임 상수 값은 금지
@@ -49,11 +76,6 @@
 - Violation: `prompt.ts` `classifyPriceZone` 함수의 설계 의도가 코드에 주석 없이 노출 — premium 존 상단 경계(high) 미검사가 의도적임에도 불명확
 - Rule: CONVENTIONS.md — 도메인 로직의 비직관적 결정은 주석으로 명시
 - Context: SMC 이론상 premium zone 위도 premium territory(과매수 구간)이므로 price >= premium.low만 체크하는 것이 정확한 설계. 주석 추가로 명시.
-
-## [PR #280 | refactor/279/ai-prompt-consistency | 2026-04-12]
-- Violation: `infrastructure/ai/claude.ts`에서 IIFE 파서를 `parseNumberEnv` 헬퍼로 교체할 때 기존 `parsed > 0` 양수 검증 가드가 누락 — `CLAUDE_MAX_TOKENS=0` 또는 음수 환경변수 설정 시 API 호출 실패
-- Rule: MISTAKES.md Pure Function Contracts #1 — "Utility functions must guard all valid input ranges explicitly"
-- Context: 기존 IIFE의 `&& parsed > 0` 조건을 `parseNumberEnv`가 대체했으나, 헬퍼 함수는 0도 유효값으로 통과시키므로 호출부에서 별도로 `> 0` 가드를 추가해야 했음
 
 ## [PR #278 Round 2 | feat/squeeze-momentum-indicator | 2026-04-12]
 - Violation: `utils.ts`에서 `const window = values.slice(-period)` — 브라우저 전역 `window` 객체 섀도잉

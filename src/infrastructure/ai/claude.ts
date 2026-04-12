@@ -27,6 +27,7 @@ const rawTopP = parseNumberEnv(process.env.CLAUDE_TOP_P, DEFAULT_CLAUDE_TOP_P);
 const CLAUDE_TOP_P =
     rawTopP > 0 && rawTopP <= 1 ? rawTopP : DEFAULT_CLAUDE_TOP_P;
 
+/** @deprecated AI 호출은 Cloud Run worker에서 처리. 로컬 개발 폴백용으로만 유지. */
 export class ClaudeProvider implements AIProvider {
     private readonly client: Anthropic;
 

@@ -17,13 +17,26 @@ import { cn } from '@/lib/cn';
 
 const ANALYSIS_PHASES = [
     '시장 데이터 정렬 중',
-    '보조지표 시그널 계산 중',
-    '캔들 패턴 탐지 중',
-    '스킬 매칭 및 신뢰도 평가 중',
+    '20개 이상의 보조지표 시그널 분석 중',
+    '캔들 패턴 및 차트 패턴 탐지 중',
+    '60개 이상의 스킬을 조합하여 시그널 매칭 중',
+    '매수·매도 전략 및 리스크 평가 중',
     'AI 종합 해석 작성 중',
 ] as const;
 
-const PHASE_INTERVAL_MS = 20000;
+const PHASE_INTERVAL_MS = 25000;
+
+const ANALYSIS_TIPS = [
+    '20개 이상의 보조지표와 60개 이상의 스킬을 조합해 분석합니다. 최대 15분까지 소요될 수 있어요.',
+    '화면을 띄워 놓고 다른 작업을 하셔도 됩니다. 분석이 완료되면 자동으로 결과가 표시돼요.',
+    'RSI, MACD, 볼린저 밴드 등 보조지표의 시그널을 종합하여 추세를 판단하고 있어요.',
+    '엘리어트 파동, 피보나치, 와이코프 등 다양한 전략을 데이터에 적용하고 있어요.',
+    '매수·매도 타이밍, 손절가, 목표가까지 산출하여 실전에 바로 활용 가능한 분석을 제공합니다.',
+    '헤드앤숄더, 더블바텀 등 차트 패턴과 캔들 패턴을 동시에 탐지하고 있어요.',
+    '한 번 분석된 결과는 캐시되어, 다음에 다시 열면 바로 확인할 수 있어요.',
+] as const;
+
+const TIP_INTERVAL_MS = 8000;
 /** 조기 완료 시 마지막 단계로 이동하기 전 잠시 멈추는 시간(ms). */
 const FINISHING_HOLD_MS = 3500;
 /** 마무리 모드에서 단계를 한 칸씩 진행시키는 간격(ms). */
@@ -43,6 +56,7 @@ export function AnalysisProgress({
     onFinished,
 }: AnalysisProgressProps) {
     const [phaseIndex, setPhaseIndex] = useState(0);
+    const [tipIndex, setTipIndex] = useState(0);
     const [finishing, setFinishing] = useState(false);
     const [prevIsAnalyzing, setPrevIsAnalyzing] = useState(isAnalyzing);
 
@@ -73,6 +87,17 @@ export function AnalysisProgress({
             window.clearInterval(intervalId);
         };
     }, [isAnalyzing, finishing]);
+    // 팁 메시지를 일정 간격으로 순환시킨다.
+    useEffect(() => {
+        if (!isAnalyzing || finishing) return;
+        const intervalId = window.setInterval(() => {
+            setTipIndex(prev => (prev + 1) % ANALYSIS_TIPS.length);
+        }, TIP_INTERVAL_MS);
+        return () => {
+            window.clearInterval(intervalId);
+        };
+    }, [isAnalyzing, finishing]);
+
     useEffect(() => {
         onFinishedRef.current = onFinished;
     });
@@ -142,8 +167,12 @@ export function AnalysisProgress({
                             …
                         </span>
                     </span>
-                    <span className="text-secondary-500 mt-0.5 text-[11px] tracking-wide">
-                        분석에는 보통 2분 정도 걸려요. 잠시만 기다려 주세요.
+                    <span
+                        key={tipIndex}
+                        className="text-secondary-500 mt-0.5 text-[11px] leading-relaxed tracking-wide"
+                        style={{ animation: 'fadeIn 0.6s ease-in' }}
+                    >
+                        {ANALYSIS_TIPS[tipIndex]}
                     </span>
                 </div>
             </div>

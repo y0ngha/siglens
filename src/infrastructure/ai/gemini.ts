@@ -21,6 +21,7 @@ const rawTopP = parseNumberEnv(process.env.GEMINI_TOP_P, DEFAULT_GEMINI_TOP_P);
 const GEMINI_TOP_P =
     rawTopP > 0 && rawTopP <= 1 ? rawTopP : DEFAULT_GEMINI_TOP_P;
 
+/** @deprecated AI 호출은 Cloud Run worker에서 처리. 로컬 개발 폴백용으로만 유지. */
 export class GeminiProvider implements AIProvider {
     private readonly client: GoogleGenerativeAI;
 
