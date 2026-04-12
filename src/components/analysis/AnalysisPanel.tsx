@@ -735,8 +735,10 @@ interface AnalysisPanelProps {
     /** 마무리 애니메이션을 포함해 "사용자에게 분석이 진행 중인 것처럼 보이는" 상태.
      *  AnalysisProgress 표시·본문 섹션 숨김에 사용된다. ChartContent가 소유한다. */
     showProgress?: boolean;
-    /** AnalysisProgress의 마무리 애니메이션이 모두 끝난 시점에 호출된다. */
-    onProgressFinished?: () => void;
+    /** useAnalysisProgress 훅에서 관리되는 현재 단계 인덱스. */
+    progressPhaseIndex?: number;
+    /** useAnalysisProgress 훅에서 관리되는 현재 팁 인덱스. */
+    progressTipIndex?: number;
     onReanalyze?: () => void;
     /** 다음 재분석까지 남은 ms. 0이면 즉시 가능. */
     reanalyzeCooldownMs?: number;
@@ -759,7 +761,8 @@ export function AnalysisPanel({
     keyLevels,
     isAnalyzing = false,
     showProgress = false,
-    onProgressFinished,
+    progressPhaseIndex = 0,
+    progressTipIndex = 0,
     onReanalyze,
     reanalyzeCooldownMs = 0,
     cooldownNotice = null,
@@ -777,9 +780,9 @@ export function AnalysisPanel({
         onTogglePattern?.(patternName);
     };
 
-    // showProgress와 onProgressFinished는 ChartContent가 관리한다.
-    // 동일한 "마무리 애니메이션 진행 중" 상태를 상단 배너(AnalyzingBanner)와 본문이
-    // 함께 공유해야 하기 때문이다.
+    // showProgress, progressPhaseIndex, progressTipIndex는 ChartContent가 관리한다.
+    // useAnalysisProgress 훅이 타이머/상태를 소유하므로, 데스크톱·모바일 두 인스턴스가
+    // 동일한 진행 상태를 표시하고 모바일 시트의 remount에도 상태가 유지된다.
 
     const detectedPatterns = analysis.patternSummaries.filter(p => p.detected);
     const hasDetectedPatterns = detectedPatterns.length > 0;
@@ -840,8 +843,8 @@ export function AnalysisPanel({
                 showProgress=true가 유지되어 인디케이터가 잠시 더 노출된다. */}
             {showProgress ? (
                 <AnalysisProgress
-                    isAnalyzing={isAnalyzing}
-                    onFinished={onProgressFinished}
+                    phaseIndex={progressPhaseIndex}
+                    tipIndex={progressTipIndex}
                 />
             ) : (
                 <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">

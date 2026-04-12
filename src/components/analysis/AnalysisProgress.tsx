@@ -1,155 +1,28 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
-import { MS_PER_MINUTE } from '@/domain/constants/time';
+import {
+    ANALYSIS_PHASES,
+    ANALYSIS_TIPS,
+} from '@/components/symbol-page/hooks/useAnalysisProgress';
 
 /**
  * AI 분석이 진행되는 동안 패널 내부에 표시되는 인터랙티브 인디케이터.
  * 사용자가 멈춘 것으로 오해하지 않도록, 단계별 메시지·스피너·스켈레톤·페이즈 도트를 조합하여
  * 분석이 살아 있다는 시각적 신호를 지속적으로 제공한다.
  *
- * 화면 전체를 가리지 않고 AnalysisPanel 내부에서만 동작한다.
- *
- * 분석이 마지막 단계 전에 끝나는 경우(캐시 히트 등)에는 곧바로 사라지지 않고
- * "마무리 애니메이션"으로 전환한다 — 잠시 멈춘 뒤 남은 단계들을 1초 간격으로
- * 빠르게 채워, 사용자가 5단계가 모두 수행되었다고 인지하게 만든다.
+ * 상태와 타이머 로직은 useAnalysisProgress 훅에서 관리한다.
+ * 이 컴포넌트는 phaseIndex와 tipIndex를 props로 받아 렌더링만 담당한다.
+ * 덕분에 데스크톱·모바일 두 인스턴스가 항상 동일한 진행 상태를 표시하고,
+ * 모바일 시트의 unmount/remount 사이클에서도 상태가 초기화되지 않는다.
  */
 
-const ANALYSIS_PHASES = [
-    '시장 데이터 정렬 중',
-    '20개 이상의 보조지표 시그널 분석 중',
-    '캔들 패턴 및 차트 패턴 탐지 중',
-    '60개 이상의 스킬을 조합하여 시그널 매칭 중',
-    '매수·매도 전략 및 리스크 평가 중',
-    'AI 종합 해석 작성 중',
-] as const;
-
-const PHASE_INTERVAL_MS = MS_PER_MINUTE;
-
-const ANALYSIS_TIPS = [
-    '20개 이상의 보조지표와 60개 이상의 스킬을 조합해 분석합니다.',
-    'AI 분석은 보통 5분정도 소요돼요. 최대 15분까지 소요될 수 있어요.',
-    '화면을 띄워 놓고 다른 작업을 하셔도 됩니다. 분석이 완료되면 자동으로 결과가 표시돼요.',
-    'RSI, MACD, 볼린저 밴드 등 보조지표의 시그널을 종합하여 추세를 판단하고 있어요.',
-    '엘리어트 파동, 피보나치, 와이코프 등 다양한 전략을 데이터에 적용하고 있어요.',
-    '매수·매도 타이밍, 손절가, 목표가까지 산출하여 실전에 바로 활용 가능한 분석을 제공합니다.',
-    '헤드앤숄더, 더블바텀 등 차트 패턴과 캔들 패턴을 동시에 탐지하고 있어요.',
-    '한 번 분석된 결과는 일정 시간 동안 캐시되어, 다음에 다시 열면 바로 확인할 수 있어요.',
-] as const;
-
-const TIP_INTERVAL_MS = 8000;
-/** 조기 완료 시 마지막 단계로 이동하기 전 잠시 멈추는 시간(ms). */
-const FINISHING_HOLD_MS = 3500;
-/** 마무리 모드에서 단계를 한 칸씩 진행시키는 간격(ms). */
-const FINISHING_STEP_MS = 1000;
-/** 마지막 단계에 도달한 뒤 onFinished를 호출하기까지의 여유(ms). */
-const FINISHING_TAIL_MS = 600;
-
 interface AnalysisProgressProps {
-    /** 부모의 실제 분석 진행 상태. true → 진행 중, false → 응답 도착. */
-    isAnalyzing: boolean;
-    /** 마무리 애니메이션까지 모두 끝난 시점에 호출된다. */
-    onFinished?: () => void;
+    phaseIndex: number;
+    tipIndex: number;
 }
 
-export function AnalysisProgress({
-    isAnalyzing,
-    onFinished,
-}: AnalysisProgressProps) {
-    const [phaseIndex, setPhaseIndex] = useState(0);
-    const [tipIndex, setTipIndex] = useState(0);
-    const [finishing, setFinishing] = useState(false);
-    const [prevIsAnalyzing, setPrevIsAnalyzing] = useState(isAnalyzing);
-
-    // 항상 최신 onFinished를 호출하기 위한 ref. 마무리 effect 자체는 한 번만 돌아야 하므로
-    // onFinished를 deps에 넣지 않고 ref로 우회한다.
-    const onFinishedRef = useRef(onFinished);
-
-    // 부모가 isAnalyzing=false로 전환하면 마무리 모드로 진입한다.
-    // 한 번 finishing이 true로 가면 다시 false로 돌아가지 않는다 — 마무리는 단조 진행.
-    // 렌더 중 setState: effect 없이 prop 변화를 즉시 반영하는 React 공식 파생 상태 패턴.
-    if (prevIsAnalyzing !== isAnalyzing) {
-        setPrevIsAnalyzing(isAnalyzing);
-        if (!isAnalyzing && !finishing) {
-            setFinishing(true);
-        }
-    }
-
-    // 진행 중에는 평소처럼 일정 간격으로 단계 메시지를 순환시킨다.
-    // 마무리 모드(finishing)로 들어가면 이 인터벌은 멈추고 별도 effect가 빠른 진행을 담당한다.
-    useEffect(() => {
-        if (!isAnalyzing || finishing) return;
-        const intervalId = window.setInterval(() => {
-            setPhaseIndex(prev =>
-                prev < ANALYSIS_PHASES.length - 1 ? prev + 1 : prev
-            );
-        }, PHASE_INTERVAL_MS);
-        return () => {
-            window.clearInterval(intervalId);
-        };
-    }, [isAnalyzing, finishing]);
-    // 팁 메시지를 일정 간격으로 순환시킨다.
-    useEffect(() => {
-        if (!isAnalyzing || finishing) return;
-        const intervalId = window.setInterval(() => {
-            setTipIndex(prev => (prev + 1) % ANALYSIS_TIPS.length);
-        }, TIP_INTERVAL_MS);
-        return () => {
-            window.clearInterval(intervalId);
-        };
-    }, [isAnalyzing, finishing]);
-
-    useEffect(() => {
-        onFinishedRef.current = onFinished;
-    });
-
-    // 마무리 시퀀스: FINISHING_HOLD_MS 만큼 멈췄다가 남은 단계를 1초 간격으로 채운 뒤 종료한다.
-    // 이미 마지막 단계에 있었다면 짧은 여운만 두고 곧장 종료한다.
-    useEffect(() => {
-        if (!finishing) return;
-        let cancelled = false;
-        const timers: number[] = [];
-
-        const callFinished = () => {
-            if (cancelled) return;
-            onFinishedRef.current?.();
-        };
-
-        const advanceFrom = (current: number) => {
-            if (cancelled) return;
-            if (current >= ANALYSIS_PHASES.length - 1) {
-                timers.push(window.setTimeout(callFinished, FINISHING_TAIL_MS));
-                return;
-            }
-            const next = current + 1;
-            setPhaseIndex(next);
-            timers.push(
-                window.setTimeout(() => advanceFrom(next), FINISHING_STEP_MS)
-            );
-        };
-
-        // finishing 진입 시점의 phaseIndex를 직접 함수형 setState로 읽어 캡처한다.
-        setPhaseIndex(current => {
-            if (current >= ANALYSIS_PHASES.length - 1) {
-                timers.push(window.setTimeout(callFinished, FINISHING_TAIL_MS));
-            } else {
-                timers.push(
-                    window.setTimeout(
-                        () => advanceFrom(current),
-                        FINISHING_HOLD_MS
-                    )
-                );
-            }
-            return current;
-        });
-
-        return () => {
-            cancelled = true;
-            timers.forEach(id => window.clearTimeout(id));
-        };
-    }, [finishing]);
-
+export function AnalysisProgress({ phaseIndex, tipIndex }: AnalysisProgressProps) {
     return (
         <div
             className="border-secondary-700/60 bg-secondary-900/40 relative flex flex-col gap-4 overflow-hidden rounded-lg border p-4"

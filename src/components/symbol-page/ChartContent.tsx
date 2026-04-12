@@ -25,6 +25,7 @@ import {
     SNAP_HALF,
     type SnapPoint,
 } from '@/components/symbol-page/MobileAnalysisSheet';
+import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -153,6 +154,12 @@ export function ChartContent({
         setDisplayAnalyzing(false);
     }, []);
 
+    // 진행 상태(단계·팁 인덱스)를 ChartContent에서 한 번만 관리한다.
+    // 데스크톱 aside와 모바일 MobileAnalysisSheet 두 인스턴스에 동일한 값을 props로
+    // 내려주어, 모바일 시트의 unmount/remount 사이클에서도 상태가 초기화되지 않도록 한다.
+    const { phaseIndex: progressPhaseIndex, tipIndex: progressTipIndex } =
+        useAnalysisProgress({ isAnalyzing, onFinished: handleProgressFinished });
+
     const analysisStatus = getAnalysisStatus(displayAnalyzing, analysisError);
 
     const validatedKeyLevels = useMemo(
@@ -180,28 +187,48 @@ export function ChartContent({
         togglePatternRef.current(patternName);
     }, []);
 
-    const analysisContent = (
-        <>
-            <AnalysisStatusBanner status={analysisStatus} className="mb-3" />
-            <AnalysisPanel
-                analysis={analysis}
-                keyLevels={validatedKeyLevels}
-                isAnalyzing={isAnalyzing}
-                showProgress={displayAnalyzing}
-                onProgressFinished={handleProgressFinished}
-                onReanalyze={handleReanalyze}
-                reanalyzeCooldownMs={reanalyzeCooldownMs}
-                cooldownNotice={cooldownNotice}
-                chartVisiblePatterns={chartVisiblePatterns}
-                onTogglePattern={handleTogglePattern}
-                _keyLevelsVisible={keyLevelsVisible}
-                _onKeyLevelsVisibilityChange={setKeyLevelsVisible}
-                _trendlinesVisible={trendlinesVisible}
-                _onTrendlinesVisibilityChange={setTrendlinesVisible}
-                actionPricesVisible={actionPricesVisible}
-                onActionPricesVisibilityChange={setActionPricesVisible}
-            />
-        </>
+    const analysisContent = useMemo(
+        () => (
+            <>
+                <AnalysisStatusBanner status={analysisStatus} className="mb-3" />
+                <AnalysisPanel
+                    analysis={analysis}
+                    keyLevels={validatedKeyLevels}
+                    isAnalyzing={isAnalyzing}
+                    showProgress={displayAnalyzing}
+                    progressPhaseIndex={progressPhaseIndex}
+                    progressTipIndex={progressTipIndex}
+                    onReanalyze={handleReanalyze}
+                    reanalyzeCooldownMs={reanalyzeCooldownMs}
+                    cooldownNotice={cooldownNotice}
+                    chartVisiblePatterns={chartVisiblePatterns}
+                    onTogglePattern={handleTogglePattern}
+                    _keyLevelsVisible={keyLevelsVisible}
+                    _onKeyLevelsVisibilityChange={setKeyLevelsVisible}
+                    _trendlinesVisible={trendlinesVisible}
+                    _onTrendlinesVisibilityChange={setTrendlinesVisible}
+                    actionPricesVisible={actionPricesVisible}
+                    onActionPricesVisibilityChange={setActionPricesVisible}
+                />
+            </>
+        ),
+        [
+            analysisStatus,
+            analysis,
+            validatedKeyLevels,
+            isAnalyzing,
+            displayAnalyzing,
+            progressPhaseIndex,
+            progressTipIndex,
+            handleReanalyze,
+            reanalyzeCooldownMs,
+            cooldownNotice,
+            chartVisiblePatterns,
+            handleTogglePattern,
+            keyLevelsVisible,
+            trendlinesVisible,
+            actionPricesVisible,
+        ]
     );
 
     return (
