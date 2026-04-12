@@ -2168,9 +2168,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain(
-                '"trend": "bullish | bearish | neutral"'
-            );
+            expect(result).toContain('"trend": "bullish | bearish | neutral"');
         });
     });
 
