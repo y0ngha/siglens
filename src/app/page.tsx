@@ -1,21 +1,16 @@
+import { Suspense } from 'react';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
-import {
-    countSkillFiles,
-    FileSkillsLoader,
-} from '@/infrastructure/skills/loader';
+import { countSkillFiles } from '@/infrastructure/skills/loader';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
-import { StatsBar } from '@/components/home/StatsBar';
+import { AsyncStatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
 import { HowItWorks } from '@/components/home/HowItWorks';
-import { SkillsShowcase } from '@/components/home/SkillsShowcase';
+import { SkillsShowcaseSkeleton } from '@/components/home/SkillsShowcase';
+import { SkillsShowcaseServer } from '@/components/home/SkillsShowcaseServer';
 import { TickerCategories } from '@/components/home/TickerCategories';
 
 export default async function Home() {
-    const loader = new FileSkillsLoader();
-    const [skills, skillCounts] = await Promise.all([
-        loader.loadSkills(),
-        countSkillFiles(),
-    ]);
+    const skillCounts = await countSkillFiles();
 
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -124,7 +119,7 @@ export default async function Home() {
                 검색으로 건너뛰기
             </a>
             <main className="flex flex-1 flex-col">
-                <section className="relative flex flex-1 flex-col items-center justify-center px-6 py-14 text-center sm:py-20 lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
+                <section className="relative flex flex-1 flex-col items-center justify-center px-6 py-10 text-center sm:py-14 lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
                     <div
                         aria-hidden="true"
                         className="hero-grid pointer-events-none absolute inset-0"
@@ -152,11 +147,15 @@ export default async function Home() {
                         >
                             <SymbolSearchPanel />
                         </div>
-                        <StatsBar skills={skills} />
+                        <Suspense fallback={<StatsBarSkeleton />}>
+                            <AsyncStatsBar />
+                        </Suspense>
                     </div>
                 </section>
                 <HowItWorks skillCounts={skillCounts} />
-                <SkillsShowcase skills={skills} />
+                <Suspense fallback={<SkillsShowcaseSkeleton />}>
+                    <SkillsShowcaseServer />
+                </Suspense>
                 <TickerCategories />
             </main>
             <Footer />

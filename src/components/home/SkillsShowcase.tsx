@@ -147,6 +147,41 @@ function SkillCard({ skill }: SkillCardProps) {
     );
 }
 
+export function SkillsShowcaseSkeleton() {
+    return (
+        <section className="px-6 py-10 lg:px-[15vw]">
+            <div className="bg-secondary-700/50 mb-6 h-3.5 w-20 animate-pulse rounded" />
+            <div className="mb-6 flex flex-wrap gap-2">
+                {[48, 56, 64, 52, 60, 72].map((w, i) => (
+                    <div
+                        key={i}
+                        className="bg-secondary-700/50 h-7 animate-pulse rounded-full"
+                        style={{ width: `${w}px` }}
+                    />
+                ))}
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 12 }).map((_, i) => (
+                    <div
+                        key={i}
+                        className="bg-secondary-800/50 border-secondary-700 rounded-lg border p-4"
+                    >
+                        <div className="mb-2 flex items-center gap-2">
+                            <div className="bg-secondary-700/50 h-4 w-28 animate-pulse rounded" />
+                            <div className="bg-secondary-700/50 h-4 w-12 animate-pulse rounded" />
+                        </div>
+                        <div className="mb-3 space-y-1.5">
+                            <div className="bg-secondary-700/50 h-3 w-full animate-pulse rounded" />
+                            <div className="bg-secondary-700/50 h-3 w-4/5 animate-pulse rounded" />
+                        </div>
+                        <div className="bg-secondary-700/50 h-1.5 animate-pulse rounded-full" />
+                    </div>
+                ))}
+            </div>
+        </section>
+    );
+}
+
 interface SkillsShowcaseProps {
     skills: SkillShowcaseItem[];
 }
@@ -162,7 +197,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     }
 
     return (
-        <section className="px-6 py-16 lg:px-[15vw]">
+        <section className="px-6 py-10 lg:px-[15vw]">
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
                 AI 분석 스킬
             </h2>
