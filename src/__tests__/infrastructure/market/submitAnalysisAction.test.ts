@@ -101,14 +101,18 @@ describe('submitAnalysisAction 함수는', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        process.env = { ...originalEnv, WORKER_URL: 'https://worker.test' };
+        process.env = {
+            ...originalEnv,
+            WORKER_URL: 'https://worker.test',
+            WORKER_SECRET: 'test-secret',
+        };
         (FileSkillsLoader as jest.Mock).mockImplementation(() => ({
             loadSkills: mockLoadSkills,
         }));
         mockCreateCacheProvider.mockReturnValue(mockCacheProvider);
         mockLoadSkills.mockResolvedValue([]);
         mockSetJobMeta.mockResolvedValue(undefined);
-        mockFetch.mockResolvedValue(new Response('{}', { status: 202 }));
+        mockFetch.mockResolvedValue(new Response('{}', { status: 200 }));
     });
 
     afterAll(() => {
@@ -163,7 +167,10 @@ describe('submitAnalysisAction 함수는', () => {
                 'https://worker.test/analyze',
                 expect.objectContaining({
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Worker-Secret': 'test-secret',
+                    },
                 })
             );
         });
@@ -173,7 +180,9 @@ describe('submitAnalysisAction 함수는', () => {
 
             await expect(
                 submitAnalysisAction(mockVariables, mockTimeframe)
-            ).rejects.toThrow('WORKER_URL environment variable is not set');
+            ).rejects.toThrow(
+                'WORKER_URL and WORKER_SECRET environment variables are required'
+            );
         });
 
         it('Skills 로딩 실패 시에도 Worker에 요청을 보낸다', async () => {
