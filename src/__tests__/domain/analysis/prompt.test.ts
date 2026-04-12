@@ -3098,7 +3098,10 @@ describe('prompt', () => {
             expect(result).toContain('Premium Zone: 160.00 ~ 170.00');
             expect(result).toContain('Equilibrium Zone: 150.00 ~ 160.00');
             expect(result).toContain('Discount Zone: 140.00 ~ 150.00');
-            expect(result).toContain('is in');
+            expect(result).toMatch(
+                /Current price \(.+\) is in (premium|discount|equilibrium|neutral) zone/
+            );
+            expect(result).toContain('is in premium zone');
         });
 
         it('should show swing points with bars ago', () => {

@@ -335,6 +335,10 @@ const formatZoneLine = (zone: SMCZone | null, label: string): string | null =>
     zone !== null ? `- ${label}: ${fmt(zone.low)} ~ ${fmt(zone.high)}` : null;
 
 // Priority: premium > discount > equilibrium (most actionable first).
+// Note: premium/discount checks use only one bound (>= low / <= high) intentionally.
+// In SMC theory, price above the premium zone is still "premium territory" (overextended),
+// and price below the discount zone is still "discount territory". The zone marks a threshold,
+// not a boundary — price beyond the far edge remains classified in that territory.
 const classifyPriceZone = (
     price: number,
     premium: SMCZone | null,
