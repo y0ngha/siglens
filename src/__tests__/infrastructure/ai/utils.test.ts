@@ -1,4 +1,9 @@
-import {AI_SYSTEM_PROMPT, parseJsonResponse, parseNumberEnv, stripMarkdownCodeBlock} from '@/infrastructure/ai/utils';
+import {
+    AI_SYSTEM_PROMPT,
+    parseJsonResponse,
+    parseNumberEnv,
+    stripMarkdownCodeBlock,
+} from '@/infrastructure/ai/utils';
 
 describe('AI_SYSTEM_PROMPT', () => {
     it('"deterministic" 키워드를 포함한다', () => {
