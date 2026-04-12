@@ -46,5 +46,6 @@ export function useFocusTrap(
 
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [active, ref]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [active]);
 }

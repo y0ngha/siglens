@@ -18,12 +18,12 @@ interface UseTimeframeChangeResult {
 }
 
 export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
+    const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
+    const [, startTransition] = useTransition();
+
     const searchParams = useSearchParams();
     const tf = searchParams.get(TIMEFRAME_QUERY_PARAM);
     const timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
-
-    const [timeframeChangeCount, setTimeframeChangeCount] = useState(0);
-    const [, startTransition] = useTransition();
 
     const queryClient = useQueryClient();
     const router = useRouter();

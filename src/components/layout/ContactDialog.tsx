@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useOnClickOutside } from '@/components/layout/hooks/useOnClickOutside';
 import { useEscapeKey } from '@/components/layout/hooks/useEscapeKey';
 import { useFocusTrap } from '@/components/layout/hooks/useFocusTrap';
@@ -21,9 +21,15 @@ export function ContactDialog({
     const [copied, setCopied] = useState(false);
     const dialogRef = useRef<HTMLDivElement>(null);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
-    useOnClickOutside([dialogRef], () => setOpen(false));
-    useEscapeKey(() => setOpen(false));
+    const handleClose = useCallback(() => {
+        setOpen(false);
+        triggerRef.current?.focus();
+    }, []);
+
+    useOnClickOutside([dialogRef], handleClose);
+    useEscapeKey(handleClose);
     useFocusTrap(dialogRef, open);
 
     useEffect(() => {
@@ -52,6 +58,7 @@ export function ContactDialog({
     return (
         <>
             <button
+                ref={triggerRef}
                 type="button"
                 onClick={() => setOpen(true)}
                 className={triggerClassName}
@@ -86,7 +93,7 @@ export function ContactDialog({
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setOpen(false)}
+                                onClick={handleClose}
                                 aria-label="닫기"
                                 className="text-secondary-500 hover:text-secondary-300 -mt-1 -mr-1 rounded p-1 transition-colors"
                             >
