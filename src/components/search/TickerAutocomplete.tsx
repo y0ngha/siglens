@@ -158,7 +158,7 @@ export function TickerAutocomplete({
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     onFocus={handleFocus}
-                    placeholder="티커 입력 (예: AAPL)"
+                    placeholder="티커 입력… (예: AAPL)"
                     className={inputClass}
                 />
                 {isOpen && (
@@ -170,7 +170,7 @@ export function TickerAutocomplete({
                     >
                         {isSearching && (
                             <div className="text-secondary-400 px-4 py-3 text-sm">
-                                검색 중...
+                                검색 중…
                             </div>
                         )}
                         {!isSearching && results.length === 0 && (

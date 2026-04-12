@@ -1,5 +1,27 @@
 # Fix Log
 
+## [PR #285 | fix/281/접근성-UI-UX-가이드라인-위반 | 2026-04-12]
+- Violation: 포커스 트랩 컨테이너 자체에 포커스가 있을 때 Shift+Tab 처리 누락 — 컨테이너 div(`tabIndex={-1}`)에 포커스가 있는 상태에서 Shift+Tab 입력 시 트랩을 벗어남
+- Rule: WAI-ARIA 포커스 트랩 패턴 — `document.activeElement === ref.current` 케이스도 Shift+Tab 래핑 조건에 포함해야 함
+- Context: `useFocusTrap.ts`에서 `first` 요소에만 Shift+Tab 트랩 조건을 두고 컨테이너 자체 포커스는 처리하지 않았음; `ContactDialog`가 열릴 때 `dialogRef.current?.focus()`로 컨테이너에 포커스를 이동시키므로 이 케이스가 실제로 발생
+
+## [PR #285 | fix/281/접근성-UI-UX-가이드라인-위반 | 2026-04-12]
+- Violation: 커스텀 훅 선언 순서 위반 — `useSearchParams()`가 `useState` 앞에 위치
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — useState가 가장 먼저 선언되어야 함
+- Context: `useTimeframeChange.ts`에서 URL 파라미터 읽기 로직을 상단에 배치하면서 useState보다 앞에 위치하게 됨
+
+- Violation: 모달 다이얼로그 닫힐 때 트리거 버튼으로 포커스 복귀 누락
+- Rule: WAI-ARIA Dialog Pattern — 다이얼로그 닫힐 때 이를 열었던 트리거 요소로 포커스가 반드시 복귀되어야 함
+- Context: `ContactDialog.tsx`에서 `setOpen(false)` 이후 포커스 복귀 처리가 없어 포커스가 body로 이동했음
+
+- Violation: `useEffect` 의존성 배열에 안정적(stable) RefObject 포함
+- Rule: React hooks 모범 사례 — `RefObject`는 렌더 간 동일한 객체 참조를 유지하므로 deps에 불필요
+- Context: `useFocusTrap.ts`의 `useEffect`에서 `[active, ref]`로 선언했으나 `ref`는 deps에서 제외해야 함
+
+- Violation: 모달 다이얼로그에 최대 높이 제한 없음 — 모바일 가로 모드 등 화면이 작을 때 모달 내용이 잘려 보이지 않을 수 있음
+- Rule: UI 레이아웃 안전성 — 모달은 뷰포트 높이를 초과하지 않도록 `max-h` + `overflow-y-auto` 처리 필요
+- Context: `ContactDialog` 다이얼로그 div에 높이 제한이 없어 `max-h-[calc(100vh-2rem)] overflow-y-auto` 추가로 해결
+
 ## [PR #278 Round 2 | feat/squeeze-momentum-indicator | 2026-04-12]
 - Violation: `utils.ts`에서 `const window = values.slice(-period)` — 브라우저 전역 `window` 객체 섀도잉
 - Rule: CONVENTIONS.md ESLint no-shadow — `window`, `document`, `location` 등 전역 이름 사용 금지

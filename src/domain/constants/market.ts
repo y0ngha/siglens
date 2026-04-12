@@ -2,6 +2,21 @@ import type { Timeframe } from '@/domain/types';
 
 export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
 
+export const TIMEFRAMES: readonly Timeframe[] = [
+    '1Min',
+    '5Min',
+    '15Min',
+    '1Hour',
+    '1Day',
+];
+
+export function isValidTimeframe(
+    value: string | undefined | null
+): value is Timeframe {
+    if (!value) return false;
+    return (TIMEFRAMES as readonly string[]).includes(value);
+}
+
 /**
  * TIMEFRAME_BARS_LIMIT: 타임프레임별 조회 바 수.
  * - '5Min': 288 = 1거래일(6.5시간 × 60분 / 5분) × 1일, 하루 전체 분봉 커버

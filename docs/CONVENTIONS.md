@@ -822,4 +822,35 @@ const { data: barsData } = useQuery({
         return res.json();
     },
 });
+
+---
+
+## URL State Rules
+
+UI state that should survive page refresh or be shareable via link must be reflected in the URL.
+
+### Query Parameter — Timeframe
+
+The selected timeframe is synchronized to the `tf` query parameter.
+
+**Reading (server):** `app/[symbol]/page.tsx` reads `searchParams.tf`, validates with `isValidTimeframe()`,
+and passes the result as `initialTimeframe` prop to `SymbolPageClient`.
+
+**Writing (client):** `useTimeframeChange` calls `router.replace(...?tf=<value>, { scroll: false })`
+inside `startTransition` whenever the user changes the timeframe.
+
+**Validation:** `isValidTimeframe()` lives in `domain/constants/market.ts` and uses the `TIMEFRAMES` constant
+as the source of truth for valid values. Never validate against hardcoded string literals at the call site.
+
+```typescript
+// ✅ Server reads initial timeframe from URL
+const { tf } = await searchParams;
+const initialTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
+
+// ✅ Client updates URL on change (inside startTransition)
+router.replace(`/${symbol}?tf=${nextTimeframe}`, { scroll: false });
+
+// ❌ Hardcoded default ignoring URL param
+const [timeframe, setTimeframe] = useState<Timeframe>(DEFAULT_TIMEFRAME);
+```
 ```
