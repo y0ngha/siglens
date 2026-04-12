@@ -2,7 +2,7 @@
 
 import { waitUntil } from '@vercel/functions';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
-import type { RawAnalysisResponse, Skill, Timeframe } from '@/domain/types';
+import type { RawAnalysisResponse, Skill } from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildAnalysisCacheKey,

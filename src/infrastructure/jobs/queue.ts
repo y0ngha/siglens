@@ -53,8 +53,12 @@ export async function getJobMeta(jobId: string): Promise<JobMeta | null> {
     if (!redis) return null;
     const raw = await redis.get<string>(metaKey(jobId));
     if (!raw) return null;
-    // Redis stores meta as JSON string; shape is guaranteed by setJobMeta
-    return JSON.parse(raw) as JobMeta;
+    try {
+        // Redis stores meta as JSON string; shape is guaranteed by setJobMeta
+        return JSON.parse(raw) as JobMeta;
+    } catch {
+        return null;
+    }
 }
 
 export async function cleanupJob(jobId: string): Promise<void> {

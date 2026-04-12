@@ -24,6 +24,7 @@ import {
     releaseReanalyzeCooldown,
     getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
 } from '@/infrastructure/market/reanalyzeCooldown';
+import { sleep } from '@/components/symbol-page/utils/sleep';
 
 interface AnalyzeMutationVariables extends AnalyzeVariables {
     force: boolean;
@@ -81,12 +82,6 @@ interface UseAnalysisResult {
     cooldownNotice: CooldownNotice | null;
 }
 
-function sleep(ms: number): Promise<void> {
-    return new Promise(resolve => {
-        setTimeout(resolve, ms);
-    });
-}
-
 export function useAnalysis({
     symbol,
     timeframe,
@@ -96,7 +91,7 @@ export function useAnalysis({
     bars,
     indicators,
 }: UseAnalysisOptions): UseAnalysisResult {
-    // State
+    // 1. useState
     const [analysisResult, setAnalysisResult] =
         useState<AnalysisResponse | null>(null);
     const [reanalyzeCooldownMs, setReanalyzeCooldownMs] = useState<number>(0);
@@ -106,7 +101,7 @@ export function useAnalysis({
     const [isPolling, setIsPolling] = useState(false);
     const [pollError, setPollError] = useState<string | null>(null);
 
-    // Refs
+    // 2. useRef
     const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
     const latestTimeframeRef = useRef<Timeframe>(timeframe);
     const prevTimeframeChangeCountRef = useRef(0);
@@ -114,7 +109,7 @@ export function useAnalysis({
     // 이후 렌더링에서 이 값이 변경되더라도 마운트 시 한 번만 사용된다.
     const initialAnalysisFailedRef = useRef(initialAnalysisFailed);
 
-    // Mutation
+    // 3. useMutation
     const {
         data: submitData,
         error: submitError,
@@ -127,6 +122,8 @@ export function useAnalysis({
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
                 setAnalysisResult(data.result);
+            } else if (data.status === 'submitted') {
+                setIsPolling(true);
             }
             if (!variables.force) return;
             setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
@@ -141,7 +138,45 @@ export function useAnalysis({
         },
     });
 
-    // Polling effect — submit 결과가 'submitted'이면 polling 시작
+    // 4. Derived variables
+    const analysis = analysisResult ?? initialAnalysis;
+    const isAnalyzing = isSubmitting || isPolling;
+    const analysisError = submitError?.message ?? pollError ?? null;
+
+    // 5. Handlers
+    // latestRef 패턴을 사용하므로 symbol·bars·indicators를 deps에서 제외하고 안정적인 함수 참조를 유지한다.
+    // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
+    const handleReanalyze = useCallback((): void => {
+        const vars = latestRef.current;
+        const tf = latestTimeframeRef.current;
+        void (async () => {
+            const acquire = await tryAcquireReanalyzeCooldown(vars.symbol, tf);
+            if (!acquire.ok) {
+                setReanalyzeCooldownMs(acquire.remainingMs);
+                setCooldownNotice({
+                    nonce: Date.now(),
+                    remainingMs: acquire.remainingMs,
+                });
+                return;
+            }
+            reset();
+            setPollError(null);
+            setAnalysisResult(null);
+            mutate({ ...vars, force: true });
+        })();
+    }, [reset, mutate]);
+
+    // 6. useLayoutEffect
+    // symbol, bars, indicators, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
+    // mutation 호출 시점에 stale closure를 방지한다.
+    useLayoutEffect(() => {
+        latestRef.current = { symbol, bars, indicators };
+        latestTimeframeRef.current = timeframe;
+    });
+
+    // 7. useEffect
+
+    // 폴링 — submit 결과가 'submitted'이면 polling 시작
     useEffect(() => {
         if (
             !submitData ||
@@ -155,7 +190,6 @@ export function useAnalysis({
         let cancelled = false;
         const startedAt = Date.now();
 
-        setIsPolling(true);
         setPollError(null);
 
         void (async () => {
@@ -201,46 +235,7 @@ export function useAnalysis({
         };
     }, [submitData]);
 
-    // Derived variables
-    const analysis = analysisResult ?? initialAnalysis;
-    const isAnalyzing = isSubmitting || isPolling;
-    const analysisError = submitError?.message ?? pollError ?? null;
-
-    // Handlers
-    // latestRef 패턴을 사용하므로 symbol·bars·indicators를 deps에서 제외하고 안정적인 함수 참조를 유지한다.
-    // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
-    const handleReanalyze = useCallback((): void => {
-        const vars = latestRef.current;
-        const tf = latestTimeframeRef.current;
-        void (async () => {
-            const acquire = await tryAcquireReanalyzeCooldown(vars.symbol, tf);
-            if (!acquire.ok) {
-                setReanalyzeCooldownMs(acquire.remainingMs);
-                setCooldownNotice({
-                    nonce: Date.now(),
-                    remainingMs: acquire.remainingMs,
-                });
-                return;
-            }
-            reset();
-            setPollError(null);
-            mutate({ ...vars, force: true });
-        })();
-    }, [reset, mutate]);
-
-    // Effects
-
-    // symbol, bars, indicators, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
-    // mutation 호출 시점에 stale closure를 방지한다.
-    // useLayoutEffect는 페인트 전에 동기적으로 실행되므로 useEffect보다 빠르게 갱신된다.
-    useLayoutEffect(() => {
-        latestRef.current = { symbol, bars, indicators };
-        latestTimeframeRef.current = timeframe;
-    });
-
     // 서버에서 초기 AI 분석이 실패한 경우 마운트 직후 자동으로 재분석을 실행한다.
-    // initialAnalysisFailedRef는 초기 마운트 시 값을 캡처하므로 이후 변경에 영향받지 않는다.
-    // latestRef는 useLayoutEffect에 의해 이 useEffect보다 먼저 현재 렌더의 props로 갱신된다.
     useEffect(() => {
         if (!initialAnalysisFailedRef.current) return;
         if (latestRef.current.bars.length === 0) return;
@@ -248,13 +243,6 @@ export function useAnalysis({
     }, [mutate]);
 
     // 타임프레임 변경 시 이전 mutation 상태를 초기화하고 새 분석을 자동 실행한다.
-    // timeframeChangeCount를 활용하여 초기 마운트와 타임프��임 변경을 구분한다.
-    // useSuspenseQuery로 인해 ChartContent가 remount될 때 isInitialMount ref가 초기화되는
-    // 문제를 피하기 위해, Suspense 바깥의 SymbolPageClient에서 변경 횟수를 추적한다.
-    // timeframeChangeCount > 0이면 타임프레임 변경으�� 인한 마운트이므로 즉시 분석을 실행한다.
-    // latestRef는 useLayoutEffect에 의해 이 useEffect보다 먼저 현재 렌더의 props로 갱신된다.
-    // ChartContent는 Suspense 경계 내에서 bars 로드가 완료된 후에만 remount되므로,
-    // 이 시점의 latestRef.current.bars는 항상 새 타임프레임의 데이터다.
     useEffect(() => {
         if (timeframeChangeCount === prevTimeframeChangeCountRef.current) {
             return;
@@ -262,12 +250,12 @@ export function useAnalysis({
         prevTimeframeChangeCountRef.current = timeframeChangeCount;
         reset();
         setPollError(null);
+        setAnalysisResult(null);
         if (latestRef.current.bars.length === 0) return;
         mutate({ ...latestRef.current, force: false });
     }, [timeframeChangeCount, reset, mutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
-    // 진실값은 Redis이지만 매초 서버 호출을 피하기 위해 클라이언트에서 감산한다.
     useEffect(() => {
         if (reanalyzeCooldownMs <= 0) return;
         const startedAt = Date.now();
@@ -283,9 +271,6 @@ export function useAnalysis({
         return () => {
             window.clearInterval(intervalId);
         };
-        // reanalyzeCooldownMs가 새 값으로 갱신될 때마다 effect가 재시작되어 startedAt도 다시 잡힌다.
-        // 의도적으로 reanalyzeCooldownMs만 deps에 포함한다 — 매 tick마다 재시작되지 않도록
-        // 내부에서는 startValue/startedAt 클로저로 단조 감소시킨다.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [reanalyzeCooldownMs === 0]);
 

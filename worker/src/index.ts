@@ -54,14 +54,14 @@ async function processJob(jobId: string, prompt: string): Promise<void> {
     try {
         const result = await callGemini(prompt);
 
-        await Promise.all([
-            redis.set(`job:${jobId}:result`, result, {
-                ex: JOB_TTL_SECONDS,
-            }),
-            redis.set(`job:${jobId}:status`, 'done', {
-                ex: JOB_TTL_SECONDS,
-            }),
-        ]);
+        // result를 먼저 저장한 후 status를 업데이트한다.
+        // 순서가 바뀌면 poller가 done을 보고 result를 읽기 전에 빈 값을 만날 수 있다.
+        await redis.set(`job:${jobId}:result`, result, {
+            ex: JOB_TTL_SECONDS,
+        });
+        await redis.set(`job:${jobId}:status`, 'done', {
+            ex: JOB_TTL_SECONDS,
+        });
 
         console.log(`[Worker] Job ${jobId} completed`);
     } catch (error) {
@@ -69,14 +69,12 @@ async function processJob(jobId: string, prompt: string): Promise<void> {
             error instanceof Error ? error.message : 'Unknown error';
         console.error(`[Worker] Job ${jobId} failed:`, message);
 
-        await Promise.all([
-            redis.set(`job:${jobId}:error`, message, {
-                ex: JOB_TTL_SECONDS,
-            }),
-            redis.set(`job:${jobId}:status`, 'error', {
-                ex: JOB_TTL_SECONDS,
-            }),
-        ]);
+        await redis.set(`job:${jobId}:error`, message, {
+            ex: JOB_TTL_SECONDS,
+        });
+        await redis.set(`job:${jobId}:status`, 'error', {
+            ex: JOB_TTL_SECONDS,
+        });
     }
 }
 
