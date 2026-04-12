@@ -33,6 +33,7 @@ import {
     SQUEEZE_MOMENTUM_BB_LENGTH,
     SQUEEZE_MOMENTUM_KC_LENGTH,
     SQUEEZE_MOMENTUM_KC_MULT,
+    SMC_SWING_PERIOD,
 } from '@/domain/indicators/constants';
 import { detectCandlePattern } from '@/domain/analysis/candle';
 import { getCandlePatternLabel } from '@/domain/analysis/candle-labels';
@@ -47,6 +48,8 @@ import type {
     Bar,
     IndicatorResult,
     Skill,
+    SMCResult,
+    SMCZone,
     SqueezeMomentumResult,
     Timeframe,
 } from '@/domain/types';
@@ -56,6 +59,13 @@ const RECENT_BARS_COUNT = 30;
 const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
 const INDICATOR_TREND_SAMPLE_COUNT = 5;
+
+const SMC_MAX_ORDER_BLOCKS = 5;
+const SMC_MAX_FAIR_VALUE_GAPS = 5;
+const SMC_MAX_STRUCTURE_BREAKS = 3;
+const SMC_MAX_EQUAL_LEVELS = 3;
+const SMC_MAX_SWING_POINTS = 5;
+const SQUEEZE_ZERO_CROSS_LOOKBACK = 10;
 
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {
     '1Min': '1-Minute',
@@ -257,12 +267,201 @@ const sqzDirectionLabel = (r: SqueezeMomentumResult): string => {
     return r.increasing ? ' [rising]' : ' [falling]';
 };
 
+const countSqueezeDuration = (data: SqueezeMomentumResult[]): number => {
+    let count = 0;
+    for (let i = data.length - 1; i >= 0; i--) {
+        if (data[i].sqzOn !== true) break;
+        count++;
+    }
+    return count;
+};
+
+interface ZeroCross {
+    direction: 'bullish_cross' | 'bearish_cross';
+    barsAgo: number;
+}
+
+const detectZeroCross = (
+    data: SqueezeMomentumResult[]
+): ZeroCross | null => {
+    const len = data.length;
+    const start = Math.max(0, len - SQUEEZE_ZERO_CROSS_LOOKBACK);
+    for (let i = len - 1; i > start; i--) {
+        const curr = data[i].momentum;
+        const prev = data[i - 1].momentum;
+        if (curr === null || prev === null) continue;
+        if (prev <= 0 && curr > 0)
+            return { direction: 'bullish_cross', barsAgo: len - 1 - i };
+        if (prev >= 0 && curr < 0)
+            return { direction: 'bearish_cross', barsAgo: len - 1 - i };
+    }
+    return null;
+};
+
 const formatSqueezeMomentumLine = (indicators: IndicatorResult): string => {
-    const last = lastOf(indicators.squeezeMomentum);
+    const data = indicators.squeezeMomentum;
+    const last = lastOf(data);
     if (!last || last.momentum === null) {
         return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): N/A`;
     }
-    return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): momentum ${fmt(last.momentum)}${sqzDirectionLabel(last)} / ${sqzStateLabel(last)}`;
+
+    const momentumTrend = detectTrend(data.map(d => d.momentum));
+    const duration = countSqueezeDuration(data);
+    const durationStr = duration > 0 ? ` / duration: ${duration} bars` : '';
+    const cross = detectZeroCross(data);
+    const crossStr =
+        cross !== null
+            ? ` / ${cross.direction === 'bullish_cross' ? 'bullish' : 'bearish'} zero-cross (${cross.barsAgo} bars ago)`
+            : '';
+
+    return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): momentum ${fmt(last.momentum)}${sqzDirectionLabel(last)}${trendLabel(momentumTrend)} / ${sqzStateLabel(last)}${durationStr}${crossStr}`;
+};
+
+const barsAgo = (index: number, totalBars: number): string =>
+    `(${totalBars - 1 - index} bars ago)`;
+
+// When adding a new field to SMCResult, update this check accordingly.
+const isSMCEmpty = (smc: SMCResult): boolean =>
+    smc.swingHighs.length === 0 &&
+    smc.swingLows.length === 0 &&
+    smc.structureBreaks.length === 0 &&
+    smc.orderBlocks.length === 0 &&
+    smc.fairValueGaps.length === 0 &&
+    smc.equalHighs.length === 0 &&
+    smc.equalLows.length === 0 &&
+    smc.premiumZone === null &&
+    smc.discountZone === null &&
+    smc.equilibriumZone === null;
+
+const formatZoneLine = (zone: SMCZone | null, label: string): string | null =>
+    zone !== null ? `- ${label}: ${fmt(zone.low)} ~ ${fmt(zone.high)}` : null;
+
+// Priority: premium > discount > equilibrium (most actionable first).
+const classifyPriceZone = (
+    price: number,
+    premium: SMCZone | null,
+    discount: SMCZone | null,
+    equilibrium: SMCZone | null
+): string => {
+    if (premium !== null && price >= premium.low) return 'premium';
+    if (discount !== null && price <= discount.high) return 'discount';
+    if (equilibrium !== null && price >= equilibrium.low && price <= equilibrium.high)
+        return 'equilibrium';
+    return 'neutral';
+};
+
+const formatSMCSection = (
+    indicators: IndicatorResult,
+    bars: Bar[]
+): string => {
+    const smc = indicators.smc;
+
+    if (isSMCEmpty(smc)) {
+        return [
+            '## Smart Money Concepts (SMC)',
+            '- Insufficient data for SMC analysis',
+        ].join('\n');
+    }
+
+    const totalBars = bars.length;
+    const currentPrice =
+        totalBars > 0 ? bars[totalBars - 1].close : null;
+    const lines: string[] = ['## Smart Money Concepts (SMC)'];
+
+    // 1. Market Structure (BOS / CHoCH)
+    const recentBreaks = smc.structureBreaks.slice(-SMC_MAX_STRUCTURE_BREAKS);
+    if (recentBreaks.length > 0) {
+        lines.push('### Market Structure');
+        for (const b of recentBreaks) {
+            lines.push(
+                `- [${b.breakType.toUpperCase()}] ${b.type} at ${fmt(b.price)} ${barsAgo(b.index, totalBars)}`
+            );
+        }
+    }
+
+    // 2. Active Order Blocks (unmitigated only)
+    const activeOBs = smc.orderBlocks
+        .filter(ob => !ob.isMitigated)
+        .slice(-SMC_MAX_ORDER_BLOCKS);
+    lines.push('### Order Blocks');
+    if (activeOBs.length > 0) {
+        for (const ob of activeOBs) {
+            lines.push(
+                `- ${ob.type} OB: ${fmt(ob.low)} ~ ${fmt(ob.high)} ${barsAgo(ob.startIndex, totalBars)}`
+            );
+        }
+    } else {
+        lines.push('- No active order blocks');
+    }
+
+    // 3. Active Fair Value Gaps (unmitigated only)
+    const activeFVGs = smc.fairValueGaps
+        .filter(fvg => !fvg.isMitigated)
+        .slice(-SMC_MAX_FAIR_VALUE_GAPS);
+    lines.push('### Fair Value Gaps');
+    if (activeFVGs.length > 0) {
+        for (const fvg of activeFVGs) {
+            lines.push(
+                `- ${fvg.type} FVG: ${fmt(fvg.low)} ~ ${fmt(fvg.high)} ${barsAgo(fvg.index, totalBars)}`
+            );
+        }
+    } else {
+        lines.push('- No active fair value gaps');
+    }
+
+    // 4. Equal Highs / Equal Lows (Liquidity Pools)
+    const eqHighs = smc.equalHighs.slice(-SMC_MAX_EQUAL_LEVELS);
+    const eqLows = smc.equalLows.slice(-SMC_MAX_EQUAL_LEVELS);
+    if (eqHighs.length > 0 || eqLows.length > 0) {
+        lines.push('### Liquidity Pools');
+        for (const eq of eqHighs) {
+            lines.push(`- Equal Highs at ${fmt(eq.price)} (sell-side liquidity)`);
+        }
+        for (const eq of eqLows) {
+            lines.push(`- Equal Lows at ${fmt(eq.price)} (buy-side liquidity)`);
+        }
+    }
+
+    // 5. Premium / Discount / Equilibrium Zones
+    const premiumLine = formatZoneLine(smc.premiumZone, 'Premium Zone');
+    const equilibriumLine = formatZoneLine(smc.equilibriumZone, 'Equilibrium Zone');
+    const discountLine = formatZoneLine(smc.discountZone, 'Discount Zone');
+    if (premiumLine !== null || equilibriumLine !== null || discountLine !== null) {
+        lines.push('### Market Zones');
+        if (premiumLine !== null) lines.push(premiumLine);
+        if (equilibriumLine !== null) lines.push(equilibriumLine);
+        if (discountLine !== null) lines.push(discountLine);
+        if (currentPrice !== null) {
+            const zone = classifyPriceZone(
+                currentPrice,
+                smc.premiumZone,
+                smc.discountZone,
+                smc.equilibriumZone
+            );
+            lines.push(
+                `- Current price (${fmt(currentPrice)}) is in ${zone} zone`
+            );
+        }
+    }
+
+    // 6. Recent Swing Points
+    const recentSwingHighs = smc.swingHighs.slice(-SMC_MAX_SWING_POINTS);
+    const recentSwingLows = smc.swingLows.slice(-SMC_MAX_SWING_POINTS);
+    if (recentSwingHighs.length > 0 || recentSwingLows.length > 0) {
+        lines.push(`### Swing Points (period: ${SMC_SWING_PERIOD})`);
+        for (const s of recentSwingHighs) {
+            lines.push(
+                `- Swing High: ${fmt(s.price)} ${barsAgo(s.index, totalBars)}`
+            );
+        }
+        for (const s of recentSwingLows) {
+            lines.push(
+                `- Swing Low: ${fmt(s.price)} ${barsAgo(s.index, totalBars)}`
+            );
+        }
+    }
+
+    return lines.join('\n');
 };
 
 const formatIndicatorSection = (indicators: IndicatorResult): string => {
@@ -475,6 +674,23 @@ const ANALYSIS_GUIDELINES = [
     '- Price touching upper band: potential breakout to the upside; touching lower band: potential breakdown',
     '- Channel width indicates volatility — narrow channel suggests consolidation before a move',
     '- Middle line acts as dynamic support/resistance',
+    '',
+    '### SMC (Smart Money Concepts) Interpretation',
+    '- Structure Breaks: BOS (Break of Structure) confirms trend continuation; CHoCH (Change of Character) signals potential trend reversal. A recent CHoCH is the strongest directional signal.',
+    '- Order Blocks: Unmitigated bullish OBs act as demand zones (potential support); bearish OBs act as supply zones (potential resistance). Price revisiting an unmitigated OB is a high-probability reaction zone.',
+    '- Fair Value Gaps: Unmitigated FVGs represent price imbalance zones that price tends to revisit. Bullish FVGs below price act as support; bearish FVGs above price act as resistance.',
+    '- Equal Highs/Lows: Equal highs represent sell-side liquidity pools (likely to be swept before reversal down); equal lows represent buy-side liquidity pools (likely to be swept before reversal up).',
+    '- Premium/Discount Zones: Prefer long entries in the discount zone and short entries in the premium zone. Equilibrium zone is neutral — wait for price to move toward a zone before entering.',
+    '- Confluence: SMC levels that align with traditional support/resistance (Volume Profile POC, moving averages, Fibonacci levels) have higher reliability. Always note SMC-traditional confluence in the summary.',
+    '- Integrate SMC findings into keyLevels: unmitigated OBs and FVGs should be considered as support/resistance levels with their SMC basis noted in the reason field.',
+    '',
+    '### Squeeze Momentum Interpretation',
+    '- Squeeze ON (BB inside KC): Volatility compression — a breakout is building. The longer the squeeze duration, the more powerful the expected breakout.',
+    '- Squeeze OFF (BB outside KC): Volatility expansion — momentum is being released. This is the actionable phase.',
+    '- Momentum direction: Rising momentum above zero = strong bullish; falling momentum below zero = strong bearish. Rising momentum below zero = bearish weakening; falling momentum above zero = bullish weakening.',
+    '- Zero-line cross: Bullish cross (negative to positive) is a buy signal; bearish cross (positive to negative) is a sell signal. These are the primary entry triggers for Squeeze Momentum.',
+    '- Squeeze duration: Longer squeeze (8+ bars) suggests a larger move on release. Short squeeze (2-3 bars) may produce a minor move.',
+    '- Combine with trend: In a confirmed uptrend, bullish squeeze release is a high-confidence long entry. In a confirmed downtrend, bearish squeeze release is a high-confidence short entry.',
     '',
     '### Conflicting Signals',
     '- When indicators give conflicting signals (e.g. RSI overbought but MACD bullish cross), list each signal individually and then state which side has stronger confluence.',
@@ -697,6 +913,7 @@ export function buildAnalysisPrompt(
         formatRecentBarsSection(bars),
         formatBuySellVolumeSection(indicators),
         formatIndicatorSection(indicators),
+        formatSMCSection(indicators, bars),
         ...(indicatorGuideSkills.length > 0
             ? [
                   `## Indicator Signal Guides\n${indicatorGuideSkills.map(buildSkillBlock).join('\n\n')}`,
