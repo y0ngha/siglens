@@ -113,4 +113,17 @@
 - Rule: DESIGN.md — 상승/하락 색상은 `#26a69a`(bullish) / `#ef5350`(bearish) 고정; 임의 hex 금지
 - Context: actionStopLoss에 Tailwind red-400(#f87171), actionTakeProfit에 green-400(#4ade80) 사용; bearish/bullish 시스템 컬러로 교체
 
+## [PR #286 Round 1 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: SkillsShowcase.tsx — all tabpanels rendered in DOM simultaneously but shared `visibleSkills` computed from activeTab state, so inactive panels showed wrong content
+- Rule: ARIA tablist pattern — each tabpanel must compute its own filtered content independently, not share state with other panels
+- Context: filteredSkills and visibleSkills were computed outside the TABS.map loop based on activeTab, causing all panels to render the active tab's data; moved computation inside each panel's render scope
+
+- Violation: SkillsShowcase.tsx — DOM event listener (pointerdown) registered directly in useEffect inside ConfidenceInfoTooltip instead of extracting to useOnClickOutside hook
+- Rule: MISTAKES.md Components — DOM event listeners in useEffect must be extracted to custom hooks (useOnClickOutside, useEscapeKey, etc.)
+- Context: ConfidenceInfoTooltip had inline useEffect + document.addEventListener('pointerdown'); created src/components/home/hooks/useOnClickOutside.ts and replaced inline logic
+
+- Violation: SkillsShowcase.tsx — ARIA tablist without roving tabindex; tabs had aria-selected but all remained in natural tab order (tabIndex unset)
+- Rule: WAI-ARIA Authoring Practices — tablist pattern requires roving tabindex: active tab tabIndex=0, inactive tabs tabIndex=-1
+- Context: Added tabIndex={isActive ? 0 : -1} to each tab button to implement roving tabindex pattern
+
 

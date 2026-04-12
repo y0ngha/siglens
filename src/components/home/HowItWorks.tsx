@@ -68,4 +68,3 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
         </section>
     );
 }
-
