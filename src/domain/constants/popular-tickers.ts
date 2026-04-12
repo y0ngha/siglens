@@ -44,7 +44,7 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     {
         id: 'quantum-computing',
         label: '양자컴퓨팅',
-        tickers: ['IONQ', 'RGTI', 'QBTS', 'QUBT', 'IBM'],
+        tickers: ['IONQ', 'LAES', 'RGTI', 'QBTS', 'QUBT', 'IBM'],
     },
     {
         id: 'ev-mobility',

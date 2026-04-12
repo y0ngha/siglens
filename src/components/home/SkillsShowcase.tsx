@@ -4,7 +4,7 @@ import { useId, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
 import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
-import { useOnClickOutside } from '@/components/home/hooks/useOnClickOutside';
+import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 
 const INITIAL_VISIBLE_COUNT = 12;
 

@@ -459,7 +459,7 @@ export function StockChart({
                             visible: ichimokuVisible,
                             onToggle: toggleIchimoku,
                         }}
-                        candlePatterns={{
+                        _candlePatterns={{
                             visible: candlePatternsVisible,
                             onToggle: toggleCandlePatterns,
                         }}
