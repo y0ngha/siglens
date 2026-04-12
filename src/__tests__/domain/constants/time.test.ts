@@ -11,7 +11,7 @@ import {
 
 describe('time constants', () => {
     describe('초 단위 상수', () => {
-        it('SECONDS_PER_MINUTE�� 60이��', () => {
+        it('SECONDS_PER_MINUTE은 60이다', () => {
             expect(SECONDS_PER_MINUTE).toBe(60);
         });
 
@@ -23,7 +23,7 @@ describe('time constants', () => {
             expect(SECONDS_PER_DAY).toBe(86400);
         });
 
-        it('SECONDS_PER_YEAR은 31536000이��', () => {
+        it('SECONDS_PER_YEAR은 31536000이다', () => {
             expect(SECONDS_PER_YEAR).toBe(31_536_000);
         });
     });
@@ -41,7 +41,7 @@ describe('time constants', () => {
             expect(MS_PER_HOUR).toBe(3_600_000);
         });
 
-        it('MS_PER_DAY�� 86400000���다', () => {
+        it('MS_PER_DAY은 86400000이다', () => {
             expect(MS_PER_DAY).toBe(86_400_000);
         });
     });
@@ -63,7 +63,7 @@ describe('time constants', () => {
             expect(MS_PER_MINUTE).toBe(SECONDS_PER_MINUTE * MS_PER_SECOND);
         });
 
-        it('MS_PER_HOUR�� SECONDS_PER_HOUR * MS_PER_SECOND이다', () => {
+        it('MS_PER_HOUR은 SECONDS_PER_HOUR * MS_PER_SECOND이다', () => {
             expect(MS_PER_HOUR).toBe(SECONDS_PER_HOUR * MS_PER_SECOND);
         });
 

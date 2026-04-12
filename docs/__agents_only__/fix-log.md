@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #290 | refactor/289/코드-정리-상수통합-복잡도개선-중복제거 | 2026-04-12]
+- Violation: 테스트 파일의 한글 문자열에 깨진 UTF-8 바이트 포함
+- Rule: CONVENTIONS.md — 테스트 설명 문구는 사람이 읽기 쉬운 한국어 텍스트여야 함
+- Context: `src/__tests__/domain/constants/time.test.ts`의 describe/it 텍스트가 잘못된 인코딩으로 저장되어 의미 불명 문자 포함
+
 ## [PR #288 | feat/287/update-popular-tickers-script | 2026-04-12]
 - Violation: `push`로 배열 직접 변경 — `weeklyVolumes.push(...)` 사용
 - Rule: MISTAKES.md Coding Paradigm #5 — push/splice 직접 변경 금지, spread 문법 사용

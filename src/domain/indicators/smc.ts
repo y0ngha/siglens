@@ -265,14 +265,16 @@ function detectStructureBreaks(
 
 // ─── Order Block detection ────────────────────────────────────────────────────
 
+interface LastOpposingIndices {
+    lastBullish: (number | null)[];
+    lastBearish: (number | null)[];
+}
+
 /**
  * Precompute the index of the last bullish and bearish candle at or before
  * each bar index in a single O(n) forward pass.
  */
-function buildLastOpposingIndices(bars: Bar[]): {
-    lastBullish: (number | null)[];
-    lastBearish: (number | null)[];
-} {
+function buildLastOpposingIndices(bars: Bar[]): LastOpposingIndices {
     const lastBullish: (number | null)[] = Array.from(
         { length: bars.length },
         () => null

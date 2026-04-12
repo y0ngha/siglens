@@ -67,7 +67,7 @@ export function useMovingAverageOverlay({
         seriesRef.current = {};
     });
 
-    // 시리즈 ���성/제거 관리
+    // 시리즈 생성/제거 관리
     // StockChart의 차트 생성 effect가 선언 순서상 앞에 있으므로
     // 이 effect 실행 시점에 chartRef.current는 이미 설정된 상태
     useEffect(() => {
@@ -109,16 +109,18 @@ export function useMovingAverageOverlay({
         seriesRef.current = nextSeries;
     }, [chartRef, visiblePeriods, lineWidth, lineStyle]);
 
+    const stableGetIndicatorData = useEffectEvent(getIndicatorData);
+
     // 데이터 동기화
     useEffect(() => {
         for (const period of visiblePeriods) {
             const series = seriesRef.current[period];
-            const data = getIndicatorData(indicators, period);
+            const data = stableGetIndicatorData(indicators, period);
             if (!series || !data) continue;
 
             series.setData(buildSeriesDataFromValues(bars, data));
         }
-    }, [indicators, bars, visiblePeriods, getIndicatorData]);
+    }, [indicators, bars, visiblePeriods]);
 
     return { visiblePeriods, togglePeriod };
 }
