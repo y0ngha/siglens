@@ -4,6 +4,8 @@ import {
     DEFAULT_TIMEFRAME,
     TIMEFRAME_BARS_LIMIT,
     TIMEFRAME_LOOKBACK_DAYS,
+    TIMEFRAMES,
+    isValidTimeframe,
 } from '@/domain/constants/market';
 
 describe('DEFAULT_TIMEFRAME', () => {
@@ -66,6 +68,48 @@ describe('TIMEFRAME_BARS_LIMIT', () => {
 
         it("'1Day'에 대해 500을 반환한다", () => {
             expect(TIMEFRAME_BARS_LIMIT['1Day']).toBe(500);
+        });
+    });
+});
+
+describe('TIMEFRAMES', () => {
+    const ALL_TIMEFRAME_VALUES: Timeframe[] = [
+        '1Min',
+        '5Min',
+        '15Min',
+        '1Hour',
+        '1Day',
+    ];
+
+    it('Timeframe 유니언의 모든 값을 포함한다', () => {
+        expect([...TIMEFRAMES].sort()).toEqual(
+            [...ALL_TIMEFRAME_VALUES].sort()
+        );
+    });
+});
+
+describe('isValidTimeframe', () => {
+    describe('유효한 Timeframe 문자열일 때', () => {
+        it("'1Day'에 대해 true를 반환한다", () => {
+            expect(isValidTimeframe('1Day')).toBe(true);
+        });
+
+        it("'1Min'에 대해 true를 반환한다", () => {
+            expect(isValidTimeframe('1Min')).toBe(true);
+        });
+    });
+
+    describe('유효하지 않은 값일 때', () => {
+        it('알 수 없는 문자열에 대해 false를 반환한다', () => {
+            expect(isValidTimeframe('invalid')).toBe(false);
+        });
+
+        it('undefined에 대해 false를 반환한다', () => {
+            expect(isValidTimeframe(undefined)).toBe(false);
+        });
+
+        it('null에 대해 false를 반환한다', () => {
+            expect(isValidTimeframe(null)).toBe(false);
         });
     });
 });

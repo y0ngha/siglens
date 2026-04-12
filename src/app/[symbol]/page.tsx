@@ -5,7 +5,7 @@ import {
     dehydrate,
     HydrationBoundary,
 } from '@tanstack/react-query';
-import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
+import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import type { AnalysisResponse, AssetInfo } from '@/domain/types';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
@@ -38,6 +38,7 @@ const FALLBACK_ANALYSIS: AnalysisResponse = {
 
 interface Props {
     params: Promise<{ symbol: string }>;
+    searchParams: Promise<{ tf?: string }>;
 }
 
 function buildDisplayName(assetInfo: AssetInfo, ticker: string): string {
@@ -54,7 +55,9 @@ function buildDisplayName(assetInfo: AssetInfo, ticker: string): string {
     return ticker;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+    params,
+}: Omit<Props, 'searchParams'>): Promise<Metadata> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoAction(ticker);
@@ -93,8 +96,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-export default async function SymbolPage({ params }: Props) {
+export default async function SymbolPage({ params, searchParams }: Props) {
     const { symbol } = await params;
+    const { tf } = await searchParams;
+    const initialTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
     const ticker = symbol.toUpperCase();
     const [assetInfo, skillCounts] = await Promise.all([
         getAssetInfoAction(ticker),
@@ -148,8 +153,8 @@ export default async function SymbolPage({ params }: Props) {
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
 
     await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME),
-        queryFn: () => fetchBarsWithIndicators(symbol, DEFAULT_TIMEFRAME),
+        queryKey: QUERY_KEYS.bars(symbol, initialTimeframe),
+        queryFn: () => fetchBarsWithIndicators(symbol, initialTimeframe),
     });
 
     return (

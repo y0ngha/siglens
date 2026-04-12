@@ -110,6 +110,25 @@ export interface StochRSIResult {
 
 ---
 
+## 마켓 상수
+
+```typescript
+// domain/constants/market.ts
+
+export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
+
+// 유효한 타임프레임 전체 목록 — URL 파라미터 검증 등 모든 검증은 이 상수를 기준으로 한다.
+export const TIMEFRAMES: readonly Timeframe[] = ['1Min', '5Min', '15Min', '1Hour', '1Day'];
+
+// URL 쿼리 파라미터 등 외부 입력에서 Timeframe을 검증할 때 사용한다.
+export function isValidTimeframe(value: string | undefined | null): value is Timeframe;
+```
+
+`isValidTimeframe`은 `TIMEFRAMES` 배열을 유일한 진실 공급원으로 삼는다.
+호출 측에서 유효 타임프레임을 하드코딩하지 않는다.
+
+---
+
 ## 인디케이터 상수
 
 ```typescript
