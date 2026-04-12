@@ -324,3 +324,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ POPULAR_TICKERS defined in src/lib/seo.ts
    ✅ Inline at usage site (src/app/sitemap.ts) or domain-specific module
 ```
+
+---
+
+## Architecture
+
+```
+1. Type interfaces defined in implementation files instead of domain/types.ts
+   → All domain types (interfaces, unions, enums) must be centralized in domain/types.ts
+   → If multiple files reference the same type, move it to domain/types.ts for single source of truth
+   ❌ interface TickerCategory { id: string; name: string; } in domain/constants/popular-tickers.ts
+   ✅ export type TickerCategory = { id: string; name: string; } in domain/types.ts
+```
