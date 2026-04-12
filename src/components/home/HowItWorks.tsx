@@ -33,7 +33,7 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
         },
     ];
     return (
-        <section className="px-6 py-16 lg:px-[15vw]">
+        <section className="px-6 py-10 lg:px-[15vw]">
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
                 이용 방법
             </h2>

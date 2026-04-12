@@ -52,7 +52,7 @@ export function TickerCategories() {
     return (
         <nav
             aria-label="섹터별 인기 종목 탐색"
-            className="px-6 py-16 lg:pr-[10vw] lg:pl-[15vw]"
+            className="px-6 py-10 lg:pr-[10vw] lg:pl-[15vw]"
         >
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
                 섹터별 인기 종목
