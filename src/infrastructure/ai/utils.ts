@@ -27,3 +27,14 @@ export function stripMarkdownCodeBlock(text: string): string {
     const match = MARKDOWN_CODE_BLOCK_PATTERN.exec(text.trim());
     return match ? match[1].trim() : text.trim();
 }
+
+export function parseJsonResponse<T>(text: string, source: string): T {
+    try {
+        return JSON.parse(stripMarkdownCodeBlock(text)) as T;
+    } catch (error) {
+        console.error(`Failed to parse ${source} response. Raw text:`, text);
+        throw new Error(`Failed to parse ${source} response as JSON`, {
+            cause: error,
+        });
+    }
+}

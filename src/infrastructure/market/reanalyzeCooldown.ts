@@ -2,6 +2,7 @@
 
 import { Redis } from '@upstash/redis';
 import type { Timeframe } from '@/domain/types';
+import { SECONDS_PER_MINUTE } from '@/domain/constants/time';
 
 /**
  * 재분석 쿨다운 정책
@@ -14,7 +15,7 @@ import type { Timeframe } from '@/domain/types';
  * 세션 범위에서 동일 정책을 강제하므로, 서버는 항상 ok로 응답한다.
  */
 
-const REANALYZE_COOLDOWN_SEC = 5 * 60;
+const REANALYZE_COOLDOWN_SEC = 5 * SECONDS_PER_MINUTE;
 const REANALYZE_COOLDOWN_MS = REANALYZE_COOLDOWN_SEC * 1000;
 
 type AcquireReanalyzeCooldownResult =

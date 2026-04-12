@@ -71,6 +71,27 @@ const getPatternBarCount = (pattern: MultiCandlePattern): number =>
         : TWO_BAR_PATTERN_COUNT;
 
 /**
+ * Merge two CandlePatternEntry arrays that are already sorted by barIndex
+ * into a single sorted array in O(n) using a two-pointer approach.
+ */
+function mergeSortedEntries(
+    a: CandlePatternEntry[],
+    b: CandlePatternEntry[]
+): CandlePatternEntry[] {
+    const result: CandlePatternEntry[] = [];
+    let ai = 0;
+    let bi = 0;
+
+    while (ai < a.length && bi < b.length) {
+        result.push(a[ai].barIndex <= b[bi].barIndex ? a[ai++] : b[bi++]);
+    }
+    while (ai < a.length) result.push(a[ai++]);
+    while (bi < b.length) result.push(b[bi++]);
+
+    return result;
+}
+
+/**
  * Extracts the last CANDLE_PATTERN_DETECTION_BARS bars from the input array.
  * Shared by prompt construction and chart marker rendering.
  */
@@ -154,9 +175,7 @@ export function detectCandlePatternEntries(bars: Bar[]): CandlePatternEntry[] {
         ];
     }, []);
 
-    return [...singleEntries, ...multiEntries].sort(
-        (a, b) => a.barIndex - b.barIndex
-    );
+    return mergeSortedEntries(singleEntries, multiEntries);
 }
 
 // ─── Selection ──────────────────────────────────────────────────────────────

@@ -48,11 +48,14 @@ import type {
     Bar,
     IndicatorResult,
     Skill,
+    SkillType,
     SMCResult,
     SMCZone,
     SqueezeMomentumResult,
     Timeframe,
 } from '@/domain/types';
+
+type SkillGroupKey = SkillType | 'regular';
 
 const INDICATOR_DECIMAL_PLACES = 2;
 const RECENT_BARS_COUNT = 30;
@@ -898,25 +901,27 @@ export function buildAnalysisPrompt(
     const activeSkills = skills
         .filter(s => s.confidenceWeight >= MIN_CONFIDENCE_WEIGHT)
         .toSorted(byName);
-    const patternSkills = activeSkills.filter(s => s.type === 'pattern');
-    const strategySkills = activeSkills.filter(s => s.type === 'strategy');
-    const indicatorGuideSkills = activeSkills.filter(
-        s => s.type === 'indicator_guide'
+
+    const skillGroups = activeSkills.reduce<Record<SkillGroupKey, Skill[]>>(
+        (acc, skill) => {
+            const key: SkillGroupKey = skill.type ?? 'regular';
+            return { ...acc, [key]: [...acc[key], skill] };
+        },
+        {
+            pattern: [],
+            strategy: [],
+            indicator_guide: [],
+            candlestick: [],
+            support_resistance: [],
+            regular: [],
+        }
     );
-    const candlestickSkills = activeSkills.filter(
-        s => s.type === 'candlestick'
-    );
-    const supportResistanceSkills = activeSkills.filter(
-        s => s.type === 'support_resistance'
-    );
-    const regularSkills = activeSkills.filter(
-        s =>
-            s.type !== 'pattern' &&
-            s.type !== 'strategy' &&
-            s.type !== 'indicator_guide' &&
-            s.type !== 'candlestick' &&
-            s.type !== 'support_resistance'
-    );
+    const patternSkills = skillGroups.pattern;
+    const strategySkills = skillGroups.strategy;
+    const indicatorGuideSkills = skillGroups.indicator_guide;
+    const candlestickSkills = skillGroups.candlestick;
+    const supportResistanceSkills = skillGroups.support_resistance;
+    const regularSkills = skillGroups.regular;
 
     const sections = [
         `Symbol: ${symbol}`,

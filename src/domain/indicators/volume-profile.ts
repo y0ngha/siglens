@@ -18,52 +18,49 @@ interface ValueAreaState {
 }
 
 function expandValueArea(
-    state: ValueAreaState,
+    initialState: ValueAreaState,
     bucketVolumes: number[],
     rowSize: number,
     targetVolume: number
 ): ValueAreaState {
-    if (state.accumulatedVolume >= targetVolume) return state;
+    let state = initialState;
 
-    const nextAbove =
-        state.vahIndex + 1 < rowSize
-            ? bucketVolumes[state.vahIndex + 1]
-            : NO_ADJACENT_BUCKET;
-    const nextBelow =
-        0 <= state.valIndex - 1
-            ? bucketVolumes[state.valIndex - 1]
-            : NO_ADJACENT_BUCKET;
+    while (state.accumulatedVolume < targetVolume) {
+        const nextAbove =
+            state.vahIndex + 1 < rowSize
+                ? bucketVolumes[state.vahIndex + 1]
+                : NO_ADJACENT_BUCKET;
+        const nextBelow =
+            0 <= state.valIndex - 1
+                ? bucketVolumes[state.valIndex - 1]
+                : NO_ADJACENT_BUCKET;
 
-    if (nextAbove === NO_ADJACENT_BUCKET && nextBelow === NO_ADJACENT_BUCKET)
-        return state;
+        if (
+            nextAbove === NO_ADJACENT_BUCKET &&
+            nextBelow === NO_ADJACENT_BUCKET
+        )
+            break;
 
-    if (nextAbove >= nextBelow) {
-        const newVahIndex = state.vahIndex + 1;
-        return expandValueArea(
-            {
+        if (nextAbove >= nextBelow) {
+            const newVahIndex = state.vahIndex + 1;
+            state = {
                 vahIndex: newVahIndex,
                 valIndex: state.valIndex,
                 accumulatedVolume:
                     state.accumulatedVolume + bucketVolumes[newVahIndex],
-            },
-            bucketVolumes,
-            rowSize,
-            targetVolume
-        );
+            };
+        } else {
+            const newValIndex = state.valIndex - 1;
+            state = {
+                vahIndex: state.vahIndex,
+                valIndex: newValIndex,
+                accumulatedVolume:
+                    state.accumulatedVolume + bucketVolumes[newValIndex],
+            };
+        }
     }
 
-    const newValIndex = state.valIndex - 1;
-    return expandValueArea(
-        {
-            vahIndex: state.vahIndex,
-            valIndex: newValIndex,
-            accumulatedVolume:
-                state.accumulatedVolume + bucketVolumes[newValIndex],
-        },
-        bucketVolumes,
-        rowSize,
-        targetVolume
-    );
+    return state;
 }
 
 export function calculateVolumeProfile(

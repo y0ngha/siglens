@@ -120,17 +120,56 @@ function detectFairValueGaps(bars: Bar[]): SMCFairValueGap[] {
         })
         .filter((fvg): fvg is SMCFairValueGap => fvg !== null);
 
-    return raw.map(fvg => ({
-        ...fvg,
-        isMitigated: bars
-            .slice(fvg.index + 1)
-            .some(b =>
-                fvg.type === 'bullish' ? b.low <= fvg.high : b.high >= fvg.low
-            ),
-    }));
+    // Check mitigation with index-based iteration to avoid .slice() allocation per FVG
+    return raw.map(fvg => {
+        let isMitigated = false;
+        for (let i = fvg.index + 1; i < bars.length; i++) {
+            if (
+                fvg.type === 'bullish'
+                    ? bars[i].low <= fvg.high
+                    : bars[i].high >= fvg.low
+            ) {
+                isMitigated = true;
+                break;
+            }
+        }
+        return { ...fvg, isMitigated };
+    });
 }
 
 // ─── Structure break detection (BOS / CHoCH) ─────────────────────────────────
+
+interface SwingAdvanceResult {
+    nextIdx: number;
+    active: SMCSwingPoint | null;
+    wasUpdated: boolean;
+}
+
+/**
+ * Advance the active swing pointer to the most recent confirmed pivot
+ * at or before `barIndex`. Returns the updated pointer index, active swing,
+ * and whether the active swing was replaced (requiring consumed-flag reset).
+ */
+function advanceActiveSwing(
+    swings: SMCSwingPoint[],
+    startIdx: number,
+    barIndex: number,
+    currentActive: SMCSwingPoint | null
+): SwingAdvanceResult {
+    let idx = startIdx;
+    let active = currentActive;
+    let wasUpdated = false;
+
+    while (idx < swings.length && swings[idx].index <= barIndex) {
+        if (active === null || swings[idx].index > active.index) {
+            active = swings[idx];
+            wasUpdated = true;
+        }
+        idx++;
+    }
+
+    return { nextIdx: idx, active, wasUpdated };
+}
 
 /**
  * Detect BOS (Break of Structure) and CHoCH (Change of Character).
@@ -167,25 +206,20 @@ function detectStructureBreaks(
     for (let i = 0; i < bars.length; i++) {
         const bar = bars[i];
 
-        // Advance active swing high to the most recent confirmed pivot
-        while (highIdx < swingHighs.length && swingHighs[highIdx].index <= i) {
-            const candidate = swingHighs[highIdx];
-            if (activeHigh === null || candidate.index > activeHigh.index) {
-                activeHigh = candidate;
-                highConsumed = false;
-            }
-            highIdx++;
-        }
+        const highResult = advanceActiveSwing(
+            swingHighs,
+            highIdx,
+            i,
+            activeHigh
+        );
+        highIdx = highResult.nextIdx;
+        activeHigh = highResult.active;
+        if (highResult.wasUpdated) highConsumed = false;
 
-        // Advance active swing low to the most recent confirmed pivot
-        while (lowIdx < swingLows.length && swingLows[lowIdx].index <= i) {
-            const candidate = swingLows[lowIdx];
-            if (activeLow === null || candidate.index > activeLow.index) {
-                activeLow = candidate;
-                lowConsumed = false;
-            }
-            lowIdx++;
-        }
+        const lowResult = advanceActiveSwing(swingLows, lowIdx, i, activeLow);
+        lowIdx = lowResult.nextIdx;
+        activeLow = lowResult.active;
+        if (lowResult.wasUpdated) lowConsumed = false;
 
         // Bullish break: close crosses above the active swing high
         if (
@@ -232,6 +266,35 @@ function detectStructureBreaks(
 // ─── Order Block detection ────────────────────────────────────────────────────
 
 /**
+ * Precompute the index of the last bullish and bearish candle at or before
+ * each bar index in a single O(n) forward pass.
+ */
+function buildLastOpposingIndices(bars: Bar[]): {
+    lastBullish: (number | null)[];
+    lastBearish: (number | null)[];
+} {
+    const lastBullish: (number | null)[] = Array.from(
+        { length: bars.length },
+        () => null
+    );
+    const lastBearish: (number | null)[] = Array.from(
+        { length: bars.length },
+        () => null
+    );
+    let bull: number | null = null;
+    let bear: number | null = null;
+
+    for (let i = 0; i < bars.length; i++) {
+        if (bars[i].close > bars[i].open) bull = i;
+        if (bars[i].close < bars[i].open) bear = i;
+        lastBullish[i] = bull;
+        lastBearish[i] = bear;
+    }
+
+    return { lastBullish, lastBearish };
+}
+
+/**
  * Detect Order Blocks (OBs).
  *
  * For each confirmed structure break, the order block is the last candle
@@ -248,9 +311,18 @@ function detectOrderBlocks(
     bars: Bar[],
     structureBreaks: SMCStructureBreak[]
 ): SMCOrderBlock[] {
+    if (structureBreaks.length === 0) return [];
+
+    const { lastBullish, lastBearish } = buildLastOpposingIndices(bars);
+
     return structureBreaks.reduce<SMCOrderBlock[]>((acc, sb) => {
+        if (sb.index === 0) return acc;
+
         const isBullishBreak = sb.type === 'bullish';
-        const obIndex = findLastOpposingCandle(bars, sb.index, isBullishBreak);
+        // Bullish break → last bearish candle; Bearish break → last bullish candle
+        const obIndex = isBullishBreak
+            ? lastBearish[sb.index - 1]
+            : lastBullish[sb.index - 1];
         if (obIndex === null) return acc;
 
         const obBar = bars[obIndex];
@@ -268,25 +340,6 @@ function detectOrderBlocks(
 
         return [...acc, ob];
     }, []);
-}
-
-/**
- * Return the index of the last candle before `endIndex` whose body
- * direction is opposite to the expected break direction:
- *  - bullishBreak → last bearish candle (close < open)
- *  - bearishBreak → last bullish candle (close > open)
- */
-function findLastOpposingCandle(
-    bars: Bar[],
-    endIndex: number,
-    lookingForBullishBreak: boolean
-): number | null {
-    const idx = bars
-        .slice(0, endIndex)
-        .findLastIndex(bar =>
-            lookingForBullishBreak ? bar.close < bar.open : bar.close > bar.open
-        );
-    return idx === -1 ? null : idx;
 }
 
 // ─── Equal High / Low detection ───────────────────────────────────────────────
@@ -319,15 +372,18 @@ function findEqualLevels(
         if (atr === null) return [];
 
         const threshold = SMC_EQUAL_LEVEL_ATR_MULTIPLIER * atr;
-        return swings
-            .slice(i + 1)
-            .filter(other => Math.abs(other.price - swing.price) <= threshold)
-            .map<SMCEqualLevel>(other => ({
-                price: (swing.price + other.price) / 2,
-                firstIndex: swing.index,
-                secondIndex: other.index,
-                type,
-            }));
+        const results: SMCEqualLevel[] = [];
+        for (let j = i + 1; j < swings.length; j++) {
+            if (Math.abs(swings[j].price - swing.price) <= threshold) {
+                results.push({
+                    price: (swing.price + swings[j].price) / 2,
+                    firstIndex: swing.index,
+                    secondIndex: swings[j].index,
+                    type,
+                });
+            }
+        }
+        return results;
     });
 }
 
