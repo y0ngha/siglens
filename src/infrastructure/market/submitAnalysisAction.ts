@@ -2,12 +2,15 @@
 
 import { waitUntil } from '@vercel/functions';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
-import type { AnalyzeVariables, Timeframe } from '@/domain/types';
+import type {
+    AnalyzeVariables,
+    SubmitAnalysisResult,
+    Timeframe,
+} from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { buildAnalysisCacheKey } from '@/infrastructure/cache/config';
 import type { RunAnalysisResult } from '@/infrastructure/market/analysisApi';
 import { setJobMeta } from '@/infrastructure/jobs/queue';
-import type { SubmitAnalysisResult } from '@/infrastructure/jobs/types';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 
 export async function submitAnalysisAction(
@@ -61,14 +64,20 @@ export async function submitAnalysisAction(
 
     // 4. Worker에 fire-and-forget
     const workerUrl = process.env.WORKER_URL;
-    if (!workerUrl) {
-        throw new Error('WORKER_URL environment variable is not set');
+    const workerSecret = process.env.WORKER_SECRET;
+    if (!workerUrl || !workerSecret) {
+        throw new Error(
+            'WORKER_URL and WORKER_SECRET environment variables are required'
+        );
     }
 
     waitUntil(
         fetch(`${workerUrl}/analyze`, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Worker-Secret': workerSecret,
+            },
             body: JSON.stringify({ jobId, prompt }),
         }).catch(error => {
             console.error('[Submit] Worker request failed:', error);

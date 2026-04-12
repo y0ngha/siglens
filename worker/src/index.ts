@@ -26,6 +26,11 @@ app.get('/health', (_req, res) => {
 });
 
 app.post('/analyze', (req, res) => {
+    if (req.headers['x-worker-secret'] !== config.workerSecret) {
+        res.status(401).json({ error: 'Unauthorized' });
+        return;
+    }
+
     const { jobId, prompt } = req.body as AnalyzeRequest;
 
     if (!jobId || !prompt) {
