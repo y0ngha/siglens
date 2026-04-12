@@ -77,6 +77,11 @@ export async function submitAnalysisAction(
     await setJobMeta(jobId, { symbol, timeframe, skillsDegraded });
 
     // 6. Worker에 fire-and-forget
+    // waitUntil은 Vercel 함수의 maxDuration(300초)까지만 fetch를 유지한다.
+    // 이후 Vercel이 커넥션을 끊더라도 Cloud Run은 요청 처리를 계속 진행한다.
+    // Cloud Run의 라이프사이클은 res.json() 호출 시점까지이므로,
+    // 클라이언트(Vercel) 커넥션 종료와 무관하게 Gemini 호출 → Redis 저장이 완료된다.
+    // 폴링 측(pollAnalysisAction)은 Redis에서 결과를 읽으므로 영향 없음.
     waitUntil(
         fetch(`${workerUrl}/analyze`, {
             method: 'POST',

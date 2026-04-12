@@ -39,7 +39,9 @@ const VolumeChart = dynamic(
 function AnalyzingBanner() {
     return (
         <div className="bg-secondary-700/40 flex items-center gap-2 rounded px-3 py-2">
-            <span className="text-secondary-400 text-sm">AI 분석 중…</span>
+            <span className="text-secondary-400 text-sm">
+                AI 분석 중…
+            </span>
         </div>
     );
 }
