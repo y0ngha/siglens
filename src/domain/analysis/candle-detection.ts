@@ -71,6 +71,24 @@ const getPatternBarCount = (pattern: MultiCandlePattern): number =>
         : TWO_BAR_PATTERN_COUNT;
 
 /**
+ * Yield merged entries from two sorted CandlePatternEntry arrays in O(n)
+ * using a two-pointer approach.
+ */
+function* mergeSortedGen(
+    a: CandlePatternEntry[],
+    b: CandlePatternEntry[]
+): Generator<CandlePatternEntry> {
+    let ai = 0;
+    let bi = 0;
+    while (ai < a.length && bi < b.length) {
+        if (a[ai].barIndex <= b[bi].barIndex) yield a[ai++];
+        else yield b[bi++];
+    }
+    while (ai < a.length) yield a[ai++];
+    while (bi < b.length) yield b[bi++];
+}
+
+/**
  * Merge two CandlePatternEntry arrays that are already sorted by barIndex
  * into a single sorted array in O(n) using a two-pointer approach.
  */
@@ -78,18 +96,7 @@ function mergeSortedEntries(
     a: CandlePatternEntry[],
     b: CandlePatternEntry[]
 ): CandlePatternEntry[] {
-    // O(n) 병합: spread/concat은 각 단계마다 O(n) 배열 복사 → 전체 O(n²)이므로 push 사용
-    const result: CandlePatternEntry[] = [];
-    let ai = 0;
-    let bi = 0;
-
-    while (ai < a.length && bi < b.length) {
-        result.push(a[ai].barIndex <= b[bi].barIndex ? a[ai++] : b[bi++]);
-    }
-    while (ai < a.length) result.push(a[ai++]);
-    while (bi < b.length) result.push(b[bi++]);
-
-    return result;
+    return [...mergeSortedGen(a, b)];
 }
 
 /**

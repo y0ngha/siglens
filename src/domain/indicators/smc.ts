@@ -366,6 +366,25 @@ function detectEqualLevels(
     };
 }
 
+function* findMatchingLevels(
+    swings: SMCSwingPoint[],
+    startJ: number,
+    swing: SMCSwingPoint,
+    threshold: number,
+    type: 'high' | 'low'
+): Generator<SMCEqualLevel> {
+    for (let j = startJ; j < swings.length; j++) {
+        if (Math.abs(swings[j].price - swing.price) <= threshold) {
+            yield {
+                price: (swing.price + swings[j].price) / 2,
+                firstIndex: swing.index,
+                secondIndex: swings[j].index,
+                type,
+            };
+        }
+    }
+}
+
 function findEqualLevels(
     swings: SMCSwingPoint[],
     atrValues: (number | null)[],
@@ -376,18 +395,7 @@ function findEqualLevels(
         if (atr === null) return [];
 
         const threshold = SMC_EQUAL_LEVEL_ATR_MULTIPLIER * atr;
-        const results: SMCEqualLevel[] = [];
-        for (let j = i + 1; j < swings.length; j++) {
-            if (Math.abs(swings[j].price - swing.price) <= threshold) {
-                results.push({
-                    price: (swing.price + swings[j].price) / 2,
-                    firstIndex: swing.index,
-                    secondIndex: swings[j].index,
-                    type,
-                });
-            }
-        }
-        return results;
+        return [...findMatchingLevels(swings, i + 1, swing, threshold, type)];
     });
 }
 

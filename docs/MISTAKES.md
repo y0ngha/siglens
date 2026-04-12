@@ -199,6 +199,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 11. External dependencies in production code without corresponding test mocks
     → When adding external packages (e.g., @vercel/functions) to infrastructure files, mock them in all corresponding test files
     → jest.mock('@package-name', ...) must be added to every test file that tests the module with the external dependency
+
+12. Period-based indicator tests only verify sign (positive/negative) without toBeCloseTo reference values
+    → Every period-based indicator test must include toBeCloseTo checks against manually-calculated expected values
+    → Warming-up period constants must be imported from source, not manually redefined in tests
+    → Boundary constants must account for full algorithm dependency chains (e.g. nested window calculations)
+    ❌ test('trend is positive', () => expect(values[idx]).toBeGreaterThan(0))  // no actual value verification
+    ✅ test('first value matches reference', () => expect(values[minBarsIdx]).toBeCloseTo(expectedValue))  // precise reference comparison
 ```
 
 ---

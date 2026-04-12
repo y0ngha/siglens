@@ -93,21 +93,21 @@ export function useMovingAverageOverlay({
 
         // 기존 시리즈 유지 + 새 기간 시리즈 추가로 refs 재구성
         // applyOptions로 lineWidth 변경을 기존 시리즈에도 반영
-        const nextSeries: Record<number, ISeriesApi<'Line'>> = {};
-        for (const period of visiblePeriods) {
-            const series =
-                seriesRef.current[period] ??
-                chart.addSeries(LineSeries, {
-                    color: getPeriodColor(period),
-                    lineStyle,
-                    lineWidth,
-                    priceLineVisible: false,
-                    lastValueVisible: false,
-                });
-            series.applyOptions({ lineWidth });
-            nextSeries[period] = series;
-        }
-        seriesRef.current = nextSeries;
+        seriesRef.current = Object.fromEntries(
+            visiblePeriods.map(period => {
+                const series =
+                    seriesRef.current[period] ??
+                    chart.addSeries(LineSeries, {
+                        color: getPeriodColor(period),
+                        lineStyle,
+                        lineWidth,
+                        priceLineVisible: false,
+                        lastValueVisible: false,
+                    });
+                series.applyOptions({ lineWidth });
+                return [period, series] as const;
+            })
+        ) as Record<number, ISeriesApi<'Line'>>;
     }, [chartRef, visiblePeriods, lineWidth, lineStyle]);
 
     // 데이터 동기화

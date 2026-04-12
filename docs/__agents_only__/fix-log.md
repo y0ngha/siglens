@@ -9,11 +9,11 @@
 - Rule: CONVENTIONS.md Custom Hook Declaration Order — 이벤트 핸들러/유틸(5단계)은 모든 useEffect(7단계)보다 앞에 선언
 - Context: `useMovingAverageOverlay.ts`에서 두 번째 useEffect 직전에 배치하여 선언 순서 위반
 
-## [PR #288 | feat/287/update-popular-tickers-script | 2026-04-12]
-- Violation: `push`로 배열 직접 변경 — `weeklyVolumes.push(...)` 사용
-- Rule: MISTAKES.md Coding Paradigm #5 — push/splice 직접 변경 금지, spread 문법 사용
-- Context: 비동기 순차 루프에서 결과 배열 누적 시 push 사용, async reduce 패턴으로 교체
+- Violation: lib 레이어에서 domain 런타임 상수(`MS_PER_MINUTE`) import
+- Rule: ARCHITECTURE.md — lib는 domain에서 타입만 import 가능, 런타임 상수 값은 금지
+- Context: `src/lib/queryConfig.ts`에서 stale/gc 시간 상수로 사용하기 위해 domain 상수를 import
 
+## [PR #288 | feat/287/update-popular-tickers-script | 2026-04-12]
 - Violation: `npx prettier` 사용 — `yarn` 대신 `npx` 사용
 - Rule: CLAUDE.md — 패키지 실행 시 항상 yarn 사용, npm/npx 금지
 - Context: 스크립트 마지막 포매팅 단계에서 `execSync('npx prettier...')` 사용
@@ -53,14 +53,6 @@
 - Context: `stdDev`와 `linreg` 두 함수 모두 지역 변수명으로 `window`를 사용; `vals`로 변경
 
 ## [PR #278 | feat/squeeze-momentum-indicator | 2026-04-12]
-- Violation: 계산 정확도 테스트 누락 — period-based 인디케이터임에도 val 부호(양수/음수)만 검증하고 수동 계산 레퍼런스 값과의 일치 여부(toBeCloseTo) 테스트 없음
-- Rule: CONVENTIONS.md — Period-Based Indicator 필수 테스트 케이스 표: "첫 번째 값이 명세와 일치한다"
-- Context: squeezeMomentum.test.ts에서 상승/하락 부호 검증만 작성하고 PineScript 원본 알고리즘 기준 수동 계산값(9.5)과 toBeCloseTo 검증 누락
-
-- Violation: 워밍업 기간 상수가 실제 첫 번째 유효 출력 인덱스를 과소평가 — 중첩 윈도우 의존성을 고려하지 않음
-- Rule: MISTAKES.md Tests #4 — 경계 상수는 소스에서 임포트해야 하며, 수동 계산 시 알고리즘 전체 의존성 체인을 반영해야 함
-- Context: MIN_BARS = max(bbLength, kcLength) = 20으로 정의했으나, delta 윈도우가 kcLength 길이의 delta 배열을 필요로 하고 각 delta 값은 kcLength 바가 필요하여 실제 워밍업은 2*kcLength-1 = 39바
-
 - Violation: 루프마다 전체 배열 슬라이싱(O(n²)) — sma/stdDev는 내부에서 slice(-period)를 수행하므로 전체 배열 전달 불필요
 - Rule: CONVENTIONS.md Performance — 불필요한 배열 복사를 피하고 필요한 윈도우만 전달
 - Context: closes.slice(0, i+1) 전달 대신 closes.slice(Math.max(0, i-maxPeriod+1), i+1)로 좁혀 O(n²) → O(n) 개선

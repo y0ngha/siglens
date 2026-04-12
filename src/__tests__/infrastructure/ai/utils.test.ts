@@ -153,7 +153,10 @@ describe('parseJsonResponse', () => {
             try {
                 parseJsonResponse('invalid', 'MySource');
             } catch (e) {
-                expect((e as Error).cause).toBeInstanceOf(SyntaxError);
+                expect(e).toBeInstanceOf(Error);
+                if (e instanceof Error) {
+                    expect(e.cause).toBeInstanceOf(SyntaxError);
+                }
             }
         });
     });
