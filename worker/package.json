@@ -6,7 +6,8 @@
     "scripts": {
         "build": "tsc",
         "start": "node dist/index.js",
-        "dev": "tsx src/index.ts"
+        "dev": "tsx src/index.ts",
+        "deploy": "gcloud run deploy siglens-worker --source . --region asia-northeast3 --timeout 3600 --memory 256Mi --cpu 1 --min-instances 0 --max-instances 3 --allow-unauthenticated --env-vars-file .env.yaml"
     },
     "dependencies": {
         "@google/generative-ai": "^0.24.1",

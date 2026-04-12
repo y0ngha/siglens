@@ -21,7 +21,8 @@
         "release": "dotenv -e .env.local -- release-it",
         "release:patch": "dotenv -e .env.local -- release-it patch",
         "release:minor": "dotenv -e .env.local -- release-it minor",
-        "release:major": "dotenv -e .env.local -- release-it major"
+        "release:major": "dotenv -e .env.local -- release-it major",
+        "worker:run": "cd worker && yarn dev"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "^0.80.0",
