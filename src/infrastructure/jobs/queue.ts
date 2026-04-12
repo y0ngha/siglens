@@ -22,10 +22,7 @@ function metaKey(jobId: string): string {
     return `job:${jobId}:meta`;
 }
 
-export async function setJobMeta(
-    jobId: string,
-    meta: JobMeta
-): Promise<void> {
+export async function setJobMeta(jobId: string, meta: JobMeta): Promise<void> {
     const redis = createJobRedis();
     if (!redis) return;
     await redis.set(metaKey(jobId), JSON.stringify(meta), {
@@ -33,9 +30,7 @@ export async function setJobMeta(
     });
 }
 
-export async function getJobStatus(
-    jobId: string
-): Promise<JobStatus | null> {
+export async function getJobStatus(jobId: string): Promise<JobStatus | null> {
     const redis = createJobRedis();
     if (!redis) return null;
     return redis.get<JobStatus>(statusKey(jobId));

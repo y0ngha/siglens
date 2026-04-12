@@ -45,10 +45,7 @@ export async function pollAnalysisAction(
         return { status: 'error', error: 'Result not found' };
     }
 
-    const parsed = parseJsonResponse<RawAnalysisResponse>(
-        rawResult,
-        'Worker'
-    );
+    const parsed = parseJsonResponse<RawAnalysisResponse>(rawResult, 'Worker');
 
     const skillsLoader = new FileSkillsLoader();
     let skills: Skill[] = [];
@@ -66,10 +63,7 @@ export async function pollAnalysisAction(
     if (meta) {
         const cache = createCacheProvider();
         if (cache !== null) {
-            const cacheKey = buildAnalysisCacheKey(
-                meta.symbol,
-                meta.timeframe
-            );
+            const cacheKey = buildAnalysisCacheKey(meta.symbol, meta.timeframe);
             const ttl = ANALYSIS_CACHE_TTL[meta.timeframe];
             waitUntil(
                 cache

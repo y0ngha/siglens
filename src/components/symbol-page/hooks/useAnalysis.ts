@@ -143,7 +143,11 @@ export function useAnalysis({
 
     // Polling effect — submit 결과가 'submitted'이면 polling 시작
     useEffect(() => {
-        if (!submitData || submitData.status !== 'submitted' || !submitData.jobId) {
+        if (
+            !submitData ||
+            submitData.status !== 'submitted' ||
+            !submitData.jobId
+        ) {
             return;
         }
 
@@ -160,7 +164,9 @@ export function useAnalysis({
                 if (cancelled) break;
 
                 if (Date.now() - startedAt > MAX_POLL_DURATION_MS) {
-                    setPollError('분석 시간이 초과되었습니다. 다시 시도해주세요.');
+                    setPollError(
+                        '분석 시간이 초과되었습니다. 다시 시도해주세요.'
+                    );
                     setIsPolling(false);
                     return;
                 }

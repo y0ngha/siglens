@@ -30,7 +30,9 @@ app.post('/analyze', (req, res) => {
         return;
     }
 
-    console.log(`[Worker] Job received: ${jobId} (prompt: ${(prompt.length / 1024).toFixed(1)}KB)`);
+    console.log(
+        `[Worker] Job received: ${jobId} (prompt: ${(prompt.length / 1024).toFixed(1)}KB)`
+    );
 
     // Cloud Run은 요청 처리 중에만 CPU를 할당하므로,
     // 응답을 보내지 않고 Gemini 완료까지 요청을 열어둔다.
