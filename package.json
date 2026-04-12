@@ -22,10 +22,11 @@
         "release:patch": "dotenv -e .env.local -- release-it patch",
         "release:minor": "dotenv -e .env.local -- release-it minor",
         "release:major": "dotenv -e .env.local -- release-it major",
-        "worker:run": "cd worker && yarn dev"
+        "worker:run": "cd worker && yarn dev",
+        "worker:deploy": "cd worker && yarn deploy"
     },
     "dependencies": {
-        "@anthropic-ai/sdk": "^0.80.0",
+        "@anthropic-ai/sdk": "0.81.0",
         "@google/generative-ai": "^0.24.1",
         "@tanstack/react-query": "^5.95.2",
         "@types/jest": "^30.0.0",

@@ -12,9 +12,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@anthropic-ai/sdk@npm:^0.80.0":
-  version: 0.80.0
-  resolution: "@anthropic-ai/sdk@npm:0.80.0"
+"@anthropic-ai/sdk@npm:0.81.0":
+  version: 0.81.0
+  resolution: "@anthropic-ai/sdk@npm:0.81.0"
   dependencies:
     json-schema-to-ts: "npm:^3.1.1"
   peerDependencies:
@@ -24,7 +24,7 @@ __metadata:
       optional: true
   bin:
     anthropic-ai-sdk: bin/cli
-  checksum: 10c0/b02c6f1f523c0ec122c8bf29ede95d685889d023c5a7d6c5b9f77149ae3c4bfd9972a56cfcc25f0ebb712d3093d050831ef76b5b9ecd0d97048d25df020b2d2d
+  checksum: 10c0/9ce1de04f88c05a74e67d07e8707d74815df8a9ad4977fbd7ad6fc146cef521214f11c4faeab5f5c00d76ee5671bf4e223dadf0e2f98c2c979aa9e33c8f89d8d
   languageName: node
   linkType: hard
 
@@ -8995,7 +8995,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "siglens@workspace:."
   dependencies:
-    "@anthropic-ai/sdk": "npm:^0.80.0"
+    "@anthropic-ai/sdk": "npm:0.81.0"
     "@google/generative-ai": "npm:^0.24.1"
     "@release-it/conventional-changelog": "npm:^10.0.6"
     "@tailwindcss/postcss": "npm:^4"
