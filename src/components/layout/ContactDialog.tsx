@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useOnClickOutside } from '@/components/layout/hooks/useOnClickOutside';
 import { useEscapeKey } from '@/components/layout/hooks/useEscapeKey';
+import { useFocusTrap } from '@/components/layout/hooks/useFocusTrap';
 import { CONTACT_EMAIL } from '@/lib/contact';
 
 const GITHUB_ISSUES_URL = 'https://github.com/y0ngha/siglens/issues/new/choose';
@@ -20,9 +21,22 @@ export function ContactDialog({
     const [copied, setCopied] = useState(false);
     const dialogRef = useRef<HTMLDivElement>(null);
     const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
 
-    useOnClickOutside([dialogRef], () => setOpen(false));
-    useEscapeKey(() => setOpen(false));
+    const handleClose = useCallback(() => {
+        setOpen(false);
+        triggerRef.current?.focus();
+    }, []);
+
+    useOnClickOutside([dialogRef], handleClose);
+    useEscapeKey(handleClose);
+    useFocusTrap(dialogRef, open);
+
+    useEffect(() => {
+        if (open) {
+            dialogRef.current?.focus();
+        }
+    }, [open]);
 
     useEffect(() => {
         return () => {
@@ -44,6 +58,7 @@ export function ContactDialog({
     return (
         <>
             <button
+                ref={triggerRef}
                 type="button"
                 onClick={() => setOpen(true)}
                 className={triggerClassName}
@@ -53,7 +68,7 @@ export function ContactDialog({
 
             {open && (
                 <div
-                    className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
+                    className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
                     role="presentation"
                 >
                     <div
@@ -61,7 +76,8 @@ export function ContactDialog({
                         role="dialog"
                         aria-modal="true"
                         aria-labelledby="contact-dialog-title"
-                        className="border-secondary-700 bg-secondary-800 w-full max-w-md rounded-xl border text-left shadow-2xl"
+                        tabIndex={-1}
+                        className="border-secondary-700 bg-secondary-800 max-h-[calc(100vh-2rem)] w-full max-w-md overflow-y-auto rounded-xl border text-left shadow-2xl outline-none"
                     >
                         <div className="border-secondary-700 flex items-start justify-between border-b px-6 py-5">
                             <div>
@@ -77,7 +93,7 @@ export function ContactDialog({
                             </div>
                             <button
                                 type="button"
-                                onClick={() => setOpen(false)}
+                                onClick={handleClose}
                                 aria-label="닫기"
                                 className="text-secondary-500 hover:text-secondary-300 -mt-1 -mr-1 rounded p-1 transition-colors"
                             >

@@ -14,10 +14,19 @@ interface Props {
 export default async function Image({ params }: Props): Promise<ImageResponse> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
-    const assetInfo = await getAssetInfoAction(ticker);
 
-    const companyName = assetInfo?.name ?? ticker;
-    const koreanName = assetInfo?.koreanName;
+    let companyName = ticker;
+    let koreanName: string | undefined;
+    try {
+        const assetInfo = await getAssetInfoAction(ticker);
+        companyName = assetInfo?.name ?? ticker;
+        koreanName = assetInfo?.koreanName;
+    } catch (error) {
+        console.error(
+            '[opengraph-image] getAssetInfoAction failed, falling back to ticker only:',
+            error
+        );
+    }
 
     return new ImageResponse(
         <div

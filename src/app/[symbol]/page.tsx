@@ -5,7 +5,7 @@ import {
     dehydrate,
     HydrationBoundary,
 } from '@tanstack/react-query';
-import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
+import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import type { AnalysisResponse, AssetInfo } from '@/domain/types';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
@@ -38,6 +38,7 @@ const FALLBACK_ANALYSIS: AnalysisResponse = {
 
 interface Props {
     params: Promise<{ symbol: string }>;
+    searchParams: Promise<{ tf?: string }>;
 }
 
 function buildDisplayName(assetInfo: AssetInfo, ticker: string): string {
@@ -54,7 +55,9 @@ function buildDisplayName(assetInfo: AssetInfo, ticker: string): string {
     return ticker;
 }
 
-export async function generateMetadata({ params }: Props): Promise<Metadata> {
+export async function generateMetadata({
+    params,
+}: Omit<Props, 'searchParams'>): Promise<Metadata> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoAction(ticker);
@@ -62,7 +65,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const title = `${displayName} 기술적 분석`;
-    const description = `${displayName} 실시간 주가 차트와 AI 분석. RSI, MACD, 볼린저밴드 등 보조지표 시그널과 캔들 패턴, 지지·저항 레벨을 자동으로 해석합니다. 무료로 바로 확인하세요.`;
+    const description = `${displayName} 실시간 차트를 AI가 자동 분석. RSI·MACD·볼린저밴드·캔들 패턴·지지저항을 무료로 즉시 확인.`;
     const url = `${SITE_URL}/${ticker}`;
     const keywords = buildSymbolKeywords(
         ticker,
@@ -93,8 +96,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-export default async function SymbolPage({ params }: Props) {
+export default async function SymbolPage({ params, searchParams }: Props) {
     const { symbol } = await params;
+    const { tf } = await searchParams;
+    const initialTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
     const ticker = symbol.toUpperCase();
     const [assetInfo, skillCounts] = await Promise.all([
         getAssetInfoAction(ticker),
@@ -108,7 +113,7 @@ export default async function SymbolPage({ params }: Props) {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: `${displayName} 기술적 분석 | ${SITE_NAME}`,
-        description: `${displayName} 실시간 주가 차트와 AI 분석. RSI, MACD, 볼린저밴드 등 보조지표 시그널과 캔들 패턴, 지지·저항 레벨을 자동으로 해석합니다. 무료로 바로 확인하세요.`,
+        description: `${displayName} 실시간 차트를 AI가 자동 분석. RSI·MACD·볼린저밴드·캔들 패턴·지지저항을 무료로 즉시 확인.`,
         url: `${SITE_URL}/${ticker}`,
         inLanguage: 'ko',
         about: {
@@ -148,8 +153,8 @@ export default async function SymbolPage({ params }: Props) {
     queryClient.setQueryData(QUERY_KEYS.assetInfo(symbol), assetInfo);
 
     await queryClient.prefetchQuery({
-        queryKey: QUERY_KEYS.bars(symbol, DEFAULT_TIMEFRAME),
-        queryFn: () => fetchBarsWithIndicators(symbol, DEFAULT_TIMEFRAME),
+        queryKey: QUERY_KEYS.bars(symbol, initialTimeframe),
+        queryFn: () => fetchBarsWithIndicators(symbol, initialTimeframe),
     });
 
     return (
@@ -169,18 +174,20 @@ export default async function SymbolPage({ params }: Props) {
                     ),
                 }}
             />
-            <section className="sr-only" aria-hidden={'true'}>
-                <p>{displayName} AI 기술적 분석 — 보조지표 및 캔들 패턴</p>
+            <section className="sr-only">
+                <h2>보조지표 분석</h2>
                 <p>
                     {displayName}({ticker}) 종목의 실시간 차트를{' '}
                     {skillCounts.indicators}종 보조지표로 자동 분석합니다.{' '}
                     {INDICATOR_NAMES} 등 {skillCounts.indicators}종 지표를
                     분석합니다.
                 </p>
+                <h2>캔들 패턴 분석</h2>
                 <p>
                     {skillCounts.candlesticks}종 캔들 패턴 분석:{' '}
                     {CANDLESTICK_NAMES} 등 주요 캔들 패턴을 자동 감지합니다.
                 </p>
+                <h2>차트 패턴 및 전략 분석</h2>
                 <p>
                     {skillCounts.patterns}종 차트 패턴, {skillCounts.strategies}
                     종 전략 분석, {skillCounts.supportResistance}종 지지/저항

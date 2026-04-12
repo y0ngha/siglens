@@ -31,7 +31,7 @@ export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
                             <Link
                                 href={`/${ticker}`}
                                 onClick={() => addSearch(ticker)}
-                                className="outline-none"
+                                className="focus-visible:ring-primary-500 rounded focus-visible:ring-1 focus-visible:outline-none"
                             >
                                 {ticker}
                             </Link>
