@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #286 Round 6 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: roving tabindex 구현에서 `element.focus()` 명시 호출 누락 — 상태(tabIndex) 업데이트만으로는 DOM 포커스 이동 미동작
+- Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴에서 tabIndex 업데이트와 함께 element.focus() 명시 호출 필수
+- Context: handleTablistKeyDown이 handleTabSelect(상태 업데이트)만 호출하고 tabButtonRefs.current[nextIdx]?.focus()를 빠뜨려, 키보드 사용자 ArrowKey 입력 시 포커스 링이 이전 탭에 그대로 남음
+
 ## [PR #286 Round 5 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
 - Violation: HowTo JSON-LD 구조화 데이터가 Suspense boundary 안에서 deferred — 초기 HTML에 미포함
 - Rule: SEO Best Practice — 구조화 데이터(JSON-LD)는 초기 HTML에 포함되어야 크롤러 호환성 보장
@@ -109,11 +114,6 @@
 - Violation: StockChart prop default actionPricesVisible = false contradicted the parent ChartContent's intent (initialized to true). Default off-by-default is misleading when caller explicitly enables the feature.
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
-
-## [PR #230 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
-- Violation: `#f87171`(actionStopLoss)과 `#4ade80`(actionTakeProfit)은 디자인 시스템에 없는 임의 hex 값 사용
-- Rule: DESIGN.md — 상승/하락 색상은 `#26a69a`(bullish) / `#ef5350`(bearish) 고정; 임의 hex 금지
-- Context: actionStopLoss에 Tailwind red-400(#f87171), actionTakeProfit에 green-400(#4ade80) 사용; bearish/bullish 시스템 컬러로 교체
 
 ## [PR #286 Round 1 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
 - Violation: SkillsShowcase.tsx — all tabpanels rendered in DOM simultaneously but shared `visibleSkills` computed from activeTab state, so inactive panels showed wrong content
