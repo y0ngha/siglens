@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, RefObject } from 'react';
+import { useEffect, useEffectEvent, RefObject } from 'react';
 
 const FOCUSABLE_SELECTOR = [
     'a[href]',
@@ -15,37 +15,35 @@ export function useFocusTrap(
     ref: RefObject<HTMLElement | null>,
     active: boolean
 ): void {
-    useEffect(() => {
-        if (!active) return;
+    const handleKeyDown = useEffectEvent((e: KeyboardEvent) => {
+        if (e.key !== 'Tab' || !ref.current) return;
 
-        function handleKeyDown(e: KeyboardEvent) {
-            if (e.key !== 'Tab' || !ref.current) return;
+        const focusable =
+            ref.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
+        if (focusable.length === 0) return;
 
-            const focusable =
-                ref.current.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR);
-            if (focusable.length === 0) return;
+        const first = focusable[0]!;
+        const last = focusable[focusable.length - 1]!;
 
-            const first = focusable[0]!;
-            const last = focusable[focusable.length - 1]!;
-
-            if (e.shiftKey) {
-                if (
-                    document.activeElement === first ||
-                    document.activeElement === ref.current
-                ) {
-                    e.preventDefault();
-                    last.focus();
-                }
-            } else {
-                if (document.activeElement === last) {
-                    e.preventDefault();
-                    first.focus();
-                }
+        if (e.shiftKey) {
+            if (
+                document.activeElement === first ||
+                document.activeElement === ref.current
+            ) {
+                e.preventDefault();
+                last.focus();
+            }
+        } else {
+            if (document.activeElement === last) {
+                e.preventDefault();
+                first.focus();
             }
         }
+    });
 
+    useEffect(() => {
+        if (!active) return;
         document.addEventListener('keydown', handleKeyDown);
         return () => document.removeEventListener('keydown', handleKeyDown);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [active]);
 }
