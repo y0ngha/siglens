@@ -14,6 +14,7 @@ import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
 import { StatsBar } from '@/components/home/StatsBar';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import { SkillsShowcase } from '@/components/home/SkillsShowcase';
+import { TickerCategories } from '@/components/home/TickerCategories';
 
 const HOMEPAGE_TICKERS = POPULAR_TICKERS.slice(
     0,
@@ -183,6 +184,7 @@ export default async function Home() {
                 <section className="pb-16">
                     <SkillsShowcase skills={skills} />
                 </section>
+                <TickerCategories />
             </main>
             <Footer />
         </>

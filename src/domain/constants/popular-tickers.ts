@@ -1,4 +1,49 @@
+import type { TickerCategory } from '@/domain/types';
+
 export const POPULAR_TICKERS_DISPLAY_COUNT = 6;
+
+export const TICKER_CATEGORIES: readonly TickerCategory[] = [
+    {
+        id: 'megacap',
+        label: '메가캡·지수',
+        tickers: [
+            'AAPL',
+            'MSFT',
+            'NVDA',
+            'GOOGL',
+            'AMZN',
+            'META',
+            'TSLA',
+            'SPY',
+            'QQQ',
+        ],
+    },
+    {
+        id: 'ai-semiconductor',
+        label: 'AI·반도체',
+        tickers: ['AMD', 'AVGO', 'ARM', 'SMCI', 'ALAB', 'SOUN'],
+    },
+    {
+        id: 'software-cloud',
+        label: '소프트웨어·클라우드',
+        tickers: ['PLTR', 'CRWD', 'SNOW', 'NOW', 'CRM', 'DDOG', 'NET'],
+    },
+    {
+        id: 'fintech-crypto',
+        label: '핀테크·크립토',
+        tickers: ['COIN', 'MSTR', 'HOOD', 'SQ', 'PYPL', 'SOFI', 'AFRM'],
+    },
+    {
+        id: 'leveraged-etf',
+        label: '레버리지 ETF',
+        tickers: ['TQQQ', 'SQQQ', 'SOXL', 'TSLL', 'NVDL'],
+    },
+    {
+        id: 'healthcare-bio',
+        label: '헬스케어·바이오',
+        tickers: ['LLY', 'NVO', 'UNH', 'ISRG', 'AMGN'],
+    },
+];
 
 export const POPULAR_TICKERS = [
     // --- [1] Mega Cap & Index ---

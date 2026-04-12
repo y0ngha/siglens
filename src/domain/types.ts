@@ -422,6 +422,20 @@ export interface AssetInfo {
     koreanName?: string;
 }
 
+export type CategoryId =
+    | 'megacap'
+    | 'ai-semiconductor'
+    | 'software-cloud'
+    | 'fintech-crypto'
+    | 'leveraged-etf'
+    | 'healthcare-bio';
+
+export interface TickerCategory {
+    id: CategoryId;
+    label: string;
+    tickers: readonly string[];
+}
+
 export interface AnalyzeVariables {
     symbol: string;
     bars: Bar[];
