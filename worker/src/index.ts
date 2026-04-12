@@ -4,6 +4,7 @@ import { Redis } from '@upstash/redis';
 import { config } from './config.js';
 import { callGemini } from './gemini.js';
 import { callClaude } from './claude.js';
+import { withRetry } from './retry.js';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -14,6 +15,8 @@ const {
 const callAI = config.aiProvider === 'claude' ? callClaude : callGemini;
 
 const JOB_TTL_SECONDS = 3600;
+const AI_RETRY_MAX_ATTEMPTS = 5;
+const AI_RETRY_DELAY_MS = 5000;
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
@@ -73,7 +76,10 @@ async function processJob(jobId: string, prompt: string): Promise<void> {
     });
 
     try {
-        const result = await callAI(prompt);
+        const result = await withRetry(() => callAI(prompt), {
+            maxAttempts: AI_RETRY_MAX_ATTEMPTS,
+            delayMs: AI_RETRY_DELAY_MS,
+        });
 
         // result를 먼저 저장한 후 status를 업데이트한다.
         // 순서가 바뀌면 poller가 done을 보고 result를 읽기 전에 빈 값을 만날 수 있다.

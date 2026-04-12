@@ -219,7 +219,12 @@ export function useAnalysis({
                         return;
                     }
                     if (result.status === 'error') {
-                        setPollError(result.error);
+                        // worker/src/retry.ts AI_SERVER_UNSTABLE_CODE 센티넬과 동기화 필요
+                        const errorMessage =
+                            result.error === 'AI_SERVER_UNSTABLE'
+                                ? "죄송합니다. AI 서버가 불안정합니다. 잠시 후 다시 시도해 주세요. 반복해서 발생할 경우 하단 '오류 제보하기'를 이용해 주세요."
+                                : result.error;
+                        setPollError(errorMessage);
                         if (lastForceRef.current) {
                             void releaseReanalyzeCooldown(
                                 latestRef.current.symbol,
