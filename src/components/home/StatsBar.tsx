@@ -1,7 +1,6 @@
 import { Fragment } from 'react';
 
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
-import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 
 interface SkillStatConfig {
     countLabel: string;
@@ -75,10 +74,4 @@ export function StatsBarSkeleton() {
             ))}
         </div>
     );
-}
-
-export async function AsyncStatsBar() {
-    const loader = new FileSkillsLoader();
-    const skills = await loader.loadSkills();
-    return <StatsBar skills={skills} />;
 }

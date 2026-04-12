@@ -395,7 +395,7 @@ function PatternAccordionItem({
     /**
      * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
      */
-    isVisible,
+    isVisible: _isVisible,
     onToggleVisibility,
 }: PatternAccordionItemProps) {
     const [isOpen, setIsOpen] = useState(false);
@@ -407,7 +407,7 @@ function PatternAccordionItem({
     /**
      * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
      */
-    const handleToggleVisibility = (): void => {
+    const _handleToggleVisibility = (): void => {
         onToggleVisibility(pattern.patternName);
     };
 
@@ -500,6 +500,7 @@ interface CandlePatternAccordionItemProps {
 /**
  * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CandlePatternAccordionItem({
     pattern,
 }: CandlePatternAccordionItemProps) {

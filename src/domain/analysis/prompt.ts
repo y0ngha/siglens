@@ -364,63 +364,65 @@ const formatSMCSection = (indicators: IndicatorResult, bars: Bar[]): string => {
 
     const totalBars = bars.length;
     const currentPrice = totalBars > 0 ? bars[totalBars - 1].close : null;
-    const lines: string[] = ['## Smart Money Concepts (SMC)'];
 
     // 1. Market Structure (BOS / CHoCH)
     const recentBreaks = smc.structureBreaks.slice(-SMC_MAX_STRUCTURE_BREAKS);
-    if (recentBreaks.length > 0) {
-        lines.push('### Market Structure');
-        for (const b of recentBreaks) {
-            lines.push(
-                `- [${b.breakType.toUpperCase()}] ${b.type} at ${fmt(b.price)} ${barsAgo(b.index, totalBars)}`
-            );
-        }
-    }
+    const structureSection =
+        recentBreaks.length > 0
+            ? [
+                  '### Market Structure',
+                  ...recentBreaks.map(
+                      b =>
+                          `- [${b.breakType.toUpperCase()}] ${b.type} at ${fmt(b.price)} ${barsAgo(b.index, totalBars)}`
+                  ),
+              ]
+            : [];
 
     // 2. Active Order Blocks (unmitigated only)
     const activeOBs = smc.orderBlocks
         .filter(ob => !ob.isMitigated)
         .slice(-SMC_MAX_ORDER_BLOCKS);
-    lines.push('### Order Blocks');
-    if (activeOBs.length > 0) {
-        for (const ob of activeOBs) {
-            lines.push(
-                `- ${ob.type} OB: ${fmt(ob.low)} ~ ${fmt(ob.high)} ${barsAgo(ob.startIndex, totalBars)}`
-            );
-        }
-    } else {
-        lines.push('- No active order blocks');
-    }
+    const orderBlockSection = [
+        '### Order Blocks',
+        ...(activeOBs.length > 0
+            ? activeOBs.map(
+                  ob =>
+                      `- ${ob.type} OB: ${fmt(ob.low)} ~ ${fmt(ob.high)} ${barsAgo(ob.startIndex, totalBars)}`
+              )
+            : ['- No active order blocks']),
+    ];
 
     // 3. Active Fair Value Gaps (unmitigated only)
     const activeFVGs = smc.fairValueGaps
         .filter(fvg => !fvg.isMitigated)
         .slice(-SMC_MAX_FAIR_VALUE_GAPS);
-    lines.push('### Fair Value Gaps');
-    if (activeFVGs.length > 0) {
-        for (const fvg of activeFVGs) {
-            lines.push(
-                `- ${fvg.type} FVG: ${fmt(fvg.low)} ~ ${fmt(fvg.high)} ${barsAgo(fvg.index, totalBars)}`
-            );
-        }
-    } else {
-        lines.push('- No active fair value gaps');
-    }
+    const fvgSection = [
+        '### Fair Value Gaps',
+        ...(activeFVGs.length > 0
+            ? activeFVGs.map(
+                  fvg =>
+                      `- ${fvg.type} FVG: ${fmt(fvg.low)} ~ ${fmt(fvg.high)} ${barsAgo(fvg.index, totalBars)}`
+              )
+            : ['- No active fair value gaps']),
+    ];
 
     // 4. Equal Highs / Equal Lows (Liquidity Pools)
     const eqHighs = smc.equalHighs.slice(-SMC_MAX_EQUAL_LEVELS);
     const eqLows = smc.equalLows.slice(-SMC_MAX_EQUAL_LEVELS);
-    if (eqHighs.length > 0 || eqLows.length > 0) {
-        lines.push('### Liquidity Pools');
-        for (const eq of eqHighs) {
-            lines.push(
-                `- Equal Highs at ${fmt(eq.price)} (sell-side liquidity)`
-            );
-        }
-        for (const eq of eqLows) {
-            lines.push(`- Equal Lows at ${fmt(eq.price)} (buy-side liquidity)`);
-        }
-    }
+    const liquiditySection =
+        eqHighs.length > 0 || eqLows.length > 0
+            ? [
+                  '### Liquidity Pools',
+                  ...eqHighs.map(
+                      eq =>
+                          `- Equal Highs at ${fmt(eq.price)} (sell-side liquidity)`
+                  ),
+                  ...eqLows.map(
+                      eq =>
+                          `- Equal Lows at ${fmt(eq.price)} (buy-side liquidity)`
+                  ),
+              ]
+            : [];
 
     // 5. Premium / Discount / Equilibrium Zones
     const premiumLine = formatZoneLine(smc.premiumZone, 'Premium Zone');
@@ -429,46 +431,47 @@ const formatSMCSection = (indicators: IndicatorResult, bars: Bar[]): string => {
         'Equilibrium Zone'
     );
     const discountLine = formatZoneLine(smc.discountZone, 'Discount Zone');
-    if (
-        premiumLine !== null ||
-        equilibriumLine !== null ||
-        discountLine !== null
-    ) {
-        lines.push('### Market Zones');
-        if (premiumLine !== null) lines.push(premiumLine);
-        if (equilibriumLine !== null) lines.push(equilibriumLine);
-        if (discountLine !== null) lines.push(discountLine);
-        if (currentPrice !== null) {
-            const zone = classifyPriceZone(
-                currentPrice,
-                smc.premiumZone,
-                smc.discountZone,
-                smc.equilibriumZone
-            );
-            lines.push(
-                `- Current price (${fmt(currentPrice)}) is in ${zone} zone`
-            );
-        }
-    }
+    const zoneLines = [premiumLine, equilibriumLine, discountLine].filter(
+        (l): l is string => l !== null
+    );
+    const currentPriceLine =
+        currentPrice !== null
+            ? [
+                  `- Current price (${fmt(currentPrice)}) is in ${classifyPriceZone(currentPrice, smc.premiumZone, smc.discountZone, smc.equilibriumZone)} zone`,
+              ]
+            : [];
+    const marketZonesSection =
+        zoneLines.length > 0
+            ? ['### Market Zones', ...zoneLines, ...currentPriceLine]
+            : [];
 
     // 6. Recent Swing Points
     const recentSwingHighs = smc.swingHighs.slice(-SMC_MAX_SWING_POINTS);
     const recentSwingLows = smc.swingLows.slice(-SMC_MAX_SWING_POINTS);
-    if (recentSwingHighs.length > 0 || recentSwingLows.length > 0) {
-        lines.push(`### Swing Points (period: ${SMC_SWING_PERIOD})`);
-        for (const s of recentSwingHighs) {
-            lines.push(
-                `- Swing High: ${fmt(s.price)} ${barsAgo(s.index, totalBars)}`
-            );
-        }
-        for (const s of recentSwingLows) {
-            lines.push(
-                `- Swing Low: ${fmt(s.price)} ${barsAgo(s.index, totalBars)}`
-            );
-        }
-    }
+    const swingSection =
+        recentSwingHighs.length > 0 || recentSwingLows.length > 0
+            ? [
+                  `### Swing Points (period: ${SMC_SWING_PERIOD})`,
+                  ...recentSwingHighs.map(
+                      s =>
+                          `- Swing High: ${fmt(s.price)} ${barsAgo(s.index, totalBars)}`
+                  ),
+                  ...recentSwingLows.map(
+                      s =>
+                          `- Swing Low: ${fmt(s.price)} ${barsAgo(s.index, totalBars)}`
+                  ),
+              ]
+            : [];
 
-    return lines.join('\n');
+    return [
+        '## Smart Money Concepts (SMC)',
+        ...structureSection,
+        ...orderBlockSection,
+        ...fvgSection,
+        ...liquiditySection,
+        ...marketZonesSection,
+        ...swingSection,
+    ].join('\n');
 };
 
 const formatIndicatorSection = (indicators: IndicatorResult): string => {

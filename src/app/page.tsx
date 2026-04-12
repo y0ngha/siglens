@@ -1,16 +1,20 @@
-import { Suspense } from 'react';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
-import { countSkillFiles } from '@/infrastructure/skills/loader';
+import {
+    countSkillFiles,
+    FileSkillsLoader,
+} from '@/infrastructure/skills/loader';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
-import { AsyncStatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
+import { StatsBar } from '@/components/home/StatsBar';
 import { HowItWorks } from '@/components/home/HowItWorks';
-import { SkillsShowcaseSkeleton } from '@/components/home/SkillsShowcase';
-import { SkillsShowcaseServer } from '@/components/home/SkillsShowcaseServer';
+import { SkillsShowcase } from '@/components/home/SkillsShowcase';
 import { TickerCategories } from '@/components/home/TickerCategories';
 
 export default async function Home() {
-    const skillCounts = await countSkillFiles();
+    const [skillCounts, skills] = await Promise.all([
+        countSkillFiles(),
+        new FileSkillsLoader().loadSkills(),
+    ]);
 
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -147,15 +151,11 @@ export default async function Home() {
                         >
                             <SymbolSearchPanel />
                         </div>
-                        <Suspense fallback={<StatsBarSkeleton />}>
-                            <AsyncStatsBar />
-                        </Suspense>
+                        <StatsBar skills={skills} />
                     </div>
                 </section>
                 <HowItWorks skillCounts={skillCounts} />
-                <Suspense fallback={<SkillsShowcaseSkeleton />}>
-                    <SkillsShowcaseServer />
-                </Suspense>
+                <SkillsShowcase skills={skills} />
                 <TickerCategories />
             </main>
             <Footer />

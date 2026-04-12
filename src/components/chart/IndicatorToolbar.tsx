@@ -161,7 +161,6 @@ interface IndicatorToolbarProps {
     cci: IndicatorToggleGroup;
     volumeProfile: IndicatorToggleGroup;
     ichimoku: IndicatorToggleGroup;
-    _candlePatterns?: IndicatorToggleGroup;
 }
 
 export function IndicatorToolbar({
@@ -180,7 +179,6 @@ export function IndicatorToolbar({
     cci,
     volumeProfile,
     ichimoku,
-    _candlePatterns,
 }: IndicatorToolbarProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);

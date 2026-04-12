@@ -21,6 +21,21 @@ const eslintConfig = defineConfig([
             'react/no-danger': 'off',
         },
     },
+    {
+        // Variables and parameters prefixed with _ are intentionally unused
+        // (kept for future use, documented with TODO comments).
+        rules: {
+            '@typescript-eslint/no-unused-vars': [
+                'warn',
+                {
+                    argsIgnorePattern: '^_',
+                    varsIgnorePattern: '^_',
+                    caughtErrorsIgnorePattern: '^_',
+                    destructuredArrayIgnorePattern: '^_',
+                },
+            ],
+        },
+    },
 ]);
 
 export default eslintConfig;

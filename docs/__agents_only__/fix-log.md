@@ -24,10 +24,6 @@
 - Rule: MISTAKES.md Tests #4 — 경계 상수는 소스에서 임포트해야 하며, 수동 계산 시 알고리즘 전체 의존성 체인을 반영해야 함
 - Context: MIN_BARS = max(bbLength, kcLength) = 20으로 정의했으나, delta 윈도우가 kcLength 길이의 delta 배열을 필요로 하고 각 delta 값은 kcLength 바가 필요하여 실제 워밍업은 2*kcLength-1 = 39바
 
-- Violation: .map() 외부 변수(let prevVal)로 상태를 누적하여 함수형 패러다임 위반
-- Rule: CONVENTIONS.md Coding Paradigm — "순수 함수 선호; 외부 상태 변이 금지"; 이전 계산에 의존하는 상태 기반 로직은 reduce 또는 두 패스 구조로 구현해야 함
-- Context: calculateSqueezeMomentum의 bars.map() 내부에서 let prevVal = null 외부 변수를 직접 수정하여 increasing 필드를 계산; 두 패스(intermediate 계산 + increasing 추가)로 분리하여 해결
-
 - Violation: 루프마다 전체 배열 슬라이싱(O(n²)) — sma/stdDev는 내부에서 slice(-period)를 수행하므로 전체 배열 전달 불필요
 - Rule: CONVENTIONS.md Performance — 불필요한 배열 복사를 피하고 필요한 윈도우만 전달
 - Context: closes.slice(0, i+1) 전달 대신 closes.slice(Math.max(0, i-maxPeriod+1), i+1)로 좁혀 O(n²) → O(n) 개선

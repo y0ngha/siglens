@@ -299,8 +299,7 @@ export function StockChart({
         paneIndex: paneIndices.cci,
     });
 
-    const { isVisible: candlePatternsVisible, toggle: toggleCandlePatterns } =
-        useCandlePatternMarkers({ seriesRef, bars });
+    useCandlePatternMarkers({ seriesRef, bars });
 
     /**
      * TODO: 선 그리는 부분에 대해서는 오류가 많아 잠시 주석처리
@@ -458,10 +457,6 @@ export function StockChart({
                         ichimoku={{
                             visible: ichimokuVisible,
                             onToggle: toggleIchimoku,
-                        }}
-                        _candlePatterns={{
-                            visible: candlePatternsVisible,
-                            onToggle: toggleCandlePatterns,
                         }}
                     />
                 </div>
