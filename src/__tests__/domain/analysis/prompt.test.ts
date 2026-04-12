@@ -2143,6 +2143,33 @@ describe('prompt', () => {
                 'simply omit that guide from indicatorResults'
             );
         });
+
+        it('indicator_guide Writing Rules에 signal trend 할당 가이드라인이 포함된다', () => {
+            const skill = makeSkill({
+                type: 'indicator_guide',
+                name: 'RSI Signal Guide',
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('Signal trend assignment:');
+            expect(result).toContain('bullish: the indicator signal suggests');
+            expect(result).toContain('bearish: the indicator signal suggests');
+            expect(result).toContain('neutral: the indicator is in');
+        });
+
+        it('indicatorResults 스키마에 trend 필드가 포함된다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                []
+            );
+            expect(result).toContain('"trend": "bullish | bearish | neutral"');
+        });
     });
 
     describe('분석 가이드라인 - Name Field Matching', () => {
