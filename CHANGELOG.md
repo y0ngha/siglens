@@ -1,5 +1,82 @@
 # Changelog
 
+# [0.7.0](https://github.com/y0ngha/siglens/compare/v0.6.1...v0.7.0) (2026-04-12)
+
+
+### Bug Fixes
+
+* buySellVolume 필드 추가, 차트 성능 최적화 ([f0c3437](https://github.com/y0ngha/siglens/commit/f0c34378765baea5f4b9fe4371ea2208cf2d492a))
+* ChartSkeleton 위치 지정 오류 수정 (VolumeChart relative 추가) ([8b2ff19](https://github.com/y0ngha/siglens/commit/8b2ff198001c27d5299ebc2456468ef92ee9d584))
+* classifyPriceZone zone boundary logic 설명 추가 및 테스트 커버리지 강화 ([2d81e68](https://github.com/y0ngha/siglens/commit/2d81e68917ec879ea1be43201e6cec6c95669c6e))
+* ESLint violations and missing exports in SMC implementation ([d143ae6](https://github.com/y0ngha/siglens/commit/d143ae679a8d0d09453f07d0f4a739c7307a85f7))
+* **home:** apply Gemini review — touch-manipulation, asymmetric padding, remove redundant borders ([1a583ce](https://github.com/y0ngha/siglens/commit/1a583cec5e2501fc1099d87ead182590d709c835))
+* HowTo JSON-LD 동기 렌더링으로 SEO 개선 ([f51e6dc](https://github.com/y0ngha/siglens/commit/f51e6dcf63fb9f09f759faf6a94666b6d181abc8))
+* **mobile:** 초기 스냅 SNAP_HALF 변경, 분석 중 시트 자동 올림 제거, 거래량 차트 padding 추가 ([6fa0a42](https://github.com/y0ngha/siglens/commit/6fa0a4234666c1c86775bc97733196e090ca63cf))
+* overlayLabelUtils 테스트 mock에 신규 지표 필드 추가 ([e6fd6c7](https://github.com/y0ngha/siglens/commit/e6fd6c76d78a80af270543dc598b31f9a03b2d48))
+* PR [#272](https://github.com/y0ngha/siglens/issues/272) 리뷰 반영 — countMdFiles 재귀화, 카운트 로직 통일, 테스트 추가 ([0ef4a58](https://github.com/y0ngha/siglens/commit/0ef4a588f65d7dc85d193df61a76a1bc02238159))
+* PR [#274](https://github.com/y0ngha/siglens/issues/274) 리뷰 반영 — lastOf 헬퍼 재사용, 명시적 priceScaleId 선언 ([dee5608](https://github.com/y0ngha/siglens/commit/dee560827b759616219f0aaf0a3af0983103a63c))
+* PR [#280](https://github.com/y0ngha/siglens/issues/280) 리뷰 반영 — toSorted 적용, max_tokens 양수 검증 복원, 오타 수정 ([9f58f17](https://github.com/y0ngha/siglens/commit/9f58f1787680b5a20dd8ef28758d3e9b5a78feaa))
+* PR 코멘트 반영 - JSON 파싱 주석, 순수 함수 패턴, 로직 개선 ([7f4a26a](https://github.com/y0ngha/siglens/commit/7f4a26a65985ca0757e8dded0b38900b8d80090b))
+* PR 코멘트 반영 - SMC 도메인 불변성 및 타입 정의 준수 ([de66b47](https://github.com/y0ngha/siglens/commit/de66b47e562f2d44fefebad313af413fcf2e3175))
+* PR 코멘트 반영 - 스크립트 안정성 및 규칙 준수 ([e6472ff](https://github.com/y0ngha/siglens/commit/e6472ff492f353e2502ad24085e907a22e753429)), closes [#5](https://github.com/y0ngha/siglens/issues/5)
+* **refactor:** useOnClickOutside 통합 및 버그 수정 ([55b2ebb](https://github.com/y0ngha/siglens/commit/55b2ebb4a4801ab8489de9974333fdb3cfdfbfc1))
+* Remove blocking awaits from Home() and wrap async operations in Suspense ([4cb3a07](https://github.com/y0ngha/siglens/commit/4cb3a071f6e91117f18ab99dd62446b07f9e9608))
+* SEO audit — meta/schema/structure improvements (closes [#282](https://github.com/y0ngha/siglens/issues/282)) ([20ea8f3](https://github.com/y0ngha/siglens/commit/20ea8f3af60ea4c5d57228a3bddb2f7892ed6e13))
+* SEO 및 접근성 개선 사항 반영 ([649a119](https://github.com/y0ngha/siglens/commit/649a1190d5ff61f726c37d27f3269095ba2ddb65))
+* useFocusTrap 의존성 배열 린트 위반 수정 ([9cdb59f](https://github.com/y0ngha/siglens/commit/9cdb59fea4029ab6821938c5f9a35dd86d114080))
+* WAI-ARIA roving tabindex와 컬러 토큰 통합 ([dddd1e0](https://github.com/y0ngha/siglens/commit/dddd1e09fa69a4c076d9a5c5956e984531e85205))
+* 개인정보처리방침 및 이용약관 페이지 접근성 및 구조 개선 ([29f370f](https://github.com/y0ngha/siglens/commit/29f370f349e8e67e9ab36d99fd0cabbed828abb0))
+* 리뷰 코멘트 반영 — PSARNextStateResult 인터페이스 추출, non-null 단언 교체, 가독성 개선, 테스트 케이스 보강 ([f2b1e81](https://github.com/y0ngha/siglens/commit/f2b1e81d42c775c3fa4fedeffcbe863f7c249578))
+* 모바일 바텀시트 차트 렌더링 및 시트 자동 확장 버그 수정 ([863a902](https://github.com/y0ngha/siglens/commit/863a90208cafb1f85e37e597e36b4bc3183b8149))
+* 바텀시트 강제 닫기 제거 ([03d030e](https://github.com/y0ngha/siglens/commit/03d030e38cd4eb7e0c8e9a11f3eb964a23265fa4))
+* 불필요한 훅 제거 및 바텀시트 높이 CSS 변수 적용 ([e63ef94](https://github.com/y0ngha/siglens/commit/e63ef94724341f8f50f356d8c3a40b85dd75117a))
+* 온도/상위P 범위 검증 추가 및 테스트 통합 ([8334b81](https://github.com/y0ngha/siglens/commit/8334b812fbf653128b4b6ed6477af11fc24dc826))
+* 전략 스킬 리뷰 코멘트 반영 (mean-reversion, multi-timeframe, wyckoff) ([ab0807d](https://github.com/y0ngha/siglens/commit/ab0807d4334b98cfe0752263c98f40d682c7768d))
+* 접근성 개선 - aria-label 제거, aria-hidden 추가, 색상 대비율 수정 ([cec98ce](https://github.com/y0ngha/siglens/commit/cec98cea956ba89ef0ba4f4e238620628c4eab1e))
+* 접근성 및 UI/UX 가이드라인 위반 사항 개선 ([106dab8](https://github.com/y0ngha/siglens/commit/106dab8560e4939f24ffbcec62ddac85777c0160))
+* 접근성 위반 사항 수정 ([f8b0fd4](https://github.com/y0ngha/siglens/commit/f8b0fd40bbd4ca4a2f2408be36e380fe82c17b63))
+* 접근성 위반 사항 수정 (포커스 트랩, 훅 선언 순서) ([861d743](https://github.com/y0ngha/siglens/commit/861d743519ef66e0656d896d4660c93b2ad554df))
+* 차트 패턴 스킬 카테고리 및 keyPrices 수정 ([e5c91e7](https://github.com/y0ngha/siglens/commit/e5c91e790d0a62a0fbed48d89b32c5f537592edf))
+
+
+### Features
+
+* 9종 보조지표 domain 계산 로직 구현 ([a9d31bf](https://github.com/y0ngha/siglens/commit/a9d31bf8c4cf05052363b6722304efbabb6ddea1))
+* buy/sell volume chart에 buy/sell labels 추가 ([b2ac419](https://github.com/y0ngha/siglens/commit/b2ac419aed1a36decd1267191ed6ffcdab397e39))
+* Buy/Sell Volume 인디케이터 구현 ([26e76a4](https://github.com/y0ngha/siglens/commit/26e76a4198c636d64ba747f80d22167370293cd9))
+* Buy/Sell Volume을 기존 Volume 오버레이로 적용 ([8db2197](https://github.com/y0ngha/siglens/commit/8db2197147096671cd944eab8ed7b16ab07b8c2f))
+* Candlestick Patterns 스킬 신규 카테고리 추가 ([56dfdf9](https://github.com/y0ngha/siglens/commit/56dfdf94e0d773915c015b407fa05344a811d296))
+* EntryRecommendation 진입 추천 여부 추가 ([eed55a6](https://github.com/y0ngha/siglens/commit/eed55a6fc1bc785f30367d3bb7020beec756eec5))
+* **home:** Suspense 기반 로딩 및 스켈레톤 추가 ([be6e89b](https://github.com/y0ngha/siglens/commit/be6e89ba4d5125240cc021816e6b8eee1971c7ca))
+* HowItWorks 설명 업데이트 ([791bd8f](https://github.com/y0ngha/siglens/commit/791bd8f5381520919fa87d66b326d59e5f1a2ff1))
+* Indicators 보조지표 스킬 추가 (ATR, OBV, Parabolic SAR, Williams %R, Supertrend, MFI, Keltner Channel, CMF, Donchian Channel) ([fe53616](https://github.com/y0ngha/siglens/commit/fe53616f18c3af7f48c4f34821dd259968d38b8a))
+* JSON-LD HowTo 스키마 추가 ([cba00b9](https://github.com/y0ngha/siglens/commit/cba00b9e4bd1ff0e6e536fcc2e3b8050950baf9a))
+* Naver SEO 메타태그 및 설명 개선 ([f595e2e](https://github.com/y0ngha/siglens/commit/f595e2ed2d5f02ea9f9032f9f58d88028786d6ba)), closes [#248](https://github.com/y0ngha/siglens/issues/248) [#249](https://github.com/y0ngha/siglens/issues/249)
+* Patterns 차트 패턴 스킬 추가 ([4bd348b](https://github.com/y0ngha/siglens/commit/4bd348bdcecb23f1f858e13998af1171d1fa1e43))
+* Privacy Policy / Terms 페이지 추가 (YMYL/E-E-A-T SEO) ([2d9097f](https://github.com/y0ngha/siglens/commit/2d9097f21275c7cc79d8892738bf6266df2114bc))
+* **prompt:** SMC 섹션 및 스퀵 모멘텀 강화 추가 ([c2b58ae](https://github.com/y0ngha/siglens/commit/c2b58ae0c22fa9840274d4c48e37ee366d6e7caf))
+* section sr-only에 aria-hidden 추가 ([3cb44e7](https://github.com/y0ngha/siglens/commit/3cb44e7608180af5875dd73a8f28a403cff8a22d))
+* SEO 개선 - iOS 홈화면 아이콘, HSTS 헤더 설정 ([a5f35b6](https://github.com/y0ngha/siglens/commit/a5f35b6132eea51535a6804907f11c067364c979))
+* SMC(Smart Money Concepts) 보조지표 및 Skills 파일 추가 ([2fddd24](https://github.com/y0ngha/siglens/commit/2fddd244504bee9df8a086e74f2b9814535ed908))
+* Squeeze Momentum 인디케이터 추가 ([22499c2](https://github.com/y0ngha/siglens/commit/22499c27dbfc97cbae2e0ec6fc7cee03e6bdcc6b))
+* Strategies 전략 스킬 추가 (Wyckoff, Divergence, Fibonacci, Breakout, Mean Reversion, Multi-Timeframe) ([aa8e397](https://github.com/y0ngha/siglens/commit/aa8e3971586da746144187ce36209c0cb885f804))
+* Support/Resistance 지지/저항 도구 스킬 신규 카테고리 추가 ([698af5e](https://github.com/y0ngha/siglens/commit/698af5ef100c4a85374d90f37e083db4414f2960))
+* 공통으로 사용할 useOnClickOutside 작성 ([425472c](https://github.com/y0ngha/siglens/commit/425472c202dd02bca87bc97c8e08551e41dc15d8))
+* 마켓 상수 및 타임프레임 검증 추가 ([9896048](https://github.com/y0ngha/siglens/commit/9896048f2c544b450c2c2d285334129256cffbef))
+* 모바일 AI 분석 패널 바텀시트 UX 개편 ([ed55533](https://github.com/y0ngha/siglens/commit/ed55533156ad710c207d6eaa5f385b5634a83e67))
+* 바텀시트 snap_half 55%로 변경 ([d9a73d0](https://github.com/y0ngha/siglens/commit/d9a73d018a793c48e0354b9de49cccadedef1b43))
+* 사이트맵 커버리지 확장 (20개 → 100개+) ([10e3501](https://github.com/y0ngha/siglens/commit/10e350151bba203dc2d1bc52e37c4b7a2d0adcc9))
+* 심볼별 OG 이미지 생성 및 크롤러 텍스트 추가 ([46ada9a](https://github.com/y0ngha/siglens/commit/46ada9a8d91cad9ffd7e551014cd280fe1c9e4c5))
+* 인기 종목 자동 업데이트 스크립트 추가 ([9f86bcf](https://github.com/y0ngha/siglens/commit/9f86bcf657e44198a3a17180961a3e8303d6c920))
+* 카테고리 > 섹터로 명칭 변경 ([3bba12a](https://github.com/y0ngha/siglens/commit/3bba12a8929fe1911ca3373a1adb545b65fc3be5))
+* 카테고리별 종목 섹션 추가 ([77c90cf](https://github.com/y0ngha/siglens/commit/77c90cf21eca85e68f1d8e1015aa38100479a8e6))
+* 타임프레임 URL 파라미터 검증 및 서버-클라이언트 동기화 ([2725fc2](https://github.com/y0ngha/siglens/commit/2725fc2ea716b5da93dfacbff1db2f34f4f11a3b))
+
+
+### Performance Improvements
+
+* 차트 라이브러리 dynamic import로 모바일 TTI 개선 ([8987839](https://github.com/y0ngha/siglens/commit/89878390d2ad781432c82fc5690fc4d67ed60a41))
+
 ## [0.6.1](https://github.com/y0ngha/siglens/compare/v0.6.0...v0.6.1) (2026-04-10)
 
 
