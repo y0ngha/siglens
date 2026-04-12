@@ -261,10 +261,6 @@ export function IndicatorToolbar({
         { label: 'CCI', ...cci },
         { label: 'VP', ...volumeProfile },
         { label: 'Ichimoku', ...ichimoku },
-        /**
-         * TODO: 캔들은 우선 임시 제거
-         */
-        // ...(candlePatterns ? [{ label: '캔들', ...candlePatterns }] : []),
     ];
 
     const activeDropdownIndicator = dropdownIndicators.find(
