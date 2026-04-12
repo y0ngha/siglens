@@ -51,11 +51,11 @@ const CATEGORY_STYLES: Record<CategoryId, CategoryStyle> = {
 export function TickerCategories() {
     return (
         <nav
-            aria-label="카테고리별 인기 종목 탐색"
+            aria-label="섹터별 인기 종목 탐색"
             className="px-6 py-16 lg:pr-[10vw] lg:pl-[15vw]"
         >
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
-                카테고리별 인기 종목
+                섹터별 인기 종목
             </h2>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {TICKER_CATEGORIES.map(category => {
@@ -80,7 +80,7 @@ export function TickerCategories() {
                             </h3>
                             <ul
                                 className="flex touch-manipulation flex-wrap gap-2"
-                                aria-label={`${category.label} 종목 목록`}
+                                aria-label={`${category.label} 섹터 종목 목록`}
                             >
                                 {category.tickers.map(ticker => (
                                     <li key={ticker}>
