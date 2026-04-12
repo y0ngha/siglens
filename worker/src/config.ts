@@ -12,6 +12,7 @@ const aiProvider = (process.env.AI_PROVIDER ?? 'gemini') as AIProviderType;
 
 export const config = {
     port: Number(process.env.PORT ?? '3000'),
+    workerSecret: requireEnv('WORKER_SECRET'),
     aiProvider,
     redis: {
         url: requireEnv('UPSTASH_REDIS_REST_URL'),
