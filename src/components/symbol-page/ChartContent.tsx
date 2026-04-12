@@ -158,7 +158,10 @@ export function ChartContent({
     // 데스크톱 aside와 모바일 MobileAnalysisSheet 두 인스턴스에 동일한 값을 props로
     // 내려주어, 모바일 시트의 unmount/remount 사이클에서도 상태가 초기화되지 않도록 한다.
     const { phaseIndex: progressPhaseIndex, tipIndex: progressTipIndex } =
-        useAnalysisProgress({ isAnalyzing, onFinished: handleProgressFinished });
+        useAnalysisProgress({
+            isAnalyzing,
+            onFinished: handleProgressFinished,
+        });
 
     const analysisStatus = getAnalysisStatus(displayAnalyzing, analysisError);
 
@@ -190,7 +193,10 @@ export function ChartContent({
     const analysisContent = useMemo(
         () => (
             <>
-                <AnalysisStatusBanner status={analysisStatus} className="mb-3" />
+                <AnalysisStatusBanner
+                    status={analysisStatus}
+                    className="mb-3"
+                />
                 <AnalysisPanel
                     analysis={analysis}
                     keyLevels={validatedKeyLevels}

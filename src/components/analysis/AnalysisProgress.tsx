@@ -22,7 +22,10 @@ interface AnalysisProgressProps {
     tipIndex: number;
 }
 
-export function AnalysisProgress({ phaseIndex, tipIndex }: AnalysisProgressProps) {
+export function AnalysisProgress({
+    phaseIndex,
+    tipIndex,
+}: AnalysisProgressProps) {
     return (
         <div
             className="border-secondary-700/60 bg-secondary-900/40 relative flex flex-col gap-4 overflow-hidden rounded-lg border p-4"
