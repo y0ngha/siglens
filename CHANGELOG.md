@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.8.1](https://github.com/y0ngha/siglens/compare/v0.8.0...v0.8.1) (2026-04-12)
+
+
+### Bug Fixes
+
+* AnalysisProgress 상태를 ChartContent로 lift-up하여 모바일 remount 초기화 수정 ([a4d5a36](https://github.com/y0ngha/siglens/commit/a4d5a360f8fb1d8b99f5de91767a8bd7376b9468))
+* Upstash 직렬화 문제 해결 및 쿨다운 로직 수정 ([3ab7336](https://github.com/y0ngha/siglens/commit/3ab7336826f095266624bc3049449a6fa06ebe86))
+
+
+### Features
+
+* Add trend direction badge to indicator signals and clarify strength labels ([0d4ae9b](https://github.com/y0ngha/siglens/commit/0d4ae9be97de212c80ad9601ec60d9fc6505b7c7))
+* AI API 재시도 로직 및 에러 처리 개선 ([06b76f1](https://github.com/y0ngha/siglens/commit/06b76f12374dcc421596832955ab74629a88dfc1))
+* Cloud Run worker 배포환경 조성 ([534c8f3](https://github.com/y0ngha/siglens/commit/534c8f36e4af210b558a10a21ca12979252dcbf2))
+* tip 내용 수정 ([6812ae3](https://github.com/y0ngha/siglens/commit/6812ae34c933fb3f7a9df3e658dde1d2178e835c))
+
 # [0.8.0](https://github.com/y0ngha/siglens/compare/v0.7.0...v0.8.0) (2026-04-12)
 
 
