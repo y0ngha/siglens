@@ -56,6 +56,11 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → When replacing HTTP calls with Server Actions, renaming patterns, or moving code, update the names
     ❌ fetchBars (no longer a fetch — now a Server Action)
     ✅ getBarsAction (accurate to new implementation)
+
+12. Using .sort() instead of .toSorted()
+    → .sort() mutates the original array and violates immutability
+    ❌ arr.sort() // in-place mutation
+    ✅ arr.toSorted() // returns new sorted array
 ```
 
 ---
@@ -201,6 +206,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Native roles (paragraph, complementary) must not be replaced with role attributes
    → Use <div role="note"> instead of <p role="note"> or <aside role="note">
    → Use semantic elements without explicit role unless the role fundamentally differs
+
+2. ARIA tablist pattern incomplete (missing roving tabindex or arrow key handlers)
+   → tablist requires both roving tabindex AND arrow key navigation to be fully accessible
+   → Active tab: tabIndex={0}; Inactive tabs: tabIndex={-1}
+   → Implement onKeyDown handler for ArrowLeft/ArrowRight to move focus between tabs
+   ❌ aria-selected set but tabIndex not set; no arrow key handlers
+   ✅ tabIndex={isActive ? 0 : -1} + handleTablistKeyDown(ArrowLeft/Right)
 ```
 
 ---

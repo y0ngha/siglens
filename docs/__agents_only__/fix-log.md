@@ -1,11 +1,6 @@
 # Fix Log
 
 ## [PR #280 | refactor/279/ai-prompt-consistency | 2026-04-12]
-- Violation: `domain/analysis/prompt.ts`에서 `.filter().slice().sort(byName)` 사용 — `.filter()`가 이미 새 배열을 반환하므로 `.slice()`가 불필요하고, `.sort()`는 in-place 변경으로 불변성 규칙 위반
-- Rule: CONVENTIONS.md — `❌ arr.sort() → ✅ arr.toSorted()` 명시 규칙
-- Context: `buildAnalysisPrompt` 내 `activeSkills` 결정론적 정렬을 구현할 때 `.slice().sort()` 패턴을 사용했으나 `.toSorted()`로 교체해야 함
-
-## [PR #280 | refactor/279/ai-prompt-consistency | 2026-04-12]
 - Violation: `infrastructure/ai/claude.ts`에서 IIFE 파서를 `parseNumberEnv` 헬퍼로 교체할 때 기존 `parsed > 0` 양수 검증 가드가 누락 — `CLAUDE_MAX_TOKENS=0` 또는 음수 환경변수 설정 시 API 호출 실패
 - Rule: MISTAKES.md Pure Function Contracts #1 — "Utility functions must guard all valid input ranges explicitly"
 - Context: 기존 IIFE의 `&& parsed > 0` 조건을 `parseNumberEnv`가 대체했으나, 헬퍼 함수는 0도 유효값으로 통과시키므로 호출부에서 별도로 `> 0` 가드를 추가해야 했음
@@ -117,9 +112,5 @@
 - Violation: SkillsShowcase.tsx — DOM event listener (pointerdown) registered directly in useEffect inside ConfidenceInfoTooltip instead of extracting to useOnClickOutside hook
 - Rule: MISTAKES.md Components — DOM event listeners in useEffect must be extracted to custom hooks (useOnClickOutside, useEscapeKey, etc.)
 - Context: ConfidenceInfoTooltip had inline useEffect + document.addEventListener('pointerdown'); created src/components/home/hooks/useOnClickOutside.ts and replaced inline logic
-
-- Violation: SkillsShowcase.tsx — ARIA tablist without roving tabindex; tabs had aria-selected but all remained in natural tab order (tabIndex unset)
-- Rule: WAI-ARIA Authoring Practices — tablist pattern requires roving tabindex: active tab tabIndex=0, inactive tabs tabIndex=-1
-- Context: Added tabIndex={isActive ? 0 : -1} to each tab button to implement roving tabindex pattern
 
 
