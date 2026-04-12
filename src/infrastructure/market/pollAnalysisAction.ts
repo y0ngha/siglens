@@ -67,7 +67,8 @@ export async function pollAnalysisAction(
     }
 
     // submit 단계의 skills 저하 OR poll 단계의 skills 저하
-    const skillsDegraded = (meta?.skillsDegraded ?? false) || pollSkillsDegraded;
+    const skillsDegraded =
+        (meta?.skillsDegraded ?? false) || pollSkillsDegraded;
 
     const enriched = enrichAnalysisWithConfidence(parsed, skills);
 

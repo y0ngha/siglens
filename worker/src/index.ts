@@ -41,7 +41,9 @@ app.post('/analyze', (req, res) => {
     const { jobId, prompt } = req.body as AnalyzeRequest;
 
     if (!jobId || !prompt) {
-        res.status(HTTP_STATUS_BAD_REQUEST).json({ error: 'jobId and prompt are required' });
+        res.status(HTTP_STATUS_BAD_REQUEST).json({
+            error: 'jobId and prompt are required',
+        });
         return;
     }
 
@@ -57,7 +59,10 @@ app.post('/analyze', (req, res) => {
         })
         .catch(error => {
             console.error(`[Worker] Job ${jobId} handler error:`, error);
-            res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).json({ status: 'error', jobId });
+            res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).json({
+                status: 'error',
+                jobId,
+            });
         });
 });
 
