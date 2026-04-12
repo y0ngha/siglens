@@ -15,6 +15,7 @@ import type {
     IndicatorResult,
     Timeframe,
 } from '@/domain/types';
+import { MS_PER_MINUTE } from '@/domain/constants/time';
 import { analyzeAction } from '@/infrastructure/market/analyzeAction';
 import {
     tryAcquireReanalyzeCooldown,
@@ -30,7 +31,7 @@ interface AnalyzeMutationVariables extends AnalyzeVariables {
  * 재분석 쿨다운 (5분).
  * 진실값은 Redis(서버)이며 클라이언트는 표시 목적으로만 카운트다운한다.
  */
-const REANALYZE_COOLDOWN_MS = 5 * 60 * 1000;
+const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
 interface UseAnalysisOptions {
     symbol: string;

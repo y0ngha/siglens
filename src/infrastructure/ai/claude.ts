@@ -1,11 +1,7 @@
 import Anthropic from '@anthropic-ai/sdk';
 import type { RawAnalysisResponse } from '@/domain/types';
 import type { AIProvider } from './types';
-import {
-    AI_SYSTEM_PROMPT,
-    parseNumberEnv,
-    stripMarkdownCodeBlock,
-} from './utils';
+import { AI_SYSTEM_PROMPT, parseJsonResponse, parseNumberEnv } from './utils';
 
 const DEFAULT_CLAUDE_MODEL = 'claude-opus-4-6';
 const DEFAULT_CLAUDE_MAX_TOKENS = 8192;
@@ -57,18 +53,9 @@ export class ClaudeProvider implements AIProvider {
             throw new Error('Unexpected response type from Claude API');
         }
 
-        try {
-            return JSON.parse(
-                stripMarkdownCodeBlock(content.text)
-            ) as RawAnalysisResponse;
-        } catch (error) {
-            console.error(
-                'Failed to parse Claude API response. Raw text:',
-                content.text
-            );
-            throw new Error('Failed to parse Claude API response as JSON', {
-                cause: error,
-            });
-        }
+        return parseJsonResponse<RawAnalysisResponse>(
+            content.text,
+            'Claude API'
+        );
     }
 }

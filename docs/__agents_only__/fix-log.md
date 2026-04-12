@@ -1,22 +1,39 @@
 # Fix Log
 
-## [PR #288 | feat/287/update-popular-tickers-script | 2026-04-12]
-- Violation: `push`로 배열 직접 변경 — `weeklyVolumes.push(...)` 사용
-- Rule: MISTAKES.md Coding Paradigm #5 — push/splice 직접 변경 금지, spread 문법 사용
-- Context: 비동기 순차 루프에서 결과 배열 누적 시 push 사용, async reduce 패턴으로 교체
+## [PR #290 Round 5 | refactor/289/코드-정리-상수통합-복잡도개선-중복제거 | 2026-04-12]
+- Violation: `parseJsonResponse`의 `JSON.parse(...) as T` 단언에 이유 주석 누락
+- Rule: MISTAKES.md TypeScript #8 — `as` 단언 사용 시 이유를 주석으로 명시
+- Context: `src/infrastructure/ai/utils.ts`에서 `JSON.parse`가 `any`를 반환하여 불가피한 단언임을 주석 없이 사용
 
+- Violation: `buildLastOpposingIndices`의 `.map()` 콜백 내 외부 `let` 변수 변이 — 비순수 콜백
+- Rule: CONVENTIONS.md — map 콜백은 순수 변환이어야 함; 상태 스캔에는 generator 패턴 사용
+- Context: `bull = i` 클로저 변이를 포함한 map 콜백, `scanLastIndex` generator로 교체
+
+## [PR #290 | refactor/289/코드-정리-상수통합-복잡도개선-중복제거 | 2026-04-12]
+- Violation: 테스트 파일의 한글 문자열에 깨진 UTF-8 바이트 포함
+- Rule: CONVENTIONS.md — 테스트 설명 문구는 사람이 읽기 쉬운 한국어 텍스트여야 함
+- Context: `src/__tests__/domain/constants/time.test.ts`의 describe/it 텍스트가 잘못된 인코딩으로 저장되어 의미 불명 문자 포함
+
+- Violation: useEffectEvent로 만든 `stableGetIndicatorData`가 첫 번째 useEffect 블록 이후에 선언
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — 이벤트 핸들러/유틸(5단계)은 모든 useEffect(7단계)보다 앞에 선언
+- Context: `useMovingAverageOverlay.ts`에서 두 번째 useEffect 직전에 배치하여 선언 순서 위반
+
+- Violation: lib 레이어에서 domain 런타임 상수(`MS_PER_MINUTE`) import
+- Rule: ARCHITECTURE.md — lib는 domain에서 타입만 import 가능, 런타임 상수 값은 금지
+- Context: `src/lib/queryConfig.ts`에서 stale/gc 시간 상수로 사용하기 위해 domain 상수를 import
+
+- Violation: domain 레이어(`smc.ts`)에서 직접 배열 인덱스 할당 (`lastBullish[i] = bull`)
+- Rule: MISTAKES.md Coding Paradigm #5 + CONVENTIONS.md domain 불변성 — 배열 직접 인덱스 할당 금지
+- Context: `buildLastOpposingIndices`에서 루프 안 직접 인덱스 할당 사용, `map`으로 교체
+
+- Violation: `findMatchingLevels` 파라미터 타입에 인라인 유니온 리터럴 (`'high' | 'low'`) 사용
+- Rule: MISTAKES.md TypeScript #5 — 2개 이상 멤버 유니온은 named type alias로 추출
+- Context: `SMCEqualLevel.type`에 이미 `SMCSwingPointType`이 정의되어 있으나 파라미터에서 인라인 유니온 사용
+
+## [PR #288 | feat/287/update-popular-tickers-script | 2026-04-12]
 - Violation: `npx prettier` 사용 — `yarn` 대신 `npx` 사용
 - Rule: CLAUDE.md — 패키지 실행 시 항상 yarn 사용, npm/npx 금지
 - Context: 스크립트 마지막 포매팅 단계에서 `execSync('npx prettier...')` 사용
-
-- Violation: `as` 타입 단언에 설명 주석 누락
-- Rule: CONVENTIONS.md — `as` 단언 사용 시 이유를 주석으로 명시
-- Context: fetchScreenerResults, fetchEodBars에서 FMP API 응답 파싱 시 `as` 단언 주석 없이 사용
-
-## [PR #286 Round 6 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
-- Violation: roving tabindex 구현에서 `element.focus()` 명시 호출 누락 — 상태(tabIndex) 업데이트만으로는 DOM 포커스 이동 미동작
-- Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴에서 tabIndex 업데이트와 함께 element.focus() 명시 호출 필수
-- Context: handleTablistKeyDown이 handleTabSelect(상태 업데이트)만 호출하고 tabButtonRefs.current[nextIdx]?.focus()를 빠뜨려, 키보드 사용자 ArrowKey 입력 시 포커스 링이 이전 탭에 그대로 남음
 
 ## [PR #286 Round 5 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
 - Violation: HowTo JSON-LD 구조화 데이터가 Suspense boundary 안에서 deferred — 초기 HTML에 미포함
@@ -44,14 +61,6 @@
 - Context: `stdDev`와 `linreg` 두 함수 모두 지역 변수명으로 `window`를 사용; `vals`로 변경
 
 ## [PR #278 | feat/squeeze-momentum-indicator | 2026-04-12]
-- Violation: 계산 정확도 테스트 누락 — period-based 인디케이터임에도 val 부호(양수/음수)만 검증하고 수동 계산 레퍼런스 값과의 일치 여부(toBeCloseTo) 테스트 없음
-- Rule: CONVENTIONS.md — Period-Based Indicator 필수 테스트 케이스 표: "첫 번째 값이 명세와 일치한다"
-- Context: squeezeMomentum.test.ts에서 상승/하락 부호 검증만 작성하고 PineScript 원본 알고리즘 기준 수동 계산값(9.5)과 toBeCloseTo 검증 누락
-
-- Violation: 워밍업 기간 상수가 실제 첫 번째 유효 출력 인덱스를 과소평가 — 중첩 윈도우 의존성을 고려하지 않음
-- Rule: MISTAKES.md Tests #4 — 경계 상수는 소스에서 임포트해야 하며, 수동 계산 시 알고리즘 전체 의존성 체인을 반영해야 함
-- Context: MIN_BARS = max(bbLength, kcLength) = 20으로 정의했으나, delta 윈도우가 kcLength 길이의 delta 배열을 필요로 하고 각 delta 값은 kcLength 바가 필요하여 실제 워밍업은 2*kcLength-1 = 39바
-
 - Violation: 루프마다 전체 배열 슬라이싱(O(n²)) — sma/stdDev는 내부에서 slice(-period)를 수행하므로 전체 배열 전달 불필요
 - Rule: CONVENTIONS.md Performance — 불필요한 배열 복사를 피하고 필요한 윈도우만 전달
 - Context: closes.slice(0, i+1) 전달 대신 closes.slice(Math.max(0, i-maxPeriod+1), i+1)로 좁혀 O(n²) → O(n) 개선
@@ -127,10 +136,5 @@
 - Violation: StockChart prop default actionPricesVisible = false contradicted the parent ChartContent's intent (initialized to true). Default off-by-default is misleading when caller explicitly enables the feature.
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
-
-## [PR #286 Round 1 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
-- Violation: SkillsShowcase.tsx — all tabpanels rendered in DOM simultaneously but shared `visibleSkills` computed from activeTab state, so inactive panels showed wrong content
-- Rule: ARIA tablist pattern — each tabpanel must compute its own filtered content independently, not share state with other panels
-- Context: filteredSkills and visibleSkills were computed outside the TABS.map loop based on activeTab, causing all panels to render the active tab's data; moved computation inside each panel's render scope
 
 

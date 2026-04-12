@@ -1,11 +1,7 @@
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import type { RawAnalysisResponse } from '@/domain/types';
 import type { AIProvider } from './types';
-import {
-    AI_SYSTEM_PROMPT,
-    parseNumberEnv,
-    stripMarkdownCodeBlock,
-} from './utils';
+import { AI_SYSTEM_PROMPT, parseJsonResponse, parseNumberEnv } from './utils';
 
 const DEFAULT_GEMINI_MODEL = 'gemini-3-flash-preview';
 const DEFAULT_GEMINI_TEMPERATURE = 0;
@@ -50,18 +46,6 @@ export class GeminiProvider implements AIProvider {
         const result = await model.generateContent(prompt);
         const text = result.response.text();
 
-        try {
-            return JSON.parse(
-                stripMarkdownCodeBlock(text)
-            ) as RawAnalysisResponse;
-        } catch (error) {
-            console.error(
-                'Failed to parse Gemini API response. Raw text:',
-                text
-            );
-            throw new Error('Failed to parse Gemini API response as JSON', {
-                cause: error,
-            });
-        }
+        return parseJsonResponse<RawAnalysisResponse>(text, 'Gemini API');
     }
 }

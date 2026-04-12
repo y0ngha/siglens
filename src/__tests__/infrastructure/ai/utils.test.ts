@@ -1,5 +1,6 @@
 import {
     AI_SYSTEM_PROMPT,
+    parseJsonResponse,
     parseNumberEnv,
     stripMarkdownCodeBlock,
 } from '@/infrastructure/ai/utils';
@@ -104,6 +105,59 @@ describe('stripMarkdownCodeBlock', () => {
             const input = '```json\n{"key": "value"}\n```\n이상입니다.';
 
             expect(stripMarkdownCodeBlock(input)).toBe('{"key": "value"}');
+        });
+    });
+});
+
+describe('parseJsonResponse', () => {
+    describe('유효한 JSON이 주어지면', () => {
+        it('파싱된 객체를 반환한다', () => {
+            expect(parseJsonResponse('{"key":"value"}', 'Test')).toEqual({
+                key: 'value',
+            });
+        });
+    });
+
+    describe('마크다운 코드 블록으로 감싸진 JSON이 주어지면', () => {
+        it('코드 블록을 제거하고 파싱한다', () => {
+            expect(
+                parseJsonResponse('```json\n{"key":"value"}\n```', 'Test')
+            ).toEqual({ key: 'value' });
+        });
+    });
+
+    describe('유효하지 않은 JSON이 주어지면', () => {
+        it('source를 포함한 에러를 던진다', () => {
+            expect(() => parseJsonResponse('invalid', 'MySource')).toThrow(
+                'Failed to parse MySource response as JSON'
+            );
+        });
+
+        it('console.error로 source와 raw text를 기록한다', () => {
+            const spy = jest
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+            try {
+                parseJsonResponse('invalid', 'MySource');
+            } catch {
+                /* expected */
+            }
+            expect(spy).toHaveBeenCalledWith(
+                'Failed to parse MySource response. Raw text:',
+                'invalid'
+            );
+            spy.mockRestore();
+        });
+
+        it('원래 에러를 cause로 포함한다', () => {
+            try {
+                parseJsonResponse('invalid', 'MySource');
+            } catch (e) {
+                expect(e).toBeInstanceOf(Error);
+                if (e instanceof Error) {
+                    expect(e.cause).toBeInstanceOf(SyntaxError);
+                }
+            }
         });
     });
 });

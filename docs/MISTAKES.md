@@ -105,6 +105,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ const value: number = getValue() ?? 0;  // type guard with fallback
    ❌ atrValues[idx] as number  // null never occurs due to prior check
    ✅ atrValues[idx]!  // non-null assertion operator
+
+8. `as` type assertions without explanatory comments
+   → When `as` must be used (e.g., external API response parsing), document why with a comment
+   → Comment should explain the reason for the assertion (e.g., "FMP API response shape guaranteed by provider")
+   ❌ const data = response as ApiResult;
+   ✅ const data = response as ApiResult; // API response shape enforced by external provider schema
 ```
 
 ---
@@ -199,6 +205,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 11. External dependencies in production code without corresponding test mocks
     → When adding external packages (e.g., @vercel/functions) to infrastructure files, mock them in all corresponding test files
     → jest.mock('@package-name', ...) must be added to every test file that tests the module with the external dependency
+
+12. Period-based indicator tests only verify sign (positive/negative) without toBeCloseTo reference values
+    → Every period-based indicator test must include toBeCloseTo checks against manually-calculated expected values
+    → Warming-up period constants must be imported from source, not manually redefined in tests
+    → Boundary constants must account for full algorithm dependency chains (e.g. nested window calculations)
+    ❌ test('trend is positive', () => expect(values[idx]).toBeGreaterThan(0))  // no actual value verification
+    ✅ test('first value matches reference', () => expect(values[minBarsIdx]).toBeCloseTo(expectedValue))  // precise reference comparison
 ```
 
 ---
