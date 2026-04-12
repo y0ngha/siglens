@@ -4,7 +4,6 @@ import { waitUntil } from '@vercel/functions';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import type {
     AnalyzeVariables,
-    Skill,
     SubmitAnalysisResult,
     Timeframe,
 } from '@/domain/types';
@@ -52,17 +51,8 @@ export async function submitAnalysisAction(
 
     // 4. Skills 로딩 + 프롬프트 빌드
     const skillsLoader = new FileSkillsLoader();
-    const { skills, skillsDegraded } = await skillsLoader
-        .loadSkills()
-        .then((loadedSkills: Skill[]) => ({
-            skills: loadedSkills,
-            skillsDegraded: false,
-        }))
-        .catch((error: unknown) => {
-            console.error('[Submit] Skills loading failed:', error);
-            const emptySkills: Skill[] = [];
-            return { skills: emptySkills, skillsDegraded: true };
-        });
+    const skills = await skillsLoader.loadSkills();
+    const skillsDegraded = false;
 
     const prompt = buildAnalysisPrompt(
         symbol,

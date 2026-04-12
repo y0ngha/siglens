@@ -2,11 +2,7 @@
 
 import { waitUntil } from '@vercel/functions';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
-import type {
-    PollAnalysisResult,
-    RawAnalysisResponse,
-    Skill,
-} from '@/domain/types';
+import type { PollAnalysisResult, RawAnalysisResponse } from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildAnalysisCacheKey,
@@ -56,18 +52,8 @@ export async function pollAnalysisAction(
     }
 
     const skillsLoader = new FileSkillsLoader();
-    let skills: Skill[] = [];
-    let pollSkillsDegraded = false;
-    try {
-        skills = await skillsLoader.loadSkills();
-    } catch (error: unknown) {
-        console.error('[Poll] Skills loading failed:', error);
-        pollSkillsDegraded = true;
-    }
-
-    // submit 단계의 skills 저하 OR poll 단계의 skills 저하
-    const skillsDegraded =
-        (meta?.skillsDegraded ?? false) || pollSkillsDegraded;
+    const skills = await skillsLoader.loadSkills();
+    const skillsDegraded = meta?.skillsDegraded ?? false;
 
     const enriched = enrichAnalysisWithConfidence(parsed, skills);
 
