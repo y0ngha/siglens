@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #292 Round 2 | feat/291/cloud-run-worker | 2026-04-13]
+- Violation: 훅 파일에서 `@/infrastructure/jobs/types` 타입 import — 아키텍처 위반
+- Rule: ARCHITECTURE.md — 훅 파일(hooks/)에서 타입 import는 @/domain/types에서만 수행
+- Context: `useAnalysis.ts`에서 `SubmitAnalysisResult`를 infrastructure에서 import; domain/types.ts로 이동
+
+- Violation: Worker `/analyze` 엔드포인트에 인증 없음 — 무제한 AI API 호출 가능
+- Rule: 보안 — 외부 노출 엔드포인트는 인증 필수
+- Context: `--allow-unauthenticated`로 배포 + 인증 없는 POST 핸들러; `X-Worker-Secret` 헤더 검증 추가
+
+- Violation: `parseJsonResponse` 호출에 try-catch 없음 — 비정상 JSON 시 처리되지 않은 에러
+- Rule: MISTAKES.md Pure Function Contracts #2 — 외부 의존성은 일관된 실패 처리
+- Context: `pollAnalysisAction.ts`에서 Worker가 비정상 응답 반환 시 에러 미처리; try-catch 추가
+
 ## [PR #292 | feat/291/cloud-run-worker | 2026-04-12]
 - Violation: Worker에서 Promise.all로 result와 status를 동시 저장 — poller가 done 상태를 보고 result가 아직 없을 수 있는 레이스 컨디션
 - Rule: 데이터 의존 관계가 있는 Redis 쓰기는 순차 실행
