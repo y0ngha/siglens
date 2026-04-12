@@ -96,8 +96,7 @@ function formatMarketCap(cap: number | null): string {
     if (cap === null) return 'N/A';
     if (cap >= 1_000_000_000_000)
         return `$${(cap / 1_000_000_000_000).toFixed(1)}T`;
-    if (cap >= 1_000_000_000)
-        return `$${(cap / 1_000_000_000).toFixed(1)}B`;
+    if (cap >= 1_000_000_000) return `$${(cap / 1_000_000_000).toFixed(1)}B`;
     return `$${(cap / 1_000_000).toFixed(0)}M`;
 }
 
@@ -176,9 +175,7 @@ async function fetchScreenerResults(
     const raw = (await res.json()) as ScreenerResult[];
 
     if (!Array.isArray(raw)) return [];
-    return raw.filter(
-        r => typeof r.symbol === 'string' && r.symbol.length > 0
-    );
+    return raw.filter(r => typeof r.symbol === 'string' && r.symbol.length > 0);
 }
 
 async function fetchEodBars(
