@@ -281,9 +281,7 @@ interface ZeroCross {
     barsAgo: number;
 }
 
-const detectZeroCross = (
-    data: SqueezeMomentumResult[]
-): ZeroCross | null => {
+const detectZeroCross = (data: SqueezeMomentumResult[]): ZeroCross | null => {
     const len = data.length;
     const start = Math.max(0, len - SQUEEZE_ZERO_CROSS_LOOKBACK);
     for (let i = len - 1; i > start; i--) {
@@ -345,15 +343,16 @@ const classifyPriceZone = (
 ): string => {
     if (premium !== null && price >= premium.low) return 'premium';
     if (discount !== null && price <= discount.high) return 'discount';
-    if (equilibrium !== null && price >= equilibrium.low && price <= equilibrium.high)
+    if (
+        equilibrium !== null &&
+        price >= equilibrium.low &&
+        price <= equilibrium.high
+    )
         return 'equilibrium';
     return 'neutral';
 };
 
-const formatSMCSection = (
-    indicators: IndicatorResult,
-    bars: Bar[]
-): string => {
+const formatSMCSection = (indicators: IndicatorResult, bars: Bar[]): string => {
     const smc = indicators.smc;
 
     if (isSMCEmpty(smc)) {
@@ -364,8 +363,7 @@ const formatSMCSection = (
     }
 
     const totalBars = bars.length;
-    const currentPrice =
-        totalBars > 0 ? bars[totalBars - 1].close : null;
+    const currentPrice = totalBars > 0 ? bars[totalBars - 1].close : null;
     const lines: string[] = ['## Smart Money Concepts (SMC)'];
 
     // 1. Market Structure (BOS / CHoCH)
@@ -415,7 +413,9 @@ const formatSMCSection = (
     if (eqHighs.length > 0 || eqLows.length > 0) {
         lines.push('### Liquidity Pools');
         for (const eq of eqHighs) {
-            lines.push(`- Equal Highs at ${fmt(eq.price)} (sell-side liquidity)`);
+            lines.push(
+                `- Equal Highs at ${fmt(eq.price)} (sell-side liquidity)`
+            );
         }
         for (const eq of eqLows) {
             lines.push(`- Equal Lows at ${fmt(eq.price)} (buy-side liquidity)`);
@@ -424,9 +424,16 @@ const formatSMCSection = (
 
     // 5. Premium / Discount / Equilibrium Zones
     const premiumLine = formatZoneLine(smc.premiumZone, 'Premium Zone');
-    const equilibriumLine = formatZoneLine(smc.equilibriumZone, 'Equilibrium Zone');
+    const equilibriumLine = formatZoneLine(
+        smc.equilibriumZone,
+        'Equilibrium Zone'
+    );
     const discountLine = formatZoneLine(smc.discountZone, 'Discount Zone');
-    if (premiumLine !== null || equilibriumLine !== null || discountLine !== null) {
+    if (
+        premiumLine !== null ||
+        equilibriumLine !== null ||
+        discountLine !== null
+    ) {
         lines.push('### Market Zones');
         if (premiumLine !== null) lines.push(premiumLine);
         if (equilibriumLine !== null) lines.push(equilibriumLine);

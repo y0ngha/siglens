@@ -3104,12 +3104,8 @@ describe('prompt', () => {
         it('should show swing points with bars ago', () => {
             const smc: SMCResult = {
                 ...EMPTY_SMC_RESULT,
-                swingHighs: [
-                    { index: 95, price: 168.0, type: 'high' },
-                ],
-                swingLows: [
-                    { index: 90, price: 142.0, type: 'low' },
-                ],
+                swingHighs: [{ index: 95, price: 168.0, type: 'high' }],
+                swingLows: [{ index: 90, price: 142.0, type: 'low' }],
             };
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
@@ -3158,9 +3154,7 @@ describe('prompt', () => {
                 makeIndicators({ smc })
             );
             const indicatorIdx = result.indexOf('## Indicator Values');
-            const smcIdx = result.indexOf(
-                '## Smart Money Concepts (SMC)'
-            );
+            const smcIdx = result.indexOf('## Smart Money Concepts (SMC)');
             expect(indicatorIdx).toBeGreaterThan(-1);
             expect(smcIdx).toBeGreaterThan(indicatorIdx);
         });
@@ -3322,9 +3316,7 @@ describe('prompt', () => {
                 bars,
                 makeIndicators()
             );
-            expect(result).toContain(
-                '### Squeeze Momentum Interpretation'
-            );
+            expect(result).toContain('### Squeeze Momentum Interpretation');
             expect(result).toContain('Zero-line cross');
             expect(result).toContain('Squeeze duration');
         });
