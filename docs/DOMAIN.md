@@ -1457,3 +1457,67 @@ display:
    → 적중률 낮은 skill의 confidence_weight 조정 제안
    → 커뮤니티 리뷰를 통한 skill 업데이트
 ```
+
+---
+
+## AI Prompt Design Principles
+
+`domain/analysis/prompt.ts`와 `infrastructure/ai/*`를 수정할 때는 다음 원칙을 준수한다.
+
+### 1. Determinism (결정성)
+
+- AI provider 호출 시 `temperature`와 `top_p`는 반드시 명시적으로 전달한다.
+  기본값: `temperature: 0`, `top_p: 0.95`
+  환경변수로 override: `GEMINI_TEMPERATURE` / `GEMINI_TOP_P` / `CLAUDE_TEMPERATURE` / `CLAUDE_TOP_P`
+- 동일 입력 → 동일 프롬프트 문자열을 보장한다.
+  `buildAnalysisPrompt`는 입력 `skills` 배열의 순서와 무관하게 byte-identical 결과를 반환해야 한다.
+  → active skills를 `skill.name` 기준 `localeCompare` 정렬한 뒤 type별 그룹화.
+- `Object.entries`, `Set`, `Map`을 사용할 때 삽입 순서가 안정적인지 확인한다.
+
+### 2. Grounding & Anti-fabrication (근거 기반)
+
+- 프롬프트에 raw 수치(지표값, 패턴 검출 결과, 최근 봉)를 사전 계산하여 주입한다. AI에게 계산을 맡기지 않는다.
+- 스키마 예시 값(150.00 등)은 "예시일 뿐 복사 금지"임을 프롬프트 내 `SCHEMA_PREFACE`로 명시한다.
+- "데이터 부족 시 추측 금지" 규칙은 system prompt와 `## Analysis Intent` 블록 양쪽에 둔다.
+
+### 3. Structured Output (구조화 출력)
+
+- **Gemini**: 반드시 `generationConfig.responseMimeType: "application/json"`을 전달한다.
+  향후 `responseSchema`를 추가할 수 있도록 `AnalysisResponse` 타입 변경 시 호환성을 고려한다.
+- **Claude**: 향후 `tools` + `tool_choice` 기반 structured output으로 확장 가능.
+- `stripMarkdownCodeBlock` 후처리는 방어 차원으로 유지하되, 1차가 아닌 2차 방어선이다.
+
+### 4. System Prompt vs User Prompt 분리
+
+| 위치 | 역할 |
+|---|---|
+| `AI_SYSTEM_PROMPT` (`infrastructure/ai/utils.ts`) | 페르소나, 결정성, anti-fabrication, 출력 형식, 한국어·존댓말 규칙 — 모든 호출에 공통인 행동 규약 |
+| `## Analysis Intent` 블록 (user prompt 상단) | 현재 호출의 데이터 grounding 규칙과 출력 의도 재확인 |
+| `RESPONSE_LANGUAGE_INSTRUCTION` (user prompt 하단) | 한국어 출력 규칙 상세 지시 |
+
+한국어 출력처럼 강하게 강제해야 하는 항목은 **system prompt + 상단 intent + 하단 instruction** 세 곳에 모두 명시한다.
+긴 프롬프트에서 attention decay를 방어하는 다중 레이어 reinforcement다.
+
+### 5. 결정적 Skills 정렬
+
+- `infrastructure/skills/loader.ts`의 `readdir`는 OS·inode 순서를 보장하지 않는다.
+- `buildAnalysisPrompt`가 active skills를 `skill.name` 기준으로 정렬하여 호출자 의존성을 제거한다.
+- 새 skill 타입 그룹이 추가될 때 그룹 내 정렬이 유지되는지 확인한다.
+
+### 6. 한국어 출력 규칙
+
+응답 JSON의 모든 자유 텍스트 필드(`summary`, `description`, `reason`, `basis`, `condition`,
+`positionAnalysis`, `entry`, `exit`, `riskReward`)는 한국어 존댓말이다.
+
+이 규칙은 다음 세 곳에 명시한다. 하나라도 누락하지 않는다:
+
+1. `AI_SYSTEM_PROMPT` — "All text content … MUST be written in Korean (한국어)"
+2. `ANALYSIS_INTENT_BLOCK` — "All text fields MUST be Korean (한국어)"
+3. `RESPONSE_LANGUAGE_INSTRUCTION` — 필드별 상세 지시
+
+### 7. 회귀 방지
+
+- `prompt.ts`의 섹션 순서를 변경할 때는 `src/__tests__/domain/analysis/prompt.test.ts`의
+  position assertion(예: Analysis Guidelines → Analysis Request 순서) 이 깨지지 않는지 확인한다.
+- AI provider 호출 옵션을 변경할 때는 `src/__tests__/infrastructure/ai/{gemini,claude,utils}.test.ts`의
+  spy 검증을 함께 갱신한다.

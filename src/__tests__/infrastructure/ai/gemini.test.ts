@@ -6,6 +6,7 @@ jest.mock('@google/generative-ai');
 
 describe('GeminiProvider', () => {
     let mockGenerateContent: jest.Mock;
+    let mockGetGenerativeModel: jest.Mock;
     let provider: GeminiProvider;
 
     const mockAnalysisResponse: RawAnalysisResponse = {
@@ -35,7 +36,12 @@ describe('GeminiProvider', () => {
 
     beforeEach(() => {
         mockGenerateContent = jest.fn();
-        const mockGetGenerativeModel = jest.fn().mockReturnValue({
+        mockGenerateContent.mockResolvedValue({
+            response: {
+                text: () => JSON.stringify(mockAnalysisResponse),
+            },
+        });
+        mockGetGenerativeModel = jest.fn().mockReturnValue({
             generateContent: mockGenerateContent,
         });
         (
@@ -68,15 +74,45 @@ describe('GeminiProvider', () => {
         });
     });
 
-    describe('정상 입력으로 analyze를 호출하면', () => {
-        beforeEach(() => {
-            mockGenerateContent.mockResolvedValue({
-                response: {
-                    text: () => JSON.stringify(mockAnalysisResponse),
-                },
-            });
+    describe('analyze를 호출하면', () => {
+        it('generationConfig에 temperature 0을 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    generationConfig: expect.objectContaining({
+                        temperature: 0,
+                    }),
+                })
+            );
         });
 
+        it('generationConfig에 topP 0.95를 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    generationConfig: expect.objectContaining({
+                        topP: 0.95,
+                    }),
+                })
+            );
+        });
+
+        it('generationConfig에 responseMimeType application/json을 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    generationConfig: expect.objectContaining({
+                        responseMimeType: 'application/json',
+                    }),
+                })
+            );
+        });
+    });
+
+    describe('정상 입력으로 analyze를 호출하면', () => {
         it('AnalysisResponse 형태의 값을 반환한다', async () => {
             const result = await provider.analyze('test prompt');
 
@@ -272,6 +308,65 @@ describe('GeminiProvider', () => {
             await expect(provider.analyze('test prompt')).rejects.toThrow(
                 'Network error'
             );
+        });
+    });
+
+    describe('GEMINI_TEMPERATURE 환경변수 범위 검증', () => {
+        it('범위를 벗어난 temperature(-1)이면 기본값 0을 사용한다', async () => {
+            const originalTemp = process.env.GEMINI_TEMPERATURE;
+            process.env.GEMINI_TEMPERATURE = '-1';
+
+            let capturedTemperature: number | undefined;
+
+            await jest.isolateModulesAsync(async () => {
+                const { GeminiProvider: IsolatedProvider } =
+                    await import('@/infrastructure/ai/gemini');
+                mockGetGenerativeModel.mockImplementation(
+                    (params: { generationConfig: { temperature: number } }) => {
+                        capturedTemperature =
+                            params.generationConfig.temperature;
+                        return { generateContent: mockGenerateContent };
+                    }
+                );
+                const isolatedProvider = new IsolatedProvider();
+                await isolatedProvider.analyze('test prompt');
+            });
+
+            if (originalTemp === undefined) {
+                delete process.env.GEMINI_TEMPERATURE;
+            } else {
+                process.env.GEMINI_TEMPERATURE = originalTemp;
+            }
+
+            expect(capturedTemperature).toBe(0);
+        });
+
+        it('범위를 벗어난 top_p(0)이면 기본값 0.95를 사용한다', async () => {
+            const originalTopP = process.env.GEMINI_TOP_P;
+            process.env.GEMINI_TOP_P = '0';
+
+            let capturedTopP: number | undefined;
+
+            await jest.isolateModulesAsync(async () => {
+                const { GeminiProvider: IsolatedProvider } =
+                    await import('@/infrastructure/ai/gemini');
+                mockGetGenerativeModel.mockImplementation(
+                    (params: { generationConfig: { topP: number } }) => {
+                        capturedTopP = params.generationConfig.topP;
+                        return { generateContent: mockGenerateContent };
+                    }
+                );
+                const isolatedProvider = new IsolatedProvider();
+                await isolatedProvider.analyze('test prompt');
+            });
+
+            if (originalTopP === undefined) {
+                delete process.env.GEMINI_TOP_P;
+            } else {
+                process.env.GEMINI_TOP_P = originalTopP;
+            }
+
+            expect(capturedTopP).toBe(0.95);
         });
     });
 });

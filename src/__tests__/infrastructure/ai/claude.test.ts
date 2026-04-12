@@ -35,6 +35,14 @@ describe('ClaudeProvider', () => {
 
     beforeEach(() => {
         mockCreate = jest.fn();
+        mockCreate.mockResolvedValue({
+            content: [
+                {
+                    type: 'text',
+                    text: JSON.stringify(mockAnalysisResponse),
+                },
+            ],
+        });
         (Anthropic as jest.MockedClass<typeof Anthropic>).mockImplementation(
             () =>
                 ({
@@ -63,18 +71,25 @@ describe('ClaudeProvider', () => {
         });
     });
 
-    describe('정상 입력으로 analyze를 호출하면', () => {
-        beforeEach(() => {
-            mockCreate.mockResolvedValue({
-                content: [
-                    {
-                        type: 'text',
-                        text: JSON.stringify(mockAnalysisResponse),
-                    },
-                ],
-            });
+    describe('analyze를 호출하면', () => {
+        it('messages.create에 temperature 0을 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockCreate).toHaveBeenCalledWith(
+                expect.objectContaining({ temperature: 0 })
+            );
         });
 
+        it('messages.create에 top_p 0.95를 전달한다', async () => {
+            await provider.analyze('test prompt');
+
+            expect(mockCreate).toHaveBeenCalledWith(
+                expect.objectContaining({ top_p: 0.95 })
+            );
+        });
+    });
+
+    describe('정상 입력으로 analyze를 호출하면', () => {
         it('AnalysisResponse 형태의 값을 반환한다', async () => {
             const result = await provider.analyze('test prompt');
 
@@ -294,6 +309,76 @@ describe('ClaudeProvider', () => {
             await expect(provider.analyze('test prompt')).rejects.toThrow(
                 'Network error'
             );
+        });
+    });
+
+    describe('CLAUDE_TEMPERATURE 환경변수 범위 검증', () => {
+        it('범위를 벗어난 temperature(-1)이면 기본값 0을 사용한다', async () => {
+            const originalTemp = process.env.CLAUDE_TEMPERATURE;
+            process.env.CLAUDE_TEMPERATURE = '-1';
+
+            let capturedTemperature: number | undefined;
+
+            await jest.isolateModulesAsync(async () => {
+                const { ClaudeProvider: IsolatedProvider } =
+                    await import('@/infrastructure/ai/claude');
+                mockCreate.mockImplementation(
+                    (params: { temperature: number }) => {
+                        capturedTemperature = params.temperature;
+                        return Promise.resolve({
+                            content: [
+                                {
+                                    type: 'text',
+                                    text: JSON.stringify(mockAnalysisResponse),
+                                },
+                            ],
+                        });
+                    }
+                );
+                const isolatedProvider = new IsolatedProvider();
+                await isolatedProvider.analyze('test prompt');
+            });
+
+            process.env.CLAUDE_TEMPERATURE =
+                originalTemp === undefined ? undefined : originalTemp;
+            if (originalTemp === undefined) {
+                delete process.env.CLAUDE_TEMPERATURE;
+            }
+
+            expect(capturedTemperature).toBe(0);
+        });
+
+        it('범위를 벗어난 top_p(0)이면 기본값 0.95를 사용한다', async () => {
+            const originalTopP = process.env.CLAUDE_TOP_P;
+            process.env.CLAUDE_TOP_P = '0';
+
+            let capturedTopP: number | undefined;
+
+            await jest.isolateModulesAsync(async () => {
+                const { ClaudeProvider: IsolatedProvider } =
+                    await import('@/infrastructure/ai/claude');
+                mockCreate.mockImplementation((params: { top_p: number }) => {
+                    capturedTopP = params.top_p;
+                    return Promise.resolve({
+                        content: [
+                            {
+                                type: 'text',
+                                text: JSON.stringify(mockAnalysisResponse),
+                            },
+                        ],
+                    });
+                });
+                const isolatedProvider = new IsolatedProvider();
+                await isolatedProvider.analyze('test prompt');
+            });
+
+            if (originalTopP === undefined) {
+                delete process.env.CLAUDE_TOP_P;
+            } else {
+                process.env.CLAUDE_TOP_P = originalTopP;
+            }
+
+            expect(capturedTopP).toBe(0.95);
         });
     });
 });

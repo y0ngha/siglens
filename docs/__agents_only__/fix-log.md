@@ -1,40 +1,14 @@
 # Fix Log
 
-## [PR #282 Round 2 | fix/seo-audit-282 | 2026-04-12]
-- Violation: `new Date()` called at module level in `next.config.ts` during env config setup — static build cannot support dynamic timestamp
-- Rule: MISTAKES.md Next.js Build & Caching rule 1 — Uncached data must not be called in Provider constructors or module-level code during prerender
-- Context: `next.config.ts` set `NEXT_BUILD_DATE = new Date()` which executes at build time; converted to `NEXT_BUILD_DATE = new Date().toISOString()` with 'use cache' guard where needed
+## [PR #280 | refactor/279/ai-prompt-consistency | 2026-04-12]
+- Violation: `domain/analysis/prompt.ts`에서 `.filter().slice().sort(byName)` 사용 — `.filter()`가 이미 새 배열을 반환하므로 `.slice()`가 불필요하고, `.sort()`는 in-place 변경으로 불변성 규칙 위반
+- Rule: CONVENTIONS.md — `❌ arr.sort() → ✅ arr.toSorted()` 명시 규칙
+- Context: `buildAnalysisPrompt` 내 `activeSkills` 결정론적 정렬을 구현할 때 `.slice().sort()` 패턴을 사용했으나 `.toSorted()`로 교체해야 함
 
-- Violation: `NEXT_BUILD_DATE` env var parsed without `isNaN()` guard — malformed dates pass through silently without validation
-- Rule: MISTAKES.md Pure Function Contracts rule 1 — Utility functions must guard all valid input ranges explicitly
-- Context: Date parsing did not validate `Number.isNaN(new Date(NEXT_BUILD_DATE).getTime())`; added guard to reject invalid date strings
-
-## [PR #282 | fix/seo-audit-282 | 2026-04-12]
-- Violation: `POPULAR_TICKERS` (business domain constant) placed in `src/lib/seo.ts` — violation of lib/ scope
-- Rule: MISTAKES.md Design & Cohesion rule 7 — Business domain constants must not be in lib/; lib/ is for utility wrappers, React Query keys, config, chart colors only
-- Context: `POPULAR_TICKERS` is business domain knowledge used in `sitemap.ts`; belongs in domain-specific module or inlined at usage site
-
-## [PR #285 | fix/281/접근성-UI-UX-가이드라인-위반 | 2026-04-12]
-- Violation: 포커스 트랩 컨테이너 자체에 포커스가 있을 때 Shift+Tab 처리 누락 — 컨테이너 div(`tabIndex={-1}`)에 포커스가 있는 상태에서 Shift+Tab 입력 시 트랩을 벗어남
-- Rule: WAI-ARIA 포커스 트랩 패턴 — `document.activeElement === ref.current` 케이스도 Shift+Tab 래핑 조건에 포함해야 함
-- Context: `useFocusTrap.ts`에서 `first` 요소에만 Shift+Tab 트랩 조건을 두고 컨테이너 자체 포커스는 처리하지 않았음; `ContactDialog`가 열릴 때 `dialogRef.current?.focus()`로 컨테이너에 포커스를 이동시키므로 이 케이스가 실제로 발생
-
-## [PR #285 | fix/281/접근성-UI-UX-가이드라인-위반 | 2026-04-12]
-- Violation: 커스텀 훅 선언 순서 위반 — `useSearchParams()`가 `useState` 앞에 위치
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — useState가 가장 먼저 선언되어야 함
-- Context: `useTimeframeChange.ts`에서 URL 파라미터 읽기 로직을 상단에 배치하면서 useState보다 앞에 위치하게 됨
-
-- Violation: 모달 다이얼로그 닫힐 때 트리거 버튼으로 포커스 복귀 누락
-- Rule: WAI-ARIA Dialog Pattern — 다이얼로그 닫힐 때 이를 열었던 트리거 요소로 포커스가 반드시 복귀되어야 함
-- Context: `ContactDialog.tsx`에서 `setOpen(false)` 이후 포커스 복귀 처리가 없어 포커스가 body로 이동했음
-
-- Violation: `useEffect` 의존성 배열에 안정적(stable) RefObject 포함
-- Rule: React hooks 모범 사례 — `RefObject`는 렌더 간 동일한 객체 참조를 유지하므로 deps에 불필요
-- Context: `useFocusTrap.ts`의 `useEffect`에서 `[active, ref]`로 선언했으나 `ref`는 deps에서 제외해야 함
-
-- Violation: 모달 다이얼로그에 최대 높이 제한 없음 — 모바일 가로 모드 등 화면이 작을 때 모달 내용이 잘려 보이지 않을 수 있음
-- Rule: UI 레이아웃 안전성 — 모달은 뷰포트 높이를 초과하지 않도록 `max-h` + `overflow-y-auto` 처리 필요
-- Context: `ContactDialog` 다이얼로그 div에 높이 제한이 없어 `max-h-[calc(100vh-2rem)] overflow-y-auto` 추가로 해결
+## [PR #280 | refactor/279/ai-prompt-consistency | 2026-04-12]
+- Violation: `infrastructure/ai/claude.ts`에서 IIFE 파서를 `parseNumberEnv` 헬퍼로 교체할 때 기존 `parsed > 0` 양수 검증 가드가 누락 — `CLAUDE_MAX_TOKENS=0` 또는 음수 환경변수 설정 시 API 호출 실패
+- Rule: MISTAKES.md Pure Function Contracts #1 — "Utility functions must guard all valid input ranges explicitly"
+- Context: 기존 IIFE의 `&& parsed > 0` 조건을 `parseNumberEnv`가 대체했으나, 헬퍼 함수는 0도 유효값으로 통과시키므로 호출부에서 별도로 `> 0` 가드를 추가해야 했음
 
 ## [PR #278 Round 2 | feat/squeeze-momentum-indicator | 2026-04-12]
 - Violation: `utils.ts`에서 `const window = values.slice(-period)` — 브라우저 전역 `window` 객체 섀도잉
