@@ -1,5 +1,19 @@
 # Fix Log
 
+## [PR #282 Round 2 | fix/seo-audit-282 | 2026-04-12]
+- Violation: `new Date()` called at module level in `next.config.ts` during env config setup — static build cannot support dynamic timestamp
+- Rule: MISTAKES.md Next.js Build & Caching rule 1 — Uncached data must not be called in Provider constructors or module-level code during prerender
+- Context: `next.config.ts` set `NEXT_BUILD_DATE = new Date()` which executes at build time; converted to `NEXT_BUILD_DATE = new Date().toISOString()` with 'use cache' guard where needed
+
+- Violation: `NEXT_BUILD_DATE` env var parsed without `isNaN()` guard — malformed dates pass through silently without validation
+- Rule: MISTAKES.md Pure Function Contracts rule 1 — Utility functions must guard all valid input ranges explicitly
+- Context: Date parsing did not validate `Number.isNaN(new Date(NEXT_BUILD_DATE).getTime())`; added guard to reject invalid date strings
+
+## [PR #282 | fix/seo-audit-282 | 2026-04-12]
+- Violation: `POPULAR_TICKERS` (business domain constant) placed in `src/lib/seo.ts` — violation of lib/ scope
+- Rule: MISTAKES.md Design & Cohesion rule 7 — Business domain constants must not be in lib/; lib/ is for utility wrappers, React Query keys, config, chart colors only
+- Context: `POPULAR_TICKERS` is business domain knowledge used in `sitemap.ts`; belongs in domain-specific module or inlined at usage site
+
 ## [PR #285 | fix/281/접근성-UI-UX-가이드라인-위반 | 2026-04-12]
 - Violation: 포커스 트랩 컨테이너 자체에 포커스가 있을 때 Shift+Tab 처리 누락 — 컨테이너 div(`tabIndex={-1}`)에 포커스가 있는 상태에서 Shift+Tab 입력 시 트랩을 벗어남
 - Rule: WAI-ARIA 포커스 트랩 패턴 — `document.activeElement === ref.current` 케이스도 Shift+Tab 래핑 조건에 포함해야 함
@@ -44,7 +58,6 @@
 - Rule: CONVENTIONS.md Performance — 불필요한 배열 복사를 피하고 필요한 윈도우만 전달
 - Context: closes.slice(0, i+1) 전달 대신 closes.slice(Math.max(0, i-maxPeriod+1), i+1)로 좁혀 O(n²) → O(n) 개선
 
-
 ## [PR #272 Round 2 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
 - Violation: `indicatorCount` prop이 `SymbolPageClient` → `ChartContent` → `AnalysisPanel`로 드릴링됨 (두 중간 컴포넌트 모두 미사용)
 - Rule: FF Coupling 4-D — 중간 컴포넌트가 직접 사용하지 않는 prop을 아래로 전달하는 것은 Props Drilling 위반
@@ -82,7 +95,6 @@
 - Violation: RESPONSE_LANGUAGE_INSTRUCTION의 "Other text fields" 목록에 새 필드(positionAnalysis, entry, exit, riskReward) 누락
 - Rule: Prompt 일관성 — 한국어 작성 지시와 줄바꿈 지시 목록이 동기화되어야 함
 - Context: actionRecommendation 필드 추가 시 첫 번째 필드 목록에만 추가하고 두 번째 목록은 누락
-
 
 ## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음

@@ -64,6 +64,7 @@ export function SymbolPageClient({
                                     </span>
                                 )}
                                 ({ticker})
+                                <span className="sr-only"> 기술적 분석</span>
                             </h1>
                         </div>
                         <div className="flex items-center gap-3">

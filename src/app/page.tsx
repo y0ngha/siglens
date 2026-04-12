@@ -1,12 +1,10 @@
 import Link from 'next/link';
 
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import {
     POPULAR_TICKERS,
     POPULAR_TICKERS_DISPLAY_COUNT,
-    SITE_DESCRIPTION,
-    SITE_NAME,
-    SITE_URL,
-} from '@/lib/seo';
+} from '@/domain/constants/popular-tickers';
 import {
     countSkillFiles,
     FileSkillsLoader,
@@ -55,6 +53,21 @@ export default async function Home() {
         sameAs: ['https://github.com/y0ngha/siglens'],
     };
 
+    const websiteJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebSite',
+        name: SITE_NAME,
+        url: SITE_URL,
+        potentialAction: {
+            '@type': 'SearchAction',
+            target: {
+                '@type': 'EntryPoint',
+                urlTemplate: `${SITE_URL}/{search_term_string}`,
+            },
+            'query-input': 'required name=search_term_string',
+        },
+    };
+
     const howToJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
@@ -91,6 +104,15 @@ export default async function Home() {
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
                     __html: JSON.stringify(organizationJsonLd).replace(
+                        /</g,
+                        '\\u003c'
+                    ),
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(websiteJsonLd).replace(
                         /</g,
                         '\\u003c'
                     ),
