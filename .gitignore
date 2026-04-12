@@ -45,3 +45,5 @@ next-env.d.ts
 /TODO.md
 .vercel
 /.claude/projects/
+/worker/dist/
+/worker/node_modules/
