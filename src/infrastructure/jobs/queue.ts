@@ -23,12 +23,14 @@ function metaKey(jobId: string): string {
     return `job:${jobId}:meta`;
 }
 
+// Upstash REST client는 값을 자동으로 직렬화/역직렬화한다.
+// set(key, object) → JSON 문자열로 저장, get(key) → 파싱된 객체로 반환.
+// 따라서 JSON.stringify/JSON.parse를 수동으로 호출하지 않는다.
+
 export async function setJobMeta(jobId: string, meta: JobMeta): Promise<void> {
     const redis = createJobRedis();
     if (!redis) return;
-    await redis.set(metaKey(jobId), JSON.stringify(meta), {
-        ex: JOB_TTL_SECONDS,
-    });
+    await redis.set(metaKey(jobId), meta, { ex: JOB_TTL_SECONDS });
 }
 
 export async function getJobStatus(jobId: string): Promise<JobStatus | null> {
@@ -37,11 +39,12 @@ export async function getJobStatus(jobId: string): Promise<JobStatus | null> {
     return redis.get<JobStatus>(statusKey(jobId));
 }
 
-// Upstash REST client는 JSON 문자열을 자동 파싱하여 객체로 반환할 수 있다
-export async function getJobResult(jobId: string): Promise<unknown> {
+export async function getJobResult(
+    jobId: string
+): Promise<Record<string, unknown> | null> {
     const redis = createJobRedis();
     if (!redis) return null;
-    return redis.get(resultKey(jobId));
+    return redis.get<Record<string, unknown>>(resultKey(jobId));
 }
 
 export async function getJobError(jobId: string): Promise<string | null> {
@@ -53,14 +56,7 @@ export async function getJobError(jobId: string): Promise<string | null> {
 export async function getJobMeta(jobId: string): Promise<JobMeta | null> {
     const redis = createJobRedis();
     if (!redis) return null;
-    const raw = await redis.get<string>(metaKey(jobId));
-    if (!raw) return null;
-    try {
-        // Redis stores meta as JSON string; shape is guaranteed by setJobMeta
-        return JSON.parse(raw) as JobMeta;
-    } catch {
-        return null;
-    }
+    return redis.get<JobMeta>(metaKey(jobId));
 }
 
 export async function cleanupJob(jobId: string): Promise<void> {
