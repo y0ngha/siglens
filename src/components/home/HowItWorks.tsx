@@ -1,6 +1,36 @@
 import { Fragment } from 'react';
 import type { SkillCounts } from '@/domain/types';
 
+export function HowItWorksSkeleton() {
+    return (
+        <section className="px-6 py-10 lg:px-[15vw]">
+            <div className="bg-secondary-700/50 mb-6 h-3.5 w-24 animate-pulse rounded" />
+            <div className="flex flex-col gap-4 md:flex-row">
+                {[0, 1, 2].map(i => (
+                    <Fragment key={i}>
+                        <div className="bg-secondary-800/50 border-secondary-700 flex-1 rounded-lg border p-6">
+                            <div className="bg-secondary-700/50 h-8 w-8 animate-pulse rounded" />
+                            <div className="bg-secondary-700/50 mt-4 h-3.5 w-20 animate-pulse rounded" />
+                            <div className="mt-2 space-y-1.5">
+                                <div className="bg-secondary-700/50 h-3 w-full animate-pulse rounded" />
+                                <div className="bg-secondary-700/50 h-3 w-4/5 animate-pulse rounded" />
+                            </div>
+                        </div>
+                        {i < 2 && (
+                            <div
+                                className="hidden items-center md:flex"
+                                aria-hidden="true"
+                            >
+                                <div className="bg-secondary-700/50 h-4 w-4 animate-pulse rounded" />
+                            </div>
+                        )}
+                    </Fragment>
+                ))}
+            </div>
+        </section>
+    );
+}
+
 interface HowItWorksProps {
     skillCounts: SkillCounts;
 }
