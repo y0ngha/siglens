@@ -30,7 +30,7 @@ export function stripMarkdownCodeBlock(text: string): string {
 
 export function parseJsonResponse<T>(text: string, source: string): T {
     try {
-        return JSON.parse(stripMarkdownCodeBlock(text)) as T;
+        return JSON.parse(stripMarkdownCodeBlock(text)) as T; // JSON.parse returns any; caller enforces T via explicit type argument
     } catch (error) {
         console.error(`Failed to parse ${source} response. Raw text:`, text);
         throw new Error(`Failed to parse ${source} response as JSON`, {

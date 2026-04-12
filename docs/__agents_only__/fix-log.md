@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #290 Round 5 | refactor/289/코드-정리-상수통합-복잡도개선-중복제거 | 2026-04-12]
+- Violation: `parseJsonResponse`의 `JSON.parse(...) as T` 단언에 이유 주석 누락
+- Rule: MISTAKES.md TypeScript #8 — `as` 단언 사용 시 이유를 주석으로 명시
+- Context: `src/infrastructure/ai/utils.ts`에서 `JSON.parse`가 `any`를 반환하여 불가피한 단언임을 주석 없이 사용
+
+- Violation: `buildLastOpposingIndices`의 `.map()` 콜백 내 외부 `let` 변수 변이 — 비순수 콜백
+- Rule: CONVENTIONS.md — map 콜백은 순수 변환이어야 함; 상태 스캔에는 generator 패턴 사용
+- Context: `bull = i` 클로저 변이를 포함한 map 콜백, `scanLastIndex` generator로 교체
+
 ## [PR #290 | refactor/289/코드-정리-상수통합-복잡도개선-중복제거 | 2026-04-12]
 - Violation: 테스트 파일의 한글 문자열에 깨진 UTF-8 바이트 포함
 - Rule: CONVENTIONS.md — 테스트 설명 문구는 사람이 읽기 쉬운 한국어 텍스트여야 함

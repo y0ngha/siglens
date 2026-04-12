@@ -121,21 +121,14 @@ function detectFairValueGaps(bars: Bar[]): SMCFairValueGap[] {
         })
         .filter((fvg): fvg is SMCFairValueGap => fvg !== null);
 
-    // Check mitigation with index-based iteration to avoid .slice() allocation per FVG
-    return raw.map(fvg => {
-        let isMitigated = false;
-        for (let i = fvg.index + 1; i < bars.length; i++) {
-            if (
-                fvg.type === 'bullish'
-                    ? bars[i].low <= fvg.high
-                    : bars[i].high >= fvg.low
-            ) {
-                isMitigated = true;
-                break;
-            }
-        }
-        return { ...fvg, isMitigated };
-    });
+    return raw.map(fvg => ({
+        ...fvg,
+        isMitigated: bars.some(
+            (b, idx) =>
+                idx > fvg.index &&
+                (fvg.type === 'bullish' ? b.low <= fvg.high : b.high >= fvg.low)
+        ),
+    }));
 }
 
 // ─── Structure break detection (BOS / CHoCH) ─────────────────────────────────
@@ -275,20 +268,22 @@ interface LastOpposingIndices {
  * Precompute the index of the last bullish and bearish candle at or before
  * each bar index in a single O(n) forward pass.
  */
+function* scanLastIndex(
+    bars: Bar[],
+    pred: (bar: Bar) => boolean
+): Generator<number | null> {
+    let last: number | null = null;
+    for (let i = 0; i < bars.length; i++) {
+        if (pred(bars[i])) last = i;
+        yield last;
+    }
+}
+
 function buildLastOpposingIndices(bars: Bar[]): LastOpposingIndices {
-    let bull: number | null = null;
-    const lastBullish = bars.map((bar, i) => {
-        if (bar.close > bar.open) bull = i;
-        return bull;
-    });
-
-    let bear: number | null = null;
-    const lastBearish = bars.map((bar, i) => {
-        if (bar.close < bar.open) bear = i;
-        return bear;
-    });
-
-    return { lastBullish, lastBearish };
+    return {
+        lastBullish: [...scanLastIndex(bars, bar => bar.close > bar.open)],
+        lastBearish: [...scanLastIndex(bars, bar => bar.close < bar.open)],
+    };
 }
 
 /**
