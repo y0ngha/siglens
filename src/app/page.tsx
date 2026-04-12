@@ -156,9 +156,7 @@ export default async function Home() {
                     </div>
                 </section>
                 <HowItWorks skillCounts={skillCounts} />
-                <div className="border-secondary-800 border-t" aria-hidden="true" />
                 <SkillsShowcase skills={skills} />
-                <div className="border-secondary-800 border-t" aria-hidden="true" />
                 <TickerCategories />
             </main>
             <Footer />

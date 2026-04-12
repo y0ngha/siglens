@@ -52,7 +52,7 @@ export function TickerCategories() {
     return (
         <nav
             aria-label="카테고리별 인기 종목 탐색"
-            className="px-6 py-16 lg:px-[15vw]"
+            className="px-6 py-16 lg:pr-[10vw] lg:pl-[15vw]"
         >
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
                 카테고리별 인기 종목
@@ -79,7 +79,7 @@ export function TickerCategories() {
                                 {category.label}
                             </h3>
                             <ul
-                                className="flex [touch-action:manipulation] flex-wrap gap-2"
+                                className="flex touch-manipulation flex-wrap gap-2"
                                 aria-label={`${category.label} 종목 목록`}
                             >
                                 {category.tickers.map(ticker => (
