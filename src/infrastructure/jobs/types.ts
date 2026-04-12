@@ -5,4 +5,5 @@ export type JobStatus = 'processing' | 'done' | 'error';
 export interface JobMeta {
     symbol: string;
     timeframe: Timeframe;
+    skillsDegraded: boolean;
 }

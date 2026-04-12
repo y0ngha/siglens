@@ -1,5 +1,12 @@
+import { constants } from 'node:http2';
 import express from 'express';
 import { Redis } from '@upstash/redis';
+
+const {
+    HTTP_STATUS_BAD_REQUEST,
+    HTTP_STATUS_UNAUTHORIZED,
+    HTTP_STATUS_INTERNAL_SERVER_ERROR,
+} = constants;
 import { config } from './config.js';
 import { callGemini } from './gemini.js';
 import { callClaude } from './claude.js';
@@ -27,14 +34,14 @@ app.get('/health', (_req, res) => {
 
 app.post('/analyze', (req, res) => {
     if (req.headers['x-worker-secret'] !== config.workerSecret) {
-        res.status(401).json({ error: 'Unauthorized' });
+        res.status(HTTP_STATUS_UNAUTHORIZED).json({ error: 'Unauthorized' });
         return;
     }
 
     const { jobId, prompt } = req.body as AnalyzeRequest;
 
     if (!jobId || !prompt) {
-        res.status(400).json({ error: 'jobId and prompt are required' });
+        res.status(HTTP_STATUS_BAD_REQUEST).json({ error: 'jobId and prompt are required' });
         return;
     }
 
@@ -50,7 +57,7 @@ app.post('/analyze', (req, res) => {
         })
         .catch(error => {
             console.error(`[Worker] Job ${jobId} handler error:`, error);
-            res.status(500).json({ status: 'error', jobId });
+            res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).json({ status: 'error', jobId });
         });
 });
 

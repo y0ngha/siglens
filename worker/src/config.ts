@@ -8,6 +8,7 @@ function requireEnv(name: string): string {
 
 export type AIProviderType = 'gemini' | 'claude';
 
+// AI_PROVIDER 환경변수는 배포 설정에서 'gemini' | 'claude'로 제한됨
 const aiProvider = (process.env.AI_PROVIDER ?? 'gemini') as AIProviderType;
 
 export const config = {

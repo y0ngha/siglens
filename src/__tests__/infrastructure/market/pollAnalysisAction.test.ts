@@ -152,6 +152,7 @@ describe('pollAnalysisAction 함수는', () => {
             mockGetJobMeta.mockResolvedValueOnce({
                 symbol: 'AAPL',
                 timeframe: '1Day',
+                skillsDegraded: false,
             });
             mockEnrich.mockReturnValueOnce(mockEnrichedResult);
 
@@ -160,7 +161,6 @@ describe('pollAnalysisAction 함수는', () => {
             expect(result.status).toBe('done');
             if (result.status === 'done') {
                 expect(result.result).toBe(mockEnrichedResult);
-                expect(result.skillsDegraded).toBe(false);
             }
             expect(mockEnrich).toHaveBeenCalled();
         });
@@ -196,12 +196,13 @@ describe('pollAnalysisAction 함수는', () => {
             });
         });
 
-        it('Skills 로딩 실패 시 skillsDegraded=true를 반환한다', async () => {
+        it('Skills 로딩 실패 시에도 done 상태를 반환한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
             mockGetJobResult.mockResolvedValueOnce(VALID_RAW_JSON);
             mockGetJobMeta.mockResolvedValueOnce({
                 symbol: 'AAPL',
                 timeframe: '1Day',
+                skillsDegraded: false,
             });
             mockEnrich.mockReturnValueOnce(mockEnrichedResult);
             mockLoadSkills.mockRejectedValueOnce(new Error('load failed'));
@@ -213,9 +214,6 @@ describe('pollAnalysisAction 함수는', () => {
             const result = await pollAnalysisAction('job-7');
 
             expect(result.status).toBe('done');
-            if (result.status === 'done') {
-                expect(result.skillsDegraded).toBe(true);
-            }
             consoleSpy.mockRestore();
         });
 
@@ -225,6 +223,7 @@ describe('pollAnalysisAction 함수는', () => {
             mockGetJobMeta.mockResolvedValueOnce({
                 symbol: 'TSLA',
                 timeframe: '1Hour',
+                skillsDegraded: false,
             });
             mockEnrich.mockReturnValueOnce(mockEnrichedResult);
             mockCacheSet.mockResolvedValueOnce(undefined);

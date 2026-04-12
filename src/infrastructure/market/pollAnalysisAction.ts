@@ -58,17 +58,20 @@ export async function pollAnalysisAction(
 
     const skillsLoader = new FileSkillsLoader();
     let skills: Skill[] = [];
-    let skillsDegraded = false;
+    let pollSkillsDegraded = false;
     try {
         skills = await skillsLoader.loadSkills();
     } catch (error: unknown) {
         console.error('[Poll] Skills loading failed:', error);
-        skillsDegraded = true;
+        pollSkillsDegraded = true;
     }
+
+    // submit 단계의 skills 저하 OR poll 단계의 skills 저하
+    const skillsDegraded = (meta?.skillsDegraded ?? false) || pollSkillsDegraded;
 
     const enriched = enrichAnalysisWithConfidence(parsed, skills);
 
-    // 캐시 저장
+    // 캐시 저장 (RunAnalysisResult 형식: AnalysisResponse + skillsDegraded)
     if (meta) {
         const cache = createCacheProvider();
         if (cache !== null) {
@@ -86,5 +89,5 @@ export async function pollAnalysisAction(
 
     waitUntil(cleanupJob(jobId));
 
-    return { status: 'done', result: enriched, skillsDegraded };
+    return { status: 'done', result: enriched };
 }

@@ -458,11 +458,11 @@ export type RawAnalysisResponse = Omit<
 
 /** submitAnalysisAction 반환 타입 */
 export type SubmitAnalysisResult =
-    | { status: 'cached'; result: AnalysisResponse; skillsDegraded: boolean }
+    | { status: 'cached'; result: AnalysisResponse }
     | { status: 'submitted'; jobId: string };
 
 /** pollAnalysisAction 반환 타입 */
 export type PollAnalysisResult =
     | { status: 'processing' }
-    | { status: 'done'; result: AnalysisResponse; skillsDegraded: boolean }
+    | { status: 'done'; result: AnalysisResponse }
     | { status: 'error'; error: string };

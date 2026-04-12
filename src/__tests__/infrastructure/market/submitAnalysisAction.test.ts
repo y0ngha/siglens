@@ -30,10 +30,6 @@ const mockCacheProvider = {
 };
 
 const mockLoadSkills = jest.fn();
-(FileSkillsLoader as jest.Mock).mockImplementation(() => ({
-    loadSkills: mockLoadSkills,
-}));
-
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
@@ -140,7 +136,6 @@ describe('submitAnalysisAction 함수는', () => {
             expect(result.status).toBe('cached');
             if (result.status === 'cached') {
                 expect(result.result).toBe(mockResult);
-                expect(result.skillsDegraded).toBe(false);
             }
             expect(mockFetch).not.toHaveBeenCalled();
         });

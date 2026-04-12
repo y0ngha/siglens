@@ -42,6 +42,7 @@ describe('jobs/queue 모듈은', () => {
             await setJobMeta('job-1', {
                 symbol: 'AAPL',
                 timeframe: '1Day',
+                skillsDegraded: false,
             });
             expect(mockSet).not.toHaveBeenCalled();
         });
@@ -78,7 +79,7 @@ describe('jobs/queue 모듈은', () => {
         });
 
         it('setJobMeta는 JSON 직렬화된 메타를 TTL과 함께 저장한다', async () => {
-            const meta: JobMeta = { symbol: 'TSLA', timeframe: '1Hour' };
+            const meta: JobMeta = { symbol: 'TSLA', timeframe: '1Hour', skillsDegraded: false };
             mockSet.mockResolvedValueOnce('OK');
 
             await setJobMeta('job-2', meta);
@@ -118,7 +119,7 @@ describe('jobs/queue 모듈은', () => {
         });
 
         it('getJobMeta는 JSON 파싱된 메타를 반환한다', async () => {
-            const meta: JobMeta = { symbol: 'AAPL', timeframe: '1Day' };
+            const meta: JobMeta = { symbol: 'AAPL', timeframe: '1Day', skillsDegraded: false };
             mockGet.mockResolvedValueOnce(JSON.stringify(meta));
 
             const result = await getJobMeta('job-6');

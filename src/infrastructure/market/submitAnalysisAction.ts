@@ -4,6 +4,7 @@ import { waitUntil } from '@vercel/functions';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import type {
     AnalyzeVariables,
+    Skill,
     SubmitAnalysisResult,
     Timeframe,
 } from '@/domain/types';
@@ -19,11 +20,21 @@ export async function submitAnalysisAction(
 ): Promise<SubmitAnalysisResult> {
     const { symbol, bars, indicators } = variables;
 
+    // 1. 환경변수 사전 검증
+    const workerUrl = process.env.WORKER_URL;
+    const workerSecret = process.env.WORKER_SECRET;
+    if (!workerUrl || !workerSecret) {
+        throw new Error(
+            'WORKER_URL and WORKER_SECRET environment variables are required'
+        );
+    }
+
+    // 2. 입력값 검증
     if (!symbol || !bars || bars.length === 0 || !indicators) {
         throw new Error('symbol, bars, and indicators are required');
     }
 
-    // 1. 캐시 확인
+    // 3. 캐시 확인
     const cache = createCacheProvider();
     const cacheKey = buildAnalysisCacheKey(symbol, timeframe);
 
@@ -32,23 +43,26 @@ export async function submitAnalysisAction(
             const cached = await cache.get<RunAnalysisResult>(cacheKey);
             if (cached !== null) {
                 console.log('[Submit] Cache hit:', cacheKey);
-                return {
-                    status: 'cached',
-                    result: cached,
-                    skillsDegraded: cached.skillsDegraded,
-                };
+                return { status: 'cached', result: cached };
             }
         } catch (error) {
             console.error('[Submit] Cache read failed:', error);
         }
     }
 
-    // 2. Skills 로딩 + 프롬프트 빌드
+    // 4. Skills 로딩 + 프롬프트 빌드
     const skillsLoader = new FileSkillsLoader();
-    const skills = await skillsLoader.loadSkills().catch((error: unknown) => {
-        console.error('[Submit] Skills loading failed:', error);
-        return [];
-    });
+    const { skills, skillsDegraded } = await skillsLoader
+        .loadSkills()
+        .then((loadedSkills: Skill[]) => ({
+            skills: loadedSkills,
+            skillsDegraded: false,
+        }))
+        .catch((error: unknown) => {
+            console.error('[Submit] Skills loading failed:', error);
+            const emptySkills: Skill[] = [];
+            return { skills: emptySkills, skillsDegraded: true };
+        });
 
     const prompt = buildAnalysisPrompt(
         symbol,
@@ -58,19 +72,11 @@ export async function submitAnalysisAction(
         timeframe
     );
 
-    // 3. jobId 생성 + 메타 저장
+    // 5. jobId 생성 + 메타 저장 (skillsDegraded 포함)
     const jobId = crypto.randomUUID();
-    await setJobMeta(jobId, { symbol, timeframe });
+    await setJobMeta(jobId, { symbol, timeframe, skillsDegraded });
 
-    // 4. Worker에 fire-and-forget
-    const workerUrl = process.env.WORKER_URL;
-    const workerSecret = process.env.WORKER_SECRET;
-    if (!workerUrl || !workerSecret) {
-        throw new Error(
-            'WORKER_URL and WORKER_SECRET environment variables are required'
-        );
-    }
-
+    // 6. Worker에 fire-and-forget
     waitUntil(
         fetch(`${workerUrl}/analyze`, {
             method: 'POST',

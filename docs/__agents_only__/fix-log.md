@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #292 Round 3 | feat/291/cloud-run-worker | 2026-04-13]
+- Violation: domain 타입에 인프라 전용 필드(skillsDegraded) 포함
+- Rule: ARCHITECTURE.md — domain 타입에 route/infra 전용 필드 정의 금지
+- Context: SubmitAnalysisResult/PollAnalysisResult에서 skillsDegraded 제거, JobMeta로 이동
+
+- Violation: setJobMeta가 환경변수 검증보다 먼저 실행 — 고아 Redis 레코드 발생 가능
+- Rule: 환경변수 사전 검증은 함수 최상단에서 수행
+- Context: submitAnalysisAction에서 WORKER_URL/WORKER_SECRET 검증을 함수 최상단으로 이동
+
+- Violation: Skills 로딩 실패 시 skillsDegraded가 submitted 경로에서 전파되지 않음
+- Rule: MISTAKES.md Domain Functions #2 — 저하 정보를 호출자에게 전파
+- Context: submitAnalysisAction에서 skillsDegraded를 JobMeta에 저장, pollAnalysisAction에서 OR 연산으로 반영
+
 ## [PR #292 Round 2 | feat/291/cloud-run-worker | 2026-04-13]
 - Violation: 훅 파일에서 `@/infrastructure/jobs/types` 타입 import — 아키텍처 위반
 - Rule: ARCHITECTURE.md — 훅 파일(hooks/)에서 타입 import는 @/domain/types에서만 수행
