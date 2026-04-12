@@ -7,7 +7,7 @@ import {
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
 import { StatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
-import { HowItWorks, HowItWorksSkeleton } from '@/components/home/HowItWorks';
+import { HowItWorks } from '@/components/home/HowItWorks';
 import {
     SkillsShowcase,
     SkillsShowcaseSkeleton,
@@ -15,7 +15,6 @@ import {
 import { TickerCategories } from '@/components/home/TickerCategories';
 
 const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
-const loadSkillCounts = cache(() => countSkillFiles());
 
 async function AsyncStatsBar() {
     const skills = await loadSkills();
@@ -27,47 +26,9 @@ async function SkillsShowcaseServer() {
     return <SkillsShowcase skills={skills} />;
 }
 
-async function HowItWorksServer() {
-    const skillCounts = await loadSkillCounts();
-    return <HowItWorks skillCounts={skillCounts} />;
-}
+export default async function Home() {
+    const skillCounts = await countSkillFiles();
 
-async function HowToJsonLdServer() {
-    const skillCounts = await loadSkillCounts();
-    const howToJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'HowTo',
-        name: `${SITE_NAME}로 미국 주식 AI 기술적 분석하는 방법`,
-        description: `종목 티커를 입력하면 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지/저항 ${skillCounts.supportResistance}종을 자동 분석합니다.`,
-        step: [
-            {
-                '@type': 'HowToStep',
-                name: '티커 입력',
-                text: '분석하고 싶은 미국 주식 종목의 심볼(티커)을 검색창에 입력합니다. 예: AAPL, TSLA, NVDA',
-            },
-            {
-                '@type': 'HowToStep',
-                name: '자동 분석',
-                text: `보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지/저항 ${skillCounts.supportResistance}종이 자동으로 분석됩니다.`,
-            },
-            {
-                '@type': 'HowToStep',
-                name: 'AI 리포트 확인',
-                text: '추세, 리스크, 진입 추천, 시그널, 차트 패턴, 전략 분석, 주요 지지/저항 레벨을 AI 리포트로 한 화면에서 확인합니다.',
-            },
-        ],
-    };
-    return (
-        <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{
-                __html: JSON.stringify(howToJsonLd).replace(/</g, '\\u003c'),
-            }}
-        />
-    );
-}
-
-export default function Home() {
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebApplication',
@@ -109,6 +70,30 @@ export default function Home() {
         },
     };
 
+    const howToJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'HowTo',
+        name: `${SITE_NAME}로 미국 주식 AI 기술적 분석하는 방법`,
+        description: `종목 티커를 입력하면 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지/저항 ${skillCounts.supportResistance}종을 자동 분석합니다.`,
+        step: [
+            {
+                '@type': 'HowToStep',
+                name: '티커 입력',
+                text: '분석하고 싶은 미국 주식 종목의 심볼(티커)을 검색창에 입력합니다. 예: AAPL, TSLA, NVDA',
+            },
+            {
+                '@type': 'HowToStep',
+                name: '자동 분석',
+                text: `보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지/저항 ${skillCounts.supportResistance}종이 자동으로 분석됩니다.`,
+            },
+            {
+                '@type': 'HowToStep',
+                name: 'AI 리포트 확인',
+                text: '추세, 리스크, 진입 추천, 시그널, 차트 패턴, 전략 분석, 주요 지지/저항 레벨을 AI 리포트로 한 화면에서 확인합니다.',
+            },
+        ],
+    };
+
     return (
         <>
             <script
@@ -135,9 +120,15 @@ export default function Home() {
                     ),
                 }}
             />
-            <Suspense fallback={null}>
-                <HowToJsonLdServer />
-            </Suspense>
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(howToJsonLd).replace(
+                        /</g,
+                        '\\u003c'
+                    ),
+                }}
+            />
             <a
                 href="#search"
                 className="focus-visible:bg-primary-600 sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"
@@ -178,9 +169,7 @@ export default function Home() {
                         </Suspense>
                     </div>
                 </section>
-                <Suspense fallback={<HowItWorksSkeleton />}>
-                    <HowItWorksServer />
-                </Suspense>
+                <HowItWorks skillCounts={skillCounts} />
                 <Suspense fallback={<SkillsShowcaseSkeleton />}>
                     <SkillsShowcaseServer />
                 </Suspense>

@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #286 Round 5 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: HowTo JSON-LD 구조화 데이터가 Suspense boundary 안에서 deferred — 초기 HTML에 미포함
+- Rule: SEO Best Practice — 구조화 데이터(JSON-LD)는 초기 HTML에 포함되어야 크롤러 호환성 보장
+- Context: B1 아키텍처 수정 시 모든 데이터 fetch를 Suspense로 분리했으나, countSkillFiles()는 fs I/O(~1ms)로 blocking 영향 미미. HowTo JSON-LD와 HowItWorks를 동기 렌더링으로 전환하여 초기 HTML에 포함시킴.
+
 ## [PR #286 Round 4 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
 - Violation: `app/page.tsx`에서 `countSkillFiles()`와 `loadSkills()` blocking await로 페이지 전체 렌더링을 지연
 - Rule: Next.js Suspense 패턴 — 느린 데이터 fetch는 async 서버 컴포넌트 + Suspense fallback으로 스트리밍 처리
