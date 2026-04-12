@@ -13,19 +13,18 @@
 - Rule: ARCHITECTURE.md — lib는 domain에서 타입만 import 가능, 런타임 상수 값은 금지
 - Context: `src/lib/queryConfig.ts`에서 stale/gc 시간 상수로 사용하기 위해 domain 상수를 import
 
+- Violation: domain 레이어(`smc.ts`)에서 직접 배열 인덱스 할당 (`lastBullish[i] = bull`)
+- Rule: MISTAKES.md Coding Paradigm #5 + CONVENTIONS.md domain 불변성 — 배열 직접 인덱스 할당 금지
+- Context: `buildLastOpposingIndices`에서 루프 안 직접 인덱스 할당 사용, `map`으로 교체
+
+- Violation: `findMatchingLevels` 파라미터 타입에 인라인 유니온 리터럴 (`'high' | 'low'`) 사용
+- Rule: MISTAKES.md TypeScript #5 — 2개 이상 멤버 유니온은 named type alias로 추출
+- Context: `SMCEqualLevel.type`에 이미 `SMCSwingPointType`이 정의되어 있으나 파라미터에서 인라인 유니온 사용
+
 ## [PR #288 | feat/287/update-popular-tickers-script | 2026-04-12]
 - Violation: `npx prettier` 사용 — `yarn` 대신 `npx` 사용
 - Rule: CLAUDE.md — 패키지 실행 시 항상 yarn 사용, npm/npx 금지
 - Context: 스크립트 마지막 포매팅 단계에서 `execSync('npx prettier...')` 사용
-
-- Violation: `as` 타입 단언에 설명 주석 누락
-- Rule: CONVENTIONS.md — `as` 단언 사용 시 이유를 주석으로 명시
-- Context: fetchScreenerResults, fetchEodBars에서 FMP API 응답 파싱 시 `as` 단언 주석 없이 사용
-
-## [PR #286 Round 6 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
-- Violation: roving tabindex 구현에서 `element.focus()` 명시 호출 누락 — 상태(tabIndex) 업데이트만으로는 DOM 포커스 이동 미동작
-- Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴에서 tabIndex 업데이트와 함께 element.focus() 명시 호출 필수
-- Context: handleTablistKeyDown이 handleTabSelect(상태 업데이트)만 호출하고 tabButtonRefs.current[nextIdx]?.focus()를 빠뜨려, 키보드 사용자 ArrowKey 입력 시 포커스 링이 이전 탭에 그대로 남음
 
 ## [PR #286 Round 5 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
 - Violation: HowTo JSON-LD 구조화 데이터가 Suspense boundary 안에서 deferred — 초기 HTML에 미포함
@@ -128,10 +127,5 @@
 - Violation: StockChart prop default actionPricesVisible = false contradicted the parent ChartContent's intent (initialized to true). Default off-by-default is misleading when caller explicitly enables the feature.
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
-
-## [PR #286 Round 1 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
-- Violation: SkillsShowcase.tsx — all tabpanels rendered in DOM simultaneously but shared `visibleSkills` computed from activeTab state, so inactive panels showed wrong content
-- Rule: ARIA tablist pattern — each tabpanel must compute its own filtered content independently, not share state with other panels
-- Context: filteredSkills and visibleSkills were computed outside the TABS.map loop based on activeTab, causing all panels to render the active tab's data; moved computation inside each panel's render scope
 
 

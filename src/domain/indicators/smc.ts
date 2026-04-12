@@ -20,6 +20,7 @@ import type {
     Bar,
     SMCResult,
     SMCSwingPoint,
+    SMCSwingPointType,
     SMCOrderBlock,
     SMCFairValueGap,
     SMCEqualLevel,
@@ -275,25 +276,17 @@ interface LastOpposingIndices {
  * each bar index in a single O(n) forward pass.
  */
 function buildLastOpposingIndices(bars: Bar[]): LastOpposingIndices {
-    const lastBullish: (number | null)[] = Array.from(
-        { length: bars.length },
-        () => null
-    );
-    const lastBearish: (number | null)[] = Array.from(
-        { length: bars.length },
-        () => null
-    );
     let bull: number | null = null;
-    let bear: number | null = null;
+    const lastBullish = bars.map((bar, i) => {
+        if (bar.close > bar.open) bull = i;
+        return bull;
+    });
 
-    // 단일 패스 O(n) — 직접 인덱스 할당으로 각 위치의 마지막 강세/약세 캔들 인덱스를 미리 계산
-    // spread로 매 단계 새 배열을 만들면 O(n²)이므로 직접 인덱스 할당 사용
-    for (let i = 0; i < bars.length; i++) {
-        if (bars[i].close > bars[i].open) bull = i;
-        if (bars[i].close < bars[i].open) bear = i;
-        lastBullish[i] = bull;
-        lastBearish[i] = bear;
-    }
+    let bear: number | null = null;
+    const lastBearish = bars.map((bar, i) => {
+        if (bar.close < bar.open) bear = i;
+        return bear;
+    });
 
     return { lastBullish, lastBearish };
 }
@@ -371,7 +364,7 @@ function* findMatchingLevels(
     startJ: number,
     swing: SMCSwingPoint,
     threshold: number,
-    type: 'high' | 'low'
+    type: SMCSwingPointType
 ): Generator<SMCEqualLevel> {
     for (let j = startJ; j < swings.length; j++) {
         if (Math.abs(swings[j].price - swing.price) <= threshold) {
@@ -388,7 +381,7 @@ function* findMatchingLevels(
 function findEqualLevels(
     swings: SMCSwingPoint[],
     atrValues: (number | null)[],
-    type: 'high' | 'low'
+    type: SMCSwingPointType
 ): SMCEqualLevel[] {
     return swings.flatMap((swing, i) => {
         const atr = atrValues[swing.index];
