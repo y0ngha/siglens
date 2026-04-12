@@ -120,7 +120,10 @@ export function useAnalysis({
     } = useMutation<SubmitAnalysisResult, Error, AnalyzeMutationVariables>({
         mutationFn: ({ force, ...analyzeVars }) => {
             lastForceRef.current = force;
-            return submitAnalysisAction(analyzeVars, latestTimeframeRef.current);
+            return submitAnalysisAction(
+                analyzeVars,
+                latestTimeframeRef.current
+            );
         },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
