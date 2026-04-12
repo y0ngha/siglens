@@ -37,7 +37,6 @@ interface AnalyzeMutationVariables extends AnalyzeVariables {
 const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
 const POLL_INTERVAL_MS = 3000;
-const MAX_POLL_DURATION_MS = 15 * MS_PER_MINUTE;
 
 interface UseAnalysisOptions {
     symbol: string;
@@ -108,6 +107,8 @@ export function useAnalysis({
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
     // 이후 렌더링에서 이 값이 변경되더라도 마운트 시 한 번만 사용된다.
     const initialAnalysisFailedRef = useRef(initialAnalysisFailed);
+    // polling 완료 시 force 경로 쿨다운 처리를 위해 마지막 요청의 force 여부를 추적
+    const lastForceRef = useRef(false);
 
     // 3. useMutation
     const {
@@ -117,16 +118,25 @@ export function useAnalysis({
         reset,
         mutate,
     } = useMutation<SubmitAnalysisResult, Error, AnalyzeMutationVariables>({
-        mutationFn: ({ ...analyzeVars }) =>
-            submitAnalysisAction(analyzeVars, latestTimeframeRef.current),
+        mutationFn: ({ force, ...analyzeVars }) => {
+            lastForceRef.current = force;
+            return submitAnalysisAction(
+                analyzeVars,
+                latestTimeframeRef.current
+            );
+        },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
                 setAnalysisResult(data.result);
+                // 캐시 히트 = 분석 완료 → force 경로만 쿨다운 시작
+                if (variables.force) {
+                    setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
+                }
             } else if (data.status === 'submitted') {
                 setIsPolling(true);
+                // submitted 단계에서는 쿨다운을 시작하지 않는다.
+                // polling 완료(done) 시에만 쿨다운을 시작한다.
             }
-            if (!variables.force) return;
-            setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
         },
         onError: (_error, variables) => {
             if (!variables.force) return;
@@ -188,7 +198,6 @@ export function useAnalysis({
 
         const jobId = submitData.jobId;
         let cancelled = false;
-        const startedAt = Date.now();
 
         setPollError(null);
 
@@ -197,25 +206,27 @@ export function useAnalysis({
                 await sleep(POLL_INTERVAL_MS);
                 if (cancelled) break;
 
-                if (Date.now() - startedAt > MAX_POLL_DURATION_MS) {
-                    setPollError(
-                        '분석 시간이 초과되었습니다. 다시 시도해주세요.'
-                    );
-                    setIsPolling(false);
-                    return;
-                }
-
                 try {
                     const result = await pollAnalysisAction(jobId);
                     if (cancelled) break;
 
                     if (result.status === 'done') {
                         setAnalysisResult(result.result);
+                        if (lastForceRef.current) {
+                            setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
+                        }
                         setIsPolling(false);
                         return;
                     }
                     if (result.status === 'error') {
                         setPollError(result.error);
+                        if (lastForceRef.current) {
+                            void releaseReanalyzeCooldown(
+                                latestRef.current.symbol,
+                                latestTimeframeRef.current
+                            );
+                            setReanalyzeCooldownMs(0);
+                        }
                         setIsPolling(false);
                         return;
                     }
@@ -223,6 +234,13 @@ export function useAnalysis({
                 } catch {
                     if (cancelled) break;
                     setPollError('분석 결과 조회에 실패했습니다.');
+                    if (lastForceRef.current) {
+                        void releaseReanalyzeCooldown(
+                            latestRef.current.symbol,
+                            latestTimeframeRef.current
+                        );
+                        setReanalyzeCooldownMs(0);
+                    }
                     setIsPolling(false);
                     return;
                 }

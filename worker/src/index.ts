@@ -13,7 +13,7 @@ const {
 
 const callAI = config.aiProvider === 'claude' ? callClaude : callGemini;
 
-const JOB_TTL_SECONDS = 600;
+const JOB_TTL_SECONDS = 3600;
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));

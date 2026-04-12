@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
+import { MS_PER_MINUTE } from '@/domain/constants/time';
 
 /**
  * AI 분석이 진행되는 동안 패널 내부에 표시되는 인터랙티브 인디케이터.
@@ -24,7 +25,7 @@ const ANALYSIS_PHASES = [
     'AI 종합 해석 작성 중',
 ] as const;
 
-const PHASE_INTERVAL_MS = 25000;
+const PHASE_INTERVAL_MS = MS_PER_MINUTE;
 
 const ANALYSIS_TIPS = [
     '20개 이상의 보조지표와 60개 이상의 스킬을 조합해 분석합니다. 최대 15분까지 소요될 수 있어요.',
