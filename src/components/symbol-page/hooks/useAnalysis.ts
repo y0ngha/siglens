@@ -14,11 +14,11 @@ import type {
     Bar,
     IndicatorResult,
     Timeframe,
+    SubmitAnalysisResult,
 } from '@/domain/types';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
-import type { SubmitAnalysisResult } from '@/infrastructure/jobs/types';
 import {
     tryAcquireReanalyzeCooldown,
     releaseReanalyzeCooldown,
