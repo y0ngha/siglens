@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #286 Round 3 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: `prompt.ts` `classifyPriceZone` 함수의 설계 의도가 코드에 주석 없이 노출 — premium 존 상단 경계(high) 미검사가 의도적임에도 불명확
+- Rule: CONVENTIONS.md — 도메인 로직의 비직관적 결정은 주석으로 명시
+- Context: SMC 이론상 premium zone 위도 premium territory(과매수 구간)이므로 price >= premium.low만 체크하는 것이 정확한 설계. 주석 추가로 명시.
+
 ## [PR #280 | refactor/279/ai-prompt-consistency | 2026-04-12]
 - Violation: `infrastructure/ai/claude.ts`에서 IIFE 파서를 `parseNumberEnv` 헬퍼로 교체할 때 기존 `parsed > 0` 양수 검증 가드가 누락 — `CLAUDE_MAX_TOKENS=0` 또는 음수 환경변수 설정 시 API 호출 실패
 - Rule: MISTAKES.md Pure Function Contracts #1 — "Utility functions must guard all valid input ranges explicitly"
