@@ -1,31 +1,33 @@
-import Link from 'next/link';
-
+import { Suspense, cache } from 'react';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
-import {
-    POPULAR_TICKERS,
-    POPULAR_TICKERS_DISPLAY_COUNT,
-} from '@/domain/constants/popular-tickers';
 import {
     countSkillFiles,
     FileSkillsLoader,
 } from '@/infrastructure/skills/loader';
 import { Footer } from '@/components/layout/Footer';
 import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
-import { StatsBar } from '@/components/home/StatsBar';
+import { StatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
 import { HowItWorks } from '@/components/home/HowItWorks';
-import { SkillsShowcase } from '@/components/home/SkillsShowcase';
+import {
+    SkillsShowcase,
+    SkillsShowcaseSkeleton,
+} from '@/components/home/SkillsShowcase';
+import { TickerCategories } from '@/components/home/TickerCategories';
 
-const HOMEPAGE_TICKERS = POPULAR_TICKERS.slice(
-    0,
-    POPULAR_TICKERS_DISPLAY_COUNT
-);
+const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
+
+async function AsyncStatsBar() {
+    const skills = await loadSkills();
+    return <StatsBar skills={skills} />;
+}
+
+async function SkillsShowcaseServer() {
+    const skills = await loadSkills();
+    return <SkillsShowcase skills={skills} />;
+}
 
 export default async function Home() {
-    const loader = new FileSkillsLoader();
-    const [skills, skillCounts] = await Promise.all([
-        loader.loadSkills(),
-        countSkillFiles(),
-    ]);
+    const skillCounts = await countSkillFiles();
 
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -134,7 +136,7 @@ export default async function Home() {
                 검색으로 건너뛰기
             </a>
             <main className="flex flex-1 flex-col">
-                <section className="relative flex flex-1 flex-col items-center justify-center px-6 py-14 text-center sm:py-20 lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
+                <section className="relative flex flex-1 flex-col items-center justify-center px-6 py-10 text-center sm:py-14 lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
                     <div
                         aria-hidden="true"
                         className="hero-grid pointer-events-none absolute inset-0"
@@ -162,27 +164,16 @@ export default async function Home() {
                         >
                             <SymbolSearchPanel />
                         </div>
-                        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
-                            <span className="text-secondary-500 text-xs">
-                                인기 종목
-                            </span>
-                            {HOMEPAGE_TICKERS.map(ticker => (
-                                <Link
-                                    key={ticker}
-                                    href={`/${ticker}`}
-                                    className="border-secondary-700 text-secondary-300 hover:border-primary-600/40 hover:text-primary-400 rounded-full border px-3 py-1 text-xs transition-colors"
-                                >
-                                    {ticker}
-                                </Link>
-                            ))}
-                        </div>
-                        <StatsBar skills={skills} />
+                        <Suspense fallback={<StatsBarSkeleton />}>
+                            <AsyncStatsBar />
+                        </Suspense>
                     </div>
                 </section>
                 <HowItWorks skillCounts={skillCounts} />
-                <section className="pb-16">
-                    <SkillsShowcase skills={skills} />
-                </section>
+                <Suspense fallback={<SkillsShowcaseSkeleton />}>
+                    <SkillsShowcaseServer />
+                </Suspense>
+                <TickerCategories />
             </main>
             <Footer />
         </>

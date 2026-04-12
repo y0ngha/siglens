@@ -1,9 +1,24 @@
 # Fix Log
 
-## [PR #280 | refactor/279/ai-prompt-consistency | 2026-04-12]
-- Violation: `domain/analysis/prompt.ts`에서 `.filter().slice().sort(byName)` 사용 — `.filter()`가 이미 새 배열을 반환하므로 `.slice()`가 불필요하고, `.sort()`는 in-place 변경으로 불변성 규칙 위반
-- Rule: CONVENTIONS.md — `❌ arr.sort() → ✅ arr.toSorted()` 명시 규칙
-- Context: `buildAnalysisPrompt` 내 `activeSkills` 결정론적 정렬을 구현할 때 `.slice().sort()` 패턴을 사용했으나 `.toSorted()`로 교체해야 함
+## [PR #286 Round 6 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: roving tabindex 구현에서 `element.focus()` 명시 호출 누락 — 상태(tabIndex) 업데이트만으로는 DOM 포커스 이동 미동작
+- Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴에서 tabIndex 업데이트와 함께 element.focus() 명시 호출 필수
+- Context: handleTablistKeyDown이 handleTabSelect(상태 업데이트)만 호출하고 tabButtonRefs.current[nextIdx]?.focus()를 빠뜨려, 키보드 사용자 ArrowKey 입력 시 포커스 링이 이전 탭에 그대로 남음
+
+## [PR #286 Round 5 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: HowTo JSON-LD 구조화 데이터가 Suspense boundary 안에서 deferred — 초기 HTML에 미포함
+- Rule: SEO Best Practice — 구조화 데이터(JSON-LD)는 초기 HTML에 포함되어야 크롤러 호환성 보장
+- Context: B1 아키텍처 수정 시 모든 데이터 fetch를 Suspense로 분리했으나, countSkillFiles()는 fs I/O(~1ms)로 blocking 영향 미미. HowTo JSON-LD와 HowItWorks를 동기 렌더링으로 전환하여 초기 HTML에 포함시킴.
+
+## [PR #286 Round 4 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: `app/page.tsx`에서 `countSkillFiles()`와 `loadSkills()` blocking await로 페이지 전체 렌더링을 지연
+- Rule: Next.js Suspense 패턴 — 느린 데이터 fetch는 async 서버 컴포넌트 + Suspense fallback으로 스트리밍 처리
+- Context: B1 아키텍처 수정 시 Suspense를 제거하고 Promise.all로 동기 fetch하도록 변경했으나, 원래 의도는 스켈레톤 로딩. `cache()`로 중복 호출 제거하고 `AsyncStatsBar`, `SkillsShowcaseServer`, `HowItWorksServer`, `HowToJsonLdServer` 인라인 async 컴포넌트로 분리하여 Suspense 복원.
+
+## [PR #286 Round 3 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: `prompt.ts` `classifyPriceZone` 함수의 설계 의도가 코드에 주석 없이 노출 — premium 존 상단 경계(high) 미검사가 의도적임에도 불명확
+- Rule: CONVENTIONS.md — 도메인 로직의 비직관적 결정은 주석으로 명시
+- Context: SMC 이론상 premium zone 위도 premium territory(과매수 구간)이므로 price >= premium.low만 체크하는 것이 정확한 설계. 주석 추가로 명시.
 
 ## [PR #280 | refactor/279/ai-prompt-consistency | 2026-04-12]
 - Violation: `infrastructure/ai/claude.ts`에서 IIFE 파서를 `parseNumberEnv` 헬퍼로 교체할 때 기존 `parsed > 0` 양수 검증 가드가 누락 — `CLAUDE_MAX_TOKENS=0` 또는 음수 환경변수 설정 시 API 호출 실패
@@ -23,10 +38,6 @@
 - Violation: 워밍업 기간 상수가 실제 첫 번째 유효 출력 인덱스를 과소평가 — 중첩 윈도우 의존성을 고려하지 않음
 - Rule: MISTAKES.md Tests #4 — 경계 상수는 소스에서 임포트해야 하며, 수동 계산 시 알고리즘 전체 의존성 체인을 반영해야 함
 - Context: MIN_BARS = max(bbLength, kcLength) = 20으로 정의했으나, delta 윈도우가 kcLength 길이의 delta 배열을 필요로 하고 각 delta 값은 kcLength 바가 필요하여 실제 워밍업은 2*kcLength-1 = 39바
-
-- Violation: .map() 외부 변수(let prevVal)로 상태를 누적하여 함수형 패러다임 위반
-- Rule: CONVENTIONS.md Coding Paradigm — "순수 함수 선호; 외부 상태 변이 금지"; 이전 계산에 의존하는 상태 기반 로직은 reduce 또는 두 패스 구조로 구현해야 함
-- Context: calculateSqueezeMomentum의 bars.map() 내부에서 let prevVal = null 외부 변수를 직접 수정하여 increasing 필드를 계산; 두 패스(intermediate 계산 + increasing 추가)로 분리하여 해결
 
 - Violation: 루프마다 전체 배열 슬라이싱(O(n²)) — sma/stdDev는 내부에서 slice(-period)를 수행하므로 전체 배열 전달 불필요
 - Rule: CONVENTIONS.md Performance — 불필요한 배열 복사를 피하고 필요한 윈도우만 전달
@@ -57,10 +68,6 @@
 - Context: privacy/page.tsx와 terms/page.tsx의 동일 요소에는 aria-label이 있으나 Footer.tsx에만 누락됨
 
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
-- Violation: components/hooks/ 파일에 'use client' 선언 누락
-- Rule: CONVENTIONS.md — components/ 아래 커스텀 훅은 무조건 'use client' 선언
-- Context: useAssetInfo.ts 작성 시 useTimeframeChange 등 기존 훅 파일에서 패턴을 확인하지 않아 누락
-
 - Violation: 서버 prefetchQuery 키와 클라이언트 훅 키 불일치 (hydration 캐시 미스)
 - Rule: React Query Hydration 패턴 — prefetchQuery 키와 useQuery 키가 정확히 일치해야 함
 - Context: 서버는 ticker(대문자)로 키를 만들고 클라이언트는 symbol(원본)로 키를 만들어 소문자 URL 진입 시 캐시 미스 발생
@@ -108,13 +115,9 @@
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
-## [PR #230 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
-- Violation: `#f87171`(actionStopLoss)과 `#4ade80`(actionTakeProfit)은 디자인 시스템에 없는 임의 hex 값 사용
-- Rule: DESIGN.md — 상승/하락 색상은 `#26a69a`(bullish) / `#ef5350`(bearish) 고정; 임의 hex 금지
-- Context: actionStopLoss에 Tailwind red-400(#f87171), actionTakeProfit에 green-400(#4ade80) 사용; bearish/bullish 시스템 컬러로 교체
-
-- Violation: `ValidatedActionPrices` 인터페이스를 구현 파일(`actionRecommendation.ts`)에 정의
-- Rule: ARCHITECTURE.md — 도메인 결과 타입은 `domain/types.ts`에 정의해야 함
-- Context: 다른 파일(`StockChart.tsx`, `useActionRecommendationOverlay.ts`)에서도 참조하는 타입을 구현 파일에 배치; `domain/types.ts`로 이동
+## [PR #286 Round 1 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
+- Violation: SkillsShowcase.tsx — all tabpanels rendered in DOM simultaneously but shared `visibleSkills` computed from activeTab state, so inactive panels showed wrong content
+- Rule: ARIA tablist pattern — each tabpanel must compute its own filtered content independently, not share state with other panels
+- Context: filteredSkills and visibleSkills were computed outside the TABS.map loop based on activeTab, causing all panels to render the active tab's data; moved computation inside each panel's render scope
 
 

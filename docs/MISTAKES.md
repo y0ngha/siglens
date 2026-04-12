@@ -56,6 +56,11 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → When replacing HTTP calls with Server Actions, renaming patterns, or moving code, update the names
     ❌ fetchBars (no longer a fetch — now a Server Action)
     ✅ getBarsAction (accurate to new implementation)
+
+12. Using .sort() instead of .toSorted()
+    → .sort() mutates the original array and violates immutability
+    ❌ arr.sort() // in-place mutation
+    ✅ arr.toSorted() // returns new sorted array
 ```
 
 ---
@@ -129,6 +134,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 8. Custom hook params missing optional properties present in sibling hooks
    → All hooks in the same family must accept consistent parameter patterns
+
+9. Custom hooks in components/ without 'use client' directive
+   → Every hook file under components/ must declare 'use client' at the top
+   → Hooks are Client Components and will fail without the directive when parent is async Server Component
 ```
 
 ---
@@ -201,6 +210,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Native roles (paragraph, complementary) must not be replaced with role attributes
    → Use <div role="note"> instead of <p role="note"> or <aside role="note">
    → Use semantic elements without explicit role unless the role fundamentally differs
+
+2. ARIA tablist pattern incomplete (missing roving tabindex or arrow key handlers)
+   → tablist requires both roving tabindex AND arrow key navigation to be fully accessible
+   → Active tab: tabIndex={0}; Inactive tabs: tabIndex={-1}
+   → Implement onKeyDown handler for ArrowLeft/ArrowRight to move focus between tabs
+   ❌ aria-selected set but tabIndex not set; no arrow key handlers
+   ✅ tabIndex={isActive ? 0 : -1} + handleTablistKeyDown(ArrowLeft/Right)
 ```
 
 ---
@@ -323,4 +339,22 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Business domain knowledge (POPULAR_TICKERS, legal disclaimers) must go to domain/ or sitemap-specific modules
    ❌ POPULAR_TICKERS defined in src/lib/seo.ts
    ✅ Inline at usage site (src/app/sitemap.ts) or domain-specific module
+
+8. Chart indicator color tokens applied to UI components
+   → Chart-specific tokens (chart-rsi, chart-period10, chart-bollinger, chart-period60, chart-period5) are semantic colors for indicator lines only
+   → UI components must use primary-*, secondary-*, chart-bullish, chart-bearish, or ui-warning
+   ❌ CATEGORY_STYLES = { fintech: 'chart-period10', healthcare: 'chart-rsi', ... }
+   ✅ CATEGORY_STYLES = { fintech: 'primary-500', healthcare: 'secondary-400', ... }
+```
+
+---
+
+## Architecture
+
+```
+1. Type interfaces defined in implementation files instead of domain/types.ts
+   → All domain types (interfaces, unions, enums) must be centralized in domain/types.ts
+   → If multiple files reference the same type, move it to domain/types.ts for single source of truth
+   ❌ interface TickerCategory { id: string; name: string; } in domain/constants/popular-tickers.ts
+   ✅ export type TickerCategory = { id: string; name: string; } in domain/types.ts
 ```

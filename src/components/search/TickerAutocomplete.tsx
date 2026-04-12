@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 
 import { isKoreanInput } from '@/domain/ticker';
 import { useTickerSearch } from '@/components/search/hooks/useTickerSearch';
-import { useOnClickOutside } from '@/components/search/hooks/useOnClickOutside';
+import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 import { cn } from '@/lib/cn';
 import type { TickerSearchResult } from '@/domain/types';
 

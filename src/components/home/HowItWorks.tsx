@@ -1,6 +1,36 @@
 import { Fragment } from 'react';
 import type { SkillCounts } from '@/domain/types';
 
+export function HowItWorksSkeleton() {
+    return (
+        <section className="px-6 py-10 lg:px-[15vw]">
+            <div className="bg-secondary-700/50 mb-6 h-3.5 w-24 animate-pulse rounded" />
+            <div className="flex flex-col gap-4 md:flex-row">
+                {[0, 1, 2].map(i => (
+                    <Fragment key={i}>
+                        <div className="bg-secondary-800/50 border-secondary-700 flex-1 rounded-lg border p-6">
+                            <div className="bg-secondary-700/50 h-8 w-8 animate-pulse rounded" />
+                            <div className="bg-secondary-700/50 mt-4 h-3.5 w-20 animate-pulse rounded" />
+                            <div className="mt-2 space-y-1.5">
+                                <div className="bg-secondary-700/50 h-3 w-full animate-pulse rounded" />
+                                <div className="bg-secondary-700/50 h-3 w-4/5 animate-pulse rounded" />
+                            </div>
+                        </div>
+                        {i < 2 && (
+                            <div
+                                className="hidden items-center md:flex"
+                                aria-hidden="true"
+                            >
+                                <div className="bg-secondary-700/50 h-4 w-4 animate-pulse rounded" />
+                            </div>
+                        )}
+                    </Fragment>
+                ))}
+            </div>
+        </section>
+    );
+}
+
 interface HowItWorksProps {
     skillCounts: SkillCounts;
 }
@@ -33,20 +63,23 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
         },
     ];
     return (
-        <section className="px-6 py-16 lg:px-[15vw]">
+        <section className="px-6 py-10 lg:px-[15vw]">
+            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
+                이용 방법
+            </h2>
             <div className="flex flex-col gap-4 md:flex-row">
                 {STEPS.map((step, idx) => (
                     <Fragment key={step.number}>
                         <div className="bg-secondary-800/50 border-secondary-700 flex-1 rounded-lg border p-6">
                             <span
                                 aria-hidden="true"
-                                className="text-primary-600/25 font-mono text-3xl leading-none font-bold"
+                                className="text-primary-600/40 font-mono text-3xl leading-none font-bold"
                             >
                                 {step.number}
                             </span>
-                            <h2 className="text-secondary-200 mt-4 text-sm font-semibold tracking-wider uppercase">
+                            <h3 className="text-secondary-200 mt-4 text-sm font-semibold tracking-wider uppercase">
                                 {step.title}
-                            </h2>
+                            </h3>
                             <p className="text-secondary-400 mt-1 text-sm leading-relaxed">
                                 {step.description}
                             </p>

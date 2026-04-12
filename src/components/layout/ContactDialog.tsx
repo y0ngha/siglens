@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useOnClickOutside } from '@/components/layout/hooks/useOnClickOutside';
+import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 import { useEscapeKey } from '@/components/layout/hooks/useEscapeKey';
 import { useFocusTrap } from '@/components/layout/hooks/useFocusTrap';
 import { CONTACT_EMAIL } from '@/lib/contact';
@@ -28,7 +28,7 @@ export function ContactDialog({
         triggerRef.current?.focus();
     }, []);
 
-    useOnClickOutside([dialogRef], handleClose);
+    useOnClickOutside([dialogRef], handleClose, { enabled: open });
     useEscapeKey(handleClose);
     useFocusTrap(dialogRef, open);
 

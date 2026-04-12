@@ -1,9 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { cn } from '@/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
 import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
+import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+
+const INITIAL_VISIBLE_COUNT = 12;
 
 type ActiveTab = 'all' | SkillType;
 
@@ -58,21 +61,7 @@ function ConfidenceInfoTooltip() {
     const [open, setOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
-        if (!open) return;
-        const handlePointerDown = (event: PointerEvent) => {
-            if (
-                containerRef.current != null &&
-                !containerRef.current.contains(event.target as Node)
-            ) {
-                setOpen(false);
-            }
-        };
-        document.addEventListener('pointerdown', handlePointerDown);
-        return () => {
-            document.removeEventListener('pointerdown', handlePointerDown);
-        };
-    }, [open]);
+    useOnClickOutside(containerRef, () => setOpen(false));
 
     return (
         <div ref={containerRef} className="group relative">
@@ -149,12 +138,47 @@ function SkillCard({ skill }: SkillCardProps) {
                         aria-hidden="true"
                     />
                 </div>
-                <span className="text-secondary-500 font-mono text-xs">
+                <span className="text-secondary-400 font-mono text-xs">
                     {Math.round(skill.confidenceWeight * 100)}%
                 </span>
                 <ConfidenceInfoTooltip />
             </div>
         </div>
+    );
+}
+
+export function SkillsShowcaseSkeleton() {
+    return (
+        <section className="px-6 py-10 lg:px-[15vw]">
+            <div className="bg-secondary-700/50 mb-6 h-3.5 w-20 animate-pulse rounded" />
+            <div className="mb-6 flex flex-wrap gap-2">
+                {[48, 56, 64, 52, 60, 72].map((w, i) => (
+                    <div
+                        key={i}
+                        className="bg-secondary-700/50 h-7 animate-pulse rounded-full"
+                        style={{ width: `${w}px` }}
+                    />
+                ))}
+            </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {Array.from({ length: 12 }).map((_, i) => (
+                    <div
+                        key={i}
+                        className="bg-secondary-800/50 border-secondary-700 rounded-lg border p-4"
+                    >
+                        <div className="mb-2 flex items-center gap-2">
+                            <div className="bg-secondary-700/50 h-4 w-28 animate-pulse rounded" />
+                            <div className="bg-secondary-700/50 h-4 w-12 animate-pulse rounded" />
+                        </div>
+                        <div className="mb-3 space-y-1.5">
+                            <div className="bg-secondary-700/50 h-3 w-full animate-pulse rounded" />
+                            <div className="bg-secondary-700/50 h-3 w-4/5 animate-pulse rounded" />
+                        </div>
+                        <div className="bg-secondary-700/50 h-1.5 animate-pulse rounded-full" />
+                    </div>
+                ))}
+            </div>
+        </section>
     );
 }
 
@@ -164,34 +188,105 @@ interface SkillsShowcaseProps {
 
 export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
     const [activeTab, setActiveTab] = useState<ActiveTab>('all');
+    const [showAll, setShowAll] = useState(false);
+    const baseId = useId();
+    const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
 
-    const filteredSkills =
-        activeTab === 'all' ? skills : skills.filter(s => s.type === activeTab);
+    const handleTabSelect = (value: ActiveTab): void => {
+        setActiveTab(value);
+        setShowAll(false);
+    };
+
+    const handleTablistKeyDown = (e: React.KeyboardEvent): void => {
+        const currentIdx = TABS.findIndex(t => t.value === activeTab);
+        let nextIdx = currentIdx;
+        if (e.key === 'ArrowRight') nextIdx = (currentIdx + 1) % TABS.length;
+        else if (e.key === 'ArrowLeft')
+            nextIdx = (currentIdx - 1 + TABS.length) % TABS.length;
+        else return;
+        e.preventDefault();
+        handleTabSelect(TABS[nextIdx].value);
+        tabButtonRefs.current[nextIdx]?.focus();
+    };
 
     return (
-        <div className="px-6 lg:px-[15vw]">
-            <div className="mb-6 flex flex-wrap gap-2">
-                {TABS.map(tab => (
-                    <button
+        <section className="px-6 py-10 lg:px-[15vw]">
+            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
+                AI 분석 스킬
+            </h2>
+            <div
+                role="tablist"
+                aria-label="스킬 카테고리 탭"
+                className="mb-6 flex flex-wrap gap-2"
+                onKeyDown={handleTablistKeyDown}
+            >
+                {TABS.map((tab, idx) => {
+                    const isActive = activeTab === tab.value;
+                    return (
+                        <button
+                            key={tab.value}
+                            ref={el => {
+                                tabButtonRefs.current[idx] = el;
+                            }}
+                            id={`${baseId}-tab-${tab.value}`}
+                            type="button"
+                            role="tab"
+                            aria-selected={isActive}
+                            aria-controls={`${baseId}-panel-${tab.value}`}
+                            tabIndex={isActive ? 0 : -1}
+                            onClick={() => handleTabSelect(tab.value)}
+                            className={cn(
+                                'rounded-full px-4 py-1.5 text-xs font-medium transition-colors',
+                                isActive
+                                    ? 'bg-primary-600 text-white'
+                                    : 'border-secondary-700 text-secondary-400 hover:text-secondary-200 border'
+                            )}
+                        >
+                            {tab.label}
+                        </button>
+                    );
+                })}
+            </div>
+            {TABS.map(tab => {
+                const isActive = activeTab === tab.value;
+                const panelSkills =
+                    tab.value === 'all'
+                        ? skills
+                        : skills.filter(s => s.type === tab.value);
+                const visibleSkills = showAll
+                    ? panelSkills
+                    : panelSkills.slice(0, INITIAL_VISIBLE_COUNT);
+                const hasMore = panelSkills.length > INITIAL_VISIBLE_COUNT;
+
+                return (
+                    <div
                         key={tab.value}
-                        type="button"
-                        onClick={() => setActiveTab(tab.value)}
-                        className={cn(
-                            'rounded-full px-4 py-1.5 text-xs font-medium transition-colors',
-                            activeTab === tab.value
-                                ? 'bg-primary-600 text-white'
-                                : 'border-secondary-700 text-secondary-400 hover:text-secondary-200 border'
-                        )}
+                        id={`${baseId}-panel-${tab.value}`}
+                        role="tabpanel"
+                        aria-labelledby={`${baseId}-tab-${tab.value}`}
+                        hidden={!isActive}
                     >
-                        {tab.label}
-                    </button>
-                ))}
-            </div>
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredSkills.map(skill => (
-                    <SkillCard key={skill.name} skill={skill} />
-                ))}
-            </div>
-        </div>
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                            {visibleSkills.map(skill => (
+                                <SkillCard key={skill.name} skill={skill} />
+                            ))}
+                        </div>
+                        {hasMore && (
+                            <div className="mt-6 flex justify-center">
+                                <button
+                                    type="button"
+                                    onClick={() => setShowAll(prev => !prev)}
+                                    className="border-secondary-700 text-secondary-400 hover:border-primary-600/40 hover:text-primary-400 rounded-full border px-6 py-2 text-xs font-medium transition-colors"
+                                >
+                                    {showAll
+                                        ? '접기'
+                                        : `더 보기 (${panelSkills.length - INITIAL_VISIBLE_COUNT}개)`}
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                );
+            })}
+        </section>
     );
 }

@@ -4,7 +4,7 @@ import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/lib/chartColors';
-import { useOnClickOutside } from '@/components/chart/hooks/useOnClickOutside';
+import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 
 interface IndicatorToggleGroup {
     visible: boolean;
@@ -161,7 +161,6 @@ interface IndicatorToolbarProps {
     cci: IndicatorToggleGroup;
     volumeProfile: IndicatorToggleGroup;
     ichimoku: IndicatorToggleGroup;
-    candlePatterns?: IndicatorToggleGroup;
 }
 
 export function IndicatorToolbar({
@@ -180,7 +179,6 @@ export function IndicatorToolbar({
     cci,
     volumeProfile,
     ichimoku,
-    candlePatterns,
 }: IndicatorToolbarProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
@@ -263,10 +261,6 @@ export function IndicatorToolbar({
         { label: 'CCI', ...cci },
         { label: 'VP', ...volumeProfile },
         { label: 'Ichimoku', ...ichimoku },
-        /**
-         * TODO: 캔들은 우선 임시 제거
-         */
-        // ...(candlePatterns ? [{ label: '캔들', ...candlePatterns }] : []),
     ];
 
     const activeDropdownIndicator = dropdownIndicators.find(

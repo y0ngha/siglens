@@ -34,7 +34,13 @@ import {
     HAMMER_HIGH_OFFSET,
     HAMMER_LOW_OFFSET,
 } from '@/__tests__/fixtures/candle';
-import type { Bar, IndicatorResult, Skill } from '@/domain/types';
+import type {
+    Bar,
+    IndicatorResult,
+    Skill,
+    SMCResult,
+    SqueezeMomentumResult,
+} from '@/domain/types';
 
 const TEST_SYMBOL = 'AAPL';
 const TEST_BAR_BASE_TIME = 1700000000;
@@ -2909,6 +2915,413 @@ describe('prompt', () => {
             const appleIndex = result.indexOf('Apple Skill');
 
             expect(appleIndex).toBeLessThan(zebraIndex);
+        });
+    });
+
+    describe('SMC 섹션', () => {
+        const bars = Array.from({ length: 100 }, (_, i) => makeBar(i));
+
+        it('should show insufficient data message when SMC is empty', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators()
+            );
+            expect(result).toContain('Insufficient data for SMC analysis');
+        });
+
+        it('should format structure breaks with BOS/CHoCH labels', () => {
+            const smc: SMCResult = {
+                ...EMPTY_SMC_RESULT,
+                structureBreaks: [
+                    {
+                        index: 95,
+                        price: 155.0,
+                        type: 'bullish',
+                        breakType: 'bos',
+                    },
+                    {
+                        index: 97,
+                        price: 160.0,
+                        type: 'bearish',
+                        breakType: 'choch',
+                    },
+                ],
+            };
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ smc })
+            );
+            expect(result).toContain('[BOS] bullish at 155.00');
+            expect(result).toContain('[CHOCH] bearish at 160.00');
+            expect(result).toContain('Market Structure');
+        });
+
+        it('should show only unmitigated order blocks', () => {
+            const smc: SMCResult = {
+                ...EMPTY_SMC_RESULT,
+                orderBlocks: [
+                    {
+                        startIndex: 80,
+                        high: 152.0,
+                        low: 149.0,
+                        type: 'bullish',
+                        isMitigated: false,
+                    },
+                    {
+                        startIndex: 85,
+                        high: 162.0,
+                        low: 158.0,
+                        type: 'bearish',
+                        isMitigated: true,
+                    },
+                    {
+                        startIndex: 90,
+                        high: 145.0,
+                        low: 142.0,
+                        type: 'bullish',
+                        isMitigated: false,
+                    },
+                ],
+            };
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ smc })
+            );
+            expect(result).toContain('bullish OB: 149.00 ~ 152.00');
+            expect(result).toContain('bullish OB: 142.00 ~ 145.00');
+            expect(result).not.toContain('bearish OB: 158.00 ~ 162.00');
+        });
+
+        it('should show "No active order blocks" when all are mitigated', () => {
+            const smc: SMCResult = {
+                ...EMPTY_SMC_RESULT,
+                orderBlocks: [
+                    {
+                        startIndex: 80,
+                        high: 152.0,
+                        low: 149.0,
+                        type: 'bullish',
+                        isMitigated: true,
+                    },
+                ],
+            };
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ smc })
+            );
+            expect(result).toContain('No active order blocks');
+        });
+
+        it('should show only unmitigated fair value gaps', () => {
+            const smc: SMCResult = {
+                ...EMPTY_SMC_RESULT,
+                fairValueGaps: [
+                    {
+                        index: 88,
+                        high: 153.5,
+                        low: 151.0,
+                        type: 'bullish',
+                        isMitigated: false,
+                    },
+                    {
+                        index: 92,
+                        high: 160.0,
+                        low: 158.5,
+                        type: 'bearish',
+                        isMitigated: true,
+                    },
+                ],
+            };
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ smc })
+            );
+            expect(result).toContain('bullish FVG: 151.00 ~ 153.50');
+            expect(result).not.toContain('bearish FVG: 158.50 ~ 160.00');
+        });
+
+        it('should show equal highs/lows as liquidity pools', () => {
+            const smc: SMCResult = {
+                ...EMPTY_SMC_RESULT,
+                equalHighs: [
+                    {
+                        price: 165.0,
+                        firstIndex: 70,
+                        secondIndex: 85,
+                        type: 'high',
+                    },
+                ],
+                equalLows: [
+                    {
+                        price: 140.0,
+                        firstIndex: 60,
+                        secondIndex: 78,
+                        type: 'low',
+                    },
+                ],
+            };
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ smc })
+            );
+            expect(result).toContain(
+                'Equal Highs at 165.00 (sell-side liquidity)'
+            );
+            expect(result).toContain(
+                'Equal Lows at 140.00 (buy-side liquidity)'
+            );
+            expect(result).toContain('Liquidity Pools');
+        });
+
+        it('should show premium/discount/equilibrium zones with price position', () => {
+            const smc: SMCResult = {
+                ...EMPTY_SMC_RESULT,
+                premiumZone: { high: 170.0, low: 160.0, type: 'premium' },
+                equilibriumZone: {
+                    high: 160.0,
+                    low: 150.0,
+                    type: 'equilibrium',
+                },
+                discountZone: { high: 150.0, low: 140.0, type: 'discount' },
+            };
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ smc })
+            );
+            expect(result).toContain('Premium Zone: 160.00 ~ 170.00');
+            expect(result).toContain('Equilibrium Zone: 150.00 ~ 160.00');
+            expect(result).toContain('Discount Zone: 140.00 ~ 150.00');
+            expect(result).toMatch(
+                /Current price \(.+\) is in (premium|discount|equilibrium|neutral) zone/
+            );
+            expect(result).toContain('is in premium zone');
+        });
+
+        it('should show swing points with bars ago', () => {
+            const smc: SMCResult = {
+                ...EMPTY_SMC_RESULT,
+                swingHighs: [{ index: 95, price: 168.0, type: 'high' }],
+                swingLows: [{ index: 90, price: 142.0, type: 'low' }],
+            };
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ smc })
+            );
+            expect(result).toContain('Swing High: 168.00 (4 bars ago)');
+            expect(result).toContain('Swing Low: 142.00 (9 bars ago)');
+        });
+
+        it('should cap order blocks to SMC_MAX_ORDER_BLOCKS (5)', () => {
+            const smc: SMCResult = {
+                ...EMPTY_SMC_RESULT,
+                orderBlocks: Array.from({ length: 10 }, (_, i) => ({
+                    startIndex: 50 + i * 3,
+                    high: 150 + i,
+                    low: 148 + i,
+                    type: 'bullish' as const,
+                    isMitigated: false,
+                })),
+            };
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ smc })
+            );
+            const obMatches = result.match(/bullish OB:/g);
+            expect(obMatches).toHaveLength(5);
+        });
+
+        it('should appear after Indicator Values section', () => {
+            const smc: SMCResult = {
+                ...EMPTY_SMC_RESULT,
+                structureBreaks: [
+                    {
+                        index: 95,
+                        price: 155.0,
+                        type: 'bullish',
+                        breakType: 'bos',
+                    },
+                ],
+            };
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ smc })
+            );
+            const indicatorIdx = result.indexOf('## Indicator Values');
+            const smcIdx = result.indexOf('## Smart Money Concepts (SMC)');
+            expect(indicatorIdx).toBeGreaterThan(-1);
+            expect(smcIdx).toBeGreaterThan(indicatorIdx);
+        });
+    });
+
+    describe('스퀴즈 모멘텀 강화', () => {
+        const bars = Array.from({ length: 50 }, (_, i) => makeBar(i));
+
+        const makeSqz = (
+            overrides?: Partial<SqueezeMomentumResult>
+        ): SqueezeMomentumResult => ({
+            momentum: null,
+            sqzOn: null,
+            sqzOff: null,
+            noSqz: null,
+            increasing: null,
+            ...overrides,
+        });
+
+        it('should show squeeze duration when sqzOn is consecutive', () => {
+            const data: SqueezeMomentumResult[] = [
+                makeSqz({ momentum: 1.0, sqzOff: true }),
+                makeSqz({ momentum: 1.5, sqzOn: true }),
+                makeSqz({ momentum: 2.0, sqzOn: true }),
+                makeSqz({ momentum: 2.5, sqzOn: true }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ squeezeMomentum: data })
+            );
+            expect(result).toContain('duration: 3 bars');
+        });
+
+        it('should not show duration when last bar is not sqzOn', () => {
+            const data: SqueezeMomentumResult[] = [
+                makeSqz({ momentum: 1.0, sqzOn: true }),
+                makeSqz({ momentum: 1.5, sqzOff: true }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ squeezeMomentum: data })
+            );
+            expect(result).not.toMatch(/duration: \d+ bars/);
+        });
+
+        it('should detect bullish zero-cross with bars ago', () => {
+            const data: SqueezeMomentumResult[] = [
+                makeSqz({ momentum: -2.0, sqzOn: true }),
+                makeSqz({ momentum: -1.0, sqzOn: true }),
+                makeSqz({ momentum: 0.5, sqzOn: true }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ squeezeMomentum: data })
+            );
+            expect(result).toContain('bullish zero-cross (0 bars ago)');
+        });
+
+        it('should detect bearish zero-cross with bars ago', () => {
+            const data: SqueezeMomentumResult[] = [
+                makeSqz({ momentum: 2.0, sqzOff: true }),
+                makeSqz({ momentum: 1.0, sqzOff: true }),
+                makeSqz({ momentum: -0.5, sqzOff: true }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ squeezeMomentum: data })
+            );
+            expect(result).toContain('bearish zero-cross (0 bars ago)');
+        });
+
+        it('should not show zero-cross when none in lookback', () => {
+            const data: SqueezeMomentumResult[] = [
+                makeSqz({ momentum: 1.0, sqzOff: true }),
+                makeSqz({ momentum: 2.0, sqzOff: true }),
+                makeSqz({ momentum: 3.0, sqzOff: true }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ squeezeMomentum: data })
+            );
+            expect(result).not.toContain('zero-cross');
+        });
+
+        it('should treat sqzOn null the same as false for duration', () => {
+            const data: SqueezeMomentumResult[] = [
+                makeSqz({ momentum: 1.0 }),
+                makeSqz({ momentum: 1.5, sqzOn: true }),
+                makeSqz({ momentum: 2.0, sqzOn: true }),
+            ];
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ squeezeMomentum: data })
+            );
+            expect(result).toContain('duration: 2 bars');
+        });
+
+        it('should handle empty squeezeMomentum array', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ squeezeMomentum: [] })
+            );
+            expect(result).toContain('Squeeze Momentum');
+            expect(result).toContain('N/A');
+        });
+
+        it('should show momentum trend label', () => {
+            const data: SqueezeMomentumResult[] = Array.from(
+                { length: 10 },
+                (_, i) =>
+                    makeSqz({
+                        momentum: 1 + i * 0.5,
+                        sqzOff: true,
+                        increasing: true,
+                    })
+            );
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ squeezeMomentum: data })
+            );
+            expect(result).toMatch(/Squeeze Momentum.*\[rising\]/);
+        });
+    });
+
+    describe('SMC 가이드라인', () => {
+        const bars = Array.from({ length: 5 }, (_, i) => makeBar(i));
+
+        it('should include SMC interpretation guidelines', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators()
+            );
+            expect(result).toContain(
+                '### SMC (Smart Money Concepts) Interpretation'
+            );
+            expect(result).toContain('BOS');
+            expect(result).toContain('CHoCH');
+            expect(result).toContain('Order Blocks');
+            expect(result).toContain('Fair Value Gaps');
+            expect(result).toContain('Premium/Discount Zones');
+        });
+    });
+
+    describe('스퀴즈 모멘텀 가이드라인', () => {
+        const bars = Array.from({ length: 5 }, (_, i) => makeBar(i));
+
+        it('should include Squeeze Momentum interpretation guidelines', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators()
+            );
+            expect(result).toContain('### Squeeze Momentum Interpretation');
+            expect(result).toContain('Zero-line cross');
+            expect(result).toContain('Squeeze duration');
         });
     });
 });

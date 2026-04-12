@@ -41,11 +41,35 @@ export function StatsBar({ skills }: StatsBarProps) {
         <div className="text-secondary-400 mt-6 flex flex-wrap items-center justify-center gap-x-2 font-mono text-xs lg:justify-start">
             {stats.map((stat, i) => (
                 <Fragment key={stat.label}>
-                    {i > 0 && <span className="text-secondary-700">·</span>}
+                    {i > 0 && (
+                        <span className="text-secondary-700" aria-hidden="true">
+                            ·
+                        </span>
+                    )}
                     <span>
                         {stat.value}
                         {stat.label}
                     </span>
+                </Fragment>
+            ))}
+        </div>
+    );
+}
+
+export function StatsBarSkeleton() {
+    return (
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-x-2 lg:justify-start">
+            {[80, 60, 72, 56, 68, 64].map((w, i) => (
+                <Fragment key={i}>
+                    {i > 0 && (
+                        <span className="text-secondary-700" aria-hidden="true">
+                            ·
+                        </span>
+                    )}
+                    <div
+                        className="bg-secondary-700/50 h-3 animate-pulse rounded"
+                        style={{ width: `${w}px` }}
+                    />
                 </Fragment>
             ))}
         </div>

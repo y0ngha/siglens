@@ -31,7 +31,7 @@ export function useBollingerOverlay({
     chartRef,
     bars,
     indicators,
-    lineWidth = DEFAULT_LINE_WIDTH, // TODO: 사용자 설정으로 연결
+    lineWidth = DEFAULT_LINE_WIDTH,
 }: UseBollingerOverlayParams): UseBollingerOverlayReturn {
     const [isVisible, setIsVisible] = useState(false);
     const prevChartRef = useRef<IChartApi | null>(null);
