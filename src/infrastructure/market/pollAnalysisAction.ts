@@ -2,7 +2,11 @@
 
 import { waitUntil } from '@vercel/functions';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
-import type { RawAnalysisResponse, Skill } from '@/domain/types';
+import type {
+    PollAnalysisResult,
+    RawAnalysisResponse,
+    Skill,
+} from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildAnalysisCacheKey,
@@ -16,7 +20,6 @@ import {
     getJobMeta,
     cleanupJob,
 } from '@/infrastructure/jobs/queue';
-import type { PollAnalysisResult } from '@/infrastructure/jobs/types';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 
 export async function pollAnalysisAction(
@@ -45,7 +48,13 @@ export async function pollAnalysisAction(
         return { status: 'error', error: 'Result not found' };
     }
 
-    const parsed = parseJsonResponse<RawAnalysisResponse>(rawResult, 'Worker');
+    let parsed: RawAnalysisResponse;
+    try {
+        parsed = parseJsonResponse<RawAnalysisResponse>(rawResult, 'Worker');
+    } catch {
+        waitUntil(cleanupJob(jobId));
+        return { status: 'error', error: 'Invalid response from worker' };
+    }
 
     const skillsLoader = new FileSkillsLoader();
     let skills: Skill[] = [];

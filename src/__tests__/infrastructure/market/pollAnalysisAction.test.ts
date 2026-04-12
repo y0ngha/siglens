@@ -165,6 +165,24 @@ describe('pollAnalysisAction 함수는', () => {
             expect(mockEnrich).toHaveBeenCalled();
         });
 
+        it('결과가 유효하지 않은 JSON이면 error를 반환한다', async () => {
+            mockGetJobStatus.mockResolvedValueOnce('done');
+            mockGetJobResult.mockResolvedValueOnce('not valid json');
+            mockGetJobMeta.mockResolvedValueOnce(null);
+
+            const consoleSpy = jest
+                .spyOn(console, 'error')
+                .mockImplementation(() => {});
+
+            const result = await pollAnalysisAction('job-invalid');
+
+            expect(result).toEqual({
+                status: 'error',
+                error: 'Invalid response from worker',
+            });
+            consoleSpy.mockRestore();
+        });
+
         it('결과가 없으면 error를 반환한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
             mockGetJobResult.mockResolvedValueOnce(null);
