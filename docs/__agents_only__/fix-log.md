@@ -5,6 +5,10 @@
 - Rule: CONVENTIONS.md — 테스트 설명 문구는 사람이 읽기 쉬운 한국어 텍스트여야 함
 - Context: `src/__tests__/domain/constants/time.test.ts`의 describe/it 텍스트가 잘못된 인코딩으로 저장되어 의미 불명 문자 포함
 
+- Violation: useEffectEvent로 만든 `stableGetIndicatorData`가 첫 번째 useEffect 블록 이후에 선언
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — 이벤트 핸들러/유틸(5단계)은 모든 useEffect(7단계)보다 앞에 선언
+- Context: `useMovingAverageOverlay.ts`에서 두 번째 useEffect 직전에 배치하여 선언 순서 위반
+
 ## [PR #288 | feat/287/update-popular-tickers-script | 2026-04-12]
 - Violation: `push`로 배열 직접 변경 — `weeklyVolumes.push(...)` 사용
 - Rule: MISTAKES.md Coding Paradigm #5 — push/splice 직접 변경 금지, spread 문법 사용

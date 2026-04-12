@@ -66,6 +66,7 @@ export function useMovingAverageOverlay({
     const clearSeriesRefs = useEffectEvent(() => {
         seriesRef.current = {};
     });
+    const stableGetIndicatorData = useEffectEvent(getIndicatorData);
 
     // 시리즈 생성/제거 관리
     // StockChart의 차트 생성 effect가 선언 순서상 앞에 있으므로
@@ -108,8 +109,6 @@ export function useMovingAverageOverlay({
         }
         seriesRef.current = nextSeries;
     }, [chartRef, visiblePeriods, lineWidth, lineStyle]);
-
-    const stableGetIndicatorData = useEffectEvent(getIndicatorData);
 
     // 데이터 동기화
     useEffect(() => {

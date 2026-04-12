@@ -78,6 +78,7 @@ function mergeSortedEntries(
     a: CandlePatternEntry[],
     b: CandlePatternEntry[]
 ): CandlePatternEntry[] {
+    // O(n) 병합: spread/concat은 각 단계마다 O(n) 배열 복사 → 전체 O(n²)이므로 push 사용
     const result: CandlePatternEntry[] = [];
     let ai = 0;
     let bi = 0;
