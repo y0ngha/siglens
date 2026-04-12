@@ -34,19 +34,22 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
     ];
     return (
         <section className="px-6 py-16 lg:px-[15vw]">
+            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
+                이용 방법
+            </h2>
             <div className="flex flex-col gap-4 md:flex-row">
                 {STEPS.map((step, idx) => (
                     <Fragment key={step.number}>
                         <div className="bg-secondary-800/50 border-secondary-700 flex-1 rounded-lg border p-6">
                             <span
                                 aria-hidden="true"
-                                className="text-primary-600/25 font-mono text-3xl leading-none font-bold"
+                                className="text-primary-600/40 font-mono text-3xl leading-none font-bold"
                             >
                                 {step.number}
                             </span>
-                            <h2 className="text-secondary-200 mt-4 text-sm font-semibold tracking-wider uppercase">
+                            <h3 className="text-secondary-200 mt-4 text-sm font-semibold tracking-wider uppercase">
                                 {step.title}
-                            </h2>
+                            </h3>
                             <p className="text-secondary-400 mt-1 text-sm leading-relaxed">
                                 {step.description}
                             </p>
@@ -65,3 +68,4 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
         </section>
     );
 }
+

@@ -41,7 +41,7 @@ export function StatsBar({ skills }: StatsBarProps) {
         <div className="text-secondary-400 mt-6 flex flex-wrap items-center justify-center gap-x-2 font-mono text-xs lg:justify-start">
             {stats.map((stat, i) => (
                 <Fragment key={stat.label}>
-                    {i > 0 && <span className="text-secondary-700">·</span>}
+                    {i > 0 && <span className="text-secondary-700" aria-hidden="true">·</span>}
                     <span>
                         {stat.value}
                         {stat.label}

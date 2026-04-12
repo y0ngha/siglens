@@ -1,7 +1,5 @@
 import type { TickerCategory } from '@/domain/types';
 
-export const POPULAR_TICKERS_DISPLAY_COUNT = 6;
-
 export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     {
         id: 'megacap',
@@ -42,6 +40,22 @@ export const TICKER_CATEGORIES: readonly TickerCategory[] = [
         id: 'healthcare-bio',
         label: '헬스케어·바이오',
         tickers: ['LLY', 'NVO', 'UNH', 'ISRG', 'AMGN'],
+    },
+    {
+        id: 'quantum-computing',
+        label: '양자컴퓨팅',
+        tickers: ['IONQ', 'RGTI', 'QBTS', 'QUBT', 'IBM'],
+    },
+    {
+        id: 'ev-mobility',
+        label: 'EV·모빌리티',
+        // TSLA intentionally duplicated from megacap — it leads both categories
+        tickers: ['TSLA', 'RIVN', 'NIO', 'LCID', 'XPEV', 'UBER', 'LYFT'],
+    },
+    {
+        id: 'energy-industrial',
+        label: '에너지·산업재',
+        tickers: ['XOM', 'CVX', 'OXY', 'COP', 'CAT', 'GE', 'BA'],
     },
 ];
 

@@ -1,10 +1,4 @@
-import Link from 'next/link';
-
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
-import {
-    POPULAR_TICKERS,
-    POPULAR_TICKERS_DISPLAY_COUNT,
-} from '@/domain/constants/popular-tickers';
 import {
     countSkillFiles,
     FileSkillsLoader,
@@ -15,11 +9,6 @@ import { StatsBar } from '@/components/home/StatsBar';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import { SkillsShowcase } from '@/components/home/SkillsShowcase';
 import { TickerCategories } from '@/components/home/TickerCategories';
-
-const HOMEPAGE_TICKERS = POPULAR_TICKERS.slice(
-    0,
-    POPULAR_TICKERS_DISPLAY_COUNT
-);
 
 export default async function Home() {
     const loader = new FileSkillsLoader();
@@ -163,27 +152,13 @@ export default async function Home() {
                         >
                             <SymbolSearchPanel />
                         </div>
-                        <div className="mt-6 flex flex-wrap items-center justify-center gap-2 lg:justify-start">
-                            <span className="text-secondary-500 text-xs">
-                                인기 종목
-                            </span>
-                            {HOMEPAGE_TICKERS.map(ticker => (
-                                <Link
-                                    key={ticker}
-                                    href={`/${ticker}`}
-                                    className="border-secondary-700 text-secondary-300 hover:border-primary-600/40 hover:text-primary-400 rounded-full border px-3 py-1 text-xs transition-colors"
-                                >
-                                    {ticker}
-                                </Link>
-                            ))}
-                        </div>
                         <StatsBar skills={skills} />
                     </div>
                 </section>
                 <HowItWorks skillCounts={skillCounts} />
-                <section className="pb-16">
-                    <SkillsShowcase skills={skills} />
-                </section>
+                <div className="border-secondary-800 border-t" aria-hidden="true" />
+                <SkillsShowcase skills={skills} />
+                <div className="border-secondary-800 border-t" aria-hidden="true" />
                 <TickerCategories />
             </main>
             <Footer />

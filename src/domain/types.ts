@@ -428,7 +428,10 @@ export type CategoryId =
     | 'software-cloud'
     | 'fintech-crypto'
     | 'leveraged-etf'
-    | 'healthcare-bio';
+    | 'healthcare-bio'
+    | 'quantum-computing'
+    | 'ev-mobility'
+    | 'energy-industrial';
 
 export interface TickerCategory {
     id: CategoryId;

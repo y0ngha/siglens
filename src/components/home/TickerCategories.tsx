@@ -34,18 +34,30 @@ const CATEGORY_STYLES: Record<CategoryId, CategoryStyle> = {
         borderColor: 'border-l-chart-rsi',
         textColor: 'text-chart-rsi',
     },
+    'quantum-computing': {
+        borderColor: 'border-l-chart-bollinger',
+        textColor: 'text-chart-bollinger',
+    },
+    'ev-mobility': {
+        borderColor: 'border-l-chart-period60',
+        textColor: 'text-chart-period60',
+    },
+    'energy-industrial': {
+        borderColor: 'border-l-chart-period5',
+        textColor: 'text-chart-period5',
+    },
 };
 
 export function TickerCategories() {
     return (
         <nav
-            aria-label="카테고리별 종목 탐색"
-            className="px-6 py-14 lg:px-[15vw]"
+            aria-label="카테고리별 인기 종목 탐색"
+            className="px-6 py-16 lg:px-[15vw]"
         >
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
-                카테고리별 종목
+                카테고리별 인기 종목
             </h2>
-            <div className="grid grid-cols-1 items-start gap-4 md:grid-cols-2 lg:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {TICKER_CATEGORIES.map(category => {
                     const style = CATEGORY_STYLES[category.id];
                     return (
