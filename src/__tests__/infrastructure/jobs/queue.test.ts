@@ -91,7 +91,7 @@ describe('jobs/queue 모듈은', () => {
             expect(mockSet).toHaveBeenCalledWith(
                 'job:job-2:meta',
                 JSON.stringify(meta),
-                { ex: 600 }
+                { ex: 3600 }
             );
         });
 

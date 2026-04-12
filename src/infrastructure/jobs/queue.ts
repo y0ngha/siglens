@@ -1,7 +1,8 @@
 import { createJobRedis } from '@/infrastructure/jobs/redis';
 import type { JobMeta, JobStatus } from '@/infrastructure/jobs/types';
+import { SECONDS_PER_HOUR } from '@/domain/constants/time';
 
-const JOB_TTL_SECONDS = 600;
+const JOB_TTL_SECONDS = SECONDS_PER_HOUR;
 
 // Upstash Redis는 HTTP REST 기반이므로 클라이언트 인스턴스 생성 비용이 없다.
 // TCP 연결을 유지하지 않으므로 함수마다 호출해도 성능 영향이 없다.
@@ -36,10 +37,11 @@ export async function getJobStatus(jobId: string): Promise<JobStatus | null> {
     return redis.get<JobStatus>(statusKey(jobId));
 }
 
-export async function getJobResult(jobId: string): Promise<string | null> {
+// Upstash REST client는 JSON 문자열을 자동 파싱하여 객체로 반환할 수 있다
+export async function getJobResult(jobId: string): Promise<unknown> {
     const redis = createJobRedis();
     if (!redis) return null;
-    return redis.get<string>(resultKey(jobId));
+    return redis.get(resultKey(jobId));
 }
 
 export async function getJobError(jobId: string): Promise<string | null> {

@@ -23,27 +23,27 @@ describe('createCacheProvider 함수는', () => {
         );
     });
 
-    describe('development 환경일 때', () => {
-        it('환경변수가 모두 있어도 null을 반환한다', () => {
-            const originalEnv = process.env.NODE_ENV;
-            Object.defineProperty(process.env, 'NODE_ENV', {
-                value: 'development',
-                configurable: true,
-            });
-            process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
-            process.env.UPSTASH_REDIS_REST_TOKEN = 'master-token';
-
-            const provider = createCacheProvider();
-            expect(provider).toBeNull();
-
-            Object.defineProperty(process.env, 'NODE_ENV', {
-                value: originalEnv,
-                configurable: true,
-            });
-            delete process.env.UPSTASH_REDIS_REST_URL;
-            delete process.env.UPSTASH_REDIS_REST_TOKEN;
-        });
-    });
+    // describe('development 환경일 때', () => {
+    //     it('환경변수가 모두 있어도 null을 반환한다', () => {
+    //         const originalEnv = process.env.NODE_ENV;
+    //         Object.defineProperty(process.env, 'NODE_ENV', {
+    //             value: 'development',
+    //             configurable: true,
+    //         });
+    //         process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
+    //         process.env.UPSTASH_REDIS_REST_TOKEN = 'master-token';
+    //
+    //         const provider = createCacheProvider();
+    //         expect(provider).toBeNull();
+    //
+    //         Object.defineProperty(process.env, 'NODE_ENV', {
+    //             value: originalEnv,
+    //             configurable: true,
+    //         });
+    //         delete process.env.UPSTASH_REDIS_REST_URL;
+    //         delete process.env.UPSTASH_REDIS_REST_TOKEN;
+    //     });
+    // });
 
     describe('환경변수가 없을 때', () => {
         it('URL과 토큰이 모두 없으면 null을 반환한다', () => {

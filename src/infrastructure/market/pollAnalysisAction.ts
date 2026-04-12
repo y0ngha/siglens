@@ -48,10 +48,27 @@ export async function pollAnalysisAction(
         return { status: 'error', error: 'Result not found' };
     }
 
+    // Upstash REST client는 JSON 문자열을 자동 파싱하여 객체로 반환할 수 있다.
+    // 문자열이면 파싱하고, 객체이면 그대로 사용한 뒤 필수 필드를 검증한다.
     let parsed: RawAnalysisResponse;
-    try {
-        parsed = parseJsonResponse<RawAnalysisResponse>(rawResult, 'Worker');
-    } catch {
+    if (typeof rawResult === 'string') {
+        try {
+            parsed = parseJsonResponse<RawAnalysisResponse>(
+                rawResult,
+                'Worker'
+            );
+        } catch {
+            waitUntil(cleanupJob(jobId));
+            return { status: 'error', error: 'Invalid response from worker' };
+        }
+    } else if (typeof rawResult === 'object') {
+        parsed = rawResult as RawAnalysisResponse;
+    } else {
+        waitUntil(cleanupJob(jobId));
+        return { status: 'error', error: 'Invalid response from worker' };
+    }
+
+    if (!parsed.summary || !parsed.trend || !parsed.riskLevel) {
         waitUntil(cleanupJob(jobId));
         return { status: 'error', error: 'Invalid response from worker' };
     }

@@ -2,6 +2,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { config } from './config.js';
 import { AI_SYSTEM_PROMPT } from './ai-system-prompt.js';
 
+const GEMINI_TIMEOUT_MS = 3600_000;
+
 const client = new GoogleGenerativeAI(config.gemini.apiKey);
 
 export async function callGemini(prompt: string): Promise<string> {
@@ -15,10 +17,19 @@ export async function callGemini(prompt: string): Promise<string> {
         },
     });
 
-    const start = Date.now();
-    const result = await model.generateContent(prompt);
-    const elapsed = Date.now() - start;
-    console.log(`[Gemini] Response time: ${elapsed}ms`);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
 
-    return result.response.text();
+    const start = Date.now();
+    try {
+        const result = await model.generateContent(prompt, {
+            signal: controller.signal,
+        });
+        const elapsed = Date.now() - start;
+        console.log(`[Gemini] Response time: ${elapsed}ms`);
+
+        return result.response.text();
+    } finally {
+        clearTimeout(timeoutId);
+    }
 }
