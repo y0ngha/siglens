@@ -28,13 +28,14 @@ const ANALYSIS_PHASES = [
 const PHASE_INTERVAL_MS = MS_PER_MINUTE;
 
 const ANALYSIS_TIPS = [
-    '20개 이상의 보조지표와 60개 이상의 스킬을 조합해 분석합니다. 최대 15분까지 소요될 수 있어요.',
+    '20개 이상의 보조지표와 60개 이상의 스킬을 조합해 분석합니다.',
+    'AI 분석은 보통 5분정도 소요돼요. 최대 15분까지 소요될 수 있어요.',
     '화면을 띄워 놓고 다른 작업을 하셔도 됩니다. 분석이 완료되면 자동으로 결과가 표시돼요.',
     'RSI, MACD, 볼린저 밴드 등 보조지표의 시그널을 종합하여 추세를 판단하고 있어요.',
     '엘리어트 파동, 피보나치, 와이코프 등 다양한 전략을 데이터에 적용하고 있어요.',
     '매수·매도 타이밍, 손절가, 목표가까지 산출하여 실전에 바로 활용 가능한 분석을 제공합니다.',
     '헤드앤숄더, 더블바텀 등 차트 패턴과 캔들 패턴을 동시에 탐지하고 있어요.',
-    '한 번 분석된 결과는 캐시되어, 다음에 다시 열면 바로 확인할 수 있어요.',
+    '한 번 분석된 결과는 일정 시간 동안 캐시되어, 다음에 다시 열면 바로 확인할 수 있어요.',
 ] as const;
 
 const TIP_INTERVAL_MS = 8000;
@@ -157,7 +158,7 @@ export function AnalysisProgress({
             aria-label="AI 분석 진행 중"
         >
             {/* 상단의 흐르는 라이트 바: indeterminate progress */}
-            <span className="via-primary-500/60 pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-gradient-to-r from-transparent to-transparent" />
+            <span className="via-primary-500/60 pointer-events-none absolute inset-x-0 top-0 h-px animate-pulse bg-linear-to-r from-transparent to-transparent" />
 
             <div className="flex items-center gap-3">
                 <Spinner />
