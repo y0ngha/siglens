@@ -241,4 +241,16 @@ export const POPULAR_TICKERS = [
     'PINS',
     'SNAP',
     'ETSY',
+
+    // --- Trending (2026-04-12) ---
+    'T',
+    'PBR',
+    'VZ',
+    'CMCSA',
+    'ITUB',
+    'CSCO',
+    'FCX',
+    'SNDK',
+    'BP',
+    'GOOG',
 ] as const;
