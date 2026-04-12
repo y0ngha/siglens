@@ -62,7 +62,8 @@ const mockEnrichedResult: AnalysisResponse = {
     trendlines: [],
 };
 
-const VALID_RAW_JSON = JSON.stringify({
+// Upstash get()은 자동 역직렬화된 객체를 반환한다
+const VALID_RAW_RESULT = {
     summary: 'raw',
     trend: 'bullish',
     indicatorResults: [],
@@ -76,7 +77,7 @@ const VALID_RAW_JSON = JSON.stringify({
     strategyResults: [],
     candlePatterns: [],
     trendlines: [],
-});
+};
 
 describe('pollAnalysisAction 함수는', () => {
     beforeEach(() => {
@@ -148,7 +149,7 @@ describe('pollAnalysisAction 함수는', () => {
     describe('status가 done일 때', () => {
         it('결과를 파싱하고 enrich한 뒤 반환한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_JSON);
+            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_RESULT);
             mockGetJobMeta.mockResolvedValueOnce({
                 symbol: 'AAPL',
                 timeframe: '1Day',
@@ -165,14 +166,10 @@ describe('pollAnalysisAction 함수는', () => {
             expect(mockEnrich).toHaveBeenCalled();
         });
 
-        it('결과가 유효하지 않은 JSON이면 error를 반환한다', async () => {
+        it('결과에 필수 필드가 없으면 error를 반환한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce('not valid json');
+            mockGetJobResult.mockResolvedValueOnce({ invalid: true });
             mockGetJobMeta.mockResolvedValueOnce(null);
-
-            const consoleSpy = jest
-                .spyOn(console, 'error')
-                .mockImplementation(() => {});
 
             const result = await pollAnalysisAction('job-invalid');
 
@@ -180,7 +177,6 @@ describe('pollAnalysisAction 함수는', () => {
                 status: 'error',
                 error: 'Invalid response from worker',
             });
-            consoleSpy.mockRestore();
         });
 
         it('결과가 없으면 error를 반환한다', async () => {
@@ -198,7 +194,7 @@ describe('pollAnalysisAction 함수는', () => {
 
         it('Skills 로딩 실패 시에도 done 상태를 반환한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_JSON);
+            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_RESULT);
             mockGetJobMeta.mockResolvedValueOnce({
                 symbol: 'AAPL',
                 timeframe: '1Day',
@@ -219,7 +215,7 @@ describe('pollAnalysisAction 함수는', () => {
 
         it('meta가 있으면 캐시에 저장한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_JSON);
+            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_RESULT);
             mockGetJobMeta.mockResolvedValueOnce({
                 symbol: 'TSLA',
                 timeframe: '1Hour',

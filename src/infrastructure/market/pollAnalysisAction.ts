@@ -12,7 +12,6 @@ import {
     buildAnalysisCacheKey,
     ANALYSIS_CACHE_TTL,
 } from '@/infrastructure/cache/config';
-import { parseJsonResponse } from '@/infrastructure/ai/utils';
 import {
     getJobStatus,
     getJobResult,
@@ -48,26 +47,9 @@ export async function pollAnalysisAction(
         return { status: 'error', error: 'Result not found' };
     }
 
-    // Upstash REST client는 JSON 문자열을 자동 파싱하여 객체로 반환할 수 있다.
-    // 문자열이면 파싱하고, 객체이면 그대로 사용한 뒤 필수 필드를 검증한다.
-    let parsed: RawAnalysisResponse;
-    if (typeof rawResult === 'string') {
-        try {
-            parsed = parseJsonResponse<RawAnalysisResponse>(
-                rawResult,
-                'Worker'
-            );
-        } catch {
-            waitUntil(cleanupJob(jobId));
-            return { status: 'error', error: 'Invalid response from worker' };
-        }
-    } else if (typeof rawResult === 'object') {
-        parsed = rawResult as RawAnalysisResponse;
-    } else {
-        waitUntil(cleanupJob(jobId));
-        return { status: 'error', error: 'Invalid response from worker' };
-    }
-
+    // Upstash get()은 자동 역직렬화된 객체를 반환한다.
+    // RawAnalysisResponse 필수 필드로 최소 검증한다.
+    const parsed = rawResult as RawAnalysisResponse;
     if (!parsed.summary || !parsed.trend || !parsed.riskLevel) {
         waitUntil(cleanupJob(jobId));
         return { status: 'error', error: 'Invalid response from worker' };

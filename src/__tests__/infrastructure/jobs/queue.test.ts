@@ -78,7 +78,7 @@ describe('jobs/queue 모듈은', () => {
             mockCreateJobRedis.mockReturnValue(mockRedis as never);
         });
 
-        it('setJobMeta는 JSON 직렬화된 메타를 TTL과 함께 저장한다', async () => {
+        it('setJobMeta는 메타 객체를 TTL과 함께 저장한다', async () => {
             const meta: JobMeta = {
                 symbol: 'TSLA',
                 timeframe: '1Hour',
@@ -88,11 +88,9 @@ describe('jobs/queue 모듈은', () => {
 
             await setJobMeta('job-2', meta);
 
-            expect(mockSet).toHaveBeenCalledWith(
-                'job:job-2:meta',
-                JSON.stringify(meta),
-                { ex: 3600 }
-            );
+            expect(mockSet).toHaveBeenCalledWith('job:job-2:meta', meta, {
+                ex: 3600,
+            });
         });
 
         it('getJobStatus는 status 키 값을 반환한다', async () => {
@@ -122,13 +120,13 @@ describe('jobs/queue 모듈은', () => {
             expect(result).toBe('API error');
         });
 
-        it('getJobMeta는 JSON 파싱된 메타를 반환한다', async () => {
+        it('getJobMeta는 Upstash가 반환한 객체를 그대로 반환한다', async () => {
             const meta: JobMeta = {
                 symbol: 'AAPL',
                 timeframe: '1Day',
                 skillsDegraded: false,
             };
-            mockGet.mockResolvedValueOnce(JSON.stringify(meta));
+            mockGet.mockResolvedValueOnce(meta);
 
             const result = await getJobMeta('job-6');
 
