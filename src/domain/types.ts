@@ -272,6 +272,7 @@ export interface Signal {
     type: SignalType;
     description: string;
     strength: SignalStrength;
+    trend: Trend;
 }
 
 export interface IndicatorGuideResult {

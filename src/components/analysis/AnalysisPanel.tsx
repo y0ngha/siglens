@@ -176,9 +176,9 @@ const SIGNAL_STRENGTH_COLOR: Record<SignalStrength, string> = {
 };
 
 const SIGNAL_STRENGTH_LABEL: Record<SignalStrength, string> = {
-    strong: '강',
-    moderate: '중',
-    weak: '약',
+    strong: '강한 시그널',
+    moderate: '보통 시그널',
+    weak: '약한 시그널',
 };
 
 const SIGNAL_TYPE_LABEL: Record<SignalType, string> = {
@@ -192,23 +192,24 @@ interface SignalItemProps {
 
 function SignalItem({ signal, typeLabel }: SignalItemProps) {
     return (
-        <div className="bg-secondary-700/40 flex items-start gap-2 rounded px-3 py-2">
-            <span
-                className={cn(
-                    'mt-0.5 shrink-0 rounded px-1.5 py-0.5 text-xs font-semibold',
-                    SIGNAL_STRENGTH_COLOR[signal.strength]
-                )}
-            >
-                {SIGNAL_STRENGTH_LABEL[signal.strength]}
-            </span>
-            <div className="min-w-0 flex-1">
-                <span className="text-secondary-300 block text-xs font-medium">
+        <div className="bg-secondary-700/40 flex flex-col gap-1.5 rounded px-3 py-2">
+            <div className="flex items-center gap-2">
+                <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
                     {typeLabel ?? SIGNAL_TYPE_LABEL[signal.type]}
                 </span>
-                <span className="text-secondary-400 block text-xs">
-                    {signal.description}
+                <TrendBadge trend={signal.trend} />
+                <span
+                    className={cn(
+                        'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium',
+                        SIGNAL_STRENGTH_COLOR[signal.strength]
+                    )}
+                >
+                    {SIGNAL_STRENGTH_LABEL[signal.strength]}
                 </span>
             </div>
+            <span className="text-secondary-400 text-xs">
+                {signal.description}
+            </span>
         </div>
     );
 }
@@ -218,8 +219,6 @@ interface TrendBadgeProps {
 }
 
 function TrendBadge({ trend }: TrendBadgeProps) {
-    const label = TREND_LABEL[trend];
-    if (!label) return null;
     return (
         <span
             className={cn(
@@ -228,7 +227,7 @@ function TrendBadge({ trend }: TrendBadgeProps) {
                 TREND_BG_COLOR[trend]
             )}
         >
-            {label}
+            {TREND_LABEL[trend]}
         </span>
     );
 }

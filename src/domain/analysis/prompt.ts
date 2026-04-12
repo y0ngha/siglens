@@ -557,7 +557,7 @@ const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
         '"A comprehensive, accessible summary that synthesizes ALL findings (indicators, patterns, volume profile, skills, strategies) into plain language a non-technical user can understand. Instead of stating raw indicator values, explain their practical meaning (e.g., instead of RSI is overbought at 75, say the stock has risen quickly and may be due for a pause). Answer: What is happening with this stock and what does it mean for the investor? Use \\n to separate each topic."',
     trend: '"bullish | bearish | neutral"',
     indicatorResults:
-        '[{ "indicatorName": "RSI Signal Guide", "signals": [{ "type": "skill", "description": "RSI 72.5 — 과매수 임계선에 근접, 단기 조정 가능", "strength": "strong | moderate | weak" }] }]',
+        '[{ "indicatorName": "RSI Signal Guide", "signals": [{ "type": "skill", "description": "RSI 72.5 — 과매수 임계선에 근접, 단기 조정 가능", "strength": "strong | moderate | weak", "trend": "bullish | bearish | neutral" }] }]',
     riskLevel: '"low | medium | high"',
     keyLevels:
         '{ "support": [{ "price": 150.00, "reason": "..." }], "resistance": [{ "price": 160.00, "reason": "..." }], "poc": { "price": 155.00, "reason": "..." } }',
@@ -817,7 +817,7 @@ const buildAnalysisRequest = (
                   '- Use the Indicator Signal Guides above to interpret the current indicator values in ## Indicator Values.',
                   '- For each indicator guide, evaluate whether the current values meet any signal condition described in its Signal Interpretation section.',
                   '- For every detected signal, add one entry to the indicatorResults array in the following exact format:',
-                  '    { "indicatorName": "<exact skill name from the list below>", "signals": [{ "type": "skill", "description": "<Korean explanation>", "strength": "strong | moderate | weak" }] }',
+                  '    { "indicatorName": "<exact skill name from the list below>", "signals": [{ "type": "skill", "description": "<Korean explanation>", "strength": "strong | moderate | weak", "trend": "bullish | bearish | neutral" }] }',
                   '- CRITICAL RULES (never violate):',
                   '  1. indicatorName: follow the Name Field Matching rule in ## Analysis Guidelines. It MUST be a non-empty string — never use an empty string, a translated name, or a generic label.',
                   '  2. Each indicatorResults entry corresponds to EXACTLY ONE indicator guide. Never combine multiple indicators (e.g., "MACD and Bollinger") into one entry. Create separate entries for separate indicators.',
@@ -827,6 +827,10 @@ const buildAnalysisRequest = (
                   '  - strong: value is in an extreme zone (e.g., RSI > 80 or < 20, Stochastic > 90 or < 10, CCI > +200 or < -200) OR multiple indicators confirm the same direction with high confluence',
                   '  - moderate: value is in a standard overbought/oversold zone (e.g., RSI 70–80, Stochastic 80–90, CCI ±100–200) with single-indicator confirmation',
                   '  - weak: value is approaching a threshold but has not yet crossed, or the signal conflicts with the prevailing trend',
+                  '- Signal trend assignment:',
+                  '  - bullish: the indicator signal suggests upward price movement (e.g., RSI recovering from oversold, MACD golden cross, price above key moving average)',
+                  '  - bearish: the indicator signal suggests downward price movement (e.g., RSI entering overbought, MACD death cross, price below key moving average)',
+                  '  - neutral: the indicator is in a range-bound or indeterminate state with no clear directional bias',
                   '- When the Key Combinations section of a guide identifies a multi-indicator confluence that is currently active, increase the strength by one level AND note the confluence in the description field.',
                   "- Respect each guide's Caveats section: do not generate a signal if the caveats indicate it would be unreliable in the current market context (e.g., Stochastic overbought in a strong uptrend with ADX > 25 should not automatically produce a bearish signal).",
                   '- If no signal conditions are met for a given indicator guide, simply omit that guide from indicatorResults. Do not create placeholder or empty entries.',
