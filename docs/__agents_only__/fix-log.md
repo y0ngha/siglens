@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #288 | feat/287/update-popular-tickers-script | 2026-04-12]
+- Violation: `push`로 배열 직접 변경 — `weeklyVolumes.push(...)` 사용
+- Rule: MISTAKES.md Coding Paradigm #5 — push/splice 직접 변경 금지, spread 문법 사용
+- Context: 비동기 순차 루프에서 결과 배열 누적 시 push 사용, async reduce 패턴으로 교체
+
+- Violation: `npx prettier` 사용 — `yarn` 대신 `npx` 사용
+- Rule: CLAUDE.md — 패키지 실행 시 항상 yarn 사용, npm/npx 금지
+- Context: 스크립트 마지막 포매팅 단계에서 `execSync('npx prettier...')` 사용
+
+- Violation: `as` 타입 단언에 설명 주석 누락
+- Rule: CONVENTIONS.md — `as` 단언 사용 시 이유를 주석으로 명시
+- Context: fetchScreenerResults, fetchEodBars에서 FMP API 응답 파싱 시 `as` 단언 주석 없이 사용
+
 ## [PR #286 Round 6 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
 - Violation: roving tabindex 구현에서 `element.focus()` 명시 호출 누락 — 상태(tabIndex) 업데이트만으로는 DOM 포커스 이동 미동작
 - Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴에서 tabIndex 업데이트와 함께 element.focus() 명시 호출 필수
