@@ -1,5 +1,24 @@
 # Changelog
 
+# [0.8.0](https://github.com/y0ngha/siglens/compare/v0.7.0...v0.8.0) (2026-04-12)
+
+
+### Bug Fixes
+
+* pollAnalysisAction parseJsonResponse try-catch 추가 및 테스트 케이스 추가 ([cf1e64c](https://github.com/y0ngha/siglens/commit/cf1e64cfae370dd06a9fc8d36588d08b05554778))
+* PR 코멘트 반영 - import/first 위반 해결 및 as-cast 주석 추가 ([eae0ae8](https://github.com/y0ngha/siglens/commit/eae0ae88215e92c596c8430d4205b1d6aa75fd39))
+* PR 코멘트 반영 - Promise.all race condition, JSON 파싱, hook 순서, useAnalysis 로직 ([ab38aba](https://github.com/y0ngha/siglens/commit/ab38abaf5e573979a7bfbce99a7849b4218ccd3a))
+* PR 코멘트 반영 - skillsDegraded 위치 이동, 환경변수 검증 위치 조정, HTTP 상수화, 테스트 정리 ([332c226](https://github.com/y0ngha/siglens/commit/332c2261b688df7a1f95680fa6cbc60d9803dcc6))
+* 아키텍처 위반 - SubmitAnalysisResult/PollAnalysisResult 도메인 타입으로 이동 ([a25e4b2](https://github.com/y0ngha/siglens/commit/a25e4b2124881b19b9afa15af2c85de8558cdd50))
+
+
+### Features
+
+* Gemini 분석을 Cloud Run 워커로 분리 - 외부 작업 큐 및 Redis 폴링 도입 ([a236e58](https://github.com/y0ngha/siglens/commit/a236e589accf6ca438f9d96668944a50fac32968)), closes [#291](https://github.com/y0ngha/siglens/issues/291)
+* Worker /analyze 엔드포인트 및 submitAnalysisAction에 X-Worker-Secret 인증 추가 ([6f8e49c](https://github.com/y0ngha/siglens/commit/6f8e49c654a238b36b6a79b8f8b68dea4bbb6fc2))
+* worker에서 Claude/Gemini AI provider 지원 ([cc4b667](https://github.com/y0ngha/siglens/commit/cc4b667b1974c52cd0417ad1d7d2848c40efbe0d))
+* 분석 진행 UI 개선 - 팁 자동순환, 애니메이션, 15분 대기시간 확대 ([61d2cc8](https://github.com/y0ngha/siglens/commit/61d2cc8cd54c6e8dcbfc61aa49daccff54c33181))
+
 # [0.7.0](https://github.com/y0ngha/siglens/compare/v0.6.1...v0.7.0) (2026-04-12)
 
 
