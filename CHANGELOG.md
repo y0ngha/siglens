@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.6](https://github.com/y0ngha/siglens/compare/v0.8.5...v0.8.6) (2026-04-13)
+
+
+### Features
+
+* 비용 최적화를 위해 gemini를 사용할 때 무료버전 > 유료버전 순으로 사용하도록 처리 ([a84f04b](https://github.com/y0ngha/siglens/commit/a84f04ba4a0c788ec38a7b3dda8d788488797ac3))
+
 ## [0.8.5](https://github.com/y0ngha/siglens/compare/v0.8.4...v0.8.5) (2026-04-13)
 
 
