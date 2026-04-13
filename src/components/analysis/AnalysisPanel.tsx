@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type React from 'react';
 import type {
@@ -393,12 +393,18 @@ interface TooltipPosition {
     left: number;
 }
 
+const TOOLTIP_GAP = 6;
+
 function getTooltipPosition(
     triggerRect: DOMRect,
     tooltipEl: HTMLElement
 ): TooltipPosition {
     const tooltipRect = tooltipEl.getBoundingClientRect();
-    const top = triggerRect.top - tooltipRect.height - 6;
+    const aboveTop = triggerRect.top - tooltipRect.height - TOOLTIP_GAP;
+    const top =
+        aboveTop < TOOLTIP_VIEWPORT_PADDING
+            ? triggerRect.bottom + TOOLTIP_GAP
+            : aboveTop;
     const rawLeft =
         triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
     const maxLeft =
@@ -413,7 +419,9 @@ interface InfoTooltipProps {
 }
 
 function InfoTooltip({ children }: InfoTooltipProps) {
+    const tooltipId = useId();
     const [open, setOpen] = useState(false);
+    const [positioned, setPositioned] = useState(false);
     const triggerRef = useRef<HTMLButtonElement>(null);
     const tooltipRef = useRef<HTMLDivElement>(null);
     const [position, setPosition] = useState<TooltipPosition>({
@@ -426,25 +434,23 @@ function InfoTooltip({ children }: InfoTooltipProps) {
     });
 
     const handleClick = (): void => {
-        if (!open && triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            setPosition({ top: rect.top - 6, left: rect.left });
+        if (open) {
+            setOpen(false);
+            setPositioned(false);
+        } else {
+            setOpen(true);
         }
-        setOpen(prev => !prev);
     };
 
     const handlePointerEnter = (e: React.PointerEvent): void => {
         if (e.pointerType === 'touch') return;
-        if (triggerRef.current) {
-            const rect = triggerRef.current.getBoundingClientRect();
-            setPosition({ top: rect.top - 6, left: rect.left });
-        }
         setOpen(true);
     };
 
     const handlePointerLeave = (e: React.PointerEvent): void => {
         if (e.pointerType === 'touch') return;
         setOpen(false);
+        setPositioned(false);
     };
 
     return (
@@ -452,6 +458,7 @@ function InfoTooltip({ children }: InfoTooltipProps) {
             <button
                 ref={triggerRef}
                 type="button"
+                aria-describedby={open ? tooltipId : undefined}
                 onClick={handleClick}
                 onPointerEnter={handlePointerEnter}
                 onPointerLeave={handlePointerLeave}
@@ -474,11 +481,17 @@ function InfoTooltip({ children }: InfoTooltipProps) {
                                 ) {
                                     setPosition(pos);
                                 }
+                                if (!positioned) setPositioned(true);
                             }
                         }}
+                        id={tooltipId}
                         role="tooltip"
                         className="bg-secondary-800 border-secondary-600 fixed z-[9999] rounded border p-2 text-xs leading-relaxed shadow-lg"
-                        style={{ top: position.top, left: position.left }}
+                        style={{
+                            top: position.top,
+                            left: position.left,
+                            visibility: positioned ? 'visible' : 'hidden',
+                        }}
                     >
                         {children}
                     </div>,
@@ -498,9 +511,9 @@ function ConfluenceInfo({ level }: ConfluenceInfoProps) {
     return (
         <InfoTooltip>
             <div className="flex flex-col gap-1">
-                {level.sources.map(source => (
+                {level.sources.map((source, index) => (
                     <div
-                        key={`${source.price}-${source.reason}`}
+                        key={`${source.price}-${source.reason}-${index}`}
                         className="flex items-baseline gap-2 whitespace-nowrap"
                     >
                         <span className="text-secondary-300 shrink-0">
