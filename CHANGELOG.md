@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.5](https://github.com/y0ngha/siglens/compare/v0.8.4...v0.8.5) (2026-04-13)
+
+
+### Features
+
+* 지수백오프 적용 및 gemini ai 모델 fallback model 추가 ([795858d](https://github.com/y0ngha/siglens/commit/795858d57e7215116a66398ea4eef275dde8ba60))
+
 ## [0.8.4](https://github.com/y0ngha/siglens/compare/v0.8.3...v0.8.4) (2026-04-13)
 
 

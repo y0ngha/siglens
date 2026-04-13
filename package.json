@@ -1,6 +1,6 @@
 {
     "name": "siglens",
-    "version": "0.8.4",
+    "version": "0.8.5",
     "private": true,
     "author": "신용하 <dev.y0ngha@gmail.com>",
     "scripts": {
