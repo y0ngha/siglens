@@ -4,7 +4,10 @@ import { useState, useCallback, useMemo, useRef } from 'react';
 import type React from 'react';
 import dynamic from 'next/dynamic';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
-import { validateKeyLevels } from '@/domain/analysis/keyLevels';
+import {
+    validateKeyLevels,
+    clusterKeyLevels,
+} from '@/domain/analysis/keyLevels';
 import { validateActionPrices } from '@/domain/analysis/actionRecommendation';
 import { cn } from '@/lib/cn';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
@@ -170,6 +173,12 @@ export function ChartContent({
         [analysis.keyLevels]
     );
 
+    const clusteredKeyLevels = useMemo(() => {
+        const lastBar = bars[bars.length - 1];
+        if (!lastBar) return { support: [], resistance: [], poc: undefined };
+        return clusterKeyLevels(validatedKeyLevels, lastBar.close);
+    }, [validatedKeyLevels, bars]);
+
     const validatedActionPrices = useMemo(
         () => validateActionPrices(analysis.actionRecommendation),
         [analysis.actionRecommendation]
@@ -199,7 +208,7 @@ export function ChartContent({
                 />
                 <AnalysisPanel
                     analysis={analysis}
-                    keyLevels={validatedKeyLevels}
+                    keyLevels={clusteredKeyLevels}
                     isAnalyzing={isAnalyzing}
                     showProgress={displayAnalyzing}
                     progressPhaseIndex={progressPhaseIndex}
@@ -221,7 +230,7 @@ export function ChartContent({
         [
             analysisStatus,
             analysis,
-            validatedKeyLevels,
+            clusteredKeyLevels,
             isAnalyzing,
             displayAnalyzing,
             progressPhaseIndex,
@@ -253,7 +262,7 @@ export function ChartContent({
                         patterns={analysis.patternSummaries}
                         trendlines={analysis.trendlines}
                         trendlinesVisible={trendlinesVisible}
-                        keyLevels={validatedKeyLevels}
+                        keyLevels={clusteredKeyLevels}
                         keyLevelsVisible={keyLevelsVisible}
                         actionPrices={validatedActionPrices}
                         actionPricesVisible={actionPricesVisible}

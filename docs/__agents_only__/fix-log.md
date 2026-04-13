@@ -1,5 +1,26 @@
 # Fix Log
 
+## [PR #294 | feat/key-levels-clustering | 2026-04-13]
+- Violation: 가격 반올림 `100`이 매직 넘버로 사용됨
+- Rule: Domain Layer Checklist — No hardcoded literals → extract to constants
+- Context: `keyLevels.ts`에서 `Math.round(rawPrice * 100) / 100` → `PRICE_DECIMAL_FACTOR` 상수로 추출
+
+- Violation: 툴팁 위치 계산 시 뷰포트 상단 경계 미고려
+- Rule: UX — 트리거가 화면 상단에 있을 때 툴팁이 화면 밖으로 벗어남
+- Context: `getTooltipPosition()`에서 `aboveTop < TOOLTIP_VIEWPORT_PADDING`이면 하단에 표시하도록 개선
+
+- Violation: Portal 기반 툴팁이 초기 위치(0,0)에서 깜빡인 후 올바른 위치로 이동
+- Rule: UX — 포탈 렌더링 시 위치 계산 전 화면 깜빡임 발생
+- Context: `InfoTooltip`에 `positioned` 상태 추가, 위치 계산 완료 전까지 `visibility: hidden` 적용
+
+- Violation: `role="tooltip"` 요소에 `aria-describedby` 연결 누락
+- Rule: WAI-ARIA — tooltip 패턴은 트리거에 `aria-describedby`로 연결해야 스크린 리더 접근 가능
+- Context: `InfoTooltip`에 `useId()`로 고유 ID 생성, 트리거 button에 `aria-describedby` 추가
+
+- Violation: React key에 `source.price-source.reason` 조합 사용 — 동일 가격·사유 존재 시 중복 가능
+- Rule: React — 리스트 렌더링 시 key 고유성 보장
+- Context: `ConfluenceInfo`에서 key에 `index` 추가하여 고유성 확보
+
 ## [PR #292 | feat/291/cloud-run-worker | 2026-04-12]
 - Violation: Worker에서 Promise.all로 result와 status를 동시 저장 — poller가 done 상태를 보고 result가 아직 없을 수 있는 레이스 컨디션
 - Rule: 데이터 의존 관계가 있는 Redis 쓰기는 순차 실행

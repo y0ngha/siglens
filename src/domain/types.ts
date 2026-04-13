@@ -296,6 +296,17 @@ export interface KeyLevels {
     poc?: KeyLevel;
 }
 
+export interface ClusteredKeyLevel extends KeyLevel {
+    count: number;
+    sources: KeyLevel[];
+}
+
+export interface ClusteredKeyLevels {
+    support: ClusteredKeyLevel[];
+    resistance: ClusteredKeyLevel[];
+    poc?: KeyLevel;
+}
+
 export interface PriceTarget {
     price: number;
     basis: string;

@@ -1,4 +1,8 @@
-import { validateKeyLevels } from '@/domain/analysis/keyLevels';
+import {
+    validateKeyLevels,
+    clusterKeyLevels,
+    DEFAULT_EPSILON_PERCENT,
+} from '@/domain/analysis/keyLevels';
 import type { KeyLevels } from '@/domain/types';
 
 describe('keyLevels', () => {
@@ -167,6 +171,217 @@ describe('keyLevels', () => {
                     { price: 200, reason: '유효 저항' },
                 ]);
                 expect(result.poc).toEqual({ price: 150, reason: 'PoC 유효' });
+            });
+        });
+    });
+
+    describe('clusterKeyLevels', () => {
+        const currentPrice = 100;
+        const epsilonPercent = DEFAULT_EPSILON_PERCENT;
+
+        describe('빈 배열일 때', () => {
+            it('빈 배열을 그대로 반환한다', () => {
+                const input: KeyLevels = {
+                    support: [],
+                    resistance: [],
+                };
+                const result = clusterKeyLevels(
+                    input,
+                    currentPrice,
+                    epsilonPercent
+                );
+                expect(result.support).toEqual([]);
+                expect(result.resistance).toEqual([]);
+            });
+        });
+
+        describe('단독 레벨일 때', () => {
+            it('count=1, sources에 원본을 포함한다', () => {
+                const input: KeyLevels = {
+                    support: [{ price: 95, reason: '지지선' }],
+                    resistance: [],
+                };
+                const result = clusterKeyLevels(
+                    input,
+                    currentPrice,
+                    epsilonPercent
+                );
+                expect(result.support).toEqual([
+                    {
+                        price: 95,
+                        reason: '지지선',
+                        count: 1,
+                        sources: [{ price: 95, reason: '지지선' }],
+                    },
+                ]);
+            });
+        });
+
+        describe('2개 레벨이 epsilon 이내일 때', () => {
+            it('하나의 클러스터로 병합하고 평균 가격을 반환한다', () => {
+                const input: KeyLevels = {
+                    support: [
+                        { price: 100.2, reason: 'MA20' },
+                        { price: 100.0, reason: 'EMA20' },
+                    ],
+                    resistance: [],
+                };
+                const result = clusterKeyLevels(
+                    input,
+                    currentPrice,
+                    epsilonPercent
+                );
+                expect(result.support).toHaveLength(1);
+                expect(result.support[0].count).toBe(2);
+                expect(result.support[0].price).toBeCloseTo(100.1);
+                expect(result.support[0].reason).toBe('2개 지표 수렴');
+                expect(result.support[0].sources).toHaveLength(2);
+            });
+        });
+
+        describe('3개 이상 연쇄 클러스터링', () => {
+            it('인접한 레벨들을 하나의 클러스터로 묶는다', () => {
+                const input: KeyLevels = {
+                    support: [
+                        { price: 100.0, reason: 'A' },
+                        { price: 100.3, reason: 'B' },
+                        { price: 100.5, reason: 'C' },
+                    ],
+                    resistance: [],
+                };
+                // epsilon = 0.5, gaps: 0.3 ≤ 0.5, 0.2 ≤ 0.5
+                const result = clusterKeyLevels(
+                    input,
+                    currentPrice,
+                    epsilonPercent
+                );
+                expect(result.support).toHaveLength(1);
+                expect(result.support[0].count).toBe(3);
+                // (100.0 + 100.3 + 100.5) / 3 ≈ 100.267 → 반올림 100.27
+                expect(result.support[0].price).toBeCloseTo(100.27);
+                expect(result.support[0].reason).toBe('3개 지표 수렴');
+            });
+        });
+
+        describe('epsilon 초과 gap이 있을 때', () => {
+            it('별도 클러스터로 분리한다', () => {
+                const input: KeyLevels = {
+                    support: [
+                        { price: 100.0, reason: 'A' },
+                        { price: 100.3, reason: 'B' },
+                        { price: 101.5, reason: 'C' },
+                    ],
+                    resistance: [],
+                };
+                // epsilon = 0.5, gaps: 0.3 ≤ 0.5, 1.2 > 0.5
+                const result = clusterKeyLevels(
+                    input,
+                    currentPrice,
+                    epsilonPercent
+                );
+                // 내림차순: 높은 가격 클러스터가 먼저
+                expect(result.support).toHaveLength(2);
+                expect(result.support[0].count).toBe(1);
+                expect(result.support[0].reason).toBe('C');
+                expect(result.support[1].count).toBe(2);
+            });
+        });
+
+        describe('POC 처리', () => {
+            it('poc는 변경 없이 그대로 통과한다', () => {
+                const input: KeyLevels = {
+                    support: [],
+                    resistance: [],
+                    poc: { price: 150, reason: 'PoC' },
+                };
+                const result = clusterKeyLevels(
+                    input,
+                    currentPrice,
+                    epsilonPercent
+                );
+                expect(result.poc).toEqual({ price: 150, reason: 'PoC' });
+            });
+
+            it('poc가 undefined이면 결과도 undefined이다', () => {
+                const input: KeyLevels = {
+                    support: [],
+                    resistance: [],
+                };
+                const result = clusterKeyLevels(
+                    input,
+                    currentPrice,
+                    epsilonPercent
+                );
+                expect(result.poc).toBeUndefined();
+            });
+        });
+
+        describe('support와 resistance 독립 처리', () => {
+            it('각각 별도로 클러스터링한다', () => {
+                const input: KeyLevels = {
+                    support: [
+                        { price: 95.0, reason: 'S1' },
+                        { price: 95.3, reason: 'S2' },
+                    ],
+                    resistance: [
+                        { price: 105.0, reason: 'R1' },
+                        { price: 105.2, reason: 'R2' },
+                    ],
+                };
+                const result = clusterKeyLevels(
+                    input,
+                    currentPrice,
+                    epsilonPercent
+                );
+                expect(result.support).toHaveLength(1);
+                expect(result.support[0].count).toBe(2);
+                expect(result.resistance).toHaveLength(1);
+                expect(result.resistance[0].count).toBe(2);
+            });
+        });
+
+        describe('입력 순서와 관계없이 정렬 후 클러스터링', () => {
+            it('역순으로 입력해도 동일한 결과를 반환한다', () => {
+                const input: KeyLevels = {
+                    support: [
+                        { price: 100.5, reason: 'C' },
+                        { price: 100.0, reason: 'A' },
+                        { price: 100.3, reason: 'B' },
+                    ],
+                    resistance: [],
+                };
+                const result = clusterKeyLevels(
+                    input,
+                    currentPrice,
+                    epsilonPercent
+                );
+                expect(result.support).toHaveLength(1);
+                expect(result.support[0].count).toBe(3);
+                expect(result.support[0].sources).toEqual([
+                    { price: 100.0, reason: 'A' },
+                    { price: 100.3, reason: 'B' },
+                    { price: 100.5, reason: 'C' },
+                ]);
+            });
+        });
+
+        describe('currentPrice가 0일 때', () => {
+            it('epsilon이 0이므로 동일 가격만 병합한다', () => {
+                const input: KeyLevels = {
+                    support: [
+                        { price: 100.0, reason: 'A' },
+                        { price: 100.3, reason: 'B' },
+                        { price: 100.0, reason: 'C' },
+                    ],
+                    resistance: [],
+                };
+                // 내림차순: 높은 가격이 먼저
+                const result = clusterKeyLevels(input, 0);
+                expect(result.support).toHaveLength(2);
+                expect(result.support[0].count).toBe(1);
+                expect(result.support[0].price).toBe(100.3);
+                expect(result.support[1].count).toBe(2);
+                expect(result.support[1].price).toBe(100.0);
             });
         });
     });

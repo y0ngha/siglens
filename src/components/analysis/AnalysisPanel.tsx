@@ -1,13 +1,15 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import type React from 'react';
 import type {
     ActionRecommendation,
     AnalysisResponse,
     CandlePatternSummary,
     EntryRecommendation,
-    KeyLevels,
+    ClusteredKeyLevel,
+    ClusteredKeyLevels,
     PatternResult,
     PriceScenario,
     RiskLevel,
@@ -32,6 +34,7 @@ import {
 } from '@/components/analysis/utils/parseStructuredSummary';
 import { AnalysisProgress } from '@/components/analysis/AnalysisProgress';
 import { AnalysisToast } from '@/components/analysis/AnalysisToast';
+import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis';
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
 
@@ -383,6 +386,163 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
     );
 }
 
+const TOOLTIP_VIEWPORT_PADDING = 8;
+
+interface TooltipPosition {
+    top: number;
+    left: number;
+}
+
+const TOOLTIP_GAP = 6;
+
+function getTooltipPosition(
+    triggerRect: DOMRect,
+    tooltipEl: HTMLElement
+): TooltipPosition {
+    const tooltipRect = tooltipEl.getBoundingClientRect();
+    const aboveTop = triggerRect.top - tooltipRect.height - TOOLTIP_GAP;
+    const top =
+        aboveTop < TOOLTIP_VIEWPORT_PADDING
+            ? triggerRect.bottom + TOOLTIP_GAP
+            : aboveTop;
+    const rawLeft =
+        triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
+    const maxLeft =
+        window.innerWidth - tooltipRect.width - TOOLTIP_VIEWPORT_PADDING;
+    const left = Math.max(TOOLTIP_VIEWPORT_PADDING, Math.min(rawLeft, maxLeft));
+
+    return { top, left };
+}
+
+interface InfoTooltipProps {
+    children: React.ReactNode;
+}
+
+function InfoTooltip({ children }: InfoTooltipProps) {
+    const tooltipId = useId();
+    const [open, setOpen] = useState(false);
+    const [positioned, setPositioned] = useState(false);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const tooltipRef = useRef<HTMLDivElement>(null);
+    const [position, setPosition] = useState<TooltipPosition>({
+        top: 0,
+        left: 0,
+    });
+
+    useOnClickOutside([triggerRef, tooltipRef], () => setOpen(false), {
+        enabled: open,
+    });
+
+    const handleClick = (): void => {
+        if (open) {
+            setOpen(false);
+            setPositioned(false);
+        } else {
+            setOpen(true);
+        }
+    };
+
+    const handlePointerEnter = (e: React.PointerEvent): void => {
+        if (e.pointerType === 'touch') return;
+        setOpen(true);
+    };
+
+    const handlePointerLeave = (e: React.PointerEvent): void => {
+        if (e.pointerType === 'touch') return;
+        setOpen(false);
+        setPositioned(false);
+    };
+
+    return (
+        <>
+            <button
+                ref={triggerRef}
+                type="button"
+                aria-describedby={open ? tooltipId : undefined}
+                onClick={handleClick}
+                onPointerEnter={handlePointerEnter}
+                onPointerLeave={handlePointerLeave}
+                className="text-secondary-600 hover:text-secondary-400 ml-1 cursor-help text-xs leading-none transition-colors"
+            >
+                ⓘ
+            </button>
+            {open &&
+                createPortal(
+                    <div
+                        ref={el => {
+                            tooltipRef.current = el;
+                            if (el && triggerRef.current) {
+                                const triggerRect =
+                                    triggerRef.current.getBoundingClientRect();
+                                const pos = getTooltipPosition(triggerRect, el);
+                                if (
+                                    pos.top !== position.top ||
+                                    pos.left !== position.left
+                                ) {
+                                    setPosition(pos);
+                                }
+                                if (!positioned) setPositioned(true);
+                            }
+                        }}
+                        id={tooltipId}
+                        role="tooltip"
+                        className="bg-secondary-800 border-secondary-600 fixed z-[9999] rounded border p-2 text-xs leading-relaxed shadow-lg"
+                        style={{
+                            top: position.top,
+                            left: position.left,
+                            visibility: positioned ? 'visible' : 'hidden',
+                        }}
+                    >
+                        {children}
+                    </div>,
+                    document.body
+                )}
+        </>
+    );
+}
+
+interface ConfluenceInfoProps {
+    level: ClusteredKeyLevel;
+}
+
+function ConfluenceInfo({ level }: ConfluenceInfoProps) {
+    if (level.count < 2) return null;
+
+    return (
+        <InfoTooltip>
+            <div className="flex flex-col gap-1">
+                {level.sources.map((source, index) => (
+                    <div
+                        key={`${source.price}-${source.reason}-${index}`}
+                        className="flex items-baseline gap-2 whitespace-nowrap"
+                    >
+                        <span className="text-secondary-300 shrink-0">
+                            {source.price.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            })}
+                        </span>
+                        <span className="text-secondary-400">
+                            {source.reason}
+                        </span>
+                    </div>
+                ))}
+            </div>
+        </InfoTooltip>
+    );
+}
+
+function KeyLevelsHeaderInfo() {
+    return (
+        <InfoTooltip>
+            <span className="text-secondary-300">
+                가까운 가격대의 지표들이 수렴된 레벨입니다. 수렴 지표가 많을수록
+                해당 가격대의 지지/저항 신뢰도가 높습니다.
+            </span>
+        </InfoTooltip>
+    );
+}
+
 interface PatternAccordionItemProps {
     pattern: PatternResult;
     isVisible: boolean;
@@ -730,7 +890,7 @@ function ReanalyzeButton({
 
 interface AnalysisPanelProps {
     analysis: AnalysisResponse;
-    keyLevels: KeyLevels;
+    keyLevels: ClusteredKeyLevels;
     isAnalyzing?: boolean;
     /** 마무리 애니메이션을 포함해 "사용자에게 분석이 진행 중인 것처럼 보이는" 상태.
      *  AnalysisProgress 표시·본문 섹션 숨김에 사용된다. ChartContent가 소유한다. */
@@ -878,33 +1038,11 @@ export function AnalysisPanel({
                         keyLevels.resistance.length > 0 ||
                         keyLevels.poc !== undefined) && (
                         <div className="flex flex-col gap-2">
-                            <div className="flex items-center justify-between">
+                            <div className="flex items-center">
                                 <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                                     주요 레벨
                                 </span>
-                                {/*{onKeyLevelsVisibilityChange !== undefined && (*/}
-                                {/*    <button*/}
-                                {/*        type="button"*/}
-                                {/*        onClick={() =>*/}
-                                {/*            onKeyLevelsVisibilityChange(*/}
-                                {/*                !keyLevelsVisible*/}
-                                {/*            )*/}
-                                {/*        }*/}
-                                {/*        className={cn(*/}
-                                {/*            'shrink-0 rounded p-1 transition-colors',*/}
-                                {/*            keyLevelsVisible*/}
-                                {/*                ? 'text-primary-400 hover:text-primary-300'*/}
-                                {/*                : 'text-secondary-600 hover:text-secondary-400'*/}
-                                {/*        )}*/}
-                                {/*        title={*/}
-                                {/*            keyLevelsVisible*/}
-                                {/*                ? '차트에서 숨기기'*/}
-                                {/*                : '차트에서 보기'*/}
-                                {/*        }*/}
-                                {/*    >*/}
-                                {/*        <EyeIcon isVisible={keyLevelsVisible} />*/}
-                                {/*    </button>*/}
-                                {/*)}*/}
+                                <KeyLevelsHeaderInfo />
                             </div>
                             <div className="grid grid-cols-2 gap-3">
                                 {keyLevels.resistance.length > 0 && (
@@ -918,10 +1056,19 @@ export function AnalysisPanel({
                                                 className="flex flex-col"
                                             >
                                                 <span className="text-chart-bearish text-sm font-medium">
-                                                    {level.price.toLocaleString()}
+                                                    {level.price.toLocaleString(
+                                                        undefined,
+                                                        {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2,
+                                                        }
+                                                    )}
                                                 </span>
-                                                <span className="text-secondary-600 text-xs">
+                                                <span className="text-secondary-600 inline-flex items-center text-xs">
                                                     {level.reason}
+                                                    <ConfluenceInfo
+                                                        level={level}
+                                                    />
                                                 </span>
                                             </div>
                                         ))}
@@ -938,10 +1085,19 @@ export function AnalysisPanel({
                                                 className="flex flex-col"
                                             >
                                                 <span className="text-chart-bullish text-sm font-medium">
-                                                    {level.price.toLocaleString()}
+                                                    {level.price.toLocaleString(
+                                                        undefined,
+                                                        {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2,
+                                                        }
+                                                    )}
                                                 </span>
-                                                <span className="text-secondary-600 text-xs">
+                                                <span className="text-secondary-600 inline-flex items-center text-xs">
                                                     {level.reason}
+                                                    <ConfluenceInfo
+                                                        level={level}
+                                                    />
                                                 </span>
                                             </div>
                                         ))}
@@ -954,7 +1110,13 @@ export function AnalysisPanel({
                                         PoC
                                     </span>
                                     <span className="text-sm font-medium">
-                                        {keyLevels.poc.price.toLocaleString()}
+                                        {keyLevels.poc.price.toLocaleString(
+                                            undefined,
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}
                                     </span>
                                     <span className="text-secondary-600 text-xs">
                                         {keyLevels.poc.reason}
