@@ -52,7 +52,15 @@ export async function pollAnalysisAction(
     }
 
     const skillsLoader = new FileSkillsLoader();
-    const skills = await skillsLoader.loadSkills();
+    let skills: Awaited<ReturnType<typeof skillsLoader.loadSkills>> = [];
+    try {
+        skills = await skillsLoader.loadSkills();
+    } catch (error) {
+        console.error(
+            '[Poll] Skills loading failed, proceeding without skills:',
+            error
+        );
+    }
     const skillsDegraded = meta?.skillsDegraded ?? false;
 
     const enriched = enrichAnalysisWithConfidence(parsed, skills);

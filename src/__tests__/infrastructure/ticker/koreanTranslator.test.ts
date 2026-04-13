@@ -8,6 +8,8 @@ jest.mock('@google/genai', () => ({
     })),
 }));
 
+import { GoogleGenAI } from '@google/genai';
+
 jest.mock('@/infrastructure/ai/utils', () => ({
     stripMarkdownCodeBlock: jest.fn((text: string) => text),
 }));
@@ -15,17 +17,26 @@ jest.mock('@/infrastructure/ai/utils', () => ({
 import { stripMarkdownCodeBlock } from '@/infrastructure/ai/utils';
 
 const mockStripMarkdown = stripMarkdownCodeBlock as jest.Mock;
+const MockedGoogleGenAI = GoogleGenAI as jest.MockedClass<typeof GoogleGenAI>;
 
 describe('translateCompanyNames', () => {
     beforeEach(() => {
         process.env.TRANSLATE_API_KEY = 'test-key';
+        delete process.env.TRANSLATE_FREE_API_KEY;
         jest.clearAllMocks();
         mockStripMarkdown.mockImplementation((text: string) => text);
+        MockedGoogleGenAI.mockImplementation(
+            () =>
+                ({
+                    models: { generateContent: mockGenerateContent },
+                }) as unknown as GoogleGenAI
+        );
     });
 
     afterEach(() => {
         delete process.env.TRANSLATE_API_KEY;
         delete process.env.TRANSLATE_MODEL;
+        delete process.env.TRANSLATE_FREE_API_KEY;
     });
 
     describe('빈 배열을 전달할 때', () => {
@@ -92,6 +103,65 @@ describe('translateCompanyNames', () => {
             expect(mockGenerateContent).toHaveBeenCalledWith(
                 expect.objectContaining({ model: 'gemini-2.5-flash' })
             );
+        });
+    });
+
+    describe('TRANSLATE_FREE_API_KEY가 설정된 경우', () => {
+        it('무료 키로 먼저 호출한다', async () => {
+            process.env.TRANSLATE_FREE_API_KEY = 'free-key';
+            const freeGenerateContent = jest.fn().mockResolvedValue({
+                text: JSON.stringify({ AAPL: '애플' }),
+            });
+            let callCount = 0;
+            MockedGoogleGenAI.mockImplementation(
+                () =>
+                    ({
+                        models: {
+                            generateContent:
+                                callCount++ === 0
+                                    ? freeGenerateContent
+                                    : mockGenerateContent,
+                        },
+                    }) as unknown as GoogleGenAI
+            );
+
+            const result = await translateCompanyNames([
+                { symbol: 'AAPL', name: 'Apple Inc.' },
+            ]);
+
+            expect(freeGenerateContent).toHaveBeenCalledTimes(1);
+            expect(mockGenerateContent).not.toHaveBeenCalled();
+            expect(result).toEqual({ AAPL: '애플' });
+        });
+
+        it('무료 키 실패 시 유료 키로 전환한다', async () => {
+            process.env.TRANSLATE_FREE_API_KEY = 'free-key';
+            const freeGenerateContent = jest
+                .fn()
+                .mockRejectedValue(new Error('quota exceeded'));
+            let callCount = 0;
+            MockedGoogleGenAI.mockImplementation(
+                () =>
+                    ({
+                        models: {
+                            generateContent:
+                                callCount++ === 0
+                                    ? freeGenerateContent
+                                    : mockGenerateContent,
+                        },
+                    }) as unknown as GoogleGenAI
+            );
+            mockGenerateContent.mockResolvedValueOnce({
+                text: JSON.stringify({ AAPL: '애플' }),
+            });
+
+            const result = await translateCompanyNames([
+                { symbol: 'AAPL', name: 'Apple Inc.' },
+            ]);
+
+            expect(freeGenerateContent).toHaveBeenCalledTimes(1);
+            expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+            expect(result).toEqual({ AAPL: '애플' });
         });
     });
 

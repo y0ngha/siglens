@@ -23,18 +23,26 @@ const GEMINI_TOP_P =
 
 /** @deprecated AI 호출은 Cloud Run worker에서 처리. 로컬 개발 폴백용으로만 유지. */
 export class GeminiProvider implements AIProvider {
-    private readonly client: GoogleGenAI;
+    private readonly freeClient: GoogleGenAI | null;
+    private readonly paidClient: GoogleGenAI;
 
     constructor() {
         const apiKey = process.env.GEMINI_API_KEY;
         if (!apiKey) {
             throw new Error('GEMINI_API_KEY must be set');
         }
-        this.client = new GoogleGenAI({ apiKey });
+        const freeApiKey = process.env.GEMINI_FREE_API_KEY;
+        this.freeClient = freeApiKey
+            ? new GoogleGenAI({ apiKey: freeApiKey })
+            : null;
+        this.paidClient = new GoogleGenAI({ apiKey });
     }
 
-    async analyze(prompt: string): Promise<RawAnalysisResponse> {
-        const response = await this.client.models.generateContent({
+    private async callWithClient(
+        client: GoogleGenAI,
+        prompt: string
+    ): Promise<RawAnalysisResponse> {
+        const response = await client.models.generateContent({
             model: GEMINI_MODEL,
             contents: prompt,
             config: {
@@ -49,5 +57,19 @@ export class GeminiProvider implements AIProvider {
             response.text ?? '',
             'Gemini API'
         );
+    }
+
+    async analyze(prompt: string): Promise<RawAnalysisResponse> {
+        if (this.freeClient) {
+            try {
+                return await this.callWithClient(this.freeClient, prompt);
+            } catch {
+                console.warn(
+                    '[GeminiProvider] Free API key failed. Switching to paid key.'
+                );
+            }
+        }
+
+        return this.callWithClient(this.paidClient, prompt);
     }
 }

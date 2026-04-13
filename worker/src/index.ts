@@ -14,42 +14,65 @@ const {
 
 const JOB_TTL_SECONDS = 3600;
 const AI_RETRY_MAX_ATTEMPTS = 5;
+const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
 const AI_RETRY_DELAY_MS = 5000;
 
-async function callAI(prompt: string): Promise<string> {
-    if (config.aiProvider === 'claude') {
-        return callClaude(prompt);
-    }
-
+async function callGeminiWithFallback(
+    prompt: string,
+    apiKey: string,
+    maxAttempts: number = AI_RETRY_MAX_ATTEMPTS
+): Promise<string> {
     try {
         return await withRetry(
             () =>
                 callGemini(prompt, {
+                    apiKey,
                     model: config.gemini.model,
                     thinking: true,
                 }),
             {
-                maxAttempts: AI_RETRY_MAX_ATTEMPTS,
+                maxAttempts,
                 baseDelayMs: AI_RETRY_DELAY_MS,
             }
         );
-    } catch (error) {
-        // 기본 모델 재시도 모두 소진 시 fallback 모델로 5회 시도
+    } catch {
         console.warn(
             `[Worker] Primary model (${config.gemini.model}) exhausted. Falling back to ${config.gemini.fallbackModel} with thinking enabled.`
         );
         return withRetry(
             () =>
                 callGemini(prompt, {
+                    apiKey,
                     model: config.gemini.fallbackModel,
                     thinking: true,
                 }),
-            {
-                maxAttempts: AI_RETRY_MAX_ATTEMPTS,
-                baseDelayMs: AI_RETRY_DELAY_MS,
-            }
+            { maxAttempts, baseDelayMs: AI_RETRY_DELAY_MS }
         );
     }
+}
+
+async function callAI(prompt: string): Promise<string> {
+    if (config.aiProvider === 'claude') {
+        return callClaude(prompt);
+    }
+
+    const { freeApiKey, apiKey } = config.gemini;
+
+    if (freeApiKey) {
+        try {
+            return await callGeminiWithFallback(
+                prompt,
+                freeApiKey,
+                AI_RETRY_MAX_ATTEMPTS_FREE
+            );
+        } catch {
+            console.warn(
+                '[Worker] Free API key exhausted. Switching to paid key.'
+            );
+        }
+    }
+
+    return callGeminiWithFallback(prompt, apiKey);
 }
 
 const app = express();

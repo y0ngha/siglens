@@ -51,8 +51,17 @@ export async function submitAnalysisAction(
 
     // 4. Skills 로딩 + 프롬프트 빌드
     const skillsLoader = new FileSkillsLoader();
-    const skills = await skillsLoader.loadSkills();
-    const skillsDegraded = false;
+    let skills: Awaited<ReturnType<typeof skillsLoader.loadSkills>> = [];
+    let skillsDegraded = false;
+    try {
+        skills = await skillsLoader.loadSkills();
+    } catch (error) {
+        console.error(
+            '[Submit] Skills loading failed, proceeding without skills:',
+            error
+        );
+        skillsDegraded = true;
+    }
 
     const prompt = buildAnalysisPrompt(
         symbol,

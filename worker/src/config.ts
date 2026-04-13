@@ -21,6 +21,7 @@ export const config = {
     },
     gemini: {
         apiKey: aiProvider === 'gemini' ? requireEnv('GEMINI_API_KEY') : '',
+        freeApiKey: process.env.GEMINI_FREE_API_KEY ?? '',
         model: process.env.GEMINI_MODEL ?? 'gemini-2.5-flash',
         fallbackModel:
             process.env.GEMINI_FALLBACK_MODEL ?? 'gemini-2.5-flash-lite',

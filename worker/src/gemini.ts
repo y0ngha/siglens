@@ -4,11 +4,21 @@ import { AI_SYSTEM_PROMPT } from './ai-system-prompt.js';
 
 const GEMINI_TIMEOUT_MS = 3600_000;
 
-const client = new GoogleGenAI({ apiKey: config.gemini.apiKey });
+const clientCache = new Map<string, GoogleGenAI>();
+
+function getClient(apiKey: string): GoogleGenAI {
+    let client = clientCache.get(apiKey);
+    if (!client) {
+        client = new GoogleGenAI({ apiKey });
+        clientCache.set(apiKey, client);
+    }
+    return client;
+}
 
 export interface GeminiCallOptions {
     model?: string;
     thinking?: boolean;
+    apiKey?: string;
 }
 
 export async function callGemini(
@@ -16,6 +26,7 @@ export async function callGemini(
     options: GeminiCallOptions = {}
 ): Promise<string> {
     const modelName = options.model ?? config.gemini.model;
+    const client = getClient(options.apiKey ?? config.gemini.apiKey);
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);

@@ -34,6 +34,7 @@ describe('GeminiProvider', () => {
     };
 
     beforeEach(() => {
+        delete process.env.GEMINI_FREE_API_KEY;
         mockGenerateContent = jest.fn();
         mockGenerateContent.mockResolvedValue({
             text: JSON.stringify(mockAnalysisResponse),
@@ -47,6 +48,67 @@ describe('GeminiProvider', () => {
                 }) as unknown as GoogleGenAI
         );
         provider = new GeminiProvider();
+    });
+
+    afterEach(() => {
+        delete process.env.GEMINI_FREE_API_KEY;
+    });
+
+    describe('GEMINI_FREE_API_KEY가 설정된 경우', () => {
+        it('무료 키로 먼저 호출한다', async () => {
+            process.env.GEMINI_FREE_API_KEY = 'free-key';
+            const freeGenerateContent = jest.fn().mockResolvedValue({
+                text: JSON.stringify(mockAnalysisResponse),
+            });
+            let callCount = 0;
+            (
+                GoogleGenAI as jest.MockedClass<typeof GoogleGenAI>
+            ).mockImplementation(
+                () =>
+                    ({
+                        models: {
+                            generateContent:
+                                callCount++ === 0
+                                    ? freeGenerateContent
+                                    : mockGenerateContent,
+                        },
+                    }) as unknown as GoogleGenAI
+            );
+            const providerWithFree = new GeminiProvider();
+
+            await providerWithFree.analyze('test prompt');
+
+            expect(freeGenerateContent).toHaveBeenCalledTimes(1);
+            expect(mockGenerateContent).not.toHaveBeenCalled();
+        });
+
+        it('무료 키 실패 시 유료 키로 전환한다', async () => {
+            process.env.GEMINI_FREE_API_KEY = 'free-key';
+            const freeGenerateContent = jest
+                .fn()
+                .mockRejectedValue(new Error('quota exceeded'));
+            let callCount = 0;
+            (
+                GoogleGenAI as jest.MockedClass<typeof GoogleGenAI>
+            ).mockImplementation(
+                () =>
+                    ({
+                        models: {
+                            generateContent:
+                                callCount++ === 0
+                                    ? freeGenerateContent
+                                    : mockGenerateContent,
+                        },
+                    }) as unknown as GoogleGenAI
+            );
+            const providerWithFree = new GeminiProvider();
+
+            const result = await providerWithFree.analyze('test prompt');
+
+            expect(freeGenerateContent).toHaveBeenCalledTimes(1);
+            expect(mockGenerateContent).toHaveBeenCalledTimes(1);
+            expect(result).toEqual(mockAnalysisResponse);
+        });
     });
 
     describe('GEMINI_API_KEY가 설정되지 않은 경우', () => {

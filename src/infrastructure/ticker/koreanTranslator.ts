@@ -8,6 +8,20 @@ interface TranslateEntry {
     name: string;
 }
 
+async function callTranslate(
+    client: GoogleGenAI,
+    model: string,
+    prompt: string
+): Promise<Record<string, string>> {
+    const result = await client.models.generateContent({
+        model,
+        contents: prompt,
+    });
+    const text = result.text ?? '';
+    // JSON.parse returns `any`; type guard for Record<string, string> is not feasible
+    return JSON.parse(stripMarkdownCodeBlock(text)) as Record<string, string>;
+}
+
 export async function translateCompanyNames(
     entries: TranslateEntry[]
 ): Promise<Record<string, string>> {
@@ -17,6 +31,7 @@ export async function translateCompanyNames(
     if (!apiKey) return {};
 
     const model = process.env.TRANSLATE_MODEL ?? DEFAULT_TRANSLATE_MODEL;
+    const freeApiKey = process.env.TRANSLATE_FREE_API_KEY;
 
     const entryList = entries.map(e => `- ${e.symbol}: ${e.name}`).join('\n');
 
@@ -27,17 +42,21 @@ Companies:
 ${entryList}`;
 
     try {
-        const client = new GoogleGenAI({ apiKey });
-        const result = await client.models.generateContent({
-            model,
-            contents: prompt,
-        });
-        const text = result.text ?? '';
-        // JSON.parse returns `any`; type guard for Record<string, string> is not feasible
-        return JSON.parse(stripMarkdownCodeBlock(text)) as Record<
-            string,
-            string
-        >;
+        if (freeApiKey) {
+            try {
+                return await callTranslate(
+                    new GoogleGenAI({ apiKey: freeApiKey }),
+                    model,
+                    prompt
+                );
+            } catch {
+                console.warn(
+                    '[koreanTranslator] Free API key failed. Switching to paid key.'
+                );
+            }
+        }
+
+        return await callTranslate(new GoogleGenAI({ apiKey }), model, prompt);
     } catch (error) {
         console.error('Korean name translation failed:', error);
         return {};
