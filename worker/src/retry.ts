@@ -44,7 +44,8 @@ export async function withRetry<T>(
 
             const delay = baseDelayMs * Math.pow(2, attempt - 1);
             console.warn(
-                `[Retry] Attempt ${attempt}/${maxAttempts} failed (5xx). Retrying in ${delay}ms...`, error
+                `[Retry] Attempt ${attempt}/${maxAttempts} failed (5xx). Retrying in ${delay}ms...`,
+                error
             );
             await sleep(delay);
         }

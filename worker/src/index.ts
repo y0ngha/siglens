@@ -32,8 +32,15 @@ async function callAI(prompt: string): Promise<string> {
             `[Worker] Primary model (${config.gemini.model}) exhausted. Falling back to ${config.gemini.fallbackModel} with thinking enabled.`
         );
         return withRetry(
-            () => callGemini(prompt, { model: config.gemini.fallbackModel, thinking: true }),
-            { maxAttempts: AI_RETRY_MAX_ATTEMPTS, baseDelayMs: AI_RETRY_DELAY_MS }
+            () =>
+                callGemini(prompt, {
+                    model: config.gemini.fallbackModel,
+                    thinking: true,
+                }),
+            {
+                maxAttempts: AI_RETRY_MAX_ATTEMPTS,
+                baseDelayMs: AI_RETRY_DELAY_MS,
+            }
         );
     }
 }

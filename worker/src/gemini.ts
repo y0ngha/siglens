@@ -11,7 +11,10 @@ export interface GeminiCallOptions {
     thinking?: boolean;
 }
 
-export async function callGemini(prompt: string, options: GeminiCallOptions = {}): Promise<string> {
+export async function callGemini(
+    prompt: string,
+    options: GeminiCallOptions = {}
+): Promise<string> {
     const modelName = options.model ?? config.gemini.model;
     const model = client.getGenerativeModel({
         model: modelName,
@@ -20,7 +23,9 @@ export async function callGemini(prompt: string, options: GeminiCallOptions = {}
             temperature: 0,
             topP: 0.95,
             responseMimeType: 'application/json',
-            ...(options.thinking === true && { thinkingConfig: { thinkingBudget: -1 } }),
+            ...(options.thinking === true && {
+                thinkingConfig: { thinkingBudget: -1 },
+            }),
         },
     });
 
