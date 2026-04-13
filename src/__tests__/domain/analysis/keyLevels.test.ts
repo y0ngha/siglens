@@ -279,10 +279,11 @@ describe('keyLevels', () => {
                     currentPrice,
                     epsilonPercent
                 );
+                // 내림차순: 높은 가격 클러스터가 먼저
                 expect(result.support).toHaveLength(2);
-                expect(result.support[0].count).toBe(2);
-                expect(result.support[1].count).toBe(1);
-                expect(result.support[1].reason).toBe('C');
+                expect(result.support[0].count).toBe(1);
+                expect(result.support[0].reason).toBe('C');
+                expect(result.support[1].count).toBe(2);
             });
         });
 
@@ -374,12 +375,13 @@ describe('keyLevels', () => {
                     ],
                     resistance: [],
                 };
+                // 내림차순: 높은 가격이 먼저
                 const result = clusterKeyLevels(input, 0);
                 expect(result.support).toHaveLength(2);
-                expect(result.support[0].count).toBe(2);
-                expect(result.support[0].price).toBe(100.0);
-                expect(result.support[1].count).toBe(1);
-                expect(result.support[1].price).toBe(100.3);
+                expect(result.support[0].count).toBe(1);
+                expect(result.support[0].price).toBe(100.3);
+                expect(result.support[1].count).toBe(2);
+                expect(result.support[1].price).toBe(100.0);
             });
         });
     });

@@ -65,7 +65,7 @@ export function clusterKeyLevels(
     const epsilon = epsilonPercent * currentPrice;
 
     return {
-        support: clusterLevels(keyLevels.support, epsilon),
+        support: clusterLevels(keyLevels.support, epsilon).toReversed(),
         resistance: clusterLevels(keyLevels.resistance, epsilon),
         poc: keyLevels.poc,
     };
