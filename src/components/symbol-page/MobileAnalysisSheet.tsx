@@ -1,14 +1,15 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import { Drawer } from 'vaul';
+import { cn } from '@/lib/cn';
 
 export type SnapPoint = number | string | null;
 
 export const SNAP_PEEK = 0.15; // 15% — 기본 접힘
 export const SNAP_HALF = 0.55; // 55% — 분석 중 배너 노출
-export const SNAP_FULL = 0.92; // 92% — 전체 열림
+export const SNAP_FULL = 0.97; // 97% — 전체 열림
 
 export const MOBILE_SNAP_POINTS = [SNAP_PEEK, SNAP_HALF, SNAP_FULL] as const;
 
@@ -33,6 +34,46 @@ export function MobileAnalysisSheet({
         if (!open) setIsOpen(true);
     }, []);
 
+    const isFullSnap = activeSnap === SNAP_FULL;
+
+    // FULL 스냅 + scrollTop === 0에서 아래로 스와이프 시 시트를 축소하는 제스처.
+    // vaul의 shouldDrag는 isDraggingInDirection 체크에서 아래 방향 드래그를
+    // 무조건 차단하므로, 별도 터치 핸들러로 스냅 포인트를 직접 전환한다.
+    const contentRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        const el = contentRef.current;
+        if (!el || !isFullSnap) return;
+
+        let startY = 0;
+        let startedAtTop = false;
+
+        function onTouchStart(e: TouchEvent): void {
+            startY = e.touches[0].clientY;
+            startedAtTop = el!.scrollTop <= 0;
+        }
+
+        function onTouchEnd(e: TouchEvent): void {
+            if (!startedAtTop) return;
+            const deltaY = e.changedTouches[0].clientY - startY;
+            if (deltaY <= 0) return;
+
+            const vh = window.innerHeight;
+            if (deltaY > vh * 0.5) {
+                onActiveSnapChange(SNAP_PEEK);
+            } else if (deltaY > vh * 0.15) {
+                onActiveSnapChange(SNAP_HALF);
+            }
+        }
+
+        el.addEventListener('touchstart', onTouchStart, { passive: true });
+        el.addEventListener('touchend', onTouchEnd, { passive: true });
+        return () => {
+            el.removeEventListener('touchstart', onTouchStart);
+            el.removeEventListener('touchend', onTouchEnd);
+        };
+    }, [isFullSnap, onActiveSnapChange]);
+
     return (
         <Drawer.Root
             open={isOpen}
@@ -42,14 +83,16 @@ export function MobileAnalysisSheet({
             snapPoints={SNAP_POINTS_MUTABLE}
             activeSnapPoint={activeSnap}
             setActiveSnapPoint={onActiveSnapChange}
+            handleOnly={isFullSnap}
+            snapToSequentialPoint
         >
             <Drawer.Portal>
                 <Drawer.Content
-                    className="bg-secondary-900 border-secondary-700 fixed inset-x-0 bottom-0 z-40 flex max-h-[92svh] flex-col overflow-hidden overscroll-contain rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
+                    className="bg-secondary-900 border-secondary-700 fixed inset-x-0 bottom-0 z-40 flex max-h-[97svh] flex-col overflow-hidden overscroll-contain rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
                     aria-live="polite"
                 >
                     <Drawer.Handle
-                        className="bg-secondary-600 mx-auto mt-3 mb-1 h-1 w-10 rounded-full"
+                        className="shrink-0"
                         aria-label="AI 분석 패널 크기 조절"
                     />
                     <Drawer.Title className="sr-only">
@@ -58,7 +101,15 @@ export function MobileAnalysisSheet({
                     <Drawer.Description className="sr-only">
                         위로 드래그하여 분석 내용을 확인하세요
                     </Drawer.Description>
-                    <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-4">
+                    <div
+                        ref={contentRef}
+                        className={cn(
+                            'min-h-0 flex-1 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3',
+                            isFullSnap
+                                ? 'overflow-y-auto'
+                                : 'overflow-hidden'
+                        )}
+                    >
                         {children}
                     </div>
                 </Drawer.Content>
