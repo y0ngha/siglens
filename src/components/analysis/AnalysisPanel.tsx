@@ -403,10 +403,7 @@ function getTooltipPosition(
         triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
     const maxLeft =
         window.innerWidth - tooltipRect.width - TOOLTIP_VIEWPORT_PADDING;
-    const left = Math.max(
-        TOOLTIP_VIEWPORT_PADDING,
-        Math.min(rawLeft, maxLeft)
-    );
+    const left = Math.max(TOOLTIP_VIEWPORT_PADDING, Math.min(rawLeft, maxLeft));
 
     return { top, left };
 }
@@ -470,10 +467,7 @@ function InfoTooltip({ children }: InfoTooltipProps) {
                             if (el && triggerRef.current) {
                                 const triggerRect =
                                     triggerRef.current.getBoundingClientRect();
-                                const pos = getTooltipPosition(
-                                    triggerRect,
-                                    el
-                                );
+                                const pos = getTooltipPosition(triggerRect, el);
                                 if (
                                     pos.top !== position.top ||
                                     pos.left !== position.left
@@ -526,8 +520,8 @@ function KeyLevelsHeaderInfo() {
     return (
         <InfoTooltip>
             <span className="text-secondary-300">
-                가까운 가격대의 지표들이 수렴된 레벨입니다. 수렴 지표가
-                많을수록 해당 가격대의 지지/저항 신뢰도가 높습니다.
+                가까운 가격대의 지표들이 수렴된 레벨입니다. 수렴 지표가 많을수록
+                해당 가격대의 지지/저항 신뢰도가 높습니다.
             </span>
         </InfoTooltip>
     );

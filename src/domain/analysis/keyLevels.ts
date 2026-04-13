@@ -37,10 +37,7 @@ function clusterLevels(
             const lastPrice = lastCluster[lastCluster.length - 1].price;
 
             if (current.price - lastPrice <= epsilon) {
-                return [
-                    ...acc.slice(0, -1),
-                    [...lastCluster, current],
-                ];
+                return [...acc.slice(0, -1), [...lastCluster, current]];
             }
             return [...acc, [current]];
         },
@@ -52,8 +49,7 @@ function clusterLevels(
         const rawPrice =
             group.reduce((sum, level) => sum + level.price, 0) / count;
         const price = Math.round(rawPrice * 100) / 100;
-        const reason =
-            count === 1 ? group[0].reason : `${count}개 지표 수렴`;
+        const reason = count === 1 ? group[0].reason : `${count}개 지표 수렴`;
 
         return { price, reason, count, sources: group };
     });
