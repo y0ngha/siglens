@@ -517,7 +517,10 @@ function ConfluenceInfo({ level }: ConfluenceInfoProps) {
                         className="flex items-baseline gap-2 whitespace-nowrap"
                     >
                         <span className="text-secondary-300 shrink-0">
-                            {source.price.toLocaleString()}
+                            {source.price.toLocaleString(undefined, {
+                                minimumFractionDigits: 2,
+                                maximumFractionDigits: 2,
+                            })}
                         </span>
                         <span className="text-secondary-400">
                             {source.reason}
@@ -1053,7 +1056,13 @@ export function AnalysisPanel({
                                                 className="flex flex-col"
                                             >
                                                 <span className="text-chart-bearish text-sm font-medium">
-                                                    {level.price.toLocaleString()}
+                                                    {level.price.toLocaleString(
+                                                        undefined,
+                                                        {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2,
+                                                        }
+                                                    )}
                                                 </span>
                                                 <span className="text-secondary-600 inline-flex items-center text-xs">
                                                     {level.reason}
@@ -1076,7 +1085,13 @@ export function AnalysisPanel({
                                                 className="flex flex-col"
                                             >
                                                 <span className="text-chart-bullish text-sm font-medium">
-                                                    {level.price.toLocaleString()}
+                                                    {level.price.toLocaleString(
+                                                        undefined,
+                                                        {
+                                                            minimumFractionDigits: 2,
+                                                            maximumFractionDigits: 2,
+                                                        }
+                                                    )}
                                                 </span>
                                                 <span className="text-secondary-600 inline-flex items-center text-xs">
                                                     {level.reason}
@@ -1095,7 +1110,13 @@ export function AnalysisPanel({
                                         PoC
                                     </span>
                                     <span className="text-sm font-medium">
-                                        {keyLevels.poc.price.toLocaleString()}
+                                        {keyLevels.poc.price.toLocaleString(
+                                            undefined,
+                                            {
+                                                minimumFractionDigits: 2,
+                                                maximumFractionDigits: 2,
+                                            }
+                                        )}
                                     </span>
                                     <span className="text-secondary-600 text-xs">
                                         {keyLevels.poc.reason}
