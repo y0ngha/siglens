@@ -486,7 +486,7 @@ function InfoTooltip({ children }: InfoTooltipProps) {
                         }}
                         id={tooltipId}
                         role="tooltip"
-                        className="bg-secondary-800 border-secondary-600 fixed z-[9999] rounded border p-2 text-xs leading-relaxed shadow-lg"
+                        className="bg-secondary-800 border-secondary-600 fixed z-9999 rounded border p-2 text-xs leading-relaxed shadow-lg"
                         style={{
                             top: position.top,
                             left: position.left,
@@ -1267,7 +1267,7 @@ export function AnalysisPanel({
             {onReanalyze !== undefined && (
                 <div className="mt-1">
                     <ReanalyzeButton
-                        isAnalyzing={isAnalyzing}
+                        isAnalyzing={isAnalyzing || showProgress}
                         reanalyzeCooldownMs={reanalyzeCooldownMs}
                         onReanalyze={onReanalyze}
                     />
