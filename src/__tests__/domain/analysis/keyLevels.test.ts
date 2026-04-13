@@ -363,5 +363,24 @@ describe('keyLevels', () => {
                 ]);
             });
         });
+
+        describe('currentPrice가 0일 때', () => {
+            it('epsilon이 0이므로 동일 가격만 병합한다', () => {
+                const input: KeyLevels = {
+                    support: [
+                        { price: 100.0, reason: 'A' },
+                        { price: 100.3, reason: 'B' },
+                        { price: 100.0, reason: 'C' },
+                    ],
+                    resistance: [],
+                };
+                const result = clusterKeyLevels(input, 0);
+                expect(result.support).toHaveLength(2);
+                expect(result.support[0].count).toBe(2);
+                expect(result.support[0].price).toBe(100.0);
+                expect(result.support[1].count).toBe(1);
+                expect(result.support[1].price).toBe(100.3);
+            });
+        });
     });
 });
