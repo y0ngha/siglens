@@ -104,10 +104,8 @@ export function MobileAnalysisSheet({
                     <div
                         ref={contentRef}
                         className={cn(
-                            'min-h-0 flex-1 px-4 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)] pt-3',
-                            isFullSnap
-                                ? 'overflow-y-auto'
-                                : 'overflow-hidden'
+                            'min-h-0 flex-1 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]',
+                            isFullSnap ? 'overflow-y-auto' : 'overflow-hidden'
                         )}
                     >
                         {children}
