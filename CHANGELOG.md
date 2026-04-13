@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.3](https://github.com/y0ngha/siglens/compare/v0.8.2...v0.8.3) (2026-04-13)
+
+
+### Features
+
+* 모바일 사용성 개선 ([9ff8af4](https://github.com/y0ngha/siglens/commit/9ff8af4744e06968bf75a52982367814160d5e5e))
+
 ## [0.8.2](https://github.com/y0ngha/siglens/compare/v0.8.1...v0.8.2) (2026-04-12)
 
 ## [0.8.1](https://github.com/y0ngha/siglens/compare/v0.8.0...v0.8.1) (2026-04-12)
