@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.8.4](https://github.com/y0ngha/siglens/compare/v0.8.3...v0.8.4) (2026-04-13)
+
+
+### Bug Fixes
+
+* 매직넘버 100을 PRICE_DECIMAL_FACTOR 상수로 추출 및 배열 접근 시 non-null assertion 추가 ([1c18416](https://github.com/y0ngha/siglens/commit/1c184160aa712076da35057a2259e043b9d3af81))
+* 서포트 레벨 내림차순 정렬 (현재가 가까운 순서대로 표시) ([00618b1](https://github.com/y0ngha/siglens/commit/00618b15a703bd9d3be94835fe93d96131dfbb28))
+* 툴팁 위치 계산 및 접근성 개선 (viewport 경계 체크, aria-describedby 추가, 초기 깜빡임 제거, React key에 index 추가) ([4c7fde9](https://github.com/y0ngha/siglens/commit/4c7fde9bb4bddbec97c2550da014293cea5f9e8c))
+
+
+### Features
+
+* 서포트/레지스턴스 키레벨 밀집도 기반 클러스터링 ([eb17ee7](https://github.com/y0ngha/siglens/commit/eb17ee77162bb373d95629d33b26152f3b2eaad6))
+* 프로그레스 돌아갈 때 분석버튼 못누르도록 수정 ([a01d10c](https://github.com/y0ngha/siglens/commit/a01d10c050bf954fb2bae134baa541fab75b71d6))
+
 ## [0.8.3](https://github.com/y0ngha/siglens/compare/v0.8.2...v0.8.3) (2026-04-13)
 
 
