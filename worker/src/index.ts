@@ -22,12 +22,19 @@ async function callAI(prompt: string): Promise<string> {
     }
 
     try {
-        return await withRetry(() => callGemini(prompt), {
-            maxAttempts: AI_RETRY_MAX_ATTEMPTS,
-            baseDelayMs: AI_RETRY_DELAY_MS,
-        });
+        return await withRetry(
+            () =>
+                callGemini(prompt, {
+                    model: config.gemini.model,
+                    thinking: true,
+                }),
+            {
+                maxAttempts: AI_RETRY_MAX_ATTEMPTS,
+                baseDelayMs: AI_RETRY_DELAY_MS,
+            }
+        );
     } catch (error) {
-        // 기본 모델 재시도 모두 소진 시 fallback 모델로 1회 시도
+        // 기본 모델 재시도 모두 소진 시 fallback 모델로 5회 시도
         console.warn(
             `[Worker] Primary model (${config.gemini.model}) exhausted. Falling back to ${config.gemini.fallbackModel} with thinking enabled.`
         );

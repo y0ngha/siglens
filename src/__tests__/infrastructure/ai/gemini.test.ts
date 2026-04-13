@@ -1,12 +1,11 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { GeminiProvider } from '@/infrastructure/ai/gemini';
 import type { RawAnalysisResponse } from '@/domain/types';
 
-jest.mock('@google/generative-ai');
+jest.mock('@google/genai');
 
 describe('GeminiProvider', () => {
     let mockGenerateContent: jest.Mock;
-    let mockGetGenerativeModel: jest.Mock;
     let provider: GeminiProvider;
 
     const mockAnalysisResponse: RawAnalysisResponse = {
@@ -37,20 +36,15 @@ describe('GeminiProvider', () => {
     beforeEach(() => {
         mockGenerateContent = jest.fn();
         mockGenerateContent.mockResolvedValue({
-            response: {
-                text: () => JSON.stringify(mockAnalysisResponse),
-            },
-        });
-        mockGetGenerativeModel = jest.fn().mockReturnValue({
-            generateContent: mockGenerateContent,
+            text: JSON.stringify(mockAnalysisResponse),
         });
         (
-            GoogleGenerativeAI as jest.MockedClass<typeof GoogleGenerativeAI>
+            GoogleGenAI as jest.MockedClass<typeof GoogleGenAI>
         ).mockImplementation(
             () =>
                 ({
-                    getGenerativeModel: mockGetGenerativeModel,
-                }) as unknown as GoogleGenerativeAI
+                    models: { generateContent: mockGenerateContent },
+                }) as unknown as GoogleGenAI
         );
         provider = new GeminiProvider();
     });
@@ -75,36 +69,36 @@ describe('GeminiProvider', () => {
     });
 
     describe('analyze를 호출하면', () => {
-        it('generationConfig에 temperature 0을 전달한다', async () => {
+        it('config에 temperature 0을 전달한다', async () => {
             await provider.analyze('test prompt');
 
-            expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+            expect(mockGenerateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    generationConfig: expect.objectContaining({
+                    config: expect.objectContaining({
                         temperature: 0,
                     }),
                 })
             );
         });
 
-        it('generationConfig에 topP 0.95를 전달한다', async () => {
+        it('config에 topP 0.95를 전달한다', async () => {
             await provider.analyze('test prompt');
 
-            expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+            expect(mockGenerateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    generationConfig: expect.objectContaining({
+                    config: expect.objectContaining({
                         topP: 0.95,
                     }),
                 })
             );
         });
 
-        it('generationConfig에 responseMimeType application/json을 전달한다', async () => {
+        it('config에 responseMimeType application/json을 전달한다', async () => {
             await provider.analyze('test prompt');
 
-            expect(mockGetGenerativeModel).toHaveBeenCalledWith(
+            expect(mockGenerateContent).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    generationConfig: expect.objectContaining({
+                    config: expect.objectContaining({
                         responseMimeType: 'application/json',
                     }),
                 })
@@ -218,10 +212,7 @@ describe('GeminiProvider', () => {
     describe('응답이 마크다운 코드 블록으로 감싸진 경우', () => {
         it('코드 블록을 제거하고 JSON을 파싱한다', async () => {
             mockGenerateContent.mockResolvedValueOnce({
-                response: {
-                    text: () =>
-                        `\`\`\`json\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
-                },
+                text: `\`\`\`json\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
             });
 
             const result = await provider.analyze('test prompt');
@@ -231,10 +222,7 @@ describe('GeminiProvider', () => {
 
         it('json 태그 없는 코드 블록도 처리한다', async () => {
             mockGenerateContent.mockResolvedValueOnce({
-                response: {
-                    text: () =>
-                        `\`\`\`\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
-                },
+                text: `\`\`\`\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
             });
 
             const result = await provider.analyze('test prompt');
@@ -244,10 +232,7 @@ describe('GeminiProvider', () => {
 
         it('코드 블록 뒤에 후행 텍스트가 있어도 JSON을 파싱한다', async () => {
             mockGenerateContent.mockResolvedValueOnce({
-                response: {
-                    text: () =>
-                        `\`\`\`json\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\`\n이상입니다.`,
-                },
+                text: `\`\`\`json\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\`\n이상입니다.`,
             });
 
             const result = await provider.analyze('test prompt');
@@ -257,10 +242,7 @@ describe('GeminiProvider', () => {
 
         it('코드 블록 앞에 설명 텍스트가 있어도 JSON을 파싱한다', async () => {
             mockGenerateContent.mockResolvedValueOnce({
-                response: {
-                    text: () =>
-                        `다음과 같습니다:\n\`\`\`json\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
-                },
+                text: `다음과 같습니다:\n\`\`\`json\n${JSON.stringify(mockAnalysisResponse)}\n\`\`\``,
             });
 
             const result = await provider.analyze('test prompt');
@@ -271,11 +253,7 @@ describe('GeminiProvider', () => {
 
     describe('응답이 유효한 JSON이 아니면', () => {
         beforeEach(() => {
-            mockGenerateContent.mockResolvedValue({
-                response: {
-                    text: () => 'invalid json',
-                },
-            });
+            mockGenerateContent.mockResolvedValue({ text: 'invalid json' });
         });
 
         it('에러를 던진다', async () => {
@@ -321,11 +299,12 @@ describe('GeminiProvider', () => {
             await jest.isolateModulesAsync(async () => {
                 const { GeminiProvider: IsolatedProvider } =
                     await import('@/infrastructure/ai/gemini');
-                mockGetGenerativeModel.mockImplementation(
-                    (params: { generationConfig: { temperature: number } }) => {
-                        capturedTemperature =
-                            params.generationConfig.temperature;
-                        return { generateContent: mockGenerateContent };
+                mockGenerateContent.mockImplementation(
+                    (params: { config: { temperature: number } }) => {
+                        capturedTemperature = params.config.temperature;
+                        return Promise.resolve({
+                            text: JSON.stringify(mockAnalysisResponse),
+                        });
                     }
                 );
                 const isolatedProvider = new IsolatedProvider();
@@ -350,10 +329,12 @@ describe('GeminiProvider', () => {
             await jest.isolateModulesAsync(async () => {
                 const { GeminiProvider: IsolatedProvider } =
                     await import('@/infrastructure/ai/gemini');
-                mockGetGenerativeModel.mockImplementation(
-                    (params: { generationConfig: { topP: number } }) => {
-                        capturedTopP = params.generationConfig.topP;
-                        return { generateContent: mockGenerateContent };
+                mockGenerateContent.mockImplementation(
+                    (params: { config: { topP: number } }) => {
+                        capturedTopP = params.config.topP;
+                        return Promise.resolve({
+                            text: JSON.stringify(mockAnalysisResponse),
+                        });
                     }
                 );
                 const isolatedProvider = new IsolatedProvider();

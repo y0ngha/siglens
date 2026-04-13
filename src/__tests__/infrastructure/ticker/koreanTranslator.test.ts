@@ -1,13 +1,10 @@
 import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
 
 const mockGenerateContent = jest.fn();
-const mockGetGenerativeModel = jest.fn(() => ({
-    generateContent: mockGenerateContent,
-}));
 
-jest.mock('@google/generative-ai', () => ({
-    GoogleGenerativeAI: jest.fn().mockImplementation(() => ({
-        getGenerativeModel: mockGetGenerativeModel,
+jest.mock('@google/genai', () => ({
+    GoogleGenAI: jest.fn().mockImplementation(() => ({
+        models: { generateContent: mockGenerateContent },
     })),
 }));
 
@@ -56,9 +53,7 @@ describe('translateCompanyNames', () => {
                 AAPL: '애플',
                 NVDA: '엔비디아',
             });
-            mockGenerateContent.mockResolvedValueOnce({
-                response: { text: () => mockResponse },
-            });
+            mockGenerateContent.mockResolvedValueOnce({ text: mockResponse });
 
             const result = await translateCompanyNames([
                 { symbol: 'AAPL', name: 'Apple Inc.' },
@@ -73,34 +68,30 @@ describe('translateCompanyNames', () => {
         it('해당 모델을 사용한다', async () => {
             process.env.TRANSLATE_MODEL = 'gemini-2.0-flash';
             const mockResponse = JSON.stringify({ AAPL: '애플' });
-            mockGenerateContent.mockResolvedValueOnce({
-                response: { text: () => mockResponse },
-            });
+            mockGenerateContent.mockResolvedValueOnce({ text: mockResponse });
 
             await translateCompanyNames([
                 { symbol: 'AAPL', name: 'Apple Inc.' },
             ]);
 
-            expect(mockGetGenerativeModel).toHaveBeenCalledWith({
-                model: 'gemini-2.0-flash',
-            });
+            expect(mockGenerateContent).toHaveBeenCalledWith(
+                expect.objectContaining({ model: 'gemini-2.0-flash' })
+            );
         });
     });
 
     describe('TRANSLATE_MODEL 환경변수가 없을 때', () => {
         it('기본 모델(gemini-2.5-flash)을 사용한다', async () => {
             const mockResponse = JSON.stringify({ AAPL: '애플' });
-            mockGenerateContent.mockResolvedValueOnce({
-                response: { text: () => mockResponse },
-            });
+            mockGenerateContent.mockResolvedValueOnce({ text: mockResponse });
 
             await translateCompanyNames([
                 { symbol: 'AAPL', name: 'Apple Inc.' },
             ]);
 
-            expect(mockGetGenerativeModel).toHaveBeenCalledWith({
-                model: 'gemini-2.5-flash',
-            });
+            expect(mockGenerateContent).toHaveBeenCalledWith(
+                expect.objectContaining({ model: 'gemini-2.5-flash' })
+            );
         });
     });
 
@@ -109,7 +100,7 @@ describe('translateCompanyNames', () => {
             const wrappedResponse = '```json\n{"AAPL":"애플"}\n```';
             mockStripMarkdown.mockReturnValueOnce('{"AAPL":"애플"}');
             mockGenerateContent.mockResolvedValueOnce({
-                response: { text: () => wrappedResponse },
+                text: wrappedResponse,
             });
 
             const result = await translateCompanyNames([
@@ -136,7 +127,7 @@ describe('translateCompanyNames', () => {
     describe('API가 유효하지 않은 JSON을 반환할 때', () => {
         it('빈 객체를 반환한다', async () => {
             mockGenerateContent.mockResolvedValueOnce({
-                response: { text: () => 'invalid json response' },
+                text: 'invalid json response',
             });
 
             const result = await translateCompanyNames([

@@ -1,4 +1,4 @@
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenAI } from '@google/genai';
 import { stripMarkdownCodeBlock } from '@/infrastructure/ai/utils';
 
 const DEFAULT_TRANSLATE_MODEL = 'gemini-2.5-flash';
@@ -27,11 +27,12 @@ Companies:
 ${entryList}`;
 
     try {
-        const genModel = new GoogleGenerativeAI(apiKey).getGenerativeModel({
+        const client = new GoogleGenAI({ apiKey });
+        const result = await client.models.generateContent({
             model,
+            contents: prompt,
         });
-        const result = await genModel.generateContent(prompt);
-        const text = result.response.text();
+        const text = result.text ?? '';
         // JSON.parse returns `any`; type guard for Record<string, string> is not feasible
         return JSON.parse(stripMarkdownCodeBlock(text)) as Record<
             string,
