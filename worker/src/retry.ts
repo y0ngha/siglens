@@ -25,9 +25,9 @@ function sleep(ms: number): Promise<void> {
 
 export async function withRetry<T>(
     fn: () => Promise<T>,
-    options: { maxAttempts: number; delayMs: number }
+    options: { maxAttempts: number; baseDelayMs: number }
 ): Promise<T> {
-    const { maxAttempts, delayMs } = options;
+    const { maxAttempts, baseDelayMs } = options;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
@@ -42,10 +42,11 @@ export async function withRetry<T>(
                 throw error;
             }
 
+            const delay = baseDelayMs * Math.pow(2, attempt - 1);
             console.warn(
-                `[Retry] Attempt ${attempt}/${maxAttempts} failed (5xx). Retrying in ${delayMs}ms...`
+                `[Retry] Attempt ${attempt}/${maxAttempts} failed (5xx). Retrying in ${delay}ms...`, error
             );
-            await sleep(delayMs);
+            await sleep(delay);
         }
     }
 

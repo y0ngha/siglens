@@ -12,11 +12,31 @@ const {
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
 } = constants;
 
-const callAI = config.aiProvider === 'claude' ? callClaude : callGemini;
-
 const JOB_TTL_SECONDS = 3600;
 const AI_RETRY_MAX_ATTEMPTS = 5;
 const AI_RETRY_DELAY_MS = 5000;
+
+async function callAI(prompt: string): Promise<string> {
+    if (config.aiProvider === 'claude') {
+        return callClaude(prompt);
+    }
+
+    try {
+        return await withRetry(() => callGemini(prompt), {
+            maxAttempts: AI_RETRY_MAX_ATTEMPTS,
+            baseDelayMs: AI_RETRY_DELAY_MS,
+        });
+    } catch (error) {
+        // 기본 모델 재시도 모두 소진 시 fallback 모델로 1회 시도
+        console.warn(
+            `[Worker] Primary model (${config.gemini.model}) exhausted. Falling back to ${config.gemini.fallbackModel} with thinking enabled.`
+        );
+        return withRetry(
+            () => callGemini(prompt, { model: config.gemini.fallbackModel, thinking: true }),
+            { maxAttempts: AI_RETRY_MAX_ATTEMPTS, baseDelayMs: AI_RETRY_DELAY_MS }
+        );
+    }
+}
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
@@ -76,10 +96,7 @@ async function processJob(jobId: string, prompt: string): Promise<void> {
     });
 
     try {
-        const result = await withRetry(() => callAI(prompt), {
-            maxAttempts: AI_RETRY_MAX_ATTEMPTS,
-            delayMs: AI_RETRY_DELAY_MS,
-        });
+        const result = await callAI(prompt);
 
         // result를 먼저 저장한 후 status를 업데이트한다.
         // 순서가 바뀌면 poller가 done을 보고 result를 읽기 전에 빈 값을 만날 수 있다.

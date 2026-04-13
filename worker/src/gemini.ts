@@ -6,14 +6,21 @@ const GEMINI_TIMEOUT_MS = 3600_000;
 
 const client = new GoogleGenerativeAI(config.gemini.apiKey);
 
-export async function callGemini(prompt: string): Promise<string> {
+export interface GeminiCallOptions {
+    model?: string;
+    thinking?: boolean;
+}
+
+export async function callGemini(prompt: string, options: GeminiCallOptions = {}): Promise<string> {
+    const modelName = options.model ?? config.gemini.model;
     const model = client.getGenerativeModel({
-        model: config.gemini.model,
+        model: modelName,
         systemInstruction: AI_SYSTEM_PROMPT,
         generationConfig: {
             temperature: 0,
             topP: 0.95,
             responseMimeType: 'application/json',
+            ...(options.thinking === true && { thinkingConfig: { thinkingBudget: -1 } }),
         },
     });
 
