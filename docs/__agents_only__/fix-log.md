@@ -46,10 +46,6 @@
 - Context: `onTouchMove`에서 `deltaY <= 0` early return이 `isDragging` 체크보다 앞에 있어 드래그 중 위로 되돌릴 때 스크롤 허용; 구조 재정렬 + `Math.max(0, deltaY)` 적용
 
 ## [PR #294 | feat/key-levels-clustering | 2026-04-13]
-- Violation: 가격 반올림 `100`이 매직 넘버로 사용됨
-- Rule: Domain Layer Checklist — No hardcoded literals → extract to constants
-- Context: `keyLevels.ts`에서 `Math.round(rawPrice * 100) / 100` → `PRICE_DECIMAL_FACTOR` 상수로 추출
-
 - Violation: React key에 `source.price-source.reason` 조합 사용 — 동일 가격·사유 존재 시 중복 가능
 - Rule: React — 리스트 렌더링 시 key 고유성 보장
 - Context: `ConfluenceInfo`에서 key에 `index` 추가하여 고유성 확보
@@ -128,5 +124,6 @@
 - Violation: StockChart prop default actionPricesVisible = false contradicted the parent ChartContent's intent (initialized to true). Default off-by-default is misleading when caller explicitly enables the feature.
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
+
 
 
