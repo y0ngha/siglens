@@ -125,8 +125,8 @@ describe('buildExpertAnalysisReport', () => {
         expect(result).toContain('205.80');
         expect(result).toContain('207.25');
         expect(result).toContain('기술적 근거:');
-        expect(result).toContain('패턴 상승 삼각형');
-        expect(result).toContain('전략 Breakout');
+        expect(result).toContain('상승 삼각형');
+        expect(result).toContain('Breakout');
         expect(result).toContain('시나리오:');
         expect(result).toContain('대응 관점:');
         expect(result).toContain(

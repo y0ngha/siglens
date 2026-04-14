@@ -8,11 +8,66 @@ import type {
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_REVALIDATE_SECONDS = 60;
 
+// FMP intraday timestamps are in America/New_York (ET), not UTC.
+// US DST: 2nd Sunday of March (spring forward) → 1st Sunday of November (fall back)
+const EDT_OFFSET_HOURS = -4; // Eastern Daylight Time (DST period): UTC-4
+const EST_OFFSET_HOURS = -5; // Eastern Standard Time (non-DST period): UTC-5
+const DST_START_MONTH = 3; // March
+const DST_START_NTH_SUNDAY = 2; // 2nd Sunday
+const DST_END_MONTH = 11; // November
+const DST_END_NTH_SUNDAY = 1; // 1st Sunday
+
+function getNthSundayOfMonth(year: number, month: number, n: number): Date {
+    const firstOfMonth = new Date(Date.UTC(year, month - 1, 1));
+    const dayOfWeek = firstOfMonth.getUTCDay(); // 0 = Sunday
+    const firstSunday = dayOfWeek === 0 ? 1 : 8 - dayOfWeek;
+    return new Date(Date.UTC(year, month - 1, firstSunday + (n - 1) * 7));
+}
+
+function getEtOffsetHours(year: number, month: number, day: number): number {
+    const dstStart = getNthSundayOfMonth(
+        year,
+        DST_START_MONTH,
+        DST_START_NTH_SUNDAY
+    );
+    const dstEnd = getNthSundayOfMonth(year, DST_END_MONTH, DST_END_NTH_SUNDAY);
+    const date = new Date(Date.UTC(year, month - 1, day));
+    return date >= dstStart && date < dstEnd
+        ? EDT_OFFSET_HOURS
+        : EST_OFFSET_HOURS;
+}
+
+/**
+ * FMP intraday timestamps are in America/New_York (ET), not UTC.
+ * Converts "YYYY-MM-DD HH:MM:SS" ET string to Unix timestamp (UTC seconds).
+ * DST is handled automatically using US rules (2nd Sun Mar → 1st Sun Nov).
+ */
+function fmpIntradayDateToUtcSeconds(dateStr: string): number {
+    const year = Number(dateStr.substring(0, 4));
+    const month = Number(dateStr.substring(5, 7));
+    const day = Number(dateStr.substring(8, 10));
+    const hour = Number(dateStr.substring(11, 13));
+    const minute = Number(dateStr.substring(14, 16));
+    const second = Number(dateStr.substring(17, 19));
+    const etOffsetHours = getEtOffsetHours(year, month, day);
+    // ET + |etOffset| = UTC  (etOffsetHours is negative, so we subtract it)
+    const utcMs = Date.UTC(
+        year,
+        month - 1,
+        day,
+        hour - etOffsetHours,
+        minute,
+        second
+    );
+    return Math.floor(utcMs / 1000);
+}
+
 const FMP_INTRADAY_TIMEFRAME_MAP: Record<Exclude<Timeframe, '1Day'>, string> = {
-    '1Min': '1min',
     '5Min': '5min',
     '15Min': '15min',
+    '30Min': '30min',
     '1Hour': '1hour',
+    '4Hour': '4hour',
 };
 
 interface FmpBar {
@@ -44,7 +99,7 @@ interface FmpQuote {
 
 function toFmpBar(raw: FmpBar): Bar {
     return {
-        time: Math.floor(new Date(raw.date + ' UTC').getTime() / 1000),
+        time: fmpIntradayDateToUtcSeconds(raw.date),
         open: raw.open,
         high: raw.high,
         low: raw.low,

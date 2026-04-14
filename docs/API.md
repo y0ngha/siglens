@@ -44,7 +44,7 @@ GET /v2/stocks/{symbol}/bars
 
 | 파라미터 | 타입 | 필수 | 설명 |
 |----------|------|------|------|
-| timeframe | string | ✅ | 1Min, 5Min, 15Min, 1Hour, 1Day |
+| timeframe | string | ✅ | `{multiplier}{unit}` 형식 (예: 1Min, 5Min, 15Min, 30Min, 1Hour, 4Hour, 1Day). unit: Min, Hour, Day, Week, Month |
 | start | string | - | ISO 8601 (예: 2024-01-15T09:30:00Z) |
 | end | string | - | ISO 8601 |
 | limit | number | - | 최대 10000, 기본 1000 |
@@ -170,10 +170,11 @@ GET /stable/historical-chart/{timeframe}?symbol={symbol}&apikey={key}
 
 | Siglens Timeframe | FMP Timeframe |
 |---|---|
-| 1Min | 1min |
 | 5Min | 5min |
 | 15Min | 15min |
+| 30Min | 30min |
 | 1Hour | 1hour |
+| 4Hour | 4hour |
 
 **Query Parameters**
 

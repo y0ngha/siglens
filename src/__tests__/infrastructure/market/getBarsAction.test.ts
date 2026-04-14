@@ -1,6 +1,6 @@
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
-import type { BarsData, Timeframe } from '@/domain/types';
+import type { BarsData } from '@/domain/types';
 
 jest.mock('@/infrastructure/market/barsApi');
 
@@ -58,7 +58,7 @@ describe('getBarsAction 함수는', () => {
         it('fetchBarsWithIndicators에 올바른 인자를 전달하고 결과를 그대로 반환한다', async () => {
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
-            const result = await getBarsAction('AAPL', '1Day' as Timeframe);
+            const result = await getBarsAction('AAPL', '1Day');
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
                 'AAPL',
@@ -70,11 +70,11 @@ describe('getBarsAction 함수는', () => {
         it('다른 symbol과 timeframe으로도 올바르게 위임한다', async () => {
             mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
 
-            await getBarsAction('TSLA', '1Min' as Timeframe);
+            await getBarsAction('TSLA', '5Min');
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
                 'TSLA',
-                '1Min'
+                '5Min'
             );
         });
     });
@@ -85,9 +85,9 @@ describe('getBarsAction 함수는', () => {
                 new Error('Fetch failed')
             );
 
-            await expect(
-                getBarsAction('AAPL', '1Day' as Timeframe)
-            ).rejects.toThrow('Fetch failed');
+            await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
+                'Fetch failed'
+            );
         });
     });
 });

@@ -61,7 +61,7 @@ describe('AlpacaProvider', () => {
             const provider = new AlpacaProvider();
             const bars = await provider.getBars({
                 symbol: 'AAPL',
-                timeframe: '1Min',
+                timeframe: '5Min',
             });
 
             expect(bars).toHaveLength(1);
@@ -124,7 +124,7 @@ describe('AlpacaProvider', () => {
             const fixedNow = '2024-06-01T12:00:00.000Z';
             const provider = new AlpacaProvider();
             await provider.getBars(
-                { symbol: 'AAPL', timeframe: '1Min' },
+                { symbol: 'AAPL', timeframe: '5Min' },
                 fixedNow
             );
 
@@ -147,7 +147,7 @@ describe('AlpacaProvider', () => {
             const provider = new AlpacaProvider();
             await provider.getBars({
                 symbol: 'AAPL',
-                timeframe: '1Min',
+                timeframe: '5Min',
                 before: '2024-01-15T09:30:00Z',
             });
 
@@ -206,7 +206,7 @@ describe('AlpacaProvider', () => {
 
             const provider = new AlpacaProvider();
             await expect(
-                provider.getBars({ symbol: 'AAPL', timeframe: '1Min' })
+                provider.getBars({ symbol: 'AAPL', timeframe: '5Min' })
             ).rejects.toThrow('Alpaca API error: 403 Forbidden');
         });
 
@@ -219,7 +219,7 @@ describe('AlpacaProvider', () => {
             });
 
             const provider = new AlpacaProvider();
-            await provider.getBars({ symbol: 'AAPL', timeframe: '1Min' });
+            await provider.getBars({ symbol: 'AAPL', timeframe: '5Min' });
             const [, init] = mockFetch.mock.calls[0] as [string, RequestInit];
             expect(
                 (init.headers as Record<string, string>)['APCA-API-SECRET-KEY']
@@ -235,7 +235,7 @@ describe('AlpacaProvider', () => {
             const provider = new AlpacaProvider();
             const bars = await provider.getBars({
                 symbol: 'AAPL',
-                timeframe: '1Min',
+                timeframe: '5Min',
             });
 
             expect(bars).toEqual([]);
