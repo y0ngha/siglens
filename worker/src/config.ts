@@ -27,7 +27,9 @@ export const config = {
             process.env.GEMINI_FALLBACK_MODEL ?? 'gemini-2.5-flash-lite',
         // flash-lite: 24576 / flash: 32768
         thinkingBudget: Number(process.env.GEMINI_THINKING_BUDGET ?? '24576'),
-        fallbackThinkingBudget: Number(process.env.GEMINI_FALLBACK_THINKING_BUDGET ?? '24576'),
+        fallbackThinkingBudget: Number(
+            process.env.GEMINI_FALLBACK_THINKING_BUDGET ?? '24576'
+        ),
     },
     claude: {
         apiKey: aiProvider === 'claude' ? requireEnv('ANTHROPIC_API_KEY') : '',

@@ -1,6 +1,6 @@
-import {GoogleGenAI} from '@google/genai';
-import {config} from './config.js';
-import {AI_SYSTEM_PROMPT} from './ai-system-prompt.js';
+import { GoogleGenAI } from '@google/genai';
+import { config } from './config.js';
+import { AI_SYSTEM_PROMPT } from './ai-system-prompt.js';
 
 const GEMINI_TIMEOUT_MS = 3600_000;
 
@@ -50,7 +50,9 @@ export async function callGemini(
                         // MAX_TOKENS + 빈 텍스트 응답을 유발한다.
                         // 호출 측에서 모델별 상한을 주입한다.
                         // flash-lite: 24576 / flash: 32768
-                        thinkingBudget: options.thinkingBudget ?? config.gemini.thinkingBudget,
+                        thinkingBudget:
+                            options.thinkingBudget ??
+                            config.gemini.thinkingBudget,
                         includeThoughts: false,
                     },
                 }),
@@ -74,15 +76,22 @@ export async function callGemini(
                     model: modelName,
                     safetyRatings,
                 });
-                throw new Error(`Gemini blocked response due to safety filter (finishReason: SAFETY)`);
+                throw new Error(
+                    `Gemini blocked response due to safety filter (finishReason: SAFETY)`
+                );
             }
 
             // SAFETY 외 이유로 빈 텍스트가 반환된 경우(thinking 전용 응답 등)는
             // 일시적 문제로 보고 재시도한다.
-            console.warn('[Gemini] Empty text response', { model: modelName, finishReason });
+            console.warn('[Gemini] Empty text response', {
+                model: modelName,
+                finishReason,
+            });
             throw Object.assign(
-                new Error(`Gemini returned an empty text response (finishReason: ${finishReason})`),
-                {retryable: true}
+                new Error(
+                    `Gemini returned an empty text response (finishReason: ${finishReason})`
+                ),
+                { retryable: true }
             );
         }
 

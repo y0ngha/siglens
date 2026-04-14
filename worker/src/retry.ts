@@ -20,7 +20,10 @@ function isRetryableError(error: unknown): boolean {
 
     // status 프로퍼티가 없는 에러도 retryable로 표시된 경우 재시도한다.
     // (예: callGemini에서 빈 텍스트 응답 시 throw하는 커스텀 에러)
-    if ('retryable' in error && (error as { retryable: unknown }).retryable === true) {
+    if (
+        'retryable' in error &&
+        (error as { retryable: unknown }).retryable === true
+    ) {
         return true;
     }
 
