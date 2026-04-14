@@ -82,7 +82,6 @@ const TEST_MIN_CONFIDENCE_WEIGHT = MIN_CONFIDENCE_WEIGHT;
 const TEST_ABOVE_MIN_CONFIDENCE = 0.6;
 const TEST_BELOW_MIN_CONFIDENCE = 0.4;
 const TEST_LOW_CONFIDENCE = 0.3;
-const TEST_MARKET_SECTION_INDEX = 3; // 0:Symbol, 1:Timeframe, 2:AnalysisIntent, 3:MarketStatus
 // expected value: ((110 - 100) / 100) * 100 = 10.00%
 const TEST_CHANGE_RATE_FORMATTED = `${(((TEST_NEXT_CLOSE - TEST_PREV_CLOSE) / TEST_PREV_CLOSE) * 100).toFixed(2)}%`;
 
@@ -210,11 +209,9 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            const marketSection =
-                result.split('\n\n')[TEST_MARKET_SECTION_INDEX];
-            expect(marketSection).toContain('Current Price: N/A');
-            expect(marketSection).toContain('Price Change %: N/A');
-            expect(marketSection).toContain('Volume: N/A');
+            expect(result).toContain('Current Price: N/A');
+            expect(result).toContain('Price Change %: N/A');
+            expect(result).toContain('Volume: N/A');
         });
     });
 
@@ -1063,6 +1060,25 @@ describe('prompt', () => {
                 [skill]
             );
             expect(result).not.toContain('Pattern Analysis');
+        });
+
+        it('summary 전용 규칙이 포함된다', () => {
+            const skill = makeSkill({
+                name: 'RSI Divergence',
+                type: undefined,
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('### Regular Skills Usage');
+            expect(result).toContain('summary only');
+            expect(result).toContain('### Active Skills Writing Rules');
+            expect(result).toContain(
+                'Do not create separate structured entries or new fields for them.'
+            );
         });
     });
 
@@ -2180,32 +2196,28 @@ describe('prompt', () => {
         });
 
         it('공통 Name Field Matching 섹션이 포함된다', () => {
-            expect(result).toContain(
-                '### Name Field Matching (applies to all identifier fields)'
-            );
+            expect(result).toContain('### Name Field Matching');
         });
 
         it('name 필드가 비어있으면 안 된다는 규칙이 명시된다', () => {
-            expect(result).toContain('non-empty string');
-            expect(result).toContain('EXACTLY matches');
+            expect(result).toContain('MUST exactly match');
+            expect(result).toContain('empty strings');
         });
 
         it('verbatim copy 지시가 포함된다', () => {
-            expect(result).toContain('Copy each skill name verbatim');
-            expect(result).toContain(
-                'Do not translate, abbreviate, paraphrase'
-            );
+            expect(result).toContain('Copy verbatim');
+            expect(result).toContain('never translate, abbreviate');
         });
 
-        it('적용 대상 필드가 명시된다 (patternSummaries.skillName, strategyResults.strategyName, indicatorResults.indicatorName)', () => {
-            expect(result).toContain('patternSummaries[].skillName');
-            expect(result).toContain('strategyResults[].strategyName');
-            expect(result).toContain('indicatorResults[].indicatorName');
+        it('적용 대상 필드가 명시된다 (skillName, strategyName, indicatorName)', () => {
+            expect(result).toContain('skillName');
+            expect(result).toContain('strategyName');
+            expect(result).toContain('indicatorName');
         });
 
         it('skill이 없으면 entry를 omit하라는 지시가 포함된다', () => {
             expect(result).toContain(
-                'omit the entry entirely rather than inventing a name'
+                'Omit the entry if no matching skill exists'
             );
         });
     });
@@ -2271,12 +2283,38 @@ describe('prompt', () => {
             expect(result).toContain('accessible');
         });
 
-        it('모든 섹션 종합 지시가 포함된다', () => {
-            expect(result).toContain('synthesize ALL');
+        it('전략 결론 포함 지시가 포함된다', () => {
+            expect(result).toContain('INCLUDE strategy conclusions');
         });
 
-        it('Summary Writing Guidelines 섹션이 포함된다', () => {
-            expect(result).toContain('Summary Writing Guidelines');
+        it('Summary Writing Checklist 섹션이 포함된다', () => {
+            expect(result).toContain('Summary Writing Checklist');
+        });
+
+        it('체크리스트에 추세 방향 단계가 포함된다', () => {
+            expect(result).toContain('1. STATE the overall trend');
+        });
+
+        it('체크리스트에 지표 요약 단계가 포함된다', () => {
+            expect(result).toContain('2. SUMMARIZE key indicator');
+        });
+
+        it('체크리스트에 캔들/차트 패턴 단계가 포함된다', () => {
+            expect(result).toContain(
+                '3. REPORT detected chart/candle patterns'
+            );
+        });
+
+        it('체크리스트에 지지/저항 단계가 포함된다', () => {
+            expect(result).toContain('5. DESCRIBE key support/resistance');
+        });
+
+        it('체크리스트에 리스크 평가 단계가 포함된다', () => {
+            expect(result).toContain('6. ASSESS risk');
+        });
+
+        it('체크리스트에 결론 단계가 포함된다', () => {
+            expect(result).toContain('7. CONCLUDE');
         });
     });
 
@@ -2287,8 +2325,26 @@ describe('prompt', () => {
             result = buildAnalysisPrompt(TEST_SYMBOL, [], makeIndicators(), []);
         });
 
-        it('Action Recommendation Guidelines 섹션이 포함된다', () => {
-            expect(result).toContain('Action Recommendation Guidelines');
+        it('Action Recommendation Decision Tree 섹션이 포함된다', () => {
+            expect(result).toContain('Action Recommendation Decision Tree');
+        });
+
+        it('결정 트리 Step 1: entryRecommendation 판단 로직이 포함된다', () => {
+            expect(result).toContain('Step 1');
+            expect(result).toContain('"enter"');
+            expect(result).toContain('"wait"');
+            expect(result).toContain('"avoid"');
+        });
+
+        it('결정 트리 Step 2: 가격 계산 규칙이 포함된다', () => {
+            expect(result).toContain('Step 2');
+            expect(result).toContain('REQUIRED for "enter" and "wait"');
+            expect(result).toContain('empty ONLY for "avoid"');
+        });
+
+        it('결정 트리 Step 3: 텍스트 필드 작성 지시가 포함된다', () => {
+            expect(result).toContain('Step 3');
+            expect(result).toContain('positionAnalysis');
         });
 
         it('actionRecommendation 필드가 스키마에 포함된다', () => {
@@ -2775,16 +2831,16 @@ describe('prompt', () => {
     });
 
     describe('Critical Response Rules', () => {
-        it('분석 요청에 JSON 전용 출력 규칙이 포함된다', () => {
+        it('분석 요청에 빈 배열 + null 방지 규칙이 포함된다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('Return ONLY a single valid JSON object');
+            expect(result).toContain('return an empty array []');
             expect(result).toContain(
-                'Do not wrap the JSON in markdown code fences'
+                'Never include null or undefined inside arrays'
             );
         });
 
@@ -2806,7 +2862,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).toContain('Critical Response Rules (MUST follow)');
+            expect(result).toContain('### Critical Response Rules');
         });
     });
 
@@ -2822,7 +2878,7 @@ describe('prompt', () => {
             expect(result).toContain('## Analysis Intent');
         });
 
-        it('Analysis Intent 블록에 한국어 출력 지시가 포함된다', () => {
+        it('Analysis Intent 블록이 데이터 분석 지시를 포함한다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 [],
@@ -2830,7 +2886,7 @@ describe('prompt', () => {
                 []
             );
 
-            expect(result).toContain('한국어');
+            expect(result).toContain('Analyze the symbol below');
         });
 
         it('Analysis Intent 블록이 Timeframe 뒤에 위치한다', () => {
@@ -3317,38 +3373,17 @@ describe('prompt', () => {
         });
     });
 
-    describe('SMC 가이드라인', () => {
+    describe('Confluence Assessment 가이드라인', () => {
         const bars = Array.from({ length: 5 }, (_, i) => makeBar(i));
 
-        it('should include SMC interpretation guidelines', () => {
+        it('should include Confluence Assessment guidelines', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
                 makeIndicators()
             );
-            expect(result).toContain(
-                '### SMC (Smart Money Concepts) Interpretation'
-            );
-            expect(result).toContain('BOS');
-            expect(result).toContain('CHoCH');
-            expect(result).toContain('Order Blocks');
-            expect(result).toContain('Fair Value Gaps');
-            expect(result).toContain('Premium/Discount Zones');
-        });
-    });
-
-    describe('스퀴즈 모멘텀 가이드라인', () => {
-        const bars = Array.from({ length: 5 }, (_, i) => makeBar(i));
-
-        it('should include Squeeze Momentum interpretation guidelines', () => {
-            const result = buildAnalysisPrompt(
-                TEST_SYMBOL,
-                bars,
-                makeIndicators()
-            );
-            expect(result).toContain('### Squeeze Momentum Interpretation');
-            expect(result).toContain('Zero-line cross');
-            expect(result).toContain('Squeeze duration');
+            expect(result).toContain('### Confluence Assessment');
+            expect(result).toContain('2+ independent signals');
         });
     });
 });

@@ -53,6 +53,38 @@ describe('keyLevels', () => {
             });
         });
 
+        describe('배열 내 null/undefined 요소가 있을 때', () => {
+            it('support 배열 내 null 요소를 필터링한다', () => {
+                // Simulating invalid runtime data (null elements) to verify null filtering behavior;
+                // KeyLevels type disallows null array elements, so `as unknown as` is required
+                const input = {
+                    support: [null, { price: 100, reason: '유효' }],
+                    resistance: [],
+                } as unknown as KeyLevels;
+                const result = validateKeyLevels(input);
+                expect(result.support).toEqual([
+                    { price: 100, reason: '유효' },
+                ]);
+            });
+
+            it('resistance 배열 내 undefined 요소를 필터링한다', () => {
+                // Simulating invalid runtime data (null/undefined elements) to verify filtering behavior;
+                // KeyLevels type disallows null/undefined array elements, so `as unknown as` is required
+                const input = {
+                    support: [],
+                    resistance: [
+                        undefined,
+                        { price: 200, reason: '유효' },
+                        null,
+                    ],
+                } as unknown as KeyLevels;
+                const result = validateKeyLevels(input);
+                expect(result.resistance).toEqual([
+                    { price: 200, reason: '유효' },
+                ]);
+            });
+        });
+
         describe('reason이 빈 문자열인 항목이 있을 때', () => {
             it('reason이 빈 문자열인 항목을 제거한다', () => {
                 const input: KeyLevels = {
