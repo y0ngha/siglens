@@ -14,7 +14,6 @@ import type {
     PriceScenario,
     RiskLevel,
     Signal,
-    SignalStrength,
     SignalType,
     StrategyResult,
     Trend,
@@ -33,6 +32,7 @@ import {
     type SkillSummarySection,
 } from '@/components/analysis/utils/parseStructuredSummary';
 import { resolveTrendDisplay } from '@/components/analysis/utils/trendUtils';
+import { resolveStrengthDisplay } from '@/components/analysis/utils/signalUtils';
 import { AnalysisProgress } from '@/components/analysis/AnalysisProgress';
 import { AnalysisToast } from '@/components/analysis/AnalysisToast';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
@@ -155,18 +155,6 @@ const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
     high: '높음',
 };
 
-const SIGNAL_STRENGTH_COLOR: Record<SignalStrength, string> = {
-    strong: 'text-chart-bullish',
-    moderate: 'text-ui-warning',
-    weak: 'text-secondary-400',
-};
-
-const SIGNAL_STRENGTH_LABEL: Record<SignalStrength, string> = {
-    strong: '강한 시그널',
-    moderate: '보통 시그널',
-    weak: '약한 시그널',
-};
-
 const SIGNAL_TYPE_LABEL: Record<SignalType, string> = {
     skill: '스킬',
 };
@@ -177,21 +165,27 @@ interface SignalItemProps {
 }
 
 function SignalItem({ signal, typeLabel }: SignalItemProps) {
+    const strengthDisplay = resolveStrengthDisplay(signal.strength);
+
     return (
         <div className="bg-secondary-700/40 flex flex-col gap-1.5 rounded px-3 py-2">
             <div className="flex items-center gap-2">
                 <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
                     {typeLabel ?? SIGNAL_TYPE_LABEL[signal.type]}
                 </span>
-                <TrendBadge trend={signal.trend} />
-                <span
-                    className={cn(
-                        'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium',
-                        SIGNAL_STRENGTH_COLOR[signal.strength]
+                <div className="flex w-36 shrink-0 items-center justify-end gap-1">
+                    <TrendBadge trend={signal.trend} />
+                    {strengthDisplay !== null && (
+                        <span
+                            className={cn(
+                                'rounded px-1.5 py-0.5 text-[10px] font-medium',
+                                strengthDisplay.color
+                            )}
+                        >
+                            {strengthDisplay.label}
+                        </span>
                     )}
-                >
-                    {SIGNAL_STRENGTH_LABEL[signal.strength]}
-                </span>
+                </div>
             </div>
             <span className="text-secondary-400 text-xs">
                 {signal.description}

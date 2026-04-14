@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #302 | fix/295-strength/signal-강도-누락-시-ui-정렬-깨짐 | 2026-04-14]
+- Violation: 테스트 기댓값으로 소스 상수를 그대로 import해 동어반복 테스트가 됨
+- Rule: Tests — expected values should be hardcoded literals, not imports from the module under test (tautological assertion)
+- Context: signalUtils.test.ts에서 SIGNAL_STRENGTH_LABEL을 import해 기댓값으로 사용했고, 레이블 문자열이 틀려도 테스트가 통과되는 문제가 있었음
+
 ## [PR #304 Round 3 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `let diffMs` 재할당 패턴 사용 — `let` + `if` 대신 선언적 `const` 표현 가능
 - Rule: CONVENTIONS.md FP 원칙 — 재할당보다 선언적 표현 권장
@@ -70,16 +75,6 @@
 - Violation: sleep 유틸리티 함수가 hooks/ 파일 내 직접 정의
 - Rule: CONVENTIONS.md — 비훅 순수 유틸리티 함수는 utils/ 서브폴더에 분리
 - Context: `useAnalysis.ts`에서 `sleep` 함수를 인라인 정의; `symbol-page/utils/sleep.ts`로 분리
-
-## [PR #286 Round 5 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
-- Violation: HowTo JSON-LD 구조화 데이터가 Suspense boundary 안에서 deferred — 초기 HTML에 미포함
-- Rule: SEO Best Practice — 구조화 데이터(JSON-LD)는 초기 HTML에 포함되어야 크롤러 호환성 보장
-- Context: B1 아키텍처 수정 시 모든 데이터 fetch를 Suspense로 분리했으나, countSkillFiles()는 fs I/O(~1ms)로 blocking 영향 미미. HowTo JSON-LD와 HowItWorks를 동기 렌더링으로 전환하여 초기 HTML에 포함시킴.
-
-## [PR #286 Round 4 | feat/284/카테고리별-종목-섹션-추가 | 2026-04-12]
-- Violation: `app/page.tsx`에서 `countSkillFiles()`와 `loadSkills()` blocking await로 페이지 전체 렌더링을 지연
-- Rule: Next.js Suspense 패턴 — 느린 데이터 fetch는 async 서버 컴포넌트 + Suspense fallback으로 스트리밍 처리
-- Context: B1 아키텍처 수정 시 Suspense를 제거하고 Promise.all로 동기 fetch하도록 변경했으나, 원래 의도는 스켈레톤 로딩. `cache()`로 중복 호출 제거하고 `AsyncStatsBar`, `SkillsShowcaseServer`, `HowItWorksServer`, `HowToJsonLdServer` 인라인 async 컴포넌트로 분리하여 Suspense 복원.
 
 ## [PR #272 Round 2 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
 - Violation: `indicatorCount` prop이 `SymbolPageClient` → `ChartContent` → `AnalysisPanel`로 드릴링됨 (두 중간 컴포넌트 모두 미사용)

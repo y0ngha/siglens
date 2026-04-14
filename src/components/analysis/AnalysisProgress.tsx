@@ -48,7 +48,7 @@ export function AnalysisProgress({
                     <span
                         key={tipIndex}
                         className="text-secondary-500 mt-0.5 text-[11px] leading-relaxed tracking-wide"
-                        style={{ animation: 'fadeIn 0.6s ease-in' }}
+                        style={{ animation: 'fade-in 0.6s ease-in' }}
                     >
                         {ANALYSIS_TIPS[tipIndex]}
                     </span>
