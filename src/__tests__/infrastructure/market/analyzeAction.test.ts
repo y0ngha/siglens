@@ -178,11 +178,11 @@ describe('analyzeAction 함수는', () => {
             mockCacheSet.mockResolvedValueOnce(undefined);
             mockComputeEffectiveTtl.mockReturnValueOnce(300);
 
-            await analyzeAction(mockVariables, '1Min');
+            await analyzeAction(mockVariables, '5Min');
 
             await Promise.resolve();
             expect(mockCacheSet).toHaveBeenCalledWith(
-                'analysis:AAPL:1Min',
+                'analysis:AAPL:5Min',
                 mockResult,
                 300
             );

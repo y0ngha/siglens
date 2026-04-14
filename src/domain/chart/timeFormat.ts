@@ -48,13 +48,15 @@ function formatDate(date: Date): string {
     return `${month} ${day}`;
 }
 
-const MINUTE_TIMEFRAMES: ReadonlySet<Timeframe> = new Set([
-    '5Min',
+const MINUTE_TIMEFRAMES: ReadonlySet<Timeframe> = new Set(['5Min']);
+
+// 15Min/30Min은 조회 기간이 20-30일이므로 날짜+시간 형식 표시
+const DATE_TIME_TIMEFRAMES: ReadonlySet<Timeframe> = new Set([
     '15Min',
     '30Min',
+    '1Hour',
+    '4Hour',
 ]);
-
-const HOUR_TIMEFRAMES: ReadonlySet<Timeframe> = new Set(['1Hour', '4Hour']);
 
 export function getTimeFormatter(
     timeframe: Timeframe
@@ -63,7 +65,7 @@ export function getTimeFormatter(
         return (timestamp: number) => formatTime(toKstDate(timestamp));
     }
 
-    if (HOUR_TIMEFRAMES.has(timeframe)) {
+    if (DATE_TIME_TIMEFRAMES.has(timeframe)) {
         return (timestamp: number) => formatDateAndTime(toKstDate(timestamp));
     }
 

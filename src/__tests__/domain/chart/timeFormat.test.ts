@@ -20,16 +20,16 @@ describe('timeFormat', () => {
         });
 
         describe('15Min 타임프레임', () => {
-            it('KST 기준 시:분 형식(HH:mm)을 반환한다', () => {
+            it('KST 기준 월/일 시:분 형식(M/D HH:mm)을 반환한다', () => {
                 const formatter = getTimeFormatter('15Min');
-                expect(formatter(UTC_TIMESTAMP_SECONDS)).toBe('18:30');
+                expect(formatter(UTC_TIMESTAMP_SECONDS)).toBe('3/30 18:30');
             });
         });
 
         describe('30Min 타임프레임', () => {
-            it('KST 기준 시:분 형식(HH:mm)을 반환한다', () => {
+            it('KST 기준 월/일 시:분 형식(M/D HH:mm)을 반환한다', () => {
                 const formatter = getTimeFormatter('30Min');
-                expect(formatter(UTC_TIMESTAMP_SECONDS)).toBe('18:30');
+                expect(formatter(UTC_TIMESTAMP_SECONDS)).toBe('3/30 18:30');
             });
         });
 
@@ -60,9 +60,18 @@ describe('timeFormat', () => {
                 expect(formatter(MIDDAY_UTC_TIMESTAMP_SECONDS)).toBe('00:00');
             });
 
-            it('30Min: UTC 15:00은 KST 00:00 (다음날)으로 포맷된다', () => {
+            it('15Min: UTC 2024-03-29 15:00은 KST 3/30 00:00으로 포맷된다', () => {
+                const formatter = getTimeFormatter('15Min');
+                expect(formatter(MIDDAY_UTC_TIMESTAMP_SECONDS)).toBe(
+                    '3/30 00:00'
+                );
+            });
+
+            it('30Min: UTC 2024-03-29 15:00은 KST 3/30 00:00으로 포맷된다', () => {
                 const formatter = getTimeFormatter('30Min');
-                expect(formatter(MIDDAY_UTC_TIMESTAMP_SECONDS)).toBe('00:00');
+                expect(formatter(MIDDAY_UTC_TIMESTAMP_SECONDS)).toBe(
+                    '3/30 00:00'
+                );
             });
 
             it('1Hour: UTC 2024-03-29 15:00은 KST 3/30 00:00으로 포맷된다', () => {
@@ -89,6 +98,20 @@ describe('timeFormat', () => {
             it('5Min: UTC 17:00은 KST 02:00으로 포맷된다', () => {
                 const formatter = getTimeFormatter('5Min');
                 expect(formatter(LATE_UTC_TIMESTAMP_SECONDS)).toBe('02:00');
+            });
+
+            it('15Min: UTC 2024-01-15 17:00은 KST 1/16 02:00으로 포맷된다', () => {
+                const formatter = getTimeFormatter('15Min');
+                expect(formatter(LATE_UTC_TIMESTAMP_SECONDS)).toBe(
+                    '1/16 02:00'
+                );
+            });
+
+            it('30Min: UTC 2024-01-15 17:00은 KST 1/16 02:00으로 포맷된다', () => {
+                const formatter = getTimeFormatter('30Min');
+                expect(formatter(LATE_UTC_TIMESTAMP_SECONDS)).toBe(
+                    '1/16 02:00'
+                );
             });
 
             it('1Hour: UTC 2024-01-15 17:00은 KST 1/16 02:00으로 포맷된다', () => {
