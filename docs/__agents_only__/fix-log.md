@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #304 Round 3 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
+- Violation: `let diffMs` 재할당 패턴 사용 — `let` + `if` 대신 선언적 `const` 표현 가능
+- Rule: CONVENTIONS.md FP 원칙 — 재할당보다 선언적 표현 권장
+- Context: `rawDiffMs <= 0 ? rawDiffMs + MS_PER_DAY : rawDiffMs` 삼항 표현식으로 교체
+
 ## [PR #304 Round 2 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `computeSecondsUntilKst17`에서 `0 < diffMs < 1000ms` 경계(서브초 구간)에서 `Math.max(1, 0) = 1` 반환 경로에 대한 테스트 누락
 - Rule: Infrastructure Layer Checklist — 100% branch coverage for infrastructure (all ?., ??, if/else paths)
@@ -11,10 +16,6 @@
 - Context: `analyzeAction`, `pollAnalysisAction`이 `computeEffectiveTtl(timeframe, new Date())`를 호출하도록 변경됐으나, 기존 테스트는 TTL을 86400/300/3600으로 하드코딩 단언; `jest.mock('@/infrastructure/cache/config', ...)` 추가하여 해결
 
 ## [PR #294 | feat/key-levels-clustering | 2026-04-13]
-- Violation: 가격 반올림 `100`이 매직 넘버로 사용됨
-- Rule: Domain Layer Checklist — No hardcoded literals → extract to constants
-- Context: `keyLevels.ts`에서 `Math.round(rawPrice * 100) / 100` → `PRICE_DECIMAL_FACTOR` 상수로 추출
-
 - Violation: 툴팁 위치 계산 시 뷰포트 상단 경계 미고려
 - Rule: UX — 트리거가 화면 상단에 있을 때 툴팁이 화면 밖으로 벗어남
 - Context: `getTooltipPosition()`에서 `aboveTop < TOOLTIP_VIEWPORT_PADDING`이면 하단에 표시하도록 개선
@@ -22,10 +23,6 @@
 - Violation: Portal 기반 툴팁이 초기 위치(0,0)에서 깜빡인 후 올바른 위치로 이동
 - Rule: UX — 포탈 렌더링 시 위치 계산 전 화면 깜빡임 발생
 - Context: `InfoTooltip`에 `positioned` 상태 추가, 위치 계산 완료 전까지 `visibility: hidden` 적용
-
-- Violation: `role="tooltip"` 요소에 `aria-describedby` 연결 누락
-- Rule: WAI-ARIA — tooltip 패턴은 트리거에 `aria-describedby`로 연결해야 스크린 리더 접근 가능
-- Context: `InfoTooltip`에 `useId()`로 고유 ID 생성, 트리거 button에 `aria-describedby` 추가
 
 - Violation: React key에 `source.price-source.reason` 조합 사용 — 동일 가격·사유 존재 시 중복 가능
 - Rule: React — 리스트 렌더링 시 key 고유성 보장
@@ -72,11 +69,6 @@
 - Violation: dynamic import loading 컴포넌트(`ChartSkeleton`)가 `absolute inset-0`을 사용함에도 래퍼 컨테이너에 `relative` 클래스 누락
 - Rule: CSS Positioning — `absolute` 자식이 올바른 영역에 렌더되려면 부모 체인에 `positioned element`(`relative/absolute/fixed/sticky`)가 있어야 함
 - Context: StockChart 컨테이너(`<div className="relative flex-3">`)는 기존에 `relative`가 있었으나, VolumeChart 컨테이너는 정적 import에서 로딩 상태가 없어 `relative`가 없었음; dynamic import 전환으로 loading prop이 생기면서 문제가 드러남
-
-## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
-- Violation: `Footer.tsx`의 `<div role="note">`에 accessible name(`aria-label`) 누락
-- Rule: WAI-ARIA — role="note" 요소에 aria-label로 accessible name을 제공해야 함
-- Context: privacy/page.tsx와 terms/page.tsx의 동일 요소에는 aria-label이 있으나 Footer.tsx에만 누락됨
 
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: 서버 prefetchQuery 키와 클라이언트 훅 키 불일치 (hydration 캐시 미스)
