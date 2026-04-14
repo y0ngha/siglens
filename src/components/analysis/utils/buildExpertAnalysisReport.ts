@@ -156,17 +156,17 @@ function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
         .filter(pattern => pattern.detected)
         .map(
             pattern =>
-                `- 패턴 ${pattern.skillName}\n  - ${normalizeWhitespace(
+                `- ${pattern.skillName}\n  - ${normalizeWhitespace(
                     pattern.summary
-                ).replace(/\*/g, '')}}`
+                ).replace(/\*/g, '')}`
         );
     lines.push(...patternLines);
 
     const strategyLines = analysis.strategyResults.map(
         strategy =>
-            `- 전략 ${strategy.strategyName}\n  - ${normalizeWhitespace(
+            `- ${strategy.strategyName}\n  - ${normalizeWhitespace(
                 strategy.summary
-            ).replace(/\*/g, '')}}}`
+            ).replace(/\*/g, '')}}`
     );
     lines.push(...strategyLines);
 
