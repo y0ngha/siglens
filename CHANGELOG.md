@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.9](https://github.com/y0ngha/siglens/compare/v0.8.8...v0.8.9) (2026-04-14)
+
+
+### Bug Fixes
+
+* 재분석시 step 6부터 진행하던 버그 수정 및 버그 개선을 위한 로그 추가 ([2f1a225](https://github.com/y0ngha/siglens/commit/2f1a22518faca2cbaf3686665e327e5fa4a54688))
+
 ## [0.8.8](https://github.com/y0ngha/siglens/compare/v0.8.7...v0.8.8) (2026-04-14)
 
 
