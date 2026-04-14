@@ -283,6 +283,11 @@ export function ChartContent({
                         onChartRemove={handleVolumeChartRemove}
                     />
                 </div>
+
+                {/* 데이터 지연 안내 */}
+                <p className="text-secondary-500 px-2 py-1 text-right text-[10px]">
+                    시세 데이터는 최대 15분 지연됩니다
+                </p>
             </div>
 
             {/* 드래그 핸들 — flex 형제로 배치 (데스크톱 전용) */}

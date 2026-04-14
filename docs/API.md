@@ -256,6 +256,42 @@ interface FmpDailyBar {
 
 ---
 
+### 3. Quote (당일 실시간 시세)
+
+```
+GET /stable/quote?symbol={symbol}&apikey={key}
+```
+
+당일 거래 중 실시간 시세를 조회. EOD 엔드포인트가 당일 데이터를 포함하지 않는 장중에 호출하여 일봉 데이터에 append한다.
+
+**Query Parameters**
+
+| 파라미터 | 타입 | 필수 | 설명 |
+|----------|------|------|------|
+| symbol | string | ✅ | 종목 심볼 |
+| apikey | string | ✅ | FMP API 키 |
+
+**Response**
+
+```typescript
+interface FmpQuote {
+    price: number;    // 현재가 (당일 bar의 close로 사용)
+    open: number;     // 당일 시가
+    dayHigh: number;  // 당일 고가
+    dayLow: number;   // 당일 저가
+    volume: number;   // 당일 거래량
+    timestamp: number; // Unix timestamp (초 단위)
+}
+
+// 응답: FmpQuote[] (배열 형태, 단일 심볼이므로 [0]만 사용)
+```
+
+**주의사항**
+- 장 마감 후 EOD 엔드포인트가 업데이트되면 당일 데이터가 중복될 수 있으므로, 마지막 EOD 봉의 time과 비교하여 중복 시 append 생략
+- 실패(non-ok, 빈 배열, 네트워크 오류) 시 EOD 데이터만으로 graceful degradation
+
+---
+
 ## Market Data Provider 선택
 
 ```bash

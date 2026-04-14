@@ -6,6 +6,7 @@ import type {
 } from './types';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
+const FMP_REVALIDATE_SECONDS = 60;
 
 const FMP_INTRADAY_TIMEFRAME_MAP: Record<Exclude<Timeframe, '1Day'>, string> = {
     '1Min': '1min',
@@ -32,6 +33,15 @@ interface FmpDailyBar {
     volume: number;
 }
 
+interface FmpQuote {
+    price: number; // 현재가 (당일 bar의 close로 사용)
+    open: number;
+    dayHigh: number;
+    dayLow: number;
+    volume: number;
+    timestamp: number; // Unix timestamp (초 단위)
+}
+
 function toFmpBar(raw: FmpBar): Bar {
     return {
         time: Math.floor(new Date(raw.date + ' UTC').getTime() / 1000),
@@ -45,7 +55,10 @@ function toFmpBar(raw: FmpBar): Bar {
 
 function toFmpDailyBar(raw: FmpDailyBar): Bar {
     return {
-        time: Math.floor(new Date(raw.date).getTime() / 1000),
+        // 'T00:00:00'을 붙여 local time midnight으로 파싱한다.
+        // date-only ISO 문자열(예: "2026-04-14")은 UTC midnight으로 파싱되어
+        // US Eastern(UTC-4) 등의 타임존에서 하루 앞 날짜로 표시되는 버그가 있다.
+        time: Math.floor(new Date(raw.date + 'T00:00:00').getTime() / 1000),
         open: raw.open,
         high: raw.high,
         low: raw.low,
@@ -108,6 +121,12 @@ export class FmpProvider implements MarketDataProvider {
         return `${FMP_BASE_URL}/historical-price-eod/full?${params}`;
     }
 
+    private buildQuoteUrl(symbol: string): string {
+        const params = new URLSearchParams({ apikey: this.apiKey });
+        params.set('symbol', symbol);
+        return `${FMP_BASE_URL}/quote?${params}`;
+    }
+
     // FMP API는 limit 파라미터를 지원하지 않습니다.
     // from 파라미터는 from 쿼리로, before 파라미터는 to 쿼리로 변환합니다.
     // Daily(1Day) 타임프레임은 /stable/historical-price-eod/full 엔드포인트를 사용합니다.
@@ -142,7 +161,7 @@ export class FmpProvider implements MarketDataProvider {
         );
 
         const res = await fetch(url, {
-            next: { revalidate: 60 },
+            next: { revalidate: FMP_REVALIDATE_SECONDS },
         });
 
         if (!res.ok) {
@@ -164,24 +183,87 @@ export class FmpProvider implements MarketDataProvider {
         fromDate: string | undefined,
         endDate: string | undefined
     ): Promise<Bar[]> {
-        const url = this.buildDailyUrl(symbol, fromDate, endDate);
+        const eodUrl = this.buildDailyUrl(symbol, fromDate, endDate);
 
-        console.log(url);
-        const res = await fetch(url, {
-            next: { revalidate: 60 },
-        });
+        // endDate가 지정된 경우 과거 데이터 조회이므로 당일 quote를 추가하지 않는다.
+        const [eodRes, todayBar] = await Promise.all([
+            fetch(eodUrl, { next: { revalidate: FMP_REVALIDATE_SECONDS } }),
+            endDate === undefined
+                ? this.fetchTodayQuoteBar(symbol)
+                : Promise.resolve(null),
+        ]);
 
-        if (!res.ok) {
-            throw new Error(`FMP API error: ${res.status} ${res.statusText}`);
+        if (!eodRes.ok) {
+            throw new Error(
+                `FMP API error: ${eodRes.status} ${eodRes.statusText}`
+            );
         }
 
-        // res.json() returns unknown; asserting shape against FMP API contract
-        const raw = (await res.json()) as FmpDailyBar[];
+        // eodRes.json() returns unknown; asserting shape against FMP API contract
+        const raw = (await eodRes.json()) as FmpDailyBar[];
 
         if (!Array.isArray(raw)) {
             return [];
         }
 
-        return raw.map(r => toFmpDailyBar(r)).toReversed();
+        const eodBars = raw.map(r => toFmpDailyBar(r)).toReversed();
+
+        if (todayBar === null) return eodBars;
+
+        // 마지막 EOD 봉이 당일 quote 봉과 같거나 이후이면 장 마감 후 EOD에 이미 포함된 것
+        const lastBar = eodBars.at(-1);
+        if (lastBar !== undefined && lastBar.time >= todayBar.time) {
+            return eodBars;
+        }
+
+        return [...eodBars, todayBar];
+    }
+
+    /**
+     * 당일 실시간 quote를 Bar 형태로 반환한다.
+     * 실패 시 null을 반환하여 EOD 데이터만으로 graceful degradation한다.
+     *
+     * EOD 조회 실패(throw)와 달리 quote 실패는 전체 요청을 실패시키지 않는 의도적 비대칭 처리다.
+     * quote는 당일 봉 보강용 부가 데이터이므로 실패해도 차트 렌더링에 치명적이지 않다.
+     * 반면 EOD 데이터는 차트의 핵심이므로 실패 시 즉시 throw한다.
+     *
+     * 주의: timestamp에서 UTC 날짜를 추출하므로 정규장 시간(9:30 AM – 4:00 PM ET) 내에서만
+     * ET 거래일과 날짜가 일치한다. 애프터마켓(예: 8:00 PM ET = 익일 01:00 UTC)의 경우
+     * UTC 날짜가 ET 거래일보다 하루 앞설 수 있으나, FMP /stable/quote는 정규장 기준
+     * 당일 데이터를 반환하므로 현재 구현 범위에서는 문제없다.
+     */
+    private async fetchTodayQuoteBar(symbol: string): Promise<Bar | null> {
+        const url = this.buildQuoteUrl(symbol);
+        try {
+            const res = await fetch(url, {
+                next: { revalidate: FMP_REVALIDATE_SECONDS },
+            });
+            if (!res.ok) return null;
+
+            // res.json() returns unknown; FMP quote API response shape guaranteed by provider contract
+            const raw = (await res.json()) as FmpQuote[];
+            if (!Array.isArray(raw) || raw.length === 0) return null;
+
+            const quote = raw[0]!;
+            const d = new Date(quote.timestamp * 1000);
+            const dateStr = d.toISOString().split('T')[0]!;
+
+            return {
+                time: Math.floor(
+                    new Date(dateStr + 'T00:00:00').getTime() / 1000
+                ),
+                open: quote.open,
+                high: quote.dayHigh,
+                low: quote.dayLow,
+                close: quote.price,
+                volume: quote.volume,
+            };
+        } catch (error) {
+            console.warn(
+                '[FmpProvider] Failed to fetch today quote, using EOD data only:',
+                error
+            );
+            return null;
+        }
     }
 }

@@ -18,6 +18,19 @@ const mockFmpDailyBar = {
     volume: 1000000,
 };
 
+// 당일 quote 모의 데이터 (timestamp는 2024-01-16 15:00 UTC → 날짜 2024-01-16)
+const mockFmpQuote = {
+    price: 110,
+    open: 105,
+    dayHigh: 115,
+    dayLow: 104,
+    volume: 2000000,
+    timestamp: Math.floor(new Date('2024-01-16T15:00:00Z').getTime() / 1000),
+};
+
+// 대부분의 테스트에서 quote fetch가 결과에 영향을 주지 않도록 빈 응답을 반환하는 mock
+const emptyQuoteMock = { ok: true, json: async () => [] };
+
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
@@ -254,6 +267,7 @@ describe('FmpProvider', () => {
                     ok: true,
                     json: async () => [],
                 });
+                mockFetch.mockResolvedValueOnce(emptyQuoteMock);
 
                 const provider = new FmpProvider();
                 await provider.getBars({
@@ -273,6 +287,7 @@ describe('FmpProvider', () => {
                     ok: true,
                     json: async () => [mockFmpDailyBar],
                 });
+                mockFetch.mockResolvedValueOnce(emptyQuoteMock);
 
                 const provider = new FmpProvider();
                 const bars = await provider.getBars({
@@ -282,7 +297,10 @@ describe('FmpProvider', () => {
 
                 expect(bars).toHaveLength(1);
                 expect(bars[0]).toEqual({
-                    time: Math.floor(new Date('2024-01-15').getTime() / 1000),
+                    // 'T00:00:00'을 붙여 local time midnight으로 파싱 (timezone 버그 수정)
+                    time: Math.floor(
+                        new Date('2024-01-15T00:00:00').getTime() / 1000
+                    ),
                     open: 100,
                     high: 105,
                     low: 99,
@@ -301,6 +319,7 @@ describe('FmpProvider', () => {
                     ok: true,
                     json: async () => newestFirst,
                 });
+                mockFetch.mockResolvedValueOnce(emptyQuoteMock);
 
                 const provider = new FmpProvider();
                 const bars = await provider.getBars({
@@ -313,7 +332,7 @@ describe('FmpProvider', () => {
                 expect(bars[2].close).toBe(103);
             });
 
-            it('before 파라미터가 있으면 to 쿼리 파라미터로 전달한다', async () => {
+            it('before 파라미터가 있으면 to 쿼리 파라미터로 전달하고 quote를 호출하지 않는다', async () => {
                 mockFetch.mockResolvedValueOnce({
                     ok: true,
                     json: async () => [],
@@ -326,6 +345,8 @@ describe('FmpProvider', () => {
                     before: '2024-01-15T00:00:00Z',
                 });
 
+                // before가 있으면 quote fetch를 건너뛰므로 fetch는 1번만 호출된다
+                expect(mockFetch).toHaveBeenCalledTimes(1);
                 const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
                 expect(new URL(url).searchParams.get('to')).toBe('2024-01-15');
             });
@@ -335,6 +356,7 @@ describe('FmpProvider', () => {
                     ok: true,
                     json: async () => [],
                 });
+                mockFetch.mockResolvedValueOnce(emptyQuoteMock);
 
                 const provider = new FmpProvider();
                 await provider.getBars({
@@ -355,6 +377,8 @@ describe('FmpProvider', () => {
                     status: 403,
                     statusText: 'Forbidden',
                 });
+                // Promise.all로 EOD와 quote를 동시에 요청하므로 quote mock도 필요
+                mockFetch.mockResolvedValueOnce(emptyQuoteMock);
 
                 const provider = new FmpProvider();
                 await expect(
@@ -367,6 +391,7 @@ describe('FmpProvider', () => {
                     ok: true,
                     json: async () => ({ error: 'Invalid ticker' }),
                 });
+                mockFetch.mockResolvedValueOnce(emptyQuoteMock);
 
                 const provider = new FmpProvider();
                 const bars = await provider.getBars({
@@ -382,6 +407,7 @@ describe('FmpProvider', () => {
                     ok: true,
                     json: async () => [],
                 });
+                mockFetch.mockResolvedValueOnce(emptyQuoteMock);
 
                 const provider = new FmpProvider();
                 const bars = await provider.getBars({
@@ -390,6 +416,181 @@ describe('FmpProvider', () => {
                 });
 
                 expect(bars).toEqual([]);
+            });
+
+            describe('당일 quote 추가', () => {
+                it('마지막 EOD 봉 이후 날짜의 quote를 마지막 봉으로 추가한다', async () => {
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [mockFmpDailyBar], // 마지막: 2024-01-15
+                    });
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [mockFmpQuote], // 당일: 2024-01-16
+                    });
+
+                    const provider = new FmpProvider();
+                    const bars = await provider.getBars({
+                        symbol: 'AAPL',
+                        timeframe: '1Day',
+                    });
+
+                    expect(bars).toHaveLength(2);
+                    expect(bars[1]).toEqual({
+                        time: Math.floor(
+                            new Date('2024-01-16T00:00:00').getTime() / 1000
+                        ),
+                        open: mockFmpQuote.open,
+                        high: mockFmpQuote.dayHigh,
+                        low: mockFmpQuote.dayLow,
+                        close: mockFmpQuote.price,
+                        volume: mockFmpQuote.volume,
+                    });
+                });
+
+                it('quote 날짜가 마지막 EOD 봉과 같으면 추가하지 않는다', async () => {
+                    // 장 마감 후 EOD가 업데이트된 경우
+                    const sameDayQuote = {
+                        ...mockFmpQuote,
+                        timestamp: Math.floor(
+                            new Date('2024-01-15T20:00:00Z').getTime() / 1000
+                        ), // 2024-01-15
+                    };
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [mockFmpDailyBar], // 마지막: 2024-01-15
+                    });
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [sameDayQuote], // 당일도 2024-01-15
+                    });
+
+                    const provider = new FmpProvider();
+                    const bars = await provider.getBars({
+                        symbol: 'AAPL',
+                        timeframe: '1Day',
+                    });
+
+                    expect(bars).toHaveLength(1);
+                });
+
+                it('quote API가 ok가 아닌 응답을 반환해도 EOD 데이터를 반환한다', async () => {
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [mockFmpDailyBar],
+                    });
+                    mockFetch.mockResolvedValueOnce({
+                        ok: false,
+                        status: 429,
+                        statusText: 'Too Many Requests',
+                    });
+
+                    const provider = new FmpProvider();
+                    const bars = await provider.getBars({
+                        symbol: 'AAPL',
+                        timeframe: '1Day',
+                    });
+
+                    expect(bars).toHaveLength(1);
+                    expect(bars[0].close).toBe(103);
+                });
+
+                it('quote API가 배열이 아닌 응답을 반환해도 EOD 데이터를 반환한다', async () => {
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [mockFmpDailyBar],
+                    });
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => ({ error: 'Not found' }),
+                    });
+
+                    const provider = new FmpProvider();
+                    const bars = await provider.getBars({
+                        symbol: 'AAPL',
+                        timeframe: '1Day',
+                    });
+
+                    expect(bars).toHaveLength(1);
+                });
+
+                it('quote API가 빈 배열을 반환해도 EOD 데이터를 반환한다', async () => {
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [mockFmpDailyBar],
+                    });
+                    mockFetch.mockResolvedValueOnce(emptyQuoteMock);
+
+                    const provider = new FmpProvider();
+                    const bars = await provider.getBars({
+                        symbol: 'AAPL',
+                        timeframe: '1Day',
+                    });
+
+                    expect(bars).toHaveLength(1);
+                });
+
+                it('quote fetch가 예외를 던져도 EOD 데이터를 반환한다', async () => {
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [mockFmpDailyBar],
+                    });
+                    mockFetch.mockRejectedValueOnce(new Error('Network error'));
+
+                    const provider = new FmpProvider();
+                    const bars = await provider.getBars({
+                        symbol: 'AAPL',
+                        timeframe: '1Day',
+                    });
+
+                    expect(bars).toHaveLength(1);
+                });
+
+                it('EOD 데이터가 없고 quote가 유효하면 quote 봉만 반환한다', async () => {
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [],
+                    });
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [mockFmpQuote],
+                    });
+
+                    const provider = new FmpProvider();
+                    const bars = await provider.getBars({
+                        symbol: 'AAPL',
+                        timeframe: '1Day',
+                    });
+
+                    expect(bars).toHaveLength(1);
+                    expect(bars[0].close).toBe(mockFmpQuote.price);
+                });
+
+                it('quote URL에 symbol과 apikey를 포함한다', async () => {
+                    mockFetch.mockResolvedValueOnce({
+                        ok: true,
+                        json: async () => [],
+                    });
+                    mockFetch.mockResolvedValueOnce(emptyQuoteMock);
+
+                    const provider = new FmpProvider();
+                    await provider.getBars({
+                        symbol: 'TSLA',
+                        timeframe: '1Day',
+                    });
+
+                    const [quoteUrl] = mockFetch.mock.calls[1] as [
+                        string,
+                        RequestInit,
+                    ];
+                    expect(quoteUrl).toContain(
+                        'financialmodelingprep.com/stable/quote'
+                    );
+                    expect(new URL(quoteUrl).searchParams.get('symbol')).toBe(
+                        'TSLA'
+                    );
+                    expect(quoteUrl).toContain('apikey=test-fmp-key');
+                });
             });
         });
     });
