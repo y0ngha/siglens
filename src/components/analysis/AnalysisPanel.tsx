@@ -190,17 +190,19 @@ function SignalItem({ signal, typeLabel }: SignalItemProps) {
                 <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
                     {typeLabel ?? SIGNAL_TYPE_LABEL[signal.type]}
                 </span>
-                <TrendBadge trend={signal.trend} />
-                {strengthDisplay !== null && (
-                    <span
-                        className={cn(
-                            'shrink-0 rounded px-1.5 py-0.5 text-[10px] font-medium',
-                            strengthDisplay.color
-                        )}
-                    >
-                        {strengthDisplay.label}
-                    </span>
-                )}
+                <div className="flex w-36 shrink-0 items-center justify-end gap-1">
+                    <TrendBadge trend={signal.trend} />
+                    {strengthDisplay !== null && (
+                        <span
+                            className={cn(
+                                'rounded px-1.5 py-0.5 text-[10px] font-medium',
+                                strengthDisplay.color
+                            )}
+                        >
+                            {strengthDisplay.label}
+                        </span>
+                    )}
+                </div>
             </div>
             <span className="text-secondary-400 text-xs">
                 {signal.description}
