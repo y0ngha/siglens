@@ -8,8 +8,8 @@ import type {
 export const DEFAULT_EPSILON_PERCENT = 0.005;
 const PRICE_DECIMAL_FACTOR = 100;
 
-function isValidKeyLevel(level: KeyLevel): boolean {
-    return level.price > 0 && level.reason.trim() !== '';
+function isValidKeyLevel(level: KeyLevel | null | undefined): boolean {
+    return level != null && level.price > 0 && level.reason.trim() !== '';
 }
 
 export function validateKeyLevels(keyLevels: KeyLevels): KeyLevels {
