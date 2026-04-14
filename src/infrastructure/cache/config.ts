@@ -7,6 +7,7 @@ import {
     MS_PER_SECOND,
     MS_PER_HOUR,
     MS_PER_DAY,
+    KST_OFFSET_HOURS,
 } from '@/domain/constants/time';
 
 export const ANALYSIS_CACHE_TTL: Record<Timeframe, number> = {
@@ -32,7 +33,6 @@ export const KOREAN_TICKERS_CACHE_KEY = 'korean:tickers';
 // KST 17:00 = UTC 08:00 = EST 04:00 (미국 프리마켓 시작 전)
 // 전날 분석 캐시를 장 시작 전에 갱신하기 위한 기준 시각
 export const CACHE_EXPIRY_HOUR_KST = 17;
-const KST_OFFSET_HOURS = 9;
 
 export function computeSecondsUntilKst17(now: Date): number {
     const kstNow = new Date(now.getTime() + KST_OFFSET_HOURS * MS_PER_HOUR);

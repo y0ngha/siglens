@@ -76,6 +76,13 @@ describe('computeSecondsUntilKst17 함수는', () => {
             const result = computeSecondsUntilKst17(now);
             expect(result).toBe(1);
         });
+
+        it('KST 17:00까지 1초 미만 남아 있으면 1을 반환한다', () => {
+            // 500ms 남은 경우: Math.floor(500/1000) = 0 → Math.max(1, 0) = 1
+            const now = new Date('2024-01-15T07:59:59.500Z');
+            const result = computeSecondsUntilKst17(now);
+            expect(result).toBe(1);
+        });
     });
 
     describe('KST 17:00 이후일 때', () => {

@@ -1,5 +1,9 @@
 import type { Timeframe } from '@/domain/types';
-import { MS_PER_HOUR, MS_PER_SECOND } from '@/domain/constants/time';
+import {
+    MS_PER_HOUR,
+    MS_PER_SECOND,
+    KST_OFFSET_HOURS,
+} from '@/domain/constants/time';
 
 const MONTH_NAMES = [
     'Jan',
@@ -15,8 +19,6 @@ const MONTH_NAMES = [
     'Nov',
     'Dec',
 ] as const;
-
-const KST_OFFSET_HOURS = 9;
 
 function toKstDate(timestampSeconds: number): Date {
     const utcDate = new Date(timestampSeconds * MS_PER_SECOND);
