@@ -192,7 +192,9 @@ export class FmpProvider implements MarketDataProvider {
         ]);
 
         if (!eodRes.ok) {
-            throw new Error(`FMP API error: ${eodRes.status} ${eodRes.statusText}`);
+            throw new Error(
+                `FMP API error: ${eodRes.status} ${eodRes.statusText}`
+            );
         }
 
         // res.json() returns unknown; asserting shape against FMP API contract
