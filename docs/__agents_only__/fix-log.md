@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #304 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
+- Violation: `computeEffectiveTtl`이 `new Date()`에 의존함에도 `analyzeAction.test.ts`, `pollAnalysisAction.test.ts`에서 mock 없이 하드코딩 TTL 단언 — 시간대에 따라 flaky 테스트 발생
+- Rule: Test Layer Rules — 외부/시간 의존 함수는 테스트에서 반드시 mock해야 함
+- Context: `analyzeAction`, `pollAnalysisAction`이 `computeEffectiveTtl(timeframe, new Date())`를 호출하도록 변경됐으나, 기존 테스트는 TTL을 86400/300/3600으로 하드코딩 단언; `jest.mock('@/infrastructure/cache/config', ...)` 추가하여 해결
+
 ## [PR #294 | feat/key-levels-clustering | 2026-04-13]
 - Violation: 가격 반올림 `100`이 매직 넘버로 사용됨
 - Rule: Domain Layer Checklist — No hardcoded literals → extract to constants

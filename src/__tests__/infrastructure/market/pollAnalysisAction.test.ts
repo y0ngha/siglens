@@ -7,6 +7,10 @@ jest.mock('@/infrastructure/jobs/queue');
 jest.mock('@/infrastructure/cache/redis');
 jest.mock('@/infrastructure/skills/loader');
 jest.mock('@/domain/analysis/confidence');
+jest.mock('@/infrastructure/cache/config', () => ({
+    ...jest.requireActual('@/infrastructure/cache/config'),
+    computeEffectiveTtl: jest.fn(),
+}));
 
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import {
@@ -19,6 +23,7 @@ import {
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
+import { computeEffectiveTtl } from '@/infrastructure/cache/config';
 import type { AnalysisResponse } from '@/domain/types';
 
 const mockGetJobStatus = getJobStatus as jest.MockedFunction<
@@ -35,6 +40,9 @@ const mockCreateCacheProvider = createCacheProvider as jest.MockedFunction<
 >;
 const mockEnrich = enrichAnalysisWithConfidence as jest.MockedFunction<
     typeof enrichAnalysisWithConfidence
+>;
+const mockComputeEffectiveTtl = computeEffectiveTtl as jest.MockedFunction<
+    typeof computeEffectiveTtl
 >;
 
 const mockLoadSkills = jest.fn();
@@ -88,6 +96,7 @@ describe('pollAnalysisAction 함수는', () => {
         mockCleanupJob.mockReset();
         mockCacheSet.mockReset();
         mockEnrich.mockReset();
+        mockComputeEffectiveTtl.mockReset();
         mockLoadSkills.mockReset();
         (FileSkillsLoader as jest.Mock).mockImplementation(() => ({
             loadSkills: mockLoadSkills,
@@ -223,6 +232,7 @@ describe('pollAnalysisAction 함수는', () => {
             });
             mockEnrich.mockReturnValueOnce(mockEnrichedResult);
             mockCacheSet.mockResolvedValueOnce(undefined);
+            mockComputeEffectiveTtl.mockReturnValueOnce(3600);
 
             await pollAnalysisAction('job-8');
 

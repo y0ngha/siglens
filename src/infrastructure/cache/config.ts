@@ -29,30 +29,27 @@ export const ASSET_INFO_CACHE_TTL_WITH_KOREAN = SECONDS_PER_YEAR;
 
 export const KOREAN_TICKERS_CACHE_KEY = 'korean:tickers';
 
+// KST 17:00 = UTC 08:00 = EST 04:00 (미국 프리마켓 시작 전)
+// 전날 분석 캐시를 장 시작 전에 갱신하기 위한 기준 시각
 export const CACHE_EXPIRY_HOUR_KST = 17;
 const KST_OFFSET_HOURS = 9;
 
 export function computeSecondsUntilKst17(now: Date): number {
-    const nowMs = now.getTime();
-    const kstMs = nowMs + KST_OFFSET_HOURS * MS_PER_HOUR;
-    const kstDate = new Date(kstMs);
+    const kstNow = new Date(now.getTime() + KST_OFFSET_HOURS * MS_PER_HOUR);
 
-    const todayKst17 = new Date(
-        Date.UTC(
-            kstDate.getUTCFullYear(),
-            kstDate.getUTCMonth(),
-            kstDate.getUTCDate(),
-            CACHE_EXPIRY_HOUR_KST - KST_OFFSET_HOURS,
-            0,
-            0,
-            0
-        )
-    );
+    // 오늘 KST 17:00 설정 (kstNow는 UTC+9 오프셋이 더해진 가상 UTC 날짜)
+    const kst17Today = new Date(kstNow);
+    kst17Today.setUTCHours(CACHE_EXPIRY_HOUR_KST, 0, 0, 0);
 
-    const kst17Ms = todayKst17.getTime();
-    const targetMs = nowMs < kst17Ms ? kst17Ms : kst17Ms + MS_PER_DAY;
+    let diffMs = kst17Today.getTime() - kstNow.getTime();
 
-    return Math.floor((targetMs - nowMs) / MS_PER_SECOND);
+    // 현재 시각이 KST 17:00 이후이면 내일 17:00 기준으로 전환
+    if (diffMs <= 0) {
+        diffMs += MS_PER_DAY;
+    }
+
+    // 최소 1초를 보장하여 Redis EX 0 오류 방지
+    return Math.max(1, Math.floor(diffMs / MS_PER_SECOND));
 }
 
 export function computeEffectiveTtl(timeframe: Timeframe, now: Date): number {
