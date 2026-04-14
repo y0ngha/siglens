@@ -46,7 +46,9 @@ describe('resolveStrengthDisplay', () => {
 
         it('알 수 없는 문자열을 받으면 null을 반환한다', () => {
             // AI 응답이 예상과 다른 값을 내려보내는 경우를 방어한다
-            expect(resolveStrengthDisplay('unknown' as SignalStrength)).toBeNull();
+            expect(
+                resolveStrengthDisplay('unknown' as SignalStrength)
+            ).toBeNull();
         });
     });
 });
