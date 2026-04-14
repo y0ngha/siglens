@@ -101,6 +101,11 @@
 - Rule: CONVENTIONS.md Naming — underscore prefix reserved for intentionally-unused destructured parameters; consumed props must not have underscore
 - Context: ActionRecommendationField received _recommendedAction but used it in render; removed underscore to indicate the prop is actually consumed
 
+## [PR #301 | fix/295/trend-데이터-누락-시-보조지표-화면-깨짐 | 2026-04-14]
+- Violation: 동일 키를 공유하는 TREND_COLOR, TREND_BG_COLOR, TREND_LABEL 세 상수가 각각 별도 Record로 분산됨
+- Rule: MISTAKES.md Design #1 — 함께 업데이트되어야 하는 데이터는 단일 객체/상수에 위치해야 한다
+- Context: `trendUtils.ts`에서 세 상수를 단일 `TREND_DISPLAY_MAP: Record<Trend, TrendDisplay>`로 통합; VALID_TRENDS Set 제거 후 `!(trend in TREND_DISPLAY_MAP)` 체크로 대체
+
 ## [PR #229 Round 2 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
 - Violation: StockChart prop default actionPricesVisible = false contradicted the parent ChartContent's intent (initialized to true). Default off-by-default is misleading when caller explicitly enables the feature.
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
