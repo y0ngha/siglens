@@ -9,10 +9,11 @@ const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_REVALIDATE_SECONDS = 60;
 
 const FMP_INTRADAY_TIMEFRAME_MAP: Record<Exclude<Timeframe, '1Day'>, string> = {
-    '1Min': '1min',
     '5Min': '5min',
     '15Min': '15min',
+    '30Min': '30min',
     '1Hour': '1hour',
+    '4Hour': '4hour',
 };
 
 interface FmpBar {

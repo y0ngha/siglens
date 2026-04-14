@@ -49,10 +49,12 @@ function formatDate(date: Date): string {
 }
 
 const MINUTE_TIMEFRAMES: ReadonlySet<Timeframe> = new Set([
-    '1Min',
     '5Min',
     '15Min',
+    '30Min',
 ]);
+
+const HOUR_TIMEFRAMES: ReadonlySet<Timeframe> = new Set(['1Hour', '4Hour']);
 
 export function getTimeFormatter(
     timeframe: Timeframe
@@ -61,7 +63,7 @@ export function getTimeFormatter(
         return (timestamp: number) => formatTime(toKstDate(timestamp));
     }
 
-    if (timeframe === '1Hour') {
+    if (HOUR_TIMEFRAMES.has(timeframe)) {
         return (timestamp: number) => formatDateAndTime(toKstDate(timestamp));
     }
 

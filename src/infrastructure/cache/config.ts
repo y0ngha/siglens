@@ -11,10 +11,11 @@ import {
 } from '@/domain/constants/time';
 
 export const ANALYSIS_CACHE_TTL: Record<Timeframe, number> = {
-    '1Min': 5 * SECONDS_PER_MINUTE,
     '5Min': 15 * SECONDS_PER_MINUTE,
     '15Min': 30 * SECONDS_PER_MINUTE,
+    '30Min': 30 * SECONDS_PER_MINUTE,
     '1Hour': SECONDS_PER_HOUR,
+    '4Hour': 4 * SECONDS_PER_HOUR,
     '1Day': SECONDS_PER_DAY,
 };
 

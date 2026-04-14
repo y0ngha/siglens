@@ -1,22 +1,15 @@
 'use client';
 
+import { TIMEFRAMES } from '@/domain/constants/market';
 import type { Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
 
-export const TIMEFRAME_OPTIONS: Timeframe[] = [
-    // TODO: 비용 문제로 인해 우선 1Day만 허용; 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-    // '1Min',
-    // '5Min',
-    // '15Min',
-    // '1Hour',
-    '1Day',
-];
-
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {
-    '1Min': '1분',
     '5Min': '5분',
     '15Min': '15분',
+    '30Min': '30분',
     '1Hour': '1시간',
+    '4Hour': '4시간',
     '1Day': '1일',
 };
 
@@ -28,7 +21,7 @@ interface TimeframeSelectorProps {
 export function TimeframeSelector({ value, onChange }: TimeframeSelectorProps) {
     return (
         <div className="flex items-center gap-1">
-            {TIMEFRAME_OPTIONS.map(timeframe => (
+            {TIMEFRAMES.map(timeframe => (
                 <button
                     key={timeframe}
                     type="button"

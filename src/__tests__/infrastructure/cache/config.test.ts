@@ -10,10 +10,6 @@ import type { Timeframe } from '@/domain/types';
 
 describe('ANALYSIS_CACHE_TTL 상수는', () => {
     describe('타임프레임별 TTL 값이', () => {
-        it('1Min은 300초(5분)이다', () => {
-            expect(ANALYSIS_CACHE_TTL['1Min']).toBe(300);
-        });
-
         it('5Min은 900초(15분)이다', () => {
             expect(ANALYSIS_CACHE_TTL['5Min']).toBe(900);
         });
@@ -22,8 +18,16 @@ describe('ANALYSIS_CACHE_TTL 상수는', () => {
             expect(ANALYSIS_CACHE_TTL['15Min']).toBe(1800);
         });
 
+        it('30Min은 1800초(30분)이다', () => {
+            expect(ANALYSIS_CACHE_TTL['30Min']).toBe(1800);
+        });
+
         it('1Hour은 3600초(1시간)이다', () => {
             expect(ANALYSIS_CACHE_TTL['1Hour']).toBe(3600);
+        });
+
+        it('4Hour는 14400초(4시간)이다', () => {
+            expect(ANALYSIS_CACHE_TTL['4Hour']).toBe(14400);
         });
 
         it('1Day는 86400초(24시간)이다', () => {
@@ -41,10 +45,11 @@ describe('buildAnalysisCacheKey 함수는', () => {
 
         it('심볼과 타임프레임을 올바르게 조합한다', () => {
             const testCases: Array<[string, Timeframe, string]> = [
-                ['AAPL', '1Min', 'analysis:AAPL:1Min'],
                 ['TSLA', '5Min', 'analysis:TSLA:5Min'],
                 ['NVDA', '15Min', 'analysis:NVDA:15Min'],
+                ['AMZN', '30Min', 'analysis:AMZN:30Min'],
                 ['MSFT', '1Hour', 'analysis:MSFT:1Hour'],
+                ['META', '4Hour', 'analysis:META:4Hour'],
                 ['GOOGL', '1Day', 'analysis:GOOGL:1Day'],
             ];
             testCases.forEach(([symbol, timeframe, expected]) => {
@@ -127,10 +132,11 @@ describe('computeEffectiveTtl 함수는', () => {
             const now = new Date('2024-01-15T07:59:30.000Z');
             const secondsUntilKst17 = 30;
             const timeframes: Timeframe[] = [
-                '1Min',
                 '5Min',
                 '15Min',
+                '30Min',
                 '1Hour',
+                '4Hour',
                 '1Day',
             ];
             timeframes.forEach(tf => {
@@ -141,10 +147,10 @@ describe('computeEffectiveTtl 함수는', () => {
 
     describe('KST 17:00까지 남은 시간이 타임프레임 TTL보다 길 때', () => {
         it('타임프레임 TTL을 반환한다', () => {
-            // KST 09:00 = UTC 00:00 → 8시간 = 28800초 남음, 1Min TTL은 300초
+            // KST 09:00 = UTC 00:00 → 8시간 = 28800초 남음, 5Min TTL은 900초
             const now = new Date('2024-01-15T00:00:00.000Z');
-            const result = computeEffectiveTtl('1Min', now);
-            expect(result).toBe(ANALYSIS_CACHE_TTL['1Min']);
+            const result = computeEffectiveTtl('5Min', now);
+            expect(result).toBe(ANALYSIS_CACHE_TTL['5Min']);
         });
 
         it('1Hour 타임프레임은 1Hour TTL을 반환한다', () => {

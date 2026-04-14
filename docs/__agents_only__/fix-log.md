@@ -1,5 +1,10 @@
 # Fix Log
 
+## [Issue #211 | feat/211/타임프레임-확장-5분-15분-30분-1시간-4시간 | 2026-04-15]
+- Violation: docs/API.md의 FMP 타임프레임 매핑 테이블과 Alpaca timeframe 파라미터 설명이 신규 타임프레임(30Min, 4Hour) 추가 후 업데이트되지 않음
+- Rule: ISSUE_IMPL_FLOW.md 1-5 Documentation updates — External API usage changed → docs/API.md 업데이트 필수
+- Context: FMP_INTRADAY_TIMEFRAME_MAP에 30min/4hour를 추가했으나 docs/API.md의 Timeframe 매핑 테이블과 Alpaca 파라미터 설명이 구 목록(1Min~1Hour)을 그대로 유지; 두 곳 모두 신규 타임프레임 추가로 업데이트
+
 ## [PR #302 | fix/295-strength/signal-강도-누락-시-ui-정렬-깨짐 | 2026-04-14]
 - Violation: 테스트 기댓값으로 소스 상수를 그대로 import해 동어반복 테스트가 됨
 - Rule: Tests — expected values should be hardcoded literals, not imports from the module under test (tautological assertion)

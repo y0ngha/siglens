@@ -28,10 +28,11 @@ describe('DEFAULT_BARS_LIMIT', () => {
 
 describe('TIMEFRAME_BARS_LIMIT', () => {
     const ALL_TIMEFRAMES: Timeframe[] = [
-        '1Min',
         '5Min',
         '15Min',
+        '30Min',
         '1Hour',
+        '4Hour',
         '1Day',
     ];
 
@@ -50,10 +51,6 @@ describe('TIMEFRAME_BARS_LIMIT', () => {
     });
 
     describe('각 타임프레임별 limit 값', () => {
-        it("'1Min'에 대해 200을 반환한다", () => {
-            expect(TIMEFRAME_BARS_LIMIT['1Min']).toBe(200);
-        });
-
         it("'5Min'에 대해 288을 반환한다", () => {
             expect(TIMEFRAME_BARS_LIMIT['5Min']).toBe(288);
         });
@@ -62,8 +59,16 @@ describe('TIMEFRAME_BARS_LIMIT', () => {
             expect(TIMEFRAME_BARS_LIMIT['15Min']).toBe(200);
         });
 
+        it("'30Min'에 대해 200을 반환한다", () => {
+            expect(TIMEFRAME_BARS_LIMIT['30Min']).toBe(200);
+        });
+
         it("'1Hour'에 대해 200을 반환한다", () => {
             expect(TIMEFRAME_BARS_LIMIT['1Hour']).toBe(200);
+        });
+
+        it("'4Hour'에 대해 200을 반환한다", () => {
+            expect(TIMEFRAME_BARS_LIMIT['4Hour']).toBe(200);
         });
 
         it("'1Day'에 대해 500을 반환한다", () => {
@@ -74,10 +79,11 @@ describe('TIMEFRAME_BARS_LIMIT', () => {
 
 describe('TIMEFRAMES', () => {
     const ALL_TIMEFRAME_VALUES: Timeframe[] = [
-        '1Min',
         '5Min',
         '15Min',
+        '30Min',
         '1Hour',
+        '4Hour',
         '1Day',
     ];
 
@@ -94,8 +100,16 @@ describe('isValidTimeframe', () => {
             expect(isValidTimeframe('1Day')).toBe(true);
         });
 
-        it("'1Min'에 대해 true를 반환한다", () => {
-            expect(isValidTimeframe('1Min')).toBe(true);
+        it("'5Min'에 대해 true를 반환한다", () => {
+            expect(isValidTimeframe('5Min')).toBe(true);
+        });
+
+        it("'30Min'에 대해 true를 반환한다", () => {
+            expect(isValidTimeframe('30Min')).toBe(true);
+        });
+
+        it("'4Hour'에 대해 true를 반환한다", () => {
+            expect(isValidTimeframe('4Hour')).toBe(true);
         });
     });
 
@@ -116,10 +130,11 @@ describe('isValidTimeframe', () => {
 
 describe('TIMEFRAME_LOOKBACK_DAYS', () => {
     const ALL_TIMEFRAMES: Timeframe[] = [
-        '1Min',
         '5Min',
         '15Min',
+        '30Min',
         '1Hour',
+        '4Hour',
         '1Day',
     ];
 
@@ -141,10 +156,6 @@ describe('TIMEFRAME_LOOKBACK_DAYS', () => {
     });
 
     describe('각 타임프레임별 lookback days 값', () => {
-        it("'1Min'에 대해 5를 반환한다", () => {
-            expect(TIMEFRAME_LOOKBACK_DAYS['1Min']).toBe(5);
-        });
-
         it("'5Min'에 대해 10을 반환한다", () => {
             expect(TIMEFRAME_LOOKBACK_DAYS['5Min']).toBe(10);
         });
@@ -153,8 +164,16 @@ describe('TIMEFRAME_LOOKBACK_DAYS', () => {
             expect(TIMEFRAME_LOOKBACK_DAYS['15Min']).toBe(20);
         });
 
+        it("'30Min'에 대해 30을 반환한다", () => {
+            expect(TIMEFRAME_LOOKBACK_DAYS['30Min']).toBe(30);
+        });
+
         it("'1Hour'에 대해 60을 반환한다", () => {
             expect(TIMEFRAME_LOOKBACK_DAYS['1Hour']).toBe(60);
+        });
+
+        it("'4Hour'에 대해 200을 반환한다", () => {
+            expect(TIMEFRAME_LOOKBACK_DAYS['4Hour']).toBe(200);
         });
 
         it("'1Day'에 대해 730을 반환한다", () => {

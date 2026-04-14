@@ -1,4 +1,4 @@
-export type Timeframe = '1Min' | '5Min' | '15Min' | '1Hour' | '1Day';
+export type Timeframe = '5Min' | '15Min' | '30Min' | '1Hour' | '4Hour' | '1Day';
 
 export interface Bar {
     time: number; // Unix timestamp (seconds)

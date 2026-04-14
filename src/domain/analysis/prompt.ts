@@ -71,19 +71,23 @@ const SMC_MAX_SWING_POINTS = 5;
 const SQUEEZE_ZERO_CROSS_LOOKBACK = 10;
 
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {
-    '1Min': '1-Minute',
     '5Min': '5-Minute',
     '15Min': '15-Minute',
+    '30Min': '30-Minute',
     '1Hour': '1-Hour',
+    '4Hour': '4-Hour',
     '1Day': 'Daily',
 };
 
 const TIMEFRAME_CONTEXT: Record<Timeframe, string> = {
-    '1Min': 'Very short-term chart. Indicator signals are noisy; prioritize trend-following over mean reversion. Overbought/oversold readings resolve quickly.',
     '5Min': 'Short-term chart. Combine indicator signals with volume confirmation before acting.',
     '15Min': 'Intraday chart. Indicator signals have moderate reliability.',
+    '30Min':
+        'Intraday chart. Good for identifying intraday trends and momentum shifts. Signals carry more weight than 5/15-minute charts.',
     '1Hour':
         'Medium-term chart. Divergences and pattern completions carry meaningful weight.',
+    '4Hour':
+        'Swing trading chart. Signals are reliable for multi-day trends. Divergences and breakouts are actionable.',
     '1Day': 'Daily chart. Indicator signals have high reliability. Overbought/oversold, divergences, and pattern completions are significant.',
 };
 
