@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #304 Round 2 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
+- Violation: `computeSecondsUntilKst17`에서 `0 < diffMs < 1000ms` 경계(서브초 구간)에서 `Math.max(1, 0) = 1` 반환 경로에 대한 테스트 누락
+- Rule: Infrastructure Layer Checklist — 100% branch coverage for infrastructure (all ?., ??, if/else paths)
+- Context: `Math.max(1, Math.floor(diffMs / MS_PER_SECOND))`의 `Math.max`가 0을 1로 올리는 경로가 테스트되지 않았음; `diffMs = 500ms`인 케이스 추가로 해결
+
 ## [PR #304 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `computeEffectiveTtl`이 `new Date()`에 의존함에도 `analyzeAction.test.ts`, `pollAnalysisAction.test.ts`에서 mock 없이 하드코딩 TTL 단언 — 시간대에 따라 flaky 테스트 발생
 - Rule: Test Layer Rules — 외부/시간 의존 함수는 테스트에서 반드시 mock해야 함
