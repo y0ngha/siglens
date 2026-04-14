@@ -85,9 +85,9 @@ describe('getBarsAction 함수는', () => {
                 new Error('Fetch failed')
             );
 
-            await expect(
-                getBarsAction('AAPL', '1Day')
-            ).rejects.toThrow('Fetch failed');
+            await expect(getBarsAction('AAPL', '1Day')).rejects.toThrow(
+                'Fetch failed'
+            );
         });
     });
 });
