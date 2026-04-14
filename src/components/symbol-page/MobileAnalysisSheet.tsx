@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect, useEffectEvent } from 'react';
+import {
+    useState,
+    useCallback,
+    useRef,
+    useEffect,
+    useEffectEvent,
+} from 'react';
 import type { ReactNode } from 'react';
 import { Drawer } from 'vaul';
 import { cn } from '@/lib/cn';
@@ -56,7 +62,7 @@ export function MobileAnalysisSheet({
                 setIsOpen(true);
             }
         },
-        [onActiveSnapChange],
+        [onActiveSnapChange]
     );
 
     // useEffectEvent로 래핑하여 부모가 메모이제이션 없이 콜백을 전달해도
@@ -81,7 +87,7 @@ export function MobileAnalysisSheet({
         // 이 값을 기준점으로 사용해 연속적인 애니메이션을 구성한다.
         function captureInitialTransform(): number {
             const matrix = new DOMMatrix(
-                window.getComputedStyle(drawerEl).transform,
+                window.getComputedStyle(drawerEl).transform
             );
             return matrix.m42;
         }
@@ -100,7 +106,7 @@ export function MobileAnalysisSheet({
                         drawerEl.style.transition = '';
                     }
                 },
-                { once: true },
+                { once: true }
             );
         }
 
@@ -210,7 +216,7 @@ export function MobileAnalysisSheet({
                         ref={contentRef}
                         className={cn(
                             'min-h-0 flex-1 px-4 pt-3 pb-[calc(env(safe-area-inset-bottom,0px)+1rem)]',
-                            isFullSnap ? 'overflow-y-auto' : 'overflow-hidden',
+                            isFullSnap ? 'overflow-y-auto' : 'overflow-hidden'
                         )}
                     >
                         {children}
