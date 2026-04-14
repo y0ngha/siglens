@@ -41,12 +41,12 @@ interface Props {
     searchParams: Promise<{ tf?: string }>;
 }
 
-function buildDisplayName(assetInfo: AssetInfo, ticker: string): string {
-    const namePart = assetInfo.name !== ticker ? assetInfo.name : null;
-    if (assetInfo.koreanName && namePart) {
+function buildDisplayName(assetInfo: AssetInfo | null, ticker: string): string {
+    const namePart = assetInfo?.name !== ticker ? assetInfo?.name : null;
+    if (assetInfo?.koreanName && namePart) {
         return `${assetInfo.koreanName}, ${namePart} (${ticker})`;
     }
-    if (assetInfo.koreanName) {
+    if (assetInfo?.koreanName) {
         return `${assetInfo.koreanName} (${ticker})`;
     }
     if (namePart) {
@@ -61,7 +61,6 @@ export async function generateMetadata({
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
     const assetInfo = await getAssetInfoAction(ticker);
-    if (!assetInfo) return notFound();
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const title = `${displayName} 기술적 분석`;
@@ -70,7 +69,7 @@ export async function generateMetadata({
     const keywords = buildSymbolKeywords(
         ticker,
         displayName,
-        assetInfo.koreanName
+        assetInfo?.koreanName
     );
 
     return {
