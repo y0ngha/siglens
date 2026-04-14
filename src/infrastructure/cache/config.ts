@@ -34,19 +34,17 @@ export const KOREAN_TICKERS_CACHE_KEY = 'korean:tickers';
 // 전날 분석 캐시를 장 시작 전에 갱신하기 위한 기준 시각
 export const CACHE_EXPIRY_HOUR_KST = 17;
 
-export function computeSecondsUntilKst17(now: Date): number {
+export function computeSecondsUntilCacheExpiry(now: Date): number {
     const kstNow = new Date(now.getTime() + KST_OFFSET_HOURS * MS_PER_HOUR);
 
     // 오늘 KST 17:00 설정 (kstNow는 UTC+9 오프셋이 더해진 가상 UTC 날짜)
     const kst17Today = new Date(kstNow);
     kst17Today.setUTCHours(CACHE_EXPIRY_HOUR_KST, 0, 0, 0);
 
-    let diffMs = kst17Today.getTime() - kstNow.getTime();
+    const rawDiffMs = kst17Today.getTime() - kstNow.getTime();
 
     // 현재 시각이 KST 17:00 이후이면 내일 17:00 기준으로 전환
-    if (diffMs <= 0) {
-        diffMs += MS_PER_DAY;
-    }
+    const diffMs = rawDiffMs <= 0 ? rawDiffMs + MS_PER_DAY : rawDiffMs;
 
     // 최소 1초를 보장하여 Redis EX 0 오류 방지
     return Math.max(1, Math.floor(diffMs / MS_PER_SECOND));
@@ -55,7 +53,7 @@ export function computeSecondsUntilKst17(now: Date): number {
 export function computeEffectiveTtl(timeframe: Timeframe, now: Date): number {
     return Math.min(
         ANALYSIS_CACHE_TTL[timeframe],
-        computeSecondsUntilKst17(now)
+        computeSecondsUntilCacheExpiry(now)
     );
 }
 

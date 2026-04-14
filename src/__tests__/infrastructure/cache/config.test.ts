@@ -3,7 +3,7 @@ import {
     CACHE_EXPIRY_HOUR_KST,
     buildAnalysisCacheKey,
     buildTickerSearchCacheKey,
-    computeSecondsUntilKst17,
+    computeSecondsUntilCacheExpiry,
     computeEffectiveTtl,
 } from '@/infrastructure/cache/config';
 import type { Timeframe } from '@/domain/types';
@@ -60,12 +60,12 @@ describe('CACHE_EXPIRY_HOUR_KST 상수는', () => {
     });
 });
 
-describe('computeSecondsUntilKst17 함수는', () => {
+describe('computeSecondsUntilCacheExpiry 함수는', () => {
     describe('KST 17:00 이전일 때', () => {
         it('오늘 KST 17:00까지 남은 초를 반환한다', () => {
             // KST 16:00 = UTC 07:00
             const now = new Date('2024-01-15T07:00:00.000Z');
-            const result = computeSecondsUntilKst17(now);
+            const result = computeSecondsUntilCacheExpiry(now);
             // KST 17:00 = UTC 08:00 → 3600초 남음
             expect(result).toBe(3600);
         });
@@ -73,14 +73,14 @@ describe('computeSecondsUntilKst17 함수는', () => {
         it('KST 17:00 1초 전이면 1초를 반환한다', () => {
             // KST 16:59:59 = UTC 07:59:59
             const now = new Date('2024-01-15T07:59:59.000Z');
-            const result = computeSecondsUntilKst17(now);
+            const result = computeSecondsUntilCacheExpiry(now);
             expect(result).toBe(1);
         });
 
         it('KST 17:00까지 1초 미만 남아 있으면 1을 반환한다', () => {
             // 500ms 남은 경우: Math.floor(500/1000) = 0 → Math.max(1, 0) = 1
             const now = new Date('2024-01-15T07:59:59.500Z');
-            const result = computeSecondsUntilKst17(now);
+            const result = computeSecondsUntilCacheExpiry(now);
             expect(result).toBe(1);
         });
     });
@@ -89,7 +89,7 @@ describe('computeSecondsUntilKst17 함수는', () => {
         it('다음 날 KST 17:00까지 남은 초를 반환한다', () => {
             // KST 18:00 = UTC 09:00
             const now = new Date('2024-01-15T09:00:00.000Z');
-            const result = computeSecondsUntilKst17(now);
+            const result = computeSecondsUntilCacheExpiry(now);
             // 다음 날 KST 17:00 = UTC 2024-01-16T08:00:00 → 23시간 = 82800초
             expect(result).toBe(82800);
         });
@@ -97,7 +97,7 @@ describe('computeSecondsUntilKst17 함수는', () => {
         it('KST 17:00 정각이면 다음 날 17:00까지 86400초를 반환한다', () => {
             // KST 17:00:00 = UTC 08:00:00
             const now = new Date('2024-01-15T08:00:00.000Z');
-            const result = computeSecondsUntilKst17(now);
+            const result = computeSecondsUntilCacheExpiry(now);
             expect(result).toBe(86400);
         });
     });
@@ -106,7 +106,7 @@ describe('computeSecondsUntilKst17 함수는', () => {
         it('KST 자정(00:00)이면 오늘 KST 17:00까지 61200초를 반환한다', () => {
             // KST 00:00 = UTC 전날 15:00
             const now = new Date('2024-01-14T15:00:00.000Z');
-            const result = computeSecondsUntilKst17(now);
+            const result = computeSecondsUntilCacheExpiry(now);
             // KST 17:00 = UTC 2024-01-15T08:00:00 → 17시간 = 61200초
             expect(result).toBe(61200);
         });
