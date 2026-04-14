@@ -6,6 +6,8 @@ import {
     getJobResult,
     getJobError,
     getJobMeta,
+    cancelJob,
+    isJobCancelled,
     cleanupJob,
 } from '@/infrastructure/jobs/queue';
 import { createJobRedis } from '@/infrastructure/jobs/redis';
@@ -65,6 +67,16 @@ describe('jobs/queue 모듈은', () => {
         it('getJobMeta는 null을 반환한다', async () => {
             const result = await getJobMeta('job-1');
             expect(result).toBeNull();
+        });
+
+        it('cancelJob은 아무 작업도 하지 않는다', async () => {
+            await cancelJob('job-1');
+            expect(mockSet).not.toHaveBeenCalled();
+        });
+
+        it('isJobCancelled는 false를 반환한다', async () => {
+            const result = await isJobCancelled('job-1');
+            expect(result).toBe(false);
         });
 
         it('cleanupJob은 아무 작업도 하지 않는다', async () => {
@@ -142,8 +154,35 @@ describe('jobs/queue 모듈은', () => {
             expect(result).toBeNull();
         });
 
-        it('cleanupJob은 4개의 키를 모두 삭제한다', async () => {
-            mockDel.mockResolvedValueOnce(4);
+        it('cancelJob은 cancelled 키를 TTL과 함께 저장한다', async () => {
+            mockSet.mockResolvedValueOnce('OK');
+
+            await cancelJob('job-9');
+
+            expect(mockSet).toHaveBeenCalledWith('job:job-9:cancelled', '1', {
+                ex: 3600,
+            });
+        });
+
+        it('isJobCancelled는 cancelled 키가 "1"이면 true를 반환한다', async () => {
+            mockGet.mockResolvedValueOnce('1');
+
+            const result = await isJobCancelled('job-10');
+
+            expect(mockGet).toHaveBeenCalledWith('job:job-10:cancelled');
+            expect(result).toBe(true);
+        });
+
+        it('isJobCancelled는 cancelled 키가 없으면 false를 반환한다', async () => {
+            mockGet.mockResolvedValueOnce(null);
+
+            const result = await isJobCancelled('job-11');
+
+            expect(result).toBe(false);
+        });
+
+        it('cleanupJob은 5개의 키를 모두 삭제한다', async () => {
+            mockDel.mockResolvedValueOnce(5);
 
             await cleanupJob('job-8');
 
@@ -151,7 +190,8 @@ describe('jobs/queue 모듈은', () => {
                 'job:job-8:status',
                 'job:job-8:result',
                 'job:job-8:error',
-                'job:job-8:meta'
+                'job:job-8:meta',
+                'job:job-8:cancelled'
             );
         });
     });

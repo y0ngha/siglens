@@ -12,6 +12,7 @@ const {
     HTTP_STATUS_INTERNAL_SERVER_ERROR,
 } = constants;
 
+// Must match JOB_TTL_SECONDS in src/infrastructure/jobs/queue.ts (cannot import across module boundary).
 const JOB_TTL_SECONDS = 3600;
 const AI_RETRY_MAX_ATTEMPTS = 5;
 const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
@@ -181,7 +182,31 @@ app.post('/analyze', (req, res) => {
         });
 });
 
+// Key helpers mirror src/infrastructure/jobs/queue.ts (cannot import across module boundary).
+// When adding or renaming keys in queue.ts, update cleanupCancelledJob() here in sync.
+async function isCancelled(jobId: string): Promise<boolean> {
+    const val = await redis.get<string>(`job:${jobId}:cancelled`);
+    return val === '1';
+}
+
+async function cleanupCancelledJob(jobId: string): Promise<void> {
+    await redis.del(
+        `job:${jobId}:status`,
+        `job:${jobId}:result`,
+        `job:${jobId}:error`,
+        `job:${jobId}:meta`,
+        `job:${jobId}:cancelled`
+    );
+}
+
 async function processJob(jobId: string, prompt: string): Promise<void> {
+    // AI 호출 전 취소 여부 확인 (제출과 처리 사이에 취소됐을 수 있음)
+    if (await isCancelled(jobId)) {
+        console.log(`[Worker] Job ${jobId} cancelled before processing`);
+        await cleanupCancelledJob(jobId);
+        return;
+    }
+
     await redis.set(`job:${jobId}:status`, 'processing', {
         ex: JOB_TTL_SECONDS,
     });
@@ -191,6 +216,13 @@ async function processJob(jobId: string, prompt: string): Promise<void> {
 
         if (!result || result.trim() === '') {
             throw new Error('AI returned an empty response');
+        }
+
+        // AI 완료 후 취소 여부 재확인 — 처리 중 타임프레임이 변경됐을 수 있음
+        if (await isCancelled(jobId)) {
+            console.log(`[Worker] Job ${jobId} cancelled after AI completion`);
+            await cleanupCancelledJob(jobId);
+            return;
         }
 
         // result를 먼저 저장한 후 status를 업데이트한다.
