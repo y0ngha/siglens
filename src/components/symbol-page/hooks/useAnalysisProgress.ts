@@ -65,12 +65,20 @@ export function useAnalysisProgress({
     // onFinished를 deps에 넣지 않고 ref로 우회한다.
     const onFinishedRef = useRef(onFinished);
 
-    // 부모가 isAnalyzing=false로 전환하면 마무리 모드로 진입한다.
-    // 한 번 finishing이 true로 가면 다시 false로 돌아가지 않는다 — 마무리는 단조 진행.
+    // isAnalyzing 전환을 감지하여 상태를 관리한다.
     // 렌더 중 setState: effect 없이 prop 변화를 즉시 반영하는 React 공식 파생 상태 패턴.
     if (prevIsAnalyzing !== isAnalyzing) {
         setPrevIsAnalyzing(isAnalyzing);
-        if (!isAnalyzing && !finishing) {
+        if (isAnalyzing) {
+            // 새 분석 시작 — 이전 분석에서 남은 phaseIndex·tipIndex·finishing을 초기화한다.
+            // 초기화하지 않으면 finishing=true가 유지된 채로 재분석이 완료될 때
+            // setFinishing(true) 호출 조건(!finishing)이 충족되지 않아 finishing effect가
+            // 재실행되지 않고, onFinished가 영원히 호출되지 않아 결과가 표시되지 않는다.
+            setPhaseIndex(0);
+            setTipIndex(0);
+            setFinishing(false);
+        } else if (!finishing) {
+            // 분석 완료 — 마무리 애니메이션 시작.
             setFinishing(true);
         }
     }

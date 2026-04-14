@@ -36,7 +36,7 @@ interface AnalyzeMutationVariables extends AnalyzeVariables {
  */
 const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
-const POLL_INTERVAL_MS = 3000;
+const POLL_INTERVAL_MS = 10000;
 
 interface UseAnalysisOptions {
     symbol: string;

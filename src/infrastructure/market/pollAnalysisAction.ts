@@ -39,6 +39,14 @@ export async function pollAnalysisAction(
     ]);
 
     if (!rawResult) {
+        console.error('[Poll] Result not found', {
+            jobId,
+            rawResultType: typeof rawResult,
+            rawResultValue: rawResult,
+            hasMeta: meta !== null,
+            symbol: meta?.symbol,
+            timeframe: meta?.timeframe,
+        });
         waitUntil(cleanupJob(jobId));
         return { status: 'error', error: 'Result not found' };
     }
