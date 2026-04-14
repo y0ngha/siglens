@@ -5,14 +5,6 @@
 - Rule: Domain Layer Checklist — No hardcoded literals → extract to constants
 - Context: `keyLevels.ts`에서 `Math.round(rawPrice * 100) / 100` → `PRICE_DECIMAL_FACTOR` 상수로 추출
 
-- Violation: 툴팁 위치 계산 시 뷰포트 상단 경계 미고려
-- Rule: UX — 트리거가 화면 상단에 있을 때 툴팁이 화면 밖으로 벗어남
-- Context: `getTooltipPosition()`에서 `aboveTop < TOOLTIP_VIEWPORT_PADDING`이면 하단에 표시하도록 개선
-
-- Violation: Portal 기반 툴팁이 초기 위치(0,0)에서 깜빡인 후 올바른 위치로 이동
-- Rule: UX — 포탈 렌더링 시 위치 계산 전 화면 깜빡임 발생
-- Context: `InfoTooltip`에 `positioned` 상태 추가, 위치 계산 완료 전까지 `visibility: hidden` 적용
-
 - Violation: `role="tooltip"` 요소에 `aria-describedby` 연결 누락
 - Rule: WAI-ARIA — tooltip 패턴은 트리거에 `aria-describedby`로 연결해야 스크린 리더 접근 가능
 - Context: `InfoTooltip`에 `useId()`로 고유 ID 생성, 트리거 button에 `aria-describedby` 추가

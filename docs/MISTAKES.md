@@ -234,6 +234,20 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## UX & Rendering
+
+```
+1. Portal-based tooltips render at initial position (0,0) before calculation, causing visible flicker
+   → Add visibility: hidden state during position calculation, reveal only after positioned
+   → Use useEffect with calculated position callback to show element only when ready
+
+2. Tooltip position calculated without viewport boundary checks
+   → If trigger is near viewport edge, tooltip may overflow screen bounds
+   → Add viewport padding checks: if (aboveTop < TOOLTIP_VIEWPORT_PADDING) render below instead
+```
+
+---
+
 ## Lightweight Charts
 
 1. Missing chart.remove() cleanup or listener unsubscribe before chart.remove()
