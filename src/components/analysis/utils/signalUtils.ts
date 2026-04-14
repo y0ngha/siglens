@@ -1,21 +1,15 @@
 import type { SignalStrength } from '@/domain/types';
 
-const SIGNAL_STRENGTH_COLOR: Record<SignalStrength, string> = {
-    strong: 'text-chart-bullish',
-    moderate: 'text-ui-warning',
-    weak: 'text-secondary-400',
-};
-
-export const SIGNAL_STRENGTH_LABEL: Record<SignalStrength, string> = {
-    strong: '강한 시그널',
-    moderate: '보통 시그널',
-    weak: '약한 시그널',
-};
-
 export interface StrengthDisplay {
     label: string;
     color: string;
 }
+
+const SIGNAL_STRENGTH_CONFIG: Record<SignalStrength, StrengthDisplay> = {
+    strong: { label: '강한 시그널', color: 'text-chart-bullish' },
+    moderate: { label: '보통 시그널', color: 'text-ui-warning' },
+    weak: { label: '약한 시그널', color: 'text-secondary-400' },
+};
 
 /**
  * strength 값이 유효한 SignalStrength 리터럴이면 표시 정보를 반환한다.
@@ -25,10 +19,7 @@ export interface StrengthDisplay {
 export function resolveStrengthDisplay(
     strength: SignalStrength | null | undefined
 ): StrengthDisplay | null {
-    if (strength == null || !Object.hasOwn(SIGNAL_STRENGTH_LABEL, strength))
+    if (strength == null || !Object.hasOwn(SIGNAL_STRENGTH_CONFIG, strength))
         return null;
-    return {
-        label: SIGNAL_STRENGTH_LABEL[strength],
-        color: SIGNAL_STRENGTH_COLOR[strength],
-    };
+    return SIGNAL_STRENGTH_CONFIG[strength];
 }
