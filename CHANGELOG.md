@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.8.11](https://github.com/y0ngha/siglens/compare/v0.8.10...v0.8.11) (2026-04-14)
+
+
+### Bug Fixes
+
+* FMP daily bar 날짜 오류 및 당일 실시간 quote 추가 ([687548a](https://github.com/y0ngha/siglens/commit/687548afa3fc6b2c9773af7bca3b7c436536a4ab))
+* FMP intraday 타임스탬프 ET→UTC 변환 (DST 자동 처리) ([6df3032](https://github.com/y0ngha/siglens/commit/6df3032c6352e32d00fa99d3f1b5dcbffb4a19cf))
+* **lint:** style lint 오류 수정 ([4929a91](https://github.com/y0ngha/siglens/commit/4929a91fbaec1b56e095b703e3f5c53c26d4b73f))
+* PR [#308](https://github.com/y0ngha/siglens/issues/308) 리뷰 코멘트 반영 (상수 추출, 패턴 통일, 주석 보강) ([3184ebf](https://github.com/y0ngha/siglens/commit/3184ebf96c38e01f792f470efdadb8a7ac1e7b31))
+* PR [#309](https://github.com/y0ngha/siglens/issues/309) 리뷰 코멘트 반영 (테스트 1Min→5Min 통일, 타임프레임 포맷 개선) ([d9048bb](https://github.com/y0ngha/siglens/commit/d9048bb5eec709a7f3e8adbee1e44ec0c8d95fe8))
+* 리포트 생성시 } 생기는 문제 해결 ([c57fe08](https://github.com/y0ngha/siglens/commit/c57fe08be0c22a25e36efa05a69a04bb08ee419d))
+
+
+### Features
+
+* max_token 오류 걸리면 점차 줄여나가며 시도 ([7714b7a](https://github.com/y0ngha/siglens/commit/7714b7a5bcde4a2956e7701739e1b58af5bc545a))
+* 차트 영역에 15분 데이터 지연 안내 문구 추가 ([ea7fbef](https://github.com/y0ngha/siglens/commit/ea7fbef4d3e2086882bb93bbd7d8bd76c33fbdbf))
+* 타임프레임 확장 (5분, 15분, 30분, 1시간, 4시간, 일봉) ([9ef4bc6](https://github.com/y0ngha/siglens/commit/9ef4bc6e396f2e23fe6683a10dac406d77819e3a))
+
 ## [0.8.10](https://github.com/y0ngha/siglens/compare/v0.8.9...v0.8.10) (2026-04-14)
 
 
