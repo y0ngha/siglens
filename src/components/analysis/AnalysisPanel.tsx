@@ -143,7 +143,6 @@ function ActionRecommendationSection({
     );
 }
 
-
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
     low: 'text-chart-bullish',
     medium: 'text-ui-warning',

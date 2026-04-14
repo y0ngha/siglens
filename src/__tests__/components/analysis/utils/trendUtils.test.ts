@@ -10,11 +10,14 @@ describe('resolveTrendDisplay', () => {
             ['bullish', TREND_LABEL.bullish],
             ['bearish', TREND_LABEL.bearish],
             ['neutral', TREND_LABEL.neutral],
-        ])('%s → label이 %s인 TrendDisplay를 반환한다', (trend, expectedLabel) => {
-            const result = resolveTrendDisplay(trend);
-            expect(result).not.toBeNull();
-            expect(result!.label).toBe(expectedLabel);
-        });
+        ])(
+            '%s → label이 %s인 TrendDisplay를 반환한다',
+            (trend, expectedLabel) => {
+                const result = resolveTrendDisplay(trend);
+                expect(result).not.toBeNull();
+                expect(result!.label).toBe(expectedLabel);
+            }
+        );
 
         it('bullish → color에 chart-bullish 클래스를 포함한다', () => {
             const result = resolveTrendDisplay('bullish');
