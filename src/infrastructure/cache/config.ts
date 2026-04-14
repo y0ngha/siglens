@@ -4,6 +4,9 @@ import {
     SECONDS_PER_HOUR,
     SECONDS_PER_DAY,
     SECONDS_PER_YEAR,
+    MS_PER_SECOND,
+    MS_PER_HOUR,
+    MS_PER_DAY,
 } from '@/domain/constants/time';
 
 export const ANALYSIS_CACHE_TTL: Record<Timeframe, number> = {
@@ -25,6 +28,36 @@ export const ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN = 12 * SECONDS_PER_HOUR;
 export const ASSET_INFO_CACHE_TTL_WITH_KOREAN = SECONDS_PER_YEAR;
 
 export const KOREAN_TICKERS_CACHE_KEY = 'korean:tickers';
+
+export const CACHE_EXPIRY_HOUR_KST = 17;
+const KST_OFFSET_HOURS = 9;
+
+export function computeSecondsUntilKst17(now: Date): number {
+    const nowMs = now.getTime();
+    const kstMs = nowMs + KST_OFFSET_HOURS * MS_PER_HOUR;
+    const kstDate = new Date(kstMs);
+
+    const todayKst17 = new Date(
+        Date.UTC(
+            kstDate.getUTCFullYear(),
+            kstDate.getUTCMonth(),
+            kstDate.getUTCDate(),
+            CACHE_EXPIRY_HOUR_KST - KST_OFFSET_HOURS,
+            0,
+            0,
+            0
+        )
+    );
+
+    const kst17Ms = todayKst17.getTime();
+    const targetMs = nowMs < kst17Ms ? kst17Ms : kst17Ms + MS_PER_DAY;
+
+    return Math.floor((targetMs - nowMs) / MS_PER_SECOND);
+}
+
+export function computeEffectiveTtl(timeframe: Timeframe, now: Date): number {
+    return Math.min(ANALYSIS_CACHE_TTL[timeframe], computeSecondsUntilKst17(now));
+}
 
 export function buildAnalysisCacheKey(
     symbol: string,

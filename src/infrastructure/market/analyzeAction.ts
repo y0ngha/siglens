@@ -9,7 +9,7 @@ import type { AnalyzeVariables, Timeframe } from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildAnalysisCacheKey,
-    ANALYSIS_CACHE_TTL,
+    computeEffectiveTtl,
 } from '@/infrastructure/cache/config';
 
 /** @deprecated submitAnalysisAction + pollAnalysisAction으로 대체됨. 로컬 개발 폴백용으로만 유지. */
@@ -38,7 +38,7 @@ export async function analyzeAction(
     if (cache !== null) {
         waitUntil(
             cache
-                .set(cacheKey, result, ANALYSIS_CACHE_TTL[timeframe])
+                .set(cacheKey, result, computeEffectiveTtl(timeframe, new Date()))
                 .catch(error => console.error('[Cache] 캐시 쓰기 실패:', error))
         );
     }

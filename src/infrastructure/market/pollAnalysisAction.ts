@@ -6,7 +6,7 @@ import type { PollAnalysisResult, RawAnalysisResponse } from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildAnalysisCacheKey,
-    ANALYSIS_CACHE_TTL,
+    computeEffectiveTtl,
 } from '@/infrastructure/cache/config';
 import {
     getJobStatus,
@@ -70,7 +70,7 @@ export async function pollAnalysisAction(
         const cache = createCacheProvider();
         if (cache !== null) {
             const cacheKey = buildAnalysisCacheKey(meta.symbol, meta.timeframe);
-            const ttl = ANALYSIS_CACHE_TTL[meta.timeframe];
+            const ttl = computeEffectiveTtl(meta.timeframe, new Date());
             waitUntil(
                 cache
                     .set(cacheKey, { ...enriched, skillsDegraded }, ttl)
