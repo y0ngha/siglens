@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.8.7](https://github.com/y0ngha/siglens/compare/v0.8.6...v0.8.7) (2026-04-14)
+
+
+### Bug Fixes
+
+* keyLevels 방어로직 추가 및 prompt 개선 ([3287d18](https://github.com/y0ngha/siglens/commit/3287d184a72260bf3f31090c6abfd49ea00e0ce6))
+* MobileAnalysisSheet null guard ordering and DOM cleanup ([aca561a](https://github.com/y0ngha/siglens/commit/aca561a8dc4099d5fbdc51ff43776ba08fc3aa7c))
+* **mobile:** 바텀시트 핸들 사라짐 버그 수정 및 네이티브 스와이프 UX 개선 ([4ef3bd8](https://github.com/y0ngha/siglens/commit/4ef3bd8291b5104caa952cdeab0e0b691fc43712)), closes [#299](https://github.com/y0ngha/siglens/issues/299)
+* Signal 강도 누락 시 보조지표 UI 정렬 깨짐 ([fe1fd50](https://github.com/y0ngha/siglens/commit/fe1fd50b615f445ed2910878fe55543d0565f226))
+* Signal.strength 선택사항화 및 유효성 검증 개선 ([e2bd70b](https://github.com/y0ngha/siglens/commit/e2bd70b0a8d9c22cb38ce8b8c5b767633ca4c6d5))
+* SignalItem 배지 영역 고정 너비 적용으로 정렬 통일 ([065543c](https://github.com/y0ngha/siglens/commit/065543c98a4cd2b7e686ecdf081c1dd99a281801))
+* Trend 데이터 누락 시 보조지표 화면 깨짐 ([3653907](https://github.com/y0ngha/siglens/commit/3653907492e742bb936c968133b6f4a8dc697835))
+* Trend 디스플레이 데이터 단일 객체로 통합 ([72452f3](https://github.com/y0ngha/siglens/commit/72452f35e19dc60e95a41345ea49af3ce85ba713)), closes [#1](https://github.com/y0ngha/siglens/issues/1)
+* 매매전략 단계별 문서 일관성 및 AI 프롬프트 수정 ([31cf01a](https://github.com/y0ngha/siglens/commit/31cf01a428ec9abcd84878bd0bad375fb2ae2c6e))
+* 캐시 만료 시간 재계산 및 테스트 안정화 ([d68a60f](https://github.com/y0ngha/siglens/commit/d68a60f9643f29cbdfa3e72504349e70955b36ff))
+
+
+### Features
+
+* 매매 전략에서 롱(매수) 포지션만 표시 ([c9083e6](https://github.com/y0ngha/siglens/commit/c9083e6fa47560a554736a4c1e11afacdb0b035b))
+* 캐시 만료 시간(KST 17:00) 기반 자동 초기화 ([6f71531](https://github.com/y0ngha/siglens/commit/6f7153169d975318b7e85bee69014593ca50b9ad))
+
 ## [0.8.6](https://github.com/y0ngha/siglens/compare/v0.8.5...v0.8.6) (2026-04-13)
 
 
