@@ -2,6 +2,12 @@ import { GoogleGenAI } from '@google/genai';
 import { config } from './config.js';
 import { AI_SYSTEM_PROMPT } from './ai-system-prompt.js';
 
+/**
+ * MAX_TOKENS 에러 식별 코드.
+ * thinkingBudget을 줄여 재시도해야 함을 호출 측에 알린다.
+ */
+export const MAX_TOKENS_CODE = 'GEMINI_MAX_TOKENS';
+
 const GEMINI_TIMEOUT_MS = 3600_000;
 
 const clientCache = new Map<string, GoogleGenAI>();
@@ -81,7 +87,22 @@ export async function callGemini(
                 );
             }
 
-            // SAFETY 외 이유로 빈 텍스트가 반환된 경우(thinking 전용 응답 등)는
+            if (finishReason === 'MAX_TOKENS') {
+                // 출력 토큰 한도 초과 — 같은 thinkingBudget으로 재시도해도 동일하게 실패한다.
+                // non-retryable로 던져 호출 측에서 thinkingBudget을 줄여 재시도하도록 한다.
+                console.warn('[Gemini] MAX_TOKENS: output truncated', {
+                    model: modelName,
+                    finishReason,
+                });
+                throw Object.assign(
+                    new Error(
+                        `Gemini hit output token limit (model: ${modelName})`
+                    ),
+                    { code: MAX_TOKENS_CODE }
+                );
+            }
+
+            // SAFETY/MAX_TOKENS 외 이유로 빈 텍스트가 반환된 경우(thinking 전용 응답 등)는
             // 일시적 문제로 보고 재시도한다.
             console.warn('[Gemini] Empty text response', {
                 model: modelName,

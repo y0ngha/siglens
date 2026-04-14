@@ -2,7 +2,7 @@ import { constants } from 'node:http2';
 import express from 'express';
 import { Redis } from '@upstash/redis';
 import { config } from './config.js';
-import { callGemini } from './gemini.js';
+import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
 import { callClaude } from './claude.js';
 import { withRetry } from './retry.js';
 
@@ -17,43 +17,99 @@ const AI_RETRY_MAX_ATTEMPTS = 5;
 const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
 const AI_RETRY_DELAY_MS = 5000;
 
+function isMaxTokensError(error: unknown): boolean {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: unknown }).code === MAX_TOKENS_CODE
+    );
+}
+
+/**
+ * MAX_TOKENS 발생 시 시도할 thinkingBudget 단계.
+ * initial → initial/2 → 8192 → 4096 → 2048 → 0(thinking off)
+ * 엄격한 감소 순서를 보장하기 위해 이전 값보다 작은 경우만 포함한다.
+ */
+function getThinkingBudgetSequence(initial: number): number[] {
+    const candidates = [
+        initial,
+        Math.floor(initial / 2),
+        8192,
+        4096,
+        2048,
+        0,
+    ];
+    const result: number[] = [];
+    for (const budget of candidates) {
+        if (result.length === 0 || budget < result[result.length - 1]) {
+            result.push(budget);
+        }
+    }
+    return result;
+}
+
+/**
+ * MAX_TOKENS 발생 시 thinkingBudget을 단계적으로 낮춰가며 1회씩 시도한다.
+ * 429/5xx 등 일시적 에러는 재시도하지 않고 그대로 throw하여
+ * 외부 withRetry 레이어에서 처리하도록 한다.
+ */
+async function callGeminiReducingBudget(
+    prompt: string,
+    apiKey: string
+): Promise<string> {
+    const budgets = getThinkingBudgetSequence(config.gemini.thinkingBudget);
+
+    for (const budget of budgets) {
+        try {
+            return await callGemini(prompt, {
+                apiKey,
+                model: config.gemini.model,
+                thinking: budget > 0,
+                thinkingBudget: budget,
+            });
+        } catch (error) {
+            if (isMaxTokensError(error)) {
+                const idx = budgets.indexOf(budget);
+                const next = budgets[idx + 1];
+                if (next !== undefined) {
+                    console.warn(
+                        `[Worker] MAX_TOKENS (thinkingBudget=${budget}). Retrying with budget=${next}.`
+                    );
+                    continue;
+                }
+                // thinking off(budget=0)에서도 MAX_TOKENS → 응답 자체가 너무 긴 경우
+                console.error(
+                    '[Worker] MAX_TOKENS even with thinking disabled. Response is too long.'
+                );
+                throw error;
+            }
+
+            // 429/5xx 등 일시적 에러 → 외부 withRetry로 전파
+            throw error;
+        }
+    }
+
+    // unreachable: 루프는 반드시 return 또는 throw로 종료됨
+    throw new Error('All thinking budget steps exhausted');
+}
+
 async function callGeminiWithFallback(
     prompt: string,
     apiKey: string,
     maxAttempts: number = AI_RETRY_MAX_ATTEMPTS
 ): Promise<string> {
-    try {
-        return await withRetry(
-            () =>
-                callGemini(prompt, {
-                    apiKey,
-                    model: config.gemini.model,
-                    thinking: true,
-                    thinkingBudget: config.gemini.thinkingBudget,
-                }),
-            {
-                maxAttempts,
-                baseDelayMs: AI_RETRY_DELAY_MS,
-            }
-        );
-    } catch (error) {
-        console.warn(
-            `[Worker] Primary model (${config.gemini.model}) exhausted. Falling back to ${config.gemini.fallbackModel} with thinking enabled.`
-        );
-        // TODO: fallback model 임시 비활성화
-        // free API key의 할당량이 key 단위로 공유되어 fallback도 즉시 실패하는 문제 확인 필요
-        // return withRetry(
-        //     () =>
-        //         callGemini(prompt, {
-        //             apiKey,
-        //             model: config.gemini.fallbackModel,
-        //             thinking: true,
-        //             thinkingBudget: config.gemini.fallbackThinkingBudget,
-        //         }),
-        //     { maxAttempts, baseDelayMs: AI_RETRY_DELAY_MS }
-        // );
-        throw error;
-    }
+    return withRetry(
+        () => callGeminiReducingBudget(prompt, apiKey),
+        { maxAttempts, baseDelayMs: AI_RETRY_DELAY_MS }
+    );
+    // TODO: fallback model 임시 비활성화
+    // free API key의 할당량이 key 단위로 공유되어 fallback도 즉시 실패하는 문제 확인 필요
+    // try {
+    //     return await withRetry(() => callGeminiReducingBudget(prompt, apiKey), ...);
+    // } catch {
+    //     return withRetry(() => callGeminiReducingBudget(prompt, apiKey, fallbackModel), ...);
+    // }
 }
 
 async function callAI(prompt: string): Promise<string> {
