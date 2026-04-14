@@ -14,13 +14,21 @@ jest.mock('@vercel/functions', () => ({
 }));
 jest.mock('@/infrastructure/market/analysisApi');
 jest.mock('@/infrastructure/cache/redis');
+jest.mock('@/infrastructure/cache/config', () => ({
+    ...jest.requireActual('@/infrastructure/cache/config'),
+    computeEffectiveTtl: jest.fn(),
+}));
 
 import { runAnalysis } from '@/infrastructure/market/analysisApi';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
+import { computeEffectiveTtl } from '@/infrastructure/cache/config';
 
 const mockRunAnalysis = runAnalysis as jest.MockedFunction<typeof runAnalysis>;
 const mockCreateCacheProvider = createCacheProvider as jest.MockedFunction<
     typeof createCacheProvider
+>;
+const mockComputeEffectiveTtl = computeEffectiveTtl as jest.MockedFunction<
+    typeof computeEffectiveTtl
 >;
 
 const mockCacheGet = jest.fn();
@@ -68,6 +76,7 @@ const mockVariables: AnalyzeVariables = {
         cmf: [],
         donchianChannel: [],
         buySellVolume: [],
+        squeezeMomentum: [],
         smc: EMPTY_SMC_RESULT,
     },
 };
@@ -104,7 +113,10 @@ describe('analyzeAction 함수는', () => {
         mockCacheGet.mockReset();
         mockCacheSet.mockReset();
         mockCacheDelete.mockReset();
+        mockComputeEffectiveTtl.mockReset();
         mockCreateCacheProvider.mockReturnValue(mockCacheProvider);
+        // 기본 TTL: 1Day 기준 (86400)
+        mockComputeEffectiveTtl.mockReturnValue(86400);
     });
 
     describe('캐시 프로바이더가 없을 때', () => {
@@ -164,6 +176,7 @@ describe('analyzeAction 함수는', () => {
             mockCacheGet.mockResolvedValueOnce(null);
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
             mockCacheSet.mockResolvedValueOnce(undefined);
+            mockComputeEffectiveTtl.mockReturnValueOnce(300);
 
             await analyzeAction(mockVariables, '1Min');
 

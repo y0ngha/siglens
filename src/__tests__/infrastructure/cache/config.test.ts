@@ -1,7 +1,10 @@
 import {
     ANALYSIS_CACHE_TTL,
+    CACHE_EXPIRY_HOUR_KST,
     buildAnalysisCacheKey,
     buildTickerSearchCacheKey,
+    computeSecondsUntilCacheExpiry,
+    computeEffectiveTtl,
 } from '@/infrastructure/cache/config';
 import type { Timeframe } from '@/domain/types';
 
@@ -47,6 +50,108 @@ describe('buildAnalysisCacheKey 함수는', () => {
             testCases.forEach(([symbol, timeframe, expected]) => {
                 expect(buildAnalysisCacheKey(symbol, timeframe)).toBe(expected);
             });
+        });
+    });
+});
+
+describe('CACHE_EXPIRY_HOUR_KST 상수는', () => {
+    it('17이다', () => {
+        expect(CACHE_EXPIRY_HOUR_KST).toBe(17);
+    });
+});
+
+describe('computeSecondsUntilCacheExpiry 함수는', () => {
+    describe('KST 17:00 이전일 때', () => {
+        it('오늘 KST 17:00까지 남은 초를 반환한다', () => {
+            // KST 16:00 = UTC 07:00
+            const now = new Date('2024-01-15T07:00:00.000Z');
+            const result = computeSecondsUntilCacheExpiry(now);
+            // KST 17:00 = UTC 08:00 → 3600초 남음
+            expect(result).toBe(3600);
+        });
+
+        it('KST 17:00 1초 전이면 1초를 반환한다', () => {
+            // KST 16:59:59 = UTC 07:59:59
+            const now = new Date('2024-01-15T07:59:59.000Z');
+            const result = computeSecondsUntilCacheExpiry(now);
+            expect(result).toBe(1);
+        });
+
+        it('KST 17:00까지 1초 미만 남아 있으면 1을 반환한다', () => {
+            // 500ms 남은 경우: Math.floor(500/1000) = 0 → Math.max(1, 0) = 1
+            const now = new Date('2024-01-15T07:59:59.500Z');
+            const result = computeSecondsUntilCacheExpiry(now);
+            expect(result).toBe(1);
+        });
+    });
+
+    describe('KST 17:00 이후일 때', () => {
+        it('다음 날 KST 17:00까지 남은 초를 반환한다', () => {
+            // KST 18:00 = UTC 09:00
+            const now = new Date('2024-01-15T09:00:00.000Z');
+            const result = computeSecondsUntilCacheExpiry(now);
+            // 다음 날 KST 17:00 = UTC 2024-01-16T08:00:00 → 23시간 = 82800초
+            expect(result).toBe(82800);
+        });
+
+        it('KST 17:00 정각이면 다음 날 17:00까지 86400초를 반환한다', () => {
+            // KST 17:00:00 = UTC 08:00:00
+            const now = new Date('2024-01-15T08:00:00.000Z');
+            const result = computeSecondsUntilCacheExpiry(now);
+            expect(result).toBe(86400);
+        });
+    });
+
+    describe('자정 경계일 때', () => {
+        it('KST 자정(00:00)이면 오늘 KST 17:00까지 61200초를 반환한다', () => {
+            // KST 00:00 = UTC 전날 15:00
+            const now = new Date('2024-01-14T15:00:00.000Z');
+            const result = computeSecondsUntilCacheExpiry(now);
+            // KST 17:00 = UTC 2024-01-15T08:00:00 → 17시간 = 61200초
+            expect(result).toBe(61200);
+        });
+    });
+});
+
+describe('computeEffectiveTtl 함수는', () => {
+    describe('KST 17:00까지 남은 시간이 타임프레임 TTL보다 짧을 때', () => {
+        it('KST 17:00까지 남은 초를 반환한다', () => {
+            // KST 16:59 = UTC 07:59 → 60초 남음
+            const now = new Date('2024-01-15T07:59:00.000Z');
+            // 1Day TTL은 86400초인데 KST 17:00까지 60초만 남음
+            const result = computeEffectiveTtl('1Day', now);
+            expect(result).toBe(60);
+        });
+
+        it('모든 타임프레임에 동일하게 적용된다', () => {
+            const now = new Date('2024-01-15T07:59:30.000Z');
+            const secondsUntilKst17 = 30;
+            const timeframes: Timeframe[] = [
+                '1Min',
+                '5Min',
+                '15Min',
+                '1Hour',
+                '1Day',
+            ];
+            timeframes.forEach(tf => {
+                expect(computeEffectiveTtl(tf, now)).toBe(secondsUntilKst17);
+            });
+        });
+    });
+
+    describe('KST 17:00까지 남은 시간이 타임프레임 TTL보다 길 때', () => {
+        it('타임프레임 TTL을 반환한다', () => {
+            // KST 09:00 = UTC 00:00 → 8시간 = 28800초 남음, 1Min TTL은 300초
+            const now = new Date('2024-01-15T00:00:00.000Z');
+            const result = computeEffectiveTtl('1Min', now);
+            expect(result).toBe(ANALYSIS_CACHE_TTL['1Min']);
+        });
+
+        it('1Hour 타임프레임은 1Hour TTL을 반환한다', () => {
+            // KST 09:00 = UTC 00:00 → 28800초 남음, 1Hour TTL은 3600초
+            const now = new Date('2024-01-15T00:00:00.000Z');
+            const result = computeEffectiveTtl('1Hour', now);
+            expect(result).toBe(ANALYSIS_CACHE_TTL['1Hour']);
         });
     });
 });

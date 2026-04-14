@@ -61,6 +61,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → .sort() mutates the original array and violates immutability
     ❌ arr.sort() // in-place mutation
     ✅ arr.toSorted() // returns new sorted array
+
+13. Hardcoded literals in function names or calculations
+    → All magic numbers and constant values must be extracted to module-level constants
+    → Function names must remain accurate when the underlying constant value changes
+    ❌ function computeSecondsUntilKst17() { ... } where 17 is hardcoded; renaming breaks if constant changes
+    ❌ Math.round(rawPrice * 100) / 100 with no constant for decimal factor
+    ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
+    ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
 ```
 
 ---
@@ -231,11 +239,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ aria-selected set but tabIndex not set; no arrow key handlers
    ✅ tabIndex={isActive ? 0 : -1} + handleTablistKeyDown(ArrowLeft/Right)
 
-3. tooltip/role="note" elements missing aria-describedby or aria-label
-   → Screen readers cannot announce purpose of ARIA landmarks without accessible names
-   → Use aria-describedby (if description exists) or aria-label (for unlabeled triggers)
-   ❌ <div role="tooltip">content</div>  or  <button><InfoIcon /></button> with role="note" sibling
-   ✅ tooltip: useId() for id, button has aria-describedby={id}; or note: <div role="note" aria-label="Legal disclaimer">
+3. Missing accessible name on ARIA roles
+   → All role attributes must have either aria-label, aria-labelledby, or accessible text content
+   → tooltip: requires aria-describedby connection to trigger element
+   → note: requires aria-label with descriptive text
+   ❌ <div role="tooltip">  // no aria-describedby
+   ✅ <div role="tooltip" id="tooltip-1">; <button aria-describedby="tooltip-1">
+   ❌ <div role="note">  // no aria-label
+   ✅ <div role="note" aria-label="Additional information">
 ```
 
 ---
