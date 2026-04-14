@@ -36,20 +36,23 @@ async function callGeminiWithFallback(
                 baseDelayMs: AI_RETRY_DELAY_MS,
             }
         );
-    } catch {
+    } catch (error) {
         console.warn(
             `[Worker] Primary model (${config.gemini.model}) exhausted. Falling back to ${config.gemini.fallbackModel} with thinking enabled.`
         );
-        return withRetry(
-            () =>
-                callGemini(prompt, {
-                    apiKey,
-                    model: config.gemini.fallbackModel,
-                    thinking: true,
-                    thinkingBudget: config.gemini.fallbackThinkingBudget,
-                }),
-            { maxAttempts, baseDelayMs: AI_RETRY_DELAY_MS }
-        );
+        // TODO: fallback model 임시 비활성화
+        // free API key의 할당량이 key 단위로 공유되어 fallback도 즉시 실패하는 문제 확인 필요
+        // return withRetry(
+        //     () =>
+        //         callGemini(prompt, {
+        //             apiKey,
+        //             model: config.gemini.fallbackModel,
+        //             thinking: true,
+        //             thinkingBudget: config.gemini.fallbackThinkingBudget,
+        //         }),
+        //     { maxAttempts, baseDelayMs: AI_RETRY_DELAY_MS }
+        // );
+        throw error;
     }
 }
 
