@@ -29,6 +29,7 @@ async function callGeminiWithFallback(
                     apiKey,
                     model: config.gemini.model,
                     thinking: true,
+                    thinkingBudget: config.gemini.thinkingBudget,
                 }),
             {
                 maxAttempts,
@@ -45,6 +46,7 @@ async function callGeminiWithFallback(
                     apiKey,
                     model: config.gemini.fallbackModel,
                     thinking: true,
+                    thinkingBudget: config.gemini.fallbackThinkingBudget,
                 }),
             { maxAttempts, baseDelayMs: AI_RETRY_DELAY_MS }
         );
@@ -134,6 +136,10 @@ async function processJob(jobId: string, prompt: string): Promise<void> {
 
     try {
         const result = await callAI(prompt);
+
+        if (!result || result.trim() === '') {
+            throw new Error('AI returned an empty response');
+        }
 
         // result를 먼저 저장한 후 status를 업데이트한다.
         // 순서가 바뀌면 poller가 done을 보고 result를 읽기 전에 빈 값을 만날 수 있다.

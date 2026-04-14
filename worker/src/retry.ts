@@ -13,7 +13,15 @@ function isRetryableError(error: unknown): boolean {
         'status' in error &&
         typeof (error as { status: unknown }).status === 'number'
     ) {
-        return (error as { status: number }).status >= 500;
+        const status = (error as { status: number }).status;
+        // 429: Rate limit (일시적 과부하) — 5xx와 동일하게 재시도한다.
+        return status === 429 || status >= 500;
+    }
+
+    // status 프로퍼티가 없는 에러도 retryable로 표시된 경우 재시도한다.
+    // (예: callGemini에서 빈 텍스트 응답 시 throw하는 커스텀 에러)
+    if ('retryable' in error && (error as { retryable: unknown }).retryable === true) {
+        return true;
     }
 
     return false;

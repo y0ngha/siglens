@@ -1,6 +1,6 @@
-import { GoogleGenAI } from '@google/genai';
-import { config } from './config.js';
-import { AI_SYSTEM_PROMPT } from './ai-system-prompt.js';
+import {GoogleGenAI} from '@google/genai';
+import {config} from './config.js';
+import {AI_SYSTEM_PROMPT} from './ai-system-prompt.js';
 
 const GEMINI_TIMEOUT_MS = 3600_000;
 
@@ -19,6 +19,7 @@ export interface GeminiCallOptions {
     model?: string;
     thinking?: boolean;
     apiKey?: string;
+    thinkingBudget?: number;
 }
 
 export async function callGemini(
@@ -41,10 +42,15 @@ export async function callGemini(
                 systemInstruction: AI_SYSTEM_PROMPT,
                 temperature: 0,
                 topP: 0.95,
+                maxOutputTokens: 65536,
                 responseMimeType: 'application/json',
                 ...(options.thinking === true && {
                     thinkingConfig: {
-                        thinkingBudget: -1,
+                        // -1(무제한)은 output token budget을 thinking이 전부 소모하여
+                        // MAX_TOKENS + 빈 텍스트 응답을 유발한다.
+                        // 호출 측에서 모델별 상한을 주입한다.
+                        // flash-lite: 24576 / flash: 32768
+                        thinkingBudget: options.thinkingBudget ?? config.gemini.thinkingBudget,
                         includeThoughts: false,
                     },
                 }),
@@ -52,11 +58,35 @@ export async function callGemini(
         });
 
         const elapsed = Date.now() - start;
+        const candidate = response.candidates?.[0];
+        const finishReason = candidate?.finishReason;
+        const text = response.text;
+
         console.log(
-            `[Gemini] Response time: ${elapsed}ms (model: ${modelName})`
+            `[Gemini] Response time: ${elapsed}ms (model: ${modelName}, finishReason: ${finishReason})`
         );
 
-        return response.text ?? '';
+        if (!text || text.trim() === '') {
+            if (finishReason === 'SAFETY') {
+                // 안전 필터 차단 — 재시도해도 동일하게 차단되므로 non-retryable로 처리한다.
+                const safetyRatings = candidate?.safetyRatings ?? [];
+                console.error('[Gemini] Response blocked by safety filter', {
+                    model: modelName,
+                    safetyRatings,
+                });
+                throw new Error(`Gemini blocked response due to safety filter (finishReason: SAFETY)`);
+            }
+
+            // SAFETY 외 이유로 빈 텍스트가 반환된 경우(thinking 전용 응답 등)는
+            // 일시적 문제로 보고 재시도한다.
+            console.warn('[Gemini] Empty text response', { model: modelName, finishReason });
+            throw Object.assign(
+                new Error(`Gemini returned an empty text response (finishReason: ${finishReason})`),
+                {retryable: true}
+            );
+        }
+
+        return text;
     } finally {
         clearTimeout(timeoutId);
     }
