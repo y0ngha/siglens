@@ -1,5 +1,26 @@
 # Fix Log
 
+## [PR #300 | fix/299/mobile-bottom-sheet-native-ux | 2026-04-14]
+- Violation: `useEffectEvent` 결과(`snapToPoint`)가 `useEffect` 의존성 배열에 포함됨
+- Rule: `react-hooks/exhaustive-deps` — `useEffectEvent` 반환 함수는 안정적 참조이므로 deps 배열에서 제거해야 함
+- Context: `MobileAnalysisSheet.tsx`의 `useEffect` deps에 `[isFullSnap, snapToPoint]`로 선언; `snapToPoint` 제거
+
+- Violation: `useEffect` cleanup에서 직접 조작한 DOM 스타일(`transform`, `transition`) 미초기화
+- Rule: React useEffect cleanup 원칙 — effect에서 직접 조작한 DOM 상태는 cleanup에서 원상복구해야 vaul 내부 스타일과 충돌 방지
+- Context: `MobileAnalysisSheet.tsx` cleanup에서 `drawerEl.style.transform = ''`, `drawerEl.style.transition = ''` 추가
+
+- Violation: 중첩 함수(`captureInitialTransform`)가 클로저로 외부 변수 캡처 — 모듈 레벨 순수 함수로 추출 필요
+- Rule: CONVENTIONS.md FP 규칙 — 외부 변수를 캡처하지 않는 중첩 함수는 모듈 레벨 순수 함수로 추출
+- Context: `captureInitialTransform`이 `drawerEl` 클로저를 캡처; `captureTransformY(el: HTMLDivElement)` 모듈 레벨 함수로 추출
+
+- Violation: null 가드 이전 변수 선언으로 `!` 단언 반복 사용
+- Rule: TypeScript narrowing — null 가드 이후 변수를 선언하면 `!` 없이 타입 안전하게 사용 가능
+- Context: `scrollEl`·`drawerEl` 선언이 `if (!contentRef.current || ...)` 가드보다 앞에 있어 `scrollEl!`, `drawerEl!` 반복; 가드 이후로 이동
+
+- Violation: `isDragging === true` 진입 후 `deltaY <= 0`일 때 `e.preventDefault()` 미호출로 브라우저 기본 스크롤 발생 가능
+- Rule: 터치 이벤트 UX — 드래그 제어 진입 후에는 모든 방향 이동에 대해 `preventDefault()`를 호출해야 함
+- Context: `onTouchMove`에서 `deltaY <= 0` early return이 `isDragging` 체크보다 앞에 있어 드래그 중 위로 되돌릴 때 스크롤 허용; 구조 재정렬 + `Math.max(0, deltaY)` 적용
+
 ## [PR #294 | feat/key-levels-clustering | 2026-04-13]
 - Violation: 가격 반올림 `100`이 매직 넘버로 사용됨
 - Rule: Domain Layer Checklist — No hardcoded literals → extract to constants
