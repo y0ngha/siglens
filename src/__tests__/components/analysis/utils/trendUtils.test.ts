@@ -1,15 +1,12 @@
-import {
-    resolveTrendDisplay,
-    TREND_LABEL,
-} from '@/components/analysis/utils/trendUtils';
+import { resolveTrendDisplay } from '@/components/analysis/utils/trendUtils';
 import type { Trend } from '@/domain/types';
 
 describe('resolveTrendDisplay', () => {
     describe('유효한 Trend 값일 때', () => {
         it.each<[Trend, string]>([
-            ['bullish', TREND_LABEL.bullish],
-            ['bearish', TREND_LABEL.bearish],
-            ['neutral', TREND_LABEL.neutral],
+            ['bullish', '강세'],
+            ['bearish', '약세'],
+            ['neutral', '보합'],
         ])(
             '%s → label이 %s인 TrendDisplay를 반환한다',
             (trend, expectedLabel) => {

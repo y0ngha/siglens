@@ -1,30 +1,28 @@
 import type { Trend } from '@/domain/types';
 
-const TREND_COLOR: Record<Trend, string> = {
-    bullish: 'text-chart-bullish',
-    bearish: 'text-chart-bearish',
-    neutral: 'text-secondary-400',
-};
-
-const TREND_BG_COLOR: Record<Trend, string> = {
-    bullish: 'bg-chart-bullish/10 border-chart-bullish/30',
-    bearish: 'bg-chart-bearish/10 border-chart-bearish/30',
-    neutral: 'bg-secondary-700/30 border-secondary-600/30',
-};
-
-export const TREND_LABEL: Record<Trend, string> = {
-    bullish: '강세',
-    bearish: '약세',
-    neutral: '보합',
-};
-
-const VALID_TRENDS = new Set<string>(['bullish', 'bearish', 'neutral']);
-
 export interface TrendDisplay {
     label: string;
     color: string;
     bgColor: string;
 }
+
+const TREND_DISPLAY_MAP: Record<Trend, TrendDisplay> = {
+    bullish: {
+        label: '강세',
+        color: 'text-chart-bullish',
+        bgColor: 'bg-chart-bullish/10 border-chart-bullish/30',
+    },
+    bearish: {
+        label: '약세',
+        color: 'text-chart-bearish',
+        bgColor: 'bg-chart-bearish/10 border-chart-bearish/30',
+    },
+    neutral: {
+        label: '보합',
+        color: 'text-secondary-400',
+        bgColor: 'bg-secondary-700/30 border-secondary-600/30',
+    },
+};
 
 /**
  * trend 값이 유효한 Trend 리터럴이면 표시 정보를 반환한다.
@@ -34,10 +32,6 @@ export interface TrendDisplay {
 export function resolveTrendDisplay(
     trend: Trend | null | undefined
 ): TrendDisplay | null {
-    if (trend == null || !VALID_TRENDS.has(trend)) return null;
-    return {
-        label: TREND_LABEL[trend],
-        color: TREND_COLOR[trend],
-        bgColor: TREND_BG_COLOR[trend],
-    };
+    if (trend == null || !(trend in TREND_DISPLAY_MAP)) return null;
+    return TREND_DISPLAY_MAP[trend];
 }
