@@ -32,6 +32,7 @@ import {
     parseStructuredSummary,
     type SkillSummarySection,
 } from '@/components/analysis/utils/parseStructuredSummary';
+import { resolveTrendDisplay } from '@/components/analysis/utils/trendUtils';
 import { AnalysisProgress } from '@/components/analysis/AnalysisProgress';
 import { AnalysisToast } from '@/components/analysis/AnalysisToast';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
@@ -142,23 +143,6 @@ function ActionRecommendationSection({
     );
 }
 
-const TREND_COLOR: Record<Trend, string> = {
-    bullish: 'text-chart-bullish',
-    bearish: 'text-chart-bearish',
-    neutral: 'text-secondary-400',
-};
-
-const TREND_BG_COLOR: Record<Trend, string> = {
-    bullish: 'bg-chart-bullish/10 border-chart-bullish/30',
-    bearish: 'bg-chart-bearish/10 border-chart-bearish/30',
-    neutral: 'bg-secondary-700/30 border-secondary-600/30',
-};
-
-const TREND_LABEL: Record<Trend, string> = {
-    bullish: '강세',
-    bearish: '약세',
-    neutral: '보합',
-};
 
 const RISK_LEVEL_COLOR: Record<RiskLevel, string> = {
     low: 'text-chart-bullish',
@@ -218,19 +202,22 @@ function SignalItem({ signal, typeLabel }: SignalItemProps) {
 }
 
 interface TrendBadgeProps {
-    trend: Trend;
+    trend: Trend | null | undefined;
 }
 
 function TrendBadge({ trend }: TrendBadgeProps) {
+    const display = resolveTrendDisplay(trend);
+    if (display === null) return null;
+
     return (
         <span
             className={cn(
                 'rounded border px-2 py-0.5 text-xs font-bold',
-                TREND_COLOR[trend],
-                TREND_BG_COLOR[trend]
+                display.color,
+                display.bgColor
             )}
         >
-            {TREND_LABEL[trend]}
+            {display.label}
         </span>
     );
 }
