@@ -12,8 +12,6 @@ export const SIGNAL_STRENGTH_LABEL: Record<SignalStrength, string> = {
     weak: '약한 시그널',
 };
 
-const VALID_STRENGTHS = new Set<string>(['strong', 'moderate', 'weak']);
-
 export interface StrengthDisplay {
     label: string;
     color: string;
@@ -27,7 +25,8 @@ export interface StrengthDisplay {
 export function resolveStrengthDisplay(
     strength: SignalStrength | null | undefined
 ): StrengthDisplay | null {
-    if (strength == null || !VALID_STRENGTHS.has(strength)) return null;
+    if (strength == null || !Object.hasOwn(SIGNAL_STRENGTH_LABEL, strength))
+        return null;
     return {
         label: SIGNAL_STRENGTH_LABEL[strength],
         color: SIGNAL_STRENGTH_COLOR[strength],

@@ -271,7 +271,7 @@ export type RiskLevel = 'low' | 'medium' | 'high';
 export interface Signal {
     type: SignalType;
     description: string;
-    strength: SignalStrength;
+    strength?: SignalStrength;
     trend: Trend;
 }
 

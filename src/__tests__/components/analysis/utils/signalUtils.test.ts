@@ -1,15 +1,12 @@
-import {
-    resolveStrengthDisplay,
-    SIGNAL_STRENGTH_LABEL,
-} from '@/components/analysis/utils/signalUtils';
+import { resolveStrengthDisplay } from '@/components/analysis/utils/signalUtils';
 import type { SignalStrength } from '@/domain/types';
 
 describe('resolveStrengthDisplay', () => {
     describe('유효한 SignalStrength 값일 때', () => {
         it.each<[SignalStrength, string]>([
-            ['strong', SIGNAL_STRENGTH_LABEL.strong],
-            ['moderate', SIGNAL_STRENGTH_LABEL.moderate],
-            ['weak', SIGNAL_STRENGTH_LABEL.weak],
+            ['strong', '강한 시그널'],
+            ['moderate', '보통 시그널'],
+            ['weak', '약한 시그널'],
         ])(
             '%s → label이 %s인 StrengthDisplay를 반환한다',
             (strength, expectedLabel) => {
