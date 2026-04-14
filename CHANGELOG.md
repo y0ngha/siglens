@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.10](https://github.com/y0ngha/siglens/compare/v0.8.9...v0.8.10) (2026-04-14)
+
+
+### Bug Fixes
+
+* gemini thinkingBudget 문제 해결 ([a3e2880](https://github.com/y0ngha/siglens/commit/a3e2880c05132b037c18c8369cf8df34e7c4a447))
+* 심볼 페이지에서 assetInfo 못불러왔을 때 notfound() 메타데이터 리턴되던 문제 해결 ([7062ebb](https://github.com/y0ngha/siglens/commit/7062ebb07adf909665fbbe48e23926b69d019a23))
+
+
+### Features
+
+* 리포트 복사시 정확한 정보를 그대로 복사할 수 있도록 처리 ([edcff44](https://github.com/y0ngha/siglens/commit/edcff4469492776a47bda63d3c9c1a494be495a2))
+
 ## [0.8.9](https://github.com/y0ngha/siglens/compare/v0.8.8...v0.8.9) (2026-04-14)
 
 
