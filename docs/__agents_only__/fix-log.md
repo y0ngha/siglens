@@ -1,13 +1,22 @@
 # Fix Log
 
+## [PR #303 | feat/297/매매전략-롱-포지션만-표시 | 2026-04-14]
+- Violation: 전략 문서에서 숏 관련 섹션을 부분적으로만 제거하여 롱 전용 지시사항과 불일치 발생
+- Rule: Documentation Sync — Skill document metadata and body content out of sync; AI instructions must reflect the system's actual capabilities
+- Context: macd-cycle.md의 Short Entry Timing 섹션(69-73행)과 wyckoff.md의 Short Entry(Distribution) 섹션(106-111행)이 AI instructions에서 숏 신호를 제외한 후에도 남아 있었음
+
+- Violation: 예시 문구에서 현재가가 지지선보다 낮게 설정되어 롱 진입 유리 상황과 논리 모순
+- Rule: Predictability — Domain logic conditions must accurately reflect the business scenario described
+- Context: prompt.ts 731행에서 "현재가 166, 지지선 167" → 지지선이 이미 뚫린 하락 돌파 상황으로 "현재가 168, 지지선 167"로 수정
+
+- Violation: UTAD 이벤트 설명 문구가 Wyckoff 도메인 이론과 불일치 (매수 진입 암시)
+- Rule: Design & Cohesion — Domain logic conditions must be accurately described; AI instructions must reflect actual domain theory
+- Context: wyckoff.md 매매 신호 예시에서 "UTAD 확인 — 매수 진입 대기 (분배 국면, 진입 보류)" → UTAD는 분배 완료 신호이므로 "진입 보류 (분배 완료, 하락 위험)"으로 수정
+
 ## [PR #294 | feat/key-levels-clustering | 2026-04-13]
 - Violation: 가격 반올림 `100`이 매직 넘버로 사용됨
 - Rule: Domain Layer Checklist — No hardcoded literals → extract to constants
 - Context: `keyLevels.ts`에서 `Math.round(rawPrice * 100) / 100` → `PRICE_DECIMAL_FACTOR` 상수로 추출
-
-- Violation: `role="tooltip"` 요소에 `aria-describedby` 연결 누락
-- Rule: WAI-ARIA — tooltip 패턴은 트리거에 `aria-describedby`로 연결해야 스크린 리더 접근 가능
-- Context: `InfoTooltip`에 `useId()`로 고유 ID 생성, 트리거 button에 `aria-describedby` 추가
 
 - Violation: React key에 `source.price-source.reason` 조합 사용 — 동일 가격·사유 존재 시 중복 가능
 - Rule: React — 리스트 렌더링 시 key 고유성 보장
@@ -54,11 +63,6 @@
 - Violation: dynamic import loading 컴포넌트(`ChartSkeleton`)가 `absolute inset-0`을 사용함에도 래퍼 컨테이너에 `relative` 클래스 누락
 - Rule: CSS Positioning — `absolute` 자식이 올바른 영역에 렌더되려면 부모 체인에 `positioned element`(`relative/absolute/fixed/sticky`)가 있어야 함
 - Context: StockChart 컨테이너(`<div className="relative flex-3">`)는 기존에 `relative`가 있었으나, VolumeChart 컨테이너는 정적 import에서 로딩 상태가 없어 `relative`가 없었음; dynamic import 전환으로 loading prop이 생기면서 문제가 드러남
-
-## [PR #267 Round 2 | feat/256/privacy-terms-pages | 2026-04-11]
-- Violation: `Footer.tsx`의 `<div role="note">`에 accessible name(`aria-label`) 누락
-- Rule: WAI-ARIA — role="note" 요소에 aria-label로 accessible name을 제공해야 함
-- Context: privacy/page.tsx와 terms/page.tsx의 동일 요소에는 aria-label이 있으나 Footer.tsx에만 누락됨
 
 ## [PR #222 | feat/221/심볼-페이지-회사명-표시 | 2026-04-10]
 - Violation: 서버 prefetchQuery 키와 클라이언트 훅 키 불일치 (hydration 캐시 미스)

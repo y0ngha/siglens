@@ -103,18 +103,10 @@ Price trends downward with lower highs and lower lows. Supply consistently excee
 3. **Conservative entry**: LPS in Phase D — pullback after SOS holds above the middle of the trading range
 4. **Stop loss**: Below the Spring low (or below SC low for wider stop)
 
-### Short Entry (Distribution)
-
-1. **Primary signal**: UTAD confirmed — price pushes above resistance, volume spikes, then reverses back below resistance within 1-3 bars
-2. **Confirmation**: SOW follows the UTAD — price breaks below the trading range on increasing volume
-3. **Conservative entry**: LPSY in Phase D — rally after SOW fails to reach the middle of the trading range
-4. **Stop loss**: Above the UTAD high (or above BC high for wider stop)
-
 ### Exit Rules
 
 - **Long exit**: Signs of Distribution emerging — BC pattern, widening volume on declines within a range
-- **Short exit**: Signs of Accumulation emerging — SC pattern, declining volume on drops within a range
-- **Trailing stop**: Move stop to the most recent LPS (long) or LPSY (short) as the trend progresses
+- **Trailing stop**: Move stop to the most recent LPS as the trend progresses
 
 ---
 
@@ -177,7 +169,7 @@ Return the summary in **this exact structured format** (one `**label**: value` p
 **세부 단계**: [해당 시 Phase A~E 명시, 예: "축적 Phase C — Spring 테스트 진행 중"]
 **핵심 이벤트**: [감지된 와이코프 이벤트, 예: "SC($120, 거래량 급증) → AR($145) → ST($125, 감소된 거래량) → Spring 대기 중"]
 **노력 대비 결과**: [현재 거래량-가격 관계 분석, 예: "고거래량 + 소폭 하락 = 매집 흡수 진행 중 (조화/괴리 판단)"]
-**매매 신호**: [현재 활성화된 신호, 예: "Spring 확인 — 매수 진입 적합" / "UTAD 확인 — 매수 진입 대기 (분배 국면, 진입 보류)" / "명확한 신호 없음"]
+**매매 신호**: [현재 활성화된 신호, 예: "Spring 확인 — 매수 진입 적합" / "UTAD 확인 — 진입 보류 (분배 완료, 하락 위험)" / "명확한 신호 없음"]
 **상세 분석**: [전체적인 시장 구조, 거래 범위 특성, Composite Man의 행동 추정, 주의사항을 포함한 상세 분석 문단]
 ```
 

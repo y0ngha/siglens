@@ -66,12 +66,6 @@ Secondary confirmation:
 - **Early (조기)**: Stage 5 — EMA(9) turning upward + MACD golden cross confirmed
 - **Advance (선발대)**: Late Stage 4 — MACD histogram shrinking (bottoming) + EMA(60) slope flattening; small position only
 
-**Short Entry Timing (3 levels)**:
-
-- **Normal (본매매)**: Stage 3 — all three EMAs trending downward + MACD histogram negative and expanding
-- **Early (조기)**: Stage 2 — EMA(9) turning downward + MACD dead cross confirmed
-- **Advance (선발대)**: Late Stage 1 — MACD histogram shrinking (topping) + EMA(60) slope flattening; small position only
-
 **Reverse Cycle Interpretation**:
 
 - Uptrend reverse (Stage 1 → 2 → 1): Pullback within uptrend — potential buying opportunity on dip

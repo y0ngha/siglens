@@ -230,6 +230,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Implement onKeyDown handler for ArrowLeft/ArrowRight to move focus between tabs
    ❌ aria-selected set but tabIndex not set; no arrow key handlers
    ✅ tabIndex={isActive ? 0 : -1} + handleTablistKeyDown(ArrowLeft/Right)
+
+3. tooltip/role="note" elements missing aria-describedby or aria-label
+   → Screen readers cannot announce purpose of ARIA landmarks without accessible names
+   → Use aria-describedby (if description exists) or aria-label (for unlabeled triggers)
+   ❌ <div role="tooltip">content</div>  or  <button><InfoIcon /></button> with role="note" sibling
+   ✅ tooltip: useId() for id, button has aria-describedby={id}; or note: <div role="note" aria-label="Legal disclaimer">
 ```
 
 ---

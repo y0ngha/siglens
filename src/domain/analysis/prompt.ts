@@ -728,7 +728,7 @@ const ANALYSIS_GUIDELINES = [
     '- positionAnalysis: State where the current price sits relative to the keyLevels (support, resistance, POC) you identified above, from the perspective of a long (buy) position holder.',
     '- entry: Provide specific long (buy) entry price ranges with reasoning. Consider:',
     '  - If current price is near resistance, advise waiting for a pullback to support (e.g., "current price 180 is near resistance 181, consider buying at support 175~177")',
-    '  - If current price is near support, long entry may be favorable (e.g., "current price 166 is near support 167, consider staged entry at 165~167")',
+    '  - If current price is near support, long entry may be favorable (e.g., "current price 168 is near support 167, consider staged entry at 167~169")',
     '  - Always provide specific price ranges, not vague descriptions',
     '  - Do not mention short (sell) entry points under any circumstances',
     '- exit: Provide specific exit price ranges for the long position: take-profit targets (referencing priceTargets.bullish and resistance levels) and stop-loss level (referencing support levels below entry). Do not include short position stop-loss or short take-profit targets.',
