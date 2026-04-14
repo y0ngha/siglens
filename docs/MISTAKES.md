@@ -62,6 +62,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ arr.sort() // in-place mutation
     ✅ arr.toSorted() // returns new sorted array
 
+14. Using let + if for conditional assignment instead of declarative const expressions
+    → Prefer ternary/conditional expressions (const) over imperative reassignment (let)
+    → Improves code clarity and follows functional programming principles
+    ❌ let result = value; if (condition) result = newValue; return result;
+    ✅ const result = condition ? newValue : value; return result;
+
 13. Hardcoded literals in function names or calculations
     → All magic numbers and constant values must be extracted to module-level constants
     → Function names must remain accurate when the underlying constant value changes

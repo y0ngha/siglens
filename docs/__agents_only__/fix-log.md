@@ -5,11 +5,6 @@
 - Rule: Tests — expected values should be hardcoded literals, not imports from the module under test (tautological assertion)
 - Context: signalUtils.test.ts에서 SIGNAL_STRENGTH_LABEL을 import해 기댓값으로 사용했고, 레이블 문자열이 틀려도 테스트가 통과되는 문제가 있었음
 
-## [PR #304 Round 3 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
-- Violation: `let diffMs` 재할당 패턴 사용 — `let` + `if` 대신 선언적 `const` 표현 가능
-- Rule: CONVENTIONS.md FP 원칙 — 재할당보다 선언적 표현 권장
-- Context: `rawDiffMs <= 0 ? rawDiffMs + MS_PER_DAY : rawDiffMs` 삼항 표현식으로 교체
-
 ## [PR #304 Round 2 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `computeSecondsUntilKst17`에서 `0 < diffMs < 1000ms` 경계(서브초 구간)에서 `Math.max(1, 0) = 1` 반환 경로에 대한 테스트 누락
 - Rule: Infrastructure Layer Checklist — 100% branch coverage for infrastructure (all ?., ??, if/else paths)
@@ -41,10 +36,6 @@
 - Violation: `useEffect` cleanup에서 직접 조작한 DOM 스타일(`transform`, `transition`) 미초기화
 - Rule: React useEffect cleanup 원칙 — effect에서 직접 조작한 DOM 상태는 cleanup에서 원상복구해야 vaul 내부 스타일과 충돌 방지
 - Context: `MobileAnalysisSheet.tsx` cleanup에서 `drawerEl.style.transform = ''`, `drawerEl.style.transition = ''` 추가
-
-- Violation: 중첩 함수(`captureInitialTransform`)가 클로저로 외부 변수 캡처 — 모듈 레벨 순수 함수로 추출 필요
-- Rule: CONVENTIONS.md FP 규칙 — 외부 변수를 캡처하지 않는 중첩 함수는 모듈 레벨 순수 함수로 추출
-- Context: `captureInitialTransform`이 `drawerEl` 클로저를 캡처; `captureTransformY(el: HTMLDivElement)` 모듈 레벨 함수로 추출
 
 - Violation: null 가드 이전 변수 선언으로 `!` 단언 반복 사용
 - Rule: TypeScript narrowing — null 가드 이후 변수를 선언하면 `!` 없이 타입 안전하게 사용 가능
