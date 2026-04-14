@@ -283,6 +283,8 @@ export function buildExpertAnalysisReport({
         buildScenarioBlock(analysis),
         `대응 관점:\n${buildResponseStance(analysis, keyLevels)}`,
         `리스크:\n${buildRiskNote(analysis)}`,
+        '' +
+        `[출처] 기술적 주가 분석 siglens.io/${symbol}]`
     ].filter(
         (section): section is string => section !== null && section !== ''
     );
