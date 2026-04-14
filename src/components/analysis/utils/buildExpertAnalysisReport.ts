@@ -95,7 +95,6 @@ function buildKeyLevelsBlock(
     if (keyLevels.resistance.length > 0) {
         lines.push(
             `- 저항: ${keyLevels.resistance
-                .slice(0, 2)
                 .map(formatLevelWithReason)
                 .join(', ')}`
         );
@@ -103,10 +102,7 @@ function buildKeyLevelsBlock(
 
     if (keyLevels.support.length > 0) {
         lines.push(
-            `- 지지: ${keyLevels.support
-                .slice(0, 2)
-                .map(formatLevelWithReason)
-                .join(', ')}`
+            `- 지지: ${keyLevels.support.map(formatLevelWithReason).join(', ')}`
         );
     }
 
@@ -150,29 +146,28 @@ function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
             }))
         )
         .filter(item => item.title !== '')
-        .slice(0, 3)
-        .map(item => `- ${item.title}: ${normalizeWhitespace(item.body)}`);
+        .map(
+            item =>
+                `- ${item.title}\n  - ${normalizeWhitespace(item.body).replace(/\*/g, '')}`
+        );
     lines.push(...indicatorLines);
 
     const patternLines = analysis.patternSummaries
         .filter(pattern => pattern.detected)
-        .slice(0, 2)
         .map(
             pattern =>
-                `- 패턴 ${pattern.skillName}: ${normalizeWhitespace(
+                `- 패턴 ${pattern.skillName}\n  - ${normalizeWhitespace(
                     pattern.summary
-                )}`
+                ).replace(/\*/g, '')}}`
         );
     lines.push(...patternLines);
 
-    const strategyLines = analysis.strategyResults
-        .slice(0, 2)
-        .map(
-            strategy =>
-                `- 전략 ${strategy.strategyName}: ${normalizeWhitespace(
-                    strategy.summary
-                )}`
-        );
+    const strategyLines = analysis.strategyResults.map(
+        strategy =>
+            `- 전략 ${strategy.strategyName}\n  - ${normalizeWhitespace(
+                strategy.summary
+            ).replace(/\*/g, '')}}}`
+    );
     lines.push(...strategyLines);
 
     if (lines.length === 0) return null;
@@ -272,8 +267,12 @@ export function buildExpertAnalysisReport({
     analysis,
     keyLevels,
 }: BuildExpertAnalysisReportInput): string {
-    const supportLevels = keyLevels.support.slice(0, 2);
-    const resistanceLevels = keyLevels.resistance.slice(0, 2);
+    const supportLevels = keyLevels.support.sort((a, b) => {
+        return a.price - b.price;
+    });
+    const resistanceLevels = keyLevels.resistance.sort((a, b) => {
+        return b.price - a.price;
+    });
 
     const sections = [
         buildTitle(symbol),
@@ -283,7 +282,7 @@ export function buildExpertAnalysisReport({
         buildScenarioBlock(analysis),
         `대응 관점:\n${buildResponseStance(analysis, keyLevels)}`,
         `리스크:\n${buildRiskNote(analysis)}`,
-        '' + `[출처] 기술적 주가 분석 siglens.io/${symbol}]`,
+        '' + `[출처] 기술적 주가 분석 > siglens.io/${symbol}`,
     ].filter(
         (section): section is string => section !== null && section !== ''
     );
