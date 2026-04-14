@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.8](https://github.com/y0ngha/siglens/compare/v0.8.7...v0.8.8) (2026-04-14)
+
+
+### Features
+
+* 리포트 복사 기능 추가 ([7fbe576](https://github.com/y0ngha/siglens/commit/7fbe5765675fe6912b06735b30324b6629c0425e))
+* 리포트 복사기능에 출처 명시 ([6e2ddba](https://github.com/y0ngha/siglens/commit/6e2ddba79eeda2ae40557a678170cbff2426107d))
+
 ## [0.8.7](https://github.com/y0ngha/siglens/compare/v0.8.6...v0.8.7) (2026-04-14)
 
 
