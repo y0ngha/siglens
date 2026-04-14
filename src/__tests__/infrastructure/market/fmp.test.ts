@@ -66,13 +66,15 @@ describe('FmpProvider', () => {
                 const provider = new FmpProvider();
                 const bars = await provider.getBars({
                     symbol: 'AAPL',
-                    timeframe: '1Min',
+                    timeframe: '5Min',
                 });
 
                 expect(bars).toHaveLength(1);
                 expect(bars[0]).toEqual({
+                    // mockFmpBar.date = '2024-01-15 09:30:00' (ET)
+                    // January = EST (UTC-5) → UTC = 09:30 + 5h = 14:30 UTC
                     time: Math.floor(
-                        new Date('2024-01-15 09:30:00 UTC').getTime() / 1000
+                        new Date('2024-01-15T14:30:00Z').getTime() / 1000
                     ),
                     open: 100,
                     high: 105,
@@ -91,13 +93,13 @@ describe('FmpProvider', () => {
                 const provider = new FmpProvider();
                 await provider.getBars({
                     symbol: 'TSLA',
-                    timeframe: '5Min',
+                    timeframe: '15Min',
                 });
 
                 // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
                 const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
                 expect(url).toContain(
-                    'financialmodelingprep.com/stable/historical-chart/5min'
+                    'financialmodelingprep.com/stable/historical-chart/15min'
                 );
                 expect(new URL(url).searchParams.get('symbol')).toBe('TSLA');
                 expect(url).toContain('apikey=test-fmp-key');
@@ -112,7 +114,7 @@ describe('FmpProvider', () => {
                 const provider = new FmpProvider();
                 await provider.getBars({
                     symbol: 'AAPL',
-                    timeframe: '1Min',
+                    timeframe: '5Min',
                     before: '2024-01-15T09:30:00Z',
                 });
 
@@ -130,7 +132,7 @@ describe('FmpProvider', () => {
                 const provider = new FmpProvider();
                 await provider.getBars({
                     symbol: 'AAPL',
-                    timeframe: '1Min',
+                    timeframe: '5Min',
                 });
 
                 // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
@@ -147,7 +149,7 @@ describe('FmpProvider', () => {
                 const provider = new FmpProvider();
                 await provider.getBars({
                     symbol: 'AAPL',
-                    timeframe: '1Min',
+                    timeframe: '5Min',
                     from: '2024-01-01T00:00:00.000Z',
                 });
 
@@ -167,7 +169,7 @@ describe('FmpProvider', () => {
                 const provider = new FmpProvider();
                 await provider.getBars({
                     symbol: 'AAPL',
-                    timeframe: '1Min',
+                    timeframe: '5Min',
                 });
 
                 // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
@@ -189,7 +191,7 @@ describe('FmpProvider', () => {
                 const provider = new FmpProvider();
                 const bars = await provider.getBars({
                     symbol: 'AAPL',
-                    timeframe: '1Min',
+                    timeframe: '5Min',
                 });
 
                 expect(bars[0].close).toBe(101);
@@ -206,7 +208,7 @@ describe('FmpProvider', () => {
 
                 const provider = new FmpProvider();
                 await expect(
-                    provider.getBars({ symbol: 'AAPL', timeframe: '1Min' })
+                    provider.getBars({ symbol: 'AAPL', timeframe: '5Min' })
                 ).rejects.toThrow('FMP API error: 401 Unauthorized');
             });
 
@@ -219,7 +221,7 @@ describe('FmpProvider', () => {
                 const provider = new FmpProvider();
                 const bars = await provider.getBars({
                     symbol: 'INVALID',
-                    timeframe: '1Min',
+                    timeframe: '5Min',
                 });
 
                 expect(bars).toEqual([]);
@@ -234,13 +236,15 @@ describe('FmpProvider', () => {
                 const provider = new FmpProvider();
                 const bars = await provider.getBars({
                     symbol: 'AAPL',
-                    timeframe: '1Min',
+                    timeframe: '5Min',
                 });
 
                 expect(bars).toEqual([]);
             });
 
-            it('date 필드를 UTC로 파싱하여 Unix timestamp로 변환한다', async () => {
+            it('date 필드를 ET 기준으로 파싱하여 UTC Unix timestamp로 변환한다 (EST: UTC-5)', async () => {
+                // 2024-01-15 = January = EST (UTC-5)
+                // 00:00 ET + 5h = 05:00 UTC
                 mockFetch.mockResolvedValueOnce({
                     ok: true,
                     json: async () => [
@@ -255,7 +259,29 @@ describe('FmpProvider', () => {
                 });
 
                 const expectedTime = Math.floor(
-                    new Date('2024-01-15 00:00:00 UTC').getTime() / 1000
+                    new Date('2024-01-15T05:00:00Z').getTime() / 1000
+                );
+                expect(bars[0].time).toBe(expectedTime);
+            });
+
+            it('date 필드를 ET 기준으로 파싱하여 UTC Unix timestamp로 변환한다 (EDT: UTC-4)', async () => {
+                // 2024-06-15 = June = EDT (UTC-4)
+                // 09:30 ET + 4h = 13:30 UTC
+                mockFetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [
+                        { ...mockFmpBar, date: '2024-06-15 09:30:00' },
+                    ],
+                });
+
+                const provider = new FmpProvider();
+                const bars = await provider.getBars({
+                    symbol: 'AAPL',
+                    timeframe: '5Min',
+                });
+
+                const expectedTime = Math.floor(
+                    new Date('2024-06-15T13:30:00Z').getTime() / 1000
                 );
                 expect(bars[0].time).toBe(expectedTime);
             });
