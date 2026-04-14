@@ -82,7 +82,8 @@ const TIMEFRAME_CONTEXT: Record<Timeframe, string> = {
     '1Min': 'Very short-term chart. Indicator signals are noisy; prioritize trend-following over mean reversion. Overbought/oversold readings resolve quickly.',
     '5Min': 'Short-term chart. Combine indicator signals with volume confirmation before acting.',
     '15Min': 'Intraday chart. Indicator signals have moderate reliability.',
-    '1Hour': 'Medium-term chart. Divergences and pattern completions carry meaningful weight.',
+    '1Hour':
+        'Medium-term chart. Divergences and pattern completions carry meaningful weight.',
     '1Day': 'Daily chart. Indicator signals have high reliability. Overbought/oversold, divergences, and pattern completions are significant.',
 };
 

@@ -56,10 +56,7 @@ describe('keyLevels', () => {
         describe('배열 내 null/undefined 요소가 있을 때', () => {
             it('support 배열 내 null 요소를 필터링한다', () => {
                 const input = {
-                    support: [
-                        null,
-                        { price: 100, reason: '유효' },
-                    ],
+                    support: [null, { price: 100, reason: '유효' }],
                     resistance: [],
                 } as unknown as KeyLevels;
                 const result = validateKeyLevels(input);

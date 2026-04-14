@@ -2281,7 +2281,9 @@ describe('prompt', () => {
         });
 
         it('체크리스트에 캔들/차트 패턴 단계가 포함된다', () => {
-            expect(result).toContain('3. REPORT detected chart/candle patterns');
+            expect(result).toContain(
+                '3. REPORT detected chart/candle patterns'
+            );
         });
 
         it('체크리스트에 지지/저항 단계가 포함된다', () => {
