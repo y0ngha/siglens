@@ -26,6 +26,7 @@ export interface GeminiCallOptions {
     thinking?: boolean;
     apiKey?: string;
     thinkingBudget?: number;
+    signal?: AbortSignal;
 }
 
 export async function callGemini(
@@ -37,6 +38,10 @@ export async function callGemini(
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), GEMINI_TIMEOUT_MS);
+    // 외부 취소 신호를 타임아웃 컨트롤러에 전파 — abort 시 Gemini HTTP 요청을 즉시 중단한다.
+    // propagateAbort는 finally에서 제거해 신호가 발생하지 않은 경우의 리스너 누수를 방지한다.
+    const propagateAbort = () => controller.abort();
+    options.signal?.addEventListener('abort', propagateAbort, { once: true });
 
     const start = Date.now();
     try {
@@ -119,5 +124,6 @@ export async function callGemini(
         return text;
     } finally {
         clearTimeout(timeoutId);
+        options.signal?.removeEventListener('abort', propagateAbort);
     }
 }

@@ -1,5 +1,5 @@
 import { constants } from 'node:http2';
-import express from 'express';
+import express, { type Request, type Response } from 'express';
 import { Redis } from '@upstash/redis';
 import { config } from './config.js';
 import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
@@ -17,6 +17,9 @@ const JOB_TTL_SECONDS = 3600;
 const AI_RETRY_MAX_ATTEMPTS = 5;
 const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
 const AI_RETRY_DELAY_MS = 5000;
+
+// 진행 중인 job의 AbortController를 보관 — /cancel 엔드포인트 수신 시 즉시 abort 가능
+const activeJobs = new Map<string, AbortController>();
 
 function isMaxTokensError(error: unknown): boolean {
     return (
@@ -50,7 +53,8 @@ function getThinkingBudgetSequence(initial: number): number[] {
  */
 async function callGeminiReducingBudget(
     prompt: string,
-    apiKey: string
+    apiKey: string,
+    signal?: AbortSignal
 ): Promise<string> {
     const budgets = getThinkingBudgetSequence(config.gemini.thinkingBudget);
 
@@ -61,6 +65,7 @@ async function callGeminiReducingBudget(
                 model: config.gemini.model,
                 thinking: budget > 0,
                 thinkingBudget: budget,
+                signal,
             });
         } catch (error) {
             if (isMaxTokensError(error)) {
@@ -91,9 +96,10 @@ async function callGeminiReducingBudget(
 async function callGeminiWithFallback(
     prompt: string,
     apiKey: string,
-    maxAttempts: number = AI_RETRY_MAX_ATTEMPTS
+    maxAttempts: number = AI_RETRY_MAX_ATTEMPTS,
+    signal?: AbortSignal
 ): Promise<string> {
-    return withRetry(() => callGeminiReducingBudget(prompt, apiKey), {
+    return withRetry(() => callGeminiReducingBudget(prompt, apiKey, signal), {
         maxAttempts,
         baseDelayMs: AI_RETRY_DELAY_MS,
     });
@@ -106,9 +112,9 @@ async function callGeminiWithFallback(
     // }
 }
 
-async function callAI(prompt: string): Promise<string> {
+async function callAI(prompt: string, signal?: AbortSignal): Promise<string> {
     if (config.aiProvider === 'claude') {
-        return callClaude(prompt);
+        return callClaude(prompt, signal);
     }
 
     const { freeApiKey, apiKey } = config.gemini;
@@ -118,7 +124,8 @@ async function callAI(prompt: string): Promise<string> {
             return await callGeminiWithFallback(
                 prompt,
                 freeApiKey,
-                AI_RETRY_MAX_ATTEMPTS_FREE
+                AI_RETRY_MAX_ATTEMPTS_FREE,
+                signal
             );
         } catch {
             console.warn(
@@ -127,7 +134,7 @@ async function callAI(prompt: string): Promise<string> {
         }
     }
 
-    return callGeminiWithFallback(prompt, apiKey);
+    return callGeminiWithFallback(prompt, apiKey, AI_RETRY_MAX_ATTEMPTS, signal);
 }
 
 const app = express();
@@ -143,11 +150,37 @@ interface AnalyzeRequest {
     prompt: string;
 }
 
-app.get('/health', (_req, res) => {
+app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok' });
 });
 
-app.post('/analyze', (req, res) => {
+app.post('/cancel', (req: Request, res: Response) => {
+    if (req.headers['x-worker-secret'] !== config.workerSecret) {
+        res.status(HTTP_STATUS_UNAUTHORIZED).json({ error: 'Unauthorized' });
+        return;
+    }
+
+    // express req.body는 any 타입; 실제 필드는 아래 if문에서 검증
+    const { jobId } = req.body as { jobId?: string };
+    if (!jobId) {
+        res.status(HTTP_STATUS_BAD_REQUEST).json({ error: 'jobId is required' });
+        return;
+    }
+
+    const controller = activeJobs.get(jobId);
+    if (controller && !controller.signal.aborted) {
+        controller.abort();
+        console.log(`[Worker] Job ${jobId} aborted via /cancel`);
+    } else {
+        console.log(
+            `[Worker] Job ${jobId} not found or already aborted (completed or different instance)`
+        );
+    }
+
+    res.json({ status: 'ok', jobId });
+});
+
+app.post('/analyze', (req: Request, res: Response) => {
     if (req.headers['x-worker-secret'] !== config.workerSecret) {
         res.status(HTTP_STATUS_UNAUTHORIZED).json({ error: 'Unauthorized' });
         return;
@@ -167,9 +200,12 @@ app.post('/analyze', (req, res) => {
         `[Worker] Job received: ${jobId} (prompt: ${(prompt.length / 1024).toFixed(1)}KB)`
     );
 
+    const controller = new AbortController();
+    activeJobs.set(jobId, controller);
+
     // Cloud Run은 요청 처리 중에만 CPU를 할당하므로,
-    // 응답을 보내지 않고 Gemini 완료까지 요청을 열어둔다.
-    void processJob(jobId, prompt)
+    // 응답을 보내지 않고 AI 완료까지 요청을 열어둔다.
+    void processJob(jobId, prompt, controller)
         .then(() => {
             res.json({ status: 'done', jobId });
         })
@@ -179,6 +215,9 @@ app.post('/analyze', (req, res) => {
                 status: 'error',
                 jobId,
             });
+        })
+        .finally(() => {
+            activeJobs.delete(jobId);
         });
 });
 
@@ -199,9 +238,13 @@ async function cleanupCancelledJob(jobId: string): Promise<void> {
     );
 }
 
-async function processJob(jobId: string, prompt: string): Promise<void> {
+async function processJob(
+    jobId: string,
+    prompt: string,
+    controller: AbortController
+): Promise<void> {
     // AI 호출 전 취소 여부 확인 (제출과 처리 사이에 취소됐을 수 있음)
-    if (await isCancelled(jobId)) {
+    if (controller.signal.aborted || (await isCancelled(jobId))) {
         console.log(`[Worker] Job ${jobId} cancelled before processing`);
         await cleanupCancelledJob(jobId);
         return;
@@ -212,14 +255,14 @@ async function processJob(jobId: string, prompt: string): Promise<void> {
     });
 
     try {
-        const result = await callAI(prompt);
+        const result = await callAI(prompt, controller.signal);
 
         if (!result || result.trim() === '') {
             throw new Error('AI returned an empty response');
         }
 
         // AI 완료 후 취소 여부 재확인 — 처리 중 타임프레임이 변경됐을 수 있음
-        if (await isCancelled(jobId)) {
+        if (controller.signal.aborted || (await isCancelled(jobId))) {
             console.log(`[Worker] Job ${jobId} cancelled after AI completion`);
             await cleanupCancelledJob(jobId);
             return;
@@ -236,6 +279,13 @@ async function processJob(jobId: string, prompt: string): Promise<void> {
 
         console.log(`[Worker] Job ${jobId} completed`);
     } catch (error) {
+        // AbortError는 취소 요청에 의한 것 — error로 기록하지 않고 cleanup한다.
+        if (controller.signal.aborted) {
+            console.log(`[Worker] Job ${jobId} aborted during AI call`);
+            await cleanupCancelledJob(jobId);
+            return;
+        }
+
         const message =
             error instanceof Error ? error.message : 'Unknown error';
         console.error(`[Worker] Job ${jobId} failed:`, message);
