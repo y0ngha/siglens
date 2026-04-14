@@ -55,6 +55,8 @@ describe('keyLevels', () => {
 
         describe('배열 내 null/undefined 요소가 있을 때', () => {
             it('support 배열 내 null 요소를 필터링한다', () => {
+                // Simulating invalid runtime data (null elements) to verify null filtering behavior;
+                // KeyLevels type disallows null array elements, so `as unknown as` is required
                 const input = {
                     support: [null, { price: 100, reason: '유효' }],
                     resistance: [],
@@ -66,6 +68,8 @@ describe('keyLevels', () => {
             });
 
             it('resistance 배열 내 undefined 요소를 필터링한다', () => {
+                // Simulating invalid runtime data (null/undefined elements) to verify filtering behavior;
+                // KeyLevels type disallows null/undefined array elements, so `as unknown as` is required
                 const input = {
                     support: [],
                     resistance: [
