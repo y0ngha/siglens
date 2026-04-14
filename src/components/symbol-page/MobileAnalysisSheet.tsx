@@ -24,6 +24,11 @@ const SNAP_POINTS_MUTABLE = [...MOBILE_SNAP_POINTS] as number[];
 
 // vaul 드로어 애니메이션과 동일한 easing 곡선
 const VAUL_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)';
+
+// vaul이 현재 적용한 translateY 값(px)을 computed style에서 읽는다.
+function captureTransformY(el: HTMLDivElement): number {
+    return new DOMMatrix(window.getComputedStyle(el).transform).m42;
+}
 // 드래그 시 손가락 속도 대비 시트 이동 비율 (러버밴드 효과)
 const DRAG_RESISTANCE = 0.6;
 // 드래그로 간주하기 위한 최소 이동량(px)
@@ -72,25 +77,16 @@ export function MobileAnalysisSheet({
     });
 
     useEffect(() => {
-        const scrollEl = contentRef.current;
-        const drawerEl = drawerContentRef.current!;
         if (!contentRef.current || !drawerContentRef.current || !isFullSnap)
             return;
+
+        const scrollEl = contentRef.current;
+        const drawerEl = drawerContentRef.current;
 
         let startY = 0;
         let startedAtTop = false;
         let isDragging = false;
         let initialTransformY = 0;
-
-        // vaul이 현재 적용한 translateY 값(px)을 computed style에서 읽는다.
-        // onActiveSnapChange 호출 시 React가 vaul의 transform을 덮어쓰므로
-        // 이 값을 기준점으로 사용해 연속적인 애니메이션을 구성한다.
-        function captureInitialTransform(): number {
-            const matrix = new DOMMatrix(
-                window.getComputedStyle(drawerEl).transform
-            );
-            return matrix.m42;
-        }
 
         // 드래그를 중단하고 vaul의 FULL 스냅 위치로 부드럽게 복귀한다.
         // activeSnap이 이미 SNAP_FULL이면 React가 리렌더를 건너뛰므로
@@ -112,28 +108,35 @@ export function MobileAnalysisSheet({
 
         function onTouchStart(e: TouchEvent): void {
             startY = e.touches[0].clientY;
-            startedAtTop = scrollEl!.scrollTop <= 0;
+            startedAtTop = scrollEl.scrollTop <= 0;
             isDragging = false;
             if (startedAtTop) {
-                initialTransformY = captureInitialTransform();
+                // onActiveSnapChange 호출 시 React가 vaul의 transform을 덮어쓰므로
+                // 이 값을 기준점으로 사용해 연속적인 애니메이션을 구성한다.
+                initialTransformY = captureTransformY(drawerEl);
             }
         }
 
         function onTouchMove(e: TouchEvent): void {
             if (!startedAtTop) return;
             const deltaY = e.touches[0].clientY - startY;
-            if (deltaY <= 0) return;
 
-            if (!isDragging && deltaY > DRAG_THRESHOLD_PX) {
-                isDragging = true;
+            if (!isDragging) {
+                if (deltaY <= 0) return;
+                if (deltaY > DRAG_THRESHOLD_PX) {
+                    isDragging = true;
+                } else {
+                    return;
+                }
             }
-            if (!isDragging) return;
 
-            // 콘텐츠 스크롤을 차단하고 시트 드래그로 처리한다
+            // 드래그 진입 후 모든 방향의 터치 이동을 제어하고 기본 스크롤을 차단한다.
+            // passive: false로 등록되어 있어 호출 가능하다.
             e.preventDefault();
 
             drawerEl.style.transition = 'none';
-            drawerEl.style.transform = `translateY(${initialTransformY + deltaY * DRAG_RESISTANCE}px)`;
+            // 위로 드래그해도 시트가 시작 위치 위로 올라가지 않도록 0으로 제한한다.
+            drawerEl.style.transform = `translateY(${initialTransformY + Math.max(0, deltaY) * DRAG_RESISTANCE}px)`;
         }
 
         function onTouchEnd(e: TouchEvent): void {
@@ -164,25 +167,28 @@ export function MobileAnalysisSheet({
             }
         }
 
-        scrollEl!.addEventListener('touchstart', onTouchStart, {
+        scrollEl.addEventListener('touchstart', onTouchStart, {
             passive: true,
         });
         // passive: false — isDragging 진입 후 e.preventDefault()를 호출하기 위해 필요
-        scrollEl!.addEventListener('touchmove', onTouchMove, {
+        scrollEl.addEventListener('touchmove', onTouchMove, {
             passive: false,
         });
-        scrollEl!.addEventListener('touchend', onTouchEnd, { passive: true });
-        scrollEl!.addEventListener('touchcancel', onTouchCancel, {
+        scrollEl.addEventListener('touchend', onTouchEnd, { passive: true });
+        scrollEl.addEventListener('touchcancel', onTouchCancel, {
             passive: true,
         });
 
         return () => {
-            scrollEl!.removeEventListener('touchstart', onTouchStart);
-            scrollEl!.removeEventListener('touchmove', onTouchMove);
-            scrollEl!.removeEventListener('touchend', onTouchEnd);
-            scrollEl!.removeEventListener('touchcancel', onTouchCancel);
+            scrollEl.removeEventListener('touchstart', onTouchStart);
+            scrollEl.removeEventListener('touchmove', onTouchMove);
+            scrollEl.removeEventListener('touchend', onTouchEnd);
+            scrollEl.removeEventListener('touchcancel', onTouchCancel);
+            // 직접 조작한 스타일을 초기화하여 vaul의 내부 스타일과 충돌을 방지한다.
+            drawerEl.style.transform = '';
+            drawerEl.style.transition = '';
         };
-    }, [isFullSnap, snapToPoint]);
+    }, [isFullSnap]);
 
     return (
         <Drawer.Root
