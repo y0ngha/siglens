@@ -5,7 +5,10 @@ import { cancelJob } from '@/infrastructure/jobs/queue';
 
 const mockCancelJob = cancelJob as jest.MockedFunction<typeof cancelJob>;
 
-const mockFetch = jest.fn<Promise<Response>, [RequestInfo | URL, RequestInit?]>();
+const mockFetch = jest.fn<
+    Promise<Response>,
+    [RequestInfo | URL, RequestInit?]
+>();
 
 describe('cancelAnalysisJobAction', () => {
     const originalFetch = global.fetch;
@@ -57,7 +60,9 @@ describe('cancelAnalysisJobAction', () => {
             process.env.WORKER_URL = 'https://worker.test';
             process.env.WORKER_SECRET = 'test-secret';
             mockCancelJob.mockResolvedValue(undefined);
-            mockFetch.mockResolvedValue(new Response(JSON.stringify({ status: 'ok' })));
+            mockFetch.mockResolvedValue(
+                new Response(JSON.stringify({ status: 'ok' }))
+            );
         });
 
         afterEach(() => {

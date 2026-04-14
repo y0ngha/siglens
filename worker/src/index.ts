@@ -134,7 +134,12 @@ async function callAI(prompt: string, signal?: AbortSignal): Promise<string> {
         }
     }
 
-    return callGeminiWithFallback(prompt, apiKey, AI_RETRY_MAX_ATTEMPTS, signal);
+    return callGeminiWithFallback(
+        prompt,
+        apiKey,
+        AI_RETRY_MAX_ATTEMPTS,
+        signal
+    );
 }
 
 const app = express();
@@ -163,7 +168,9 @@ app.post('/cancel', (req: Request, res: Response) => {
     // express req.body는 any 타입; 실제 필드는 아래 if문에서 검증
     const { jobId } = req.body as { jobId?: string };
     if (!jobId) {
-        res.status(HTTP_STATUS_BAD_REQUEST).json({ error: 'jobId is required' });
+        res.status(HTTP_STATUS_BAD_REQUEST).json({
+            error: 'jobId is required',
+        });
         return;
     }
 

@@ -130,5 +130,22 @@
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
+## [Issue #312 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
+- Violation: worker/src/index.ts — key construction logic and full key list duplicated from queue.ts without documentation
+- Rule: FF.md Cohesion 3-B — shared Redis key schema must be documented when module boundary prevents import
+- Context: Worker process cannot import queue.ts directly due to environment constraints; key construction duplicated; added JSDoc documenting the schema origin
+
+- Violation: worker/src/index.ts — JOB_TTL_SECONDS = 3600 hardcoded without comment linking to the shared constant in queue.ts
+- Rule: CONVENTIONS.md — shared constants must be explicitly referenced or extracted to infrastructure/config
+- Context: Queue service defines JOB_TTL_SECONDS = 3600; hardcoded in worker without link to source; added comment documenting sync requirement
+
+- Violation: useAnalysis.ts — eslint-disable-next-line react-hooks/exhaustive-deps used to suppress deps warning
+- Rule: CONVENTIONS.md react-hooks/exhaustive-deps — must restructure to fix the actual issue, not suppress the lint rule
+- Context: Mutation deps warning caused by unstable callback; fixed by restructuring with isCountdownActive boolean and cooldownStartValueRef to break the closure chain
+
+- Violation: cancelAnalysisJobAction.ts — Server Action passthrough with no error handling
+- Rule: CONVENTIONS.md — fire-and-forget actions should swallow errors and log a warning instead of throwing to caller
+- Context: Action called without try-catch; caller receives uncaught error; added try-catch to swallow and log, matching notification-action pattern
+
 
 
