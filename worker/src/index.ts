@@ -32,14 +32,7 @@ function isMaxTokensError(error: unknown): boolean {
  * 엄격한 감소 순서를 보장하기 위해 이전 값보다 작은 경우만 포함한다.
  */
 function getThinkingBudgetSequence(initial: number): number[] {
-    const candidates = [
-        initial,
-        Math.floor(initial / 2),
-        8192,
-        4096,
-        2048,
-        0,
-    ];
+    const candidates = [initial, Math.floor(initial / 2), 8192, 4096, 2048, 0];
     const result: number[] = [];
     for (const budget of candidates) {
         if (result.length === 0 || budget < result[result.length - 1]) {
@@ -99,10 +92,10 @@ async function callGeminiWithFallback(
     apiKey: string,
     maxAttempts: number = AI_RETRY_MAX_ATTEMPTS
 ): Promise<string> {
-    return withRetry(
-        () => callGeminiReducingBudget(prompt, apiKey),
-        { maxAttempts, baseDelayMs: AI_RETRY_DELAY_MS }
-    );
+    return withRetry(() => callGeminiReducingBudget(prompt, apiKey), {
+        maxAttempts,
+        baseDelayMs: AI_RETRY_DELAY_MS,
+    });
     // TODO: fallback model 임시 비활성화
     // free API key의 할당량이 key 단위로 공유되어 fallback도 즉시 실패하는 문제 확인 필요
     // try {
