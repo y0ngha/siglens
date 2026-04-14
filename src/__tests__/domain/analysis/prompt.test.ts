@@ -1061,6 +1061,25 @@ describe('prompt', () => {
             );
             expect(result).not.toContain('Pattern Analysis');
         });
+
+        it('summary 전용 규칙이 포함된다', () => {
+            const skill = makeSkill({
+                name: 'RSI Divergence',
+                type: undefined,
+            });
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                [],
+                makeIndicators(),
+                [skill]
+            );
+            expect(result).toContain('### Regular Skills Usage');
+            expect(result).toContain('summary only');
+            expect(result).toContain('### Active Skills Writing Rules');
+            expect(result).toContain(
+                'Do not create separate structured entries or new fields for them.'
+            );
+        });
     });
 
     describe('Skills 섹션 - 신뢰도 레이블', () => {

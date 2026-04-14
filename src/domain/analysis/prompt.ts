@@ -608,6 +608,11 @@ const ANALYSIS_GUIDELINES = [
     '### Name Field Matching',
     '- skillName, strategyName, and indicatorName MUST exactly match a skill name from Writing Rules below. Copy verbatim — never translate, abbreviate, or use empty strings. Omit the entry if no matching skill exists.',
     '',
+    '### Regular Skills Usage',
+    '- Skills shown in ## Active Skills are context-only regular skills without a dedicated structured output field.',
+    '- Use them only to enrich the summary with additional interpretation or market context when they are relevant.',
+    '- Do not create new top-level fields for regular skills, and do not force them into indicatorResults, patternSummaries, strategyResults, candlePatterns, or keyLevels unless another explicit rule already applies.',
+    '',
     '### Candle Patterns vs Chart Patterns',
     '- candlePatterns: Only include candle patterns (single/multi candle) detected from bar data. Chart patterns defined in skills/*.md go in patternSummaries.',
     '- patternSummaries: Only include chart patterns defined in skills/*.md. Candle patterns go in candlePatterns.',
@@ -711,7 +716,8 @@ const buildAnalysisRequest = (
     strategySkills: Skill[],
     indicatorGuideSkills: Skill[],
     candlestickSkills: Skill[],
-    supportResistanceSkills: Skill[]
+    supportResistanceSkills: Skill[],
+    regularSkills: Skill[]
 ): string => {
     const patternListInstruction =
         patternSkills.length > 0
@@ -823,6 +829,20 @@ const buildAnalysisRequest = (
               ].join('\n')
             : '';
 
+    const regularSkillInstruction =
+        regularSkills.length > 0
+            ? [
+                  '',
+                  '### Active Skills Writing Rules',
+                  '- The skills listed below are regular context skills.',
+                  '- Reflect relevant insights from these skills in the summary only.',
+                  '- Do not create separate structured entries or new fields for them.',
+                  '',
+                  'Active skill list to consider for summary enrichment:',
+                  ...regularSkills.map(s => `- ${s.name}`),
+              ].join('\n')
+            : '';
+
     return [
         '## Analysis Request',
         CRITICAL_RESPONSE_RULES,
@@ -835,6 +855,7 @@ const buildAnalysisRequest = (
         strategyInstruction,
         candlestickInstruction,
         supportResistanceInstruction,
+        regularSkillInstruction,
     ]
         .filter(s => s !== '')
         .join('\n');
@@ -922,7 +943,8 @@ export function buildAnalysisPrompt(
             strategySkills,
             indicatorGuideSkills,
             candlestickSkills,
-            supportResistanceSkills
+            supportResistanceSkills,
+            regularSkills
         ),
     ];
 
