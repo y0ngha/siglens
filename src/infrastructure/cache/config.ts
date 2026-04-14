@@ -56,7 +56,10 @@ export function computeSecondsUntilKst17(now: Date): number {
 }
 
 export function computeEffectiveTtl(timeframe: Timeframe, now: Date): number {
-    return Math.min(ANALYSIS_CACHE_TTL[timeframe], computeSecondsUntilKst17(now));
+    return Math.min(
+        ANALYSIS_CACHE_TTL[timeframe],
+        computeSecondsUntilKst17(now)
+    );
 }
 
 export function buildAnalysisCacheKey(

@@ -119,7 +119,13 @@ describe('computeEffectiveTtl 함수는', () => {
         it('모든 타임프레임에 동일하게 적용된다', () => {
             const now = new Date('2024-01-15T07:59:30.000Z');
             const secondsUntilKst17 = 30;
-            const timeframes: Timeframe[] = ['1Min', '5Min', '15Min', '1Hour', '1Day'];
+            const timeframes: Timeframe[] = [
+                '1Min',
+                '5Min',
+                '15Min',
+                '1Hour',
+                '1Day',
+            ];
             timeframes.forEach(tf => {
                 expect(computeEffectiveTtl(tf, now)).toBe(secondsUntilKst17);
             });

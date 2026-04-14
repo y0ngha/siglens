@@ -38,7 +38,11 @@ export async function analyzeAction(
     if (cache !== null) {
         waitUntil(
             cache
-                .set(cacheKey, result, computeEffectiveTtl(timeframe, new Date()))
+                .set(
+                    cacheKey,
+                    result,
+                    computeEffectiveTtl(timeframe, new Date())
+                )
                 .catch(error => console.error('[Cache] 캐시 쓰기 실패:', error))
         );
     }
