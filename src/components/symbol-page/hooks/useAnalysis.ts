@@ -112,9 +112,6 @@ export function useAnalysis({
     const initialAnalysisFailedRef = useRef(initialAnalysisFailed);
     // polling 완료 시 force 경로 쿨다운 처리를 위해 마지막 요청의 force 여부를 추적
     const lastForceRef = useRef(false);
-    // 쿨다운 카운트다운 시작 시점의 초기 값. isCountdownActive가 true로 전환될 때 캡처한다.
-    const cooldownStartValueRef = useRef(0);
-
     // 3. useMutation
     const {
         data: submitData,
@@ -302,20 +299,13 @@ export function useAnalysis({
     // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.
     useEffect(() => {
         if (!isCountdownActive) return;
-        cooldownStartValueRef.current = reanalyzeCooldownMs;
-        const startedAt = Date.now();
         const intervalId = window.setInterval(() => {
-            const remaining = Math.max(
-                0,
-                cooldownStartValueRef.current - (Date.now() - startedAt)
-            );
-            setReanalyzeCooldownMs(remaining);
-            if (remaining <= 0) window.clearInterval(intervalId);
+            setReanalyzeCooldownMs(prev => Math.max(0, prev - 1000));
         }, 1000);
         return () => {
             window.clearInterval(intervalId);
         };
-    }, [isCountdownActive]); // eslint: setReanalyzeCooldownMs is a stable setter; cooldownStartValueRef is a ref
+    }, [isCountdownActive]);
 
     // 마운트 시점 및 심볼/타임프레임 변경 시 서버에서 쿨다운 진실값을 동기화한다.
     useEffect(() => {

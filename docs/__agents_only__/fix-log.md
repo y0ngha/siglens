@@ -130,6 +130,15 @@
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
+## [PR #313 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
+- Violation: cancelAnalysisJobAction.ts의 fetch 호출에 타임아웃 미설정 — 네트워크 지연 시 Server Action이 무기한 대기 가능
+- Rule: CONVENTIONS.md — fire-and-forget fetch 요청에는 타임아웃을 설정해 클라이언트 흐름이 블로킹되지 않도록 해야 함
+- Context: `/cancel` 엔드포인트 호출에 AbortSignal.timeout(5000) 추가
+
+- Violation: useAnalysis.ts 카운트다운 effect에서 cooldownStartValueRef + Date.now() 기반 수동 계산 사용
+- Rule: Coding Paradigm — 함수형 상태 업데이트(prev => ...)를 사용하면 외부 ref 없이 동일 효과를 더 단순하게 달성할 수 있음
+- Context: setReanalyzeCooldownMs(prev => Math.max(0, prev - 1000))로 단순화; cooldownStartValueRef 제거
+
 ## [Issue #312 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
 - Violation: worker/src/index.ts — key construction logic and full key list duplicated from queue.ts without documentation
 - Rule: FF.md Cohesion 3-B — shared Redis key schema must be documented when module boundary prevents import

@@ -81,6 +81,7 @@ describe('cancelAnalysisJobAction', () => {
                         'X-Worker-Secret': 'test-secret',
                     }),
                     body: JSON.stringify({ jobId: 'job-xyz' }),
+                    signal: expect.any(AbortSignal),
                 })
             );
         });
