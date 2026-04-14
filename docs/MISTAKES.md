@@ -230,6 +230,26 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Implement onKeyDown handler for ArrowLeft/ArrowRight to move focus between tabs
    ❌ aria-selected set but tabIndex not set; no arrow key handlers
    ✅ tabIndex={isActive ? 0 : -1} + handleTablistKeyDown(ArrowLeft/Right)
+
+3. tooltip/role="note" elements missing aria-describedby or aria-label
+   → Screen readers cannot announce purpose of ARIA landmarks without accessible names
+   → Use aria-describedby (if description exists) or aria-label (for unlabeled triggers)
+   ❌ <div role="tooltip">content</div>  or  <button><InfoIcon /></button> with role="note" sibling
+   ✅ tooltip: useId() for id, button has aria-describedby={id}; or note: <div role="note" aria-label="Legal disclaimer">
+```
+
+---
+
+## UX & Rendering
+
+```
+1. Portal-based tooltips render at initial position (0,0) before calculation, causing visible flicker
+   → Add visibility: hidden state during position calculation, reveal only after positioned
+   → Use useEffect with calculated position callback to show element only when ready
+
+2. Tooltip position calculated without viewport boundary checks
+   → If trigger is near viewport edge, tooltip may overflow screen bounds
+   → Add viewport padding checks: if (aboveTop < TOOLTIP_VIEWPORT_PADDING) render below instead
 ```
 
 ---

@@ -66,12 +66,6 @@ Secondary confirmation:
 - **Early (조기)**: Stage 5 — EMA(9) turning upward + MACD golden cross confirmed
 - **Advance (선발대)**: Late Stage 4 — MACD histogram shrinking (bottoming) + EMA(60) slope flattening; small position only
 
-**Short Entry Timing (3 levels)**:
-
-- **Normal (본매매)**: Stage 3 — all three EMAs trending downward + MACD histogram negative and expanding
-- **Early (조기)**: Stage 2 — EMA(9) turning downward + MACD dead cross confirmed
-- **Advance (선발대)**: Late Stage 1 — MACD histogram shrinking (topping) + EMA(60) slope flattening; small position only
-
 **Reverse Cycle Interpretation**:
 
 - Uptrend reverse (Stage 1 → 2 → 1): Pullback within uptrend — potential buying opportunity on dip
@@ -110,7 +104,7 @@ Add an entry to skillResults with the following fields:
 
 - **skillName**: Must be exactly `"MACD 대순환 분석"`
 - **trend**: Set to `"bullish"` for Stages 1/5/6, `"bearish"` for Stages 2/3/4, `"neutral"` for transition points with mixed signals
-- **summary**: A comprehensive Korean-language summary that includes: current stage number (1–6) and description, EMA(9)/EMA(21)/EMA(60) ordering and slope, whether the stage follows forward progression or reverse cycle, EMA(60) slope direction (rising/flat/declining), MACD histogram trend (expanding positive/shrinking/crossing/expanding negative), and any active entry timing signal (Normal/Early/Advance long or short). If no entry signal is present, state so explicitly.
+- **summary**: A comprehensive Korean-language summary that includes: current stage number (1–6) and description, EMA(9)/EMA(21)/EMA(60) ordering and slope, whether the stage follows forward progression or reverse cycle, EMA(60) slope direction (rising/flat/declining), MACD histogram trend (expanding positive/shrinking/crossing/expanding negative), and any active long (buy) entry timing signal (Normal/Early/Advance long). If no long entry signal is present, state so explicitly. Do not include short entry signals.
 
 Add an entry to skillSignals with skillName: `"MACD 대순환 분석"`. The signals array should include:
 
