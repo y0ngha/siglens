@@ -136,7 +136,7 @@ body {
         color-mix(in oklch, var(--color-primary-600) 30%, transparent);
 }
 
-@keyframes fadeIn {
+@keyframes fade-in {
     from {
         opacity: 0;
     }
