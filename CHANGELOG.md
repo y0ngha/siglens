@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.8.12](https://github.com/y0ngha/siglens/compare/v0.8.11...v0.8.12) (2026-04-14)
+
+
+### Bug Fixes
+
+* PR [#313](https://github.com/y0ngha/siglens/issues/313) 리뷰 코멘트 반영 (fetch 타임아웃, 카운트다운 단순화, 함수형 스타일) ([e49aca2](https://github.com/y0ngha/siglens/commit/e49aca209cf9ba34005d730c0de64c2ea4fd8293))
+
+
+### Features
+
+* AbortController로 AI 호출 중간 취소 지원 (단일 인스턴스) ([b64f414](https://github.com/y0ngha/siglens/commit/b64f414d947f904815023a678422bb33dfc76669))
+* 타임프레임 변경 시 진행 중인 분석 작업 취소 ([6cc2ab4](https://github.com/y0ngha/siglens/commit/6cc2ab4365c331454e3df1bc4fd349f77d6eed46))
+
 ## [0.8.11](https://github.com/y0ngha/siglens/compare/v0.8.10...v0.8.11) (2026-04-14)
 
 
