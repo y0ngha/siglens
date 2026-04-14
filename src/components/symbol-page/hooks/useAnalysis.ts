@@ -19,6 +19,7 @@ import type {
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
+import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
 import {
     tryAcquireReanalyzeCooldown,
     releaseReanalyzeCooldown,
@@ -104,12 +105,13 @@ export function useAnalysis({
     const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
     const latestTimeframeRef = useRef<Timeframe>(timeframe);
     const prevTimeframeChangeCountRef = useRef(0);
+    // 현재 진행 중인 워커 job ID. 타임프레임 변경 시 취소 신호 전달에 사용.
+    const currentJobIdRef = useRef<string | null>(null);
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
     // 이후 렌더링에서 이 값이 변경되더라도 마운트 시 한 번만 사용된다.
     const initialAnalysisFailedRef = useRef(initialAnalysisFailed);
     // polling 완료 시 force 경로 쿨다운 처리를 위해 마지막 요청의 force 여부를 추적
     const lastForceRef = useRef(false);
-
     // 3. useMutation
     const {
         data: submitData,
@@ -127,12 +129,14 @@ export function useAnalysis({
         },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
+                currentJobIdRef.current = null;
                 setAnalysisResult(data.result);
                 // 캐시 히트 = 분석 완료 → force 경로만 쿨다운 시작
                 if (variables.force) {
                     setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
                 }
             } else if (data.status === 'submitted') {
+                currentJobIdRef.current = data.jobId;
                 setIsPolling(true);
                 // submitted 단계에서는 쿨다운을 시작하지 않는다.
                 // polling 완료(done) 시에만 쿨다운을 시작한다.
@@ -152,6 +156,8 @@ export function useAnalysis({
     const analysis = analysisResult ?? initialAnalysis;
     const isAnalyzing = isSubmitting || isPolling;
     const analysisError = submitError?.message ?? pollError ?? null;
+    // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
+    const isCountdownActive = reanalyzeCooldownMs > 0;
 
     // 5. Handlers
     // latestRef 패턴을 사용하므로 symbol·bars·indicators를 deps에서 제외하고 안정적인 함수 참조를 유지한다.
@@ -211,6 +217,7 @@ export function useAnalysis({
                     if (cancelled) break;
 
                     if (result.status === 'done') {
+                        currentJobIdRef.current = null;
                         setAnalysisResult(result.result);
                         if (lastForceRef.current) {
                             setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
@@ -219,6 +226,7 @@ export function useAnalysis({
                         return;
                     }
                     if (result.status === 'error') {
+                        currentJobIdRef.current = null;
                         // worker/src/retry.ts AI_SERVER_UNSTABLE_CODE 센티넬과 동기화 필요
                         const errorMessage =
                             result.error === 'AI_SERVER_UNSTABLE'
@@ -238,6 +246,7 @@ export function useAnalysis({
                     // 'processing' → 다음 poll 계속
                 } catch {
                     if (cancelled) break;
+                    currentJobIdRef.current = null;
                     setPollError('분석 결과 조회에 실패했습니다.');
                     if (lastForceRef.current) {
                         void releaseReanalyzeCooldown(
@@ -265,12 +274,20 @@ export function useAnalysis({
         mutate({ ...latestRef.current, force: false });
     }, [mutate]);
 
-    // 타임프레임 변경 시 이전 mutation 상태를 초기화하고 새 분석을 자동 실행한다.
+    // 타임프레임 변경 시 진행 중인 워커 작업을 취소하고, 이전 mutation 상태를 초기화한 뒤 새 분석을 자동 실행한다.
     useEffect(() => {
         if (timeframeChangeCount === prevTimeframeChangeCountRef.current) {
             return;
         }
         prevTimeframeChangeCountRef.current = timeframeChangeCount;
+
+        // 진행 중인 워커 작업에 취소 신호를 보낸다. reset() 호출 이전에 jobId를 캡처해야 한다.
+        const jobId = currentJobIdRef.current;
+        if (jobId) {
+            void cancelAnalysisJobAction(jobId);
+            currentJobIdRef.current = null;
+        }
+
         reset();
         setPollError(null);
         setAnalysisResult(null);
@@ -279,23 +296,16 @@ export function useAnalysis({
     }, [timeframeChangeCount, reset, mutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
+    // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.
     useEffect(() => {
-        if (reanalyzeCooldownMs <= 0) return;
-        const startedAt = Date.now();
-        const startValue = reanalyzeCooldownMs;
+        if (!isCountdownActive) return;
         const intervalId = window.setInterval(() => {
-            const remaining = Math.max(
-                0,
-                startValue - (Date.now() - startedAt)
-            );
-            setReanalyzeCooldownMs(remaining);
-            if (remaining <= 0) window.clearInterval(intervalId);
+            setReanalyzeCooldownMs(prev => Math.max(0, prev - 1000));
         }, 1000);
         return () => {
             window.clearInterval(intervalId);
         };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [reanalyzeCooldownMs === 0]);
+    }, [isCountdownActive]);
 
     // 마운트 시점 및 심볼/타임프레임 변경 시 서버에서 쿨다운 진실값을 동기화한다.
     useEffect(() => {

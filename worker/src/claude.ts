@@ -4,16 +4,22 @@ import { AI_SYSTEM_PROMPT } from './ai-system-prompt.js';
 
 const client = new Anthropic({ apiKey: config.claude.apiKey });
 
-export async function callClaude(prompt: string): Promise<string> {
+export async function callClaude(
+    prompt: string,
+    signal?: AbortSignal
+): Promise<string> {
     const start = Date.now();
-    const message = await client.messages.create({
-        model: config.claude.model,
-        max_tokens: config.claude.maxTokens,
-        temperature: 0,
-        top_p: 0.95,
-        system: AI_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: prompt }],
-    });
+    const message = await client.messages.create(
+        {
+            model: config.claude.model,
+            max_tokens: config.claude.maxTokens,
+            temperature: 0,
+            top_p: 0.95,
+            system: AI_SYSTEM_PROMPT,
+            messages: [{ role: 'user', content: prompt }],
+        },
+        { signal }
+    );
 
     const elapsed = Date.now() - start;
     console.log(`[Claude] Response time: ${elapsed}ms`);

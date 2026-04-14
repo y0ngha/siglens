@@ -23,6 +23,10 @@ function metaKey(jobId: string): string {
     return `job:${jobId}:meta`;
 }
 
+function cancelledKey(jobId: string): string {
+    return `job:${jobId}:cancelled`;
+}
+
 // Upstash REST client는 값을 자동으로 직렬화/역직렬화한다.
 // set(key, object) → JSON 문자열로 저장, get(key) → 파싱된 객체로 반환.
 // 따라서 JSON.stringify/JSON.parse를 수동으로 호출하지 않는다.
@@ -59,6 +63,19 @@ export async function getJobMeta(jobId: string): Promise<JobMeta | null> {
     return redis.get<JobMeta>(metaKey(jobId));
 }
 
+export async function cancelJob(jobId: string): Promise<void> {
+    const redis = createJobRedis();
+    if (!redis) return;
+    await redis.set(cancelledKey(jobId), '1', { ex: JOB_TTL_SECONDS });
+}
+
+export async function isJobCancelled(jobId: string): Promise<boolean> {
+    const redis = createJobRedis();
+    if (!redis) return false;
+    const val = await redis.get<string>(cancelledKey(jobId));
+    return val === '1';
+}
+
 export async function cleanupJob(jobId: string): Promise<void> {
     const redis = createJobRedis();
     if (!redis) return;
@@ -66,6 +83,7 @@ export async function cleanupJob(jobId: string): Promise<void> {
         statusKey(jobId),
         resultKey(jobId),
         errorKey(jobId),
-        metaKey(jobId)
+        metaKey(jobId),
+        cancelledKey(jobId)
     );
 }
