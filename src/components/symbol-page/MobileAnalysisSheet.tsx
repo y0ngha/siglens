@@ -1,6 +1,12 @@
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import {
+    useState,
+    useCallback,
+    useRef,
+    useEffect,
+    useEffectEvent,
+} from 'react';
 import type { ReactNode } from 'react';
 import { Drawer } from 'vaul';
 import { cn } from '@/lib/cn';
@@ -16,6 +22,18 @@ export const MOBILE_SNAP_POINTS = [SNAP_PEEK, SNAP_HALF, SNAP_FULL] as const;
 // Vaul의 snapPoints prop은 readonly 배열을 허용하지 않아 mutable 사본을 사용한다
 const SNAP_POINTS_MUTABLE = [...MOBILE_SNAP_POINTS] as number[];
 
+// vaul 드로어 애니메이션과 동일한 easing 곡선
+const VAUL_EASING = 'cubic-bezier(0.32, 0.72, 0, 1)';
+
+// vaul이 현재 적용한 translateY 값(px)을 computed style에서 읽는다.
+function captureTransformY(el: HTMLDivElement): number {
+    return new DOMMatrix(window.getComputedStyle(el).transform).m42;
+}
+// 드래그 시 손가락 속도 대비 시트 이동 비율 (러버밴드 효과)
+const DRAG_RESISTANCE = 0.6;
+// 드래그로 간주하기 위한 최소 이동량(px)
+const DRAG_THRESHOLD_PX = 8;
+
 interface MobileAnalysisSheetProps {
     activeSnap: SnapPoint;
     onActiveSnapChange: (snap: SnapPoint) => void;
@@ -28,51 +46,149 @@ export function MobileAnalysisSheet({
     children,
 }: MobileAnalysisSheetProps) {
     // Vaul이 최소 스냅 아래 드래그 시 내부적으로 닫으려 할 수 있다. open 상태를
-    // 직접 제어해 즉시 재오픈함으로써 시트가 화면에서 사라지지 않도록 한다.
+    // 직접 제어해 즉시 재오픈하고, activeSnap도 SNAP_PEEK로 초기화해
+    // 시트와 핸들이 화면에서 사라지지 않도록 한다.
     const [isOpen, setIsOpen] = useState(true);
-    const handleOpenChange = useCallback((open: boolean) => {
-        if (!open) setIsOpen(true);
-    }, []);
-
-    const isFullSnap = activeSnap === SNAP_FULL;
 
     // FULL 스냅 + scrollTop === 0에서 아래로 스와이프 시 시트를 축소하는 제스처.
     // vaul의 shouldDrag는 isDraggingInDirection 체크에서 아래 방향 드래그를
     // 무조건 차단하므로, 별도 터치 핸들러로 스냅 포인트를 직접 전환한다.
+    // touchmove에서 Drawer.Content의 transform을 직접 조작하여
+    // 손가락을 따라오는 실시간 피드백을 제공한다.
     const contentRef = useRef<HTMLDivElement>(null);
+    const drawerContentRef = useRef<HTMLDivElement>(null);
+
+    const isFullSnap = activeSnap === SNAP_FULL;
+
+    const handleOpenChange = useCallback(
+        (open: boolean) => {
+            if (!open) {
+                onActiveSnapChange(SNAP_PEEK);
+                setIsOpen(true);
+            }
+        },
+        [onActiveSnapChange]
+    );
+
+    // useEffectEvent로 래핑하여 부모가 메모이제이션 없이 콜백을 전달해도
+    // effect가 재마운트되지 않도록 안정적인 참조를 보장한다.
+    const snapToPoint = useEffectEvent((snap: SnapPoint) => {
+        onActiveSnapChange(snap);
+    });
 
     useEffect(() => {
-        const el = contentRef.current;
-        if (!el || !isFullSnap) return;
+        if (!contentRef.current || !drawerContentRef.current || !isFullSnap)
+            return;
+
+        const scrollEl = contentRef.current;
+        const drawerEl = drawerContentRef.current;
 
         let startY = 0;
         let startedAtTop = false;
+        let isDragging = false;
+        let initialTransformY = 0;
+
+        // 드래그를 중단하고 vaul의 FULL 스냅 위치로 부드럽게 복귀한다.
+        // activeSnap이 이미 SNAP_FULL이면 React가 리렌더를 건너뛰므로
+        // CSS transition을 직접 적용해 애니메이션을 처리한다.
+        function snapBack(): void {
+            drawerEl.style.transition = `transform 0.5s ${VAUL_EASING}`;
+            drawerEl.style.transform = `translateY(${initialTransformY}px)`;
+            drawerEl.addEventListener(
+                'transitionend',
+                () => {
+                    // 새로운 드래그가 시작된 경우 transition 초기화를 건너뛴다
+                    if (!isDragging) {
+                        drawerEl.style.transition = '';
+                    }
+                },
+                { once: true }
+            );
+        }
 
         function onTouchStart(e: TouchEvent): void {
             startY = e.touches[0].clientY;
-            startedAtTop = el!.scrollTop <= 0;
-        }
-
-        function onTouchEnd(e: TouchEvent): void {
-            if (!startedAtTop) return;
-            const deltaY = e.changedTouches[0].clientY - startY;
-            if (deltaY <= 0) return;
-
-            const vh = window.innerHeight;
-            if (deltaY > vh * 0.5) {
-                onActiveSnapChange(SNAP_PEEK);
-            } else if (deltaY > vh * 0.15) {
-                onActiveSnapChange(SNAP_HALF);
+            startedAtTop = scrollEl.scrollTop <= 0;
+            isDragging = false;
+            if (startedAtTop) {
+                // onActiveSnapChange 호출 시 React가 vaul의 transform을 덮어쓰므로
+                // 이 값을 기준점으로 사용해 연속적인 애니메이션을 구성한다.
+                initialTransformY = captureTransformY(drawerEl);
             }
         }
 
-        el.addEventListener('touchstart', onTouchStart, { passive: true });
-        el.addEventListener('touchend', onTouchEnd, { passive: true });
+        function onTouchMove(e: TouchEvent): void {
+            if (!startedAtTop) return;
+            const deltaY = e.touches[0].clientY - startY;
+
+            if (!isDragging) {
+                if (deltaY <= 0) return;
+                if (deltaY > DRAG_THRESHOLD_PX) {
+                    isDragging = true;
+                } else {
+                    return;
+                }
+            }
+
+            // 드래그 진입 후 모든 방향의 터치 이동을 제어하고 기본 스크롤을 차단한다.
+            // passive: false로 등록되어 있어 호출 가능하다.
+            e.preventDefault();
+
+            drawerEl.style.transition = 'none';
+            // 위로 드래그해도 시트가 시작 위치 위로 올라가지 않도록 0으로 제한한다.
+            drawerEl.style.transform = `translateY(${initialTransformY + Math.max(0, deltaY) * DRAG_RESISTANCE}px)`;
+        }
+
+        function onTouchEnd(e: TouchEvent): void {
+            if (!startedAtTop || !isDragging) return;
+            isDragging = false;
+
+            const deltaY = e.changedTouches[0].clientY - startY;
+            const vh = window.innerHeight;
+
+            if (deltaY > vh * 0.45) {
+                // 충분히 드래그: PEEK로 스냅
+                // snapToPoint → React 리렌더 → vaul이 현재 transform 위치에서
+                // 새 스냅 위치까지 CSS transition으로 애니메이션
+                snapToPoint(SNAP_PEEK);
+            } else if (deltaY > vh * 0.12) {
+                // 중간 드래그: HALF로 스냅
+                snapToPoint(SNAP_HALF);
+            } else {
+                // 드래그 부족: FULL로 복귀
+                snapBack();
+            }
+        }
+
+        function onTouchCancel(): void {
+            if (isDragging) {
+                isDragging = false;
+                snapBack();
+            }
+        }
+
+        scrollEl.addEventListener('touchstart', onTouchStart, {
+            passive: true,
+        });
+        // passive: false — isDragging 진입 후 e.preventDefault()를 호출하기 위해 필요
+        scrollEl.addEventListener('touchmove', onTouchMove, {
+            passive: false,
+        });
+        scrollEl.addEventListener('touchend', onTouchEnd, { passive: true });
+        scrollEl.addEventListener('touchcancel', onTouchCancel, {
+            passive: true,
+        });
+
         return () => {
-            el.removeEventListener('touchstart', onTouchStart);
-            el.removeEventListener('touchend', onTouchEnd);
+            scrollEl.removeEventListener('touchstart', onTouchStart);
+            scrollEl.removeEventListener('touchmove', onTouchMove);
+            scrollEl.removeEventListener('touchend', onTouchEnd);
+            scrollEl.removeEventListener('touchcancel', onTouchCancel);
+            // 직접 조작한 스타일을 초기화하여 vaul의 내부 스타일과 충돌을 방지한다.
+            drawerEl.style.transform = '';
+            drawerEl.style.transition = '';
         };
-    }, [isFullSnap, onActiveSnapChange]);
+    }, [isFullSnap]);
 
     return (
         <Drawer.Root
@@ -88,6 +204,7 @@ export function MobileAnalysisSheet({
         >
             <Drawer.Portal>
                 <Drawer.Content
+                    ref={drawerContentRef}
                     className="bg-secondary-900 border-secondary-700 fixed inset-x-0 bottom-0 z-40 flex max-h-[97svh] flex-col overflow-hidden overscroll-contain rounded-t-2xl border-t pb-[env(safe-area-inset-bottom)] shadow-[0_-8px_24px_-8px_rgba(0,0,0,0.6)] md:hidden"
                     aria-live="polite"
                 >
