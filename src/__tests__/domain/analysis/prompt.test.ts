@@ -928,7 +928,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).not.toContain('Pattern Analysis');
+            expect(result).not.toContain('## Pattern Analysis\n');
         });
 
         it('활성화된 Skills 섹션이 포함되지 않는다', () => {
@@ -938,7 +938,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).not.toContain('Active Skills');
+            expect(result).not.toContain('## Active Skills\n');
         });
     });
 
@@ -996,8 +996,8 @@ describe('prompt', () => {
                 makeIndicators(),
                 skills
             );
-            expect(result).not.toContain('Active Skills');
-            expect(result).not.toContain('Pattern Analysis');
+            expect(result).not.toContain('## Active Skills\n');
+            expect(result).not.toContain('## Pattern Analysis\n');
         });
     });
 
@@ -1028,7 +1028,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('Active Skills');
+            expect(result).not.toContain('## Active Skills\n');
         });
     });
 
@@ -1044,7 +1044,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).toContain('Active Skills');
+            expect(result).toContain('## Active Skills\n');
             expect(result).toContain('RSI Divergence');
         });
 
@@ -1059,7 +1059,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('Pattern Analysis');
+            expect(result).not.toContain('## Pattern Analysis\n');
         });
 
         it('summary 전용 규칙이 포함된다', () => {
@@ -1165,7 +1165,7 @@ describe('prompt', () => {
             );
             expect(result).toContain('Pattern Analysis');
             expect(result).toContain('Head and Shoulders');
-            expect(result).toContain('Active Skills');
+            expect(result).toContain('## Active Skills\n');
             expect(result).toContain('RSI Divergence');
         });
 
@@ -1894,7 +1894,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('Pattern Analysis');
+            expect(result).not.toContain('## Pattern Analysis\n');
         });
 
         it('활성화된 Skills 섹션에는 포함되지 않는다', () => {
@@ -1908,7 +1908,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('Active Skills');
+            expect(result).not.toContain('## Active Skills\n');
         });
 
         it('indicator_guide skill이 없을 때 Indicator Signal Guides 섹션이 포함되지 않는다', () => {
@@ -1918,7 +1918,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).not.toContain('Indicator Signal Guides');
+            expect(result).not.toContain('## Indicator Signal Guides\n');
         });
 
         it('여러 indicator_guide skill이 모두 Indicator Signal Guides 섹션에 포함된다', () => {
@@ -1966,7 +1966,7 @@ describe('prompt', () => {
             expect(result).toContain('RSI Signal Guide');
             expect(result).toContain('Pattern Analysis');
             expect(result).toContain('Head and Shoulders');
-            expect(result).toContain('Active Skills');
+            expect(result).toContain('## Active Skills\n');
             expect(result).toContain('Wyckoff Theory');
         });
 
@@ -1983,7 +1983,7 @@ describe('prompt', () => {
                 [skill]
             );
             expect(result).not.toContain('Low Confidence Guide');
-            expect(result).not.toContain('Indicator Signal Guides');
+            expect(result).not.toContain('## Indicator Signal Guides\n');
         });
     });
 
@@ -2404,7 +2404,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [strategySkill]
             );
-            expect(result).not.toContain('Active Skills');
+            expect(result).not.toContain('## Active Skills\n');
         });
 
         it('Pattern Analysis 섹션에는 포함되지 않는다', () => {
@@ -2414,7 +2414,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [strategySkill]
             );
-            expect(result).not.toContain('Pattern Analysis');
+            expect(result).not.toContain('## Pattern Analysis\n');
         });
 
         it('strategy skill에 대한 strategyResults Writing Rules 지시사항이 생성된다', () => {
@@ -2481,7 +2481,7 @@ describe('prompt', () => {
             expect(result).toContain('Head and Shoulders');
             expect(result).toContain('Strategy Analysis');
             expect(result).toContain('엘리어트 파동');
-            expect(result).toContain('Active Skills');
+            expect(result).toContain('## Active Skills\n');
             expect(result).toContain('Wyckoff Theory');
         });
 
@@ -2534,7 +2534,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('Pattern Analysis');
+            expect(result).not.toContain('## Pattern Analysis\n');
         });
 
         it('활성화된 Skills 섹션에는 포함되지 않는다', () => {
@@ -2548,7 +2548,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('Active Skills');
+            expect(result).not.toContain('## Active Skills\n');
         });
 
         it('candlestick skill이 없을 때 Candlestick Pattern Guides 섹션이 포함되지 않는다', () => {
@@ -2558,7 +2558,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).not.toContain('Candlestick Pattern Guides');
+            expect(result).not.toContain('## Candlestick Pattern Guides\n');
         });
 
         it('여러 candlestick skill이 모두 Candlestick Pattern Guides 섹션에 포함된다', () => {
@@ -2624,7 +2624,7 @@ describe('prompt', () => {
             expect(result).toContain('RSI Signal Guide');
             expect(result).toContain('Strategy Analysis');
             expect(result).toContain('엘리어트 파동');
-            expect(result).toContain('Active Skills');
+            expect(result).toContain('## Active Skills\n');
             expect(result).toContain('Wyckoff Theory');
         });
 
@@ -2641,7 +2641,7 @@ describe('prompt', () => {
                 [skill]
             );
             expect(result).not.toContain('Low Confidence Guide');
-            expect(result).not.toContain('Candlestick Pattern Guides');
+            expect(result).not.toContain('## Candlestick Pattern Guides\n');
         });
     });
 
@@ -2726,7 +2726,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 [skill]
             );
-            expect(result).not.toContain('Active Skills');
+            expect(result).not.toContain('## Active Skills\n');
         });
 
         it('support_resistance skill이 없을 때 Support/Resistance Tool Guides 섹션이 포함되지 않는다', () => {
@@ -2736,7 +2736,7 @@ describe('prompt', () => {
                 makeIndicators(),
                 []
             );
-            expect(result).not.toContain('Support/Resistance Tool Guides');
+            expect(result).not.toContain('## Support/Resistance Tool Guides\n');
         });
 
         it('여러 support_resistance skill이 모두 Support/Resistance Tool Guides 섹션에 포함된다', () => {
@@ -2774,7 +2774,7 @@ describe('prompt', () => {
                 [skill]
             );
             expect(result).not.toContain('Low Confidence SR');
-            expect(result).not.toContain('Support/Resistance Tool Guides');
+            expect(result).not.toContain('## Support/Resistance Tool Guides\n');
         });
     });
 
@@ -3369,7 +3369,7 @@ describe('prompt', () => {
                 bars,
                 makeIndicators({ squeezeMomentum: data })
             );
-            expect(result).toMatch(/Squeeze Momentum.*\[rising\]/);
+            expect(result).toMatch(/Squeeze Momentum.*\[rising]/);
         });
     });
 

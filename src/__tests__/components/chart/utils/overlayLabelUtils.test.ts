@@ -39,6 +39,7 @@ const mockIndicators: IndicatorResult = {
     keltnerChannel: [],
     cmf: [],
     donchianChannel: [],
+    squeezeMomentum: [],
     buySellVolume: [],
     smc: EMPTY_SMC_RESULT,
 };

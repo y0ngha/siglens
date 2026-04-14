@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import type React from 'react';
 import type {
@@ -31,6 +31,7 @@ import {
     parseStructuredSummary,
     type SkillSummarySection,
 } from '@/components/analysis/utils/parseStructuredSummary';
+import { buildExpertAnalysisReport } from '@/components/analysis/utils/buildExpertAnalysisReport';
 import { resolveTrendDisplay } from '@/components/analysis/utils/trendUtils';
 import { resolveStrengthDisplay } from '@/components/analysis/utils/signalUtils';
 import { AnalysisProgress } from '@/components/analysis/AnalysisProgress';
@@ -639,6 +640,7 @@ interface CandlePatternAccordionItemProps {
 /**
  * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function CandlePatternAccordionItem({
     pattern,
 }: CandlePatternAccordionItemProps) {
@@ -869,6 +871,7 @@ function ReanalyzeButton({
 }
 
 interface AnalysisPanelProps {
+    symbol: string;
     analysis: AnalysisResponse;
     keyLevels: ClusteredKeyLevels;
     isAnalyzing?: boolean;
@@ -897,6 +900,7 @@ interface AnalysisPanelProps {
 }
 
 export function AnalysisPanel({
+    symbol,
     analysis,
     keyLevels,
     isAnalyzing = false,
@@ -916,8 +920,42 @@ export function AnalysisPanel({
     onActionPricesVisibilityChange,
 }: AnalysisPanelProps) {
     const { indicatorCount } = useSymbolPageContext();
+    const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
+        'idle'
+    );
+    const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+    const resetCopyStateLater = (): void => {
+        if (copyTimeoutRef.current !== null) {
+            clearTimeout(copyTimeoutRef.current);
+        }
+        copyTimeoutRef.current = setTimeout(() => setCopyState('idle'), 2000);
+    };
+
     const handleTogglePatternVisibility = (patternName: string): void => {
         onTogglePattern?.(patternName);
+    };
+
+    const handleCopyReport = async (): Promise<void> => {
+        if (showProgress || isAnalyzing) return;
+
+        try {
+            if (typeof navigator === 'undefined' || !navigator.clipboard) {
+                throw new Error('Clipboard API unavailable');
+            }
+
+            const report = buildExpertAnalysisReport({
+                symbol,
+                analysis,
+                keyLevels,
+            });
+            await navigator.clipboard.writeText(report);
+            setCopyState('copied');
+        } catch {
+            setCopyState('failed');
+        }
+
+        resetCopyStateLater();
     };
 
     // showProgress, progressPhaseIndex, progressTipIndex는 ChartContent가 관리한다.
@@ -941,6 +979,14 @@ export function AnalysisPanel({
         r => r.indicatorName !== '' && !patternSkillNames.has(r.indicatorName)
     );
 
+    useEffect(() => {
+        return () => {
+            if (copyTimeoutRef.current !== null) {
+                clearTimeout(copyTimeoutRef.current);
+            }
+        };
+    }, []);
+
     return (
         <div className="bg-secondary-800 relative flex flex-col gap-4 rounded-lg p-4">
             <AnalysisToast
@@ -961,18 +1007,58 @@ export function AnalysisPanel({
                     )}
                     <TrendBadge trend={analysis.trend} />
                 </div>
-                <div className="text-secondary-400 flex items-center gap-1.5 text-xs">
-                    <span>리스크</span>
-                    <span
+                <div className="flex items-center gap-3">
+                    <button
+                        type="button"
+                        onClick={handleCopyReport}
+                        disabled={showProgress || isAnalyzing}
                         className={cn(
-                            'font-semibold',
-                            RISK_LEVEL_COLOR[analysis.riskLevel]
+                            // [공통 스타일]
+                            'rounded border px-2 py-1 text-xs font-medium transition-colors',
+
+                            // [1. 로딩/분석 중 상태]
+                            (showProgress || isAnalyzing) &&
+                                'border-secondary-700 text-secondary-600 cursor-not-allowed',
+
+                            // [2. 일반 상태 (진행 중이 아닐 때만 적용)]
+                            (!showProgress || isAnalyzing) && {
+                                'border-primary-400/40 bg-primary-400/10 text-primary-300':
+                                    copyState === 'copied',
+                                'border-chart-bearish/40 bg-chart-bearish/10 text-chart-bearish':
+                                    copyState === 'failed',
+                                'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
+                                    copyState === 'idle',
+                                // idle은 기본 상태를 의미하며, 필요에 따라 copyState !== 'copied' && copyState !== 'failed'로 작성 가능
+                            }
                         )}
+                        title={
+                            showProgress || isAnalyzing
+                                ? '분석이 완료된 뒤 복사할 수 있습니다'
+                                : '리포트 복사'
+                        }
                     >
-                        {RISK_LEVEL_LABEL[analysis.riskLevel]}
-                    </span>
+                        {copyState === 'copied' && '복사됨'}
+                        {copyState === 'failed' && '복사 실패'}
+                        {copyState === 'idle' && '리포트 복사'}
+                    </button>
+                    <div className="text-secondary-400 flex items-center gap-1.5 text-xs">
+                        <span>리스크</span>
+                        <span
+                            className={cn(
+                                'font-semibold',
+                                RISK_LEVEL_COLOR[analysis.riskLevel]
+                            )}
+                        >
+                            {RISK_LEVEL_LABEL[analysis.riskLevel]}
+                        </span>
+                    </div>
                 </div>
             </div>
+            {copyState === 'failed' && (
+                <p className="text-chart-bearish -mt-2 text-xs">
+                    클립보드 복사에 실패했습니다. 브라우저 권한을 확인해 주세요.
+                </p>
+            )}
             <p className="text-secondary-500 font-mono text-xs">
                 {detectedPatterns.length + detectedStrategyResults.length}개
                 스킬 감지 · {indicatorCount}종 인디케이터 적용

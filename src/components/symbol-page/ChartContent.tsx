@@ -207,6 +207,7 @@ export function ChartContent({
                     className="mb-3"
                 />
                 <AnalysisPanel
+                    symbol={symbol}
                     analysis={analysis}
                     keyLevels={clusteredKeyLevels}
                     isAnalyzing={isAnalyzing}
@@ -228,6 +229,7 @@ export function ChartContent({
             </>
         ),
         [
+            symbol,
             analysisStatus,
             analysis,
             clusteredKeyLevels,

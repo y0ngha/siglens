@@ -44,6 +44,7 @@ const mockBarsData: BarsData = {
         keltnerChannel: [],
         cmf: [],
         donchianChannel: [],
+        squeezeMomentum: [],
         buySellVolume: [],
         smc: EMPTY_SMC_RESULT,
     },
