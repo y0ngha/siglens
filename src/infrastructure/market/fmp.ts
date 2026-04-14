@@ -25,10 +25,16 @@ function getNthSundayOfMonth(year: number, month: number, n: number): Date {
 }
 
 function getEtOffsetHours(year: number, month: number, day: number): number {
-    const dstStart = getNthSundayOfMonth(year, DST_START_MONTH, DST_START_NTH_SUNDAY);
+    const dstStart = getNthSundayOfMonth(
+        year,
+        DST_START_MONTH,
+        DST_START_NTH_SUNDAY
+    );
     const dstEnd = getNthSundayOfMonth(year, DST_END_MONTH, DST_END_NTH_SUNDAY);
     const date = new Date(Date.UTC(year, month - 1, day));
-    return date >= dstStart && date < dstEnd ? EDT_OFFSET_HOURS : EST_OFFSET_HOURS;
+    return date >= dstStart && date < dstEnd
+        ? EDT_OFFSET_HOURS
+        : EST_OFFSET_HOURS;
 }
 
 /**
@@ -45,7 +51,14 @@ function fmpIntradayDateToUtcSeconds(dateStr: string): number {
     const second = Number(dateStr.substring(17, 19));
     const etOffsetHours = getEtOffsetHours(year, month, day);
     // ET + |etOffset| = UTC  (etOffsetHours is negative, so we subtract it)
-    const utcMs = Date.UTC(year, month - 1, day, hour - etOffsetHours, minute, second);
+    const utcMs = Date.UTC(
+        year,
+        month - 1,
+        day,
+        hour - etOffsetHours,
+        minute,
+        second
+    );
     return Math.floor(utcMs / 1000);
 }
 
