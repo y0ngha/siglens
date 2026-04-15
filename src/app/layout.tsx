@@ -1,7 +1,9 @@
 import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
+import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
+import { ADSENSE_PUBLISHER_ID, ADSENSE_ENABLED } from '@/lib/adsense';
 import {
     ROOT_KEYWORDS,
     ROOT_TITLE,
@@ -85,6 +87,16 @@ export default function RootLayout({
             lang="ko"
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased [color-scheme:dark]`}
         >
+            <head>
+                {ADSENSE_ENABLED && ADSENSE_PUBLISHER_ID && (
+                    <Script
+                        async
+                        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUBLISHER_ID}`}
+                        crossOrigin="anonymous"
+                        strategy="afterInteractive"
+                    />
+                )}
+            </head>
             <body className="flex min-h-full flex-col">
                 <Suspense>
                     <ReactQueryProvider>{children}</ReactQueryProvider>
