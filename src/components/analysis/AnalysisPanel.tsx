@@ -1348,7 +1348,10 @@ export function AnalysisPanel({
 
             {/* 분석 완료 후 패널 하단 광고 — 리포트를 다 읽은 사용자의 다음 행동 유도 */}
             {!showProgress && (
-                <AdBanner isFreeUser={isFreeUser} slot="analysis-panel-bottom" />
+                <AdBanner
+                    isFreeUser={isFreeUser}
+                    slot="analysis-panel-bottom"
+                />
             )}
         </div>
     );

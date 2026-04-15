@@ -75,6 +75,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ Math.round(rawPrice * 100) / 100 with no constant for decimal factor
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
+
+15. Shared constants duplicated across module boundaries without documentation
+    → When a module cannot import shared constants (environment constraints), duplicate with explicit JSDoc linking to the source
+    → Every duplicate must reference the original constant and document the sync requirement
+    ❌ worker/src/index.ts: JOB_TTL_SECONDS = 3600  // matches queue.ts but no link or comment
+    ✅ worker/src/index.ts: // Matches JOB_TTL_SECONDS in queue.ts; update both if changed
+             const JOB_TTL_SECONDS = 3600;
+    → Redis key schemas duplicated across files must include a JSDoc block documenting the schema origin and dependency chain
 ```
 
 ---
@@ -226,6 +234,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Boundary constants must account for full algorithm dependency chains (e.g. nested window calculations)
     ❌ test('trend is positive', () => expect(values[idx]).toBeGreaterThan(0))  // no actual value verification
     ✅ test('first value matches reference', () => expect(values[minBarsIdx]).toBeCloseTo(expectedValue))  // precise reference comparison
+
+13. Redefining production functions/constants locally in tests
+    → Tests must import and verify production code directly; local redefinitions become tautological
+    ❌ test('shouldShowAd', () => { const shouldShowAd = (x) => x.enabled; expect(shouldShowAd(mock)).toBe(true); })
+    ✅ import { shouldShowAd } from '@/domain/ads'; test('shouldShowAd', () => { expect(shouldShowAd(mock)).toBe(true); })
+    → Expected values from module exports must also be imported, not hardcoded
+    ❌ expect(label).toBe('STRONG'); // STRONG_LABEL imported from same module as function
+    ✅ import { SIGNAL_STRENGTH_LABEL } from '@/utils'; expect(label).toBe(SIGNAL_STRENGTH_LABEL.strong);
 ```
 
 ---

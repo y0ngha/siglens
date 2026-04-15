@@ -12,14 +12,12 @@ declare global {
 
 // NEXT_PUBLIC_ 변수는 빌드 타임에 인라인된다.
 // 미설정 시 빈 문자열 → 광고 미노출 (graceful degradation).
-const ADSENSE_PUBLISHER_ID =
-    process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID ?? '';
+const ADSENSE_PUBLISHER_ID = process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID ?? '';
 
 export type AdBannerSlot = 'analysis-progress' | 'analysis-panel-bottom';
 
 export const AD_SLOT_ID: Record<AdBannerSlot, string> = {
-    'analysis-progress':
-        process.env.NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS ?? '',
+    'analysis-progress': process.env.NEXT_PUBLIC_ADSENSE_SLOT_PROGRESS ?? '',
     'analysis-panel-bottom':
         process.env.NEXT_PUBLIC_ADSENSE_SLOT_PANEL_BOTTOM ?? '',
 };

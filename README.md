@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Status](https://img.shields.io/badge/status-MVP-yellow)
+![Status](https://img.shields.io/badge/status-BETA-yellow)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 
 ![Vercel](https://img.shields.io/badge/Vercel-000000?style=flat&logo=vercel&logoColor=white)
