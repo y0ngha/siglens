@@ -3,7 +3,7 @@ import { Suspense } from 'react';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
-import { ADSENSE_PUBLISHER_ID, ADSENSE_ENABLED } from '@/lib/adsense';
+import { ADSENSE_ENABLED } from '@/lib/adsense';
 import {
     ROOT_KEYWORDS,
     ROOT_TITLE,
@@ -85,15 +85,25 @@ export default function RootLayout({
     return (
         <html
             lang="ko"
-            className={`${geistSans.variable} ${geistMono.variable} h-full antialiased [color-scheme:dark]`}
+            className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scheme-dark`}
         >
             <head>
-                {ADSENSE_ENABLED && ADSENSE_PUBLISHER_ID && (
+                {/* AdSense가 레이아웃을 깨뜨리지 못하도록 강제 스타일 주입 */}
+                <style
+                    dangerouslySetInnerHTML={{
+                        __html: `
+                    html, body { height: 100% !important; overflow: hidden !important; }
+                    body { display: flex; flex-direction: column; min-height: 100vh !important; }
+                `,
+                    }}
+                />
+
+                {ADSENSE_ENABLED && (
                     <Script
                         async
-                        src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_PUBLISHER_ID}`}
+                        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js"
                         crossOrigin="anonymous"
-                        strategy="afterInteractive"
+                        strategy="lazyOnload"
                     />
                 )}
             </head>
