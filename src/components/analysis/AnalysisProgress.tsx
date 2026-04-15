@@ -5,6 +5,7 @@ import {
     ANALYSIS_PHASES,
     ANALYSIS_TIPS,
 } from '@/components/symbol-page/hooks/useAnalysisProgress';
+import { AdBanner } from '@/components/analysis/AdBanner';
 
 /**
  * AI 분석이 진행되는 동안 패널 내부에 표시되는 인터랙티브 인디케이터.
@@ -20,11 +21,14 @@ import {
 interface AnalysisProgressProps {
     phaseIndex: number;
     tipIndex: number;
+    /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다. */
+    isFreeUser?: boolean;
 }
 
 export function AnalysisProgress({
     phaseIndex,
     tipIndex,
+    isFreeUser = true,
 }: AnalysisProgressProps) {
     return (
         <div
@@ -80,6 +84,9 @@ export function AnalysisProgress({
                 <SkeletonLine widthClass="w-10/12" delayMs={150} />
                 <SkeletonLine widthClass="w-7/12" delayMs={300} />
             </div>
+
+            {/* 분석 대기 중 광고 — 사용자가 결과를 기다리는 동안 자연스럽게 노출 */}
+            <AdBanner isFreeUser={isFreeUser} slot="analysis-progress" />
         </div>
     );
 }

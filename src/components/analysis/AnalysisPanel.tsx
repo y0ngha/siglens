@@ -36,6 +36,7 @@ import { resolveTrendDisplay } from '@/components/analysis/utils/trendUtils';
 import { resolveStrengthDisplay } from '@/components/analysis/utils/signalUtils';
 import { AnalysisProgress } from '@/components/analysis/AnalysisProgress';
 import { AnalysisToast } from '@/components/analysis/AnalysisToast';
+import { AdBanner } from '@/components/analysis/AdBanner';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis';
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
@@ -897,6 +898,9 @@ interface AnalysisPanelProps {
     _onTrendlinesVisibilityChange?: (isVisible: boolean) => void;
     actionPricesVisible?: boolean;
     onActionPricesVisibilityChange?: (isVisible: boolean) => void;
+    /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다.
+     *  인증 시스템 도입 전까지 기본값은 true (모든 사용자를 Free로 처리). */
+    isFreeUser?: boolean;
 }
 
 export function AnalysisPanel({
@@ -918,6 +922,7 @@ export function AnalysisPanel({
     _onTrendlinesVisibilityChange,
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
+    isFreeUser = true,
 }: AnalysisPanelProps) {
     const { indicatorCount } = useSymbolPageContext();
     const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>(
@@ -1071,6 +1076,7 @@ export function AnalysisPanel({
                 <AnalysisProgress
                     phaseIndex={progressPhaseIndex}
                     tipIndex={progressTipIndex}
+                    isFreeUser={isFreeUser}
                 />
             ) : (
                 <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
@@ -1338,6 +1344,11 @@ export function AnalysisPanel({
                         onReanalyze={onReanalyze}
                     />
                 </div>
+            )}
+
+            {/* 분석 완료 후 패널 하단 광고 — 리포트를 다 읽은 사용자의 다음 행동 유도 */}
+            {!showProgress && (
+                <AdBanner isFreeUser={isFreeUser} slot="analysis-panel-bottom" />
             )}
         </div>
     );

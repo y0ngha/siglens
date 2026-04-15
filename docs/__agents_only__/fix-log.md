@@ -1,14 +1,14 @@
 # Fix Log
 
+## [Issue #314 | feat/314/애드센스-배너-광고-구현 | 2026-04-15]
+- Violation: AdBanner.tsx의 `<ins>` 엘리먼트에 `style={{ display: 'block' }}` 인라인 스타일 사용
+- Rule: CONVENTIONS.md — No inline styles → Tailwind only; `block` 클래스를 사용해야 함
+- Context: AdSense `<ins>` 태그에 `display: block`을 적용하기 위해 인라인 스타일을 사용했으나, Tailwind의 `block` 클래스로 대체 가능
+
 ## [Issue #211 | feat/211/타임프레임-확장-5분-15분-30분-1시간-4시간 | 2026-04-15]
 - Violation: docs/API.md의 FMP 타임프레임 매핑 테이블과 Alpaca timeframe 파라미터 설명이 신규 타임프레임(30Min, 4Hour) 추가 후 업데이트되지 않음
 - Rule: ISSUE_IMPL_FLOW.md 1-5 Documentation updates — External API usage changed → docs/API.md 업데이트 필수
 - Context: FMP_INTRADAY_TIMEFRAME_MAP에 30min/4hour를 추가했으나 docs/API.md의 Timeframe 매핑 테이블과 Alpaca 파라미터 설명이 구 목록(1Min~1Hour)을 그대로 유지; 두 곳 모두 신규 타임프레임 추가로 업데이트
-
-## [PR #302 | fix/295-strength/signal-강도-누락-시-ui-정렬-깨짐 | 2026-04-14]
-- Violation: 테스트 기댓값으로 소스 상수를 그대로 import해 동어반복 테스트가 됨
-- Rule: Tests — expected values should be hardcoded literals, not imports from the module under test (tautological assertion)
-- Context: signalUtils.test.ts에서 SIGNAL_STRENGTH_LABEL을 import해 기댓값으로 사용했고, 레이블 문자열이 틀려도 테스트가 통과되는 문제가 있었음
 
 ## [PR #304 Round 2 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `computeSecondsUntilKst17`에서 `0 < diffMs < 1000ms` 경계(서브초 구간)에서 `Math.max(1, 0) = 1` 반환 경로에 대한 테스트 누락
@@ -138,15 +138,6 @@
 - Violation: useAnalysis.ts 카운트다운 effect에서 cooldownStartValueRef + Date.now() 기반 수동 계산 사용
 - Rule: Coding Paradigm — 함수형 상태 업데이트(prev => ...)를 사용하면 외부 ref 없이 동일 효과를 더 단순하게 달성할 수 있음
 - Context: setReanalyzeCooldownMs(prev => Math.max(0, prev - 1000))로 단순화; cooldownStartValueRef 제거
-
-## [Issue #312 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
-- Violation: worker/src/index.ts — key construction logic and full key list duplicated from queue.ts without documentation
-- Rule: FF.md Cohesion 3-B — shared Redis key schema must be documented when module boundary prevents import
-- Context: Worker process cannot import queue.ts directly due to environment constraints; key construction duplicated; added JSDoc documenting the schema origin
-
-- Violation: worker/src/index.ts — JOB_TTL_SECONDS = 3600 hardcoded without comment linking to the shared constant in queue.ts
-- Rule: CONVENTIONS.md — shared constants must be explicitly referenced or extracted to infrastructure/config
-- Context: Queue service defines JOB_TTL_SECONDS = 3600; hardcoded in worker without link to source; added comment documenting sync requirement
 
 - Violation: useAnalysis.ts — eslint-disable-next-line react-hooks/exhaustive-deps used to suppress deps warning
 - Rule: CONVENTIONS.md react-hooks/exhaustive-deps — must restructure to fix the actual issue, not suppress the lint rule
