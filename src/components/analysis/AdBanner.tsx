@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
     ADSENSE_PUBLISHER_ID,
     ADSENSE_SLOTS,
@@ -30,22 +30,36 @@ interface AdBannerProps {
 }
 
 export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
+    const containerRef = useRef<HTMLDivElement>(null);
+    const [isPushed, setIsPushed] = useState(false);
     const showAd = shouldShowAd(isFreeUser);
 
     useEffect(() => {
-        if (!showAd) return;
+        if (!showAd || isPushed) return;
 
-        // 레이아웃이 확정된 후 광고를 요청하기 위해 requestAnimationFrame 사용
-        const timeoutId = setTimeout(() => {
-            try {
-                (window.adsbygoogle = window.adsbygoogle ?? []).push({});
-            } catch (e) {
-                console.error('AdSense push error:', e);
+        // ResizeObserver를 사용하여 실제 너비가 확보되었을 때만 광고 요청
+        const observer = new ResizeObserver(entries => {
+            for (const entry of entries) {
+                if (entry.contentRect.width > 0) {
+                    try {
+                        (window.adsbygoogle = window.adsbygoogle ?? []).push(
+                            {}
+                        );
+                        setIsPushed(true);
+                        observer.disconnect();
+                    } catch (e) {
+                        console.error('AdSense push error:', e);
+                    }
+                }
             }
-        }, 100);
+        });
 
-        return () => clearTimeout(timeoutId);
-    }, [showAd]);
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [showAd, isPushed]);
 
     if (!showAd) return null;
 
@@ -55,15 +69,18 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
         : '분석 결과가 도움이 되셨나요? 하단 제휴 링크를 통한 활동은 Siglens 서비스를 지속하는 데 큰 힘이 됩니다.';
 
     return (
-        <div className="flex w-full flex-col items-center gap-2 overflow-hidden rounded-md py-4">
+        <div
+            ref={containerRef}
+            className="flex w-full flex-col items-center gap-2 overflow-hidden rounded-md py-4"
+        >
             <ins
-                className="adsbygoogle block w-full min-w-[250px]"
+                className="adsbygoogle block w-full min-w-60"
                 data-ad-client={ADSENSE_PUBLISHER_ID}
                 data-ad-slot={SLOT_MAPPING[slot]}
                 data-ad-format="auto"
                 data-full-width-responsive="true"
             />
-            <p className="text-secondary-400 whitespace-nowrap text-center text-xs leading-relaxed">
+            <p className="text-secondary-400 text-center text-xs leading-relaxed whitespace-nowrap">
                 {supportMessage}
             </p>
         </div>
