@@ -1,10 +1,15 @@
 # Fix Log
 
-## [PR #315 Round 2 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
-- Violation: AdBanner.tsx `useEffect` deps에 `slot` 불필요하게 포함 — effect 본문에서 직접 참조하지 않으며 `showAd`가 이미 캡처
-- Rule: Predictability — effect 의존성 배열에는 effect 내부에서 직접 참조하는 변수만 포함해야 함
-- Context: `slot`은 `showAd = ... && !!slotId` 계산에만 관여하고 effect 본문에서 직접 접근하지 않음; `showAd`가 slot 변화를 이미 반영하므로 `slot` 제거
+## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
+- Violation: AdBanner.tsx JSX에서 `SLOT_MAPPING[slot]` 재조회 — 이미 `slotId`로 추출된 값을 중복 계산
+- Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값을 여러 번 조회하지 말고 로컬 const로 추출 후 재사용
+- Context: `const slotId = SLOT_MAPPING[slot]`이 line 37에 있음에도 JSX `data-ad-slot`에서 `SLOT_MAPPING[slot]` 재조회; `slotId`로 교체
 
+- Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
+- Rule: Next.js Best Practices — `next/script`는 `<body>` 영역에 배치해야 함; `lazyOnload`는 브라우저 유휴 시점 실행이므로 `<head>` 배치가 의미상 부적절
+- Context: AdSense `<Script>`가 `<head>` 블록 안에 있었음; `<body>` 끝으로 이동
+
+## [PR #315 Round 2 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
 - Violation: `isPushed`를 `useState`로 관리하여 push 완료 시 불필요한 리렌더 + effect 재실행 사이클 발생
 - Rule: Components — JSX 렌더 출력에 영향을 주지 않는 내부 플래그는 `useRef`로 관리해야 함
 - Context: `setIsPushed(true)` 호출 → 리렌더 → effect 재실행 → 즉시 guard return 무의미한 사이클; `useRef`로 전환해 렌더 없이 플래그 관리
@@ -14,10 +19,6 @@
 - Context: `shouldShowAd`는 AdBanner.tsx 단독 사용이므로 컴포넌트 내 인라인으로 해결; lib/adsense.ts에서 함수 제거
 
 ## [PR #315 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
-- Violation: AdBanner.tsx에서 `slotId` 유효성 미검사 — 슬롯 환경 변수 미설정 시 빈 `<ins>` 태그가 렌더되고 adsbygoogle에 push됨
-- Rule: Predictability — 환경 변수 미설정 상황을 graceful하게 처리해야 함; 환경 변수에 의존하는 렌더링 조건은 해당 값의 유효성을 포함해야 함
-- Context: `shouldShowAd`가 publisherId만 검사하고 slotId는 검사하지 않아 슬롯 env var 누락 시 `data-ad-slot=""`으로 빈 광고 요청 발생; `slotId = SLOT_MAPPING[slot]`을 꺼내어 `showAd` 계산에 `&& !!slotId` 추가
-
 - Violation: layout.tsx에 `overflow: hidden !important`를 html/body에 전역 적용하여 페이지 스크롤 차단
 - Rule: UX & Rendering — 전역 CSS 강제 주입으로 앱 전체 사용성 저해 금지
 - Context: AdSense 레이아웃 깨짐을 방지하려는 의도였으나 `overflow: hidden`이 모든 페이지의 스크롤을 차단; `<style dangerouslySetInnerHTML>` 블록 전체 제거
