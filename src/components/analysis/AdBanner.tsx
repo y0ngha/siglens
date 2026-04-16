@@ -81,7 +81,7 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
             <ins
                 className="adsbygoogle block w-full min-w-60"
                 data-ad-client={ADSENSE_PUBLISHER_ID}
-                data-ad-slot={SLOT_MAPPING[slot]}
+                data-ad-slot={slotId}
                 data-ad-format="auto"
                 data-full-width-responsive="true"
             />

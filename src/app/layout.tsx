@@ -87,7 +87,10 @@ export default function RootLayout({
             lang="ko"
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scheme-dark`}
         >
-            <head>
+            <body className="flex min-h-full flex-col">
+                <Suspense>
+                    <ReactQueryProvider>{children}</ReactQueryProvider>
+                </Suspense>
                 {ADSENSE_ENABLED && (
                     <Script
                         async
@@ -96,11 +99,6 @@ export default function RootLayout({
                         strategy="lazyOnload"
                     />
                 )}
-            </head>
-            <body className="flex min-h-full flex-col">
-                <Suspense>
-                    <ReactQueryProvider>{children}</ReactQueryProvider>
-                </Suspense>
             </body>
         </html>
     );
