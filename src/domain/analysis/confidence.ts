@@ -74,7 +74,8 @@ export function enrichAnalysisWithConfidence(
                 ...p,
                 id: patternSummaryIds[index],
                 confidenceWeight:
-                    skill?.confidenceWeight ?? UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
+                    skill?.confidenceWeight ??
+                    UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
                 renderConfig: skill?.display?.chart,
             };
         }
