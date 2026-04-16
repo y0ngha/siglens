@@ -1241,7 +1241,8 @@ export function AnalysisPanel({
                     )}
 
                     {/* 가격 목표 */}
-                    {((analysis.priceTargets.bullish?.targets.length ?? 0) > 0 ||
+                    {((analysis.priceTargets.bullish?.targets.length ?? 0) >
+                        0 ||
                         (analysis.priceTargets.bearish?.targets.length ?? 0) >
                             0) && (
                         <div className="flex flex-col gap-2">
