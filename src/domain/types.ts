@@ -457,14 +457,34 @@ export interface AnalyzeVariables {
     indicators: IndicatorResult;
 }
 
-export type RawAnalysisResponse = Omit<
-    AnalysisResponse,
-    'patternSummaries' | 'strategyResults' | 'candlePatterns'
-> & {
-    patternSummaries: Omit<PatternSummary, 'confidenceWeight' | 'id'>[];
-    strategyResults: Omit<StrategyResult, 'confidenceWeight' | 'id'>[];
-    candlePatterns: Omit<CandlePatternSummary, 'id'>[];
-};
+/**
+ * LLM이 반환하는 원시 분석 응답.
+ *
+ * 프롬프트에서는 모든 필드를 required로 요청하지만,
+ * LLM 특성상 어떤 필드도 누락되거나 null로 반환될 수 있다.
+ * {@link enrichAnalysisWithConfidence} 에서 누락 필드를 기본값으로
+ * 정규화한 후 {@link AnalysisResponse} 로 변환된다.
+ */
+export interface RawAnalysisResponse {
+    summary?: string | null;
+    trend?: Trend | null;
+    indicatorResults?: IndicatorGuideResult[] | null;
+    riskLevel?: RiskLevel | null;
+    keyLevels?: {
+        support?: KeyLevel[] | null;
+        resistance?: KeyLevel[] | null;
+        poc?: KeyLevel | null;
+    } | null;
+    priceTargets?: {
+        bullish?: PriceScenario | null;
+        bearish?: PriceScenario | null;
+    } | null;
+    patternSummaries?: Omit<PatternSummary, 'confidenceWeight' | 'id'>[] | null;
+    strategyResults?: Omit<StrategyResult, 'confidenceWeight' | 'id'>[] | null;
+    candlePatterns?: Omit<CandlePatternSummary, 'id'>[] | null;
+    trendlines?: Trendline[] | null;
+    actionRecommendation?: ActionRecommendation | null;
+}
 
 // --- Job Result Types (submit + poll 패턴) ---
 

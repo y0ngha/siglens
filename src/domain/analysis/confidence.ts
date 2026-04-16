@@ -50,24 +50,21 @@ export function filterPatterns(patterns: PatternResult[]): PatternResult[] {
 }
 
 export function enrichAnalysisWithConfidence(
-    analysis: RawAnalysisResponse,
+    raw: RawAnalysisResponse,
     skills: Skill[]
 ): AnalysisResponse {
     const lookup = buildSkillLookup(skills);
-    const patternSummaryIds = buildUniqueIds(
-        analysis.patternSummaries,
-        'patternName'
-    );
-    const candlePatternIds = buildUniqueIds(
-        analysis.candlePatterns,
-        'patternName'
-    );
-    const strategyResultIds = buildUniqueIds(
-        analysis.strategyResults,
-        'strategyName'
-    );
 
-    const enrichedPatterns: PatternResult[] = analysis.patternSummaries.map(
+    // LLM이 필드를 누락하거나 null로 반환할 수 있으므로 기본값으로 정규화한다.
+    const patternSummaries = raw.patternSummaries ?? [];
+    const strategyResults = raw.strategyResults ?? [];
+    const candlePatterns = raw.candlePatterns ?? [];
+
+    const patternSummaryIds = buildUniqueIds(patternSummaries, 'patternName');
+    const candlePatternIds = buildUniqueIds(candlePatterns, 'patternName');
+    const strategyResultIds = buildUniqueIds(strategyResults, 'strategyName');
+
+    const enrichedPatterns: PatternResult[] = patternSummaries.map(
         (
             p: Omit<PatternSummary, 'confidenceWeight' | 'id'>,
             index: number
@@ -77,17 +74,30 @@ export function enrichAnalysisWithConfidence(
                 ...p,
                 id: patternSummaryIds[index],
                 confidenceWeight:
-                    skill?.confidenceWeight ??
-                    UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
+                    skill?.confidenceWeight ?? UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
                 renderConfig: skill?.display?.chart,
             };
         }
     );
 
     return {
-        ...analysis,
+        summary: raw.summary ?? '',
+        trend: raw.trend ?? 'neutral',
+        indicatorResults: raw.indicatorResults ?? [],
+        riskLevel: raw.riskLevel ?? 'medium',
+        keyLevels: {
+            support: raw.keyLevels?.support ?? [],
+            resistance: raw.keyLevels?.resistance ?? [],
+            poc: raw.keyLevels?.poc ?? undefined,
+        },
+        priceTargets: {
+            bullish: raw.priceTargets?.bullish ?? null,
+            bearish: raw.priceTargets?.bearish ?? null,
+        },
+        trendlines: raw.trendlines ?? [],
+        actionRecommendation: raw.actionRecommendation ?? undefined,
         patternSummaries: filterPatterns(enrichedPatterns),
-        strategyResults: analysis.strategyResults.map(
+        strategyResults: strategyResults.map(
             (
                 r: Omit<StrategyResult, 'confidenceWeight' | 'id'>,
                 index: number
@@ -99,7 +109,7 @@ export function enrichAnalysisWithConfidence(
                     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
             })
         ),
-        candlePatterns: analysis.candlePatterns.map(
+        candlePatterns: candlePatterns.map(
             (
                 p: Omit<CandlePatternSummary, 'id'>,
                 index: number
