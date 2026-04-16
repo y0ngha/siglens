@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #315 Round 2 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
+- Violation: AdBanner.tsx `useEffect` deps에 `slot` 불필요하게 포함 — effect 본문에서 직접 참조하지 않으며 `showAd`가 이미 캡처
+- Rule: Predictability — effect 의존성 배열에는 effect 내부에서 직접 참조하는 변수만 포함해야 함
+- Context: `slot`은 `showAd = ... && !!slotId` 계산에만 관여하고 effect 본문에서 직접 접근하지 않음; `showAd`가 slot 변화를 이미 반영하므로 `slot` 제거
+
+- Violation: `isPushed`를 `useState`로 관리하여 push 완료 시 불필요한 리렌더 + effect 재실행 사이클 발생
+- Rule: Components — JSX 렌더 출력에 영향을 주지 않는 내부 플래그는 `useRef`로 관리해야 함
+- Context: `setIsPushed(true)` 호출 → 리렌더 → effect 재실행 → 즉시 guard return 무의미한 사이클; `useRef`로 전환해 렌더 없이 플래그 관리
+
+- Violation: `shouldShowAd()` 비즈니스 로직 함수가 `lib/`에 배치됨 — lib/CLAUDE.md 범위(유틸리티 래퍼, 설정 상수, 차트 색상) 초과
+- Rule: Design & Cohesion — lib/은 순수 유틸리티/설정 상수만; 비즈니스 판단 로직은 사용처에 인라인하거나 domain/으로 이동
+- Context: `shouldShowAd`는 AdBanner.tsx 단독 사용이므로 컴포넌트 내 인라인으로 해결; lib/adsense.ts에서 함수 제거
+
 ## [PR #315 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
 - Violation: AdBanner.tsx에서 `slotId` 유효성 미검사 — 슬롯 환경 변수 미설정 시 빈 `<ins>` 태그가 렌더되고 adsbygoogle에 push됨
 - Rule: Predictability — 환경 변수 미설정 상황을 graceful하게 처리해야 함; 환경 변수에 의존하는 렌더링 조건은 해당 값의 유효성을 포함해야 함
