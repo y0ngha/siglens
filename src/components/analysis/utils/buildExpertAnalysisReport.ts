@@ -177,7 +177,7 @@ function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
 function buildScenarioBlock(analysis: AnalysisResponse): string | null {
     const lines: string[] = [];
 
-    if (analysis.priceTargets.bullish.targets.length > 0) {
+    if (analysis.priceTargets.bullish && analysis.priceTargets.bullish.targets.length > 0) {
         lines.push(
             `- 상방: ${normalizeWhitespace(
                 analysis.priceTargets.bullish.condition
@@ -189,7 +189,7 @@ function buildScenarioBlock(analysis: AnalysisResponse): string | null {
         );
     }
 
-    if (analysis.priceTargets.bearish.targets.length > 0) {
+    if (analysis.priceTargets.bearish && analysis.priceTargets.bearish.targets.length > 0) {
         lines.push(
             `- 하방: ${normalizeWhitespace(
                 analysis.priceTargets.bearish.condition

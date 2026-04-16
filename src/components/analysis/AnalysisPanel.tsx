@@ -790,7 +790,7 @@ function TrendlineItem({ trendline }: TrendlineItemProps) {
 
 interface PriceScenarioSectionProps {
     label: string;
-    scenario: PriceScenario;
+    scenario: PriceScenario | null;
     colorClass: string;
 }
 
@@ -799,7 +799,7 @@ function PriceScenarioSection({
     scenario,
     colorClass,
 }: PriceScenarioSectionProps) {
-    if (scenario.targets.length === 0) return null;
+    if (!scenario || scenario.targets.length === 0) return null;
     return (
         <div className="flex flex-col gap-1.5">
             <span className={cn('text-xs font-medium', colorClass)}>
@@ -1241,8 +1241,9 @@ export function AnalysisPanel({
                     )}
 
                     {/* 가격 목표 */}
-                    {(analysis.priceTargets.bullish.targets.length > 0 ||
-                        analysis.priceTargets.bearish.targets.length > 0) && (
+                    {((analysis.priceTargets.bullish?.targets.length ?? 0) > 0 ||
+                        (analysis.priceTargets.bearish?.targets.length ?? 0) >
+                            0) && (
                         <div className="flex flex-col gap-2">
                             <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                                 가격 목표

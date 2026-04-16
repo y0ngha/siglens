@@ -318,8 +318,8 @@ export interface PriceScenario {
 }
 
 export interface PriceTargets {
-    bullish: PriceScenario;
-    bearish: PriceScenario;
+    bullish: PriceScenario | null;
+    bearish: PriceScenario | null;
 }
 
 export interface PatternLine {
