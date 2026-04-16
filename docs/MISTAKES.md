@@ -75,6 +75,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ Math.round(rawPrice * 100) / 100 with no constant for decimal factor
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
+
+15. Shared constants duplicated across module boundaries without documentation
+    → When a module cannot import shared constants (environment constraints), duplicate with explicit JSDoc linking to the source
+    → Every duplicate must reference the original constant and document the sync requirement
+    ❌ worker/src/index.ts: JOB_TTL_SECONDS = 3600  // matches queue.ts but no link or comment
+    ✅ worker/src/index.ts: // Matches JOB_TTL_SECONDS in queue.ts; update both if changed
+             const JOB_TTL_SECONDS = 3600;
+    → Redis key schemas duplicated across files must include a JSDoc block documenting the schema origin and dependency chain
 ```
 
 ---
@@ -226,6 +234,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Boundary constants must account for full algorithm dependency chains (e.g. nested window calculations)
     ❌ test('trend is positive', () => expect(values[idx]).toBeGreaterThan(0))  // no actual value verification
     ✅ test('first value matches reference', () => expect(values[minBarsIdx]).toBeCloseTo(expectedValue))  // precise reference comparison
+
+13. Redefining production functions/constants locally in tests
+    → Tests must import and verify production code directly; local redefinitions become tautological
+    ❌ test('shouldShowAd', () => { const shouldShowAd = (x) => x.enabled; expect(shouldShowAd(mock)).toBe(true); })
+    ✅ import { shouldShowAd } from '@/domain/ads'; test('shouldShowAd', () => { expect(shouldShowAd(mock)).toBe(true); })
+    → Expected values from module exports must also be imported, not hardcoded
+    ❌ expect(label).toBe('STRONG'); // STRONG_LABEL imported from same module as function
+    ✅ import { SIGNAL_STRENGTH_LABEL } from '@/utils'; expect(label).toBe(SIGNAL_STRENGTH_LABEL.strong);
 ```
 
 ---
@@ -348,6 +364,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → If a type system guarantees a field is present, do not add optional chaining or truthiness checks
    ❌ !!assetInfo?.name  // when AssetInfo.name is required
    ✅ !!assetInfo  // sufficient when name is guaranteed
+
+3. useEffect dependency array missing dynamic variables or including stable refs
+   → All variables from outer scope used in useEffect body must be in deps array
+   → Stable refs and useEffectEvent-wrapped functions should not be in deps array
+   → Missing deps cause stale closures; unnecessary deps cause redundant re-runs
+   ❌ useEffect(() => { ... slot ... }, [isFullSnap])  // slot prop used but not in deps
+   ❌ useEffect(() => { ... snapToPoint ... }, [isFullSnap, snapToPoint])  // snapToPoint from useEffectEvent is stable
+   ✅ useEffect(() => { ... slot ... }, [isFullSnap, slot])  // all dynamic deps included
+   ✅ useEffect(() => { ... snapToPoint ... }, [isFullSnap])  // useEffectEvent results excluded
+
+4. Documentation examples contradict actual business logic
+   → Skill documents must reflect actual system capabilities and conditions
+   → Example scenarios must match the signal conditions they describe
+   ❌ Example shows "current price 166, support 167" to illustrate long entry when support would be broken
+   ❌ Description says "UTAD confirms buying" when UTAD actually signals distribution completion
+   ✅ Example: "current price 168, support 167" to show support holding for long entry
+   ✅ Description: "UTAD signals distribution complete; defer entry (downside risk)"
 ```
 
 ---

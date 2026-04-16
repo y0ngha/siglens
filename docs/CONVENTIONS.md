@@ -555,8 +555,9 @@ candleSeries.setData([...newOlderBars, ...existingBars]);
 <div className="flex-3">     // ✅ correct — Tailwind v4 generates flex: 3
 <div className="flex-[3]">   // ❌ unnecessary arbitrary syntax
 
-// ✅ Arbitrary CSS properties — use bracket notation for non-utility CSS
-<html className="[color-scheme:dark]">   // ✅ correct
+// ✅ Tailwind v4 utility for color scheme — use the built-in utility class
+<html className="scheme-dark">          // ✅ correct — Tailwind v4 utility
+<html className="[color-scheme:dark]">  // ❌ unnecessary arbitrary syntax in Tailwind v4
 <html style={{ colorScheme: 'dark' }}>  // ❌ inline style (prohibited)
 
 // ✅ Dynamic runtime values → CSS custom properties

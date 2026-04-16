@@ -1,14 +1,41 @@
 # Fix Log
 
+## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
+- Violation: AdBanner.tsx JSX에서 `SLOT_MAPPING[slot]` 재조회 — 이미 `slotId`로 추출된 값을 중복 계산
+- Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값을 여러 번 조회하지 말고 로컬 const로 추출 후 재사용
+- Context: `const slotId = SLOT_MAPPING[slot]`이 line 37에 있음에도 JSX `data-ad-slot`에서 `SLOT_MAPPING[slot]` 재조회; `slotId`로 교체
+
+- Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
+- Rule: Next.js Best Practices — `next/script`는 `<body>` 영역에 배치해야 함; `lazyOnload`는 브라우저 유휴 시점 실행이므로 `<head>` 배치가 의미상 부적절
+- Context: AdSense `<Script>`가 `<head>` 블록 안에 있었음; `<body>` 끝으로 이동
+
+## [PR #315 Round 2 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
+- Violation: `isPushed`를 `useState`로 관리하여 push 완료 시 불필요한 리렌더 + effect 재실행 사이클 발생
+- Rule: Components — JSX 렌더 출력에 영향을 주지 않는 내부 플래그는 `useRef`로 관리해야 함
+- Context: `setIsPushed(true)` 호출 → 리렌더 → effect 재실행 → 즉시 guard return 무의미한 사이클; `useRef`로 전환해 렌더 없이 플래그 관리
+
+- Violation: `shouldShowAd()` 비즈니스 로직 함수가 `lib/`에 배치됨 — lib/CLAUDE.md 범위(유틸리티 래퍼, 설정 상수, 차트 색상) 초과
+- Rule: Design & Cohesion — lib/은 순수 유틸리티/설정 상수만; 비즈니스 판단 로직은 사용처에 인라인하거나 domain/으로 이동
+- Context: `shouldShowAd`는 AdBanner.tsx 단독 사용이므로 컴포넌트 내 인라인으로 해결; lib/adsense.ts에서 함수 제거
+
+## [PR #315 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
+- Violation: layout.tsx에 `overflow: hidden !important`를 html/body에 전역 적용하여 페이지 스크롤 차단
+- Rule: UX & Rendering — 전역 CSS 강제 주입으로 앱 전체 사용성 저해 금지
+- Context: AdSense 레이아웃 깨짐을 방지하려는 의도였으나 `overflow: hidden`이 모든 페이지의 스크롤을 차단; `<style dangerouslySetInnerHTML>` 블록 전체 제거
+
+- Violation: AdBanner.tsx 안내 메시지 `<p>`에 `whitespace-nowrap` 적용으로 모바일에서 텍스트 오버플로우 위험
+- Rule: Design — 동적 텍스트 콘텐츠에 `whitespace-nowrap` 사용 금지; 자연스러운 줄바꿈 허용
+- Context: 긴 한국어 안내 메시지가 작은 화면에서 컨테이너를 넘어 레이아웃 깨짐 유발 가능; 클래스 제거
+
+## [Issue #314 | feat/314/애드센스-배너-광고-구현 | 2026-04-15]
+- Violation: AdBanner.tsx의 `<ins>` 엘리먼트에 `style={{ display: 'block' }}` 인라인 스타일 사용
+- Rule: CONVENTIONS.md — No inline styles → Tailwind only; `block` 클래스를 사용해야 함
+- Context: AdSense `<ins>` 태그에 `display: block`을 적용하기 위해 인라인 스타일을 사용했으나, Tailwind의 `block` 클래스로 대체 가능
+
 ## [Issue #211 | feat/211/타임프레임-확장-5분-15분-30분-1시간-4시간 | 2026-04-15]
 - Violation: docs/API.md의 FMP 타임프레임 매핑 테이블과 Alpaca timeframe 파라미터 설명이 신규 타임프레임(30Min, 4Hour) 추가 후 업데이트되지 않음
 - Rule: ISSUE_IMPL_FLOW.md 1-5 Documentation updates — External API usage changed → docs/API.md 업데이트 필수
 - Context: FMP_INTRADAY_TIMEFRAME_MAP에 30min/4hour를 추가했으나 docs/API.md의 Timeframe 매핑 테이블과 Alpaca 파라미터 설명이 구 목록(1Min~1Hour)을 그대로 유지; 두 곳 모두 신규 타임프레임 추가로 업데이트
-
-## [PR #302 | fix/295-strength/signal-강도-누락-시-ui-정렬-깨짐 | 2026-04-14]
-- Violation: 테스트 기댓값으로 소스 상수를 그대로 import해 동어반복 테스트가 됨
-- Rule: Tests — expected values should be hardcoded literals, not imports from the module under test (tautological assertion)
-- Context: signalUtils.test.ts에서 SIGNAL_STRENGTH_LABEL을 import해 기댓값으로 사용했고, 레이블 문자열이 틀려도 테스트가 통과되는 문제가 있었음
 
 ## [PR #304 Round 2 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `computeSecondsUntilKst17`에서 `0 < diffMs < 1000ms` 경계(서브초 구간)에서 `Math.max(1, 0) = 1` 반환 경로에 대한 테스트 누락
@@ -25,19 +52,7 @@
 - Rule: Documentation Sync — Skill document metadata and body content out of sync; AI instructions must reflect the system's actual capabilities
 - Context: macd-cycle.md의 Short Entry Timing 섹션(69-73행)과 wyckoff.md의 Short Entry(Distribution) 섹션(106-111행)이 AI instructions에서 숏 신호를 제외한 후에도 남아 있었음
 
-- Violation: 예시 문구에서 현재가가 지지선보다 낮게 설정되어 롱 진입 유리 상황과 논리 모순
-- Rule: Predictability — Domain logic conditions must accurately reflect the business scenario described
-- Context: prompt.ts 731행에서 "현재가 166, 지지선 167" → 지지선이 이미 뚫린 하락 돌파 상황으로 "현재가 168, 지지선 167"로 수정
-
-- Violation: UTAD 이벤트 설명 문구가 Wyckoff 도메인 이론과 불일치 (매수 진입 암시)
-- Rule: Design & Cohesion — Domain logic conditions must be accurately described; AI instructions must reflect actual domain theory
-- Context: wyckoff.md 매매 신호 예시에서 "UTAD 확인 — 매수 진입 대기 (분배 국면, 진입 보류)" → UTAD는 분배 완료 신호이므로 "진입 보류 (분배 완료, 하락 위험)"으로 수정
-
 ## [PR #300 | fix/299/mobile-bottom-sheet-native-ux | 2026-04-14]
-- Violation: `useEffectEvent` 결과(`snapToPoint`)가 `useEffect` 의존성 배열에 포함됨
-- Rule: `react-hooks/exhaustive-deps` — `useEffectEvent` 반환 함수는 안정적 참조이므로 deps 배열에서 제거해야 함
-- Context: `MobileAnalysisSheet.tsx`의 `useEffect` deps에 `[isFullSnap, snapToPoint]`로 선언; `snapToPoint` 제거
-
 - Violation: `useEffect` cleanup에서 직접 조작한 DOM 스타일(`transform`, `transition`) 미초기화
 - Rule: React useEffect cleanup 원칙 — effect에서 직접 조작한 DOM 상태는 cleanup에서 원상복구해야 vaul 내부 스타일과 충돌 방지
 - Context: `MobileAnalysisSheet.tsx` cleanup에서 `drawerEl.style.transform = ''`, `drawerEl.style.transition = ''` 추가
@@ -138,15 +153,6 @@
 - Violation: useAnalysis.ts 카운트다운 effect에서 cooldownStartValueRef + Date.now() 기반 수동 계산 사용
 - Rule: Coding Paradigm — 함수형 상태 업데이트(prev => ...)를 사용하면 외부 ref 없이 동일 효과를 더 단순하게 달성할 수 있음
 - Context: setReanalyzeCooldownMs(prev => Math.max(0, prev - 1000))로 단순화; cooldownStartValueRef 제거
-
-## [Issue #312 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
-- Violation: worker/src/index.ts — key construction logic and full key list duplicated from queue.ts without documentation
-- Rule: FF.md Cohesion 3-B — shared Redis key schema must be documented when module boundary prevents import
-- Context: Worker process cannot import queue.ts directly due to environment constraints; key construction duplicated; added JSDoc documenting the schema origin
-
-- Violation: worker/src/index.ts — JOB_TTL_SECONDS = 3600 hardcoded without comment linking to the shared constant in queue.ts
-- Rule: CONVENTIONS.md — shared constants must be explicitly referenced or extracted to infrastructure/config
-- Context: Queue service defines JOB_TTL_SECONDS = 3600; hardcoded in worker without link to source; added comment documenting sync requirement
 
 - Violation: useAnalysis.ts — eslint-disable-next-line react-hooks/exhaustive-deps used to suppress deps warning
 - Rule: CONVENTIONS.md react-hooks/exhaustive-deps — must restructure to fix the actual issue, not suppress the lint rule

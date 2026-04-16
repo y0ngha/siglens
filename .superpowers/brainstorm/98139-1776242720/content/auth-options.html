@@ -1,0 +1,82 @@
+<h2>Free vs Pro: 사용자 구분 전략</h2>
+<p class="subtitle">
+    구현 난이도와 보안성 사이의 균형을 맞추는 두 가지 접근 방식입니다.
+</p>
+
+<div class="options">
+    <div class="option" data-choice="with-login" onclick="toggleSelect(this)">
+        <div class="letter">A</div>
+        <div class="content">
+            <h3>로그인 방식 (Full Auth)</h3>
+            <p>NextAuth.js, Clerk 등을 사용한 정석적인 방법입니다.</p>
+            <ul>
+                <li>
+                    <strong>장점</strong>: 확실한 Pro 권한 관리, 분석 히스토리
+                    저장, 기기 간 동기화
+                </li>
+                <li>
+                    <strong>단점</strong>: 구현 공수 큼, 사용자 가입 허들 발생
+                </li>
+            </ul>
+        </div>
+    </div>
+    <div class="option" data-choice="no-login" onclick="toggleSelect(this)">
+        <div class="letter">B</div>
+        <div class="content">
+            <h3>로그인 없는 방식 (Access Key)</h3>
+            <p>
+                결제 시 이메일로 'Pro 키'를 발급하고, 사이트에서 입력하는
+                방식입니다.
+            </p>
+            <ul>
+                <li>
+                    <strong>장점</strong>: 가입 절차 없음(저마찰), 구현이 매우
+                    간단함
+                </li>
+                <li>
+                    <strong>단점</strong>: 키 공유 위험, 브라우저 쿠키/로컬
+                    스토리지 의존
+                </li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<div class="section">
+    <h3>나누는 기준 (Tiering)</h3>
+    <table style="width: 100%; border-collapse: collapse; margin-top: 10px">
+        <thead>
+            <tr style="border-bottom: 2px solid #eee; text-align: left">
+                <th style="padding: 8px">항목</th>
+                <th style="padding: 8px">Free (로그인X)</th>
+                <th style="padding: 8px">Pro (인증됨)</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr style="border-bottom: 1px solid #eee">
+                <td style="padding: 8px">AI 모델</td>
+                <td style="padding: 8px">Gemini Flash</td>
+                <td style="padding: 8px"><strong>Gemini 2.5 Pro</strong></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee">
+                <td style="padding: 8px">데이터</td>
+                <td style="padding: 8px">일봉 (Daily)</td>
+                <td style="padding: 8px"><strong>분봉 (1m~60m)</strong></td>
+            </tr>
+            <tr style="border-bottom: 1px solid #eee">
+                <td style="padding: 8px">횟수 제한</td>
+                <td style="padding: 8px">일 5회</td>
+                <td style="padding: 8px"><strong>무제한 / 넉넉함</strong></td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+
+<div class="section">
+    <h3>추천 의견</h3>
+    <p>
+        "소소하게" 시작하신다면 <strong>B안(Access Key)</strong>으로 시작해서
+        반응을 보신 뒤, 나중에 히스토리 기능이 필요해질 때
+        <strong>A안</strong>으로 전환하는 로드맵을 추천합니다.
+    </p>
+</div>
