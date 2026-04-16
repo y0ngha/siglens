@@ -364,6 +364,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → If a type system guarantees a field is present, do not add optional chaining or truthiness checks
    ❌ !!assetInfo?.name  // when AssetInfo.name is required
    ✅ !!assetInfo  // sufficient when name is guaranteed
+
+3. useEffect dependency array missing dynamic variables or including stable refs
+   → All variables from outer scope used in useEffect body must be in deps array
+   → Stable refs and useEffectEvent-wrapped functions should not be in deps array
+   → Missing deps cause stale closures; unnecessary deps cause redundant re-runs
+   ❌ useEffect(() => { ... slot ... }, [isFullSnap])  // slot prop used but not in deps
+   ❌ useEffect(() => { ... snapToPoint ... }, [isFullSnap, snapToPoint])  // snapToPoint from useEffectEvent is stable
+   ✅ useEffect(() => { ... slot ... }, [isFullSnap, slot])  // all dynamic deps included
+   ✅ useEffect(() => { ... snapToPoint ... }, [isFullSnap])  // useEffectEvent results excluded
+
+4. Documentation examples contradict actual business logic
+   → Skill documents must reflect actual system capabilities and conditions
+   → Example scenarios must match the signal conditions they describe
+   ❌ Example shows "current price 166, support 167" to illustrate long entry when support would be broken
+   ❌ Description says "UTAD confirms buying" when UTAD actually signals distribution completion
+   ✅ Example: "current price 168, support 167" to show support holding for long entry
+   ✅ Description: "UTAD signals distribution complete; defer entry (downside risk)"
 ```
 
 ---
