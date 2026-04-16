@@ -32,7 +32,8 @@ interface AdBannerProps {
 export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const [isPushed, setIsPushed] = useState(false);
-    const showAd = shouldShowAd(isFreeUser);
+    const slotId = SLOT_MAPPING[slot];
+    const showAd = shouldShowAd(isFreeUser) && !!slotId;
 
     useEffect(() => {
         if (!showAd || isPushed) return;
@@ -59,7 +60,7 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
         }
 
         return () => observer.disconnect();
-    }, [showAd, isPushed]);
+    }, [showAd, isPushed, slot]);
 
     if (!showAd) return null;
 
@@ -80,7 +81,7 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
                 data-ad-format="auto"
                 data-full-width-responsive="true"
             />
-            <p className="text-secondary-400 text-center text-xs leading-relaxed whitespace-nowrap">
+            <p className="text-secondary-400 text-center text-xs leading-relaxed">
                 {supportMessage}
             </p>
         </div>

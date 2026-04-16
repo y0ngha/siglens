@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #315 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
+- Violation: AdBanner.tsx에서 `slotId` 유효성 미검사 — 슬롯 환경 변수 미설정 시 빈 `<ins>` 태그가 렌더되고 adsbygoogle에 push됨
+- Rule: Predictability — 환경 변수 미설정 상황을 graceful하게 처리해야 함; 환경 변수에 의존하는 렌더링 조건은 해당 값의 유효성을 포함해야 함
+- Context: `shouldShowAd`가 publisherId만 검사하고 slotId는 검사하지 않아 슬롯 env var 누락 시 `data-ad-slot=""`으로 빈 광고 요청 발생; `slotId = SLOT_MAPPING[slot]`을 꺼내어 `showAd` 계산에 `&& !!slotId` 추가
+
+- Violation: layout.tsx에 `overflow: hidden !important`를 html/body에 전역 적용하여 페이지 스크롤 차단
+- Rule: UX & Rendering — 전역 CSS 강제 주입으로 앱 전체 사용성 저해 금지
+- Context: AdSense 레이아웃 깨짐을 방지하려는 의도였으나 `overflow: hidden`이 모든 페이지의 스크롤을 차단; `<style dangerouslySetInnerHTML>` 블록 전체 제거
+
+- Violation: AdBanner.tsx 안내 메시지 `<p>`에 `whitespace-nowrap` 적용으로 모바일에서 텍스트 오버플로우 위험
+- Rule: Design — 동적 텍스트 콘텐츠에 `whitespace-nowrap` 사용 금지; 자연스러운 줄바꿈 허용
+- Context: 긴 한국어 안내 메시지가 작은 화면에서 컨테이너를 넘어 레이아웃 깨짐 유발 가능; 클래스 제거
+
 ## [Issue #314 | feat/314/애드센스-배너-광고-구현 | 2026-04-15]
 - Violation: AdBanner.tsx의 `<ins>` 엘리먼트에 `style={{ display: 'block' }}` 인라인 스타일 사용
 - Rule: CONVENTIONS.md — No inline styles → Tailwind only; `block` 클래스를 사용해야 함
@@ -25,19 +38,7 @@
 - Rule: Documentation Sync — Skill document metadata and body content out of sync; AI instructions must reflect the system's actual capabilities
 - Context: macd-cycle.md의 Short Entry Timing 섹션(69-73행)과 wyckoff.md의 Short Entry(Distribution) 섹션(106-111행)이 AI instructions에서 숏 신호를 제외한 후에도 남아 있었음
 
-- Violation: 예시 문구에서 현재가가 지지선보다 낮게 설정되어 롱 진입 유리 상황과 논리 모순
-- Rule: Predictability — Domain logic conditions must accurately reflect the business scenario described
-- Context: prompt.ts 731행에서 "현재가 166, 지지선 167" → 지지선이 이미 뚫린 하락 돌파 상황으로 "현재가 168, 지지선 167"로 수정
-
-- Violation: UTAD 이벤트 설명 문구가 Wyckoff 도메인 이론과 불일치 (매수 진입 암시)
-- Rule: Design & Cohesion — Domain logic conditions must be accurately described; AI instructions must reflect actual domain theory
-- Context: wyckoff.md 매매 신호 예시에서 "UTAD 확인 — 매수 진입 대기 (분배 국면, 진입 보류)" → UTAD는 분배 완료 신호이므로 "진입 보류 (분배 완료, 하락 위험)"으로 수정
-
 ## [PR #300 | fix/299/mobile-bottom-sheet-native-ux | 2026-04-14]
-- Violation: `useEffectEvent` 결과(`snapToPoint`)가 `useEffect` 의존성 배열에 포함됨
-- Rule: `react-hooks/exhaustive-deps` — `useEffectEvent` 반환 함수는 안정적 참조이므로 deps 배열에서 제거해야 함
-- Context: `MobileAnalysisSheet.tsx`의 `useEffect` deps에 `[isFullSnap, snapToPoint]`로 선언; `snapToPoint` 제거
-
 - Violation: `useEffect` cleanup에서 직접 조작한 DOM 스타일(`transform`, `transition`) 미초기화
 - Rule: React useEffect cleanup 원칙 — effect에서 직접 조작한 DOM 상태는 cleanup에서 원상복구해야 vaul 내부 스타일과 충돌 방지
 - Context: `MobileAnalysisSheet.tsx` cleanup에서 `drawerEl.style.transform = ''`, `drawerEl.style.transition = ''` 추가

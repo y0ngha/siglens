@@ -88,16 +88,6 @@ export default function RootLayout({
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scheme-dark`}
         >
             <head>
-                {/* AdSense가 레이아웃을 깨뜨리지 못하도록 강제 스타일 주입 */}
-                <style
-                    dangerouslySetInnerHTML={{
-                        __html: `
-                    html, body { height: 100% !important; overflow: hidden !important; }
-                    body { display: flex; flex-direction: column; min-height: 100vh !important; }
-                `,
-                    }}
-                />
-
                 {ADSENSE_ENABLED && (
                     <Script
                         async
