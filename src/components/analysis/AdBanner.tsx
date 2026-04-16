@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import {
+    ADSENSE_ENABLED,
     ADSENSE_PUBLISHER_ID,
     ADSENSE_SLOTS,
-    shouldShowAd,
 } from '@/lib/adsense';
 
 // window.adsbygoogle: Google AdSense가 로드 후 채우는 전역 배열.
@@ -31,12 +31,16 @@ interface AdBannerProps {
 
 export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const [isPushed, setIsPushed] = useState(false);
+    const isPushedRef = useRef(false);
     const slotId = SLOT_MAPPING[slot];
-    const showAd = shouldShowAd(isFreeUser) && !!slotId;
+    const showAd =
+        isFreeUser &&
+        ADSENSE_ENABLED &&
+        ADSENSE_PUBLISHER_ID.length > 0 &&
+        !!slotId;
 
     useEffect(() => {
-        if (!showAd || isPushed) return;
+        if (!showAd || isPushedRef.current) return;
 
         // ResizeObserver를 사용하여 실제 너비가 확보되었을 때만 광고 요청
         const observer = new ResizeObserver(entries => {
@@ -46,7 +50,7 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
                         (window.adsbygoogle = window.adsbygoogle ?? []).push(
                             {}
                         );
-                        setIsPushed(true);
+                        isPushedRef.current = true;
                         observer.disconnect();
                     } catch (e) {
                         console.error('AdSense push error:', e);
@@ -60,7 +64,7 @@ export function AdBanner({ isFreeUser, slot }: AdBannerProps) {
         }
 
         return () => observer.disconnect();
-    }, [showAd, isPushed, slot]);
+    }, [showAd]);
 
     if (!showAd) return null;
 
