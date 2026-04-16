@@ -34,6 +34,7 @@ export function SymbolPageClient({
     const { timeframe, timeframeChangeCount, handleTimeframeChange } =
         useTimeframeChange(symbol);
     const assetInfo = useAssetInfo(symbol);
+
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
 
