@@ -87,7 +87,7 @@ export default function RootLayout({
             lang="ko"
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scheme-dark`}
         >
-            <body className="flex min-h-full flex-col">
+            <body className="flex h-full flex-col overflow-hidden">
                 <Suspense>
                     <ReactQueryProvider>{children}</ReactQueryProvider>
                 </Suspense>
