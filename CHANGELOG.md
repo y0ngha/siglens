@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.8.13](https://github.com/y0ngha/siglens/compare/v0.8.12...v0.8.13) (2026-04-16)
+
+
+### Bug Fixes
+
+* AdBanner 최적화 - 불필요한 상태 제거 ([7d98268](https://github.com/y0ngha/siglens/commit/7d982688e2d011b2bcb4807d6afa13af37ee1376))
+* body height 제약으로 AdSense 광고 요소의 문서 스크롤 방지 ([4b1177c](https://github.com/y0ngha/siglens/commit/4b1177c23a5dfcbd6b722be443062f1173b0fa97))
+* **design:** adsense scripts가 css를 파괴하지 못하도록 설정 ([5505cd4](https://github.com/y0ngha/siglens/commit/5505cd495408015e95deb771bdeac39742d39bd2))
+* PriceScenario 필드의 null 처리 추가 ([9961e6d](https://github.com/y0ngha/siglens/commit/9961e6d7321c9229e5018c8315550bc727be4701))
+* **refactor:** layout이 다 그려진 후 adsbygoogle을 넣도록 처리 ([33f6ce1](https://github.com/y0ngha/siglens/commit/33f6ce1c56ba622ec32e7653484fbf37a346483a))
+* 메인 페이지 스크롤 복원 ([2887629](https://github.com/y0ngha/siglens/commit/2887629b18628aae22ee6dd4e64242371c9c327c))
+* 애드센스 배너 광고 버그 수정 ([34d5b18](https://github.com/y0ngha/siglens/commit/34d5b18d6b14e4082cb4299c0a5f276f587080e9))
+* 애드센스 배너 성능 및 배치 최적화 ([75073f5](https://github.com/y0ngha/siglens/commit/75073f51f302fddb64a51b7c14e8be2838bd5847))
+
+
+### Features
+
+* adsense scripts 추가 ([a4189a8](https://github.com/y0ngha/siglens/commit/a4189a8c5a0a5788c3e6bad9bc8c2fdd51d64e3b))
+* Google AdSense 배너 광고 구현 ([357da01](https://github.com/y0ngha/siglens/commit/357da016f2aec35700c48055939dd783fee4c6dd))
+
 ## [0.8.12](https://github.com/y0ngha/siglens/compare/v0.8.11...v0.8.12) (2026-04-14)
 
 
