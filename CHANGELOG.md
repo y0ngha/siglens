@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.14](https://github.com/y0ngha/siglens/compare/v0.8.13...v0.8.14) (2026-04-16)
+
+
+### Bug Fixes
+
+* 메인화면 스크롤 안되던 문제 해결 ([6c5e66c](https://github.com/y0ngha/siglens/commit/6c5e66c925ef6cdba34290b358bc9198cf8d8a55))
+
 ## [0.8.13](https://github.com/y0ngha/siglens/compare/v0.8.12...v0.8.13) (2026-04-16)
 
 
