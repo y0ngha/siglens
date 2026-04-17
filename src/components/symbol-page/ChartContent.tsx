@@ -254,10 +254,15 @@ export function ChartContent({
 
     // MobileAnalysisSheet를 Suspense 경계 밖에서 렌더링하기 위해 콘텐츠를 상위로 전달한다.
     // Suspense 경계 내에서 직접 렌더링하면 타임프레임 전환 시 바텀시트가 사라진다.
+    //
+    // timeframe을 deps에 포함시키는 이유: React Compiler의 자동 메모이제이션 하에서
+    // analysisContent의 참조가 예상보다 안정적으로 유지되어 effect가 재실행되지 않는
+    // 케이스가 관측되었다. timeframe을 deps에 넣어 타임프레임 전환 시 부모 시트
+    // 콘텐츠 갱신이 확실히 일어나도록 한다.
     const notifyMobileContent = useEffectEvent(onMobileSheetContent);
     useEffect(() => {
         notifyMobileContent(analysisContent);
-    }, [analysisContent]);
+    }, [analysisContent, timeframe]);
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">

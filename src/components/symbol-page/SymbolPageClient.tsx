@@ -1,7 +1,8 @@
 'use client';
 
-import { Suspense, useState, useEffect } from 'react';
+import { Suspense, useState } from 'react';
 import type { ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { AnalysisResponse } from '@/domain/types';
@@ -11,13 +12,24 @@ import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { ChartContent } from '@/components/symbol-page/ChartContent';
 import {
-    MobileAnalysisSheet,
     SNAP_HALF,
     type SnapPoint,
 } from '@/components/symbol-page/MobileAnalysisSheet';
 import { SymbolPageProvider } from '@/components/symbol-page/SymbolPageContext';
 import { useTimeframeChange } from '@/components/symbol-page/hooks/useTimeframeChange';
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
+
+// vaul은 내부 Radix DismissableLayer로 Drawer 외부 형제 요소에 aria-hidden을 주입한다.
+// 이 DOM 조작이 hydration 사이클과 겹치면 React가 mismatch를 감지하므로,
+// ssr: false로 모듈 로딩 경계까지 분리하여 hydration 완료 이후 비동기로 마운트한다.
+// 타입과 상수(SNAP_HALF, SnapPoint)는 정적 참조라 일반 import를 유지한다.
+const MobileAnalysisSheet = dynamic(
+    () =>
+        import('@/components/symbol-page/MobileAnalysisSheet').then(m => ({
+            default: m.MobileAnalysisSheet,
+        })),
+    { ssr: false }
+);
 
 interface SymbolPageClientProps {
     symbol: string;
@@ -32,7 +44,6 @@ export function SymbolPageClient({
     initialAnalysisFailed,
     indicatorCount,
 }: SymbolPageClientProps) {
-    const [isMounted, setIsMounted] = useState(false);
     const [sheetSnap, setSheetSnap] = useState<SnapPoint>(SNAP_HALF);
     const [mobileSheetContent, setMobileSheetContent] =
         useState<ReactNode>(null);
@@ -47,12 +58,6 @@ export function SymbolPageClient({
 
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
-
-    // vaul이 클라이언트에서 aria-hidden을 DOM에 주입하므로 SSR에서는 렌더링을 생략한다.
-    // 서버와 클라이언트 간 Hydration mismatch를 방지하기 위해 마운트 후에만 시트를 표시한다.
-    useEffect(() => {
-        setIsMounted(true);
-    }, []);
 
     return (
         <SymbolPageProvider indicatorCount={indicatorCount}>
@@ -123,14 +128,12 @@ export function SymbolPageClient({
                     </ErrorBoundary>
                 </div>
                 {/* Suspense 경계 밖에 렌더링하여 타임프레임 전환 시 바텀시트가 사라지지 않도록 한다 */}
-                {isMounted && (
-                    <MobileAnalysisSheet
-                        activeSnap={sheetSnap}
-                        onActiveSnapChange={setSheetSnap}
-                    >
-                        {mobileSheetContent}
-                    </MobileAnalysisSheet>
-                )}
+                <MobileAnalysisSheet
+                    activeSnap={sheetSnap}
+                    onActiveSnapChange={setSheetSnap}
+                >
+                    {mobileSheetContent}
+                </MobileAnalysisSheet>
             </div>
         </SymbolPageProvider>
     );
