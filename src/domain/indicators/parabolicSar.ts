@@ -34,9 +34,9 @@ function nextState(
 ): PSARNextStateResult {
     const projectedSAR = prev.sar + prev.af * (prev.ep - prev.sar);
 
-    // Wilder's clamp: the projected SAR for the current bar must not penetrate
-    // the prior two bars' lows (in uptrend) or highs (in downtrend). Applied
-    // to the newly projected value, not retroactively to the previous SAR.
+    // Wilder clamp: 현재 봉에 대해 새로 투영한 SAR 은 이전 두 봉의 저점(상승장)
+    // 또는 고점(하락장)을 침범해서는 안 된다. clamp 는 이전 SAR 에 소급 적용하지
+    // 않고, 방금 계산한 projectedSAR 에 대해서만 적용한다.
     const rawSAR =
         prev.trend === 'up'
             ? Math.min(projectedSAR, prevBars[0].low, prevBars[1].low)

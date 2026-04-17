@@ -437,6 +437,7 @@ describe('calculateSmc', () => {
             expect(bullishBreaks.length).toBeGreaterThan(0);
             const lastBreak = bullishBreaks[bullishBreaks.length - 1];
             // structure-break-aware range 에서는 이탈 가격이 range 상단 앵커로 포함
+            expect(result.premiumZone).not.toBeNull();
             expect(result.premiumZone!.high).toBeGreaterThanOrEqual(
                 lastBreak.price
             );
@@ -450,6 +451,7 @@ describe('calculateSmc', () => {
             );
             expect(bearishBreaks.length).toBeGreaterThan(0);
             const lastBreak = bearishBreaks[bearishBreaks.length - 1];
+            expect(result.discountZone).not.toBeNull();
             expect(result.discountZone!.low).toBeLessThanOrEqual(
                 lastBreak.price
             );
