@@ -12,6 +12,14 @@ const eslintConfig = defineConfig([
         'out/**',
         'build/**',
         'next-env.d.ts',
+        // Worker build artifacts and tooling
+        'worker/.yarn/**',
+        'worker/.vscode/**',
+        'worker/dist/**',
+        // Tooling config directories
+        '.agents/**',
+        '.claude/**',
+        '.superpowers/**',
     ]),
     {
         // JSON-LD structured data injection via dangerouslySetInnerHTML on <script> elements

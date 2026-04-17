@@ -51,3 +51,11 @@ next-env.d.ts
 
 /.github/*
 /.gemini/*
+
+/worker/.yarn/*
+/worker/.vscode/*
+/worker/dist/*
+
+/.agents/*
+/.claude/*
+/.superpowers/*
