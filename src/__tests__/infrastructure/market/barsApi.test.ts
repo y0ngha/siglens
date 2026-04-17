@@ -1,3 +1,8 @@
+jest.mock('next/cache', () => ({
+    cacheLife: jest.fn(),
+    cacheTag: jest.fn(),
+}));
+
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import {
     DEFAULT_TIMEFRAME,
@@ -181,9 +186,7 @@ describe('fetchBarsWithIndicators 함수는', () => {
                     symbol: 'TSLA',
                     timeframe: DEFAULT_TIMEFRAME,
                     limit: TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME],
-                    from: expect.stringMatching(
-                        /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
-                    ),
+                    from: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
                 })
             );
         });

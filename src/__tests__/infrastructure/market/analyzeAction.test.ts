@@ -1,10 +1,6 @@
 import { analyzeAction } from '@/infrastructure/market/analyzeAction';
 import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
-import type {
-    AnalyzeVariables,
-    RawAnalysisResponse,
-    Timeframe,
-} from '@/domain/types';
+import type { Timeframe } from '@/domain/types';
 import type { RunAnalysisResult } from '@/infrastructure/market/analysisApi';
 
 jest.mock('@vercel/functions', () => ({
@@ -13,6 +9,7 @@ jest.mock('@vercel/functions', () => ({
     },
 }));
 jest.mock('@/infrastructure/market/analysisApi');
+jest.mock('@/infrastructure/market/barsApi');
 jest.mock('@/infrastructure/cache/redis');
 jest.mock('@/infrastructure/cache/config', () => ({
     ...jest.requireActual('@/infrastructure/cache/config'),
@@ -20,10 +17,15 @@ jest.mock('@/infrastructure/cache/config', () => ({
 }));
 
 import { runAnalysis } from '@/infrastructure/market/analysisApi';
+import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { computeEffectiveTtl } from '@/infrastructure/cache/config';
 
 const mockRunAnalysis = runAnalysis as jest.MockedFunction<typeof runAnalysis>;
+const mockFetchBarsWithIndicators =
+    fetchBarsWithIndicators as jest.MockedFunction<
+        typeof fetchBarsWithIndicators
+    >;
 const mockCreateCacheProvider = createCacheProvider as jest.MockedFunction<
     typeof createCacheProvider
 >;
@@ -41,8 +43,10 @@ const mockCacheProvider = {
     delete: mockCacheDelete,
 };
 
-const mockVariables: AnalyzeVariables = {
-    symbol: 'AAPL',
+const mockSymbol = 'AAPL';
+const mockTimeframe: Timeframe = '1Day';
+
+const mockBarsData = {
     bars: [
         {
             time: 1705312200,
@@ -81,13 +85,11 @@ const mockVariables: AnalyzeVariables = {
     },
 };
 
-const mockTimeframe: Timeframe = '1Day';
-
-const mockRawAnalysis: RawAnalysisResponse = {
+const mockResult: RunAnalysisResult = {
     summary: '테스트 분석 요약',
-    trend: 'bullish' as const,
+    trend: 'bullish',
     indicatorResults: [],
-    riskLevel: 'low' as const,
+    riskLevel: 'low',
     keyLevels: { support: [], resistance: [] },
     priceTargets: {
         bullish: { targets: [], condition: '' },
@@ -97,24 +99,19 @@ const mockRawAnalysis: RawAnalysisResponse = {
     strategyResults: [],
     candlePatterns: [],
     trendlines: [],
-};
-
-const mockResult: RunAnalysisResult = {
-    ...mockRawAnalysis,
     skillsDegraded: false,
-    patternSummaries: [],
-    strategyResults: [],
-    candlePatterns: [],
 };
 
 describe('analyzeAction 함수는', () => {
     beforeEach(() => {
         mockRunAnalysis.mockReset();
+        mockFetchBarsWithIndicators.mockReset();
         mockCacheGet.mockReset();
         mockCacheSet.mockReset();
         mockCacheDelete.mockReset();
         mockComputeEffectiveTtl.mockReset();
         mockCreateCacheProvider.mockReturnValue(mockCacheProvider);
+        mockFetchBarsWithIndicators.mockResolvedValue(mockBarsData);
         // 기본 TTL: 1Day 기준 (86400)
         mockComputeEffectiveTtl.mockReturnValue(86400);
     });
@@ -124,13 +121,17 @@ describe('analyzeAction 함수는', () => {
             mockCreateCacheProvider.mockReturnValue(null);
         });
 
-        it('runAnalysis를 직접 호출하고 결과를 반환한다', async () => {
+        it('fetchBarsWithIndicators를 호출하고 runAnalysis로 결과를 반환한다', async () => {
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
 
-            const result = await analyzeAction(mockVariables, mockTimeframe);
+            const result = await analyzeAction(mockSymbol, mockTimeframe);
 
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
+                mockSymbol,
+                mockTimeframe
+            );
             expect(mockRunAnalysis).toHaveBeenCalledWith(
-                mockVariables,
+                { symbol: mockSymbol, bars: mockBarsData.bars, indicators: mockBarsData.indicators },
                 mockTimeframe
             );
             expect(result).toBe(mockResult);
@@ -138,12 +139,13 @@ describe('analyzeAction 함수는', () => {
     });
 
     describe('캐시 히트일 때', () => {
-        it('runAnalysis를 호출하지 않고 캐시 결과를 반환한다', async () => {
+        it('fetchBarsWithIndicators와 runAnalysis를 호출하지 않고 캐시 결과를 반환한다', async () => {
             mockCacheGet.mockResolvedValueOnce(mockResult);
 
-            const result = await analyzeAction(mockVariables, mockTimeframe);
+            const result = await analyzeAction(mockSymbol, mockTimeframe);
 
             expect(mockCacheGet).toHaveBeenCalledWith('analysis:AAPL:1Day');
+            expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
             expect(mockRunAnalysis).not.toHaveBeenCalled();
             expect(result).toBe(mockResult);
         });
@@ -155,10 +157,10 @@ describe('analyzeAction 함수는', () => {
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
             mockCacheSet.mockResolvedValueOnce(undefined);
 
-            const result = await analyzeAction(mockVariables, mockTimeframe);
+            const result = await analyzeAction(mockSymbol, mockTimeframe);
 
             expect(mockRunAnalysis).toHaveBeenCalledWith(
-                mockVariables,
+                { symbol: mockSymbol, bars: mockBarsData.bars, indicators: mockBarsData.indicators },
                 mockTimeframe
             );
             expect(result).toBe(mockResult);
@@ -178,7 +180,7 @@ describe('analyzeAction 함수는', () => {
             mockCacheSet.mockResolvedValueOnce(undefined);
             mockComputeEffectiveTtl.mockReturnValueOnce(300);
 
-            await analyzeAction(mockVariables, '5Min');
+            await analyzeAction(mockSymbol, '5Min');
 
             await Promise.resolve();
             expect(mockCacheSet).toHaveBeenCalledWith(
@@ -199,14 +201,14 @@ describe('analyzeAction 함수는', () => {
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
             mockCacheSet.mockResolvedValueOnce(undefined);
 
-            const result = await analyzeAction(mockVariables, mockTimeframe);
+            const result = await analyzeAction(mockSymbol, mockTimeframe);
 
             expect(consoleSpy).toHaveBeenCalledWith(
                 '[Cache] 캐시 읽기 실패:',
                 cacheError
             );
             expect(mockRunAnalysis).toHaveBeenCalledWith(
-                mockVariables,
+                { symbol: mockSymbol, bars: mockBarsData.bars, indicators: mockBarsData.indicators },
                 mockTimeframe
             );
             expect(result).toBe(mockResult);
@@ -232,7 +234,7 @@ describe('analyzeAction 함수는', () => {
             mockRunAnalysis.mockResolvedValueOnce(mockResult);
             mockCacheSet.mockRejectedValueOnce(cacheError);
 
-            const result = await analyzeAction(mockVariables, mockTimeframe);
+            const result = await analyzeAction(mockSymbol, mockTimeframe);
 
             expect(result).toBe(mockResult);
 
@@ -251,7 +253,7 @@ describe('analyzeAction 함수는', () => {
             mockRunAnalysis.mockRejectedValueOnce(new Error('Analysis failed'));
 
             await expect(
-                analyzeAction(mockVariables, mockTimeframe)
+                analyzeAction(mockSymbol, mockTimeframe)
             ).rejects.toThrow('Analysis failed');
         });
     });

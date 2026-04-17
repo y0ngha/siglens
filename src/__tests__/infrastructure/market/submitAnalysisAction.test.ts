@@ -1,5 +1,9 @@
-import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
-import type { AnalyzeVariables, Timeframe } from '@/domain/types';
+jest.mock('next/cache', () => ({
+    cacheLife: jest.fn(),
+    cacheTag: jest.fn(),
+}));
+
+import type { Timeframe } from '@/domain/types';
 import type { RunAnalysisResult } from '@/infrastructure/market/analysisApi';
 
 jest.mock('@vercel/functions', () => ({
@@ -10,16 +14,23 @@ jest.mock('@vercel/functions', () => ({
 jest.mock('@/infrastructure/cache/redis');
 jest.mock('@/infrastructure/jobs/queue');
 jest.mock('@/infrastructure/skills/loader');
+jest.mock('@/infrastructure/market/barsApi');
 
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { setJobMeta } from '@/infrastructure/jobs/queue';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
+import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
+import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
 
 const mockCreateCacheProvider = createCacheProvider as jest.MockedFunction<
     typeof createCacheProvider
 >;
 const mockSetJobMeta = setJobMeta as jest.MockedFunction<typeof setJobMeta>;
+const mockFetchBarsWithIndicators =
+    fetchBarsWithIndicators as jest.MockedFunction<
+        typeof fetchBarsWithIndicators
+    >;
 
 const mockCacheGet = jest.fn();
 const mockCacheSet = jest.fn();
@@ -33,8 +44,10 @@ const mockLoadSkills = jest.fn();
 const mockFetch = jest.fn();
 global.fetch = mockFetch;
 
-const mockVariables: AnalyzeVariables = {
-    symbol: 'AAPL',
+const mockSymbol = 'AAPL';
+const mockTimeframe: Timeframe = '1Day';
+
+const mockBarsData = {
     bars: [
         {
             time: 1705312200,
@@ -73,8 +86,6 @@ const mockVariables: AnalyzeVariables = {
     },
 };
 
-const mockTimeframe: Timeframe = '1Day';
-
 const mockResult: RunAnalysisResult = {
     summary: '테스트',
     trend: 'bullish' as const,
@@ -109,34 +120,24 @@ describe('submitAnalysisAction 함수는', () => {
         mockLoadSkills.mockResolvedValue([]);
         mockSetJobMeta.mockResolvedValue(undefined);
         mockFetch.mockResolvedValue(new Response('{}', { status: 200 }));
+        mockFetchBarsWithIndicators.mockResolvedValue(mockBarsData);
     });
 
     afterAll(() => {
         process.env = originalEnv;
     });
 
-    it('입력값이 없으면 에러를 던진다', async () => {
-        await expect(
-            submitAnalysisAction(
-                { symbol: '', bars: [], indicators: mockVariables.indicators },
-                mockTimeframe
-            )
-        ).rejects.toThrow('symbol, bars, and indicators are required');
-    });
-
     describe('캐시 히트일 때', () => {
         it('cached 상태와 함께 결과를 반환한다', async () => {
             mockCacheGet.mockResolvedValueOnce(mockResult);
 
-            const result = await submitAnalysisAction(
-                mockVariables,
-                mockTimeframe
-            );
+            const result = await submitAnalysisAction(mockSymbol, mockTimeframe);
 
             expect(result.status).toBe('cached');
             if (result.status === 'cached') {
                 expect(result.result).toBe(mockResult);
             }
+            expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
             expect(mockFetch).not.toHaveBeenCalled();
         });
     });
@@ -146,12 +147,13 @@ describe('submitAnalysisAction 함수는', () => {
             mockCacheGet.mockResolvedValueOnce(null);
         });
 
-        it('프롬프트를 빌드하고 Worker에 요청을 보낸 뒤 jobId를 반환한다', async () => {
-            const result = await submitAnalysisAction(
-                mockVariables,
+        it('fetchBarsWithIndicators를 호출하고 Worker에 요청을 보낸 뒤 jobId를 반환한다', async () => {
+            const result = await submitAnalysisAction(mockSymbol, mockTimeframe);
+
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
+                mockSymbol,
                 mockTimeframe
             );
-
             expect(result.status).toBe('submitted');
             if (result.status === 'submitted') {
                 expect(result.jobId).toBeDefined();
@@ -174,7 +176,7 @@ describe('submitAnalysisAction 함수는', () => {
             delete process.env.WORKER_URL;
 
             await expect(
-                submitAnalysisAction(mockVariables, mockTimeframe)
+                submitAnalysisAction(mockSymbol, mockTimeframe)
             ).rejects.toThrow(
                 'WORKER_URL and WORKER_SECRET environment variables are required'
             );
@@ -186,10 +188,7 @@ describe('submitAnalysisAction 함수는', () => {
                 .mockImplementation(() => {});
             mockLoadSkills.mockRejectedValueOnce(new Error('load failed'));
 
-            const result = await submitAnalysisAction(
-                mockVariables,
-                mockTimeframe
-            );
+            const result = await submitAnalysisAction(mockSymbol, mockTimeframe);
 
             expect(result.status).toBe('submitted');
             expect(mockFetch).toHaveBeenCalled();
@@ -201,10 +200,7 @@ describe('submitAnalysisAction 함수는', () => {
         it('캐시 조회를 건너뛰고 Worker에 요청을 보낸다', async () => {
             mockCreateCacheProvider.mockReturnValue(null);
 
-            const result = await submitAnalysisAction(
-                mockVariables,
-                mockTimeframe
-            );
+            const result = await submitAnalysisAction(mockSymbol, mockTimeframe);
 
             expect(result.status).toBe('submitted');
             expect(mockCacheGet).not.toHaveBeenCalled();
