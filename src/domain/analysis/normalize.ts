@@ -234,9 +234,7 @@ export function normalizePatternSummary(v: unknown): RawPatternSummary | null {
 
 type RawStrategyResult = Omit<StrategyResult, 'confidenceWeight' | 'id'>;
 
-export function normalizeStrategyResult(
-    v: unknown
-): RawStrategyResult | null {
+export function normalizeStrategyResult(v: unknown): RawStrategyResult | null {
     const o = asObject(v);
     if (!o) return null;
     const strategyName = asString(o.strategyName);

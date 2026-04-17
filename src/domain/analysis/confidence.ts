@@ -87,9 +87,7 @@ export function enrichAnalysisWithConfidence(
     const indicatorResults = compact(
         asArray(raw.indicatorResults).map(normalizeIndicatorGuideResult)
     );
-    const trendlines = compact(
-        asArray(raw.trendlines).map(normalizeTrendline)
-    );
+    const trendlines = compact(asArray(raw.trendlines).map(normalizeTrendline));
 
     const patternSummaryIds = buildUniqueIds(patternSummaries, 'patternName');
     const candlePatternIds = buildUniqueIds(candlePatterns, 'patternName');
