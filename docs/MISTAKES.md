@@ -198,6 +198,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 9. Custom hooks in components/ without 'use client' directive
    → Every hook file under components/ must declare 'use client' at the top
    → Hooks are Client Components and will fail without the directive when parent is async Server Component
+
+10. setState called directly in useEffect body (react-hooks/set-state-in-effect)
+    → If the state being reset logically belongs to "mutation starts", move it to useMutation's onMutate callback
+    → onMutate fires synchronously before the mutationFn, satisfies the linter, and centralizes reset logic
+    ❌ useEffect(() => { setPollError(null); setAnalysisResult(null); mutate(...); }, [deps])
+    ✅ useMutation({ onMutate: () => { setPollError(null); setAnalysisResult(null); }, ... })
+    → For state that must reset on every mutate call site, onMutate is the single source of truth
+    → Note: useCallback does NOT help — the linter traces into useCallback bodies and still flags setState
 ```
 
 ---
