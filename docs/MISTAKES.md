@@ -330,6 +330,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → AI instructions must reflect the system's actual capabilities, not idealized requirements
    ❌ mean-reversion.md body uses 2×ATR but frontmatter indicators omits atr
    ✅ Frontmatter includes all body references; update AI instructions to match actual RECENT_BARS_COUNT=30
+
+2. API endpoint or parameter changes not reflected in docs/API.md
+   → When external API schema or timeframe/parameter options change, update docs/API.md reference tables
+   → Include all provider names, endpoint paths, and parameter enums in documentation
+   ❌ FMP_INTRADAY_TIMEFRAME_MAP extended to include 30min, 4hour; docs/API.md still lists only 1Min-1Hour
+   ✅ docs/API.md Timeframe table updated to include all current mappings
 ```
 
 ---
