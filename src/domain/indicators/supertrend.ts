@@ -44,7 +44,7 @@ export function calculateSupertrend(
     };
 
     const results: SupertrendResult[] = new Array(bars.length);
-    for (let i = 0; i < firstValidIdx; i++) results[i] = NULL_RESULT;
+    results.fill(NULL_RESULT, 0, firstValidIdx);
     results[firstValidIdx] = firstResult;
     let stState = initialState;
     for (let i = firstValidIdx + 1; i < bars.length; i++) {

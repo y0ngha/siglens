@@ -10,9 +10,12 @@ export function calculateOBV(bars: Bar[]): number[] {
     for (let i = 1; i < bars.length; i++) {
         const prev = results[i - 1];
         const prevClose = bars[i - 1].close;
-        if (bars[i].close > prevClose) results[i] = prev + bars[i].volume;
-        else if (bars[i].close < prevClose) results[i] = prev - bars[i].volume;
-        else results[i] = prev;
+        results[i] =
+            bars[i].close > prevClose
+                ? prev + bars[i].volume
+                : bars[i].close < prevClose
+                  ? prev - bars[i].volume
+                  : prev;
     }
     return results;
 }
