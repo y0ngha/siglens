@@ -160,9 +160,17 @@ The gap between the three lines is narrowing → the trend is losing momentum. I
 
 ## AI Analysis Instructions
 
+**Data Source Rule (mandatory)**: Read values exclusively from the `- MA:` line in the indicator section. These are SMA (Simple Moving Average) values.
+
+- Short-term (단기): **MA(5)**
+- Medium-term (중기): **MA(20)**
+- Long-term (장기): **MA(60)**
+
+Do NOT use EMA values. The `- EMA:` line is reserved for MACD 대순환 분석. If you use EMA instead of MA, both strategies will produce identical results and the analysis will be meaningless.
+
 When analyzing the current MA Cycle results, include the following:
 
-- **Current Stage Determination**: Specify which of Stages 1–6 applies based on the positional relationship of MA5 (short), MA20 (medium), and MA60 (long). If the ordering is unclear or converging, state "Stage Transition Zone" or "Possible Range-Bound Market."
+- **Current Stage Determination**: Specify which of Stages 1–6 applies based on the positional relationship of MA(5) (short), MA(20) (medium), and MA(60) (long) read from the `- MA:` indicator line. If the ordering is unclear or converging, state "Stage Transition Zone" or "Possible Range-Bound Market."
 
 - **Forward/Reverse Progression Pattern**: Explain the path of transition from the previous stage to the current stage, including whether it was a forward progression. If a reverse transition is detected, clearly describe its meaning (pullback vs. trend reversal).
 
