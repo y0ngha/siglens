@@ -64,7 +64,7 @@ const PERCENTAGE_FACTOR = 100;
 // 타임프레임별 프롬프트 파라미터.
 //
 // 동일한 "bar 개수" 라 하더라도 실제 시간 지평은 타임프레임마다 크게 달라지므로,
-// AI 프롬프트의 설명력과 잡음 내성을 맞추기 위해 아래 세 상수는 타임프레임 인지형
+// AI 프롬프트의 설명력과 잡음 내성을 맞추기 위해 아래 세 값은 타임프레임 인지형
 // 맵으로 관리한다.
 //   - trendSampleCount:     detectTrend 슬라이스 크기. 단기(분봉)에서는 샘플이
 //                           많아야 잡음에 강하고, 장기(일봉)에서는 과한 smoothing
@@ -74,51 +74,54 @@ const PERCENTAGE_FACTOR = 100;
 //                           장기에서는 시각적/토큰 부담을 줄인다.
 //   - squeezeZeroCrossLookback: Squeeze Momentum 영점 교차 탐지 lookback. 신호가
 //                           의미 있는 최근 기간이 타임프레임마다 다르다.
+//
+// 세 값은 항상 함께 수정되어야 하므로 MISTAKES.md Design & Cohesion #1 에 따라
+// 단일 PROMPT_CONFIG_BY_TIMEFRAME 맵으로 통합한다. 새 타임프레임 추가 시 한 곳만
+// 갱신하면 되고 누락 가능성이 사라진다.
 interface PromptConfig {
     trendSampleCount: number;
     recentBarsCount: number;
     squeezeZeroCrossLookback: number;
 }
 
-// 타임프레임별 프롬프트 파라미터 맵. 테스트 및 외부 호출자가 동일 값을
+// 타임프레임별 프롬프트 파라미터 단일 맵. 테스트 및 외부 호출자가 동일 값을
 // 참조할 수 있도록 export 한다 (MISTAKES.md Tests #4/#13: boundary constant
 // 는 소스에서 import, 하드코딩 금지).
-export const TREND_SAMPLE_COUNT_BY_TIMEFRAME: Record<Timeframe, number> = {
-    '5Min': 12,
-    '15Min': 10,
-    '30Min': 9,
-    '1Hour': 8,
-    '4Hour': 7,
-    '1Day': 7,
+export const PROMPT_CONFIG_BY_TIMEFRAME: Record<Timeframe, PromptConfig> = {
+    '5Min': {
+        trendSampleCount: 12,
+        recentBarsCount: 48,
+        squeezeZeroCrossLookback: 24,
+    },
+    '15Min': {
+        trendSampleCount: 10,
+        recentBarsCount: 40,
+        squeezeZeroCrossLookback: 18,
+    },
+    '30Min': {
+        trendSampleCount: 9,
+        recentBarsCount: 36,
+        squeezeZeroCrossLookback: 14,
+    },
+    '1Hour': {
+        trendSampleCount: 8,
+        recentBarsCount: 32,
+        squeezeZeroCrossLookback: 12,
+    },
+    '4Hour': {
+        trendSampleCount: 7,
+        recentBarsCount: 30,
+        squeezeZeroCrossLookback: 10,
+    },
+    '1Day': {
+        trendSampleCount: 7,
+        recentBarsCount: 30,
+        squeezeZeroCrossLookback: 10,
+    },
 };
 
-export const RECENT_BARS_COUNT_BY_TIMEFRAME: Record<Timeframe, number> = {
-    '5Min': 48,
-    '15Min': 40,
-    '30Min': 36,
-    '1Hour': 32,
-    '4Hour': 30,
-    '1Day': 30,
-};
-
-export const SQUEEZE_ZERO_CROSS_LOOKBACK_BY_TIMEFRAME: Record<
-    Timeframe,
-    number
-> = {
-    '5Min': 24,
-    '15Min': 18,
-    '30Min': 14,
-    '1Hour': 12,
-    '4Hour': 10,
-    '1Day': 10,
-};
-
-const resolvePromptConfig = (timeframe: Timeframe): PromptConfig => ({
-    trendSampleCount: TREND_SAMPLE_COUNT_BY_TIMEFRAME[timeframe],
-    recentBarsCount: RECENT_BARS_COUNT_BY_TIMEFRAME[timeframe],
-    squeezeZeroCrossLookback:
-        SQUEEZE_ZERO_CROSS_LOOKBACK_BY_TIMEFRAME[timeframe],
-});
+const resolvePromptConfig = (timeframe: Timeframe): PromptConfig =>
+    PROMPT_CONFIG_BY_TIMEFRAME[timeframe];
 
 // detectTrend 의 상대 임계값 비율 (윈도 내 최대 절대값의 몇 % 를 'flat' 으로 간주할지).
 const INDICATOR_TREND_THRESHOLD_RATIO = 0.01;

@@ -1,6 +1,6 @@
 import {
     buildAnalysisPrompt,
-    RECENT_BARS_COUNT_BY_TIMEFRAME,
+    PROMPT_CONFIG_BY_TIMEFRAME,
 } from '@/domain/analysis/prompt';
 import { CANDLE_PATTERN_DETECTION_BARS } from '@/domain/analysis/candle-detection';
 import {
@@ -3393,7 +3393,9 @@ describe('prompt', () => {
     describe('타임프레임별 프롬프트 파라미터', () => {
         // 모든 타임프레임의 recentBarsCount 상한을 초과하도록 충분히 많은 봉을 만든다.
         const maxRecentBars = Math.max(
-            ...Object.values(RECENT_BARS_COUNT_BY_TIMEFRAME)
+            ...Object.values(PROMPT_CONFIG_BY_TIMEFRAME).map(
+                c => c.recentBarsCount
+            )
         );
         const bars = Array.from({ length: maxRecentBars + 10 }, (_, i) =>
             makeBar(i)
@@ -3408,7 +3410,7 @@ describe('prompt', () => {
                 '5Min'
             );
             expect(result).toContain(
-                `## Recent Bar Data (Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['5Min']} bars)`
+                `## Recent Bar Data (Last ${PROMPT_CONFIG_BY_TIMEFRAME['5Min'].recentBarsCount} bars)`
             );
         });
 
@@ -3421,7 +3423,7 @@ describe('prompt', () => {
                 '1Day'
             );
             expect(result).toContain(
-                `## Recent Bar Data (Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['1Day']} bars)`
+                `## Recent Bar Data (Last ${PROMPT_CONFIG_BY_TIMEFRAME['1Day'].recentBarsCount} bars)`
             );
         });
 
@@ -3434,7 +3436,7 @@ describe('prompt', () => {
                 '1Hour'
             );
             expect(result).toContain(
-                `## Recent Bar Data (Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['1Hour']} bars)`
+                `## Recent Bar Data (Last ${PROMPT_CONFIG_BY_TIMEFRAME['1Hour'].recentBarsCount} bars)`
             );
         });
 
@@ -3458,10 +3460,10 @@ describe('prompt', () => {
                 '1Day'
             );
             expect(result5Min).toContain(
-                `Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['5Min']}-bar cumulative`
+                `Last ${PROMPT_CONFIG_BY_TIMEFRAME['5Min'].recentBarsCount}-bar cumulative`
             );
             expect(result1Day).toContain(
-                `Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['1Day']}-bar cumulative`
+                `Last ${PROMPT_CONFIG_BY_TIMEFRAME['1Day'].recentBarsCount}-bar cumulative`
             );
         });
     });
