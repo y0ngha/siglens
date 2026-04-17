@@ -14,18 +14,6 @@ interface PSARState {
 
 const NULL_RESULT: ParabolicSARResult = { sar: null, trend: null };
 
-function clampSARUptrend(sar: number, prevBar: Bar, prevPrevBar: Bar): number {
-    return Math.min(sar, prevBar.low, prevPrevBar.low);
-}
-
-function clampSARDowntrend(
-    sar: number,
-    prevBar: Bar,
-    prevPrevBar: Bar
-): number {
-    return Math.max(sar, prevBar.high, prevPrevBar.high);
-}
-
 interface PSARNextStateResult {
     state: PSARState;
     result: ParabolicSARResult;
@@ -40,10 +28,19 @@ interface PSARReduceAcc {
 function nextState(
     bar: Bar,
     prev: PSARState,
+    prevBars: [Bar, Bar],
     afIncrement: number,
     afMax: number
 ): PSARNextStateResult {
-    const rawSAR = prev.sar + prev.af * (prev.ep - prev.sar);
+    const projectedSAR = prev.sar + prev.af * (prev.ep - prev.sar);
+
+    // Wilder's clamp: the projected SAR for the current bar must not penetrate
+    // the prior two bars' lows (in uptrend) or highs (in downtrend). Applied
+    // to the newly projected value, not retroactively to the previous SAR.
+    const rawSAR =
+        prev.trend === 'up'
+            ? Math.min(projectedSAR, prevBars[0].low, prevBars[1].low)
+            : Math.max(projectedSAR, prevBars[0].high, prevBars[1].high);
 
     if (prev.trend === 'up') {
         if (bar.low < rawSAR) {
@@ -115,28 +112,13 @@ export function calculateParabolicSAR(
 
     const { results } = bars.slice(2).reduce<PSARReduceAcc>(
         (acc, bar) => {
-            // SAR 클램핑
-            const clampedSAR =
-                acc.state.trend === 'up'
-                    ? clampSARUptrend(
-                          acc.state.sar,
-                          acc.prevBars[1],
-                          acc.prevBars[0]
-                      )
-                    : clampSARDowntrend(
-                          acc.state.sar,
-                          acc.prevBars[1],
-                          acc.prevBars[0]
-                      );
-
-            const clampedState = { ...acc.state, sar: clampedSAR };
             const { state, result } = nextState(
                 bar,
-                clampedState,
+                acc.state,
+                acc.prevBars,
                 afIncrement,
                 afMax
             );
-
             return {
                 state,
                 results: [...acc.results, result],

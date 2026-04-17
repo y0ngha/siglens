@@ -116,6 +116,38 @@ describe('calculateParabolicSAR', () => {
             expect(hasUp && hasDown).toBe(true);
         });
 
+        it('상승 추세에서 SAR은 직전 2봉의 저점을 초과하지 않는다 (Wilder clamp)', () => {
+            const bars = makeBars(
+                Array.from({ length: 15 }, (_, i) => ({
+                    high: 110 + i * 5,
+                    low: 90 + i * 5,
+                    close: 100 + i * 5,
+                }))
+            );
+            const result = calculateParabolicSAR(bars);
+            result.forEach((r, i) => {
+                if (i < 2 || r.trend !== 'up' || r.sar === null) return;
+                const bound = Math.min(bars[i - 1].low, bars[i - 2].low);
+                expect(r.sar).toBeLessThanOrEqual(bound);
+            });
+        });
+
+        it('하락 추세에서 SAR은 직전 2봉의 고점 미만으로 내려가지 않는다 (Wilder clamp)', () => {
+            const bars = makeBars(
+                Array.from({ length: 15 }, (_, i) => ({
+                    high: 110 - i * 5,
+                    low: 90 - i * 5,
+                    close: 100 - i * 5,
+                }))
+            );
+            const result = calculateParabolicSAR(bars);
+            result.forEach((r, i) => {
+                if (i < 2 || r.trend !== 'down' || r.sar === null) return;
+                const bound = Math.max(bars[i - 1].high, bars[i - 2].high);
+                expect(r.sar).toBeGreaterThanOrEqual(bound);
+            });
+        });
+
         it('기본값이 올바르다', () => {
             const bars = makeBars(
                 Array.from({ length: 10 }, (_, i) => ({
