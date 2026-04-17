@@ -111,7 +111,7 @@ describe('AlpacaProvider', () => {
             ).toBe('test-secret');
         });
 
-        it('before 파라미터가 없으면 now 인자를 end로 사용한다', async () => {
+        it('before 파라미터가 없으면 end 쿼리 파라미터를 포함하지 않는다', async () => {
             mockFetch.mockResolvedValueOnce({
                 ok: true,
                 json: async () => ({
@@ -121,17 +121,13 @@ describe('AlpacaProvider', () => {
                 }),
             });
 
-            const fixedNow = '2024-06-01T12:00:00.000Z';
             const provider = new AlpacaProvider();
-            await provider.getBars(
-                { symbol: 'AAPL', timeframe: '5Min' },
-                fixedNow
-            );
+            await provider.getBars({ symbol: 'AAPL', timeframe: '5Min' });
 
             // jest mock.calls 타입이 unknown[]이므로 tuple 형태로 assertion 필요
             const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
             const endParam = new URL(url).searchParams.get('end');
-            expect(endParam).toBe(fixedNow);
+            expect(endParam).toBeNull();
         });
 
         it('before 파라미터가 있으면 end 쿼리로 전달한다', async () => {

@@ -1,8 +1,8 @@
 import type {
-    GetBarsOptions,
     Bar,
-    Timeframe,
+    GetBarsOptions,
     MarketDataProvider,
+    Timeframe,
 } from './types';
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
@@ -187,6 +187,10 @@ export class FmpProvider implements MarketDataProvider {
     // Daily(1Day) 타임프레임은 /stable/historical-price-eod/full 엔드포인트를 사용합니다.
     async getBars(options: GetBarsOptions): Promise<Bar[]> {
         const { symbol, timeframe, before, from } = options;
+
+        console.log(
+            `[FMP][${new Date().toISOString()}] getBars called: ${symbol} ${timeframe} from=${from}`
+        );
 
         const fromDate = from !== undefined ? from.substring(0, 10) : undefined;
         const endDate =

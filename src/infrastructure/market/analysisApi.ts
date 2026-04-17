@@ -4,7 +4,7 @@ import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import type {
     AnalysisResponse,
-    AnalyzeVariables,
+    RunAnalysisInput,
     Skill,
     Timeframe,
 } from '@/domain/types';
@@ -16,7 +16,7 @@ export interface RunAnalysisResult extends AnalysisResponse {
 
 /** @deprecated AI 호출은 Cloud Run worker에서 처리. 로컬 개발 폴백용으로만 유지. */
 export async function runAnalysis(
-    { symbol, bars, indicators }: AnalyzeVariables,
+    { symbol, bars, indicators }: RunAnalysisInput,
     timeframe: Timeframe = '1Day'
 ): Promise<RunAnalysisResult> {
     if (!symbol || !bars || bars.length === 0 || !indicators) {

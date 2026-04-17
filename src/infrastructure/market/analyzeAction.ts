@@ -5,7 +5,8 @@ import {
     runAnalysis,
     type RunAnalysisResult,
 } from '@/infrastructure/market/analysisApi';
-import type { AnalyzeVariables, Timeframe } from '@/domain/types';
+import type { Timeframe } from '@/domain/types';
+import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildAnalysisCacheKey,
@@ -14,11 +15,11 @@ import {
 
 /** @deprecated submitAnalysisAction + pollAnalysisAction으로 대체됨. 로컬 개발 폴백용으로만 유지. */
 export async function analyzeAction(
-    variables: AnalyzeVariables,
+    symbol: string,
     timeframe: Timeframe
 ): Promise<RunAnalysisResult> {
     const cache = createCacheProvider();
-    const cacheKey = buildAnalysisCacheKey(variables.symbol, timeframe);
+    const cacheKey = buildAnalysisCacheKey(symbol, timeframe);
 
     if (cache !== null) {
         try {
@@ -33,7 +34,11 @@ export async function analyzeAction(
     }
 
     console.log('[Analysis] Run Analysis:', cacheKey);
-    const result = await runAnalysis(variables, timeframe);
+    const { bars, indicators } = await fetchBarsWithIndicators(
+        symbol,
+        timeframe
+    );
+    const result = await runAnalysis({ symbol, bars, indicators }, timeframe);
 
     if (cache !== null) {
         waitUntil(
