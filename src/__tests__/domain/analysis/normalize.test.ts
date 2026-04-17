@@ -418,9 +418,10 @@ describe('normalizeKeyPrice', () => {
 
 describe('normalizeTrendlinePoint', () => {
     it('유효한 객체를 반환한다', () => {
-        expect(
-            normalizeTrendlinePoint({ time: 100, price: 200 })
-        ).toEqual({ time: 100, price: 200 });
+        expect(normalizeTrendlinePoint({ time: 100, price: 200 })).toEqual({
+            time: 100,
+            price: 200,
+        });
     });
 
     it('time 또는 price가 숫자가 아니면 null을 반환한다', () => {
@@ -526,12 +527,8 @@ describe('normalizePatternSummary', () => {
     });
 
     it('patternName 또는 skillName이 없으면 null을 반환한다', () => {
-        expect(
-            normalizePatternSummary({ skillName: 'S' })
-        ).toBeNull();
-        expect(
-            normalizePatternSummary({ patternName: 'P' })
-        ).toBeNull();
+        expect(normalizePatternSummary({ skillName: 'S' })).toBeNull();
+        expect(normalizePatternSummary({ patternName: 'P' })).toBeNull();
     });
 
     it('객체가 아니면 null을 반환한다', () => {
@@ -581,9 +578,7 @@ describe('normalizeCandlePatternSummary', () => {
     });
 
     it('patternName이 없으면 null을 반환한다', () => {
-        expect(
-            normalizeCandlePatternSummary({ summary: 'x' })
-        ).toBeNull();
+        expect(normalizeCandlePatternSummary({ summary: 'x' })).toBeNull();
     });
 
     it('객체가 아니면 null을 반환한다', () => {
@@ -609,9 +604,7 @@ describe('normalizeTrendline', () => {
     });
 
     it('start 또는 end가 유효하지 않으면 null을 반환한다', () => {
-        expect(
-            normalizeTrendline({ ...validLine, start: null })
-        ).toBeNull();
+        expect(normalizeTrendline({ ...validLine, start: null })).toBeNull();
         expect(
             normalizeTrendline({ ...validLine, end: { time: 2 } })
         ).toBeNull();
