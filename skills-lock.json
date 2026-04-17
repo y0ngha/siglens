@@ -36,6 +36,11 @@
             "sourceType": "github",
             "computedHash": "3a3be8c925f96ac4e1280db28a01677e7ca5197f3792de2bbf35ab3bb324b6dd"
         },
+        "typescript-expert": {
+            "source": "sickn33/antigravity-awesome-skills",
+            "sourceType": "github",
+            "computedHash": "b286805fbc1e24cdbe238445c62f27889cdc48dac9dfb77fc927bd1b3c37ab2a"
+        },
         "vercel-react-best-practices": {
             "source": "vercel-labs/agent-skills",
             "sourceType": "github",
