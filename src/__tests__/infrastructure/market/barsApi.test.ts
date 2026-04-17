@@ -3,6 +3,7 @@ jest.mock('next/cache', () => ({
     cacheTag: jest.fn(),
 }));
 
+import { cacheLife, cacheTag } from 'next/cache';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import {
     DEFAULT_TIMEFRAME,
@@ -186,9 +187,24 @@ describe('fetchBarsWithIndicators 함수는', () => {
                     symbol: 'TSLA',
                     timeframe: DEFAULT_TIMEFRAME,
                     limit: TIMEFRAME_BARS_LIMIT[DEFAULT_TIMEFRAME],
-                    from: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/),
+                    from: expect.stringMatching(
+                        /^\d{4}-\d{2}-\d{2}T00:00:00Z$/
+                    ),
                 })
             );
+        });
+
+        it('cacheTag와 cacheLife를 올바른 인수로 호출한다', async () => {
+            mockGetBars.mockResolvedValueOnce([]);
+            const mockCacheTag = cacheTag as jest.Mock;
+            const mockCacheLife = cacheLife as jest.Mock;
+
+            await fetchBarsWithIndicators('TSLA', DEFAULT_TIMEFRAME);
+
+            expect(mockCacheTag).toHaveBeenCalledWith(
+                `bars:TSLA:${DEFAULT_TIMEFRAME}`
+            );
+            expect(mockCacheLife).toHaveBeenCalledWith('minutes');
         });
     });
 

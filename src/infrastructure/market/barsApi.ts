@@ -11,8 +11,8 @@ function computeFromDay(timeframe: Timeframe, now: Date): string {
     const lookbackDays = TIMEFRAME_LOOKBACK_DAYS[timeframe];
     const from = new Date(now);
     from.setUTCDate(from.getUTCDate() - lookbackDays);
-    // UTC 날짜 단위로 절삭하여 캐시 키 안정화 (하루 내 동일 값 보장)
-    return from.toISOString().substring(0, 10);
+    // UTC 날짜 단위로 절삭하여 캐시 키 안정화 (하루 내 동일 값 보장), RFC3339 형식으로 Alpaca 호환성 확보
+    return from.toISOString().substring(0, 10) + 'T00:00:00Z';
 }
 
 // new Date()는 'use cache' 경계 바깥에서 계산하여 동적 값이 캐시 키에 포함되도록 한다.
