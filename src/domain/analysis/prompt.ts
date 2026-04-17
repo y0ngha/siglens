@@ -62,6 +62,12 @@ const RECENT_BARS_COUNT = 30;
 const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
 const INDICATOR_TREND_SAMPLE_COUNT = 5;
+// detectTrend 의 상대 임계값 비율 (윈도 내 최대 절대값의 몇 % 를 'flat' 으로 간주할지).
+const INDICATOR_TREND_THRESHOLD_RATIO = 0.01;
+// detectTrend 의 절대 최소 임계값. 윈도 값이 모두 0 근처라서 ratio × maxAbs 가
+// 0 에 수렴하는 경우(예: MACD histogram, CCI, CMF 의 영점 교차 구간) 잡음이
+// 'rising'/'falling' 으로 오분류되는 것을 방지한다.
+const INDICATOR_TREND_MIN_THRESHOLD = 1e-8;
 
 const SMC_MAX_ORDER_BLOCKS = 5;
 const SMC_MAX_FAIR_VALUE_GAPS = 5;
@@ -101,7 +107,18 @@ const detectTrend = (values: (number | null)[]): IndicatorTrend | null => {
     const first = nonNull[0];
     const last = nonNull[nonNull.length - 1];
     const diff = last - first;
-    const threshold = Math.abs(first) * 0.01;
+    // 임계값은 윈도 내 최대 절대값을 기준으로 설정한다. 이렇게 하면
+    // MACD histogram, CCI, CMF 처럼 0 근처를 교차하는 지표에서도 잡음이
+    // 무조건 'rising'/'falling' 으로 분류되지 않고, 지표의 실제 스케일에
+    // 비례한 안정적인 임계값이 적용된다.
+    const windowMaxAbs = nonNull.reduce(
+        (max, v) => Math.max(max, Math.abs(v)),
+        0
+    );
+    const threshold = Math.max(
+        windowMaxAbs * INDICATOR_TREND_THRESHOLD_RATIO,
+        INDICATOR_TREND_MIN_THRESHOLD
+    );
     if (diff > threshold) return 'rising';
     if (diff < -threshold) return 'falling';
     return 'flat';
