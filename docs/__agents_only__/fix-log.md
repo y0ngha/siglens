@@ -145,3 +145,12 @@
 
 
 
+
+## [Issue #325 | feat/325/지수-심볼-지원 | 2026-04-17]
+- Violation: Infrastructure 함수(FmpProvider.getBars)에 `console.log` 디버그 로그 잔류
+- Rule: Infrastructure Layer Checklist — No console.log or debug artifacts
+- Context: `fmp.ts`의 기존 `getBars` 메서드에 남아있던 타이밍 로그를 제거하지 않고 유지한 채 PR 제출
+
+- Violation: findIndexMatch 반환 타입을 `ReturnType<typeof filterIndexResults>[number] | undefined`로 표현
+- Rule: TypeScript — 재사용 가능하거나 의미를 전달해야 하는 반환 타입은 구조적 유틸리티 타입 대신 명시적 named type으로 표현
+- Context: `filterIndexResults`가 `FmpSearchResult[]`를 반환하므로 해당 표현식은 `FmpSearchResult | undefined`와 동일; 명시적 타입 사용이 더 가독성 높음
