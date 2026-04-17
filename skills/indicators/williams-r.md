@@ -8,7 +8,7 @@ confidence_weight: 0.8
 
 ## Overview
 
-Williams %R, developed by Larry Williams, is a momentum oscillator that measures the position of the current close relative to the highest high over a lookback period. It ranges from 0 to -100, where values near 0 indicate the close is near the period's high (potential overbought) and values near -100 indicate the close is near the period's low (potential oversold). Mathematically, it is the inverse of the Fast Stochastic %K, providing similar signals on a different scale. The standard period is 14 bars.
+Williams %R, developed by Larry Williams, is a momentum oscillator that measures the position of the current close relative to the highest high over a lookback period. It ranges from 0 to -100, where values near 0 indicate the close is near the period's high (potential overbought) and values near -100 indicate the close is near the period's low (potential oversold). Mathematically, Williams %R equals the Fast Stochastic %K shifted by -100 (`%R = %K - 100`) — the two oscillators are a linear offset of each other rather than a multiplicative inverse, so they move in the same direction on the same underlying data. The standard period is 14 bars.
 
 ## Signal Interpretation
 
@@ -37,7 +37,7 @@ Williams %R, developed by Larry Williams, is a momentum oscillator that measures
 
 ## Recommended Combinations
 
-- Williams %R + Stochastic: Since %R is the inverse of Fast Stochastic %K, using both provides mutual confirmation. When both agree on overbought/oversold status, the signal strength increases.
+- Williams %R + Stochastic: Williams %R is equivalent to Fast Stochastic %K with a -100 shift, but the Stochastic indicator shown on this project is Slow Stochastic (Fast %K smoothed by 3-period SMA). Comparing unsmoothed %R against smoothed Slow %K therefore reveals short-term momentum divergence: when %R extremes appear before Slow %K confirms, an early turning point is likely.
 - Williams %R + RSI: %R reacts faster to price changes due to its simpler calculation. Use %R for early entry timing and RSI for broader overbought/oversold context.
 - Williams %R + MACD: MACD provides trend direction while %R provides entry timing within the trend context. Enter long when MACD is bullish and %R crosses above -80.
 - Williams %R + Bollinger Bands: %R oversold + price at Bollinger lower band = high-probability mean reversion buy in ranging markets.
@@ -45,6 +45,6 @@ Williams %R, developed by Larry Williams, is a momentum oscillator that measures
 ## Caveats
 
 - Like all oscillators, Williams %R generates frequent false signals in strong trending markets. An asset in a strong uptrend can remain above -20 for many bars — do not sell solely based on overbought readings during trends.
-- %R is mathematically identical to inverted Fast Stochastic %K — using both simultaneously adds no informational value. Choose one or the other.
+- %R is related to Fast Stochastic %K by a fixed linear offset (`%R = %K - 100`), so it carries identical informational content on a shifted scale. Using both simultaneously adds no new signal — choose one or the other.
 - The 14-period setting is standard for daily charts. For shorter timeframes, periods of 10 or 21 may provide better sensitivity depending on the asset's characteristics.
 - %R does not incorporate volume information. Combine with volume-based indicators (OBV, MFI) for more robust signal confirmation.

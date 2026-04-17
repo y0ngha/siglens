@@ -41,6 +41,6 @@ ADX (Average Directional Index) is derived from DMI and measures the strength of
 ## Caveats
 
 - ADX does not indicate direction — a high ADX reading alone does not tell you if the trend is up or down.
-- ADX is computed from EMA-smoothed directional movement, so it lags the actual trend onset by several bars.
+- ADX is computed from Wilder-smoothed directional movement (Wilder smoothing uses `α = 1/N`, distinct from the standard EMA weight `α = 2/(N+1)`), so it lags the actual trend onset by several bars.
 - Using ADX < 20 as a filter to suppress trend-following signals significantly reduces false entries in choppy markets.
 - ADX above 60 is rare and often precedes a violent reversal or consolidation phase — approach with caution.
