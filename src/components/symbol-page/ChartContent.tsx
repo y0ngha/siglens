@@ -8,7 +8,7 @@ import {
     useEffect,
     useEffectEvent,
 } from 'react';
-import type React from 'react';
+import React from 'react';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
@@ -260,7 +260,9 @@ export function ChartContent({
         () => <React.Fragment key={timeframe}>{analysisContent}</React.Fragment>,
         [analysisContent, timeframe]
     );
+
     const notifyMobileContent = useEffectEvent(onMobileSheetContent);
+
     useEffect(() => {
         notifyMobileContent(mobileContent);
     }, [mobileContent]);
