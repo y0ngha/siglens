@@ -259,6 +259,8 @@ export function ChartContent({
     // analysisContent의 참조가 예상보다 안정적으로 유지되어 effect가 재실행되지 않는
     // 케이스가 관측되었다. timeframe을 deps에 넣어 타임프레임 전환 시 부모 시트
     // 콘텐츠 갱신이 확실히 일어나도록 한다.
+    // TODO(#319): MISTAKES.md Predictability 규칙 3 위반(body에서 사용하지 않는 dep)
+    //   임시 워크어라운드. 근본 해결은 analysisContent 메모이제이션 재구성으로 진행 예정.
     const notifyMobileContent = useEffectEvent(onMobileSheetContent);
     useEffect(() => {
         notifyMobileContent(analysisContent);
