@@ -148,6 +148,19 @@ describe('calculateParabolicSAR', () => {
             });
         });
 
+        it('첫 번째 유효 SAR 값이 명세와 일치한다', () => {
+            // bars[1].close(11) >= bars[0].close(9) → initialTrend='up'
+            // initialState.sar = bars[0].low = 8 → result[1].sar = 8
+            const bars = makeBars([
+                { high: 10, low: 8, close: 9 },
+                { high: 12, low: 10, close: 11 },
+                { high: 14, low: 12, close: 13 },
+            ]);
+            const result = calculateParabolicSAR(bars);
+            expect(result[1].sar).toBeCloseTo(8, 5);
+            expect(result[1].trend).toBe('up');
+        });
+
         it('기본값이 올바르다', () => {
             const bars = makeBars(
                 Array.from({ length: 10 }, (_, i) => ({
