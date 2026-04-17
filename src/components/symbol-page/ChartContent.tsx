@@ -1,6 +1,13 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef, useEffect, useEffectEvent } from 'react';
+import {
+    useState,
+    useCallback,
+    useMemo,
+    useRef,
+    useEffect,
+    useEffectEvent,
+} from 'react';
 import type React from 'react';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
@@ -100,7 +107,6 @@ export function ChartContent({
     initialAnalysisFailed,
     onMobileSheetContent,
 }: ChartContentProps) {
-
     const { bars, indicators } = useBars({ symbol, timeframe });
 
     const {
