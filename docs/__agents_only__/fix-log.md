@@ -1,10 +1,6 @@
 # Fix Log
 
 ## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
-- Violation: AdBanner.tsx JSX에서 `SLOT_MAPPING[slot]` 재조회 — 이미 `slotId`로 추출된 값을 중복 계산
-- Rule: MISTAKES.md Coding Paradigm #2 — 동일한 값을 여러 번 조회하지 말고 로컬 const로 추출 후 재사용
-- Context: `const slotId = SLOT_MAPPING[slot]`이 line 37에 있음에도 JSX `data-ad-slot`에서 `SLOT_MAPPING[slot]` 재조회; `slotId`로 교체
-
 - Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
 - Rule: Next.js Best Practices — `next/script`는 `<body>` 영역에 배치해야 함; `lazyOnload`는 브라우저 유휴 시점 실행이므로 `<head>` 배치가 의미상 부적절
 - Context: AdSense `<Script>`가 `<head>` 블록 안에 있었음; `<body>` 끝으로 이동
@@ -148,10 +144,6 @@
 - Violation: cancelAnalysisJobAction.ts의 fetch 호출에 타임아웃 미설정 — 네트워크 지연 시 Server Action이 무기한 대기 가능
 - Rule: CONVENTIONS.md — fire-and-forget fetch 요청에는 타임아웃을 설정해 클라이언트 흐름이 블로킹되지 않도록 해야 함
 - Context: `/cancel` 엔드포인트 호출에 AbortSignal.timeout(5000) 추가
-
-- Violation: useAnalysis.ts 카운트다운 effect에서 cooldownStartValueRef + Date.now() 기반 수동 계산 사용
-- Rule: Coding Paradigm — 함수형 상태 업데이트(prev => ...)를 사용하면 외부 ref 없이 동일 효과를 더 단순하게 달성할 수 있음
-- Context: setReanalyzeCooldownMs(prev => Math.max(0, prev - 1000))로 단순화; cooldownStartValueRef 제거
 
 - Violation: useAnalysis.ts — eslint-disable-next-line react-hooks/exhaustive-deps used to suppress deps warning
 - Rule: CONVENTIONS.md react-hooks/exhaustive-deps — must restructure to fix the actual issue, not suppress the lint rule
