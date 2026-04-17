@@ -34,7 +34,8 @@ async function translateAndCache(
     symbol: string,
     name: string,
     exchange: string,
-    exchangeFullName: string
+    exchangeFullName: string,
+    fmpSymbol?: string
 ): Promise<void> {
     const translated = await translateCompanyNames([{ symbol, name }]);
     const koreanName = translated[symbol];
@@ -55,7 +56,7 @@ async function translateAndCache(
         await cacheProvider
             .set(
                 cacheKey,
-                { symbol, name, koreanName },
+                { symbol, name, koreanName, ...(fmpSymbol && { fmpSymbol }) },
                 ASSET_INFO_CACHE_TTL_WITH_KOREAN
             )
             .catch(error =>
@@ -87,9 +88,11 @@ const resolveAssetInfo = cache(
 
         const fmpResults = await searchBySymbol(upper);
         const usResults = filterUsExchanges(fmpResults);
-        const usMatch = usResults.find(r => r.symbol === upper) ?? usResults[0];
-        const indexMatch = usMatch ? undefined : await findIndexMatch(upper);
-        const match = usMatch ?? indexMatch;
+        const exactUsMatch = usResults.find(r => r.symbol === upper);
+        const indexMatch = exactUsMatch
+            ? undefined
+            : await findIndexMatch(upper);
+        const match = exactUsMatch ?? indexMatch ?? usResults[0];
 
         if (!match) return null;
 
@@ -111,7 +114,8 @@ const resolveAssetInfo = cache(
                     upper,
                     name,
                     exchange,
-                    exchangeFullName
+                    exchangeFullName,
+                    indexMatch?.symbol
                 ).catch(error =>
                     console.error('Asset info translateAndCache failed:', error)
                 )

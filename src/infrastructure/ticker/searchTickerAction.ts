@@ -22,8 +22,14 @@ import {
 } from '@/infrastructure/ticker/koreanNameStore';
 import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
 import type { TickerSearchResult, KoreanTickerEntry } from '@/domain/types';
+import type { FmpSearchResult } from '@/infrastructure/ticker/types';
 
 const MAX_SEARCH_RESULTS = 10;
+const MAX_INDEX_SYMBOL_LENGTH = 6;
+
+function toIndexTickerResult(r: FmpSearchResult): TickerSearchResult {
+    return toTickerSearchResult({ ...r, symbol: toDisplaySymbol(r.symbol) });
+}
 
 async function translateAndCache(
     unmapped: TickerSearchResult[]
@@ -75,22 +81,23 @@ export async function searchTickerAction(
         }
     }
 
+    const shouldSearchIndex =
+        !trimmed.startsWith('^') &&
+        !trimmed.includes(' ') &&
+        trimmed.length <= MAX_INDEX_SYMBOL_LENGTH;
+
     const [symbolResults, nameResults, indexResults] = await Promise.all([
         searchBySymbol(trimmed),
         searchByName(trimmed),
-        searchBySymbol(`^${trimmed}`),
+        shouldSearchIndex ? searchBySymbol(`^${trimmed}`) : Promise.resolve([]),
     ]);
 
-    const toIndexResult = (r: (typeof indexResults)[number]) =>
-        toTickerSearchResult({ ...r, symbol: toDisplaySymbol(r.symbol) });
-
     const merged = deduplicateResults([
+        // 지수 심볼 우선 (사용자가 'SPX' 입력 시 주식 부분 일치보다 지수를 먼저 노출)
+        ...filterIndexResults(symbolResults).map(toIndexTickerResult),
+        ...filterIndexResults(indexResults).map(toIndexTickerResult),
         ...filterUsExchanges(symbolResults).map(toTickerSearchResult),
         ...filterUsExchanges(nameResults).map(toTickerSearchResult),
-        // 정규 검색 결과에 포함된 지수 심볼 (FMP가 ^ prefix 결과를 함께 반환하는 경우)
-        ...filterIndexResults(symbolResults).map(toIndexResult),
-        // ^{trimmed} 직접 검색 결과 (심볼 직접 입력 시)
-        ...filterIndexResults(indexResults).map(toIndexResult),
     ]);
 
     const koreanNames = await getKoreanNames(merged.map(r => r.symbol));

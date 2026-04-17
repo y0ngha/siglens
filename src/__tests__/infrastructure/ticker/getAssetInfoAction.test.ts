@@ -343,6 +343,27 @@ describe('getAssetInfoAction', () => {
             );
         });
 
+        it('지수 심볼 번역 완료 후 캐시에 fmpSymbol을 포함하여 갱신한다', async () => {
+            mockFilterUsExchanges.mockReturnValueOnce([]);
+            mockSearchBySymbol
+                .mockResolvedValueOnce([])
+                .mockResolvedValueOnce([makeFmpResult('^SPX')]);
+            mockGetKoreanNames.mockResolvedValueOnce({});
+            mockTranslateCompanyNames.mockResolvedValue({ SPX: 'S&P 500' });
+
+            await getAssetInfoAction('SPX');
+            await new Promise(resolve => setTimeout(resolve, 0));
+
+            expect(mockCacheSet).toHaveBeenCalledWith(
+                expect.stringContaining('SPX'),
+                expect.objectContaining({
+                    fmpSymbol: '^SPX',
+                    koreanName: 'S&P 500',
+                }),
+                expect.any(Number)
+            );
+        });
+
         it('번역 결과가 비어있으면 setKoreanTickers를 호출하지 않는다', async () => {
             mockSearchBySymbol.mockResolvedValueOnce([makeFmpResult('IONQ')]);
             mockGetKoreanNames.mockResolvedValueOnce({});

@@ -256,6 +256,21 @@ describe('searchTickerAction', () => {
             expect(mockSearchBySymbol).toHaveBeenCalledWith('^SPX');
         });
 
+        it('7자 이상 쿼리에서는 지수 검색을 건너뛴다', async () => {
+            await searchTickerAction('TOOLONG');
+            expect(mockSearchBySymbol).not.toHaveBeenCalledWith('^TOOLONG');
+        });
+
+        it('공백이 포함된 쿼리에서는 지수 검색을 건너뛴다', async () => {
+            await searchTickerAction('S P X');
+            expect(mockSearchBySymbol).not.toHaveBeenCalledWith('^S P X');
+        });
+
+        it('^ 로 시작하는 쿼리에서는 지수 검색을 건너뛴다', async () => {
+            await searchTickerAction('^SPX');
+            expect(mockSearchBySymbol).not.toHaveBeenCalledWith('^^SPX');
+        });
+
         it('^ 접두사 검색 결과가 있으면 지수 결과를 포함한다', async () => {
             const indexFmpResult = {
                 symbol: '^SPX',
