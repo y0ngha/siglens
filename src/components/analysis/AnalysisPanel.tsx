@@ -130,16 +130,20 @@ function ActionRecommendationSection({
                 </button>
             </div>
             <div className="flex flex-col gap-2">
-                {ACTION_RECOMMENDATION_FIELDS.map(({ label, key }) => (
-                    <div key={label} className="flex flex-col gap-0.5">
-                        <span className="text-secondary-400 text-xs font-medium">
-                            {label}
-                        </span>
-                        <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
-                            {rec[key]}
-                        </p>
-                    </div>
-                ))}
+                {ACTION_RECOMMENDATION_FIELDS.map(({ label, key }) => {
+                    const value = rec[key];
+                    if (typeof value !== 'string' || value === '') return null;
+                    return (
+                        <div key={label} className="flex flex-col gap-0.5">
+                            <span className="text-secondary-400 text-xs font-medium">
+                                {label}
+                            </span>
+                            <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
+                                {value}
+                            </p>
+                        </div>
+                    );
+                })}
             </div>
         </div>
     );

@@ -2,14 +2,22 @@ import {
     enrichAnalysisWithConfidence,
     filterPatterns,
 } from '@/domain/analysis/confidence';
-import type { RawAnalysisResponse } from '@/domain/types';
+import type {
+    PatternResult,
+    RawAnalysisResponse,
+    Skill,
+    SkillChartDisplay,
+} from '@/domain/types';
+import type {
+    RawPatternSummary,
+    RawStrategyResult,
+} from '@/domain/analysis/normalize';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     MEDIUM_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
-import type { PatternResult, Skill, SkillChartDisplay } from '@/domain/types';
 
 const makeSkillChartDisplay = (
     overrides?: Partial<SkillChartDisplay>
@@ -31,8 +39,8 @@ const makeSkill = (overrides?: Partial<Skill>): Skill => ({
 });
 
 const makePatternSummary = (
-    overrides?: Partial<RawAnalysisResponse['patternSummaries'][number]>
-): RawAnalysisResponse['patternSummaries'][number] => ({
+    overrides?: Partial<RawPatternSummary>
+): RawPatternSummary => ({
     patternName: '테스트 패턴',
     skillName: '테스트 스킬',
     detected: true,
@@ -42,8 +50,8 @@ const makePatternSummary = (
 });
 
 const makeStrategyResult = (
-    overrides?: Partial<RawAnalysisResponse['strategyResults'][number]>
-): RawAnalysisResponse['strategyResults'][number] => ({
+    overrides?: Partial<RawStrategyResult>
+): RawStrategyResult => ({
     strategyName: '테스트 전략',
     trend: 'bullish',
     summary: '테스트 요약',
@@ -522,6 +530,81 @@ describe('confidence', () => {
                 expect(result.actionRecommendation).toEqual(
                     actionRecommendation
                 );
+            });
+        });
+
+        describe('indicatorResults 정규화', () => {
+            it('유효한 indicatorResults 항목이 enriched 결과에 포함된다', () => {
+                const analysis = makeAnalysisResponse({
+                    indicatorResults: [
+                        {
+                            indicatorName: 'RSI',
+                            signals: [
+                                {
+                                    type: 'skill',
+                                    description: '과매수',
+                                    trend: 'bearish',
+                                    strength: 'strong',
+                                },
+                            ],
+                        },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.indicatorResults).toHaveLength(1);
+                expect(result.indicatorResults[0].indicatorName).toBe('RSI');
+                expect(result.indicatorResults[0].signals[0].description).toBe(
+                    '과매수'
+                );
+            });
+
+            it('indicatorName이 없는 항목은 탈락시킨다', () => {
+                const analysis = makeAnalysisResponse({
+                    indicatorResults: [
+                        { signals: [] },
+                        { indicatorName: 'MACD', signals: [] },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.indicatorResults).toHaveLength(1);
+                expect(result.indicatorResults[0].indicatorName).toBe('MACD');
+            });
+        });
+
+        describe('trendlines 정규화', () => {
+            it('유효한 trendline이 enriched 결과에 포함된다', () => {
+                const analysis = makeAnalysisResponse({
+                    trendlines: [
+                        {
+                            direction: 'ascending',
+                            start: { time: 1, price: 100 },
+                            end: { time: 2, price: 200 },
+                        },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.trendlines).toHaveLength(1);
+                expect(result.trendlines[0].direction).toBe('ascending');
+            });
+
+            it('direction이 유효하지 않은 항목은 탈락시킨다', () => {
+                const analysis = makeAnalysisResponse({
+                    trendlines: [
+                        {
+                            direction: 'sideways',
+                            start: { time: 1, price: 100 },
+                            end: { time: 2, price: 200 },
+                        },
+                        {
+                            direction: 'descending',
+                            start: { time: 3, price: 300 },
+                            end: { time: 4, price: 250 },
+                        },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.trendlines).toHaveLength(1);
+                expect(result.trendlines[0].direction).toBe('descending');
             });
         });
     }); // enrichAnalysisWithConfidence

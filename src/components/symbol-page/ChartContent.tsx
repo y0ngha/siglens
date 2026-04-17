@@ -1,7 +1,15 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef } from 'react';
+import {
+    useState,
+    useCallback,
+    useMemo,
+    useRef,
+    useEffect,
+    useEffectEvent,
+} from 'react';
 import type React from 'react';
+import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import {
@@ -22,12 +30,7 @@ import {
 import { useChartSync } from '@/components/chart/hooks/useChartSync';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
-import {
-    MobileAnalysisSheet,
-    SNAP_PEEK,
-    SNAP_HALF,
-    type SnapPoint,
-} from '@/components/symbol-page/MobileAnalysisSheet';
+import { SNAP_PEEK } from '@/components/symbol-page/MobileAnalysisSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 
 const StockChart = dynamic(
@@ -92,6 +95,8 @@ interface ChartContentProps {
     initialAnalysis: AnalysisResponse;
     /** 서버에서 초기 AI 분석이 실패했는지 여부. true이면 마운트 시 자동으로 재분석을 실행한다. */
     initialAnalysisFailed: boolean;
+    /** 모바일 바텀시트에 렌더링할 콘텐츠가 변경될 때 호출된다. Suspense 경계 밖에서 시트를 유지하기 위해 상위로 끌어올린다. */
+    onMobileSheetContent: (content: ReactNode) => void;
 }
 
 export function ChartContent({
@@ -100,9 +105,8 @@ export function ChartContent({
     timeframeChangeCount,
     initialAnalysis,
     initialAnalysisFailed,
+    onMobileSheetContent,
 }: ChartContentProps) {
-    const [sheetSnap, setSheetSnap] = useState<SnapPoint>(SNAP_HALF);
-
     const { bars, indicators } = useBars({ symbol, timeframe });
 
     const {
@@ -248,6 +252,20 @@ export function ChartContent({
         ]
     );
 
+    // MobileAnalysisSheet를 Suspense 경계 밖에서 렌더링하기 위해 콘텐츠를 상위로 전달한다.
+    // Suspense 경계 내에서 직접 렌더링하면 타임프레임 전환 시 바텀시트가 사라진다.
+    //
+    // timeframe을 deps에 포함시키는 이유: React Compiler의 자동 메모이제이션 하에서
+    // analysisContent의 참조가 예상보다 안정적으로 유지되어 effect가 재실행되지 않는
+    // 케이스가 관측되었다. timeframe을 deps에 넣어 타임프레임 전환 시 부모 시트
+    // 콘텐츠 갱신이 확실히 일어나도록 한다.
+    // TODO(#319): MISTAKES.md Predictability 규칙 3 위반(body에서 사용하지 않는 dep)
+    //   임시 워크어라운드. 근본 해결은 analysisContent 메모이제이션 재구성으로 진행 예정.
+    const notifyMobileContent = useEffectEvent(onMobileSheetContent);
+    useEffect(() => {
+        notifyMobileContent(analysisContent);
+    }, [analysisContent, timeframe]);
+
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
             {/* 차트 영역 — 바텀시트는 fixed 오버레이. pb는 SNAP_PEEK 높이만큼 확보해 Peek 시 거래량 차트가 가려지지 않도록 한다 */}
@@ -320,14 +338,6 @@ export function ChartContent({
             >
                 {analysisContent}
             </aside>
-
-            {/* AI 분석 패널 — 모바일 바텀시트 (항상 렌더, Drawer.Content 내부 md:hidden으로 데스크톱에서 숨김) */}
-            <MobileAnalysisSheet
-                activeSnap={sheetSnap}
-                onActiveSnapChange={setSheetSnap}
-            >
-                {analysisContent}
-            </MobileAnalysisSheet>
 
             {/* 드래그 중 전체 화면 오버레이 — 텍스트 선택 방지 */}
             {isDragging && (

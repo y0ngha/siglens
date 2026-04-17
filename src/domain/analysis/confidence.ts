@@ -11,6 +11,21 @@ import type {
     Skill,
     StrategyResult,
 } from '@/domain/types';
+import {
+    asArray,
+    asString,
+    compact,
+    normalizeActionRecommendation,
+    normalizeCandlePatternSummary,
+    normalizeIndicatorGuideResult,
+    normalizeKeyLevels,
+    normalizePatternSummary,
+    normalizePriceTargets,
+    normalizeRiskLevel,
+    normalizeStrategyResult,
+    normalizeTrend,
+    normalizeTrendline,
+} from '@/domain/analysis/normalize';
 
 interface SkillLookup {
     byName: Map<string, Skill>;
@@ -55,10 +70,21 @@ export function enrichAnalysisWithConfidence(
 ): AnalysisResponse {
     const lookup = buildSkillLookup(skills);
 
-    // LLM이 필드를 누락하거나 null로 반환할 수 있으므로 기본값으로 정규화한다.
-    const patternSummaries = raw.patternSummaries ?? [];
-    const strategyResults = raw.strategyResults ?? [];
-    const candlePatterns = raw.candlePatterns ?? [];
+    // 모든 배열 필드를 타입 검증하며 정규화한다.
+    // 잘못된 항목(null 반환)은 탈락시킨다.
+    const patternSummaries = compact(
+        asArray(raw.patternSummaries).map(normalizePatternSummary)
+    );
+    const strategyResults = compact(
+        asArray(raw.strategyResults).map(normalizeStrategyResult)
+    );
+    const candlePatterns = compact(
+        asArray(raw.candlePatterns).map(normalizeCandlePatternSummary)
+    );
+    const indicatorResults = compact(
+        asArray(raw.indicatorResults).map(normalizeIndicatorGuideResult)
+    );
+    const trendlines = compact(asArray(raw.trendlines).map(normalizeTrendline));
 
     const patternSummaryIds = buildUniqueIds(patternSummaries, 'patternName');
     const candlePatternIds = buildUniqueIds(candlePatterns, 'patternName');
@@ -82,21 +108,16 @@ export function enrichAnalysisWithConfidence(
     );
 
     return {
-        summary: raw.summary ?? '',
-        trend: raw.trend ?? 'neutral',
-        indicatorResults: raw.indicatorResults ?? [],
-        riskLevel: raw.riskLevel ?? 'medium',
-        keyLevels: {
-            support: raw.keyLevels?.support ?? [],
-            resistance: raw.keyLevels?.resistance ?? [],
-            poc: raw.keyLevels?.poc ?? undefined,
-        },
-        priceTargets: {
-            bullish: raw.priceTargets?.bullish ?? null,
-            bearish: raw.priceTargets?.bearish ?? null,
-        },
-        trendlines: raw.trendlines ?? [],
-        actionRecommendation: raw.actionRecommendation ?? undefined,
+        summary: asString(raw.summary),
+        trend: normalizeTrend(raw.trend),
+        indicatorResults,
+        riskLevel: normalizeRiskLevel(raw.riskLevel),
+        keyLevels: normalizeKeyLevels(raw.keyLevels),
+        priceTargets: normalizePriceTargets(raw.priceTargets),
+        trendlines,
+        actionRecommendation: normalizeActionRecommendation(
+            raw.actionRecommendation
+        ),
         patternSummaries: filterPatterns(enrichedPatterns),
         strategyResults: strategyResults.map(
             (

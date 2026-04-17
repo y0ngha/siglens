@@ -93,7 +93,8 @@ export function MobileAnalysisSheet({
         // CSS transition을 직접 적용해 애니메이션을 처리한다.
         function snapBack(): void {
             drawerEl.style.transition = `transform 0.5s ${VAUL_EASING}`;
-            drawerEl.style.transform = `translateY(${initialTransformY}px)`;
+            // SNAP_FULL 위치는 항상 translateY(0)이므로 initialTransformY에 의존하지 않는다.
+            drawerEl.style.transform = 'translateY(0px)';
             drawerEl.addEventListener(
                 'transitionend',
                 () => {
@@ -111,9 +112,12 @@ export function MobileAnalysisSheet({
             startedAtTop = scrollEl.scrollTop <= 0;
             isDragging = false;
             if (startedAtTop) {
-                // onActiveSnapChange 호출 시 React가 vaul의 transform을 덮어쓰므로
-                // 이 값을 기준점으로 사용해 연속적인 애니메이션을 구성한다.
+                // 진행 중인 snapBack() 애니메이션을 즉시 중단해 initialTransformY와
+                // 실제 DOM 위치를 동기화한다. 이를 생략하면 애니메이션 중간값이
+                // 기준점으로 캡처되어 반복 스와이프 시 위치가 누적 drift된다.
                 initialTransformY = captureTransformY(drawerEl);
+                drawerEl.style.transition = 'none';
+                drawerEl.style.transform = `translateY(${initialTransformY}px)`;
             }
         }
 
