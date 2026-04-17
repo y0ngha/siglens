@@ -12,7 +12,8 @@ import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 
 export async function submitAnalysisAction(
     symbol: string,
-    timeframe: Timeframe
+    timeframe: Timeframe,
+    force: boolean = false
 ): Promise<SubmitAnalysisResult> {
     // 1. 환경변수 사전 검증
     const workerUrl = process.env.WORKER_URL;
@@ -23,11 +24,11 @@ export async function submitAnalysisAction(
         );
     }
 
-    // 2. 캐시 확인
+    // 2. 캐시 확인 (force: true이면 캐시를 건너뛰고 항상 재분석)
     const cache = createCacheProvider();
     const cacheKey = buildAnalysisCacheKey(symbol, timeframe);
 
-    if (cache !== null) {
+    if (!force && cache !== null) {
         try {
             const cached = await cache.get<RunAnalysisResult>(cacheKey);
             if (cached !== null) {

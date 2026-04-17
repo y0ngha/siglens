@@ -114,7 +114,7 @@ export function useAnalysis({
     } = useMutation<SubmitAnalysisResult, Error, AnalyzeMutationVariables>({
         mutationFn: ({ force, symbol: mutSymbol }) => {
             lastForceRef.current = force;
-            return submitAnalysisAction(mutSymbol, latestTimeframeRef.current);
+            return submitAnalysisAction(mutSymbol, latestTimeframeRef.current, force);
         },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {

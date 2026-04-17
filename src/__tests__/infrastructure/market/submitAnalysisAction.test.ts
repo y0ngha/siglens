@@ -143,6 +143,22 @@ describe('submitAnalysisAction 함수는', () => {
             expect(mockFetchBarsWithIndicators).not.toHaveBeenCalled();
             expect(mockFetch).not.toHaveBeenCalled();
         });
+
+        it('force가 true이면 캐시를 건너뛰고 Worker에 요청을 보낸다', async () => {
+            const result = await submitAnalysisAction(
+                mockSymbol,
+                mockTimeframe,
+                true
+            );
+
+            expect(result.status).toBe('submitted');
+            expect(mockCacheGet).not.toHaveBeenCalled();
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
+                mockSymbol,
+                mockTimeframe
+            );
+            expect(mockFetch).toHaveBeenCalled();
+        });
     });
 
     describe('캐시 미스일 때', () => {
