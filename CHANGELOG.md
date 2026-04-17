@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.8.15](https://github.com/y0ngha/siglens/compare/v0.8.14...v0.8.15) (2026-04-17)
+
+
+### Bug Fixes
+
+* SSR hydration mismatch - MobileAnalysisSheet 렌더링 타이밍 수정 ([23da1ec](https://github.com/y0ngha/siglens/commit/23da1ecd3ea831b2390aaa9039e7c378989c5a78))
+* 모바일 Bottom Sheet 컴포넌트 사라지는 문제 해결 ([7c358bf](https://github.com/y0ngha/siglens/commit/7c358bf179bd8c577a44310cc93e3d93325de961))
+* 모바일 바텀시트 사라짐 문제 근본 해결 ([338c898](https://github.com/y0ngha/siglens/commit/338c898bfed5014c6c2136edbc8463d8f6f5698a))
+
 ## [0.8.14](https://github.com/y0ngha/siglens/compare/v0.8.13...v0.8.14) (2026-04-16)
 
 
