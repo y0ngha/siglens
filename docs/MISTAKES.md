@@ -40,6 +40,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 6. Repeating identical filtering/calculation logic across multiple useEffect/useMemo blocks
    → Extract to useMemo (hooks) or const (regular code)
 
+6.5. State/function/documentation divergence — parts of the system not synchronized when requirements change
+   → When reset() is called, all related state (useState + useMutation) must be reset together
+   → When function implementation changes, all related functions in the same module must use consistent approach
+   → When prompt/instruction fields are updated, all field lists and documentation must stay synchronized
+   ❌ reset() clears useMutation data but leaves separate useState stale
+   ❌ collectMdFiles uses recursion but countSkillFiles uses non-recursive readdir
+   ❌ Prompt field added to first list but omitted from second list in same instruction block
+   ✅ reset() clears both useMutation and all related useState state together
+   ✅ countSkillFiles reuses collectMdFiles for consistency
+   ✅ All field lists synchronized when new fields are added
+
 7. Repeating identical className ternary 3+ times
    → Extract to a helper function
 
