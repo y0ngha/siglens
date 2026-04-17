@@ -34,7 +34,10 @@ export async function analyzeAction(
     }
 
     console.log('[Analysis] Run Analysis:', cacheKey);
-    const { bars, indicators } = await fetchBarsWithIndicators(symbol, timeframe);
+    const { bars, indicators } = await fetchBarsWithIndicators(
+        symbol,
+        timeframe
+    );
     const result = await runAnalysis({ symbol, bars, indicators }, timeframe);
 
     if (cache !== null) {

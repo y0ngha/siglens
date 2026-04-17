@@ -451,7 +451,6 @@ export interface TickerCategory {
     tickers: readonly string[];
 }
 
-
 export interface RunAnalysisInput {
     symbol: string;
     bars: Bar[];

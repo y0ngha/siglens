@@ -131,7 +131,11 @@ describe('analyzeAction 함수는', () => {
                 mockTimeframe
             );
             expect(mockRunAnalysis).toHaveBeenCalledWith(
-                { symbol: mockSymbol, bars: mockBarsData.bars, indicators: mockBarsData.indicators },
+                {
+                    symbol: mockSymbol,
+                    bars: mockBarsData.bars,
+                    indicators: mockBarsData.indicators,
+                },
                 mockTimeframe
             );
             expect(result).toBe(mockResult);
@@ -160,7 +164,11 @@ describe('analyzeAction 함수는', () => {
             const result = await analyzeAction(mockSymbol, mockTimeframe);
 
             expect(mockRunAnalysis).toHaveBeenCalledWith(
-                { symbol: mockSymbol, bars: mockBarsData.bars, indicators: mockBarsData.indicators },
+                {
+                    symbol: mockSymbol,
+                    bars: mockBarsData.bars,
+                    indicators: mockBarsData.indicators,
+                },
                 mockTimeframe
             );
             expect(result).toBe(mockResult);
@@ -208,7 +216,11 @@ describe('analyzeAction 함수는', () => {
                 cacheError
             );
             expect(mockRunAnalysis).toHaveBeenCalledWith(
-                { symbol: mockSymbol, bars: mockBarsData.bars, indicators: mockBarsData.indicators },
+                {
+                    symbol: mockSymbol,
+                    bars: mockBarsData.bars,
+                    indicators: mockBarsData.indicators,
+                },
                 mockTimeframe
             );
             expect(result).toBe(mockResult);

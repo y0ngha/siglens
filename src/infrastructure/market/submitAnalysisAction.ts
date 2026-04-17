@@ -40,7 +40,10 @@ export async function submitAnalysisAction(
     }
 
     // 3. Bars + Indicators 서버 재구성 (barsApi 캐시 워밍 시 추가 API 호출 없음)
-    const { bars, indicators } = await fetchBarsWithIndicators(symbol, timeframe);
+    const { bars, indicators } = await fetchBarsWithIndicators(
+        symbol,
+        timeframe
+    );
 
     // 4. Skills 로딩 + 프롬프트 빌드
     const skillsLoader = new FileSkillsLoader();

@@ -131,7 +131,10 @@ describe('submitAnalysisAction 함수는', () => {
         it('cached 상태와 함께 결과를 반환한다', async () => {
             mockCacheGet.mockResolvedValueOnce(mockResult);
 
-            const result = await submitAnalysisAction(mockSymbol, mockTimeframe);
+            const result = await submitAnalysisAction(
+                mockSymbol,
+                mockTimeframe
+            );
 
             expect(result.status).toBe('cached');
             if (result.status === 'cached') {
@@ -148,7 +151,10 @@ describe('submitAnalysisAction 함수는', () => {
         });
 
         it('fetchBarsWithIndicators를 호출하고 Worker에 요청을 보낸 뒤 jobId를 반환한다', async () => {
-            const result = await submitAnalysisAction(mockSymbol, mockTimeframe);
+            const result = await submitAnalysisAction(
+                mockSymbol,
+                mockTimeframe
+            );
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
                 mockSymbol,
@@ -188,7 +194,10 @@ describe('submitAnalysisAction 함수는', () => {
                 .mockImplementation(() => {});
             mockLoadSkills.mockRejectedValueOnce(new Error('load failed'));
 
-            const result = await submitAnalysisAction(mockSymbol, mockTimeframe);
+            const result = await submitAnalysisAction(
+                mockSymbol,
+                mockTimeframe
+            );
 
             expect(result.status).toBe('submitted');
             expect(mockFetch).toHaveBeenCalled();
@@ -200,7 +209,10 @@ describe('submitAnalysisAction 함수는', () => {
         it('캐시 조회를 건너뛰고 Worker에 요청을 보낸다', async () => {
             mockCreateCacheProvider.mockReturnValue(null);
 
-            const result = await submitAnalysisAction(mockSymbol, mockTimeframe);
+            const result = await submitAnalysisAction(
+                mockSymbol,
+                mockTimeframe
+            );
 
             expect(result.status).toBe('submitted');
             expect(mockCacheGet).not.toHaveBeenCalled();
