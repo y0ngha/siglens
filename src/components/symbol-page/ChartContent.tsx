@@ -122,8 +122,6 @@ export function ChartContent({
         initialAnalysis,
         initialAnalysisFailed,
         timeframeChangeCount,
-        bars,
-        indicators,
     });
 
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =

@@ -10,9 +10,6 @@ import {
 } from 'react';
 import type {
     AnalysisResponse,
-    AnalyzeVariables,
-    Bar,
-    IndicatorResult,
     Timeframe,
     SubmitAnalysisResult,
 } from '@/domain/types';
@@ -27,7 +24,8 @@ import {
 } from '@/infrastructure/market/reanalyzeCooldown';
 import { sleep } from '@/components/symbol-page/utils/sleep';
 
-interface AnalyzeMutationVariables extends AnalyzeVariables {
+interface AnalyzeMutationVariables {
+    symbol: string;
     force: boolean;
 }
 
@@ -56,10 +54,6 @@ interface UseAnalysisOptions {
      * 0이면 초기 마운트, 1 이상이면 타임프레임 변경으로 인한 마운트다.
      */
     timeframeChangeCount: number;
-    /** latestRef를 통해 handleReanalyze 호출 시 최신 값을 읽기 위한 채널 */
-    bars: Bar[];
-    /** latestRef를 통해 handleReanalyze 호출 시 최신 값을 읽기 위한 채널 */
-    indicators: IndicatorResult;
 }
 
 /**
@@ -88,8 +82,6 @@ export function useAnalysis({
     initialAnalysis,
     initialAnalysisFailed,
     timeframeChangeCount,
-    bars,
-    indicators,
 }: UseAnalysisOptions): UseAnalysisResult {
     // 1. useState
     const [analysisResult, setAnalysisResult] =
@@ -102,7 +94,7 @@ export function useAnalysis({
     const [pollError, setPollError] = useState<string | null>(null);
 
     // 2. useRef
-    const latestRef = useRef<AnalyzeVariables>({ symbol, bars, indicators });
+    const latestRef = useRef<{ symbol: string }>({ symbol });
     const latestTimeframeRef = useRef<Timeframe>(timeframe);
     const prevTimeframeChangeCountRef = useRef(0);
     // 현재 진행 중인 워커 job ID. 타임프레임 변경 시 취소 신호 전달에 사용.
@@ -120,10 +112,10 @@ export function useAnalysis({
         reset,
         mutate,
     } = useMutation<SubmitAnalysisResult, Error, AnalyzeMutationVariables>({
-        mutationFn: ({ force, ...analyzeVars }) => {
+        mutationFn: ({ force, symbol: mutSymbol }) => {
             lastForceRef.current = force;
             return submitAnalysisAction(
-                analyzeVars,
+                mutSymbol,
                 latestTimeframeRef.current
             );
         },
@@ -142,10 +134,10 @@ export function useAnalysis({
                 // polling 완료(done) 시에만 쿨다운을 시작한다.
             }
         },
-        onError: (_error, variables) => {
-            if (!variables.force) return;
+        onError: (_error, { force, symbol: mutSymbol }) => {
+            if (!force) return;
             void releaseReanalyzeCooldown(
-                variables.symbol,
+                mutSymbol,
                 latestTimeframeRef.current
             );
             setReanalyzeCooldownMs(0);
@@ -160,13 +152,13 @@ export function useAnalysis({
     const isCountdownActive = reanalyzeCooldownMs > 0;
 
     // 5. Handlers
-    // latestRef 패턴을 사용하므로 symbol·bars·indicators를 deps에서 제외하고 안정적인 함수 참조를 유지한다.
+    // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
     // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
     const handleReanalyze = useCallback((): void => {
-        const vars = latestRef.current;
+        const { symbol: latestSymbol } = latestRef.current;
         const tf = latestTimeframeRef.current;
         void (async () => {
-            const acquire = await tryAcquireReanalyzeCooldown(vars.symbol, tf);
+            const acquire = await tryAcquireReanalyzeCooldown(latestSymbol, tf);
             if (!acquire.ok) {
                 setReanalyzeCooldownMs(acquire.remainingMs);
                 setCooldownNotice({
@@ -178,15 +170,15 @@ export function useAnalysis({
             reset();
             setPollError(null);
             setAnalysisResult(null);
-            mutate({ ...vars, force: true });
+            mutate({ symbol: latestSymbol, force: true });
         })();
     }, [reset, mutate]);
 
     // 6. useLayoutEffect
-    // symbol, bars, indicators, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
+    // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
     useLayoutEffect(() => {
-        latestRef.current = { symbol, bars, indicators };
+        latestRef.current = { symbol };
         latestTimeframeRef.current = timeframe;
     });
 
@@ -270,8 +262,7 @@ export function useAnalysis({
     // 서버에서 초기 AI 분석이 실패한 경우 마운트 직후 자동으로 재분석을 실행한다.
     useEffect(() => {
         if (!initialAnalysisFailedRef.current) return;
-        if (latestRef.current.bars.length === 0) return;
-        mutate({ ...latestRef.current, force: false });
+        mutate({ symbol: latestRef.current.symbol, force: false });
     }, [mutate]);
 
     // 타임프레임 변경 시 진행 중인 워커 작업을 취소하고, 이전 mutation 상태를 초기화한 뒤 새 분석을 자동 실행한다.
@@ -291,8 +282,7 @@ export function useAnalysis({
         reset();
         setPollError(null);
         setAnalysisResult(null);
-        if (latestRef.current.bars.length === 0) return;
-        mutate({ ...latestRef.current, force: false });
+        mutate({ symbol: latestRef.current.symbol, force: false });
     }, [timeframeChangeCount, reset, mutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
