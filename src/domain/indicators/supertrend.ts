@@ -11,11 +11,6 @@ interface SupertrendState {
     trend: PriceTrend;
 }
 
-interface SupertrendReduceAcc {
-    state: SupertrendState;
-    results: SupertrendResult[];
-}
-
 const NULL_RESULT: SupertrendResult = { supertrend: null, trend: null };
 
 export function calculateSupertrend(
@@ -48,54 +43,45 @@ export function calculateSupertrend(
         trend: initialState.trend,
     };
 
-    const { results } = bars
-        .slice(firstValidIdx + 1)
-        .reduce<SupertrendReduceAcc>(
-            (acc, bar, i) => {
-                const idx = firstValidIdx + 1 + i;
-                const atr = atrValues[idx]!;
-                const currentHL2 = (bar.high + bar.low) / 2;
-                const basicUpperBand = currentHL2 + multiplier * atr;
-                const basicLowerBand = currentHL2 - multiplier * atr;
-                const prevClose = bars[idx - 1].close;
+    const results: SupertrendResult[] = new Array(bars.length);
+    for (let i = 0; i < firstValidIdx; i++) results[i] = NULL_RESULT;
+    results[firstValidIdx] = firstResult;
+    let stState = initialState;
+    for (let i = firstValidIdx + 1; i < bars.length; i++) {
+        const bar = bars[i];
+        const atr = atrValues[i]!;
+        const currentHL2 = (bar.high + bar.low) / 2;
+        const basicUpperBand = currentHL2 + multiplier * atr;
+        const basicLowerBand = currentHL2 - multiplier * atr;
+        const prevClose = bars[i - 1].close;
 
-                const finalUpperBand =
-                    basicUpperBand < acc.state.finalUpperBand ||
-                    prevClose > acc.state.finalUpperBand
-                        ? basicUpperBand
-                        : acc.state.finalUpperBand;
+        const finalUpperBand =
+            basicUpperBand < stState.finalUpperBand ||
+            prevClose > stState.finalUpperBand
+                ? basicUpperBand
+                : stState.finalUpperBand;
 
-                const finalLowerBand =
-                    basicLowerBand > acc.state.finalLowerBand ||
-                    prevClose < acc.state.finalLowerBand
-                        ? basicLowerBand
-                        : acc.state.finalLowerBand;
+        const finalLowerBand =
+            basicLowerBand > stState.finalLowerBand ||
+            prevClose < stState.finalLowerBand
+                ? basicLowerBand
+                : stState.finalLowerBand;
 
-                const trend: PriceTrend =
-                    acc.state.trend === 'up'
-                        ? bar.close < finalLowerBand
-                            ? 'down'
-                            : 'up'
-                        : bar.close > finalUpperBand
-                          ? 'up'
-                          : 'down';
+        const trend: PriceTrend =
+            stState.trend === 'up'
+                ? bar.close < finalLowerBand
+                    ? 'down'
+                    : 'up'
+                : bar.close > finalUpperBand
+                  ? 'up'
+                  : 'down';
 
-                const supertrend =
-                    trend === 'up' ? finalLowerBand : finalUpperBand;
-
-                return {
-                    state: { finalUpperBand, finalLowerBand, trend },
-                    results: [...acc.results, { supertrend, trend }],
-                };
-            },
-            {
-                state: initialState,
-                results: [
-                    ...new Array(firstValidIdx).fill(NULL_RESULT),
-                    firstResult,
-                ],
-            }
-        );
+        results[i] = {
+            supertrend: trend === 'up' ? finalLowerBand : finalUpperBand,
+            trend,
+        };
+        stState = { finalUpperBand, finalLowerBand, trend };
+    }
 
     return results;
 }

@@ -52,20 +52,18 @@ export function calculateDMI(
     );
 
     // smoothedValues[k] corresponds to bars[k + period]
-    const smoothedValues = raws.slice(period).reduce<SmoothedDM[]>(
-        (acc, r) => {
-            const prev = acc[acc.length - 1];
-            return [
-                ...acc,
-                {
-                    tr: prev.tr - prev.tr / period + r.tr,
-                    dmPlus: prev.dmPlus - prev.dmPlus / period + r.dmPlus,
-                    dmMinus: prev.dmMinus - prev.dmMinus / period + r.dmMinus,
-                },
-            ];
-        },
-        [firstSmoothed]
-    );
+    const tailRaws = raws.slice(period);
+    const smoothedValues: SmoothedDM[] = new Array(tailRaws.length + 1);
+    smoothedValues[0] = firstSmoothed;
+    for (let i = 0; i < tailRaws.length; i++) {
+        const prev = smoothedValues[i];
+        const r = tailRaws[i];
+        smoothedValues[i + 1] = {
+            tr: prev.tr - prev.tr / period + r.tr,
+            dmPlus: prev.dmPlus - prev.dmPlus / period + r.dmPlus,
+            dmMinus: prev.dmMinus - prev.dmMinus / period + r.dmMinus,
+        };
+    }
 
     // Compute +DI, -DI, DX for each smoothed value
     const diValues = smoothedValues.map(s => {
@@ -82,13 +80,13 @@ export function calculateDMI(
     const firstADX =
         diValues.slice(0, period).reduce((sum, v) => sum + v.dx, 0) / period;
 
-    const adxValues = diValues.slice(period).reduce<number[]>(
-        (acc, v) => {
-            const prev = acc[acc.length - 1];
-            return [...acc, (prev * (period - 1) + v.dx) / period];
-        },
-        [firstADX]
-    );
+    const tailDiValues = diValues.slice(period);
+    const adxValues: number[] = new Array(tailDiValues.length + 1);
+    adxValues[0] = firstADX;
+    for (let i = 0; i < tailDiValues.length; i++) {
+        adxValues[i + 1] =
+            (adxValues[i] * (period - 1) + tailDiValues[i].dx) / period;
+    }
 
     return bars.map((_, i) => {
         if (i < 2 * period - 1) return nullResult;

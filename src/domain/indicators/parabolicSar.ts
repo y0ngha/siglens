@@ -19,12 +19,6 @@ interface PSARNextStateResult {
     result: ParabolicSARResult;
 }
 
-interface PSARReduceAcc {
-    state: PSARState;
-    results: ParabolicSARResult[];
-    prevBars: [Bar, Bar];
-}
-
 function nextState(
     bar: Bar,
     prev: PSARState,
@@ -110,27 +104,23 @@ export function calculateParabolicSAR(
         trend: initialTrend,
     };
 
-    const { results } = bars.slice(2).reduce<PSARReduceAcc>(
-        (acc, bar) => {
-            const { state, result } = nextState(
-                bar,
-                acc.state,
-                acc.prevBars,
-                afIncrement,
-                afMax
-            );
-            return {
-                state,
-                results: [...acc.results, result],
-                prevBars: [acc.prevBars[1], bar],
-            };
-        },
-        {
-            state: initialState,
-            results: [NULL_RESULT, initialResult],
-            prevBars: [bars[0], bars[1]],
-        }
-    );
+    const results: ParabolicSARResult[] = new Array(bars.length);
+    results[0] = NULL_RESULT;
+    results[1] = initialResult;
+    let psarState = initialState;
+    let prevBars: [Bar, Bar] = [bars[0], bars[1]];
+    for (let i = 2; i < bars.length; i++) {
+        const { state, result } = nextState(
+            bars[i],
+            psarState,
+            prevBars,
+            afIncrement,
+            afMax
+        );
+        results[i] = result;
+        psarState = state;
+        prevBars = [prevBars[1], bars[i]];
+    }
 
     return results;
 }
