@@ -151,6 +151,25 @@ Violations trigger ESLint errors. PRs cannot be merged.
 
 ---
 
+## Skill Usage Rules
+
+Invoke the listed skills **before** writing code in each category. Do not skip.
+
+| Situation | Skills to invoke (in order)                               |
+|---|-----------------------------------------------------------|
+| New feature (any kind) | `brainstorming` first — no exceptions                     |
+| UI component / page implementation | `frontend-design` → `web-design-guidelines` → `seo-audit` |
+| React / Next.js code | `vercel-react-best-practices` → `next-cache-components`   |
+| Pure functions / business logic / TypeScript types | `typescript-advanced-types`, `typescript-expert`                             |
+
+**Rules:**
+- `brainstorming` is mandatory before any new feature, regardless of size.
+- UI skills apply whenever a `.tsx` component or page is being created or significantly modified.
+- React/Next.js skills apply whenever you write hooks, RSC, route handlers, or data-fetching logic.
+- TypeScript skills apply whenever you define types, generics, or domain-layer pure functions.
+
+---
+
 ## Task Execution Rules
 
 1. Read the relevant `docs/` documents before starting any task.
