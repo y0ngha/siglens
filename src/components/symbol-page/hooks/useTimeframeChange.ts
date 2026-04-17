@@ -23,11 +23,12 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
     const [, startTransition] = useTransition();
 
     const searchParams = useSearchParams();
-    const tf = searchParams.get(TIMEFRAME_QUERY_PARAM);
     const assetInfo = useAssetInfo(symbol);
-    const timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
     const queryClient = useQueryClient();
     const router = useRouter();
+
+    const tf = searchParams.get(TIMEFRAME_QUERY_PARAM);
+    const timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
 
     const handleTimeframeChange = useCallback(
         (nextTimeframe: Timeframe): void => {

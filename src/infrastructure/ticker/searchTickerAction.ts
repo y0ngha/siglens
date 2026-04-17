@@ -94,7 +94,9 @@ export async function searchTickerAction(
 
     const merged = deduplicateResults([
         // 지수 심볼 우선 (사용자가 'SPX' 입력 시 주식 부분 일치보다 지수를 먼저 노출)
+        // FMP가 일반 심볼 검색 결과에 ^ 접두사 심볼을 함께 반환하는 경우를 처리
         ...filterIndexResults(symbolResults).map(toIndexTickerResult),
+        // ^{trimmed} 직접 검색 결과 (심볼 직접 입력 시)
         ...filterIndexResults(indexResults).map(toIndexTickerResult),
         ...filterUsExchanges(symbolResults).map(toTickerSearchResult),
         ...filterUsExchanges(nameResults).map(toTickerSearchResult),
