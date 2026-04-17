@@ -2,14 +2,23 @@ import {
     enrichAnalysisWithConfidence,
     filterPatterns,
 } from '@/domain/analysis/confidence';
-import type { RawAnalysisResponse } from '@/domain/types';
+import type {
+    PatternResult,
+    PatternSummary,
+    RawAnalysisResponse,
+    Skill,
+    SkillChartDisplay,
+    StrategyResult,
+} from '@/domain/types';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     MEDIUM_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
-import type { PatternResult, Skill, SkillChartDisplay } from '@/domain/types';
+
+type RawPatternSummary = Omit<PatternSummary, 'confidenceWeight' | 'id'>;
+type RawStrategyResult = Omit<StrategyResult, 'confidenceWeight' | 'id'>;
 
 const makeSkillChartDisplay = (
     overrides?: Partial<SkillChartDisplay>
@@ -31,8 +40,8 @@ const makeSkill = (overrides?: Partial<Skill>): Skill => ({
 });
 
 const makePatternSummary = (
-    overrides?: Partial<RawAnalysisResponse['patternSummaries'][number]>
-): RawAnalysisResponse['patternSummaries'][number] => ({
+    overrides?: Partial<RawPatternSummary>
+): RawPatternSummary => ({
     patternName: '테스트 패턴',
     skillName: '테스트 스킬',
     detected: true,
@@ -42,8 +51,8 @@ const makePatternSummary = (
 });
 
 const makeStrategyResult = (
-    overrides?: Partial<RawAnalysisResponse['strategyResults'][number]>
-): RawAnalysisResponse['strategyResults'][number] => ({
+    overrides?: Partial<RawStrategyResult>
+): RawStrategyResult => ({
     strategyName: '테스트 전략',
     trend: 'bullish',
     summary: '테스트 요약',

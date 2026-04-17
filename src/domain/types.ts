@@ -461,29 +461,23 @@ export interface AnalyzeVariables {
  * LLM이 반환하는 원시 분석 응답.
  *
  * 프롬프트에서는 모든 필드를 required로 요청하지만,
- * LLM 특성상 어떤 필드도 누락되거나 null로 반환될 수 있다.
- * {@link enrichAnalysisWithConfidence} 에서 누락 필드를 기본값으로
- * 정규화한 후 {@link AnalysisResponse} 로 변환된다.
+ * LLM 특성상 누락·null 반환뿐 아니라 잘못된 타입(예: string 필드에 객체)으로
+ * 반환되는 케이스까지 관측된다. 따라서 모든 필드를 unknown으로 받아
+ * {@link enrichAnalysisWithConfidence}에서 런타임 정규화한 뒤
+ * {@link AnalysisResponse}로 변환한다.
  */
 export interface RawAnalysisResponse {
-    summary?: string | null;
-    trend?: Trend | null;
-    indicatorResults?: IndicatorGuideResult[] | null;
-    riskLevel?: RiskLevel | null;
-    keyLevels?: {
-        support?: KeyLevel[] | null;
-        resistance?: KeyLevel[] | null;
-        poc?: KeyLevel | null;
-    } | null;
-    priceTargets?: {
-        bullish?: PriceScenario | null;
-        bearish?: PriceScenario | null;
-    } | null;
-    patternSummaries?: Omit<PatternSummary, 'confidenceWeight' | 'id'>[] | null;
-    strategyResults?: Omit<StrategyResult, 'confidenceWeight' | 'id'>[] | null;
-    candlePatterns?: Omit<CandlePatternSummary, 'id'>[] | null;
-    trendlines?: Trendline[] | null;
-    actionRecommendation?: ActionRecommendation | null;
+    summary?: unknown;
+    trend?: unknown;
+    indicatorResults?: unknown;
+    riskLevel?: unknown;
+    keyLevels?: unknown;
+    priceTargets?: unknown;
+    patternSummaries?: unknown;
+    strategyResults?: unknown;
+    candlePatterns?: unknown;
+    trendlines?: unknown;
+    actionRecommendation?: unknown;
 }
 
 // --- Job Result Types (submit + poll 패턴) ---
