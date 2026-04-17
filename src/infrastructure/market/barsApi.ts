@@ -44,5 +44,9 @@ export async function fetchBarsWithIndicators(
     fmpSymbol?: string
 ): Promise<BarsData> {
     const fromDay = computeFromDay(timeframe, new Date());
-    return fetchBarsWithIndicatorsCached(fmpSymbol ?? symbol, timeframe, fromDay);
+    return fetchBarsWithIndicatorsCached(
+        fmpSymbol ?? symbol,
+        timeframe,
+        fromDay
+    );
 }
