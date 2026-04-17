@@ -4,21 +4,20 @@ import {
 } from '@/domain/analysis/confidence';
 import type {
     PatternResult,
-    PatternSummary,
     RawAnalysisResponse,
     Skill,
     SkillChartDisplay,
-    StrategyResult,
 } from '@/domain/types';
+import type {
+    RawPatternSummary,
+    RawStrategyResult,
+} from '@/domain/analysis/normalize';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     MEDIUM_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
     UNMATCHED_SKILL_CONFIDENCE_WEIGHT,
 } from '@/domain/indicators/constants';
-
-type RawPatternSummary = Omit<PatternSummary, 'confidenceWeight' | 'id'>;
-type RawStrategyResult = Omit<StrategyResult, 'confidenceWeight' | 'id'>;
 
 const makeSkillChartDisplay = (
     overrides?: Partial<SkillChartDisplay>

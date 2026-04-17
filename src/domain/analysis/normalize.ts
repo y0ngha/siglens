@@ -81,6 +81,11 @@ export function compact<T>(xs: (T | null)[]): T[] {
     return xs.filter((x): x is T => x !== null);
 }
 
+function normalizeNumberArray(v: unknown): number[] | undefined {
+    if (!Array.isArray(v)) return undefined;
+    return v.map(asNumber).filter((p): p is number => p !== undefined);
+}
+
 // --- enum 래퍼 ---
 
 export function normalizeTrend(v: unknown): Trend {
@@ -205,7 +210,7 @@ export function normalizeTimeRange(
     return { start, end };
 }
 
-type RawPatternSummary = Omit<PatternSummary, 'confidenceWeight' | 'id'>;
+export type RawPatternSummary = Omit<PatternSummary, 'confidenceWeight' | 'id'>;
 
 export function normalizePatternSummary(v: unknown): RawPatternSummary | null {
     const o = asObject(v);
@@ -233,7 +238,7 @@ export function normalizePatternSummary(v: unknown): RawPatternSummary | null {
     };
 }
 
-type RawStrategyResult = Omit<StrategyResult, 'confidenceWeight' | 'id'>;
+export type RawStrategyResult = Omit<StrategyResult, 'confidenceWeight' | 'id'>;
 
 export function normalizeStrategyResult(v: unknown): RawStrategyResult | null {
     const o = asObject(v);
@@ -289,18 +294,10 @@ export function normalizeActionRecommendation(
     const exit = asString(o.exit);
     const riskReward = asString(o.riskReward);
 
+    // LLM이 텍스트 설명 없이 숫자 필드만 반환하는 케이스는 프롬프트 구조상 발생하지
+    // 않으므로, 텍스트 4개 필드를 추천 존재 여부의 대표 신호로 사용한다.
+    // 모두 비어 있으면 숫자 필드가 있더라도 추천 자체가 없는 것으로 간주한다.
     if (!positionAnalysis && !entry && !exit && !riskReward) return undefined;
-
-    const entryPrices = Array.isArray(o.entryPrices)
-        ? o.entryPrices
-              .map(asNumber)
-              .filter((p): p is number => p !== undefined)
-        : undefined;
-    const takeProfitPrices = Array.isArray(o.takeProfitPrices)
-        ? o.takeProfitPrices
-              .map(asNumber)
-              .filter((p): p is number => p !== undefined)
-        : undefined;
 
     return {
         positionAnalysis,
@@ -311,8 +308,8 @@ export function normalizeActionRecommendation(
             o.entryRecommendation,
             VALID_ENTRY_RECOMMENDATIONS
         ),
-        entryPrices,
+        entryPrices: normalizeNumberArray(o.entryPrices),
         stopLoss: asNumber(o.stopLoss),
-        takeProfitPrices,
+        takeProfitPrices: normalizeNumberArray(o.takeProfitPrices),
     };
 }
