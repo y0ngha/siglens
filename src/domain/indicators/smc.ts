@@ -389,6 +389,14 @@ function findEqualLevels(
 
 // ─── Premium / Discount / Equilibrium zones ───────────────────────────────────
 
+// detectZones 가 사용하는 내부 range 표현. 외부에 노출되지 않는 구현 전용
+// 타입이므로 domain/types.ts 가 아닌 본 파일에 둔다 (indicator 결과 타입만
+// types.ts 에 배치하는 ARCHITECTURE.md 규칙에 부합).
+interface ZoneRange {
+    top: number;
+    bottom: number;
+}
+
 /**
  * Resolve the structural range used to compute Premium/Discount/Equilibrium
  * zones. ICT-style SMC reads the "current range" relative to the most recent
@@ -411,7 +419,7 @@ function resolveZoneRange(
     swingHighs: SMCSwingPoint[],
     swingLows: SMCSwingPoint[],
     structureBreaks: SMCStructureBreak[]
-): { top: number; bottom: number } | null {
+): ZoneRange | null {
     const lastBreak = structureBreaks[structureBreaks.length - 1];
 
     if (lastBreak === undefined) {

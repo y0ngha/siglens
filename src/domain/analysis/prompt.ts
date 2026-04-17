@@ -80,7 +80,10 @@ interface PromptConfig {
     squeezeZeroCrossLookback: number;
 }
 
-const TREND_SAMPLE_COUNT_BY_TIMEFRAME: Record<Timeframe, number> = {
+// 타임프레임별 프롬프트 파라미터 맵. 테스트 및 외부 호출자가 동일 값을
+// 참조할 수 있도록 export 한다 (MISTAKES.md Tests #4/#13: boundary constant
+// 는 소스에서 import, 하드코딩 금지).
+export const TREND_SAMPLE_COUNT_BY_TIMEFRAME: Record<Timeframe, number> = {
     '5Min': 12,
     '15Min': 10,
     '30Min': 9,
@@ -89,7 +92,7 @@ const TREND_SAMPLE_COUNT_BY_TIMEFRAME: Record<Timeframe, number> = {
     '1Day': 7,
 };
 
-const RECENT_BARS_COUNT_BY_TIMEFRAME: Record<Timeframe, number> = {
+export const RECENT_BARS_COUNT_BY_TIMEFRAME: Record<Timeframe, number> = {
     '5Min': 48,
     '15Min': 40,
     '30Min': 36,
@@ -98,7 +101,10 @@ const RECENT_BARS_COUNT_BY_TIMEFRAME: Record<Timeframe, number> = {
     '1Day': 30,
 };
 
-const SQUEEZE_ZERO_CROSS_LOOKBACK_BY_TIMEFRAME: Record<Timeframe, number> = {
+export const SQUEEZE_ZERO_CROSS_LOOKBACK_BY_TIMEFRAME: Record<
+    Timeframe,
+    number
+> = {
     '5Min': 24,
     '15Min': 18,
     '30Min': 14,

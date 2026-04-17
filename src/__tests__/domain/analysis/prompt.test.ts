@@ -1,4 +1,7 @@
-import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
+import {
+    buildAnalysisPrompt,
+    RECENT_BARS_COUNT_BY_TIMEFRAME,
+} from '@/domain/analysis/prompt';
 import { CANDLE_PATTERN_DETECTION_BARS } from '@/domain/analysis/candle-detection';
 import {
     HIGH_CONFIDENCE_WEIGHT,
@@ -3388,10 +3391,15 @@ describe('prompt', () => {
     });
 
     describe('타임프레임별 프롬프트 파라미터', () => {
-        // 60봉을 만들어 모든 타임프레임의 recentBarsCount 상한(48)을 초과하도록 한다.
-        const bars = Array.from({ length: 60 }, (_, i) => makeBar(i));
+        // 모든 타임프레임의 recentBarsCount 상한을 초과하도록 충분히 많은 봉을 만든다.
+        const maxRecentBars = Math.max(
+            ...Object.values(RECENT_BARS_COUNT_BY_TIMEFRAME)
+        );
+        const bars = Array.from({ length: maxRecentBars + 10 }, (_, i) =>
+            makeBar(i)
+        );
 
-        it('5Min 타임프레임에서는 최근 48봉을 표시한다', () => {
+        it('5Min 타임프레임에서는 해당 타임프레임의 recentBarsCount만큼 표시한다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
@@ -3399,10 +3407,12 @@ describe('prompt', () => {
                 [],
                 '5Min'
             );
-            expect(result).toContain('## Recent Bar Data (Last 48 bars)');
+            expect(result).toContain(
+                `## Recent Bar Data (Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['5Min']} bars)`
+            );
         });
 
-        it('1Day 타임프레임에서는 최근 30봉을 표시한다', () => {
+        it('1Day 타임프레임에서는 해당 타임프레임의 recentBarsCount만큼 표시한다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
@@ -3410,10 +3420,12 @@ describe('prompt', () => {
                 [],
                 '1Day'
             );
-            expect(result).toContain('## Recent Bar Data (Last 30 bars)');
+            expect(result).toContain(
+                `## Recent Bar Data (Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['1Day']} bars)`
+            );
         });
 
-        it('1Hour 타임프레임에서는 최근 32봉을 표시한다', () => {
+        it('1Hour 타임프레임에서는 해당 타임프레임의 recentBarsCount만큼 표시한다', () => {
             const result = buildAnalysisPrompt(
                 TEST_SYMBOL,
                 bars,
@@ -3421,11 +3433,13 @@ describe('prompt', () => {
                 [],
                 '1Hour'
             );
-            expect(result).toContain('## Recent Bar Data (Last 32 bars)');
+            expect(result).toContain(
+                `## Recent Bar Data (Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['1Hour']} bars)`
+            );
         });
 
         it('buy/sell volume 누적 구간도 타임프레임별 recentBarsCount를 따른다', () => {
-            const buySellVolume = Array.from({ length: 60 }, () => ({
+            const buySellVolume = Array.from({ length: bars.length }, () => ({
                 buyVolume: 1000,
                 sellVolume: 500,
             }));
@@ -3443,8 +3457,12 @@ describe('prompt', () => {
                 [],
                 '1Day'
             );
-            expect(result5Min).toContain('Last 48-bar cumulative');
-            expect(result1Day).toContain('Last 30-bar cumulative');
+            expect(result5Min).toContain(
+                `Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['5Min']}-bar cumulative`
+            );
+            expect(result1Day).toContain(
+                `Last ${RECENT_BARS_COUNT_BY_TIMEFRAME['1Day']}-bar cumulative`
+            );
         });
     });
 });
