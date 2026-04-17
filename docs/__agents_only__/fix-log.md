@@ -32,11 +32,6 @@
 - Rule: CONVENTIONS.md — No inline styles → Tailwind only; `block` 클래스를 사용해야 함
 - Context: AdSense `<ins>` 태그에 `display: block`을 적용하기 위해 인라인 스타일을 사용했으나, Tailwind의 `block` 클래스로 대체 가능
 
-## [Issue #211 | feat/211/타임프레임-확장-5분-15분-30분-1시간-4시간 | 2026-04-15]
-- Violation: docs/API.md의 FMP 타임프레임 매핑 테이블과 Alpaca timeframe 파라미터 설명이 신규 타임프레임(30Min, 4Hour) 추가 후 업데이트되지 않음
-- Rule: ISSUE_IMPL_FLOW.md 1-5 Documentation updates — External API usage changed → docs/API.md 업데이트 필수
-- Context: FMP_INTRADAY_TIMEFRAME_MAP에 30min/4hour를 추가했으나 docs/API.md의 Timeframe 매핑 테이블과 Alpaca 파라미터 설명이 구 목록(1Min~1Hour)을 그대로 유지; 두 곳 모두 신규 타임프레임 추가로 업데이트
-
 ## [PR #304 Round 2 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `computeSecondsUntilKst17`에서 `0 < diffMs < 1000ms` 경계(서브초 구간)에서 `Math.max(1, 0) = 1` 반환 경로에 대한 테스트 누락
 - Rule: Infrastructure Layer Checklist — 100% branch coverage for infrastructure (all ?., ??, if/else paths)
@@ -46,11 +41,6 @@
 - Violation: `computeEffectiveTtl`이 `new Date()`에 의존함에도 `analyzeAction.test.ts`, `pollAnalysisAction.test.ts`에서 mock 없이 하드코딩 TTL 단언 — 시간대에 따라 flaky 테스트 발생
 - Rule: Test Layer Rules — 외부/시간 의존 함수는 테스트에서 반드시 mock해야 함
 - Context: `analyzeAction`, `pollAnalysisAction`이 `computeEffectiveTtl(timeframe, new Date())`를 호출하도록 변경됐으나, 기존 테스트는 TTL을 86400/300/3600으로 하드코딩 단언; `jest.mock('@/infrastructure/cache/config', ...)` 추가하여 해결
-
-## [PR #303 | feat/297/매매전략-롱-포지션만-표시 | 2026-04-14]
-- Violation: 전략 문서에서 숏 관련 섹션을 부분적으로만 제거하여 롱 전용 지시사항과 불일치 발생
-- Rule: Documentation Sync — Skill document metadata and body content out of sync; AI instructions must reflect the system's actual capabilities
-- Context: macd-cycle.md의 Short Entry Timing 섹션(69-73행)과 wyckoff.md의 Short Entry(Distribution) 섹션(106-111행)이 AI instructions에서 숏 신호를 제외한 후에도 남아 있었음
 
 ## [PR #300 | fix/299/mobile-bottom-sheet-native-ux | 2026-04-14]
 - Violation: `useEffect` cleanup에서 직접 조작한 DOM 스타일(`transform`, `transition`) 미초기화
