@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #326 | feat/325/지수-심볼-지원 | 2026-04-17]
+- Violation: `useAssetInfo(symbol)` (`useQuery`)가 파생 변수 `timeframe` 이후에 선언됨
+- Rule: CONVENTIONS.md — Custom Hook 선언 순서: useState → useRef → useQuery/useMutation → 파생 변수 → 핸들러 → useEffect
+- Context: `useTimeframeChange.ts`에서 `const timeframe = ...` (파생 변수) 뒤에 `useAssetInfo` 호출이 위치
+
+- Violation: `toIndexResult` 인라인 함수가 `searchTickerAction` 함수 내부에 정의됨
+- Rule: CONVENTIONS.md — 중첩 함수는 명시적 파라미터와 함께 모듈 레벨로 추출
+- Context: `searchTickerAction` 함수 내에 `toIndexResult` 화살표 함수를 인라인으로 정의했으나 모듈 레벨 `toIndexTickerResult`로 추출해야 함
+
 ## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
 - Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
 - Rule: Next.js Best Practices — `next/script`는 `<body>` 영역에 배치해야 함; `lazyOnload`는 브라우저 유휴 시점 실행이므로 `<head>` 배치가 의미상 부적절
@@ -27,11 +36,6 @@
 - Violation: AdBanner.tsx의 `<ins>` 엘리먼트에 `style={{ display: 'block' }}` 인라인 스타일 사용
 - Rule: CONVENTIONS.md — No inline styles → Tailwind only; `block` 클래스를 사용해야 함
 - Context: AdSense `<ins>` 태그에 `display: block`을 적용하기 위해 인라인 스타일을 사용했으나, Tailwind의 `block` 클래스로 대체 가능
-
-## [PR #304 Round 2 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
-- Violation: `computeSecondsUntilKst17`에서 `0 < diffMs < 1000ms` 경계(서브초 구간)에서 `Math.max(1, 0) = 1` 반환 경로에 대한 테스트 누락
-- Rule: Infrastructure Layer Checklist — 100% branch coverage for infrastructure (all ?., ??, if/else paths)
-- Context: `Math.max(1, Math.floor(diffMs / MS_PER_SECOND))`의 `Math.max`가 0을 1로 올리는 경로가 테스트되지 않았음; `diffMs = 500ms`인 케이스 추가로 해결
 
 ## [PR #304 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `computeEffectiveTtl`이 `new Date()`에 의존함에도 `analyzeAction.test.ts`, `pollAnalysisAction.test.ts`에서 mock 없이 하드코딩 TTL 단언 — 시간대에 따라 flaky 테스트 발생
@@ -129,27 +133,10 @@
 - Violation: computeFromDay 반환값이 YYYY-MM-DD 형식 — Alpaca API가 RFC3339 형식 요구
 - Rule: Provider pair symmetric rule — Alpaca start 파라미터는 RFC3339 형식 필요
 - Context: barsApi.ts의 computeFromDay가 substring(0, 10)만 반환; T00:00:00Z 추가로 RFC3339 호환성 확보 (FMP는 fromDate.substring(0,10)으로 처리하므로 영향 없음)
-
 ## [PR #313 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
-- Violation: cancelAnalysisJobAction.ts의 fetch 호출에 타임아웃 미설정 — 네트워크 지연 시 Server Action이 무기한 대기 가능
-- Rule: CONVENTIONS.md — fire-and-forget fetch 요청에는 타임아웃을 설정해 클라이언트 흐름이 블로킹되지 않도록 해야 함
-- Context: `/cancel` 엔드포인트 호출에 AbortSignal.timeout(5000) 추가
-
 - Violation: useAnalysis.ts — eslint-disable-next-line react-hooks/exhaustive-deps used to suppress deps warning
 - Rule: CONVENTIONS.md react-hooks/exhaustive-deps — must restructure to fix the actual issue, not suppress the lint rule
 - Context: Mutation deps warning caused by unstable callback; fixed by restructuring with isCountdownActive boolean and cooldownStartValueRef to break the closure chain
-
-- Violation: cancelAnalysisJobAction.ts — Server Action passthrough with no error handling
-- Rule: CONVENTIONS.md — fire-and-forget actions should swallow errors and log a warning instead of throwing to caller
-- Context: Action called without try-catch; caller receives uncaught error; added try-catch to swallow and log, matching notification-action pattern
-
-
-
-
-## [Issue #325 | feat/325/지수-심볼-지원 | 2026-04-17]
-- Violation: Infrastructure 함수(FmpProvider.getBars)에 `console.log` 디버그 로그 잔류
-- Rule: Infrastructure Layer Checklist — No console.log or debug artifacts
-- Context: `fmp.ts`의 기존 `getBars` 메서드에 남아있던 타이밍 로그를 제거하지 않고 유지한 채 PR 제출
 
 - Violation: findIndexMatch 반환 타입을 `ReturnType<typeof filterIndexResults>[number] | undefined`로 표현
 - Rule: TypeScript — 재사용 가능하거나 의미를 전달해야 하는 반환 타입은 구조적 유틸리티 타입 대신 명시적 named type으로 표현

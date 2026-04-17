@@ -242,6 +242,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Expected values from module exports must also be imported, not hardcoded
     ❌ expect(label).toBe('STRONG'); // STRONG_LABEL imported from same module as function
     ✅ import { SIGNAL_STRENGTH_LABEL } from '@/utils'; expect(label).toBe(SIGNAL_STRENGTH_LABEL.strong);
+
+14. Time-dependent functions in tests must be explicitly mocked
+    → Functions using Date.now(), new Date() must be mocked in test files
+    → Hard-coded expected values (e.g., TTL seconds) without mocking time sources cause flaky tests
+    ❌ analyzeAction test: expect(ttl).toBe(86400); without mocking new Date()
+    ✅ jest.mock('@/infrastructure/cache/config', ...); mock Date to fixed timestamp before assertions
 ```
 
 ---
@@ -340,20 +346,44 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
-## Pure Function Contracts
+## Infrastructure Functions
 
 ```
-1. Utility functions must guard all valid input ranges explicitly
-   → Pure functions must handle edge cases so callers cannot receive invalid results
-   → Include guards for both lower bounds (null, negative) and upper bounds (array length, max values)
-   ❌ function resolveBarIndex(index) { if (index < 0) return 0; return index; }  // missing upper bound
-   ✅ function resolveBarIndex(index) { if (index < 0) return 0; if (index >= length) return length - 1; return index; }
+1. Conditional logic branches must all update shared data consistently
+   → Background jobs and retry paths must produce same data shape as main path
+   → When caching results, all code paths must store the same fields
+   ❌ Main path: cache.set(symbol, { symbol, name, koreanName, fmpSymbol })
+      Background job: cache.set(symbol, { symbol, name, koreanName })  // fmpSymbol missing
+   ✅ Both paths: cache.set(symbol, { symbol, name, koreanName, fmpSymbol })
 
-2. External dependencies must fail gracefully consistently across the module
-   → All calls to the same external service should use identical error handling patterns
-   → If one call uses try-catch, all calls to that service should be wrapped identically
-   ❌ cache.get(key)  // no try-catch, but cache.set(key, val) has try-catch
-   ✅ const value = await cache.get(key).catch(error => { console.error(...); return null; });
+2. Infrastructure functions must have 100% branch coverage
+   → All if/else, optional chaining (?.), nullish coalescing (??) paths tested
+   → Test edge cases like subsecond boundaries, zero values, Math.max guard behavior
+   ❌ Math.max(1, Math.floor(diffMs / 1000)) guard that converts 0→1 untested
+   ✅ Add test case: diffMs = 500ms covers the Math.max(1, 0) = 1 path
+
+3. No debug artifacts (console.log) in infrastructure files
+   → Infrastructure functions are utilities; logging belongs in higher layers
+   ❌ getBars() { console.log(...timing...); return bars; }
+   ✅ Remove logging; expose metrics via return type if needed
+```
+
+---
+
+## Fire-and-Forget Operations
+
+```
+1. Fire-and-forget fetch requests must have timeouts
+   → fetch() without timeout can block indefinitely on network delay
+   → Apply AbortSignal.timeout(ms) to prevent client-side blocking
+   ❌ fetch('/cancel', { method: 'POST' })  // no timeout
+   ✅ fetch('/cancel', { method: 'POST', signal: AbortSignal.timeout(5000) })
+
+2. Fire-and-forget Server Actions must swallow errors
+   → Error propagation from background actions blocks the caller
+   → Wrap in try-catch, log warning, and return normally
+   ❌ async function cancelAction() { await fetch('/cancel'); }  // throws to caller if fetch fails
+   ✅ async function cancelAction() { try { await fetch(...); } catch (e) { console.warn('Background action failed', e); } }
 ```
 
 ---
