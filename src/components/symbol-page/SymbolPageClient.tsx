@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -32,6 +32,7 @@ export function SymbolPageClient({
     initialAnalysisFailed,
     indicatorCount,
 }: SymbolPageClientProps) {
+    const [isMounted, setIsMounted] = useState(false);
     const [sheetSnap, setSheetSnap] = useState<SnapPoint>(SNAP_HALF);
     const [mobileSheetContent, setMobileSheetContent] =
         useState<ReactNode>(null);
@@ -46,6 +47,12 @@ export function SymbolPageClient({
 
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
+
+    // vaul이 클라이언트에서 aria-hidden을 DOM에 주입하므로 SSR에서는 렌더링을 생략한다.
+    // 서버와 클라이언트 간 Hydration mismatch를 방지하기 위해 마운트 후에만 시트를 표시한다.
+    useEffect(() => {
+        setIsMounted(true);
+    }, []);
 
     return (
         <SymbolPageProvider indicatorCount={indicatorCount}>
@@ -116,12 +123,14 @@ export function SymbolPageClient({
                     </ErrorBoundary>
                 </div>
                 {/* Suspense 경계 밖에 렌더링하여 타임프레임 전환 시 바텀시트가 사라지지 않도록 한다 */}
-                <MobileAnalysisSheet
-                    activeSnap={sheetSnap}
-                    onActiveSnapChange={setSheetSnap}
-                >
-                    {mobileSheetContent}
-                </MobileAnalysisSheet>
+                {isMounted && (
+                    <MobileAnalysisSheet
+                        activeSnap={sheetSnap}
+                        onActiveSnapChange={setSheetSnap}
+                    >
+                        {mobileSheetContent}
+                    </MobileAnalysisSheet>
+                )}
             </div>
         </SymbolPageProvider>
     );
