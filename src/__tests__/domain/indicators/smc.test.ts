@@ -427,6 +427,33 @@ describe('calculateSmc', () => {
             expect(result.discountZone!.type).toBe('discount');
             expect(result.equilibriumZone!.type).toBe('equilibrium');
         });
+
+        it('bullish 구조 이탈 이후 range 상단은 이탈 가격 이상이다', () => {
+            const bars = makeBullishBreakSequence();
+            const result = calculateSmc(bars, 3);
+            const bullishBreaks = result.structureBreaks.filter(
+                b => b.type === 'bullish'
+            );
+            expect(bullishBreaks.length).toBeGreaterThan(0);
+            const lastBreak = bullishBreaks[bullishBreaks.length - 1];
+            // structure-break-aware range 에서는 이탈 가격이 range 상단 앵커로 포함
+            expect(result.premiumZone!.high).toBeGreaterThanOrEqual(
+                lastBreak.price
+            );
+        });
+
+        it('bearish 구조 이탈 이후 range 하단은 이탈 가격 이하이다', () => {
+            const bars = makeBearishBreakSequence();
+            const result = calculateSmc(bars, 3);
+            const bearishBreaks = result.structureBreaks.filter(
+                b => b.type === 'bearish'
+            );
+            expect(bearishBreaks.length).toBeGreaterThan(0);
+            const lastBreak = bearishBreaks[bearishBreaks.length - 1];
+            expect(result.discountZone!.low).toBeLessThanOrEqual(
+                lastBreak.price
+            );
+        });
     });
 
     describe('반환 타입 구조', () => {

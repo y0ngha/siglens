@@ -3386,4 +3386,65 @@ describe('prompt', () => {
             expect(result).toContain('2+ independent signals');
         });
     });
+
+    describe('타임프레임별 프롬프트 파라미터', () => {
+        // 60봉을 만들어 모든 타임프레임의 recentBarsCount 상한(48)을 초과하도록 한다.
+        const bars = Array.from({ length: 60 }, (_, i) => makeBar(i));
+
+        it('5Min 타임프레임에서는 최근 48봉을 표시한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                [],
+                '5Min'
+            );
+            expect(result).toContain('## Recent Bar Data (Last 48 bars)');
+        });
+
+        it('1Day 타임프레임에서는 최근 30봉을 표시한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                [],
+                '1Day'
+            );
+            expect(result).toContain('## Recent Bar Data (Last 30 bars)');
+        });
+
+        it('1Hour 타임프레임에서는 최근 32봉을 표시한다', () => {
+            const result = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators(),
+                [],
+                '1Hour'
+            );
+            expect(result).toContain('## Recent Bar Data (Last 32 bars)');
+        });
+
+        it('buy/sell volume 누적 구간도 타임프레임별 recentBarsCount를 따른다', () => {
+            const buySellVolume = Array.from({ length: 60 }, () => ({
+                buyVolume: 1000,
+                sellVolume: 500,
+            }));
+            const result5Min = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ buySellVolume }),
+                [],
+                '5Min'
+            );
+            const result1Day = buildAnalysisPrompt(
+                TEST_SYMBOL,
+                bars,
+                makeIndicators({ buySellVolume }),
+                [],
+                '1Day'
+            );
+            expect(result5Min).toContain('Last 48-bar cumulative');
+            expect(result1Day).toContain('Last 30-bar cumulative');
+        });
+    });
 });

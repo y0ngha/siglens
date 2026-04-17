@@ -390,23 +390,83 @@ function findEqualLevels(
 // ─── Premium / Discount / Equilibrium zones ───────────────────────────────────
 
 /**
- * Calculate Premium, Discount, and Equilibrium zones from the most recent
- * swing range (last confirmed swing high and swing low).
+ * Resolve the structural range used to compute Premium/Discount/Equilibrium
+ * zones. ICT-style SMC reads the "current range" relative to the most recent
+ * confirmed structure break:
+ *
+ *  - Bullish BOS/CHoCH: the broken swing high anchors the range top; the
+ *    range bottom is the lowest swing low formed since the break (falling
+ *    back to swing lows that formed immediately before the break when no
+ *    post-break pullback low exists yet).
+ *  - Bearish BOS/CHoCH: symmetric — the broken swing low anchors the bottom
+ *    and the highest swing high since the break anchors the top.
+ *  - No structure break yet: use the extremes of all detected swings as a
+ *    pragmatic fallback. This covers early-warmup and consolidation cases
+ *    where no directional commitment has formed.
+ *
+ * Returns null when the relevant swing arrays are empty and no anchor can be
+ * established. The zone builder treats a non-positive span as "no range".
+ */
+function resolveZoneRange(
+    swingHighs: SMCSwingPoint[],
+    swingLows: SMCSwingPoint[],
+    structureBreaks: SMCStructureBreak[]
+): { top: number; bottom: number } | null {
+    const lastBreak = structureBreaks[structureBreaks.length - 1];
+
+    if (lastBreak === undefined) {
+        if (swingHighs.length === 0 || swingLows.length === 0) return null;
+        return {
+            top: swingHighs.reduce((m, s) => Math.max(m, s.price), -Infinity),
+            bottom: swingLows.reduce((m, s) => Math.min(m, s.price), Infinity),
+        };
+    }
+
+    if (lastBreak.type === 'bullish') {
+        const lowsAfter = swingLows.filter(s => s.index > lastBreak.index);
+        const lowsBefore = swingLows.filter(s => s.index <= lastBreak.index);
+        const relevantLows = lowsAfter.length > 0 ? lowsAfter : lowsBefore;
+        if (relevantLows.length === 0) return null;
+
+        const highsAfter = swingHighs.filter(s => s.index >= lastBreak.index);
+        const highPrices = [lastBreak.price, ...highsAfter.map(s => s.price)];
+
+        return {
+            top: highPrices.reduce((m, p) => Math.max(m, p), -Infinity),
+            bottom: relevantLows.reduce(
+                (m, s) => Math.min(m, s.price),
+                Infinity
+            ),
+        };
+    }
+
+    // bearish break
+    const highsAfter = swingHighs.filter(s => s.index > lastBreak.index);
+    const highsBefore = swingHighs.filter(s => s.index <= lastBreak.index);
+    const relevantHighs = highsAfter.length > 0 ? highsAfter : highsBefore;
+    if (relevantHighs.length === 0) return null;
+
+    const lowsAfter = swingLows.filter(s => s.index >= lastBreak.index);
+    const lowPrices = [lastBreak.price, ...lowsAfter.map(s => s.price)];
+
+    return {
+        top: relevantHighs.reduce((m, s) => Math.max(m, s.price), -Infinity),
+        bottom: lowPrices.reduce((m, p) => Math.min(m, p), Infinity),
+    };
+}
+
+/**
+ * Calculate Premium, Discount, and Equilibrium zones from the active
+ * structural range (see `resolveZoneRange` for the range derivation rules).
  *
  *  - Premium zone:     top 25% of the range  → price is relatively expensive
  *  - Equilibrium zone: middle 50% of the range
  *  - Discount zone:    bottom 25% of the range → price is relatively cheap
- *
- * Limitation: swingHighs and swingLows are independent arrays, and the zone
- * range is built by combining their latest entries. The two swings are not
- * guaranteed to belong to the same confirmed cycle (e.g., after a CHoCH the
- * most recent high may precede the most recent low or vice versa). Treat the
- * resulting zones as a pragmatic heuristic rather than a strict ICT range.
- * See skills/indicators/smart-money-concepts.md caveats for details.
  */
 function detectZones(
     swingHighs: SMCSwingPoint[],
-    swingLows: SMCSwingPoint[]
+    swingLows: SMCSwingPoint[],
+    structureBreaks: SMCStructureBreak[]
 ): Pick<SMCResult, 'premiumZone' | 'discountZone' | 'equilibriumZone'> {
     const empty = {
         premiumZone: null,
@@ -414,30 +474,27 @@ function detectZones(
         equilibriumZone: null,
     };
 
-    if (swingHighs.length === 0 || swingLows.length === 0) return empty;
+    const resolved = resolveZoneRange(swingHighs, swingLows, structureBreaks);
+    if (resolved === null) return empty;
 
-    const lastHigh = swingHighs[swingHighs.length - 1];
-    const lastLow = swingLows[swingLows.length - 1];
-    const rangeTop = Math.max(lastHigh.price, lastLow.price);
-    const rangeBottom = Math.min(lastHigh.price, lastLow.price);
-    const range = rangeTop - rangeBottom;
-
-    if (range <= 0) return empty;
+    const { top, bottom } = resolved;
+    const span = top - bottom;
+    if (span <= 0) return empty;
 
     return {
         premiumZone: {
-            high: rangeTop,
-            low: rangeBottom + SMC_PREMIUM_RATIO * range,
+            high: top,
+            low: bottom + SMC_PREMIUM_RATIO * span,
             type: 'premium',
         },
         equilibriumZone: {
-            high: rangeBottom + SMC_PREMIUM_RATIO * range,
-            low: rangeBottom + SMC_DISCOUNT_RATIO * range,
+            high: bottom + SMC_PREMIUM_RATIO * span,
+            low: bottom + SMC_DISCOUNT_RATIO * span,
             type: 'equilibrium',
         },
         discountZone: {
-            high: rangeBottom + SMC_DISCOUNT_RATIO * range,
-            low: rangeBottom,
+            high: bottom + SMC_DISCOUNT_RATIO * span,
+            low: bottom,
             type: 'discount',
         },
     };
@@ -466,7 +523,8 @@ export function calculateSmc(
     );
     const { premiumZone, discountZone, equilibriumZone } = detectZones(
         swingHighs,
-        swingLows
+        swingLows,
+        structureBreaks
     );
 
     return {
