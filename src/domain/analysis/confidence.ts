@@ -13,6 +13,8 @@ import type {
 } from '@/domain/types';
 import {
     asArray,
+    asString,
+    compact,
     normalizeActionRecommendation,
     normalizeCandlePatternSummary,
     normalizeIndicatorGuideResult,
@@ -23,7 +25,6 @@ import {
     normalizeStrategyResult,
     normalizeTrend,
     normalizeTrendline,
-    asString,
 } from '@/domain/analysis/normalize';
 
 interface SkillLookup {
@@ -57,10 +58,6 @@ function buildUniqueIds<T, K extends keyof T>(items: T[], key: K): string[] {
         },
         { ids: [], counter: new Map() }
     ).ids;
-}
-
-function compact<T>(xs: (T | null)[]): T[] {
-    return xs.filter((x): x is T => x !== null);
 }
 
 export function filterPatterns(patterns: PatternResult[]): PatternResult[] {

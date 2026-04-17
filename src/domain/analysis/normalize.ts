@@ -69,6 +69,7 @@ export function asOptionalEnum<T extends string>(
 
 export function asObject(v: unknown): Record<string, unknown> | null {
     if (v === null || typeof v !== 'object' || Array.isArray(v)) return null;
+    // 바로 위 가드에서 null, 비객체, 배열을 모두 걸러내 Record 구조임을 확정했다.
     return v as Record<string, unknown>;
 }
 
@@ -76,7 +77,7 @@ export function asArray(v: unknown): unknown[] {
     return Array.isArray(v) ? v : [];
 }
 
-function compact<T>(xs: (T | null)[]): T[] {
+export function compact<T>(xs: (T | null)[]): T[] {
     return xs.filter((x): x is T => x !== null);
 }
 
