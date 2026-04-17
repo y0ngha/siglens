@@ -533,5 +533,80 @@ describe('confidence', () => {
                 );
             });
         });
+
+        describe('indicatorResults 정규화', () => {
+            it('유효한 indicatorResults 항목이 enriched 결과에 포함된다', () => {
+                const analysis = makeAnalysisResponse({
+                    indicatorResults: [
+                        {
+                            indicatorName: 'RSI',
+                            signals: [
+                                {
+                                    type: 'skill',
+                                    description: '과매수',
+                                    trend: 'bearish',
+                                    strength: 'strong',
+                                },
+                            ],
+                        },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.indicatorResults).toHaveLength(1);
+                expect(result.indicatorResults[0].indicatorName).toBe('RSI');
+                expect(result.indicatorResults[0].signals[0].description).toBe(
+                    '과매수'
+                );
+            });
+
+            it('indicatorName이 없는 항목은 탈락시킨다', () => {
+                const analysis = makeAnalysisResponse({
+                    indicatorResults: [
+                        { signals: [] },
+                        { indicatorName: 'MACD', signals: [] },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.indicatorResults).toHaveLength(1);
+                expect(result.indicatorResults[0].indicatorName).toBe('MACD');
+            });
+        });
+
+        describe('trendlines 정규화', () => {
+            it('유효한 trendline이 enriched 결과에 포함된다', () => {
+                const analysis = makeAnalysisResponse({
+                    trendlines: [
+                        {
+                            direction: 'ascending',
+                            start: { time: 1, price: 100 },
+                            end: { time: 2, price: 200 },
+                        },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.trendlines).toHaveLength(1);
+                expect(result.trendlines[0].direction).toBe('ascending');
+            });
+
+            it('direction이 유효하지 않은 항목은 탈락시킨다', () => {
+                const analysis = makeAnalysisResponse({
+                    trendlines: [
+                        {
+                            direction: 'sideways',
+                            start: { time: 1, price: 100 },
+                            end: { time: 2, price: 200 },
+                        },
+                        {
+                            direction: 'descending',
+                            start: { time: 3, price: 300 },
+                            end: { time: 4, price: 250 },
+                        },
+                    ],
+                });
+                const result = enrichAnalysisWithConfidence(analysis, []);
+                expect(result.trendlines).toHaveLength(1);
+                expect(result.trendlines[0].direction).toBe('descending');
+            });
+        });
     }); // enrichAnalysisWithConfidence
 });
