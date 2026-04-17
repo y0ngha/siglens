@@ -19,6 +19,10 @@ jest.mock('@/infrastructure/ticker/fmpTickerApi', () => ({
     searchBySymbol: jest.fn(),
     searchByName: jest.fn(),
     filterUsExchanges: jest.fn((results: unknown[]) => results),
+    filterIndexResults: jest.fn(() => []),
+    toDisplaySymbol: jest.fn((s: string) =>
+        s.startsWith('^') ? s.slice(1) : s
+    ),
     toTickerSearchResult: jest.fn((r: TickerSearchResult) => r),
 }));
 
@@ -37,6 +41,7 @@ import {
     searchBySymbol,
     searchByName,
     filterUsExchanges,
+    filterIndexResults,
     toTickerSearchResult,
 } from '@/infrastructure/ticker/fmpTickerApi';
 import {
@@ -50,6 +55,7 @@ const mockCreateCacheProvider = createCacheProvider as jest.Mock;
 const mockSearchBySymbol = searchBySymbol as jest.Mock;
 const mockSearchByName = searchByName as jest.Mock;
 const mockFilterUsExchanges = filterUsExchanges as jest.Mock;
+const mockFilterIndexResults = filterIndexResults as jest.Mock;
 const mockToTickerSearchResult = toTickerSearchResult as jest.Mock;
 const mockSearchByKoreanName = searchByKoreanName as jest.Mock;
 const mockGetKoreanNames = getKoreanNames as jest.Mock;
@@ -157,13 +163,14 @@ describe('searchTickerAction', () => {
     });
 
     describe('영어 쿼리이고 캐시 미스일 때', () => {
-        it('FMP API를 병렬로 호출한다', async () => {
+        it('FMP API를 병렬로 호출한다 (심볼, 이름, 지수 검색 포함)', async () => {
             mockCacheGet.mockResolvedValueOnce(null);
 
             await searchTickerAction('AAPL');
 
             expect(mockSearchBySymbol).toHaveBeenCalledWith('AAPL');
             expect(mockSearchByName).toHaveBeenCalledWith('AAPL');
+            expect(mockSearchBySymbol).toHaveBeenCalledWith('^AAPL');
         });
 
         it('US 거래소 필터링을 적용한다', async () => {
@@ -240,6 +247,49 @@ describe('searchTickerAction', () => {
                 symbol: string;
             }>;
             expect(savedEntries.every(e => e.symbol !== 'EXTRA')).toBe(true);
+        });
+    });
+
+    describe('지수 심볼 검색일 때', () => {
+        it('^{query} 형식으로 searchBySymbol을 추가 호출한다', async () => {
+            await searchTickerAction('SPX');
+            expect(mockSearchBySymbol).toHaveBeenCalledWith('^SPX');
+        });
+
+        it('^ 접두사 검색 결과가 있으면 지수 결과를 포함한다', async () => {
+            const indexFmpResult = {
+                symbol: '^SPX',
+                name: 'S&P 500',
+                exchange: 'SNP',
+                exchangeFullName: 'SNP',
+            };
+            mockFilterIndexResults.mockReturnValueOnce([indexFmpResult]);
+            mockSearchBySymbol
+                .mockResolvedValueOnce([]) // SPX 일반 검색
+                .mockResolvedValueOnce([indexFmpResult]); // ^SPX 지수 검색
+
+            await searchTickerAction('SPX');
+            expect(mockFilterIndexResults).toHaveBeenCalledWith([
+                indexFmpResult,
+            ]);
+        });
+
+        it('지수 결과의 ^ 접두사가 제거된 심볼로 toTickerSearchResult를 호출한다', async () => {
+            const indexFmpResult = {
+                symbol: '^SPX',
+                name: 'S&P 500',
+                exchange: 'SNP',
+                exchangeFullName: 'SNP',
+            };
+            mockFilterIndexResults.mockReturnValueOnce([indexFmpResult]);
+            mockSearchBySymbol
+                .mockResolvedValueOnce([])
+                .mockResolvedValueOnce([indexFmpResult]);
+
+            await searchTickerAction('SPX');
+            expect(mockToTickerSearchResult).toHaveBeenCalledWith(
+                expect.objectContaining({ symbol: 'SPX' })
+            );
         });
     });
 

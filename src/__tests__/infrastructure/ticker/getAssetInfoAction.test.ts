@@ -21,6 +21,7 @@ jest.mock('@/infrastructure/cache/redis', () => ({
 jest.mock('@/infrastructure/ticker/fmpTickerApi', () => ({
     searchBySymbol: jest.fn(),
     filterUsExchanges: jest.fn((results: unknown[]) => results),
+    filterIndexResults: jest.fn((results: unknown[]) => results),
 }));
 
 jest.mock('@/infrastructure/ticker/koreanNameStore', () => ({
@@ -37,6 +38,7 @@ import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     searchBySymbol,
     filterUsExchanges,
+    filterIndexResults,
 } from '@/infrastructure/ticker/fmpTickerApi';
 import {
     getKoreanNames,
@@ -47,6 +49,7 @@ import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator'
 const mockCreateCacheProvider = createCacheProvider as jest.Mock;
 const mockSearchBySymbol = searchBySymbol as jest.Mock;
 const mockFilterUsExchanges = filterUsExchanges as jest.Mock;
+const mockFilterIndexResults = filterIndexResults as jest.Mock;
 const mockGetKoreanNames = getKoreanNames as jest.Mock;
 const mockSetKoreanTickers = setKoreanTickers as jest.Mock;
 const mockTranslateCompanyNames = translateCompanyNames as jest.Mock;
@@ -67,6 +70,9 @@ describe('getAssetInfoAction', () => {
             delete: mockCacheDelete,
         });
         mockFilterUsExchanges.mockImplementation(
+            (results: unknown[]) => results
+        );
+        mockFilterIndexResults.mockImplementation(
             (results: unknown[]) => results
         );
         mockSearchBySymbol.mockResolvedValue([]);
@@ -169,6 +175,60 @@ describe('getAssetInfoAction', () => {
             await getAssetInfoAction('WP-LOGIN.PHP');
             await new Promise(resolve => setTimeout(resolve, 0));
             expect(mockCacheSet).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('US 거래소 결과가 없고 지수 폴백이 성공할 때', () => {
+        it('^ 접두사 검색으로 찾은 지수 정보를 반환한다', async () => {
+            mockFilterUsExchanges.mockReturnValueOnce([]);
+            mockSearchBySymbol
+                .mockResolvedValueOnce([]) // SPX 일반 검색 → 빈 결과
+                .mockResolvedValueOnce([makeFmpResult('^SPX')]); // ^SPX 지수 검색
+
+            const result = await getAssetInfoAction('SPX');
+            expect(result).not.toBeNull();
+            expect(result!.symbol).toBe('SPX');
+        });
+
+        it('fmpSymbol을 ^SYMBOL 형식으로 설정한다', async () => {
+            mockFilterUsExchanges.mockReturnValueOnce([]);
+            mockSearchBySymbol
+                .mockResolvedValueOnce([])
+                .mockResolvedValueOnce([makeFmpResult('^SPX')]);
+
+            const result = await getAssetInfoAction('SPX');
+            expect(result!.fmpSymbol).toBe('^SPX');
+        });
+
+        it('지수 검색 시 ^SYMBOL 형식으로 searchBySymbol을 호출한다', async () => {
+            mockFilterUsExchanges.mockReturnValueOnce([]);
+            mockSearchBySymbol
+                .mockResolvedValueOnce([])
+                .mockResolvedValueOnce([makeFmpResult('^SPX')]);
+
+            await getAssetInfoAction('SPX');
+            expect(mockSearchBySymbol).toHaveBeenCalledWith('^SPX');
+        });
+
+        it('지수 검색도 실패하면 null을 반환한다', async () => {
+            mockFilterUsExchanges.mockReturnValueOnce([]);
+            mockFilterIndexResults.mockReturnValueOnce([]);
+            mockSearchBySymbol
+                .mockResolvedValueOnce([])
+                .mockResolvedValueOnce([]);
+
+            const result = await getAssetInfoAction('SPX');
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('일반 주식 심볼일 때', () => {
+        it('fmpSymbol을 설정하지 않는다', async () => {
+            mockSearchBySymbol.mockResolvedValueOnce([makeFmpResult('AAPL')]);
+            mockGetKoreanNames.mockResolvedValueOnce({});
+
+            const result = await getAssetInfoAction('AAPL');
+            expect(result!.fmpSymbol).toBeUndefined();
         });
     });
 

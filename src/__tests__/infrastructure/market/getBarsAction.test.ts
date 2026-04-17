@@ -62,7 +62,8 @@ describe('getBarsAction 함수는', () => {
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
                 'AAPL',
-                '1Day'
+                '1Day',
+                undefined
             );
             expect(result).toBe(mockBarsData);
         });
@@ -74,7 +75,20 @@ describe('getBarsAction 함수는', () => {
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
                 'TSLA',
-                '5Min'
+                '5Min',
+                undefined
+            );
+        });
+
+        it('fmpSymbol이 주어지면 fetchBarsWithIndicators에 그대로 전달한다', async () => {
+            mockFetchBarsWithIndicators.mockResolvedValueOnce(mockBarsData);
+
+            await getBarsAction('SPX', '1Day', '^SPX');
+
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
+                'SPX',
+                '1Day',
+                '^SPX'
             );
         });
     });

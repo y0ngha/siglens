@@ -432,6 +432,8 @@ export interface AssetInfo {
     symbol: string;
     name: string;
     koreanName?: string;
+    /** FMP API 심볼 (지수의 경우 ^ 접두사 포함, 예: ^SPX). 일반 주식은 undefined. */
+    fmpSymbol?: string;
 }
 
 export type CategoryId =

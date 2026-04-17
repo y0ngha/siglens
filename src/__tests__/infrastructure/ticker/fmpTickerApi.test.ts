@@ -2,6 +2,8 @@ import {
     searchBySymbol,
     searchByName,
     filterUsExchanges,
+    filterIndexResults,
+    toDisplaySymbol,
     toTickerSearchResult,
 } from '@/infrastructure/ticker/fmpTickerApi';
 import type { FmpSearchResult } from '@/infrastructure/ticker/types';
@@ -49,6 +51,68 @@ describe('filterUsExchanges', () => {
     describe('빈 배열일 때', () => {
         it('빈 배열을 반환한다', () => {
             expect(filterUsExchanges([])).toEqual([]);
+        });
+    });
+});
+
+describe('filterIndexResults', () => {
+    describe('^ 접두사를 가진 심볼만 포함할 때', () => {
+        it('모든 결과를 반환한다', () => {
+            const results = [
+                makeFmpResult({ symbol: '^SPX' }),
+                makeFmpResult({ symbol: '^DJI' }),
+            ];
+            expect(filterIndexResults(results)).toHaveLength(2);
+        });
+    });
+
+    describe('일반 주식 심볼이 혼합될 때', () => {
+        it('^ 접두사 심볼만 반환한다', () => {
+            const results = [
+                makeFmpResult({ symbol: '^SPX' }),
+                makeFmpResult({ symbol: 'AAPL' }),
+                makeFmpResult({ symbol: '^VIX' }),
+            ];
+            const filtered = filterIndexResults(results);
+            expect(filtered).toHaveLength(2);
+            expect(filtered.map(r => r.symbol)).toEqual(['^SPX', '^VIX']);
+        });
+    });
+
+    describe('빈 배열일 때', () => {
+        it('빈 배열을 반환한다', () => {
+            expect(filterIndexResults([])).toEqual([]);
+        });
+    });
+
+    describe('^ 접두사가 없는 결과만 있을 때', () => {
+        it('빈 배열을 반환한다', () => {
+            const results = [makeFmpResult({ symbol: 'AAPL' })];
+            expect(filterIndexResults(results)).toEqual([]);
+        });
+    });
+});
+
+describe('toDisplaySymbol', () => {
+    describe('^ 접두사가 있을 때', () => {
+        it('^SPX를 SPX로 변환한다', () => {
+            expect(toDisplaySymbol('^SPX')).toBe('SPX');
+        });
+
+        it('^DJI를 DJI로 변환한다', () => {
+            expect(toDisplaySymbol('^DJI')).toBe('DJI');
+        });
+    });
+
+    describe('^ 접두사가 없을 때', () => {
+        it('심볼을 그대로 반환한다', () => {
+            expect(toDisplaySymbol('AAPL')).toBe('AAPL');
+        });
+    });
+
+    describe('빈 문자열일 때', () => {
+        it('빈 문자열을 반환한다', () => {
+            expect(toDisplaySymbol('')).toBe('');
         });
     });
 });

@@ -11,6 +11,8 @@ import {
     searchBySymbol,
     searchByName,
     filterUsExchanges,
+    filterIndexResults,
+    toDisplaySymbol,
     toTickerSearchResult,
 } from '@/infrastructure/ticker/fmpTickerApi';
 import {
@@ -60,26 +62,35 @@ export async function searchTickerAction(
         return results.slice(0, MAX_SEARCH_RESULTS);
     }
 
-    const cache = createCacheProvider();
+    const cacheProvider = createCacheProvider();
     const cacheKey = buildTickerSearchCacheKey(trimmed);
 
-    if (cache) {
+    if (cacheProvider) {
         try {
-            const cached = await cache.get<TickerSearchResult[]>(cacheKey);
+            const cached =
+                await cacheProvider.get<TickerSearchResult[]>(cacheKey);
             if (cached) return cached;
         } catch (error) {
             console.error('Ticker search cache get failed:', error);
         }
     }
 
-    const [symbolResults, nameResults] = await Promise.all([
+    const [symbolResults, nameResults, indexResults] = await Promise.all([
         searchBySymbol(trimmed),
         searchByName(trimmed),
+        searchBySymbol(`^${trimmed}`),
     ]);
+
+    const toIndexResult = (r: (typeof indexResults)[number]) =>
+        toTickerSearchResult({ ...r, symbol: toDisplaySymbol(r.symbol) });
 
     const merged = deduplicateResults([
         ...filterUsExchanges(symbolResults).map(toTickerSearchResult),
         ...filterUsExchanges(nameResults).map(toTickerSearchResult),
+        // 정규 검색 결과에 포함된 지수 심볼 (FMP가 ^ prefix 결과를 함께 반환하는 경우)
+        ...filterIndexResults(symbolResults).map(toIndexResult),
+        // ^{trimmed} 직접 검색 결과 (심볼 직접 입력 시)
+        ...filterIndexResults(indexResults).map(toIndexResult),
     ]);
 
     const koreanNames = await getKoreanNames(merged.map(r => r.symbol));
@@ -100,9 +111,9 @@ export async function searchTickerAction(
 
     const final = enriched.slice(0, MAX_SEARCH_RESULTS);
 
-    if (cache) {
+    if (cacheProvider) {
         waitUntil(
-            cache
+            cacheProvider
                 .set(cacheKey, final, TICKER_SEARCH_CACHE_TTL)
                 .catch(error =>
                     console.error('Ticker search cache set failed:', error)

@@ -11,7 +11,9 @@ import {
 import {
     searchBySymbol,
     filterUsExchanges,
+    filterIndexResults,
 } from '@/infrastructure/ticker/fmpTickerApi';
+import type { FmpSearchResult } from '@/infrastructure/ticker/types';
 import {
     getKoreanNames,
     setKoreanTickers,
@@ -19,6 +21,14 @@ import {
 import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
 import { isValidTickerFormat } from '@/domain/ticker';
 import type { AssetInfo, KoreanTickerEntry } from '@/domain/types';
+
+async function findIndexMatch(
+    symbol: string
+): Promise<FmpSearchResult | undefined> {
+    const results = await searchBySymbol(`^${symbol}`);
+    const indexResults = filterIndexResults(results);
+    return indexResults.find(r => r.symbol === `^${symbol}`) ?? indexResults[0];
+}
 
 async function translateAndCache(
     symbol: string,
@@ -77,7 +87,9 @@ const resolveAssetInfo = cache(
 
         const fmpResults = await searchBySymbol(upper);
         const usResults = filterUsExchanges(fmpResults);
-        const match = usResults.find(r => r.symbol === upper) ?? usResults[0];
+        const usMatch = usResults.find(r => r.symbol === upper) ?? usResults[0];
+        const indexMatch = usMatch ? undefined : await findIndexMatch(upper);
+        const match = usMatch ?? indexMatch;
 
         if (!match) return null;
 
@@ -90,6 +102,7 @@ const resolveAssetInfo = cache(
             symbol: upper,
             name,
             ...(koreanName && { koreanName }),
+            ...(indexMatch && { fmpSymbol: indexMatch.symbol }),
         };
 
         if (!koreanName) {
