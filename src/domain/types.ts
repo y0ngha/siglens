@@ -451,7 +451,8 @@ export interface TickerCategory {
     tickers: readonly string[];
 }
 
-export interface AnalyzeVariables {
+
+export interface RunAnalysisInput {
     symbol: string;
     bars: Bar[];
     indicators: IndicatorResult;

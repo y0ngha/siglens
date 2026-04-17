@@ -2,23 +2,18 @@
 
 import { waitUntil } from '@vercel/functions';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
-import type {
-    AnalyzeVariables,
-    SubmitAnalysisResult,
-    Timeframe,
-} from '@/domain/types';
+import type { SubmitAnalysisResult, Timeframe } from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { buildAnalysisCacheKey } from '@/infrastructure/cache/config';
 import type { RunAnalysisResult } from '@/infrastructure/market/analysisApi';
+import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { setJobMeta } from '@/infrastructure/jobs/queue';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 
 export async function submitAnalysisAction(
-    variables: AnalyzeVariables,
+    symbol: string,
     timeframe: Timeframe
 ): Promise<SubmitAnalysisResult> {
-    const { symbol, bars, indicators } = variables;
-
     // 1. 환경변수 사전 검증
     const workerUrl = process.env.WORKER_URL;
     const workerSecret = process.env.WORKER_SECRET;
@@ -28,12 +23,7 @@ export async function submitAnalysisAction(
         );
     }
 
-    // 2. 입력값 검증
-    if (!symbol || !bars || bars.length === 0 || !indicators) {
-        throw new Error('symbol, bars, and indicators are required');
-    }
-
-    // 3. 캐시 확인
+    // 2. 캐시 확인
     const cache = createCacheProvider();
     const cacheKey = buildAnalysisCacheKey(symbol, timeframe);
 
@@ -48,6 +38,9 @@ export async function submitAnalysisAction(
             console.error('[Submit] Cache read failed:', error);
         }
     }
+
+    // 3. Bars + Indicators 서버 재구성 (barsApi 캐시 워밍 시 추가 API 호출 없음)
+    const { bars, indicators } = await fetchBarsWithIndicators(symbol, timeframe);
 
     // 4. Skills 로딩 + 프롬프트 빌드
     const skillsLoader = new FileSkillsLoader();

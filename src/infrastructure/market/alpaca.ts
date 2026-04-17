@@ -45,21 +45,19 @@ export class AlpacaProvider implements MarketDataProvider {
         this.secretKey = secretKey;
     }
 
-    async getBars(
-        options: GetBarsOptions,
-        now: string = new Date().toISOString()
-    ): Promise<Bar[]> {
+    async getBars(options: GetBarsOptions): Promise<Bar[]> {
         const { symbol, timeframe, limit = 500, before, from } = options;
-
-        const endTime = before ?? now;
 
         const params = new URLSearchParams({
             timeframe,
             limit: String(limit),
             adjustment: 'raw',
             feed: 'iex',
-            end: endTime,
         });
+
+        if (before !== undefined) {
+            params.set('end', before);
+        }
 
         if (from !== undefined) {
             params.set('start', from);
