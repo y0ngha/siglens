@@ -206,6 +206,27 @@ describe('fetchBarsWithIndicators 함수는', () => {
             );
             expect(mockCacheLife).toHaveBeenCalledWith('minutes');
         });
+
+        it('fmpSymbol이 주어지면 getBars에 fmpSymbol을 전달한다', async () => {
+            mockGetBars.mockResolvedValueOnce([]);
+
+            await fetchBarsWithIndicators('SPX', DEFAULT_TIMEFRAME, '^SPX');
+
+            expect(mockGetBars).toHaveBeenCalledWith(
+                expect.objectContaining({ symbol: '^SPX' })
+            );
+        });
+
+        it('fmpSymbol이 주어지면 cacheTag에 fmpSymbol을 사용한다', async () => {
+            mockGetBars.mockResolvedValueOnce([]);
+            const mockCacheTag = cacheTag as jest.Mock;
+
+            await fetchBarsWithIndicators('SPX', DEFAULT_TIMEFRAME, '^SPX');
+
+            expect(mockCacheTag).toHaveBeenCalledWith(
+                `bars:^SPX:${DEFAULT_TIMEFRAME}`
+            );
+        });
     });
 
     describe('getBars가 에러를 던질 때', () => {

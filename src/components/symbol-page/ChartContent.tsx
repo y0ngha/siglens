@@ -97,6 +97,7 @@ interface ChartContentProps {
     initialAnalysisFailed: boolean;
     /** 모바일 바텀시트에 렌더링할 콘텐츠가 변경될 때 호출된다. Suspense 경계 밖에서 시트를 유지하기 위해 상위로 끌어올린다. */
     onMobileSheetContent: (content: ReactNode) => void;
+    fmpSymbol?: string;
 }
 
 export function ChartContent({
@@ -106,8 +107,9 @@ export function ChartContent({
     initialAnalysis,
     initialAnalysisFailed,
     onMobileSheetContent,
+    fmpSymbol,
 }: ChartContentProps) {
-    const { bars, indicators } = useBars({ symbol, timeframe });
+    const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
 
     const {
         analysis,

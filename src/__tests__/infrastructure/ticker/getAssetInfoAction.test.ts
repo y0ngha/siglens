@@ -220,6 +220,18 @@ describe('getAssetInfoAction', () => {
             const result = await getAssetInfoAction('SPX');
             expect(result).toBeNull();
         });
+
+        it('정확한 심볼 매치 없을 때 첫 번째 결과로 폴백한다', async () => {
+            mockFilterUsExchanges.mockReturnValueOnce([]);
+            mockSearchBySymbol
+                .mockResolvedValueOnce([])
+                .mockResolvedValueOnce([makeFmpResult('^SPXW')]);
+            mockGetKoreanNames.mockResolvedValueOnce({});
+
+            const result = await getAssetInfoAction('SPX');
+            expect(result).not.toBeNull();
+            expect(result!.fmpSymbol).toBe('^SPXW');
+        });
     });
 
     describe('일반 주식 심볼일 때', () => {
