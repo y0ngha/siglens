@@ -396,6 +396,13 @@ function findEqualLevels(
  *  - Premium zone:     top 25% of the range  → price is relatively expensive
  *  - Equilibrium zone: middle 50% of the range
  *  - Discount zone:    bottom 25% of the range → price is relatively cheap
+ *
+ * Limitation: swingHighs and swingLows are independent arrays, and the zone
+ * range is built by combining their latest entries. The two swings are not
+ * guaranteed to belong to the same confirmed cycle (e.g., after a CHoCH the
+ * most recent high may precede the most recent low or vice versa). Treat the
+ * resulting zones as a pragmatic heuristic rather than a strict ICT range.
+ * See skills/indicators/smart-money-concepts.md caveats for details.
  */
 function detectZones(
     swingHighs: SMCSwingPoint[],
