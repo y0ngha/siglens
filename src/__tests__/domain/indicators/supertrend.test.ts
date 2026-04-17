@@ -100,6 +100,22 @@ describe('calculateSupertrend', () => {
                 });
         });
 
+        it('첫 번째 유효 값이 명세와 일치한다', () => {
+            // period=3, multiplier=3
+            // TR 모두 4로 균일 → ATR=4
+            // bars[3]: hl2=(16+12)/2=14, finalLowerBand=14-3*4=2, close(15)>hl2(14) → trend='up'
+            const bars = makeBars([
+                { high: 12, low: 8, close: 10 },
+                { high: 13, low: 9, close: 11 },
+                { high: 14, low: 10, close: 12 },
+                { high: 16, low: 12, close: 15 },
+                { high: 17, low: 13, close: 16 },
+            ]);
+            const result = calculateSupertrend(bars, 3, 3);
+            expect(result[3].supertrend).toBeCloseTo(2, 5);
+            expect(result[3].trend).toBe('up');
+        });
+
         it('period 기본값은 SUPERTREND_ATR_PERIOD와 SUPERTREND_MULTIPLIER다', () => {
             const bars = makeUniformBars(20);
             expect(calculateSupertrend(bars)).toEqual(

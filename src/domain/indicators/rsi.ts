@@ -25,29 +25,23 @@ export function calculateRSI(
     const toRSI = (avgGain: number, avgLoss: number): number =>
         avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
 
-    const { rsiValues } = diffs
-        .slice(period)
-        .reduce<{ state: WilderState; rsiValues: number[] }>(
-            ({ state, rsiValues }, diff) => {
-                const gain = diff > 0 ? diff : 0;
-                const loss = diff < 0 ? -diff : 0;
-                const next = {
-                    avgGain: (state.avgGain * (period - 1) + gain) / period,
-                    avgLoss: (state.avgLoss * (period - 1) + loss) / period,
-                };
-                return {
-                    state: next,
-                    rsiValues: [
-                        ...rsiValues,
-                        toRSI(next.avgGain, next.avgLoss),
-                    ],
-                };
-            },
-            {
-                state: { avgGain: initialAvgGain, avgLoss: initialAvgLoss },
-                rsiValues: [toRSI(initialAvgGain, initialAvgLoss)],
-            }
-        );
+    const tailDiffs = diffs.slice(period);
+    const rsiValues: number[] = new Array(tailDiffs.length + 1);
+    rsiValues[0] = toRSI(initialAvgGain, initialAvgLoss);
+    let wilderState: WilderState = {
+        avgGain: initialAvgGain,
+        avgLoss: initialAvgLoss,
+    };
+    for (let i = 0; i < tailDiffs.length; i++) {
+        const diff = tailDiffs[i];
+        const gain = diff > 0 ? diff : 0;
+        const loss = diff < 0 ? -diff : 0;
+        wilderState = {
+            avgGain: (wilderState.avgGain * (period - 1) + gain) / period,
+            avgLoss: (wilderState.avgLoss * (period - 1) + loss) / period,
+        };
+        rsiValues[i + 1] = toRSI(wilderState.avgGain, wilderState.avgLoss);
+    }
 
     return [...new Array(period).fill(null), ...rsiValues];
 }

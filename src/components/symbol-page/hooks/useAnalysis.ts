@@ -120,6 +120,10 @@ export function useAnalysis({
                 force
             );
         },
+        onMutate: () => {
+            setPollError(null);
+            setAnalysisResult(null);
+        },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
                 currentJobIdRef.current = null;
@@ -169,8 +173,6 @@ export function useAnalysis({
                 return;
             }
             reset();
-            setPollError(null);
-            setAnalysisResult(null);
             mutate({ symbol: latestSymbol, force: true });
         })();
     }, [reset, mutate]);
@@ -197,8 +199,6 @@ export function useAnalysis({
 
         const jobId = submitData.jobId;
         let cancelled = false;
-
-        setPollError(null);
 
         void (async () => {
             while (!cancelled) {
@@ -281,8 +281,6 @@ export function useAnalysis({
         }
 
         reset();
-        setPollError(null);
-        setAnalysisResult(null);
         mutate({ symbol: latestRef.current.symbol, force: false });
     }, [timeframeChangeCount, reset, mutate]);
 

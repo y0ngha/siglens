@@ -84,6 +84,35 @@ function calculateRSI(closes: number[], period: number): (number | null)[] { ...
 // ✅ function child(parentVar: T) { ... }  // extracted, explicit params
 ```
 
+**Exception — Local state-accumulator mutation is allowed when `reduce + spread` causes O(N²) complexity:**
+
+State-machine based indicators where each step depends on the previous accumulated result
+cannot use `reduce + [...acc, value]` without incurring O(N²) time complexity.
+In these cases, a function-local mutable accumulator (pre-allocated array + index assignment,
+or a `for` loop with index) is permitted.
+
+The following conditions must all be satisfied:
+1. The function maintains a pure contract (same input → same output, no side effects)
+2. Input arguments (`bars`, `state`, etc.) are never mutated
+3. The return value is a completed, externally immutable array
+
+```typescript
+// ❌ O(N²) — spread inside reduce creates a new array on every iteration
+const results = bars.reduce((acc, bar) => {
+    return [...acc, compute(bar)];
+}, [] as Result[]);
+
+// ✅ O(N) — pre-allocated array with index assignment (local mutation only)
+const results: Result[] = new Array(bars.length);
+let state = initialState;
+for (let i = 0; i < bars.length; i++) {
+    const { state: next, result } = nextState(state, bars[i]);
+    results[i] = result;
+    state = next;
+}
+return results;
+```
+
 ### Priority by Layer
 
 ```
