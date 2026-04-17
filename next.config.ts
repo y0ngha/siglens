@@ -18,6 +18,14 @@ const nextConfig: NextConfig = {
         root: import.meta.dirname,
     },
 
+    // TODO: 임시 조치. submitAnalysisAction이 bars+indicators 전체를 payload로 보내 1MB 초과.
+    // 근본 해결은 Server Action 내부에서 서버가 직접 fetchBarsWithIndicators로 재구성하도록 리팩토링.
+    experimental: {
+        serverActions: {
+            bodySizeLimit: '5mb',
+        },
+    },
+
     headers: async () => [
         {
             source: '/(.*)',
