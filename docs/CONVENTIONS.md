@@ -801,10 +801,10 @@ to `useQuery`/`useMutation` as `queryFn`/`mutationFn`.
 // src/infrastructure/market/barsApi.ts
 export async function fetchBarsWithIndicators(
     symbol: string,
-    timeframe: Timeframe,
-    signal?: AbortSignal
+    timeframe: Timeframe
 ): Promise<BarsData> {
-    const res = await fetch(`/api/bars?symbol=${symbol}&timeframe=${timeframe}`);
+    'use cache';
+    // FMP/Alpaca 호출 + domain indicator 계산 결과를 함께 캐싱
     // ...
 }
 
@@ -812,7 +812,7 @@ export async function fetchBarsWithIndicators(
 // src/components/symbol-page/hooks/useBars.ts
 const { data } = useQuery({
     queryKey: QUERY_KEYS.bars(symbol, timeframe),
-    queryFn: ({ signal }) => fetchBarsWithIndicators(symbol, timeframe, signal),
+    queryFn: () => fetchBarsWithIndicators(symbol, timeframe),
 });
 
 // ❌ No inline fetch logic inside component hooks
