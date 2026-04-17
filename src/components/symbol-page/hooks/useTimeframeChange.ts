@@ -7,6 +7,7 @@ import type { BarsData, Timeframe } from '@/domain/types';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';
+import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 
 const TIMEFRAME_QUERY_PARAM = 'tf';
 
@@ -22,11 +23,12 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
     const [, startTransition] = useTransition();
 
     const searchParams = useSearchParams();
-    const tf = searchParams.get(TIMEFRAME_QUERY_PARAM);
-    const timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
-
+    const assetInfo = useAssetInfo(symbol);
     const queryClient = useQueryClient();
     const router = useRouter();
+
+    const tf = searchParams.get(TIMEFRAME_QUERY_PARAM);
+    const timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
 
     const handleTimeframeChange = useCallback(
         (nextTimeframe: Timeframe): void => {
@@ -41,7 +43,8 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
             // 렌더 전에 쿼리 캐시에 데이터(또는 진행 중인 Promise)를 넣어둔다.
             void queryClient.prefetchQuery<BarsData>({
                 queryKey: QUERY_KEYS.bars(symbol, nextTimeframe),
-                queryFn: () => getBarsAction(symbol, nextTimeframe),
+                queryFn: () =>
+                    getBarsAction(symbol, nextTimeframe, assetInfo?.fmpSymbol),
             });
             startTransition(() => {
                 setTimeframeChangeCount(c => c + 1);
@@ -51,7 +54,7 @@ export function useTimeframeChange(symbol: string): UseTimeframeChangeResult {
                 );
             });
         },
-        [timeframe, queryClient, symbol, router]
+        [timeframe, queryClient, symbol, router, assetInfo?.fmpSymbol]
     );
 
     return { timeframe, timeframeChangeCount, handleTimeframeChange };

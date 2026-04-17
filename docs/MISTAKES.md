@@ -40,6 +40,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 6. Repeating identical filtering/calculation logic across multiple useEffect/useMemo blocks
    → Extract to useMemo (hooks) or const (regular code)
 
+6.5. State/function/documentation divergence — parts of the system not synchronized when requirements change
+   → When reset() is called, all related state (useState + useMutation) must be reset together
+   → When function implementation changes, all related functions in the same module must use consistent approach
+   → When prompt/instruction fields are updated, all field lists and documentation must stay synchronized
+   ❌ reset() clears useMutation data but leaves separate useState stale
+   ❌ collectMdFiles uses recursion but countSkillFiles uses non-recursive readdir
+   ❌ Prompt field added to first list but omitted from second list in same instruction block
+   ✅ reset() clears both useMutation and all related useState state together
+   ✅ countSkillFiles reuses collectMdFiles for consistency
+   ✅ All field lists synchronized when new fields are added
+
 7. Repeating identical className ternary 3+ times
    → Extract to a helper function
 
@@ -83,6 +94,27 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ worker/src/index.ts: // Matches JOB_TTL_SECONDS in queue.ts; update both if changed
              const JOB_TTL_SECONDS = 3600;
     → Redis key schemas duplicated across files must include a JSDoc block documenting the schema origin and dependency chain
+
+16. Custom hooks declared after derived variables in component/hook code
+    → All hook calls must be declared before derived variables (const x = ...), handlers, or effects
+    ❌ const timeframe = computeTimeframe(); useQuery(...)
+    ✅ useQuery(...); const timeframe = computeTimeframe();
+    → Ordering: useState/useRef → useQuery/useMutation → derived variables → handlers → useEffect
+
+17. Non-hook utility functions defined inside hook files
+    → Pure utilities like sleep() belong in utils/ subfolders, not inside hook files
+    ❌ useAnalysis.ts: const sleep = (ms) => new Promise(...)
+    ✅ symbol-page/utils/sleep.ts
+
+18. Inline styles in JSX when Tailwind classes are available
+    → Always use Tailwind; never inline style={{ ... }} for layout or styling
+    ❌ <ins style={{ display: 'block' }} />
+    ✅ <ins className="block" />
+
+19. Nested functions without explicit parameters extracted to module level
+    → When extracting a function from a parent function scope, make all parent variables explicit parameters
+    ❌ function searchAction() { function toResult(x) { ... parent var ... } }
+    ✅ function toResult(x, parentVar) { ... }; function searchAction() { toResult(..., parentVar); }
 ```
 
 ---
@@ -242,6 +274,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Expected values from module exports must also be imported, not hardcoded
     ❌ expect(label).toBe('STRONG'); // STRONG_LABEL imported from same module as function
     ✅ import { SIGNAL_STRENGTH_LABEL } from '@/utils'; expect(label).toBe(SIGNAL_STRENGTH_LABEL.strong);
+
+14. Time-dependent functions in tests must be explicitly mocked
+    → Functions using Date.now(), new Date() must be mocked in test files
+    → Hard-coded expected values (e.g., TTL seconds) without mocking time sources cause flaky tests
+    ❌ analyzeAction test: expect(ttl).toBe(86400); without mocking new Date()
+    ✅ jest.mock('@/infrastructure/cache/config', ...); mock Date to fixed timestamp before assertions
 ```
 
 ---
@@ -340,20 +378,44 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
-## Pure Function Contracts
+## Infrastructure Functions
 
 ```
-1. Utility functions must guard all valid input ranges explicitly
-   → Pure functions must handle edge cases so callers cannot receive invalid results
-   → Include guards for both lower bounds (null, negative) and upper bounds (array length, max values)
-   ❌ function resolveBarIndex(index) { if (index < 0) return 0; return index; }  // missing upper bound
-   ✅ function resolveBarIndex(index) { if (index < 0) return 0; if (index >= length) return length - 1; return index; }
+1. Conditional logic branches must all update shared data consistently
+   → Background jobs and retry paths must produce same data shape as main path
+   → When caching results, all code paths must store the same fields
+   ❌ Main path: cache.set(symbol, { symbol, name, koreanName, fmpSymbol })
+      Background job: cache.set(symbol, { symbol, name, koreanName })  // fmpSymbol missing
+   ✅ Both paths: cache.set(symbol, { symbol, name, koreanName, fmpSymbol })
 
-2. External dependencies must fail gracefully consistently across the module
-   → All calls to the same external service should use identical error handling patterns
-   → If one call uses try-catch, all calls to that service should be wrapped identically
-   ❌ cache.get(key)  // no try-catch, but cache.set(key, val) has try-catch
-   ✅ const value = await cache.get(key).catch(error => { console.error(...); return null; });
+2. Infrastructure functions must have 100% branch coverage
+   → All if/else, optional chaining (?.), nullish coalescing (??) paths tested
+   → Test edge cases like subsecond boundaries, zero values, Math.max guard behavior
+   ❌ Math.max(1, Math.floor(diffMs / 1000)) guard that converts 0→1 untested
+   ✅ Add test case: diffMs = 500ms covers the Math.max(1, 0) = 1 path
+
+3. No debug artifacts (console.log) in infrastructure files
+   → Infrastructure functions are utilities; logging belongs in higher layers
+   ❌ getBars() { console.log(...timing...); return bars; }
+   ✅ Remove logging; expose metrics via return type if needed
+```
+
+---
+
+## Fire-and-Forget Operations
+
+```
+1. Fire-and-forget fetch requests must have timeouts
+   → fetch() without timeout can block indefinitely on network delay
+   → Apply AbortSignal.timeout(ms) to prevent client-side blocking
+   ❌ fetch('/cancel', { method: 'POST' })  // no timeout
+   ✅ fetch('/cancel', { method: 'POST', signal: AbortSignal.timeout(5000) })
+
+2. Fire-and-forget Server Actions must swallow errors
+   → Error propagation from background actions blocks the caller
+   → Wrap in try-catch, log warning, and return normally
+   ❌ async function cancelAction() { await fetch('/cancel'); }  // throws to caller if fetch fails
+   ✅ async function cancelAction() { try { await fetch(...); } catch (e) { console.warn('Background action failed', e); } }
 ```
 
 ---

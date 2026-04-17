@@ -287,6 +287,58 @@ describe('FmpProvider', () => {
             });
         });
 
+        describe('지수 심볼 (^ 접두사 포함)일 때', () => {
+            it('intraday 요청 시 ^ 접두사가 포함된 심볼을 그대로 FMP URL에 사용한다', async () => {
+                mockFetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [],
+                });
+
+                const provider = new FmpProvider();
+                await provider.getBars({ symbol: '^SPX', timeframe: '5Min' });
+
+                const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+                expect(new URL(url).searchParams.get('symbol')).toBe('^SPX');
+            });
+
+            it('daily 요청 시 EOD URL과 quote URL 모두 ^ 접두사 심볼을 그대로 사용한다', async () => {
+                mockFetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [],
+                });
+                mockFetch.mockResolvedValueOnce(emptyQuoteMock);
+
+                const provider = new FmpProvider();
+                await provider.getBars({ symbol: '^VIX', timeframe: '1Day' });
+
+                const [eodUrl] = mockFetch.mock.calls[0] as [
+                    string,
+                    RequestInit,
+                ];
+                const [quoteUrl] = mockFetch.mock.calls[1] as [
+                    string,
+                    RequestInit,
+                ];
+                expect(new URL(eodUrl).searchParams.get('symbol')).toBe('^VIX');
+                expect(new URL(quoteUrl).searchParams.get('symbol')).toBe(
+                    '^VIX'
+                );
+            });
+
+            it('일반 주식 심볼은 ^ 접두사 없이 그대로 사용한다', async () => {
+                mockFetch.mockResolvedValueOnce({
+                    ok: true,
+                    json: async () => [],
+                });
+
+                const provider = new FmpProvider();
+                await provider.getBars({ symbol: 'AAPL', timeframe: '5Min' });
+
+                const [url] = mockFetch.mock.calls[0] as [string, RequestInit];
+                expect(new URL(url).searchParams.get('symbol')).toBe('AAPL');
+            });
+        });
+
         describe('daily 타임프레임 (1Day)', () => {
             it('historical-price-eod/full 엔드포인트로 요청한다', async () => {
                 mockFetch.mockResolvedValueOnce({

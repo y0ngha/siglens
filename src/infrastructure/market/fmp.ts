@@ -186,24 +186,20 @@ export class FmpProvider implements MarketDataProvider {
     // from 파라미터는 from 쿼리로, before 파라미터는 to 쿼리로 변환합니다.
     // Daily(1Day) 타임프레임은 /stable/historical-price-eod/full 엔드포인트를 사용합니다.
     async getBars(options: GetBarsOptions): Promise<Bar[]> {
-        const { symbol, timeframe, before, from } = options;
-
-        console.log(
-            `[FMP][${new Date().toISOString()}] getBars called: ${symbol} ${timeframe} from=${from}`
-        );
+        const { symbol: fmpSymbol, timeframe, before, from } = options;
 
         const fromDate = from !== undefined ? from.substring(0, 10) : undefined;
         const endDate =
             before !== undefined ? before.substring(0, 10) : undefined;
 
         if (timeframe === '1Day') {
-            return this.getDailyBars(symbol, fromDate, endDate);
+            return this.getDailyBars(fmpSymbol, fromDate, endDate);
         }
 
         // timeframe !== '1Day' is guaranteed by the branch above
         const intradayTimeframe = timeframe as Exclude<Timeframe, '1Day'>;
         const fmpTimeframe = FMP_INTRADAY_TIMEFRAME_MAP[intradayTimeframe];
-        return this.getIntradayBars(symbol, fmpTimeframe, fromDate, endDate);
+        return this.getIntradayBars(fmpSymbol, fmpTimeframe, fromDate, endDate);
     }
 
     private async getIntradayBars(

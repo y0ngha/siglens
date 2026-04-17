@@ -123,6 +123,7 @@ export function SymbolPageClient({
                                 initialAnalysis={initialAnalysis}
                                 initialAnalysisFailed={initialAnalysisFailed}
                                 onMobileSheetContent={setMobileSheetContent}
+                                fmpSymbol={assetInfo?.fmpSymbol}
                             />
                         </Suspense>
                     </ErrorBoundary>

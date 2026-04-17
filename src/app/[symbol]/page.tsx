@@ -153,7 +153,12 @@ export default async function SymbolPage({ params, searchParams }: Props) {
 
     await queryClient.prefetchQuery({
         queryKey: QUERY_KEYS.bars(symbol, initialTimeframe),
-        queryFn: () => fetchBarsWithIndicators(symbol, initialTimeframe),
+        queryFn: () =>
+            fetchBarsWithIndicators(
+                symbol,
+                initialTimeframe,
+                assetInfo.fmpSymbol
+            ),
     });
 
     return (

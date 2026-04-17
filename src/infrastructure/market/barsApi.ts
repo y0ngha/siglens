@@ -17,18 +17,18 @@ function computeFromDay(timeframe: Timeframe, now: Date): string {
 
 // new Date()는 'use cache' 경계 바깥에서 계산하여 동적 값이 캐시 키에 포함되도록 한다.
 async function fetchBarsWithIndicatorsCached(
-    symbol: string,
+    fmpSymbol: string,
     timeframe: Timeframe,
     fromDay: string
 ): Promise<BarsData> {
     'use cache';
     cacheLife('minutes');
-    cacheTag(`bars:${symbol}:${timeframe}`);
+    cacheTag(`bars:${fmpSymbol}:${timeframe}`);
 
     const limit = TIMEFRAME_BARS_LIMIT[timeframe];
     const provider = createMarketDataProvider();
     const bars = await provider.getBars({
-        symbol,
+        symbol: fmpSymbol,
         timeframe,
         limit,
         from: fromDay,
@@ -40,8 +40,13 @@ async function fetchBarsWithIndicatorsCached(
 
 export async function fetchBarsWithIndicators(
     symbol: string,
-    timeframe: Timeframe
+    timeframe: Timeframe,
+    fmpSymbol?: string
 ): Promise<BarsData> {
     const fromDay = computeFromDay(timeframe, new Date());
-    return fetchBarsWithIndicatorsCached(symbol, timeframe, fromDay);
+    return fetchBarsWithIndicatorsCached(
+        fmpSymbol ?? symbol,
+        timeframe,
+        fromDay
+    );
 }

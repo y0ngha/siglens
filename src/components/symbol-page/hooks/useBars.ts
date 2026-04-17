@@ -8,6 +8,7 @@ import { QUERY_KEYS } from '@/lib/queryConfig';
 interface UseBarsOptions {
     symbol: string;
     timeframe: Timeframe;
+    fmpSymbol?: string;
 }
 
 interface UseBarsResult {
@@ -15,10 +16,14 @@ interface UseBarsResult {
     indicators: IndicatorResult;
 }
 
-export function useBars({ symbol, timeframe }: UseBarsOptions): UseBarsResult {
+export function useBars({
+    symbol,
+    timeframe,
+    fmpSymbol,
+}: UseBarsOptions): UseBarsResult {
     const { data } = useSuspenseQuery<BarsData, Error>({
         queryKey: QUERY_KEYS.bars(symbol, timeframe),
-        queryFn: () => getBarsAction(symbol, timeframe),
+        queryFn: () => getBarsAction(symbol, timeframe, fmpSymbol),
     });
 
     return { bars: data.bars, indicators: data.indicators };

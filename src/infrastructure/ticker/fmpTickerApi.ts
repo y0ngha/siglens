@@ -23,6 +23,18 @@ export function filterUsExchanges(
     );
 }
 
+// FMP는 지수 심볼에 ^ 접두사를 붙여 반환한다 (예: ^SPX, ^DJI)
+export function filterIndexResults(
+    results: FmpSearchResult[]
+): FmpSearchResult[] {
+    return results.filter(r => r.symbol.startsWith('^'));
+}
+
+// ^ 접두사를 제거하여 URL/표시용 심볼로 변환한다 (예: ^SPX → SPX)
+export function toDisplaySymbol(fmpSymbol: string): string {
+    return fmpSymbol.startsWith('^') ? fmpSymbol.slice(1) : fmpSymbol;
+}
+
 async function fetchFmpEndpoint(
     endpoint: 'search-symbol' | 'search-name',
     query: string

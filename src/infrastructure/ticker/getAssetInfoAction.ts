@@ -11,7 +11,9 @@ import {
 import {
     searchBySymbol,
     filterUsExchanges,
+    filterIndexResults,
 } from '@/infrastructure/ticker/fmpTickerApi';
+import type { FmpSearchResult } from '@/infrastructure/ticker/types';
 import {
     getKoreanNames,
     setKoreanTickers,
@@ -20,11 +22,20 @@ import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator'
 import { isValidTickerFormat } from '@/domain/ticker';
 import type { AssetInfo, KoreanTickerEntry } from '@/domain/types';
 
+async function findIndexMatch(
+    symbol: string
+): Promise<FmpSearchResult | undefined> {
+    const results = await searchBySymbol(`^${symbol}`);
+    const indexResults = filterIndexResults(results);
+    return indexResults.find(r => r.symbol === `^${symbol}`) ?? indexResults[0];
+}
+
 async function translateAndCache(
     symbol: string,
     name: string,
     exchange: string,
-    exchangeFullName: string
+    exchangeFullName: string,
+    fmpSymbol?: string
 ): Promise<void> {
     const translated = await translateCompanyNames([{ symbol, name }]);
     const koreanName = translated[symbol];
@@ -45,7 +56,7 @@ async function translateAndCache(
         await cacheProvider
             .set(
                 cacheKey,
-                { symbol, name, koreanName },
+                { symbol, name, koreanName, ...(fmpSymbol && { fmpSymbol }) },
                 ASSET_INFO_CACHE_TTL_WITH_KOREAN
             )
             .catch(error =>
@@ -77,7 +88,11 @@ const resolveAssetInfo = cache(
 
         const fmpResults = await searchBySymbol(upper);
         const usResults = filterUsExchanges(fmpResults);
-        const match = usResults.find(r => r.symbol === upper) ?? usResults[0];
+        const exactUsMatch = usResults.find(r => r.symbol === upper);
+        const indexMatch = exactUsMatch
+            ? undefined
+            : await findIndexMatch(upper);
+        const match = exactUsMatch ?? indexMatch ?? usResults[0];
 
         if (!match) return null;
 
@@ -90,6 +105,7 @@ const resolveAssetInfo = cache(
             symbol: upper,
             name,
             ...(koreanName && { koreanName }),
+            ...(indexMatch && { fmpSymbol: indexMatch.symbol }),
         };
 
         if (!koreanName) {
@@ -98,7 +114,8 @@ const resolveAssetInfo = cache(
                     upper,
                     name,
                     exchange,
-                    exchangeFullName
+                    exchangeFullName,
+                    indexMatch?.symbol
                 ).catch(error =>
                     console.error('Asset info translateAndCache failed:', error)
                 )

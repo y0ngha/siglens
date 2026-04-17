@@ -11,6 +11,8 @@ import {
     searchBySymbol,
     searchByName,
     filterUsExchanges,
+    filterIndexResults,
+    toDisplaySymbol,
     toTickerSearchResult,
 } from '@/infrastructure/ticker/fmpTickerApi';
 import {
@@ -20,8 +22,14 @@ import {
 } from '@/infrastructure/ticker/koreanNameStore';
 import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
 import type { TickerSearchResult, KoreanTickerEntry } from '@/domain/types';
+import type { FmpSearchResult } from '@/infrastructure/ticker/types';
 
 const MAX_SEARCH_RESULTS = 10;
+const MAX_INDEX_SYMBOL_LENGTH = 6;
+
+function toIndexTickerResult(r: FmpSearchResult): TickerSearchResult {
+    return toTickerSearchResult({ ...r, symbol: toDisplaySymbol(r.symbol) });
+}
 
 async function translateAndCache(
     unmapped: TickerSearchResult[]
@@ -60,24 +68,36 @@ export async function searchTickerAction(
         return results.slice(0, MAX_SEARCH_RESULTS);
     }
 
-    const cache = createCacheProvider();
+    const cacheProvider = createCacheProvider();
     const cacheKey = buildTickerSearchCacheKey(trimmed);
 
-    if (cache) {
+    if (cacheProvider) {
         try {
-            const cached = await cache.get<TickerSearchResult[]>(cacheKey);
+            const cached =
+                await cacheProvider.get<TickerSearchResult[]>(cacheKey);
             if (cached) return cached;
         } catch (error) {
             console.error('Ticker search cache get failed:', error);
         }
     }
 
-    const [symbolResults, nameResults] = await Promise.all([
+    const shouldSearchIndex =
+        !trimmed.startsWith('^') &&
+        !trimmed.includes(' ') &&
+        trimmed.length <= MAX_INDEX_SYMBOL_LENGTH;
+
+    const [symbolResults, nameResults, indexResults] = await Promise.all([
         searchBySymbol(trimmed),
         searchByName(trimmed),
+        shouldSearchIndex ? searchBySymbol(`^${trimmed}`) : Promise.resolve([]),
     ]);
 
     const merged = deduplicateResults([
+        // 지수 심볼 우선 (사용자가 'SPX' 입력 시 주식 부분 일치보다 지수를 먼저 노출)
+        // FMP가 일반 심볼 검색 결과에 ^ 접두사 심볼을 함께 반환하는 경우를 처리
+        ...filterIndexResults(symbolResults).map(toIndexTickerResult),
+        // ^{trimmed} 직접 검색 결과 (심볼 직접 입력 시)
+        ...filterIndexResults(indexResults).map(toIndexTickerResult),
         ...filterUsExchanges(symbolResults).map(toTickerSearchResult),
         ...filterUsExchanges(nameResults).map(toTickerSearchResult),
     ]);
@@ -100,9 +120,9 @@ export async function searchTickerAction(
 
     const final = enriched.slice(0, MAX_SEARCH_RESULTS);
 
-    if (cache) {
+    if (cacheProvider) {
         waitUntil(
-            cache
+            cacheProvider
                 .set(cacheKey, final, TICKER_SEARCH_CACHE_TTL)
                 .catch(error =>
                     console.error('Ticker search cache set failed:', error)

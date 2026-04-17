@@ -1,5 +1,6 @@
 # Fix Log
 
+
 ## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
 - Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
 - Rule: Next.js Best Practices — `next/script`는 `<body>` 영역에 배치해야 함; `lazyOnload`는 브라우저 유휴 시점 실행이므로 `<head>` 배치가 의미상 부적절
@@ -23,15 +24,6 @@
 - Rule: Design — 동적 텍스트 콘텐츠에 `whitespace-nowrap` 사용 금지; 자연스러운 줄바꿈 허용
 - Context: 긴 한국어 안내 메시지가 작은 화면에서 컨테이너를 넘어 레이아웃 깨짐 유발 가능; 클래스 제거
 
-## [Issue #314 | feat/314/애드센스-배너-광고-구현 | 2026-04-15]
-- Violation: AdBanner.tsx의 `<ins>` 엘리먼트에 `style={{ display: 'block' }}` 인라인 스타일 사용
-- Rule: CONVENTIONS.md — No inline styles → Tailwind only; `block` 클래스를 사용해야 함
-- Context: AdSense `<ins>` 태그에 `display: block`을 적용하기 위해 인라인 스타일을 사용했으나, Tailwind의 `block` 클래스로 대체 가능
-
-## [PR #304 Round 2 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
-- Violation: `computeSecondsUntilKst17`에서 `0 < diffMs < 1000ms` 경계(서브초 구간)에서 `Math.max(1, 0) = 1` 반환 경로에 대한 테스트 누락
-- Rule: Infrastructure Layer Checklist — 100% branch coverage for infrastructure (all ?., ??, if/else paths)
-- Context: `Math.max(1, Math.floor(diffMs / MS_PER_SECOND))`의 `Math.max`가 0을 1로 올리는 경로가 테스트되지 않았음; `diffMs = 500ms`인 케이스 추가로 해결
 
 ## [PR #304 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `computeEffectiveTtl`이 `new Date()`에 의존함에도 `analyzeAction.test.ts`, `pollAnalysisAction.test.ts`에서 mock 없이 하드코딩 TTL 단언 — 시간대에 따라 flaky 테스트 발생
@@ -61,14 +53,6 @@
 - Rule: 데이터 의존 관계가 있는 Redis 쓰기는 순차 실행
 - Context: `worker/src/index.ts`에서 `Promise.all([set result, set status])` → `await set result; await set status`로 순차 실행
 
-- Violation: 타임프레임 변경 시 analysisResult(useState)를 null로 초기화하지 않아 이전 결과가 남음
-- Rule: 상태 일관성 — reset() 호출 시 관련 useState도 함께 초기화해야 함
-- Context: `useAnalysis.ts`에서 reset()은 useMutation data만 초기화하고, 별도 useState인 analysisResult는 그대로 유지
-
-- Violation: sleep 유틸리티 함수가 hooks/ 파일 내 직접 정의
-- Rule: CONVENTIONS.md — 비훅 순수 유틸리티 함수는 utils/ 서브폴더에 분리
-- Context: `useAnalysis.ts`에서 `sleep` 함수를 인라인 정의; `symbol-page/utils/sleep.ts`로 분리
-
 ## [PR #272 Round 2 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
 - Violation: `indicatorCount` prop이 `SymbolPageClient` → `ChartContent` → `AnalysisPanel`로 드릴링됨 (두 중간 컴포넌트 모두 미사용)
 - Rule: FF Coupling 4-D — 중간 컴포넌트가 직접 사용하지 않는 prop을 아래로 전달하는 것은 Props Drilling 위반
@@ -77,11 +61,6 @@
 - Violation: `countSkillFiles`에 캐싱 없음 — 페이지 요청마다 skills/ 디렉토리를 다시 스캔
 - Rule: App CLAUDE.md — "infrastructure 함수에는 `'use cache'` 디렉티브로 명시적 캐싱 적용"
 - Context: `'use cache'` 디렉티브 적용; `cacheComponents: true` 활성화 필요
-
-## [PR #272 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
-- Violation: `countMdFiles`가 `readdir`를 1레벨만 호출하여 비재귀적으로 구현됨
-- Rule: 일관성 원칙 — 동일 모듈 내 `collectMdFiles`(재귀 탐색)와 구현 방식이 달라 향후 서브디렉토리 추가 시 카운트 불일치 발생 가능
-- Context: `countSkillFiles` 추가 시 `collectMdFiles` 재활용 없이 단순 `readdir` 사용; `collectMdFiles`를 재활용하도록 수정
 
 ## [PR #270 | feat/261/차트-dynamic-import-모바일-TTI-개선 | 2026-04-11]
 - Violation: dynamic import loading 컴포넌트(`ChartSkeleton`)가 `absolute inset-0`을 사용함에도 래퍼 컨테이너에 `relative` 클래스 누락
@@ -92,11 +71,6 @@
 - Violation: 서버 prefetchQuery 키와 클라이언트 훅 키 불일치 (hydration 캐시 미스)
 - Rule: React Query Hydration 패턴 — prefetchQuery 키와 useQuery 키가 정확히 일치해야 함
 - Context: 서버는 ticker(대문자)로 키를 만들고 클라이언트는 symbol(원본)로 키를 만들어 소문자 URL 진입 시 캐시 미스 발생
-
-## [PR #220 | feat/219/action-recommendation | 2026-04-10]
-- Violation: RESPONSE_LANGUAGE_INSTRUCTION의 "Other text fields" 목록에 새 필드(positionAnalysis, entry, exit, riskReward) 누락
-- Rule: Prompt 일관성 — 한국어 작성 지시와 줄바꿈 지시 목록이 동기화되어야 함
-- Context: actionRecommendation 필드 추가 시 첫 번째 필드 목록에만 추가하고 두 번째 목록은 누락
 
 ## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
 - Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음
@@ -129,19 +103,11 @@
 - Violation: computeFromDay 반환값이 YYYY-MM-DD 형식 — Alpaca API가 RFC3339 형식 요구
 - Rule: Provider pair symmetric rule — Alpaca start 파라미터는 RFC3339 형식 필요
 - Context: barsApi.ts의 computeFromDay가 substring(0, 10)만 반환; T00:00:00Z 추가로 RFC3339 호환성 확보 (FMP는 fromDate.substring(0,10)으로 처리하므로 영향 없음)
-
 ## [PR #313 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
-- Violation: cancelAnalysisJobAction.ts의 fetch 호출에 타임아웃 미설정 — 네트워크 지연 시 Server Action이 무기한 대기 가능
-- Rule: CONVENTIONS.md — fire-and-forget fetch 요청에는 타임아웃을 설정해 클라이언트 흐름이 블로킹되지 않도록 해야 함
-- Context: `/cancel` 엔드포인트 호출에 AbortSignal.timeout(5000) 추가
-
 - Violation: useAnalysis.ts — eslint-disable-next-line react-hooks/exhaustive-deps used to suppress deps warning
 - Rule: CONVENTIONS.md react-hooks/exhaustive-deps — must restructure to fix the actual issue, not suppress the lint rule
 - Context: Mutation deps warning caused by unstable callback; fixed by restructuring with isCountdownActive boolean and cooldownStartValueRef to break the closure chain
 
-- Violation: cancelAnalysisJobAction.ts — Server Action passthrough with no error handling
-- Rule: CONVENTIONS.md — fire-and-forget actions should swallow errors and log a warning instead of throwing to caller
-- Context: Action called without try-catch; caller receives uncaught error; added try-catch to swallow and log, matching notification-action pattern
-
-
-
+- Violation: findIndexMatch 반환 타입을 `ReturnType<typeof filterIndexResults>[number] | undefined`로 표현
+- Rule: TypeScript — 재사용 가능하거나 의미를 전달해야 하는 반환 타입은 구조적 유틸리티 타입 대신 명시적 named type으로 표현
+- Context: `filterIndexResults`가 `FmpSearchResult[]`를 반환하므로 해당 표현식은 `FmpSearchResult | undefined`와 동일; 명시적 타입 사용이 더 가독성 높음
