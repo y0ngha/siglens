@@ -83,6 +83,27 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ worker/src/index.ts: // Matches JOB_TTL_SECONDS in queue.ts; update both if changed
              const JOB_TTL_SECONDS = 3600;
     → Redis key schemas duplicated across files must include a JSDoc block documenting the schema origin and dependency chain
+
+16. Custom hooks declared after derived variables in component/hook code
+    → All hook calls must be declared before derived variables (const x = ...), handlers, or effects
+    ❌ const timeframe = computeTimeframe(); useQuery(...)
+    ✅ useQuery(...); const timeframe = computeTimeframe();
+    → Ordering: useState/useRef → useQuery/useMutation → derived variables → handlers → useEffect
+
+17. Non-hook utility functions defined inside hook files
+    → Pure utilities like sleep() belong in utils/ subfolders, not inside hook files
+    ❌ useAnalysis.ts: const sleep = (ms) => new Promise(...)
+    ✅ symbol-page/utils/sleep.ts
+
+18. Inline styles in JSX when Tailwind classes are available
+    → Always use Tailwind; never inline style={{ ... }} for layout or styling
+    ❌ <ins style={{ display: 'block' }} />
+    ✅ <ins className="block" />
+
+19. Nested functions without explicit parameters extracted to module level
+    → When extracting a function from a parent function scope, make all parent variables explicit parameters
+    ❌ function searchAction() { function toResult(x) { ... parent var ... } }
+    ✅ function toResult(x, parentVar) { ... }; function searchAction() { toResult(..., parentVar); }
 ```
 
 ---

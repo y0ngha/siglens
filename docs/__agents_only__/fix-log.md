@@ -1,13 +1,5 @@
 # Fix Log
 
-## [PR #326 | feat/325/지수-심볼-지원 | 2026-04-17]
-- Violation: `useAssetInfo(symbol)` (`useQuery`)가 파생 변수 `timeframe` 이후에 선언됨
-- Rule: CONVENTIONS.md — Custom Hook 선언 순서: useState → useRef → useQuery/useMutation → 파생 변수 → 핸들러 → useEffect
-- Context: `useTimeframeChange.ts`에서 `const timeframe = ...` (파생 변수) 뒤에 `useAssetInfo` 호출이 위치
-
-- Violation: `toIndexResult` 인라인 함수가 `searchTickerAction` 함수 내부에 정의됨
-- Rule: CONVENTIONS.md — 중첩 함수는 명시적 파라미터와 함께 모듈 레벨로 추출
-- Context: `searchTickerAction` 함수 내에 `toIndexResult` 화살표 함수를 인라인으로 정의했으나 모듈 레벨 `toIndexTickerResult`로 추출해야 함
 
 ## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
 - Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
@@ -32,10 +24,6 @@
 - Rule: Design — 동적 텍스트 콘텐츠에 `whitespace-nowrap` 사용 금지; 자연스러운 줄바꿈 허용
 - Context: 긴 한국어 안내 메시지가 작은 화면에서 컨테이너를 넘어 레이아웃 깨짐 유발 가능; 클래스 제거
 
-## [Issue #314 | feat/314/애드센스-배너-광고-구현 | 2026-04-15]
-- Violation: AdBanner.tsx의 `<ins>` 엘리먼트에 `style={{ display: 'block' }}` 인라인 스타일 사용
-- Rule: CONVENTIONS.md — No inline styles → Tailwind only; `block` 클래스를 사용해야 함
-- Context: AdSense `<ins>` 태그에 `display: block`을 적용하기 위해 인라인 스타일을 사용했으나, Tailwind의 `block` 클래스로 대체 가능
 
 ## [PR #304 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
 - Violation: `computeEffectiveTtl`이 `new Date()`에 의존함에도 `analyzeAction.test.ts`, `pollAnalysisAction.test.ts`에서 mock 없이 하드코딩 TTL 단언 — 시간대에 따라 flaky 테스트 발생
@@ -69,9 +57,6 @@
 - Rule: 상태 일관성 — reset() 호출 시 관련 useState도 함께 초기화해야 함
 - Context: `useAnalysis.ts`에서 reset()은 useMutation data만 초기화하고, 별도 useState인 analysisResult는 그대로 유지
 
-- Violation: sleep 유틸리티 함수가 hooks/ 파일 내 직접 정의
-- Rule: CONVENTIONS.md — 비훅 순수 유틸리티 함수는 utils/ 서브폴더에 분리
-- Context: `useAnalysis.ts`에서 `sleep` 함수를 인라인 정의; `symbol-page/utils/sleep.ts`로 분리
 
 ## [PR #272 Round 2 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
 - Violation: `indicatorCount` prop이 `SymbolPageClient` → `ChartContent` → `AnalysisPanel`로 드릴링됨 (두 중간 컴포넌트 모두 미사용)
