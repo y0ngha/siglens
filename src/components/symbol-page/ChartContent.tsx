@@ -257,7 +257,7 @@ export function ChartContent({
     // analysisContent 참조가 안정적으로 유지되더라도 타임프레임 변경 시 effect가 재실행된다.
     // useEffect body에서는 mobileContent만 참조하므로 Predictability 규칙 3을 준수한다.
     const mobileContent = useMemo(
-        () => <>{analysisContent}</>,
+        () => <React.Fragment key={timeframe}>{analysisContent}</React.Fragment>,
         [analysisContent, timeframe]
     );
     const notifyMobileContent = useEffectEvent(onMobileSheetContent);
