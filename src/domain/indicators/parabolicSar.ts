@@ -14,18 +14,6 @@ interface PSARState {
 
 const NULL_RESULT: ParabolicSARResult = { sar: null, trend: null };
 
-function clampSARUptrend(sar: number, prevBar: Bar, prevPrevBar: Bar): number {
-    return Math.min(sar, prevBar.low, prevPrevBar.low);
-}
-
-function clampSARDowntrend(
-    sar: number,
-    prevBar: Bar,
-    prevPrevBar: Bar
-): number {
-    return Math.max(sar, prevBar.high, prevPrevBar.high);
-}
-
 interface PSARNextStateResult {
     state: PSARState;
     result: ParabolicSARResult;
@@ -40,10 +28,19 @@ interface PSARReduceAcc {
 function nextState(
     bar: Bar,
     prev: PSARState,
+    prevBars: [Bar, Bar],
     afIncrement: number,
     afMax: number
 ): PSARNextStateResult {
-    const rawSAR = prev.sar + prev.af * (prev.ep - prev.sar);
+    const projectedSAR = prev.sar + prev.af * (prev.ep - prev.sar);
+
+    // Wilder clamp: 현재 봉에 대해 새로 투영한 SAR 은 이전 두 봉의 저점(상승장)
+    // 또는 고점(하락장)을 침범해서는 안 된다. clamp 는 이전 SAR 에 소급 적용하지
+    // 않고, 방금 계산한 projectedSAR 에 대해서만 적용한다.
+    const rawSAR =
+        prev.trend === 'up'
+            ? Math.min(projectedSAR, prevBars[0].low, prevBars[1].low)
+            : Math.max(projectedSAR, prevBars[0].high, prevBars[1].high);
 
     if (prev.trend === 'up') {
         if (bar.low < rawSAR) {
@@ -115,28 +112,13 @@ export function calculateParabolicSAR(
 
     const { results } = bars.slice(2).reduce<PSARReduceAcc>(
         (acc, bar) => {
-            // SAR 클램핑
-            const clampedSAR =
-                acc.state.trend === 'up'
-                    ? clampSARUptrend(
-                          acc.state.sar,
-                          acc.prevBars[1],
-                          acc.prevBars[0]
-                      )
-                    : clampSARDowntrend(
-                          acc.state.sar,
-                          acc.prevBars[1],
-                          acc.prevBars[0]
-                      );
-
-            const clampedState = { ...acc.state, sar: clampedSAR };
             const { state, result } = nextState(
                 bar,
-                clampedState,
+                acc.state,
+                acc.prevBars,
                 afIncrement,
                 afMax
             );
-
             return {
                 state,
                 results: [...acc.results, result],

@@ -12,6 +12,8 @@ The Squeeze Momentum Indicator, originally developed by LazyBear (PineScript: ht
 
 **Parameters used:** BB length = 20, KC length = 20, KC multiplier = 1.5 (applied to both BB deviation and KC ATR offset).
 
+**BB deviation note:** The standard Bollinger Bands definition uses a deviation multiplier of 2.0. This implementation follows LazyBear's original PineScript faithfully, where the `mult` parameter is declared but never referenced — the BB deviation is computed as `multKC × stdev(close, bbLength)` with `multKC = 1.5`. As a result, the squeeze bands in this indicator are narrower than a conventional BB(20, 2.0) and produce more frequent squeeze transitions than a textbook BB reading would suggest. Do not compare these squeeze bands directly with a standalone Bollinger Bands indicator on the same chart.
+
 **Dependency note:** Squeeze Momentum is not a standalone oscillator — it requires both Bollinger Bands and Keltner Channel data to compute its squeeze state. The momentum component itself is derived from a separate linear regression of price deviations. All three inputs (BB, KC, and the regression series) must be available for the indicator to produce a meaningful reading.
 
 ## Signal Interpretation

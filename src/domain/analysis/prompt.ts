@@ -58,17 +58,83 @@ import type {
 type SkillGroupKey = SkillType | 'regular';
 
 const INDICATOR_DECIMAL_PLACES = 2;
-const RECENT_BARS_COUNT = 30;
 const DATETIME_DISPLAY_LENGTH = 16;
 const PERCENTAGE_FACTOR = 100;
-const INDICATOR_TREND_SAMPLE_COUNT = 5;
+
+// 타임프레임별 프롬프트 파라미터.
+//
+// 동일한 "bar 개수" 라 하더라도 실제 시간 지평은 타임프레임마다 크게 달라지므로,
+// AI 프롬프트의 설명력과 잡음 내성을 맞추기 위해 아래 세 값은 타임프레임 인지형
+// 맵으로 관리한다.
+//   - trendSampleCount:     detectTrend 슬라이스 크기. 단기(분봉)에서는 샘플이
+//                           많아야 잡음에 강하고, 장기(일봉)에서는 과한 smoothing
+//                           이 최근 반전을 놓치므로 작은 값을 쓴다.
+//   - recentBarsCount:      프롬프트에 포함할 "최근 봉" 수 + buy/sell volume 요약
+//                           구간. 단기에서는 충분한 컨텍스트를 위해 많이 보고,
+//                           장기에서는 시각적/토큰 부담을 줄인다.
+//   - squeezeZeroCrossLookback: Squeeze Momentum 영점 교차 탐지 lookback. 신호가
+//                           의미 있는 최근 기간이 타임프레임마다 다르다.
+//
+// 세 값은 항상 함께 수정되어야 하므로 MISTAKES.md Design & Cohesion #1 에 따라
+// 단일 PROMPT_CONFIG_BY_TIMEFRAME 맵으로 통합한다. 새 타임프레임 추가 시 한 곳만
+// 갱신하면 되고 누락 가능성이 사라진다.
+interface PromptConfig {
+    trendSampleCount: number;
+    recentBarsCount: number;
+    squeezeZeroCrossLookback: number;
+}
+
+// 타임프레임별 프롬프트 파라미터 단일 맵. 테스트 및 외부 호출자가 동일 값을
+// 참조할 수 있도록 export 한다 (MISTAKES.md Tests #4/#13: boundary constant
+// 는 소스에서 import, 하드코딩 금지).
+export const PROMPT_CONFIG_BY_TIMEFRAME: Record<Timeframe, PromptConfig> = {
+    '5Min': {
+        trendSampleCount: 12,
+        recentBarsCount: 48,
+        squeezeZeroCrossLookback: 24,
+    },
+    '15Min': {
+        trendSampleCount: 10,
+        recentBarsCount: 40,
+        squeezeZeroCrossLookback: 18,
+    },
+    '30Min': {
+        trendSampleCount: 9,
+        recentBarsCount: 36,
+        squeezeZeroCrossLookback: 14,
+    },
+    '1Hour': {
+        trendSampleCount: 8,
+        recentBarsCount: 32,
+        squeezeZeroCrossLookback: 12,
+    },
+    '4Hour': {
+        trendSampleCount: 7,
+        recentBarsCount: 30,
+        squeezeZeroCrossLookback: 10,
+    },
+    '1Day': {
+        trendSampleCount: 7,
+        recentBarsCount: 30,
+        squeezeZeroCrossLookback: 10,
+    },
+};
+
+const resolvePromptConfig = (timeframe: Timeframe): PromptConfig =>
+    PROMPT_CONFIG_BY_TIMEFRAME[timeframe];
+
+// detectTrend 의 상대 임계값 비율 (윈도 내 최대 절대값의 몇 % 를 'flat' 으로 간주할지).
+const INDICATOR_TREND_THRESHOLD_RATIO = 0.01;
+// detectTrend 의 절대 최소 임계값. 윈도 값이 모두 0 근처라서 ratio × maxAbs 가
+// 0 에 수렴하는 경우(예: MACD histogram, CCI, CMF 의 영점 교차 구간) 잡음이
+// 'rising'/'falling' 으로 오분류되는 것을 방지한다.
+const INDICATOR_TREND_MIN_THRESHOLD = 1e-8;
 
 const SMC_MAX_ORDER_BLOCKS = 5;
 const SMC_MAX_FAIR_VALUE_GAPS = 5;
 const SMC_MAX_STRUCTURE_BREAKS = 3;
 const SMC_MAX_EQUAL_LEVELS = 3;
 const SMC_MAX_SWING_POINTS = 5;
-const SQUEEZE_ZERO_CROSS_LOOKBACK = 10;
 
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {
     '5Min': '5-Minute',
@@ -93,17 +159,47 @@ const TIMEFRAME_CONTEXT: Record<Timeframe, string> = {
 
 type IndicatorTrend = 'rising' | 'falling' | 'flat';
 
-const detectTrend = (values: (number | null)[]): IndicatorTrend | null => {
+const detectTrend = (
+    values: (number | null)[],
+    sampleCount: number
+): IndicatorTrend | null => {
     const nonNull = values
-        .slice(-INDICATOR_TREND_SAMPLE_COUNT)
+        .slice(-sampleCount)
         .filter((v): v is number => v !== null);
     if (nonNull.length < 2) return null;
-    const first = nonNull[0];
-    const last = nonNull[nonNull.length - 1];
-    const diff = last - first;
-    const threshold = Math.abs(first) * 0.01;
-    if (diff > threshold) return 'rising';
-    if (diff < -threshold) return 'falling';
+
+    // 선형 회귀 slope 로 추세 방향을 판정한다. 첫/마지막 값만 비교하면 단일
+    // 극단치(whipsaw) 에 추세가 좌우되지만, slope 는 윈도 내 모든 값을 반영하여
+    // 잡음에 견고하다. windowSpan = slope × (n - 1) 은 fitted line 이 윈도 전체에
+    // 걸쳐 움직인 총 변화량이며, 임계값과 같은 단위로 비교 가능하다.
+    const n = nonNull.length;
+    const xMean = (n - 1) / 2;
+    const yMean = nonNull.reduce((sum, v) => sum + v, 0) / n;
+    const numerator = nonNull.reduce(
+        (sum, v, i) => sum + (i - xMean) * (v - yMean),
+        0
+    );
+    const denominator = nonNull.reduce(
+        (sum, _, i) => sum + (i - xMean) ** 2,
+        0
+    );
+    if (denominator === 0) return 'flat';
+    const windowSpan = (numerator / denominator) * (n - 1);
+
+    // 임계값은 윈도 내 최대 절대값을 기준으로 설정한다. 이렇게 하면
+    // MACD histogram, CCI, CMF 처럼 0 근처를 교차하는 지표에서도 잡음이
+    // 무조건 'rising'/'falling' 으로 분류되지 않고, 지표의 실제 스케일에
+    // 비례한 안정적인 임계값이 적용된다.
+    const windowMaxAbs = nonNull.reduce(
+        (max, v) => Math.max(max, Math.abs(v)),
+        0
+    );
+    const threshold = Math.max(
+        windowMaxAbs * INDICATOR_TREND_THRESHOLD_RATIO,
+        INDICATOR_TREND_MIN_THRESHOLD
+    );
+    if (windowSpan > threshold) return 'rising';
+    if (windowSpan < -threshold) return 'falling';
     return 'flat';
 };
 
@@ -214,8 +310,11 @@ const buildCandlePatternEntries = (bars: Bar[]): PromptCandlePatternEntry[] => {
 const formatPatternEntry = (entry: PromptCandlePatternEntry): string =>
     `- [${entry.barsAgo} bars ago] ${entry.patternType === 'single' ? 'Single candle pattern' : 'Multi-candle pattern'}: ${entry.patternName}`;
 
-const formatRecentBarsSection = (bars: Bar[]): string => {
-    const recentBars = bars.slice(-RECENT_BARS_COUNT);
+const formatRecentBarsSection = (
+    bars: Bar[],
+    recentBarsCount: number
+): string => {
+    const recentBars = bars.slice(-recentBarsCount);
 
     if (recentBars.length === 0) {
         return ['## Recent Bar Data', '- No data available'].join('\n');
@@ -237,8 +336,11 @@ const formatRecentBarsSection = (bars: Bar[]): string => {
     ].join('\n');
 };
 
-const formatBuySellVolumeSection = (indicators: IndicatorResult): string => {
-    const recentBuySell = indicators.buySellVolume.slice(-RECENT_BARS_COUNT);
+const formatBuySellVolumeSection = (
+    indicators: IndicatorResult,
+    recentBarsCount: number
+): string => {
+    const recentBuySell = indicators.buySellVolume.slice(-recentBarsCount);
 
     if (recentBuySell.length === 0) {
         return ['## Volume Analysis', '- No data available'].join('\n');
@@ -297,9 +399,12 @@ interface ZeroCross {
     barsAgo: number;
 }
 
-const detectZeroCross = (data: SqueezeMomentumResult[]): ZeroCross | null => {
+const detectZeroCross = (
+    data: SqueezeMomentumResult[],
+    lookback: number
+): ZeroCross | null => {
     const len = data.length;
-    const start = Math.max(0, len - SQUEEZE_ZERO_CROSS_LOOKBACK);
+    const start = Math.max(0, len - lookback);
     for (let i = len - 1; i > start; i--) {
         const curr = data[i].momentum;
         const prev = data[i - 1].momentum;
@@ -312,17 +417,23 @@ const detectZeroCross = (data: SqueezeMomentumResult[]): ZeroCross | null => {
     return null;
 };
 
-const formatSqueezeMomentumLine = (indicators: IndicatorResult): string => {
+const formatSqueezeMomentumLine = (
+    indicators: IndicatorResult,
+    config: PromptConfig
+): string => {
     const data = indicators.squeezeMomentum;
     const last = lastOf(data);
     if (!last || last.momentum === null) {
         return `- Squeeze Momentum(BB:${SQUEEZE_MOMENTUM_BB_LENGTH},KC:${SQUEEZE_MOMENTUM_KC_LENGTH},mult:${SQUEEZE_MOMENTUM_KC_MULT}): N/A`;
     }
 
-    const momentumTrend = detectTrend(data.map(d => d.momentum));
+    const momentumTrend = detectTrend(
+        data.map(d => d.momentum),
+        config.trendSampleCount
+    );
     const duration = countSqueezeDuration(data);
     const durationStr = duration > 0 ? ` / duration: ${duration} bars` : '';
-    const cross = detectZeroCross(data);
+    const cross = detectZeroCross(data, config.squeezeZeroCrossLookback);
     const crossStr =
         cross !== null
             ? ` / ${cross.direction === 'bullish_cross' ? 'bullish' : 'bearish'} zero-cross (${cross.barsAgo} bars ago)`
@@ -494,7 +605,10 @@ const formatSMCSection = (indicators: IndicatorResult, bars: Bar[]): string => {
     ].join('\n');
 };
 
-const formatIndicatorSection = (indicators: IndicatorResult): string => {
+const formatIndicatorSection = (
+    indicators: IndicatorResult,
+    config: PromptConfig
+): string => {
     const lastRSI = lastNonNull(indicators.rsi);
     const lastMACD = lastOf(indicators.macd);
     const lastBollinger = lastOf(indicators.bollinger);
@@ -515,15 +629,17 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
     const lastCMF = lastNonNull(indicators.cmf);
     const lastDonchian = lastOf(indicators.donchianChannel);
 
-    const rsiTrend = detectTrend(indicators.rsi);
-    const cciTrend = detectTrend(indicators.cci);
+    const sampleCount = config.trendSampleCount;
+    const rsiTrend = detectTrend(indicators.rsi, sampleCount);
+    const cciTrend = detectTrend(indicators.cci, sampleCount);
     const macdTrend = detectTrend(
-        indicators.macd.map(m => m.histogram ?? null)
+        indicators.macd.map(m => m.histogram ?? null),
+        sampleCount
     );
-    const atrTrend = detectTrend(indicators.atr);
-    const obvTrend = detectTrend(indicators.obv);
-    const mfiTrend = detectTrend(indicators.mfi);
-    const cmfTrend = detectTrend(indicators.cmf);
+    const atrTrend = detectTrend(indicators.atr, sampleCount);
+    const obvTrend = detectTrend(indicators.obv, sampleCount);
+    const mfiTrend = detectTrend(indicators.mfi, sampleCount);
+    const cmfTrend = detectTrend(indicators.cmf, sampleCount);
 
     return [
         '## Indicator Values',
@@ -548,7 +664,7 @@ const formatIndicatorSection = (indicators: IndicatorResult): string => {
         `- Keltner Channel(${KELTNER_EMA_PERIOD},${KELTNER_ATR_PERIOD},${KELTNER_MULTIPLIER}): Upper ${fmt(lastKeltner?.upper ?? null)} / Middle ${fmt(lastKeltner?.middle ?? null)} / Lower ${fmt(lastKeltner?.lower ?? null)}`,
         `- CMF(${CMF_DEFAULT_PERIOD}): ${fmt(lastCMF)}${trendLabel(cmfTrend)}`,
         `- Donchian Channel(${DONCHIAN_DEFAULT_PERIOD}): Upper ${fmt(lastDonchian?.upper ?? null)} / Middle ${fmt(lastDonchian?.middle ?? null)} / Lower ${fmt(lastDonchian?.lower ?? null)}`,
-        formatSqueezeMomentumLine(indicators),
+        formatSqueezeMomentumLine(indicators, config),
     ].join('\n');
 };
 
@@ -901,6 +1017,8 @@ export function buildAnalysisPrompt(
     const supportResistanceSkills = skillGroups.support_resistance;
     const regularSkills = skillGroups.regular;
 
+    const config = resolvePromptConfig(timeframe);
+
     const sections = [
         `Symbol: ${symbol}`,
         `Timeframe: ${TIMEFRAME_LABEL[timeframe]}\nTimeframe interpretation: ${TIMEFRAME_CONTEXT[timeframe]}`,
@@ -908,9 +1026,9 @@ export function buildAnalysisPrompt(
         ANALYSIS_GUIDELINES,
         formatMarketSection(bars),
         formatLongTermContext(bars),
-        formatRecentBarsSection(bars),
-        formatBuySellVolumeSection(indicators),
-        formatIndicatorSection(indicators),
+        formatRecentBarsSection(bars, config.recentBarsCount),
+        formatBuySellVolumeSection(indicators, config.recentBarsCount),
+        formatIndicatorSection(indicators, config),
         formatSMCSection(indicators, bars),
         ...(indicatorGuideSkills.length > 0
             ? [

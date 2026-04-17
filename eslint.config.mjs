@@ -20,6 +20,8 @@ const eslintConfig = defineConfig([
         '.agents/**',
         '.claude/**',
         '.superpowers/**',
+        'worker/.pnp.cjs',
+        'coverage/**',
     ]),
     {
         // JSON-LD structured data injection via dangerouslySetInnerHTML on <script> elements
