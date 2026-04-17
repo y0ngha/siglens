@@ -145,6 +145,15 @@
 - Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
 - Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
 
+## [PR #320 | refactor/318/서버-액션-페이로드-축소 | 2026-04-17]
+- Violation: submitAnalysisAction에 force 파라미터 없어 force: true(재분석 버튼)에도 Redis 캐시가 그대로 반환됨
+- Rule: Props declared but not connected to callbacks — useAnalysis가 force를 Server Action에 전달하지 않아 재분석 의도가 서버에 전달되지 않음
+- Context: mutationFn에서 force를 추출하여 lastForceRef에만 저장하고 submitAnalysisAction 호출 시 누락; force 파라미터 추가 및 !force 조건으로 Redis 캐시 건너뜀
+
+- Violation: computeFromDay 반환값이 YYYY-MM-DD 형식 — Alpaca API가 RFC3339 형식 요구
+- Rule: Provider pair symmetric rule — Alpaca start 파라미터는 RFC3339 형식 필요
+- Context: barsApi.ts의 computeFromDay가 substring(0, 10)만 반환; T00:00:00Z 추가로 RFC3339 호환성 확보 (FMP는 fromDate.substring(0,10)으로 처리하므로 영향 없음)
+
 ## [PR #313 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
 - Violation: cancelAnalysisJobAction.ts의 fetch 호출에 타임아웃 미설정 — 네트워크 지연 시 Server Action이 무기한 대기 가능
 - Rule: CONVENTIONS.md — fire-and-forget fetch 요청에는 타임아웃을 설정해 클라이언트 흐름이 블로킹되지 않도록 해야 함
