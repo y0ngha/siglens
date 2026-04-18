@@ -5,8 +5,25 @@ import {
     computePctB,
     computeEma20Slope,
     percentileRank,
+    detectRsiBullishDivergence,
+    detectRsiBearishDivergence,
 } from '@/domain/signals/anticipation';
-import type { BollingerResult } from '@/domain/types';
+import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
+import type { Bar, BollingerResult, IndicatorResult } from '@/domain/types';
+
+function barsFromOHLC(
+    data: Array<{ open: number; high: number; low: number; close: number }>
+): Bar[] {
+    return data.map((d, i) => ({
+        time: 1700000000 + i * 86400,
+        volume: 1000,
+        ...d,
+    }));
+}
+
+function withRsiAndBars(rsi: (number | null)[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, rsi };
+}
 
 describe('findPivotLows', () => {
     describe('창 내에 명확한 저점이 있을 때', () => {
@@ -154,6 +171,213 @@ describe('percentileRank', () => {
     describe('배열에 없는 값', () => {
         it('배열 내 상대 위치에 해당하는 비율을 반환한다', () => {
             expect(percentileRank(2.5, [1, 2, 3, 4, 5])).toBeCloseTo(0.4);
+        });
+    });
+});
+
+describe('detectRsiBullishDivergence', () => {
+    describe('가격은 더 낮은 저점이고 RSI는 더 높은 저점일 때', () => {
+        it('Signal을 반환한다', () => {
+            // Flat baseline (100) ensures only indices 5 and 17 are pivot lows
+            const ohlc = Array.from({ length: 20 }, (_, i) => {
+                const low = i === 5 ? 90 : i === 17 ? 85 : 100;
+                return { open: low + 1, high: low + 2, low, close: low + 1 };
+            });
+            const rsi = Array.from({ length: 20 }, (_, i) => {
+                if (i === 5) return 25;
+                if (i === 17) return 35;
+                return 50;
+            });
+            const result = detectRsiBullishDivergence(
+                barsFromOHLC(ohlc),
+                withRsiAndBars(rsi)
+            );
+            expect(result?.type).toBe('rsi_bullish_divergence');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('expected');
+        });
+    });
+
+    describe('Hidden divergence (price higher low + rsi lower low) 일 때', () => {
+        it('null을 반환한다 (regular만 감지)', () => {
+            const ohlc = Array.from({ length: 20 }, (_, i) => {
+                const low = i === 5 ? 85 : i === 17 ? 90 : 100;
+                return { open: low + 1, high: low + 2, low, close: low + 1 };
+            });
+            const rsi = Array.from({ length: 20 }, (_, i) => {
+                if (i === 5) return 35;
+                if (i === 17) return 25;
+                return 50;
+            });
+            expect(
+                detectRsiBullishDivergence(
+                    barsFromOHLC(ohlc),
+                    withRsiAndBars(rsi)
+                )
+            ).toBeNull();
+        });
+    });
+
+    describe('둘째 피벗이 최근 5봉 이전일 때', () => {
+        it('null을 반환한다', () => {
+            // Pivots at 5 and 10; lastIdx=19, so 19-10=9 > 5 (not fresh)
+            const ohlc = Array.from({ length: 20 }, (_, i) => {
+                const low = i === 5 ? 90 : i === 10 ? 85 : 100;
+                return { open: low + 1, high: low + 2, low, close: low + 1 };
+            });
+            const rsi = Array.from({ length: 20 }, (_, i) => {
+                if (i === 5) return 25;
+                if (i === 10) return 35;
+                return 50;
+            });
+            expect(
+                detectRsiBullishDivergence(
+                    barsFromOHLC(ohlc),
+                    withRsiAndBars(rsi)
+                )
+            ).toBeNull();
+        });
+    });
+
+    describe('창 내 피벗이 2개 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const ohlc = Array.from({ length: 20 }, () => ({
+                open: 100,
+                high: 100,
+                low: 100,
+                close: 100,
+            }));
+            const rsi = Array(20).fill(50);
+            expect(
+                detectRsiBullishDivergence(
+                    barsFromOHLC(ohlc),
+                    withRsiAndBars(rsi)
+                )
+            ).toBeNull();
+        });
+    });
+});
+
+describe('detectRsiBullishDivergence — 추가 엣지케이스', () => {
+    describe('bars 길이가 lookback보다 작을 때', () => {
+        it('null을 반환한다', () => {
+            const ohlc = Array.from({ length: 10 }, () => ({
+                open: 100,
+                high: 100,
+                low: 100,
+                close: 100,
+            }));
+            const rsi = Array(10).fill(50);
+            expect(
+                detectRsiBullishDivergence(
+                    barsFromOHLC(ohlc),
+                    withRsiAndBars(rsi)
+                )
+            ).toBeNull();
+        });
+    });
+
+    describe('피벗 위치의 RSI 값이 null일 때', () => {
+        it('null을 반환한다', () => {
+            const ohlc = Array.from({ length: 20 }, (_, i) => {
+                const low = i === 5 ? 90 : i === 17 ? 85 : 100;
+                return { open: low + 1, high: low + 2, low, close: low + 1 };
+            });
+            const rsi: (number | null)[] = Array.from({ length: 20 }, (_, i) => {
+                if (i === 5) return null; // first pivot has null RSI
+                if (i === 17) return 35;
+                return 50;
+            });
+            expect(
+                detectRsiBullishDivergence(
+                    barsFromOHLC(ohlc),
+                    withRsiAndBars(rsi)
+                )
+            ).toBeNull();
+        });
+    });
+
+    describe('가격이 더 낮지만 RSI도 더 낮을 때 (regular 조건 미충족)', () => {
+        it('null을 반환한다', () => {
+            const ohlc = Array.from({ length: 20 }, (_, i) => {
+                const low = i === 5 ? 90 : i === 17 ? 85 : 100;
+                return { open: low + 1, high: low + 2, low, close: low + 1 };
+            });
+            const rsi = Array.from({ length: 20 }, (_, i) => {
+                if (i === 5) return 30;
+                if (i === 17) return 25; // rsi2 <= rsi1
+                return 50;
+            });
+            expect(
+                detectRsiBullishDivergence(
+                    barsFromOHLC(ohlc),
+                    withRsiAndBars(rsi)
+                )
+            ).toBeNull();
+        });
+    });
+});
+
+describe('detectRsiBearishDivergence', () => {
+    describe('가격은 더 높은 고점이고 RSI는 더 낮은 고점일 때', () => {
+        it('Signal을 반환한다', () => {
+            // Flat baseline avoids incidental pivots; only 5 and 17 are pivots
+            const ohlc = Array.from({ length: 20 }, (_, i) => {
+                const high = i === 5 ? 105 : i === 17 ? 110 : 100;
+                return { open: high - 1, high, low: high - 2, close: high - 1 };
+            });
+            const rsi = Array.from({ length: 20 }, (_, i) => {
+                if (i === 5) return 75;
+                if (i === 17) return 65;
+                return 50;
+            });
+            const result = detectRsiBearishDivergence(
+                barsFromOHLC(ohlc),
+                withRsiAndBars(rsi)
+            );
+            expect(result?.type).toBe('rsi_bearish_divergence');
+            expect(result?.direction).toBe('bearish');
+            expect(result?.phase).toBe('expected');
+        });
+    });
+
+    describe('가격이 더 낮은 고점일 때 (regular 조건 미충족)', () => {
+        it('null을 반환한다', () => {
+            const ohlc = Array.from({ length: 20 }, (_, i) => {
+                const high = i === 5 ? 110 : i === 17 ? 105 : 100;
+                return { open: high - 1, high, low: high - 2, close: high - 1 };
+            });
+            const rsi = Array.from({ length: 20 }, (_, i) => {
+                if (i === 5) return 75;
+                if (i === 17) return 65;
+                return 50;
+            });
+            expect(
+                detectRsiBearishDivergence(
+                    barsFromOHLC(ohlc),
+                    withRsiAndBars(rsi)
+                )
+            ).toBeNull();
+        });
+    });
+
+    describe('가격이 더 높은 고점이지만 RSI도 더 높을 때', () => {
+        it('null을 반환한다', () => {
+            const ohlc = Array.from({ length: 20 }, (_, i) => {
+                const high = i === 5 ? 105 : i === 17 ? 110 : 100;
+                return { open: high - 1, high, low: high - 2, close: high - 1 };
+            });
+            const rsi = Array.from({ length: 20 }, (_, i) => {
+                if (i === 5) return 65;
+                if (i === 17) return 75; // rsi2 >= rsi1
+                return 50;
+            });
+            expect(
+                detectRsiBearishDivergence(
+                    barsFromOHLC(ohlc),
+                    withRsiAndBars(rsi)
+                )
+            ).toBeNull();
         });
     });
 });

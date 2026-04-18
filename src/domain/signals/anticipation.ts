@@ -1,4 +1,10 @@
-import type { BollingerResult } from '@/domain/types';
+import type { Bar, BollingerResult, IndicatorResult } from '@/domain/types';
+import type { Signal } from '@/domain/signals/types';
+import {
+    DIVERGENCE_FRESHNESS_BARS,
+    DIVERGENCE_LOOKBACK_BARS,
+    PIVOT_WINDOW,
+} from '@/domain/signals/constants';
 
 export function findPivotLows(lows: number[], window: number): number[] {
     const pivots: number[] = [];
@@ -68,4 +74,87 @@ export function percentileRank(value: number, xs: number[]): number | null {
         return below / xs.length;
     }
     return below / (xs.length - 1);
+}
+
+type DivergenceKind = 'bullish' | 'bearish';
+
+function detectRegularDivergence(
+    bars: Bar[],
+    rsi: (number | null)[],
+    kind: DivergenceKind
+): number | null {
+    if (bars.length < DIVERGENCE_LOOKBACK_BARS) return null;
+    const windowStart = bars.length - DIVERGENCE_LOOKBACK_BARS;
+    const lastIdx = bars.length - 1;
+
+    const series =
+        kind === 'bullish'
+            ? bars.slice(windowStart).map((b) => b.low)
+            : bars.slice(windowStart).map((b) => b.high);
+    const pivotsLocal =
+        kind === 'bullish'
+            ? findPivotLows(series, PIVOT_WINDOW)
+            : findPivotHighs(series, PIVOT_WINDOW);
+
+    if (pivotsLocal.length < 2) return null;
+
+    // Convert local-window indices back to absolute indices
+    const pivots = pivotsLocal.map((i) => i + windowStart);
+    const p1 = pivots[pivots.length - 2];
+    const p2 = pivots[pivots.length - 1];
+
+    // Freshness: second pivot must be within last N bars
+    if (lastIdx - p2 > DIVERGENCE_FRESHNESS_BARS) return null;
+
+    const price1 = kind === 'bullish' ? bars[p1].low : bars[p1].high;
+    const price2 = kind === 'bullish' ? bars[p2].low : bars[p2].high;
+    const rsi1 = rsi[p1];
+    const rsi2 = rsi[p2];
+    if (
+        rsi1 === null ||
+        rsi2 === null ||
+        rsi1 === undefined ||
+        rsi2 === undefined
+    ) {
+        return null;
+    }
+
+    if (kind === 'bullish') {
+        // Regular: price lower low, rsi higher low
+        if (price2 >= price1) return null;
+        if (rsi2 <= rsi1) return null;
+    } else {
+        // Regular: price higher high, rsi lower high
+        if (price2 <= price1) return null;
+        if (rsi2 >= rsi1) return null;
+    }
+    return p2;
+}
+
+export function detectRsiBullishDivergence(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const idx = detectRegularDivergence(bars, indicators.rsi, 'bullish');
+    if (idx === null) return null;
+    return {
+        type: 'rsi_bullish_divergence',
+        direction: 'bullish',
+        phase: 'expected',
+        detectedAt: idx,
+    };
+}
+
+export function detectRsiBearishDivergence(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const idx = detectRegularDivergence(bars, indicators.rsi, 'bearish');
+    if (idx === null) return null;
+    return {
+        type: 'rsi_bearish_divergence',
+        direction: 'bearish',
+        phase: 'expected',
+        detectedAt: idx,
+    };
 }
