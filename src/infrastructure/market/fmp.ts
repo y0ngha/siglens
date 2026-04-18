@@ -298,6 +298,7 @@ export class FmpProvider implements MarketDataProvider {
             });
             if (!res.ok) return null;
 
+            // FMP /stable/quote API 응답 형식: FmpQuote 객체 배열 (FMP API spec 보장)
             const raw = (await res.json()) as FmpQuote[];
             if (!Array.isArray(raw) || raw.length === 0) return null;
 
