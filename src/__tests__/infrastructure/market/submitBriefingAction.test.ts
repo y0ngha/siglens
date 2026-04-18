@@ -78,7 +78,10 @@ describe('submitBriefingAction 함수는', () => {
                     laggingSectors: [],
                     performanceDescription: '기술 섹터 주도',
                 },
-                volatilityAnalysis: { vixLevel: 17.48, description: 'VIX 안정' },
+                volatilityAnalysis: {
+                    vixLevel: 17.48,
+                    description: 'VIX 안정',
+                },
                 riskSentiment: '위험 선호',
             };
             mockCacheGet.mockResolvedValueOnce({

@@ -1,7 +1,10 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
-import type { MarketBriefingResponse, PollBriefingResult } from '@/domain/types';
+import type {
+    MarketBriefingResponse,
+    PollBriefingResult,
+} from '@/domain/types';
 import { normalizeMarketBriefing } from '@/domain/analysis/normalizeMarketBriefing';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {

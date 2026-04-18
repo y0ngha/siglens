@@ -8,7 +8,11 @@ import { asArray, asNumber, asObject, asString } from './normalize';
 function normalizeSectorAnalysis(v: unknown): MarketBriefingSectorAnalysis {
     const o = asObject(v);
     if (!o) {
-        return { leadingSectors: [], laggingSectors: [], performanceDescription: '' };
+        return {
+            leadingSectors: [],
+            laggingSectors: [],
+            performanceDescription: '',
+        };
     }
     return {
         leadingSectors: asArray(o.leadingSectors)

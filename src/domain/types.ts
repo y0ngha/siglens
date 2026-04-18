@@ -70,7 +70,11 @@ export interface MarketBriefingResponse {
 }
 
 export type SubmitBriefingResult =
-    | { status: 'cached'; briefing: MarketBriefingResponse; generatedAt: string }
+    | {
+          status: 'cached';
+          briefing: MarketBriefingResponse;
+          generatedAt: string;
+      }
     | { status: 'submitted'; jobId: string };
 
 export type PollBriefingResult =

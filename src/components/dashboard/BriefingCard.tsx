@@ -38,7 +38,13 @@ export function BriefingCard({
 
     if (!briefing) return null;
 
-    const { summary, dominantThemes, sectorAnalysis, volatilityAnalysis, riskSentiment } = briefing;
+    const {
+        summary,
+        dominantThemes,
+        sectorAnalysis,
+        volatilityAnalysis,
+        riskSentiment,
+    } = briefing;
 
     return (
         <div className="border-secondary-700/50 flex flex-col gap-3 rounded-lg border p-4">
@@ -69,7 +75,9 @@ export function BriefingCard({
                 <div className="flex flex-col gap-1">
                     {sectorAnalysis.leadingSectors.length > 0 && (
                         <p className="text-xs">
-                            <span className="text-secondary-500 mr-1">상승</span>
+                            <span className="text-secondary-500 mr-1">
+                                상승
+                            </span>
                             <span className="text-chart-bullish font-mono">
                                 {sectorAnalysis.leadingSectors.join(' · ')}
                             </span>
@@ -77,7 +85,9 @@ export function BriefingCard({
                     )}
                     {sectorAnalysis.laggingSectors.length > 0 && (
                         <p className="text-xs">
-                            <span className="text-secondary-500 mr-1">하락</span>
+                            <span className="text-secondary-500 mr-1">
+                                하락
+                            </span>
                             <span className="text-chart-bearish font-mono">
                                 {sectorAnalysis.laggingSectors.join(' · ')}
                             </span>
