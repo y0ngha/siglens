@@ -1,3 +1,4 @@
+import type { MarketQuote } from '@/domain/types';
 import type { GetBarsOptions, Bar, MarketDataProvider } from './types';
 
 const BASE_URL = 'https://data.alpaca.markets/v2';
@@ -83,5 +84,10 @@ export class AlpacaProvider implements MarketDataProvider {
         const raw = (await res.json()) as AlpacaBarsRawResponse;
 
         return (raw.bars ?? []).map(r => toAlpacaBar(r));
+    }
+
+    // AlpacaProvider는 quote 엔드포인트를 지원하지 않음 — FmpProvider 전용 기능
+    async getQuote(_symbol: string): Promise<MarketQuote | null> {
+        return null;
     }
 }

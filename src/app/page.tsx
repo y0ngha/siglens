@@ -1,4 +1,5 @@
 import { Suspense, cache } from 'react';
+import { connection } from 'next/server';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import {
     countSkillFiles,
@@ -13,8 +14,35 @@ import {
     SkillsShowcaseSkeleton,
 } from '@/components/home/SkillsShowcase';
 import { TickerCategories } from '@/components/home/TickerCategories';
+import { MarketSummaryPanel } from '@/components/dashboard/MarketSummaryPanel';
+import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummaryPanelSkeleton';
+import { getMarketSummary } from '@/infrastructure/dashboard/marketSummaryApi';
+import { submitBriefingAction } from '@/infrastructure/market/submitBriefingAction';
 
 const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
+
+async function AsyncMarketSummaryPanel() {
+    // connection()은 동적 렌더링을 명시적으로 활성화하여 new Date()가 실제 현재 시간을 반환하도록 한다
+    await connection();
+    const summaryData = await getMarketSummary();
+    const briefingResult = await submitBriefingAction(summaryData);
+    return (
+        <MarketSummaryPanel
+            indices={summaryData.indices}
+            sectors={summaryData.sectors}
+            initialBriefing={
+                briefingResult.status === 'cached'
+                    ? briefingResult.briefing
+                    : undefined
+            }
+            briefingJobId={
+                briefingResult.status === 'submitted'
+                    ? briefingResult.jobId
+                    : undefined
+            }
+        />
+    );
+}
 
 async function AsyncStatsBar() {
     const skills = await loadSkills();
@@ -169,6 +197,9 @@ export default async function Home() {
                         </Suspense>
                     </div>
                 </section>
+                <Suspense fallback={<MarketSummaryPanelSkeleton />}>
+                    <AsyncMarketSummaryPanel />
+                </Suspense>
                 <HowItWorks skillCounts={skillCounts} />
                 <Suspense fallback={<SkillsShowcaseSkeleton />}>
                     <SkillsShowcaseServer />

@@ -1,5 +1,56 @@
 export type Timeframe = '5Min' | '15Min' | '30Min' | '1Hour' | '4Hour' | '1Day';
 
+export interface IndexTicker {
+    symbol: string;
+    fmpSymbol: string;
+    displayName: string;
+    koreanName: string;
+}
+
+export interface SectorEtf {
+    symbol: string;
+    sectorName: string;
+    koreanName: string;
+}
+
+export interface MarketQuote {
+    symbol: string;
+    price: number;
+    changesPercentage: number;
+    name: string;
+}
+
+export interface MarketIndexData {
+    symbol: string;
+    fmpSymbol: string;
+    displayName: string;
+    koreanName: string;
+    price: number;
+    changesPercentage: number;
+}
+
+export interface MarketSectorData {
+    symbol: string;
+    sectorName: string;
+    koreanName: string;
+    price: number;
+    changesPercentage: number;
+}
+
+export interface MarketSummaryData {
+    indices: MarketIndexData[];
+    sectors: MarketSectorData[];
+}
+
+export type SubmitBriefingResult =
+    | { status: 'cached'; briefing: string }
+    | { status: 'submitted'; jobId: string };
+
+export type PollBriefingResult =
+    | { status: 'processing' }
+    | { status: 'done'; briefing: string }
+    | { status: 'error'; error: string };
+
 export interface Bar {
     time: number; // Unix timestamp (seconds)
     open: number;

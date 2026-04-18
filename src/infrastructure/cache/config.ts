@@ -72,3 +72,10 @@ export function buildTickerSearchCacheKey(query: string): string {
 export function buildAssetInfoCacheKey(symbol: string): string {
     return `asset-info:${symbol.toUpperCase()}`;
 }
+
+// 시장 브리핑: 1시간 캐시 (시장 데이터 변화 주기에 맞춤)
+export const MARKET_BRIEFING_CACHE_TTL = SECONDS_PER_HOUR;
+
+export function buildBriefingCacheKey(dateHour: string): string {
+    return `briefing:market:${dateHour}`;
+}
