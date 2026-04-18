@@ -51,6 +51,16 @@ export type PollBriefingResult =
     | { status: 'done'; briefing: string }
     | { status: 'error'; error: string };
 
+export interface SectorGroupDef {
+    label: string;
+    symbols: readonly string[];
+}
+
+export interface MarketSummaryActionResult {
+    summary: MarketSummaryData;
+    briefing: SubmitBriefingResult;
+}
+
 export interface Bar {
     time: number; // Unix timestamp (seconds)
     open: number;

@@ -1,6 +1,6 @@
-import type { IndexTicker, SectorEtf } from '@/domain/types';
+import type { IndexTicker, SectorEtf, SectorGroupDef } from '@/domain/types';
 
-export type { IndexTicker, SectorEtf };
+export type { IndexTicker, SectorEtf, SectorGroupDef };
 
 export const MARKET_INDICES: IndexTicker[] = [
     {
@@ -41,6 +41,13 @@ export const SECTOR_ETFS: SectorEtf[] = [
     { symbol: 'XLU', sectorName: 'Utilities', koreanName: '유틸리티' },
     { symbol: 'XLRE', sectorName: 'Real Estate', koreanName: '부동산' },
     { symbol: 'XLC', sectorName: 'Comm. Svc.', koreanName: '통신서비스' },
+];
+
+// GICS 기반 섹터 분류: 성장 / 경기민감 / 방어
+export const SECTOR_GROUPS: readonly SectorGroupDef[] = [
+    { label: '성장', symbols: ['XLK', 'XLC', 'XLY', 'XLF'] },
+    { label: '경기민감', symbols: ['XLE', 'XLI', 'XLB'] },
+    { label: '방어', symbols: ['XLV', 'XLP', 'XLU', 'XLRE'] },
 ];
 
 export const MARKET_SUMMARY_FMP_SYMBOLS: readonly string[] = [
