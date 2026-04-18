@@ -22,13 +22,20 @@ export function useBriefing(
         enabled: !!jobId,
         refetchInterval: query => {
             const status = query.state.data?.status;
-            return status === 'done' || status === 'error' ? false : POLL_INTERVAL_MS;
+            return status === 'done' || status === 'error'
+                ? false
+                : POLL_INTERVAL_MS;
         },
         staleTime: Infinity,
     });
 
-    const briefing = initialBriefing ?? (data?.status === 'done' ? data.briefing : null);
-    const isLoading = !!jobId && !initialBriefing && data?.status !== 'done' && data?.status !== 'error';
+    const briefing =
+        initialBriefing ?? (data?.status === 'done' ? data.briefing : null);
+    const isLoading =
+        !!jobId &&
+        !initialBriefing &&
+        data?.status !== 'done' &&
+        data?.status !== 'error';
     const error = data?.status === 'error' ? data.error : null;
 
     return { briefing, isLoading, error };
