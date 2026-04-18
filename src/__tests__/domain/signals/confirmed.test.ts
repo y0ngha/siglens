@@ -5,10 +5,17 @@ import {
     detectDeathCross,
     detectMacdBullishCross,
     detectMacdBearishCross,
+    detectBollingerLowerBounce,
+    detectBollingerUpperBreakout,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
-import type { Bar, IndicatorResult, MACDResult } from '@/domain/types';
+import type {
+    Bar,
+    BollingerResult,
+    IndicatorResult,
+    MACDResult,
+} from '@/domain/types';
 
 function buildBars(n: number): Bar[] {
     return Array.from({ length: n }, (_, i) => ({
@@ -330,6 +337,170 @@ describe('detectMacdBearishCross', () => {
             ];
             const bars = buildBars(points.length);
             expect(detectMacdBearishCross(bars, withMacd(points))).toBeNull();
+        });
+    });
+});
+
+function withBollinger(points: BollingerResult[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, bollinger: points };
+}
+
+describe('detectBollingerLowerBounce', () => {
+    describe('전봉 low가 lower 이하이고 현봉 close가 전봉 close보다 높을 때', () => {
+        it('Signal을 반환한다', () => {
+            const points: BollingerResult[] = [
+                { upper: 110, middle: 100, lower: 90 },
+                { upper: 110, middle: 100, lower: 90 },
+            ];
+            const bars: Bar[] = [
+                { time: 1, open: 95, high: 96, low: 89, close: 92, volume: 100 },
+                { time: 2, open: 92, high: 98, low: 92, close: 97, volume: 100 },
+            ];
+            const result = detectBollingerLowerBounce(bars, withBollinger(points));
+            expect(result?.type).toBe('bollinger_lower_bounce');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(1);
+        });
+    });
+
+    describe('전봉 low가 lower보다 크면', () => {
+        it('null을 반환한다', () => {
+            const points: BollingerResult[] = [
+                { upper: 110, middle: 100, lower: 90 },
+                { upper: 110, middle: 100, lower: 90 },
+            ];
+            const bars: Bar[] = [
+                { time: 1, open: 95, high: 96, low: 93, close: 94, volume: 100 },
+                { time: 2, open: 94, high: 98, low: 94, close: 97, volume: 100 },
+            ];
+            expect(
+                detectBollingerLowerBounce(bars, withBollinger(points))
+            ).toBeNull();
+        });
+    });
+
+    describe('현봉 close가 전봉 close 이하이면', () => {
+        it('null을 반환한다', () => {
+            const points: BollingerResult[] = [
+                { upper: 110, middle: 100, lower: 90 },
+                { upper: 110, middle: 100, lower: 90 },
+            ];
+            const bars: Bar[] = [
+                { time: 1, open: 95, high: 96, low: 89, close: 95, volume: 100 },
+                { time: 2, open: 95, high: 96, low: 90, close: 95, volume: 100 },
+            ];
+            expect(
+                detectBollingerLowerBounce(bars, withBollinger(points))
+            ).toBeNull();
+        });
+    });
+
+    describe('bars 또는 bollinger 데이터가 부족할 때', () => {
+        it('null을 반환한다', () => {
+            const points: BollingerResult[] = [
+                { upper: 110, middle: 100, lower: 90 },
+            ];
+            const bars: Bar[] = [
+                { time: 1, open: 95, high: 96, low: 89, close: 92, volume: 100 },
+            ];
+            expect(
+                detectBollingerLowerBounce(bars, withBollinger(points))
+            ).toBeNull();
+        });
+    });
+
+    describe('전봉 bollinger lower가 null일 때', () => {
+        it('null을 반환한다', () => {
+            const points: BollingerResult[] = [
+                { upper: null, middle: null, lower: null },
+                { upper: 110, middle: 100, lower: 90 },
+            ];
+            const bars: Bar[] = [
+                { time: 1, open: 95, high: 96, low: 89, close: 92, volume: 100 },
+                { time: 2, open: 92, high: 98, low: 92, close: 97, volume: 100 },
+            ];
+            expect(
+                detectBollingerLowerBounce(bars, withBollinger(points))
+            ).toBeNull();
+        });
+    });
+});
+
+describe('detectBollingerUpperBreakout', () => {
+    describe('현봉 close가 upper보다 클 때', () => {
+        it('Signal을 반환한다', () => {
+            const points: BollingerResult[] = [
+                { upper: 110, middle: 100, lower: 90 },
+            ];
+            const bars: Bar[] = [
+                {
+                    time: 1,
+                    open: 105,
+                    high: 115,
+                    low: 105,
+                    close: 112,
+                    volume: 100,
+                },
+            ];
+            const result = detectBollingerUpperBreakout(
+                bars,
+                withBollinger(points)
+            );
+            expect(result?.type).toBe('bollinger_upper_breakout');
+            expect(result?.direction).toBe('bearish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(0);
+        });
+    });
+
+    describe('현봉 close가 upper 이하일 때', () => {
+        it('null을 반환한다', () => {
+            const points: BollingerResult[] = [
+                { upper: 110, middle: 100, lower: 90 },
+            ];
+            const bars: Bar[] = [
+                {
+                    time: 1,
+                    open: 105,
+                    high: 110,
+                    low: 105,
+                    close: 110,
+                    volume: 100,
+                },
+            ];
+            expect(
+                detectBollingerUpperBreakout(bars, withBollinger(points))
+            ).toBeNull();
+        });
+    });
+
+    describe('bars 또는 bollinger 데이터가 없을 때', () => {
+        it('null을 반환한다', () => {
+            expect(
+                detectBollingerUpperBreakout([], EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('현봉 bollinger upper가 null일 때', () => {
+        it('null을 반환한다', () => {
+            const points: BollingerResult[] = [
+                { upper: null, middle: null, lower: null },
+            ];
+            const bars: Bar[] = [
+                {
+                    time: 1,
+                    open: 105,
+                    high: 115,
+                    low: 105,
+                    close: 112,
+                    volume: 100,
+                },
+            ];
+            expect(
+                detectBollingerUpperBreakout(bars, withBollinger(points))
+            ).toBeNull();
         });
     });
 });

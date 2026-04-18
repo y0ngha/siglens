@@ -165,3 +165,43 @@ export function detectMacdBearishCross(
         detectedAt: idx,
     };
 }
+
+export function detectBollingerLowerBounce(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const bb = indicators.bollinger;
+    if (bars.length < 2 || bb.length < 2) return null;
+    const lastIdx = bars.length - 1;
+    const prevBar = bars[lastIdx - 1];
+    const curBar = bars[lastIdx];
+    const prevBB = bb[lastIdx - 1];
+    if (prevBB.lower === null) return null;
+    if (prevBar.low > prevBB.lower) return null;
+    if (curBar.close <= prevBar.close) return null;
+    return {
+        type: 'bollinger_lower_bounce',
+        direction: 'bullish',
+        phase: 'confirmed',
+        detectedAt: lastIdx,
+    };
+}
+
+export function detectBollingerUpperBreakout(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const bb = indicators.bollinger;
+    if (bars.length === 0 || bb.length === 0) return null;
+    const lastIdx = bars.length - 1;
+    const curBar = bars[lastIdx];
+    const curBB = bb[lastIdx];
+    if (curBB.upper === null) return null;
+    if (curBar.close <= curBB.upper) return null;
+    return {
+        type: 'bollinger_upper_breakout',
+        direction: 'bearish',
+        phase: 'confirmed',
+        detectedAt: lastIdx,
+    };
+}
