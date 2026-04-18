@@ -8,4 +8,5 @@ export const QUERY_KEYS = {
         ['bars', symbol, timeframe] as const,
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', symbol] as const,
+    briefing: (jobId: string) => ['briefing', jobId] as const,
 } as const;
