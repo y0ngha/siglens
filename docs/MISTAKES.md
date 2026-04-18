@@ -344,6 +344,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 1. Missing chart.remove() cleanup or listener unsubscribe before chart.remove()
    → Always call unsubscribeVisibleLogicalRangeChange before chart.remove() to prevent "Object is disposed" errors
    → Use a ref pattern for onChartRemove callback to capture cleanup logic and guard chartRef.current in ResizeObserver
+   → When effect cleanup order is non-deterministic (chart dispose may run first), use try-catch on the unsubscribe call
+      rather than re-reading chartRef.current in cleanup (which triggers react-hooks/exhaustive-deps warnings)
+   ❌ chartRef.current?.unsubscribeCrosshairMove(handler)  // eslint-disable required, ref read in cleanup
+   ✅ try { chart.unsubscribeCrosshairMove(handler); } catch { /* already disposed */ }
 
 2. Passing domain null values directly to setData
    → Convert to WhitespaceData({ time })
