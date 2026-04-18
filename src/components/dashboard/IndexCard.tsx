@@ -47,6 +47,7 @@ export function IndexCard({ data, href }: IndexCardProps) {
             </div>
             {/* 가격 */}
             <p className="text-secondary-100 font-mono text-sm tabular-nums">
+                $
                 {data.price.toLocaleString('en-US', {
                     maximumFractionDigits: 2,
                 })}
