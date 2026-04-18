@@ -6,6 +6,7 @@ import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildBriefingCacheKey,
     MARKET_BRIEFING_CACHE_TTL,
+    ISO_DATE_HOUR_PREFIX_LENGTH,
 } from '@/infrastructure/cache/config';
 import {
     getJobStatus,
@@ -36,21 +37,23 @@ export async function pollBriefingAction(
         return { status: 'error', error: 'Result not found' };
     }
 
-    // worker는 항상 { briefing: string } 형태로 결과를 저장하므로 assertion이 안전하다
-    const briefing = (raw as { briefing?: string }).briefing;
+    // worker가 저장하는 결과는 항상 { briefing: string } 형태이므로 assertion이 안전하다
+    const briefing = (raw as { briefing?: string }).briefing; // worker 계약에 의해 보장
     if (!briefing) {
         waitUntil(cleanupJob(jobId));
         return { status: 'error', error: 'Invalid briefing result' };
     }
 
     // 브리핑을 캐시에 저장 (1시간 TTL)
-    const dateHour = new Date().toISOString().slice(0, 13);
+    const now = new Date();
+    const generatedAt = now.toISOString();
+    const dateHour = generatedAt.slice(0, ISO_DATE_HOUR_PREFIX_LENGTH);
     const cacheKey = buildBriefingCacheKey(dateHour);
     const cache = createCacheProvider();
     if (cache !== null) {
         waitUntil(
             cache
-                .set(cacheKey, briefing, MARKET_BRIEFING_CACHE_TTL)
+                .set(cacheKey, { briefing, generatedAt }, MARKET_BRIEFING_CACHE_TTL)
                 .catch(err =>
                     console.error('[Briefing/Poll] Cache write failed:', err)
                 )
@@ -58,5 +61,5 @@ export async function pollBriefingAction(
     }
 
     waitUntil(cleanupJob(jobId));
-    return { status: 'done', briefing };
+    return { status: 'done', briefing, generatedAt };
 }

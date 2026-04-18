@@ -8,13 +8,15 @@ const POLL_INTERVAL_MS = 5_000;
 
 interface UseBriefingResult {
     briefing: string | null;
+    generatedAt: string | null;
     isLoading: boolean;
     error: string | null;
 }
 
 export function useBriefing(
     jobId: string | undefined,
-    initialBriefing: string | undefined
+    initialBriefing: string | undefined,
+    initialGeneratedAt: string | undefined
 ): UseBriefingResult {
     const { data } = useQuery({
         queryKey: QUERY_KEYS.briefing(jobId ?? ''),
@@ -29,14 +31,12 @@ export function useBriefing(
         staleTime: Infinity,
     });
 
-    const briefing =
-        initialBriefing ?? (data?.status === 'done' ? data.briefing : null);
-    const isLoading =
-        !!jobId &&
-        !initialBriefing &&
-        data?.status !== 'done' &&
-        data?.status !== 'error';
+    const polledDone = data?.status === 'done' ? data : null;
+
+    const briefing = initialBriefing ?? polledDone?.briefing ?? null;
+    const generatedAt = initialGeneratedAt ?? polledDone?.generatedAt ?? null;
+    const isLoading = !!jobId && briefing === null && data?.status !== 'error';
     const error = data?.status === 'error' ? data.error : null;
 
-    return { briefing, isLoading, error };
+    return { briefing, generatedAt, isLoading, error };
 }

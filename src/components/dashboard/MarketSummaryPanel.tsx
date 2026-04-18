@@ -17,10 +17,15 @@ export function MarketSummaryPanel() {
         data?.briefing.status === 'submitted' ? data.briefing.jobId : undefined;
     const initialBriefing =
         data?.briefing.status === 'cached' ? data.briefing.briefing : undefined;
+    const initialGeneratedAt =
+        data?.briefing.status === 'cached'
+            ? data.briefing.generatedAt
+            : undefined;
 
-    const { briefing, isLoading, error } = useBriefing(
+    const { briefing, generatedAt, isLoading, error } = useBriefing(
         briefingJobId,
-        initialBriefing
+        initialBriefing,
+        initialGeneratedAt
     );
 
     const sectorMap = useMemo(
@@ -90,9 +95,25 @@ export function MarketSummaryPanel() {
                             </p>
                         </div>
                     ) : briefing ? (
-                        <p className="text-secondary-300 text-sm leading-relaxed">
-                            {briefing}
-                        </p>
+                        <div className="flex flex-col gap-2">
+                            <p className="text-secondary-300 text-sm leading-relaxed">
+                                {briefing}
+                            </p>
+                            {generatedAt && (
+                                <p className="text-secondary-600 text-xs">
+                                    {new Date(generatedAt).toLocaleString(
+                                        'ko-KR',
+                                        {
+                                            month: 'long',
+                                            day: 'numeric',
+                                            hour: '2-digit',
+                                            minute: '2-digit',
+                                        }
+                                    )}{' '}
+                                    기준 분석
+                                </p>
+                            )}
+                        </div>
                     ) : error ? (
                         <p className="text-chart-bearish text-sm">
                             브리핑을 불러오지 못했습니다.

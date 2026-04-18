@@ -68,16 +68,19 @@ describe('submitBriefingAction 함수는', () => {
     });
 
     describe('캐시 히트일 때', () => {
-        it('cached 상태와 함께 브리핑을 반환한다', async () => {
-            mockCacheGet.mockResolvedValueOnce(
-                '시장이 강세를 보이고 있습니다.'
-            );
+        it('cached 상태와 함께 브리핑과 generatedAt을 반환한다', async () => {
+            const cachedGeneratedAt = '2026-04-18T14:00:00.000Z';
+            mockCacheGet.mockResolvedValueOnce({
+                briefing: '시장이 강세를 보이고 있습니다.',
+                generatedAt: cachedGeneratedAt,
+            });
 
             const result = await submitBriefingAction(mockData);
 
             expect(result.status).toBe('cached');
             if (result.status === 'cached') {
                 expect(result.briefing).toBe('시장이 강세를 보이고 있습니다.');
+                expect(result.generatedAt).toBe(cachedGeneratedAt);
             }
             expect(mockFetch).not.toHaveBeenCalled();
         });

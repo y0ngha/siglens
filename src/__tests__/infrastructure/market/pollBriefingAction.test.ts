@@ -34,12 +34,21 @@ const mockCacheProvider = {
     delete: jest.fn(),
 };
 
+const FIXED_NOW = new Date('2026-04-18T14:30:00.000Z');
+const FIXED_ISO = FIXED_NOW.toISOString();
+const FIXED_DATE_HOUR = '2026-04-18T14';
+
 describe('pollBriefingAction 함수는', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        jest.useFakeTimers({ now: FIXED_NOW });
         mockCreateCacheProvider.mockReturnValue(mockCacheProvider);
         mockCleanupJob.mockResolvedValue(undefined);
         mockCacheSet.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        jest.useRealTimers();
     });
 
     describe('status가 null일 때', () => {
@@ -83,7 +92,7 @@ describe('pollBriefingAction 함수는', () => {
     });
 
     describe('status가 done일 때', () => {
-        it('유효한 briefing과 함께 done 상태를 반환한다', async () => {
+        it('유효한 briefing과 generatedAt과 함께 done 상태를 반환한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
             mockGetJobResult.mockResolvedValueOnce({
                 briefing: '시장은 강세입니다.',
@@ -94,6 +103,7 @@ describe('pollBriefingAction 함수는', () => {
             expect(result).toEqual({
                 status: 'done',
                 briefing: '시장은 강세입니다.',
+                generatedAt: FIXED_ISO,
             });
         });
 
@@ -121,7 +131,7 @@ describe('pollBriefingAction 함수는', () => {
             });
         });
 
-        it('done 상태에서 캐시에 브리핑을 저장한다', async () => {
+        it('done 상태에서 캐시에 briefing과 generatedAt을 저장한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
             mockGetJobResult.mockResolvedValueOnce({
                 briefing: '시장이 상승 중입니다.',
@@ -131,8 +141,8 @@ describe('pollBriefingAction 함수는', () => {
 
             await Promise.resolve();
             expect(mockCacheSet).toHaveBeenCalledWith(
-                expect.stringContaining('briefing:market:'),
-                '시장이 상승 중입니다.',
+                `briefing:market:${FIXED_DATE_HOUR}`,
+                { briefing: '시장이 상승 중입니다.', generatedAt: FIXED_ISO },
                 expect.any(Number)
             );
         });
@@ -149,6 +159,7 @@ describe('pollBriefingAction 함수는', () => {
             expect(result).toEqual({
                 status: 'done',
                 briefing: '브리핑 텍스트',
+                generatedAt: FIXED_ISO,
             });
             expect(mockCacheSet).not.toHaveBeenCalled();
         });

@@ -4,7 +4,10 @@ import { waitUntil } from '@vercel/functions';
 import { buildMarketBriefingPrompt } from '@/domain/analysis/marketBriefingPrompt';
 import type { MarketSummaryData, SubmitBriefingResult } from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
-import { buildBriefingCacheKey } from '@/infrastructure/cache/config';
+import {
+    buildBriefingCacheKey,
+    ISO_DATE_HOUR_PREFIX_LENGTH,
+} from '@/infrastructure/cache/config';
 
 export async function submitBriefingAction(
     data: MarketSummaryData
@@ -18,15 +21,19 @@ export async function submitBriefingAction(
     }
 
     const now = new Date();
-    const dateHour = now.toISOString().slice(0, 13); // "2026-04-18T14"
+    const dateHour = now.toISOString().slice(0, ISO_DATE_HOUR_PREFIX_LENGTH);
     const cacheKey = buildBriefingCacheKey(dateHour);
 
     const cache = createCacheProvider();
     if (cache !== null) {
         try {
-            const cached = await cache.get<string>(cacheKey);
+            const cached = await cache.get<{ briefing: string; generatedAt: string }>(cacheKey);
             if (cached !== null) {
-                return { status: 'cached', briefing: cached };
+                return {
+                    status: 'cached',
+                    briefing: cached.briefing,
+                    generatedAt: cached.generatedAt,
+                };
             }
         } catch (error) {
             console.error('[Briefing/Submit] Cache read failed:', error);

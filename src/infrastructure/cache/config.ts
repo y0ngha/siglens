@@ -76,6 +76,9 @@ export function buildAssetInfoCacheKey(symbol: string): string {
 // 시장 브리핑: 1시간 캐시 (시장 데이터 변화 주기에 맞춤)
 export const MARKET_BRIEFING_CACHE_TTL = SECONDS_PER_HOUR;
 
+// ISO 8601 문자열에서 시(hour) 단위 접두어("YYYY-MM-DDTHH")의 문자 수
+export const ISO_DATE_HOUR_PREFIX_LENGTH = 13;
+
 export function buildBriefingCacheKey(dateHour: string): string {
     return `briefing:market:${dateHour}`;
 }

@@ -43,12 +43,12 @@ export interface MarketSummaryData {
 }
 
 export type SubmitBriefingResult =
-    | { status: 'cached'; briefing: string }
+    | { status: 'cached'; briefing: string; generatedAt: string }
     | { status: 'submitted'; jobId: string };
 
 export type PollBriefingResult =
     | { status: 'processing' }
-    | { status: 'done'; briefing: string }
+    | { status: 'done'; briefing: string; generatedAt: string }
     | { status: 'error'; error: string };
 
 export interface SectorGroupDef {
