@@ -3,6 +3,7 @@ import type { Signal } from '@/domain/signals/types';
 import {
     DIVERGENCE_FRESHNESS_BARS,
     DIVERGENCE_LOOKBACK_BARS,
+    HISTOGRAM_CONVERGENCE_BARS,
     PIVOT_WINDOW,
 } from '@/domain/signals/constants';
 
@@ -156,5 +157,54 @@ export function detectRsiBearishDivergence(
         direction: 'bearish',
         phase: 'expected',
         detectedAt: idx,
+    };
+}
+
+export function detectMacdHistogramBullishConvergence(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const macd = indicators.macd;
+    if (macd.length < HISTOGRAM_CONVERGENCE_BARS) return null;
+    const tail = macd.slice(-HISTOGRAM_CONVERGENCE_BARS);
+    for (const p of tail) {
+        if (p.histogram === null || !(p.histogram < 0)) return null;
+    }
+    for (let i = 1; i < tail.length; i++) {
+        // Non-null asserted: prior loop guarantees histogram !== null for all tail elements.
+        const prev = tail[i - 1]!.histogram as number;
+        const cur = tail[i]!.histogram as number;
+        // magnitude strictly decreasing (absolute value)
+        if (!(Math.abs(cur) < Math.abs(prev))) return null;
+    }
+    return {
+        type: 'macd_histogram_bullish_convergence',
+        direction: 'bullish',
+        phase: 'expected',
+        detectedAt: macd.length - 1,
+    };
+}
+
+export function detectMacdHistogramBearishConvergence(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const macd = indicators.macd;
+    if (macd.length < HISTOGRAM_CONVERGENCE_BARS) return null;
+    const tail = macd.slice(-HISTOGRAM_CONVERGENCE_BARS);
+    for (const p of tail) {
+        if (p.histogram === null || !(p.histogram > 0)) return null;
+    }
+    for (let i = 1; i < tail.length; i++) {
+        // Non-null asserted: prior loop guarantees histogram !== null for all tail elements.
+        const prev = tail[i - 1]!.histogram as number;
+        const cur = tail[i]!.histogram as number;
+        if (!(cur < prev)) return null;
+    }
+    return {
+        type: 'macd_histogram_bearish_convergence',
+        direction: 'bearish',
+        phase: 'expected',
+        detectedAt: macd.length - 1,
     };
 }

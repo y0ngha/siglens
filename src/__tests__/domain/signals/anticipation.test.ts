@@ -7,9 +7,16 @@ import {
     percentileRank,
     detectRsiBullishDivergence,
     detectRsiBearishDivergence,
+    detectMacdHistogramBullishConvergence,
+    detectMacdHistogramBearishConvergence,
 } from '@/domain/signals/anticipation';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
-import type { Bar, BollingerResult, IndicatorResult } from '@/domain/types';
+import type {
+    Bar,
+    BollingerResult,
+    IndicatorResult,
+    MACDResult,
+} from '@/domain/types';
 
 function barsFromOHLC(
     data: Array<{ open: number; high: number; low: number; close: number }>
@@ -23,6 +30,10 @@ function barsFromOHLC(
 
 function withRsiAndBars(rsi: (number | null)[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, rsi };
+}
+
+function withMacd(points: MACDResult[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, macd: points };
 }
 
 describe('findPivotLows', () => {
@@ -377,6 +388,140 @@ describe('detectRsiBearishDivergence', () => {
                     barsFromOHLC(ohlc),
                     withRsiAndBars(rsi)
                 )
+            ).toBeNull();
+        });
+    });
+});
+
+describe('detectMacdHistogramBullishConvergence', () => {
+    describe('최근 5봉이 모두 음수이고 절대값이 단조 감소할 때', () => {
+        it('Signal을 반환한다', () => {
+            const hist = [-5, -4, -3, -2, -1];
+            const points: MACDResult[] = hist.map((h) => ({
+                macd: 0,
+                signal: 0,
+                histogram: h,
+            }));
+            const result = detectMacdHistogramBullishConvergence(
+                [],
+                withMacd(points)
+            );
+            expect(result?.type).toBe('macd_histogram_bullish_convergence');
+        });
+    });
+
+    describe('0이 포함되면', () => {
+        it('null을 반환한다', () => {
+            const hist = [-5, -4, -3, -2, 0];
+            const points: MACDResult[] = hist.map((h) => ({
+                macd: 0,
+                signal: 0,
+                histogram: h,
+            }));
+            expect(
+                detectMacdHistogramBullishConvergence([], withMacd(points))
+            ).toBeNull();
+        });
+    });
+
+    describe('단조가 깨지면', () => {
+        it('null을 반환한다', () => {
+            const hist = [-5, -4, -5, -2, -1];
+            const points: MACDResult[] = hist.map((h) => ({
+                macd: 0,
+                signal: 0,
+                histogram: h,
+            }));
+            expect(
+                detectMacdHistogramBullishConvergence([], withMacd(points))
+            ).toBeNull();
+        });
+    });
+
+    describe('타이가 있으면', () => {
+        it('null을 반환한다 (엄격 단조)', () => {
+            const hist = [-5, -4, -4, -2, -1];
+            const points: MACDResult[] = hist.map((h) => ({
+                macd: 0,
+                signal: 0,
+                histogram: h,
+            }));
+            expect(
+                detectMacdHistogramBullishConvergence([], withMacd(points))
+            ).toBeNull();
+        });
+    });
+
+    describe('macd 길이가 5봉 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const hist = [-4, -3, -2, -1];
+            const points: MACDResult[] = hist.map((h) => ({
+                macd: 0,
+                signal: 0,
+                histogram: h,
+            }));
+            expect(
+                detectMacdHistogramBullishConvergence([], withMacd(points))
+            ).toBeNull();
+        });
+    });
+});
+
+describe('detectMacdHistogramBearishConvergence', () => {
+    describe('최근 5봉이 모두 양수이고 값이 단조 감소할 때', () => {
+        it('Signal을 반환한다', () => {
+            const hist = [5, 4, 3, 2, 1];
+            const points: MACDResult[] = hist.map((h) => ({
+                macd: 0,
+                signal: 0,
+                histogram: h,
+            }));
+            const result = detectMacdHistogramBearishConvergence(
+                [],
+                withMacd(points)
+            );
+            expect(result?.type).toBe('macd_histogram_bearish_convergence');
+        });
+    });
+
+    describe('0이 포함되면', () => {
+        it('null을 반환한다', () => {
+            const hist = [5, 4, 3, 2, 0];
+            const points: MACDResult[] = hist.map((h) => ({
+                macd: 0,
+                signal: 0,
+                histogram: h,
+            }));
+            expect(
+                detectMacdHistogramBearishConvergence([], withMacd(points))
+            ).toBeNull();
+        });
+    });
+
+    describe('단조가 깨지면', () => {
+        it('null을 반환한다', () => {
+            const hist = [5, 4, 5, 2, 1];
+            const points: MACDResult[] = hist.map((h) => ({
+                macd: 0,
+                signal: 0,
+                histogram: h,
+            }));
+            expect(
+                detectMacdHistogramBearishConvergence([], withMacd(points))
+            ).toBeNull();
+        });
+    });
+
+    describe('macd 길이가 5봉 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const hist = [4, 3, 2, 1];
+            const points: MACDResult[] = hist.map((h) => ({
+                macd: 0,
+                signal: 0,
+                histogram: h,
+            }));
+            expect(
+                detectMacdHistogramBearishConvergence([], withMacd(points))
             ).toBeNull();
         });
     });
