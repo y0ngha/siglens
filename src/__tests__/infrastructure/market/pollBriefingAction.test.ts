@@ -38,6 +38,32 @@ const FIXED_NOW = new Date('2026-04-18T14:30:00.000Z');
 const FIXED_ISO = FIXED_NOW.toISOString();
 const FIXED_DATE_HOUR = '2026-04-18T14';
 
+// raw에는 빈 문자열 테마가 포함돼 있어 normalization 시 필터링된다
+const VALID_RAW_BRIEFING = {
+    summary: '시장은 강세입니다.',
+    dominantThemes: ['기술주 강세', ''],
+    sectorAnalysis: {
+        leadingSectors: ['XLK'],
+        laggingSectors: [],
+        performanceDescription: '기술 섹터 주도',
+    },
+    volatilityAnalysis: { vixLevel: 17.48, description: 'VIX 안정' },
+    riskSentiment: '위험 선호',
+};
+
+// 빈 문자열 테마가 필터링된 정규화 결과
+const NORMALIZED_BRIEFING = {
+    summary: '시장은 강세입니다.',
+    dominantThemes: ['기술주 강세'],
+    sectorAnalysis: {
+        leadingSectors: ['XLK'],
+        laggingSectors: [],
+        performanceDescription: '기술 섹터 주도',
+    },
+    volatilityAnalysis: { vixLevel: 17.48, description: 'VIX 안정' },
+    riskSentiment: '위험 선호',
+};
+
 describe('pollBriefingAction 함수는', () => {
     beforeEach(() => {
         jest.clearAllMocks();
@@ -94,15 +120,13 @@ describe('pollBriefingAction 함수는', () => {
     describe('status가 done일 때', () => {
         it('유효한 briefing과 generatedAt과 함께 done 상태를 반환한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce({
-                briefing: '시장은 강세입니다.',
-            });
+            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_BRIEFING);
 
             const result = await pollBriefingAction('job-5');
 
             expect(result).toEqual({
                 status: 'done',
-                briefing: '시장은 강세입니다.',
+                briefing: NORMALIZED_BRIEFING,
                 generatedAt: FIXED_ISO,
             });
         });
@@ -119,7 +143,7 @@ describe('pollBriefingAction 함수는', () => {
             });
         });
 
-        it('briefing 필드가 없으면 error를 반환한다', async () => {
+        it('summary 필드가 없으면 error를 반환한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
             mockGetJobResult.mockResolvedValueOnce({ unexpected: 'field' });
 
@@ -131,18 +155,15 @@ describe('pollBriefingAction 함수는', () => {
             });
         });
 
-        it('done 상태에서 캐시에 briefing과 generatedAt을 저장한다', async () => {
+        it('done 상태에서 정규화된 briefing과 generatedAt을 캐시에 저장한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce({
-                briefing: '시장이 상승 중입니다.',
-            });
+            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_BRIEFING);
 
             await pollBriefingAction('job-8');
 
-            await Promise.resolve();
             expect(mockCacheSet).toHaveBeenCalledWith(
                 `briefing:market:${FIXED_DATE_HOUR}`,
-                { briefing: '시장이 상승 중입니다.', generatedAt: FIXED_ISO },
+                { briefing: NORMALIZED_BRIEFING, generatedAt: FIXED_ISO },
                 expect.any(Number)
             );
         });
@@ -150,15 +171,13 @@ describe('pollBriefingAction 함수는', () => {
         it('캐시 프로바이더가 없어도 done 상태를 반환한다', async () => {
             mockCreateCacheProvider.mockReturnValue(null);
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce({
-                briefing: '브리핑 텍스트',
-            });
+            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_BRIEFING);
 
             const result = await pollBriefingAction('job-9');
 
             expect(result).toEqual({
                 status: 'done',
-                briefing: '브리핑 텍스트',
+                briefing: NORMALIZED_BRIEFING,
                 generatedAt: FIXED_ISO,
             });
             expect(mockCacheSet).not.toHaveBeenCalled();

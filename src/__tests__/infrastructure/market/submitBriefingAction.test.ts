@@ -68,10 +68,21 @@ describe('submitBriefingAction 함수는', () => {
     });
 
     describe('캐시 히트일 때', () => {
-        it('cached 상태와 함께 브리핑과 generatedAt을 반환한다', async () => {
+        it('cached 상태와 함께 MarketBriefingResponse와 generatedAt을 반환한다', async () => {
             const cachedGeneratedAt = '2026-04-18T14:00:00.000Z';
+            const cachedBriefing = {
+                summary: '시장이 강세를 보이고 있습니다.',
+                dominantThemes: ['기술주 강세'],
+                sectorAnalysis: {
+                    leadingSectors: ['XLK'],
+                    laggingSectors: [],
+                    performanceDescription: '기술 섹터 주도',
+                },
+                volatilityAnalysis: { vixLevel: 17.48, description: 'VIX 안정' },
+                riskSentiment: '위험 선호',
+            };
             mockCacheGet.mockResolvedValueOnce({
-                briefing: '시장이 강세를 보이고 있습니다.',
+                briefing: cachedBriefing,
                 generatedAt: cachedGeneratedAt,
             });
 
@@ -79,7 +90,7 @@ describe('submitBriefingAction 함수는', () => {
 
             expect(result.status).toBe('cached');
             if (result.status === 'cached') {
-                expect(result.briefing).toBe('시장이 강세를 보이고 있습니다.');
+                expect(result.briefing).toEqual(cachedBriefing);
                 expect(result.generatedAt).toBe(cachedGeneratedAt);
             }
             expect(mockFetch).not.toHaveBeenCalled();

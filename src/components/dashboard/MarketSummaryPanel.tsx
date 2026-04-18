@@ -2,6 +2,7 @@
 
 import { useMemo } from 'react';
 import { IndexCard } from './IndexCard';
+import { BriefingCard } from './BriefingCard';
 import { useBriefing } from './hooks/useBriefing';
 import { useMarketSummary } from './hooks/useMarketSummary';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
@@ -86,40 +87,12 @@ export function MarketSummaryPanel() {
                 </div>
 
                 {/* AI 브리핑 */}
-                <div className="border-secondary-700/50 rounded-lg border p-4">
-                    {isLoading ? (
-                        <div className="flex items-center gap-2">
-                            <div className="bg-secondary-700/50 h-2 w-2 animate-pulse rounded-full" />
-                            <p className="text-secondary-500 text-sm">
-                                AI 브리핑 생성 중...
-                            </p>
-                        </div>
-                    ) : briefing ? (
-                        <div className="flex flex-col gap-2">
-                            <p className="text-secondary-300 text-sm leading-relaxed">
-                                {briefing}
-                            </p>
-                            {generatedAt && (
-                                <p className="text-secondary-600 text-xs">
-                                    {new Date(generatedAt).toLocaleString(
-                                        'ko-KR',
-                                        {
-                                            month: 'long',
-                                            day: 'numeric',
-                                            hour: '2-digit',
-                                            minute: '2-digit',
-                                        }
-                                    )}{' '}
-                                    기준 분석
-                                </p>
-                            )}
-                        </div>
-                    ) : error ? (
-                        <p className="text-chart-bearish text-sm">
-                            브리핑을 불러오지 못했습니다.
-                        </p>
-                    ) : null}
-                </div>
+                <BriefingCard
+                    briefing={briefing}
+                    generatedAt={generatedAt}
+                    isLoading={isLoading}
+                    error={error}
+                />
             </div>
         </section>
     );

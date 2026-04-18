@@ -2,7 +2,11 @@
 
 import { waitUntil } from '@vercel/functions';
 import { buildMarketBriefingPrompt } from '@/domain/analysis/marketBriefingPrompt';
-import type { MarketSummaryData, SubmitBriefingResult } from '@/domain/types';
+import type {
+    MarketBriefingResponse,
+    MarketSummaryData,
+    SubmitBriefingResult,
+} from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildBriefingCacheKey,
@@ -28,7 +32,7 @@ export async function submitBriefingAction(
     if (cache !== null) {
         try {
             const cached = await cache.get<{
-                briefing: string;
+                briefing: MarketBriefingResponse;
                 generatedAt: string;
             }>(cacheKey);
             if (cached !== null) {

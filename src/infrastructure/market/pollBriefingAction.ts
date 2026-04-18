@@ -1,7 +1,8 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
-import type { PollBriefingResult } from '@/domain/types';
+import type { MarketBriefingResponse, PollBriefingResult } from '@/domain/types';
+import { normalizeMarketBriefing } from '@/domain/analysis/normalizeMarketBriefing';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildBriefingCacheKey,
@@ -37,14 +38,14 @@ export async function pollBriefingAction(
         return { status: 'error', error: 'Result not found' };
     }
 
-    // worker가 저장하는 결과는 항상 { briefing: string } 형태이므로 assertion이 안전하다
-    const briefing = (raw as { briefing?: string }).briefing; // worker 계약에 의해 보장
-    if (!briefing) {
+    const briefing: MarketBriefingResponse = normalizeMarketBriefing(raw);
+
+    // 정규화 후 summary가 없으면 worker 응답 이상
+    if (!briefing.summary) {
         waitUntil(cleanupJob(jobId));
         return { status: 'error', error: 'Invalid briefing result' };
     }
 
-    // 브리핑을 캐시에 저장 (1시간 TTL)
     const now = new Date();
     const generatedAt = now.toISOString();
     const dateHour = generatedAt.slice(0, ISO_DATE_HOUR_PREFIX_LENGTH);

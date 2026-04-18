@@ -3,11 +3,12 @@
 import { useQuery } from '@tanstack/react-query';
 import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';
+import type { MarketBriefingResponse } from '@/domain/types';
 
 const POLL_INTERVAL_MS = 5_000;
 
 interface UseBriefingResult {
-    briefing: string | null;
+    briefing: MarketBriefingResponse | null;
     generatedAt: string | null;
     isLoading: boolean;
     error: string | null;
@@ -15,7 +16,7 @@ interface UseBriefingResult {
 
 export function useBriefing(
     jobId: string | undefined,
-    initialBriefing: string | undefined,
+    initialBriefing: MarketBriefingResponse | undefined,
     initialGeneratedAt: string | undefined
 ): UseBriefingResult {
     const { data } = useQuery({

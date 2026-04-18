@@ -18,7 +18,23 @@ export function buildMarketBriefingPrompt(
         })
         .join('\n');
 
-    return `You are a concise market analyst. Write a 2–3 sentence market briefing in Korean (존댓말) based on the data below. Focus on dominant themes: which sectors are leading or lagging, any notable volatility (VIX), and overall risk-on/off sentiment. Be specific and factual. No markdown, no JSON, plain text only.
+    return `You are a concise market analyst. Analyze the market data below and respond with a JSON object matching the exact schema provided. No markdown, no extra text — only valid JSON.
+
+Schema:
+{
+  "summary": "1-sentence overall market summary in Korean (존댓말)",
+  "dominantThemes": ["theme1", "theme2"],
+  "sectorAnalysis": {
+    "leadingSectors": ["ETF ticker", ...],
+    "laggingSectors": ["ETF ticker", ...],
+    "performanceDescription": "sector performance summary in Korean"
+  },
+  "volatilityAnalysis": {
+    "vixLevel": <number>,
+    "description": "VIX interpretation in Korean"
+  },
+  "riskSentiment": "risk-on/off/neutral assessment in Korean"
+}
 
 주요 지수:
 ${indexLines}

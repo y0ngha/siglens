@@ -42,13 +42,40 @@ export interface MarketSummaryData {
     sectors: MarketSectorData[];
 }
 
+export interface RawMarketBriefingResponse {
+    summary?: unknown;
+    dominantThemes?: unknown;
+    sectorAnalysis?: unknown;
+    volatilityAnalysis?: unknown;
+    riskSentiment?: unknown;
+}
+
+export interface MarketBriefingSectorAnalysis {
+    leadingSectors: string[];
+    laggingSectors: string[];
+    performanceDescription: string;
+}
+
+export interface MarketBriefingVolatilityAnalysis {
+    vixLevel?: number;
+    description: string;
+}
+
+export interface MarketBriefingResponse {
+    summary: string;
+    dominantThemes: string[];
+    sectorAnalysis: MarketBriefingSectorAnalysis;
+    volatilityAnalysis: MarketBriefingVolatilityAnalysis;
+    riskSentiment: string;
+}
+
 export type SubmitBriefingResult =
-    | { status: 'cached'; briefing: string; generatedAt: string }
+    | { status: 'cached'; briefing: MarketBriefingResponse; generatedAt: string }
     | { status: 'submitted'; jobId: string };
 
 export type PollBriefingResult =
     | { status: 'processing' }
-    | { status: 'done'; briefing: string; generatedAt: string }
+    | { status: 'done'; briefing: MarketBriefingResponse; generatedAt: string }
     | { status: 'error'; error: string };
 
 export interface SectorGroupDef {
