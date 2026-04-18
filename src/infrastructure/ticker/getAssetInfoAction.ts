@@ -11,9 +11,11 @@ import {
 import {
     searchBySymbol,
     filterUsExchanges,
-    filterIndexResults,
+    // TODO: 지수 심볼 검색 재활성화 시 복원
+    // filterIndexResults,
 } from '@/infrastructure/ticker/fmpTickerApi';
-import type { FmpSearchResult } from '@/infrastructure/ticker/types';
+// TODO: 지수 심볼 검색 재활성화 시 복원
+// import type { FmpSearchResult } from '@/infrastructure/ticker/types';
 import {
     getKoreanNames,
     setKoreanTickers,
@@ -22,13 +24,14 @@ import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator'
 import { isValidTickerFormat } from '@/domain/ticker';
 import type { AssetInfo, KoreanTickerEntry } from '@/domain/types';
 
-async function findIndexMatch(
-    symbol: string
-): Promise<FmpSearchResult | undefined> {
-    const results = await searchBySymbol(`^${symbol}`);
-    const indexResults = filterIndexResults(results);
-    return indexResults.find(r => r.symbol === `^${symbol}`) ?? indexResults[0];
-}
+// TODO: 지수 심볼 검색 재활성화 시 복원
+// async function findIndexMatch(
+//     symbol: string
+// ): Promise<FmpSearchResult | undefined> {
+//     const results = await searchBySymbol(`^${symbol}`);
+//     const indexResults = filterIndexResults(results);
+//     return indexResults.find(r => r.symbol === `^${symbol}`) ?? indexResults[0];
+// }
 
 async function translateAndCache(
     symbol: string,
@@ -89,10 +92,12 @@ const resolveAssetInfo = cache(
         const fmpResults = await searchBySymbol(upper);
         const usResults = filterUsExchanges(fmpResults);
         const exactUsMatch = usResults.find(r => r.symbol === upper);
-        const indexMatch = exactUsMatch
-            ? undefined
-            : await findIndexMatch(upper);
-        const match = exactUsMatch ?? indexMatch ?? usResults[0];
+        // TODO: 지수 심볼 검색 재활성화 시 아래 블록 복원
+        // const indexMatch = exactUsMatch
+        //     ? undefined
+        //     : await findIndexMatch(upper);
+        // const match = exactUsMatch ?? indexMatch ?? usResults[0];
+        const match = exactUsMatch ?? usResults[0];
 
         if (!match) return null;
 
@@ -105,7 +110,8 @@ const resolveAssetInfo = cache(
             symbol: upper,
             name,
             ...(koreanName && { koreanName }),
-            ...(indexMatch && { fmpSymbol: indexMatch.symbol }),
+            // TODO: 지수 심볼 검색 재활성화 시 복원
+            // ...(indexMatch && { fmpSymbol: indexMatch.symbol }),
         };
 
         if (!koreanName) {
@@ -114,8 +120,8 @@ const resolveAssetInfo = cache(
                     upper,
                     name,
                     exchange,
-                    exchangeFullName,
-                    indexMatch?.symbol
+                    exchangeFullName
+                    // TODO: 지수 심볼 검색 재활성화 시 복원: indexMatch?.symbol
                 ).catch(error =>
                     console.error('Asset info translateAndCache failed:', error)
                 )
