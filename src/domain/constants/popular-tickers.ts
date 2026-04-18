@@ -253,4 +253,16 @@ export const POPULAR_TICKERS = [
     'SNDK',
     'BP',
     'GOOG',
+
+    // --- Trending (2026-04-18) ---
+    'T',
+    'ABT',
+    'C',
+    'BSX',
+    'PBR-A',
+    'GLW',
+    'SAN',
+    'BMY',
+    'MDT',
+    'HDB',
 ] as const;
