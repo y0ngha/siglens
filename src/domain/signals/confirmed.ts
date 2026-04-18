@@ -4,6 +4,12 @@ import {
     RSI_OVERBOUGHT_LEVEL,
     RSI_OVERSOLD_LEVEL,
 } from '@/domain/indicators/constants';
+import { calculateMA } from '@/domain/indicators/ma';
+import {
+    CROSS_LOOKBACK_BARS,
+    GOLDEN_CROSS_FAST_PERIOD,
+    GOLDEN_CROSS_SLOW_PERIOD,
+} from '@/domain/signals/constants';
 
 export function detectRsiOversold(
     bars: Bar[],
@@ -38,5 +44,66 @@ export function detectRsiOverbought(
         direction: 'bearish',
         phase: 'confirmed',
         detectedAt: lastIdx,
+    };
+}
+
+type CrossDirection = 'up' | 'down';
+
+function findCross(
+    fast: (number | null)[],
+    slow: (number | null)[],
+    lookback: number,
+    direction: CrossDirection
+): number | null {
+    const len = Math.min(fast.length, slow.length);
+    const start = Math.max(1, len - lookback);
+    for (let i = start; i < len; i++) {
+        const f = fast[i];
+        const s = slow[i];
+        const fPrev = fast[i - 1];
+        const sPrev = slow[i - 1];
+        if (f === null || s === null || fPrev === null || sPrev === null)
+            continue;
+        if (direction === 'up' && fPrev <= sPrev && f > s) return i;
+        if (direction === 'down' && fPrev >= sPrev && f < s) return i;
+    }
+    return null;
+}
+
+export function detectGoldenCross(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    if (bars.length < GOLDEN_CROSS_SLOW_PERIOD + 1) return null;
+    const fast =
+        indicators.ma[GOLDEN_CROSS_FAST_PERIOD] ??
+        calculateMA(bars, GOLDEN_CROSS_FAST_PERIOD);
+    const slow = calculateMA(bars, GOLDEN_CROSS_SLOW_PERIOD);
+    const crossIdx = findCross(fast, slow, CROSS_LOOKBACK_BARS, 'up');
+    if (crossIdx === null) return null;
+    return {
+        type: 'golden_cross',
+        direction: 'bullish',
+        phase: 'confirmed',
+        detectedAt: crossIdx,
+    };
+}
+
+export function detectDeathCross(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    if (bars.length < GOLDEN_CROSS_SLOW_PERIOD + 1) return null;
+    const fast =
+        indicators.ma[GOLDEN_CROSS_FAST_PERIOD] ??
+        calculateMA(bars, GOLDEN_CROSS_FAST_PERIOD);
+    const slow = calculateMA(bars, GOLDEN_CROSS_SLOW_PERIOD);
+    const crossIdx = findCross(fast, slow, CROSS_LOOKBACK_BARS, 'down');
+    if (crossIdx === null) return null;
+    return {
+        type: 'death_cross',
+        direction: 'bearish',
+        phase: 'confirmed',
+        detectedAt: crossIdx,
     };
 }
