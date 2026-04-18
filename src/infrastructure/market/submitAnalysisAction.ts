@@ -13,7 +13,8 @@ import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 export async function submitAnalysisAction(
     symbol: string,
     timeframe: Timeframe,
-    force: boolean = false
+    force: boolean = false,
+    fmpSymbol?: string
 ): Promise<SubmitAnalysisResult> {
     // 1. 환경변수 사전 검증
     const workerUrl = process.env.WORKER_URL;
@@ -43,7 +44,8 @@ export async function submitAnalysisAction(
     // 3. Bars + Indicators 서버 재구성 (barsApi 캐시 워밍 시 추가 API 호출 없음)
     const { bars, indicators } = await fetchBarsWithIndicators(
         symbol,
-        timeframe
+        timeframe,
+        fmpSymbol
     );
 
     // 4. Skills 로딩 + 프롬프트 빌드

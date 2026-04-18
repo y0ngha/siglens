@@ -155,7 +155,8 @@ describe('submitAnalysisAction 함수는', () => {
             expect(mockCacheGet).not.toHaveBeenCalled();
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
                 mockSymbol,
-                mockTimeframe
+                mockTimeframe,
+                undefined
             );
             expect(mockFetch).toHaveBeenCalled();
         });
@@ -174,7 +175,8 @@ describe('submitAnalysisAction 함수는', () => {
 
             expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
                 mockSymbol,
-                mockTimeframe
+                mockTimeframe,
+                undefined
             );
             expect(result.status).toBe('submitted');
             if (result.status === 'submitted') {
@@ -218,6 +220,29 @@ describe('submitAnalysisAction 함수는', () => {
             expect(result.status).toBe('submitted');
             expect(mockFetch).toHaveBeenCalled();
             consoleSpy.mockRestore();
+        });
+    });
+
+    describe('fmpSymbol이 제공될 때', () => {
+        beforeEach(() => {
+            mockCacheGet.mockResolvedValueOnce(null);
+        });
+
+        it('fetchBarsWithIndicators에 fmpSymbol을 전달한다', async () => {
+            const mockFmpSymbol = '^SPX';
+
+            await submitAnalysisAction(
+                'SPX',
+                mockTimeframe,
+                false,
+                mockFmpSymbol
+            );
+
+            expect(mockFetchBarsWithIndicators).toHaveBeenCalledWith(
+                'SPX',
+                mockTimeframe,
+                mockFmpSymbol
+            );
         });
     });
 

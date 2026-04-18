@@ -123,6 +123,7 @@ export function ChartContent({
         timeframe,
         initialAnalysis,
         initialAnalysisFailed,
+        fmpSymbol,
         timeframeChangeCount,
     });
 

@@ -27,6 +27,7 @@ import { sleep } from '@/components/symbol-page/utils/sleep';
 interface AnalyzeMutationVariables {
     symbol: string;
     force: boolean;
+    fmpSymbol?: string;
 }
 
 /**
@@ -47,6 +48,7 @@ interface UseAnalysisOptions {
      * true이면 마운트 시 자동으로 재분석을 실행한다.
      */
     initialAnalysisFailed: boolean;
+    fmpSymbol?: string;
     /**
      * 타임프레임이 변경된 누적 횟수. SymbolPageClient에서 추적하여 전달한다.
      * Suspense remount 시 isInitialMount ref가 초기화되는 문제를 우회하기 위해
@@ -81,6 +83,7 @@ export function useAnalysis({
     timeframe,
     initialAnalysis,
     initialAnalysisFailed,
+    fmpSymbol,
     timeframeChangeCount,
 }: UseAnalysisOptions): UseAnalysisResult {
     // 1. useState
@@ -94,7 +97,7 @@ export function useAnalysis({
     const [pollError, setPollError] = useState<string | null>(null);
 
     // 2. useRef
-    const latestRef = useRef<{ symbol: string }>({ symbol });
+    const latestRef = useRef<{ symbol: string; fmpSymbol?: string }>({ symbol, fmpSymbol });
     const latestTimeframeRef = useRef<Timeframe>(timeframe);
     const prevTimeframeChangeCountRef = useRef(0);
     // 현재 진행 중인 워커 job ID. 타임프레임 변경 시 취소 신호 전달에 사용.
@@ -112,12 +115,13 @@ export function useAnalysis({
         reset,
         mutate,
     } = useMutation<SubmitAnalysisResult, Error, AnalyzeMutationVariables>({
-        mutationFn: ({ force, symbol: mutSymbol }) => {
+        mutationFn: ({ force, symbol: mutSymbol, fmpSymbol: mutFmpSymbol }) => {
             lastForceRef.current = force;
             return submitAnalysisAction(
                 mutSymbol,
                 latestTimeframeRef.current,
-                force
+                force,
+                mutFmpSymbol
             );
         },
         onMutate: () => {
@@ -160,7 +164,8 @@ export function useAnalysis({
     // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
     // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
     const handleReanalyze = useCallback((): void => {
-        const { symbol: latestSymbol } = latestRef.current;
+        const { symbol: latestSymbol, fmpSymbol: latestFmpSymbol } =
+            latestRef.current;
         const tf = latestTimeframeRef.current;
         void (async () => {
             const acquire = await tryAcquireReanalyzeCooldown(latestSymbol, tf);
@@ -173,7 +178,7 @@ export function useAnalysis({
                 return;
             }
             reset();
-            mutate({ symbol: latestSymbol, force: true });
+            mutate({ symbol: latestSymbol, force: true, fmpSymbol: latestFmpSymbol });
         })();
     }, [reset, mutate]);
 
@@ -181,7 +186,7 @@ export function useAnalysis({
     // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
     useLayoutEffect(() => {
-        latestRef.current = { symbol };
+        latestRef.current = { symbol, fmpSymbol };
         latestTimeframeRef.current = timeframe;
     });
 
@@ -263,7 +268,7 @@ export function useAnalysis({
     // 서버에서 초기 AI 분석이 실패한 경우 마운트 직후 자동으로 재분석을 실행한다.
     useEffect(() => {
         if (!initialAnalysisFailedRef.current) return;
-        mutate({ symbol: latestRef.current.symbol, force: false });
+        mutate({ symbol: latestRef.current.symbol, force: false, fmpSymbol: latestRef.current.fmpSymbol });
     }, [mutate]);
 
     // 타임프레임 변경 시 진행 중인 워커 작업을 취소하고, 이전 mutation 상태를 초기화한 뒤 새 분석을 자동 실행한다.
@@ -281,7 +286,7 @@ export function useAnalysis({
         }
 
         reset();
-        mutate({ symbol: latestRef.current.symbol, force: false });
+        mutate({ symbol: latestRef.current.symbol, force: false, fmpSymbol: latestRef.current.fmpSymbol });
     }, [timeframeChangeCount, reset, mutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
