@@ -1,7 +1,9 @@
 import {
     ANALYSIS_CACHE_TTL,
     CACHE_EXPIRY_HOUR_KST,
+    MARKET_BRIEFING_CACHE_TTL,
     buildAnalysisCacheKey,
+    buildBriefingCacheKey,
     buildTickerSearchCacheKey,
     computeSecondsUntilCacheExpiry,
     computeEffectiveTtl,
@@ -158,6 +160,26 @@ describe('computeEffectiveTtl 함수는', () => {
             const now = new Date('2024-01-15T00:00:00.000Z');
             const result = computeEffectiveTtl('1Hour', now);
             expect(result).toBe(ANALYSIS_CACHE_TTL['1Hour']);
+        });
+    });
+});
+
+describe('MARKET_BRIEFING_CACHE_TTL 상수는', () => {
+    it('3600초(1시간)이다', () => {
+        expect(MARKET_BRIEFING_CACHE_TTL).toBe(3600);
+    });
+});
+
+describe('buildBriefingCacheKey 함수는', () => {
+    describe('정상 입력일 때', () => {
+        it('briefing:market:{dateHour} 형식의 키를 반환한다', () => {
+            const key = buildBriefingCacheKey('2026-04-18T14');
+            expect(key).toBe('briefing:market:2026-04-18T14');
+        });
+
+        it('dateHour 값을 그대로 포함한다', () => {
+            const key = buildBriefingCacheKey('2026-01-01T00');
+            expect(key).toBe('briefing:market:2026-01-01T00');
         });
     });
 });

@@ -1,5 +1,89 @@
 export type Timeframe = '5Min' | '15Min' | '30Min' | '1Hour' | '4Hour' | '1Day';
 
+export interface IndexTicker {
+    symbol: string;
+    fmpSymbol: string;
+    displayName: string;
+    koreanName: string;
+}
+
+export interface SectorEtf {
+    symbol: string;
+    sectorName: string;
+    koreanName: string;
+}
+
+export interface MarketQuote {
+    symbol: string;
+    price: number;
+    changesPercentage: number;
+    name: string;
+}
+
+export interface MarketIndexData {
+    symbol: string;
+    fmpSymbol: string;
+    displayName: string;
+    koreanName: string;
+    price: number;
+    changesPercentage: number;
+}
+
+export interface MarketSectorData {
+    symbol: string;
+    sectorName: string;
+    koreanName: string;
+    price: number;
+    changesPercentage: number;
+}
+
+export interface MarketSummaryData {
+    indices: MarketIndexData[];
+    sectors: MarketSectorData[];
+}
+
+export interface MarketBriefingSectorAnalysis {
+    leadingSectors: string[];
+    laggingSectors: string[];
+    performanceDescription: string;
+}
+
+export interface MarketBriefingVolatilityAnalysis {
+    vixLevel?: number;
+    description: string;
+}
+
+export interface MarketBriefingResponse {
+    summary: string;
+    dominantThemes: string[];
+    sectorAnalysis: MarketBriefingSectorAnalysis;
+    volatilityAnalysis: MarketBriefingVolatilityAnalysis;
+    riskSentiment: string;
+}
+
+export type SubmitBriefingResult =
+    | {
+          status: 'cached';
+          briefing: MarketBriefingResponse;
+          generatedAt: string;
+      }
+    | { status: 'submitted'; jobId: string };
+
+export type PollBriefingResult =
+    | { status: 'processing' }
+    | { status: 'done'; briefing: MarketBriefingResponse; generatedAt: string }
+    | { status: 'error'; error: string };
+
+export interface SectorGroupDef {
+    label: string;
+    symbols: readonly string[];
+}
+
+export interface MarketSummaryActionResult {
+    summary: MarketSummaryData;
+    briefing: SubmitBriefingResult;
+}
+
 export interface Bar {
     time: number; // Unix timestamp (seconds)
     open: number;

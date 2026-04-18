@@ -306,6 +306,101 @@ async function processJob(
     }
 }
 
+interface BriefingRequest {
+    jobId: string;
+    prompt: string;
+}
+
+app.post('/briefing', (req: Request, res: Response) => {
+    if (req.headers['x-worker-secret'] !== config.workerSecret) {
+        res.status(HTTP_STATUS_UNAUTHORIZED).json({ error: 'Unauthorized' });
+        return;
+    }
+
+    const { jobId, prompt } = req.body as BriefingRequest;
+
+    if (!jobId || !prompt) {
+        res.status(HTTP_STATUS_BAD_REQUEST).json({
+            error: 'jobId and prompt are required',
+        });
+        return;
+    }
+
+    console.log(`[Worker] Briefing job received: ${jobId}`);
+
+    const controller = new AbortController();
+    activeJobs.set(jobId, controller);
+
+    void processBriefingJob(jobId, prompt, controller)
+        .catch(error => {
+            console.error(
+                `[Worker] Briefing job ${jobId} handler error:`,
+                error
+            );
+        })
+        .finally(() => {
+            activeJobs.delete(jobId);
+        });
+
+    res.json({ status: 'submitted', jobId });
+});
+
+async function processBriefingJob(
+    jobId: string,
+    prompt: string,
+    controller: AbortController
+): Promise<void> {
+    if (controller.signal.aborted || (await isCancelled(jobId))) {
+        await cleanupCancelledJob(jobId);
+        return;
+    }
+
+    await redis.set(`job:${jobId}:status`, 'processing', {
+        ex: JOB_TTL_SECONDS,
+    });
+
+    try {
+        const text = await callAI(prompt, controller.signal);
+
+        if (!text || text.trim() === '') {
+            throw new Error('AI returned an empty response');
+        }
+
+        if (controller.signal.aborted || (await isCancelled(jobId))) {
+            await cleanupCancelledJob(jobId);
+            return;
+        }
+
+        // AI가 반환한 JSON 문자열을 그대로 저장 — Upstash가 get 시 자동 파싱하여
+        // pollBriefingAction에 RawMarketBriefingResponse 객체로 전달된다.
+        // /analyze 엔드포인트와 동일한 패턴.
+        await redis.set(`job:${jobId}:result`, text.trim(), {
+            ex: JOB_TTL_SECONDS,
+        });
+        await redis.set(`job:${jobId}:status`, 'done', {
+            ex: JOB_TTL_SECONDS,
+        });
+
+        console.log(`[Worker] Briefing job ${jobId} completed`);
+    } catch (error) {
+        if (controller.signal.aborted) {
+            await cleanupCancelledJob(jobId);
+            return;
+        }
+
+        const message =
+            error instanceof Error ? error.message : 'Unknown error';
+        console.error(`[Worker] Briefing job ${jobId} failed:`, message);
+
+        await redis.set(`job:${jobId}:error`, message, {
+            ex: JOB_TTL_SECONDS,
+        });
+        await redis.set(`job:${jobId}:status`, 'error', {
+            ex: JOB_TTL_SECONDS,
+        });
+    }
+}
+
 app.listen(config.port, () => {
     console.log(`[Worker] Listening on port ${config.port}`);
 });

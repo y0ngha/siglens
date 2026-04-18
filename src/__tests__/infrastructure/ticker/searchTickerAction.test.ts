@@ -163,14 +163,13 @@ describe('searchTickerAction', () => {
     });
 
     describe('영어 쿼리이고 캐시 미스일 때', () => {
-        it('FMP API를 병렬로 호출한다 (심볼, 이름, 지수 검색 포함)', async () => {
+        it('FMP API를 병렬로 호출한다 (심볼, 이름)', async () => {
             mockCacheGet.mockResolvedValueOnce(null);
 
             await searchTickerAction('AAPL');
 
             expect(mockSearchBySymbol).toHaveBeenCalledWith('AAPL');
             expect(mockSearchByName).toHaveBeenCalledWith('AAPL');
-            expect(mockSearchBySymbol).toHaveBeenCalledWith('^AAPL');
         });
 
         it('US 거래소 필터링을 적용한다', async () => {
@@ -250,7 +249,8 @@ describe('searchTickerAction', () => {
         });
     });
 
-    describe('지수 심볼 검색일 때', () => {
+    // TODO: 지수 심볼 검색 재활성화 시 describe.skip 제거
+    describe.skip('지수 심볼 검색일 때', () => {
         it('^{query} 형식으로 searchBySymbol을 추가 호출한다', async () => {
             await searchTickerAction('SPX');
             expect(mockSearchBySymbol).toHaveBeenCalledWith('^SPX');

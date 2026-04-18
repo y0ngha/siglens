@@ -1,3 +1,4 @@
+import type { MarketQuote } from '@/domain/types';
 import type {
     Bar,
     GetBarsOptions,
@@ -95,6 +96,8 @@ interface FmpQuote {
     dayLow: number;
     volume: number;
     timestamp: number; // Unix timestamp (초 단위)
+    changesPercentage: number; // 전일 대비 등락률
+    name: string;
 }
 
 function toFmpBar(raw: FmpBar): Bar {
@@ -287,6 +290,31 @@ export class FmpProvider implements MarketDataProvider {
      * UTC 날짜가 ET 거래일보다 하루 앞설 수 있으나, FMP /stable/quote는 정규장 기준
      * 당일 데이터를 반환하므로 현재 구현 범위에서는 문제없다.
      */
+    async getQuote(symbol: string): Promise<MarketQuote | null> {
+        const url = this.buildQuoteUrl(symbol);
+        try {
+            const res = await fetch(url, {
+                next: { revalidate: FMP_REVALIDATE_SECONDS },
+            });
+            if (!res.ok) return null;
+
+            // FMP /stable/quote API 응답 형식: FmpQuote 객체 배열 (FMP API spec 보장)
+            const raw = (await res.json()) as FmpQuote[];
+            if (!Array.isArray(raw) || raw.length === 0) return null;
+
+            const quote = raw[0]!;
+            return {
+                symbol,
+                price: quote.price,
+                changesPercentage: quote.changesPercentage,
+                name: quote.name ?? symbol,
+            };
+        } catch (error) {
+            console.warn('[FmpProvider] getQuote failed:', symbol, error);
+            return null;
+        }
+    }
+
     private async fetchTodayQuoteBar(symbol: string): Promise<Bar | null> {
         const url = this.buildQuoteUrl(symbol);
         try {

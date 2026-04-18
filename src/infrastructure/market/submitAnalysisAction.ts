@@ -2,10 +2,13 @@
 
 import { waitUntil } from '@vercel/functions';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
-import type { SubmitAnalysisResult, Timeframe } from '@/domain/types';
+import type {
+    AnalysisResponse,
+    SubmitAnalysisResult,
+    Timeframe,
+} from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { buildAnalysisCacheKey } from '@/infrastructure/cache/config';
-import type { RunAnalysisResult } from '@/infrastructure/market/analysisApi';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { setJobMeta } from '@/infrastructure/jobs/queue';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
@@ -31,7 +34,7 @@ export async function submitAnalysisAction(
 
     if (!force && cache !== null) {
         try {
-            const cached = await cache.get<RunAnalysisResult>(cacheKey);
+            const cached = await cache.get<AnalysisResponse>(cacheKey);
             if (cached !== null) {
                 console.log('[Submit] Cache hit:', cacheKey);
                 return { status: 'cached', result: cached };

@@ -1,5 +1,31 @@
 # Fix Log
 
+## [PR #330 Round 3 | feature/issue-328-market-summary-panel | 2026-04-19]
+- Violation: infrastructure 파일에 대응하는 테스트 파일 누락
+- Rule: CONVENTIONS.md — infrastructure/ 100% coverage 필수
+- Context: `getMarketSummaryAction.ts` 신규 생성 시 테스트 파일 미작성
+
+## [PR #330 Round 2 | feature/issue-328-market-summary-panel | 2026-04-19]
+- Violation: Lightweight Charts dispose 이후 `unsubscribeCrosshairMove` 직접 호출
+- Rule: MISTAKES.md > Lightweight Charts #1 — ref 패턴으로 chart 생존 여부 확인 필요
+- Context: `useOverlayLegend.ts` cleanup에서 `chart.unsubscribeCrosshairMove`로 변경하여 ref guard가 제거됨; chart 생성 effect cleanup이 먼저 실행 시 'Object is disposed' 예외 발생 가능
+
+- Violation: derived 상수 이후에 hook 선언
+- Rule: MISTAKES.md > Coding Paradigm #16 — 모든 hook은 derived 상수보다 먼저 선언
+- Context: `MarketSummaryPanel.tsx`에서 5개 derived 상수 이후 `useBriefing`, `useMemo` 호출; 중간 상수를 인라인으로 이동하여 수정
+
+## [PR #330 | feature/issue-328-market-summary-panel | 2026-04-19]
+- Violation: fire-and-forget `fetch`에 `AbortSignal.timeout()` 없음
+- Rule: MISTAKES.md > Fire-and-Forget Operations #1 — Fire-and-forget fetch requests must have timeouts
+- Context: `submitBriefingAction.ts`의 `waitUntil(fetch(...))` 패턴에 타임아웃이 없어 worker 무응답 시 indefinitely hang 가능
+
+- Violation: 타입 시스템이 보장하는 필드에 중복 null/truthy 체크
+- Rule: MISTAKES.md > Predictability #2 — Conditional checks that duplicate type system guarantees
+- Context: `BriefingCard.tsx`에서 `dominantThemes`, `sectorAnalysis`, `leadingSectors` 등 `MarketBriefingResponse`가 보장하는 non-null 필드에 불필요한 `&&` guard 추가
+
+- Violation: Worker 분석 완료 후에만 HTTP 응답 전송
+- Rule: Fire-and-forget + polling 패턴 설계 원칙 — worker는 수신 즉시 응답하고 처리는 백그라운드에서 진행해야 함
+- Context: `worker/src/index.ts`의 `/briefing` 엔드포인트가 `processBriefingJob` 완료 후 `res.json()`을 호출하여 AI 처리 시간 동안 HTTP 연결이 유지됨
 
 ## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
 - Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
@@ -104,10 +130,6 @@
 - Rule: Provider pair symmetric rule — Alpaca start 파라미터는 RFC3339 형식 필요
 - Context: barsApi.ts의 computeFromDay가 substring(0, 10)만 반환; T00:00:00Z 추가로 RFC3339 호환성 확보 (FMP는 fromDate.substring(0,10)으로 처리하므로 영향 없음)
 ## [PR #313 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
-- Violation: useAnalysis.ts — eslint-disable-next-line react-hooks/exhaustive-deps used to suppress deps warning
-- Rule: CONVENTIONS.md react-hooks/exhaustive-deps — must restructure to fix the actual issue, not suppress the lint rule
-- Context: Mutation deps warning caused by unstable callback; fixed by restructuring with isCountdownActive boolean and cooldownStartValueRef to break the closure chain
-
 - Violation: findIndexMatch 반환 타입을 `ReturnType<typeof filterIndexResults>[number] | undefined`로 표현
 - Rule: TypeScript — 재사용 가능하거나 의미를 전달해야 하는 반환 타입은 구조적 유틸리티 타입 대신 명시적 named type으로 표현
 - Context: `filterIndexResults`가 `FmpSearchResult[]`를 반환하므로 해당 표현식은 `FmpSearchResult | undefined`와 동일; 명시적 타입 사용이 더 가독성 높음

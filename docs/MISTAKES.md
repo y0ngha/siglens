@@ -73,13 +73,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ arr.sort() // in-place mutation
     ✅ arr.toSorted() // returns new sorted array
 
+13. eslint-disable suppresses lint warnings instead of fixing root cause
+    → Never suppress warnings with eslint-disable-next-line or inline comments
+    → Always restructure the code to fix the actual issue (e.g., exhaustive-deps warnings → fix closure captures, remove unstable references)
+    ❌ // eslint-disable-next-line react-hooks/exhaustive-deps
+    ✅ Restructure deps, use useEffectEvent, use useRef for stable references
+
 14. Using let + if for conditional assignment instead of declarative const expressions
     → Prefer ternary/conditional expressions (const) over imperative reassignment (let)
     → Improves code clarity and follows functional programming principles
     ❌ let result = value; if (condition) result = newValue; return result;
     ✅ const result = condition ? newValue : value; return result;
 
-13. Hardcoded literals in function names or calculations
+15. Hardcoded literals in function names or calculations
     → All magic numbers and constant values must be extracted to module-level constants
     → Function names must remain accurate when the underlying constant value changes
     ❌ function computeSecondsUntilKst17() { ... } where 17 is hardcoded; renaming breaks if constant changes
@@ -87,7 +93,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
 
-15. Shared constants duplicated across module boundaries without documentation
+16. Shared constants duplicated across module boundaries without documentation
     → When a module cannot import shared constants (environment constraints), duplicate with explicit JSDoc linking to the source
     → Every duplicate must reference the original constant and document the sync requirement
     ❌ worker/src/index.ts: JOB_TTL_SECONDS = 3600  // matches queue.ts but no link or comment
@@ -95,23 +101,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
              const JOB_TTL_SECONDS = 3600;
     → Redis key schemas duplicated across files must include a JSDoc block documenting the schema origin and dependency chain
 
-16. Custom hooks declared after derived variables in component/hook code
+17. Custom hooks declared after derived variables in component/hook code
     → All hook calls must be declared before derived variables (const x = ...), handlers, or effects
     ❌ const timeframe = computeTimeframe(); useQuery(...)
     ✅ useQuery(...); const timeframe = computeTimeframe();
     → Ordering: useState/useRef → useQuery/useMutation → derived variables → handlers → useEffect
 
-17. Non-hook utility functions defined inside hook files
+18. Non-hook utility functions defined inside hook files
     → Pure utilities like sleep() belong in utils/ subfolders, not inside hook files
     ❌ useAnalysis.ts: const sleep = (ms) => new Promise(...)
     ✅ symbol-page/utils/sleep.ts
 
-18. Inline styles in JSX when Tailwind classes are available
+19. Inline styles in JSX when Tailwind classes are available
     → Always use Tailwind; never inline style={{ ... }} for layout or styling
     ❌ <ins style={{ display: 'block' }} />
     ✅ <ins className="block" />
 
-19. Nested functions without explicit parameters extracted to module level
+20. Nested functions without explicit parameters extracted to module level
     → When extracting a function from a parent function scope, make all parent variables explicit parameters
     ❌ function searchAction() { function toResult(x) { ... parent var ... } }
     ✅ function toResult(x, parentVar) { ... }; function searchAction() { toResult(..., parentVar); }
@@ -338,6 +344,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 1. Missing chart.remove() cleanup or listener unsubscribe before chart.remove()
    → Always call unsubscribeVisibleLogicalRangeChange before chart.remove() to prevent "Object is disposed" errors
    → Use a ref pattern for onChartRemove callback to capture cleanup logic and guard chartRef.current in ResizeObserver
+   → When effect cleanup order is non-deterministic (chart dispose may run first), use try-catch on the unsubscribe call
+      rather than re-reading chartRef.current in cleanup (which triggers react-hooks/exhaustive-deps warnings)
+   ❌ chartRef.current?.unsubscribeCrosshairMove(handler)  // eslint-disable required, ref read in cleanup
+   ✅ try { chart.unsubscribeCrosshairMove(handler); } catch { /* already disposed */ }
 
 2. Passing domain null values directly to setData
    → Convert to WhitespaceData({ time })

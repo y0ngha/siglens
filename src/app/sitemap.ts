@@ -19,7 +19,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
         {
             url: SITE_URL,
             lastModified: SITEMAP_DATE,
-            changeFrequency: 'daily' as const,
+            changeFrequency: 'hourly' as const,
             priority: 1,
         },
         ...POPULAR_TICKERS.map(ticker => ({

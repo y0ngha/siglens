@@ -13,6 +13,7 @@ import {
     SkillsShowcaseSkeleton,
 } from '@/components/home/SkillsShowcase';
 import { TickerCategories } from '@/components/home/TickerCategories';
+import { MarketSummaryPanel } from '@/components/dashboard/MarketSummaryPanel';
 
 const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
 
@@ -169,6 +170,7 @@ export default async function Home() {
                         </Suspense>
                     </div>
                 </section>
+                <MarketSummaryPanel />
                 <HowItWorks skillCounts={skillCounts} />
                 <Suspense fallback={<SkillsShowcaseSkeleton />}>
                     <SkillsShowcaseServer />

@@ -8,3 +8,5 @@ npx skills add https://github.com/anthropics/skills --skill frontend-design
 npx skills add https://github.com/coreyhaines31/marketingskills --skill seo-audit
 
 npx skills add https://github.com/sickn33/antigravity-awesome-skills --skill typescript-expert
+
+npx skills add https://github.com/obra/superpowers --skill writing-plans

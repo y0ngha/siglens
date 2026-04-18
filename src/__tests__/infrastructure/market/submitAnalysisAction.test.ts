@@ -3,8 +3,7 @@ jest.mock('next/cache', () => ({
     cacheTag: jest.fn(),
 }));
 
-import type { Timeframe } from '@/domain/types';
-import type { RunAnalysisResult } from '@/infrastructure/market/analysisApi';
+import type { AnalysisResponse, Timeframe } from '@/domain/types';
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: (promise: Promise<unknown>) => {
@@ -86,7 +85,7 @@ const mockBarsData = {
     },
 };
 
-const mockResult: RunAnalysisResult = {
+const mockResult: AnalysisResponse = {
     summary: '테스트',
     trend: 'bullish' as const,
     indicatorResults: [],
@@ -100,7 +99,6 @@ const mockResult: RunAnalysisResult = {
     strategyResults: [],
     candlePatterns: [],
     trendlines: [],
-    skillsDegraded: false,
 };
 
 describe('submitAnalysisAction 함수는', () => {
