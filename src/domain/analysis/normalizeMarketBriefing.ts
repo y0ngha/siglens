@@ -3,7 +3,7 @@ import type {
     MarketBriefingSectorAnalysis,
     MarketBriefingVolatilityAnalysis,
 } from '@/domain/types';
-import { asArray, asNumber, asObject, asString } from './normalize';
+import { asArray, asNumber, asObject, asString } from './normalizePrimitives';
 
 function normalizeSectorAnalysis(v: unknown): MarketBriefingSectorAnalysis {
     const o = asObject(v);

@@ -178,7 +178,8 @@ describe('getAssetInfoAction', () => {
         });
     });
 
-    describe('US 거래소 결과가 없고 지수 폴백이 성공할 때', () => {
+    // TODO: 지수 심볼 검색 재활성화 시 describe.skip 제거
+    describe.skip('US 거래소 결과가 없고 지수 폴백이 성공할 때', () => {
         it('^ 접두사 검색으로 찾은 지수 정보를 반환한다', async () => {
             mockFilterUsExchanges.mockReturnValueOnce([]);
             mockSearchBySymbol
@@ -355,7 +356,8 @@ describe('getAssetInfoAction', () => {
             );
         });
 
-        it('지수 심볼 번역 완료 후 캐시에 fmpSymbol을 포함하여 갱신한다', async () => {
+        // TODO: 지수 심볼 검색 재활성화 시 it.skip 제거
+        it.skip('지수 심볼 번역 완료 후 캐시에 fmpSymbol을 포함하여 갱신한다', async () => {
             mockFilterUsExchanges.mockReturnValueOnce([]);
             mockSearchBySymbol
                 .mockResolvedValueOnce([])

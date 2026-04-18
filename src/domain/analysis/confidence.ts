@@ -15,6 +15,8 @@ import {
     asArray,
     asString,
     compact,
+} from '@/domain/analysis/normalizePrimitives';
+import {
     normalizeActionRecommendation,
     normalizeCandlePatternSummary,
     normalizeIndicatorGuideResult,

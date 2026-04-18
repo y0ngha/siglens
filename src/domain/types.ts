@@ -42,14 +42,6 @@ export interface MarketSummaryData {
     sectors: MarketSectorData[];
 }
 
-export interface RawMarketBriefingResponse {
-    summary?: unknown;
-    dominantThemes?: unknown;
-    sectorAnalysis?: unknown;
-    volatilityAnalysis?: unknown;
-    riskSentiment?: unknown;
-}
-
 export interface MarketBriefingSectorAnalysis {
     leadingSectors: string[];
     laggingSectors: string[];

@@ -71,6 +71,58 @@ describe('normalizeMarketBriefing 함수는', () => {
         });
     });
 
+    describe('sectorAnalysis 필드가 부분적으로 누락된 경우', () => {
+        it('leadingSectors가 없으면 빈 배열을 반환한다', () => {
+            const result = normalizeMarketBriefing({
+                sectorAnalysis: {
+                    laggingSectors: ['XLE'],
+                    performanceDescription: '설명',
+                },
+            });
+            expect(result.sectorAnalysis.leadingSectors).toEqual([]);
+        });
+
+        it('laggingSectors가 없으면 빈 배열을 반환한다', () => {
+            const result = normalizeMarketBriefing({
+                sectorAnalysis: { leadingSectors: ['XLK'] },
+            });
+            expect(result.sectorAnalysis.laggingSectors).toEqual([]);
+        });
+
+        it('performanceDescription이 없으면 빈 문자열을 반환한다', () => {
+            const result = normalizeMarketBriefing({
+                sectorAnalysis: { leadingSectors: ['XLK'], laggingSectors: [] },
+            });
+            expect(result.sectorAnalysis.performanceDescription).toBe('');
+        });
+    });
+
+    describe('최상위 필드가 잘못된 타입으로 주어졌을 때', () => {
+        it('summary가 문자열이 아니면 빈 문자열을 반환한다', () => {
+            expect(normalizeMarketBriefing({ summary: 42 }).summary).toBe('');
+            expect(normalizeMarketBriefing({ summary: {} }).summary).toBe('');
+        });
+
+        it('dominantThemes가 배열이 아니면 빈 배열을 반환한다', () => {
+            expect(
+                normalizeMarketBriefing({ dominantThemes: 'text' })
+                    .dominantThemes
+            ).toEqual([]);
+            expect(
+                normalizeMarketBriefing({ dominantThemes: 42 }).dominantThemes
+            ).toEqual([]);
+        });
+
+        it('riskSentiment가 문자열이 아니면 빈 문자열을 반환한다', () => {
+            expect(
+                normalizeMarketBriefing({ riskSentiment: null }).riskSentiment
+            ).toBe('');
+            expect(
+                normalizeMarketBriefing({ riskSentiment: {} }).riskSentiment
+            ).toBe('');
+        });
+    });
+
     describe('비정상 입력이 주어졌을 때', () => {
         it('null이면 모든 필드를 기본값으로 반환한다', () => {
             const result = normalizeMarketBriefing(null);

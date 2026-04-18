@@ -376,12 +376,12 @@ async function processBriefingJob(
             return;
         }
 
-        // 결과를 객체로 감싸서 저장 — pollBriefingAction에서 { briefing } 구조로 읽음
-        await redis.set(
-            `job:${jobId}:result`,
-            JSON.stringify({ briefing: text.trim() }),
-            { ex: JOB_TTL_SECONDS }
-        );
+        // AI가 반환한 JSON 문자열을 그대로 저장 — Upstash가 get 시 자동 파싱하여
+        // pollBriefingAction에 RawMarketBriefingResponse 객체로 전달된다.
+        // /analyze 엔드포인트와 동일한 패턴.
+        await redis.set(`job:${jobId}:result`, text.trim(), {
+            ex: JOB_TTL_SECONDS,
+        });
         await redis.set(`job:${jobId}:status`, 'done', {
             ex: JOB_TTL_SECONDS,
         });
