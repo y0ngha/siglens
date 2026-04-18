@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #330 Round 2 | feature/issue-328-market-summary-panel | 2026-04-19]
+- Violation: Lightweight Charts dispose 이후 `unsubscribeCrosshairMove` 직접 호출
+- Rule: MISTAKES.md > Lightweight Charts #1 — ref 패턴으로 chart 생존 여부 확인 필요
+- Context: `useOverlayLegend.ts` cleanup에서 `chart.unsubscribeCrosshairMove`로 변경하여 ref guard가 제거됨; chart 생성 effect cleanup이 먼저 실행 시 'Object is disposed' 예외 발생 가능
+
+- Violation: derived 상수 이후에 hook 선언
+- Rule: MISTAKES.md > Coding Paradigm #16 — 모든 hook은 derived 상수보다 먼저 선언
+- Context: `MarketSummaryPanel.tsx`에서 5개 derived 상수 이후 `useBriefing`, `useMemo` 호출; 중간 상수를 인라인으로 이동하여 수정
+
 ## [PR #330 | feature/issue-328-market-summary-panel | 2026-04-19]
 - Violation: fire-and-forget `fetch`에 `AbortSignal.timeout()` 없음
 - Rule: MISTAKES.md > Fire-and-Forget Operations #1 — Fire-and-forget fetch requests must have timeouts
