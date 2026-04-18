@@ -9,6 +9,8 @@ import {
     detectRsiBearishDivergence,
     detectMacdHistogramBullishConvergence,
     detectMacdHistogramBearishConvergence,
+    detectBollingerSqueezeBullish,
+    detectBollingerSqueezeBearish,
 } from '@/domain/signals/anticipation';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import type {
@@ -522,6 +524,249 @@ describe('detectMacdHistogramBearishConvergence', () => {
             }));
             expect(
                 detectMacdHistogramBearishConvergence([], withMacd(points))
+            ).toBeNull();
+        });
+    });
+});
+
+function squeezeFixture(opts: {
+    wideCount?: number;
+    pctB: number;
+    emaSlope: 'up' | 'down';
+}): { bars: Bar[]; indicators: IndicatorResult } {
+    const wideCount = opts.wideCount ?? 119;
+    // First `wideCount` wide bands (width ~0.2), final bar narrow (width ~0.02)
+    const bb: BollingerResult[] = [
+        ...Array(wideCount)
+            .fill(null)
+            .map(() => ({ upper: 110, middle: 100, lower: 90 })),
+        { upper: 101, middle: 100, lower: 99 },
+    ];
+    // close that produces the requested %B
+    const width =
+        (bb[bb.length - 1].upper as number) -
+        (bb[bb.length - 1].lower as number);
+    const close = (bb[bb.length - 1].lower as number) + opts.pctB * width;
+    const bars: Bar[] = bb.map((_, i) => ({
+        time: 1 + i,
+        open: close,
+        high: close,
+        low: close,
+        close,
+        volume: 100,
+    }));
+    const slopeDir = opts.emaSlope === 'up' ? 1 : -1;
+    const ema20 = bb.map((_, i) => 100 + slopeDir * i * 0.5);
+    return {
+        bars,
+        indicators: {
+            ...EMPTY_INDICATOR_RESULT,
+            bollinger: bb,
+            ema: { 20: ema20 },
+        },
+    };
+}
+
+describe('detectBollingerSqueezeBullish', () => {
+    describe('너비 하위 10% + %B ≥ 0.5 + 기울기 ≥ 0 일 때', () => {
+        it('Signal을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'up',
+            });
+            const result = detectBollingerSqueezeBullish(bars, indicators);
+            expect(result?.type).toBe('bollinger_squeeze_bullish');
+        });
+    });
+
+    describe('%B가 0.5 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.3,
+                emaSlope: 'up',
+            });
+            expect(detectBollingerSqueezeBullish(bars, indicators)).toBeNull();
+        });
+    });
+
+    describe('EMA20 기울기가 음수일 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'down',
+            });
+            expect(detectBollingerSqueezeBullish(bars, indicators)).toBeNull();
+        });
+    });
+
+    describe('bb 데이터가 120봉 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                wideCount: 50,
+                pctB: 0.6,
+                emaSlope: 'up',
+            });
+            expect(detectBollingerSqueezeBullish(bars, indicators)).toBeNull();
+        });
+    });
+});
+
+describe('detectBollingerSqueezeBearish', () => {
+    describe('너비 하위 10% + %B < 0.5 + 기울기 ≤ 0 일 때', () => {
+        it('Signal을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.4,
+                emaSlope: 'down',
+            });
+            const result = detectBollingerSqueezeBearish(bars, indicators);
+            expect(result?.type).toBe('bollinger_squeeze_bearish');
+        });
+    });
+
+    describe('bb 데이터가 120봉 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                wideCount: 50,
+                pctB: 0.4,
+                emaSlope: 'down',
+            });
+            expect(detectBollingerSqueezeBearish(bars, indicators)).toBeNull();
+        });
+    });
+
+    describe('%B가 0.5 이상일 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'down',
+            });
+            expect(detectBollingerSqueezeBearish(bars, indicators)).toBeNull();
+        });
+    });
+
+    describe('EMA20 기울기가 양수일 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.4,
+                emaSlope: 'up',
+            });
+            expect(detectBollingerSqueezeBearish(bars, indicators)).toBeNull();
+        });
+    });
+});
+
+describe('detectBollingerSqueezeBullish — 추가 엣지케이스', () => {
+    describe('bars.length !== bb.length 일 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'up',
+            });
+            // Drop the last bar to desync lengths
+            const mismatchedBars = bars.slice(0, -1);
+            expect(
+                detectBollingerSqueezeBullish(mismatchedBars, indicators)
+            ).toBeNull();
+        });
+    });
+
+    describe('마지막 bb 밴드가 null 필드를 포함할 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'up',
+            });
+            const bb = [...indicators.bollinger];
+            bb[bb.length - 1] = { upper: null, middle: null, lower: null };
+            expect(
+                detectBollingerSqueezeBullish(bars, {
+                    ...indicators,
+                    bollinger: bb,
+                })
+            ).toBeNull();
+        });
+    });
+
+    describe('중간 bb 밴드에 null 필드가 섞여 있을 때', () => {
+        it('null인 width는 건너뛰고 나머지로 percentile을 계산한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'up',
+            });
+            const bb = [...indicators.bollinger];
+            // Insert a null-field band in the lookback window to exercise the `continue` path
+            bb[0] = { upper: null, middle: null, lower: null };
+            const result = detectBollingerSqueezeBullish(bars, {
+                ...indicators,
+                bollinger: bb,
+            });
+            expect(result?.type).toBe('bollinger_squeeze_bullish');
+        });
+    });
+
+    describe('마지막 bb에서 upper == lower 일 때 (pctB null)', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'up',
+            });
+            const bb = [...indicators.bollinger];
+            // Keep width computable via middle but make pctB fail (upper == lower)
+            bb[bb.length - 1] = { upper: 100, middle: 100, lower: 100 };
+            expect(
+                detectBollingerSqueezeBullish(bars, {
+                    ...indicators,
+                    bollinger: bb,
+                })
+            ).toBeNull();
+        });
+    });
+
+    describe('indicators.ema[20] 이 undefined 일 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'up',
+            });
+            expect(
+                detectBollingerSqueezeBullish(bars, {
+                    ...indicators,
+                    ema: {},
+                })
+            ).toBeNull();
+        });
+    });
+
+    describe('computeEma20Slope가 null을 반환할 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'up',
+            });
+            // Short EMA array forces slope computation to fail
+            expect(
+                detectBollingerSqueezeBullish(bars, {
+                    ...indicators,
+                    ema: { 20: [100, 101] },
+                })
+            ).toBeNull();
+        });
+    });
+
+    describe('마지막 밴드 너비가 하위 10%에 들지 않을 때', () => {
+        it('null을 반환한다', () => {
+            const { bars, indicators } = squeezeFixture({
+                pctB: 0.6,
+                emaSlope: 'up',
+            });
+            const bb = [...indicators.bollinger];
+            // Last band is wider than all others, rank = 1 > SQUEEZE_PERCENTILE (0.1)
+            bb[bb.length - 1] = { upper: 150, middle: 100, lower: 50 };
+            expect(
+                detectBollingerSqueezeBullish(bars, {
+                    ...indicators,
+                    bollinger: bb,
+                })
             ).toBeNull();
         });
     });

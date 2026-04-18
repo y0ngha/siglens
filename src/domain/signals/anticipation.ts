@@ -5,6 +5,10 @@ import {
     DIVERGENCE_LOOKBACK_BARS,
     HISTOGRAM_CONVERGENCE_BARS,
     PIVOT_WINDOW,
+    SQUEEZE_LOOKBACK_BARS,
+    SQUEEZE_PCT_B_THRESHOLD,
+    SQUEEZE_PERCENTILE,
+    TREND_SLOPE_LOOKBACK,
 } from '@/domain/signals/constants';
 
 export function findPivotLows(lows: number[], window: number): number[] {
@@ -206,5 +210,70 @@ export function detectMacdHistogramBearishConvergence(
         direction: 'bearish',
         phase: 'expected',
         detectedAt: macd.length - 1,
+    };
+}
+
+function isSqueezePresent(
+    bars: Bar[],
+    indicators: IndicatorResult
+): { lastIdx: number; pctB: number; slope: number } | null {
+    const bb = indicators.bollinger;
+    if (bb.length < SQUEEZE_LOOKBACK_BARS) return null;
+    if (bars.length !== bb.length) return null;
+    const lastIdx = bb.length - 1;
+    const lastBB = bb[lastIdx];
+    const widthLast = computeBbWidth(lastBB);
+    if (widthLast === null) return null;
+
+    const widths: number[] = [];
+    for (let i = lastIdx - SQUEEZE_LOOKBACK_BARS + 1; i <= lastIdx; i++) {
+        const p = bb[i];
+        const w = computeBbWidth(p);
+        if (w === null) continue;
+        widths.push(w);
+    }
+    const rank = percentileRank(widthLast, widths);
+    if (rank === null || rank > SQUEEZE_PERCENTILE) return null;
+
+    const pctB = computePctB(bars[lastIdx].close, lastBB);
+    if (pctB === null) return null;
+
+    const ema20 = indicators.ema[20];
+    if (ema20 === undefined) return null;
+    const slope = computeEma20Slope(ema20, TREND_SLOPE_LOOKBACK);
+    if (slope === null) return null;
+
+    return { lastIdx, pctB, slope };
+}
+
+export function detectBollingerSqueezeBullish(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const s = isSqueezePresent(bars, indicators);
+    if (s === null) return null;
+    if (s.pctB < SQUEEZE_PCT_B_THRESHOLD) return null;
+    if (s.slope < 0) return null;
+    return {
+        type: 'bollinger_squeeze_bullish',
+        direction: 'bullish',
+        phase: 'expected',
+        detectedAt: s.lastIdx,
+    };
+}
+
+export function detectBollingerSqueezeBearish(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const s = isSqueezePresent(bars, indicators);
+    if (s === null) return null;
+    if (s.pctB >= SQUEEZE_PCT_B_THRESHOLD) return null;
+    if (s.slope > 0) return null;
+    return {
+        type: 'bollinger_squeeze_bearish',
+        direction: 'bearish',
+        phase: 'expected',
+        detectedAt: s.lastIdx,
     };
 }
