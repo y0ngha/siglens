@@ -14,9 +14,11 @@ export async function getMarketSummary(): Promise<MarketSummaryData> {
     );
 
     const quoteMap = new Map(
-        (quotes.filter(q => q !== null) as NonNullable<(typeof quotes)[number]>[]).map(
-            q => [q.symbol, q]
-        )
+        (
+            quotes.filter(q => q !== null) as NonNullable<
+                (typeof quotes)[number]
+            >[]
+        ).map(q => [q.symbol, q])
     );
 
     return {

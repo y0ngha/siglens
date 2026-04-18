@@ -17,7 +17,10 @@ export function MarketSummaryPanel({
     initialBriefing,
     briefingJobId,
 }: MarketSummaryPanelProps) {
-    const { briefing, isLoading, error } = useBriefing(briefingJobId, initialBriefing);
+    const { briefing, isLoading, error } = useBriefing(
+        briefingJobId,
+        initialBriefing
+    );
 
     return (
         <section

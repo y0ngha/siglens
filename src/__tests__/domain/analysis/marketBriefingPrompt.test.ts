@@ -21,8 +21,20 @@ const indices: MarketIndexData[] = [
 ];
 
 const sectors: MarketSectorData[] = [
-    { symbol: 'XLK', sectorName: 'Technology', koreanName: '기술', price: 210.0, changesPercentage: 1.2 },
-    { symbol: 'XLE', sectorName: 'Energy', koreanName: '에너지', price: 88.5, changesPercentage: -0.75 },
+    {
+        symbol: 'XLK',
+        sectorName: 'Technology',
+        koreanName: '기술',
+        price: 210.0,
+        changesPercentage: 1.2,
+    },
+    {
+        symbol: 'XLE',
+        sectorName: 'Energy',
+        koreanName: '에너지',
+        price: 88.5,
+        changesPercentage: -0.75,
+    },
 ];
 
 describe('buildMarketBriefingPrompt 함수는', () => {

@@ -59,7 +59,7 @@ export function IndexCard({ data, href }: IndexCardProps) {
             <Link
                 href={href}
                 title={`${label} 분석`}
-                className="block transition-opacity hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:rounded-lg"
+                className="focus-visible:ring-primary-500 block transition-opacity hover:opacity-80 focus-visible:rounded-lg focus-visible:ring-2 focus-visible:outline-none"
             >
                 {inner}
             </Link>

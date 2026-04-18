@@ -336,7 +336,10 @@ app.post('/briefing', (req: Request, res: Response) => {
             res.json({ status: 'done', jobId });
         })
         .catch(error => {
-            console.error(`[Worker] Briefing job ${jobId} handler error:`, error);
+            console.error(
+                `[Worker] Briefing job ${jobId} handler error:`,
+                error
+            );
             res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).json({
                 status: 'error',
                 jobId,

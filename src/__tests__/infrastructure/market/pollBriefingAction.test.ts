@@ -85,11 +85,16 @@ describe('pollBriefingAction 함수는', () => {
     describe('status가 done일 때', () => {
         it('유효한 briefing과 함께 done 상태를 반환한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce({ briefing: '시장은 강세입니다.' });
+            mockGetJobResult.mockResolvedValueOnce({
+                briefing: '시장은 강세입니다.',
+            });
 
             const result = await pollBriefingAction('job-5');
 
-            expect(result).toEqual({ status: 'done', briefing: '시장은 강세입니다.' });
+            expect(result).toEqual({
+                status: 'done',
+                briefing: '시장은 강세입니다.',
+            });
         });
 
         it('결과가 없으면 error를 반환한다', async () => {
@@ -98,7 +103,10 @@ describe('pollBriefingAction 함수는', () => {
 
             const result = await pollBriefingAction('job-6');
 
-            expect(result).toEqual({ status: 'error', error: 'Result not found' });
+            expect(result).toEqual({
+                status: 'error',
+                error: 'Result not found',
+            });
         });
 
         it('briefing 필드가 없으면 error를 반환한다', async () => {
@@ -115,7 +123,9 @@ describe('pollBriefingAction 함수는', () => {
 
         it('done 상태에서 캐시에 브리핑을 저장한다', async () => {
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce({ briefing: '시장이 상승 중입니다.' });
+            mockGetJobResult.mockResolvedValueOnce({
+                briefing: '시장이 상승 중입니다.',
+            });
 
             await pollBriefingAction('job-8');
 
@@ -130,11 +140,16 @@ describe('pollBriefingAction 함수는', () => {
         it('캐시 프로바이더가 없어도 done 상태를 반환한다', async () => {
             mockCreateCacheProvider.mockReturnValue(null);
             mockGetJobStatus.mockResolvedValueOnce('done');
-            mockGetJobResult.mockResolvedValueOnce({ briefing: '브리핑 텍스트' });
+            mockGetJobResult.mockResolvedValueOnce({
+                briefing: '브리핑 텍스트',
+            });
 
             const result = await pollBriefingAction('job-9');
 
-            expect(result).toEqual({ status: 'done', briefing: '브리핑 텍스트' });
+            expect(result).toEqual({
+                status: 'done',
+                briefing: '브리핑 텍스트',
+            });
             expect(mockCacheSet).not.toHaveBeenCalled();
         });
     });

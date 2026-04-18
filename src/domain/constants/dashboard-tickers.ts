@@ -3,10 +3,30 @@ import type { IndexTicker, SectorEtf } from '@/domain/types';
 export type { IndexTicker, SectorEtf };
 
 export const MARKET_INDICES: IndexTicker[] = [
-    { symbol: 'GSPC', fmpSymbol: '^GSPC', displayName: 'S&P 500', koreanName: '미국 대형주 500' },
-    { symbol: 'DJI', fmpSymbol: '^DJI', displayName: 'Dow Jones', koreanName: '다우 산업지수' },
-    { symbol: 'IXIC', fmpSymbol: '^IXIC', displayName: 'NASDAQ', koreanName: '나스닥 종합' },
-    { symbol: 'VIX', fmpSymbol: '^VIX', displayName: 'VIX', koreanName: '공포지수' },
+    {
+        symbol: 'GSPC',
+        fmpSymbol: '^GSPC',
+        displayName: 'S&P 500',
+        koreanName: '미국 대형주 500',
+    },
+    {
+        symbol: 'DJI',
+        fmpSymbol: '^DJI',
+        displayName: 'Dow Jones',
+        koreanName: '다우 산업지수',
+    },
+    {
+        symbol: 'IXIC',
+        fmpSymbol: '^IXIC',
+        displayName: 'NASDAQ',
+        koreanName: '나스닥 종합',
+    },
+    {
+        symbol: 'VIX',
+        fmpSymbol: '^VIX',
+        displayName: 'VIX',
+        koreanName: '공포지수',
+    },
 ];
 
 export const SECTOR_ETFS: SectorEtf[] = [
