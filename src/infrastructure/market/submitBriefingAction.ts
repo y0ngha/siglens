@@ -27,7 +27,10 @@ export async function submitBriefingAction(
     const cache = createCacheProvider();
     if (cache !== null) {
         try {
-            const cached = await cache.get<{ briefing: string; generatedAt: string }>(cacheKey);
+            const cached = await cache.get<{
+                briefing: string;
+                generatedAt: string;
+            }>(cacheKey);
             if (cached !== null) {
                 return {
                     status: 'cached',

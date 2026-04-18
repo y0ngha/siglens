@@ -53,7 +53,11 @@ export async function pollBriefingAction(
     if (cache !== null) {
         waitUntil(
             cache
-                .set(cacheKey, { briefing, generatedAt }, MARKET_BRIEFING_CACHE_TTL)
+                .set(
+                    cacheKey,
+                    { briefing, generatedAt },
+                    MARKET_BRIEFING_CACHE_TTL
+                )
                 .catch(err =>
                     console.error('[Briefing/Poll] Cache write failed:', err)
                 )
