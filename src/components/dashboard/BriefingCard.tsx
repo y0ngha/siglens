@@ -56,7 +56,7 @@ export function BriefingCard({
             )}
 
             {/* 주요 테마 */}
-            {dominantThemes && dominantThemes.length > 0 && (
+            {dominantThemes.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
                     {dominantThemes.map(theme => (
                         <span
@@ -70,11 +70,8 @@ export function BriefingCard({
             )}
 
             {/* 섹터 분석 */}
-            {((sectorAnalysis &&
-                sectorAnalysis.leadingSectors &&
-                sectorAnalysis.leadingSectors.length > 0) ||
-                (sectorAnalysis.laggingSectors &&
-                    sectorAnalysis.laggingSectors.length > 0)) && (
+            {(sectorAnalysis.leadingSectors.length > 0 ||
+                sectorAnalysis.laggingSectors.length > 0) && (
                 <div className="flex flex-col gap-1">
                     {sectorAnalysis.leadingSectors.length > 0 && (
                         <p className="text-xs">

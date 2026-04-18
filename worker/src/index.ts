@@ -332,22 +332,17 @@ app.post('/briefing', (req: Request, res: Response) => {
     activeJobs.set(jobId, controller);
 
     void processBriefingJob(jobId, prompt, controller)
-        .then(() => {
-            res.json({ status: 'done', jobId });
-        })
         .catch(error => {
             console.error(
                 `[Worker] Briefing job ${jobId} handler error:`,
                 error
             );
-            res.status(HTTP_STATUS_INTERNAL_SERVER_ERROR).json({
-                status: 'error',
-                jobId,
-            });
         })
         .finally(() => {
             activeJobs.delete(jobId);
         });
+
+    res.json({ status: 'submitted', jobId });
 });
 
 async function processBriefingJob(

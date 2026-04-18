@@ -1,7 +1,5 @@
 import type { IndexTicker, SectorEtf, SectorGroupDef } from '@/domain/types';
 
-export type { IndexTicker, SectorEtf, SectorGroupDef };
-
 export const MARKET_INDICES: IndexTicker[] = [
     {
         symbol: 'GSPC',

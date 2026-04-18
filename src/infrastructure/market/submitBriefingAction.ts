@@ -55,6 +55,7 @@ export async function submitBriefingAction(
                 'X-Worker-Secret': workerSecret,
             },
             body: JSON.stringify({ jobId, prompt }),
+            signal: AbortSignal.timeout(10_000),
         }).catch(error => {
             console.error('[Briefing/Submit] Worker request failed:', error);
         })

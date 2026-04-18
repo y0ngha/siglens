@@ -1,5 +1,17 @@
 # Fix Log
 
+## [PR #330 | feature/issue-328-market-summary-panel | 2026-04-19]
+- Violation: fire-and-forget `fetch`에 `AbortSignal.timeout()` 없음
+- Rule: MISTAKES.md > Fire-and-Forget Operations #1 — Fire-and-forget fetch requests must have timeouts
+- Context: `submitBriefingAction.ts`의 `waitUntil(fetch(...))` 패턴에 타임아웃이 없어 worker 무응답 시 indefinitely hang 가능
+
+- Violation: 타입 시스템이 보장하는 필드에 중복 null/truthy 체크
+- Rule: MISTAKES.md > Predictability #2 — Conditional checks that duplicate type system guarantees
+- Context: `BriefingCard.tsx`에서 `dominantThemes`, `sectorAnalysis`, `leadingSectors` 등 `MarketBriefingResponse`가 보장하는 non-null 필드에 불필요한 `&&` guard 추가
+
+- Violation: Worker 분석 완료 후에만 HTTP 응답 전송
+- Rule: Fire-and-forget + polling 패턴 설계 원칙 — worker는 수신 즉시 응답하고 처리는 백그라운드에서 진행해야 함
+- Context: `worker/src/index.ts`의 `/briefing` 엔드포인트가 `processBriefingJob` 완료 후 `res.json()`을 호출하여 AI 처리 시간 동안 HTTP 연결이 유지됨
 
 ## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
 - Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
