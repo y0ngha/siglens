@@ -55,7 +55,9 @@ export function MarketSummaryPanel() {
                     {SECTOR_GROUPS.map(group => {
                         const groupSectors = group.symbols
                             .map(sym => sectorMap.get(sym))
-                            .filter((s): s is MarketSectorData => s !== undefined);
+                            .filter(
+                                (s): s is MarketSectorData => s !== undefined
+                            );
 
                         return (
                             <div key={group.label}>
