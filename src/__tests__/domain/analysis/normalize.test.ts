@@ -19,7 +19,6 @@ import {
     normalizeTrendlinePoint,
 } from '@/domain/analysis/normalize';
 
-
 describe('enum 래퍼', () => {
     describe('normalizeTrend', () => {
         it('유효한 Trend 값을 그대로 반환한다', () => {
