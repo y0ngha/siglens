@@ -12,30 +12,23 @@ import type { MarketSectorData } from '@/domain/types';
 export function MarketSummaryPanel() {
     const { data, isPending } = useMarketSummary();
 
-    const indices = data?.summary.indices ?? [];
-    const rawSectors = data?.summary.sectors;
-    const briefingJobId =
-        data?.briefing.status === 'submitted' ? data.briefing.jobId : undefined;
-    const initialBriefing =
-        data?.briefing.status === 'cached' ? data.briefing.briefing : undefined;
-    const initialGeneratedAt =
+    const { briefing, generatedAt, isLoading, error } = useBriefing(
+        data?.briefing.status === 'submitted' ? data.briefing.jobId : undefined,
+        data?.briefing.status === 'cached' ? data.briefing.briefing : undefined,
         data?.briefing.status === 'cached'
             ? data.briefing.generatedAt
-            : undefined;
-
-    const { briefing, generatedAt, isLoading, error } = useBriefing(
-        briefingJobId,
-        initialBriefing,
-        initialGeneratedAt
+            : undefined
     );
 
     const sectorMap = useMemo(
         () =>
             new Map<string, MarketSectorData>(
-                (rawSectors ?? []).map(s => [s.symbol, s])
+                (data?.summary.sectors ?? []).map(s => [s.symbol, s])
             ),
-        [rawSectors]
+        [data?.summary.sectors]
     );
+
+    const indices = data?.summary.indices ?? [];
 
     if (isPending) return <MarketSummaryPanelSkeleton />;
 
