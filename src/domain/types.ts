@@ -578,3 +578,9 @@ export type PollAnalysisResult =
     | { status: 'processing' }
     | { status: 'done'; result: AnalysisResponse }
     | { status: 'error'; error: string };
+
+export interface SectorStock {
+    symbol: string;
+    koreanName: string;
+    sectorSymbol: string; // XLK, XLF, XLE, ...
+}
