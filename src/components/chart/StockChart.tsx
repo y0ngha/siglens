@@ -216,6 +216,12 @@ export function StockChart({
 
         return () => {
             onChartRemoveRef.current?.();
+            // autoSize: true 상태에서 컨테이너가 DOM에서 제거되면 LWC 내부
+            // ResizeObserver가 발화해 draw RAF를 스케���링한다. chart.remove()가
+            // 이 RAF를 취소하지 못하면 disposed 객체 접근으로 에러가 난다.
+            // remove() 전에 autoSize를 끄면 ResizeObserver가 해제되어 RAF가
+            // 스케줄되지 않으므로 안전하게 dispose할 수 있다.
+            chart.applyOptions({ autoSize: false });
             chart.remove();
             chartRef.current = null;
             seriesRef.current = null;
@@ -342,13 +348,12 @@ export function StockChart({
     // autoSize: true 상태에서는 명시 chart.resize() 호출이 무시되므로,
     // autoSize를 잠시 끄고 → 1px 차이로 강제 resize → autoSize 복원 순서로
     // ResizeObserver 발화와 동일한 layout invalidate를 일으킨다.
-    // cleanup이 있으면 후속 리렌더에 의해 RAF가 취소될 수 있으므로 의도적으로 생략한다.
     useEffect(() => {
         const chart = chartRef.current;
         const wrapper = wrapperRef.current;
         if (!chart || !wrapper) return;
 
-        requestAnimationFrame(() => {
+        const rafId = requestAnimationFrame(() => {
             const currentChart = chartRef.current;
             const currentWrapper = wrapperRef.current;
             if (!currentChart || !currentWrapper) return;
@@ -362,6 +367,8 @@ export function StockChart({
             currentChart.applyOptions({ autoSize: true });
             currentChart.timeScale().fitContent();
         });
+
+        return () => cancelAnimationFrame(rafId);
     }, [paneIndices]);
 
     /**

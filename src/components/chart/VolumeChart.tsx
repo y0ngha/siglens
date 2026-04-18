@@ -71,6 +71,7 @@ export function VolumeChart({
 
         return () => {
             onChartRemoveRef.current?.();
+            chart.applyOptions({ autoSize: false });
             chart.remove();
             chartRef.current = null;
             totalSeriesRef.current = null;

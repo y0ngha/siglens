@@ -56,7 +56,10 @@ export function useOverlayLegend({
         chart.subscribeCrosshairMove(handler);
 
         return () => {
-            chart.unsubscribeCrosshairMove(handler);
+            // chart 생성 effect cleanup이 먼저 실행되어 chart.remove()로 dispose된 후
+            // 이 cleanup이 실행될 수 있으므로, ref를 통해 생존 여부를 확인한다.
+            // chart.remove()는 모든 구독을 정리하므로 null이면 별도 해제 불필요.
+            chartRef.current?.unsubscribeCrosshairMove(handler);
         };
     }, [chartRef]);
 
