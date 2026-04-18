@@ -1,4 +1,4 @@
-import type { Bar, IndicatorResult } from '@/domain/types';
+import type { Bar, IndicatorResult, MACDResult } from '@/domain/types';
 import type { Signal } from '@/domain/signals/types';
 import {
     RSI_OVERBOUGHT_LEVEL,
@@ -105,5 +105,63 @@ export function detectDeathCross(
         direction: 'bearish',
         phase: 'confirmed',
         detectedAt: crossIdx,
+    };
+}
+
+function findMacdCross(
+    points: MACDResult[],
+    lookback: number,
+    direction: CrossDirection
+): number | null {
+    const len = points.length;
+    if (len < 2) return null;
+    const start = Math.max(1, len - lookback);
+    for (let i = start; i < len; i++) {
+        const p = points[i];
+        const prev = points[i - 1];
+        if (
+            p.macd === null ||
+            p.signal === null ||
+            prev.macd === null ||
+            prev.signal === null
+        )
+            continue;
+        if (direction === 'up' && prev.macd <= prev.signal && p.macd > p.signal)
+            return i;
+        if (
+            direction === 'down' &&
+            prev.macd >= prev.signal &&
+            p.macd < p.signal
+        )
+            return i;
+    }
+    return null;
+}
+
+export function detectMacdBullishCross(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const idx = findMacdCross(indicators.macd, CROSS_LOOKBACK_BARS, 'up');
+    if (idx === null) return null;
+    return {
+        type: 'macd_bullish_cross',
+        direction: 'bullish',
+        phase: 'confirmed',
+        detectedAt: idx,
+    };
+}
+
+export function detectMacdBearishCross(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const idx = findMacdCross(indicators.macd, CROSS_LOOKBACK_BARS, 'down');
+    if (idx === null) return null;
+    return {
+        type: 'macd_bearish_cross',
+        direction: 'bearish',
+        phase: 'confirmed',
+        detectedAt: idx,
     };
 }

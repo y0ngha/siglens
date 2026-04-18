@@ -3,10 +3,12 @@ import {
     detectRsiOverbought,
     detectGoldenCross,
     detectDeathCross,
+    detectMacdBullishCross,
+    detectMacdBearishCross,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
-import type { Bar, IndicatorResult } from '@/domain/types';
+import type { Bar, IndicatorResult, MACDResult } from '@/domain/types';
 
 function buildBars(n: number): Bar[] {
     return Array.from({ length: n }, (_, i) => ({
@@ -240,6 +242,94 @@ describe('detectDeathCross', () => {
             const result = detectDeathCross(bars, indicators);
             expect(result).not.toBeNull();
             expect(result?.type).toBe('death_cross');
+        });
+    });
+});
+
+function withMacd(points: MACDResult[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, macd: points };
+}
+
+describe('detectMacdBullishCross', () => {
+    describe('최근 3봉 내 MACD line이 signal line을 상향 교차할 때', () => {
+        it('Signal을 반환한다', () => {
+            const points: MACDResult[] = [
+                { macd: -1, signal: 0, histogram: -1 },
+                { macd: -0.5, signal: 0, histogram: -0.5 },
+                { macd: -0.2, signal: -0.1, histogram: -0.1 },
+                { macd: 0.1, signal: -0.05, histogram: 0.15 }, // cross up
+            ];
+            const bars = buildBars(points.length);
+            const result = detectMacdBullishCross(bars, withMacd(points));
+            expect(result?.type).toBe('macd_bullish_cross');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+        });
+    });
+
+    describe('교차가 4봉 이전이거나 없을 때', () => {
+        it('null을 반환한다', () => {
+            const points: MACDResult[] = [
+                { macd: 1, signal: 0, histogram: 1 },
+                { macd: 1.1, signal: 0.05, histogram: 1.05 },
+                { macd: 1.2, signal: 0.1, histogram: 1.1 },
+            ];
+            const bars = buildBars(points.length);
+            expect(detectMacdBullishCross(bars, withMacd(points))).toBeNull();
+        });
+    });
+
+    describe('MACD 포인트가 2개 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(1);
+            expect(
+                detectMacdBullishCross(
+                    bars,
+                    withMacd([{ macd: 0.1, signal: 0, histogram: 0.1 }])
+                )
+            ).toBeNull();
+        });
+    });
+
+    describe('MACDResult 내부 필드가 null인 경우', () => {
+        it('내부 null 필드 봉은 건너뛰고 교차를 탐지한다', () => {
+            const points: MACDResult[] = [
+                { macd: null, signal: null, histogram: null },
+                { macd: -0.2, signal: -0.1, histogram: -0.1 },
+                { macd: 0.1, signal: -0.05, histogram: 0.15 },
+            ];
+            const bars = buildBars(points.length);
+            const result = detectMacdBullishCross(bars, withMacd(points));
+            expect(result?.type).toBe('macd_bullish_cross');
+        });
+    });
+});
+
+describe('detectMacdBearishCross', () => {
+    describe('최근 3봉 내 MACD line이 signal line을 하향 교차할 때', () => {
+        it('Signal을 반환한다', () => {
+            const points: MACDResult[] = [
+                { macd: 1, signal: 0, histogram: 1 },
+                { macd: 0.5, signal: 0.2, histogram: 0.3 },
+                { macd: 0.1, signal: 0.15, histogram: -0.05 }, // cross down
+            ];
+            const bars = buildBars(points.length);
+            const result = detectMacdBearishCross(bars, withMacd(points));
+            expect(result?.type).toBe('macd_bearish_cross');
+            expect(result?.direction).toBe('bearish');
+            expect(result?.phase).toBe('confirmed');
+        });
+    });
+
+    describe('하향 교차가 발생하지 않을 때', () => {
+        it('null을 반환한다', () => {
+            const points: MACDResult[] = [
+                { macd: 1, signal: 0, histogram: 1 },
+                { macd: 1.1, signal: 0.05, histogram: 1.05 },
+                { macd: 1.2, signal: 0.1, histogram: 1.1 },
+            ];
+            const bars = buildBars(points.length);
+            expect(detectMacdBearishCross(bars, withMacd(points))).toBeNull();
         });
     });
 });
