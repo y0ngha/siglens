@@ -14,6 +14,7 @@ import {
     detectSupportProximityBullish,
     detectResistanceProximityBearish,
 } from '@/domain/signals/anticipation';
+import { TREND_EMA_PERIOD } from '@/domain/signals/constants';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import type {
     Bar,
@@ -580,7 +581,7 @@ function squeezeFixture(opts: {
         indicators: {
             ...EMPTY_INDICATOR_RESULT,
             bollinger: bb,
-            ema: { 20: ema20 },
+            ema: { [TREND_EMA_PERIOD]: ema20 },
         },
     };
 }
@@ -765,7 +766,7 @@ describe('detectBollingerSqueezeBullish — 추가 엣지케이스', () => {
             expect(
                 detectBollingerSqueezeBullish(bars, {
                     ...indicators,
-                    ema: { 20: [100, 101] },
+                    ema: { [TREND_EMA_PERIOD]: [100, 101] },
                 })
             ).toBeNull();
         });

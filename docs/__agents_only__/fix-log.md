@@ -1,5 +1,19 @@
 # Fix Log
 
+## [PR #331 Round 7 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `DashboardTimeframe` 타입이 `constants/dashboard-tickers.ts` 에 정의되고 `domain/types.ts` 에서 re-export
+- Rule: MISTAKES.md Architecture #1 — 모든 도메인 타입은 `domain/types.ts` 에 직접 정의 (re-export 우회 금지, 순환 의존 유발)
+- Context: `export type DashboardTimeframe = (typeof DASHBOARD_TIMEFRAMES)[number]` 를 `domain/types.ts` 로 이동. 상수 파일은 타입을 import 하여 `readonly DashboardTimeframe[]` 로 명시적 타입 annotation
+
+
+- Violation: `signalToQuadrantKey` if-chain (4단 nested conditional)
+- Rule: CONVENTIONS.md 선언적 패턴 — nested conditionals → object map
+- Context: `SectorSignalPanel.tsx` 의 direction × phase 판정을 `Record<SignalDirection, Record<SignalPhase, QuadrantKey>>` 맵 lookup 으로 전환
+
+- Violation: quadrants useMemo 의 이중 중첩 reduce 가 useMemo 바디에 직접 존재
+- Rule: MISTAKES.md Coding #9 — Complex anonymous expressions → named helper
+- Context: 내부 accumulator 를 `groupStockIntoQuadrants` 순수 함수로 module-level 추출, useMemo 는 reduce 호출만 남김
+
 ## [PR #331 Round 6 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: useMemo 파생값이 handler 선언 뒤에 위치
 - Rule: MISTAKES.md #17 — hook 선언 순서 `useState → useCallback → useMemo(파생값) → handlers → useEffect`
@@ -9,9 +23,6 @@
 - Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴은 aria-checked 와 DOM focus 동기화 필수
 - Context: `TimeframeSelector` 의 Arrow 키 처리가 `onChange` 만 호출하고 실제 포커스 이동 누락. `SectorTabs` 패턴처럼 `querySelectorAll('[role="radio"]')[nextIdx].focus()` 추가
 
-- Violation: bucketedTimestamp 내 unnamed 숫자 리터럴 (10/13/15)
-- Rule: MISTAKES.md #15 — business logic constants 는 module-level named constant 로 추출
-- Context: `sectorSignalsApi.ts` 의 slice 위치와 15분 버킷 크기를 `ISO_DATE_LENGTH`/`ISO_HOUR_LENGTH`/`FIFTEEN_MIN_BUCKET` 으로 추출
 
 - Violation: useMemo 내 local push 누산기
 - Rule: MISTAKES.md #5 — CONVENTIONS.md 예외 (domain 상태머신) 미해당

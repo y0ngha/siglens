@@ -1,5 +1,6 @@
 import type { Bar, IndicatorResult, TrendState } from '@/domain/types';
 import {
+    TREND_EMA_PERIOD,
     TREND_SLOPE_LOOKBACK,
     TREND_SLOPE_THRESHOLD,
 } from '@/domain/signals/constants';
@@ -8,7 +9,7 @@ export function classifyTrend(
     bars: Bar[],
     indicators: IndicatorResult
 ): TrendState {
-    const ema20 = indicators.ema[20];
+    const ema20 = indicators.ema[TREND_EMA_PERIOD];
     if (ema20 === undefined) return 'sideways';
     if (ema20.length < TREND_SLOPE_LOOKBACK + 1) return 'sideways';
 

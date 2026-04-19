@@ -15,6 +15,7 @@ import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSumm
 import type { DashboardTimeframe } from '@/domain/types';
 import {
     DASHBOARD_TIMEFRAMES,
+    DEFAULT_DASHBOARD_TIMEFRAME,
     SIGNAL_SECTORS,
 } from '@/domain/constants/dashboard-tickers';
 import { QUERY_KEYS } from '@/lib/queryConfig';
@@ -84,7 +85,7 @@ export default async function MarketPage({
         params.timeframe
     )
         ? params.timeframe
-        : '1Day';
+        : DEFAULT_DASHBOARD_TIMEFRAME;
     const fallbackSector = SIGNAL_SECTORS[0].symbol;
     const initialSector =
         params.sector !== undefined &&

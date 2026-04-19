@@ -1,4 +1,5 @@
 import { classifyTrend } from '@/domain/signals/trend';
+import { TREND_EMA_PERIOD } from '@/domain/signals/constants';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import type { Bar, IndicatorResult } from '@/domain/types';
 
@@ -16,7 +17,7 @@ function buildBars(closes: number[]): Bar[] {
 function buildIndicators(ema20: (number | null)[]): IndicatorResult {
     return {
         ...EMPTY_INDICATOR_RESULT,
-        ema: { 20: ema20 },
+        ema: { [TREND_EMA_PERIOD]: ema20 },
     };
 }
 

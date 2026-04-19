@@ -15,6 +15,7 @@ import {
     SR_APPROACH_LOOKBACK,
     SR_MA_PERIODS,
     SR_PROXIMITY_PCT,
+    TREND_EMA_PERIOD,
     TREND_SLOPE_LOOKBACK,
 } from '@/domain/signals/constants';
 import { calculateMA } from '@/domain/indicators/ma';
@@ -252,7 +253,7 @@ function computeSqueezeState(
     const pctB = computePctB(bars[lastIdx].close, lastBB);
     if (pctB === null) return null;
 
-    const ema20 = indicators.ema[20];
+    const ema20 = indicators.ema[TREND_EMA_PERIOD];
     if (ema20 === undefined) return null;
     const slope = computeEma20Slope(ema20, TREND_SLOPE_LOOKBACK);
     if (slope === null) return null;

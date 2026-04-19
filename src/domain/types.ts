@@ -636,4 +636,4 @@ export interface SectorSignalsResult {
     readonly stocks: readonly StockSignalResult[];
 }
 
-export type { DashboardTimeframe } from '@/domain/constants/dashboard-tickers';
+export type DashboardTimeframe = '15Min' | '1Hour' | '1Day';

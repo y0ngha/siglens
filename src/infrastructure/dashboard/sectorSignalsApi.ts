@@ -5,7 +5,10 @@ import type {
     StockSignalResult,
     Timeframe,
 } from '@/domain/types';
-import { SECTOR_STOCKS } from '@/domain/constants/dashboard-tickers';
+import {
+    DEFAULT_DASHBOARD_TIMEFRAME,
+    SECTOR_STOCKS,
+} from '@/domain/constants/dashboard-tickers';
 import { calculateIndicators } from '@/domain/indicators';
 import { classifyTrend, detectSignals } from '@/domain/signals';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
@@ -97,7 +100,7 @@ async function fetchInChunks<T, R>(
 }
 
 export async function getSectorSignals(
-    timeframe: DashboardTimeframe = '1Day'
+    timeframe: DashboardTimeframe = DEFAULT_DASHBOARD_TIMEFRAME
 ): Promise<SectorSignalsResult> {
     const cache = createCacheProvider();
     const now = new Date();

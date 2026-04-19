@@ -1,4 +1,5 @@
 import type {
+    DashboardTimeframe,
     IndexTicker,
     SectorEtf,
     SectorGroupDef,
@@ -148,8 +149,13 @@ export const SECTOR_STOCKS: readonly SectorStock[] = [
 ];
 
 // Timeframes supported by Panel C sector signal dashboard
-export const DASHBOARD_TIMEFRAMES = ['15Min', '1Hour', '1Day'] as const;
-export type DashboardTimeframe = (typeof DASHBOARD_TIMEFRAMES)[number];
+export const DASHBOARD_TIMEFRAMES: readonly DashboardTimeframe[] = [
+    '15Min',
+    '1Hour',
+    '1Day',
+];
+
+export const DEFAULT_DASHBOARD_TIMEFRAME: DashboardTimeframe = '1Day';
 
 export const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
     '15Min': '15분',

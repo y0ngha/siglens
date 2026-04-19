@@ -5,10 +5,15 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import type {
     DashboardTimeframe,
     Signal,
+    SignalDirection,
+    SignalPhase,
     SectorSignalsResult,
     StockSignalResult,
 } from '@/domain/types';
-import { SIGNAL_SECTORS } from '@/domain/constants/dashboard-tickers';
+import {
+    DEFAULT_DASHBOARD_TIMEFRAME,
+    SIGNAL_SECTORS,
+} from '@/domain/constants/dashboard-tickers';
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
@@ -26,14 +31,55 @@ const EMPTY_QUADRANTS: Record<QuadrantKey, readonly StockSignalResult[]> = {
     bearishConfirmed: [],
 };
 
+const SIGNAL_TO_QUADRANT: Record<
+    SignalDirection,
+    Record<SignalPhase, QuadrantKey>
+> = {
+    bullish: {
+        confirmed: 'bullishConfirmed',
+        expected: 'bullishExpected',
+    },
+    bearish: {
+        confirmed: 'bearishConfirmed',
+        expected: 'bearishExpected',
+    },
+};
+
 function signalToQuadrantKey(s: Signal): QuadrantKey {
-    if (s.direction === 'bullish' && s.phase === 'confirmed')
-        return 'bullishConfirmed';
-    if (s.direction === 'bullish' && s.phase === 'expected')
-        return 'bullishExpected';
-    if (s.direction === 'bearish' && s.phase === 'expected')
-        return 'bearishExpected';
-    return 'bearishConfirmed';
+    return SIGNAL_TO_QUADRANT[s.direction][s.phase];
+}
+
+function groupStockIntoQuadrants(
+    acc: Record<QuadrantKey, readonly StockSignalResult[]>,
+    stock: StockSignalResult
+): Record<QuadrantKey, readonly StockSignalResult[]> {
+    const grouped = stock.signals.reduce<
+        Record<QuadrantKey, readonly Signal[]>
+    >(
+        (g, s) => {
+            const key = signalToQuadrantKey(s);
+            return { ...g, [key]: [...g[key], s] };
+        },
+        {
+            bullishConfirmed: [],
+            bullishExpected: [],
+            bearishExpected: [],
+            bearishConfirmed: [],
+        }
+    );
+    return (Object.keys(grouped) as QuadrantKey[]).reduce(
+        (next, key) =>
+            grouped[key].length === 0
+                ? next
+                : {
+                      ...next,
+                      [key]: [
+                          ...next[key],
+                          { ...stock, signals: grouped[key] },
+                      ],
+                  },
+        acc
+    );
 }
 
 interface SectorSignalPanelProps {
@@ -74,7 +120,8 @@ export function SectorSignalPanel({
             if (nextSector === SIGNAL_SECTORS[0].symbol)
                 params.delete('sector');
             else params.set('sector', nextSector);
-            if (nextTimeframe === '1Day') params.delete('timeframe');
+            if (nextTimeframe === DEFAULT_DASHBOARD_TIMEFRAME)
+                params.delete('timeframe');
             else params.set('timeframe', nextTimeframe);
             const qs = params.toString();
             router.replace(qs === '' ? pathname : `${pathname}?${qs}`, {
@@ -92,38 +139,7 @@ export function SectorSignalPanel({
     );
 
     const quadrants = useMemo(
-        () =>
-            sectorStocks.reduce<
-                Record<QuadrantKey, readonly StockSignalResult[]>
-            >((acc, stock) => {
-                const grouped = stock.signals.reduce<
-                    Record<QuadrantKey, readonly Signal[]>
-                >(
-                    (g, s) => {
-                        const key = signalToQuadrantKey(s);
-                        return { ...g, [key]: [...g[key], s] };
-                    },
-                    {
-                        bullishConfirmed: [],
-                        bullishExpected: [],
-                        bearishExpected: [],
-                        bearishConfirmed: [],
-                    }
-                );
-                return (Object.keys(grouped) as QuadrantKey[]).reduce(
-                    (next, key) =>
-                        grouped[key].length === 0
-                            ? next
-                            : {
-                                  ...next,
-                                  [key]: [
-                                      ...next[key],
-                                      { ...stock, signals: grouped[key] },
-                                  ],
-                              },
-                    acc
-                );
-            }, EMPTY_QUADRANTS),
+        () => sectorStocks.reduce(groupStockIntoQuadrants, EMPTY_QUADRANTS),
         [sectorStocks]
     );
 

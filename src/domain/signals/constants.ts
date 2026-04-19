@@ -18,6 +18,7 @@ export const SR_APPROACH_LOOKBACK = 5;
 // Trend classification
 export const TREND_SLOPE_LOOKBACK = 20;
 export const TREND_SLOPE_THRESHOLD = 0.03;
+export const TREND_EMA_PERIOD = 20;
 
 // Moving averages used by detectors that are NOT in MA_DEFAULT_PERIODS
 export const GOLDEN_CROSS_FAST_PERIOD = 20;
