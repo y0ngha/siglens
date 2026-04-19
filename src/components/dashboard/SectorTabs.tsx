@@ -36,13 +36,13 @@ export function SectorTabs({ activeSector, onChange }: SectorTabsProps) {
             role="tablist"
             aria-label="섹터 선택"
             className="border-secondary-700 flex touch-manipulation gap-6 overflow-x-auto overscroll-x-contain border-b pb-0"
-            style={{ scrollbarWidth: 'thin' }}
         >
             {SECTOR_ETFS.map((etf, i) => {
                 const isActive = etf.symbol === activeSector;
                 return (
                     <button
                         key={etf.symbol}
+                        id={`sector-tab-${etf.symbol}`}
                         role="tab"
                         aria-selected={isActive}
                         aria-controls={`sector-panel-${etf.symbol}`}

@@ -120,12 +120,7 @@ function detectRegularDivergence(
     const price2 = kind === 'bullish' ? bars[p2].low : bars[p2].high;
     const rsi1 = rsi[p1];
     const rsi2 = rsi[p2];
-    if (
-        rsi1 === null ||
-        rsi2 === null ||
-        rsi1 === undefined ||
-        rsi2 === undefined
-    ) {
+    if (rsi1 == null || rsi2 == null) {
         return null;
     }
 
@@ -181,8 +176,8 @@ export function detectMacdHistogramBullishConvergence(
     }
     for (let i = 1; i < tail.length; i++) {
         // Non-null asserted: prior loop guarantees histogram !== null for all tail elements.
-        const prev = tail[i - 1]!.histogram as number;
-        const cur = tail[i]!.histogram as number;
+        const prev = tail[i - 1]!.histogram!;
+        const cur = tail[i]!.histogram!;
         // magnitude strictly decreasing (absolute value)
         if (!(Math.abs(cur) < Math.abs(prev))) return null;
     }
@@ -206,8 +201,8 @@ export function detectMacdHistogramBearishConvergence(
     }
     for (let i = 1; i < tail.length; i++) {
         // Non-null asserted: prior loop guarantees histogram !== null for all tail elements.
-        const prev = tail[i - 1]!.histogram as number;
-        const cur = tail[i]!.histogram as number;
+        const prev = tail[i - 1]!.histogram!;
+        const cur = tail[i]!.histogram!;
         if (!(cur < prev)) return null;
     }
     return {
@@ -306,7 +301,7 @@ export function detectSupportProximityBullish(
 
     for (const period of SR_MA_PERIODS) {
         if (bars.length < period) continue;
-        // calculateMA returns a real number at lastIdx whenever bars.length >= period
+        // calculateMA returns a real number at lastIdx when bars.length >= period (checked above)
         const ma = calculateMA(bars, period)[lastIdx] as number;
         if (isWithinProximity(closeLast, ma, 'above')) {
             return {
@@ -332,7 +327,7 @@ export function detectResistanceProximityBearish(
 
     for (const period of SR_MA_PERIODS) {
         if (bars.length < period) continue;
-        // calculateMA returns a real number at lastIdx whenever bars.length >= period
+        // calculateMA returns a real number at lastIdx when bars.length >= period (checked above)
         const ma = calculateMA(bars, period)[lastIdx] as number;
         if (isWithinProximity(closeLast, ma, 'below')) {
             return {

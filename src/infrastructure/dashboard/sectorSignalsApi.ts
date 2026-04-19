@@ -9,6 +9,8 @@ import { classifyTrend, detectSignals } from '@/domain/signals';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { createMarketDataProvider } from '@/infrastructure/market/factory';
 
+// 1 hour. Intentionally independent from `ANALYSIS_CACHE_TTL` constants —
+// daily bars change once per day, so hourly TTL matches the data cadence.
 const CACHE_TTL_SECONDS = 3600;
 const BARS_LOOKBACK_DAYS = 400;
 

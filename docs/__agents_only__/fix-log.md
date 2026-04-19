@@ -1,5 +1,14 @@
 # Fix Log
 
+## [Issue #329 Round 1 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `rsi1 === null || rsi2 === null || rsi1 === undefined || rsi2 === undefined` 이중 null/undefined 체크
+- Rule: FF 2-C (Predictability — expose hidden logic) — `(number | null)[]` 타입이면 out-of-bounds 만 undefined, 의도를 분리해 표기하거나 `== null` 로 통합
+- Context: `anticipation.ts detectRegularDivergence` 에서 피벗 인덱스 근거가 있음에도 불필요한 undefined 체크 작성
+
+- Violation: 안정적이지 않은 inline arrow function (`updateUrl`) 을 state handler 에서 호출
+- Rule: FF 1-B (Readability — extract implementation detail) — 다른 handler 가 공유 호출할 때는 `useCallback` 으로 식별성 확보
+- Context: `SectorSignalPanel.tsx` 의 URL 동기화 로직이 매 렌더 새 함수로 생성되어 `handleSectorChange` / `handleStrictChange` 간 공유 비효율
+
 ## [PR #330 Round 3 | feature/issue-328-market-summary-panel | 2026-04-19]
 - Violation: infrastructure 파일에 대응하는 테스트 파일 누락
 - Rule: CONVENTIONS.md — infrastructure/ 100% coverage 필수

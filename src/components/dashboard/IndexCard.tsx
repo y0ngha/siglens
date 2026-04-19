@@ -60,9 +60,8 @@ export function IndexCard({ data, href }: IndexCardProps) {
             <Link
                 href={href}
                 title={`${label} 분석`}
-                style={{ transformOrigin: 'center' }}
                 className={cn(
-                    'block touch-manipulation rounded-lg',
+                    'block touch-manipulation rounded-lg origin-center',
                     'transition-[background-color,border-color,transform,box-shadow] duration-150',
                     'hover:bg-secondary-800/70 hover:border-secondary-600 hover:-translate-y-px',
                     'hover:shadow-primary-950/40 hover:shadow-lg',

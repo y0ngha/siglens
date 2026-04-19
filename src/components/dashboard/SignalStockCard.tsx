@@ -17,7 +17,7 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
             href={`/${data.symbol}`}
             title={`${data.koreanName} 분석`}
             className={cn(
-                'border-secondary-700 bg-secondary-800/50 block touch-manipulation border',
+                'border-secondary-700 bg-secondary-800/50 block touch-manipulation border origin-center',
                 'rounded-lg p-3',
                 'transition-[background-color,border-color,transform,box-shadow] duration-150',
                 'hover:bg-secondary-800/70 hover:border-secondary-600 hover:-translate-y-px',
@@ -25,7 +25,6 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
                 'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
                 'motion-reduce:transition-none motion-reduce:hover:transform-none'
             )}
-            style={{ transformOrigin: 'center' }}
         >
             <div className="flex flex-col gap-1">
                 <div className="flex items-center justify-between gap-1">

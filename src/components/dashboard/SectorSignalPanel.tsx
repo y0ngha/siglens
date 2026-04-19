@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import type {
     Signal,
@@ -24,17 +24,14 @@ function filterByStrict(
     strict: boolean
 ): readonly StockSignalResult[] {
     if (!strict) return stocks;
-    const result: StockSignalResult[] = [];
-    for (const stock of stocks) {
+    return stocks.flatMap(stock => {
         const filtered = stock.signals.filter(sig => {
             if (sig.phase === 'confirmed') return true;
             if (sig.direction === 'bullish') return stock.trend !== 'uptrend';
             return stock.trend !== 'downtrend';
         });
-        if (filtered.length === 0) continue;
-        result.push({ ...stock, signals: filtered });
-    }
-    return result;
+        return filtered.length === 0 ? [] : [{ ...stock, signals: filtered }];
+    });
 }
 
 export function SectorSignalPanel({
@@ -48,17 +45,20 @@ export function SectorSignalPanel({
     const [activeSector, setActiveSector] = useState(initialSector);
     const [strict, setStrict] = useStrictModeToggle(initialStrict);
 
-    const updateUrl = (nextSector: string, nextStrict: boolean) => {
-        const params = new URLSearchParams(searchParams.toString());
-        if (nextSector === SECTOR_ETFS[0].symbol) params.delete('sector');
-        else params.set('sector', nextSector);
-        if (nextStrict) params.delete('strict');
-        else params.set('strict', '0');
-        const qs = params.toString();
-        router.replace(qs === '' ? pathname : `${pathname}?${qs}`, {
-            scroll: false,
-        });
-    };
+    const updateUrl = useCallback(
+        (nextSector: string, nextStrict: boolean) => {
+            const params = new URLSearchParams(searchParams.toString());
+            if (nextSector === SECTOR_ETFS[0].symbol) params.delete('sector');
+            else params.set('sector', nextSector);
+            if (nextStrict) params.delete('strict');
+            else params.set('strict', '0');
+            const qs = params.toString();
+            router.replace(qs === '' ? pathname : `${pathname}?${qs}`, {
+                scroll: false,
+            });
+        },
+        [router, pathname, searchParams]
+    );
 
     const handleSectorChange = (sector: string) => {
         setActiveSector(sector);
@@ -81,6 +81,8 @@ export function SectorSignalPanel({
     );
 
     const quadrants = useMemo(() => {
+        // Local accumulators — object leaves callback as stable result; internal push
+        // is acceptable per convention (immutable contract is on the exported value).
         const buckets = {
             bullishConfirmed: [] as StockSignalResult[],
             bullishExpected: [] as StockSignalResult[],
@@ -138,6 +140,7 @@ export function SectorSignalPanel({
             <div
                 id={`sector-panel-${activeSector}`}
                 role="tabpanel"
+                aria-labelledby={`sector-tab-${activeSector}`}
                 className="mt-6 flex flex-col gap-4"
             >
                 <SignalSubsection
