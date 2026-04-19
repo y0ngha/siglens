@@ -17,7 +17,7 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
             href={`/${data.symbol}`}
             title={`${data.koreanName} 분석`}
             className={cn(
-                'border-secondary-700 bg-secondary-800/50 block touch-manipulation border origin-center',
+                'border-secondary-700 bg-secondary-800/50 block origin-center touch-manipulation border',
                 'rounded-lg p-3',
                 'transition-[background-color,border-color,transform,box-shadow] duration-150',
                 'hover:bg-secondary-800/70 hover:border-secondary-600 hover:-translate-y-px',

@@ -61,7 +61,7 @@ export function IndexCard({ data, href }: IndexCardProps) {
                 href={href}
                 title={`${label} 분석`}
                 className={cn(
-                    'block touch-manipulation rounded-lg origin-center',
+                    'block origin-center touch-manipulation rounded-lg',
                     'transition-[background-color,border-color,transform,box-shadow] duration-150',
                     'hover:bg-secondary-800/70 hover:border-secondary-600 hover:-translate-y-px',
                     'hover:shadow-primary-950/40 hover:shadow-lg',
