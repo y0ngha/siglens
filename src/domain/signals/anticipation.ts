@@ -80,6 +80,9 @@ export function percentileRank(value: number, xs: number[]): number | null {
     }
     const below = xs.filter(x => x < value).length;
     const equal = xs.filter(x => x === value).length;
+    // Degenerate case: all values equal — return neutral 0.5 to avoid spurious
+    // "min" or "max" classification when the distribution has zero variance.
+    if (equal === xs.length) return 0.5;
     if (equal === 0) {
         return below / xs.length;
     }
@@ -225,13 +228,14 @@ function computeSqueezeState(
     const widthLast = computeBbWidth(lastBB);
     if (widthLast === null) return null;
 
+    // Exclude lastIdx from loop — widthLast already computed above
     const widths: number[] = [];
-    for (let i = lastIdx - SQUEEZE_LOOKBACK_BARS + 1; i <= lastIdx; i++) {
-        const p = bb[i];
-        const w = computeBbWidth(p);
+    for (let i = lastIdx - SQUEEZE_LOOKBACK_BARS + 1; i < lastIdx; i++) {
+        const w = computeBbWidth(bb[i]);
         if (w === null) continue;
         widths.push(w);
     }
+    widths.push(widthLast);
     const rank = percentileRank(widthLast, widths);
     if (rank === null || rank > SQUEEZE_PERCENTILE) return null;
 

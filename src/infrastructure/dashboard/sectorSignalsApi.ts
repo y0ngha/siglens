@@ -119,26 +119,24 @@ export async function getSectorSignals(
             })
     );
 
-    const stocks: StockSignalResult[] = [];
-    for (let i = 0; i < SECTOR_STOCKS.length; i++) {
-        const stockDef = SECTOR_STOCKS[i];
-        const r = fetchResults[i];
+    // fetchResults[i] is guaranteed defined — SECTOR_STOCKS.length === fetchResults.length
+    const stocks = SECTOR_STOCKS.map((stockDef, i) => {
+        const r = fetchResults[i]!;
         if (r.status === 'rejected') {
             console.warn(
                 '[sectorSignalsApi] fetch failed for',
                 stockDef.symbol,
                 r.reason
             );
-            continue;
+            return null;
         }
-        const result = computeStockResult(
+        return computeStockResult(
             stockDef.symbol,
             stockDef.koreanName,
             stockDef.sectorSymbol,
             r.value
         );
-        if (result !== null) stocks.push(result);
-    }
+    }).filter((s): s is StockSignalResult => s !== null);
 
     const payload: SectorSignalsResult = {
         computedAt: now.toISOString(),

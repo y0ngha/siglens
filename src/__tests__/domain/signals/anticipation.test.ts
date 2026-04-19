@@ -196,6 +196,11 @@ describe('percentileRank', () => {
             expect(percentileRank(2.5, [1, 2, 3, 4, 5])).toBeCloseTo(0.4);
         });
     });
+    describe('모든 원소가 value와 같을 때', () => {
+        it('중립 0.5를 반환한다 (분산 0인 degenerate 케이스)', () => {
+            expect(percentileRank(3, [3, 3, 3, 3])).toBeCloseTo(0.5);
+        });
+    });
 });
 
 describe('detectRsiBullishDivergence', () => {

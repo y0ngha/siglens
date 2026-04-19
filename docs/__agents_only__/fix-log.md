@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `stocks.push(result)` 배열 직접 변이
+- Rule: MISTAKES.md Coding Paradigm #5 — immutable 패턴 우선 (map + filter)
+- Context: `sectorSignalsApi.ts` 의 for-loop 누산기를 `SECTOR_STOCKS.map(...).filter(...)` 함수형 패턴으로 교체
+
+- Violation: `computeBbWidth(lastBB)` 중복 호출
+- Rule: MISTAKES.md Coding Paradigm #2 — 동일 입력 중복 계산 금지
+- Context: `anticipation.ts computeSqueezeState` 에서 lastBB 의 width 를 루프 진입 전 1회 + 루프 내 i===lastIdx 에서 1회 = 2회 계산. 루프 범위를 `i < lastIdx` 로 변경해 이미 계산한 widthLast 를 push
+
+- Violation: `percentileRank` 가 분산=0 (모든 원소 동일) 케이스에서 0 반환 — 스퀴즈 false-positive 유발 가능
+- Rule: defensive numerical handling — degenerate distribution 에서 정책 결정이 필요
+- Context: all-equal 입력 시 `below / (len-1) = 0/0` 또는 0 반환으로 "최소값" 으로 분류되어 squeeze 조건 통과. 0.5 중립값 반환으로 수정
+
 ## [PR #331 Round 2 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: `as number` 타입 단언을 `!` 로 대체 가능한 상황에서 사용
 - Rule: MISTAKES.md TypeScript #7 — `as` 는 null 가능한 경우 `!` 우선 고려
