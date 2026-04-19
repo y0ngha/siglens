@@ -667,35 +667,37 @@ export interface ChatPromptPayload {
 
 // ─── Backtesting ──────────────────────────────────────────────────────────────
 
-export type BacktestSignalResult = 'win' | 'loss';
+export type BacktestOutcome = 'win' | 'loss';
+
+export interface BacktestAIAnalysis {
+    summary: string;
+    tags: string[];
+}
 
 export interface BacktestCase {
-    ticker: string;           // "NVDA"
-    entryDate: string;        // "2025-04-11"
-    entryPrice: number;       // 98.31
-    exitDate: string;         // "2025-04-19"
-    exitPrice: number;        // 121.42
-    holdingDays: number;      // 8
-    returnPct: number;        // 23.5 (양수=수익, 음수=손실)
+    ticker: string;
+    entryDate: string;
+    entryPrice: number;
+    exitDate: string;
+    exitPrice: number;
+    holdingDays: number;
+    returnPct: number; // positive = profit, negative = loss
     signalType: 'buy' | 'sell';
-    result: BacktestSignalResult;
+    result: BacktestOutcome;
     exitReason: 'signal' | 'stop_loss';
-    aiResult: BacktestSignalResult; // AI trend 예측의 실제 결과
-    aiAnalysis: {
-        summary: string;      // AI AnalysisResponse.summary 발췌 (순수 기술적 분석)
-        tags: string[];       // indicatorResults에서 추출한 신호 레이블 (최대 3개)
-    };
+    aiResult: BacktestOutcome;
+    aiAnalysis: BacktestAIAnalysis;
 }
 
 export interface BacktestMeta {
-    period: string;           // "2025.04 – 2026.04"
+    period: string;
     totalCases: number;
-    winRate: number;          // 73.2 (퍼센트) — 실제 가격 결과 기반
-    aiWinRate: number;        // 68.9 (퍼센트) — AI trend 예측 정확도
+    winRate: number;    // Range: 0–100
+    aiWinRate: number;  // Range: 0–100
     tickerCount: number;
 }
 
 export interface BacktestData {
     meta: BacktestMeta;
-    cases: BacktestCase[];    // entryDate ASC 정렬
+    cases: BacktestCase[];
 }
