@@ -44,17 +44,6 @@ function withIchimoku(values: IchimokuResult[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, ichimoku: values };
 }
 
-function barsWithClose(closes: number[]): Bar[] {
-    return closes.map((c, i) => ({
-        time: 1700000000 + i * 86400,
-        open: c,
-        high: c,
-        low: c,
-        close: c,
-        volume: 1000,
-    }));
-}
-
 describe('detectRsiOversold', () => {
     describe('마지막 RSI가 30 미만일 때', () => {
         it('Signal을 반환한다', () => {
@@ -666,7 +655,7 @@ describe('detectIchimokuCloudBreakout', () => {
 
     describe('직전은 구름 아래, 최신 bar가 처음 돌파할 때', () => {
         it('Signal을 반환한다', () => {
-            const bars = barsWithClose([95, 96, 97, 105]);
+            const bars = buildBarsWithCloses([95, 96, 97, 105]);
             const ichimoku: IchimokuResult[] = [
                 nullCloud,
                 nullCloud,
@@ -679,13 +668,14 @@ describe('detectIchimokuCloudBreakout', () => {
             );
             expect(result?.type).toBe('ichimoku_cloud_breakout');
             expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
             expect(result?.detectedAt).toBe(3);
         });
     });
 
     describe('직전 bar가 이미 구름 위에 있을 때', () => {
         it('null을 반환한다 (오탐지 방지)', () => {
-            const bars = barsWithClose([95, 96, 100, 105]);
+            const bars = buildBarsWithCloses([95, 96, 100, 105]);
             const ichimoku: IchimokuResult[] = [
                 nullCloud,
                 nullCloud,
@@ -700,7 +690,7 @@ describe('detectIchimokuCloudBreakout', () => {
 
     describe('구름 데이터가 null일 때', () => {
         it('null을 반환한다', () => {
-            const bars = barsWithClose([95, 100]);
+            const bars = buildBarsWithCloses([95, 100]);
             const ichimoku: IchimokuResult[] = [nullCloud, nullCloud];
             expect(
                 detectIchimokuCloudBreakout(bars, withIchimoku(ichimoku))
@@ -712,7 +702,7 @@ describe('detectIchimokuCloudBreakout', () => {
         it('null을 반환한다', () => {
             expect(
                 detectIchimokuCloudBreakout(
-                    barsWithClose([100]),
+                    buildBarsWithCloses([100]),
                     EMPTY_INDICATOR_RESULT
                 )
             ).toBeNull();
