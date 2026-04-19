@@ -667,12 +667,9 @@ export interface ChatPromptPayload {
 
 // ─── Backtesting ──────────────────────────────────────────────────────────────
 
-export type BacktestOutcome = 'win' | 'loss';
-
-export interface BacktestAIAnalysis {
-    summary: string;
-    tags: string[];
-}
+export type BacktestSignalResult = 'win' | 'loss';
+export type BacktestAiResult = 'win' | 'loss' | 'neutral';
+export type BacktestExitReason = 'take_profit' | 'stop_loss' | 'time';
 
 export interface BacktestCase {
     ticker: string;
@@ -681,19 +678,24 @@ export interface BacktestCase {
     exitDate: string;
     exitPrice: number;
     holdingDays: number;
-    returnPct: number; // positive = profit, negative = loss
-    signalType: 'buy' | 'sell';
-    result: BacktestOutcome;
-    exitReason: 'signal' | 'stop_loss';
-    aiResult: BacktestOutcome;
-    aiAnalysis: BacktestAIAnalysis;
+    returnPct: number;
+    signalType: 'buy';
+    result: BacktestSignalResult;
+    exitReason: BacktestExitReason;
+    aiResult: BacktestAiResult;
+    aiTrendHit: boolean;
+    aiAnalysis: {
+        summary: string;
+        tags: string[];
+    };
 }
 
 export interface BacktestMeta {
     period: string;
     totalCases: number;
-    winRate: number; // Range: 0–100
-    aiWinRate: number; // Range: 0–100
+    winRate: number;
+    aiWinRate: number;
+    aiTrendHitRate: number;
     tickerCount: number;
 }
 
