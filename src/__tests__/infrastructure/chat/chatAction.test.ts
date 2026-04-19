@@ -105,8 +105,8 @@ describe('chatAction 함수는', () => {
         mockGetRemainingTokens.mockResolvedValueOnce(3);
 
         let capturedApiKey = '';
-        MockGoogleGenAI.mockImplementation((options: { apiKey: string }) => {
-            capturedApiKey = options.apiKey;
+        MockGoogleGenAI.mockImplementation((options: { apiKey?: string }) => {
+            capturedApiKey = options.apiKey ?? '';
             return { models: { generateContent: mockGenerateContent } } as unknown as InstanceType<typeof GoogleGenAI>;
         });
         mockGenerateContent.mockResolvedValueOnce({ text: '응답' });
@@ -122,8 +122,8 @@ describe('chatAction 함수는', () => {
         mockGetRemainingTokens.mockResolvedValueOnce(3);
 
         const usedKeys: string[] = [];
-        MockGoogleGenAI.mockImplementation((options: { apiKey: string }) => {
-            usedKeys.push(options.apiKey);
+        MockGoogleGenAI.mockImplementation((options: { apiKey?: string }) => {
+            usedKeys.push(options.apiKey ?? '');
             return { models: { generateContent: mockGenerateContent } } as unknown as InstanceType<typeof GoogleGenAI>;
         });
         // free key 실패, paid key 성공
@@ -135,6 +135,18 @@ describe('chatAction 함수는', () => {
 
         expect(usedKeys).toEqual(['free-api-key', 'paid-api-key']);
         expect(result).toEqual({ ok: true, message: 'paid key 응답', remainingTokens: 3 });
+    });
+
+    it('GEMINI_API_KEY 미설정 시 server_error를 반환한다', async () => {
+        delete process.env.GEMINI_API_KEY;
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+
+        const result = await chatAction(
+            'AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문'
+        );
+
+        expect(result).toEqual({ ok: false, error: 'server_error' });
+        expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
     it('Gemini 429 에러 시 rate_limited를 반환한다', async () => {

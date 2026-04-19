@@ -37,8 +37,8 @@ async function callGemini(
     const genai = new GoogleGenAI({ apiKey });
     const response = await genai.models.generateContent({
         model: GEMINI_CHAT_MODEL,
-        systemInstruction: systemPrompt,
         contents: messages,
+        config: { systemInstruction: systemPrompt },
     });
     return response.text ?? '';
 }
