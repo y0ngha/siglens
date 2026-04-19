@@ -23,7 +23,7 @@ export function FloatingChatButton({
     return (
         <>
             {isOpen && (
-                <div className="fixed bottom-20 right-6 z-40 hidden w-[380px] overflow-hidden rounded-xl border border-secondary-700 bg-secondary-900 shadow-2xl md:block">
+                <div className="border-secondary-700 bg-secondary-900 fixed right-6 bottom-20 z-40 hidden w-[380px] overflow-hidden rounded-xl border shadow-2xl md:block">
                     <ChatPanel
                         symbol={symbol}
                         timeframe={timeframe}
@@ -36,11 +36,13 @@ export function FloatingChatButton({
             <button
                 type="button"
                 onClick={() => setIsOpen(prev => !prev)}
-                className="fixed bottom-6 right-6 z-40 hidden h-12 w-12 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg transition-colors hover:bg-primary-500 md:flex"
+                className="bg-primary-600 hover:bg-primary-500 fixed right-6 bottom-6 z-40 hidden h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-colors md:flex"
                 aria-label={isOpen ? 'AI 채팅 닫기' : 'AI 채팅 열기'}
                 aria-expanded={isOpen}
             >
-                <span className="text-base leading-none">{isOpen ? '✕' : '💬'}</span>
+                <span className="text-base leading-none">
+                    {isOpen ? '✕' : '💬'}
+                </span>
             </button>
         </>
     );
