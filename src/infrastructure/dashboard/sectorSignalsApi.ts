@@ -1,27 +1,52 @@
-import type { Bar } from '@/domain/types';
+import type { Bar, Timeframe } from '@/domain/types';
 import type {
     SectorSignalsResult,
     StockSignalResult,
 } from '@/domain/signals/types';
 import { SECTOR_STOCKS } from '@/domain/constants/dashboard-tickers';
+import type { DashboardTimeframe } from '@/domain/constants/dashboard-tickers';
 import { calculateIndicators } from '@/domain/indicators';
 import { classifyTrend, detectSignals } from '@/domain/signals';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { createMarketDataProvider } from '@/infrastructure/market/factory';
 
-// 1 hour. Intentionally independent from `ANALYSIS_CACHE_TTL` constants —
-// daily bars change once per day, so hourly TTL matches the data cadence.
-const CACHE_TTL_SECONDS = 3600;
-const BARS_LOOKBACK_DAYS = 400;
+// TTL per timeframe (seconds) — matches data update cadence
+// 1Day: daily bars change once a day; 1Hour: bars complete hourly; 15Min: 15-min intervals.
+// Intentionally independent from ANALYSIS_CACHE_TTL constants.
+const TTL_BY_TIMEFRAME: Record<DashboardTimeframe, number> = {
+    '1Day': 3600, // 1h
+    '1Hour': 900, // 15min
+    '15Min': 300, // 5min
+};
 
-function cacheKey(): string {
-    const date = new Date().toISOString().slice(0, 10);
-    return `dashboard:signals:1Day:${date}`;
+// 'from' lookback in days per timeframe — covers SQUEEZE_LOOKBACK_BARS=120 + buffer
+const LOOKBACK_DAYS_BY_TIMEFRAME: Record<DashboardTimeframe, number> = {
+    '1Day': 400, // ~1.5 years of daily
+    '1Hour': 40, // ~5 weeks (120 hourly bars = ~18 trading days)
+    '15Min': 10, // ~10 days (120 × 15min bars ≈ 5 trading days during market hours)
+};
+
+// Concurrency limit for FMP batch fetch (avoids 429)
+const FETCH_CONCURRENCY = 10;
+
+function bucketedTimestamp(timeframe: DashboardTimeframe, now: Date): string {
+    const iso = now.toISOString();
+    if (timeframe === '1Day') return iso.slice(0, 10); // YYYY-MM-DD
+    if (timeframe === '1Hour') return iso.slice(0, 13); // YYYY-MM-DDTHH
+    // 15Min: floor minute to 15-min bucket
+    const minutes = now.getUTCMinutes();
+    const bucketMin = Math.floor(minutes / 15) * 15;
+    const minStr = bucketMin.toString().padStart(2, '0');
+    return `${iso.slice(0, 13)}:${minStr}`; // YYYY-MM-DDTHH:MM
 }
 
-function fromDate(): string {
-    const d = new Date();
-    d.setUTCDate(d.getUTCDate() - BARS_LOOKBACK_DAYS);
+function cacheKey(timeframe: DashboardTimeframe, now: Date): string {
+    return `dashboard:signals:${timeframe}:${bucketedTimestamp(timeframe, now)}`;
+}
+
+function fromDate(timeframe: DashboardTimeframe, now: Date): string {
+    const d = new Date(now);
+    d.setUTCDate(d.getUTCDate() - LOOKBACK_DAYS_BY_TIMEFRAME[timeframe]);
     return d.toISOString();
 }
 
@@ -51,30 +76,47 @@ function computeStockResult(
     };
 }
 
-export async function getSectorSignals(): Promise<SectorSignalsResult> {
+async function fetchInChunks<T, R>(
+    items: readonly T[],
+    chunkSize: number,
+    fetcher: (item: T) => Promise<R>
+): Promise<PromiseSettledResult<R>[]> {
+    const results: PromiseSettledResult<R>[] = [];
+    for (let i = 0; i < items.length; i += chunkSize) {
+        const chunk = items.slice(i, i + chunkSize);
+        const chunkResults = await Promise.allSettled(chunk.map(fetcher));
+        results.push(...chunkResults);
+    }
+    return results;
+}
+
+export async function getSectorSignals(
+    timeframe: DashboardTimeframe = '1Day'
+): Promise<SectorSignalsResult> {
     const cache = createCacheProvider();
-    const key = cacheKey();
+    const now = new Date();
+    const key = cacheKey(timeframe, now);
 
     if (cache !== null) {
         try {
             const cached = await cache.get<SectorSignalsResult>(key);
-            if (cached !== null) {
-                return cached;
-            }
+            if (cached !== null) return cached;
         } catch (err) {
             console.warn('[sectorSignalsApi] cache read failed:', err);
         }
     }
 
     const provider = createMarketDataProvider();
-    const fetchResults = await Promise.allSettled(
-        SECTOR_STOCKS.map(s =>
+    const fromIso = fromDate(timeframe, now);
+    const fetchResults = await fetchInChunks(
+        SECTOR_STOCKS,
+        FETCH_CONCURRENCY,
+        s =>
             provider.getBars({
                 symbol: s.symbol,
-                timeframe: '1Day',
-                from: fromDate(),
+                timeframe: timeframe as Timeframe,
+                from: fromIso,
             })
-        )
     );
 
     const stocks: StockSignalResult[] = [];
@@ -99,13 +141,13 @@ export async function getSectorSignals(): Promise<SectorSignalsResult> {
     }
 
     const payload: SectorSignalsResult = {
-        computedAt: new Date().toISOString(),
+        computedAt: now.toISOString(),
         stocks,
     };
 
     if (cache !== null) {
         try {
-            await cache.set(key, payload, CACHE_TTL_SECONDS);
+            await cache.set(key, payload, TTL_BY_TIMEFRAME[timeframe]);
         } catch (err) {
             console.warn('[sectorSignalsApi] cache write failed:', err);
         }

@@ -171,7 +171,7 @@ export default async function Home() {
                                 href="/market"
                                 className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold tracking-wider uppercase transition-colors"
                             >
-                                섹터별 신호 스캐너 →
+                                오늘 주목할 종목 →
                             </Link>
                         </div>
                         <Suspense fallback={<StatsBarSkeleton />}>

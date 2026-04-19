@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import { cn } from '@/lib/cn';
-import { SECTOR_ETFS } from '@/domain/constants/dashboard-tickers';
+import { SIGNAL_SECTORS } from '@/domain/constants/dashboard-tickers';
 
 interface SectorTabsProps {
     activeSector: string;
@@ -10,25 +10,27 @@ interface SectorTabsProps {
 }
 
 export function SectorTabs({ activeSector, onChange }: SectorTabsProps) {
+    const total = SIGNAL_SECTORS.length;
+
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLButtonElement>, index: number) => {
-            const total = SECTOR_ETFS.length;
-            let nextIndex = -1;
-            if (e.key === 'ArrowRight') nextIndex = (index + 1) % total;
-            else if (e.key === 'ArrowLeft')
-                nextIndex = (index - 1 + total) % total;
-            else if (e.key === 'Home') nextIndex = 0;
-            else if (e.key === 'End') nextIndex = total - 1;
-            if (nextIndex !== -1) {
-                e.preventDefault();
-                onChange(SECTOR_ETFS[nextIndex].symbol);
-                const nextBtn = e.currentTarget.parentElement?.children[
-                    nextIndex
-                ] as HTMLElement;
-                nextBtn?.focus();
-            }
+            const KEY_MAP: Partial<Record<string, number>> = {
+                ArrowRight: (index + 1) % total,
+                ArrowLeft: (index - 1 + total) % total,
+                Home: 0,
+                End: total - 1,
+            };
+            const nextIndex = KEY_MAP[e.key] ?? -1;
+            if (nextIndex === -1) return;
+            e.preventDefault();
+            onChange(SIGNAL_SECTORS[nextIndex].symbol);
+            const parent = e.currentTarget.parentElement;
+            const nextBtn = parent?.children[nextIndex] as
+                | HTMLElement
+                | undefined;
+            nextBtn?.focus();
         },
-        [onChange]
+        [onChange, total]
     );
 
     return (
@@ -37,7 +39,7 @@ export function SectorTabs({ activeSector, onChange }: SectorTabsProps) {
             aria-label="섹터 선택"
             className="border-secondary-700 flex touch-manipulation gap-6 overflow-x-auto overscroll-x-contain border-b pb-0"
         >
-            {SECTOR_ETFS.map((etf, i) => {
+            {SIGNAL_SECTORS.map((etf, i) => {
                 const isActive = etf.symbol === activeSector;
                 return (
                     <button

@@ -1,4 +1,4 @@
-import { SECTOR_ETFS } from '@/domain/constants/dashboard-tickers';
+import { SIGNAL_SECTORS } from '@/domain/constants/dashboard-tickers';
 
 export function SectorSignalPanelSkeleton() {
     return (
@@ -12,7 +12,7 @@ export function SectorSignalPanelSkeleton() {
                 <div className="bg-secondary-700/50 h-3.5 w-20 animate-pulse rounded" />
             </div>
             <div className="border-secondary-700 flex gap-6 overflow-x-auto border-b pb-2">
-                {SECTOR_ETFS.map(etf => (
+                {SIGNAL_SECTORS.map(etf => (
                     <div
                         key={etf.symbol}
                         className="bg-secondary-700/50 h-3 w-12 shrink-0 animate-pulse rounded"

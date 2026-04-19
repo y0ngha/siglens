@@ -923,6 +923,37 @@ describe('detectSupportProximityBullish', () => {
             ).toBeNull();
         });
     });
+
+    describe('indicators.ma[period]가 이미 계산되어 있을 때', () => {
+        it('재계산 없이 캐시된 MA를 사용해 Signal을 반환한다', () => {
+            const closes = [
+                ...Array(50).fill(100),
+                102,
+                103,
+                104,
+                105,
+                106,
+                105,
+                104,
+                103,
+                102,
+                101,
+            ];
+            const bars = barsFromCloses(closes);
+            // Pre-populate indicators.ma[50] — exercises the `??` left branch.
+            const ma50 = closes.map((_, i) => {
+                if (i < 49) return null;
+                const window = closes.slice(i - 49, i + 1);
+                return window.reduce((a, b) => a + b, 0) / 50;
+            });
+            const indicators: IndicatorResult = {
+                ...EMPTY_INDICATOR_RESULT,
+                ma: { 50: ma50 },
+            };
+            const result = detectSupportProximityBullish(bars, indicators);
+            expect(result?.type).toBe('support_proximity_bullish');
+        });
+    });
 });
 
 describe('detectResistanceProximityBearish', () => {
@@ -1022,6 +1053,37 @@ describe('detectResistanceProximityBearish', () => {
             expect(
                 detectResistanceProximityBearish(bars, EMPTY_INDICATOR_RESULT)
             ).toBeNull();
+        });
+    });
+
+    describe('indicators.ma[period]가 이미 계산되어 있을 때', () => {
+        it('재계산 없이 캐시된 MA를 사용해 Signal을 반환한다', () => {
+            const closes = [
+                ...Array(50).fill(100),
+                98,
+                97,
+                96,
+                95,
+                94,
+                95,
+                96,
+                97,
+                98,
+                99,
+            ];
+            const bars = barsFromCloses(closes);
+            // Pre-populate indicators.ma[50] — exercises the `??` left branch.
+            const ma50 = closes.map((_, i) => {
+                if (i < 49) return null;
+                const window = closes.slice(i - 49, i + 1);
+                return window.reduce((a, b) => a + b, 0) / 50;
+            });
+            const indicators: IndicatorResult = {
+                ...EMPTY_INDICATOR_RESULT,
+                ma: { 50: ma50 },
+            };
+            const result = detectResistanceProximityBearish(bars, indicators);
+            expect(result?.type).toBe('resistance_proximity_bearish');
         });
     });
 });

@@ -1,5 +1,26 @@
 # Fix Log
 
+## [PR #331 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `components/` .tsx 파일에서 `infrastructure/` 직접 import
+- Rule: ARCHITECTURE.md 레이어 의존성 — 컴포넌트 파일은 infrastructure 직접 import 금지 (RSC Server Component 라도 동일 규칙 적용)
+- Context: `SectorSignalPanelContainer.tsx` 가 async RSC 라는 명목으로 `getSectorSignals` 를 직접 import 했으나 components/ 폴더 위치만으로 lint 통과해도 규칙 위반. 컨테이너 파일 삭제하고 fetch 를 `app/market/page.tsx` RSC 로 이동
+
+- Violation: 68~74 종목에 대한 Promise.allSettled 병렬 fetch — FMP rate limit 초과 가능
+- Rule: API 호출 시 provider rate limit 고려한 concurrency 제한 필수
+- Context: `sectorSignalsApi.ts` 가 `Promise.allSettled(SECTOR_STOCKS.map(...))` 로 전체 동시 실행. `fetchInChunks` 헬퍼로 청크 10개씩 순차 처리로 변경
+
+- Violation: 이미 계산된 `indicators.ma[period]` 가 있는데 S/R 감지기에서 `calculateMA` 를 직접 재호출
+- Rule: 중복 계산 방지 — indicator bag 우선 사용 후 fallback
+- Context: `detectSupportProximityBullish` / `detectResistanceProximityBearish` 가 `_indicators` 를 무시하고 `calculateMA(bars, period)` 만 호출. `indicators.ma[period] ?? calculateMA(bars, period)` 패턴으로 변경
+
+- Violation: `isSqueezePresent` 네이밍이 boolean 반환을 암시하지만 실제로는 객체 반환
+- Rule: MISTAKES.md #11 — 함수명은 반환 타입과 일치
+- Context: 스퀴즈 상태 객체(lastIdx, pctB, slope)를 반환하므로 `computeSqueezeState` 로 리네임
+
+- Violation: 테스트에서 `new Date()` 의존 함수(cacheKey) 를 모킹하지 않아 자정 경계 flaky 위험
+- Rule: MISTAKES.md Tests — 시간 의존 함수는 반드시 `jest.useFakeTimers()` + `setSystemTime()` 으로 모킹
+- Context: `sectorSignalsApi.test.ts` 가 cacheKey assertion 없이도 UTC 날짜 바뀌면 동작 차이 발생 가능. 고정 타임스탬프 주입
+
 ## [Issue #329 Round 1 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: `rsi1 === null || rsi2 === null || rsi1 === undefined || rsi2 === undefined` 이중 null/undefined 체크
 - Rule: FF 2-C (Predictability — expose hidden logic) — `(number | null)[]` 타입이면 out-of-bounds 만 undefined, 의도를 분리해 표기하거나 `== null` 로 통합

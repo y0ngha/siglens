@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Suspense } from 'react';
 import {
     dehydrate,
@@ -7,10 +8,16 @@ import {
 } from '@tanstack/react-query';
 import { MarketSummaryPanel } from '@/components/dashboard/MarketSummaryPanel';
 import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummaryPanelSkeleton';
-import { SectorSignalPanelContainer } from '@/components/dashboard/SectorSignalPanelContainer';
+import { SectorSignalPanel } from '@/components/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/components/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/components/dashboard/SignalTypeGuide';
+import { getSectorSignals } from '@/infrastructure/dashboard/sectorSignalsApi';
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
+import {
+    DASHBOARD_TIMEFRAMES,
+    SIGNAL_SECTORS,
+    type DashboardTimeframe,
+} from '@/domain/constants/dashboard-tickers';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/lib/seo';
 
@@ -39,7 +46,30 @@ export const metadata: Metadata = {
 
 interface SearchParams {
     sector?: string;
-    strict?: string;
+    timeframe?: string;
+}
+
+function isDashboardTimeframe(v: string | undefined): v is DashboardTimeframe {
+    return (
+        v !== undefined && (DASHBOARD_TIMEFRAMES as readonly string[]).includes(v)
+    );
+}
+
+async function SectorSignalSection({
+    initialSector,
+    initialTimeframe,
+}: {
+    initialSector: string;
+    initialTimeframe: DashboardTimeframe;
+}) {
+    const data = await getSectorSignals(initialTimeframe);
+    return (
+        <SectorSignalPanel
+            data={data}
+            initialSector={initialSector}
+            initialTimeframe={initialTimeframe}
+        />
+    );
 }
 
 export default async function MarketPage({
@@ -49,13 +79,23 @@ export default async function MarketPage({
 }) {
     const params = await searchParams;
     const hasQueryVariant =
-        params.sector !== undefined || params.strict !== undefined;
-    const initialStrict = params.strict !== '0';
+        params.sector !== undefined || params.timeframe !== undefined;
+    const initialTimeframe: DashboardTimeframe = isDashboardTimeframe(
+        params.timeframe
+    )
+        ? params.timeframe
+        : '1Day';
+    const fallbackSector = SIGNAL_SECTORS[0].symbol;
+    const initialSector =
+        params.sector !== undefined &&
+        SIGNAL_SECTORS.some(e => e.symbol === params.sector)
+            ? params.sector
+            : fallbackSector;
 
     const queryClient = new QueryClient();
     await queryClient.prefetchQuery({
         queryKey: QUERY_KEYS.marketSummary(),
-        queryFn: getMarketSummaryAction,
+        queryFn: () => getMarketSummaryAction(),
     });
 
     return (
@@ -64,15 +104,26 @@ export default async function MarketPage({
                 <meta name="robots" content="noindex, follow" />
             )}
             <h1 className="sr-only">미국 주식 기술적 신호 대시보드</h1>
+            <div className="px-6 pt-6 lg:px-[15vw]">
+                <Link
+                    href="/"
+                    className="text-secondary-400 hover:text-secondary-200 inline-flex items-center gap-1 text-xs tracking-wider uppercase transition-colors"
+                >
+                    ← 홈으로
+                </Link>
+            </div>
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <Suspense fallback={<MarketSummaryPanelSkeleton />}>
                     <MarketSummaryPanel />
                 </Suspense>
             </HydrationBoundary>
-            <Suspense fallback={<SectorSignalPanelSkeleton />}>
-                <SectorSignalPanelContainer
-                    initialSector={params.sector}
-                    initialStrict={initialStrict}
+            <Suspense
+                key={`${initialSector}-${initialTimeframe}`}
+                fallback={<SectorSignalPanelSkeleton />}
+            >
+                <SectorSignalSection
+                    initialSector={initialSector}
+                    initialTimeframe={initialTimeframe}
                 />
             </Suspense>
             <SignalTypeGuide />

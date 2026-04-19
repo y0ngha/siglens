@@ -7,23 +7,25 @@ import type {
     SectorSignalsResult,
     StockSignalResult,
 } from '@/domain/signals/types';
-import { SECTOR_ETFS } from '@/domain/constants/dashboard-tickers';
-import { useStrictModeToggle } from './hooks/useStrictModeToggle';
+import {
+    SIGNAL_SECTORS,
+    type DashboardTimeframe,
+} from '@/domain/constants/dashboard-tickers';
 import { SectorTabs } from './SectorTabs';
-import { StrictModeToggle } from './StrictModeToggle';
+import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
 
 interface SectorSignalPanelProps {
     data: SectorSignalsResult;
     initialSector: string;
-    initialStrict: boolean;
+    initialTimeframe: DashboardTimeframe;
 }
 
-function filterByStrict(
-    stocks: readonly StockSignalResult[],
-    strict: boolean
+// Strict mode is always on: anticipation signals only visible when the stock's
+// trend opposes or is sideways relative to the signal's direction.
+function filterStrict(
+    stocks: readonly StockSignalResult[]
 ): readonly StockSignalResult[] {
-    if (!strict) return stocks;
     return stocks.flatMap(stock => {
         const filtered = stock.signals.filter(sig => {
             if (sig.phase === 'confirmed') return true;
@@ -37,21 +39,20 @@ function filterByStrict(
 export function SectorSignalPanel({
     data,
     initialSector,
-    initialStrict,
+    initialTimeframe,
 }: SectorSignalPanelProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [activeSector, setActiveSector] = useState(initialSector);
-    const [strict, setStrict] = useStrictModeToggle(initialStrict);
 
     const updateUrl = useCallback(
-        (nextSector: string, nextStrict: boolean) => {
+        (nextSector: string, nextTimeframe: DashboardTimeframe) => {
             const params = new URLSearchParams(searchParams.toString());
-            if (nextSector === SECTOR_ETFS[0].symbol) params.delete('sector');
+            if (nextSector === SIGNAL_SECTORS[0].symbol) params.delete('sector');
             else params.set('sector', nextSector);
-            if (nextStrict) params.delete('strict');
-            else params.set('strict', '0');
+            if (nextTimeframe === '1Day') params.delete('timeframe');
+            else params.set('timeframe', nextTimeframe);
             const qs = params.toString();
             router.replace(qs === '' ? pathname : `${pathname}?${qs}`, {
                 scroll: false,
@@ -62,18 +63,14 @@ export function SectorSignalPanel({
 
     const handleSectorChange = (sector: string) => {
         setActiveSector(sector);
-        updateUrl(sector, strict);
+        updateUrl(sector, initialTimeframe);
     };
 
-    const handleStrictChange = (next: boolean) => {
-        setStrict(next);
+    const handleTimeframeChange = (next: DashboardTimeframe) => {
         updateUrl(activeSector, next);
     };
 
-    const filtered = useMemo(
-        () => filterByStrict(data.stocks, strict),
-        [data.stocks, strict]
-    );
+    const filtered = useMemo(() => filterStrict(data.stocks), [data.stocks]);
 
     const sectorStocks = useMemo(
         () => filtered.filter(s => s.sectorSymbol === activeSector),
@@ -128,9 +125,9 @@ export function SectorSignalPanel({
                 <h2 className="text-secondary-200 text-sm font-semibold tracking-[0.15em] uppercase">
                     섹터 신호 탐색
                 </h2>
-                <StrictModeToggle
-                    strict={strict}
-                    onChange={handleStrictChange}
+                <TimeframeSelector
+                    timeframe={initialTimeframe}
+                    onChange={handleTimeframeChange}
                 />
             </div>
             <SectorTabs

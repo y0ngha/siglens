@@ -138,4 +138,27 @@ export const SECTOR_STOCKS: readonly SectorStock[] = [
     { symbol: 'DIS', koreanName: '디즈니', sectorSymbol: 'XLC' },
     { symbol: 'CMCSA', koreanName: '컴캐스트', sectorSymbol: 'XLC' },
     { symbol: 'T', koreanName: 'AT&T', sectorSymbol: 'XLC' },
+    // Quantum (QNTM) — 6 (virtual sector, no ETF)
+    { symbol: 'IONQ', koreanName: '아이온큐', sectorSymbol: 'QNTM' },
+    { symbol: 'LAES', koreanName: 'SEALSQ', sectorSymbol: 'QNTM' },
+    { symbol: 'RGTI', koreanName: '리게티 컴퓨팅', sectorSymbol: 'QNTM' },
+    { symbol: 'QBTS', koreanName: '디웨이브 퀀텀', sectorSymbol: 'QNTM' },
+    { symbol: 'QUBT', koreanName: '퀀텀 컴퓨팅', sectorSymbol: 'QNTM' },
+    { symbol: 'IBM', koreanName: '아이비엠', sectorSymbol: 'QNTM' },
+];
+
+// Timeframes supported by Panel C sector signal dashboard
+export const DASHBOARD_TIMEFRAMES = ['15Min', '1Hour', '1Day'] as const;
+export type DashboardTimeframe = (typeof DASHBOARD_TIMEFRAMES)[number];
+
+export const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
+    '15Min': '15분봉',
+    '1Hour': '1시간봉',
+    '1Day': '일봉',
+};
+
+// Panel C sector tabs — SECTOR_ETFS + virtual Quantum sector (no ETF)
+export const SIGNAL_SECTORS: readonly SectorEtf[] = [
+    ...SECTOR_ETFS,
+    { symbol: 'QNTM', sectorName: 'Quantum', koreanName: '양자' },
 ];

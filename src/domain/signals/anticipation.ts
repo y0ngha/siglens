@@ -213,7 +213,7 @@ export function detectMacdHistogramBearishConvergence(
     };
 }
 
-function isSqueezePresent(
+function computeSqueezeState(
     bars: Bar[],
     indicators: IndicatorResult
 ): { lastIdx: number; pctB: number; slope: number } | null {
@@ -250,7 +250,7 @@ export function detectBollingerSqueezeBullish(
     bars: Bar[],
     indicators: IndicatorResult
 ): Signal | null {
-    const s = isSqueezePresent(bars, indicators);
+    const s = computeSqueezeState(bars, indicators);
     if (s === null) return null;
     if (s.pctB < SQUEEZE_PCT_B_THRESHOLD) return null;
     if (s.slope < 0) return null;
@@ -266,7 +266,7 @@ export function detectBollingerSqueezeBearish(
     bars: Bar[],
     indicators: IndicatorResult
 ): Signal | null {
-    const s = isSqueezePresent(bars, indicators);
+    const s = computeSqueezeState(bars, indicators);
     if (s === null) return null;
     if (s.pctB >= SQUEEZE_PCT_B_THRESHOLD) return null;
     if (s.slope > 0) return null;
@@ -291,7 +291,7 @@ function isWithinProximity(
 
 export function detectSupportProximityBullish(
     bars: Bar[],
-    _indicators: IndicatorResult
+    indicators: IndicatorResult
 ): Signal | null {
     if (bars.length < SR_APPROACH_LOOKBACK + 1) return null;
     const lastIdx = bars.length - 1;
@@ -302,7 +302,8 @@ export function detectSupportProximityBullish(
     for (const period of SR_MA_PERIODS) {
         if (bars.length < period) continue;
         // calculateMA returns a real number at lastIdx when bars.length >= period (checked above)
-        const ma = calculateMA(bars, period)[lastIdx] as number;
+        const ma = (indicators.ma[period] ??
+            calculateMA(bars, period))[lastIdx] as number;
         if (isWithinProximity(closeLast, ma, 'above')) {
             return {
                 type: 'support_proximity_bullish',
@@ -317,7 +318,7 @@ export function detectSupportProximityBullish(
 
 export function detectResistanceProximityBearish(
     bars: Bar[],
-    _indicators: IndicatorResult
+    indicators: IndicatorResult
 ): Signal | null {
     if (bars.length < SR_APPROACH_LOOKBACK + 1) return null;
     const lastIdx = bars.length - 1;
@@ -328,7 +329,8 @@ export function detectResistanceProximityBearish(
     for (const period of SR_MA_PERIODS) {
         if (bars.length < period) continue;
         // calculateMA returns a real number at lastIdx when bars.length >= period (checked above)
-        const ma = calculateMA(bars, period)[lastIdx] as number;
+        const ma = (indicators.ma[period] ??
+            calculateMA(bars, period))[lastIdx] as number;
         if (isWithinProximity(closeLast, ma, 'below')) {
             return {
                 type: 'resistance_proximity_bearish',

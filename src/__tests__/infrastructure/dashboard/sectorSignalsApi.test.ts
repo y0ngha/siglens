@@ -62,6 +62,9 @@ function buildOscillatingBars(count: number): Bar[] {
 
 describe('getSectorSignals 함수는', () => {
     beforeEach(() => {
+        jest.useFakeTimers();
+        jest.setSystemTime(new Date('2026-04-19T12:30:00Z'));
+
         mockCacheGet.mockReset();
         mockCacheSet.mockReset();
         mockCacheDelete.mockReset();
@@ -79,6 +82,10 @@ describe('getSectorSignals 함수는', () => {
         });
     });
 
+    afterEach(() => {
+        jest.useRealTimers();
+    });
+
     describe('캐시 히트일 때', () => {
         it('provider를 호출하지 않고 캐시된 결과를 반환한다', async () => {
             const cached: SectorSignalsResult = {
@@ -93,6 +100,19 @@ describe('getSectorSignals 함수는', () => {
             expect(mockGetBars).not.toHaveBeenCalled();
             expect(mockCacheSet).not.toHaveBeenCalled();
         });
+
+        it('1Day 기본 타임프레임의 캐시 키는 YYYY-MM-DD 버킷을 사용한다', async () => {
+            mockCacheGet.mockResolvedValue({
+                computedAt: '2026-04-19T00:00:00Z',
+                stocks: [],
+            });
+
+            await getSectorSignals();
+
+            expect(mockCacheGet).toHaveBeenCalledWith(
+                'dashboard:signals:1Day:2026-04-19'
+            );
+        });
     });
 
     describe('캐시 프로바이더가 null일 때', () => {
@@ -106,7 +126,7 @@ describe('getSectorSignals 함수는', () => {
             expect(mockCacheSet).not.toHaveBeenCalled();
             expect(mockGetBars).toHaveBeenCalled();
             expect(result.stocks).toEqual([]);
-            expect(typeof result.computedAt).toBe('string');
+            expect(result.computedAt).toBe('2026-04-19T12:30:00.000Z');
         });
     });
 
@@ -139,10 +159,10 @@ describe('getSectorSignals 함수는', () => {
             expect(mockGetBars).toHaveBeenCalledTimes(SECTOR_STOCKS.length);
             expect(mockCacheSet).toHaveBeenCalledTimes(1);
             const [key, payload, ttl] = mockCacheSet.mock.calls[0];
-            expect(typeof key).toBe('string');
+            expect(key).toBe('dashboard:signals:1Day:2026-04-19');
             expect(payload).toMatchObject({
                 stocks: expect.any(Array),
-                computedAt: expect.any(String),
+                computedAt: '2026-04-19T12:30:00.000Z',
             });
             expect(ttl).toBe(3600);
         });
@@ -155,8 +175,24 @@ describe('getSectorSignals 함수는', () => {
 
             const firstCallOptions = mockGetBars.mock.calls[0][0];
             expect(firstCallOptions.timeframe).toBe('1Day');
-            expect(typeof firstCallOptions.from).toBe('string');
+            // 2026-04-19 - 400 days = 2025-03-15
+            expect(firstCallOptions.from).toBe('2025-03-15T12:30:00.000Z');
             expect(firstCallOptions.symbol).toBe(SECTOR_STOCKS[0].symbol);
+        });
+
+        it('SECTOR_STOCKS 전체에 대해 getBars 호출이 발생한다 (청크 처리 포함)', async () => {
+            mockCacheGet.mockResolvedValue(null);
+            mockGetBars.mockResolvedValue([]);
+
+            await getSectorSignals();
+
+            const calledSymbols = mockGetBars.mock.calls.map(
+                c => c[0].symbol as string
+            );
+            expect(calledSymbols).toHaveLength(SECTOR_STOCKS.length);
+            for (const stock of SECTOR_STOCKS) {
+                expect(calledSymbols).toContain(stock.symbol);
+            }
         });
     });
 
@@ -291,6 +327,60 @@ describe('getSectorSignals 함수는', () => {
             if (apple) {
                 expect(apple.changePercent).toBe(0);
             }
+        });
+    });
+
+    describe('타임프레임별 동작', () => {
+        it("1Hour 타임프레임은 YYYY-MM-DDTHH 버킷 캐시 키와 900초 TTL을 사용한다", async () => {
+            mockCacheGet.mockResolvedValue(null);
+            mockGetBars.mockResolvedValue([]);
+            mockCacheSet.mockResolvedValue(undefined);
+
+            await getSectorSignals('1Hour');
+
+            expect(mockCacheGet).toHaveBeenCalledWith(
+                'dashboard:signals:1Hour:2026-04-19T12'
+            );
+            const [key, , ttl] = mockCacheSet.mock.calls[0];
+            expect(key).toBe('dashboard:signals:1Hour:2026-04-19T12');
+            expect(ttl).toBe(900);
+            const firstCallOptions = mockGetBars.mock.calls[0][0];
+            expect(firstCallOptions.timeframe).toBe('1Hour');
+            // 2026-04-19 - 40 days = 2026-03-10
+            expect(firstCallOptions.from).toBe('2026-03-10T12:30:00.000Z');
+        });
+
+        it('15Min 타임프레임은 15분 버킷으로 floor한 캐시 키와 300초 TTL을 사용한다', async () => {
+            mockCacheGet.mockResolvedValue(null);
+            mockGetBars.mockResolvedValue([]);
+            mockCacheSet.mockResolvedValue(undefined);
+
+            // 12:30 floors to :30 (bucket minutes = 30)
+            await getSectorSignals('15Min');
+
+            expect(mockCacheGet).toHaveBeenCalledWith(
+                'dashboard:signals:15Min:2026-04-19T12:30'
+            );
+            const [key, , ttl] = mockCacheSet.mock.calls[0];
+            expect(key).toBe('dashboard:signals:15Min:2026-04-19T12:30');
+            expect(ttl).toBe(300);
+            const firstCallOptions = mockGetBars.mock.calls[0][0];
+            expect(firstCallOptions.timeframe).toBe('15Min');
+            // 2026-04-19 - 10 days = 2026-04-09
+            expect(firstCallOptions.from).toBe('2026-04-09T12:30:00.000Z');
+        });
+
+        it('15Min 타임프레임은 분을 15분 하한 버킷으로 내림한다 (예: :07 → :00)', async () => {
+            jest.setSystemTime(new Date('2026-04-19T12:07:00Z'));
+            mockCacheGet.mockResolvedValue(null);
+            mockGetBars.mockResolvedValue([]);
+            mockCacheSet.mockResolvedValue(undefined);
+
+            await getSectorSignals('15Min');
+
+            expect(mockCacheGet).toHaveBeenCalledWith(
+                'dashboard:signals:15Min:2026-04-19T12:00'
+            );
         });
     });
 });
