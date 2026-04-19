@@ -18,8 +18,8 @@ export function validateBacktestData(data: unknown): BacktestData {
     }
 
     const cases = d['cases'] as unknown[];
-    for (let i = 0; i < cases.length; i++) {
-        const c = cases[i] as Record<string, unknown>;
+    cases.forEach((item, i) => {
+        const c = item as Record<string, unknown>;
         if (typeof c['returnPct'] !== 'number') {
             throw new Error(`cases[${i}].returnPct must be a number`);
         }
@@ -33,7 +33,7 @@ export function validateBacktestData(data: unknown): BacktestData {
         ) {
             throw new Error(`cases[${i}].aiAnalysis.tags must be an array`);
         }
-    }
+    });
 
     // Safe: all required fields validated above
     return data as BacktestData;

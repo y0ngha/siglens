@@ -18,7 +18,7 @@ import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import { parseJsonResponse } from '@/infrastructure/ai/utils';
 import { callGeminiScript } from './ai.js';
-import type { Bar, RawAnalysisResponse, BacktestOutcome } from '@/domain/types';
+import type { Bar, RawAnalysisResponse, BacktestOutcome, BacktestCase } from '@/domain/types';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
@@ -71,6 +71,7 @@ async function fetchDailyBars(ticker: string): Promise<FmpBar[]> {
     const res = await fetch(url);
     if (!res.ok)
         throw new Error(`FMP fetch failed for ${ticker}: ${res.status}`);
+    // FMP API: { historical: FmpBar[] } 형태를 보장함
     const json = (await res.json()) as { historical?: FmpBar[] };
     return (json.historical ?? []).slice().reverse();
 }
@@ -227,7 +228,7 @@ async function main() {
         }
         const bars = toBarArray(fmpBars);
         const signals = detectBuySignals(fmpBars);
-        const selected = signals.slice(0, MAX_SIGNALS_PER_TICKER);
+        const selected = signals.slice(-MAX_SIGNALS_PER_TICKER);
         console.log(
             `  Found ${signals.length} signals → using ${selected.length}`
         );

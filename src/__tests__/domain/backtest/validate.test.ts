@@ -34,6 +34,18 @@ describe('validateBacktestData', () => {
     });
 
     describe('invalid input', () => {
+        it('throws when data is null', () => {
+            expect(() => validateBacktestData(null)).toThrow(
+                'BacktestData must be an object'
+            );
+        });
+
+        it('throws when data is not an object', () => {
+            expect(() => validateBacktestData('string')).toThrow(
+                'BacktestData must be an object'
+            );
+        });
+
         it('throws when meta is missing', () => {
             expect(() => validateBacktestData({ cases: [] })).toThrow(
                 'meta must be an object'
