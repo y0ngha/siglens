@@ -84,6 +84,16 @@ describe('validateBacktestData', () => {
             );
         });
 
+        it('throws when aiResult is not win or loss', () => {
+            const bad = {
+                ...validData,
+                cases: [{ ...validCase, aiResult: 'maybe' }],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                "cases[0].aiResult must be 'win' or 'loss'"
+            );
+        });
+
         it('throws when aiAnalysis.tags is not an array', () => {
             const bad = {
                 ...validData,

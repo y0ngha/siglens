@@ -25,9 +25,12 @@ export function validateBacktestData(data: unknown): BacktestData {
         if (typeof c['returnPct'] !== 'number') {
             throw new Error(`cases[${i}].returnPct must be a number`);
         }
-        // includes() requires BacktestOutcome; cast from unknown is safe after string check
+        // Array.prototype.includes uses strict equality; non-string values correctly return false
         if (!VALID_OUTCOMES.includes(c['result'] as BacktestOutcome)) {
             throw new Error(`cases[${i}].result must be 'win' or 'loss'`);
+        }
+        if (!VALID_OUTCOMES.includes(c['aiResult'] as BacktestOutcome)) {
+            throw new Error(`cases[${i}].aiResult must be 'win' or 'loss'`);
         }
         if (
             typeof c['aiAnalysis'] !== 'object' ||

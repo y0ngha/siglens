@@ -10,7 +10,10 @@ function getMonthLabel(dateStr: string): string {
     return `${year}년 ${parseInt(month, 10)}월`;
 }
 
-type MonthGroup = { label: string; items: BacktestCase[] };
+interface MonthGroup {
+    label: string;
+    items: BacktestCase[];
+}
 
 export function BacktestCaseList({ cases }: BacktestCaseListProps) {
     if (cases.length === 0) {

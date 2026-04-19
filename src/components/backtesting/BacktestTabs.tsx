@@ -44,18 +44,23 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
     const handleKeyDown = useCallback(
         (e: React.KeyboardEvent<HTMLDivElement>) => {
             const currentIdx = tabs.indexOf(safeActive);
+            let nextTab: string | undefined;
             if (e.key === 'ArrowRight') {
                 e.preventDefault();
-                setActive(tabs[(currentIdx + 1) % tabs.length]);
+                nextTab = tabs[(currentIdx + 1) % tabs.length];
             } else if (e.key === 'ArrowLeft') {
                 e.preventDefault();
-                setActive(tabs[(currentIdx - 1 + tabs.length) % tabs.length]);
+                nextTab = tabs[(currentIdx - 1 + tabs.length) % tabs.length];
             } else if (e.key === 'Home') {
                 e.preventDefault();
-                setActive(tabs[0]);
+                nextTab = tabs[0];
             } else if (e.key === 'End') {
                 e.preventDefault();
-                setActive(tabs[tabs.length - 1]);
+                nextTab = tabs[tabs.length - 1];
+            }
+            if (nextTab !== undefined) {
+                setActive(nextTab);
+                document.getElementById(`tab-${nextTab}`)?.focus();
             }
         },
         [safeActive, tabs, setActive]
