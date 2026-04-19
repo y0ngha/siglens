@@ -14,7 +14,6 @@ import {
     SkillsShowcaseSkeleton,
 } from '@/components/home/SkillsShowcase';
 import { TickerCategories } from '@/components/home/TickerCategories';
-import { MarketSummaryPanel } from '@/components/dashboard/MarketSummaryPanel';
 
 const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
 
@@ -119,8 +118,8 @@ export default async function Home() {
         step: [
             {
                 '@type': 'HowToStep',
-                name: '티커 입력',
-                text: '분석하고 싶은 미국 주식 종목의 심볼(티커)을 검색창에 입력합니다. 예: AAPL, TSLA, NVDA',
+                name: '종목명, 심볼 입력',
+                text: '분석하고 싶은 미국 주식 종목명, 심볼을 검색창에 입력합니다. 예: 애플, 테슬라, 엔비디아, AAPL, TSLA, NVDA',
             },
             {
                 '@type': 'HowToStep',
@@ -207,7 +206,7 @@ export default async function Home() {
                                 AI가 읽어주는 시장과 차트
                             </span>
                         </h1>
-                        <p className="text-secondary-400 mx-auto mt-4 max-w-lg text-base leading-relaxed text-balance sm:text-xl lg:mx-0">
+                        <p className="text-secondary-400 mx-auto mt-4 max-w-lg text-base leading-relaxed break-keep sm:text-xl lg:mx-0">
                             오늘 주목할 섹터부터 종목별 기술적 분석, AI 대화까지
                             한 번에.
                         </p>
@@ -230,7 +229,6 @@ export default async function Home() {
                         </Suspense>
                     </div>
                 </section>
-                <MarketSummaryPanel />
                 <HowItWorks skillCounts={skillCounts} />
                 <section className="px-6 pb-8 lg:px-[15vw]">
                     <div className="border-secondary-800 bg-secondary-800/30 flex flex-col items-center gap-3 rounded-lg border px-6 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
