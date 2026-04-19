@@ -51,8 +51,7 @@ export async function generateMetadata({
         alternates: { canonical: MARKET_URL },
         openGraph: {
             title: `오늘의 미국 주식 시장 | ${SITE_NAME}`,
-            description:
-                '11개 섹터 선도 종목의 기술적 신호를 매일 자동 스캔. 무료.',
+            description: MARKET_DESCRIPTION,
             url: MARKET_URL,
             siteName: SITE_NAME,
             locale: 'ko_KR',
