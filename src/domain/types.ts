@@ -607,7 +607,8 @@ export type ConfirmedSignalType =
     | 'cci_bullish_cross'
     | 'dmi_bullish_cross'
     | 'cmf_bullish_flip'
-    | 'mfi_oversold_bounce';
+    | 'mfi_oversold_bounce'
+    | 'keltner_upper_breakout';
 
 export type ExpectedSignalType =
     | 'rsi_bullish_divergence'

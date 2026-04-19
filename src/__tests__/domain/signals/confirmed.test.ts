@@ -14,6 +14,7 @@ import {
     detectCmfBullishFlip,
     detectMfiOversoldBounce,
     detectParabolicSarFlip,
+    detectKeltnerUpperBreakout,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
@@ -23,6 +24,7 @@ import type {
     DMIResult,
     IchimokuResult,
     IndicatorResult,
+    KeltnerChannelResult,
     MACDResult,
     ParabolicSARResult,
     SupertrendResult,
@@ -69,6 +71,10 @@ function withMfi(values: (number | null)[]): IndicatorResult {
 
 function withSar(values: ParabolicSARResult[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, parabolicSar: values };
+}
+
+function withKeltner(values: KeltnerChannelResult[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, keltnerChannel: values };
 }
 
 describe('detectRsiOversold', () => {
@@ -973,6 +979,59 @@ describe('detectParabolicSarFlip', () => {
         it('null을 반환한다', () => {
             expect(
                 detectParabolicSarFlip(buildBars(5), EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+});
+
+// ─── detectKeltnerUpperBreakout ───────────────────────────────────────────────
+
+describe('detectKeltnerUpperBreakout', () => {
+    describe('직전 close ≤ upper, 최신 close > upper일 때', () => {
+        it('Signal을 반환한다', () => {
+            const bars = buildBarsWithCloses([98, 105]);
+            const keltner: KeltnerChannelResult[] = [
+                { upper: 100, middle: 95, lower: 90 },
+                { upper: 102, middle: 97, lower: 92 },
+            ];
+            const result = detectKeltnerUpperBreakout(bars, withKeltner(keltner));
+            expect(result?.type).toBe('keltner_upper_breakout');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(1);
+        });
+    });
+
+    describe('직전 이미 upper 위였다면', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBarsWithCloses([105, 110]);
+            const keltner: KeltnerChannelResult[] = [
+                { upper: 100, middle: 95, lower: 90 },
+                { upper: 102, middle: 97, lower: 92 },
+            ];
+            expect(
+                detectKeltnerUpperBreakout(bars, withKeltner(keltner))
+            ).toBeNull();
+        });
+    });
+
+    describe('upper가 null일 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBarsWithCloses([98, 105]);
+            const keltner: KeltnerChannelResult[] = [
+                { upper: null, middle: null, lower: null },
+                { upper: null, middle: null, lower: null },
+            ];
+            expect(
+                detectKeltnerUpperBreakout(bars, withKeltner(keltner))
+            ).toBeNull();
+        });
+    });
+
+    describe('bars 길이가 2 미만일 때', () => {
+        it('null을 반환한다', () => {
+            expect(
+                detectKeltnerUpperBreakout(buildBarsWithCloses([100]), EMPTY_INDICATOR_RESULT)
             ).toBeNull();
         });
     });

@@ -396,3 +396,25 @@ export function detectParabolicSarFlip(
     }
     return null;
 }
+
+export function detectKeltnerUpperBreakout(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const keltner = indicators.keltnerChannel;
+    if (bars.length < 2 || keltner.length < 2) return null;
+    const lastIdx = bars.length - 1;
+    const prevKc = keltner[lastIdx - 1];
+    const curKc = keltner[lastIdx];
+    if (prevKc.upper === null || curKc.upper === null) return null;
+    const prevClose = bars[lastIdx - 1].close;
+    const curClose = bars[lastIdx].close;
+    if (prevClose > prevKc.upper) return null;
+    if (curClose <= curKc.upper) return null;
+    return {
+        type: 'keltner_upper_breakout',
+        direction: 'bullish',
+        phase: 'confirmed',
+        detectedAt: lastIdx,
+    };
+}
