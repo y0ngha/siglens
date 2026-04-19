@@ -64,7 +64,7 @@ export function Header() {
                         );
                     })}
                 </nav>
-                <div className="ml-auto w-full max-w-40 sm:max-w-xs">
+                <div className="ml-auto w-full max-w-40 sm:max-w-xs flex justify-end">
                     <TickerAutocomplete size="sm" />
                 </div>
             </div>
