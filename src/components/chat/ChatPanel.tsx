@@ -28,8 +28,13 @@ export function ChatPanel({
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    const { messages, loadingPhase, analysisUpdated, sendMessage, dismissAnalysisUpdated } =
-        useChat({ symbol, timeframe, analysis, isAnalysisReady });
+    const {
+        messages,
+        loadingPhase,
+        analysisUpdated,
+        sendMessage,
+        dismissAnalysisUpdated,
+    } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
 
     const isInputDisabled = loadingPhase !== null || !isAnalysisReady;
     const placeholder = !isAnalysisReady
@@ -44,7 +49,9 @@ export function ChatPanel({
         inputRef.current?.focus();
     }, [inputValue, loadingPhase, isAnalysisReady, sendMessage]);
 
-    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+    const handleKeyDown = (
+        e: React.KeyboardEvent<HTMLTextAreaElement>
+    ): void => {
         if (e.key === 'Enter' && !e.shiftKey) {
             e.preventDefault();
             void handleSubmit();
@@ -71,7 +78,8 @@ export function ChatPanel({
             {analysisUpdated && (
                 <div className="bg-primary-900/30 border-primary-700/50 flex items-center justify-between border-b px-3 py-1.5">
                     <span className="text-primary-300 text-xs">
-                        분석이 업데이트됐어요 — 최신 결과 기반으로 이어서 질문하세요
+                        분석이 업데이트됐어요 — 최신 결과 기반으로 이어서
+                        질문하세요
                     </span>
                     <button
                         type="button"
@@ -88,8 +96,8 @@ export function ChatPanel({
                 {messages.length === 0 && loadingPhase === null && (
                     <div className="bg-secondary-700/30 rounded-lg rounded-tl-sm p-3">
                         <p className="text-secondary-400 text-xs leading-relaxed">
-                            분석 결과를 바탕으로 질문해보세요. 진입 타이밍, 매도 전략,
-                            지표 해석 등을 물어보실 수 있어요.
+                            분석 결과를 바탕으로 질문해보세요. 진입 타이밍, 매도
+                            전략, 지표 해석 등을 물어보실 수 있어요.
                         </p>
                     </div>
                 )}
@@ -101,7 +109,7 @@ export function ChatPanel({
                             'max-w-[85%] rounded-lg p-2.5 text-xs leading-relaxed',
                             msg.role === 'user'
                                 ? 'bg-primary-600/80 ml-auto rounded-tr-sm text-white'
-                                : 'bg-secondary-700/50 rounded-tl-sm text-secondary-200'
+                                : 'bg-secondary-700/50 text-secondary-200 rounded-tl-sm'
                         )}
                     >
                         {msg.content}
@@ -115,9 +123,15 @@ export function ChatPanel({
                             {LOADING_MESSAGES[loadingPhase]}
                         </p>
                         <span className="text-secondary-500 mt-1 inline-flex gap-0.5 text-base leading-none">
-                            <span className="animate-bounce [animation-delay:0ms]">·</span>
-                            <span className="animate-bounce [animation-delay:150ms]">·</span>
-                            <span className="animate-bounce [animation-delay:300ms]">·</span>
+                            <span className="animate-bounce [animation-delay:0ms]">
+                                ·
+                            </span>
+                            <span className="animate-bounce [animation-delay:150ms]">
+                                ·
+                            </span>
+                            <span className="animate-bounce [animation-delay:300ms]">
+                                ·
+                            </span>
                         </span>
                     </div>
                 )}
@@ -144,7 +158,7 @@ export function ChatPanel({
                         placeholder={placeholder}
                         rows={1}
                         className={cn(
-                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[32px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-xs leading-relaxed outline-none transition-colors',
+                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[32px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-xs leading-relaxed transition-colors outline-none',
                             'focus:border-primary-500',
                             isInputDisabled && 'cursor-not-allowed opacity-50'
                         )}

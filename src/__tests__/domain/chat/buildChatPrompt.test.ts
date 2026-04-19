@@ -53,7 +53,13 @@ describe('buildChatPrompt 함수는', () => {
                     riskReward: '1:2',
                 },
             };
-            const result = buildChatPrompt('AAPL', '1Day', analysis, [], '진입 전략?');
+            const result = buildChatPrompt(
+                'AAPL',
+                '1Day',
+                analysis,
+                [],
+                '진입 전략?'
+            );
             expect(result.systemPrompt).toContain('182 이하 진입 고려');
         });
 
@@ -65,7 +71,13 @@ describe('buildChatPrompt 함수는', () => {
                     support: [{ price: 180.0, reason: 'Moving average' }],
                 },
             };
-            const result = buildChatPrompt('AAPL', '1Day', analysis, [], '질문');
+            const result = buildChatPrompt(
+                'AAPL',
+                '1Day',
+                analysis,
+                [],
+                '질문'
+            );
             expect(result.systemPrompt).toContain('195.50');
             expect(result.systemPrompt).toContain('180.00');
         });
@@ -76,11 +88,23 @@ describe('buildChatPrompt 함수는', () => {
                 indicatorResults: [
                     {
                         indicatorName: 'RSI',
-                        signals: [{ type: 'skill', trend: 'bearish', description: 'Overbought at 75' }],
+                        signals: [
+                            {
+                                type: 'skill',
+                                trend: 'bearish',
+                                description: 'Overbought at 75',
+                            },
+                        ],
                     },
                 ],
             };
-            const result = buildChatPrompt('AAPL', '1Day', analysis, [], '질문');
+            const result = buildChatPrompt(
+                'AAPL',
+                '1Day',
+                analysis,
+                [],
+                '질문'
+            );
             expect(result.systemPrompt).toContain('RSI');
             expect(result.systemPrompt).toContain('Overbought at 75');
         });
@@ -89,11 +113,20 @@ describe('buildChatPrompt 함수는', () => {
             const analysis: AnalysisResponse = {
                 ...MINIMAL_ANALYSIS,
                 priceTargets: {
-                    bullish: { targets: [{ price: 200.0, basis: 'Breakout target' }], condition: 'Above 195' },
+                    bullish: {
+                        targets: [{ price: 200.0, basis: 'Breakout target' }],
+                        condition: 'Above 195',
+                    },
                     bearish: { targets: [], condition: '' },
                 },
             };
-            const result = buildChatPrompt('AAPL', '1Day', analysis, [], '질문');
+            const result = buildChatPrompt(
+                'AAPL',
+                '1Day',
+                analysis,
+                [],
+                '질문'
+            );
             expect(result.systemPrompt).toContain('200.00');
             expect(result.systemPrompt).toContain('Breakout target');
         });
@@ -116,7 +149,10 @@ describe('buildChatPrompt 함수는', () => {
         it('히스토리가 있으면 히스토리 뒤에 새 메시지를 추가한다', () => {
             const history = [
                 { role: 'user' as const, content: '언제 팔아?' },
-                { role: 'model' as const, content: 'RSI가 70 넘으면 고려하세요.' },
+                {
+                    role: 'model' as const,
+                    content: 'RSI가 70 넘으면 고려하세요.',
+                },
             ];
             const result = buildChatPrompt(
                 'AAPL',
@@ -127,7 +163,9 @@ describe('buildChatPrompt 함수는', () => {
             );
             expect(result.messages).toHaveLength(3);
             expect(result.messages[0].parts[0].text).toBe('언제 팔아?');
-            expect(result.messages[1].parts[0].text).toBe('RSI가 70 넘으면 고려하세요.');
+            expect(result.messages[1].parts[0].text).toBe(
+                'RSI가 70 넘으면 고려하세요.'
+            );
             expect(result.messages[2].parts[0].text).toBe('더 쉽게 설명해줘');
         });
     });

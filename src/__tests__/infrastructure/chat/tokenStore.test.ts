@@ -1,4 +1,10 @@
-import { hashIp, tryConsumeToken, getRemainingTokens, CHAT_TOKEN_LIMIT, CHAT_TOKEN_TTL_SEC } from '@/infrastructure/chat/tokenStore';
+import {
+    hashIp,
+    tryConsumeToken,
+    getRemainingTokens,
+    CHAT_TOKEN_LIMIT,
+    CHAT_TOKEN_TTL_SEC,
+} from '@/infrastructure/chat/tokenStore';
 
 jest.mock('@upstash/redis');
 import { Redis } from '@upstash/redis';
@@ -30,7 +36,12 @@ describe('tryConsumeToken / getRemainingTokens 함수는', () => {
         process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
         process.env.UPSTASH_REDIS_REST_TOKEN = 'master-token';
         MockRedis.mockImplementation(
-            () => ({ incr: mockIncr, expire: mockExpire, get: mockGet }) as unknown as Redis
+            () =>
+                ({
+                    incr: mockIncr,
+                    expire: mockExpire,
+                    get: mockGet,
+                }) as unknown as Redis
         );
     });
 
@@ -46,7 +57,10 @@ describe('tryConsumeToken / getRemainingTokens 함수는', () => {
 
             const result = await tryConsumeToken('abc123');
 
-            expect(mockExpire).toHaveBeenCalledWith('chat:tokens:abc123', CHAT_TOKEN_TTL_SEC);
+            expect(mockExpire).toHaveBeenCalledWith(
+                'chat:tokens:abc123',
+                CHAT_TOKEN_TTL_SEC
+            );
             expect(result).toBe(true);
         });
 

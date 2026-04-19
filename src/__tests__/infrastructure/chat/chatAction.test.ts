@@ -25,12 +25,19 @@ jest.mock('@google/genai', () => ({
 }));
 
 import { headers } from 'next/headers';
-import { tryConsumeToken, getRemainingTokens } from '@/infrastructure/chat/tokenStore';
+import {
+    tryConsumeToken,
+    getRemainingTokens,
+} from '@/infrastructure/chat/tokenStore';
 import { GoogleGenAI } from '@google/genai';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
-const mockTryConsumeToken = tryConsumeToken as jest.MockedFunction<typeof tryConsumeToken>;
-const mockGetRemainingTokens = getRemainingTokens as jest.MockedFunction<typeof getRemainingTokens>;
+const mockTryConsumeToken = tryConsumeToken as jest.MockedFunction<
+    typeof tryConsumeToken
+>;
+const mockGetRemainingTokens = getRemainingTokens as jest.MockedFunction<
+    typeof getRemainingTokens
+>;
 const MockGoogleGenAI = GoogleGenAI as jest.MockedClass<typeof GoogleGenAI>;
 
 const MINIMAL_ANALYSIS: AnalysisResponse = {
@@ -62,9 +69,12 @@ describe('chatAction 함수는', () => {
             }),
         } as unknown as Awaited<ReturnType<typeof headers>>);
         mockGenerateContent = jest.fn();
-        MockGoogleGenAI.mockImplementation(() => ({
-            models: { generateContent: mockGenerateContent },
-        }) as unknown as InstanceType<typeof GoogleGenAI>);
+        MockGoogleGenAI.mockImplementation(
+            () =>
+                ({
+                    models: { generateContent: mockGenerateContent },
+                }) as unknown as InstanceType<typeof GoogleGenAI>
+        );
     });
 
     afterEach(() => {
@@ -76,7 +86,11 @@ describe('chatAction 함수는', () => {
         mockTryConsumeToken.mockResolvedValueOnce(false);
 
         const result = await chatAction(
-            'AAPL', '1Day', MINIMAL_ANALYSIS, [], '지금 사도 돼?'
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '지금 사도 돼?'
         );
 
         expect(result).toEqual({ ok: false, error: 'token_exhausted' });
@@ -86,10 +100,16 @@ describe('chatAction 함수는', () => {
     it('성공 시 AI 응답 메시지와 남은 토큰을 반환한다', async () => {
         mockTryConsumeToken.mockResolvedValueOnce(true);
         mockGetRemainingTokens.mockResolvedValueOnce(4);
-        mockGenerateContent.mockResolvedValueOnce({ text: 'RSI가 높아서 조금 기다리는 게 좋아요.' });
+        mockGenerateContent.mockResolvedValueOnce({
+            text: 'RSI가 높아서 조금 기다리는 게 좋아요.',
+        });
 
         const result = await chatAction(
-            'AAPL', '1Day', MINIMAL_ANALYSIS, [], '지금 사도 돼?'
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '지금 사도 돼?'
         );
 
         expect(result).toEqual({
@@ -107,7 +127,9 @@ describe('chatAction 함수는', () => {
         let capturedApiKey = '';
         MockGoogleGenAI.mockImplementation((options: { apiKey?: string }) => {
             capturedApiKey = options.apiKey ?? '';
-            return { models: { generateContent: mockGenerateContent } } as unknown as InstanceType<typeof GoogleGenAI>;
+            return {
+                models: { generateContent: mockGenerateContent },
+            } as unknown as InstanceType<typeof GoogleGenAI>;
         });
         mockGenerateContent.mockResolvedValueOnce({ text: '응답' });
 
@@ -124,17 +146,29 @@ describe('chatAction 함수는', () => {
         const usedKeys: string[] = [];
         MockGoogleGenAI.mockImplementation((options: { apiKey?: string }) => {
             usedKeys.push(options.apiKey ?? '');
-            return { models: { generateContent: mockGenerateContent } } as unknown as InstanceType<typeof GoogleGenAI>;
+            return {
+                models: { generateContent: mockGenerateContent },
+            } as unknown as InstanceType<typeof GoogleGenAI>;
         });
         // free key 실패, paid key 성공
         mockGenerateContent
             .mockRejectedValueOnce(new Error('free key quota exceeded'))
             .mockResolvedValueOnce({ text: 'paid key 응답' });
 
-        const result = await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
+        );
 
         expect(usedKeys).toEqual(['free-api-key', 'paid-api-key']);
-        expect(result).toEqual({ ok: true, message: 'paid key 응답', remainingTokens: 3 });
+        expect(result).toEqual({
+            ok: true,
+            message: 'paid key 응답',
+            remainingTokens: 3,
+        });
     });
 
     it('free key에서 429 에러 시 paid key로 fallback한다', async () => {
@@ -145,24 +179,40 @@ describe('chatAction 함수는', () => {
         const usedKeys: string[] = [];
         MockGoogleGenAI.mockImplementation((options: { apiKey?: string }) => {
             usedKeys.push(options.apiKey ?? '');
-            return { models: { generateContent: mockGenerateContent } } as unknown as InstanceType<typeof GoogleGenAI>;
+            return {
+                models: { generateContent: mockGenerateContent },
+            } as unknown as InstanceType<typeof GoogleGenAI>;
         });
         const rateLimitError = Object.assign(new Error('429'), { status: 429 });
         mockGenerateContent
             .mockRejectedValueOnce(rateLimitError)
             .mockResolvedValueOnce({ text: 'paid key fallback 응답' });
 
-        const result = await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
+        );
 
         expect(usedKeys).toEqual(['free-api-key', 'paid-api-key']);
-        expect(result).toEqual({ ok: true, message: 'paid key fallback 응답', remainingTokens: 3 });
+        expect(result).toEqual({
+            ok: true,
+            message: 'paid key fallback 응답',
+            remainingTokens: 3,
+        });
     });
 
     it('GEMINI_API_KEY 미설정 시 server_error를 반환한다', async () => {
         delete process.env.GEMINI_API_KEY;
 
         const result = await chatAction(
-            'AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문'
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
         );
 
         expect(result).toEqual({ ok: false, error: 'server_error' });
@@ -175,7 +225,11 @@ describe('chatAction 함수는', () => {
         mockGenerateContent.mockResolvedValueOnce({ text: null });
 
         const result = await chatAction(
-            'AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문'
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
         );
 
         expect(result).toEqual({ ok: true, message: '', remainingTokens: 4 });
@@ -187,7 +241,11 @@ describe('chatAction 함수는', () => {
         mockGenerateContent.mockRejectedValueOnce(error);
 
         const result = await chatAction(
-            'AAPL', '1Day', MINIMAL_ANALYSIS, [], '언제 팔아?'
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '언제 팔아?'
         );
 
         expect(result).toEqual({ ok: false, error: 'rate_limited' });
@@ -198,7 +256,11 @@ describe('chatAction 함수는', () => {
         mockGenerateContent.mockRejectedValueOnce(new Error('network error'));
 
         const result = await chatAction(
-            'AAPL', '1Day', MINIMAL_ANALYSIS, [], '설명해줘'
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '설명해줘'
         );
 
         expect(result).toEqual({ ok: false, error: 'server_error' });

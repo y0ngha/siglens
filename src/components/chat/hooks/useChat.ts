@@ -1,6 +1,14 @@
 'use client';
 
-import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, startTransition } from 'react';
+import {
+    useState,
+    useEffect,
+    useLayoutEffect,
+    useRef,
+    useCallback,
+    useMemo,
+    startTransition,
+} from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import type {
@@ -70,8 +78,13 @@ export function useChat({
 
     // 3. useMutation (chatAction wired as mutationFn per architecture rules)
     const { mutateAsync } = useMutation({
-        mutationFn: ({ currentMessages, text }: { currentMessages: ChatMessage[]; text: string }) =>
-            chatAction(symbol, timeframe, analysis, currentMessages, text),
+        mutationFn: ({
+            currentMessages,
+            text,
+        }: {
+            currentMessages: ChatMessage[];
+            text: string;
+        }) => chatAction(symbol, timeframe, analysis, currentMessages, text),
         onMutate: ({ currentMessages, text }) => {
             const userMessage: ChatMessage = { role: 'user', content: text };
             setMessages([...currentMessages, userMessage]);
@@ -91,7 +104,10 @@ export function useChat({
             const aiContent = result.ok
                 ? result.message
                 : (ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error);
-            const aiMessage: ChatMessage = { role: 'model', content: aiContent };
+            const aiMessage: ChatMessage = {
+                role: 'model',
+                content: aiContent,
+            };
             setMessages(prev => [...prev, aiMessage]);
         },
         onError: () => {
@@ -159,7 +175,12 @@ export function useChat({
     useEffect(() => {
         const prev = prevAnalysisRef.current;
         prevAnalysisRef.current = analysis;
-        if (prev !== null && prev !== analysis && messagesRef.current.length > 0 && isAnalysisReady) {
+        if (
+            prev !== null &&
+            prev !== analysis &&
+            messagesRef.current.length > 0 &&
+            isAnalysisReady
+        ) {
             startTransition(() => {
                 setAnalysisUpdated(true);
             });
@@ -180,5 +201,11 @@ export function useChat({
         };
     }, []);
 
-    return { messages, loadingPhase, analysisUpdated, sendMessage, dismissAnalysisUpdated };
+    return {
+        messages,
+        loadingPhase,
+        analysisUpdated,
+        sendMessage,
+        dismissAnalysisUpdated,
+    };
 }

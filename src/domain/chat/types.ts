@@ -10,10 +10,7 @@ export interface ChatSession {
     savedAt: number; // Unix timestamp (ms)
 }
 
-export type ChatErrorCode =
-    | 'token_exhausted'
-    | 'rate_limited'
-    | 'server_error';
+export type ChatErrorCode = 'token_exhausted' | 'rate_limited' | 'server_error';
 
 export type ChatActionResult =
     | { ok: true; message: string; remainingTokens: number }

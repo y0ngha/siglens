@@ -1,6 +1,8 @@
 import { GoogleGenAI } from '@google/genai';
 
-type GeminiContents = string | Array<{ role: string; parts: Array<{ text: string }> }>;
+type GeminiContents =
+    | string
+    | Array<{ role: string; parts: Array<{ text: string }> }>;
 
 interface GeminiCallOptions {
     apiKey: string;
@@ -19,7 +21,9 @@ async function callGemini({
     const response = await genai.models.generateContent({
         model,
         contents,
-        ...(systemInstruction !== undefined ? { config: { systemInstruction } } : {}),
+        ...(systemInstruction !== undefined
+            ? { config: { systemInstruction } }
+            : {}),
     });
     return response.text ?? '';
 }
@@ -41,10 +45,20 @@ export async function callGeminiWithKeyFallback({
 }: CallGeminiWithKeyFallbackOptions): Promise<string> {
     if (freeApiKey) {
         try {
-            return await callGemini({ apiKey: freeApiKey, model, contents, systemInstruction });
+            return await callGemini({
+                apiKey: freeApiKey,
+                model,
+                contents,
+                systemInstruction,
+            });
         } catch {
             // free key failed (quota/rate limit) — fall through to paid key
         }
     }
-    return callGemini({ apiKey: paidApiKey, model, contents, systemInstruction });
+    return callGemini({
+        apiKey: paidApiKey,
+        model,
+        contents,
+        systemInstruction,
+    });
 }

@@ -35,7 +35,10 @@ ${entryList}`;
             contents: prompt,
         });
         // JSON.parse returns `any`; type guard for Record<string, string> is not feasible
-        return JSON.parse(stripMarkdownCodeBlock(text)) as Record<string, string>;
+        return JSON.parse(stripMarkdownCodeBlock(text)) as Record<
+            string,
+            string
+        >;
     } catch (error) {
         console.error('Korean name translation failed:', error);
         return {};

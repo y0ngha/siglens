@@ -1,17 +1,23 @@
 // IMPORTANT: System prompt strings must be written in English.
 // Korean reduces LLM instruction-following consistency.
 
-import type { AnalysisResponse, ChatPromptPayload, KeyLevel, PriceScenario, Timeframe } from '@/domain/types';
+import type {
+    AnalysisResponse,
+    ChatPromptPayload,
+    KeyLevel,
+    PriceScenario,
+    Timeframe,
+} from '@/domain/types';
 import type { ChatMessage } from '@/domain/chat/types';
 
 function formatKeyLevels(levels: KeyLevel[]): string {
     if (levels.length === 0) return 'None detected';
-    return levels
-        .map(l => `${l.price.toFixed(2)} (${l.reason})`)
-        .join(', ');
+    return levels.map(l => `${l.price.toFixed(2)} (${l.reason})`).join(', ');
 }
 
-function formatPriceTargets(scenario: PriceScenario | null | undefined): string {
+function formatPriceTargets(
+    scenario: PriceScenario | null | undefined
+): string {
     if (!scenario || scenario.targets.length === 0) return 'None';
     return scenario.targets
         .map(t => `${t.price.toFixed(2)} — ${t.basis}`)
