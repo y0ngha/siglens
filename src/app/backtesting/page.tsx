@@ -18,13 +18,15 @@ const data = validateBacktestData(backtestData as unknown);
 // Derived once at module load — intentionally static, data.json is replaced by the script
 const TICKERS = [...new Set(data.cases.map(c => c.ticker))];
 
+const BACKTESTING_FULL_TITLE = `${BACKTESTING_TITLE} | ${SITE_NAME}`;
+
 export const metadata: Metadata = {
-    title: { absolute: `${BACKTESTING_TITLE} | ${SITE_NAME}` },
+    title: { absolute: BACKTESTING_FULL_TITLE },
     description: BACKTESTING_DESCRIPTION,
     keywords: BACKTESTING_KEYWORDS,
     alternates: { canonical: BACKTESTING_URL },
     openGraph: {
-        title: `${BACKTESTING_TITLE} | ${SITE_NAME}`,
+        title: BACKTESTING_FULL_TITLE,
         description: BACKTESTING_DESCRIPTION,
         url: BACKTESTING_URL,
         siteName: SITE_NAME,
@@ -41,7 +43,7 @@ export const metadata: Metadata = {
     },
     twitter: {
         card: 'summary_large_image',
-        title: `${BACKTESTING_TITLE} | ${SITE_NAME}`,
+        title: BACKTESTING_FULL_TITLE,
         description: BACKTESTING_DESCRIPTION,
         images: ['/og-image.png'],
     },
@@ -50,7 +52,7 @@ export const metadata: Metadata = {
 const webPageJsonLd = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
-    name: `${BACKTESTING_TITLE} | ${SITE_NAME}`,
+    name: BACKTESTING_FULL_TITLE,
     description: BACKTESTING_DESCRIPTION,
     url: BACKTESTING_URL,
     isPartOf: { '@type': 'WebSite', name: SITE_NAME, url: SITE_URL },

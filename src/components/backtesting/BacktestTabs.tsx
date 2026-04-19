@@ -18,16 +18,14 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
     const searchParams = useSearchParams();
     const tabs = useMemo(() => [ALL_TAB, ...tickers], [tickers]);
 
-    const active = searchParams.get('ticker') ?? ALL_TAB;
-    const safeActive = tabs.includes(active) ? active : ALL_TAB;
-
-    const filtered = useMemo(
-        () =>
-            safeActive === ALL_TAB
-                ? cases
-                : cases.filter(c => c.ticker === safeActive),
-        [cases, safeActive]
-    );
+    const { safeActive, filtered } = useMemo(() => {
+        const active = searchParams.get('ticker') ?? ALL_TAB;
+        const safe = tabs.includes(active) ? active : ALL_TAB;
+        return {
+            safeActive: safe,
+            filtered: safe === ALL_TAB ? cases : cases.filter(c => c.ticker === safe),
+        };
+    }, [cases, tabs, searchParams]);
 
     const setActive = useCallback(
         (tab: string) => {

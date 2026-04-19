@@ -52,6 +52,12 @@ describe('validateBacktestData', () => {
             );
         });
 
+        it('throws when meta is null', () => {
+            expect(() =>
+                validateBacktestData({ meta: null, cases: [] })
+            ).toThrow('meta must be an object');
+        });
+
         it('throws when cases is not an array', () => {
             expect(() =>
                 validateBacktestData({ ...validData, cases: null })
@@ -84,6 +90,26 @@ describe('validateBacktestData', () => {
                 cases: [
                     { ...validCase, aiAnalysis: { summary: 'x', tags: 'x' } },
                 ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.tags must be an array'
+            );
+        });
+
+        it('throws when aiAnalysis is null', () => {
+            const bad = {
+                ...validData,
+                cases: [{ ...validCase, aiAnalysis: null }],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.tags must be an array'
+            );
+        });
+
+        it('throws when aiAnalysis is not an object', () => {
+            const bad = {
+                ...validData,
+                cases: [{ ...validCase, aiAnalysis: 42 }],
             };
             expect(() => validateBacktestData(bad)).toThrow(
                 'cases[0].aiAnalysis.tags must be an array'
