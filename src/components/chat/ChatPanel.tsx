@@ -34,6 +34,7 @@ export function ChatPanel({
         messages,
         loadingPhase,
         analysisUpdated,
+        remainingTokens,
         sendMessage,
         dismissAnalysisUpdated,
     } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
@@ -80,8 +81,7 @@ export function ChatPanel({
             {analysisUpdated && (
                 <div className="bg-primary-900/30 border-primary-700/50 flex items-center justify-between border-b px-3 py-1.5">
                     <span className="text-primary-300 text-xs">
-                        분석이 업데이트됐어요 — 최신 결과 기반으로 이어서
-                        질문하세요
+                        분석이 업데이트됐어요 — 최신 결과 기반으로 이어서 질문하세요
                     </span>
                     <button
                         type="button"
@@ -149,6 +149,12 @@ export function ChatPanel({
                     </span>
                     <span>·</span>
                     <span>분석 범위 내 질문만 가능</span>
+                    {remainingTokens !== null && (
+                        <>
+                            <span>·</span>
+                            <span>오늘 {remainingTokens}회 남음</span>
+                        </>
+                    )}
                 </div>
                 <div className="flex items-end gap-2">
                     <textarea

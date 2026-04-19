@@ -46,6 +46,7 @@ export interface UseChatReturn {
     messages: ChatMessage[];
     loadingPhase: ChatLoadingPhase | null;
     analysisUpdated: boolean;
+    remainingTokens: number | null;
     sendMessage: (text: string) => Promise<void>;
     dismissAnalysisUpdated: () => void;
 }
@@ -61,6 +62,7 @@ export function useChat({
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
+    const [remainingTokens, setRemainingTokens] = useState<number | null>(null);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -76,6 +78,10 @@ export function useChat({
     const initialStorageKeyRef = useRef(buildStorageKey(symbol, timeframe));
     // storageKey just changed but messages haven't updated yet — skip that save cycle
     const isKeyChangePendingRef = useRef(false);
+    // true if localStorage had messages on mount — triggers banner when analysis first becomes ready
+    const hasRestoredHistoryRef = useRef(false);
+    // true until isAnalysisReady first becomes true — distinguishes page-refresh from re-analysis
+    const isFirstAnalysisReadyRef = useRef(true);
 
     const { mutateAsync } = useMutation({
         mutationFn: ({
@@ -109,6 +115,9 @@ export function useChat({
                 content: aiContent,
             };
             setMessages(prev => [...prev, aiMessage]);
+            if (result.ok) {
+                setRemainingTokens(result.remainingTokens);
+            }
         },
         onError: () => {
             setMessages(prev => [
@@ -147,8 +156,10 @@ export function useChat({
 
     // 하이드레이션 후 localStorage 로드 (SSR/client mismatch 방지 — 마운트 1회만 실행)
     useEffect(() => {
+        const loaded = loadSession(initialStorageKeyRef.current);
+        if (loaded.length > 0) hasRestoredHistoryRef.current = true;
         startTransition(() => {
-            setMessages(loadSession(initialStorageKeyRef.current));
+            setMessages(loaded);
         });
     }, []);
 
@@ -168,19 +179,25 @@ export function useChat({
         });
     }, [storageKey]);
 
-    // 재분석으로 analysis 객체가 교체됐고 기존 대화가 있으면 배너 표시
+    // 컨텍스트 변경 배너 표시:
+    // 1) 새로고침 후 첫 분석 완료 + 복원된 대화가 있는 경우
+    // 2) 페이지 열린 상태에서 재분석으로 analysis 교체된 경우
     useEffect(() => {
         const prev = prevAnalysisRef.current;
         prevAnalysisRef.current = analysis;
-        if (
-            prev !== null &&
-            prev !== analysis &&
-            messagesRef.current.length > 0 &&
-            isAnalysisReady
-        ) {
-            startTransition(() => {
-                setAnalysisUpdated(true);
-            });
+
+        if (!isAnalysisReady) return;
+
+        if (isFirstAnalysisReadyRef.current) {
+            isFirstAnalysisReadyRef.current = false;
+            if (hasRestoredHistoryRef.current) {
+                startTransition(() => setAnalysisUpdated(true));
+            }
+            return;
+        }
+
+        if (prev !== null && prev !== analysis && messagesRef.current.length > 0) {
+            startTransition(() => setAnalysisUpdated(true));
         }
     }, [analysis, isAnalysisReady]);
 
@@ -210,6 +227,7 @@ export function useChat({
         messages,
         loadingPhase,
         analysisUpdated,
+        remainingTokens,
         sendMessage,
         dismissAnalysisUpdated,
     };
