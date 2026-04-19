@@ -1,4 +1,4 @@
-import { callGemini, MAX_TOKENS_CODE } from '../worker/src/gemini.js';
+import { callGemini, MAX_TOKENS_CODE } from '../../worker/src/gemini.js';
 
 // Fixed fallback steps after the initial budget. Values must be strictly decreasing.
 const BUDGET_FALLBACK_STEPS = [8192, 4096, 2048, 0] as const;
