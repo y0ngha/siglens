@@ -1,15 +1,21 @@
-import { useState, useEffect, useRef, useCallback, startTransition } from 'react';
+'use client';
+
+import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, startTransition } from 'react';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import type {
     ChatMessage,
     ChatErrorCode,
     ChatLoadingPhase,
-    ChatSession,
 } from '@/domain/chat/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
+import {
+    buildStorageKey,
+    loadSession,
+    saveSession,
+} from '@/components/chat/utils/chatStorage';
 
-const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7일
-const LOADING_PHASE_DELAY_MS = 1500;
+// 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
+const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
 
 const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     token_exhausted:
@@ -18,44 +24,14 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
 };
 
-function buildStorageKey(symbol: string, timeframe: Timeframe): string {
-    return `siglens_chat_${symbol.toUpperCase()}_${timeframe}`;
-}
-
-function loadSession(key: string): ChatMessage[] {
-    if (typeof window === 'undefined') return [];
-    try {
-        const raw = localStorage.getItem(key);
-        if (!raw) return [];
-        const session: ChatSession = JSON.parse(raw);
-        if (Date.now() - session.savedAt > CHAT_HISTORY_TTL_MS) {
-            localStorage.removeItem(key);
-            return [];
-        }
-        return session.messages;
-    } catch {
-        return [];
-    }
-}
-
-function saveSession(key: string, messages: ChatMessage[]): void {
-    if (typeof window === 'undefined') return;
-    try {
-        const session: ChatSession = { messages, savedAt: Date.now() };
-        localStorage.setItem(key, JSON.stringify(session));
-    } catch {
-        // 스토리지 용량 초과 등 무시
-    }
-}
-
-interface UseChatOptions {
+export interface UseChatOptions {
     symbol: string;
     timeframe: Timeframe;
     analysis: AnalysisResponse;
     isAnalysisReady: boolean;
 }
 
-interface UseChatReturn {
+export interface UseChatReturn {
     messages: ChatMessage[];
     loadingPhase: ChatLoadingPhase | null;
     analysisUpdated: boolean;
@@ -69,9 +45,8 @@ export function useChat({
     analysis,
     isAnalysisReady,
 }: UseChatOptions): UseChatReturn {
-    const storageKey = buildStorageKey(symbol, timeframe);
     const [messages, setMessages] = useState<ChatMessage[]>(() =>
-        loadSession(storageKey)
+        loadSession(buildStorageKey(symbol, timeframe))
     );
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
@@ -79,58 +54,49 @@ export function useChat({
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const prevAnalysisRef = useRef(analysis);
-    const prevKeyRef = useRef(storageKey);
+    // null on first render — treated as "not yet compared" to prevent false banner on mount
+    const prevAnalysisRef = useRef<AnalysisResponse | null>(null);
+    // null on mount — used to skip the initial effect run in the key-change effect
+    const prevKeyRef = useRef<string | null>(null);
+    // latest-value refs: let sendMessage read current values without being in its dep array
+    const messagesRef = useRef(messages);
+    const loadingPhaseRef = useRef(loadingPhase);
+    // mount guard: prevents redundant localStorage write on initial render
+    const didSaveMountRef = useRef(false);
 
-    // 심볼·타임프레임 변경 시 히스토리 교체
-    useEffect(() => {
-        if (prevKeyRef.current === storageKey) return;
-        prevKeyRef.current = storageKey;
-        const loaded = loadSession(storageKey);
-        startTransition(() => {
-            setMessages(loaded);
-            setAnalysisUpdated(false);
-        });
-    }, [storageKey]);
+    // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
+    // inline render assignments can be stale under interrupted/discarded renders)
+    useLayoutEffect(() => {
+        messagesRef.current = messages;
+        loadingPhaseRef.current = loadingPhase;
+    });
 
-    // 재분석으로 analysis 객체가 교체됐고 기존 대화가 있으면 배너 표시
-    useEffect(() => {
-        if (
-            prevAnalysisRef.current !== analysis &&
-            messages.length > 0 &&
-            isAnalysisReady
-        ) {
-            startTransition(() => {
-                setAnalysisUpdated(true);
-            });
-        }
-        prevAnalysisRef.current = analysis;
-    }, [analysis, messages.length, isAnalysisReady]);
-
-    // messages 변경 시 localStorage 동기화
-    useEffect(() => {
-        saveSession(storageKey, messages);
-    }, [messages, storageKey]);
+    const storageKey = useMemo(
+        () => buildStorageKey(symbol, timeframe),
+        [symbol, timeframe]
+    );
 
     const sendMessage = useCallback(
         async (text: string): Promise<void> => {
-            if (loadingPhase !== null || !isAnalysisReady) return;
+            // Guard checked at call time only; the async body runs to completion even if
+            // loadingPhase or analysis change mid-flight (stale closure is intentional —
+            // in-flight requests use the snapshot captured when the user submitted)
+            if (loadingPhaseRef.current !== null || !isAnalysisReady) return;
 
+            const currentMessages = messagesRef.current;
             const userMessage: ChatMessage = { role: 'user', content: text };
-            const updatedMessages = [...messages, userMessage];
-            setMessages(updatedMessages);
+            setMessages([...currentMessages, userMessage]);
 
-            // 로딩 단계 시작
             setLoadingPhase('analyzing');
             phaseTimerRef.current = setTimeout(() => {
                 setLoadingPhase('generating');
-            }, LOADING_PHASE_DELAY_MS);
+            }, ANALYZING_PHASE_MIN_DURATION_MS);
 
             const result = await chatAction(
                 symbol,
                 timeframe,
                 analysis,
-                messages, // 신규 userMessage 제외한 히스토리
+                currentMessages, // 신규 userMessage 제외한 히스토리
                 text
             );
 
@@ -142,17 +108,52 @@ export function useChat({
 
             const aiContent: string = result.ok
                 ? result.message
-                : ERROR_MESSAGES[result.error];
+                : (ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error);
 
             const aiMessage: ChatMessage = { role: 'model', content: aiContent };
             setMessages(prev => [...prev, aiMessage]);
         },
-        [messages, loadingPhase, isAnalysisReady, symbol, timeframe, analysis]
+        [isAnalysisReady, symbol, timeframe, analysis]
     );
 
     const dismissAnalysisUpdated = useCallback(() => {
         setAnalysisUpdated(false);
     }, []);
+
+    // 심볼·타임프레임 변경 시 히스토리 교체 (null 체크로 마운트 첫 실행 스킵)
+    useEffect(() => {
+        if (prevKeyRef.current === null) {
+            prevKeyRef.current = storageKey;
+            return;
+        }
+        if (prevKeyRef.current === storageKey) return;
+        prevKeyRef.current = storageKey;
+        const loaded = loadSession(storageKey);
+        startTransition(() => {
+            setMessages(loaded);
+            setAnalysisUpdated(false);
+        });
+    }, [storageKey]);
+
+    // 재분석으로 analysis 객체가 교체됐고 기존 대화가 있으면 배너 표시
+    useEffect(() => {
+        const prev = prevAnalysisRef.current;
+        prevAnalysisRef.current = analysis;
+        if (prev !== null && prev !== analysis && messagesRef.current.length > 0 && isAnalysisReady) {
+            startTransition(() => {
+                setAnalysisUpdated(true);
+            });
+        }
+    }, [analysis, isAnalysisReady]);
+
+    // messages 변경 시 localStorage 동기화 (마운트 첫 실행 스킵 — 초기 로드 데이터 불필요한 재기록 방지)
+    useEffect(() => {
+        if (!didSaveMountRef.current) {
+            didSaveMountRef.current = true;
+            return;
+        }
+        saveSession(storageKey, messages);
+    }, [messages, storageKey]);
 
     useEffect(() => {
         return () => {
