@@ -65,8 +65,12 @@ describe('callGeminiWithKeyFallback 함수는', () => {
         });
 
         expect(MockGoogleGenAI).toHaveBeenCalledTimes(2);
-        expect(MockGoogleGenAI).toHaveBeenNthCalledWith(1, { apiKey: 'free-key' });
-        expect(MockGoogleGenAI).toHaveBeenNthCalledWith(2, { apiKey: 'paid-key' });
+        expect(MockGoogleGenAI).toHaveBeenNthCalledWith(1, {
+            apiKey: 'free-key',
+        });
+        expect(MockGoogleGenAI).toHaveBeenNthCalledWith(2, {
+            apiKey: 'paid-key',
+        });
         expect(result).toBe('paid response');
     });
 

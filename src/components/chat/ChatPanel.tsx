@@ -10,56 +10,50 @@ import { useChat } from '@/components/chat/hooks/useChat';
 const CHAT_MODEL_DISPLAY_NAME = 'Gemini 2.5 Flash';
 
 // 모듈 레벨 상수로 선언하여 렌더마다 객체가 재생성되지 않도록 한다
-const MARKDOWN_COMPONENTS: Components =
-    {
-        p: ({ children }) => (
-            <p className="mb-1.5 last:mb-0">{children}</p>
-        ),
-        strong: ({ children }) => (
-            <strong className="text-secondary-100 font-semibold">
-                {children}
-            </strong>
-        ),
-        em: ({ children }) => (
-            <em className="text-secondary-300 italic">{children}</em>
-        ),
-        ul: ({ children }) => (
-            <ul className="mb-1.5 ml-3 list-disc last:mb-0">{children}</ul>
-        ),
-        ol: ({ children }) => (
-            <ol className="mb-1.5 ml-3 list-decimal last:mb-0">{children}</ol>
-        ),
-        li: ({ children }) => (
-            <li className="mb-0.5">{children}</li>
-        ),
-        h1: ({ children }) => (
-            <p className="mb-1.5 font-semibold text-secondary-100 last:mb-0">
-                {children}
-            </p>
-        ),
-        h2: ({ children }) => (
-            <p className="mb-1.5 font-semibold text-secondary-100 last:mb-0">
-                {children}
-            </p>
-        ),
-        h3: ({ children }) => (
-            <p className="mb-1 font-medium text-secondary-200 last:mb-0">
-                {children}
-            </p>
-        ),
-        code: ({ children }) => (
-            <code className="bg-secondary-800 rounded px-1 py-0.5 font-mono text-[10px] text-secondary-300">
-                {children}
-            </code>
-        ),
-        pre: ({ children }) => (
-            <pre className="bg-secondary-800 mb-1.5 overflow-x-auto rounded p-2 font-mono text-[10px] text-secondary-300 last:mb-0">
-                {children}
-            </pre>
-        ),
-    };
+const MARKDOWN_COMPONENTS: Components = {
+    p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
+    strong: ({ children }) => (
+        <strong className="text-secondary-100 font-semibold">{children}</strong>
+    ),
+    em: ({ children }) => (
+        <em className="text-secondary-300 italic">{children}</em>
+    ),
+    ul: ({ children }) => (
+        <ul className="mb-1.5 ml-3 list-disc last:mb-0">{children}</ul>
+    ),
+    ol: ({ children }) => (
+        <ol className="mb-1.5 ml-3 list-decimal last:mb-0">{children}</ol>
+    ),
+    li: ({ children }) => <li className="mb-0.5">{children}</li>,
+    h1: ({ children }) => (
+        <p className="text-secondary-100 mb-1.5 font-semibold last:mb-0">
+            {children}
+        </p>
+    ),
+    h2: ({ children }) => (
+        <p className="text-secondary-100 mb-1.5 font-semibold last:mb-0">
+            {children}
+        </p>
+    ),
+    h3: ({ children }) => (
+        <p className="text-secondary-200 mb-1 font-medium last:mb-0">
+            {children}
+        </p>
+    ),
+    code: ({ children }) => (
+        <code className="bg-secondary-800 text-secondary-300 rounded px-1 py-0.5 font-mono text-[10px]">
+            {children}
+        </code>
+    ),
+    pre: ({ children }) => (
+        <pre className="bg-secondary-800 text-secondary-300 mb-1.5 overflow-x-auto rounded p-2 font-mono text-[10px] last:mb-0">
+            {children}
+        </pre>
+    ),
+};
 
-const LOADING_MESSAGES = {    analyzing: '요청을 분석하고 있어요...',
+const LOADING_MESSAGES = {
+    analyzing: '요청을 분석하고 있어요...',
     generating: '응답을 생성하고 있어요...',
 } as const;
 
