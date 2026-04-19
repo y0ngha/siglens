@@ -7,7 +7,7 @@ import { cn } from '@/lib/cn';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { SITE_NAME } from '@/lib/seo';
 
-const NAV_ITEMS = [{ href: '/market', label: '시장 개요' }] as const;
+const NAV_ITEMS = [{ href: '/market', label: '시장 분석' }] as const;
 
 export function Header() {
     const pathname = usePathname();
