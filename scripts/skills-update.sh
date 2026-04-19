@@ -9,4 +9,8 @@ npx skills add https://github.com/coreyhaines31/marketingskills --skill seo-audi
 
 npx skills add https://github.com/sickn33/antigravity-awesome-skills --skill typescript-expert
 
+npx skills add https://github.com/obra/superpowers --skill brainstorming
+
 npx skills add https://github.com/obra/superpowers --skill writing-plans
+
+npx skills add https://github.com/obra/superpowers --skill subagent-driven-development
