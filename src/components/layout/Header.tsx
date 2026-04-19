@@ -37,7 +37,10 @@ export function Header() {
                         {SITE_NAME}
                     </span>
                 </Link>
-                <nav aria-label="주요 네비게이션" className="flex gap-1 sm:gap-4">
+                <nav
+                    aria-label="주요 네비게이션"
+                    className="flex gap-1 sm:gap-4"
+                >
                     {NAV_ITEMS.map(item => {
                         const isActive =
                             pathname === item.href ||
@@ -51,7 +54,7 @@ export function Header() {
                                     'focus-visible:ring-primary-500 -mb-px flex min-h-11 touch-manipulation items-center border-b-2 px-2 text-xs font-semibold tracking-[0.12em] uppercase transition-colors focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none',
                                     isActive
                                         ? 'text-secondary-100 border-primary-500'
-                                        : 'text-secondary-400 border-transparent hover:text-secondary-100'
+                                        : 'text-secondary-400 hover:text-secondary-100 border-transparent'
                                 )}
                             >
                                 {item.label}
