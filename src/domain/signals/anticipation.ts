@@ -20,36 +20,29 @@ import {
 } from '@/domain/signals/constants';
 import { calculateMA } from '@/domain/indicators/ma';
 
+function findPivots(
+    values: number[],
+    window: number,
+    compare: (cur: number, neighbor: number) => boolean
+): number[] {
+    const neighborOffsets = Array.from({ length: window }, (_, k) => k + 1);
+    return values
+        .slice(window, values.length - window)
+        .flatMap((cur, localIdx) => {
+            const i = localIdx + window;
+            const isPivot = neighborOffsets.every(
+                k => compare(cur, values[i - k]) && compare(cur, values[i + k])
+            );
+            return isPivot ? [i] : [];
+        });
+}
+
 export function findPivotLows(lows: number[], window: number): number[] {
-    const pivots: number[] = [];
-    for (let i = window; i < lows.length - window; i++) {
-        const cur = lows[i];
-        let isPivot = true;
-        for (let k = 1; k <= window; k++) {
-            if (!(cur < lows[i - k]) || !(cur < lows[i + k])) {
-                isPivot = false;
-                break;
-            }
-        }
-        if (isPivot) pivots.push(i);
-    }
-    return pivots;
+    return findPivots(lows, window, (cur, n) => cur < n);
 }
 
 export function findPivotHighs(highs: number[], window: number): number[] {
-    const pivots: number[] = [];
-    for (let i = window; i < highs.length - window; i++) {
-        const cur = highs[i];
-        let isPivot = true;
-        for (let k = 1; k <= window; k++) {
-            if (!(cur > highs[i - k]) || !(cur > highs[i + k])) {
-                isPivot = false;
-                break;
-            }
-        }
-        if (isPivot) pivots.push(i);
-    }
-    return pivots;
+    return findPivots(highs, window, (cur, n) => cur > n);
 }
 
 export function computeBbWidth(bb: BollingerResult): number | null {
@@ -239,14 +232,14 @@ function computeSqueezeState(
     const widthLast = computeBbWidth(lastBB);
     if (widthLast === null) return null;
 
-    // Exclude lastIdx from loop — widthLast already computed above
-    const widths: number[] = [];
-    for (let i = lastIdx - SQUEEZE_LOOKBACK_BARS + 1; i < lastIdx; i++) {
-        const w = computeBbWidth(bb[i]);
-        if (w === null) continue;
-        widths.push(w);
-    }
-    widths.push(widthLast);
+    // Exclude lastIdx from slice — widthLast already computed above and appended at end
+    const widths = [
+        ...bb
+            .slice(lastIdx - SQUEEZE_LOOKBACK_BARS + 1, lastIdx)
+            .map(computeBbWidth)
+            .filter((w): w is number => w !== null),
+        widthLast,
+    ];
     const rank = percentileRank(widthLast, widths);
     if (rank === null || rank > SQUEEZE_PERCENTILE) return null;
 

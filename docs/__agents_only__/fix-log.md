@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #331 Round 8 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `findPivotLows` / `findPivotHighs` 의 `pivots.push(i)` 누산
+- Rule: MISTAKES.md #5 — 도메인 레이어 immutable 필수 (O(N²) 예외 해당 없음)
+- Context: 두 함수의 push 패턴을 공통 헬퍼 `findPivots(values, window, compare)` 로 추출하고 `slice + flatMap` 함수형 리팩토링
+
+- Violation: `computeSqueezeState` 의 widths 수집에서 `for` 루프 + `push`
+- Rule: MISTAKES.md #5 — O(N) 대안 존재 (slice + map + filter)
+- Context: `bb.slice(start, lastIdx).map(computeBbWidth).filter((w): w is number => w !== null)` + spread 로 widthLast 결합
+
 ## [PR #331 Round 7 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: `DashboardTimeframe` 타입이 `constants/dashboard-tickers.ts` 에 정의되고 `domain/types.ts` 에서 re-export
 - Rule: MISTAKES.md Architecture #1 — 모든 도메인 타입은 `domain/types.ts` 에 직접 정의 (re-export 우회 금지, 순환 의존 유발)
