@@ -29,10 +29,12 @@ import {
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
 
+// Matches CHAT_TOKEN_LIMIT in infrastructure/chat/tokenStore.ts
+// Hook files may not import from infrastructure — duplicate value with link
+const DAILY_CHAT_LIMIT = 5;
+
 const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
-    // '5' matches CHAT_TOKEN_LIMIT in infrastructure/chat/tokenStore.ts
-    token_exhausted:
-        '오늘 무료 질문 5회를 모두 사용했어요. 내일 다시 이용하거나 유료 플랜을 이용해보세요.',
+    token_exhausted: `오늘 무료 질문 ${DAILY_CHAT_LIMIT}회를 모두 사용했어요. 내일 다시 이용해주세요.`,
     rate_limited: 'AI 서버가 잠시 바빠요. 잠시 후 다시 시도해주세요.',
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
 };
