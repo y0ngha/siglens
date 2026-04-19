@@ -1,0 +1,164 @@
+'use client';
+
+import { useRef, useEffect, useState, useCallback } from 'react';
+import type { AnalysisResponse, Timeframe } from '@/domain/types';
+import { cn } from '@/lib/cn';
+import { useChat } from '@/components/chat/hooks/useChat';
+
+const LOADING_MESSAGES = {
+    analyzing: '요청을 분석하고 있어요...',
+    generating: '응답을 생성하고 있어요...',
+} as const;
+
+interface ChatPanelProps {
+    symbol: string;
+    timeframe: Timeframe;
+    analysis: AnalysisResponse;
+    isAnalysisReady: boolean;
+}
+
+export function ChatPanel({
+    symbol,
+    timeframe,
+    analysis,
+    isAnalysisReady,
+}: ChatPanelProps) {
+    const { messages, loadingPhase, analysisUpdated, sendMessage, dismissAnalysisUpdated } =
+        useChat({ symbol, timeframe, analysis, isAnalysisReady });
+
+    const [inputValue, setInputValue] = useState('');
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+    const inputRef = useRef<HTMLTextAreaElement>(null);
+
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, loadingPhase]);
+
+    const handleSubmit = useCallback(async (): Promise<void> => {
+        const text = inputValue.trim();
+        if (!text || loadingPhase !== null || !isAnalysisReady) return;
+        setInputValue('');
+        await sendMessage(text);
+    }, [inputValue, loadingPhase, isAnalysisReady, sendMessage]);
+
+    const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            void handleSubmit();
+        }
+    };
+
+    const isInputDisabled = loadingPhase !== null || !isAnalysisReady;
+    const placeholder = !isAnalysisReady
+        ? '분석이 완료된 후 질문할 수 있어요'
+        : '질문을 입력하세요… (Enter로 전송)';
+
+    return (
+        <div className="border-secondary-700 flex flex-col border-t">
+            {/* 헤더 */}
+            <div className="border-secondary-700 flex items-center justify-between border-b px-3 py-2">
+                <span className="text-secondary-300 text-xs font-semibold">
+                    💬 AI에게 물어보기
+                </span>
+                <span className="bg-secondary-700 text-secondary-400 rounded px-1.5 py-0.5 text-[10px]">
+                    Gemini 2.5 Flash
+                </span>
+            </div>
+
+            {/* 재분석 업데이트 배너 */}
+            {analysisUpdated && (
+                <div className="bg-primary-900/30 border-primary-700/50 flex items-center justify-between border-b px-3 py-1.5">
+                    <span className="text-primary-300 text-xs">
+                        분석이 업데이트됐어요 — 최신 결과 기반으로 이어서 질문하세요
+                    </span>
+                    <button
+                        type="button"
+                        onClick={dismissAnalysisUpdated}
+                        className="text-primary-400 hover:text-primary-200 ml-2 text-xs"
+                    >
+                        ✕
+                    </button>
+                </div>
+            )}
+
+            {/* 메시지 영역 — 고정 높이, 내부 스크롤 */}
+            <div className="flex h-[320px] flex-col gap-2 overflow-y-auto px-3 py-2">
+                {messages.length === 0 && loadingPhase === null && (
+                    <div className="bg-secondary-700/30 rounded-lg rounded-tl-sm p-3">
+                        <p className="text-secondary-400 text-xs leading-relaxed">
+                            분석 결과를 바탕으로 질문해보세요. 진입 타이밍, 매도 전략,
+                            지표 해석 등을 물어보실 수 있어요.
+                        </p>
+                    </div>
+                )}
+
+                {messages.map((msg, i) => (
+                    <div
+                        key={i}
+                        className={cn(
+                            'max-w-[85%] rounded-lg p-2.5 text-xs leading-relaxed',
+                            msg.role === 'user'
+                                ? 'bg-primary-600/80 ml-auto rounded-tr-sm text-white'
+                                : 'bg-secondary-700/50 rounded-tl-sm text-secondary-200'
+                        )}
+                    >
+                        {msg.content}
+                    </div>
+                ))}
+
+                {/* 로딩 말풍선 */}
+                {loadingPhase !== null && (
+                    <div className="bg-secondary-700/50 max-w-[85%] rounded-lg rounded-tl-sm p-2.5">
+                        <p className="text-secondary-400 text-xs">
+                            {LOADING_MESSAGES[loadingPhase]}
+                        </p>
+                        <span className="text-secondary-500 mt-1 inline-flex gap-0.5 text-base leading-none">
+                            <span className="animate-bounce" style={{ animationDelay: '0ms' }}>·</span>
+                            <span className="animate-bounce" style={{ animationDelay: '150ms' }}>·</span>
+                            <span className="animate-bounce" style={{ animationDelay: '300ms' }}>·</span>
+                        </span>
+                    </div>
+                )}
+
+                <div ref={messagesEndRef} />
+            </div>
+
+            {/* 입력 영역 */}
+            <div className="border-secondary-700 border-t px-3 py-2">
+                <div className="text-secondary-600 mb-1.5 flex items-center gap-1.5 text-[10px]">
+                    <span className="bg-secondary-700 rounded px-1 py-0.5">
+                        Gemini 2.5 Flash
+                    </span>
+                    <span>·</span>
+                    <span>분석 범위 내 질문만 가능</span>
+                </div>
+                <div className="flex items-end gap-2">
+                    <textarea
+                        ref={inputRef}
+                        value={inputValue}
+                        onChange={e => setInputValue(e.target.value)}
+                        onKeyDown={handleKeyDown}
+                        disabled={isInputDisabled}
+                        placeholder={placeholder}
+                        rows={1}
+                        className={cn(
+                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[32px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-xs leading-relaxed outline-none transition-colors',
+                            'focus:border-primary-500',
+                            isInputDisabled &&
+                                'cursor-not-allowed opacity-50'
+                        )}
+                    />
+                    <button
+                        type="button"
+                        onClick={() => void handleSubmit()}
+                        disabled={isInputDisabled || inputValue.trim() === ''}
+                        className="bg-primary-600 hover:bg-primary-500 disabled:bg-secondary-700 disabled:text-secondary-500 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white transition-colors disabled:cursor-not-allowed"
+                        aria-label="전송"
+                    >
+                        ↑
+                    </button>
+                </div>
+            </div>
+        </div>
+    );
+}
