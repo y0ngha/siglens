@@ -1,4 +1,4 @@
-import type { SignalType } from '@/domain/signals/types';
+import type { SignalType } from '@/domain/types';
 
 const SIGNAL_BADGE_LABELS: Record<SignalType, string> = {
     rsi_oversold: 'RSI 과매도',

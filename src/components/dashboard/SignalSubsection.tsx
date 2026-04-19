@@ -1,4 +1,4 @@
-import type { StockSignalResult } from '@/domain/signals/types';
+import type { StockSignalResult } from '@/domain/types';
 import { SignalStockCard } from './SignalStockCard';
 
 interface SignalSubsectionProps {

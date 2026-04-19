@@ -1,8 +1,9 @@
-import type { Bar, Timeframe } from '@/domain/types';
 import type {
+    Bar,
     SectorSignalsResult,
     StockSignalResult,
-} from '@/domain/signals/types';
+    Timeframe,
+} from '@/domain/types';
 import { SECTOR_STOCKS } from '@/domain/constants/dashboard-tickers';
 import type { DashboardTimeframe } from '@/domain/constants/dashboard-tickers';
 import { calculateIndicators } from '@/domain/indicators';
@@ -101,8 +102,8 @@ export async function getSectorSignals(
         try {
             const cached = await cache.get<SectorSignalsResult>(key);
             if (cached !== null) return cached;
-        } catch (err) {
-            console.warn('[sectorSignalsApi] cache read failed:', err);
+        } catch {
+            // Graceful degradation: fall through to provider fetch on cache read failure
         }
     }
 
@@ -123,11 +124,7 @@ export async function getSectorSignals(
     const stocks = SECTOR_STOCKS.map((stockDef, i) => {
         const r = fetchResults[i]!;
         if (r.status === 'rejected') {
-            console.warn(
-                '[sectorSignalsApi] fetch failed for',
-                stockDef.symbol,
-                r.reason
-            );
+            // Graceful degradation: exclude failing symbol from the result set
             return null;
         }
         return computeStockResult(
@@ -146,8 +143,8 @@ export async function getSectorSignals(
     if (cache !== null) {
         try {
             await cache.set(key, payload, TTL_BY_TIMEFRAME[timeframe]);
-        } catch (err) {
-            console.warn('[sectorSignalsApi] cache write failed:', err);
+        } catch {
+            // Graceful degradation: return computed payload even if cache write fails
         }
     }
 

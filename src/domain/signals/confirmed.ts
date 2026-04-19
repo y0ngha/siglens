@@ -1,5 +1,4 @@
-import type { Bar, IndicatorResult, MACDResult } from '@/domain/types';
-import type { Signal } from '@/domain/signals/types';
+import type { Bar, IndicatorResult, MACDResult, Signal } from '@/domain/types';
 import {
     RSI_OVERBOUGHT_LEVEL,
     RSI_OVERSOLD_LEVEL,

@@ -1,5 +1,4 @@
-import type { Bar, IndicatorResult } from '@/domain/types';
-import type { Signal } from '@/domain/signals/types';
+import type { Bar, IndicatorResult, Signal } from '@/domain/types';
 import {
     detectBollingerLowerBounce,
     detectBollingerUpperBreakout,
@@ -21,7 +20,6 @@ import {
     detectSupportProximityBullish,
 } from '@/domain/signals/anticipation';
 
-export * from '@/domain/signals/types';
 export { classifyTrend } from '@/domain/signals/trend';
 
 type Detector = (bars: Bar[], indicators: IndicatorResult) => Signal | null;

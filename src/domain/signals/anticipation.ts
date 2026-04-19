@@ -1,5 +1,9 @@
-import type { Bar, BollingerResult, IndicatorResult } from '@/domain/types';
-import type { Signal } from '@/domain/signals/types';
+import type {
+    Bar,
+    BollingerResult,
+    IndicatorResult,
+    Signal,
+} from '@/domain/types';
 import {
     DIVERGENCE_FRESHNESS_BARS,
     DIVERGENCE_LOOKBACK_BARS,

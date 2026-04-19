@@ -1,5 +1,4 @@
-import type { Bar, IndicatorResult } from '@/domain/types';
-import type { TrendState } from '@/domain/signals/types';
+import type { Bar, IndicatorResult, TrendState } from '@/domain/types';
 import {
     TREND_SLOPE_LOOKBACK,
     TREND_SLOPE_THRESHOLD,

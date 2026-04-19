@@ -344,7 +344,7 @@ export interface SkillCounts {
     supportResistance: number;
 }
 
-export type SignalType = 'skill';
+export type AnalysisSignalType = 'skill';
 
 export type SignalStrength = 'strong' | 'moderate' | 'weak';
 
@@ -352,8 +352,8 @@ export type Trend = 'bullish' | 'bearish' | 'neutral';
 
 export type RiskLevel = 'low' | 'medium' | 'high';
 
-export interface Signal {
-    type: SignalType;
+export interface AnalysisSignal {
+    type: AnalysisSignalType;
     description: string;
     strength?: SignalStrength;
     trend: Trend;
@@ -361,7 +361,7 @@ export interface Signal {
 
 export interface IndicatorGuideResult {
     indicatorName: string;
-    signals: Signal[];
+    signals: AnalysisSignal[];
 }
 
 export interface KeyLevel {
@@ -583,4 +583,55 @@ export interface SectorStock {
     symbol: string;
     koreanName: string;
     sectorSymbol: string; // XLK, XLF, XLE, ...
+}
+
+// ─── Sector Signal Discovery (Panel C) ───────────────────────────────────────
+
+export type SignalDirection = 'bullish' | 'bearish';
+export type SignalPhase = 'confirmed' | 'expected';
+
+export type ConfirmedSignalType =
+    | 'rsi_oversold'
+    | 'rsi_overbought'
+    | 'golden_cross'
+    | 'death_cross'
+    | 'macd_bullish_cross'
+    | 'macd_bearish_cross'
+    | 'bollinger_lower_bounce'
+    | 'bollinger_upper_breakout';
+
+export type ExpectedSignalType =
+    | 'rsi_bullish_divergence'
+    | 'rsi_bearish_divergence'
+    | 'macd_histogram_bullish_convergence'
+    | 'macd_histogram_bearish_convergence'
+    | 'bollinger_squeeze_bullish'
+    | 'bollinger_squeeze_bearish'
+    | 'support_proximity_bullish'
+    | 'resistance_proximity_bearish';
+
+export type SignalType = ConfirmedSignalType | ExpectedSignalType;
+
+export interface Signal {
+    readonly type: SignalType;
+    readonly direction: SignalDirection;
+    readonly phase: SignalPhase;
+    readonly detectedAt: number;
+}
+
+export type TrendState = 'uptrend' | 'downtrend' | 'sideways';
+
+export interface StockSignalResult {
+    readonly symbol: string;
+    readonly koreanName: string;
+    readonly sectorSymbol: string;
+    readonly price: number;
+    readonly changePercent: number;
+    readonly trend: TrendState;
+    readonly signals: readonly Signal[];
+}
+
+export interface SectorSignalsResult {
+    readonly computedAt: string;
+    readonly stocks: readonly StockSignalResult[];
 }

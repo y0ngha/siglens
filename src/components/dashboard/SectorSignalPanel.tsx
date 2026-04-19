@@ -6,7 +6,7 @@ import type {
     Signal,
     SectorSignalsResult,
     StockSignalResult,
-} from '@/domain/signals/types';
+} from '@/domain/types';
 import {
     SIGNAL_SECTORS,
     type DashboardTimeframe,
@@ -81,8 +81,10 @@ export function SectorSignalPanel({
     );
 
     const quadrants = useMemo(() => {
-        // Local accumulators — object leaves callback as stable result; internal push
-        // is acceptable per convention (immutable contract is on the exported value).
+        // Local accumulators with push — per CONVENTIONS.md exception: refactoring to
+        // reduce+spread yields O(N*M) allocations for classifying signals across 4
+        // quadrants; local mutation here is bounded (~8 stocks × 2-3 signals per
+        // sector) and does not escape this callback.
         const buckets = {
             bullishConfirmed: [] as StockSignalResult[],
             bullishExpected: [] as StockSignalResult[],

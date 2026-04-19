@@ -5,8 +5,7 @@ import { getSectorSignals } from '@/infrastructure/dashboard/sectorSignalsApi';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { createMarketDataProvider } from '@/infrastructure/market/factory';
 import { SECTOR_STOCKS } from '@/domain/constants/dashboard-tickers';
-import type { Bar } from '@/domain/types';
-import type { SectorSignalsResult } from '@/domain/signals/types';
+import type { Bar, SectorSignalsResult } from '@/domain/types';
 
 const mockCreateCacheProvider = createCacheProvider as jest.MockedFunction<
     typeof createCacheProvider
@@ -132,9 +131,6 @@ describe('getSectorSignals 함수는', () => {
 
     describe('캐시 읽기가 실패할 때', () => {
         it('예외를 무시하고 provider를 호출해 결과를 반환한다', async () => {
-            const warnSpy = jest
-                .spyOn(console, 'warn')
-                .mockImplementation(() => {});
             mockCacheGet.mockRejectedValue(new Error('redis read down'));
             mockGetBars.mockResolvedValue([]);
             mockCacheSet.mockResolvedValue(undefined);
@@ -143,8 +139,6 @@ describe('getSectorSignals 함수는', () => {
 
             expect(result).toBeDefined();
             expect(mockGetBars).toHaveBeenCalled();
-            expect(warnSpy).toHaveBeenCalled();
-            warnSpy.mockRestore();
         });
     });
 
@@ -198,9 +192,6 @@ describe('getSectorSignals 함수는', () => {
 
     describe('개별 종목 fetch가 실패할 때', () => {
         it('나머지 종목은 정상 처리하고 실패 종목은 결과에서 제외한다', async () => {
-            const warnSpy = jest
-                .spyOn(console, 'warn')
-                .mockImplementation(() => {});
             mockCacheGet.mockResolvedValue(null);
             mockGetBars.mockImplementation((opts: { symbol: string }) =>
                 opts.symbol === 'AAPL'
@@ -212,16 +203,11 @@ describe('getSectorSignals 함수는', () => {
 
             const appleResult = result.stocks.find(s => s.symbol === 'AAPL');
             expect(appleResult).toBeUndefined();
-            expect(warnSpy).toHaveBeenCalled();
-            warnSpy.mockRestore();
         });
     });
 
     describe('캐시 저장이 실패할 때', () => {
         it('응답은 정상적으로 반환된다', async () => {
-            const warnSpy = jest
-                .spyOn(console, 'warn')
-                .mockImplementation(() => {});
             mockCacheGet.mockResolvedValue(null);
             mockGetBars.mockResolvedValue([]);
             mockCacheSet.mockRejectedValue(new Error('redis write down'));
@@ -229,8 +215,6 @@ describe('getSectorSignals 함수는', () => {
             const result = await getSectorSignals();
 
             expect(result).toBeDefined();
-            expect(warnSpy).toHaveBeenCalled();
-            warnSpy.mockRestore();
         });
     });
 
