@@ -13,12 +13,12 @@
 import { writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { config } from 'dotenv';
-import { calculateIndicators } from '../src/domain/indicators/index.js';
-import { buildAnalysisPrompt } from '../src/domain/analysis/prompt.js';
-import { enrichAnalysisWithConfidence } from '../src/domain/analysis/confidence.js';
-import { parseJsonResponse } from '../src/infrastructure/ai/utils.js';
-import { callGeminiScript } from '../worker/src/ai.js';
-import type { Bar, RawAnalysisResponse, BacktestOutcome } from '../src/domain/types.js';
+import { calculateIndicators } from '@/domain/indicators';
+import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
+import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
+import { parseJsonResponse } from '@/infrastructure/ai/utils';
+import { callGeminiScript } from './ai.js';
+import type { Bar, RawAnalysisResponse, BacktestOutcome } from '@/domain/types';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
