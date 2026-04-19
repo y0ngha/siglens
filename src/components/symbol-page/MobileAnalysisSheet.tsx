@@ -188,8 +188,9 @@ export function MobileAnalysisSheet({
             scrollEl.removeEventListener('touchmove', onTouchMove);
             scrollEl.removeEventListener('touchend', onTouchEnd);
             scrollEl.removeEventListener('touchcancel', onTouchCancel);
-            // 직접 조작한 스타일을 초기화하여 vaul의 내부 스타일과 충돌을 방지한다.
-            drawerEl.style.transform = '';
+            // transition만 초기화한다. transform을 초기화하면 vaul이 이미 렌더 사이클에서
+            // 적용한 SNAP_PEEK 위치의 inline transform을 덮어써 시트가 CSS 기본값
+            // (translateY(100%))으로 숨겨지는 버그가 발생한다.
             drawerEl.style.transition = '';
         };
     }, [isFullSnap]);
