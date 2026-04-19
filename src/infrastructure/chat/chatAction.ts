@@ -1,8 +1,12 @@
 'use server';
 
 import { headers } from 'next/headers';
-import type { AnalysisResponse, Timeframe } from '@/domain/types';
-import type { ChatMessage, ChatActionResult } from '@/domain/chat/types';
+import type {
+    AnalysisResponse,
+    Timeframe,
+    ChatMessage,
+    ChatActionResult,
+} from '@/domain/types';
 import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
 import {
     hashIp,

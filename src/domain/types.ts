@@ -646,6 +646,8 @@ export type {
     ChatMessage,
     ChatErrorCode,
     ChatLoadingPhase,
+    ChatSession,
+    ChatActionResult,
 } from './chat/types';
 
 export interface ChatPromptPayload {

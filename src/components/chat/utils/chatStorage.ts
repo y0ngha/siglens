@@ -1,5 +1,4 @@
-import type { Timeframe } from '@/domain/types';
-import type { ChatMessage, ChatSession } from '@/domain/chat/types';
+import type { Timeframe, ChatMessage, ChatSession } from '@/domain/types';
 
 export const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7일 (ms)
 export const MAX_STORED_MESSAGES = 40;

@@ -3,12 +3,12 @@
 
 import type {
     AnalysisResponse,
+    ChatMessage,
     ChatPromptPayload,
     KeyLevel,
     PriceScenario,
     Timeframe,
 } from '@/domain/types';
-import type { ChatMessage } from '@/domain/chat/types';
 
 function formatKeyLevels(levels: KeyLevel[]): string {
     if (levels.length === 0) return 'None detected';
