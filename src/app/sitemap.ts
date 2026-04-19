@@ -28,6 +28,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: 'daily' as const,
             priority: 0.9,
         },
+        {
+            url: `${SITE_URL}/backtesting`,
+            lastModified: SITEMAP_DATE,
+            changeFrequency: 'monthly' as const,
+            priority: 0.9,
+        },
         ...POPULAR_TICKERS.map(ticker => ({
             url: `${SITE_URL}/${ticker}`,
             lastModified: SITEMAP_DATE,

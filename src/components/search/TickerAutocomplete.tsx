@@ -158,7 +158,7 @@ export function TickerAutocomplete({
                     onChange={handleChange}
                     onKeyDown={handleKeyDown}
                     onFocus={handleFocus}
-                    placeholder="티커 입력… (예: AAPL)"
+                    placeholder="종목 입력 (예: AAPL, 애플)"
                     className={inputClass}
                 />
                 {isOpen && (

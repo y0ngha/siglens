@@ -664,3 +664,40 @@ export interface ChatPromptPayload {
     systemPrompt: string;
     messages: ChatMessage[];
 }
+
+// ─── Backtesting ──────────────────────────────────────────────────────────────
+
+export type BacktestOutcome = 'win' | 'loss';
+
+export interface BacktestAIAnalysis {
+    summary: string;
+    tags: string[];
+}
+
+export interface BacktestCase {
+    ticker: string;
+    entryDate: string;
+    entryPrice: number;
+    exitDate: string;
+    exitPrice: number;
+    holdingDays: number;
+    returnPct: number; // positive = profit, negative = loss
+    signalType: 'buy' | 'sell';
+    result: BacktestOutcome;
+    exitReason: 'signal' | 'stop_loss';
+    aiResult: BacktestOutcome;
+    aiAnalysis: BacktestAIAnalysis;
+}
+
+export interface BacktestMeta {
+    period: string;
+    totalCases: number;
+    winRate: number; // Range: 0–100
+    aiWinRate: number; // Range: 0–100
+    tickerCount: number;
+}
+
+export interface BacktestData {
+    meta: BacktestMeta;
+    cases: BacktestCase[];
+}

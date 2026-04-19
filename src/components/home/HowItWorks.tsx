@@ -47,8 +47,8 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
     const STEPS = [
         {
             number: '01',
-            title: '티커 입력',
-            description: '종목 심볼을 입력하면 차트가 렌더링됩니다',
+            title: '종목 입력',
+            description: '종목명, 심볼을 입력하면 차트가 렌더링됩니다',
         },
         {
             number: '02',

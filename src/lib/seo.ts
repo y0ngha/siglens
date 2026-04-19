@@ -63,3 +63,21 @@ export function buildSymbolKeywords(
             : []),
     ];
 }
+
+export const BACKTESTING_PATH = '/backtesting';
+export const BACKTESTING_URL = `${SITE_URL}${BACKTESTING_PATH}`;
+// Root layout template appends "| Siglens" — exclude brand name to prevent duplication
+export const BACKTESTING_TITLE = 'AI 기술적 분석 백테스팅 결과';
+export const BACKTESTING_DESCRIPTION =
+    'AAPL·NVDA·TSLA 등 10개 종목을 1년간 실제 분석한 백테스팅 케이스입니다. RSI·MACD·Supertrend 기술적 신호와 AI 예측이 실제로 얼마나 맞았는지 데이터로 직접 확인하세요.';
+export const BACKTESTING_KEYWORDS = [
+    ...ROOT_KEYWORDS,
+    '주식 AI 백테스팅',
+    '기술적 분석 백테스팅',
+    'AI 주식 예측 정확도',
+    '주식 기술적 분석 정확도',
+    'RSI 신호 백테스팅',
+    'MACD 백테스팅',
+    'AI 분석 신뢰도',
+    'Magnificent 7 분석',
+];

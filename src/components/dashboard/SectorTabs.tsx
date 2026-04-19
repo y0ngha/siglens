@@ -37,7 +37,7 @@ export function SectorTabs({ activeSector, onChange }: SectorTabsProps) {
         <div
             role="tablist"
             aria-label="섹터 선택"
-            className="border-secondary-700 flex touch-manipulation gap-6 overflow-x-auto overscroll-x-contain border-b pb-0"
+            className="border-secondary-700 flex touch-manipulation gap-6 overflow-x-auto overflow-y-hidden overscroll-x-contain border-b pb-0"
         >
             {SIGNAL_SECTORS.map((etf, i) => {
                 const isActive = etf.symbol === activeSector;
