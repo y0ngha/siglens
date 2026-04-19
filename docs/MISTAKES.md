@@ -18,8 +18,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 2. Identical values queried or computed multiple times in a single function
    → Extract to a local const or assign once before using repeatedly
+   → Applies to loop boundaries, array calculations, and function returns
    ❌ map.get(key) called twice with the same key
+   ❌ for (let i = 0; i < array.length; i++) with length queried each iteration
+   ❌ computeBbWidth(lastBB) called in loop setup and inside loop body (when checking lastIdx)
    ✅ const value = map.get(key); reuse value
+   ✅ for (let i = 0; i < lastIdx; i++) { ... }; widthLast = computeBbWidth(lastBB) after loop
+   ✅ const length = array.length; for (let i = 0; i < length; i++)
 
 3. Discarding the callback parameter and re-accessing via external array index
    ❌ lines.reduce((acc, _line, idx) => { const line = lines[idx]; ... })
@@ -106,6 +111,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ const timeframe = computeTimeframe(); useQuery(...)
     ✅ useQuery(...); const timeframe = computeTimeframe();
     → Ordering: useState/useRef → useQuery/useMutation → derived variables → handlers → useEffect
+
+17.5. for loop with .push() inside useMemo, reduce, or other functional expressions
+    → Loop accumulation must use spread, map, filter, flatMap, or reduce — never direct mutation
+    ❌ useMemo(() => { for (let i = 0; i < data.length; i++) { result.push(...) } }, [])
+    ✅ useMemo(() => data.map(...).filter(...), [])
+    ✅ useMemo(() => data.reduce((acc, item) => [...acc, ...], []), [])
+    → Applies to all functional/declarative contexts, not just loops
 
 18. Non-hook utility functions defined inside hook files
     → Pure utilities like sleep() belong in utils/ subfolders, not inside hook files
