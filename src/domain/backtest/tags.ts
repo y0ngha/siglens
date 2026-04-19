@@ -1,4 +1,4 @@
-const TAG_LABEL_MAP: Record<string, string> = {
+export const TAG_LABEL_MAP: Record<string, string> = {
     // 기존 confirmed bullish (Task 4-12 이전)
     rsi_oversold: 'RSI 과매도 반등',
     golden_cross: 'EMA 골든크로스',
@@ -21,6 +21,11 @@ const TAG_LABEL_MAP: Record<string, string> = {
     squeeze_momentum_bullish: 'Squeeze 양전환',
 };
 
+/**
+ * Signal type 문자열을 UI 표시용 한글 라벨로 변환.
+ * 파라미터 타입은 의도적으로 `string` — data.json 등 외부 경로에서 올 수 있는
+ * 미등록 type을 안전하게 fallback 처리하기 위함. 등록된 type은 TAG_LABEL_MAP으로 완전성 테스트.
+ */
 export function signalTypeToTagLabel(type: string): string {
     return TAG_LABEL_MAP[type] ?? type;
 }
