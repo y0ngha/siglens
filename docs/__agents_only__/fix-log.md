@@ -1,11 +1,6 @@
 # Fix Log
 
 ## [PR #331 Round 7 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: `DashboardTimeframe` 타입이 `constants/dashboard-tickers.ts` 에 정의되고 `domain/types.ts` 에서 re-export
-- Rule: MISTAKES.md Architecture #1 — 모든 도메인 타입은 `domain/types.ts` 에 직접 정의 (re-export 우회 금지, 순환 의존 유발)
-- Context: `export type DashboardTimeframe = (typeof DASHBOARD_TIMEFRAMES)[number]` 를 `domain/types.ts` 로 이동. 상수 파일은 타입을 import 하여 `readonly DashboardTimeframe[]` 로 명시적 타입 annotation
-
-
 - Violation: `signalToQuadrantKey` if-chain (4단 nested conditional)
 - Rule: CONVENTIONS.md 선언적 패턴 — nested conditionals → object map
 - Context: `SectorSignalPanel.tsx` 의 direction × phase 판정을 `Record<SignalDirection, Record<SignalPhase, QuadrantKey>>` 맵 lookup 으로 전환
@@ -179,9 +174,14 @@
 - Violation: `src/infrastructure/ai/gemini.ts` 신규 인프라 파일에 대응하는 전용 테스트 파일 누락
 - Rule: `src/__tests__/CLAUDE.md` — Tests cover domain and infrastructure only, mirror source structure, 100% coverage target
 - Context: `callGeminiWithKeyFallback`의 4개 분기(freeApiKey undefined, free key 성공, free key 실패→fallback, systemInstruction undefined)가 전용 테스트 없이 간접 커버만 됨
-- Violation: `ChatSession`, `ChatActionResult` 타입이 `domain/types.ts`에서 re-export되지 않음
-- Rule: MISTAKES.md Architecture #1 — 도메인 타입은 `domain/types.ts`로 중앙화
-- Context: `chatStorage.ts`와 `chatAction.ts`가 `@/domain/chat/types`를 직접 참조
 - Violation: `useChat.ts` `ERROR_MESSAGES`의 매직 넘버 `5` 하드코딩
 - Rule: MISTAKES.md Coding Paradigm #15 — 모든 매직 넘버는 모듈 레벨 상수로 추출
 - Context: `CHAT_TOKEN_LIMIT`과 동기화 필요한 값이 주석으로만 연결되고 리터럴로 남아있었음
+
+## [PR #333 Round 2 | feat/332/ai-chat | 2026-04-19]
+- Violation: `loadSession`이 `loadSessionFull`과 TTL·JSON 파싱 로직을 중복 구현
+- Rule: MISTAKES.md #1 — 동일 알고리즘 재구현 금지, 기존 헬퍼에 위임
+- Context: loadSession이 loadSessionFull과 거의 동일한 localStorage 읽기 로직을 독립적으로 구현하고 있었음
+- Violation: `getRemainingTokensAction`을 bare `useEffect + .then()` 패턴으로 직접 호출
+- Rule: ARCHITECTURE.md — Hook files may import fetch functions from infrastructure only, limited to queryFn/mutationFn connection purpose
+- Context: useChat.ts에서 인프라 함수를 useEffect 내부에서 직접 호출했으나, useQuery의 queryFn으로 감싸야 규칙 준수
