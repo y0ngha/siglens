@@ -57,7 +57,9 @@ export function SymbolPageClient({
     // hydration 완료 후에만 MobileAnalysisSheet를 마운트한다.
     // vaul의 aria-hidden 주입이 React hydration과 겹치지 않도록 보장한다.
     const [isMounted, setIsMounted] = useState(false);
-    useEffect(() => { startTransition(() => setIsMounted(true)); }, []);
+    useEffect(() => {
+        startTransition(() => setIsMounted(true));
+    }, []);
 
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
