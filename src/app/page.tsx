@@ -158,7 +158,8 @@ export default async function Home() {
                             </span>
                         </h1>
                         <p className="text-secondary-400 mx-auto mt-4 max-w-lg text-base leading-relaxed text-balance sm:text-xl lg:mx-0">
-                            시장 흐름부터 종목별 기술적 분석, AI 대화까지 &mdash; 한 곳에서.
+                            시장 흐름부터 종목별 기술적 분석, AI 대화까지
+                            &mdash; 한 곳에서.
                         </p>
                         <div
                             id="search"
