@@ -73,6 +73,9 @@ function toBarArray(fmpBars: FmpBar[]): Bar[] {
     }));
 }
 
+// Simplified RSI for signal detection only. Uses simple (non-smoothed) averages
+// intentionally — the production pipeline (calculateIndicators) uses Wilder smoothing,
+// which is used later for the full AI analysis prompt, not for signal detection.
 function calcRsiSimple(closes: number[], period = 14): number[] {
     const rsi: number[] = new Array(closes.length).fill(50);
     for (let i = period; i < closes.length; i++) {
@@ -171,21 +174,22 @@ async function runAiAnalysis(
     return { trend: result.trend, summary: (result.summary ?? '').slice(0, 150), tags };
 }
 
+type CaseItem = {
+    ticker: string;
+    entryDate: string;
+    entryPrice: number;
+    exitDate: string;
+    exitPrice: number;
+    holdingDays: number;
+    returnPct: number;
+    signalType: 'buy' | 'sell';
+    result: BacktestOutcome;
+    exitReason: 'signal' | 'stop_loss';
+    aiResult: BacktestOutcome;
+    aiAnalysis: { summary: string; tags: string[] };
+};
+
 async function main() {
-    type CaseItem = {
-        ticker: string;
-        entryDate: string;
-        entryPrice: number;
-        exitDate: string;
-        exitPrice: number;
-        holdingDays: number;
-        returnPct: number;
-        signalType: 'buy' | 'sell';
-        result: BacktestOutcome;
-        exitReason: 'signal' | 'stop_loss';
-        aiResult: BacktestOutcome;
-        aiAnalysis: { summary: string; tags: string[] };
-    };
     const allCases: CaseItem[] = [];
 
     for (const ticker of TICKERS) {

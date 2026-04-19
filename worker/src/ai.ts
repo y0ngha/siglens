@@ -1,5 +1,10 @@
 import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
 
+// Fixed fallback steps after the initial budget. Values must be strictly decreasing.
+const BUDGET_FALLBACK_STEPS = [8192, 4096, 2048, 0] as const;
+
+const DEFAULT_THINKING_BUDGET = 16000;
+
 function isMaxTokensError(error: unknown): boolean {
     return (
         typeof error === 'object' &&
@@ -10,7 +15,8 @@ function isMaxTokensError(error: unknown): boolean {
 }
 
 function getThinkingBudgetSequence(initial: number): number[] {
-    const candidates = [initial, Math.floor(initial / 2), 8192, 4096, 2048, 0];
+    // Always start with initial, then use fixed fallback steps that are strictly smaller.
+    const candidates = [initial, ...BUDGET_FALLBACK_STEPS];
     const result: number[] = [];
     for (const budget of candidates) {
         if (result.length === 0 || budget < result[result.length - 1]) {
@@ -65,5 +71,5 @@ export async function callGeminiScript(
     model: string,
     signal?: AbortSignal
 ): Promise<string> {
-    return callGeminiReducingBudget(prompt, apiKey, model, 16000, signal);
+    return callGeminiReducingBudget(prompt, apiKey, model, DEFAULT_THINKING_BUDGET, signal);
 }
