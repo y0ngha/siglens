@@ -41,7 +41,7 @@ export function TimeframeSelector({
                 id="timeframe-label"
                 className="text-secondary-500 text-[10px] tracking-wider uppercase"
             >
-                봉
+                타임프레임
             </span>
             <div
                 role="radiogroup"

@@ -152,9 +152,9 @@ export const DASHBOARD_TIMEFRAMES = ['15Min', '1Hour', '1Day'] as const;
 export type DashboardTimeframe = (typeof DASHBOARD_TIMEFRAMES)[number];
 
 export const DASHBOARD_TIMEFRAME_LABELS: Record<DashboardTimeframe, string> = {
-    '15Min': '15분봉',
-    '1Hour': '1시간봉',
-    '1Day': '일봉',
+    '15Min': '15분',
+    '1Hour': '1시간',
+    '1Day': '1일',
 };
 
 // Panel C sector tabs — SECTOR_ETFS + virtual Quantum sector (no ETF)
