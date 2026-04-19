@@ -15,11 +15,15 @@ export function BriefingCard({
 }: BriefingCardProps) {
     if (isLoading) {
         return (
-            <div className="border-secondary-700/50 rounded-lg border p-4">
+            <div
+                role="status"
+                aria-live="polite"
+                className="border-secondary-700/50 rounded-lg border p-4"
+            >
                 <div className="flex items-center gap-2">
                     <div className="bg-secondary-700/50 h-2 w-2 animate-pulse rounded-full" />
                     <p className="text-secondary-500 text-sm">
-                        AI 브리핑 생성 중...
+                        AI 브리핑 생성 중…
                     </p>
                 </div>
             </div>
@@ -28,7 +32,10 @@ export function BriefingCard({
 
     if (error) {
         return (
-            <div className="border-secondary-700/50 rounded-lg border p-4">
+            <div
+                role="alert"
+                className="border-secondary-700/50 rounded-lg border p-4"
+            >
                 <p className="text-chart-bearish text-sm">
                     브리핑을 불러오지 못했습니다.
                 </p>

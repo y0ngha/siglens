@@ -60,7 +60,15 @@ export function IndexCard({ data, href }: IndexCardProps) {
             <Link
                 href={href}
                 title={`${label} 분석`}
-                className="focus-visible:ring-primary-500 block transition-opacity hover:opacity-80 focus-visible:rounded-lg focus-visible:ring-2 focus-visible:outline-none"
+                style={{ transformOrigin: 'center' }}
+                className={cn(
+                    'touch-manipulation block rounded-lg',
+                    'transition-[background-color,border-color,transform,box-shadow] duration-150',
+                    'hover:bg-secondary-800/70 hover:border-secondary-600 hover:-translate-y-px',
+                    'hover:shadow-lg hover:shadow-primary-950/40',
+                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                    'motion-reduce:transition-none motion-reduce:hover:transform-none'
+                )}
             >
                 {inner}
             </Link>
