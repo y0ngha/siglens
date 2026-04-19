@@ -21,7 +21,10 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
     const safeActive = tabs.includes(active) ? active : ALL_TAB;
 
     const filtered = useMemo(
-        () => (safeActive === ALL_TAB ? cases : cases.filter(c => c.ticker === safeActive)),
+        () =>
+            safeActive === ALL_TAB
+                ? cases
+                : cases.filter(c => c.ticker === safeActive),
         [cases, safeActive]
     );
 

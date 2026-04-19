@@ -18,7 +18,12 @@ import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import { parseJsonResponse } from '@/infrastructure/ai/utils';
 import { callGeminiScript } from './ai.js';
-import type { Bar, RawAnalysisResponse, BacktestOutcome, BacktestCase } from '@/domain/types';
+import type {
+    Bar,
+    RawAnalysisResponse,
+    BacktestOutcome,
+    BacktestCase,
+} from '@/domain/types';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 

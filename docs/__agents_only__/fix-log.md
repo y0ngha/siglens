@@ -186,3 +186,20 @@
 - Rule: MISTAKES.md Design #2 — 동일 리소스를 여러 번 생성하지 말 것, 단일 인스턴스 캐싱 필요
 - Context: tryConsumeToken과 getRemainingTokens 각각 호출 시 새 Redis 인스턴스 생성
 
+
+## [PR #339 | master | 2026-04-20]
+- Violation: validateBacktestData null/non-object 분기 테스트 누락
+- Rule: CONVENTIONS.md domain/ 100% 커버리지 필수
+- Context: validate.ts 첫 번째 가드(`data === null || typeof data !== 'object'`)에 대한 테스트 케이스가 누락됨
+
+- Violation: validate.ts에서 for 루프 사용
+- Rule: CONVENTIONS.md 도메인 레이어 — for/while 금지, forEach/map/filter/reduce 사용
+- Context: cases 배열 순회 시 `for (let i = 0; ...)` 루프를 forEach로 교체해야 함
+
+- Violation: BacktestTabs filtered 파생값 useMemo 누락
+- Rule: MISTAKES.md #10 — 'use client' 컴포넌트에서 props/state 기반 파생값은 useMemo로 감싸야 함
+- Context: cases prop + safeActive 상태로부터 파생되는 filtered 배열이 useMemo 없이 매 렌더마다 재계산됨
+
+- Violation: generate-backtest.ts BacktestCase 타입 미임포트
+- Rule: TypeScript 타입 안전성 — 사용하는 타입은 반드시 import 선언
+- Context: `let allCases: BacktestCase[] = []`에서 BacktestCase를 참조하나 import 누락
