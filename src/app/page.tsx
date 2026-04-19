@@ -178,10 +178,7 @@ export default async function Home() {
             <script
                 type="application/ld+json"
                 dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(faqJsonLd).replace(
-                        /</g,
-                        '\\u003c'
-                    ),
+                    __html: JSON.stringify(faqJsonLd).replace(/</g, '\\u003c'),
                 }}
             />
             <a

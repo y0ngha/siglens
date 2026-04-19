@@ -185,3 +185,16 @@
 - Violation: `tokenStore.ts` `getRedis()`가 매 호출마다 `new Redis(...)` 인스턴스 재생성
 - Rule: MISTAKES.md Design #2 — 동일 리소스를 여러 번 생성하지 말 것, 단일 인스턴스 캐싱 필요
 - Context: tryConsumeToken과 getRemainingTokens 각각 호출 시 새 Redis 인스턴스 생성
+
+## [SEO Metadata Update | src/app/[symbol]/page.tsx, src/app/market/page.tsx, src/lib/seo.ts | 2026-04-20]
+- Violation: MARKET_KEYWORDS spread ROOT_KEYWORDS then re-added '섹터 순환', '급등주', '매매 신호' — duplicate keywords in final metadata array
+- Rule: CONVENTIONS.md — Avoid keyword duplication; check base set for overlap before extending
+- Context: When extending a keyword list, failed to deduplicate. Fixed by removing three duplicates from MARKET_KEYWORDS after spread.
+
+- Violation: Used non-standard Korean transliteration '인겔핑' for "Engulfing" in SEO-crawlable sr-only block
+- Rule: CONVENTIONS.md Terminology — Use standard Korean terms for technical indicators; '장악형' is the standard term for Engulfing
+- Context: src/app/[symbol]/page.tsx pattern block. Fixed by replacing '인겔핑' with '장악형'.
+
+- Violation: jsonLd.description duplicated the exact description string from generateMetadata verbatim (two identical strings in different locations)
+- Rule: FF.md Cohesion 3-A — Extract repeated literal values to named constants; prevents silent divergence on change
+- Context: src/app/[symbol]/page.tsx buildSymbolDescription duplicated in both generateMetadata and jsonLd. Extracted to src/lib/seo.ts buildSymbolDescription() helper.

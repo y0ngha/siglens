@@ -182,8 +182,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                 <p>
                     {displayName} 주가를 RSI·MACD·볼린저밴드 등{' '}
                     {skillCounts.indicators}종 보조지표로 해석하고, 도지·해머·
-                    장악형 같은 주요 캔들 패턴과 차트 패턴을 자동으로 감지합니다.
-                    주요 지지·저항 레벨과 매매 전략도 함께 확인할 수 있습니다.
+                    장악형 같은 주요 캔들 패턴과 차트 패턴을 자동으로
+                    감지합니다. 주요 지지·저항 레벨과 매매 전략도 함께 확인할 수
+                    있습니다.
                 </p>
                 <h2>AI와 대화로 분석 결과 확인</h2>
                 <p>
