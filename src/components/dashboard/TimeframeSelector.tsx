@@ -2,10 +2,10 @@
 
 import { useCallback } from 'react';
 import { cn } from '@/lib/cn';
+import type { DashboardTimeframe } from '@/domain/types';
 import {
     DASHBOARD_TIMEFRAMES,
     DASHBOARD_TIMEFRAME_LABELS,
-    type DashboardTimeframe,
 } from '@/domain/constants/dashboard-tickers';
 
 interface TimeframeSelectorProps {
@@ -30,6 +30,10 @@ export function TimeframeSelector({
             if (nextIdx !== -1) {
                 e.preventDefault();
                 onChange(DASHBOARD_TIMEFRAMES[nextIdx]);
+                const parent = e.currentTarget.closest('[role="radiogroup"]');
+                const buttons =
+                    parent?.querySelectorAll<HTMLElement>('[role="radio"]');
+                buttons?.[nextIdx]?.focus();
             }
         },
         [onChange, timeframe]

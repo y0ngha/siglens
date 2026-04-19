@@ -3,17 +3,38 @@
 import { useCallback, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import type {
+    DashboardTimeframe,
     Signal,
     SectorSignalsResult,
     StockSignalResult,
 } from '@/domain/types';
-import {
-    SIGNAL_SECTORS,
-    type DashboardTimeframe,
-} from '@/domain/constants/dashboard-tickers';
+import { SIGNAL_SECTORS } from '@/domain/constants/dashboard-tickers';
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
+
+type QuadrantKey =
+    | 'bullishConfirmed'
+    | 'bullishExpected'
+    | 'bearishExpected'
+    | 'bearishConfirmed';
+
+const EMPTY_QUADRANTS: Record<QuadrantKey, readonly StockSignalResult[]> = {
+    bullishConfirmed: [],
+    bullishExpected: [],
+    bearishExpected: [],
+    bearishConfirmed: [],
+};
+
+function signalToQuadrantKey(s: Signal): QuadrantKey {
+    if (s.direction === 'bullish' && s.phase === 'confirmed')
+        return 'bullishConfirmed';
+    if (s.direction === 'bullish' && s.phase === 'expected')
+        return 'bullishExpected';
+    if (s.direction === 'bearish' && s.phase === 'expected')
+        return 'bearishExpected';
+    return 'bearishConfirmed';
+}
 
 interface SectorSignalPanelProps {
     data: SectorSignalsResult;
@@ -63,6 +84,49 @@ export function SectorSignalPanel({
         [router, pathname, searchParams]
     );
 
+    const filtered = useMemo(() => filterStrict(data.stocks), [data.stocks]);
+
+    const sectorStocks = useMemo(
+        () => filtered.filter(s => s.sectorSymbol === activeSector),
+        [filtered, activeSector]
+    );
+
+    const quadrants = useMemo(
+        () =>
+            sectorStocks.reduce<
+                Record<QuadrantKey, readonly StockSignalResult[]>
+            >((acc, stock) => {
+                const grouped = stock.signals.reduce<
+                    Record<QuadrantKey, readonly Signal[]>
+                >(
+                    (g, s) => {
+                        const key = signalToQuadrantKey(s);
+                        return { ...g, [key]: [...g[key], s] };
+                    },
+                    {
+                        bullishConfirmed: [],
+                        bullishExpected: [],
+                        bearishExpected: [],
+                        bearishConfirmed: [],
+                    }
+                );
+                return (Object.keys(grouped) as QuadrantKey[]).reduce(
+                    (next, key) =>
+                        grouped[key].length === 0
+                            ? next
+                            : {
+                                  ...next,
+                                  [key]: [
+                                      ...next[key],
+                                      { ...stock, signals: grouped[key] },
+                                  ],
+                              },
+                    acc
+                );
+            }, EMPTY_QUADRANTS),
+        [sectorStocks]
+    );
+
     const handleSectorChange = (sector: string) => {
         setActiveSector(sector);
         updateUrl(sector, activeTimeframe);
@@ -72,53 +136,6 @@ export function SectorSignalPanel({
         setActiveTimeframe(next);
         updateUrl(activeSector, next);
     };
-
-    const filtered = useMemo(() => filterStrict(data.stocks), [data.stocks]);
-
-    const sectorStocks = useMemo(
-        () => filtered.filter(s => s.sectorSymbol === activeSector),
-        [filtered, activeSector]
-    );
-
-    const quadrants = useMemo(() => {
-        // Local accumulators with push — per CONVENTIONS.md exception: refactoring to
-        // reduce+spread yields O(N*M) allocations for classifying signals across 4
-        // quadrants; local mutation here is bounded (~8 stocks × 2-3 signals per
-        // sector) and does not escape this callback.
-        const buckets = {
-            bullishConfirmed: [] as StockSignalResult[],
-            bullishExpected: [] as StockSignalResult[],
-            bearishExpected: [] as StockSignalResult[],
-            bearishConfirmed: [] as StockSignalResult[],
-        };
-        for (const stock of sectorStocks) {
-            const byQuadrant: Record<keyof typeof buckets, Signal[]> = {
-                bullishConfirmed: [],
-                bullishExpected: [],
-                bearishExpected: [],
-                bearishConfirmed: [],
-            };
-            for (const s of stock.signals) {
-                const key =
-                    s.direction === 'bullish' && s.phase === 'confirmed'
-                        ? 'bullishConfirmed'
-                        : s.direction === 'bullish' && s.phase === 'expected'
-                          ? 'bullishExpected'
-                          : s.direction === 'bearish' && s.phase === 'expected'
-                            ? 'bearishExpected'
-                            : 'bearishConfirmed';
-                byQuadrant[key].push(s);
-            }
-            for (const key of Object.keys(buckets) as Array<
-                keyof typeof buckets
-            >) {
-                if (byQuadrant[key].length > 0) {
-                    buckets[key].push({ ...stock, signals: byQuadrant[key] });
-                }
-            }
-        }
-        return buckets;
-    }, [sectorStocks]);
 
     return (
         <section

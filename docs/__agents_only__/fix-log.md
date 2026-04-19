@@ -1,5 +1,22 @@
 # Fix Log
 
+## [PR #331 Round 6 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: useMemo 파생값이 handler 선언 뒤에 위치
+- Rule: MISTAKES.md #17 — hook 선언 순서 `useState → useCallback → useMemo(파생값) → handlers → useEffect`
+- Context: `SectorSignalPanel.tsx` 에서 `handleSectorChange` / `handleTimeframeChange` 가 `filtered`/`sectorStocks`/`quadrants` useMemo 보다 먼저 선언. useMemo 를 handlers 앞으로 이동
+
+- Violation: radiogroup 키보드 네비게이션에서 DOM 포커스 미이동
+- Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴은 aria-checked 와 DOM focus 동기화 필수
+- Context: `TimeframeSelector` 의 Arrow 키 처리가 `onChange` 만 호출하고 실제 포커스 이동 누락. `SectorTabs` 패턴처럼 `querySelectorAll('[role="radio"]')[nextIdx].focus()` 추가
+
+- Violation: bucketedTimestamp 내 unnamed 숫자 리터럴 (10/13/15)
+- Rule: MISTAKES.md #15 — business logic constants 는 module-level named constant 로 추출
+- Context: `sectorSignalsApi.ts` 의 slice 위치와 15분 버킷 크기를 `ISO_DATE_LENGTH`/`ISO_HOUR_LENGTH`/`FIFTEEN_MIN_BUCKET` 으로 추출
+
+- Violation: useMemo 내 local push 누산기
+- Rule: MISTAKES.md #5 — CONVENTIONS.md 예외 (domain 상태머신) 미해당
+- Context: `SectorSignalPanel.tsx` quadrants useMemo 를 reduce + spread 패턴으로 재작성. `signalToQuadrantKey` 순수 헬퍼 module-level 추출
+
 ## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: `stocks.push(result)` 배열 직접 변이
 - Rule: MISTAKES.md Coding Paradigm #5 — immutable 패턴 우선 (map + filter)
@@ -34,10 +51,6 @@
 - Violation: `isSqueezePresent` 네이밍이 boolean 반환을 암시하지만 실제로는 객체 반환
 - Rule: MISTAKES.md #11 — 함수명은 반환 타입과 일치
 - Context: 스퀴즈 상태 객체(lastIdx, pctB, slope)를 반환하므로 `computeSqueezeState` 로 리네임
-
-- Violation: 테스트에서 `new Date()` 의존 함수(cacheKey) 를 모킹하지 않아 자정 경계 flaky 위험
-- Rule: MISTAKES.md Tests — 시간 의존 함수는 반드시 `jest.useFakeTimers()` + `setSystemTime()` 으로 모킹
-- Context: `sectorSignalsApi.test.ts` 가 cacheKey assertion 없이도 UTC 날짜 바뀌면 동작 차이 발생 가능. 고정 타임스탬프 주입
 
 ## [Issue #329 Round 1 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: `rsi1 === null || rsi2 === null || rsi1 === undefined || rsi2 === undefined` 이중 null/undefined 체크
@@ -86,11 +99,6 @@
 - Rule: Design — 동적 텍스트 콘텐츠에 `whitespace-nowrap` 사용 금지; 자연스러운 줄바꿈 허용
 - Context: 긴 한국어 안내 메시지가 작은 화면에서 컨테이너를 넘어 레이아웃 깨짐 유발 가능; 클래스 제거
 
-
-## [PR #304 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
-- Violation: `computeEffectiveTtl`이 `new Date()`에 의존함에도 `analyzeAction.test.ts`, `pollAnalysisAction.test.ts`에서 mock 없이 하드코딩 TTL 단언 — 시간대에 따라 flaky 테스트 발생
-- Rule: Test Layer Rules — 외부/시간 의존 함수는 테스트에서 반드시 mock해야 함
-- Context: `analyzeAction`, `pollAnalysisAction`이 `computeEffectiveTtl(timeframe, new Date())`를 호출하도록 변경됐으나, 기존 테스트는 TTL을 86400/300/3600으로 하드코딩 단언; `jest.mock('@/infrastructure/cache/config', ...)` 추가하여 해결
 
 ## [PR #300 | fix/299/mobile-bottom-sheet-native-ux | 2026-04-14]
 - Violation: `useEffect` cleanup에서 직접 조작한 DOM 스타일(`transform`, `transition`) 미초기화

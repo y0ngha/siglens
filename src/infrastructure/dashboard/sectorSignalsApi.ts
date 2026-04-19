@@ -1,11 +1,11 @@
 import type {
     Bar,
+    DashboardTimeframe,
     SectorSignalsResult,
     StockSignalResult,
     Timeframe,
 } from '@/domain/types';
 import { SECTOR_STOCKS } from '@/domain/constants/dashboard-tickers';
-import type { DashboardTimeframe } from '@/domain/constants/dashboard-tickers';
 import { calculateIndicators } from '@/domain/indicators';
 import { classifyTrend, detectSignals } from '@/domain/signals';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
@@ -30,15 +30,20 @@ const LOOKBACK_DAYS_BY_TIMEFRAME: Record<DashboardTimeframe, number> = {
 // Concurrency limit for FMP batch fetch (avoids 429)
 const FETCH_CONCURRENCY = 10;
 
+const ISO_DATE_LENGTH = 10; // 'YYYY-MM-DD' slice position
+const ISO_HOUR_LENGTH = 13; // 'YYYY-MM-DDTHH' slice position
+const FIFTEEN_MIN_BUCKET = 15;
+
 function bucketedTimestamp(timeframe: DashboardTimeframe, now: Date): string {
     const iso = now.toISOString();
-    if (timeframe === '1Day') return iso.slice(0, 10); // YYYY-MM-DD
-    if (timeframe === '1Hour') return iso.slice(0, 13); // YYYY-MM-DDTHH
+    if (timeframe === '1Day') return iso.slice(0, ISO_DATE_LENGTH);
+    if (timeframe === '1Hour') return iso.slice(0, ISO_HOUR_LENGTH);
     // 15Min: floor minute to 15-min bucket
     const minutes = now.getUTCMinutes();
-    const bucketMin = Math.floor(minutes / 15) * 15;
+    const bucketMin =
+        Math.floor(minutes / FIFTEEN_MIN_BUCKET) * FIFTEEN_MIN_BUCKET;
     const minStr = bucketMin.toString().padStart(2, '0');
-    return `${iso.slice(0, 13)}:${minStr}`; // YYYY-MM-DDTHH:MM
+    return `${iso.slice(0, ISO_HOUR_LENGTH)}:${minStr}`;
 }
 
 function cacheKey(timeframe: DashboardTimeframe, now: Date): string {

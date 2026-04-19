@@ -12,10 +12,10 @@ import { SectorSignalPanelSkeleton } from '@/components/dashboard/SectorSignalPa
 import { SignalTypeGuide } from '@/components/dashboard/SignalTypeGuide';
 import { getSectorSignals } from '@/infrastructure/dashboard/sectorSignalsApi';
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
+import type { DashboardTimeframe } from '@/domain/types';
 import {
     DASHBOARD_TIMEFRAMES,
     SIGNAL_SECTORS,
-    type DashboardTimeframe,
 } from '@/domain/constants/dashboard-tickers';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/lib/seo';
