@@ -11,14 +11,13 @@ import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
-import { buildSymbolKeywords, SITE_NAME, SITE_URL } from '@/lib/seo';
+import {
+    buildSymbolDescription,
+    buildSymbolKeywords,
+    SITE_NAME,
+    SITE_URL,
+} from '@/lib/seo';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
-
-const INDICATOR_NAMES =
-    'RSI(상대강도지수), MACD(이동평균수렴확산), 볼린저밴드, 단순이동평균(SMA), 지수이동평균(EMA), 스토캐스틱, ATR(평균진폭), OBV(거래량균형지수), CCI(상품채널지수), 파라볼릭SAR, 슈퍼트렌드, 켈트너채널, VWAP(거래량가중평균가격)';
-
-const CANDLESTICK_NAMES =
-    '도지(Doji), 해머(Hammer), 역망치(Inverted Hammer), 교수형(Hanging Man), 유성형(Shooting Star), 불리시 인겔핑(Bullish Engulfing), 베어리시 인겔핑(Bearish Engulfing)';
 
 const FALLBACK_ANALYSIS: AnalysisResponse = {
     summary: 'AI 분석을 일시적으로 사용할 수 없습니다.',
@@ -63,8 +62,8 @@ export async function generateMetadata({
     const assetInfo = await getAssetInfoAction(ticker);
 
     const displayName = buildDisplayName(assetInfo, ticker);
-    const title = `${displayName} 기술적 분석`;
-    const description = `${displayName} 실시간 차트를 AI가 자동 분석. RSI·MACD·볼린저밴드·캔들 패턴·지지저항을 무료로 즉시 확인.`;
+    const title = `${displayName} 주가 AI 분석`;
+    const description = buildSymbolDescription(displayName);
     const url = `${SITE_URL}/${ticker}`;
     const keywords = buildSymbolKeywords(
         ticker,
@@ -111,8 +110,8 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: `${displayName} 기술적 분석 | ${SITE_NAME}`,
-        description: `${displayName} 실시간 차트를 AI가 자동 분석. RSI·MACD·볼린저밴드·캔들 패턴·지지저항을 무료로 즉시 확인.`,
+        name: `${displayName} 주가 AI 분석 | ${SITE_NAME}`,
+        description: buildSymbolDescription(displayName),
         url: `${SITE_URL}/${ticker}`,
         inLanguage: 'ko',
         about: {
@@ -135,7 +134,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
             {
                 '@type': 'ListItem',
                 position: 2,
-                name: `${displayName} 기술적 분석`,
+                name: `${displayName} 주가 AI 분석`,
                 item: `${SITE_URL}/${ticker}`,
             },
         ],
@@ -179,23 +178,18 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                 }}
             />
             <section className="sr-only">
-                <h2>보조지표 분석</h2>
+                <h2>{displayName} 기술적 분석</h2>
                 <p>
-                    {displayName}({ticker}) 종목의 실시간 차트를{' '}
-                    {skillCounts.indicators}종 보조지표로 자동 분석합니다.{' '}
-                    {INDICATOR_NAMES} 등 {skillCounts.indicators}종 지표를
-                    분석합니다.
+                    {displayName} 주가를 RSI·MACD·볼린저밴드 등{' '}
+                    {skillCounts.indicators}종 보조지표로 해석하고, 도지·해머·
+                    장악형 같은 주요 캔들 패턴과 차트 패턴을 자동으로 감지합니다.
+                    주요 지지·저항 레벨과 매매 전략도 함께 확인할 수 있습니다.
                 </p>
-                <h2>캔들 패턴 분석</h2>
+                <h2>AI와 대화로 분석 결과 확인</h2>
                 <p>
-                    {skillCounts.candlesticks}종 캔들 패턴 분석:{' '}
-                    {CANDLESTICK_NAMES} 등 주요 캔들 패턴을 자동 감지합니다.
-                </p>
-                <h2>차트 패턴 및 전략 분석</h2>
-                <p>
-                    {skillCounts.patterns}종 차트 패턴, {skillCounts.strategies}
-                    종 전략 분석, {skillCounts.supportResistance}종 지지/저항
-                    레벨 분석을 제공합니다.
+                    분석된 차트 데이터를 근거로 AI와 대화할 수 있습니다. 추세
+                    판단, 지표 의미, 진입 타이밍 등 궁금한 점을 질문하면{' '}
+                    {displayName}의 현재 상황에 맞춰 답변합니다.
                 </p>
             </section>
             <HydrationBoundary state={dehydrate(queryClient)}>

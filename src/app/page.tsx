@@ -43,7 +43,7 @@ export default async function Home() {
         offers: {
             '@type': 'Offer',
             price: '0',
-            priceCurrency: 'USD',
+            priceCurrency: 'KRW',
         },
     };
 
@@ -72,11 +72,50 @@ export default async function Home() {
         },
     };
 
+    const faqJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+            {
+                '@type': 'Question',
+                name: `${SITE_NAME}는 어떤 서비스인가요?`,
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '미국 주식 티커를 입력하면 RSI, MACD, 볼린저밴드 등 보조지표와 캔들 패턴, 지지·저항 레벨을 AI가 자동 해석해 주는 무료 웹 서비스입니다. 회원가입 없이 바로 이용할 수 있습니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'AI 대화로 무엇을 물어볼 수 있나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '분석된 차트와 지표 데이터를 맥락으로, 현재 추세·진입 타이밍·지표 해석·패턴 의미·전략 비교 등을 자유롭게 질문할 수 있습니다. 답변은 화면에 표시된 분석 결과를 근거로 생성됩니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '오늘의 시장 현황에서 어떤 신호를 볼 수 있나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '11개 섹터의 선도 종목을 매일 스캔해 골든크로스, 데드크로스, RSI 다이버전스, 볼린저 스퀴즈 등 기술적 신호가 포착된 티커를 보여줍니다. 관심 종목을 클릭하면 상세 AI 분석 페이지로 바로 이동합니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '서비스 이용 요금이 있나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '현재는 회원가입 없이 무료로 제공됩니다. 향후 고급 기능은 유료 플랜으로 제공될 예정이며, 기본 분석은 계속 무료로 이용할 수 있습니다.',
+                },
+            },
+        ],
+    };
+
     const howToJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
         name: `${SITE_NAME}로 미국 주식 시장 분석·기술적 분석·AI 대화하는 방법`,
-        description: `종목 티커를 입력하면 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지/저항 ${skillCounts.supportResistance}종을 자동 분석합니다.`,
+        description: `${SITE_NAME}에서 미국 주식 종목의 기술적 신호를 AI로 자동 해석하고, 분석 결과를 바탕으로 AI와 대화하는 방법입니다.`,
         step: [
             {
                 '@type': 'HowToStep',
@@ -92,6 +131,11 @@ export default async function Home() {
                 '@type': 'HowToStep',
                 name: 'AI 리포트 확인',
                 text: '추세, 리스크, 진입 추천, 시그널, 차트 패턴, 전략 분석, 주요 지지/저항 레벨을 AI 리포트로 한 화면에서 확인합니다.',
+            },
+            {
+                '@type': 'HowToStep',
+                name: 'AI 대화',
+                text: '분석 결과를 바탕으로 AI와 직접 대화하세요. 차트 해석, 지표 의미, 매매 전략 등 궁금한 점을 질문하면 분석 데이터 맥락에 맞는 답변을 즉시 받을 수 있습니다.',
             },
         ],
     };
@@ -131,6 +175,15 @@ export default async function Home() {
                     ),
                 }}
             />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(faqJsonLd).replace(
+                        /</g,
+                        '\\u003c'
+                    ),
+                }}
+            />
             <a
                 href="#search"
                 className="focus-visible:bg-primary-600 sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"
@@ -158,8 +211,8 @@ export default async function Home() {
                             </span>
                         </h1>
                         <p className="text-secondary-400 mx-auto mt-4 max-w-lg text-base leading-relaxed text-balance sm:text-xl lg:mx-0">
-                            시장 흐름부터 종목별 기술적 분석, AI 대화까지
-                            &mdash; 한 곳에서.
+                            오늘 주목할 섹터부터 종목별 기술적 분석, AI 대화까지
+                            한 번에.
                         </p>
                         <div
                             id="search"
