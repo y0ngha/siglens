@@ -538,6 +538,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → UI components must use primary-*, secondary-*, chart-bullish, chart-bearish, or ui-warning
    ❌ CATEGORY_STYLES = { fintech: 'chart-period10', healthcare: 'chart-rsi', ... }
    ✅ CATEGORY_STYLES = { fintech: 'primary-500', healthcare: 'secondary-400', ... }
+
+9. Repeated literal values in the same page or component across multiple locations
+   → Extract to a named constant; prevents silent divergence when updating
+   → Applies to descriptions, messages, configuration values, and metadata strings
+   ❌ generateMetadata() { ... description: 'exact same text' }; buildJsonLd() { ... description: 'exact same text' }
+   ✅ const SYMBOL_DESCRIPTION = '...'; generateMetadata() uses SYMBOL_DESCRIPTION; buildJsonLd() uses SYMBOL_DESCRIPTION
+   ❌ metadata.description uses MARKET_DESCRIPTION; openGraph.description uses separate hardcoded string
+   ✅ Both metadata.description and openGraph.description reference MARKET_DESCRIPTION constant
 ```
 
 ---

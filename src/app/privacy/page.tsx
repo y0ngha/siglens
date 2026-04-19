@@ -67,6 +67,10 @@ const TOC: readonly TocItem[] = [
 export const metadata: Metadata = {
     title: PRIVACY_TITLE,
     description: PRIVACY_DESCRIPTION,
+    robots: {
+        index: false,
+        follow: true,
+    },
     alternates: {
         canonical: PAGE_URL,
     },

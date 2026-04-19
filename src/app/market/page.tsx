@@ -21,28 +21,47 @@ import {
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/lib/seo';
 
-export const metadata: Metadata = {
-    title: `섹터별 미국 주식 신호 탐색 — 골든크로스·RSI 다이버전스 스캔 | ${SITE_NAME}`,
-    description:
-        '11개 섹터별 선도 종목의 기술적 신호를 한눈에. 골든크로스·데드크로스·RSI 다이버전스·볼린저 스퀴즈를 AI 없이 실시간 포착. 무료.',
-    keywords: [
-        ...ROOT_KEYWORDS,
-        '섹터 신호',
-        '골든크로스 스캐너',
-        'RSI 다이버전스',
-        '볼린저 스퀴즈',
-    ],
-    alternates: { canonical: `${SITE_URL}/market` },
-    openGraph: {
-        title: `섹터별 미국 주식 신호 탐색 | ${SITE_NAME}`,
-        description:
-            '11개 섹터별 선도 종목의 기술적 신호를 스캔. AI 없이 실시간, 무료.',
-        url: `${SITE_URL}/market`,
-        siteName: SITE_NAME,
-        locale: 'ko_KR',
-        type: 'website',
-    },
-};
+const MARKET_TITLE = `오늘의 미국 주식, 섹터별 기술적 신호 | ${SITE_NAME}`;
+const MARKET_DESCRIPTION =
+    '오늘 움직임이 큰 미국 주식을 섹터별로 확인하세요. 11개 섹터 선도 종목에서 골든크로스, RSI 다이버전스, 볼린저 스퀴즈가 포착된 티커를 보여주고, 클릭 한 번으로 AI 분석으로 이동합니다.';
+const MARKET_URL = `${SITE_URL}/market`;
+const MARKET_KEYWORDS = [
+    ...ROOT_KEYWORDS,
+    '미국 주식 시장 개요',
+    '미국 시장 동향',
+    '섹터별 종목',
+    '골든크로스 스캐너',
+    'RSI 다이버전스',
+    '볼린저 스퀴즈',
+];
+
+export async function generateMetadata({
+    searchParams,
+}: {
+    searchParams: Promise<SearchParams>;
+}): Promise<Metadata> {
+    const params = await searchParams;
+    const hasQueryVariant =
+        params.sector !== undefined || params.timeframe !== undefined;
+
+    return {
+        title: MARKET_TITLE,
+        description: MARKET_DESCRIPTION,
+        keywords: MARKET_KEYWORDS,
+        alternates: { canonical: MARKET_URL },
+        openGraph: {
+            title: `오늘의 미국 주식 시장 | ${SITE_NAME}`,
+            description: MARKET_DESCRIPTION,
+            url: MARKET_URL,
+            siteName: SITE_NAME,
+            locale: 'ko_KR',
+            type: 'website',
+        },
+        ...(hasQueryVariant && {
+            robots: { index: false, follow: true },
+        }),
+    };
+}
 
 interface SearchParams {
     sector?: string;
@@ -79,8 +98,6 @@ export default async function MarketPage({
     searchParams: Promise<SearchParams>;
 }) {
     const params = await searchParams;
-    const hasQueryVariant =
-        params.sector !== undefined || params.timeframe !== undefined;
     const initialTimeframe: DashboardTimeframe = isDashboardTimeframe(
         params.timeframe
     )
@@ -99,11 +116,51 @@ export default async function MarketPage({
         queryFn: () => getMarketSummaryAction(),
     });
 
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: `오늘의 미국 주식 시장, 섹터별 기술적 신호 | ${SITE_NAME}`,
+        description: MARKET_DESCRIPTION,
+        url: MARKET_URL,
+        inLanguage: 'ko',
+    };
+
+    const breadcrumbJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: [
+            {
+                '@type': 'ListItem',
+                position: 1,
+                name: SITE_NAME,
+                item: SITE_URL,
+            },
+            {
+                '@type': 'ListItem',
+                position: 2,
+                name: '시장 현황',
+                item: MARKET_URL,
+            },
+        ],
+    };
+
     return (
         <>
-            {hasQueryVariant && (
-                <meta name="robots" content="noindex, follow" />
-            )}
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
+                }}
+            />
+            <script
+                type="application/ld+json"
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(breadcrumbJsonLd).replace(
+                        /</g,
+                        '\\u003c'
+                    ),
+                }}
+            />
             <h1 className="sr-only">미국 주식 기술적 신호 대시보드</h1>
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <Suspense fallback={<MarketSummaryPanelSkeleton />}>

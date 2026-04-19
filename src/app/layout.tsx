@@ -43,11 +43,20 @@ export const metadata: Metadata = {
         description: SITE_DESCRIPTION,
         url: SITE_URL,
         locale: 'ko_KR',
+        images: [
+            {
+                url: '/og-image.png',
+                width: 1200,
+                height: 630,
+                alt: SITE_NAME,
+            },
+        ],
     },
     twitter: {
         card: 'summary_large_image',
         title: ROOT_TITLE,
         description: SITE_DESCRIPTION,
+        images: ['/og-image.png'],
     },
     icons: {
         apple: [{ url: '/apple-touch-icon.png', sizes: '180x180' }],

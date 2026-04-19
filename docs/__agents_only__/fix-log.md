@@ -185,3 +185,4 @@
 - Violation: `tokenStore.ts` `getRedis()`가 매 호출마다 `new Redis(...)` 인스턴스 재생성
 - Rule: MISTAKES.md Design #2 — 동일 리소스를 여러 번 생성하지 말 것, 단일 인스턴스 캐싱 필요
 - Context: tryConsumeToken과 getRemainingTokens 각각 호출 시 새 Redis 인스턴스 생성
+
