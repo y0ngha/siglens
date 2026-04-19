@@ -231,3 +231,36 @@ export function detectSupertrendBullishFlip(
     }
     return null;
 }
+
+export function detectIchimokuCloudBreakout(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const ichimoku = indicators.ichimoku;
+    if (bars.length < 2 || ichimoku.length < 2) return null;
+    const lastIdx = bars.length - 1;
+
+    const prevIchi = ichimoku[lastIdx - 1];
+    const curIchi = ichimoku[lastIdx];
+    if (
+        prevIchi.senkouA === null ||
+        prevIchi.senkouB === null ||
+        curIchi.senkouA === null ||
+        curIchi.senkouB === null
+    ) {
+        return null;
+    }
+    const prevKumoUpper = Math.max(prevIchi.senkouA, prevIchi.senkouB);
+    const curKumoUpper = Math.max(curIchi.senkouA, curIchi.senkouB);
+    const prevClose = bars[lastIdx - 1].close;
+    const curClose = bars[lastIdx].close;
+    if (prevClose > prevKumoUpper) return null;
+    if (curClose <= curKumoUpper) return null;
+
+    return {
+        type: 'ichimoku_cloud_breakout',
+        direction: 'bullish',
+        phase: 'confirmed',
+        detectedAt: lastIdx,
+    };
+}

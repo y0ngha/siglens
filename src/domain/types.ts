@@ -601,7 +601,8 @@ export type ConfirmedSignalType =
     | 'macd_bearish_cross'
     | 'bollinger_lower_bounce'
     | 'bollinger_upper_breakout'
-    | 'supertrend_bullish_flip';
+    | 'supertrend_bullish_flip'
+    | 'ichimoku_cloud_breakout';
 
 export type ExpectedSignalType =
     | 'rsi_bullish_divergence'
