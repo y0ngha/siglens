@@ -35,7 +35,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
     return (
         <article
             aria-label={`${c.ticker} ${c.entryDate} ${isWin ? '수익' : '손실'} ${returnLabel}`}
-            className={`rounded-lg border p-3 bg-secondary-800/50 ${v.article}`}
+            className={`bg-secondary-800/50 rounded-lg border p-3 ${v.article}`}
         >
             <div className="mb-2 flex items-center gap-2">
                 <span
@@ -46,36 +46,55 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                 </span>
 
                 <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs">
-                    <div className="shrink-0 rounded border border-chart-bullish/20 bg-chart-bullish/10 px-2 py-1">
-                        <span className="font-semibold text-chart-bullish">
+                    <div className="border-chart-bullish/20 bg-chart-bullish/10 shrink-0 rounded border px-2 py-1">
+                        <span className="text-chart-bullish font-semibold">
                             {c.signalType === 'buy' ? '매수' : '매도'}
                         </span>
-                        <span className="ml-1 text-secondary-400">{c.entryDate}</span>
-                        <span className="ml-1 font-mono tabular-nums text-secondary-500">
+                        <span className="text-secondary-400 ml-1">
+                            {c.entryDate}
+                        </span>
+                        <span className="text-secondary-500 ml-1 font-mono tabular-nums">
                             {priceFormatter.format(c.entryPrice)}
                         </span>
                     </div>
-                    <span className="shrink-0 text-secondary-600" aria-hidden="true">→</span>
-                    <span className="shrink-0 whitespace-nowrap text-[10px] text-secondary-500">
+                    <span
+                        className="text-secondary-600 shrink-0"
+                        aria-hidden="true"
+                    >
+                        →
+                    </span>
+                    <span className="text-secondary-500 shrink-0 text-[10px] whitespace-nowrap">
                         <span className="tabular-nums">{c.holdingDays}</span>일
                     </span>
-                    <span className="shrink-0 text-secondary-600" aria-hidden="true">→</span>
-                    <div className="shrink-0 rounded border border-chart-bearish/20 bg-chart-bearish/10 px-2 py-1 text-right">
-                        <span className="font-semibold text-chart-bearish">
+                    <span
+                        className="text-secondary-600 shrink-0"
+                        aria-hidden="true"
+                    >
+                        →
+                    </span>
+                    <div className="border-chart-bearish/20 bg-chart-bearish/10 shrink-0 rounded border px-2 py-1 text-right">
+                        <span className="text-chart-bearish font-semibold">
                             {c.exitReason === 'stop_loss' ? '손절' : '매도'}
                         </span>
-                        <span className="ml-1 text-secondary-400">{c.exitDate}</span>
-                        <span className="ml-1 font-mono tabular-nums text-secondary-500">
+                        <span className="text-secondary-400 ml-1">
+                            {c.exitDate}
+                        </span>
+                        <span className="text-secondary-500 ml-1 font-mono tabular-nums">
                             {priceFormatter.format(c.exitPrice)}
                         </span>
                     </div>
                 </div>
 
                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                    <span className={`font-mono text-sm font-bold tabular-nums ${v.returnText}`}>
+                    <span
+                        className={`font-mono text-sm font-bold tabular-nums ${v.returnText}`}
+                    >
                         {returnLabel}
                     </span>
-                    <span aria-hidden="true" className={`text-xs ${v.returnText}`}>
+                    <span
+                        aria-hidden="true"
+                        className={`text-xs ${v.returnText}`}
+                    >
                         {isWin ? '✓' : '✗'}
                     </span>
                     <span className="sr-only">{isWin ? '수익' : '손실'}</span>
@@ -83,7 +102,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             </div>
 
             <p
-                className={`line-clamp-3 rounded-r border-l-2 bg-black/20 px-3 py-2 text-[11px] leading-relaxed text-secondary-400 ${v.aiSummary}`}
+                className={`text-secondary-400 line-clamp-3 rounded-r border-l-2 bg-black/20 px-3 py-2 text-[11px] leading-relaxed ${v.aiSummary}`}
             >
                 {c.aiAnalysis.summary}
             </p>
@@ -91,7 +110,10 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             {c.aiAnalysis.tags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                     {c.aiAnalysis.tags.map(tag => (
-                        <span key={tag} className={`rounded px-1.5 py-0.5 text-[10px] ${v.tag}`}>
+                        <span
+                            key={tag}
+                            className={`rounded px-1.5 py-0.5 text-[10px] ${v.tag}`}
+                        >
                             {tag}
                         </span>
                     ))}

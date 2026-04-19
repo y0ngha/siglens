@@ -692,8 +692,8 @@ export interface BacktestCase {
 export interface BacktestMeta {
     period: string;
     totalCases: number;
-    winRate: number;    // Range: 0–100
-    aiWinRate: number;  // Range: 0–100
+    winRate: number; // Range: 0–100
+    aiWinRate: number; // Range: 0–100
     tickerCount: number;
 }
 

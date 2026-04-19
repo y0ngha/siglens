@@ -233,18 +233,19 @@ export default async function Home() {
                 <MarketSummaryPanel />
                 <HowItWorks skillCounts={skillCounts} />
                 <section className="px-6 pb-8 lg:px-[15vw]">
-                    <div className="flex flex-col items-center gap-3 rounded-lg border border-secondary-800 bg-secondary-800/30 px-6 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
+                    <div className="border-secondary-800 bg-secondary-800/30 flex flex-col items-center gap-3 rounded-lg border px-6 py-5 text-center sm:flex-row sm:justify-between sm:text-left">
                         <div>
-                            <p className="text-sm font-semibold text-secondary-200">
+                            <p className="text-secondary-200 text-sm font-semibold">
                                 Siglens는 얼마나 정확할까요?
                             </p>
-                            <p className="mt-0.5 text-xs text-secondary-500">
-                                1년간 10개 종목 기술적 분석 + AI 예측 백테스팅 결과를 확인하세요.
+                            <p className="text-secondary-500 mt-0.5 text-xs">
+                                1년간 10개 종목 기술적 분석 + AI 예측 백테스팅
+                                결과를 확인하세요.
                             </p>
                         </div>
                         <Link
                             href="/backtesting"
-                            className="shrink-0 rounded-md bg-secondary-700 px-4 py-2 text-xs font-medium text-secondary-200 transition-colors hover:bg-secondary-600"
+                            className="bg-secondary-700 text-secondary-200 hover:bg-secondary-600 shrink-0 rounded-md px-4 py-2 text-xs font-medium transition-colors"
                         >
                             백테스팅 결과 보기 →
                         </Link>

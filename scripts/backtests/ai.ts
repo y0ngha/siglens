@@ -16,7 +16,11 @@ function isMaxTokensError(error: unknown): boolean {
 
 function getThinkingBudgetSequence(initial: number): number[] {
     // Always start with initial, then use fixed fallback steps that are strictly smaller.
-    const candidates = [initial, Math.floor(initial / 2), ...BUDGET_FALLBACK_STEPS];
+    const candidates = [
+        initial,
+        Math.floor(initial / 2),
+        ...BUDGET_FALLBACK_STEPS,
+    ];
     const result: number[] = [];
     for (const budget of candidates) {
         if (result.length === 0 || budget < result[result.length - 1]) {
@@ -71,5 +75,11 @@ export async function callGeminiScript(
     model: string,
     signal?: AbortSignal
 ): Promise<string> {
-    return callGeminiReducingBudget(prompt, apiKey, model, DEFAULT_THINKING_BUDGET, signal);
+    return callGeminiReducingBudget(
+        prompt,
+        apiKey,
+        model,
+        DEFAULT_THINKING_BUDGET,
+        signal
+    );
 }

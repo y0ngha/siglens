@@ -22,7 +22,18 @@ import type { Bar, RawAnalysisResponse, BacktestOutcome } from '@/domain/types';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
-const TICKERS = ['AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA', 'PLTR', 'CRWD', 'MSTR'];
+const TICKERS = [
+    'AAPL',
+    'MSFT',
+    'GOOGL',
+    'AMZN',
+    'NVDA',
+    'META',
+    'TSLA',
+    'PLTR',
+    'CRWD',
+    'MSTR',
+];
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_API_KEY = process.env.FMP_API_KEY ?? '';
 const GEMINI_FREE_API_KEY = process.env.GEMINI_FREE_API_KEY ?? '';
@@ -39,7 +50,8 @@ const DEFAULT_RETRY_AFTER_MS = 60_000;
 const GEMINI_MODEL = 'gemini-2.5-flash-lite';
 
 if (!FMP_API_KEY) throw new Error('FMP_API_KEY is required in .env.local');
-if (!GEMINI_FREE_API_KEY) throw new Error('GEMINI_FREE_API_KEY is required in .env.local');
+if (!GEMINI_FREE_API_KEY)
+    throw new Error('GEMINI_FREE_API_KEY is required in .env.local');
 
 function sleep(ms: number): Promise<void> {
     return new Promise(r => setTimeout(r, ms));
@@ -57,7 +69,8 @@ interface FmpBar {
 async function fetchDailyBars(ticker: string): Promise<FmpBar[]> {
     const url = `${FMP_BASE_URL}/historical-price-eod/full?symbol=${ticker}&from=${FROM_DATE}&to=${TO_DATE}&apikey=${FMP_API_KEY}`;
     const res = await fetch(url);
-    if (!res.ok) throw new Error(`FMP fetch failed for ${ticker}: ${res.status}`);
+    if (!res.ok)
+        throw new Error(`FMP fetch failed for ${ticker}: ${res.status}`);
     const json = (await res.json()) as { historical?: FmpBar[] };
     return (json.historical ?? []).slice().reverse();
 }
@@ -108,7 +121,11 @@ function detectBuySignals(fmpBars: FmpBar[]): SignalPoint[] {
     const signals: SignalPoint[] = [];
     for (let i = 15; i < fmpBars.length - HOLD_DAYS - 1; i++) {
         if (rsi[i - 1] < 30 && rsi[i] >= 30) {
-            signals.push({ idx: i, entryDate: fmpBars[i].date, entryPrice: fmpBars[i].close });
+            signals.push({
+                idx: i,
+                entryDate: fmpBars[i].date,
+                entryPrice: fmpBars[i].close,
+            });
         }
     }
     return signals;
@@ -141,7 +158,11 @@ function is429(err: unknown): boolean {
 async function callGeminiWithRetryAfter(prompt: string): Promise<string> {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-            return await callGeminiScript(prompt, GEMINI_FREE_API_KEY, GEMINI_MODEL);
+            return await callGeminiScript(
+                prompt,
+                GEMINI_FREE_API_KEY,
+                GEMINI_MODEL
+            );
         } catch (err) {
             if (is429(err) && attempt < MAX_RETRIES) {
                 const waitMs = parseRetryAfterMs(err);
@@ -161,17 +182,36 @@ async function runAiAnalysis(
     ticker: string,
     bars: Bar[],
     entryIdx: number
-): Promise<{ trend: 'bullish' | 'bearish' | 'neutral'; summary: string; tags: string[] }> {
-    const contextBars = bars.slice(Math.max(0, entryIdx - CONTEXT_BARS + 1), entryIdx + 1);
+): Promise<{
+    trend: 'bullish' | 'bearish' | 'neutral';
+    summary: string;
+    tags: string[];
+}> {
+    const contextBars = bars.slice(
+        Math.max(0, entryIdx - CONTEXT_BARS + 1),
+        entryIdx + 1
+    );
     const indicators = calculateIndicators(contextBars);
-    const prompt = buildAnalysisPrompt(ticker, contextBars, indicators, [], '1Day');
+    const prompt = buildAnalysisPrompt(
+        ticker,
+        contextBars,
+        indicators,
+        [],
+        '1Day'
+    );
     const text = await callGeminiWithRetryAfter(prompt);
     const raw = parseJsonResponse<RawAnalysisResponse>(text, 'analysis');
     const result = enrichAnalysisWithConfidence(raw, []);
     const tags: string[] = result.indicatorResults
-        .flatMap(ir => ir.signals.map(s => `${ir.indicatorName} ${s.description}`))
+        .flatMap(ir =>
+            ir.signals.map(s => `${ir.indicatorName} ${s.description}`)
+        )
         .slice(0, 3);
-    return { trend: result.trend, summary: (result.summary ?? '').slice(0, 150), tags };
+    return {
+        trend: result.trend,
+        summary: (result.summary ?? '').slice(0, 150),
+        tags,
+    };
 }
 
 async function main() {
@@ -188,20 +228,26 @@ async function main() {
         const bars = toBarArray(fmpBars);
         const signals = detectBuySignals(fmpBars);
         const selected = signals.slice(0, MAX_SIGNALS_PER_TICKER);
-        console.log(`  Found ${signals.length} signals → using ${selected.length}`);
+        console.log(
+            `  Found ${signals.length} signals → using ${selected.length}`
+        );
 
         for (const sig of selected) {
             const exitIdx = Math.min(sig.idx + HOLD_DAYS, fmpBars.length - 1);
             const exitBar = fmpBars[exitIdx];
-            const returnPct = ((exitBar.close - sig.entryPrice) / sig.entryPrice) * 100;
+            const returnPct =
+                ((exitBar.close - sig.entryPrice) / sig.entryPrice) * 100;
             const result: BacktestOutcome = returnPct >= 0 ? 'win' : 'loss';
-            console.log(`  ${sig.entryDate} → ${exitBar.date} | ${returnPct.toFixed(1)}% (${result})`);
+            console.log(
+                `  ${sig.entryDate} → ${exitBar.date} | ${returnPct.toFixed(1)}% (${result})`
+            );
 
             const ai = await runAiAnalysis(ticker, bars, sig.idx);
 
             // aiResult: AI의 bullish/bearish 예측이 실제 가격 방향과 일치했는지 여부
             const aiResult: BacktestOutcome =
-                (ai.trend === 'bullish' && returnPct > 0) || (ai.trend === 'bearish' && returnPct < 0)
+                (ai.trend === 'bullish' && returnPct > 0) ||
+                (ai.trend === 'bearish' && returnPct < 0)
                     ? 'win'
                     : 'loss';
 
@@ -227,7 +273,9 @@ async function main() {
         }
     }
 
-    const sortedCases = [...allCases].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
+    const sortedCases = [...allCases].sort((a, b) =>
+        a.entryDate.localeCompare(b.entryDate)
+    );
 
     const wins = sortedCases.filter(c => c.result === 'win').length;
     const aiWins = sortedCases.filter(c => c.aiResult === 'win').length;
@@ -238,7 +286,8 @@ async function main() {
             period: '2025.04 – 2026.04',
             totalCases: total,
             winRate: total > 0 ? Number(((wins / total) * 100).toFixed(1)) : 0,
-            aiWinRate: total > 0 ? Number(((aiWins / total) * 100).toFixed(1)) : 0,
+            aiWinRate:
+                total > 0 ? Number(((aiWins / total) * 100).toFixed(1)) : 0,
             tickerCount: TICKERS.length,
         },
         cases: sortedCases,

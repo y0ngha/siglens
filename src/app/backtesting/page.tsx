@@ -73,23 +73,34 @@ export default function BacktestingPage() {
         <>
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(webPageJsonLd) }}
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(webPageJsonLd),
+                }}
             />
             <script
                 type="application/ld+json"
-                dangerouslySetInnerHTML={{ __html: JSON.stringify(datasetJsonLd) }}
+                dangerouslySetInnerHTML={{
+                    __html: JSON.stringify(datasetJsonLd),
+                }}
             />
-            <div className="min-h-screen bg-secondary-900">
+            <div className="bg-secondary-900 min-h-screen">
                 <BacktestHero meta={data.meta} />
                 <main>
-                    <Suspense fallback={<div className="py-10 text-center text-sm text-secondary-500">로딩 중...</div>}>
+                    <Suspense
+                        fallback={
+                            <div className="text-secondary-500 py-10 text-center text-sm">
+                                로딩 중...
+                            </div>
+                        }
+                    >
                         <BacktestTabs cases={data.cases} tickers={TICKERS} />
                     </Suspense>
                 </main>
-                <footer className="border-t border-secondary-800 px-6 py-4">
-                    <p className="text-center text-[11px] text-secondary-600">
-                        * 본 결과는 과거 데이터 기반 백테스팅이며 미래 수익을 보장하지 않습니다.
-                        투자 판단의 책임은 투자자 본인에게 있습니다.
+                <footer className="border-secondary-800 border-t px-6 py-4">
+                    <p className="text-secondary-600 text-center text-[11px]">
+                        * 본 결과는 과거 데이터 기반 백테스팅이며 미래 수익을
+                        보장하지 않습니다. 투자 판단의 책임은 투자자 본인에게
+                        있습니다.
                     </p>
                 </footer>
             </div>

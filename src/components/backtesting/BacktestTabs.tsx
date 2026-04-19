@@ -21,7 +21,9 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
     const safeActive = tabs.includes(active) ? active : ALL_TAB;
 
     const filtered =
-        safeActive === ALL_TAB ? cases : cases.filter(c => c.ticker === safeActive);
+        safeActive === ALL_TAB
+            ? cases
+            : cases.filter(c => c.ticker === safeActive);
 
     const setActive = useCallback(
         (tab: string) => {
@@ -62,7 +64,7 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
                 role="tablist"
                 aria-label="티커 필터"
                 onKeyDown={handleKeyDown}
-                className="overflow-x-auto border-b border-secondary-800"
+                className="border-secondary-800 overflow-x-auto border-b"
             >
                 <div className="flex min-w-max px-4">
                     {tabs.map(tab => {
@@ -76,10 +78,10 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
                                 aria-controls="backtest-case-list"
                                 tabIndex={isSelected ? 0 : -1}
                                 onClick={() => setActive(tab)}
-                                className={`[touch-action:manipulation] cursor-pointer border-b-2 px-3.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1 focus-visible:ring-offset-secondary-900 ${
+                                className={`focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-900 cursor-pointer [touch-action:manipulation] border-b-2 px-3.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none ${
                                     isSelected
                                         ? 'border-primary-400 text-primary-400'
-                                        : 'border-transparent text-secondary-500 hover:text-secondary-300'
+                                        : 'text-secondary-500 hover:text-secondary-300 border-transparent'
                                 }`}
                             >
                                 {tab}

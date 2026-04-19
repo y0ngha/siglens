@@ -35,7 +35,9 @@ describe('validateBacktestData', () => {
 
     describe('invalid input', () => {
         it('throws when meta is missing', () => {
-            expect(() => validateBacktestData({ cases: [] })).toThrow('meta must be an object');
+            expect(() => validateBacktestData({ cases: [] })).toThrow(
+                'meta must be an object'
+            );
         });
 
         it('throws when cases is not an array', () => {
@@ -45,21 +47,35 @@ describe('validateBacktestData', () => {
         });
 
         it('throws when a case has invalid returnPct type', () => {
-            const bad = { ...validData, cases: [{ ...validCase, returnPct: '23.5' }] };
-            expect(() => validateBacktestData(bad)).toThrow('cases[0].returnPct must be a number');
+            const bad = {
+                ...validData,
+                cases: [{ ...validCase, returnPct: '23.5' }],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].returnPct must be a number'
+            );
         });
 
         it('throws when result is not win or loss', () => {
-            const bad = { ...validData, cases: [{ ...validCase, result: 'maybe' }] };
-            expect(() => validateBacktestData(bad)).toThrow("cases[0].result must be 'win' or 'loss'");
+            const bad = {
+                ...validData,
+                cases: [{ ...validCase, result: 'maybe' }],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                "cases[0].result must be 'win' or 'loss'"
+            );
         });
 
         it('throws when aiAnalysis.tags is not an array', () => {
             const bad = {
                 ...validData,
-                cases: [{ ...validCase, aiAnalysis: { summary: 'x', tags: 'x' } }],
+                cases: [
+                    { ...validCase, aiAnalysis: { summary: 'x', tags: 'x' } },
+                ],
             };
-            expect(() => validateBacktestData(bad)).toThrow('cases[0].aiAnalysis.tags must be an array');
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.tags must be an array'
+            );
         });
     });
 });

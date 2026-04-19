@@ -15,7 +15,7 @@ type MonthGroup = { label: string; items: BacktestCase[] };
 export function BacktestCaseList({ cases }: BacktestCaseListProps) {
     if (cases.length === 0) {
         return (
-            <p className="py-10 text-center text-sm text-secondary-500">
+            <p className="text-secondary-500 py-10 text-center text-sm">
                 해당 종목의 케이스가 없습니다.
             </p>
         );
@@ -34,12 +34,15 @@ export function BacktestCaseList({ cases }: BacktestCaseListProps) {
         <div className="flex flex-col gap-2 px-4 pb-6">
             {groups.map(group => (
                 <div key={group.label}>
-                    <div className="pb-1 pt-3 text-[10px] uppercase tracking-widest text-secondary-600">
+                    <div className="text-secondary-600 pt-3 pb-1 text-[10px] tracking-widest uppercase">
                         {group.label}
                     </div>
                     <div className="flex flex-col gap-2">
                         {group.items.map((c, i) => (
-                            <BacktestCaseCard key={`${c.ticker}-${c.entryDate}-${i}`} case_={c} />
+                            <BacktestCaseCard
+                                key={`${c.ticker}-${c.entryDate}-${i}`}
+                                case_={c}
+                            />
                         ))}
                     </div>
                 </div>
