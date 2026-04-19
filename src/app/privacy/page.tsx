@@ -316,9 +316,15 @@ export default function PrivacyPage() {
                                 </li>
                                 <li>
                                     <strong className="text-secondary-200">
+                                        Google LLC
+                                    </strong>
+                                    &nbsp;(미국): AI 채팅 응답 생성 (Gemini API)
+                                </li>
+                                <li>
+                                    <strong className="text-secondary-200">
                                         Upstash, Inc.
                                     </strong>
-                                    &nbsp;(미국): 분석 결과 캐시 저장 (Redis)
+                                    &nbsp;(미국): 분석 결과 캐시 및 AI 질문 횟수 제한 (Redis)
                                 </li>
                             </ul>
                             <p>

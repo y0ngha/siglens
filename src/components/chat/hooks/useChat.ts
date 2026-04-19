@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useLayoutEffect, useRef, useCallback, useMemo, startTransition } from 'react';
+import { useMutation } from '@tanstack/react-query';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import type {
     ChatMessage,
@@ -18,6 +19,7 @@ import {
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
 
 const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
+    // '5' matches CHAT_TOKEN_LIMIT in infrastructure/chat/tokenStore.ts
     token_exhausted:
         '오늘 무료 질문 5회를 모두 사용했어요. 내일 다시 이용하거나 유료 플랜을 이용해보세요.',
     rate_limited: 'AI 서버가 잠시 바빠요. 잠시 후 다시 시도해주세요.',
@@ -71,6 +73,39 @@ export function useChat({
         loadingPhaseRef.current = loadingPhase;
     });
 
+    const { mutateAsync } = useMutation({
+        mutationFn: ({ currentMessages, text }: { currentMessages: ChatMessage[]; text: string }) =>
+            chatAction(symbol, timeframe, analysis, currentMessages, text),
+        onMutate: ({ currentMessages, text }) => {
+            const userMessage: ChatMessage = { role: 'user', content: text };
+            setMessages([...currentMessages, userMessage]);
+            setLoadingPhase('analyzing');
+            phaseTimerRef.current = setTimeout(() => {
+                setLoadingPhase('generating');
+            }, ANALYZING_PHASE_MIN_DURATION_MS);
+        },
+        onSettled: () => {
+            if (phaseTimerRef.current !== null) {
+                clearTimeout(phaseTimerRef.current);
+                phaseTimerRef.current = null;
+            }
+            setLoadingPhase(null);
+        },
+        onSuccess: result => {
+            const aiContent = result.ok
+                ? result.message
+                : (ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error);
+            const aiMessage: ChatMessage = { role: 'model', content: aiContent };
+            setMessages(prev => [...prev, aiMessage]);
+        },
+        onError: () => {
+            setMessages(prev => [
+                ...prev,
+                { role: 'model', content: ERROR_MESSAGES.server_error },
+            ]);
+        },
+    });
+
     const storageKey = useMemo(
         () => buildStorageKey(symbol, timeframe),
         [symbol, timeframe]
@@ -82,38 +117,9 @@ export function useChat({
             // loadingPhase or analysis change mid-flight (stale closure is intentional —
             // in-flight requests use the snapshot captured when the user submitted)
             if (loadingPhaseRef.current !== null || !isAnalysisReady) return;
-
-            const currentMessages = messagesRef.current;
-            const userMessage: ChatMessage = { role: 'user', content: text };
-            setMessages([...currentMessages, userMessage]);
-
-            setLoadingPhase('analyzing');
-            phaseTimerRef.current = setTimeout(() => {
-                setLoadingPhase('generating');
-            }, ANALYZING_PHASE_MIN_DURATION_MS);
-
-            const result = await chatAction(
-                symbol,
-                timeframe,
-                analysis,
-                currentMessages, // 신규 userMessage 제외한 히스토리
-                text
-            );
-
-            if (phaseTimerRef.current !== null) {
-                clearTimeout(phaseTimerRef.current);
-                phaseTimerRef.current = null;
-            }
-            setLoadingPhase(null);
-
-            const aiContent: string = result.ok
-                ? result.message
-                : (ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error);
-
-            const aiMessage: ChatMessage = { role: 'model', content: aiContent };
-            setMessages(prev => [...prev, aiMessage]);
+            await mutateAsync({ currentMessages: messagesRef.current, text });
         },
-        [isAnalysisReady, symbol, timeframe, analysis]
+        [isAnalysisReady, mutateAsync]
     );
 
     const dismissAnalysisUpdated = useCallback(() => {

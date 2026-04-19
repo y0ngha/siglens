@@ -25,6 +25,7 @@ function isRateLimitError(error: unknown): boolean {
         typeof error === 'object' &&
         error !== null &&
         'status' in error &&
+        // @google/genai attaches an HTTP status code to error objects
         (error as { status: number }).status === 429
     );
 }

@@ -51,11 +51,11 @@ describe('tryConsumeToken / getRemainingTokens 함수는', () => {
         });
 
         it('한도 내 호출은 true를 반환한다', async () => {
-            mockIncr.mockResolvedValueOnce(5); // 5번째 호출
-            mockExpire.mockResolvedValueOnce(1);
+            mockIncr.mockResolvedValueOnce(5); // 5번째 호출 — count !== 1이므로 expire 호출 없음
 
             const result = await tryConsumeToken('abc123');
             expect(result).toBe(true);
+            expect(mockExpire).not.toHaveBeenCalled();
         });
 
         it('한도 초과 호출은 false를 반환한다', async () => {
