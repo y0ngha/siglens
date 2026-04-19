@@ -38,7 +38,7 @@ export function MarketSummaryPanel() {
             aria-live="polite"
             className="px-6 py-10 lg:px-[15vw]"
         >
-            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
+            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-[0.15em] uppercase">
                 시장 현황
             </h2>
             <div className="flex flex-col gap-6">
@@ -60,7 +60,7 @@ export function MarketSummaryPanel() {
 
                         return (
                             <div key={group.label}>
-                                <p className="text-secondary-500 mb-1.5 text-xs">
+                                <p className="text-secondary-500 mb-1.5 text-[10px] tracking-wider uppercase">
                                     {group.label}
                                 </p>
                                 <div

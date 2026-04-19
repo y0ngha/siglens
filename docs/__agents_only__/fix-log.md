@@ -1,5 +1,77 @@
 # Fix Log
 
+## [PR #331 Round 7 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `DashboardTimeframe` 타입이 `constants/dashboard-tickers.ts` 에 정의되고 `domain/types.ts` 에서 re-export
+- Rule: MISTAKES.md Architecture #1 — 모든 도메인 타입은 `domain/types.ts` 에 직접 정의 (re-export 우회 금지, 순환 의존 유발)
+- Context: `export type DashboardTimeframe = (typeof DASHBOARD_TIMEFRAMES)[number]` 를 `domain/types.ts` 로 이동. 상수 파일은 타입을 import 하여 `readonly DashboardTimeframe[]` 로 명시적 타입 annotation
+
+
+- Violation: `signalToQuadrantKey` if-chain (4단 nested conditional)
+- Rule: CONVENTIONS.md 선언적 패턴 — nested conditionals → object map
+- Context: `SectorSignalPanel.tsx` 의 direction × phase 판정을 `Record<SignalDirection, Record<SignalPhase, QuadrantKey>>` 맵 lookup 으로 전환
+
+- Violation: quadrants useMemo 의 이중 중첩 reduce 가 useMemo 바디에 직접 존재
+- Rule: MISTAKES.md Coding #9 — Complex anonymous expressions → named helper
+- Context: 내부 accumulator 를 `groupStockIntoQuadrants` 순수 함수로 module-level 추출, useMemo 는 reduce 호출만 남김
+
+## [PR #331 Round 6 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: useMemo 파생값이 handler 선언 뒤에 위치
+- Rule: MISTAKES.md #17 — hook 선언 순서 `useState → useCallback → useMemo(파생값) → handlers → useEffect`
+- Context: `SectorSignalPanel.tsx` 에서 `handleSectorChange` / `handleTimeframeChange` 가 `filtered`/`sectorStocks`/`quadrants` useMemo 보다 먼저 선언. useMemo 를 handlers 앞으로 이동
+
+- Violation: radiogroup 키보드 네비게이션에서 DOM 포커스 미이동
+- Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴은 aria-checked 와 DOM focus 동기화 필수
+- Context: `TimeframeSelector` 의 Arrow 키 처리가 `onChange` 만 호출하고 실제 포커스 이동 누락. `SectorTabs` 패턴처럼 `querySelectorAll('[role="radio"]')[nextIdx].focus()` 추가
+
+
+- Violation: useMemo 내 local push 누산기
+- Rule: MISTAKES.md #5 — CONVENTIONS.md 예외 (domain 상태머신) 미해당
+- Context: `SectorSignalPanel.tsx` quadrants useMemo 를 reduce + spread 패턴으로 재작성. `signalToQuadrantKey` 순수 헬퍼 module-level 추출
+
+## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `stocks.push(result)` 배열 직접 변이
+- Rule: MISTAKES.md Coding Paradigm #5 — immutable 패턴 우선 (map + filter)
+- Context: `sectorSignalsApi.ts` 의 for-loop 누산기를 `SECTOR_STOCKS.map(...).filter(...)` 함수형 패턴으로 교체
+
+- Violation: `computeBbWidth(lastBB)` 중복 호출
+- Rule: MISTAKES.md Coding Paradigm #2 — 동일 입력 중복 계산 금지
+- Context: `anticipation.ts computeSqueezeState` 에서 lastBB 의 width 를 루프 진입 전 1회 + 루프 내 i===lastIdx 에서 1회 = 2회 계산. 루프 범위를 `i < lastIdx` 로 변경해 이미 계산한 widthLast 를 push
+
+- Violation: `percentileRank` 가 분산=0 (모든 원소 동일) 케이스에서 0 반환 — 스퀴즈 false-positive 유발 가능
+- Rule: defensive numerical handling — degenerate distribution 에서 정책 결정이 필요
+- Context: all-equal 입력 시 `below / (len-1) = 0/0` 또는 0 반환으로 "최소값" 으로 분류되어 squeeze 조건 통과. 0.5 중립값 반환으로 수정
+
+## [PR #331 Round 2 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `as number` 타입 단언을 `!` 로 대체 가능한 상황에서 사용
+- Rule: MISTAKES.md TypeScript #7 — `as` 는 null 가능한 경우 `!` 우선 고려
+- Context: `anticipation.ts` S/R detector 가 주석에 이미 "null 불가 보장" 명시한 상태에서 `as number` 사용. `!` 로 교체
+
+## [PR #331 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `components/` .tsx 파일에서 `infrastructure/` 직접 import
+- Rule: ARCHITECTURE.md 레이어 의존성 — 컴포넌트 파일은 infrastructure 직접 import 금지 (RSC Server Component 라도 동일 규칙 적용)
+- Context: `SectorSignalPanelContainer.tsx` 가 async RSC 라는 명목으로 `getSectorSignals` 를 직접 import 했으나 components/ 폴더 위치만으로 lint 통과해도 규칙 위반. 컨테이너 파일 삭제하고 fetch 를 `app/market/page.tsx` RSC 로 이동
+
+- Violation: 68~74 종목에 대한 Promise.allSettled 병렬 fetch — FMP rate limit 초과 가능
+- Rule: API 호출 시 provider rate limit 고려한 concurrency 제한 필수
+- Context: `sectorSignalsApi.ts` 가 `Promise.allSettled(SECTOR_STOCKS.map(...))` 로 전체 동시 실행. `fetchInChunks` 헬퍼로 청크 10개씩 순차 처리로 변경
+
+- Violation: 이미 계산된 `indicators.ma[period]` 가 있는데 S/R 감지기에서 `calculateMA` 를 직접 재호출
+- Rule: 중복 계산 방지 — indicator bag 우선 사용 후 fallback
+- Context: `detectSupportProximityBullish` / `detectResistanceProximityBearish` 가 `_indicators` 를 무시하고 `calculateMA(bars, period)` 만 호출. `indicators.ma[period] ?? calculateMA(bars, period)` 패턴으로 변경
+
+- Violation: `isSqueezePresent` 네이밍이 boolean 반환을 암시하지만 실제로는 객체 반환
+- Rule: MISTAKES.md #11 — 함수명은 반환 타입과 일치
+- Context: 스퀴즈 상태 객체(lastIdx, pctB, slope)를 반환하므로 `computeSqueezeState` 로 리네임
+
+## [Issue #329 Round 1 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `rsi1 === null || rsi2 === null || rsi1 === undefined || rsi2 === undefined` 이중 null/undefined 체크
+- Rule: FF 2-C (Predictability — expose hidden logic) — `(number | null)[]` 타입이면 out-of-bounds 만 undefined, 의도를 분리해 표기하거나 `== null` 로 통합
+- Context: `anticipation.ts detectRegularDivergence` 에서 피벗 인덱스 근거가 있음에도 불필요한 undefined 체크 작성
+
+- Violation: 안정적이지 않은 inline arrow function (`updateUrl`) 을 state handler 에서 호출
+- Rule: FF 1-B (Readability — extract implementation detail) — 다른 handler 가 공유 호출할 때는 `useCallback` 으로 식별성 확보
+- Context: `SectorSignalPanel.tsx` 의 URL 동기화 로직이 매 렌더 새 함수로 생성되어 `handleSectorChange` / `handleStrictChange` 간 공유 비효율
+
 ## [PR #330 Round 3 | feature/issue-328-market-summary-panel | 2026-04-19]
 - Violation: infrastructure 파일에 대응하는 테스트 파일 누락
 - Rule: CONVENTIONS.md — infrastructure/ 100% coverage 필수
@@ -15,17 +87,9 @@
 - Context: `MarketSummaryPanel.tsx`에서 5개 derived 상수 이후 `useBriefing`, `useMemo` 호출; 중간 상수를 인라인으로 이동하여 수정
 
 ## [PR #330 | feature/issue-328-market-summary-panel | 2026-04-19]
-- Violation: fire-and-forget `fetch`에 `AbortSignal.timeout()` 없음
-- Rule: MISTAKES.md > Fire-and-Forget Operations #1 — Fire-and-forget fetch requests must have timeouts
-- Context: `submitBriefingAction.ts`의 `waitUntil(fetch(...))` 패턴에 타임아웃이 없어 worker 무응답 시 indefinitely hang 가능
-
 - Violation: 타입 시스템이 보장하는 필드에 중복 null/truthy 체크
 - Rule: MISTAKES.md > Predictability #2 — Conditional checks that duplicate type system guarantees
 - Context: `BriefingCard.tsx`에서 `dominantThemes`, `sectorAnalysis`, `leadingSectors` 등 `MarketBriefingResponse`가 보장하는 non-null 필드에 불필요한 `&&` guard 추가
-
-- Violation: Worker 분석 완료 후에만 HTTP 응답 전송
-- Rule: Fire-and-forget + polling 패턴 설계 원칙 — worker는 수신 즉시 응답하고 처리는 백그라운드에서 진행해야 함
-- Context: `worker/src/index.ts`의 `/briefing` 엔드포인트가 `processBriefingJob` 완료 후 `res.json()`을 호출하여 AI 처리 시간 동안 HTTP 연결이 유지됨
 
 ## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
 - Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
@@ -33,10 +97,6 @@
 - Context: AdSense `<Script>`가 `<head>` 블록 안에 있었음; `<body>` 끝으로 이동
 
 ## [PR #315 Round 2 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
-- Violation: `isPushed`를 `useState`로 관리하여 push 완료 시 불필요한 리렌더 + effect 재실행 사이클 발생
-- Rule: Components — JSX 렌더 출력에 영향을 주지 않는 내부 플래그는 `useRef`로 관리해야 함
-- Context: `setIsPushed(true)` 호출 → 리렌더 → effect 재실행 → 즉시 guard return 무의미한 사이클; `useRef`로 전환해 렌더 없이 플래그 관리
-
 - Violation: `shouldShowAd()` 비즈니스 로직 함수가 `lib/`에 배치됨 — lib/CLAUDE.md 범위(유틸리티 래퍼, 설정 상수, 차트 색상) 초과
 - Rule: Design & Cohesion — lib/은 순수 유틸리티/설정 상수만; 비즈니스 판단 로직은 사용처에 인라인하거나 domain/으로 이동
 - Context: `shouldShowAd`는 AdBanner.tsx 단독 사용이므로 컴포넌트 내 인라인으로 해결; lib/adsense.ts에서 함수 제거
@@ -50,11 +110,6 @@
 - Rule: Design — 동적 텍스트 콘텐츠에 `whitespace-nowrap` 사용 금지; 자연스러운 줄바꿈 허용
 - Context: 긴 한국어 안내 메시지가 작은 화면에서 컨테이너를 넘어 레이아웃 깨짐 유발 가능; 클래스 제거
 
-
-## [PR #304 | feat/296/캐시-만료-KST-17시-자동-초기화 | 2026-04-14]
-- Violation: `computeEffectiveTtl`이 `new Date()`에 의존함에도 `analyzeAction.test.ts`, `pollAnalysisAction.test.ts`에서 mock 없이 하드코딩 TTL 단언 — 시간대에 따라 flaky 테스트 발생
-- Rule: Test Layer Rules — 외부/시간 의존 함수는 테스트에서 반드시 mock해야 함
-- Context: `analyzeAction`, `pollAnalysisAction`이 `computeEffectiveTtl(timeframe, new Date())`를 호출하도록 변경됐으나, 기존 테스트는 TTL을 86400/300/3600으로 하드코딩 단언; `jest.mock('@/infrastructure/cache/config', ...)` 추가하여 해결
 
 ## [PR #300 | fix/299/mobile-bottom-sheet-native-ux | 2026-04-14]
 - Violation: `useEffect` cleanup에서 직접 조작한 DOM 스타일(`transform`, `transition`) 미초기화

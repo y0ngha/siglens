@@ -212,6 +212,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ useMutation({ onMutate: () => { setPollError(null); setAnalysisResult(null); }, ... })
     → For state that must reset on every mutate call site, onMutate is the single source of truth
     → Note: useCallback does NOT help — the linter traces into useCallback bodies and still flags setState
+
+11. URL synchronization using initial props instead of current local state
+    → RSC pending states can cause initial props to be stale during concurrent updates
+    → Always derive URL from local state (useState) that reflects current user action
+    ❌ handleSectorChange() { updateUrl(initialTimeframe); }  // prop is stale during RSC pending
+    ✅ const [activeTimeframe, setActiveTimeframe] = useState(initialTimeframe); handleSectorChange() { updateUrl(activeTimeframe); }
+
+12. Internal flags affecting render state managed with useState instead of useRef
+    → Flags that do not influence JSX output should use useRef to prevent unnecessary re-renders and effect re-runs
+    → useState causes render cycles: setState → rerender → effect re-executes → immediate guard return
+    ❌ const [isPushed, setIsPushed] = useState(false); handlePush() { setIsPushed(true); }
+    ✅ const isPushedRef = useRef(false); handlePush() { isPushedRef.current = true; }
 ```
 
 ---

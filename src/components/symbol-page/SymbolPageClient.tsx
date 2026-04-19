@@ -9,7 +9,6 @@ import type { AnalysisResponse } from '@/domain/types';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
-import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { ChartContent } from '@/components/symbol-page/ChartContent';
 import {
     SNAP_HALF,
@@ -61,7 +60,7 @@ export function SymbolPageClient({
 
     return (
         <SymbolPageProvider indicatorCount={indicatorCount}>
-            <div className="bg-secondary-900 text-secondary-200 flex h-screen flex-col overflow-hidden">
+            <div className="bg-secondary-900 text-secondary-200 flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden">
                 {/* 헤더 */}
                 <header className="border-secondary-700 border-b px-4 py-3">
                     <div className="flex items-center justify-between">
@@ -90,9 +89,6 @@ export function SymbolPageClient({
                             </h1>
                         </div>
                         <div className="flex items-center gap-3">
-                            <div className="hidden md:block">
-                                <TickerAutocomplete size="sm" />
-                            </div>
                             <div className="hidden sm:block">
                                 <TimeframeSelector
                                     value={timeframe}

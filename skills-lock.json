@@ -31,6 +31,11 @@
             "sourceType": "github",
             "computedHash": "1eef04180a5278a6869fab117c75fa2acf512bfda0a4b16569409b88b7bcb343"
         },
+        "subagent-driven-development": {
+            "source": "obra/superpowers",
+            "sourceType": "github",
+            "computedHash": "a197f8e5fba5ea59013e1adbaa90dd42db35de8f074feca200c8038de584a83b"
+        },
         "typescript-advanced-types": {
             "source": "wshobson/agents",
             "sourceType": "github",

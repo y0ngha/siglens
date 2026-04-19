@@ -1,5 +1,6 @@
 import type {
     ActionRecommendation,
+    AnalysisSignal,
     CandlePatternSummary,
     EntryRecommendation,
     IndicatorGuideResult,
@@ -12,7 +13,6 @@ import type {
     PriceTarget,
     PriceTargets,
     RiskLevel,
-    Signal,
     SignalStrength,
     StrategyResult,
     Trend,
@@ -113,10 +113,10 @@ export function normalizePriceTargets(v: unknown): PriceTargets {
 
 // --- Signals / IndicatorGuideResult ---
 
-export function normalizeSignal(v: unknown): Signal | null {
+export function normalizeSignal(v: unknown): AnalysisSignal | null {
     const o = asObject(v);
     if (!o) return null;
-    // SignalType은 현재 'skill' 단일 값으로 고정
+    // AnalysisSignalType은 현재 'skill' 단일 값으로 고정
     return {
         type: 'skill',
         description: asString(o.description),

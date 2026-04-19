@@ -22,6 +22,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: 'hourly' as const,
             priority: 1,
         },
+        {
+            url: `${SITE_URL}/market`,
+            lastModified: SITEMAP_DATE,
+            changeFrequency: 'daily' as const,
+            priority: 0.9,
+        },
         ...POPULAR_TICKERS.map(ticker => ({
             url: `${SITE_URL}/${ticker}`,
             lastModified: SITEMAP_DATE,

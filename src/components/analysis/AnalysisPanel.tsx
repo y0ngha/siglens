@@ -6,6 +6,8 @@ import type React from 'react';
 import type {
     ActionRecommendation,
     AnalysisResponse,
+    AnalysisSignal,
+    AnalysisSignalType,
     CandlePatternSummary,
     EntryRecommendation,
     ClusteredKeyLevel,
@@ -13,8 +15,6 @@ import type {
     PatternResult,
     PriceScenario,
     RiskLevel,
-    Signal,
-    SignalType,
     StrategyResult,
     Trend,
     Trendline,
@@ -161,12 +161,12 @@ const RISK_LEVEL_LABEL: Record<RiskLevel, string> = {
     high: '높음',
 };
 
-const SIGNAL_TYPE_LABEL: Record<SignalType, string> = {
+const SIGNAL_TYPE_LABEL: Record<AnalysisSignalType, string> = {
     skill: '스킬',
 };
 
 interface SignalItemProps {
-    signal: Signal;
+    signal: AnalysisSignal;
     typeLabel?: string;
 }
 

@@ -356,3 +356,31 @@ className="text-[#1a2b3c]"
    → Siglens는 다크 모드 전용
    → 라이트 모드 분기 처리 불필요
 ```
+
+## Dashboard Panel C — Signal Quadrants
+
+Four subsections per sector: `상승 신호 / 상승 조짐 / 하락 조짐 / 하락 신호`.
+
+### Visual System — "Terminal Editorial"
+
+Distinction uses three orthogonal cues (not emotional color):
+- **Marker shape**: filled ▲▼ for confirmed signals, outlined △▽ for anticipation
+- **Top rule**: `border-t-2 border-secondary-600` solid (confirmed), `border-t border-dashed border-secondary-700` (anticipation)
+- **Label typography**: `font-semibold tracking-[0.15em]` (confirmed), `font-medium tracking-[0.15em] opacity-70` (anticipation)
+
+Price delta chips remain the only use of `text-chart-bullish` / `text-chart-bearish`. Subsection headers are neutral (`text-secondary-200`).
+
+### Cards
+
+`SignalStockCard` extends `IndexCard` language: mono ticker, tabular-nums price, signal badges as tracked uppercase labels with `·` bullet separator. Hover uses `-translate-y-px` + background/border shift, not `opacity-80`.
+
+### Background
+
+`.sector-panel-bg` utility applies a subtle 32px grid with radial mask — terminal atmosphere at opacity 0.35.
+
+### Accessibility
+
+- Sector tabs: WAI-ARIA tablist, Left/Right/Home/End key nav
+- Strict mode toggle: radiogroup, Left/Right key toggle
+- All ▲▼ markers `aria-hidden` with `sr-only` direction text
+- `prefers-reduced-motion`: global utility in `globals.css` disables all transitions/animations

@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from 'next';
 import { Suspense } from 'react';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
+import { Header } from '@/components/layout/Header';
+import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import { ADSENSE_ENABLED } from '@/lib/adsense';
 import {
@@ -88,8 +90,12 @@ export default function RootLayout({
             className={`${geistSans.variable} ${geistMono.variable} h-full antialiased scheme-dark`}
         >
             <body className="flex min-h-full flex-col">
+                <SiteJsonLd />
                 <Suspense>
-                    <ReactQueryProvider>{children}</ReactQueryProvider>
+                    <ReactQueryProvider>
+                        <Header />
+                        {children}
+                    </ReactQueryProvider>
                 </Suspense>
                 {ADSENSE_ENABLED && (
                     <Script
