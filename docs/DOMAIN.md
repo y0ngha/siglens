@@ -1538,3 +1538,38 @@ display:
   position assertion(예: Analysis Guidelines → Analysis Request 순서) 이 깨지지 않는지 확인한다.
 - AI provider 호출 옵션을 변경할 때는 `src/__tests__/infrastructure/ai/{gemini,claude,utils}.test.ts`의
   spy 검증을 함께 갱신한다.
+
+## Signal Detection
+
+`domain/signals/` contains pure-function signal detectors used by the `/market` page's Panel C.
+
+### Types (`domain/signals/types.ts`)
+
+- `Signal` — `{ type, direction: 'bullish'|'bearish', phase: 'confirmed'|'expected', detectedAt }`
+- `TrendState` — `'uptrend' | 'downtrend' | 'sideways'`
+- `StockSignalResult` — per-stock result including price, changePercent, trend, and raw signals
+- `SectorSignalsResult` — aggregate payload (computedAt + stocks[])
+
+### Modules
+
+- `trend.ts` — `classifyTrend(bars, indicators): TrendState` using EMA20 slope over 20 bars (±3% threshold)
+- `confirmed.ts` — 8 detectors: RSI oversold/overbought, Golden/Death cross, MACD bullish/bearish cross, Bollinger lower bounce / upper breakout
+- `anticipation.ts` — 8 detectors: RSI regular divergence (bullish/bearish), MACD histogram convergence (bullish/bearish), Bollinger squeeze (bullish/bearish), Support/Resistance proximity (bullish/bearish)
+- `index.ts` — `detectSignals(bars, indicators)` aggregator
+
+### Key Constants (`domain/signals/constants.ts`)
+
+- `CROSS_LOOKBACK_BARS = 3` — max bar distance to accept golden/death/MACD cross as recent
+- `DIVERGENCE_LOOKBACK_BARS = 20`, `DIVERGENCE_FRESHNESS_BARS = 5`, `PIVOT_WINDOW = 2`
+- `HISTOGRAM_CONVERGENCE_BARS = 5`
+- `SQUEEZE_LOOKBACK_BARS = 120`, `SQUEEZE_PERCENTILE = 0.1`, `SQUEEZE_PCT_B_THRESHOLD = 0.5`
+- `TREND_SLOPE_LOOKBACK = 20`, `TREND_SLOPE_THRESHOLD = 0.03`
+- `SR_PROXIMITY_PCT = 0.02`, `SR_APPROACH_LOOKBACK = 5`
+
+### Trend Gate (Strict Mode)
+
+Anticipation signals are NOT gated at the domain level. The UI applies a strict-mode filter:
+- Strict ON + `expected` bullish → only visible when `trend !== 'uptrend'`
+- Strict ON + `expected` bearish → only visible when `trend !== 'downtrend'`
+- Strict OFF → all signals visible
+- Confirmed signals → always visible
