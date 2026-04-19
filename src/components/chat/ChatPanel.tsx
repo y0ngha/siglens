@@ -5,7 +5,7 @@ import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
 
-const CHAT_MODEL_DISPLAY_NAME = '{CHAT_MODEL_DISPLAY_NAME}';
+const CHAT_MODEL_DISPLAY_NAME = 'Gemini 2.5 Flash';
 
 const LOADING_MESSAGES = {
     analyzing: '요청을 분석하고 있어요...',
