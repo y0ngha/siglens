@@ -490,7 +490,7 @@ export interface AnalysisResponse {
     candlePatterns: CandlePatternSummary[];
     trendlines: Trendline[];
     actionRecommendation?: ActionRecommendation;
-    /** ISO 8601 timestamp set by infrastructure when analysis is created or served from cache */
+    /** ISO 8601 timestamp of when this analysis was performed. */
     analyzedAt?: string;
 }
 
@@ -652,8 +652,5 @@ export type {
 
 export interface ChatPromptPayload {
     systemPrompt: string;
-    messages: Array<{
-        role: 'user' | 'model';
-        parts: Array<{ text: string }>;
-    }>;
+    messages: Array<{ role: 'user' | 'model'; content: string }>;
 }

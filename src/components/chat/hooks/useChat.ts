@@ -9,7 +9,7 @@ import {
     useMemo,
     startTransition,
 } from 'react';
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     AnalysisResponse,
     Timeframe,
@@ -66,7 +66,13 @@ export function useChat({
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
-    const [remainingTokens, setRemainingTokens] = useState<number | null>(null);
+
+    const queryClient = useQueryClient();
+    const { data: remainingTokensData } = useQuery({
+        queryKey: ['chat', 'remaining-tokens'],
+        queryFn: getRemainingTokensAction,
+        staleTime: 0,
+    });
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -120,7 +126,10 @@ export function useChat({
             };
             setMessages(prev => [...prev, aiMessage]);
             if (result.ok) {
-                setRemainingTokens(result.remainingTokens);
+                queryClient.setQueryData(
+                    ['chat', 'remaining-tokens'],
+                    result.remainingTokens
+                );
             }
         },
         onError: () => {
@@ -229,13 +238,6 @@ export function useChat({
         saveSession(storageKey, messages);
     }, [messages, storageKey]);
 
-    // 마운트 시 잔여 토큰 조회
-    useEffect(() => {
-        getRemainingTokensAction().then(count => {
-            if (count !== null) setRemainingTokens(count);
-        });
-    }, []);
-
     useEffect(() => {
         return () => {
             if (phaseTimerRef.current !== null) {
@@ -248,7 +250,7 @@ export function useChat({
         messages,
         loadingPhase,
         analysisUpdated,
-        remainingTokens,
+        remainingTokens: remainingTokensData ?? null,
         sendMessage,
         dismissAnalysisUpdated,
     };

@@ -8,20 +8,7 @@ export function buildStorageKey(symbol: string, timeframe: Timeframe): string {
 }
 
 export function loadSession(key: string): ChatMessage[] {
-    if (typeof window === 'undefined') return [];
-    try {
-        const raw = localStorage.getItem(key);
-        if (!raw) return [];
-        const session: ChatSession = JSON.parse(raw);
-        if (Date.now() - session.savedAt > CHAT_HISTORY_TTL_MS) {
-            localStorage.removeItem(key);
-            return [];
-        }
-        return session.messages;
-    } catch {
-        // 손상된 JSON, 타입 불일치, 쿼터 초과 등 무시
-        return [];
-    }
+    return loadSessionFull(key).messages;
 }
 
 export function loadSessionFull(key: string): {

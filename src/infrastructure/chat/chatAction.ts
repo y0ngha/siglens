@@ -62,12 +62,17 @@ export async function chatAction(
         userMessage
     );
 
+    const geminiContents = messages.map(m => ({
+        role: m.role,
+        parts: [{ text: m.content }],
+    }));
+
     try {
         const responseText = await callGeminiWithKeyFallback({
             freeApiKey: process.env.GEMINI_CHAT_FREE_API_KEY,
             paidApiKey,
             model: GEMINI_CHAT_MODEL,
-            contents: messages,
+            contents: geminiContents,
             systemInstruction: systemPrompt,
         });
         const remainingTokens = await getRemainingTokens(hashedIp);

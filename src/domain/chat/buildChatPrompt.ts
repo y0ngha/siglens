@@ -93,11 +93,8 @@ Price Targets:
 === END ANALYSIS DATA ===`;
 
     const messages = [
-        ...history.map(m => ({
-            role: m.role,
-            parts: [{ text: m.content }],
-        })),
-        { role: 'user' as const, parts: [{ text: userMessage }] },
+        ...history.map(m => ({ role: m.role, content: m.content })),
+        { role: 'user' as const, content: userMessage },
     ];
 
     return { systemPrompt, messages };
