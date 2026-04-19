@@ -1,0 +1,47 @@
+'use client';
+
+import { useCallback, useState } from 'react';
+import type { AnalysisResponse, Timeframe } from '@/domain/types';
+import { ChatPanel } from '@/components/chat/ChatPanel';
+
+interface FloatingChatButtonProps {
+    symbol: string;
+    timeframe: Timeframe;
+    analysis: AnalysisResponse;
+    isAnalysisReady: boolean;
+}
+
+export function FloatingChatButton({
+    symbol,
+    timeframe,
+    analysis,
+    isAnalysisReady,
+}: FloatingChatButtonProps) {
+    const [isOpen, setIsOpen] = useState(false);
+    const handleClose = useCallback(() => setIsOpen(false), []);
+
+    return (
+        <>
+            {isOpen && (
+                <div className="fixed bottom-20 right-6 z-40 hidden w-[380px] overflow-hidden rounded-xl border border-secondary-700 bg-secondary-900 shadow-2xl md:block">
+                    <ChatPanel
+                        symbol={symbol}
+                        timeframe={timeframe}
+                        analysis={analysis}
+                        isAnalysisReady={isAnalysisReady}
+                        onClose={handleClose}
+                    />
+                </div>
+            )}
+            <button
+                type="button"
+                onClick={() => setIsOpen(prev => !prev)}
+                className="fixed bottom-6 right-6 z-40 hidden h-12 w-12 items-center justify-center rounded-full bg-primary-600 text-white shadow-lg transition-colors hover:bg-primary-500 md:flex"
+                aria-label={isOpen ? 'AI 채팅 닫기' : 'AI 채팅 열기'}
+                aria-expanded={isOpen}
+            >
+                <span className="text-base leading-none">{isOpen ? '✕' : '💬'}</span>
+            </button>
+        </>
+    );
+}

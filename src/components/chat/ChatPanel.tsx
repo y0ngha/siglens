@@ -17,6 +17,7 @@ interface ChatPanelProps {
     timeframe: Timeframe;
     analysis: AnalysisResponse;
     isAnalysisReady: boolean;
+    onClose?: () => void;
 }
 
 export function ChatPanel({
@@ -24,6 +25,7 @@ export function ChatPanel({
     timeframe,
     analysis,
     isAnalysisReady,
+    onClose,
 }: ChatPanelProps) {
     const [inputValue, setInputValue] = useState('');
 
@@ -66,15 +68,27 @@ export function ChatPanel({
     }, [messages, loadingPhase]);
 
     return (
-        <div className="border-secondary-700 flex flex-col border-t">
+        <div className="flex flex-col">
             {/* 헤더 */}
             <div className="border-secondary-700 flex items-center justify-between border-b px-3 py-2">
                 <span className="text-secondary-300 text-xs font-semibold">
                     💬 AI에게 물어보기
                 </span>
-                <span className="bg-secondary-700 text-secondary-400 rounded px-1.5 py-0.5 text-[10px]">
-                    {CHAT_MODEL_DISPLAY_NAME}
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className="bg-secondary-700 text-secondary-400 rounded px-1.5 py-0.5 text-[10px]">
+                        {CHAT_MODEL_DISPLAY_NAME}
+                    </span>
+                    {onClose && (
+                        <button
+                            type="button"
+                            onClick={onClose}
+                            className="text-secondary-500 hover:text-secondary-300 text-sm leading-none transition-colors"
+                            aria-label="채팅 닫기"
+                        >
+                            ✕
+                        </button>
+                    )}
+                </div>
             </div>
 
             {/* 재분석 업데이트 배너 */}
