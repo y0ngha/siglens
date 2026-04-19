@@ -11,6 +11,8 @@ import {
     detectMacdHistogramBearishConvergence,
     detectBollingerSqueezeBullish,
     detectBollingerSqueezeBearish,
+    detectSupportProximityBullish,
+    detectResistanceProximityBearish,
 } from '@/domain/signals/anticipation';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import type {
@@ -767,6 +769,275 @@ describe('detectBollingerSqueezeBullish — 추가 엣지케이스', () => {
                     ...indicators,
                     bollinger: bb,
                 })
+            ).toBeNull();
+        });
+    });
+});
+
+function barsFromCloses(closes: number[]): Bar[] {
+    return closes.map((c, i) => ({
+        time: 1 + i,
+        open: c,
+        high: c,
+        low: c,
+        close: c,
+        volume: 100,
+    }));
+}
+
+describe('detectSupportProximityBullish', () => {
+    describe('close가 MA50 위 + 2% 이내 + 5봉 하락일 때', () => {
+        it('Signal을 반환한다', () => {
+            // Baseline of 100 bars keeps MA50 ≈ 100; last 10 bars push up then
+            // pull back so bars[54]=106 > bars[59]=101 (falling) and close
+            // (101) sits ~0.3% above MA50 (≈100.7).
+            const closes = [
+                ...Array(50).fill(100),
+                102,
+                103,
+                104,
+                105,
+                106,
+                105,
+                104,
+                103,
+                102,
+                101,
+            ];
+            const bars = barsFromCloses(closes);
+            const result = detectSupportProximityBullish(
+                bars,
+                EMPTY_INDICATOR_RESULT
+            );
+            expect(result?.type).toBe('support_proximity_bullish');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('expected');
+            expect(result?.detectedAt).toBe(bars.length - 1);
+        });
+    });
+
+    describe('close가 MA 아래에 있을 때', () => {
+        it('null을 반환한다', () => {
+            const closes = [
+                ...Array(55).fill(100),
+                99,
+                98,
+                97,
+                96,
+                95,
+            ];
+            const bars = barsFromCloses(closes);
+            expect(
+                detectSupportProximityBullish(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('close가 MA와 거리 > 2%일 때', () => {
+        it('null을 반환한다', () => {
+            // Close[59]=110 sits ~8% above MA50 (≈101.78) and bars[54]=115 >
+            // bars[59]=110 so falling condition passes — only the distance
+            // check fails.
+            const closes = [
+                ...Array(50).fill(100),
+                102,
+                103,
+                104,
+                105,
+                115,
+                114,
+                113,
+                112,
+                111,
+                110,
+            ];
+            const bars = barsFromCloses(closes);
+            expect(
+                detectSupportProximityBullish(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('최근 5봉 상승 중일 때', () => {
+        it('null을 반환한다 (접근이 아닌 이탈)', () => {
+            const closes = [
+                ...Array(55).fill(100),
+                99,
+                99.5,
+                100,
+                100.5,
+                101.5,
+            ];
+            const bars = barsFromCloses(closes);
+            expect(
+                detectSupportProximityBullish(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('bars 길이가 SR_APPROACH_LOOKBACK + 1 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const bars = barsFromCloses([100, 99, 98, 97, 96]);
+            expect(
+                detectSupportProximityBullish(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('bars 길이가 50 이상 200 미만일 때', () => {
+        it('MA200은 건너뛰고 MA50만으로 판정한다', () => {
+            // 60 bars — MA50 resolves, MA200 returns all-null and is skipped.
+            const closes = [
+                ...Array(50).fill(100),
+                102,
+                103,
+                104,
+                105,
+                106,
+                105,
+                104,
+                103,
+                102,
+                101,
+            ];
+            const bars = barsFromCloses(closes);
+            const result = detectSupportProximityBullish(
+                bars,
+                EMPTY_INDICATOR_RESULT
+            );
+            expect(result?.type).toBe('support_proximity_bullish');
+        });
+    });
+
+    describe('bars 길이가 모든 MA period 미만일 때', () => {
+        it('null을 반환한다', () => {
+            // 20 bars — not enough for MA50 nor MA200. Recent 5 bars fall.
+            const closes = [
+                ...Array(15).fill(100),
+                104,
+                103,
+                102,
+                101,
+                100,
+            ];
+            const bars = barsFromCloses(closes);
+            expect(
+                detectSupportProximityBullish(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+});
+
+describe('detectResistanceProximityBearish', () => {
+    describe('close가 MA 아래 + 2% 이내 + 5봉 상승일 때', () => {
+        it('Signal을 반환한다', () => {
+            // Last 10 bars dip then rise so bars[54]=94 < bars[59]=99 (rising)
+            // and close (99) sits ~0.3% below MA50 (≈99.3).
+            const closes = [
+                ...Array(50).fill(100),
+                98,
+                97,
+                96,
+                95,
+                94,
+                95,
+                96,
+                97,
+                98,
+                99,
+            ];
+            const bars = barsFromCloses(closes);
+            const result = detectResistanceProximityBearish(
+                bars,
+                EMPTY_INDICATOR_RESULT
+            );
+            expect(result?.type).toBe('resistance_proximity_bearish');
+            expect(result?.direction).toBe('bearish');
+            expect(result?.phase).toBe('expected');
+            expect(result?.detectedAt).toBe(bars.length - 1);
+        });
+    });
+
+    describe('close가 MA 위에 있을 때', () => {
+        it('null을 반환한다', () => {
+            const closes = [
+                ...Array(55).fill(100),
+                105,
+                106,
+                107,
+                108,
+                109,
+            ];
+            const bars = barsFromCloses(closes);
+            expect(
+                detectResistanceProximityBearish(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('close가 MA와 거리 > 2%일 때', () => {
+        it('null을 반환한다', () => {
+            // Close[59]=90 sits ~8% below MA50 (≈98.22) with bars[54]=85 <
+            // bars[59]=90 (rising) — only distance check fails.
+            const closes = [
+                ...Array(50).fill(100),
+                98,
+                97,
+                96,
+                95,
+                85,
+                86,
+                87,
+                88,
+                89,
+                90,
+            ];
+            const bars = barsFromCloses(closes);
+            expect(
+                detectResistanceProximityBearish(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('최근 5봉 하락 중일 때', () => {
+        it('null을 반환한다 (접근이 아닌 이탈)', () => {
+            const closes = [
+                ...Array(55).fill(100),
+                101.5,
+                100.5,
+                100,
+                99.5,
+                99,
+            ];
+            const bars = barsFromCloses(closes);
+            expect(
+                detectResistanceProximityBearish(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('bars 길이가 SR_APPROACH_LOOKBACK + 1 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const bars = barsFromCloses([100, 101, 102, 103, 104]);
+            expect(
+                detectResistanceProximityBearish(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('bars 길이가 모든 MA period 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const closes = [
+                ...Array(15).fill(100),
+                96,
+                97,
+                98,
+                99,
+                100,
+            ];
+            const bars = barsFromCloses(closes);
+            expect(
+                detectResistanceProximityBearish(bars, EMPTY_INDICATOR_RESULT)
             ).toBeNull();
         });
     });

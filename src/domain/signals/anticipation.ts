@@ -8,8 +8,12 @@ import {
     SQUEEZE_LOOKBACK_BARS,
     SQUEEZE_PCT_B_THRESHOLD,
     SQUEEZE_PERCENTILE,
+    SR_APPROACH_LOOKBACK,
+    SR_MA_PERIODS,
+    SR_PROXIMITY_PCT,
     TREND_SLOPE_LOOKBACK,
 } from '@/domain/signals/constants';
+import { calculateMA } from '@/domain/indicators/ma';
 
 export function findPivotLows(lows: number[], window: number): number[] {
     const pivots: number[] = [];
@@ -276,4 +280,67 @@ export function detectBollingerSqueezeBearish(
         phase: 'expected',
         detectedAt: s.lastIdx,
     };
+}
+
+function isWithinProximity(
+    close: number,
+    ma: number,
+    side: 'above' | 'below'
+): boolean {
+    const distance = Math.abs(close - ma) / ma;
+    if (distance > SR_PROXIMITY_PCT) return false;
+    if (side === 'above') return close > ma;
+    return close < ma;
+}
+
+export function detectSupportProximityBullish(
+    bars: Bar[],
+    _indicators: IndicatorResult
+): Signal | null {
+    if (bars.length < SR_APPROACH_LOOKBACK + 1) return null;
+    const lastIdx = bars.length - 1;
+    const closeLast = bars[lastIdx].close;
+    const closePrev5 = bars[lastIdx - SR_APPROACH_LOOKBACK].close;
+    if (!(closeLast < closePrev5)) return null; // must be falling
+
+    for (const period of SR_MA_PERIODS) {
+        if (bars.length < period) continue;
+        // calculateMA returns a real number at lastIdx whenever bars.length >= period
+        const ma = calculateMA(bars, period)[lastIdx] as number;
+        if (isWithinProximity(closeLast, ma, 'above')) {
+            return {
+                type: 'support_proximity_bullish',
+                direction: 'bullish',
+                phase: 'expected',
+                detectedAt: lastIdx,
+            };
+        }
+    }
+    return null;
+}
+
+export function detectResistanceProximityBearish(
+    bars: Bar[],
+    _indicators: IndicatorResult
+): Signal | null {
+    if (bars.length < SR_APPROACH_LOOKBACK + 1) return null;
+    const lastIdx = bars.length - 1;
+    const closeLast = bars[lastIdx].close;
+    const closePrev5 = bars[lastIdx - SR_APPROACH_LOOKBACK].close;
+    if (!(closeLast > closePrev5)) return null; // must be rising
+
+    for (const period of SR_MA_PERIODS) {
+        if (bars.length < period) continue;
+        // calculateMA returns a real number at lastIdx whenever bars.length >= period
+        const ma = calculateMA(bars, period)[lastIdx] as number;
+        if (isWithinProximity(closeLast, ma, 'below')) {
+            return {
+                type: 'resistance_proximity_bearish',
+                direction: 'bearish',
+                phase: 'expected',
+                detectedAt: lastIdx,
+            };
+        }
+    }
+    return null;
 }
