@@ -4,9 +4,9 @@ export const SITE_URL =
 export const SITE_NAME = 'Siglens';
 
 export const SITE_DESCRIPTION =
-    '티커 입력 한 번으로 RSI·MACD·볼린저밴드·캔들 패턴·지지저항을 AI가 자동 분석합니다. 무료, 회원가입 불필요.';
+    '시장 흐름 파악부터 종목별 기술적 분석, AI와의 심층 대화까지 한 곳에서. RSI·MACD·볼린저밴드·캔들 패턴·지지저항 자동 분석과 오늘 주목할 종목을 무료로 확인하세요. 회원가입 불필요.';
 
-export const ROOT_TITLE = `미국 주식 AI 기술적 분석 — RSI·MACD·볼린저밴드 자동 해석 | ${SITE_NAME}`;
+export const ROOT_TITLE = `미국 주식 무료 AI 분석 — 시장 분석·기술적 분석·AI 대화 | ${SITE_NAME}`;
 
 export const ROOT_KEYWORDS = [
     'Siglens',
