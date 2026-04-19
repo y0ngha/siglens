@@ -162,7 +162,7 @@ Expected: both packages resolved (already installed in existing codebase).
 
 Run:
 ```bash
-yarn test --passWithNoTests --testPathPattern="src/__tests__/domain/indicators/rsi.test" 2>&1 | tail -10
+yarn test --passWithNoTests --testPathPatterns="src/__tests__/domain/indicators/rsi.test" 2>&1 | tail -10
 ```
 Expected: PASS.
 
@@ -500,7 +500,7 @@ describe('classifyTrend', () => {
 
 Run:
 ```bash
-yarn test --testPathPattern="signals/trend.test" 2>&1 | tail -15
+yarn test --testPathPatterns="signals/trend.test" 2>&1 | tail -15
 ```
 Expected: FAIL — `Cannot find module '@/domain/signals/trend'`.
 
@@ -545,7 +545,7 @@ export function classifyTrend(
 
 Run:
 ```bash
-yarn test --testPathPattern="signals/trend.test" 2>&1 | tail -15
+yarn test --testPathPatterns="signals/trend.test" 2>&1 | tail -15
 ```
 Expected: PASS (all 6 tests).
 
@@ -553,7 +553,7 @@ Expected: PASS (all 6 tests).
 
 Run:
 ```bash
-yarn test --coverage --testPathPattern="signals/trend" --collectCoverageFrom="src/domain/signals/trend.ts" 2>&1 | tail -15
+yarn test --coverage --testPathPatterns="signals/trend" --collectCoverageFrom="src/domain/signals/trend.ts" 2>&1 | tail -15
 ```
 Expected: 100% statement/branch coverage.
 
@@ -672,7 +672,7 @@ describe('detectRsiOverbought', () => {
 
 - [ ] **Step 2: Verify test fails**
 
-Run: `yarn test --testPathPattern="signals/confirmed.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/confirmed.test" 2>&1 | tail -15`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Create `confirmed.ts` with RSI detectors**
@@ -725,7 +725,7 @@ export function detectRsiOverbought(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals/confirmed.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/confirmed.test" 2>&1 | tail -15`
 Expected: PASS (all 8 tests).
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -826,7 +826,7 @@ describe('detectDeathCross', () => {
 
 - [ ] **Step 2: Verify tests fail**
 
-Run: `yarn test --testPathPattern="signals/confirmed.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="signals/confirmed.test" 2>&1 | tail -20`
 Expected: FAIL on new test blocks.
 
 - [ ] **Step 3: Append detectors to `confirmed.ts`**
@@ -902,7 +902,7 @@ export function detectDeathCross(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals/confirmed.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/confirmed.test" 2>&1 | tail -15`
 Expected: PASS.
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -977,7 +977,7 @@ describe('detectMacdBearishCross', () => {
 
 - [ ] **Step 2: Verify tests fail**
 
-Run: `yarn test --testPathPattern="signals/confirmed.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="signals/confirmed.test" 2>&1 | tail -20`
 Expected: FAIL on new blocks.
 
 - [ ] **Step 3: Append MACD detectors to `confirmed.ts`**
@@ -1025,7 +1025,7 @@ export function detectMacdBearishCross(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals/confirmed.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/confirmed.test" 2>&1 | tail -15`
 Expected: PASS.
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -1110,7 +1110,7 @@ describe('detectBollingerUpperBreakout', () => {
 
 - [ ] **Step 2: Verify tests fail**
 
-Run: `yarn test --testPathPattern="signals/confirmed.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="signals/confirmed.test" 2>&1 | tail -20`
 Expected: FAIL.
 
 - [ ] **Step 3: Append Bollinger detectors to `confirmed.ts`**
@@ -1163,7 +1163,7 @@ export function detectBollingerUpperBreakout(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals/confirmed.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/confirmed.test" 2>&1 | tail -15`
 Expected: PASS (all confirmed tests).
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -1273,7 +1273,7 @@ describe('percentileRank', () => {
 
 - [ ] **Step 2: Verify tests fail**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -20`
 Expected: FAIL — module/exports not found.
 
 - [ ] **Step 3: Implement helpers**
@@ -1348,7 +1348,7 @@ export function percentileRank(value: number, xs: number[]): number | null {
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -15`
 Expected: PASS.
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -1487,7 +1487,7 @@ describe('detectRsiBearishDivergence', () => {
 
 - [ ] **Step 2: Verify tests fail**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -20`
 Expected: FAIL on new blocks.
 
 - [ ] **Step 3: Append divergence detectors**
@@ -1571,7 +1571,7 @@ export function detectRsiBearishDivergence(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -15`
 Expected: PASS.
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -1646,7 +1646,7 @@ describe('detectMacdHistogramBearishConvergence', () => {
 
 - [ ] **Step 2: Verify tests fail**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -20`
 Expected: FAIL.
 
 - [ ] **Step 3: Append detectors to `anticipation.ts`**
@@ -1704,7 +1704,7 @@ export function detectMacdHistogramBearishConvergence(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -15`
 Expected: PASS.
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -1795,7 +1795,7 @@ describe('detectBollingerSqueezeBearish', () => {
 
 - [ ] **Step 2: Verify tests fail**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -20`
 Expected: FAIL.
 
 - [ ] **Step 3: Append squeeze detectors**
@@ -1878,7 +1878,7 @@ export function detectBollingerSqueezeBearish(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -15`
 Expected: PASS.
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -1981,7 +1981,7 @@ describe('detectResistanceProximityBearish', () => {
 
 - [ ] **Step 2: Verify tests fail**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -20`
 Expected: FAIL.
 
 - [ ] **Step 3: Append S/R detectors**
@@ -2060,7 +2060,7 @@ export function detectResistanceProximityBearish(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals/anticipation.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/anticipation.test" 2>&1 | tail -15`
 Expected: PASS.
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -2121,7 +2121,7 @@ export {};
 
 - [ ] **Step 2: Verify tests fail**
 
-Run: `yarn test --testPathPattern="signals/index.test" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals/index.test" 2>&1 | tail -15`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Create aggregator**
@@ -2188,14 +2188,14 @@ export function detectSignals(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="signals" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="signals" 2>&1 | tail -15`
 Expected: PASS (all signals tests).
 
 - [ ] **Step 5: Full domain coverage check**
 
 Run:
 ```bash
-yarn test --coverage --collectCoverageFrom="src/domain/signals/**/*.ts" --testPathPattern="signals" 2>&1 | tail -15
+yarn test --coverage --collectCoverageFrom="src/domain/signals/**/*.ts" --testPathPatterns="signals" 2>&1 | tail -15
 ```
 Expected: 100% on all statements/branches.
 
@@ -2306,7 +2306,7 @@ describe('getSectorSignals', () => {
 
 - [ ] **Step 3: Verify tests fail**
 
-Run: `yarn test --testPathPattern="sectorSignalsApi.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="sectorSignalsApi.test" 2>&1 | tail -20`
 Expected: FAIL.
 
 - [ ] **Step 4: Implement `sectorSignalsApi.ts`**
@@ -2424,30 +2424,28 @@ export async function getSectorSignals(): Promise<SectorSignalsResult> {
 }
 ```
 
-**Note:** Re-export `SectorSignalsResult` / `StockSignalResult` / `Signal` / etc. from `@/domain/types` by re-exporting the signals types. Add to `src/domain/types.ts` end:
+**Note:** Originally this plan re-exported `Signal`/`SignalType`/etc. from `@/domain/types`, but Task 14 discovered a name collision — `domain/types.ts` already declares `Signal` and `SignalType` for the unrelated analysis-panel system. **Resolution: skip the re-export entirely.** All Panel C consumers (components, infrastructure) import directly from `@/domain/signals/types`. In `sectorSignalsApi.ts` below, change the import to:
 
 ```ts
-export type {
-    Signal,
-    SignalType,
-    SignalDirection,
-    SignalPhase,
-    TrendState,
-    StockSignalResult,
+import type { Bar } from '@/domain/types';
+import type {
     SectorSignalsResult,
+    StockSignalResult,
 } from '@/domain/signals/types';
 ```
 
+Same pattern applies in subsequent tasks (17, 18, 22, 24) — import Panel C types from `@/domain/signals/types`, not `@/domain/types`.
+
 - [ ] **Step 5: Verify tests pass**
 
-Run: `yarn test --testPathPattern="sectorSignalsApi.test" 2>&1 | tail -20`
+Run: `yarn test --testPathPatterns="sectorSignalsApi.test" 2>&1 | tail -20`
 Expected: PASS.
 
 - [ ] **Step 6: Coverage check**
 
 Run:
 ```bash
-yarn test --coverage --collectCoverageFrom="src/infrastructure/dashboard/sectorSignalsApi.ts" --testPathPattern="sectorSignalsApi" 2>&1 | tail -15
+yarn test --coverage --collectCoverageFrom="src/infrastructure/dashboard/sectorSignalsApi.ts" --testPathPatterns="sectorSignalsApi" 2>&1 | tail -15
 ```
 Expected: 100% branches.
 
@@ -2514,7 +2512,7 @@ describe('useStrictModeToggle', () => {
 
 - [ ] **Step 2: Verify test fails**
 
-Run: `yarn test --testPathPattern="useStrictModeToggle" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="useStrictModeToggle" 2>&1 | tail -15`
 Expected: FAIL — module not found.
 
 - [ ] **Step 3: Implement hook**
@@ -2568,7 +2566,7 @@ export function useStrictModeToggle(
 
 - [ ] **Step 4: Verify tests pass**
 
-Run: `yarn test --testPathPattern="useStrictModeToggle" 2>&1 | tail -15`
+Run: `yarn test --testPathPatterns="useStrictModeToggle" 2>&1 | tail -15`
 Expected: PASS.
 
 - [ ] **Step 5: STOP — ready for review commit**
@@ -3846,7 +3844,7 @@ Expected: all pass.
 yarn test --coverage \
     --collectCoverageFrom='src/domain/signals/**/*.ts' \
     --collectCoverageFrom='src/infrastructure/dashboard/sectorSignalsApi.ts' \
-    --testPathPattern='signals|sectorSignalsApi' 2>&1 | tail -20
+    --testPathPatterns='signals|sectorSignalsApi' 2>&1 | tail -20
 ```
 Expected: 100% statements, 100% branches. If below 100%, add the missing test(s) before proceeding.
 
