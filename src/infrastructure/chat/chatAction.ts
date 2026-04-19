@@ -2,7 +2,7 @@
 
 import { headers } from 'next/headers';
 import { GoogleGenAI } from '@google/genai';
-import type { AnalysisResponse, Timeframe } from '@/domain/types';
+import type { AnalysisResponse, Timeframe, ChatPromptPayload } from '@/domain/types';
 import type { ChatMessage, ChatActionResult } from '@/domain/chat/types';
 import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
 import {
@@ -32,7 +32,7 @@ function isRateLimitError(error: unknown): boolean {
 async function callGemini(
     apiKey: string,
     systemPrompt: string,
-    messages: Array<{ role: 'user' | 'model'; parts: Array<{ text: string }> }>
+    messages: ChatPromptPayload['messages']
 ): Promise<string> {
     const genai = new GoogleGenAI({ apiKey });
     const response = await genai.models.generateContent({
@@ -43,6 +43,22 @@ async function callGemini(
     return response.text ?? '';
 }
 
+async function callGeminiWithFallback(
+    freeApiKey: string | undefined,
+    paidApiKey: string,
+    systemPrompt: string,
+    messages: ChatPromptPayload['messages']
+): Promise<string> {
+    if (freeApiKey) {
+        try {
+            return await callGemini(freeApiKey, systemPrompt, messages);
+        } catch {
+            // free key failed — fall back to paid key
+        }
+    }
+    return callGemini(paidApiKey, systemPrompt, messages);
+}
+
 export async function chatAction(
     symbol: string,
     timeframe: Timeframe,
@@ -50,6 +66,11 @@ export async function chatAction(
     history: ChatMessage[],
     userMessage: string
 ): Promise<ChatActionResult> {
+    const paidApiKey = process.env.GEMINI_API_KEY;
+    if (!paidApiKey) {
+        return { ok: false, error: 'server_error' };
+    }
+
     const ip = await getClientIp();
     const hashedIp = hashIp(ip);
 
@@ -66,25 +87,13 @@ export async function chatAction(
         userMessage
     );
 
-    const paidApiKey = process.env.GEMINI_API_KEY;
-    if (!paidApiKey) {
-        return { ok: false, error: 'server_error' };
-    }
-
     try {
-        const freeApiKey = process.env.GEMINI_CHAT_FREE_API_KEY;
-        let responseText: string;
-
-        if (freeApiKey) {
-            try {
-                responseText = await callGemini(freeApiKey, systemPrompt, messages);
-            } catch {
-                responseText = await callGemini(paidApiKey, systemPrompt, messages);
-            }
-        } else {
-            responseText = await callGemini(paidApiKey, systemPrompt, messages);
-        }
-
+        const responseText = await callGeminiWithFallback(
+            process.env.GEMINI_CHAT_FREE_API_KEY,
+            paidApiKey,
+            systemPrompt,
+            messages
+        );
         const remainingTokens = await getRemainingTokens(hashedIp);
         return { ok: true, message: responseText, remainingTokens };
     } catch (error) {
