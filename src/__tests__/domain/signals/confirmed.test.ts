@@ -110,7 +110,9 @@ describe('detectRsiOverbought', () => {
     describe('RSI 데이터가 없을 때', () => {
         it('null을 반환한다', () => {
             const bars = buildBars(5);
-            expect(detectRsiOverbought(bars, EMPTY_INDICATOR_RESULT)).toBeNull();
+            expect(
+                detectRsiOverbought(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
         });
     });
 
@@ -353,10 +355,27 @@ describe('detectBollingerLowerBounce', () => {
                 { upper: 110, middle: 100, lower: 90 },
             ];
             const bars: Bar[] = [
-                { time: 1, open: 95, high: 96, low: 89, close: 92, volume: 100 },
-                { time: 2, open: 92, high: 98, low: 92, close: 97, volume: 100 },
+                {
+                    time: 1,
+                    open: 95,
+                    high: 96,
+                    low: 89,
+                    close: 92,
+                    volume: 100,
+                },
+                {
+                    time: 2,
+                    open: 92,
+                    high: 98,
+                    low: 92,
+                    close: 97,
+                    volume: 100,
+                },
             ];
-            const result = detectBollingerLowerBounce(bars, withBollinger(points));
+            const result = detectBollingerLowerBounce(
+                bars,
+                withBollinger(points)
+            );
             expect(result?.type).toBe('bollinger_lower_bounce');
             expect(result?.direction).toBe('bullish');
             expect(result?.phase).toBe('confirmed');
@@ -371,8 +390,22 @@ describe('detectBollingerLowerBounce', () => {
                 { upper: 110, middle: 100, lower: 90 },
             ];
             const bars: Bar[] = [
-                { time: 1, open: 95, high: 96, low: 93, close: 94, volume: 100 },
-                { time: 2, open: 94, high: 98, low: 94, close: 97, volume: 100 },
+                {
+                    time: 1,
+                    open: 95,
+                    high: 96,
+                    low: 93,
+                    close: 94,
+                    volume: 100,
+                },
+                {
+                    time: 2,
+                    open: 94,
+                    high: 98,
+                    low: 94,
+                    close: 97,
+                    volume: 100,
+                },
             ];
             expect(
                 detectBollingerLowerBounce(bars, withBollinger(points))
@@ -387,8 +420,22 @@ describe('detectBollingerLowerBounce', () => {
                 { upper: 110, middle: 100, lower: 90 },
             ];
             const bars: Bar[] = [
-                { time: 1, open: 95, high: 96, low: 89, close: 95, volume: 100 },
-                { time: 2, open: 95, high: 96, low: 90, close: 95, volume: 100 },
+                {
+                    time: 1,
+                    open: 95,
+                    high: 96,
+                    low: 89,
+                    close: 95,
+                    volume: 100,
+                },
+                {
+                    time: 2,
+                    open: 95,
+                    high: 96,
+                    low: 90,
+                    close: 95,
+                    volume: 100,
+                },
             ];
             expect(
                 detectBollingerLowerBounce(bars, withBollinger(points))
@@ -402,7 +449,14 @@ describe('detectBollingerLowerBounce', () => {
                 { upper: 110, middle: 100, lower: 90 },
             ];
             const bars: Bar[] = [
-                { time: 1, open: 95, high: 96, low: 89, close: 92, volume: 100 },
+                {
+                    time: 1,
+                    open: 95,
+                    high: 96,
+                    low: 89,
+                    close: 92,
+                    volume: 100,
+                },
             ];
             expect(
                 detectBollingerLowerBounce(bars, withBollinger(points))
@@ -417,8 +471,22 @@ describe('detectBollingerLowerBounce', () => {
                 { upper: 110, middle: 100, lower: 90 },
             ];
             const bars: Bar[] = [
-                { time: 1, open: 95, high: 96, low: 89, close: 92, volume: 100 },
-                { time: 2, open: 92, high: 98, low: 92, close: 97, volume: 100 },
+                {
+                    time: 1,
+                    open: 95,
+                    high: 96,
+                    low: 89,
+                    close: 92,
+                    volume: 100,
+                },
+                {
+                    time: 2,
+                    open: 92,
+                    high: 98,
+                    low: 92,
+                    close: 97,
+                    volume: 100,
+                },
             ];
             expect(
                 detectBollingerLowerBounce(bars, withBollinger(points))

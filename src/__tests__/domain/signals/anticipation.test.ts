@@ -103,7 +103,11 @@ describe('computeBbWidth', () => {
             expect(computeBbWidth(bb)).toBeNull();
         });
         it('lower가 null이면 null을 반환한다', () => {
-            const bb: BollingerResult = { upper: 110, middle: 100, lower: null };
+            const bb: BollingerResult = {
+                upper: 110,
+                middle: 100,
+                lower: null,
+            };
             expect(computeBbWidth(bb)).toBeNull();
         });
     });
@@ -124,7 +128,11 @@ describe('computePctB', () => {
             expect(computePctB(100, bb)).toBeNull();
         });
         it('lower가 null이면 null을 반환한다', () => {
-            const bb: BollingerResult = { upper: 110, middle: 100, lower: null };
+            const bb: BollingerResult = {
+                upper: 110,
+                middle: 100,
+                lower: null,
+            };
             expect(computePctB(100, bb)).toBeNull();
         });
     });
@@ -298,11 +306,14 @@ describe('detectRsiBullishDivergence — 추가 엣지케이스', () => {
                 const low = i === 5 ? 90 : i === 17 ? 85 : 100;
                 return { open: low + 1, high: low + 2, low, close: low + 1 };
             });
-            const rsi: (number | null)[] = Array.from({ length: 20 }, (_, i) => {
-                if (i === 5) return null; // first pivot has null RSI
-                if (i === 17) return 35;
-                return 50;
-            });
+            const rsi: (number | null)[] = Array.from(
+                { length: 20 },
+                (_, i) => {
+                    if (i === 5) return null; // first pivot has null RSI
+                    if (i === 17) return 35;
+                    return 50;
+                }
+            );
             expect(
                 detectRsiBullishDivergence(
                     barsFromOHLC(ohlc),
@@ -401,7 +412,7 @@ describe('detectMacdHistogramBullishConvergence', () => {
     describe('최근 5봉이 모두 음수이고 절대값이 단조 감소할 때', () => {
         it('Signal을 반환한다', () => {
             const hist = [-5, -4, -3, -2, -1];
-            const points: MACDResult[] = hist.map((h) => ({
+            const points: MACDResult[] = hist.map(h => ({
                 macd: 0,
                 signal: 0,
                 histogram: h,
@@ -417,7 +428,7 @@ describe('detectMacdHistogramBullishConvergence', () => {
     describe('0이 포함되면', () => {
         it('null을 반환한다', () => {
             const hist = [-5, -4, -3, -2, 0];
-            const points: MACDResult[] = hist.map((h) => ({
+            const points: MACDResult[] = hist.map(h => ({
                 macd: 0,
                 signal: 0,
                 histogram: h,
@@ -431,7 +442,7 @@ describe('detectMacdHistogramBullishConvergence', () => {
     describe('단조가 깨지면', () => {
         it('null을 반환한다', () => {
             const hist = [-5, -4, -5, -2, -1];
-            const points: MACDResult[] = hist.map((h) => ({
+            const points: MACDResult[] = hist.map(h => ({
                 macd: 0,
                 signal: 0,
                 histogram: h,
@@ -445,7 +456,7 @@ describe('detectMacdHistogramBullishConvergence', () => {
     describe('타이가 있으면', () => {
         it('null을 반환한다 (엄격 단조)', () => {
             const hist = [-5, -4, -4, -2, -1];
-            const points: MACDResult[] = hist.map((h) => ({
+            const points: MACDResult[] = hist.map(h => ({
                 macd: 0,
                 signal: 0,
                 histogram: h,
@@ -459,7 +470,7 @@ describe('detectMacdHistogramBullishConvergence', () => {
     describe('macd 길이가 5봉 미만일 때', () => {
         it('null을 반환한다', () => {
             const hist = [-4, -3, -2, -1];
-            const points: MACDResult[] = hist.map((h) => ({
+            const points: MACDResult[] = hist.map(h => ({
                 macd: 0,
                 signal: 0,
                 histogram: h,
@@ -475,7 +486,7 @@ describe('detectMacdHistogramBearishConvergence', () => {
     describe('최근 5봉이 모두 양수이고 값이 단조 감소할 때', () => {
         it('Signal을 반환한다', () => {
             const hist = [5, 4, 3, 2, 1];
-            const points: MACDResult[] = hist.map((h) => ({
+            const points: MACDResult[] = hist.map(h => ({
                 macd: 0,
                 signal: 0,
                 histogram: h,
@@ -491,7 +502,7 @@ describe('detectMacdHistogramBearishConvergence', () => {
     describe('0이 포함되면', () => {
         it('null을 반환한다', () => {
             const hist = [5, 4, 3, 2, 0];
-            const points: MACDResult[] = hist.map((h) => ({
+            const points: MACDResult[] = hist.map(h => ({
                 macd: 0,
                 signal: 0,
                 histogram: h,
@@ -505,7 +516,7 @@ describe('detectMacdHistogramBearishConvergence', () => {
     describe('단조가 깨지면', () => {
         it('null을 반환한다', () => {
             const hist = [5, 4, 5, 2, 1];
-            const points: MACDResult[] = hist.map((h) => ({
+            const points: MACDResult[] = hist.map(h => ({
                 macd: 0,
                 signal: 0,
                 histogram: h,
@@ -519,7 +530,7 @@ describe('detectMacdHistogramBearishConvergence', () => {
     describe('macd 길이가 5봉 미만일 때', () => {
         it('null을 반환한다', () => {
             const hist = [4, 3, 2, 1];
-            const points: MACDResult[] = hist.map((h) => ({
+            const points: MACDResult[] = hist.map(h => ({
                 macd: 0,
                 signal: 0,
                 histogram: h,
@@ -818,14 +829,7 @@ describe('detectSupportProximityBullish', () => {
 
     describe('close가 MA 아래에 있을 때', () => {
         it('null을 반환한다', () => {
-            const closes = [
-                ...Array(55).fill(100),
-                99,
-                98,
-                97,
-                96,
-                95,
-            ];
+            const closes = [...Array(55).fill(100), 99, 98, 97, 96, 95];
             const bars = barsFromCloses(closes);
             expect(
                 detectSupportProximityBullish(bars, EMPTY_INDICATOR_RESULT)
@@ -912,14 +916,7 @@ describe('detectSupportProximityBullish', () => {
     describe('bars 길이가 모든 MA period 미만일 때', () => {
         it('null을 반환한다', () => {
             // 20 bars — not enough for MA50 nor MA200. Recent 5 bars fall.
-            const closes = [
-                ...Array(15).fill(100),
-                104,
-                103,
-                102,
-                101,
-                100,
-            ];
+            const closes = [...Array(15).fill(100), 104, 103, 102, 101, 100];
             const bars = barsFromCloses(closes);
             expect(
                 detectSupportProximityBullish(bars, EMPTY_INDICATOR_RESULT)
@@ -960,14 +957,7 @@ describe('detectResistanceProximityBearish', () => {
 
     describe('close가 MA 위에 있을 때', () => {
         it('null을 반환한다', () => {
-            const closes = [
-                ...Array(55).fill(100),
-                105,
-                106,
-                107,
-                108,
-                109,
-            ];
+            const closes = [...Array(55).fill(100), 105, 106, 107, 108, 109];
             const bars = barsFromCloses(closes);
             expect(
                 detectResistanceProximityBearish(bars, EMPTY_INDICATOR_RESULT)
@@ -1027,14 +1017,7 @@ describe('detectResistanceProximityBearish', () => {
 
     describe('bars 길이가 모든 MA period 미만일 때', () => {
         it('null을 반환한다', () => {
-            const closes = [
-                ...Array(15).fill(100),
-                96,
-                97,
-                98,
-                99,
-                100,
-            ];
+            const closes = [...Array(15).fill(100), 96, 97, 98, 99, 100];
             const bars = barsFromCloses(closes);
             expect(
                 detectResistanceProximityBearish(bars, EMPTY_INDICATOR_RESULT)

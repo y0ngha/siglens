@@ -281,7 +281,9 @@ describe('getSectorSignals 함수는', () => {
                 close: 5,
             });
             mockGetBars.mockImplementation((opts: { symbol: string }) =>
-                opts.symbol === 'AAPL' ? Promise.resolve(bars) : Promise.resolve([])
+                opts.symbol === 'AAPL'
+                    ? Promise.resolve(bars)
+                    : Promise.resolve([])
             );
 
             const result = await getSectorSignals();

@@ -20,15 +20,19 @@ export function SignalSubsection({
             ? 'border-t-2 border-secondary-600'
             : 'border-t border-dashed border-secondary-700';
     const labelOpacity =
-        variant === 'confirmed' ? 'opacity-100 font-semibold' : 'opacity-70 font-medium';
+        variant === 'confirmed'
+            ? 'opacity-100 font-semibold'
+            : 'opacity-70 font-medium';
 
     return (
         <section className={`${borderClass} pt-3 pb-4`}>
             <div className="mb-3 flex items-baseline justify-between">
                 <h3
-                    className={`text-secondary-200 text-pretty text-sm tracking-[0.15em] uppercase ${labelOpacity}`}
+                    className={`text-secondary-200 text-sm tracking-[0.15em] text-pretty uppercase ${labelOpacity}`}
                 >
-                    <span aria-hidden="true" className="mr-2">{marker}</span>
+                    <span aria-hidden="true" className="mr-2">
+                        {marker}
+                    </span>
                     {title}
                 </h3>
                 <span

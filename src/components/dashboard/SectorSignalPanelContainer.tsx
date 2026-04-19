@@ -14,8 +14,15 @@ export async function SectorSignalPanelContainer({
     const data = await getSectorSignals();
     const fallbackSector = SECTOR_ETFS[0].symbol;
     const sector =
-        initialSector !== undefined && SECTOR_ETFS.some(e => e.symbol === initialSector)
+        initialSector !== undefined &&
+        SECTOR_ETFS.some(e => e.symbol === initialSector)
             ? initialSector
             : fallbackSector;
-    return <SectorSignalPanel data={data} initialSector={sector} initialStrict={initialStrict} />;
+    return (
+        <SectorSignalPanel
+            data={data}
+            initialSector={sector}
+            initialStrict={initialStrict}
+        />
+    );
 }

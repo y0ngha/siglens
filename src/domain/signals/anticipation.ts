@@ -48,7 +48,8 @@ export function findPivotHighs(highs: number[], window: number): number[] {
 }
 
 export function computeBbWidth(bb: BollingerResult): number | null {
-    if (bb.upper === null || bb.middle === null || bb.lower === null) return null;
+    if (bb.upper === null || bb.middle === null || bb.lower === null)
+        return null;
     if (bb.middle === 0) return null;
     return (bb.upper - bb.lower) / bb.middle;
 }
@@ -77,8 +78,8 @@ export function percentileRank(value: number, xs: number[]): number | null {
         if (value === xs[0]) return 0.5;
         return value > xs[0] ? 1 : 0;
     }
-    const below = xs.filter((x) => x < value).length;
-    const equal = xs.filter((x) => x === value).length;
+    const below = xs.filter(x => x < value).length;
+    const equal = xs.filter(x => x === value).length;
     if (equal === 0) {
         return below / xs.length;
     }
@@ -98,8 +99,8 @@ function detectRegularDivergence(
 
     const series =
         kind === 'bullish'
-            ? bars.slice(windowStart).map((b) => b.low)
-            : bars.slice(windowStart).map((b) => b.high);
+            ? bars.slice(windowStart).map(b => b.low)
+            : bars.slice(windowStart).map(b => b.high);
     const pivotsLocal =
         kind === 'bullish'
             ? findPivotLows(series, PIVOT_WINDOW)
@@ -108,7 +109,7 @@ function detectRegularDivergence(
     if (pivotsLocal.length < 2) return null;
 
     // Convert local-window indices back to absolute indices
-    const pivots = pivotsLocal.map((i) => i + windowStart);
+    const pivots = pivotsLocal.map(i => i + windowStart);
     const p1 = pivots[pivots.length - 2];
     const p2 = pivots[pivots.length - 1];
 

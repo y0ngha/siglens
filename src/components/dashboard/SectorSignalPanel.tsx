@@ -2,7 +2,11 @@
 
 import { useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import type { Signal, SectorSignalsResult, StockSignalResult } from '@/domain/signals/types';
+import type {
+    Signal,
+    SectorSignalsResult,
+    StockSignalResult,
+} from '@/domain/signals/types';
 import { SECTOR_ETFS } from '@/domain/constants/dashboard-tickers';
 import { useStrictModeToggle } from './hooks/useStrictModeToggle';
 import { SectorTabs } from './SectorTabs';
@@ -33,7 +37,11 @@ function filterByStrict(
     return result;
 }
 
-export function SectorSignalPanel({ data, initialSector, initialStrict }: SectorSignalPanelProps) {
+export function SectorSignalPanel({
+    data,
+    initialSector,
+    initialStrict,
+}: SectorSignalPanelProps) {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();
@@ -47,7 +55,9 @@ export function SectorSignalPanel({ data, initialSector, initialStrict }: Sector
         if (nextStrict) params.delete('strict');
         else params.set('strict', '0');
         const qs = params.toString();
-        router.replace(qs === '' ? pathname : `${pathname}?${qs}`, { scroll: false });
+        router.replace(qs === '' ? pathname : `${pathname}?${qs}`, {
+            scroll: false,
+        });
     };
 
     const handleSectorChange = (sector: string) => {
@@ -60,7 +70,10 @@ export function SectorSignalPanel({ data, initialSector, initialStrict }: Sector
         updateUrl(activeSector, next);
     };
 
-    const filtered = useMemo(() => filterByStrict(data.stocks, strict), [data.stocks, strict]);
+    const filtered = useMemo(
+        () => filterByStrict(data.stocks, strict),
+        [data.stocks, strict]
+    );
 
     const sectorStocks = useMemo(
         () => filtered.filter(s => s.sectorSymbol === activeSector),
@@ -83,13 +96,18 @@ export function SectorSignalPanel({ data, initialSector, initialStrict }: Sector
             };
             for (const s of stock.signals) {
                 const key =
-                    s.direction === 'bullish' && s.phase === 'confirmed' ? 'bullishConfirmed' :
-                    s.direction === 'bullish' && s.phase === 'expected'  ? 'bullishExpected' :
-                    s.direction === 'bearish' && s.phase === 'expected'  ? 'bearishExpected' :
-                                                                            'bearishConfirmed';
+                    s.direction === 'bullish' && s.phase === 'confirmed'
+                        ? 'bullishConfirmed'
+                        : s.direction === 'bullish' && s.phase === 'expected'
+                          ? 'bullishExpected'
+                          : s.direction === 'bearish' && s.phase === 'expected'
+                            ? 'bearishExpected'
+                            : 'bearishConfirmed';
                 byQuadrant[key].push(s);
             }
-            for (const key of Object.keys(buckets) as Array<keyof typeof buckets>) {
+            for (const key of Object.keys(buckets) as Array<
+                keyof typeof buckets
+            >) {
                 if (byQuadrant[key].length > 0) {
                     buckets[key].push({ ...stock, signals: byQuadrant[key] });
                 }
@@ -108,9 +126,15 @@ export function SectorSignalPanel({ data, initialSector, initialStrict }: Sector
                 <h2 className="text-secondary-200 text-sm font-semibold tracking-[0.15em] uppercase">
                     섹터 신호 탐색
                 </h2>
-                <StrictModeToggle strict={strict} onChange={handleStrictChange} />
+                <StrictModeToggle
+                    strict={strict}
+                    onChange={handleStrictChange}
+                />
             </div>
-            <SectorTabs activeSector={activeSector} onChange={handleSectorChange} />
+            <SectorTabs
+                activeSector={activeSector}
+                onChange={handleSectorChange}
+            />
             <div
                 id={`sector-panel-${activeSector}`}
                 role="tabpanel"

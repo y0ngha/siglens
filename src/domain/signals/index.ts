@@ -50,7 +50,7 @@ export function detectSignals(
     indicators: IndicatorResult
 ): readonly Signal[] {
     if (bars.length === 0) return [];
-    return DETECTORS.map((d) => d(bars, indicators)).filter(
+    return DETECTORS.map(d => d(bars, indicators)).filter(
         (s): s is Signal => s !== null
     );
 }

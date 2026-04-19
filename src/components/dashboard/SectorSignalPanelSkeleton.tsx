@@ -11,7 +11,7 @@ export function SectorSignalPanelSkeleton() {
                 <div className="bg-secondary-700/50 h-3.5 w-24 animate-pulse rounded" />
                 <div className="bg-secondary-700/50 h-3.5 w-20 animate-pulse rounded" />
             </div>
-            <div className="flex gap-6 overflow-x-auto border-b border-secondary-700 pb-2">
+            <div className="border-secondary-700 flex gap-6 overflow-x-auto border-b pb-2">
                 {SECTOR_ETFS.map(etf => (
                     <div
                         key={etf.symbol}
@@ -21,7 +21,10 @@ export function SectorSignalPanelSkeleton() {
             </div>
             <div className="mt-6 flex flex-col gap-4">
                 {[0, 1, 2, 3].map(i => (
-                    <div key={i} className="flex flex-col gap-3 border-t border-secondary-700 pt-3 pb-4">
+                    <div
+                        key={i}
+                        className="border-secondary-700 flex flex-col gap-3 border-t pt-3 pb-4"
+                    >
                         <div className="flex items-center justify-between">
                             <div className="bg-secondary-700/50 h-3 w-20 animate-pulse rounded" />
                             <div className="bg-secondary-700/50 h-6 w-8 animate-pulse rounded" />

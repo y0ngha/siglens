@@ -168,8 +168,16 @@ body {
     pointer-events: none;
     content: '';
     background-image:
-        linear-gradient(to right, var(--color-secondary-800) 1px, transparent 1px),
-        linear-gradient(to bottom, var(--color-secondary-800) 1px, transparent 1px);
+        linear-gradient(
+            to right,
+            var(--color-secondary-800) 1px,
+            transparent 1px
+        ),
+        linear-gradient(
+            to bottom,
+            var(--color-secondary-800) 1px,
+            transparent 1px
+        );
     background-size: 32px 32px;
     opacity: 0.35;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black, transparent);

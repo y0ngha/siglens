@@ -24,7 +24,7 @@ describe('detectSignals', () => {
                 rsi: [...Array(19).fill(50), 25],
             };
             const signals = detectSignals(bars, indicators);
-            expect(signals.some((s) => s.type === 'rsi_oversold')).toBe(true);
+            expect(signals.some(s => s.type === 'rsi_oversold')).toBe(true);
         });
     });
 

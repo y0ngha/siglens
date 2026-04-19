@@ -62,11 +62,11 @@ export function IndexCard({ data, href }: IndexCardProps) {
                 title={`${label} 분석`}
                 style={{ transformOrigin: 'center' }}
                 className={cn(
-                    'touch-manipulation block rounded-lg',
+                    'block touch-manipulation rounded-lg',
                     'transition-[background-color,border-color,transform,box-shadow] duration-150',
                     'hover:bg-secondary-800/70 hover:border-secondary-600 hover:-translate-y-px',
-                    'hover:shadow-lg hover:shadow-primary-950/40',
-                    'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500',
+                    'hover:shadow-primary-950/40 hover:shadow-lg',
+                    'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
                     'motion-reduce:transition-none motion-reduce:hover:transform-none'
                 )}
             >
