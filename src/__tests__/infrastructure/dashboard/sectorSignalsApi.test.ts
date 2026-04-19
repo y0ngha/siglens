@@ -331,7 +331,7 @@ describe('getSectorSignals 함수는', () => {
     });
 
     describe('타임프레임별 동작', () => {
-        it("1Hour 타임프레임은 YYYY-MM-DDTHH 버킷 캐시 키와 900초 TTL을 사용한다", async () => {
+        it('1Hour 타임프레임은 YYYY-MM-DDTHH 버킷 캐시 키와 900초 TTL을 사용한다', async () => {
             mockCacheGet.mockResolvedValue(null);
             mockGetBars.mockResolvedValue([]);
             mockCacheSet.mockResolvedValue(undefined);

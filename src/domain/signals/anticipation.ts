@@ -302,8 +302,9 @@ export function detectSupportProximityBullish(
     for (const period of SR_MA_PERIODS) {
         if (bars.length < period) continue;
         // calculateMA returns a real number at lastIdx when bars.length >= period (checked above)
-        const ma = (indicators.ma[period] ??
-            calculateMA(bars, period))[lastIdx] as number;
+        const ma = (indicators.ma[period] ?? calculateMA(bars, period))[
+            lastIdx
+        ] as number;
         if (isWithinProximity(closeLast, ma, 'above')) {
             return {
                 type: 'support_proximity_bullish',
@@ -329,8 +330,9 @@ export function detectResistanceProximityBearish(
     for (const period of SR_MA_PERIODS) {
         if (bars.length < period) continue;
         // calculateMA returns a real number at lastIdx when bars.length >= period (checked above)
-        const ma = (indicators.ma[period] ??
-            calculateMA(bars, period))[lastIdx] as number;
+        const ma = (indicators.ma[period] ?? calculateMA(bars, period))[
+            lastIdx
+        ] as number;
         if (isWithinProximity(closeLast, ma, 'below')) {
             return {
                 type: 'resistance_proximity_bearish',

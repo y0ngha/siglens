@@ -51,7 +51,8 @@ interface SearchParams {
 
 function isDashboardTimeframe(v: string | undefined): v is DashboardTimeframe {
     return (
-        v !== undefined && (DASHBOARD_TIMEFRAMES as readonly string[]).includes(v)
+        v !== undefined &&
+        (DASHBOARD_TIMEFRAMES as readonly string[]).includes(v)
     );
 }
 

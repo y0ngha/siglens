@@ -49,7 +49,8 @@ export function SectorSignalPanel({
     const updateUrl = useCallback(
         (nextSector: string, nextTimeframe: DashboardTimeframe) => {
             const params = new URLSearchParams(searchParams.toString());
-            if (nextSector === SIGNAL_SECTORS[0].symbol) params.delete('sector');
+            if (nextSector === SIGNAL_SECTORS[0].symbol)
+                params.delete('sector');
             else params.set('sector', nextSector);
             if (nextTimeframe === '1Day') params.delete('timeframe');
             else params.set('timeframe', nextTimeframe);
