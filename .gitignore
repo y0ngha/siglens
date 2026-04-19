@@ -50,3 +50,5 @@ next-env.d.ts
 /.claude/projects/
 /worker/dist/
 /worker/node_modules/
+/.superpowers/
+/docs/superpowers/

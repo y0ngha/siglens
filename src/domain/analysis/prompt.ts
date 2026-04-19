@@ -677,11 +677,15 @@ const buildSkillBlock = (skill: Skill): string =>
     `### ${skill.name} ${confidenceLabel(skill.confidenceWeight)}\n${skill.content}`;
 
 /**
- * Defines the JSON schema example for all keys of AnalysisResponse.
- * The Record<keyof AnalysisResponse, string> type enforces compile-time synchronization
- * with AnalysisResponse — changes to the interface will produce a compile error here.
+ * Defines the JSON schema example for all LLM-generated keys of AnalysisResponse.
+ * The Record type enforces compile-time synchronization with AnalysisResponse —
+ * changes to the interface will produce a compile error here.
+ * analyzedAt is excluded because it is injected by infrastructure after LLM response.
  */
-const ANALYSIS_RESPONSE_SCHEMA: Record<keyof AnalysisResponse, string> = {
+const ANALYSIS_RESPONSE_SCHEMA: Record<
+    keyof Omit<AnalysisResponse, 'analyzedAt'>,
+    string
+> = {
     summary:
         '"A comprehensive, accessible summary that synthesizes ALL findings (indicators, patterns, volume profile, skills, strategies) into plain language a non-technical user can understand. Instead of stating raw indicator values, explain their practical meaning (e.g., instead of RSI is overbought at 75, say the stock has risen quickly and may be due for a pause). Answer: What is happening with this stock and what does it mean for the investor? Use \\n to separate each topic."',
     trend: '"bullish | bearish | neutral"',

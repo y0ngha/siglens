@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, startTransition, useEffect, useState } from 'react';
 import type { ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
@@ -54,6 +54,12 @@ export function SymbolPageClient({
     const { timeframe, timeframeChangeCount, handleTimeframeChange } =
         useTimeframeChange(symbol);
     const assetInfo = useAssetInfo(symbol);
+    // hydration 완료 후에만 MobileAnalysisSheet를 마운트한다.
+    // vaul의 aria-hidden 주입이 React hydration과 겹치지 않도록 보장한다.
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => {
+        startTransition(() => setIsMounted(true));
+    }, []);
 
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
@@ -125,12 +131,14 @@ export function SymbolPageClient({
                     </ErrorBoundary>
                 </div>
                 {/* Suspense 경계 밖에 렌더링하여 타임프레임 전환 시 바텀시트가 사라지지 않도록 한다 */}
-                <MobileAnalysisSheet
-                    activeSnap={sheetSnap}
-                    onActiveSnapChange={setSheetSnap}
-                >
-                    {mobileSheetContent}
-                </MobileAnalysisSheet>
+                {isMounted && (
+                    <MobileAnalysisSheet
+                        activeSnap={sheetSnap}
+                        onActiveSnapChange={setSheetSnap}
+                    >
+                        {mobileSheetContent}
+                    </MobileAnalysisSheet>
+                )}
             </div>
         </SymbolPageProvider>
     );

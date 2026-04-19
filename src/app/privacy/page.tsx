@@ -193,6 +193,12 @@ export default function PrivacyPage() {
                                     이용자가 자발적으로 제공하는 이메일 주소 및
                                     문의 내용
                                 </li>
+                                <li>
+                                    AI 질문 횟수 제한(Rate Limiting): IP 주소를
+                                    SHA-256 해시로 변환하여 원본 IP를 복원할 수
+                                    없는 형태로 저장. 24시간 후 자동 삭제되며,
+                                    다른 개인정보와 결합하지 않습니다.
+                                </li>
                             </ul>
                             <p>
                                 수집 방법: 이용자가 서비스에 접속하거나 기능을
@@ -310,9 +316,16 @@ export default function PrivacyPage() {
                                 </li>
                                 <li>
                                     <strong className="text-secondary-200">
+                                        Google LLC
+                                    </strong>
+                                    &nbsp;(미국): AI 채팅 응답 생성 (Gemini API)
+                                </li>
+                                <li>
+                                    <strong className="text-secondary-200">
                                         Upstash, Inc.
                                     </strong>
-                                    &nbsp;(미국): 분석 결과 캐시 저장 (Redis)
+                                    &nbsp;(미국): 분석 결과 캐시 및 AI 질문 횟수
+                                    제한 (Redis)
                                 </li>
                             </ul>
                             <p>

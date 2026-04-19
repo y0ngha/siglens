@@ -1,11 +1,6 @@
 # Fix Log
 
 ## [PR #331 Round 7 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: `DashboardTimeframe` 타입이 `constants/dashboard-tickers.ts` 에 정의되고 `domain/types.ts` 에서 re-export
-- Rule: MISTAKES.md Architecture #1 — 모든 도메인 타입은 `domain/types.ts` 에 직접 정의 (re-export 우회 금지, 순환 의존 유발)
-- Context: `export type DashboardTimeframe = (typeof DASHBOARD_TIMEFRAMES)[number]` 를 `domain/types.ts` 로 이동. 상수 파일은 타입을 import 하여 `readonly DashboardTimeframe[]` 로 명시적 타입 annotation
-
-
 - Violation: `signalToQuadrantKey` if-chain (4단 nested conditional)
 - Rule: CONVENTIONS.md 선언적 패턴 — nested conditionals → object map
 - Context: `SectorSignalPanel.tsx` 의 direction × phase 판정을 `Record<SignalDirection, Record<SignalPhase, QuadrantKey>>` 맵 lookup 으로 전환
@@ -15,10 +10,6 @@
 - Context: 내부 accumulator 를 `groupStockIntoQuadrants` 순수 함수로 module-level 추출, useMemo 는 reduce 호출만 남김
 
 ## [PR #331 Round 6 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: useMemo 파생값이 handler 선언 뒤에 위치
-- Rule: MISTAKES.md #17 — hook 선언 순서 `useState → useCallback → useMemo(파생값) → handlers → useEffect`
-- Context: `SectorSignalPanel.tsx` 에서 `handleSectorChange` / `handleTimeframeChange` 가 `filtered`/`sectorStocks`/`quadrants` useMemo 보다 먼저 선언. useMemo 를 handlers 앞으로 이동
-
 - Violation: radiogroup 키보드 네비게이션에서 DOM 포커스 미이동
 - Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴은 aria-checked 와 DOM focus 동기화 필수
 - Context: `TimeframeSelector` 의 Arrow 키 처리가 `onChange` 만 호출하고 실제 포커스 이동 누락. `SectorTabs` 패턴처럼 `querySelectorAll('[role="radio"]')[nextIdx].focus()` 추가
@@ -36,10 +27,6 @@
 - Context: `anticipation.ts` S/R detector 가 주석에 이미 "null 불가 보장" 명시한 상태에서 `as number` 사용. `!` 로 교체
 
 ## [PR #331 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: `components/` .tsx 파일에서 `infrastructure/` 직접 import
-- Rule: ARCHITECTURE.md 레이어 의존성 — 컴포넌트 파일은 infrastructure 직접 import 금지 (RSC Server Component 라도 동일 규칙 적용)
-- Context: `SectorSignalPanelContainer.tsx` 가 async RSC 라는 명목으로 `getSectorSignals` 를 직접 import 했으나 components/ 폴더 위치만으로 lint 통과해도 규칙 위반. 컨테이너 파일 삭제하고 fetch 를 `app/market/page.tsx` RSC 로 이동
-
 - Violation: 68~74 종목에 대한 Promise.allSettled 병렬 fetch — FMP rate limit 초과 가능
 - Rule: API 호출 시 provider rate limit 고려한 concurrency 제한 필수
 - Context: `sectorSignalsApi.ts` 가 `Promise.allSettled(SECTOR_STOCKS.map(...))` 로 전체 동시 실행. `fetchInChunks` 헬퍼로 청크 10개씩 순차 처리로 변경
@@ -60,11 +47,6 @@
 - Violation: 안정적이지 않은 inline arrow function (`updateUrl`) 을 state handler 에서 호출
 - Rule: FF 1-B (Readability — extract implementation detail) — 다른 handler 가 공유 호출할 때는 `useCallback` 으로 식별성 확보
 - Context: `SectorSignalPanel.tsx` 의 URL 동기화 로직이 매 렌더 새 함수로 생성되어 `handleSectorChange` / `handleStrictChange` 간 공유 비효율
-
-## [PR #330 Round 3 | feature/issue-328-market-summary-panel | 2026-04-19]
-- Violation: infrastructure 파일에 대응하는 테스트 파일 누락
-- Rule: CONVENTIONS.md — infrastructure/ 100% coverage 필수
-- Context: `getMarketSummaryAction.ts` 신규 생성 시 테스트 파일 미작성
 
 ## [PR #330 Round 2 | feature/issue-328-market-summary-panel | 2026-04-19]
 - Violation: Lightweight Charts dispose 이후 `unsubscribeCrosshairMove` 직접 호출
@@ -182,3 +164,24 @@
 - Violation: period-based indicator 테스트에 toBeCloseTo 수치 검증 누락
 - Rule: MISTAKES.md Tests #12 — Every period-based indicator test must include toBeCloseTo checks against manually-calculated expected values
 - Context: calculateSupertrend 리팩터링 PR에서 기존 테스트가 방향성(up/down) 부등호만 검증하고 실제 계산값을 검증하지 않아 리뷰어에게 Blocker 지적 받음
+
+
+## [PR #333 | feat/332/ai-chat | 2026-04-19]
+- Violation: `src/infrastructure/ai/gemini.ts` 신규 인프라 파일에 대응하는 전용 테스트 파일 누락
+- Rule: `src/__tests__/CLAUDE.md` — Tests cover domain and infrastructure only, mirror source structure, 100% coverage target
+- Context: `callGeminiWithKeyFallback`의 4개 분기(freeApiKey undefined, free key 성공, free key 실패→fallback, systemInstruction undefined)가 전용 테스트 없이 간접 커버만 됨
+## [PR #333 Round 2 | feat/332/ai-chat | 2026-04-19]
+- Violation: `loadSession`이 `loadSessionFull`과 TTL·JSON 파싱 로직을 중복 구현
+- Rule: MISTAKES.md #1 — 동일 알고리즘 재구현 금지, 기존 헬퍼에 위임
+- Context: loadSession이 loadSessionFull과 거의 동일한 localStorage 읽기 로직을 독립적으로 구현하고 있었음
+- Violation: `getRemainingTokensAction`을 bare `useEffect + .then()` 패턴으로 직접 호출
+- Rule: ARCHITECTURE.md — Hook files may import fetch functions from infrastructure only, limited to queryFn/mutationFn connection purpose
+- Context: useChat.ts에서 인프라 함수를 useEffect 내부에서 직접 호출했으나, useQuery의 queryFn으로 감싸야 규칙 준수
+
+## [PR #333 Round 3 | feat/332/ai-chat | 2026-04-19]
+- Violation: `domain/chat/types.ts`를 별도 파일로 두고 `domain/types.ts`에서 re-export하는 구조
+- Rule: MISTAKES.md Architecture #1 — All domain types must be centralized in domain/types.ts; re-export 우회 금지
+- Context: PR #331에서 동일한 패턴이 이미 수정된 전례가 있음에도 Chat 타입에 동일 패턴 적용됨
+- Violation: `tokenStore.ts` `getRedis()`가 매 호출마다 `new Redis(...)` 인스턴스 재생성
+- Rule: MISTAKES.md Design #2 — 동일 리소스를 여러 번 생성하지 말 것, 단일 인스턴스 캐싱 필요
+- Context: tryConsumeToken과 getRemainingTokens 각각 호출 시 새 Redis 인스턴스 생성

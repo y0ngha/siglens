@@ -32,6 +32,7 @@ import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStat
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { SNAP_PEEK } from '@/components/symbol-page/MobileAnalysisSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
+import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -344,6 +345,12 @@ export function ChartContent({
             >
                 {analysisContent}
             </aside>
+            <FloatingChatButton
+                symbol={symbol}
+                timeframe={timeframe}
+                analysis={analysis}
+                isAnalysisReady={!displayAnalyzing}
+            />
 
             {/* 드래그 중 전체 화면 오버레이 — 텍스트 선택 방지 */}
             {isDragging && (

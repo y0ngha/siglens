@@ -490,6 +490,8 @@ export interface AnalysisResponse {
     candlePatterns: CandlePatternSummary[];
     trendlines: Trendline[];
     actionRecommendation?: ActionRecommendation;
+    /** ISO 8601 timestamp of when this analysis was performed. */
+    analyzedAt?: string;
 }
 
 export interface BarsData {
@@ -637,3 +639,28 @@ export interface SectorSignalsResult {
 }
 
 export type DashboardTimeframe = '15Min' | '1Hour' | '1Day';
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+
+export interface ChatMessage {
+    role: 'user' | 'model';
+    content: string;
+}
+
+export type ChatLoadingPhase = 'analyzing' | 'generating';
+
+export interface ChatSession {
+    messages: ChatMessage[];
+    savedAt: number; // Unix timestamp (ms)
+}
+
+export type ChatErrorCode = 'token_exhausted' | 'rate_limited' | 'server_error';
+
+export type ChatActionResult =
+    | { ok: true; message: string; remainingTokens: number }
+    | { ok: false; error: ChatErrorCode };
+
+export interface ChatPromptPayload {
+    systemPrompt: string;
+    messages: ChatMessage[];
+}
