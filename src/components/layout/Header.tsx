@@ -16,10 +16,11 @@ export function Header() {
             className="bg-secondary-900/90 supports-[backdrop-filter]:bg-secondary-900/75 border-secondary-800 sticky top-0 z-40 border-b backdrop-blur-md"
             role="banner"
         >
-            <div className="mx-auto flex h-14 items-center gap-3 px-4 sm:gap-6 sm:px-6 lg:px-[15vw]">
+            <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
                 <Link
                     href="/"
                     title="홈으로"
+                    aria-label={`${SITE_NAME} 홈`}
                     className="focus-visible:ring-primary-500 -mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:outline-none"
                 >
                     <Image
@@ -32,7 +33,7 @@ export function Header() {
                     />
                     <span
                         translate="no"
-                        className="text-secondary-100 font-mono text-sm font-semibold tracking-[0.15em] uppercase"
+                        className="text-secondary-100 hidden font-mono text-sm font-semibold tracking-[0.15em] uppercase sm:inline"
                     >
                         {SITE_NAME}
                     </span>
