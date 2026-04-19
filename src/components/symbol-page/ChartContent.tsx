@@ -33,7 +33,6 @@ import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus
 import { SNAP_PEEK } from '@/components/symbol-page/MobileAnalysisSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
-import { MobilePanelContent } from '@/components/chat/MobilePanelContent';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -263,17 +262,9 @@ export function ChartContent({
     // useEffect body에서는 mobileContent만 참조하므로 Predictability 규칙 3을 준수한다.
     const mobileContent = useMemo(
         () => (
-            <React.Fragment key={timeframe}>
-                <MobilePanelContent
-                    analysisContent={analysisContent}
-                    symbol={symbol}
-                    timeframe={timeframe}
-                    analysis={analysis}
-                    isAnalysisReady={!displayAnalyzing}
-                />
-            </React.Fragment>
+            <React.Fragment key={timeframe}>{analysisContent}</React.Fragment>
         ),
-        [analysisContent, timeframe, symbol, analysis, displayAnalyzing]
+        [analysisContent, timeframe]
     );
 
     const notifyMobileContent = useEffectEvent(onMobileSheetContent);
