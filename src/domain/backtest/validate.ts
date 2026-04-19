@@ -1,9 +1,12 @@
-import type { BacktestData } from '@/domain/types';
+import type { BacktestData, BacktestOutcome } from '@/domain/types';
+
+const VALID_OUTCOMES: BacktestOutcome[] = ['win', 'loss'];
 
 export function validateBacktestData(data: unknown): BacktestData {
     if (typeof data !== 'object' || data === null) {
         throw new Error('BacktestData must be an object');
     }
+    // Safe: confirmed non-null object above
     const d = data as Record<string, unknown>;
 
     if (typeof d['meta'] !== 'object' || d['meta'] === null) {
@@ -14,12 +17,13 @@ export function validateBacktestData(data: unknown): BacktestData {
         throw new Error('cases must be an array');
     }
 
-    for (let i = 0; i < (d['cases'] as unknown[]).length; i++) {
-        const c = (d['cases'] as unknown[])[i] as Record<string, unknown>;
+    const cases = d['cases'] as unknown[];
+    for (let i = 0; i < cases.length; i++) {
+        const c = cases[i] as Record<string, unknown>;
         if (typeof c['returnPct'] !== 'number') {
             throw new Error(`cases[${i}].returnPct must be a number`);
         }
-        if (c['result'] !== 'win' && c['result'] !== 'loss') {
+        if (!VALID_OUTCOMES.includes(c['result'] as BacktestOutcome)) {
             throw new Error(`cases[${i}].result must be 'win' or 'loss'`);
         }
         if (
@@ -31,5 +35,6 @@ export function validateBacktestData(data: unknown): BacktestData {
         }
     }
 
+    // Safe: all required fields validated above
     return data as BacktestData;
 }

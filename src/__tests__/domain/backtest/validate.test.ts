@@ -35,23 +35,23 @@ describe('validateBacktestData', () => {
 
     describe('invalid input', () => {
         it('throws when meta is missing', () => {
-            expect(() => validateBacktestData({ cases: [] })).toThrow('meta');
+            expect(() => validateBacktestData({ cases: [] })).toThrow('meta must be an object');
         });
 
         it('throws when cases is not an array', () => {
             expect(() =>
                 validateBacktestData({ ...validData, cases: null })
-            ).toThrow('cases');
+            ).toThrow('cases must be an array');
         });
 
         it('throws when a case has invalid returnPct type', () => {
             const bad = { ...validData, cases: [{ ...validCase, returnPct: '23.5' }] };
-            expect(() => validateBacktestData(bad)).toThrow('returnPct');
+            expect(() => validateBacktestData(bad)).toThrow('cases[0].returnPct must be a number');
         });
 
         it('throws when result is not win or loss', () => {
             const bad = { ...validData, cases: [{ ...validCase, result: 'maybe' }] };
-            expect(() => validateBacktestData(bad)).toThrow('result');
+            expect(() => validateBacktestData(bad)).toThrow("cases[0].result must be 'win' or 'loss'");
         });
 
         it('throws when aiAnalysis.tags is not an array', () => {
@@ -59,7 +59,7 @@ describe('validateBacktestData', () => {
                 ...validData,
                 cases: [{ ...validCase, aiAnalysis: { summary: 'x', tags: 'x' } }],
             };
-            expect(() => validateBacktestData(bad)).toThrow('tags');
+            expect(() => validateBacktestData(bad)).toThrow('cases[0].aiAnalysis.tags must be an array');
         });
     });
 });
