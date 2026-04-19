@@ -2,6 +2,7 @@ import type { Timeframe } from '@/domain/types';
 import type { ChatMessage, ChatSession } from '@/domain/chat/types';
 
 export const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7일 (ms)
+export const MAX_STORED_MESSAGES = 40;
 
 export function buildStorageKey(symbol: string, timeframe: Timeframe): string {
     return `siglens_chat_${symbol.toUpperCase()}_${timeframe}`;
@@ -46,7 +47,10 @@ export function loadSessionFull(key: string): {
 export function saveSession(key: string, messages: ChatMessage[]): void {
     if (typeof window === 'undefined') return;
     try {
-        const session: ChatSession = { messages, savedAt: Date.now() };
+        const session: ChatSession = {
+            messages: messages.slice(-MAX_STORED_MESSAGES),
+            savedAt: Date.now(),
+        };
         localStorage.setItem(key, JSON.stringify(session));
     } catch {
         // 스토리지 용량 초과 등 무시
