@@ -70,6 +70,7 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
                         return (
                             <button
                                 key={tab}
+                                id={`tab-${tab}`}
                                 role="tab"
                                 aria-selected={isSelected}
                                 aria-controls="backtest-case-list"
@@ -91,7 +92,7 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
             <div
                 id="backtest-case-list"
                 role="tabpanel"
-                aria-label={`${safeActive} 케이스 목록`}
+                aria-labelledby={`tab-${safeActive}`}
             >
                 <BacktestCaseList cases={filtered} />
             </div>

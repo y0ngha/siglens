@@ -47,7 +47,9 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
 
                 <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs">
                     <div className="shrink-0 rounded border border-chart-bullish/20 bg-chart-bullish/10 px-2 py-1">
-                        <span className="font-semibold text-chart-bullish">매수</span>
+                        <span className="font-semibold text-chart-bullish">
+                            {c.signalType === 'buy' ? '매수' : '매도'}
+                        </span>
                         <span className="ml-1 text-secondary-400">{c.entryDate}</span>
                         <span className="ml-1 font-mono tabular-nums text-secondary-500">
                             {priceFormatter.format(c.entryPrice)}

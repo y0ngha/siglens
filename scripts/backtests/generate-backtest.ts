@@ -174,23 +174,8 @@ async function runAiAnalysis(
     return { trend: result.trend, summary: (result.summary ?? '').slice(0, 150), tags };
 }
 
-type CaseItem = {
-    ticker: string;
-    entryDate: string;
-    entryPrice: number;
-    exitDate: string;
-    exitPrice: number;
-    holdingDays: number;
-    returnPct: number;
-    signalType: 'buy' | 'sell';
-    result: BacktestOutcome;
-    exitReason: 'signal' | 'stop_loss';
-    aiResult: BacktestOutcome;
-    aiAnalysis: { summary: string; tags: string[] };
-};
-
 async function main() {
-    const allCases: CaseItem[] = [];
+    let allCases: BacktestCase[] = [];
 
     for (const ticker of TICKERS) {
         console.log(`\n[${ticker}] Fetching bars...`);
@@ -220,30 +205,33 @@ async function main() {
                     ? 'win'
                     : 'loss';
 
-            allCases.push({
-                ticker,
-                entryDate: sig.entryDate,
-                entryPrice: sig.entryPrice,
-                exitDate: exitBar.date,
-                exitPrice: exitBar.close,
-                holdingDays: exitIdx - sig.idx,
-                returnPct: Number(returnPct.toFixed(2)),
-                signalType: 'buy',
-                result,
-                exitReason: 'signal',
-                aiResult,
-                aiAnalysis: { summary: ai.summary, tags: ai.tags },
-            });
+            allCases = [
+                ...allCases,
+                {
+                    ticker,
+                    entryDate: sig.entryDate,
+                    entryPrice: sig.entryPrice,
+                    exitDate: exitBar.date,
+                    exitPrice: exitBar.close,
+                    holdingDays: exitIdx - sig.idx,
+                    returnPct: Number(returnPct.toFixed(2)),
+                    signalType: 'buy',
+                    result,
+                    exitReason: 'signal',
+                    aiResult,
+                    aiAnalysis: { summary: ai.summary, tags: ai.tags },
+                },
+            ];
 
             await sleep(GEMINI_SLEEP_MS);
         }
     }
 
-    allCases.sort((a, b) => a.entryDate.localeCompare(b.entryDate));
+    const sortedCases = [...allCases].sort((a, b) => a.entryDate.localeCompare(b.entryDate));
 
-    const wins = allCases.filter(c => c.result === 'win').length;
-    const aiWins = allCases.filter(c => c.aiResult === 'win').length;
-    const total = allCases.length;
+    const wins = sortedCases.filter(c => c.result === 'win').length;
+    const aiWins = sortedCases.filter(c => c.aiResult === 'win').length;
+    const total = sortedCases.length;
 
     const output = {
         meta: {
@@ -253,7 +241,7 @@ async function main() {
             aiWinRate: total > 0 ? Number(((aiWins / total) * 100).toFixed(1)) : 0,
             tickerCount: TICKERS.length,
         },
-        cases: allCases,
+        cases: sortedCases,
     };
 
     writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2), 'utf-8');
