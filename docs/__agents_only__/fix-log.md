@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #331 Round 2 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
+- Violation: `as number` 타입 단언을 `!` 로 대체 가능한 상황에서 사용
+- Rule: MISTAKES.md TypeScript #7 — `as` 는 null 가능한 경우 `!` 우선 고려
+- Context: `anticipation.ts` S/R detector 가 주석에 이미 "null 불가 보장" 명시한 상태에서 `as number` 사용. `!` 로 교체
+
 ## [PR #331 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: `components/` .tsx 파일에서 `infrastructure/` 직접 import
 - Rule: ARCHITECTURE.md 레이어 의존성 — 컴포넌트 파일은 infrastructure 직접 import 금지 (RSC Server Component 라도 동일 규칙 적용)
@@ -55,10 +60,6 @@
 - Context: AdSense `<Script>`가 `<head>` 블록 안에 있었음; `<body>` 끝으로 이동
 
 ## [PR #315 Round 2 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
-- Violation: `isPushed`를 `useState`로 관리하여 push 완료 시 불필요한 리렌더 + effect 재실행 사이클 발생
-- Rule: Components — JSX 렌더 출력에 영향을 주지 않는 내부 플래그는 `useRef`로 관리해야 함
-- Context: `setIsPushed(true)` 호출 → 리렌더 → effect 재실행 → 즉시 guard return 무의미한 사이클; `useRef`로 전환해 렌더 없이 플래그 관리
-
 - Violation: `shouldShowAd()` 비즈니스 로직 함수가 `lib/`에 배치됨 — lib/CLAUDE.md 범위(유틸리티 래퍼, 설정 상수, 차트 색상) 초과
 - Rule: Design & Cohesion — lib/은 순수 유틸리티/설정 상수만; 비즈니스 판단 로직은 사용처에 인라인하거나 domain/으로 이동
 - Context: `shouldShowAd`는 AdBanner.tsx 단독 사용이므로 컴포넌트 내 인라인으로 해결; lib/adsense.ts에서 함수 제거

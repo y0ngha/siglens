@@ -45,6 +45,7 @@ export function SectorSignalPanel({
     const pathname = usePathname();
     const searchParams = useSearchParams();
     const [activeSector, setActiveSector] = useState(initialSector);
+    const [activeTimeframe, setActiveTimeframe] = useState(initialTimeframe);
 
     const updateUrl = useCallback(
         (nextSector: string, nextTimeframe: DashboardTimeframe) => {
@@ -64,10 +65,11 @@ export function SectorSignalPanel({
 
     const handleSectorChange = (sector: string) => {
         setActiveSector(sector);
-        updateUrl(sector, initialTimeframe);
+        updateUrl(sector, activeTimeframe);
     };
 
     const handleTimeframeChange = (next: DashboardTimeframe) => {
+        setActiveTimeframe(next);
         updateUrl(activeSector, next);
     };
 
@@ -127,7 +129,7 @@ export function SectorSignalPanel({
                     섹터 신호 탐색
                 </h2>
                 <TimeframeSelector
-                    timeframe={initialTimeframe}
+                    timeframe={activeTimeframe}
                     onChange={handleTimeframeChange}
                 />
             </div>
