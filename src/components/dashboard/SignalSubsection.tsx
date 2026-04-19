@@ -1,4 +1,5 @@
 import type { StockSignalResult } from '@/domain/types';
+import { cn } from '@/lib/cn';
 import { SignalStockCard } from './SignalStockCard';
 
 interface SignalSubsectionProps {
@@ -25,10 +26,13 @@ export function SignalSubsection({
             : 'opacity-70 font-medium';
 
     return (
-        <section className={`${borderClass} pt-3 pb-4`}>
+        <section className={cn(borderClass, 'pt-3 pb-4')}>
             <div className="mb-3 flex items-baseline justify-between">
                 <h3
-                    className={`text-secondary-200 text-sm tracking-[0.15em] text-pretty uppercase ${labelOpacity}`}
+                    className={cn(
+                        'text-secondary-200 text-sm tracking-[0.15em] text-pretty uppercase',
+                        labelOpacity
+                    )}
                 >
                     <span aria-hidden="true" className="mr-2">
                         {marker}

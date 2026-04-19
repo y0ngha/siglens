@@ -77,7 +77,9 @@ export function detectGoldenCross(
     const fast =
         indicators.ma[GOLDEN_CROSS_FAST_PERIOD] ??
         calculateMA(bars, GOLDEN_CROSS_FAST_PERIOD);
-    const slow = calculateMA(bars, GOLDEN_CROSS_SLOW_PERIOD);
+    const slow =
+        indicators.ma[GOLDEN_CROSS_SLOW_PERIOD] ??
+        calculateMA(bars, GOLDEN_CROSS_SLOW_PERIOD);
     const crossIdx = findCross(fast, slow, CROSS_LOOKBACK_BARS, 'up');
     if (crossIdx === null) return null;
     return {
@@ -96,7 +98,9 @@ export function detectDeathCross(
     const fast =
         indicators.ma[GOLDEN_CROSS_FAST_PERIOD] ??
         calculateMA(bars, GOLDEN_CROSS_FAST_PERIOD);
-    const slow = calculateMA(bars, GOLDEN_CROSS_SLOW_PERIOD);
+    const slow =
+        indicators.ma[GOLDEN_CROSS_SLOW_PERIOD] ??
+        calculateMA(bars, GOLDEN_CROSS_SLOW_PERIOD);
     const crossIdx = findCross(fast, slow, CROSS_LOOKBACK_BARS, 'down');
     if (crossIdx === null) return null;
     return {

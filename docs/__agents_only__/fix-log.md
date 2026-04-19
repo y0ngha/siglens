@@ -1,14 +1,5 @@
 # Fix Log
 
-## [PR #331 Round 4 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: Panel C 도메인 타입을 `domain/signals/types.ts` 분리 파일에 배치 — 여러 레이어(infrastructure/, components/, domain/signals/)에서 참조됨
-- Rule: MISTAKES.md Architecture #1 — 복수 파일이 참조하는 타입은 `domain/types.ts` 단일 소스
-- Context: 레거시 `Signal`/`SignalType` (analysis 패널용) 이름 충돌로 의도적으로 분리했었으나, 레거시를 `AnalysisSignal`/`AnalysisSignalType` 으로 rename 하여 충돌 해소 후 Panel C 타입을 `domain/types.ts` 로 이동. `domain/signals/types.ts` 파일 삭제
-
-- Violation: `sectorSignalsApi.ts` 에 `console.warn` 3곳 (캐시 읽기/쓰기 실패, 종목 fetch 실패)
-- Rule: MISTAKES.md Infrastructure #3 — infrastructure 파일에 console.log/warn 등 디버그 로깅 금지
-- Context: graceful degradation 유지하되 로깅은 제거. `catch {}` 빈 핸들러 + 설명 주석으로 대체
-
 ## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: `stocks.push(result)` 배열 직접 변이
 - Rule: MISTAKES.md Coding Paradigm #5 — immutable 패턴 우선 (map + filter)

@@ -115,6 +115,8 @@ export async function getSectorSignals(
         s =>
             provider.getBars({
                 symbol: s.symbol,
+                // DashboardTimeframe('15Min' | '1Hour' | '1Day') 는 Timeframe 의 부분집합 —
+                // provider.getBars 시그니처에 맞추기 위한 안전한 widening.
                 timeframe: timeframe as Timeframe,
                 from: fromIso,
             })
