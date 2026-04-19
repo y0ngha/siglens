@@ -12,6 +12,7 @@ import {
     DMI_ADX_TREND_THRESHOLD,
     GOLDEN_CROSS_FAST_PERIOD,
     GOLDEN_CROSS_SLOW_PERIOD,
+    MFI_OVERSOLD_LEVEL,
 } from '@/domain/signals/constants';
 
 export function detectRsiOversold(
@@ -350,5 +351,25 @@ export function detectCmfBullishFlip(
         direction: 'bullish',
         phase: 'confirmed',
         detectedAt: idx,
+    };
+}
+
+export function detectMfiOversoldBounce(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const mfi = indicators.mfi;
+    if (mfi.length < 2) return null;
+    const lastIdx = mfi.length - 1;
+    const prev = mfi[lastIdx - 1];
+    const cur = mfi[lastIdx];
+    if (prev === null || cur === null) return null;
+    if (prev >= MFI_OVERSOLD_LEVEL) return null;
+    if (cur < MFI_OVERSOLD_LEVEL) return null;
+    return {
+        type: 'mfi_oversold_bounce',
+        direction: 'bullish',
+        phase: 'confirmed',
+        detectedAt: lastIdx,
     };
 }

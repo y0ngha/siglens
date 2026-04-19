@@ -605,7 +605,8 @@ export type ConfirmedSignalType =
     | 'ichimoku_cloud_breakout'
     | 'cci_bullish_cross'
     | 'dmi_bullish_cross'
-    | 'cmf_bullish_flip';
+    | 'cmf_bullish_flip'
+    | 'mfi_oversold_bounce';
 
 export type ExpectedSignalType =
     | 'rsi_bullish_divergence'

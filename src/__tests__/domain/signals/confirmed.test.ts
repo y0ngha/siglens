@@ -12,6 +12,7 @@ import {
     detectCciBullishCross,
     detectDmiBullishCross,
     detectCmfBullishFlip,
+    detectMfiOversoldBounce,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
@@ -58,6 +59,10 @@ function withDmi(values: DMIResult[]): IndicatorResult {
 
 function withCmf(values: (number | null)[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, cmf: values };
+}
+
+function withMfi(values: (number | null)[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, mfi: values };
 }
 
 describe('detectRsiOversold', () => {
@@ -875,6 +880,53 @@ describe('detectCmfBullishFlip', () => {
         it('null을 반환한다', () => {
             expect(
                 detectCmfBullishFlip(buildBars(5), EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+});
+
+// ─── detectMfiOversoldBounce ──────────────────────────────────────────────────
+
+describe('detectMfiOversoldBounce', () => {
+    describe('직전 MFI < 20, 최신 MFI ≥ 20일 때', () => {
+        it('Signal을 반환한다', () => {
+            const bars = buildBars(10);
+            const mfi = [...Array(9).fill(15), 22];
+            const result = detectMfiOversoldBounce(bars, withMfi(mfi));
+            expect(result?.type).toBe('mfi_oversold_bounce');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(9);
+        });
+    });
+
+    describe('직전 MFI가 이미 20 이상이었을 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(10);
+            const mfi = [...Array(9).fill(25), 30];
+            expect(detectMfiOversoldBounce(bars, withMfi(mfi))).toBeNull();
+        });
+    });
+
+    describe('최신 MFI가 여전히 20 미만일 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(10);
+            const mfi = [...Array(9).fill(15), 18];
+            expect(detectMfiOversoldBounce(bars, withMfi(mfi))).toBeNull();
+        });
+    });
+
+    describe('MFI 데이터가 1개뿐일 때', () => {
+        it('null을 반환한다 (length < 2 가드)', () => {
+            const bars = buildBars(5);
+            expect(detectMfiOversoldBounce(bars, withMfi([15]))).toBeNull();
+        });
+    });
+
+    describe('MFI 데이터가 없을 때', () => {
+        it('null을 반환한다', () => {
+            expect(
+                detectMfiOversoldBounce(buildBars(5), EMPTY_INDICATOR_RESULT)
             ).toBeNull();
         });
     });
