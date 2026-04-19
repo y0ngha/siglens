@@ -9,6 +9,7 @@ import {
     detectBollingerUpperBreakout,
     detectSupertrendBullishFlip,
     detectIchimokuCloudBreakout,
+    detectCciBullishCross,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
@@ -705,6 +706,62 @@ describe('detectIchimokuCloudBreakout', () => {
                     buildBarsWithCloses([100]),
                     EMPTY_INDICATOR_RESULT
                 )
+            ).toBeNull();
+        });
+    });
+});
+
+// ─── detectCciBullishCross ────────────────────────────────────────────────────
+
+function withCci(values: (number | null)[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, cci: values };
+}
+
+describe('detectCciBullishCross', () => {
+    describe('최근 3 bar 내 -100 상향 돌파가 있을 때', () => {
+        it('Signal을 전환 bar로 반환한다', () => {
+            const bars = buildBars(10);
+            const cci = [
+                ...Array(7).fill(-120),
+                -80,  // -100 상향 돌파 (index 7)
+                -70, -60,
+            ];
+            const result = detectCciBullishCross(bars, withCci(cci));
+            expect(result?.type).toBe('cci_bullish_cross');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(7);
+        });
+    });
+
+    describe('최근 3 bar 내 +100 상향 돌파가 있을 때', () => {
+        it('Signal을 반환한다', () => {
+            const bars = buildBars(10);
+            const cci = [
+                ...Array(7).fill(80),
+                120, 130, 140,  // +100 상향 돌파 (index 7)
+            ];
+            const result = detectCciBullishCross(bars, withCci(cci));
+            expect(result?.type).toBe('cci_bullish_cross');
+            expect(result?.detectedAt).toBe(7);
+        });
+    });
+
+    describe('최근 3 bar 내 돌파가 없을 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(10);
+            const cci = [
+                ...Array(3).fill(-120),
+                ...Array(7).fill(-80),  // 돌파는 index 3에서 발생했으나 lookback=3 초과
+            ];
+            expect(detectCciBullishCross(bars, withCci(cci))).toBeNull();
+        });
+    });
+
+    describe('CCI 데이터가 없을 때', () => {
+        it('null을 반환한다', () => {
+            expect(
+                detectCciBullishCross(buildBars(5), EMPTY_INDICATOR_RESULT)
             ).toBeNull();
         });
     });

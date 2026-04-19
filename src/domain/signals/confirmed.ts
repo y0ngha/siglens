@@ -5,6 +5,8 @@ import {
 } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
 import {
+    CCI_BULLISH_CROSS_LEVEL,
+    CCI_OVERSOLD_CROSS_LEVEL,
     CROSS_LOOKBACK_BARS,
     GOLDEN_CROSS_FAST_PERIOD,
     GOLDEN_CROSS_SLOW_PERIOD,
@@ -263,4 +265,26 @@ export function detectIchimokuCloudBreakout(
         phase: 'confirmed',
         detectedAt: lastIdx,
     };
+}
+
+export function detectCciBullishCross(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const cci = indicators.cci;
+    if (cci.length < 2) return null;
+    const thresholds = [CCI_OVERSOLD_CROSS_LEVEL, CCI_BULLISH_CROSS_LEVEL];
+    for (const threshold of thresholds) {
+        const thresholdArr = cci.map(() => threshold);
+        const idx = findCross(cci, thresholdArr, CROSS_LOOKBACK_BARS, 'up');
+        if (idx !== null) {
+            return {
+                type: 'cci_bullish_cross',
+                direction: 'bullish',
+                phase: 'confirmed',
+                detectedAt: idx,
+            };
+        }
+    }
+    return null;
 }
