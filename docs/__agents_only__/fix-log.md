@@ -36,10 +36,6 @@
 - Context: `anticipation.ts` S/R detector 가 주석에 이미 "null 불가 보장" 명시한 상태에서 `as number` 사용. `!` 로 교체
 
 ## [PR #331 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: `components/` .tsx 파일에서 `infrastructure/` 직접 import
-- Rule: ARCHITECTURE.md 레이어 의존성 — 컴포넌트 파일은 infrastructure 직접 import 금지 (RSC Server Component 라도 동일 규칙 적용)
-- Context: `SectorSignalPanelContainer.tsx` 가 async RSC 라는 명목으로 `getSectorSignals` 를 직접 import 했으나 components/ 폴더 위치만으로 lint 통과해도 규칙 위반. 컨테이너 파일 삭제하고 fetch 를 `app/market/page.tsx` RSC 로 이동
-
 - Violation: 68~74 종목에 대한 Promise.allSettled 병렬 fetch — FMP rate limit 초과 가능
 - Rule: API 호출 시 provider rate limit 고려한 concurrency 제한 필수
 - Context: `sectorSignalsApi.ts` 가 `Promise.allSettled(SECTOR_STOCKS.map(...))` 로 전체 동시 실행. `fetchInChunks` 헬퍼로 청크 10개씩 순차 처리로 변경
@@ -178,7 +174,14 @@
 - Rule: MISTAKES.md Tests #12 — Every period-based indicator test must include toBeCloseTo checks against manually-calculated expected values
 - Context: calculateSupertrend 리팩터링 PR에서 기존 테스트가 방향성(up/down) 부등호만 검증하고 실제 계산값을 검증하지 않아 리뷰어에게 Blocker 지적 받음
 
+
 ## [PR #333 | feat/332/ai-chat | 2026-04-19]
-- Violation: 훅 파일에서 @/domain/chat/types 직접 임포트
-- Rule: CLAUDE.md Layer Dependency Rules — Hook files type imports must be from @/domain/types
-- Context: useChat.ts 신규 작성 시 타입이 domain/chat/types에 정의돼 있어 직접 임포트했으나 도메인 재export 경로 규칙 미준수
+- Violation: `src/infrastructure/ai/gemini.ts` 신규 인프라 파일에 대응하는 전용 테스트 파일 누락
+- Rule: `src/__tests__/CLAUDE.md` — Tests cover domain and infrastructure only, mirror source structure, 100% coverage target
+- Context: `callGeminiWithKeyFallback`의 4개 분기(freeApiKey undefined, free key 성공, free key 실패→fallback, systemInstruction undefined)가 전용 테스트 없이 간접 커버만 됨
+- Violation: `ChatSession`, `ChatActionResult` 타입이 `domain/types.ts`에서 re-export되지 않음
+- Rule: MISTAKES.md Architecture #1 — 도메인 타입은 `domain/types.ts`로 중앙화
+- Context: `chatStorage.ts`와 `chatAction.ts`가 `@/domain/chat/types`를 직접 참조
+- Violation: `useChat.ts` `ERROR_MESSAGES`의 매직 넘버 `5` 하드코딩
+- Rule: MISTAKES.md Coding Paradigm #15 — 모든 매직 넘버는 모듈 레벨 상수로 추출
+- Context: `CHAT_TOKEN_LIMIT`과 동기화 필요한 값이 주석으로만 연결되고 리터럴로 남아있었음
