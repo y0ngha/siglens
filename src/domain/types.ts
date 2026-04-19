@@ -640,7 +640,11 @@ export type DashboardTimeframe = '15Min' | '1Hour' | '1Day';
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
 
-export type { ChatMessage, ChatErrorCode, ChatLoadingPhase } from './chat/types';
+export type {
+    ChatMessage,
+    ChatErrorCode,
+    ChatLoadingPhase,
+} from './chat/types';
 
 export interface ChatPromptPayload {
     systemPrompt: string;

@@ -11,7 +11,11 @@ import {
 } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
-import type { ChatMessage, ChatErrorCode, ChatLoadingPhase } from '@/domain/types';
+import type {
+    ChatMessage,
+    ChatErrorCode,
+    ChatLoadingPhase,
+} from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import {
     buildStorageKey,
