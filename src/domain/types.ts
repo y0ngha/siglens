@@ -490,6 +490,8 @@ export interface AnalysisResponse {
     candlePatterns: CandlePatternSummary[];
     trendlines: Trendline[];
     actionRecommendation?: ActionRecommendation;
+    /** ISO 8601 timestamp set by infrastructure when analysis is created or served from cache */
+    analyzedAt?: string;
 }
 
 export interface BarsData {

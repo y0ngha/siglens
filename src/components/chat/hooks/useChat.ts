@@ -18,9 +18,11 @@ import type {
     ChatLoadingPhase,
 } from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
+import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import {
     buildStorageKey,
     loadSession,
+    loadSessionFull,
     saveSession,
 } from '@/components/chat/utils/chatStorage';
 
@@ -78,8 +80,8 @@ export function useChat({
     const initialStorageKeyRef = useRef(buildStorageKey(symbol, timeframe));
     // storageKey just changed but messages haven't updated yet — skip that save cycle
     const isKeyChangePendingRef = useRef(false);
-    // true if localStorage had messages on mount — triggers banner when analysis first becomes ready
-    const hasRestoredHistoryRef = useRef(false);
+    // savedAt (ms) of the restored session — null if no history on mount
+    const restoredSavedAtRef = useRef<number | null>(null);
     // true until isAnalysisReady first becomes true — distinguishes page-refresh from re-analysis
     const isFirstAnalysisReadyRef = useRef(true);
 
@@ -156,8 +158,12 @@ export function useChat({
 
     // 하이드레이션 후 localStorage 로드 (SSR/client mismatch 방지 — 마운트 1회만 실행)
     useEffect(() => {
-        const loaded = loadSession(initialStorageKeyRef.current);
-        if (loaded.length > 0) hasRestoredHistoryRef.current = true;
+        const { messages: loaded, savedAt } = loadSessionFull(
+            initialStorageKeyRef.current
+        );
+        if (loaded.length > 0 && savedAt !== null) {
+            restoredSavedAtRef.current = savedAt;
+        }
         startTransition(() => {
             setMessages(loaded);
         });
@@ -190,7 +196,13 @@ export function useChat({
 
         if (isFirstAnalysisReadyRef.current) {
             isFirstAnalysisReadyRef.current = false;
-            if (hasRestoredHistoryRef.current) {
+            const restoredSavedAt = restoredSavedAtRef.current;
+            if (
+                restoredSavedAt !== null &&
+                messagesRef.current.length > 0 &&
+                analysis.analyzedAt !== undefined &&
+                new Date(analysis.analyzedAt).getTime() > restoredSavedAt
+            ) {
                 startTransition(() => setAnalysisUpdated(true));
             }
             return;
@@ -214,6 +226,13 @@ export function useChat({
         }
         saveSession(storageKey, messages);
     }, [messages, storageKey]);
+
+    // 마운트 시 잔여 토큰 조회
+    useEffect(() => {
+        getRemainingTokensAction().then(count => {
+            if (count !== null) setRemainingTokens(count);
+        });
+    }, []);
 
     useEffect(() => {
         return () => {

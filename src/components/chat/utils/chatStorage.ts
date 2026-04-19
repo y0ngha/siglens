@@ -24,6 +24,24 @@ export function loadSession(key: string): ChatMessage[] {
     }
 }
 
+export function loadSessionFull(
+    key: string
+): { messages: ChatMessage[]; savedAt: number | null } {
+    if (typeof window === 'undefined') return { messages: [], savedAt: null };
+    try {
+        const raw = localStorage.getItem(key);
+        if (!raw) return { messages: [], savedAt: null };
+        const session: ChatSession = JSON.parse(raw);
+        if (Date.now() - session.savedAt > CHAT_HISTORY_TTL_MS) {
+            localStorage.removeItem(key);
+            return { messages: [], savedAt: null };
+        }
+        return { messages: session.messages, savedAt: session.savedAt };
+    } catch {
+        return { messages: [], savedAt: null };
+    }
+}
+
 export function saveSession(key: string, messages: ChatMessage[]): void {
     if (typeof window === 'undefined') return;
     try {

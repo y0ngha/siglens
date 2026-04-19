@@ -170,7 +170,8 @@ describe('pollAnalysisAction 함수는', () => {
 
             expect(result.status).toBe('done');
             if (result.status === 'done') {
-                expect(result.result).toBe(mockEnrichedResult);
+                expect(result.result).toMatchObject(mockEnrichedResult);
+                expect(result.result.analyzedAt).toBeDefined();
             }
             expect(mockEnrich).toHaveBeenCalled();
         });

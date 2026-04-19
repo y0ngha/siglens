@@ -72,6 +72,8 @@ export async function pollAnalysisAction(
     const skillsDegraded = meta?.skillsDegraded ?? false;
 
     const enriched = enrichAnalysisWithConfidence(parsed, skills);
+    const analyzedAt = new Date().toISOString();
+    const result = { ...enriched, analyzedAt };
 
     // 캐시 저장 (RunAnalysisResult 형식: AnalysisResponse + skillsDegraded)
     if (meta) {
@@ -81,7 +83,7 @@ export async function pollAnalysisAction(
             const ttl = computeEffectiveTtl(meta.timeframe, new Date());
             waitUntil(
                 cache
-                    .set(cacheKey, { ...enriched, skillsDegraded }, ttl)
+                    .set(cacheKey, { ...result, skillsDegraded }, ttl)
                     .catch(error =>
                         console.error('[Poll] Cache write failed:', error)
                     )
@@ -91,5 +93,5 @@ export async function pollAnalysisAction(
 
     waitUntil(cleanupJob(jobId));
 
-    return { status: 'done', result: enriched };
+    return { status: 'done', result };
 }
