@@ -233,6 +233,8 @@ function calculateMaxDailyChangePct(bars: EodBar[]): number {
 function filterAndRank(tickers: TickerWeeklyVolume[]): TickerWeeklyVolume[] {
     return tickers
         .filter(t => t.maxDailyChangePct < MAX_DAILY_CHANGE_PCT)
+        // toSorted not available in ES2017 target — slice() preserves immutability
+        .slice()
         .sort((a, b) => b.weeklyVolume - a.weeklyVolume)
         .slice(0, MAX_NEW_TICKERS);
 }

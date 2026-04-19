@@ -46,8 +46,16 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                 </span>
 
                 <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs">
-                    <div className="border-chart-bullish/20 bg-chart-bullish/10 shrink-0 rounded border px-2 py-1">
-                        <span className="text-chart-bullish font-semibold">
+                    <div
+                        className={`shrink-0 rounded border px-2 py-1 ${
+                            c.signalType === 'buy'
+                                ? 'border-chart-bullish/20 bg-chart-bullish/10'
+                                : 'border-chart-bearish/20 bg-chart-bearish/10'
+                        }`}
+                    >
+                        <span
+                            className={`font-semibold ${c.signalType === 'buy' ? 'text-chart-bullish' : 'text-chart-bearish'}`}
+                        >
                             {c.signalType === 'buy' ? '매수' : '매도'}
                         </span>
                         <span className="text-secondary-400 ml-1">

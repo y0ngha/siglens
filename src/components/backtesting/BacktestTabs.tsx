@@ -3,6 +3,7 @@
 import { useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { BacktestCase } from '@/domain/types';
+import { cn } from '@/lib/cn';
 import { BacktestCaseList } from './BacktestCaseList';
 
 interface BacktestTabsProps {
@@ -81,11 +82,12 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
                                 aria-controls="backtest-case-list"
                                 tabIndex={isSelected ? 0 : -1}
                                 onClick={() => setActive(tab)}
-                                className={`focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-900 cursor-pointer [touch-action:manipulation] border-b-2 px-3.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none ${
+                                className={cn(
+                                    'focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-900 cursor-pointer [touch-action:manipulation] border-b-2 px-3.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none',
                                     isSelected
                                         ? 'border-primary-400 text-primary-400'
                                         : 'text-secondary-500 hover:text-secondary-300 border-transparent'
-                                }`}
+                                )}
                             >
                                 {tab}
                             </button>
