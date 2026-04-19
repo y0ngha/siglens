@@ -53,23 +53,29 @@ describe('tryConsumeToken / getRemainingTokens 함수는', () => {
     describe('tryConsumeToken 함수는', () => {
         it('첫 번째 호출 시 TTL을 설정하고 true를 반환한다', async () => {
             mockIncr.mockResolvedValueOnce(1);
-            mockExpire.mockResolvedValueOnce(1);
+            mockExpire.mockResolvedValueOnce(1); // NX: 키에 TTL 없으므로 설정됨
 
             const result = await tryConsumeToken('abc123');
 
             expect(mockExpire).toHaveBeenCalledWith(
                 'chat:tokens:abc123',
-                CHAT_TOKEN_TTL_SEC
+                CHAT_TOKEN_TTL_SEC,
+                'NX'
             );
             expect(result).toBe(true);
         });
 
         it('한도 내 호출은 true를 반환한다', async () => {
-            mockIncr.mockResolvedValueOnce(5); // 5번째 호출 — count !== 1이므로 expire 호출 없음
+            mockIncr.mockResolvedValueOnce(5);
+            mockExpire.mockResolvedValueOnce(0); // NX: 이미 TTL 있으므로 0 반환
 
             const result = await tryConsumeToken('abc123');
             expect(result).toBe(true);
-            expect(mockExpire).not.toHaveBeenCalled();
+            expect(mockExpire).toHaveBeenCalledWith(
+                'chat:tokens:abc123',
+                CHAT_TOKEN_TTL_SEC,
+                'NX'
+            );
         });
 
         it('한도 초과 호출은 false를 반환한다', async () => {
@@ -115,6 +121,21 @@ describe('tryConsumeToken / getRemainingTokens 함수는', () => {
 
             const result = await getRemainingTokens('abc123');
             expect(result).toBe(0);
+        });
+
+        it('Redis가 없으면 최대 토큰 수를 반환한다', async () => {
+            delete process.env.UPSTASH_REDIS_REST_URL;
+
+            const result = await getRemainingTokens('abc123');
+            expect(result).toBe(CHAT_TOKEN_LIMIT);
+            expect(mockGet).not.toHaveBeenCalled();
+        });
+
+        it('Redis 오류 시 최대 토큰 수를 반환한다 (통과 처리)', async () => {
+            mockGet.mockRejectedValueOnce(new Error('connection failed'));
+
+            const result = await getRemainingTokens('abc123');
+            expect(result).toBe(CHAT_TOKEN_LIMIT);
         });
     });
 });

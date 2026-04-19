@@ -11,11 +11,7 @@ import {
 } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
-import type {
-    ChatMessage,
-    ChatErrorCode,
-    ChatLoadingPhase,
-} from '@/domain/chat/types';
+import type { ChatMessage, ChatErrorCode, ChatLoadingPhase } from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import {
     buildStorageKey,
@@ -55,14 +51,12 @@ export function useChat({
     analysis,
     isAnalysisReady,
 }: UseChatOptions): UseChatReturn {
-    // 1. useState
     const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
 
-    // 2. useRef
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
     const prevAnalysisRef = useRef<AnalysisResponse | null>(null);
@@ -71,12 +65,13 @@ export function useChat({
     // latest-value refs: let sendMessage read current values without being in its dep array
     const messagesRef = useRef(messages);
     const loadingPhaseRef = useRef(loadingPhase);
-    // mount guard: prevents saving [] before the initial localStorage load runs
+    // mount guard: save effect skips first run (messages = []) then sets true
     const didSaveMountRef = useRef(false);
-    // initial storageKey captured at render — mount effect reads this ref so deps array stays []
+    // storageKey captured at mount — mount effect reads this ref so deps array stays []
     const initialStorageKeyRef = useRef(buildStorageKey(symbol, timeframe));
+    // storageKey just changed but messages haven't updated yet — skip that save cycle
+    const isKeyChangePendingRef = useRef(false);
 
-    // 3. useMutation (chatAction wired as mutationFn per architecture rules)
     const { mutateAsync } = useMutation({
         mutationFn: ({
             currentMessages,
@@ -118,13 +113,11 @@ export function useChat({
         },
     });
 
-    // 4. Derived variables
     const storageKey = useMemo(
         () => buildStorageKey(symbol, timeframe),
         [symbol, timeframe]
     );
 
-    // 5. Handlers (useCallback)
     const sendMessage = useCallback(
         async (text: string): Promise<void> => {
             // Guard checked at call time only; the async body runs to completion even if
@@ -140,7 +133,6 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
-    // 6. Effects
     // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
     // inline render assignments can be stale under interrupted/discarded renders)
     useLayoutEffect(() => {
@@ -153,7 +145,6 @@ export function useChat({
         startTransition(() => {
             setMessages(loadSession(initialStorageKeyRef.current));
         });
-        didSaveMountRef.current = true;
     }, []);
 
     // 심볼·타임프레임 변경 시 히스토리 교체 (null 체크로 마운트 첫 실행 스킵)
@@ -164,6 +155,7 @@ export function useChat({
         }
         if (prevKeyRef.current === storageKey) return;
         prevKeyRef.current = storageKey;
+        isKeyChangePendingRef.current = true;
         const loaded = loadSession(storageKey);
         startTransition(() => {
             setMessages(loaded);
@@ -187,9 +179,17 @@ export function useChat({
         }
     }, [analysis, isAnalysisReady]);
 
-    // messages 변경 시 localStorage 동기화 (초기 로드 완료 전까지 저장 스킵)
+    // messages 변경 시 localStorage 동기화
+    // — 첫 실행(messages=[])은 스킵, storageKey 변경 직후 낡은 messages 저장 방지
     useEffect(() => {
-        if (!didSaveMountRef.current) return;
+        if (!didSaveMountRef.current) {
+            didSaveMountRef.current = true;
+            return;
+        }
+        if (isKeyChangePendingRef.current) {
+            isKeyChangePendingRef.current = false;
+            return;
+        }
         saveSession(storageKey, messages);
     }, [messages, storageKey]);
 

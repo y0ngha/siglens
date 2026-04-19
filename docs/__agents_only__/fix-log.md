@@ -182,3 +182,14 @@
 - Violation: period-based indicator 테스트에 toBeCloseTo 수치 검증 누락
 - Rule: MISTAKES.md Tests #12 — Every period-based indicator test must include toBeCloseTo checks against manually-calculated expected values
 - Context: calculateSupertrend 리팩터링 PR에서 기존 테스트가 방향성(up/down) 부등호만 검증하고 실제 계산값을 검증하지 않아 리뷰어에게 Blocker 지적 받음
+
+## [PR #333 | feat/332/ai-chat | 2026-04-19]
+- Violation: 훅 파일에서 @/domain/chat/types 직접 임포트
+- Rule: CLAUDE.md Layer Dependency Rules — Hook files type imports must be from @/domain/types
+- Context: useChat.ts 신규 작성 시 타입이 domain/chat/types에 정의돼 있어 직접 임포트했으나 도메인 재export 경로 규칙 미준수
+- Violation: useMutation mutationFn에 불필요한 as 타입 단언 사용
+- Rule: MISTAKES.md TypeScript #7 — Using as type assertions instead of type guards or non-null assertion operators
+- Context: chatAction.ts에서 ChatPromptPayload['messages']와 GeminiContents 배열이 구조적으로 호환됨에도 as 단언 추가
+- Violation: getRemainingTokens의 redis===null 및 catch 브랜치 테스트 누락
+- Rule: CONVENTIONS.md infrastructure/ 100% 필수 / MISTAKES.md Infrastructure #2
+- Context: tryConsumeToken 브랜치는 모두 커버했으나 getRemainingTokens의 두 fallback 경로 테스트 미작성

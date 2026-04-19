@@ -1,11 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
-import type {
-    AnalysisResponse,
-    Timeframe,
-    ChatPromptPayload,
-} from '@/domain/types';
+import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import type { ChatMessage, ChatActionResult } from '@/domain/chat/types';
 import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
 import {
@@ -67,7 +63,7 @@ export async function chatAction(
             freeApiKey: process.env.GEMINI_CHAT_FREE_API_KEY,
             paidApiKey,
             model: GEMINI_CHAT_MODEL,
-            contents: messages as ChatPromptPayload['messages'],
+            contents: messages,
             systemInstruction: systemPrompt,
         });
         const remainingTokens = await getRemainingTokens(hashedIp);

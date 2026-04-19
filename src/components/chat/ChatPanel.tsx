@@ -5,6 +5,8 @@ import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
 
+const CHAT_MODEL_DISPLAY_NAME = '{CHAT_MODEL_DISPLAY_NAME}';
+
 const LOADING_MESSAGES = {
     analyzing: '요청을 분석하고 있어요...',
     generating: '응답을 생성하고 있어요...',
@@ -70,7 +72,7 @@ export function ChatPanel({
                     💬 AI에게 물어보기
                 </span>
                 <span className="bg-secondary-700 text-secondary-400 rounded px-1.5 py-0.5 text-[10px]">
-                    Gemini 2.5 Flash
+                    {CHAT_MODEL_DISPLAY_NAME}
                 </span>
             </div>
 
@@ -143,7 +145,7 @@ export function ChatPanel({
             <div className="border-secondary-700 border-t px-3 py-2">
                 <div className="text-secondary-600 mb-1.5 flex items-center gap-1.5 text-[10px]">
                     <span className="bg-secondary-700 rounded px-1 py-0.5">
-                        Gemini 2.5 Flash
+                        {CHAT_MODEL_DISPLAY_NAME}
                     </span>
                     <span>·</span>
                     <span>분석 범위 내 질문만 가능</span>

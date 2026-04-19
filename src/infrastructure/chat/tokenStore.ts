@@ -27,9 +27,7 @@ export async function tryConsumeToken(hashedIp: string): Promise<boolean> {
 
     try {
         const count = await redis.incr(key);
-        if (count === 1) {
-            await redis.expire(key, CHAT_TOKEN_TTL_SEC);
-        }
+        await redis.expire(key, CHAT_TOKEN_TTL_SEC, 'NX');
         return count <= CHAT_TOKEN_LIMIT;
     } catch {
         return true;
