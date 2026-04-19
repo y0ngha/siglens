@@ -75,7 +75,7 @@ export default async function Home() {
     const howToJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
-        name: `${SITE_NAME}로 미국 주식 AI 기술적 분석하는 방법`,
+        name: `${SITE_NAME}로 미국 주식 시장 분석·기술적 분석·AI 대화하는 방법`,
         description: `종목 티커를 입력하면 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지/저항 ${skillCounts.supportResistance}종을 자동 분석합니다.`,
         step: [
             {
@@ -152,9 +152,9 @@ export default async function Home() {
                             SIGLENS
                         </p>
                         <h1 className="text-secondary-100 text-[2rem] leading-[1.15] font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
-                            AI가 분석하는 미국 주식{' '}
+                            미국 주식,{' '}
                             <span className="text-primary-400 block sm:inline">
-                                기술적 분석
+                                AI가 읽어주는 시장과 차트
                             </span>
                         </h1>
                         <p className="text-secondary-400 mx-auto mt-4 max-w-lg text-base leading-relaxed text-balance sm:text-xl lg:mx-0">
