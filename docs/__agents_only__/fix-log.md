@@ -61,11 +61,6 @@
 - Rule: FF 1-B (Readability — extract implementation detail) — 다른 handler 가 공유 호출할 때는 `useCallback` 으로 식별성 확보
 - Context: `SectorSignalPanel.tsx` 의 URL 동기화 로직이 매 렌더 새 함수로 생성되어 `handleSectorChange` / `handleStrictChange` 간 공유 비효율
 
-## [PR #330 Round 3 | feature/issue-328-market-summary-panel | 2026-04-19]
-- Violation: infrastructure 파일에 대응하는 테스트 파일 누락
-- Rule: CONVENTIONS.md — infrastructure/ 100% coverage 필수
-- Context: `getMarketSummaryAction.ts` 신규 생성 시 테스트 파일 미작성
-
 ## [PR #330 Round 2 | feature/issue-328-market-summary-panel | 2026-04-19]
 - Violation: Lightweight Charts dispose 이후 `unsubscribeCrosshairMove` 직접 호출
 - Rule: MISTAKES.md > Lightweight Charts #1 — ref 패턴으로 chart 생존 여부 확인 필요
@@ -187,9 +182,3 @@
 - Violation: 훅 파일에서 @/domain/chat/types 직접 임포트
 - Rule: CLAUDE.md Layer Dependency Rules — Hook files type imports must be from @/domain/types
 - Context: useChat.ts 신규 작성 시 타입이 domain/chat/types에 정의돼 있어 직접 임포트했으나 도메인 재export 경로 규칙 미준수
-- Violation: useMutation mutationFn에 불필요한 as 타입 단언 사용
-- Rule: MISTAKES.md TypeScript #7 — Using as type assertions instead of type guards or non-null assertion operators
-- Context: chatAction.ts에서 ChatPromptPayload['messages']와 GeminiContents 배열이 구조적으로 호환됨에도 as 단언 추가
-- Violation: getRemainingTokens의 redis===null 및 catch 브랜치 테스트 누락
-- Rule: CONVENTIONS.md infrastructure/ 100% 필수 / MISTAKES.md Infrastructure #2
-- Context: tryConsumeToken 브랜치는 모두 커버했으나 getRemainingTokens의 두 fallback 경로 테스트 미작성
