@@ -34,7 +34,7 @@ async function callGeminiReducingBudget(
     prompt: string,
     apiKey: string,
     model: string,
-    thinkingBudget = 16000,
+    thinkingBudget = DEFAULT_THINKING_BUDGET,
     signal?: AbortSignal
 ): Promise<string> {
     const budgets = getThinkingBudgetSequence(thinkingBudget);
