@@ -41,6 +41,62 @@ describe('buildChatPrompt 함수는', () => {
             );
             expect(result.systemPrompt).toContain('AAPL is trending upward.');
         });
+
+        it('actionRecommendation이 있으면 systemPrompt에 포함한다', () => {
+            const analysis: AnalysisResponse = {
+                ...MINIMAL_ANALYSIS,
+                actionRecommendation: {
+                    entryRecommendation: 'wait',
+                    positionAnalysis: '현재 과매수 구간',
+                    entry: '182 이하 진입 고려',
+                    exit: '190 도달 시 일부 매도',
+                    riskReward: '1:2',
+                },
+            };
+            const result = buildChatPrompt('AAPL', '1Day', analysis, [], '진입 전략?');
+            expect(result.systemPrompt).toContain('182 이하 진입 고려');
+        });
+
+        it('keyLevels가 있으면 지지/저항 가격을 포함한다', () => {
+            const analysis: AnalysisResponse = {
+                ...MINIMAL_ANALYSIS,
+                keyLevels: {
+                    resistance: [{ price: 195.5, reason: 'Previous high' }],
+                    support: [{ price: 180.0, reason: 'Moving average' }],
+                },
+            };
+            const result = buildChatPrompt('AAPL', '1Day', analysis, [], '질문');
+            expect(result.systemPrompt).toContain('195.50');
+            expect(result.systemPrompt).toContain('180.00');
+        });
+
+        it('indicatorResults가 있으면 시그널을 포함한다', () => {
+            const analysis: AnalysisResponse = {
+                ...MINIMAL_ANALYSIS,
+                indicatorResults: [
+                    {
+                        indicatorName: 'RSI',
+                        signals: [{ type: 'skill', trend: 'bearish', description: 'Overbought at 75' }],
+                    },
+                ],
+            };
+            const result = buildChatPrompt('AAPL', '1Day', analysis, [], '질문');
+            expect(result.systemPrompt).toContain('RSI');
+            expect(result.systemPrompt).toContain('Overbought at 75');
+        });
+
+        it('priceTargets가 있으면 가격 목표를 포함한다', () => {
+            const analysis: AnalysisResponse = {
+                ...MINIMAL_ANALYSIS,
+                priceTargets: {
+                    bullish: { targets: [{ price: 200.0, basis: 'Breakout target' }], condition: 'Above 195' },
+                    bearish: { targets: [], condition: '' },
+                },
+            };
+            const result = buildChatPrompt('AAPL', '1Day', analysis, [], '질문');
+            expect(result.systemPrompt).toContain('200.00');
+            expect(result.systemPrompt).toContain('Breakout target');
+        });
     });
 
     describe('messages를', () => {
@@ -73,21 +129,6 @@ describe('buildChatPrompt 함수는', () => {
             expect(result.messages[0].parts[0].text).toBe('언제 팔아?');
             expect(result.messages[1].parts[0].text).toBe('RSI가 70 넘으면 고려하세요.');
             expect(result.messages[2].parts[0].text).toBe('더 쉽게 설명해줘');
-        });
-
-        it('actionRecommendation이 있으면 systemPrompt에 포함한다', () => {
-            const analysis: AnalysisResponse = {
-                ...MINIMAL_ANALYSIS,
-                actionRecommendation: {
-                    entryRecommendation: 'wait',
-                    positionAnalysis: '현재 과매수 구간',
-                    entry: '182 이하 진입 고려',
-                    exit: '190 도달 시 일부 매도',
-                    riskReward: '1:2',
-                },
-            };
-            const result = buildChatPrompt('AAPL', '1Day', analysis, [], '진입 전략?');
-            expect(result.systemPrompt).toContain('182 이하 진입 고려');
         });
     });
 });

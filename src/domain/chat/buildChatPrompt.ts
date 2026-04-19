@@ -1,16 +1,8 @@
 // IMPORTANT: System prompt strings must be written in English.
 // Korean reduces LLM instruction-following consistency.
 
-import type { AnalysisResponse, KeyLevel, PriceScenario, Timeframe } from '@/domain/types';
+import type { AnalysisResponse, ChatPromptPayload, KeyLevel, PriceScenario, Timeframe } from '@/domain/types';
 import type { ChatMessage } from '@/domain/chat/types';
-
-export interface ChatPromptPayload {
-    systemPrompt: string;
-    messages: Array<{
-        role: 'user' | 'model';
-        parts: Array<{ text: string }>;
-    }>;
-}
 
 function formatKeyLevels(levels: KeyLevel[]): string {
     if (levels.length === 0) return 'None detected';

@@ -637,3 +637,13 @@ export interface SectorSignalsResult {
 }
 
 export type DashboardTimeframe = '15Min' | '1Hour' | '1Day';
+
+// ─── Chat ─────────────────────────────────────────────────────────────────────
+
+export interface ChatPromptPayload {
+    systemPrompt: string;
+    messages: Array<{
+        role: 'user' | 'model';
+        parts: Array<{ text: string }>;
+    }>;
+}
