@@ -208,7 +208,11 @@ export function useChat({
             return;
         }
 
-        if (prev !== null && prev !== analysis && messagesRef.current.length > 0) {
+        if (
+            prev !== null &&
+            prev !== analysis &&
+            messagesRef.current.length > 0
+        ) {
             startTransition(() => setAnalysisUpdated(true));
         }
     }, [analysis, isAnalysisReady]);

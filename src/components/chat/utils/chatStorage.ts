@@ -24,9 +24,10 @@ export function loadSession(key: string): ChatMessage[] {
     }
 }
 
-export function loadSessionFull(
-    key: string
-): { messages: ChatMessage[]; savedAt: number | null } {
+export function loadSessionFull(key: string): {
+    messages: ChatMessage[];
+    savedAt: number | null;
+} {
     if (typeof window === 'undefined') return { messages: [], savedAt: null };
     try {
         const raw = localStorage.getItem(key);
