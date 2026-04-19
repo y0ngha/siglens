@@ -10,8 +10,9 @@ import {
     startTransition,
 } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import type {
+    AnalysisResponse,
+    Timeframe,
     ChatMessage,
     ChatErrorCode,
     ChatLoadingPhase,
