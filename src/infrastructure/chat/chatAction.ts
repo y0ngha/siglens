@@ -1,7 +1,6 @@
 'use server';
 
 import { headers } from 'next/headers';
-import { GoogleGenAI } from '@google/genai';
 import type { AnalysisResponse, Timeframe, ChatPromptPayload } from '@/domain/types';
 import type { ChatMessage, ChatActionResult } from '@/domain/chat/types';
 import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
@@ -10,6 +9,7 @@ import {
     tryConsumeToken,
     getRemainingTokens,
 } from '@/infrastructure/chat/tokenStore';
+import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 
 const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
 
@@ -28,36 +28,6 @@ function isRateLimitError(error: unknown): boolean {
         // @google/genai attaches an HTTP status code to error objects
         (error as { status: number }).status === 429
     );
-}
-
-async function callGemini(
-    apiKey: string,
-    systemPrompt: string,
-    messages: ChatPromptPayload['messages']
-): Promise<string> {
-    const genai = new GoogleGenAI({ apiKey });
-    const response = await genai.models.generateContent({
-        model: GEMINI_CHAT_MODEL,
-        contents: messages,
-        config: { systemInstruction: systemPrompt },
-    });
-    return response.text ?? '';
-}
-
-async function callGeminiWithFallback(
-    freeApiKey: string | undefined,
-    paidApiKey: string,
-    systemPrompt: string,
-    messages: ChatPromptPayload['messages']
-): Promise<string> {
-    if (freeApiKey) {
-        try {
-            return await callGemini(freeApiKey, systemPrompt, messages);
-        } catch {
-            // free key failed — fall back to paid key
-        }
-    }
-    return callGemini(paidApiKey, systemPrompt, messages);
 }
 
 export async function chatAction(
@@ -89,12 +59,13 @@ export async function chatAction(
     );
 
     try {
-        const responseText = await callGeminiWithFallback(
-            process.env.GEMINI_CHAT_FREE_API_KEY,
+        const responseText = await callGeminiWithKeyFallback({
+            freeApiKey: process.env.GEMINI_CHAT_FREE_API_KEY,
             paidApiKey,
-            systemPrompt,
-            messages
-        );
+            model: GEMINI_CHAT_MODEL,
+            contents: messages as ChatPromptPayload['messages'],
+            systemInstruction: systemPrompt,
+        });
         const remainingTokens = await getRemainingTokens(hashedIp);
         return { ok: true, message: responseText, remainingTokens };
     } catch (error) {

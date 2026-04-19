@@ -1,25 +1,11 @@
-import { GoogleGenAI } from '@google/genai';
 import { stripMarkdownCodeBlock } from '@/infrastructure/ai/utils';
+import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 
 const DEFAULT_TRANSLATE_MODEL = 'gemini-2.5-flash';
 
 interface TranslateEntry {
     symbol: string;
     name: string;
-}
-
-async function callTranslate(
-    client: GoogleGenAI,
-    model: string,
-    prompt: string
-): Promise<Record<string, string>> {
-    const result = await client.models.generateContent({
-        model,
-        contents: prompt,
-    });
-    const text = result.text ?? '';
-    // JSON.parse returns `any`; type guard for Record<string, string> is not feasible
-    return JSON.parse(stripMarkdownCodeBlock(text)) as Record<string, string>;
 }
 
 export async function translateCompanyNames(
@@ -42,21 +28,14 @@ Companies:
 ${entryList}`;
 
     try {
-        if (freeApiKey) {
-            try {
-                return await callTranslate(
-                    new GoogleGenAI({ apiKey: freeApiKey }),
-                    model,
-                    prompt
-                );
-            } catch {
-                console.warn(
-                    '[koreanTranslator] Free API key failed. Switching to paid key.'
-                );
-            }
-        }
-
-        return await callTranslate(new GoogleGenAI({ apiKey }), model, prompt);
+        const text = await callGeminiWithKeyFallback({
+            freeApiKey,
+            paidApiKey: apiKey,
+            model,
+            contents: prompt,
+        });
+        // JSON.parse returns `any`; type guard for Record<string, string> is not feasible
+        return JSON.parse(stripMarkdownCodeBlock(text)) as Record<string, string>;
     } catch (error) {
         console.error('Korean name translation failed:', error);
         return {};

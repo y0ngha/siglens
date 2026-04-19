@@ -47,6 +47,7 @@ export function useChat({
     analysis,
     isAnalysisReady,
 }: UseChatOptions): UseChatReturn {
+    // 1. useState
     const [messages, setMessages] = useState<ChatMessage[]>(() =>
         loadSession(buildStorageKey(symbol, timeframe))
     );
@@ -55,6 +56,7 @@ export function useChat({
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
 
+    // 2. useRef
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
     const prevAnalysisRef = useRef<AnalysisResponse | null>(null);
@@ -66,13 +68,7 @@ export function useChat({
     // mount guard: prevents redundant localStorage write on initial render
     const didSaveMountRef = useRef(false);
 
-    // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
-    // inline render assignments can be stale under interrupted/discarded renders)
-    useLayoutEffect(() => {
-        messagesRef.current = messages;
-        loadingPhaseRef.current = loadingPhase;
-    });
-
+    // 3. useMutation (chatAction wired as mutationFn per architecture rules)
     const { mutateAsync } = useMutation({
         mutationFn: ({ currentMessages, text }: { currentMessages: ChatMessage[]; text: string }) =>
             chatAction(symbol, timeframe, analysis, currentMessages, text),
@@ -106,11 +102,13 @@ export function useChat({
         },
     });
 
+    // 4. Derived variables
     const storageKey = useMemo(
         () => buildStorageKey(symbol, timeframe),
         [symbol, timeframe]
     );
 
+    // 5. Handlers (useCallback)
     const sendMessage = useCallback(
         async (text: string): Promise<void> => {
             // Guard checked at call time only; the async body runs to completion even if
@@ -125,6 +123,14 @@ export function useChat({
     const dismissAnalysisUpdated = useCallback(() => {
         setAnalysisUpdated(false);
     }, []);
+
+    // 6. Effects
+    // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
+    // inline render assignments can be stale under interrupted/discarded renders)
+    useLayoutEffect(() => {
+        messagesRef.current = messages;
+        loadingPhaseRef.current = loadingPhase;
+    });
 
     // 심볼·타임프레임 변경 시 히스토리 교체 (null 체크로 마운트 첫 실행 스킵)
     useEffect(() => {
