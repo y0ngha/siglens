@@ -10,12 +10,14 @@ import {
     detectSupertrendBullishFlip,
     detectIchimokuCloudBreakout,
     detectCciBullishCross,
+    detectDmiBullishCross,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
 import type {
     Bar,
     BollingerResult,
+    DMIResult,
     IchimokuResult,
     IndicatorResult,
     MACDResult,
@@ -47,6 +49,10 @@ function withIchimoku(values: IchimokuResult[]): IndicatorResult {
 
 function withCci(values: (number | null)[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, cci: values };
+}
+
+function withDmi(values: DMIResult[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, dmi: values };
 }
 
 describe('detectRsiOversold', () => {
@@ -770,6 +776,58 @@ describe('detectCciBullishCross', () => {
         it('null을 반환한다 (length < 2 가드)', () => {
             const bars = buildBars(5);
             expect(detectCciBullishCross(bars, withCci([50]))).toBeNull();
+        });
+    });
+});
+
+// ─── detectDmiBullishCross ────────────────────────────────────────────────────
+
+describe('detectDmiBullishCross', () => {
+    describe('+DI가 -DI 상향 돌파 + ADX ≥ 20일 때', () => {
+        it('Signal을 반환한다', () => {
+            const bars = buildBars(10);
+            const dmi: DMIResult[] = [
+                ...Array(7).fill({ diPlus: 15, diMinus: 25, adx: 22 }),
+                { diPlus: 28, diMinus: 20, adx: 25 },
+                { diPlus: 30, diMinus: 18, adx: 28 },
+                { diPlus: 32, diMinus: 16, adx: 30 },
+            ];
+            const result = detectDmiBullishCross(bars, withDmi(dmi));
+            expect(result?.type).toBe('dmi_bullish_cross');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(7);
+        });
+    });
+
+    describe('+DI가 -DI 상향 돌파했으나 ADX < 20일 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(10);
+            const dmi: DMIResult[] = [
+                ...Array(7).fill({ diPlus: 15, diMinus: 25, adx: 15 }),
+                { diPlus: 28, diMinus: 20, adx: 18 },
+                { diPlus: 30, diMinus: 18, adx: 18 },
+                { diPlus: 32, diMinus: 16, adx: 18 },
+            ];
+            expect(detectDmiBullishCross(bars, withDmi(dmi))).toBeNull();
+        });
+    });
+
+    describe('cross가 없을 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(10);
+            const dmi: DMIResult[] = Array(10).fill({
+                diPlus: 15, diMinus: 25, adx: 30,
+            });
+            expect(detectDmiBullishCross(bars, withDmi(dmi))).toBeNull();
+        });
+    });
+
+    describe('DMI 데이터가 없을 때', () => {
+        it('null을 반환한다', () => {
+            expect(
+                detectDmiBullishCross(buildBars(5), EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
         });
     });
 });

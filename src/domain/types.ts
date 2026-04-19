@@ -603,7 +603,8 @@ export type ConfirmedSignalType =
     | 'bollinger_upper_breakout'
     | 'supertrend_bullish_flip'
     | 'ichimoku_cloud_breakout'
-    | 'cci_bullish_cross';
+    | 'cci_bullish_cross'
+    | 'dmi_bullish_cross';
 
 export type ExpectedSignalType =
     | 'rsi_bullish_divergence'

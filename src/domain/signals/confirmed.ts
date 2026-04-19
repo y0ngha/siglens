@@ -8,6 +8,7 @@ import {
     CCI_BULLISH_CROSS_LEVEL,
     CCI_OVERSOLD_CROSS_LEVEL,
     CROSS_LOOKBACK_BARS,
+    DMI_ADX_TREND_THRESHOLD,
     GOLDEN_CROSS_FAST_PERIOD,
     GOLDEN_CROSS_SLOW_PERIOD,
 } from '@/domain/signals/constants';
@@ -308,4 +309,24 @@ export function detectCciBullishCross(
         }
     }
     return null;
+}
+
+export function detectDmiBullishCross(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const dmi = indicators.dmi;
+    if (dmi.length < 2) return null;
+    const diPlus = dmi.map(d => d.diPlus);
+    const diMinus = dmi.map(d => d.diMinus);
+    const idx = findCross(diPlus, diMinus, CROSS_LOOKBACK_BARS, 'up');
+    if (idx === null) return null;
+    const adxAtCross = dmi[idx].adx;
+    if (adxAtCross === null || adxAtCross < DMI_ADX_TREND_THRESHOLD) return null;
+    return {
+        type: 'dmi_bullish_cross',
+        direction: 'bullish',
+        phase: 'confirmed',
+        detectedAt: idx,
+    };
 }
