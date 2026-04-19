@@ -11,11 +11,6 @@ import { chatAction } from '@/infrastructure/chat/chatAction';
 const CHAT_HISTORY_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7일
 const LOADING_PHASE_DELAY_MS = 1500;
 
-const LOADING_MESSAGES: Record<ChatLoadingPhase, string> = {
-    analyzing: '요청을 분석하고 있어요...',
-    generating: '응답을 생성하고 있어요...',
-};
-
 const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     token_exhausted:
         '오늘 무료 질문 5회를 모두 사용했어요. 내일 다시 이용하거나 유료 플랜을 이용해보세요.',
