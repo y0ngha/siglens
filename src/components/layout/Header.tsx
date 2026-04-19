@@ -13,7 +13,7 @@ export function Header() {
     const pathname = usePathname();
     return (
         <header
-            className="bg-secondary-900/90 supports-[backdrop-filter]:bg-secondary-900/75 border-secondary-800 sticky top-0 z-40 border-b backdrop-blur-md"
+            className="bg-secondary-900/90 supports-backdrop-filter:bg-secondary-900/75 border-secondary-800 sticky top-0 z-40 border-b backdrop-blur-md"
             role="banner"
         >
             <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
@@ -24,8 +24,8 @@ export function Header() {
                     className="focus-visible:ring-primary-500 -mx-1 flex min-h-11 shrink-0 touch-manipulation items-center gap-2 rounded px-1 focus-visible:ring-2 focus-visible:outline-none"
                 >
                     <Image
-                        src="/icon24.png"
-                        alt=""
+                        src="/icon96.png"
+                        alt="Siglens 로고"
                         width={24}
                         height={24}
                         className="h-6 w-6"
@@ -64,7 +64,7 @@ export function Header() {
                         );
                     })}
                 </nav>
-                <div className="ml-auto w-full max-w-[10rem] sm:max-w-xs">
+                <div className="ml-auto w-full max-w-40 sm:max-w-xs">
                     <TickerAutocomplete size="sm" />
                 </div>
             </div>
