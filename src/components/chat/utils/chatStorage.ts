@@ -11,10 +11,12 @@ export function loadSession(key: string): ChatMessage[] {
     return loadSessionFull(key).messages;
 }
 
-export function loadSessionFull(key: string): {
+interface ChatSessionLoadResult {
     messages: ChatMessage[];
     savedAt: number | null;
-} {
+}
+
+export function loadSessionFull(key: string): ChatSessionLoadResult {
     if (typeof window === 'undefined') return { messages: [], savedAt: null };
     try {
         const raw = localStorage.getItem(key);

@@ -4,11 +4,20 @@ import { Redis } from '@upstash/redis';
 export const CHAT_TOKEN_LIMIT = 5;
 export const CHAT_TOKEN_TTL_SEC = 86400; // 24시간
 
+// undefined = uninitialised, null = unavailable (env vars missing)
+let _redis: Redis | null | undefined = undefined;
+
 function getRedis(): Redis | null {
+    if (_redis !== undefined) return _redis;
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
-    if (!url || !token) return null;
-    return new Redis({ url, token });
+    _redis = url && token ? new Redis({ url, token }) : null;
+    return _redis;
+}
+
+/** Reset the singleton — for use in tests only. */
+export function resetRedisForTest(): void {
+    _redis = undefined;
 }
 
 export function hashIp(ip: string): string {

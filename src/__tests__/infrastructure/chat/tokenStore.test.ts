@@ -2,6 +2,7 @@ import {
     hashIp,
     tryConsumeToken,
     getRemainingTokens,
+    resetRedisForTest,
     CHAT_TOKEN_LIMIT,
     CHAT_TOKEN_TTL_SEC,
 } from '@/infrastructure/chat/tokenStore';
@@ -33,6 +34,7 @@ describe('hashIp 함수는', () => {
 describe('tryConsumeToken / getRemainingTokens 함수는', () => {
     beforeEach(() => {
         jest.resetAllMocks();
+        resetRedisForTest();
         process.env.UPSTASH_REDIS_REST_URL = 'https://test.upstash.io';
         process.env.UPSTASH_REDIS_REST_TOKEN = 'master-token';
         MockRedis.mockImplementation(
@@ -46,6 +48,7 @@ describe('tryConsumeToken / getRemainingTokens 함수는', () => {
     });
 
     afterEach(() => {
+        resetRedisForTest();
         delete process.env.UPSTASH_REDIS_REST_URL;
         delete process.env.UPSTASH_REDIS_REST_TOKEN;
     });

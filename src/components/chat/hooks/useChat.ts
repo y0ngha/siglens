@@ -67,13 +67,6 @@ export function useChat({
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
 
-    const queryClient = useQueryClient();
-    const { data: remainingTokensData } = useQuery({
-        queryKey: ['chat', 'remaining-tokens'],
-        queryFn: getRemainingTokensAction,
-        staleTime: 0,
-    });
-
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
     const prevAnalysisRef = useRef<AnalysisResponse | null>(null);
@@ -92,6 +85,13 @@ export function useChat({
     const storageKeyRef = useRef(buildStorageKey(symbol, timeframe));
     // true until isAnalysisReady first becomes true — distinguishes page-refresh from re-analysis
     const isFirstAnalysisReadyRef = useRef(true);
+
+    const queryClient = useQueryClient();
+    const { data: remainingTokensData } = useQuery({
+        queryKey: ['chat', 'remaining-tokens'],
+        queryFn: getRemainingTokensAction,
+        staleTime: 0,
+    });
 
     const { mutateAsync } = useMutation({
         mutationFn: ({

@@ -1,5 +1,6 @@
 'use server';
 
+import { constants } from 'node:http2';
 import { headers } from 'next/headers';
 import type {
     AnalysisResponse,
@@ -30,7 +31,8 @@ function isRateLimitError(error: unknown): boolean {
         error !== null &&
         'status' in error &&
         // @google/genai attaches an HTTP status code to error objects
-        (error as { status: number }).status === 429
+        (error as { status: number }).status ===
+            constants.HTTP_STATUS_TOO_MANY_REQUESTS
     );
 }
 
