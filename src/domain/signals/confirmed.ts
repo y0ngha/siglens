@@ -13,6 +13,7 @@ import {
     GOLDEN_CROSS_FAST_PERIOD,
     GOLDEN_CROSS_SLOW_PERIOD,
     MFI_OVERSOLD_LEVEL,
+    SQUEEZE_MOMENTUM_ZERO_CROSS,
 } from '@/domain/signals/constants';
 
 export function detectRsiOversold(
@@ -416,5 +417,27 @@ export function detectKeltnerUpperBreakout(
         direction: 'bullish',
         phase: 'confirmed',
         detectedAt: lastIdx,
+    };
+}
+
+export function detectSqueezeMomentumBullish(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const sqz = indicators.squeezeMomentum;
+    if (sqz.length < 2) return null;
+    const momentum = sqz.map(s => s.momentum);
+    const idx = findThresholdCross(
+        momentum,
+        SQUEEZE_MOMENTUM_ZERO_CROSS,
+        CROSS_LOOKBACK_BARS,
+        'up'
+    );
+    if (idx === null) return null;
+    return {
+        type: 'squeeze_momentum_bullish',
+        direction: 'bullish',
+        phase: 'confirmed',
+        detectedAt: idx,
     };
 }

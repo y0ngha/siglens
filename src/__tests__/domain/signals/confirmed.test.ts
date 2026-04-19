@@ -15,6 +15,7 @@ import {
     detectMfiOversoldBounce,
     detectParabolicSarFlip,
     detectKeltnerUpperBreakout,
+    detectSqueezeMomentumBullish,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
@@ -27,6 +28,7 @@ import type {
     KeltnerChannelResult,
     MACDResult,
     ParabolicSARResult,
+    SqueezeMomentumResult,
     SupertrendResult,
 } from '@/domain/types';
 
@@ -75,6 +77,14 @@ function withSar(values: ParabolicSARResult[]): IndicatorResult {
 
 function withKeltner(values: KeltnerChannelResult[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, keltnerChannel: values };
+}
+
+function withSqueezeMomentum(values: SqueezeMomentumResult[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, squeezeMomentum: values };
+}
+
+function sqz(momentum: number | null): SqueezeMomentumResult {
+    return { momentum, sqzOn: null, sqzOff: null, noSqz: null, increasing: null };
 }
 
 describe('detectRsiOversold', () => {
@@ -1032,6 +1042,60 @@ describe('detectKeltnerUpperBreakout', () => {
         it('null을 반환한다', () => {
             expect(
                 detectKeltnerUpperBreakout(buildBarsWithCloses([100]), EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+});
+
+// ─── detectSqueezeMomentumBullish ─────────────────────────────────────────────
+
+describe('detectSqueezeMomentumBullish', () => {
+    describe('최근 3 bar 내 histogram 0 상향 돌파일 때', () => {
+        it('Signal을 반환한다', () => {
+            const bars = buildBars(10);
+            const values = [
+                ...Array(7).fill(sqz(-0.5)),
+                sqz(0.3),
+                sqz(0.5),
+                sqz(0.7),
+            ];
+            const result = detectSqueezeMomentumBullish(
+                bars, withSqueezeMomentum(values)
+            );
+            expect(result?.type).toBe('squeeze_momentum_bullish');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(7);
+        });
+    });
+
+    describe('lookback 초과 범위일 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(10);
+            const values = [
+                ...Array(3).fill(sqz(-0.5)),
+                ...Array(7).fill(sqz(0.3)),
+            ];
+            expect(
+                detectSqueezeMomentumBullish(bars, withSqueezeMomentum(values))
+            ).toBeNull();
+        });
+    });
+
+    describe('momentum이 null일 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(5);
+            const values = Array(5).fill(sqz(null));
+            expect(
+                detectSqueezeMomentumBullish(bars, withSqueezeMomentum(values))
+            ).toBeNull();
+        });
+    });
+
+    describe('Squeeze Momentum 데이터가 없을 때', () => {
+        it('null을 반환한다', () => {
+            expect(
+                detectSqueezeMomentumBullish(buildBars(5), EMPTY_INDICATOR_RESULT)
             ).toBeNull();
         });
     });
