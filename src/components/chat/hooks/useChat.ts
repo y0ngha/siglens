@@ -48,9 +48,7 @@ export function useChat({
     isAnalysisReady,
 }: UseChatOptions): UseChatReturn {
     // 1. useState
-    const [messages, setMessages] = useState<ChatMessage[]>(() =>
-        loadSession(buildStorageKey(symbol, timeframe))
-    );
+    const [messages, setMessages] = useState<ChatMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
     );
@@ -65,8 +63,10 @@ export function useChat({
     // latest-value refs: let sendMessage read current values without being in its dep array
     const messagesRef = useRef(messages);
     const loadingPhaseRef = useRef(loadingPhase);
-    // mount guard: prevents redundant localStorage write on initial render
+    // mount guard: prevents saving [] before the initial localStorage load runs
     const didSaveMountRef = useRef(false);
+    // initial storageKey captured at render — mount effect reads this ref so deps array stays []
+    const initialStorageKeyRef = useRef(buildStorageKey(symbol, timeframe));
 
     // 3. useMutation (chatAction wired as mutationFn per architecture rules)
     const { mutateAsync } = useMutation({
@@ -132,6 +132,14 @@ export function useChat({
         loadingPhaseRef.current = loadingPhase;
     });
 
+    // 하이드레이션 후 localStorage 로드 (SSR/client mismatch 방지 — 마운트 1회만 실행)
+    useEffect(() => {
+        startTransition(() => {
+            setMessages(loadSession(initialStorageKeyRef.current));
+        });
+        didSaveMountRef.current = true;
+    }, []);
+
     // 심볼·타임프레임 변경 시 히스토리 교체 (null 체크로 마운트 첫 실행 스킵)
     useEffect(() => {
         if (prevKeyRef.current === null) {
@@ -158,12 +166,9 @@ export function useChat({
         }
     }, [analysis, isAnalysisReady]);
 
-    // messages 변경 시 localStorage 동기화 (마운트 첫 실행 스킵 — 초기 로드 데이터 불필요한 재기록 방지)
+    // messages 변경 시 localStorage 동기화 (초기 로드 완료 전까지 저장 스킵)
     useEffect(() => {
-        if (!didSaveMountRef.current) {
-            didSaveMountRef.current = true;
-            return;
-        }
+        if (!didSaveMountRef.current) return;
         saveSession(storageKey, messages);
     }, [messages, storageKey]);
 
