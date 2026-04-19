@@ -1,4 +1,5 @@
 import { Suspense, cache } from 'react';
+import Link from 'next/link';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import {
     countSkillFiles,
@@ -164,6 +165,14 @@ export default async function Home() {
                             className="mt-8 flex justify-center lg:justify-start"
                         >
                             <SymbolSearchPanel />
+                        </div>
+                        <div className="mt-6 flex justify-center lg:justify-start">
+                            <Link
+                                href="/market"
+                                className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold tracking-wider uppercase transition-colors"
+                            >
+                                섹터별 신호 스캐너 →
+                            </Link>
                         </div>
                         <Suspense fallback={<StatsBarSkeleton />}>
                             <AsyncStatsBar />
