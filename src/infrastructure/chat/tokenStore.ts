@@ -1,8 +1,8 @@
 import { createHash } from 'crypto';
 import { Redis } from '@upstash/redis';
 
-const CHAT_TOKEN_LIMIT = 5;
-const CHAT_TOKEN_TTL_SEC = 86400; // 24시간
+export const CHAT_TOKEN_LIMIT = 5;
+export const CHAT_TOKEN_TTL_SEC = 86400; // 24시간
 
 function getRedis(): Redis | null {
     const url = process.env.UPSTASH_REDIS_REST_URL;
@@ -31,8 +31,7 @@ export async function tryConsumeToken(hashedIp: string): Promise<boolean> {
             await redis.expire(key, CHAT_TOKEN_TTL_SEC);
         }
         return count <= CHAT_TOKEN_LIMIT;
-    } catch (error) {
-        console.error('[TokenStore] tryConsumeToken 실패:', error);
+    } catch {
         return true;
     }
 }
@@ -47,8 +46,7 @@ export async function getRemainingTokens(hashedIp: string): Promise<number> {
         const count = await redis.get<number>(key);
         if (count === null) return CHAT_TOKEN_LIMIT;
         return Math.max(0, CHAT_TOKEN_LIMIT - count);
-    } catch (error) {
-        console.error('[TokenStore] getRemainingTokens 실패:', error);
+    } catch {
         return CHAT_TOKEN_LIMIT;
     }
 }
