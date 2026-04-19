@@ -51,3 +51,4 @@ next-env.d.ts
 /worker/dist/
 /worker/node_modules/
 /.superpowers/
+/docs/superpowers/
