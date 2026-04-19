@@ -16,7 +16,11 @@ function isMaxTokensError(error: unknown): boolean {
 
 function getThinkingBudgetSequence(initial: number): number[] {
     // Always start with initial, then use fixed fallback steps that are strictly smaller.
-    const candidates = [initial, Math.floor(initial / 2), ...BUDGET_FALLBACK_STEPS];
+    const candidates = [
+        initial,
+        Math.floor(initial / 2),
+        ...BUDGET_FALLBACK_STEPS,
+    ];
     return candidates.reduce<number[]>(
         (acc, budget) =>
             acc.length === 0 || budget < acc[acc.length - 1]

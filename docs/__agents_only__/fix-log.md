@@ -1,14 +1,5 @@
 # Fix Log
 
-## [PR #331 Round 7 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: `signalToQuadrantKey` if-chain (4단 nested conditional)
-- Rule: CONVENTIONS.md 선언적 패턴 — nested conditionals → object map
-- Context: `SectorSignalPanel.tsx` 의 direction × phase 판정을 `Record<SignalDirection, Record<SignalPhase, QuadrantKey>>` 맵 lookup 으로 전환
-
-- Violation: quadrants useMemo 의 이중 중첩 reduce 가 useMemo 바디에 직접 존재
-- Rule: MISTAKES.md Coding #9 — Complex anonymous expressions → named helper
-- Context: 내부 accumulator 를 `groupStockIntoQuadrants` 순수 함수로 module-level 추출, useMemo 는 reduce 호출만 남김
-
 ## [PR #331 Round 6 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: radiogroup 키보드 네비게이션에서 DOM 포커스 미이동
 - Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴은 aria-checked 와 DOM focus 동기화 필수
@@ -20,11 +11,6 @@
 - Violation: `percentileRank` 가 분산=0 (모든 원소 동일) 케이스에서 0 반환 — 스퀴즈 false-positive 유발 가능
 - Rule: defensive numerical handling — degenerate distribution 에서 정책 결정이 필요
 - Context: all-equal 입력 시 `below / (len-1) = 0/0` 또는 0 반환으로 "최소값" 으로 분류되어 squeeze 조건 통과. 0.5 중립값 반환으로 수정
-
-## [PR #331 Round 2 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: `as number` 타입 단언을 `!` 로 대체 가능한 상황에서 사용
-- Rule: MISTAKES.md TypeScript #7 — `as` 는 null 가능한 경우 `!` 우선 고려
-- Context: `anticipation.ts` S/R detector 가 주석에 이미 "null 불가 보장" 명시한 상태에서 `as number` 사용. `!` 로 교체
 
 ## [PR #331 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: 68~74 종목에 대한 Promise.allSettled 병렬 fetch — FMP rate limit 초과 가능
@@ -53,10 +39,6 @@
 - Rule: MISTAKES.md > Lightweight Charts #1 — ref 패턴으로 chart 생존 여부 확인 필요
 - Context: `useOverlayLegend.ts` cleanup에서 `chart.unsubscribeCrosshairMove`로 변경하여 ref guard가 제거됨; chart 생성 effect cleanup이 먼저 실행 시 'Object is disposed' 예외 발생 가능
 
-- Violation: derived 상수 이후에 hook 선언
-- Rule: MISTAKES.md > Coding Paradigm #16 — 모든 hook은 derived 상수보다 먼저 선언
-- Context: `MarketSummaryPanel.tsx`에서 5개 derived 상수 이후 `useBriefing`, `useMemo` 호출; 중간 상수를 인라인으로 이동하여 수정
-
 ## [PR #330 | feature/issue-328-market-summary-panel | 2026-04-19]
 - Violation: 타입 시스템이 보장하는 필드에 중복 null/truthy 체크
 - Rule: MISTAKES.md > Predictability #2 — Conditional checks that duplicate type system guarantees
@@ -66,34 +48,6 @@
 - Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
 - Rule: Next.js Best Practices — `next/script`는 `<body>` 영역에 배치해야 함; `lazyOnload`는 브라우저 유휴 시점 실행이므로 `<head>` 배치가 의미상 부적절
 - Context: AdSense `<Script>`가 `<head>` 블록 안에 있었음; `<body>` 끝으로 이동
-
-## [PR #315 Round 2 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
-- Violation: `shouldShowAd()` 비즈니스 로직 함수가 `lib/`에 배치됨 — lib/CLAUDE.md 범위(유틸리티 래퍼, 설정 상수, 차트 색상) 초과
-- Rule: Design & Cohesion — lib/은 순수 유틸리티/설정 상수만; 비즈니스 판단 로직은 사용처에 인라인하거나 domain/으로 이동
-- Context: `shouldShowAd`는 AdBanner.tsx 단독 사용이므로 컴포넌트 내 인라인으로 해결; lib/adsense.ts에서 함수 제거
-
-## [PR #315 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
-- Violation: layout.tsx에 `overflow: hidden !important`를 html/body에 전역 적용하여 페이지 스크롤 차단
-- Rule: UX & Rendering — 전역 CSS 강제 주입으로 앱 전체 사용성 저해 금지
-- Context: AdSense 레이아웃 깨짐을 방지하려는 의도였으나 `overflow: hidden`이 모든 페이지의 스크롤을 차단; `<style dangerouslySetInnerHTML>` 블록 전체 제거
-
-- Violation: AdBanner.tsx 안내 메시지 `<p>`에 `whitespace-nowrap` 적용으로 모바일에서 텍스트 오버플로우 위험
-- Rule: Design — 동적 텍스트 콘텐츠에 `whitespace-nowrap` 사용 금지; 자연스러운 줄바꿈 허용
-- Context: 긴 한국어 안내 메시지가 작은 화면에서 컨테이너를 넘어 레이아웃 깨짐 유발 가능; 클래스 제거
-
-
-## [PR #300 | fix/299/mobile-bottom-sheet-native-ux | 2026-04-14]
-- Violation: `useEffect` cleanup에서 직접 조작한 DOM 스타일(`transform`, `transition`) 미초기화
-- Rule: React useEffect cleanup 원칙 — effect에서 직접 조작한 DOM 상태는 cleanup에서 원상복구해야 vaul 내부 스타일과 충돌 방지
-- Context: `MobileAnalysisSheet.tsx` cleanup에서 `drawerEl.style.transform = ''`, `drawerEl.style.transition = ''` 추가
-
-- Violation: null 가드 이전 변수 선언으로 `!` 단언 반복 사용
-- Rule: TypeScript narrowing — null 가드 이후 변수를 선언하면 `!` 없이 타입 안전하게 사용 가능
-- Context: `scrollEl`·`drawerEl` 선언이 `if (!contentRef.current || ...)` 가드보다 앞에 있어 `scrollEl!`, `drawerEl!` 반복; 가드 이후로 이동
-
-- Violation: `isDragging === true` 진입 후 `deltaY <= 0`일 때 `e.preventDefault()` 미호출로 브라우저 기본 스크롤 발생 가능
-- Rule: 터치 이벤트 UX — 드래그 제어 진입 후에는 모든 방향 이동에 대해 `preventDefault()`를 호출해야 함
-- Context: `onTouchMove`에서 `deltaY <= 0` early return이 `isDragging` 체크보다 앞에 있어 드래그 중 위로 되돌릴 때 스크롤 허용; 구조 재정렬 + `Math.max(0, deltaY)` 적용
 
 ## [PR #294 | feat/key-levels-clustering | 2026-04-13]
 - Violation: React key에 `source.price-source.reason` 조합 사용 — 동일 가격·사유 존재 시 중복 가능
@@ -170,23 +124,6 @@
 - Violation: `src/infrastructure/ai/gemini.ts` 신규 인프라 파일에 대응하는 전용 테스트 파일 누락
 - Rule: `src/__tests__/CLAUDE.md` — Tests cover domain and infrastructure only, mirror source structure, 100% coverage target
 - Context: `callGeminiWithKeyFallback`의 4개 분기(freeApiKey undefined, free key 성공, free key 실패→fallback, systemInstruction undefined)가 전용 테스트 없이 간접 커버만 됨
-## [PR #333 Round 2 | feat/332/ai-chat | 2026-04-19]
-- Violation: `loadSession`이 `loadSessionFull`과 TTL·JSON 파싱 로직을 중복 구현
-- Rule: MISTAKES.md #1 — 동일 알고리즘 재구현 금지, 기존 헬퍼에 위임
-- Context: loadSession이 loadSessionFull과 거의 동일한 localStorage 읽기 로직을 독립적으로 구현하고 있었음
-- Violation: `getRemainingTokensAction`을 bare `useEffect + .then()` 패턴으로 직접 호출
-- Rule: ARCHITECTURE.md — Hook files may import fetch functions from infrastructure only, limited to queryFn/mutationFn connection purpose
-- Context: useChat.ts에서 인프라 함수를 useEffect 내부에서 직접 호출했으나, useQuery의 queryFn으로 감싸야 규칙 준수
-
-## [PR #333 Round 3 | feat/332/ai-chat | 2026-04-19]
-- Violation: `domain/chat/types.ts`를 별도 파일로 두고 `domain/types.ts`에서 re-export하는 구조
-- Rule: MISTAKES.md Architecture #1 — All domain types must be centralized in domain/types.ts; re-export 우회 금지
-- Context: PR #331에서 동일한 패턴이 이미 수정된 전례가 있음에도 Chat 타입에 동일 패턴 적용됨
-- Violation: `tokenStore.ts` `getRedis()`가 매 호출마다 `new Redis(...)` 인스턴스 재생성
-- Rule: MISTAKES.md Design #2 — 동일 리소스를 여러 번 생성하지 말 것, 단일 인스턴스 캐싱 필요
-- Context: tryConsumeToken과 getRemainingTokens 각각 호출 시 새 Redis 인스턴스 생성
-
-
 ## [PR #339 | master | 2026-04-20]
 - Violation: validateBacktestData null/non-object 분기 테스트 누락
 - Rule: CONVENTIONS.md domain/ 100% 커버리지 필수

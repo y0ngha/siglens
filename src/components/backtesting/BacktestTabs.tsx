@@ -23,7 +23,8 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
         const safe = tabs.includes(active) ? active : ALL_TAB;
         return {
             safeActive: safe,
-            filtered: safe === ALL_TAB ? cases : cases.filter(c => c.ticker === safe),
+            filtered:
+                safe === ALL_TAB ? cases : cases.filter(c => c.ticker === safe),
         };
     }, [cases, tabs, searchParams]);
 
