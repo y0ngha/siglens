@@ -160,7 +160,6 @@ describe('chatAction 함수는', () => {
 
     it('GEMINI_API_KEY 미설정 시 server_error를 반환한다', async () => {
         delete process.env.GEMINI_API_KEY;
-        mockTryConsumeToken.mockResolvedValueOnce(true);
 
         const result = await chatAction(
             'AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문'
@@ -168,6 +167,18 @@ describe('chatAction 함수는', () => {
 
         expect(result).toEqual({ ok: false, error: 'server_error' });
         expect(mockGenerateContent).not.toHaveBeenCalled();
+    });
+
+    it('Gemini response.text가 null이면 빈 문자열을 반환한다', async () => {
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+        mockGetRemainingTokens.mockResolvedValueOnce(4);
+        mockGenerateContent.mockResolvedValueOnce({ text: null });
+
+        const result = await chatAction(
+            'AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문'
+        );
+
+        expect(result).toEqual({ ok: true, message: '', remainingTokens: 4 });
     });
 
     it('Gemini 429 에러 시 rate_limited를 반환한다', async () => {
