@@ -23,22 +23,25 @@ export function ChatPanel({
     analysis,
     isAnalysisReady,
 }: ChatPanelProps) {
-    const { messages, loadingPhase, analysisUpdated, sendMessage, dismissAnalysisUpdated } =
-        useChat({ symbol, timeframe, analysis, isAnalysisReady });
-
     const [inputValue, setInputValue] = useState('');
+
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, loadingPhase]);
+    const { messages, loadingPhase, analysisUpdated, sendMessage, dismissAnalysisUpdated } =
+        useChat({ symbol, timeframe, analysis, isAnalysisReady });
+
+    const isInputDisabled = loadingPhase !== null || !isAnalysisReady;
+    const placeholder = !isAnalysisReady
+        ? '분석이 완료된 후 질문할 수 있어요'
+        : '질문을 입력하세요… (Enter로 전송)';
 
     const handleSubmit = useCallback(async (): Promise<void> => {
         const text = inputValue.trim();
         if (!text || loadingPhase !== null || !isAnalysisReady) return;
         setInputValue('');
         await sendMessage(text);
+        inputRef.current?.focus();
     }, [inputValue, loadingPhase, isAnalysisReady, sendMessage]);
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>): void => {
@@ -48,10 +51,9 @@ export function ChatPanel({
         }
     };
 
-    const isInputDisabled = loadingPhase !== null || !isAnalysisReady;
-    const placeholder = !isAnalysisReady
-        ? '분석이 완료된 후 질문할 수 있어요'
-        : '질문을 입력하세요… (Enter로 전송)';
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages, loadingPhase]);
 
     return (
         <div className="border-secondary-700 flex flex-col border-t">
@@ -94,7 +96,7 @@ export function ChatPanel({
 
                 {messages.map((msg, i) => (
                     <div
-                        key={i}
+                        key={`${msg.role}-${i}`}
                         className={cn(
                             'max-w-[85%] rounded-lg p-2.5 text-xs leading-relaxed',
                             msg.role === 'user'
@@ -113,9 +115,9 @@ export function ChatPanel({
                             {LOADING_MESSAGES[loadingPhase]}
                         </p>
                         <span className="text-secondary-500 mt-1 inline-flex gap-0.5 text-base leading-none">
-                            <span className="animate-bounce" style={{ animationDelay: '0ms' }}>·</span>
-                            <span className="animate-bounce" style={{ animationDelay: '150ms' }}>·</span>
-                            <span className="animate-bounce" style={{ animationDelay: '300ms' }}>·</span>
+                            <span className="animate-bounce [animation-delay:0ms]">·</span>
+                            <span className="animate-bounce [animation-delay:150ms]">·</span>
+                            <span className="animate-bounce [animation-delay:300ms]">·</span>
                         </span>
                     </div>
                 )}
@@ -144,8 +146,7 @@ export function ChatPanel({
                         className={cn(
                             'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[32px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-xs leading-relaxed outline-none transition-colors',
                             'focus:border-primary-500',
-                            isInputDisabled &&
-                                'cursor-not-allowed opacity-50'
+                            isInputDisabled && 'cursor-not-allowed opacity-50'
                         )}
                     />
                     <button
