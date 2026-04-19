@@ -71,6 +71,28 @@ export function findCross(
     return null;
 }
 
+/**
+ * 값 배열이 스칼라 임계값(threshold)을 상향/하향 돌파한 가장 최근 lookback bar 인덱스를 반환.
+ * findCross의 "parallel constant array" 패턴을 피하기 위한 전용 헬퍼.
+ */
+export function findThresholdCross(
+    values: (number | null)[],
+    threshold: number,
+    lookback: number,
+    direction: CrossDirection
+): number | null {
+    const len = values.length;
+    const start = Math.max(1, len - lookback);
+    for (let i = start; i < len; i++) {
+        const v = values[i];
+        const vPrev = values[i - 1];
+        if (v === null || vPrev === null) continue;
+        if (direction === 'up' && vPrev <= threshold && v > threshold) return i;
+        if (direction === 'down' && vPrev >= threshold && v < threshold) return i;
+    }
+    return null;
+}
+
 export function detectGoldenCross(
     bars: Bar[],
     indicators: IndicatorResult
@@ -275,8 +297,7 @@ export function detectCciBullishCross(
     if (cci.length < 2) return null;
     const thresholds = [CCI_OVERSOLD_CROSS_LEVEL, CCI_BULLISH_CROSS_LEVEL];
     for (const threshold of thresholds) {
-        const thresholdArr = cci.map(() => threshold);
-        const idx = findCross(cci, thresholdArr, CROSS_LOOKBACK_BARS, 'up');
+        const idx = findThresholdCross(cci, threshold, CROSS_LOOKBACK_BARS, 'up');
         if (idx !== null) {
             return {
                 type: 'cci_bullish_cross',

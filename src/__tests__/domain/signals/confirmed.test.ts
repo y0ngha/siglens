@@ -45,6 +45,10 @@ function withIchimoku(values: IchimokuResult[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, ichimoku: values };
 }
 
+function withCci(values: (number | null)[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, cci: values };
+}
+
 describe('detectRsiOversold', () => {
     describe('마지막 RSI가 30 미만일 때', () => {
         it('Signal을 반환한다', () => {
@@ -713,10 +717,6 @@ describe('detectIchimokuCloudBreakout', () => {
 
 // ─── detectCciBullishCross ────────────────────────────────────────────────────
 
-function withCci(values: (number | null)[]): IndicatorResult {
-    return { ...EMPTY_INDICATOR_RESULT, cci: values };
-}
-
 describe('detectCciBullishCross', () => {
     describe('최근 3 bar 내 -100 상향 돌파가 있을 때', () => {
         it('Signal을 전환 bar로 반환한다', () => {
@@ -763,6 +763,13 @@ describe('detectCciBullishCross', () => {
             expect(
                 detectCciBullishCross(buildBars(5), EMPTY_INDICATOR_RESULT)
             ).toBeNull();
+        });
+    });
+
+    describe('CCI 데이터가 1개뿐일 때', () => {
+        it('null을 반환한다 (length < 2 가드)', () => {
+            const bars = buildBars(5);
+            expect(detectCciBullishCross(bars, withCci([50]))).toBeNull();
         });
     });
 });
