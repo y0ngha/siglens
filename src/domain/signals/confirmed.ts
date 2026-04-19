@@ -373,3 +373,26 @@ export function detectMfiOversoldBounce(
         detectedAt: lastIdx,
     };
 }
+
+export function detectParabolicSarFlip(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const sar = indicators.parabolicSar;
+    if (sar.length < 2) return null;
+    const lastIdx = sar.length - 1;
+    const start = Math.max(1, lastIdx - CROSS_LOOKBACK_BARS + 1);
+    for (let i = start; i <= lastIdx; i++) {
+        const prev = sar[i - 1]?.trend;
+        const cur = sar[i]?.trend;
+        if (prev === 'down' && cur === 'up') {
+            return {
+                type: 'parabolic_sar_flip',
+                direction: 'bullish',
+                phase: 'confirmed',
+                detectedAt: i,
+            };
+        }
+    }
+    return null;
+}

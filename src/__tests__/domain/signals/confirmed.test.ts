@@ -13,6 +13,7 @@ import {
     detectDmiBullishCross,
     detectCmfBullishFlip,
     detectMfiOversoldBounce,
+    detectParabolicSarFlip,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
@@ -23,6 +24,7 @@ import type {
     IchimokuResult,
     IndicatorResult,
     MACDResult,
+    ParabolicSARResult,
     SupertrendResult,
 } from '@/domain/types';
 
@@ -63,6 +65,10 @@ function withCmf(values: (number | null)[]): IndicatorResult {
 
 function withMfi(values: (number | null)[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, mfi: values };
+}
+
+function withSar(values: ParabolicSARResult[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, parabolicSar: values };
 }
 
 describe('detectRsiOversold', () => {
@@ -927,6 +933,46 @@ describe('detectMfiOversoldBounce', () => {
         it('null을 반환한다', () => {
             expect(
                 detectMfiOversoldBounce(buildBars(5), EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+});
+
+// ─── detectParabolicSarFlip ───────────────────────────────────────────────────
+
+describe('detectParabolicSarFlip', () => {
+    describe('최근 3 bar 내 down→up 전환일 때', () => {
+        it('Signal을 반환한다', () => {
+            const bars = buildBars(10);
+            const sar: ParabolicSARResult[] = [
+                ...Array(7).fill({ sar: 110, trend: 'down' as const }),
+                { sar: 95, trend: 'up' as const },
+                { sar: 93, trend: 'up' as const },
+                { sar: 91, trend: 'up' as const },
+            ];
+            const result = detectParabolicSarFlip(bars, withSar(sar));
+            expect(result?.type).toBe('parabolic_sar_flip');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(7);
+        });
+    });
+
+    describe('lookback 초과 범위 전환일 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(10);
+            const sar: ParabolicSARResult[] = [
+                ...Array(3).fill({ sar: 110, trend: 'down' as const }),
+                ...Array(7).fill({ sar: 95, trend: 'up' as const }),
+            ];
+            expect(detectParabolicSarFlip(bars, withSar(sar))).toBeNull();
+        });
+    });
+
+    describe('SAR 데이터가 없을 때', () => {
+        it('null을 반환한다', () => {
+            expect(
+                detectParabolicSarFlip(buildBars(5), EMPTY_INDICATOR_RESULT)
             ).toBeNull();
         });
     });
