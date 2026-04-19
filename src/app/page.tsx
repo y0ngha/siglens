@@ -52,7 +52,7 @@ export default async function Home() {
         '@type': 'Organization',
         name: SITE_NAME,
         url: SITE_URL,
-        logo: `${SITE_URL}/icon.png`,
+        logo: `${SITE_URL}/icon512.png`,
         description: SITE_DESCRIPTION,
         sameAs: ['https://github.com/y0ngha/siglens'],
     };

@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Suspense } from 'react';
 import {
     dehydrate,
@@ -105,14 +104,6 @@ export default async function MarketPage({
                 <meta name="robots" content="noindex, follow" />
             )}
             <h1 className="sr-only">미국 주식 기술적 신호 대시보드</h1>
-            <div className="px-6 pt-6 lg:px-[15vw]">
-                <Link
-                    href="/"
-                    className="text-secondary-400 hover:text-secondary-200 inline-flex items-center gap-1 text-xs tracking-wider uppercase transition-colors"
-                >
-                    ← 홈으로
-                </Link>
-            </div>
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <Suspense fallback={<MarketSummaryPanelSkeleton />}>
                     <MarketSummaryPanel />
