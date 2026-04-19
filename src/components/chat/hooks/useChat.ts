@@ -80,8 +80,8 @@ export function useChat({
     const initialStorageKeyRef = useRef(buildStorageKey(symbol, timeframe));
     // storageKey just changed but messages haven't updated yet — skip that save cycle
     const isKeyChangePendingRef = useRef(false);
-    // savedAt (ms) of the restored session — null if no history on mount
-    const restoredSavedAtRef = useRef<number | null>(null);
+    // current storageKey ref — lets analysis effect read latest key without deps array entry
+    const storageKeyRef = useRef(buildStorageKey(symbol, timeframe));
     // true until isAnalysisReady first becomes true — distinguishes page-refresh from re-analysis
     const isFirstAnalysisReadyRef = useRef(true);
 
@@ -154,16 +154,12 @@ export function useChat({
     useLayoutEffect(() => {
         messagesRef.current = messages;
         loadingPhaseRef.current = loadingPhase;
+        storageKeyRef.current = storageKey;
     });
 
     // 하이드레이션 후 localStorage 로드 (SSR/client mismatch 방지 — 마운트 1회만 실행)
     useEffect(() => {
-        const { messages: loaded, savedAt } = loadSessionFull(
-            initialStorageKeyRef.current
-        );
-        if (loaded.length > 0 && savedAt !== null) {
-            restoredSavedAtRef.current = savedAt;
-        }
+        const loaded = loadSession(initialStorageKeyRef.current);
         startTransition(() => {
             setMessages(loaded);
         });
@@ -186,33 +182,33 @@ export function useChat({
     }, [storageKey]);
 
     // 컨텍스트 변경 배너 표시:
-    // 1) 새로고침 후 첫 분석 완료 + 복원된 대화가 있는 경우
-    // 2) 페이지 열린 상태에서 재분석으로 analysis 교체된 경우
+    // 분석 완료 시 마지막 채팅 시각(savedAt)과 분석 시각(analyzedAt)을 비교해
+    // 분석이 더 최신이고 기존 채팅 내역이 있으면 배너를 표시한다.
+    // — 1) 새로고침 후 첫 분석 완료 (page-refresh path)
+    // — 2) 페이지 열린 상태에서 재분석으로 analysis 교체된 경우 (live re-analysis path)
     useEffect(() => {
         const prev = prevAnalysisRef.current;
         prevAnalysisRef.current = analysis;
 
         if (!isAnalysisReady) return;
+        if (!analysis.analyzedAt) return;
+        if (messagesRef.current.length === 0) return;
+
+        const analysisTime = new Date(analysis.analyzedAt).getTime();
+        const { savedAt } = loadSessionFull(storageKeyRef.current);
+        if (savedAt === null) return;
 
         if (isFirstAnalysisReadyRef.current) {
+            // Page-refresh path: fire once when analysis first becomes ready
             isFirstAnalysisReadyRef.current = false;
-            const restoredSavedAt = restoredSavedAtRef.current;
-            if (
-                restoredSavedAt !== null &&
-                messagesRef.current.length > 0 &&
-                analysis.analyzedAt !== undefined &&
-                new Date(analysis.analyzedAt).getTime() > restoredSavedAt
-            ) {
+            if (analysisTime > savedAt) {
                 startTransition(() => setAnalysisUpdated(true));
             }
             return;
         }
 
-        if (
-            prev !== null &&
-            prev !== analysis &&
-            messagesRef.current.length > 0
-        ) {
+        // Live re-analysis path: analysis object itself changed
+        if (prev !== null && prev !== analysis && analysisTime > savedAt) {
             startTransition(() => setAnalysisUpdated(true));
         }
     }, [analysis, isAnalysisReady]);
