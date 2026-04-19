@@ -46,9 +46,9 @@ export function detectRsiOverbought(
     };
 }
 
-type CrossDirection = 'up' | 'down';
+export type CrossDirection = 'up' | 'down';
 
-function findCross(
+export function findCross(
     fast: (number | null)[],
     slow: (number | null)[],
     lookback: number,
