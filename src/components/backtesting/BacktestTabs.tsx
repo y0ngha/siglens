@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import type { BacktestCase } from '@/domain/types';
 import { BacktestCaseList } from './BacktestCaseList';
@@ -15,7 +15,7 @@ const ALL_TAB = '전체';
 export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
     const router = useRouter();
     const searchParams = useSearchParams();
-    const tabs = [ALL_TAB, ...tickers];
+    const tabs = useMemo(() => [ALL_TAB, ...tickers], [tickers]);
 
     const active = searchParams.get('ticker') ?? ALL_TAB;
     const safeActive = tabs.includes(active) ? active : ALL_TAB;
