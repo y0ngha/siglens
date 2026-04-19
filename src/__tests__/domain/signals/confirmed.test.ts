@@ -7,6 +7,7 @@ import {
     detectMacdBearishCross,
     detectBollingerLowerBounce,
     detectBollingerUpperBreakout,
+    detectSupertrendBullishFlip,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
@@ -15,6 +16,7 @@ import type {
     BollingerResult,
     IndicatorResult,
     MACDResult,
+    SupertrendResult,
 } from '@/domain/types';
 
 function buildBars(n: number): Bar[] {
@@ -30,6 +32,10 @@ function buildBars(n: number): Bar[] {
 
 function withRsi(values: (number | null)[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, rsi: values };
+}
+
+function withSupertrend(values: SupertrendResult[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, supertrend: values };
 }
 
 describe('detectRsiOversold', () => {
@@ -569,6 +575,63 @@ describe('detectBollingerUpperBreakout', () => {
             expect(
                 detectBollingerUpperBreakout(bars, withBollinger(points))
             ).toBeNull();
+        });
+    });
+});
+
+// ─── detectSupertrendBullishFlip ──────────────────────────────────────────────
+
+describe('detectSupertrendBullishFlip', () => {
+    describe('최근 3 bar 내 down→up 전환이 있을 때', () => {
+        it('Signal을 전환 bar 인덱스로 반환한다', () => {
+            const bars = buildBars(10);
+            const st: SupertrendResult[] = [
+                ...Array(7).fill({ supertrend: 100, trend: 'down' as const }),
+                { supertrend: 100, trend: 'up' as const },
+                { supertrend: 100, trend: 'up' as const },
+                { supertrend: 100, trend: 'up' as const },
+            ];
+            const result = detectSupertrendBullishFlip(bars, withSupertrend(st));
+            expect(result).not.toBeNull();
+            expect(result?.type).toBe('supertrend_bullish_flip');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(7);
+        });
+    });
+
+    describe('최근 3 bar 내 전환이 없을 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(10);
+            const st: SupertrendResult[] = [
+                ...Array(3).fill({ supertrend: 100, trend: 'down' as const }),
+                ...Array(7).fill({ supertrend: 100, trend: 'up' as const }),
+            ];
+            // 전환이 index 3에서 일어났으나 CROSS_LOOKBACK_BARS=3보다 오래됨
+            expect(detectSupertrendBullishFlip(bars, withSupertrend(st))).toBeNull();
+        });
+    });
+
+    describe('supertrend 데이터가 없을 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(5);
+            expect(
+                detectSupertrendBullishFlip(bars, EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+
+    describe('직전 trend가 null일 때', () => {
+        it('null을 반환한다 (전환 불명확)', () => {
+            const bars = buildBars(5);
+            const st: SupertrendResult[] = [
+                { supertrend: null, trend: null },
+                { supertrend: null, trend: null },
+                { supertrend: null, trend: null },
+                { supertrend: null, trend: null },
+                { supertrend: 100, trend: 'up' as const },
+            ];
+            expect(detectSupertrendBullishFlip(bars, withSupertrend(st))).toBeNull();
         });
     });
 });

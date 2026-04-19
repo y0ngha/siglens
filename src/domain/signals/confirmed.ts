@@ -208,3 +208,26 @@ export function detectBollingerUpperBreakout(
         detectedAt: lastIdx,
     };
 }
+
+export function detectSupertrendBullishFlip(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const st = indicators.supertrend;
+    if (st.length < 2) return null;
+    const lastIdx = st.length - 1;
+    const start = Math.max(1, lastIdx - CROSS_LOOKBACK_BARS + 1);
+    for (let i = start; i <= lastIdx; i++) {
+        const prev = st[i - 1]?.trend;
+        const cur = st[i]?.trend;
+        if (prev === 'down' && cur === 'up') {
+            return {
+                type: 'supertrend_bullish_flip',
+                direction: 'bullish',
+                phase: 'confirmed',
+                detectedAt: i,
+            };
+        }
+    }
+    return null;
+}
