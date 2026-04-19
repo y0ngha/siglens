@@ -7,6 +7,7 @@ import { calculateMA } from '@/domain/indicators/ma';
 import {
     CCI_BULLISH_CROSS_LEVEL,
     CCI_OVERSOLD_CROSS_LEVEL,
+    CMF_BULLISH_CROSS_LEVEL,
     CROSS_LOOKBACK_BARS,
     DMI_ADX_TREND_THRESHOLD,
     GOLDEN_CROSS_FAST_PERIOD,
@@ -325,6 +326,27 @@ export function detectDmiBullishCross(
     if (adxAtCross === null || adxAtCross < DMI_ADX_TREND_THRESHOLD) return null;
     return {
         type: 'dmi_bullish_cross',
+        direction: 'bullish',
+        phase: 'confirmed',
+        detectedAt: idx,
+    };
+}
+
+export function detectCmfBullishFlip(
+    bars: Bar[],
+    indicators: IndicatorResult
+): Signal | null {
+    const cmf = indicators.cmf;
+    if (cmf.length < 2) return null;
+    const idx = findThresholdCross(
+        cmf,
+        CMF_BULLISH_CROSS_LEVEL,
+        CROSS_LOOKBACK_BARS,
+        'up'
+    );
+    if (idx === null) return null;
+    return {
+        type: 'cmf_bullish_flip',
         direction: 'bullish',
         phase: 'confirmed',
         detectedAt: idx,

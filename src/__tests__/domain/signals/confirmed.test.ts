@@ -11,6 +11,7 @@ import {
     detectIchimokuCloudBreakout,
     detectCciBullishCross,
     detectDmiBullishCross,
+    detectCmfBullishFlip,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
@@ -53,6 +54,10 @@ function withCci(values: (number | null)[]): IndicatorResult {
 
 function withDmi(values: DMIResult[]): IndicatorResult {
     return { ...EMPTY_INDICATOR_RESULT, dmi: values };
+}
+
+function withCmf(values: (number | null)[]): IndicatorResult {
+    return { ...EMPTY_INDICATOR_RESULT, cmf: values };
 }
 
 describe('detectRsiOversold', () => {
@@ -827,6 +832,49 @@ describe('detectDmiBullishCross', () => {
         it('null을 반환한다', () => {
             expect(
                 detectDmiBullishCross(buildBars(5), EMPTY_INDICATOR_RESULT)
+            ).toBeNull();
+        });
+    });
+});
+
+// ─── detectCmfBullishFlip ─────────────────────────────────────────────────────
+
+describe('detectCmfBullishFlip', () => {
+    describe('최근 3 bar 내 CMF가 0 상향 돌파할 때', () => {
+        it('Signal을 반환한다', () => {
+            const bars = buildBars(10);
+            const cmf = [
+                ...Array(7).fill(-0.1),
+                0.05,  // 0 상향 돌파 (index 7)
+                0.1, 0.15,
+            ];
+            const result = detectCmfBullishFlip(bars, withCmf(cmf));
+            expect(result?.type).toBe('cmf_bullish_flip');
+            expect(result?.direction).toBe('bullish');
+            expect(result?.phase).toBe('confirmed');
+            expect(result?.detectedAt).toBe(7);
+        });
+    });
+
+    describe('최근 3 bar 내 돌파가 없을 때', () => {
+        it('null을 반환한다', () => {
+            const bars = buildBars(10);
+            const cmf = [...Array(3).fill(-0.1), ...Array(7).fill(0.1)];
+            expect(detectCmfBullishFlip(bars, withCmf(cmf))).toBeNull();
+        });
+    });
+
+    describe('CMF 데이터가 1개뿐일 때', () => {
+        it('null을 반환한다 (length < 2 가드)', () => {
+            const bars = buildBars(5);
+            expect(detectCmfBullishFlip(bars, withCmf([0.2]))).toBeNull();
+        });
+    });
+
+    describe('CMF 데이터가 없을 때', () => {
+        it('null을 반환한다', () => {
+            expect(
+                detectCmfBullishFlip(buildBars(5), EMPTY_INDICATOR_RESULT)
             ).toBeNull();
         });
     });

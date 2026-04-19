@@ -604,7 +604,8 @@ export type ConfirmedSignalType =
     | 'supertrend_bullish_flip'
     | 'ichimoku_cloud_breakout'
     | 'cci_bullish_cross'
-    | 'dmi_bullish_cross';
+    | 'dmi_bullish_cross'
+    | 'cmf_bullish_flip';
 
 export type ExpectedSignalType =
     | 'rsi_bullish_divergence'
