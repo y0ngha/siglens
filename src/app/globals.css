@@ -145,3 +145,32 @@ body {
         opacity: 1;
     }
 }
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        transition-duration: 0.01ms !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+    }
+}
+
+.sector-panel-bg {
+    position: relative;
+}
+
+.sector-panel-bg::before {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    content: '';
+    background-image:
+        linear-gradient(to right, var(--color-secondary-800) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--color-secondary-800) 1px, transparent 1px);
+    background-size: 32px 32px;
+    opacity: 0.35;
+    mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black, transparent);
+}
