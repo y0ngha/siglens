@@ -75,8 +75,7 @@ export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
                                 aria-controls="backtest-case-list"
                                 tabIndex={isSelected ? 0 : -1}
                                 onClick={() => setActive(tab)}
-                                style={{ touchAction: 'manipulation' }}
-                                className={`cursor-pointer border-b-2 px-3.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1 focus-visible:ring-offset-secondary-900 ${
+                                className={`[touch-action:manipulation] cursor-pointer border-b-2 px-3.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 focus-visible:ring-offset-1 focus-visible:ring-offset-secondary-900 ${
                                     isSelected
                                         ? 'border-primary-400 text-primary-400'
                                         : 'border-transparent text-secondary-500 hover:text-secondary-300'

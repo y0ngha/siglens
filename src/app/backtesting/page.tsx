@@ -13,7 +13,9 @@ import { BacktestTabs } from '@/components/backtesting/BacktestTabs';
 import backtestData from './data.json';
 import type { BacktestData } from '@/domain/types';
 
+// JSON import is typed as any; shape is guaranteed by generate-backtest.ts output schema
 const data = backtestData as unknown as BacktestData;
+// Derived once at module load — intentionally static, data.json is replaced by the script
 const TICKERS = [...new Set(data.cases.map(c => c.ticker))];
 
 export const metadata: Metadata = {

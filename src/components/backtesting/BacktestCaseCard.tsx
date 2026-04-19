@@ -11,27 +11,36 @@ const priceFormatter = new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 2,
 });
 
+const winClasses = {
+    article: 'border-secondary-700',
+    badge: 'bg-secondary-700 text-primary-400',
+    returnText: 'text-chart-bullish',
+    aiSummary: 'border-chart-bullish',
+    tag: 'border border-primary-900/50 bg-primary-950/40 text-primary-400',
+} as const;
+
+const lossClasses = {
+    article: 'border-chart-bearish/20',
+    badge: 'bg-chart-bearish/10 text-chart-bearish',
+    returnText: 'text-chart-bearish',
+    aiSummary: 'border-ui-warning',
+    tag: 'border border-ui-warning/30 bg-ui-warning/10 text-ui-warning',
+} as const;
+
 export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
     const isWin = c.result === 'win';
+    const v = isWin ? winClasses : lossClasses;
     const returnLabel = `${c.returnPct >= 0 ? '+' : ''}${c.returnPct.toFixed(1)}%`;
 
     return (
         <article
             aria-label={`${c.ticker} ${c.entryDate} ${isWin ? '수익' : '손실'} ${returnLabel}`}
-            className={`rounded-lg border p-3 ${
-                isWin
-                    ? 'border-secondary-700 bg-secondary-800/50'
-                    : 'border-chart-bearish/20 bg-secondary-800/50'
-            }`}
+            className={`rounded-lg border p-3 bg-secondary-800/50 ${v.article}`}
         >
             <div className="mb-2 flex items-center gap-2">
                 <span
                     translate="no"
-                    className={`rounded px-2 py-0.5 text-xs font-bold ${
-                        isWin
-                            ? 'bg-secondary-700 text-primary-400'
-                            : 'bg-chart-bearish/10 text-chart-bearish'
-                    }`}
+                    className={`rounded px-2 py-0.5 text-xs font-bold ${v.badge}`}
                 >
                     {c.ticker}
                 </span>
@@ -61,17 +70,10 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                 </div>
 
                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
-                    <span
-                        className={`font-mono text-sm font-bold tabular-nums ${
-                            isWin ? 'text-chart-bullish' : 'text-chart-bearish'
-                        }`}
-                    >
+                    <span className={`font-mono text-sm font-bold tabular-nums ${v.returnText}`}>
                         {returnLabel}
                     </span>
-                    <span
-                        aria-hidden="true"
-                        className={`text-xs ${isWin ? 'text-chart-bullish' : 'text-chart-bearish'}`}
-                    >
+                    <span aria-hidden="true" className={`text-xs ${v.returnText}`}>
                         {isWin ? '✓' : '✗'}
                     </span>
                     <span className="sr-only">{isWin ? '수익' : '손실'}</span>
@@ -79,11 +81,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             </div>
 
             <p
-                className={`line-clamp-3 rounded-r px-3 py-2 text-[11px] leading-relaxed text-secondary-400 ${
-                    isWin
-                        ? 'border-l-2 border-chart-bullish bg-black/20'
-                        : 'border-l-2 border-ui-warning bg-black/20'
-                }`}
+                className={`line-clamp-3 rounded-r border-l-2 bg-black/20 px-3 py-2 text-[11px] leading-relaxed text-secondary-400 ${v.aiSummary}`}
             >
                 {c.aiAnalysis.summary}
             </p>
@@ -91,14 +89,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             {c.aiAnalysis.tags.length > 0 && (
                 <div className="mt-2 flex flex-wrap gap-1.5">
                     {c.aiAnalysis.tags.map(tag => (
-                        <span
-                            key={tag}
-                            className={`rounded px-1.5 py-0.5 text-[10px] ${
-                                isWin
-                                    ? 'border border-primary-900/50 bg-primary-950/40 text-primary-400'
-                                    : 'border border-ui-warning/30 bg-ui-warning/10 text-ui-warning'
-                            }`}
-                        >
+                        <span key={tag} className={`rounded px-1.5 py-0.5 text-[10px] ${v.tag}`}>
                             {tag}
                         </span>
                     ))}

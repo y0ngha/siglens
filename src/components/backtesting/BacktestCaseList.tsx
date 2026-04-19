@@ -10,6 +10,8 @@ function getMonthLabel(dateStr: string): string {
     return `${year}년 ${parseInt(month, 10)}월`;
 }
 
+type MonthGroup = { label: string; items: BacktestCase[] };
+
 export function BacktestCaseList({ cases }: BacktestCaseListProps) {
     if (cases.length === 0) {
         return (
@@ -19,16 +21,14 @@ export function BacktestCaseList({ cases }: BacktestCaseListProps) {
         );
     }
 
-    const groups: Array<{ label: string; items: BacktestCase[] }> = [];
-    for (const c of cases) {
+    const groups = cases.reduce<MonthGroup[]>((acc, c) => {
         const label = getMonthLabel(c.entryDate);
-        const last = groups[groups.length - 1];
+        const last = acc[acc.length - 1];
         if (!last || last.label !== label) {
-            groups.push({ label, items: [c] });
-        } else {
-            last.items.push(c);
+            return [...acc, { label, items: [c] }];
         }
-    }
+        return [...acc.slice(0, -1), { label, items: [...last.items, c] }];
+    }, []);
 
     return (
         <div className="flex flex-col gap-2 px-4 pb-6">
