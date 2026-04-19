@@ -196,9 +196,7 @@ Return the analysis in **this exact structured format** (one `**label**: value` 
 **현재 가격 영역**: [프리미엄 / 균형 / 디스카운트]
 **주요 활성 레벨**: [미완료 OB 및 FVG 레벨, 예: "불리시 OB $185.20–$186.50 (미완료), 불리시 FVG $183.00–$184.20"]
 **유동성 대상**: [근접한 EQH/EQL, 예: "EQH $190.50 — 청산 후 반전 가능"]
-**신호 강도**: [낮음 / 중간 / 높음 — 합류 요인 수 기재]
 **방향 의견**: [강세 / 약세 / 중립]
-**상세 분석**: [구조 흐름, 핵심 레벨과의 관계, 현재 가격 위치, 예상 시나리오(주 시나리오와 무효화 조건)를 포함한 상세 분석 문단]
 ```
 
 Additional output rules:
@@ -206,3 +204,4 @@ Additional output rules:
 - If CHoCH occurred within the last 10 bars, flag it explicitly as a high-priority reversal watch.
 - If price swept EQH or EQL within the last 5 bars without follow-through, flag it as a potential liquidity grab reversal.
 - Set `trend` field: `bullish` if structure is bullish and price is in Discount near an OB/FVG, `bearish` if structure is bearish and price is in Premium near an OB/FVG, `neutral` otherwise.
+- Set `strength` field as a separate JSON field (do NOT embed it in description): map confluence count → `weak` (1 factor), `moderate` (2 factors), `strong` (3+ factors).
