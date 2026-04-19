@@ -671,6 +671,11 @@ export type BacktestSignalResult = 'win' | 'loss';
 export type BacktestAiResult = 'win' | 'loss' | 'neutral';
 export type BacktestExitReason = 'take_profit' | 'stop_loss' | 'time';
 
+export interface BacktestAiAnalysis {
+    summary: string;
+    tags: string[];
+}
+
 export interface BacktestCase {
     ticker: string;
     entryDate: string;
@@ -684,10 +689,7 @@ export interface BacktestCase {
     exitReason: BacktestExitReason;
     aiResult: BacktestAiResult;
     aiTrendHit: boolean;
-    aiAnalysis: {
-        summary: string;
-        tags: string[];
-    };
+    aiAnalysis: BacktestAiAnalysis;
 }
 
 export interface BacktestMeta {
