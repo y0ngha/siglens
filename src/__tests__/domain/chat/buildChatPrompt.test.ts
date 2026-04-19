@@ -143,7 +143,7 @@ describe('buildChatPrompt 함수는', () => {
             );
             expect(result.messages).toHaveLength(1);
             expect(result.messages[0].role).toBe('user');
-            expect(result.messages[0].parts[0].text).toBe('지금 사도 돼?');
+            expect(result.messages[0].content).toBe('지금 사도 돼?');
         });
 
         it('히스토리가 있으면 히스토리 뒤에 새 메시지를 추가한다', () => {
@@ -162,11 +162,11 @@ describe('buildChatPrompt 함수는', () => {
                 '더 쉽게 설명해줘'
             );
             expect(result.messages).toHaveLength(3);
-            expect(result.messages[0].parts[0].text).toBe('언제 팔아?');
-            expect(result.messages[1].parts[0].text).toBe(
+            expect(result.messages[0].content).toBe('언제 팔아?');
+            expect(result.messages[1].content).toBe(
                 'RSI가 70 넘으면 고려하세요.'
             );
-            expect(result.messages[2].parts[0].text).toBe('더 쉽게 설명해줘');
+            expect(result.messages[2].content).toBe('더 쉽게 설명해줘');
         });
     });
 });
