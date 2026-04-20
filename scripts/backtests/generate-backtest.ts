@@ -106,7 +106,9 @@ const GEMINI_THINKING_BUDGET = Number(
 const DECISIVENESS_SUFFIX = `
 
 [Backtest evaluation directive]
-When technical indicators are clearly aligned in either direction, prefer 'enter' or 'avoid' as your entryRecommendation. Reserve 'wait' strictly for genuinely conflicting or ambiguous setups. Your decisive call (enter/avoid) is preferred over excessive caution.`;
+When technical indicators are clearly aligned in either direction, prefer 'enter' or 'avoid' as your entryRecommendation. Reserve 'wait' strictly for genuinely conflicting or ambiguous setups. Your decisive call (enter/avoid) is preferred over excessive caution.
+
+The 'summary' field should be concise — 2 to 3 complete sentences, total length under 250 characters. Always end each sentence with proper punctuation so truncation at a sentence boundary is possible.`;
 
 if (!FMP_API_KEY) throw new Error('FMP_API_KEY is required in .env.local');
 if (!GEMINI_API_KEY)
@@ -116,6 +118,25 @@ const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 function sleep(ms: number): Promise<void> {
     return new Promise(r => setTimeout(r, ms));
+}
+
+/**
+ * 텍스트를 maxLength 이내로 자르되, 가능하면 마지막 문장 종결점에서 자른다.
+ * 자를 경계(. ! ?)가 maxLength의 절반 이후에 있을 때만 사용 — 너무 짧게 잘리는 것 방지.
+ * 종결점을 찾지 못하면 말줄임표(…)를 붙여 명시적으로 잘렸음을 표시.
+ */
+function truncateAtSentenceBoundary(text: string, maxLength: number): string {
+    if (text.length <= maxLength) return text;
+    const clipped = text.slice(0, maxLength);
+    const lastPeriod = Math.max(
+        clipped.lastIndexOf('.'),
+        clipped.lastIndexOf('!'),
+        clipped.lastIndexOf('?')
+    );
+    if (lastPeriod > maxLength / 2) {
+        return clipped.slice(0, lastPeriod + 1);
+    }
+    return clipped.trimEnd() + '…';
 }
 
 // ─── FMP bars ──────────────────────────────────────────────────────────────────
@@ -253,7 +274,7 @@ function decodeAnalysis(text: string): AiAnalysisForBacktest {
 
     return {
         trend: result.trend,
-        summary: (result.summary ?? '').slice(0, 150),
+        summary: truncateAtSentenceBoundary(result.summary ?? '', 250),
         entryRecommendation,
         stopLoss: result.actionRecommendation?.stopLoss,
         takeProfit: result.actionRecommendation?.takeProfitPrices?.[0],
