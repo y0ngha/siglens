@@ -427,7 +427,6 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
     );
 }
 
-
 interface ConfluenceInfoProps {
     level: ClusteredKeyLevel;
 }
