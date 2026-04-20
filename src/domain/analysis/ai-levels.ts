@@ -1,4 +1,8 @@
-import type { ActionRecommendation, AnalysisResponse } from '@/domain/types';
+import type {
+    ActionRecommendation,
+    AnalysisResponse,
+    ReconciledActionLevels,
+} from '@/domain/types';
 
 /**
  * AI SL/TP 검증, ATR 기반 fallback resolver, 그리고 ActionRecommendation 재조합.
@@ -146,9 +150,19 @@ export function resolveBullishTakeProfit(
 // 더 이상 실제 값과 일치하지 않는다. 결정론적으로 재생성해 UI 표시와 실제
 // 실행 레벨 사이의 괴리를 제거한다. (AI 재호출 없음.)
 
+const ORDINAL_LABEL = ['1차', '2차', '3차', '4차', '5차'] as const;
+
+function ordinalLabel(index: number): string {
+    return ORDINAL_LABEL[index] ?? `${index + 1}차`;
+}
+
 /**
  * bullish 롱 포지션 기준으로 SL/TP 값을 기반으로 exit 텍스트를 생성.
- * 예: "목표가 $164.90 (+2.3%)에서 익절, 손절 $158.40 (-1.7%)."
+ *
+ * - 단일 TP: "목표가 $164.90 (+2.3%)에서 익절, 손절 $158.40 (-1.7%)."
+ * - 복수 TP: "1차 목표 $164.90 (+2.3%), 2차 목표 $170.00 (+5.6%)에서 익절, 손절 $158.40 (-1.7%)."
+ *
+ * stopLoss 또는 takeProfitPrices[0]이 유한한 양수가 아니면 해당 파트를 생략한다.
  */
 export function buildBullishExitText(
     entryPrice: number,
@@ -156,40 +170,59 @@ export function buildBullishExitText(
     takeProfitPrices: readonly number[] | undefined
 ): string {
     const parts: string[] = [];
-    if (takeProfitPrices && takeProfitPrices.length > 0) {
-        const tp = takeProfitPrices[0];
+
+    const validTps = (takeProfitPrices ?? []).filter(
+        (tp): tp is number => typeof tp === 'number' && Number.isFinite(tp)
+    );
+
+    if (validTps.length === 1) {
+        const tp = validTps[0];
         const pct = (((tp - entryPrice) / entryPrice) * 100).toFixed(1);
         parts.push(`목표가 $${tp.toFixed(2)} (+${pct}%)에서 익절`);
+    } else if (validTps.length > 1) {
+        const tpParts = validTps.map((tp, idx) => {
+            const pct = (((tp - entryPrice) / entryPrice) * 100).toFixed(1);
+            return `${ordinalLabel(idx)} 목표 $${tp.toFixed(2)} (+${pct}%)`;
+        });
+        parts.push(`${tpParts.join(', ')}에서 익절`);
     }
-    if (stopLoss !== undefined) {
+
+    if (stopLoss !== undefined && Number.isFinite(stopLoss)) {
         const pct = (((stopLoss - entryPrice) / entryPrice) * 100).toFixed(1);
         parts.push(`손절 $${stopLoss.toFixed(2)} (${pct}%)`);
     }
+
     return parts.length > 0 ? parts.join(', ') + '.' : '';
 }
 
 /**
  * bullish 롱 포지션의 위험:보상 비율 텍스트.
- * 예: "손절 1.2% vs 목표 3.2% → 위험:보상 = 1:2.7"
+ *
+ * 예: "손절 -1.7% vs 목표 +3.2% → 위험:보상 = 1:1.9"
+ *
+ * - slPct는 부호를 유지(음수)하고, ratio는 절대값 기반(reward/|risk|)으로 계산한다.
+ * - stopLoss 또는 takeProfitPrices[0]가 유한한 양수가 아니거나 riskAbs === 0 이면 빈 문자열을 반환.
  */
 export function buildBullishRiskRewardText(
     entryPrice: number,
     stopLoss: number | undefined,
     takeProfitPrices: readonly number[] | undefined
 ): string {
-    if (
-        stopLoss === undefined ||
-        !takeProfitPrices ||
-        takeProfitPrices.length === 0
-    ) {
-        return '';
-    }
-    const tp = takeProfitPrices[0];
-    const riskPct = Math.abs(((stopLoss - entryPrice) / entryPrice) * 100);
-    const rewardPct = ((tp - entryPrice) / entryPrice) * 100;
-    if (riskPct === 0) return '';
-    const ratio = (rewardPct / riskPct).toFixed(1);
-    return `손절 ${riskPct.toFixed(1)}% vs 목표 ${rewardPct.toFixed(1)}% → 위험:보상 = 1:${ratio}`;
+    if (stopLoss === undefined || !Number.isFinite(stopLoss)) return '';
+    const tp = takeProfitPrices?.[0];
+    if (tp === undefined || !Number.isFinite(tp)) return '';
+
+    const slPct = ((stopLoss - entryPrice) / entryPrice) * 100;
+    const tpPct = ((tp - entryPrice) / entryPrice) * 100;
+    const riskAbs = Math.abs(slPct);
+    if (riskAbs === 0) return '';
+
+    const slLabel = `${slPct.toFixed(1)}%`;
+    const tpLabel =
+        tpPct >= 0 ? `+${tpPct.toFixed(1)}%` : `${tpPct.toFixed(1)}%`;
+    const ratio = (tpPct / riskAbs).toFixed(1);
+
+    return `손절 ${slLabel} vs 목표 ${tpLabel} → 위험:보상 = 1:${ratio}`;
 }
 
 export interface ReconcileResult {
@@ -199,22 +232,53 @@ export interface ReconcileResult {
 }
 
 /**
- * bullish ActionRecommendation에 대해 SL/TP 유효성 검증 + fallback 적용 +
- * 텍스트 재조합을 수행한다.
+ * 보정 사유 문장 생성. 4가지 경우를 구분한다.
+ * - SL+TP 누락 / SL+TP 무효
+ * - SL만 누락 / SL만 무효
+ * - TP만 누락 / TP만 무효
+ */
+function buildReconcileReason(
+    slWas: boolean,
+    tpWas: boolean,
+    aiSlMissing: boolean,
+    aiTpMissing: boolean
+): string {
+    if (slWas && tpWas) {
+        return aiSlMissing && aiTpMissing
+            ? 'AI가 손절·목표가를 제시하지 않아 ATR 기반 기본값을 계산했습니다.'
+            : 'AI가 제시한 손절·목표가 중 일부가 내부 기준을 벗어나 보정했습니다.';
+    }
+    if (slWas) {
+        return aiSlMissing
+            ? 'AI가 손절가를 제시하지 않아 ATR 기반 기본값을 계산했습니다.'
+            : 'AI가 제시한 손절가가 내부 기준을 벗어나 보정했습니다.';
+    }
+    return aiTpMissing
+        ? 'AI가 목표가를 제시하지 않아 ATR 기반 기본값을 계산했습니다.'
+        : 'AI가 제시한 목표가가 내부 기준을 벗어나 보정했습니다.';
+}
+
+/**
+ * bullish ActionRecommendation에 대해 SL/TP 유효성 검증 + fallback 계산을 수행한 뒤,
+ * 필요한 경우 보정값을 `reconciledLevels` 필드에 **병기**한다.
  *
- * - 유효한 AI 값은 그대로 유지
- * - 무효/누락 값은 ATR 기반 fallback으로 교체
- * - SL 또는 takeProfitPrices[0]가 교체되면 exit/riskReward 텍스트도 재생성
- * - positionAnalysis, entry, entryRecommendation, entryPrices는 건드리지 않음
+ * AI 원본 필드(stopLoss, takeProfitPrices, exit, riskReward)는 **절대 수정하지 않는다.**
+ * 보정값은 reconciledLevels에만 담기며, UI는 AI 값과 보정값을 병기할 수 있다.
  *
- * AI가 여러 목표가를 제시한 경우 첫 번째만 보정 — 나머지 원소는 보존한다.
+ * - AI가 entryRecommendation='avoid' 라면 의도적으로 레벨을 비운 것이므로 보정하지 않는다.
+ * - SL 또는 takeProfitPrices[0]이 AI 기준 유효 → reconciledLevels를 생성하지 않는다.
+ * - SL 또는 TP[0]이 fallback 으로 치환된 경우에만 reconciledLevels를 추가한다.
+ * - TP 배열 중 [0]만 보정되며, [1..]은 AI 값 그대로 보존된다.
  */
 export function reconcileBullishActionRecommendation(
     rec: ActionRecommendation,
     entryPrice: number,
     atr: number | undefined
 ): ReconcileResult {
-    const changes: string[] = [];
+    // avoid: AI가 의도적으로 레벨을 비운 것이므로 보정하지 않는다.
+    if (rec.entryRecommendation === 'avoid') {
+        return { recommendation: rec, wasReconciled: false, changes: [] };
+    }
 
     const slResolved = resolveBullishStopLoss(rec.stopLoss, entryPrice, atr);
     const tpResolved = resolveBullishTakeProfit(
@@ -223,52 +287,79 @@ export function reconcileBullishActionRecommendation(
         atr
     );
 
-    const slChanged =
-        slResolved.source === 'fallback' && slResolved.value !== rec.stopLoss;
-    const tpChanged =
-        tpResolved.source === 'fallback' &&
-        tpResolved.value !== rec.takeProfitPrices?.[0];
+    const slWasReconciled =
+        slResolved.source === 'fallback' && slResolved.value !== undefined;
+    const tpWasReconciled =
+        tpResolved.source === 'fallback' && tpResolved.value !== undefined;
 
-    if (slChanged) {
+    if (!slWasReconciled && !tpWasReconciled) {
+        return { recommendation: rec, wasReconciled: false, changes: [] };
+    }
+
+    const reconciledTpArr: readonly number[] | undefined = tpWasReconciled
+        ? [tpResolved.value!, ...(rec.takeProfitPrices?.slice(1) ?? [])]
+        : rec.takeProfitPrices;
+
+    const reconciledSl = slWasReconciled ? slResolved.value : rec.stopLoss;
+
+    const aiSlMissing = rec.stopLoss === undefined;
+    const aiTpMissing =
+        rec.takeProfitPrices === undefined ||
+        rec.takeProfitPrices.length === 0 ||
+        rec.takeProfitPrices[0] === undefined;
+
+    const reconciled: ReconciledActionLevels = {
+        stopLoss: reconciledSl,
+        takeProfitPrices: reconciledTpArr,
+        exit: buildBullishExitText(entryPrice, reconciledSl, reconciledTpArr),
+        riskReward: buildBullishRiskRewardText(
+            entryPrice,
+            reconciledSl,
+            reconciledTpArr
+        ),
+        reason: buildReconcileReason(
+            slWasReconciled,
+            tpWasReconciled,
+            aiSlMissing,
+            aiTpMissing
+        ),
+    };
+
+    const changes: string[] = [];
+    if (slWasReconciled) {
         changes.push(
-            `stopLoss: ${rec.stopLoss ?? 'null'} → ${slResolved.value?.toFixed(2)} (fallback)`
+            `stopLoss: ${rec.stopLoss ?? 'null'} → ${reconciled.stopLoss?.toFixed(2)} (fallback)`
         );
     }
-    if (tpChanged) {
+    if (tpWasReconciled) {
         changes.push(
             `takeProfitPrices[0]: ${rec.takeProfitPrices?.[0] ?? 'null'} → ${tpResolved.value?.toFixed(2)} (fallback)`
         );
     }
 
-    // TP가 fallback이면 첫 번째 원소만 교체하고, AI가 제공한 나머지 target은 보존.
-    let newTpArr = rec.takeProfitPrices;
-    if (tpChanged && tpResolved.value !== undefined) {
-        const rest = rec.takeProfitPrices?.slice(1) ?? [];
-        newTpArr = [tpResolved.value, ...rest];
-    }
-
-    const reconciled: ActionRecommendation = {
-        ...rec,
-        stopLoss: slResolved.value ?? rec.stopLoss,
-        takeProfitPrices: newTpArr,
+    return {
+        recommendation: { ...rec, reconciledLevels: reconciled }, // AI fields UNCHANGED
+        wasReconciled: true,
+        changes,
     };
+}
 
-    const wasReconciled = slChanged || tpChanged;
-
-    if (wasReconciled) {
-        reconciled.exit = buildBullishExitText(
-            entryPrice,
-            reconciled.stopLoss,
-            reconciled.takeProfitPrices
-        );
-        reconciled.riskReward = buildBullishRiskRewardText(
-            entryPrice,
-            reconciled.stopLoss,
-            reconciled.takeProfitPrices
-        );
+/**
+ * AI가 제시한 entryPrices 배열을 중간값(midpoint)으로 환산한다.
+ * - 유한한 양수만 골라 산술 평균을 계산
+ * - 유효 원소가 없으면 fallback 반환
+ */
+function computeEntryPriceMid(
+    entryPrices: readonly number[] | undefined,
+    fallback: number | undefined
+): number | undefined {
+    if (entryPrices && entryPrices.length > 0) {
+        const valid = entryPrices.filter(p => Number.isFinite(p) && p > 0);
+        if (valid.length > 0) {
+            return valid.reduce((sum, p) => sum + p, 0) / valid.length;
+        }
     }
-
-    return { recommendation: reconciled, wasReconciled, changes };
+    return fallback;
 }
 
 /**
@@ -276,10 +367,10 @@ export function reconcileBullishActionRecommendation(
  *
  * - actionRecommendation이 없으면 원본 그대로 반환
  * - bullish 외 trend라도 스키마는 long-only이므로 reconcile을 수행 (invalid는 fallback)
- * - entryPrice는 AI가 제시한 entryPrices[0] → fallbackEntryPrice 순으로 결정
+ * - entryPrice는 AI가 제시한 entryPrices의 중간값 → fallbackEntryPrice 순으로 결정
  * - entryPrice를 결정할 수 없으면 원본 반환 (fallback 계산 불가)
  *
- * AI 재호출 없이 결정론적으로 텍스트까지 재조합한다.
+ * AI 재호출 없이 결정론적으로 reconciledLevels를 병기한다.
  */
 export function postProcessAnalysisWithReconcile(
     response: AnalysisResponse,
@@ -289,8 +380,12 @@ export function postProcessAnalysisWithReconcile(
     const rec = response.actionRecommendation;
     if (!rec) return response;
 
-    const entryPrice = rec.entryPrices?.[0] ?? fallbackEntryPrice;
-    if (entryPrice === undefined) return response;
+    const entryPrice = computeEntryPriceMid(
+        rec.entryPrices,
+        fallbackEntryPrice
+    );
+    if (entryPrice === undefined || !Number.isFinite(entryPrice))
+        return response;
 
     const { recommendation } = reconcileBullishActionRecommendation(
         rec,
