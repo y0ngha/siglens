@@ -2,6 +2,8 @@ import type {
     ActionRecommendation,
     AnalysisResponse,
     ReconciledActionLevels,
+    ReconcileResult,
+    ResolvedLevel,
 } from '@/domain/types';
 
 /**
@@ -31,19 +33,12 @@ export const SL_FALLBACK_ATR_MULTIPLIER = 1.5;
 /** Fallback TP 배수 — entryPrice + ATR*2.0 (risk:reward ≈ 1:1.33). */
 export const TP_FALLBACK_ATR_MULTIPLIER = 2.0;
 
-export type LevelSource = 'ai' | 'fallback' | 'missing';
-
-export interface ResolvedLevel {
-    readonly value: number | undefined;
-    readonly source: LevelSource;
-}
-
 function isFinitePositive(n: number | undefined): n is number {
     return typeof n === 'number' && Number.isFinite(n) && n > 0;
 }
 
 function hasUsableAtr(atr: number | undefined): atr is number {
-    return typeof atr === 'number' && Number.isFinite(atr) && atr > 0;
+    return isFinitePositive(atr);
 }
 
 /**
@@ -263,12 +258,6 @@ export function buildBullishRiskRewardText(
     const ratio = (tpPct / riskAbs).toFixed(1);
 
     return `손절 ${slLabel} vs 목표 ${tpLabel} → 위험:보상 = 1:${ratio}`;
-}
-
-export interface ReconcileResult {
-    readonly recommendation: ActionRecommendation;
-    readonly wasReconciled: boolean;
-    readonly changes: readonly string[];
 }
 
 /**

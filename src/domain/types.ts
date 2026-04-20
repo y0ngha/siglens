@@ -458,6 +458,19 @@ export interface Trendline {
     end: TrendlinePoint;
 }
 
+export type LevelSource = 'ai' | 'fallback' | 'missing';
+
+export interface ResolvedLevel {
+    readonly value: number | undefined;
+    readonly source: LevelSource;
+}
+
+export interface ReconcileResult {
+    readonly recommendation: ActionRecommendation;
+    readonly wasReconciled: boolean;
+    readonly changes: readonly string[];
+}
+
 export interface ValidatedActionPrices {
     entryPrices: number[];
     stopLoss: number | undefined;

@@ -17,7 +17,8 @@ export interface TooltipPosition {
 
 export function getTooltipPosition(
     triggerRect: DOMRect,
-    tooltipEl: HTMLElement
+    tooltipEl: HTMLElement,
+    viewportWidth: number
 ): TooltipPosition {
     const tooltipRect = tooltipEl.getBoundingClientRect();
     const aboveTop = triggerRect.top - tooltipRect.height - TOOLTIP_GAP;
@@ -27,8 +28,7 @@ export function getTooltipPosition(
             : aboveTop;
     const rawLeft =
         triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
-    const maxLeft =
-        window.innerWidth - tooltipRect.width - TOOLTIP_VIEWPORT_PADDING;
+    const maxLeft = viewportWidth - tooltipRect.width - TOOLTIP_VIEWPORT_PADDING;
     const left = Math.max(TOOLTIP_VIEWPORT_PADDING, Math.min(rawLeft, maxLeft));
 
     return { top, left };

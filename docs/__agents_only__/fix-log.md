@@ -72,6 +72,11 @@
 
 
 
+## [PR #342 Round 10 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: `LevelSource`, `ResolvedLevel`, `ReconcileResult` 타입이 구현 파일 `ai-levels.ts`에 정의됨
+- Rule: MISTAKES.md Architecture #1 — 모든 도메인 타입은 `domain/types.ts`에 중앙화
+- Context: 세 타입이 `generate-backtest.ts` 등 외부에서 소비되고 있어 경계 위반. `domain/types.ts`로 이동하고 `import type`으로 참조
+
 ## [PR #342 Round 9 | feat/multi-signal-backtest | 2026-04-20]
 - Violation: TP 배열 fallback 교체 후 오름차순 정렬 미보장
 - Rule: Domain Functions — 도메인 배열 계약(오름차순 TP)은 보정 후에도 유지
