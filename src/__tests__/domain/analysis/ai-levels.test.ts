@@ -292,6 +292,16 @@ describe('buildBullishExitText', () => {
             '목표가 $110.00 (+10.0%)에서 익절.'
         );
     });
+
+    it('진입가 이하인 TP는 건너뛴다', () => {
+        expect(buildBullishExitText(100, 95, [80])).toBe(
+            '손절 $95.00 (-5.0%).'
+        );
+    });
+
+    it('0인 TP는 건너뛴다', () => {
+        expect(buildBullishExitText(100, 95, [0])).toBe('손절 $95.00 (-5.0%).');
+    });
 });
 
 describe('buildBullishRiskRewardText', () => {
