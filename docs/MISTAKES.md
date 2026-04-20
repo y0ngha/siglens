@@ -558,4 +558,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → If multiple files reference the same type, move it to domain/types.ts for single source of truth
    ❌ interface TickerCategory { id: string; name: string; } in domain/constants/popular-tickers.ts
    ✅ export type TickerCategory = { id: string; name: string; } in domain/types.ts
+
+2. Pure utility functions placed in components/ instead of proper layers
+   → Pure functions with no React dependencies must be in domain/ (business logic) or lib/ (UI utilities)
+   → Utility functions extracted from components must go to utils/ subfolders, not remain in components/
+   ❌ Pure function in components/dashboard/utils/ or inlined in SectorSignalPanel.tsx
+   ✅ Pure function in domain/signals/ or dedicated utils/ subfolder with proper layer imports
 ```

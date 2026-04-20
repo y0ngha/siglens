@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #341 | worktree-feat+market-mixed-signal-conflict | 2026-04-20]
+- Violation: 여러 컴포넌트에서 참조하는 타입을 components/ 하위 독립 파일에 정의
+- Rule: MISTAKES.md Architecture #1 — 여러 파일이 참조하는 타입은 domain/types.ts에 통합
+- Context: ConflictInfo, StockWithConflict를 conflict-types.ts에 정의했으나 domain/types.ts로 이동해야 함
+
+- Violation: 이미 정의된 named type alias 대신 인라인 교차 타입 재사용
+- Rule: MISTAKES.md TypeScript #5 — 재사용 가능한 타입 패턴은 named alias 사용
+- Context: SignalStockCard.tsx에서 StockWithConflict 대신 StockSignalResult & { conflict?: ConflictInfo } 인라인 사용
+
 ## [PR #331 Round 6 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: radiogroup 키보드 네비게이션에서 DOM 포커스 미이동
 - Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴은 aria-checked 와 DOM focus 동기화 필수
@@ -16,10 +25,6 @@
 - Violation: 68~74 종목에 대한 Promise.allSettled 병렬 fetch — FMP rate limit 초과 가능
 - Rule: API 호출 시 provider rate limit 고려한 concurrency 제한 필수
 - Context: `sectorSignalsApi.ts` 가 `Promise.allSettled(SECTOR_STOCKS.map(...))` 로 전체 동시 실행. `fetchInChunks` 헬퍼로 청크 10개씩 순차 처리로 변경
-
-- Violation: 이미 계산된 `indicators.ma[period]` 가 있는데 S/R 감지기에서 `calculateMA` 를 직접 재호출
-- Rule: 중복 계산 방지 — indicator bag 우선 사용 후 fallback
-- Context: `detectSupportProximityBullish` / `detectResistanceProximityBearish` 가 `_indicators` 를 무시하고 `calculateMA(bars, period)` 만 호출. `indicators.ma[period] ?? calculateMA(bars, period)` 패턴으로 변경
 
 - Violation: `isSqueezePresent` 네이밍이 boolean 반환을 암시하지만 실제로는 객체 반환
 - Rule: MISTAKES.md #11 — 함수명은 반환 타입과 일치
@@ -125,10 +130,6 @@
 - Rule: CONVENTIONS.md domain/ 100% 커버리지 필수
 - Context: validate.ts 첫 번째 가드(`data === null || typeof data !== 'object'`)에 대한 테스트 케이스가 누락됨
 
-- Violation: validate.ts에서 for 루프 사용
-- Rule: CONVENTIONS.md 도메인 레이어 — for/while 금지, forEach/map/filter/reduce 사용
-- Context: cases 배열 순회 시 `for (let i = 0; ...)` 루프를 forEach로 교체해야 함
-
 - Violation: BacktestTabs filtered 파생값 useMemo 누락
 - Rule: MISTAKES.md #10 — 'use client' 컴포넌트에서 props/state 기반 파생값은 useMemo로 감싸야 함
 - Context: cases prop + safeActive 상태로부터 파생되는 filtered 배열이 useMemo 없이 매 렌더마다 재계산됨
@@ -136,3 +137,16 @@
 - Violation: generate-backtest.ts BacktestCase 타입 미임포트
 - Rule: TypeScript 타입 안전성 — 사용하는 타입은 반드시 import 선언
 - Context: `let allCases: BacktestCase[] = []`에서 BacktestCase를 참조하나 import 누락
+
+## [worktree-feat+market-mixed-signal-conflict | 2026-04-20]
+- Violation: ConflictInfo interface duplicated across two component files
+- Rule: CONVENTIONS.md — shared domain types must have single source of truth
+- Context: ConflictInfo defined in both component files; consolidated to conflict-types.ts
+
+- Violation: Complex three-way ternary for variant styling
+- Rule: CONVENTIONS.md — complex conditionals should extract to data structures
+- Context: Replaced ternary with VARIANT_BORDER and VARIANT_LABEL object maps
+
+- Violation: Tooltip using title attribute only — not announced on touch devices
+- Rule: CONVENTIONS.md accessibility — interactive elements require ARIA patterns
+- Context: Replaced title with button + aria-describedby + role=tooltip pattern
