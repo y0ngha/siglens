@@ -72,6 +72,11 @@
 
 
 
+## [PR #342 Round 9 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: TP 배열 fallback 교체 후 오름차순 정렬 미보장
+- Rule: Domain Functions — 도메인 배열 계약(오름차순 TP)은 보정 후에도 유지
+- Context: `reconcileBullishActionRecommendation`에서 `takeProfitPrices[0]`을 fallback으로 교체할 때 기존 `[1..]`과 역전될 수 있음. `filter(tp > entryPrice) + toSorted()`로 정렬 보장
+
 ## [PR #342 Round 3 | feat/multi-signal-backtest | 2026-04-20]
 - Violation: `'99'` hex alpha 접미사가 두 색상 상수에 중복
 - Rule: MISTAKES.md #15 — 반복되는 매직 문자열 상수화
