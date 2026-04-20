@@ -32,6 +32,12 @@ import { calculateIndicators, calculateMA } from '@/domain/indicators';
 import { detectSignals } from '@/domain/signals';
 import { simulateExit } from '@/domain/backtest/exit';
 import { signalTypeToTagLabel } from '@/domain/backtest/tags';
+import {
+    isValidBullishStopLoss,
+    isValidBullishTakeProfit,
+    resolveBullishStopLoss,
+    resolveBullishTakeProfit,
+} from '@/domain/backtest/ai-validation';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import { AI_SYSTEM_PROMPT, parseJsonResponse } from '@/infrastructure/ai/utils';
@@ -322,6 +328,7 @@ interface CandidateWithPrompt {
     bars: Bar[];
     fmpBars: FmpBar[];
     prompt: string;
+    atrAtEntry: number | undefined;
 }
 
 function buildPromptForCandidate(
@@ -356,6 +363,10 @@ async function collectAllCandidates(): Promise<CandidateWithPrompt[]> {
         const candidates = findEntryCandidates(bars, fmpBars);
         console.log(`  Found ${candidates.length} entry candidates`);
 
+        // 전체 히스토리 기준 ATR을 한 번만 계산. entry bar(c.idx)의 ATR을
+        // 후보 레벨에서 SL/TP 검증·fallback 기준으로 사용한다.
+        const fullIndicators = calculateIndicators(bars);
+
         const withPrompts = candidates.map(c => ({
             ticker,
             idx: c.idx,
@@ -365,6 +376,7 @@ async function collectAllCandidates(): Promise<CandidateWithPrompt[]> {
             bars,
             fmpBars,
             prompt: buildPromptForCandidate(ticker, bars, c.idx),
+            atrAtEntry: fullIndicators.atr[c.idx] ?? undefined,
         }));
 
         all = [...all, ...withPrompts];
@@ -495,14 +507,32 @@ function buildBacktestCase(
     c: CandidateWithPrompt,
     ai: AiAnalysisForBacktest
 ): BacktestCase {
-    const safeStopLoss =
-        ai.stopLoss !== undefined && ai.stopLoss < c.entryPrice
-            ? ai.stopLoss
-            : undefined;
-    const safeTakeProfit =
-        ai.takeProfit !== undefined && ai.takeProfit > c.entryPrice
-            ? ai.takeProfit
-            : undefined;
+    // Resolver: AI 값이 유효하면 사용, 아니면 ATR 기반 fallback, 둘 다 없으면 undefined.
+    // exit 시뮬레이션은 resolved 값(AI 또는 fallback)을 사용한다.
+    const slResolved = resolveBullishStopLoss(
+        ai.stopLoss,
+        c.entryPrice,
+        c.atrAtEntry
+    );
+    const tpResolved = resolveBullishTakeProfit(
+        ai.takeProfit,
+        c.entryPrice,
+        c.atrAtEntry
+    );
+    const safeStopLoss = slResolved.value;
+    const safeTakeProfit = tpResolved.value;
+
+    // Fallback 사용 시 로그로 관찰 가능성(observability) 확보.
+    if (slResolved.source === 'fallback') {
+        console.log(
+            `  [validate] ${c.ticker} ${c.entryDate}: AI SL ${ai.stopLoss} invalid → fallback ${safeStopLoss?.toFixed(2)}`
+        );
+    }
+    if (tpResolved.source === 'fallback') {
+        console.log(
+            `  [validate] ${c.ticker} ${c.entryDate}: AI TP ${ai.takeProfit} invalid → fallback ${safeTakeProfit?.toFixed(2)}`
+        );
+    }
 
     const exit = simulateExit({
         bars: c.bars,
@@ -528,6 +558,10 @@ function buildBacktestCase(
         `  [${c.ticker}] ${c.entryDate} → ${c.fmpBars[exit.exitIdx].date} | ${exit.returnPct.toFixed(1)}% (${result}, ${exitReason}, ai=${aiResult})`
     );
 
+    // aiAnalysis.stopLoss/takeProfit은 "AI가 제시한 값"의 의미를 유지한다.
+    // fallback 값을 여기에 넣으면 UI에서 AI 판단을 잘못 표현하게 되므로,
+    // 원래 AI 값이 유효할 때만 기록하고, 유효하지 않으면 undefined.
+    // exit 시뮬레이션에는 resolved 값이 쓰이므로 의미는 분리된다.
     return {
         ticker: c.ticker,
         entryDate: c.entryDate,
@@ -546,8 +580,20 @@ function buildBacktestCase(
             tags: c.signalTypes.map(signalTypeToTagLabel),
             entryRecommendation: ai.entryRecommendation,
             bullishTargets: ai.bullishTargets,
-            stopLoss: safeStopLoss,
-            takeProfit: safeTakeProfit,
+            stopLoss: isValidBullishStopLoss(
+                ai.stopLoss,
+                c.entryPrice,
+                c.atrAtEntry
+            )
+                ? ai.stopLoss
+                : undefined,
+            takeProfit: isValidBullishTakeProfit(
+                ai.takeProfit,
+                c.entryPrice,
+                c.atrAtEntry
+            )
+                ? ai.takeProfit
+                : undefined,
             riskLevel: ai.riskLevel,
         },
     };
