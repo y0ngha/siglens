@@ -150,11 +150,7 @@ function ActionRecommendationSection({
 }
 
 /** rec에서 reconciledLevels를 1회만 뽑아 전달하는 래퍼 — JSX 내 반복 접근 제거. */
-function ReconciledLevelsBlockFromRec({
-    rec,
-}: {
-    rec: ActionRecommendation;
-}) {
+function ReconciledLevelsBlockFromRec({ rec }: { rec: ActionRecommendation }) {
     const reconciled = rec.reconciledLevels;
     if (!reconciled) return null;
     if (reconciled.exit === '' && reconciled.riskReward === '') return null;

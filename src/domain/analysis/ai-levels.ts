@@ -191,11 +191,7 @@ function buildExitSlPart(
     entryPrice: number,
     stopLoss: number | undefined
 ): string | undefined {
-    if (
-        stopLoss === undefined ||
-        !Number.isFinite(stopLoss) ||
-        stopLoss <= 0
-    ) {
+    if (stopLoss === undefined || !Number.isFinite(stopLoss) || stopLoss <= 0) {
         return undefined;
     }
     return `손절 $${stopLoss.toFixed(2)} (${formatSignedPct(entryPrice, stopLoss)})`;
