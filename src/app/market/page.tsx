@@ -19,7 +19,7 @@ import {
     SIGNAL_SECTORS,
 } from '@/domain/constants/dashboard-tickers';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import { ROOT_KEYWORDS, SITE_NAME, SITE_URL} from '@/lib/seo';
+import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/lib/seo';
 
 const MARKET_TITLE = `오늘의 미국 주식, 섹터별 기술적 신호 | ${SITE_NAME}`;
 const MARKET_DESCRIPTION =
