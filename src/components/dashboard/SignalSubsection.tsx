@@ -1,4 +1,4 @@
-import type { StockSignalResult } from '@/domain/types';
+import type { StockWithConflict } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { SignalStockCard } from './SignalStockCard';
 
@@ -6,7 +6,7 @@ interface SignalSubsectionProps {
     title: string;
     marker: string; // ▲ ▼ △ ▽ ⚡
     variant: 'confirmed' | 'expected' | 'mixed';
-    stocks: readonly StockSignalResult[];
+    stocks: readonly StockWithConflict[];
     infoMessage?: string;
 }
 
@@ -51,6 +51,8 @@ export function SignalSubsection({
                         <>
                             <button
                                 type="button"
+                                title={infoMessage}
+                                aria-label="추가 정보"
                                 aria-describedby={tooltipId}
                                 className="text-secondary-500 hover:text-secondary-300 cursor-default text-xs transition-colors"
                             >

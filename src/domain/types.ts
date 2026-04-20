@@ -647,6 +647,15 @@ export interface SectorSignalsResult {
     readonly stocks: readonly StockSignalResult[];
 }
 
+export interface ConflictInfo {
+    readonly bullishCount: number;
+    readonly bearishCount: number;
+}
+
+export type StockWithConflict = StockSignalResult & {
+    readonly conflict?: ConflictInfo;
+};
+
 export type DashboardTimeframe = '15Min' | '1Hour' | '1Day';
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────

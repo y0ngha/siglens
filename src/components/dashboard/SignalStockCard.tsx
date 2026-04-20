@@ -1,11 +1,10 @@
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
-import type { StockSignalResult } from '@/domain/types';
+import type { StockWithConflict } from '@/domain/types';
 import { SignalBadge } from './SignalBadge';
-import type { ConflictInfo } from './conflict-types';
 
 interface SignalStockCardProps {
-    data: StockSignalResult & { conflict?: ConflictInfo };
+    data: StockWithConflict;
 }
 
 export function SignalStockCard({ data }: SignalStockCardProps) {
