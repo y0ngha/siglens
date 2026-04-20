@@ -212,7 +212,7 @@ export function buildBullishExitText(
 ): string {
     const validTps = (takeProfitPrices ?? []).filter(
         (tp): tp is number =>
-            typeof tp === 'number' && Number.isFinite(tp) && tp > 0
+            typeof tp === 'number' && Number.isFinite(tp) && tp > entryPrice
     );
 
     const parts = [

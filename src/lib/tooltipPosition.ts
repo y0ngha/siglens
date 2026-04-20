@@ -17,10 +17,9 @@ export interface TooltipPosition {
 
 export function getTooltipPosition(
     triggerRect: DOMRect,
-    tooltipEl: HTMLElement,
+    tooltipRect: DOMRect,
     viewportWidth: number
 ): TooltipPosition {
-    const tooltipRect = tooltipEl.getBoundingClientRect();
     const aboveTop = triggerRect.top - tooltipRect.height - TOOLTIP_GAP;
     const top =
         aboveTop < TOOLTIP_VIEWPORT_PADDING
