@@ -37,7 +37,7 @@ import {
     isValidBullishTakeProfit,
     resolveBullishStopLoss,
     resolveBullishTakeProfit,
-} from '@/domain/backtest/ai-validation';
+} from '@/domain/analysis/ai-levels';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import { AI_SYSTEM_PROMPT, parseJsonResponse } from '@/infrastructure/ai/utils';

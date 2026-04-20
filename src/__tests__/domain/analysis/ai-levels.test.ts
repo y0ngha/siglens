@@ -9,7 +9,7 @@ import {
     isValidBullishTakeProfit,
     resolveBullishStopLoss,
     resolveBullishTakeProfit,
-} from '@/domain/backtest/ai-validation';
+} from '@/domain/analysis/ai-levels';
 
 describe('isValidBullishStopLoss', () => {
     it.each<
