@@ -5,7 +5,8 @@
  *
  * 환경변수 (.env.local):
  *   FMP_API_KEY           — Financial Modeling Prep API 키
- *   GEMINI_FREE_API_KEY   — Google AI Studio 무료 API 키 (Gemini 2.5 Flash-lite)
+ *   GEMINI_API_KEY        — Google Gemini API 키 (paid tier, gemini-2.5-flash 이상 권장)
+ *   GEMINI_MODEL          — 선택, 기본 'gemini-2.5-flash'
  *
  * 출력: src/app/backtesting/data.json
  *
@@ -45,7 +46,8 @@ const TICKERS = [
 ];
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_API_KEY = process.env.FMP_API_KEY ?? '';
-const GEMINI_FREE_API_KEY = process.env.GEMINI_FREE_API_KEY ?? '';
+// Paid Gemini API 사용 — free tier는 일일 20회 한도로 93개 케이스 생성 불가.
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
 
 const FROM_DATE_FETCH = '2024-09-01';
 const DISPLAY_START_DATE = '2025-04-01';
@@ -58,15 +60,16 @@ const MIN_BARS = 120;
 const MIN_CONFLUENCE = 2;
 const HOLD_DAYS = 10;
 const CONTEXT_BARS = 120;
-const GEMINI_SLEEP_MS = 5_000;
+// Paid tier는 높은 RPM 한도를 제공하지만 보수적 sleep 유지 (quota protection).
+const GEMINI_SLEEP_MS = 2_000;
 const FMP_SLEEP_MS = 1_000;
 const MAX_RETRIES = 5;
 const DEFAULT_RETRY_AFTER_MS = 60_000;
-const GEMINI_MODEL = 'gemini-2.5-flash-lite';
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
 
 if (!FMP_API_KEY) throw new Error('FMP_API_KEY is required in .env.local');
-if (!GEMINI_FREE_API_KEY)
-    throw new Error('GEMINI_FREE_API_KEY is required in .env.local');
+if (!GEMINI_API_KEY)
+    throw new Error('GEMINI_API_KEY is required in .env.local');
 
 function sleep(ms: number): Promise<void> {
     return new Promise(r => setTimeout(r, ms));
@@ -203,7 +206,7 @@ async function callGeminiWithRetryAfter(prompt: string): Promise<string> {
         try {
             return await callGeminiScript(
                 prompt,
-                GEMINI_FREE_API_KEY,
+                GEMINI_API_KEY,
                 GEMINI_MODEL
             );
         } catch (err) {
