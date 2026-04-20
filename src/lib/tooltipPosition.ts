@@ -1,11 +1,4 @@
-/**
- * 트리거와 툴팁 엘리먼트의 bounding rect 기반으로 툴팁이 뷰포트 안에
- * 들어오는 `position: fixed` 좌표를 계산한다.
- *
- * - 기본은 트리거 위쪽 표시, 공간이 부족하면 아래로 뒤집는다.
- * - 좌우는 뷰포트 패딩을 고려한 center 정렬.
- * - 순수 함수 — DOM 쓰기 없음. 읽기만 수행(getBoundingClientRect).
- */
+/** triggerRect·tooltipRect 기반으로 툴팁의 `position: fixed` 좌표를 계산한다. 위쪽 기본, 공간 부족 시 아래로. */
 
 export const TOOLTIP_VIEWPORT_PADDING = 8;
 export const TOOLTIP_GAP = 6;

@@ -6,20 +6,7 @@ import type {
     ResolvedLevel,
 } from '@/domain/types';
 
-/**
- * AI SL/TP 검증, ATR 기반 fallback resolver, 그리고 ActionRecommendation 재조합.
- *
- * 백테스트 및 production AI 파이프라인에서 AI가 제시한 stopLoss/takeProfit의
- * 유효성을 검증하고, 무효하거나 누락된 경우 ATR 기반 fallback 값을 계산한다.
- *
- * 설계 배경:
- *   - 기존 inline 검증(entry 대비 단순 비교)은 $0.01만 낮아도 SL로 수용,
- *     SL 누락 시 exitReason='time'으로 빠지는 비율이 높았다 (29/100).
- *   - ATR 배수 한도로 터무니없이 먼 값을 걸러내고, 누락 시 ATR 기반
- *     합리적 fallback을 제공해 시뮬레이션 정확도를 높인다.
- *
- * 모든 함수는 순수 함수 — 외부 I/O/상태 없음.
- */
+/** AI SL/TP 검증 + ATR 기반 fallback resolver. AI 원본 필드를 수정하지 않고 reconciledLevels에 보정값을 병기한다. */
 
 /** ATR 배수 한도 — entryPrice - ATR*5 보다 더 낮은 SL은 비현실적으로 간주한다. */
 export const SL_MAX_ATR_MULTIPLIER = 5;
@@ -41,12 +28,7 @@ function hasUsableAtr(atr: number | undefined): atr is number {
     return isFinitePositive(atr);
 }
 
-/**
- * Bullish 매수 포지션의 stopLoss 유효성 검증.
- * - 숫자 유한 + 양수
- * - entryPrice보다 낮음 (bullish이므로)
- * - ATR이 있으면 entryPrice - ATR*SL_MAX_ATR_MULTIPLIER 이상
- */
+/** SL이 bullish 포지션에서 유효한지 검증한다 (양수·entry 미만·ATR 배수 범위 내). */
 export function isValidBullishStopLoss(
     sl: number | undefined,
     entryPrice: number,
@@ -61,12 +43,7 @@ export function isValidBullishStopLoss(
     return true;
 }
 
-/**
- * Bullish takeProfit 유효성 검증.
- * - 숫자 유한 + 양수
- * - entryPrice보다 높음
- * - ATR이 있으면 entryPrice + ATR*TP_MAX_ATR_MULTIPLIER 이하
- */
+/** TP가 bullish 포지션에서 유효한지 검증한다 (entry 초과·ATR 배수 범위 내). */
 export function isValidBullishTakeProfit(
     tp: number | undefined,
     entryPrice: number,
@@ -139,11 +116,7 @@ export function resolveBullishTakeProfit(
     return { value: undefined, source: 'missing' };
 }
 
-// ─── Text reconciliation (production pipeline) ──────────────────────────────
-//
-// AI가 제시한 SL/TP가 보정되면, actionRecommendation.exit / riskReward 텍스트는
-// 더 이상 실제 값과 일치하지 않는다. 결정론적으로 재생성해 UI 표시와 실제
-// 실행 레벨 사이의 괴리를 제거한다. (AI 재호출 없음.)
+// SL/TP 보정 후 exit · riskReward 텍스트를 AI 재호출 없이 결정론적으로 재생성한다.
 
 const ORDINAL_LABEL = ['1차', '2차', '3차', '4차', '5차'] as const;
 
@@ -151,20 +124,13 @@ function ordinalLabel(index: number): string {
     return ORDINAL_LABEL[index] ?? `${index + 1}차`;
 }
 
-/**
- * 진입가 대비 백분율을 signed 문자열로 포맷.
- * 예: 165 → "+3.2%", 158 → "-1.2%"
- */
+/** 진입가 대비 signed 백분율 문자열 반환 (+3.2% / -1.2% 형식). */
 function formatSignedPct(entryPrice: number, price: number): string {
     const pct = ((price - entryPrice) / entryPrice) * 100;
     return pct >= 0 ? `+${pct.toFixed(1)}%` : `${pct.toFixed(1)}%`;
 }
 
-/**
- * 유효 TP 배열을 exit 텍스트의 TP 파트로 포맷. 빈 배열이면 undefined.
- *   - 단일: "목표가 $164.90 (+2.3%)에서 익절"
- *   - 복수: "1차 목표 $X (+n%), 2차 목표 $Y (+m%)에서 익절"
- */
+/** 유효 TP 배열을 exit 텍스트 TP 파트로 포맷. 빈 배열이면 undefined. */
 function buildExitTpPart(
     entryPrice: number,
     validTps: readonly number[]
@@ -197,14 +163,7 @@ function buildExitSlPart(
     return `손절 $${stopLoss.toFixed(2)} (${formatSignedPct(entryPrice, stopLoss)})`;
 }
 
-/**
- * bullish 롱 포지션 기준으로 SL/TP 값을 기반으로 exit 텍스트를 생성.
- *
- * - 단일 TP: "목표가 $164.90 (+2.3%)에서 익절, 손절 $158.40 (-1.7%)."
- * - 복수 TP: "1차 목표 $164.90 (+2.3%), 2차 목표 $170.00 (+5.6%)에서 익절, 손절 $158.40 (-1.7%)."
- *
- * stopLoss 또는 takeProfitPrices[0]이 유한한 양수가 아니면 해당 파트를 생략한다.
- */
+/** bullish 포지션 SL/TP 기반 exit 텍스트 생성. 유효하지 않은 파트는 생략한다. */
 export function buildBullishExitText(
     entryPrice: number,
     stopLoss: number | undefined,
@@ -223,14 +182,7 @@ export function buildBullishExitText(
     return parts.length > 0 ? parts.join(', ') + '.' : '';
 }
 
-/**
- * bullish 롱 포지션의 위험:보상 비율 텍스트.
- *
- * 예: "손절 -1.7% vs 목표 +3.2% → 위험:보상 = 1:1.9"
- *
- * - slPct는 부호를 유지(음수)하고, ratio는 절대값 기반(reward/|risk|)으로 계산한다.
- * - stopLoss 또는 takeProfitPrices[0]가 유한한 양수가 아니거나 riskAbs === 0 이면 빈 문자열을 반환.
- */
+/** bullish 롱 포지션의 signed 위험:보상 비율 텍스트. SL/TP 중 하나라도 무효면 빈 문자열. */
 export function buildBullishRiskRewardText(
     entryPrice: number,
     stopLoss: number | undefined,
@@ -260,12 +212,7 @@ export function buildBullishRiskRewardText(
     return `손절 ${slLabel} vs 목표 ${tpLabel} → 위험:보상 = 1:${ratio}`;
 }
 
-/**
- * 보정 사유 문장 생성. 4가지 경우를 구분한다.
- * - SL+TP 누락 / SL+TP 무효
- * - SL만 누락 / SL만 무효
- * - TP만 누락 / TP만 무효
- */
+/** 보정 경위 문장 생성 (SL·TP 누락·무효 여부 조합 4가지). */
 function buildReconcileReason(
     slWas: boolean,
     tpWas: boolean,
@@ -287,18 +234,7 @@ function buildReconcileReason(
         : 'AI가 제시한 목표가가 내부 기준을 벗어나 보정했습니다.';
 }
 
-/**
- * bullish ActionRecommendation에 대해 SL/TP 유효성 검증 + fallback 계산을 수행한 뒤,
- * 필요한 경우 보정값을 `reconciledLevels` 필드에 **병기**한다.
- *
- * AI 원본 필드(stopLoss, takeProfitPrices, exit, riskReward)는 **절대 수정하지 않는다.**
- * 보정값은 reconciledLevels에만 담기며, UI는 AI 값과 보정값을 병기할 수 있다.
- *
- * - AI가 entryRecommendation='avoid' 라면 의도적으로 레벨을 비운 것이므로 보정하지 않는다.
- * - SL 또는 takeProfitPrices[0]이 AI 기준 유효 → reconciledLevels를 생성하지 않는다.
- * - SL 또는 TP[0]이 fallback 으로 치환된 경우에만 reconciledLevels를 추가한다.
- * - TP 배열 중 [0]만 보정되며, [1..]은 AI 값 그대로 보존된다.
- */
+/** bullish 추천에 SL/TP 보정을 적용한다. AI 원본 필드는 수정하지 않고 reconciledLevels에만 보정값을 병기한다. */
 export function reconcileBullishActionRecommendation(
     rec: ActionRecommendation,
     entryPrice: number,
@@ -385,11 +321,7 @@ export function reconcileBullishActionRecommendation(
     };
 }
 
-/**
- * AI가 제시한 entryPrices 배열을 중간값(midpoint)으로 환산한다.
- * - 유한한 양수만 골라 산술 평균을 계산
- * - 유효 원소가 없으면 fallback 반환
- */
+/** entryPrices 중 유효한 양수의 산술 평균. 유효 원소가 없으면 fallback 반환. */
 function computeEntryPriceMid(
     entryPrices: readonly number[] | undefined,
     fallback: number | undefined
@@ -403,16 +335,7 @@ function computeEntryPriceMid(
     return fallback;
 }
 
-/**
- * AnalysisResponse의 actionRecommendation에 reconciliation을 적용한다.
- *
- * - actionRecommendation이 없으면 원본 그대로 반환
- * - bullish 외 trend라도 스키마는 long-only이므로 reconcile을 수행 (invalid는 fallback)
- * - entryPrice는 AI가 제시한 entryPrices의 중간값 → fallbackEntryPrice 순으로 결정
- * - entryPrice를 결정할 수 없으면 원본 반환 (fallback 계산 불가)
- *
- * AI 재호출 없이 결정론적으로 reconciledLevels를 병기한다.
- */
+/** AnalysisResponse에 reconciledLevels를 병기한다. entryPrice 결정 불가 시 원본 반환. */
 export function postProcessAnalysisWithReconcile(
     response: AnalysisResponse,
     fallbackEntryPrice: number | undefined,
