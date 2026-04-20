@@ -1,114 +1,823 @@
 {
   "meta": {
     "period": "2025.04 – 2026.04",
-    "totalCases": 100,
-    "winRate": 60,
-    "aiWinRate": 57.1,
-    "aiTrendHitRate": 20,
+    "totalCases": 76,
+    "winRate": 71.1,
+    "aiWinRate": 40,
+    "aiTrendHitRate": 39.5,
     "tickerCount": 10
   },
   "cases": [
     {
-      "ticker": "TSLA",
-      "entryDate": "2025-08-07",
-      "entryPrice": 322.27,
-      "exitDate": "2025-08-08",
-      "exitPrice": 324.51,
-      "holdingDays": 1,
-      "returnPct": 0.7,
+      "ticker": "MSTR",
+      "entryDate": "2025-04-14",
+      "entryPrice": 311.45,
+      "exitDate": "2025-04-21",
+      "exitPrice": 321,
+      "holdingDays": 4,
+      "returnPct": 3.07,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
-      "aiResult": "win",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "TSLA 주가는 현재 혼조세를 보이고 있습니다. 단기적으로는 강한 매수세와 함께 상승 모멘텀을 보이지만, 장기 추세 지표들은 여전히 하락세를 가리키고 있습니다.\n상대강도지수(RSI)와 스토캐스틱(Stochastic)은 상승세를 나타내며 단기적인 매수 압력이 있음을 시사",
-        "tags": [
-          "MACD 골든크로스",
-          "BB 수축 강세"
-        ]
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "entryDate": "2025-08-20",
-      "entryPrice": 223.81,
-      "exitDate": "2025-09-04",
-      "exitPrice": 235.68,
-      "holdingDays": 10,
-      "returnPct": 5.3,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "AMZN 주식은 현재 단기적인 조정 또는 횡보 구간에 있지만, 전반적인 추세는 여전히 강세입니다.\nMACD, OBV, Parabolic SAR, Supertrend 지표는 강세 신호를 보내고 있으며, SMC 시장 구조 분석에서도 강세 추세가 확인됩니다. 그러나 단기적으",
+        "summary": "현재 주가는 단기 상승 모멘텀을 보이고 있으나 중요한 저항 구간에 직면해 있습니다.\nMACD 골든크로스와 CMF 지표 상승은 긍정적 매수 신호를 나타내지만, 가격이 이치모쿠 구름대와 120일 이동평균선, 그리고 거래량 집중대(POC) 아래에 있어 저항 돌파 여부가 관건입니다.\n따라서 현재는 중립적인 추세이며, 저항 돌파 또는 의미 있는 지지선으로의 조정 시까지 관망하는 전략이 유효해 보입니다. 리스크는 보통 수준입니다.",
         "tags": [
-          "Supertrend 전환",
-          "지지선 근접"
+          "EMA 골든크로스",
+          "MACD 골든크로스",
+          "Parabolic SAR 전환"
         ]
       }
     },
     {
       "ticker": "PLTR",
-      "entryDate": "2025-08-21",
-      "entryPrice": 156.18,
-      "exitDate": "2025-09-05",
-      "exitPrice": 153.11,
-      "holdingDays": 10,
-      "returnPct": -1.97,
+      "entryDate": "2025-04-15",
+      "entryPrice": 98.4,
+      "exitDate": "2025-04-23",
+      "exitPrice": 100.34,
+      "holdingDays": 5,
+      "returnPct": 1.97,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "win",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "최근 강력한 상승 모멘텀으로 추세가 강세로 전환되었습니다.\nMACD 골든크로스, OBV 상승, 이치모쿠 구름대 상향 돌파 등 다수의 기술적 지표가 강세 신호를 보내고 있습니다.\n가격이 주요 저항대였던 볼륨 프로파일 가치 영역 상단(VAH)과 이치모쿠 구름대를 돌파하여 새로운 지지선으로 작용할 가능성이 있습니다.\n다만, 스토캐스틱 등 일부 단기 지표가 과매수 영역에 진입하여 단기적인 가격 조정이나 횡보 가능성도 존재합니다.",
+        "tags": [
+          "Supertrend 전환",
+          "Ichimoku 구름 돌파",
+          "CCI 100 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "CRWD",
+      "entryDate": "2025-04-15",
+      "entryPrice": 392.8,
+      "exitDate": "2025-04-21",
+      "exitPrice": 362,
+      "holdingDays": 3,
+      "returnPct": -7.84,
       "signalType": "buy",
       "result": "loss",
-      "exitReason": "time",
-      "aiResult": "win",
+      "exitReason": "stop_loss",
+      "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "주가는 단기적으로 강한 하락 추세에 있습니다.\n대부분의 모멘텀 지표(MACD, DMI, OBV, MFI, CCI, Williams %R)는 매도 압력이 강해지고 있음을 나타내며, RSI 또한 하락 중입니다. StochRSI와 Williams %R은 과매도 영역에 진입하",
+        "summary": "강력한 매수세 유입으로 단기 추세가 강세로 전환되었습니다.\nMACD 골든크로스와 같은 긍정적 신호가 다수 포착되었으나, 일부 지표는 과매수 상태로 단기 조정 가능성을 시사합니다.\n현재 가격은 주요 지지선인 365.08 위에 있으며, 398.60에서 저항에 직면할 수 있습니다.",
         "tags": [
-          "BB 하단 반등",
-          "지지선 근접"
+          "Supertrend 전환",
+          "Ichimoku 구름 돌파",
+          "CCI 100 돌파"
         ]
       }
     },
     {
       "ticker": "TSLA",
-      "entryDate": "2025-08-22",
-      "entryPrice": 340.01,
-      "exitDate": "2025-08-25",
-      "exitPrice": 345.33,
+      "entryDate": "2025-04-25",
+      "entryPrice": 284.95,
+      "exitDate": "2025-04-28",
+      "exitPrice": 291.85,
       "holdingDays": 1,
-      "returnPct": 1.56,
+      "returnPct": 2.42,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "강력한 거래량과 함께 단기 상승 추세로 전환되었습니다.\nMACD 골든크로스 등 긍정적 신호가 있으나, 볼린저 밴드 상단 및 주요 이동평균선 저항에 근접하여 단기 조정 위험이 존재합니다.\n추격 매수보다는 조정 시 매수 기회를 찾는 것이 바람직합니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Parabolic SAR 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "MSFT",
+      "entryDate": "2025-05-01",
+      "entryPrice": 425.4,
+      "exitDate": "2025-05-02",
+      "exitPrice": 436.99,
+      "holdingDays": 1,
+      "returnPct": 2.72,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "TSLA는 장기적으로는 상승 추세에 있으나, 단기적으로는 모멘텀 약화 및 저항에 직면해 있습니다.\nRSI, MACD 히스토그램, CCI, CMF는 하락하며 매수 모멘텀이 약화되고 있음을 시사합니다. OBV 하락은 가격 상승에 대한 매수 확신 부족을 나타내는 약세 다이버",
+        "summary": "강력한 갭 상승으로 주요 저항을 돌파하며 단기 상승 추세로 전환되었습니다.\nMACD와 같은 추세 지표는 강세를 보이지만, RSI와 스토캐스틱은 극심한 과매수 상태로 단기 조정 가능성을 시사합니다.\n최근 형성된 지지 구간인 417-425달러까지의 가격 조정을 기다린 후 매수하는 것이 유리해 보입니다. 현재 추격 매수는 위험도가 높습니다.",
         "tags": [
-          "MACD 골든크로스",
-          "BB 수축 강세"
+          "Supertrend 전환",
+          "Ichimoku 구름 돌파",
+          "Keltner 상단 돌파"
         ]
       }
     },
     {
-      "ticker": "MSTR",
-      "entryDate": "2025-08-22",
-      "entryPrice": 358.13,
-      "exitDate": "2025-09-08",
-      "exitPrice": 329.9,
+      "ticker": "GOOGL",
+      "entryDate": "2025-05-02",
+      "entryPrice": 164.03,
+      "exitDate": "2025-05-07",
+      "exitPrice": 154.5,
+      "holdingDays": 3,
+      "returnPct": -5.81,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "stop_loss",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "단기적으로 강한 상승 모멘텀을 보이고 있으나, 장기 이동평균선과 이치모쿠 구름대 아래에 위치하여 전반적인 추세는 혼조세입니다.\nMACD 골든크로스 등 긍정적 신호에도 불구하고, OBV 지표가 하락하며 가격 상승을 뒷받침하지 못하는 약세 다이버전스가 나타나고 있습니다.\n현재 가격은 볼륨 프로파일 가치 영역 하단(VAL)인 164.09$와 60일 이동평균선인 165.78$ 부근의 강한 저항에 직면해 있습니다.",
+        "tags": [
+          "Supertrend 전환",
+          "CCI 100 돌파",
+          "DMI 골든크로스"
+        ]
+      }
+    },
+    {
+      "ticker": "META",
+      "entryDate": "2025-05-02",
+      "entryPrice": 597.02,
+      "exitDate": "2025-05-12",
+      "exitPrice": 614.25,
+      "holdingDays": 6,
+      "returnPct": 2.89,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "단기적으로 매우 강력한 상승 모멘텀이 발생하여 주요 저항선에 도달했습니다.\nMACD 골든크로스와 스퀴즈 모멘텀 상승 신호는 긍정적이지만, 다수의 오실레이터 지표가 과매수 상태로 단기 조정의 위험도 존재합니다.\n현재 가격대는 주요 매물대(POC)와 장기 이동평균선이 겹치는 중요한 변곡점으로, 이 저항 구간을 돌파하는지 여부가 향후 방향성을 결정할 것입니다.",
+        "tags": [
+          "Supertrend 전환",
+          "CCI 100 돌파",
+          "Parabolic SAR 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "AMZN",
+      "entryDate": "2025-05-12",
+      "entryPrice": 208.64,
+      "exitDate": "2025-05-27",
+      "exitPrice": 206.02,
       "holdingDays": 10,
-      "returnPct": -7.88,
+      "returnPct": -1.26,
       "signalType": "buy",
       "result": "loss",
       "exitReason": "time",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "MSTR의 전반적인 추세는 여러 중기 지표(MACD, DMI, Supertrend, Parabolic SAR)가 하락세를 가리키며 약세입니다. 최근 시장 구조(SMC)에서도 365.70에서 약세 CHOCH(Change of Character)가 발생하여 하락 추세가 강",
+        "summary": "최근 강력한 갭 상승으로 강세 추세로의 전환 신호가 나타났습니다. MACD와 같은 추세 지표는 강한 매수 모멘텀을 보이고 있으나, RSI와 스토캐스틱은 극심한 과매수 상태로 단기 조정 가능성을 경고합니다.\n\n주가는 현재 120일 이동평균선과 이치모쿠 구름 상단 등 주요 장기 저항선에 근접해 있습니다. 과매수 부담으로 인해 저항 돌파에 실패할 경우, 최근 발생한 가격 갭($195.00~$205.75)까지 되돌림이 나타날 수 있습니다.",
+        "tags": [
+          "Supertrend 전환",
+          "CCI 100 돌파",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "TSLA",
+      "entryDate": "2025-05-12",
+      "entryPrice": 318.38,
+      "exitDate": "2025-05-13",
+      "exitPrice": 325.1,
+      "holdingDays": 1,
+      "returnPct": 2.11,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 단기 상승 추세가 형성되었으며, 주요 저항선을 돌파하고 추세 전환 신호(Bullish CHOCH)가 나타났습니다.\n대부분의 추세 지표는 강세를 나타내지만, RSI와 스토캐스틱 등 다수의 모멘텀 지표가 과매수 상태로 단기 조정 또는 횡보 가능성을 시사합니다.\n최근 발생한 약세 캔들 패턴은 무시되고 가격이 상승하여 매수세의 우위를 보여줍니다.\n현재 가격은 과도하게 상승한 상태이므로, 295.00 ~ 311.",
+        "tags": [
+          "Supertrend 전환",
+          "CCI 100 돌파",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "PLTR",
+      "entryDate": "2025-05-13",
+      "entryPrice": 128.1,
+      "exitDate": "2025-05-14",
+      "exitPrice": 130.6,
+      "holdingDays": 1,
+      "returnPct": 1.95,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세를 보이며 최근 고점을 돌파했습니다. 이동평균선 정배열과 긍정적인 거래량 지표(OBV, CMF)가 추세를 뒷받침합니다.\n그러나 RSI, 스토캐스틱 등 다수 모멘텀 지표가 과매수 구간에 진입하여 단기적인 가격 조정 또는 횡보 가능성을 시사하고 있습니다.\n주요 지지 구간은 115.01 ~ 120.94달러이며, 저항은 이전 고점인 130.60달러입니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "Parabolic SAR 전환",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "CRWD",
+      "entryDate": "2025-05-27",
+      "entryPrice": 472.22,
+      "exitDate": "2025-06-03",
+      "exitPrice": 480,
+      "holdingDays": 5,
+      "returnPct": 1.65,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세로, 신고가를 경신하며 강한 매수세를 보이고 있습니다.\nMACD와 같은 추세 지표는 강세를 나타내지만, 스토캐스틱과 CCI는 과매수 신호를 보내 단기 조정 가능성을 시사합니다.\n최근 'Three Outside Up' 캔들 패턴이 나타나 상승 추세를 지지하고 있습니다.\n현재 주가는 과도하게 상승한 상태이므로, 448.88 ~ 459.60달러 지지 구간으로의 조정 시 매수를 고려하는 것이 더 유리할 수 있습니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "META",
+      "entryDate": "2025-06-02",
+      "entryPrice": 670.9,
+      "exitDate": "2025-06-16",
+      "exitPrice": 702.12,
+      "holdingDays": 10,
+      "returnPct": 4.65,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "time",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 확인되었으며, 최근 거래량 급증과 함께 주요 저항선을 돌파했습니다.\n그러나 RSI 등 일부 지표가 과매수 구간에 근접하여 단기 조정 가능성이 존재합니다.\n따라서 조정 시 지지선을 확인 후 접근하는 것이 유리해 보입니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "MSTR",
+      "entryDate": "2025-06-04",
+      "entryPrice": 378.1,
+      "exitDate": "2025-06-18",
+      "exitPrice": 369.03,
+      "holdingDays": 10,
+      "returnPct": -2.4,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "time",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "현재 주가는 단기적으로 방향성 없는 횡보 국면에 있으며, 장기 이동평균선은 상승 추세를 지지하고 있습니다.\nMACD의 약세 신호가 완화되고 RSI는 중립이지만, 가격이 주요 단기 저항선 아래에 위치하여 상방 압력이 제한되고 있습니다.\n주요 지지선은 356~358달러 구간이며, 저항선은 394~399달러 구간에 형성되어 있습니다.\n단기 신호가 혼재되어 있어, 지지선에서의 반등을 확인하거나 저항선 돌파 시까지 관망하는 전략이 유효해 보입니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "DMI 골든크로스",
+          "MACD 히스토그램 강세 수렴"
+        ]
+      }
+    },
+    {
+      "ticker": "TSLA",
+      "entryDate": "2025-06-06",
+      "entryPrice": 295.14,
+      "exitDate": "2025-06-23",
+      "exitPrice": 348.68,
+      "holdingDays": 10,
+      "returnPct": 18.14,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "time",
+      "aiResult": "loss",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "주가는 강력한 단기 하락 추세에 있으며, 대부분의 추세 지표가 약세를 가리키고 있습니다.\nMACD와 DMI는 하락 모멘텀이 지속되고 있음을 확인시켜주며, 가격은 이치모쿠 구름대와 같은 주요 지지선을 하향 돌파했습니다.\n다만, 스토캐스틱과 같은 단기 오실레이터는 과매도 영역에 진입하여 기술적 반등 가능성을 시사하고 있으나, 추세가 워낙 강해 신뢰도는 낮습니다.",
         "tags": [
           "BB 하단 반등",
+          "Ichimoku 구름 돌파",
+          "지지선 근접"
+        ]
+      }
+    },
+    {
+      "ticker": "GOOGL",
+      "entryDate": "2025-06-09",
+      "entryPrice": 176.09,
+      "exitDate": "2025-06-10",
+      "exitPrice": 176.77,
+      "holdingDays": 1,
+      "returnPct": 0.39,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "주가는 단기 상승 추세에 있으며, 이동평균선 정배열과 수퍼트렌드 등 다수 지표가 강세 신호를 보내고 있습니다.\n그러나 RSI와 CCI가 과매수 구간에 진입하고 가격이 볼린저 밴드 상단에 도달하여 단기적인 조정이나 횡보 가능성이 제기됩니다.\n현재 가격은 주요 저항선인 176.77달러에 근접해 있으며, 돌파 시 추가 상승이 기대되나 실패 시 170달러 초반까지 되돌림이 나타날 수 있습니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "CMF 매집 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "AMZN",
+      "entryDate": "2025-06-09",
+      "entryPrice": 216.98,
+      "exitDate": "2025-06-24",
+      "exitPrice": 212.77,
+      "holdingDays": 10,
+      "returnPct": -1.94,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "time",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 진행 중이며, 이동평균선이 정배열을 이루고 있습니다.\n그러나 RSI, 스토캐스틱 등 다수 오실레이터 지표가 과매수 구간에 진입하여 단기적인 가격 조정 또는 기간 조정의 가능성이 높아진 상태입니다.\n주요 지지선은 206.80(20일 이동평균선)과 203.64(POC)이며, 저항선은 220.54(VAH)입니다.\n결론적으로, 추세는 강세이지만 과열 신호로 인해 신규 진입은 조정 시점을 기다리는 것이 바람직합니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "PLTR",
+      "entryDate": "2025-06-11",
+      "entryPrice": 136.39,
+      "exitDate": "2025-06-16",
+      "exitPrice": 140,
+      "holdingDays": 3,
+      "returnPct": 2.65,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 지속되고 있으며, 모든 주요 이동평균선이 정배열 상태입니다. 스마트 머니 개념(SMC) 분석상 연이은 구조적 고점 돌파(BOS)로 상승 모멘텀이 확인됩니다.\n다만, 스토캐스틱 등 일부 단기 지표가 과열 신호를 보내고 있어, 추격 매수보다는 조정 시 지지 구간을 확인하는 전략이 유효해 보입니다.\n주요 저항선은 기간 고점인 140.00달러이며, 주요 지지선은 129.50달러 부근입니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "Parabolic SAR 전환",
+          "MACD 히스토그램 강세 수렴"
+        ]
+      }
+    },
+    {
+      "ticker": "NVDA",
+      "entryDate": "2025-06-24",
+      "entryPrice": 147.9,
+      "exitDate": "2025-06-25",
+      "exitPrice": 153.13,
+      "holdingDays": 1,
+      "returnPct": 3.54,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 지속되고 있으며, 다수의 추세 지표가 이를 뒷받침하고 있습니다.\n그러나 RSI, 스토캐스틱 등 단기 모멘텀 지표가 과매수 구간에 진입하고 MACD가 약세 신호를 보여, 단기적인 가격 조정이나 횡보 가능성이 있습니다.\n현재 가격은 주요 지지선과 이격이 벌어져 있어 추격 매수는 위험 부담이 따르므로, 조정 시 지지선 부근에서 매수 기회를 찾는 것이 유리해 보입니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "CMF 매집 전환",
+          "BB 수축 강세"
+        ]
+      }
+    },
+    {
+      "ticker": "META",
+      "entryDate": "2025-06-24",
+      "entryPrice": 712.2,
+      "exitDate": "2025-07-09",
+      "exitPrice": 732.78,
+      "holdingDays": 10,
+      "returnPct": 2.89,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "time",
+      "aiResult": "loss",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 지속되고 있으며, 이동평균선 정배열과 DMI 지표가 이를 뒷받침합니다.\n그러나 RSI와 MACD 등 일부 모멘텀 지표는 약화 신호를 보이고 있으며, Williams %R은 과매수 상태로 단기 조정 가능성을 시사합니다.\n최근 '상승 장악 확인형(Three Inside Up)' 캔들 패턴이 나타나 단기 상승 심리를 지지하고 있습니다.\n현재 가격은 주요 저항선인 713.",
+        "tags": [
+          "CMF 매집 전환",
+          "Parabolic SAR 전환",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "TSLA",
+      "entryDate": "2025-06-24",
+      "entryPrice": 340.47,
+      "exitDate": "2025-06-27",
+      "exitPrice": 319,
+      "holdingDays": 3,
+      "returnPct": -6.31,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "stop_loss",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "단기적으로 상승 추세 전환을 시도하고 있으나, 중요한 저항 구간에 도달하여 혼조세를 보이고 있습니다.\nMACD와 RSI 같은 모멘텀 지표는 상승 신호를 보내고 있지만, 최근 '하락 마루보즈' 캔들 패턴과 CMF 지표 하락은 매도 압력이 존재함을 시사합니다.\n현재 가격은 거래량 프로파일의 주요 저항선(VAH 341.09)에 근접해 있어, 이 가격대를 돌파하는지 여부가 향후 방향성을 결정할 중요한 변수입니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "DMI 골든크로스",
+          "Parabolic SAR 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "MSTR",
+      "entryDate": "2025-06-24",
+      "entryPrice": 377.02,
+      "exitDate": "2025-06-25",
+      "exitPrice": 384.78,
+      "holdingDays": 1,
+      "returnPct": 2.06,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "현재 주가는 장기 이동평균선 위에 있어 긍정적이나, 단기적으로는 방향성 없는 횡보 국면에 있습니다.\nMACD와 OBV 같은 모멘텀 지표는 약세를 보이지만, 스토캐스틱 RSI는 과매도 상태이며 최근 역망치형과 족집게 바닥형 캔들 패턴이 나타나 기술적 반등 가능성을 시사합니다.\n주가는 20일 이동평균선(약 376) 부근의 지지와 볼륨 프로파일 저항선(약 385) 사이에서 압축되고 있으며, '스퀴즈' 상태는 조만간 변동성 확대를 예고합니다.",
+        "tags": [
+          "BB 하단 반등",
+          "Ichimoku 구름 돌파",
+          "CCI 100 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "CRWD",
+      "entryDate": "2025-06-25",
+      "entryPrice": 494.09,
+      "exitDate": "2025-06-26",
+      "exitPrice": 500.41,
+      "holdingDays": 1,
+      "returnPct": 1.28,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "주가는 이동평균선 정배열과 지속적인 고점 돌파로 강한 상승 추세를 보이고 있습니다.\n그러나 MACD 데드크로스, 스토캐스틱 과매수, OBV 하락 다이버전스 등 단기 조정 가능성을 시사하는 경고 신호가 다수 나타나고 있습니다.\n최근 약세 캔들 패턴이 출현하여 단기 고점 형성 가능성이 있으며, 신규 진입 시에는 500.41달러의 전고점 저항과 476.72달러의 20일 이동평균선 지지를 주시해야 합니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "Parabolic SAR 전환",
+          "BB 수축 강세"
+        ]
+      }
+    },
+    {
+      "ticker": "AMZN",
+      "entryDate": "2025-06-27",
+      "entryPrice": 223.3,
+      "exitDate": "2025-07-14",
+      "exitPrice": 225.69,
+      "holdingDays": 10,
+      "returnPct": 1.07,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "time",
+      "aiResult": "loss",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 진행 중이며, 최근 대량 거래량을 동반하여 직전 고점을 돌파했습니다.\n그러나 RSI, Williams %R 등 다수 지표가 과매수 상태를 나타내고 있어 단기적인 가격 조정 가능성이 높습니다.\n현재 가격은 저항 구간에 진입했으며, 신규 진입은 위험 부담이 큽니다. 조정 시 지지선인 212.30달러 부근에서 지지 여부를 확인하는 것이 중요합니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "CMF 매집 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "AAPL",
+      "entryDate": "2025-06-30",
+      "entryPrice": 205.17,
+      "exitDate": "2025-07-01",
+      "exitPrice": 209.48,
+      "holdingDays": 1,
+      "returnPct": 2.1,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "단기 상승 추세로 전환하며 MACD 골든크로스 등 긍정적 신호가 나타났습니다.\n다만 일부 지표는 단기 과열을 시사하여 조정 가능성이 있습니다.\n현재 205.57 부근의 저항에 직면해 있으며, 201.19의 지지 여부가 중요합니다.\n강한 매수세와 함께 저항 돌파를 시도하고 있으나, 조정 후 지지를 확인하는 전략이 유효할 수 있습니다.",
+        "tags": [
+          "Ichimoku 구름 돌파",
+          "CCI 100 돌파",
+          "Squeeze 양전환"
+        ]
+      }
+    },
+    {
+      "ticker": "MSTR",
+      "entryDate": "2025-07-11",
+      "entryPrice": 434.58,
+      "exitDate": "2025-07-14",
+      "exitPrice": 438.84,
+      "holdingDays": 1,
+      "returnPct": 0.98,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "현재 주가는 이동평균선 정배열과 지속적인 고점 돌파(BOS)로 강력한 상승 추세에 있습니다.\n다수의 모멘텀 지표는 강세를 나타내지만, RSI, 스토캐스틱 등 오실레이터 지표들은 과매수 구간에 진입하여 단기적인 가격 조정 또는 횡보 가능성을 시사합니다.\n주요 지지선은 거래량 프로파일 가치 영역 상단인 417.24이며, 저항선은 전고점인 438.84입니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "CMF 매집 전환",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "PLTR",
+      "entryDate": "2025-07-14",
+      "entryPrice": 149.15,
+      "exitDate": "2025-07-15",
+      "exitPrice": 149.57,
+      "holdingDays": 1,
+      "returnPct": 0.28,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 진행 중이며, 최근 거래일에 높은 거래량을 동반한 장대양봉으로 볼린저 밴드 상단을 돌파했습니다.\nMACD와 같은 추세 지표는 강세 신호를 보내고 있으나, RSI와 Williams %R 등 다수의 오실레이터 지표가 과매수 구간에 진입하여 단기적인 가격 조정 또는 기간 조정의 가능성이 높아졌습니다.\n현재 가격은 주요 저항선인 기간 고점에 근접해 있습니다. 추격 매수보다는 조정 시 지지 구간을 확인하는 전략이 유효해 보입니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Parabolic SAR 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "TSLA",
+      "entryDate": "2025-07-18",
+      "entryPrice": 329.65,
+      "exitDate": "2025-07-24",
+      "exitPrice": 317,
+      "holdingDays": 4,
+      "returnPct": -3.84,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "stop_loss",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "단기 상승 모멘텀이 강하게 나타나고 있습니다. MACD 골든크로스 및 거래량 증가가 긍정적이지만, 현재 가격은 주요 저항선인 볼륨 프로파일 VAH(329.98)에 도달했습니다.\n스토캐스틱 지표가 과매수 구간에 진입하여 단기 조정 가능성을 시사하며, ADX 수치가 낮아 아직 명확한 추세는 형성되지 않았습니다.\n결론적으로, 저항 돌파 시 추가 상승을 기대할 수 있으나, 돌파 실패 시 조정 가능성이 공존하는 중요한 변곡점에 위치하고 있습니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "Ichimoku 구름 돌파",
+          "CMF 매집 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "AMZN",
+      "entryDate": "2025-07-21",
+      "entryPrice": 229.3,
+      "exitDate": "2025-07-22",
+      "exitPrice": 229.69,
+      "holdingDays": 1,
+      "returnPct": 0.17,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "AMZN은 이동평균선 정배열과 다수의 강세 지표에 힘입어 뚜렷한 상승 추세에 있습니다.\n그러나 스토캐스틱 등 일부 모멘텀 지표가 과매수 신호를 보내고 MACD 모멘텀이 약화되고 있어 단기적인 가격 조정이나 횡보 가능성이 존재합니다.\n주요 지지선은 20일 이동평균선이 위치한 221.20달러이며, 저항선은 기간 고점인 242.52달러입니다.\n전반적인 추세는 긍정적이지만, 과열 신호로 인해 신규 진입은 가격 조정을 기다리는 것이 유리해 보입니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "CMF 매집 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "MSFT",
+      "entryDate": "2025-07-25",
+      "entryPrice": 513.71,
+      "exitDate": "2025-07-31",
+      "exitPrice": 518.29,
+      "holdingDays": 4,
+      "returnPct": 0.89,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "MSFT는 DMI/ADX와 이동평균선 정배열이 뒷받침하는 강력한 상승 추세에 있습니다.\n그러나 RSI가 과매수 영역에 진입하고 MACD가 약세 신호를 보여 단기적인 가격 조정 또는 횡보 가능성이 제기됩니다.\n주요 지지선은 503.00(20일 이동평균선)이며, 저항선은 전고점인 518.29입니다.\n전반적인 추세는 긍정적이나, 과열 신호로 인해 신규 진입 시에는 조정을 기다리는 것이 바람직해 보입니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "Parabolic SAR 전환",
+          "BB 수축 강세"
+        ]
+      }
+    },
+    {
+      "ticker": "META",
+      "entryDate": "2025-07-28",
+      "entryPrice": 717.63,
+      "exitDate": "2025-07-31",
+      "exitPrice": 731.14,
+      "holdingDays": 3,
+      "returnPct": 1.88,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "장기 상승 추세가 유지되고 있으나, 단기적으로는 주요 저항선 아래에서 횡보하고 있습니다.\nRSI와 스토캐스틱은 상승 신호를 보이고 있지만, MACD와 CMF 자금 흐름 지표는 약세를 보여 혼조세를 나타냅니다.\n최근 집게 바닥형 캔들 패턴이 나타나 단기 반등 가능성을 시사하며, 거래량 집중 가격대인 719.97달러 돌파 여부가 향후 방향성의 중요한 변수가 될 것입니다.",
+        "tags": [
+          "Parabolic SAR 전환",
+          "MACD 히스토그램 강세 수렴",
+          "BB 수축 강세"
+        ]
+      }
+    },
+    {
+      "ticker": "PLTR",
+      "entryDate": "2025-08-05",
+      "entryPrice": 173.27,
+      "exitDate": "2025-08-06",
+      "exitPrice": 176.33,
+      "holdingDays": 1,
+      "returnPct": 1.77,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 진행 중이며, 최근 거래량이 급증하며 추세를 뒷받침하고 있습니다.\n그러나 RSI, 스토캐스틱 등 다수의 기술적 지표가 과매수 신호를 보내고 있어 단기적인 가격 조정이나 횡보 가능성이 매우 높습니다.\n주요 저항선은 전고점인 176.33달러이며, 조정 시 1차 지지선은 161달러 부근입니다.\n전반적인 추세는 긍정적이나, 단기 과열에 따른 되돌림 위험이 존재하므로 신규 진입 시에는 보수적인 접근이 필요합니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "AAPL",
+      "entryDate": "2025-08-06",
+      "entryPrice": 213.25,
+      "exitDate": "2025-08-07",
+      "exitPrice": 214.65,
+      "holdingDays": 1,
+      "returnPct": 0.66,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "최근 대량 거래량을 동반한 '상승 벨트홀드' 캔들이 나타나며 강력한 단기 상승 신호를 보였습니다.\n그러나 MACD와 슈퍼트렌드 등 추세 지표는 여전히 약세 신호를 보내고 있어 상충되는 상황입니다.\n현재 가격은 주요 저항선(214.65)에 근접해 있어, 추격 매수보다는 주요 지지선(211.29) 부근으로의 조정 시 매수 기회를 고려하는 것이 바람직합니다.",
+        "tags": [
+          "BB 하단 반등",
+          "CCI 100 돌파",
+          "DMI 골든크로스"
+        ]
+      }
+    },
+    {
+      "ticker": "AMZN",
+      "entryDate": "2025-08-06",
+      "entryPrice": 222.31,
+      "exitDate": "2025-08-14",
+      "exitPrice": 231.22,
+      "holdingDays": 6,
+      "returnPct": 4.01,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "단기 하락 추세 중 주요 지지선에서 강한 반등 신호(Three Inside Up 캔들 패턴)가 나타났습니다.\n그러나 MACD 등 주요 모멘텀 지표는 여전히 약세를 보이고 있어 신호가 충돌하는 상황입니다.\n225.60달러의 저항선 돌파 여부가 향후 방향성을 결정할 중요한 변곡점이 될 것입니다.",
+        "tags": [
+          "BB 하단 반등",
+          "CCI 100 돌파",
+          "DMI 골든크로스"
+        ]
+      }
+    },
+    {
+      "ticker": "MSTR",
+      "entryDate": "2025-08-07",
+      "entryPrice": 402.01,
+      "exitDate": "2025-08-13",
+      "exitPrice": 385,
+      "holdingDays": 4,
+      "returnPct": -4.23,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "stop_loss",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "현재 주가는 장기 상승 추세 중 단기 조정을 거친 후 반등을 시도하는 국면입니다.\nMACD와 스토캐스틱 등 모멘텀 지표가 저점에서 상승 전환하고 있고, '집게 바닥형'과 '상승 벨트홀드' 캔들 패턴이 나타나 단기 상승 가능성을 시사합니다. 하지만 20일 이동평균선(412.83)과 볼륨 프로파일의 상단(433.71)에 저항이 존재하여 신호가 혼재된 상황입니다.\n핵심 지지선은 387.",
+        "tags": [
+          "Ichimoku 구름 돌파",
+          "CCI 100 돌파",
+          "Parabolic SAR 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "GOOGL",
+      "entryDate": "2025-08-08",
+      "entryPrice": 201.42,
+      "exitDate": "2025-08-12",
+      "exitPrice": 202.61,
+      "holdingDays": 2,
+      "returnPct": 0.59,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "GOOGL은 이동평균선 정배열과 강력한 DMI를 바탕으로 명확한 상승 추세를 보이고 있습니다.\n하지만 RSI(71.77)와 스토캐스틱 지표가 과매수 구간에 진입하여 단기 조정 가능성이 높아진 상태입니다.\n주요 지지선은 20일 이동평균선(191.09)이며, 저항선은 전고점인 202.61입니다. 현재는 추격 매수보다 조정 시 지지선을 확인하는 신중한 접근이 필요합니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Keltner 상단 돌파"
+        ]
+      }
+    },
+    {
+      "ticker": "TSLA",
+      "entryDate": "2025-08-08",
+      "entryPrice": 329.65,
+      "exitDate": "2025-08-11",
+      "exitPrice": 338,
+      "holdingDays": 1,
+      "returnPct": 2.53,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "단기 상승 추세가 강하게 나타나고 있습니다. MACD 골든크로스와 'Three Outside Up' 캔들 패턴이 상승 모멘텀을 지지하며, 가격은 주요 지지선인 319.75달러 위에 있습니다. 다만 일부 지표가 상충되어, 338달러 저항선 돌파 여부를 확인하는 신중한 접근이 필요합니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "Ichimoku 구름 돌파",
+          "Parabolic SAR 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "MSFT",
+      "entryDate": "2025-08-22",
+      "entryPrice": 507.23,
+      "exitDate": "2025-09-08",
+      "exitPrice": 498.2,
+      "holdingDays": 10,
+      "returnPct": -1.78,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "time",
+      "aiResult": "win",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "단기 하락 추세가 명확하며, MACD와 이동평균선 등 주요 지표들이 약세 신호를 보이고 있습니다.\n일부 보조지표는 과매도 상태로 단기 반등 가능성을 시사하지만, 전반적인 매도 압력이 강합니다.\n현재 가격은 주요 지지선인 499~502달러 구간에 근접하고 있어, 이 구간의 지지 여부가 단기 방향성을 결정할 중요한 변곡점이 될 것입니다. 신규 진입은 위험도가 높습니다.",
+        "tags": [
+          "BB 하단 반등",
+          "DMI 골든크로스",
           "지지선 근접"
         ]
       }
@@ -117,17 +826,17 @@
       "ticker": "NVDA",
       "entryDate": "2025-08-25",
       "entryPrice": 179.81,
-      "exitDate": "2025-08-29",
-      "exitPrice": 175,
-      "holdingDays": 4,
-      "returnPct": -2.68,
+      "exitDate": "2025-09-02",
+      "exitPrice": 168.5,
+      "holdingDays": 5,
+      "returnPct": -6.29,
       "signalType": "buy",
       "result": "loss",
       "exitReason": "stop_loss",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "NVDA는 장기적으로 강한 상승 추세를 유지하고 있으나, 단기적으로는 모멘텀 약화 신호가 나타나고 있습니다.\nMACD는 약세 전환 신호를 보이며, DMI는 강한 하락 추세 강도를 나타냅니다. OBV는 가격 상승에도 불구하고 하락하여 매집 약화를 시사합니다. 반면, Pa",
+        "summary": "NVDA는 장기 상승 추세에 있으나, 최근 단기 모멘텀 지표(MACD, DMI)에서 약세 신호가 나타나 조정 가능성이 제기됩니다.\n현재 주가는 20일 이동평균선(179.13) 부근에서 등락하고 있으며, 주요 저항선은 전고점인 184.48입니다.\n거래량은 매수 우위를 보이고 있으나 OBV 지표는 하락하여 가격과의 다이버전스가 관찰됩니다.\n따라서, 추세는 살아있지만 단기 변동성 확대와 조정 위험이 공존하는 상황으로, 신중한 접근이 요구됩니다.",
         "tags": [
           "BB 하단 반등",
           "CCI 100 돌파",
@@ -136,152 +845,112 @@
       }
     },
     {
-      "ticker": "AAPL",
-      "entryDate": "2025-09-03",
-      "entryPrice": 238.47,
-      "exitDate": "2025-09-17",
-      "exitPrice": 238.99,
-      "holdingDays": 10,
-      "returnPct": 0.22,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "loss",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "AAPL 주가는 현재 강력한 상승 추세에 있으며, 여러 장기 지표들이 이를 뒷받침하고 있습니다. 이동평균선, DMI, MACD, 일목균형표, Supertrend 등 대부분의 추세 지표들이 강한 매수 신호를 보내고 있습니다.\n하지만 단기적으로는 주가가 기간 최고가인 23",
-        "tags": [
-          "MACD 골든크로스",
-          "CCI 100 돌파",
-          "Keltner 상단 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "PLTR",
-      "entryDate": "2025-09-09",
-      "entryPrice": 162.36,
-      "exitDate": "2025-09-23",
-      "exitPrice": 182.55,
-      "holdingDays": 10,
-      "returnPct": 12.44,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "PLTR 주식은 장기적으로는 강세 추세에 있으나, 단기적으로는 조정 후 회복 단계에 있으며 혼조세를 보이고 있습니다.\n현재 가격(162.36)은 VAH(161.61)와 VWAP(160.49) 위에 위치하며 단기 지지력을 확보하고 있지만, MA(20)(163.08) 및 ",
-        "tags": [
-          "Parabolic SAR 전환",
-          "MACD 히스토그램 강세 수렴"
-        ]
-      }
-    },
-    {
-      "ticker": "MSTR",
-      "entryDate": "2025-09-09",
-      "entryPrice": 328.53,
-      "exitDate": "2025-09-18",
-      "exitPrice": 341.25,
-      "holdingDays": 7,
-      "returnPct": 3.87,
+      "ticker": "TSLA",
+      "entryDate": "2025-08-25",
+      "entryPrice": 346.6,
+      "exitDate": "2025-08-27",
+      "exitPrice": 353.26,
+      "holdingDays": 2,
+      "returnPct": 1.92,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
-      "aiTrendHit": false,
+      "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "MSTR은 현재 하락 추세에 있으며, 주요 이동평균선과 일목균형표 구름대 아래에 위치하고 있습니다. SMC 분석에서도 하락 추세 전환(CHOCH)이 확인되었습니다.\n다만, RSI, 스토캐스틱, 윌리엄스 %R 등 일부 모멘텀 지표들이 과매도권에 근접하고 상승 전환을 시도",
+        "summary": "현재 주가는 이동평균선 정배열과 주요 저항선 돌파로 강력한 상승 추세를 보이고 있습니다.\n하지만 OBV 지표의 하락 다이버전스와 MACD 모멘텀 약화는 상승 동력에 대한 경고 신호로 해석될 수 있습니다.\n따라서, 추격 매수보다는 주요 지지선인 335.00-340.00 구간까지 조정을 기다리는 신중한 접근이 유리해 보입니다.",
         "tags": [
-          "CCI 100 돌파",
-          "CMF 매집 전환",
-          "RSI 강세 다이버전스"
+          "MACD 골든크로스",
+          "Supertrend 전환",
+          "CCI 100 돌파"
         ]
       }
     },
     {
-      "ticker": "AMZN",
-      "entryDate": "2025-09-11",
-      "entryPrice": 229.95,
-      "exitDate": "2025-09-25",
-      "exitPrice": 218.15,
-      "holdingDays": 10,
-      "returnPct": -5.13,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AMZN 주가는 장기적으로는 상승 추세에 있으나, 단기적으로는 혼조세를 보이며 조정 압력을 받고 있습니다.\nMACD, Parabolic SAR, Supertrend, MFI는 여전히 강세 신호를 유지하고 있습니다. 그러나 RSI, 스토캐스틱, StochRSI, CCI,",
-        "tags": [
-          "BB 수축 강세",
-          "지지선 근접"
-        ]
-      }
-    },
-    {
-      "ticker": "NVDA",
-      "entryDate": "2025-09-11",
-      "entryPrice": 177.17,
-      "exitDate": "2025-09-12",
-      "exitPrice": 177,
-      "holdingDays": 1,
-      "returnPct": -0.1,
+      "ticker": "AAPL",
+      "entryDate": "2025-09-03",
+      "entryPrice": 238.47,
+      "exitDate": "2025-09-10",
+      "exitPrice": 228,
+      "holdingDays": 5,
+      "returnPct": -4.39,
       "signalType": "buy",
       "result": "loss",
       "exitReason": "stop_loss",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "NVDA는 현재 혼조세를 보이고 있습니다. 단기 이동평균선과 일부 모멘텀 지표(RSI, 스토캐스틱, CCI, MFI, OBV)는 상승 모멘텀을 시사하지만, DMI, 파라볼릭 SAR, 슈퍼트렌드와 같은 추세 지표는 하락 압력을 나타냅니다. MACD는 약세 크로스오버 상태",
+        "summary": "강력한 상승 추세가 진행 중이며, 이동평균선 정배열과 다수의 지표가 강세 신호를 보내고 있습니다.\n최근 대량 거래를 동반하며 직전 고점을 돌파했으나, RSI가 과매수 구간에 근접하여 단기 조정 가능성이 있습니다.\n주요 지지선은 228.86이며 저항선은 238.85입니다. 추격 매수보다는 조정 시 지지를 확인하고 접근하는 것이 유리해 보입니다.",
         "tags": [
-          "CCI 100 돌파",
-          "MACD 히스토그램 강세 수렴"
-        ]
-      }
-    },
-    {
-      "ticker": "TSLA",
-      "entryDate": "2025-09-11",
-      "entryPrice": 368.81,
-      "exitDate": "2025-09-12",
-      "exitPrice": 368.99,
-      "holdingDays": 1,
-      "returnPct": 0.05,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "TSLA는 현재 강한 상승 추세에 있으며, 최근 최고가인 368.99에 근접한 368.81에 거래되고 있습니다. 이동평균선과 EMA는 모두 정배열을 유지하며 강한 상승 추세를 지지하고, MACD는 매수 모멘텀이 강함을 나타냅니다. SMC 관점에서도 최근 355.39에서",
-        "tags": [
+          "MACD 골든크로스",
           "CCI 100 돌파",
           "Keltner 상단 돌파"
         ]
       }
     },
     {
-      "ticker": "META",
-      "entryDate": "2025-09-16",
-      "entryPrice": 779,
-      "exitDate": "2025-09-19",
-      "exitPrice": 789.66,
-      "holdingDays": 3,
-      "returnPct": 1.37,
+      "ticker": "AMZN",
+      "entryDate": "2025-09-03",
+      "entryPrice": 225.99,
+      "exitDate": "2025-09-04",
+      "exitPrice": 231.83,
+      "holdingDays": 1,
+      "returnPct": 2.58,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "전반적인 상승 추세 속에서 단기 조정 및 횡보 국면에 진입했습니다.\nMACD와 스토캐스틱 등 단기 모멘텀 지표는 약세 신호를 보내고 있으나, OBV와 Supertrend 등 추세 및 거래량 지표는 여전히 강세를 유지하며 신호가 엇갈리고 있습니다.\n최근 약세 캔들 패턴이 나타났으며, 가격 변동성이 확대될 수 있는 스퀴즈(Squeeze) 구간에 진입하여 방향성 탐색이 예상됩니다.\n핵심 지지선은 222.44달러, 저항선은 231.",
+        "tags": [
+          "Ichimoku 구름 돌파",
+          "CMF 매집 전환",
+          "지지선 근접"
+        ]
+      }
+    },
+    {
+      "ticker": "META",
+      "entryDate": "2025-09-03",
+      "entryPrice": 737.05,
+      "exitDate": "2025-09-04",
+      "exitPrice": 759.18,
+      "holdingDays": 1,
+      "returnPct": 3,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "현재 주가는 단기 하락 조정 국면에 있으며, 장기 상승 추세 속에서 숨 고르기를 하고 있습니다.\nMACD와 같은 추세 지표는 하락 압력이 지속되고 있음을 보여주지만, 스토캐스틱 지표는 과매도 구간에 진입하여 기술적 반등 가능성을 시사합니다.\n주가는 726~732달러 구간의 주요 지지선에 근접해 있으며, 이 구간에서의 지지 여부가 단기 방향성을 결정할 중요한 변곡점이 될 것입니다.",
+        "tags": [
+          "BB 하단 반등",
+          "CCI 100 돌파",
+          "지지선 근접"
+        ]
+      }
+    },
+    {
+      "ticker": "PLTR",
+      "entryDate": "2025-09-10",
+      "entryPrice": 166.74,
+      "exitDate": "2025-09-18",
+      "exitPrice": 174.75,
+      "holdingDays": 6,
+      "returnPct": 4.8,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "win",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "META는 현재 강한 상승 추세에 있으며, 여러 지표가 매수 모멘텀을 지지합니다. MACD, OBV, CMF, Supertrend, Parabolic SAR, Squeeze Momentum은 강한 매수 모멘텀과 추세 강화를 나타냅니다.\n그러나 RSI, Stochasti",
+        "summary": "장기 상승 추세 속에서 단기 조정을 마치고 회복 국면에 진입한 것으로 보입니다.\n다수의 모멘텀 지표가 강세로 전환되고 있으며, 특히 거래량이 집중된 가격대(VAH)를 상향 돌파하여 추가 상승 가능성을 시사합니다.\n주요 지지선은 156.45 ~ 162.00 구간에 형성되어 있으며, 저항선은 174.75 및 이전 고점인 190.00으로 예상됩니다.\n전반적으로 기술적 신호가 긍정적으로 전환되어, 상승 추세 재개를 기대해 볼 수 있는 시점입니다.",
         "tags": [
-          "MACD 골든크로스",
-          "CCI 100 돌파",
-          "CMF 매집 전환"
+          "DMI 골든크로스",
+          "Parabolic SAR 전환",
+          "MACD 히스토그램 강세 수렴"
         ]
       }
     },
@@ -299,7 +968,7 @@
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "CRWD는 현재 강한 상승 추세에 있습니다. 주가는 모든 주요 이동평균선 위에 위치하며, DMI와 Supertrend 지표도 상승 추세를 확고히 지지하고 있습니다. OBV와 CMF 또한 매집세가 강함을 보여줍니다.\nRSI, Stochastic, StochRSI, CCI",
+        "summary": "강력한 상승 추세입니다. 최근 대량 거래량을 동반한 급등으로 주요 저항선을 돌파했으나, RSI와 스토캐스틱 등 다수 지표가 과매수 구간에 진입하여 단기적인 가격 조정 가능성이 있습니다.\n주요 지지선은 485.90달러와 462.12달러이며, 저항선은 전고점인 517.98달러입니다.\n강한 상승 모멘텀이 확인되지만 과매수 상태로 인해 신규 진입은 위험 부담이 따르므로, 조정 시 지지 구간을 확인하는 전략이 유효해 보입니다.",
         "tags": [
           "Supertrend 전환",
           "Ichimoku 구름 돌파",
@@ -312,16 +981,16 @@
       "entryDate": "2025-09-19",
       "entryPrice": 245.5,
       "exitDate": "2025-09-22",
-      "exitPrice": 246.3,
+      "exitPrice": 250,
       "holdingDays": 1,
-      "returnPct": 0.33,
+      "returnPct": 1.83,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "AAPL 주가는 현재 강한 상승 추세에 있으며, 여러 지표들이 이러한 모멘텀을 지지하고 있습니다.\n하지만 RSI, 스토캐스틱, 윌리엄스 %R, CCI 등 다수의 모멘텀 지표가 과매수 영역에 진입했으며, 주가가 볼린저 밴드 및 켈트너 채널 상단에 위치하여 단기적인 조정 ",
+        "summary": "강력한 상승 추세가 진행 중이며, 최근 대량 거래량을 동반한 급등으로 신고가를 경신했습니다.\n주요 모멘텀 지표들이 과매수 구간에 진입하여 단기 조정 가능성이 있으나, 전반적인 추세는 매우 긍정적입니다.\n신규 진입은 조정 시 지지 구간을 확인하는 것이 유리하며, 단기 과열에 따른 변동성 확대에 유의해야 합니다.",
         "tags": [
           "MACD 골든크로스",
           "CCI 100 돌파",
@@ -330,243 +999,99 @@
       }
     },
     {
-      "ticker": "MSTR",
-      "entryDate": "2025-09-29",
-      "entryPrice": 326.42,
-      "exitDate": "2025-09-30",
-      "exitPrice": 320,
-      "holdingDays": 1,
-      "returnPct": -1.97,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSTR 주가는 중기적으로 하락 추세에 있습니다. 주요 이동평균선과 Supertrend 지표가 하락세를 지지하며, SMC 시장 구조 분석에서도 약세 전환(CHOCH) 및 하락 추세 지속(BOS) 신호가 나타났습니다.\nRSI, MFI, OBV는 하락세를 보이며 매도 압력",
-        "tags": [
-          "MACD 골든크로스",
-          "BB 하단 반등",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
       "ticker": "MSFT",
-      "entryDate": "2025-10-01",
-      "entryPrice": 519.71,
-      "exitDate": "2025-10-15",
-      "exitPrice": 513.43,
+      "entryDate": "2025-09-19",
+      "entryPrice": 517.93,
+      "exitDate": "2025-10-03",
+      "exitPrice": 517.35,
       "holdingDays": 10,
-      "returnPct": -1.21,
+      "returnPct": -0.11,
       "signalType": "buy",
       "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSFT 주식은 현재 강한 상승 추세에 있습니다. 최근 SMC 분석에서 519.30에서 강세 CHOCH가 발생하여 시장 구조가 상승으로 전환되었음을 확인했습니다. 주가는 대부분의 단기 및 중기 이동평균선 위에 위치하며, MACD, RSI, OBV 등 주요 추세 지표들이",
-        "tags": [
-          "CCI 100 돌파",
-          "Parabolic SAR 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "entryDate": "2025-10-02",
-      "entryPrice": 222.41,
-      "exitDate": "2025-10-16",
-      "exitPrice": 214.47,
-      "holdingDays": 10,
-      "returnPct": -3.57,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AMZN 주가는 단기적으로 하락 추세에 있으며, 중기 이동평균선 아래에서 거래되고 있습니다. RSI, 스토캐스틱, CCI, 윌리엄스 %R, MFI는 과매도권에서 상승하며 단기 반등 가능성을 시사합니다. OBV는 주가 하락에도 불구하고 상승하여 매집 가능성을 나타내는 강",
-        "tags": [
-          "CCI 100 돌파",
-          "MACD 히스토그램 강세 수렴"
-        ]
-      }
-    },
-    {
-      "ticker": "GOOGL",
-      "entryDate": "2025-10-06",
-      "entryPrice": 250.43,
-      "exitDate": "2025-10-09",
-      "exitPrice": 242.45,
-      "holdingDays": 3,
-      "returnPct": -3.19,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "GOOGL 주가는 현재 강한 상승 추세에 있으나, 단기적으로 과열 신호와 모멘텀 약화 조짐을 보이고 있습니다.\n최근 '상승 벨트홀드' 캔들 패턴이 발생하여 추가 상승 가능성을 시사하지만, RSI가 과매수권에 근접하고 MACD 히스토그램, CCI, MFI 등 모멘텀 지표",
-        "tags": [
-          "Parabolic SAR 전환",
-          "BB 수축 강세"
-        ]
-      }
-    },
-    {
-      "ticker": "META",
-      "entryDate": "2025-10-07",
-      "entryPrice": 713.08,
-      "exitDate": "2025-10-21",
-      "exitPrice": 733.27,
-      "holdingDays": 10,
-      "returnPct": 2.83,
-      "signalType": "buy",
-      "result": "win",
       "exitReason": "time",
       "aiResult": "loss",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "주가는 현재 강한 하락 추세에 있습니다. 대부분의 단기 및 중기 이동평균선 아래에 위치하며, 이치모쿠 구름 아래에서 거래되고 있습니다.\nRSI, 스토캐스틱, CCI, MFI, Williams %R 등 여러 모멘텀 지표들이 과매도 영역에 진입했거나 근접했지만, 여전히 하",
-        "tags": [
-          "CMF 매집 전환",
-          "MFI 과매도 반등"
-        ]
-      }
-    },
-    {
-      "ticker": "PLTR",
-      "entryDate": "2025-10-09",
-      "entryPrice": 185.47,
-      "exitDate": "2025-10-10",
-      "exitPrice": 177,
-      "holdingDays": 1,
-      "returnPct": -4.57,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "PLTR 주식은 현재 강한 상승 추세에 있으며, 모든 주요 이동평균선 위에 가격이 위치하고 Supertrend 및 Parabolic SAR 지표도 이를 지지합니다. OBV가 상승하고 VWAP 위에 가격이 있어 매수 압력이 지속되고 있음을 확인합니다.\n그러나 단기 모멘텀",
-        "tags": [
-          "Parabolic SAR 전환",
-          "BB 수축 강세"
-        ]
-      }
-    },
-    {
-      "ticker": "CRWD",
-      "entryDate": "2025-10-09",
-      "entryPrice": 509.13,
-      "exitDate": "2025-10-16",
-      "exitPrice": 480,
-      "holdingDays": 5,
-      "returnPct": -5.72,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "CRWD 주식은 현재 강한 상승 추세에 있습니다. \n\nRSI, 스토캐스틱, 윌리엄스 %R은 과매수권에 근접하거나 진입하여 단기 조정 가능성을 시사합니다. MACD 히스토그램, OBV, MFI, 스퀴즈 모멘텀은 하락하며 상승 모멘텀이 약화되고 있음을 나타냅니다. 반면, ",
+        "summary": "강력한 상승 추세 전환 신호가 나타나고 있습니다.\nMACD 골든 크로스와 함께 대량 거래량을 동반한 장대양봉이 발생했으며, RSI와 OBV 등 대부분의 보조지표가 상승 모멘텀을 지지하고 있습니다.\n최근 '상승 벨트홀드'와 '상승 장악형' 캔들 패턴이 나타나 단기 강세 전망을 강화합니다.\n주요 지지선은 POC인 507.17이며, 저항선은 이치모쿠 구름 상단인 527.25와 전고점인 555.45입니다.",
         "tags": [
           "CCI 100 돌파",
-          "Parabolic SAR 전환"
+          "CMF 매집 전환",
+          "Squeeze 양전환"
         ]
       }
     },
     {
       "ticker": "NVDA",
-      "entryDate": "2025-10-16",
-      "entryPrice": 181.81,
-      "exitDate": "2025-10-30",
-      "exitPrice": 202.89,
-      "holdingDays": 10,
-      "returnPct": 11.59,
+      "entryDate": "2025-09-19",
+      "entryPrice": 176.67,
+      "exitDate": "2025-09-22",
+      "exitPrice": 182.44,
+      "holdingDays": 1,
+      "returnPct": 3.27,
       "signalType": "buy",
       "result": "win",
-      "exitReason": "time",
+      "exitReason": "take_profit",
       "aiResult": "neutral",
-      "aiTrendHit": false,
+      "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "현재 주가는 중기 상승 추세 내에서 단기적으로 하락 압력을 받고 있습니다. 최근 고점 대비 하락하며 약세 모멘텀이 강해지고 있습니다.\nRSI, MACD, 스토캐스틱, CCI, OBV 등 대부분의 단기 모멘텀 지표들이 하락세를 보이거나 약세 신호를 나타내고 있습니다. M",
+        "summary": "장기 상승 추세 속에서 단기적으로는 횡보 국면을 보이고 있습니다.\n최근 강력한 강세 반전 신호인 '모닝스타' 캔들 패턴이 나타나 상승 전환 기대감을 높이고 있으나, MACD를 제외한 여러 보조지표는 모멘텀 약화를 시사하여 신호가 엇갈립니다.\n현재 주가는 주요 지지선인 20일 이동평균선 부근에 있으며, 상방의 저항 돌파 여부가 단기 방향성을 결정할 중요한 변수입니다.",
         "tags": [
-          "CMF 매집 전환",
+          "MACD 골든크로스",
+          "Parabolic SAR 전환",
           "지지선 근접"
         ]
       }
     },
     {
-      "ticker": "AAPL",
-      "entryDate": "2025-10-17",
-      "entryPrice": 252.29,
-      "exitDate": "2025-10-31",
-      "exitPrice": 270.37,
+      "ticker": "MSFT",
+      "entryDate": "2025-10-06",
+      "entryPrice": 528.57,
+      "exitDate": "2025-10-20",
+      "exitPrice": 516.79,
       "holdingDays": 10,
-      "returnPct": 7.17,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AAPL의 장기 추세는 여러 이동평균선과 SMC(Smart Money Concepts)의 시장 구조 분석을 통해 여전히 강세로 판단됩니다. 하지만 단기 모멘텀 지표들은 혼조세를 보이며 약세 신호를 보내고 있습니다.\nRSI, MACD, CCI, MFI, 스퀴즈 모멘텀 지",
-        "tags": [
-          "CCI 100 돌파",
-          "DMI 골든크로스"
-        ]
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "entryDate": "2025-10-20",
-      "entryPrice": 216.48,
-      "exitDate": "2025-11-03",
-      "exitPrice": 254,
-      "holdingDays": 10,
-      "returnPct": 17.33,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "현재 AMZN 주식은 단기에서 중기적으로 하락 추세에 있습니다. 여러 이동평균선과 이치모쿠 클라우드, 슈퍼트렌드, DMI 지표가 모두 하락세를 강하게 지지하고 있습니다.\nRSI, MACD, CCI, OBV, MFI 등 대부분의 모멘텀 및 거래량 지표 또한 매도 압력이 ",
-        "tags": [
-          "BB 하단 반등",
-          "지지선 근접"
-        ]
-      }
-    },
-    {
-      "ticker": "MSTR",
-      "entryDate": "2025-10-20",
-      "entryPrice": 296.61,
-      "exitDate": "2025-11-03",
-      "exitPrice": 264.67,
-      "holdingDays": 10,
-      "returnPct": -10.77,
+      "returnPct": -2.23,
       "signalType": "buy",
       "result": "loss",
       "exitReason": "time",
-      "aiResult": "win",
+      "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "현재 MSTR 주가는 강한 하락 추세에 있습니다. 주가는 장기 이동평균선 아래에서 거래되고 있으며, 단기 이동평균선 또한 하락세를 보이며 약세 정렬을 형성하고 있습니다.\nRSI, MACD, DMI, OBV, CMF, Parabolic SAR, Supertrend 등 대",
+        "summary": "주가는 강력한 상승 추세를 보이고 있으며, 다수의 기술적 지표가 강세 신호를 보내고 있습니다.\n최근 주요 저항선을 돌파하며 상승 모멘텀이 강화되었으나, RSI와 CCI 등 일부 보조지표는 과매수 구간에 진입하여 단기적인 조정 또는 횡보 가능성을 시사합니다.\n핵심 지지선은 510-519달러 구간에 형성되어 있으며, 이 구간까지의 조정 시 매수 기회를 고려해볼 수 있습니다.",
         "tags": [
-          "BB 하단 반등",
+          "Supertrend 전환",
+          "Ichimoku 구름 돌파",
           "CCI 100 돌파"
         ]
       }
     },
     {
+      "ticker": "AMZN",
+      "entryDate": "2025-10-09",
+      "entryPrice": 227.74,
+      "exitDate": "2025-10-10",
+      "exitPrice": 221.5,
+      "holdingDays": 1,
+      "returnPct": -2.74,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "stop_loss",
+      "aiResult": "loss",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "최근 하락 조정 이후 단기 상승 추세로의 전환 가능성이 나타나고 있습니다. MACD 골든크로스, 강세 캔들 패턴(Three Outside Up) 등 긍정적 신호가 다수 포착되었으며, 가격이 주요 이동평균선 위로 회복했습니다.\n현재 주가는 주요 지지선인 222.00달러 위에 위치해 있으며, 단기 저항선인 234.25달러 돌파를 시도할 것으로 예상됩니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "Ichimoku 구름 돌파",
+          "Parabolic SAR 전환"
+        ]
+      }
+    },
+    {
       "ticker": "GOOGL",
-      "entryDate": "2025-10-21",
-      "entryPrice": 250.46,
-      "exitDate": "2025-10-22",
-      "exitPrice": 255.41,
+      "entryDate": "2025-10-15",
+      "entryPrice": 251.03,
+      "exitDate": "2025-10-16",
+      "exitPrice": 256,
       "holdingDays": 1,
       "returnPct": 1.98,
       "signalType": "buy",
@@ -575,10 +1100,33 @@
       "aiResult": "neutral",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "GOOGL 주가는 전반적으로 강한 상승 추세를 보이고 있습니다. 최근 여러 이동평균선과 일목균형표 지표들이 모두 상승세를 지지하며, OBV와 Squeeze Momentum 지표 또한 매수세가 강함을 나타내고 있습니다.\n하지만 스토캐스틱과 StochRSI는 과매수 영역에",
+        "summary": "강력한 상승 추세를 보이고 있으며, 모든 주요 이동평균선 위에 가격이 위치해 있습니다.\nRSI와 스토캐스틱 등 모멘텀 지표는 상승하고 있으나, OBV는 하락 다이버전스를 보여 매수세 약화 가능성을 경고합니다.\n최근 고점인 256.00 수준이 주요 저항선으로 작용하고 있으며, 246.65(20일 이평선)가 단기 지지선입니다.",
         "tags": [
-          "Squeeze 양전환",
-          "BB 수축 강세"
+          "CCI 100 돌파",
+          "DMI 골든크로스",
+          "Parabolic SAR 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "AAPL",
+      "entryDate": "2025-10-20",
+      "entryPrice": 262.24,
+      "exitDate": "2025-10-21",
+      "exitPrice": 264.38,
+      "holdingDays": 1,
+      "returnPct": 0.82,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 진행 중이며, 최근 대량 거래량을 동반하여 주요 저항선을 돌파했습니다.\n다수의 기술적 지표가 강세 신호를 보내고 있으나, RSI가 과매수 영역에 근접하는 등 단기 과열 신호도 나타나고 있어 조정 가능성에 유의해야 합니다.\n현재 가격은 저항선에 근접해 있으므로, 추격 매수보다는 조정 시 지지 구간을 확인하는 전략이 유효해 보입니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "DMI 골든크로스",
+          "Parabolic SAR 전환"
         ]
       }
     },
@@ -587,16 +1135,16 @@
       "entryDate": "2025-10-22",
       "entryPrice": 520.54,
       "exitDate": "2025-10-27",
-      "exitPrice": 527,
+      "exitPrice": 531.03,
       "holdingDays": 3,
-      "returnPct": 1.24,
+      "returnPct": 2.02,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
-      "aiTrendHit": true,
+      "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "MSFT 주가는 현재 상승 추세에 있으나, 단기적으로는 혼조세를 보이고 있습니다.\n이동평균선, Supertrend, Parabolic SAR, OBV, CMF 등 다수의 추세 및 거래량 지표들은 강세 신호를 보내고 있습니다. 이는 주가가 견고한 상승 흐름을 유지하고 있",
+        "summary": "현재 주가는 뚜렷한 방향성 없이 횡보하는 중립적인 추세에 있습니다.\n일부 모멘텀 지표는 상승 신호를 보이고 있으나, MACD와 스퀴즈 모멘텀 지표는 약세 신호를 보내며 신호가 엇갈리고 있습니다.\n주가는 일목균형표 구름대 내에 갇혀 있으며, 상단 저항선(524달러) 돌파 또는 하단 지지선(511달러) 이탈 여부가 향후 방향성을 결정할 중요한 변수입니다.\n종합적으로, 방향성 확인 전까지는 신중한 접근이 필요합니다.",
         "tags": [
           "Parabolic SAR 전환",
           "MACD 히스토그램 강세 수렴",
@@ -605,63 +1153,86 @@
       }
     },
     {
-      "ticker": "META",
-      "entryDate": "2025-10-24",
-      "entryPrice": 738.36,
-      "exitDate": "2025-10-27",
-      "exitPrice": 745,
+      "ticker": "PLTR",
+      "entryDate": "2025-10-23",
+      "entryPrice": 180.48,
+      "exitDate": "2025-11-06",
+      "exitPrice": 175.05,
+      "holdingDays": 10,
+      "returnPct": -3.01,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "time",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "주가는 장기적으로 상승 추세에 있으나, 단기적으로는 뚜렷한 방향성 없이 횡보하고 있습니다.\nMACD는 상승 전환을 시도하고 StochRSI는 과매도 상태로 단기 반등 가능성을 시사하지만, RSI와 OBV 등 여러 보조지표는 하락하며 매수세 약화를 나타냅니다.\n현재 가격은 주요 지지선인 20일 이동평균선(180.10) 부근에 있으며, 위로는 188.20의 저항, 아래로는 170.80의 지지가 중요합니다.",
+        "tags": [
+          "BB 하단 반등",
+          "CCI 100 돌파",
+          "CMF 매집 전환"
+        ]
+      }
+    },
+    {
+      "ticker": "CRWD",
+      "entryDate": "2025-10-23",
+      "entryPrice": 521.98,
+      "exitDate": "2025-10-24",
+      "exitPrice": 525.79,
       "holdingDays": 1,
-      "returnPct": 0.9,
+      "returnPct": 0.73,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "현재 주가는 모든 주요 이동평균선 위에 위치한 강력한 상승 추세에 있습니다. 최근 강한 거래량을 동반한 장대양봉으로 전고점을 돌파하며 상승 모멘텀이 매우 강함을 보여줍니다.\n다만, 일부 보조지표(Williams %R, CCI)가 과매수 신호를 보내고 있고, 볼린저 밴드 상단을 돌파하는 등 단기 과열 양상이 나타나고 있어 추격 매수 시 단기 조정의 위험이 존재합니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "Parabolic SAR 전환",
+          "MACD 히스토그램 강세 수렴"
+        ]
+      }
+    },
+    {
+      "ticker": "AMZN",
+      "entryDate": "2025-10-27",
+      "entryPrice": 226.97,
+      "exitDate": "2025-10-31",
+      "exitPrice": 234.08,
+      "holdingDays": 4,
+      "returnPct": 3.13,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "META 주가는 현재 혼조세를 보이고 있습니다. 최근 SMC의 강세 CHOCH 신호와 MACD의 강세 전환, Squeeze Momentum의 강세 제로 크로스 및 OBV 상승은 매수 압력이 증가하고 있음을 시사합니다. 그러나 RSI, 스토캐스틱, CCI, 윌리엄스 %R",
+        "summary": "단기 하락 추세 이후 강한 반등을 보이며 상승 전환을 시도하고 있습니다. MACD 골든크로스, Squeeze Momentum 상승 신호 등 다수의 기술적 지표가 강세로 전환되었습니다.\n그러나 주가는 이치모쿠 구름대 내부에 위치하고 있으며, 228~231달러 구간에 강력한 저항이 밀집해 있어 주의가 필요합니다.\n현재는 지지선인 222달러 부근으로의 조정 시 매수하거나, 저항선을 확실히 돌파한 후 접근하는 것이 유효한 전략으로 판단됩니다.",
         "tags": [
           "CCI 100 돌파",
+          "Parabolic SAR 전환",
           "Squeeze 양전환"
         ]
       }
     },
     {
-      "ticker": "PLTR",
-      "entryDate": "2025-10-24",
-      "entryPrice": 184.63,
-      "exitDate": "2025-10-27",
-      "exitPrice": 186.97,
+      "ticker": "NVDA",
+      "entryDate": "2025-10-27",
+      "entryPrice": 191.49,
+      "exitDate": "2025-10-28",
+      "exitPrice": 193.88,
       "holdingDays": 1,
-      "returnPct": 1.27,
+      "returnPct": 1.25,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
-      "aiResult": "win",
+      "aiResult": "neutral",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "PLTR은 현재 강한 상승 추세에 있으며, 주요 이동평균선 위에 위치하고 긍정적인 모멘텀 지표들이 이를 뒷받침합니다. RSI, 스토캐스틱, CCI는 상승세를 보이며 매수 모멘텀이 강함을 나타냅니다. 최근 발생한 강세 장악형 및 상승 샅바형 캔들 패턴은 추가적인 상승 가",
-        "tags": [
-          "CCI 100 돌파",
-          "CMF 매집 전환",
-          "Parabolic SAR 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "CRWD",
-      "entryDate": "2025-10-24",
-      "entryPrice": 527.32,
-      "exitDate": "2025-11-07",
-      "exitPrice": 539.81,
-      "holdingDays": 10,
-      "returnPct": 2.37,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "loss",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "CRWD는 현재 강한 상승 추세에 있으며, 주가는 5일, 20일, 60일 이동평균선 위에 위치하고 이동평균선들이 정배열을 형성하고 있습니다.\nRSI, 스토캐스틱, CCI, 윌리엄스 %R 등 다수의 모멘텀 지표가 과매수 상태를 나타내고 있어 단기 조정 가능성이 있습니다.",
+        "summary": "강력한 상승 추세가 진행 중이며 모멘텀 지표도 강세입니다.\n하지만 OBV 등 거래량 지표에서 약세 다이버전스가 관찰되어 단기 조정 가능성이 있습니다.\n현재 가격은 주요 저항선 195.62에 근접해 있으며, 185.15가 주요 지지선입니다.",
         "tags": [
           "MACD 골든크로스",
           "CCI 100 돌파",
@@ -673,17 +1244,17 @@
       "ticker": "TSLA",
       "entryDate": "2025-10-27",
       "entryPrice": 452.42,
-      "exitDate": "2025-10-28",
-      "exitPrice": 459.13,
-      "holdingDays": 1,
-      "returnPct": 1.48,
+      "exitDate": "2025-11-03",
+      "exitPrice": 470.75,
+      "holdingDays": 5,
+      "returnPct": 4.05,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "TSLA 주식은 현재 강한 상승 추세에 있습니다. 대부분의 이동평균선이 정배열을 이루고 있으며, Supertrend와 Parabolic SAR 지표도 상승 추세를 지지하고 있습니다.\n단기 모멘텀 지표는 혼조세를 보입니다. Stochastic과 CCI는 과매수 영역에 진",
+        "summary": "강력한 상승 추세를 보이고 있으며, 가격은 모든 주요 이동평균선 위에 위치해 있습니다.\nMACD와 CCI 같은 모멘텀 지표는 강세를 나타내지만, RSI가 하락하고 OBV가 횡보하는 등 일부 혼재된 신호도 존재합니다.\n단기적으로 '베어리쉬 하라미' 캔들 패턴이 나타났으나, 최근 강한 양봉으로 그 영향은 약화되었을 수 있습니다.\n주요 저항선은 이전 고점인 470.75달러이며, 지지선은 20일 이동평균선인 438.83달러입니다.",
         "tags": [
           "CCI 100 돌파",
           "Parabolic SAR 전환",
@@ -692,149 +1263,24 @@
       }
     },
     {
-      "ticker": "GOOGL",
-      "entryDate": "2025-11-05",
-      "entryPrice": 284.31,
-      "exitDate": "2025-11-11",
-      "exitPrice": 291.59,
-      "holdingDays": 4,
-      "returnPct": 2.56,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "현재 GOOGL 주가는 강력한 상승 추세에 있습니다. 이동평균선들이 정배열을 이루고 있으며, DMI, Supertrend, Parabolic SAR, OBV 등 대부분의 추세 및 거래량 지표들이 강한 매수세를 지지하고 있습니다.\n그러나 RSI, 스토캐스틱, Willia",
-        "tags": [
-          "CMF 매집 전환",
-          "Keltner 상단 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "META",
-      "entryDate": "2025-11-10",
-      "entryPrice": 631.76,
-      "exitDate": "2025-11-18",
-      "exitPrice": 595,
-      "holdingDays": 6,
-      "returnPct": -5.82,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "META는 현재 강한 하락 추세에 있으며, 대부분의 추세 지표가 이를 확인하고 있습니다. MACD는 하락 모멘텀을 보이고 있으며, DMI는 강한 하락 추세를 나타내고 있습니다. OBV와 CMF 또한 매도 압력이 우세함을 시사합니다.\nRSI, 스토캐스틱, 윌리엄스 %R,",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "CRWD",
-      "entryDate": "2025-11-10",
-      "entryPrice": 557.53,
-      "exitDate": "2025-11-12",
-      "exitPrice": 559,
-      "holdingDays": 2,
-      "returnPct": 0.26,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "CRWD 주가는 현재 강한 상승 추세에 있으며, 최근 기간 최고가에 도달했습니다.\n대부분의 이동평균선(MA 5, 20, 60, 120 및 EMA 9, 20, 60)이 정배열을 이루며 강력한 상승 모멘텀을 지지하고 있습니다. OBV, MFI, CMF 또한 매수 압력이 강",
-        "tags": [
-          "MACD 골든크로스",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "entryDate": "2025-11-13",
-      "entryPrice": 503.29,
-      "exitDate": "2025-11-14",
-      "exitPrice": 508.76,
-      "holdingDays": 1,
-      "returnPct": 1.09,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSFT 주가는 단기적으로 하락 추세에 있으며, 대부분의 이동평균선 아래에 위치하고 있습니다. 그러나 여러 모멘텀 지표들이 과매도 상태를 나타내며 단기 반등 가능성을 시사하고 있어 혼조세를 보입니다.\n\nRSI는 50 아래에서 상승하며 매도 압력이 약화되고 있음을 나타내",
-        "tags": [
-          "CCI 100 돌파",
-          "MACD 히스토그램 강세 수렴"
-        ]
-      }
-    },
-    {
-      "ticker": "MSTR",
-      "entryDate": "2025-11-13",
-      "entryPrice": 208.54,
-      "exitDate": "2025-11-28",
-      "exitPrice": 177.18,
-      "holdingDays": 10,
-      "returnPct": -15.04,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "win",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSTR 주가는 현재 강력한 하락 추세에 있으며, 장기 및 단기 지표 모두 약세를 가리키고 있습니다.\nRSI, 스토캐스틱, 윌리엄스 %R, MFI 등 대부분의 모멘텀 지표가 과매도 영역에 깊이 진입하여 단기적인 기술적 반등 가능성은 있으나, 아직 추세 전환 신호는 나타",
-        "tags": [
-          "RSI 과매도 반등",
-          "RSI 강세 다이버전스"
-        ]
-      }
-    },
-    {
       "ticker": "NVDA",
-      "entryDate": "2025-11-17",
-      "entryPrice": 186.6,
+      "entryDate": "2025-11-19",
+      "entryPrice": 186.52,
       "exitDate": "2025-11-20",
-      "exitPrice": 191.27,
-      "holdingDays": 3,
-      "returnPct": 2.5,
+      "exitPrice": 193.4,
+      "holdingDays": 1,
+      "returnPct": 3.69,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "NVDA 주가는 단기적으로 하락 추세에 있으며, 여러 지표들이 매도 압력을 시사합니다.\nMACD는 약세 전환 신호를 보이며 하락 모멘텀이 강합니다. RSI, 스토캐스틱, CCI, MFI 등 대부분의 모멘텀 지표들이 하락세를 나타내거나 과매도권에 근접하고 있습니다. AT",
+        "summary": "전반적인 추세는 다수의 지표가 약세를 나타내며 하락세로 전환되었습니다.\n그러나 스토캐스틱과 같은 일부 모멘텀 지표는 과매도 영역에 있어 단기적인 반등 가능성을 시사합니다.\n현재 주가는 주요 지지선인 POC(181.79) 위에 위치해 있으며, 저항선은 20일 이동평균선(193.39)입니다.\n지표 간 신호가 상충되고 변동성 확대 가능성이 있어, 추세 방향이 명확해질 때까지 관망하는 것이 바람직합니다.",
         "tags": [
-          "CMF 매집 전환",
-          "지지선 근접"
-        ]
-      }
-    },
-    {
-      "ticker": "GOOGL",
-      "entryDate": "2025-11-21",
-      "entryPrice": 299.66,
-      "exitDate": "2025-12-08",
-      "exitPrice": 313.72,
-      "holdingDays": 10,
-      "returnPct": 4.69,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "현재 GOOGL 주가는 강한 상승 추세에 있습니다.\nRSI, CCI, Williams %R 지표는 과매수권에 근접하거나 진입하여 단기 조정 가능성을 시사합니다. 볼린저 밴드 상단을 돌파한 상태로, 가격이 과도하게 상승하여 밴드 안으로 회귀할 수 있습니다. 반면, DMI",
-        "tags": [
-          "MACD 골든크로스",
-          "CCI 100 돌파"
+          "Ichimoku 구름 돌파",
+          "CCI 100 돌파",
+          "CMF 매집 전환"
         ]
       }
     },
@@ -842,84 +1288,21 @@
       "ticker": "AAPL",
       "entryDate": "2025-11-24",
       "entryPrice": 275.92,
-      "exitDate": "2025-12-09",
-      "exitPrice": 277.18,
-      "holdingDays": 10,
-      "returnPct": 0.46,
+      "exitDate": "2025-11-25",
+      "exitPrice": 277.32,
+      "holdingDays": 1,
+      "returnPct": 0.51,
       "signalType": "buy",
       "result": "win",
-      "exitReason": "time",
+      "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "AAPL은 현재 강력한 상승 추세에 있습니다. 주가는 모든 주요 이동평균선 위에 위치하며 정배열을 이루고 있고, DMI와 OBV 또한 강한 매수 압력을 나타냅니다.\n하지만 단기적으로 주가가 볼린저 밴드 상단 위에 위치하며 과매수 상태를 보이고 있으며, RSI와 Will",
+        "summary": "전반적으로 강력한 상승 추세가 진행 중이며, 가격은 모든 주요 이동평균선 위에 위치해 있습니다.\n최근 'Three Outside Up' 캔들 패턴과 함께 거래량이 증가하며 상승 모멘텀이 강화되었으나, RSI가 과매수 구간에 근접하고 MACD가 약세 신호를 보여 단기 조정 가능성도 존재합니다.\n주요 저항은 직전 고점인 277.32이며, 270.43 부근의 20일 이동평균선이 중요한 지지선 역할을 할 것입니다.",
         "tags": [
           "BB 하단 반등",
           "CCI 100 돌파",
           "Parabolic SAR 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "entryDate": "2025-11-24",
-      "entryPrice": 226.28,
-      "exitDate": "2025-12-09",
-      "exitPrice": 227.92,
-      "holdingDays": 10,
-      "returnPct": 0.72,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AMZN 주가는 전반적으로 하락 추세에 있으나, 단기적으로는 반등 가능성이 있습니다.\n대부분의 추세 지표(이동평균선, DMI, Parabolic SAR, Supertrend, Ichimoku)는 약세 또는 하락 추세를 나타내고 있으며, MACD 또한 약세 전환 신호를 ",
-        "tags": [
-          "Ichimoku 구름 돌파",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "TSLA",
-      "entryDate": "2025-11-24",
-      "entryPrice": 417.78,
-      "exitDate": "2025-12-09",
-      "exitPrice": 445.17,
-      "holdingDays": 10,
-      "returnPct": 6.56,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "TSLA 주가는 단기적으로 혼조세를 보이며 약간의 하락 압력을 받고 있으나, 회복 가능성도 보입니다.\n\nRSI는 중립적인 위치에서 상승 중이며, MACD는 여전히 매도 신호 상태이지만 히스토그램이 상승하여 매도 모멘텀이 약화되고 있음을 시사합니다. 스토캐스틱과 Stoc",
-        "tags": [
-          "CCI 100 돌파",
-          "MACD 히스토그램 강세 수렴"
-        ]
-      }
-    },
-    {
-      "ticker": "PLTR",
-      "entryDate": "2025-11-25",
-      "entryPrice": 163.55,
-      "exitDate": "2025-12-10",
-      "exitPrice": 187.91,
-      "holdingDays": 10,
-      "returnPct": 14.89,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "PLTR 주식은 단기에서 중기적으로 강한 하락 추세에 있습니다. \nMACD, DMI, 슈퍼트렌드, Parabolic SAR, 일목균형표 등 대부분의 추세 지표들이 하락 모멘텀을 강력하게 확인하고 있습니다. OBV 또한 하락하여 매도 압력이 우세함을 나타냅니다. 변동성(",
-        "tags": [
-          "CCI 100 돌파",
-          "MFI 과매도 반등"
         ]
       }
     },
@@ -927,17 +1310,17 @@
       "ticker": "CRWD",
       "entryDate": "2025-11-25",
       "entryPrice": 512.34,
-      "exitDate": "2025-12-10",
-      "exitPrice": 519.54,
-      "holdingDays": 10,
-      "returnPct": 1.41,
+      "exitDate": "2025-12-02",
+      "exitPrice": 520,
+      "holdingDays": 4,
+      "returnPct": 1.5,
       "signalType": "buy",
       "result": "win",
-      "exitReason": "time",
+      "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "CRWD 주식은 단기적으로 하락 추세에 있으며, 대부분의 모멘텀 및 추세 지표가 약세를 나타내고 있습니다. MACD는 매도 신호를 보이고 있으며, DMI, OBV, MFI, CCI, 스퀴즈 모멘텀 또한 하락 압력을 시사합니다. 최근 'three_outside_down'",
+        "summary": "현재 단기 하락 추세가 진행 중이며, MACD와 같은 주요 지표들이 약세 신호를 보내고 있습니다.\n최근 'Three Outside Down'이라는 강력한 하락 반전 캔들 패턴이 나타나 부정적인 전망을 더합니다.\n하지만 가격이 볼륨 프로파일 POC(501.89달러) 등 주요 지지선에 근접했고, 스토캐스틱 RSI와 같은 일부 지표는 과매도 상태여서 기술적 반등 가능성도 존재합니다.",
         "tags": [
           "BB 하단 반등",
           "CMF 매집 전환",
@@ -946,132 +1329,46 @@
       }
     },
     {
-      "ticker": "META",
-      "entryDate": "2025-11-28",
-      "entryPrice": 647.95,
-      "exitDate": "2025-12-04",
-      "exitPrice": 666.35,
-      "holdingDays": 4,
-      "returnPct": 2.84,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "META 주식은 단기적으로 강한 상승 모멘텀을 보이고 있으나, 장기 추세는 중립에서 약세입니다.\nMACD는 강세 교차를 보이며 상승 추세를 지지하고 DMI 지표 또한 강한 추세 강도를 나타내며 매수세가 우세함을 보여줍니다. OBV와 스퀴즈 모멘텀 지표도 상승하며 매집이",
-        "tags": [
-          "Supertrend 전환",
-          "CCI 100 돌파",
-          "DMI 골든크로스"
-        ]
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "entryDate": "2025-12-01",
-      "entryPrice": 486.74,
-      "exitDate": "2025-12-15",
-      "exitPrice": 474.82,
-      "holdingDays": 10,
-      "returnPct": -2.45,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "주가는 전반적으로 하락 추세에 있으며, 주요 이동평균선과 일목균형표 기준선 아래에 위치하고 있습니다. DMI 지표는 강한 하락 추세가 지속되고 있음을 나타냅니다.\n최근 단기 모멘텀 지표들(RSI, MACD 히스토그램, 스토캐스틱, CCI, MFI, 스퀴즈 모멘텀)이 과",
-        "tags": [
-          "CCI 100 돌파",
-          "CMF 매집 전환",
-          "Parabolic SAR 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "MSTR",
-      "entryDate": "2025-12-02",
-      "entryPrice": 181.33,
-      "exitDate": "2025-12-09",
-      "exitPrice": 195,
+      "ticker": "PLTR",
+      "entryDate": "2025-12-10",
+      "entryPrice": 187.91,
+      "exitDate": "2025-12-17",
+      "exitPrice": 177,
       "holdingDays": 5,
-      "returnPct": 7.54,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "win",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSTR은 현재 강한 하락 추세 속에 있습니다. 이동평균선과 DMI 지표는 여전히 하락세를 가리키고 있으며, 가격은 장기적으로 할인 구역(Discount Zone)에 머물고 있습니다.\n하지만 단기적으로는 과매도권에서 매수세 유입 신호가 포착되고 있습니다. RSI, MA",
-        "tags": [
-          "MACD 골든크로스",
-          "CCI 100 돌파",
-          "Parabolic SAR 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "NVDA",
-      "entryDate": "2025-12-08",
-      "entryPrice": 185.55,
-      "exitDate": "2025-12-11",
-      "exitPrice": 180,
-      "holdingDays": 3,
-      "returnPct": -2.99,
+      "returnPct": -5.81,
       "signalType": "buy",
       "result": "loss",
       "exitReason": "stop_loss",
-      "aiResult": "loss",
+      "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "현재 주가는 단기적으로 상승 모멘텀을 보이며 중립적인 추세에 있습니다. 장기 이동평균선과 이치모쿠 클라우드는 여전히 하락 또는 중립적인 신호를 보내고 있어 추세 전환의 확신은 부족합니다.\nMACD는 강세 교차를 형성하며 상승 추세로 전환될 가능성을 시사하고 있습니다. ",
+        "summary": "상승 추세가 강화되고 있으며, MACD와 거래량 지표들이 이를 뒷받침하고 있습니다.\n그러나 스토캐스틱과 CCI 등 단기 지표들은 극심한 과매수 상태를 나타내어 단기적인 가격 조정이나 횡보 가능성에 대한 주의가 필요합니다.\n최근 주요 저항선이었던 186.12를 돌파하여 현재는 이 가격대가 중요한 지지선으로 작용할 것입니다.\n결론적으로, 추세는 긍정적이나 단기 과열에 따른 변동성 확대에 유의해야 합니다.",
         "tags": [
-          "MACD 골든크로스",
-          "Parabolic SAR 전환"
+          "Supertrend 전환",
+          "CCI 100 돌파",
+          "Squeeze 양전환"
         ]
       }
     },
     {
       "ticker": "TSLA",
-      "entryDate": "2025-12-15",
-      "entryPrice": 475.31,
-      "exitDate": "2025-12-16",
-      "exitPrice": 481.77,
-      "holdingDays": 1,
-      "returnPct": 1.36,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "현재 TSLA 주가는 강한 상승 추세에 있습니다. RSI, CCI, MFI는 강한 매수 모멘텀을 나타내지만, 스토캐스틱, 윌리엄스 %R은 과매수 상태를 경고하고 있습니다. MACD 히스토그램은 하락하며 모멘텀 약화를 시사합니다.\n주가는 볼린저 밴드 상단선과 켈트너 채널",
-        "tags": [
-          "Supertrend 전환",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "MSFT",
       "entryDate": "2025-12-16",
-      "entryPrice": 476.39,
-      "exitDate": "2025-12-18",
-      "exitPrice": 482.66,
-      "holdingDays": 2,
-      "returnPct": 1.32,
+      "entryPrice": 489.88,
+      "exitDate": "2025-12-29",
+      "exitPrice": 459,
+      "holdingDays": 8,
+      "returnPct": -6.3,
       "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
+      "result": "loss",
+      "exitReason": "stop_loss",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "MSFT 주가는 현재 하락 추세에 있습니다. 대부분의 이동평균선과 이치모쿠 지표가 주가 위에 위치하며 하락 압력을 나타냅니다. DMI 지표는 강한 하락 추세를, RSI, 스토캐스틱, 윌리엄스 %R은 하락 모멘텀을 보이며 과매도권에 근접하고 있어 단기적인 반등 가능성을 ",
+        "summary": "강력한 상승 추세가 진행 중이며, 모든 이동평균선과 추세 지표가 강세를 나타내고 있습니다.\n주요 저항 구간을 돌파하여 추가 상승 기대감이 높지만, RSI와 스토캐스틱 등 다수 오실레이터 지표가 과매수 상태로 단기적인 가격 조정이나 기간 조정의 위험이 매우 높습니다.\n현재 가격에서의 추격 매수는 위험하며, 조정 시 지지 구간을 확인하고 진입하는 것이 유리해 보입니다.",
         "tags": [
-          "Squeeze 양전환",
-          "RSI 강세 다이버전스",
-          "지지선 근접"
+          "Supertrend 전환",
+          "CCI 100 돌파",
+          "Keltner 상단 돌파"
         ]
       }
     },
@@ -1080,16 +1377,16 @@
       "entryDate": "2025-12-19",
       "entryPrice": 273.67,
       "exitDate": "2026-01-02",
-      "exitPrice": 277.51,
+      "exitPrice": 277.5,
       "holdingDays": 8,
       "returnPct": 1.4,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
-      "aiResult": "win",
+      "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "AAPL 주식은 장기적으로는 상승 추세에 있으나, 단기적으로는 하락 조정을 겪고 있습니다.\n최근 지표들을 살펴보면, RSI, MACD, CCI, MFI 등 대부분의 모멘텀 지표들이 하락세를 보이며 매도 압력이 우세함을 나타내고 있습니다. 특히 MACD는 약세 교차를 보",
+        "summary": "장기 상승 추세 속 단기 조정 국면입니다.\nMACD와 스퀴즈 모멘텀 등 단기 지표는 하락 신호를 보내고 있으나, 스토캐스틱 과매도와 최근 강세장악형 캔들은 반등 가능성을 시사합니다.\n주요 지지선인 265~270달러 구간의 지지 여부가 향후 방향성을 결정할 중요한 변곡점이 될 것입니다.",
         "tags": [
           "BB 하단 반등",
           "CMF 매집 전환",
@@ -1101,43 +1398,21 @@
       "ticker": "GOOGL",
       "entryDate": "2025-12-19",
       "entryPrice": 307.16,
-      "exitDate": "2026-01-02",
-      "exitPrice": 318.92,
-      "holdingDays": 8,
-      "returnPct": 3.83,
+      "exitDate": "2025-12-23",
+      "exitPrice": 313,
+      "holdingDays": 2,
+      "returnPct": 1.9,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
-      "aiTrendHit": true,
+      "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "GOOGL 주식은 장기적으로는 상승 추세에 있으나, 단기적으로는 혼조세를 보이며 조정 압력을 받고 있습니다.\n주요 이동평균선 위에 위치하며 슈퍼트렌드 지표도 상승 추세를 지지하고 있지만, MACD는 약세 전환 신호를 보이고 Parabolic SAR도 하락 추세를 시사합",
+        "summary": "장기적으로는 상승 추세를 유지하고 있으나, 단기적으로는 조정 국면에 진입한 모습입니다.\nMACD 데드크로스 등 단기 지표는 약세를 보이고 있지만, 스토캐스틱 RSI가 과매도 구간에 진입하고 불리쉬 하라미 캔들 패턴이 나타나 기술적 반등 가능성도 존재합니다.\n현재 주가는 298-300달러의 주요 지지선과 313달러의 저항선 사이에서 방향성을 모색하고 있으며, 지지선에서의 반등 여부가 단기 추세의 분기점이 될 것입니다.",
         "tags": [
           "CCI 100 돌파",
           "DMI 골든크로스",
           "CMF 매집 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "PLTR",
-      "entryDate": "2025-12-19",
-      "entryPrice": 193.38,
-      "exitDate": "2025-12-22",
-      "exitPrice": 195,
-      "holdingDays": 1,
-      "returnPct": 0.84,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "PLTR의 전반적인 추세는 강한 상승세입니다. 모든 주요 이동평균선 위에 가격이 위치하며, OBV와 CMF는 상승하여 매수 압력이 강함을 나타냅니다. 슈퍼트렌드와 파라볼릭 SAR 또한 상승 추세를 지지합니다.\n하지만 단기적으로는 RSI, 스토캐스틱, CCI, MFI, ",
-        "tags": [
-          "Ichimoku 구름 돌파",
-          "CCI 100 돌파",
-          "Parabolic SAR 전환"
         ]
       }
     },
@@ -1152,10 +1427,10 @@
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
-      "aiResult": "neutral",
+      "aiResult": "win",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "NVDA 주가는 현재 강한 상승 추세를 보이고 있습니다. MACD는 강세 크로스오버를 형성하며 상승 모멘텀을 확인하고 있고, 스퀴즈 모멘텀 지표 또한 강세 제로 크로스를 나타내며 추가 상승 가능성을 시사합니다. 최근 발생한 강세 장악형 및 상승 마루보즈 캔들 패턴은 매",
+        "summary": "단기 추세가 강한 상승세로 전환되었습니다. MACD 골든크로스, 볼린저 밴드 상단 돌파, 상승장악형 캔들 등 다수의 강세 신호가 나타나고 있습니다.\n다만 일부 단기 지표는 과매수 상태로, 단기적인 가격 변동성 확대에 유의해야 합니다.\n종합적으로, 강력한 매수세와 함께 주요 저항선을 돌파하여 추가 상승 가능성이 높은 상황이며, 단기 조정 시 지지선을 확인하며 접근하는 전략이 유효해 보입니다.",
         "tags": [
           "MACD 골든크로스",
           "CCI 100 돌파",
@@ -1177,7 +1452,7 @@
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "AMZN 주가는 단기적으로 상승 모멘텀을 보이며 주요 이동평균선 위에 위치하고 있습니다. MACD는 강한 매수 신호를 보이며 상승 모멘텀을 나타내지만, RSI, Stochastic, Williams %R은 과매수 영역에 근접하거나 진입하여 단기 조정 가능성을 시사합니다",
+        "summary": "단기 상승 모멘텀이 나타나고 있으나 전반적으로는 방향성 없는 횡보 장세입니다.\nMACD는 강세 신호를 보이지만 스토캐스틱은 과매수 상태로 혼재된 신호를 보입니다.\n현재 가격은 주요 저항선(233.82)에 근접해 있어 돌파 여부가 단기 방향성을 결정할 것이며, 하방으로는 229달러 부근에 강력한 지지선이 존재합니다.\n결론적으로, 상승 시도 중이나 저항 돌파 확인이 필요한 시점입니다.",
         "tags": [
           "MACD 골든크로스",
           "Parabolic SAR 전환",
@@ -1186,86 +1461,24 @@
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2025-12-24",
-      "entryPrice": 477.11,
-      "exitDate": "2026-01-02",
-      "exitPrice": 465,
-      "holdingDays": 5,
-      "returnPct": -2.54,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "CRWD는 현재 하락 추세에 있으며, 주요 이동평균선(MA 5, 20, 60, 120)과 일목균형표 구름대 아래에서 거래되고 있습니다. 슈퍼트렌드와 Parabolic SAR 또한 하락 추세를 지지하고 있습니다.\n하지만 RSI, 스토캐스틱, 윌리엄스 %R, StochRS",
-        "tags": [
-          "CMF 매집 전환",
-          "MACD 히스토그램 강세 수렴"
-        ]
-      }
-    },
-    {
       "ticker": "META",
-      "entryDate": "2025-12-26",
-      "entryPrice": 663.29,
-      "exitDate": "2026-01-12",
-      "exitPrice": 641.97,
-      "holdingDays": 10,
-      "returnPct": -3.21,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "META 주식은 현재 혼조세에 있으며, 단기적으로는 하락 압력이 우세합니다.\nDMI는 강한 상승 추세를 나타내지만, MACD 히스토그램과 OBV, MFI, CMF는 하락하며 매도 압력과 모멘텀 약화를 시사합니다. 스퀴즈 모멘텀이 발생 중이며 모멘텀이 하락하여 가격 변동",
-        "tags": [
-          "BB 수축 강세",
-          "지지선 근접"
-        ]
-      }
-    },
-    {
-      "ticker": "MSTR",
-      "entryDate": "2025-12-30",
-      "entryPrice": 155.61,
-      "exitDate": "2026-01-14",
-      "exitPrice": 179.33,
-      "holdingDays": 10,
-      "returnPct": 15.24,
+      "entryDate": "2025-12-29",
+      "entryPrice": 658.69,
+      "exitDate": "2025-12-30",
+      "exitPrice": 666.35,
+      "holdingDays": 1,
+      "returnPct": 1.16,
       "signalType": "buy",
       "result": "win",
-      "exitReason": "time",
-      "aiResult": "loss",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "주가는 강한 하락 추세에 있으며, 현재 기간 최저가 및 돈치안 채널 하단선 부근의 중요한 지지선에 도달했습니다. RSI, 스토캐스틱, 윌리엄스 %R 등 모멘텀 지표는 극심한 과매도 상태를 나타내어 단기 반등 가능성을 시사하지만, DMI, 이동평균선, 슈퍼트렌드, 파라볼",
-        "tags": [
-          "CCI 100 돌파",
-          "RSI 강세 다이버전스"
-        ]
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "entryDate": "2026-01-06",
-      "entryPrice": 478.51,
-      "exitDate": "2026-01-21",
-      "exitPrice": 444.11,
-      "holdingDays": 10,
-      "returnPct": -7.19,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
+      "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "MSFT 주가는 현재 하락 추세에 있으며, 주요 이동평균선과 Parabolic SAR, Supertrend 지표 모두 하락세를 지지하고 있습니다.\nRSI, MACD, DMI, OBV 등 대부분의 모멘텀 및 추세 지표들이 약세 또는 하락세를 보이고 있습니다. 스토캐스틱과",
+        "summary": "현재 주가는 단기 상승 추세 지표와 약화되는 모멘텀 및 매도 압력을 나타내는 지표들이 혼재된 중립 국면에 있습니다.\n주가는 주요 저항선인 666.35달러(거래량 집중 가격대) 바로 아래에 위치해 있으며, 최근 약세 캔들 패턴과 하락하는 거래량 지표(OBV, CMF)는 조정 가능성을 시사합니다.\n스퀴즈 모멘텀 지표가 약세 신호를 보내고 있어 변동성 확대에 대비해야 합니다.",
         "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
+          "EMA 골든크로스",
+          "BB 수축 강세",
+          "지지선 근접"
         ]
       }
     },
@@ -1283,7 +1496,7 @@
       "aiResult": "neutral",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "GOOGL은 현재 강력한 상승 추세에 있습니다. 모든 주요 이동평균선 위에 주가가 위치하며, DMI와 Supertrend 지표도 강한 상승세를 지지하고 있습니다.\n핵심 지표 분석: RSI(64.10), 스토캐스틱(%K 77.53), 윌리엄스 %R(-13.89), Sto",
+        "summary": "GOOGL은 현재 강력한 상승 추세에 있습니다. 이동평균선이 정배열을 이루고 있고, DMI, Supertrend 등 대부분의 추세 지표가 강세를 나타내고 있습니다.\n다만 RSI, CCI 등 일부 모멘텀 지표가 과매수 영역에 근접하고 있어 단기적인 가격 조정이나 기간 조정의 가능성이 존재합니다.\n현재 가격은 주요 저항선에 근접해 있으므로, 신규 진입은 지지선까지의 조정을 기다리는 것이 유리해 보입니다. 핵심 지지 구간은 312달러 부근입니다.",
         "tags": [
           "CCI 100 돌파",
           "Squeeze 양전환",
@@ -1292,109 +1505,24 @@
       }
     },
     {
-      "ticker": "AAPL",
-      "entryDate": "2026-01-09",
-      "entryPrice": 259.37,
-      "exitDate": "2026-01-26",
-      "exitPrice": 255.41,
-      "holdingDays": 10,
-      "returnPct": -1.53,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "win",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AAPL은 현재 강한 하락 추세에 있으며, 대부분의 추세 지표와 SMC 분석이 이를 뒷받침합니다.\n단기적으로는 RSI, 스토캐스틱, CCI, 윌리엄스 %R 등 모멘텀 지표들이 극심한 과매도 상태를 나타내어 기술적 반등 가능성이 있습니다.\n최근 'downside_gap_",
-        "tags": [
-          "RSI 과매도 반등",
-          "BB 하단 반등",
-          "CMF 매집 전환"
-        ]
-      }
-    },
-    {
       "ticker": "TSLA",
       "entryDate": "2026-01-12",
       "entryPrice": 448.96,
       "exitDate": "2026-01-20",
-      "exitPrice": 430,
+      "exitPrice": 422,
       "holdingDays": 5,
-      "returnPct": -4.22,
+      "returnPct": -6,
       "signalType": "buy",
       "result": "loss",
       "exitReason": "stop_loss",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "전반적인 추세는 장기적으로 강한 상승세에 있으나, 최근 고점 대비 조정을 겪었습니다. 현재는 단기적으로 중립에서 약간 강세로 전환될 조짐을 보이고 있습니다.\n주요 지표들을 살펴보면, RSI는 상승 중이며 MACD 히스토그램도 상승하여 매수 모멘텀이 개선되고 있음을 시사",
+        "summary": "현재 주가는 단기 하락 추세에서 반등을 시도하는 중립적인 국면에 있습니다.\nRSI와 스토캐스틱 지표는 상승하며 매수 신호를 보이고 있으나, MACD와 슈퍼트렌드는 여전히 약세 신호를 유지하여 신호가 엇갈리고 있습니다.\n최근 '관통형(Piercing Line)' 캔들 패턴이 나타나 단기적인 상승 반전 가능성을 시사합니다.\n주요 지지선은 거래량이 집중된 436.01달러이며, 저항선은 20일 이동평균선인 461.93달러에 위치해 있습니다.",
         "tags": [
           "CCI 100 돌파",
           "Parabolic SAR 전환",
           "지지선 근접"
-        ]
-      }
-    },
-    {
-      "ticker": "PLTR",
-      "entryDate": "2026-01-12",
-      "entryPrice": 179.41,
-      "exitDate": "2026-01-27",
-      "exitPrice": 165.7,
-      "holdingDays": 10,
-      "returnPct": -7.64,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "현재 PLTR 주가는 단기적으로는 혼조세를 보이며 약세 압력을 받고 있으나, 장기 이동평균선과 일목균형표 구름대 위에 위치하여 중장기적인 지지 기반은 유지하고 있습니다.\nRSI는 중립 영역에서 상승 중이며, MACD는 약세 교차 상태이나 히스토그램이 상승하여 약세 모멘",
-        "tags": [
-          "Ichimoku 구름 돌파",
-          "MACD 히스토그램 강세 수렴"
-        ]
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "entryDate": "2026-01-14",
-      "entryPrice": 236.65,
-      "exitDate": "2026-01-15",
-      "exitPrice": 239.98,
-      "holdingDays": 1,
-      "returnPct": 1.41,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AMZN은 단기적으로 하락 모멘텀이 강해지고 있으며, 주요 지지선 테스트가 예상됩니다. RSI, CCI, MFI는 하락하며 모멘텀 약화를 나타내고, 스토캐스틱과 StochRSI는 과매수 영역에서 하락 교차를 보여 잠재적인 조정을 시사합니다. MACD는 여전히 강세 신호",
-        "tags": [
-          "EMA 골든크로스",
-          "지지선 근접"
-        ]
-      }
-    },
-    {
-      "ticker": "NVDA",
-      "entryDate": "2026-01-22",
-      "entryPrice": 184.84,
-      "exitDate": "2026-02-05",
-      "exitPrice": 171.88,
-      "holdingDays": 10,
-      "returnPct": -7.01,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "win",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "주가는 현재 중립적인 추세 속에서 단기적으로 하락 모멘텀을 보이고 있습니다. RSI는 중립 영역에서 하락 중이며, MACD, 스토캐스틱, CCI, OBV, MFI, CMF, 스퀴즈 모멘텀 등 대부분의 모멘텀 지표들이 약세 신호를 보내고 있습니다. 슈퍼트렌드와 Parab",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
         ]
       }
     },
@@ -1403,16 +1531,16 @@
       "entryDate": "2026-01-22",
       "entryPrice": 647.63,
       "exitDate": "2026-01-23",
-      "exitPrice": 656.99,
+      "exitPrice": 666.35,
       "holdingDays": 1,
-      "returnPct": 1.45,
+      "returnPct": 2.89,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "META 주가는 현재 단기적으로 강한 상승 모멘텀을 보이고 있습니다. 최근 양봉과 높은 매수 거래량은 단기적인 반등 가능성을 시사합니다. RSI, 스토캐스틱, CCI 등 단기 모멘텀 지표들은 상승세를 나타내며 과매수 영역에 진입하지 않아 추가 상승 여력이 있습니다.\n그",
+        "summary": "장기 하락 추세 속에서 최근 강한 반등이 나타나며 단기 상승 모멘텀이 형성되었습니다.\nRSI와 스토캐스틱 등 모멘텀 지표는 강세 신호를 보내고 있으나, MACD와 OBV 등 추세 지표는 여전히 약세를 나타내며 신호가 엇갈리고 있습니다.\n현재 주가는 649.23달러의 슈퍼트렌드 저항선에 근접해 있으며, 상방의 볼륨 프로파일 POC(666.35달러)와 일목균형표 구름대가 강력한 저항 구간으로 작용할 것입니다.",
         "tags": [
           "BB 하단 반등",
           "CCI 100 돌파",
@@ -1421,725 +1549,134 @@
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2026-01-22",
-      "entryPrice": 453.77,
-      "exitDate": "2026-01-26",
-      "exitPrice": 464.31,
-      "holdingDays": 2,
-      "returnPct": 2.32,
+      "ticker": "NVDA",
+      "entryDate": "2026-01-26",
+      "entryPrice": 186.47,
+      "exitDate": "2026-01-27",
+      "exitPrice": 189.13,
+      "holdingDays": 1,
+      "returnPct": 1.43,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "CRWD 주식은 현재 강력한 하락 추세에 있습니다. 주가는 주요 이동평균선과 이치모쿠 클라우드 아래에 위치하며, Supertrend와 Parabolic SAR 또한 하락 추세를 가리키고 있습니다.\nMACD는 매도 신호를 유지하며 하락 모멘텀이 강화되고 있고, DMI는 ",
+        "summary": "현재 주가는 뚜렷한 방향성 없이 좁은 범위에서 횡보하는 중립적인 추세를 보이고 있습니다.\n모멘텀 지표는 소폭 개선되고 있으나, 자금 유출 신호(CMF)와 같은 부정적 지표가 혼재하여 방향성이 불확실합니다.\n가격이 주요 지지선(181.11)과 저항선(189.13) 사이에서 압축되고 있어, 향후 변동성 확대에 대비해야 합니다.\n결론적으로, 명확한 돌파 신호가 나타나기 전까지는 관망하는 것이 유리해 보입니다.",
         "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
+          "CCI 100 돌파",
+          "MACD 히스토그램 강세 수렴",
+          "BB 수축 강세"
         ]
       }
     },
     {
       "ticker": "MSFT",
-      "entryDate": "2026-01-23",
-      "entryPrice": 465.95,
-      "exitDate": "2026-01-27",
-      "exitPrice": 475.68,
+      "entryDate": "2026-01-27",
+      "entryPrice": 480.58,
+      "exitDate": "2026-01-29",
+      "exitPrice": 469,
       "holdingDays": 2,
-      "returnPct": 2.09,
+      "returnPct": -2.41,
       "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
+      "result": "loss",
+      "exitReason": "stop_loss",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "전반적인 추세는 하락세이나, 단기적으로는 상승 모멘텀이 나타나고 있습니다.\nMACD, DMI, Parabolic SAR, Supertrend, OBV 등 장기 추세 지표들은 여전히 하락 추세를 가리키고 있습니다. 반면, RSI, 스토캐스틱, CCI, MFI, CMF, ",
+        "summary": "단기적으로 강한 반등세가 나타나고 있으나, 중장기 하락 추세 내의 주요 저항 구간에 진입했습니다.\nMACD 골든크로스, 강세 캔들 패턴 등 긍정적 신호가 다수 포착되었지만, 60일 이동평균선과 이치모쿠 구름대가 상방 압력으로 작용하고 있습니다.\n현재는 단기 상승 모멘텀과 중기 저항이 충돌하는 변곡점으로, 저항 돌파 여부에 따라 추세 방향이 결정될 가능성이 높습니다.",
         "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파",
-          "CMF 매집 전환"
+          "MACD 골든크로스",
+          "Supertrend 전환",
+          "CCI 100 돌파"
         ]
       }
     },
     {
       "ticker": "AAPL",
-      "entryDate": "2026-01-27",
-      "entryPrice": 258.27,
-      "exitDate": "2026-02-10",
-      "exitPrice": 273.68,
-      "holdingDays": 10,
-      "returnPct": 5.97,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AAPL은 현재 하락 추세에 있으며, 최근 캔들 패턴과 SMC 시장 구조는 약세를 지지합니다.\nMACD는 시그널 선 아래에 있지만 히스토그램이 상승하여 하락 모멘텀이 약화되고 있음을 시사합니다. RSI, 스토캐스틱, CCI, OBV, MFI는 상승하며 단기적인 매수 모",
-        "tags": [
-          "CCI 100 돌파",
-          "Parabolic SAR 전환",
-          "MACD 히스토그램 강세 수렴"
-        ]
-      }
-    },
-    {
-      "ticker": "GOOGL",
-      "entryDate": "2026-01-29",
-      "entryPrice": 338.25,
-      "exitDate": "2026-02-02",
-      "exitPrice": 342.29,
+      "entryDate": "2026-02-02",
+      "entryPrice": 270.01,
+      "exitDate": "2026-02-04",
+      "exitPrice": 275.26,
       "holdingDays": 2,
-      "returnPct": 1.19,
+      "returnPct": 1.94,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "GOOGL은 강력한 상승 추세에 있습니다. 주가는 모든 주요 이동평균선 위에 위치하며, DMI와 Parabolic SAR, Supertrend 지표가 이를 뒷받침합니다. MACD는 강한 매수 모멘텀을 나타내고 OBV는 지속적인 매집을 보여줍니다.\n그러나 RSI, Sto",
+        "summary": "강력한 상승 추세로의 전환 신호가 나타났습니다. 주요 이동평균선과 볼린저 밴드 상단을 대량 거래량과 함께 돌파하며 강한 매수세를 확인했습니다.\n다만, RSI와 스토캐스틱 등 다수 보조지표가 단기 과매수 상태를 나타내고 있어 속도 조절이나 조정 가능성이 존재합니다.\n핵심 지지선은 268.74(60일 이평선)이며, 저항선은 275.26(일목균형표 구름 상단)입니다.",
         "tags": [
-          "MACD 골든크로스",
-          "Parabolic SAR 전환"
+          "Supertrend 전환",
+          "CCI 100 돌파",
+          "DMI 골든크로스"
         ]
       }
     },
     {
-      "ticker": "TSLA",
-      "entryDate": "2026-01-30",
-      "entryPrice": 430.41,
-      "exitDate": "2026-02-02",
-      "exitPrice": 416,
-      "holdingDays": 1,
-      "returnPct": -3.35,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "TSLA 주가는 현재 하락 추세가 강하게 지속되고 있습니다. MACD, DMI, 이치모쿠, 이동평균선 등 대부분의 주요 추세 지표들이 매도 신호를 보내고 있으며, 주가는 주요 저항선 아래에 위치하고 있습니다.\n단기적으로는 최근 불리시 하라미 캔들 패턴이 발생했고, MF",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "PLTR",
+      "ticker": "GOOGL",
       "entryDate": "2026-02-02",
-      "entryPrice": 147.76,
-      "exitDate": "2026-02-03",
-      "exitPrice": 152.5,
-      "holdingDays": 1,
-      "returnPct": 3.21,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "PLTR 주식은 현재 강력한 하락 추세에 있습니다. 모든 주요 이동평균선 아래에서 거래되고 있으며, DMI, MACD, Supertrend 등 추세 지표들이 강한 매도 신호를 보내고 있습니다.\nRSI, 스토캐스틱, CCI, Williams %R, MFI 등 여러 모멘텀",
-        "tags": [
-          "RSI 과매도 반등",
-          "BB 하단 반등"
-        ]
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "entryDate": "2026-02-06",
-      "entryPrice": 210.32,
-      "exitDate": "2026-02-12",
-      "exitPrice": 198,
-      "holdingDays": 4,
-      "returnPct": -5.86,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AMZN은 현재 강한 하락 추세에 있으며, 대부분의 지표가 극심한 과매도 상태를 나타내고 있습니다. \nRSI, 스토캐스틱, CCI, 윌리엄스 %R, 볼린저 밴드, 켈트너 채널 등 여러 지표가 과매도 영역에 진입하여 단기적인 반등 가능성을 시사합니다. 반면, MACD, ",
-        "tags": [
-          "RSI 과매도 반등",
-          "CMF 매집 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "NVDA",
-      "entryDate": "2026-02-06",
-      "entryPrice": 185.41,
-      "exitDate": "2026-02-23",
-      "exitPrice": 191.55,
-      "holdingDays": 10,
-      "returnPct": 3.31,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "현재 주가는 최근 강한 양봉과 높은 거래량으로 단기적인 상승 모멘텀을 보이고 있으나, 전반적인 추세는 중립적이며 하방 압력도 존재합니다.\nRSI, MACD, OBV, MFI 등 다수의 모멘텀 및 거래량 지표들은 여전히 약세 신호를 보내고 있으며, DMI는 약한 하락 추",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파",
-          "지지선 근접"
-        ]
-      }
-    },
-    {
-      "ticker": "MSTR",
-      "entryDate": "2026-02-06",
-      "entryPrice": 134.93,
-      "exitDate": "2026-02-23",
-      "exitPrice": 123.71,
-      "holdingDays": 10,
-      "returnPct": -8.32,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "win",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "전반적인 추세는 강한 하락세입니다. 주가는 주요 이동평균선과 일목균형표 구름대 아래에 위치하며, MACD와 DMI 지표도 하락 추세를 강하게 지지하고 있습니다.\n단기적으로 스토캐스틱 RSI가 과매도 영역에 진입하여 단기 반등 가능성을 시사합니다. CCI 또한 과매도권에",
-        "tags": [
-          "BB 하단 반등",
-          "CMF 매집 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "entryDate": "2026-02-09",
-      "entryPrice": 413.6,
-      "exitDate": "2026-02-10",
-      "exitPrice": 420.61,
-      "holdingDays": 1,
-      "returnPct": 1.69,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSFT 주가는 현재 강력한 하락 추세에 있습니다. 대부분의 이동평균선과 지표들이 약세를 가리키며, DMI는 강한 하락 추세를, MACD는 하락 모멘텀을 보여주고 있습니다.\n하지만 RSI, 스토캐스틱, 윌리엄스 %R, CCI 등 일부 모멘텀 지표들은 과매도 영역에서 상",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "CRWD",
-      "entryDate": "2026-02-10",
-      "entryPrice": 413.39,
-      "exitDate": "2026-02-25",
-      "exitPrice": 363.31,
-      "holdingDays": 10,
-      "returnPct": -12.11,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "win",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "CRWD 주식은 현재 강력한 하락 추세에 있습니다. 대부분의 장기 이동평균선과 추세 지표(MACD, DMI, Supertrend, Parabolic SAR, Squeeze Momentum)가 하락세를 강하게 지지하고 있으며, OBV 또한 매도 압력이 우세함을 보여줍니다",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "AAPL",
-      "entryDate": "2026-02-11",
-      "entryPrice": 275.5,
-      "exitDate": "2026-02-12",
-      "exitPrice": 269,
-      "holdingDays": 1,
-      "returnPct": -2.36,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AAPL은 현재 강세 추세를 유지하고 있습니다. 이동평균선과 일목균형표, DMI, 슈퍼트렌드 등 주요 추세 지표들이 모두 상승 추세를 가리키고 있으며, SMC의 강세 CHOCH 패턴도 이를 뒷받침합니다.\n하지만 단기적으로는 RSI, 스토캐스틱, StochRSI, CCI",
-        "tags": [
-          "Ichimoku 구름 돌파",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "PLTR",
-      "entryDate": "2026-02-18",
-      "entryPrice": 135.38,
-      "exitDate": "2026-03-04",
-      "exitPrice": 153.19,
-      "holdingDays": 10,
-      "returnPct": 13.16,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "PLTR 주식은 현재 강한 하락 추세에 있습니다. 장기 이동평균선과 볼린저 밴드 중간선 아래에서 거래되고 있으며, DMI 지표는 강력한 하락 추세를 확인시켜 줍니다.\n모멘텀 지표인 스토캐스틱, 스토캐스스틱 RSI, 윌리엄스 %R은 과매도 영역에 진입하여 단기적인 반등 ",
-        "tags": [
-          "CCI 100 돌파",
-          "RSI 강세 다이버전스"
-        ]
-      }
-    },
-    {
-      "ticker": "GOOGL",
-      "entryDate": "2026-02-20",
-      "entryPrice": 314.98,
-      "exitDate": "2026-02-26",
-      "exitPrice": 305,
-      "holdingDays": 4,
-      "returnPct": -3.17,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "GOOGL은 현재 단기적으로 과매도권에서 반등 조짐을 보이고 있습니다. RSI, 스토캐스틱, CCI 등 모멘텀 지표들이 과매도 수준에서 상승 전환을 시도하고 있으며, MACD 히스토그램도 약세 모멘텀이 약화되고 있음을 시사합니다. 금일 강한 매수 거래량(87.94%)과",
-        "tags": [
-          "CCI 100 돌파",
-          "CMF 매집 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "TSLA",
-      "entryDate": "2026-02-24",
-      "entryPrice": 409.38,
-      "exitDate": "2026-02-25",
-      "exitPrice": 417.58,
-      "holdingDays": 1,
-      "returnPct": 2,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "TSLA 주가는 현재 전반적인 하락 추세에 있으나, 단기적으로는 반등 시도가 나타나고 있습니다.\nMACD와 DMI는 여전히 강한 하락 모멘텀을 나타내며, 주가는 주요 이동평균선과 이치모쿠 기준선 아래에 위치하여 전반적인 약세를 보입니다. 또한, 시장 구조상 최근 하락 ",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "NVDA",
-      "entryDate": "2026-02-25",
-      "entryPrice": 195.56,
-      "exitDate": "2026-02-26",
-      "exitPrice": 186,
-      "holdingDays": 1,
-      "returnPct": -4.89,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "전반적인 추세는 이동평균선, MACD, Parabolic SAR, Supertrend 등 다수의 지표들이 강한 상승세를 가리키며 긍정적입니다.\n하지만 RSI, 스토캐스틱, CCI, Williams %R 등 여러 모멘텀 지표들이 과매수 영역에 진입하여 단기적인 가격 조정",
-        "tags": [
-          "Supertrend 전환",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "META",
-      "entryDate": "2026-02-25",
-      "entryPrice": 653.69,
-      "exitDate": "2026-03-11",
-      "exitPrice": 654.86,
-      "holdingDays": 10,
-      "returnPct": 0.18,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "전반적인 추세는 혼조세입니다. 단기적으로는 강한 매수세가 유입되며 상승 모멘텀을 보이고 있으나, 중장기 이동평균선과 주요 저항선 아래에 위치하여 상승 여력이 제한될 수 있습니다.\nRSI, 스토캐스틱, CCI, MFI, CMF, OBV 등 대부분의 모멘텀 지표들이 상승하",
-        "tags": [
-          "Ichimoku 구름 돌파",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "entryDate": "2026-02-26",
-      "entryPrice": 401.72,
-      "exitDate": "2026-03-12",
-      "exitPrice": 401.86,
-      "holdingDays": 10,
-      "returnPct": 0.03,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSFT 주가는 현재 강한 하락 추세에 있습니다.\n단기 모멘텀 지표(스토캐스틱, 스토캐스틱 RSI, MACD 히스토그램, MFI, CCI, 스퀴즈 모멘텀)는 과매도/음의 영역에서 상승하며 약화된 하락 모멘텀과 단기 반등 가능성을 시사합니다. 특히 스토캐스틱과 스토캐스틱",
-        "tags": [
-          "MACD 골든크로스",
-          "RSI 강세 다이버전스"
-        ]
-      }
-    },
-    {
-      "ticker": "CRWD",
-      "entryDate": "2026-02-26",
-      "entryPrice": 381.1,
-      "exitDate": "2026-03-12",
-      "exitPrice": 441.54,
-      "holdingDays": 10,
-      "returnPct": 15.86,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "CRWD 주식은 장기적으로 강한 하락 추세에 있습니다. 여러 지표들이 매도 압력이 우세함을 나타내고 있으며, 시장 구조 또한 지속적인 하락을 확인시켜주고 있습니다.\n최근 2거래일 동안 강한 양봉이 출현하며 단기적인 반등을 시도하고 있으며, 현재 거래량에서 매수세가 강하",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "MSTR",
-      "entryDate": "2026-03-02",
-      "entryPrice": 137.65,
-      "exitDate": "2026-03-03",
-      "exitPrice": 129,
-      "holdingDays": 1,
-      "returnPct": -6.28,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "loss",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSTR 주식은 장기적으로 하락 추세에 있으나, 최근 강력한 단기 상승 모멘텀을 보이고 있습니다.\nMACD는 강한 매수 신호를 나타내며, DMI는 상승 추세의 강화를 지지하고 있습니다. OBV와 Parabolic SAR 또한 상승세를 확인시켜주고 있습니다. 특히 스퀴즈",
-        "tags": [
-          "DMI 골든크로스",
-          "Squeeze 양전환"
-        ]
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "entryDate": "2026-03-05",
-      "entryPrice": 218.94,
-      "exitDate": "2026-03-19",
-      "exitPrice": 208.76,
-      "holdingDays": 10,
-      "returnPct": -4.65,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AMZN 주식은 단기적으로 강한 상승 모멘텀을 보이며 상승 추세에 있습니다.\nMACD는 강세 크로스오버를 보이고 있고, DMI는 강세 추세가 발전하고 있음을 나타내며, OBV와 CMF도 상승하여 매수 압력이 강함을 시사합니다. Parabolic SAR 또한 상승 추세를",
-        "tags": [
-          "CCI 100 돌파",
-          "DMI 골든크로스",
-          "Parabolic SAR 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "AAPL",
-      "entryDate": "2026-03-10",
-      "entryPrice": 260.83,
-      "exitDate": "2026-03-24",
-      "exitPrice": 251.64,
-      "holdingDays": 10,
-      "returnPct": -3.52,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AAPL 주가는 현재 혼조세를 보이며 전반적으로 하락 추세에 있습니다.\nMACD는 하락 신호를 보이며, RSI, 스토캐스틱, CCI는 과매도권에 근접하여 단기 반등 가능성을 시사합니다. Squeeze Momentum은 음의 영역에서 상승하고 있어 모멘텀 전환의 초기 신",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "GOOGL",
-      "entryDate": "2026-03-10",
-      "entryPrice": 307.04,
-      "exitDate": "2026-03-24",
-      "exitPrice": 295,
-      "holdingDays": 10,
-      "returnPct": -3.92,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "GOOGL 주가는 현재 하락 추세에 있으나, 단기적으로는 상승 모멘텀을 보이며 혼조세를 나타내고 있습니다.\n주요 추세 지표인 DMI, Supertrend, Parabolic SAR은 모두 하락 추세를 가리키며, 주가는 주요 이동평균선(MA20, EMA20, EMA60,",
-        "tags": [
-          "MACD 골든크로스",
-          "BB 하단 반등",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "TSLA",
-      "entryDate": "2026-03-11",
-      "entryPrice": 407.82,
-      "exitDate": "2026-03-12",
-      "exitPrice": 405,
-      "holdingDays": 1,
-      "returnPct": -0.69,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "TSLA 주가는 현재 중립적인 추세에 있으며, 단기적으로는 상승 모멘텀을 보이지만 장기적인 하락 압력에 직면해 있습니다.\nMACD는 강세 전환을 보였고, RSI, 스토캐스틱, CCI, OBV, MFI 등 대부분의 모멘텀 지표들이 상승하며 단기적인 매수 압력을 시사합니다",
-        "tags": [
-          "MACD 골든크로스",
-          "CCI 100 돌파",
-          "RSI 강세 다이버전스"
-        ]
-      }
-    },
-    {
-      "ticker": "META",
-      "entryDate": "2026-03-12",
-      "entryPrice": 638.18,
-      "exitDate": "2026-03-26",
-      "exitPrice": 547.54,
-      "holdingDays": 10,
-      "returnPct": -14.2,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "win",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "현재 주가는 하락 추세가 지속되고 있습니다. MACD는 하락 교차를 보이며 모멘텀이 약화되고 있고, RSI와 CCI도 하락하며 매도 압력이 강함을 시사합니다. DMI의 ADX는 낮은 수준으로 추세의 강도가 약하지만, -DI가 +DI보다 높아 하락 압력이 우세합니다.\nO",
-        "tags": [
-          "MACD 골든크로스",
-          "Squeeze 양전환"
-        ]
-      }
-    },
-    {
-      "ticker": "MSTR",
-      "entryDate": "2026-03-17",
-      "entryPrice": 150.28,
-      "exitDate": "2026-03-19",
-      "exitPrice": 135,
+      "entryPrice": 343.69,
+      "exitDate": "2026-02-04",
+      "exitPrice": 332,
       "holdingDays": 2,
-      "returnPct": -10.17,
+      "returnPct": -3.4,
       "signalType": "buy",
       "result": "loss",
       "exitReason": "stop_loss",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "MSTR은 최근 강한 상승세를 보이며 단기적으로 과매수 상태에 진입했습니다. SMC의 강세 CHOCH 신호와 스퀴즈 모멘텀의 상승은 잠재적인 추세 전환을 시사하지만, 여러 모멘텀 지표가 과매수 상태를 나타내고 볼린저밴드 상단 위에 주가가 위치하여 단기 조정 가능성이 높",
+        "summary": "GOOGL은 이동평균선 정배열과 지속적인 구조적 고점 돌파(BOS)를 보이며 강력한 상승 추세에 있습니다.\n최근 강한 상승으로 RSI와 스토캐스틱 지표가 과매수 구간에 진입하여 단기 조정 가능성이 제기됩니다. 그러나 MACD는 여전히 강세 모멘텀을 나타내고 있으며, 최근 '강세 장악형(Bullish Engulfing)' 캔들 패턴이 나타나 매수세의 우위를 보여줍니다.\n주요 지지선은 거래량 가치 영역 상단(VAH)인 341.",
         "tags": [
-          "Supertrend 전환",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "AAPL",
-      "entryDate": "2026-03-25",
-      "entryPrice": 252.62,
-      "exitDate": "2026-04-09",
-      "exitPrice": 260.49,
-      "holdingDays": 10,
-      "returnPct": 3.12,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "loss",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "현재 AAPL 주식은 강한 하락 추세에 있습니다. DMI, 이치모쿠, 슈퍼트렌드, Parabolic SAR 등 주요 추세 지표들이 모두 하락세를 가리키고 있으며, 주가는 대부분의 이동평균선과 볼린저 밴드 중간선 아래에 위치해 있습니다. 거래량 분석에서도 매도세가 우세합",
-        "tags": [
+          "MACD 골든크로스",
           "CCI 100 돌파",
-          "RSI 강세 다이버전스",
-          "MACD 히스토그램 강세 수렴"
-        ]
-      }
-    },
-    {
-      "ticker": "PLTR",
-      "entryDate": "2026-03-25",
-      "entryPrice": 154.96,
-      "exitDate": "2026-03-26",
-      "exitPrice": 149,
-      "holdingDays": 1,
-      "returnPct": -3.85,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "PLTR 주가는 현재 154.96달러로, 장기적으로는 상승 추세를 유지하고 있으나 단기적으로는 모멘텀이 약화되고 있습니다.\n이동평균선과 볼린저 밴드 중간선 등 여러 지표가 151.50달러 부근에서 강력한 지지선을 형성하고 있습니다. 반면, 155.40달러 부근에는 단기",
-        "tags": [
-          "EMA 골든크로스",
-          "Parabolic SAR 전환"
-        ]
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "entryDate": "2026-03-30",
-      "entryPrice": 358.96,
-      "exitDate": "2026-03-31",
-      "exitPrice": 365,
-      "holdingDays": 1,
-      "returnPct": 1.68,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSFT 주가는 현재 강력한 하락 추세에 있습니다. 장기 이동평균선들이 역배열을 형성하고 있으며, MACD, DMI, OBV, CMF, Squeeze Momentum 등 대부분의 추세 및 모멘텀 지표들이 강한 매도 압력과 하락 모멘텀을 지속적으로 나타내고 있습니다.\n그",
-        "tags": [
-          "RSI 과매도 반등",
-          "BB 하단 반등",
-          "MFI 과매도 반등"
-        ]
-      }
-    },
-    {
-      "ticker": "META",
-      "entryDate": "2026-03-30",
-      "entryPrice": 536.38,
-      "exitDate": "2026-04-14",
-      "exitPrice": 662.49,
-      "holdingDays": 10,
-      "returnPct": 23.51,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "META 주식은 현재 강한 하락 추세에 있습니다. 주가는 기간 최저점 부근에 위치하며, 5일, 20일, 60일 이동평균선 모두 현재 가격 위에 있어 강력한 저항으로 작용하고 있습니다.\nRSI, Stochastic, StochRSI, CCI, Williams %R, MF",
-        "tags": [
-          "RSI 과매도 반등",
-          "BB 하단 반등"
-        ]
-      }
-    },
-    {
-      "ticker": "AMZN",
-      "entryDate": "2026-03-31",
-      "entryPrice": 208.27,
-      "exitDate": "2026-04-15",
-      "exitPrice": 248.5,
-      "holdingDays": 10,
-      "returnPct": 19.32,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "loss",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "AMZN 주가는 현재 하락 추세에 있으며, 주요 이동평균선 아래에서 거래되고 있습니다.\nMACD는 하락 신호를 보이고 있으며, DMI는 약한 하락 추세를 나타냅니다. RSI, 스토캐스틱, StochRSI, MFI는 과매도권에 진입했거나 근접하여 단기적인 반등 가능성을 ",
-        "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
+          "CMF 매집 전환"
         ]
       }
     },
     {
       "ticker": "NVDA",
-      "entryDate": "2026-03-31",
-      "entryPrice": 174.4,
-      "exitDate": "2026-04-08",
-      "exitPrice": 183.24,
-      "holdingDays": 5,
-      "returnPct": 5.07,
+      "entryDate": "2026-02-10",
+      "entryPrice": 188.54,
+      "exitDate": "2026-02-25",
+      "exitPrice": 194.49,
+      "holdingDays": 10,
+      "returnPct": 3.16,
       "signalType": "buy",
       "result": "win",
       "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "NVDA는 현재 전반적으로 하락 추세에 있습니다. MACD, DMI, 슈퍼트렌드, OBV, MFI, CMF 등 대부분의 추세 지표들이 매도 압력과 하락 모멘텀을 나타내고 있습니다.\n하지만 최근 강한 상승 마루보즈 캔들과 6거래일 전의 강세 하라미 패턴이 나타났으며, 스",
+        "summary": "현재 주가는 주요 저항선(189.13 VAH)과 지지선(181.11 POC) 사이의 좁은 범위에서 횡보하고 있습니다.\nMACD 골든크로스 등 단기 강세 신호가 있으나, OBV 하락 다이버전스와 최근의 약세 구조 변화(CHOCH)는 상승 모멘텀에 대한 의구심을 더합니다.\n변동성 축소(Squeeze) 상태로, 향후 저항 돌파 또는 지지 이탈 시 강한 방향성이 나타날 수 있어 주의 깊은 관찰이 필요합니다.",
         "tags": [
-          "BB 하단 반등",
-          "CCI 100 돌파"
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Parabolic SAR 전환"
         ]
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2026-03-31",
-      "entryPrice": 390.41,
-      "exitDate": "2026-04-15",
-      "exitPrice": 411.16,
-      "holdingDays": 10,
-      "returnPct": 5.31,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "time",
-      "aiResult": "loss",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "CRWD 주식은 여러 지표에서 강한 하락 추세를 보이고 있습니다. MACD, DMI, 슈퍼트렌드, 파라볼릭 SAR, 이치모쿠 지표 모두 하락세를 지지하고 있습니다. 거래량 지표인 OBV와 CMF 또한 매도 압력이 우세함을 나타냅니다.\n\n단기적으로는 RSI, 스토캐스틱,",
-        "tags": [
-          "EMA 골든크로스",
-          "CCI 100 돌파"
-        ]
-      }
-    },
-    {
-      "ticker": "GOOGL",
-      "entryDate": "2026-04-01",
-      "entryPrice": 297.39,
-      "exitDate": "2026-04-02",
-      "exitPrice": 293.5,
-      "holdingDays": 1,
-      "returnPct": -1.31,
+      "ticker": "AAPL",
+      "entryDate": "2026-02-24",
+      "entryPrice": 272.14,
+      "exitDate": "2026-02-27",
+      "exitPrice": 264.5,
+      "holdingDays": 3,
+      "returnPct": -2.81,
       "signalType": "buy",
       "result": "loss",
       "exitReason": "stop_loss",
-      "aiResult": "neutral",
+      "aiResult": "loss",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "GOOGL은 장기적으로 하락 추세에 있으나, 최근 단기적인 반등 모멘텀과 강세 캔들 패턴이 나타나고 있습니다. DMI, MACD, OBV, MFI, CMF 및 SMC 시장 구조(약세 CHOCH, BOS)는 전반적인 약세 추세를 나타내며, 주가는 주요 장기 이동평균선과 ",
+        "summary": "현재 주가는 주요 저항선인 이치모쿠 구름과 거래량 집중 구간(POC)을 상향 돌파하며 강세 전환을 시도하고 있습니다.\n강력한 'Three Outside Up' 캔들 패턴과 다수의 이동평균선이 상승 추세를 지지하고 있습니다.\n다만, ADX가 낮아 추세 강도가 아직 약하고 일부 보조지표(Parabolic SAR)는 약세 신호를 보내고 있어, 돌파가 안착하는지 확인할 필요가 있습니다.\n핵심 지지선은 267달러 부근이며, 저항선은 279달러입니다.",
         "tags": [
-          "Supertrend 전환",
-          "CCI 100 돌파",
-          "Parabolic SAR 전환"
+          "EMA 골든크로스",
+          "MACD 골든크로스",
+          "CMF 매집 전환"
         ]
       }
     }
