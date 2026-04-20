@@ -237,7 +237,7 @@ export default async function Home() {
                                 Siglens는 얼마나 정확할까요?
                             </p>
                             <p className="text-secondary-500 mt-0.5 text-xs">
-                                1년간 10개 종목 기술적 분석 + AI 예측 백테스팅
+                                2년간 10개 종목 기술적 분석 + AI 예측 백테스팅
                                 결과를 확인하세요.
                             </p>
                         </div>

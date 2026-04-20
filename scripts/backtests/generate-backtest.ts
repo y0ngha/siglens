@@ -70,8 +70,9 @@ const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_API_KEY = process.env.FMP_API_KEY ?? '';
 const GEMINI_API_KEY = process.env.GEMINI_API_KEY ?? '';
 
-const FROM_DATE_FETCH = '2024-09-01';
-const DISPLAY_START_DATE = '2025-04-01';
+// DISPLAY_START_DATE 2024-04-01 이전으로 약 6개월 warmup 확보 (MIN_BARS=120).
+const FROM_DATE_FETCH = '2023-09-01';
+const DISPLAY_START_DATE = '2024-04-01';
 const TO_DATE = '2026-04-20';
 
 const OUTPUT_PATH = resolve(process.cwd(), 'src/app/backtesting/data.json');
@@ -619,7 +620,7 @@ function writeOutput(allCases: BacktestCase[]): void {
     const aiTrendHits = sortedCases.filter(c => c.aiTrendHit).length;
 
     const meta: BacktestMeta = {
-        period: '2025.04 – 2026.04',
+        period: '2024.04 – 2026.04',
         totalCases: total,
         winRate: total > 0 ? Number(((wins / total) * 100).toFixed(1)) : 0,
         aiWinRate:
