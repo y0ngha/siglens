@@ -72,6 +72,13 @@ jobs:
                         2. Run: gh pr diff ${{ github.event.pull_request.number }} --repo ${{ github.repository }} to analyze the changes.
                         3. **Contextual Reading**: Based on the diff, read CLAUDE.md, /docs/MISTAKES.md, and ONLY the relevant principle documents from the list below.
                         4. Review the diff strictly against the loaded rules.
+
+                        ## Completeness Rule (CRITICAL — Never Omit)
+                        - You MUST report **every single violation** found in the diff. Do NOT prioritize, filter, or batch findings.
+                        - Do NOT stop at 1-2 Blockers or 2-3 Suggestions. Report ALL of them in one pass.
+                        - If you find 10 Blockers and 8 Suggestions, report all 18. Partial reviews are forbidden.
+                        - The developer will fix everything at once — giving partial feedback causes repeated review cycles.
+
                         5. If findings exist, categorize your feedback strictly into:
                         - **[Blocker]**: Critical architecture, domain, or logic violations that MUST be fixed.
                         - **[Suggestion]**: Optional improvements, readability enhancements, or best practices.
