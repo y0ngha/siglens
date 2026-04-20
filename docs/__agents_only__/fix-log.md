@@ -133,3 +133,8 @@
 - Violation: `ai-levels.ts`의 `tpResolved.value!` 비-null 단언
 - Rule: MISTAKES.md — `!` 단언보다 지역 `const`로 narrowing을 고정해 타입 좁히기를 명시적으로 전파
 - Context: `tpWasReconciled` 게이트에도 TS 좁히기 전파가 안 되어 `!` 필요했던 것을, `const tpFallback = tpResolved.value` + `tpWasReconciled && tpFallback !== undefined` 가드로 대체
+
+## [PR #342 Round 5 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: `SignalSubsection` ⓘ 버튼이 `title` + `sr-only` 조합만 사용 — 키보드 사용자에게 시각적 툴팁 표시 안 됨
+- Rule: MISTAKES.md Accessibility #4 — 인터랙티브 info 아이콘은 `button` + 실제 `role="tooltip"` 렌더 + focus-visible ring 필수
+- Context: AnalysisPanel에 구현된 완전한 InfoTooltip(click/pointer/portal/focus-ring)을 `src/components/ui/InfoTooltip.tsx`로 분리해 공통화. SignalSubsection + AnalysisPanel 양쪽에서 재사용. focus-visible:ring-primary-400 기본 포함.

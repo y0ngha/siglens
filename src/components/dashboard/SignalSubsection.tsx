@@ -1,5 +1,6 @@
 import type { StockWithConflict } from '@/domain/types';
 import { cn } from '@/lib/cn';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { SignalStockCard } from './SignalStockCard';
 
 interface SignalSubsectionProps {
@@ -30,7 +31,6 @@ export function SignalSubsection({
     infoMessage,
 }: SignalSubsectionProps) {
     const count = stocks.length.toString().padStart(2, '0');
-    const tooltipId = infoMessage ? `${title}-info` : undefined;
 
     return (
         <section className={cn(VARIANT_BORDER[variant], 'pt-3 pb-4')}>
@@ -47,21 +47,12 @@ export function SignalSubsection({
                         </span>
                         {title}
                     </h3>
-                    {tooltipId && (
-                        <>
-                            <button
-                                type="button"
-                                title={infoMessage}
-                                aria-label="추가 정보"
-                                aria-describedby={tooltipId}
-                                className="text-secondary-500 hover:text-secondary-300 cursor-default text-xs transition-colors"
-                            >
-                                ⓘ
-                            </button>
-                            <span id={tooltipId} className="sr-only">
+                    {infoMessage && (
+                        <InfoTooltip>
+                            <span className="text-secondary-300">
                                 {infoMessage}
                             </span>
-                        </>
+                        </InfoTooltip>
                     )}
                 </div>
                 <span
