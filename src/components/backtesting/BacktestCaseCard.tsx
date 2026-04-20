@@ -11,6 +11,56 @@ const priceFormatter = new Intl.NumberFormat('en-US', {
     maximumFractionDigits: 2,
 });
 
+function EntryRecBadge({
+    recommendation,
+}: {
+    recommendation: 'enter' | 'wait' | 'avoid';
+}) {
+    const config = {
+        enter: {
+            label: 'AI 진입 권고',
+            cls: 'bg-chart-bullish/10 text-chart-bullish border-chart-bullish/30',
+        },
+        avoid: {
+            label: 'AI 회피 권고',
+            cls: 'bg-chart-bearish/10 text-chart-bearish border-chart-bearish/30',
+        },
+        wait: {
+            label: 'AI 관망',
+            cls: 'bg-secondary-800 text-secondary-400 border-secondary-700',
+        },
+    }[recommendation];
+    return (
+        <span
+            translate="no"
+            className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold ${config.cls}`}
+        >
+            {config.label}
+        </span>
+    );
+}
+
+function RiskBadge({ level }: { level: string }) {
+    const normalized = level.toLowerCase();
+    const isHigh =
+        normalized.includes('high') ||
+        normalized.includes('extreme') ||
+        level.includes('높');
+    const isLow = normalized.includes('low') || level.includes('낮');
+    const cls = isHigh
+        ? 'bg-ui-warning/10 text-ui-warning border-ui-warning/30'
+        : isLow
+          ? 'bg-chart-bullish/10 text-chart-bullish border-chart-bullish/30'
+          : 'bg-secondary-800 text-secondary-400 border-secondary-700';
+    return (
+        <span
+            className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase ${cls}`}
+        >
+            {level}
+        </span>
+    );
+}
+
 const winClasses = {
     article: 'border-secondary-700',
     badge: 'bg-secondary-700 text-primary-400',
@@ -31,6 +81,12 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
     const isWin = c.result === 'win';
     const v = isWin ? winClasses : lossClasses;
     const returnLabel = `${c.returnPct >= 0 ? '+' : ''}${c.returnPct.toFixed(1)}%`;
+
+    const firstBullishTarget = c.aiAnalysis.bullishTargets[0];
+    const showPredictionBlock =
+        c.aiAnalysis.bullishTargets.length > 0 ||
+        c.aiAnalysis.stopLoss !== undefined ||
+        c.aiAnalysis.takeProfit !== undefined;
 
     return (
         <article
@@ -125,6 +181,84 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             {tag}
                         </span>
                     ))}
+                </div>
+            )}
+
+            {showPredictionBlock && (
+                <div className="bg-secondary-900/60 text-secondary-400 mt-2 rounded px-3 py-2 text-[10px]">
+                    <div className="mb-1 flex items-center gap-2">
+                        <span className="text-secondary-500 text-[9px] font-semibold tracking-wider uppercase">
+                            AI 예측 레벨
+                        </span>
+                        <EntryRecBadge
+                            recommendation={
+                                c.aiAnalysis.entryRecommendation
+                            }
+                        />
+                        {c.aiAnalysis.riskLevel && (
+                            <RiskBadge level={c.aiAnalysis.riskLevel} />
+                        )}
+                    </div>
+
+                    <div className="flex flex-wrap gap-x-3 gap-y-1 font-mono tabular-nums">
+                        {firstBullishTarget && (
+                            <div>
+                                <span className="text-secondary-500">
+                                    목표가:{' '}
+                                </span>
+                                <span className="text-chart-bullish">
+                                    {priceFormatter.format(
+                                        firstBullishTarget.price,
+                                    )}
+                                </span>
+                                {c.aiTrendHit && (
+                                    <span className="text-chart-bullish ml-1">
+                                        ✓ 도달
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                        {c.aiAnalysis.takeProfit !== undefined && (
+                            <div>
+                                <span className="text-secondary-500">
+                                    TP:{' '}
+                                </span>
+                                <span className="text-chart-bullish">
+                                    {priceFormatter.format(
+                                        c.aiAnalysis.takeProfit,
+                                    )}
+                                </span>
+                                {c.exitReason === 'take_profit' && (
+                                    <span className="text-chart-bullish ml-1">
+                                        ✓
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                        {c.aiAnalysis.stopLoss !== undefined && (
+                            <div>
+                                <span className="text-secondary-500">
+                                    SL:{' '}
+                                </span>
+                                <span className="text-chart-bearish">
+                                    {priceFormatter.format(
+                                        c.aiAnalysis.stopLoss,
+                                    )}
+                                </span>
+                                {c.exitReason === 'stop_loss' && (
+                                    <span className="text-chart-bearish ml-1">
+                                        ✓
+                                    </span>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {firstBullishTarget?.basis && (
+                        <p className="text-secondary-500 mt-1 line-clamp-1 text-[9px]">
+                            근거: {firstBullishTarget.basis}
+                        </p>
+                    )}
                 </div>
             )}
         </article>
