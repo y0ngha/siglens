@@ -191,7 +191,12 @@ function buildExitSlPart(
     entryPrice: number,
     stopLoss: number | undefined
 ): string | undefined {
-    if (stopLoss === undefined || !Number.isFinite(stopLoss) || stopLoss <= 0) {
+    if (
+        stopLoss === undefined ||
+        !Number.isFinite(stopLoss) ||
+        stopLoss <= 0 ||
+        stopLoss >= entryPrice
+    ) {
         return undefined;
     }
     return `손절 $${stopLoss.toFixed(2)} (${formatSignedPct(entryPrice, stopLoss)})`;
@@ -236,7 +241,12 @@ export function buildBullishRiskRewardText(
     stopLoss: number | undefined,
     takeProfitPrices: readonly number[] | undefined
 ): string {
-    if (stopLoss === undefined || !Number.isFinite(stopLoss) || stopLoss <= 0)
+    if (
+        stopLoss === undefined ||
+        !Number.isFinite(stopLoss) ||
+        stopLoss <= 0 ||
+        stopLoss >= entryPrice
+    )
         return '';
     const tp = takeProfitPrices?.[0];
     // tp가 entryPrice보다 크지 않으면 R:R이 음수가 되어 사용자 혼란 → 빈 문자열

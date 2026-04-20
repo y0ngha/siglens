@@ -187,12 +187,10 @@ function ReconciledLevelsBlock({
                 <InfoTooltip>
                     <span className="text-secondary-300">
                         {RECONCILED_TOOLTIP_PREFIX}
-                        {reason !== '' && (
-                            <>
-                                <br />
-                                {reason}
-                            </>
-                        )}
+                        <>
+                            <br />
+                            {reason}
+                        </>
                     </span>
                 </InfoTooltip>
             </header>

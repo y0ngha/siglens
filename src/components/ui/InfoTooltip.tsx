@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useId, useRef, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type React from 'react';
 import { createPortal } from 'react-dom';
+import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 import {
     getTooltipPosition,
@@ -49,17 +50,10 @@ export function InfoTooltip({ children, className }: InfoTooltipProps) {
 
     // WCAG 2.1 SC 1.4.13 — 열린 툴팁은 Escape로 닫을 수 있어야 한다.
     // useOnClickOutside는 포인터 이벤트만 처리하므로 키보드 사용자용 경로가 별도로 필요하다.
-    useEffect(() => {
-        if (!open) return;
-        const handleKeyDown = (e: KeyboardEvent): void => {
-            if (e.key === 'Escape') {
-                setOpen(false);
-                setPositioned(false);
-            }
-        };
-        document.addEventListener('keydown', handleKeyDown);
-        return () => document.removeEventListener('keydown', handleKeyDown);
-    }, [open]);
+    useEscapeKey(() => {
+        setOpen(false);
+        setPositioned(false);
+    }, open);
 
     const handleClick = (): void => {
         if (open) {

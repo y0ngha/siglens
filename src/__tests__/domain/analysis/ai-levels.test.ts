@@ -336,6 +336,10 @@ describe('buildBullishRiskRewardText', () => {
     it('TP가 entry와 같으면 빈 문자열을 반환한다', () => {
         expect(buildBullishRiskRewardText(100, 95, [100])).toBe('');
     });
+
+    it('SL이 entry보다 높으면 빈 문자열을 반환한다 (양수 slPct 방지)', () => {
+        expect(buildBullishRiskRewardText(100, 105, [110])).toBe('');
+    });
 });
 
 describe('reconcileBullishActionRecommendation', () => {
@@ -650,6 +654,32 @@ describe('postProcessAnalysisWithReconcile', () => {
         };
         const result = postProcessAnalysisWithReconcile(response, undefined, 5);
         expect(result).toBe(response);
+    });
+
+    it('entryPrices가 빈 배열이면 fallbackEntryPrice를 사용한다', () => {
+        const response = {
+            ...baseResponse,
+            actionRecommendation: { ...rec, entryPrices: [], stopLoss: 50 },
+        };
+        const result = postProcessAnalysisWithReconcile(response, 100, 5);
+        expect(
+            result.actionRecommendation?.reconciledLevels?.stopLoss
+        ).toBeCloseTo(92.5, 3);
+    });
+
+    it('entryPrices 원소가 모두 0 이하면 fallbackEntryPrice를 사용한다', () => {
+        const response = {
+            ...baseResponse,
+            actionRecommendation: {
+                ...rec,
+                entryPrices: [0, -1],
+                stopLoss: 50,
+            },
+        };
+        const result = postProcessAnalysisWithReconcile(response, 100, 5);
+        expect(
+            result.actionRecommendation?.reconciledLevels?.stopLoss
+        ).toBeCloseTo(92.5, 3);
     });
 
     it('AI 값이 모두 유효하면 recommendation은 같은 참조이고 reconciledLevels 없음', () => {
