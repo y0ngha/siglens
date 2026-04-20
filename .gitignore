@@ -59,3 +59,5 @@ next-env.d.ts
 /worker/.vscode/
 
 .vscode/
+# Dev-only preview routes — local testing, never deployed
+/src/app/dev/
