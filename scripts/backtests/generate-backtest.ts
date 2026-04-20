@@ -8,7 +8,7 @@
  * 환경변수 (.env.local):
  *   FMP_API_KEY     — Financial Modeling Prep API 키
  *   GEMINI_API_KEY  — Google Gemini API 키 (Batch API 지원 모델 필요)
- *   GEMINI_MODEL    — 선택, 기본 'gemini-2.5-flash'
+ *   GEMINI_MODEL    — 선택, 기본 'gemini-2.5-pro' (gemini-2.5-pro 이상 권장)
  *   FORCE_FRESH     — '1'이면 .batch-job.txt 무시하고 새로 제출
  *
  * 출력: src/app/backtesting/data.json
@@ -28,7 +28,7 @@ import { resolve } from 'path';
 import { config } from 'dotenv';
 import { GoogleGenAI, JobState } from '@google/genai';
 import type { InlinedRequest, InlinedResponse } from '@google/genai';
-import { calculateIndicators } from '@/domain/indicators';
+import { calculateIndicators, calculateMA } from '@/domain/indicators';
 import { detectSignals } from '@/domain/signals';
 import { simulateExit } from '@/domain/backtest/exit';
 import { signalTypeToTagLabel } from '@/domain/backtest/tags';
@@ -83,7 +83,7 @@ const BATCH_STATE_PATH = resolve(
 const MAX_SIGNALS_PER_TICKER = 10;
 const MAX_TAGS_PER_CASE = 3;
 const MIN_BARS = 120;
-const MIN_CONFLUENCE = 2;
+const MIN_CONFLUENCE = 3;
 const HOLD_DAYS = 10;
 const CONTEXT_BARS = 120;
 const FMP_SLEEP_MS = 1_000;
@@ -92,16 +92,21 @@ const POLL_INTERVAL_MS = 30_000;
 const MAX_POLL_MS = 2 * 60 * 60 * 1_000; // 2h
 const POLL_WARN_MS = 60 * 60 * 1_000; // 1h
 
-const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
+const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-pro';
 /**
  * MUST stay in sync with worker/src/gemini.ts DEFAULT_THINKING_BUDGET.
  * Changing here without also updating the worker (or vice versa) will cause
  * backtest and production AI responses to diverge.
  */
-// flash-lite: 24576 / flash: 32768 — worker/src/gemini.ts와 동일 상한 유지.
+// pro: 32768 — worker/src/gemini.ts와 동일 상한 유지.
 const GEMINI_THINKING_BUDGET = Number(
-    process.env.GEMINI_THINKING_BUDGET ?? '24576'
+    process.env.GEMINI_THINKING_BUDGET ?? '32768'
 );
+
+const DECISIVENESS_SUFFIX = `
+
+[Backtest evaluation directive]
+When technical indicators are clearly aligned in either direction, prefer 'enter' or 'avoid' as your entryRecommendation. Reserve 'wait' strictly for genuinely conflicting or ambiguous setups. Your decisive call (enter/avoid) is preferred over excessive caution.`;
 
 if (!FMP_API_KEY) throw new Error('FMP_API_KEY is required in .env.local');
 if (!GEMINI_API_KEY)
@@ -170,13 +175,18 @@ function findEntryCandidates(bars: Bar[], fmpBars: FmpBar[]): EntryCandidate[] {
             .map(s => s.type)
     );
 
+    // MA50 시리즈를 한 번만 계산 (O(n*50), 루프 밖). 종가 > MA50 조건으로
+    // 중기 상승추세 확인 필터에 사용.
+    const ma50Series = calculateMA(bars, 50);
+
     // O(n²) sweep: 각 bar마다 prefix를 잘라 calculateIndicators + detectSignals 재실행.
     // 운영 코드와 동일한 탐지 로직을 재사용하기 위한 의도적 단순화 (spec 섹션 10.4).
     // n ≈ 400 bars × 10 tickers 수준에서 실측 수분 내 완료.
     for (let i = MIN_BARS; i < bars.length - HOLD_DAYS; i++) {
         const prefix = bars.slice(0, i + 1);
+        const indicators = calculateIndicators(prefix);
         const bullishTypes = new Set(
-            detectSignals(prefix, calculateIndicators(prefix))
+            detectSignals(prefix, indicators)
                 .filter(s => s.direction === 'bullish')
                 .map(s => s.type)
         );
@@ -185,11 +195,16 @@ function findEntryCandidates(bars: Bar[], fmpBars: FmpBar[]): EntryCandidate[] {
         const entryDate = fmpBars[i].date;
         const inDisplayRange = entryDate >= DISPLAY_START_DATE;
 
+        const ma50AtI = ma50Series[i];
+        const closeAboveMa50 =
+            ma50AtI !== null && fmpBars[i].close > ma50AtI;
+
         if (
             inDisplayRange &&
             i > cooldownUntil &&
             bullishTypes.size >= MIN_CONFLUENCE &&
-            fresh.length >= 1
+            fresh.length >= 1 &&
+            closeAboveMa50
         ) {
             candidates = [
                 ...candidates,
@@ -296,7 +311,10 @@ function buildPromptForCandidate(
         idx + 1
     );
     const indicators = calculateIndicators(contextBars);
-    return buildAnalysisPrompt(ticker, contextBars, indicators, [], '1Day');
+    return (
+        buildAnalysisPrompt(ticker, contextBars, indicators, [], '1Day') +
+        DECISIVENESS_SUFFIX
+    );
 }
 
 async function collectAllCandidates(): Promise<CandidateWithPrompt[]> {
