@@ -47,7 +47,7 @@ export function SignalSubsection({
                         </span>
                         {title}
                     </h3>
-                    {infoMessage && tooltipId && (
+                    {tooltipId && (
                         <>
                             <button
                                 type="button"

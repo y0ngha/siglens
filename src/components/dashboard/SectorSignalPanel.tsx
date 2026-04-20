@@ -18,7 +18,7 @@ import {
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
-import { resolveConflicts } from './utils/resolveConflicts';
+import { resolveConflicts } from '@/domain/signals/resolveConflicts';
 
 type QuadrantKey =
     | 'bullishConfirmed'

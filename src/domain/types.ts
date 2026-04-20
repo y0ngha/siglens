@@ -652,9 +652,9 @@ export interface ConflictInfo {
     readonly bearishCount: number;
 }
 
-export type StockWithConflict = StockSignalResult & {
+export interface StockWithConflict extends StockSignalResult {
     readonly conflict?: ConflictInfo;
-};
+}
 
 export type DashboardTimeframe = '15Min' | '1Hour' | '1Day';
 
