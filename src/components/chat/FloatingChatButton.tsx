@@ -1,6 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {
+    startTransition,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+} from 'react';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 
@@ -45,7 +51,9 @@ export function FloatingChatButton({
         if (wasReadyOnMountRef.current) return;
         try {
             if (!localStorage.getItem(TOOLTIP_SHOWN_KEY)) {
-                setShowTooltip(true);
+                startTransition(() => {
+                    setShowTooltip(true);
+                });
             }
         } catch {
             // ignore
