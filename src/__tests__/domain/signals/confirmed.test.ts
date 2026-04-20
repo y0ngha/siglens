@@ -16,6 +16,7 @@ import {
     detectParabolicSarFlip,
     detectKeltnerUpperBreakout,
     detectSqueezeMomentumBullish,
+    findThresholdCross,
 } from '@/domain/signals/confirmed';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';
 import { calculateMA } from '@/domain/indicators/ma';
@@ -1126,6 +1127,45 @@ describe('detectSqueezeMomentumBullish', () => {
                     EMPTY_INDICATOR_RESULT
                 )
             ).toBeNull();
+        });
+    });
+});
+
+// ─── findThresholdCross helper ────────────────────────────────────────────────
+
+describe('findThresholdCross', () => {
+    describe('direction=up', () => {
+        it('값이 임계값을 상향 돌파한 인덱스를 반환한다', () => {
+            const values = [-5, -3, -1, 2];
+            expect(findThresholdCross(values, 0, 3, 'up')).toBe(3);
+        });
+
+        it('돌파가 없으면 null을 반환한다', () => {
+            expect(findThresholdCross([1, 2, 3, 4], 10, 3, 'up')).toBeNull();
+        });
+
+        it('null 값은 건너뛴다', () => {
+            const values = [null, -1, null, 2];
+            expect(findThresholdCross(values, 0, 4, 'up')).toBeNull();
+        });
+    });
+
+    describe('direction=down', () => {
+        it('값이 임계값을 하향 돌파한 인덱스를 반환한다', () => {
+            const values = [5, 3, 1, -2];
+            expect(findThresholdCross(values, 0, 3, 'down')).toBe(3);
+        });
+
+        it('돌파가 없으면 null을 반환한다', () => {
+            expect(findThresholdCross([5, 4, 3, 2], -10, 3, 'down')).toBeNull();
+        });
+    });
+
+    describe('lookback 경계', () => {
+        it('lookback 범위 밖의 cross는 무시한다', () => {
+            const values = [-5, 2, 3, 4, 5];
+            // cross happened at index 1 (-5 → 2), lookback=2 covers [3, 4]
+            expect(findThresholdCross(values, 0, 2, 'up')).toBeNull();
         });
     });
 });
