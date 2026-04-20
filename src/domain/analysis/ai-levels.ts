@@ -339,9 +339,16 @@ export function reconcileBullishActionRecommendation(
     // tpWasReconciled 게이트로 value가 number임이 런타임 보장되지만 TS가 좁히기를
     // 전파하지 못해, narrowing을 지역 const로 고정해 `!` 단언을 제거한다.
     const tpFallback = tpResolved.value;
+    // TP 배열 보정 시 entryPrice 초과 유효값만 유지하고 오름차순 정렬.
+    // [0]이 fallback으로 교체됐을 때 기존 [1..]과 순서가 역전되는 경우 방지.
     const reconciledTpArr: readonly number[] | undefined =
         tpWasReconciled && tpFallback !== undefined
-            ? [tpFallback, ...(rec.takeProfitPrices?.slice(1) ?? [])]
+            ? [
+                  tpFallback,
+                  ...(rec.takeProfitPrices?.slice(1) ?? []).filter(
+                      tp => Number.isFinite(tp) && tp > entryPrice
+                  ),
+              ].toSorted((a, b) => a - b)
             : rec.takeProfitPrices;
 
     const reconciledSl = slWasReconciled ? slResolved.value : rec.stopLoss;

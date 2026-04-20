@@ -574,6 +574,31 @@ describe('reconcileBullishActionRecommendation', () => {
             );
         });
     });
+
+    it('TP[0] fallback 교체 후 기존 [1]과 오름차순을 보장한다', () => {
+        // entry=100, ATR=5, TP=[200, 105] → [0]=200 무효(ATR 내 3σ 초과), fallback=110
+        // [1]=105는 유효(>entry). 교체 후 [fallback=110, 105] → 정렬 → [105, 110]
+        const rec: ActionRecommendation = {
+            ...baseRec,
+            takeProfitPrices: [200, 105],
+        };
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(result.wasReconciled).toBe(true);
+        const tps = result.recommendation.reconciledLevels?.takeProfitPrices;
+        expect(tps).toBeDefined();
+        expect(tps![0]).toBeLessThan(tps![1]);
+    });
+
+    it('TP[0] fallback 교체 후 entryPrice 이하인 [1]은 제거된다', () => {
+        // entry=100, TP=[200, 80] → [0] fallback, [1]=80 ≤ entry → 제거
+        const rec: ActionRecommendation = {
+            ...baseRec,
+            takeProfitPrices: [200, 80],
+        };
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        const tps = result.recommendation.reconciledLevels?.takeProfitPrices;
+        expect(tps?.every(tp => tp > 100)).toBe(true);
+    });
 });
 
 describe('postProcessAnalysisWithReconcile', () => {
