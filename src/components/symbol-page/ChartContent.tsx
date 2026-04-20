@@ -16,7 +16,10 @@ import {
     validateKeyLevels,
     clusterKeyLevels,
 } from '@/domain/analysis/keyLevels';
-import { validateActionPrices } from '@/domain/analysis/actionRecommendation';
+import {
+    validateActionPrices,
+    extractReconciledActionLines,
+} from '@/domain/analysis/actionRecommendation';
 import { cn } from '@/lib/cn';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
@@ -190,6 +193,11 @@ export function ChartContent({
         [analysis.actionRecommendation]
     );
 
+    const reconciledActionLines = useMemo(
+        () => extractReconciledActionLines(analysis.actionRecommendation),
+        [analysis.actionRecommendation]
+    );
+
     const handlePatternOverlayChange = useCallback(
         (
             visiblePatterns: Set<string>,
@@ -292,6 +300,7 @@ export function ChartContent({
                         keyLevels={clusteredKeyLevels}
                         keyLevelsVisible={keyLevelsVisible}
                         actionPrices={validatedActionPrices}
+                        reconciledActionPrices={reconciledActionLines}
                         actionPricesVisible={actionPricesVisible}
                         onPatternOverlayChange={handlePatternOverlayChange}
                         onChartReady={handleStockChartReady}
