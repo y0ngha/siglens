@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #342 | feat/multi-signal-backtest | 2026-04-21]
+- Violation: `buildBullishExitText` TP 필터가 `tp > 0`으로만 검증 — 진입가 이하 TP 허용
+- Rule: MISTAKES.md #23 — financial values must guard tp > entryPrice to prevent negative-direction text
+- Context: `tp > 0`을 `tp > entryPrice`로 변경; 대응 테스트 케이스 2건 추가 (tp=0, tp<entry)
+
+- Violation: `lib/tooltipPosition.ts` — `HTMLElement` 파라미터로 내부에서 `getBoundingClientRect()` 호출 (lib/ 순수 함수 계약 위반)
+- Rule: ARCHITECTURE.md — lib/ 레이어는 사이드 이펙트 없는 순수 함수만 허용
+- Context: `getTooltipPosition` 파라미터를 `HTMLElement → DOMRect`로 변경; 호출부 `InfoTooltip.tsx`에서 `.getBoundingClientRect()` 수행 후 전달
+
+- Violation: `ReconciledLevelsBlockFromRec` 인라인 prop 타입 사용
+- Rule: CONVENTIONS.md — Props interface must be defined directly above the component; no inline prop types
+- Context: `interface ReconciledLevelsBlockFromRecProps` 선언 후 컴포넌트에 적용
+
 ## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 
 - Violation: `percentileRank` 가 분산=0 (모든 원소 동일) 케이스에서 0 반환 — 스퀴즈 false-positive 유발 가능
