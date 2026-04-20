@@ -4,30 +4,84 @@
  */
 export const AI_SERVER_UNSTABLE_CODE = 'AI_SERVER_UNSTABLE';
 
-function isRetryableError(error: unknown): boolean {
-    if (typeof error !== 'object' || error === null) return false;
+type ErrorKind = 'rate_limit' | 'server_error' | 'retryable' | 'none';
 
-    // Anthropic SDK APIError, Gemini SDK 등은 HTTP 상태를 status 프로퍼티에 담는다.
-    // unknown 타입이므로 in 연산자로 존재를 확인한 뒤 타입을 좁힌다.
+const RETRY_ALLOWABLE_TIME_MS = 900_000;
+
+function classifyError(error: unknown): ErrorKind {
+    if (typeof error !== 'object' || error === null) return 'none';
+
     if (
         'status' in error &&
         typeof (error as { status: unknown }).status === 'number'
     ) {
         const status = (error as { status: number }).status;
-        // 429: Rate limit (일시적 과부하) — 5xx와 동일하게 재시도한다.
-        return status === 429 || status >= 500;
+        if (status === 429) return 'rate_limit';
+        if (status >= 500) return 'server_error';
+        return 'none';
     }
 
-    // status 프로퍼티가 없는 에러도 retryable로 표시된 경우 재시도한다.
-    // (예: callGemini에서 빈 텍스트 응답 시 throw하는 커스텀 에러)
     if (
         'retryable' in error &&
         (error as { retryable: unknown }).retryable === true
     ) {
-        return true;
+        return 'retryable';
     }
 
-    return false;
+    return 'none';
+}
+
+const GRPC_RETRY_INFO_TYPE =
+    'type.googleapis.com/google.rpc.RetryInfo' as const;
+
+interface GrpcRetryInfo {
+    '@type': typeof GRPC_RETRY_INFO_TYPE;
+    retryDelay: string; // e.g. "15s", "58s"
+}
+
+function isRetryInfo(detail: unknown): detail is GrpcRetryInfo {
+    return (
+        typeof detail === 'object' &&
+        detail !== null &&
+        (detail as Record<string, unknown>)['@type'] === GRPC_RETRY_INFO_TYPE &&
+        typeof (detail as Record<string, unknown>)['retryDelay'] === 'string'
+    );
+}
+
+// Gemini SDK ApiError: message가 JSON 문자열이고 details는 그 안에 포함됨
+//   → error.message = '{"error":{"details":[{RetryInfo}]}}'
+// Anthropic SDK RateLimitError: error.retryDelay — 숫자(ms)
+function get429RetryDelay(error: unknown): number | undefined {
+    if (typeof error !== 'object' || error === null) return undefined;
+
+    // Anthropic SDK — retryDelay(ms) 숫자
+    const direct = (error as Record<string, unknown>)['retryDelay'];
+    if (typeof direct === 'number') return direct;
+
+    // Gemini SDK — message JSON 파싱 후 details 탐색
+    const message = (error as Record<string, unknown>)['message'];
+    if (typeof message !== 'string') return undefined;
+
+    let details: unknown;
+    try {
+        const parsed = JSON.parse(message) as Record<string, unknown>;
+        const inner = parsed['error'];
+        if (typeof inner === 'object' && inner !== null) {
+            details = (inner as Record<string, unknown>)['details'];
+        }
+    } catch {
+        return undefined;
+    }
+
+    if (!Array.isArray(details)) return undefined;
+
+    const retryInfo = details.find(isRetryInfo);
+    if (!retryInfo) return undefined;
+
+    // "15s" → 15000, "58.4s" → 58400
+    const match = retryInfo.retryDelay.match(/^(\d+(?:\.\d+)?)s$/);
+    if (!match) return undefined;
+    return Math.ceil(parseFloat(match[1]) * 1000);
 }
 
 function sleep(ms: number): Promise<void> {
@@ -44,24 +98,41 @@ export async function withRetry<T>(
         try {
             return await fn();
         } catch (error) {
-            const retryable = isRetryableError(error);
+            const kind = classifyError(error);
 
-            if (!retryable || attempt === maxAttempts) {
-                if (retryable) {
+            if (kind === 'none' || attempt === maxAttempts) {
+                if (kind !== 'none') {
                     throw new Error(AI_SERVER_UNSTABLE_CODE);
                 }
                 throw error;
             }
 
-            const delay = baseDelayMs * Math.pow(2, attempt - 1);
-            console.warn(
-                `[Retry] Attempt ${attempt}/${maxAttempts} failed (5xx). Retrying in ${delay}ms...`,
-                error
-            );
-            await sleep(delay);
+            if (kind === 'rate_limit') {
+                const delay = get429RetryDelay(error) ?? baseDelayMs;
+
+                if (delay >= RETRY_ALLOWABLE_TIME_MS) {
+                    console.warn(
+                        `[Retry] Do not attempt to retry beyond the allowable time. Response received: ${delay}`
+                    );
+                    break;
+                }
+
+                console.warn(
+                    `[Retry] Attempt ${attempt}/${maxAttempts} failed (429). Retrying in ${delay}ms...`,
+                    error
+                );
+                await sleep(delay);
+            } else {
+                // server_error | retryable → 지수 백오프
+                const delay = baseDelayMs * Math.pow(2, attempt - 1);
+                console.warn(
+                    `[Retry] Attempt ${attempt}/${maxAttempts} failed (5xx). Retrying in ${delay}ms...`,
+                    error
+                );
+                await sleep(delay);
+            }
         }
     }
-
     // unreachable — for 루프가 항상 return 또는 throw
     throw new Error(AI_SERVER_UNSTABLE_CODE);
 }
