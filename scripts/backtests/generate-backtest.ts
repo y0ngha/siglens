@@ -1,51 +1,61 @@
 /**
- * 백테스팅 데이터 생성 스크립트
+ * 백테스팅 데이터 생성 스크립트 (멀티-시그널 confluence 기반)
  *
- * 사용법: npx tsx scripts/generate-backtest.ts
+ * 사용법: npx tsx scripts/backtests/generate-backtest.ts
  *
  * 환경변수 (.env.local):
  *   FMP_API_KEY           — Financial Modeling Prep API 키
  *   GEMINI_FREE_API_KEY   — Google AI Studio 무료 API 키 (Gemini 2.5 Flash-lite)
  *
  * 출력: src/app/backtesting/data.json
+ *
+ * 설계 문서: docs/superpowers/specs/2026-04-20-multi-signal-backtest-design.md
  */
 
 import { writeFileSync } from 'fs';
 import { resolve } from 'path';
 import { config } from 'dotenv';
 import { calculateIndicators } from '@/domain/indicators';
+import { detectSignals } from '@/domain/signals';
+import { simulateExit } from '@/domain/backtest/exit';
+import { signalTypeToTagLabel } from '@/domain/backtest/tags';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
 import { parseJsonResponse } from '@/infrastructure/ai/utils';
 import { callGeminiScript } from './ai.js';
 import type {
     Bar,
-    RawAnalysisResponse,
-    BacktestOutcome,
+    BacktestAiResult,
     BacktestCase,
+    BacktestExitReason,
+    BacktestMeta,
+    BacktestSignalResult,
+    EntryRecommendation,
+    RawAnalysisResponse,
+    Trend,
 } from '@/domain/types';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
+// ─── 설정 ──────────────────────────────────────────────────────────────────────
+
 const TICKERS = [
-    'AAPL',
-    'MSFT',
-    'GOOGL',
-    'AMZN',
-    'NVDA',
-    'META',
-    'TSLA',
-    'PLTR',
-    'CRWD',
-    'MSTR',
+    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA',
+    'PLTR', 'CRWD', 'MSTR',
 ];
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_API_KEY = process.env.FMP_API_KEY ?? '';
 const GEMINI_FREE_API_KEY = process.env.GEMINI_FREE_API_KEY ?? '';
-const FROM_DATE = '2025-04-01';
+
+const FROM_DATE_FETCH = '2024-09-01';
+const DISPLAY_START_DATE = '2025-04-01';
 const TO_DATE = '2026-04-20';
+
 const OUTPUT_PATH = resolve(process.cwd(), 'src/app/backtesting/data.json');
 const MAX_SIGNALS_PER_TICKER = 10;
+const MAX_TAGS_PER_CASE = 3;
+const MIN_BARS = 120;
+const MIN_CONFLUENCE = 2;
 const HOLD_DAYS = 10;
 const CONTEXT_BARS = 120;
 const GEMINI_SLEEP_MS = 5_000;
@@ -62,6 +72,8 @@ function sleep(ms: number): Promise<void> {
     return new Promise(r => setTimeout(r, ms));
 }
 
+// ─── FMP bars ──────────────────────────────────────────────────────────────────
+
 interface FmpBar {
     date: string;
     open: number;
@@ -72,11 +84,10 @@ interface FmpBar {
 }
 
 async function fetchDailyBars(ticker: string): Promise<FmpBar[]> {
-    const url = `${FMP_BASE_URL}/historical-price-eod/full?symbol=${ticker}&from=${FROM_DATE}&to=${TO_DATE}&apikey=${FMP_API_KEY}`;
+    const url = `${FMP_BASE_URL}/historical-price-eod/full?symbol=${ticker}&from=${FROM_DATE_FETCH}&to=${TO_DATE}&apikey=${FMP_API_KEY}`;
     const res = await fetch(url);
     if (!res.ok)
         throw new Error(`FMP fetch failed for ${ticker}: ${res.status}`);
-    // FMP API: { historical: FmpBar[] } 형태를 보장함
     const json = (await res.json()) as { historical?: FmpBar[] };
     return (json.historical ?? []).slice().reverse();
 }
@@ -92,50 +103,66 @@ function toBarArray(fmpBars: FmpBar[]): Bar[] {
     }));
 }
 
-// Simplified RSI for signal detection only. Uses simple (non-smoothed) averages
-// intentionally — the production pipeline (calculateIndicators) uses Wilder smoothing,
-// which is used later for the full AI analysis prompt, not for signal detection.
-function calcRsiSimple(closes: number[], period = 14): number[] {
-    const rsi: number[] = new Array(closes.length).fill(50);
-    for (let i = period; i < closes.length; i++) {
-        let gains = 0,
-            losses = 0;
-        for (let j = i - period + 1; j <= i; j++) {
-            const diff = closes[j] - closes[j - 1];
-            if (diff > 0) gains += diff;
-            else losses -= diff;
-        }
-        const avgGain = gains / period;
-        const avgLoss = losses / period;
-        if (avgLoss === 0) {
-            rsi[i] = 100;
-            continue;
-        }
-        rsi[i] = 100 - 100 / (1 + avgGain / avgLoss);
-    }
-    return rsi;
-}
+// ─── 후보 탐지 (confluence + cooldown + display range) ─────────────────────────
 
-interface SignalPoint {
+interface EntryCandidate {
     idx: number;
     entryDate: string;
     entryPrice: number;
+    signalTypes: string[];
 }
 
-function detectBuySignals(fmpBars: FmpBar[]): SignalPoint[] {
-    const rsi = calcRsiSimple(fmpBars.map(b => b.close));
-    const signals: SignalPoint[] = [];
-    for (let i = 15; i < fmpBars.length - HOLD_DAYS - 1; i++) {
-        if (rsi[i - 1] < 30 && rsi[i] >= 30) {
-            signals.push({
+function findEntryCandidates(
+    bars: Bar[],
+    fmpBars: FmpBar[]
+): EntryCandidate[] {
+    const candidates: EntryCandidate[] = [];
+    let cooldownUntil = -1;
+
+    if (bars.length < MIN_BARS + 1) return candidates;
+
+    // 시드: MIN_BARS-1 시점 bullish 상태. 없으면 첫 반복에서 phantom confluence 발생
+    const seedPrefix = bars.slice(0, MIN_BARS);
+    let lastBullishTypes = new Set(
+        detectSignals(seedPrefix, calculateIndicators(seedPrefix))
+            .filter(s => s.direction === 'bullish')
+            .map(s => s.type)
+    );
+
+    for (let i = MIN_BARS; i < bars.length - HOLD_DAYS; i++) {
+        const prefix = bars.slice(0, i + 1);
+        const bullishTypes = new Set(
+            detectSignals(prefix, calculateIndicators(prefix))
+                .filter(s => s.direction === 'bullish')
+                .map(s => s.type)
+        );
+        const fresh = [...bullishTypes].filter(t => !lastBullishTypes.has(t));
+
+        const entryDate = fmpBars[i].date;
+        const inDisplayRange = entryDate >= DISPLAY_START_DATE;
+
+        if (
+            inDisplayRange &&
+            i > cooldownUntil &&
+            bullishTypes.size >= MIN_CONFLUENCE &&
+            fresh.length >= 1
+        ) {
+            candidates.push({
                 idx: i,
-                entryDate: fmpBars[i].date,
+                entryDate,
                 entryPrice: fmpBars[i].close,
+                signalTypes: [...bullishTypes].slice(0, MAX_TAGS_PER_CASE),
             });
+            cooldownUntil = i + HOLD_DAYS;
         }
+
+        lastBullishTypes = bullishTypes;
     }
-    return signals;
+
+    return candidates.slice(-MAX_SIGNALS_PER_TICKER);
 }
+
+// ─── Gemini 호출 retry ────────────────────────────────────────────────────────
 
 function parseRetryAfterMs(err: unknown): number {
     const msg = err instanceof Error ? err.message : String(err);
@@ -184,15 +211,24 @@ async function callGeminiWithRetryAfter(prompt: string): Promise<string> {
     throw new Error('Max retries exceeded');
 }
 
+// ─── AI 분석 ───────────────────────────────────────────────────────────────────
+
+interface AiAnalysisForBacktest {
+    trend: Trend;
+    summary: string;
+    entryRecommendation: EntryRecommendation;
+    stopLoss?: number;
+    takeProfit?: number;
+    bullishTargets: number[];
+}
+
+const VALID_RECS: EntryRecommendation[] = ['enter', 'wait', 'avoid'];
+
 async function runAiAnalysis(
     ticker: string,
     bars: Bar[],
     entryIdx: number
-): Promise<{
-    trend: 'bullish' | 'bearish' | 'neutral';
-    summary: string;
-    tags: string[];
-}> {
+): Promise<AiAnalysisForBacktest> {
     const contextBars = bars.slice(
         Math.max(0, entryIdx - CONTEXT_BARS + 1),
         entryIdx + 1
@@ -208,17 +244,52 @@ async function runAiAnalysis(
     const text = await callGeminiWithRetryAfter(prompt);
     const raw = parseJsonResponse<RawAnalysisResponse>(text, 'analysis');
     const result = enrichAnalysisWithConfidence(raw, []);
-    const tags: string[] = result.indicatorResults
-        .flatMap(ir =>
-            ir.signals.map(s => `${ir.indicatorName} ${s.description}`)
-        )
-        .slice(0, 3);
+
+    const rawRec = result.actionRecommendation?.entryRecommendation;
+    const entryRecommendation: EntryRecommendation = VALID_RECS.includes(
+        rawRec as EntryRecommendation
+    )
+        ? (rawRec as EntryRecommendation)
+        : 'wait';
+
     return {
         trend: result.trend,
         summary: (result.summary ?? '').slice(0, 150),
-        tags,
+        entryRecommendation,
+        stopLoss: result.actionRecommendation?.stopLoss,
+        takeProfit: result.actionRecommendation?.takeProfitPrices?.[0],
+        bullishTargets:
+            result.priceTargets?.bullish?.targets.map(t => t.price) ?? [],
     };
 }
+
+// ─── 결과 판정 ─────────────────────────────────────────────────────────────────
+
+function computeAiResult(
+    entryRec: EntryRecommendation,
+    actualReturnPct: number
+): BacktestAiResult {
+    if (entryRec === 'wait') return 'neutral';
+    if (entryRec === 'enter' && actualReturnPct > 0) return 'win';
+    if (entryRec === 'avoid' && actualReturnPct < 0) return 'win';
+    return 'loss';
+}
+
+function computeAiTrendHit(
+    trend: Trend,
+    bullishTargets: number[],
+    bars: Bar[],
+    entryIdx: number,
+    exitIdx: number
+): boolean {
+    if (trend !== 'bullish' || bullishTargets.length === 0) return false;
+    const firstTarget = bullishTargets[0];
+    return bars
+        .slice(entryIdx + 1, exitIdx + 1)
+        .some(b => b.high >= firstTarget);
+}
+
+// ─── 메인 ──────────────────────────────────────────────────────────────────────
 
 async function main() {
     let allCases: BacktestCase[] = [];
@@ -227,51 +298,76 @@ async function main() {
         console.log(`\n[${ticker}] Fetching bars...`);
         const fmpBars = await fetchDailyBars(ticker);
         await sleep(FMP_SLEEP_MS);
-        if (fmpBars.length < 30) {
-            console.log(`  Skipping — not enough bars`);
+        if (fmpBars.length < MIN_BARS + 1) {
+            console.log(`  Skipping — not enough bars (${fmpBars.length})`);
             continue;
         }
         const bars = toBarArray(fmpBars);
-        const signals = detectBuySignals(fmpBars);
-        const selected = signals.slice(-MAX_SIGNALS_PER_TICKER);
-        console.log(
-            `  Found ${signals.length} signals → using ${selected.length}`
-        );
 
-        for (const sig of selected) {
-            const exitIdx = Math.min(sig.idx + HOLD_DAYS, fmpBars.length - 1);
-            const exitBar = fmpBars[exitIdx];
-            const returnPct =
-                ((exitBar.close - sig.entryPrice) / sig.entryPrice) * 100;
-            const result: BacktestOutcome = returnPct >= 0 ? 'win' : 'loss';
-            console.log(
-                `  ${sig.entryDate} → ${exitBar.date} | ${returnPct.toFixed(1)}% (${result})`
+        const candidates = findEntryCandidates(bars, fmpBars);
+        console.log(`  Found ${candidates.length} entry candidates`);
+
+        for (const candidate of candidates) {
+            const ai = await runAiAnalysis(ticker, bars, candidate.idx);
+
+            const safeStopLoss =
+                ai.stopLoss !== undefined && ai.stopLoss < candidate.entryPrice
+                    ? ai.stopLoss
+                    : undefined;
+            const safeTakeProfit =
+                ai.takeProfit !== undefined &&
+                ai.takeProfit > candidate.entryPrice
+                    ? ai.takeProfit
+                    : undefined;
+
+            const exit = simulateExit({
+                bars,
+                entryIdx: candidate.idx,
+                entryPrice: candidate.entryPrice,
+                stopLoss: safeStopLoss,
+                takeProfit: safeTakeProfit,
+                maxHoldDays: HOLD_DAYS,
+            });
+
+            const result: BacktestSignalResult =
+                exit.returnPct >= 0 ? 'win' : 'loss';
+            const aiResult = computeAiResult(
+                ai.entryRecommendation,
+                exit.returnPct
+            );
+            const aiTrendHit = computeAiTrendHit(
+                ai.trend,
+                ai.bullishTargets,
+                bars,
+                candidate.idx,
+                exit.exitIdx
             );
 
-            const ai = await runAiAnalysis(ticker, bars, sig.idx);
+            const exitReason: BacktestExitReason = exit.exitReason;
 
-            // aiResult: AI의 bullish/bearish 예측이 실제 가격 방향과 일치했는지 여부
-            const aiResult: BacktestOutcome =
-                (ai.trend === 'bullish' && returnPct > 0) ||
-                (ai.trend === 'bearish' && returnPct < 0)
-                    ? 'win'
-                    : 'loss';
+            console.log(
+                `  ${candidate.entryDate} → ${fmpBars[exit.exitIdx].date} | ${exit.returnPct.toFixed(1)}% (${result}, ${exitReason}, ai=${aiResult})`
+            );
 
             allCases = [
                 ...allCases,
                 {
                     ticker,
-                    entryDate: sig.entryDate,
-                    entryPrice: sig.entryPrice,
-                    exitDate: exitBar.date,
-                    exitPrice: exitBar.close,
-                    holdingDays: exitIdx - sig.idx,
-                    returnPct: Number(returnPct.toFixed(2)),
+                    entryDate: candidate.entryDate,
+                    entryPrice: candidate.entryPrice,
+                    exitDate: fmpBars[exit.exitIdx].date,
+                    exitPrice: exit.exitPrice,
+                    holdingDays: exit.holdingDays,
+                    returnPct: Number(exit.returnPct.toFixed(2)),
                     signalType: 'buy',
                     result,
-                    exitReason: 'signal',
+                    exitReason,
                     aiResult,
-                    aiAnalysis: { summary: ai.summary, tags: ai.tags },
+                    aiTrendHit,
+                    aiAnalysis: {
+                        summary: ai.summary,
+                        tags: candidate.signalTypes.map(signalTypeToTagLabel),
+                    },
                 },
             ];
 
@@ -283,26 +379,32 @@ async function main() {
         a.entryDate.localeCompare(b.entryDate)
     );
 
-    const wins = sortedCases.filter(c => c.result === 'win').length;
-    const aiWins = sortedCases.filter(c => c.aiResult === 'win').length;
     const total = sortedCases.length;
+    const wins = sortedCases.filter(c => c.result === 'win').length;
+    const aiDecisive = sortedCases.filter(c => c.aiResult !== 'neutral');
+    const aiWins = aiDecisive.filter(c => c.aiResult === 'win').length;
+    const aiTrendHits = sortedCases.filter(c => c.aiTrendHit).length;
 
-    const output = {
-        meta: {
-            period: '2025.04 – 2026.04',
-            totalCases: total,
-            winRate: total > 0 ? Number(((wins / total) * 100).toFixed(1)) : 0,
-            aiWinRate:
-                total > 0 ? Number(((aiWins / total) * 100).toFixed(1)) : 0,
-            tickerCount: TICKERS.length,
-        },
-        cases: sortedCases,
+    const meta: BacktestMeta = {
+        period: '2025.04 – 2026.04',
+        totalCases: total,
+        winRate: total > 0 ? Number(((wins / total) * 100).toFixed(1)) : 0,
+        aiWinRate:
+            aiDecisive.length > 0
+                ? Number(((aiWins / aiDecisive.length) * 100).toFixed(1))
+                : 0,
+        aiTrendHitRate:
+            total > 0 ? Number(((aiTrendHits / total) * 100).toFixed(1)) : 0,
+        tickerCount: TICKERS.length,
     };
+
+    const output = { meta, cases: sortedCases };
 
     writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2), 'utf-8');
     console.log(`\n✓ Saved ${total} cases to ${OUTPUT_PATH}`);
-    console.log(`  Signal win rate: ${output.meta.winRate}%`);
-    console.log(`  AI win rate: ${output.meta.aiWinRate}%`);
+    console.log(`  Signal win rate: ${meta.winRate}%`);
+    console.log(`  AI win rate (decisive only): ${meta.aiWinRate}%`);
+    console.log(`  AI trend hit rate: ${meta.aiTrendHitRate}%`);
 }
 
 main().catch(err => {
