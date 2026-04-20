@@ -182,7 +182,7 @@ export default async function MarketPage({
                 </Suspense>
             </HydrationBoundary>
             <Suspense
-                key={`${initialSector}-${initialTimeframe}`}
+                key={initialTimeframe}
                 fallback={<SectorSignalPanelSkeleton />}
             >
                 <SectorSignalSection
