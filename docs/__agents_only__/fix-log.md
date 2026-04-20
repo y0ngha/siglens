@@ -111,3 +111,16 @@
 - Rule: CONVENTIONS.md — complex conditionals should extract to data structures
 - Context: Replaced ternary with VARIANT_BORDER and VARIANT_LABEL object maps
 
+
+## [PR #342 Round 3 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: `reconcileBullishActionRecommendation` 도메인 함수 내부에서 `changes.push()` 직접 변이
+- Rule: MISTAKES.md #5 / CONVENTIONS.md Immutability — 도메인 레이어는 push/splice 금지
+- Context: `const changes: string[] = []` + 조건부 `push` 2개 → `readonly string[] = [...(cond ? [msg] : [])]` 선언형 spread로 변환
+
+- Violation: `'99'` hex alpha 접미사가 두 색상 상수에 중복
+- Rule: MISTAKES.md #15 — 반복되는 매직 문자열 상수화
+- Context: `RECONCILED_HEX_ALPHA` 모듈 상수로 추출해 두 색상 변수에서 참조 (의미 + 중복 제거)
+
+- Violation: `ReconciledActionLevels.reason` 필드는 툴팁 전용 사유로 정의됐으나 UI가 무시
+- Rule: Domain 스키마 의도와 UI 소비 경로 일치 필수
+- Context: `AnalysisPanel.ReconciledLevelsBlock` 이 reason을 전달받지 않고 generic prefix만 표시. `RECONCILED_TOOLTIP_PREFIX` + reason을 2줄로 표시하도록 변경

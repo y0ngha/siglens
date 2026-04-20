@@ -339,17 +339,18 @@ export function reconcileBullishActionRecommendation(
         ),
     };
 
-    const changes: string[] = [];
-    if (slWasReconciled) {
-        changes.push(
-            `stopLoss: ${rec.stopLoss ?? 'null'} → ${reconciled.stopLoss?.toFixed(2)} (fallback)`
-        );
-    }
-    if (tpWasReconciled) {
-        changes.push(
-            `takeProfitPrices[0]: ${rec.takeProfitPrices?.[0] ?? 'null'} → ${tpResolved.value?.toFixed(2)} (fallback)`
-        );
-    }
+    const changes: readonly string[] = [
+        ...(slWasReconciled
+            ? [
+                  `stopLoss: ${rec.stopLoss ?? 'null'} → ${reconciled.stopLoss?.toFixed(2)} (fallback)`,
+              ]
+            : []),
+        ...(tpWasReconciled
+            ? [
+                  `takeProfitPrices[0]: ${rec.takeProfitPrices?.[0] ?? 'null'} → ${tpResolved.value?.toFixed(2)} (fallback)`,
+              ]
+            : []),
+    ];
 
     return {
         recommendation: { ...rec, reconciledLevels: reconciled }, // AI fields UNCHANGED

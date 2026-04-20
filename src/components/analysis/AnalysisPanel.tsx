@@ -151,6 +151,7 @@ function ActionRecommendationSection({
                     <ReconciledLevelsBlock
                         exit={rec.reconciledLevels.exit}
                         riskReward={rec.reconciledLevels.riskReward}
+                        reason={rec.reconciledLevels.reason}
                     />
                 )}
         </div>
@@ -160,11 +161,17 @@ function ActionRecommendationSection({
 interface ReconciledLevelsBlockProps {
     exit: string;
     riskReward: string;
+    reason: string;
 }
+
+/** 툴팁 공통 안내 문구 (보정 경위 구체 사유 앞에 위치). */
+const RECONCILED_TOOLTIP_PREFIX =
+    'AI가 제시한 내용을 기반으로, 내부 데이터로 보정한 결과입니다.';
 
 function ReconciledLevelsBlock({
     exit,
     riskReward,
+    reason,
 }: ReconciledLevelsBlockProps) {
     return (
         <section className="border-secondary-700 bg-secondary-800/40 mt-1 flex flex-col gap-1 rounded-md border px-3 py-2">
@@ -174,8 +181,13 @@ function ReconciledLevelsBlock({
                 </span>
                 <InfoTooltip>
                     <span className="text-secondary-300">
-                        AI가 제시한 내용을 기반으로, 내부 데이터로 보정한
-                        결과입니다.
+                        {RECONCILED_TOOLTIP_PREFIX}
+                        {reason !== '' && (
+                            <>
+                                <br />
+                                {reason}
+                            </>
+                        )}
                     </span>
                 </InfoTooltip>
             </header>
