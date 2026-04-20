@@ -9,11 +9,15 @@ import {
     deriveFallbackTakeProfit,
     isValidBullishStopLoss,
     isValidBullishTakeProfit,
+    postProcessAnalysisWithReconcile,
     reconcileBullishActionRecommendation,
     resolveBullishStopLoss,
     resolveBullishTakeProfit,
 } from '@/domain/analysis/ai-levels';
-import type { ActionRecommendation } from '@/domain/types';
+import type {
+    ActionRecommendation,
+    AnalysisResponse,
+} from '@/domain/types';
 
 describe('isValidBullishStopLoss', () => {
     it.each<
@@ -408,5 +412,107 @@ describe('reconcileBullishActionRecommendation', () => {
         expect(result.recommendation.entryRecommendation).toBe(
             baseRec.entryRecommendation
         );
+    });
+});
+
+describe('postProcessAnalysisWithReconcile', () => {
+    const baseResponse: AnalysisResponse = {
+        summary: 's',
+        trend: 'bullish',
+        indicatorResults: [],
+        riskLevel: 'low',
+        keyLevels: { support: [], resistance: [] },
+        priceTargets: {
+            bullish: { targets: [], condition: '' },
+            bearish: { targets: [], condition: '' },
+        },
+        patternSummaries: [],
+        strategyResults: [],
+        candlePatterns: [],
+        trendlines: [],
+    };
+
+    const rec: ActionRecommendation = {
+        positionAnalysis: '분석',
+        entry: '진입',
+        exit: '원본 exit',
+        riskReward: '원본 riskReward',
+        entryRecommendation: 'enter',
+        entryPrices: [100],
+        stopLoss: 95,
+        takeProfitPrices: [110],
+    };
+
+    it('actionRecommendation이 없으면 원본을 그대로 반환한다', () => {
+        const result = postProcessAnalysisWithReconcile(baseResponse, 100, 5);
+        expect(result).toBe(baseResponse);
+    });
+
+    it('entryPrices[0]가 있으면 이를 entryPrice로 사용한다', () => {
+        const response = {
+            ...baseResponse,
+            actionRecommendation: { ...rec, stopLoss: 50 },
+        };
+        // entryPrices[0]=100, SL 50 invalid → fallback 92.5
+        const result = postProcessAnalysisWithReconcile(response, 999, 5);
+        expect(result.actionRecommendation?.stopLoss).toBeCloseTo(92.5, 3);
+    });
+
+    it('entryPrices가 없으면 fallbackEntryPrice를 사용한다', () => {
+        const recNoEntry = { ...rec, entryPrices: undefined, stopLoss: 50 };
+        const response = {
+            ...baseResponse,
+            actionRecommendation: recNoEntry,
+        };
+        const result = postProcessAnalysisWithReconcile(response, 100, 5);
+        expect(result.actionRecommendation?.stopLoss).toBeCloseTo(92.5, 3);
+    });
+
+    it('entryPrice를 결정할 수 없으면 원본을 반환한다', () => {
+        const recNoEntry = { ...rec, entryPrices: undefined, stopLoss: 50 };
+        const response = {
+            ...baseResponse,
+            actionRecommendation: recNoEntry,
+        };
+        const result = postProcessAnalysisWithReconcile(
+            response,
+            undefined,
+            5
+        );
+        expect(result).toBe(response);
+    });
+
+    it('AI 값이 모두 유효하면 recommendation 참조가 유지된다 (wasReconciled=false)', () => {
+        const response = { ...baseResponse, actionRecommendation: rec };
+        const result = postProcessAnalysisWithReconcile(response, 100, 2);
+        expect(result.actionRecommendation).toEqual(rec);
+    });
+
+    it('AI SL이 무효하면 reconcile되어 텍스트까지 재생성된다', () => {
+        const response = {
+            ...baseResponse,
+            actionRecommendation: { ...rec, stopLoss: 50 },
+        };
+        const result = postProcessAnalysisWithReconcile(response, 100, 5);
+        expect(result.actionRecommendation?.stopLoss).toBeCloseTo(92.5, 3);
+        expect(result.actionRecommendation?.exit).not.toBe('원본 exit');
+        expect(result.actionRecommendation?.riskReward).not.toBe(
+            '원본 riskReward'
+        );
+    });
+
+    it('ATR이 undefined이고 SL이 side 체크만 통과하면 원본 유지', () => {
+        const response = {
+            ...baseResponse,
+            actionRecommendation: { ...rec, stopLoss: 50 },
+        };
+        const result = postProcessAnalysisWithReconcile(
+            response,
+            100,
+            undefined
+        );
+        // ATR 없어서 side check만 수행, SL 50 < entry 100 → valid, 원본 유지
+        expect(result.actionRecommendation?.stopLoss).toBe(50);
+        expect(result.actionRecommendation?.exit).toBe('원본 exit');
     });
 });

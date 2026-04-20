@@ -1,4 +1,4 @@
-import type { ActionRecommendation } from '@/domain/types';
+import type { ActionRecommendation, AnalysisResponse } from '@/domain/types';
 
 /**
  * AI SL/TP 검증, ATR 기반 fallback resolver, 그리고 ActionRecommendation 재조합.
@@ -269,4 +269,33 @@ export function reconcileBullishActionRecommendation(
     }
 
     return { recommendation: reconciled, wasReconciled, changes };
+}
+
+/**
+ * AnalysisResponse의 actionRecommendation에 reconciliation을 적용한다.
+ *
+ * - actionRecommendation이 없으면 원본 그대로 반환
+ * - bullish 외 trend라도 스키마는 long-only이므로 reconcile을 수행 (invalid는 fallback)
+ * - entryPrice는 AI가 제시한 entryPrices[0] → fallbackEntryPrice 순으로 결정
+ * - entryPrice를 결정할 수 없으면 원본 반환 (fallback 계산 불가)
+ *
+ * AI 재호출 없이 결정론적으로 텍스트까지 재조합한다.
+ */
+export function postProcessAnalysisWithReconcile(
+    response: AnalysisResponse,
+    fallbackEntryPrice: number | undefined,
+    atr: number | undefined
+): AnalysisResponse {
+    const rec = response.actionRecommendation;
+    if (!rec) return response;
+
+    const entryPrice = rec.entryPrices?.[0] ?? fallbackEntryPrice;
+    if (entryPrice === undefined) return response;
+
+    const { recommendation } = reconcileBullishActionRecommendation(
+        rec,
+        entryPrice,
+        atr
+    );
+    return { ...response, actionRecommendation: recommendation };
 }

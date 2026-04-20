@@ -73,9 +73,20 @@ export async function submitAnalysisAction(
         timeframe
     );
 
-    // 5. jobId 생성 + 메타 저장 (skillsDegraded 포함)
+    // 5. jobId 생성 + 메타 저장 (skillsDegraded + reconcile 기준값 포함)
+    //
+    // lastClose/atr은 pollAnalysisAction에서 AI SL/TP 검증·fallback 기준으로 사용.
+    // 마지막 non-null ATR과 마지막 bar 종가를 추출해 저장한다.
     const jobId = crypto.randomUUID();
-    await setJobMeta(jobId, { symbol, timeframe, skillsDegraded });
+    const lastClose = bars[bars.length - 1]?.close;
+    const atr = lastNonNull(indicators.atr) ?? undefined;
+    await setJobMeta(jobId, {
+        symbol,
+        timeframe,
+        skillsDegraded,
+        lastClose,
+        atr,
+    });
 
     // 6. Worker에 fire-and-forget
     // waitUntil은 Vercel 함수의 maxDuration(300초)까지만 fetch를 유지한다.
@@ -98,4 +109,12 @@ export async function submitAnalysisAction(
 
     console.log('[Submit] Job submitted:', jobId, cacheKey);
     return { status: 'submitted', jobId };
+}
+
+function lastNonNull(arr: readonly (number | null)[]): number | null {
+    for (let i = arr.length - 1; 0 <= i; i--) {
+        const v = arr[i];
+        if (v !== null) return v;
+    }
+    return null;
 }
