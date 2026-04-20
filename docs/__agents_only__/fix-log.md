@@ -124,3 +124,12 @@
 - Violation: `ReconciledActionLevels.reason` 필드는 툴팁 전용 사유로 정의됐으나 UI가 무시
 - Rule: Domain 스키마 의도와 UI 소비 경로 일치 필수
 - Context: `AnalysisPanel.ReconciledLevelsBlock` 이 reason을 전달받지 않고 generic prefix만 표시. `RECONCILED_TOOLTIP_PREFIX` + reason을 2줄로 표시하도록 변경
+
+## [PR #342 Round 4 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: `generate-backtest.ts`에서 `isValidBullishStopLoss`/`isValidBullishTakeProfit` 재호출 (이미 `resolveBullish*` 결과가 있음)
+- Rule: MISTAKES.md #2 — 동일 연산을 같은 함수 내에서 반복 실행 금지
+- Context: `slResolved.source === 'ai'`가 `isValidBullishStopLoss`와 의미상 동일. 상단에서 계산된 결과를 재활용하도록 변경 + unused imports 제거
+
+- Violation: `ai-levels.ts`의 `tpResolved.value!` 비-null 단언
+- Rule: MISTAKES.md — `!` 단언보다 지역 `const`로 narrowing을 고정해 타입 좁히기를 명시적으로 전파
+- Context: `tpWasReconciled` 게이트에도 TS 좁히기 전파가 안 되어 `!` 필요했던 것을, `const tpFallback = tpResolved.value` + `tpWasReconciled && tpFallback !== undefined` 가드로 대체

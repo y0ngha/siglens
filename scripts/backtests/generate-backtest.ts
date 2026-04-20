@@ -33,8 +33,6 @@ import { detectSignals } from '@/domain/signals';
 import { simulateExit } from '@/domain/backtest/exit';
 import { signalTypeToTagLabel } from '@/domain/backtest/tags';
 import {
-    isValidBullishStopLoss,
-    isValidBullishTakeProfit,
     resolveBullishStopLoss,
     resolveBullishTakeProfit,
 } from '@/domain/analysis/ai-levels';
@@ -580,20 +578,10 @@ function buildBacktestCase(
             tags: c.signalTypes.map(signalTypeToTagLabel),
             entryRecommendation: ai.entryRecommendation,
             bullishTargets: ai.bullishTargets,
-            stopLoss: isValidBullishStopLoss(
-                ai.stopLoss,
-                c.entryPrice,
-                c.atrAtEntry
-            )
-                ? ai.stopLoss
-                : undefined,
-            takeProfit: isValidBullishTakeProfit(
-                ai.takeProfit,
-                c.entryPrice,
-                c.atrAtEntry
-            )
-                ? ai.takeProfit
-                : undefined,
+            // slResolved/tpResolved.source === 'ai'는 isValidBullish*(...)와 의미상 동일.
+            // 상단에서 이미 계산한 결과를 재활용해 중복 검증을 제거한다.
+            stopLoss: slResolved.source === 'ai' ? ai.stopLoss : undefined,
+            takeProfit: tpResolved.source === 'ai' ? ai.takeProfit : undefined,
             riskLevel: ai.riskLevel,
         },
     };

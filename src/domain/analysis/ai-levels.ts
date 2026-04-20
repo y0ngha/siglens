@@ -310,9 +310,13 @@ export function reconcileBullishActionRecommendation(
         return { recommendation: rec, wasReconciled: false, changes: [] };
     }
 
-    const reconciledTpArr: readonly number[] | undefined = tpWasReconciled
-        ? [tpResolved.value!, ...(rec.takeProfitPrices?.slice(1) ?? [])]
-        : rec.takeProfitPrices;
+    // tpWasReconciled 게이트로 value가 number임이 런타임 보장되지만 TS가 좁히기를
+    // 전파하지 못해, narrowing을 지역 const로 고정해 `!` 단언을 제거한다.
+    const tpFallback = tpResolved.value;
+    const reconciledTpArr: readonly number[] | undefined =
+        tpWasReconciled && tpFallback !== undefined
+            ? [tpFallback, ...(rec.takeProfitPrices?.slice(1) ?? [])]
+            : rec.takeProfitPrices;
 
     const reconciledSl = slWasReconciled ? slResolved.value : rec.stopLoss;
 
