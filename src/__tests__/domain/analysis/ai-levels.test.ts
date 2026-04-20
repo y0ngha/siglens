@@ -328,6 +328,14 @@ describe('buildBullishRiskRewardText', () => {
     it('TP[0]이 NaN이면 빈 문자열을 반환한다', () => {
         expect(buildBullishRiskRewardText(100, 95, [Number.NaN])).toBe('');
     });
+
+    it('TP가 entry보다 낮으면 빈 문자열을 반환한다 (음수 R:R 방지)', () => {
+        expect(buildBullishRiskRewardText(100, 95, [80])).toBe('');
+    });
+
+    it('TP가 entry와 같으면 빈 문자열을 반환한다', () => {
+        expect(buildBullishRiskRewardText(100, 95, [100])).toBe('');
+    });
 });
 
 describe('reconcileBullishActionRecommendation', () => {

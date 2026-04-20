@@ -166,6 +166,42 @@ function formatSignedPct(entryPrice: number, price: number): string {
 }
 
 /**
+ * 유효 TP 배열을 exit 텍스트의 TP 파트로 포맷. 빈 배열이면 undefined.
+ *   - 단일: "목표가 $164.90 (+2.3%)에서 익절"
+ *   - 복수: "1차 목표 $X (+n%), 2차 목표 $Y (+m%)에서 익절"
+ */
+function buildExitTpPart(
+    entryPrice: number,
+    validTps: readonly number[]
+): string | undefined {
+    if (validTps.length === 0) return undefined;
+    if (validTps.length === 1) {
+        const tp = validTps[0];
+        return `목표가 $${tp.toFixed(2)} (${formatSignedPct(entryPrice, tp)})에서 익절`;
+    }
+    const tpParts = validTps.map(
+        (tp, idx) =>
+            `${ordinalLabel(idx)} 목표 $${tp.toFixed(2)} (${formatSignedPct(entryPrice, tp)})`
+    );
+    return `${tpParts.join(', ')}에서 익절`;
+}
+
+/** 유효한 SL을 exit 텍스트 파트로 포맷. 무효값이면 undefined. */
+function buildExitSlPart(
+    entryPrice: number,
+    stopLoss: number | undefined
+): string | undefined {
+    if (
+        stopLoss === undefined ||
+        !Number.isFinite(stopLoss) ||
+        stopLoss <= 0
+    ) {
+        return undefined;
+    }
+    return `손절 $${stopLoss.toFixed(2)} (${formatSignedPct(entryPrice, stopLoss)})`;
+}
+
+/**
  * bullish 롱 포지션 기준으로 SL/TP 값을 기반으로 exit 텍스트를 생성.
  *
  * - 단일 TP: "목표가 $164.90 (+2.3%)에서 익절, 손절 $158.40 (-1.7%)."
@@ -178,31 +214,15 @@ export function buildBullishExitText(
     stopLoss: number | undefined,
     takeProfitPrices: readonly number[] | undefined
 ): string {
-    const parts: string[] = [];
-
     const validTps = (takeProfitPrices ?? []).filter(
         (tp): tp is number =>
             typeof tp === 'number' && Number.isFinite(tp) && tp > 0
     );
 
-    if (validTps.length === 1) {
-        const tp = validTps[0];
-        parts.push(
-            `목표가 $${tp.toFixed(2)} (${formatSignedPct(entryPrice, tp)})에서 익절`
-        );
-    } else if (validTps.length > 1) {
-        const tpParts = validTps.map(
-            (tp, idx) =>
-                `${ordinalLabel(idx)} 목표 $${tp.toFixed(2)} (${formatSignedPct(entryPrice, tp)})`
-        );
-        parts.push(`${tpParts.join(', ')}에서 익절`);
-    }
-
-    if (stopLoss !== undefined && Number.isFinite(stopLoss) && stopLoss > 0) {
-        parts.push(
-            `손절 $${stopLoss.toFixed(2)} (${formatSignedPct(entryPrice, stopLoss)})`
-        );
-    }
+    const parts = [
+        buildExitTpPart(entryPrice, validTps),
+        buildExitSlPart(entryPrice, stopLoss),
+    ].filter((p): p is string => p !== undefined);
 
     return parts.length > 0 ? parts.join(', ') + '.' : '';
 }

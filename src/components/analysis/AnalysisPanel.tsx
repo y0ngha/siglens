@@ -144,16 +144,26 @@ function ActionRecommendationSection({
                     );
                 })}
             </div>
-            {rec.reconciledLevels &&
-                (rec.reconciledLevels.exit !== '' ||
-                    rec.reconciledLevels.riskReward !== '') && (
-                    <ReconciledLevelsBlock
-                        exit={rec.reconciledLevels.exit}
-                        riskReward={rec.reconciledLevels.riskReward}
-                        reason={rec.reconciledLevels.reason}
-                    />
-                )}
+            <ReconciledLevelsBlockFromRec rec={rec} />
         </div>
+    );
+}
+
+/** rec에서 reconciledLevels를 1회만 뽑아 전달하는 래퍼 — JSX 내 반복 접근 제거. */
+function ReconciledLevelsBlockFromRec({
+    rec,
+}: {
+    rec: ActionRecommendation;
+}) {
+    const reconciled = rec.reconciledLevels;
+    if (!reconciled) return null;
+    if (reconciled.exit === '' && reconciled.riskReward === '') return null;
+    return (
+        <ReconciledLevelsBlock
+            exit={reconciled.exit}
+            riskReward={reconciled.riskReward}
+            reason={reconciled.reason}
+        />
     );
 }
 

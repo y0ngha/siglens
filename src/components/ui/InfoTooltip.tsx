@@ -4,6 +4,10 @@ import { useEffect, useId, useRef, useState } from 'react';
 import type React from 'react';
 import { createPortal } from 'react-dom';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+import {
+    getTooltipPosition,
+    type TooltipPosition,
+} from '@/components/ui/utils/tooltipPosition';
 import { cn } from '@/lib/cn';
 
 /**
@@ -23,33 +27,6 @@ interface InfoTooltipProps {
     readonly children: React.ReactNode;
     /** 추가 className. 기본 접근성 클래스(focus-visible ring 등)에 병합된다. */
     readonly className?: string;
-}
-
-const TOOLTIP_VIEWPORT_PADDING = 8;
-const TOOLTIP_GAP = 6;
-
-interface TooltipPosition {
-    top: number;
-    left: number;
-}
-
-function getTooltipPosition(
-    triggerRect: DOMRect,
-    tooltipEl: HTMLElement
-): TooltipPosition {
-    const tooltipRect = tooltipEl.getBoundingClientRect();
-    const aboveTop = triggerRect.top - tooltipRect.height - TOOLTIP_GAP;
-    const top =
-        aboveTop < TOOLTIP_VIEWPORT_PADDING
-            ? triggerRect.bottom + TOOLTIP_GAP
-            : aboveTop;
-    const rawLeft =
-        triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
-    const maxLeft =
-        window.innerWidth - tooltipRect.width - TOOLTIP_VIEWPORT_PADDING;
-    const left = Math.max(TOOLTIP_VIEWPORT_PADDING, Math.min(rawLeft, maxLeft));
-
-    return { top, left };
 }
 
 const DEFAULT_TRIGGER_CLASS =
