@@ -1,10 +1,10 @@
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
-import type { StockSignalResult } from '@/domain/types';
+import type { StockWithConflict } from '@/domain/types';
 import { SignalBadge } from './SignalBadge';
 
 interface SignalStockCardProps {
-    data: StockSignalResult;
+    data: StockWithConflict;
 }
 
 export function SignalStockCard({ data }: SignalStockCardProps) {
@@ -73,6 +73,12 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
                             </span>
                         ))}
                     </div>
+                )}
+                {data.conflict && (
+                    <p className="text-secondary-500 mt-1 text-xs">
+                        상승 {data.conflict.bullishCount}건 / 하락{' '}
+                        {data.conflict.bearishCount}건 감지
+                    </p>
                 )}
             </div>
         </Link>

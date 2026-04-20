@@ -359,14 +359,16 @@ className="text-[#1a2b3c]"
 
 ## Dashboard Panel C — Signal Quadrants
 
-Four subsections per sector: `상승 신호 / 상승 조짐 / 하락 조짐 / 하락 신호`.
+Five subsections per sector: `상승 신호 / 상승 조짐 / 혼재 / 하락 조짐 / 하락 신호`.
+
+The center **혼재** section appears when a stock has equal bullish and bearish signal counts. It uses `border-t-2 border-secondary-500` and a `◈` unicode marker to remain visually distinct from directional sections without introducing emoji rendering inconsistencies.
 
 ### Visual System — "Terminal Editorial"
 
 Distinction uses three orthogonal cues (not emotional color):
-- **Marker shape**: filled ▲▼ for confirmed signals, outlined △▽ for anticipation
-- **Top rule**: `border-t-2 border-secondary-600` solid (confirmed), `border-t border-dashed border-secondary-700` (anticipation)
-- **Label typography**: `font-semibold tracking-[0.15em]` (confirmed), `font-medium tracking-[0.15em] opacity-70` (anticipation)
+- **Marker shape**: filled ▲▼ for confirmed signals, outlined △▽ for anticipation, ◈ for mixed
+- **Top rule**: `border-t-2 border-secondary-600` solid (confirmed), `border-t-2 border-secondary-500` (mixed), `border-t border-dashed border-secondary-700` (anticipation)
+- **Label typography**: `font-semibold tracking-[0.15em]` (confirmed / mixed), `font-medium tracking-[0.15em] opacity-70` (anticipation)
 
 Price delta chips remain the only use of `text-chart-bullish` / `text-chart-bearish`. Subsection headers are neutral (`text-secondary-200`).
 
