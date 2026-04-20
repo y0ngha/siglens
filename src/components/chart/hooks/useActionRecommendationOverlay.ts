@@ -16,12 +16,9 @@ import type {
 import { CHART_COLORS } from '@/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
-/**
- * 보정값(reconciledLevels) 차트 라인 스타일.
- * - 대시 스타일로 AI 원본과 시각적으로 구분
- * - 같은 semantic color에 알파 접미사를 붙여 톤을 낮춤
- */
-/** 보정값 라인용 8-bit hex alpha 접미사 (0x99 ≈ 60% opacity). */
+// 보정값(reconciledLevels) 차트 라인 스타일.
+// - 대시 스타일로 AI 원본과 시각적으로 구분
+// - 같은 semantic color에 알파 접미사를 붙여 톤을 낮춤 (0x99 ≈ 60% opacity)
 const RECONCILED_HEX_ALPHA = '99';
 const RECONCILED_STOP_LOSS_COLOR = `${CHART_COLORS.actionStopLoss}${RECONCILED_HEX_ALPHA}`;
 const RECONCILED_TAKE_PROFIT_COLOR = `${CHART_COLORS.actionTakeProfit}${RECONCILED_HEX_ALPHA}`;

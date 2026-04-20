@@ -1,25 +1,27 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import type React from 'react';
 import { createPortal } from 'react-dom';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+import { cn } from '@/lib/cn';
 
 /**
- * 키보드·마우스·터치 모두 접근 가능한 ⓘ 툴팁.
+ * 키보드·마우스·터치 모두 접근 가능한 ⓘ 툴팁 (disclosure 패턴).
  *
- * - Click / Enter / Space: 열고 닫기 토글 (키보드 사용자)
- * - Pointer(마우스) hover: 열기/닫기
+ * - Click / Enter / Space: 열고 닫기 토글 (키보드·마우스)
+ * - Pointer(마우스) hover: 열기 / leave 시 닫기
  * - Touch: click으로만 토글 (hover 미작동)
- * - Escape는 useOnClickOutside가 triggerRef/tooltipRef 외부 클릭으로 처리
- * - focus-visible ring으로 키보드 포커스 시각화
+ * - **Escape 키**: 열린 상태에서 닫기 (WCAG 2.1 SC 1.4.13)
+ * - `aria-expanded`로 disclosure 상태를 스크린리더에 노출
+ * - `focus-visible ring`으로 키보드 포커스 시각화
  *
  * 참고: MISTAKES.md Accessibility #4 — `title` 속성만으로는 키보드 사용자에게
  *       정보가 전달되지 않으므로 interactive button + 실제 툴팁 렌더가 필요하다.
  */
 interface InfoTooltipProps {
     readonly children: React.ReactNode;
-    /** 추가 className (접근성 아이콘 컬러 오버라이드 등). 기본값은 secondary-600. */
+    /** 추가 className. 기본 접근성 클래스(focus-visible ring 등)에 병합된다. */
     readonly className?: string;
 }
 
@@ -53,10 +55,7 @@ function getTooltipPosition(
 const DEFAULT_TRIGGER_CLASS =
     'text-secondary-600 hover:text-secondary-400 focus-visible:ring-primary-400 ml-1 cursor-help rounded text-xs leading-none transition-colors focus:outline-none focus-visible:ring-1';
 
-export function InfoTooltip({
-    children,
-    className = DEFAULT_TRIGGER_CLASS,
-}: InfoTooltipProps) {
+export function InfoTooltip({ children, className }: InfoTooltipProps) {
     const tooltipId = useId();
     const [open, setOpen] = useState(false);
     const [positioned, setPositioned] = useState(false);
@@ -70,6 +69,20 @@ export function InfoTooltip({
     useOnClickOutside([triggerRef, tooltipRef], () => setOpen(false), {
         enabled: open,
     });
+
+    // WCAG 2.1 SC 1.4.13 — 열린 툴팁은 Escape로 닫을 수 있어야 한다.
+    // useOnClickOutside는 포인터 이벤트만 처리하므로 키보드 사용자용 경로가 별도로 필요하다.
+    useEffect(() => {
+        if (!open) return;
+        const handleKeyDown = (e: KeyboardEvent): void => {
+            if (e.key === 'Escape') {
+                setOpen(false);
+                setPositioned(false);
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [open]);
 
     const handleClick = (): void => {
         if (open) {
@@ -96,12 +109,13 @@ export function InfoTooltip({
             <button
                 ref={triggerRef}
                 type="button"
-                aria-describedby={open ? tooltipId : undefined}
                 aria-label="추가 정보"
+                aria-describedby={open ? tooltipId : undefined}
+                aria-expanded={open}
                 onClick={handleClick}
                 onPointerEnter={handlePointerEnter}
                 onPointerLeave={handlePointerLeave}
-                className={className}
+                className={cn(DEFAULT_TRIGGER_CLASS, className)}
             >
                 ⓘ
             </button>

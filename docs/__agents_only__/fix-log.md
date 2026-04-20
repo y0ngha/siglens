@@ -138,3 +138,20 @@
 - Violation: `SignalSubsection` ⓘ 버튼이 `title` + `sr-only` 조합만 사용 — 키보드 사용자에게 시각적 툴팁 표시 안 됨
 - Rule: MISTAKES.md Accessibility #4 — 인터랙티브 info 아이콘은 `button` + 실제 `role="tooltip"` 렌더 + focus-visible ring 필수
 - Context: AnalysisPanel에 구현된 완전한 InfoTooltip(click/pointer/portal/focus-ring)을 `src/components/ui/InfoTooltip.tsx`로 분리해 공통화. SignalSubsection + AnalysisPanel 양쪽에서 재사용. focus-visible:ring-primary-400 기본 포함.
+
+## [PR #342 Round 6 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: `InfoTooltip`에 Escape 키 핸들러 부재 — 열린 툴팁을 키보드로 닫을 수 없음
+- Rule: WCAG 2.1 SC 1.4.13 (Content on Hover or Focus) — dismissible 요구사항
+- Context: `useOnClickOutside`는 포인터만 처리하므로 키보드 사용자 경로가 부재. `useEffect`로 document keydown 리스너 추가해 Escape 시 open=false
+
+- Violation: `InfoTooltip`의 `className` prop이 default 클래스를 완전 교체 → 접근성 필수 클래스(focus-visible ring) 소실 위험
+- Rule: 접근성 regression 방지 — override 대신 병합(concat)이 안전
+- Context: `cn(DEFAULT_TRIGGER_CLASS, className)` 으로 변경해 추가 커스텀은 허용하되 기본 focus-ring은 항상 유지
+
+- Violation: `InfoTooltip`의 button에 `aria-expanded` 누락 — 토글 disclosure 패턴인데 상태 미노출
+- Rule: ARIA — toggle button(disclosure)은 aria-expanded로 상태를 스크린리더에 알려야 함
+- Context: `aria-expanded={open}` 속성 추가해 스크린리더 사용자가 Enter/Space 후 상태 변화 감지 가능
+
+- Violation: `useActionRecommendationOverlay.ts` 에 이중 JSDoc 블록 (두 번째 `/** */` 때문에 첫 번째가 orphan)
+- Rule: JSDoc 관례 — 하나의 심볼에는 최대 하나의 JSDoc 블록만 연결
+- Context: 두 JSDoc 블록을 `//` 섹션 주석으로 통합해 orphan 제거
