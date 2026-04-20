@@ -88,9 +88,11 @@ async function fetchDailyBars(ticker: string): Promise<FmpBar[]> {
     const res = await fetch(url);
     if (!res.ok)
         throw new Error(`FMP fetch failed for ${ticker}: ${res.status}`);
-    // FMP API response schema guaranteed by provider — { historical: FmpBar[] }
-    const json = (await res.json()) as { historical?: FmpBar[] };
-    return (json.historical ?? []).slice().reverse();
+    // FMP /stable endpoint은 FmpBar[] 를 직접 반환 (newest first).
+    // Legacy /api/v3 endpoint은 { historical: FmpBar[] } 형태였으나 /stable로 변경됨.
+    const json = (await res.json()) as FmpBar[] | { historical?: FmpBar[] };
+    const bars = Array.isArray(json) ? json : (json.historical ?? []);
+    return bars.slice().reverse();
 }
 
 function toBarArray(fmpBars: FmpBar[]): Bar[] {
