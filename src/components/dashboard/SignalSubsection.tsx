@@ -4,7 +4,7 @@ import { SignalStockCard } from './SignalStockCard';
 
 interface SignalSubsectionProps {
     title: string;
-    marker: string; // ▲ ▼ △ ▽ ⚡
+    marker: string; // ▲ ▼ △ ▽ ◈
     variant: 'confirmed' | 'expected' | 'mixed';
     stocks: readonly StockWithConflict[];
     infoMessage?: string;
@@ -60,7 +60,6 @@ export function SignalSubsection({
                             </button>
                             <span
                                 id={tooltipId}
-                                role="tooltip"
                                 className="sr-only"
                             >
                                 {infoMessage}

@@ -7,7 +7,7 @@ import type {
     ConflictResolution,
 } from '@/domain/types';
 
-function countSignalDirections(signals: readonly Signal[]): { bullishCount: number; bearishCount: number } {
+function countSignalDirections(signals: readonly Signal[]): ConflictInfo {
     return signals.reduce(
         (counts, s) => ({
             bullishCount: counts.bullishCount + (s.direction === 'bullish' ? 1 : 0),
@@ -18,33 +18,32 @@ function countSignalDirections(signals: readonly Signal[]): { bullishCount: numb
 }
 
 export function resolveConflicts(stocks: readonly StockSignalResult[]): ConflictResolution {
-    return stocks.reduce<{ resolved: StockWithConflict[]; mixed: StockWithConflict[] }>(
-        (acc, stock) => {
-            const { bullishCount, bearishCount } = countSignalDirections(stock.signals);
+    const resolved: StockWithConflict[] = [];
+    const mixed: StockWithConflict[] = [];
 
-            if (bullishCount === 0 || bearishCount === 0) {
-                return { ...acc, resolved: [...acc.resolved, stock] };
-            }
+    for (const stock of stocks) {
+        const { bullishCount, bearishCount } = countSignalDirections(stock.signals);
 
-            const conflict: ConflictInfo = { bullishCount, bearishCount };
+        if (bullishCount === 0 || bearishCount === 0) {
+            resolved.push(stock);
+            continue;
+        }
 
-            if (bullishCount === bearishCount) {
-                return { ...acc, mixed: [...acc.mixed, { ...stock, conflict }] };
-            }
+        const conflict: ConflictInfo = { bullishCount, bearishCount };
 
-            const winningDirection: SignalDirection =
-                bullishCount > bearishCount ? 'bullish' : 'bearish';
-            const filteredSignals = stock.signals.filter(
-                s => s.direction === winningDirection
-            );
-            return {
-                ...acc,
-                resolved: [
-                    ...acc.resolved,
-                    { ...stock, signals: filteredSignals, conflict },
-                ],
-            };
-        },
-        { resolved: [], mixed: [] }
-    );
+        if (bullishCount === bearishCount) {
+            mixed.push({ ...stock, conflict });
+            continue;
+        }
+
+        const winningDirection: SignalDirection =
+            bullishCount > bearishCount ? 'bullish' : 'bearish';
+        resolved.push({
+            ...stock,
+            signals: stock.signals.filter(s => s.direction === winningDirection),
+            conflict,
+        });
+    }
+
+    return { resolved, mixed };
 }
