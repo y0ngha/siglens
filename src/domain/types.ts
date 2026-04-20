@@ -600,7 +600,16 @@ export type ConfirmedSignalType =
     | 'macd_bullish_cross'
     | 'macd_bearish_cross'
     | 'bollinger_lower_bounce'
-    | 'bollinger_upper_breakout';
+    | 'bollinger_upper_breakout'
+    | 'supertrend_bullish_flip'
+    | 'parabolic_sar_flip'
+    | 'ichimoku_cloud_breakout'
+    | 'cci_bullish_cross'
+    | 'dmi_bullish_cross'
+    | 'cmf_bullish_flip'
+    | 'mfi_oversold_bounce'
+    | 'keltner_upper_breakout'
+    | 'squeeze_momentum_bullish';
 
 export type ExpectedSignalType =
     | 'rsi_bullish_divergence'
@@ -667,11 +676,28 @@ export interface ChatPromptPayload {
 
 // ─── Backtesting ──────────────────────────────────────────────────────────────
 
-export type BacktestOutcome = 'win' | 'loss';
+export type BacktestSignalResult = 'win' | 'loss';
+export type BacktestAiResult = 'win' | 'loss' | 'neutral';
+export type BacktestExitReason = 'take_profit' | 'stop_loss' | 'time';
 
-export interface BacktestAIAnalysis {
+export interface BacktestAiPriceTarget {
+    price: number;
+    basis: string;
+}
+
+export type BacktestAiEntryRecommendation = 'enter' | 'wait' | 'avoid';
+
+export interface BacktestAiAnalysis {
     summary: string;
     tags: string[];
+    entryRecommendation: BacktestAiEntryRecommendation;
+    // 방향성 예측: bullish priceTargets[0] 만 저장 (UI는 첫 목표가만 표시)
+    bullishTargets: BacktestAiPriceTarget[];
+    // 실행 레벨: AI가 제시한 SL/TP (무효값은 제거 — 유효한 것만 저장)
+    stopLoss?: number;
+    takeProfit?: number;
+    // 리스크 등급: AI의 AnalysisResponse.riskLevel ('low' | 'moderate' | 'high' | 'extreme' 중 하나)
+    riskLevel?: string;
 }
 
 export interface BacktestCase {
@@ -681,19 +707,21 @@ export interface BacktestCase {
     exitDate: string;
     exitPrice: number;
     holdingDays: number;
-    returnPct: number; // positive = profit, negative = loss
-    signalType: 'buy' | 'sell';
-    result: BacktestOutcome;
-    exitReason: 'signal' | 'stop_loss';
-    aiResult: BacktestOutcome;
-    aiAnalysis: BacktestAIAnalysis;
+    returnPct: number;
+    signalType: 'buy';
+    result: BacktestSignalResult;
+    exitReason: BacktestExitReason;
+    aiResult: BacktestAiResult;
+    aiTrendHit: boolean;
+    aiAnalysis: BacktestAiAnalysis;
 }
 
 export interface BacktestMeta {
     period: string;
     totalCases: number;
-    winRate: number; // Range: 0–100
-    aiWinRate: number; // Range: 0–100
+    winRate: number;
+    aiWinRate: number;
+    aiTrendHitRate: number;
     tickerCount: number;
 }
 

@@ -52,3 +52,10 @@ next-env.d.ts
 /worker/node_modules/
 /.superpowers/
 /docs/superpowers/
+
+# backtest batch job state
+/scripts/backtests/.batch-job.txt
+
+/worker/.vscode/
+
+.vscode/

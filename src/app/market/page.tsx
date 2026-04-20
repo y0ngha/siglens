@@ -50,12 +50,26 @@ export async function generateMetadata({
         keywords: MARKET_KEYWORDS,
         alternates: { canonical: MARKET_URL },
         openGraph: {
-            title: `오늘의 미국 주식 시장 | ${SITE_NAME}`,
+            title: MARKET_TITLE,
             description: MARKET_DESCRIPTION,
             url: MARKET_URL,
             siteName: SITE_NAME,
             locale: 'ko_KR',
             type: 'website',
+            images: [
+                {
+                    url: '/og-image.png',
+                    width: 1200,
+                    height: 630,
+                    alt: MARKET_TITLE,
+                },
+            ],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: MARKET_TITLE,
+            description: MARKET_DESCRIPTION,
+            images: ['/og-image.png'],
         },
         ...(hasQueryVariant && {
             robots: { index: false, follow: true },

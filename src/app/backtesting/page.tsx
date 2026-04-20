@@ -65,7 +65,7 @@ const datasetJsonLd = {
     description: BACKTESTING_DESCRIPTION,
     url: BACKTESTING_URL,
     creator: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
-    temporalCoverage: '2025-04/2026-04',
+    temporalCoverage: '2024-04/2026-04',
     spatialCoverage: 'US',
     variableMeasured: '주식 기술적 분석 신호 승률 및 AI 예측 정확도',
 };

@@ -10,6 +10,7 @@ import {
     PRIVACY_PATH,
     PRIVACY_TITLE,
     TERMS_DESCRIPTION,
+    TERMS_FULL_TITLE,
     TERMS_PATH,
     TERMS_TITLE,
 } from '@/lib/legal';
@@ -20,7 +21,7 @@ const PAGE_URL = `${SITE_URL}${TERMS_PATH}`;
 const JSON_LD = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
-    name: `${TERMS_TITLE} | ${SITE_NAME}`,
+    name: TERMS_TITLE,
     description: TERMS_DESCRIPTION,
     url: PAGE_URL,
     inLanguage: 'ko',
@@ -77,15 +78,24 @@ export const metadata: Metadata = {
     openGraph: {
         type: 'article',
         siteName: SITE_NAME,
-        title: `${TERMS_TITLE} | ${SITE_NAME}`,
+        title: TERMS_FULL_TITLE,
         description: TERMS_DESCRIPTION,
         url: PAGE_URL,
         locale: 'ko_KR',
+        images: [
+            {
+                url: '/og-image.png',
+                width: 1200,
+                height: 630,
+                alt: TERMS_FULL_TITLE,
+            },
+        ],
     },
     twitter: {
         card: 'summary',
-        title: `${TERMS_TITLE} | ${SITE_NAME}`,
+        title: TERMS_FULL_TITLE,
         description: TERMS_DESCRIPTION,
+        images: ['/og-image.png'],
     },
 };
 

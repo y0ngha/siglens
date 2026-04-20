@@ -8,6 +8,7 @@ import {
     INVESTMENT_DISCLAIMER,
     LEGAL_EFFECTIVE_DATE,
     PRIVACY_DESCRIPTION,
+    PRIVACY_FULL_TITLE,
     PRIVACY_PATH,
     PRIVACY_TITLE,
     TERMS_PATH,
@@ -77,15 +78,24 @@ export const metadata: Metadata = {
     openGraph: {
         type: 'article',
         siteName: SITE_NAME,
-        title: `${PRIVACY_TITLE} | ${SITE_NAME}`,
+        title: PRIVACY_FULL_TITLE,
         description: PRIVACY_DESCRIPTION,
         url: PAGE_URL,
         locale: 'ko_KR',
+        images: [
+            {
+                url: '/og-image.png',
+                width: 1200,
+                height: 630,
+                alt: PRIVACY_FULL_TITLE,
+            },
+        ],
     },
     twitter: {
         card: 'summary',
-        title: `${PRIVACY_TITLE} | ${SITE_NAME}`,
+        title: PRIVACY_FULL_TITLE,
         description: PRIVACY_DESCRIPTION,
+        images: ['/og-image.png'],
     },
 };
 

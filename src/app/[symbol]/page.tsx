@@ -63,6 +63,7 @@ export async function generateMetadata({
 
     const displayName = buildDisplayName(assetInfo, ticker);
     const title = `${displayName} 주가 AI 분석`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
     const description = buildSymbolDescription(displayName);
     const url = `${SITE_URL}/${ticker}`;
     const keywords = buildSymbolKeywords(
@@ -81,15 +82,24 @@ export async function generateMetadata({
         openGraph: {
             type: 'website',
             siteName: SITE_NAME,
-            title: `${title} | ${SITE_NAME}`,
+            title: fullTitle,
             description,
             url,
             locale: 'ko_KR',
+            images: [
+                {
+                    url: '/og-image.png',
+                    width: 1200,
+                    height: 630,
+                    alt: fullTitle,
+                },
+            ],
         },
         twitter: {
             card: 'summary_large_image',
-            title: `${title} | ${SITE_NAME}`,
+            title: fullTitle,
             description,
+            images: ['/og-image.png'],
         },
     };
 }
