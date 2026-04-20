@@ -145,7 +145,51 @@ function ActionRecommendationSection({
                     );
                 })}
             </div>
+            {rec.reconciledLevels &&
+                (rec.reconciledLevels.exit !== '' ||
+                    rec.reconciledLevels.riskReward !== '') && (
+                    <ReconciledLevelsBlock
+                        exit={rec.reconciledLevels.exit}
+                        riskReward={rec.reconciledLevels.riskReward}
+                    />
+                )}
         </div>
+    );
+}
+
+interface ReconciledLevelsBlockProps {
+    exit: string;
+    riskReward: string;
+}
+
+function ReconciledLevelsBlock({
+    exit,
+    riskReward,
+}: ReconciledLevelsBlockProps) {
+    return (
+        <section className="border-secondary-700 bg-secondary-800/40 mt-1 flex flex-col gap-1 rounded-md border px-3 py-2">
+            <header className="flex items-center">
+                <span className="text-secondary-400 text-[10px] font-semibold tracking-wide uppercase">
+                    내부 보정값
+                </span>
+                <InfoTooltip>
+                    <span className="text-secondary-300">
+                        AI가 제시한 내용을 기반으로, 내부 데이터로 보정한
+                        결과입니다.
+                    </span>
+                </InfoTooltip>
+            </header>
+            {exit !== '' && (
+                <p className="text-secondary-300 text-sm leading-relaxed">
+                    {exit}
+                </p>
+            )}
+            {riskReward !== '' && (
+                <p className="text-secondary-400 text-xs leading-relaxed">
+                    {riskReward}
+                </p>
+            )}
+        </section>
     );
 }
 
