@@ -88,6 +88,7 @@ async function fetchDailyBars(ticker: string): Promise<FmpBar[]> {
     const res = await fetch(url);
     if (!res.ok)
         throw new Error(`FMP fetch failed for ${ticker}: ${res.status}`);
+    // FMP API response schema guaranteed by provider — { historical: FmpBar[] }
     const json = (await res.json()) as { historical?: FmpBar[] };
     return (json.historical ?? []).slice().reverse();
 }
@@ -116,7 +117,7 @@ function findEntryCandidates(
     bars: Bar[],
     fmpBars: FmpBar[]
 ): EntryCandidate[] {
-    const candidates: EntryCandidate[] = [];
+    let candidates: EntryCandidate[] = [];
     let cooldownUntil = -1;
 
     if (bars.length < MIN_BARS + 1) return candidates;
@@ -129,6 +130,9 @@ function findEntryCandidates(
             .map(s => s.type)
     );
 
+    // O(n²) sweep: 각 bar마다 prefix를 잘라 calculateIndicators + detectSignals 재실행.
+    // 운영 코드와 동일한 탐지 로직을 재사용하기 위한 의도적 단순화 (spec 섹션 10.4).
+    // n ≈ 400 bars × 10 tickers 수준에서 실측 수분 내 완료.
     for (let i = MIN_BARS; i < bars.length - HOLD_DAYS; i++) {
         const prefix = bars.slice(0, i + 1);
         const bullishTypes = new Set(
@@ -147,18 +151,22 @@ function findEntryCandidates(
             bullishTypes.size >= MIN_CONFLUENCE &&
             fresh.length >= 1
         ) {
-            candidates.push({
-                idx: i,
-                entryDate,
-                entryPrice: fmpBars[i].close,
-                signalTypes: [...bullishTypes].slice(0, MAX_TAGS_PER_CASE),
-            });
+            candidates = [
+                ...candidates,
+                {
+                    idx: i,
+                    entryDate,
+                    entryPrice: fmpBars[i].close,
+                    signalTypes: [...bullishTypes].slice(0, MAX_TAGS_PER_CASE),
+                },
+            ];
             cooldownUntil = i + HOLD_DAYS;
         }
 
         lastBullishTypes = bullishTypes;
     }
 
+    // 목업과 일치: 티커당 가장 최근 N개 케이스만 표시 (chronological tail)
     return candidates.slice(-MAX_SIGNALS_PER_TICKER);
 }
 
@@ -222,7 +230,9 @@ interface AiAnalysisForBacktest {
     bullishTargets: number[];
 }
 
-const VALID_RECS: EntryRecommendation[] = ['enter', 'wait', 'avoid'];
+function isValidEntryRecommendation(v: unknown): v is EntryRecommendation {
+    return v === 'enter' || v === 'wait' || v === 'avoid';
+}
 
 async function runAiAnalysis(
     ticker: string,
@@ -246,10 +256,8 @@ async function runAiAnalysis(
     const result = enrichAnalysisWithConfidence(raw, []);
 
     const rawRec = result.actionRecommendation?.entryRecommendation;
-    const entryRecommendation: EntryRecommendation = VALID_RECS.includes(
-        rawRec as EntryRecommendation
-    )
-        ? (rawRec as EntryRecommendation)
+    const entryRecommendation: EntryRecommendation = isValidEntryRecommendation(rawRec)
+        ? rawRec
         : 'wait';
 
     return {
