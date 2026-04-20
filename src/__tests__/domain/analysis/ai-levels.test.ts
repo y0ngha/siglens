@@ -14,10 +14,7 @@ import {
     resolveBullishStopLoss,
     resolveBullishTakeProfit,
 } from '@/domain/analysis/ai-levels';
-import type {
-    ActionRecommendation,
-    AnalysisResponse,
-} from '@/domain/types';
+import type { ActionRecommendation, AnalysisResponse } from '@/domain/types';
 
 describe('isValidBullishStopLoss', () => {
     it.each<
@@ -474,11 +471,7 @@ describe('postProcessAnalysisWithReconcile', () => {
             ...baseResponse,
             actionRecommendation: recNoEntry,
         };
-        const result = postProcessAnalysisWithReconcile(
-            response,
-            undefined,
-            5
-        );
+        const result = postProcessAnalysisWithReconcile(response, undefined, 5);
         expect(result).toBe(response);
     });
 
