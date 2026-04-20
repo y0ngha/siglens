@@ -1,7 +1,9 @@
 'use client';
 
 import { useCallback } from 'react';
+import type { KeyboardEvent } from 'react';
 import { cn } from '@/lib/cn';
+import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
 import type { DashboardTimeframe } from '@/domain/types';
 import {
     DASHBOARD_TIMEFRAMES,
@@ -17,27 +19,24 @@ export function TimeframeSelector({
     timeframe,
     onChange,
 }: TimeframeSelectorProps) {
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLButtonElement>) => {
-            const idx = DASHBOARD_TIMEFRAMES.indexOf(timeframe);
-            const total = DASHBOARD_TIMEFRAMES.length;
-            const nextIdx =
-                e.key === 'ArrowRight'
-                    ? (idx + 1) % total
-                    : e.key === 'ArrowLeft'
-                      ? (idx - 1 + total) % total
-                      : -1;
-            if (nextIdx !== -1) {
-                e.preventDefault();
-                onChange(DASHBOARD_TIMEFRAMES[nextIdx]);
-                const parent = e.currentTarget.closest('[role="radiogroup"]');
-                const buttons =
-                    parent?.querySelectorAll<HTMLElement>('[role="radio"]');
-                buttons?.[nextIdx]?.focus();
-            }
+    const focusRadio = useCallback(
+        (next: DashboardTimeframe, e: KeyboardEvent<Element>) => {
+            const idx = DASHBOARD_TIMEFRAMES.indexOf(next);
+            const parent = e.currentTarget.closest('[role="radiogroup"]');
+            const buttons =
+                parent?.querySelectorAll<HTMLElement>('[role="radio"]');
+            buttons?.[idx]?.focus();
         },
-        [onChange, timeframe]
+        []
     );
+
+    const handleKeyDown = useRovingKeyboardNav<DashboardTimeframe>({
+        items: DASHBOARD_TIMEFRAMES,
+        activeItem: timeframe,
+        onChange,
+        focusItem: focusRadio,
+        withHomeEnd: false,
+    });
 
     return (
         <div className="flex items-baseline gap-3">

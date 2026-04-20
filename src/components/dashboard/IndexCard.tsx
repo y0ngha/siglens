@@ -1,5 +1,8 @@
 import Link from 'next/link';
+import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
+import { formatUsdPrice } from '@/lib/priceFormat';
+import { formatPriceChange } from '@/components/dashboard/utils/priceChangeDisplay';
 import type { MarketIndexData, MarketSectorData } from '@/domain/types';
 
 type IndexCardData = MarketIndexData | MarketSectorData;
@@ -14,9 +17,9 @@ interface IndexCardProps {
 }
 
 export function IndexCard({ data, href }: IndexCardProps) {
-    const isUp = data.changesPercentage >= 0;
-    const sign = isUp ? '+' : '';
-    const changeColor = isUp ? 'text-chart-bullish' : 'text-chart-bearish';
+    const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
+        data.changesPercentage
+    );
     const label = getLabel(data);
 
     const inner = (
@@ -36,21 +39,18 @@ export function IndexCard({ data, href }: IndexCardProps) {
                 <span
                     className={cn(
                         'flex shrink-0 items-center gap-0.5 font-mono text-xs tabular-nums',
-                        changeColor
+                        colorClass
                     )}
                 >
-                    <span aria-hidden="true">{isUp ? '▲' : '▼'}</span>
-                    <span className="sr-only">{isUp ? '상승' : '하락'}</span>
+                    <span aria-hidden="true">{arrow}</span>
+                    <span className="sr-only">{arrowLabel}</span>
                     {sign}
                     {data.changesPercentage.toFixed(2)}%
                 </span>
             </div>
             {/* 가격 */}
             <p className="text-secondary-100 font-mono text-sm tabular-nums">
-                $
-                {data.price.toLocaleString('en-US', {
-                    maximumFractionDigits: 2,
-                })}
+                ${formatUsdPrice(data.price)}
             </p>
         </div>
     );
@@ -60,14 +60,7 @@ export function IndexCard({ data, href }: IndexCardProps) {
             <Link
                 href={href}
                 title={`${label} 분석`}
-                className={cn(
-                    'block origin-center touch-manipulation rounded-lg',
-                    'transition-[background-color,border-color,transform,box-shadow] duration-150',
-                    'hover:bg-secondary-800/70 hover:border-secondary-600 hover:-translate-y-px',
-                    'hover:shadow-primary-950/40 hover:shadow-lg',
-                    'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
-                    'motion-reduce:transition-none motion-reduce:hover:transform-none'
-                )}
+                className={CARD_LINK_CLASSES}
             >
                 {inner}
             </Link>

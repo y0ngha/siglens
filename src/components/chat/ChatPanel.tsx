@@ -1,11 +1,11 @@
 'use client';
 
-import { useRef, useEffect, useState, useCallback } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
+import { useChatInput } from '@/components/chat/hooks/useChatInput';
 
 const CHAT_MODEL_DISPLAY_NAME = 'Gemini 2.5 Flash';
 
@@ -72,11 +72,6 @@ export function ChatPanel({
     isAnalysisReady,
     onClose,
 }: ChatPanelProps) {
-    const [inputValue, setInputValue] = useState('');
-
-    const messagesEndRef = useRef<HTMLDivElement>(null);
-    const inputRef = useRef<HTMLTextAreaElement>(null);
-
     const {
         messages,
         loadingPhase,
@@ -86,31 +81,19 @@ export function ChatPanel({
         dismissAnalysisUpdated,
     } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
 
-    const isInputDisabled = loadingPhase !== null || !isAnalysisReady;
+    const {
+        inputValue,
+        setInputValue,
+        isInputDisabled,
+        inputRef,
+        messagesEndRef,
+        handleSubmit,
+        handleKeyDown,
+    } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
+
     const placeholder = !isAnalysisReady
         ? '분석이 완료된 후 질문할 수 있어요'
         : '질문을 입력하세요… (Enter로 전송)';
-
-    const handleSubmit = useCallback(async (): Promise<void> => {
-        const text = inputValue.trim();
-        if (!text || loadingPhase !== null || !isAnalysisReady) return;
-        setInputValue('');
-        await sendMessage(text);
-        inputRef.current?.focus();
-    }, [inputValue, loadingPhase, isAnalysisReady, sendMessage]);
-
-    const handleKeyDown = (
-        e: React.KeyboardEvent<HTMLTextAreaElement>
-    ): void => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            void handleSubmit();
-        }
-    };
-
-    useEffect(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, loadingPhase]);
 
     return (
         <div className="flex flex-col">

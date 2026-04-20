@@ -19,7 +19,13 @@ import {
     SIGNAL_SECTORS,
 } from '@/domain/constants/dashboard-tickers';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/lib/seo';
+import {
+    buildBreadcrumbJsonLd,
+    ROOT_KEYWORDS,
+    SITE_NAME,
+    SITE_URL,
+} from '@/lib/seo';
+import { JsonLd } from '@/components/ui/JsonLd';
 
 const MARKET_TITLE = `오늘의 미국 주식, 섹터별 기술적 신호 | ${SITE_NAME}`;
 const MARKET_DESCRIPTION =
@@ -133,48 +139,20 @@ export default async function MarketPage({
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: `오늘의 미국 주식 시장, 섹터별 기술적 신호 | ${SITE_NAME}`,
+        name: MARKET_TITLE,
         description: MARKET_DESCRIPTION,
         url: MARKET_URL,
         inLanguage: 'ko',
     };
 
-    const breadcrumbJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-            {
-                '@type': 'ListItem',
-                position: 1,
-                name: SITE_NAME,
-                item: SITE_URL,
-            },
-            {
-                '@type': 'ListItem',
-                position: 2,
-                name: '시장 현황',
-                item: MARKET_URL,
-            },
-        ],
-    };
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+        { name: '시장 현황', url: MARKET_URL },
+    ]);
 
     return (
         <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(breadcrumbJsonLd).replace(
-                        /</g,
-                        '\\u003c'
-                    ),
-                }}
-            />
+            <JsonLd data={jsonLd} />
+            <JsonLd data={breadcrumbJsonLd} />
             <h1 className="sr-only">미국 주식 기술적 신호 대시보드</h1>
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <Suspense fallback={<MarketSummaryPanelSkeleton />}>

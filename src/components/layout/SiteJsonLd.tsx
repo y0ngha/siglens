@@ -1,4 +1,5 @@
 import { SITE_NAME, SITE_URL } from '@/lib/seo';
+import { JsonLd } from '@/components/ui/JsonLd';
 
 export function SiteJsonLd() {
     const data = {
@@ -15,10 +16,5 @@ export function SiteJsonLd() {
             'query-input': 'required name=search_term_string',
         },
     };
-    return (
-        <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(data) }}
-        />
-    );
+    return <JsonLd data={data} />;
 }

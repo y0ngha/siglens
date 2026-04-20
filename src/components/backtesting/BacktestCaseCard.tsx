@@ -1,15 +1,9 @@
 import type { BacktestCase } from '@/domain/types';
+import { formatUsdCurrency } from '@/lib/priceFormat';
 
 interface BacktestCaseCardProps {
     case_: BacktestCase;
 }
-
-const priceFormatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-});
 
 function EntryRecBadge({
     recommendation,
@@ -118,7 +112,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             {c.entryDate}
                         </span>
                         <span className="text-secondary-500 ml-1 font-mono tabular-nums">
-                            {priceFormatter.format(c.entryPrice)}
+                            {formatUsdCurrency(c.entryPrice)}
                         </span>
                     </div>
                     <span
@@ -144,7 +138,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             {c.exitDate}
                         </span>
                         <span className="text-secondary-500 ml-1 font-mono tabular-nums">
-                            {priceFormatter.format(c.exitPrice)}
+                            {formatUsdCurrency(c.exitPrice)}
                         </span>
                     </div>
                 </div>
@@ -205,7 +199,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                     목표가:{' '}
                                 </span>
                                 <span className="text-chart-bullish">
-                                    {priceFormatter.format(
+                                    {formatUsdCurrency(
                                         firstBullishTarget.price
                                     )}
                                 </span>
@@ -220,9 +214,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             <div>
                                 <span className="text-secondary-500">TP: </span>
                                 <span className="text-chart-bullish">
-                                    {priceFormatter.format(
-                                        c.aiAnalysis.takeProfit
-                                    )}
+                                    {formatUsdCurrency(c.aiAnalysis.takeProfit)}
                                 </span>
                                 {c.exitReason === 'take_profit' && (
                                     <span className="text-chart-bullish ml-1">
@@ -235,9 +227,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             <div>
                                 <span className="text-secondary-500">SL: </span>
                                 <span className="text-chart-bearish">
-                                    {priceFormatter.format(
-                                        c.aiAnalysis.stopLoss
-                                    )}
+                                    {formatUsdCurrency(c.aiAnalysis.stopLoss)}
                                 </span>
                                 {c.exitReason === 'stop_loss' && (
                                     <span className="text-chart-bearish ml-1">

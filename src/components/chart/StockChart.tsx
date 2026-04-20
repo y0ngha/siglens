@@ -1,7 +1,7 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type {
     IChartApi,
     ISeriesApi,
@@ -20,7 +20,6 @@ import type {
     ValidatedActionPrices,
 } from '@/domain/types';
 import { getTimeFormatter } from '@/domain/chart/timeFormat';
-import type { PaneIndices } from '@/components/chart/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
 import { useBollingerOverlay } from '@/components/chart/hooks/useBollingerOverlay';
@@ -37,10 +36,8 @@ import { useActionRecommendationOverlay } from '@/components/chart/hooks/useActi
 import type { ReconciledActionLineData } from '@/domain/types';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import { useOverlayLegend } from '@/components/chart/hooks/useOverlayLegend';
-import {
-    DEFAULT_LINE_WIDTH,
-    INACTIVE_PANE_INDEX,
-} from '@/components/chart/constants';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { useIndicatorVisibility } from '@/components/chart/hooks/useIndicatorVisibility';
 import { OverlayLegend } from '@/components/chart/OverlayLegend';
 import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
 import { buildOverlayLabelConfigs } from '@/components/chart/utils/overlayLabelUtils';
@@ -51,7 +48,6 @@ import {
 } from '@/domain/indicators/constants';
 import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
 
-const FIRST_INDICATOR_PANE_INDEX = 1;
 const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
 
 interface CommonHookParams {
@@ -102,13 +98,6 @@ export function StockChart({
     onChartReady,
     onChartRemove,
 }: StockChartProps) {
-    const [rsiVisible, setRsiVisible] = useState(false);
-    const [macdVisible, setMacdVisible] = useState(false);
-    const [dmiVisible, setDmiVisible] = useState(false);
-    const [stochasticVisible, setStochasticVisible] = useState(false);
-    const [stochRsiVisible, setStochRsiVisible] = useState(false);
-    const [cciVisible, setCciVisible] = useState(false);
-
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
@@ -118,63 +107,21 @@ export function StockChart({
     const onChartReadyRef = useRef(onChartReady);
     const onChartRemoveRef = useRef(onChartRemove);
 
-    const paneIndices: PaneIndices = useMemo(() => {
-        const visibles = [
-            rsiVisible,
-            macdVisible,
-            dmiVisible,
-            stochasticVisible,
-            stochRsiVisible,
-            cciVisible,
-        ];
-        const indexFor = (pos: number): number => {
-            const precedingActive = visibles
-                .slice(0, pos)
-                .filter(Boolean).length;
-            return visibles[pos]
-                ? FIRST_INDICATOR_PANE_INDEX + precedingActive
-                : INACTIVE_PANE_INDEX;
-        };
-        return {
-            rsi: indexFor(0),
-            macd: indexFor(1),
-            dmi: indexFor(2),
-            stochastic: indexFor(3),
-            stochRsi: indexFor(4),
-            cci: indexFor(5),
-        };
-    }, [
+    const {
         rsiVisible,
         macdVisible,
         dmiVisible,
         stochasticVisible,
         stochRsiVisible,
         cciVisible,
-    ]);
-
-    const toggleRSI = useCallback(() => {
-        setRsiVisible(prev => !prev);
-    }, []);
-
-    const toggleMACD = useCallback(() => {
-        setMacdVisible(prev => !prev);
-    }, []);
-
-    const toggleDMI = useCallback(() => {
-        setDmiVisible(prev => !prev);
-    }, []);
-
-    const toggleStochastic = useCallback(() => {
-        setStochasticVisible(prev => !prev);
-    }, []);
-
-    const toggleStochRSI = useCallback(() => {
-        setStochRsiVisible(prev => !prev);
-    }, []);
-
-    const toggleCCI = useCallback(() => {
-        setCciVisible(prev => !prev);
-    }, []);
+        toggleRSI,
+        toggleMACD,
+        toggleDMI,
+        toggleStochastic,
+        toggleStochRSI,
+        toggleCCI,
+        paneIndices,
+    } = useIndicatorVisibility();
 
     const commonHookParams: CommonHookParams = {
         chartRef,

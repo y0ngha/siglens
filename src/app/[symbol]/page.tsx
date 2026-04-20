@@ -12,12 +12,14 @@ import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import {
+    buildBreadcrumbJsonLd,
     buildSymbolDescription,
     buildSymbolKeywords,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
+import { JsonLd } from '@/components/ui/JsonLd';
 
 const FALLBACK_ANALYSIS: AnalysisResponse = {
     summary: 'AI 분석을 일시적으로 사용할 수 없습니다.',
@@ -131,24 +133,12 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         },
     };
 
-    const breadcrumbJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-            {
-                '@type': 'ListItem',
-                position: 1,
-                name: SITE_NAME,
-                item: SITE_URL,
-            },
-            {
-                '@type': 'ListItem',
-                position: 2,
-                name: `${displayName} 주가 AI 분석`,
-                item: `${SITE_URL}/${ticker}`,
-            },
-        ],
-    };
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+        {
+            name: `${displayName} 주가 AI 분석`,
+            url: `${SITE_URL}/${ticker}`,
+        },
+    ]);
 
     const queryClient = new QueryClient({
         defaultOptions: {
@@ -172,21 +162,8 @@ export default async function SymbolPage({ params, searchParams }: Props) {
 
     return (
         <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(breadcrumbJsonLd).replace(
-                        /</g,
-                        '\\u003c'
-                    ),
-                }}
-            />
+            <JsonLd data={jsonLd} />
+            <JsonLd data={breadcrumbJsonLd} />
             <section className="sr-only">
                 <h2>{displayName} 기술적 분석</h2>
                 <p>

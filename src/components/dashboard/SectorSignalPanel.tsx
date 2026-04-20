@@ -1,88 +1,10 @@
 'use client';
 
-import { useCallback, useMemo, useState } from 'react';
-import { useRouter, usePathname, useSearchParams } from 'next/navigation';
-import type {
-    DashboardTimeframe,
-    Signal,
-    SignalDirection,
-    SignalPhase,
-    SectorSignalsResult,
-    StockSignalResult,
-    StockWithConflict,
-} from '@/domain/types';
-import {
-    DEFAULT_DASHBOARD_TIMEFRAME,
-    SIGNAL_SECTORS,
-} from '@/domain/constants/dashboard-tickers';
+import type { DashboardTimeframe, SectorSignalsResult } from '@/domain/types';
+import { useSectorSignalState } from './hooks/useSectorSignalState';
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
-import { resolveConflicts } from '@/domain/signals/resolveConflicts';
-
-type QuadrantKey =
-    | 'bullishConfirmed'
-    | 'bullishExpected'
-    | 'bearishExpected'
-    | 'bearishConfirmed';
-
-const EMPTY_QUADRANTS: Record<QuadrantKey, readonly StockWithConflict[]> = {
-    bullishConfirmed: [],
-    bullishExpected: [],
-    bearishExpected: [],
-    bearishConfirmed: [],
-};
-
-const SIGNAL_TO_QUADRANT: Record<
-    SignalDirection,
-    Record<SignalPhase, QuadrantKey>
-> = {
-    bullish: {
-        confirmed: 'bullishConfirmed',
-        expected: 'bullishExpected',
-    },
-    bearish: {
-        confirmed: 'bearishConfirmed',
-        expected: 'bearishExpected',
-    },
-};
-
-function signalToQuadrantKey(s: Signal): QuadrantKey {
-    return SIGNAL_TO_QUADRANT[s.direction][s.phase];
-}
-
-function groupStockIntoQuadrants(
-    acc: Record<QuadrantKey, readonly StockWithConflict[]>,
-    stock: StockWithConflict
-): Record<QuadrantKey, readonly StockWithConflict[]> {
-    const grouped = stock.signals.reduce<
-        Record<QuadrantKey, readonly Signal[]>
-    >(
-        (g, s) => {
-            const key = signalToQuadrantKey(s);
-            return { ...g, [key]: [...g[key], s] };
-        },
-        {
-            bullishConfirmed: [],
-            bullishExpected: [],
-            bearishExpected: [],
-            bearishConfirmed: [],
-        }
-    );
-    return (Object.keys(grouped) as QuadrantKey[]).reduce(
-        (next, key) =>
-            grouped[key].length === 0
-                ? next
-                : {
-                      ...next,
-                      [key]: [
-                          ...next[key],
-                          { ...stock, signals: grouped[key] },
-                      ],
-                  },
-        acc
-    );
-}
 
 interface SectorSignalPanelProps {
     data: SectorSignalsResult;
@@ -90,75 +12,23 @@ interface SectorSignalPanelProps {
     initialTimeframe: DashboardTimeframe;
 }
 
-// Strict mode is always on: anticipation signals only visible when the stock's
-// trend opposes or is sideways relative to the signal's direction.
-function filterStrict(
-    stocks: readonly StockSignalResult[]
-): readonly StockSignalResult[] {
-    return stocks.flatMap(stock => {
-        const filtered = stock.signals.filter(sig => {
-            if (sig.phase === 'confirmed') return true;
-            if (sig.direction === 'bullish') return stock.trend !== 'uptrend';
-            return stock.trend !== 'downtrend';
-        });
-        return filtered.length === 0 ? [] : [{ ...stock, signals: filtered }];
-    });
-}
-
 export function SectorSignalPanel({
     data,
     initialSector,
     initialTimeframe,
 }: SectorSignalPanelProps) {
-    const router = useRouter();
-    const pathname = usePathname();
-    const searchParams = useSearchParams();
-    const [activeSector, setActiveSector] = useState(initialSector);
-    const [activeTimeframe, setActiveTimeframe] = useState(initialTimeframe);
-
-    const updateUrl = useCallback(
-        (nextSector: string, nextTimeframe: DashboardTimeframe) => {
-            const params = new URLSearchParams(searchParams.toString());
-            if (nextSector === SIGNAL_SECTORS[0].symbol)
-                params.delete('sector');
-            else params.set('sector', nextSector);
-            if (nextTimeframe === DEFAULT_DASHBOARD_TIMEFRAME)
-                params.delete('timeframe');
-            else params.set('timeframe', nextTimeframe);
-            const qs = params.toString();
-            router.replace(qs === '' ? pathname : `${pathname}?${qs}`, {
-                scroll: false,
-            });
-        },
-        [router, pathname, searchParams]
-    );
-
-    const filtered = useMemo(() => filterStrict(data.stocks), [data.stocks]);
-
-    const sectorStocks = useMemo(
-        () => filtered.filter(s => s.sectorSymbol === activeSector),
-        [filtered, activeSector]
-    );
-
-    const { resolved: resolvedStocks, mixed: mixedStocks } = useMemo(
-        () => resolveConflicts(sectorStocks),
-        [sectorStocks]
-    );
-
-    const quadrants = useMemo(
-        () => resolvedStocks.reduce(groupStockIntoQuadrants, EMPTY_QUADRANTS),
-        [resolvedStocks]
-    );
-
-    const handleSectorChange = (sector: string) => {
-        setActiveSector(sector);
-        updateUrl(sector, activeTimeframe);
-    };
-
-    const handleTimeframeChange = (next: DashboardTimeframe) => {
-        setActiveTimeframe(next);
-        updateUrl(activeSector, next);
-    };
+    const {
+        activeSector,
+        activeTimeframe,
+        quadrants,
+        mixedStocks,
+        handleSectorChange,
+        handleTimeframeChange,
+    } = useSectorSignalState({
+        data,
+        initialSector,
+        initialTimeframe,
+    });
 
     return (
         <section

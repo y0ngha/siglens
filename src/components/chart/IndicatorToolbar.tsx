@@ -1,21 +1,18 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/lib/chartColors';
-import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+import {
+    useIndicatorDropdown,
+    type DropdownPosition,
+    type IndicatorDropdownType,
+} from '@/components/chart/hooks/useIndicatorDropdown';
 
 interface IndicatorToggleGroup {
     visible: boolean;
     onToggle: () => void;
 }
-
-type IndicatorType = 'ma' | 'ema';
-
-type DropdownType = IndicatorType | null;
-
-const DROPDOWN_OFFSET_PX = 4;
 
 const TOOLBAR_LABEL_EXPANDED = 'Hide indicators';
 const TOOLBAR_LABEL_COLLAPSED = 'Show indicators';
@@ -31,7 +28,7 @@ const indicatorButtonClass = (active: boolean): string =>
 const COLLAPSE_BUTTON_ACTIVE = false as const;
 
 interface DropdownIndicatorConfig {
-    type: IndicatorType;
+    type: IndicatorDropdownType;
     label: string;
     active: boolean;
     availablePeriods: readonly number[];
@@ -43,11 +40,6 @@ interface ToggleIndicatorConfig {
     label: string;
     visible: boolean;
     onToggle: () => void;
-}
-
-interface DropdownPosition {
-    top: number;
-    left: number;
 }
 
 interface PeriodLabelProps {
@@ -180,57 +172,16 @@ export function IndicatorToolbar({
     volumeProfile,
     ichimoku,
 }: IndicatorToolbarProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
-    const [dropdownPosition, setDropdownPosition] =
-        useState<DropdownPosition | null>(null);
-
-    const toolbarRef = useRef<HTMLDivElement>(null);
-    const maButtonRef = useRef<HTMLButtonElement>(null);
-    const emaButtonRef = useRef<HTMLButtonElement>(null);
-    const portalRef = useRef<HTMLDivElement>(null);
-
-    useOnClickOutside(toolbarRef, event => {
-        if (!openDropdown) return;
-        const isInsidePortal = portalRef.current?.contains(
-            event.target as Node
-        );
-        if (!isInsidePortal) {
-            setOpenDropdown(null);
-        }
-    });
-
-    const buttonRefMap = useMemo(
-        () => ({
-            ma: maButtonRef,
-            ema: emaButtonRef,
-        }),
-        []
-    );
-
-    const toggleExpanded = (): void => {
-        setIsExpanded(prev => !prev);
-        if (openDropdown) {
-            setOpenDropdown(null);
-        }
-    };
-
-    const toggleDropdown = (type: IndicatorType): void => {
-        if (openDropdown === type) {
-            setOpenDropdown(null);
-            return;
-        }
-
-        const buttonRef = buttonRefMap[type];
-        if (!buttonRef.current) return;
-
-        const rect = buttonRef.current.getBoundingClientRect();
-        setDropdownPosition({
-            top: rect.bottom + window.scrollY + DROPDOWN_OFFSET_PX,
-            left: rect.left + window.scrollX,
-        });
-        setOpenDropdown(type);
-    };
+    const {
+        isExpanded,
+        openDropdown,
+        dropdownPosition,
+        toolbarRef,
+        portalRef,
+        buttonRefs,
+        toggleExpanded,
+        toggleDropdown,
+    } = useIndicatorDropdown();
 
     const dropdownIndicators: DropdownIndicatorConfig[] = [
         {
@@ -294,7 +245,7 @@ export function IndicatorToolbar({
                             className="flex min-w-12 items-start gap-1"
                         >
                             <button
-                                ref={buttonRefMap[indicator.type]}
+                                ref={buttonRefs[indicator.type]}
                                 type="button"
                                 onClick={() => toggleDropdown(indicator.type)}
                                 aria-expanded={openDropdown === indicator.type}

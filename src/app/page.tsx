@@ -14,6 +14,7 @@ import {
     SkillsShowcaseSkeleton,
 } from '@/components/home/SkillsShowcase';
 import { TickerCategories } from '@/components/home/TickerCategories';
+import { JsonLd } from '@/components/ui/JsonLd';
 
 const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
 
@@ -141,45 +142,11 @@ export default async function Home() {
 
     return (
         <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(organizationJsonLd).replace(
-                        /</g,
-                        '\\u003c'
-                    ),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(websiteJsonLd).replace(
-                        /</g,
-                        '\\u003c'
-                    ),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(howToJsonLd).replace(
-                        /</g,
-                        '\\u003c'
-                    ),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(faqJsonLd).replace(/</g, '\\u003c'),
-                }}
-            />
+            <JsonLd data={jsonLd} />
+            <JsonLd data={organizationJsonLd} />
+            <JsonLd data={websiteJsonLd} />
+            <JsonLd data={howToJsonLd} />
+            <JsonLd data={faqJsonLd} />
             <a
                 href="#search"
                 className="focus-visible:bg-primary-600 sr-only focus-visible:not-sr-only focus-visible:fixed focus-visible:top-4 focus-visible:left-4 focus-visible:z-50 focus-visible:rounded focus-visible:px-4 focus-visible:py-2 focus-visible:text-white"

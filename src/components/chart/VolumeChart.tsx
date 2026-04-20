@@ -1,12 +1,23 @@
 'use client';
 
-import { useEffect, useMemo, useRef } from 'react';
-import { HistogramSeries, createChart } from 'lightweight-charts';
-import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
+import { useRef } from 'react';
+import type { IChartApi } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
 import type { Bar, BuySellVolumeResult } from '@/domain/types';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
+import { useVolumeChartData } from '@/components/chart/hooks/useVolumeChartData';
+import { useVolumeChartLifecycle } from '@/components/chart/hooks/useVolumeChartLifecycle';
 import type { PaneLabelConfig } from '@/components/chart/types';
+
+const VOLUME_LABELS: PaneLabelConfig[] = [
+    {
+        paneIndex: 0,
+        subLabels: [
+            { name: 'Buy', color: CHART_COLORS.bullish },
+            { name: 'Sell', color: CHART_COLORS.bearish },
+        ],
+    },
+];
 
 interface VolumeChartProps {
     bars: Bar[];
@@ -25,108 +36,25 @@ export function VolumeChart({
 }: VolumeChartProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const chartRef = useRef<IChartApi | null>(null);
-    const totalSeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
-    const buySeriesRef = useRef<ISeriesApi<'Histogram'> | null>(null);
-    const onChartReadyRef = useRef(onChartReady);
-    const onChartRemoveRef = useRef(onChartRemove);
 
-    useEffect(() => {
-        onChartReadyRef.current = onChartReady;
-        onChartRemoveRef.current = onChartRemove;
+    const { chartRef, totalSeriesRef, buySeriesRef } = useVolumeChartLifecycle({
+        containerRef,
+        onChartReady,
+        onChartRemove,
     });
 
-    useEffect(() => {
-        if (!containerRef.current) return;
-
-        const chart = createChart(containerRef.current, {
-            autoSize: true,
-            layout: {
-                background: { color: CHART_COLORS.background },
-                textColor: CHART_COLORS.text,
-            },
-            grid: {
-                vertLines: { color: CHART_COLORS.grid },
-                horzLines: { color: CHART_COLORS.grid },
-            },
-        });
-
-        chartRef.current = chart;
-
-        // Total volume (red, background)
-        totalSeriesRef.current = chart.addSeries(HistogramSeries, {
-            color: CHART_COLORS.volumeBearish,
-            priceFormat: { type: 'volume' },
-            priceScaleId: 'volume',
-        });
-
-        // Buy volume (teal, overlay) — shares the same price scale as total volume
-        buySeriesRef.current = chart.addSeries(HistogramSeries, {
-            color: CHART_COLORS.volumeBullish,
-            priceFormat: { type: 'volume' },
-            priceScaleId: 'volume',
-        });
-
-        onChartReadyRef.current?.(chart);
-
-        return () => {
-            onChartRemoveRef.current?.();
-            chart.applyOptions({ autoSize: false });
-            chart.remove();
-            chartRef.current = null;
-            totalSeriesRef.current = null;
-            buySeriesRef.current = null;
-        };
-    }, []);
-
-    useEffect(() => {
-        if (
-            !totalSeriesRef.current ||
-            !buySeriesRef.current ||
-            !chartRef.current
-        )
-            return;
-
-        if (bars.length === 0 || buySellVolume.length === 0) {
-            totalSeriesRef.current.setData([]);
-            buySeriesRef.current.setData([]);
-            return;
-        }
-
-        totalSeriesRef.current.setData(
-            bars.map(({ time, volume }) => ({
-                time: time as UTCTimestamp,
-                value: volume,
-            }))
-        );
-
-        buySeriesRef.current.setData(
-            bars.map(({ time }, i) => ({
-                time: time as UTCTimestamp,
-                value: buySellVolume[i]!.buyVolume,
-            }))
-        );
-
-        chartRef.current.timeScale().fitContent();
-    }, [bars, buySellVolume]);
-
-    const volumeLabels = useMemo<PaneLabelConfig[]>(
-        () => [
-            {
-                paneIndex: 0,
-                subLabels: [
-                    { name: 'Buy', color: CHART_COLORS.bullish },
-                    { name: 'Sell', color: CHART_COLORS.bearish },
-                ],
-            },
-        ],
-        []
-    );
+    useVolumeChartData({
+        chartRef,
+        totalSeriesRef,
+        buySeriesRef,
+        bars,
+        buySellVolume,
+    });
 
     usePaneLabels({
         chartRef,
         containerRef: wrapperRef,
-        labels: volumeLabels,
+        labels: VOLUME_LABELS,
     });
 
     return (

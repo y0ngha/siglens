@@ -64,6 +64,29 @@ export function buildSymbolKeywords(
     ];
 }
 
+export interface BreadcrumbItem {
+    name: string;
+    url: string;
+}
+
+// 홈(Siglens → SITE_URL)이 첫 항목으로 자동 삽입된다.
+export function buildBreadcrumbJsonLd(trail: BreadcrumbItem[]): object {
+    const items: BreadcrumbItem[] = [
+        { name: SITE_NAME, url: SITE_URL },
+        ...trail,
+    ];
+    return {
+        '@context': 'https://schema.org',
+        '@type': 'BreadcrumbList',
+        itemListElement: items.map((item, index) => ({
+            '@type': 'ListItem',
+            position: index + 1,
+            name: item.name,
+            item: item.url,
+        })),
+    };
+}
+
 export const BACKTESTING_PATH = '/backtesting';
 export const BACKTESTING_URL = `${SITE_URL}${BACKTESTING_PATH}`;
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication

@@ -1,21 +1,24 @@
 'use client';
 
-import React, { useId, useRef, useState } from 'react';
+import React, { useId, useRef } from 'react';
 import { cn } from '@/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
 import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
-import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
+import { TabsPill, buildTabId, buildPanelId } from '@/components/ui/tabs';
+import {
+    useSkillsShowcase,
+    type SkillsActiveTab,
+} from '@/components/home/hooks/useSkillsShowcase';
 
 const INITIAL_VISIBLE_COUNT = 12;
 
-type ActiveTab = 'all' | SkillType;
-
 interface TabConfig {
-    value: ActiveTab;
+    value: SkillsActiveTab;
     label: string;
 }
 
-const TABS: TabConfig[] = [
+const TABS: readonly TabConfig[] = [
     { value: 'all', label: '전체' },
     { value: 'indicator_guide', label: '보조지표' },
     { value: 'pattern', label: '차트 패턴' },
@@ -53,33 +56,34 @@ const TYPE_BADGE: Record<SkillType, TypeBadgeConfig> = {
     support_resistance: {
         label: '지지/저항',
         className:
-            'bg-chart-bollinger/10 text-chart-bollinger border border-chart-bollinger/30',
+            'bg-secondary-700/30 text-secondary-300 border border-secondary-600/50',
     },
 };
 
 function ConfidenceInfoTooltip() {
-    const [open, setOpen] = useState(false);
     const containerRef = useRef<HTMLDivElement>(null);
-
-    useOnClickOutside(containerRef, () => setOpen(false));
+    const tooltipId = useId();
+    const { isOpen, toggle } = usePopoverToggle(containerRef);
 
     return (
         <div ref={containerRef} className="group relative">
             <button
                 type="button"
                 aria-label="신뢰도 점수 설명"
-                aria-expanded={open}
-                onClick={() => setOpen(prev => !prev)}
+                aria-describedby={tooltipId}
+                aria-expanded={isOpen}
+                onClick={toggle}
                 className="text-secondary-600 hover:text-secondary-400 cursor-help text-xs leading-none transition-colors"
             >
                 ⓘ
             </button>
             <div
+                id={tooltipId}
                 role="tooltip"
                 className={cn(
                     'bg-secondary-800 border-secondary-600 absolute right-0 bottom-full z-10 mb-1.5 w-56 rounded border p-2 text-xs shadow-lg transition-opacity',
                     'group-hover:opacity-100',
-                    open
+                    isOpen
                         ? 'pointer-events-auto opacity-100'
                         : 'pointer-events-none opacity-0 sm:pointer-events-none sm:opacity-0'
                 )}
@@ -187,66 +191,22 @@ interface SkillsShowcaseProps {
 }
 
 export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
-    const [activeTab, setActiveTab] = useState<ActiveTab>('all');
-    const [showAll, setShowAll] = useState(false);
-    const baseId = useId();
-    const tabButtonRefs = useRef<(HTMLButtonElement | null)[]>([]);
-
-    const handleTabSelect = (value: ActiveTab): void => {
-        setActiveTab(value);
-        setShowAll(false);
-    };
-
-    const handleTablistKeyDown = (e: React.KeyboardEvent): void => {
-        const currentIdx = TABS.findIndex(t => t.value === activeTab);
-        let nextIdx = currentIdx;
-        if (e.key === 'ArrowRight') nextIdx = (currentIdx + 1) % TABS.length;
-        else if (e.key === 'ArrowLeft')
-            nextIdx = (currentIdx - 1 + TABS.length) % TABS.length;
-        else return;
-        e.preventDefault();
-        handleTabSelect(TABS[nextIdx].value);
-        tabButtonRefs.current[nextIdx]?.focus();
-    };
+    const { activeTab, showAll, baseId, handleTabSelect, toggleShowAll } =
+        useSkillsShowcase();
 
     return (
         <section className="px-6 py-10 lg:px-[15vw]">
             <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
                 AI 분석 스킬
             </h2>
-            <div
-                role="tablist"
-                aria-label="스킬 카테고리 탭"
-                className="mb-6 flex flex-wrap gap-2"
-                onKeyDown={handleTablistKeyDown}
-            >
-                {TABS.map((tab, idx) => {
-                    const isActive = activeTab === tab.value;
-                    return (
-                        <button
-                            key={tab.value}
-                            ref={el => {
-                                tabButtonRefs.current[idx] = el;
-                            }}
-                            id={`${baseId}-tab-${tab.value}`}
-                            type="button"
-                            role="tab"
-                            aria-selected={isActive}
-                            aria-controls={`${baseId}-panel-${tab.value}`}
-                            tabIndex={isActive ? 0 : -1}
-                            onClick={() => handleTabSelect(tab.value)}
-                            className={cn(
-                                'rounded-full px-4 py-1.5 text-xs font-medium transition-colors',
-                                isActive
-                                    ? 'bg-primary-600 text-white'
-                                    : 'border-secondary-700 text-secondary-400 hover:text-secondary-200 border'
-                            )}
-                        >
-                            {tab.label}
-                        </button>
-                    );
-                })}
-            </div>
+            <TabsPill
+                tabs={TABS}
+                activeTab={activeTab}
+                onChange={handleTabSelect}
+                ariaLabel="스킬 카테고리 탭"
+                idPrefix={baseId}
+                className="mb-6"
+            />
             {TABS.map(tab => {
                 const isActive = activeTab === tab.value;
                 const panelSkills =
@@ -261,9 +221,9 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                 return (
                     <div
                         key={tab.value}
-                        id={`${baseId}-panel-${tab.value}`}
+                        id={buildPanelId(baseId, tab.value)}
                         role="tabpanel"
-                        aria-labelledby={`${baseId}-tab-${tab.value}`}
+                        aria-labelledby={buildTabId(baseId, tab.value)}
                         hidden={!isActive}
                     >
                         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -275,7 +235,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                             <div className="mt-6 flex justify-center">
                                 <button
                                     type="button"
-                                    onClick={() => setShowAll(prev => !prev)}
+                                    onClick={toggleShowAll}
                                     className="border-secondary-700 text-secondary-400 hover:border-primary-600/40 hover:text-primary-400 rounded-full border px-6 py-2 text-xs font-medium transition-colors"
                                 >
                                     {showAll

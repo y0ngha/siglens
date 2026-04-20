@@ -10,6 +10,7 @@ import {
 } from '@/lib/seo';
 import { BacktestHero } from '@/components/backtesting/BacktestHero';
 import { BacktestTabs } from '@/components/backtesting/BacktestTabs';
+import { JsonLd } from '@/components/ui/JsonLd';
 import backtestData from './data.json';
 import { validateBacktestData } from '@/domain/backtest/validate';
 
@@ -73,18 +74,8 @@ const datasetJsonLd = {
 export default function BacktestingPage() {
     return (
         <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(webPageJsonLd),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(datasetJsonLd),
-                }}
-            />
+            <JsonLd data={webPageJsonLd} />
+            <JsonLd data={datasetJsonLd} />
             <div className="bg-secondary-900 min-h-screen">
                 <BacktestHero meta={data.meta} />
                 <main>

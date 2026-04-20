@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
+import { ReactNode, useId, useRef, useState } from 'react';
 import type React from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
@@ -25,7 +25,7 @@ import { cn } from '@/lib/cn';
  *       정보가 전달되지 않으므로 interactive button + 실제 툴팁 렌더가 필요하다.
  */
 interface InfoTooltipProps {
-    readonly children: React.ReactNode;
+    readonly children: ReactNode;
     /** 추가 className. 기본 접근성 클래스(focus-visible ring 등)에 병합된다. */
     readonly className?: string;
 }

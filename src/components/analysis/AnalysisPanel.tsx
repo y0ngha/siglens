@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import type React from 'react';
+import { usePointerTooltip } from '@/components/hooks/usePointerTooltip';
 import type {
     ActionRecommendation,
     AnalysisResponse,
@@ -373,38 +373,12 @@ interface ConfidenceBadgeProps {
 }
 
 function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
-    const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+    const { isVisible, toggle, handlePointerEnter, handlePointerLeave } =
+        usePointerTooltip();
 
     const level: ConfidenceLevel =
         confidenceWeight >= HIGH_CONFIDENCE_WEIGHT ? 'high' : 'medium';
     const { className, label, tooltip } = CONFIDENCE_BADGE_CONFIG[level];
-
-    const handleClick = (): void => {
-        setIsTooltipVisible(prev => !prev);
-    };
-
-    const handleMouseEnter = (): void => {
-        setIsTooltipVisible(true);
-    };
-
-    const handleMouseLeave = (): void => {
-        setIsTooltipVisible(false);
-    };
-
-    const handlePointerEnter = (
-        e: React.PointerEvent<HTMLSpanElement>
-    ): void => {
-        // 터치 기기에서는 hover를 비활성화한다. 클릭(handleClick)만으로 토글한다.
-        if (e.pointerType === 'touch') return;
-        handleMouseEnter();
-    };
-
-    const handlePointerLeave = (
-        e: React.PointerEvent<HTMLSpanElement>
-    ): void => {
-        if (e.pointerType === 'touch') return;
-        handleMouseLeave();
-    };
 
     return (
         <span
@@ -414,7 +388,7 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
         >
             <button
                 type="button"
-                onClick={handleClick}
+                onClick={toggle}
                 className={cn(
                     'cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium',
                     className
@@ -422,7 +396,7 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
             >
                 {label}
             </button>
-            {isTooltipVisible && (
+            {isVisible && (
                 <div
                     role="tooltip"
                     className="bg-secondary-800 border-secondary-600 absolute bottom-full left-1/2 z-50 mb-1 w-48 -translate-x-1/2 rounded border p-2 text-xs leading-relaxed shadow-lg"

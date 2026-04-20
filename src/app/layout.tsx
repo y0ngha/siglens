@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Suspense } from 'react';
+import { ReactNode, Suspense } from 'react';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Header } from '@/components/layout/Header';
@@ -91,7 +91,7 @@ export const viewport: Viewport = {
 export default function RootLayout({
     children,
 }: Readonly<{
-    children: React.ReactNode;
+    children: ReactNode;
 }>) {
     return (
         <html
