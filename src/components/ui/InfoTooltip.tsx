@@ -8,7 +8,7 @@ import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 import {
     getTooltipPosition,
     type TooltipPosition,
-} from '@/components/ui/utils/tooltipPosition';
+} from '@/lib/tooltipPosition';
 import { cn } from '@/lib/cn';
 
 /**
