@@ -17,13 +17,7 @@ import {
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
-
-interface ConflictInfo {
-    readonly bullishCount: number;
-    readonly bearishCount: number;
-}
-
-type StockWithConflict = StockSignalResult & { readonly conflict?: ConflictInfo };
+import type { ConflictInfo, StockWithConflict } from './conflict-types';
 
 type QuadrantKey =
     | 'bullishConfirmed'
@@ -93,37 +87,46 @@ function resolveConflicts(stocks: readonly StockSignalResult[]): {
     resolved: readonly StockWithConflict[];
     mixed: readonly StockWithConflict[];
 } {
-    const resolved: StockWithConflict[] = [];
-    const mixed: StockWithConflict[] = [];
+    return stocks.reduce<{
+        resolved: StockWithConflict[];
+        mixed: StockWithConflict[];
+    }>(
+        (acc, stock) => {
+            const { bullishCount, bearishCount } = stock.signals.reduce(
+                (counts, s) => ({
+                    bullishCount:
+                        counts.bullishCount + (s.direction === 'bullish' ? 1 : 0),
+                    bearishCount:
+                        counts.bearishCount + (s.direction === 'bearish' ? 1 : 0),
+                }),
+                { bullishCount: 0, bearishCount: 0 }
+            );
 
-    for (const stock of stocks) {
-        const bullishCount = stock.signals.filter(
-            s => s.direction === 'bullish'
-        ).length;
-        const bearishCount = stock.signals.filter(
-            s => s.direction === 'bearish'
-        ).length;
+            if (bullishCount === 0 || bearishCount === 0) {
+                return { ...acc, resolved: [...acc.resolved, stock] };
+            }
 
-        if (bullishCount === 0 || bearishCount === 0) {
-            resolved.push(stock);
-            continue;
-        }
+            const conflict: ConflictInfo = { bullishCount, bearishCount };
 
-        const conflict: ConflictInfo = { bullishCount, bearishCount };
+            if (bullishCount === bearishCount) {
+                return { ...acc, mixed: [...acc.mixed, { ...stock, conflict }] };
+            }
 
-        if (bullishCount === bearishCount) {
-            mixed.push({ ...stock, conflict });
-        } else {
             const winningDirection: SignalDirection =
                 bullishCount > bearishCount ? 'bullish' : 'bearish';
             const filteredSignals = stock.signals.filter(
                 s => s.direction === winningDirection
             );
-            resolved.push({ ...stock, signals: filteredSignals, conflict });
-        }
-    }
-
-    return { resolved, mixed };
+            return {
+                ...acc,
+                resolved: [
+                    ...acc.resolved,
+                    { ...stock, signals: filteredSignals, conflict },
+                ],
+            };
+        },
+        { resolved: [], mixed: [] }
+    );
 }
 
 interface SectorSignalPanelProps {

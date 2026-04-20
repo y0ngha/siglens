@@ -2,11 +2,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import type { StockSignalResult } from '@/domain/types';
 import { SignalBadge } from './SignalBadge';
-
-interface ConflictInfo {
-    bullishCount: number;
-    bearishCount: number;
-}
+import type { ConflictInfo } from './conflict-types';
 
 interface SignalStockCardProps {
     data: StockSignalResult & { conflict?: ConflictInfo };
