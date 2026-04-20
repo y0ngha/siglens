@@ -243,7 +243,7 @@ describe('resolveBullishTakeProfit', () => {
 });
 
 describe('buildBullishExitText', () => {
-    it('SL + TP 모두 있으면 목표가/손절 텍스트를 반환한다', () => {
+    it('SL + 단일 TP 모두 있으면 목표가/손절 텍스트를 반환한다', () => {
         expect(buildBullishExitText(100, 95, [110])).toBe(
             '목표가 $110.00 (+10.0%)에서 익절, 손절 $95.00 (-5.0%).'
         );
@@ -269,17 +269,43 @@ describe('buildBullishExitText', () => {
         expect(buildBullishExitText(100, undefined, undefined)).toBe('');
     });
 
-    it('TP 배열의 첫 번째 원소만 사용한다', () => {
-        expect(buildBullishExitText(100, 95, [110, 120, 130])).toBe(
-            '목표가 $110.00 (+10.0%)에서 익절, 손절 $95.00 (-5.0%).'
+    it('복수 TP면 "1차 목표, 2차 목표" 형식으로 출력한다', () => {
+        expect(buildBullishExitText(100, 95, [110, 120])).toBe(
+            '1차 목표 $110.00 (+10.0%), 2차 목표 $120.00 (+20.0%)에서 익절, 손절 $95.00 (-5.0%).'
+        );
+    });
+
+    it('복수 TP 3개 + SL 없음도 올바르게 포맷된다', () => {
+        expect(buildBullishExitText(100, undefined, [110, 120, 130])).toBe(
+            '1차 목표 $110.00 (+10.0%), 2차 목표 $120.00 (+20.0%), 3차 목표 $130.00 (+30.0%)에서 익절.'
+        );
+    });
+
+    it('NaN TP는 건너뛴다', () => {
+        expect(buildBullishExitText(100, 95, [Number.NaN])).toBe(
+            '손절 $95.00 (-5.0%).'
+        );
+    });
+
+    it('NaN SL은 건너뛴다', () => {
+        expect(buildBullishExitText(100, Number.NaN, [110])).toBe(
+            '목표가 $110.00 (+10.0%)에서 익절.'
         );
     });
 });
 
 describe('buildBullishRiskRewardText', () => {
-    it('표준 위험:보상 비율을 계산한다', () => {
+    it('표준 위험:보상 비율을 signed pct로 계산한다', () => {
+        // entry=100, sl=95 (-5.0%), tp=110 (+10.0%) → 1:2.0
         expect(buildBullishRiskRewardText(100, 95, [110])).toBe(
-            '손절 5.0% vs 목표 10.0% → 위험:보상 = 1:2.0'
+            '손절 -5.0% vs 목표 +10.0% → 위험:보상 = 1:2.0'
+        );
+    });
+
+    it('명세 예시: 손절 -1.7% vs 목표 +3.2% → 1:1.9', () => {
+        // entry=100, sl=98.3 (-1.7%), tp=103.2 (+3.2%) → ratio = 3.2/1.7 = 1.88 → 1.9
+        expect(buildBullishRiskRewardText(100, 98.3, [103.2])).toBe(
+            '손절 -1.7% vs 목표 +3.2% → 위험:보상 = 1:1.9'
         );
     });
 
@@ -295,8 +321,12 @@ describe('buildBullishRiskRewardText', () => {
         expect(buildBullishRiskRewardText(100, 95, [])).toBe('');
     });
 
-    it('SL이 entry와 같으면 riskPct=0이 되어 빈 문자열을 반환한다', () => {
+    it('SL이 entry와 같으면 riskAbs=0이 되어 빈 문자열을 반환한다', () => {
         expect(buildBullishRiskRewardText(100, 100, [110])).toBe('');
+    });
+
+    it('TP[0]이 NaN이면 빈 문자열을 반환한다', () => {
+        expect(buildBullishRiskRewardText(100, 95, [Number.NaN])).toBe('');
     });
 });
 
@@ -312,53 +342,87 @@ describe('reconcileBullishActionRecommendation', () => {
         takeProfitPrices: [110],
     };
 
-    it('AI 값이 모두 유효하면 원본을 그대로 유지한다', () => {
+    it('AI 값이 모두 유효하면 원본을 그대로 유지한다 (reconciledLevels 없음)', () => {
         const result = reconcileBullishActionRecommendation(baseRec, 100, 2);
         expect(result.wasReconciled).toBe(false);
-        expect(result.recommendation).toEqual(baseRec);
+        expect(result.recommendation).toBe(baseRec);
+        expect(result.recommendation.reconciledLevels).toBeUndefined();
         expect(result.changes).toEqual([]);
     });
 
-    it('SL이 무효하면 ATR fallback을 적용하고 텍스트를 재생성한다', () => {
+    it('avoid 일 때는 보정하지 않는다 (reconciledLevels undefined, wasReconciled=false)', () => {
+        const rec: ActionRecommendation = {
+            ...baseRec,
+            entryRecommendation: 'avoid',
+            stopLoss: undefined,
+            takeProfitPrices: undefined,
+        };
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(result.wasReconciled).toBe(false);
+        expect(result.recommendation).toBe(rec);
+        expect(result.recommendation.reconciledLevels).toBeUndefined();
+    });
+
+    it('AI 원본 필드는 보정 후에도 불변이다 (stopLoss/takeProfitPrices/exit/riskReward)', () => {
+        const rec = { ...baseRec, stopLoss: 50 }; // 50 invalid → fallback
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(result.wasReconciled).toBe(true);
+        // AI originals preserved
+        expect(result.recommendation.stopLoss).toBe(rec.stopLoss);
+        expect(result.recommendation.takeProfitPrices).toBe(
+            rec.takeProfitPrices
+        );
+        expect(result.recommendation.exit).toBe(rec.exit);
+        expect(result.recommendation.riskReward).toBe(rec.riskReward);
+    });
+
+    it('SL이 무효하면 reconciledLevels에 fallback + 재생성 텍스트를 담는다', () => {
         // entry=100, ATR=5, 불합리한 SL 50 (ATR*5=25 밖)
         const rec = { ...baseRec, stopLoss: 50 };
         const result = reconcileBullishActionRecommendation(rec, 100, 5);
         expect(result.wasReconciled).toBe(true);
-        expect(result.recommendation.stopLoss).toBeCloseTo(92.5, 3);
-        expect(result.recommendation.exit).toContain('손절 $92.50');
-        expect(result.recommendation.exit).not.toBe(baseRec.exit);
-        expect(result.recommendation.riskReward).not.toBe(baseRec.riskReward);
+
+        const reconciled = result.recommendation.reconciledLevels;
+        expect(reconciled).toBeDefined();
+        expect(reconciled?.stopLoss).toBeCloseTo(92.5, 3);
+        // TP는 AI 값 유효 → reconciledLevels.takeProfitPrices는 AI 원본 참조
+        expect(reconciled?.takeProfitPrices).toBe(rec.takeProfitPrices);
+        expect(reconciled?.exit).toContain('손절 $92.50');
+        expect(reconciled?.riskReward).toContain('→ 위험:보상 =');
+        expect(reconciled?.reason).toContain('손절가');
+
         expect(result.changes.length).toBeGreaterThan(0);
         expect(result.changes[0]).toMatch(/stopLoss: 50 → 92\.50 \(fallback\)/);
     });
 
-    it('TP가 누락되면 ATR fallback을 적용한다', () => {
+    it('TP가 누락되면 reconciledLevels에 fallback을 담는다', () => {
         const rec = { ...baseRec, takeProfitPrices: undefined };
         const result = reconcileBullishActionRecommendation(rec, 100, 5);
         expect(result.wasReconciled).toBe(true);
-        expect(result.recommendation.takeProfitPrices?.[0]).toBeCloseTo(110, 3);
+
+        const reconciled = result.recommendation.reconciledLevels;
+        expect(reconciled).toBeDefined();
+        expect(reconciled?.takeProfitPrices?.[0]).toBeCloseTo(110, 3);
         expect(result.changes.some(c => c.includes('takeProfitPrices'))).toBe(
             true
         );
+        expect(reconciled?.reason).toContain('목표가를 제시하지 않아');
     });
 
-    it('ATR이 없고 SL이 side만 통과하면 fallback 불가 → 원본 유지', () => {
-        // SL 50은 entry 아래라 isValidBullishStopLoss의 side 체크는 통과,
-        // ATR이 없으니 ATR bound check는 skip → valid로 간주되어 원본 유지.
+    it('ATR 없이 SL side만 통과하면 reconciledLevels를 추가하지 않는다', () => {
         const rec = { ...baseRec, stopLoss: 50, takeProfitPrices: undefined };
         const result = reconcileBullishActionRecommendation(
             rec,
             100,
             undefined
         );
-        expect(result.recommendation.stopLoss).toBe(50);
-        expect(result.recommendation.takeProfitPrices).toBeUndefined();
+        // ATR 없어서 side check만 통과하면 SL 50은 valid, TP 누락 + ATR 없음 → missing → wasReconciled=false
         expect(result.wasReconciled).toBe(false);
+        expect(result.recommendation).toBe(rec);
+        expect(result.recommendation.reconciledLevels).toBeUndefined();
     });
 
-    it('ATR이 없고 SL이 무효(entry 이상)하면 missing → 원본 유지하고 reconciled=false', () => {
-        // ATR 없어도 SL side check(>= entry)는 fail해서 invalid로 간주되지만,
-        // fallback이 없어 resolved.source='missing' → 변경 없음.
+    it('ATR 없고 SL 무효(entry 이상)이면 fallback 없어서 wasReconciled=false', () => {
         const rec = { ...baseRec, stopLoss: 150 };
         const result = reconcileBullishActionRecommendation(
             rec,
@@ -366,36 +430,60 @@ describe('reconcileBullishActionRecommendation', () => {
             undefined
         );
         expect(result.wasReconciled).toBe(false);
-        expect(result.recommendation.stopLoss).toBe(150);
+        expect(result.recommendation).toBe(rec);
+        expect(result.recommendation.reconciledLevels).toBeUndefined();
     });
 
-    it('AI TP 여러 개 중 첫 번째만 보정하고 나머지는 보존한다', () => {
-        // [0]=50이 entry 아래라 무효 → fallback 110으로 보정.
-        // [1]=120, [2]=130은 그대로 유지.
+    it('AI TP 여러 개 중 첫 번째만 보정하고 나머지는 보존한다 (reconciledLevels)', () => {
+        // [0]=50 invalid (entry 이하) → fallback 110. [1]=120, [2]=130은 그대로.
         const rec = { ...baseRec, takeProfitPrices: [50, 120, 130] };
         const result = reconcileBullishActionRecommendation(rec, 100, 5);
         expect(result.wasReconciled).toBe(true);
-        expect(result.recommendation.takeProfitPrices?.[0]).toBeCloseTo(110, 3);
-        expect(result.recommendation.takeProfitPrices?.[1]).toBe(120);
-        expect(result.recommendation.takeProfitPrices?.[2]).toBe(130);
+
+        const reconciled = result.recommendation.reconciledLevels;
+        expect(reconciled?.takeProfitPrices?.[0]).toBeCloseTo(110, 3);
+        expect(reconciled?.takeProfitPrices?.[1]).toBe(120);
+        expect(reconciled?.takeProfitPrices?.[2]).toBe(130);
+
+        // AI 원본은 불변
+        expect(result.recommendation.takeProfitPrices).toBe(
+            rec.takeProfitPrices
+        );
     });
 
-    it('SL과 TP 모두 무효하면 둘 다 fallback 적용', () => {
+    it('AI TP 여러 개일 때 reconciledLevels.exit에 "1차/2차" 형식 포함', () => {
+        // [0]=50 invalid → fallback 110, [1]=150.
+        const rec = { ...baseRec, takeProfitPrices: [50, 150] };
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(result.wasReconciled).toBe(true);
+        expect(result.recommendation.reconciledLevels?.exit).toContain(
+            '1차 목표'
+        );
+        expect(result.recommendation.reconciledLevels?.exit).toContain(
+            '2차 목표'
+        );
+    });
+
+    it('SL과 TP 모두 무효하면 둘 다 reconciledLevels에 fallback 적용', () => {
         const rec = { ...baseRec, stopLoss: 50, takeProfitPrices: [200] };
         // SL 50 (ATR*5=25 범위 밖), TP 200 (ATR*10=50 범위 밖)
         const result = reconcileBullishActionRecommendation(rec, 100, 5);
         expect(result.wasReconciled).toBe(true);
-        expect(result.recommendation.stopLoss).toBeCloseTo(92.5, 3);
-        expect(result.recommendation.takeProfitPrices?.[0]).toBeCloseTo(110, 3);
+
+        const reconciled = result.recommendation.reconciledLevels;
+        expect(reconciled?.stopLoss).toBeCloseTo(92.5, 3);
+        expect(reconciled?.takeProfitPrices?.[0]).toBeCloseTo(110, 3);
         expect(result.changes.length).toBe(2);
+        expect(reconciled?.reason).toContain('내부 기준을 벗어나');
     });
 
     it('원본 rec 객체를 변경하지 않는다 (불변성)', () => {
         const rec = { ...baseRec, stopLoss: 50 };
         const originalSl = rec.stopLoss;
+        const originalExit = rec.exit;
         reconcileBullishActionRecommendation(rec, 100, 5);
         expect(rec.stopLoss).toBe(originalSl);
-        expect(rec.exit).toBe(baseRec.exit);
+        expect(rec.exit).toBe(originalExit);
     });
 
     it('positionAnalysis, entry, entryPrices, entryRecommendation은 건드리지 않는다', () => {
@@ -409,6 +497,70 @@ describe('reconcileBullishActionRecommendation', () => {
         expect(result.recommendation.entryRecommendation).toBe(
             baseRec.entryRecommendation
         );
+    });
+
+    describe('reconcile reason 문구 (4가지)', () => {
+        it('SL+TP 모두 누락 → 공통 "손절·목표가를 제시하지 않아"', () => {
+            const rec: ActionRecommendation = {
+                ...baseRec,
+                stopLoss: undefined,
+                takeProfitPrices: undefined,
+            };
+            const result = reconcileBullishActionRecommendation(rec, 100, 5);
+            expect(result.recommendation.reconciledLevels?.reason).toBe(
+                'AI가 손절·목표가를 제시하지 않아 ATR 기반 기본값을 계산했습니다.'
+            );
+        });
+
+        it('SL+TP 모두 무효 → "손절·목표가 중 일부가 내부 기준을 벗어나"', () => {
+            const rec = {
+                ...baseRec,
+                stopLoss: 50,
+                takeProfitPrices: [200],
+            };
+            const result = reconcileBullishActionRecommendation(rec, 100, 5);
+            expect(result.recommendation.reconciledLevels?.reason).toBe(
+                'AI가 제시한 손절·목표가 중 일부가 내부 기준을 벗어나 보정했습니다.'
+            );
+        });
+
+        it('SL만 누락 → "손절가를 제시하지 않아"', () => {
+            const rec: ActionRecommendation = {
+                ...baseRec,
+                stopLoss: undefined,
+            };
+            const result = reconcileBullishActionRecommendation(rec, 100, 5);
+            expect(result.recommendation.reconciledLevels?.reason).toBe(
+                'AI가 손절가를 제시하지 않아 ATR 기반 기본값을 계산했습니다.'
+            );
+        });
+
+        it('SL만 무효 → "손절가가 내부 기준을 벗어나"', () => {
+            const rec = { ...baseRec, stopLoss: 50 };
+            const result = reconcileBullishActionRecommendation(rec, 100, 5);
+            expect(result.recommendation.reconciledLevels?.reason).toBe(
+                'AI가 제시한 손절가가 내부 기준을 벗어나 보정했습니다.'
+            );
+        });
+
+        it('TP만 누락 → "목표가를 제시하지 않아"', () => {
+            const rec: ActionRecommendation = {
+                ...baseRec,
+                takeProfitPrices: undefined,
+            };
+            const result = reconcileBullishActionRecommendation(rec, 100, 5);
+            expect(result.recommendation.reconciledLevels?.reason).toBe(
+                'AI가 목표가를 제시하지 않아 ATR 기반 기본값을 계산했습니다.'
+            );
+        });
+
+        it('TP만 무효 → "목표가가 내부 기준을 벗어나"', () => {
+            const rec = { ...baseRec, takeProfitPrices: [200] };
+            const result = reconcileBullishActionRecommendation(rec, 100, 5);
+            expect(result.recommendation.reconciledLevels?.reason).toBe(
+                'AI가 제시한 목표가가 내부 기준을 벗어나 보정했습니다.'
+            );
+        });
     });
 });
 
@@ -445,14 +597,27 @@ describe('postProcessAnalysisWithReconcile', () => {
         expect(result).toBe(baseResponse);
     });
 
-    it('entryPrices[0]가 있으면 이를 entryPrice로 사용한다', () => {
+    it('entryPrices midpoint: [100, 120] → entryPrice 110 사용', () => {
+        // SL 103 (< 110)은 ATR*5=25 밖이 아니므로 valid → reconcile 안됨.
+        // entryPrice가 올바르게 midpoint로 계산됐는지 확인하기 위해,
+        // midpoint 기준으로만 무효한 SL 105를 사용한다.
+        // entry 110 기준 SL 105 < 110 valid.
+        // 대신 midpoint 기준으로 무효(entry 초과)한 SL 115를 사용.
         const response = {
             ...baseResponse,
-            actionRecommendation: { ...rec, stopLoss: 50 },
+            actionRecommendation: {
+                ...rec,
+                entryPrices: [100, 120],
+                stopLoss: 115,
+            },
         };
-        // entryPrices[0]=100, SL 50 invalid → fallback 92.5
         const result = postProcessAnalysisWithReconcile(response, 999, 5);
-        expect(result.actionRecommendation?.stopLoss).toBeCloseTo(92.5, 3);
+        // midpoint 110 기준 SL 115 > entry → invalid → fallback 110 - 5*1.5 = 102.5
+        expect(
+            result.actionRecommendation?.reconciledLevels?.stopLoss
+        ).toBeCloseTo(102.5, 3);
+        // AI 원본은 그대로
+        expect(result.actionRecommendation?.stopLoss).toBe(115);
     });
 
     it('entryPrices가 없으면 fallbackEntryPrice를 사용한다', () => {
@@ -462,7 +627,11 @@ describe('postProcessAnalysisWithReconcile', () => {
             actionRecommendation: recNoEntry,
         };
         const result = postProcessAnalysisWithReconcile(response, 100, 5);
-        expect(result.actionRecommendation?.stopLoss).toBeCloseTo(92.5, 3);
+        expect(
+            result.actionRecommendation?.reconciledLevels?.stopLoss
+        ).toBeCloseTo(92.5, 3);
+        // AI 원본 불변
+        expect(result.actionRecommendation?.stopLoss).toBe(50);
     });
 
     it('entryPrice를 결정할 수 없으면 원본을 반환한다', () => {
@@ -475,26 +644,29 @@ describe('postProcessAnalysisWithReconcile', () => {
         expect(result).toBe(response);
     });
 
-    it('AI 값이 모두 유효하면 recommendation 참조가 유지된다 (wasReconciled=false)', () => {
+    it('AI 값이 모두 유효하면 recommendation은 같은 참조이고 reconciledLevels 없음', () => {
         const response = { ...baseResponse, actionRecommendation: rec };
         const result = postProcessAnalysisWithReconcile(response, 100, 2);
-        expect(result.actionRecommendation).toEqual(rec);
+        expect(result.actionRecommendation).toBe(rec);
+        expect(result.actionRecommendation?.reconciledLevels).toBeUndefined();
     });
 
-    it('AI SL이 무효하면 reconcile되어 텍스트까지 재생성된다', () => {
+    it('AI SL이 무효하면 reconciledLevels가 병기되고 AI 원본 필드는 불변', () => {
         const response = {
             ...baseResponse,
             actionRecommendation: { ...rec, stopLoss: 50 },
         };
         const result = postProcessAnalysisWithReconcile(response, 100, 5);
-        expect(result.actionRecommendation?.stopLoss).toBeCloseTo(92.5, 3);
-        expect(result.actionRecommendation?.exit).not.toBe('원본 exit');
-        expect(result.actionRecommendation?.riskReward).not.toBe(
-            '원본 riskReward'
-        );
+        expect(
+            result.actionRecommendation?.reconciledLevels?.stopLoss
+        ).toBeCloseTo(92.5, 3);
+        // AI 원본 불변
+        expect(result.actionRecommendation?.stopLoss).toBe(50);
+        expect(result.actionRecommendation?.exit).toBe('원본 exit');
+        expect(result.actionRecommendation?.riskReward).toBe('원본 riskReward');
     });
 
-    it('ATR이 undefined이고 SL이 side 체크만 통과하면 원본 유지', () => {
+    it('ATR이 undefined이고 SL이 side 체크만 통과하면 reconciledLevels 없음', () => {
         const response = {
             ...baseResponse,
             actionRecommendation: { ...rec, stopLoss: 50 },
@@ -504,8 +676,23 @@ describe('postProcessAnalysisWithReconcile', () => {
             100,
             undefined
         );
-        // ATR 없어서 side check만 수행, SL 50 < entry 100 → valid, 원본 유지
+        // ATR 없어서 side check만 수행, SL 50 < entry 100 → valid, reconciledLevels 없음
         expect(result.actionRecommendation?.stopLoss).toBe(50);
         expect(result.actionRecommendation?.exit).toBe('원본 exit');
+        expect(result.actionRecommendation?.reconciledLevels).toBeUndefined();
+    });
+
+    it('entryRecommendation=avoid 이면 reconciledLevels 생성 안 함', () => {
+        const response = {
+            ...baseResponse,
+            actionRecommendation: {
+                ...rec,
+                entryRecommendation: 'avoid' as const,
+                stopLoss: undefined,
+                takeProfitPrices: undefined,
+            },
+        };
+        const result = postProcessAnalysisWithReconcile(response, 100, 5);
+        expect(result.actionRecommendation?.reconciledLevels).toBeUndefined();
     });
 });
