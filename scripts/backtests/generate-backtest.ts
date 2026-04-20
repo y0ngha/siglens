@@ -41,8 +41,16 @@ config({ path: resolve(process.cwd(), '.env.local') });
 // ─── 설정 ──────────────────────────────────────────────────────────────────────
 
 const TICKERS = [
-    'AAPL', 'MSFT', 'GOOGL', 'AMZN', 'NVDA', 'META', 'TSLA',
-    'PLTR', 'CRWD', 'MSTR',
+    'AAPL',
+    'MSFT',
+    'GOOGL',
+    'AMZN',
+    'NVDA',
+    'META',
+    'TSLA',
+    'PLTR',
+    'CRWD',
+    'MSTR',
 ];
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_API_KEY = process.env.FMP_API_KEY ?? '';
@@ -118,10 +126,7 @@ interface EntryCandidate {
     signalTypes: string[];
 }
 
-function findEntryCandidates(
-    bars: Bar[],
-    fmpBars: FmpBar[]
-): EntryCandidate[] {
+function findEntryCandidates(bars: Bar[], fmpBars: FmpBar[]): EntryCandidate[] {
     let candidates: EntryCandidate[] = [];
     let cooldownUntil = -1;
 
@@ -201,14 +206,18 @@ function is429(err: unknown): boolean {
     return msg.includes('429') || /resource.?exhausted/i.test(msg);
 }
 
+function is503(err: unknown): boolean {
+    if (typeof err === 'object' && err !== null) {
+        if ((err as Record<string, unknown>).status === 503) return true;
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    return msg.includes('503') || /unavailable|high demand/i.test(msg);
+}
+
 async function callGeminiWithRetryAfter(prompt: string): Promise<string> {
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
         try {
-            return await callGeminiScript(
-                prompt,
-                GEMINI_API_KEY,
-                GEMINI_MODEL
-            );
+            return await callGeminiScript(prompt, GEMINI_API_KEY, GEMINI_MODEL);
         } catch (err) {
             if (is429(err) && attempt < MAX_RETRIES) {
                 const waitMs = parseRetryAfterMs(err);
@@ -216,6 +225,15 @@ async function callGeminiWithRetryAfter(prompt: string): Promise<string> {
                     `  [429] Rate limited (attempt ${attempt + 1}/${MAX_RETRIES}), waiting ${waitMs / 1000}s...`
                 );
                 await sleep(waitMs + 500);
+                continue;
+            }
+            if (is503(err) && attempt < MAX_RETRIES) {
+                // 503 은 provider-side overload — exponential backoff (2s → 4s → 8s → 16s → 32s)
+                const waitMs = 2_000 * Math.pow(2, attempt);
+                console.log(
+                    `  [503] Model overloaded (attempt ${attempt + 1}/${MAX_RETRIES}), waiting ${waitMs / 1000}s...`
+                );
+                await sleep(waitMs);
                 continue;
             }
             throw err;
@@ -261,7 +279,9 @@ async function runAiAnalysis(
     const result = enrichAnalysisWithConfidence(raw, []);
 
     const rawRec = result.actionRecommendation?.entryRecommendation;
-    const entryRecommendation: EntryRecommendation = isValidEntryRecommendation(rawRec)
+    const entryRecommendation: EntryRecommendation = isValidEntryRecommendation(
+        rawRec
+    )
         ? rawRec
         : 'wait';
 
