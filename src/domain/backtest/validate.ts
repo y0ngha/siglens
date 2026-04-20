@@ -1,4 +1,5 @@
 import type {
+    BacktestAiEntryRecommendation,
     BacktestAiResult,
     BacktestData,
     BacktestExitReason,
@@ -11,6 +12,11 @@ const VALID_EXIT_REASONS: BacktestExitReason[] = [
     'take_profit',
     'stop_loss',
     'time',
+];
+const VALID_ENTRY_RECOMMENDATIONS: BacktestAiEntryRecommendation[] = [
+    'enter',
+    'wait',
+    'avoid',
 ];
 
 export function validateBacktestData(data: unknown): BacktestData {
@@ -72,6 +78,72 @@ export function validateBacktestData(data: unknown): BacktestData {
             !Array.isArray((c['aiAnalysis'] as Record<string, unknown>)['tags'])
         ) {
             throw new Error(`cases[${i}].aiAnalysis.tags must be an array`);
+        }
+
+        // aiAnalysis confirmed non-null object with tags array above
+        const aiAnalysis = c['aiAnalysis'] as Record<string, unknown>;
+
+        if (
+            !VALID_ENTRY_RECOMMENDATIONS.includes(
+                aiAnalysis['entryRecommendation'] as BacktestAiEntryRecommendation
+            )
+        ) {
+            throw new Error(
+                `cases[${i}].aiAnalysis.entryRecommendation must be 'enter', 'wait', or 'avoid'`
+            );
+        }
+
+        if (!Array.isArray(aiAnalysis['bullishTargets'])) {
+            throw new Error(
+                `cases[${i}].aiAnalysis.bullishTargets must be an array`
+            );
+        }
+        const bullishTargets = aiAnalysis['bullishTargets'] as unknown[];
+        bullishTargets.forEach((target, j) => {
+            if (typeof target !== 'object' || target === null) {
+                throw new Error(
+                    `cases[${i}].aiAnalysis.bullishTargets[${j}] must be an object`
+                );
+            }
+            // target confirmed non-null object above; cast to access price/basis fields
+            const t = target as Record<string, unknown>;
+            if (typeof t['price'] !== 'number') {
+                throw new Error(
+                    `cases[${i}].aiAnalysis.bullishTargets[${j}].price must be a number`
+                );
+            }
+            if (typeof t['basis'] !== 'string') {
+                throw new Error(
+                    `cases[${i}].aiAnalysis.bullishTargets[${j}].basis must be a string`
+                );
+            }
+        });
+
+        if (
+            aiAnalysis['stopLoss'] !== undefined &&
+            typeof aiAnalysis['stopLoss'] !== 'number'
+        ) {
+            throw new Error(
+                `cases[${i}].aiAnalysis.stopLoss must be a number when present`
+            );
+        }
+
+        if (
+            aiAnalysis['takeProfit'] !== undefined &&
+            typeof aiAnalysis['takeProfit'] !== 'number'
+        ) {
+            throw new Error(
+                `cases[${i}].aiAnalysis.takeProfit must be a number when present`
+            );
+        }
+
+        if (
+            aiAnalysis['riskLevel'] !== undefined &&
+            typeof aiAnalysis['riskLevel'] !== 'string'
+        ) {
+            throw new Error(
+                `cases[${i}].aiAnalysis.riskLevel must be a string when present`
+            );
         }
     });
 

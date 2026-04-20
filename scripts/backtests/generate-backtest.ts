@@ -254,7 +254,8 @@ interface AiAnalysisForBacktest {
     entryRecommendation: EntryRecommendation;
     stopLoss?: number;
     takeProfit?: number;
-    bullishTargets: number[];
+    bullishTargets: { price: number; basis: string }[];
+    riskLevel?: string;
 }
 
 function isValidEntryRecommendation(v: unknown): v is EntryRecommendation {
@@ -279,7 +280,11 @@ function decodeAnalysis(text: string): AiAnalysisForBacktest {
         stopLoss: result.actionRecommendation?.stopLoss,
         takeProfit: result.actionRecommendation?.takeProfitPrices?.[0],
         bullishTargets:
-            result.priceTargets?.bullish?.targets.map(t => t.price) ?? [],
+            result.priceTargets?.bullish?.targets.map(t => ({
+                price: t.price,
+                basis: t.basis,
+            })) ?? [],
+        riskLevel: result.riskLevel,
     };
 }
 
@@ -297,13 +302,13 @@ function computeAiResult(
 
 function computeAiTrendHit(
     trend: Trend,
-    bullishTargets: number[],
+    bullishTargets: { price: number; basis: string }[],
     bars: Bar[],
     entryIdx: number,
     exitIdx: number
 ): boolean {
     if (trend !== 'bullish' || bullishTargets.length === 0) return false;
-    const firstTarget = bullishTargets[0];
+    const firstTarget = bullishTargets[0].price;
     return bars
         .slice(entryIdx + 1, exitIdx + 1)
         .some(b => b.high >= firstTarget);
@@ -544,6 +549,11 @@ function buildBacktestCase(
         aiAnalysis: {
             summary: ai.summary,
             tags: c.signalTypes.map(signalTypeToTagLabel),
+            entryRecommendation: ai.entryRecommendation,
+            bullishTargets: ai.bullishTargets,
+            stopLoss: safeStopLoss,
+            takeProfit: safeTakeProfit,
+            riskLevel: ai.riskLevel,
         },
     };
 }

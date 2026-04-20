@@ -680,9 +680,24 @@ export type BacktestSignalResult = 'win' | 'loss';
 export type BacktestAiResult = 'win' | 'loss' | 'neutral';
 export type BacktestExitReason = 'take_profit' | 'stop_loss' | 'time';
 
+export interface BacktestAiPriceTarget {
+    price: number;
+    basis: string;
+}
+
+export type BacktestAiEntryRecommendation = 'enter' | 'wait' | 'avoid';
+
 export interface BacktestAiAnalysis {
     summary: string;
     tags: string[];
+    entryRecommendation: BacktestAiEntryRecommendation;
+    // 방향성 예측: bullish priceTargets[0] 만 저장 (UI는 첫 목표가만 표시)
+    bullishTargets: BacktestAiPriceTarget[];
+    // 실행 레벨: AI가 제시한 SL/TP (무효값은 제거 — 유효한 것만 저장)
+    stopLoss?: number;
+    takeProfit?: number;
+    // 리스크 등급: AI의 AnalysisResponse.riskLevel ('low' | 'moderate' | 'high' | 'extreme' 중 하나)
+    riskLevel?: string;
 }
 
 export interface BacktestCase {

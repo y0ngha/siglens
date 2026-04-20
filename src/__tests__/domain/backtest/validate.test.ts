@@ -14,7 +14,15 @@ describe('validateBacktestData', () => {
         exitReason: 'take_profit',
         aiResult: 'win',
         aiTrendHit: true,
-        aiAnalysis: { summary: 'RSI 반등', tags: ['RSI 과매도'] },
+        aiAnalysis: {
+            summary: 'RSI 반등',
+            tags: ['RSI 과매도'],
+            entryRecommendation: 'enter',
+            bullishTargets: [{ price: 125.0, basis: '직전 저항선' }],
+            stopLoss: 95.0,
+            takeProfit: 125.0,
+            riskLevel: 'moderate',
+        },
     };
 
     const validData = {
@@ -228,6 +236,215 @@ describe('validateBacktestData', () => {
             expect(() => validateBacktestData(bad)).toThrow(
                 'cases[0].aiAnalysis.tags must be an array'
             );
+        });
+
+        it('throws when aiAnalysis.entryRecommendation is missing', () => {
+            const bad = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            entryRecommendation: undefined,
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                "cases[0].aiAnalysis.entryRecommendation must be 'enter', 'wait', or 'avoid'"
+            );
+        });
+
+        it('throws when aiAnalysis.entryRecommendation is an invalid value', () => {
+            const bad = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            entryRecommendation: 'maybe',
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                "cases[0].aiAnalysis.entryRecommendation must be 'enter', 'wait', or 'avoid'"
+            );
+        });
+
+        it('throws when aiAnalysis.bullishTargets is missing', () => {
+            const bad = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            bullishTargets: undefined,
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.bullishTargets must be an array'
+            );
+        });
+
+        it('throws when aiAnalysis.bullishTargets is not an array', () => {
+            const bad = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            bullishTargets: 'not-array',
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.bullishTargets must be an array'
+            );
+        });
+
+        it('throws when aiAnalysis.bullishTargets[0].price is not a number', () => {
+            const bad = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            bullishTargets: [{ price: '125', basis: 'x' }],
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.bullishTargets[0].price must be a number'
+            );
+        });
+
+        it('throws when aiAnalysis.bullishTargets[0].basis is not a string', () => {
+            const bad = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            bullishTargets: [{ price: 125, basis: 42 }],
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.bullishTargets[0].basis must be a string'
+            );
+        });
+
+        it('throws when aiAnalysis.stopLoss is present but not a number', () => {
+            const bad = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            stopLoss: '95.0',
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.stopLoss must be a number when present'
+            );
+        });
+
+        it('throws when aiAnalysis.takeProfit is present but not a number', () => {
+            const bad = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            takeProfit: '125.0',
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.takeProfit must be a number when present'
+            );
+        });
+
+        it('throws when aiAnalysis.riskLevel is present but not a string', () => {
+            const bad = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            riskLevel: 42,
+                        },
+                    },
+                ],
+            };
+            expect(() => validateBacktestData(bad)).toThrow(
+                'cases[0].aiAnalysis.riskLevel must be a string when present'
+            );
+        });
+    });
+
+    describe('valid input (extended aiAnalysis)', () => {
+        it('accepts aiAnalysis with stopLoss/takeProfit/riskLevel omitted', () => {
+            const { stopLoss, takeProfit, riskLevel, ...rest } =
+                validCase.aiAnalysis;
+            void stopLoss;
+            void takeProfit;
+            void riskLevel;
+            const data = {
+                ...validData,
+                cases: [{ ...validCase, aiAnalysis: rest }],
+            };
+            expect(validateBacktestData(data)).toEqual(data);
+        });
+
+        it('accepts aiAnalysis with empty bullishTargets array', () => {
+            const data = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            bullishTargets: [],
+                        },
+                    },
+                ],
+            };
+            expect(validateBacktestData(data)).toEqual(data);
+        });
+
+        it('accepts entryRecommendation = avoid', () => {
+            const data = {
+                ...validData,
+                cases: [
+                    {
+                        ...validCase,
+                        aiAnalysis: {
+                            ...validCase.aiAnalysis,
+                            entryRecommendation: 'avoid',
+                        },
+                    },
+                ],
+            };
+            expect(validateBacktestData(data)).toEqual(data);
         });
     });
 });
