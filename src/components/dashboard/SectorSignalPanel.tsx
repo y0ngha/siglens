@@ -9,6 +9,7 @@ import type {
     SignalPhase,
     SectorSignalsResult,
     StockSignalResult,
+    StockWithConflict,
 } from '@/domain/types';
 import {
     DEFAULT_DASHBOARD_TIMEFRAME,
@@ -17,6 +18,7 @@ import {
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
+import { resolveConflicts } from '@/domain/signals/resolveConflicts';
 
 type QuadrantKey =
     | 'bullishConfirmed'
@@ -24,7 +26,7 @@ type QuadrantKey =
     | 'bearishExpected'
     | 'bearishConfirmed';
 
-const EMPTY_QUADRANTS: Record<QuadrantKey, readonly StockSignalResult[]> = {
+const EMPTY_QUADRANTS: Record<QuadrantKey, readonly StockWithConflict[]> = {
     bullishConfirmed: [],
     bullishExpected: [],
     bearishExpected: [],
@@ -50,9 +52,9 @@ function signalToQuadrantKey(s: Signal): QuadrantKey {
 }
 
 function groupStockIntoQuadrants(
-    acc: Record<QuadrantKey, readonly StockSignalResult[]>,
-    stock: StockSignalResult
-): Record<QuadrantKey, readonly StockSignalResult[]> {
+    acc: Record<QuadrantKey, readonly StockWithConflict[]>,
+    stock: StockWithConflict
+): Record<QuadrantKey, readonly StockWithConflict[]> {
     const grouped = stock.signals.reduce<
         Record<QuadrantKey, readonly Signal[]>
     >(
@@ -138,9 +140,14 @@ export function SectorSignalPanel({
         [filtered, activeSector]
     );
 
-    const quadrants = useMemo(
-        () => sectorStocks.reduce(groupStockIntoQuadrants, EMPTY_QUADRANTS),
+    const { resolved: resolvedStocks, mixed: mixedStocks } = useMemo(
+        () => resolveConflicts(sectorStocks),
         [sectorStocks]
+    );
+
+    const quadrants = useMemo(
+        () => resolvedStocks.reduce(groupStockIntoQuadrants, EMPTY_QUADRANTS),
+        [resolvedStocks]
     );
 
     const handleSectorChange = (sector: string) => {
@@ -189,6 +196,13 @@ export function SectorSignalPanel({
                     marker="△"
                     variant="expected"
                     stocks={quadrants.bullishExpected}
+                />
+                <SignalSubsection
+                    title="혼재"
+                    marker="◈"
+                    variant="mixed"
+                    stocks={mixedStocks}
+                    infoMessage="상승 신호와 하락 신호의 강도가 동일합니다. 방향을 알 수 없습니다."
                 />
                 <SignalSubsection
                     title="하락 조짐"

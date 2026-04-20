@@ -1,44 +1,72 @@
-import type { StockSignalResult } from '@/domain/types';
+import type { StockWithConflict } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { SignalStockCard } from './SignalStockCard';
 
 interface SignalSubsectionProps {
     title: string;
-    marker: string; // ▲ ▼ △ ▽
-    variant: 'confirmed' | 'expected';
-    stocks: readonly StockSignalResult[];
+    marker: string; // ▲ ▼ △ ▽ ◈
+    variant: 'confirmed' | 'expected' | 'mixed';
+    stocks: readonly StockWithConflict[];
+    infoMessage?: string;
 }
+
+const VARIANT_BORDER: Record<SignalSubsectionProps['variant'], string> = {
+    confirmed: 'border-t-2 border-secondary-600',
+    mixed: 'border-t-2 border-secondary-500',
+    expected: 'border-t border-dashed border-secondary-700',
+};
+
+const VARIANT_LABEL: Record<SignalSubsectionProps['variant'], string> = {
+    confirmed: 'opacity-100 font-semibold',
+    mixed: 'opacity-100 font-semibold',
+    expected: 'opacity-70 font-medium',
+};
 
 export function SignalSubsection({
     title,
     marker,
     variant,
     stocks,
+    infoMessage,
 }: SignalSubsectionProps) {
     const count = stocks.length.toString().padStart(2, '0');
-    const borderClass =
-        variant === 'confirmed'
-            ? 'border-t-2 border-secondary-600'
-            : 'border-t border-dashed border-secondary-700';
-    const labelOpacity =
-        variant === 'confirmed'
-            ? 'opacity-100 font-semibold'
-            : 'opacity-70 font-medium';
+    const tooltipId = infoMessage ? `${title}-info` : undefined;
 
     return (
-        <section className={cn(borderClass, 'pt-3 pb-4')}>
+        <section className={cn(VARIANT_BORDER[variant], 'pt-3 pb-4')}>
             <div className="mb-3 flex items-baseline justify-between">
-                <h3
-                    className={cn(
-                        'text-secondary-200 text-sm tracking-[0.15em] text-pretty uppercase',
-                        labelOpacity
+                <div className="flex items-center gap-2">
+                    <h3
+                        className={cn(
+                            'text-secondary-200 text-sm tracking-[0.15em] text-pretty uppercase',
+                            VARIANT_LABEL[variant]
+                        )}
+                    >
+                        <span aria-hidden="true" className="mr-2">
+                            {marker}
+                        </span>
+                        {title}
+                    </h3>
+                    {tooltipId && (
+                        <>
+                            <button
+                                type="button"
+                                title={infoMessage}
+                                aria-label="추가 정보"
+                                aria-describedby={tooltipId}
+                                className="text-secondary-500 hover:text-secondary-300 cursor-default text-xs transition-colors"
+                            >
+                                ⓘ
+                            </button>
+                            <span
+                                id={tooltipId}
+                                className="sr-only"
+                            >
+                                {infoMessage}
+                            </span>
+                        </>
                     )}
-                >
-                    <span aria-hidden="true" className="mr-2">
-                        {marker}
-                    </span>
-                    {title}
-                </h3>
+                </div>
                 <span
                     className="text-secondary-500 font-mono text-2xl tabular-nums"
                     aria-label={`${stocks.length}개 종목`}
