@@ -60,10 +60,7 @@ describe('simulateExit', () => {
 
     describe('동일 bar에서 SL·TP 모두 발동할 때', () => {
         it('SL을 우선 반환한다 (보수적 가정)', () => {
-            const bars: Bar[] = [
-                bar(100, 100, 100, 0),
-                bar(94, 106, 100, 1),
-            ];
+            const bars: Bar[] = [bar(100, 100, 100, 0), bar(94, 106, 100, 1)];
             const result = simulateExit({
                 bars,
                 entryIdx: 0,
@@ -123,10 +120,7 @@ describe('simulateExit', () => {
 
     describe('maxHoldDays가 bars 길이를 초과할 때', () => {
         it('가용 마지막 bar에서 time exit', () => {
-            const bars: Bar[] = [
-                bar(100, 100, 100, 0),
-                bar(100, 102, 101, 1),
-            ];
+            const bars: Bar[] = [bar(100, 100, 100, 0), bar(100, 102, 101, 1)];
             const result = simulateExit({
                 bars,
                 entryIdx: 0,

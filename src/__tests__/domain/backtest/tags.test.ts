@@ -2,12 +2,9 @@ import { signalTypeToTagLabel, TAG_LABEL_MAP } from '@/domain/backtest/tags';
 
 describe('signalTypeToTagLabel', () => {
     describe('매핑된 type은 해당 라벨을 반환한다', () => {
-        it.each(Object.entries(TAG_LABEL_MAP))(
-            '%s → %s',
-            (type, expected) => {
-                expect(signalTypeToTagLabel(type)).toBe(expected);
-            }
-        );
+        it.each(Object.entries(TAG_LABEL_MAP))('%s → %s', (type, expected) => {
+            expect(signalTypeToTagLabel(type)).toBe(expected);
+        });
     });
 
     describe('매핑 완전성 검증 (모든 ConfirmedSignalType 및 anticipation bullish)', () => {

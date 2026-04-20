@@ -33,9 +33,7 @@ function buildResult(
     };
 }
 
-export function simulateExit(
-    input: ExitSimulationInput
-): ExitSimulationResult {
+export function simulateExit(input: ExitSimulationInput): ExitSimulationResult {
     const { bars, entryIdx, entryPrice, stopLoss, takeProfit, maxHoldDays } =
         input;
     const maxIdx = Math.min(entryIdx + maxHoldDays, bars.length - 1);

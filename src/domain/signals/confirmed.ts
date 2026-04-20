@@ -92,7 +92,8 @@ export function findThresholdCross(
         const vPrev = values[i - 1];
         if (v === null || vPrev === null) continue;
         if (direction === 'up' && vPrev <= threshold && v > threshold) return i;
-        if (direction === 'down' && vPrev >= threshold && v < threshold) return i;
+        if (direction === 'down' && vPrev >= threshold && v < threshold)
+            return i;
     }
     return null;
 }
@@ -301,7 +302,12 @@ export function detectCciBullishCross(
     if (cci.length < 2) return null;
     const thresholds = [CCI_OVERSOLD_CROSS_LEVEL, CCI_BULLISH_CROSS_LEVEL];
     for (const threshold of thresholds) {
-        const idx = findThresholdCross(cci, threshold, CROSS_LOOKBACK_BARS, 'up');
+        const idx = findThresholdCross(
+            cci,
+            threshold,
+            CROSS_LOOKBACK_BARS,
+            'up'
+        );
         if (idx !== null) {
             return {
                 type: 'cci_bullish_cross',
@@ -325,7 +331,8 @@ export function detectDmiBullishCross(
     const idx = findCross(diPlus, diMinus, CROSS_LOOKBACK_BARS, 'up');
     if (idx === null) return null;
     const adxAtCross = dmi[idx].adx;
-    if (adxAtCross === null || adxAtCross < DMI_ADX_TREND_THRESHOLD) return null;
+    if (adxAtCross === null || adxAtCross < DMI_ADX_TREND_THRESHOLD)
+        return null;
     return {
         type: 'dmi_bullish_cross',
         direction: 'bullish',

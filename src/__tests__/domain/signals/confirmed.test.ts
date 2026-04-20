@@ -84,7 +84,13 @@ function withSqueezeMomentum(values: SqueezeMomentumResult[]): IndicatorResult {
 }
 
 function sqz(momentum: number | null): SqueezeMomentumResult {
-    return { momentum, sqzOn: null, sqzOff: null, noSqz: null, increasing: null };
+    return {
+        momentum,
+        sqzOn: null,
+        sqzOff: null,
+        noSqz: null,
+        increasing: null,
+    };
 }
 
 describe('detectRsiOversold', () => {
@@ -640,7 +646,10 @@ describe('detectSupertrendBullishFlip', () => {
                 { supertrend: 100, trend: 'up' as const },
                 { supertrend: 100, trend: 'up' as const },
             ];
-            const result = detectSupertrendBullishFlip(bars, withSupertrend(st));
+            const result = detectSupertrendBullishFlip(
+                bars,
+                withSupertrend(st)
+            );
             expect(result).not.toBeNull();
             expect(result?.type).toBe('supertrend_bullish_flip');
             expect(result?.direction).toBe('bullish');
@@ -657,7 +666,9 @@ describe('detectSupertrendBullishFlip', () => {
                 ...Array(7).fill({ supertrend: 100, trend: 'up' as const }),
             ];
             // 전환이 index 3에서 일어났으나 CROSS_LOOKBACK_BARS=3보다 오래됨
-            expect(detectSupertrendBullishFlip(bars, withSupertrend(st))).toBeNull();
+            expect(
+                detectSupertrendBullishFlip(bars, withSupertrend(st))
+            ).toBeNull();
         });
     });
 
@@ -680,7 +691,9 @@ describe('detectSupertrendBullishFlip', () => {
                 { supertrend: null, trend: null },
                 { supertrend: 100, trend: 'up' as const },
             ];
-            expect(detectSupertrendBullishFlip(bars, withSupertrend(st))).toBeNull();
+            expect(
+                detectSupertrendBullishFlip(bars, withSupertrend(st))
+            ).toBeNull();
         });
     });
 });
@@ -761,8 +774,9 @@ describe('detectCciBullishCross', () => {
             const bars = buildBars(10);
             const cci = [
                 ...Array(7).fill(-120),
-                -80,  // -100 상향 돌파 (index 7)
-                -70, -60,
+                -80, // -100 상향 돌파 (index 7)
+                -70,
+                -60,
             ];
             const result = detectCciBullishCross(bars, withCci(cci));
             expect(result?.type).toBe('cci_bullish_cross');
@@ -777,7 +791,9 @@ describe('detectCciBullishCross', () => {
             const bars = buildBars(10);
             const cci = [
                 ...Array(7).fill(80),
-                120, 130, 140,  // +100 상향 돌파 (index 7)
+                120,
+                130,
+                140, // +100 상향 돌파 (index 7)
             ];
             const result = detectCciBullishCross(bars, withCci(cci));
             expect(result?.type).toBe('cci_bullish_cross');
@@ -790,7 +806,7 @@ describe('detectCciBullishCross', () => {
             const bars = buildBars(10);
             const cci = [
                 ...Array(3).fill(-120),
-                ...Array(7).fill(-80),  // 돌파는 index 3에서 발생했으나 lookback=3 초과
+                ...Array(7).fill(-80), // 돌파는 index 3에서 발생했으나 lookback=3 초과
             ];
             expect(detectCciBullishCross(bars, withCci(cci))).toBeNull();
         });
@@ -849,7 +865,9 @@ describe('detectDmiBullishCross', () => {
         it('null을 반환한다', () => {
             const bars = buildBars(10);
             const dmi: DMIResult[] = Array(10).fill({
-                diPlus: 15, diMinus: 25, adx: 30,
+                diPlus: 15,
+                diMinus: 25,
+                adx: 30,
             });
             expect(detectDmiBullishCross(bars, withDmi(dmi))).toBeNull();
         });
@@ -872,8 +890,9 @@ describe('detectCmfBullishFlip', () => {
             const bars = buildBars(10);
             const cmf = [
                 ...Array(7).fill(-0.1),
-                0.05,  // 0 상향 돌파 (index 7)
-                0.1, 0.15,
+                0.05, // 0 상향 돌파 (index 7)
+                0.1,
+                0.15,
             ];
             const result = detectCmfBullishFlip(bars, withCmf(cmf));
             expect(result?.type).toBe('cmf_bullish_flip');
@@ -1004,7 +1023,10 @@ describe('detectKeltnerUpperBreakout', () => {
                 { upper: 100, middle: 95, lower: 90 },
                 { upper: 102, middle: 97, lower: 92 },
             ];
-            const result = detectKeltnerUpperBreakout(bars, withKeltner(keltner));
+            const result = detectKeltnerUpperBreakout(
+                bars,
+                withKeltner(keltner)
+            );
             expect(result?.type).toBe('keltner_upper_breakout');
             expect(result?.direction).toBe('bullish');
             expect(result?.phase).toBe('confirmed');
@@ -1041,7 +1063,10 @@ describe('detectKeltnerUpperBreakout', () => {
     describe('bars 길이가 2 미만일 때', () => {
         it('null을 반환한다', () => {
             expect(
-                detectKeltnerUpperBreakout(buildBarsWithCloses([100]), EMPTY_INDICATOR_RESULT)
+                detectKeltnerUpperBreakout(
+                    buildBarsWithCloses([100]),
+                    EMPTY_INDICATOR_RESULT
+                )
             ).toBeNull();
         });
     });
@@ -1060,7 +1085,8 @@ describe('detectSqueezeMomentumBullish', () => {
                 sqz(0.7),
             ];
             const result = detectSqueezeMomentumBullish(
-                bars, withSqueezeMomentum(values)
+                bars,
+                withSqueezeMomentum(values)
             );
             expect(result?.type).toBe('squeeze_momentum_bullish');
             expect(result?.direction).toBe('bullish');
@@ -1095,7 +1121,10 @@ describe('detectSqueezeMomentumBullish', () => {
     describe('Squeeze Momentum 데이터가 없을 때', () => {
         it('null을 반환한다', () => {
             expect(
-                detectSqueezeMomentumBullish(buildBars(5), EMPTY_INDICATOR_RESULT)
+                detectSqueezeMomentumBullish(
+                    buildBars(5),
+                    EMPTY_INDICATOR_RESULT
+                )
             ).toBeNull();
         });
     });
