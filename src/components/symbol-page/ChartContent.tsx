@@ -311,7 +311,8 @@ export function ChartContent({
 
                 {/* 안내 */}
                 <p className="text-secondary-500 px-2 py-1 text-right text-[10px]">
-                    차트는 Pre-market, After-market 주가를 반영하지 않습니다. | 시세 데이터는 최대 15분 지연됩니다.
+                    차트는 Pre-market, After-market 주가를 반영하지 않습니다. |
+                    시세 데이터는 최대 15분 지연됩니다.
                 </p>
             </div>
 

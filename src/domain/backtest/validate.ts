@@ -85,7 +85,9 @@ export function validateBacktestData(data: unknown): BacktestData {
 
         if (
             !VALID_ENTRY_RECOMMENDATIONS.includes(
-                aiAnalysis['entryRecommendation'] as BacktestAiEntryRecommendation
+                aiAnalysis[
+                    'entryRecommendation'
+                ] as BacktestAiEntryRecommendation
             )
         ) {
             throw new Error(

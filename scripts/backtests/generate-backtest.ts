@@ -34,10 +34,7 @@ import { simulateExit } from '@/domain/backtest/exit';
 import { signalTypeToTagLabel } from '@/domain/backtest/tags';
 import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
-import {
-    AI_SYSTEM_PROMPT,
-    parseJsonResponse,
-} from '@/infrastructure/ai/utils';
+import { AI_SYSTEM_PROMPT, parseJsonResponse } from '@/infrastructure/ai/utils';
 import type {
     Bar,
     BacktestAiResult,
@@ -218,8 +215,7 @@ function findEntryCandidates(bars: Bar[], fmpBars: FmpBar[]): EntryCandidate[] {
         const inDisplayRange = entryDate >= DISPLAY_START_DATE;
 
         const ma50AtI = ma50Series[i];
-        const closeAboveMa50 =
-            ma50AtI !== null && fmpBars[i].close > ma50AtI;
+        const closeAboveMa50 = ma50AtI !== null && fmpBars[i].close > ma50AtI;
 
         if (
             inDisplayRange &&
@@ -459,9 +455,7 @@ async function pollUntilComplete(
 
         const status = await ai.batches.get({ name: batchName });
         const state = status.state ?? 'UNKNOWN';
-        console.log(
-            `[poll] state=${state} elapsed=${formatElapsed(elapsed)}`
-        );
+        console.log(`[poll] state=${state} elapsed=${formatElapsed(elapsed)}`);
 
         if (state === JobState.JOB_STATE_SUCCEEDED) {
             const responses = status.dest?.inlinedResponses ?? [];
@@ -665,11 +659,7 @@ function saveBatchState(
             entryDate: c.entryDate,
         })),
     };
-    writeFileSync(
-        BATCH_STATE_PATH,
-        JSON.stringify(state, null, 2),
-        'utf-8'
-    );
+    writeFileSync(BATCH_STATE_PATH, JSON.stringify(state, null, 2), 'utf-8');
 }
 
 function loadBatchState(): BatchJobState | null {

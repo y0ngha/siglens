@@ -191,9 +191,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             AI 예측 레벨
                         </span>
                         <EntryRecBadge
-                            recommendation={
-                                c.aiAnalysis.entryRecommendation
-                            }
+                            recommendation={c.aiAnalysis.entryRecommendation}
                         />
                         {c.aiAnalysis.riskLevel && (
                             <RiskBadge level={c.aiAnalysis.riskLevel} />
@@ -208,7 +206,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                 </span>
                                 <span className="text-chart-bullish">
                                     {priceFormatter.format(
-                                        firstBullishTarget.price,
+                                        firstBullishTarget.price
                                     )}
                                 </span>
                                 {c.aiTrendHit && (
@@ -220,12 +218,10 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         )}
                         {c.aiAnalysis.takeProfit !== undefined && (
                             <div>
-                                <span className="text-secondary-500">
-                                    TP:{' '}
-                                </span>
+                                <span className="text-secondary-500">TP: </span>
                                 <span className="text-chart-bullish">
                                     {priceFormatter.format(
-                                        c.aiAnalysis.takeProfit,
+                                        c.aiAnalysis.takeProfit
                                     )}
                                 </span>
                                 {c.exitReason === 'take_profit' && (
@@ -237,12 +233,10 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                         )}
                         {c.aiAnalysis.stopLoss !== undefined && (
                             <div>
-                                <span className="text-secondary-500">
-                                    SL:{' '}
-                                </span>
+                                <span className="text-secondary-500">SL: </span>
                                 <span className="text-chart-bearish">
                                     {priceFormatter.format(
-                                        c.aiAnalysis.stopLoss,
+                                        c.aiAnalysis.stopLoss
                                     )}
                                 </span>
                                 {c.exitReason === 'stop_loss' && (
