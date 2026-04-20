@@ -10,19 +10,25 @@ import type {
 function countSignalDirections(signals: readonly Signal[]): ConflictInfo {
     return signals.reduce(
         (counts, s) => ({
-            bullishCount: counts.bullishCount + (s.direction === 'bullish' ? 1 : 0),
-            bearishCount: counts.bearishCount + (s.direction === 'bearish' ? 1 : 0),
+            bullishCount:
+                counts.bullishCount + (s.direction === 'bullish' ? 1 : 0),
+            bearishCount:
+                counts.bearishCount + (s.direction === 'bearish' ? 1 : 0),
         }),
         { bullishCount: 0, bearishCount: 0 }
     );
 }
 
-export function resolveConflicts(stocks: readonly StockSignalResult[]): ConflictResolution {
+export function resolveConflicts(
+    stocks: readonly StockSignalResult[]
+): ConflictResolution {
     const resolved: StockWithConflict[] = [];
     const mixed: StockWithConflict[] = [];
 
     for (const stock of stocks) {
-        const { bullishCount, bearishCount } = countSignalDirections(stock.signals);
+        const { bullishCount, bearishCount } = countSignalDirections(
+            stock.signals
+        );
 
         if (bullishCount === 0 || bearishCount === 0) {
             resolved.push(stock);
@@ -40,7 +46,9 @@ export function resolveConflicts(stocks: readonly StockSignalResult[]): Conflict
             bullishCount > bearishCount ? 'bullish' : 'bearish';
         resolved.push({
             ...stock,
-            signals: stock.signals.filter(s => s.direction === winningDirection),
+            signals: stock.signals.filter(
+                s => s.direction === winningDirection
+            ),
             conflict,
         });
     }
