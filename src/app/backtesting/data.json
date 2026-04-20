@@ -2,92 +2,12 @@
   "meta": {
     "period": "2024.04 – 2026.04",
     "totalCases": 100,
-    "winRate": 69,
-    "aiWinRate": 53.3,
-    "aiTrendHitRate": 36,
+    "winRate": 71,
+    "aiWinRate": 58.8,
+    "aiTrendHitRate": 35,
     "tickerCount": 10
   },
   "cases": [
-    {
-      "ticker": "MSFT",
-      "entryDate": "2024-10-25",
-      "entryPrice": 428.15,
-      "exitDate": "2024-10-31",
-      "exitPrice": 418,
-      "holdingDays": 4,
-      "returnPct": -2.37,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "단기 상승 추세로 전환되는 초기 국면에 있습니다.\nMACD 골든크로스, 이동평균선 정배열 등 다수의 기술적 지표가 강세 신호를 보내고 있으나, ADX 수치가 낮아 아직 추세의 힘은 강하지 않습니다.\n현재 주가는 볼린저 밴드 상단 저항선에 근접하여 단기적인 조정이나 기간 조정 가능성이 존재합니다.\n주요 지지선은 419.36달러(20일 이동평균선)와 414.89달러(거래량 집중 구간)이며, 이 구간에서의 지지 여부가 중요합니다.",
-        "tags": [
-          "Ichimoku 구름 돌파",
-          "CCI 100 돌파",
-          "Squeeze 양전환"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 439.04,
-            "basis": "거래량 프로파일의 가치 영역 상단(VAH) 수준입니다."
-          },
-          {
-            "price": 441.85,
-            "basis": "28일 전 형성된 주요 스윙 고점입니다."
-          },
-          {
-            "price": 468.35,
-            "basis": "분석 기간 내 최고점으로, 장기적인 목표가가 될 수 있습니다."
-          }
-        ],
-        "stopLoss": 418,
-        "takeProfit": 439.04,
-        "riskLevel": "medium"
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "entryDate": "2024-11-26",
-      "entryPrice": 427.99,
-      "exitDate": "2024-12-04",
-      "exitPrice": 435.59,
-      "holdingDays": 5,
-      "returnPct": 1.78,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "전반적으로 강세 전환 초기 국면으로 판단됩니다. MACD 골든 크로스, 주요 이동평균선 돌파 등 긍정적 신호가 다수 포착되었습니다.\n다만, ADX 지수가 낮아 추세 강도는 아직 약하며 단기 저항선에 근접해 있어, 가격 조정 시 지지 구간에서 접근하는 것이 유리해 보입니다.",
-        "tags": [
-          "MACD 골든크로스",
-          "Ichimoku 구름 돌파",
-          "CMF 매집 전환"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 435.59,
-            "basis": "거래량 프로파일의 가치 영역 상단(VAH)으로, 1차 목표가로 설정할 수 있습니다."
-          },
-          {
-            "price": 438.5,
-            "basis": "이전 주요 스윙 고점으로, VAH 돌파 시 도달 가능한 2차 목표가입니다."
-          },
-          {
-            "price": 440.18,
-            "basis": "매도 측 유동성이 쌓여있는 동일 고점(Equal Highs) 구간으로, 가격을 끌어당기는 자석 역할을 할 수 있습니다."
-          }
-        ],
-        "stopLoss": 414.5,
-        "takeProfit": 435.59,
-        "riskLevel": "medium"
-      }
-    },
     {
       "ticker": "GOOGL",
       "entryDate": "2024-11-26",
@@ -242,46 +162,6 @@
         "stopLoss": 239.5,
         "takeProfit": 249.95,
         "riskLevel": "high"
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "entryDate": "2025-01-17",
-      "entryPrice": 429.03,
-      "exitDate": "2025-01-22",
-      "exitPrice": 439.8,
-      "holdingDays": 2,
-      "returnPct": 2.51,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "MSFT는 현재 뚜렷한 방향성 없이 횡보하는 국면입니다. 단기 모멘텀 지표는 상승 신호를 보이고 있으나, 거래량 지표와 추세 지표는 약세를 나타내며 신호가 혼재되어 있습니다. 가격은 주요 지지선 위에 있으나 저항선 또한 가까워, 변동성 확대를 앞둔 '스퀴즈' 상태에서 방향성 탐색이 이어질 것으로 보입니다.",
-        "tags": [
-          "CCI 100 돌파",
-          "Parabolic SAR 전환",
-          "RSI 강세 다이버전스"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 439.81,
-            "basis": "수퍼트렌드 지표 저항선"
-          },
-          {
-            "price": 442.28,
-            "basis": "볼린저 밴드 상단"
-          },
-          {
-            "price": 456.16,
-            "basis": "기간 내 최고점 및 이전 스윙 고점"
-          }
-        ],
-        "stopLoss": 414.5,
-        "takeProfit": 439.8,
-        "riskLevel": "medium"
       }
     },
     {
@@ -724,42 +604,6 @@
       }
     },
     {
-      "ticker": "MSFT",
-      "entryDate": "2025-05-01",
-      "entryPrice": 425.4,
-      "exitDate": "2025-05-12",
-      "exitPrice": 449.2,
-      "holdingDays": 7,
-      "returnPct": 5.59,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "강력한 상승 추세입니다. 주가는 큰 갭 상승과 함께 주요 저항선을 돌파하며 강한 매수 모멘텀을 보여주고 있습니다.\nMACD와 DMI 등 다수 지표가 강세 신호를 보내고 있으나, RSI, 스토캐스틱 등은 과매수 상태로 단기 조정 가능성을 시사합니다.\n주요 지지선은 갭으로 형성된 424.90-395.10달러 구간이며, 저항선은 449.20달러(VAH)와 전고점 456.16달러입니다.",
-        "tags": [
-          "Supertrend 전환",
-          "Ichimoku 구름 돌파",
-          "Keltner 상단 돌파"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 449.2,
-            "basis": "거래량 프로파일의 가치 영역 상단(VAH)으로, 1차 목표 저항선입니다."
-          },
-          {
-            "price": 456.16,
-            "basis": "분석 기간 내 최고점으로, 추세 지속 시 도달 가능한 2차 목표가입니다."
-          }
-        ],
-        "stopLoss": 394,
-        "takeProfit": 449.2,
-        "riskLevel": "high"
-      }
-    },
-    {
       "ticker": "GOOGL",
       "entryDate": "2025-05-02",
       "entryPrice": 164.03,
@@ -1020,6 +864,42 @@
       }
     },
     {
+      "ticker": "WMT",
+      "entryDate": "2025-06-03",
+      "entryPrice": 99.98,
+      "exitDate": "2025-06-09",
+      "exitPrice": 96.8,
+      "holdingDays": 4,
+      "returnPct": -3.18,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "stop_loss",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "주가는 강력한 상승 모멘텀을 보이며 주요 이동평균선이 정배열을 이루고 있습니다. 최근 강세 캔들 패턴과 구조적 변화(Bullish CHOCH)가 나타나 상승 추세를 지지합니다.\n다만, 스토캐스틱 등 일부 단기 지표가 과매수 구간에 진입했고 주가가 볼린저 밴드 상단에 도달하여 단기적인 조정이나 기간 조정의 가능성이 있습니다.\n핵심 지지선은 거래량이 집중된 97.33(POC)이며, 저항선은 이전 고점인 100.89와 105.30입니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Squeeze 양전환"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 100.89,
+            "basis": "최근 스윙 고점 돌파 시 1차 목표가입니다."
+          },
+          {
+            "price": 105.3,
+            "basis": "분석 기간 내 최고점으로, 추세 지속 시 도달 가능한 2차 목표가입니다."
+          }
+        ],
+        "stopLoss": 96.8,
+        "takeProfit": 100.89,
+        "riskLevel": "medium"
+      }
+    },
+    {
       "ticker": "TSLA",
       "entryDate": "2025-06-06",
       "entryPrice": 295.14,
@@ -1206,6 +1086,42 @@
         ],
         "stopLoss": 124.5,
         "takeProfit": 140,
+        "riskLevel": "medium"
+      }
+    },
+    {
+      "ticker": "WMT",
+      "entryDate": "2025-06-23",
+      "entryPrice": 97.87,
+      "exitDate": "2025-07-08",
+      "exitPrice": 97.09,
+      "holdingDays": 10,
+      "returnPct": -0.8,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "time",
+      "aiResult": "loss",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "주가는 단기 상승 추세로 전환하려는 초기 단계에 있습니다.\n이동평균선이 정배열 초기 국면을 형성하고 있으며, RSI와 MACD 같은 모멘텀 지표들이 상승하며 긍정적인 신호를 보내고 있습니다.\n최근 '트위저 바닥형' 캔들 패턴과 거래량 프로파일(POC) 지지선 위에서 가격이 형성된 점은 상승 기대감을 높입니다.\n다만, ADX 지수가 낮아 추세의 힘이 아직 약하고, 바로 위 98.56 가격대에 저항이 존재하여 단기 변동성이 나타날 수 있습니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "CMF 매집 전환",
+          "MACD 히스토그램 강세 수렴"
+        ],
+        "entryRecommendation": "enter",
+        "bullishTargets": [
+          {
+            "price": 100.89,
+            "basis": "최근 주요 스윙 고점 돌파를 목표로 하는 1차 목표가입니다."
+          },
+          {
+            "price": 105.3,
+            "basis": "분석 기간 내 최고점으로, 상승 추세가 지속될 경우 도달 가능한 2차 목표가입니다."
+          }
+        ],
+        "stopLoss": 94.8,
+        "takeProfit": 100.89,
         "riskLevel": "medium"
       }
     },
@@ -1604,42 +1520,6 @@
       }
     },
     {
-      "ticker": "MSFT",
-      "entryDate": "2025-07-25",
-      "entryPrice": 513.71,
-      "exitDate": "2025-07-31",
-      "exitPrice": 518,
-      "holdingDays": 4,
-      "returnPct": 0.84,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "강력한 상승 추세가 지속되고 있으나, 단기적으로 과열 신호가 나타나고 있습니다.\nDMI와 이동평균선은 강한 상승 추세를 지지하지만, RSI는 과매수 영역에 있고 MACD는 약세 신호를 보여 단기 조정 가능성을 시사합니다.\n최근 강세 캔들 패턴이 나타나 상승 기대감을 유지하고 있습니다.\n주요 지지선은 503.00 부근이며, 저항선은 전고점인 518.29입니다.",
-        "tags": [
-          "CCI 100 돌파",
-          "Parabolic SAR 전환",
-          "BB 수축 강세"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 518.29,
-            "basis": "기간 내 전고점 재도전"
-          },
-          {
-            "price": 525,
-            "basis": "전고점 돌파 시 심리적 라운드 넘버 목표가"
-          }
-        ],
-        "stopLoss": 494,
-        "takeProfit": 518,
-        "riskLevel": "high"
-      }
-    },
-    {
       "ticker": "LLY",
       "entryDate": "2025-07-25",
       "entryPrice": 812.69,
@@ -1708,6 +1588,42 @@
         ],
         "stopLoss": 710,
         "takeProfit": 731.14,
+        "riskLevel": "medium"
+      }
+    },
+    {
+      "ticker": "WMT",
+      "entryDate": "2025-07-28",
+      "entryPrice": 97.61,
+      "exitDate": "2025-08-04",
+      "exitPrice": 99.35,
+      "holdingDays": 5,
+      "returnPct": 1.78,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "win",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "현재 주가는 횡보 국면에서 상승 돌파를 시도하고 있습니다.\nMACD의 강세 전환 신호, RSI 상승, OBV 등 다수의 기술적 지표가 단기 상승 모멘텀 강화를 시사합니다.\n최근 '상승 장악 확인형(Three Outside Up)' 캔들 패턴이 나타나 강세 전망을 뒷받침하고 있습니다.\n주요 지지선은 거래량이 집중된 97.33이며, 저항선은 이전 고점인 99.35 수준입니다.\n다만, 추세 강도가 아직 약해(ADX 10.",
+        "tags": [
+          "MACD 골든크로스",
+          "CMF 매집 전환",
+          "Parabolic SAR 전환"
+        ],
+        "entryRecommendation": "enter",
+        "bullishTargets": [
+          {
+            "price": 99.35,
+            "basis": "최근 스윙 고점 수준으로 1차 저항 목표가입니다."
+          },
+          {
+            "price": 100.89,
+            "basis": "이전 주요 고점으로, 1차 목표가 돌파 시 도달 가능한 2차 목표가입니다."
+          }
+        ],
+        "stopLoss": 95.8,
+        "takeProfit": 99.35,
         "riskLevel": "medium"
       }
     },
@@ -1934,46 +1850,6 @@
       }
     },
     {
-      "ticker": "MSFT",
-      "entryDate": "2025-08-22",
-      "entryPrice": 507.23,
-      "exitDate": "2025-09-08",
-      "exitPrice": 498.2,
-      "holdingDays": 10,
-      "returnPct": -1.78,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "단기 하락 추세가 진행 중이며, 가격이 주요 이동평균선 아래로 하락했습니다.\n다수의 모멘텀 지표는 약세를 가리키고 있으나, 스토캐스틱과 같은 일부 오실레이터는 과매도 상태로 단기 기술적 반등 가능성을 시사합니다.\n현재 주가는 $494-$500 구간의 주요 지지선에 근접하고 있어, 이 구간에서의 가격 움직임이 향후 방향성을 결정할 중요한 변곡점이 될 것입니다.",
-        "tags": [
-          "BB 하단 반등",
-          "DMI 골든크로스",
-          "지지선 근접"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 514.4,
-            "basis": "20일 지수이동평균선 및 약세 FVG 하단 저항선"
-          },
-          {
-            "price": 519.27,
-            "basis": "20일 이동평균선 및 볼린저밴드 중심선이 위치한 주요 저항 구간"
-          },
-          {
-            "price": 528.08,
-            "basis": "이치모쿠 기준선(Kijun-sen) 저항"
-          }
-        ],
-        "stopLoss": 489,
-        "takeProfit": 514.4,
-        "riskLevel": "high"
-      }
-    },
-    {
       "ticker": "NVDA",
       "entryDate": "2025-08-25",
       "entryPrice": 179.81,
@@ -2140,6 +2016,42 @@
       }
     },
     {
+      "ticker": "WMT",
+      "entryDate": "2025-09-03",
+      "entryPrice": 99.44,
+      "exitDate": "2025-09-08",
+      "exitPrice": 102.13,
+      "holdingDays": 3,
+      "returnPct": 2.71,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "win",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "주가가 최근 저점에서 반등하며 상승 전환을 시도하고 있습니다. RSI, 스토캐스틱 등 다수의 모멘텀 지표가 강세 신호를 보내고 있으며, 거래량 프로파일(POC 96.94)이 강력한 지지선 역할을 하고 있습니다.\n단기적으로 20일 이동평균선(99.88)과 이전 고점(104.72)이 저항선으로 작용할 수 있으나, 지표들의 긍정적인 흐름을 고려할 때 저항 돌파 시 추가 상승이 기대됩니다. 투자자는 저항 돌파 여부를 확인하며 신중한 접근이 필요합니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "DMI 골든크로스",
+          "Parabolic SAR 전환"
+        ],
+        "entryRecommendation": "enter",
+        "bullishTargets": [
+          {
+            "price": 102.13,
+            "basis": "거래량 프로파일의 VAH(Value Area High) 수준으로, 단기적인 1차 목표가입니다."
+          },
+          {
+            "price": 104.72,
+            "basis": "최근 스윙 고점(Swing High)으로, VAH 돌파 시 도달 가능한 2차 목표가입니다."
+          }
+        ],
+        "stopLoss": 96.5,
+        "takeProfit": 102.13,
+        "riskLevel": "medium"
+      }
+    },
+    {
       "ticker": "AVGO",
       "entryDate": "2025-09-05",
       "entryPrice": 334.89,
@@ -2286,46 +2198,6 @@
       }
     },
     {
-      "ticker": "MSFT",
-      "entryDate": "2025-09-19",
-      "entryPrice": 517.93,
-      "exitDate": "2025-10-03",
-      "exitPrice": 517.35,
-      "holdingDays": 10,
-      "returnPct": -0.11,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "loss",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "단기적으로 강력한 상승 전환 흐름을 보이고 있습니다.\nMACD 골든크로스 발생과 함께 대량 거래량을 동반한 장대양봉이 나타나며 강한 매수세가 유입되고 있습니다.\n최근 '상승 벨트홀드' 캔들 패턴이 나타나 단기 상승 가능성을 높이고 있습니다.\n주요 지지선은 거래량 집중 구간인 507.17달러이며, 저항선은 이치모쿠 구름 상단인 527.25달러입니다.",
-        "tags": [
-          "CCI 100 돌파",
-          "CMF 매집 전환",
-          "Squeeze 양전환"
-        ],
-        "entryRecommendation": "enter",
-        "bullishTargets": [
-          {
-            "price": 532.7,
-            "basis": "최근 스윙 고점 수준으로, 1차 저항 목표가입니다."
-          },
-          {
-            "price": 533.51,
-            "basis": "거래량 프로파일 가치 영역 상단(VAH)으로, 주요 저항 구간입니다."
-          },
-          {
-            "price": 555.45,
-            "basis": "분석 기간 내 최고점으로, 추세 지속 시 도달 가능한 장기 목표가입니다."
-          }
-        ],
-        "stopLoss": 505,
-        "takeProfit": 532.7,
-        "riskLevel": "medium"
-      }
-    },
-    {
       "ticker": "NVDA",
       "entryDate": "2025-09-19",
       "entryPrice": 176.67,
@@ -2402,42 +2274,38 @@
       }
     },
     {
-      "ticker": "MSFT",
-      "entryDate": "2025-10-06",
-      "entryPrice": 528.57,
+      "ticker": "WMT",
+      "entryDate": "2025-10-03",
+      "entryPrice": 102.07,
       "exitDate": "2025-10-14",
-      "exitPrice": 509,
-      "holdingDays": 6,
-      "returnPct": -3.7,
+      "exitPrice": 104.2,
+      "holdingDays": 7,
+      "returnPct": 2.09,
       "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
+      "result": "win",
+      "exitReason": "take_profit",
       "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "강력한 상승 추세가 진행 중이며, 다수의 기술적 지표가 강세 신호를 보내고 있습니다.\nMACD는 상승 모멘텀을 확인시켜주며, 가격은 모든 주요 이동평균선 위에 위치해 있습니다.\n다만, CCI 지표가 과매수 구간에 진입하고 가격이 볼린저 밴드 상단을 돌파하여 단기적인 가격 조정이나 숨 고르기 가능성이 있습니다.\n주요 지지선은 거래량 집중 가격대(POC)인 509.67이며, 저항선은 이전 고점인 532.70과 534.64입니다.",
+        "summary": "중기 상승 추세 속 단기 조정 국면입니다.\nMACD 데드크로스 등 단기 지표는 약세를 보이나, 60일 이동평균선과 볼륨 프로파일 주요 지지선이 97.4~99.9달러 구간에 존재합니다.\n최근 '트위저 탑', '교수형' 등 약세 캔들 패턴이 나타나 하락 압력을 더하고 있습니다.\n현재 주가는 주요 지지 구간과 단기 저항선 사이에서 방향성을 탐색하고 있으며, 지지선 방어 여부가 향후 추세의 분기점이 될 것입니다.",
         "tags": [
-          "Supertrend 전환",
-          "Ichimoku 구름 돌파",
-          "CCI 100 돌파"
+          "BB 하단 반등",
+          "CCI 100 돌파",
+          "지지선 근접"
         ],
         "entryRecommendation": "wait",
         "bullishTargets": [
           {
-            "price": 532.7,
-            "basis": "이전 스윙 고점 저항 레벨입니다."
+            "price": 104.21,
+            "basis": "이전 단기 고점 및 볼린저 밴드 상단 근접 가격입니다."
           },
           {
-            "price": 534.64,
-            "basis": "거래량 프로파일의 가치 영역 상단(VAH) 저항입니다."
-          },
-          {
-            "price": 555.45,
-            "basis": "분석 기간 내 최고가(Period High)입니다."
+            "price": 106.11,
+            "basis": "기간 내 최고가이자 주요 스윙 고점입니다."
           }
         ],
-        "stopLoss": 509,
-        "takeProfit": 532.7,
+        "stopLoss": 97,
+        "takeProfit": 104.2,
         "riskLevel": "medium"
       }
     },
@@ -2571,46 +2439,6 @@
         "stopLoss": 248.5,
         "takeProfit": 264.38,
         "riskLevel": "high"
-      }
-    },
-    {
-      "ticker": "MSFT",
-      "entryDate": "2025-10-22",
-      "entryPrice": 520.54,
-      "exitDate": "2025-10-27",
-      "exitPrice": 531.03,
-      "holdingDays": 3,
-      "returnPct": 2.02,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "장기 상승 추세는 유효하나, 단기적으로는 낮은 변동성 속에서 횡보하는 모습을 보이고 있습니다.\nRSI, OBV 등 일부 지표는 긍정적이지만 MACD와 최근 캔들 패턴은 약세 신호를 보내고 있어 방향성이 혼재된 상태입니다.\n현재 가격은 주요 지지선(511-516)과 저항선(521-524) 사이에 위치해 있어, 향후 저항 돌파 또는 지지선 이탈 여부가 단기 주가 방향을 결정할 중요한 변수가 될 것입니다.",
-        "tags": [
-          "Parabolic SAR 전환",
-          "MACD 히스토그램 강세 수렴",
-          "BB 수축 강세"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 531.03,
-            "basis": "최근 스윙 고점 수준으로, 1차 목표가로 설정할 수 있습니다."
-          },
-          {
-            "price": 537.15,
-            "basis": "거래량 프로파일의 밸류에어리어 상단(VAH)으로, 통계적으로 유의미한 저항선이자 2차 목표가입니다."
-          },
-          {
-            "price": 555.45,
-            "basis": "분석 기간 내 최고점으로, 장기적인 상승 시 도달 가능한 최종 목표가입니다."
-          }
-        ],
-        "stopLoss": 505,
-        "takeProfit": 531.03,
-        "riskLevel": "medium"
       }
     },
     {
@@ -2823,6 +2651,42 @@
         "stopLoss": 820,
         "takeProfit": 885.4,
         "riskLevel": "high"
+      }
+    },
+    {
+      "ticker": "WMT",
+      "entryDate": "2025-11-11",
+      "entryPrice": 103.44,
+      "exitDate": "2025-11-13",
+      "exitPrice": 102.4,
+      "holdingDays": 2,
+      "returnPct": -1.01,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "stop_loss",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "중립 추세 속에서 단기 반등 시도가 나타나고 있습니다. 최근 '망치형' 캔들과 스토캐스틱 골든크로스 등 긍정적 신호가 있으나, 20일 이동평균선(104.28)과 슈퍼트렌드(106.43) 저항이 강합니다. 저항 돌파 여부가 향후 방향성을 결정할 중요한 변수입니다.",
+        "tags": [
+          "CMF 매집 전환",
+          "Parabolic SAR 전환",
+          "RSI 강세 다이버전스"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 106.43,
+            "basis": "슈퍼트렌드 저항선 수준입니다."
+          },
+          {
+            "price": 109.58,
+            "basis": "기간 내 최고점이자 이전 스윙 고점입니다."
+          }
+        ],
+        "stopLoss": 102.4,
+        "takeProfit": 106.43,
+        "riskLevel": "medium"
       }
     },
     {
@@ -3296,6 +3160,38 @@
       }
     },
     {
+      "ticker": "WMT",
+      "entryDate": "2026-01-09",
+      "entryPrice": 114.53,
+      "exitDate": "2026-01-12",
+      "exitPrice": 117.45,
+      "holdingDays": 1,
+      "returnPct": 2.55,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "전반적으로 강한 상승 추세에 있으나 단기 모멘텀은 혼조세를 보입니다.\n이동평균선은 정배열로 상승을 지지하며, OBV와 거래량은 매수 우위를 나타냅니다.\n주요 저항선은 117.45달러이며, 지지선은 113.61달러입니다. 저항 돌파 시 추가 상승이 기대되나, 조정 가능성도 염두에 두어야 합니다.",
+        "tags": [
+          "BB 하단 반등",
+          "Parabolic SAR 전환",
+          "MACD 히스토그램 강세 수렴"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 117.45,
+            "basis": "이전 스윙 고점 및 볼린저 밴드 상단 저항선입니다."
+          }
+        ],
+        "stopLoss": 110,
+        "takeProfit": 117.45,
+        "riskLevel": "medium"
+      }
+    },
+    {
       "ticker": "TSLA",
       "entryDate": "2026-01-12",
       "entryPrice": 448.96,
@@ -3412,46 +3308,6 @@
       }
     },
     {
-      "ticker": "MSFT",
-      "entryDate": "2026-01-27",
-      "entryPrice": 480.58,
-      "exitDate": "2026-01-29",
-      "exitPrice": 469,
-      "holdingDays": 2,
-      "returnPct": -2.41,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "loss",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "단기적으로 강한 기술적 반등이 나타나고 있습니다. MACD 골든크로스, 강세 캔들 패턴, OBV 상승 등 다수의 지표가 상승 모멘텀을 지지하고 있습니다.\n그러나 가격은 60일 이동평균선과 일목균형표 구름대 등 중기 저항선에 근접해 있습니다. 현재 위치는 주요 지지선인 볼륨 프로파일 가치 영역 하단(VAL) 바로 위입니다.\n결론적으로, 단기 상승세가 유효하지만 중요한 저항 구간에 진입하여 돌파 여부가 향후 방향성을 결정할 것입니다.",
-        "tags": [
-          "MACD 골든크로스",
-          "Supertrend 전환",
-          "CCI 100 돌파"
-        ],
-        "entryRecommendation": "enter",
-        "bullishTargets": [
-          {
-            "price": 489.7,
-            "basis": "최근 스윙 고점 저항선입니다."
-          },
-          {
-            "price": 508.18,
-            "basis": "볼륨 프로파일 POC(매물대 중심) 레벨로, 주요 가격 목표치입니다."
-          },
-          {
-            "price": 527.36,
-            "basis": "볼륨 프로파일 가치 영역 상단(VAH)입니다."
-          }
-        ],
-        "stopLoss": 469,
-        "takeProfit": 489.7,
-        "riskLevel": "medium"
-      }
-    },
-    {
       "ticker": "AAPL",
       "entryDate": "2026-02-02",
       "entryPrice": 270.01,
@@ -3513,6 +3369,32 @@
         ],
         "entryRecommendation": "avoid",
         "bullishTargets": [],
+        "riskLevel": "high"
+      }
+    },
+    {
+      "ticker": "WMT",
+      "entryDate": "2026-02-02",
+      "entryPrice": 124.06,
+      "exitDate": "2026-02-17",
+      "exitPrice": 128.85,
+      "holdingDays": 10,
+      "returnPct": 3.86,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "time",
+      "aiResult": "loss",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "WMT는 강력한 상승 추세를 보이며, 최근 주요 저항선을 거래량을 동반하여 돌파하고 신고가를 경신했습니다.\n다수의 추세 지표는 강세를 확인해주고 있으나, RSI가 72를 넘어서는 등 단기 과매수 신호가 나타나 가격 조정의 위험이 높아진 상태입니다.\n최근 'Three Outside Up'과 같은 강세 캔들 패턴이 상승 모멘텀을 지지하고 있습니다.\n결론적으로 추세는 명확한 강세이지만, 과열 신호로 인해 신규 진입은 가격이 주요 지지선인 117.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Parabolic SAR 전환"
+        ],
+        "entryRecommendation": "avoid",
+        "bullishTargets": [],
+        "stopLoss": 117.5,
         "riskLevel": "high"
       }
     },
@@ -3657,6 +3539,82 @@
         ],
         "stopLoss": 315,
         "takeProfit": 357.44,
+        "riskLevel": "medium"
+      }
+    },
+    {
+      "ticker": "WMT",
+      "entryDate": "2026-03-11",
+      "entryPrice": 123.49,
+      "exitDate": "2026-03-13",
+      "exitPrice": 126.66,
+      "holdingDays": 2,
+      "returnPct": 2.57,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "현재 단기 하락 조정 국면에 있으며, MACD와 같은 모멘텀 지표는 약세를 나타냅니다.\n그러나 가격이 주요 지지선인 120.52-121.05 구간에 접근하고 있고, OBV는 강세 다이버전스를 보여 상반된 신호를 보냅니다.\nStochRSI 과매도와 SMC 할인 영역 진입은 반등 가능성을 시사하지만, 하락 모멘텀이 강해 지지 확인 전까지는 보수적인 접근이 필요합니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "CMF 매집 전환",
+          "지지선 근접"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 126.66,
+            "basis": "20일 이동평균선 및 볼린저 밴드 중간선 저항"
+          },
+          {
+            "price": 128.75,
+            "basis": "최근 스윙 고점"
+          },
+          {
+            "price": 134.69,
+            "basis": "기간 내 최고점"
+          }
+        ],
+        "stopLoss": 120.4,
+        "takeProfit": 126.66,
+        "riskLevel": "medium"
+      }
+    },
+    {
+      "ticker": "WMT",
+      "entryDate": "2026-03-31",
+      "entryPrice": 124.28,
+      "exitDate": "2026-04-09",
+      "exitPrice": 127.98,
+      "holdingDays": 6,
+      "returnPct": 2.98,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "현재 주가는 장기 횡보 압축(Squeeze) 국면에 있으며, 곧 변동성 확대가 예상됩니다.\n단기적으로 MACD 골든크로스와 강세장악형 캔들 패턴이 나타나 상승 기대감을 높이고 있습니다.\n하지만 주가가 일목균형표 구름대 내에 있고 슈퍼트렌드 지표가 저항으로 작용하는 등 혼조된 신호도 존재합니다.\n주요 저항선인 128.00 돌파 여부가 향후 추세의 관건이 될 것이며, 주요 지지선은 119.02에 형성되어 있습니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CMF 매집 전환",
+          "Parabolic SAR 전환"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 127.98,
+            "basis": "거래량 프로파일의 가치 영역 상단(VAH) 및 이전 고점 유동성(Equal Highs)이 위치한 1차 목표가입니다."
+          },
+          {
+            "price": 134.69,
+            "basis": "분석 기간 내 최고점으로, 주요 스윙 고점 저항선 역할을 하는 2차 목표가입니다."
+          }
+        ],
+        "stopLoss": 117.9,
+        "takeProfit": 127.98,
         "riskLevel": "medium"
       }
     }

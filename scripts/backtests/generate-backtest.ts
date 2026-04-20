@@ -56,7 +56,7 @@ config({ path: resolve(process.cwd(), '.env.local') });
 
 const TICKERS = [
     'AAPL',
-    'MSFT',
+    'WMT',
     'GOOGL',
     'AMZN',
     'NVDA',
