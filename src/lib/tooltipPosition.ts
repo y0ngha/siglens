@@ -28,7 +28,8 @@ export function getTooltipPosition(
             : aboveTop;
     const rawLeft =
         triggerRect.left + triggerRect.width / 2 - tooltipRect.width / 2;
-    const maxLeft = viewportWidth - tooltipRect.width - TOOLTIP_VIEWPORT_PADDING;
+    const maxLeft =
+        viewportWidth - tooltipRect.width - TOOLTIP_VIEWPORT_PADDING;
     const left = Math.max(TOOLTIP_VIEWPORT_PADDING, Math.min(rawLeft, maxLeft));
 
     return { top, left };
