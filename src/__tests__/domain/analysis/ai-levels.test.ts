@@ -3,13 +3,17 @@ import {
     SL_MAX_ATR_MULTIPLIER,
     TP_FALLBACK_ATR_MULTIPLIER,
     TP_MAX_ATR_MULTIPLIER,
+    buildBullishExitText,
+    buildBullishRiskRewardText,
     deriveFallbackStopLoss,
     deriveFallbackTakeProfit,
     isValidBullishStopLoss,
     isValidBullishTakeProfit,
+    reconcileBullishActionRecommendation,
     resolveBullishStopLoss,
     resolveBullishTakeProfit,
 } from '@/domain/analysis/ai-levels';
+import type { ActionRecommendation } from '@/domain/types';
 
 describe('isValidBullishStopLoss', () => {
     it.each<
@@ -234,5 +238,175 @@ describe('resolveBullishTakeProfit', () => {
         );
         expect(result.source).toBe('missing');
         expect(result.value).toBeUndefined();
+    });
+});
+
+describe('buildBullishExitText', () => {
+    it('SL + TP 모두 있으면 목표가/손절 텍스트를 반환한다', () => {
+        expect(buildBullishExitText(100, 95, [110])).toBe(
+            '목표가 $110.00 (+10.0%)에서 익절, 손절 $95.00 (-5.0%).'
+        );
+    });
+
+    it('TP만 있으면 목표가 텍스트만 반환한다', () => {
+        expect(buildBullishExitText(100, undefined, [110])).toBe(
+            '목표가 $110.00 (+10.0%)에서 익절.'
+        );
+    });
+
+    it('SL만 있으면 손절 텍스트만 반환한다', () => {
+        expect(buildBullishExitText(100, 95, undefined)).toBe(
+            '손절 $95.00 (-5.0%).'
+        );
+    });
+
+    it('TP 배열이 빈 배열이고 SL이 없으면 빈 문자열을 반환한다', () => {
+        expect(buildBullishExitText(100, undefined, [])).toBe('');
+    });
+
+    it('둘 다 undefined면 빈 문자열을 반환한다', () => {
+        expect(buildBullishExitText(100, undefined, undefined)).toBe('');
+    });
+
+    it('TP 배열의 첫 번째 원소만 사용한다', () => {
+        expect(buildBullishExitText(100, 95, [110, 120, 130])).toBe(
+            '목표가 $110.00 (+10.0%)에서 익절, 손절 $95.00 (-5.0%).'
+        );
+    });
+});
+
+describe('buildBullishRiskRewardText', () => {
+    it('표준 위험:보상 비율을 계산한다', () => {
+        expect(buildBullishRiskRewardText(100, 95, [110])).toBe(
+            '손절 5.0% vs 목표 10.0% → 위험:보상 = 1:2.0'
+        );
+    });
+
+    it('SL이 없으면 빈 문자열을 반환한다', () => {
+        expect(buildBullishRiskRewardText(100, undefined, [110])).toBe('');
+    });
+
+    it('TP가 없으면 빈 문자열을 반환한다', () => {
+        expect(buildBullishRiskRewardText(100, 95, undefined)).toBe('');
+    });
+
+    it('TP 배열이 빈 배열이면 빈 문자열을 반환한다', () => {
+        expect(buildBullishRiskRewardText(100, 95, [])).toBe('');
+    });
+
+    it('SL이 entry와 같으면 riskPct=0이 되어 빈 문자열을 반환한다', () => {
+        expect(buildBullishRiskRewardText(100, 100, [110])).toBe('');
+    });
+});
+
+describe('reconcileBullishActionRecommendation', () => {
+    const baseRec: ActionRecommendation = {
+        positionAnalysis: '분석 내용',
+        entry: '진입 전략',
+        exit: 'AI 원본 exit 텍스트',
+        riskReward: 'AI 원본 riskReward 텍스트',
+        entryRecommendation: 'enter',
+        entryPrices: [100],
+        stopLoss: 95,
+        takeProfitPrices: [110],
+    };
+
+    it('AI 값이 모두 유효하면 원본을 그대로 유지한다', () => {
+        const result = reconcileBullishActionRecommendation(baseRec, 100, 2);
+        expect(result.wasReconciled).toBe(false);
+        expect(result.recommendation).toEqual(baseRec);
+        expect(result.changes).toEqual([]);
+    });
+
+    it('SL이 무효하면 ATR fallback을 적용하고 텍스트를 재생성한다', () => {
+        // entry=100, ATR=5, 불합리한 SL 50 (ATR*5=25 밖)
+        const rec = { ...baseRec, stopLoss: 50 };
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(result.wasReconciled).toBe(true);
+        expect(result.recommendation.stopLoss).toBeCloseTo(92.5, 3);
+        expect(result.recommendation.exit).toContain('손절 $92.50');
+        expect(result.recommendation.exit).not.toBe(baseRec.exit);
+        expect(result.recommendation.riskReward).not.toBe(baseRec.riskReward);
+        expect(result.changes.length).toBeGreaterThan(0);
+        expect(result.changes[0]).toMatch(/stopLoss: 50 → 92\.50 \(fallback\)/);
+    });
+
+    it('TP가 누락되면 ATR fallback을 적용한다', () => {
+        const rec = { ...baseRec, takeProfitPrices: undefined };
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(result.wasReconciled).toBe(true);
+        expect(result.recommendation.takeProfitPrices?.[0]).toBeCloseTo(110, 3);
+        expect(result.changes.some(c => c.includes('takeProfitPrices'))).toBe(
+            true
+        );
+    });
+
+    it('ATR이 없고 SL이 side만 통과하면 fallback 불가 → 원본 유지', () => {
+        // SL 50은 entry 아래라 isValidBullishStopLoss의 side 체크는 통과,
+        // ATR이 없으니 ATR bound check는 skip → valid로 간주되어 원본 유지.
+        const rec = { ...baseRec, stopLoss: 50, takeProfitPrices: undefined };
+        const result = reconcileBullishActionRecommendation(
+            rec,
+            100,
+            undefined
+        );
+        expect(result.recommendation.stopLoss).toBe(50);
+        expect(result.recommendation.takeProfitPrices).toBeUndefined();
+        expect(result.wasReconciled).toBe(false);
+    });
+
+    it('ATR이 없고 SL이 무효(entry 이상)하면 missing → 원본 유지하고 reconciled=false', () => {
+        // ATR 없어도 SL side check(>= entry)는 fail해서 invalid로 간주되지만,
+        // fallback이 없어 resolved.source='missing' → 변경 없음.
+        const rec = { ...baseRec, stopLoss: 150 };
+        const result = reconcileBullishActionRecommendation(
+            rec,
+            100,
+            undefined
+        );
+        expect(result.wasReconciled).toBe(false);
+        expect(result.recommendation.stopLoss).toBe(150);
+    });
+
+    it('AI TP 여러 개 중 첫 번째만 보정하고 나머지는 보존한다', () => {
+        // [0]=50이 entry 아래라 무효 → fallback 110으로 보정.
+        // [1]=120, [2]=130은 그대로 유지.
+        const rec = { ...baseRec, takeProfitPrices: [50, 120, 130] };
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(result.wasReconciled).toBe(true);
+        expect(result.recommendation.takeProfitPrices?.[0]).toBeCloseTo(110, 3);
+        expect(result.recommendation.takeProfitPrices?.[1]).toBe(120);
+        expect(result.recommendation.takeProfitPrices?.[2]).toBe(130);
+    });
+
+    it('SL과 TP 모두 무효하면 둘 다 fallback 적용', () => {
+        const rec = { ...baseRec, stopLoss: 50, takeProfitPrices: [200] };
+        // SL 50 (ATR*5=25 범위 밖), TP 200 (ATR*10=50 범위 밖)
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(result.wasReconciled).toBe(true);
+        expect(result.recommendation.stopLoss).toBeCloseTo(92.5, 3);
+        expect(result.recommendation.takeProfitPrices?.[0]).toBeCloseTo(110, 3);
+        expect(result.changes.length).toBe(2);
+    });
+
+    it('원본 rec 객체를 변경하지 않는다 (불변성)', () => {
+        const rec = { ...baseRec, stopLoss: 50 };
+        const originalSl = rec.stopLoss;
+        reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(rec.stopLoss).toBe(originalSl);
+        expect(rec.exit).toBe(baseRec.exit);
+    });
+
+    it('positionAnalysis, entry, entryPrices, entryRecommendation은 건드리지 않는다', () => {
+        const rec = { ...baseRec, stopLoss: 50 };
+        const result = reconcileBullishActionRecommendation(rec, 100, 5);
+        expect(result.recommendation.positionAnalysis).toBe(
+            baseRec.positionAnalysis
+        );
+        expect(result.recommendation.entry).toBe(baseRec.entry);
+        expect(result.recommendation.entryPrices).toEqual(baseRec.entryPrices);
+        expect(result.recommendation.entryRecommendation).toBe(
+            baseRec.entryRecommendation
+        );
     });
 });
