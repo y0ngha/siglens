@@ -466,6 +466,19 @@ export interface ValidatedActionPrices {
 
 export type EntryRecommendation = 'enter' | 'wait' | 'avoid';
 
+export interface ReconciledActionLevels {
+    /** 보정된 stopLoss (AI-valid 시엔 AI 값 그대로, 보정된 경우 fallback 값) */
+    readonly stopLoss?: number;
+    /** 보정된 takeProfitPrices 전체 배열 — 첫 번째만 보정돼도 나머지 AI 값 보존 */
+    readonly takeProfitPrices?: readonly number[];
+    /** 재생성 exit 텍스트 (보정값 기반) */
+    readonly exit: string;
+    /** 재생성 risk-reward 텍스트 */
+    readonly riskReward: string;
+    /** 툴팁 표시용 사유 1문장 */
+    readonly reason: string;
+}
+
 export interface ActionRecommendation {
     positionAnalysis: string;
     entry: string;
@@ -476,6 +489,8 @@ export interface ActionRecommendation {
     entryPrices?: number[]; // 진입가 범위 [low, high] 또는 단일 [price]
     stopLoss?: number; // 손절가 (단일)
     takeProfitPrices?: number[]; // 목표가 (복수 가능, 오름차순)
+    /** AI 원본은 불변. 무효·누락 값일 때 도메인 보정값 병기. */
+    reconciledLevels?: ReconciledActionLevels;
 }
 
 export interface AnalysisResponse {
