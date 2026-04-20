@@ -1,10 +1,17 @@
 # Fix Log
 
-## [PR #331 Round 6 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: radiogroup 키보드 네비게이션에서 DOM 포커스 미이동
-- Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴은 aria-checked 와 DOM focus 동기화 필수
-- Context: `TimeframeSelector` 의 Arrow 키 처리가 `onChange` 만 호출하고 실제 포커스 이동 누락. `SectorTabs` 패턴처럼 `querySelectorAll('[role="radio"]')[nextIdx].focus()` 추가
+## [PR #342 | feat/multi-signal-backtest | 2026-04-21]
+- Violation: `buildBullishExitText` TP 필터가 `tp > 0`으로만 검증 — 진입가 이하 TP 허용
+- Rule: MISTAKES.md #23 — financial values must guard tp > entryPrice to prevent negative-direction text
+- Context: `tp > 0`을 `tp > entryPrice`로 변경; 대응 테스트 케이스 2건 추가 (tp=0, tp<entry)
 
+- Violation: `lib/tooltipPosition.ts` — `HTMLElement` 파라미터로 내부에서 `getBoundingClientRect()` 호출 (lib/ 순수 함수 계약 위반)
+- Rule: ARCHITECTURE.md — lib/ 레이어는 사이드 이펙트 없는 순수 함수만 허용
+- Context: `getTooltipPosition` 파라미터를 `HTMLElement → DOMRect`로 변경; 호출부 `InfoTooltip.tsx`에서 `.getBoundingClientRect()` 수행 후 전달
+
+- Violation: `ReconciledLevelsBlockFromRec` 인라인 prop 타입 사용
+- Rule: CONVENTIONS.md — Props interface must be defined directly above the component; no inline prop types
+- Context: `interface ReconciledLevelsBlockFromRecProps` 선언 후 컴포넌트에 적용
 
 ## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 
@@ -17,32 +24,10 @@
 - Rule: API 호출 시 provider rate limit 고려한 concurrency 제한 필수
 - Context: `sectorSignalsApi.ts` 가 `Promise.allSettled(SECTOR_STOCKS.map(...))` 로 전체 동시 실행. `fetchInChunks` 헬퍼로 청크 10개씩 순차 처리로 변경
 
-- Violation: 이미 계산된 `indicators.ma[period]` 가 있는데 S/R 감지기에서 `calculateMA` 를 직접 재호출
-- Rule: 중복 계산 방지 — indicator bag 우선 사용 후 fallback
-- Context: `detectSupportProximityBullish` / `detectResistanceProximityBearish` 가 `_indicators` 를 무시하고 `calculateMA(bars, period)` 만 호출. `indicators.ma[period] ?? calculateMA(bars, period)` 패턴으로 변경
-
-- Violation: `isSqueezePresent` 네이밍이 boolean 반환을 암시하지만 실제로는 객체 반환
-- Rule: MISTAKES.md #11 — 함수명은 반환 타입과 일치
-- Context: 스퀴즈 상태 객체(lastIdx, pctB, slope)를 반환하므로 `computeSqueezeState` 로 리네임
-
-## [Issue #329 Round 1 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: `rsi1 === null || rsi2 === null || rsi1 === undefined || rsi2 === undefined` 이중 null/undefined 체크
-- Rule: FF 2-C (Predictability — expose hidden logic) — `(number | null)[]` 타입이면 out-of-bounds 만 undefined, 의도를 분리해 표기하거나 `== null` 로 통합
-- Context: `anticipation.ts detectRegularDivergence` 에서 피벗 인덱스 근거가 있음에도 불필요한 undefined 체크 작성
-
-- Violation: 안정적이지 않은 inline arrow function (`updateUrl`) 을 state handler 에서 호출
-- Rule: FF 1-B (Readability — extract implementation detail) — 다른 handler 가 공유 호출할 때는 `useCallback` 으로 식별성 확보
-- Context: `SectorSignalPanel.tsx` 의 URL 동기화 로직이 매 렌더 새 함수로 생성되어 `handleSectorChange` / `handleStrictChange` 간 공유 비효율
-
 ## [PR #330 Round 2 | feature/issue-328-market-summary-panel | 2026-04-19]
 - Violation: Lightweight Charts dispose 이후 `unsubscribeCrosshairMove` 직접 호출
 - Rule: MISTAKES.md > Lightweight Charts #1 — ref 패턴으로 chart 생존 여부 확인 필요
 - Context: `useOverlayLegend.ts` cleanup에서 `chart.unsubscribeCrosshairMove`로 변경하여 ref guard가 제거됨; chart 생성 effect cleanup이 먼저 실행 시 'Object is disposed' 예외 발생 가능
-
-## [PR #330 | feature/issue-328-market-summary-panel | 2026-04-19]
-- Violation: 타입 시스템이 보장하는 필드에 중복 null/truthy 체크
-- Rule: MISTAKES.md > Predictability #2 — Conditional checks that duplicate type system guarantees
-- Context: `BriefingCard.tsx`에서 `dominantThemes`, `sectorAnalysis`, `leadingSectors` 등 `MarketBriefingResponse`가 보장하는 non-null 필드에 불필요한 `&&` guard 추가
 
 ## [PR #315 Round 3 | feat/314/애드센스-배너-광고-구현 | 2026-04-16]
 - Violation: layout.tsx에서 `<Script strategy="lazyOnload">`를 `<head>` 내부에 배치
@@ -88,23 +73,6 @@
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
 
-## [PR #229 Round 1 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
-- Violation: chartRef (stable RefObject) included in useEffect dependency array for overlay hook
-- Rule: MISTAKES.md Components #2 — stable RefObject references should not be in dependency arrays; only include deps that actually change
-- Context: useCharacterOverlay hook included chartRef alongside dynamic deps like data; removed to match useChartSync pattern of excluding RefObjects
-
-- Violation: Component props with leading underscore used in component body (e.g., _recommendedAction used as recommendedAction)
-- Rule: CONVENTIONS.md Naming — underscore prefix reserved for intentionally-unused destructured parameters; consumed props must not have underscore
-- Context: ActionRecommendationField received _recommendedAction but used it in render; removed underscore to indicate the prop is actually consumed
-
-## [PR #229 Round 2 | feat/229/action-recommendation-chart-overlay | 2026-04-10]
-- Violation: StockChart prop default actionPricesVisible = false contradicted the parent ChartContent's intent (initialized to true). Default off-by-default is misleading when caller explicitly enables the feature.
-- Rule: FF.md Readability 1-C — Design intent must be exposed in code; default values must align with component usage context or caller must explicitly pass the value
-- Context: ChartContent initializes actionPricesVisible={true}, but StockChart defaulted to false when prop was optional, creating contradiction between declaration and runtime behavior. Fixed by changing StockChart default to true to expose the actual design intent.
-
-- Violation: computeFromDay 반환값이 YYYY-MM-DD 형식 — Alpaca API가 RFC3339 형식 요구
-- Rule: Provider pair symmetric rule — Alpaca start 파라미터는 RFC3339 형식 필요
-- Context: barsApi.ts의 computeFromDay가 substring(0, 10)만 반환; T00:00:00Z 추가로 RFC3339 호환성 확보 (FMP는 fromDate.substring(0,10)으로 처리하므로 영향 없음)
 ## [PR #313 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
 - Violation: findIndexMatch 반환 타입을 `ReturnType<typeof filterIndexResults>[number] | undefined`로 표현
 - Rule: TypeScript — 재사용 가능하거나 의미를 전달해야 하는 반환 타입은 구조적 유틸리티 타입 대신 명시적 named type으로 표현
@@ -116,23 +84,23 @@
 - Context: calculateSupertrend 리팩터링 PR에서 기존 테스트가 방향성(up/down) 부등호만 검증하고 실제 계산값을 검증하지 않아 리뷰어에게 Blocker 지적 받음
 
 
-## [PR #333 | feat/332/ai-chat | 2026-04-19]
-- Violation: `src/infrastructure/ai/gemini.ts` 신규 인프라 파일에 대응하는 전용 테스트 파일 누락
-- Rule: `src/__tests__/CLAUDE.md` — Tests cover domain and infrastructure only, mirror source structure, 100% coverage target
-- Context: `callGeminiWithKeyFallback`의 4개 분기(freeApiKey undefined, free key 성공, free key 실패→fallback, systemInstruction undefined)가 전용 테스트 없이 간접 커버만 됨
-## [PR #339 | master | 2026-04-20]
-- Violation: validateBacktestData null/non-object 분기 테스트 누락
-- Rule: CONVENTIONS.md domain/ 100% 커버리지 필수
-- Context: validate.ts 첫 번째 가드(`data === null || typeof data !== 'object'`)에 대한 테스트 케이스가 누락됨
 
-- Violation: validate.ts에서 for 루프 사용
-- Rule: CONVENTIONS.md 도메인 레이어 — for/while 금지, forEach/map/filter/reduce 사용
-- Context: cases 배열 순회 시 `for (let i = 0; ...)` 루프를 forEach로 교체해야 함
+## [PR #342 Round 10 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: `LevelSource`, `ResolvedLevel`, `ReconcileResult` 타입이 구현 파일 `ai-levels.ts`에 정의됨
+- Rule: MISTAKES.md Architecture #1 — 모든 도메인 타입은 `domain/types.ts`에 중앙화
+- Context: 세 타입이 `generate-backtest.ts` 등 외부에서 소비되고 있어 경계 위반. `domain/types.ts`로 이동하고 `import type`으로 참조
 
-- Violation: BacktestTabs filtered 파생값 useMemo 누락
-- Rule: MISTAKES.md #10 — 'use client' 컴포넌트에서 props/state 기반 파생값은 useMemo로 감싸야 함
-- Context: cases prop + safeActive 상태로부터 파생되는 filtered 배열이 useMemo 없이 매 렌더마다 재계산됨
+## [PR #342 Round 9 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: TP 배열 fallback 교체 후 오름차순 정렬 미보장
+- Rule: Domain Functions — 도메인 배열 계약(오름차순 TP)은 보정 후에도 유지
+- Context: `reconcileBullishActionRecommendation`에서 `takeProfitPrices[0]`을 fallback으로 교체할 때 기존 `[1..]`과 역전될 수 있음. `filter(tp > entryPrice) + toSorted()`로 정렬 보장
 
-- Violation: generate-backtest.ts BacktestCase 타입 미임포트
-- Rule: TypeScript 타입 안전성 — 사용하는 타입은 반드시 import 선언
-- Context: `let allCases: BacktestCase[] = []`에서 BacktestCase를 참조하나 import 누락
+## [PR #342 Round 3 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: `'99'` hex alpha 접미사가 두 색상 상수에 중복
+- Rule: MISTAKES.md #15 — 반복되는 매직 문자열 상수화
+- Context: `RECONCILED_HEX_ALPHA` 모듈 상수로 추출해 두 색상 변수에서 참조 (의미 + 중복 제거)
+
+- Violation: `ReconciledActionLevels.reason` 필드는 툴팁 전용 사유로 정의됐으나 UI가 무시
+- Rule: Domain 스키마 의도와 UI 소비 경로 일치 필수
+- Context: `AnalysisPanel.ReconciledLevelsBlock` 이 reason을 전달받지 않고 generic prefix만 표시. `RECONCILED_TOOLTIP_PREFIX` + reason을 2줄로 표시하도록 변경
+

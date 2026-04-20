@@ -244,5 +244,61 @@ describe('pollAnalysisAction 함수는', () => {
                 3600
             );
         });
+
+        it('meta.lastClose/atr이 있고 AI SL이 무효하면 reconciledLevels가 병기되고 AI 원본은 불변이다', async () => {
+            mockGetJobStatus.mockResolvedValueOnce('done');
+            mockGetJobResult.mockResolvedValueOnce(VALID_RAW_RESULT);
+            mockGetJobMeta.mockResolvedValueOnce({
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                skillsDegraded: false,
+                lastClose: 100,
+                atr: 5,
+            });
+            // enriched 결과에 AI 원본 exit/riskReward를 포함시키고,
+            // entryPrices 없이 무효 SL만 두면 postProcess가 reconciledLevels에 fallback(92.5)을 병기해야 한다.
+            mockEnrich.mockReturnValueOnce({
+                ...mockEnrichedResult,
+                actionRecommendation: {
+                    positionAnalysis: '분석',
+                    entry: '진입',
+                    exit: 'AI 원본 exit',
+                    riskReward: 'AI 원본 riskReward',
+                    entryRecommendation: 'enter',
+                    stopLoss: 50, // entry 100에 대해 ATR*5=25 범위 밖 → fallback
+                    takeProfitPrices: [110],
+                },
+            });
+            mockComputeEffectiveTtl.mockReturnValueOnce(3600);
+
+            const pollResult = await pollAnalysisAction('job-reconcile');
+
+            expect(pollResult.status).toBe('done');
+            if (pollResult.status === 'done') {
+                // AI 원본 필드는 그대로 유지
+                expect(pollResult.result.actionRecommendation?.stopLoss).toBe(
+                    50
+                );
+                expect(pollResult.result.actionRecommendation?.exit).toBe(
+                    'AI 원본 exit'
+                );
+                expect(pollResult.result.actionRecommendation?.riskReward).toBe(
+                    'AI 원본 riskReward'
+                );
+                // 보정값은 reconciledLevels에 병기
+                expect(
+                    pollResult.result.actionRecommendation?.reconciledLevels
+                        ?.stopLoss
+                ).toBeCloseTo(92.5, 3);
+                expect(
+                    pollResult.result.actionRecommendation?.reconciledLevels
+                        ?.exit
+                ).toContain('손절 $92.50');
+                expect(
+                    pollResult.result.actionRecommendation?.reconciledLevels
+                        ?.reason
+                ).toBeTruthy();
+            }
+        });
     });
 });

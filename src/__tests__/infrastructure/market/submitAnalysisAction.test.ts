@@ -258,4 +258,59 @@ describe('submitAnalysisAction 함수는', () => {
             expect(mockFetch).toHaveBeenCalled();
         });
     });
+
+    describe('JobMeta에 reconcile 기준값 저장', () => {
+        beforeEach(() => {
+            mockCacheGet.mockResolvedValueOnce(null);
+        });
+
+        it('마지막 bar 종가(lastClose)를 meta에 저장한다', async () => {
+            await submitAnalysisAction(mockSymbol, mockTimeframe);
+
+            expect(mockSetJobMeta).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({ lastClose: 103 })
+            );
+        });
+
+        it('ATR이 있으면 마지막 non-null 값을 meta에 저장한다', async () => {
+            mockFetchBarsWithIndicators.mockResolvedValueOnce({
+                ...mockBarsData,
+                indicators: { ...mockBarsData.indicators, atr: [null, 2.5, 3] },
+            });
+
+            await submitAnalysisAction(mockSymbol, mockTimeframe);
+
+            expect(mockSetJobMeta).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({ atr: 3 })
+            );
+        });
+
+        it('ATR이 모두 null이면 undefined로 저장한다', async () => {
+            mockFetchBarsWithIndicators.mockResolvedValueOnce({
+                ...mockBarsData,
+                indicators: {
+                    ...mockBarsData.indicators,
+                    atr: [null, null],
+                },
+            });
+
+            await submitAnalysisAction(mockSymbol, mockTimeframe);
+
+            expect(mockSetJobMeta).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({ atr: undefined })
+            );
+        });
+
+        it('ATR 배열이 비어있으면 undefined로 저장한다', async () => {
+            await submitAnalysisAction(mockSymbol, mockTimeframe);
+
+            expect(mockSetJobMeta).toHaveBeenCalledWith(
+                expect.any(String),
+                expect.objectContaining({ atr: undefined })
+            );
+        });
+    });
 });

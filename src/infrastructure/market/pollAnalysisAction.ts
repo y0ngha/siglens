@@ -2,6 +2,7 @@
 
 import { waitUntil } from '@vercel/functions';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
+import { postProcessAnalysisWithReconcile } from '@/domain/analysis/ai-levels';
 import type { PollAnalysisResult, RawAnalysisResponse } from '@/domain/types';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
@@ -72,8 +73,18 @@ export async function pollAnalysisAction(
     const skillsDegraded = meta?.skillsDegraded ?? false;
 
     const enriched = enrichAnalysisWithConfidence(parsed, skills);
+
+    // AI SL/TP 검증 + ATR 기반 fallback + 텍스트 재조합.
+    // meta.lastClose/atr은 submitAnalysisAction이 저장한 값 (fallback 계산 기준).
+    // 값이 없으면 reconcile은 no-op — 원본 AI 응답 유지.
+    const reconciled = postProcessAnalysisWithReconcile(
+        enriched,
+        meta?.lastClose,
+        meta?.atr
+    );
+
     const analyzedAt = new Date().toISOString();
-    const result = { ...enriched, analyzedAt };
+    const result = { ...reconciled, analyzedAt };
 
     // 캐시 저장 (RunAnalysisResult 형식: AnalysisResponse + skillsDegraded)
     if (meta) {

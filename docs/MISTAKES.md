@@ -98,6 +98,31 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
 
+21. Domain functions using imperative for-loop + push instead of higher-order functions
+    → Domain functions must use map, filter, flatMap, reduce — never direct mutation with push/splice
+    → Applies to all domain/ implementations; violation of functional programming paradigm
+    ❌ const result = []; for (const item of data) { result.push(transform(item)); } return result;
+    ✅ const result = data.map(transform); return result;
+    ❌ const lines = []; for (const rec of reconciled) { lines.push(...extractLines(rec)); } return lines;
+    ✅ const lines = reconciled.flatMap(extractLines); return lines;
+
+22. Domain functions incomplete test coverage — missing unit tests entirely or covering <100% branches
+    → Every new domain function must have dedicated unit tests with 100% branch coverage
+    → Test infrastructure functions similarly; coverage checks catch missing edge cases
+    ❌ callGeminiWithKeyFallback added to infrastructure/ai/gemini.ts without src/__tests__/infrastructure/ test file
+    ❌ extractReconciledActionLines added to domain/analysis/ without corresponding unit tests for 8+ cases
+    ✅ src/__tests__/domain/analysis/actionRecommendation.test.ts with cases: undefined rec, missing levels, duplicates, zero values, empty result
+    ✅ New infrastructure functions tested in parallel src/__tests__/infrastructure/ test file with all branches covered
+
+23. Domain functions inadequate defensive checks on financial data (division by zero, negative values, bounds)
+    → Financial values require explicit guards before use — null/undefined checks insufficient
+    → takeProfit, entryPrice, stoploss must be validated for sensible ranges (>0, within bounds)
+    → Prevent negative R:R, invalid leverage, or meaningless outputs
+    ❌ Number.isFinite(tp) only; allows tp = 0 or tp < 0 which breaks logic downstream
+    ❌ const reward = tp - entryPrice; no guard for tp <= entryPrice, can yield negative R:R
+    ✅ Number.isFinite(tp) && tp > 0 && tp !== entryPrice; return early if invalid
+    ✅ if (tp <= entryPrice) return ''; // meaningless result, prevent display
+
 16. Shared constants duplicated across module boundaries without documentation
     → When a module cannot import shared constants (environment constraints), duplicate with explicit JSDoc linking to the source
     → Every duplicate must reference the original constant and document the sync requirement
@@ -345,6 +370,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ <div role="tooltip" id="tooltip-1">; <button aria-describedby="tooltip-1">
    ❌ <div role="note">  // no aria-label
    ✅ <div role="note" aria-label="Additional information">
+
+4. Interactive info icons using <span title="..."> only — not keyboard accessible
+   → Tooltips must be keyboard-accessible; title attribute ignored by keyboard users and screen readers
+   → Replace <span> with <button>, add aria-describedby + role="tooltip" pattern
+   ❌ <span title="Information">ⓘ</span>  // title-only, no keyboard access
+   ✅ <button aria-describedby="tooltip-id" className="focus-visible:ring"><span id="tooltip-id" role="tooltip">Information</span></button>
 ```
 
 ---
@@ -416,6 +447,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Include all provider names, endpoint paths, and parameter enums in documentation
    ❌ FMP_INTRADAY_TIMEFRAME_MAP extended to include 30min, 4hour; docs/API.md still lists only 1Min-1Hour
    ✅ docs/API.md Timeframe table updated to include all current mappings
+
+3. Inline code comments reference removed or changed implementation
+   → Module-level JSDoc blocks must document current behavior, not legacy/removed code
+   → Single-line summaries only; multi-paragraph docstrings must be condensed to one line per function
+   ❌ tooltipPosition.ts module docs reference getBoundingClientRect() after it was removed from function
+   ❌ ai-levels.ts multi-paragraph JSDoc blocks documenting design rationale instead of current signature
+   ✅ Module comment: "Calculate tooltip position from DOMRect bounds"
+   ✅ Function comment: "Transform input levels with reconciliation rules"
+   → When changing function implementation, update related comments immediately
 ```
 
 ---
@@ -558,4 +598,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → If multiple files reference the same type, move it to domain/types.ts for single source of truth
    ❌ interface TickerCategory { id: string; name: string; } in domain/constants/popular-tickers.ts
    ✅ export type TickerCategory = { id: string; name: string; } in domain/types.ts
+
+2. Pure utility functions placed in components/ instead of proper layers
+   → Pure functions with no React dependencies must be in domain/ (business logic) or lib/ (UI utilities)
+   → Utility functions extracted from components must go to utils/ subfolders, not remain in components/
+   ❌ Pure function in components/dashboard/utils/ or inlined in SectorSignalPanel.tsx
+   ✅ Pure function in domain/signals/ or dedicated utils/ subfolder with proper layer imports
 ```

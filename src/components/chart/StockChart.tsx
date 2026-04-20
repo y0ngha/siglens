@@ -34,6 +34,7 @@ import { useVolumeProfileOverlay } from '@/components/chart/hooks/useVolumeProfi
 import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { useActionRecommendationOverlay } from '@/components/chart/hooks/useActionRecommendationOverlay';
+import type { ReconciledActionLineData } from '@/domain/types';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import { useOverlayLegend } from '@/components/chart/hooks/useOverlayLegend';
 import {
@@ -70,6 +71,7 @@ interface StockChartProps {
     keyLevels?: KeyLevels;
     keyLevelsVisible?: boolean;
     actionPrices?: ValidatedActionPrices;
+    reconciledActionPrices?: ReconciledActionLineData;
     actionPricesVisible?: boolean;
     onPatternOverlayChange?: (
         visiblePatterns: Set<string>,
@@ -94,6 +96,7 @@ export function StockChart({
     keyLevels: _keyLevels = EMPTY_KEY_LEVELS,
     keyLevelsVisible: _keyLevelsVisible = false,
     actionPrices,
+    reconciledActionPrices,
     actionPricesVisible = true,
     onPatternOverlayChange: _onPatternOverlayChange,
     onChartReady,
@@ -336,6 +339,7 @@ export function StockChart({
     useActionRecommendationOverlay({
         seriesRef,
         actionPrices,
+        reconciledPrices: reconciledActionPrices,
         isVisible: actionPricesVisible,
         lineWidth: DEFAULT_LINE_WIDTH,
     });

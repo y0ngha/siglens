@@ -458,6 +458,19 @@ export interface Trendline {
     end: TrendlinePoint;
 }
 
+export type LevelSource = 'ai' | 'fallback' | 'missing';
+
+export interface ResolvedLevel {
+    readonly value: number | undefined;
+    readonly source: LevelSource;
+}
+
+export interface ReconcileResult {
+    readonly recommendation: ActionRecommendation;
+    readonly wasReconciled: boolean;
+    readonly changes: readonly string[];
+}
+
 export interface ValidatedActionPrices {
     entryPrices: number[];
     stopLoss: number | undefined;
@@ -465,6 +478,40 @@ export interface ValidatedActionPrices {
 }
 
 export type EntryRecommendation = 'enter' | 'wait' | 'avoid';
+
+export interface ReconciledActionLevels {
+    /** 보정된 stopLoss (AI-valid 시엔 AI 값 그대로, 보정된 경우 fallback 값) */
+    readonly stopLoss?: number;
+    /** 보정된 takeProfitPrices 전체 배열 — 첫 번째만 보정돼도 나머지 AI 값 보존 */
+    readonly takeProfitPrices?: readonly number[];
+    /** 재생성 exit 텍스트 (보정값 기반) */
+    readonly exit: string;
+    /** 재생성 risk-reward 텍스트 */
+    readonly riskReward: string;
+    /** 툴팁 표시용 사유 1문장 */
+    readonly reason: string;
+}
+
+/**
+ * 보정값 takeProfit 단일 항목 — 차트 라벨 분기에 사용.
+ */
+export interface ReconciledTpEntry {
+    readonly index: number;
+    readonly price: number;
+    /** 다중 TP일 때 "#N 청산" 라벨, 단일일 때 "목표가" 라벨로 분기 */
+    readonly totalCount: number;
+}
+
+/**
+ * 차트 오버레이용 "보정값 라인" 정보.
+ * AI 원본과 실제로 값이 다른 인덱스만 포함하므로 중복 라인 렌더를 방지한다.
+ */
+export interface ReconciledActionLineData {
+    /** 보정된 stopLoss. AI 값과 다를 때만 존재. */
+    readonly stopLoss?: number;
+    /** 보정된 takeProfitPrices 중 AI 원본과 다른 인덱스만 포함. */
+    readonly takeProfitPrices: readonly ReconciledTpEntry[];
+}
 
 export interface ActionRecommendation {
     positionAnalysis: string;
@@ -476,6 +523,8 @@ export interface ActionRecommendation {
     entryPrices?: number[]; // 진입가 범위 [low, high] 또는 단일 [price]
     stopLoss?: number; // 손절가 (단일)
     takeProfitPrices?: number[]; // 목표가 (복수 가능, 오름차순)
+    /** AI 원본은 불변. 무효·누락 값일 때 도메인 보정값 병기. */
+    reconciledLevels?: ReconciledActionLevels;
 }
 
 export interface AnalysisResponse {
