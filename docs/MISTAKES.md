@@ -98,6 +98,31 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
 
+21. Domain functions using imperative for-loop + push instead of higher-order functions
+    → Domain functions must use map, filter, flatMap, reduce — never direct mutation with push/splice
+    → Applies to all domain/ implementations; violation of functional programming paradigm
+    ❌ const result = []; for (const item of data) { result.push(transform(item)); } return result;
+    ✅ const result = data.map(transform); return result;
+    ❌ const lines = []; for (const rec of reconciled) { lines.push(...extractLines(rec)); } return lines;
+    ✅ const lines = reconciled.flatMap(extractLines); return lines;
+
+22. Domain functions incomplete test coverage — missing unit tests entirely or covering <100% branches
+    → Every new domain function must have dedicated unit tests with 100% branch coverage
+    → Test infrastructure functions similarly; coverage checks catch missing edge cases
+    ❌ callGeminiWithKeyFallback added to infrastructure/ai/gemini.ts without src/__tests__/infrastructure/ test file
+    ❌ extractReconciledActionLines added to domain/analysis/ without corresponding unit tests for 8+ cases
+    ✅ src/__tests__/domain/analysis/actionRecommendation.test.ts with cases: undefined rec, missing levels, duplicates, zero values, empty result
+    ✅ New infrastructure functions tested in parallel src/__tests__/infrastructure/ test file with all branches covered
+
+23. Domain functions inadequate defensive checks on financial data (division by zero, negative values, bounds)
+    → Financial values require explicit guards before use — null/undefined checks insufficient
+    → takeProfit, entryPrice, stoploss must be validated for sensible ranges (>0, within bounds)
+    → Prevent negative R:R, invalid leverage, or meaningless outputs
+    ❌ Number.isFinite(tp) only; allows tp = 0 or tp < 0 which breaks logic downstream
+    ❌ const reward = tp - entryPrice; no guard for tp <= entryPrice, can yield negative R:R
+    ✅ Number.isFinite(tp) && tp > 0 && tp !== entryPrice; return early if invalid
+    ✅ if (tp <= entryPrice) return ''; // meaningless result, prevent display
+
 16. Shared constants duplicated across module boundaries without documentation
     → When a module cannot import shared constants (environment constraints), duplicate with explicit JSDoc linking to the source
     → Every duplicate must reference the original constant and document the sync requirement

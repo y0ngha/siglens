@@ -1,5 +1,11 @@
-import { validateActionPrices } from '@/domain/analysis/actionRecommendation';
-import type { ActionRecommendation } from '@/domain/types';
+import {
+    extractReconciledActionLines,
+    validateActionPrices,
+} from '@/domain/analysis/actionRecommendation';
+import type {
+    ActionRecommendation,
+    ReconciledActionLevels,
+} from '@/domain/types';
 
 const makeRec = (
     overrides?: Partial<ActionRecommendation>
@@ -123,6 +129,138 @@ describe('validateActionPrices', () => {
             expect(result?.entryPrices).toEqual([165, 167]);
             expect(result?.stopLoss).toBe(160);
             expect(result?.takeProfitPrices).toEqual([180, 195]);
+        });
+    });
+});
+
+describe('extractReconciledActionLines', () => {
+    const baseReconciled = (
+        overrides?: Partial<ReconciledActionLevels>
+    ): ReconciledActionLevels => ({
+        exit: 'reconciled exit',
+        riskReward: 'reconciled rr',
+        reason: 'reason',
+        ...overrides,
+    });
+
+    describe('rec가 undefined일 때', () => {
+        it('undefined를 반환한다', () => {
+            expect(extractReconciledActionLines(undefined)).toBeUndefined();
+        });
+    });
+
+    describe('reconciledLevels이 없을 때', () => {
+        it('undefined를 반환한다', () => {
+            const rec = makeRec();
+            expect(extractReconciledActionLines(rec)).toBeUndefined();
+        });
+    });
+
+    describe('보정값 stopLoss가 AI 값과 동일할 때', () => {
+        it('stopLoss는 생략된다 (중복 라인 방지)', () => {
+            const rec = makeRec({
+                stopLoss: 160,
+                takeProfitPrices: [180],
+                reconciledLevels: baseReconciled({
+                    stopLoss: 160,
+                    takeProfitPrices: [185],
+                }),
+            });
+            const result = extractReconciledActionLines(rec);
+            expect(result?.stopLoss).toBeUndefined();
+            expect(result?.takeProfitPrices).toEqual([
+                { index: 0, price: 185, totalCount: 1 },
+            ]);
+        });
+    });
+
+    describe('보정값 takeProfitPrices가 AI 값과 인덱스별 동일할 때', () => {
+        it('동일 인덱스는 생략된다', () => {
+            const rec = makeRec({
+                stopLoss: 160,
+                takeProfitPrices: [180, 195],
+                reconciledLevels: baseReconciled({
+                    stopLoss: 155,
+                    takeProfitPrices: [180, 200],
+                }),
+            });
+            const result = extractReconciledActionLines(rec);
+            expect(result?.stopLoss).toBe(155);
+            expect(result?.takeProfitPrices).toEqual([
+                { index: 1, price: 200, totalCount: 2 },
+            ]);
+        });
+    });
+
+    describe('보정값과 AI 값이 모두 다를 때', () => {
+        it('stopLoss와 모든 takeProfitPrices 인덱스를 포함한다', () => {
+            const rec = makeRec({
+                stopLoss: 160,
+                takeProfitPrices: [180, 195],
+                reconciledLevels: baseReconciled({
+                    stopLoss: 155,
+                    takeProfitPrices: [185, 200],
+                }),
+            });
+            const result = extractReconciledActionLines(rec);
+            expect(result).toEqual({
+                stopLoss: 155,
+                takeProfitPrices: [
+                    { index: 0, price: 185, totalCount: 2 },
+                    { index: 1, price: 200, totalCount: 2 },
+                ],
+            });
+        });
+    });
+
+    describe('보정값 stopLoss가 0 이하일 때', () => {
+        it('stopLoss는 생략된다', () => {
+            const rec = makeRec({
+                stopLoss: 160,
+                takeProfitPrices: [180],
+                reconciledLevels: baseReconciled({
+                    stopLoss: 0,
+                    takeProfitPrices: [185],
+                }),
+            });
+            const result = extractReconciledActionLines(rec);
+            expect(result?.stopLoss).toBeUndefined();
+            expect(result?.takeProfitPrices).toEqual([
+                { index: 0, price: 185, totalCount: 1 },
+            ]);
+        });
+    });
+
+    describe('슬라이스할 것이 모두 없을 때 (모두 동일)', () => {
+        it('undefined를 반환한다', () => {
+            const rec = makeRec({
+                stopLoss: 160,
+                takeProfitPrices: [180, 195],
+                reconciledLevels: baseReconciled({
+                    stopLoss: 160,
+                    takeProfitPrices: [180, 195],
+                }),
+            });
+            expect(extractReconciledActionLines(rec)).toBeUndefined();
+        });
+    });
+
+    describe('AI 원본 stopLoss만 있고 takeProfitPrices는 없을 때', () => {
+        it('보정 TP가 있으면 index부터 포함한다', () => {
+            const rec = makeRec({
+                stopLoss: 160,
+                takeProfitPrices: undefined,
+                reconciledLevels: baseReconciled({
+                    stopLoss: 155,
+                    takeProfitPrices: [185, 200],
+                }),
+            });
+            const result = extractReconciledActionLines(rec);
+            expect(result?.stopLoss).toBe(155);
+            expect(result?.takeProfitPrices).toEqual([
+                { index: 0, price: 185, totalCount: 2 },
+                { index: 1, price: 200, totalCount: 2 },
+            ]);
         });
     });
 });

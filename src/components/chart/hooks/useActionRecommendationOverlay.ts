@@ -88,43 +88,41 @@ export function useActionRecommendationOverlay({
         );
 
         // 보정값 라인 (dashed + 반투명). AI 값과 다를 때만 라벨 "(보정)"을 병기한다.
-        const reconciledLines: IPriceLine[] = [];
-        if (reconciledPrices) {
-            if (reconciledPrices.stopLoss !== undefined) {
-                reconciledLines.push(
-                    series.createPriceLine({
-                        price: reconciledPrices.stopLoss,
-                        color: RECONCILED_STOP_LOSS_COLOR,
-                        lineWidth,
-                        lineStyle: LineStyle.LargeDashed,
-                        axisLabelVisible: true,
-                        title: '손절 (보정)',
-                    })
-                );
-            }
-            for (const tp of reconciledPrices.takeProfitPrices) {
-                const title =
-                    tp.totalCount > 1
-                        ? `#${tp.index + 1} 청산 (보정)`
-                        : '목표가 (보정)';
-                reconciledLines.push(
-                    series.createPriceLine({
-                        price: tp.price,
-                        color: RECONCILED_TAKE_PROFIT_COLOR,
-                        lineWidth,
-                        lineStyle: LineStyle.LargeDashed,
-                        axisLabelVisible: true,
-                        title,
-                    })
-                );
-            }
-        }
+        const reconciledStopLossLine =
+            reconciledPrices?.stopLoss !== undefined
+                ? [
+                      series.createPriceLine({
+                          price: reconciledPrices.stopLoss,
+                          color: RECONCILED_STOP_LOSS_COLOR,
+                          lineWidth,
+                          lineStyle: LineStyle.LargeDashed,
+                          axisLabelVisible: true,
+                          title: '손절 (보정)',
+                      }),
+                  ]
+                : [];
+
+        const reconciledTakeProfitLines =
+            reconciledPrices?.takeProfitPrices.map(tp =>
+                series.createPriceLine({
+                    price: tp.price,
+                    color: RECONCILED_TAKE_PROFIT_COLOR,
+                    lineWidth,
+                    lineStyle: LineStyle.LargeDashed,
+                    axisLabelVisible: true,
+                    title:
+                        tp.totalCount > 1
+                            ? `#${tp.index + 1} 청산 (보정)`
+                            : '목표가 (보정)',
+                })
+            ) ?? [];
 
         priceLinesRef.current = [
             ...entryLines,
             ...stopLossLine,
             ...takeProfitLines,
-            ...reconciledLines,
+            ...reconciledStopLossLine,
+            ...reconciledTakeProfitLines,
         ];
     }, [actionPrices, reconciledPrices, isVisible, lineWidth, seriesRef]);
 }

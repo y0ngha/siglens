@@ -1,11 +1,5 @@
 # Fix Log
 
-## [PR #331 Round 6 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: radiogroup 키보드 네비게이션에서 DOM 포커스 미이동
-- Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴은 aria-checked 와 DOM focus 동기화 필수
-- Context: `TimeframeSelector` 의 Arrow 키 처리가 `onChange` 만 호출하고 실제 포커스 이동 누락. `SectorTabs` 패턴처럼 `querySelectorAll('[role="radio"]')[nextIdx].focus()` 추가
-
-
 ## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 
 - Violation: `percentileRank` 가 분산=0 (모든 원소 동일) 케이스에서 0 반환 — 스퀴즈 false-positive 유발 가능
@@ -16,10 +10,6 @@
 - Violation: 68~74 종목에 대한 Promise.allSettled 병렬 fetch — FMP rate limit 초과 가능
 - Rule: API 호출 시 provider rate limit 고려한 concurrency 제한 필수
 - Context: `sectorSignalsApi.ts` 가 `Promise.allSettled(SECTOR_STOCKS.map(...))` 로 전체 동시 실행. `fetchInChunks` 헬퍼로 청크 10개씩 순차 처리로 변경
-
-- Violation: `isSqueezePresent` 네이밍이 boolean 반환을 암시하지만 실제로는 객체 반환
-- Rule: MISTAKES.md #11 — 함수명은 반환 타입과 일치
-- Context: 스퀴즈 상태 객체(lastIdx, pctB, slope)를 반환하므로 `computeSqueezeState` 로 리네임
 
 ## [Issue #329 Round 1 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: `rsi1 === null || rsi2 === null || rsi1 === undefined || rsi2 === undefined` 이중 null/undefined 체크
@@ -112,23 +102,6 @@
 - Context: calculateSupertrend 리팩터링 PR에서 기존 테스트가 방향성(up/down) 부등호만 검증하고 실제 계산값을 검증하지 않아 리뷰어에게 Blocker 지적 받음
 
 
-## [PR #333 | feat/332/ai-chat | 2026-04-19]
-- Violation: `src/infrastructure/ai/gemini.ts` 신규 인프라 파일에 대응하는 전용 테스트 파일 누락
-- Rule: `src/__tests__/CLAUDE.md` — Tests cover domain and infrastructure only, mirror source structure, 100% coverage target
-- Context: `callGeminiWithKeyFallback`의 4개 분기(freeApiKey undefined, free key 성공, free key 실패→fallback, systemInstruction undefined)가 전용 테스트 없이 간접 커버만 됨
-## [PR #339 | master | 2026-04-20]
-- Violation: validateBacktestData null/non-object 분기 테스트 누락
-- Rule: CONVENTIONS.md domain/ 100% 커버리지 필수
-- Context: validate.ts 첫 번째 가드(`data === null || typeof data !== 'object'`)에 대한 테스트 케이스가 누락됨
-
-- Violation: BacktestTabs filtered 파생값 useMemo 누락
-- Rule: MISTAKES.md #10 — 'use client' 컴포넌트에서 props/state 기반 파생값은 useMemo로 감싸야 함
-- Context: cases prop + safeActive 상태로부터 파생되는 filtered 배열이 useMemo 없이 매 렌더마다 재계산됨
-
-- Violation: generate-backtest.ts BacktestCase 타입 미임포트
-- Rule: TypeScript 타입 안전성 — 사용하는 타입은 반드시 import 선언
-- Context: `let allCases: BacktestCase[] = []`에서 BacktestCase를 참조하나 import 누락
-
 ## [worktree-feat+market-mixed-signal-conflict | 2026-04-20]
 - Violation: ConflictInfo interface duplicated across two component files
 - Rule: CONVENTIONS.md — shared domain types must have single source of truth
@@ -138,19 +111,3 @@
 - Rule: CONVENTIONS.md — complex conditionals should extract to data structures
 - Context: Replaced ternary with VARIANT_BORDER and VARIANT_LABEL object maps
 
-## [PR #342 | feat/multi-signal-backtest | 2026-04-20]
-- Violation: `extractReconciledActionLines` domain 함수에서 for 루프 + 배열 push 사용
-- Rule: CONVENTIONS.md domain/ — higher-order functions 필수 (`map`, `filter`, `flatMap` 등)
-- Context: reconciled TP들을 필터링하는 로직이 for + push 패턴. `flatMap`으로 변환해 함수형 일관성 회복
-
-- Violation: `buildBullishExitText`에서 takeProfit 유효성 필터에 `> 0` 조건 누락
-- Rule: Defensive programming — 금융 데이터는 양수여야 함, 방어적 가드 필요
-- Context: `Number.isFinite`만 체크하면 0 이하 값도 통과. 하위 코드의 가정과 일치하도록 `> 0` 추가
-
-- Violation: `buildBullishRiskRewardText`에서 tp <= entryPrice 케이스 미가드 → 음수 R:R 계산
-- Rule: Domain 함수는 의미 없는 결과를 반환하지 않아야 함 (사용자 혼란 방지)
-- Context: AI가 tp를 entry 이하로 주거나 fallback 계산 경계에서 tp <= entry일 때 음수 R:R 표시 가능. 빈 문자열 반환으로 가드
-
-- Violation: `lastNonNull`에서 역방향 for 루프 + early return
-- Rule: CONVENTIONS.md infrastructure/ — functional 권장 (`findLast` 등 higher-order)
-- Context: for 루프 대신 ES2023 `findLast` 사용해 선언적 표현 + short-circuit 유지
