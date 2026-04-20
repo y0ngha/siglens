@@ -98,9 +98,10 @@ export function InfoTooltip({ children, className }: InfoTooltipProps) {
                             if (el && triggerRef.current) {
                                 const triggerRect =
                                     triggerRef.current.getBoundingClientRect();
+                                const tooltipRect = el.getBoundingClientRect();
                                 const pos = getTooltipPosition(
                                     triggerRect,
-                                    el,
+                                    tooltipRect,
                                     window.innerWidth
                                 );
                                 if (
