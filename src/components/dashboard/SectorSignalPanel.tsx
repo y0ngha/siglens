@@ -199,10 +199,10 @@ export function SectorSignalPanel({
                 />
                 <SignalSubsection
                     title="혼재"
-                    marker="⚡"
+                    marker="◈"
                     variant="mixed"
                     stocks={mixedStocks}
-                    infoMessage="상승 신호와 하락 신호의 강도가 동일하다. 방향을 알 수 없다."
+                    infoMessage="상승 신호와 하락 신호의 강도가 동일합니다. 방향을 알 수 없습니다."
                 />
                 <SignalSubsection
                     title="하락 조짐"

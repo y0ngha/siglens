@@ -1,28 +1,26 @@
 import type {
+    Signal,
     SignalDirection,
     StockSignalResult,
     ConflictInfo,
     StockWithConflict,
+    ConflictResolution,
 } from '@/domain/types';
 
-export function resolveConflicts(stocks: readonly StockSignalResult[]): {
-    resolved: readonly StockWithConflict[];
-    mixed: readonly StockWithConflict[];
-} {
-    return stocks.reduce<{
-        resolved: StockWithConflict[];
-        mixed: StockWithConflict[];
-    }>(
+function countSignalDirections(signals: readonly Signal[]): { bullishCount: number; bearishCount: number } {
+    return signals.reduce(
+        (counts, s) => ({
+            bullishCount: counts.bullishCount + (s.direction === 'bullish' ? 1 : 0),
+            bearishCount: counts.bearishCount + (s.direction === 'bearish' ? 1 : 0),
+        }),
+        { bullishCount: 0, bearishCount: 0 }
+    );
+}
+
+export function resolveConflicts(stocks: readonly StockSignalResult[]): ConflictResolution {
+    return stocks.reduce<{ resolved: StockWithConflict[]; mixed: StockWithConflict[] }>(
         (acc, stock) => {
-            const { bullishCount, bearishCount } = stock.signals.reduce(
-                (counts, s) => ({
-                    bullishCount:
-                        counts.bullishCount + (s.direction === 'bullish' ? 1 : 0),
-                    bearishCount:
-                        counts.bearishCount + (s.direction === 'bearish' ? 1 : 0),
-                }),
-                { bullishCount: 0, bearishCount: 0 }
-            );
+            const { bullishCount, bearishCount } = countSignalDirections(stock.signals);
 
             if (bullishCount === 0 || bearishCount === 0) {
                 return { ...acc, resolved: [...acc.resolved, stock] };

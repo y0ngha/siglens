@@ -656,6 +656,11 @@ export interface StockWithConflict extends StockSignalResult {
     readonly conflict?: ConflictInfo;
 }
 
+export interface ConflictResolution {
+    readonly resolved: readonly StockWithConflict[];
+    readonly mixed: readonly StockWithConflict[];
+}
+
 export type DashboardTimeframe = '15Min' | '1Hour' | '1Day';
 
 // ─── Chat ─────────────────────────────────────────────────────────────────────
