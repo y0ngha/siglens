@@ -64,7 +64,7 @@ const TICKERS = [
     'TSLA',
     'PLTR',
     'CRWD',
-    'MSTR',
+    'AVGO',
 ];
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
 const FMP_API_KEY = process.env.FMP_API_KEY ?? '';
