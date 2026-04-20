@@ -112,9 +112,5 @@ export async function submitAnalysisAction(
 }
 
 function lastNonNull(arr: readonly (number | null)[]): number | null {
-    for (let i = arr.length - 1; 0 <= i; i--) {
-        const v = arr[i];
-        if (v !== null) return v;
-    }
-    return null;
+    return arr.findLast((v): v is number => v !== null) ?? null;
 }

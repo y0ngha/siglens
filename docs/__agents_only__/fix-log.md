@@ -1,14 +1,5 @@
 # Fix Log
 
-## [PR #341 | worktree-feat+market-mixed-signal-conflict | 2026-04-20]
-- Violation: 여러 컴포넌트에서 참조하는 타입을 components/ 하위 독립 파일에 정의
-- Rule: MISTAKES.md Architecture #1 — 여러 파일이 참조하는 타입은 domain/types.ts에 통합
-- Context: ConflictInfo, StockWithConflict를 conflict-types.ts에 정의했으나 domain/types.ts로 이동해야 함
-
-- Violation: 이미 정의된 named type alias 대신 인라인 교차 타입 재사용
-- Rule: MISTAKES.md TypeScript #5 — 재사용 가능한 타입 패턴은 named alias 사용
-- Context: SignalStockCard.tsx에서 StockWithConflict 대신 StockSignalResult & { conflict?: ConflictInfo } 인라인 사용
-
 ## [PR #331 Round 6 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 - Violation: radiogroup 키보드 네비게이션에서 DOM 포커스 미이동
 - Rule: MISTAKES.md Accessibility #2 — roving tabindex 패턴은 aria-checked 와 DOM focus 동기화 필수
@@ -147,6 +138,19 @@
 - Rule: CONVENTIONS.md — complex conditionals should extract to data structures
 - Context: Replaced ternary with VARIANT_BORDER and VARIANT_LABEL object maps
 
-- Violation: Tooltip using title attribute only — not announced on touch devices
-- Rule: CONVENTIONS.md accessibility — interactive elements require ARIA patterns
-- Context: Replaced title with button + aria-describedby + role=tooltip pattern
+## [PR #342 | feat/multi-signal-backtest | 2026-04-20]
+- Violation: `extractReconciledActionLines` domain 함수에서 for 루프 + 배열 push 사용
+- Rule: CONVENTIONS.md domain/ — higher-order functions 필수 (`map`, `filter`, `flatMap` 등)
+- Context: reconciled TP들을 필터링하는 로직이 for + push 패턴. `flatMap`으로 변환해 함수형 일관성 회복
+
+- Violation: `buildBullishExitText`에서 takeProfit 유효성 필터에 `> 0` 조건 누락
+- Rule: Defensive programming — 금융 데이터는 양수여야 함, 방어적 가드 필요
+- Context: `Number.isFinite`만 체크하면 0 이하 값도 통과. 하위 코드의 가정과 일치하도록 `> 0` 추가
+
+- Violation: `buildBullishRiskRewardText`에서 tp <= entryPrice 케이스 미가드 → 음수 R:R 계산
+- Rule: Domain 함수는 의미 없는 결과를 반환하지 않아야 함 (사용자 혼란 방지)
+- Context: AI가 tp를 entry 이하로 주거나 fallback 계산 경계에서 tp <= entry일 때 음수 R:R 표시 가능. 빈 문자열 반환으로 가드
+
+- Violation: `lastNonNull`에서 역방향 for 루프 + early return
+- Rule: CONVENTIONS.md infrastructure/ — functional 권장 (`findLast` 등 higher-order)
+- Context: for 루프 대신 ES2023 `findLast` 사용해 선언적 표현 + short-circuit 유지

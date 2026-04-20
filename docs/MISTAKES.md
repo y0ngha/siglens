@@ -345,6 +345,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ <div role="tooltip" id="tooltip-1">; <button aria-describedby="tooltip-1">
    ❌ <div role="note">  // no aria-label
    ✅ <div role="note" aria-label="Additional information">
+
+4. Interactive info icons using <span title="..."> only — not keyboard accessible
+   → Tooltips must be keyboard-accessible; title attribute ignored by keyboard users and screen readers
+   → Replace <span> with <button>, add aria-describedby + role="tooltip" pattern
+   ❌ <span title="Information">ⓘ</span>  // title-only, no keyboard access
+   ✅ <button aria-describedby="tooltip-id" className="focus-visible:ring"><span id="tooltip-id" role="tooltip">Information</span></button>
 ```
 
 ---

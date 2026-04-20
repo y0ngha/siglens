@@ -1,5 +1,6 @@
 import type {
     ActionRecommendation,
+    ReconciledActionLineData,
     ValidatedActionPrices,
 } from '@/domain/types';
 
@@ -36,15 +37,6 @@ export function validateActionPrices(
  * - 보정값 takeProfitPrices[i]가 AI 값 [i]와 동일하면 해당 인덱스는 생략
  * - 반환되는 takeProfitPrices는 총 TP 개수(totalCount)를 함께 담아 라벨 분기에 사용한다.
  */
-export interface ReconciledActionLineData {
-    readonly stopLoss?: number;
-    readonly takeProfitPrices: readonly {
-        readonly index: number;
-        readonly price: number;
-        readonly totalCount: number;
-    }[];
-}
-
 export function extractReconciledActionLines(
     rec: ActionRecommendation | undefined
 ): ReconciledActionLineData | undefined {
@@ -60,26 +52,17 @@ export function extractReconciledActionLines(
 
     const reconciledTps = reconciled.takeProfitPrices ?? [];
     const totalCount = reconciledTps.length;
-    const tpsToRender: Array<{
-        readonly index: number;
-        readonly price: number;
-        readonly totalCount: number;
-    }> = [];
-    for (let i = 0; i < reconciledTps.length; i += 1) {
-        const reconciledTp = reconciledTps[i];
-        const aiTp = rec.takeProfitPrices?.[i];
+    const tpsToRender = reconciledTps.flatMap((reconciledTp, index) => {
+        const aiTp = rec.takeProfitPrices?.[index];
         if (
-            reconciledTp !== undefined &&
-            reconciledTp > 0 &&
-            reconciledTp !== aiTp
+            reconciledTp === undefined ||
+            reconciledTp <= 0 ||
+            reconciledTp === aiTp
         ) {
-            tpsToRender.push({
-                index: i,
-                price: reconciledTp,
-                totalCount,
-            });
+            return [];
         }
-    }
+        return [{ index, price: reconciledTp, totalCount }];
+    });
 
     if (slToRender === undefined && tpsToRender.length === 0) return undefined;
 

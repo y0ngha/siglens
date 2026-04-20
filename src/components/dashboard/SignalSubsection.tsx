@@ -45,13 +45,14 @@ export function SignalSubsection({
                         {title}
                     </h3>
                     {infoMessage && (
-                        <span
+                        <button
+                            type="button"
                             title={infoMessage}
                             aria-label={infoMessage}
-                            className="text-secondary-500 hover:text-secondary-300 cursor-default text-xs transition-colors"
+                            className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-secondary-500 cursor-default rounded text-xs transition-colors focus:outline-none focus-visible:ring-2"
                         >
                             ⓘ
-                        </span>
+                        </button>
                     )}
                 </div>
                 <span

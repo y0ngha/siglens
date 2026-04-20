@@ -9,7 +9,10 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { LineStyle } from 'lightweight-charts';
-import type { ValidatedActionPrices } from '@/domain/types';
+import type {
+    ReconciledActionLineData,
+    ValidatedActionPrices,
+} from '@/domain/types';
 import { CHART_COLORS } from '@/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 
@@ -21,26 +24,10 @@ import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 const RECONCILED_STOP_LOSS_COLOR = `${CHART_COLORS.actionStopLoss}99`; // ~60% opacity
 const RECONCILED_TAKE_PROFIT_COLOR = `${CHART_COLORS.actionTakeProfit}99`;
 
-/**
- * 보정값(reconciled) SL/TP 라인 데이터. AI 원본과 별도로 병기 렌더링된다.
- * - AI 값과 동일하면 중복 표시를 피하기 위해 호출 측에서 필터링한 뒤 전달한다.
- */
-export interface ReconciledActionPrices {
-    /** 보정된 stopLoss. AI 값과 다를 때만 전달. */
-    readonly stopLoss?: number;
-    /** 보정된 takeProfitPrices 중 AI 원본과 다른 인덱스만 포함한 리스트. */
-    readonly takeProfitPrices: readonly {
-        readonly index: number;
-        readonly price: number;
-        /** 다중 TP일 때 라벨 분기에 사용 */
-        readonly totalCount: number;
-    }[];
-}
-
 interface UseActionRecommendationOverlayParams {
     seriesRef: RefObject<ISeriesApi<'Candlestick', UTCTimestamp> | null>;
     actionPrices: ValidatedActionPrices | undefined;
-    reconciledPrices?: ReconciledActionPrices;
+    reconciledPrices?: ReconciledActionLineData;
     isVisible: boolean;
     lineWidth?: LineWidth;
 }

@@ -34,7 +34,7 @@ import { useVolumeProfileOverlay } from '@/components/chart/hooks/useVolumeProfi
 import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { useActionRecommendationOverlay } from '@/components/chart/hooks/useActionRecommendationOverlay';
-import type { ReconciledActionPrices } from '@/components/chart/hooks/useActionRecommendationOverlay';
+import type { ReconciledActionLineData } from '@/domain/types';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import { useOverlayLegend } from '@/components/chart/hooks/useOverlayLegend';
 import {
@@ -71,7 +71,7 @@ interface StockChartProps {
     keyLevels?: KeyLevels;
     keyLevelsVisible?: boolean;
     actionPrices?: ValidatedActionPrices;
-    reconciledActionPrices?: ReconciledActionPrices;
+    reconciledActionPrices?: ReconciledActionLineData;
     actionPricesVisible?: boolean;
     onPatternOverlayChange?: (
         visiblePatterns: Set<string>,

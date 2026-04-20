@@ -157,6 +157,15 @@ function ordinalLabel(index: number): string {
 }
 
 /**
+ * 진입가 대비 백분율을 signed 문자열로 포맷.
+ * 예: 165 → "+3.2%", 158 → "-1.2%"
+ */
+function formatSignedPct(entryPrice: number, price: number): string {
+    const pct = ((price - entryPrice) / entryPrice) * 100;
+    return pct >= 0 ? `+${pct.toFixed(1)}%` : `${pct.toFixed(1)}%`;
+}
+
+/**
  * bullish 롱 포지션 기준으로 SL/TP 값을 기반으로 exit 텍스트를 생성.
  *
  * - 단일 TP: "목표가 $164.90 (+2.3%)에서 익절, 손절 $158.40 (-1.7%)."
@@ -172,24 +181,27 @@ export function buildBullishExitText(
     const parts: string[] = [];
 
     const validTps = (takeProfitPrices ?? []).filter(
-        (tp): tp is number => typeof tp === 'number' && Number.isFinite(tp)
+        (tp): tp is number =>
+            typeof tp === 'number' && Number.isFinite(tp) && tp > 0
     );
 
     if (validTps.length === 1) {
         const tp = validTps[0];
-        const pct = (((tp - entryPrice) / entryPrice) * 100).toFixed(1);
-        parts.push(`목표가 $${tp.toFixed(2)} (+${pct}%)에서 익절`);
+        parts.push(
+            `목표가 $${tp.toFixed(2)} (${formatSignedPct(entryPrice, tp)})에서 익절`
+        );
     } else if (validTps.length > 1) {
-        const tpParts = validTps.map((tp, idx) => {
-            const pct = (((tp - entryPrice) / entryPrice) * 100).toFixed(1);
-            return `${ordinalLabel(idx)} 목표 $${tp.toFixed(2)} (+${pct}%)`;
-        });
+        const tpParts = validTps.map(
+            (tp, idx) =>
+                `${ordinalLabel(idx)} 목표 $${tp.toFixed(2)} (${formatSignedPct(entryPrice, tp)})`
+        );
         parts.push(`${tpParts.join(', ')}에서 익절`);
     }
 
-    if (stopLoss !== undefined && Number.isFinite(stopLoss)) {
-        const pct = (((stopLoss - entryPrice) / entryPrice) * 100).toFixed(1);
-        parts.push(`손절 $${stopLoss.toFixed(2)} (${pct}%)`);
+    if (stopLoss !== undefined && Number.isFinite(stopLoss) && stopLoss > 0) {
+        parts.push(
+            `손절 $${stopLoss.toFixed(2)} (${formatSignedPct(entryPrice, stopLoss)})`
+        );
     }
 
     return parts.length > 0 ? parts.join(', ') + '.' : '';
@@ -208,9 +220,11 @@ export function buildBullishRiskRewardText(
     stopLoss: number | undefined,
     takeProfitPrices: readonly number[] | undefined
 ): string {
-    if (stopLoss === undefined || !Number.isFinite(stopLoss)) return '';
+    if (stopLoss === undefined || !Number.isFinite(stopLoss) || stopLoss <= 0)
+        return '';
     const tp = takeProfitPrices?.[0];
-    if (tp === undefined || !Number.isFinite(tp)) return '';
+    // tp가 entryPrice보다 크지 않으면 R:R이 음수가 되어 사용자 혼란 → 빈 문자열
+    if (tp === undefined || !Number.isFinite(tp) || tp <= entryPrice) return '';
 
     const slPct = ((stopLoss - entryPrice) / entryPrice) * 100;
     const tpPct = ((tp - entryPrice) / entryPrice) * 100;
