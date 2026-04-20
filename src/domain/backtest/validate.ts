@@ -1,6 +1,17 @@
-import type { BacktestData, BacktestOutcome } from '@/domain/types';
+import type {
+    BacktestAiResult,
+    BacktestData,
+    BacktestExitReason,
+    BacktestSignalResult,
+} from '@/domain/types';
 
-const VALID_OUTCOMES: BacktestOutcome[] = ['win', 'loss'];
+const VALID_SIGNAL_RESULTS: BacktestSignalResult[] = ['win', 'loss'];
+const VALID_AI_RESULTS: BacktestAiResult[] = ['win', 'loss', 'neutral'];
+const VALID_EXIT_REASONS: BacktestExitReason[] = [
+    'take_profit',
+    'stop_loss',
+    'time',
+];
 
 export function validateBacktestData(data: unknown): BacktestData {
     if (typeof data !== 'object' || data === null) {
@@ -11,6 +22,11 @@ export function validateBacktestData(data: unknown): BacktestData {
 
     if (typeof d['meta'] !== 'object' || d['meta'] === null) {
         throw new Error('meta must be an object');
+    }
+    // meta confirmed non-null object above; cast to access named fields for validation
+    const meta = d['meta'] as Record<string, unknown>;
+    if (typeof meta['aiTrendHitRate'] !== 'number') {
+        throw new Error('meta.aiTrendHitRate must be a number');
     }
 
     if (!Array.isArray(d['cases'])) {
@@ -25,12 +41,29 @@ export function validateBacktestData(data: unknown): BacktestData {
         if (typeof c['returnPct'] !== 'number') {
             throw new Error(`cases[${i}].returnPct must be a number`);
         }
+        if (c['signalType'] !== 'buy') {
+            throw new Error(`cases[${i}].signalType must be 'buy'`);
+        }
         // Array.prototype.includes uses strict equality; non-string values correctly return false
-        if (!VALID_OUTCOMES.includes(c['result'] as BacktestOutcome)) {
+        if (
+            !VALID_SIGNAL_RESULTS.includes(c['result'] as BacktestSignalResult)
+        ) {
             throw new Error(`cases[${i}].result must be 'win' or 'loss'`);
         }
-        if (!VALID_OUTCOMES.includes(c['aiResult'] as BacktestOutcome)) {
-            throw new Error(`cases[${i}].aiResult must be 'win' or 'loss'`);
+        if (!VALID_AI_RESULTS.includes(c['aiResult'] as BacktestAiResult)) {
+            throw new Error(
+                `cases[${i}].aiResult must be 'win', 'loss', or 'neutral'`
+            );
+        }
+        if (
+            !VALID_EXIT_REASONS.includes(c['exitReason'] as BacktestExitReason)
+        ) {
+            throw new Error(
+                `cases[${i}].exitReason must be 'take_profit', 'stop_loss', or 'time'`
+            );
+        }
+        if (typeof c['aiTrendHit'] !== 'boolean') {
+            throw new Error(`cases[${i}].aiTrendHit must be a boolean`);
         }
         if (
             typeof c['aiAnalysis'] !== 'object' ||

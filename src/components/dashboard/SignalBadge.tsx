@@ -17,6 +17,15 @@ const SIGNAL_BADGE_LABELS: Record<SignalType, string> = {
     bollinger_squeeze_bearish: '볼린저 스퀴즈(↓)',
     support_proximity_bullish: '지지선 근접',
     resistance_proximity_bearish: '저항선 근접',
+    supertrend_bullish_flip: 'Supertrend 전환',
+    ichimoku_cloud_breakout: 'Ichimoku 구름 돌파',
+    cci_bullish_cross: 'CCI 100 돌파',
+    dmi_bullish_cross: 'DMI 골든크로스',
+    cmf_bullish_flip: 'CMF 매집 전환',
+    mfi_oversold_bounce: 'MFI 과매도 반등',
+    parabolic_sar_flip: 'Parabolic SAR 전환',
+    keltner_upper_breakout: 'Keltner 상단 돌파',
+    squeeze_momentum_bullish: 'Squeeze 양전환',
 };
 
 interface SignalBadgeProps {
