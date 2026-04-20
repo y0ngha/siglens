@@ -447,6 +447,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Include all provider names, endpoint paths, and parameter enums in documentation
    ❌ FMP_INTRADAY_TIMEFRAME_MAP extended to include 30min, 4hour; docs/API.md still lists only 1Min-1Hour
    ✅ docs/API.md Timeframe table updated to include all current mappings
+
+3. Inline code comments reference removed or changed implementation
+   → Module-level JSDoc blocks must document current behavior, not legacy/removed code
+   → Single-line summaries only; multi-paragraph docstrings must be condensed to one line per function
+   ❌ tooltipPosition.ts module docs reference getBoundingClientRect() after it was removed from function
+   ❌ ai-levels.ts multi-paragraph JSDoc blocks documenting design rationale instead of current signature
+   ✅ Module comment: "Calculate tooltip position from DOMRect bounds"
+   ✅ Function comment: "Transform input levels with reconciliation rules"
+   → When changing function implementation, update related comments immediately
 ```
 
 ---
