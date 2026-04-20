@@ -58,10 +58,7 @@ export function SignalSubsection({
                             >
                                 ⓘ
                             </button>
-                            <span
-                                id={tooltipId}
-                                className="sr-only"
-                            >
+                            <span id={tooltipId} className="sr-only">
                                 {infoMessage}
                             </span>
                         </>
