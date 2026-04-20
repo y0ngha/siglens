@@ -18,13 +18,20 @@ import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';
 import { SignalSubsection } from './SignalSubsection';
 
+interface ConflictInfo {
+    readonly bullishCount: number;
+    readonly bearishCount: number;
+}
+
+type StockWithConflict = StockSignalResult & { readonly conflict?: ConflictInfo };
+
 type QuadrantKey =
     | 'bullishConfirmed'
     | 'bullishExpected'
     | 'bearishExpected'
     | 'bearishConfirmed';
 
-const EMPTY_QUADRANTS: Record<QuadrantKey, readonly StockSignalResult[]> = {
+const EMPTY_QUADRANTS: Record<QuadrantKey, readonly StockWithConflict[]> = {
     bullishConfirmed: [],
     bullishExpected: [],
     bearishExpected: [],
@@ -50,9 +57,9 @@ function signalToQuadrantKey(s: Signal): QuadrantKey {
 }
 
 function groupStockIntoQuadrants(
-    acc: Record<QuadrantKey, readonly StockSignalResult[]>,
-    stock: StockSignalResult
-): Record<QuadrantKey, readonly StockSignalResult[]> {
+    acc: Record<QuadrantKey, readonly StockWithConflict[]>,
+    stock: StockWithConflict
+): Record<QuadrantKey, readonly StockWithConflict[]> {
     const grouped = stock.signals.reduce<
         Record<QuadrantKey, readonly Signal[]>
     >(
@@ -80,6 +87,43 @@ function groupStockIntoQuadrants(
                   },
         acc
     );
+}
+
+function resolveConflicts(stocks: readonly StockSignalResult[]): {
+    resolved: readonly StockWithConflict[];
+    mixed: readonly StockWithConflict[];
+} {
+    const resolved: StockWithConflict[] = [];
+    const mixed: StockWithConflict[] = [];
+
+    for (const stock of stocks) {
+        const bullishCount = stock.signals.filter(
+            s => s.direction === 'bullish'
+        ).length;
+        const bearishCount = stock.signals.filter(
+            s => s.direction === 'bearish'
+        ).length;
+
+        if (bullishCount === 0 || bearishCount === 0) {
+            resolved.push(stock);
+            continue;
+        }
+
+        const conflict: ConflictInfo = { bullishCount, bearishCount };
+
+        if (bullishCount === bearishCount) {
+            mixed.push({ ...stock, conflict });
+        } else {
+            const winningDirection: SignalDirection =
+                bullishCount > bearishCount ? 'bullish' : 'bearish';
+            const filteredSignals = stock.signals.filter(
+                s => s.direction === winningDirection
+            );
+            resolved.push({ ...stock, signals: filteredSignals, conflict });
+        }
+    }
+
+    return { resolved, mixed };
 }
 
 interface SectorSignalPanelProps {
@@ -138,9 +182,14 @@ export function SectorSignalPanel({
         [filtered, activeSector]
     );
 
-    const quadrants = useMemo(
-        () => sectorStocks.reduce(groupStockIntoQuadrants, EMPTY_QUADRANTS),
+    const { resolved: resolvedStocks, mixed: mixedStocks } = useMemo(
+        () => resolveConflicts(sectorStocks),
         [sectorStocks]
+    );
+
+    const quadrants = useMemo(
+        () => resolvedStocks.reduce(groupStockIntoQuadrants, EMPTY_QUADRANTS),
+        [resolvedStocks]
     );
 
     const handleSectorChange = (sector: string) => {
@@ -189,6 +238,13 @@ export function SectorSignalPanel({
                     marker="△"
                     variant="expected"
                     stocks={quadrants.bullishExpected}
+                />
+                <SignalSubsection
+                    title="혼재"
+                    marker="⚡"
+                    variant="mixed"
+                    stocks={mixedStocks}
+                    infoMessage="상승 신호와 하락 신호의 강도가 동일하다. 방향을 알 수 없다."
                 />
                 <SignalSubsection
                     title="하락 조짐"
