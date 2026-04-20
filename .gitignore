@@ -55,3 +55,7 @@ next-env.d.ts
 
 # backtest batch job state
 /scripts/backtests/.batch-job.txt
+
+/worker/.vscode/
+
+.vscode/
