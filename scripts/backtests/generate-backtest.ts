@@ -93,6 +93,11 @@ const MAX_POLL_MS = 2 * 60 * 60 * 1_000; // 2h
 const POLL_WARN_MS = 60 * 60 * 1_000; // 1h
 
 const GEMINI_MODEL = process.env.GEMINI_MODEL ?? 'gemini-2.5-flash';
+/**
+ * MUST stay in sync with worker/src/gemini.ts DEFAULT_THINKING_BUDGET.
+ * Changing here without also updating the worker (or vice versa) will cause
+ * backtest and production AI responses to diverge.
+ */
 // flash-lite: 24576 / flash: 32768 — worker/src/gemini.ts와 동일 상한 유지.
 const GEMINI_THINKING_BUDGET = Number(
     process.env.GEMINI_THINKING_BUDGET ?? '24576'
@@ -101,6 +106,8 @@ const GEMINI_THINKING_BUDGET = Number(
 if (!FMP_API_KEY) throw new Error('FMP_API_KEY is required in .env.local');
 if (!GEMINI_API_KEY)
     throw new Error('GEMINI_API_KEY is required in .env.local');
+
+const ai = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 
 function sleep(ms: number): Promise<void> {
     return new Promise(r => setTimeout(r, ms));
@@ -279,8 +286,21 @@ interface CandidateWithPrompt {
     prompt: string;
 }
 
+function buildPromptForCandidate(
+    ticker: string,
+    bars: Bar[],
+    idx: number
+): string {
+    const contextBars = bars.slice(
+        Math.max(0, idx - CONTEXT_BARS + 1),
+        idx + 1
+    );
+    const indicators = calculateIndicators(contextBars);
+    return buildAnalysisPrompt(ticker, contextBars, indicators, [], '1Day');
+}
+
 async function collectAllCandidates(): Promise<CandidateWithPrompt[]> {
-    const all: CandidateWithPrompt[] = [];
+    let all: CandidateWithPrompt[] = [];
 
     // FMP 레이트 리밋 회피를 위해 순차 실행 (10 tickers × ~1-2s → 10-20s).
     for (const ticker of TICKERS) {
@@ -295,30 +315,18 @@ async function collectAllCandidates(): Promise<CandidateWithPrompt[]> {
         const candidates = findEntryCandidates(bars, fmpBars);
         console.log(`  Found ${candidates.length} entry candidates`);
 
-        for (const c of candidates) {
-            const contextBars = bars.slice(
-                Math.max(0, c.idx - CONTEXT_BARS + 1),
-                c.idx + 1
-            );
-            const indicators = calculateIndicators(contextBars);
-            const prompt = buildAnalysisPrompt(
-                ticker,
-                contextBars,
-                indicators,
-                [],
-                '1Day'
-            );
-            all.push({
-                ticker,
-                idx: c.idx,
-                entryDate: c.entryDate,
-                entryPrice: c.entryPrice,
-                signalTypes: c.signalTypes,
-                bars,
-                fmpBars,
-                prompt,
-            });
-        }
+        const withPrompts = candidates.map(c => ({
+            ticker,
+            idx: c.idx,
+            entryDate: c.entryDate,
+            entryPrice: c.entryPrice,
+            signalTypes: c.signalTypes,
+            bars,
+            fmpBars,
+            prompt: buildPromptForCandidate(ticker, bars, c.idx),
+        }));
+
+        all = [...all, ...withPrompts];
     }
 
     return all;
@@ -326,10 +334,11 @@ async function collectAllCandidates(): Promise<CandidateWithPrompt[]> {
 
 // ─── Phase 2: Batch 제출 ───────────────────────────────────────────────────────
 
-function getGenAI(): GoogleGenAI {
-    return new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-}
-
+/**
+ * Request-level config mirrors worker/src/gemini.ts:callGemini options
+ * (temperature, topP, maxOutputTokens, responseMimeType, systemInstruction).
+ * MUST stay in sync — divergence breaks parity between backtest and live AI.
+ */
 function buildInlinedRequest(c: CandidateWithPrompt): InlinedRequest {
     // worker/src/gemini.ts의 callGemini 구성과 동일한 config을 사용한다.
     // 배치 응답이 동기 호출과 동일한 shape을 갖도록 responseMimeType/systemInstruction/
@@ -355,8 +364,9 @@ function buildInlinedRequest(c: CandidateWithPrompt): InlinedRequest {
     };
 }
 
-async function submitBatch(candidates: CandidateWithPrompt[]): Promise<string> {
-    const ai = getGenAI();
+async function submitBatch(
+    candidates: readonly CandidateWithPrompt[]
+): Promise<string> {
     const requests: InlinedRequest[] = candidates.map(buildInlinedRequest);
     const displayName = `siglens-backtest-${Date.now()}`;
     console.log(
@@ -370,7 +380,7 @@ async function submitBatch(candidates: CandidateWithPrompt[]): Promise<string> {
     const name = batch.name;
     if (!name)
         throw new Error('Batch create response missing resource name (.name)');
-    writeFileSync(BATCH_STATE_PATH, name, 'utf-8');
+    saveBatchState(name, candidates);
     console.log(`[batch] Created ${name} (state=${batch.state ?? 'UNKNOWN'})`);
     console.log(`[batch] Resource name saved to ${BATCH_STATE_PATH}`);
     return name;
@@ -391,7 +401,6 @@ function formatElapsed(ms: number): string {
 async function pollUntilComplete(
     batchName: string
 ): Promise<InlinedResponse[]> {
-    const ai = getGenAI();
     const start = Date.now();
     let warned = false;
 
@@ -501,8 +510,8 @@ function buildBacktestCase(
 }
 
 function materializeCases(
-    candidates: CandidateWithPrompt[],
-    responses: InlinedResponse[]
+    candidates: readonly CandidateWithPrompt[],
+    responses: readonly InlinedResponse[]
 ): BacktestCase[] {
     if (responses.length !== candidates.length) {
         console.warn(
@@ -511,19 +520,19 @@ function materializeCases(
         );
     }
 
-    const cases: BacktestCase[] = [];
     const n = Math.min(candidates.length, responses.length);
+    const pairs = Array.from({ length: n }, (_, i) => ({
+        candidate: candidates[i],
+        response: responses[i],
+    }));
 
-    for (let i = 0; i < n; i++) {
-        const candidate = candidates[i];
-        const response = responses[i];
-
+    return pairs.flatMap(({ candidate, response }) => {
         if (response.error) {
             const msg = response.error.message ?? 'unknown error';
             console.warn(
                 `  [${candidate.ticker} ${candidate.entryDate}] skipped — response error: ${msg}`
             );
-            continue;
+            return [];
         }
 
         const text = extractResponseText(response);
@@ -531,24 +540,20 @@ function materializeCases(
             console.warn(
                 `  [${candidate.ticker} ${candidate.entryDate}] skipped — empty response text`
             );
-            continue;
+            return [];
         }
 
-        let ai: AiAnalysisForBacktest;
         try {
-            ai = decodeAnalysis(text);
+            const ai = decodeAnalysis(text);
+            return [buildBacktestCase(candidate, ai)];
         } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
             console.warn(
                 `  [${candidate.ticker} ${candidate.entryDate}] skipped — parse error: ${msg}`
             );
-            continue;
+            return [];
         }
-
-        cases.push(buildBacktestCase(candidate, ai));
-    }
-
-    return cases;
+    });
 }
 
 // ─── Phase 5: 출력 ─────────────────────────────────────────────────────────────
@@ -579,7 +584,7 @@ function writeOutput(allCases: BacktestCase[]): void {
 
     const output = { meta, cases: sortedCases };
     writeFileSync(OUTPUT_PATH, JSON.stringify(output, null, 2), 'utf-8');
-    console.log(`\n✓ Saved ${total} cases to ${OUTPUT_PATH}`);
+    console.log(`\n[done] Saved ${total} cases to ${OUTPUT_PATH}`);
     console.log(`  Signal win rate: ${meta.winRate}%`);
     console.log(`  AI win rate (decisive only): ${meta.aiWinRate}%`);
     console.log(`  AI trend hit rate: ${meta.aiTrendHitRate}%`);
@@ -587,20 +592,88 @@ function writeOutput(allCases: BacktestCase[]): void {
 
 // ─── 메인 ──────────────────────────────────────────────────────────────────────
 
-function readSavedBatchName(): string | null {
+interface BatchJobState {
+    batchName: string;
+    savedAt: string; // ISO timestamp
+    candidateManifest: Array<{
+        ticker: string;
+        idx: number;
+        entryDate: string; // cross-check
+    }>;
+}
+
+function saveBatchState(
+    batchName: string,
+    candidates: readonly CandidateWithPrompt[]
+): void {
+    const state: BatchJobState = {
+        batchName,
+        savedAt: new Date().toISOString(),
+        candidateManifest: candidates.map(c => ({
+            ticker: c.ticker,
+            idx: c.idx,
+            entryDate: c.entryDate,
+        })),
+    };
+    writeFileSync(
+        BATCH_STATE_PATH,
+        JSON.stringify(state, null, 2),
+        'utf-8'
+    );
+}
+
+function loadBatchState(): BatchJobState | null {
     if (process.env.FORCE_FRESH === '1') {
         console.log('[resume] FORCE_FRESH=1 — skipping saved batch');
         return null;
     }
     if (!existsSync(BATCH_STATE_PATH)) return null;
     try {
-        const raw = readFileSync(BATCH_STATE_PATH, 'utf-8').trim();
-        return raw === '' ? null : raw;
+        const raw = readFileSync(BATCH_STATE_PATH, 'utf-8');
+        const parsed = JSON.parse(raw) as BatchJobState;
+        if (
+            typeof parsed.batchName !== 'string' ||
+            !Array.isArray(parsed.candidateManifest)
+        ) {
+            console.warn(
+                `[resume] ${BATCH_STATE_PATH} has unexpected shape — ignoring.`
+            );
+            return null;
+        }
+        return parsed;
     } catch (err) {
         console.warn(
-            `[resume] Failed to read ${BATCH_STATE_PATH}: ${err instanceof Error ? err.message : String(err)}`
+            `[resume] Failed to parse ${BATCH_STATE_PATH}: ${err instanceof Error ? err.message : String(err)}`
         );
         return null;
+    }
+}
+
+function assertManifestMatch(
+    saved: BatchJobState['candidateManifest'],
+    current: readonly CandidateWithPrompt[]
+): void {
+    if (saved.length !== current.length) {
+        throw new Error(
+            `[resume] Candidate count changed (saved=${saved.length} current=${current.length}). ` +
+                `Batch responses won't align. Set FORCE_FRESH=1 to submit a new batch.`
+        );
+    }
+    for (let i = 0; i < saved.length; i++) {
+        const s = saved[i];
+        const c = current[i];
+        if (
+            s.ticker !== c.ticker ||
+            s.idx !== c.idx ||
+            s.entryDate !== c.entryDate
+        ) {
+            throw new Error(
+                `[resume] Candidate manifest drift at index ${i}: ` +
+                    `saved=${s.ticker}/${s.idx}/${s.entryDate} ` +
+                    `current=${c.ticker}/${c.idx}/${c.entryDate}. ` +
+                    `Set FORCE_FRESH=1 to submit a new batch.`
+            );
+        }
     }
 }
 
@@ -615,7 +688,7 @@ function clearBatchState(): void {
 }
 
 async function main(): Promise<void> {
-    const savedBatchName = readSavedBatchName();
+    const savedState = loadBatchState();
 
     // Phase 1 — 후보 수집 (findEntryCandidates는 결정적이므로 resume 시에도 동일 순서 보장)
     console.log('\n=== Phase 1: Collecting candidates ===');
@@ -628,11 +701,12 @@ async function main(): Promise<void> {
 
     // Phase 2 — Batch 제출 (또는 resume 시 skip)
     let batchName: string;
-    if (savedBatchName) {
+    if (savedState) {
+        assertManifestMatch(savedState.candidateManifest, candidates);
         console.log(
-            `\n=== Phase 2: SKIPPED (resuming batch ${savedBatchName}) ===`
+            `\n=== Phase 2: SKIPPED (resuming batch ${savedState.batchName}) ===`
         );
-        batchName = savedBatchName;
+        batchName = savedState.batchName;
     } else {
         console.log('\n=== Phase 2: Submitting batch ===');
         batchName = await submitBatch(candidates);
