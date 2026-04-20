@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.8.17](https://github.com/y0ngha/siglens/compare/v0.8.16...v0.8.17) (2026-04-20)
+
+
+### Bug Fixes
+
+* address PR [#342](https://github.com/y0ngha/siglens/issues/342) review comments (round 8) ([a95091d](https://github.com/y0ngha/siglens/commit/a95091da590b3047f555213391530079528a4f13))
+* ensure TP array ascending order after fallback substitution ([95602b5](https://github.com/y0ngha/siglens/commit/95602b506d341121f473fd1115722733d8f8d53d))
+* getTooltipPosition 호출과 ReconciledLevelsBlockFromRecProps 인터페이스 추출 ([27bad02](https://github.com/y0ngha/siglens/commit/27bad02a288f58820cbbdb44b581ad37562ba23a))
+* lint 오류 해결 ([9fb84bc](https://github.com/y0ngha/siglens/commit/9fb84bcc2600cea7c08ae085b6f3b4284f61cdb5))
+* market 페이지 내 suspense boundary 오류 수정 ([db2a461](https://github.com/y0ngha/siglens/commit/db2a4614e13fb6a32e86fbcfd4824d5a37ecee90))
+* PR [#342](https://github.com/y0ngha/siglens/issues/342) 리뷰 코멘트 반영 ([14fb3c2](https://github.com/y0ngha/siglens/commit/14fb3c23ca84f07e0e5235b13d72a70d3b287466))
+* TP filter와 tooltip position 파라미터 정정 ([fa0dbf5](https://github.com/y0ngha/siglens/commit/fa0dbf5688be8275dfca7049991dde9078b5dd92))
+
+
+### Features
+
+* **analysis/ui:** add reconciled-levels block with tooltip in info panel ([1c8eb39](https://github.com/y0ngha/siglens/commit/1c8eb39c8f16e507ce08bbd2275600d943997363))
+* **analysis:** add reconcileBullishActionRecommendation for production SL/TP safety ([7d2821e](https://github.com/y0ngha/siglens/commit/7d2821e377cf9dd73b92f62416a4d697b9ae9b9f))
+* **analysis:** integrate SL/TP reconciliation into production AI pipeline ([091cdf6](https://github.com/y0ngha/siglens/commit/091cdf62cb11165db214b20d69da33233807378f))
+* **backtest:** add AI SL/TP validation and ATR-based fallback resolver ([96dd49b](https://github.com/y0ngha/siglens/commit/96dd49b7a89181edb56b26ef9d6bd368ccc2b5f0))
+* **backtest:** integrate SL/TP resolver into generate-backtest ([aea504d](https://github.com/y0ngha/siglens/commit/aea504dc12ffb47bb70b634e49faabfa1c65b459))
+* **chart:** render reconciled SL/TP lines (dashed, "(보정)" label) ([4692113](https://github.com/y0ngha/siglens/commit/46921133ab12f6c6a731067c832895b1f0a0ef5d)), closes [#n](https://github.com/y0ngha/siglens/issues/n)
+* **market:** add infoMessage prop and mixed variant to SignalSubsection ([a5428ed](https://github.com/y0ngha/siglens/commit/a5428edbcb8fad64301bd465c75cfb6d42382ac8))
+* **market:** 섹터 신호 탐색 혼재 영역 추가 ([ef67a40](https://github.com/y0ngha/siglens/commit/ef67a40373710ec3ebe31022b012a9c9e848652e))
+* **types:** add ReconciledActionLevels + reconciledLevels field on ActionRecommendation ([ca8b335](https://github.com/y0ngha/siglens/commit/ca8b335076eaf9f59d4226f35d70baf336364ac7))
+* worker에서 retry 시간 이후 시도할 수 있다면, 시도하도록 처리 ([1eb842b](https://github.com/y0ngha/siglens/commit/1eb842b676b5c81bcf17285a84f839c22c72775c))
+* worker에서 retry 허용 시간을 60초로 수정 ([3a81bf0](https://github.com/y0ngha/siglens/commit/3a81bf0103930d4e4309174c7e8bb20855c18038))
+
 ## [0.8.16](https://github.com/y0ngha/siglens/compare/v0.8.15...v0.8.16) (2026-04-20)
 
 
