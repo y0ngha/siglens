@@ -2,52 +2,12 @@
   "meta": {
     "period": "2024.04 – 2026.04",
     "totalCases": 100,
-    "winRate": 68,
-    "aiWinRate": 56.3,
-    "aiTrendHitRate": 37,
+    "winRate": 69,
+    "aiWinRate": 53.3,
+    "aiTrendHitRate": 36,
     "tickerCount": 10
   },
   "cases": [
-    {
-      "ticker": "CRWD",
-      "entryDate": "2024-10-10",
-      "entryPrice": 314.92,
-      "exitDate": "2024-10-24",
-      "exitPrice": 304.47,
-      "holdingDays": 10,
-      "returnPct": -3.32,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "강력한 상승 추세가 진행 중입니다. 대량 거래량을 동반하며 주요 저항선을 돌파했고, MACD와 이동평균선 등 다수 지표가 강세 신호를 보내고 있습니다.\n다만, RSI와 스토캐스틱 지표가 과매수 구간에 진입하여 단기적인 가격 조정 가능성이 있습니다.\n전반적인 추세는 긍정적이나, 과열 신호가 있어 신규 진입 시에는 조정 시점을 기다리는 것이 유리해 보입니다.",
-        "tags": [
-          "Ichimoku 구름 돌파",
-          "CCI 100 돌파",
-          "Parabolic SAR 전환"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 328.38,
-            "basis": "볼륨 프로파일 가치 영역 상단(VAH) 저항선입니다."
-          },
-          {
-            "price": 358.84,
-            "basis": "이전 주요 스윙 고점입니다."
-          },
-          {
-            "price": 396.49,
-            "basis": "상단 유동성(Equal Highs)이 존재하는 구간으로, 장기적인 목표가가 될 수 있습니다."
-          }
-        ],
-        "stopLoss": 285,
-        "takeProfit": 328.38,
-        "riskLevel": "high"
-      }
-    },
     {
       "ticker": "MSFT",
       "entryDate": "2024-10-25",
@@ -85,42 +45,6 @@
         ],
         "stopLoss": 418,
         "takeProfit": 439.04,
-        "riskLevel": "medium"
-      }
-    },
-    {
-      "ticker": "CRWD",
-      "entryDate": "2024-11-06",
-      "entryPrice": 320,
-      "exitDate": "2024-11-07",
-      "exitPrice": 323.94,
-      "holdingDays": 1,
-      "returnPct": 1.23,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "win",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "이동평균선과 시장 구조가 지지하는 강력한 상승 추세에 있습니다.\n현재 주가는 볼린저 밴드 상단과 주요 저항선인 320달러 부근에 도달하여 저항 돌파를 시도하고 있습니다.\n대부분의 기술적 지표가 강세를 나타내고 있으나, 단기 과열에 따른 변동성 확대에 유의해야 합니다.\n투자자는 저항 돌파 확인 후 추격 매수 또는 조정 시 지지 구간을 활용한 분할 매수 전략을 고려할 수 있습니다.",
-        "tags": [
-          "CCI 100 돌파",
-          "Parabolic SAR 전환",
-          "BB 수축 강세"
-        ],
-        "entryRecommendation": "enter",
-        "bullishTargets": [
-          {
-            "price": 323.94,
-            "basis": "최근 스윙 고점 돌파를 목표로 하는 1차 목표가입니다."
-          },
-          {
-            "price": 396.49,
-            "basis": "장기적인 관점에서 상단 유동성(Equal Highs)을 목표로 하는 2차 목표가입니다."
-          }
-        ],
-        "stopLoss": 302,
-        "takeProfit": 323.94,
         "riskLevel": "medium"
       }
     },
@@ -238,38 +162,6 @@
         "stopLoss": 565,
         "takeProfit": 599.66,
         "riskLevel": "medium"
-      }
-    },
-    {
-      "ticker": "CRWD",
-      "entryDate": "2024-12-16",
-      "entryPrice": 388.2,
-      "exitDate": "2024-12-17",
-      "exitPrice": 377,
-      "holdingDays": 1,
-      "returnPct": -2.89,
-      "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
-      "aiResult": "loss",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "강력한 상승 추세 속에서 에너지가 응축되는 스퀴즈 상태 이후 상방으로 분출하고 있습니다.\n단기 과매수 신호가 존재하지만, 거래량을 동반한 돌파는 추가 상승 가능성을 시사합니다.\n위험 관리를 전제로 한 단기 트레이딩 접근은 유효하나, 변동성 확대에 주의해야 합니다.",
-        "tags": [
-          "MACD 골든크로스",
-          "CCI 100 돌파",
-          "Keltner 상단 돌파"
-        ],
-        "entryRecommendation": "enter",
-        "bullishTargets": [
-          {
-            "price": 398.33,
-            "basis": "기간 내 최고가 저항선"
-          }
-        ],
-        "stopLoss": 377,
-        "takeProfit": 398.33,
-        "riskLevel": "high"
       }
     },
     {
@@ -612,38 +504,6 @@
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2025-01-22",
-      "entryPrice": 377.98,
-      "exitDate": "2025-01-28",
-      "exitPrice": 389,
-      "holdingDays": 4,
-      "returnPct": 2.92,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "강한 상승 추세가 지속되고 있으며, 가격은 모든 주요 이동평균선 위에 위치하고 있습니다.\n그러나 RSI, 스토캐스틱 등 다수의 지표가 과매수 신호를 보내고 있어 단기 조정 가능성이 존재합니다.\n최근 'Three Inside Up' 강세 캔들 패턴이 나타났으며, 볼륨 프로파일의 주요 저항선을 돌파하여 긍정적입니다.\n결론적으로, 추세는 강세이나 단기 과열로 인해 신규 진입은 조정 시 지지 구간을 확인하고 접근하는 것이 유리해 보입니다.",
-        "tags": [
-          "MACD 골든크로스",
-          "CCI 100 돌파",
-          "CMF 매집 전환"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 389,
-            "basis": "분석 기간 내 최고점(Period High)으로, 주요 저항선이자 1차 목표가입니다."
-          }
-        ],
-        "stopLoss": 357,
-        "takeProfit": 389,
-        "riskLevel": "medium"
-      }
-    },
-    {
       "ticker": "GOOGL",
       "entryDate": "2025-02-06",
       "entryPrice": 191.6,
@@ -792,38 +652,38 @@
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2025-04-15",
-      "entryPrice": 392.8,
-      "exitDate": "2025-04-21",
-      "exitPrice": 362,
-      "holdingDays": 3,
-      "returnPct": -7.84,
+      "ticker": "LLY",
+      "entryDate": "2025-04-17",
+      "entryPrice": 839.96,
+      "exitDate": "2025-04-25",
+      "exitPrice": 874.92,
+      "holdingDays": 5,
+      "returnPct": 4.16,
       "signalType": "buy",
-      "result": "loss",
-      "exitReason": "stop_loss",
+      "result": "win",
+      "exitReason": "take_profit",
       "aiResult": "neutral",
-      "aiTrendHit": false,
+      "aiTrendHit": true,
       "aiAnalysis": {
-        "summary": "단기적으로 강한 상승 추세로 전환되었습니다.\nMACD 골든크로스, OBV 상승 등 다수의 지표가 강세 신호를 보내고 있으나, 스토캐스틱 등 일부 오실레이터는 과매수 구간에 진입하여 단기 조정 가능성을 시사합니다.\n최근 고점을 돌파하며 강세 구조 변화(Bullish CHOCH)가 확인되었고, 주요 지지선은 거래량 집중 구간(POC)인 365.08이며 저항선은 398.60입니다.",
+        "summary": "최근 저점에서 강한 반등을 보이며 단기 상승 추세에 있습니다.\nMACD 골든크로스, OBV 상승 등 대부분의 지표가 강세 신호를 보내고 있으나, 대량 거래량을 동반한 갭 상승 후 도지 캔들이 나타나 단기 과열 및 저항에 직면했음을 시사합니다.\n현재 가격은 주요 저항 구간인 거래량 집중대 상단(VAH) 844.06 근처에 위치해 있으며, 지지선은 POC(800.97)에 형성되어 있습니다.",
         "tags": [
+          "MACD 골든크로스",
           "Supertrend 전환",
-          "Ichimoku 구름 돌파",
-          "CCI 100 돌파"
+          "DMI 골든크로스"
         ],
         "entryRecommendation": "wait",
         "bullishTargets": [
           {
-            "price": 411.3,
-            "basis": "이전 주요 스윙 고점(Swing High) 수준으로, 1차 목표 저항선입니다."
+            "price": 874.92,
+            "basis": "직전 스윙 고점 돌파를 목표로 합니다."
           },
           {
-            "price": 455.59,
-            "basis": "분석 기간 내 최고가로, 강세 추세가 지속될 경우 도달 가능한 2차 목표가입니다."
+            "price": 935.63,
+            "basis": "분석 기간 내 최고가 수준입니다."
           }
         ],
-        "stopLoss": 362,
-        "takeProfit": 411.3,
+        "stopLoss": 795,
+        "takeProfit": 874.92,
         "riskLevel": "medium"
       }
     },
@@ -1124,42 +984,6 @@
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2025-05-27",
-      "entryPrice": 472.22,
-      "exitDate": "2025-06-03",
-      "exitPrice": 480,
-      "holdingDays": 5,
-      "returnPct": 1.65,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "강력한 상승 추세로, 신고가를 경신하며 강한 매수세를 보이고 있습니다.\nMACD와 같은 추세 지표는 강세를 나타내지만, 스토캐스틱과 CCI는 과매수 신호를 보내 단기 조정 가능성을 시사합니다.\n최근 'Three Outside Up' 캔들 패턴이 나타나 상승 추세를 지지하고 있습니다.\n현재 주가는 과도하게 상승한 상태이므로, 448.88 ~ 459.60달러 지지 구간으로의 조정 시 매수를 고려하는 것이 더 유리할 수 있습니다.",
-        "tags": [
-          "MACD 골든크로스",
-          "CCI 100 돌파",
-          "Keltner 상단 돌파"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 480,
-            "basis": "신고가 경신 후 도달 가능한 심리적 저항선입니다."
-          },
-          {
-            "price": 500,
-            "basis": "주요 라운드 넘버 가격대로, 강력한 심리적 목표가 및 저항선 역할을 합니다."
-          }
-        ],
-        "stopLoss": 435,
-        "takeProfit": 480,
-        "riskLevel": "high"
-      }
-    },
-    {
       "ticker": "META",
       "entryDate": "2025-06-02",
       "entryPrice": 670.9,
@@ -1310,6 +1134,46 @@
         ],
         "stopLoss": 201.5,
         "takeProfit": 220.54,
+        "riskLevel": "high"
+      }
+    },
+    {
+      "ticker": "LLY",
+      "entryDate": "2025-06-10",
+      "entryPrice": 807.19,
+      "exitDate": "2025-06-25",
+      "exitPrice": 792.3,
+      "holdingDays": 10,
+      "returnPct": -1.84,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "time",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "강력한 매수세와 함께 주요 저항선을 돌파하며 뚜렷한 상승 추세로 전환되었습니다.\nMACD 골든크로스, 거래량 급증 등 다수의 기술적 지표가 강세 신호를 보내고 있습니다.\n다만, 스토캐스틱, CCI 등 일부 단기 지표가 과매수 상태를 나타내고 있어 단기적인 가격 조정이나 기간 조정의 가능성이 존재합니다.\n결론적으로 추세는 강세이지만, 현재 가격에서의 추격 매수는 위험 부담이 따르므로, 조정 시 지지 구간을 확인하며 접근하는 것이 유리해 보입니다.",
+        "tags": [
+          "Supertrend 전환",
+          "DMI 골든크로스",
+          "CMF 매집 전환"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 844.06,
+            "basis": "거래량 프로파일의 가치 영역 상단(VAH) 수준입니다."
+          },
+          {
+            "price": 850.93,
+            "basis": "이전 하락 시 발생한 약세 FVG(Fair Value Gap)를 채우는 가격대입니다."
+          },
+          {
+            "price": 902.5,
+            "basis": "이전 주요 스윙 고점(Swing High)으로, 추세 지속 시 도달 가능한 목표가입니다."
+          }
+        ],
+        "stopLoss": 744,
+        "takeProfit": 844.06,
         "riskLevel": "high"
       }
     },
@@ -1490,38 +1354,6 @@
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2025-06-25",
-      "entryPrice": 494.09,
-      "exitDate": "2025-06-26",
-      "exitPrice": 500.41,
-      "holdingDays": 1,
-      "returnPct": 1.28,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "강력한 상승 추세로 신고가를 경신했으나, 여러 단기 지표에서 과열 및 약세 다이버전스 신호가 나타나고 있습니다.\nMACD 데드크로스와 최근의 약세 캔들 패턴은 단기 조정 가능성을 시사합니다.\n주요 지지선은 20일 이동평균선(476.72)이며, 저항선은 전고점(500.41)입니다.\n따라서 추격 매수보다는 조정 시 지지 구간에서 매수 기회를 기다리는 전략이 유효해 보입니다.",
-        "tags": [
-          "CCI 100 돌파",
-          "Parabolic SAR 전환",
-          "BB 수축 강세"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 500.41,
-            "basis": "기간 내 최고가 및 직전 스윙 하이 저항선 재테스트"
-          }
-        ],
-        "stopLoss": 460,
-        "takeProfit": 500.41,
-        "riskLevel": "medium"
-      }
-    },
-    {
       "ticker": "AMZN",
       "entryDate": "2025-06-27",
       "entryPrice": 223.3,
@@ -1594,6 +1426,38 @@
         ],
         "stopLoss": 200.9,
         "takeProfit": 208.47,
+        "riskLevel": "medium"
+      }
+    },
+    {
+      "ticker": "LLY",
+      "entryDate": "2025-07-10",
+      "entryPrice": 790.65,
+      "exitDate": "2025-07-24",
+      "exitPrice": 805.43,
+      "holdingDays": 10,
+      "returnPct": 1.87,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "time",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "현재 주가는 주요 이동평균선들이 밀집된 구간에서 횡보하며 방향성을 탐색하고 있습니다. ADX 지표가 10.32로 매우 낮아 뚜렷한 추세가 없는 상태입니다.\n단기적으로 스토캐스틱과 MACD 히스토그램은 상승 신호를 보이고 있으나, 822.52의 POC(거래량 집중 가격대)와 825.00의 전고점이 강력한 저항으로 작용하고 있습니다.",
+        "tags": [
+          "Ichimoku 구름 돌파",
+          "Parabolic SAR 전환",
+          "BB 수축 강세"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 844.06,
+            "basis": "거래량 프로파일의 상단 값 영역(VAH)으로, 825.00 저항 돌파 시 다음 목표가가 될 수 있습니다."
+          }
+        ],
+        "stopLoss": 755,
+        "takeProfit": 825,
         "riskLevel": "medium"
       }
     },
@@ -1773,6 +1637,42 @@
         "stopLoss": 494,
         "takeProfit": 518,
         "riskLevel": "high"
+      }
+    },
+    {
+      "ticker": "LLY",
+      "entryDate": "2025-07-25",
+      "entryPrice": 812.69,
+      "exitDate": "2025-07-29",
+      "exitPrice": 798,
+      "holdingDays": 2,
+      "returnPct": -1.81,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "stop_loss",
+      "aiResult": "loss",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "주가는 단기 상승 추세에 있으며, 최근 주요 가격대(BOS)를 돌파하며 강세 신호를 보이고 있습니다.\nMACD와 같은 주요 모멘텀 지표는 상승을 지지하고 있으나, 스토캐스틱 등 일부 지표는 과매수 신호를 보내고 있어 단기적인 가격 조정 가능성도 존재합니다.\n현재 가격은 거래량이 집중된 POC(811.75) 부근에 위치하여 중요한 지지/저항 구간으로 작용할 것입니다. 전반적으로 상승세가 우세하지만, 단기 과열에 대한 주의가 필요합니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "CMF 매집 전환"
+        ],
+        "entryRecommendation": "enter",
+        "bullishTargets": [
+          {
+            "price": 825,
+            "basis": "이전 주요 스윙 고점 및 유동성 풀(Equal Highs)이 형성된 가격대입니다."
+          },
+          {
+            "price": 844.06,
+            "basis": "거래량 프로파일의 가치 영역 상단(VAH)으로, 상승 추세가 지속될 경우 도달 가능한 주요 저항 목표가입니다."
+          }
+        ],
+        "stopLoss": 798,
+        "takeProfit": 825,
+        "riskLevel": "medium"
       }
     },
     {
@@ -2310,32 +2210,42 @@
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2025-09-18",
-      "entryPrice": 502.63,
-      "exitDate": "2025-10-02",
-      "exitPrice": 496.8,
-      "holdingDays": 10,
-      "returnPct": -1.16,
+      "ticker": "LLY",
+      "entryDate": "2025-09-10",
+      "entryPrice": 754.62,
+      "exitDate": "2025-09-16",
+      "exitPrice": 767,
+      "holdingDays": 4,
+      "returnPct": 1.64,
       "signalType": "buy",
-      "result": "loss",
-      "exitReason": "time",
-      "aiResult": "win",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
       "aiTrendHit": false,
       "aiAnalysis": {
-        "summary": "강력한 상승 추세입니다. 최근 대량 거래량을 동반한 급등으로 주요 저항선을 돌파하며 강세 구조로 전환되었습니다.\n다만, RSI 등 대부분의 보조지표가 과매수 구간에 진입하여 단기적인 가격 조정 또는 횡보 가능성이 있습니다.\n추세는 강하지만, 과도한 상승으로 인해 신규 진입은 위험 부담이 큽니다. 조정 시 지지 구간을 확인하는 것이 바람직합니다.",
+        "summary": "단기적으로 강한 V자 반등을 보이고 있으나, 스토캐스틱 등 다수 지표가 과매수 상태를 나타내어 단기 조정 가능성이 있습니다.\n현재 주가는 볼륨 프로파일 POC와 120일 이동평균선이 위치한 강력한 저항 구간에 근접해 있습니다.\n최근 'Three Inside Up' 강세 캔들 패턴이 나타났지만, 과매수 부담과 저항을 고려할 때, 조정 시 지지선을 확인하고 접근하는 전략이 유효해 보입니다.",
         "tags": [
-          "Supertrend 전환",
-          "Ichimoku 구름 돌파",
-          "Keltner 상단 돌파"
+          "CCI 100 돌파",
+          "CMF 매집 전환",
+          "RSI 강세 다이버전스"
         ],
-        "entryRecommendation": "avoid",
+        "entryRecommendation": "wait",
         "bullishTargets": [
           {
-            "price": 517.98,
-            "basis": "분석 기간 내 최고점으로, 상승 추세 지속 시 도달 가능한 1차 목표가입니다."
+            "price": 777.83,
+            "basis": "이치모쿠 구름대 상단 저항"
+          },
+          {
+            "price": 802.5,
+            "basis": "이전 주요 스윙 고점"
+          },
+          {
+            "price": 827.01,
+            "basis": "볼륨 프로파일 상단(VAH)"
           }
         ],
+        "stopLoss": 715,
+        "takeProfit": 767,
         "riskLevel": "high"
       }
     },
@@ -2448,6 +2358,46 @@
         ],
         "stopLoss": 172.5,
         "takeProfit": 182.44,
+        "riskLevel": "medium"
+      }
+    },
+    {
+      "ticker": "LLY",
+      "entryDate": "2025-09-30",
+      "entryPrice": 763,
+      "exitDate": "2025-10-01",
+      "exitPrice": 776.96,
+      "holdingDays": 1,
+      "returnPct": 1.83,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "win",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "단기 상승 추세로의 전환 가능성이 나타나고 있습니다. 최근 거래일에 강한 매수세와 함께 주요 저항선인 거래량 집중 가격(POC)을 돌파했습니다.\n일부 보조지표(MACD)는 아직 약세 신호를 보이고 있으나, 가격 움직임과 거래량(OBV), 긍정적인 캔들 패턴은 상승 모멘텀을 지지하고 있습니다. 다만 ADX 수치가 낮아 아직 강력한 추세가 형성되지는 않았습니다.\n주요 지지선은 757달러이며 저항선은 777달러입니다.",
+        "tags": [
+          "BB 하단 반등",
+          "CCI 100 돌파",
+          "CMF 매집 전환"
+        ],
+        "entryRecommendation": "enter",
+        "bullishTargets": [
+          {
+            "price": 776.96,
+            "basis": "최근 스윙 고점 돌파를 목표로 하는 1차 저항선입니다."
+          },
+          {
+            "price": 815.4,
+            "basis": "거래량 프로파일 가치 영역 상단(VAH)으로, 유동성이 높은 구간이자 주요 저항 레벨입니다."
+          },
+          {
+            "price": 822.61,
+            "basis": "이전 고점들이 형성한 매도측 유동성(Sell-side Liquidity) 구간으로, 가격이 도달할 가능성이 있는 목표 지점입니다."
+          }
+        ],
+        "stopLoss": 745,
+        "takeProfit": 776.96,
         "riskLevel": "medium"
       }
     },
@@ -2700,42 +2650,6 @@
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2025-10-23",
-      "entryPrice": 521.98,
-      "exitDate": "2025-10-24",
-      "exitPrice": 522.43,
-      "holdingDays": 1,
-      "returnPct": 0.09,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": true,
-      "aiAnalysis": {
-        "summary": "주가는 강력한 상승 추세로 신고가를 경신했습니다. 이동평균선이 정배열되고 다수의 기술적 지표가 강세를 나타내고 있습니다.\n그러나 Williams %R 지표가 과매수 상태에 있고 주가가 볼린저 밴드 상단을 크게 벗어나 있어 단기적인 가격 조정 가능성이 높습니다.\n최근 강한 상승세는 긍정적이지만, 과열 신호로 인해 추격 매수보다는 조정 시 지지 구간에서 매수하는 것이 유리해 보입니다.",
-        "tags": [
-          "CCI 100 돌파",
-          "Parabolic SAR 전환",
-          "MACD 히스토그램 강세 수렴"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 522.43,
-            "basis": "현재 기간 내 최고가이며, 1차 심리적 저항선입니다."
-          },
-          {
-            "price": 525.79,
-            "basis": "켈트너 채널 상단으로, 상승 추세가 지속될 경우 도달 가능한 변동성 기반 목표가입니다."
-          }
-        ],
-        "stopLoss": 490,
-        "takeProfit": 522.43,
-        "riskLevel": "high"
-      }
-    },
-    {
       "ticker": "AMZN",
       "entryDate": "2025-10-27",
       "entryPrice": 226.97,
@@ -2876,6 +2790,42 @@
       }
     },
     {
+      "ticker": "LLY",
+      "entryDate": "2025-10-31",
+      "entryPrice": 862.86,
+      "exitDate": "2025-11-03",
+      "exitPrice": 885.4,
+      "holdingDays": 1,
+      "returnPct": 2.61,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 진행 중이며, 이동평균선이 정배열을 이루고 주요 저항선을 돌파했습니다.\n다만, RSI와 같은 일부 보조지표가 과매수 영역에 근접하고 가격이 볼린저 밴드 상단에 위치하여 단기적인 조정이나 횡보 가능성이 있습니다.\nMFI, CMF 지표에서 매수 압력 약화 신호가 나타나고 있어 추격 매수에는 주의가 필요합니다.\n결론적으로, 추세는 긍정적이나 과열 신호가 있어 신규 진입은 조정을 이용하는 것이 유리해 보입니다.",
+        "tags": [
+          "MACD 골든크로스",
+          "CCI 100 돌파",
+          "Parabolic SAR 전환"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 885.4,
+            "basis": "현재 가격에 일일 변동성(ATR) 1배를 더한 값으로, 단기적인 변동성을 고려한 목표가입니다."
+          },
+          {
+            "price": 900,
+            "basis": "심리적으로 중요한 라운드 넘버 저항선입니다."
+          }
+        ],
+        "stopLoss": 820,
+        "takeProfit": 885.4,
+        "riskLevel": "high"
+      }
+    },
+    {
       "ticker": "NVDA",
       "entryDate": "2025-11-19",
       "entryPrice": 186.52,
@@ -2984,46 +2934,6 @@
       }
     },
     {
-      "ticker": "CRWD",
-      "entryDate": "2025-11-25",
-      "entryPrice": 512.34,
-      "exitDate": "2025-12-02",
-      "exitPrice": 520,
-      "holdingDays": 4,
-      "returnPct": 1.5,
-      "signalType": "buy",
-      "result": "win",
-      "exitReason": "take_profit",
-      "aiResult": "neutral",
-      "aiTrendHit": false,
-      "aiAnalysis": {
-        "summary": "현재 단기 하락 추세가 진행 중이며, MACD와 같은 주요 지표들이 약세 신호를 보내고 있습니다.\n최근 'Three Outside Down'이라는 강력한 하락 반전 캔들 패턴이 나타나 부정적인 전망을 더합니다.\n하지만 가격이 볼륨 프로파일 POC(501.89달러) 등 주요 지지선에 근접했고, 스토캐스틱 RSI와 같은 일부 지표는 과매도 상태여서 기술적 반등 가능성도 존재합니다.",
-        "tags": [
-          "BB 하단 반등",
-          "CMF 매집 전환",
-          "지지선 근접"
-        ],
-        "entryRecommendation": "wait",
-        "bullishTargets": [
-          {
-            "price": 520.46,
-            "basis": "20일 지수이동평균선(EMA) 및 켈트너 채널 중간선 저항"
-          },
-          {
-            "price": 531.11,
-            "basis": "20일 이동평균선 및 볼린저 밴드 중간선 저항"
-          },
-          {
-            "price": 542.85,
-            "basis": "파라볼릭 SAR 하락 추세 저항선"
-          }
-        ],
-        "stopLoss": 494,
-        "takeProfit": 520,
-        "riskLevel": "high"
-      }
-    },
-    {
       "ticker": "PLTR",
       "entryDate": "2025-12-10",
       "entryPrice": 187.91,
@@ -3056,6 +2966,42 @@
         ],
         "stopLoss": 177,
         "takeProfit": 195.7,
+        "riskLevel": "medium"
+      }
+    },
+    {
+      "ticker": "LLY",
+      "entryDate": "2025-12-15",
+      "entryPrice": 1062.19,
+      "exitDate": "2025-12-30",
+      "exitPrice": 1079.75,
+      "holdingDays": 10,
+      "returnPct": 1.65,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "time",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 지속되고 있으며, 최근 거래일에 강한 매수세와 함께 상승 마감했습니다.\n다수의 기술적 지표(RSI, DMI, 이동평균선)가 강세 신호를 보내고 있으나, 주가가 단기 급등하여 일부 과열 신호도 나타나고 있습니다.\n주요 저항선은 1112달러이며, 지지선은 1040달러 부근에 형성되어 있습니다.\n현재 추격 매수보다는 조정 시 지지선을 확인하며 접근하는 것이 유리해 보입니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "DMI 골든크로스",
+          "Parabolic SAR 전환"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 1084.15,
+            "basis": "SMC 분석에 따른 약세 FVG 하단부로, 1차 저항 목표가입니다."
+          },
+          {
+            "price": 1111.99,
+            "basis": "기간 내 최고점이자 주요 스윙 고점으로, 최종 목표가로 설정할 수 있습니다."
+          }
+        ],
+        "stopLoss": 995,
+        "takeProfit": 1112,
         "riskLevel": "medium"
       }
     },
@@ -3318,6 +3264,38 @@
       }
     },
     {
+      "ticker": "LLY",
+      "entryDate": "2026-01-07",
+      "entryPrice": 1108.09,
+      "exitDate": "2026-01-08",
+      "exitPrice": 1117.66,
+      "holdingDays": 1,
+      "returnPct": 0.86,
+      "signalType": "buy",
+      "result": "win",
+      "exitReason": "take_profit",
+      "aiResult": "neutral",
+      "aiTrendHit": true,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세가 지속되며 최근 고점을 돌파하여 추세 강화를 확인했습니다.\n단기적으로는 RSI, MACD 등 일부 모멘텀 지표가 약화 신호를 보내고 있어 조정 가능성이 존재합니다.\n주요 지지선은 20일 이동평균선이 위치한 1056.50이며, 저항선은 전고점인 1117.66입니다.\n전반적으로 추세는 긍정적이나, 단기 과열에 따른 가격 조정을 기다린 후 지지선 부근에서 매수 기회를 찾는 것이 유리해 보입니다.",
+        "tags": [
+          "CCI 100 돌파",
+          "DMI 골든크로스",
+          "Parabolic SAR 전환"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 1117.66,
+            "basis": "기간 내 최고가(Period High) 재도전"
+          }
+        ],
+        "stopLoss": 1030,
+        "takeProfit": 1117.66,
+        "riskLevel": "medium"
+      }
+    },
+    {
       "ticker": "TSLA",
       "entryDate": "2026-01-12",
       "entryPrice": 448.96,
@@ -3536,6 +3514,38 @@
         "entryRecommendation": "avoid",
         "bullishTargets": [],
         "riskLevel": "high"
+      }
+    },
+    {
+      "ticker": "LLY",
+      "entryDate": "2026-02-04",
+      "entryPrice": 1107.12,
+      "exitDate": "2026-02-05",
+      "exitPrice": 1040,
+      "holdingDays": 1,
+      "returnPct": -6.06,
+      "signalType": "buy",
+      "result": "loss",
+      "exitReason": "stop_loss",
+      "aiResult": "neutral",
+      "aiTrendHit": false,
+      "aiAnalysis": {
+        "summary": "강력한 상승 추세에 있으며, 최근 대량 거래를 동반한 급등으로 주요 저항선인 가치 영역 상단(VAH)을 돌파했습니다.\nRSI와 스토캐스틱 등 모멘텀 지표가 상승하고 있어 추가 상승 가능성을 시사하지만, 단기 급등에 따른 과열 및 조정 가능성도 존재합니다.\n주요 지지선은 POC인 1064.12이며, 저항선은 전고점인 1133.95입니다.\n전반적으로 강세 전망이 우세하나, 신규 진입은 조정 시 지지 구간을 확인하는 전략이 유효해 보입니다.",
+        "tags": [
+          "BB 하단 반등",
+          "Ichimoku 구름 돌파",
+          "CCI 100 돌파"
+        ],
+        "entryRecommendation": "wait",
+        "bullishTargets": [
+          {
+            "price": 1133.95,
+            "basis": "최근 스윙 고점이자 분석 기간 내 최고가 수준으로, 1차 목표가로 설정할 수 있습니다."
+          }
+        ],
+        "stopLoss": 1040,
+        "takeProfit": 1133.95,
+        "riskLevel": "medium"
       }
     },
     {

@@ -63,7 +63,7 @@ const TICKERS = [
     'META',
     'TSLA',
     'PLTR',
-    'CRWD',
+    'LLY',
     'AVGO',
 ];
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
