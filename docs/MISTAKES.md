@@ -59,13 +59,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 7. Repeating identical className ternary 3+ times
    → Extract to a helper function
 
-7.5. Combining Tailwind classes with template literals instead of cn()
+7.5. Combining Tailwind classes with template literals or + operator instead of cn()
    → All dynamic or conditional Tailwind className combinations must use cn() utility
-   → Never concatenate Tailwind classes with template literals, string concatenation, or ternaries
+   → Never concatenate Tailwind classes with template literals, string concatenation (+ operator), or ternaries
+   → Even static className constants must use cn() when building multi-part classNames
    ❌ className={`grid gap-2 ${condition ? 'px-4' : 'px-2'}`}
    ❌ className={'px-4 ' + (isActive ? 'bg-primary' : '')}
+   ❌ const CARD_CLASSES = 'px-4 py-2' + ' bg-white' + ' border border-gray-200'  // + operator on strings
    ✅ className={cn('grid gap-2', condition ? 'px-4' : 'px-2')}
    ✅ className={cn('px-4', isActive && 'bg-primary')}
+   ✅ const CARD_CLASSES = cn('px-4 py-2', 'bg-white', 'border border-gray-200')
    → cn() enables proper class merging, conflict detection, and IDE support
 
 8. Tight coupling between interface props and dependent files
@@ -160,8 +163,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 19. Inline styles in JSX when Tailwind classes are available
     → Always use Tailwind; never inline style={{ ... }} for layout or styling
+    → When dynamic values require inline styles, use CSS custom properties + Tailwind classes instead
+    → `style={{ '--custom-prop': value }} as CSSProperties` + `className="... var(--custom-prop)"` pattern
     ❌ <ins style={{ display: 'block' }} />
+    ❌ <div style={{ backgroundColor: getColor(state) }} />  // inline color computation
     ✅ <ins className="block" />
+    ✅ <div style={{ '--period-color': getColor(state) } as CSSProperties} className="bg-[var(--period-color)]" />
 
 20. Nested functions without explicit parameters extracted to module level
     → When extracting a function from a parent function scope, make all parent variables explicit parameters
@@ -278,6 +285,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Improves readability and allows reuse in tests or other contexts
     ❌ export default function MyComponent({ label }: { label: string }) { ... }
     ✅ interface MyComponentProps { label: string }; export default function MyComponent(props: MyComponentProps) { ... }
+
+14. Exported component functions missing explicit return type annotation
+    → All `export function` components must include explicit return type (`: ReactElement`)
+    → Improves type safety, IDE support, and catches accidental undefined returns
+    ❌ export function StockChart(props: Props) { return <div>...</div>; }
+    ✅ export function StockChart(props: Props): ReactElement { return <div>...</div>; }
+    → Add `import { ReactElement } from 'react'` if needed
 ```
 
 ---

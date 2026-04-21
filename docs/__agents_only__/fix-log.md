@@ -5,51 +5,14 @@
 - Rule: ARCHITECTURE.md — domain/ 레이어는 순수 TypeScript 함수만 포함; CSS 클래스명·유니코드 표시문자·접근성 레이블 등 프레젠테이션 관심사를 포함할 수 없음
 - Context: 각 타입의 유일한 소비처(`lib/priceFormat.ts`, `lib/seo.ts`, `domain/skills.ts`)로 이동; domain/types.ts에서 삭제
 
-## [PR #344 Round 13 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `domain/types.ts` — `BacktestAiAnalysis.riskLevel?: string` 런타임 값 목록이 있음에도 union type 미사용
-- Rule: MISTAKES.md TypeScript #6 — 3+ 파일에서 반복되는 union literal은 named type으로 추출
-- Context: `BacktestRiskLevel = 'low' | 'moderate' | 'high' | 'extreme'` 타입 추가, riskLevel 필드 타입 교체
 
-- Violation: `IndicatorToolbar.tsx` — `style={{ backgroundColor: getPeriodColor(period) }}` 인라인 스타일 2곳
-- Rule: MISTAKES.md #19 — Tailwind CSS custom property 패턴 사용 필수
-- Context: `style={{ '--period-color': getPeriodColor(period) } as CSSProperties}` + `className="... bg-[var(--period-color)]"` 패턴으로 변환
 
-- Violation: 25개 exported 컴포넌트 함수에 `: ReactElement` 반환 타입 누락
-- Rule: CONVENTIONS.md — export function must have explicit return type
-- Context: ChatPanel, StockChart, SectorTabs 등 25개 파일에 `: ReactElement` 추가, 필요한 파일에 import 추가
-
-- Violation: `skills.test.ts` — `buildSkillStats` 테스트에서 레이블 문자열 하드코딩
-- Rule: MISTAKES.md Tests #13 — 프로덕션 상수를 로컬에서 재정의하지 말 것
-- Context: `SKILL_STAT_CONFIG` export 추가; 테스트에서 `SKILL_STAT_CONFIG[type].countLabel` 참조로 변환
-
-- Violation: `overlayLabelUtils.test.ts` — `resolveOverlayValues > 유효한 barIndex일 때` 블록에서 두 it()이 `name` 프로퍼티를 중복 검증
-- Rule: MISTAKES.md Tests #6 — each it() must test exactly one unique behavior
-- Context: 첫 번째 it()에서 `result[0].name` 검증 제거 (value만 검증); name+color는 두 번째 it()에서 검증
-
-## [PR #344 Round 11 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `src/lib/cardStyles.ts` — `+` 연산자로 Tailwind 클래스 연결 (cn() 미사용)
-- Rule: CONVENTIONS.md Tailwind 규칙 — 정적 문자열이라도 className 연결에는 cn() 사용 필수
-- Context: CARD_LINK_CLASSES 상수가 6개 문자열을 `+`로 연결; cn() import 추가 후 cn() 인자 분리로 변환
-- Violation: `src/components/ui/tabs/useTabs.ts` — 순수 유틸리티 함수 `buildTabId`/`buildPanelId`가 hook 파일에 정의됨
-- Rule: CONVENTIONS.md — Pure utility functions (non-hook helpers) must always be placed in a utils/ subfolder
-- Context: `buildTabId`/`buildPanelId`는 React hook을 사용하지 않는 순수 함수; `utils/tabIds.ts`로 이동, useTabs.ts에서 import, index.ts re-export 경로 업데이트
-- Violation: `useMarketSummary.ts` — `indices` 파생값이 useMemo 없이 렌더마다 새 [] 참조 생성
-- Rule: MISTAKES.md Coding Paradigm #10 — props/state 파생 객체는 useMemo 메모이제이션 필수
-- Context: `data?.summary.indices ?? []`를 `useMemo(() => data?.summary.indices ?? [], [data?.summary.indices])`로 변환
-
-## [PR #344 Round 9 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `useChartOverlayVisibility.ts` — 소비처가 없는 Dead State 3개(`chartVisiblePatterns`, `keyLevelsVisible`, `trendlinesVisible`) 및 Dead Callback 2개(`handlePatternOverlayChange`, `handleTogglePattern`) 잔존
-- Rule: MISTAKES.md Components #5.5 — Unused, dead, or decorative props/state in component interfaces는 제거 필수
-- Context: `StockChart`/`AnalysisPanel`에서 pattern·trendline·keyLevel 관련 props가 모두 제거됐으나 훅 내부 state는 미삭제; 3개 `useState`가 렌더마다 불필요하게 구독 상태 유지
 
 ## [PR #344 Round 7 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `AnalysisPanel.tsx` 복사 버튼 조건 `(!showProgress || isAnalyzing)` — `isAnalyzing=true`일 때 disabled 상태임에도 normal 스타일 적용됨
 - Rule: Boolean 조건 논리 — "진행 중이 아님"은 `!(A || B)` = `!A && !B`, `!A || B` 가 아님
 - Context: `(!showProgress || isAnalyzing)` → `(!showProgress && !isAnalyzing)` 로 수정; loading·analyzing 두 상태 모두 일반 스타일 적용 차단
 
-- Violation: `docs/API.md` 예시 요청과 FMP 섹션 헤더에 제거된 `1Min` 타임프레임 참조 잔존
-- Rule: MISTAKES.md Documentation Sync #2 — API 파라미터 변경 시 docs/API.md 업데이트 필수
-- Context: 도메인 `Timeframe` 타입에서 `1Min` 제거 후 API.md 예시(`timeframe=1Min`)와 FMP 헤더(`1Min ~ 1Hour`)가 미반영 상태였음; `5Min`, `5Min ~ 4Hour`로 업데이트
 
 ## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 
@@ -98,10 +61,6 @@
 - Rule: React Query Hydration 패턴 — prefetchQuery 키와 useQuery 키가 정확히 일치해야 함
 - Context: 서버는 ticker(대문자)로 키를 만들고 클라이언트는 symbol(원본)로 키를 만들어 소문자 URL 진입 시 캐시 미스 발생
 
-## [feat/157/fmp-provider | 2026-04-06]
-- Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
-- Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
-- Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
 
 ## [PR #313 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
 
@@ -132,29 +91,10 @@
 - Context: `useCallback`으로 래핑. deps: `[updateUrl, activeTimeframe]`, `[updateUrl, activeSector]`
 
 ## [PR #344 Round 3 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `StatsBarSkeleton`의 `style={{ width: ${w}px }}` 인라인 스타일
-- Rule: CONVENTIONS.md — prefer CSS custom property pattern over arbitrary inline styles
-- Context: `w-[var(--stat-w)]` + `style={{ '--stat-w': '${w}px' } as CSSProperties}`로 변경
-
-- Violation: `ConfidenceBadge`의 `div[role="tooltip"]`에 `id` 없음, `<button>`에 `aria-describedby` 없음
-- Rule: MISTAKES.md Accessibility #3 — tooltip requires aria-describedby connection to trigger element
-- Context: `useId()` 추가로 스크린 리더가 툴팁과 버튼을 연결할 수 있도록 수정
 
 ## [PR #344 round-2 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `SymbolLayoutClient.tsx` 인라인 prop 타입 사용
 - Rule: CONVENTIONS.md — Props interface declared directly above component function
 - Context: single-prop 컴포넌트라도 named interface 선언 필요
 
-## [PR #344 Round 5 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `src/__tests__/domain/skills.test.ts` — `buildSkillStats` 함수에 테스트 미존재
-- Rule: MISTAKES.md Domain Functions #22 — Domain functions require 100% branch coverage with dedicated unit tests
-- Context: empty array, all types present, missing type fallback, return structure validation을 포함한 4개 describe/it 블록 추가
-
-- Violation: `src/components/analysis/AnalysisPanel.tsx` — `EyeIcon`에 대한 오도하는 TODO 주석 "unused, skip cleanup"
-- Rule: Documentation Sync — Comments must reflect current implementation reality, not outdated preservation intent
-- Context: EyeIcon이 실제로는 다른 곳에서 사용되고 있으므로 거짓 TODO 주석 삭제
-
-- Violation: S-5 시도 (useEffect deps에서 RefObjects 제거) — ESLint `react-hooks/exhaustive-deps` 경고 발생
-- Rule: MISTAKES.md Coding Paradigm #13 — eslint-disable 사용 금지; 근본 원인(클로저/ref 캡처) 구조 변경 필수
-- Context: MISTAKES.md #13 규칙에 따라 변경 되돌림 (eslint-disable 금지, refs 제거 시 exhaustive-deps 경고 해결 불가)
 
