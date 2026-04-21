@@ -1,8 +1,7 @@
 import { createJobRedis } from '@/infrastructure/jobs/redis';
+import { Redis } from '@upstash/redis';
 
 jest.mock('@upstash/redis');
-
-import { Redis } from '@upstash/redis';
 
 const MockRedis = Redis as jest.MockedClass<typeof Redis>;
 

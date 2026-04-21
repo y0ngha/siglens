@@ -1,5 +1,6 @@
 'use client';
 
+import type React from 'react';
 import {
     useCallback,
     useEffect,
@@ -7,7 +8,6 @@ import {
     useRef,
     useState,
 } from 'react';
-import type React from 'react';
 
 interface UseDragListenerOptions {
     onResize: (deltaX: number) => void;

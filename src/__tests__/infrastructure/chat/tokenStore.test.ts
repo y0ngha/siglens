@@ -1,14 +1,14 @@
 import {
-    hashIp,
-    tryConsumeToken,
-    getRemainingTokens,
-    resetRedisForTest,
     CHAT_TOKEN_LIMIT,
     CHAT_TOKEN_TTL_SEC,
+    getRemainingTokens,
+    hashIp,
+    resetRedisForTest,
+    tryConsumeToken,
 } from '@/infrastructure/chat/tokenStore';
+import { Redis } from '@upstash/redis';
 
 jest.mock('@upstash/redis');
-import { Redis } from '@upstash/redis';
 
 const MockRedis = Redis as jest.MockedClass<typeof Redis>;
 

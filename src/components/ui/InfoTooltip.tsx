@@ -1,7 +1,8 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
 import type React from 'react';
+import type { ReactNode } from 'react';
+import { useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
@@ -11,21 +12,9 @@ import {
 } from '@/lib/tooltipPosition';
 import { cn } from '@/lib/cn';
 
-/**
- * 키보드·마우스·터치 모두 접근 가능한 ⓘ 툴팁 (disclosure 패턴).
- *
- * - Click / Enter / Space: 열고 닫기 토글 (키보드·마우스)
- * - Pointer(마우스) hover: 열기 / leave 시 닫기
- * - Touch: click으로만 토글 (hover 미작동)
- * - **Escape 키**: 열린 상태에서 닫기 (WCAG 2.1 SC 1.4.13)
- * - `aria-expanded`로 disclosure 상태를 스크린리더에 노출
- * - `focus-visible ring`으로 키보드 포커스 시각화
- *
- * 참고: MISTAKES.md Accessibility #4 — `title` 속성만으로는 키보드 사용자에게
- *       정보가 전달되지 않으므로 interactive button + 실제 툴팁 렌더가 필요하다.
- */
+// 키보드·마우스·터치 접근 가능한 ⓘ disclosure 툴팁 — WCAG 2.1 SC 1.4.13 준수.
 interface InfoTooltipProps {
-    readonly children: React.ReactNode;
+    readonly children: ReactNode;
     /** 추가 className. 기본 접근성 클래스(focus-visible ring 등)에 병합된다. */
     readonly className?: string;
 }
@@ -115,12 +104,16 @@ export function InfoTooltip({ children, className }: InfoTooltipProps) {
                         }}
                         id={tooltipId}
                         role="tooltip"
-                        className="bg-secondary-800 border-secondary-600 fixed z-9999 rounded border p-2 text-xs leading-relaxed shadow-lg"
-                        style={{
-                            top: position.top,
-                            left: position.left,
-                            visibility: positioned ? 'visible' : 'hidden',
-                        }}
+                        className={cn(
+                            'bg-secondary-800 border-secondary-600 fixed top-(--tt) left-(--tl) z-9999 rounded border p-2 text-xs leading-relaxed shadow-lg',
+                            positioned ? 'visible' : 'invisible'
+                        )}
+                        style={
+                            {
+                                '--tt': `${position.top}px`,
+                                '--tl': `${position.left}px`,
+                            } as React.CSSProperties
+                        }
                     >
                         {children}
                     </div>,

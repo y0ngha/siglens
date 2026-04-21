@@ -1,7 +1,7 @@
 import {
+    EMA_DEFAULT_PERIODS,
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
-    EMA_DEFAULT_PERIODS,
 } from '@/domain/indicators/constants';
 
 describe('EMPTY_INDICATOR_RESULT', () => {

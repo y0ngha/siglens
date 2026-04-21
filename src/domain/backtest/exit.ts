@@ -1,4 +1,4 @@
-import type { Bar, BacktestExitReason } from '@/domain/types';
+import type { BacktestExitReason, Bar } from '@/domain/types';
 
 export interface ExitSimulationInput {
     bars: Bar[];

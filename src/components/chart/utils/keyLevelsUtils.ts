@@ -1,10 +1,10 @@
-import { LineSeries, LineStyle } from 'lightweight-charts';
 import type {
     IChartApi,
     ISeriesApi,
     LineWidth,
     UTCTimestamp,
 } from 'lightweight-charts';
+import { LineSeries, LineStyle } from 'lightweight-charts';
 import type { Bar } from '@/domain/types';
 
 export function buildLineData(

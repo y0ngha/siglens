@@ -3,10 +3,10 @@ import {
     calculateIchimokuFutureCloud,
 } from '@/domain/indicators/ichimoku';
 import {
-    ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_BASE_PERIOD,
-    ICHIMOKU_SPAN_B_PERIOD,
+    ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_DISPLACEMENT,
+    ICHIMOKU_SPAN_B_PERIOD,
 } from '@/domain/indicators/constants';
 import type { Bar } from '@/domain/types';
 

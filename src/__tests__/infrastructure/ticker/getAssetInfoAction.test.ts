@@ -1,4 +1,16 @@
 import type { AssetInfo } from '@/domain/types';
+import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
+import { createCacheProvider } from '@/infrastructure/cache/redis';
+import {
+    filterIndexResults,
+    filterUsExchanges,
+    searchBySymbol,
+} from '@/infrastructure/ticker/fmpTickerApi';
+import {
+    getKoreanNames,
+    setKoreanTickers,
+} from '@/infrastructure/ticker/koreanNameStore';
+import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: (promise: Promise<unknown>) => {
@@ -32,19 +44,6 @@ jest.mock('@/infrastructure/ticker/koreanNameStore', () => ({
 jest.mock('@/infrastructure/ticker/koreanTranslator', () => ({
     translateCompanyNames: jest.fn(),
 }));
-
-import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
-import { createCacheProvider } from '@/infrastructure/cache/redis';
-import {
-    searchBySymbol,
-    filterUsExchanges,
-    filterIndexResults,
-} from '@/infrastructure/ticker/fmpTickerApi';
-import {
-    getKoreanNames,
-    setKoreanTickers,
-} from '@/infrastructure/ticker/koreanNameStore';
-import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
 
 const mockCreateCacheProvider = createCacheProvider as jest.Mock;
 const mockSearchBySymbol = searchBySymbol as jest.Mock;

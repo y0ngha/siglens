@@ -1,11 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
-
 import { isKoreanInput } from '@/domain/ticker';
-import { useTickerSearch } from '@/components/search/hooks/useTickerSearch';
-import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+import { useAutocomplete } from '@/components/search/hooks/useAutocomplete';
 import { cn } from '@/lib/cn';
 import type { TickerSearchResult } from '@/domain/types';
 
@@ -13,6 +9,20 @@ const LISTBOX_ID = 'ticker-autocomplete-listbox';
 const OPTION_ID_PREFIX = `${LISTBOX_ID}-option`;
 
 type TickerAutocompleteSize = 'sm' | 'lg';
+
+const INPUT_BASE =
+    'bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1';
+const INPUT_SIZE: Record<TickerAutocompleteSize, string> = {
+    sm: 'px-3 py-2 text-sm',
+    lg: 'focus-glow w-full px-4 py-3 text-base sm:w-96',
+};
+
+const BUTTON_BASE =
+    'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500';
+const BUTTON_SIZE: Record<TickerAutocompleteSize, string> = {
+    sm: 'px-4 py-2 text-sm',
+    lg: 'px-6 py-3 text-base',
+};
 
 interface TickerAutocompleteProps {
     className?: string;
@@ -25,109 +35,23 @@ export function TickerAutocomplete({
     size = 'sm',
     onSelect,
 }: TickerAutocompleteProps) {
-    const [query, setQuery] = useState('');
-    const [isClosed, setIsClosed] = useState(false);
-    const [selectedIndex, setSelectedIndex] = useState(-1);
+    const {
+        query,
+        results,
+        isSearching,
+        selectedIndex,
+        isOpen,
+        inputRef,
+        dropdownRef,
+        handleChange,
+        handleKeyDown,
+        handleFocus,
+        handleSearchClick,
+        navigate,
+        prefetch,
+    } = useAutocomplete({ onSelect });
 
-    const inputRef = useRef<HTMLInputElement>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const prefetchedRef = useRef(new Set<string>());
-
-    const router = useRouter();
-    const { results, isSearching, hasQuery } = useTickerSearch(query);
-
-    const isOpen = !isClosed && hasQuery;
     const isKorean = isKoreanInput(query);
-    const inputClass = useMemo(
-        () =>
-            cn(
-                'bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1',
-                size === 'lg'
-                    ? 'focus-glow w-full px-4 py-3 text-base sm:w-96'
-                    : 'px-3 py-2 text-sm'
-            ),
-        [size]
-    );
-    const buttonClass = useMemo(
-        () =>
-            cn(
-                'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors',
-                size === 'lg' ? 'px-6 py-3 text-base' : 'px-4 py-2 text-sm'
-            ),
-        [size]
-    );
-
-    const navigate = useCallback(
-        (symbol: string) => {
-            setQuery('');
-            setIsClosed(true);
-            setSelectedIndex(-1);
-            onSelect?.(symbol);
-            router.push(`/${symbol}`);
-        },
-        [onSelect, router]
-    );
-
-    const prefetch = useCallback(
-        (symbol: string) => {
-            if (prefetchedRef.current.has(symbol)) return;
-            prefetchedRef.current.add(symbol);
-            router.prefetch(`/${symbol}`);
-        },
-        [router]
-    );
-
-    const handleChange = useCallback(
-        (e: React.ChangeEvent<HTMLInputElement>) => {
-            setQuery(e.target.value);
-            setIsClosed(false);
-            setSelectedIndex(-1);
-        },
-        []
-    );
-
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLInputElement>) => {
-            if (e.key === 'ArrowDown') {
-                e.preventDefault();
-                const nextIndex = Math.min(
-                    selectedIndex + 1,
-                    results.length - 1
-                );
-                setSelectedIndex(nextIndex);
-                const next = results[nextIndex];
-                if (next) prefetch(next.symbol);
-            } else if (e.key === 'ArrowUp') {
-                e.preventDefault();
-                const prevIndex = Math.max(selectedIndex - 1, -1);
-                setSelectedIndex(prevIndex);
-                const prev = results[prevIndex];
-                if (prev) prefetch(prev.symbol);
-            } else if (e.key === 'Enter') {
-                e.preventDefault();
-                const selected = results[selectedIndex];
-                if (selectedIndex >= 0 && selected) {
-                    navigate(selected.symbol);
-                } else {
-                    const trimmed = query.trim().toUpperCase();
-                    if (trimmed) navigate(trimmed);
-                }
-            } else if (e.key === 'Escape') {
-                setIsClosed(true);
-                setSelectedIndex(-1);
-            }
-        },
-        [navigate, prefetch, query, results, selectedIndex]
-    );
-
-    const handleSearchClick = useCallback(() => {
-        const trimmed = query.trim().toUpperCase();
-        if (trimmed) navigate(trimmed);
-    }, [navigate, query]);
-
-    const handleFocus = useCallback(() => setIsClosed(false), []);
-
-    useOnClickOutside([inputRef, dropdownRef], () => setIsClosed(true));
 
     return (
         <div
@@ -159,7 +83,7 @@ export function TickerAutocomplete({
                     onKeyDown={handleKeyDown}
                     onFocus={handleFocus}
                     placeholder="종목 입력 (예: AAPL, 애플)"
-                    className={inputClass}
+                    className={cn(INPUT_BASE, INPUT_SIZE[size])}
                 />
                 {isOpen && (
                     <div
@@ -196,7 +120,7 @@ export function TickerAutocomplete({
             <button
                 type="button"
                 onClick={handleSearchClick}
-                className={buttonClass}
+                className={cn(BUTTON_BASE, BUTTON_SIZE[size])}
             >
                 검색
             </button>
@@ -232,7 +156,7 @@ function ResultItem({
             onClick={() => onSelect(result.symbol)}
             onMouseEnter={() => onPrefetch(result.symbol)}
             className={cn(
-                'hover:bg-secondary-700 w-full px-4 py-2 text-left transition-colors',
+                'hover:bg-secondary-700 focus-visible:ring-primary-500 w-full px-4 py-2 text-left transition-colors focus-visible:ring-1 focus-visible:outline-none',
                 isSelected && 'bg-secondary-700'
             )}
         >

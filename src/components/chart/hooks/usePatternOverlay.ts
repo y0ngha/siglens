@@ -1,14 +1,14 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import type { RefObject } from 'react';
-import { LineSeries, createSeriesMarkers } from 'lightweight-charts';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import type {
     IChartApi,
     ISeriesApi,
     ISeriesMarkersPluginApi,
     UTCTimestamp,
 } from 'lightweight-charts';
+import { createSeriesMarkers, LineSeries } from 'lightweight-charts';
 import type { Bar, PatternLine, PatternResult } from '@/domain/types';
 import {
     BASE_PATTERN_SERIES_OPTIONS,

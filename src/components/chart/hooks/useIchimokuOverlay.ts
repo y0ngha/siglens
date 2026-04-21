@@ -1,5 +1,6 @@
 'use client';
 
+import type { RefObject } from 'react';
 import {
     useCallback,
     useEffect,
@@ -7,19 +8,18 @@ import {
     useRef,
     useState,
 } from 'react';
-import type { RefObject } from 'react';
-import { AreaSeries, LineSeries, LineStyle } from 'lightweight-charts';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
+import { AreaSeries, LineSeries, LineStyle } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import { calculateIchimokuFutureCloud } from '@/domain/indicators/ichimoku';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
+import type { FutureCloudBase } from '@/components/chart/utils/ichimokuUtils';
 import {
     buildCloudData,
     extendWithFutureCloud,
 } from '@/components/chart/utils/ichimokuUtils';
-import type { FutureCloudBase } from '@/components/chart/utils/ichimokuUtils';
 
 interface UseIchimokuOverlayParams {
     chartRef: RefObject<IChartApi | null>;

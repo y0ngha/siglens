@@ -10,17 +10,16 @@ import {
     TIMEFRAME_BARS_LIMIT,
 } from '@/domain/constants/market';
 import {
-    MA_DEFAULT_PERIODS,
-    EMA_DEFAULT_PERIODS,
-    RSI_DEFAULT_PERIOD,
-    MACD_SLOW_PERIOD,
     BOLLINGER_DEFAULT_PERIOD,
     DMI_DEFAULT_PERIOD,
+    EMA_DEFAULT_PERIODS,
+    MA_DEFAULT_PERIODS,
+    MACD_SLOW_PERIOD,
+    RSI_DEFAULT_PERIOD,
 } from '@/domain/indicators/constants';
+import { createMarketDataProvider } from '@/infrastructure/market/factory';
 
 jest.mock('@/infrastructure/market/factory');
-
-import { createMarketDataProvider } from '@/infrastructure/market/factory';
 
 const mockGetBars = jest.fn();
 

@@ -1,10 +1,9 @@
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
 import type { BarsData } from '@/domain/types';
+import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 
 jest.mock('@/infrastructure/market/barsApi');
-
-import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 
 const mockFetchBarsWithIndicators =
     fetchBarsWithIndicators as jest.MockedFunction<

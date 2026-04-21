@@ -18,23 +18,23 @@
 
 import type {
     Bar,
-    SMCResult,
-    SMCSwingPoint,
-    SMCSwingPointType,
-    SMCOrderBlock,
-    SMCFairValueGap,
+    SMCBreakType,
     SMCEqualLevel,
+    SMCFairValueGap,
+    SMCOrderBlock,
+    SMCResult,
     SMCStructureBreak,
     SMCStructureDirection,
-    SMCBreakType,
+    SMCSwingPoint,
+    SMCSwingPointType,
 } from '@/domain/types';
 import {
-    SMC_SWING_PERIOD,
-    SMC_EQUAL_LEVEL_ATR_MULTIPLIER,
-    SMC_ATR_PERIOD,
-    SMC_PREMIUM_RATIO,
-    SMC_DISCOUNT_RATIO,
     EMPTY_SMC_RESULT,
+    SMC_ATR_PERIOD,
+    SMC_DISCOUNT_RATIO,
+    SMC_EQUAL_LEVEL_ATR_MULTIPLIER,
+    SMC_PREMIUM_RATIO,
+    SMC_SWING_PERIOD,
 } from '@/domain/indicators/constants';
 import { calculateATR } from '@/domain/indicators/atr';
 

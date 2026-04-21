@@ -1,9 +1,7 @@
 'use client';
 
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
-import { useEscapeKey } from '@/components/layout/hooks/useEscapeKey';
-import { useFocusTrap } from '@/components/layout/hooks/useFocusTrap';
+import { useCopyToClipboard } from '@/components/hooks/useCopyToClipboard';
+import { useDialog } from '@/components/hooks/useDialog';
 import { CONTACT_EMAIL } from '@/lib/contact';
 
 const GITHUB_ISSUES_URL = 'https://github.com/y0ngha/siglens/issues/new/choose';
@@ -17,56 +15,21 @@ export function ContactDialog({
     triggerLabel = '오류 제보하기',
     triggerClassName,
 }: ContactDialogProps) {
-    const [open, setOpen] = useState(false);
-    const [copied, setCopied] = useState(false);
-    const dialogRef = useRef<HTMLDivElement>(null);
-    const copyTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const triggerRef = useRef<HTMLButtonElement>(null);
-
-    const handleClose = useCallback(() => {
-        setOpen(false);
-        triggerRef.current?.focus();
-    }, []);
-
-    useOnClickOutside([dialogRef], handleClose, { enabled: open });
-    useEscapeKey(handleClose);
-    useFocusTrap(dialogRef, open);
-
-    useEffect(() => {
-        if (open) {
-            dialogRef.current?.focus();
-        }
-    }, [open]);
-
-    useEffect(() => {
-        return () => {
-            if (copyTimeoutRef.current !== null) {
-                clearTimeout(copyTimeoutRef.current);
-            }
-        };
-    }, []);
-
-    const copyEmail = async () => {
-        if (copyTimeoutRef.current !== null) {
-            clearTimeout(copyTimeoutRef.current);
-        }
-        await navigator.clipboard.writeText(CONTACT_EMAIL);
-        setCopied(true);
-        copyTimeoutRef.current = setTimeout(() => setCopied(false), 2000);
-    };
+    const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
+    const { copied, copy } = useCopyToClipboard();
 
     return (
         <>
             <button
                 ref={triggerRef}
                 type="button"
-                onClick={() => setOpen(true)}
+                onClick={open}
                 className={triggerClassName}
             >
                 {triggerLabel}
             </button>
 
-            {open && (
+            {isOpen && (
                 <div
                     className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center overscroll-contain p-4 backdrop-blur-sm"
                     role="presentation"
@@ -93,9 +56,9 @@ export function ContactDialog({
                             </div>
                             <button
                                 type="button"
-                                onClick={handleClose}
+                                onClick={close}
                                 aria-label="닫기"
-                                className="text-secondary-500 hover:text-secondary-300 -mt-1 -mr-1 rounded p-1 transition-colors"
+                                className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 -mt-1 -mr-1 rounded p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
                             >
                                 <svg
                                     width="16"
@@ -153,14 +116,14 @@ export function ContactDialog({
                                     </span>
                                     <button
                                         type="button"
-                                        onClick={copyEmail}
+                                        onClick={() => copy(CONTACT_EMAIL)}
                                         aria-label={
                                             copied
                                                 ? '이메일 주소가 복사되었습니다'
                                                 : '이메일 주소 복사'
                                         }
                                         aria-live="polite"
-                                        className="text-secondary-500 hover:text-primary-400 ml-3 shrink-0 text-xs transition-colors"
+                                        className="text-secondary-500 hover:text-primary-400 focus-visible:ring-primary-500 ml-3 shrink-0 rounded text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none"
                                     >
                                         {copied ? '복사됨' : '복사'}
                                     </button>

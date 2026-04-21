@@ -1,5 +1,11 @@
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import type { AnalysisResponse } from '@/domain/types';
+import { headers } from 'next/headers';
+import {
+    getRemainingTokens,
+    tryConsumeToken,
+} from '@/infrastructure/chat/tokenStore';
+import { GoogleGenAI } from '@google/genai';
 
 jest.mock('next/headers', () => ({
     headers: jest.fn().mockResolvedValue({
@@ -23,13 +29,6 @@ jest.mock('@google/genai', () => ({
         },
     })),
 }));
-
-import { headers } from 'next/headers';
-import {
-    tryConsumeToken,
-    getRemainingTokens,
-} from '@/infrastructure/chat/tokenStore';
-import { GoogleGenAI } from '@google/genai';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const mockTryConsumeToken = tryConsumeToken as jest.MockedFunction<

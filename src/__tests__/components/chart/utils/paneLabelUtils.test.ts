@@ -1,19 +1,19 @@
 import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
 import { CHART_COLORS } from '@/lib/chartColors';
 import {
-    RSI_DEFAULT_PERIOD,
-    MACD_FAST_PERIOD,
-    MACD_SLOW_PERIOD,
-    MACD_SIGNAL_PERIOD,
+    CCI_DEFAULT_PERIOD,
     DMI_DEFAULT_PERIOD,
-    STOCHASTIC_K_PERIOD,
-    STOCHASTIC_D_PERIOD,
-    STOCHASTIC_SMOOTHING,
+    MACD_FAST_PERIOD,
+    MACD_SIGNAL_PERIOD,
+    MACD_SLOW_PERIOD,
+    RSI_DEFAULT_PERIOD,
+    STOCH_RSI_D_PERIOD,
+    STOCH_RSI_K_PERIOD,
     STOCH_RSI_RSI_PERIOD,
     STOCH_RSI_STOCH_PERIOD,
-    STOCH_RSI_K_PERIOD,
-    STOCH_RSI_D_PERIOD,
-    CCI_DEFAULT_PERIOD,
+    STOCHASTIC_D_PERIOD,
+    STOCHASTIC_K_PERIOD,
+    STOCHASTIC_SMOOTHING,
 } from '@/domain/indicators/constants';
 import type { PaneIndices } from '@/components/chart/types';
 import { INACTIVE_PANE_INDEX } from '@/components/chart/constants';

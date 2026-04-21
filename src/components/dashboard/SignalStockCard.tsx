@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
+import { formatPriceChange, formatUsdPrice } from '@/lib/priceFormat';
 import type { StockWithConflict } from '@/domain/types';
 import { SignalBadge } from './SignalBadge';
 
@@ -8,22 +10,17 @@ interface SignalStockCardProps {
 }
 
 export function SignalStockCard({ data }: SignalStockCardProps) {
-    const isUp = data.changePercent >= 0;
-    const sign = isUp ? '+' : '';
-    const changeColor = isUp ? 'text-chart-bullish' : 'text-chart-bearish';
+    const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
+        data.changePercent
+    );
 
     return (
         <Link
             href={`/${data.symbol}`}
             title={`${data.koreanName} 분석`}
             className={cn(
-                'border-secondary-700 bg-secondary-800/50 block origin-center touch-manipulation border',
-                'rounded-lg p-3',
-                'transition-[background-color,border-color,transform,box-shadow] duration-150',
-                'hover:bg-secondary-800/70 hover:border-secondary-600 hover:-translate-y-px',
-                'hover:shadow-primary-950/40 hover:shadow-lg',
-                'focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none',
-                'motion-reduce:transition-none motion-reduce:hover:transform-none'
+                'border-secondary-700 bg-secondary-800/50 border p-3',
+                CARD_LINK_CLASSES
             )}
         >
             <div className="flex flex-col gap-1">
@@ -37,13 +34,11 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
                     <span
                         className={cn(
                             'flex shrink-0 items-center gap-0.5 font-mono text-xs tabular-nums',
-                            changeColor
+                            colorClass
                         )}
                     >
-                        <span aria-hidden="true">{isUp ? '▲' : '▼'}</span>
-                        <span className="sr-only">
-                            {isUp ? '상승' : '하락'}
-                        </span>
+                        <span aria-hidden="true">{arrow}</span>
+                        <span className="sr-only">{arrowLabel}</span>
                         {sign}
                         {data.changePercent.toFixed(2)}%
                     </span>
@@ -52,10 +47,7 @@ export function SignalStockCard({ data }: SignalStockCardProps) {
                     {data.koreanName}
                 </p>
                 <p className="text-secondary-100 font-mono text-sm tabular-nums">
-                    $
-                    {data.price.toLocaleString('en-US', {
-                        maximumFractionDigits: 2,
-                    })}
+                    ${formatUsdPrice(data.price)}
                 </p>
                 {data.signals.length > 0 && (
                     <div className="flex flex-wrap gap-x-1.5 gap-y-0.5 pt-1">

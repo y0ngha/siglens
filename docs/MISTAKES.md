@@ -59,6 +59,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 7. Repeating identical className ternary 3+ times
    → Extract to a helper function
 
+7.5. Combining Tailwind classes with template literals or + operator instead of cn()
+   → All dynamic or conditional Tailwind className combinations must use cn() utility
+   → Never concatenate Tailwind classes with template literals, string concatenation (+ operator), or ternaries
+   → Even static className constants must use cn() when building multi-part classNames
+   ❌ className={`grid gap-2 ${condition ? 'px-4' : 'px-2'}`}
+   ❌ className={'px-4 ' + (isActive ? 'bg-primary' : '')}
+   ❌ const CARD_CLASSES = 'px-4 py-2' + ' bg-white' + ' border border-gray-200'  // + operator on strings
+   ✅ className={cn('grid gap-2', condition ? 'px-4' : 'px-2')}
+   ✅ className={cn('px-4', isActive && 'bg-primary')}
+   ✅ const CARD_CLASSES = cn('px-4 py-2', 'bg-white', 'border border-gray-200')
+   → cn() enables proper class merging, conflict detection, and IDE support
+
 8. Tight coupling between interface props and dependent files
    → Group related prop pairs into a single type (e.g. IndicatorToggleGroup { visible, onToggle })
 
@@ -151,8 +163,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 19. Inline styles in JSX when Tailwind classes are available
     → Always use Tailwind; never inline style={{ ... }} for layout or styling
+    → When dynamic values require inline styles, use CSS custom properties + Tailwind classes instead
+    → `style={{ '--custom-prop': value }} as CSSProperties` + `className="... var(--custom-prop)"` pattern
     ❌ <ins style={{ display: 'block' }} />
+    ❌ <div style={{ backgroundColor: getColor(state) }} />  // inline color computation
     ✅ <ins className="block" />
+    ✅ <div style={{ '--period-color': getColor(state) } as CSSProperties} className="bg-[var(--period-color)]" />
 
 20. Nested functions without explicit parameters extracted to module level
     → When extracting a function from a parent function scope, make all parent variables explicit parameters
@@ -202,12 +218,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ const value: number = getValue() ?? 0;  // type guard with fallback
    ❌ atrValues[idx] as number  // null never occurs due to prior check
    ✅ atrValues[idx]!  // non-null assertion operator
-
-8. `as` type assertions without explanatory comments
-   → When `as` must be used (e.g., external API response parsing), document why with a comment
-   → Comment should explain the reason for the assertion (e.g., "FMP API response shape guaranteed by provider")
-   ❌ const data = response as ApiResult;
-   ✅ const data = response as ApiResult; // API response shape enforced by external provider schema
+   ⚠️  Safe-cast exception: `as` is allowed when TypeScript's type system structurally widens a
+      value whose runtime type is already guaranteed by the surrounding type — NOT to force-cast
+      a value that could genuinely be null, undefined, number, or string at runtime.
+   → The key distinction:
+      Safe  — TS cannot express the constraint, but the runtime value is provably correct
+      Unsafe — the runtime value could actually be a different type; `as` hides the real problem
+   ❌ const value = fetchData() as MyType;       // runtime value may be null/undefined/wrong shape
+   ❌ const x = someString as SpecificLiteral;   // string may not satisfy the union at runtime
+   ✅ // Object.keys widens to string[], but SKILL_STAT_CONFIG: Record<SkillType, …> guarantees keys
+      const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];  // TS limitation, not runtime risk
+   → Mandatory: every safe-cast `as` must be accompanied by a comment explaining the guarantee.
 ```
 
 ---
@@ -228,6 +249,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 5. Props declared but not connected to callbacks (latent bugs)
    → If a callback prop exists, it must actually be invoked
+
+5.5. Unused, dead, or decorative props in component interfaces
+   → Props that are declared but not consumed by the component, or received but immediately discarded (_prefix pattern)
+   → Intermediate components must not pass-through props they don't directly use (Props Drilling anti-pattern)
+   → Remove unused props from interface; remove pass-through behavior in intermediate components
+   ❌ interface Props { isVisible?: boolean; onToggleVisibility?(...) }; component destructures but uses neither
+   ❌ ChartContent receives chartVisiblePatterns but passes to AnalysisPanel without AnalysisPanel consuming it
+   ✅ Remove both from interface; if AnalysisPanel needs it, pass directly from parent (or use context for cross-cutting concerns)
 
 6. Repeating identical JSX structure 2+ times
    → Extract to a data array + .map() pattern
@@ -261,6 +290,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → useState causes render cycles: setState → rerender → effect re-executes → immediate guard return
     ❌ const [isPushed, setIsPushed] = useState(false); handlePush() { setIsPushed(true); }
     ✅ const isPushedRef = useRef(false); handlePush() { isPushedRef.current = true; }
+
+13. Component props interface declared inline instead of above component function
+    → Extract inline prop type definitions to named interface declared directly above component
+    → Improves readability and allows reuse in tests or other contexts
+    ❌ export default function MyComponent({ label }: { label: string }) { ... }
+    ✅ interface MyComponentProps { label: string }; export default function MyComponent(props: MyComponentProps) { ... }
 ```
 
 ---
@@ -371,7 +406,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ <div role="note">  // no aria-label
    ✅ <div role="note" aria-label="Additional information">
 
-4. Interactive info icons using <span title="..."> only — not keyboard accessible
+4. Missing focus-visible:ring on interactive buttons
+   → All interactive buttons must have keyboard focus indicator
+   → Apply focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500 to every button
+   ❌ <button className="px-4 py-2 bg-primary-600">Click</button>  // no focus indicator
+   ✅ <button className="px-4 py-2 bg-primary-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500">Click</button>
+   → Includes: TabsPill, DropdownPortal buttons, info icons, action buttons in AnalysisPanel, IndicatorToolbar
+   → Omission violates keyboard accessibility (WCAG 2.4.7 Focus Visible)
+
+5. Interactive info icons using <span title="..."> only — not keyboard accessible
    → Tooltips must be keyboard-accessible; title attribute ignored by keyboard users and screen readers
    → Replace <span> with <button>, add aria-describedby + role="tooltip" pattern
    ❌ <span title="Information">ⓘ</span>  // title-only, no keyboard access
@@ -604,4 +647,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Utility functions extracted from components must go to utils/ subfolders, not remain in components/
    ❌ Pure function in components/dashboard/utils/ or inlined in SectorSignalPanel.tsx
    ✅ Pure function in domain/signals/ or dedicated utils/ subfolder with proper layer imports
+
+3. UI presentation types or configurations with display labels defined in domain/
+   → domain/types.ts and domain/ modules must contain only pure business logic types
+   → Presentation concerns (Korean labels, CSS class names, UI-specific configurations, display enums) belong in lib/ or component-specific modules
+   ❌ SkillStat, SkillStatConfig, SKILL_STAT_CONFIG defined in domain/skills.ts with Korean display labels
+   ❌ PriceChangeDisplay, BreadcrumbItem UI types defined in domain/types.ts
+   ✅ Move presentation-specific types to lib/ (e.g., lib/skillStats.ts, lib/priceFormat.ts)
+   ✅ domain/ contains only pure calculation functions: countSkillsByType, formatPrice logic, etc.
 ```

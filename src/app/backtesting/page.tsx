@@ -5,11 +5,15 @@ import {
     BACKTESTING_KEYWORDS,
     BACKTESTING_TITLE,
     BACKTESTING_URL,
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_WIDTH,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
+import { TERMS_PATH } from '@/lib/legal';
 import { BacktestHero } from '@/components/backtesting/BacktestHero';
 import { BacktestTabs } from '@/components/backtesting/BacktestTabs';
+import { JsonLd } from '@/components/ui/JsonLd';
 import backtestData from './data.json';
 import { validateBacktestData } from '@/domain/backtest/validate';
 
@@ -35,8 +39,8 @@ export const metadata: Metadata = {
         images: [
             {
                 url: '/og-image.png',
-                width: 1200,
-                height: 630,
+                width: OG_IMAGE_WIDTH,
+                height: OG_IMAGE_HEIGHT,
                 alt: `${SITE_NAME} AI 백테스팅 결과`,
             },
         ],
@@ -65,6 +69,7 @@ const datasetJsonLd = {
     description: BACKTESTING_DESCRIPTION,
     url: BACKTESTING_URL,
     creator: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+    license: `${SITE_URL}${TERMS_PATH}`,
     temporalCoverage: '2024-04/2026-04',
     spatialCoverage: 'US',
     variableMeasured: '주식 기술적 분석 신호 승률 및 AI 예측 정확도',
@@ -73,18 +78,8 @@ const datasetJsonLd = {
 export default function BacktestingPage() {
     return (
         <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(webPageJsonLd),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(datasetJsonLd),
-                }}
-            />
+            <JsonLd data={webPageJsonLd} />
+            <JsonLd data={datasetJsonLd} />
             <div className="bg-secondary-900 min-h-screen">
                 <BacktestHero meta={data.meta} />
                 <main>

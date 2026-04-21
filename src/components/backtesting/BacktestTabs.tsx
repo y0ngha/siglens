@@ -1,9 +1,8 @@
 'use client';
 
-import { useCallback, useMemo } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import type { BacktestCase } from '@/domain/types';
-import { cn } from '@/lib/cn';
+import { buildPanelId, buildTabId, TabsUnderline } from '@/components/ui/tabs';
+import { useBacktestFilter } from './hooks/useBacktestFilter';
 import { BacktestCaseList } from './BacktestCaseList';
 
 interface BacktestTabsProps {
@@ -11,99 +10,29 @@ interface BacktestTabsProps {
     tickers: string[];
 }
 
-const ALL_TAB = '전체';
+const TABS_ID_PREFIX = 'backtest';
 
 export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
-    const router = useRouter();
-    const searchParams = useSearchParams();
-    const tabs = useMemo(() => [ALL_TAB, ...tickers], [tickers]);
-
-    const { safeActive, filtered } = useMemo(() => {
-        const active = searchParams.get('ticker') ?? ALL_TAB;
-        const safe = tabs.includes(active) ? active : ALL_TAB;
-        return {
-            safeActive: safe,
-            filtered:
-                safe === ALL_TAB ? cases : cases.filter(c => c.ticker === safe),
-        };
-    }, [cases, tabs, searchParams]);
-
-    const setActive = useCallback(
-        (tab: string) => {
-            const params = new URLSearchParams(searchParams.toString());
-            if (tab === ALL_TAB) {
-                params.delete('ticker');
-            } else {
-                params.set('ticker', tab);
-            }
-            router.push(`?${params.toString()}`, { scroll: false });
-        },
-        [router, searchParams]
-    );
-
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLDivElement>) => {
-            const currentIdx = tabs.indexOf(safeActive);
-            let nextTab: string | undefined;
-            if (e.key === 'ArrowRight') {
-                e.preventDefault();
-                nextTab = tabs[(currentIdx + 1) % tabs.length];
-            } else if (e.key === 'ArrowLeft') {
-                e.preventDefault();
-                nextTab = tabs[(currentIdx - 1 + tabs.length) % tabs.length];
-            } else if (e.key === 'Home') {
-                e.preventDefault();
-                nextTab = tabs[0];
-            } else if (e.key === 'End') {
-                e.preventDefault();
-                nextTab = tabs[tabs.length - 1];
-            }
-            if (nextTab !== undefined) {
-                setActive(nextTab);
-                document.getElementById(`tab-${nextTab}`)?.focus();
-            }
-        },
-        [safeActive, tabs, setActive]
+    const { tabItems, activeTab, setActiveTab, filtered } = useBacktestFilter(
+        cases,
+        tickers
     );
 
     return (
         <div>
-            <div
-                role="tablist"
-                aria-label="티커 필터"
-                onKeyDown={handleKeyDown}
-                className="border-secondary-800 overflow-x-auto border-b"
-            >
-                <div className="flex min-w-max px-4">
-                    {tabs.map(tab => {
-                        const isSelected = tab === safeActive;
-                        return (
-                            <button
-                                key={tab}
-                                id={`tab-${tab}`}
-                                role="tab"
-                                aria-selected={isSelected}
-                                aria-controls="backtest-case-list"
-                                tabIndex={isSelected ? 0 : -1}
-                                onClick={() => setActive(tab)}
-                                className={cn(
-                                    'focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-900 cursor-pointer [touch-action:manipulation] border-b-2 px-3.5 py-2.5 text-[10px] font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-1 focus-visible:outline-none',
-                                    isSelected
-                                        ? 'border-primary-400 text-primary-400'
-                                        : 'text-secondary-500 hover:text-secondary-300 border-transparent'
-                                )}
-                            >
-                                {tab}
-                            </button>
-                        );
-                    })}
-                </div>
-            </div>
+            <TabsUnderline
+                tabs={tabItems}
+                activeTab={activeTab}
+                onChange={setActiveTab}
+                ariaLabel="티커 필터"
+                size="xs"
+                idPrefix={TABS_ID_PREFIX}
+            />
 
             <div
-                id="backtest-case-list"
+                id={buildPanelId(TABS_ID_PREFIX, activeTab)}
                 role="tabpanel"
-                aria-labelledby={`tab-${safeActive}`}
+                aria-labelledby={buildTabId(TABS_ID_PREFIX, activeTab)}
             >
                 <BacktestCaseList cases={filtered} />
             </div>

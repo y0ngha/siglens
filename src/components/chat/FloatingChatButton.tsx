@@ -1,16 +1,8 @@
 'use client';
 
-import {
-    startTransition,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
-
-const TOOLTIP_SHOWN_KEY = 'siglens:chat-tooltip-shown';
+import { useChatButtonState } from '@/components/chat/hooks/useChatButtonState';
 
 interface FloatingChatButtonProps {
     symbol: string;
@@ -25,40 +17,13 @@ export function FloatingChatButton({
     analysis,
     isAnalysisReady,
 }: FloatingChatButtonProps) {
-    const [isOpen, setIsOpen] = useState(false);
-    const [showTooltip, setShowTooltip] = useState(false);
-    const wasReadyOnMountRef = useRef(isAnalysisReady);
-
-    const handleClose = useCallback(() => setIsOpen(false), []);
-
-    const dismissTooltip = useCallback(() => {
-        setShowTooltip(false);
-        try {
-            localStorage.setItem(TOOLTIP_SHOWN_KEY, '1');
-        } catch {
-            // ignore quota errors
-        }
-    }, []);
-
-    const handleButtonClick = useCallback(() => {
-        if (showTooltip) dismissTooltip();
-        setIsOpen(prev => !prev);
-    }, [showTooltip, dismissTooltip]);
-
-    useEffect(() => {
-        if (!isAnalysisReady) return;
-        // 마운트 시점에 이미 ready였다면 분석이 방금 완료된 게 아님 — 툴팁 미표시
-        if (wasReadyOnMountRef.current) return;
-        try {
-            if (!localStorage.getItem(TOOLTIP_SHOWN_KEY)) {
-                startTransition(() => {
-                    setShowTooltip(true);
-                });
-            }
-        } catch {
-            // ignore
-        }
-    }, [isAnalysisReady]);
+    const {
+        isOpen,
+        showTooltip,
+        handleClose,
+        handleButtonClick,
+        dismissTooltip,
+    } = useChatButtonState(isAnalysisReady);
 
     return (
         <>
@@ -78,7 +43,7 @@ export function FloatingChatButton({
                     <button
                         type="button"
                         onClick={dismissTooltip}
-                        className="text-secondary-400 hover:text-secondary-200 absolute top-2 right-2 flex h-5 w-5 items-center justify-center text-xs transition-colors"
+                        className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 absolute top-2 right-2 flex h-5 w-5 items-center justify-center rounded text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none"
                         aria-label="툴팁 닫기"
                     >
                         ✕
@@ -94,7 +59,7 @@ export function FloatingChatButton({
             <button
                 type="button"
                 onClick={handleButtonClick}
-                className="bg-primary-600 hover:bg-primary-500 fixed right-4 bottom-3 z-50 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-colors md:right-6 md:bottom-6"
+                className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 fixed right-4 bottom-3 z-50 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-colors focus-visible:ring-1 focus-visible:outline-none md:right-6 md:bottom-6"
                 aria-label={isOpen ? 'AI 채팅 닫기' : 'AI 채팅 열기'}
                 aria-expanded={isOpen}
             >

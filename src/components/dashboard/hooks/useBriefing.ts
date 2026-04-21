@@ -3,23 +3,26 @@
 import { useQuery } from '@tanstack/react-query';
 import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import type { MarketBriefingResponse } from '@/domain/types';
+import type {
+    MarketBriefingResponse,
+    SubmitBriefingResult,
+} from '@/domain/types';
 
 const POLL_INTERVAL_MS = 5_000;
 
 interface UseBriefingResult {
-    briefing: MarketBriefingResponse | null;
-    generatedAt: string | null;
-    isLoading: boolean;
-    error: string | null;
+    briefing: MarketBriefingResponse;
+    generatedAt: string;
 }
 
+// 로딩 중에는 Promise를, 에러 시에는 Error를 throw한다 — 호출부는 <Suspense> + <ErrorBoundary>로 감싼다.
+// 반환값 null은 briefing이 요청되지 않은 상태(input이 없음)를 뜻한다.
 export function useBriefing(
-    jobId: string | undefined,
-    initialBriefing: MarketBriefingResponse | undefined,
-    initialGeneratedAt: string | undefined
-): UseBriefingResult {
-    const { data } = useQuery({
+    input: SubmitBriefingResult | undefined
+): UseBriefingResult | null {
+    const jobId = input?.status === 'submitted' ? input.jobId : undefined;
+
+    const { data, error } = useQuery({
         queryKey: QUERY_KEYS.briefing(jobId ?? ''),
         queryFn: () => pollBriefingAction(jobId!),
         enabled: !!jobId,
@@ -32,12 +35,20 @@ export function useBriefing(
         staleTime: Infinity,
     });
 
-    const polledDone = data?.status === 'done' ? data : null;
+    if (!input) return null;
 
-    const briefing = initialBriefing ?? polledDone?.briefing ?? null;
-    const generatedAt = initialGeneratedAt ?? polledDone?.generatedAt ?? null;
-    const isLoading = !!jobId && briefing === null && data?.status !== 'error';
-    const error = data?.status === 'error' ? data.error : null;
+    if (input.status === 'cached') {
+        return {
+            briefing: input.briefing,
+            generatedAt: input.generatedAt,
+        };
+    }
 
-    return { briefing, generatedAt, isLoading, error };
+    if (error) throw error;
+    if (!data || data.status === 'processing') {
+        throw new Promise<void>(() => undefined);
+    }
+    if (data.status === 'error') throw new Error(data.error);
+
+    return { briefing: data.briefing, generatedAt: data.generatedAt };
 }

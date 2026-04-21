@@ -19,7 +19,15 @@ import {
     SIGNAL_SECTORS,
 } from '@/domain/constants/dashboard-tickers';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import { ROOT_KEYWORDS, SITE_NAME, SITE_URL } from '@/lib/seo';
+import {
+    buildBreadcrumbJsonLd,
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_WIDTH,
+    ROOT_KEYWORDS,
+    SITE_NAME,
+    SITE_URL,
+} from '@/lib/seo';
+import { JsonLd } from '@/components/ui/JsonLd';
 
 const MARKET_TITLE = `오늘의 미국 주식, 섹터별 기술적 신호 | ${SITE_NAME}`;
 const MARKET_DESCRIPTION =
@@ -35,11 +43,18 @@ const MARKET_KEYWORDS = [
     '볼린저 스퀴즈',
 ];
 
+interface SearchParams {
+    sector?: string;
+    timeframe?: string;
+}
+
+interface GenerateMetadataProps {
+    searchParams: Promise<SearchParams>;
+}
+
 export async function generateMetadata({
     searchParams,
-}: {
-    searchParams: Promise<SearchParams>;
-}): Promise<Metadata> {
+}: GenerateMetadataProps): Promise<Metadata> {
     const params = await searchParams;
     const hasQueryVariant =
         params.sector !== undefined || params.timeframe !== undefined;
@@ -59,8 +74,8 @@ export async function generateMetadata({
             images: [
                 {
                     url: '/og-image.png',
-                    width: 1200,
-                    height: 630,
+                    width: OG_IMAGE_WIDTH,
+                    height: OG_IMAGE_HEIGHT,
                     alt: MARKET_TITLE,
                 },
             ],
@@ -77,11 +92,6 @@ export async function generateMetadata({
     };
 }
 
-interface SearchParams {
-    sector?: string;
-    timeframe?: string;
-}
-
 function isDashboardTimeframe(v: string | undefined): v is DashboardTimeframe {
     return (
         v !== undefined &&
@@ -89,13 +99,15 @@ function isDashboardTimeframe(v: string | undefined): v is DashboardTimeframe {
     );
 }
 
+interface SectorSignalSectionProps {
+    initialSector: string;
+    initialTimeframe: DashboardTimeframe;
+}
+
 async function SectorSignalSection({
     initialSector,
     initialTimeframe,
-}: {
-    initialSector: string;
-    initialTimeframe: DashboardTimeframe;
-}) {
+}: SectorSignalSectionProps) {
     const data = await getSectorSignals(initialTimeframe);
     return (
         <SectorSignalPanel
@@ -106,11 +118,11 @@ async function SectorSignalSection({
     );
 }
 
-export default async function MarketPage({
-    searchParams,
-}: {
+interface MarketPageProps {
     searchParams: Promise<SearchParams>;
-}) {
+}
+
+export default async function MarketPage({ searchParams }: MarketPageProps) {
     const params = await searchParams;
     const initialTimeframe: DashboardTimeframe = isDashboardTimeframe(
         params.timeframe
@@ -133,48 +145,20 @@ export default async function MarketPage({
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: `오늘의 미국 주식 시장, 섹터별 기술적 신호 | ${SITE_NAME}`,
+        name: MARKET_TITLE,
         description: MARKET_DESCRIPTION,
         url: MARKET_URL,
         inLanguage: 'ko',
     };
 
-    const breadcrumbJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'BreadcrumbList',
-        itemListElement: [
-            {
-                '@type': 'ListItem',
-                position: 1,
-                name: SITE_NAME,
-                item: SITE_URL,
-            },
-            {
-                '@type': 'ListItem',
-                position: 2,
-                name: '시장 현황',
-                item: MARKET_URL,
-            },
-        ],
-    };
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+        { name: '시장 현황', url: MARKET_URL },
+    ]);
 
     return (
         <>
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(jsonLd).replace(/</g, '\\u003c'),
-                }}
-            />
-            <script
-                type="application/ld+json"
-                dangerouslySetInnerHTML={{
-                    __html: JSON.stringify(breadcrumbJsonLd).replace(
-                        /</g,
-                        '\\u003c'
-                    ),
-                }}
-            />
+            <JsonLd data={jsonLd} />
+            <JsonLd data={breadcrumbJsonLd} />
             <h1 className="sr-only">미국 주식 기술적 신호 대시보드</h1>
             <HydrationBoundary state={dehydrate(queryClient)}>
                 <Suspense fallback={<MarketSummaryPanelSkeleton />}>

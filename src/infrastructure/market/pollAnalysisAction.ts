@@ -10,11 +10,11 @@ import {
     computeEffectiveTtl,
 } from '@/infrastructure/cache/config';
 import {
-    getJobStatus,
-    getJobResult,
+    cleanupJob,
     getJobError,
     getJobMeta,
-    cleanupJob,
+    getJobResult,
+    getJobStatus,
 } from '@/infrastructure/jobs/queue';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';
 

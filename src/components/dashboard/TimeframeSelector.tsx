@@ -1,11 +1,12 @@
 'use client';
 
-import { useCallback } from 'react';
+import type { KeyboardEvent } from 'react';
 import { cn } from '@/lib/cn';
+import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
 import type { DashboardTimeframe } from '@/domain/types';
 import {
-    DASHBOARD_TIMEFRAMES,
     DASHBOARD_TIMEFRAME_LABELS,
+    DASHBOARD_TIMEFRAMES,
 } from '@/domain/constants/dashboard-tickers';
 
 interface TimeframeSelectorProps {
@@ -13,43 +14,41 @@ interface TimeframeSelectorProps {
     onChange: (next: DashboardTimeframe) => void;
 }
 
+const TIMEFRAME_LABEL_ID = 'timeframe-label';
+
+function focusRadioInGroup(
+    next: DashboardTimeframe,
+    e: KeyboardEvent<Element>
+): void {
+    const idx = DASHBOARD_TIMEFRAMES.indexOf(next);
+    const parent = e.currentTarget.closest('[role="radiogroup"]');
+    const buttons = parent?.querySelectorAll<HTMLElement>('[role="radio"]');
+    buttons?.[idx]?.focus();
+}
+
 export function TimeframeSelector({
     timeframe,
     onChange,
 }: TimeframeSelectorProps) {
-    const handleKeyDown = useCallback(
-        (e: React.KeyboardEvent<HTMLButtonElement>) => {
-            const idx = DASHBOARD_TIMEFRAMES.indexOf(timeframe);
-            const total = DASHBOARD_TIMEFRAMES.length;
-            const nextIdx =
-                e.key === 'ArrowRight'
-                    ? (idx + 1) % total
-                    : e.key === 'ArrowLeft'
-                      ? (idx - 1 + total) % total
-                      : -1;
-            if (nextIdx !== -1) {
-                e.preventDefault();
-                onChange(DASHBOARD_TIMEFRAMES[nextIdx]);
-                const parent = e.currentTarget.closest('[role="radiogroup"]');
-                const buttons =
-                    parent?.querySelectorAll<HTMLElement>('[role="radio"]');
-                buttons?.[nextIdx]?.focus();
-            }
-        },
-        [onChange, timeframe]
-    );
+    const handleKeyDown = useRovingKeyboardNav<DashboardTimeframe>({
+        items: DASHBOARD_TIMEFRAMES,
+        activeItem: timeframe,
+        onChange,
+        focusItem: focusRadioInGroup,
+        withHomeEnd: false,
+    });
 
     return (
         <div className="flex items-baseline gap-3">
             <span
-                id="timeframe-label"
+                id={TIMEFRAME_LABEL_ID}
                 className="text-secondary-500 text-[10px] tracking-wider uppercase"
             >
                 타임프레임
             </span>
             <div
                 role="radiogroup"
-                aria-labelledby="timeframe-label"
+                aria-labelledby={TIMEFRAME_LABEL_ID}
                 className="flex gap-3"
             >
                 {DASHBOARD_TIMEFRAMES.map(tf => {

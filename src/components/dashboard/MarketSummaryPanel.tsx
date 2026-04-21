@@ -1,34 +1,37 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Suspense } from 'react';
+import { cn } from '@/lib/cn';
+import { ErrorBoundary } from 'react-error-boundary';
 import { IndexCard } from './IndexCard';
-import { BriefingCard } from './BriefingCard';
+import {
+    BriefingCard,
+    BriefingErrorCard,
+    BriefingLoadingCard,
+} from './BriefingCard';
 import { useBriefing } from './hooks/useBriefing';
 import { useMarketSummary } from './hooks/useMarketSummary';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
 import { SECTOR_GROUPS } from '@/domain/constants/dashboard-tickers';
-import type { MarketSectorData } from '@/domain/types';
+import type { MarketSectorData, SubmitBriefingResult } from '@/domain/types';
+
+interface BriefingRegionProps {
+    input: SubmitBriefingResult | undefined;
+}
+
+function BriefingRegion({ input }: BriefingRegionProps) {
+    const result = useBriefing(input);
+    if (!result) return null;
+    return (
+        <BriefingCard
+            briefing={result.briefing}
+            generatedAt={result.generatedAt}
+        />
+    );
+}
 
 export function MarketSummaryPanel() {
-    const { data, isPending } = useMarketSummary();
-
-    const { briefing, generatedAt, isLoading, error } = useBriefing(
-        data?.briefing.status === 'submitted' ? data.briefing.jobId : undefined,
-        data?.briefing.status === 'cached' ? data.briefing.briefing : undefined,
-        data?.briefing.status === 'cached'
-            ? data.briefing.generatedAt
-            : undefined
-    );
-
-    const sectorMap = useMemo(
-        () =>
-            new Map<string, MarketSectorData>(
-                (data?.summary.sectors ?? []).map(s => [s.symbol, s])
-            ),
-        [data?.summary.sectors]
-    );
-
-    const indices = data?.summary.indices ?? [];
+    const { data, isPending, sectorMap, indices } = useMarketSummary();
 
     if (isPending) return <MarketSummaryPanelSkeleton />;
 
@@ -64,7 +67,12 @@ export function MarketSummaryPanel() {
                                     {group.label}
                                 </p>
                                 <div
-                                    className={`grid gap-2 ${groupSectors.length === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}
+                                    className={cn(
+                                        'grid gap-2',
+                                        groupSectors.length === 3
+                                            ? 'grid-cols-3'
+                                            : 'grid-cols-4'
+                                    )}
                                 >
                                     {groupSectors.map(etf => (
                                         <IndexCard
@@ -79,13 +87,12 @@ export function MarketSummaryPanel() {
                     })}
                 </div>
 
-                {/* AI 브리핑 */}
-                <BriefingCard
-                    briefing={briefing}
-                    generatedAt={generatedAt}
-                    isLoading={isLoading}
-                    error={error}
-                />
+                {/* AI 브리핑 — Suspense/ErrorBoundary로 선언적 상태 관리 */}
+                <ErrorBoundary fallback={<BriefingErrorCard />}>
+                    <Suspense fallback={<BriefingLoadingCard />}>
+                        <BriefingRegion input={data?.briefing} />
+                    </Suspense>
+                </ErrorBoundary>
             </div>
         </section>
     );

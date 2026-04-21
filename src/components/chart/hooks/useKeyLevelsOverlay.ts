@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useEffectEvent, useRef } from 'react';
 import type { RefObject } from 'react';
+import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import type { Bar, KeyLevels } from '@/domain/types';
 import { CHART_COLORS } from '@/lib/chartColors';

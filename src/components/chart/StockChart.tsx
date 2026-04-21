@@ -1,7 +1,7 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import type {
     IChartApi,
     ISeriesApi,
@@ -13,14 +13,11 @@ import { CHART_COLORS } from '@/lib/chartColors';
 import type {
     Bar,
     IndicatorResult,
-    KeyLevels,
-    PatternResult,
+    ReconciledActionLineData,
     Timeframe,
-    Trendline,
     ValidatedActionPrices,
 } from '@/domain/types';
 import { getTimeFormatter } from '@/domain/chart/timeFormat';
-import type { PaneIndices } from '@/components/chart/types';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
 import { useBollingerOverlay } from '@/components/chart/hooks/useBollingerOverlay';
@@ -34,13 +31,10 @@ import { useVolumeProfileOverlay } from '@/components/chart/hooks/useVolumeProfi
 import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { useActionRecommendationOverlay } from '@/components/chart/hooks/useActionRecommendationOverlay';
-import type { ReconciledActionLineData } from '@/domain/types';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import { useOverlayLegend } from '@/components/chart/hooks/useOverlayLegend';
-import {
-    DEFAULT_LINE_WIDTH,
-    INACTIVE_PANE_INDEX,
-} from '@/components/chart/constants';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
+import { useIndicatorVisibility } from '@/components/chart/hooks/useIndicatorVisibility';
 import { OverlayLegend } from '@/components/chart/OverlayLegend';
 import { buildPaneLabels } from '@/components/chart/utils/paneLabelUtils';
 import { buildOverlayLabelConfigs } from '@/components/chart/utils/overlayLabelUtils';
@@ -50,9 +44,6 @@ import {
     MA_DEFAULT_PERIODS,
 } from '@/domain/indicators/constants';
 import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
-
-const FIRST_INDICATOR_PANE_INDEX = 1;
-const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
 
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
@@ -65,18 +56,9 @@ interface StockChartProps {
     bars: Bar[];
     timeframe: Timeframe;
     indicators?: IndicatorResult;
-    patterns?: PatternResult[];
-    trendlines?: Trendline[];
-    trendlinesVisible?: boolean;
-    keyLevels?: KeyLevels;
-    keyLevelsVisible?: boolean;
     actionPrices?: ValidatedActionPrices;
     reconciledActionPrices?: ReconciledActionLineData;
     actionPricesVisible?: boolean;
-    onPatternOverlayChange?: (
-        visiblePatterns: Set<string>,
-        togglePattern: (patternName: string) => void
-    ) => void;
     /** 차트 인스턴스가 준비되면 호출된다. 거래량 차트와 visible range 동기화에 사용된다. */
     onChartReady?: (chart: IChartApi) => void;
     /** 차트가 제거되기 직전에 호출된다. 구독 해제에 사용된다. */
@@ -87,28 +69,12 @@ export function StockChart({
     bars,
     timeframe,
     indicators = EMPTY_INDICATOR_RESULT,
-    /**
-     * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-     */
-    patterns: _patterns = [],
-    trendlines: _trendlines = [],
-    trendlinesVisible: _trendlinesVisible = false,
-    keyLevels: _keyLevels = EMPTY_KEY_LEVELS,
-    keyLevelsVisible: _keyLevelsVisible = false,
     actionPrices,
     reconciledActionPrices,
     actionPricesVisible = true,
-    onPatternOverlayChange: _onPatternOverlayChange,
     onChartReady,
     onChartRemove,
 }: StockChartProps) {
-    const [rsiVisible, setRsiVisible] = useState(false);
-    const [macdVisible, setMacdVisible] = useState(false);
-    const [dmiVisible, setDmiVisible] = useState(false);
-    const [stochasticVisible, setStochasticVisible] = useState(false);
-    const [stochRsiVisible, setStochRsiVisible] = useState(false);
-    const [cciVisible, setCciVisible] = useState(false);
-
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);
@@ -118,63 +84,21 @@ export function StockChart({
     const onChartReadyRef = useRef(onChartReady);
     const onChartRemoveRef = useRef(onChartRemove);
 
-    const paneIndices: PaneIndices = useMemo(() => {
-        const visibles = [
-            rsiVisible,
-            macdVisible,
-            dmiVisible,
-            stochasticVisible,
-            stochRsiVisible,
-            cciVisible,
-        ];
-        const indexFor = (pos: number): number => {
-            const precedingActive = visibles
-                .slice(0, pos)
-                .filter(Boolean).length;
-            return visibles[pos]
-                ? FIRST_INDICATOR_PANE_INDEX + precedingActive
-                : INACTIVE_PANE_INDEX;
-        };
-        return {
-            rsi: indexFor(0),
-            macd: indexFor(1),
-            dmi: indexFor(2),
-            stochastic: indexFor(3),
-            stochRsi: indexFor(4),
-            cci: indexFor(5),
-        };
-    }, [
+    const {
         rsiVisible,
         macdVisible,
         dmiVisible,
         stochasticVisible,
         stochRsiVisible,
         cciVisible,
-    ]);
-
-    const toggleRSI = useCallback(() => {
-        setRsiVisible(prev => !prev);
-    }, []);
-
-    const toggleMACD = useCallback(() => {
-        setMacdVisible(prev => !prev);
-    }, []);
-
-    const toggleDMI = useCallback(() => {
-        setDmiVisible(prev => !prev);
-    }, []);
-
-    const toggleStochastic = useCallback(() => {
-        setStochasticVisible(prev => !prev);
-    }, []);
-
-    const toggleStochRSI = useCallback(() => {
-        setStochRsiVisible(prev => !prev);
-    }, []);
-
-    const toggleCCI = useCallback(() => {
-        setCciVisible(prev => !prev);
-    }, []);
+        toggleRSI,
+        toggleMACD,
+        toggleDMI,
+        toggleStochastic,
+        toggleStochRSI,
+        toggleCCI,
+        paneIndices,
+    } = useIndicatorVisibility();
 
     const commonHookParams: CommonHookParams = {
         chartRef,
@@ -211,19 +135,14 @@ export function StockChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
-            // lightweight-charts의 addSeries() 반환 타입에 UTCTimestamp 제네릭이 포함되지 않아
-            // 타입 가드로 narrowing이 불가능하다. 라이브러리 타입 한계로 인한 assertion이다.
+            // LWC addSeries() 반환 타입에 UTCTimestamp 제네릭이 없어 타입 가드 불가 — 라이브러리 타입 한계.
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
         onChartReadyRef.current?.(chart);
 
         return () => {
             onChartRemoveRef.current?.();
-            // autoSize: true 상태에서 컨테이너가 DOM에서 제거되면 LWC 내부
-            // ResizeObserver가 발화해 draw RAF를 스케���링한다. chart.remove()가
-            // 이 RAF를 취소하지 못하면 disposed 객체 접근으로 에러가 난다.
-            // remove() 전에 autoSize를 끄면 ResizeObserver가 해제되어 RAF가
-            // 스케줄되지 않으므로 안전하게 dispose할 수 있다.
+            // autoSize 해제 후 remove — LWC ResizeObserver가 disposed 객체에 접근하는 에러 방지.
             chart.applyOptions({ autoSize: false });
             chart.remove();
             chartRef.current = null;
@@ -246,6 +165,7 @@ export function StockChart({
 
         seriesRef.current.setData(
             bars.map(({ time, open, high, low, close }) => ({
+                // Bar.time은 number이지만 LWC setData는 UTCTimestamp(branded number)를 요구한다.
                 time: time as UTCTimestamp,
                 open,
                 high,
@@ -310,32 +230,6 @@ export function StockChart({
 
     useCandlePatternMarkers({ seriesRef, bars });
 
-    /**
-     * TODO: 선 그리는 부분에 대해서는 오류가 많아 잠시 주석처리
-     */
-
-    // const { visiblePatterns, togglePattern } = usePatternOverlay({
-    //     chartRef,
-    //     seriesRef,
-    //     bars,
-    //     patterns,
-    // });
-    //
-    // useTrendlineOverlay({
-    //     chartRef,
-    //     bars,
-    //     trendlines,
-    //     isVisible: trendlinesVisible,
-    // });
-    //
-    // useKeyLevelsOverlay({
-    //     chartRef,
-    //     bars,
-    //     keyLevels,
-    //     isVisible: keyLevelsVisible,
-    //     lineWidth: DEFAULT_LINE_WIDTH,
-    // });
-
     useActionRecommendationOverlay({
         seriesRef,
         actionPrices,
@@ -344,14 +238,7 @@ export function StockChart({
         lineWidth: DEFAULT_LINE_WIDTH,
     });
 
-    // 레이아웃 강제 갱신
-    // indicator hook이 removeSeries로 마지막 series를 제거하면 LWC v5는 논리적
-    // pane을 panes() 배열에서 빼지만, 일부 indicator(MACD/Stochastic/CCI 등)에서
-    // DOM 레이아웃 재계산이 트리거되지 않아 빈 공간이 남는다. AI 패널 리사이즈로
-    // wrapper 크기가 변하면 LWC autoSize ResizeObserver가 발화해 정리된다.
-    // autoSize: true 상태에서는 명시 chart.resize() 호출이 무시되므로,
-    // autoSize를 잠시 끄고 → 1px 차이로 강제 resize → autoSize 복원 순서로
-    // ResizeObserver 발화와 동일한 layout invalidate를 일으킨다.
+    // indicator 제거 시 LWC v5가 빈 pane DOM을 정리하지 않아 autoSize 토글로 layout invalidate를 강제한다.
     useEffect(() => {
         const chart = chartRef.current;
         const wrapper = wrapperRef.current;
@@ -374,18 +261,6 @@ export function StockChart({
 
         return () => cancelAnimationFrame(rafId);
     }, [paneIndices]);
-
-    /**
-     * TODO: 선 그리는 부분에 대해서는 오류가 많아 잠시 주석처리
-     */
-
-    // const notifyPatternOverlayChange = useEffectEvent(() => {
-    //     onPatternOverlayChange?.(visiblePatterns, togglePattern);
-    // });
-    //
-    // useEffect(() => {
-    //     notifyPatternOverlayChange();
-    // }, [visiblePatterns]);
 
     const overlayLabelConfigs = useMemo(
         () =>

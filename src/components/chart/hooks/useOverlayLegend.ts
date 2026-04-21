@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import type { OverlayLegendItem } from '@/components/chart/types';

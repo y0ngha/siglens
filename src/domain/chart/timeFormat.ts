@@ -1,8 +1,8 @@
 import type { Timeframe } from '@/domain/types';
 import {
+    KST_OFFSET_HOURS,
     MS_PER_HOUR,
     MS_PER_SECOND,
-    KST_OFFSET_HOURS,
 } from '@/domain/constants/time';
 
 const MONTH_NAMES = [

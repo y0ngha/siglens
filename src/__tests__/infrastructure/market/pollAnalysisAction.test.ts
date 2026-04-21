@@ -14,11 +14,11 @@ jest.mock('@/infrastructure/cache/config', () => ({
 
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import {
-    getJobStatus,
-    getJobResult,
+    cleanupJob,
     getJobError,
     getJobMeta,
-    cleanupJob,
+    getJobResult,
+    getJobStatus,
 } from '@/infrastructure/jobs/queue';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { FileSkillsLoader } from '@/infrastructure/skills/loader';

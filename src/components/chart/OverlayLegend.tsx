@@ -1,84 +1,38 @@
-import type React from 'react';
+'use client';
+
+import type { CSSProperties } from 'react';
 import type { OverlayLegendItem } from '@/components/chart/types';
-
-interface OverlayGroup {
-    key: string;
-    items: OverlayLegendItem[];
-}
-
-const ICHIMOKU_NAMES = new Set([
-    'Tenkan',
-    'Kijun',
-    'Chikou',
-    'Senkou A',
-    'Senkou B',
-]);
-const VP_NAMES = new Set(['POC', 'VAH', 'VAL']);
-
-function getGroupKey(name: string): string {
-    if (name.startsWith('MA(')) return 'MA';
-    if (name.startsWith('EMA(')) return 'EMA';
-    if (name.startsWith('BB ')) return 'BB';
-    if (ICHIMOKU_NAMES.has(name)) return 'Ichimoku';
-    if (VP_NAMES.has(name)) return 'VP';
-    return name;
-}
-
-function groupItems(items: OverlayLegendItem[]): OverlayGroup[] {
-    return items.reduce<{ groups: OverlayGroup[]; seen: Map<string, number> }>(
-        ({ groups, seen }, item) => {
-            const key = getGroupKey(item.name);
-            const existingIdx = seen.get(key);
-
-            if (existingIdx !== undefined) {
-                const updatedGroups = groups.map((g, i) =>
-                    i === existingIdx ? { ...g, items: [...g.items, item] } : g
-                );
-                return { groups: updatedGroups, seen };
-            }
-
-            const nextSeen = new Map(seen).set(key, groups.length);
-            return {
-                groups: [...groups, { key, items: [item] }],
-                seen: nextSeen,
-            };
-        },
-        { groups: [], seen: new Map() }
-    ).groups;
-}
-
-function formatValue(value: number | null): string {
-    if (value === null) return '-';
-    return value.toFixed(2);
-}
+import { useOverlayGroups } from '@/components/chart/hooks/useOverlayGroups';
+import { formatOverlayValue } from '@/components/chart/utils/overlayLegendFormat';
 
 interface OverlayLegendProps {
     items: OverlayLegendItem[];
 }
 
 export function OverlayLegend({ items }: OverlayLegendProps) {
+    const groups = useOverlayGroups(items);
+
     if (items.length === 0) return null;
 
-    const groups = groupItems(items);
-
     return (
-        <div className="pointer-events-none flex flex-col gap-[6px]">
+        <div className="pointer-events-none flex flex-col gap-1.5">
             {groups.map(group => (
                 <div
                     key={group.key}
-                    className="flex flex-wrap gap-x-3 gap-y-[6px]"
+                    className="flex flex-wrap gap-x-3 gap-y-1.5"
                 >
                     {group.items.map(item => (
                         <span
                             key={item.name}
-                            className="font-mono text-[11px] leading-none text-[color:var(--legend-color)]"
+                            className="font-mono text-[11px] leading-none text-(--legend-color)"
                             style={
                                 {
                                     '--legend-color': item.color,
-                                } as React.CSSProperties
+                                } as CSSProperties
                             }
                         >
-                            {'\u25CF'} {item.name} {formatValue(item.value)}
+                            {'\u25CF'} {item.name}{' '}
+                            {formatOverlayValue(item.value)}
                         </span>
                     ))}
                 </div>

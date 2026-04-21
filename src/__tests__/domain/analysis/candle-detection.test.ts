@@ -1,14 +1,14 @@
+import type {
+    CandlePatternEntry,
+    MultiCandlePatternEntry,
+    SingleCandlePatternEntry,
+} from '@/domain/analysis/candle-detection';
 import {
     CANDLE_PATTERN_DETECTION_BARS,
     detectCandlePatternEntries,
     getDetectionBars,
     MULTI_CANDLE_PATTERN_BUFFER,
     selectLastCandlePatternEntries,
-} from '@/domain/analysis/candle-detection';
-import type {
-    CandlePatternEntry,
-    SingleCandlePatternEntry,
-    MultiCandlePatternEntry,
 } from '@/domain/analysis/candle-detection';
 import {
     makeBar,

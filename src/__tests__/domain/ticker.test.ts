@@ -1,6 +1,6 @@
 import {
-    isKoreanInput,
     deduplicateResults,
+    isKoreanInput,
     isValidTickerFormat,
 } from '@/domain/ticker';
 import type { TickerSearchResult } from '@/domain/types';

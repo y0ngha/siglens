@@ -1,18 +1,18 @@
 import {
-    findPivotLows,
-    findPivotHighs,
     computeBbWidth,
-    computePctB,
     computeEma20Slope,
-    percentileRank,
-    detectRsiBullishDivergence,
-    detectRsiBearishDivergence,
-    detectMacdHistogramBullishConvergence,
-    detectMacdHistogramBearishConvergence,
-    detectBollingerSqueezeBullish,
+    computePctB,
     detectBollingerSqueezeBearish,
-    detectSupportProximityBullish,
+    detectBollingerSqueezeBullish,
+    detectMacdHistogramBearishConvergence,
+    detectMacdHistogramBullishConvergence,
     detectResistanceProximityBearish,
+    detectRsiBearishDivergence,
+    detectRsiBullishDivergence,
+    detectSupportProximityBullish,
+    findPivotHighs,
+    findPivotLows,
+    percentileRank,
 } from '@/domain/signals/anticipation';
 import { TREND_EMA_PERIOD } from '@/domain/signals/constants';
 import { EMPTY_INDICATOR_RESULT } from '@/domain/indicators/constants';

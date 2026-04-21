@@ -1,9 +1,9 @@
 import {
     CANDLE_PATTERN_LABELS,
-    MULTI_CANDLE_PATTERN_LABELS,
+    findCandlePatternLabel,
     getCandlePatternLabel,
     getMultiCandlePatternLabel,
-    findCandlePatternLabel,
+    MULTI_CANDLE_PATTERN_LABELS,
 } from '@/domain/analysis/candle-labels';
 import type {
     CandlePattern,

@@ -8,10 +8,10 @@ jest.mock('@/infrastructure/cache/redis');
 
 import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
 import {
-    getJobStatus,
-    getJobResult,
-    getJobError,
     cleanupJob,
+    getJobError,
+    getJobResult,
+    getJobStatus,
 } from '@/infrastructure/jobs/queue';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 

@@ -1,7 +1,7 @@
 import { calculateStochastic } from '@/domain/indicators/stochastic';
 import {
-    STOCHASTIC_K_PERIOD,
     STOCHASTIC_D_PERIOD,
+    STOCHASTIC_K_PERIOD,
     STOCHASTIC_SMOOTHING,
 } from '@/domain/indicators/constants';
 import type { Bar } from '@/domain/types';

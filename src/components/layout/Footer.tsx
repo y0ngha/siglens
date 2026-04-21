@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { CurrentYear } from '@/components/layout/CurrentYear';
 import { ContactDialog } from '@/components/layout/ContactDialog';
+import { DotSeparator } from '@/components/ui/DotSeparator';
 import {
     INVESTMENT_DISCLAIMER,
     PRIVACY_PATH,
@@ -9,18 +10,10 @@ import {
     TERMS_TITLE,
 } from '@/lib/legal';
 
-function FooterSeparator() {
-    return (
-        <span className="text-secondary-700" aria-hidden="true">
-            ·
-        </span>
-    );
-}
-
 export function Footer() {
     return (
         <footer className="border-secondary-800 border-t">
-            <div className="flex flex-col gap-4 px-6 py-6 lg:px-[15vw]">
+            <div className="flex flex-col gap-2 px-6 py-6 lg:px-[15vw]">
                 <div
                     role="note"
                     aria-label="투자 면책 고지"
@@ -28,7 +21,7 @@ export function Footer() {
                 >
                     {INVESTMENT_DISCLAIMER}
                 </div>
-                <div className="border-secondary-800 flex flex-col items-center gap-3 border-t pt-4 sm:flex-row sm:justify-between">
+                <div className="border-secondary-800 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
                     <p className="text-secondary-600 text-sm">
                         © <CurrentYear /> Siglens
                     </p>
@@ -42,19 +35,19 @@ export function Footer() {
                         >
                             {PRIVACY_TITLE}
                         </Link>
-                        <FooterSeparator />
+                        <DotSeparator />
                         <Link
                             href={TERMS_PATH}
                             className="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
                         >
                             {TERMS_TITLE}
                         </Link>
-                        <FooterSeparator />
+                        <DotSeparator />
                         <ContactDialog
                             triggerLabel="오류 제보하기"
                             triggerClassName="text-secondary-500 hover:text-secondary-300 text-sm transition-colors rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500"
                         />
-                        <FooterSeparator />
+                        <DotSeparator />
                         <a
                             href="https://github.com/y0ngha/siglens"
                             target="_blank"

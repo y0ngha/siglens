@@ -54,7 +54,7 @@ GET /v2/stocks/{symbol}/bars
 **Request 예시**
 
 ```
-GET /v2/stocks/AAPL/bars?timeframe=1Min&limit=200&feed=iex&sort=asc
+GET /v2/stocks/AAPL/bars?timeframe=5Min&limit=200&feed=iex&sort=asc
 ```
 
 **Response**
@@ -160,7 +160,7 @@ FMP_API_KEY=
 
 ## FMP 사용 엔드포인트
 
-### 1. Historical Chart (Intraday: 1Min ~ 1Hour)
+### 1. Historical Chart (Intraday: 5Min ~ 4Hour)
 
 ```
 GET /stable/historical-chart/{timeframe}?symbol={symbol}&apikey={key}

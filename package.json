@@ -3,6 +3,7 @@
     "version": "0.8.17",
     "private": true,
     "author": "신용하 <dev.y0ngha@gmail.com>",
+    "license": "PolyForm-Noncommercial-1.0.0",
     "scripts": {
         "dev": "next dev --turbopack -p 4200",
         "build": "rm -rf .next && next build",

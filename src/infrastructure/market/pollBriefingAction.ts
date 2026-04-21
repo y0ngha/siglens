@@ -9,14 +9,14 @@ import { normalizeMarketBriefing } from '@/domain/analysis/normalizeMarketBriefi
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
     buildBriefingCacheKey,
-    MARKET_BRIEFING_CACHE_TTL,
     ISO_DATE_HOUR_PREFIX_LENGTH,
+    MARKET_BRIEFING_CACHE_TTL,
 } from '@/infrastructure/cache/config';
 import {
-    getJobStatus,
-    getJobResult,
-    getJobError,
     cleanupJob,
+    getJobError,
+    getJobResult,
+    getJobStatus,
 } from '@/infrastructure/jobs/queue';
 
 export async function pollBriefingAction(

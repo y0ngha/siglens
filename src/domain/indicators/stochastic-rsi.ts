@@ -1,10 +1,10 @@
 import type { StochRSIResult } from '@/domain/types';
 import { calculateRSI } from '@/domain/indicators/rsi';
 import {
+    STOCH_RSI_D_PERIOD,
+    STOCH_RSI_K_PERIOD,
     STOCH_RSI_RSI_PERIOD,
     STOCH_RSI_STOCH_PERIOD,
-    STOCH_RSI_K_PERIOD,
-    STOCH_RSI_D_PERIOD,
 } from '@/domain/indicators/constants';
 import { sma } from '@/domain/indicators/utils';
 

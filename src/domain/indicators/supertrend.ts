@@ -1,4 +1,4 @@
-import type { Bar, SupertrendResult, PriceTrend } from '@/domain/types';
+import type { Bar, PriceTrend, SupertrendResult } from '@/domain/types';
 import {
     SUPERTREND_ATR_PERIOD,
     SUPERTREND_MULTIPLIER,

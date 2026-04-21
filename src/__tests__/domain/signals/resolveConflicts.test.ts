@@ -1,5 +1,5 @@
 import { resolveConflicts } from '@/domain/signals/resolveConflicts';
-import type { StockSignalResult, Signal } from '@/domain/types';
+import type { Signal, StockSignalResult } from '@/domain/types';
 
 function buildSignal(
     direction: 'bullish' | 'bearish',

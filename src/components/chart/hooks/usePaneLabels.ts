@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
+import { useEffect, useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import type { PaneLabelConfig, PaneSubLabel } from '@/components/chart/types';
 

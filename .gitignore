@@ -61,3 +61,5 @@ next-env.d.ts
 .vscode/
 # Dev-only preview routes — local testing, never deployed
 /src/app/dev/
+/.claire/
+/.claude/worktrees/

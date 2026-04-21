@@ -1,7 +1,7 @@
 import {
-    validateKeyLevels,
     clusterKeyLevels,
     DEFAULT_EPSILON_PERCENT,
+    validateKeyLevels,
 } from '@/domain/analysis/keyLevels';
 import type { KeyLevels } from '@/domain/types';
 

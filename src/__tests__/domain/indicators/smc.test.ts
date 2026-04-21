@@ -1,7 +1,7 @@
 import { calculateSmc } from '@/domain/indicators/smc';
 import {
-    SMC_SWING_PERIOD,
     SMC_ATR_PERIOD,
+    SMC_SWING_PERIOD,
 } from '@/domain/indicators/constants';
 import type { Bar, SMCResult } from '@/domain/types';
 

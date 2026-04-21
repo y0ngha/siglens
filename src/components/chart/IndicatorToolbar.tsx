@@ -1,21 +1,19 @@
 'use client';
 
-import { useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/lib/chartColors';
-import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
+import {
+    type DropdownPosition,
+    type IndicatorDropdownType,
+    useIndicatorDropdown,
+} from '@/components/chart/hooks/useIndicatorDropdown';
 
 interface IndicatorToggleGroup {
     visible: boolean;
     onToggle: () => void;
 }
-
-type IndicatorType = 'ma' | 'ema';
-
-type DropdownType = IndicatorType | null;
-
-const DROPDOWN_OFFSET_PX = 4;
 
 const TOOLBAR_LABEL_EXPANDED = 'Hide indicators';
 const TOOLBAR_LABEL_COLLAPSED = 'Show indicators';
@@ -31,7 +29,7 @@ const indicatorButtonClass = (active: boolean): string =>
 const COLLAPSE_BUTTON_ACTIVE = false as const;
 
 interface DropdownIndicatorConfig {
-    type: IndicatorType;
+    type: IndicatorDropdownType;
     label: string;
     active: boolean;
     availablePeriods: readonly number[];
@@ -43,11 +41,6 @@ interface ToggleIndicatorConfig {
     label: string;
     visible: boolean;
     onToggle: () => void;
-}
-
-interface DropdownPosition {
-    top: number;
-    left: number;
 }
 
 interface PeriodLabelProps {
@@ -65,10 +58,13 @@ function PeriodLabels({ indicatorName, visiblePeriods }: PeriodLabelProps) {
                     key={period}
                     className="text-secondary-300 flex items-center gap-1 text-xs"
                 >
-                    {/* getPeriodColor는 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)를 반환하므로 style prop 사용 허용 */}
                     <span
-                        className="inline-block h-1.5 w-3 shrink-0 rounded-sm"
-                        style={{ backgroundColor: getPeriodColor(period) }}
+                        className="inline-block h-1.5 w-3 shrink-0 rounded-sm bg-[var(--period-color)]"
+                        style={
+                            {
+                                '--period-color': getPeriodColor(period),
+                            } as CSSProperties
+                        }
                     />
                     {indicatorName}({period})
                 </span>
@@ -91,8 +87,13 @@ function DropdownPortal({
     return createPortal(
         <div
             ref={portalRef}
-            className="border-secondary-700 bg-secondary-800 fixed z-50 flex flex-col gap-0.5 rounded border p-1 shadow-lg"
-            style={{ top: position.top, left: position.left }}
+            className="border-secondary-700 bg-secondary-800 fixed top-[var(--dp-top)] left-[var(--dp-left)] z-50 flex flex-col gap-0.5 rounded border p-1 shadow-lg"
+            style={
+                {
+                    '--dp-top': `${position.top}px`,
+                    '--dp-left': `${position.left}px`,
+                } as CSSProperties
+            }
         >
             {indicator.availablePeriods.map(period => (
                 <button
@@ -100,18 +101,19 @@ function DropdownPortal({
                     type="button"
                     onClick={() => indicator.onToggle(period)}
                     className={cn(
-                        'flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors',
+                        'focus-visible:ring-primary-500 flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none',
                         indicator.visiblePeriods.includes(period)
                             ? 'bg-secondary-700 text-white'
                             : 'text-secondary-400 hover:bg-secondary-700 hover:text-white'
                     )}
                 >
-                    {/* getPeriodColor는 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)를 반환하므로 style prop 사용 허용 */}
                     <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{
-                            backgroundColor: getPeriodColor(period),
-                        }}
+                        className="h-2 w-2 shrink-0 rounded-full bg-[var(--period-color)]"
+                        style={
+                            {
+                                '--period-color': getPeriodColor(period),
+                            } as CSSProperties
+                        }
                     />
                     {period}
                 </button>
@@ -180,57 +182,16 @@ export function IndicatorToolbar({
     volumeProfile,
     ichimoku,
 }: IndicatorToolbarProps) {
-    const [isExpanded, setIsExpanded] = useState(false);
-    const [openDropdown, setOpenDropdown] = useState<DropdownType>(null);
-    const [dropdownPosition, setDropdownPosition] =
-        useState<DropdownPosition | null>(null);
-
-    const toolbarRef = useRef<HTMLDivElement>(null);
-    const maButtonRef = useRef<HTMLButtonElement>(null);
-    const emaButtonRef = useRef<HTMLButtonElement>(null);
-    const portalRef = useRef<HTMLDivElement>(null);
-
-    useOnClickOutside(toolbarRef, event => {
-        if (!openDropdown) return;
-        const isInsidePortal = portalRef.current?.contains(
-            event.target as Node
-        );
-        if (!isInsidePortal) {
-            setOpenDropdown(null);
-        }
-    });
-
-    const buttonRefMap = useMemo(
-        () => ({
-            ma: maButtonRef,
-            ema: emaButtonRef,
-        }),
-        []
-    );
-
-    const toggleExpanded = (): void => {
-        setIsExpanded(prev => !prev);
-        if (openDropdown) {
-            setOpenDropdown(null);
-        }
-    };
-
-    const toggleDropdown = (type: IndicatorType): void => {
-        if (openDropdown === type) {
-            setOpenDropdown(null);
-            return;
-        }
-
-        const buttonRef = buttonRefMap[type];
-        if (!buttonRef.current) return;
-
-        const rect = buttonRef.current.getBoundingClientRect();
-        setDropdownPosition({
-            top: rect.bottom + window.scrollY + DROPDOWN_OFFSET_PX,
-            left: rect.left + window.scrollX,
-        });
-        setOpenDropdown(type);
-    };
+    const {
+        isExpanded,
+        openDropdown,
+        dropdownPosition,
+        toolbarRef,
+        portalRef,
+        buttonRefs,
+        toggleExpanded,
+        toggleDropdown,
+    } = useIndicatorDropdown();
 
     const dropdownIndicators: DropdownIndicatorConfig[] = [
         {
@@ -294,7 +255,7 @@ export function IndicatorToolbar({
                             className="flex min-w-12 items-start gap-1"
                         >
                             <button
-                                ref={buttonRefMap[indicator.type]}
+                                ref={buttonRefs[indicator.type]}
                                 type="button"
                                 onClick={() => toggleDropdown(indicator.type)}
                                 aria-expanded={openDropdown === indicator.type}

@@ -1,17 +1,16 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import type React from 'react';
+import { usePointerTooltip } from '@/components/hooks/usePointerTooltip';
 import type {
     ActionRecommendation,
     AnalysisResponse,
     AnalysisSignal,
     AnalysisSignalType,
-    CandlePatternSummary,
-    EntryRecommendation,
     ClusteredKeyLevel,
     ClusteredKeyLevels,
+    EntryRecommendation,
     PatternResult,
     PriceScenario,
     RiskLevel,
@@ -20,7 +19,6 @@ import type {
     Trendline,
     TrendlineDirection,
 } from '@/domain/types';
-import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
@@ -39,11 +37,13 @@ import { AnalysisToast } from '@/components/analysis/AnalysisToast';
 import { AdBanner } from '@/components/analysis/AdBanner';
 import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis';
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
+import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
+import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/components/hooks/useCopyToClipboard';
 
 function formatCooldown(ms: number): string {
-    const totalSec = Math.ceil(ms / 1000);
-    const minutes = Math.floor(totalSec / 60);
-    const seconds = totalSec % 60;
+    const totalSec = Math.ceil(ms / MS_PER_SECOND);
+    const minutes = Math.floor(totalSec / SECONDS_PER_MINUTE);
+    const seconds = totalSec % SECONDS_PER_MINUTE;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
@@ -113,7 +113,7 @@ function ActionRecommendationSection({
                     type="button"
                     onClick={onToggleChart}
                     className={cn(
-                        'flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors',
+                        'focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none',
                         isChartVisible
                             ? 'text-primary-400 hover:text-primary-300'
                             : 'text-secondary-500 hover:text-secondary-400'
@@ -312,9 +312,6 @@ interface EyeIconProps {
     isVisible: boolean;
 }
 
-/**
- * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
- */
 function EyeIcon({ isVisible }: EyeIconProps) {
     return isVisible ? (
         <svg
@@ -373,38 +370,13 @@ interface ConfidenceBadgeProps {
 }
 
 function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
-    const [isTooltipVisible, setIsTooltipVisible] = useState(false);
+    const { isVisible, toggle, handlePointerEnter, handlePointerLeave } =
+        usePointerTooltip();
+    const tooltipId = useId();
 
     const level: ConfidenceLevel =
         confidenceWeight >= HIGH_CONFIDENCE_WEIGHT ? 'high' : 'medium';
     const { className, label, tooltip } = CONFIDENCE_BADGE_CONFIG[level];
-
-    const handleClick = (): void => {
-        setIsTooltipVisible(prev => !prev);
-    };
-
-    const handleMouseEnter = (): void => {
-        setIsTooltipVisible(true);
-    };
-
-    const handleMouseLeave = (): void => {
-        setIsTooltipVisible(false);
-    };
-
-    const handlePointerEnter = (
-        e: React.PointerEvent<HTMLSpanElement>
-    ): void => {
-        // 터치 기기에서는 hover를 비활성화한다. 클릭(handleClick)만으로 토글한다.
-        if (e.pointerType === 'touch') return;
-        handleMouseEnter();
-    };
-
-    const handlePointerLeave = (
-        e: React.PointerEvent<HTMLSpanElement>
-    ): void => {
-        if (e.pointerType === 'touch') return;
-        handleMouseLeave();
-    };
 
     return (
         <span
@@ -414,16 +386,18 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
         >
             <button
                 type="button"
-                onClick={handleClick}
+                onClick={toggle}
+                aria-describedby={isVisible ? tooltipId : undefined}
                 className={cn(
-                    'cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium',
+                    'focus-visible:ring-primary-500 cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium focus-visible:ring-1 focus-visible:outline-none',
                     className
                 )}
             >
                 {label}
             </button>
-            {isTooltipVisible && (
+            {isVisible && (
                 <div
+                    id={tooltipId}
                     role="tooltip"
                     className="bg-secondary-800 border-secondary-600 absolute bottom-full left-1/2 z-50 mb-1 w-48 -translate-x-1/2 rounded border p-2 text-xs leading-relaxed shadow-lg"
                 >
@@ -479,29 +453,13 @@ function KeyLevelsHeaderInfo() {
 
 interface PatternAccordionItemProps {
     pattern: PatternResult;
-    isVisible: boolean;
-    onToggleVisibility: (patternName: string) => void;
 }
 
-function PatternAccordionItem({
-    pattern,
-    /**
-     * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-     */
-    isVisible: _isVisible,
-    onToggleVisibility,
-}: PatternAccordionItemProps) {
+function PatternAccordionItem({ pattern }: PatternAccordionItemProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
         setIsOpen(prev => !prev);
-    };
-
-    /**
-     * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-     */
-    const _handleToggleVisibility = (): void => {
-        onToggleVisibility(pattern.patternName);
     };
 
     const primaryLabel = pattern.renderConfig?.label ?? '주요 가격';
@@ -514,7 +472,7 @@ function PatternAccordionItem({
                     type="button"
                     aria-expanded={isOpen}
                     onClick={handleToggleOpen}
-                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left"
+                    className="focus-visible:ring-primary-500 flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:outline-none"
                 >
                     <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
                         {pattern.skillName}
@@ -527,19 +485,6 @@ function PatternAccordionItem({
                         confidenceWeight={pattern.confidenceWeight}
                     />
                 </span>
-                {/*<button*/}
-                {/*    type="button"*/}
-                {/*    onClick={handleToggleVisibility}*/}
-                {/*    className={cn(*/}
-                {/*        'shrink-0 rounded p-1 pr-3 transition-colors',*/}
-                {/*        isVisible*/}
-                {/*            ? 'text-primary-400 hover:text-primary-300'*/}
-                {/*            : 'text-secondary-600 hover:text-secondary-400'*/}
-                {/*    )}*/}
-                {/*    title={isVisible ? '차트에서 숨기기' : '차트에서 보기'}*/}
-                {/*>*/}
-                {/*    <EyeIcon isVisible={isVisible} />*/}
-                {/*</button>*/}
             </div>
 
             {isOpen ? (
@@ -577,54 +522,6 @@ function PatternAccordionItem({
                             </div>
                         </div>
                     )}
-                </div>
-            ) : null}
-        </div>
-    );
-}
-
-/**
- * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
- */
-interface CandlePatternAccordionItemProps {
-    pattern: CandlePatternSummary;
-}
-
-/**
- * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function CandlePatternAccordionItem({
-    pattern,
-}: CandlePatternAccordionItemProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    const handleToggleOpen = (): void => {
-        setIsOpen(prev => !prev);
-    };
-
-    const patternLabel = findCandlePatternLabel(pattern.patternName);
-
-    return (
-        <div className="border-secondary-700 overflow-hidden rounded-md border">
-            <button
-                type="button"
-                aria-expanded={isOpen}
-                onClick={handleToggleOpen}
-                className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors"
-            >
-                <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
-                    {patternLabel}
-                </span>
-                <TrendBadge trend={pattern.trend} />
-                <ChevronIcon isOpen={isOpen} />
-            </button>
-
-            {isOpen ? (
-                <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
-                    <p className="text-secondary-400 text-xs leading-relaxed">
-                        {pattern.summary}
-                    </p>
                 </div>
             ) : null}
         </div>
@@ -672,7 +569,7 @@ function StrategyAccordionItem({ strategy }: StrategyAccordionItemProps) {
                     type="button"
                     aria-expanded={isOpen}
                     onClick={handleToggleOpen}
-                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left"
+                    className="focus-visible:ring-primary-500 flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:outline-none"
                 >
                     <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
                         {strategy.strategyName}
@@ -816,7 +713,7 @@ function ReanalyzeButton({
                     ? '재분석은 5분에 한 번만 실행할 수 있어요.'
                     : undefined
             }
-            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors disabled:cursor-not-allowed"
+            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 focus-visible:ring-primary-500 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed"
         >
             {label}
         </button>
@@ -840,14 +737,6 @@ interface AnalysisPanelProps {
     reanalyzeCooldownMs?: number;
     /** 쿨다운 중 재분석 시도를 토스트로 알리기 위한 알림. */
     cooldownNotice?: CooldownNotice | null;
-    /** 차트에서 현재 표시 중인 패턴 이름 집합 (patternName 기준). StockChart가 소유한 상태다. */
-    chartVisiblePatterns?: Set<string>;
-    /** 차트 패턴 표시 여부를 토글한다. patternName을 인자로 받는다. */
-    onTogglePattern?: (patternName: string) => void;
-    _keyLevelsVisible?: boolean;
-    _onKeyLevelsVisibilityChange?: (isVisible: boolean) => void;
-    _trendlinesVisible?: boolean;
-    _onTrendlinesVisibilityChange?: (isVisible: boolean) => void;
     actionPricesVisible?: boolean;
     onActionPricesVisibilityChange?: (isVisible: boolean) => void;
     /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다.
@@ -866,12 +755,6 @@ export function AnalysisPanel({
     onReanalyze,
     reanalyzeCooldownMs = 0,
     cooldownNotice = null,
-    chartVisiblePatterns,
-    onTogglePattern,
-    _keyLevelsVisible = false,
-    _onKeyLevelsVisibilityChange,
-    _trendlinesVisible = false,
-    _onTrendlinesVisibilityChange,
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
     isFreeUser = true,
@@ -886,11 +769,10 @@ export function AnalysisPanel({
         if (copyTimeoutRef.current !== null) {
             clearTimeout(copyTimeoutRef.current);
         }
-        copyTimeoutRef.current = setTimeout(() => setCopyState('idle'), 2000);
-    };
-
-    const handleTogglePatternVisibility = (patternName: string): void => {
-        onTogglePattern?.(patternName);
+        copyTimeoutRef.current = setTimeout(
+            () => setCopyState('idle'),
+            COPY_RESET_MS
+        );
     };
 
     const handleCopyReport = async (): Promise<void> => {
@@ -971,22 +853,23 @@ export function AnalysisPanel({
                         disabled={showProgress || isAnalyzing}
                         className={cn(
                             // [공통 스타일]
-                            'rounded border px-2 py-1 text-xs font-medium transition-colors',
+                            'focus-visible:ring-primary-500 rounded border px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none',
 
                             // [1. 로딩/분석 중 상태]
                             (showProgress || isAnalyzing) &&
                                 'border-secondary-700 text-secondary-600 cursor-not-allowed',
 
                             // [2. 일반 상태 (진행 중이 아닐 때만 적용)]
-                            (!showProgress || isAnalyzing) && {
-                                'border-primary-400/40 bg-primary-400/10 text-primary-300':
-                                    copyState === 'copied',
-                                'border-chart-bearish/40 bg-chart-bearish/10 text-chart-bearish':
-                                    copyState === 'failed',
-                                'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
-                                    copyState === 'idle',
-                                // idle은 기본 상태를 의미하며, 필요에 따라 copyState !== 'copied' && copyState !== 'failed'로 작성 가능
-                            }
+                            !showProgress &&
+                                !isAnalyzing && {
+                                    'border-primary-400/40 bg-primary-400/10 text-primary-300':
+                                        copyState === 'copied',
+                                    'border-chart-bearish/40 bg-chart-bearish/10 text-chart-bearish':
+                                        copyState === 'failed',
+                                    'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
+                                        copyState === 'idle',
+                                    // idle은 기본 상태를 의미하며, 필요에 따라 copyState !== 'copied' && copyState !== 'failed'로 작성 가능
+                                }
                         )}
                         title={
                             showProgress || isAnalyzing
@@ -1157,29 +1040,6 @@ export function AnalysisPanel({
                                 <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                                     추세선
                                 </span>
-                                {/*{onTrendlinesVisibilityChange !== undefined && (*/}
-                                {/*    <button*/}
-                                {/*        type="button"*/}
-                                {/*        onClick={() =>*/}
-                                {/*            onTrendlinesVisibilityChange(*/}
-                                {/*                !trendlinesVisible*/}
-                                {/*            )*/}
-                                {/*        }*/}
-                                {/*        className={cn(*/}
-                                {/*            'shrink-0 rounded p-1 transition-colors',*/}
-                                {/*            trendlinesVisible*/}
-                                {/*                ? 'text-primary-400 hover:text-primary-300'*/}
-                                {/*                : 'text-secondary-600 hover:text-secondary-400'*/}
-                                {/*        )}*/}
-                                {/*        title={*/}
-                                {/*            trendlinesVisible*/}
-                                {/*                ? '차트에서 숨기기'*/}
-                                {/*                : '차트에서 보기'*/}
-                                {/*        }*/}
-                                {/*    >*/}
-                                {/*        <EyeIcon isVisible={trendlinesVisible} />*/}
-                                {/*    </button>*/}
-                                {/*)}*/}
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 {analysis.trendlines.map(trendline => (
@@ -1253,14 +1113,6 @@ export function AnalysisPanel({
                                     <PatternAccordionItem
                                         key={pattern.id}
                                         pattern={pattern}
-                                        isVisible={
-                                            chartVisiblePatterns?.has(
-                                                pattern.patternName
-                                            ) ?? false
-                                        }
-                                        onToggleVisibility={
-                                            handleTogglePatternVisibility
-                                        }
                                     />
                                 ))}
                             </div>

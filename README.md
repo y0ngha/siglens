@@ -45,28 +45,112 @@ Siglens     → 티커만 입력 → 차트 + 인디케이터 자동 렌더 → 
 
 ## ✨ Features
 
-- **📊 차트** — Lightweight Charts 기반 캔들/거래량/인디케이터 렌더링
-- **📈 인디케이터** — RSI, MACD, 볼린저 밴드, DMI, VWAP, EMA 자동 계산
+- **📊 차트** — Lightweight Charts v5 기반 캔들/거래량/인디케이터 렌더링, 5분봉~일봉 멀티 타임프레임
+- **📈 인디케이터 25종** — RSI, MACD, 볼린저 밴드, ADX, DMI, Stochastic, StochRSI, CCI, VWAP, MA, EMA, Volume Profile, Ichimoku Cloud, ATR, Donchian/Keltner Channel, SuperTrend, OBV, CMF, MFI, Parabolic SAR, Williams %R, Squeeze Momentum, Smart Money Concepts 자동 계산
 - **🕯️ 캔들 패턴** — 단일 캔들 15종 + 멀티 캔들 30종 자동 감지
-- **🔍 차트 패턴** — 헤드앤숄더, 쐐기, 이중천장/바닥 등 Skills 기반 감지
-- **🤖 AI 종합 분석** — 인디케이터 해석 + 패턴 + 지지/저항 + 방향성 리포트
+- **🔍 차트 패턴** — 헤드앤숄더, 쐐기, 이중천장/바닥, 삼각수렴, 플래그, 컵앤핸들 등 Skills 기반 감지
+- **🤖 AI 종합 분석** — 트렌드 방향, 리스크 레벨, 지지/저항, 가격 목표, 진입 추천 리포트
+- **💬 AI 챗봇** — 분석 결과 기반 자연어 후속 질문 (Gemini 2.5 Flash, IP당 5회/일)
+- **🌐 시장 현황 대시보드** — 11개 섹터 200+ 종목 신호 스캐너 (골든크로스, RSI 다이버전스, 볼린저 스퀴즈)
+- **🧪 AI 백테스팅** — 2년간 100건 분석 결과의 실제 수익률 검증 (/backtesting)
 - **♻️ 온디맨드 재분석** — 사용자 요청 시 즉시 재분석
+
+---
+
+## 🌐 시장 현황 대시보드
+
+종목 하나하나를 찾아다니지 않아도, **지금 어떤 섹터에서 신호가 나오고 있는지** 한눈에 파악할 수 있습니다.
+[오늘 주목할 주식 보기 >](https://siglens.io/market), [오늘 전체 시장 현황 보기 >](https://siglens.io/market)
+
+```
+/market 접속 → 11개 섹터 탭 → 각 종목의 현재 신호 확인 → 원클릭으로 AI 분석 페이지 이동
+```
+
+**스캔 대상 신호:**
+- **골든크로스** — 단기 이동평균선이 장기선을 상향 돌파한 종목
+- **RSI 다이버전스** — 가격과 RSI 방향이 엇갈리는 잠재적 반전 신호
+- **볼린저 스퀴즈** — 변동성 수축 이후 급등/급락 가능성이 높은 구간
+
+**스캔 범위:** 메가캡, AI/반도체, 소프트웨어, 핀테크/크립토, EV, 레버리지 ETF, 금융, 소비재, 에너지, 헬스케어, 중국 ADR 등 11개 섹터 200+ 종목
+
+---
+
+## 💬 AI 챗봇
+
+분석 리포트를 받은 뒤 궁금한 점을 **자연어로 바로 물어볼 수 있습니다.**
+
+```
+AI 분석 리포트 수신 → 챗봇 패널에서 후속 질문 → 분석 컨텍스트를 그대로 이어서 답변
+```
+
+- **엔진**: Gemini 2.5 Flash — 분석 원문 전체가 컨텍스트로 주입됨
+- **대화 기록**: localStorage에 세션 단위로 저장
+- **사용 제한**: IP당 5회/일 (무료 서비스 유지를 위한 제한)
+
+> 예시 질문: "지금 RSI가 과매도라고 했는데, 어느 레벨에서 반등을 기대할 수 있어?"
+
+---
+
+## 🧪 AI 백테스팅 (`/backtesting`)
+
+AI 분석의 실제 정확도를 검증하기 위해 **2년간(2024.04 ~ 2026.04) 100건의 분석 결과**를 백테스팅했습니다.
+
+- **승률 70%** — 신호 발생 후 실제 가격 움직임 기준
+- **AI 방향 예측 적중률 61.5%** — AI 리포트의 상승/하락/중립 예측 vs 실제 결과
+- 10개 대표 종목, 100건 케이스, 실제 AI 분석 원문 포함
+
+결과는 [백테스팅 결과](https://siglens.io/backtesting) 페이지에서 확인할 수 있으며, 원본 데이터는 `src/app/backtesting/data.json`에 저장되어 있습니다.
+
+---
+
+## 📊 Data Source
+
+[Financial Modeling Prep](https://site.financialmodelingprep.com)
+
+| 항목 | 값                               |
+|------|---------------------------------|
+| Exchange | 미국 전체 시장                        |
+| Timeframe | 5분봉, 15분봉, 30분봉, 4시간봉, 1시간봉, 일봉 |
+| Delay | 최대 15분 지연                       |
+| History | 다년간                             |
+
+---
+
+## 💬 Community
+
+- **[💬 Discord](https://discord.gg/siglens)** — 실시간 대화
+  - 현재는 MVP 운영 중으로 초대받은 유저에게만 초대해드리고 있어요.
+
+---
+
+## ⚠️ Disclaimer
+
+**Siglens는 분석 정보만 제공하며 투자 조언이 아닙니다.**
+
+- 제시된 분석 결과를 기반으로 한 모든 투자 결정은 **본인의 책임**입니다.
+- 운영자는 분석 정보로 인한 금전적 손실에 대해 법적 책임을 지지 않습니다.
+- 투자 결정 전에 충분한 조사와 자체 판단을 권장합니다.
+
+---
 
 ---
 
 ## 🛠 Tech Stack
 
-| 영역 | 기술 |
-|------|------|
-| Framework | Next.js 16.2 (App Router + Turbopack) |
-| UI | React 19.2, Tailwind CSS |
-| Chart | Lightweight Charts |
-| Data | FMP (Financial Modeling Prep) API |
-| AI | Claude (Anthropic) / Gemini (Google) |
-| Testing | Jest (domain / infrastructure) |
-| Language | TypeScript |
-| Package Manager | yarn 4.12.0 |
-| Runtime | Node.js 25.2.1 |
+| 영역 | 기술                                                              |
+|------|-----------------------------------------------------------------|
+| Framework | Next.js 16.2 (App Router + Turbopack + React Compiler)          |
+| UI | React 19.2, Tailwind CSS 4                                      |
+| Chart | Lightweight Charts v5                                           |
+| Data | FMP API                                                         |
+| Cache | Upstash Redis                                                   |
+| AI | Claude (Anthropic), Gemini 2.5 — 분석 리포트 / Gemini 2.5 Flash — 챗봇 |
+| State | TanStack Query v5                                               |
+| Testing | Jest (domain / infrastructure)                                  |
+| Language | TypeScript 5                                                    |
+| Package Manager | yarn 4.12.0                                                     |
+| Runtime | Node.js 25.2.1                                                  |
+| Deploy | Vercel (Edge Functions), Cloud Run (Worker)                     |
 
 ---
 
@@ -94,10 +178,11 @@ cp .env.example .env.local
 ```
 
 필수 환경변수:
-- `FMP_API_KEY` — [Financial Modeling Prep](https://site.financialmodelingprep.com/developer)에서 발급
-- `ANTHROPIC_API_KEY` — [Anthropic Console](https://console.anthropic.com)에서 발급
-- `GEMINI_API_KEY` — [Google AI Studio](https://aistudio.google.com/apikey)에서 발급
-- `AI_PROVIDER` — `claude` 또는 `gemini`
+- `ALPACA_API_KEY` / `ALPACA_SECRET_KEY` — [Alpaca Markets](https://alpaca.markets)에서 발급 (시세 데이터)
+- `FMP_API_KEY` — [Financial Modeling Prep](https://site.financialmodelingprep.com/developer)에서 발급 (종목 정보)
+- `ANTHROPIC_API_KEY` — [Anthropic Console](https://console.anthropic.com)에서 발급 (AI 분석 리포트)
+- `GEMINI_API_KEY` — [Google AI Studio](https://aistudio.google.com/apikey)에서 발급 (AI 챗봇)
+- `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — [Upstash](https://upstash.com)에서 발급 (캐시)
 
 ### Run Development Server
 
@@ -115,14 +200,19 @@ http://localhost:4200 접속
 siglens/
 ├── src/
 │   ├── app/              # Next.js App Router (RSC, Route Handler)
+│   │   ├── market/       # 시장 현황 대시보드 (섹터별 신호 스캐너)
+│   │   ├── backtesting/  # AI 백테스팅 결과 페이지 + data.json
+│   │   └── [symbol]/     # 종목별 AI 분석 페이지
 │   ├── domain/           # 순수 TS — 인디케이터, 패턴, 프롬프트 빌더
 │   ├── infrastructure/   # 외부 의존성 — Alpaca, FMP, AI Provider, Skills Loader
 │   ├── components/       # React Client Components
 │   └── lib/              # UI 유틸, React Query 키 팩토리
 ├── skills/               # 분석 기법 정의 (.md, 코드 아님)
-│   ├── patterns/
-│   ├── indicators/
-│   └── strategies/
+│   ├── patterns/         # 차트 패턴 (헤드앤숄더, 쐐기, 이중천장/바닥 등)
+│   ├── indicators/       # 보조지표 시그널 해석
+│   ├── strategies/       # 엘리어트 파동, 와이코프, 대순환 등 전략
+│   ├── support-resistance/ # 피보나치, 피봇포인트
+│   └── candlesticks/     # 캔들 패턴 교육
 ├── docs/                 # 아키텍처/도메인/컨벤션 문서
 └── refs/                 # 보조지표·투자 이론 레퍼런스
 ```
@@ -169,27 +259,29 @@ Claude Code가 이슈를 받아 브랜치 생성 → 코드 작성 → 테스트
 본문을 파싱하고, `domain/analysis/prompt.ts`가 이를 AI 프롬프트에 주입합니다.
 도메인 코드를 건드리지 않고 분석 기법을 추가/수정할 수 있다는 의미입니다.
 
-현재 등록된 카테고리:
+현재 등록된 카테고리 (총 61개 Skills):
 
-- `skills/patterns/` — 차트 패턴 (헤드앤숄더, 쐐기, 이중천장/바닥 등)
-- `skills/indicators/` — 보조지표 시그널 (예정)
-- `skills/strategies/` — 대순환 분석 등 전략 (예정)
+- `skills/patterns/` — 차트 패턴 (헤드앤숄더, 쐐기, 이중천장/바닥, 삼각수렴, 플래그 등)
+- `skills/indicators/` — 보조지표 시그널 해석 (RSI, MACD, 볼린저 밴드, 일목균형표 등)
+- `skills/strategies/` — 엘리어트 파동, 와이코프, 대순환 분석, 다이버전스, 브레이크아웃 등
+- `skills/support-resistance/` — 피보나치 되돌림/확장, 피봇포인트
+- `skills/candlesticks/` — 도지, 장악형, 망치형, 마루보주, 하라미, 이브닝/모닝스타 등
 
 ---
 
 ## 📚 Documentation
 
-| 문서 | 내용                                                       |
-|------|----------------------------------------------------------|
-| [SERVICE.md](./docs/SERVICE.md) | 서비스 개요, 대상 사용자, 기술 스택, Skills 시스템                        |
-| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | 레이어 구조, 의존성 규칙, 데이터 흐름                                   |
-| [DOMAIN.md](./docs/DOMAIN.md) | 인디케이터 계산 명세, 캔들 패턴, Skills 시스템                           |
-| [API.md](./docs/API.md) | Alpaca, FMP API, Claude, Gemini API 명세                   |
-| [CONVENTIONS.md](./docs/CONVENTIONS.md) | 코딩 컨벤션, 네이밍, 패러다임                                        |
+| 문서 | 내용 |
+|------|------|
+| [SERVICE.md](./docs/SERVICE.md) | 서비스 개요, 대상 사용자, 기술 스택, Skills 시스템 |
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md) | 레이어 구조, 의존성 규칙, 데이터 흐름 |
+| [DOMAIN.md](./docs/DOMAIN.md) | 인디케이터 계산 명세, 캔들 패턴, Skills 시스템 |
+| [API.md](./docs/API.md) | Alpaca, FMP API, Claude, Gemini API 명세 |
+| [CONVENTIONS.md](./docs/CONVENTIONS.md) | 코딩 컨벤션, 네이밍, 패러다임 |
 | [FF.md](./docs/FF.md) | FF 4원칙 (Readability, Predictability, Cohesion, Coupling) |
-| [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수                            |
-| [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 브랜치, 커밋 메시지, PR 규칙                                       |
-| [MISTAKES.md](./docs/MISTAKES.md) | 자주 하는 실수 모음                                              |
+| [DESIGN.md](./docs/DESIGN.md) | 컬러 시스템, Tailwind 설정, 차트 컬러 상수 |
+| [GIT_CONVENTIONS.md](./docs/GIT_CONVENTIONS.md) | 브랜치, 커밋 메시지, PR 규칙 |
+| [MISTAKES.md](./docs/MISTAKES.md) | 자주 하는 실수 모음 |
 
 ---
 
@@ -222,18 +314,6 @@ yarn format            # Prettier
 
 ---
 
-## 📊 Data Source
-
-[Financial Modeling Prep (FMP)](https://site.financialmodelingprep.com) 기반
-
-| 항목 | 값 |
-|------|-----|
-| Exchange | 미국 전체 시장 |
-| Timeframe | 일봉 (현재 비용 이슈로 일봉만 지원) |
-| History | 다년간 |
-
----
-
 ## 🤝 Contributing
 
 ### 코드 기여
@@ -253,23 +333,6 @@ yarn format            # Prettier
 
 따라서 **현재는 외부에서 Skills를 기여하기 어렵습니다.** 틀이 잡히는 대로 이 섹션을 업데이트할 예정입니다.
 관심 있으신 분은 Discord에서 미리 의견을 남겨주세요.
-
----
-
-## 💬 Community
-
-- **[💬 Discord](https://discord.gg/siglens)** — 실시간 대화
-  - 현재는 MVP 운영 중으로 초대받은 유저에게만 초대해드리고 있어요.
-
----
-
-## ⚠️ Disclaimer
-
-**Siglens는 분석 정보만 제공하며 투자 조언이 아닙니다.**
-
-- 제시된 분석 결과를 기반으로 한 모든 투자 결정은 **본인의 책임**입니다.
-- 운영자는 분석 정보로 인한 금전적 손실에 대해 법적 책임을 지지 않습니다.
-- 투자 결정 전에 충분한 조사와 자체 판단을 권장합니다.
 
 ---
 

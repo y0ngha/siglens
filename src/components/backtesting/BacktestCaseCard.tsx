@@ -1,21 +1,16 @@
-import type { BacktestCase } from '@/domain/types';
+import type { BacktestCase, BacktestRiskLevel } from '@/domain/types';
+import { cn } from '@/lib/cn';
+import { formatUsdCurrency } from '@/lib/priceFormat';
 
 interface BacktestCaseCardProps {
     case_: BacktestCase;
 }
 
-const priceFormatter = new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-});
-
-function EntryRecBadge({
-    recommendation,
-}: {
+interface EntryRecBadgeProps {
     recommendation: 'enter' | 'wait' | 'avoid';
-}) {
+}
+
+function EntryRecBadge({ recommendation }: EntryRecBadgeProps) {
     const config = {
         enter: {
             label: 'AI 진입 권고',
@@ -33,20 +28,23 @@ function EntryRecBadge({
     return (
         <span
             translate="no"
-            className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold ${config.cls}`}
+            className={cn(
+                'rounded border px-1.5 py-0.5 text-[9px] font-semibold',
+                config.cls
+            )}
         >
             {config.label}
         </span>
     );
 }
 
-function RiskBadge({ level }: { level: string }) {
-    const normalized = level.toLowerCase();
-    const isHigh =
-        normalized.includes('high') ||
-        normalized.includes('extreme') ||
-        level.includes('높');
-    const isLow = normalized.includes('low') || level.includes('낮');
+interface RiskBadgeProps {
+    level: BacktestRiskLevel;
+}
+
+function RiskBadge({ level }: RiskBadgeProps) {
+    const isHigh = level === 'high' || level === 'extreme';
+    const isLow = level === 'low';
     const cls = isHigh
         ? 'bg-ui-warning/10 text-ui-warning border-ui-warning/30'
         : isLow
@@ -54,7 +52,10 @@ function RiskBadge({ level }: { level: string }) {
           : 'bg-secondary-800 text-secondary-400 border-secondary-700';
     return (
         <span
-            className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase ${cls}`}
+            className={cn(
+                'rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase',
+                cls
+            )}
         >
             {level}
         </span>
@@ -91,26 +92,38 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
     return (
         <article
             aria-label={`${c.ticker} ${c.entryDate} ${isWin ? '수익' : '손실'} ${returnLabel}`}
-            className={`bg-secondary-800/50 rounded-lg border p-3 ${v.article}`}
+            className={cn(
+                'bg-secondary-800/50 rounded-lg border p-3',
+                v.article
+            )}
         >
             <div className="mb-2 flex items-center gap-2">
                 <span
                     translate="no"
-                    className={`rounded px-2 py-0.5 text-xs font-bold ${v.badge}`}
+                    className={cn(
+                        'rounded px-2 py-0.5 text-xs font-bold',
+                        v.badge
+                    )}
                 >
                     {c.ticker}
                 </span>
 
                 <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs">
                     <div
-                        className={`shrink-0 rounded border px-2 py-1 ${
+                        className={cn(
+                            'shrink-0 rounded border px-2 py-1',
                             c.signalType === 'buy'
                                 ? 'border-chart-bullish/20 bg-chart-bullish/10'
                                 : 'border-chart-bearish/20 bg-chart-bearish/10'
-                        }`}
+                        )}
                     >
                         <span
-                            className={`font-semibold ${c.signalType === 'buy' ? 'text-chart-bullish' : 'text-chart-bearish'}`}
+                            className={cn(
+                                'font-semibold',
+                                c.signalType === 'buy'
+                                    ? 'text-chart-bullish'
+                                    : 'text-chart-bearish'
+                            )}
                         >
                             {c.signalType === 'buy' ? '매수' : '매도'}
                         </span>
@@ -118,7 +131,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             {c.entryDate}
                         </span>
                         <span className="text-secondary-500 ml-1 font-mono tabular-nums">
-                            {priceFormatter.format(c.entryPrice)}
+                            {formatUsdCurrency(c.entryPrice)}
                         </span>
                     </div>
                     <span
@@ -144,20 +157,23 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             {c.exitDate}
                         </span>
                         <span className="text-secondary-500 ml-1 font-mono tabular-nums">
-                            {priceFormatter.format(c.exitPrice)}
+                            {formatUsdCurrency(c.exitPrice)}
                         </span>
                     </div>
                 </div>
 
                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
                     <span
-                        className={`font-mono text-sm font-bold tabular-nums ${v.returnText}`}
+                        className={cn(
+                            'font-mono text-sm font-bold tabular-nums',
+                            v.returnText
+                        )}
                     >
                         {returnLabel}
                     </span>
                     <span
                         aria-hidden="true"
-                        className={`text-xs ${v.returnText}`}
+                        className={cn('text-xs', v.returnText)}
                     >
                         {isWin ? '✓' : '✗'}
                     </span>
@@ -166,7 +182,10 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
             </div>
 
             <p
-                className={`text-secondary-400 line-clamp-3 rounded-r border-l-2 bg-black/20 px-3 py-2 text-[11px] leading-relaxed ${v.aiSummary}`}
+                className={cn(
+                    'text-secondary-400 line-clamp-3 rounded-r border-l-2 bg-black/20 px-3 py-2 text-[11px] leading-relaxed',
+                    v.aiSummary
+                )}
             >
                 {c.aiAnalysis.summary}
             </p>
@@ -176,7 +195,10 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                     {c.aiAnalysis.tags.map(tag => (
                         <span
                             key={tag}
-                            className={`rounded px-1.5 py-0.5 text-[10px] ${v.tag}`}
+                            className={cn(
+                                'rounded px-1.5 py-0.5 text-[10px]',
+                                v.tag
+                            )}
                         >
                             {tag}
                         </span>
@@ -205,7 +227,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                                     목표가:{' '}
                                 </span>
                                 <span className="text-chart-bullish">
-                                    {priceFormatter.format(
+                                    {formatUsdCurrency(
                                         firstBullishTarget.price
                                     )}
                                 </span>
@@ -220,9 +242,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             <div>
                                 <span className="text-secondary-500">TP: </span>
                                 <span className="text-chart-bullish">
-                                    {priceFormatter.format(
-                                        c.aiAnalysis.takeProfit
-                                    )}
+                                    {formatUsdCurrency(c.aiAnalysis.takeProfit)}
                                 </span>
                                 {c.exitReason === 'take_profit' && (
                                     <span className="text-chart-bullish ml-1">
@@ -235,9 +255,7 @@ export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
                             <div>
                                 <span className="text-secondary-500">SL: </span>
                                 <span className="text-chart-bearish">
-                                    {priceFormatter.format(
-                                        c.aiAnalysis.stopLoss
-                                    )}
+                                    {formatUsdCurrency(c.aiAnalysis.stopLoss)}
                                 </span>
                                 {c.exitReason === 'stop_loss' && (
                                     <span className="text-chart-bearish ml-1">

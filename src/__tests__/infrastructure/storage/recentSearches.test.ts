@@ -1,9 +1,9 @@
 import {
-    MAX_RECENT_SEARCHES,
-    RECENT_SEARCHES_STORAGE_KEY,
     addRecentSearch,
     clearRecentSearches,
     getRecentSearches,
+    MAX_RECENT_SEARCHES,
+    RECENT_SEARCHES_STORAGE_KEY,
     removeRecentSearch,
 } from '@/infrastructure/storage/recentSearches';
 

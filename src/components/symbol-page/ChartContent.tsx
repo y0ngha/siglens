@@ -1,39 +1,26 @@
 'use client';
 
-import {
-    useState,
-    useCallback,
-    useMemo,
-    useRef,
-    useEffect,
-    useEffectEvent,
-} from 'react';
-import React from 'react';
 import type { ReactNode } from 'react';
+import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
-import {
-    validateKeyLevels,
-    clusterKeyLevels,
-} from '@/domain/analysis/keyLevels';
-import {
-    validateActionPrices,
-    extractReconciledActionLines,
-} from '@/domain/analysis/actionRecommendation';
 import { cn } from '@/lib/cn';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
+import { useAnalysisDerivedData } from '@/components/symbol-page/hooks/useAnalysisDerivedData';
+import { useAnalysisDisplay } from '@/components/symbol-page/hooks/useAnalysisDisplay';
+import { useActionPricesVisibility } from '@/components/symbol-page/hooks/useActionPricesVisibility';
 import {
-    usePanelResize,
-    PANEL_MIN_WIDTH,
     PANEL_MAX_WIDTH,
+    PANEL_MIN_WIDTH,
+    usePanelResize,
 } from '@/components/symbol-page/hooks/usePanelResize';
 import { useChartSync } from '@/components/chart/hooks/useChartSync';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
-import { SNAP_PEEK } from '@/components/symbol-page/MobileAnalysisSheet';
+import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 
@@ -141,34 +128,13 @@ export function ChartContent({
         handleVolumeChartRemove,
     } = useChartSync();
 
-    const [chartVisiblePatterns, setChartVisiblePatterns] = useState<
-        Set<string>
-    >(new Set());
-    const togglePatternRef = useRef<(patternName: string) => void>(
-        () => undefined
-    );
-    const [keyLevelsVisible, setKeyLevelsVisible] = useState(false);
-    const [trendlinesVisible, setTrendlinesVisible] = useState(false);
-    const [actionPricesVisible, setActionPricesVisible] = useState(true);
+    const { actionPricesVisible, setActionPricesVisible } =
+        useActionPricesVisibility();
 
-    // 마무리 애니메이션이 모두 끝난 뒤에야 본문/배너가 사라지도록, isAnalyzing보다
-    // 늦게 false로 떨어지는 displayAnalyzing 상태를 둔다. AnalysisPanel(본문)과
-    // AnalysisStatusBanner(상단 배너)가 동일한 타이밍을 공유한다.
-    const [displayAnalyzing, setDisplayAnalyzing] = useState(isAnalyzing);
-    const [prevIsAnalyzing, setPrevIsAnalyzing] = useState(isAnalyzing);
-    if (prevIsAnalyzing !== isAnalyzing) {
-        setPrevIsAnalyzing(isAnalyzing);
-        if (isAnalyzing) {
-            setDisplayAnalyzing(true);
-        }
-    }
-    const handleProgressFinished = useCallback(() => {
-        setDisplayAnalyzing(false);
-    }, []);
+    const { displayAnalyzing, handleProgressFinished } =
+        useAnalysisDisplay(isAnalyzing);
 
-    // 진행 상태(단계·팁 인덱스)를 ChartContent에서 한 번만 관리한다.
-    // 데스크톱 aside와 모바일 MobileAnalysisSheet 두 인스턴스에 동일한 값을 props로
-    // 내려주어, 모바일 시트의 unmount/remount 사이클에서도 상태가 초기화되지 않도록 한다.
+    // 데스크톱·모바일 두 인스턴스 공유 — 모바일 시트 unmount/remount 시에도 상태 유지.
     const { phaseIndex: progressPhaseIndex, tipIndex: progressTipIndex } =
         useAnalysisProgress({
             isAnalyzing,
@@ -177,41 +143,8 @@ export function ChartContent({
 
     const analysisStatus = getAnalysisStatus(displayAnalyzing, analysisError);
 
-    const validatedKeyLevels = useMemo(
-        () => validateKeyLevels(analysis.keyLevels),
-        [analysis.keyLevels]
-    );
-
-    const clusteredKeyLevels = useMemo(() => {
-        const lastBar = bars[bars.length - 1];
-        if (!lastBar) return { support: [], resistance: [], poc: undefined };
-        return clusterKeyLevels(validatedKeyLevels, lastBar.close);
-    }, [validatedKeyLevels, bars]);
-
-    const validatedActionPrices = useMemo(
-        () => validateActionPrices(analysis.actionRecommendation),
-        [analysis.actionRecommendation]
-    );
-
-    const reconciledActionLines = useMemo(
-        () => extractReconciledActionLines(analysis.actionRecommendation),
-        [analysis.actionRecommendation]
-    );
-
-    const handlePatternOverlayChange = useCallback(
-        (
-            visiblePatterns: Set<string>,
-            toggle: (patternName: string) => void
-        ): void => {
-            setChartVisiblePatterns(visiblePatterns);
-            togglePatternRef.current = toggle;
-        },
-        []
-    );
-
-    const handleTogglePattern = useCallback((patternName: string): void => {
-        togglePatternRef.current(patternName);
-    }, []);
+    const { clusteredKeyLevels, validatedActionPrices, reconciledActionLines } =
+        useAnalysisDerivedData(analysis, bars);
 
     const analysisContent = useMemo(
         () => (
@@ -231,12 +164,6 @@ export function ChartContent({
                     onReanalyze={handleReanalyze}
                     reanalyzeCooldownMs={reanalyzeCooldownMs}
                     cooldownNotice={cooldownNotice}
-                    chartVisiblePatterns={chartVisiblePatterns}
-                    onTogglePattern={handleTogglePattern}
-                    _keyLevelsVisible={keyLevelsVisible}
-                    _onKeyLevelsVisibilityChange={setKeyLevelsVisible}
-                    _trendlinesVisible={trendlinesVisible}
-                    _onTrendlinesVisibilityChange={setTrendlinesVisible}
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
@@ -254,20 +181,12 @@ export function ChartContent({
             handleReanalyze,
             reanalyzeCooldownMs,
             cooldownNotice,
-            chartVisiblePatterns,
-            handleTogglePattern,
-            keyLevelsVisible,
-            trendlinesVisible,
             actionPricesVisible,
+            setActionPricesVisible,
         ]
     );
 
-    // MobileAnalysisSheet를 Suspense 경계 밖에서 렌더링하기 위해 콘텐츠를 상위로 전달한다.
-    // Suspense 경계 내에서 직접 렌더링하면 타임프레임 전환 시 바텀시트가 사라진다.
-    //
-    // timeframe을 래퍼 useMemo의 deps에 포함시켜, React Compiler 자동 메모이제이션으로
-    // analysisContent 참조가 안정적으로 유지되더라도 타임프레임 변경 시 effect가 재실행된다.
-    // useEffect body에서는 mobileContent만 참조하므로 Predictability 규칙 3을 준수한다.
+    // timeframe key로 래핑 — Suspense 경계 밖 전달 + 타임프레임 변경 시 effect 재실행 보장.
     const mobileContent = useMemo(
         () => (
             <React.Fragment key={timeframe}>{analysisContent}</React.Fragment>
@@ -294,15 +213,9 @@ export function ChartContent({
                         bars={bars}
                         timeframe={timeframe}
                         indicators={indicators}
-                        patterns={analysis.patternSummaries}
-                        trendlines={analysis.trendlines}
-                        trendlinesVisible={trendlinesVisible}
-                        keyLevels={clusteredKeyLevels}
-                        keyLevelsVisible={keyLevelsVisible}
                         actionPrices={validatedActionPrices}
                         reconciledActionPrices={reconciledActionLines}
                         actionPricesVisible={actionPricesVisible}
-                        onPatternOverlayChange={handlePatternOverlayChange}
                         onChartReady={handleStockChartReady}
                         onChartRemove={handleStockChartRemove}
                     />

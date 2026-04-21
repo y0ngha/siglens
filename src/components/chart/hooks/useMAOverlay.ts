@@ -1,12 +1,12 @@
 'use client';
 
 import type { RefObject } from 'react';
-import { LineStyle } from 'lightweight-charts';
 import type { IChartApi, LineWidth } from 'lightweight-charts';
+import { LineStyle } from 'lightweight-charts';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import {
-    useMovingAverageOverlay,
     type IndicatorDataAccessor,
+    useMovingAverageOverlay,
 } from './useMovingAverageOverlay';
 
 const getMaData: IndicatorDataAccessor = (indicators, period) =>

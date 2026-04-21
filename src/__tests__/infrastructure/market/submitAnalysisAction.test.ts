@@ -4,6 +4,12 @@ jest.mock('next/cache', () => ({
 }));
 
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
+import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
+import { createCacheProvider } from '@/infrastructure/cache/redis';
+import { setJobMeta } from '@/infrastructure/jobs/queue';
+import { FileSkillsLoader } from '@/infrastructure/skills/loader';
+import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
+import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: (promise: Promise<unknown>) => {
@@ -14,13 +20,6 @@ jest.mock('@/infrastructure/cache/redis');
 jest.mock('@/infrastructure/jobs/queue');
 jest.mock('@/infrastructure/skills/loader');
 jest.mock('@/infrastructure/market/barsApi');
-
-import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
-import { createCacheProvider } from '@/infrastructure/cache/redis';
-import { setJobMeta } from '@/infrastructure/jobs/queue';
-import { FileSkillsLoader } from '@/infrastructure/skills/loader';
-import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
-import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
 
 const mockCreateCacheProvider = createCacheProvider as jest.MockedFunction<
     typeof createCacheProvider
