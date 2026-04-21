@@ -3,7 +3,7 @@ import { Fragment } from 'react';
 
 import type { SkillShowcaseItem } from '@/domain/types';
 import { DotSeparator } from '@/components/ui/DotSeparator';
-import { buildSkillStats } from '@/domain/skills';
+import { buildSkillStats } from '@/lib/skillStats';
 
 interface StatsBarProps {
     skills: SkillShowcaseItem[];

@@ -636,4 +636,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Utility functions extracted from components must go to utils/ subfolders, not remain in components/
    ❌ Pure function in components/dashboard/utils/ or inlined in SectorSignalPanel.tsx
    ✅ Pure function in domain/signals/ or dedicated utils/ subfolder with proper layer imports
+
+3. UI presentation types or configurations with display labels defined in domain/
+   → domain/types.ts and domain/ modules must contain only pure business logic types
+   → Presentation concerns (Korean labels, CSS class names, UI-specific configurations, display enums) belong in lib/ or component-specific modules
+   ❌ SkillStat, SkillStatConfig, SKILL_STAT_CONFIG defined in domain/skills.ts with Korean display labels
+   ❌ PriceChangeDisplay, BreadcrumbItem UI types defined in domain/types.ts
+   ✅ Move presentation-specific types to lib/ (e.g., lib/skillStats.ts, lib/priceFormat.ts)
+   ✅ domain/ contains only pure calculation functions: countSkillsByType, formatPrice logic, etc.
 ```
