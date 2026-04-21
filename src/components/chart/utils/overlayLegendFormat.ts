@@ -5,6 +5,10 @@ export interface OverlayGroup {
     items: OverlayLegendItem[];
 }
 
+const MA_NAME_PREFIX = 'MA(';
+const EMA_NAME_PREFIX = 'EMA(';
+const BB_NAME_PREFIX = 'BB ';
+
 const ICHIMOKU_NAMES = new Set([
     'Tenkan',
     'Kijun',
@@ -15,9 +19,9 @@ const ICHIMOKU_NAMES = new Set([
 const VP_NAMES = new Set(['POC', 'VAH', 'VAL']);
 
 function getGroupKey(name: string): string {
-    if (name.startsWith('MA(')) return 'MA';
-    if (name.startsWith('EMA(')) return 'EMA';
-    if (name.startsWith('BB ')) return 'BB';
+    if (name.startsWith(MA_NAME_PREFIX)) return 'MA';
+    if (name.startsWith(EMA_NAME_PREFIX)) return 'EMA';
+    if (name.startsWith(BB_NAME_PREFIX)) return 'BB';
     if (ICHIMOKU_NAMES.has(name)) return 'Ichimoku';
     if (VP_NAMES.has(name)) return 'VP';
     return name;

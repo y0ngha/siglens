@@ -211,12 +211,6 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ const value: number = getValue() ?? 0;  // type guard with fallback
    ❌ atrValues[idx] as number  // null never occurs due to prior check
    ✅ atrValues[idx]!  // non-null assertion operator
-
-8. `as` type assertions without explanatory comments
-   → When `as` must be used (e.g., external API response parsing), document why with a comment
-   → Comment should explain the reason for the assertion (e.g., "FMP API response shape guaranteed by provider")
-   ❌ const data = response as ApiResult;
-   ✅ const data = response as ApiResult; // API response shape enforced by external provider schema
 ```
 
 ---
