@@ -10,7 +10,7 @@ import {
 } from 'react';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
-import { useFocusTrap } from '@/components/layout/hooks/useFocusTrap';
+import { useFocusTrap } from '@/components/hooks/useFocusTrap';
 
 interface UseDialogReturn {
     isOpen: boolean;
@@ -38,11 +38,11 @@ export function useDialog(): UseDialogReturn {
         triggerRef.current?.focus();
     }, []);
 
+    const open = useCallback(() => setIsOpen(true), []);
+
     useLayoutEffect(() => {
         closeRef.current = close;
     }, [close]);
-
-    const open = useCallback(() => setIsOpen(true), []);
 
     useEffect(() => {
         if (isOpen) dialogRef.current?.focus();

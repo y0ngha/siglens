@@ -1,9 +1,13 @@
+type PriceSign = '+' | '';
+type PriceArrow = '▲' | '▼';
+type PriceArrowLabel = '상승' | '하락';
+
 export interface PriceChangeDisplay {
     isUp: boolean;
-    sign: '+' | '';
+    sign: PriceSign;
     colorClass: string;
-    arrow: '▲' | '▼';
-    arrowLabel: '상승' | '하락';
+    arrow: PriceArrow;
+    arrowLabel: PriceArrowLabel;
 }
 
 export function formatUsdPrice(price: number): string {
