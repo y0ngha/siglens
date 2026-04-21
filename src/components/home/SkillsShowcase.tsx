@@ -12,6 +12,8 @@ import {
 } from '@/components/home/hooks/useSkillsShowcase';
 
 const INITIAL_VISIBLE_COUNT = 12;
+const SKELETON_TAB_WIDTHS_PX = [48, 56, 64, 52, 60, 72] as const;
+const SKELETON_CARD_COUNT = 12;
 
 interface TabConfig {
     value: SkillsActiveTab;
@@ -156,7 +158,7 @@ export function SkillsShowcaseSkeleton() {
         <section className="px-6 py-10 lg:px-[15vw]">
             <div className="bg-secondary-700/50 mb-6 h-3.5 w-20 animate-pulse rounded" />
             <div className="mb-6 flex flex-wrap gap-2">
-                {[48, 56, 64, 52, 60, 72].map((w, i) => (
+                {SKELETON_TAB_WIDTHS_PX.map((w, i) => (
                     <div
                         key={i}
                         className="bg-secondary-700/50 h-7 animate-pulse rounded-full"
@@ -165,7 +167,7 @@ export function SkillsShowcaseSkeleton() {
                 ))}
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {Array.from({ length: 12 }).map((_, i) => (
+                {Array.from({ length: SKELETON_CARD_COUNT }).map((_, i) => (
                     <div
                         key={i}
                         className="bg-secondary-800/50 border-secondary-700 rounded-lg border p-4"

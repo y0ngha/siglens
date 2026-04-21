@@ -38,9 +38,6 @@
 - Context: `worker/src/index.ts`에서 `Promise.all([set result, set status])` → `await set result; await set status`로 순차 실행
 
 ## [PR #272 Round 2 | refactor/271/skill-counts-build-time-derivation | 2026-04-11]
-- Violation: `indicatorCount` prop이 `SymbolPageClient` → `ChartContent` → `AnalysisPanel`로 드릴링됨 (두 중간 컴포넌트 모두 미사용)
-- Rule: FF Coupling 4-D — 중간 컴포넌트가 직접 사용하지 않는 prop을 아래로 전달하는 것은 Props Drilling 위반
-- Context: `AnalysisPanel`만 `indicatorCount`를 실제로 사용; `SymbolPageContext` (Provider/hook) 패턴으로 해결
 
 - Violation: `countSkillFiles`에 캐싱 없음 — 페이지 요청마다 skills/ 디렉토리를 다시 스캔
 - Rule: App CLAUDE.md — "infrastructure 함수에는 `'use cache'` 디렉티브로 명시적 캐싱 적용"
@@ -127,11 +124,6 @@
 - Rule: MISTAKES.md Accessibility #3 — tooltip requires aria-describedby connection to trigger element
 - Context: `useId()` 추가로 스크린 리더가 툴팁과 버튼을 연결할 수 있도록 수정
 
-
-- Violation: `AnalysisPanelProps`에 미사용 필드 `_keyLevelsVisible` 등 4개 선언 및 전달
-- Rule: FF Predictability — dead props create confusing data flow without effect
-- Context: `ChartContent.tsx`에서 `AnalysisPanel`에 전달했지만 컴포넌트 본문에서 미사용
-
 ## [PR #344 round-2 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `SymbolLayoutClient.tsx` 인라인 prop 타입 사용
 - Rule: CONVENTIONS.md — Props interface declared directly above component function
@@ -140,4 +132,29 @@
 - Violation: `StockChart.tsx`에 주석 처리된 코드 블록 + `_` prefix 미사용 파라미터 6개
 - Rule: CONVENTIONS.md "No dead code, no commented-out code"
 - Context: 선 그리기 기능 비활성화 후 props와 훅 호출 주석만 남아있고 실제 코드가 없었음
+
+## [PR #344 Round 5 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `src/__tests__/domain/skills.test.ts` — `buildSkillStats` 함수에 테스트 미존재
+- Rule: MISTAKES.md Domain Functions #22 — Domain functions require 100% branch coverage with dedicated unit tests
+- Context: empty array, all types present, missing type fallback, return structure validation을 포함한 4개 describe/it 블록 추가
+
+- Violation: `src/domain/skills.ts` line 24 — `Object.keys(SKILL_STAT_CONFIG) as SkillType[]` cast가 설명 주석 없음
+- Rule: MISTAKES.md TypeScript #8 — as type assertions require explanatory comments documenting why the cast is necessary
+- Context: SKILL_STAT_CONFIG의 키는 항상 SkillType 집합과 일치하므로 캐스트가 필요하다는 설명 주석 추가
+
+- Violation: `src/components/analysis/AnalysisPanel.tsx` — `EyeIcon`에 대한 오도하는 TODO 주석 "unused, skip cleanup"
+- Rule: Documentation Sync — Comments must reflect current implementation reality, not outdated preservation intent
+- Context: EyeIcon이 실제로는 다른 곳에서 사용되고 있으므로 거짓 TODO 주석 삭제
+
+- Violation: `src/components/chart/hooks/useVolumeChartData.ts` line 47 — `buySellVolume[i]!` non-null assertion이 설명 주석 없음
+- Rule: MISTAKES.md TypeScript #8 — Non-null assertion operators require comments explaining why null is logically impossible
+- Context: bars와 buySellVolume은 infrastructure 레이어에서 동일 길이로 보장되므로 인덱스 안전성을 설명하는 주석 추가
+
+- Violation: S-5 시도 (useEffect deps에서 RefObjects 제거) — ESLint `react-hooks/exhaustive-deps` 경고 발생
+- Rule: MISTAKES.md Coding Paradigm #13 — eslint-disable 사용 금지; 근본 원인(클로저/ref 캡처) 구조 변경 필수
+- Context: MISTAKES.md #13 규칙에 따라 변경 되돌림 (eslint-disable 금지, refs 제거 시 exhaustive-deps 경고 해결 불가)
+
+- Violation: `src/components/home/SkillsShowcase.tsx` — 매직 넘버 `[48, 56, 64, 52, 60, 72]` 및 `12` 하드코딩
+- Rule: MISTAKES.md Coding Paradigm #15 — 매직 넘버는 named constant로 추출 필수
+- Context: `SKELETON_TAB_WIDTHS_PX`, `SKELETON_CARD_COUNT` 상수로 추출
 

@@ -43,6 +43,7 @@ export function useVolumeChartData({
         buySeriesRef.current.setData(
             bars.map(({ time }, i) => ({
                 time: time as UTCTimestamp,
+                // bars and buySellVolume are guaranteed same length by infrastructure layer
                 value: buySellVolume[i]!.buyVolume,
             }))
         );

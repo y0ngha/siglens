@@ -129,12 +129,8 @@ export function ChartContent({
         handleVolumeChartRemove,
     } = useChartSync();
 
-    const {
-        chartVisiblePatterns,
-        actionPricesVisible,
-        setActionPricesVisible,
-        handleTogglePattern,
-    } = useChartOverlayVisibility();
+    const { actionPricesVisible, setActionPricesVisible } =
+        useChartOverlayVisibility();
 
     const { displayAnalyzing, handleProgressFinished } =
         useAnalysisDisplay(isAnalyzing);
@@ -169,8 +165,6 @@ export function ChartContent({
                     onReanalyze={handleReanalyze}
                     reanalyzeCooldownMs={reanalyzeCooldownMs}
                     cooldownNotice={cooldownNotice}
-                    chartVisiblePatterns={chartVisiblePatterns}
-                    onTogglePattern={handleTogglePattern}
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
@@ -188,8 +182,6 @@ export function ChartContent({
             handleReanalyze,
             reanalyzeCooldownMs,
             cooldownNotice,
-            chartVisiblePatterns,
-            handleTogglePattern,
             actionPricesVisible,
             setActionPricesVisible,
         ]

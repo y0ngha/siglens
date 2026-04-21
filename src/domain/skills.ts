@@ -21,6 +21,7 @@ const SKILL_STAT_CONFIG: Record<SkillType, SkillStatConfig> = {
     support_resistance: { countLabel: '개 지지/저항 도구' },
 };
 
+// SKILL_STAT_CONFIG keys are exactly the SkillType union — cast is safe
 const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];
 
 export function buildSkillStats(

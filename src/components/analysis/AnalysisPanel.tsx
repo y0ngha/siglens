@@ -311,9 +311,6 @@ interface EyeIconProps {
     isVisible: boolean;
 }
 
-/**
- * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
- */
 function EyeIcon({ isVisible }: EyeIconProps) {
     return isVisible ? (
         <svg
@@ -455,15 +452,9 @@ function KeyLevelsHeaderInfo() {
 
 interface PatternAccordionItemProps {
     pattern: PatternResult;
-    isVisible: boolean;
-    onToggleVisibility?: (patternName: string) => void;
 }
 
-function PatternAccordionItem({
-    pattern,
-    isVisible: _isVisible,
-    onToggleVisibility: _onToggleVisibility,
-}: PatternAccordionItemProps) {
+function PatternAccordionItem({ pattern }: PatternAccordionItemProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
@@ -745,10 +736,6 @@ interface AnalysisPanelProps {
     reanalyzeCooldownMs?: number;
     /** 쿨다운 중 재분석 시도를 토스트로 알리기 위한 알림. */
     cooldownNotice?: CooldownNotice | null;
-    /** 차트에서 현재 표시 중인 패턴 이름 집합 (patternName 기준). StockChart가 소유한 상태다. */
-    chartVisiblePatterns?: Set<string>;
-    /** 차트 패턴 표시 여부를 토글한다. patternName을 인자로 받는다. */
-    onTogglePattern?: (patternName: string) => void;
     actionPricesVisible?: boolean;
     onActionPricesVisibilityChange?: (isVisible: boolean) => void;
     /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다.
@@ -767,8 +754,6 @@ export function AnalysisPanel({
     onReanalyze,
     reanalyzeCooldownMs = 0,
     cooldownNotice = null,
-    chartVisiblePatterns,
-    onTogglePattern,
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
     isFreeUser = true,
@@ -1123,12 +1108,6 @@ export function AnalysisPanel({
                                     <PatternAccordionItem
                                         key={pattern.id}
                                         pattern={pattern}
-                                        isVisible={
-                                            chartVisiblePatterns?.has(
-                                                pattern.patternName
-                                            ) ?? false
-                                        }
-                                        onToggleVisibility={onTogglePattern}
                                     />
                                 ))}
                             </div>

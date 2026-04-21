@@ -229,6 +229,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 5. Props declared but not connected to callbacks (latent bugs)
    → If a callback prop exists, it must actually be invoked
 
+5.5. Unused, dead, or decorative props in component interfaces
+   → Props that are declared but not consumed by the component, or received but immediately discarded (_prefix pattern)
+   → Intermediate components must not pass-through props they don't directly use (Props Drilling anti-pattern)
+   → Remove unused props from interface; remove pass-through behavior in intermediate components
+   ❌ interface Props { isVisible?: boolean; onToggleVisibility?(...) }; component destructures but uses neither
+   ❌ ChartContent receives chartVisiblePatterns but passes to AnalysisPanel without AnalysisPanel consuming it
+   ✅ Remove both from interface; if AnalysisPanel needs it, pass directly from parent (or use context for cross-cutting concerns)
+
 6. Repeating identical JSX structure 2+ times
    → Extract to a data array + .map() pattern
 
