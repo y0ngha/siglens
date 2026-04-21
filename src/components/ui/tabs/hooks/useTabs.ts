@@ -75,17 +75,14 @@ export function useTabs<T extends string>({
         tabRefs.current.get(nextTab)?.focus();
     }, []);
 
-    const getRef = useCallback(
-        (tab: T): RefCallback<HTMLElement> => {
-            if (!tabRefCallbacks.current.has(tab)) {
-                tabRefCallbacks.current.set(tab, el => {
-                    tabRefs.current.set(tab, el);
-                });
-            }
-            return tabRefCallbacks.current.get(tab)!;
-        },
-        []
-    );
+    const getRef = useCallback((tab: T): RefCallback<HTMLElement> => {
+        if (!tabRefCallbacks.current.has(tab)) {
+            tabRefCallbacks.current.set(tab, el => {
+                tabRefs.current.set(tab, el);
+            });
+        }
+        return tabRefCallbacks.current.get(tab)!;
+    }, []);
 
     useLayoutEffect(() => {
         focusTabRef.current = focusTab;
