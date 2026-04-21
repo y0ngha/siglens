@@ -1,6 +1,24 @@
 'use client';
 
 import {
+    buildStorageKey,
+    loadSession,
+    loadSessionFull,
+    saveSession,
+} from '@/components/chat/utils/chatStorage';
+import { GEMINI_2_5_FLASH_MODEL } from '@/domain/constants/chatModels';
+import type {
+    AnalysisResponse,
+    ChatErrorCode,
+    ChatLoadingPhase,
+    ChatMessage,
+    ChatModel,
+    Timeframe,
+} from '@/domain/types';
+import { chatAction } from '@/infrastructure/chat/chatAction';
+import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
     startTransition,
     useCallback,
     useEffect,
@@ -9,22 +27,6 @@ import {
     useRef,
     useState,
 } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type {
-    AnalysisResponse,
-    ChatErrorCode,
-    ChatLoadingPhase,
-    ChatMessage,
-    Timeframe,
-} from '@/domain/types';
-import { chatAction } from '@/infrastructure/chat/chatAction';
-import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
-import {
-    buildStorageKey,
-    loadSession,
-    loadSessionFull,
-    saveSession,
-} from '@/components/chat/utils/chatStorage';
 
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
@@ -36,6 +38,8 @@ const DAILY_CHAT_LIMIT = 5;
 const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     token_exhausted: `오늘 무료 질문 ${DAILY_CHAT_LIMIT}회를 모두 사용했어요. 내일 다시 이용해주세요.`,
     rate_limited: 'AI 서버가 잠시 바빠요. 잠시 후 다시 시도해주세요.',
+    server_busy:
+        'AI 서버가 지금 바빠요. 위의 모델 선택기에서 다른 모델로 바꿔보세요.',
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
 };
 
@@ -53,6 +57,8 @@ export interface UseChatReturn {
     remainingTokens: number | null;
     sendMessage: (text: string) => Promise<void>;
     dismissAnalysisUpdated: () => void;
+    selectedModel: ChatModel;
+    setSelectedModel: (model: ChatModel) => void;
 }
 
 export function useChat({
@@ -66,6 +72,8 @@ export function useChat({
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
+    const [selectedModel, setSelectedModel] =
+        useState<ChatModel>(GEMINI_2_5_FLASH_MODEL);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -100,7 +108,15 @@ export function useChat({
         }: {
             currentMessages: ChatMessage[];
             text: string;
-        }) => chatAction(symbol, timeframe, analysis, currentMessages, text),
+        }) =>
+            chatAction(
+                symbol,
+                timeframe,
+                analysis,
+                currentMessages,
+                text,
+                selectedModel
+            ),
         onMutate: ({ currentMessages, text }) => {
             const userMessage: ChatMessage = { role: 'user', content: text };
             setMessages([...currentMessages, userMessage]);
@@ -253,5 +269,7 @@ export function useChat({
         remainingTokens: remainingTokensData ?? null,
         sendMessage,
         dismissAnalysisUpdated,
+        selectedModel,
+        setSelectedModel,
     };
 }
