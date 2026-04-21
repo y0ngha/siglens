@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.8.20](https://github.com/y0ngha/siglens/compare/v0.8.19...v0.8.20) (2026-04-21)
+
+
+### Bug Fixes
+
+* market에서 브리핑 안보이던 것 수정 ([4969868](https://github.com/y0ngha/siglens/commit/496986847d6602263ac5563e7b66d3240dafa8e4))
+* 마켓 데이터 보여줄 때 등락률 제대로 안보여주던 것 수정 ([ee3cde7](https://github.com/y0ngha/siglens/commit/ee3cde73dc8841472cd2e573095436523532763c))
+
 ## [0.8.19](https://github.com/y0ngha/siglens/compare/v0.8.18...v0.8.19) (2026-04-21)
 
 
