@@ -385,7 +385,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ <div role="note">  // no aria-label
    ✅ <div role="note" aria-label="Additional information">
 
-4. Interactive info icons using <span title="..."> only — not keyboard accessible
+4. Missing focus-visible:ring on interactive buttons
+   → All interactive buttons must have keyboard focus indicator
+   → Apply focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500 to every button
+   ❌ <button className="px-4 py-2 bg-primary-600">Click</button>  // no focus indicator
+   ✅ <button className="px-4 py-2 bg-primary-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500">Click</button>
+   → Includes: TabsPill, DropdownPortal buttons, info icons, action buttons in AnalysisPanel, IndicatorToolbar
+   → Omission violates keyboard accessibility (WCAG 2.4.7 Focus Visible)
+
+5. Interactive info icons using <span title="..."> only — not keyboard accessible
    → Tooltips must be keyboard-accessible; title attribute ignored by keyboard users and screen readers
    → Replace <span> with <button>, add aria-describedby + role="tooltip" pattern
    ❌ <span title="Information">ⓘ</span>  // title-only, no keyboard access

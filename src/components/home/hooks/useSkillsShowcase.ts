@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useCallback, useId, useState } from 'react';
 import type { SkillType } from '@/domain/types';
 
 export type SkillsActiveTab = 'all' | SkillType;
@@ -18,14 +18,14 @@ export function useSkillsShowcase(): UseSkillsShowcaseReturn {
     const [showAll, setShowAll] = useState(false);
     const baseId = useId();
 
-    const handleTabSelect = (value: SkillsActiveTab): void => {
+    const handleTabSelect = useCallback((value: SkillsActiveTab): void => {
         setActiveTab(value);
         setShowAll(false);
-    };
+    }, []);
 
-    const toggleShowAll = (): void => {
+    const toggleShowAll = useCallback((): void => {
         setShowAll(prev => !prev);
-    };
+    }, []);
 
     return { activeTab, showAll, baseId, handleTabSelect, toggleShowAll };
 }

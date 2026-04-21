@@ -94,10 +94,6 @@
 - Context: `useCallback`으로 래핑. deps: `[updateUrl, activeTimeframe]`, `[updateUrl, activeSector]`
 
 ## [PR #344 Round 3 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `SkillsShowcase.tsx`, `AnalysisPanel.tsx`(6개 버튼), `IndicatorToolbar.tsx` DropdownPortal 버튼에 `focus-visible:ring` 클래스 누락
-- Rule: MISTAKES.md Accessibility #4 — all interactive buttons must have focus-visible:ring-1 ring-primary-500
-- Context: 각 버튼 className에 `focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500` 추가
-
 - Violation: `StatsBarSkeleton`의 `style={{ width: ${w}px }}` 인라인 스타일
 - Rule: CONVENTIONS.md — prefer CSS custom property pattern over arbitrary inline styles
 - Context: `w-[var(--stat-w)]` + `style={{ '--stat-w': '${w}px' } as CSSProperties}`로 변경

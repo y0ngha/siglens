@@ -242,7 +242,7 @@ export function SkillsShowcase({ skills }: SkillsShowcaseProps) {
                                 <button
                                     type="button"
                                     onClick={toggleShowAll}
-                                    className="border-secondary-700 text-secondary-400 hover:border-primary-600/40 hover:text-primary-400 rounded-full border px-6 py-2 text-xs font-medium transition-colors"
+                                    className="border-secondary-700 text-secondary-400 hover:border-primary-600/40 hover:text-primary-400 focus-visible:ring-primary-500 rounded-full border px-6 py-2 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none"
                                 >
                                     {showAll
                                         ? '접기'
