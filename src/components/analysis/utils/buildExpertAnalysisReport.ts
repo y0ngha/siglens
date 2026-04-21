@@ -166,7 +166,7 @@ function buildEvidenceBlock(analysis: AnalysisResponse): string | null {
         strategy =>
             `- ${strategy.strategyName}\n  - ${normalizeWhitespace(
                 strategy.summary
-            ).replace(/\*/g, '')}}`
+            ).replace(/\*/g, '')}`
     );
     lines.push(...strategyLines);
 
