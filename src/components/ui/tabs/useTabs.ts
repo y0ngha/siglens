@@ -5,6 +5,7 @@ import {
     type RefCallback,
     useCallback,
     useId,
+    useMemo,
     useRef,
 } from 'react';
 import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
@@ -49,8 +50,11 @@ export function useTabs<T extends string>({
     idPrefix,
 }: UseTabsOptions<T>): UseTabsReturn<T> {
     const generatedPrefix = useId();
-    const prefix = idPrefix ?? generatedPrefix;
     const tabRefs = useRef(new Map<T, HTMLElement | null>());
+
+    const prefix = useMemo(() => {
+        return idPrefix ?? generatedPrefix;
+    }, [idPrefix, generatedPrefix]);
 
     const focusTab = useCallback((nextTab: T) => {
         tabRefs.current.get(nextTab)?.focus();
