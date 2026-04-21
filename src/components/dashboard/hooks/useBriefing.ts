@@ -3,7 +3,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import { getSuspensePromise, resolveSuspensePromise } from '@/components/utils/suspensePromise';
+import {
+    getSuspensePromise,
+    resolveSuspensePromise,
+} from '@/components/utils/suspensePromise';
 import type {
     MarketBriefingResponse,
     SubmitBriefingResult,
@@ -55,7 +58,9 @@ export function useBriefing(
 
     if (error) throw error;
     if (!data || data.status === 'processing') {
-        throw jobId ? getSuspensePromise(jobId) : new Promise<void>(() => undefined);
+        throw jobId
+            ? getSuspensePromise(jobId)
+            : new Promise<void>(() => undefined);
     }
     if (data.status === 'error') throw new Error(data.error);
 
