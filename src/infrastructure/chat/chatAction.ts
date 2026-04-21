@@ -1,22 +1,22 @@
 'use server';
 
-import { constants } from 'node:http2';
-import { headers } from 'next/headers';
+import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
+import { GEMINI_2_5_FLASH_MODEL } from '@/domain/constants/chatModels';
 import type {
     AnalysisResponse,
     ChatActionResult,
     ChatMessage,
+    ChatModel,
     Timeframe,
 } from '@/domain/types';
-import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
+import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 import {
     getRemainingTokens,
     hashIp,
     tryConsumeToken,
 } from '@/infrastructure/chat/tokenStore';
-import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
-
-const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
+import { headers } from 'next/headers';
+import { constants } from 'node:http2';
 
 async function getClientIp(): Promise<string> {
     const headersList = await headers();
@@ -36,12 +36,23 @@ function isRateLimitError(error: unknown): boolean {
     );
 }
 
+function isServerBusyError(error: unknown): boolean {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'status' in error &&
+        (error as { status: number }).status ===
+            constants.HTTP_STATUS_SERVICE_UNAVAILABLE
+    );
+}
+
 export async function chatAction(
     symbol: string,
     timeframe: Timeframe,
     analysis: AnalysisResponse,
     history: ChatMessage[],
-    userMessage: string
+    userMessage: string,
+    model: ChatModel = GEMINI_2_5_FLASH_MODEL
 ): Promise<ChatActionResult> {
     const paidApiKey = process.env.GEMINI_API_KEY;
     if (!paidApiKey) {
@@ -73,7 +84,7 @@ export async function chatAction(
         const responseText = await callGeminiWithKeyFallback({
             freeApiKey: process.env.GEMINI_CHAT_FREE_API_KEY,
             paidApiKey,
-            model: GEMINI_CHAT_MODEL,
+            model,
             contents: geminiContents,
             systemInstruction: systemPrompt,
         });
@@ -82,6 +93,9 @@ export async function chatAction(
     } catch (error) {
         if (isRateLimitError(error)) {
             return { ok: false, error: 'rate_limited' };
+        }
+        if (isServerBusyError(error)) {
+            return { ok: false, error: 'server_busy' };
         }
         return { ok: false, error: 'server_error' };
     }

@@ -264,4 +264,53 @@ describe('chatAction 함수는', () => {
 
         expect(result).toEqual({ ok: false, error: 'server_error' });
     });
+
+    it('Gemini 503 에러 시 server_busy를 반환한다', async () => {
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+        const error = Object.assign(new Error('503'), { status: 503 });
+        mockGenerateContent.mockRejectedValueOnce(error);
+
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
+        );
+
+        expect(result).toEqual({ ok: false, error: 'server_busy' });
+    });
+
+    it('model 파라미터를 Gemini 호출에 전달한다', async () => {
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+        mockGetRemainingTokens.mockResolvedValueOnce(4);
+
+        let capturedModel = '';
+        MockGoogleGenAI.mockImplementation(
+            () =>
+                ({
+                    models: {
+                        generateContent: jest
+                            .fn()
+                            .mockImplementation(
+                                (params: { model: string }) => {
+                                    capturedModel = params.model;
+                                    return Promise.resolve({ text: '응답' });
+                                }
+                            ),
+                    },
+                }) as unknown as InstanceType<typeof GoogleGenAI>
+        );
+
+        await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문',
+            'gemini-2.5-flash-lite'
+        );
+
+        expect(capturedModel).toBe('gemini-2.5-flash-lite');
+    });
 });
