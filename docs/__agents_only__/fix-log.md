@@ -82,11 +82,6 @@
 
 
 
-## [PR #342 Round 10 | feat/multi-signal-backtest | 2026-04-20]
-- Violation: `LevelSource`, `ResolvedLevel`, `ReconcileResult` 타입이 구현 파일 `ai-levels.ts`에 정의됨
-- Rule: MISTAKES.md Architecture #1 — 모든 도메인 타입은 `domain/types.ts`에 중앙화
-- Context: 세 타입이 `generate-backtest.ts` 등 외부에서 소비되고 있어 경계 위반. `domain/types.ts`로 이동하고 `import type`으로 참조
-
 ## [PR #342 Round 9 | feat/multi-signal-backtest | 2026-04-20]
 - Violation: TP 배열 fallback 교체 후 오름차순 정렬 미보장
 - Rule: Domain Functions — 도메인 배열 계약(오름차순 TP)은 보정 후에도 유지
@@ -115,3 +110,13 @@
 - Violation: `AnalysisPanelProps`에 미사용 필드 `_keyLevelsVisible` 등 4개 선언 및 전달
 - Rule: FF Predictability — dead props create confusing data flow without effect
 - Context: `ChartContent.tsx`에서 `AnalysisPanel`에 전달했지만 컴포넌트 본문에서 미사용
+
+## [PR #344 round-2 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `SymbolLayoutClient.tsx` 인라인 prop 타입 사용
+- Rule: CONVENTIONS.md — Props interface declared directly above component function
+- Context: single-prop 컴포넌트라도 named interface 선언 필요
+
+- Violation: `StockChart.tsx`에 주석 처리된 코드 블록 + `_` prefix 미사용 파라미터 6개
+- Rule: CONVENTIONS.md "No dead code, no commented-out code"
+- Context: 선 그리기 기능 비활성화 후 props와 훅 호출 주석만 남아있고 실제 코드가 없었음
+
