@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.19](https://github.com/y0ngha/siglens/compare/v0.8.18...v0.8.19) (2026-04-21)
+
+
+### Bug Fixes
+
+* 브리핑 데이터 가져올 때 무한로딩 걸리는 버그 수정 ([05c6da6](https://github.com/y0ngha/siglens/commit/05c6da63c84aa6671e9ae98591be7ce62e051c28))
+
 ## [0.8.18](https://github.com/y0ngha/siglens/compare/v0.8.17...v0.8.18) (2026-04-21)
 
 
