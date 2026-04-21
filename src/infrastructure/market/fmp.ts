@@ -96,7 +96,7 @@ interface FmpQuote {
     dayLow: number;
     volume: number;
     timestamp: number; // Unix timestamp (초 단위)
-    changesPercentage: number; // 전일 대비 등락률
+    changePercentage: number; // 전일 대비 등락률
     name: string;
 }
 
@@ -303,10 +303,11 @@ export class FmpProvider implements MarketDataProvider {
             if (!Array.isArray(raw) || raw.length === 0) return null;
 
             const quote = raw[0]!;
+
             return {
                 symbol,
                 price: quote.price,
-                changesPercentage: quote.changesPercentage,
+                changesPercentage: quote.changePercentage,
                 name: quote.name ?? symbol,
             };
         } catch (error) {
