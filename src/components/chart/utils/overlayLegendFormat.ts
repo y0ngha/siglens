@@ -41,10 +41,10 @@ export function groupOverlayItems(
                 return { groups: updatedGroups, seen };
             }
 
-            const nextSeen = new Map(seen).set(key, groups.length);
+            seen.set(key, groups.length);
             return {
                 groups: [...groups, { key, items: [item] }],
-                seen: nextSeen,
+                seen,
             };
         },
         { groups: [], seen: new Map() }

@@ -1,7 +1,7 @@
 'use client';
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { ReactNode, useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { QUERY_GC_TIME_MS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 
 interface ReactQueryProviderProps {

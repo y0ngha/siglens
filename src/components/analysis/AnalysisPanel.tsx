@@ -856,15 +856,16 @@ export function AnalysisPanel({
                                 'border-secondary-700 text-secondary-600 cursor-not-allowed',
 
                             // [2. 일반 상태 (진행 중이 아닐 때만 적용)]
-                            (!showProgress || isAnalyzing) && {
-                                'border-primary-400/40 bg-primary-400/10 text-primary-300':
-                                    copyState === 'copied',
-                                'border-chart-bearish/40 bg-chart-bearish/10 text-chart-bearish':
-                                    copyState === 'failed',
-                                'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
-                                    copyState === 'idle',
-                                // idle은 기본 상태를 의미하며, 필요에 따라 copyState !== 'copied' && copyState !== 'failed'로 작성 가능
-                            }
+                            !showProgress &&
+                                !isAnalyzing && {
+                                    'border-primary-400/40 bg-primary-400/10 text-primary-300':
+                                        copyState === 'copied',
+                                    'border-chart-bearish/40 bg-chart-bearish/10 text-chart-bearish':
+                                        copyState === 'failed',
+                                    'border-secondary-700 text-secondary-300 hover:border-secondary-600 hover:text-secondary-100':
+                                        copyState === 'idle',
+                                    // idle은 기본 상태를 의미하며, 필요에 따라 copyState !== 'copied' && copyState !== 'failed'로 작성 가능
+                                }
                         )}
                         title={
                             showProgress || isAnalyzing

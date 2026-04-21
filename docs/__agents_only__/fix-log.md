@@ -1,6 +1,15 @@
 # Fix Log
 
 
+## [PR #344 Round 7 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `AnalysisPanel.tsx` 복사 버튼 조건 `(!showProgress || isAnalyzing)` — `isAnalyzing=true`일 때 disabled 상태임에도 normal 스타일 적용됨
+- Rule: Boolean 조건 논리 — "진행 중이 아님"은 `!(A || B)` = `!A && !B`, `!A || B` 가 아님
+- Context: `(!showProgress || isAnalyzing)` → `(!showProgress && !isAnalyzing)` 로 수정; loading·analyzing 두 상태 모두 일반 스타일 적용 차단
+
+- Violation: `docs/API.md` 예시 요청과 FMP 섹션 헤더에 제거된 `1Min` 타임프레임 참조 잔존
+- Rule: MISTAKES.md Documentation Sync #2 — API 파라미터 변경 시 docs/API.md 업데이트 필수
+- Context: 도메인 `Timeframe` 타입에서 `1Min` 제거 후 API.md 예시(`timeframe=1Min`)와 FMP 헤더(`1Min ~ 1Hour`)가 미반영 상태였음; `5Min`, `5Min ~ 4Hour`로 업데이트
+
 ## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 
 - Violation: `percentileRank` 가 분산=0 (모든 원소 동일) 케이스에서 0 반환 — 스퀴즈 false-positive 유발 가능
