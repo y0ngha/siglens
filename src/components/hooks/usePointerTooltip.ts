@@ -1,6 +1,10 @@
 'use client';
 
-import { useState, type PointerEvent as ReactPointerEvent } from 'react';
+import {
+    useCallback,
+    useState,
+    type PointerEvent as ReactPointerEvent,
+} from 'react';
 
 interface UsePointerTooltipReturn {
     isVisible: boolean;
@@ -13,17 +17,17 @@ interface UsePointerTooltipReturn {
 export function usePointerTooltip(): UsePointerTooltipReturn {
     const [isVisible, setIsVisible] = useState(false);
 
-    const toggle = (): void => setIsVisible(prev => !prev);
+    const toggle = useCallback((): void => setIsVisible(prev => !prev), []);
 
-    const handlePointerEnter = (e: ReactPointerEvent): void => {
+    const handlePointerEnter = useCallback((e: ReactPointerEvent): void => {
         if (e.pointerType === 'touch') return;
         setIsVisible(true);
-    };
+    }, []);
 
-    const handlePointerLeave = (e: ReactPointerEvent): void => {
+    const handlePointerLeave = useCallback((e: ReactPointerEvent): void => {
         if (e.pointerType === 'touch') return;
         setIsVisible(false);
-    };
+    }, []);
 
     return { isVisible, toggle, handlePointerEnter, handlePointerLeave };
 }

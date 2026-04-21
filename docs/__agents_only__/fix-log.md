@@ -1,6 +1,11 @@
 # Fix Log
 
 
+## [PR #344 Round 9 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `useChartOverlayVisibility.ts` — 소비처가 없는 Dead State 3개(`chartVisiblePatterns`, `keyLevelsVisible`, `trendlinesVisible`) 및 Dead Callback 2개(`handlePatternOverlayChange`, `handleTogglePattern`) 잔존
+- Rule: MISTAKES.md Components #5.5 — Unused, dead, or decorative props/state in component interfaces는 제거 필수
+- Context: `StockChart`/`AnalysisPanel`에서 pattern·trendline·keyLevel 관련 props가 모두 제거됐으나 훅 내부 state는 미삭제; 3개 `useState`가 렌더마다 불필요하게 구독 상태 유지
+
 ## [PR #344 Round 7 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `AnalysisPanel.tsx` 복사 버튼 조건 `(!showProgress || isAnalyzing)` — `isAnalyzing=true`일 때 disabled 상태임에도 normal 스타일 적용됨
 - Rule: Boolean 조건 논리 — "진행 중이 아님"은 `!(A || B)` = `!A && !B`, `!A || B` 가 아님

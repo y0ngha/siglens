@@ -98,7 +98,7 @@ function DropdownPortal({
                     type="button"
                     onClick={() => indicator.onToggle(period)}
                     className={cn(
-                        'flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-white/80 focus-visible:outline-none',
+                        'focus-visible:ring-primary-500 flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none',
                         indicator.visiblePeriods.includes(period)
                             ? 'bg-secondary-700 text-white'
                             : 'text-secondary-400 hover:bg-secondary-700 hover:text-white'

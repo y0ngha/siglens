@@ -70,7 +70,9 @@ export interface BreadcrumbItem {
 }
 
 // 홈(Siglens → SITE_URL)이 첫 항목으로 자동 삽입된다.
-export function buildBreadcrumbJsonLd(trail: BreadcrumbItem[]): object {
+export function buildBreadcrumbJsonLd(
+    trail: readonly BreadcrumbItem[]
+): Record<string, unknown> {
     const items: BreadcrumbItem[] = [
         { name: SITE_NAME, url: SITE_URL },
         ...trail,
