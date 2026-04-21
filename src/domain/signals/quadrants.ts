@@ -38,6 +38,13 @@ const EMPTY_SIGNAL_QUADRANTS: Record<QuadrantKey, readonly Signal[]> = {
     bearishConfirmed: [],
 };
 
+const QUADRANT_KEYS: readonly QuadrantKey[] = [
+    'bullishConfirmed',
+    'bullishExpected',
+    'bearishExpected',
+    'bearishConfirmed',
+];
+
 function signalToQuadrantKey(s: Signal): QuadrantKey {
     return SIGNAL_TO_QUADRANT[s.direction][s.phase];
 }
@@ -52,8 +59,7 @@ export function groupStockIntoQuadrants(
         const key = signalToQuadrantKey(s);
         return { ...g, [key]: [...g[key], s] };
     }, EMPTY_SIGNAL_QUADRANTS);
-    // Object.keys(grouped) keys are exactly QuadrantKey union — cast is safe
-    return (Object.keys(grouped) as QuadrantKey[]).reduce(
+    return QUADRANT_KEYS.reduce(
         (next, key) =>
             grouped[key].length === 0
                 ? next

@@ -5,6 +5,7 @@ import {
     type RefCallback,
     useCallback,
     useId,
+    useLayoutEffect,
     useRef,
 } from 'react';
 import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
@@ -50,18 +51,32 @@ export function useTabs<T extends string>({
 }: UseTabsOptions<T>): UseTabsReturn<T> {
     const generatedPrefix = useId();
     const tabRefs = useRef(new Map<T, HTMLElement | null>());
-
-    const focusTab = useCallback((nextTab: T) => {
-        tabRefs.current.get(nextTab)?.focus();
-    }, []);
+    // focusTabRef provides a stable focusItem for useRovingKeyboardNav;
+    // synced to focusTab via useLayoutEffect after focusTab is declared
+    const focusTabRef = useRef<(tab: T, e: KeyboardEvent<Element>) => void>(
+        () => {}
+    );
+    const stableFocusTab = useCallback(
+        (nextTab: T, e: KeyboardEvent<Element>) =>
+            focusTabRef.current(nextTab, e),
+        []
+    );
 
     const handleKeyDown = useRovingKeyboardNav({
         items: tabs,
         activeItem: activeTab,
         onChange,
-        focusItem: focusTab,
+        focusItem: stableFocusTab,
         withHomeEnd,
     });
+
+    const focusTab = useCallback((nextTab: T) => {
+        tabRefs.current.get(nextTab)?.focus();
+    }, []);
+
+    useLayoutEffect(() => {
+        focusTabRef.current = focusTab;
+    }, [focusTab]);
 
     const prefix = idPrefix ?? generatedPrefix;
 

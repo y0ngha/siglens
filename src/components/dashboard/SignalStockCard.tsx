@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
+import { CARD_LINK_CLASSES } from '@/components/ui/cardStyles';
 import { cn } from '@/lib/cn';
 import { formatPriceChange, formatUsdPrice } from '@/lib/priceFormat';
 import type { StockWithConflict } from '@/domain/types';

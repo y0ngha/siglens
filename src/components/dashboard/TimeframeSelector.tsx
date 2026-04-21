@@ -1,7 +1,6 @@
 'use client';
 
 import type { KeyboardEvent } from 'react';
-import { useCallback } from 'react';
 import { cn } from '@/lib/cn';
 import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
 import type { DashboardTimeframe } from '@/domain/types';
@@ -17,26 +16,25 @@ interface TimeframeSelectorProps {
 
 const TIMEFRAME_LABEL_ID = 'timeframe-label';
 
+function focusRadioInGroup(
+    next: DashboardTimeframe,
+    e: KeyboardEvent<Element>
+): void {
+    const idx = DASHBOARD_TIMEFRAMES.indexOf(next);
+    const parent = e.currentTarget.closest('[role="radiogroup"]');
+    const buttons = parent?.querySelectorAll<HTMLElement>('[role="radio"]');
+    buttons?.[idx]?.focus();
+}
+
 export function TimeframeSelector({
     timeframe,
     onChange,
 }: TimeframeSelectorProps) {
-    const focusRadio = useCallback(
-        (next: DashboardTimeframe, e: KeyboardEvent<Element>) => {
-            const idx = DASHBOARD_TIMEFRAMES.indexOf(next);
-            const parent = e.currentTarget.closest('[role="radiogroup"]');
-            const buttons =
-                parent?.querySelectorAll<HTMLElement>('[role="radio"]');
-            buttons?.[idx]?.focus();
-        },
-        []
-    );
-
     const handleKeyDown = useRovingKeyboardNav<DashboardTimeframe>({
         items: DASHBOARD_TIMEFRAMES,
         activeItem: timeframe,
         onChange,
-        focusItem: focusRadio,
+        focusItem: focusRadioInGroup,
         withHomeEnd: false,
     });
 

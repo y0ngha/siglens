@@ -4,6 +4,7 @@ import {
     type RefObject,
     useCallback,
     useEffect,
+    useLayoutEffect,
     useRef,
     useState,
 } from 'react';
@@ -23,17 +24,23 @@ export function useDialog(): UseDialogReturn {
     const [isOpen, setIsOpen] = useState(false);
     const dialogRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
+    // closeRef provides a stable target for hooks that must be declared before close
+    const closeRef = useRef<() => void>(() => {});
 
-    // close는 useOnClickOutside/useEscapeKey에 전달하기 위해 훅 선언 이전에 배치한다.
-    // setIsOpen(setState)과 triggerRef는 렌더 간 안정적이므로 deps 배열이 비어 있어도 안전하다.
+    useOnClickOutside([dialogRef], () => closeRef.current(), {
+        enabled: isOpen,
+    });
+    useEscapeKey(() => closeRef.current(), isOpen);
+    useFocusTrap(dialogRef, isOpen);
+
     const close = useCallback(() => {
         setIsOpen(false);
         triggerRef.current?.focus();
     }, []);
 
-    useOnClickOutside([dialogRef], close, { enabled: isOpen });
-    useEscapeKey(close, isOpen);
-    useFocusTrap(dialogRef, isOpen);
+    useLayoutEffect(() => {
+        closeRef.current = close;
+    }, [close]);
 
     const open = useCallback(() => setIsOpen(true), []);
 

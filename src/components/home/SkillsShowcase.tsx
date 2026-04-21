@@ -72,7 +72,7 @@ function ConfidenceInfoTooltip() {
             <button
                 type="button"
                 aria-label="신뢰도 점수 설명"
-                aria-describedby={isOpen ? tooltipId : undefined}
+                aria-describedby={tooltipId}
                 onClick={toggle}
                 className="text-secondary-600 hover:text-secondary-400 focus-visible:ring-primary-500 cursor-help rounded text-xs leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
             >
