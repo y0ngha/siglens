@@ -7,7 +7,7 @@ interface UseCopyToClipboardReturn {
     copy: (text: string) => Promise<void>;
 }
 
-const DEFAULT_RESET_MS = 2000;
+export const DEFAULT_RESET_MS = 2000;
 
 export function useCopyToClipboard(
     resetMs = DEFAULT_RESET_MS

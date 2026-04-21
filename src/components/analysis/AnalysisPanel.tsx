@@ -38,8 +38,7 @@ import { AdBanner } from '@/components/analysis/AdBanner';
 import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis';
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
-
-const COPY_RESET_MS = 2000;
+import { DEFAULT_RESET_MS as COPY_RESET_MS } from '@/components/hooks/useCopyToClipboard';
 
 function formatCooldown(ms: number): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
