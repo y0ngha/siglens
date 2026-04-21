@@ -13,7 +13,7 @@ import {
 export function Footer() {
     return (
         <footer className="border-secondary-800 border-t">
-            <div className="flex flex-col gap-4 px-6 py-6 lg:px-[15vw]">
+            <div className="flex flex-col gap-2 px-6 py-6 lg:px-[15vw]">
                 <div
                     role="note"
                     aria-label="투자 면책 고지"
@@ -21,7 +21,7 @@ export function Footer() {
                 >
                     {INVESTMENT_DISCLAIMER}
                 </div>
-                <div className="border-secondary-800 flex flex-col items-center gap-3 border-t pt-4 sm:flex-row sm:justify-between">
+                <div className="border-secondary-800 flex flex-col items-center gap-3 sm:flex-row sm:justify-between">
                     <p className="text-secondary-600 text-sm">
                         © <CurrentYear /> Siglens
                     </p>
