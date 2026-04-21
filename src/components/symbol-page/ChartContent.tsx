@@ -131,20 +131,15 @@ export function ChartContent({
 
     const {
         chartVisiblePatterns,
-        keyLevelsVisible,
-        trendlinesVisible,
         actionPricesVisible,
         setActionPricesVisible,
-        handlePatternOverlayChange,
         handleTogglePattern,
     } = useChartOverlayVisibility();
 
     const { displayAnalyzing, handleProgressFinished } =
         useAnalysisDisplay(isAnalyzing);
 
-    // 진행 상태(단계·팁 인덱스)를 ChartContent에서 한 번만 관리한다.
-    // 데스크톱 aside와 모바일 MobileAnalysisSheet 두 인스턴스에 동일한 값을 props로
-    // 내려주어, 모바일 시트의 unmount/remount 사이클에서도 상태가 초기화되지 않도록 한다.
+    // 데스크톱·모바일 두 인스턴스 공유 — 모바일 시트 unmount/remount 시에도 상태 유지.
     const { phaseIndex: progressPhaseIndex, tipIndex: progressTipIndex } =
         useAnalysisProgress({
             isAnalyzing,
@@ -200,12 +195,7 @@ export function ChartContent({
         ]
     );
 
-    // MobileAnalysisSheet를 Suspense 경계 밖에서 렌더링하기 위해 콘텐츠를 상위로 전달한다.
-    // Suspense 경계 내에서 직접 렌더링하면 타임프레임 전환 시 바텀시트가 사라진다.
-    //
-    // timeframe을 래퍼 useMemo의 deps에 포함시켜, React Compiler 자동 메모이제이션으로
-    // analysisContent 참조가 안정적으로 유지되더라도 타임프레임 변경 시 effect가 재실행된다.
-    // useEffect body에서는 mobileContent만 참조하므로 Predictability 규칙 3을 준수한다.
+    // timeframe key로 래핑 — Suspense 경계 밖 전달 + 타임프레임 변경 시 effect 재실행 보장.
     const mobileContent = useMemo(
         () => (
             <React.Fragment key={timeframe}>{analysisContent}</React.Fragment>
@@ -232,15 +222,9 @@ export function ChartContent({
                         bars={bars}
                         timeframe={timeframe}
                         indicators={indicators}
-                        patterns={analysis.patternSummaries}
-                        trendlines={analysis.trendlines}
-                        trendlinesVisible={trendlinesVisible}
-                        keyLevels={clusteredKeyLevels}
-                        keyLevelsVisible={keyLevelsVisible}
                         actionPrices={validatedActionPrices}
                         reconciledActionPrices={reconciledActionLines}
                         actionPricesVisible={actionPricesVisible}
-                        onPatternOverlayChange={handlePatternOverlayChange}
                         onChartReady={handleStockChartReady}
                         onChartRemove={handleStockChartRemove}
                     />

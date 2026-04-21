@@ -1,9 +1,13 @@
 'use client';
 
 import { useBodyScrollLock } from '@/components/hooks/useBodyScrollLock';
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
-export function SymbolLayoutClient({ children }: { children: ReactNode }) {
+interface SymbolLayoutClientProps {
+    children: ReactNode;
+}
+
+export function SymbolLayoutClient({ children }: SymbolLayoutClientProps) {
     useBodyScrollLock();
     return <>{children}</>;
 }

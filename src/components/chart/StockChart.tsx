@@ -13,10 +13,7 @@ import { CHART_COLORS } from '@/lib/chartColors';
 import type {
     Bar,
     IndicatorResult,
-    KeyLevels,
-    PatternResult,
     Timeframe,
-    Trendline,
     ValidatedActionPrices,
 } from '@/domain/types';
 import { getTimeFormatter } from '@/domain/chart/timeFormat';
@@ -48,8 +45,6 @@ import {
 } from '@/domain/indicators/constants';
 import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
 
-const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
-
 interface CommonHookParams {
     chartRef: RefObject<IChartApi | null>;
     bars: Bar[];
@@ -61,18 +56,9 @@ interface StockChartProps {
     bars: Bar[];
     timeframe: Timeframe;
     indicators?: IndicatorResult;
-    patterns?: PatternResult[];
-    trendlines?: Trendline[];
-    trendlinesVisible?: boolean;
-    keyLevels?: KeyLevels;
-    keyLevelsVisible?: boolean;
     actionPrices?: ValidatedActionPrices;
     reconciledActionPrices?: ReconciledActionLineData;
     actionPricesVisible?: boolean;
-    onPatternOverlayChange?: (
-        visiblePatterns: Set<string>,
-        togglePattern: (patternName: string) => void
-    ) => void;
     /** 차트 인스턴스가 준비되면 호출된다. 거래량 차트와 visible range 동기화에 사용된다. */
     onChartReady?: (chart: IChartApi) => void;
     /** 차트가 제거되기 직전에 호출된다. 구독 해제에 사용된다. */
@@ -83,18 +69,9 @@ export function StockChart({
     bars,
     timeframe,
     indicators = EMPTY_INDICATOR_RESULT,
-    /**
-     * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-     */
-    patterns: _patterns = [],
-    trendlines: _trendlines = [],
-    trendlinesVisible: _trendlinesVisible = false,
-    keyLevels: _keyLevels = EMPTY_KEY_LEVELS,
-    keyLevelsVisible: _keyLevelsVisible = false,
     actionPrices,
     reconciledActionPrices,
     actionPricesVisible = true,
-    onPatternOverlayChange: _onPatternOverlayChange,
     onChartReady,
     onChartRemove,
 }: StockChartProps) {
@@ -158,19 +135,14 @@ export function StockChart({
             borderDownColor: CHART_COLORS.bearish,
             wickUpColor: CHART_COLORS.bullish,
             wickDownColor: CHART_COLORS.bearish,
-            // lightweight-charts의 addSeries() 반환 타입에 UTCTimestamp 제네릭이 포함되지 않아
-            // 타입 가드로 narrowing이 불가능하다. 라이브러리 타입 한계로 인한 assertion이다.
+            // LWC addSeries() 반환 타입에 UTCTimestamp 제네릭이 없어 타입 가드 불가 — 라이브러리 타입 한계.
         }) as ISeriesApi<'Candlestick', UTCTimestamp>;
 
         onChartReadyRef.current?.(chart);
 
         return () => {
             onChartRemoveRef.current?.();
-            // autoSize: true 상태에서 컨테이너가 DOM에서 제거되면 LWC 내부
-            // ResizeObserver가 발화해 draw RAF를 스케���링한다. chart.remove()가
-            // 이 RAF를 취소하지 못하면 disposed 객체 접근으로 에러가 난다.
-            // remove() 전에 autoSize를 끄면 ResizeObserver가 해제되어 RAF가
-            // 스케줄되지 않으므로 안전하게 dispose할 수 있다.
+            // autoSize 해제 후 remove — LWC ResizeObserver가 disposed 객체에 접근하는 에러 방지.
             chart.applyOptions({ autoSize: false });
             chart.remove();
             chartRef.current = null;
@@ -257,32 +229,6 @@ export function StockChart({
 
     useCandlePatternMarkers({ seriesRef, bars });
 
-    /**
-     * TODO: 선 그리는 부분에 대해서는 오류가 많아 잠시 주석처리
-     */
-
-    // const { visiblePatterns, togglePattern } = usePatternOverlay({
-    //     chartRef,
-    //     seriesRef,
-    //     bars,
-    //     patterns,
-    // });
-    //
-    // useTrendlineOverlay({
-    //     chartRef,
-    //     bars,
-    //     trendlines,
-    //     isVisible: trendlinesVisible,
-    // });
-    //
-    // useKeyLevelsOverlay({
-    //     chartRef,
-    //     bars,
-    //     keyLevels,
-    //     isVisible: keyLevelsVisible,
-    //     lineWidth: DEFAULT_LINE_WIDTH,
-    // });
-
     useActionRecommendationOverlay({
         seriesRef,
         actionPrices,
@@ -291,14 +237,7 @@ export function StockChart({
         lineWidth: DEFAULT_LINE_WIDTH,
     });
 
-    // 레이아웃 강제 갱신
-    // indicator hook이 removeSeries로 마지막 series를 제거하면 LWC v5는 논리적
-    // pane을 panes() 배열에서 빼지만, 일부 indicator(MACD/Stochastic/CCI 등)에서
-    // DOM 레이아웃 재계산이 트리거되지 않아 빈 공간이 남는다. AI 패널 리사이즈로
-    // wrapper 크기가 변하면 LWC autoSize ResizeObserver가 발화해 정리된다.
-    // autoSize: true 상태에서는 명시 chart.resize() 호출이 무시되므로,
-    // autoSize를 잠시 끄고 → 1px 차이로 강제 resize → autoSize 복원 순서로
-    // ResizeObserver 발화와 동일한 layout invalidate를 일으킨다.
+    // indicator 제거 시 LWC v5가 빈 pane DOM을 정리하지 않아 autoSize 토글로 layout invalidate를 강제한다.
     useEffect(() => {
         const chart = chartRef.current;
         const wrapper = wrapperRef.current;
@@ -321,18 +260,6 @@ export function StockChart({
 
         return () => cancelAnimationFrame(rafId);
     }, [paneIndices]);
-
-    /**
-     * TODO: 선 그리는 부분에 대해서는 오류가 많아 잠시 주석처리
-     */
-
-    // const notifyPatternOverlayChange = useEffectEvent(() => {
-    //     onPatternOverlayChange?.(visiblePatterns, togglePattern);
-    // });
-    //
-    // useEffect(() => {
-    //     notifyPatternOverlayChange();
-    // }, [visiblePatterns]);
 
     const overlayLabelConfigs = useMemo(
         () =>
