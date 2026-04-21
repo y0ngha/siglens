@@ -1,5 +1,6 @@
 import type { ReactElement } from 'react';
 import type { BacktestCase } from '@/domain/types';
+import { cn } from '@/lib/cn';
 import { formatUsdCurrency } from '@/lib/priceFormat';
 
 interface BacktestCaseCardProps {
@@ -28,7 +29,10 @@ function EntryRecBadge({ recommendation }: EntryRecBadgeProps) {
     return (
         <span
             translate="no"
-            className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold ${config.cls}`}
+            className={cn(
+                'rounded border px-1.5 py-0.5 text-[9px] font-semibold',
+                config.cls
+            )}
         >
             {config.label}
         </span>
@@ -53,7 +57,10 @@ function RiskBadge({ level }: RiskBadgeProps) {
           : 'bg-secondary-800 text-secondary-400 border-secondary-700';
     return (
         <span
-            className={`rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase ${cls}`}
+            className={cn(
+                'rounded border px-1.5 py-0.5 text-[9px] font-semibold uppercase',
+                cls
+            )}
         >
             {level}
         </span>
@@ -92,26 +99,38 @@ export function BacktestCaseCard({
     return (
         <article
             aria-label={`${c.ticker} ${c.entryDate} ${isWin ? '수익' : '손실'} ${returnLabel}`}
-            className={`bg-secondary-800/50 rounded-lg border p-3 ${v.article}`}
+            className={cn(
+                'bg-secondary-800/50 rounded-lg border p-3',
+                v.article
+            )}
         >
             <div className="mb-2 flex items-center gap-2">
                 <span
                     translate="no"
-                    className={`rounded px-2 py-0.5 text-xs font-bold ${v.badge}`}
+                    className={cn(
+                        'rounded px-2 py-0.5 text-xs font-bold',
+                        v.badge
+                    )}
                 >
                     {c.ticker}
                 </span>
 
                 <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto text-xs">
                     <div
-                        className={`shrink-0 rounded border px-2 py-1 ${
+                        className={cn(
+                            'shrink-0 rounded border px-2 py-1',
                             c.signalType === 'buy'
                                 ? 'border-chart-bullish/20 bg-chart-bullish/10'
                                 : 'border-chart-bearish/20 bg-chart-bearish/10'
-                        }`}
+                        )}
                     >
                         <span
-                            className={`font-semibold ${c.signalType === 'buy' ? 'text-chart-bullish' : 'text-chart-bearish'}`}
+                            className={cn(
+                                'font-semibold',
+                                c.signalType === 'buy'
+                                    ? 'text-chart-bullish'
+                                    : 'text-chart-bearish'
+                            )}
                         >
                             {c.signalType === 'buy' ? '매수' : '매도'}
                         </span>
@@ -152,13 +171,16 @@ export function BacktestCaseCard({
 
                 <div className="ml-auto flex shrink-0 items-center gap-1.5">
                     <span
-                        className={`font-mono text-sm font-bold tabular-nums ${v.returnText}`}
+                        className={cn(
+                            'font-mono text-sm font-bold tabular-nums',
+                            v.returnText
+                        )}
                     >
                         {returnLabel}
                     </span>
                     <span
                         aria-hidden="true"
-                        className={`text-xs ${v.returnText}`}
+                        className={cn('text-xs', v.returnText)}
                     >
                         {isWin ? '✓' : '✗'}
                     </span>
@@ -167,7 +189,10 @@ export function BacktestCaseCard({
             </div>
 
             <p
-                className={`text-secondary-400 line-clamp-3 rounded-r border-l-2 bg-black/20 px-3 py-2 text-[11px] leading-relaxed ${v.aiSummary}`}
+                className={cn(
+                    'text-secondary-400 line-clamp-3 rounded-r border-l-2 bg-black/20 px-3 py-2 text-[11px] leading-relaxed',
+                    v.aiSummary
+                )}
             >
                 {c.aiAnalysis.summary}
             </p>
@@ -177,7 +202,10 @@ export function BacktestCaseCard({
                     {c.aiAnalysis.tags.map(tag => (
                         <span
                             key={tag}
-                            className={`rounded px-1.5 py-0.5 text-[10px] ${v.tag}`}
+                            className={cn(
+                                'rounded px-1.5 py-0.5 text-[10px]',
+                                v.tag
+                            )}
                         >
                             {tag}
                         </span>

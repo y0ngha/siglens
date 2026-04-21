@@ -58,7 +58,7 @@ export function ContactDialog({
                                 type="button"
                                 onClick={close}
                                 aria-label="닫기"
-                                className="text-secondary-500 hover:text-secondary-300 -mt-1 -mr-1 rounded p-1 transition-colors"
+                                className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 -mt-1 -mr-1 rounded p-1 transition-colors focus-visible:ring-1 focus-visible:outline-none"
                             >
                                 <svg
                                     width="16"
@@ -123,7 +123,7 @@ export function ContactDialog({
                                                 : '이메일 주소 복사'
                                         }
                                         aria-live="polite"
-                                        className="text-secondary-500 hover:text-primary-400 ml-3 shrink-0 text-xs transition-colors"
+                                        className="text-secondary-500 hover:text-primary-400 focus-visible:ring-primary-500 ml-3 shrink-0 rounded text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none"
                                     >
                                         {copied ? '복사됨' : '복사'}
                                     </button>

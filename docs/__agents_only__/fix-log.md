@@ -112,11 +112,6 @@
 - Rule: CONVENTIONS.md — Props interface declared directly above component function
 - Context: single-prop 컴포넌트라도 named interface 선언 필요
 
-## [PR #344 Round 6 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `MarketSummaryPanel.tsx` — 조건부 Tailwind className에 템플릿 리터럴 사용
-- Rule: CONVENTIONS.md — 조건부 Tailwind 클래스는 반드시 `cn()`을 사용해야 함
-- Context: `` className={`grid gap-2 ${...}`} `` 패턴을 `className={cn('grid gap-2', ...)}` 로 변경
-
 ## [PR #344 Round 5 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `src/__tests__/domain/skills.test.ts` — `buildSkillStats` 함수에 테스트 미존재
 - Rule: MISTAKES.md Domain Functions #22 — Domain functions require 100% branch coverage with dedicated unit tests
