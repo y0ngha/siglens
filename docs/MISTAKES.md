@@ -59,6 +59,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 7. Repeating identical className ternary 3+ times
    → Extract to a helper function
 
+7.5. Combining Tailwind classes with template literals instead of cn()
+   → All dynamic or conditional Tailwind className combinations must use cn() utility
+   → Never concatenate Tailwind classes with template literals, string concatenation, or ternaries
+   ❌ className={`grid gap-2 ${condition ? 'px-4' : 'px-2'}`}
+   ❌ className={'px-4 ' + (isActive ? 'bg-primary' : '')}
+   ✅ className={cn('grid gap-2', condition ? 'px-4' : 'px-2')}
+   ✅ className={cn('px-4', isActive && 'bg-primary')}
+   → cn() enables proper class merging, conflict detection, and IDE support
+
 8. Tight coupling between interface props and dependent files
    → Group related prop pairs into a single type (e.g. IndicatorToggleGroup { visible, onToggle })
 
