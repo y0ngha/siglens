@@ -11,9 +11,7 @@ interface UseRovingKeyboardNavOptions<T> {
     withHomeEnd?: boolean;
 }
 
-// Arrow L/R (기본) + Home/End (옵션) 기반 roving tabindex/radiogroup 키 내비게이션.
-// focusItem은 next 아이템으로 포커스 이동 방식을 caller가 결정할 수 있게 한다
-// (ref 기반 또는 DOM 질의 기반). caller는 focusItem/onChange를 useCallback으로 안정화하는 것이 좋다.
+// Arrow L/R + Home/End 기반 roving tabindex 내비게이션 — focusItem/onChange는 useCallback으로 안정화 필요.
 export function useRovingKeyboardNav<T>({
     items,
     activeItem,

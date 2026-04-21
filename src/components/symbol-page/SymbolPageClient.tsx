@@ -14,9 +14,7 @@ import { useMobileSheet } from '@/components/symbol-page/hooks/useMobileSheet';
 import { useTimeframeChange } from '@/components/symbol-page/hooks/useTimeframeChange';
 import { useHydrated } from '@/components/hooks/useHydrated';
 
-// vaul은 내부 Radix DismissableLayer로 Drawer 외부 형제 요소에 aria-hidden을 주입한다.
-// 이 DOM 조작이 hydration 사이클과 겹치면 React가 mismatch를 감지하므로,
-// ssr: false로 모듈 로딩 경계까지 분리하여 hydration 완료 이후 비동기로 마운트한다.
+// vaul의 aria-hidden 주입이 hydration과 겹쳐 mismatch 발생 — ssr: false로 hydration 완료 후 마운트.
 const MobileAnalysisSheet = dynamic(
     () =>
         import('@/components/symbol-page/MobileAnalysisSheet').then(m => ({
