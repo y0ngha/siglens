@@ -40,9 +40,9 @@ export function useIndicatorDropdown(): UseIndicatorDropdownReturn {
 
     useOnClickOutside(toolbarRef, event => {
         if (!openDropdown) return;
-        const isInsidePortal = portalRef.current?.contains(
-            event.target as Node
-        );
+        const isInsidePortal =
+            event.target instanceof Node &&
+            portalRef.current?.contains(event.target);
         if (!isInsidePortal) setOpenDropdown(null);
     });
 

@@ -1,4 +1,4 @@
-import type { BacktestCase } from '@/domain/types';
+import type { BacktestCase, BacktestRiskLevel } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { formatUsdCurrency } from '@/lib/priceFormat';
 
@@ -39,7 +39,7 @@ function EntryRecBadge({ recommendation }: EntryRecBadgeProps) {
 }
 
 interface RiskBadgeProps {
-    level: string;
+    level: BacktestRiskLevel;
 }
 
 function RiskBadge({ level }: RiskBadgeProps) {
