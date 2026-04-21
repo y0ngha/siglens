@@ -93,7 +93,9 @@ describe('buildSkillStats', () => {
             expect(result.find(s => s.label === '개 차트 패턴')?.value).toBe(1);
             expect(result.find(s => s.label === '개 전략 분석')?.value).toBe(1);
             expect(result.find(s => s.label === '개 캔들 패턴')?.value).toBe(1);
-            expect(result.find(s => s.label === '개 지지/저항 도구')?.value).toBe(1);
+            expect(
+                result.find(s => s.label === '개 지지/저항 도구')?.value
+            ).toBe(1);
         });
     });
 
