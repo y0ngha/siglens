@@ -1,6 +1,7 @@
-import type { BreadcrumbItem } from '@/domain/types';
-
-export type { BreadcrumbItem };
+export interface BreadcrumbItem {
+    name: string;
+    url: string;
+}
 
 export const SITE_URL =
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io';

@@ -344,15 +344,6 @@ export interface SkillCounts {
     supportResistance: number;
 }
 
-export interface SkillStat {
-    value: number;
-    label: string;
-}
-
-export interface SkillStatConfig {
-    countLabel: string;
-}
-
 export type AnalysisSignalType = 'skill';
 
 export type SignalStrength = 'strong' | 'moderate' | 'weak';
@@ -362,19 +353,6 @@ export type Trend = 'bullish' | 'bearish' | 'neutral';
 export type RiskLevel = 'low' | 'medium' | 'high';
 
 export type BacktestRiskLevel = 'low' | 'moderate' | 'high' | 'extreme';
-
-export interface PriceChangeDisplay {
-    isUp: boolean;
-    sign: '+' | '';
-    colorClass: string;
-    arrow: '▲' | '▼';
-    arrowLabel: '상승' | '하락';
-}
-
-export interface BreadcrumbItem {
-    name: string;
-    url: string;
-}
 
 export interface AnalysisSignal {
     type: AnalysisSignalType;

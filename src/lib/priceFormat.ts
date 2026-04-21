@@ -1,6 +1,10 @@
-import type { PriceChangeDisplay } from '@/domain/types';
-
-export type { PriceChangeDisplay };
+export interface PriceChangeDisplay {
+    isUp: boolean;
+    sign: '+' | '';
+    colorClass: string;
+    arrow: '▲' | '▼';
+    arrowLabel: '상승' | '하락';
+}
 
 export function formatUsdPrice(price: number): string {
     return price.toLocaleString('en-US', { maximumFractionDigits: 2 });

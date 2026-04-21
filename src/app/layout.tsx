@@ -91,11 +91,11 @@ export const viewport: Viewport = {
     viewportFit: 'cover',
 };
 
-export default function RootLayout({
-    children,
-}: Readonly<{
-    children: ReactNode;
-}>) {
+interface RootLayoutProps {
+    readonly children: ReactNode;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html
             lang="ko"
