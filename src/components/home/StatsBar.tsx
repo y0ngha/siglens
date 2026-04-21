@@ -3,7 +3,7 @@ import type { CSSProperties, ReactElement } from 'react';
 
 import type { SkillShowcaseItem } from '@/domain/types';
 import { DotSeparator } from '@/components/ui/DotSeparator';
-import { buildSkillStats } from '@/lib/skillStats';
+import { buildSkillStats } from '@/domain/skills';
 
 interface StatsBarProps {
     skills: SkillShowcaseItem[];

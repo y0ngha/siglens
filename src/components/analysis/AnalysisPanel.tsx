@@ -37,11 +37,12 @@ import { AnalysisToast } from '@/components/analysis/AnalysisToast';
 import { AdBanner } from '@/components/analysis/AdBanner';
 import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis';
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
+import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
 
 function formatCooldown(ms: number): string {
-    const totalSec = Math.ceil(ms / 1000);
-    const minutes = Math.floor(totalSec / 60);
-    const seconds = totalSec % 60;
+    const totalSec = Math.ceil(ms / MS_PER_SECOND);
+    const minutes = Math.floor(totalSec / SECONDS_PER_MINUTE);
+    const seconds = totalSec % SECONDS_PER_MINUTE;
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
@@ -455,7 +456,7 @@ function KeyLevelsHeaderInfo() {
 interface PatternAccordionItemProps {
     pattern: PatternResult;
     isVisible: boolean;
-    onToggleVisibility: (patternName: string) => void;
+    onToggleVisibility?: (patternName: string) => void;
 }
 
 function PatternAccordionItem({
@@ -492,19 +493,6 @@ function PatternAccordionItem({
                         confidenceWeight={pattern.confidenceWeight}
                     />
                 </span>
-                {/*<button*/}
-                {/*    type="button"*/}
-                {/*    onClick={handleToggleVisibility}*/}
-                {/*    className={cn(*/}
-                {/*        'shrink-0 rounded p-1 pr-3 transition-colors',*/}
-                {/*        isVisible*/}
-                {/*            ? 'text-primary-400 hover:text-primary-300'*/}
-                {/*            : 'text-secondary-600 hover:text-secondary-400'*/}
-                {/*    )}*/}
-                {/*    title={isVisible ? '차트에서 숨기기' : '차트에서 보기'}*/}
-                {/*>*/}
-                {/*    <EyeIcon isVisible={isVisible} />*/}
-                {/*</button>*/}
             </div>
 
             {isOpen ? (
@@ -798,10 +786,6 @@ export function AnalysisPanel({
         copyTimeoutRef.current = setTimeout(() => setCopyState('idle'), 2000);
     };
 
-    const handleTogglePatternVisibility = (patternName: string): void => {
-        onTogglePattern?.(patternName);
-    };
-
     const handleCopyReport = async (): Promise<void> => {
         if (showProgress || isAnalyzing) return;
 
@@ -1066,29 +1050,6 @@ export function AnalysisPanel({
                                 <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                                     추세선
                                 </span>
-                                {/*{onTrendlinesVisibilityChange !== undefined && (*/}
-                                {/*    <button*/}
-                                {/*        type="button"*/}
-                                {/*        onClick={() =>*/}
-                                {/*            onTrendlinesVisibilityChange(*/}
-                                {/*                !trendlinesVisible*/}
-                                {/*            )*/}
-                                {/*        }*/}
-                                {/*        className={cn(*/}
-                                {/*            'shrink-0 rounded p-1 transition-colors',*/}
-                                {/*            trendlinesVisible*/}
-                                {/*                ? 'text-primary-400 hover:text-primary-300'*/}
-                                {/*                : 'text-secondary-600 hover:text-secondary-400'*/}
-                                {/*        )}*/}
-                                {/*        title={*/}
-                                {/*            trendlinesVisible*/}
-                                {/*                ? '차트에서 숨기기'*/}
-                                {/*                : '차트에서 보기'*/}
-                                {/*        }*/}
-                                {/*    >*/}
-                                {/*        <EyeIcon isVisible={trendlinesVisible} />*/}
-                                {/*    </button>*/}
-                                {/*)}*/}
                             </div>
                             <div className="flex flex-col gap-1.5">
                                 {analysis.trendlines.map(trendline => (
@@ -1167,9 +1128,7 @@ export function AnalysisPanel({
                                                 pattern.patternName
                                             ) ?? false
                                         }
-                                        onToggleVisibility={
-                                            handleTogglePatternVisibility
-                                        }
+                                        onToggleVisibility={onTogglePattern}
                                     />
                                 ))}
                             </div>

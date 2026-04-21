@@ -2,8 +2,7 @@ import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
-import { formatUsdPrice } from '@/lib/priceFormat';
-import { formatPriceChange } from '@/lib/priceFormat';
+import { formatPriceChange, formatUsdPrice } from '@/lib/priceFormat';
 import type { MarketIndexData, MarketSectorData } from '@/domain/types';
 
 type IndexCardData = MarketIndexData | MarketSectorData;

@@ -80,15 +80,21 @@ export function useSectorSignalState({
         [router, pathname, searchParams]
     );
 
-    const handleSectorChange = (sector: string) => {
-        setActiveSector(sector);
-        updateUrl(sector, activeTimeframe);
-    };
+    const handleSectorChange = useCallback(
+        (sector: string) => {
+            setActiveSector(sector);
+            updateUrl(sector, activeTimeframe);
+        },
+        [updateUrl, activeTimeframe]
+    );
 
-    const handleTimeframeChange = (next: DashboardTimeframe) => {
-        setActiveTimeframe(next);
-        updateUrl(activeSector, next);
-    };
+    const handleTimeframeChange = useCallback(
+        (next: DashboardTimeframe) => {
+            setActiveTimeframe(next);
+            updateUrl(activeSector, next);
+        },
+        [updateUrl, activeSector]
+    );
 
     return {
         activeSector,

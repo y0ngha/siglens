@@ -48,12 +48,15 @@ export function useChatInput({
         inputRef.current?.focus();
     }, [inputValue, loadingPhase, isAnalysisReady, sendMessage]);
 
-    const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>): void => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            void handleSubmit();
-        }
-    };
+    const handleKeyDown = useCallback(
+        (e: KeyboardEvent<HTMLTextAreaElement>): void => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                void handleSubmit();
+            }
+        },
+        [handleSubmit]
+    );
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });

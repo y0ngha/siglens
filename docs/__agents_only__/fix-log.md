@@ -1,10 +1,6 @@
 # Fix Log
 
 ## [PR #342 | feat/multi-signal-backtest | 2026-04-21]
-- Violation: `buildBullishExitText` TP 필터가 `tp > 0`으로만 검증 — 진입가 이하 TP 허용
-- Rule: MISTAKES.md #23 — financial values must guard tp > entryPrice to prevent negative-direction text
-- Context: `tp > 0`을 `tp > entryPrice`로 변경; 대응 테스트 케이스 2건 추가 (tp=0, tp<entry)
-
 - Violation: `lib/tooltipPosition.ts` — `HTMLElement` 파라미터로 내부에서 `getBoundingClientRect()` 호출 (lib/ 순수 함수 계약 위반)
 - Rule: ARCHITECTURE.md — lib/ 레이어는 사이드 이펙트 없는 순수 함수만 허용
 - Context: `getTooltipPosition` 파라미터를 `HTMLElement → DOMRect`로 변경; 호출부 `InfoTooltip.tsx`에서 `.getBoundingClientRect()` 수행 후 전달
@@ -82,16 +78,28 @@
 
 
 
-## [PR #342 Round 9 | feat/multi-signal-backtest | 2026-04-20]
-- Violation: TP 배열 fallback 교체 후 오름차순 정렬 미보장
-- Rule: Domain Functions — 도메인 배열 계약(오름차순 TP)은 보정 후에도 유지
-- Context: `reconcileBullishActionRecommendation`에서 `takeProfitPrices[0]`을 fallback으로 교체할 때 기존 `[1..]`과 역전될 수 있음. `filter(tp > entryPrice) + toSorted()`로 정렬 보장
-
 ## [PR #342 Round 3 | feat/multi-signal-backtest | 2026-04-20]
 - Violation: `ReconciledActionLevels.reason` 필드는 툴팁 전용 사유로 정의됐으나 UI가 무시
 - Rule: Domain 스키마 의도와 UI 소비 경로 일치 필수
 - Context: `AnalysisPanel.ReconciledLevelsBlock` 이 reason을 전달받지 않고 generic prefix만 표시. `RECONCILED_TOOLTIP_PREFIX` + reason을 2줄로 표시하도록 변경
 
+
+## [PR #344 Round 4 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `lib/skillStats.ts::countByType`가 `domain/skills.ts::countSkillsByType`와 동일한 reduce 로직 중복 구현
+- Rule: DRY — 동일 로직은 단일 정의 원칙. buildSkillStats는 도메인 집계 함수이므로 domain/ 레이어가 적합
+- Context: `buildSkillStats`를 `domain/skills.ts`로 이동, `countSkillsByType` 직접 재사용. `lib/skillStats.ts` 삭제
+
+- Violation: `IndexCard.tsx`에서 `@/lib/priceFormat`을 두 개의 별도 import 구문으로 사용
+- Rule: ESLint `import/no-duplicates` — 동일 모듈은 단일 import 구문으로 통합
+- Context: `import { formatUsdPrice, formatPriceChange } from '@/lib/priceFormat'`으로 병합
+
+- Violation: `AnalysisPanel.tsx::formatCooldown`에서 `1000`, `60` 매직 넘버 사용
+- Rule: MISTAKES.md #15 — 매직 넘버는 named constant로 추출
+- Context: `domain/constants/time.ts`의 `MS_PER_SECOND`, `SECONDS_PER_MINUTE` import하여 교체
+
+- Violation: `useSectorSignalState.ts`의 `handleSectorChange`, `handleTimeframeChange`가 `useCallback` 미적용
+- Rule: CONVENTIONS.md — 안정화된 `updateUrl`을 호출하는 핸들러는 `useCallback`으로 참조 안정화 필요
+- Context: `useCallback`으로 래핑. deps: `[updateUrl, activeTimeframe]`, `[updateUrl, activeSector]`
 
 ## [PR #344 Round 3 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `PriceChangeDisplay` + `formatPriceChange`가 `components/dashboard/utils/`에 위치
