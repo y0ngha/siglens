@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -9,7 +10,7 @@ import { SITE_NAME } from '@/lib/seo';
 
 const NAV_ITEMS = [{ href: '/market', label: '시장 분석' }] as const;
 
-export function Header() {
+export function Header(): ReactElement {
     const pathname = usePathname();
     return (
         <header

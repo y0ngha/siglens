@@ -39,6 +39,8 @@ import type { CooldownNotice } from '@/components/symbol-page/hooks/useAnalysis'
 import { TRENDLINE_DIRECTION_LABEL } from '@/components/trendline/constants';
 import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
 
+const COPY_RESET_MS = 2000;
+
 function formatCooldown(ms: number): string {
     const totalSec = Math.ceil(ms / MS_PER_SECOND);
     const minutes = Math.floor(totalSec / SECONDS_PER_MINUTE);
@@ -768,7 +770,7 @@ export function AnalysisPanel({
         if (copyTimeoutRef.current !== null) {
             clearTimeout(copyTimeoutRef.current);
         }
-        copyTimeoutRef.current = setTimeout(() => setCopyState('idle'), 2000);
+        copyTimeoutRef.current = setTimeout(() => setCopyState('idle'), COPY_RESET_MS);
     };
 
     const handleCopyReport = async (): Promise<void> => {

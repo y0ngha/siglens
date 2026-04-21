@@ -361,6 +361,21 @@ export type Trend = 'bullish' | 'bearish' | 'neutral';
 
 export type RiskLevel = 'low' | 'medium' | 'high';
 
+export type BacktestRiskLevel = 'low' | 'moderate' | 'high' | 'extreme';
+
+export interface PriceChangeDisplay {
+    isUp: boolean;
+    sign: '+' | '';
+    colorClass: string;
+    arrow: '▲' | '▼';
+    arrowLabel: '상승' | '하락';
+}
+
+export interface BreadcrumbItem {
+    name: string;
+    url: string;
+}
+
 export interface AnalysisSignal {
     type: AnalysisSignalType;
     description: string;
@@ -768,8 +783,7 @@ export interface BacktestAiAnalysis {
     // 실행 레벨: AI가 제시한 SL/TP (무효값은 제거 — 유효한 것만 저장)
     stopLoss?: number;
     takeProfit?: number;
-    // 리스크 등급: AI의 AnalysisResponse.riskLevel ('low' | 'moderate' | 'high' | 'extreme' 중 하나)
-    riskLevel?: string;
+    riskLevel?: BacktestRiskLevel;
 }
 
 export interface BacktestCase {

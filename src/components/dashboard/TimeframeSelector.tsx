@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ReactElement } from 'react';
 import { cn } from '@/lib/cn';
 import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
 import type { DashboardTimeframe } from '@/domain/types';
@@ -20,7 +20,7 @@ const TIMEFRAME_LABEL_ID = 'timeframe-label';
 export function TimeframeSelector({
     timeframe,
     onChange,
-}: TimeframeSelectorProps) {
+}: TimeframeSelectorProps): ReactElement {
     const focusRadio = useCallback(
         (next: DashboardTimeframe, e: KeyboardEvent<Element>) => {
             const idx = DASHBOARD_TIMEFRAMES.indexOf(next);

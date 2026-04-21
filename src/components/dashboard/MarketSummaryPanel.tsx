@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import { Suspense } from 'react';
 import { cn } from '@/lib/cn';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -30,7 +31,7 @@ function BriefingRegion({ input }: BriefingRegionProps) {
     );
 }
 
-export function MarketSummaryPanel() {
+export function MarketSummaryPanel(): ReactElement {
     const { data, isPending, sectorMap, indices } = useMarketSummary();
 
     if (isPending) return <MarketSummaryPanelSkeleton />;

@@ -15,6 +15,8 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolDescription,
     buildSymbolKeywords,
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_WIDTH,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
@@ -91,8 +93,8 @@ export async function generateMetadata({
             images: [
                 {
                     url: '/og-image.png',
-                    width: 1200,
-                    height: 630,
+                    width: OG_IMAGE_WIDTH,
+                    height: OG_IMAGE_HEIGHT,
                     alt: fullTitle,
                 },
             ],

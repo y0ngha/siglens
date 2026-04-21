@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import { isKoreanInput } from '@/domain/ticker';
 import { useAutocomplete } from '@/components/search/hooks/useAutocomplete';
 import { cn } from '@/lib/cn';
@@ -18,7 +19,7 @@ const INPUT_SIZE: Record<TickerAutocompleteSize, string> = {
 };
 
 const BUTTON_BASE =
-    'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors';
+    'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500';
 const BUTTON_SIZE: Record<TickerAutocompleteSize, string> = {
     sm: 'px-4 py-2 text-sm',
     lg: 'px-6 py-3 text-base',
@@ -34,7 +35,7 @@ export function TickerAutocomplete({
     className,
     size = 'sm',
     onSelect,
-}: TickerAutocompleteProps) {
+}: TickerAutocompleteProps): ReactElement {
     const {
         query,
         results,
@@ -156,7 +157,7 @@ function ResultItem({
             onClick={() => onSelect(result.symbol)}
             onMouseEnter={() => onPrefetch(result.symbol)}
             className={cn(
-                'hover:bg-secondary-700 w-full px-4 py-2 text-left transition-colors',
+                'hover:bg-secondary-700 w-full px-4 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500',
                 isSelected && 'bg-secondary-700'
             )}
         >

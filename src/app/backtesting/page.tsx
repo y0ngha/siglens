@@ -5,6 +5,8 @@ import {
     BACKTESTING_KEYWORDS,
     BACKTESTING_TITLE,
     BACKTESTING_URL,
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_WIDTH,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
@@ -37,8 +39,8 @@ export const metadata: Metadata = {
         images: [
             {
                 url: '/og-image.png',
-                width: 1200,
-                height: 630,
+                width: OG_IMAGE_WIDTH,
+                height: OG_IMAGE_HEIGHT,
                 alt: `${SITE_NAME} AI 백테스팅 결과`,
             },
         ],

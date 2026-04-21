@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
@@ -71,7 +72,7 @@ export function ChatPanel({
     analysis,
     isAnalysisReady,
     onClose,
-}: ChatPanelProps) {
+}: ChatPanelProps): ReactElement {
     const {
         messages,
         loadingPhase,
@@ -110,7 +111,7 @@ export function ChatPanel({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="text-secondary-500 hover:text-secondary-300 text-sm leading-none transition-colors"
+                            className="text-secondary-500 hover:text-secondary-300 rounded text-sm leading-none transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500"
                             aria-label="채팅 닫기"
                         >
                             ✕
@@ -129,7 +130,7 @@ export function ChatPanel({
                     <button
                         type="button"
                         onClick={dismissAnalysisUpdated}
-                        className="text-primary-400 hover:text-primary-200 ml-2 text-xs"
+                        className="text-primary-400 hover:text-primary-200 ml-2 rounded text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500"
                     >
                         ✕
                     </button>
@@ -225,7 +226,7 @@ export function ChatPanel({
                         type="button"
                         onClick={() => void handleSubmit()}
                         disabled={isInputDisabled || inputValue.trim() === ''}
-                        className="bg-primary-600 hover:bg-primary-500 disabled:bg-secondary-700 disabled:text-secondary-500 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white transition-colors disabled:cursor-not-allowed"
+                        className="bg-primary-600 hover:bg-primary-500 disabled:bg-secondary-700 disabled:text-secondary-500 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white transition-colors disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500"
                         aria-label="전송"
                     >
                         ↑

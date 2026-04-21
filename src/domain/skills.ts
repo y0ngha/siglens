@@ -14,7 +14,7 @@ export function countSkillsByType(
     }, {});
 }
 
-const SKILL_STAT_CONFIG: Record<SkillType, SkillStatConfig> = {
+export const SKILL_STAT_CONFIG: Record<SkillType, SkillStatConfig> = {
     indicator_guide: { countLabel: '종 보조지표' },
     pattern: { countLabel: '개 차트 패턴' },
     strategy: { countLabel: '개 전략 분석' },

@@ -1,6 +1,6 @@
 'use client';
 
-import type { RefObject } from 'react';
+import type { ReactElement, RefObject } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 import type {
     IChartApi,
@@ -74,7 +74,7 @@ export function StockChart({
     actionPricesVisible = true,
     onChartReady,
     onChartRemove,
-}: StockChartProps) {
+}: StockChartProps): ReactElement {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);

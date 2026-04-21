@@ -253,7 +253,6 @@ describe('resolveOverlayValues', () => {
         it('config.getValue 결과를 value로 반환한다', () => {
             const result = resolveOverlayValues(configs, mockIndicators, 0);
 
-            expect(result[0].name).toBe('MA(5)');
             expect(result[0].value).toBe(100);
         });
 

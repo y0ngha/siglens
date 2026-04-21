@@ -58,10 +58,9 @@ function PeriodLabels({ indicatorName, visiblePeriods }: PeriodLabelProps) {
                     key={period}
                     className="text-secondary-300 flex items-center gap-1 text-xs"
                 >
-                    {/* getPeriodColor는 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)를 반환하므로 style prop 사용 허용 */}
                     <span
-                        className="inline-block h-1.5 w-3 shrink-0 rounded-sm"
-                        style={{ backgroundColor: getPeriodColor(period) }}
+                        className="inline-block h-1.5 w-3 shrink-0 rounded-sm bg-[var(--period-color)]"
+                        style={{ '--period-color': getPeriodColor(period) } as CSSProperties}
                     />
                     {indicatorName}({period})
                 </span>
@@ -104,12 +103,9 @@ function DropdownPortal({
                             : 'text-secondary-400 hover:bg-secondary-700 hover:text-white'
                     )}
                 >
-                    {/* getPeriodColor는 런타임에 결정되는 동적 도메인 색상 상수(CHART_COLORS)를 반환하므로 style prop 사용 허용 */}
                     <span
-                        className="h-2 w-2 shrink-0 rounded-full"
-                        style={{
-                            backgroundColor: getPeriodColor(period),
-                        }}
+                        className="h-2 w-2 shrink-0 rounded-full bg-[var(--period-color)]"
+                        style={{ '--period-color': getPeriodColor(period) } as CSSProperties}
                     />
                     {period}
                 </button>

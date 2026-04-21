@@ -1,6 +1,6 @@
 'use client';
 
-import { type ReactNode } from 'react';
+import { type ReactElement, type ReactNode } from 'react';
 import { Drawer } from 'vaul';
 import { cn } from '@/lib/cn';
 import {
@@ -20,7 +20,7 @@ export function MobileAnalysisSheet({
     activeSnap,
     onActiveSnapChange,
     children,
-}: MobileAnalysisSheetProps) {
+}: MobileAnalysisSheetProps): ReactElement {
     const {
         isOpen,
         isFullSnap,

@@ -13,7 +13,7 @@ import {
     TERMS_PATH,
     TERMS_TITLE,
 } from '@/lib/legal';
-import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/lib/seo';
+import { buildBreadcrumbJsonLd, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_NAME, SITE_URL } from '@/lib/seo';
 import { JsonLd } from '@/components/ui/JsonLd';
 
 const PAGE_URL = `${SITE_URL}${TERMS_PATH}`;
@@ -70,8 +70,8 @@ export const metadata: Metadata = {
         images: [
             {
                 url: '/og-image.png',
-                width: 1200,
-                height: 630,
+                width: OG_IMAGE_WIDTH,
+                height: OG_IMAGE_HEIGHT,
                 alt: TERMS_FULL_TITLE,
             },
         ],

@@ -21,6 +21,8 @@ import {
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import {
     buildBreadcrumbJsonLd,
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_WIDTH,
     ROOT_KEYWORDS,
     SITE_NAME,
     SITE_URL,
@@ -72,8 +74,8 @@ export async function generateMetadata({
             images: [
                 {
                     url: '/og-image.png',
-                    width: 1200,
-                    height: 630,
+                    width: OG_IMAGE_WIDTH,
+                    height: OG_IMAGE_HEIGHT,
                     alt: MARKET_TITLE,
                 },
             ],

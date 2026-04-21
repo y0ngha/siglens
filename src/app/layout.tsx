@@ -8,6 +8,8 @@ import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import { ADSENSE_ENABLED } from '@/lib/adsense';
 import {
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_WIDTH,
     ROOT_KEYWORDS,
     ROOT_TITLE,
     SITE_DESCRIPTION,
@@ -47,8 +49,8 @@ export const metadata: Metadata = {
         images: [
             {
                 url: '/og-image.png',
-                width: 1200,
-                height: 630,
+                width: OG_IMAGE_WIDTH,
+                height: OG_IMAGE_HEIGHT,
                 alt: SITE_NAME,
             },
         ],

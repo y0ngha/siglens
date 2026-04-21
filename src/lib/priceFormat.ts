@@ -1,3 +1,7 @@
+import type { PriceChangeDisplay } from '@/domain/types';
+
+export type { PriceChangeDisplay };
+
 export function formatUsdPrice(price: number): string {
     return price.toLocaleString('en-US', { maximumFractionDigits: 2 });
 }
@@ -12,14 +16,6 @@ const USD_CURRENCY_FORMATTER = new Intl.NumberFormat('en-US', {
 
 export function formatUsdCurrency(price: number): string {
     return USD_CURRENCY_FORMATTER.format(price);
-}
-
-export interface PriceChangeDisplay {
-    isUp: boolean;
-    sign: '+' | '';
-    colorClass: string;
-    arrow: '▲' | '▼';
-    arrowLabel: '상승' | '하락';
 }
 
 export function formatPriceChange(percent: number): PriceChangeDisplay {

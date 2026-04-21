@@ -1,9 +1,9 @@
 import { ImageResponse } from 'next/og';
-import { SITE_DESCRIPTION, SITE_NAME } from '@/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_DESCRIPTION, SITE_NAME } from '@/lib/seo';
 
 export const runtime = 'edge';
 export const alt = '미국 주식 AI 기술적 분석 플랫폼';
-export const size = { width: 1200, height: 630 };
+export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';
 
 export default async function Image() {

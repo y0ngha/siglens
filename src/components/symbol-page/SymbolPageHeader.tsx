@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import Link from 'next/link';
 import type { AssetInfo, Timeframe } from '@/domain/types';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
@@ -16,7 +17,7 @@ export function SymbolPageHeader({
     assetInfo,
     timeframe,
     onTimeframeChange,
-}: SymbolPageHeaderProps) {
+}: SymbolPageHeaderProps): ReactElement {
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
 

@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import type { StockWithConflict } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
@@ -29,7 +30,7 @@ export function SignalSubsection({
     variant,
     stocks,
     infoMessage,
-}: SignalSubsectionProps) {
+}: SignalSubsectionProps): ReactElement {
     const count = stocks.length.toString().padStart(2, '0');
 
     return (

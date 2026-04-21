@@ -1,3 +1,5 @@
+import type { ReactElement } from 'react';
+
 const ENTRIES = [
     {
         term: '골든크로스',
@@ -33,7 +35,7 @@ const ENTRIES = [
     },
 ];
 
-export function SignalTypeGuide() {
+export function SignalTypeGuide(): ReactElement {
     return (
         <section
             className="px-6 py-10 lg:px-[15vw]"

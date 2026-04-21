@@ -1,3 +1,7 @@
+import type { BreadcrumbItem } from '@/domain/types';
+
+export type { BreadcrumbItem };
+
 export const SITE_URL =
     process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io';
 
@@ -64,11 +68,6 @@ export function buildSymbolKeywords(
     ];
 }
 
-export interface BreadcrumbItem {
-    name: string;
-    url: string;
-}
-
 // 홈(Siglens → SITE_URL)이 첫 항목으로 자동 삽입된다.
 export function buildBreadcrumbJsonLd(
     trail: readonly BreadcrumbItem[]
@@ -88,6 +87,9 @@ export function buildBreadcrumbJsonLd(
         })),
     };
 }
+
+export const OG_IMAGE_WIDTH = 1200;
+export const OG_IMAGE_HEIGHT = 630;
 
 export const BACKTESTING_PATH = '/backtesting';
 export const BACKTESTING_URL = `${SITE_URL}${BACKTESTING_PATH}`;

@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import type { BacktestMeta } from '@/domain/types';
 
 interface BacktestHeroProps {
@@ -23,7 +24,7 @@ function StatCard({ value, label, valueClassName }: StatCardProps) {
     );
 }
 
-export function BacktestHero({ meta }: BacktestHeroProps) {
+export function BacktestHero({ meta }: BacktestHeroProps): ReactElement {
     return (
         <header className="border-secondary-800 border-b px-6 py-6 text-center">
             <p className="text-secondary-500 mb-1.5 text-[10px] tracking-widest uppercase">

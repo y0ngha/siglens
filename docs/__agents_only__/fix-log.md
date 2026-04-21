@@ -1,5 +1,26 @@
 # Fix Log
 
+## [PR #344 Round 13 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `domain/types.ts` — `BacktestAiAnalysis.riskLevel?: string` 런타임 값 목록이 있음에도 union type 미사용
+- Rule: MISTAKES.md TypeScript #6 — 3+ 파일에서 반복되는 union literal은 named type으로 추출
+- Context: `BacktestRiskLevel = 'low' | 'moderate' | 'high' | 'extreme'` 타입 추가, riskLevel 필드 타입 교체
+
+- Violation: `IndicatorToolbar.tsx` — `style={{ backgroundColor: getPeriodColor(period) }}` 인라인 스타일 2곳
+- Rule: MISTAKES.md #19 — Tailwind CSS custom property 패턴 사용 필수
+- Context: `style={{ '--period-color': getPeriodColor(period) } as CSSProperties}` + `className="... bg-[var(--period-color)]"` 패턴으로 변환
+
+- Violation: 25개 exported 컴포넌트 함수에 `: ReactElement` 반환 타입 누락
+- Rule: CONVENTIONS.md — export function must have explicit return type
+- Context: ChatPanel, StockChart, SectorTabs 등 25개 파일에 `: ReactElement` 추가, 필요한 파일에 import 추가
+
+- Violation: `skills.test.ts` — `buildSkillStats` 테스트에서 레이블 문자열 하드코딩
+- Rule: MISTAKES.md Tests #13 — 프로덕션 상수를 로컬에서 재정의하지 말 것
+- Context: `SKILL_STAT_CONFIG` export 추가; 테스트에서 `SKILL_STAT_CONFIG[type].countLabel` 참조로 변환
+
+- Violation: `overlayLabelUtils.test.ts` — `resolveOverlayValues > 유효한 barIndex일 때` 블록에서 두 it()이 `name` 프로퍼티를 중복 검증
+- Rule: MISTAKES.md Tests #6 — each it() must test exactly one unique behavior
+- Context: 첫 번째 it()에서 `result[0].name` 검증 제거 (value만 검증); name+color는 두 번째 it()에서 검증
+
 ## [PR #344 Round 11 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `src/lib/cardStyles.ts` — `+` 연산자로 Tailwind 클래스 연결 (cn() 미사용)
 - Rule: CONVENTIONS.md Tailwind 규칙 — 정적 문자열이라도 className 연결에는 cn() 사용 필수
@@ -10,10 +31,6 @@
 - Violation: `useMarketSummary.ts` — `indices` 파생값이 useMemo 없이 렌더마다 새 [] 참조 생성
 - Rule: MISTAKES.md Coding Paradigm #10 — props/state 파생 객체는 useMemo 메모이제이션 필수
 - Context: `data?.summary.indices ?? []`를 `useMemo(() => data?.summary.indices ?? [], [data?.summary.indices])`로 변환
-- Violation: `domain/skills.ts` — `SkillStatConfig` 인터페이스가 구현 파일 내부에 정의됨
-- Rule: MISTAKES.md Architecture #1 — domain 타입은 domain/types.ts로 중앙화
-- Context: `SkillStatConfig`를 `domain/types.ts`로 이동, `domain/skills.ts`에서 import
-
 
 ## [PR #344 Round 9 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `useChartOverlayVisibility.ts` — 소비처가 없는 Dead State 3개(`chartVisiblePatterns`, `keyLevelsVisible`, `trendlinesVisible`) 및 Dead Callback 2개(`handlePatternOverlayChange`, `handleTogglePattern`) 잔존

@@ -1,11 +1,12 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import type { FallbackProps } from 'react-error-boundary';
 
 export function ChartErrorFallback({
     error,
     resetErrorBoundary,
-}: FallbackProps) {
+}: FallbackProps): ReactElement {
     const errorMessage =
         error instanceof Error
             ? error.message
