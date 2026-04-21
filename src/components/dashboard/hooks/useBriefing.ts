@@ -17,14 +17,20 @@ export function useBriefing(jobId: string): BriefingResult {
         queryFn: () => pollBriefingAction(jobId),
         refetchInterval: query => {
             const status = query.state.data?.status;
-            console.log(status)
-            return status === 'done' || status === 'error' ? false : POLL_INTERVAL_MS;
+
+            return status === 'done' || status === 'error'
+                ? false
+                : POLL_INTERVAL_MS;
         },
         staleTime: Infinity,
-        refetchIntervalInBackground: true
+        refetchIntervalInBackground: true,
     });
 
     if (!data || data.status === 'processing') return { status: 'processing' };
     if (data.status === 'error') throw new Error(data.error);
-    return { status: 'done', briefing: data.briefing, generatedAt: data.generatedAt };
+    return {
+        status: 'done',
+        briefing: data.briefing,
+        generatedAt: data.generatedAt,
+    };
 }
