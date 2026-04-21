@@ -24,26 +24,18 @@ export function useDialog(): UseDialogReturn {
     const dialogRef = useRef<HTMLDivElement>(null);
     const triggerRef = useRef<HTMLButtonElement>(null);
 
-    // 커스텀 훅은 인라인 콜백을 받는다. 외부용 handler(아래 useCallback)는 hook 선언 이후에 둔다.
-    useOnClickOutside(
-        [dialogRef],
-        () => {
-            setIsOpen(false);
-            triggerRef.current?.focus();
-        },
-        { enabled: isOpen }
-    );
-    useEscapeKey(() => {
-        setIsOpen(false);
-        triggerRef.current?.focus();
-    }, isOpen);
-    useFocusTrap(dialogRef, isOpen);
-
-    const open = useCallback(() => setIsOpen(true), []);
+    // close는 useOnClickOutside/useEscapeKey에 전달하기 위해 훅 선언 이전에 배치한다.
+    // setIsOpen(setState)과 triggerRef는 렌더 간 안정적이므로 deps 배열이 비어 있어도 안전하다.
     const close = useCallback(() => {
         setIsOpen(false);
         triggerRef.current?.focus();
     }, []);
+
+    useOnClickOutside([dialogRef], close, { enabled: isOpen });
+    useEscapeKey(close, isOpen);
+    useFocusTrap(dialogRef, isOpen);
+
+    const open = useCallback(() => setIsOpen(true), []);
 
     useEffect(() => {
         if (isOpen) dialogRef.current?.focus();

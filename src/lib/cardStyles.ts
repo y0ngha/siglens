@@ -1,5 +1,5 @@
 // Link로 감싸진 카드(IndexCard, SignalStockCard)에서 공통으로 쓰는 hover/focus/motion-reduce 스타일.
-// 카드 고유 배경/테두리 class는 내부 inner div가 담당하므로 이 상수는 외곽 Link 전용이다.
+// 카드 고유 배경/테두리는 각 컴포넌트가 직접 지정한다 (IndexCard: inner div, SignalStockCard: 외곽 Link에 함께).
 import { cn } from '@/lib/cn';
 
 export const CARD_LINK_CLASSES = cn(

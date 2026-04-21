@@ -1,13 +1,9 @@
-import type { SkillShowcaseItem, SkillType } from '@/domain/types';
-
-export interface SkillStat {
-    value: number;
-    label: string;
-}
-
-export interface SkillStatConfig {
-    countLabel: string;
-}
+import type {
+    SkillShowcaseItem,
+    SkillStat,
+    SkillStatConfig,
+    SkillType,
+} from '@/domain/types';
 
 export function countSkillsByType(
     skills: readonly SkillShowcaseItem[]
