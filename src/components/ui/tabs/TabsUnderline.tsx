@@ -2,7 +2,7 @@
 
 import { useMemo } from 'react';
 import { cn } from '@/lib/cn';
-import { useTabs } from './useTabs';
+import { useTabs } from './hooks/useTabs';
 import type { TabItem } from './utils/tabIds';
 
 // 'xs' — BacktestTabs 스타일 (10px, font-medium, active: primary text+border)
