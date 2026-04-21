@@ -1,28 +1,5 @@
 # Fix Log
 
-## [PR #344 Round 17 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `useCallback` 핸들러(focusTab, close)가 커스텀 훅(useRovingKeyboardNav, useOnClickOutside 등)보다 앞에 선언
-- Rule: MISTAKES.md #17 — 훅 순서: useState/useRef → custom hooks → handlers → useEffect
-- Context: `useTabs.ts`와 `useDialog.ts`에서 커스텀 훅에 전달할 콜백 때문에 핸들러가 훅보다 앞에 배치됨; `closeRef`/`focusTabRef` + `useLayoutEffect` 패턴으로 분리
-
-- Violation: `as QuadrantKey[]` 타입 단언 사용 (`Object.keys` 반환값에 적용)
-- Rule: MISTAKES.md TypeScript #7 — `as` 대신 타입 가드 또는 명시적 상수 사용
-- Context: `quadrants.ts`의 `groupStockIntoQuadrants`에서 `QUADRANT_KEYS` 모듈 상수로 대체
-
-- Violation: `aria-describedby={isOpen ? tooltipId : undefined}` — tooltip이 항상 DOM에 존재함에도 조건부 연결
-- Rule: MISTAKES.md Accessibility #3 — tooltip은 항상 aria-describedby로 연결
-- Context: `SkillsShowcase.tsx` `ConfidenceInfoTooltip`에서 `aria-describedby={tooltipId}` 로 수정
-
-- Violation: `CARD_LINK_CLASSES`를 `lib/`에 배치 — lib/CLAUDE.md 범위(외부 유틸 래퍼, Query 키, config 상수, 차트 색상) 초과
-- Rule: MISTAKES.md Design & Cohesion #7 — 범위 외 상수를 lib/에 두지 않음
-- Context: `src/components/ui/cardStyles.ts`로 이동; 컴포넌트 레이어 공용 UI 상수로 재배치
-
-## [PR #344 Round 15 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `RiskBadgeProps.level`을 `string`으로 선언하여 이미 존재하는 `BacktestRiskLevel` 유니온 타입을 활용하지 않음
-- Rule: TypeScript — 도메인 유니온 타입이 존재할 때 인터페이스 prop에 `string`을 사용하면 타입 안전성 저하
-- Context: `BacktestCaseCard.tsx`의 내부 `RiskBadgeProps`에서 `level: string` 대신 `level: BacktestRiskLevel`을 사용해야 함
-
-
 
 
 ## [PR #344 Round 7 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
@@ -109,9 +86,8 @@
 
 ## [PR #344 Round 3 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 
-## [PR #344 round-2 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `SymbolLayoutClient.tsx` 인라인 prop 타입 사용
-- Rule: CONVENTIONS.md — Props interface declared directly above component function
-- Context: single-prop 컴포넌트라도 named interface 선언 필요
+## [PR #344 Round 18 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 
-
+- Violation: 범용 공유 훅이 특정 기능 폴더(`layout/hooks/`)에 위치
+- Rule: ARCHITECTURE.md — components/hooks/는 여러 폴더에서 공통으로 사용하는 범용 훅 디렉토리
+- Context: `useFocusTrap`이 layout 전용 폴더에 있었으나 `useDialog`(hooks/)에서 사용되므로 components/hooks/로 이동
