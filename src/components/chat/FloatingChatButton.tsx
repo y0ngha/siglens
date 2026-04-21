@@ -1,8 +1,8 @@
 'use client';
 
-import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { useChatButtonState } from '@/components/chat/hooks/useChatButtonState';
+import type { AnalysisResponse, Timeframe } from '@/domain/types';
 
 interface FloatingChatButtonProps {
     symbol: string;
@@ -49,8 +49,6 @@ export function FloatingChatButton({
                         ✕
                     </button>
                     <p className="text-secondary-100 pr-4 text-sm leading-relaxed">
-                        AI 분석이 완료되었어요.
-                        <br />
                         분석 내용에 궁금하신 게 있다면 언제든 저에게
                         말씀해주세요.
                     </p>

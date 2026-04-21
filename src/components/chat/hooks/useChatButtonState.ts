@@ -1,12 +1,6 @@
 'use client';
 
-import {
-    startTransition,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-} from 'react';
+import { startTransition, useCallback, useEffect, useState } from 'react';
 
 const TOOLTIP_SHOWN_KEY = 'siglens:chat-tooltip-shown';
 
@@ -24,7 +18,6 @@ export function useChatButtonState(
 ): UseChatButtonStateReturn {
     const [isOpen, setIsOpen] = useState(false);
     const [showTooltip, setShowTooltip] = useState(false);
-    const wasReadyOnMountRef = useRef(isAnalysisReady);
 
     const handleClose = useCallback(() => setIsOpen(false), []);
 
@@ -44,8 +37,7 @@ export function useChatButtonState(
 
     useEffect(() => {
         if (!isAnalysisReady) return;
-        // 마운트 시점에 이미 ready였다면 분석이 방금 완료된 게 아님 — 툴팁 미표시
-        if (wasReadyOnMountRef.current) return;
+
         try {
             if (!localStorage.getItem(TOOLTIP_SHOWN_KEY)) {
                 startTransition(() => setShowTooltip(true));
