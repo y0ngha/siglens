@@ -8,6 +8,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
+import { TERMS_PATH } from '@/lib/legal';
 import { BacktestHero } from '@/components/backtesting/BacktestHero';
 import { BacktestTabs } from '@/components/backtesting/BacktestTabs';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -66,6 +67,7 @@ const datasetJsonLd = {
     description: BACKTESTING_DESCRIPTION,
     url: BACKTESTING_URL,
     creator: { '@type': 'Organization', name: SITE_NAME, url: SITE_URL },
+    license: `${SITE_URL}${TERMS_PATH}`,
     temporalCoverage: '2024-04/2026-04',
     spatialCoverage: 'US',
     variableMeasured: '주식 기술적 분석 신호 승률 및 AI 예측 정확도',
