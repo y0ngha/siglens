@@ -1,31 +1,31 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { RefObject } from 'react';
-import { createSeriesMarkers } from 'lightweight-charts';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type {
     ISeriesApi,
     ISeriesMarkersPluginApi,
     SeriesMarkerBar,
     UTCTimestamp,
 } from 'lightweight-charts';
+import { createSeriesMarkers } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
 import type { Bar } from '@/domain/types';
+import type { CandlePatternEntry } from '@/domain/analysis/candle-detection';
 import {
     detectCandlePatternEntries,
     getDetectionBars,
     selectLastCandlePatternEntries,
 } from '@/domain/analysis/candle-detection';
-import type { CandlePatternEntry } from '@/domain/analysis/candle-detection';
 import {
     getCandlePatternLabel,
     getMultiCandlePatternLabel,
 } from '@/domain/analysis/candle-labels';
-import {
-    getSinglePatternTrend,
-    getMultiPatternTrend,
-} from '@/domain/analysis/candle-trend';
 import type { PatternTrend } from '@/domain/analysis/candle-trend';
+import {
+    getMultiPatternTrend,
+    getSinglePatternTrend,
+} from '@/domain/analysis/candle-trend';
 
 // --- Types -------------------------------------------------------------------
 

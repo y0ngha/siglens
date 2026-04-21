@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import type { MarketBriefingResponse } from '@/domain/types';
 
 interface BriefingCardProps {
@@ -6,10 +5,7 @@ interface BriefingCardProps {
     generatedAt: string;
 }
 
-export function BriefingCard({
-    briefing,
-    generatedAt,
-}: BriefingCardProps): ReactElement {
+export function BriefingCard({ briefing, generatedAt }: BriefingCardProps) {
     const {
         summary,
         dominantThemes,
@@ -99,7 +95,7 @@ export function BriefingCard({
     );
 }
 
-export function BriefingLoadingCard(): ReactElement {
+export function BriefingLoadingCard() {
     return (
         <div
             role="status"
@@ -114,7 +110,7 @@ export function BriefingLoadingCard(): ReactElement {
     );
 }
 
-export function BriefingErrorCard(): ReactElement {
+export function BriefingErrorCard() {
     return (
         <div
             role="alert"

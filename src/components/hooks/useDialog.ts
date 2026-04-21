@@ -1,11 +1,11 @@
 'use client';
 
 import {
+    type RefObject,
     useCallback,
     useEffect,
     useRef,
     useState,
-    type RefObject,
 } from 'react';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';

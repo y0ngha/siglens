@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import type { BacktestCase } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { formatUsdCurrency } from '@/lib/priceFormat';
@@ -83,9 +82,7 @@ const lossClasses = {
     tag: 'border border-ui-warning/30 bg-ui-warning/10 text-ui-warning',
 } as const;
 
-export function BacktestCaseCard({
-    case_: c,
-}: BacktestCaseCardProps): ReactElement {
+export function BacktestCaseCard({ case_: c }: BacktestCaseCardProps) {
     const isWin = c.result === 'win';
     const v = isWin ? winClasses : lossClasses;
     const returnLabel = `${c.returnPct >= 0 ? '+' : ''}${c.returnPct.toFixed(1)}%`;

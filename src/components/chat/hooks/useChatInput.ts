@@ -1,12 +1,12 @@
 'use client';
 
 import {
+    type KeyboardEvent,
+    type RefObject,
     useCallback,
     useEffect,
     useRef,
     useState,
-    type KeyboardEvent,
-    type RefObject,
 } from 'react';
 import type { ChatLoadingPhase, ChatMessage } from '@/domain/types';
 

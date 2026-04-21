@@ -1,7 +1,6 @@
-import type { ReactElement } from 'react';
 import { SIGNAL_SECTORS } from '@/domain/constants/dashboard-tickers';
 
-export function SectorSignalPanelSkeleton(): ReactElement {
+export function SectorSignalPanelSkeleton() {
     return (
         <section
             aria-label="섹터 신호 로딩 중"

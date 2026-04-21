@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, type RefObject } from 'react';
+import { type RefObject, useEffect } from 'react';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import type { Bar, BuySellVolumeResult } from '@/domain/types';
 

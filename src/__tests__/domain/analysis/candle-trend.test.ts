@@ -1,9 +1,9 @@
-import {
-    getSinglePatternTrend,
-    getMultiPatternTrend,
-    EXCLUDED_SINGLE_PATTERNS,
-} from '@/domain/analysis/candle-trend';
 import type { PatternTrend } from '@/domain/analysis/candle-trend';
+import {
+    EXCLUDED_SINGLE_PATTERNS,
+    getMultiPatternTrend,
+    getSinglePatternTrend,
+} from '@/domain/analysis/candle-trend';
 import type {
     CandlePattern,
     MultiCandlePattern,

@@ -8,7 +8,7 @@ import type {
     MarketSummaryActionResult,
 } from '@/domain/types';
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
-import { QUERY_KEYS, MARKET_SUMMARY_STALE_TIME_MS } from '@/lib/queryConfig';
+import { MARKET_SUMMARY_STALE_TIME_MS, QUERY_KEYS } from '@/lib/queryConfig';
 
 interface UseMarketSummaryReturn {
     data: MarketSummaryActionResult | undefined;

@@ -1,13 +1,13 @@
 'use client';
 
-import type { CSSProperties, ReactElement } from 'react';
+import type { CSSProperties } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/lib/chartColors';
 import {
-    useIndicatorDropdown,
     type DropdownPosition,
     type IndicatorDropdownType,
+    useIndicatorDropdown,
 } from '@/components/chart/hooks/useIndicatorDropdown';
 
 interface IndicatorToggleGroup {
@@ -181,7 +181,7 @@ export function IndicatorToolbar({
     cci,
     volumeProfile,
     ichimoku,
-}: IndicatorToolbarProps): ReactElement {
+}: IndicatorToolbarProps) {
     const {
         isExpanded,
         openDropdown,

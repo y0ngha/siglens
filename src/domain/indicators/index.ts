@@ -23,7 +23,7 @@ import { calculateDonchianChannel } from './donchianChannel';
 import { calculateBuySellVolume } from './buySellVolume';
 import { calculateSmc } from './smc';
 import { calculateSqueezeMomentum } from './squeezeMomentum';
-import { MA_DEFAULT_PERIODS, EMA_DEFAULT_PERIODS } from './constants';
+import { EMA_DEFAULT_PERIODS, MA_DEFAULT_PERIODS } from './constants';
 
 export * from './rsi';
 export * from './macd';

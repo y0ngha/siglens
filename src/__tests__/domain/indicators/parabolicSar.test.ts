@@ -1,8 +1,8 @@
 import { calculateParabolicSAR } from '@/domain/indicators/parabolicSar';
 import {
-    PSAR_AF_START,
     PSAR_AF_INCREMENT,
     PSAR_AF_MAX,
+    PSAR_AF_START,
 } from '@/domain/indicators/constants';
 import type { Bar, ParabolicSARResult } from '@/domain/types';
 

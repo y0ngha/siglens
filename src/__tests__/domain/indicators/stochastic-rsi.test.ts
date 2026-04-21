@@ -1,9 +1,9 @@
 import { calculateStochRSI } from '@/domain/indicators/stochastic-rsi';
 import {
+    STOCH_RSI_D_PERIOD,
+    STOCH_RSI_K_PERIOD,
     STOCH_RSI_RSI_PERIOD,
     STOCH_RSI_STOCH_PERIOD,
-    STOCH_RSI_K_PERIOD,
-    STOCH_RSI_D_PERIOD,
 } from '@/domain/indicators/constants';
 
 // First non-null K index: rsiPeriod + stochPeriod - 1 + kSmoothing - 1

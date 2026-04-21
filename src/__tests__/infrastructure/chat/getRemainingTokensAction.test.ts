@@ -1,4 +1,6 @@
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
+import { headers } from 'next/headers';
+import { getRemainingTokens, hashIp } from '@/infrastructure/chat/tokenStore';
 
 jest.mock('next/headers', () => ({
     headers: jest.fn(),
@@ -8,9 +10,6 @@ jest.mock('@/infrastructure/chat/tokenStore', () => ({
     hashIp: jest.fn((ip: string) => `hashed_${ip}`),
     getRemainingTokens: jest.fn(),
 }));
-
-import { headers } from 'next/headers';
-import { hashIp, getRemainingTokens } from '@/infrastructure/chat/tokenStore';
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const mockHashIp = hashIp as jest.MockedFunction<typeof hashIp>;

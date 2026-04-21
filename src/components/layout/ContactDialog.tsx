@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactElement } from 'react';
 import { useCopyToClipboard } from '@/components/hooks/useCopyToClipboard';
 import { useDialog } from '@/components/hooks/useDialog';
 import { CONTACT_EMAIL } from '@/lib/contact';
@@ -15,7 +14,7 @@ interface ContactDialogProps {
 export function ContactDialog({
     triggerLabel = '오류 제보하기',
     triggerClassName,
-}: ContactDialogProps): ReactElement {
+}: ContactDialogProps) {
     const { isOpen, open, close, dialogRef, triggerRef } = useDialog();
     const { copied, copy } = useCopyToClipboard();
 

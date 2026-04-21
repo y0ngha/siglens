@@ -2,10 +2,10 @@ import type { Timeframe } from '@/domain/types';
 import {
     DEFAULT_BARS_LIMIT,
     DEFAULT_TIMEFRAME,
+    isValidTimeframe,
     TIMEFRAME_BARS_LIMIT,
     TIMEFRAME_LOOKBACK_DAYS,
     TIMEFRAMES,
-    isValidTimeframe,
 } from '@/domain/constants/market';
 
 describe('DEFAULT_TIMEFRAME', () => {

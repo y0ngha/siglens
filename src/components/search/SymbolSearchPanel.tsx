@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactElement } from 'react';
 import Link from 'next/link';
 
 import { useRecentSearches } from '@/components/search/hooks/useRecentSearches';
@@ -11,9 +10,7 @@ interface SymbolSearchPanelProps {
     className?: string;
 }
 
-export function SymbolSearchPanel({
-    className,
-}: SymbolSearchPanelProps): ReactElement {
+export function SymbolSearchPanel({ className }: SymbolSearchPanelProps) {
     const { recentSearches, addSearch, removeSearch, clearAll } =
         useRecentSearches();
 

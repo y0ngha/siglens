@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactElement } from 'react';
 import { SIGNAL_SECTORS } from '@/domain/constants/dashboard-tickers';
 import { TabsUnderline } from '@/components/ui/tabs';
 
@@ -15,10 +14,7 @@ const TAB_ITEMS = SIGNAL_SECTORS.map(s => ({
     label: s.koreanName,
 }));
 
-export function SectorTabs({
-    activeSector,
-    onChange,
-}: SectorTabsProps): ReactElement {
+export function SectorTabs({ activeSector, onChange }: SectorTabsProps) {
     return (
         <TabsUnderline
             tabs={TAB_ITEMS}

@@ -1,8 +1,8 @@
 import {
-    searchBySymbol,
-    searchByName,
-    filterUsExchanges,
     filterIndexResults,
+    filterUsExchanges,
+    searchByName,
+    searchBySymbol,
     toDisplaySymbol,
     toTickerSearchResult,
 } from '@/infrastructure/ticker/fmpTickerApi';

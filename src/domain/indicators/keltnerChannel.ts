@@ -1,7 +1,7 @@
 import type { Bar, KeltnerChannelResult } from '@/domain/types';
 import {
-    KELTNER_EMA_PERIOD,
     KELTNER_ATR_PERIOD,
+    KELTNER_EMA_PERIOD,
     KELTNER_MULTIPLIER,
 } from '@/domain/indicators/constants';
 import { computeEMAValues } from '@/domain/indicators/ema';

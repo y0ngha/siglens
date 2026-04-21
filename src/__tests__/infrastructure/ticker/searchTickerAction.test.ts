@@ -1,5 +1,19 @@
 import { searchTickerAction } from '@/infrastructure/ticker/searchTickerAction';
 import type { TickerSearchResult } from '@/domain/types';
+import { createCacheProvider } from '@/infrastructure/cache/redis';
+import {
+    filterIndexResults,
+    filterUsExchanges,
+    searchByName,
+    searchBySymbol,
+    toTickerSearchResult,
+} from '@/infrastructure/ticker/fmpTickerApi';
+import {
+    getKoreanNames,
+    searchByKoreanName,
+    setKoreanTickers,
+} from '@/infrastructure/ticker/koreanNameStore';
+import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
 
 const mockCacheGet = jest.fn();
 const mockCacheSet = jest.fn();
@@ -35,21 +49,6 @@ jest.mock('@/infrastructure/ticker/koreanNameStore', () => ({
 jest.mock('@/infrastructure/ticker/koreanTranslator', () => ({
     translateCompanyNames: jest.fn(),
 }));
-
-import { createCacheProvider } from '@/infrastructure/cache/redis';
-import {
-    searchBySymbol,
-    searchByName,
-    filterUsExchanges,
-    filterIndexResults,
-    toTickerSearchResult,
-} from '@/infrastructure/ticker/fmpTickerApi';
-import {
-    searchByKoreanName,
-    getKoreanNames,
-    setKoreanTickers,
-} from '@/infrastructure/ticker/koreanNameStore';
-import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
 
 const mockCreateCacheProvider = createCacheProvider as jest.Mock;
 const mockSearchBySymbol = searchBySymbol as jest.Mock;

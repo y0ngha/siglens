@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, type ReactElement } from 'react';
+import { useMemo } from 'react';
 import { cn } from '@/lib/cn';
 import { useTabs } from './useTabs';
 import type { TabItem } from './utils/tabIds';
@@ -23,7 +23,7 @@ export function TabsPill<T extends string>({
     idPrefix,
     withHomeEnd = false,
     className,
-}: TabsPillProps<T>): ReactElement {
+}: TabsPillProps<T>) {
     const values = useMemo((): readonly T[] => tabs.map(t => t.value), [tabs]);
     const { getTabProps } = useTabs({
         tabs: values,

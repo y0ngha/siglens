@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useRef, type RefObject } from 'react';
+import { type RefObject, useEffect, useRef } from 'react';
 import {
-    HistogramSeries,
     createChart,
+    HistogramSeries,
     type IChartApi,
     type ISeriesApi,
 } from 'lightweight-charts';

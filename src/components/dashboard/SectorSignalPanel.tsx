@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactElement } from 'react';
 import type { DashboardTimeframe, SectorSignalsResult } from '@/domain/types';
 import { useSectorSignalState } from './hooks/useSectorSignalState';
 import { SectorTabs } from './SectorTabs';
@@ -17,7 +16,7 @@ export function SectorSignalPanel({
     data,
     initialSector,
     initialTimeframe,
-}: SectorSignalPanelProps): ReactElement {
+}: SectorSignalPanelProps) {
     const {
         activeSector,
         activeTimeframe,

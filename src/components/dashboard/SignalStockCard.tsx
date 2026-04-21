@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
@@ -10,7 +9,7 @@ interface SignalStockCardProps {
     data: StockWithConflict;
 }
 
-export function SignalStockCard({ data }: SignalStockCardProps): ReactElement {
+export function SignalStockCard({ data }: SignalStockCardProps) {
     const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
         data.changePercent
     );

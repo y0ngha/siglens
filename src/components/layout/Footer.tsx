@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { CurrentYear } from '@/components/layout/CurrentYear';
 import { ContactDialog } from '@/components/layout/ContactDialog';
@@ -11,7 +10,7 @@ import {
     TERMS_TITLE,
 } from '@/lib/legal';
 
-export function Footer(): ReactElement {
+export function Footer() {
     return (
         <footer className="border-secondary-800 border-t">
             <div className="flex flex-col gap-4 px-6 py-6 lg:px-[15vw]">

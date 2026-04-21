@@ -5,10 +5,10 @@ import { cn } from '@/lib/cn';
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
 import { HIGH_CONFIDENCE_WEIGHT } from '@/domain/indicators/constants';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
-import { TabsPill, buildTabId, buildPanelId } from '@/components/ui/tabs';
+import { buildPanelId, buildTabId, TabsPill } from '@/components/ui/tabs';
 import {
-    useSkillsShowcase,
     type SkillsActiveTab,
+    useSkillsShowcase,
 } from '@/components/home/hooks/useSkillsShowcase';
 
 const INITIAL_VISIBLE_COUNT = 12;

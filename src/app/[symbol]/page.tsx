@@ -1,9 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import {
-    QueryClient,
     dehydrate,
     HydrationBoundary,
+    QueryClient,
 } from '@tanstack/react-query';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import type { AnalysisResponse, AssetInfo } from '@/domain/types';

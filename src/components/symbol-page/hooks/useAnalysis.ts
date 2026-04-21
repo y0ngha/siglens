@@ -10,17 +10,17 @@ import {
 } from 'react';
 import type {
     AnalysisResponse,
-    Timeframe,
     SubmitAnalysisResult,
+    Timeframe,
 } from '@/domain/types';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
 import {
-    tryAcquireReanalyzeCooldown,
-    releaseReanalyzeCooldown,
     getReanalyzeCooldownMs as fetchReanalyzeCooldownMs,
+    releaseReanalyzeCooldown,
+    tryAcquireReanalyzeCooldown,
 } from '@/infrastructure/market/reanalyzeCooldown';
 import { sleep } from '@/components/symbol-page/utils/sleep';
 

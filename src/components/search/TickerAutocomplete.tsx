@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactElement } from 'react';
 import { isKoreanInput } from '@/domain/ticker';
 import { useAutocomplete } from '@/components/search/hooks/useAutocomplete';
 import { cn } from '@/lib/cn';
@@ -35,7 +34,7 @@ export function TickerAutocomplete({
     className,
     size = 'sm',
     onSelect,
-}: TickerAutocompleteProps): ReactElement {
+}: TickerAutocompleteProps) {
     const {
         query,
         results,

@@ -1,8 +1,8 @@
 'use client';
 
-import { useId, useRef, useState } from 'react';
-import type { ReactNode } from 'react';
 import type React from 'react';
+import type { ReactNode } from 'react';
+import { useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
@@ -105,7 +105,7 @@ export function InfoTooltip({ children, className }: InfoTooltipProps) {
                         id={tooltipId}
                         role="tooltip"
                         className={cn(
-                            'bg-secondary-800 border-secondary-600 fixed top-[var(--tt)] left-[var(--tl)] z-9999 rounded border p-2 text-xs leading-relaxed shadow-lg',
+                            'bg-secondary-800 border-secondary-600 fixed top-(--tt) left-(--tl) z-9999 rounded border p-2 text-xs leading-relaxed shadow-lg',
                             positioned ? 'visible' : 'invisible'
                         )}
                         style={

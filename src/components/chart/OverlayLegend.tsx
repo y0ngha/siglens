@@ -1,6 +1,6 @@
 'use client';
 
-import type { CSSProperties, ReactElement } from 'react';
+import type { CSSProperties } from 'react';
 import type { OverlayLegendItem } from '@/components/chart/types';
 import { useOverlayGroups } from '@/components/chart/hooks/useOverlayGroups';
 import { formatOverlayValue } from '@/components/chart/utils/overlayLegendFormat';
@@ -9,24 +9,22 @@ interface OverlayLegendProps {
     items: OverlayLegendItem[];
 }
 
-export function OverlayLegend({
-    items,
-}: OverlayLegendProps): ReactElement | null {
+export function OverlayLegend({ items }: OverlayLegendProps) {
     const groups = useOverlayGroups(items);
 
     if (items.length === 0) return null;
 
     return (
-        <div className="pointer-events-none flex flex-col gap-[6px]">
+        <div className="pointer-events-none flex flex-col gap-1.5">
             {groups.map(group => (
                 <div
                     key={group.key}
-                    className="flex flex-wrap gap-x-3 gap-y-[6px]"
+                    className="flex flex-wrap gap-x-3 gap-y-1.5"
                 >
                     {group.items.map(item => (
                         <span
                             key={item.name}
-                            className="font-mono text-[11px] leading-none text-[color:var(--legend-color)]"
+                            className="font-mono text-[11px] leading-none text-(--legend-color)"
                             style={
                                 {
                                     '--legend-color': item.color,

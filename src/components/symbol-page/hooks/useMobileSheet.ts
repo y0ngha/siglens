@@ -1,10 +1,10 @@
 'use client';
 
 import {
-    useState,
     type Dispatch,
     type ReactNode,
     type SetStateAction,
+    useState,
 } from 'react';
 import {
     SNAP_HALF,

@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import type { BacktestCase } from '@/domain/types';
 import { BacktestCaseCard } from './BacktestCaseCard';
 
@@ -16,9 +15,7 @@ interface MonthGroup {
     items: BacktestCase[];
 }
 
-export function BacktestCaseList({
-    cases,
-}: BacktestCaseListProps): ReactElement {
+export function BacktestCaseList({ cases }: BacktestCaseListProps) {
     if (cases.length === 0) {
         return (
             <p className="text-secondary-500 py-10 text-center text-sm">

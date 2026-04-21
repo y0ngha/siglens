@@ -1,10 +1,10 @@
 import {
-    sma,
-    typicalPrice,
-    stdDev,
+    linreg,
     rollingHighest,
     rollingLowest,
-    linreg,
+    sma,
+    stdDev,
+    typicalPrice,
 } from '@/domain/indicators/utils';
 
 describe('utils', () => {

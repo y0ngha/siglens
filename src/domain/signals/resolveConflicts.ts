@@ -1,10 +1,10 @@
 import type {
+    ConflictInfo,
+    ConflictResolution,
     Signal,
     SignalDirection,
     StockSignalResult,
-    ConflictInfo,
     StockWithConflict,
-    ConflictResolution,
 } from '@/domain/types';
 
 function countSignalDirections(signals: readonly Signal[]): ConflictInfo {

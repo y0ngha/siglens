@@ -1,8 +1,4 @@
 import {
-    SL_FALLBACK_ATR_MULTIPLIER,
-    SL_MAX_ATR_MULTIPLIER,
-    TP_FALLBACK_ATR_MULTIPLIER,
-    TP_MAX_ATR_MULTIPLIER,
     buildBullishExitText,
     buildBullishRiskRewardText,
     deriveFallbackStopLoss,
@@ -13,6 +9,10 @@ import {
     reconcileBullishActionRecommendation,
     resolveBullishStopLoss,
     resolveBullishTakeProfit,
+    SL_FALLBACK_ATR_MULTIPLIER,
+    SL_MAX_ATR_MULTIPLIER,
+    TP_FALLBACK_ATR_MULTIPLIER,
+    TP_MAX_ATR_MULTIPLIER,
 } from '@/domain/analysis/ai-levels';
 import type { ActionRecommendation, AnalysisResponse } from '@/domain/types';
 

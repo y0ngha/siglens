@@ -21,7 +21,7 @@ import {
     SQUEEZE_MOMENTUM_KC_LENGTH,
     SQUEEZE_MOMENTUM_KC_MULT,
 } from '@/domain/indicators/constants';
-import { sma, stdDev, linreg, rollingHighest, rollingLowest } from './utils';
+import { linreg, rollingHighest, rollingLowest, sma, stdDev } from './utils';
 
 type BarComputed = Omit<SqueezeMomentumResult, 'increasing'>;
 

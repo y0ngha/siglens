@@ -1,9 +1,10 @@
 import {
-    searchByKoreanName,
     getKoreanNames,
+    searchByKoreanName,
     setKoreanTickers,
 } from '@/infrastructure/ticker/koreanNameStore';
 import type { KoreanTickerEntry } from '@/domain/types';
+import { createCacheProvider } from '@/infrastructure/cache/redis';
 
 const mockGet = jest.fn();
 const mockSet = jest.fn();
@@ -12,8 +13,6 @@ const mockDelete = jest.fn();
 jest.mock('@/infrastructure/cache/redis', () => ({
     createCacheProvider: jest.fn(),
 }));
-
-import { createCacheProvider } from '@/infrastructure/cache/redis';
 
 const mockCreateCacheProvider = createCacheProvider as jest.Mock;
 

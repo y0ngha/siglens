@@ -3,26 +3,23 @@
 import { waitUntil } from '@vercel/functions';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
-    TICKER_SEARCH_CACHE_TTL,
     buildTickerSearchCacheKey,
+    TICKER_SEARCH_CACHE_TTL,
 } from '@/infrastructure/cache/config';
-import { isKoreanInput, deduplicateResults } from '@/domain/ticker';
+import { deduplicateResults, isKoreanInput } from '@/domain/ticker';
 import {
-    searchBySymbol,
-    searchByName,
     filterUsExchanges,
-    // TODO: 지수 심볼 검색 재활성화 시 복원
-    // filterIndexResults,
-    // toDisplaySymbol,
+    searchByName,
+    searchBySymbol,
     toTickerSearchResult,
 } from '@/infrastructure/ticker/fmpTickerApi';
 import {
-    searchByKoreanName,
     getKoreanNames,
+    searchByKoreanName,
     setKoreanTickers,
 } from '@/infrastructure/ticker/koreanNameStore';
 import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
-import type { TickerSearchResult, KoreanTickerEntry } from '@/domain/types';
+import type { KoreanTickerEntry, TickerSearchResult } from '@/domain/types';
 // TODO: 지수 심볼 검색 재활성화 시 복원
 // import type { FmpSearchResult } from '@/infrastructure/ticker/types';
 

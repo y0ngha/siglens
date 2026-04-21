@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactElement } from 'react';
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from 'react-error-boundary';
@@ -36,7 +35,7 @@ export function SymbolPageClient({
     initialAnalysis,
     initialAnalysisFailed,
     indicatorCount,
-}: SymbolPageClientProps): ReactElement {
+}: SymbolPageClientProps) {
     const {
         sheetSnap,
         setSheetSnap,

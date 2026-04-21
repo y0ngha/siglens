@@ -1,14 +1,14 @@
 'use client';
 
 import {
+    type KeyboardEvent,
+    type RefCallback,
     useCallback,
     useId,
     useRef,
-    type KeyboardEvent,
-    type RefCallback,
 } from 'react';
 import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
-import { buildTabId, buildPanelId } from './utils/tabIds';
+import { buildPanelId, buildTabId } from './utils/tabIds';
 
 interface UseTabsOptions<T extends string> {
     tabs: readonly T[];

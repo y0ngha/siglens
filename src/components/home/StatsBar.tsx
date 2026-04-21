@@ -1,5 +1,5 @@
+import type { CSSProperties } from 'react';
 import { Fragment } from 'react';
-import type { CSSProperties, ReactElement } from 'react';
 
 import type { SkillShowcaseItem } from '@/domain/types';
 import { DotSeparator } from '@/components/ui/DotSeparator';
@@ -9,7 +9,7 @@ interface StatsBarProps {
     skills: SkillShowcaseItem[];
 }
 
-export function StatsBar({ skills }: StatsBarProps): ReactElement {
+export function StatsBar({ skills }: StatsBarProps) {
     const stats = buildSkillStats(skills);
 
     return (
@@ -27,7 +27,7 @@ export function StatsBar({ skills }: StatsBarProps): ReactElement {
     );
 }
 
-export function StatsBarSkeleton(): ReactElement {
+export function StatsBarSkeleton() {
     return (
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-2 lg:justify-start">
             {[80, 60, 72, 56, 68, 64].map((w, i) => (

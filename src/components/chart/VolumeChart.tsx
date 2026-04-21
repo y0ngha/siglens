@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactElement } from 'react';
 import { useRef } from 'react';
 import type { IChartApi } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
@@ -34,7 +33,7 @@ export function VolumeChart({
     buySellVolume,
     onChartReady,
     onChartRemove,
-}: VolumeChartProps): ReactElement {
+}: VolumeChartProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
 

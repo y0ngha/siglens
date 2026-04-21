@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import type { SignalType } from '@/domain/types';
 
 const SIGNAL_BADGE_LABELS: Record<SignalType, string> = {
@@ -33,7 +32,7 @@ interface SignalBadgeProps {
     type: SignalType;
 }
 
-export function SignalBadge({ type }: SignalBadgeProps): ReactElement {
+export function SignalBadge({ type }: SignalBadgeProps) {
     return (
         <span className="text-secondary-300 text-[10px] tracking-wider uppercase">
             {SIGNAL_BADGE_LABELS[type]}

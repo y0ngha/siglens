@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, type RefObject } from 'react';
+import { type RefObject, useEffect, useEffectEvent } from 'react';
 import {
     DRAG_RESISTANCE,
     DRAG_THRESHOLD_PX,
@@ -9,8 +9,8 @@ import {
     SNAP_BACK_DURATION,
     SNAP_HALF,
     SNAP_PEEK,
-    VAUL_EASING,
     type SnapPoint,
+    VAUL_EASING,
 } from '@/components/symbol-page/constants/mobileSheet';
 import { captureTransformY } from '@/components/symbol-page/utils/mobileSheetDom';
 

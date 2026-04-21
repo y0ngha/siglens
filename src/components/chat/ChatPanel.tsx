@@ -1,8 +1,7 @@
 'use client';
 
-import type { ReactElement } from 'react';
-import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
+import ReactMarkdown from 'react-markdown';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
@@ -72,7 +71,7 @@ export function ChatPanel({
     analysis,
     isAnalysisReady,
     onClose,
-}: ChatPanelProps): ReactElement {
+}: ChatPanelProps) {
     const {
         messages,
         loadingPhase,

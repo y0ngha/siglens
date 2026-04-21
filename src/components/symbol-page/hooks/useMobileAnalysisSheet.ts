@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState, type RefObject } from 'react';
+import { type RefObject, useCallback, useRef, useState } from 'react';
 import {
     SNAP_FULL,
     SNAP_PEEK,

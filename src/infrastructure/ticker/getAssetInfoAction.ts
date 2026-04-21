@@ -4,15 +4,13 @@ import { waitUntil } from '@vercel/functions';
 import { cache } from 'react';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import {
-    ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
     ASSET_INFO_CACHE_TTL_WITH_KOREAN,
+    ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN,
     buildAssetInfoCacheKey,
 } from '@/infrastructure/cache/config';
 import {
-    searchBySymbol,
     filterUsExchanges,
-    // TODO: 지수 심볼 검색 재활성화 시 복원
-    // filterIndexResults,
+    searchBySymbol,
 } from '@/infrastructure/ticker/fmpTickerApi';
 // TODO: 지수 심볼 검색 재활성화 시 복원
 // import type { FmpSearchResult } from '@/infrastructure/ticker/types';

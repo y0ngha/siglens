@@ -1,4 +1,4 @@
-import { Suspense, cache } from 'react';
+import { cache, Suspense } from 'react';
 import Link from 'next/link';
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
 import {

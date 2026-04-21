@@ -1,10 +1,9 @@
-import type { ReactElement } from 'react';
 import {
     MARKET_INDICES,
     SECTOR_GROUPS,
 } from '@/domain/constants/dashboard-tickers';
 
-export function MarketSummaryPanelSkeleton(): ReactElement {
+export function MarketSummaryPanelSkeleton() {
     return (
         <section
             aria-label="시장 현황 로딩 중"

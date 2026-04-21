@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, type KeyboardEvent } from 'react';
+import { type KeyboardEvent, useCallback } from 'react';
 import { getRovingNextIndex } from '@/lib/rovingKeyboardNav';
 
 interface UseRovingKeyboardNavOptions<T> {

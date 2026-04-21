@@ -3,10 +3,10 @@
 import { useCallback, useSyncExternalStore } from 'react';
 
 import {
-    RECENT_SEARCHES_STORAGE_KEY,
     addRecentSearch,
     clearRecentSearches,
     getRecentSearches,
+    RECENT_SEARCHES_STORAGE_KEY,
     removeRecentSearch,
 } from '@/infrastructure/storage/recentSearches';
 

@@ -1,4 +1,6 @@
 import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
+import { GoogleGenAI } from '@google/genai';
+import { stripMarkdownCodeBlock } from '@/infrastructure/ai/utils';
 
 const mockGenerateContent = jest.fn();
 
@@ -8,13 +10,9 @@ jest.mock('@google/genai', () => ({
     })),
 }));
 
-import { GoogleGenAI } from '@google/genai';
-
 jest.mock('@/infrastructure/ai/utils', () => ({
     stripMarkdownCodeBlock: jest.fn((text: string) => text),
 }));
-
-import { stripMarkdownCodeBlock } from '@/infrastructure/ai/utils';
 
 const mockStripMarkdown = stripMarkdownCodeBlock as jest.Mock;
 const MockedGoogleGenAI = GoogleGenAI as jest.MockedClass<typeof GoogleGenAI>;

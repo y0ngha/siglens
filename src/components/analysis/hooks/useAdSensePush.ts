@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type RefObject } from 'react';
+import { type RefObject, useEffect, useRef } from 'react';
 
 // window.adsbygoogle: Google AdSense가 로드 후 채우는 전역 배열.
 declare global {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useEffectEvent, RefObject } from 'react';
+import { RefObject, useEffect, useEffectEvent } from 'react';
 
 const FOCUSABLE_SELECTOR = [
     'a[href]',

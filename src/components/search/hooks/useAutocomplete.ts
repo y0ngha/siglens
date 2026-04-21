@@ -1,12 +1,12 @@
 'use client';
 
 import {
-    useCallback,
-    useRef,
-    useState,
     type ChangeEvent,
     type KeyboardEvent,
     type RefObject,
+    useCallback,
+    useRef,
+    useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
 import type { TickerSearchResult } from '@/domain/types';

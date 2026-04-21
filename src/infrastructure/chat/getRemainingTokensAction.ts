@@ -1,7 +1,7 @@
 'use server';
 
 import { headers } from 'next/headers';
-import { hashIp, getRemainingTokens } from '@/infrastructure/chat/tokenStore';
+import { getRemainingTokens, hashIp } from '@/infrastructure/chat/tokenStore';
 
 export async function getRemainingTokensAction(): Promise<number | null> {
     try {

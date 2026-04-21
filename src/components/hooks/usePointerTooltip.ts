@@ -1,9 +1,9 @@
 'use client';
 
 import {
+    type PointerEvent as ReactPointerEvent,
     useCallback,
     useState,
-    type PointerEvent as ReactPointerEvent,
 } from 'react';
 
 interface UsePointerTooltipReturn {

@@ -1,6 +1,5 @@
 'use client';
 
-import type { ReactElement } from 'react';
 import { TIMEFRAMES } from '@/domain/constants/market';
 import type { Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
@@ -19,10 +18,7 @@ interface TimeframeSelectorProps {
     onChange: (timeframe: Timeframe) => void;
 }
 
-export function TimeframeSelector({
-    value,
-    onChange,
-}: TimeframeSelectorProps): ReactElement {
+export function TimeframeSelector({ value, onChange }: TimeframeSelectorProps) {
     return (
         <div className="flex items-center gap-1">
             {TIMEFRAMES.map(timeframe => (

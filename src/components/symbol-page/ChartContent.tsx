@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useEffectEvent, useMemo } from 'react';
-import React from 'react';
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactNode } from 'react';
+import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
@@ -14,9 +13,9 @@ import { useAnalysisDerivedData } from '@/components/symbol-page/hooks/useAnalys
 import { useAnalysisDisplay } from '@/components/symbol-page/hooks/useAnalysisDisplay';
 import { useChartOverlayVisibility } from '@/components/symbol-page/hooks/useChartOverlayVisibility';
 import {
-    usePanelResize,
-    PANEL_MIN_WIDTH,
     PANEL_MAX_WIDTH,
+    PANEL_MIN_WIDTH,
+    usePanelResize,
 } from '@/components/symbol-page/hooks/usePanelResize';
 import { useChartSync } from '@/components/chart/hooks/useChartSync';
 import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
@@ -100,7 +99,7 @@ export function ChartContent({
     initialAnalysisFailed,
     onMobileSheetContent,
     fmpSymbol,
-}: ChartContentProps): ReactElement {
+}: ChartContentProps) {
     const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
 
     const {

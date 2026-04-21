@@ -1,8 +1,7 @@
 'use client';
 
-import type { ReactElement } from 'react';
 import type { BacktestCase } from '@/domain/types';
-import { TabsUnderline, buildTabId, buildPanelId } from '@/components/ui/tabs';
+import { buildPanelId, buildTabId, TabsUnderline } from '@/components/ui/tabs';
 import { useBacktestFilter } from './hooks/useBacktestFilter';
 import { BacktestCaseList } from './BacktestCaseList';
 
@@ -13,10 +12,7 @@ interface BacktestTabsProps {
 
 const TABS_ID_PREFIX = 'backtest';
 
-export function BacktestTabs({
-    cases,
-    tickers,
-}: BacktestTabsProps): ReactElement {
+export function BacktestTabs({ cases, tickers }: BacktestTabsProps) {
     const { tabItems, activeTab, setActiveTab, filtered } = useBacktestFilter(
         cases,
         tickers

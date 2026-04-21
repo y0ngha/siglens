@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
@@ -16,7 +15,7 @@ interface IndexCardProps {
     href?: string;
 }
 
-export function IndexCard({ data, href }: IndexCardProps): ReactElement {
+export function IndexCard({ data, href }: IndexCardProps) {
     const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
         data.changesPercentage
     );

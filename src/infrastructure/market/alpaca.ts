@@ -1,5 +1,5 @@
 import type { MarketQuote } from '@/domain/types';
-import type { GetBarsOptions, Bar, MarketDataProvider } from './types';
+import type { Bar, GetBarsOptions, MarketDataProvider } from './types';
 
 const BASE_URL = 'https://data.alpaca.markets/v2';
 

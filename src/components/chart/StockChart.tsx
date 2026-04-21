@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactElement, RefObject } from 'react';
+import type { RefObject } from 'react';
 import { useEffect, useMemo, useRef } from 'react';
 import type {
     IChartApi,
@@ -13,6 +13,7 @@ import { CHART_COLORS } from '@/lib/chartColors';
 import type {
     Bar,
     IndicatorResult,
+    ReconciledActionLineData,
     Timeframe,
     ValidatedActionPrices,
 } from '@/domain/types';
@@ -30,7 +31,6 @@ import { useVolumeProfileOverlay } from '@/components/chart/hooks/useVolumeProfi
 import { useIchimokuOverlay } from '@/components/chart/hooks/useIchimokuOverlay';
 import { useCandlePatternMarkers } from '@/components/chart/hooks/useCandlePatternMarkers';
 import { useActionRecommendationOverlay } from '@/components/chart/hooks/useActionRecommendationOverlay';
-import type { ReconciledActionLineData } from '@/domain/types';
 import { usePaneLabels } from '@/components/chart/hooks/usePaneLabels';
 import { useOverlayLegend } from '@/components/chart/hooks/useOverlayLegend';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
@@ -74,7 +74,7 @@ export function StockChart({
     actionPricesVisible = true,
     onChartReady,
     onChartRemove,
-}: StockChartProps): ReactElement {
+}: StockChartProps) {
     const wrapperRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const chartRef = useRef<IChartApi | null>(null);

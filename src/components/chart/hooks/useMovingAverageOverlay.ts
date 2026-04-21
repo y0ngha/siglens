@@ -1,5 +1,6 @@
 'use client';
 
+import type { RefObject } from 'react';
 import {
     useCallback,
     useEffect,
@@ -7,14 +8,13 @@ import {
     useRef,
     useState,
 } from 'react';
-import type { RefObject } from 'react';
-import { LineSeries } from 'lightweight-charts';
 import type {
     IChartApi,
     ISeriesApi,
     LineStyle,
     LineWidth,
 } from 'lightweight-charts';
+import { LineSeries } from 'lightweight-charts';
 import { getPeriodColor } from '@/lib/chartColors';
 import type { Bar, IndicatorResult } from '@/domain/types';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
