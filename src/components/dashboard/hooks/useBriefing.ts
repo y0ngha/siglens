@@ -3,6 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';
+import { getSuspensePromise, resolveSuspensePromise } from '@/components/utils/suspensePromise';
 import type {
     MarketBriefingResponse,
     SubmitBriefingResult,
@@ -24,7 +25,15 @@ export function useBriefing(
 
     const { data, error } = useQuery({
         queryKey: QUERY_KEYS.briefing(jobId ?? ''),
-        queryFn: () => pollBriefingAction(jobId!),
+        queryFn: async () => {
+            const result = await pollBriefingAction(jobId!);
+            // processing이 아니면(done / error) Suspense promise를 resolve해
+            // React가 suspended 컴포넌트를 재렌더링하도록 한다.
+            if (result.status !== 'processing') {
+                resolveSuspensePromise(jobId!);
+            }
+            return result;
+        },
         enabled: !!jobId,
         refetchInterval: query => {
             const status = query.state.data?.status;
@@ -46,7 +55,7 @@ export function useBriefing(
 
     if (error) throw error;
     if (!data || data.status === 'processing') {
-        throw new Promise<void>(() => undefined);
+        throw jobId ? getSuspensePromise(jobId) : new Promise<void>(() => undefined);
     }
     if (data.status === 'error') throw new Error(data.error);
 
