@@ -285,13 +285,6 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Improves readability and allows reuse in tests or other contexts
     ❌ export default function MyComponent({ label }: { label: string }) { ... }
     ✅ interface MyComponentProps { label: string }; export default function MyComponent(props: MyComponentProps) { ... }
-
-14. Exported component functions missing explicit return type annotation
-    → All `export function` components must include explicit return type (`: ReactElement`)
-    → Improves type safety, IDE support, and catches accidental undefined returns
-    ❌ export function StockChart(props: Props) { return <div>...</div>; }
-    ✅ export function StockChart(props: Props): ReactElement { return <div>...</div>; }
-    → Add `import { ReactElement } from 'react'` if needed
 ```
 
 ---
