@@ -43,12 +43,8 @@ interface RiskBadgeProps {
 }
 
 function RiskBadge({ level }: RiskBadgeProps) {
-    const normalized = level.toLowerCase();
-    const isHigh =
-        normalized.includes('high') ||
-        normalized.includes('extreme') ||
-        level.includes('높');
-    const isLow = normalized.includes('low') || level.includes('낮');
+    const isHigh = level === 'high' || level === 'extreme';
+    const isLow = level === 'low';
     const cls = isHigh
         ? 'bg-ui-warning/10 text-ui-warning border-ui-warning/30'
         : isLow

@@ -30,7 +30,7 @@ interface UseAnalysisDerivedDataReturn {
     reconciledActionLines: ReconciledActionLineData | undefined;
 }
 
-// AnalysisPanel/StockChart가 소비하는 파생 데이터를 한 곳에 모아 메모한다.
+// 여러 훅/컴포넌트가 동일 deps로 반복 메모하지 않도록 파생 데이터를 한 곳에 집중한다.
 export function useAnalysisDerivedData(
     analysis: AnalysisResponse,
     bars: Bar[]
