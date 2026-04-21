@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.8.21](https://github.com/y0ngha/siglens/compare/v0.8.20...v0.8.21) (2026-04-21)
+
+
+### Bug Fixes
+
+* 리포트 복사시 } 잘못 들어가는 것 수정 ([84d79f6](https://github.com/y0ngha/siglens/commit/84d79f6b8e5cd7065bf3ddb7ceb40a883c169d32))
+
+
+### Features
+
+* AI 분석 툴팁 문구 변경 ([e89d7e8](https://github.com/y0ngha/siglens/commit/e89d7e8752caa49f44df02a1753c38e2ecb6d7ef))
+
 ## [0.8.20](https://github.com/y0ngha/siglens/compare/v0.8.19...v0.8.20) (2026-04-21)
 
 
