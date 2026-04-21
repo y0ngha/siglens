@@ -1,4 +1,9 @@
-import type { SkillShowcaseItem, SkillStat, SkillType } from '@/domain/types';
+import type {
+    SkillShowcaseItem,
+    SkillStat,
+    SkillStatConfig,
+    SkillType,
+} from '@/domain/types';
 
 export function countSkillsByType(
     skills: readonly SkillShowcaseItem[]
@@ -7,10 +12,6 @@ export function countSkillsByType(
         if (skill.type == null) return acc;
         return { ...acc, [skill.type]: (acc[skill.type] ?? 0) + 1 };
     }, {});
-}
-
-interface SkillStatConfig {
-    countLabel: string;
 }
 
 const SKILL_STAT_CONFIG: Record<SkillType, SkillStatConfig> = {

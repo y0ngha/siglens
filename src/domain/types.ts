@@ -349,6 +349,10 @@ export interface SkillStat {
     label: string;
 }
 
+export interface SkillStatConfig {
+    countLabel: string;
+}
+
 export type AnalysisSignalType = 'skill';
 
 export type SignalStrength = 'strong' | 'moderate' | 'weak';

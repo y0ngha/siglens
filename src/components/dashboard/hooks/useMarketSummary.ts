@@ -32,7 +32,10 @@ export function useMarketSummary(): UseMarketSummaryReturn {
         [data?.summary.sectors]
     );
 
-    const indices = data?.summary.indices ?? [];
+    const indices = useMemo(
+        () => data?.summary.indices ?? [],
+        [data?.summary.indices]
+    );
 
     return { data, isPending, sectorMap, indices };
 }

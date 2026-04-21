@@ -1,5 +1,22 @@
 # Fix Log
 
+## [PR #344 Round 11 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `src/lib/cardStyles.ts` — `+` 연산자로 Tailwind 클래스 연결 (cn() 미사용)
+- Rule: CONVENTIONS.md Tailwind 규칙 — 정적 문자열이라도 className 연결에는 cn() 사용 필수
+- Context: CARD_LINK_CLASSES 상수가 6개 문자열을 `+`로 연결; cn() import 추가 후 cn() 인자 분리로 변환
+- Violation: `src/components/ui/tabs/useTabs.ts` — 순수 유틸리티 함수 `buildTabId`/`buildPanelId`가 hook 파일에 정의됨
+- Rule: CONVENTIONS.md — Pure utility functions (non-hook helpers) must always be placed in a utils/ subfolder
+- Context: `buildTabId`/`buildPanelId`는 React hook을 사용하지 않는 순수 함수; `utils/tabIds.ts`로 이동, useTabs.ts에서 import, index.ts re-export 경로 업데이트
+- Violation: `TabsPill.tsx` / `TabsUnderline.tsx` — 동일한 `TabItem<T>` 인터페이스 두 파일에 중복 정의
+- Rule: MISTAKES.md Coding Paradigm #6.5 — 동일 타입/로직의 이중 정의 금지
+- Context: 두 파일 모두 동일 구조의 TabItem<T>를 각각 정의; utils/tabIds.ts로 통합 후 import
+- Violation: `useMarketSummary.ts` — `indices` 파생값이 useMemo 없이 렌더마다 새 [] 참조 생성
+- Rule: MISTAKES.md Coding Paradigm #10 — props/state 파생 객체는 useMemo 메모이제이션 필수
+- Context: `data?.summary.indices ?? []`를 `useMemo(() => data?.summary.indices ?? [], [data?.summary.indices])`로 변환
+- Violation: `domain/skills.ts` — `SkillStatConfig` 인터페이스가 구현 파일 내부에 정의됨
+- Rule: MISTAKES.md Architecture #1 — domain 타입은 domain/types.ts로 중앙화
+- Context: `SkillStatConfig`를 `domain/types.ts`로 이동, `domain/skills.ts`에서 import
+
 
 ## [PR #344 Round 9 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `useChartOverlayVisibility.ts` — 소비처가 없는 Dead State 3개(`chartVisiblePatterns`, `keyLevelsVisible`, `trendlinesVisible`) 및 Dead Callback 2개(`handlePatternOverlayChange`, `handleTogglePattern`) 잔존
@@ -68,9 +85,6 @@
 - Context: `alpaca.ts` reads `ALPACA_API_SECRET` first via `?? ALPACA_SECRET_KEY` fallback, but `.env.example` only listed the fallback variable; `ALPACA_API_SECRET=` was added to the example file
 
 ## [PR #313 | feat/312/타임프레임-변경-시-분석-작업-취소 | 2026-04-15]
-- Violation: findIndexMatch 반환 타입을 `ReturnType<typeof filterIndexResults>[number] | undefined`로 표현
-- Rule: TypeScript — 재사용 가능하거나 의미를 전달해야 하는 반환 타입은 구조적 유틸리티 타입 대신 명시적 named type으로 표현
-- Context: `filterIndexResults`가 `FmpSearchResult[]`를 반환하므로 해당 표현식은 `FmpSearchResult | undefined`와 동일; 명시적 타입 사용이 더 가독성 높음
 
 ## [PR #327 | refactor/324/state-machine-인디케이터-O-N-최적화 | 2026-04-18]
 - Violation: period-based indicator 테스트에 toBeCloseTo 수치 검증 누락

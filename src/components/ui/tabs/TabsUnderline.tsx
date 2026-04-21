@@ -3,11 +3,7 @@
 import { useMemo, type ReactElement } from 'react';
 import { cn } from '@/lib/cn';
 import { useTabs } from './useTabs';
-
-interface TabItem<T extends string> {
-    value: T;
-    label: string;
-}
+import type { TabItem } from './utils/tabIds';
 
 // 'xs' — BacktestTabs 스타일 (10px, font-medium, active: primary text+border)
 // 'sm' — SectorTabs 스타일 (12px uppercase tracking, active: primary border only)
@@ -59,11 +55,7 @@ export function TabsUnderline<T extends string>({
     idPrefix,
     withHomeEnd,
 }: TabsUnderlineProps<T>): ReactElement {
-    // useMemo 반환 타입이 T[]로 추론되므로 readonly 제약을 위해 캐스트한다.
-    const values = useMemo(
-        () => tabs.map(t => t.value),
-        [tabs]
-    ) as readonly T[];
+    const values = useMemo((): readonly T[] => tabs.map(t => t.value), [tabs]);
     const { getTabProps } = useTabs({
         tabs: values,
         activeTab,
