@@ -111,7 +111,7 @@ function ActionRecommendationSection({
                     type="button"
                     onClick={onToggleChart}
                     className={cn(
-                        'flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors',
+                        'focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 text-xs transition-colors focus-visible:ring-1 focus-visible:outline-none',
                         isChartVisible
                             ? 'text-primary-400 hover:text-primary-300'
                             : 'text-secondary-500 hover:text-secondary-400'
@@ -390,7 +390,7 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
                 onClick={toggle}
                 aria-describedby={isVisible ? tooltipId : undefined}
                 className={cn(
-                    'cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium',
+                    'focus-visible:ring-primary-500 cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium focus-visible:ring-1 focus-visible:outline-none',
                     className
                 )}
             >
@@ -479,7 +479,7 @@ function PatternAccordionItem({
                     type="button"
                     aria-expanded={isOpen}
                     onClick={handleToggleOpen}
-                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left"
+                    className="focus-visible:ring-primary-500 flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:outline-none"
                 >
                     <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
                         {pattern.skillName}
@@ -589,7 +589,7 @@ function StrategyAccordionItem({ strategy }: StrategyAccordionItemProps) {
                     type="button"
                     aria-expanded={isOpen}
                     onClick={handleToggleOpen}
-                    className="flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left"
+                    className="focus-visible:ring-primary-500 flex min-w-0 flex-1 items-center gap-2 px-3 py-2.5 text-left focus-visible:ring-1 focus-visible:outline-none"
                 >
                     <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
                         {strategy.strategyName}
@@ -733,7 +733,7 @@ function ReanalyzeButton({
                     ? '재분석은 5분에 한 번만 실행할 수 있어요.'
                     : undefined
             }
-            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors disabled:cursor-not-allowed"
+            className="bg-primary-600 hover:bg-primary-700 disabled:bg-primary-600/40 disabled:text-secondary-300 focus-visible:ring-primary-500 w-full rounded-lg px-4 py-2 text-sm font-semibold text-white tabular-nums transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed"
         >
             {label}
         </button>
@@ -880,7 +880,7 @@ export function AnalysisPanel({
                         disabled={showProgress || isAnalyzing}
                         className={cn(
                             // [공통 스타일]
-                            'rounded border px-2 py-1 text-xs font-medium transition-colors',
+                            'focus-visible:ring-primary-500 rounded border px-2 py-1 text-xs font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none',
 
                             // [1. 로딩/분석 중 상태]
                             (showProgress || isAnalyzing) &&

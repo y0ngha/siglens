@@ -1,10 +1,4 @@
-import type { SkillShowcaseItem, SkillType } from '@/domain/types';
-import { countSkillsByType } from '@/domain/skills';
-
-export interface SkillStat {
-    value: number;
-    label: string;
-}
+import type { SkillShowcaseItem, SkillStat, SkillType } from '@/domain/types';
 
 interface SkillStatConfig {
     countLabel: string;
@@ -20,10 +14,19 @@ const SKILL_STAT_CONFIG: Record<SkillType, SkillStatConfig> = {
 
 const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];
 
+function countByType(
+    skills: readonly SkillShowcaseItem[]
+): Partial<Record<SkillType, number>> {
+    return skills.reduce<Partial<Record<SkillType, number>>>((acc, skill) => {
+        if (skill.type == null) return acc;
+        return { ...acc, [skill.type]: (acc[skill.type] ?? 0) + 1 };
+    }, {});
+}
+
 export function buildSkillStats(
     skills: readonly SkillShowcaseItem[]
 ): SkillStat[] {
-    const typeCounts = countSkillsByType(skills);
+    const typeCounts = countByType(skills);
     return [
         { value: skills.length, label: '개 분석 스킬' },
         ...SKILL_TYPES.map(type => ({

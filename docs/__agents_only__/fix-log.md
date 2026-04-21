@@ -88,14 +88,27 @@
 - Context: `reconcileBullishActionRecommendation`에서 `takeProfitPrices[0]`을 fallback으로 교체할 때 기존 `[1..]`과 역전될 수 있음. `filter(tp > entryPrice) + toSorted()`로 정렬 보장
 
 ## [PR #342 Round 3 | feat/multi-signal-backtest | 2026-04-20]
-- Violation: `'99'` hex alpha 접미사가 두 색상 상수에 중복
-- Rule: MISTAKES.md #15 — 반복되는 매직 문자열 상수화
-- Context: `RECONCILED_HEX_ALPHA` 모듈 상수로 추출해 두 색상 변수에서 참조 (의미 + 중복 제거)
-
 - Violation: `ReconciledActionLevels.reason` 필드는 툴팁 전용 사유로 정의됐으나 UI가 무시
 - Rule: Domain 스키마 의도와 UI 소비 경로 일치 필수
 - Context: `AnalysisPanel.ReconciledLevelsBlock` 이 reason을 전달받지 않고 generic prefix만 표시. `RECONCILED_TOOLTIP_PREFIX` + reason을 2줄로 표시하도록 변경
 
+
+## [PR #344 Round 3 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `PriceChangeDisplay` + `formatPriceChange`가 `components/dashboard/utils/`에 위치
+- Rule: ARCHITECTURE.md — pure utility functions without React deps must not live in components/
+- Context: `src/lib/priceFormat.ts`로 이동; `SignalStockCard.tsx`, `IndexCard.tsx` import 경로 변경
+
+- Violation: `SkillStat` 인터페이스가 `components/home/utils/buildSkillStats.ts`에 위치
+- Rule: ARCHITECTURE.md — domain-layer interfaces must be in domain/types.ts
+- Context: `SkillStat`을 `domain/types.ts`로 이동; `buildSkillStats`를 `lib/skillStats.ts`로 이동 (countByType 인라인으로 domain 함수 import 제거)
+
+- Violation: `SkillsShowcase.tsx`, `AnalysisPanel.tsx`(6개 버튼), `IndicatorToolbar.tsx` DropdownPortal 버튼에 `focus-visible:ring` 클래스 누락
+- Rule: MISTAKES.md Accessibility #4 — all interactive buttons must have focus-visible:ring-1 ring-primary-500
+- Context: 각 버튼 className에 `focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500` 추가
+
+- Violation: `StatsBarSkeleton`의 `style={{ width: ${w}px }}` 인라인 스타일
+- Rule: CONVENTIONS.md — prefer CSS custom property pattern over arbitrary inline styles
+- Context: `w-[var(--stat-w)]` + `style={{ '--stat-w': '${w}px' } as CSSProperties}`로 변경
 
 ## [PR #344 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `CandlePatternAccordionItem` 미사용 함수에 `eslint-disable-next-line` 사용

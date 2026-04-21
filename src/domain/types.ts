@@ -344,6 +344,11 @@ export interface SkillCounts {
     supportResistance: number;
 }
 
+export interface SkillStat {
+    value: number;
+    label: string;
+}
+
 export type AnalysisSignalType = 'skill';
 
 export type SignalStrength = 'strong' | 'moderate' | 'weak';

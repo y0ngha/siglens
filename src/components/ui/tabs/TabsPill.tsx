@@ -28,6 +28,7 @@ export function TabsPill<T extends string>({
     withHomeEnd = false,
     className,
 }: TabsPillProps<T>): ReactElement {
+    // useMemo 반환 타입이 T[]로 추론되므로 readonly 제약을 위해 캐스트한다.
     const values = useMemo(
         () => tabs.map(t => t.value),
         [tabs]

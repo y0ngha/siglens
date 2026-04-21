@@ -1,8 +1,9 @@
+import type { ReactElement } from 'react';
 import Link from 'next/link';
 import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
 import { formatUsdPrice } from '@/lib/priceFormat';
-import { formatPriceChange } from '@/components/dashboard/utils/priceChangeDisplay';
+import { formatPriceChange } from '@/lib/priceFormat';
 import type { MarketIndexData, MarketSectorData } from '@/domain/types';
 
 type IndexCardData = MarketIndexData | MarketSectorData;
@@ -16,7 +17,7 @@ interface IndexCardProps {
     href?: string;
 }
 
-export function IndexCard({ data, href }: IndexCardProps) {
+export function IndexCard({ data, href }: IndexCardProps): ReactElement {
     const { sign, colorClass, arrow, arrowLabel } = formatPriceChange(
         data.changesPercentage
     );

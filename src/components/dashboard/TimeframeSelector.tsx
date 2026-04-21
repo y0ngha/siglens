@@ -15,6 +15,8 @@ interface TimeframeSelectorProps {
     onChange: (next: DashboardTimeframe) => void;
 }
 
+const TIMEFRAME_LABEL_ID = 'timeframe-label';
+
 export function TimeframeSelector({
     timeframe,
     onChange,
@@ -41,14 +43,14 @@ export function TimeframeSelector({
     return (
         <div className="flex items-baseline gap-3">
             <span
-                id="timeframe-label"
+                id={TIMEFRAME_LABEL_ID}
                 className="text-secondary-500 text-[10px] tracking-wider uppercase"
             >
                 타임프레임
             </span>
             <div
                 role="radiogroup"
-                aria-labelledby="timeframe-label"
+                aria-labelledby={TIMEFRAME_LABEL_ID}
                 className="flex gap-3"
             >
                 {DASHBOARD_TIMEFRAMES.map(tf => {

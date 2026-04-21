@@ -1,8 +1,7 @@
 import Link from 'next/link';
 import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
-import { formatUsdPrice } from '@/lib/priceFormat';
-import { formatPriceChange } from '@/components/dashboard/utils/priceChangeDisplay';
+import { formatPriceChange, formatUsdPrice } from '@/lib/priceFormat';
 import type { StockWithConflict } from '@/domain/types';
 import { SignalBadge } from './SignalBadge';
 

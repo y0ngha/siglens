@@ -73,7 +73,7 @@ function ConfidenceInfoTooltip() {
                 aria-describedby={tooltipId}
                 aria-expanded={isOpen}
                 onClick={toggle}
-                className="text-secondary-600 hover:text-secondary-400 cursor-help text-xs leading-none transition-colors"
+                className="text-secondary-600 hover:text-secondary-400 focus-visible:ring-primary-500 cursor-help rounded text-xs leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
             >
                 ⓘ
             </button>

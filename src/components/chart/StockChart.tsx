@@ -165,6 +165,7 @@ export function StockChart({
 
         seriesRef.current.setData(
             bars.map(({ time, open, high, low, close }) => ({
+                // Bar.time은 number이지만 LWC setData는 UTCTimestamp(branded number)를 요구한다.
                 time: time as UTCTimestamp,
                 open,
                 high,

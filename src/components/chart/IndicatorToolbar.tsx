@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactElement } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from '@/lib/cn';
 import { getPeriodColor } from '@/lib/chartColors';
@@ -92,7 +93,7 @@ function DropdownPortal({
                     type="button"
                     onClick={() => indicator.onToggle(period)}
                     className={cn(
-                        'flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors',
+                        'flex items-center gap-2 rounded px-2 py-1 text-xs transition-colors focus-visible:ring-1 focus-visible:ring-white/80 focus-visible:outline-none',
                         indicator.visiblePeriods.includes(period)
                             ? 'bg-secondary-700 text-white'
                             : 'text-secondary-400 hover:bg-secondary-700 hover:text-white'
@@ -171,7 +172,7 @@ export function IndicatorToolbar({
     cci,
     volumeProfile,
     ichimoku,
-}: IndicatorToolbarProps) {
+}: IndicatorToolbarProps): ReactElement {
     const {
         isExpanded,
         openDropdown,

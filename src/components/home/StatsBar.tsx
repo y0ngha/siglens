@@ -1,14 +1,15 @@
 import { Fragment } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 
 import type { SkillShowcaseItem } from '@/domain/types';
 import { DotSeparator } from '@/components/ui/DotSeparator';
-import { buildSkillStats } from '@/components/home/utils/buildSkillStats';
+import { buildSkillStats } from '@/lib/skillStats';
 
 interface StatsBarProps {
     skills: SkillShowcaseItem[];
 }
 
-export function StatsBar({ skills }: StatsBarProps) {
+export function StatsBar({ skills }: StatsBarProps): ReactElement {
     const stats = buildSkillStats(skills);
 
     return (
@@ -26,15 +27,15 @@ export function StatsBar({ skills }: StatsBarProps) {
     );
 }
 
-export function StatsBarSkeleton() {
+export function StatsBarSkeleton(): ReactElement {
     return (
         <div className="mt-6 flex flex-wrap items-center justify-center gap-x-2 lg:justify-start">
             {[80, 60, 72, 56, 68, 64].map((w, i) => (
                 <Fragment key={i}>
                     {i > 0 && <DotSeparator />}
                     <div
-                        className="bg-secondary-700/50 h-3 animate-pulse rounded"
-                        style={{ width: `${w}px` }}
+                        className="bg-secondary-700/50 h-3 w-[var(--stat-w)] animate-pulse rounded"
+                        style={{ '--stat-w': `${w}px` } as CSSProperties}
                     />
                 </Fragment>
             ))}

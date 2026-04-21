@@ -2,7 +2,7 @@
 
 import { useEffect, useEffectEvent, useMemo } from 'react';
 import React from 'react';
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import type { AnalysisResponse, Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
@@ -100,7 +100,7 @@ export function ChartContent({
     initialAnalysisFailed,
     onMobileSheetContent,
     fmpSymbol,
-}: ChartContentProps) {
+}: ChartContentProps): ReactElement {
     const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
 
     const {
