@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import type {
     AnalysisResponse,
     Bar,
+    ClusteredKeyLevel,
     ClusteredKeyLevels,
     ReconciledActionLineData,
     ValidatedActionPrices,
@@ -17,11 +18,11 @@ import {
     validateActionPrices,
 } from '@/domain/analysis/actionRecommendation';
 
-const EMPTY_CLUSTERED_KEY_LEVELS: ClusteredKeyLevels = {
-    support: [],
-    resistance: [],
+const EMPTY_CLUSTERED_KEY_LEVELS = {
+    support: [] as ClusteredKeyLevel[],
+    resistance: [] as ClusteredKeyLevel[],
     poc: undefined,
-};
+} as const satisfies ClusteredKeyLevels;
 
 interface UseAnalysisDerivedDataReturn {
     clusteredKeyLevels: ClusteredKeyLevels;

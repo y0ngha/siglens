@@ -7,9 +7,6 @@
 - Violation: `src/components/ui/tabs/useTabs.ts` — 순수 유틸리티 함수 `buildTabId`/`buildPanelId`가 hook 파일에 정의됨
 - Rule: CONVENTIONS.md — Pure utility functions (non-hook helpers) must always be placed in a utils/ subfolder
 - Context: `buildTabId`/`buildPanelId`는 React hook을 사용하지 않는 순수 함수; `utils/tabIds.ts`로 이동, useTabs.ts에서 import, index.ts re-export 경로 업데이트
-- Violation: `TabsPill.tsx` / `TabsUnderline.tsx` — 동일한 `TabItem<T>` 인터페이스 두 파일에 중복 정의
-- Rule: MISTAKES.md Coding Paradigm #6.5 — 동일 타입/로직의 이중 정의 금지
-- Context: 두 파일 모두 동일 구조의 TabItem<T>를 각각 정의; utils/tabIds.ts로 통합 후 import
 - Violation: `useMarketSummary.ts` — `indices` 파생값이 useMemo 없이 렌더마다 새 [] 참조 생성
 - Rule: MISTAKES.md Coding Paradigm #10 — props/state 파생 객체는 useMemo 메모이제이션 필수
 - Context: `data?.summary.indices ?? []`를 `useMemo(() => data?.summary.indices ?? [], [data?.summary.indices])`로 변환

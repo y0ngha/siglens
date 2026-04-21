@@ -2,17 +2,13 @@
 
 import { useMemo } from 'react';
 import type { BacktestCase } from '@/domain/types';
+import type { TabItem } from '@/components/ui/tabs';
 import { useQueryParamState } from '@/components/hooks/useQueryParamState';
 
 const ALL_TAB = '전체';
 
-interface TabItem {
-    value: string;
-    label: string;
-}
-
 interface UseBacktestFilterReturn {
-    tabItems: readonly TabItem[];
+    tabItems: readonly TabItem<string>[];
     activeTab: string;
     setActiveTab: (tab: string) => void;
     filtered: BacktestCase[];
@@ -24,7 +20,7 @@ export function useBacktestFilter(
 ): UseBacktestFilterReturn {
     const [rawTicker, setTicker] = useQueryParamState('ticker', ALL_TAB);
 
-    const tabItems = useMemo<readonly TabItem[]>(
+    const tabItems = useMemo<readonly TabItem<string>[]>(
         () => [ALL_TAB, ...tickers].map(t => ({ value: t, label: t })),
         [tickers]
     );
