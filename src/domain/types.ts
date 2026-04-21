@@ -799,12 +799,3 @@ export type QuadrantKey =
     | 'bullishExpected'
     | 'bearishExpected'
     | 'bearishConfirmed';
-
-export interface SkillStat {
-    value: number;
-    label: string;
-}
-
-export interface SkillStatConfig {
-    countLabel: string;
-}
