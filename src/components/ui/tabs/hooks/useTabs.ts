@@ -51,6 +51,7 @@ export function useTabs<T extends string>({
 }: UseTabsOptions<T>): UseTabsReturn<T> {
     const generatedPrefix = useId();
     const tabRefs = useRef(new Map<T, HTMLElement | null>());
+    const tabRefCallbacks = useRef(new Map<T, RefCallback<HTMLElement>>());
     // focusTabRef provides a stable focusItem for useRovingKeyboardNav;
     // synced to focusTab via useLayoutEffect after focusTab is declared
     const focusTabRef = useRef<(tab: T, e: KeyboardEvent<Element>) => void>(
@@ -74,6 +75,18 @@ export function useTabs<T extends string>({
         tabRefs.current.get(nextTab)?.focus();
     }, []);
 
+    const getRef = useCallback(
+        (tab: T): RefCallback<HTMLElement> => {
+            if (!tabRefCallbacks.current.has(tab)) {
+                tabRefCallbacks.current.set(tab, el => {
+                    tabRefs.current.set(tab, el);
+                });
+            }
+            return tabRefCallbacks.current.get(tab)!;
+        },
+        []
+    );
+
     useLayoutEffect(() => {
         focusTabRef.current = focusTab;
     }, [focusTab]);
@@ -89,11 +102,9 @@ export function useTabs<T extends string>({
             tabIndex: tab === activeTab ? 0 : -1,
             onClick: () => onChange(tab),
             onKeyDown: handleKeyDown,
-            ref: el => {
-                tabRefs.current.set(tab, el);
-            },
+            ref: getRef(tab),
         }),
-        [activeTab, onChange, handleKeyDown, prefix]
+        [activeTab, onChange, handleKeyDown, prefix, getRef]
     );
 
     const getPanelProps = useCallback(

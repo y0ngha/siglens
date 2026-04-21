@@ -218,6 +218,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ const value: number = getValue() ?? 0;  // type guard with fallback
    ❌ atrValues[idx] as number  // null never occurs due to prior check
    ✅ atrValues[idx]!  // non-null assertion operator
+   ⚠️  Safe-cast exception: `as` is allowed when TypeScript's type system structurally widens a
+      value whose runtime type is already guaranteed by the surrounding type — NOT to force-cast
+      a value that could genuinely be null, undefined, number, or string at runtime.
+   → The key distinction:
+      Safe  — TS cannot express the constraint, but the runtime value is provably correct
+      Unsafe — the runtime value could actually be a different type; `as` hides the real problem
+   ❌ const value = fetchData() as MyType;       // runtime value may be null/undefined/wrong shape
+   ❌ const x = someString as SpecificLiteral;   // string may not satisfy the union at runtime
+   ✅ // Object.keys widens to string[], but SKILL_STAT_CONFIG: Record<SkillType, …> guarantees keys
+      const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];  // TS limitation, not runtime risk
+   → Mandatory: every safe-cast `as` must be accompanied by a comment explaining the guarantee.
 ```
 
 ---
