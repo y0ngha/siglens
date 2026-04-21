@@ -792,3 +792,9 @@ export interface BacktestData {
     meta: BacktestMeta;
     cases: BacktestCase[];
 }
+
+export type QuadrantKey =
+    | 'bullishConfirmed'
+    | 'bullishExpected'
+    | 'bearishExpected'
+    | 'bearishConfirmed';

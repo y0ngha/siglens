@@ -1,16 +1,11 @@
 import type {
+    QuadrantKey,
     Signal,
     SignalDirection,
     SignalPhase,
     StockSignalResult,
     StockWithConflict,
 } from '@/domain/types';
-
-export type QuadrantKey =
-    | 'bullishConfirmed'
-    | 'bullishExpected'
-    | 'bearishExpected'
-    | 'bearishConfirmed';
 
 export const EMPTY_QUADRANTS: Record<
     QuadrantKey,

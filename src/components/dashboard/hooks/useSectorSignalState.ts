@@ -4,6 +4,7 @@ import { useCallback, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import type {
     DashboardTimeframe,
+    QuadrantKey,
     SectorSignalsResult,
     StockWithConflict,
 } from '@/domain/types';
@@ -15,7 +16,6 @@ import {
     EMPTY_QUADRANTS,
     filterStrictAnticipation,
     groupStockIntoQuadrants,
-    type QuadrantKey,
 } from '@/domain/signals/quadrants';
 import { resolveConflicts } from '@/domain/signals/resolveConflicts';
 

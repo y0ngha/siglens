@@ -2,9 +2,9 @@ import {
     EMPTY_QUADRANTS,
     filterStrictAnticipation,
     groupStockIntoQuadrants,
-    type QuadrantKey,
 } from '@/domain/signals/quadrants';
 import type {
+    QuadrantKey,
     Signal,
     StockSignalResult,
     StockWithConflict,

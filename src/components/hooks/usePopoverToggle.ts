@@ -3,7 +3,7 @@
 import { useCallback, useState, type RefObject } from 'react';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 
-interface PopoverToggle {
+interface UsePopoverToggleReturn {
     isOpen: boolean;
     open: () => void;
     close: () => void;
@@ -12,7 +12,7 @@ interface PopoverToggle {
 
 export function usePopoverToggle(
     refs: RefObject<HTMLElement | null> | RefObject<HTMLElement | null>[]
-): PopoverToggle {
+): UsePopoverToggleReturn {
     const [isOpen, setIsOpen] = useState(false);
 
     useOnClickOutside(refs, () => setIsOpen(false), { enabled: isOpen });
