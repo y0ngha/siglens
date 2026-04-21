@@ -1,6 +1,7 @@
 'use client';
 
 import { Suspense } from 'react';
+import { cn } from '@/lib/cn';
 import { ErrorBoundary } from 'react-error-boundary';
 import { IndexCard } from './IndexCard';
 import {
@@ -66,7 +67,12 @@ export function MarketSummaryPanel() {
                                     {group.label}
                                 </p>
                                 <div
-                                    className={`grid gap-2 ${groupSectors.length === 3 ? 'grid-cols-3' : 'grid-cols-4'}`}
+                                    className={cn(
+                                        'grid gap-2',
+                                        groupSectors.length === 3
+                                            ? 'grid-cols-3'
+                                            : 'grid-cols-4'
+                                    )}
                                 >
                                     {groupSectors.map(etf => (
                                         <IndexCard

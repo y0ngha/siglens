@@ -41,11 +41,18 @@ const MARKET_KEYWORDS = [
     '볼린저 스퀴즈',
 ];
 
+interface SearchParams {
+    sector?: string;
+    timeframe?: string;
+}
+
+interface GenerateMetadataProps {
+    searchParams: Promise<SearchParams>;
+}
+
 export async function generateMetadata({
     searchParams,
-}: {
-    searchParams: Promise<SearchParams>;
-}): Promise<Metadata> {
+}: GenerateMetadataProps): Promise<Metadata> {
     const params = await searchParams;
     const hasQueryVariant =
         params.sector !== undefined || params.timeframe !== undefined;
@@ -83,11 +90,6 @@ export async function generateMetadata({
     };
 }
 
-interface SearchParams {
-    sector?: string;
-    timeframe?: string;
-}
-
 function isDashboardTimeframe(v: string | undefined): v is DashboardTimeframe {
     return (
         v !== undefined &&
@@ -95,13 +97,15 @@ function isDashboardTimeframe(v: string | undefined): v is DashboardTimeframe {
     );
 }
 
+interface SectorSignalSectionProps {
+    initialSector: string;
+    initialTimeframe: DashboardTimeframe;
+}
+
 async function SectorSignalSection({
     initialSector,
     initialTimeframe,
-}: {
-    initialSector: string;
-    initialTimeframe: DashboardTimeframe;
-}) {
+}: SectorSignalSectionProps) {
     const data = await getSectorSignals(initialTimeframe);
     return (
         <SectorSignalPanel
@@ -112,11 +116,11 @@ async function SectorSignalSection({
     );
 }
 
-export default async function MarketPage({
-    searchParams,
-}: {
+interface MarketPageProps {
     searchParams: Promise<SearchParams>;
-}) {
+}
+
+export default async function MarketPage({ searchParams }: MarketPageProps) {
     const params = await searchParams;
     const initialTimeframe: DashboardTimeframe = isDashboardTimeframe(
         params.timeframe

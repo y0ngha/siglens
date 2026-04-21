@@ -1,10 +1,5 @@
 # Fix Log
 
-## [PR #342 | feat/multi-signal-backtest | 2026-04-21]
-- Violation: `lib/tooltipPosition.ts` — `HTMLElement` 파라미터로 내부에서 `getBoundingClientRect()` 호출 (lib/ 순수 함수 계약 위반)
-- Rule: ARCHITECTURE.md — lib/ 레이어는 사이드 이펙트 없는 순수 함수만 허용
-- Context: `getTooltipPosition` 파라미터를 `HTMLElement → DOMRect`로 변경; 호출부 `InfoTooltip.tsx`에서 `.getBoundingClientRect()` 수행 후 전달
-
 
 ## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 
@@ -53,11 +48,6 @@
 - Rule: React Query Hydration 패턴 — prefetchQuery 키와 useQuery 키가 정확히 일치해야 함
 - Context: 서버는 ticker(대문자)로 키를 만들고 클라이언트는 symbol(원본)로 키를 만들어 소문자 URL 진입 시 캐시 미스 발생
 
-## [PR #216 Round 3 | feat/196/ticker-autocomplete | 2026-04-09]
-- Violation: 컴포넌트 교체 후 구 구현체 파일(`SymbolSearch.tsx`)이 삭제되지 않고 고아 파일로 남음
-- Rule: 코드베이스에 import되지 않는 파일은 데드 코드 — PR에서 교체 시 구 파일 삭제 필수
-- Context: `SymbolSearch`가 `TickerAutocomplete`로 교체됐지만 `src/components/search/SymbolSearch.tsx`가 미삭제 상태로 남아 있었음
-
 ## [feat/157/fmp-provider | 2026-04-06]
 - Violation: `.env.example` documented only `ALPACA_SECRET_KEY=` (fallback) and omitted `ALPACA_API_SECRET=` (primary key read by `alpaca.ts`)
 - Rule: docs/API.md — env var documentation must include primary variable names; omitting the primary causes setup errors for new developers
@@ -90,23 +80,11 @@
 - Rule: ESLint `import/no-duplicates` — 동일 모듈은 단일 import 구문으로 통합
 - Context: `import { formatUsdPrice, formatPriceChange } from '@/lib/priceFormat'`으로 병합
 
-- Violation: `AnalysisPanel.tsx::formatCooldown`에서 `1000`, `60` 매직 넘버 사용
-- Rule: MISTAKES.md #15 — 매직 넘버는 named constant로 추출
-- Context: `domain/constants/time.ts`의 `MS_PER_SECOND`, `SECONDS_PER_MINUTE` import하여 교체
-
 - Violation: `useSectorSignalState.ts`의 `handleSectorChange`, `handleTimeframeChange`가 `useCallback` 미적용
 - Rule: CONVENTIONS.md — 안정화된 `updateUrl`을 호출하는 핸들러는 `useCallback`으로 참조 안정화 필요
 - Context: `useCallback`으로 래핑. deps: `[updateUrl, activeTimeframe]`, `[updateUrl, activeSector]`
 
 ## [PR #344 Round 3 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `PriceChangeDisplay` + `formatPriceChange`가 `components/dashboard/utils/`에 위치
-- Rule: ARCHITECTURE.md — pure utility functions without React deps must not live in components/
-- Context: `src/lib/priceFormat.ts`로 이동; `SignalStockCard.tsx`, `IndexCard.tsx` import 경로 변경
-
-- Violation: `SkillStat` 인터페이스가 `components/home/utils/buildSkillStats.ts`에 위치
-- Rule: ARCHITECTURE.md — domain-layer interfaces must be in domain/types.ts
-- Context: `SkillStat`을 `domain/types.ts`로 이동; `buildSkillStats`를 `lib/skillStats.ts`로 이동 (countByType 인라인으로 domain 함수 import 제거)
-
 - Violation: `SkillsShowcase.tsx`, `AnalysisPanel.tsx`(6개 버튼), `IndicatorToolbar.tsx` DropdownPortal 버튼에 `focus-visible:ring` 클래스 누락
 - Rule: MISTAKES.md Accessibility #4 — all interactive buttons must have focus-visible:ring-1 ring-primary-500
 - Context: 각 버튼 className에 `focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500` 추가
@@ -114,11 +92,6 @@
 - Violation: `StatsBarSkeleton`의 `style={{ width: ${w}px }}` 인라인 스타일
 - Rule: CONVENTIONS.md — prefer CSS custom property pattern over arbitrary inline styles
 - Context: `w-[var(--stat-w)]` + `style={{ '--stat-w': '${w}px' } as CSSProperties}`로 변경
-
-## [PR #344 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `CandlePatternAccordionItem` 미사용 함수에 `eslint-disable-next-line` 사용
-- Rule: MISTAKES.md Coding Paradigm #13 — eslint-disable suppresses lint warnings instead of fixing root cause; delete dead code instead
-- Context: `AnalysisPanel.tsx`에서 TODO 주석으로 미사용 컴포넌트를 보존하면서 lint 경고를 억제함
 
 - Violation: `ConfidenceBadge`의 `div[role="tooltip"]`에 `id` 없음, `<button>`에 `aria-describedby` 없음
 - Rule: MISTAKES.md Accessibility #3 — tooltip requires aria-describedby connection to trigger element
@@ -129,32 +102,21 @@
 - Rule: CONVENTIONS.md — Props interface declared directly above component function
 - Context: single-prop 컴포넌트라도 named interface 선언 필요
 
-- Violation: `StockChart.tsx`에 주석 처리된 코드 블록 + `_` prefix 미사용 파라미터 6개
-- Rule: CONVENTIONS.md "No dead code, no commented-out code"
-- Context: 선 그리기 기능 비활성화 후 props와 훅 호출 주석만 남아있고 실제 코드가 없었음
+## [PR #344 Round 6 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `MarketSummaryPanel.tsx` — 조건부 Tailwind className에 템플릿 리터럴 사용
+- Rule: CONVENTIONS.md — 조건부 Tailwind 클래스는 반드시 `cn()`을 사용해야 함
+- Context: `` className={`grid gap-2 ${...}`} `` 패턴을 `className={cn('grid gap-2', ...)}` 로 변경
 
 ## [PR #344 Round 5 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `src/__tests__/domain/skills.test.ts` — `buildSkillStats` 함수에 테스트 미존재
 - Rule: MISTAKES.md Domain Functions #22 — Domain functions require 100% branch coverage with dedicated unit tests
 - Context: empty array, all types present, missing type fallback, return structure validation을 포함한 4개 describe/it 블록 추가
 
-- Violation: `src/domain/skills.ts` line 24 — `Object.keys(SKILL_STAT_CONFIG) as SkillType[]` cast가 설명 주석 없음
-- Rule: MISTAKES.md TypeScript #8 — as type assertions require explanatory comments documenting why the cast is necessary
-- Context: SKILL_STAT_CONFIG의 키는 항상 SkillType 집합과 일치하므로 캐스트가 필요하다는 설명 주석 추가
-
 - Violation: `src/components/analysis/AnalysisPanel.tsx` — `EyeIcon`에 대한 오도하는 TODO 주석 "unused, skip cleanup"
 - Rule: Documentation Sync — Comments must reflect current implementation reality, not outdated preservation intent
 - Context: EyeIcon이 실제로는 다른 곳에서 사용되고 있으므로 거짓 TODO 주석 삭제
 
-- Violation: `src/components/chart/hooks/useVolumeChartData.ts` line 47 — `buySellVolume[i]!` non-null assertion이 설명 주석 없음
-- Rule: MISTAKES.md TypeScript #8 — Non-null assertion operators require comments explaining why null is logically impossible
-- Context: bars와 buySellVolume은 infrastructure 레이어에서 동일 길이로 보장되므로 인덱스 안전성을 설명하는 주석 추가
-
 - Violation: S-5 시도 (useEffect deps에서 RefObjects 제거) — ESLint `react-hooks/exhaustive-deps` 경고 발생
 - Rule: MISTAKES.md Coding Paradigm #13 — eslint-disable 사용 금지; 근본 원인(클로저/ref 캡처) 구조 변경 필수
 - Context: MISTAKES.md #13 규칙에 따라 변경 되돌림 (eslint-disable 금지, refs 제거 시 exhaustive-deps 경고 해결 불가)
-
-- Violation: `src/components/home/SkillsShowcase.tsx` — 매직 넘버 `[48, 56, 64, 52, 60, 72]` 및 `12` 하드코딩
-- Rule: MISTAKES.md Coding Paradigm #15 — 매직 넘버는 named constant로 추출 필수
-- Context: `SKELETON_TAB_WIDTHS_PX`, `SKELETON_CARD_COUNT` 상수로 추출
 

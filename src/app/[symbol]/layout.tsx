@@ -1,6 +1,10 @@
 import { SymbolLayoutClient } from './SymbolLayoutClient';
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 
-export default function SymbolLayout({ children }: { children: ReactNode }) {
+interface SymbolLayoutProps {
+    children: ReactNode;
+}
+
+export default function SymbolLayout({ children }: SymbolLayoutProps) {
     return <SymbolLayoutClient>{children}</SymbolLayoutClient>;
 }

@@ -103,12 +103,16 @@ export function InfoTooltip({ children, className }: InfoTooltipProps) {
                         }}
                         id={tooltipId}
                         role="tooltip"
-                        className="bg-secondary-800 border-secondary-600 fixed z-9999 rounded border p-2 text-xs leading-relaxed shadow-lg"
-                        style={{
-                            top: position.top,
-                            left: position.left,
-                            visibility: positioned ? 'visible' : 'hidden',
-                        }}
+                        className={cn(
+                            'bg-secondary-800 border-secondary-600 fixed top-[var(--tt)] left-[var(--tl)] z-9999 rounded border p-2 text-xs leading-relaxed shadow-lg',
+                            positioned ? 'visible' : 'invisible'
+                        )}
+                        style={
+                            {
+                                '--tt': `${position.top}px`,
+                                '--tl': `${position.left}px`,
+                            } as React.CSSProperties
+                        }
                     >
                         {children}
                     </div>,

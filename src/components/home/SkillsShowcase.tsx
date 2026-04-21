@@ -161,8 +161,12 @@ export function SkillsShowcaseSkeleton() {
                 {SKELETON_TAB_WIDTHS_PX.map((w, i) => (
                     <div
                         key={i}
-                        className="bg-secondary-700/50 h-7 animate-pulse rounded-full"
-                        style={{ width: `${w}px` }}
+                        className="bg-secondary-700/50 h-7 w-[var(--skeleton-w)] animate-pulse rounded-full"
+                        style={
+                            {
+                                '--skeleton-w': `${w}px`,
+                            } as React.CSSProperties
+                        }
                     />
                 ))}
             </div>
