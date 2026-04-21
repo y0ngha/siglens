@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #344 Round 14 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `domain/types.ts`에 UI 관심사 타입 3종 (`PriceChangeDisplay`, `BreadcrumbItem`, `SkillStat`/`SkillStatConfig`) 정의
+- Rule: ARCHITECTURE.md — domain/ 레이어는 순수 TypeScript 함수만 포함; CSS 클래스명·유니코드 표시문자·접근성 레이블 등 프레젠테이션 관심사를 포함할 수 없음
+- Context: 각 타입의 유일한 소비처(`lib/priceFormat.ts`, `lib/seo.ts`, `domain/skills.ts`)로 이동; domain/types.ts에서 삭제
+
 ## [PR #344 Round 13 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `domain/types.ts` — `BacktestAiAnalysis.riskLevel?: string` 런타임 값 목록이 있음에도 union type 미사용
 - Rule: MISTAKES.md TypeScript #6 — 3+ 파일에서 반복되는 union literal은 named type으로 추출
