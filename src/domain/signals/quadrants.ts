@@ -53,6 +53,7 @@ export function groupStockIntoQuadrants(
             bearishConfirmed: [],
         }
     );
+    // Object.keys(grouped) keys are exactly QuadrantKey union — cast is safe
     return (Object.keys(grouped) as QuadrantKey[]).reduce(
         (next, key) =>
             grouped[key].length === 0
