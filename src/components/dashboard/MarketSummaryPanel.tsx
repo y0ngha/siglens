@@ -15,18 +15,41 @@ import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
 import { SECTOR_GROUPS } from '@/domain/constants/dashboard-tickers';
 import type { MarketSectorData, SubmitBriefingResult } from '@/domain/types';
 
-interface BriefingRegionProps {
-    input: SubmitBriefingResult | undefined;
+interface BriefingContentProps {
+    jobId: string;
 }
 
-function BriefingRegion({ input }: BriefingRegionProps) {
-    const result = useBriefing(input);
-    if (!result) return null;
+function BriefingContent({ jobId }: BriefingContentProps) {
+    const result = useBriefing(jobId);
+    if (result.status === 'processing') return <BriefingLoadingCard />;
     return (
         <BriefingCard
             briefing={result.briefing}
             generatedAt={result.generatedAt}
         />
+    );
+}
+
+interface BriefingRegionProps {
+    input: SubmitBriefingResult | undefined;
+}
+
+function BriefingRegion({ input }: BriefingRegionProps) {
+    if (!input) return null;
+    if (input.status === 'cached') {
+        return (
+            <BriefingCard
+                briefing={input.briefing}
+                generatedAt={input.generatedAt}
+            />
+        );
+    }
+    return (
+        <ErrorBoundary fallback={<BriefingErrorCard />}>
+            <Suspense fallback={<BriefingLoadingCard />}>
+                <BriefingContent jobId={input.jobId} />
+            </Suspense>
+        </ErrorBoundary>
     );
 }
 
@@ -87,12 +110,8 @@ export function MarketSummaryPanel() {
                     })}
                 </div>
 
-                {/* AI 브리핑 — Suspense/ErrorBoundary로 선언적 상태 관리 */}
-                <ErrorBoundary fallback={<BriefingErrorCard />}>
-                    <Suspense fallback={<BriefingLoadingCard />}>
-                        <BriefingRegion input={data?.briefing} />
-                    </Suspense>
-                </ErrorBoundary>
+                {/* AI 브리핑 */}
+                <BriefingRegion input={data?.briefing} />
             </div>
         </section>
     );

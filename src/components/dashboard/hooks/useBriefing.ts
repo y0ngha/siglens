@@ -3,66 +3,28 @@
 import { useQuery } from '@tanstack/react-query';
 import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import {
-    getSuspensePromise,
-    resolveSuspensePromise,
-} from '@/components/utils/suspensePromise';
-import type {
-    MarketBriefingResponse,
-    SubmitBriefingResult,
-} from '@/domain/types';
+import type { MarketBriefingResponse } from '@/domain/types';
 
 const POLL_INTERVAL_MS = 5_000;
 
-interface UseBriefingResult {
-    briefing: MarketBriefingResponse;
-    generatedAt: string;
-}
+type BriefingResult =
+    | { status: 'processing' }
+    | { status: 'done'; briefing: MarketBriefingResponse; generatedAt: string };
 
-// 로딩 중에는 Promise를, 에러 시에는 Error를 throw한다 — 호출부는 <Suspense> + <ErrorBoundary>로 감싼다.
-// 반환값 null은 briefing이 요청되지 않은 상태(input이 없음)를 뜻한다.
-export function useBriefing(
-    input: SubmitBriefingResult | undefined
-): UseBriefingResult | null {
-    const jobId = input?.status === 'submitted' ? input.jobId : undefined;
-
-    const { data, error } = useQuery({
-        queryKey: QUERY_KEYS.briefing(jobId ?? ''),
-        queryFn: async () => {
-            const result = await pollBriefingAction(jobId!);
-            // processing이 아니면(done / error) Suspense promise를 resolve해
-            // React가 suspended 컴포넌트를 재렌더링하도록 한다.
-            if (result.status !== 'processing') {
-                resolveSuspensePromise(jobId!);
-            }
-            return result;
-        },
-        enabled: !!jobId,
+export function useBriefing(jobId: string): BriefingResult {
+    const { data } = useQuery({
+        queryKey: QUERY_KEYS.briefing(jobId),
+        queryFn: () => pollBriefingAction(jobId),
         refetchInterval: query => {
             const status = query.state.data?.status;
-            return status === 'done' || status === 'error'
-                ? false
-                : POLL_INTERVAL_MS;
+            console.log(status)
+            return status === 'done' || status === 'error' ? false : POLL_INTERVAL_MS;
         },
         staleTime: Infinity,
+        refetchIntervalInBackground: true
     });
 
-    if (!input) return null;
-
-    if (input.status === 'cached') {
-        return {
-            briefing: input.briefing,
-            generatedAt: input.generatedAt,
-        };
-    }
-
-    if (error) throw error;
-    if (!data || data.status === 'processing') {
-        throw jobId
-            ? getSuspensePromise(jobId)
-            : new Promise<void>(() => undefined);
-    }
+    if (!data || data.status === 'processing') return { status: 'processing' };
     if (data.status === 'error') throw new Error(data.error);
-
-    return { briefing: data.briefing, generatedAt: data.generatedAt };
+    return { status: 'done', briefing: data.briefing, generatedAt: data.generatedAt };
 }
