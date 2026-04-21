@@ -261,6 +261,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → useState causes render cycles: setState → rerender → effect re-executes → immediate guard return
     ❌ const [isPushed, setIsPushed] = useState(false); handlePush() { setIsPushed(true); }
     ✅ const isPushedRef = useRef(false); handlePush() { isPushedRef.current = true; }
+
+13. Component props interface declared inline instead of above component function
+    → Extract inline prop type definitions to named interface declared directly above component
+    → Improves readability and allows reuse in tests or other contexts
+    ❌ export default function MyComponent({ label }: { label: string }) { ... }
+    ✅ interface MyComponentProps { label: string }; export default function MyComponent(props: MyComponentProps) { ... }
 ```
 
 ---

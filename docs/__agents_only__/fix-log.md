@@ -9,9 +9,6 @@
 - Rule: ARCHITECTURE.md — lib/ 레이어는 사이드 이펙트 없는 순수 함수만 허용
 - Context: `getTooltipPosition` 파라미터를 `HTMLElement → DOMRect`로 변경; 호출부 `InfoTooltip.tsx`에서 `.getBoundingClientRect()` 수행 후 전달
 
-- Violation: `ReconciledLevelsBlockFromRec` 인라인 prop 타입 사용
-- Rule: CONVENTIONS.md — Props interface must be defined directly above the component; no inline prop types
-- Context: `interface ReconciledLevelsBlockFromRecProps` 선언 후 컴포넌트에 적용
 
 ## [PR #331 Round 3 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
 
@@ -104,3 +101,17 @@
 - Rule: Domain 스키마 의도와 UI 소비 경로 일치 필수
 - Context: `AnalysisPanel.ReconciledLevelsBlock` 이 reason을 전달받지 않고 generic prefix만 표시. `RECONCILED_TOOLTIP_PREFIX` + reason을 2줄로 표시하도록 변경
 
+
+## [PR #344 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
+- Violation: `CandlePatternAccordionItem` 미사용 함수에 `eslint-disable-next-line` 사용
+- Rule: MISTAKES.md Coding Paradigm #13 — eslint-disable suppresses lint warnings instead of fixing root cause; delete dead code instead
+- Context: `AnalysisPanel.tsx`에서 TODO 주석으로 미사용 컴포넌트를 보존하면서 lint 경고를 억제함
+
+- Violation: `ConfidenceBadge`의 `div[role="tooltip"]`에 `id` 없음, `<button>`에 `aria-describedby` 없음
+- Rule: MISTAKES.md Accessibility #3 — tooltip requires aria-describedby connection to trigger element
+- Context: `useId()` 추가로 스크린 리더가 툴팁과 버튼을 연결할 수 있도록 수정
+
+
+- Violation: `AnalysisPanelProps`에 미사용 필드 `_keyLevelsVisible` 등 4개 선언 및 전달
+- Rule: FF Predictability — dead props create confusing data flow without effect
+- Context: `ChartContent.tsx`에서 `AnalysisPanel`에 전달했지만 컴포넌트 본문에서 미사용
