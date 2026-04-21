@@ -147,8 +147,13 @@ type Timeframe = '1Min' | '5Min' | '15Min' | '1Hour' | '1Day';
 // ❌ No any
 const data: any = response;
 
-// ✅ Return types must be explicitly declared on domain functions
+// ✅ Return types must be explicitly declared on non-component functions
 function calculateRSI(closes: number[], period: number): (number | null)[] { ... }
+
+// ❌ Do NOT annotate return types on UI-rendering functions (components)
+// TypeScript infers JSX.Element / ReactNode automatically; annotating adds noise
+export function StockChart({ symbol }: StockChartProps): JSX.Element { ... } // ❌
+export function StockChart({ symbol }: StockChartProps) { ... }              // ✅
 
 // ✅ Initial period values must be null
 // (null = skip rendering, 0 = renders as invalid data in charts)

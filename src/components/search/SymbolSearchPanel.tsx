@@ -11,7 +11,9 @@ interface SymbolSearchPanelProps {
     className?: string;
 }
 
-export function SymbolSearchPanel({ className }: SymbolSearchPanelProps): ReactElement {
+export function SymbolSearchPanel({
+    className,
+}: SymbolSearchPanelProps): ReactElement {
     const { recentSearches, addSearch, removeSearch, clearAll } =
         useRecentSearches();
 

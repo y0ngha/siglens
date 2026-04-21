@@ -13,7 +13,13 @@ import {
     TERMS_PATH,
     TERMS_TITLE,
 } from '@/lib/legal';
-import { buildBreadcrumbJsonLd, OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_NAME, SITE_URL } from '@/lib/seo';
+import {
+    buildBreadcrumbJsonLd,
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_WIDTH,
+    SITE_NAME,
+    SITE_URL,
+} from '@/lib/seo';
 import { JsonLd } from '@/components/ui/JsonLd';
 
 const PAGE_URL = `${SITE_URL}${PRIVACY_PATH}`;

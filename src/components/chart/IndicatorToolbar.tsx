@@ -60,7 +60,11 @@ function PeriodLabels({ indicatorName, visiblePeriods }: PeriodLabelProps) {
                 >
                     <span
                         className="inline-block h-1.5 w-3 shrink-0 rounded-sm bg-[var(--period-color)]"
-                        style={{ '--period-color': getPeriodColor(period) } as CSSProperties}
+                        style={
+                            {
+                                '--period-color': getPeriodColor(period),
+                            } as CSSProperties
+                        }
                     />
                     {indicatorName}({period})
                 </span>
@@ -105,7 +109,11 @@ function DropdownPortal({
                 >
                     <span
                         className="h-2 w-2 shrink-0 rounded-full bg-[var(--period-color)]"
-                        style={{ '--period-color': getPeriodColor(period) } as CSSProperties}
+                        style={
+                            {
+                                '--period-color': getPeriodColor(period),
+                            } as CSSProperties
+                        }
                     />
                     {period}
                 </button>

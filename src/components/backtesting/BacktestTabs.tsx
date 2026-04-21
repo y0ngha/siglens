@@ -13,7 +13,10 @@ interface BacktestTabsProps {
 
 const TABS_ID_PREFIX = 'backtest';
 
-export function BacktestTabs({ cases, tickers }: BacktestTabsProps): ReactElement {
+export function BacktestTabs({
+    cases,
+    tickers,
+}: BacktestTabsProps): ReactElement {
     const { tabItems, activeTab, setActiveTab, filtered } = useBacktestFilter(
         cases,
         tickers

@@ -1,5 +1,10 @@
 import { ImageResponse } from 'next/og';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_DESCRIPTION, SITE_NAME } from '@/lib/seo';
+import {
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_WIDTH,
+    SITE_DESCRIPTION,
+    SITE_NAME,
+} from '@/lib/seo';
 
 export const runtime = 'edge';
 export const alt = '미국 주식 AI 기술적 분석 플랫폼';

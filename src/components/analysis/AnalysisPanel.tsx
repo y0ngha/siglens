@@ -770,7 +770,10 @@ export function AnalysisPanel({
         if (copyTimeoutRef.current !== null) {
             clearTimeout(copyTimeoutRef.current);
         }
-        copyTimeoutRef.current = setTimeout(() => setCopyState('idle'), COPY_RESET_MS);
+        copyTimeoutRef.current = setTimeout(
+            () => setCopyState('idle'),
+            COPY_RESET_MS
+        );
     };
 
     const handleCopyReport = async (): Promise<void> => {

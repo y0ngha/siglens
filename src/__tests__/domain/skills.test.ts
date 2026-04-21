@@ -1,4 +1,8 @@
-import { buildSkillStats, countSkillsByType, SKILL_STAT_CONFIG } from '@/domain/skills';
+import {
+    buildSkillStats,
+    countSkillsByType,
+    SKILL_STAT_CONFIG,
+} from '@/domain/skills';
 import type { SkillShowcaseItem, SkillType } from '@/domain/types';
 
 function buildSkill(
@@ -89,11 +93,34 @@ describe('buildSkillStats', () => {
             ];
             const result = buildSkillStats(skills);
             expect(result[0].value).toBe(6);
-            expect(result.find(s => s.label === SKILL_STAT_CONFIG.indicator_guide.countLabel)?.value).toBe(2);
-            expect(result.find(s => s.label === SKILL_STAT_CONFIG.pattern.countLabel)?.value).toBe(1);
-            expect(result.find(s => s.label === SKILL_STAT_CONFIG.strategy.countLabel)?.value).toBe(1);
-            expect(result.find(s => s.label === SKILL_STAT_CONFIG.candlestick.countLabel)?.value).toBe(1);
-            expect(result.find(s => s.label === SKILL_STAT_CONFIG.support_resistance.countLabel)?.value).toBe(1);
+            expect(
+                result.find(
+                    s =>
+                        s.label === SKILL_STAT_CONFIG.indicator_guide.countLabel
+                )?.value
+            ).toBe(2);
+            expect(
+                result.find(
+                    s => s.label === SKILL_STAT_CONFIG.pattern.countLabel
+                )?.value
+            ).toBe(1);
+            expect(
+                result.find(
+                    s => s.label === SKILL_STAT_CONFIG.strategy.countLabel
+                )?.value
+            ).toBe(1);
+            expect(
+                result.find(
+                    s => s.label === SKILL_STAT_CONFIG.candlestick.countLabel
+                )?.value
+            ).toBe(1);
+            expect(
+                result.find(
+                    s =>
+                        s.label ===
+                        SKILL_STAT_CONFIG.support_resistance.countLabel
+                )?.value
+            ).toBe(1);
         });
     });
 
@@ -103,8 +130,16 @@ describe('buildSkillStats', () => {
                 buildSkill({ type: 'indicator_guide' }),
             ];
             const result = buildSkillStats(skills);
-            expect(result.find(s => s.label === SKILL_STAT_CONFIG.pattern.countLabel)?.value).toBe(0);
-            expect(result.find(s => s.label === SKILL_STAT_CONFIG.strategy.countLabel)?.value).toBe(0);
+            expect(
+                result.find(
+                    s => s.label === SKILL_STAT_CONFIG.pattern.countLabel
+                )?.value
+            ).toBe(0);
+            expect(
+                result.find(
+                    s => s.label === SKILL_STAT_CONFIG.strategy.countLabel
+                )?.value
+            ).toBe(0);
         });
     });
 

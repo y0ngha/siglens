@@ -19,7 +19,10 @@ interface TimeframeSelectorProps {
     onChange: (timeframe: Timeframe) => void;
 }
 
-export function TimeframeSelector({ value, onChange }: TimeframeSelectorProps): ReactElement {
+export function TimeframeSelector({
+    value,
+    onChange,
+}: TimeframeSelectorProps): ReactElement {
     return (
         <div className="flex items-center gap-1">
             {TIMEFRAMES.map(timeframe => (

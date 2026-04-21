@@ -16,7 +16,9 @@ interface MonthGroup {
     items: BacktestCase[];
 }
 
-export function BacktestCaseList({ cases }: BacktestCaseListProps): ReactElement {
+export function BacktestCaseList({
+    cases,
+}: BacktestCaseListProps): ReactElement {
     if (cases.length === 0) {
         return (
             <p className="text-secondary-500 py-10 text-center text-sm">

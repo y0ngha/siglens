@@ -157,7 +157,7 @@ function ResultItem({
             onClick={() => onSelect(result.symbol)}
             onMouseEnter={() => onPrefetch(result.symbol)}
             className={cn(
-                'hover:bg-secondary-700 w-full px-4 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500',
+                'hover:bg-secondary-700 focus-visible:ring-primary-500 w-full px-4 py-2 text-left transition-colors focus-visible:ring-1 focus-visible:outline-none',
                 isSelected && 'bg-secondary-700'
             )}
         >

@@ -15,7 +15,10 @@ const TAB_ITEMS = SIGNAL_SECTORS.map(s => ({
     label: s.koreanName,
 }));
 
-export function SectorTabs({ activeSector, onChange }: SectorTabsProps): ReactElement {
+export function SectorTabs({
+    activeSector,
+    onChange,
+}: SectorTabsProps): ReactElement {
     return (
         <TabsUnderline
             tabs={TAB_ITEMS}

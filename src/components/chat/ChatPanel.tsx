@@ -111,7 +111,7 @@ export function ChatPanel({
                         <button
                             type="button"
                             onClick={onClose}
-                            className="text-secondary-500 hover:text-secondary-300 rounded text-sm leading-none transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500"
+                            className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 rounded text-sm leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
                             aria-label="채팅 닫기"
                         >
                             ✕
@@ -130,7 +130,7 @@ export function ChatPanel({
                     <button
                         type="button"
                         onClick={dismissAnalysisUpdated}
-                        className="text-primary-400 hover:text-primary-200 ml-2 rounded text-xs focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500"
+                        className="text-primary-400 hover:text-primary-200 focus-visible:ring-primary-500 ml-2 rounded text-xs focus-visible:ring-1 focus-visible:outline-none"
                     >
                         ✕
                     </button>
@@ -226,7 +226,7 @@ export function ChatPanel({
                         type="button"
                         onClick={() => void handleSubmit()}
                         disabled={isInputDisabled || inputValue.trim() === ''}
-                        className="bg-primary-600 hover:bg-primary-500 disabled:bg-secondary-700 disabled:text-secondary-500 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white transition-colors disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500"
+                        className="bg-primary-600 hover:bg-primary-500 disabled:bg-secondary-700 disabled:text-secondary-500 focus-visible:ring-primary-500 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed"
                         aria-label="전송"
                     >
                         ↑
