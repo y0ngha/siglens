@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.8.18](https://github.com/y0ngha/siglens/compare/v0.8.17...v0.8.18) (2026-04-21)
+
+
+### Bug Fixes
+
+* PR [#344](https://github.com/y0ngha/siglens/issues/344) Round 15 리뷰 코멘트 반영 (instanceof 타입 가드 적용, RiskBadge 타입 강화) ([a3f4d17](https://github.com/y0ngha/siglens/commit/a3f4d179252ac2dee60e9e67beb1458b498f78de))
+* 라우팅 계층 리팩토링 Round 5 - 테스트 커버리지 및 코드 정리 ([06addb3](https://github.com/y0ngha/siglens/commit/06addb39bbf704edee10b3cb7b202529d47d9941))
+* 리뷰 fix ([1e26c71](https://github.com/y0ngha/siglens/commit/1e26c71c3223e7d2d581109a65802f540b9a73cd))
+* 리뷰 fix ([7f28fad](https://github.com/y0ngha/siglens/commit/7f28fad210daf7fc0f345880cda200f567df77eb))
+
+
+### Features
+
+* 백테스팅 datasetJsonLd license 추가 ([d420a35](https://github.com/y0ngha/siglens/commit/d420a359210b6a0fe03d923fa09a90d9d1bf7bcc))
+
+
+### Reverts
+
+* claude code review action ([3504cbc](https://github.com/y0ngha/siglens/commit/3504cbce173a3ac12c58e7584a0427b19f6056f5))
+* claude code review action ([4e2ded0](https://github.com/y0ngha/siglens/commit/4e2ded094dfb309aac7613c4323a290adea50d3d))
+
 ## [0.8.17](https://github.com/y0ngha/siglens/compare/v0.8.16...v0.8.17) (2026-04-20)
 
 
