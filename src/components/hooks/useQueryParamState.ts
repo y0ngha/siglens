@@ -7,12 +7,14 @@ interface UseQueryParamStateOptions {
     replace?: boolean;
 }
 
+type UseQueryParamStateResult = [string, (next: string) => void];
+
 // 값이 defaultValue일 때는 URL에서 파라미터를 제거하여 canonical URL을 유지한다.
 export function useQueryParamState(
     key: string,
     defaultValue: string,
     { replace = false }: UseQueryParamStateOptions = {}
-): [string, (next: string) => void] {
+): UseQueryParamStateResult {
     const router = useRouter();
     const pathname = usePathname();
     const searchParams = useSearchParams();

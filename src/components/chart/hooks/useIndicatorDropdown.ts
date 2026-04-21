@@ -1,6 +1,6 @@
 'use client';
 
-import { type RefObject, useMemo, useRef, useState } from 'react';
+import { type RefObject, useCallback, useMemo, useRef, useState } from 'react';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 
 export type IndicatorDropdownType = 'ma' | 'ema';
@@ -51,25 +51,28 @@ export function useIndicatorDropdown(): UseIndicatorDropdownReturn {
         []
     );
 
-    const toggleExpanded = (): void => {
+    const toggleExpanded = useCallback((): void => {
         setIsExpanded(prev => !prev);
         if (openDropdown) setOpenDropdown(null);
-    };
+    }, [openDropdown]);
 
-    const toggleDropdown = (type: IndicatorDropdownType): void => {
-        if (openDropdown === type) {
-            setOpenDropdown(null);
-            return;
-        }
-        const buttonRef = buttonRefs[type];
-        if (!buttonRef.current) return;
-        const rect = buttonRef.current.getBoundingClientRect();
-        setDropdownPosition({
-            top: rect.bottom + window.scrollY + DROPDOWN_OFFSET_PX,
-            left: rect.left + window.scrollX,
-        });
-        setOpenDropdown(type);
-    };
+    const toggleDropdown = useCallback(
+        (type: IndicatorDropdownType): void => {
+            if (openDropdown === type) {
+                setOpenDropdown(null);
+                return;
+            }
+            const buttonRef = buttonRefs[type];
+            if (!buttonRef.current) return;
+            const rect = buttonRef.current.getBoundingClientRect();
+            setDropdownPosition({
+                top: rect.bottom + window.scrollY + DROPDOWN_OFFSET_PX,
+                left: rect.left + window.scrollX,
+            });
+            setOpenDropdown(type);
+        },
+        [openDropdown, buttonRefs]
+    );
 
     return {
         isExpanded,
