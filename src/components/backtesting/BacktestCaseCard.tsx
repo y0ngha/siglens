@@ -5,11 +5,11 @@ interface BacktestCaseCardProps {
     case_: BacktestCase;
 }
 
-function EntryRecBadge({
-    recommendation,
-}: {
+interface EntryRecBadgeProps {
     recommendation: 'enter' | 'wait' | 'avoid';
-}) {
+}
+
+function EntryRecBadge({ recommendation }: EntryRecBadgeProps) {
     const config = {
         enter: {
             label: 'AI 진입 권고',
@@ -34,7 +34,11 @@ function EntryRecBadge({
     );
 }
 
-function RiskBadge({ level }: { level: string }) {
+interface RiskBadgeProps {
+    level: string;
+}
+
+function RiskBadge({ level }: RiskBadgeProps) {
     const normalized = level.toLowerCase();
     const isHigh =
         normalized.includes('high') ||

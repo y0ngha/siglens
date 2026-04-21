@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useRef, useState } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { usePointerTooltip } from '@/components/hooks/usePointerTooltip';
 import type {
@@ -8,7 +8,6 @@ import type {
     AnalysisResponse,
     AnalysisSignal,
     AnalysisSignalType,
-    CandlePatternSummary,
     EntryRecommendation,
     ClusteredKeyLevel,
     ClusteredKeyLevels,
@@ -20,7 +19,6 @@ import type {
     Trendline,
     TrendlineDirection,
 } from '@/domain/types';
-import { findCandlePatternLabel } from '@/domain/analysis/candle-labels';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
@@ -375,6 +373,7 @@ interface ConfidenceBadgeProps {
 function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
     const { isVisible, toggle, handlePointerEnter, handlePointerLeave } =
         usePointerTooltip();
+    const tooltipId = useId();
 
     const level: ConfidenceLevel =
         confidenceWeight >= HIGH_CONFIDENCE_WEIGHT ? 'high' : 'medium';
@@ -389,6 +388,7 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
             <button
                 type="button"
                 onClick={toggle}
+                aria-describedby={isVisible ? tooltipId : undefined}
                 className={cn(
                     'cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium',
                     className
@@ -398,6 +398,7 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
             </button>
             {isVisible && (
                 <div
+                    id={tooltipId}
                     role="tooltip"
                     className="bg-secondary-800 border-secondary-600 absolute bottom-full left-1/2 z-50 mb-1 w-48 -translate-x-1/2 rounded border p-2 text-xs leading-relaxed shadow-lg"
                 >
@@ -459,23 +460,13 @@ interface PatternAccordionItemProps {
 
 function PatternAccordionItem({
     pattern,
-    /**
-     * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-     */
     isVisible: _isVisible,
-    onToggleVisibility,
+    onToggleVisibility: _onToggleVisibility,
 }: PatternAccordionItemProps) {
     const [isOpen, setIsOpen] = useState(false);
 
     const handleToggleOpen = (): void => {
         setIsOpen(prev => !prev);
-    };
-
-    /**
-     * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
-     */
-    const _handleToggleVisibility = (): void => {
-        onToggleVisibility(pattern.patternName);
     };
 
     const primaryLabel = pattern.renderConfig?.label ?? '주요 가격';
@@ -551,54 +542,6 @@ function PatternAccordionItem({
                             </div>
                         </div>
                     )}
-                </div>
-            ) : null}
-        </div>
-    );
-}
-
-/**
- * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
- */
-interface CandlePatternAccordionItemProps {
-    pattern: CandlePatternSummary;
-}
-
-/**
- * TODO 미사용이어도 이를 정리하지 않고 넘어간다. 나중에 사용할 예정이다.
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-function CandlePatternAccordionItem({
-    pattern,
-}: CandlePatternAccordionItemProps) {
-    const [isOpen, setIsOpen] = useState(false);
-
-    const handleToggleOpen = (): void => {
-        setIsOpen(prev => !prev);
-    };
-
-    const patternLabel = findCandlePatternLabel(pattern.patternName);
-
-    return (
-        <div className="border-secondary-700 overflow-hidden rounded-md border">
-            <button
-                type="button"
-                aria-expanded={isOpen}
-                onClick={handleToggleOpen}
-                className="bg-secondary-700/20 hover:bg-secondary-700/40 flex w-full items-center gap-2 px-3 py-2.5 text-left transition-colors"
-            >
-                <span className="text-secondary-300 min-w-0 flex-1 truncate text-xs font-medium">
-                    {patternLabel}
-                </span>
-                <TrendBadge trend={pattern.trend} />
-                <ChevronIcon isOpen={isOpen} />
-            </button>
-
-            {isOpen ? (
-                <div className="bg-secondary-800/60 border-secondary-700 border-t px-3 py-2.5">
-                    <p className="text-secondary-400 text-xs leading-relaxed">
-                        {pattern.summary}
-                    </p>
                 </div>
             ) : null}
         </div>
@@ -818,10 +761,6 @@ interface AnalysisPanelProps {
     chartVisiblePatterns?: Set<string>;
     /** 차트 패턴 표시 여부를 토글한다. patternName을 인자로 받는다. */
     onTogglePattern?: (patternName: string) => void;
-    _keyLevelsVisible?: boolean;
-    _onKeyLevelsVisibilityChange?: (isVisible: boolean) => void;
-    _trendlinesVisible?: boolean;
-    _onTrendlinesVisibilityChange?: (isVisible: boolean) => void;
     actionPricesVisible?: boolean;
     onActionPricesVisibilityChange?: (isVisible: boolean) => void;
     /** false이면 광고를 표시하지 않는다. Pro 사용자에게는 false를 전달한다.
@@ -842,10 +781,6 @@ export function AnalysisPanel({
     cooldownNotice = null,
     chartVisiblePatterns,
     onTogglePattern,
-    _keyLevelsVisible = false,
-    _onKeyLevelsVisibilityChange,
-    _trendlinesVisible = false,
-    _onTrendlinesVisibilityChange,
     actionPricesVisible = true,
     onActionPricesVisibilityChange,
     isFreeUser = true,

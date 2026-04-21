@@ -132,9 +132,7 @@ export function ChartContent({
     const {
         chartVisiblePatterns,
         keyLevelsVisible,
-        setKeyLevelsVisible,
         trendlinesVisible,
-        setTrendlinesVisible,
         actionPricesVisible,
         setActionPricesVisible,
         handlePatternOverlayChange,
@@ -178,10 +176,6 @@ export function ChartContent({
                     cooldownNotice={cooldownNotice}
                     chartVisiblePatterns={chartVisiblePatterns}
                     onTogglePattern={handleTogglePattern}
-                    _keyLevelsVisible={keyLevelsVisible}
-                    _onKeyLevelsVisibilityChange={setKeyLevelsVisible}
-                    _trendlinesVisible={trendlinesVisible}
-                    _onTrendlinesVisibilityChange={setTrendlinesVisible}
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
@@ -201,10 +195,6 @@ export function ChartContent({
             cooldownNotice,
             chartVisiblePatterns,
             handleTogglePattern,
-            keyLevelsVisible,
-            setKeyLevelsVisible,
-            trendlinesVisible,
-            setTrendlinesVisible,
             actionPricesVisible,
             setActionPricesVisible,
         ]
