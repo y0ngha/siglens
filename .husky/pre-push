@@ -1,6 +1,6 @@
 echo "🎨 Running prettier before push..."
 
-yarn format
+yarn format | grep -v "unchanged"
 
 # 포맷 후 변경된 파일이 있는지 확인
 if ! git diff --quiet; then
