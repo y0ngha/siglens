@@ -87,20 +87,39 @@ function blockToText(block) {
         case 'paragraph':
             text = getPlainText(block.paragraph.rich_text);
             break;
+
         case 'bulleted_list_item':
             text = getPlainText(block.bulleted_list_item.rich_text);
             break;
+
         case 'numbered_list_item':
             text = getPlainText(block.numbered_list_item.rich_text);
             break;
+
         case 'to_do':
             text = `[${block.to_do.checked ? 'x' : ' '}] ${getPlainText(block.to_do.rich_text)}`;
             break;
+
         case 'heading_1':
         case 'heading_2':
         case 'heading_3':
             text = getPlainText(block[block.type].rich_text);
             break;
+
+        case 'code': {
+            const code = getPlainText(block.code.rich_text);
+            const lang = block.code.language || '';
+            return `\`\`\`${lang}\n${code}\n\`\`\``;
+        }
+
+        case 'quote':
+            text = `> ${getPlainText(block.quote.rich_text)}`;
+            break;
+
+        case 'callout':
+            text = `💡 ${getPlainText(block.callout.rich_text)}`;
+            break;
+
         default:
             return '';
     }
@@ -135,7 +154,16 @@ async function convertPage(page) {
     const contents = blocks
         .map(blockToText)
         .filter(t => t && t.trim() !== '')
-        .map(t => `  - ${t}`);
+        .flatMap(t => {
+            if (t.startsWith('```')) {
+                return t.split('\n').map((line, i, codeLines) => {
+                    const needIndent =
+                        i === 0 || i === 1 || i === codeLines.length - 1;
+                    return `${needIndent ? '  ' : ''}${line}`;
+                });
+            }
+            return [`  - ${t}`];
+        });
 
     if (contents.length === 0) return null;
 
