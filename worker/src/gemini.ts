@@ -1,6 +1,6 @@
 import { GoogleGenAI } from '@google/genai';
-import { config } from './config.js';
 import { AI_SYSTEM_PROMPT } from './ai-system-prompt.js';
+import { config } from './config.js';
 
 /**
  * MAX_TOKENS 에러 식별 코드.
@@ -76,52 +76,60 @@ export async function callGemini(
         const text = response.text;
 
         console.log(
-            `[Gemini] Response time: ${elapsed}ms (model: ${modelName}, finishReason: ${finishReason})`
+            `[Gemini] Response time: ${elapsed}ms (model: ${modelName}, finishReason: ${finishReason}`
         );
 
-        if (!text || text.trim() === '') {
-            if (finishReason === 'SAFETY') {
-                // 안전 필터 차단 — 재시도해도 동일하게 차단되므로 non-retryable로 처리한다.
-                const safetyRatings = candidate?.safetyRatings ?? [];
-                console.error('[Gemini] Response blocked by safety filter', {
-                    model: modelName,
-                    safetyRatings,
-                });
-                throw new Error(
-                    `Gemini blocked response due to safety filter (finishReason: SAFETY)`
-                );
-            }
-
-            if (finishReason === 'MAX_TOKENS') {
-                // 출력 토큰 한도 초과 — 같은 thinkingBudget으로 재시도해도 동일하게 실패한다.
-                // non-retryable로 던져 호출 측에서 thinkingBudget을 줄여 재시도하도록 한다.
-                console.warn('[Gemini] MAX_TOKENS: output truncated', {
+        if (finishReason === 'STOP') {
+            if (text) {
+                return text;
+            } else {
+                console.warn('[Gemini] Empty text response', {
                     model: modelName,
                     finishReason,
                 });
                 throw Object.assign(
                     new Error(
-                        `Gemini hit output token limit (model: ${modelName})`
+                        `Gemini returned an empty text response (finishReason: ${finishReason})`
                     ),
-                    { code: MAX_TOKENS_CODE }
+                    { retryable: true }
                 );
             }
-
-            // SAFETY/MAX_TOKENS 외 이유로 빈 텍스트가 반환된 경우(thinking 전용 응답 등)는
-            // 일시적 문제로 보고 재시도한다.
-            console.warn('[Gemini] Empty text response', {
+        } else if (finishReason === 'SAFETY') {
+            // 안전 필터 차단 — 재시도해도 동일하게 차단되므로 non-retryable로 처리한다.
+            const safetyRatings = candidate?.safetyRatings ?? [];
+            console.error('[Gemini] Response blocked by safety filter', {
+                model: modelName,
+                safetyRatings,
+            });
+            throw new Error(
+                `Gemini blocked response due to safety filter (finishReason: SAFETY)`
+            );
+        } else if (finishReason === 'MAX_TOKENS') {
+            // 출력 토큰 한도 초과 — 같은 thinkingBudget으로 재시도해도 동일하게 실패한다.
+            // non-retryable로 던져 호출 측에서 thinkingBudget을 줄여 재시도하도록 한다.
+            console.warn('[Gemini] MAX_TOKENS: output truncated', {
                 model: modelName,
                 finishReason,
             });
             throw Object.assign(
                 new Error(
-                    `Gemini returned an empty text response (finishReason: ${finishReason})`
+                    `Gemini hit output token limit (model: ${modelName})`
                 ),
-                { retryable: true }
+                { code: MAX_TOKENS_CODE }
             );
         }
 
-        return text;
+        // SAFETY/MAX_TOKENS 외 이유로 빈 텍스트가 반환된 경우(thinking 전용 응답 등)는
+        // 일시적 문제로 보고 재시도한다.
+        console.warn('[Gemini] Invalid response', {
+            model: modelName,
+            finishReason,
+            text,
+        });
+        throw Object.assign(
+            new Error(`Invalid Gemini response: finishReason ${finishReason}`),
+            { retryable: true }
+        );
     } finally {
         clearTimeout(timeoutId);
         options.signal?.removeEventListener('abort', propagateAbort);
