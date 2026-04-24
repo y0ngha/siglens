@@ -76,18 +76,9 @@ export function useChat({
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
-    const [selectedModel, setSelectedModel] = useState<ChatModel>(() => {
-        try {
-            const stored = localStorage.getItem(MODEL_STORAGE_KEY);
-            // VALID_CHAT_MODELS.some narrows stored to a known ChatModel literal; cast is safe
-            if (stored !== null && VALID_CHAT_MODELS.some(m => m === stored)) {
-                return stored as (typeof VALID_CHAT_MODELS)[number];
-            }
-        } catch {
-            // 스토리지 접근 불가 시 무시
-        }
-        return GEMINI_2_5_FLASH_MODEL;
-    });
+    const [selectedModel, setSelectedModel] = useState<ChatModel>(
+        GEMINI_2_5_FLASH_MODEL
+    );
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -208,6 +199,24 @@ export function useChat({
         startTransition(() => {
             setMessages(loaded);
         });
+    }, []);
+
+    // 하이드레이션 후 저장된 모델 로드 (SSR/client mismatch 방지 — 마운트 1회만 실행)
+    // 선언 순서가 write effect보다 앞이어야 저장된 값을 읽을 수 있음
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem(MODEL_STORAGE_KEY);
+            // VALID_CHAT_MODELS.some narrows stored to a known ChatModel literal; cast is safe
+            if (stored !== null && VALID_CHAT_MODELS.some(m => m === stored)) {
+                startTransition(() => {
+                    setSelectedModel(
+                        stored as (typeof VALID_CHAT_MODELS)[number]
+                    );
+                });
+            }
+        } catch {
+            // 스토리지 접근 불가 시 무시
+        }
     }, []);
 
     // selectedModel 변경 시 localStorage 동기화

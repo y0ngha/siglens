@@ -5,6 +5,11 @@
 - Rule: FF Coupling — 훅(로직 레이어)은 컴포넌트 레이아웃(UI 레이어) 위치를 알아서는 안 됨
 - Context: `useChat.ts`의 `ERROR_MESSAGES.server_busy`가 ChatPanel 드롭다운 위치를 서술; 위치 변경 시 메시지가 부정확해짐
 
+## [PR #345 Round 4 | feat/chat-model-selector | 2026-04-25]
+- Violation: `useState` lazy initializer에서 `localStorage` 접근으로 SSR hydration mismatch 발생
+- Rule: Components — 브라우저 전용 API(localStorage, window 등)는 lazy initializer가 아닌 `useEffect`에서만 접근해야 함
+- Context: `useChat.ts`의 `selectedModel` 초기화가 lazy initializer로 localStorage를 읽어 서버 렌더값(기본값)과 클라이언트 hydration값이 달라질 수 있었음; `useState(default) + 마운트 useEffect` 패턴으로 교체
+
 ## [PR #345 Round 3 | feat/chat-model-selector | 2026-04-24]
 - Violation: 마운트 useEffect 내 채팅 세션 로드와 모델 설정 로드 책임 혼합 + localStorage 초기화 타이밍 버그
 - Rule: CONVENTIONS.md — useEffect는 책임별로 분리; 상태 초기화는 lazy initializer 패턴 사용

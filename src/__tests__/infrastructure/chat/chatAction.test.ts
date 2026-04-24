@@ -326,6 +326,7 @@ describe('chatAction 함수는', () => {
             MINIMAL_ANALYSIS,
             [],
             '질문',
+            // 유효하지 않은 모델로 서버 측 검증 분기를 테스트하기 위해 타입 시스템 우회
             'invalid-model' as ChatModel
         );
 

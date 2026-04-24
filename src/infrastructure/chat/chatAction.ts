@@ -31,9 +31,9 @@ async function getClientIp(): Promise<string> {
 function getHttpErrorStatus(error: unknown): number | undefined {
     if (typeof error !== 'object' || error === null || !('status' in error))
         return undefined;
-    // @google/genai attaches an HTTP status code to error objects;
-    // 'status' in error 가드를 통과했으므로 number 접근이 런타임에도 안전함
-    return (error as { status: number }).status;
+    // 'status' in error guarantees key existence only, not type; verify number at runtime
+    const status = (error as { status: unknown }).status;
+    return typeof status === 'number' ? status : undefined;
 }
 
 function isRateLimitError(error: unknown): boolean {
