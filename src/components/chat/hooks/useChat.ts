@@ -72,8 +72,9 @@ export function useChat({
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
-    const [selectedModel, setSelectedModel] =
-        useState<ChatModel>(GEMINI_2_5_FLASH_MODEL);
+    const [selectedModel, setSelectedModel] = useState<ChatModel>(
+        GEMINI_2_5_FLASH_MODEL
+    );
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount

@@ -1,11 +1,13 @@
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import type { AnalysisResponse } from '@/domain/types';
+import { GEMINI_2_5_FLASH_LITE_MODEL } from '@/domain/constants/chatModels';
 import { headers } from 'next/headers';
 import {
     getRemainingTokens,
     tryConsumeToken,
 } from '@/infrastructure/chat/tokenStore';
 import { GoogleGenAI } from '@google/genai';
+import { constants } from 'node:http2';
 
 jest.mock('next/headers', () => ({
     headers: jest.fn().mockResolvedValue({
@@ -182,7 +184,9 @@ describe('chatAction 함수는', () => {
                 models: { generateContent: mockGenerateContent },
             } as unknown as InstanceType<typeof GoogleGenAI>;
         });
-        const rateLimitError = Object.assign(new Error('429'), { status: 429 });
+        const rateLimitError = Object.assign(new Error('429'), {
+            status: constants.HTTP_STATUS_TOO_MANY_REQUESTS,
+        });
         mockGenerateContent
             .mockRejectedValueOnce(rateLimitError)
             .mockResolvedValueOnce({ text: 'paid key fallback 응답' });
@@ -236,7 +240,9 @@ describe('chatAction 함수는', () => {
 
     it('Gemini 429 에러 시 rate_limited를 반환한다', async () => {
         mockTryConsumeToken.mockResolvedValueOnce(true);
-        const error = Object.assign(new Error('429'), { status: 429 });
+        const error = Object.assign(new Error('429'), {
+            status: constants.HTTP_STATUS_TOO_MANY_REQUESTS,
+        });
         mockGenerateContent.mockRejectedValueOnce(error);
 
         const result = await chatAction(
@@ -267,7 +273,9 @@ describe('chatAction 함수는', () => {
 
     it('Gemini 503 에러 시 server_busy를 반환한다', async () => {
         mockTryConsumeToken.mockResolvedValueOnce(true);
-        const error = Object.assign(new Error('503'), { status: 503 });
+        const error = Object.assign(new Error('503'), {
+            status: constants.HTTP_STATUS_SERVICE_UNAVAILABLE,
+        });
         mockGenerateContent.mockRejectedValueOnce(error);
 
         const result = await chatAction(
@@ -292,12 +300,10 @@ describe('chatAction 함수는', () => {
                     models: {
                         generateContent: jest
                             .fn()
-                            .mockImplementation(
-                                (params: { model: string }) => {
-                                    capturedModel = params.model;
-                                    return Promise.resolve({ text: '응답' });
-                                }
-                            ),
+                            .mockImplementation((params: { model: string }) => {
+                                capturedModel = params.model;
+                                return Promise.resolve({ text: '응답' });
+                            }),
                     },
                 }) as unknown as InstanceType<typeof GoogleGenAI>
         );
@@ -308,9 +314,9 @@ describe('chatAction 함수는', () => {
             MINIMAL_ANALYSIS,
             [],
             '질문',
-            'gemini-2.5-flash-lite'
+            GEMINI_2_5_FLASH_LITE_MODEL
         );
 
-        expect(capturedModel).toBe('gemini-2.5-flash-lite');
+        expect(capturedModel).toBe(GEMINI_2_5_FLASH_LITE_MODEL);
     });
 });

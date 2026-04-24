@@ -1,8 +1,3 @@
-import {
-    GEMINI_2_5_FLASH_MODEL,
-    GEMINI_2_5_FLASH_LITE_MODEL,
-} from '@/domain/constants/chatModels';
-
 export type Timeframe = '5Min' | '15Min' | '30Min' | '1Hour' | '4Hour' | '1Day';
 
 export interface IndexTicker {
@@ -733,9 +728,7 @@ export interface ChatSession {
     savedAt: number; // Unix timestamp (ms)
 }
 
-export type ChatModel =
-    | typeof GEMINI_2_5_FLASH_MODEL
-    | typeof GEMINI_2_5_FLASH_LITE_MODEL;
+export type ChatModel = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
 
 export type ChatErrorCode =
     | 'token_exhausted'
