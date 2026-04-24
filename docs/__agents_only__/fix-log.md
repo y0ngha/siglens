@@ -1,6 +1,13 @@
 # Fix Log
 
+## [PR #345 | feat/chat-model-selector | 2026-04-24]
+- Violation: `server_busy` 에러 메시지가 "위의 모델 선택기에서"처럼 UI 레이아웃 구조를 훅 레이어에서 직접 참조
+- Rule: FF Coupling — 훅(로직 레이어)은 컴포넌트 레이아웃(UI 레이어) 위치를 알아서는 안 됨
+- Context: `useChat.ts`의 `ERROR_MESSAGES.server_busy`가 ChatPanel 드롭다운 위치를 서술; 위치 변경 시 메시지가 부정확해짐
 
+- Violation: `role="listbox"` 선언 후 WAI-ARIA 필수 키보드 인터랙션(ArrowDown/Up/Enter/Escape/Home/End) 미구현
+- Rule: WCAG 2.1 SC 2.1.1 (Keyboard) + WAI-ARIA Listbox Pattern — `role="listbox"` 사용 시 화살표 내비게이션 필수
+- Context: `ChatPanel.tsx` 모델 드롭다운이 클릭만 처리; 스크린 리더 사용자는 listbox로 안내받지만 키보드로 탐색 불가
 
 ## [PR #344 Round 7 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `AnalysisPanel.tsx` 복사 버튼 조건 `(!showProgress || isAnalyzing)` — `isAnalyzing=true`일 때 disabled 상태임에도 normal 스타일 적용됨
