@@ -7,8 +7,8 @@ import {
     saveSession,
 } from '@/components/chat/utils/chatStorage';
 import {
-    GEMINI_2_5_FLASH_LITE_MODEL,
     GEMINI_2_5_FLASH_MODEL,
+    VALID_CHAT_MODELS,
 } from '@/domain/constants/chatModels';
 import type {
     AnalysisResponse,
@@ -198,12 +198,12 @@ export function useChat({
 
         try {
             const stored = localStorage.getItem(MODEL_STORAGE_KEY);
-            if (
-                stored === GEMINI_2_5_FLASH_MODEL ||
-                stored === GEMINI_2_5_FLASH_LITE_MODEL
-            ) {
+            // VALID_CHAT_MODELS.some narrows stored to a known ChatModel literal; cast is safe
+            if (stored !== null && VALID_CHAT_MODELS.some(m => m === stored)) {
                 startTransition(() => {
-                    setSelectedModel(stored);
+                    setSelectedModel(
+                        stored as (typeof VALID_CHAT_MODELS)[number]
+                    );
                 });
             }
         } catch {

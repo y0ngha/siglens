@@ -2,8 +2,8 @@
 
 import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
 import {
-    GEMINI_2_5_FLASH_LITE_MODEL,
     GEMINI_2_5_FLASH_MODEL,
+    VALID_CHAT_MODELS,
 } from '@/domain/constants/chatModels';
 import type {
     AnalysisResponse,
@@ -20,11 +20,6 @@ import {
 } from '@/infrastructure/chat/tokenStore';
 import { headers } from 'next/headers';
 import { constants } from 'node:http2';
-
-const VALID_CHAT_MODELS: readonly ChatModel[] = [
-    GEMINI_2_5_FLASH_MODEL,
-    GEMINI_2_5_FLASH_LITE_MODEL,
-];
 
 async function getClientIp(): Promise<string> {
     const headersList = await headers();

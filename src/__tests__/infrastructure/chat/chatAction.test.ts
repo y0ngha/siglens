@@ -1,5 +1,5 @@
 import { chatAction } from '@/infrastructure/chat/chatAction';
-import type { AnalysisResponse } from '@/domain/types';
+import type { AnalysisResponse, ChatModel } from '@/domain/types';
 import { GEMINI_2_5_FLASH_LITE_MODEL } from '@/domain/constants/chatModels';
 import { headers } from 'next/headers';
 import {
@@ -287,6 +287,20 @@ describe('chatAction 함수는', () => {
         );
 
         expect(result).toEqual({ ok: false, error: 'server_busy' });
+    });
+
+    it('유효하지 않은 모델 전달 시 server_error를 반환한다', async () => {
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문',
+            'invalid-model' as ChatModel
+        );
+
+        expect(result).toEqual({ ok: false, error: 'server_error' });
+        expect(mockGenerateContent).not.toHaveBeenCalled();
     });
 
     it('model 파라미터를 Gemini 호출에 전달한다', async () => {

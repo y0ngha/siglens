@@ -116,9 +116,9 @@ export function ChatPanel({
         handleKeyDown,
     } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
 
-    // 모델 드롭다운 상태
     const triggerRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
+    const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
     const [opensUpward, setOpensUpward] = useState(true);
     const { isOpen, toggle, close } = usePopoverToggle([
         triggerRef,
@@ -138,33 +138,34 @@ export function ChatPanel({
             opt => opt.id === selectedModel
         );
         switch (e.key) {
-            case 'ArrowDown':
+            case 'ArrowDown': {
                 e.preventDefault();
-                setSelectedModel(
-                    CHAT_MODEL_OPTIONS[
-                        (currentIndex + 1) % CHAT_MODEL_OPTIONS.length
-                    ]!.id
-                );
+                const nextIdx = (currentIndex + 1) % CHAT_MODEL_OPTIONS.length;
+                setSelectedModel(CHAT_MODEL_OPTIONS[nextIdx]!.id);
+                optionRefs.current[nextIdx]?.focus();
                 break;
-            case 'ArrowUp':
+            }
+            case 'ArrowUp': {
                 e.preventDefault();
-                setSelectedModel(
-                    CHAT_MODEL_OPTIONS[
-                        (currentIndex - 1 + CHAT_MODEL_OPTIONS.length) %
-                            CHAT_MODEL_OPTIONS.length
-                    ]!.id
-                );
+                const prevIdx =
+                    (currentIndex - 1 + CHAT_MODEL_OPTIONS.length) %
+                    CHAT_MODEL_OPTIONS.length;
+                setSelectedModel(CHAT_MODEL_OPTIONS[prevIdx]!.id);
+                optionRefs.current[prevIdx]?.focus();
                 break;
+            }
             case 'Home':
                 e.preventDefault();
                 setSelectedModel(CHAT_MODEL_OPTIONS[0]!.id);
+                optionRefs.current[0]?.focus();
                 break;
-            case 'End':
+            case 'End': {
                 e.preventDefault();
-                setSelectedModel(
-                    CHAT_MODEL_OPTIONS[CHAT_MODEL_OPTIONS.length - 1]!.id
-                );
+                const lastIdx = CHAT_MODEL_OPTIONS.length - 1;
+                setSelectedModel(CHAT_MODEL_OPTIONS[lastIdx]!.id);
+                optionRefs.current[lastIdx]?.focus();
                 break;
+            }
             case 'Escape':
                 e.preventDefault();
                 close();
@@ -309,11 +310,16 @@ export function ChatPanel({
                                         : 'top-full mt-1'
                                 )}
                             >
-                                {CHAT_MODEL_OPTIONS.map(option => (
+                                {CHAT_MODEL_OPTIONS.map((option, i) => (
                                     <div
                                         key={option.id}
+                                        ref={el => {
+                                            optionRefs.current[i] = el;
+                                        }}
                                         role="option"
-                                        tabIndex={0}
+                                        tabIndex={
+                                            selectedModel === option.id ? 0 : -1
+                                        }
                                         aria-selected={
                                             selectedModel === option.id
                                         }
