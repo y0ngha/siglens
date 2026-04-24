@@ -5,22 +5,14 @@
 - Rule: FF Coupling — 훅(로직 레이어)은 컴포넌트 레이아웃(UI 레이어) 위치를 알아서는 안 됨
 - Context: `useChat.ts`의 `ERROR_MESSAGES.server_busy`가 ChatPanel 드롭다운 위치를 서술; 위치 변경 시 메시지가 부정확해짐
 
-- Violation: `role="listbox"` 선언 후 WAI-ARIA 필수 키보드 인터랙션(ArrowDown/Up/Enter/Escape/Home/End) 미구현
-- Rule: WCAG 2.1 SC 2.1.1 (Keyboard) + WAI-ARIA Listbox Pattern — `role="listbox"` 사용 시 화살표 내비게이션 필수
-- Context: `ChatPanel.tsx` 모델 드롭다운이 클릭만 처리; 스크린 리더 사용자는 listbox로 안내받지만 키보드로 탐색 불가
+## [PR #345 Round 3 | feat/chat-model-selector | 2026-04-24]
+- Violation: 마운트 useEffect 내 채팅 세션 로드와 모델 설정 로드 책임 혼합 + localStorage 초기화 타이밍 버그
+- Rule: CONVENTIONS.md — useEffect는 책임별로 분리; 상태 초기화는 lazy initializer 패턴 사용
+- Context: `selectedModel` 쓰기 effect가 마운트 직후 기본값으로 localStorage를 덮어써 저장된 모델 선택이 소실됨; useState lazy initializer로 교체하여 해결
 
-## [PR #345 Round 2 | feat/chat-model-selector | 2026-04-24]
-- Violation: `role="listbox"` 구현 후 로빙 tabindex 미적용 — 모든 `role="option"` 요소가 `tabIndex={0}` 고정
-- Rule: MISTAKES.md Accessibility #2 — Listbox 패턴은 선택된 옵션만 tabIndex=0, 나머지는 tabIndex=-1 (로빙 tabindex)
-- Context: `ChatPanel.tsx` 모델 드롭다운 옵션 전체가 Tab 순서에 포함되어 WAI-ARIA Authoring Practices 위반
-
-- Violation: Arrow key 핸들러가 `setSelectedModel` 상태만 변경하고 `element.focus()` DOM 포커스 이동 미구현
-- Rule: WAI-ARIA Listbox Pattern — "Down Arrow: Moves visual focus(= DOM focus) to the next option"
-- Context: `handleListboxKeyDown`에서 포커스 이동 없이 상태만 변경; Enter 키 선택 시 DOM 포커스 위치와 불일치 발생
-
-- Violation: 유효하지 않은 모델 검증 브랜치(`VALID_CHAT_MODELS.includes(model)`) 테스트 누락
-- Rule: MISTAKES.md Infrastructure Functions #2 — infrastructure 함수는 100% 브랜치 커버리지 필수
-- Context: `chatAction.ts`에 추가된 얼리 리턴 브랜치를 커버하는 `it()` 케이스 없음; Server Action은 시스템 경계라 런타임 검증 필수
+- Violation: 파생 변수 `selectedModelOption`이 핸들러 선언(handleDropdownToggle, handleListboxKeyDown) 이후에 위치
+- Rule: MISTAKES.md #17 — 선언 순서: useState/useRef → derived → handlers → useEffect
+- Context: `ChatPanel.tsx`에서 const 파생값이 핸들러보다 아래에 위치; 선언 순서 위반
 
 ## [PR #344 Round 7 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
 - Violation: `AnalysisPanel.tsx` 복사 버튼 조건 `(!showProgress || isAnalyzing)` — `isAnalyzing=true`일 때 disabled 상태임에도 normal 스타일 적용됨

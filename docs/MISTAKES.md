@@ -397,6 +397,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ aria-selected set but tabIndex not set; no arrow key handlers
    ✅ tabIndex={isActive ? 0 : -1} + handleTablistKeyDown(ArrowLeft/Right)
 
+2.5. ARIA listbox pattern incomplete (missing roving tabindex, arrow key handlers, or DOM focus sync)
+   → listbox requires both roving tabindex AND arrow key navigation (Up/Down/Home/End/Enter/Escape)
+   → AND DOM focus movement — selecting with arrow keys must move element.focus() to match visual selection
+   → Active option: tabIndex={0}; Inactive options: tabIndex={-1}
+   → Implement onKeyDown handler: ArrowDown/Up moves visual + DOM focus, Enter selects, Escape closes
+   ❌ role="option" all have tabIndex={0} (broken roving tabindex)
+   ❌ handleListboxKeyDown sets selectedModel state only, missing element.focus() call
+   ✅ tabIndex={selectedModel === model ? 0 : -1} + focus via useRef + ArrowDown/Up move both visual + DOM focus
+
 3. Missing accessible name on ARIA roles
    → All role attributes must have either aria-label, aria-labelledby, or accessible text content
    → tooltip: requires aria-describedby connection to trigger element
