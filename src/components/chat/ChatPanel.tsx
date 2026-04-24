@@ -125,12 +125,22 @@ export function ChatPanel({
         dropdownRef,
     ]);
 
+    const selectedModelOption = CHAT_MODEL_OPTIONS.find(
+        opt => opt.id === selectedModel
+    )!;
+
     const handleDropdownToggle = () => {
         if (!isOpen && triggerRef.current) {
             const rect = triggerRef.current.getBoundingClientRect();
             setOpensUpward(rect.top > window.innerHeight - rect.bottom);
         }
         toggle();
+        if (!isOpen) {
+            const selectedIdx = CHAT_MODEL_OPTIONS.findIndex(
+                opt => opt.id === selectedModel
+            );
+            setTimeout(() => optionRefs.current[selectedIdx]?.focus(), 0);
+        }
     };
 
     const handleListboxKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
@@ -169,13 +179,10 @@ export function ChatPanel({
             case 'Escape':
                 e.preventDefault();
                 close();
+                triggerRef.current?.focus();
                 break;
         }
     };
-
-    const selectedModelOption = CHAT_MODEL_OPTIONS.find(
-        opt => opt.id === selectedModel
-    )!;
 
     const placeholder = !isAnalysisReady
         ? '분석이 완료된 후 질문할 수 있어요'
@@ -326,6 +333,7 @@ export function ChatPanel({
                                         onClick={() => {
                                             setSelectedModel(option.id);
                                             close();
+                                            triggerRef.current?.focus();
                                         }}
                                         onKeyDown={e => {
                                             if (
@@ -335,6 +343,7 @@ export function ChatPanel({
                                                 e.preventDefault();
                                                 setSelectedModel(option.id);
                                                 close();
+                                                triggerRef.current?.focus();
                                             }
                                         }}
                                         className={cn(
