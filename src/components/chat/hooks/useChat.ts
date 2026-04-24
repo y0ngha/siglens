@@ -6,7 +6,10 @@ import {
     loadSessionFull,
     saveSession,
 } from '@/components/chat/utils/chatStorage';
-import { GEMINI_2_5_FLASH_MODEL } from '@/domain/constants/chatModels';
+import {
+    GEMINI_2_5_FLASH_LITE_MODEL,
+    GEMINI_2_5_FLASH_MODEL,
+} from '@/domain/constants/chatModels';
 import type {
     AnalysisResponse,
     ChatErrorCode,
@@ -30,6 +33,7 @@ import {
 
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
+const MODEL_STORAGE_KEY = 'siglens_chat_model';
 
 // Matches CHAT_TOKEN_LIMIT in infrastructure/chat/tokenStore.ts
 // Hook files may not import from infrastructure — duplicate value with link
@@ -39,7 +43,7 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     token_exhausted: `오늘 무료 질문 ${DAILY_CHAT_LIMIT}회를 모두 사용했어요. 내일 다시 이용해주세요.`,
     rate_limited: 'AI 서버가 잠시 바빠요. 잠시 후 다시 시도해주세요.',
     server_busy:
-        'AI 서버가 지금 바빠요. 위의 모델 선택기에서 다른 모델로 바꿔보세요.',
+        'AI 서버가 지금 바빠요. 다른 모델로 변경 후 다시 시도해주세요.',
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
 };
 
@@ -191,7 +195,30 @@ export function useChat({
         startTransition(() => {
             setMessages(loaded);
         });
+
+        try {
+            const stored = localStorage.getItem(MODEL_STORAGE_KEY);
+            if (
+                stored === GEMINI_2_5_FLASH_MODEL ||
+                stored === GEMINI_2_5_FLASH_LITE_MODEL
+            ) {
+                startTransition(() => {
+                    setSelectedModel(stored);
+                });
+            }
+        } catch {
+            // 스토리지 접근 불가 시 무시
+        }
     }, []);
+
+    // selectedModel 변경 시 localStorage 동기화
+    useEffect(() => {
+        try {
+            localStorage.setItem(MODEL_STORAGE_KEY, selectedModel);
+        } catch {
+            // 스토리지 용량 초과 등 무시
+        }
+    }, [selectedModel]);
 
     // 심볼·타임프레임 변경 시 히스토리 교체 (null 체크로 마운트 첫 실행 스킵)
     useEffect(() => {

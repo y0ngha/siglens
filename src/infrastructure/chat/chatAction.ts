@@ -1,7 +1,10 @@
 'use server';
 
 import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
-import { GEMINI_2_5_FLASH_MODEL } from '@/domain/constants/chatModels';
+import {
+    GEMINI_2_5_FLASH_LITE_MODEL,
+    GEMINI_2_5_FLASH_MODEL,
+} from '@/domain/constants/chatModels';
 import type {
     AnalysisResponse,
     ChatActionResult,
@@ -18,6 +21,11 @@ import {
 import { headers } from 'next/headers';
 import { constants } from 'node:http2';
 
+const VALID_CHAT_MODELS: readonly ChatModel[] = [
+    GEMINI_2_5_FLASH_MODEL,
+    GEMINI_2_5_FLASH_LITE_MODEL,
+];
+
 async function getClientIp(): Promise<string> {
     const headersList = await headers();
     return (
@@ -25,24 +33,23 @@ async function getClientIp(): Promise<string> {
     );
 }
 
+function getHttpErrorStatus(error: unknown): number | undefined {
+    if (typeof error !== 'object' || error === null || !('status' in error))
+        return undefined;
+    // @google/genai attaches an HTTP status code to error objects;
+    // 'status' in error 가드를 통과했으므로 number 접근이 런타임에도 안전함
+    return (error as { status: number }).status;
+}
+
 function isRateLimitError(error: unknown): boolean {
     return (
-        typeof error === 'object' &&
-        error !== null &&
-        'status' in error &&
-        // @google/genai attaches an HTTP status code to error objects
-        (error as { status: number }).status ===
-            constants.HTTP_STATUS_TOO_MANY_REQUESTS
+        getHttpErrorStatus(error) === constants.HTTP_STATUS_TOO_MANY_REQUESTS
     );
 }
 
 function isServerBusyError(error: unknown): boolean {
     return (
-        typeof error === 'object' &&
-        error !== null &&
-        'status' in error &&
-        (error as { status: number }).status ===
-            constants.HTTP_STATUS_SERVICE_UNAVAILABLE
+        getHttpErrorStatus(error) === constants.HTTP_STATUS_SERVICE_UNAVAILABLE
     );
 }
 
@@ -54,6 +61,10 @@ export async function chatAction(
     userMessage: string,
     model: ChatModel = GEMINI_2_5_FLASH_MODEL
 ): Promise<ChatActionResult> {
+    if (!VALID_CHAT_MODELS.includes(model)) {
+        return { ok: false, error: 'server_error' };
+    }
+
     const paidApiKey = process.env.GEMINI_API_KEY;
     if (!paidApiKey) {
         return { ok: false, error: 'server_error' };

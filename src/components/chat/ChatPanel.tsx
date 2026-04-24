@@ -13,12 +13,14 @@ import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
 
-// 모델 선택 옵션 (모듈 레벨 상수 — 렌더마다 재생성 방지)
-const CHAT_MODEL_OPTIONS: ReadonlyArray<{
+interface ChatModelOption {
     id: ChatModel;
     label: string;
     fullName: string;
-}> = [
+}
+
+// 모듈 레벨 상수 — 렌더마다 재생성 방지
+const CHAT_MODEL_OPTIONS: ReadonlyArray<ChatModelOption> = [
     {
         id: GEMINI_2_5_FLASH_MODEL,
         label: 'Flash',
@@ -31,7 +33,6 @@ const CHAT_MODEL_OPTIONS: ReadonlyArray<{
     },
 ];
 
-// 모듈 레벨 상수로 선언하여 렌더마다 객체가 재생성되지 않도록 한다
 const MARKDOWN_COMPONENTS: Components = {
     p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
     strong: ({ children }) => (
@@ -132,9 +133,48 @@ export function ChatPanel({
         toggle();
     };
 
-    const selectedModelOption =
-        CHAT_MODEL_OPTIONS.find(opt => opt.id === selectedModel) ??
-        CHAT_MODEL_OPTIONS[0]!;
+    const handleListboxKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        const currentIndex = CHAT_MODEL_OPTIONS.findIndex(
+            opt => opt.id === selectedModel
+        );
+        switch (e.key) {
+            case 'ArrowDown':
+                e.preventDefault();
+                setSelectedModel(
+                    CHAT_MODEL_OPTIONS[
+                        (currentIndex + 1) % CHAT_MODEL_OPTIONS.length
+                    ]!.id
+                );
+                break;
+            case 'ArrowUp':
+                e.preventDefault();
+                setSelectedModel(
+                    CHAT_MODEL_OPTIONS[
+                        (currentIndex - 1 + CHAT_MODEL_OPTIONS.length) %
+                            CHAT_MODEL_OPTIONS.length
+                    ]!.id
+                );
+                break;
+            case 'Home':
+                e.preventDefault();
+                setSelectedModel(CHAT_MODEL_OPTIONS[0]!.id);
+                break;
+            case 'End':
+                e.preventDefault();
+                setSelectedModel(
+                    CHAT_MODEL_OPTIONS[CHAT_MODEL_OPTIONS.length - 1]!.id
+                );
+                break;
+            case 'Escape':
+                e.preventDefault();
+                close();
+                break;
+        }
+    };
+
+    const selectedModelOption = CHAT_MODEL_OPTIONS.find(
+        opt => opt.id === selectedModel
+    )!;
 
     const placeholder = !isAnalysisReady
         ? '분석이 완료된 후 질문할 수 있어요'
@@ -233,9 +273,7 @@ export function ChatPanel({
 
             {/* 입력 영역 */}
             <div className="border-secondary-700 border-t px-3 py-2">
-                {/* 메타 바 — 모델 드롭다운 + 안내 텍스트 */}
                 <div className="text-secondary-600 mb-1.5 flex items-center gap-1.5 text-[10px]">
-                    {/* 모델 선택 드롭다운 */}
                     <div className="relative">
                         <button
                             ref={triggerRef}
@@ -263,6 +301,7 @@ export function ChatPanel({
                                 ref={dropdownRef}
                                 role="listbox"
                                 aria-label="AI 모델 목록"
+                                onKeyDown={handleListboxKeyDown}
                                 className={cn(
                                     'border-secondary-600 bg-secondary-800 absolute left-0 z-10 min-w-[160px] overflow-hidden rounded-lg border shadow-lg',
                                     opensUpward
@@ -271,10 +310,10 @@ export function ChatPanel({
                                 )}
                             >
                                 {CHAT_MODEL_OPTIONS.map(option => (
-                                    <button
+                                    <div
                                         key={option.id}
-                                        type="button"
                                         role="option"
+                                        tabIndex={0}
                                         aria-selected={
                                             selectedModel === option.id
                                         }
@@ -282,8 +321,18 @@ export function ChatPanel({
                                             setSelectedModel(option.id);
                                             close();
                                         }}
+                                        onKeyDown={e => {
+                                            if (
+                                                e.key === 'Enter' ||
+                                                e.key === ' '
+                                            ) {
+                                                e.preventDefault();
+                                                setSelectedModel(option.id);
+                                                close();
+                                            }
+                                        }}
                                         className={cn(
-                                            'focus-visible:ring-primary-500 flex min-h-[44px] w-full items-center gap-2 px-3 text-left transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                                            'focus-visible:ring-primary-500 flex min-h-[44px] w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
                                             selectedModel === option.id
                                                 ? 'text-primary-300 bg-primary-900/20'
                                                 : 'text-secondary-300 hover:bg-secondary-700'
@@ -300,7 +349,7 @@ export function ChatPanel({
                                                 {option.fullName}
                                             </div>
                                         </div>
-                                    </button>
+                                    </div>
                                 ))}
                             </div>
                         )}
@@ -316,7 +365,6 @@ export function ChatPanel({
                     )}
                 </div>
 
-                {/* 입력창 + 전송 버튼 */}
                 <div className="flex items-end gap-2">
                     <textarea
                         ref={inputRef}
