@@ -151,22 +151,16 @@ async function convertPage(page) {
 
     const blocks = await getBlocks(page.id);
 
-    const contents = blocks
-        .map(blockToText)
-        .filter(t => t && t.trim() !== '')
-        .flatMap(t => {
-            if (t.startsWith('```')) {
-                return t.split('\n').map((line, i, codeLines) => {
-                    const needIndent =
-                        i === 0 || i === 1 || i === codeLines.length - 1;
-                    return `${needIndent ? '  ' : ''}${line}`;
-                });
-            }
-            return [`  - ${t}`];
-        });
-
-    if (contents.length === 0) return null;
-
+    const contents = blocks.map(blockToText).flatMap(t => {
+        if (t.startsWith('```')) {
+            return t.split('\n').map((line, i, codeLines) => {
+                const needIndent =
+                    i === 0 || i === 1 || i === codeLines.length - 1;
+                return `${needIndent ? '  ' : ''}${line}`;
+            });
+        }
+        return [`  - ${t}`];
+    });
     return {
         project,
         tag,
