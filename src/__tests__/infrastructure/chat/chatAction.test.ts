@@ -289,6 +289,36 @@ describe('chatAction 함수는', () => {
         expect(result).toEqual({ ok: false, error: 'server_busy' });
     });
 
+    it('문자열 에러 throw 시 server_error를 반환한다', async () => {
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+        mockGenerateContent.mockRejectedValueOnce('string error');
+
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
+        );
+
+        expect(result).toEqual({ ok: false, error: 'server_error' });
+    });
+
+    it('null throw 시 server_error를 반환한다', async () => {
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+        mockGenerateContent.mockRejectedValueOnce(null);
+
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
+        );
+
+        expect(result).toEqual({ ok: false, error: 'server_error' });
+    });
+
     it('유효하지 않은 모델 전달 시 server_error를 반환한다', async () => {
         const result = await chatAction(
             'AAPL',

@@ -4,10 +4,7 @@ import { useRef, useState } from 'react';
 import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
-import {
-    GEMINI_2_5_FLASH_MODEL,
-    GEMINI_2_5_FLASH_LITE_MODEL,
-} from '@/domain/constants/chatModels';
+import { VALID_CHAT_MODELS } from '@/domain/constants/chatModels';
 import type { AnalysisResponse, ChatModel, Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
@@ -19,19 +16,21 @@ interface ChatModelOption {
     fullName: string;
 }
 
-// 모듈 레벨 상수 — 렌더마다 재생성 방지
-const CHAT_MODEL_OPTIONS: ReadonlyArray<ChatModelOption> = [
-    {
-        id: GEMINI_2_5_FLASH_MODEL,
-        label: 'Flash',
-        fullName: 'Gemini 2.5 Flash',
-    },
-    {
-        id: GEMINI_2_5_FLASH_LITE_MODEL,
+const MODEL_DISPLAY_MAP: Record<
+    ChatModel,
+    { label: string; fullName: string }
+> = {
+    'gemini-2.5-flash': { label: 'Flash', fullName: 'Gemini 2.5 Flash' },
+    'gemini-2.5-flash-lite': {
         label: 'Flash Lite',
         fullName: 'Gemini 2.5 Flash Lite',
     },
-];
+};
+
+const CHAT_MODEL_OPTIONS = VALID_CHAT_MODELS.map(id => ({
+    id,
+    ...MODEL_DISPLAY_MAP[id],
+})) satisfies ReadonlyArray<ChatModelOption>;
 
 const MARKDOWN_COMPONENTS: Components = {
     p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
@@ -95,6 +94,15 @@ export function ChatPanel({
     isAnalysisReady,
     onClose,
 }: ChatPanelProps) {
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const [opensUpward, setOpensUpward] = useState(true);
+    const { isOpen, toggle, close } = usePopoverToggle([
+        triggerRef,
+        dropdownRef,
+    ]);
+
     const {
         messages,
         loadingPhase,
@@ -103,7 +111,7 @@ export function ChatPanel({
         sendMessage,
         dismissAnalysisUpdated,
         selectedModel,
-        setSelectedModel,
+        handleModelChange,
     } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
 
     const {
@@ -116,18 +124,7 @@ export function ChatPanel({
         handleKeyDown,
     } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
 
-    const triggerRef = useRef<HTMLButtonElement>(null);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-    const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
-    const [opensUpward, setOpensUpward] = useState(true);
-    const { isOpen, toggle, close } = usePopoverToggle([
-        triggerRef,
-        dropdownRef,
-    ]);
-
-    const selectedModelOption = CHAT_MODEL_OPTIONS.find(
-        opt => opt.id === selectedModel
-    )!;
+    const selectedModelOption = MODEL_DISPLAY_MAP[selectedModel];
 
     const handleDropdownToggle = () => {
         if (!isOpen && triggerRef.current) {
@@ -151,7 +148,7 @@ export function ChatPanel({
             case 'ArrowDown': {
                 e.preventDefault();
                 const nextIdx = (currentIndex + 1) % CHAT_MODEL_OPTIONS.length;
-                setSelectedModel(CHAT_MODEL_OPTIONS[nextIdx]!.id);
+                handleModelChange(CHAT_MODEL_OPTIONS[nextIdx]!.id);
                 optionRefs.current[nextIdx]?.focus();
                 break;
             }
@@ -160,19 +157,19 @@ export function ChatPanel({
                 const prevIdx =
                     (currentIndex - 1 + CHAT_MODEL_OPTIONS.length) %
                     CHAT_MODEL_OPTIONS.length;
-                setSelectedModel(CHAT_MODEL_OPTIONS[prevIdx]!.id);
+                handleModelChange(CHAT_MODEL_OPTIONS[prevIdx]!.id);
                 optionRefs.current[prevIdx]?.focus();
                 break;
             }
             case 'Home':
                 e.preventDefault();
-                setSelectedModel(CHAT_MODEL_OPTIONS[0]!.id);
+                handleModelChange(CHAT_MODEL_OPTIONS[0]!.id);
                 optionRefs.current[0]?.focus();
                 break;
             case 'End': {
                 e.preventDefault();
                 const lastIdx = CHAT_MODEL_OPTIONS.length - 1;
-                setSelectedModel(CHAT_MODEL_OPTIONS[lastIdx]!.id);
+                handleModelChange(CHAT_MODEL_OPTIONS[lastIdx]!.id);
                 optionRefs.current[lastIdx]?.focus();
                 break;
             }
@@ -331,7 +328,7 @@ export function ChatPanel({
                                             selectedModel === option.id
                                         }
                                         onClick={() => {
-                                            setSelectedModel(option.id);
+                                            handleModelChange(option.id);
                                             close();
                                             triggerRef.current?.focus();
                                         }}
@@ -341,7 +338,7 @@ export function ChatPanel({
                                                 e.key === ' '
                                             ) {
                                                 e.preventDefault();
-                                                setSelectedModel(option.id);
+                                                handleModelChange(option.id);
                                                 close();
                                                 triggerRef.current?.focus();
                                             }
@@ -388,9 +385,9 @@ export function ChatPanel({
                         onKeyDown={handleKeyDown}
                         disabled={isInputDisabled}
                         placeholder={placeholder}
-                        rows={2}
+                        rows={1}
                         className={cn(
-                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[52px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-xs leading-relaxed transition-colors outline-none',
+                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[32px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-xs leading-relaxed transition-colors outline-none',
                             'focus:border-primary-500',
                             isInputDisabled && 'cursor-not-allowed opacity-50'
                         )}

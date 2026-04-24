@@ -62,7 +62,7 @@ export interface UseChatReturn {
     sendMessage: (text: string) => Promise<void>;
     dismissAnalysisUpdated: () => void;
     selectedModel: ChatModel;
-    setSelectedModel: (model: ChatModel) => void;
+    handleModelChange: (model: ChatModel) => void;
 }
 
 export function useChat({
@@ -190,6 +190,10 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
+    const handleModelChange = useCallback((model: ChatModel) => {
+        setSelectedModel(model);
+    }, []);
+
     // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
     // inline render assignments can be stale under interrupted/discarded renders)
     useLayoutEffect(() => {
@@ -293,6 +297,6 @@ export function useChat({
         sendMessage,
         dismissAnalysisUpdated,
         selectedModel,
-        setSelectedModel,
+        handleModelChange,
     };
 }
