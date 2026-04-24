@@ -6,7 +6,7 @@ export const AI_SERVER_UNSTABLE_CODE = 'AI_SERVER_UNSTABLE';
 
 type ErrorKind = 'rate_limit' | 'server_error' | 'retryable' | 'none';
 
-const RETRY_ALLOWABLE_TIME_MS = 600_000;
+const RETRY_ALLOWABLE_TIME_MS = 300_000;
 
 function classifyError(error: unknown): ErrorKind {
     if (typeof error !== 'object' || error === null) return 'none';

@@ -24,7 +24,8 @@
         "release:minor": "dotenv -e .env.local -- release-it minor",
         "release:major": "dotenv -e .env.local -- release-it major",
         "worker:run": "cd worker && yarn dev",
-        "worker:deploy": "cd worker && yarn deploy"
+        "worker:deploy": "cd worker && yarn deploy",
+        "fetch-this-week-tasks": "cd scripts/fetch-this-week-tasks && node --env-file=.env index.js"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "0.81.0",

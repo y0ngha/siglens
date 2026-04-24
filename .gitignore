@@ -63,3 +63,5 @@ next-env.d.ts
 /src/app/dev/
 /.claire/
 /.claude/worktrees/
+
+**node_modules**
