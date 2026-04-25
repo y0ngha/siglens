@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #379 Round 2 | fix/349/briefing-retry-delay-paid-key-fallback | 2026-04-25]
+- Violation: `withRetry` JSDoc 블록이 4줄 다중 단락 — 단일 줄 요약 규칙 위반
+- Rule: MISTAKES.md Documentation Sync #3 — Single-line summaries only; multi-paragraph docstrings must be condensed to one line per function
+- Context: `retry.ts`의 `withRetry` 함수와 `AI_SERVER_UNSTABLE_CODE` 상수 JSDoc, `index.ts`의 `getThinkingBudgetSequence`·`callGeminiReducingBudget` JSDoc 모두 단일 줄로 압축
+
+- Violation: 엔드포인트 전용 상수(`ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS`, `BRIEFING_MAX_RETRY_DELAY_MS`)가 범용 retry 유틸리티 모듈에 export되어 불필요한 결합 발생
+- Rule: FF Cohesion 원칙 — 파일을 수정하면 함께 바뀌어야 할 파일을 같은 위치에 두어야 한다
+- Context: 두 상수는 `index.ts`에서만 사용되므로 `retry.ts`에서 제거하고 `index.ts` 상수 블록으로 이동
+
 ## [PR #379 | fix/349/briefing-retry-delay-paid-key-fallback | 2026-04-25]
 - Violation: `withRetry`가 누적 지연 대신 개별 지연만 `delayLimit`과 비교하여, 여러 번의 짧은 재시도가 누적되어 총 대기 시간이 한도를 초과할 수 있었음
 - Rule: CONVENTIONS.md Predictability — PR 설명과 구현이 일치해야 함; "누적 재시도 지연 시간 제한"이라고 명시되어 있으면 구현도 누적값을 추적해야 함

@@ -4,11 +4,7 @@ import { Redis } from '@upstash/redis';
 import { config } from './config.js';
 import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
 import { callClaude } from './claude.js';
-import {
-    withRetry,
-    ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS,
-    BRIEFING_MAX_RETRY_DELAY_MS,
-} from './retry.js';
+import { withRetry } from './retry.js';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -21,6 +17,8 @@ const JOB_TTL_SECONDS = 3600;
 const AI_RETRY_MAX_ATTEMPTS = 5;
 const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
 const AI_RETRY_DELAY_MS = 5000;
+const ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS = 30_000;
+const BRIEFING_MAX_RETRY_DELAY_MS = 10_000;
 
 // 진행 중인 job의 AbortController를 보관 — /cancel 엔드포인트 수신 시 즉시 abort 가능
 const activeJobs = new Map<string, AbortController>();
@@ -34,11 +32,7 @@ function isMaxTokensError(error: unknown): boolean {
     );
 }
 
-/**
- * MAX_TOKENS 발생 시 시도할 thinkingBudget 단계.
- * initial → initial/2 → 8192 → 4096 → 2048 → 0(thinking off)
- * 엄격한 감소 순서를 보장하기 위해 이전 값보다 작은 경우만 포함한다.
- */
+/** MAX_TOKENS 발생 시 시도할 thinkingBudget 단계 시퀀스를 반환한다 (엄격한 감소 순서). */
 function getThinkingBudgetSequence(initial: number): number[] {
     const candidates = [initial, Math.floor(initial / 2), 8192, 4096, 2048, 0];
     return candidates.reduce<number[]>((acc, budget) => {
@@ -49,11 +43,7 @@ function getThinkingBudgetSequence(initial: number): number[] {
     }, []);
 }
 
-/**
- * MAX_TOKENS 발생 시 thinkingBudget을 단계적으로 낮춰가며 1회씩 시도한다.
- * 429/5xx 등 일시적 에러는 재시도하지 않고 그대로 throw하여
- * 외부 withRetry 레이어에서 처리하도록 한다.
- */
+/** MAX_TOKENS 발생 시 thinkingBudget을 단계적으로 낮춰가며 시도; 일시적 에러는 outer withRetry로 전파한다. */
 async function callGeminiReducingBudget(
     prompt: string,
     apiKey: string,

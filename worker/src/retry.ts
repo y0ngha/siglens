@@ -1,14 +1,5 @@
-/**
- * 5xx 에러로 모든 재시도가 소진되었음을 나타내는 센티넬 에러 코드.
- * 클라이언트(useAnalysis.ts)에서 동일한 문자열로 매칭하여 사용자 안내 메시지를 표시한다.
- */
+/** useAnalysis.ts가 이 문자열로 매칭하여 사용자 안내 메시지를 표시하는 5xx 소진 센티넬 코드. */
 export const AI_SERVER_UNSTABLE_CODE = 'AI_SERVER_UNSTABLE';
-
-/** 일반 분석(/analyze) — free 키 rate limit 시 최대 허용 지연. 초과 시 즉시 유료 키로 전환한다. */
-export const ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS = 30_000;
-
-/** AI 브리핑(/briefing) — 약 10초 이내 완료 목표. 초과 시 즉시 유료 키로 전환한다. */
-export const BRIEFING_MAX_RETRY_DELAY_MS = 10_000;
 
 type ErrorKind = 'rate_limit' | 'server_error' | 'retryable' | 'none';
 
@@ -94,12 +85,7 @@ function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/**
- * withRetry options
- * - abortIfDelayExceedsMs: 계산된 재시도 지연이 이 값 이상이면 대기 없이 즉시 루프를 종료하고
- *   AI_SERVER_UNSTABLE_CODE를 throw한다. 호출 측에서 유료 키로의 전환 등 다음 단계를 처리해야 한다.
- *   미지정 시 RETRY_ALLOWABLE_TIME_MS(300초)가 기본값으로 적용된다.
- */
+/** 누적 지연이 abortIfDelayExceedsMs를 초과하면 즉시 루프를 중단하고 AI_SERVER_UNSTABLE_CODE를 throw한다. */
 export async function withRetry<T>(
     fn: () => Promise<T>,
     options: {
