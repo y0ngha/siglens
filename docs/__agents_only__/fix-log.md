@@ -1,10 +1,6 @@
 # Fix Log
 
 ## [PR #380 Round 2 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
-- Violation: 외부 인터페이스(`GeminiWithRetryOptions.abortIfDelayExceedsMs`)와 내부 구현(`withRetry` 옵션의 `abortIfCumulativeDelayReachesMs`) 간 파라미터 이름 불일치
-- Rule: FF Predictability — 동일한 개념은 전체 호출 체인에서 일관된 이름을 사용해야 함
-- Context: `callGeminiWithRetry` 인터페이스의 `abortIfDelayExceedsMs`가 내부에서 `abortIfCumulativeDelayReachesMs`로 매핑되어 동일 옵션을 두 이름으로 표현했음; 인터페이스 필드명을 통일
-
 - Violation: `tsconfig.test.json`이 `tsconfig.json`의 `exclude: ["src/__tests__"]`를 상속받아 테스트 파일 포함 의도가 불명확
 - Rule: CONVENTIONS.md — 설정 파일의 의도는 명시적으로 선언되어야 한다
 - Context: `tsconfig.test.json`에 `exclude` 필드가 없어 상속된 exclusion이 적용됨; `exclude: ["node_modules", "dist"]`를 명시적으로 오버라이드하여 테스트 파일 포함 의도를 문서화
@@ -14,14 +10,6 @@
 - Context: `callGeminiReducingBudget` 마지막 `throw` 앞의 주석이 코드 동작을 단순 재서술; 주석 제거
 
 ## [PR #380 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
-- Violation: `beforeEach`와 에러 변수가 모듈 최상위 레벨에 선언됨 — describe 블록 밖에서 공유 상태를 관리
-- Rule: MISTAKES.md Tests #3 — beforeEach/beforeAll은 반드시 describe 블록 내부에 선언
-- Context: `gemini-retry.test.ts` 전체를 최상위 `describe('gemini-retry', ...)` 로 감싸고 변수·beforeEach를 그 안으로 이동
-
-- Violation: `for...of` + `indexOf` 중복 탐색 — 이미 순회 중인 배열에서 인덱스를 O(n) 재탐색
-- Rule: MISTAKES.md #2 — 동일 값을 한 함수에서 두 번 계산하지 않는다
-- Context: `callGeminiReducingBudget`의 `for...of` 루프를 `for (let i = 0; ...)` 로 교체하여 직접 인덱스 접근
-
 - Violation: 다중 줄 JSDoc 블록 4곳 — 단일 줄 요약 규칙 위반
 - Rule: CLAUDE.md — multi-line comment blocks are prohibited; one short line max
 - Context: `gemini-retry.ts`의 `getThinkingBudgetSequence`·`callGeminiReducingBudget`·`budgetRef` 필드 JSDoc을 단일 줄 또는 inline 주석으로 압축
@@ -47,11 +35,6 @@
 - Violation: `callAnalysisAI`와 `callBriefingAI`가 Claude → Gemini 무료 키 → 유료 키 폴백 로직을 18줄씩 완전 중복 구현
 - Rule: MISTAKES.md Coding Paradigm #1 — "Across provider pairs: extract shared logic"
 - Context: `worker/src/index.ts`에서 `callGeminiWithKeyFallback` 헬퍼로 공통 로직 추출; `callAnalysisAI`, `callBriefingAI`는 각 지연 한도 상수만 전달하는 1줄로 단순화
-
-## [PR #345 | feat/chat-model-selector | 2026-04-24]
-- Violation: `server_busy` 에러 메시지가 "위의 모델 선택기에서"처럼 UI 레이아웃 구조를 훅 레이어에서 직접 참조
-- Rule: FF Coupling — 훅(로직 레이어)은 컴포넌트 레이아웃(UI 레이어) 위치를 알아서는 안 됨
-- Context: `useChat.ts`의 `ERROR_MESSAGES.server_busy`가 ChatPanel 드롭다운 위치를 서술; 위치 변경 시 메시지가 부정확해짐
 
 ## [PR #345 Round 4 | feat/chat-model-selector | 2026-04-25]
 - Violation: `useState` lazy initializer에서 `localStorage` 접근으로 SSR hydration mismatch 발생

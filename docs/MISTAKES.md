@@ -296,6 +296,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Improves readability and allows reuse in tests or other contexts
     ❌ export default function MyComponent({ label }: { label: string }) { ... }
     ✅ interface MyComponentProps { label: string }; export default function MyComponent(props: MyComponentProps) { ... }
+
+14. Hook error messages reference component layout positions (violates FF Coupling)
+    → Hooks (logic layer) must not know about component structure (UI layer)
+    → Error messages should describe the problem, not the position in the current UI
+    ❌ useChat.ts: ERROR_MESSAGES.server_busy = "위의 모델 선택기에서 다른 모델을 선택하세요"  // references ChatPanel dropdown location
+    ✅ ERROR_MESSAGES.server_busy = "Change the model and retry"  // describes action, not location
+    → When UI layout changes (dropdown moves), message remains correct without code change
 ```
 
 ---
@@ -583,6 +590,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ Description says "UTAD confirms buying" when UTAD actually signals distribution completion
    ✅ Example: "current price 168, support 167" to show support holding for long entry
    ✅ Description: "UTAD signals distribution complete; defer entry (downside risk)"
+
+5. Test infrastructure changes applied to production tsconfig instead of test-only configuration
+   → Test-specific settings (ts-jest CJS mode, module resolution overrides) must be isolated to tsconfig.test.json
+   → Production tsconfig.json must remain stable to prevent ESM-only dependency failures at runtime
+   ❌ tsconfig.json module changed from ESM to CJS for ts-jest compatibility, breaking ESM-only imports
+   ✅ tsconfig.test.json overrides only module/moduleResolution for test environment, tsconfig.json unchanged
+
+6. Interface parameter names diverge from implementation across call chain
+   → Parameter names for the same logical value must be consistent across external interface and internal implementation
+   → Inconsistency makes the code harder to follow and prone to off-by-one errors
+   ❌ callGeminiWithRetry accepts abortIfDelayExceedsMs, internally maps to abortIfCumulativeDelayReachesMs
+   ✅ Interface and implementation use identical parameter names; mapping logic is transparent
 ```
 
 ---
