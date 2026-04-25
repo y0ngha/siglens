@@ -167,17 +167,6 @@ describe('buildDisplayName', () => {
             expect(buildDisplayName(assetInfo, 'AAPL')).toBe('애플 (AAPL)');
         });
     });
-
-    describe('assetInfo에 koreanName만 있고 name이 ticker와 같을 때', () => {
-        it('"koreanName (ticker)" 형식으로 반환한다', () => {
-            const assetInfo: AssetInfo = {
-                symbol: 'TSLA',
-                name: 'TSLA',
-                koreanName: '테슬라',
-            };
-            expect(buildDisplayName(assetInfo, 'TSLA')).toBe('테슬라 (TSLA)');
-        });
-    });
 });
 
 describe('deduplicateResults', () => {

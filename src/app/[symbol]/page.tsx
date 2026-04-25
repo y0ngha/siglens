@@ -51,11 +51,17 @@ export async function generateMetadata({
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
 
-    const title = `${ticker} 주가 AI 분석`;
+    const assetInfo = await getAssetInfoAction(ticker);
+    const displayName = buildDisplayName(assetInfo, ticker);
+    const title = `${displayName} 주가 AI 분석`;
     const fullTitle = `${title} | ${SITE_NAME}`;
-    const description = buildSymbolDescription(ticker);
+    const description = buildSymbolDescription(displayName);
     const url = `${SITE_URL}/${ticker}`;
-    const keywords = buildSymbolKeywords(ticker, ticker);
+    const keywords = buildSymbolKeywords(
+        ticker,
+        displayName,
+        assetInfo?.koreanName
+    );
 
     return {
         title,

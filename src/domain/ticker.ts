@@ -28,15 +28,15 @@ export function buildDisplayName(
     assetInfo: AssetInfo | null,
     ticker: string
 ): string {
-    const namePart = assetInfo?.name !== ticker ? assetInfo?.name : null;
-    if (assetInfo?.koreanName && namePart) {
-        return `${assetInfo.koreanName}, ${namePart} (${ticker})`;
+    if (!assetInfo) return ticker;
+
+    const { name, koreanName } = assetInfo;
+    const nameIsDifferent = name && name !== ticker;
+
+    if (koreanName) {
+        return nameIsDifferent
+            ? `${koreanName}, ${name} (${ticker})`
+            : `${koreanName} (${ticker})`;
     }
-    if (assetInfo?.koreanName) {
-        return `${assetInfo.koreanName} (${ticker})`;
-    }
-    if (namePart) {
-        return `${namePart} (${ticker})`;
-    }
-    return ticker;
+    return nameIsDifferent ? `${name} (${ticker})` : ticker;
 }
