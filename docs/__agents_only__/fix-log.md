@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #383 | fix/348/symbol-page-title-placeholder | 2026-04-25]
+- Violation: `generateMetadata`에서 `buildSymbolKeywords(ticker, ticker)` 중복 인자 전달 — `displayName` 자리에 ticker를 넘겨 회사명·한국어 키워드 소실
+- Rule: MISTAKES.md Coding Paradigm — 동일한 값을 여러 인자 위치에 반복 전달하면 파라미터 설계 의도가 무력화됨
+- Context: `generateMetadata`에서 `getAssetInfoAction` 제거 후 displayName을 구하지 않아 `buildSymbolKeywords(ticker, ticker)` 호출; `getAssetInfoAction` + `buildDisplayName`을 복원하여 수정
+
+- Violation: `generateMetadata`의 `<title>` · `<meta description>`과 JSON-LD `name`/`description`이 다른 값을 생성 — SEO 불일치
+- Rule: MISTAKES.md Design & Cohesion — 같은 비즈니스 규칙이 두 레이어에 적용될 때 양쪽 조건을 동일하게 유지해야 한다
+- Context: `generateMetadata`에서만 `getAssetInfoAction`을 제거해 제목이 ticker 단독(예: "AAPL 주가 AI 분석")이 되고 JSON-LD는 displayName(예: "애플, Apple Inc (AAPL)")을 사용하는 불일치 발생
+
+- Violation: 테스트 describe 블록이 직상위 블록의 케이스와 동일한 조건·기대값을 중복 검증
+- Rule: MISTAKES.md Tests — each it() must test exactly one unique behavior
+- Context: 171–180행 describe('assetInfo에 koreanName만 있고 name이 ticker와 같을 때')가 161–168행과 완전 동일 조건; 해당 블록 제거
+
 ## [PR #380 Round 4 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
 - Violation: 테스트 설명 문구 "starts from half when initial equals a mid-range candidate"가 실제 동작 불일치
 - Rule: MISTAKES.md Tests #9 — 설명이 실제 검증 내용을 정확히 반영해야 함
