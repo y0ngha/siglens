@@ -65,3 +65,5 @@ next-env.d.ts
 /.claude/worktrees/
 
 **node_modules**
+
+/scripts
