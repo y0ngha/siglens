@@ -2,7 +2,6 @@
     "name": "siglens-worker",
     "version": "1.0.0",
     "private": true,
-    "type": "module",
     "packageManager": "yarn@4.12.0",
     "scripts": {
         "build": "tsc",
