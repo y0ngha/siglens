@@ -23,33 +23,34 @@
  * 설계 문서: docs/superpowers/specs/2026-04-20-multi-signal-backtest-design.md
  */
 
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
-import { resolve } from 'path';
-import { config } from 'dotenv';
-import { GoogleGenAI, JobState } from '@google/genai';
-import type { InlinedRequest, InlinedResponse } from '@google/genai';
-import { calculateIndicators, calculateMA } from '@/domain/indicators';
-import { detectSignals } from '@/domain/signals';
-import { simulateExit } from '@/domain/backtest/exit';
-import { signalTypeToTagLabel } from '@/domain/backtest/tags';
 import {
     resolveBullishStopLoss,
     resolveBullishTakeProfit,
 } from '@/domain/analysis/ai-levels';
-import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
 import { enrichAnalysisWithConfidence } from '@/domain/analysis/confidence';
-import { AI_SYSTEM_PROMPT, parseJsonResponse } from '@/infrastructure/ai/utils';
+import { buildAnalysisPrompt } from '@/domain/analysis/prompt';
+import { simulateExit } from '@/domain/backtest/exit';
+import { signalTypeToTagLabel } from '@/domain/backtest/tags';
+import { calculateIndicators, calculateMA } from '@/domain/indicators';
+import { detectSignals } from '@/domain/signals';
 import type {
-    Bar,
     BacktestAiResult,
     BacktestCase,
     BacktestExitReason,
     BacktestMeta,
+    BacktestRiskLevel,
     BacktestSignalResult,
+    Bar,
     EntryRecommendation,
     RawAnalysisResponse,
     Trend,
 } from '@/domain/types';
+import { AI_SYSTEM_PROMPT, parseJsonResponse } from '@/infrastructure/ai/utils';
+import type { InlinedRequest, InlinedResponse } from '@google/genai';
+import { GoogleGenAI, JobState } from '@google/genai';
+import { config } from 'dotenv';
+import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { resolve } from 'path';
 
 config({ path: resolve(process.cwd(), '.env.local') });
 
@@ -582,7 +583,11 @@ function buildBacktestCase(
             // 상단에서 이미 계산한 결과를 재활용해 중복 검증을 제거한다.
             stopLoss: slResolved.source === 'ai' ? ai.stopLoss : undefined,
             takeProfit: tpResolved.source === 'ai' ? ai.takeProfit : undefined,
-            riskLevel: ai.riskLevel,
+            riskLevel: ['low', 'moderate', 'high', 'extreme'].includes(
+                ai.riskLevel ?? ''
+            )
+                ? (ai.riskLevel as BacktestRiskLevel)
+                : undefined,
         },
     };
 }
