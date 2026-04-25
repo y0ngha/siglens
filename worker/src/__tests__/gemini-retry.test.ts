@@ -48,7 +48,9 @@ describe('gemini-retry', () => {
         });
 
         it('starts from half when initial equals a mid-range candidate', () => {
-            expect(getThinkingBudgetSequence(8192)).toEqual([8192, 4096, 2048, 0]);
+            expect(getThinkingBudgetSequence(8192)).toEqual([
+                8192, 4096, 2048, 0,
+            ]);
         });
 
         it('excludes candidates larger than initial', () => {
