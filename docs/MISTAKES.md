@@ -610,6 +610,21 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → TODO comments indicate intentional preservation for future references
    → Removing such code breaks commented-out code that still references it; restore or update all references first
 
+4.5. Stateful operations in retry/fallback chains lose reduced state
+   → When retry or fallback logic repeats a function (withRetry, key fallback), shared mutable state must be passed through explicitly
+   → Local state initialized on each call gets reset, losing reductions/calculations from previous attempts
+   → Use ref-based accumulation (budgetRef.current) or single instance patterns to preserve state across retries
+   ❌ callGeminiWithRetry reinitializes thinkingBudget from config on each retry, losing consumed budget
+   ❌ callGeminiWithFallback creates new budgetRef for paid key, resetting to initial on Free→Paid fallback
+   ✅ Create budgetRef once in callGeminiWithKeyFallback, pass to both free and paid key calls
+   ✅ Preserve reduced budget across withRetry retries by threading mutable ref through call chain
+
+4.6. Option parameter names must express control flow semantics, not implementation details
+   → Parameters controlling abort/exception behavior must name the consequence, not the check
+   → Caller cannot predict hidden side effects from unclear names
+   ❌ maxDelayMs — looks like a cap, actually aborts with exception if exceeded
+   ✅ abortIfCumulativeDelayReachesMs — name signals exception will be thrown
+
 5. Domain logic conditions differ between server and client
    → When the same business rule applies in both layers, ensure identical conditions on both sides
    → Example: if client uses `name !== ticker` guard, server `buildDisplayName` must use the same guard

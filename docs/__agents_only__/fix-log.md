@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #380 Round 2 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
+- Violation: 외부 인터페이스(`GeminiWithRetryOptions.abortIfDelayExceedsMs`)와 내부 구현(`withRetry` 옵션의 `abortIfCumulativeDelayReachesMs`) 간 파라미터 이름 불일치
+- Rule: FF Predictability — 동일한 개념은 전체 호출 체인에서 일관된 이름을 사용해야 함
+- Context: `callGeminiWithRetry` 인터페이스의 `abortIfDelayExceedsMs`가 내부에서 `abortIfCumulativeDelayReachesMs`로 매핑되어 동일 옵션을 두 이름으로 표현했음; 인터페이스 필드명을 통일
+
+- Violation: `tsconfig.test.json`이 `tsconfig.json`의 `exclude: ["src/__tests__"]`를 상속받아 테스트 파일 포함 의도가 불명확
+- Rule: CONVENTIONS.md — 설정 파일의 의도는 명시적으로 선언되어야 한다
+- Context: `tsconfig.test.json`에 `exclude` 필드가 없어 상속된 exclusion이 적용됨; `exclude: ["node_modules", "dist"]`를 명시적으로 오버라이드하여 테스트 파일 포함 의도를 문서화
+
+- Violation: `// unreachable: 루프는 반드시 return 또는 throw로 종료됨` 주석이 코드가 하는 일(WHAT)을 설명
+- Rule: CLAUDE.md — "Don't explain WHAT the code does"
+- Context: `callGeminiReducingBudget` 마지막 `throw` 앞의 주석이 코드 동작을 단순 재서술; 주석 제거
+
 ## [PR #380 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
 - Violation: `beforeEach`와 에러 변수가 모듈 최상위 레벨에 선언됨 — describe 블록 밖에서 공유 상태를 관리
 - Rule: MISTAKES.md Tests #3 — beforeEach/beforeAll은 반드시 describe 블록 내부에 선언
@@ -16,15 +29,6 @@
 - Violation: `as` 타입 단언 보증 주석 누락 — 캐스트 이유가 독자에게 불투명
 - Rule: MISTAKES.md TypeScript #7 — every safe-cast `as` must have a comment explaining the guarantee
 - Context: `isMaxTokensError`의 `(error as { code: unknown })` 및 테스트 파일의 2개 `as` 캐스트에 보증 주석 추가
-
-## [Issue #350 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
-- Violation: 5xx 재시도 시 thinkingBudget이 초기값으로 리셋됨 — withRetry가 fn()을 재호출할 때마다 callGeminiReducingBudget이 config.gemini.thinkingBudget에서 시작
-- Rule: Predictability — 상태 연속성이 필요한 호출 체인에서 각 호출이 공유 상태를 갖지 않으면 이전 시도에서 감소된 값이 소실됨
-- Context: worker/src/gemini-retry.ts에 budgetRef 패턴 도입; budgetRef.current를 루프 반복 시작 시 업데이트하여 withRetry 재호출 간 감소된 budget 보존
-
-- Violation: Free→Paid 키 전환 시 thinkingBudget이 초기값으로 리셋됨 — callGeminiWithFallback이 새 budgetRef를 생성하여 유료 키 호출이 초기값에서 시작
-- Rule: Predictability — 연관된 재시도 흐름(Free→Paid 폴백)은 상태를 공유해야 함
-- Context: callGeminiWithKeyFallback에서 단일 budgetRef를 생성하여 free key와 paid key 호출 양쪽에 전달; GeminiWithFallbackOptions에 budgetRef 필드 추가
 
 ## [PR #379 Round 2 | fix/349/briefing-retry-delay-paid-key-fallback | 2026-04-25]
 - Violation: `withRetry` JSDoc 블록이 4줄 다중 단락 — 단일 줄 요약 규칙 위반
@@ -43,11 +47,6 @@
 - Violation: `callAnalysisAI`와 `callBriefingAI`가 Claude → Gemini 무료 키 → 유료 키 폴백 로직을 18줄씩 완전 중복 구현
 - Rule: MISTAKES.md Coding Paradigm #1 — "Across provider pairs: extract shared logic"
 - Context: `worker/src/index.ts`에서 `callGeminiWithKeyFallback` 헬퍼로 공통 로직 추출; `callAnalysisAI`, `callBriefingAI`는 각 지연 한도 상수만 전달하는 1줄로 단순화
-
-## [Issue #349 | fix/349/briefing-retry-delay-paid-key-fallback | 2026-04-25]
-- Violation: 옵션 파라미터 이름(`maxDelayMs`)이 단순 지연 상한처럼 보이지만, 실제로는 한도 초과 시 루프를 즉시 중단하고 `AI_SERVER_UNSTABLE_CODE`를 throw하는 제어 흐름 부수 효과를 가짐
-- Rule: FF Predictability — 파라미터 이름은 호출 측이 타입과 이름만으로 동작을 예측할 수 있어야 한다. 숨겨진 제어 흐름 효과는 이름에 명시해야 함
-- Context: `withRetry`의 `maxDelayMs` 옵션이 delay cap처럼 보였으나 실제로는 abort-on-exceed 시맨틱. `abortIfCumulativeDelayReachesMs`로 이름을 변경하여 의도를 명확히 함
 
 ## [PR #345 | feat/chat-model-selector | 2026-04-24]
 - Violation: `server_busy` 에러 메시지가 "위의 모델 선택기에서"처럼 UI 레이아웃 구조를 훅 레이어에서 직접 참조

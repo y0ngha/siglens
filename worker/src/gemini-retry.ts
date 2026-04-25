@@ -35,8 +35,9 @@ export async function callGeminiReducingBudget(
     budgetRef: { current: number }
 ): Promise<string> {
     const budgets = getThinkingBudgetSequence(budgetRef.current);
+    const budgetCount = budgets.length;
 
-    for (let i = 0; i < budgets.length; i++) {
+    for (let i = 0; i < budgetCount; i++) {
         const budget = budgets[i];
         budgetRef.current = budget;
         try {
@@ -69,14 +70,13 @@ export async function callGeminiReducingBudget(
         }
     }
 
-    // unreachable: 루프는 반드시 return 또는 throw로 종료됨
     throw new Error('All thinking budget steps exhausted');
 }
 
 export interface GeminiWithRetryOptions {
     maxAttempts?: number;
     signal?: AbortSignal;
-    abortIfDelayExceedsMs?: number;
+    abortIfCumulativeDelayReachesMs?: number;
     // 미지정 시 config.gemini.thinkingBudget으로 초기화된 새 참조가 생성됨
     budgetRef?: { current: number };
 }
@@ -89,7 +89,7 @@ export async function callGeminiWithRetry(
     const {
         maxAttempts = AI_RETRY_MAX_ATTEMPTS,
         signal,
-        abortIfDelayExceedsMs,
+        abortIfCumulativeDelayReachesMs,
         budgetRef = { current: config.gemini.thinkingBudget },
     } = options;
     return withRetry(
@@ -97,7 +97,7 @@ export async function callGeminiWithRetry(
         {
             maxAttempts,
             baseDelayMs: AI_RETRY_DELAY_MS,
-            abortIfCumulativeDelayReachesMs: abortIfDelayExceedsMs,
+            abortIfCumulativeDelayReachesMs,
         }
     );
     // TODO: fallback model 임시 비활성화
@@ -122,7 +122,7 @@ export async function callGeminiWithKeyFallback(
             return await callGeminiWithRetry(prompt, freeApiKey, {
                 maxAttempts: AI_RETRY_MAX_ATTEMPTS_FREE,
                 signal,
-                abortIfDelayExceedsMs: freeKeyDelayLimit,
+                abortIfCumulativeDelayReachesMs: freeKeyDelayLimit,
                 budgetRef,
             });
         } catch (err) {

@@ -142,6 +142,24 @@ describe('gemini-retry', () => {
             expect(budgetRef.current).toBe(24576);
         });
 
+        it('propagates null error (isMaxTokensError: null path)', async () => {
+            mockCallGemini.mockRejectedValueOnce(null);
+
+            const budgetRef = { current: 24576 };
+            await expect(
+                callGeminiReducingBudget('prompt', 'key', undefined, budgetRef)
+            ).rejects.toBeNull();
+        });
+
+        it('propagates string error (isMaxTokensError: non-object path)', async () => {
+            mockCallGemini.mockRejectedValueOnce('unexpected string error');
+
+            const budgetRef = { current: 24576 };
+            await expect(
+                callGeminiReducingBudget('prompt', 'key', undefined, budgetRef)
+            ).rejects.toBe('unexpected string error');
+        });
+
         it('preserves reduced budget in budgetRef when 5xx follows MAX_TOKENS (Bug 1)', async () => {
             // Sequence: MAX_TOKENS at 24576 → continues to 12288 → 5xx at 12288
             mockCallGemini
@@ -207,6 +225,19 @@ describe('gemini-retry', () => {
                 apiKey: 'paid-key',
                 thinkingBudget: 12288,
             });
+        });
+
+        it('rethrows AbortError from free key phase without falling back to paid key', async () => {
+            const abortError = Object.assign(new Error('Aborted'), {
+                name: 'AbortError',
+            });
+            mockCallGemini.mockRejectedValueOnce(abortError);
+
+            await expect(
+                callGeminiWithKeyFallback('prompt', undefined, 30000)
+            ).rejects.toMatchObject({ name: 'AbortError' });
+
+            expect(mockCallGemini).toHaveBeenCalledTimes(1);
         });
 
         it('calls paid key directly when freeApiKey is not configured', async () => {
