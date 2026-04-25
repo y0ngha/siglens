@@ -1,5 +1,22 @@
 # Fix Log
 
+## [PR #380 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
+- Violation: `beforeEach`와 에러 변수가 모듈 최상위 레벨에 선언됨 — describe 블록 밖에서 공유 상태를 관리
+- Rule: MISTAKES.md Tests #3 — beforeEach/beforeAll은 반드시 describe 블록 내부에 선언
+- Context: `gemini-retry.test.ts` 전체를 최상위 `describe('gemini-retry', ...)` 로 감싸고 변수·beforeEach를 그 안으로 이동
+
+- Violation: `for...of` + `indexOf` 중복 탐색 — 이미 순회 중인 배열에서 인덱스를 O(n) 재탐색
+- Rule: MISTAKES.md #2 — 동일 값을 한 함수에서 두 번 계산하지 않는다
+- Context: `callGeminiReducingBudget`의 `for...of` 루프를 `for (let i = 0; ...)` 로 교체하여 직접 인덱스 접근
+
+- Violation: 다중 줄 JSDoc 블록 4곳 — 단일 줄 요약 규칙 위반
+- Rule: CLAUDE.md — multi-line comment blocks are prohibited; one short line max
+- Context: `gemini-retry.ts`의 `getThinkingBudgetSequence`·`callGeminiReducingBudget`·`budgetRef` 필드 JSDoc을 단일 줄 또는 inline 주석으로 압축
+
+- Violation: `as` 타입 단언 보증 주석 누락 — 캐스트 이유가 독자에게 불투명
+- Rule: MISTAKES.md TypeScript #7 — every safe-cast `as` must have a comment explaining the guarantee
+- Context: `isMaxTokensError`의 `(error as { code: unknown })` 및 테스트 파일의 2개 `as` 캐스트에 보증 주석 추가
+
 ## [Issue #350 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
 - Violation: 5xx 재시도 시 thinkingBudget이 초기값으로 리셋됨 — withRetry가 fn()을 재호출할 때마다 callGeminiReducingBudget이 config.gemini.thinkingBudget에서 시작
 - Rule: Predictability — 상태 연속성이 필요한 호출 체인에서 각 호출이 공유 상태를 갖지 않으면 이전 시도에서 감소된 값이 소실됨
