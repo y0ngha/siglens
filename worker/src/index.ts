@@ -1,10 +1,16 @@
-import { constants } from 'node:http2';
-import express, { type Request, type Response } from 'express';
 import { Redis } from '@upstash/redis';
+import express, { type Request, type Response } from 'express';
+import { constants } from 'node:http2';
+import { callClaude } from './claude.js';
 import { config } from './config.js';
 import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
-import { callClaude } from './claude.js';
 import { withRetry } from './retry.js';
+
+interface GeminiWithFallbackOptions {
+    maxAttempts?: number;
+    signal?: AbortSignal;
+    abortIfCumulativeDelayReachesMs?: number;
+}
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -17,6 +23,8 @@ const JOB_TTL_SECONDS = 3600;
 const AI_RETRY_MAX_ATTEMPTS = 5;
 const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
 const AI_RETRY_DELAY_MS = 5000;
+const ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS = 30_000;
+const BRIEFING_MAX_RETRY_DELAY_MS = 10_000;
 
 // 진행 중인 job의 AbortController를 보관 — /cancel 엔드포인트 수신 시 즉시 abort 가능
 const activeJobs = new Map<string, AbortController>();
@@ -30,27 +38,18 @@ function isMaxTokensError(error: unknown): boolean {
     );
 }
 
-/**
- * MAX_TOKENS 발생 시 시도할 thinkingBudget 단계.
- * initial → initial/2 → 8192 → 4096 → 2048 → 0(thinking off)
- * 엄격한 감소 순서를 보장하기 위해 이전 값보다 작은 경우만 포함한다.
- */
+/** MAX_TOKENS 발생 시 시도할 thinkingBudget 단계 시퀀스를 반환한다 (엄격한 감소 순서). */
 function getThinkingBudgetSequence(initial: number): number[] {
     const candidates = [initial, Math.floor(initial / 2), 8192, 4096, 2048, 0];
-    const result: number[] = [];
-    for (const budget of candidates) {
-        if (result.length === 0 || budget < result[result.length - 1]) {
-            result.push(budget);
+    return candidates.reduce<number[]>((acc, budget) => {
+        if (acc.length === 0 || budget < acc[acc.length - 1]) {
+            return [...acc, budget];
         }
-    }
-    return result;
+        return acc;
+    }, []);
 }
 
-/**
- * MAX_TOKENS 발생 시 thinkingBudget을 단계적으로 낮춰가며 1회씩 시도한다.
- * 429/5xx 등 일시적 에러는 재시도하지 않고 그대로 throw하여
- * 외부 withRetry 레이어에서 처리하도록 한다.
- */
+/** MAX_TOKENS 발생 시 thinkingBudget을 단계적으로 낮춰가며 시도; 일시적 에러는 outer withRetry로 전파한다. */
 async function callGeminiReducingBudget(
     prompt: string,
     apiKey: string,
@@ -96,12 +95,17 @@ async function callGeminiReducingBudget(
 async function callGeminiWithFallback(
     prompt: string,
     apiKey: string,
-    maxAttempts: number = AI_RETRY_MAX_ATTEMPTS,
-    signal?: AbortSignal
+    options: GeminiWithFallbackOptions = {}
 ): Promise<string> {
+    const {
+        maxAttempts = AI_RETRY_MAX_ATTEMPTS,
+        signal,
+        abortIfCumulativeDelayReachesMs,
+    } = options;
     return withRetry(() => callGeminiReducingBudget(prompt, apiKey, signal), {
         maxAttempts,
         baseDelayMs: AI_RETRY_DELAY_MS,
+        abortIfCumulativeDelayReachesMs,
     });
     // TODO: fallback model 임시 비활성화
     // free API key의 할당량이 key 단위로 공유되어 fallback도 즉시 실패하는 문제 확인 필요
@@ -112,33 +116,52 @@ async function callGeminiWithFallback(
     // }
 }
 
-async function callAI(prompt: string, signal?: AbortSignal): Promise<string> {
-    if (config.aiProvider === 'claude') {
-        return callClaude(prompt, signal);
-    }
-
+async function callGeminiWithKeyFallback(
+    prompt: string,
+    signal: AbortSignal | undefined,
+    freeKeyDelayLimit: number
+): Promise<string> {
     const { freeApiKey, apiKey } = config.gemini;
 
     if (freeApiKey) {
         try {
-            return await callGeminiWithFallback(
-                prompt,
-                freeApiKey,
-                AI_RETRY_MAX_ATTEMPTS_FREE,
-                signal
-            );
-        } catch {
+            return await callGeminiWithFallback(prompt, freeApiKey, {
+                maxAttempts: AI_RETRY_MAX_ATTEMPTS_FREE,
+                signal,
+                abortIfCumulativeDelayReachesMs: freeKeyDelayLimit,
+            });
+        } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') throw err;
             console.warn(
                 '[Worker] Free API key exhausted. Switching to paid key.'
             );
         }
     }
 
-    return callGeminiWithFallback(
+    return callGeminiWithFallback(prompt, apiKey, { signal });
+}
+
+async function callAnalysisAI(
+    prompt: string,
+    signal?: AbortSignal
+): Promise<string> {
+    if (config.aiProvider === 'claude') return callClaude(prompt, signal);
+    return callGeminiWithKeyFallback(
         prompt,
-        apiKey,
-        AI_RETRY_MAX_ATTEMPTS,
-        signal
+        signal,
+        ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS
+    );
+}
+
+async function callBriefingAI(
+    prompt: string,
+    signal?: AbortSignal
+): Promise<string> {
+    if (config.aiProvider === 'claude') return callClaude(prompt, signal);
+    return callGeminiWithKeyFallback(
+        prompt,
+        signal,
+        BRIEFING_MAX_RETRY_DELAY_MS
     );
 }
 
@@ -262,7 +285,7 @@ async function processJob(
     });
 
     try {
-        const result = await callAI(prompt, controller.signal);
+        const result = await callAnalysisAI(prompt, controller.signal);
 
         if (!result || result.trim() === '') {
             throw new Error('AI returned an empty response');
@@ -360,7 +383,7 @@ async function processBriefingJob(
     });
 
     try {
-        const text = await callAI(prompt, controller.signal);
+        const text = await callBriefingAI(prompt, controller.signal);
 
         if (!text || text.trim() === '') {
             throw new Error('AI returned an empty response');

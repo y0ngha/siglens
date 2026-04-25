@@ -1,7 +1,4 @@
-/**
- * 5xx 에러로 모든 재시도가 소진되었음을 나타내는 센티넬 에러 코드.
- * 클라이언트(useAnalysis.ts)에서 동일한 문자열로 매칭하여 사용자 안내 메시지를 표시한다.
- */
+/** useAnalysis.ts가 이 문자열로 매칭하여 사용자 안내 메시지를 표시하는 5xx 소진 센티넬 코드. */
 export const AI_SERVER_UNSTABLE_CODE = 'AI_SERVER_UNSTABLE';
 
 type ErrorKind = 'rate_limit' | 'server_error' | 'retryable' | 'none';
@@ -88,11 +85,20 @@ function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/** 누적 지연이 abortIfCumulativeDelayReachesMs 이상이면 즉시 루프를 중단하고 AI_SERVER_UNSTABLE_CODE를 throw한다. */
 export async function withRetry<T>(
     fn: () => Promise<T>,
-    options: { maxAttempts: number; baseDelayMs: number }
+    options: {
+        maxAttempts: number;
+        baseDelayMs: number;
+        abortIfCumulativeDelayReachesMs?: number;
+    }
 ): Promise<T> {
-    const { maxAttempts, baseDelayMs } = options;
+    const { maxAttempts, baseDelayMs, abortIfCumulativeDelayReachesMs } =
+        options;
+    const delayLimit =
+        abortIfCumulativeDelayReachesMs ?? RETRY_ALLOWABLE_TIME_MS;
+    let cumulativeDelay = 0;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
@@ -107,32 +113,27 @@ export async function withRetry<T>(
                 throw error;
             }
 
-            if (kind === 'rate_limit') {
-                const delay = get429RetryDelay(error) ?? baseDelayMs;
+            const delay =
+                kind === 'rate_limit'
+                    ? (get429RetryDelay(error) ?? baseDelayMs)
+                    : baseDelayMs * Math.pow(2, attempt - 1);
 
-                if (delay >= RETRY_ALLOWABLE_TIME_MS) {
-                    console.warn(
-                        `[Retry] Do not attempt to retry beyond the allowable time. Response received: ${delay}`
-                    );
-                    break;
-                }
-
+            if (cumulativeDelay + delay >= delayLimit) {
                 console.warn(
-                    `[Retry] Attempt ${attempt}/${maxAttempts} failed (429). Retrying in ${delay}ms...`,
-                    error
+                    `[Retry] Cumulative retry delay (${cumulativeDelay + delay}ms) would exceed limit (${delayLimit}ms). Aborting retries.`
                 );
-                await sleep(delay);
-            } else {
-                // server_error | retryable → 지수 백오프
-                const delay = baseDelayMs * Math.pow(2, attempt - 1);
-                console.warn(
-                    `[Retry] Attempt ${attempt}/${maxAttempts} failed (5xx). Retrying in ${delay}ms...`,
-                    error
-                );
-                await sleep(delay);
+                break;
             }
+
+            const label = kind === 'rate_limit' ? '429' : '5xx';
+            console.warn(
+                `[Retry] Attempt ${attempt}/${maxAttempts} failed (${label}). Retrying in ${delay}ms...`,
+                error
+            );
+            cumulativeDelay += delay;
+            await sleep(delay);
         }
     }
-    // unreachable — for 루프가 항상 return 또는 throw
+    // delay 한도 초과로 break된 경우에만 도달
     throw new Error(AI_SERVER_UNSTABLE_CODE);
 }
