@@ -76,11 +76,8 @@ function computeStockResult(
     const trend = classifyTrend(bars, indicators);
     const price = quote?.price ?? last.close;
     const changePercent =
-        quote !== null
-            ? quote.changesPercentage
-            : prev.close === 0
-              ? 0
-              : ((last.close - prev.close) / prev.close) * 100;
+        quote?.changesPercentage ??
+        (prev.close === 0 ? 0 : ((last.close - prev.close) / prev.close) * 100);
     return {
         symbol,
         koreanName,
@@ -126,18 +123,22 @@ export async function getSectorSignals(
     const fromIso = fromDate(timeframe, now);
     // DashboardTimeframe('15Min' | '1Hour' | '1Day') 는 Timeframe 의 부분집합 —
     // provider.getBars 시그니처에 맞추기 위한 안전한 widening.
-    const [barsResults, quoteResults] = await Promise.all([
-        fetchInChunks(SECTOR_STOCKS, FETCH_CONCURRENCY, s =>
+    // Sequential fetch to keep concurrent requests within FETCH_CONCURRENCY limit.
+    const barsResults = await fetchInChunks(
+        SECTOR_STOCKS,
+        FETCH_CONCURRENCY,
+        s =>
             provider.getBars({
                 symbol: s.symbol,
                 timeframe: timeframe as Timeframe,
                 from: fromIso,
             })
-        ),
-        fetchInChunks(SECTOR_STOCKS, FETCH_CONCURRENCY, s =>
-            provider.getQuote(s.symbol)
-        ),
-    ]);
+    );
+    const quoteResults = await fetchInChunks(
+        SECTOR_STOCKS,
+        FETCH_CONCURRENCY,
+        s => provider.getQuote(s.symbol)
+    );
 
     // barsResults[i] / quoteResults[i] are guaranteed defined — length === SECTOR_STOCKS.length
     const stocks = SECTOR_STOCKS.map((stockDef, i) => {

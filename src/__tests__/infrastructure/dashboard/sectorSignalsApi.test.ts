@@ -321,6 +321,27 @@ describe('getSectorSignals 함수는', () => {
             expect(apple?.changePercent).toBeCloseTo(expectedChange);
         });
 
+        it('getQuote가 실패(rejected)하면 bars 기반으로 price와 changePercent를 계산한다', async () => {
+            mockCacheGet.mockResolvedValue(null);
+            const oscillating = buildOscillatingBars(60);
+            mockGetBars.mockImplementation((opts: { symbol: string }) =>
+                opts.symbol === 'AAPL'
+                    ? Promise.resolve(oscillating)
+                    : Promise.resolve([])
+            );
+            mockGetQuote.mockRejectedValue(new Error('quote fetch failed'));
+
+            const result = await getSectorSignals();
+
+            const apple = result.stocks.find(s => s.symbol === 'AAPL');
+            const last = oscillating[oscillating.length - 1]!;
+            const prev = oscillating[oscillating.length - 2]!;
+            const expectedChange =
+                ((last.close - prev.close) / prev.close) * 100;
+            expect(apple?.price).toBe(last.close);
+            expect(apple?.changePercent).toBeCloseTo(expectedChange);
+        });
+
         it('이전 종가가 0일 때 changePercent는 0으로 계산된다', async () => {
             mockCacheGet.mockResolvedValue(null);
             // Build bars where prev.close === 0, with enough history to produce signals
