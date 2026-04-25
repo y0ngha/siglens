@@ -1,5 +1,14 @@
 # Fix Log
 
+## [Issue #350 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
+- Violation: 5xx 재시도 시 thinkingBudget이 초기값으로 리셋됨 — withRetry가 fn()을 재호출할 때마다 callGeminiReducingBudget이 config.gemini.thinkingBudget에서 시작
+- Rule: Predictability — 상태 연속성이 필요한 호출 체인에서 각 호출이 공유 상태를 갖지 않으면 이전 시도에서 감소된 값이 소실됨
+- Context: worker/src/gemini-retry.ts에 budgetRef 패턴 도입; budgetRef.current를 루프 반복 시작 시 업데이트하여 withRetry 재호출 간 감소된 budget 보존
+
+- Violation: Free→Paid 키 전환 시 thinkingBudget이 초기값으로 리셋됨 — callGeminiWithFallback이 새 budgetRef를 생성하여 유료 키 호출이 초기값에서 시작
+- Rule: Predictability — 연관된 재시도 흐름(Free→Paid 폴백)은 상태를 공유해야 함
+- Context: callGeminiWithKeyFallback에서 단일 budgetRef를 생성하여 free key와 paid key 호출 양쪽에 전달; GeminiWithFallbackOptions에 budgetRef 필드 추가
+
 ## [PR #379 | fix/349/briefing-retry-delay-paid-key-fallback | 2026-04-25]
 - Violation: `withRetry`가 누적 지연 대신 개별 지연만 `delayLimit`과 비교하여, 여러 번의 짧은 재시도가 누적되어 총 대기 시간이 한도를 초과할 수 있었음
 - Rule: CONVENTIONS.md Predictability — PR 설명과 구현이 일치해야 함; "누적 재시도 지연 시간 제한"이라고 명시되어 있으면 구현도 누적값을 추적해야 함
