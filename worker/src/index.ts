@@ -3,10 +3,6 @@ import express, { type Request, type Response } from 'express';
 import { Redis } from '@upstash/redis';
 import { config } from './config.js';
 import { callClaude } from './claude.js';
-import {
-    ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS,
-    BRIEFING_MAX_RETRY_DELAY_MS,
-} from './retry.js';
 import { callGeminiWithKeyFallback } from './gemini-retry.js';
 
 const {
@@ -17,6 +13,8 @@ const {
 
 // Must match JOB_TTL_SECONDS in src/infrastructure/jobs/queue.ts (cannot import across module boundary).
 const JOB_TTL_SECONDS = 3600;
+const ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS = 30_000;
+const BRIEFING_MAX_RETRY_DELAY_MS = 10_000;
 
 // 진행 중인 job의 AbortController를 보관 — /cancel 엔드포인트 수신 시 즉시 abort 가능
 const activeJobs = new Map<string, AbortController>();
