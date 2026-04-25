@@ -33,5 +33,5 @@
         "proxy.ts",
         ".next/dev/types/**/*.ts"
     ],
-    "exclude": ["node_modules", "worker"]
+    "exclude": ["node_modules", "worker", "scripts"]
 }
