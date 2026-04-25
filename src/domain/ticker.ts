@@ -1,4 +1,4 @@
-import type { TickerSearchResult } from '@/domain/types';
+import type { AssetInfo, TickerSearchResult } from '@/domain/types';
 
 const KOREAN_UNICODE_REGEX = /[\u3131-\u3163\uac00-\ud7a3]/;
 
@@ -22,4 +22,21 @@ export function deduplicateResults(
         seen.add(result.symbol);
         return true;
     });
+}
+
+export function buildDisplayName(
+    assetInfo: AssetInfo | null,
+    ticker: string
+): string {
+    const namePart = assetInfo?.name !== ticker ? assetInfo?.name : null;
+    if (assetInfo?.koreanName && namePart) {
+        return `${assetInfo.koreanName}, ${namePart} (${ticker})`;
+    }
+    if (assetInfo?.koreanName) {
+        return `${assetInfo.koreanName} (${ticker})`;
+    }
+    if (namePart) {
+        return `${namePart} (${ticker})`;
+    }
+    return ticker;
 }

@@ -1,9 +1,10 @@
 import {
+    buildDisplayName,
     deduplicateResults,
     isKoreanInput,
     isValidTickerFormat,
 } from '@/domain/ticker';
-import type { TickerSearchResult } from '@/domain/types';
+import type { AssetInfo, TickerSearchResult } from '@/domain/types';
 
 const makeResult = (symbol: string): TickerSearchResult => ({
     symbol,
@@ -120,6 +121,59 @@ describe('isValidTickerFormat', () => {
     describe('소문자가 포함될 때', () => {
         it('소문자 티커를 거부한다', () => {
             expect(isValidTickerFormat('aapl')).toBe(false);
+        });
+    });
+});
+
+describe('buildDisplayName', () => {
+    describe('assetInfo가 null일 때', () => {
+        it('ticker를 그대로 반환한다', () => {
+            expect(buildDisplayName(null, 'AAPL')).toBe('AAPL');
+        });
+    });
+
+    describe('assetInfo가 있고 name이 ticker와 다를 때', () => {
+        it('koreanName 없이 "name (ticker)" 형식으로 반환한다', () => {
+            const assetInfo: AssetInfo = { symbol: 'AAPL', name: 'Apple Inc' };
+            expect(buildDisplayName(assetInfo, 'AAPL')).toBe('Apple Inc (AAPL)');
+        });
+
+        it('koreanName과 함께 "koreanName, name (ticker)" 형식으로 반환한다', () => {
+            const assetInfo: AssetInfo = {
+                symbol: 'AAPL',
+                name: 'Apple Inc',
+                koreanName: '애플',
+            };
+            expect(buildDisplayName(assetInfo, 'AAPL')).toBe(
+                '애플, Apple Inc (AAPL)'
+            );
+        });
+    });
+
+    describe('assetInfo가 있고 name이 ticker와 같을 때', () => {
+        it('koreanName 없이 ticker를 반환한다', () => {
+            const assetInfo: AssetInfo = { symbol: 'AAPL', name: 'AAPL' };
+            expect(buildDisplayName(assetInfo, 'AAPL')).toBe('AAPL');
+        });
+
+        it('koreanName이 있으면 "koreanName (ticker)" 형식으로 반환한다', () => {
+            const assetInfo: AssetInfo = {
+                symbol: 'AAPL',
+                name: 'AAPL',
+                koreanName: '애플',
+            };
+            expect(buildDisplayName(assetInfo, 'AAPL')).toBe('애플 (AAPL)');
+        });
+    });
+
+    describe('assetInfo에 koreanName만 있고 name이 ticker와 같을 때', () => {
+        it('"koreanName (ticker)" 형식으로 반환한다', () => {
+            const assetInfo: AssetInfo = {
+                symbol: 'TSLA',
+                name: 'TSLA',
+                koreanName: '테슬라',
+            };
+            expect(buildDisplayName(assetInfo, 'TSLA')).toBe('테슬라 (TSLA)');
         });
     });
 });

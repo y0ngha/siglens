@@ -6,7 +6,7 @@ import {
     QueryClient,
 } from '@tanstack/react-query';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
-import type { AnalysisResponse, AssetInfo } from '@/domain/types';
+import type { AnalysisResponse } from '@/domain/types';
 import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
@@ -20,6 +20,7 @@ import {
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
+import { buildDisplayName } from '@/domain/ticker';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/components/ui/JsonLd';
 
@@ -44,37 +45,17 @@ interface Props {
     searchParams: Promise<{ tf?: string }>;
 }
 
-function buildDisplayName(assetInfo: AssetInfo | null, ticker: string): string {
-    const namePart = assetInfo?.name !== ticker ? assetInfo?.name : null;
-    if (assetInfo?.koreanName && namePart) {
-        return `${assetInfo.koreanName}, ${namePart} (${ticker})`;
-    }
-    if (assetInfo?.koreanName) {
-        return `${assetInfo.koreanName} (${ticker})`;
-    }
-    if (namePart) {
-        return `${namePart} (${ticker})`;
-    }
-    return ticker;
-}
-
 export async function generateMetadata({
     params,
 }: Omit<Props, 'searchParams'>): Promise<Metadata> {
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
-    const assetInfo = await getAssetInfoAction(ticker);
 
-    const displayName = buildDisplayName(assetInfo, ticker);
-    const title = `${displayName} 주가 AI 분석`;
+    const title = `${ticker} 주가 AI 분석`;
     const fullTitle = `${title} | ${SITE_NAME}`;
-    const description = buildSymbolDescription(displayName);
+    const description = buildSymbolDescription(ticker);
     const url = `${SITE_URL}/${ticker}`;
-    const keywords = buildSymbolKeywords(
-        ticker,
-        displayName,
-        assetInfo?.koreanName
-    );
+    const keywords = buildSymbolKeywords(ticker, ticker);
 
     return {
         title,
