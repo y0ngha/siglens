@@ -143,7 +143,12 @@ async function callAnalysisAI(
         }
     }
 
-    return callGeminiWithFallback(prompt, apiKey, AI_RETRY_MAX_ATTEMPTS, signal);
+    return callGeminiWithFallback(
+        prompt,
+        apiKey,
+        AI_RETRY_MAX_ATTEMPTS,
+        signal
+    );
 }
 
 async function callBriefingAI(
@@ -172,7 +177,12 @@ async function callBriefingAI(
         }
     }
 
-    return callGeminiWithFallback(prompt, apiKey, AI_RETRY_MAX_ATTEMPTS, signal);
+    return callGeminiWithFallback(
+        prompt,
+        apiKey,
+        AI_RETRY_MAX_ATTEMPTS,
+        signal
+    );
 }
 
 const app = express();
