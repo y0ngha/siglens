@@ -1,4 +1,5 @@
 import {
+    AI_RETRY_DELAY_MS,
     callGeminiReducingBudget,
     callGeminiWithKeyFallback,
     callGeminiWithRetry,
@@ -40,6 +41,7 @@ describe('gemini-retry', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
+        jest.restoreAllMocks();
         MAX_TOKENS_ERROR = Object.assign(new Error('MAX_TOKENS'), {
             code: 'GEMINI_MAX_TOKENS',
         });
@@ -213,7 +215,7 @@ describe('gemini-retry', () => {
                 expect.any(Function),
                 expect.objectContaining({
                     maxAttempts: 7,
-                    baseDelayMs: 5000,
+                    baseDelayMs: AI_RETRY_DELAY_MS,
                     abortIfCumulativeDelayReachesMs: 15000,
                 })
             );
@@ -303,21 +305,27 @@ describe('gemini-retry', () => {
             const { config } = jest.requireMock('../config') as {
                 config: { gemini: { freeApiKey: string } };
             };
-            const saved = config.gemini.freeApiKey;
-            try {
-                config.gemini.freeApiKey = '';
-                mockCallGemini.mockResolvedValueOnce('result');
+            jest.replaceProperty(config.gemini, 'freeApiKey', '');
+            mockCallGemini.mockResolvedValueOnce('result');
 
-                await callGeminiWithKeyFallback('prompt', undefined, 30000);
+            await callGeminiWithKeyFallback('prompt', undefined, 30000);
 
-                expect(mockCallGemini).toHaveBeenCalledWith(
-                    'prompt',
-                    expect.objectContaining({ apiKey: 'paid-key' })
-                );
-                expect(mockCallGemini).toHaveBeenCalledTimes(1);
-            } finally {
-                config.gemini.freeApiKey = saved;
-            }
+            expect(mockCallGemini).toHaveBeenCalledWith(
+                'prompt',
+                expect.objectContaining({ apiKey: 'paid-key' })
+            );
+            expect(mockCallGemini).toHaveBeenCalledTimes(1);
+        });
+
+        it('propagates error when paid key also fails', async () => {
+            const paidKeyError = new Error('paid key exhausted');
+            mockCallGemini
+                .mockRejectedValueOnce(SERVER_ERROR) // free key fails
+                .mockRejectedValueOnce(paidKeyError); // paid key fails
+
+            await expect(
+                callGeminiWithKeyFallback('prompt', undefined, 30000)
+            ).rejects.toThrow('paid key exhausted');
         });
     });
 });

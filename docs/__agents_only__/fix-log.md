@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #380 Round 3 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
+- Violation: 설계상 도달 불가능한 throw 문에 `/* istanbul ignore next */` 없이 방치 → Istanbul 100% 커버리지 실패
+- Rule: Infrastructure #2 — infrastructure/ 100% branch coverage 요건
+- Context: `getThinkingBudgetSequence()`가 항상 `DISABLED_THINKING_BUDGET`으로 끝나므로 루프 마지막 `throw`는 절대 실행되지 않음; `/* istanbul ignore next */` 추가로 Istanbul 집계 제외
+
+- Violation: Jest 테스트에서 mock 객체 프로퍼티를 `try/finally`로 직접 변이 후 복원
+- Rule: CONVENTIONS.md Functional Programming — Immutability; 직접 할당(`obj.prop = val`)은 mutation
+- Context: `callGeminiWithKeyFallback` 테스트의 freeApiKey 비설정 케이스에서 `config.gemini.freeApiKey = ''`로 직접 변이 후 finally 복원; `jest.replaceProperty(config.gemini, 'freeApiKey', '')` + `jest.restoreAllMocks()`로 교체
+
+- Violation: 비활성화된 fallback 모델 코드 6줄이 TODO 주석으로 남아 production 코드에 잔류
+- Rule: CONVENTIONS.md — 주석 처리된 코드는 사용하지 않는 dead code와 동일하게 취급; 의사결정 내용은 커밋 메시지 또는 GitHub Issue로 이전
+- Context: `callGeminiWithRetry` 내 TODO 주석과 6줄 주석 코드 제거; 결정 사항은 PR 설명에 기록됨
+
 ## [PR #380 Round 2 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
 - Violation: `tsconfig.test.json`이 `tsconfig.json`의 `exclude: ["src/__tests__"]`를 상속받아 테스트 파일 포함 의도가 불명확
 - Rule: CONVENTIONS.md — 설정 파일의 의도는 명시적으로 선언되어야 한다
@@ -10,19 +23,11 @@
 - Context: `callGeminiReducingBudget` 마지막 `throw` 앞의 주석이 코드 동작을 단순 재서술; 주석 제거
 
 ## [PR #380 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
-- Violation: 다중 줄 JSDoc 블록 4곳 — 단일 줄 요약 규칙 위반
-- Rule: CLAUDE.md — multi-line comment blocks are prohibited; one short line max
-- Context: `gemini-retry.ts`의 `getThinkingBudgetSequence`·`callGeminiReducingBudget`·`budgetRef` 필드 JSDoc을 단일 줄 또는 inline 주석으로 압축
-
 - Violation: `as` 타입 단언 보증 주석 누락 — 캐스트 이유가 독자에게 불투명
 - Rule: MISTAKES.md TypeScript #7 — every safe-cast `as` must have a comment explaining the guarantee
 - Context: `isMaxTokensError`의 `(error as { code: unknown })` 및 테스트 파일의 2개 `as` 캐스트에 보증 주석 추가
 
 ## [PR #379 Round 2 | fix/349/briefing-retry-delay-paid-key-fallback | 2026-04-25]
-- Violation: `withRetry` JSDoc 블록이 4줄 다중 단락 — 단일 줄 요약 규칙 위반
-- Rule: MISTAKES.md Documentation Sync #3 — Single-line summaries only; multi-paragraph docstrings must be condensed to one line per function
-- Context: `retry.ts`의 `withRetry` 함수와 `AI_SERVER_UNSTABLE_CODE` 상수 JSDoc, `index.ts`의 `getThinkingBudgetSequence`·`callGeminiReducingBudget` JSDoc 모두 단일 줄로 압축
-
 - Violation: 엔드포인트 전용 상수(`ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS`, `BRIEFING_MAX_RETRY_DELAY_MS`)가 범용 retry 유틸리티 모듈에 export되어 불필요한 결합 발생
 - Rule: FF Cohesion 원칙 — 파일을 수정하면 함께 바뀌어야 할 파일을 같은 위치에 두어야 한다
 - Context: 두 상수는 `index.ts`에서만 사용되므로 `retry.ts`에서 제거하고 `index.ts` 상수 블록으로 이동
@@ -120,10 +125,6 @@
 
 
 ## [PR #344 Round 4 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `lib/skillStats.ts::countByType`가 `domain/skills.ts::countSkillsByType`와 동일한 reduce 로직 중복 구현
-- Rule: DRY — 동일 로직은 단일 정의 원칙. buildSkillStats는 도메인 집계 함수이므로 domain/ 레이어가 적합
-- Context: `buildSkillStats`를 `domain/skills.ts`로 이동, `countSkillsByType` 직접 재사용. `lib/skillStats.ts` 삭제
-
 - Violation: `IndexCard.tsx`에서 `@/lib/priceFormat`을 두 개의 별도 import 구문으로 사용
 - Rule: ESLint `import/no-duplicates` — 동일 모듈은 단일 import 구문으로 통합
 - Context: `import { formatUsdPrice, formatPriceChange } from '@/lib/priceFormat'`으로 병합

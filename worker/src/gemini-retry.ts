@@ -4,8 +4,9 @@ import { withRetry } from './retry.js';
 
 const AI_RETRY_MAX_ATTEMPTS = 5;
 const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
-const AI_RETRY_DELAY_MS = 5000;
+export const AI_RETRY_DELAY_MS = 5000;
 export const THINKING_BUDGET_STEPS = [8192, 4096, 2048] as const;
+export type BudgetRef = { current: number };
 export const DISABLED_THINKING_BUDGET = 0;
 
 function isMaxTokensError(error: unknown): boolean {
@@ -39,7 +40,7 @@ export async function callGeminiReducingBudget(
     prompt: string,
     apiKey: string,
     signal: AbortSignal | undefined,
-    budgetRef: { current: number }
+    budgetRef: BudgetRef
 ): Promise<string> {
     const budgets = getThinkingBudgetSequence(budgetRef.current);
     const budgetCount = budgets.length;
@@ -78,6 +79,7 @@ export async function callGeminiReducingBudget(
     }
 
     // getThinkingBudgetSequence() always ends with DISABLED_THINKING_BUDGET, so the loop exits by return/throw.
+    /* istanbul ignore next */
     throw new Error('All thinking budget steps exhausted');
 }
 
@@ -86,7 +88,7 @@ export interface GeminiWithRetryOptions {
     signal?: AbortSignal;
     abortIfCumulativeDelayReachesMs?: number;
     // 미지정 시 config.gemini.thinkingBudget으로 초기화된 새 참조가 생성됨
-    budgetRef?: { current: number };
+    budgetRef?: BudgetRef;
 }
 
 export async function callGeminiWithRetry(
@@ -108,13 +110,6 @@ export async function callGeminiWithRetry(
             abortIfCumulativeDelayReachesMs,
         }
     );
-    // TODO: fallback model 임시 비활성화
-    // free API key의 할당량이 key 단위로 공유되어 fallback도 즉시 실패하는 문제 확인 필요
-    // try {
-    //     return await withRetry(() => callGeminiReducingBudget(prompt, apiKey), ...);
-    // } catch {
-    //     return withRetry(() => callGeminiReducingBudget(prompt, apiKey, fallbackModel), ...);
-    // }
 }
 
 export async function callGeminiWithKeyFallback(
