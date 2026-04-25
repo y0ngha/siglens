@@ -5,6 +5,8 @@ import { withRetry } from './retry.js';
 const AI_RETRY_MAX_ATTEMPTS = 5;
 const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
 const AI_RETRY_DELAY_MS = 5000;
+export const THINKING_BUDGET_STEPS = [8192, 4096, 2048] as const;
+export const DISABLED_THINKING_BUDGET = 0;
 
 function isMaxTokensError(error: unknown): boolean {
     return (
@@ -16,9 +18,14 @@ function isMaxTokensError(error: unknown): boolean {
     );
 }
 
-// initial 값부터 시작해 엄격 감소 순서만 포함 — 이전 값보다 큰 후보는 건너뜀
+// MAX_TOKENS 발생 시 thinking budget을 단계적으로 줄이며 같은 요청을 이어서 재시도한다.
 export function getThinkingBudgetSequence(initial: number): number[] {
-    const candidates = [initial, Math.floor(initial / 2), 8192, 4096, 2048, 0];
+    const candidates = [
+        initial,
+        Math.floor(initial / 2),
+        ...THINKING_BUDGET_STEPS,
+        DISABLED_THINKING_BUDGET,
+    ];
     return candidates.reduce<number[]>((acc, budget) => {
         if (acc.length === 0 || budget < acc[acc.length - 1]) {
             return [...acc, budget];
@@ -70,6 +77,7 @@ export async function callGeminiReducingBudget(
         }
     }
 
+    // getThinkingBudgetSequence() always ends with DISABLED_THINKING_BUDGET, so the loop exits by return/throw.
     throw new Error('All thinking budget steps exhausted');
 }
 

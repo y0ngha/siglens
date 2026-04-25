@@ -1,10 +1,13 @@
 import {
-    getThinkingBudgetSequence,
     callGeminiReducingBudget,
-    callGeminiWithRetry,
     callGeminiWithKeyFallback,
+    callGeminiWithRetry,
+    DISABLED_THINKING_BUDGET,
+    getThinkingBudgetSequence,
+    THINKING_BUDGET_STEPS,
 } from '../gemini-retry';
 import { callGemini } from '../gemini';
+import { withRetry } from '../retry';
 
 jest.mock('../gemini', () => ({
     callGemini: jest.fn(),
@@ -23,10 +26,13 @@ jest.mock('../config', () => ({
     },
 }));
 
+jest.mock('../retry', () => ({
+    withRetry: jest.fn(async <T>(fn: () => Promise<T>): Promise<T> => fn()),
+}));
+
 // jest.mock('../gemini', ...) 호출로 런타임 타입이 MockedFunction임이 보장됨
 const mockCallGemini = callGemini as jest.MockedFunction<typeof callGemini>;
-
-const ABORT_IMMEDIATELY_MS = 0;
+const mockWithRetry = withRetry as jest.MockedFunction<typeof withRetry>;
 
 describe('gemini-retry', () => {
     let MAX_TOKENS_ERROR: Error & { code: string };
@@ -43,35 +49,52 @@ describe('gemini-retry', () => {
     describe('getThinkingBudgetSequence', () => {
         it('returns full descending sequence for high initial value', () => {
             expect(getThinkingBudgetSequence(24576)).toEqual([
-                24576, 12288, 8192, 4096, 2048, 0,
+                24576,
+                12288,
+                ...THINKING_BUDGET_STEPS,
+                DISABLED_THINKING_BUDGET,
             ]);
         });
 
         it('starts from half when initial equals a mid-range candidate', () => {
             expect(getThinkingBudgetSequence(8192)).toEqual([
-                8192, 4096, 2048, 0,
+                THINKING_BUDGET_STEPS[0],
+                THINKING_BUDGET_STEPS[1],
+                THINKING_BUDGET_STEPS[2],
+                DISABLED_THINKING_BUDGET,
             ]);
         });
 
         it('excludes candidates larger than initial', () => {
-            expect(getThinkingBudgetSequence(4096)).toEqual([4096, 2048, 0]);
+            expect(getThinkingBudgetSequence(4096)).toEqual([
+                THINKING_BUDGET_STEPS[1],
+                THINKING_BUDGET_STEPS[2],
+                DISABLED_THINKING_BUDGET,
+            ]);
         });
 
         it('returns only zero when initial is zero', () => {
-            expect(getThinkingBudgetSequence(0)).toEqual([0]);
+            expect(getThinkingBudgetSequence(0)).toEqual([
+                DISABLED_THINKING_BUDGET,
+            ]);
         });
 
         it('includes half-value when it falls between standard candidates', () => {
             // initial=18000 → half=9000 sits between 8192 and the next candidate
             expect(getThinkingBudgetSequence(18000)).toEqual([
-                18000, 9000, 8192, 4096, 2048, 0,
+                18000,
+                9000,
+                ...THINKING_BUDGET_STEPS,
+                DISABLED_THINKING_BUDGET,
             ]);
         });
 
         it('skips half-value when it equals a standard candidate', () => {
             // initial=16384 → half=8192 equals the standard 8192 candidate
             expect(getThinkingBudgetSequence(16384)).toEqual([
-                16384, 8192, 4096, 2048, 0,
+                16384,
+                ...THINKING_BUDGET_STEPS,
+                DISABLED_THINKING_BUDGET,
             ]);
         });
     });
@@ -178,6 +201,24 @@ describe('gemini-retry', () => {
     });
 
     describe('callGeminiWithRetry', () => {
+        it('delegates to withRetry with the configured retry policy', async () => {
+            mockCallGemini.mockResolvedValueOnce('result');
+
+            await callGeminiWithRetry('prompt', 'key', {
+                maxAttempts: 7,
+                abortIfCumulativeDelayReachesMs: 15000,
+            });
+
+            expect(mockWithRetry).toHaveBeenCalledWith(
+                expect.any(Function),
+                expect.objectContaining({
+                    maxAttempts: 7,
+                    baseDelayMs: 5000,
+                    abortIfCumulativeDelayReachesMs: 15000,
+                })
+            );
+        });
+
         it('uses provided budgetRef as starting budget (Bug 2 mechanism)', async () => {
             mockCallGemini.mockResolvedValueOnce('result');
 
@@ -204,19 +245,35 @@ describe('gemini-retry', () => {
     });
 
     describe('callGeminiWithKeyFallback', () => {
+        it('returns immediately when free key succeeds on first call', async () => {
+            mockCallGemini.mockResolvedValueOnce('free-result');
+
+            const result = await callGeminiWithKeyFallback(
+                'prompt',
+                undefined,
+                30000
+            );
+
+            expect(result).toBe('free-result');
+            expect(mockCallGemini).toHaveBeenCalledTimes(1);
+            expect(mockCallGemini).toHaveBeenCalledWith(
+                'prompt',
+                expect.objectContaining({ apiKey: 'free-key' })
+            );
+        });
+
         it('passes the same budgetRef to paid key after free key exhaustion (Bug 2)', async () => {
-            // Free key sequence: MAX_TOKENS at 24576 (reduces to 12288), then 5xx → withRetry aborts
-            // (ABORT_IMMEDIATELY_MS=0 causes abort after the very first retry delay)
-            // Paid key call must start from 12288 (reduced budget), not 24576 (initial)
+            // Free key call reduces the shared budgetRef before failing.
+            // Paid key call must resume from that reduced budget, not the initial budget.
             mockCallGemini
                 .mockRejectedValueOnce(MAX_TOKENS_ERROR) // free, budget=24576 → reduces to 12288
-                .mockRejectedValueOnce(SERVER_ERROR) // free, budget=12288 → 5xx → abort
+                .mockRejectedValueOnce(SERVER_ERROR) // free, budget=12288 → fail and fall back
                 .mockResolvedValueOnce('paid-result'); // paid, budget=12288 → success
 
             const result = await callGeminiWithKeyFallback(
                 'prompt',
                 undefined,
-                ABORT_IMMEDIATELY_MS
+                30000
             );
 
             expect(result).toBe('paid-result');
@@ -225,6 +282,7 @@ describe('gemini-retry', () => {
                 apiKey: 'paid-key',
                 thinkingBudget: 12288,
             });
+            expect(mockWithRetry).toHaveBeenCalledTimes(2);
         });
 
         it('rethrows AbortError from free key phase without falling back to paid key', async () => {
