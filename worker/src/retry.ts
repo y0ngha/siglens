@@ -85,17 +85,19 @@ function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-/** 누적 지연이 abortIfDelayExceedsMs를 초과하면 즉시 루프를 중단하고 AI_SERVER_UNSTABLE_CODE를 throw한다. */
+/** 누적 지연이 abortIfCumulativeDelayReachesMs 이상이면 즉시 루프를 중단하고 AI_SERVER_UNSTABLE_CODE를 throw한다. */
 export async function withRetry<T>(
     fn: () => Promise<T>,
     options: {
         maxAttempts: number;
         baseDelayMs: number;
-        abortIfDelayExceedsMs?: number;
+        abortIfCumulativeDelayReachesMs?: number;
     }
 ): Promise<T> {
-    const { maxAttempts, baseDelayMs, abortIfDelayExceedsMs } = options;
-    const delayLimit = abortIfDelayExceedsMs ?? RETRY_ALLOWABLE_TIME_MS;
+    const { maxAttempts, baseDelayMs, abortIfCumulativeDelayReachesMs } =
+        options;
+    const delayLimit =
+        abortIfCumulativeDelayReachesMs ?? RETRY_ALLOWABLE_TIME_MS;
     let cumulativeDelay = 0;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {

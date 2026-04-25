@@ -1,10 +1,16 @@
-import { constants } from 'node:http2';
-import express, { type Request, type Response } from 'express';
 import { Redis } from '@upstash/redis';
+import express, { type Request, type Response } from 'express';
+import { constants } from 'node:http2';
+import { callClaude } from './claude.js';
 import { config } from './config.js';
 import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
-import { callClaude } from './claude.js';
 import { withRetry } from './retry.js';
+
+interface GeminiWithFallbackOptions {
+    maxAttempts?: number;
+    signal?: AbortSignal;
+    abortIfCumulativeDelayReachesMs?: number;
+}
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -86,12 +92,6 @@ async function callGeminiReducingBudget(
     throw new Error('All thinking budget steps exhausted');
 }
 
-interface GeminiWithFallbackOptions {
-    maxAttempts?: number;
-    signal?: AbortSignal;
-    abortIfDelayExceedsMs?: number;
-}
-
 async function callGeminiWithFallback(
     prompt: string,
     apiKey: string,
@@ -100,12 +100,12 @@ async function callGeminiWithFallback(
     const {
         maxAttempts = AI_RETRY_MAX_ATTEMPTS,
         signal,
-        abortIfDelayExceedsMs,
+        abortIfCumulativeDelayReachesMs,
     } = options;
     return withRetry(() => callGeminiReducingBudget(prompt, apiKey, signal), {
         maxAttempts,
         baseDelayMs: AI_RETRY_DELAY_MS,
-        abortIfDelayExceedsMs,
+        abortIfCumulativeDelayReachesMs,
     });
     // TODO: fallback model 임시 비활성화
     // free API key의 할당량이 key 단위로 공유되어 fallback도 즉시 실패하는 문제 확인 필요
@@ -128,7 +128,7 @@ async function callGeminiWithKeyFallback(
             return await callGeminiWithFallback(prompt, freeApiKey, {
                 maxAttempts: AI_RETRY_MAX_ATTEMPTS_FREE,
                 signal,
-                abortIfDelayExceedsMs: freeKeyDelayLimit,
+                abortIfCumulativeDelayReachesMs: freeKeyDelayLimit,
             });
         } catch (err) {
             if (err instanceof Error && err.name === 'AbortError') throw err;

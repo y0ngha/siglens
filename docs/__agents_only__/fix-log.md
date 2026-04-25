@@ -21,7 +21,7 @@
 ## [Issue #349 | fix/349/briefing-retry-delay-paid-key-fallback | 2026-04-25]
 - Violation: 옵션 파라미터 이름(`maxDelayMs`)이 단순 지연 상한처럼 보이지만, 실제로는 한도 초과 시 루프를 즉시 중단하고 `AI_SERVER_UNSTABLE_CODE`를 throw하는 제어 흐름 부수 효과를 가짐
 - Rule: FF Predictability — 파라미터 이름은 호출 측이 타입과 이름만으로 동작을 예측할 수 있어야 한다. 숨겨진 제어 흐름 효과는 이름에 명시해야 함
-- Context: `withRetry`의 `maxDelayMs` 옵션이 delay cap처럼 보였으나 실제로는 abort-on-exceed 시맨틱. `abortIfDelayExceedsMs`로 이름을 변경하여 의도를 명확히 함
+- Context: `withRetry`의 `maxDelayMs` 옵션이 delay cap처럼 보였으나 실제로는 abort-on-exceed 시맨틱. `abortIfCumulativeDelayReachesMs`로 이름을 변경하여 의도를 명확히 함
 
 ## [PR #345 | feat/chat-model-selector | 2026-04-24]
 - Violation: `server_busy` 에러 메시지가 "위의 모델 선택기에서"처럼 UI 레이아웃 구조를 훅 레이어에서 직접 참조
