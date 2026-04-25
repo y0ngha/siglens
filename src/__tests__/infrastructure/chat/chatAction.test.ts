@@ -1,11 +1,13 @@
 import { chatAction } from '@/infrastructure/chat/chatAction';
-import type { AnalysisResponse } from '@/domain/types';
+import type { AnalysisResponse, ChatModel } from '@/domain/types';
+import { GEMINI_2_5_FLASH_LITE_MODEL } from '@/domain/constants/chatModels';
 import { headers } from 'next/headers';
 import {
     getRemainingTokens,
     tryConsumeToken,
 } from '@/infrastructure/chat/tokenStore';
 import { GoogleGenAI } from '@google/genai';
+import { constants } from 'node:http2';
 
 jest.mock('next/headers', () => ({
     headers: jest.fn().mockResolvedValue({
@@ -182,7 +184,9 @@ describe('chatAction 함수는', () => {
                 models: { generateContent: mockGenerateContent },
             } as unknown as InstanceType<typeof GoogleGenAI>;
         });
-        const rateLimitError = Object.assign(new Error('429'), { status: 429 });
+        const rateLimitError = Object.assign(new Error('429'), {
+            status: constants.HTTP_STATUS_TOO_MANY_REQUESTS,
+        });
         mockGenerateContent
             .mockRejectedValueOnce(rateLimitError)
             .mockResolvedValueOnce({ text: 'paid key fallback 응답' });
@@ -236,7 +240,9 @@ describe('chatAction 함수는', () => {
 
     it('Gemini 429 에러 시 rate_limited를 반환한다', async () => {
         mockTryConsumeToken.mockResolvedValueOnce(true);
-        const error = Object.assign(new Error('429'), { status: 429 });
+        const error = Object.assign(new Error('429'), {
+            status: constants.HTTP_STATUS_TOO_MANY_REQUESTS,
+        });
         mockGenerateContent.mockRejectedValueOnce(error);
 
         const result = await chatAction(
@@ -263,5 +269,99 @@ describe('chatAction 함수는', () => {
         );
 
         expect(result).toEqual({ ok: false, error: 'server_error' });
+    });
+
+    it('Gemini 503 에러 시 server_busy를 반환한다', async () => {
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+        const error = Object.assign(new Error('503'), {
+            status: constants.HTTP_STATUS_SERVICE_UNAVAILABLE,
+        });
+        mockGenerateContent.mockRejectedValueOnce(error);
+
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
+        );
+
+        expect(result).toEqual({ ok: false, error: 'server_busy' });
+    });
+
+    it('문자열 에러 throw 시 server_error를 반환한다', async () => {
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+        mockGenerateContent.mockRejectedValueOnce('string error');
+
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
+        );
+
+        expect(result).toEqual({ ok: false, error: 'server_error' });
+    });
+
+    it('null throw 시 server_error를 반환한다', async () => {
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+        mockGenerateContent.mockRejectedValueOnce(null);
+
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문'
+        );
+
+        expect(result).toEqual({ ok: false, error: 'server_error' });
+    });
+
+    it('유효하지 않은 모델 전달 시 server_error를 반환한다', async () => {
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문',
+            // 유효하지 않은 모델로 서버 측 검증 분기를 테스트하기 위해 타입 시스템 우회
+            'invalid-model' as ChatModel
+        );
+
+        expect(result).toEqual({ ok: false, error: 'server_error' });
+        expect(mockGenerateContent).not.toHaveBeenCalled();
+    });
+
+    it('model 파라미터를 Gemini 호출에 전달한다', async () => {
+        mockTryConsumeToken.mockResolvedValueOnce(true);
+        mockGetRemainingTokens.mockResolvedValueOnce(4);
+
+        let capturedModel = '';
+        MockGoogleGenAI.mockImplementation(
+            () =>
+                ({
+                    models: {
+                        generateContent: jest
+                            .fn()
+                            .mockImplementation((params: { model: string }) => {
+                                capturedModel = params.model;
+                                return Promise.resolve({ text: '응답' });
+                            }),
+                    },
+                }) as unknown as InstanceType<typeof GoogleGenAI>
+        );
+
+        await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문',
+            GEMINI_2_5_FLASH_LITE_MODEL
+        );
+
+        expect(capturedModel).toBe(GEMINI_2_5_FLASH_LITE_MODEL);
     });
 });

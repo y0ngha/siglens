@@ -1,6 +1,27 @@
 'use client';
 
 import {
+    buildStorageKey,
+    loadSession,
+    loadSessionFull,
+    saveSession,
+} from '@/components/chat/utils/chatStorage';
+import {
+    GEMINI_2_5_FLASH_MODEL,
+    VALID_CHAT_MODELS,
+} from '@/domain/constants/chatModels';
+import type {
+    AnalysisResponse,
+    ChatErrorCode,
+    ChatLoadingPhase,
+    ChatMessage,
+    ChatModel,
+    Timeframe,
+} from '@/domain/types';
+import { chatAction } from '@/infrastructure/chat/chatAction';
+import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import {
     startTransition,
     useCallback,
     useEffect,
@@ -9,25 +30,10 @@ import {
     useRef,
     useState,
 } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import type {
-    AnalysisResponse,
-    ChatErrorCode,
-    ChatLoadingPhase,
-    ChatMessage,
-    Timeframe,
-} from '@/domain/types';
-import { chatAction } from '@/infrastructure/chat/chatAction';
-import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
-import {
-    buildStorageKey,
-    loadSession,
-    loadSessionFull,
-    saveSession,
-} from '@/components/chat/utils/chatStorage';
 
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
+const MODEL_STORAGE_KEY = 'siglens_chat_model';
 
 // Matches CHAT_TOKEN_LIMIT in infrastructure/chat/tokenStore.ts
 // Hook files may not import from infrastructure — duplicate value with link
@@ -36,6 +42,8 @@ const DAILY_CHAT_LIMIT = 5;
 const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     token_exhausted: `오늘 무료 질문 ${DAILY_CHAT_LIMIT}회를 모두 사용했어요. 내일 다시 이용해주세요.`,
     rate_limited: 'AI 서버가 잠시 바빠요. 잠시 후 다시 시도해주세요.',
+    server_busy:
+        'AI 서버가 지금 바빠요. 다른 모델로 변경 후 다시 시도해주세요.',
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
 };
 
@@ -53,6 +61,8 @@ export interface UseChatReturn {
     remainingTokens: number | null;
     sendMessage: (text: string) => Promise<void>;
     dismissAnalysisUpdated: () => void;
+    selectedModel: ChatModel;
+    handleModelChange: (model: ChatModel) => void;
 }
 
 export function useChat({
@@ -66,6 +76,9 @@ export function useChat({
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
+    const [selectedModel, setSelectedModel] = useState<ChatModel>(
+        GEMINI_2_5_FLASH_MODEL
+    );
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -100,7 +113,15 @@ export function useChat({
         }: {
             currentMessages: ChatMessage[];
             text: string;
-        }) => chatAction(symbol, timeframe, analysis, currentMessages, text),
+        }) =>
+            chatAction(
+                symbol,
+                timeframe,
+                analysis,
+                currentMessages,
+                text,
+                selectedModel
+            ),
         onMutate: ({ currentMessages, text }) => {
             const userMessage: ChatMessage = { role: 'user', content: text };
             setMessages([...currentMessages, userMessage]);
@@ -160,6 +181,10 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
+    const handleModelChange = useCallback((model: ChatModel) => {
+        setSelectedModel(model);
+    }, []);
+
     // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
     // inline render assignments can be stale under interrupted/discarded renders)
     useLayoutEffect(() => {
@@ -175,6 +200,33 @@ export function useChat({
             setMessages(loaded);
         });
     }, []);
+
+    // 하이드레이션 후 저장된 모델 로드 (SSR/client mismatch 방지 — 마운트 1회만 실행)
+    // 선언 순서가 write effect보다 앞이어야 저장된 값을 읽을 수 있음
+    useEffect(() => {
+        try {
+            const stored = localStorage.getItem(MODEL_STORAGE_KEY);
+            // VALID_CHAT_MODELS.some narrows stored to a known ChatModel literal; cast is safe
+            if (stored !== null && VALID_CHAT_MODELS.some(m => m === stored)) {
+                startTransition(() => {
+                    setSelectedModel(
+                        stored as (typeof VALID_CHAT_MODELS)[number]
+                    );
+                });
+            }
+        } catch {
+            // 스토리지 접근 불가 시 무시
+        }
+    }, []);
+
+    // selectedModel 변경 시 localStorage 동기화
+    useEffect(() => {
+        try {
+            localStorage.setItem(MODEL_STORAGE_KEY, selectedModel);
+        } catch {
+            // 스토리지 용량 초과 등 무시
+        }
+    }, [selectedModel]);
 
     // 심볼·타임프레임 변경 시 히스토리 교체 (null 체크로 마운트 첫 실행 스킵)
     useEffect(() => {
@@ -253,5 +305,7 @@ export function useChat({
         remainingTokens: remainingTokensData ?? null,
         sendMessage,
         dismissAnalysisUpdated,
+        selectedModel,
+        handleModelChange,
     };
 }

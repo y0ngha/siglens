@@ -728,7 +728,13 @@ export interface ChatSession {
     savedAt: number; // Unix timestamp (ms)
 }
 
-export type ChatErrorCode = 'token_exhausted' | 'rate_limited' | 'server_error';
+export type ChatModel = 'gemini-2.5-flash' | 'gemini-2.5-flash-lite';
+
+export type ChatErrorCode =
+    | 'token_exhausted'
+    | 'rate_limited'
+    | 'server_error'
+    | 'server_busy';
 
 export type ChatActionResult =
     | { ok: true; message: string; remainingTokens: number }

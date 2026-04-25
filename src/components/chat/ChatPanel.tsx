@@ -1,15 +1,37 @@
 'use client';
 
+import { useRef, useState } from 'react';
 import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
-import type { AnalysisResponse, Timeframe } from '@/domain/types';
+import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
+import { VALID_CHAT_MODELS } from '@/domain/constants/chatModels';
+import type { AnalysisResponse, ChatModel, Timeframe } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
 
-const CHAT_MODEL_DISPLAY_NAME = 'Gemini 2.5 Flash';
+interface ChatModelOption {
+    id: ChatModel;
+    label: string;
+    fullName: string;
+}
 
-// 모듈 레벨 상수로 선언하여 렌더마다 객체가 재생성되지 않도록 한다
+const MODEL_DISPLAY_MAP: Record<
+    ChatModel,
+    { label: string; fullName: string }
+> = {
+    'gemini-2.5-flash': { label: 'Flash', fullName: 'Gemini 2.5 Flash' },
+    'gemini-2.5-flash-lite': {
+        label: 'Flash Lite',
+        fullName: 'Gemini 2.5 Flash Lite',
+    },
+};
+
+const CHAT_MODEL_OPTIONS = VALID_CHAT_MODELS.map(id => ({
+    id,
+    ...MODEL_DISPLAY_MAP[id],
+})) satisfies ReadonlyArray<ChatModelOption>;
+
 const MARKDOWN_COMPONENTS: Components = {
     p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
     strong: ({ children }) => (
@@ -72,6 +94,15 @@ export function ChatPanel({
     isAnalysisReady,
     onClose,
 }: ChatPanelProps) {
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const [opensUpward, setOpensUpward] = useState(true);
+    const { isOpen, toggle, close } = usePopoverToggle([
+        triggerRef,
+        dropdownRef,
+    ]);
+
     const {
         messages,
         loadingPhase,
@@ -79,6 +110,8 @@ export function ChatPanel({
         remainingTokens,
         sendMessage,
         dismissAnalysisUpdated,
+        selectedModel,
+        handleModelChange,
     } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
 
     const {
@@ -91,6 +124,63 @@ export function ChatPanel({
         handleKeyDown,
     } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
 
+    const selectedModelOption = MODEL_DISPLAY_MAP[selectedModel];
+
+    const handleDropdownToggle = () => {
+        if (!isOpen && triggerRef.current) {
+            const rect = triggerRef.current.getBoundingClientRect();
+            setOpensUpward(rect.top > window.innerHeight - rect.bottom);
+        }
+        toggle();
+        if (!isOpen) {
+            const selectedIdx = CHAT_MODEL_OPTIONS.findIndex(
+                opt => opt.id === selectedModel
+            );
+            setTimeout(() => optionRefs.current[selectedIdx]?.focus(), 0);
+        }
+    };
+
+    const handleListboxKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        const currentIndex = CHAT_MODEL_OPTIONS.findIndex(
+            opt => opt.id === selectedModel
+        );
+        switch (e.key) {
+            case 'ArrowDown': {
+                e.preventDefault();
+                const nextIdx = (currentIndex + 1) % CHAT_MODEL_OPTIONS.length;
+                handleModelChange(CHAT_MODEL_OPTIONS[nextIdx]!.id);
+                optionRefs.current[nextIdx]?.focus();
+                break;
+            }
+            case 'ArrowUp': {
+                e.preventDefault();
+                const prevIdx =
+                    (currentIndex - 1 + CHAT_MODEL_OPTIONS.length) %
+                    CHAT_MODEL_OPTIONS.length;
+                handleModelChange(CHAT_MODEL_OPTIONS[prevIdx]!.id);
+                optionRefs.current[prevIdx]?.focus();
+                break;
+            }
+            case 'Home':
+                e.preventDefault();
+                handleModelChange(CHAT_MODEL_OPTIONS[0]!.id);
+                optionRefs.current[0]?.focus();
+                break;
+            case 'End': {
+                e.preventDefault();
+                const lastIdx = CHAT_MODEL_OPTIONS.length - 1;
+                handleModelChange(CHAT_MODEL_OPTIONS[lastIdx]!.id);
+                optionRefs.current[lastIdx]?.focus();
+                break;
+            }
+            case 'Escape':
+                e.preventDefault();
+                close();
+                triggerRef.current?.focus();
+                break;
+        }
+    };
+
     const placeholder = !isAnalysisReady
         ? '분석이 완료된 후 질문할 수 있어요'
         : '질문을 입력하세요… (Enter로 전송)';
@@ -102,21 +192,16 @@ export function ChatPanel({
                 <span className="text-secondary-300 text-xs font-semibold">
                     💬 AI에게 물어보기
                 </span>
-                <div className="flex items-center gap-2">
-                    <span className="bg-secondary-700 text-secondary-400 rounded px-1.5 py-0.5 text-[10px]">
-                        {CHAT_MODEL_DISPLAY_NAME}
-                    </span>
-                    {onClose && (
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 rounded text-sm leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
-                            aria-label="채팅 닫기"
-                        >
-                            ✕
-                        </button>
-                    )}
-                </div>
+                {onClose && (
+                    <button
+                        type="button"
+                        onClick={onClose}
+                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 rounded text-sm leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        aria-label="채팅 닫기"
+                    >
+                        ✕
+                    </button>
+                )}
             </div>
 
             {/* 재분석 업데이트 배너 */}
@@ -194,9 +279,94 @@ export function ChatPanel({
             {/* 입력 영역 */}
             <div className="border-secondary-700 border-t px-3 py-2">
                 <div className="text-secondary-600 mb-1.5 flex items-center gap-1.5 text-[10px]">
-                    <span className="bg-secondary-700 rounded px-1 py-0.5">
-                        {CHAT_MODEL_DISPLAY_NAME}
-                    </span>
+                    <div className="relative">
+                        <button
+                            ref={triggerRef}
+                            type="button"
+                            onClick={handleDropdownToggle}
+                            className="bg-secondary-700 hover:bg-secondary-600 text-secondary-400 focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            aria-haspopup="listbox"
+                            aria-expanded={isOpen}
+                            aria-label="AI 모델 선택"
+                        >
+                            <span>{selectedModelOption.label}</span>
+                            <span
+                                className={cn(
+                                    'transition-transform duration-150',
+                                    isOpen && 'rotate-180'
+                                )}
+                                aria-hidden="true"
+                            >
+                                ▾
+                            </span>
+                        </button>
+
+                        {isOpen && (
+                            <div
+                                ref={dropdownRef}
+                                role="listbox"
+                                aria-label="AI 모델 목록"
+                                onKeyDown={handleListboxKeyDown}
+                                className={cn(
+                                    'border-secondary-600 bg-secondary-800 absolute left-0 z-10 min-w-[160px] overflow-hidden rounded-lg border shadow-lg',
+                                    opensUpward
+                                        ? 'bottom-full mb-1'
+                                        : 'top-full mt-1'
+                                )}
+                            >
+                                {CHAT_MODEL_OPTIONS.map((option, i) => (
+                                    <div
+                                        key={option.id}
+                                        ref={el => {
+                                            optionRefs.current[i] = el;
+                                        }}
+                                        role="option"
+                                        tabIndex={
+                                            selectedModel === option.id ? 0 : -1
+                                        }
+                                        aria-selected={
+                                            selectedModel === option.id
+                                        }
+                                        onClick={() => {
+                                            handleModelChange(option.id);
+                                            close();
+                                            triggerRef.current?.focus();
+                                        }}
+                                        onKeyDown={e => {
+                                            if (
+                                                e.key === 'Enter' ||
+                                                e.key === ' '
+                                            ) {
+                                                e.preventDefault();
+                                                handleModelChange(option.id);
+                                                close();
+                                                triggerRef.current?.focus();
+                                            }
+                                        }}
+                                        className={cn(
+                                            'focus-visible:ring-primary-500 flex min-h-[44px] w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                                            selectedModel === option.id
+                                                ? 'text-primary-300 bg-primary-900/20'
+                                                : 'text-secondary-300 hover:bg-secondary-700'
+                                        )}
+                                    >
+                                        <span className="w-3 text-[10px]">
+                                            {selectedModel === option.id && '✓'}
+                                        </span>
+                                        <div>
+                                            <div className="text-[11px] font-medium">
+                                                {option.label}
+                                            </div>
+                                            <div className="text-secondary-500 text-[10px]">
+                                                {option.fullName}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
                     <span>·</span>
                     <span>분석 범위 내 질문만 가능</span>
                     {remainingTokens !== null && (
@@ -206,6 +376,7 @@ export function ChatPanel({
                         </>
                     )}
                 </div>
+
                 <div className="flex items-end gap-2">
                     <textarea
                         ref={inputRef}

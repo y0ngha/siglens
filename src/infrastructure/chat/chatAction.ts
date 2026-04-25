@@ -1,22 +1,25 @@
 'use server';
 
-import { constants } from 'node:http2';
-import { headers } from 'next/headers';
+import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
+import {
+    GEMINI_2_5_FLASH_MODEL,
+    VALID_CHAT_MODELS,
+} from '@/domain/constants/chatModels';
 import type {
     AnalysisResponse,
     ChatActionResult,
     ChatMessage,
+    ChatModel,
     Timeframe,
 } from '@/domain/types';
-import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
+import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 import {
     getRemainingTokens,
     hashIp,
     tryConsumeToken,
 } from '@/infrastructure/chat/tokenStore';
-import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
-
-const GEMINI_CHAT_MODEL = 'gemini-2.5-flash';
+import { headers } from 'next/headers';
+import { constants } from 'node:http2';
 
 async function getClientIp(): Promise<string> {
     const headersList = await headers();
@@ -25,14 +28,23 @@ async function getClientIp(): Promise<string> {
     );
 }
 
+function getHttpErrorStatus(error: unknown): number | undefined {
+    if (typeof error !== 'object' || error === null || !('status' in error))
+        return undefined;
+    // 'status' in error guarantees key existence only, not type; verify number at runtime
+    const status = (error as { status: unknown }).status;
+    return typeof status === 'number' ? status : undefined;
+}
+
 function isRateLimitError(error: unknown): boolean {
     return (
-        typeof error === 'object' &&
-        error !== null &&
-        'status' in error &&
-        // @google/genai attaches an HTTP status code to error objects
-        (error as { status: number }).status ===
-            constants.HTTP_STATUS_TOO_MANY_REQUESTS
+        getHttpErrorStatus(error) === constants.HTTP_STATUS_TOO_MANY_REQUESTS
+    );
+}
+
+function isServerBusyError(error: unknown): boolean {
+    return (
+        getHttpErrorStatus(error) === constants.HTTP_STATUS_SERVICE_UNAVAILABLE
     );
 }
 
@@ -41,8 +53,13 @@ export async function chatAction(
     timeframe: Timeframe,
     analysis: AnalysisResponse,
     history: ChatMessage[],
-    userMessage: string
+    userMessage: string,
+    model: ChatModel = GEMINI_2_5_FLASH_MODEL
 ): Promise<ChatActionResult> {
+    if (!VALID_CHAT_MODELS.includes(model)) {
+        return { ok: false, error: 'server_error' };
+    }
+
     const paidApiKey = process.env.GEMINI_API_KEY;
     if (!paidApiKey) {
         return { ok: false, error: 'server_error' };
@@ -73,7 +90,7 @@ export async function chatAction(
         const responseText = await callGeminiWithKeyFallback({
             freeApiKey: process.env.GEMINI_CHAT_FREE_API_KEY,
             paidApiKey,
-            model: GEMINI_CHAT_MODEL,
+            model,
             contents: geminiContents,
             systemInstruction: systemPrompt,
         });
@@ -82,6 +99,9 @@ export async function chatAction(
     } catch (error) {
         if (isRateLimitError(error)) {
             return { ok: false, error: 'rate_limited' };
+        }
+        if (isServerBusyError(error)) {
+            return { ok: false, error: 'server_busy' };
         }
         return { ok: false, error: 'server_error' };
     }
