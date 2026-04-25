@@ -1,16 +1,9 @@
-import { Redis } from '@upstash/redis';
-import express, { type Request, type Response } from 'express';
 import { constants } from 'node:http2';
-import { callClaude } from './claude.js';
+import express, { type Request, type Response } from 'express';
+import { Redis } from '@upstash/redis';
 import { config } from './config.js';
-import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
-import { withRetry } from './retry.js';
-
-interface GeminiWithFallbackOptions {
-    maxAttempts?: number;
-    signal?: AbortSignal;
-    abortIfCumulativeDelayReachesMs?: number;
-}
+import { callClaude } from './claude.js';
+import { callGeminiWithKeyFallback } from './gemini-retry.js';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -20,126 +13,11 @@ const {
 
 // Must match JOB_TTL_SECONDS in src/infrastructure/jobs/queue.ts (cannot import across module boundary).
 const JOB_TTL_SECONDS = 3600;
-const AI_RETRY_MAX_ATTEMPTS = 5;
-const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
-const AI_RETRY_DELAY_MS = 5000;
 const ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS = 30_000;
 const BRIEFING_MAX_RETRY_DELAY_MS = 10_000;
 
 // 진행 중인 job의 AbortController를 보관 — /cancel 엔드포인트 수신 시 즉시 abort 가능
 const activeJobs = new Map<string, AbortController>();
-
-function isMaxTokensError(error: unknown): boolean {
-    return (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        (error as { code: unknown }).code === MAX_TOKENS_CODE
-    );
-}
-
-/** MAX_TOKENS 발생 시 시도할 thinkingBudget 단계 시퀀스를 반환한다 (엄격한 감소 순서). */
-function getThinkingBudgetSequence(initial: number): number[] {
-    const candidates = [initial, Math.floor(initial / 2), 8192, 4096, 2048, 0];
-    return candidates.reduce<number[]>((acc, budget) => {
-        if (acc.length === 0 || budget < acc[acc.length - 1]) {
-            return [...acc, budget];
-        }
-        return acc;
-    }, []);
-}
-
-/** MAX_TOKENS 발생 시 thinkingBudget을 단계적으로 낮춰가며 시도; 일시적 에러는 outer withRetry로 전파한다. */
-async function callGeminiReducingBudget(
-    prompt: string,
-    apiKey: string,
-    signal?: AbortSignal
-): Promise<string> {
-    const budgets = getThinkingBudgetSequence(config.gemini.thinkingBudget);
-
-    for (const budget of budgets) {
-        try {
-            return await callGemini(prompt, {
-                apiKey,
-                model: config.gemini.model,
-                thinking: budget > 0,
-                thinkingBudget: budget,
-                signal,
-            });
-        } catch (error) {
-            if (isMaxTokensError(error)) {
-                const idx = budgets.indexOf(budget);
-                const next = budgets[idx + 1];
-                if (next !== undefined) {
-                    console.warn(
-                        `[Worker] MAX_TOKENS (thinkingBudget=${budget}). Retrying with budget=${next}.`
-                    );
-                    continue;
-                }
-                // thinking off(budget=0)에서도 MAX_TOKENS → 응답 자체가 너무 긴 경우
-                console.error(
-                    '[Worker] MAX_TOKENS even with thinking disabled. Response is too long.'
-                );
-                throw error;
-            }
-
-            // 429/5xx 등 일시적 에러 → 외부 withRetry로 전파
-            throw error;
-        }
-    }
-
-    // unreachable: 루프는 반드시 return 또는 throw로 종료됨
-    throw new Error('All thinking budget steps exhausted');
-}
-
-async function callGeminiWithFallback(
-    prompt: string,
-    apiKey: string,
-    options: GeminiWithFallbackOptions = {}
-): Promise<string> {
-    const {
-        maxAttempts = AI_RETRY_MAX_ATTEMPTS,
-        signal,
-        abortIfCumulativeDelayReachesMs,
-    } = options;
-    return withRetry(() => callGeminiReducingBudget(prompt, apiKey, signal), {
-        maxAttempts,
-        baseDelayMs: AI_RETRY_DELAY_MS,
-        abortIfCumulativeDelayReachesMs,
-    });
-    // TODO: fallback model 임시 비활성화
-    // free API key의 할당량이 key 단위로 공유되어 fallback도 즉시 실패하는 문제 확인 필요
-    // try {
-    //     return await withRetry(() => callGeminiReducingBudget(prompt, apiKey), ...);
-    // } catch {
-    //     return withRetry(() => callGeminiReducingBudget(prompt, apiKey, fallbackModel), ...);
-    // }
-}
-
-async function callGeminiWithKeyFallback(
-    prompt: string,
-    signal: AbortSignal | undefined,
-    freeKeyDelayLimit: number
-): Promise<string> {
-    const { freeApiKey, apiKey } = config.gemini;
-
-    if (freeApiKey) {
-        try {
-            return await callGeminiWithFallback(prompt, freeApiKey, {
-                maxAttempts: AI_RETRY_MAX_ATTEMPTS_FREE,
-                signal,
-                abortIfCumulativeDelayReachesMs: freeKeyDelayLimit,
-            });
-        } catch (err) {
-            if (err instanceof Error && err.name === 'AbortError') throw err;
-            console.warn(
-                '[Worker] Free API key exhausted. Switching to paid key.'
-            );
-        }
-    }
-
-    return callGeminiWithFallback(prompt, apiKey, { signal });
-}
 
 async function callAnalysisAI(
     prompt: string,
