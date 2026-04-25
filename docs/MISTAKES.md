@@ -11,6 +11,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ## Coding Paradigm
 
 ```
+0. Concurrent fetch without respecting provider rate limits
+   → Always use fetchInChunks or sequential await for multiple API calls
+   → Never use Promise.all/Promise.allSettled when calls exceed FETCH_CONCURRENCY threshold
+   → Rate limits: FMP=250/min, Alpaca=various, Gemini=API-tier dependent
+   ❌ Promise.allSettled(SECTOR_STOCKS.map(fetchQuote))  // parallel, exceeds rate limit
+   ❌ Promise.all([fetchInChunks(...), fetchInChunks(...)])  // doubles concurrency to 20 when limit is 10
+   ✅ Use fetchInChunks(items, FETCH_CONCURRENCY) for sequential chunked execution
+   ✅ for await (const batch of chunks) { const results = await Promise.all(batch); }
+
 1. Reimplementing the same algorithm
    → Check for existing helpers before writing a new function
    → Separate number[]-based helpers from Bar[]-based wrappers for reuse
@@ -239,6 +248,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ## Components
 
 ```
+0. Duplicate import statements from same module
+   → ESLint import/no-duplicates rule: always consolidate imports from the same module into a single statement
+   → Prevents accidental divergence between import blocks and makes dependencies clear
+   ❌ import { formatUsdPrice } from '@/lib/priceFormat';
+      // ... code ...
+      import { formatPriceChange } from '@/lib/priceFormat';
+   ✅ import { formatUsdPrice, formatPriceChange } from '@/lib/priceFormat';
+
 1. External callback prop in useEffect dependency array → infinite loops
    → Use useEffectEvent to wrap callback props
 

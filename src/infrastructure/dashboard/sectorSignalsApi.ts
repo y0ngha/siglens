@@ -1,6 +1,7 @@
 import type {
     Bar,
     DashboardTimeframe,
+    MarketQuote,
     SectorSignalsResult,
     StockSignalResult,
     Timeframe,
@@ -63,7 +64,8 @@ function computeStockResult(
     symbol: string,
     koreanName: string,
     sectorSymbol: string,
-    bars: Bar[]
+    bars: Bar[],
+    quote: MarketQuote | null
 ): StockSignalResult | null {
     if (bars.length < 2) return null;
     const last = bars[bars.length - 1];
@@ -72,13 +74,15 @@ function computeStockResult(
     const signals = detectSignals(bars, indicators);
     if (signals.length === 0) return null;
     const trend = classifyTrend(bars, indicators);
+    const price = quote?.price ?? last.close;
     const changePercent =
-        prev.close === 0 ? 0 : ((last.close - prev.close) / prev.close) * 100;
+        quote?.changesPercentage ??
+        (prev.close === 0 ? 0 : ((last.close - prev.close) / prev.close) * 100);
     return {
         symbol,
         koreanName,
         sectorSymbol,
-        price: last.close,
+        price,
         changePercent,
         trend,
         signals,
@@ -117,31 +121,41 @@ export async function getSectorSignals(
 
     const provider = createMarketDataProvider();
     const fromIso = fromDate(timeframe, now);
-    const fetchResults = await fetchInChunks(
+    // DashboardTimeframe('15Min' | '1Hour' | '1Day') 는 Timeframe 의 부분집합 —
+    // provider.getBars 시그니처에 맞추기 위한 안전한 widening.
+    // Sequential fetch to keep concurrent requests within FETCH_CONCURRENCY limit.
+    const barsResults = await fetchInChunks(
         SECTOR_STOCKS,
         FETCH_CONCURRENCY,
         s =>
             provider.getBars({
                 symbol: s.symbol,
-                // DashboardTimeframe('15Min' | '1Hour' | '1Day') 는 Timeframe 의 부분집합 —
-                // provider.getBars 시그니처에 맞추기 위한 안전한 widening.
                 timeframe: timeframe as Timeframe,
                 from: fromIso,
             })
     );
+    const quoteResults = await fetchInChunks(
+        SECTOR_STOCKS,
+        FETCH_CONCURRENCY,
+        s => provider.getQuote(s.symbol)
+    );
 
-    // fetchResults[i] is guaranteed defined — SECTOR_STOCKS.length === fetchResults.length
+    // barsResults[i] / quoteResults[i] are guaranteed defined — length === SECTOR_STOCKS.length
     const stocks = SECTOR_STOCKS.map((stockDef, i) => {
-        const r = fetchResults[i]!;
-        if (r.status === 'rejected') {
+        const barsResult = barsResults[i]!;
+        if (barsResult.status === 'rejected') {
             // Graceful degradation: exclude failing symbol from the result set
             return null;
         }
+        const quoteResult = quoteResults[i]!;
+        const quote =
+            quoteResult.status === 'fulfilled' ? quoteResult.value : null;
         return computeStockResult(
             stockDef.symbol,
             stockDef.koreanName,
             stockDef.sectorSymbol,
-            r.value
+            barsResult.value,
+            quote
         );
     }).filter((s): s is StockSignalResult => s !== null);
 

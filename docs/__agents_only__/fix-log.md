@@ -85,10 +85,6 @@
 - Rule: defensive numerical handling — degenerate distribution 에서 정책 결정이 필요
 - Context: all-equal 입력 시 `below / (len-1) = 0/0` 또는 0 반환으로 "최소값" 으로 분류되어 squeeze 조건 통과. 0.5 중립값 반환으로 수정
 
-## [PR #331 | feat/329/panel-c-sector-signal-discovery | 2026-04-19]
-- Violation: 68~74 종목에 대한 Promise.allSettled 병렬 fetch — FMP rate limit 초과 가능
-- Rule: API 호출 시 provider rate limit 고려한 concurrency 제한 필수
-- Context: `sectorSignalsApi.ts` 가 `Promise.allSettled(SECTOR_STOCKS.map(...))` 로 전체 동시 실행. `fetchInChunks` 헬퍼로 청크 10개씩 순차 처리로 변경
 
 ## [PR #330 Round 2 | feature/issue-328-market-summary-panel | 2026-04-19]
 - Violation: Lightweight Charts dispose 이후 `unsubscribeCrosshairMove` 직접 호출
@@ -143,10 +139,6 @@
 
 
 ## [PR #344 Round 4 | refactor/343/라우팅-계층-중복-제거-ui-로직-분리 | 2026-04-21]
-- Violation: `IndexCard.tsx`에서 `@/lib/priceFormat`을 두 개의 별도 import 구문으로 사용
-- Rule: ESLint `import/no-duplicates` — 동일 모듈은 단일 import 구문으로 통합
-- Context: `import { formatUsdPrice, formatPriceChange } from '@/lib/priceFormat'`으로 병합
-
 - Violation: `useSectorSignalState.ts`의 `handleSectorChange`, `handleTimeframeChange`가 `useCallback` 미적용
 - Rule: CONVENTIONS.md — 안정화된 `updateUrl`을 호출하는 핸들러는 `useCallback`으로 참조 안정화 필요
 - Context: `useCallback`으로 래핑. deps: `[updateUrl, activeTimeframe]`, `[updateUrl, activeSector]`

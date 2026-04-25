@@ -5,7 +5,7 @@ import { getSectorSignals } from '@/infrastructure/dashboard/sectorSignalsApi';
 import { createCacheProvider } from '@/infrastructure/cache/redis';
 import { createMarketDataProvider } from '@/infrastructure/market/factory';
 import { SECTOR_STOCKS } from '@/domain/constants/dashboard-tickers';
-import type { Bar, SectorSignalsResult } from '@/domain/types';
+import type { Bar, MarketQuote, SectorSignalsResult } from '@/domain/types';
 
 const mockCreateCacheProvider = createCacheProvider as jest.MockedFunction<
     typeof createCacheProvider
@@ -69,6 +69,7 @@ describe('getSectorSignals 함수는', () => {
         mockCacheDelete.mockReset();
         mockGetBars.mockReset();
         mockGetQuote.mockReset();
+        mockGetQuote.mockResolvedValue(null);
 
         mockCreateCacheProvider.mockReturnValue({
             get: mockCacheGet,
@@ -97,6 +98,7 @@ describe('getSectorSignals 함수는', () => {
 
             expect(result).toEqual(cached);
             expect(mockGetBars).not.toHaveBeenCalled();
+            expect(mockGetQuote).not.toHaveBeenCalled();
             expect(mockCacheSet).not.toHaveBeenCalled();
         });
 
@@ -151,6 +153,7 @@ describe('getSectorSignals 함수는', () => {
             await getSectorSignals();
 
             expect(mockGetBars).toHaveBeenCalledTimes(SECTOR_STOCKS.length);
+            expect(mockGetQuote).toHaveBeenCalledTimes(SECTOR_STOCKS.length);
             expect(mockCacheSet).toHaveBeenCalledTimes(1);
             const [key, payload, ttl] = mockCacheSet.mock.calls[0];
             expect(key).toBe('dashboard:signals:1Day:2026-04-19');
@@ -268,6 +271,75 @@ describe('getSectorSignals 함수는', () => {
                     apple.trend
                 );
             }
+        });
+
+        it('quote가 있으면 price와 changePercent를 quote 값으로 표시한다', async () => {
+            mockCacheGet.mockResolvedValue(null);
+            const oscillating = buildOscillatingBars(60);
+            mockGetBars.mockImplementation((opts: { symbol: string }) =>
+                opts.symbol === 'AAPL'
+                    ? Promise.resolve(oscillating)
+                    : Promise.resolve([])
+            );
+            const appleQuote: MarketQuote = {
+                symbol: 'AAPL',
+                price: 999,
+                changesPercentage: 3.5,
+                name: 'Apple Inc.',
+            };
+            mockGetQuote.mockImplementation((symbol: string) =>
+                symbol === 'AAPL'
+                    ? Promise.resolve(appleQuote)
+                    : Promise.resolve(null)
+            );
+
+            const result = await getSectorSignals();
+
+            const apple = result.stocks.find(s => s.symbol === 'AAPL');
+            expect(apple?.price).toBe(999);
+            expect(apple?.changePercent).toBe(3.5);
+        });
+
+        it('quote가 null이면 bars 기반으로 price와 changePercent를 계산한다', async () => {
+            mockCacheGet.mockResolvedValue(null);
+            const oscillating = buildOscillatingBars(60);
+            mockGetBars.mockImplementation((opts: { symbol: string }) =>
+                opts.symbol === 'AAPL'
+                    ? Promise.resolve(oscillating)
+                    : Promise.resolve([])
+            );
+            mockGetQuote.mockResolvedValue(null);
+
+            const result = await getSectorSignals();
+
+            const apple = result.stocks.find(s => s.symbol === 'AAPL');
+            const last = oscillating[oscillating.length - 1]!;
+            const prev = oscillating[oscillating.length - 2]!;
+            const expectedChange =
+                ((last.close - prev.close) / prev.close) * 100;
+            expect(apple?.price).toBe(last.close);
+            expect(apple?.changePercent).toBeCloseTo(expectedChange);
+        });
+
+        it('getQuote가 실패(rejected)하면 bars 기반으로 price와 changePercent를 계산한다', async () => {
+            mockCacheGet.mockResolvedValue(null);
+            const oscillating = buildOscillatingBars(60);
+            mockGetBars.mockImplementation((opts: { symbol: string }) =>
+                opts.symbol === 'AAPL'
+                    ? Promise.resolve(oscillating)
+                    : Promise.resolve([])
+            );
+            mockGetQuote.mockRejectedValue(new Error('quote fetch failed'));
+
+            const result = await getSectorSignals();
+
+            const apple = result.stocks.find(s => s.symbol === 'AAPL');
+            const last = oscillating[oscillating.length - 1]!;
+            const prev = oscillating[oscillating.length - 2]!;
+            const expectedChange =
+                ((last.close - prev.close) / prev.close) * 100;
+            expect(apple?.price).toBe(last.close);
+            expect(apple?.changePercent).toBeCloseTo(expectedChange);
         });
 
         it('이전 종가가 0일 때 changePercent는 0으로 계산된다', async () => {
