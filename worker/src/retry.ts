@@ -110,6 +110,7 @@ export async function withRetry<T>(
 ): Promise<T> {
     const { maxAttempts, baseDelayMs, abortIfDelayExceedsMs } = options;
     const delayLimit = abortIfDelayExceedsMs ?? RETRY_ALLOWABLE_TIME_MS;
+    let cumulativeDelay = 0;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
@@ -129,9 +130,9 @@ export async function withRetry<T>(
                     ? (get429RetryDelay(error) ?? baseDelayMs)
                     : baseDelayMs * Math.pow(2, attempt - 1);
 
-            if (delay >= delayLimit) {
+            if (cumulativeDelay + delay >= delayLimit) {
                 console.warn(
-                    `[Retry] Retry delay (${delay}ms) exceeds limit (${delayLimit}ms). Aborting retries.`
+                    `[Retry] Cumulative retry delay (${cumulativeDelay + delay}ms) would exceed limit (${delayLimit}ms). Aborting retries.`
                 );
                 break;
             }
@@ -141,9 +142,10 @@ export async function withRetry<T>(
                 `[Retry] Attempt ${attempt}/${maxAttempts} failed (${label}). Retrying in ${delay}ms...`,
                 error
             );
+            cumulativeDelay += delay;
             await sleep(delay);
         }
     }
-    // break로 루프를 정상 종료한 경우(delay 한도 초과) 또는 maxAttempts 소진 시 도달
+    // delay 한도 초과로 break된 경우에만 도달
     throw new Error(AI_SERVER_UNSTABLE_CODE);
 }

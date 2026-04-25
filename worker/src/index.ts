@@ -96,13 +96,22 @@ async function callGeminiReducingBudget(
     throw new Error('All thinking budget steps exhausted');
 }
 
+interface GeminiWithFallbackOptions {
+    maxAttempts?: number;
+    signal?: AbortSignal;
+    abortIfDelayExceedsMs?: number;
+}
+
 async function callGeminiWithFallback(
     prompt: string,
     apiKey: string,
-    maxAttempts: number = AI_RETRY_MAX_ATTEMPTS,
-    signal?: AbortSignal,
-    abortIfDelayExceedsMs?: number
+    options: GeminiWithFallbackOptions = {}
 ): Promise<string> {
+    const {
+        maxAttempts = AI_RETRY_MAX_ATTEMPTS,
+        signal,
+        abortIfDelayExceedsMs,
+    } = options;
     return withRetry(() => callGeminiReducingBudget(prompt, apiKey, signal), {
         maxAttempts,
         baseDelayMs: AI_RETRY_DELAY_MS,
@@ -117,37 +126,40 @@ async function callGeminiWithFallback(
     // }
 }
 
-async function callAnalysisAI(
+async function callGeminiWithKeyFallback(
     prompt: string,
-    signal?: AbortSignal
+    signal: AbortSignal | undefined,
+    freeKeyDelayLimit: number
 ): Promise<string> {
-    if (config.aiProvider === 'claude') {
-        return callClaude(prompt, signal);
-    }
-
     const { freeApiKey, apiKey } = config.gemini;
 
     if (freeApiKey) {
         try {
-            return await callGeminiWithFallback(
-                prompt,
-                freeApiKey,
-                AI_RETRY_MAX_ATTEMPTS_FREE,
+            return await callGeminiWithFallback(prompt, freeApiKey, {
+                maxAttempts: AI_RETRY_MAX_ATTEMPTS_FREE,
                 signal,
-                ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS
-            );
-        } catch {
+                abortIfDelayExceedsMs: freeKeyDelayLimit,
+            });
+        } catch (err) {
+            if (err instanceof Error && err.name === 'AbortError') throw err;
             console.warn(
                 '[Worker] Free API key exhausted. Switching to paid key.'
             );
         }
     }
 
-    return callGeminiWithFallback(
+    return callGeminiWithFallback(prompt, apiKey, { signal });
+}
+
+async function callAnalysisAI(
+    prompt: string,
+    signal?: AbortSignal
+): Promise<string> {
+    if (config.aiProvider === 'claude') return callClaude(prompt, signal);
+    return callGeminiWithKeyFallback(
         prompt,
-        apiKey,
-        AI_RETRY_MAX_ATTEMPTS,
-        signal
+        signal,
+        ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS
     );
 }
 
@@ -155,33 +167,11 @@ async function callBriefingAI(
     prompt: string,
     signal?: AbortSignal
 ): Promise<string> {
-    if (config.aiProvider === 'claude') {
-        return callClaude(prompt, signal);
-    }
-
-    const { freeApiKey, apiKey } = config.gemini;
-
-    if (freeApiKey) {
-        try {
-            return await callGeminiWithFallback(
-                prompt,
-                freeApiKey,
-                AI_RETRY_MAX_ATTEMPTS_FREE,
-                signal,
-                BRIEFING_MAX_RETRY_DELAY_MS
-            );
-        } catch {
-            console.warn(
-                '[Worker] Free API key exhausted. Switching to paid key.'
-            );
-        }
-    }
-
-    return callGeminiWithFallback(
+    if (config.aiProvider === 'claude') return callClaude(prompt, signal);
+    return callGeminiWithKeyFallback(
         prompt,
-        apiKey,
-        AI_RETRY_MAX_ATTEMPTS,
-        signal
+        signal,
+        BRIEFING_MAX_RETRY_DELAY_MS
     );
 }
 
