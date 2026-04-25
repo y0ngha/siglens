@@ -135,7 +135,9 @@ describe('buildDisplayName', () => {
     describe('assetInfo가 있고 name이 ticker와 다를 때', () => {
         it('koreanName 없이 "name (ticker)" 형식으로 반환한다', () => {
             const assetInfo: AssetInfo = { symbol: 'AAPL', name: 'Apple Inc' };
-            expect(buildDisplayName(assetInfo, 'AAPL')).toBe('Apple Inc (AAPL)');
+            expect(buildDisplayName(assetInfo, 'AAPL')).toBe(
+                'Apple Inc (AAPL)'
+            );
         });
 
         it('koreanName과 함께 "koreanName, name (ticker)" 형식으로 반환한다', () => {
