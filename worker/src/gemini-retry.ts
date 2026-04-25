@@ -11,15 +11,12 @@ function isMaxTokensError(error: unknown): boolean {
         typeof error === 'object' &&
         error !== null &&
         'code' in error &&
+        // 'code' in error 가드로 좁혀졌지만 TS가 { code: unknown }으로 완전 추론하지 못해 캐스트
         (error as { code: unknown }).code === MAX_TOKENS_CODE
     );
 }
 
-/**
- * MAX_TOKENS 발생 시 시도할 thinkingBudget 단계.
- * initial → initial/2 → 8192 → 4096 → 2048 → 0(thinking off)
- * 엄격한 감소 순서를 보장하기 위해 이전 값보다 작은 경우만 포함한다.
- */
+// initial 값부터 시작해 엄격 감소 순서만 포함 — 이전 값보다 큰 후보는 건너뜀
 export function getThinkingBudgetSequence(initial: number): number[] {
     const candidates = [initial, Math.floor(initial / 2), 8192, 4096, 2048, 0];
     return candidates.reduce<number[]>((acc, budget) => {
@@ -30,14 +27,7 @@ export function getThinkingBudgetSequence(initial: number): number[] {
     }, []);
 }
 
-/**
- * MAX_TOKENS 발생 시 thinkingBudget을 단계적으로 낮춰가며 1회씩 시도한다.
- * 429/5xx 등 일시적 에러는 재시도하지 않고 그대로 throw하여
- * 외부 withRetry 레이어에서 처리하도록 한다.
- *
- * budgetRef.current는 매 시도 시작 시 현재 budget으로 업데이트된다.
- * 5xx로 withRetry 재호출 시 감소된 budget에서 재개할 수 있게 한다.
- */
+// budgetRef.current는 매 시도마다 업데이트되어 5xx 재시도 시 감소된 budget에서 재개한다
 export async function callGeminiReducingBudget(
     prompt: string,
     apiKey: string,
@@ -46,7 +36,8 @@ export async function callGeminiReducingBudget(
 ): Promise<string> {
     const budgets = getThinkingBudgetSequence(budgetRef.current);
 
-    for (const budget of budgets) {
+    for (let i = 0; i < budgets.length; i++) {
+        const budget = budgets[i];
         budgetRef.current = budget;
         try {
             return await callGemini(prompt, {
@@ -58,8 +49,7 @@ export async function callGeminiReducingBudget(
             });
         } catch (error) {
             if (isMaxTokensError(error)) {
-                const idx = budgets.indexOf(budget);
-                const next = budgets[idx + 1];
+                const next = budgets[i + 1];
                 if (next !== undefined) {
                     console.warn(
                         `[Worker] MAX_TOKENS (thinkingBudget=${budget}). Retrying with budget=${next}.`
@@ -83,21 +73,18 @@ export async function callGeminiReducingBudget(
     throw new Error('All thinking budget steps exhausted');
 }
 
-export interface GeminiWithFallbackOptions {
+export interface GeminiWithRetryOptions {
     maxAttempts?: number;
     signal?: AbortSignal;
     abortIfDelayExceedsMs?: number;
-    /**
-     * Free→Paid 키 전환 시 budget 상태를 공유하기 위한 참조.
-     * 미지정 시 config.gemini.thinkingBudget으로 초기화된 새 참조가 생성된다.
-     */
+    // 미지정 시 config.gemini.thinkingBudget으로 초기화된 새 참조가 생성됨
     budgetRef?: { current: number };
 }
 
 export async function callGeminiWithRetry(
     prompt: string,
     apiKey: string,
-    options: GeminiWithFallbackOptions = {}
+    options: GeminiWithRetryOptions = {}
 ): Promise<string> {
     const {
         maxAttempts = AI_RETRY_MAX_ATTEMPTS,
@@ -110,7 +97,7 @@ export async function callGeminiWithRetry(
         {
             maxAttempts,
             baseDelayMs: AI_RETRY_DELAY_MS,
-            abortIfDelayExceedsMs,
+            abortIfCumulativeDelayReachesMs: abortIfDelayExceedsMs,
         }
     );
     // TODO: fallback model 임시 비활성화

@@ -23,199 +23,210 @@ jest.mock('../config', () => ({
     },
 }));
 
+// jest.mock('../gemini', ...) 호출로 런타임 타입이 MockedFunction임이 보장됨
 const mockCallGemini = callGemini as jest.MockedFunction<typeof callGemini>;
 
-let MAX_TOKENS_ERROR: Error & { code: string };
-let SERVER_ERROR: Error & { status: number };
+const ABORT_IMMEDIATELY_MS = 0;
 
-beforeEach(() => {
-    jest.clearAllMocks();
-    MAX_TOKENS_ERROR = Object.assign(new Error('MAX_TOKENS'), {
-        code: 'GEMINI_MAX_TOKENS',
-    });
-    SERVER_ERROR = Object.assign(new Error('5xx'), { status: 503 });
-});
+describe('gemini-retry', () => {
+    let MAX_TOKENS_ERROR: Error & { code: string };
+    let SERVER_ERROR: Error & { status: number };
 
-describe('getThinkingBudgetSequence', () => {
-    it('returns full descending sequence for high initial value', () => {
-        expect(getThinkingBudgetSequence(24576)).toEqual([
-            24576, 12288, 8192, 4096, 2048, 0,
-        ]);
+    beforeEach(() => {
+        jest.clearAllMocks();
+        MAX_TOKENS_ERROR = Object.assign(new Error('MAX_TOKENS'), {
+            code: 'GEMINI_MAX_TOKENS',
+        });
+        SERVER_ERROR = Object.assign(new Error('5xx'), { status: 503 });
     });
 
-    it('starts from half when initial equals a mid-range candidate', () => {
-        expect(getThinkingBudgetSequence(8192)).toEqual([8192, 4096, 2048, 0]);
-    });
+    describe('getThinkingBudgetSequence', () => {
+        it('returns full descending sequence for high initial value', () => {
+            expect(getThinkingBudgetSequence(24576)).toEqual([
+                24576, 12288, 8192, 4096, 2048, 0,
+            ]);
+        });
 
-    it('excludes candidates larger than initial', () => {
-        expect(getThinkingBudgetSequence(4096)).toEqual([4096, 2048, 0]);
-    });
+        it('starts from half when initial equals a mid-range candidate', () => {
+            expect(getThinkingBudgetSequence(8192)).toEqual([8192, 4096, 2048, 0]);
+        });
 
-    it('returns only zero when initial is zero', () => {
-        expect(getThinkingBudgetSequence(0)).toEqual([0]);
-    });
+        it('excludes candidates larger than initial', () => {
+            expect(getThinkingBudgetSequence(4096)).toEqual([4096, 2048, 0]);
+        });
 
-    it('includes half-value when it falls between standard candidates', () => {
-        // initial=18000 → half=9000 sits between 8192 and the next candidate
-        expect(getThinkingBudgetSequence(18000)).toEqual([
-            18000, 9000, 8192, 4096, 2048, 0,
-        ]);
-    });
+        it('returns only zero when initial is zero', () => {
+            expect(getThinkingBudgetSequence(0)).toEqual([0]);
+        });
 
-    it('skips half-value when it equals a standard candidate', () => {
-        // initial=16384 → half=8192 equals the standard 8192 candidate
-        expect(getThinkingBudgetSequence(16384)).toEqual([
-            16384, 8192, 4096, 2048, 0,
-        ]);
-    });
-});
+        it('includes half-value when it falls between standard candidates', () => {
+            // initial=18000 → half=9000 sits between 8192 and the next candidate
+            expect(getThinkingBudgetSequence(18000)).toEqual([
+                18000, 9000, 8192, 4096, 2048, 0,
+            ]);
+        });
 
-describe('callGeminiReducingBudget', () => {
-    it('returns result on successful first call', async () => {
-        mockCallGemini.mockResolvedValueOnce('result');
-
-        const budgetRef = { current: 24576 };
-        const result = await callGeminiReducingBudget(
-            'prompt',
-            'key',
-            undefined,
-            budgetRef
-        );
-
-        expect(result).toBe('result');
-        expect(mockCallGemini).toHaveBeenCalledWith(
-            'prompt',
-            expect.objectContaining({ thinkingBudget: 24576 })
-        );
-    });
-
-    it('reduces budget on MAX_TOKENS and retries with next step', async () => {
-        mockCallGemini
-            .mockRejectedValueOnce(MAX_TOKENS_ERROR)
-            .mockResolvedValueOnce('result');
-
-        const budgetRef = { current: 24576 };
-        const result = await callGeminiReducingBudget(
-            'prompt',
-            'key',
-            undefined,
-            budgetRef
-        );
-
-        expect(result).toBe('result');
-        expect(mockCallGemini).toHaveBeenNthCalledWith(
-            1,
-            'prompt',
-            expect.objectContaining({ thinkingBudget: 24576 })
-        );
-        expect(mockCallGemini).toHaveBeenNthCalledWith(
-            2,
-            'prompt',
-            expect.objectContaining({ thinkingBudget: 12288 })
-        );
-    });
-
-    it('throws when MAX_TOKENS occurs with thinking disabled (budget=0)', async () => {
-        mockCallGemini.mockRejectedValue(MAX_TOKENS_ERROR);
-
-        const budgetRef = { current: 0 };
-        await expect(
-            callGeminiReducingBudget('prompt', 'key', undefined, budgetRef)
-        ).rejects.toThrow('MAX_TOKENS');
-    });
-
-    it('propagates 5xx error and preserves current budget in budgetRef', async () => {
-        mockCallGemini.mockRejectedValueOnce(SERVER_ERROR);
-
-        const budgetRef = { current: 24576 };
-        await expect(
-            callGeminiReducingBudget('prompt', 'key', undefined, budgetRef)
-        ).rejects.toEqual(SERVER_ERROR);
-
-        // budgetRef reflects the budget being tried when 5xx occurred
-        expect(budgetRef.current).toBe(24576);
-    });
-
-    it('preserves reduced budget in budgetRef when 5xx follows MAX_TOKENS (Bug 1)', async () => {
-        // Sequence: MAX_TOKENS at 24576 → continues to 12288 → 5xx at 12288
-        mockCallGemini
-            .mockRejectedValueOnce(MAX_TOKENS_ERROR)
-            .mockRejectedValueOnce(SERVER_ERROR);
-
-        const budgetRef = { current: 24576 };
-        await expect(
-            callGeminiReducingBudget('prompt', 'key', undefined, budgetRef)
-        ).rejects.toEqual(SERVER_ERROR);
-
-        // Must be 12288 (reduced), not 24576 (initial)
-        // withRetry's next attempt will start from this reduced budget
-        expect(budgetRef.current).toBe(12288);
-    });
-});
-
-describe('callGeminiWithRetry', () => {
-    it('uses provided budgetRef as starting budget (Bug 2 mechanism)', async () => {
-        mockCallGemini.mockResolvedValueOnce('result');
-
-        // Simulate budget already reduced to 12288 by prior free key attempts
-        const budgetRef = { current: 12288 };
-        await callGeminiWithRetry('prompt', 'paid-key', { budgetRef });
-
-        expect(mockCallGemini).toHaveBeenCalledWith(
-            'prompt',
-            expect.objectContaining({ thinkingBudget: 12288 })
-        );
-    });
-
-    it('creates new budgetRef from config.gemini.thinkingBudget when not provided', async () => {
-        mockCallGemini.mockResolvedValueOnce('result');
-
-        await callGeminiWithRetry('prompt', 'key');
-
-        expect(mockCallGemini).toHaveBeenCalledWith(
-            'prompt',
-            expect.objectContaining({ thinkingBudget: 24576 })
-        );
-    });
-});
-
-describe('callGeminiWithKeyFallback', () => {
-    it('passes the same budgetRef to paid key after free key exhaustion (Bug 2)', async () => {
-        // Free key sequence: MAX_TOKENS at 24576 (reduces to 12288), then 5xx → withRetry aborts
-        // (abortIfDelayExceedsMs=0 causes abort after the very first retry delay)
-        // Paid key call must start from 12288 (reduced budget), not 24576 (initial)
-        mockCallGemini
-            .mockRejectedValueOnce(MAX_TOKENS_ERROR) // free, budget=24576 → reduces to 12288
-            .mockRejectedValueOnce(SERVER_ERROR) // free, budget=12288 → 5xx → abort
-            .mockResolvedValueOnce('paid-result'); // paid, budget=12288 → success
-
-        const result = await callGeminiWithKeyFallback('prompt', undefined, 0);
-
-        expect(result).toBe('paid-result');
-        // Third callGemini call is the paid key attempt — must use reduced budget
-        expect(mockCallGemini.mock.calls[2][1]).toMatchObject({
-            apiKey: 'paid-key',
-            thinkingBudget: 12288,
+        it('skips half-value when it equals a standard candidate', () => {
+            // initial=16384 → half=8192 equals the standard 8192 candidate
+            expect(getThinkingBudgetSequence(16384)).toEqual([
+                16384, 8192, 4096, 2048, 0,
+            ]);
         });
     });
 
-    it('calls paid key directly when freeApiKey is not configured', async () => {
-        const { config } = jest.requireMock('../config') as {
-            config: { gemini: { freeApiKey: string } };
-        };
-        const saved = config.gemini.freeApiKey;
-        config.gemini.freeApiKey = '';
+    describe('callGeminiReducingBudget', () => {
+        it('returns result on successful first call', async () => {
+            mockCallGemini.mockResolvedValueOnce('result');
 
-        mockCallGemini.mockResolvedValueOnce('result');
+            const budgetRef = { current: 24576 };
+            const result = await callGeminiReducingBudget(
+                'prompt',
+                'key',
+                undefined,
+                budgetRef
+            );
 
-        await callGeminiWithKeyFallback('prompt', undefined, 30000);
+            expect(result).toBe('result');
+            expect(mockCallGemini).toHaveBeenCalledWith(
+                'prompt',
+                expect.objectContaining({ thinkingBudget: 24576 })
+            );
+        });
 
-        expect(mockCallGemini).toHaveBeenCalledWith(
-            'prompt',
-            expect.objectContaining({ apiKey: 'paid-key' })
-        );
-        expect(mockCallGemini).toHaveBeenCalledTimes(1);
+        it('reduces budget on MAX_TOKENS and retries with next step', async () => {
+            mockCallGemini
+                .mockRejectedValueOnce(MAX_TOKENS_ERROR)
+                .mockResolvedValueOnce('result');
 
-        config.gemini.freeApiKey = saved;
+            const budgetRef = { current: 24576 };
+            const result = await callGeminiReducingBudget(
+                'prompt',
+                'key',
+                undefined,
+                budgetRef
+            );
+
+            expect(result).toBe('result');
+            expect(mockCallGemini).toHaveBeenNthCalledWith(
+                1,
+                'prompt',
+                expect.objectContaining({ thinkingBudget: 24576 })
+            );
+            expect(mockCallGemini).toHaveBeenNthCalledWith(
+                2,
+                'prompt',
+                expect.objectContaining({ thinkingBudget: 12288 })
+            );
+        });
+
+        it('throws when MAX_TOKENS occurs with thinking disabled (budget=0)', async () => {
+            mockCallGemini.mockRejectedValue(MAX_TOKENS_ERROR);
+
+            const budgetRef = { current: 0 };
+            await expect(
+                callGeminiReducingBudget('prompt', 'key', undefined, budgetRef)
+            ).rejects.toThrow('MAX_TOKENS');
+        });
+
+        it('propagates 5xx error and preserves current budget in budgetRef', async () => {
+            mockCallGemini.mockRejectedValueOnce(SERVER_ERROR);
+
+            const budgetRef = { current: 24576 };
+            await expect(
+                callGeminiReducingBudget('prompt', 'key', undefined, budgetRef)
+            ).rejects.toEqual(SERVER_ERROR);
+
+            // budgetRef reflects the budget being tried when 5xx occurred
+            expect(budgetRef.current).toBe(24576);
+        });
+
+        it('preserves reduced budget in budgetRef when 5xx follows MAX_TOKENS (Bug 1)', async () => {
+            // Sequence: MAX_TOKENS at 24576 → continues to 12288 → 5xx at 12288
+            mockCallGemini
+                .mockRejectedValueOnce(MAX_TOKENS_ERROR)
+                .mockRejectedValueOnce(SERVER_ERROR);
+
+            const budgetRef = { current: 24576 };
+            await expect(
+                callGeminiReducingBudget('prompt', 'key', undefined, budgetRef)
+            ).rejects.toEqual(SERVER_ERROR);
+
+            // Must be 12288 (reduced), not 24576 (initial)
+            // withRetry's next attempt will start from this reduced budget
+            expect(budgetRef.current).toBe(12288);
+        });
+    });
+
+    describe('callGeminiWithRetry', () => {
+        it('uses provided budgetRef as starting budget (Bug 2 mechanism)', async () => {
+            mockCallGemini.mockResolvedValueOnce('result');
+
+            // Simulate budget already reduced to 12288 by prior free key attempts
+            const budgetRef = { current: 12288 };
+            await callGeminiWithRetry('prompt', 'paid-key', { budgetRef });
+
+            expect(mockCallGemini).toHaveBeenCalledWith(
+                'prompt',
+                expect.objectContaining({ thinkingBudget: 12288 })
+            );
+        });
+
+        it('creates new budgetRef from config.gemini.thinkingBudget when not provided', async () => {
+            mockCallGemini.mockResolvedValueOnce('result');
+
+            await callGeminiWithRetry('prompt', 'key');
+
+            expect(mockCallGemini).toHaveBeenCalledWith(
+                'prompt',
+                expect.objectContaining({ thinkingBudget: 24576 })
+            );
+        });
+    });
+
+    describe('callGeminiWithKeyFallback', () => {
+        it('passes the same budgetRef to paid key after free key exhaustion (Bug 2)', async () => {
+            // Free key sequence: MAX_TOKENS at 24576 (reduces to 12288), then 5xx → withRetry aborts
+            // (ABORT_IMMEDIATELY_MS=0 causes abort after the very first retry delay)
+            // Paid key call must start from 12288 (reduced budget), not 24576 (initial)
+            mockCallGemini
+                .mockRejectedValueOnce(MAX_TOKENS_ERROR) // free, budget=24576 → reduces to 12288
+                .mockRejectedValueOnce(SERVER_ERROR) // free, budget=12288 → 5xx → abort
+                .mockResolvedValueOnce('paid-result'); // paid, budget=12288 → success
+
+            const result = await callGeminiWithKeyFallback(
+                'prompt',
+                undefined,
+                ABORT_IMMEDIATELY_MS
+            );
+
+            expect(result).toBe('paid-result');
+            // Third callGemini call is the paid key attempt — must use reduced budget
+            expect(mockCallGemini.mock.calls[2][1]).toMatchObject({
+                apiKey: 'paid-key',
+                thinkingBudget: 12288,
+            });
+        });
+
+        it('calls paid key directly when freeApiKey is not configured', async () => {
+            // jest.requireMock는 unknown 반환 — jest.mock('../config', ...) 로 형태 보장됨
+            const { config } = jest.requireMock('../config') as {
+                config: { gemini: { freeApiKey: string } };
+            };
+            const saved = config.gemini.freeApiKey;
+            try {
+                config.gemini.freeApiKey = '';
+                mockCallGemini.mockResolvedValueOnce('result');
+
+                await callGeminiWithKeyFallback('prompt', undefined, 30000);
+
+                expect(mockCallGemini).toHaveBeenCalledWith(
+                    'prompt',
+                    expect.objectContaining({ apiKey: 'paid-key' })
+                );
+                expect(mockCallGemini).toHaveBeenCalledTimes(1);
+            } finally {
+                config.gemini.freeApiKey = saved;
+            }
+        });
     });
 });
