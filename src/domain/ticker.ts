@@ -31,7 +31,7 @@ export function buildDisplayName(
     if (!assetInfo) return ticker;
 
     const { name, koreanName } = assetInfo;
-    const nameIsDifferent = name && name !== ticker;
+    const nameIsDifferent = name !== '' && name !== ticker;
 
     if (koreanName) {
         return nameIsDifferent
