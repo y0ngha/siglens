@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #380 Round 4 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
+- Violation: 테스트 설명 문구 "starts from half when initial equals a mid-range candidate"가 실제 동작 불일치
+- Rule: MISTAKES.md Tests #9 — 설명이 실제 검증 내용을 정확히 반영해야 함
+- Context: `getThinkingBudgetSequence(8192)` 케이스에서 첫 값은 `initial`(8192) 자체이므로 "starts from half"는 오해를 유발; "deduplicates half-value when it coincides with a standard candidate, preserving initial as first entry"로 수정
+
 ## [PR #380 Round 3 | fix/350/thinking-budget-preservation-across-retries | 2026-04-25]
 - Violation: 설계상 도달 불가능한 throw 문에 `/* istanbul ignore next */` 없이 방치 → Istanbul 100% 커버리지 실패
 - Rule: Infrastructure #2 — infrastructure/ 100% branch coverage 요건

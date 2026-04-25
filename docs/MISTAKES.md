@@ -229,6 +229,9 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ // Object.keys widens to string[], but SKILL_STAT_CONFIG: Record<SkillType, …> guarantees keys
       const SKILL_TYPES = Object.keys(SKILL_STAT_CONFIG) as SkillType[];  // TS limitation, not runtime risk
    → Mandatory: every safe-cast `as` must be accompanied by a comment explaining the guarantee.
+   → Test file exception: Jest mocking patterns are self-documenting and do NOT require a guarantee comment.
+      `callGemini as jest.MockedFunction<typeof callGemini>` — the cast purpose is evident from the pattern itself.
+      This exemption applies only to `.test.ts` files; production code `as` casts always require a comment.
 ```
 
 ---

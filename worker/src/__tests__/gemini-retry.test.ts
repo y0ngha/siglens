@@ -58,7 +58,7 @@ describe('gemini-retry', () => {
             ]);
         });
 
-        it('starts from half when initial equals a mid-range candidate', () => {
+        it('deduplicates half-value when it coincides with a standard candidate, preserving initial as first entry', () => {
             expect(getThinkingBudgetSequence(8192)).toEqual([
                 THINKING_BUDGET_STEPS[0],
                 THINKING_BUDGET_STEPS[1],
