@@ -4,6 +4,12 @@
  */
 export const AI_SERVER_UNSTABLE_CODE = 'AI_SERVER_UNSTABLE';
 
+/** 일반 분석(/analyze) — free 키 rate limit 시 최대 허용 지연. 초과 시 즉시 유료 키로 전환한다. */
+export const ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS = 30_000;
+
+/** AI 브리핑(/briefing) — 약 10초 이내 완료 목표. 초과 시 즉시 유료 키로 전환한다. */
+export const BRIEFING_MAX_RETRY_DELAY_MS = 10_000;
+
 type ErrorKind = 'rate_limit' | 'server_error' | 'retryable' | 'none';
 
 const RETRY_ALLOWABLE_TIME_MS = 300_000;
@@ -88,11 +94,22 @@ function sleep(ms: number): Promise<void> {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
+/**
+ * withRetry options
+ * - abortIfDelayExceedsMs: 계산된 재시도 지연이 이 값 이상이면 대기 없이 즉시 루프를 종료하고
+ *   AI_SERVER_UNSTABLE_CODE를 throw한다. 호출 측에서 유료 키로의 전환 등 다음 단계를 처리해야 한다.
+ *   미지정 시 RETRY_ALLOWABLE_TIME_MS(300초)가 기본값으로 적용된다.
+ */
 export async function withRetry<T>(
     fn: () => Promise<T>,
-    options: { maxAttempts: number; baseDelayMs: number }
+    options: {
+        maxAttempts: number;
+        baseDelayMs: number;
+        abortIfDelayExceedsMs?: number;
+    }
 ): Promise<T> {
-    const { maxAttempts, baseDelayMs } = options;
+    const { maxAttempts, baseDelayMs, abortIfDelayExceedsMs } = options;
+    const delayLimit = abortIfDelayExceedsMs ?? RETRY_ALLOWABLE_TIME_MS;
 
     for (let attempt = 1; attempt <= maxAttempts; attempt++) {
         try {
@@ -107,32 +124,26 @@ export async function withRetry<T>(
                 throw error;
             }
 
-            if (kind === 'rate_limit') {
-                const delay = get429RetryDelay(error) ?? baseDelayMs;
+            const delay =
+                kind === 'rate_limit'
+                    ? (get429RetryDelay(error) ?? baseDelayMs)
+                    : baseDelayMs * Math.pow(2, attempt - 1);
 
-                if (delay >= RETRY_ALLOWABLE_TIME_MS) {
-                    console.warn(
-                        `[Retry] Do not attempt to retry beyond the allowable time. Response received: ${delay}`
-                    );
-                    break;
-                }
-
+            if (delay >= delayLimit) {
                 console.warn(
-                    `[Retry] Attempt ${attempt}/${maxAttempts} failed (429). Retrying in ${delay}ms...`,
-                    error
+                    `[Retry] Retry delay (${delay}ms) exceeds limit (${delayLimit}ms). Aborting retries.`
                 );
-                await sleep(delay);
-            } else {
-                // server_error | retryable → 지수 백오프
-                const delay = baseDelayMs * Math.pow(2, attempt - 1);
-                console.warn(
-                    `[Retry] Attempt ${attempt}/${maxAttempts} failed (5xx). Retrying in ${delay}ms...`,
-                    error
-                );
-                await sleep(delay);
+                break;
             }
+
+            const label = kind === 'rate_limit' ? '429' : '5xx';
+            console.warn(
+                `[Retry] Attempt ${attempt}/${maxAttempts} failed (${label}). Retrying in ${delay}ms...`,
+                error
+            );
+            await sleep(delay);
         }
     }
-    // unreachable — for 루프가 항상 return 또는 throw
+    // break로 루프를 정상 종료한 경우(delay 한도 초과) 또는 maxAttempts 소진 시 도달
     throw new Error(AI_SERVER_UNSTABLE_CODE);
 }

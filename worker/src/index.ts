@@ -4,7 +4,11 @@ import { Redis } from '@upstash/redis';
 import { config } from './config.js';
 import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
 import { callClaude } from './claude.js';
-import { withRetry } from './retry.js';
+import {
+    withRetry,
+    ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS,
+    BRIEFING_MAX_RETRY_DELAY_MS,
+} from './retry.js';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -37,13 +41,12 @@ function isMaxTokensError(error: unknown): boolean {
  */
 function getThinkingBudgetSequence(initial: number): number[] {
     const candidates = [initial, Math.floor(initial / 2), 8192, 4096, 2048, 0];
-    const result: number[] = [];
-    for (const budget of candidates) {
-        if (result.length === 0 || budget < result[result.length - 1]) {
-            result.push(budget);
+    return candidates.reduce<number[]>((acc, budget) => {
+        if (acc.length === 0 || budget < acc[acc.length - 1]) {
+            return [...acc, budget];
         }
-    }
-    return result;
+        return acc;
+    }, []);
 }
 
 /**
@@ -97,11 +100,13 @@ async function callGeminiWithFallback(
     prompt: string,
     apiKey: string,
     maxAttempts: number = AI_RETRY_MAX_ATTEMPTS,
-    signal?: AbortSignal
+    signal?: AbortSignal,
+    abortIfDelayExceedsMs?: number
 ): Promise<string> {
     return withRetry(() => callGeminiReducingBudget(prompt, apiKey, signal), {
         maxAttempts,
         baseDelayMs: AI_RETRY_DELAY_MS,
+        abortIfDelayExceedsMs,
     });
     // TODO: fallback model 임시 비활성화
     // free API key의 할당량이 key 단위로 공유되어 fallback도 즉시 실패하는 문제 확인 필요
@@ -112,7 +117,10 @@ async function callGeminiWithFallback(
     // }
 }
 
-async function callAI(prompt: string, signal?: AbortSignal): Promise<string> {
+async function callAnalysisAI(
+    prompt: string,
+    signal?: AbortSignal
+): Promise<string> {
     if (config.aiProvider === 'claude') {
         return callClaude(prompt, signal);
     }
@@ -125,7 +133,8 @@ async function callAI(prompt: string, signal?: AbortSignal): Promise<string> {
                 prompt,
                 freeApiKey,
                 AI_RETRY_MAX_ATTEMPTS_FREE,
-                signal
+                signal,
+                ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS
             );
         } catch {
             console.warn(
@@ -134,12 +143,36 @@ async function callAI(prompt: string, signal?: AbortSignal): Promise<string> {
         }
     }
 
-    return callGeminiWithFallback(
-        prompt,
-        apiKey,
-        AI_RETRY_MAX_ATTEMPTS,
-        signal
-    );
+    return callGeminiWithFallback(prompt, apiKey, AI_RETRY_MAX_ATTEMPTS, signal);
+}
+
+async function callBriefingAI(
+    prompt: string,
+    signal?: AbortSignal
+): Promise<string> {
+    if (config.aiProvider === 'claude') {
+        return callClaude(prompt, signal);
+    }
+
+    const { freeApiKey, apiKey } = config.gemini;
+
+    if (freeApiKey) {
+        try {
+            return await callGeminiWithFallback(
+                prompt,
+                freeApiKey,
+                AI_RETRY_MAX_ATTEMPTS_FREE,
+                signal,
+                BRIEFING_MAX_RETRY_DELAY_MS
+            );
+        } catch {
+            console.warn(
+                '[Worker] Free API key exhausted. Switching to paid key.'
+            );
+        }
+    }
+
+    return callGeminiWithFallback(prompt, apiKey, AI_RETRY_MAX_ATTEMPTS, signal);
 }
 
 const app = express();
@@ -262,7 +295,7 @@ async function processJob(
     });
 
     try {
-        const result = await callAI(prompt, controller.signal);
+        const result = await callAnalysisAI(prompt, controller.signal);
 
         if (!result || result.trim() === '') {
             throw new Error('AI returned an empty response');
@@ -360,7 +393,7 @@ async function processBriefingJob(
     });
 
     try {
-        const text = await callAI(prompt, controller.signal);
+        const text = await callBriefingAI(prompt, controller.signal);
 
         if (!text || text.trim() === '') {
             throw new Error('AI returned an empty response');
