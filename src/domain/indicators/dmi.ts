@@ -1,5 +1,5 @@
 import type { Bar, DMIResult } from '@/domain/types';
-import { DMI_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
+import { DMI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
 
 // RawDM과 SmoothedDM은 구조가 같지만 의미가 다르다.
 // RawDM은 한 봉의 원시 TR/DM 값이고,

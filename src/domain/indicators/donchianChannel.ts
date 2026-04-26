@@ -1,5 +1,5 @@
 import type { Bar, DonchianChannelResult } from '@/domain/types';
-import { DONCHIAN_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
+import { DONCHIAN_DEFAULT_PERIOD } from '@/domain/indicators/constants';
 
 export function calculateDonchianChannel(
     bars: Bar[],

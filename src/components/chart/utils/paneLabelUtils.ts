@@ -13,7 +13,7 @@ import {
     STOCHASTIC_D_PERIOD,
     STOCHASTIC_K_PERIOD,
     STOCHASTIC_SMOOTHING,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import type { PaneIndices, PaneLabelConfig } from '@/components/chart/types';
 import { INACTIVE_PANE_INDEX } from '@/components/chart/constants';
 

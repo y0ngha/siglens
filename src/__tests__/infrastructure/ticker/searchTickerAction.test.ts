@@ -20,10 +20,10 @@ describe('searchTickerAction 함수는', () => {
         mockSearchTicker.mockReset();
     });
 
-    it('query를 siglens-core searchTicker에 그대로 전달한다', async () => {
+    it('trim된 query를 siglens-core searchTicker에 전달한다', async () => {
         mockSearchTicker.mockResolvedValueOnce(results);
 
-        await searchTickerAction('apple');
+        await searchTickerAction('  apple  ');
 
         expect(mockSearchTicker).toHaveBeenCalledWith('apple');
     });
@@ -34,5 +34,12 @@ describe('searchTickerAction 함수는', () => {
         const result = await searchTickerAction('apple');
 
         expect(result).toBe(results);
+    });
+
+    it('빈 문자열 query는 searchTicker를 호출하지 않고 빈 배열을 반환한다', async () => {
+        const result = await searchTickerAction('   ');
+
+        expect(mockSearchTicker).not.toHaveBeenCalled();
+        expect(result).toEqual([]);
     });
 });

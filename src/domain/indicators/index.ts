@@ -23,7 +23,10 @@ import { calculateDonchianChannel } from './donchianChannel';
 import { calculateBuySellVolume } from './buySellVolume';
 import { calculateSmc } from './smc';
 import { calculateSqueezeMomentum } from './squeezeMomentum';
-import { EMA_DEFAULT_PERIODS, MA_DEFAULT_PERIODS } from '@y0ngha/siglens-core';
+import {
+    EMA_DEFAULT_PERIODS,
+    MA_DEFAULT_PERIODS,
+} from '@/domain/indicators/constants';
 
 export * from './rsi';
 export * from './macd';

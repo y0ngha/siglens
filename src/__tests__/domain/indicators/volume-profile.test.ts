@@ -3,7 +3,7 @@ import {
     VP_DEFAULT_ROW_SIZE,
     VP_MIN_BARS,
     VP_VALUE_AREA_PERCENTAGE,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import type { Bar } from '@/domain/types';
 
 // bucket 경계 이산화로 인한 허용 오차

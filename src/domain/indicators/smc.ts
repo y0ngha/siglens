@@ -35,7 +35,7 @@ import {
     SMC_EQUAL_LEVEL_ATR_MULTIPLIER,
     SMC_PREMIUM_RATIO,
     SMC_SWING_PERIOD,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import { calculateATR } from '@/domain/indicators/atr';
 
 // ─── Swing detection ─────────────────────────────────────────────────────────

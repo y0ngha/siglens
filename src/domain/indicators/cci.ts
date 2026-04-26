@@ -2,7 +2,7 @@ import type { Bar } from '@/domain/types';
 import {
     CCI_DEFAULT_PERIOD,
     CCI_NORMALIZATION_CONSTANT,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import { sma, typicalPrice } from './utils';
 
 export function calculateCCI(

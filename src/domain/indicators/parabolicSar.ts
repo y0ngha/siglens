@@ -3,7 +3,7 @@ import {
     PSAR_AF_INCREMENT,
     PSAR_AF_MAX,
     PSAR_AF_START,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 
 interface PSARState {
     sar: number;

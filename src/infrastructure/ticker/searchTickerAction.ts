@@ -6,5 +6,7 @@ import type { TickerSearchResult } from '@/domain/types';
 export async function searchTickerAction(
     query: string
 ): Promise<TickerSearchResult[]> {
-    return searchTicker(query);
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+    return searchTicker(trimmed);
 }

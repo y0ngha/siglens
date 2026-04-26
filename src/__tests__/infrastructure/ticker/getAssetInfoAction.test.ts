@@ -18,10 +18,10 @@ describe('getAssetInfoAction 함수는', () => {
         mockGetAssetInfo.mockReset();
     });
 
-    it('symbol을 siglens-core getAssetInfo에 그대로 전달한다', async () => {
+    it('symbol을 대문자로 변환해 siglens-core getAssetInfo에 전달한다', async () => {
         mockGetAssetInfo.mockResolvedValueOnce(assetInfo);
 
-        await getAssetInfoAction('AAPL');
+        await getAssetInfoAction('aapl');
 
         expect(mockGetAssetInfo).toHaveBeenCalledWith('AAPL');
     });

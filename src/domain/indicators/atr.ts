@@ -1,5 +1,5 @@
 import type { Bar } from '@/domain/types';
-import { ATR_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
+import { ATR_DEFAULT_PERIOD } from '@/domain/indicators/constants';
 
 function trueRange(bar: Bar, prev: Bar): number {
     return Math.max(

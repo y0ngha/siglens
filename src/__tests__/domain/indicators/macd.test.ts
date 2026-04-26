@@ -3,7 +3,7 @@ import {
     MACD_FAST_PERIOD,
     MACD_SIGNAL_PERIOD,
     MACD_SLOW_PERIOD,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import type { Bar, MACDResult } from '@/domain/types';
 
 function makeBars(closes: number[]): Bar[] {

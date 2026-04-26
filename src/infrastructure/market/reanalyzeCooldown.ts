@@ -12,7 +12,12 @@ export async function tryAcquireReanalyzeCooldown(
     symbol: string,
     timeframe: Timeframe
 ): Promise<AcquireReanalyzeCooldownResult> {
-    return coreTryAcquire(symbol, timeframe);
+    try {
+        return await coreTryAcquire(symbol, timeframe);
+    } catch (error) {
+        console.error('[ReanalyzeCooldown] acquire 실패:', error);
+        return { ok: true };
+    }
 }
 
 export async function releaseReanalyzeCooldown(

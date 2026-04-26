@@ -38,6 +38,14 @@ describe('reanalyzeCooldown wrapper는', () => {
         expect(result).toEqual({ ok: true });
     });
 
+    it('tryAcquireReanalyzeCooldown은 core가 예외를 던지면 { ok: true }를 반환한다', async () => {
+        mockTryAcquire.mockRejectedValueOnce(new Error('Redis connection failed'));
+
+        const result = await tryAcquireReanalyzeCooldown('AAPL', '1Day');
+
+        expect(result).toEqual({ ok: true });
+    });
+
     it('releaseReanalyzeCooldown은 인자를 그대로 위임한다', async () => {
         mockRelease.mockResolvedValueOnce(undefined);
 

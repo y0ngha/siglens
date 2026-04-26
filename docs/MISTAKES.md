@@ -718,4 +718,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ PriceChangeDisplay, BreadcrumbItem UI types defined in domain/types.ts
    ✅ Move presentation-specific types to lib/ (e.g., lib/skillStats.ts, lib/priceFormat.ts)
    ✅ domain/ contains only pure calculation functions: countSkillsByType, formatPrice logic, etc.
+
+4. Domain layer importing constants or functions from external packages
+   → domain/ must be pure TypeScript with no external package imports
+   → When migrating local functions to external packages, create local re-export wrappers or duplicate constants in domain/
+   → Protects domain layer from package version changes and maintains independence
+   ❌ domain/indicators/*.ts imports constants from @y0ngha/siglens-core
+   ❌ domain/signals/index.ts re-exports functions from external package
+   ✅ Create/restore domain/indicators/constants.ts with local copies or wrappers
+   ✅ domain/signals/index.ts exports only local signal calculation functions
 ```

@@ -4,7 +4,7 @@ import {
     ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_DISPLACEMENT,
     ICHIMOKU_SPAN_B_PERIOD,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 
 function periodMidpoint(
     bars: Bar[],

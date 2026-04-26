@@ -20,7 +20,7 @@ import {
     MACD_SIGNAL_PERIOD,
     MACD_SLOW_PERIOD,
     RSI_DEFAULT_PERIOD,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import type { Bar } from '@/domain/types';
 
 const TEST_BAR_COUNT = 100;

@@ -4,7 +4,7 @@ import {
     SQUEEZE_MOMENTUM_KC_LENGTH,
     SQUEEZE_MOMENTUM_KC_MULT,
     SQUEEZE_MOMENTUM_MIN_BARS,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import type { Bar, SqueezeMomentumResult } from '@/domain/types';
 
 function makeBars(

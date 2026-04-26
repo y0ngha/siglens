@@ -20,7 +20,7 @@ import {
     SQUEEZE_MOMENTUM_BB_LENGTH,
     SQUEEZE_MOMENTUM_KC_LENGTH,
     SQUEEZE_MOMENTUM_KC_MULT,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import { linreg, rollingHighest, rollingLowest, sma, stdDev } from './utils';
 
 type BarComputed = Omit<SqueezeMomentumResult, 'increasing'>;

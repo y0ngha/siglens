@@ -2,7 +2,7 @@ import { calculateCCI } from '@/domain/indicators/cci';
 import {
     CCI_DEFAULT_PERIOD,
     CCI_NORMALIZATION_CONSTANT,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import type { Bar } from '@/domain/types';
 
 const TYPICAL_PRICE_DIVISOR = 3;
