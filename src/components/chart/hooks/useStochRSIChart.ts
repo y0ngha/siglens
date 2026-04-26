@@ -10,7 +10,7 @@ import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import {
     STOCH_RSI_OVERBOUGHT_LEVEL,
     STOCH_RSI_OVERSOLD_LEVEL,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseStochRSIChartParams {

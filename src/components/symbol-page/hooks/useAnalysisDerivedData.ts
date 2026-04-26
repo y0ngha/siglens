@@ -11,10 +11,12 @@ import type {
 } from '@/domain/types';
 import {
     clusterKeyLevels,
+    validateKeyLevels,
+} from '@/domain/analysis/keyLevels';
+import {
     extractReconciledActionLines,
     validateActionPrices,
-    validateKeyLevels,
-} from '@y0ngha/siglens-core';
+} from '@/domain/analysis/actionRecommendation';
 
 const EMPTY_CLUSTERED_KEY_LEVELS = {
     support: [] as ClusteredKeyLevel[],

@@ -11,7 +11,7 @@ import {
     CCI_OVERBOUGHT_LEVEL,
     CCI_OVERSOLD_LEVEL,
     CCI_ZERO_LEVEL,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import { buildSeriesDataFromValues } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseCCIChartParams {

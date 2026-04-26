@@ -84,6 +84,11 @@ export interface MarketSummaryActionResult {
     briefing: SubmitBriefingResult;
 }
 
+export interface MarketSummaryWithBriefing {
+    summary: MarketSummaryData;
+    briefing: SubmitBriefingResult;
+}
+
 export interface Bar {
     time: number; // Unix timestamp (seconds)
     open: number;
@@ -805,3 +810,76 @@ export type QuadrantKey =
     | 'bullishExpected'
     | 'bearishExpected'
     | 'bearishConfirmed';
+
+export type CandlePattern =
+    | 'flat'
+    | 'gravestone_doji'
+    | 'dragonfly_doji'
+    | 'doji'
+    | 'bullish_marubozu'
+    | 'bearish_marubozu'
+    | 'shooting_star'
+    | 'inverted_hammer'
+    | 'hammer'
+    | 'hanging_man'
+    | 'bullish_belt_hold'
+    | 'bearish_belt_hold'
+    | 'spinning_top'
+    | 'bullish'
+    | 'bearish';
+
+export type MultiCandlePattern =
+    | 'bullish_engulfing'
+    | 'bullish_harami'
+    | 'bullish_harami_cross'
+    | 'piercing_line'
+    | 'bullish_counterattack_line'
+    | 'morning_star'
+    | 'morning_doji_star'
+    | 'bullish_abandoned_baby'
+    | 'three_white_soldiers'
+    | 'three_inside_up'
+    | 'three_outside_up'
+    | 'bullish_triple_star'
+    | 'ladder_bottom'
+    | 'tweezers_bottom'
+    | 'downside_gap_two_rabbits'
+    | 'bearish_engulfing'
+    | 'bearish_harami'
+    | 'bearish_harami_cross'
+    | 'dark_cloud_cover'
+    | 'bearish_counterattack_line'
+    | 'evening_star'
+    | 'evening_doji_star'
+    | 'bearish_abandoned_baby'
+    | 'three_black_crows'
+    | 'three_inside_down'
+    | 'three_outside_down'
+    | 'bearish_triple_star'
+    | 'advance_block'
+    | 'tweezers_top'
+    | 'upside_gap_two_crows'
+    | 'upside_gap_tasuki'
+    | 'downside_gap_tasuki'
+    | 'on_neck'
+    | 'in_neck';
+
+export type PatternTrend = 'bullish' | 'bearish' | 'neutral';
+
+export interface SingleCandlePatternEntry {
+    barIndex: number;
+    patternType: 'single';
+    singlePattern: CandlePattern;
+    multiPattern: null;
+}
+
+export interface MultiCandlePatternEntry {
+    barIndex: number;
+    patternType: 'multi';
+    singlePattern: null;
+    multiPattern: MultiCandlePattern;
+}
+
+export type CandlePatternEntry =
+    | SingleCandlePatternEntry
+    | MultiCandlePatternEntry;

@@ -10,7 +10,7 @@ import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummary
 import { SectorSignalPanel } from '@/components/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/components/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/components/dashboard/SignalTypeGuide';
-import { getSectorSignals } from '@y0ngha/siglens-core';
+import { getSectorSignalsAction } from '@/infrastructure/dashboard/getSectorSignalsAction';
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
 import type { DashboardTimeframe } from '@/domain/types';
 import {
@@ -108,7 +108,7 @@ async function SectorSignalSection({
     initialSector,
     initialTimeframe,
 }: SectorSignalSectionProps) {
-    const data = await getSectorSignals(initialTimeframe);
+    const data = await getSectorSignalsAction(initialTimeframe);
     return (
         <SectorSignalPanel
             data={data}

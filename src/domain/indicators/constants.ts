@@ -1,4 +1,4 @@
-import type { SMCResult } from '@/domain/types';
+import type { IndicatorResult, SMCResult } from '@/domain/types';
 
 export const EMPTY_SMC_RESULT: SMCResult = {
     swingHighs: [],
@@ -47,8 +47,8 @@ export const CCI_ZERO_LEVEL = 0;
 
 export const MA_DEFAULT_PERIODS = [5, 20, 60, 120, 200] as const;
 export const EMA_DEFAULT_PERIODS = [9, 20, 21, 60] as const;
-export const EMA_SUPPORT_RESISTANCE_SHORT_INDEX = 1;
-export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3;
+export const EMA_SUPPORT_RESISTANCE_SHORT_INDEX = 1; // 20-period EMA
+export const EMA_SUPPORT_RESISTANCE_LONG_INDEX = 3; // 60-period EMA
 
 export const ATR_DEFAULT_PERIOD = 14;
 
@@ -83,6 +83,8 @@ export const VP_MIN_BARS = 30;
 export const SQUEEZE_MOMENTUM_BB_LENGTH = 20;
 export const SQUEEZE_MOMENTUM_KC_LENGTH = 20;
 export const SQUEEZE_MOMENTUM_KC_MULT = 1.5;
+// Actual warmup: delta window of kcLength requires kcLength delta values,
+//  each of which needs kcLength bars → first valid result at index 2*kcLength-2.
 export const SQUEEZE_MOMENTUM_MIN_BARS = 2 * SQUEEZE_MOMENTUM_KC_LENGTH - 1;
 
 export const SMC_SWING_PERIOD = 5;
@@ -95,3 +97,30 @@ export const HIGH_CONFIDENCE_WEIGHT = 0.8;
 export const MEDIUM_CONFIDENCE_WEIGHT = 0.7;
 export const MIN_CONFIDENCE_WEIGHT = 0.5;
 export const UNMATCHED_SKILL_CONFIDENCE_WEIGHT = 0;
+
+export const EMPTY_INDICATOR_RESULT: IndicatorResult = {
+    macd: [],
+    bollinger: [],
+    dmi: [],
+    stochastic: [],
+    stochRsi: [],
+    rsi: [],
+    cci: [],
+    vwap: [],
+    ma: {},
+    ema: {},
+    volumeProfile: null,
+    ichimoku: [],
+    atr: [],
+    obv: [],
+    parabolicSar: [],
+    williamsR: [],
+    supertrend: [],
+    mfi: [],
+    keltnerChannel: [],
+    cmf: [],
+    donchianChannel: [],
+    buySellVolume: [],
+    smc: EMPTY_SMC_RESULT,
+    squeezeMomentum: [],
+};

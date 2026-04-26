@@ -24,12 +24,21 @@ export async function releaseReanalyzeCooldown(
     symbol: string,
     timeframe: Timeframe
 ): Promise<void> {
-    return coreRelease(symbol, timeframe);
+    try {
+        return await coreRelease(symbol, timeframe);
+    } catch (error) {
+        console.error('[ReanalyzeCooldown] release 실패:', error);
+    }
 }
 
 export async function getReanalyzeCooldownMs(
     symbol: string,
     timeframe: Timeframe
 ): Promise<number> {
-    return coreGetMs(symbol, timeframe);
+    try {
+        return await coreGetMs(symbol, timeframe);
+    } catch (error) {
+        console.error('[ReanalyzeCooldown] pttl 조회 실패:', error);
+        return 0;
+    }
 }

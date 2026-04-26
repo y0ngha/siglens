@@ -42,7 +42,7 @@ import {
     EMA_DEFAULT_PERIODS,
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
-} from '@y0ngha/siglens-core';
+} from '@/domain/indicators/constants';
 import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
 
 interface CommonHookParams {

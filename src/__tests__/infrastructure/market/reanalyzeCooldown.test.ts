@@ -64,4 +64,20 @@ describe('reanalyzeCooldown wrapper는', () => {
         expect(mockGetMs).toHaveBeenCalledWith('AAPL', '1Day');
         expect(result).toBe(120_000);
     });
+
+    it('releaseReanalyzeCooldown은 core가 예외를 던지면 에러 없이 완료된다', async () => {
+        mockRelease.mockRejectedValueOnce(new Error('Redis connection failed'));
+
+        await expect(
+            releaseReanalyzeCooldown('AAPL', '1Day')
+        ).resolves.toBeUndefined();
+    });
+
+    it('getReanalyzeCooldownMs는 core가 예외를 던지면 0을 반환한다', async () => {
+        mockGetMs.mockRejectedValueOnce(new Error('Redis connection failed'));
+
+        const result = await getReanalyzeCooldownMs('AAPL', '1Day');
+
+        expect(result).toBe(0);
+    });
 });
