@@ -1,9 +1,6 @@
 import { submitBriefingAction } from '@/infrastructure/market/submitBriefingAction';
 import { submitBriefing } from '@y0ngha/siglens-core';
-import type {
-    MarketSummaryData,
-    SubmitBriefingResult,
-} from '@/domain/types';
+import type { MarketSummaryData, SubmitBriefingResult } from '@/domain/types';
 
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),

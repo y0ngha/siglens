@@ -13,7 +13,10 @@ const mockGetSummary = getMarketSummaryWithBriefing as jest.MockedFunction<
     typeof getMarketSummaryWithBriefing
 >;
 
-const summary = { indices: [], sectors: [] } as unknown as MarketSummaryWithBriefing;
+const summary = {
+    indices: [],
+    sectors: [],
+} as unknown as MarketSummaryWithBriefing;
 
 describe('getMarketSummaryAction 함수는', () => {
     beforeEach(() => {
