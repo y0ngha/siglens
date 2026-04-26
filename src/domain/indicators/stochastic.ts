@@ -3,7 +3,7 @@ import {
     STOCHASTIC_D_PERIOD,
     STOCHASTIC_K_PERIOD,
     STOCHASTIC_SMOOTHING,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 import { sma } from '@/domain/indicators/utils';
 
 const MIDPOINT_PERCENTAGE = 50;

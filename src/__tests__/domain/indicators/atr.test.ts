@@ -1,5 +1,5 @@
 import { calculateATR } from '@/domain/indicators/atr';
-import { ATR_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import { ATR_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 import type { Bar } from '@/domain/types';
 
 function makeBars(

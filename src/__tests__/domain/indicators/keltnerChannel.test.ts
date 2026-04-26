@@ -3,7 +3,7 @@ import {
     KELTNER_ATR_PERIOD,
     KELTNER_EMA_PERIOD,
     KELTNER_MULTIPLIER,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 import type { Bar, KeltnerChannelResult } from '@/domain/types';
 
 function makeBars(

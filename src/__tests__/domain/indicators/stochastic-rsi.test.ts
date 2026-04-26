@@ -4,7 +4,7 @@ import {
     STOCH_RSI_K_PERIOD,
     STOCH_RSI_RSI_PERIOD,
     STOCH_RSI_STOCH_PERIOD,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 
 // First non-null K index: rsiPeriod + stochPeriod - 1 + kSmoothing - 1
 const FIRST_K_INDEX =

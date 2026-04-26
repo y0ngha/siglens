@@ -7,7 +7,7 @@ import {
 } from '@tanstack/react-query';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import type { AnalysisResponse } from '@/domain/types';
-import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
+import { fetchBarsWithIndicators } from '@y0ngha/siglens-core';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';

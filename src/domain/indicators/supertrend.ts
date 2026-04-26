@@ -2,7 +2,7 @@ import type { Bar, PriceTrend, SupertrendResult } from '@/domain/types';
 import {
     SUPERTREND_ATR_PERIOD,
     SUPERTREND_MULTIPLIER,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 import { calculateATR } from '@/domain/indicators/atr';
 
 interface SupertrendState {

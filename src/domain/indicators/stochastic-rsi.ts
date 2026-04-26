@@ -5,7 +5,7 @@ import {
     STOCH_RSI_K_PERIOD,
     STOCH_RSI_RSI_PERIOD,
     STOCH_RSI_STOCH_PERIOD,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 import { sma } from '@/domain/indicators/utils';
 
 /**

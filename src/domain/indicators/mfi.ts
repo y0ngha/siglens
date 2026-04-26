@@ -1,5 +1,5 @@
 import type { Bar } from '@/domain/types';
-import { MFI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import { MFI_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 import { typicalPrice } from '@/domain/indicators/utils';
 
 const MFI_MAX = 100;

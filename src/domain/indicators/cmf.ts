@@ -1,5 +1,5 @@
 import type { Bar } from '@/domain/types';
-import { CMF_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import { CMF_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 
 function clv(bar: Bar): number {
     const range = bar.high - bar.low;

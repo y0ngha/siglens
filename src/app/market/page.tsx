@@ -10,7 +10,7 @@ import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummary
 import { SectorSignalPanel } from '@/components/dashboard/SectorSignalPanel';
 import { SectorSignalPanelSkeleton } from '@/components/dashboard/SectorSignalPanelSkeleton';
 import { SignalTypeGuide } from '@/components/dashboard/SignalTypeGuide';
-import { getSectorSignals } from '@/infrastructure/dashboard/sectorSignalsApi';
+import { getSectorSignals } from '@y0ngha/siglens-core';
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
 import type { DashboardTimeframe } from '@/domain/types';
 import {

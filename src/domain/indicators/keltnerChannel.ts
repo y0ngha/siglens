@@ -3,7 +3,7 @@ import {
     KELTNER_ATR_PERIOD,
     KELTNER_EMA_PERIOD,
     KELTNER_MULTIPLIER,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 import { computeEMAValues } from '@/domain/indicators/ema';
 import { calculateATR } from '@/domain/indicators/atr';
 

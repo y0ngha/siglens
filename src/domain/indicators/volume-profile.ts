@@ -7,7 +7,7 @@ import {
     VP_DEFAULT_ROW_SIZE,
     VP_MIN_BARS,
     VP_VALUE_AREA_PERCENTAGE,
-} from './constants';
+} from '@y0ngha/siglens-core';
 
 const NO_ADJACENT_BUCKET = -1;
 

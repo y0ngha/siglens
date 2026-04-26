@@ -1,4 +1,4 @@
-import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import { RSI_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 
 interface WilderState {
     avgGain: number;

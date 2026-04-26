@@ -1,5 +1,5 @@
 import type { Bar } from '@/domain/types';
-import { WILLIAMS_R_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import { WILLIAMS_R_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 
 const WILLIAMS_R_MIDPOINT = -50;
 const WILLIAMS_R_SCALE = -100;

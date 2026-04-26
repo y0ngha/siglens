@@ -4,7 +4,7 @@ import {
     MACD_FAST_PERIOD,
     MACD_SIGNAL_PERIOD,
     MACD_SLOW_PERIOD,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 
 export function calculateMACD(
     bars: Bar[],

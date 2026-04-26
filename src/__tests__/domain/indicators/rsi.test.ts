@@ -1,5 +1,5 @@
 import { calculateRSI } from '@/domain/indicators/rsi';
-import { RSI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import { RSI_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 
 describe('calculateRSI', () => {
     describe('입력 배열이 비어있을 때', () => {

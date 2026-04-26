@@ -1,88 +1,38 @@
-jest.mock('@/infrastructure/dashboard/marketSummaryApi');
-jest.mock('@/infrastructure/market/submitBriefingAction');
-
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
-import { getMarketSummary } from '@/infrastructure/dashboard/marketSummaryApi';
-import { submitBriefingAction } from '@/infrastructure/market/submitBriefingAction';
-import type { MarketSummaryData, SubmitBriefingResult } from '@/domain/types';
+import {
+    getMarketSummaryWithBriefing,
+    type MarketSummaryWithBriefing,
+} from '@y0ngha/siglens-core';
 
-const mockGetMarketSummary = getMarketSummary as jest.MockedFunction<
-    typeof getMarketSummary
+jest.mock('@y0ngha/siglens-core', () => ({
+    ...jest.requireActual('@y0ngha/siglens-core'),
+    getMarketSummaryWithBriefing: jest.fn(),
+}));
+
+const mockGetSummary = getMarketSummaryWithBriefing as jest.MockedFunction<
+    typeof getMarketSummaryWithBriefing
 >;
-const mockSubmitBriefingAction = submitBriefingAction as jest.MockedFunction<
-    typeof submitBriefingAction
->;
 
-const mockSummary: MarketSummaryData = {
-    indices: [
-        {
-            symbol: 'GSPC',
-            fmpSymbol: '^GSPC',
-            displayName: 'S&P 500',
-            koreanName: '미국 대형주 500',
-            price: 5200,
-            changesPercentage: 0.5,
-        },
-    ],
-    sectors: [
-        {
-            symbol: 'XLK',
-            sectorName: 'Technology',
-            koreanName: '기술',
-            price: 210,
-            changesPercentage: 1.2,
-        },
-    ],
-};
-
-const mockBriefing: SubmitBriefingResult = {
-    status: 'submitted',
-    jobId: 'test-job-id',
-};
+const summary = { indices: [], sectors: [] } as unknown as MarketSummaryWithBriefing;
 
 describe('getMarketSummaryAction 함수는', () => {
     beforeEach(() => {
-        jest.clearAllMocks();
-        mockGetMarketSummary.mockResolvedValue(mockSummary);
-        mockSubmitBriefingAction.mockResolvedValue(mockBriefing);
+        mockGetSummary.mockReset();
     });
 
-    describe('정상 동작할 때', () => {
-        it('summary와 briefing을 합산하여 반환한다', async () => {
-            const result = await getMarketSummaryAction();
+    it('siglens-core getMarketSummaryWithBriefing을 인자 없이 호출한다', async () => {
+        mockGetSummary.mockResolvedValueOnce(summary);
 
-            expect(result.summary).toBe(mockSummary);
-            expect(result.briefing).toBe(mockBriefing);
-        });
+        await getMarketSummaryAction();
 
-        it('getMarketSummary 결과를 submitBriefingAction에 전달한다', async () => {
-            await getMarketSummaryAction();
-
-            expect(mockSubmitBriefingAction).toHaveBeenCalledWith(mockSummary);
-        });
+        expect(mockGetSummary).toHaveBeenCalledWith();
     });
 
-    describe('getMarketSummary가 실패할 때', () => {
-        it('예외를 전파한다', async () => {
-            mockGetMarketSummary.mockRejectedValue(
-                new Error('Market data fetch failed')
-            );
+    it('underlying 함수의 결과를 그대로 반환한다', async () => {
+        mockGetSummary.mockResolvedValueOnce(summary);
 
-            await expect(getMarketSummaryAction()).rejects.toThrow(
-                'Market data fetch failed'
-            );
-        });
-    });
+        const result = await getMarketSummaryAction();
 
-    describe('submitBriefingAction이 실패할 때', () => {
-        it('예외를 전파한다', async () => {
-            mockSubmitBriefingAction.mockRejectedValue(
-                new Error('Briefing submit failed')
-            );
-
-            await expect(getMarketSummaryAction()).rejects.toThrow(
-                'Briefing submit failed'
-            );
-        });
+        expect(result).toBe(summary);
     });
 });

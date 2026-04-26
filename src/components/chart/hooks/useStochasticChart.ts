@@ -10,7 +10,7 @@ import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import {
     STOCHASTIC_OVERBOUGHT_LEVEL,
     STOCHASTIC_OVERSOLD_LEVEL,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseStochasticChartParams {

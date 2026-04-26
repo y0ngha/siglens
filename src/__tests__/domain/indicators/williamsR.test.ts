@@ -1,5 +1,5 @@
 import { calculateWilliamsR } from '@/domain/indicators/williamsR';
-import { WILLIAMS_R_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import { WILLIAMS_R_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 import type { Bar } from '@/domain/types';
 
 function makeBars(

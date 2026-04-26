@@ -1,5 +1,5 @@
 import { calculateDMI } from '@/domain/indicators/dmi';
-import { DMI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import { DMI_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 import type { Bar, DMIResult } from '@/domain/types';
 
 function makeBars(

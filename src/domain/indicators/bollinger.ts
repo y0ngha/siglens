@@ -2,7 +2,7 @@ import type { Bar, BollingerResult } from '@/domain/types';
 import {
     BOLLINGER_DEFAULT_PERIOD,
     BOLLINGER_DEFAULT_STD_DEV,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 
 export function calculateBollinger(
     bars: Bar[],

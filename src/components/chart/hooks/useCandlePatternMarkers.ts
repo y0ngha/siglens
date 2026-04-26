@@ -11,21 +11,17 @@ import type {
 import { createSeriesMarkers } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
 import type { Bar } from '@/domain/types';
-import type { CandlePatternEntry } from '@/domain/analysis/candle-detection';
 import {
     detectCandlePatternEntries,
-    getDetectionBars,
-    selectLastCandlePatternEntries,
-} from '@/domain/analysis/candle-detection';
-import {
     getCandlePatternLabel,
+    getDetectionBars,
     getMultiCandlePatternLabel,
-} from '@/domain/analysis/candle-labels';
-import type { PatternTrend } from '@/domain/analysis/candle-trend';
-import {
     getMultiPatternTrend,
     getSinglePatternTrend,
-} from '@/domain/analysis/candle-trend';
+    selectLastCandlePatternEntries,
+    type CandlePatternEntry,
+    type PatternTrend,
+} from '@y0ngha/siglens-core';
 
 // --- Types -------------------------------------------------------------------
 

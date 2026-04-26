@@ -1,5 +1,5 @@
 import { calculateMFI } from '@/domain/indicators/mfi';
-import { MFI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
+import { MFI_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
 import type { Bar } from '@/domain/types';
 
 function makeBars(

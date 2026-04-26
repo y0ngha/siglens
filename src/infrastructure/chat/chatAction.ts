@@ -1,6 +1,9 @@
 'use server';
 
-import { buildChatPrompt } from '@/domain/chat/buildChatPrompt';
+import {
+    buildChatPrompt,
+    callGeminiWithKeyFallback,
+} from '@y0ngha/siglens-core';
 import {
     GEMINI_2_5_FLASH_MODEL,
     VALID_CHAT_MODELS,
@@ -12,7 +15,6 @@ import type {
     ChatModel,
     Timeframe,
 } from '@/domain/types';
-import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 import {
     getRemainingTokens,
     hashIp,

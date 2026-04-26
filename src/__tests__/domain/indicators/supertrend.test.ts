@@ -2,7 +2,7 @@ import { calculateSupertrend } from '@/domain/indicators/supertrend';
 import {
     SUPERTREND_ATR_PERIOD,
     SUPERTREND_MULTIPLIER,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 import type { Bar, SupertrendResult } from '@/domain/types';
 
 function makeBars(

@@ -1,6 +1,6 @@
 'use server';
 
-import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
+import { fetchBarsWithIndicators } from '@y0ngha/siglens-core';
 import type { BarsData, Timeframe } from '@/domain/types';
 
 export async function getBarsAction(

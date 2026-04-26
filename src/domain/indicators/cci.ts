@@ -1,5 +1,8 @@
 import type { Bar } from '@/domain/types';
-import { CCI_DEFAULT_PERIOD, CCI_NORMALIZATION_CONSTANT } from './constants';
+import {
+    CCI_DEFAULT_PERIOD,
+    CCI_NORMALIZATION_CONSTANT,
+} from '@y0ngha/siglens-core';
 import { sma, typicalPrice } from './utils';
 
 export function calculateCCI(
