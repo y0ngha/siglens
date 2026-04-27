@@ -1,5 +1,50 @@
 # Changelog
 
+# [0.10.0](https://github.com/y0ngha/siglens/compare/v0.8.21...v0.10.0) (2026-04-27)
+
+
+### Bug Fixes
+
+* 350 리뷰 코멘트 반영 완료 ([9ac26ac](https://github.com/y0ngha/siglens/commit/9ac26acfc8d68952808fdb85c268542172e610ad)), closes [#7](https://github.com/y0ngha/siglens/issues/7)
+* 383 리뷰 코멘트 반영 완료 ([b0d7eac](https://github.com/y0ngha/siglens/commit/b0d7eac5e00f5ad7d7716fb3231ed4987b2bb5a0))
+* AI briefing retryDelay 제한 추가 및 유료 키 폴백 ([2bd5396](https://github.com/y0ngha/siglens/commit/2bd53961d93480207a935693e3e527c9bb6c4c00))
+* briefing 재시도 딜레이 및 유료 키 폴백 로직 정리 ([389b137](https://github.com/y0ngha/siglens/commit/389b137830c74da7e2b46f1d5f9fda85d7fa9328))
+* immutable pattern 및 import 통합 ([7a11cd7](https://github.com/y0ngha/siglens/commit/7a11cd714a60773a7aac8dd98be4187098cba161))
+* MISTAKES.md violations (paradigm, error handling, test coverage) ([20be818](https://github.com/y0ngha/siglens/commit/20be8183cff297faa45441c819c14fb09245c62a)), closes [#21](https://github.com/y0ngha/siglens/issues/21) [#5](https://github.com/y0ngha/siglens/issues/5) [#2](https://github.com/y0ngha/siglens/issues/2)
+* nameIsDiffrent 타입 오류 수정 ([4e66d7c](https://github.com/y0ngha/siglens/commit/4e66d7c6f84c889c2f9bceac63f72a7541599da6))
+* PR [#345](https://github.com/y0ngha/siglens/issues/345) 리뷰 코멘트 반영 완료 ([443047a](https://github.com/y0ngha/siglens/commit/443047a07f511b5d9dc2bb4b2ffd06f2a718bec0))
+* PR [#345](https://github.com/y0ngha/siglens/issues/345) 리뷰 코멘트 반영 완료 ([46bc618](https://github.com/y0ngha/siglens/commit/46bc618d0b8885b8bc6326c248f9fba4c839a2d1))
+* PR [#379](https://github.com/y0ngha/siglens/issues/379) 리뷰 코멘트 반영 완료 ([e79ff8e](https://github.com/y0ngha/siglens/commit/e79ff8eac40716d55e9bf24f359e0cc953925f7b))
+* PR [#380](https://github.com/y0ngha/siglens/issues/380) 리뷰 코멘트 반영 완료 ([2c4261b](https://github.com/y0ngha/siglens/commit/2c4261bd046331f3f73eb2c4f30dc89422408daf))
+* PR [#380](https://github.com/y0ngha/siglens/issues/380) 리뷰 코멘트 반영 완료 ([0eda22e](https://github.com/y0ngha/siglens/commit/0eda22ef75c1c1aef4cd1e74653d0585feaff0a9))
+* PR [#380](https://github.com/y0ngha/siglens/issues/380) 리뷰 코멘트 반영 완료 ([e501c56](https://github.com/y0ngha/siglens/commit/e501c56cab7b0adeb7fac0f13fe706f23cae065d))
+* Restore domain/analysis modules and fix component/hook imports ([0354464](https://github.com/y0ngha/siglens/commit/0354464308425e3e755556639e6899726305b957)), closes [#384](https://github.com/y0ngha/siglens/issues/384)
+* thinkingBudget 재시도 간 보존 및 Free→Paid 키 전환 시 상태 공유 ([#350](https://github.com/y0ngha/siglens/issues/350)) ([804871b](https://github.com/y0ngha/siglens/commit/804871b63b2a68b4f9182897f9c96891daca1234))
+* 리뷰 코멘트 반영 완료 ([f40142c](https://github.com/y0ngha/siglens/commit/f40142c817ccb61c3d1b33203a76fb6353d5f931))
+* 마켓 페이지 섹터 시그널 등락률 오류 ([05ebec2](https://github.com/y0ngha/siglens/commit/05ebec2fb6461cc4da62162948b95a8ec55dcf53))
+* 백테스트 생성 스크립트 수정 ([a71ab47](https://github.com/y0ngha/siglens/commit/a71ab47fe02fa8bc9b0da967382c9e9dad52b3cb))
+* 심볼 페이지 제목이 '[SYMBOL]' 플레이스홀더를 표시하는 문제 해결 ([4e7c1d2](https://github.com/y0ngha/siglens/commit/4e7c1d27c42cb50ea47aff4df9b5823004ad56e5))
+* 재시도 로직 ESLint 위반 수정 ([#380](https://github.com/y0ngha/siglens/issues/380)) ([0179ddf](https://github.com/y0ngha/siglens/commit/0179ddf0d099a5e24586a1f516a30ca412e5a210))
+* 중복 import 통합 및 dead code 제거 ([a115d46](https://github.com/y0ngha/siglens/commit/a115d46aaab7d785bcf03b9cbafb4b9a55e5035e))
+* 채팅 모델 선택 UI 및 로직 개선 ([dc2c525](https://github.com/y0ngha/siglens/commit/dc2c525e9e1f43f6da016bb33b7f8da6e00c8656))
+* 채팅 모델 선택기 유효성 검증 및 키보드 네비게이션 개선 ([cb161de](https://github.com/y0ngha/siglens/commit/cb161de58b1fab31e4c2a6acac3b704a46c43662))
+* 채팅 패널 모델 선택 타이밍 버그 및 포커스 관리 개선 ([2384bfd](https://github.com/y0ngha/siglens/commit/2384bfdf63f83315a784bc1c9adf6e603ae20684))
+
+
+### Features
+
+* chatAction — model 파라미터 추가, server_busy(503) 에러 처리 ([91b6aa1](https://github.com/y0ngha/siglens/commit/91b6aa1384c2f7a256aaebda0d598f59748de25c))
+* ChatModel 타입, server_busy 에러코드 추가 ([574a8eb](https://github.com/y0ngha/siglens/commit/574a8ebb35f8b210555a44686e8c1f17db3e73a4))
+* ChatPanel 모델 선택 드롭다운 UI 및 접근성 개선 ([acbd165](https://github.com/y0ngha/siglens/commit/acbd165f1e354185e04ff5e8e9c20a9cba83016a))
+* Gemini 모델 ID 상수 정의 (chatModels) ([3edb986](https://github.com/y0ngha/siglens/commit/3edb9866566aba894c71f912181d59628cc80001))
+* Migrate core/infrastructure modules to @y0ngha/siglens-core ([ed16346](https://github.com/y0ngha/siglens/commit/ed16346a2f5d5bfacb6772edf54aad375f8bfeb8))
+* useChat — selectedModel 상태 추가, server_busy 에러 메시지 ([50844f4](https://github.com/y0ngha/siglens/commit/50844f4461980958587af43b7d902678405a8eb6))
+* worker gemini retry 허용 시간 30초로 변경 ([8315997](https://github.com/y0ngha/siglens/commit/8315997ff5938037f260c7029dcbf16d6f88909e))
+* worker gemini 응답 분기 수정 ([cd90b17](https://github.com/y0ngha/siglens/commit/cd90b17f32b5f5bc7fbe0a067a15f6275b8c4b35))
+* 로컬 지표 상수 및 신호 함수 마이그레이션, 안정성 강화 ([58257fd](https://github.com/y0ngha/siglens/commit/58257fdd273b0e52463453da7af9d6103c1a5dd9))
+* 분석 패널 및 채팅 패널 마크다운 개선 ([5d71793](https://github.com/y0ngha/siglens/commit/5d717931514dc9219a3fe9bd8ac5357033853e9e))
+* 이번 주 할 일 불러올 때 markdown도 제대로 불러오도록 처리 ([e9b529c](https://github.com/y0ngha/siglens/commit/e9b529ce71599b6538f596cd00f2180cb69d6efa))
+
 # [0.9.0](https://github.com/y0ngha/siglens/compare/v0.8.21...v0.9.0) (2026-04-27)
 
 
