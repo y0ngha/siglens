@@ -1,5 +1,5 @@
 import { CHART_COLORS, getPeriodColor } from '@/lib/chartColors';
-import type { Bar, IndicatorResult } from '@/domain/types';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import type {
     OverlayItemBase,
     OverlayLegendItem,

@@ -385,6 +385,11 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → When adding external packages (e.g., @vercel/functions) to infrastructure files, mock them in all corresponding test files
     → jest.mock('@package-name', ...) must be added to every test file that tests the module with the external dependency
 
+12. New infrastructure Server Action wrapper files created without unit tests
+    → Every new infrastructure function must have a corresponding unit test file
+    → Thin wrappers delegating to siglens-core require equivalent forwarding tests (e.g., getBarsAction.test.ts model)
+    → Test coverage must match or exceed the original implementation coverage
+
 12. Period-based indicator tests only verify sign (positive/negative) without toBeCloseTo reference values
     → Every period-based indicator test must include toBeCloseTo checks against manually-calculated expected values
     → Warming-up period constants must be imported from source, not manually redefined in tests
@@ -718,4 +723,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ PriceChangeDisplay, BreadcrumbItem UI types defined in domain/types.ts
    ✅ Move presentation-specific types to lib/ (e.g., lib/skillStats.ts, lib/priceFormat.ts)
    ✅ domain/ contains only pure calculation functions: countSkillsByType, formatPrice logic, etc.
+
+4. Creating thin re-export wrappers around `@y0ngha/siglens-core`
+   → `@y0ngha/siglens-core` is the externalized SigLens domain — direct import from any layer is allowed (see ARCHITECTURE.md)
+   → Wrapper files in `src/domain/` that only re-export from siglens-core add no information and should not exist
+   → Other third-party packages (e.g. technicalindicators) remain prohibited inside domain/
+   ❌ src/domain/indicators/atr.ts: `export { calculateATR } from '@y0ngha/siglens-core';`  // pure boilerplate wrapper
+   ❌ src/domain/analysis/candle-detection.ts re-exporting from siglens-core
+   ✅ Components / hooks / app code imports directly: `import { calculateATR } from '@y0ngha/siglens-core';`
+   ✅ src/domain/ keeps only SigLens-app-specific logic (backtest, chat models, dashboard sector grouping, etc.)
+   ❌ Deep imports: `from '@y0ngha/siglens-core/dist/domain/indicators/atr'` (only the public package surface is allowed)
 ```

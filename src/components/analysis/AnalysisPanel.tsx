@@ -18,11 +18,11 @@ import type {
     Trend,
     Trendline,
     TrendlineDirection,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { useSymbolPageContext } from '@/components/symbol-page/SymbolPageContext';
 import {

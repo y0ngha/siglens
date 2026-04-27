@@ -5,6 +5,7 @@
     "author": "신용하 <dev.y0ngha@gmail.com>",
     "license": "PolyForm-Noncommercial-1.0.0",
     "scripts": {
+        "install:all": "yarn install && echo '-----' && cd worker && yarn install",
         "dev": "next dev --turbopack -p 4200",
         "build": "rm -rf .next && next build",
         "start": "next start",
@@ -34,6 +35,7 @@
         "@types/jest": "^30.0.0",
         "@upstash/redis": "^1.37.0",
         "@vercel/functions": "^3.4.3",
+        "@y0ngha/siglens-core": "^0.1.6",
         "clsx": "^2.1.1",
         "lightweight-charts": "^5.1.0",
         "next": "16.2.0",

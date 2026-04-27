@@ -9,7 +9,7 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { createSeriesMarkers, LineSeries } from 'lightweight-charts';
-import type { Bar, PatternLine, PatternResult } from '@/domain/types';
+import type { Bar, PatternLine, PatternResult } from '@y0ngha/siglens-core';
 import {
     BASE_PATTERN_SERIES_OPTIONS,
     LABEL_SERIES_INDEX,

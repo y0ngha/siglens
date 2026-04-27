@@ -5,13 +5,13 @@ import { useQuery } from '@tanstack/react-query';
 import type {
     MarketIndexData,
     MarketSectorData,
-    MarketSummaryActionResult,
-} from '@/domain/types';
+    MarketSummaryWithBriefing,
+} from '@y0ngha/siglens-core';
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
 import { MARKET_SUMMARY_STALE_TIME_MS, QUERY_KEYS } from '@/lib/queryConfig';
 
 interface UseMarketSummaryReturn {
-    data: MarketSummaryActionResult | undefined;
+    data: MarketSummaryWithBriefing | undefined;
     isPending: boolean;
     sectorMap: Map<string, MarketSectorData>;
     indices: readonly MarketIndexData[];

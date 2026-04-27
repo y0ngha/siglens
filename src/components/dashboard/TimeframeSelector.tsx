@@ -3,7 +3,7 @@
 import type { KeyboardEvent } from 'react';
 import { cn } from '@/lib/cn';
 import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
-import type { DashboardTimeframe } from '@/domain/types';
+import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import {
     DASHBOARD_TIMEFRAME_LABELS,
     DASHBOARD_TIMEFRAMES,

@@ -1,4 +1,4 @@
-import type { Timeframe } from '@/domain/types';
+import type { Timeframe } from '@y0ngha/siglens-core';
 import {
     DEFAULT_BARS_LIMIT,
     DEFAULT_TIMEFRAME,

@@ -1,4 +1,4 @@
-import type { Timeframe } from '@/domain/types';
+import type { Timeframe } from '@y0ngha/siglens-core';
 import {
     KST_OFFSET_HOURS,
     MS_PER_HOUR,

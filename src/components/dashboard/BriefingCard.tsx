@@ -1,4 +1,4 @@
-import type { MarketBriefingResponse } from '@/domain/types';
+import type { MarketBriefingResponse } from '@y0ngha/siglens-core';
 
 interface BriefingCardProps {
     briefing: MarketBriefingResponse;

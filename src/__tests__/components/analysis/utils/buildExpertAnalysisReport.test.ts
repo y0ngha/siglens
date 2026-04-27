@@ -1,5 +1,8 @@
 import { buildExpertAnalysisReport } from '@/components/analysis/utils/buildExpertAnalysisReport';
-import type { AnalysisResponse, ClusteredKeyLevels } from '@/domain/types';
+import type {
+    AnalysisResponse,
+    ClusteredKeyLevels,
+} from '@y0ngha/siglens-core';
 
 describe('buildExpertAnalysisReport', () => {
     const baseAnalysis: AnalysisResponse = {

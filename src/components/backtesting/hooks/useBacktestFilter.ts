@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { BacktestCase } from '@/domain/types';
+import type { BacktestCase } from '@y0ngha/siglens-core';
 import type { TabItem } from '@/components/ui/tabs';
 import { useQueryParamState } from '@/components/hooks/useQueryParamState';
 

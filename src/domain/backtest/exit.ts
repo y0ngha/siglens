@@ -1,4 +1,4 @@
-import type { BacktestExitReason, Bar } from '@/domain/types';
+import type { Bar, BacktestExitReason } from '@y0ngha/siglens-core';
 
 export interface ExitSimulationInput {
     bars: Bar[];

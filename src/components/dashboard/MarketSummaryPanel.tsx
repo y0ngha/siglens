@@ -13,7 +13,10 @@ import { useBriefing } from './hooks/useBriefing';
 import { useMarketSummary } from './hooks/useMarketSummary';
 import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
 import { SECTOR_GROUPS } from '@/domain/constants/dashboard-tickers';
-import type { MarketSectorData, SubmitBriefingResult } from '@/domain/types';
+import type {
+    MarketSectorData,
+    SubmitBriefingResult,
+} from '@y0ngha/siglens-core';
 
 interface BriefingContentProps {
     jobId: string;

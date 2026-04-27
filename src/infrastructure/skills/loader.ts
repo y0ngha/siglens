@@ -7,7 +7,7 @@ import type {
     SkillCounts,
     SkillDisplay,
     SkillType,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 import type { SkillsProvider } from './types';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');

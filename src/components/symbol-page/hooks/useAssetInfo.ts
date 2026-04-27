@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
-import type { AssetInfo } from '@/domain/types';
+import type { AssetInfo } from '@y0ngha/siglens-core';
 
 export function useAssetInfo(symbol: string): AssetInfo | undefined {
     const { data } = useQuery({

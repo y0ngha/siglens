@@ -1,5 +1,5 @@
 import { simulateExit } from '@/domain/backtest/exit';
-import type { Bar } from '@/domain/types';
+import type { Bar } from '@y0ngha/siglens-core';
 
 function bar(low: number, high: number, close: number, idx = 0): Bar {
     return {

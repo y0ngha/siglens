@@ -1,5 +1,5 @@
 import type { IChartApi, ISeriesApi } from 'lightweight-charts';
-import type { PatternResult, SkillChartDisplay } from '@/domain/types';
+import type { PatternResult, SkillChartDisplay } from '@y0ngha/siglens-core';
 
 export interface VisiblePatternResult extends PatternResult {
     renderConfig: SkillChartDisplay;

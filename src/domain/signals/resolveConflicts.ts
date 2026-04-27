@@ -4,8 +4,7 @@ import type {
     Signal,
     SignalDirection,
     StockSignalResult,
-    StockWithConflict,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 
 function countSignalDirections(signals: readonly Signal[]): ConflictInfo {
     return signals.reduce(
@@ -22,36 +21,41 @@ function countSignalDirections(signals: readonly Signal[]): ConflictInfo {
 export function resolveConflicts(
     stocks: readonly StockSignalResult[]
 ): ConflictResolution {
-    const resolved: StockWithConflict[] = [];
-    const mixed: StockWithConflict[] = [];
+    return stocks.reduce(
+        (acc, stock) => {
+            const { bullishCount, bearishCount } = countSignalDirections(
+                stock.signals
+            );
 
-    for (const stock of stocks) {
-        const { bullishCount, bearishCount } = countSignalDirections(
-            stock.signals
-        );
+            if (bullishCount === 0 || bearishCount === 0) {
+                return { ...acc, resolved: [...acc.resolved, stock] };
+            }
 
-        if (bullishCount === 0 || bearishCount === 0) {
-            resolved.push(stock);
-            continue;
-        }
+            const conflict: ConflictInfo = { bullishCount, bearishCount };
 
-        const conflict: ConflictInfo = { bullishCount, bearishCount };
+            if (bullishCount === bearishCount) {
+                return {
+                    ...acc,
+                    mixed: [...acc.mixed, { ...stock, conflict }],
+                };
+            }
 
-        if (bullishCount === bearishCount) {
-            mixed.push({ ...stock, conflict });
-            continue;
-        }
-
-        const winningDirection: SignalDirection =
-            bullishCount > bearishCount ? 'bullish' : 'bearish';
-        resolved.push({
-            ...stock,
-            signals: stock.signals.filter(
-                s => s.direction === winningDirection
-            ),
-            conflict,
-        });
-    }
-
-    return { resolved, mixed };
+            const winningDirection: SignalDirection =
+                bullishCount > bearishCount ? 'bullish' : 'bearish';
+            return {
+                ...acc,
+                resolved: [
+                    ...acc.resolved,
+                    {
+                        ...stock,
+                        signals: stock.signals.filter(
+                            s => s.direction === winningDirection
+                        ),
+                        conflict,
+                    },
+                ],
+            };
+        },
+        { resolved: [], mixed: [] } as ConflictResolution
+    );
 }

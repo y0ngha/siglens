@@ -16,7 +16,7 @@ import type {
 } from 'lightweight-charts';
 import { LineSeries } from 'lightweight-charts';
 import { getPeriodColor } from '@/lib/chartColors';
-import type { Bar, IndicatorResult } from '@/domain/types';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesDataFromValues } from '@/components/chart/utils/seriesDataUtils';
 

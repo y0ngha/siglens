@@ -3,7 +3,7 @@
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from 'react-error-boundary';
-import type { AnalysisResponse } from '@/domain/types';
+import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
 import { ChartContent } from '@/components/symbol-page/ChartContent';

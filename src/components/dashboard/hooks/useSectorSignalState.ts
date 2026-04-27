@@ -7,7 +7,7 @@ import type {
     QuadrantKey,
     SectorSignalsResult,
     StockWithConflict,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     SIGNAL_SECTORS,

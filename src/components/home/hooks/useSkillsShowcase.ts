@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useId, useState } from 'react';
-import type { SkillType } from '@/domain/types';
+import type { SkillType } from '@y0ngha/siglens-core';
 
 export type SkillsActiveTab = 'all' | SkillType;
 

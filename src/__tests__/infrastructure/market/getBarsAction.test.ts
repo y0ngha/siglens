@@ -1,9 +1,14 @@
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
-import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
-import type { BarsData } from '@/domain/types';
-import { fetchBarsWithIndicators } from '@/infrastructure/market/barsApi';
+import {
+    EMPTY_SMC_RESULT,
+    fetchBarsWithIndicators,
+} from '@y0ngha/siglens-core';
+import type { BarsData } from '@y0ngha/siglens-core';
 
-jest.mock('@/infrastructure/market/barsApi');
+jest.mock('@y0ngha/siglens-core', () => ({
+    ...jest.requireActual('@y0ngha/siglens-core'),
+    fetchBarsWithIndicators: jest.fn(),
+}));
 
 const mockFetchBarsWithIndicators =
     fetchBarsWithIndicators as jest.MockedFunction<

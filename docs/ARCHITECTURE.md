@@ -28,7 +28,7 @@ Layered Architecture를 기반으로 한다.
 ## 의존성 방향 규칙
 
 ```
-domain         ← 외부 import 없음
+domain         ← 외부 import 없음 (단, @y0ngha/siglens-core는 예외 — 아래 참고)
                  순수 TypeScript 함수만 허용
                  technicalindicators 라이브러리도 금지
                  (계산 로직을 직접 구현)
@@ -53,13 +53,24 @@ components     ← domain, lib import 가능
                  컴포넌트 파일(.tsx): infrastructure 직접 import 금지
                  훅 파일(hooks/): infrastructure의 fetch 함수만 import 가능
                    → useQuery/useMutation의 queryFn/mutationFn 연결 목적에 한함
-                   → 타입 import는 @/domain/types에서 수행
+                   → 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서 수행
                  'use client' 필수 표기
 ```
 
+**`@y0ngha/siglens-core` 예외 — 모든 레이어에서 직접 import 가능**
+
+`@y0ngha/siglens-core`는 외부 라이브러리가 아니라 **SigLens 도메인 로직 자체를 외주화한 패키지**다. 인디케이터 계산, 캔들 패턴 탐지, 시그널 로직, 도메인 타입 등 본 프로젝트의 domain 레이어 본체가 이 패키지에 들어 있다. 따라서 다음과 같이 취급한다:
+
+- `domain`, `infrastructure`, `lib`, `app`, `components` **어느 레이어에서든 직접 import 가능**
+- 얇은 re-export wrapper를 만들 필요 없음 — 의미 없는 보일러플레이트만 늘어남
+- 단, 패키지가 노출하지 않는 내부 모듈을 deep import하는 것은 금지 (`@y0ngha/siglens-core/dist/...` 형태 X)
+- siglens 로컬 도메인 코드(`src/domain/`)는 SigLens 앱 고유 로직(backtest, chat 모델 상수, 대시보드 섹터 그룹핑 등)만 보유
+
+`technicalindicators` 같은 일반 외부 라이브러리는 종전 규칙 그대로 domain에서 금지된다.
+
 **위반 예시 (절대 금지)**
 ```typescript
-// ❌ domain에서 외부 라이브러리 import
+// ❌ domain에서 일반 외부 라이브러리 import
 // src/domain/indicators/rsi.ts
 import { RSI } from 'technicalindicators'; // 금지
 
@@ -70,6 +81,16 @@ import { AlpacaProvider } from '@/infrastructure/market/alpaca'; // 금지
 // ❌ domain에서 infrastructure import
 // src/domain/analysis/prompt.ts
 import { claudeClient } from '@/infrastructure/ai/claude'; // 금지
+
+// ❌ siglens-core deep import
+import { calculateBollinger } from '@y0ngha/siglens-core/dist/domain/indicators/bollinger'; // 금지
+```
+
+**허용 예시**
+```typescript
+// ✅ components에서 siglens-core 직접 import
+import { detectCandlePatternEntries, RSI_OVERBOUGHT_LEVEL } from '@y0ngha/siglens-core';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 ```
 
 **타입 배치 규칙**

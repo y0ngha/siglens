@@ -4,7 +4,7 @@ import type {
     BacktestData,
     BacktestExitReason,
     BacktestSignalResult,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 
 const VALID_SIGNAL_RESULTS: BacktestSignalResult[] = ['win', 'loss'];
 const VALID_AI_RESULTS: BacktestAiResult[] = ['win', 'loss', 'neutral'];

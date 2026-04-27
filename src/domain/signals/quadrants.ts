@@ -5,7 +5,7 @@ import type {
     SignalPhase,
     StockSignalResult,
     StockWithConflict,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 
 export const EMPTY_QUADRANTS: Record<
     QuadrantKey,

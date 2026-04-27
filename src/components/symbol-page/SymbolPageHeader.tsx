@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import type { AssetInfo, Timeframe } from '@/domain/types';
+import type { AssetInfo, Timeframe } from '@y0ngha/siglens-core';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 
 interface SymbolPageHeaderProps {

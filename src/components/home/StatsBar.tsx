@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import { Fragment } from 'react';
 
-import type { SkillShowcaseItem } from '@/domain/types';
+import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
 import { DotSeparator } from '@/components/ui/DotSeparator';
 import { buildSkillStats } from '@/lib/skillStats';
 

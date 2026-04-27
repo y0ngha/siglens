@@ -1,4 +1,4 @@
-import type { Bar, IchimokuFuturePoint } from '@/domain/types';
+import type { Bar, IchimokuFuturePoint } from '@y0ngha/siglens-core';
 import type { UTCTimestamp } from 'lightweight-charts';
 import type { SeriesPoint } from '@/components/chart/utils/seriesDataUtils';
 

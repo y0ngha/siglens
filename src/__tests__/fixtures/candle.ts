@@ -1,4 +1,4 @@
-import type { Bar } from '@/domain/types';
+import type { Bar } from '@y0ngha/siglens-core';
 
 export const TEST_BAR_BASE_TIME = 1700000000;
 export const TEST_BAR_INTERVAL = 60;

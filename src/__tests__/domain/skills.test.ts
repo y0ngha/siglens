@@ -1,5 +1,5 @@
 import { countSkillsByType } from '@/domain/skills';
-import type { SkillShowcaseItem, SkillType } from '@/domain/types';
+import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 
 function buildSkill(
     overrides: Partial<SkillShowcaseItem> = {}

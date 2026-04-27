@@ -2,7 +2,7 @@
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { useChatButtonState } from '@/components/chat/hooks/useChatButtonState';
-import type { AnalysisResponse, Timeframe } from '@/domain/types';
+import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 
 interface FloatingChatButtonProps {
     symbol: string;

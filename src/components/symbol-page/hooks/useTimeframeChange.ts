@@ -3,7 +3,7 @@
 import { useCallback, useState, useTransition } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useQueryClient } from '@tanstack/react-query';
-import type { BarsData, Timeframe } from '@/domain/types';
+import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';

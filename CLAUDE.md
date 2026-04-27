@@ -133,6 +133,7 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 
 ```
 domain         ← No external imports. Pure TypeScript functions only.
+                 Exception: @y0ngha/siglens-core may be imported (see below).
 infrastructure ← May import from domain only. Handles file I/O (Skills) and API calls.
 lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.
 app (RSC/Route)← May import from infrastructure, domain, lib.
@@ -140,12 +141,14 @@ components     ← May import from domain, lib.
                Component files (.tsx): Direct imports from infrastructure are prohibited.
                Hook files (hooks/): May import fetch functions from infrastructure only
                  → Limited to queryFn/mutationFn connection purpose
-                 → Type imports must be from @/domain/types
+                 → Type imports must be from @/domain/types or @y0ngha/siglens-core
 
 lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.
                May import types from domain (e.g. Timeframe) when needed for React Query key factories.
                React Query key factories (QUERY_KEYS) and config constants belong in lib/.
 ```
+
+**`@y0ngha/siglens-core` exception**: This package is not a third-party library — it is the externalized SigLens domain logic (indicators, candle patterns, signals, domain types). Direct import is allowed from **every layer** including `components/` and hooks. Do not create thin re-export wrappers in `domain/` — they are pure boilerplate. Deep imports (`@y0ngha/siglens-core/dist/...`) are still prohibited; use only the public package surface. Local `src/domain/` keeps only SigLens-app-specific logic (backtest, chat models, dashboard sector grouping, etc.).
 
 Violations trigger ESLint errors. PRs cannot be merged.
 

@@ -1,4 +1,4 @@
-import type { SkillShowcaseItem, SkillType } from '@/domain/types';
+import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 import { countSkillsByType } from '@/domain/skills';
 
 export interface SkillStat {

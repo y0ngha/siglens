@@ -2,7 +2,7 @@
 
 import { type RefObject, useEffect } from 'react';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
-import type { Bar, BuySellVolumeResult } from '@/domain/types';
+import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
 
 interface UseVolumeChartDataOptions {
     chartRef: RefObject<IChartApi | null>;

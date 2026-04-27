@@ -1,4 +1,4 @@
-import type { SkillShowcaseItem, SkillType } from '@/domain/types';
+import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
 
 export function countSkillsByType(
     skills: readonly SkillShowcaseItem[]

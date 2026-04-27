@@ -1,4 +1,4 @@
-import type { Timeframe } from '@/domain/types';
+import type { Timeframe } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 
 export const QUERY_STALE_TIME_MS = MS_PER_MINUTE;

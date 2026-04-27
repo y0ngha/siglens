@@ -8,7 +8,7 @@ import type {
     Signal,
     StockSignalResult,
     StockWithConflict,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 
 function buildSignal(
     direction: 'bullish' | 'bearish',

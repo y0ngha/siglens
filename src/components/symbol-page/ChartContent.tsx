@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import type { AnalysisResponse, Timeframe } from '@/domain/types';
+import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';

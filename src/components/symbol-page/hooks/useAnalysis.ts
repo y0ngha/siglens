@@ -12,7 +12,7 @@ import type {
     AnalysisResponse,
     SubmitAnalysisResult,
     Timeframe,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';

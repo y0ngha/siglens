@@ -4,7 +4,7 @@ import type {
     SectorEtf,
     SectorGroupDef,
     SectorStock,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 
 export const MARKET_INDICES: IndexTicker[] = [
     {

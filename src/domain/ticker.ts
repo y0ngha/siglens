@@ -1,4 +1,4 @@
-import type { AssetInfo, TickerSearchResult } from '@/domain/types';
+import type { AssetInfo, TickerSearchResult } from '@y0ngha/siglens-core';
 
 const KOREAN_UNICODE_REGEX = /[\u3131-\u3163\uac00-\ud7a3]/;
 

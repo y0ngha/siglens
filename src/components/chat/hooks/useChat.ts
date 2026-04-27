@@ -17,7 +17,7 @@ import type {
     ChatMessage,
     ChatModel,
     Timeframe,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';

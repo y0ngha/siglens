@@ -1,4 +1,4 @@
-import type { SignalStrength } from '@/domain/types';
+import type { SignalStrength } from '@y0ngha/siglens-core';
 
 export interface StrengthDisplay {
     label: string;

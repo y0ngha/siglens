@@ -5,7 +5,7 @@ import type {
     EntryRecommendation,
     RiskLevel,
     Trend,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
 
 interface BuildExpertAnalysisReportInput {
     symbol: string;

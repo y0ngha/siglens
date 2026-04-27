@@ -3,7 +3,7 @@
 import { isKoreanInput } from '@/domain/ticker';
 import { useAutocomplete } from '@/components/search/hooks/useAutocomplete';
 import { cn } from '@/lib/cn';
-import type { TickerSearchResult } from '@/domain/types';
+import type { TickerSearchResult } from '@y0ngha/siglens-core';
 
 const LISTBOX_ID = 'ticker-autocomplete-listbox';
 const OPTION_ID_PREFIX = `${LISTBOX_ID}-option`;

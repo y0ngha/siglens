@@ -5,13 +5,14 @@ import { useEffect, useEffectEvent, useRef } from 'react';
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { LineSeries, LineStyle } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
-import type { Bar, IndicatorResult } from '@/domain/types';
-import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import {
+    type Bar,
+    type IndicatorResult,
     CCI_OVERBOUGHT_LEVEL,
     CCI_OVERSOLD_LEVEL,
     CCI_ZERO_LEVEL,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
+import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesDataFromValues } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseCCIChartParams {
