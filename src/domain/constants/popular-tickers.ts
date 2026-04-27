@@ -265,4 +265,16 @@ export const POPULAR_TICKERS = [
     'BMY',
     'MDT',
     'HDB',
+
+    // --- Trending (2026-04-27) ---
+    'T',
+    'VALE',
+    'LYG',
+    'CSX',
+    'CNQ',
+    'KMI',
+    'NEE',
+    'B',
+    'BKR',
+    'C',
 ] as const;
