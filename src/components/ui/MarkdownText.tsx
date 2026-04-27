@@ -53,8 +53,10 @@ export const MARKDOWN_TEXT_COMPONENTS: Components = {
     ),
 };
 
-interface MarkdownTextProps
-    extends Omit<ComponentPropsWithoutRef<'div'>, 'children'> {
+interface MarkdownTextProps extends Omit<
+    ComponentPropsWithoutRef<'div'>,
+    'children'
+> {
     children: string;
     components?: Components;
 }
