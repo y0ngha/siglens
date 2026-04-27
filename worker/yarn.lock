@@ -1264,13 +1264,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@y0ngha/siglens-core@npm:^0.1.5":
-  version: 0.1.5
-  resolution: "@y0ngha/siglens-core@npm:0.1.5::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.1.5%2Fa1c499d3697f894b5d8e1e689ecb52836643e838"
+"@y0ngha/siglens-core@npm:^0.1.6":
+  version: 0.1.6
+  resolution: "@y0ngha/siglens-core@npm:0.1.6::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.1.6%2F76ff44a316f1e6488419e8757ca29b91199fe317"
   peerDependencies:
     "@google/genai": ^1.50.1
     "@upstash/redis": ^1.37.0
-  checksum: 10c0/5d947747f5d98833b099a2d31645b4beea3f55edff3912ad87f6e76ab3254fa92d533087307e8aabf83aabf16e9fa1e7a4ef960bd357a7e9251424ef199f0087
+  checksum: 10c0/294bff5b42ea6842059ebcc63ebbaf47ebc65e5500c3ac05cc807cc15b390f9b0ca4aa3d96a7e30eb4c0750f004672cbda5ef55a51b92e4fa5fbb85f08f0e4ec
   languageName: node
   linkType: hard
 
@@ -4149,7 +4149,7 @@ __metadata:
     "@types/jest": "npm:^29.5.14"
     "@types/node": "npm:^22.15.3"
     "@upstash/redis": "npm:^1.34.3"
-    "@y0ngha/siglens-core": "npm:^0.1.5"
+    "@y0ngha/siglens-core": "npm:^0.1.6"
     express: "npm:^5.2.1"
     jest: "npm:^29.7.0"
     ts-jest: "npm:^29.3.2"
