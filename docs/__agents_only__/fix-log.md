@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #384 round 2 | feat/372-377/siglens-core-migration | 2026-04-27]
+- Violation: `MarketSummaryActionResult` 인터페이스 dead code 잔존 (domain/types.ts)
+- Rule: MISTAKES.md Coding Paradigm #4 — 효과 없는 코드 제거
+- Context: `getMarketSummaryAction` 반환 타입이 `MarketSummaryWithBriefing`으로 변경되었으나 `MarketSummaryActionResult`가 미삭제 상태로 남아 중복 타입 혼란 유발.
+
+- Violation: domain/types.ts 2줄 주석 블록
+- Rule: CONVENTIONS.md — 다중 줄 주석 블록 금지, 한 줄로 압축
+- Context: 파일 최상단 설명 주석이 2줄로 작성됨.
+
 ## [PR #384 | feat/372-377/siglens-core-migration | 2026-04-27]
 - Violation: `for...of` + `push()` 직접 변이로 도메인 함수 구현 (resolveConflicts.ts)
 - Rule: MISTAKES.md Coding Paradigm #21, #5 (도메인 함수는 map/filter/reduce 사용; 배열 직접 변이 금지)
@@ -9,22 +18,9 @@
 - Rule: MISTAKES.md Fire-and-Forget #2 (fire-and-forget Server Action은 에러를 삼켜야 함)
 - Context: 호출측 useAnalysis.ts에서 `void cancelAnalysisJobAction(jobId)`로 호출하므로 fire-and-forget 패턴인데, 에러를 그대로 전파하여 unhandled Promise rejection 발생 가능.
 
-- Violation: 새 infrastructure 파일(getSectorSignalsAction.ts)에 테스트 파일 누락
-- Rule: CONVENTIONS.md infrastructure/ 100% 커버리지 필수; CLAUDE.md "Always write test files alongside implementation files"
-- Context: getSectorSignalsAction.ts 생성 시 대응 테스트 파일을 작성하지 않음.
-
 - Violation: @vercel/functions를 import하는 infrastructure 파일 테스트에서 jest.mock('@vercel/functions') 누락 (5개 파일)
 - Rule: MISTAKES.md Tests #11 (외부 패키지를 infrastructure 파일에 추가할 때 모든 대응 테스트 파일에 mock 추가)
 - Context: submitAnalysisAction, pollAnalysisAction, pollBriefingAction, submitBriefingAction, searchTickerAction 테스트 파일이 @vercel/functions mock 없이 작성됨.
-
-## [Issue #372-377 | feat/372-377/siglens-core-migration | 2026-04-26]
-- Violation: Two/multiple separate import statements from the same module '@y0ngha/siglens-core' (useAnalysisDerivedData.ts: 2 statements, useCandlePatternMarkers.ts: 5 statements)
-- Rule: MISTAKES.md Components #0 (import/no-duplicates)
-- Context: Bulk import-path replacement script split each original local-path import into its own statement, leaving multiple back-to-back imports from the same target module that should have been merged.
-
-- Violation: New infrastructure Server Action wrapper files (9 files) created without corresponding unit tests
-- Rule: MISTAKES.md Domain Functions #22 / Test Layer Rules (100% coverage for infrastructure)
-- Context: Wrappers are thin async pass-throughs that delegate one call into siglens-core; the deleted originals had tests, so equivalent forwarding tests should accompany the new wrappers for consistency with getBarsAction.test.ts.
 
 ## [PR #384 | feat/372-377/siglens-core-migration | 2026-04-27]
 - Violation: infrastructure try-catch 없이 Redis 연동 핵심 함수 호출

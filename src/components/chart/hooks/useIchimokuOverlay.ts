@@ -11,8 +11,11 @@ import {
 import type { IChartApi, ISeriesApi, LineWidth } from 'lightweight-charts';
 import { AreaSeries, LineSeries, LineStyle } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
-import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
-import { calculateIchimokuFutureCloud } from '@y0ngha/siglens-core';
+import {
+    type Bar,
+    type IndicatorResult,
+    calculateIchimokuFutureCloud,
+} from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import { buildSeriesData } from '@/components/chart/utils/seriesDataUtils';
 import type { FutureCloudBase } from '@/components/chart/utils/ichimokuUtils';

@@ -9,8 +9,9 @@ import type {
     ReconciledActionLineData,
     ValidatedActionPrices,
 } from '@y0ngha/siglens-core';
-import { clusterKeyLevels, validateKeyLevels } from '@y0ngha/siglens-core';
 import {
+    clusterKeyLevels,
+    validateKeyLevels,
     extractReconciledActionLines,
     validateActionPrices,
 } from '@y0ngha/siglens-core';

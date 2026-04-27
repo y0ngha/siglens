@@ -385,6 +385,11 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → When adding external packages (e.g., @vercel/functions) to infrastructure files, mock them in all corresponding test files
     → jest.mock('@package-name', ...) must be added to every test file that tests the module with the external dependency
 
+12. New infrastructure Server Action wrapper files created without unit tests
+    → Every new infrastructure function must have a corresponding unit test file
+    → Thin wrappers delegating to siglens-core require equivalent forwarding tests (e.g., getBarsAction.test.ts model)
+    → Test coverage must match or exceed the original implementation coverage
+
 12. Period-based indicator tests only verify sign (positive/negative) without toBeCloseTo reference values
     → Every period-based indicator test must include toBeCloseTo checks against manually-calculated expected values
     → Warming-up period constants must be imported from source, not manually redefined in tests

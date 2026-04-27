@@ -1,7 +1,6 @@
 'use server';
 
-import { getAssetInfo } from '@y0ngha/siglens-core';
-import type { AssetInfo } from '@y0ngha/siglens-core';
+import { type AssetInfo, getAssetInfo } from '@y0ngha/siglens-core';
 
 export async function getAssetInfoAction(
     symbol: string

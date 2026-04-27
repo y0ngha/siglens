@@ -2,8 +2,11 @@
 
 import React, { useId, useRef } from 'react';
 import { cn } from '@/lib/cn';
-import type { SkillShowcaseItem, SkillType } from '@y0ngha/siglens-core';
-import { HIGH_CONFIDENCE_WEIGHT } from '@y0ngha/siglens-core';
+import {
+    type SkillShowcaseItem,
+    type SkillType,
+    HIGH_CONFIDENCE_WEIGHT,
+} from '@y0ngha/siglens-core';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { buildPanelId, buildTabId, TabsPill } from '@/components/ui/tabs';
 import {

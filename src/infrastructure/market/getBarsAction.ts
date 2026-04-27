@@ -1,8 +1,11 @@
 'use server';
 
 import { cacheLife, cacheTag } from 'next/cache';
-import { fetchBarsWithIndicators } from '@y0ngha/siglens-core';
-import type { BarsData, Timeframe } from '@y0ngha/siglens-core';
+import {
+    type BarsData,
+    type Timeframe,
+    fetchBarsWithIndicators,
+} from '@y0ngha/siglens-core';
 
 export async function getBarsAction(
     symbol: string,

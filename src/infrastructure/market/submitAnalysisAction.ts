@@ -1,8 +1,11 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
-import { submitAnalysis } from '@y0ngha/siglens-core';
-import type { SubmitAnalysisResult, Timeframe } from '@y0ngha/siglens-core';
+import {
+    type SubmitAnalysisResult,
+    type Timeframe,
+    submitAnalysis,
+} from '@y0ngha/siglens-core';
 
 export async function submitAnalysisAction(
     symbol: string,

@@ -10,21 +10,15 @@ import type {
 } from 'lightweight-charts';
 import { createSeriesMarkers } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
-import type {
-    Bar,
-    CandlePatternEntry,
-    PatternTrend,
-} from '@y0ngha/siglens-core';
 import {
+    type Bar,
+    type CandlePatternEntry,
+    type PatternTrend,
     detectCandlePatternEntries,
     getDetectionBars,
     selectLastCandlePatternEntries,
-} from '@y0ngha/siglens-core';
-import {
     getCandlePatternLabel,
     getMultiCandlePatternLabel,
-} from '@y0ngha/siglens-core';
-import {
     getMultiPatternTrend,
     getSinglePatternTrend,
 } from '@y0ngha/siglens-core';
