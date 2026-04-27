@@ -1,21 +1,25 @@
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
+import { createChatTokenStore, hashClientIp } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
-import { getRemainingTokens, hashIp } from '@/infrastructure/chat/tokenStore';
 
 jest.mock('next/headers', () => ({
     headers: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/chat/tokenStore', () => ({
-    hashIp: jest.fn((ip: string) => `hashed_${ip}`),
-    getRemainingTokens: jest.fn(),
+jest.mock('@y0ngha/siglens-core', () => ({
+    ...jest.requireActual('@y0ngha/siglens-core'),
+    createChatTokenStore: jest.fn(),
+    hashClientIp: jest.fn((ip: string) => `hashed_${ip}`),
 }));
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
-const mockHashIp = hashIp as jest.MockedFunction<typeof hashIp>;
-const mockGetRemainingTokens = getRemainingTokens as jest.MockedFunction<
-    typeof getRemainingTokens
+const mockCreateChatTokenStore = createChatTokenStore as jest.MockedFunction<
+    typeof createChatTokenStore
 >;
+const mockHashClientIp = hashClientIp as jest.MockedFunction<
+    typeof hashClientIp
+>;
+const mockGetRemainingTokens = jest.fn();
 
 function makeHeadersMap(xForwardedFor?: string) {
     return {
@@ -28,9 +32,13 @@ function makeHeadersMap(xForwardedFor?: string) {
 describe('getRemainingTokensAction 함수는', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockCreateChatTokenStore.mockReturnValue({
+            tryConsumeToken: jest.fn(),
+            getRemainingTokens: mockGetRemainingTokens,
+        });
     });
 
-    it('x-forwarded-for IP를 해시하여 잔여 토큰 수를 반환한다', async () => {
+    it('x-forwarded-for IP를 해시하여 core 토큰 저장소에 전달한다', async () => {
         mockHeaders.mockResolvedValue(
             makeHeadersMap('1.2.3.4') as unknown as Awaited<
                 ReturnType<typeof headers>
@@ -40,7 +48,7 @@ describe('getRemainingTokensAction 함수는', () => {
 
         const result = await getRemainingTokensAction();
 
-        expect(mockHashIp).toHaveBeenCalledWith('1.2.3.4');
+        expect(mockHashClientIp).toHaveBeenCalledWith('1.2.3.4');
         expect(mockGetRemainingTokens).toHaveBeenCalledWith('hashed_1.2.3.4');
         expect(result).toBe(3);
     });
@@ -55,7 +63,7 @@ describe('getRemainingTokensAction 함수는', () => {
 
         const result = await getRemainingTokensAction();
 
-        expect(mockHashIp).toHaveBeenCalledWith('1.2.3.4');
+        expect(mockHashClientIp).toHaveBeenCalledWith('1.2.3.4');
         expect(result).toBe(4);
     });
 
@@ -67,7 +75,7 @@ describe('getRemainingTokensAction 함수는', () => {
 
         const result = await getRemainingTokensAction();
 
-        expect(mockHashIp).toHaveBeenCalledWith('unknown');
+        expect(mockHashClientIp).toHaveBeenCalledWith('unknown');
         expect(result).toBe(5);
     });
 

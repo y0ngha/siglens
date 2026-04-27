@@ -1,15 +1,16 @@
 'use server';
 
+import { createChatTokenStore, hashClientIp } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
-import { getRemainingTokens, hashIp } from '@/infrastructure/chat/tokenStore';
 
 export async function getRemainingTokensAction(): Promise<number | null> {
     try {
         const headersList = await headers();
-        const ip =
+        const clientIp =
             headersList.get('x-forwarded-for')?.split(',')[0].trim() ??
             'unknown';
-        return await getRemainingTokens(hashIp(ip));
+        const tokenStore = createChatTokenStore();
+        return await tokenStore.getRemainingTokens(hashClientIp(clientIp));
     } catch {
         return null;
     }

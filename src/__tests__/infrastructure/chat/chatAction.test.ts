@@ -1,45 +1,28 @@
 import { chatAction } from '@/infrastructure/chat/chatAction';
-import type { AnalysisResponse, ChatModel } from '@y0ngha/siglens-core';
-import { GEMINI_2_5_FLASH_LITE_MODEL } from '@/domain/constants/chatModels';
-import { headers } from 'next/headers';
 import {
-    getRemainingTokens,
-    tryConsumeToken,
-} from '@/infrastructure/chat/tokenStore';
-import { GoogleGenAI } from '@google/genai';
-import { constants } from 'node:http2';
+    GEMINI_2_5_FLASH_LITE_MODEL,
+    GEMINI_2_5_FLASH_MODEL,
+    requestChatCompletion,
+} from '@y0ngha/siglens-core';
+import type { AnalysisResponse, ChatActionResult } from '@y0ngha/siglens-core';
+import { headers } from 'next/headers';
 
 jest.mock('next/headers', () => ({
-    headers: jest.fn().mockResolvedValue({
-        get: jest.fn((key: string) => {
-            if (key === 'x-forwarded-for') return '1.2.3.4';
-            return null;
-        }),
-    }),
+    headers: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/chat/tokenStore', () => ({
-    hashIp: jest.fn(() => 'abc123hashedip'),
-    tryConsumeToken: jest.fn(),
-    getRemainingTokens: jest.fn(),
-}));
-
-jest.mock('@google/genai', () => ({
-    GoogleGenAI: jest.fn().mockImplementation(() => ({
-        models: {
-            generateContent: jest.fn(),
-        },
-    })),
+jest.mock('@y0ngha/siglens-core', () => ({
+    ...jest.requireActual('@y0ngha/siglens-core'),
+    GEMINI_2_5_FLASH_MODEL: 'gemini-2.5-flash',
+    GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
+    VALID_CHAT_MODELS: ['gemini-2.5-flash', 'gemini-2.5-flash-lite'],
+    requestChatCompletion: jest.fn(),
 }));
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
-const mockTryConsumeToken = tryConsumeToken as jest.MockedFunction<
-    typeof tryConsumeToken
+const mockRequestChatCompletion = requestChatCompletion as jest.MockedFunction<
+    (params: unknown) => Promise<ChatActionResult>
 >;
-const mockGetRemainingTokens = getRemainingTokens as jest.MockedFunction<
-    typeof getRemainingTokens
->;
-const MockGoogleGenAI = GoogleGenAI as jest.MockedClass<typeof GoogleGenAI>;
 
 const MINIMAL_ANALYSIS: AnalysisResponse = {
     summary: 'AAPL trending up.',
@@ -57,25 +40,31 @@ const MINIMAL_ANALYSIS: AnalysisResponse = {
     trendlines: [],
 };
 
-describe('chatAction 함수는', () => {
-    let mockGenerateContent: jest.Mock;
+const SUCCESS_RESULT: ChatActionResult = {
+    ok: true,
+    message: 'RSI가 높아서 조금 기다리는 게 좋아요.',
+    remainingTokens: 4,
+};
 
+function makeHeadersMap(xForwardedFor?: string) {
+    return {
+        get: jest.fn((key: string) =>
+            key === 'x-forwarded-for' ? (xForwardedFor ?? null) : null
+        ),
+    };
+}
+
+describe('chatAction 함수는', () => {
     beforeEach(() => {
-        jest.resetAllMocks();
+        jest.clearAllMocks();
         process.env.GEMINI_API_KEY = 'paid-api-key';
-        mockHeaders.mockResolvedValue({
-            get: jest.fn((key: string) => {
-                if (key === 'x-forwarded-for') return '1.2.3.4';
-                return null;
-            }),
-        } as unknown as Awaited<ReturnType<typeof headers>>);
-        mockGenerateContent = jest.fn();
-        MockGoogleGenAI.mockImplementation(
-            () =>
-                ({
-                    models: { generateContent: mockGenerateContent },
-                }) as unknown as InstanceType<typeof GoogleGenAI>
+        delete process.env.GEMINI_CHAT_FREE_API_KEY;
+        mockHeaders.mockResolvedValue(
+            makeHeadersMap('1.2.3.4') as unknown as Awaited<
+                ReturnType<typeof headers>
+            >
         );
+        mockRequestChatCompletion.mockResolvedValue(SUCCESS_RESULT);
     });
 
     afterEach(() => {
@@ -83,128 +72,83 @@ describe('chatAction 함수는', () => {
         delete process.env.GEMINI_CHAT_FREE_API_KEY;
     });
 
-    it('토큰 소진 시 token_exhausted 에러를 반환한다', async () => {
-        mockTryConsumeToken.mockResolvedValueOnce(false);
+    it('core 채팅 use-case에 요청 정보를 위임하고 결과를 반환한다', async () => {
+        const history = [{ role: 'user' as const, content: '이전 질문' }];
 
         const result = await chatAction(
             'AAPL',
             '1Day',
             MINIMAL_ANALYSIS,
-            [],
-            '지금 사도 돼?'
+            history,
+            '지금 사도 돼?',
+            GEMINI_2_5_FLASH_LITE_MODEL
         );
 
-        expect(result).toEqual({ ok: false, error: 'token_exhausted' });
-        expect(mockGenerateContent).not.toHaveBeenCalled();
-    });
-
-    it('성공 시 AI 응답 메시지와 남은 토큰을 반환한다', async () => {
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        mockGetRemainingTokens.mockResolvedValueOnce(4);
-        mockGenerateContent.mockResolvedValueOnce({
-            text: 'RSI가 높아서 조금 기다리는 게 좋아요.',
-        });
-
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '지금 사도 돼?'
-        );
-
-        expect(result).toEqual({
-            ok: true,
-            message: 'RSI가 높아서 조금 기다리는 게 좋아요.',
-            remainingTokens: 4,
+        expect(result).toBe(SUCCESS_RESULT);
+        expect(mockRequestChatCompletion).toHaveBeenCalledWith({
+            clientIp: '1.2.3.4',
+            symbol: 'AAPL',
+            timeframe: '1Day',
+            analysis: MINIMAL_ANALYSIS,
+            history,
+            userMessage: '지금 사도 돼?',
+            model: GEMINI_2_5_FLASH_LITE_MODEL,
+            freeApiKey: undefined,
+            paidApiKey: 'paid-api-key',
         });
     });
 
-    it('GEMINI_CHAT_FREE_API_KEY 성공 시 paid key를 사용하지 않는다', async () => {
+    it('model을 생략하면 core의 기본 채팅 모델을 전달한다', async () => {
+        await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+
+        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+            expect.objectContaining({
+                model: GEMINI_2_5_FLASH_MODEL,
+            })
+        );
+    });
+
+    it('free API key가 있으면 core use-case에 함께 전달한다', async () => {
         process.env.GEMINI_CHAT_FREE_API_KEY = 'free-api-key';
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        mockGetRemainingTokens.mockResolvedValueOnce(3);
-
-        let capturedApiKey = '';
-        MockGoogleGenAI.mockImplementation((options: { apiKey?: string }) => {
-            capturedApiKey = options.apiKey ?? '';
-            return {
-                models: { generateContent: mockGenerateContent },
-            } as unknown as InstanceType<typeof GoogleGenAI>;
-        });
-        mockGenerateContent.mockResolvedValueOnce({ text: '응답' });
 
         await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
 
-        expect(capturedApiKey).toBe('free-api-key');
+        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+            expect.objectContaining({
+                freeApiKey: 'free-api-key',
+                paidApiKey: 'paid-api-key',
+            })
+        );
     });
 
-    it('GEMINI_CHAT_FREE_API_KEY 실패 시 paid key로 fallback한다', async () => {
-        process.env.GEMINI_CHAT_FREE_API_KEY = 'free-api-key';
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        mockGetRemainingTokens.mockResolvedValueOnce(3);
-
-        const usedKeys: string[] = [];
-        MockGoogleGenAI.mockImplementation((options: { apiKey?: string }) => {
-            usedKeys.push(options.apiKey ?? '');
-            return {
-                models: { generateContent: mockGenerateContent },
-            } as unknown as InstanceType<typeof GoogleGenAI>;
-        });
-        // free key 실패, paid key 성공
-        mockGenerateContent
-            .mockRejectedValueOnce(new Error('free key quota exceeded'))
-            .mockResolvedValueOnce({ text: 'paid key 응답' });
-
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '질문'
+    it('x-forwarded-for에 여러 IP가 있으면 첫 번째 IP만 전달한다', async () => {
+        mockHeaders.mockResolvedValue(
+            makeHeadersMap('1.2.3.4, 5.6.7.8') as unknown as Awaited<
+                ReturnType<typeof headers>
+            >
         );
 
-        expect(usedKeys).toEqual(['free-api-key', 'paid-api-key']);
-        expect(result).toEqual({
-            ok: true,
-            message: 'paid key 응답',
-            remainingTokens: 3,
-        });
+        await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+
+        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+            expect.objectContaining({
+                clientIp: '1.2.3.4',
+            })
+        );
     });
 
-    it('free key에서 429 에러 시 paid key로 fallback한다', async () => {
-        process.env.GEMINI_CHAT_FREE_API_KEY = 'free-api-key';
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        mockGetRemainingTokens.mockResolvedValueOnce(3);
-
-        const usedKeys: string[] = [];
-        MockGoogleGenAI.mockImplementation((options: { apiKey?: string }) => {
-            usedKeys.push(options.apiKey ?? '');
-            return {
-                models: { generateContent: mockGenerateContent },
-            } as unknown as InstanceType<typeof GoogleGenAI>;
-        });
-        const rateLimitError = Object.assign(new Error('429'), {
-            status: constants.HTTP_STATUS_TOO_MANY_REQUESTS,
-        });
-        mockGenerateContent
-            .mockRejectedValueOnce(rateLimitError)
-            .mockResolvedValueOnce({ text: 'paid key fallback 응답' });
-
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '질문'
+    it('x-forwarded-for 헤더가 없으면 unknown을 전달한다', async () => {
+        mockHeaders.mockResolvedValue(
+            makeHeadersMap() as unknown as Awaited<ReturnType<typeof headers>>
         );
 
-        expect(usedKeys).toEqual(['free-api-key', 'paid-api-key']);
-        expect(result).toEqual({
-            ok: true,
-            message: 'paid key fallback 응답',
-            remainingTokens: 3,
-        });
+        await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+
+        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+            expect.objectContaining({
+                clientIp: 'unknown',
+            })
+        );
     });
 
     it('GEMINI_API_KEY 미설정 시 server_error를 반환한다', async () => {
@@ -219,79 +163,11 @@ describe('chatAction 함수는', () => {
         );
 
         expect(result).toEqual({ ok: false, error: 'server_error' });
-        expect(mockGenerateContent).not.toHaveBeenCalled();
+        expect(mockRequestChatCompletion).not.toHaveBeenCalled();
     });
 
-    it('Gemini response.text가 null이면 빈 문자열을 반환한다', async () => {
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        mockGetRemainingTokens.mockResolvedValueOnce(4);
-        mockGenerateContent.mockResolvedValueOnce({ text: null });
-
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '질문'
-        );
-
-        expect(result).toEqual({ ok: true, message: '', remainingTokens: 4 });
-    });
-
-    it('Gemini 429 에러 시 rate_limited를 반환한다', async () => {
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        const error = Object.assign(new Error('429'), {
-            status: constants.HTTP_STATUS_TOO_MANY_REQUESTS,
-        });
-        mockGenerateContent.mockRejectedValueOnce(error);
-
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '언제 팔아?'
-        );
-
-        expect(result).toEqual({ ok: false, error: 'rate_limited' });
-    });
-
-    it('기타 Gemini 오류 시 server_error를 반환한다', async () => {
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        mockGenerateContent.mockRejectedValueOnce(new Error('network error'));
-
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '설명해줘'
-        );
-
-        expect(result).toEqual({ ok: false, error: 'server_error' });
-    });
-
-    it('Gemini 503 에러 시 server_busy를 반환한다', async () => {
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        const error = Object.assign(new Error('503'), {
-            status: constants.HTTP_STATUS_SERVICE_UNAVAILABLE,
-        });
-        mockGenerateContent.mockRejectedValueOnce(error);
-
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '질문'
-        );
-
-        expect(result).toEqual({ ok: false, error: 'server_busy' });
-    });
-
-    it('문자열 에러 throw 시 server_error를 반환한다', async () => {
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        mockGenerateContent.mockRejectedValueOnce('string error');
+    it('headers 조회 실패 시 server_error를 반환한다', async () => {
+        mockHeaders.mockRejectedValue(new Error('headers unavailable'));
 
         const result = await chatAction(
             'AAPL',
@@ -304,9 +180,8 @@ describe('chatAction 함수는', () => {
         expect(result).toEqual({ ok: false, error: 'server_error' });
     });
 
-    it('null throw 시 server_error를 반환한다', async () => {
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        mockGenerateContent.mockRejectedValueOnce(null);
+    it('core use-case가 에러를 던지면 server_error를 반환한다', async () => {
+        mockRequestChatCompletion.mockRejectedValue(new Error('core failed'));
 
         const result = await chatAction(
             'AAPL',
@@ -317,51 +192,5 @@ describe('chatAction 함수는', () => {
         );
 
         expect(result).toEqual({ ok: false, error: 'server_error' });
-    });
-
-    it('유효하지 않은 모델 전달 시 server_error를 반환한다', async () => {
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '질문',
-            // 유효하지 않은 모델로 서버 측 검증 분기를 테스트하기 위해 타입 시스템 우회
-            'invalid-model' as ChatModel
-        );
-
-        expect(result).toEqual({ ok: false, error: 'server_error' });
-        expect(mockGenerateContent).not.toHaveBeenCalled();
-    });
-
-    it('model 파라미터를 Gemini 호출에 전달한다', async () => {
-        mockTryConsumeToken.mockResolvedValueOnce(true);
-        mockGetRemainingTokens.mockResolvedValueOnce(4);
-
-        let capturedModel = '';
-        MockGoogleGenAI.mockImplementation(
-            () =>
-                ({
-                    models: {
-                        generateContent: jest
-                            .fn()
-                            .mockImplementation((params: { model: string }) => {
-                                capturedModel = params.model;
-                                return Promise.resolve({ text: '응답' });
-                            }),
-                    },
-                }) as unknown as InstanceType<typeof GoogleGenAI>
-        );
-
-        await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '질문',
-            GEMINI_2_5_FLASH_LITE_MODEL
-        );
-
-        expect(capturedModel).toBe(GEMINI_2_5_FLASH_LITE_MODEL);
     });
 });

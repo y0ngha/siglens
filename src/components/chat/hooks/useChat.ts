@@ -9,7 +9,7 @@ import {
 import {
     GEMINI_2_5_FLASH_MODEL,
     VALID_CHAT_MODELS,
-} from '@/domain/constants/chatModels';
+} from '@y0ngha/siglens-core';
 import type {
     AnalysisResponse,
     ChatErrorCode,
@@ -35,8 +35,7 @@ import {
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
 const MODEL_STORAGE_KEY = 'siglens_chat_model';
 
-// Matches CHAT_TOKEN_LIMIT in infrastructure/chat/tokenStore.ts
-// Hook files may not import from infrastructure — duplicate value with link
+// Matches the siglens-core chat token limit; update only when the core policy changes.
 const DAILY_CHAT_LIMIT = 5;
 
 const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
@@ -46,6 +45,10 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
         'AI 서버가 지금 바빠요. 다른 모델로 변경 후 다시 시도해주세요.',
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
 };
+
+function isValidChatModel(value: string): value is ChatModel {
+    return VALID_CHAT_MODELS.some(model => model === value);
+}
 
 export interface UseChatOptions {
     symbol: string;
@@ -206,12 +209,10 @@ export function useChat({
     useEffect(() => {
         try {
             const stored = localStorage.getItem(MODEL_STORAGE_KEY);
-            // VALID_CHAT_MODELS.some narrows stored to a known ChatModel literal; cast is safe
-            if (stored !== null && VALID_CHAT_MODELS.some(m => m === stored)) {
+            // VALID_CHAT_MODELS comes from siglens-core and is the runtime source of truth.
+            if (stored !== null && isValidChatModel(stored)) {
                 startTransition(() => {
-                    setSelectedModel(
-                        stored as (typeof VALID_CHAT_MODELS)[number]
-                    );
+                    setSelectedModel(stored);
                 });
             }
         } catch {

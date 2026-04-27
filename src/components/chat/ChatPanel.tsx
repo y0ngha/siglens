@@ -3,7 +3,7 @@
 import { useRef, useState } from 'react';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
-import { VALID_CHAT_MODELS } from '@/domain/constants/chatModels';
+import { VALID_CHAT_MODELS } from '@y0ngha/siglens-core';
 import type {
     AnalysisResponse,
     ChatModel,
