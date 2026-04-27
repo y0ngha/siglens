@@ -9,7 +9,7 @@
         "start": "node dist/index.js",
         "dev": "tsx --env-file=.env src/index.ts",
         "test": "jest --config jest.config.cjs",
-        "deploy": "gcloud run deploy siglens-worker --source . --region asia-northeast3 --timeout 3600 --memory 512Mi --cpu 1 --min-instances 0 --max-instances 3 --allow-unauthenticated --env-vars-file .env.yaml"
+        "deploy": "bash scripts/deploy.sh"
     },
     "dependencies": {
         "@anthropic-ai/sdk": "0.81.0",
