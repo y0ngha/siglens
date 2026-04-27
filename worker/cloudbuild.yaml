@@ -1,26 +1,26 @@
 steps:
-  - name: gcr.io/cloud-builders/docker
-    entrypoint: bash
-    secretEnv:
-      - SIGLENS_GITHUB_TOKEN
-    args:
-      - -c
-      - |
-        DOCKER_BUILDKIT=1 docker build \
-          --secret id=SIGLENS_GITHUB_TOKEN,env=SIGLENS_GITHUB_TOKEN \
-          --tag "${_IMAGE_URI}" \
-          --file Dockerfile \
-          .
+    - name: gcr.io/cloud-builders/docker
+      entrypoint: bash
+      secretEnv:
+          - SIGLENS_GITHUB_TOKEN
+      args:
+          - -c
+          - |
+              DOCKER_BUILDKIT=1 docker build \
+                --secret id=SIGLENS_GITHUB_TOKEN,env=SIGLENS_GITHUB_TOKEN \
+                --tag "${_IMAGE_URI}" \
+                --file Dockerfile \
+                .
 
-  - name: gcr.io/cloud-builders/docker
-    args:
-      - push
-      - "${_IMAGE_URI}"
+    - name: gcr.io/cloud-builders/docker
+      args:
+          - push
+          - '${_IMAGE_URI}'
 
 availableSecrets:
-  secretManager:
-    - versionName: projects/${PROJECT_ID}/secrets/SIGLENS_GITHUB_TOKEN/versions/latest
-      env: SIGLENS_GITHUB_TOKEN
+    secretManager:
+        - versionName: projects/${PROJECT_ID}/secrets/SIGLENS_GITHUB_TOKEN/versions/latest
+          env: SIGLENS_GITHUB_TOKEN
 
 options:
-  logging: CLOUD_LOGGING_ONLY
+    logging: CLOUD_LOGGING_ONLY
