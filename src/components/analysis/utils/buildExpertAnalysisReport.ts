@@ -1,4 +1,11 @@
-import type { AnalysisResponse, ClusteredKeyLevel, ClusteredKeyLevels, EntryRecommendation, RiskLevel, Trend } from '@y0ngha/siglens-core';
+import type {
+    AnalysisResponse,
+    ClusteredKeyLevel,
+    ClusteredKeyLevels,
+    EntryRecommendation,
+    RiskLevel,
+    Trend,
+} from '@y0ngha/siglens-core';
 
 interface BuildExpertAnalysisReportInput {
     symbol: string;

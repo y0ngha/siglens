@@ -3,7 +3,12 @@ import {
     filterStrictAnticipation,
     groupStockIntoQuadrants,
 } from '@/domain/signals/quadrants';
-import type { QuadrantKey, Signal, StockSignalResult, StockWithConflict } from '@y0ngha/siglens-core';
+import type {
+    QuadrantKey,
+    Signal,
+    StockSignalResult,
+    StockWithConflict,
+} from '@y0ngha/siglens-core';
 
 function buildSignal(
     direction: 'bullish' | 'bearish',

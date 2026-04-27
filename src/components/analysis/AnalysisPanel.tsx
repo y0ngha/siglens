@@ -3,7 +3,22 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { usePointerTooltip } from '@/components/hooks/usePointerTooltip';
-import type { ActionRecommendation, AnalysisResponse, AnalysisSignal, AnalysisSignalType, ClusteredKeyLevel, ClusteredKeyLevels, EntryRecommendation, PatternResult, PriceScenario, RiskLevel, StrategyResult, Trend, Trendline, TrendlineDirection } from '@y0ngha/siglens-core';
+import type {
+    ActionRecommendation,
+    AnalysisResponse,
+    AnalysisSignal,
+    AnalysisSignalType,
+    ClusteredKeyLevel,
+    ClusteredKeyLevels,
+    EntryRecommendation,
+    PatternResult,
+    PriceScenario,
+    RiskLevel,
+    StrategyResult,
+    Trend,
+    Trendline,
+    TrendlineDirection,
+} from '@y0ngha/siglens-core';
 import {
     HIGH_CONFIDENCE_WEIGHT,
     MIN_CONFIDENCE_WEIGHT,

@@ -1,4 +1,11 @@
-import type { QuadrantKey, Signal, SignalDirection, SignalPhase, StockSignalResult, StockWithConflict } from '@y0ngha/siglens-core';
+import type {
+    QuadrantKey,
+    Signal,
+    SignalDirection,
+    SignalPhase,
+    StockSignalResult,
+    StockWithConflict,
+} from '@y0ngha/siglens-core';
 
 export const EMPTY_QUADRANTS: Record<
     QuadrantKey,

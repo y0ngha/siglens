@@ -7,10 +7,7 @@ import { LineSeries, LineStyle } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
 import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
-import {
-    RSI_OVERBOUGHT_LEVEL,
-    RSI_OVERSOLD_LEVEL,
-} from '@y0ngha/siglens-core';
+import { RSI_OVERBOUGHT_LEVEL, RSI_OVERSOLD_LEVEL } from '@y0ngha/siglens-core';
 import { buildSeriesDataFromValues } from '@/components/chart/utils/seriesDataUtils';
 
 interface UseRSIChartParams {

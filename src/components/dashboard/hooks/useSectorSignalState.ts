@@ -2,7 +2,12 @@
 
 import { useCallback, useMemo, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import type { DashboardTimeframe, QuadrantKey, SectorSignalsResult, StockWithConflict } from '@y0ngha/siglens-core';
+import type {
+    DashboardTimeframe,
+    QuadrantKey,
+    SectorSignalsResult,
+    StockWithConflict,
+} from '@y0ngha/siglens-core';
 import {
     DEFAULT_DASHBOARD_TIMEFRAME,
     SIGNAL_SECTORS,

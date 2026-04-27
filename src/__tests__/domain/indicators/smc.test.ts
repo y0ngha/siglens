@@ -1,8 +1,5 @@
 import { calculateSmc } from '@y0ngha/siglens-core';
-import {
-    SMC_ATR_PERIOD,
-    SMC_SWING_PERIOD,
-} from '@y0ngha/siglens-core';
+import { SMC_ATR_PERIOD, SMC_SWING_PERIOD } from '@y0ngha/siglens-core';
 import type { Bar, SMCResult } from '@y0ngha/siglens-core';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────

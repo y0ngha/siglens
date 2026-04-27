@@ -1,4 +1,11 @@
-import type { ConflictInfo, ConflictResolution, Signal, SignalDirection, StockSignalResult, StockWithConflict } from '@y0ngha/siglens-core';
+import type {
+    ConflictInfo,
+    ConflictResolution,
+    Signal,
+    SignalDirection,
+    StockSignalResult,
+    StockWithConflict,
+} from '@y0ngha/siglens-core';
 
 function countSignalDirections(signals: readonly Signal[]): ConflictInfo {
     return signals.reduce(

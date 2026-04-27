@@ -10,7 +10,13 @@ import type {
 } from 'lightweight-charts';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
-import type { Bar, IndicatorResult, ReconciledActionLineData, Timeframe, ValidatedActionPrices } from '@y0ngha/siglens-core';
+import type {
+    Bar,
+    IndicatorResult,
+    ReconciledActionLineData,
+    Timeframe,
+    ValidatedActionPrices,
+} from '@y0ngha/siglens-core';
 import { getTimeFormatter } from '@/domain/chart/timeFormat';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
