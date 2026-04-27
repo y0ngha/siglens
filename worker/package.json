@@ -15,7 +15,7 @@
         "@anthropic-ai/sdk": "0.81.0",
         "@google/genai": "^1.49.0",
         "@upstash/redis": "^1.34.3",
-        "@y0ngha/siglens-core": "^0.1.4",
+        "@y0ngha/siglens-core": "^0.1.5",
         "express": "^5.2.1"
     },
     "devDependencies": {
