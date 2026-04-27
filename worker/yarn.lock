@@ -1264,13 +1264,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@y0ngha/siglens-core@npm:^0.1.9":
-  version: 0.1.9
-  resolution: "@y0ngha/siglens-core@npm:0.1.9::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.1.9%2F734b22c7b6c53199bb5dc9beb25dd754ecd2a8b6"
+"@y0ngha/siglens-core@npm:^0.1.10":
+  version: 0.1.10
+  resolution: "@y0ngha/siglens-core@npm:0.1.10::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.1.10%2Fe949542f810942e6cc00797a2de4b2c09364e0a6"
   peerDependencies:
     "@google/genai": ^1.50.1
+    "@neondatabase/serverless": ^1.1.0
     "@upstash/redis": ^1.37.0
-  checksum: 10c0/1373537632e08b7b81e8aef87a9f92c09524df5ac26b89cd74216e17e22b1bfe20b16568bb311f147990d00afbbb58660d0b87922b43e76d46117f8920a2ac73
+    drizzle-orm: ^0.45.2
+  checksum: 10c0/34c301244d8b572a76536ecd75e3d3a48cca46eb3acb0a73d004ef392f8c210ab963e22b241d3871542d76903629c03e9deed2b7b8fe1d7081b5cc8720160555
   languageName: node
   linkType: hard
 
@@ -4149,7 +4151,7 @@ __metadata:
     "@types/jest": "npm:^29.5.14"
     "@types/node": "npm:^22.15.3"
     "@upstash/redis": "npm:^1.34.3"
-    "@y0ngha/siglens-core": "npm:^0.1.9"
+    "@y0ngha/siglens-core": "npm:^0.1.10"
     express: "npm:^5.2.1"
     jest: "npm:^29.7.0"
     ts-jest: "npm:^29.3.2"
