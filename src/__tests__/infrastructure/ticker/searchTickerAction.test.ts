@@ -2,6 +2,10 @@ import { searchTickerAction } from '@/infrastructure/ticker/searchTickerAction';
 import { searchTicker } from '@y0ngha/siglens-core';
 import type { TickerSearchResult } from '@y0ngha/siglens-core';
 
+jest.mock('@vercel/functions', () => ({
+    waitUntil: jest.fn(),
+}));
+
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     searchTicker: jest.fn(),

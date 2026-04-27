@@ -5,6 +5,10 @@ import type {
     SubmitBriefingResult,
 } from '@y0ngha/siglens-core';
 
+jest.mock('@vercel/functions', () => ({
+    waitUntil: jest.fn(),
+}));
+
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     submitBriefing: jest.fn(),

@@ -2,6 +2,10 @@ import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisActi
 import { submitAnalysis } from '@y0ngha/siglens-core';
 import type { SubmitAnalysisResult } from '@y0ngha/siglens-core';
 
+jest.mock('@vercel/functions', () => ({
+    waitUntil: jest.fn(),
+}));
+
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     submitAnalysis: jest.fn(),

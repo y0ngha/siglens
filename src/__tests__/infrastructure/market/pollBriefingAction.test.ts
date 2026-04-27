@@ -2,6 +2,10 @@ import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
 import { pollBriefing } from '@y0ngha/siglens-core';
 import type { PollBriefingResult } from '@y0ngha/siglens-core';
 
+jest.mock('@vercel/functions', () => ({
+    waitUntil: jest.fn(),
+}));
+
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     pollBriefing: jest.fn(),
