@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #384 round 3 | feat/372-377/siglens-core-migration | 2026-04-27]
+- Violation: 동일 모듈(`@y0ngha/siglens-core`)에서 중복 import 구문 (useAnalysisDerivedData.ts)
+- Rule: MISTAKES.md Components #0 — ESLint `import/no-duplicates` 규칙: 같은 모듈에서 단일 import 구문으로 통합
+- Context: `import type`과 `import` 두 개의 별도 구문으로 분리되어 있었음. inline `type` 한정자를 사용해 단일 구문으로 병합.
+
 ## [PR #384 round 2 | feat/372-377/siglens-core-migration | 2026-04-27]
 - Violation: `MarketSummaryActionResult` 인터페이스 dead code 잔존 (domain/types.ts)
 - Rule: MISTAKES.md Coding Paradigm #4 — 효과 없는 코드 제거
@@ -10,10 +15,6 @@
 - Context: 파일 최상단 설명 주석이 2줄로 작성됨.
 
 ## [PR #384 | feat/372-377/siglens-core-migration | 2026-04-27]
-- Violation: `for...of` + `push()` 직접 변이로 도메인 함수 구현 (resolveConflicts.ts)
-- Rule: MISTAKES.md Coding Paradigm #21, #5 (도메인 함수는 map/filter/reduce 사용; 배열 직접 변이 금지)
-- Context: 단순 분류 함수에서 local 뮤터블 어큐뮬레이터 예외(state-machine indicator)를 잘못 적용하여 for...of + push() 패턴 사용. reduce로 교체.
-
 - Violation: fire-and-forget Server Action에 try-catch 없음 (cancelAnalysisJobAction.ts)
 - Rule: MISTAKES.md Fire-and-Forget #2 (fire-and-forget Server Action은 에러를 삼켜야 함)
 - Context: 호출측 useAnalysis.ts에서 `void cancelAnalysisJobAction(jobId)`로 호출하므로 fire-and-forget 패턴인데, 에러를 그대로 전파하여 unhandled Promise rejection 발생 가능.
