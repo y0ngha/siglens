@@ -1,5 +1,22 @@
 # Fix Log
 
+## [PR #384 | feat/372-377/siglens-core-migration | 2026-04-27]
+- Violation: `for...of` + `push()` 직접 변이로 도메인 함수 구현 (resolveConflicts.ts)
+- Rule: MISTAKES.md Coding Paradigm #21, #5 (도메인 함수는 map/filter/reduce 사용; 배열 직접 변이 금지)
+- Context: 단순 분류 함수에서 local 뮤터블 어큐뮬레이터 예외(state-machine indicator)를 잘못 적용하여 for...of + push() 패턴 사용. reduce로 교체.
+
+- Violation: fire-and-forget Server Action에 try-catch 없음 (cancelAnalysisJobAction.ts)
+- Rule: MISTAKES.md Fire-and-Forget #2 (fire-and-forget Server Action은 에러를 삼켜야 함)
+- Context: 호출측 useAnalysis.ts에서 `void cancelAnalysisJobAction(jobId)`로 호출하므로 fire-and-forget 패턴인데, 에러를 그대로 전파하여 unhandled Promise rejection 발생 가능.
+
+- Violation: 새 infrastructure 파일(getSectorSignalsAction.ts)에 테스트 파일 누락
+- Rule: CONVENTIONS.md infrastructure/ 100% 커버리지 필수; CLAUDE.md "Always write test files alongside implementation files"
+- Context: getSectorSignalsAction.ts 생성 시 대응 테스트 파일을 작성하지 않음.
+
+- Violation: @vercel/functions를 import하는 infrastructure 파일 테스트에서 jest.mock('@vercel/functions') 누락 (5개 파일)
+- Rule: MISTAKES.md Tests #11 (외부 패키지를 infrastructure 파일에 추가할 때 모든 대응 테스트 파일에 mock 추가)
+- Context: submitAnalysisAction, pollAnalysisAction, pollBriefingAction, submitBriefingAction, searchTickerAction 테스트 파일이 @vercel/functions mock 없이 작성됨.
+
 ## [Issue #372-377 | feat/372-377/siglens-core-migration | 2026-04-26]
 - Violation: Two/multiple separate import statements from the same module '@y0ngha/siglens-core' (useAnalysisDerivedData.ts: 2 statements, useCandlePatternMarkers.ts: 5 statements)
 - Rule: MISTAKES.md Components #0 (import/no-duplicates)
