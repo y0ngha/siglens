@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { MarkdownText } from '@/components/ui/MarkdownText';
 import { usePointerTooltip } from '@/components/hooks/usePointerTooltip';
 import type {
     ActionRecommendation,
@@ -137,9 +138,9 @@ function ActionRecommendationSection({
                             <span className="text-secondary-400 text-xs font-medium">
                                 {label}
                             </span>
-                            <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
+                            <MarkdownText className="text-secondary-300 text-sm">
                                 {value}
-                            </p>
+                            </MarkdownText>
                         </div>
                     );
                 })}
@@ -191,22 +192,21 @@ function ReconciledLevelsBlock({
                     내부 보정값
                 </span>
                 <InfoTooltip>
-                    <span className="text-secondary-300">
-                        {RECONCILED_TOOLTIP_PREFIX}
-                        <br />
-                        {reason}
-                    </span>
+                    <div className="text-secondary-300">
+                        <p>{RECONCILED_TOOLTIP_PREFIX}</p>
+                        <MarkdownText>{reason}</MarkdownText>
+                    </div>
                 </InfoTooltip>
             </header>
             {exit !== '' && (
-                <p className="text-secondary-300 text-sm leading-relaxed">
+                <MarkdownText className="text-secondary-300 text-sm">
                     {exit}
-                </p>
+                </MarkdownText>
             )}
             {riskReward !== '' && (
-                <p className="text-secondary-400 text-xs leading-relaxed">
+                <MarkdownText className="text-secondary-400 text-xs">
                     {riskReward}
-                </p>
+                </MarkdownText>
             )}
         </section>
     );
@@ -256,9 +256,9 @@ function SignalItem({ signal, typeLabel }: SignalItemProps) {
                     )}
                 </div>
             </div>
-            <span className="text-secondary-400 text-xs">
+            <MarkdownText className="text-secondary-400 text-xs">
                 {signal.description}
-            </span>
+            </MarkdownText>
         </div>
     );
 }
@@ -489,9 +489,9 @@ function PatternAccordionItem({ pattern }: PatternAccordionItemProps) {
 
             {isOpen ? (
                 <div className="bg-secondary-800/60 border-secondary-700 flex flex-col gap-2.5 border-t px-3 py-2.5">
-                    <p className="text-secondary-400 text-xs leading-relaxed">
+                    <MarkdownText className="text-secondary-400 text-xs">
                         {pattern.summary}
-                    </p>
+                    </MarkdownText>
                     {keyPrices.length > 0 && (
                         <div className="flex flex-col gap-1">
                             <span className="text-secondary-500 text-[10px] font-semibold tracking-wide uppercase">
@@ -540,9 +540,9 @@ function StructuredSkillSummary({ sections }: StructuredSkillSummaryProps) {
                     <span className="text-secondary-500 text-[10px] font-semibold tracking-wide uppercase">
                         {section.label}
                     </span>
-                    <span className="text-secondary-300 text-xs leading-relaxed">
+                    <MarkdownText className="text-secondary-300 text-xs">
                         {section.value}
-                    </span>
+                    </MarkdownText>
                 </div>
             ))}
         </div>
@@ -589,9 +589,9 @@ function StrategyAccordionItem({ strategy }: StrategyAccordionItemProps) {
                     {sections !== null ? (
                         <StructuredSkillSummary sections={sections} />
                     ) : (
-                        <p className="text-secondary-400 text-xs leading-relaxed">
+                        <MarkdownText className="text-secondary-400 text-xs">
                             {strategy.summary}
-                        </p>
+                        </MarkdownText>
                     )}
                 </div>
             ) : null}
@@ -654,9 +654,9 @@ function PriceScenarioSection({
             <span className={cn('text-xs font-medium', colorClass)}>
                 {label}
             </span>
-            <span className="text-secondary-500 text-xs">
+            <MarkdownText className="text-secondary-500 text-xs">
                 {scenario.condition}
-            </span>
+            </MarkdownText>
             {scenario.targets.map((target, index) => (
                 <div
                     key={`target-${index}-${target.price}`}
@@ -673,9 +673,9 @@ function PriceScenarioSection({
                             maximumFractionDigits: 2,
                         })}
                     </span>
-                    <span className="text-secondary-500 text-xs">
+                    <MarkdownText className="text-secondary-500 text-xs">
                         {target.basis}
-                    </span>
+                    </MarkdownText>
                 </div>
             ))}
         </div>
@@ -914,9 +914,9 @@ export function AnalysisPanel({
                     isFreeUser={isFreeUser}
                 />
             ) : (
-                <p className="text-secondary-300 text-sm leading-relaxed whitespace-pre-line">
+                <MarkdownText className="text-secondary-300 text-sm">
                     {analysis.summary}
-                </p>
+                </MarkdownText>
             )}
 
             {/* 인디케이터/패턴/스킬/레벨/추세선/가격목표 등 본문 섹션 —

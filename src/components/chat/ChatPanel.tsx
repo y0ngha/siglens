@@ -1,9 +1,8 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import type { Components } from 'react-markdown';
-import ReactMarkdown from 'react-markdown';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
+import { MarkdownText } from '@/components/ui/MarkdownText';
 import { VALID_CHAT_MODELS } from '@/domain/constants/chatModels';
 import type {
     AnalysisResponse,
@@ -35,48 +34,6 @@ const CHAT_MODEL_OPTIONS = VALID_CHAT_MODELS.map(id => ({
     id,
     ...MODEL_DISPLAY_MAP[id],
 })) satisfies ReadonlyArray<ChatModelOption>;
-
-const MARKDOWN_COMPONENTS: Components = {
-    p: ({ children }) => <p className="mb-1.5 last:mb-0">{children}</p>,
-    strong: ({ children }) => (
-        <strong className="text-secondary-100 font-semibold">{children}</strong>
-    ),
-    em: ({ children }) => (
-        <em className="text-secondary-300 italic">{children}</em>
-    ),
-    ul: ({ children }) => (
-        <ul className="mb-1.5 ml-3 list-disc last:mb-0">{children}</ul>
-    ),
-    ol: ({ children }) => (
-        <ol className="mb-1.5 ml-3 list-decimal last:mb-0">{children}</ol>
-    ),
-    li: ({ children }) => <li className="mb-0.5">{children}</li>,
-    h1: ({ children }) => (
-        <p className="text-secondary-100 mb-1.5 font-semibold last:mb-0">
-            {children}
-        </p>
-    ),
-    h2: ({ children }) => (
-        <p className="text-secondary-100 mb-1.5 font-semibold last:mb-0">
-            {children}
-        </p>
-    ),
-    h3: ({ children }) => (
-        <p className="text-secondary-200 mb-1 font-medium last:mb-0">
-            {children}
-        </p>
-    ),
-    code: ({ children }) => (
-        <code className="bg-secondary-800 text-secondary-300 rounded px-1 py-0.5 font-mono text-[10px]">
-            {children}
-        </code>
-    ),
-    pre: ({ children }) => (
-        <pre className="bg-secondary-800 text-secondary-300 mb-1.5 overflow-x-auto rounded p-2 font-mono text-[10px] last:mb-0">
-            {children}
-        </pre>
-    ),
-};
 
 const LOADING_MESSAGES = {
     analyzing: '요청을 분석하고 있어요...',
@@ -250,9 +207,7 @@ export function ChatPanel({
                         {msg.role === 'user' ? (
                             msg.content
                         ) : (
-                            <ReactMarkdown components={MARKDOWN_COMPONENTS}>
-                                {msg.content}
-                            </ReactMarkdown>
+                            <MarkdownText>{msg.content}</MarkdownText>
                         )}
                     </div>
                 ))}
