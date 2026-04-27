@@ -3136,13 +3136,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@y0ngha/siglens-core@npm:^0.1.8":
-  version: 0.1.8
-  resolution: "@y0ngha/siglens-core@npm:0.1.8::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.1.8%2Feffbb06bfdd4788c7b4b6c7e4a38693f0a008c2b"
+"@y0ngha/siglens-core@npm:^0.1.9":
+  version: 0.1.9
+  resolution: "@y0ngha/siglens-core@npm:0.1.9::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.1.9%2F734b22c7b6c53199bb5dc9beb25dd754ecd2a8b6"
   peerDependencies:
     "@google/genai": ^1.50.1
     "@upstash/redis": ^1.37.0
-  checksum: 10c0/8f1642f1d9f035fedf3236bde5a8c86a46b5b0183a01b25a1f566c3b190681adc768fec702326dea1aca18f3a93c47c282a9f3ecd80db89a5895ce4030e8fe0f
+  checksum: 10c0/1373537632e08b7b81e8aef87a9f92c09524df5ac26b89cd74216e17e22b1bfe20b16568bb311f147990d00afbbb58660d0b87922b43e76d46117f8920a2ac73
   languageName: node
   linkType: hard
 
@@ -9976,7 +9976,7 @@ __metadata:
     "@types/react-dom": "npm:^19"
     "@upstash/redis": "npm:^1.37.0"
     "@vercel/functions": "npm:^3.4.3"
-    "@y0ngha/siglens-core": "npm:^0.1.8"
+    "@y0ngha/siglens-core": "npm:^0.1.9"
     babel-plugin-react-compiler: "npm:1.0.0"
     clsx: "npm:^2.1.1"
     dotenv-cli: "npm:^11.0.0"
