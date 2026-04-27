@@ -1,15 +1,13 @@
 'use client';
 
 import { useMemo } from 'react';
-import type {
-    AnalysisResponse,
-    Bar,
-    ClusteredKeyLevel,
-    ClusteredKeyLevels,
-    ReconciledActionLineData,
-    ValidatedActionPrices,
-} from '@y0ngha/siglens-core';
 import {
+    type AnalysisResponse,
+    type Bar,
+    type ClusteredKeyLevel,
+    type ClusteredKeyLevels,
+    type ReconciledActionLineData,
+    type ValidatedActionPrices,
     clusterKeyLevels,
     validateKeyLevels,
     extractReconciledActionLines,

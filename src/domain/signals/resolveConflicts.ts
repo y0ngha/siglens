@@ -21,7 +21,6 @@ function countSignalDirections(signals: readonly Signal[]): ConflictInfo {
 export function resolveConflicts(
     stocks: readonly StockSignalResult[]
 ): ConflictResolution {
-    // Mutable accumulator avoids O(N²) spread; cast is safe — mutable array satisfies readonly
     return stocks.reduce(
         (acc, stock) => {
             const { bullishCount, bearishCount } = countSignalDirections(
@@ -29,31 +28,34 @@ export function resolveConflicts(
             );
 
             if (bullishCount === 0 || bearishCount === 0) {
-                acc.resolved.push(stock);
-                return acc;
+                return { ...acc, resolved: [...acc.resolved, stock] };
             }
 
             const conflict: ConflictInfo = { bullishCount, bearishCount };
 
             if (bullishCount === bearishCount) {
-                acc.mixed.push({ ...stock, conflict });
-                return acc;
+                return {
+                    ...acc,
+                    mixed: [...acc.mixed, { ...stock, conflict }],
+                };
             }
 
             const winningDirection: SignalDirection =
                 bullishCount > bearishCount ? 'bullish' : 'bearish';
-            acc.resolved.push({
-                ...stock,
-                signals: stock.signals.filter(
-                    s => s.direction === winningDirection
-                ),
-                conflict,
-            });
-            return acc;
+            return {
+                ...acc,
+                resolved: [
+                    ...acc.resolved,
+                    {
+                        ...stock,
+                        signals: stock.signals.filter(
+                            s => s.direction === winningDirection
+                        ),
+                        conflict,
+                    },
+                ],
+            };
         },
-        {
-            resolved: [] as ConflictResolution['resolved'][number][],
-            mixed: [] as ConflictResolution['mixed'][number][],
-        }
-    ) as ConflictResolution;
+        { resolved: [], mixed: [] } as ConflictResolution
+    );
 }
