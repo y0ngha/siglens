@@ -10,7 +10,7 @@ import {
     calculateRSI,
     calculateVolumeProfile,
     calculateVWAP,
-} from '@/domain/indicators';
+} from '@y0ngha/siglens-core';
 import {
     BOLLINGER_DEFAULT_PERIOD,
     DMI_DEFAULT_PERIOD,
@@ -20,8 +20,8 @@ import {
     MACD_SIGNAL_PERIOD,
     MACD_SLOW_PERIOD,
     RSI_DEFAULT_PERIOD,
-} from '@/domain/indicators/constants';
-import type { Bar } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 const TEST_BAR_COUNT = 100;
 const DEFAULT_OPEN = 100;

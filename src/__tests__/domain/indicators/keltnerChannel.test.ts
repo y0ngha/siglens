@@ -1,10 +1,10 @@
-import { calculateKeltnerChannel } from '@/domain/indicators/keltnerChannel';
+import { calculateKeltnerChannel } from '@y0ngha/siglens-core';
 import {
     KELTNER_ATR_PERIOD,
     KELTNER_EMA_PERIOD,
     KELTNER_MULTIPLIER,
-} from '@/domain/indicators/constants';
-import type { Bar, KeltnerChannelResult } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar, KeltnerChannelResult } from '@y0ngha/siglens-core';
 
 function makeBars(
     values: { high: number; low: number; close: number }[]

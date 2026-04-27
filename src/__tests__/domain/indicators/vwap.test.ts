@@ -1,6 +1,6 @@
 import { SECONDS_PER_DAY } from '@/domain/constants/time';
-import { calculateVWAP } from '@/domain/indicators/vwap';
-import type { Bar } from '@/domain/types';
+import { calculateVWAP } from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 function makeBar(overrides: Partial<Bar> & { time: number }): Bar {
     return {

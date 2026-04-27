@@ -1,9 +1,9 @@
-import { calculateBollinger } from '@/domain/indicators/bollinger';
+import { calculateBollinger } from '@y0ngha/siglens-core';
 import {
     BOLLINGER_DEFAULT_PERIOD,
     BOLLINGER_DEFAULT_STD_DEV,
-} from '@/domain/indicators/constants';
-import type { Bar, BollingerResult } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar, BollingerResult } from '@y0ngha/siglens-core';
 
 function makeBars(closes: number[]): Bar[] {
     return closes.map((close, i) => ({

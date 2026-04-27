@@ -1,10 +1,10 @@
-import { calculateMACD } from '@/domain/indicators/macd';
+import { calculateMACD } from '@y0ngha/siglens-core';
 import {
     MACD_FAST_PERIOD,
     MACD_SIGNAL_PERIOD,
     MACD_SLOW_PERIOD,
-} from '@/domain/indicators/constants';
-import type { Bar, MACDResult } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar, MACDResult } from '@y0ngha/siglens-core';
 
 function makeBars(closes: number[]): Bar[] {
     return closes.map((close, i) => ({

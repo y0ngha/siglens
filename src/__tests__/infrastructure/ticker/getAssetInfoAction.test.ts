@@ -1,6 +1,6 @@
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { getAssetInfo } from '@y0ngha/siglens-core';
-import type { AssetInfo } from '@/domain/types';
+import type { AssetInfo } from '@y0ngha/siglens-core';
 
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),

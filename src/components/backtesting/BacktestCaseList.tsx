@@ -1,4 +1,4 @@
-import type { BacktestCase } from '@/domain/types';
+import type { BacktestCase } from '@y0ngha/siglens-core';
 import { BacktestCaseCard } from './BacktestCaseCard';
 
 interface BacktestCaseListProps {

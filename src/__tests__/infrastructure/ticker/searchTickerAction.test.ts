@@ -1,6 +1,6 @@
 import { searchTickerAction } from '@/infrastructure/ticker/searchTickerAction';
 import { searchTicker } from '@y0ngha/siglens-core';
-import type { TickerSearchResult } from '@/domain/types';
+import type { TickerSearchResult } from '@y0ngha/siglens-core';
 
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
@@ -25,7 +25,9 @@ describe('searchTickerAction 함수는', () => {
 
         await searchTickerAction('  apple  ');
 
-        expect(mockSearchTicker).toHaveBeenCalledWith('apple');
+        expect(mockSearchTicker).toHaveBeenCalledWith('apple', {
+            waitUntil: expect.any(Function),
+        });
     });
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {

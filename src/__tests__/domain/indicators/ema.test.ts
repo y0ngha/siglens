@@ -1,5 +1,5 @@
-import { calculateEMA, computeEMAValues } from '@/domain/indicators/ema';
-import type { Bar } from '@/domain/types';
+import { calculateEMA, computeEMAValues } from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 function makeBars(closes: number[]): Bar[] {
     return closes.map((close, i) => ({

@@ -1,4 +1,4 @@
-import type { BacktestCase, BacktestRiskLevel } from '@/domain/types';
+import type { BacktestCase, BacktestRiskLevel } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { formatUsdCurrency } from '@/lib/priceFormat';
 

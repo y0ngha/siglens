@@ -1,5 +1,5 @@
-import { calculateBuySellVolume } from '@/domain/indicators/buySellVolume';
-import type { Bar } from '@/domain/types';
+import { calculateBuySellVolume } from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 function makeBar(
     overrides: Partial<Bar> & {

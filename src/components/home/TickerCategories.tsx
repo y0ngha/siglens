@@ -1,7 +1,7 @@
 import Link from 'next/link';
 
 import { cn } from '@/lib/cn';
-import type { CategoryId } from '@/domain/types';
+import type { CategoryId } from '@y0ngha/siglens-core';
 import { TICKER_CATEGORIES } from '@/domain/constants/popular-tickers';
 
 type CategoryStyle = {

@@ -1,6 +1,6 @@
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import { submitAnalysis } from '@y0ngha/siglens-core';
-import type { SubmitAnalysisResult } from '@/domain/types';
+import type { SubmitAnalysisResult } from '@y0ngha/siglens-core';
 
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
@@ -30,7 +30,8 @@ describe('submitAnalysisAction 함수는', () => {
             'AAPL',
             '1Day',
             true,
-            '^AAPL'
+            '^AAPL',
+            { waitUntil: expect.any(Function) }
         );
     });
 

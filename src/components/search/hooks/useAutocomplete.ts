@@ -9,7 +9,7 @@ import {
     useState,
 } from 'react';
 import { useRouter } from 'next/navigation';
-import type { TickerSearchResult } from '@/domain/types';
+import type { TickerSearchResult } from '@y0ngha/siglens-core';
 import { useOnClickOutside } from '@/components/hooks/useOnClickOutside';
 import { useTickerSearch } from '@/components/search/hooks/useTickerSearch';
 

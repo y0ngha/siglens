@@ -4,8 +4,8 @@ import {
     resolveOverlayValues,
 } from '@/components/chart/utils/overlayLabelUtils';
 import { CHART_COLORS, getPeriodColor } from '@/lib/chartColors';
-import { EMPTY_SMC_RESULT } from '@/domain/indicators/constants';
-import type { Bar, IndicatorResult } from '@/domain/types';
+import { EMPTY_SMC_RESULT } from '@y0ngha/siglens-core';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 
 const mockBars: Bar[] = [
     { time: 100, open: 10, high: 15, low: 9, close: 12, volume: 1000 },

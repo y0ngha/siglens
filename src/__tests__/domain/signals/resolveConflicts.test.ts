@@ -1,5 +1,5 @@
 import { resolveConflicts } from '@/domain/signals/resolveConflicts';
-import type { Signal, StockSignalResult } from '@/domain/types';
+import type { Signal, StockSignalResult } from '@y0ngha/siglens-core';
 
 function buildSignal(
     direction: 'bullish' | 'bearish',

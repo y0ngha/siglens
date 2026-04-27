@@ -1,6 +1,6 @@
-import { calculateWilliamsR } from '@/domain/indicators/williamsR';
-import { WILLIAMS_R_DEFAULT_PERIOD } from '@/domain/indicators/constants';
-import type { Bar } from '@/domain/types';
+import { calculateWilliamsR } from '@y0ngha/siglens-core';
+import { WILLIAMS_R_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 function makeBars(
     values: { high: number; low: number; close: number }[]

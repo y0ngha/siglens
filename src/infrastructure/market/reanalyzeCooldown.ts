@@ -6,7 +6,7 @@ import {
     tryAcquireReanalyzeCooldown as coreTryAcquire,
     type AcquireReanalyzeCooldownResult,
 } from '@y0ngha/siglens-core';
-import type { Timeframe } from '@/domain/types';
+import type { Timeframe } from '@y0ngha/siglens-core';
 
 export async function tryAcquireReanalyzeCooldown(
     symbol: string,

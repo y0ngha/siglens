@@ -6,7 +6,7 @@ import {
     QueryClient,
 } from '@tanstack/react-query';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
-import type { AnalysisResponse } from '@/domain/types';
+import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { countSkillFiles } from '@/infrastructure/skills/loader';

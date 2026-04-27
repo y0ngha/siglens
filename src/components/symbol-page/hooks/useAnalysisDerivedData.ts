@@ -1,22 +1,15 @@
 'use client';
 
 import { useMemo } from 'react';
-import type {
-    AnalysisResponse,
-    Bar,
-    ClusteredKeyLevel,
-    ClusteredKeyLevels,
-    ReconciledActionLineData,
-    ValidatedActionPrices,
-} from '@/domain/types';
+import type { AnalysisResponse, Bar, ClusteredKeyLevel, ClusteredKeyLevels, ReconciledActionLineData, ValidatedActionPrices } from '@y0ngha/siglens-core';
 import {
     clusterKeyLevels,
     validateKeyLevels,
-} from '@/domain/analysis/keyLevels';
+} from '@y0ngha/siglens-core';
 import {
     extractReconciledActionLines,
     validateActionPrices,
-} from '@/domain/analysis/actionRecommendation';
+} from '@y0ngha/siglens-core';
 
 const EMPTY_CLUSTERED_KEY_LEVELS = {
     support: [] as ClusteredKeyLevel[],

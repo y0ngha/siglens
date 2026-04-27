@@ -1,11 +1,11 @@
-import { calculateSqueezeMomentum } from '@/domain/indicators/squeezeMomentum';
+import { calculateSqueezeMomentum } from '@y0ngha/siglens-core';
 import {
     SQUEEZE_MOMENTUM_BB_LENGTH,
     SQUEEZE_MOMENTUM_KC_LENGTH,
     SQUEEZE_MOMENTUM_KC_MULT,
     SQUEEZE_MOMENTUM_MIN_BARS,
-} from '@/domain/indicators/constants';
-import type { Bar, SqueezeMomentumResult } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar, SqueezeMomentumResult } from '@y0ngha/siglens-core';
 
 function makeBars(
     values: { high: number; low: number; close: number }[]

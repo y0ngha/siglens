@@ -3,7 +3,7 @@
 import type { RefObject } from 'react';
 import type { IChartApi, LineWidth } from 'lightweight-charts';
 import { LineStyle } from 'lightweight-charts';
-import type { Bar, IndicatorResult } from '@/domain/types';
+import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import {
     type IndicatorDataAccessor,
     useMovingAverageOverlay,

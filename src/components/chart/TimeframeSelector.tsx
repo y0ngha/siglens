@@ -1,7 +1,7 @@
 'use client';
 
 import { TIMEFRAMES } from '@/domain/constants/market';
-import type { Timeframe } from '@/domain/types';
+import type { Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 
 const TIMEFRAME_LABEL: Record<Timeframe, string> = {

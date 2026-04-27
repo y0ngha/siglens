@@ -1,4 +1,4 @@
-import type { StockWithConflict } from '@/domain/types';
+import type { StockWithConflict } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { SignalStockCard } from './SignalStockCard';

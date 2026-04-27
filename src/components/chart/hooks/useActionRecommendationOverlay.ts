@@ -9,10 +9,7 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { LineStyle } from 'lightweight-charts';
-import type {
-    ReconciledActionLineData,
-    ValidatedActionPrices,
-} from '@/domain/types';
+import type { ReconciledActionLineData, ValidatedActionPrices } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/lib/chartColors';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 

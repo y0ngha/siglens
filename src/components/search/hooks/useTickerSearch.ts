@@ -5,7 +5,7 @@ import { useQuery } from '@tanstack/react-query';
 
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { searchTickerAction } from '@/infrastructure/ticker/searchTickerAction';
-import type { TickerSearchResult } from '@/domain/types';
+import type { TickerSearchResult } from '@y0ngha/siglens-core';
 
 const DEBOUNCE_MS = 300;
 const MIN_QUERY_LENGTH = 1;

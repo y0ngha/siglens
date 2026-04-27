@@ -1,6 +1,6 @@
-import { calculateATR } from '@/domain/indicators/atr';
-import { ATR_DEFAULT_PERIOD } from '@/domain/indicators/constants';
-import type { Bar } from '@/domain/types';
+import { calculateATR } from '@y0ngha/siglens-core';
+import { ATR_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 function makeBars(
     values: { high: number; low: number; close: number }[]

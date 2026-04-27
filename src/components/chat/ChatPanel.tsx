@@ -5,7 +5,7 @@ import type { Components } from 'react-markdown';
 import ReactMarkdown from 'react-markdown';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { VALID_CHAT_MODELS } from '@/domain/constants/chatModels';
-import type { AnalysisResponse, ChatModel, Timeframe } from '@/domain/types';
+import type { AnalysisResponse, ChatModel, Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';

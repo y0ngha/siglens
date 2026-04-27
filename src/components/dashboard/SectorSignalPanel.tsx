@@ -1,6 +1,6 @@
 'use client';
 
-import type { DashboardTimeframe, SectorSignalsResult } from '@/domain/types';
+import type { DashboardTimeframe, SectorSignalsResult } from '@y0ngha/siglens-core';
 import { useSectorSignalState } from './hooks/useSectorSignalState';
 import { SectorTabs } from './SectorTabs';
 import { TimeframeSelector } from './TimeframeSelector';

@@ -1,5 +1,5 @@
 import { chatAction } from '@/infrastructure/chat/chatAction';
-import type { AnalysisResponse, ChatModel } from '@/domain/types';
+import type { AnalysisResponse, ChatModel } from '@y0ngha/siglens-core';
 import { GEMINI_2_5_FLASH_LITE_MODEL } from '@/domain/constants/chatModels';
 import { headers } from 'next/headers';
 import {

@@ -1,6 +1,6 @@
 import { pollBriefingAction } from '@/infrastructure/market/pollBriefingAction';
 import { pollBriefing } from '@y0ngha/siglens-core';
-import type { PollBriefingResult } from '@/domain/types';
+import type { PollBriefingResult } from '@y0ngha/siglens-core';
 
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
@@ -23,7 +23,9 @@ describe('pollBriefingAction 함수는', () => {
 
         await pollBriefingAction('job-456');
 
-        expect(mockPollBriefing).toHaveBeenCalledWith('job-456');
+        expect(mockPollBriefing).toHaveBeenCalledWith('job-456', {
+            waitUntil: expect.any(Function),
+        });
     });
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {

@@ -3,7 +3,7 @@ import {
     EMPTY_SMC_RESULT,
     fetchBarsWithIndicators,
 } from '@y0ngha/siglens-core';
-import type { BarsData } from '@/domain/types';
+import type { BarsData } from '@y0ngha/siglens-core';
 
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),

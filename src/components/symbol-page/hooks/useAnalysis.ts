@@ -8,11 +8,7 @@ import {
     useRef,
     useState,
 } from 'react';
-import type {
-    AnalysisResponse,
-    SubmitAnalysisResult,
-    Timeframe,
-} from '@/domain/types';
+import type { AnalysisResponse, SubmitAnalysisResult, Timeframe } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';

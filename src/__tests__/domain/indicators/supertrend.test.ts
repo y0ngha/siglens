@@ -1,9 +1,9 @@
-import { calculateSupertrend } from '@/domain/indicators/supertrend';
+import { calculateSupertrend } from '@y0ngha/siglens-core';
 import {
     SUPERTREND_ATR_PERIOD,
     SUPERTREND_MULTIPLIER,
-} from '@/domain/indicators/constants';
-import type { Bar, SupertrendResult } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar, SupertrendResult } from '@y0ngha/siglens-core';
 
 function makeBars(
     values: { high: number; low: number; close: number }[]

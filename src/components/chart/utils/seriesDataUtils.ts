@@ -1,4 +1,4 @@
-import type { Bar } from '@/domain/types';
+import type { Bar } from '@y0ngha/siglens-core';
 import type { UTCTimestamp } from 'lightweight-charts';
 
 export type SeriesPoint =

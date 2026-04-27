@@ -1,4 +1,4 @@
-import type { Timeframe } from '@/domain/types';
+import type { Timeframe } from '@y0ngha/siglens-core';
 
 export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
 

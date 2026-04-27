@@ -1,5 +1,5 @@
-import { calculateOBV } from '@/domain/indicators/obv';
-import type { Bar } from '@/domain/types';
+import { calculateOBV } from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 function makeBars(values: { close: number; volume: number }[]): Bar[] {
     return values.map((v, i) => ({

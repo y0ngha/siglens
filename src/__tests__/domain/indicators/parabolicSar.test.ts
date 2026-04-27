@@ -1,10 +1,10 @@
-import { calculateParabolicSAR } from '@/domain/indicators/parabolicSar';
+import { calculateParabolicSAR } from '@y0ngha/siglens-core';
 import {
     PSAR_AF_INCREMENT,
     PSAR_AF_MAX,
     PSAR_AF_START,
-} from '@/domain/indicators/constants';
-import type { Bar, ParabolicSARResult } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar, ParabolicSARResult } from '@y0ngha/siglens-core';
 
 function makeBars(
     values: { high: number; low: number; close: number }[]

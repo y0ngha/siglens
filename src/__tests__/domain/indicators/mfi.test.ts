@@ -1,6 +1,6 @@
-import { calculateMFI } from '@/domain/indicators/mfi';
-import { MFI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
-import type { Bar } from '@/domain/types';
+import { calculateMFI } from '@y0ngha/siglens-core';
+import { MFI_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 function makeBars(
     values: { high: number; low: number; close: number; volume: number }[]

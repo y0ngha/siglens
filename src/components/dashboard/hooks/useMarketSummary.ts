@@ -2,11 +2,7 @@
 
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import type {
-    MarketIndexData,
-    MarketSectorData,
-    MarketSummaryWithBriefing,
-} from '@/domain/types';
+import type { MarketIndexData, MarketSectorData, MarketSummaryWithBriefing } from '@y0ngha/siglens-core';
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
 import { MARKET_SUMMARY_STALE_TIME_MS, QUERY_KEYS } from '@/lib/queryConfig';
 

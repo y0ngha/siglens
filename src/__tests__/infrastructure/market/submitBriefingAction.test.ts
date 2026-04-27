@@ -1,6 +1,6 @@
 import { submitBriefingAction } from '@/infrastructure/market/submitBriefingAction';
 import { submitBriefing } from '@y0ngha/siglens-core';
-import type { MarketSummaryData, SubmitBriefingResult } from '@/domain/types';
+import type { MarketSummaryData, SubmitBriefingResult } from '@y0ngha/siglens-core';
 
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
@@ -27,7 +27,9 @@ describe('submitBriefingAction 함수는', () => {
 
         await submitBriefingAction(summary);
 
-        expect(mockSubmitBriefing).toHaveBeenCalledWith(summary);
+        expect(mockSubmitBriefing).toHaveBeenCalledWith(summary, {
+            waitUntil: expect.any(Function),
+        });
     });
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {

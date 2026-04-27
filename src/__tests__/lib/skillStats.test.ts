@@ -1,5 +1,5 @@
 import { buildSkillStats, SKILL_STAT_CONFIG } from '@/lib/skillStats';
-import type { SkillShowcaseItem } from '@/domain/types';
+import type { SkillShowcaseItem } from '@y0ngha/siglens-core';
 
 function buildSkill(
     overrides: Partial<SkillShowcaseItem> = {}

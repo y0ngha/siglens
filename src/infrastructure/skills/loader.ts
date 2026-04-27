@@ -1,13 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import type { Dirent } from 'node:fs';
 import { join } from 'node:path';
-import type {
-    Skill,
-    SkillCategory,
-    SkillCounts,
-    SkillDisplay,
-    SkillType,
-} from '@/domain/types';
+import type { Skill, SkillCategory, SkillCounts, SkillDisplay, SkillType } from '@y0ngha/siglens-core';
 import type { SkillsProvider } from './types';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');

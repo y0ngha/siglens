@@ -1,6 +1,6 @@
-import { calculateDonchianChannel } from '@/domain/indicators/donchianChannel';
-import { DONCHIAN_DEFAULT_PERIOD } from '@/domain/indicators/constants';
-import type { Bar, DonchianChannelResult } from '@/domain/types';
+import { calculateDonchianChannel } from '@y0ngha/siglens-core';
+import { DONCHIAN_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
+import type { Bar, DonchianChannelResult } from '@y0ngha/siglens-core';
 
 function makeBars(
     values: { high: number; low: number; close: number }[]

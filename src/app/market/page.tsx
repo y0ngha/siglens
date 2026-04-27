@@ -12,7 +12,7 @@ import { SectorSignalPanelSkeleton } from '@/components/dashboard/SectorSignalPa
 import { SignalTypeGuide } from '@/components/dashboard/SignalTypeGuide';
 import { getSectorSignalsAction } from '@/infrastructure/dashboard/getSectorSignalsAction';
 import { getMarketSummaryAction } from '@/infrastructure/dashboard/getMarketSummaryAction';
-import type { DashboardTimeframe } from '@/domain/types';
+import type { DashboardTimeframe } from '@y0ngha/siglens-core';
 import {
     DASHBOARD_TIMEFRAMES,
     DEFAULT_DASHBOARD_TIMEFRAME,

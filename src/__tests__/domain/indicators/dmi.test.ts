@@ -1,6 +1,6 @@
-import { calculateDMI } from '@/domain/indicators/dmi';
-import { DMI_DEFAULT_PERIOD } from '@/domain/indicators/constants';
-import type { Bar, DMIResult } from '@/domain/types';
+import { calculateDMI } from '@y0ngha/siglens-core';
+import { DMI_DEFAULT_PERIOD } from '@y0ngha/siglens-core';
+import type { Bar, DMIResult } from '@y0ngha/siglens-core';
 
 function makeBars(
     values: { high: number; low: number; close: number }[]

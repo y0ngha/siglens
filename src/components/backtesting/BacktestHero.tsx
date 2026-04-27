@@ -1,4 +1,4 @@
-import type { BacktestMeta } from '@/domain/types';
+import type { BacktestMeta } from '@y0ngha/siglens-core';
 
 interface BacktestHeroProps {
     meta: BacktestMeta;

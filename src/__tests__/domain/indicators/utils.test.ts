@@ -5,7 +5,7 @@ import {
     sma,
     stdDev,
     typicalPrice,
-} from '@/domain/indicators/utils';
+} from '@y0ngha/siglens-core';
 
 describe('utils', () => {
     describe('sma', () => {

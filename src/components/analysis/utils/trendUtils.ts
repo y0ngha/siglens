@@ -1,4 +1,4 @@
-import type { Trend } from '@/domain/types';
+import type { Trend } from '@y0ngha/siglens-core';
 
 export interface TrendDisplay {
     label: string;

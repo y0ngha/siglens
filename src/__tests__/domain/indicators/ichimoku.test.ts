@@ -1,14 +1,14 @@
 import {
     calculateIchimoku,
     calculateIchimokuFutureCloud,
-} from '@/domain/indicators/ichimoku';
+} from '@y0ngha/siglens-core';
 import {
     ICHIMOKU_BASE_PERIOD,
     ICHIMOKU_CONVERSION_PERIOD,
     ICHIMOKU_DISPLACEMENT,
     ICHIMOKU_SPAN_B_PERIOD,
-} from '@/domain/indicators/constants';
-import type { Bar } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 const makeBars = (count: number, startPrice = 100): Bar[] =>
     Array.from({ length: count }, (_, i) => ({

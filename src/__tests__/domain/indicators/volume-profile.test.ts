@@ -1,10 +1,10 @@
-import { calculateVolumeProfile } from '@/domain/indicators/volume-profile';
+import { calculateVolumeProfile } from '@y0ngha/siglens-core';
 import {
     VP_DEFAULT_ROW_SIZE,
     VP_MIN_BARS,
     VP_VALUE_AREA_PERCENTAGE,
-} from '@/domain/indicators/constants';
-import type { Bar } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 // bucket 경계 이산화로 인한 허용 오차
 const VALUE_AREA_TOLERANCE = 0.05;

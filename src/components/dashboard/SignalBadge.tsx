@@ -1,4 +1,4 @@
-import type { SignalType } from '@/domain/types';
+import type { SignalType } from '@y0ngha/siglens-core';
 
 const SIGNAL_BADGE_LABELS: Record<SignalType, string> = {
     rsi_oversold: 'RSI 과매도',

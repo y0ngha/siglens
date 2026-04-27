@@ -4,8 +4,8 @@ import type { RefObject } from 'react';
 import { useEffect, useEffectEvent, useLayoutEffect, useRef } from 'react';
 import type { IChartApi, ISeriesApi, UTCTimestamp } from 'lightweight-charts';
 import { LineSeries, LineStyle } from 'lightweight-charts';
-import type { Bar, Trendline } from '@/domain/types';
-import { extendTrendline } from '@/domain/analysis/trendline';
+import type { Bar, Trendline } from '@y0ngha/siglens-core';
+import { extendTrendline } from '@y0ngha/siglens-core';
 import { DEFAULT_LINE_WIDTH } from '@/components/chart/constants';
 import {
     TRENDLINE_DIRECTION_COLOR,

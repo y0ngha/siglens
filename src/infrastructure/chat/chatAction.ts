@@ -8,13 +8,7 @@ import {
     GEMINI_2_5_FLASH_MODEL,
     VALID_CHAT_MODELS,
 } from '@/domain/constants/chatModels';
-import type {
-    AnalysisResponse,
-    ChatActionResult,
-    ChatMessage,
-    ChatModel,
-    Timeframe,
-} from '@/domain/types';
+import type { AnalysisResponse, ChatActionResult, ChatMessage, ChatModel, Timeframe } from '@y0ngha/siglens-core';
 import {
     getRemainingTokens,
     hashIp,

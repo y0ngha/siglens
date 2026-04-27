@@ -1,7 +1,8 @@
 'use server';
 
+import { waitUntil } from '@vercel/functions';
 import { submitAnalysis } from '@y0ngha/siglens-core';
-import type { SubmitAnalysisResult, Timeframe } from '@/domain/types';
+import type { SubmitAnalysisResult, Timeframe } from '@y0ngha/siglens-core';
 
 export async function submitAnalysisAction(
     symbol: string,
@@ -9,5 +10,5 @@ export async function submitAnalysisAction(
     force?: boolean,
     fmpSymbol?: string
 ): Promise<SubmitAnalysisResult> {
-    return submitAnalysis(symbol, timeframe, force, fmpSymbol);
+    return submitAnalysis(symbol, timeframe, force, fmpSymbol, { waitUntil });
 }

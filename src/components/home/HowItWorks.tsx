@@ -1,5 +1,5 @@
 import { Fragment } from 'react';
-import type { SkillCounts } from '@/domain/types';
+import type { SkillCounts } from '@y0ngha/siglens-core';
 
 export function HowItWorksSkeleton() {
     return (

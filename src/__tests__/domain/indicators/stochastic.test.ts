@@ -1,10 +1,10 @@
-import { calculateStochastic } from '@/domain/indicators/stochastic';
+import { calculateStochastic } from '@y0ngha/siglens-core';
 import {
     STOCHASTIC_D_PERIOD,
     STOCHASTIC_K_PERIOD,
     STOCHASTIC_SMOOTHING,
-} from '@/domain/indicators/constants';
-import type { Bar } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar } from '@y0ngha/siglens-core';
 
 const makeBar = (close: number, high: number, low: number, index = 0): Bar => ({
     time: 1000 + index,

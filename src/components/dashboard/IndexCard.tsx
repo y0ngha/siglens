@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
 import { formatPriceChange, formatUsdPrice } from '@/lib/priceFormat';
-import type { MarketIndexData, MarketSectorData } from '@/domain/types';
+import type { MarketIndexData, MarketSectorData } from '@y0ngha/siglens-core';
 
 type IndexCardData = MarketIndexData | MarketSectorData;
 

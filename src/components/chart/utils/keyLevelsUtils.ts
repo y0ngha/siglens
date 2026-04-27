@@ -5,7 +5,7 @@ import type {
     UTCTimestamp,
 } from 'lightweight-charts';
 import { LineSeries, LineStyle } from 'lightweight-charts';
-import type { Bar } from '@/domain/types';
+import type { Bar } from '@y0ngha/siglens-core';
 
 export function buildLineData(
     bars: Bar[],

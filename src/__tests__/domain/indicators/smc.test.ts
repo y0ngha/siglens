@@ -1,9 +1,9 @@
-import { calculateSmc } from '@/domain/indicators/smc';
+import { calculateSmc } from '@y0ngha/siglens-core';
 import {
     SMC_ATR_PERIOD,
     SMC_SWING_PERIOD,
-} from '@/domain/indicators/constants';
-import type { Bar, SMCResult } from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { Bar, SMCResult } from '@y0ngha/siglens-core';
 
 // ─── Fixtures ─────────────────────────────────────────────────────────────────
 

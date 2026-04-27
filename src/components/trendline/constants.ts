@@ -1,4 +1,4 @@
-import type { TrendlineDirection } from '@/domain/types';
+import type { TrendlineDirection } from '@y0ngha/siglens-core';
 import { CHART_COLORS } from '@/lib/chartColors';
 
 export const TRENDLINE_DIRECTION_LABEL: Record<TrendlineDirection, string> = {

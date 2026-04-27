@@ -1,5 +1,5 @@
 import { resolveTrendDisplay } from '@/components/analysis/utils/trendUtils';
-import type { Trend } from '@/domain/types';
+import type { Trend } from '@y0ngha/siglens-core';
 
 describe('resolveTrendDisplay', () => {
     describe('유효한 Trend 값일 때', () => {

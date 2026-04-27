@@ -1,6 +1,6 @@
 'use client';
 
-import type { BacktestCase } from '@/domain/types';
+import type { BacktestCase } from '@y0ngha/siglens-core';
 import { buildPanelId, buildTabId, TabsUnderline } from '@/components/ui/tabs';
 import { useBacktestFilter } from './hooks/useBacktestFilter';
 import { BacktestCaseList } from './BacktestCaseList';

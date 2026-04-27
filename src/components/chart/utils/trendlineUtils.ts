@@ -1,4 +1,4 @@
-import type { Bar, Trendline, TrendlineDirection } from '@/domain/types';
+import type { Bar, Trendline, TrendlineDirection } from '@y0ngha/siglens-core';
 
 export function trendlineKey(trendline: Trendline): string {
     return `${trendline.direction}:${trendline.start.time}:${trendline.end.time}`;

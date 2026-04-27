@@ -1,7 +1,7 @@
 'use client';
 
 import { useSuspenseQuery } from '@tanstack/react-query';
-import type { Bar, BarsData, IndicatorResult, Timeframe } from '@/domain/types';
+import type { Bar, BarsData, IndicatorResult, Timeframe } from '@y0ngha/siglens-core';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 

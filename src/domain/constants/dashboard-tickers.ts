@@ -1,10 +1,4 @@
-import type {
-    DashboardTimeframe,
-    IndexTicker,
-    SectorEtf,
-    SectorGroupDef,
-    SectorStock,
-} from '@/domain/types';
+import type { DashboardTimeframe, IndexTicker, SectorEtf, SectorGroupDef, SectorStock } from '@y0ngha/siglens-core';
 
 export const MARKET_INDICES: IndexTicker[] = [
     {

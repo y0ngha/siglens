@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
 import { formatPriceChange, formatUsdPrice } from '@/lib/priceFormat';
-import type { StockWithConflict } from '@/domain/types';
+import type { StockWithConflict } from '@y0ngha/siglens-core';
 import { SignalBadge } from './SignalBadge';
 
 interface SignalStockCardProps {

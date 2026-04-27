@@ -10,13 +10,7 @@ import type {
 } from 'lightweight-charts';
 import { CandlestickSeries, createChart } from 'lightweight-charts';
 import { CHART_COLORS } from '@/lib/chartColors';
-import type {
-    Bar,
-    IndicatorResult,
-    ReconciledActionLineData,
-    Timeframe,
-    ValidatedActionPrices,
-} from '@/domain/types';
+import type { Bar, IndicatorResult, ReconciledActionLineData, Timeframe, ValidatedActionPrices } from '@y0ngha/siglens-core';
 import { getTimeFormatter } from '@/domain/chart/timeFormat';
 import { useMAOverlay } from '@/components/chart/hooks/useMAOverlay';
 import { useEMAOverlay } from '@/components/chart/hooks/useEMAOverlay';
@@ -42,7 +36,7 @@ import {
     EMA_DEFAULT_PERIODS,
     EMPTY_INDICATOR_RESULT,
     MA_DEFAULT_PERIODS,
-} from '@/domain/indicators/constants';
+} from '@y0ngha/siglens-core';
 import { IndicatorToolbar } from '@/components/chart/IndicatorToolbar';
 
 interface CommonHookParams {

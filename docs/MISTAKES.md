@@ -719,12 +719,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Move presentation-specific types to lib/ (e.g., lib/skillStats.ts, lib/priceFormat.ts)
    ✅ domain/ contains only pure calculation functions: countSkillsByType, formatPrice logic, etc.
 
-4. Domain layer importing constants or functions from external packages
-   → domain/ must be pure TypeScript with no external package imports
-   → When migrating local functions to external packages, create local re-export wrappers or duplicate constants in domain/
-   → Protects domain layer from package version changes and maintains independence
-   ❌ domain/indicators/*.ts imports constants from @y0ngha/siglens-core
-   ❌ domain/signals/index.ts re-exports functions from external package
-   ✅ Create/restore domain/indicators/constants.ts with local copies or wrappers
-   ✅ domain/signals/index.ts exports only local signal calculation functions
+4. Creating thin re-export wrappers around `@y0ngha/siglens-core`
+   → `@y0ngha/siglens-core` is the externalized SigLens domain — direct import from any layer is allowed (see ARCHITECTURE.md)
+   → Wrapper files in `src/domain/` that only re-export from siglens-core add no information and should not exist
+   → Other third-party packages (e.g. technicalindicators) remain prohibited inside domain/
+   ❌ src/domain/indicators/atr.ts: `export { calculateATR } from '@y0ngha/siglens-core';`  // pure boilerplate wrapper
+   ❌ src/domain/analysis/candle-detection.ts re-exporting from siglens-core
+   ✅ Components / hooks / app code imports directly: `import { calculateATR } from '@y0ngha/siglens-core';`
+   ✅ src/domain/ keeps only SigLens-app-specific logic (backtest, chat models, dashboard sector grouping, etc.)
+   ❌ Deep imports: `from '@y0ngha/siglens-core/dist/domain/indicators/atr'` (only the public package surface is allowed)
 ```
