@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.10.1](https://github.com/y0ngha/siglens/compare/v0.10.0...v0.10.1) (2026-04-28)
+
+
+### Bug Fixes
+
+* 모바일에서 헤더 티커검색 클릭이 안됨(검색 안되는 이슈 처리) ([db9e949](https://github.com/y0ngha/siglens/commit/db9e949be07b6dc0843b5fd9276b293feadb24f1))
+* 심볼 분석 페이지 [SYMBOL]로 나는 이슈 처리 ([0f7e3e8](https://github.com/y0ngha/siglens/commit/0f7e3e89d398837a9bb074d33ccc49af96fc4d3e))
+
 # [0.10.0](https://github.com/y0ngha/siglens/compare/v0.8.21...v0.10.0) (2026-04-27)
 
 
