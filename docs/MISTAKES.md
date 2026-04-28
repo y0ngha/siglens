@@ -540,6 +540,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Module comment: "Calculate tooltip position from DOMRect bounds"
    ✅ Function comment: "Transform input levels with reconciliation rules"
    → When changing function implementation, update related comments immediately
+
+4. Multi-line JSDoc blocks for single-line function descriptions
+   → All function comments must be single-line only; multi-line blocks add unnecessary verbosity
+   → Extract context/explanation into commit messages or documentation links if needed
+   ❌ /**
+      * Handles authentication
+      * Sets up the session and applies cookies
+      */
+   ✅ // Handles authentication and session setup
 ```
 
 ---

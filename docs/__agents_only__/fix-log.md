@@ -1,5 +1,26 @@
 # Fix Log
 
+## [PR #389 round 3 | feat/369/auth-email | 2026-04-28]
+- Violation: 비컴포넌트 함수에 명시적 반환 타입 누락 (proxy.ts, useCurrentUser.ts, useLoginForm.ts, useSignupForm.ts)
+- Rule: CONVENTIONS.md — 비컴포넌트 함수에는 명시적 반환 타입 필수
+- Context: proxy 함수 및 커스텀 훅 3개에서 반환 타입 생략. 같은 PR의 useLogout만 UseLogoutResult 인터페이스를 명시한 일관성 결여. UseQueryResult / ReturnType<typeof useActionState> 형태로 명시 추가.
+
+- Violation: role="menu" 컨테이너 내부 인터랙티브 자식에 role="menuitem" 누락 (LogoutButton.tsx)
+- Rule: WAI-ARIA — role="menu"의 Required Owned Elements는 menuitem/menuitemcheckbox/menuitemradio 중 하나여야 함
+- Context: HeaderUserMenu의 role="menu" 컨테이너 안에 위치한 LogoutButton이 단순 <button>이라 스크린 리더가 메뉴 항목으로 인식하지 못함.
+
+- Violation: required field로 인해 동일 오류 메시지가 폼 필드와 폼 레벨에 이중 표시되는 형태 모델링 (formTypes.ts, registerAction.ts)
+- Rule: FF.md Cohesion — 폼 상태 모델은 표시 위치를 단일 결정 가능해야 함
+- Context: SignupFormState.error.field가 required라 auto_login_failed 분기에서 'email'을 강제로 채웠고, SignupForm이 emailError + formError 양쪽으로 같은 메시지를 표시. field를 optional로 변경하고 auto_login_failed에서 omit.
+
+- Violation: 멀티라인 JSDoc 주석 블록 (proxy.ts, infrastructure/auth/{db,getCurrentUser,applyAuthCookie,sessionCookieOptions}.ts)
+- Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
+- Context: 인증 어댑터 파일들이 2~4줄 JSDoc 블록으로 작성됨. 한 줄로 압축.
+
+- Violation: 2개 이상 멤버의 union 리터럴이 named type alias로 추출되지 않음 (infrastructure/auth/types.ts)
+- Rule: CONVENTIONS.md — 2개 이상 멤버의 union 리터럴은 named type alias로 추출
+- Context: ResponseCookie.sameSite의 'lax' | 'strict' | 'none' 인라인 union을 CookieSameSite alias로 추출.
+
 ## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
 - Violation: Next.js error.tsx 컴포넌트 props 인터페이스에 `error: Error & { digest?: string }` 누락
 - Rule: Next.js App Router 컨벤션 — error.tsx는 프레임워크가 `error`와 `reset` 두 prop을 모두 전달하므로 인터페이스에 양쪽 다 선언 필요
@@ -19,10 +40,6 @@
 - Violation: `MarketSummaryActionResult` 인터페이스 dead code 잔존 (domain/types.ts)
 - Rule: MISTAKES.md Coding Paradigm #4 — 효과 없는 코드 제거
 - Context: `getMarketSummaryAction` 반환 타입이 `MarketSummaryWithBriefing`으로 변경되었으나 `MarketSummaryActionResult`가 미삭제 상태로 남아 중복 타입 혼란 유발.
-
-- Violation: domain/types.ts 2줄 주석 블록
-- Rule: CONVENTIONS.md — 다중 줄 주석 블록 금지, 한 줄로 압축
-- Context: 파일 최상단 설명 주석이 2줄로 작성됨.
 
 ## [PR #384 | feat/372-377/siglens-core-migration | 2026-04-27]
 - Violation: fire-and-forget Server Action에 try-catch 없음 (cancelAnalysisJobAction.ts)
