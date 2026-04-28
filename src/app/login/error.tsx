@@ -9,7 +9,7 @@ interface LoginErrorProps {
 
 export default function LoginError({ reset }: LoginErrorProps) {
     return (
-        <main className="flex min-h-[calc(100dvh-3.5rem)] flex-col items-center justify-center gap-4 bg-slate-950 px-4 py-12 text-center">
+        <main className="bg-secondary-950 flex min-h-[calc(100dvh-3.5rem)] flex-col items-center justify-center gap-4 px-4 py-12 text-center">
             <h1 className="text-secondary-50 text-2xl font-semibold">
                 로그인 페이지를 표시할 수 없어요
             </h1>
@@ -20,7 +20,7 @@ export default function LoginError({ reset }: LoginErrorProps) {
                 <button
                     type="button"
                     onClick={reset}
-                    className="inline-flex min-h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                    className="inline-flex min-h-11 items-center rounded bg-blue-600 px-4 text-sm font-semibold text-white hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                 >
                     다시 시도
                 </button>

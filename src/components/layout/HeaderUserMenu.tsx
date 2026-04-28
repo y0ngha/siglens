@@ -52,7 +52,7 @@ export function HeaderUserMenu() {
                 </Link>
                 <Link
                     href="/signup"
-                    className="inline-flex min-h-11 items-center rounded bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                    className="inline-flex min-h-11 items-center rounded bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                 >
                     회원가입
                 </Link>
