@@ -26,6 +26,7 @@ interface LoginPageProps {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
     const params = await searchParams;
     const next = sanitizeNextPath(params.next);
+    const nextParam = next === '/' ? undefined : next;
     const initialError = params.error
         ? OAUTH_ERROR_MESSAGES[params.error]
         : undefined;
@@ -45,11 +46,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 </p>
             }
         >
-            <LoginForm
-                next={next === '/' ? undefined : next}
-                initialError={initialError}
-            />
-            <SocialLoginButtons next={next === '/' ? undefined : next} />
+            <LoginForm next={nextParam} initialError={initialError} />
+            <SocialLoginButtons next={nextParam} />
         </AuthCardShell>
     );
 }

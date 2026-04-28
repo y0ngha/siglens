@@ -1,13 +1,7 @@
 import { googleOAuthAdapter } from '@/infrastructure/auth/oauth/google';
+import { jsonResponse } from '@/__tests__/fixtures/jsonResponse';
 
 const ORIGINAL_FETCH = global.fetch;
-
-function jsonResponse(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json' },
-    });
-}
 
 describe('googleOAuthAdapter', () => {
     const REDIRECT_URI = 'https://app.example.com/api/auth/callback/google';

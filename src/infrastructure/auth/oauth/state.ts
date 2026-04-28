@@ -1,5 +1,5 @@
 import { randomBytes, timingSafeEqual } from 'crypto';
-import type { OAuthProvider } from '@y0ngha/siglens-core';
+import type { SupportedOAuthProvider } from '@/domain/types';
 import type { ResponseCookie } from '../types';
 import { isSecureCookieEnv } from '../sessionCookieOptions';
 
@@ -11,10 +11,17 @@ export const OAUTH_STATE_TTL_SECONDS = 5 * 60;
 
 interface StatePayload {
     state: string;
-    provider: OAuthProvider;
+    provider: SupportedOAuthProvider;
     next: string;
     exp: number;
 }
+
+interface OAuthStateIssueResult {
+    state: string;
+    cookie: ResponseCookie;
+}
+
+type OAuthStateVerifyResult = { ok: true; next: string } | { ok: false };
 
 function isStatePayload(value: unknown): value is StatePayload {
     if (typeof value !== 'object' || value === null) return false;
@@ -30,10 +37,10 @@ function isStatePayload(value: unknown): value is StatePayload {
 
 /** state 발급 — 쿼리에 실릴 토큰과 HttpOnly 쿠키 메타를 함께 반환. */
 export function issueOAuthState(
-    provider: OAuthProvider,
+    provider: SupportedOAuthProvider,
     next: string,
     now: Date = new Date()
-): { state: string; cookie: ResponseCookie } {
+): OAuthStateIssueResult {
     const state = randomBytes(32).toString('base64url');
     const expMs = now.getTime() + OAUTH_STATE_TTL_SECONDS * 1000;
     const payload: StatePayload = { state, provider, next, exp: expMs };
@@ -67,11 +74,11 @@ export function expiredOAuthStateCookie(): ResponseCookie {
 
 /** state 검증 — 쿠키 ↔ 쿼리 토큰 timing-safe 비교 + provider/만료 검사. */
 export function verifyOAuthState(
-    provider: OAuthProvider,
+    provider: SupportedOAuthProvider,
     queryState: string,
     cookieValue: string | undefined,
     now: Date = new Date()
-): { ok: true; next: string } | { ok: false } {
+): OAuthStateVerifyResult {
     if (!cookieValue) return { ok: false };
     let payload: StatePayload;
     try {

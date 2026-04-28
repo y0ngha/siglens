@@ -1,10 +1,6 @@
 import type { SupportedOAuthProvider } from '@/domain/types';
 import { cn } from '@/lib/cn';
 
-interface SocialLoginButtonsProps {
-    next?: string;
-}
-
 interface SocialProvider {
     id: SupportedOAuthProvider;
     label: string;
@@ -18,13 +14,13 @@ const PROVIDERS: readonly SocialProvider[] = [
         label: 'Continue with Google',
         glyph: 'G',
         buttonClassName:
-            'bg-white text-slate-900 hover:bg-secondary-100 ring-1 ring-secondary-200',
+            'bg-white text-secondary-900 hover:bg-secondary-100 ring-1 ring-secondary-200',
     },
     {
         id: 'kakao',
         label: '카카오로 시작하기',
         glyph: 'K',
-        buttonClassName: 'bg-[#FEE500] text-slate-900 hover:brightness-95',
+        buttonClassName: 'bg-[#FEE500] text-secondary-900 hover:brightness-95',
     },
 ];
 
@@ -33,6 +29,10 @@ function buildHref(providerId: SupportedOAuthProvider, next?: string): string {
     if (!next) return base;
     const params = new URLSearchParams({ next });
     return `${base}?${params.toString()}`;
+}
+
+interface SocialLoginButtonsProps {
+    next?: string;
 }
 
 export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {

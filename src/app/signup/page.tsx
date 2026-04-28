@@ -19,6 +19,7 @@ interface SignupPageProps {
 export default async function SignupPage({ searchParams }: SignupPageProps) {
     const params = await searchParams;
     const next = sanitizeNextPath(params.next);
+    const nextParam = next === '/' ? undefined : next;
     return (
         <AuthCardShell
             title="회원이 되면 더 많은 걸 볼 수 있어요"
@@ -35,8 +36,8 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
                 </p>
             }
         >
-            <SignupForm next={next === '/' ? undefined : next} />
-            <SocialLoginButtons next={next === '/' ? undefined : next} />
+            <SignupForm next={nextParam} />
+            <SocialLoginButtons next={nextParam} />
         </AuthCardShell>
     );
 }

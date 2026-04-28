@@ -78,6 +78,19 @@ describe('issueOAuthState / verifyOAuthState', () => {
         });
     });
 
+    it('TTL 경계 시각과 동일한 state는 아직 유효하다', () => {
+        const { state, cookie } = issueOAuthState('google', '/', FIXED_NOW);
+        const boundary = new Date(
+            FIXED_NOW.getTime() + OAUTH_STATE_TTL_SECONDS * 1000
+        );
+        expect(
+            verifyOAuthState('google', state, cookie.value, boundary)
+        ).toEqual({
+            ok: true,
+            next: '/',
+        });
+    });
+
     it('쿼리 state가 cookie 길이와 다르면 거부한다', () => {
         const { cookie } = issueOAuthState('google', '/', FIXED_NOW);
         expect(
