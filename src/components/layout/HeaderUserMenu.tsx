@@ -11,8 +11,8 @@ import { cn } from '@/lib/cn';
 
 const TIER_DOT_COLOR: Record<Tier, string> = {
     free: 'bg-secondary-500',
-    member: 'bg-blue-500',
-    pro: 'bg-amber-400',
+    member: 'bg-primary-500',
+    pro: 'bg-ui-warning',
 };
 
 const TIER_LABEL: Record<Tier, string> = {
@@ -52,7 +52,7 @@ export function HeaderUserMenu() {
                 </Link>
                 <Link
                     href="/signup"
-                    className="inline-flex min-h-11 items-center rounded bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-500 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                    className="inline-flex min-h-11 items-center rounded bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
                 >
                     회원가입
                 </Link>

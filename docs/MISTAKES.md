@@ -695,7 +695,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 8. Chart indicator color tokens applied to UI components
    → Chart-specific tokens (chart-rsi, chart-period10, chart-bollinger, chart-period60, chart-period5) are semantic colors for indicator lines only
-   → UI components must use primary-*, secondary-*, chart-bullish, chart-bearish, or ui-warning
+   → UI components must use primary-*, secondary-*, ui-success, ui-warning, or ui-danger
    ❌ CATEGORY_STYLES = { fintech: 'chart-period10', healthcare: 'chart-rsi', ... }
    ✅ CATEGORY_STYLES = { fintech: 'primary-500', healthcare: 'secondary-400', ... }
 

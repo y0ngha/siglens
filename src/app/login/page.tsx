@@ -1,10 +1,10 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { sanitizeNextPath } from '@/lib/authRoutes';
 import { SITE_NAME } from '@/lib/seo';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
     title: '로그인',

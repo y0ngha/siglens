@@ -19,19 +19,12 @@ import { redirect } from 'next/navigation';
 import { loginUser, registerUser } from '@y0ngha/siglens-core';
 import { registerAction } from '@/infrastructure/auth/registerAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
+import { makeFormData } from '@/__tests__/utils/makeFormData';
 
 const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
 const mockRegister = registerUser as jest.MockedFunction<typeof registerUser>;
 const mockLogin = loginUser as jest.MockedFunction<typeof loginUser>;
 const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
-
-function makeFormData(values: Record<string, string>): FormData {
-    const fd = new FormData();
-    for (const [key, value] of Object.entries(values)) {
-        fd.set(key, value);
-    }
-    return fd;
-}
 
 const FAKE_USER = {
     id: 'u1',
@@ -81,6 +74,29 @@ describe('registerAction', () => {
         await registerAction({ error: null }, makeFormData({}));
         expect(mockRegister).toHaveBeenCalledWith(
             expect.objectContaining({ email: '', password: '' }),
+            expect.any(Object),
+            expect.any(Object)
+        );
+    });
+
+    it('email은 trim하고 password는 원본을 유지한다', async () => {
+        mockRegister.mockResolvedValue({
+            ok: false,
+            error: {
+                code: 'invalid_email',
+                field: 'email',
+                message: 'Email format is invalid',
+            },
+        });
+        await registerAction(
+            { error: null },
+            makeFormData({ email: '  a@b.com  ', password: '  Pass1234  ' })
+        );
+        expect(mockRegister).toHaveBeenCalledWith(
+            expect.objectContaining({
+                email: 'a@b.com',
+                password: '  Pass1234  ',
+            }),
             expect.any(Object),
             expect.any(Object)
         );

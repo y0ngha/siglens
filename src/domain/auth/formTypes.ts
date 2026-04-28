@@ -1,10 +1,11 @@
 import type {
+    LoginUserErrorCode,
     RegisterUserErrorCode,
     RegisterUserErrorField,
 } from '@y0ngha/siglens-core';
 
 export interface LoginFormState {
-    error: { code: string; message: string } | null;
+    error: { code: LoginUserErrorCode; message: string } | null;
 }
 
 export interface SignupFormState {

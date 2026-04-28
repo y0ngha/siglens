@@ -205,21 +205,25 @@ VWAP             #e879f9   (퍼플)
 
 ---
 
-## UI Color — 심각도 표시
+## UI Color — 상태 표시
 
-UI 상태 심각도를 표현한다. 차트 컬러와 구분되는 UI 전용 토큰이다.
+UI 상태를 표현한다. 차트 컬러와 구분되는 UI 전용 토큰이다.
 
 ```
+--color-ui-success: #26a69a   (틸 그린)
 --color-ui-warning: #f59e0b   (앰버)
 --color-ui-danger:  #ef5350   (레드)
 ```
 
 **사용처**
 ```
+valid strength rule    text-ui-success
 medium risk 표시      text-ui-warning
 moderate strength     text-ui-warning
 투자 면책 고지 박스   border-ui-danger/30  bg-ui-danger/5  text-ui-danger
 ```
+
+참고: `#26a69a`는 `chart.bullish`(상승 캔들)와 동일한 값이지만, UI 성공/충족 상태 표시 목적으로 별도 토큰(`ui-success`)을 분리한다. 차트 상승 렌더링에는 `chart-bullish`를 사용하고, UI 성공 표시에는 `ui-success`를 사용한다.
 
 참고: `#f59e0b`는 `chart.signal`(MACD 시그널 라인)과 동일한 값이지만, UI 상태 표시 목적으로 별도 토큰(`ui-warning`)을 분리한다. 차트 시그널 렌더링에는 `chart-signal`을 사용하고, UI 심각도 표시에는 `ui-warning`을 사용한다.
 
@@ -311,6 +315,11 @@ const config: Config = {
                     stochRsiD: '#60a5fa',
                     // VWAP
                     vwap:      '#e879f9',
+                },
+                ui: {
+                    success: '#26a69a',
+                    warning: '#f59e0b',
+                    danger:  '#ef5350',
                 },
             },
         },

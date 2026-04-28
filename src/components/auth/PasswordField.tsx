@@ -56,7 +56,7 @@ export function PasswordField({
                     onBlur={() => setCapsLock(false)}
                     aria-invalid={!!error}
                     aria-describedby={describedBy}
-                    className="border-secondary-700 text-secondary-50 placeholder:text-secondary-500 h-12 w-full rounded-md border bg-slate-950 px-4 pr-12 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 focus:outline-none"
+                    className="border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 h-12 w-full rounded-md border px-4 pr-12 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 focus:outline-none"
                 />
                 <button
                     type="button"
@@ -72,7 +72,7 @@ export function PasswordField({
                 <p
                     id={capsId}
                     aria-live="polite"
-                    className="text-xs text-amber-400"
+                    className="text-ui-warning text-xs"
                 >
                     Caps Lock이 켜져 있습니다.
                 </p>
@@ -82,7 +82,7 @@ export function PasswordField({
                 <p
                     id={errorId}
                     role="alert"
-                    className="flex items-start gap-1 text-sm text-rose-400"
+                    className="text-ui-danger flex items-start gap-1 text-sm"
                 >
                     <span aria-hidden>⚠</span>
                     <span>{error}</span>

@@ -37,7 +37,8 @@ src/infrastructure/auth/
   loginAction.ts           'use server' — loginUser → cookie set → redirect(sanitizeNextPath)
   logoutAction.ts          'use server' — logoutUser → 만료 cookie set → redirect('/')
 
-src/lib/authRoutes.ts      AUTH_PATHS, sanitizeNextPath()
+src/lib/authRoutes.ts      AUTH_PATHS
+src/domain/auth/redirect.ts sanitizeNextPath()
 
 proxy.ts                   matcher: ['/login','/signup']. 세션 쿠키 존재 시 / 로 redirect
 

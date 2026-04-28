@@ -1,7 +1,7 @@
 'use server';
 
 import type { SignupFormState } from '@/domain/auth/formTypes';
-import { sanitizeNextPath } from '@/lib/authRoutes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
@@ -24,7 +24,7 @@ export async function registerAction(
     formData: FormData
 ): Promise<SignupFormState> {
     const email = String(formData.get('email') ?? '').trim();
-    const password = String(formData.get('password') ?? '').trim();
+    const password = String(formData.get('password') ?? '');
     const rawName = String(formData.get('name') ?? '').trim();
     const name = rawName ? rawName : undefined;
     const next = sanitizeNextPath(formData.get('next')?.toString());
