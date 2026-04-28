@@ -1,23 +1,32 @@
 import type { OAuthProvider } from '@y0ngha/siglens-core';
-import { OAUTH_PROVIDER_VALUES } from '@y0ngha/siglens-core';
-import { appleOAuthAdapter } from './apple';
 import { googleOAuthAdapter } from './google';
 import { kakaoOAuthAdapter } from './kakao';
 import type { OAuthProviderAdapter } from './types';
 
-const ADAPTERS: Record<OAuthProvider, OAuthProviderAdapter> = {
+/** siglens 앱에서 현재 활성화된 OAuth provider. siglens-core 의 OAuthProvider 부분집합. */
+export type SupportedOAuthProvider = 'google' | 'kakao';
+
+const SUPPORTED_PROVIDERS: readonly SupportedOAuthProvider[] = [
+    'google',
+    'kakao',
+];
+
+const ADAPTERS: Record<SupportedOAuthProvider, OAuthProviderAdapter> = {
     google: googleOAuthAdapter,
     kakao: kakaoOAuthAdapter,
-    apple: appleOAuthAdapter,
 };
 
-export function getOAuthAdapter(provider: OAuthProvider): OAuthProviderAdapter {
+export function getOAuthAdapter(
+    provider: SupportedOAuthProvider
+): OAuthProviderAdapter {
     return ADAPTERS[provider];
 }
 
-/** 라우트 파라미터로 들어온 임의 문자열이 지원 provider 인지 검증. */
-export function isOAuthProvider(value: string): value is OAuthProvider {
-    return (OAUTH_PROVIDER_VALUES as readonly string[]).includes(value);
+/** 라우트 파라미터로 들어온 임의 문자열이 활성화된 provider 인지 검증. */
+export function isOAuthProvider(
+    value: string
+): value is SupportedOAuthProvider {
+    return (SUPPORTED_PROVIDERS as readonly string[]).includes(value);
 }
 
 /** 어댑터가 사용하는 redirect URI를 환경변수 단일 소스에서 도출.

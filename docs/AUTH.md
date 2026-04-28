@@ -20,8 +20,9 @@
 | `DATABASE_URL` | Neon Postgres 연결 (siglens-core가 사용) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | Kakao OAuth (client_secret 미발급 앱이면 KAKAO_CLIENT_SECRET 생략 가능) |
-| `APPLE_CLIENT_ID` / `APPLE_TEAM_ID` / `APPLE_KEY_ID` / `APPLE_PRIVATE_KEY` | Apple Sign In (PEM의 `\n` escape 자동 복원) |
 | `OAUTH_REDIRECT_BASE_URL` (없으면 `NEXT_PUBLIC_SITE_URL` fallback) | OAuth 콜백 URL 베이스 |
+
+> **현재 활성화된 provider**: Google, Kakao. siglens-core 의 `OAuthProvider` 타입은 `apple`도 포함하지만 본 앱에서는 비활성. 추후 활성화 시 `providers.ts`의 `SUPPORTED_PROVIDERS` 와 `SocialLoginButtons` 의 PROVIDERS 배열에 추가하면 된다.
 
 ## 파일 맵
 
@@ -52,7 +53,6 @@ src/infrastructure/auth/oauth/
   providers.ts             provider id → adapter map, isOAuthProvider, buildOAuthRedirectUri
   google.ts                Google OIDC 어댑터 (token + userinfo)
   kakao.ts                 Kakao OAuth 2.0 어댑터 (kapi.kakao.com)
-  apple.ts                 Apple Sign In 어댑터 (jose ES256 client_secret JWT)
 
 src/app/api/auth/
   [provider]/start/route.ts   state 발급 + provider authorize URL 302
@@ -134,7 +134,6 @@ src/app/signup/page.tsx    RSC — AuthCardShell + SignupForm
 provider별 정책:
 - **Google** — OIDC scope `openid email profile`. userinfo endpoint 사용.
 - **Kakao** — scope `account_email profile_nickname profile_image`. `kapi.kakao.com/v2/user/me`. `KAKAO_CLIENT_SECRET`은 카카오 개발자 콘솔에서 발급한 경우에만 전달.
-- **Apple** — scope `email`. client_secret은 매 호출 ES256 JWT로 동적 서명(jose). 첫 인증에서만 email이 id_token에 담기며, 이름은 form_post 모드를 쓰지 않으므로 미수집(`null`).
 
 ### Header 사용자 표시
 

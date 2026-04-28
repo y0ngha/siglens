@@ -1,9 +1,3 @@
-jest.mock('jose', () => ({
-    importPKCS8: jest.fn(),
-    decodeJwt: jest.fn(),
-    SignJWT: jest.fn(),
-}));
-
 import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
@@ -11,10 +5,12 @@ import {
 } from '@/infrastructure/auth/oauth/providers';
 
 describe('isOAuthProvider', () => {
-    it('지원 provider 문자열은 true를 반환한다', () => {
+    it('활성화된 provider 문자열은 true를 반환한다', () => {
         expect(isOAuthProvider('google')).toBe(true);
         expect(isOAuthProvider('kakao')).toBe(true);
-        expect(isOAuthProvider('apple')).toBe(true);
+    });
+    it('siglens-core가 알지만 siglens 앱에서 비활성화된 provider는 false', () => {
+        expect(isOAuthProvider('apple')).toBe(false);
     });
     it('지원하지 않는 문자열은 false를 반환한다', () => {
         expect(isOAuthProvider('facebook')).toBe(false);
@@ -26,7 +22,6 @@ describe('getOAuthAdapter', () => {
     it('각 provider id에 대응하는 어댑터를 반환한다', () => {
         expect(getOAuthAdapter('google').id).toBe('google');
         expect(getOAuthAdapter('kakao').id).toBe('kakao');
-        expect(getOAuthAdapter('apple').id).toBe('apple');
     });
 });
 
@@ -57,8 +52,8 @@ describe('buildOAuthRedirectUri', () => {
 
     it('베이스 URL 끝의 슬래시는 제거된다', () => {
         process.env.OAUTH_REDIRECT_BASE_URL = 'https://app.example.com/';
-        expect(buildOAuthRedirectUri('apple')).toBe(
-            'https://app.example.com/api/auth/callback/apple'
+        expect(buildOAuthRedirectUri('google')).toBe(
+            'https://app.example.com/api/auth/callback/google'
         );
     });
 

@@ -1,4 +1,4 @@
-import type { OAuthProvider } from '@y0ngha/siglens-core';
+import type { SupportedOAuthProvider } from '@/infrastructure/auth/oauth/providers';
 import { cn } from '@/lib/cn';
 
 interface SocialLoginButtonsProps {
@@ -6,7 +6,7 @@ interface SocialLoginButtonsProps {
 }
 
 interface SocialProvider {
-    id: OAuthProvider;
+    id: SupportedOAuthProvider;
     label: string;
     glyph: string;
     buttonClassName: string;
@@ -26,16 +26,9 @@ const PROVIDERS: readonly SocialProvider[] = [
         glyph: 'K',
         buttonClassName: 'bg-[#FEE500] text-slate-900 hover:brightness-95',
     },
-    {
-        id: 'apple',
-        label: 'Continue with Apple',
-        glyph: '',
-        buttonClassName:
-            'bg-black text-white hover:bg-slate-900 ring-1 ring-slate-800',
-    },
 ];
 
-function buildHref(providerId: OAuthProvider, next?: string): string {
+function buildHref(providerId: SupportedOAuthProvider, next?: string): string {
     const base = `/api/auth/${providerId}/start`;
     if (!next) return base;
     const params = new URLSearchParams({ next });
