@@ -6,7 +6,11 @@ import { registerAction } from '@/infrastructure/auth/registerAction';
 
 const INITIAL_STATE: SignupFormState = { error: null };
 
-export function useSignupForm() {
+type UseSignupFormReturn = ReturnType<
+    typeof useActionState<SignupFormState, FormData>
+>;
+
+export function useSignupForm(): UseSignupFormReturn {
     return useActionState<SignupFormState, FormData>(
         registerAction,
         INITIAL_STATE

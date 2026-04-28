@@ -62,7 +62,6 @@ export async function registerAction(
         return {
             error: {
                 code: 'auto_login_failed',
-                field: 'email',
                 message: AUTO_LOGIN_FAILED_MESSAGE,
             },
         };

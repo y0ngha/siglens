@@ -4,10 +4,7 @@ type DatabaseClient = ReturnType<typeof createDatabaseClient>;
 
 let cachedClient: DatabaseClient | null = null;
 
-/**
- * 인증 관련 DB 접근에 사용하는 모듈 캐시된 DatabaseClient 핸들.
- * DATABASE_URL이 비어 있으면 명시적으로 throw한다.
- */
+/** 인증 DB 접근용 모듈 캐시된 DatabaseClient. DATABASE_URL이 비어 있으면 throw. */
 export function getAuthDatabaseClient(): DatabaseClient {
     if (cachedClient !== null) return cachedClient;
     const databaseUrl = process.env.DATABASE_URL;

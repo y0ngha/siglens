@@ -7,6 +7,7 @@ export function LogoutButton() {
     return (
         <button
             type="button"
+            role="menuitem"
             disabled={pending}
             onClick={logout}
             className="text-secondary-200 hover:bg-secondary-800 flex w-full items-center rounded px-3 py-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none disabled:opacity-60"

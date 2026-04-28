@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, type UseQueryResult } from '@tanstack/react-query';
 import type { AuthUserRecord } from '@y0ngha/siglens-core';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
 import {
@@ -9,7 +9,7 @@ import {
     QUERY_STALE_TIME_MS,
 } from '@/lib/queryConfig';
 
-export function useCurrentUser() {
+export function useCurrentUser(): UseQueryResult<AuthUserRecord | null> {
     return useQuery<AuthUserRecord | null>({
         queryKey: QUERY_KEYS.currentUser(),
         queryFn: () => currentUserAction(),

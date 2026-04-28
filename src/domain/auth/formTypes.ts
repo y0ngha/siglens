@@ -10,7 +10,7 @@ export interface LoginFormState {
 export interface SignupFormState {
     error: {
         code: RegisterUserErrorCode | 'auto_login_failed';
-        field: RegisterUserErrorField;
+        field?: RegisterUserErrorField;
         message: string;
     } | null;
 }
