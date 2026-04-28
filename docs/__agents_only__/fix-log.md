@@ -17,9 +17,6 @@
 - Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
 - Context: 인증 어댑터 파일들이 2~4줄 JSDoc 블록으로 작성됨. 한 줄로 압축.
 
-- Violation: 2개 이상 멤버의 union 리터럴이 named type alias로 추출되지 않음 (infrastructure/auth/types.ts)
-- Rule: CONVENTIONS.md — 2개 이상 멤버의 union 리터럴은 named type alias로 추출
-- Context: ResponseCookie.sameSite의 'lax' | 'strict' | 'none' 인라인 union을 CookieSameSite alias로 추출.
 
 ## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
 - Violation: Next.js error.tsx 컴포넌트 props 인터페이스에 `error: Error & { digest?: string }` 누락
@@ -70,3 +67,25 @@
 
 ## [Round 1 — Skipped findings]
 - `src/app/[symbol]/page.tsx:144` and `src/app/market/page.tsx:13` (recommended): RSC에서 siglens-core 함수를 직접 호출하는 패턴은 기존 관례이며 이번 PR이 도입한 변경이 아님. RSC는 underlying async 함수를 직접 호출하고, 클라이언트용 Server Action wrapper는 별도 hook 경로로 사용하는 분리 패턴이 의도됨. PR 범위 밖이므로 skip.
+
+## [PR #389 | feat/369/auth-email | 2026-04-29]
+- Violation: registerAction이 password에 .trim() 적용, loginAction은 trim 없이 사용 — 회원가입 시 trim된 비밀번호로 해시되어 로그인 시 verify 실패
+- Rule: FF.md Predictability — 동일 입력에 대한 동일 처리 보장; 양 액션 간 비대칭 처리 금지
+- Context: 사용자가 비밀번호에 의도적/비의도적 공백 포함 가입 시 로그인 불가 버그. password는 양쪽 모두 trim 제거(원본 유지), email은 양쪽 모두 trim 적용으로 통일.
+
+- Violation: bg-slate-950, bg-slate-900/80 등 Tailwind 기본 클래스 직접 사용 (DESIGN.md 시맨틱 토큰 미사용)
+- Rule: DESIGN.md 사용 규칙 — bg-secondary-* 시맨틱 토큰 사용; 토큰에 없는 임의 클래스 금지
+- Context: AuthCardShell, AuthFieldGroup, PasswordField, login/error.tsx에서 bg-slate-* 사용. bg-secondary-* 토큰으로 통일.
+
+- Violation: text-rose-*, bg-rose-*, border-rose-*, text-amber-* 등 미정의 색상 토큰을 UI 검증 상태에 사용
+- Rule: DESIGN.md UI Color — 위험/경고는 ui-danger, ui-warning 토큰 사용
+- Context: Auth 폼의 에러/CapsLock 표시에 rose/amber 직접 사용. ui-danger, ui-warning 토큰으로 교체.
+
+- Violation: Primary 버튼 hover 색상 hover:bg-blue-500 (밝아짐) — DESIGN.md는 hover:bg-blue-700 (어두워짐) 명시
+- Rule: DESIGN.md Primary Color 사용처 — 버튼(primary) bg-blue-600 hover:bg-blue-700
+- Context: SubmitButton, login/error 다시시도 버튼, HeaderUserMenu 회원가입 버튼이 hover로 밝아지는 방향. DESIGN.md 규약대로 어두워지도록 수정.
+
+- Violation: makeFormData 헬퍼가 loginAction.test.ts와 registerAction.test.ts에 동일 정의 중복
+- Rule: CONVENTIONS.md DRY / FF Cohesion — 동일 헬퍼는 단일 위치에서 export
+- Context: 두 테스트 파일에 같은 FormData 빌더 함수가 각각 정의됨. src/__tests__/utils/makeFormData.ts로 추출하여 import.
+
