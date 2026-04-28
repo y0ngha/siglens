@@ -5,10 +5,7 @@ export const AUTH_PATHS = {
 
 export const DEFAULT_REDIRECT_PATH = '/';
 
-/**
- * Open-redirect를 막기 위해 next 쿼리 값을 검증한다.
- * 같은 origin의 path-only 만 허용하고, 그 외엔 '/'를 반환한다.
- */
+// Open-redirect 방어: 같은 origin의 path-only만 허용, 그 외 '/' 반환
 export function sanitizeNextPath(input: string | null | undefined): string {
     if (!input) return DEFAULT_REDIRECT_PATH;
     if (!input.startsWith('/')) return DEFAULT_REDIRECT_PATH;

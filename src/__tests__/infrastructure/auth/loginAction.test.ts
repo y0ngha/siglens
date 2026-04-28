@@ -17,18 +17,11 @@ import { redirect } from 'next/navigation';
 import { loginUser } from '@y0ngha/siglens-core';
 import { loginAction } from '@/infrastructure/auth/loginAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
+import { makeFormData } from '@/__tests__/utils/makeFormData';
 
 const mockCookies = cookies as jest.MockedFunction<typeof cookies>;
 const mockLogin = loginUser as jest.MockedFunction<typeof loginUser>;
 const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
-
-function makeFormData(values: Record<string, string>): FormData {
-    const fd = new FormData();
-    for (const [key, value] of Object.entries(values)) {
-        fd.set(key, value);
-    }
-    return fd;
-}
 
 describe('loginAction', () => {
     let setSpy: jest.Mock;
@@ -55,6 +48,25 @@ describe('loginAction', () => {
         await loginAction({ error: null }, makeFormData({}));
         expect(mockLogin).toHaveBeenCalledWith(
             { email: '', password: '' },
+            expect.any(Object),
+            expect.any(Object)
+        );
+    });
+
+    it('email은 trim하고 password는 원본을 유지한다', async () => {
+        mockLogin.mockResolvedValue({
+            ok: false,
+            error: {
+                code: 'invalid_credentials',
+                message: 'Email or password is incorrect',
+            },
+        });
+        await loginAction(
+            { error: null },
+            makeFormData({ email: '  a@b.com  ', password: '  Pass1234  ' })
+        );
+        expect(mockLogin).toHaveBeenCalledWith(
+            { email: 'a@b.com', password: '  Pass1234  ' },
             expect.any(Object),
             expect.any(Object)
         );

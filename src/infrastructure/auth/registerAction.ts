@@ -24,7 +24,7 @@ export async function registerAction(
     formData: FormData
 ): Promise<SignupFormState> {
     const email = String(formData.get('email') ?? '').trim();
-    const password = String(formData.get('password') ?? '').trim();
+    const password = String(formData.get('password') ?? '');
     const rawName = String(formData.get('name') ?? '').trim();
     const name = rawName ? rawName : undefined;
     const next = sanitizeNextPath(formData.get('next')?.toString());
