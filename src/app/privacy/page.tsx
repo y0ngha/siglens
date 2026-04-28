@@ -347,13 +347,6 @@ export default function PrivacyPage() {
                             &nbsp;(대한민국): 카카오 계정으로 소셜 로그인을
                             선택한 경우의 OAuth 인증 위탁
                         </li>
-                        <li>
-                            <strong className="text-secondary-200">
-                                Apple Inc.
-                            </strong>
-                            &nbsp;(미국): Apple 계정으로 소셜 로그인을 선택한
-                            경우의 OAuth 인증 위탁
-                        </li>
                     </ul>
                     <p>
                         상기 업체로 이전되는 정보에는 이용자가 입력한 종목 티커,

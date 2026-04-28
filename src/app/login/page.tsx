@@ -1,9 +1,10 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { LoginForm } from '@/components/auth/LoginForm';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { SITE_NAME } from '@/lib/seo';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
 export const metadata: Metadata = {
     title: '로그인',
@@ -25,6 +26,7 @@ interface LoginPageProps {
 export default async function LoginPage({ searchParams }: LoginPageProps) {
     const params = await searchParams;
     const next = sanitizeNextPath(params.next);
+    const nextParam = next === '/' ? undefined : next;
     const initialError = params.error
         ? OAUTH_ERROR_MESSAGES[params.error]
         : undefined;
@@ -44,10 +46,8 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 </p>
             }
         >
-            <LoginForm
-                next={next === '/' ? undefined : next}
-                initialError={initialError}
-            />
+            <LoginForm next={nextParam} initialError={initialError} />
+            <SocialLoginButtons next={nextParam} />
         </AuthCardShell>
     );
 }

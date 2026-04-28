@@ -274,7 +274,7 @@ export default function TermsPage() {
                         </li>
                         <li>
                             소셜 로그인을 이용하는 경우, 해당 OAuth 제공자(예
-                            Google · Kakao · Apple)의 약관 또한 함께 적용됩니다.
+                            Google · Kakao)의 약관 또한 함께 적용됩니다.
                         </li>
                     </ul>
                     <p>
