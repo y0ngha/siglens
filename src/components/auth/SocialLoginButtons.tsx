@@ -1,4 +1,4 @@
-import type { SupportedOAuthProvider } from '@/infrastructure/auth/oauth/providers';
+import type { SupportedOAuthProvider } from '@/domain/types';
 import { cn } from '@/lib/cn';
 
 interface SocialLoginButtonsProps {
@@ -18,7 +18,7 @@ const PROVIDERS: readonly SocialProvider[] = [
         label: 'Continue with Google',
         glyph: 'G',
         buttonClassName:
-            'bg-white text-slate-900 hover:bg-slate-100 ring-1 ring-slate-200',
+            'bg-white text-slate-900 hover:bg-secondary-100 ring-1 ring-secondary-200',
     },
     {
         id: 'kakao',
@@ -42,9 +42,7 @@ export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
                 aria-hidden
                 className="border-secondary-800 text-secondary-500 my-6 flex items-center gap-3 border-t pt-3 text-xs tracking-[0.2em] uppercase"
             >
-                <span className="border-secondary-800 -mt-3 bg-slate-900/80 px-2">
-                    또는
-                </span>
+                <span className="bg-secondary-900/80 -mt-3 px-2">또는</span>
             </div>
             {PROVIDERS.map(provider => (
                 <a

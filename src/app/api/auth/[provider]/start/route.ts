@@ -5,13 +5,16 @@ import {
     isOAuthProvider,
 } from '@/infrastructure/auth/oauth/providers';
 import { issueOAuthState } from '@/infrastructure/auth/oauth/state';
-import { sanitizeNextPath } from '@/lib/authRoutes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
 
 interface StartRouteParams {
     params: Promise<{ provider: string }>;
 }
 
-export async function GET(req: NextRequest, { params }: StartRouteParams) {
+export async function GET(
+    req: NextRequest,
+    { params }: StartRouteParams
+): Promise<NextResponse> {
     const { provider } = await params;
     if (!isOAuthProvider(provider)) {
         return NextResponse.redirect(

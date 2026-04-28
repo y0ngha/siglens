@@ -1,10 +1,8 @@
 import type { OAuthProvider } from '@y0ngha/siglens-core';
+import type { SupportedOAuthProvider } from '@/domain/types';
 import { googleOAuthAdapter } from './google';
 import { kakaoOAuthAdapter } from './kakao';
 import type { OAuthProviderAdapter } from './types';
-
-/** siglens 앱에서 현재 활성화된 OAuth provider. siglens-core 의 OAuthProvider 부분집합. */
-export type SupportedOAuthProvider = 'google' | 'kakao';
 
 const SUPPORTED_PROVIDERS: readonly SupportedOAuthProvider[] = [
     'google',
@@ -26,6 +24,7 @@ export function getOAuthAdapter(
 export function isOAuthProvider(
     value: string
 ): value is SupportedOAuthProvider {
+    // SUPPORTED_PROVIDERS is a readonly string-literal list; widening to string[] is only for includes().
     return (SUPPORTED_PROVIDERS as readonly string[]).includes(value);
 }
 

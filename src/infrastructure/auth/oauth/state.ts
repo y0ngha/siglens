@@ -18,6 +18,7 @@ interface StatePayload {
 
 function isStatePayload(value: unknown): value is StatePayload {
     if (typeof value !== 'object' || value === null) return false;
+    // typeof + null checks above guarantee a non-null object; Record widens property probing only.
     const candidate = value as Record<string, unknown>;
     return (
         typeof candidate.state === 'string' &&

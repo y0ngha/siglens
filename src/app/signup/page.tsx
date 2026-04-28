@@ -1,7 +1,7 @@
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { SignupForm } from '@/components/auth/SignupForm';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
-import { sanitizeNextPath } from '@/lib/authRoutes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { SITE_NAME } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';

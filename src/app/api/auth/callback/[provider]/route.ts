@@ -17,7 +17,7 @@ import {
     verifyOAuthState,
 } from '@/infrastructure/auth/oauth/state';
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
-import { sanitizeNextPath } from '@/lib/authRoutes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
 
 interface CallbackRouteParams {
     params: Promise<{ provider: string }>;
@@ -36,7 +36,10 @@ function redirectToLoginWithError(
     return response;
 }
 
-export async function GET(req: NextRequest, { params }: CallbackRouteParams) {
+export async function GET(
+    req: NextRequest,
+    { params }: CallbackRouteParams
+): Promise<NextResponse> {
     const { provider } = await params;
     if (!isOAuthProvider(provider)) {
         return redirectToLoginWithError(req, 'oauth_unknown');

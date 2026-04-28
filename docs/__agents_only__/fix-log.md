@@ -80,3 +80,12 @@
 - Violation: infrastructure/auth Server Action이 lib/authRoutes의 순수 redirect 검증 함수를 import
 - Rule: ARCHITECTURE.md 레이어 의존 방향 — infrastructure는 domain만 import 가능하며 lib import 금지
 - Context: loginAction.ts와 registerAction.ts가 `sanitizeNextPath`를 lib에서 가져와 레이어 방향을 위반. 순수 함수와 기본 redirect 상수를 domain/auth/redirect.ts로 이동.
+
+## [PR #390 | feat/369/auth-social | 2026-04-29]
+- Violation: 컴포넌트 파일이 infrastructure OAuth provider 타입을 직접 import
+- Rule: ARCHITECTURE.md — `.tsx` 컴포넌트 파일은 `@/infrastructure` 직접 import 금지
+- Context: SocialLoginButtons.tsx가 `SupportedOAuthProvider`를 infrastructure에서 가져와 레이어 의존 방향을 위반. 앱 공통 타입을 domain/types.ts로 이동하고 컴포넌트와 infrastructure가 domain 타입을 참조하도록 수정.
+
+- Violation: Route Handler GET 함수에 명시적 반환 타입 누락
+- Rule: CONVENTIONS.md — 비컴포넌트 함수에는 명시적 반환 타입 필수
+- Context: OAuth start/callback route의 GET 함수가 `Promise<NextResponse>`를 명시하지 않아 PR #389와 같은 반환 타입 누락 패턴이 반복됨.
