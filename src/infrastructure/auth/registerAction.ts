@@ -1,7 +1,7 @@
 'use server';
 
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import type { SignupFormState } from '@/domain/auth/formTypes';
+import { sanitizeNextPath } from '@/lib/authRoutes';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
@@ -10,11 +10,11 @@ import {
     loginUser,
     registerUser,
 } from '@y0ngha/siglens-core';
-import type { SignupFormState } from '@/domain/auth/formTypes';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 import { applyAuthCookie } from './applyAuthCookie';
 import { getAuthDatabaseClient } from './db';
 import { isSecureCookieEnv } from './sessionCookieOptions';
-import { sanitizeNextPath } from '@/lib/authRoutes';
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
@@ -23,9 +23,9 @@ export async function registerAction(
     _prev: SignupFormState,
     formData: FormData
 ): Promise<SignupFormState> {
-    const email = String(formData.get('email') ?? '');
-    const password = String(formData.get('password') ?? '');
-    const rawName = formData.get('name')?.toString().trim();
+    const email = String(formData.get('email') ?? '').trim();
+    const password = String(formData.get('password') ?? '').trim();
+    const rawName = String(formData.get('name') ?? '').trim();
     const name = rawName ? rawName : undefined;
     const next = sanitizeNextPath(formData.get('next')?.toString());
 
