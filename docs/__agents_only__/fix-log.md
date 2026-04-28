@@ -1,13 +1,14 @@
 # Fix Log
 
+## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
+- Violation: Next.js error.tsx 컴포넌트 props 인터페이스에 `error: Error & { digest?: string }` 누락
+- Rule: Next.js App Router 컨벤션 — error.tsx는 프레임워크가 `error`와 `reset` 두 prop을 모두 전달하므로 인터페이스에 양쪽 다 선언 필요
+- Context: src/app/login/error.tsx가 reset만 prop으로 선언하고 error를 누락. 표시에 사용하지 않더라도 타입 안전성을 위해 선언 추가.
+
 ## [Issue #369 round 1 | feat/369/auth-email | 2026-04-28]
 - Violation: components/auth/{LoginForm,SignupForm,LogoutButton}.tsx 가 infrastructure/auth/* Server Action을 직접 import
 - Rule: ARCHITECTURE.md — `.tsx` 컴포넌트 파일은 `@/infrastructure` 직접 import 금지. hook 파일(`hooks/`)에서만 fetch/Server Action 함수 import 허용 (queryFn/mutationFn 연결 목적)
 - Context: useActionState로 Server Action을 폼 액션으로 받는 패턴에서 .tsx에서 바로 import했음. components/hooks/{useLoginForm,useSignupForm,useLogout}.ts 로 분리해 .tsx는 훅을 통해서만 액션에 접근하도록 수정.
-
-- Violation: SignupForm.tsx에서 useActionState가 useState/useId 보다 먼저 선언됨
-- Rule: CONVENTIONS.md "Custom Hook Declaration Order" — useState → useRef → useQuery/useMutation/useActionState → derived → handler → useEffect
-- Context: 처음 작성 시 useActionState를 최상단에 두고 useState/useId가 뒤에 있었음. mutation-equivalent 훅(useActionState)이 useState 뒤에 오도록 재배치.
 
 ## [PR #384 round 3 | feat/372-377/siglens-core-migration | 2026-04-27]
 - Violation: 동일 모듈(`@y0ngha/siglens-core`)에서 중복 import 구문 (useAnalysisDerivedData.ts)

@@ -3,7 +3,8 @@ import {
     hasLetter,
     hasMinLength,
     hasNumber,
-} from './utils/passwordRules';
+} from '@/domain/auth/passwordRules';
+import { cn } from '@/lib/cn';
 
 interface PasswordStrengthHintProps {
     password: string;
@@ -37,9 +38,9 @@ export function PasswordStrengthHint({
                 return (
                     <li
                         key={rule.id}
-                        className={
+                        className={cn(
                             ok ? 'text-emerald-300' : 'text-secondary-500'
-                        }
+                        )}
                     >
                         <span aria-hidden>{ok ? '✓' : '○'}</span>
                         <span className="ml-1.5">{rule.label}</span>

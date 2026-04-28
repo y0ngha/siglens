@@ -4,8 +4,8 @@ import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
     findUserBySessionToken,
+    type AuthUserRecord,
 } from '@y0ngha/siglens-core';
-import type { AuthUserRecord } from '@y0ngha/siglens-core';
 import { getAuthDatabaseClient } from './db';
 
 /**

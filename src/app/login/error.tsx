@@ -3,6 +3,7 @@
 import Link from 'next/link';
 
 interface LoginErrorProps {
+    error: Error & { digest?: string };
     reset: () => void;
 }
 
