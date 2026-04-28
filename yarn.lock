@@ -7296,6 +7296,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"jose@npm:^6.2.3":
+  version: 6.2.3
+  resolution: "jose@npm:6.2.3"
+  checksum: 10c0/aa91bccba22cc84d86308f833749bcb0b00441e35c24e0ac79abeac5f76dc62d47bdef9c1da6a0c609f5da6478595f52b252085888b89dbdb163861e40ea4188
+  languageName: node
+  linkType: hard
+
 "js-tokens@npm:^3.0.0 || ^4.0.0, js-tokens@npm:^4.0.0":
   version: 4.0.0
   resolution: "js-tokens@npm:4.0.0"
@@ -10102,6 +10109,7 @@ __metadata:
     eslint-plugin-react-compiler: "npm:^19.1.0-rc.2"
     husky: "npm:^9.1.7"
     jest: "npm:^30.2.0"
+    jose: "npm:^6.2.3"
     lightweight-charts: "npm:^5.1.0"
     next: "npm:16.2.0"
     postcss-html: "npm:^1.8.0"
