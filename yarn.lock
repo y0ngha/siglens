@@ -3136,15 +3136,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@y0ngha/siglens-core@npm:^0.1.10":
-  version: 0.1.10
-  resolution: "@y0ngha/siglens-core@npm:0.1.10::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.1.10%2Fe949542f810942e6cc00797a2de4b2c09364e0a6"
+"@y0ngha/siglens-core@npm:^0.1.12":
+  version: 0.1.12
+  resolution: "@y0ngha/siglens-core@npm:0.1.12::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.1.12%2F8b889936da026af727ee2060d9b922d9788154a9"
+  dependencies:
+    bcryptjs: "npm:^3.0.3"
   peerDependencies:
     "@google/genai": ^1.50.1
     "@neondatabase/serverless": ^1.1.0
     "@upstash/redis": ^1.37.0
     drizzle-orm: ^0.45.2
-  checksum: 10c0/34c301244d8b572a76536ecd75e3d3a48cca46eb3acb0a73d004ef392f8c210ab963e22b241d3871542d76903629c03e9deed2b7b8fe1d7081b5cc8720160555
+  checksum: 10c0/0d46076d2f01b7d634024f2b1cf3adfbe10913a5719c607649a5a30776d5b429dfd49c591152f97719061f2028b74913e0aa1fab3980cd7a1f0a53ff8c579c64
   languageName: node
   linkType: hard
 
@@ -3601,6 +3603,15 @@ __metadata:
   version: 5.2.0
   resolution: "basic-ftp@npm:5.2.0"
   checksum: 10c0/a0f85c01deae0723021f9bf4a7be29378186fa8bba41e74ea11832fe74c187ce90c3599c3cc5ec936581cfd150020e79f4a9ed0ee9fb20b2308e69b045f3a059
+  languageName: node
+  linkType: hard
+
+"bcryptjs@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "bcryptjs@npm:3.0.3"
+  bin:
+    bcrypt: bin/bcrypt
+  checksum: 10c0/127c94699f07eab5fbbb89d600c3f0e36ae6fd001e028139740b41fffb62a23a2743523fb88f442ae3308a27d4843b97ccb9e436d78f5c5899be187d0972c6d5
   languageName: node
   linkType: hard
 
@@ -9978,7 +9989,7 @@ __metadata:
     "@types/react-dom": "npm:^19"
     "@upstash/redis": "npm:^1.37.0"
     "@vercel/functions": "npm:^3.4.3"
-    "@y0ngha/siglens-core": "npm:^0.1.10"
+    "@y0ngha/siglens-core": "npm:^0.1.12"
     babel-plugin-react-compiler: "npm:1.0.0"
     clsx: "npm:^2.1.1"
     dotenv-cli: "npm:^11.0.0"
