@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { SignupForm } from '@/components/auth/SignupForm';
+import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { sanitizeNextPath } from '@/lib/authRoutes';
 import { SITE_NAME } from '@/lib/seo';
 
@@ -35,6 +36,7 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
             }
         >
             <SignupForm next={next === '/' ? undefined : next} />
+            <SocialLoginButtons next={next === '/' ? undefined : next} />
         </AuthCardShell>
     );
 }

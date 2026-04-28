@@ -1,5 +1,10 @@
 # Fix Log
 
+## [Issue #369 PR-2 round 1 | feat/369/auth-social | 2026-04-28]
+- Violation: role="separator" 컨테이너 안에 텍스트 노드가 직접 들어감 (SocialLoginButtons.tsx)
+- Rule: WAI-ARIA — role="separator"는 시각적 구분선 역할로, 라벨이 필요한 경우 aria-label로 노출하고 자식 노드는 비워야 함. 시각용 "또는" 텍스트가 들어간 div는 role을 제거하고 aria-hidden으로 처리해 접근성 트리에서 분리하는 편이 명확함.
+- Context: 인증 폼과 소셜 버튼 사이의 시각적 구분선이 한국어 "또는" 텍스트를 자식으로 가지고 있어, 스크린 리더가 separator 역할 + 텍스트를 이중으로 안내할 가능성이 있었음. role을 제거하고 aria-hidden으로 변경.
+
 ## [PR #389 round 3 | feat/369/auth-email | 2026-04-28]
 - Violation: 비컴포넌트 함수에 명시적 반환 타입 누락 (proxy.ts, useCurrentUser.ts, useLoginForm.ts, useSignupForm.ts)
 - Rule: CONVENTIONS.md — 비컴포넌트 함수에는 명시적 반환 타입 필수
@@ -54,10 +59,6 @@
 - Violation: infrastructure try-catch 없이 Redis 연동 핵심 함수 호출
 - Rule: MISTAKES.md Domain Functions #2 (Silent fallback without exposing degradation)
 - Context: `tryAcquireReanalyzeCooldown` wrapper에서 Redis 장애 시 예외가 상위로 전파되어 서비스 중단 가능. graceful degradation으로 `{ ok: true }` 반환.
-
-- Violation: `getMarketSummaryAction.test.ts` fixture에서 `as unknown as` 이중 캐스트 사용
-- Rule: MISTAKES.md TypeScript #7 (as 타입 단언 대신 타입 가드 사용)
-- Context: 테스트 fixture가 실제 `MarketSummaryWithBriefing` 구조와 다른 형태(`{ indices, sectors }`)로 정의되어 있었음. 올바른 `{ summary: { indices, sectors }, briefing }` 구조로 수정.
 
 ## [PR #384 Round 2 | feat/372-377/siglens-core-migration | 2026-04-27]
 - Violation: WHY 주석 삭제 — EMA index 매핑 및 SQUEEZE_MOMENTUM_MIN_BARS 알고리즘 유도 주석 제거
