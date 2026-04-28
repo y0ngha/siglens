@@ -9,10 +9,10 @@ import {
     loginUser,
 } from '@y0ngha/siglens-core';
 import type { LoginFormState } from '@/domain/auth/formTypes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { applyAuthCookie } from './applyAuthCookie';
 import { getAuthDatabaseClient } from './db';
 import { isSecureCookieEnv } from './sessionCookieOptions';
-import { sanitizeNextPath } from '@/lib/authRoutes';
 
 export async function loginAction(
     _prev: LoginFormState,

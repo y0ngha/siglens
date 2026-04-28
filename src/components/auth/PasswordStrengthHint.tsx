@@ -39,7 +39,7 @@ export function PasswordStrengthHint({
                     <li
                         key={rule.id}
                         className={cn(
-                            ok ? 'text-emerald-300' : 'text-secondary-500'
+                            ok ? 'text-ui-success' : 'text-secondary-500'
                         )}
                     >
                         <span aria-hidden>{ok ? '✓' : '○'}</span>

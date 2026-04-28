@@ -11,8 +11,8 @@ import { cn } from '@/lib/cn';
 
 const TIER_DOT_COLOR: Record<Tier, string> = {
     free: 'bg-secondary-500',
-    member: 'bg-blue-500',
-    pro: 'bg-amber-400',
+    member: 'bg-primary-500',
+    pro: 'bg-ui-warning',
 };
 
 const TIER_LABEL: Record<Tier, string> = {

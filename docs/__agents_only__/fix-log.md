@@ -89,3 +89,7 @@
 - Rule: CONVENTIONS.md DRY / FF Cohesion — 동일 헬퍼는 단일 위치에서 export
 - Context: 두 테스트 파일에 같은 FormData 빌더 함수가 각각 정의됨. src/__tests__/utils/makeFormData.ts로 추출하여 import.
 
+## [PR #389 review comments | feat/369/auth-email | 2026-04-29]
+- Violation: infrastructure/auth Server Action이 lib/authRoutes의 순수 redirect 검증 함수를 import
+- Rule: ARCHITECTURE.md 레이어 의존 방향 — infrastructure는 domain만 import 가능하며 lib import 금지
+- Context: loginAction.ts와 registerAction.ts가 `sanitizeNextPath`를 lib에서 가져와 레이어 방향을 위반. 순수 함수와 기본 redirect 상수를 domain/auth/redirect.ts로 이동.

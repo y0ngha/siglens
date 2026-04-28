@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { LoginForm } from '@/components/auth/LoginForm';
-import { sanitizeNextPath } from '@/lib/authRoutes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { SITE_NAME } from '@/lib/seo';
 
 export const metadata: Metadata = {
