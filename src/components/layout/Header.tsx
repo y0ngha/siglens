@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/cn';
+import { HeaderUserMenu } from '@/components/layout/HeaderUserMenu';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { SITE_NAME } from '@/lib/seo';
 
@@ -66,6 +67,9 @@ export function Header() {
                 </nav>
                 <div className="ml-auto flex w-full max-w-40 justify-end sm:max-w-xs">
                     <TickerAutocomplete size="sm" />
+                </div>
+                <div className="flex shrink-0 items-center">
+                    <HeaderUserMenu />
                 </div>
             </div>
         </header>

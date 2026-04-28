@@ -48,12 +48,13 @@ const TOC: readonly TocItem[] = [
     { id: 'effect', label: '제3조 약관의 효력 및 변경' },
     { id: 'service', label: '제4조 서비스의 제공 및 변경' },
     { id: 'disclaimer', label: '제5조 투자 정보에 관한 면책' },
-    { id: 'obligations', label: '제6조 이용자의 의무' },
-    { id: 'ip', label: '제7조 지적재산권' },
-    { id: 'limitation', label: '제8조 책임의 제한' },
-    { id: 'privacy', label: '제9조 개인정보의 보호' },
-    { id: 'governing-law', label: '제10조 준거법 및 관할' },
-    { id: 'contact', label: '제11조 문의처' },
+    { id: 'account', label: '제6조 회원가입 및 계정 관리' },
+    { id: 'obligations', label: '제7조 이용자의 의무' },
+    { id: 'ip', label: '제8조 지적재산권' },
+    { id: 'limitation', label: '제9조 책임의 제한' },
+    { id: 'privacy', label: '제10조 개인정보의 보호' },
+    { id: 'governing-law', label: '제11조 준거법 및 관할' },
+    { id: 'contact', label: '제12조 문의처' },
 ];
 
 export const metadata: Metadata = {
@@ -247,7 +248,44 @@ export default function TermsPage() {
                     </p>
                 </PolicySection>
 
-                <PolicySection id="obligations" title="제6조 (이용자의 의무)">
+                <PolicySection
+                    id="account"
+                    title="제6조 (회원가입 및 계정 관리)"
+                >
+                    <p>
+                        서비스의 모든 기본 기능은 회원가입이나 로그인 없이
+                        이용할 수 있으며, 회원가입은 이용자의 선택에 의한
+                        옵션입니다. 회원가입 시 이용자는 서비스가 제공하는
+                        등급(tier) 기반의 추가 혜택을 이용할 수 있습니다.
+                    </p>
+                    <p>
+                        회원가입 절차에서 이용자는 다음 사항을 준수해야 합니다.
+                    </p>
+                    <ul className="list-disc space-y-1.5 pl-5">
+                        <li>
+                            정확한 이메일 주소를 제공하여야 하며, 타인의 정보를
+                            도용하거나 허위 정보를 제공할 수 없습니다.
+                        </li>
+                        <li>
+                            비밀번호는 본인이 직접 안전하게 보관할 책임이
+                            있으며, 제3자에게 양도하거나 공유할 수 없습니다.
+                            비밀번호 유출로 발생하는 손해의 책임은 이용자
+                            본인에게 있습니다.
+                        </li>
+                        <li>
+                            소셜 로그인을 이용하는 경우, 해당 OAuth 제공자(예
+                            Google · Kakao · Apple)의 약관 또한 함께 적용됩니다.
+                        </li>
+                    </ul>
+                    <p>
+                        회원 탈퇴는 별도의 절차로 제공될 예정이며, 그 시점까지는
+                        제12조 문의처로 탈퇴를 요청해주시면 지체 없이
+                        처리합니다. 탈퇴 시 저장된 회원 정보는 관련 법령상 보존
+                        의무가 있는 경우를 제외하고 즉시 파기됩니다.
+                    </p>
+                </PolicySection>
+
+                <PolicySection id="obligations" title="제7조 (이용자의 의무)">
                     <p>이용자는 다음 각 호의 행위를 하여서는 안 됩니다.</p>
                     <ul className="list-disc space-y-1.5 pl-5">
                         <li>
@@ -262,11 +300,15 @@ export default function TermsPage() {
                             운영자 또는 제3자의 지적재산권, 기타 권리를 침해하는
                             행위
                         </li>
+                        <li>
+                            타인의 계정을 도용하거나, 본인의 계정·비밀번호를
+                            제3자가 사용하도록 허용하는 행위
+                        </li>
                         <li>법령, 공공질서 또는 미풍양속에 반하는 행위</li>
                     </ul>
                 </PolicySection>
 
-                <PolicySection id="ip" title="제7조 (지적재산권)">
+                <PolicySection id="ip" title="제8조 (지적재산권)">
                     <p>
                         서비스에 포함된 텍스트, 이미지, 소프트웨어, 상표, 로고
                         등 모든 저작물에 관한 저작권 및 기타 지적재산권은 운영자
@@ -280,7 +322,7 @@ export default function TermsPage() {
                     </p>
                 </PolicySection>
 
-                <PolicySection id="limitation" title="제8조 (책임의 제한)">
+                <PolicySection id="limitation" title="제9조 (책임의 제한)">
                     <p>
                         운영자는 천재지변, 전쟁, 기간통신사업자의 서비스 중지,
                         해킹 등 운영자가 통제할 수 없는 사유로 서비스를 제공할
@@ -300,7 +342,7 @@ export default function TermsPage() {
                     </p>
                 </PolicySection>
 
-                <PolicySection id="privacy" title="제9조 (개인정보의 보호)">
+                <PolicySection id="privacy" title="제10조 (개인정보의 보호)">
                     <p>
                         운영자는 이용자의 개인정보를 중요시하며 「개인정보
                         보호법」 등 관련 법령을 준수하기 위해 노력합니다.
@@ -318,7 +360,7 @@ export default function TermsPage() {
 
                 <PolicySection
                     id="governing-law"
-                    title="제10조 (준거법 및 관할)"
+                    title="제11조 (준거법 및 관할)"
                 >
                     <p>
                         본 약관의 해석 및 운영자와 이용자 간의 분쟁에 관하여는
@@ -332,7 +374,7 @@ export default function TermsPage() {
                     </p>
                 </PolicySection>
 
-                <PolicySection id="contact" title="제11조 (문의처)">
+                <PolicySection id="contact" title="제12조 (문의처)">
                     <p>
                         본 약관 및 서비스 이용에 관한 문의는 다음의 연락처로
                         보내주시기 바랍니다.

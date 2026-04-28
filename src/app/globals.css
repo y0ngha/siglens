@@ -182,3 +182,15 @@ body {
     opacity: 0.35;
     mask-image: radial-gradient(ellipse 80% 60% at 50% 30%, black, transparent);
 }
+
+@keyframes fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
