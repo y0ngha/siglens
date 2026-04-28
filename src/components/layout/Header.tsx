@@ -13,7 +13,7 @@ export function Header() {
     const pathname = usePathname();
     return (
         <header
-            className="bg-secondary-900/90 supports-backdrop-filter:bg-secondary-900/75 border-secondary-800 sticky top-0 z-40 border-b backdrop-blur-md"
+            className="bg-secondary-900/90 supports-backdrop-filter:bg-secondary-900/75 border-secondary-800 sticky top-0 z-50 border-b backdrop-blur-md"
             role="banner"
         >
             <div className="flex h-14 items-center gap-2 px-3 sm:gap-4 sm:px-6">
@@ -64,7 +64,7 @@ export function Header() {
                         );
                     })}
                 </nav>
-                <div className="ml-auto flex w-full max-w-40 justify-end sm:max-w-xs">
+                <div className="ml-auto flex w-full min-w-0 max-w-40 justify-end sm:max-w-xs">
                     <TickerAutocomplete size="sm" />
                 </div>
             </div>
