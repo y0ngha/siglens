@@ -1,36 +1,37 @@
 # Fix Log
 
-## [PR #384 round 3 | feat/372-377/siglens-core-migration | 2026-04-27]
-- Violation: 동일 모듈(`@y0ngha/siglens-core`)에서 중복 import 구문 (useAnalysisDerivedData.ts)
-- Rule: MISTAKES.md Components #0 — ESLint `import/no-duplicates` 규칙: 같은 모듈에서 단일 import 구문으로 통합
-- Context: `import type`과 `import` 두 개의 별도 구문으로 분리되어 있었음. inline `type` 한정자를 사용해 단일 구문으로 병합.
+## [Issue #369 PR-2 round 1 | feat/369/auth-social | 2026-04-28]
+- Violation: role="separator" 컨테이너 안에 텍스트 노드가 직접 들어감 (SocialLoginButtons.tsx)
+- Rule: WAI-ARIA — role="separator"는 시각적 구분선 역할로, 라벨이 필요한 경우 aria-label로 노출하고 자식 노드는 비워야 함. 시각용 "또는" 텍스트가 들어간 div는 role을 제거하고 aria-hidden으로 처리해 접근성 트리에서 분리하는 편이 명확함.
+- Context: 인증 폼과 소셜 버튼 사이의 시각적 구분선이 한국어 "또는" 텍스트를 자식으로 가지고 있어, 스크린 리더가 separator 역할 + 텍스트를 이중으로 안내할 가능성이 있었음. role을 제거하고 aria-hidden으로 변경.
 
-## [PR #384 round 2 | feat/372-377/siglens-core-migration | 2026-04-27]
-- Violation: `MarketSummaryActionResult` 인터페이스 dead code 잔존 (domain/types.ts)
-- Rule: MISTAKES.md Coding Paradigm #4 — 효과 없는 코드 제거
-- Context: `getMarketSummaryAction` 반환 타입이 `MarketSummaryWithBriefing`으로 변경되었으나 `MarketSummaryActionResult`가 미삭제 상태로 남아 중복 타입 혼란 유발.
+## [PR #389 round 3 | feat/369/auth-email | 2026-04-28]
+- Violation: 비컴포넌트 함수에 명시적 반환 타입 누락 (proxy.ts, useCurrentUser.ts, useLoginForm.ts, useSignupForm.ts)
+- Rule: CONVENTIONS.md — 비컴포넌트 함수에는 명시적 반환 타입 필수
+- Context: proxy 함수 및 커스텀 훅 3개에서 반환 타입 생략. 같은 PR의 useLogout만 UseLogoutResult 인터페이스를 명시한 일관성 결여. UseQueryResult / ReturnType<typeof useActionState> 형태로 명시 추가.
 
-- Violation: domain/types.ts 2줄 주석 블록
-- Rule: CONVENTIONS.md — 다중 줄 주석 블록 금지, 한 줄로 압축
-- Context: 파일 최상단 설명 주석이 2줄로 작성됨.
+- Violation: role="menu" 컨테이너 내부 인터랙티브 자식에 role="menuitem" 누락 (LogoutButton.tsx)
+- Rule: WAI-ARIA — role="menu"의 Required Owned Elements는 menuitem/menuitemcheckbox/menuitemradio 중 하나여야 함
+- Context: HeaderUserMenu의 role="menu" 컨테이너 안에 위치한 LogoutButton이 단순 <button>이라 스크린 리더가 메뉴 항목으로 인식하지 못함.
 
-## [PR #384 | feat/372-377/siglens-core-migration | 2026-04-27]
-- Violation: fire-and-forget Server Action에 try-catch 없음 (cancelAnalysisJobAction.ts)
-- Rule: MISTAKES.md Fire-and-Forget #2 (fire-and-forget Server Action은 에러를 삼켜야 함)
-- Context: 호출측 useAnalysis.ts에서 `void cancelAnalysisJobAction(jobId)`로 호출하므로 fire-and-forget 패턴인데, 에러를 그대로 전파하여 unhandled Promise rejection 발생 가능.
+- Violation: required field로 인해 동일 오류 메시지가 폼 필드와 폼 레벨에 이중 표시되는 형태 모델링 (formTypes.ts, registerAction.ts)
+- Rule: FF.md Cohesion — 폼 상태 모델은 표시 위치를 단일 결정 가능해야 함
+- Context: SignupFormState.error.field가 required라 auto_login_failed 분기에서 'email'을 강제로 채웠고, SignupForm이 emailError + formError 양쪽으로 같은 메시지를 표시. field를 optional로 변경하고 auto_login_failed에서 omit.
 
-- Violation: @vercel/functions를 import하는 infrastructure 파일 테스트에서 jest.mock('@vercel/functions') 누락 (5개 파일)
-- Rule: MISTAKES.md Tests #11 (외부 패키지를 infrastructure 파일에 추가할 때 모든 대응 테스트 파일에 mock 추가)
-- Context: submitAnalysisAction, pollAnalysisAction, pollBriefingAction, submitBriefingAction, searchTickerAction 테스트 파일이 @vercel/functions mock 없이 작성됨.
+- Violation: 멀티라인 JSDoc 주석 블록 (proxy.ts, infrastructure/auth/{db,getCurrentUser,applyAuthCookie,sessionCookieOptions}.ts)
+- Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
+- Context: 인증 어댑터 파일들이 2~4줄 JSDoc 블록으로 작성됨. 한 줄로 압축.
 
-## [PR #384 | feat/372-377/siglens-core-migration | 2026-04-27]
-- Violation: infrastructure try-catch 없이 Redis 연동 핵심 함수 호출
-- Rule: MISTAKES.md Domain Functions #2 (Silent fallback without exposing degradation)
-- Context: `tryAcquireReanalyzeCooldown` wrapper에서 Redis 장애 시 예외가 상위로 전파되어 서비스 중단 가능. graceful degradation으로 `{ ok: true }` 반환.
 
-- Violation: `getMarketSummaryAction.test.ts` fixture에서 `as unknown as` 이중 캐스트 사용
-- Rule: MISTAKES.md TypeScript #7 (as 타입 단언 대신 타입 가드 사용)
-- Context: 테스트 fixture가 실제 `MarketSummaryWithBriefing` 구조와 다른 형태(`{ indices, sectors }`)로 정의되어 있었음. 올바른 `{ summary: { indices, sectors }, briefing }` 구조로 수정.
+## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
+- Violation: Next.js error.tsx 컴포넌트 props 인터페이스에 `error: Error & { digest?: string }` 누락
+- Rule: Next.js App Router 컨벤션 — error.tsx는 프레임워크가 `error`와 `reset` 두 prop을 모두 전달하므로 인터페이스에 양쪽 다 선언 필요
+- Context: src/app/login/error.tsx가 reset만 prop으로 선언하고 error를 누락. 표시에 사용하지 않더라도 타입 안전성을 위해 선언 추가.
+
+## [Issue #369 round 1 | feat/369/auth-email | 2026-04-28]
+- Violation: components/auth/{LoginForm,SignupForm,LogoutButton}.tsx 가 infrastructure/auth/* Server Action을 직접 import
+- Rule: ARCHITECTURE.md — `.tsx` 컴포넌트 파일은 `@/infrastructure` 직접 import 금지. hook 파일(`hooks/`)에서만 fetch/Server Action 함수 import 허용 (queryFn/mutationFn 연결 목적)
+- Context: useActionState로 Server Action을 폼 액션으로 받는 패턴에서 .tsx에서 바로 import했음. components/hooks/{useLoginForm,useSignupForm,useLogout}.ts 로 분리해 .tsx는 훅을 통해서만 액션에 접근하도록 수정.
 
 ## [PR #384 Round 2 | feat/372-377/siglens-core-migration | 2026-04-27]
 - Violation: WHY 주석 삭제 — EMA index 매핑 및 SQUEEZE_MOMENTUM_MIN_BARS 알고리즘 유도 주석 제거
@@ -43,3 +44,48 @@
 
 ## [Round 1 — Skipped findings]
 - `src/app/[symbol]/page.tsx:144` and `src/app/market/page.tsx:13` (recommended): RSC에서 siglens-core 함수를 직접 호출하는 패턴은 기존 관례이며 이번 PR이 도입한 변경이 아님. RSC는 underlying async 함수를 직접 호출하고, 클라이언트용 Server Action wrapper는 별도 hook 경로로 사용하는 분리 패턴이 의도됨. PR 범위 밖이므로 skip.
+
+## [PR #390 | feat/369/auth-social | 2026-04-28]
+- Violation: OAuth 콜백에서 쿠키에 저장된 next 경로를 검증 없이 그대로 redirect로 사용
+- Rule: Open Redirect 방어 — 사용자 변조 가능 입력은 사용 시점마다 sanitize (defense-in-depth)
+- Context: state 쿠키는 HMAC 서명 없이 base64url JSON으로만 저장되므로 next 값이 변조 가능. /start에서 한 번 sanitize했더라도 콜백에서 redirect 직전에 sanitizeNextPath를 다시 적용해야 안전.
+
+## [PR #390 | feat/369/auth-social | 2026-04-28]
+- Violation: 외부 OAuth 토큰/유저 응답의 .json() 파싱 실패가 500 에러로 노출됨
+- Rule: 시스템 경계(외부 API)의 예측 불가능한 응답은 try/catch로 감싸 결과 객체로 변환
+- Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
+
+## [PR #389 | feat/369/auth-email | 2026-04-29]
+- Violation: registerAction이 password에 .trim() 적용, loginAction은 trim 없이 사용 — 회원가입 시 trim된 비밀번호로 해시되어 로그인 시 verify 실패
+- Rule: FF.md Predictability — 동일 입력에 대한 동일 처리 보장; 양 액션 간 비대칭 처리 금지
+- Context: 사용자가 비밀번호에 의도적/비의도적 공백 포함 가입 시 로그인 불가 버그. password는 양쪽 모두 trim 제거(원본 유지), email은 양쪽 모두 trim 적용으로 통일.
+
+- Violation: bg-slate-950, bg-slate-900/80 등 Tailwind 기본 클래스 직접 사용 (DESIGN.md 시맨틱 토큰 미사용)
+- Rule: DESIGN.md 사용 규칙 — bg-secondary-* 시맨틱 토큰 사용; 토큰에 없는 임의 클래스 금지
+- Context: AuthCardShell, AuthFieldGroup, PasswordField, login/error.tsx에서 bg-slate-* 사용. bg-secondary-* 토큰으로 통일.
+
+- Violation: text-rose-*, bg-rose-*, border-rose-*, text-amber-* 등 미정의 색상 토큰을 UI 검증 상태에 사용
+- Rule: DESIGN.md UI Color — 위험/경고는 ui-danger, ui-warning 토큰 사용
+- Context: Auth 폼의 에러/CapsLock 표시에 rose/amber 직접 사용. ui-danger, ui-warning 토큰으로 교체.
+
+- Violation: Primary 버튼 hover 색상 hover:bg-blue-500 (밝아짐) — DESIGN.md는 hover:bg-blue-700 (어두워짐) 명시
+- Rule: DESIGN.md Primary Color 사용처 — 버튼(primary) bg-blue-600 hover:bg-blue-700
+- Context: SubmitButton, login/error 다시시도 버튼, HeaderUserMenu 회원가입 버튼이 hover로 밝아지는 방향. DESIGN.md 규약대로 어두워지도록 수정.
+
+- Violation: makeFormData 헬퍼가 loginAction.test.ts와 registerAction.test.ts에 동일 정의 중복
+- Rule: CONVENTIONS.md DRY / FF Cohesion — 동일 헬퍼는 단일 위치에서 export
+- Context: 두 테스트 파일에 같은 FormData 빌더 함수가 각각 정의됨. src/__tests__/utils/makeFormData.ts로 추출하여 import.
+
+## [PR #389 review comments | feat/369/auth-email | 2026-04-29]
+- Violation: infrastructure/auth Server Action이 lib/authRoutes의 순수 redirect 검증 함수를 import
+- Rule: ARCHITECTURE.md 레이어 의존 방향 — infrastructure는 domain만 import 가능하며 lib import 금지
+- Context: loginAction.ts와 registerAction.ts가 `sanitizeNextPath`를 lib에서 가져와 레이어 방향을 위반. 순수 함수와 기본 redirect 상수를 domain/auth/redirect.ts로 이동.
+
+## [PR #390 | feat/369/auth-social | 2026-04-29]
+- Violation: 컴포넌트 파일이 infrastructure OAuth provider 타입을 직접 import
+- Rule: ARCHITECTURE.md — `.tsx` 컴포넌트 파일은 `@/infrastructure` 직접 import 금지
+- Context: SocialLoginButtons.tsx가 `SupportedOAuthProvider`를 infrastructure에서 가져와 레이어 의존 방향을 위반. 앱 공통 타입을 domain/types.ts로 이동하고 컴포넌트와 infrastructure가 domain 타입을 참조하도록 수정.
+
+- Violation: Route Handler GET 함수에 명시적 반환 타입 누락
+- Rule: CONVENTIONS.md — 비컴포넌트 함수에는 명시적 반환 타입 필수
+- Context: OAuth start/callback route의 GET 함수가 `Promise<NextResponse>`를 명시하지 않아 PR #389와 같은 반환 타입 누락 패턴이 반복됨.
