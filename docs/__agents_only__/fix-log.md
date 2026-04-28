@@ -36,30 +36,6 @@
 - Rule: ARCHITECTURE.md — `.tsx` 컴포넌트 파일은 `@/infrastructure` 직접 import 금지. hook 파일(`hooks/`)에서만 fetch/Server Action 함수 import 허용 (queryFn/mutationFn 연결 목적)
 - Context: useActionState로 Server Action을 폼 액션으로 받는 패턴에서 .tsx에서 바로 import했음. components/hooks/{useLoginForm,useSignupForm,useLogout}.ts 로 분리해 .tsx는 훅을 통해서만 액션에 접근하도록 수정.
 
-## [PR #384 round 3 | feat/372-377/siglens-core-migration | 2026-04-27]
-- Violation: 동일 모듈(`@y0ngha/siglens-core`)에서 중복 import 구문 (useAnalysisDerivedData.ts)
-- Rule: MISTAKES.md Components #0 — ESLint `import/no-duplicates` 규칙: 같은 모듈에서 단일 import 구문으로 통합
-- Context: `import type`과 `import` 두 개의 별도 구문으로 분리되어 있었음. inline `type` 한정자를 사용해 단일 구문으로 병합.
-
-## [PR #384 round 2 | feat/372-377/siglens-core-migration | 2026-04-27]
-- Violation: `MarketSummaryActionResult` 인터페이스 dead code 잔존 (domain/types.ts)
-- Rule: MISTAKES.md Coding Paradigm #4 — 효과 없는 코드 제거
-- Context: `getMarketSummaryAction` 반환 타입이 `MarketSummaryWithBriefing`으로 변경되었으나 `MarketSummaryActionResult`가 미삭제 상태로 남아 중복 타입 혼란 유발.
-
-## [PR #384 | feat/372-377/siglens-core-migration | 2026-04-27]
-- Violation: fire-and-forget Server Action에 try-catch 없음 (cancelAnalysisJobAction.ts)
-- Rule: MISTAKES.md Fire-and-Forget #2 (fire-and-forget Server Action은 에러를 삼켜야 함)
-- Context: 호출측 useAnalysis.ts에서 `void cancelAnalysisJobAction(jobId)`로 호출하므로 fire-and-forget 패턴인데, 에러를 그대로 전파하여 unhandled Promise rejection 발생 가능.
-
-- Violation: @vercel/functions를 import하는 infrastructure 파일 테스트에서 jest.mock('@vercel/functions') 누락 (5개 파일)
-- Rule: MISTAKES.md Tests #11 (외부 패키지를 infrastructure 파일에 추가할 때 모든 대응 테스트 파일에 mock 추가)
-- Context: submitAnalysisAction, pollAnalysisAction, pollBriefingAction, submitBriefingAction, searchTickerAction 테스트 파일이 @vercel/functions mock 없이 작성됨.
-
-## [PR #384 | feat/372-377/siglens-core-migration | 2026-04-27]
-- Violation: infrastructure try-catch 없이 Redis 연동 핵심 함수 호출
-- Rule: MISTAKES.md Domain Functions #2 (Silent fallback without exposing degradation)
-- Context: `tryAcquireReanalyzeCooldown` wrapper에서 Redis 장애 시 예외가 상위로 전파되어 서비스 중단 가능. graceful degradation으로 `{ ok: true }` 반환.
-
 ## [PR #384 Round 2 | feat/372-377/siglens-core-migration | 2026-04-27]
 - Violation: WHY 주석 삭제 — EMA index 매핑 및 SQUEEZE_MOMENTUM_MIN_BARS 알고리즘 유도 주석 제거
 - Rule: CLAUDE.md 코멘트 규칙 ("WHY is non-obvious" 주석은 유지)
@@ -71,3 +47,13 @@
 
 ## [Round 1 — Skipped findings]
 - `src/app/[symbol]/page.tsx:144` and `src/app/market/page.tsx:13` (recommended): RSC에서 siglens-core 함수를 직접 호출하는 패턴은 기존 관례이며 이번 PR이 도입한 변경이 아님. RSC는 underlying async 함수를 직접 호출하고, 클라이언트용 Server Action wrapper는 별도 hook 경로로 사용하는 분리 패턴이 의도됨. PR 범위 밖이므로 skip.
+
+## [PR #390 | feat/369/auth-social | 2026-04-28]
+- Violation: OAuth 콜백에서 쿠키에 저장된 next 경로를 검증 없이 그대로 redirect로 사용
+- Rule: Open Redirect 방어 — 사용자 변조 가능 입력은 사용 시점마다 sanitize (defense-in-depth)
+- Context: state 쿠키는 HMAC 서명 없이 base64url JSON으로만 저장되므로 next 값이 변조 가능. /start에서 한 번 sanitize했더라도 콜백에서 redirect 직전에 sanitizeNextPath를 다시 적용해야 안전.
+
+## [PR #390 | feat/369/auth-social | 2026-04-28]
+- Violation: 외부 OAuth 토큰/유저 응답의 .json() 파싱 실패가 500 에러로 노출됨
+- Rule: 시스템 경계(외부 API)의 예측 불가능한 응답은 try/catch로 감싸 결과 객체로 변환
+- Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.

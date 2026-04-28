@@ -50,7 +50,12 @@ export const googleOAuthAdapter: OAuthProviderAdapter = {
         });
         if (!tokenResponse.ok)
             return { ok: false, reason: 'token_exchange_failed' };
-        const tokenJson = (await tokenResponse.json()) as GoogleTokenResponse;
+        let tokenJson: GoogleTokenResponse;
+        try {
+            tokenJson = (await tokenResponse.json()) as GoogleTokenResponse;
+        } catch {
+            return { ok: false, reason: 'token_exchange_failed' };
+        }
         if (!tokenJson.access_token)
             return { ok: false, reason: 'token_exchange_failed' };
 
@@ -59,8 +64,12 @@ export const googleOAuthAdapter: OAuthProviderAdapter = {
         });
         if (!userinfoResponse.ok)
             return { ok: false, reason: 'profile_fetch_failed' };
-        const profile =
-            (await userinfoResponse.json()) as GoogleUserInfoResponse;
+        let profile: GoogleUserInfoResponse;
+        try {
+            profile = (await userinfoResponse.json()) as GoogleUserInfoResponse;
+        } catch {
+            return { ok: false, reason: 'profile_fetch_failed' };
+        }
         if (!profile.sub || !profile.email)
             return { ok: false, reason: 'email_missing' };
 

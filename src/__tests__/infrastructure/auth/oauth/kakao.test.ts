@@ -141,6 +141,32 @@ describe('kakaoOAuthAdapter', () => {
         ).resolves.toEqual({ ok: false, reason: 'email_missing' });
     });
 
+    it('token JSON 파싱 실패 시 token_exchange_failed', async () => {
+        global.fetch = jest.fn(
+            async () => new Response('not-json', { status: 200 })
+        ) as never;
+        await expect(
+            kakaoOAuthAdapter.exchangeCodeForProfile({
+                code: 'c',
+                redirectUri: REDIRECT_URI,
+            })
+        ).resolves.toEqual({ ok: false, reason: 'token_exchange_failed' });
+    });
+
+    it('user JSON 파싱 실패 시 profile_fetch_failed', async () => {
+        const calls = [
+            jsonResponse(200, { access_token: 'tok' }),
+            new Response('not-json', { status: 200 }),
+        ];
+        global.fetch = jest.fn(async () => calls.shift()!) as never;
+        await expect(
+            kakaoOAuthAdapter.exchangeCodeForProfile({
+                code: 'c',
+                redirectUri: REDIRECT_URI,
+            })
+        ).resolves.toEqual({ ok: false, reason: 'profile_fetch_failed' });
+    });
+
     it('성공 시 SocialLoginUserInput을 반환한다', async () => {
         const calls = [
             jsonResponse(200, { access_token: 'tok' }),

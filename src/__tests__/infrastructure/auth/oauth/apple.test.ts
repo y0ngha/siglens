@@ -115,6 +115,19 @@ describe('appleOAuthAdapter', () => {
         ).resolves.toEqual({ ok: false, reason: 'token_exchange_failed' });
     });
 
+    it('token JSON 파싱 실패 시 token_exchange_failed', async () => {
+        setupSignJWTSuccess();
+        global.fetch = jest.fn(
+            async () => new Response('not-json', { status: 200 })
+        ) as never;
+        await expect(
+            appleOAuthAdapter.exchangeCodeForProfile({
+                code: 'c',
+                redirectUri: REDIRECT_URI,
+            })
+        ).resolves.toEqual({ ok: false, reason: 'token_exchange_failed' });
+    });
+
     it('id_token 디코드 실패 시 profile_fetch_failed', async () => {
         setupSignJWTSuccess();
         global.fetch = jest.fn(async () =>

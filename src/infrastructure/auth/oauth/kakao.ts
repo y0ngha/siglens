@@ -53,7 +53,12 @@ export const kakaoOAuthAdapter: OAuthProviderAdapter = {
         });
         if (!tokenResponse.ok)
             return { ok: false, reason: 'token_exchange_failed' };
-        const tokenJson = (await tokenResponse.json()) as KakaoTokenResponse;
+        let tokenJson: KakaoTokenResponse;
+        try {
+            tokenJson = (await tokenResponse.json()) as KakaoTokenResponse;
+        } catch {
+            return { ok: false, reason: 'token_exchange_failed' };
+        }
         if (!tokenJson.access_token)
             return { ok: false, reason: 'token_exchange_failed' };
 
@@ -62,7 +67,12 @@ export const kakaoOAuthAdapter: OAuthProviderAdapter = {
         });
         if (!userResponse.ok)
             return { ok: false, reason: 'profile_fetch_failed' };
-        const user = (await userResponse.json()) as KakaoUserResponse;
+        let user: KakaoUserResponse;
+        try {
+            user = (await userResponse.json()) as KakaoUserResponse;
+        } catch {
+            return { ok: false, reason: 'profile_fetch_failed' };
+        }
         const account = user.kakao_account;
         if (typeof user.id !== 'number' || !account?.email)
             return { ok: false, reason: 'email_missing' };

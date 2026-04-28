@@ -74,7 +74,12 @@ export const appleOAuthAdapter: OAuthProviderAdapter = {
         });
         if (!tokenResponse.ok)
             return { ok: false, reason: 'token_exchange_failed' };
-        const tokenJson = (await tokenResponse.json()) as AppleTokenResponse;
+        let tokenJson: AppleTokenResponse;
+        try {
+            tokenJson = (await tokenResponse.json()) as AppleTokenResponse;
+        } catch {
+            return { ok: false, reason: 'token_exchange_failed' };
+        }
         if (!tokenJson.id_token)
             return { ok: false, reason: 'token_exchange_failed' };
 

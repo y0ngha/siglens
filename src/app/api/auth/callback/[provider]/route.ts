@@ -17,6 +17,7 @@ import {
     verifyOAuthState,
 } from '@/infrastructure/auth/oauth/state';
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
+import { sanitizeNextPath } from '@/lib/authRoutes';
 
 interface CallbackRouteParams {
     params: Promise<{ provider: string }>;
@@ -83,7 +84,9 @@ export async function GET(req: NextRequest, { params }: CallbackRouteParams) {
         return redirectToLoginWithError(req, 'oauth_profile_invalid');
     }
 
-    const response = NextResponse.redirect(new URL(stateResult.next, req.url));
+    const response = NextResponse.redirect(
+        new URL(sanitizeNextPath(stateResult.next), req.url)
+    );
     response.cookies.set(applyAuthCookie(result.cookie));
     response.cookies.set(expiredOAuthStateCookie());
     return response;
