@@ -11,6 +11,29 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ## Coding Paradigm
 
 ```
+0. Non-component function or Route Handler missing explicit return type
+   → All functions outside component render scope must declare return type explicitly
+   → Applies to Server Actions, Route Handlers (GET/POST), custom hooks, infrastructure functions
+   → Prevents type inference errors and makes API contracts explicit
+   ❌ async function loginAction(data: FormData) { ... }  // no Promise<Result> declaration
+   ❌ export async function GET(req: Request) { ... }  // no Promise<NextResponse> declaration
+   ❌ const useCurrentUser = () => { ... }  // no UseQueryResult explicit return
+   ✅ async function loginAction(data: FormData): Promise<LoginResult> { ... }
+   ✅ export async function GET(req: Request): Promise<NextResponse> { ... }
+   ✅ const useCurrentUser = (): UseQueryResult<User, Error> => { ... }
+
+0.5. Tailwind color tokens used directly; design system tokens not applied
+   → All colors must come from src/lib/design/tailwind-config.ts semantic tokens
+   → Never use base Tailwind colors (blue-*, slate-*, rose-*, amber-*) directly in JSX className
+   → Special colors (brand-kakao) must be registered as tokens in tailwind.config.ts before use
+   ❌ className="bg-blue-600 hover:bg-blue-700"  // base Tailwind color
+   ❌ className="bg-[#FEE500]"  // arbitrary color inline
+   ❌ className="text-rose-600 bg-amber-100"  // undefined design tokens
+   ✅ className="bg-primary-600 hover:bg-primary-700"  // semantic primary token
+   ✅ className="bg-secondary-950"  // secondary token
+   ✅ className="text-ui-danger"  // UI semantic token
+   ✅ className="bg-brand-kakao"  // brand token registered in tailwind.config.ts
+
 0. Concurrent fetch without respecting provider rate limits
    → Always use fetchInChunks or sequential await for multiple API calls
    → Never use Promise.all/Promise.allSettled when calls exceed FETCH_CONCURRENCY threshold
@@ -713,6 +736,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ## Architecture
 
 ```
+0. Component (.tsx) files importing directly from infrastructure or infrastructure types
+   → `.tsx` component files are prohibited from importing @/infrastructure modules or types
+   → Hook files (`hooks/*.ts`) may import fetch/Server Action functions from infrastructure for queryFn/mutationFn use only
+   → Component files must receive all data/actions through hook abstractions
+   ❌ LoginForm.tsx: `import { loginAction } from '@/infrastructure/auth'`  // direct infrastructure import in .tsx
+   ❌ SocialLoginButtons.tsx: `import { SupportedOAuthProvider } from '@/infrastructure/oauth'`  // infrastructure type in .tsx
+   ✅ LoginForm.tsx: `import { useLoginForm } from '@/components/hooks/useLoginForm'`  // hook abstraction
+   ✅ Hook file (hooks/useLoginForm.ts) imports infrastructure; component uses hook only
+   ✅ App-layer RSC files may import infrastructure (infrastructure ← app direction allowed)
+
 1. Type interfaces defined in implementation files instead of domain/types.ts
    → All domain types (interfaces, unions, enums) must be centralized in domain/types.ts
    → If multiple files reference the same type, move it to domain/types.ts for single source of truth

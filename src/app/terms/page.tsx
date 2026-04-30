@@ -278,10 +278,17 @@ export default function TermsPage() {
                         </li>
                     </ul>
                     <p>
-                        회원 탈퇴는 별도의 절차로 제공될 예정이며, 그 시점까지는
-                        제12조 문의처로 탈퇴를 요청해주시면 지체 없이
-                        처리합니다. 탈퇴 시 저장된 회원 정보는 관련 법령상 보존
-                        의무가 있는 경우를 제외하고 즉시 파기됩니다.
+                        회원은 로그인 후 언제든지&nbsp;
+                        <Link
+                            href="/account/delete"
+                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                            계정 설정 → 회원 탈퇴
+                        </Link>
+                        &nbsp;페이지에서 직접 탈퇴할 수 있습니다. 탈퇴 시 저장된
+                        회원 정보(이메일·비밀번호 해시·표시 이름·OAuth 연결
+                        정보·등급)와 모든 활성 세션은 관련 법령상 보존 의무가
+                        있는 경우를 제외하고 즉시 파기됩니다.
                     </p>
                 </PolicySection>
 
@@ -350,7 +357,7 @@ export default function TermsPage() {
                         내용은&nbsp;
                         <Link
                             href={PRIVACY_PATH}
-                            className="text-primary-400 hover:text-primary-300 transition-colors"
+                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
                             {PRIVACY_TITLE}
                         </Link>

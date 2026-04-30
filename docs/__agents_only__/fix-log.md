@@ -1,23 +1,6 @@
 # Fix Log
 
 ## [Issue #369 PR-2 round 1 | feat/369/auth-social | 2026-04-28]
-- Violation: role="separator" 컨테이너 안에 텍스트 노드가 직접 들어감 (SocialLoginButtons.tsx)
-- Rule: WAI-ARIA — role="separator"는 시각적 구분선 역할로, 라벨이 필요한 경우 aria-label로 노출하고 자식 노드는 비워야 함. 시각용 "또는" 텍스트가 들어간 div는 role을 제거하고 aria-hidden으로 처리해 접근성 트리에서 분리하는 편이 명확함.
-- Context: 인증 폼과 소셜 버튼 사이의 시각적 구분선이 한국어 "또는" 텍스트를 자식으로 가지고 있어, 스크린 리더가 separator 역할 + 텍스트를 이중으로 안내할 가능성이 있었음. role을 제거하고 aria-hidden으로 변경.
-
-## [PR #389 round 3 | feat/369/auth-email | 2026-04-28]
-- Violation: 비컴포넌트 함수에 명시적 반환 타입 누락 (proxy.ts, useCurrentUser.ts, useLoginForm.ts, useSignupForm.ts)
-- Rule: CONVENTIONS.md — 비컴포넌트 함수에는 명시적 반환 타입 필수
-- Context: proxy 함수 및 커스텀 훅 3개에서 반환 타입 생략. 같은 PR의 useLogout만 UseLogoutResult 인터페이스를 명시한 일관성 결여. UseQueryResult / ReturnType<typeof useActionState> 형태로 명시 추가.
-
-- Violation: role="menu" 컨테이너 내부 인터랙티브 자식에 role="menuitem" 누락 (LogoutButton.tsx)
-- Rule: WAI-ARIA — role="menu"의 Required Owned Elements는 menuitem/menuitemcheckbox/menuitemradio 중 하나여야 함
-- Context: HeaderUserMenu의 role="menu" 컨테이너 안에 위치한 LogoutButton이 단순 <button>이라 스크린 리더가 메뉴 항목으로 인식하지 못함.
-
-- Violation: required field로 인해 동일 오류 메시지가 폼 필드와 폼 레벨에 이중 표시되는 형태 모델링 (formTypes.ts, registerAction.ts)
-- Rule: FF.md Cohesion — 폼 상태 모델은 표시 위치를 단일 결정 가능해야 함
-- Context: SignupFormState.error.field가 required라 auto_login_failed 분기에서 'email'을 강제로 채웠고, SignupForm이 emailError + formError 양쪽으로 같은 메시지를 표시. field를 optional로 변경하고 auto_login_failed에서 omit.
-
 - Violation: 멀티라인 JSDoc 주석 블록 (proxy.ts, infrastructure/auth/{db,getCurrentUser,applyAuthCookie,sessionCookieOptions}.ts)
 - Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
 - Context: 인증 어댑터 파일들이 2~4줄 JSDoc 블록으로 작성됨. 한 줄로 압축.
@@ -28,19 +11,11 @@
 - Rule: Next.js App Router 컨벤션 — error.tsx는 프레임워크가 `error`와 `reset` 두 prop을 모두 전달하므로 인터페이스에 양쪽 다 선언 필요
 - Context: src/app/login/error.tsx가 reset만 prop으로 선언하고 error를 누락. 표시에 사용하지 않더라도 타입 안전성을 위해 선언 추가.
 
-## [Issue #369 round 1 | feat/369/auth-email | 2026-04-28]
-- Violation: components/auth/{LoginForm,SignupForm,LogoutButton}.tsx 가 infrastructure/auth/* Server Action을 직접 import
-- Rule: ARCHITECTURE.md — `.tsx` 컴포넌트 파일은 `@/infrastructure` 직접 import 금지. hook 파일(`hooks/`)에서만 fetch/Server Action 함수 import 허용 (queryFn/mutationFn 연결 목적)
-- Context: useActionState로 Server Action을 폼 액션으로 받는 패턴에서 .tsx에서 바로 import했음. components/hooks/{useLoginForm,useSignupForm,useLogout}.ts 로 분리해 .tsx는 훅을 통해서만 액션에 접근하도록 수정.
 
 ## [PR #384 Round 2 | feat/372-377/siglens-core-migration | 2026-04-27]
 - Violation: WHY 주석 삭제 — EMA index 매핑 및 SQUEEZE_MOMENTUM_MIN_BARS 알고리즘 유도 주석 제거
 - Rule: CLAUDE.md 코멘트 규칙 ("WHY is non-obvious" 주석은 유지)
 - Context: 마이그레이션 과정에서 비자명 인덱스 매핑 주석(20-period EMA, 60-period EMA)과 알고리즘 유도 주석(2*kcLength-1 이유)이 삭제됨. 독자가 EMA_DEFAULT_PERIODS를 열어봐야만 확인 가능한 숨겨진 매핑이므로 반드시 유지해야 함.
-
-- Violation: 외부 패키지로 이전된 domain 함수들을 컴포넌트/앱이 직접 import
-- Rule: ARCHITECTURE.md 레이어 의존 방향 — components ← domain, lib만 허용; app ← infrastructure, domain, lib만 허용
-- Context: siglens-core 마이그레이션 과정에서 domain/analysis/ 파일들이 삭제되고 컴포넌트 훅들이 siglens-core를 직접 참조하게 됨. 마이그레이션 시 삭제된 domain 파일은 반드시 로컬 구현 또는 래퍼로 복원해야 함.
 
 ## [Round 1 — Skipped findings]
 - `src/app/[symbol]/page.tsx:144` and `src/app/market/page.tsx:13` (recommended): RSC에서 siglens-core 함수를 직접 호출하는 패턴은 기존 관례이며 이번 PR이 도입한 변경이 아님. RSC는 underlying async 함수를 직접 호출하고, 클라이언트용 Server Action wrapper는 별도 hook 경로로 사용하는 분리 패턴이 의도됨. PR 범위 밖이므로 skip.
@@ -60,37 +35,25 @@
 - Rule: FF.md Predictability — 동일 입력에 대한 동일 처리 보장; 양 액션 간 비대칭 처리 금지
 - Context: 사용자가 비밀번호에 의도적/비의도적 공백 포함 가입 시 로그인 불가 버그. password는 양쪽 모두 trim 제거(원본 유지), email은 양쪽 모두 trim 적용으로 통일.
 
-- Violation: bg-slate-950, bg-slate-900/80 등 Tailwind 기본 클래스 직접 사용 (DESIGN.md 시맨틱 토큰 미사용)
-- Rule: DESIGN.md 사용 규칙 — bg-secondary-* 시맨틱 토큰 사용; 토큰에 없는 임의 클래스 금지
-- Context: AuthCardShell, AuthFieldGroup, PasswordField, login/error.tsx에서 bg-slate-* 사용. bg-secondary-* 토큰으로 통일.
+## [Issue #387 | feat/387/회원탈퇴-ui | 2026-04-30]
+- Violation: aria-describedby가 정적 힌트 텍스트만 가리키고 입력 검증 결과를 알리는 라이브 영역이 없음
+- Rule: WCAG 4.1.3 (Status Messages) — 사용자가 입력한 값에 대한 검증 결과는 스크린리더에 즉시 통지되어야 함
+- Context: DeleteAccountConfirm의 이메일 재입력 필드가 aria-describedby로 정적 힌트만 가리켜 잘못된 이메일을 입력해도 음성 안내가 없었음. 같은 paragraph를 role="status" aria-live="polite" + 입력값에 따라 텍스트가 바뀌는 동적 메시지로 전환하고, aria-invalid도 함께 토글하도록 수정.
 
-- Violation: text-rose-*, bg-rose-*, border-rose-*, text-amber-* 등 미정의 색상 토큰을 UI 검증 상태에 사용
-- Rule: DESIGN.md UI Color — 위험/경고는 ui-danger, ui-warning 토큰 사용
-- Context: Auth 폼의 에러/CapsLock 표시에 rose/amber 직접 사용. ui-danger, ui-warning 토큰으로 교체.
+## [PR #391 코멘트 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
+- Violation: 기본 Tailwind 색상 직접 사용 — text-blue-400, hover:text-blue-300, focus-visible:ring-blue-500, focus-visible:ring-red-400, focus:border-blue-500, focus:ring-blue-500/40, aria-invalid:border-red-500
+- Rule: MISTAKES.md 0.5 — 모든 색상은 시맨틱 토큰(primary-*, ui-danger 등) 사용, 기본 Tailwind 색상(blue-*, red-*) 직접 사용 금지
+- Context: DeleteAccountConfirm.tsx, account/page.tsx, account/delete/page.tsx, HeaderUserMenu.tsx의 신규 추가 요소들에 blue-*/red-* 기본 색상 클래스가 적용됨. 각각 primary-500/ui-danger 시맨틱 토큰으로 교체.
 
-- Violation: Primary 버튼 hover 색상 hover:bg-blue-500 (밝아짐) — DESIGN.md는 hover:bg-blue-700 (어두워짐) 명시
-- Rule: DESIGN.md Primary Color 사용처 — 버튼(primary) bg-blue-600 hover:bg-blue-700
-- Context: SubmitButton, login/error 다시시도 버튼, HeaderUserMenu 회원가입 버튼이 hover로 밝아지는 방향. DESIGN.md 규약대로 어두워지도록 수정.
+- Violation: 이메일 표시 요소에 aria-hidden 적용으로 스크린 리더 접근 불가
+- Rule: WCAG 접근성 — 사용자가 참조해야 할 정보는 스크린 리더에서 읽혀야 함
+- Context: DeleteAccountConfirm에서 사용자가 재입력해야 할 이메일 주소를 표시하는 <p>에 aria-hidden이 적용되어 스크린 리더 사용자가 이메일 확인 불가. aria-hidden 제거.
 
-- Violation: makeFormData 헬퍼가 loginAction.test.ts와 registerAction.test.ts에 동일 정의 중복
-- Rule: CONVENTIONS.md DRY / FF Cohesion — 동일 헬퍼는 단일 위치에서 export
-- Context: 두 테스트 파일에 같은 FormData 빌더 함수가 각각 정의됨. src/__tests__/utils/makeFormData.ts로 추출하여 import.
+- Violation: describe 레이블과 실제 테스트 케이스 의미 불일치
+- Rule: MISTAKES.md Tests #9 — describe 텍스트는 내부 it()들의 공통 전제조건만 커버해야 함
+- Context: describe('이메일 검증 (email_mismatch)') 블록 안에 이메일이 일치하여 성공하는 케이스가 포함됨. 별도 describe('이메일 정규화') 블록으로 분리.
 
-## [PR #389 review comments | feat/369/auth-email | 2026-04-29]
-- Violation: infrastructure/auth Server Action이 lib/authRoutes의 순수 redirect 검증 함수를 import
-- Rule: ARCHITECTURE.md 레이어 의존 방향 — infrastructure는 domain만 import 가능하며 lib import 금지
-- Context: loginAction.ts와 registerAction.ts가 `sanitizeNextPath`를 lib에서 가져와 레이어 방향을 위반. 순수 함수와 기본 redirect 상수를 domain/auth/redirect.ts로 이동.
-
-## [PR #390 | feat/369/auth-social | 2026-04-29]
-- Violation: 컴포넌트 파일이 infrastructure OAuth provider 타입을 직접 import
-- Rule: ARCHITECTURE.md — `.tsx` 컴포넌트 파일은 `@/infrastructure` 직접 import 금지
-- Context: SocialLoginButtons.tsx가 `SupportedOAuthProvider`를 infrastructure에서 가져와 레이어 의존 방향을 위반. 앱 공통 타입을 domain/types.ts로 이동하고 컴포넌트와 infrastructure가 domain 타입을 참조하도록 수정.
-
-- Violation: Route Handler GET 함수에 명시적 반환 타입 누락
-- Rule: CONVENTIONS.md — 비컴포넌트 함수에는 명시적 반환 타입 필수
-- Context: OAuth start/callback route의 GET 함수가 `Promise<NextResponse>`를 명시하지 않아 PR #389와 같은 반환 타입 누락 패턴이 반복됨.
-
-## [PR #389 | feat/369/auth-email | 2026-04-30]
-- Violation: 카카오 소셜 로그인 버튼이 DESIGN.md에 등록되지 않은 임의 색상 `bg-[#FEE500]` 사용
-- Rule: DESIGN.md 색상 토큰 관리 — 반복/브랜드 색상은 디자인 토큰으로 등록해 단일 위치에서 관리
-- Context: SocialLoginButtons.tsx의 카카오 버튼 브랜드 색상을 `brand-kakao` 토큰으로 등록하고 컴포넌트에서 `bg-brand-kakao`를 사용하도록 수정.
+## [PR #391 Suggestion 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
+- Violation: section의 aria-label이 시각적 h2 헤딩 텍스트와 불일치
+- Rule: WCAG 접근성 — aria-label은 가능한 한 visible text와 일치시켜 인지 불일치 방지
+- Context: account/page.tsx에서 위험존 section의 aria-label이 "위험 작업"이고 h2가 "위험존"으로 달라, 스크린 리더와 시각 사용자 간 용어 불일치. aria-label="위험존"으로 통일.

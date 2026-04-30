@@ -7,18 +7,13 @@ import { LogoutButton } from '@/components/auth/LogoutButton';
 import { useCurrentUser } from '@/components/hooks/useCurrentUser';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
+import { TIER_LABEL } from '@/lib/auth/tierLabel';
 import { cn } from '@/lib/cn';
 
 const TIER_DOT_COLOR: Record<Tier, string> = {
     free: 'bg-secondary-500',
     member: 'bg-primary-500',
     pro: 'bg-ui-warning',
-};
-
-const TIER_LABEL: Record<Tier, string> = {
-    free: 'Free',
-    member: 'Member',
-    pro: 'Pro',
 };
 
 interface UserSummary {
@@ -109,6 +104,14 @@ export function HeaderUserMenu() {
                         </p>
                     </div>
                     <div role="none" className="mt-1">
+                        <Link
+                            href="/account"
+                            role="menuitem"
+                            onClick={close}
+                            className="text-secondary-200 hover:bg-secondary-800 focus-visible:ring-primary-500 flex w-full items-center rounded px-3 py-2 text-left text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                            계정 설정
+                        </Link>
                         <LogoutButton />
                     </div>
                 </div>

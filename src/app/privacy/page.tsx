@@ -100,7 +100,7 @@ const bottomNotice = (
             {INVESTMENT_DISCLAIMER} 서비스 이용과 관련한 자세한 조건은&nbsp;
             <Link
                 href={TERMS_PATH}
-                className="text-primary-400 hover:text-primary-300 transition-colors"
+                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
                 {TERMS_TITLE}
             </Link>
@@ -396,11 +396,29 @@ export default function PrivacyPage() {
                         비회원의 경우 개인 식별 정보의 수집 자체를 최소화하고
                         있으므로 별도로 저장된 개인정보가 없는 경우 본 권리의
                         행사 대상이 되는 정보가 존재하지 않을 수 있습니다.
-                        회원의 경우 회원 탈퇴를 통해 저장된 회원 정보 일체의
-                        삭제를 요청할 수 있으며, 회원 탈퇴 절차는 별도 화면을
-                        통해 제공될 예정입니다. 그 시점까지는 아래 &quot;10.
-                        개인정보 보호책임자 및 문의&quot;의 연락처로 탈퇴를
-                        요청해주시면 지체 없이 처리합니다.
+                    </p>
+                    <p>
+                        회원은 로그인 후 언제든지&nbsp;
+                        <Link
+                            href="/account/delete"
+                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                            계정 설정 → 회원 탈퇴
+                        </Link>
+                        &nbsp;페이지에서 직접 탈퇴할 수 있습니다. 탈퇴 시 회원
+                        정보(이메일·비밀번호 해시·표시 이름·OAuth 연결
+                        정보·등급) 일체와 모든 활성 세션이 즉시 영구 파기됩니다.
+                        단, 관련 법령에 보존 의무가 있는 경우에는 해당 기간
+                        동안만 보관됩니다.
+                    </p>
+                    <p>
+                        소셜 로그인(Google · Kakao)으로 가입하신 경우, 운영자가
+                        보유한 OAuth 연결 정보는 탈퇴와 동시에 파기되지만, 외부
+                        provider 계정에 등록된 앱 접근 권한은 자동으로 해제되지
+                        않습니다. 완전한 권한 회수를 원하시는 경우 각 provider의
+                        계정 설정(예: Google 계정 → 보안 → 타사 액세스, Kakao
+                        계정 → 연결된 서비스 관리)에서 본 서비스 연결을 직접
+                        해제해 주시기 바랍니다.
                     </p>
                     <p>
                         이용자가 오류 제보를 통해 제공한 문의 내용에 대하여 열람
