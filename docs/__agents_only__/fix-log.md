@@ -68,3 +68,16 @@
 - Violation: 동일한 Record<Tier, string> 라벨 매핑이 HeaderUserMenu와 새 /account 페이지 양쪽에 중복 정의
 - Rule: MISTAKES.md Design & Cohesion #1 — 함께 갱신해야 하는 데이터는 단일 위치에 둔다
 - Context: TIER_LABEL이 두 파일에 반복 정의되어 새 tier 추가 시 양쪽 동기화 부담. src/lib/auth/tierLabel.ts로 추출해 양쪽이 import하도록 통합.
+
+## [PR #391 코멘트 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
+- Violation: 기본 Tailwind 색상 직접 사용 — text-blue-400, hover:text-blue-300, focus-visible:ring-blue-500, focus-visible:ring-red-400, focus:border-blue-500, focus:ring-blue-500/40, aria-invalid:border-red-500
+- Rule: MISTAKES.md 0.5 — 모든 색상은 시맨틱 토큰(primary-*, ui-danger 등) 사용, 기본 Tailwind 색상(blue-*, red-*) 직접 사용 금지
+- Context: DeleteAccountConfirm.tsx, account/page.tsx, account/delete/page.tsx, HeaderUserMenu.tsx의 신규 추가 요소들에 blue-*/red-* 기본 색상 클래스가 적용됨. 각각 primary-500/ui-danger 시맨틱 토큰으로 교체.
+
+- Violation: 이메일 표시 요소에 aria-hidden 적용으로 스크린 리더 접근 불가
+- Rule: WCAG 접근성 — 사용자가 참조해야 할 정보는 스크린 리더에서 읽혀야 함
+- Context: DeleteAccountConfirm에서 사용자가 재입력해야 할 이메일 주소를 표시하는 <p>에 aria-hidden이 적용되어 스크린 리더 사용자가 이메일 확인 불가. aria-hidden 제거.
+
+- Violation: describe 레이블과 실제 테스트 케이스 의미 불일치
+- Rule: MISTAKES.md Tests #9 — describe 텍스트는 내부 it()들의 공통 전제조건만 커버해야 함
+- Context: describe('이메일 검증 (email_mismatch)') 블록 안에 이메일이 일치하여 성공하는 케이스가 포함됨. 별도 describe('이메일 정규화') 블록으로 분리.

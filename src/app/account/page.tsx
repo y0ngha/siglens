@@ -78,7 +78,7 @@ export default async function AccountPage() {
                         </div>
                         <Link
                             href="/account/delete"
-                            className="text-ui-danger border-ui-danger/40 hover:bg-ui-danger/10 inline-flex h-11 shrink-0 items-center justify-center rounded-md border px-5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none"
+                            className="text-ui-danger border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger inline-flex h-11 shrink-0 items-center justify-center rounded-md border px-5 text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
                             회원 탈퇴 진행
                         </Link>

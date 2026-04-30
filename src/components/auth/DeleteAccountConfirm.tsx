@@ -12,10 +12,6 @@ const HINT_DEFAULT = '이메일이 일치해야 탈퇴 버튼이 활성화됩니
 const HINT_MISMATCH = '입력한 이메일이 본인 이메일과 일치하지 않습니다.';
 const HINT_MATCH = '입력한 이메일이 일치합니다. 탈퇴 버튼이 활성화되었습니다.';
 
-interface DeleteAccountConfirmProps {
-    userEmail: string;
-}
-
 interface DangerSubmitButtonProps {
     disabled: boolean;
 }
@@ -28,7 +24,7 @@ function DangerSubmitButton({ disabled }: DangerSubmitButtonProps) {
             type="submit"
             disabled={isDisabled}
             aria-busy={pending}
-            className="bg-ui-danger hover:bg-ui-danger/90 active:bg-ui-danger/80 flex h-12 w-full items-center justify-center gap-2 rounded-md font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:ring-red-400 focus-visible:outline-none disabled:opacity-50 motion-reduce:transition-none"
+            className="bg-ui-danger hover:bg-ui-danger/90 active:bg-ui-danger/80 focus-visible:ring-ui-danger flex h-12 w-full items-center justify-center gap-2 rounded-md font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50 motion-reduce:transition-none"
         >
             {pending ? (
                 <>
@@ -43,6 +39,10 @@ function DangerSubmitButton({ disabled }: DangerSubmitButtonProps) {
             )}
         </button>
     );
+}
+
+interface DeleteAccountConfirmProps {
+    userEmail: string;
 }
 
 export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
@@ -94,10 +94,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                 >
                     계속하려면 본인 이메일을 정확히 입력하세요
                 </label>
-                <p
-                    aria-hidden
-                    className="text-secondary-100 bg-secondary-950 border-secondary-800 rounded-md border px-3 py-2 font-mono text-sm break-all"
-                >
+                <p className="text-secondary-100 bg-secondary-950 border-secondary-800 rounded-md border px-3 py-2 font-mono text-sm break-all">
                     {userEmail}
                 </p>
                 <input
@@ -112,7 +109,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                     onChange={event => setInput(event.target.value)}
                     aria-invalid={isMismatch}
                     aria-describedby={INPUT_HINT_ID}
-                    className="border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 h-12 w-full rounded-md border px-4 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 focus:outline-none aria-invalid:border-red-500"
+                    className="border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-primary-500/40 aria-invalid:border-ui-danger h-12 w-full rounded-md border px-4 text-sm focus:ring-2 focus:outline-none"
                 />
                 <p
                     id={INPUT_HINT_ID}
@@ -129,7 +126,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Link
                     href="/account"
-                    className="text-secondary-200 border-secondary-700 hover:bg-secondary-800 inline-flex h-12 items-center justify-center rounded-md border px-5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none sm:flex-1"
+                    className="text-secondary-200 border-secondary-700 hover:bg-secondary-800 focus-visible:ring-primary-500 inline-flex h-12 items-center justify-center rounded-md border px-5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none sm:flex-1"
                 >
                     취소
                 </Link>

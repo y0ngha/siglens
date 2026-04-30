@@ -111,6 +111,13 @@ describe('deleteAccountAction', () => {
             );
             expect(result.error?.code).toBe('email_mismatch');
         });
+    });
+
+    describe('이메일 정규화', () => {
+        beforeEach(() => {
+            getSpy.mockReturnValue({ value: 'tok' });
+            mockFindUser.mockResolvedValue(USER);
+        });
 
         it('이메일 비교는 대소문자/공백을 무시한다', async () => {
             mockDelete.mockResolvedValue({ ok: true, cookie: expiredCookie });
