@@ -56,7 +56,7 @@ export default async function AccountPage() {
                 </section>
 
                 <section
-                    aria-label="위험 작업"
+                    aria-label="위험존"
                     className="border-ui-danger/30 bg-ui-danger/5 space-y-4 rounded-2xl border p-6"
                 >
                     <div>

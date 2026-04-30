@@ -1,14 +1,6 @@
 # Fix Log
 
 ## [Issue #369 PR-2 round 1 | feat/369/auth-social | 2026-04-28]
-- Violation: role="separator" 컨테이너 안에 텍스트 노드가 직접 들어감 (SocialLoginButtons.tsx)
-- Rule: WAI-ARIA — role="separator"는 시각적 구분선 역할로, 라벨이 필요한 경우 aria-label로 노출하고 자식 노드는 비워야 함. 시각용 "또는" 텍스트가 들어간 div는 role을 제거하고 aria-hidden으로 처리해 접근성 트리에서 분리하는 편이 명확함.
-- Context: 인증 폼과 소셜 버튼 사이의 시각적 구분선이 한국어 "또는" 텍스트를 자식으로 가지고 있어, 스크린 리더가 separator 역할 + 텍스트를 이중으로 안내할 가능성이 있었음. role을 제거하고 aria-hidden으로 변경.
-
-- Violation: role="menu" 컨테이너 내부 인터랙티브 자식에 role="menuitem" 누락 (LogoutButton.tsx)
-- Rule: WAI-ARIA — role="menu"의 Required Owned Elements는 menuitem/menuitemcheckbox/menuitemradio 중 하나여야 함
-- Context: HeaderUserMenu의 role="menu" 컨테이너 안에 위치한 LogoutButton이 단순 <button>이라 스크린 리더가 메뉴 항목으로 인식하지 못함.
-
 - Violation: 멀티라인 JSDoc 주석 블록 (proxy.ts, infrastructure/auth/{db,getCurrentUser,applyAuthCookie,sessionCookieOptions}.ts)
 - Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
 - Context: 인증 어댑터 파일들이 2~4줄 JSDoc 블록으로 작성됨. 한 줄로 압축.
@@ -60,3 +52,8 @@
 - Violation: describe 레이블과 실제 테스트 케이스 의미 불일치
 - Rule: MISTAKES.md Tests #9 — describe 텍스트는 내부 it()들의 공통 전제조건만 커버해야 함
 - Context: describe('이메일 검증 (email_mismatch)') 블록 안에 이메일이 일치하여 성공하는 케이스가 포함됨. 별도 describe('이메일 정규화') 블록으로 분리.
+
+## [PR #391 Suggestion 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
+- Violation: section의 aria-label이 시각적 h2 헤딩 텍스트와 불일치
+- Rule: WCAG 접근성 — aria-label은 가능한 한 visible text와 일치시켜 인지 불일치 방지
+- Context: account/page.tsx에서 위험존 section의 aria-label이 "위험 작업"이고 h2가 "위험존"으로 달라, 스크린 리더와 시각 사용자 간 용어 불일치. aria-label="위험존"으로 통일.
