@@ -154,7 +154,7 @@ export default async function Home() {
                 검색으로 건너뛰기
             </a>
             <main className="flex flex-1 flex-col">
-                <section className="bg-secondary-950 relative flex flex-col items-center justify-center overflow-hidden px-6 py-12 text-center sm:py-16 lg:min-h-[calc(100svh-9rem)] lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
+                <section className="relative flex flex-col items-center justify-center overflow-hidden px-6 py-12 text-center sm:py-16 lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
                     <div
                         aria-hidden="true"
                         className="hero-report-lines pointer-events-none absolute inset-0"
@@ -177,7 +177,7 @@ export default async function Home() {
                         </p>
                         <div
                             id="search"
-                            className="mt-8 flex w-full justify-center sm:max-w-xl lg:justify-start"
+                            className="mt-8 flex w-full justify-center lg:justify-start"
                         >
                             <SymbolSearchPanel />
                         </div>

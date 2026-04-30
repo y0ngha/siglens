@@ -1,14 +1,14 @@
 'use client';
 
-import Link from 'next/link';
-import { useRef } from 'react';
-import type { Tier } from '@y0ngha/siglens-core';
 import { LogoutButton } from '@/components/auth/LogoutButton';
 import { useCurrentUser } from '@/components/hooks/useCurrentUser';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
 import { cn } from '@/lib/cn';
+import type { Tier } from '@y0ngha/siglens-core';
+import Link from 'next/link';
+import { useRef } from 'react';
 
 const TIER_DOT_COLOR: Record<Tier, string> = {
     free: 'bg-secondary-500',
@@ -41,13 +41,13 @@ export function HeaderUserMenu() {
             <nav aria-label="인증" className="flex items-center gap-2">
                 <Link
                     href="/login"
-                    className="text-secondary-200 hover:text-secondary-50 hidden min-h-11 items-center rounded px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none sm:inline-flex"
+                    className="text-secondary-200 hover:text-secondary-50 focus-visible:ring-primary-500 hidden min-h-11 items-center rounded px-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none sm:inline-flex"
                 >
                     로그인
                 </Link>
                 <Link
                     href="/signup"
-                    className="inline-flex min-h-11 items-center rounded bg-blue-600 px-3 text-sm font-semibold text-white transition-colors hover:bg-blue-700 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                    className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 inline-flex min-h-11 items-center rounded px-3 text-sm font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                     회원가입
                 </Link>
