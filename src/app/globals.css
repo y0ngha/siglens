@@ -66,6 +66,9 @@
     --color-ui-success: #26a69a;
     --color-ui-warning: #f59e0b;
     --color-ui-danger: #ef5350;
+
+    /* Brand — Social login */
+    --color-brand-kakao: #fee500;
     --font-sans: var(--font-geist-sans);
     --font-mono: var(--font-geist-mono);
 }

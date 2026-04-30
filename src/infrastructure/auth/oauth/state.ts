@@ -7,7 +7,8 @@ import { isSecureCookieEnv } from '../sessionCookieOptions';
 export const OAUTH_STATE_COOKIE_NAME = 'siglens_oauth_state';
 
 /** OAuth state 쿠키 TTL (5분). */
-export const OAUTH_STATE_TTL_SECONDS = 5 * 60;
+export const OAUTH_STATE_TTL_MINUTES = 5;
+export const OAUTH_STATE_TTL_SECONDS = OAUTH_STATE_TTL_MINUTES * 60;
 
 interface StatePayload {
     state: string;

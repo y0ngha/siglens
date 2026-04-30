@@ -231,6 +231,21 @@ moderate strength     text-ui-warning
 
 ---
 
+## Brand Color — 소셜 로그인
+
+외부 브랜드가 명시한 색상을 UI 상태 토큰과 분리해 관리한다.
+
+```
+--color-brand-kakao: #fee500   (Kakao Yellow)
+```
+
+**사용처**
+```
+카카오 소셜 로그인 버튼    bg-brand-kakao
+```
+
+---
+
 ## Tailwind CSS 버전
 
 이 프로젝트는 **Tailwind CSS v4**를 사용한다.

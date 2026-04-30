@@ -20,7 +20,8 @@ const PROVIDERS: readonly SocialProvider[] = [
         id: 'kakao',
         label: '카카오로 시작하기',
         glyph: 'K',
-        buttonClassName: 'bg-[#FEE500] text-secondary-900 hover:brightness-95',
+        buttonClassName:
+            'bg-brand-kakao text-secondary-900 hover:brightness-95',
     },
 ];
 

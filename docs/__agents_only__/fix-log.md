@@ -89,3 +89,8 @@
 - Violation: Route Handler GET 함수에 명시적 반환 타입 누락
 - Rule: CONVENTIONS.md — 비컴포넌트 함수에는 명시적 반환 타입 필수
 - Context: OAuth start/callback route의 GET 함수가 `Promise<NextResponse>`를 명시하지 않아 PR #389와 같은 반환 타입 누락 패턴이 반복됨.
+
+## [PR #389 | feat/369/auth-email | 2026-04-30]
+- Violation: 카카오 소셜 로그인 버튼이 DESIGN.md에 등록되지 않은 임의 색상 `bg-[#FEE500]` 사용
+- Rule: DESIGN.md 색상 토큰 관리 — 반복/브랜드 색상은 디자인 토큰으로 등록해 단일 위치에서 관리
+- Context: SocialLoginButtons.tsx의 카카오 버튼 브랜드 색상을 `brand-kakao` 토큰으로 등록하고 컴포넌트에서 `bg-brand-kakao`를 사용하도록 수정.
