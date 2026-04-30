@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { ResetPasswordFormState } from '@/domain/auth/formTypes';
 import { useResetPasswordForm } from '@/components/hooks/useResetPasswordForm';
 import { AuthErrorAlert } from './AuthErrorAlert';
@@ -9,6 +9,7 @@ import { PasswordStrengthHint } from './PasswordStrengthHint';
 import { SubmitButton } from './SubmitButton';
 
 interface ResetPasswordFormProps {
+    email: string;
     token: string;
 }
 
@@ -30,14 +31,15 @@ function describePasswordFieldError(
     return null;
 }
 
-export function ResetPasswordForm({ token }: ResetPasswordFormProps) {
+export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const [password, setPassword] = useState('');
     const [state, formAction] = useResetPasswordForm();
     const formError = describeFormError(state);
     const fieldError = describePasswordFieldError(state);
-    const hintId = 'reset-password-hint';
+    const hintId = useId();
     return (
         <form action={formAction} className="space-y-4" noValidate>
+            <input type="hidden" name="email" value={email} />
             <input type="hidden" name="token" value={token} />
             {formError ? <AuthErrorAlert message={formError} /> : null}
             <PasswordField

@@ -1,17 +1,18 @@
 'use server';
 
-import type { SignupFormState } from '@/domain/auth/formTypes';
-import { sanitizeNextPath } from '@/domain/auth/redirect';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
     loginUser,
-    registerUser,
 } from '@y0ngha/siglens-core';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+// TODO(siglens-core#55): replace with real exports once the new core ships.
+import { createEmailTokenStore, registerUserV2 } from '@/domain/auth/coreStubs';
+import type { SignupFormState } from '@/domain/auth/formTypes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { applyAuthCookie } from './applyAuthCookie';
 import { getAuthDatabaseClient } from './db';
 import { isSecureCookieEnv } from './sessionCookieOptions';
@@ -32,10 +33,15 @@ export async function registerAction(
     const { db } = getAuthDatabaseClient();
     const userRepo = new DrizzleUserRepository(db);
 
-    const registerResult = await registerUser(
+    // 새 시그니처: deps에 emailTokens 추가. 코어가 verified 상태를 확인하여
+    // verified가 아니면 email_not_verified 에러를 반환한다.
+    const registerResult = await registerUserV2(
         { email, password, name },
-        userRepo,
-        bcryptPasswordHasher
+        {
+            users: userRepo,
+            passwordHasher: bcryptPasswordHasher,
+            emailTokens: createEmailTokenStore(),
+        }
     );
 
     if (!registerResult.ok) {
