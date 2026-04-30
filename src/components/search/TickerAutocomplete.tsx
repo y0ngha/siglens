@@ -13,15 +13,15 @@ type TickerAutocompleteSize = 'sm' | 'lg';
 const INPUT_BASE =
     'bg-secondary-800 border-secondary-700 text-secondary-100 placeholder-secondary-500 focus:border-primary-600 focus:ring-primary-500 rounded-lg border transition-colors outline-none focus:ring-1';
 const INPUT_SIZE: Record<TickerAutocompleteSize, string> = {
-    sm: 'px-3 py-2 text-sm',
-    lg: 'focus-glow w-full px-4 py-3 text-base sm:w-96',
+    sm: 'h-11 px-3 text-sm',
+    lg: 'focus-glow h-12 px-4 text-base',
 };
 
 const BUTTON_BASE =
-    'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500';
+    'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:outline-none';
 const BUTTON_SIZE: Record<TickerAutocompleteSize, string> = {
-    sm: 'px-3 py-2 text-sm sm:px-4',
-    lg: 'px-6 py-3 text-base',
+    sm: 'h-11 px-3 text-sm sm:px-4',
+    lg: 'h-12 w-full px-6 text-base sm:w-auto',
 };
 
 interface TickerAutocompleteProps {
@@ -56,8 +56,8 @@ export function TickerAutocomplete({
     return (
         <div
             className={cn(
-                'relative flex min-w-0 items-center gap-2',
-                size === 'lg' && 'w-full max-w-md',
+                'relative flex min-w-0',
+                size === 'sm' ? 'items-center gap-2' : 'w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center',
                 className
             )}
         >
