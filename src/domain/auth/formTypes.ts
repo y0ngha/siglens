@@ -1,4 +1,6 @@
 import type {
+    ConfirmPasswordResetError,
+    ConfirmPasswordResetErrorCode,
     DeleteAccountErrorCode,
     LoginUserErrorCode,
     RegisterUserErrorCode,
@@ -24,4 +26,17 @@ export type DeleteAccountFormErrorCode =
 
 export interface DeleteAccountFormState {
     error: { code: DeleteAccountFormErrorCode; message: string } | null;
+}
+
+export interface ForgotPasswordFormState {
+    /** Always returns success message regardless of account existence (enumeration mitigation). */
+    submitted: boolean;
+}
+
+export interface ResetPasswordFormState {
+    error: {
+        code: ConfirmPasswordResetErrorCode;
+        field?: ConfirmPasswordResetError['field'];
+        message: string;
+    } | null;
 }
