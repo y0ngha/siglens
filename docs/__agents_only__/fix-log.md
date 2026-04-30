@@ -9,10 +9,6 @@
 - Rule: WAI-ARIA — role="menu"의 Required Owned Elements는 menuitem/menuitemcheckbox/menuitemradio 중 하나여야 함
 - Context: HeaderUserMenu의 role="menu" 컨테이너 안에 위치한 LogoutButton이 단순 <button>이라 스크린 리더가 메뉴 항목으로 인식하지 못함.
 
-- Violation: required field로 인해 동일 오류 메시지가 폼 필드와 폼 레벨에 이중 표시되는 형태 모델링 (formTypes.ts, registerAction.ts)
-- Rule: FF.md Cohesion — 폼 상태 모델은 표시 위치를 단일 결정 가능해야 함
-- Context: SignupFormState.error.field가 required라 auto_login_failed 분기에서 'email'을 강제로 채웠고, SignupForm이 emailError + formError 양쪽으로 같은 메시지를 표시. field를 optional로 변경하고 auto_login_failed에서 omit.
-
 - Violation: 멀티라인 JSDoc 주석 블록 (proxy.ts, infrastructure/auth/{db,getCurrentUser,applyAuthCookie,sessionCookieOptions}.ts)
 - Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
 - Context: 인증 어댑터 파일들이 2~4줄 JSDoc 블록으로 작성됨. 한 줄로 압축.
@@ -28,10 +24,6 @@
 - Violation: WHY 주석 삭제 — EMA index 매핑 및 SQUEEZE_MOMENTUM_MIN_BARS 알고리즘 유도 주석 제거
 - Rule: CLAUDE.md 코멘트 규칙 ("WHY is non-obvious" 주석은 유지)
 - Context: 마이그레이션 과정에서 비자명 인덱스 매핑 주석(20-period EMA, 60-period EMA)과 알고리즘 유도 주석(2*kcLength-1 이유)이 삭제됨. 독자가 EMA_DEFAULT_PERIODS를 열어봐야만 확인 가능한 숨겨진 매핑이므로 반드시 유지해야 함.
-
-- Violation: 외부 패키지로 이전된 domain 함수들을 컴포넌트/앱이 직접 import
-- Rule: ARCHITECTURE.md 레이어 의존 방향 — components ← domain, lib만 허용; app ← infrastructure, domain, lib만 허용
-- Context: siglens-core 마이그레이션 과정에서 domain/analysis/ 파일들이 삭제되고 컴포넌트 훅들이 siglens-core를 직접 참조하게 됨. 마이그레이션 시 삭제된 domain 파일은 반드시 로컬 구현 또는 래퍼로 복원해야 함.
 
 ## [Round 1 — Skipped findings]
 - `src/app/[symbol]/page.tsx:144` and `src/app/market/page.tsx:13` (recommended): RSC에서 siglens-core 함수를 직접 호출하는 패턴은 기존 관례이며 이번 PR이 도입한 변경이 아님. RSC는 underlying async 함수를 직접 호출하고, 클라이언트용 Server Action wrapper는 별도 hook 경로로 사용하는 분리 패턴이 의도됨. PR 범위 밖이므로 skip.
@@ -51,23 +43,10 @@
 - Rule: FF.md Predictability — 동일 입력에 대한 동일 처리 보장; 양 액션 간 비대칭 처리 금지
 - Context: 사용자가 비밀번호에 의도적/비의도적 공백 포함 가입 시 로그인 불가 버그. password는 양쪽 모두 trim 제거(원본 유지), email은 양쪽 모두 trim 적용으로 통일.
 
-- Violation: makeFormData 헬퍼가 loginAction.test.ts와 registerAction.test.ts에 동일 정의 중복
-- Rule: CONVENTIONS.md DRY / FF Cohesion — 동일 헬퍼는 단일 위치에서 export
-- Context: 두 테스트 파일에 같은 FormData 빌더 함수가 각각 정의됨. src/__tests__/utils/makeFormData.ts로 추출하여 import.
-
-## [PR #389 review comments | feat/369/auth-email | 2026-04-29]
-- Violation: infrastructure/auth Server Action이 lib/authRoutes의 순수 redirect 검증 함수를 import
-- Rule: ARCHITECTURE.md 레이어 의존 방향 — infrastructure는 domain만 import 가능하며 lib import 금지
-- Context: loginAction.ts와 registerAction.ts가 `sanitizeNextPath`를 lib에서 가져와 레이어 방향을 위반. 순수 함수와 기본 redirect 상수를 domain/auth/redirect.ts로 이동.
-
 ## [Issue #387 | feat/387/회원탈퇴-ui | 2026-04-30]
 - Violation: aria-describedby가 정적 힌트 텍스트만 가리키고 입력 검증 결과를 알리는 라이브 영역이 없음
 - Rule: WCAG 4.1.3 (Status Messages) — 사용자가 입력한 값에 대한 검증 결과는 스크린리더에 즉시 통지되어야 함
 - Context: DeleteAccountConfirm의 이메일 재입력 필드가 aria-describedby로 정적 힌트만 가리켜 잘못된 이메일을 입력해도 음성 안내가 없었음. 같은 paragraph를 role="status" aria-live="polite" + 입력값에 따라 텍스트가 바뀌는 동적 메시지로 전환하고, aria-invalid도 함께 토글하도록 수정.
-
-- Violation: 동일한 Record<Tier, string> 라벨 매핑이 HeaderUserMenu와 새 /account 페이지 양쪽에 중복 정의
-- Rule: MISTAKES.md Design & Cohesion #1 — 함께 갱신해야 하는 데이터는 단일 위치에 둔다
-- Context: TIER_LABEL이 두 파일에 반복 정의되어 새 tier 추가 시 양쪽 동기화 부담. src/lib/auth/tierLabel.ts로 추출해 양쪽이 import하도록 통합.
 
 ## [PR #391 코멘트 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
 - Violation: 기본 Tailwind 색상 직접 사용 — text-blue-400, hover:text-blue-300, focus-visible:ring-blue-500, focus-visible:ring-red-400, focus:border-blue-500, focus:ring-blue-500/40, aria-invalid:border-red-500
