@@ -36,6 +36,7 @@ src/infrastructure/auth/
   registerAction.ts        'use server' — registerUser → 자동 loginUser → cookie set → redirect
   loginAction.ts           'use server' — loginUser → cookie set → redirect(sanitizeNextPath)
   logoutAction.ts          'use server' — logoutUser → 만료 cookie set → redirect('/')
+  deleteAccountAction.ts   'use server' — getCurrentUser + 이메일 일치 검증 → deleteAccount → 만료 cookie set → redirect('/?account_deleted=1')
 
 src/domain/auth/redirect.ts sanitizeNextPath()
 
@@ -61,6 +62,10 @@ src/app/api/auth/
 src/app/login/page.tsx     RSC — AuthCardShell + LoginForm
 src/app/login/error.tsx    클라이언트 에러 fallback
 src/app/signup/page.tsx    RSC — AuthCardShell + SignupForm
+src/app/account/page.tsx          RSC — 프로필 정보 + 위험존(회원 탈퇴 진입)
+src/app/account/delete/page.tsx   RSC — AuthCardShell + DeleteAccountConfirm
+src/components/auth/DeleteAccountConfirm.tsx  이메일 재입력 확인 폼
+src/components/hooks/useDeleteAccountForm.ts  useActionState wrapper
 ```
 
 ## 시퀀스
@@ -92,6 +97,28 @@ src/app/signup/page.tsx    RSC — AuthCardShell + SignupForm
    → cookies().set(applyAuthCookie(result.cookie))
    → redirect(sanitizeNextPath(next))
 ```
+
+### 회원 탈퇴
+
+```
+[Header dropdown] 계정 설정 → /account
+   ↓ 위험존 카드 → /account/delete
+[RSC] account/delete/page.tsx
+   → getCurrentUser() — null이면 redirect('/login?next=/account/delete')
+   → DeleteAccountConfirm(client, userEmail)
+       ⤳ 입력 이메일 == userEmail 일 때만 submit 활성
+   ↓ submit (useActionState)
+[Server Action] deleteAccountAction
+   → getCurrentUser() — 재검증 (CSR 위변조 방어)
+   → input email !== user.email → { error: 'email_mismatch' } 반환
+   → deleteAccount({ userId }, { users }, { secureCookie })
+       ⤳ user 행 삭제 (sessions 는 FK CASCADE)
+   → cookies().set(applyAuthCookie(expiredCookie))
+   → redirect('/?account_deleted=1')
+```
+
+가드 전략은 다른 회원 전용 페이지와 동일하다. proxy.ts는 변경하지 않으며, RSC가
+`getCurrentUser()` 결과로 직접 `/login?next=/account/delete` 로 리다이렉트한다.
 
 ### 로그아웃
 
@@ -182,8 +209,5 @@ siglens-core가 반환하는 메타를 그대로 사용한다.
 
 ## 후속 이슈
 
-- siglens-core: 회원탈퇴 use-case는 0.1.12에 포함됨(`deleteAccount`). siglens
-  측 UI는 별도 이슈 #387.
 - siglens-core: 비밀번호 재설정 use-case는 별도 이슈 #42.
 - siglens: 비밀번호 재설정 UI는 별도 이슈 #388.
-- siglens: 소셜 로그인(PR-2)은 본 PR-1 머지 후 진행.
