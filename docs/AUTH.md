@@ -35,18 +35,23 @@ src/infrastructure/auth/
   sessionCookieOptions.ts  isSecureCookieEnv() — NODE_ENV로 secure 플래그 결정
   getCurrentUser.ts        쿠키 → findUserBySessionToken (RSC/Server Action 전용)
   currentUserAction.ts     'use server' wrapper — useCurrentUser용
-  registerAction.ts        'use server' — registerUser → 자동 loginUser → cookie set → redirect
+  registerAction.ts        'use server' — registerUserV2(emailTokens 포함) → 자동 loginUser → cookie set → redirect
+  requestEmailVerificationAction.ts  'use server' — requestEmailVerification 호출, buildMessage 콜백으로 인증 코드 메일 발송
+  verifyEmailAction.ts     'use server' — verifyEmail로 코드 확인 (pending → verified)
   loginAction.ts           'use server' — loginUser → cookie set → redirect(sanitizeNextPath)
   logoutAction.ts          'use server' — logoutUser → 만료 cookie set → redirect('/')
   deleteAccountAction.ts   'use server' — getCurrentUser + 이메일 일치 검증 → deleteAccount → 만료 cookie set → redirect('/?account_deleted=1')
-  passwordResetTokenService.ts        crypto.randomBytes(32) base64url generator + sha256 hasher
-  requestPasswordResetAction.ts       'use server' — requestPasswordReset → token 있으면 buildPasswordResetEmail + dispatcher.sendEmail (fire-and-forget) → 항상 submitted: true
-  confirmPasswordResetAction.ts       'use server' — confirmPasswordReset → 성공 시 redirect('/login?password_reset=1')
+  requestPasswordResetAction.ts       'use server' — requestPasswordResetV2(emailTokens, dispatcher 주입, buildMessage 콜백) → 항상 submitted: true
+  confirmPasswordResetAction.ts       'use server' — confirmPasswordResetV2(input.email 추가, emailTokens 주입) → 성공 시 redirect('/login?password_reset=1')
+
+src/domain/auth/
+  coreStubs.ts             siglens-core#55 미배포 API 임시 stub (EmailMessage/EmailTokenStore/requestEmailVerification/verifyEmail/requestPasswordResetV2/confirmPasswordResetV2/registerUserV2). 새 코어 배포 시 삭제 예정.
 
 src/infrastructure/email/
-  types.ts                 EmailMessage / EmailDispatcher 인터페이스
+  types.ts                 EmailDispatcher 인터페이스 (EmailMessage는 coreStubs에서 re-export)
   resend.ts                ResendEmailDispatcher (RESEND_API_KEY 있을 때) / NoopEmailDispatcher fallback
-  passwordResetEmail.ts    domain-aware 템플릿 빌더 (한국어 본문 + 한국 시간대 만료 표기)
+  passwordResetEmail.ts    비밀번호 재설정 템플릿 — URL: /reset-password?email=…&token=…
+  emailVerificationEmail.ts  회원가입 인증 코드 템플릿 — 6자리 코드 본문 노출
 
 src/domain/auth/redirect.ts sanitizeNextPath()
 
@@ -86,21 +91,37 @@ src/components/hooks/useResetPasswordForm.ts  useActionState wrapper
 
 ## 시퀀스
 
-### 이메일 회원가입
+### 이메일 회원가입 (3단계 인증 흐름)
+
+이슈 #394 / siglens-core#55 이후 회원가입은 이메일 인증을 강제하는 3단계 흐름이다.
+SignupForm(client)은 useActionState 3개의 결과를 derive해 phase를 결정한다.
 
 ```
 [Browser] /signup
+   ↓ phase = 'email'
+[Form 1] 이메일 입력 → useRequestEmailVerification.formAction
+[Server Action] requestEmailVerificationAction
+   → requestEmailVerification({ email }, { emailTokens, emailDispatcher }, { buildMessage })
+       ⤳ 코어가 6자리 코드 발급 + Redis(EmailTokenStore) pending 저장 + dispatcher 호출
+   → { submitted: true }   ⇒ phase 자동 'code'
    ↓
-[RSC] signup/page.tsx → SignupForm(client)
-   ↓ (form submit, useActionState)
+[Form 2] 코드 입력 + email hidden → useVerifyEmail.formAction
+[Server Action] verifyEmailAction
+   → verifyEmail({ email, code }, { emailTokens })
+       ⤳ 코어가 Redis 조회 + 코드 일치 + TTL 확인 → pending → verified 상태 전이
+   → { verified: true }   ⇒ phase 자동 'details'
+   ↓
+[Form 3] 비밀번호 + 이름 입력 → useSignupForm.formAction
 [Server Action] registerAction
-   → registerUser(input, DrizzleUserRepository, bcryptPasswordHasher)
-       ⤳ 검증(이메일 형식·비밀번호 강도) + 중복 검사 + bcrypt hash + INSERT
-   → loginUser(input, deps, { secureCookie })   // 자동 로그인
-       ⤳ verify hash + INSERT session
+   → registerUserV2({ email, password, name }, { users, passwordHasher, emailTokens })
+       ⤳ 코어가 verified 확인 (아니면 email_not_verified 에러) + bcrypt hash + INSERT users
+   → loginUser(...)   // 자동 로그인
    → cookies().set(applyAuthCookie(loginResult.cookie))
    → redirect(sanitizeNextPath(next))
 ```
+
+phase 전이는 `useEffect`로 setState하지 않고 useActionState의 결과를 직접 derive한다
+(`react-hooks/set-state-in-effect` 회피).
 
 ### 이메일 로그인
 
@@ -136,36 +157,40 @@ src/components/hooks/useResetPasswordForm.ts  useActionState wrapper
 가드 전략은 다른 회원 전용 페이지와 동일하다. proxy.ts는 변경하지 않으며, RSC가
 `getCurrentUser()` 결과로 직접 `/login?next=/account/delete` 로 리다이렉트한다.
 
-### 비밀번호 재설정
+### 비밀번호 재설정 (Redis 토큰 + email/token URL 쌍)
+
+이슈 #394 / siglens-core#55 이후 password_resets DB 테이블은 제거되고 Redis(EmailTokenStore)로 토큰을 관리한다.
 
 ```
 [/login] "비밀번호를 잊으셨나요?" 링크 → /forgot-password
-   ↓ ForgotPasswordForm submit (useActionState)
+   ↓ ForgotPasswordForm submit
 [Server Action] requestPasswordResetAction
-   → requestPasswordReset({ email }, { users, passwordResets, tokenGenerator, tokenHasher })
-       ⤳ 코어가 사용자 조회 + token 발급(혹은 token: null) + INSERT password_resets
-   → result.token !== null 이면:
-       buildPasswordResetEmail({ to, token, expiresAt }) → dispatcher.sendEmail (fire-and-forget)
+   → requestPasswordResetV2({ email }, { users, emailTokens, emailDispatcher }, { buildMessage })
+       ⤳ 코어가 사용자 조회 + token 발급 + Redis pending 저장 + dispatcher.sendEmail
    → 항상 { submitted: true } 반환 (enumeration 회피)
    ↓
-[메일 수신] 링크 클릭 → /reset-password?token=<raw>
-   ↓ ResetPasswordForm submit
+[메일 수신] 링크 클릭 → /reset-password?email=<email>&token=<raw>
+   ↓ ResetPasswordForm submit (email + token 둘 다 hidden input으로 전달)
 [Server Action] confirmPasswordResetAction
-   → confirmPasswordReset({ token, newPassword }, { passwordResets, passwordHasher, tokenHasher })
-       ⤳ 코어가 token 해시 검증 + 만료 확인 + 비밀번호 강도 검증 + bcrypt hash + UPDATE
-   → 실패: 폼 상태로 invalid_token / expired_token / weak_password / invalid_password 반환
+   → confirmPasswordResetV2({ email, token, newPassword }, { users, passwordHasher, emailTokens })
+       ⤳ 코어가 Redis 조회 + 토큰 일치 + TTL 확인 + 비밀번호 강도 검증 + bcrypt hash + UPDATE users
+   → 실패: 폼 상태로 invalid_token / expired_token / weak_password / invalid_password / invalid_email 반환
    → 성공: redirect('/login?password_reset=1') — 로그인은 별도 (의도적으로 자동로그인 안 함)
 [/login?password_reset=1] 상단에 "비밀번호 변경 완료" 안내 표시 후 로그인 폼
 ```
 
-소셜 가입 사용자에 대해서는 코어 `requestPasswordReset`이 password_hash가 없는 계정에
-`token: null`을 반환하므로, 메일이 발송되지 않고 자연스럽게 흐름이 끊긴다. 사용자에게는
-enumeration 회피를 위해 동일한 success 메시지가 노출된다.
+소셜 가입 사용자에 대해서는 코어가 password_hash 없는 계정으로 토큰 발급을 거부하므로,
+사용자 측에서는 enumeration 회피를 위해 동일한 success 메시지가 노출된다.
 
-이메일 dispatcher는 `RESEND_API_KEY` 환경변수가 설정되어 있을 때 `ResendEmailDispatcher`를,
-없을 때 `NoopEmailDispatcher`(개발/CI 환경)를 사용한다. 향후 코어가 이메일 발송을
-직접 책임지게 되면(siglens-core#53) consumer 측 dispatcher는 deps로 주입만 하고
-빌더는 코어로 이전된다.
+dispatcher 정책: `RESEND_API_KEY` 환경변수가 설정되어 있을 때 `ResendEmailDispatcher`를
+사용하고, 없을 때 `NoopEmailDispatcher`(개발/CI 환경)로 fallback. EmailTokenStore는
+코어 `createEmailTokenStore()` 팩토리(Upstash Redis 자동 사용) 호출.
+
+> **현재 구현 상태**: siglens-core#55 의 새 시그니처(`requestPasswordResetV2`,
+> `confirmPasswordResetV2`, `requestEmailVerification`, `verifyEmail`,
+> `registerUserV2`, `EmailTokenStore`)는 아직 npm에 배포되지 않아
+> `src/domain/auth/coreStubs.ts`로 임시 stub이 작성되어 있다. 새 코어 버전이
+> 배포되면 stubs 모듈을 삭제하고 import 경로를 `@y0ngha/siglens-core`로 교체한다.
 
 ### 로그아웃
 

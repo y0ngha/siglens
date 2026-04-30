@@ -58,3 +58,20 @@
 - Violation: fire-and-forget 주석을 달아두고 실제로는 await로 dispatcher 호출 결과를 기다림
 - Rule: MISTAKES.md Fire-and-Forget Operations #1 — fire-and-forget이라면 진짜로 caller를 막지 않아야 함
 - Context: requestPasswordResetAction에서 이메일 발송을 async로 진행할 의도였으나 await가 들어가 Resend 응답을 기다리는 동안 Server Action이 블록됨. void 호출로 변경하고 dispatcher.sendEmail 자체가 boolean 반환 + 내부 swallow 한다는 점을 주석으로 명시.
+
+## [Issue #394 round 1 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: 동일 모듈에서 import 두 번 (re-export + 내부 사용)
+- Rule: MISTAKES.md Components #0 — 중복 import 통합
+- Context: src/infrastructure/email/types.ts에서 EmailMessage를 export type으로 한 번, 내부 annotation용으로 또 한 번 import. 단일 import + export type {…}으로 통합.
+
+- Violation: 인프라 레이어 내부에서 EmailMessage를 도메인 stubs에서 직접 import하여 ./types 인다이렉션을 우회
+- Rule: FF Cohesion 3-A — 인프라 모듈은 자체 ./types 경계를 통해 외부 타입을 받음
+- Context: emailVerificationEmail.ts가 @/domain/auth/coreStubs에서 EmailMessage를 직접 import해 passwordResetEmail.ts와 import 경로가 갈렸음. ./types를 통해 동일 경로로 통일.
+
+- Violation: 정적 string id를 hardcode하여 useId() 미사용
+- Rule: FF Predictability — 같은 기능의 사용처는 동일한 idiomatic React 패턴 사용
+- Context: ResetPasswordForm의 hintId가 'reset-password-hint' literal이었으나 SignupForm은 useId()를 사용 중. useId()로 통일.
+
+- Violation: 에러 코드 union의 일부 분기가 테스트 미커버
+- Rule: MISTAKES.md Infrastructure #2 / Tests #22 — 인프라 액션은 모든 에러 분기 테스트 필요
+- Context: verifyEmailAction의 'no_pending_verification', registerAction의 'email_already_exists' 분기가 테스트 누락. 각각 케이스 추가하여 분기 커버리지 보완.
