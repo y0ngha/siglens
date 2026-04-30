@@ -100,7 +100,7 @@ const bottomNotice = (
             {INVESTMENT_DISCLAIMER} 서비스 이용과 관련한 자세한 조건은&nbsp;
             <Link
                 href={TERMS_PATH}
-                className="text-primary-400 hover:text-primary-300 transition-colors"
+                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
                 {TERMS_TITLE}
             </Link>
@@ -401,7 +401,7 @@ export default function PrivacyPage() {
                         회원은 로그인 후 언제든지&nbsp;
                         <Link
                             href="/account/delete"
-                            className="text-primary-400 hover:text-primary-300 transition-colors"
+                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
                             계정 설정 → 회원 탈퇴
                         </Link>

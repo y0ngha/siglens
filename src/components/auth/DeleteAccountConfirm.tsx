@@ -111,7 +111,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                     aria-describedby={INPUT_HINT_ID}
                     className="border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-primary-500/40 aria-invalid:border-ui-danger h-12 w-full rounded-md border px-4 text-sm focus:ring-2 focus:outline-none"
                 />
-                <p
+                <div
                     id={INPUT_HINT_ID}
                     role="status"
                     aria-live="polite"
@@ -121,7 +121,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
                     )}
                 >
                     {hintMessage}
-                </p>
+                </div>
             </div>
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Link

@@ -281,7 +281,7 @@ export default function TermsPage() {
                         회원은 로그인 후 언제든지&nbsp;
                         <Link
                             href="/account/delete"
-                            className="text-primary-400 hover:text-primary-300 transition-colors"
+                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
                             계정 설정 → 회원 탈퇴
                         </Link>
@@ -357,7 +357,7 @@ export default function TermsPage() {
                         내용은&nbsp;
                         <Link
                             href={PRIVACY_PATH}
-                            className="text-primary-400 hover:text-primary-300 transition-colors"
+                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
                             {PRIVACY_TITLE}
                         </Link>
