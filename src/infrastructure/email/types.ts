@@ -1,9 +1,8 @@
-export interface EmailMessage {
-    to: string;
-    subject: string;
-    html: string;
-    text: string;
-}
+// EmailMessage 의 정식 정의는 siglens-core가 publish 후 그곳으로 이전될 예정.
+// 그 시점까지는 domain/auth/coreStubs에 정의된 shape를 그대로 사용한다.
+import type { EmailMessage } from '@/domain/auth/coreStubs';
+
+export type { EmailMessage };
 
 export interface EmailDispatcher {
     /**
