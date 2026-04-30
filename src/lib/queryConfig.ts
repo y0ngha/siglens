@@ -12,4 +12,5 @@ export const QUERY_KEYS = {
     assetInfo: (symbol: string) => ['asset-info', symbol] as const,
     briefing: (jobId: string) => ['briefing', jobId] as const,
     marketSummary: () => ['market-summary'] as const,
+    currentUser: () => ['current-user'] as const,
 } as const;

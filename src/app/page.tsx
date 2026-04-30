@@ -1,20 +1,20 @@
-import { cache, Suspense } from 'react';
-import Link from 'next/link';
-import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
-import {
-    countSkillFiles,
-    FileSkillsLoader,
-} from '@/infrastructure/skills/loader';
-import { Footer } from '@/components/layout/Footer';
-import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
-import { StatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
 import { HowItWorks } from '@/components/home/HowItWorks';
 import {
     SkillsShowcase,
     SkillsShowcaseSkeleton,
 } from '@/components/home/SkillsShowcase';
+import { StatsBar, StatsBarSkeleton } from '@/components/home/StatsBar';
 import { TickerCategories } from '@/components/home/TickerCategories';
+import { Footer } from '@/components/layout/Footer';
+import { SymbolSearchPanel } from '@/components/search/SymbolSearchPanel';
 import { JsonLd } from '@/components/ui/JsonLd';
+import {
+    countSkillFiles,
+    FileSkillsLoader,
+} from '@/infrastructure/skills/loader';
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from '@/lib/seo';
+import Link from 'next/link';
+import { cache, Suspense } from 'react';
 
 const loadSkills = cache(() => new FileSkillsLoader().loadSkills());
 
@@ -163,23 +163,24 @@ export default async function Home() {
                         aria-hidden="true"
                         className="hero-ambient pointer-events-none absolute inset-0"
                     />
-                    <div className="relative">
+                    <div className="relative w-full max-w-4xl">
                         <p className="text-secondary-400 mb-6 font-mono text-xs tracking-[0.3em] uppercase">
                             SIGLENS
                         </p>
-                        <h1 className="text-secondary-100 text-[2rem] leading-[1.15] font-bold tracking-tight text-balance sm:text-5xl lg:text-6xl">
+                        <h1 className="text-secondary-100 mx-auto max-w-xs text-[2rem] leading-[1.15] font-bold tracking-tight text-balance sm:max-w-none sm:text-5xl lg:mx-0 lg:text-6xl">
                             미국 주식,{' '}
-                            <span className="text-primary-400 block sm:inline">
-                                AI가 읽어주는 시장과 차트
+                            <span className="text-primary-400">
+                                AI가 읽어주는
+                                <br className="sm:hidden" /> 시장과 차트
                             </span>
                         </h1>
-                        <p className="text-secondary-400 mx-auto mt-4 max-w-lg text-base leading-relaxed break-keep sm:text-xl lg:mx-0">
+                        <p className="text-secondary-400 mx-auto mt-4 max-w-xs text-base leading-relaxed sm:max-w-lg sm:text-xl lg:mx-0">
                             오늘 주목할 섹터부터 종목별 기술적 분석, AI 대화까지
                             한 번에.
                         </p>
                         <div
                             id="search"
-                            className="mt-8 flex justify-center lg:justify-start"
+                            className="mt-8 flex w-full justify-center sm:max-w-xl lg:justify-start"
                         >
                             <SymbolSearchPanel />
                         </div>
