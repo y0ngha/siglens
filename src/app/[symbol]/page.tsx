@@ -14,11 +14,10 @@ import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolDescription,
-    buildSymbolKeywords,
+    buildSymbolSeoContent,
     OG_IMAGE_HEIGHT,
     OG_IMAGE_WIDTH,
     SITE_NAME,
-    SITE_URL,
 } from '@/lib/seo';
 import { buildDisplayName } from '@/domain/ticker';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
@@ -49,19 +48,8 @@ export async function generateMetadata({
     params,
 }: Omit<Props, 'searchParams'>): Promise<Metadata> {
     const { symbol } = await params;
-    const ticker = symbol.toUpperCase();
-
-    const assetInfo = await getAssetInfoAction(ticker);
-    const displayName = buildDisplayName(assetInfo, ticker);
-    const title = `${displayName} 주가 AI 분석`;
-    const fullTitle = `${title} | ${SITE_NAME}`;
-    const description = buildSymbolDescription(displayName);
-    const url = `${SITE_URL}/${ticker}`;
-    const keywords = buildSymbolKeywords(
-        ticker,
-        displayName,
-        assetInfo?.koreanName
-    );
+    const { title, fullTitle, description, url, keywords } =
+        buildSymbolSeoContent(symbol);
 
     return {
         title,
@@ -107,13 +95,14 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     if (!assetInfo) return notFound();
 
     const displayName = buildDisplayName(assetInfo, ticker);
+    const { url } = buildSymbolSeoContent(ticker);
 
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: `${displayName} 주가 AI 분석 | ${SITE_NAME}`,
         description: buildSymbolDescription(displayName),
-        url: `${SITE_URL}/${ticker}`,
+        url,
         inLanguage: 'ko',
         about: {
             '@type': 'Corporation',
@@ -125,7 +114,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         {
             name: `${displayName} 주가 AI 분석`,
-            url: `${SITE_URL}/${ticker}`,
+            url,
         },
     ]);
 

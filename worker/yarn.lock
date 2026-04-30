@@ -1271,7 +1271,6 @@ __metadata:
     bcryptjs: "npm:^3.0.3"
   peerDependencies:
     "@google/genai": ^1.50.1
-    "@neondatabase/serverless": ^1.1.0
     "@upstash/redis": ^1.37.0
     drizzle-orm: ^0.45.2
   checksum: 10c0/0d46076d2f01b7d634024f2b1cf3adfbe10913a5719c607649a5a30776d5b429dfd49c591152f97719061f2028b74913e0aa1fab3980cd7a1f0a53ff8c579c64

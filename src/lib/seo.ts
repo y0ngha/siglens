@@ -43,6 +43,28 @@ export function buildSymbolDescription(displayName: string): string {
     return `${displayName} 주가를 AI가 자동 분석합니다. RSI·MACD·볼린저밴드 지표 해석, 캔들·차트 패턴 감지, AI와 대화하며 확인까지. 회원가입 없이 무료로.`;
 }
 
+export interface SymbolSeoContent {
+    ticker: string;
+    title: string;
+    fullTitle: string;
+    description: string;
+    url: string;
+    keywords: string[];
+}
+
+export function buildSymbolSeoContent(symbol: string): SymbolSeoContent {
+    const ticker = symbol.toUpperCase();
+    const title = `${ticker} 주가 AI 분석`;
+    return {
+        ticker,
+        title,
+        fullTitle: `${title} | ${SITE_NAME}`,
+        description: buildSymbolDescription(ticker),
+        url: `${SITE_URL}/${ticker}`,
+        keywords: buildSymbolKeywords(ticker, ticker),
+    };
+}
+
 export function buildSymbolKeywords(
     ticker: string,
     displayName: string,

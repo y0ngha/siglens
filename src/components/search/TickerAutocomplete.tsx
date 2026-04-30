@@ -20,7 +20,7 @@ const INPUT_SIZE: Record<TickerAutocompleteSize, string> = {
 const BUTTON_BASE =
     'bg-primary-600 hover:bg-primary-700 shrink-0 rounded-lg font-semibold whitespace-nowrap text-white transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500';
 const BUTTON_SIZE: Record<TickerAutocompleteSize, string> = {
-    sm: 'px-4 py-2 text-sm',
+    sm: 'px-3 py-2 text-sm sm:px-4',
     lg: 'px-6 py-3 text-base',
 };
 
@@ -56,12 +56,12 @@ export function TickerAutocomplete({
     return (
         <div
             className={cn(
-                'relative flex items-center gap-2',
+                'relative flex min-w-0 items-center gap-2',
                 size === 'lg' && 'w-full max-w-md',
                 className
             )}
         >
-            <div className="relative flex-1">
+            <div className="relative min-w-0 flex-1">
                 <input
                     ref={inputRef}
                     name="symbol"
@@ -83,7 +83,11 @@ export function TickerAutocomplete({
                     onKeyDown={handleKeyDown}
                     onFocus={handleFocus}
                     placeholder="종목 입력 (예: AAPL, 애플)"
-                    className={cn(INPUT_BASE, INPUT_SIZE[size])}
+                    className={cn(
+                        INPUT_BASE,
+                        INPUT_SIZE[size],
+                        'w-full min-w-0'
+                    )}
                 />
                 {isOpen && (
                     <div
