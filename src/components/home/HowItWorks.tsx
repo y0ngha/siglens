@@ -3,12 +3,12 @@ import type { SkillCounts } from '@y0ngha/siglens-core';
 
 export function HowItWorksSkeleton() {
     return (
-        <section className="px-6 py-10 lg:px-[15vw]">
+        <section className="bg-secondary-950 px-6 pt-2 pb-12 lg:px-[15vw]">
             <div className="bg-secondary-700/50 mb-6 h-3.5 w-24 animate-pulse rounded" />
             <div className="flex flex-col gap-4 md:flex-row">
                 {[0, 1, 2].map(i => (
                     <Fragment key={i}>
-                        <div className="bg-secondary-800/50 border-secondary-700 flex-1 rounded-lg border p-6">
+                        <div className="border-secondary-800 bg-secondary-900/55 flex-1 rounded-lg border p-6">
                             <div className="bg-secondary-700/50 h-8 w-8 animate-pulse rounded" />
                             <div className="bg-secondary-700/50 mt-4 h-3.5 w-20 animate-pulse rounded" />
                             <div className="mt-2 space-y-1.5">
@@ -63,17 +63,17 @@ export function HowItWorks({ skillCounts }: HowItWorksProps) {
         },
     ];
     return (
-        <section className="px-6 py-10 lg:px-[15vw]">
-            <h2 className="text-secondary-200 mb-6 text-sm font-semibold tracking-wider uppercase">
+        <section className="bg-secondary-950 px-6 pt-2 pb-12 lg:px-[15vw]">
+            <h2 className="text-secondary-400 mb-6 text-sm font-semibold tracking-wider uppercase">
                 이용 방법
             </h2>
             <div className="flex flex-col gap-4 md:flex-row">
                 {STEPS.map((step, idx) => (
                     <Fragment key={step.number}>
-                        <div className="bg-secondary-800/50 border-secondary-700 flex-1 rounded-lg border p-6">
+                        <div className="border-secondary-800 bg-secondary-900/55 flex-1 rounded-lg border p-6">
                             <span
                                 aria-hidden="true"
-                                className="text-primary-600/40 font-mono text-3xl leading-none font-bold"
+                                className="text-primary-500/35 font-mono text-3xl leading-none font-bold"
                             >
                                 {step.number}
                             </span>

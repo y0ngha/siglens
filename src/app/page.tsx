@@ -154,29 +154,26 @@ export default async function Home() {
                 검색으로 건너뛰기
             </a>
             <main className="flex flex-1 flex-col">
-                <section className="relative flex flex-1 flex-col items-center justify-center px-6 py-10 text-center sm:py-14 lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
+                <section className="bg-secondary-950 relative flex flex-col items-center justify-center overflow-hidden px-6 py-12 text-center sm:py-16 lg:min-h-[calc(100svh-9rem)] lg:items-start lg:pr-[10vw] lg:pl-[15vw] lg:text-left">
                     <div
                         aria-hidden="true"
-                        className="hero-grid pointer-events-none absolute inset-0"
-                    />
-                    <div
-                        aria-hidden="true"
-                        className="hero-ambient pointer-events-none absolute inset-0"
+                        className="hero-report-lines pointer-events-none absolute inset-0"
                     />
                     <div className="relative w-full max-w-4xl">
-                        <p className="text-secondary-400 mb-6 font-mono text-xs tracking-[0.3em] uppercase">
-                            SIGLENS
+                        <p className="text-secondary-400 mb-5 font-mono text-[0.68rem] leading-relaxed tracking-[0.18em] uppercase sm:text-xs">
+                            미국 주식 AI 분석 플랫폼, SIGLENS
                         </p>
-                        <h1 className="text-secondary-100 mx-auto max-w-xs text-[2rem] leading-[1.15] font-bold tracking-tight text-balance sm:max-w-none sm:text-5xl lg:mx-0 lg:text-6xl">
-                            미국 주식,{' '}
-                            <span className="text-primary-400">
-                                AI가 읽어주는
-                                <br className="sm:hidden" /> 시장과 차트
+                        <h1 className="text-secondary-100 mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-6xl">
+                            복잡한 차트 분석을
+                            <br />
+                            <span className="text-primary-300">
+                                한 번에 정리합니다
                             </span>
                         </h1>
-                        <p className="text-secondary-400 mx-auto mt-4 max-w-xs text-base leading-relaxed sm:max-w-lg sm:text-xl lg:mx-0">
-                            오늘 주목할 섹터부터 종목별 기술적 분석, AI 대화까지
-                            한 번에.
+                        <p className="text-secondary-400 mx-auto mt-5 max-w-sm text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">
+                            티커를 입력하면 RSI, MACD, 볼린저밴드 등 보조지표{' '}
+                            {skillCounts.indicators}종과 차트 패턴, 전략 신호를
+                            AI가 분석해 핵심 근거만 보여줍니다.
                         </p>
                         <div
                             id="search"
@@ -187,7 +184,7 @@ export default async function Home() {
                         <div className="mt-6 flex justify-center lg:justify-start">
                             <Link
                                 href="/market"
-                                className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold tracking-wider uppercase transition-colors"
+                                className="text-primary-400 hover:text-primary-300 inline-flex items-center gap-1 text-sm font-semibold transition-colors"
                             >
                                 오늘 주목할 종목 →
                             </Link>
