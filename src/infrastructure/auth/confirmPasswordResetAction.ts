@@ -3,27 +3,31 @@
 import {
     DrizzleUserRepository,
     bcryptPasswordHasher,
-    confirmPasswordReset,
 } from '@y0ngha/siglens-core';
 import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/domain/auth/formTypes';
+// TODO(siglens-core#55): replace with real exports once the new core ships.
+import {
+    createEmailTokenStore,
+    confirmPasswordResetV2,
+} from '@/domain/auth/coreStubs';
 import { getAuthDatabaseClient } from './db';
-import { passwordResetTokenHasher } from './passwordResetTokenService';
 
 export async function confirmPasswordResetAction(
     _prev: ResetPasswordFormState,
     formData: FormData
 ): Promise<ResetPasswordFormState> {
+    const email = String(formData.get('email') ?? '').trim();
     const token = String(formData.get('token') ?? '');
     const newPassword = String(formData.get('newPassword') ?? '');
 
     const { db } = getAuthDatabaseClient();
-    const result = await confirmPasswordReset(
-        { token, newPassword },
+    const result = await confirmPasswordResetV2(
+        { email, token, newPassword },
         {
-            passwordResets: new DrizzleUserRepository(db),
+            users: new DrizzleUserRepository(db),
             passwordHasher: bcryptPasswordHasher,
-            tokenHasher: passwordResetTokenHasher,
+            emailTokens: createEmailTokenStore(),
         }
     );
 

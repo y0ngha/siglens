@@ -1,17 +1,15 @@
 'use server';
 
-import {
-    DrizzleUserRepository,
-    requestPasswordReset,
-} from '@y0ngha/siglens-core';
+import { DrizzleUserRepository } from '@y0ngha/siglens-core';
 import type { ForgotPasswordFormState } from '@/domain/auth/formTypes';
 import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
 import { createEmailDispatcher } from '@/infrastructure/email/resend';
-import { getAuthDatabaseClient } from './db';
+// TODO(siglens-core#55): replace with real exports once the new core ships.
 import {
-    passwordResetTokenGenerator,
-    passwordResetTokenHasher,
-} from './passwordResetTokenService';
+    createEmailTokenStore,
+    requestPasswordResetV2,
+} from '@/domain/auth/coreStubs';
+import { getAuthDatabaseClient } from './db';
 
 export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,
@@ -21,28 +19,24 @@ export async function requestPasswordResetAction(
 
     const { db } = getAuthDatabaseClient();
     const repo = new DrizzleUserRepository(db);
-    const result = await requestPasswordReset(
+    const emailTokens = createEmailTokenStore();
+    const emailDispatcher = createEmailDispatcher();
+
+    // 코어가 토큰 발급 + Redis 저장 + dispatcher.sendEmail까지 처리한다.
+    // consumer는 buildMessage 콜백에서 to/subject/html/text만 채워 넘긴다.
+    await requestPasswordResetV2(
         { email },
+        { users: repo, emailTokens, emailDispatcher },
         {
-            users: repo,
-            passwordResets: repo,
-            tokenGenerator: passwordResetTokenGenerator,
-            tokenHasher: passwordResetTokenHasher,
+            buildMessage: token =>
+                buildPasswordResetEmail({
+                    to: email,
+                    token,
+                    email,
+                }),
         }
     );
 
-    if (result.token !== null) {
-        const dispatcher = createEmailDispatcher();
-        const message = buildPasswordResetEmail({
-            to: email,
-            token: result.token,
-            expiresAt: result.expiresAt,
-        });
-        // fire-and-forget — 발송 결과를 기다리지 않는다. dispatcher.sendEmail은 boolean을
-        // 반환하며 내부에서 에러를 swallow하므로 caller로 예외가 새지 않는다.
-        // enumeration 방지를 위해 발송 성공/실패와 무관하게 동일한 응답을 반환한다.
-        void dispatcher.sendEmail(message);
-    }
-
+    // enumeration 회피 — 코어 결과와 무관하게 항상 동일 응답.
     return { submitted: true };
 }
