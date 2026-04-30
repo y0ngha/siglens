@@ -57,7 +57,9 @@ export function TickerAutocomplete({
         <div
             className={cn(
                 'relative flex min-w-0',
-                size === 'sm' ? 'items-center gap-2' : 'w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center',
+                size === 'sm'
+                    ? 'items-center gap-2'
+                    : 'w-full max-w-xl flex-col gap-3 sm:flex-row sm:items-center',
                 className
             )}
         >
