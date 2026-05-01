@@ -59,6 +59,19 @@ describe('ResendEmailDispatcher', () => {
         });
         await expect(dispatcher.sendEmail(message)).resolves.toBe(false);
     });
+
+    it('이메일 발송이 타임아웃되면 false를 반환한다', async () => {
+        sendMock.mockReturnValue(new Promise(() => {}));
+        jest.spyOn(AbortSignal, 'timeout').mockReturnValueOnce(
+            AbortSignal.abort(new DOMException('timeout', 'TimeoutError'))
+        );
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+        await expect(dispatcher.sendEmail(message)).resolves.toBe(false);
+        jest.restoreAllMocks();
+    });
 });
 
 describe('createEmailDispatcher', () => {

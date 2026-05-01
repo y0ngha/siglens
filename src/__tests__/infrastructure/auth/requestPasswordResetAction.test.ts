@@ -11,8 +11,8 @@ jest.mock('@/infrastructure/email/resend', () => ({
 }));
 
 jest.mock('@/infrastructure/email/passwordResetEmail', () => ({
-    buildPasswordResetEmail: jest.fn(({ to, email, token }) => ({
-        to,
+    buildPasswordResetEmail: jest.fn(({ email, token }) => ({
+        to: email,
         subject: 'subject',
         html: `html-${email}-${token}`,
         text: `text-${email}-${token}`,
@@ -81,7 +81,7 @@ describe('requestPasswordResetAction', () => {
     });
 
     describe('buildMessage 콜백', () => {
-        it('코어에 buildMessage 콜백을 전달하며, 호출 시 to/email/token이 모두 채워진 메시지를 반환한다', async () => {
+        it('코어에 buildMessage 콜백을 전달하며, 호출 시 email/token이 채워진 메시지를 반환한다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
                 tokenIssued: true,
@@ -100,7 +100,6 @@ describe('requestPasswordResetAction', () => {
                 html: string;
             };
             expect(mockBuild).toHaveBeenCalledWith({
-                to: 'user@example.com',
                 email: 'user@example.com',
                 token: 'the-token',
             });

@@ -131,6 +131,9 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         로 인증 코드를 보냈어요.{' '}
                         <EmailEditButton onClick={onRestart} />
                     </p>
+                    {codeState.error?.code === 'redis_unavailable' ? (
+                        <AuthErrorAlert message={codeState.error.message} />
+                    ) : null}
                     <AuthFieldGroup
                         id="signup-code"
                         name="code"
@@ -139,7 +142,11 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         autoComplete="one-time-code"
                         required
                         placeholder="6자리 코드"
-                        error={codeState.error?.message}
+                        error={
+                            codeState.error?.code !== 'redis_unavailable'
+                                ? codeState.error?.message
+                                : undefined
+                        }
                     />
                     <SubmitButton label="코드 확인" pendingLabel="확인 중…" />
                 </form>

@@ -32,7 +32,7 @@ export async function requestPasswordResetAction(
         { users: repo, emailTokens, emailDispatcher },
         {
             buildMessage: token =>
-                buildPasswordResetEmail({ to: email, email, token }),
+                buildPasswordResetEmail({ email, token }),
         }
     );
 

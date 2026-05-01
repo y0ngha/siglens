@@ -7,7 +7,6 @@ export type {
     ForgotPasswordFormState,
     LocalInfraErrorCode,
     LoginFormState,
-    RequestEmailVerificationErrorCode,
     RequestEmailVerificationFormState,
     ResetPasswordFormState,
     SignupFormState,

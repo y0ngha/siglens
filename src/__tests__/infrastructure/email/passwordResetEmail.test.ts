@@ -11,7 +11,6 @@ describe('buildPasswordResetEmail', () => {
     });
 
     const baseInput = {
-        to: 'user@example.com',
         email: 'user@example.com',
         token: 'raw-token-123',
     };

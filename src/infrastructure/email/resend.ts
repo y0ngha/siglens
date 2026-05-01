@@ -29,6 +29,16 @@ export class ResendEmailDispatcher implements EmailDispatcher {
 
     async sendEmail(message: EmailMessage): Promise<boolean> {
         const signal = AbortSignal.timeout(EMAIL_SEND_TIMEOUT_MS);
+        let cleanup: (() => void) | undefined;
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            if (signal.aborted) {
+                reject(signal.reason);
+                return;
+            }
+            const listener = (): void => reject(signal.reason);
+            signal.addEventListener('abort', listener, { once: true });
+            cleanup = () => signal.removeEventListener('abort', listener);
+        });
         try {
             const { error } = await Promise.race([
                 this.client.emails.send({
@@ -38,19 +48,13 @@ export class ResendEmailDispatcher implements EmailDispatcher {
                     html: message.html,
                     text: message.text,
                 }),
-                new Promise<never>((_, reject) =>
-                    signal.addEventListener(
-                        'abort',
-                        () => reject(signal.reason),
-                        {
-                            once: true,
-                        }
-                    )
-                ),
+                timeoutPromise,
             ]);
             return error === null;
         } catch {
             return false;
+        } finally {
+            cleanup?.();
         }
     }
 }

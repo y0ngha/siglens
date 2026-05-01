@@ -44,11 +44,9 @@ export interface ResetPasswordFormState {
     } | null;
 }
 
-export type RequestEmailVerificationErrorCode = LocalInfraErrorCode;
-
 export interface RequestEmailVerificationFormState {
     submitted: boolean;
-    error: { code: RequestEmailVerificationErrorCode; message: string } | null;
+    error: { code: LocalInfraErrorCode; message: string } | null;
 }
 
 export interface VerifyEmailFormState {
