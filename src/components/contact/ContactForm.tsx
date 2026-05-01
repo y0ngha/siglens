@@ -2,33 +2,18 @@
 
 import { SubmitButton } from '@/components/auth/SubmitButton';
 import { useContactForm } from '@/components/contact/hooks/useContactForm';
+import { ContactSubmittedNotice } from '@/components/contact/ContactSubmittedNotice';
+import { ContactTextField } from '@/components/contact/ContactTextField';
+import { ContactTextareaField } from '@/components/contact/ContactTextareaField';
+import {
+    getFieldError,
+    getSubmissionError,
+} from '@/components/contact/utils/contactFormUtils';
 import { useCurrentUser } from '@/components/hooks/useCurrentUser';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
 } from '@/domain/contact/constants';
-import type { ContactFormError, ContactFormField } from '@/domain/types';
-import { CONTACT_ERROR_MESSAGES } from '@/lib/contactErrorMessages';
-import { ContactSubmittedNotice } from './ContactSubmittedNotice';
-import { ContactTextField } from './ContactTextField';
-import { ContactTextareaField } from './ContactTextareaField';
-
-function getFieldError(
-    error: ContactFormError | null,
-    field: ContactFormField
-): string | undefined {
-    return error?.field === field
-        ? CONTACT_ERROR_MESSAGES[error.code]
-        : undefined;
-}
-
-function getSubmissionError(
-    error: ContactFormError | null
-): string | undefined {
-    return error && error.field === undefined
-        ? CONTACT_ERROR_MESSAGES[error.code]
-        : undefined;
-}
 
 export function ContactForm() {
     const [state, formAction] = useContactForm();

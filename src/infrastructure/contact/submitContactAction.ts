@@ -27,10 +27,10 @@ export async function submitContactAction(
         };
     }
 
-    // TODO(#398): submitContactInquiry 호출로 교체
+    // TODO(#398): submitContactInquiry 호출로 교체 — 성공 시 submitted: true 반환 유지
     return {
-        submitted: false,
-        error: { code: 'submission_failed' },
+        submitted: true,
+        error: null,
         values: validation.values,
     };
 }

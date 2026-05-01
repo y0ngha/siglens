@@ -35,16 +35,7 @@
 - Rule: FF.md Predictability — 동일 입력에 대한 동일 처리 보장; 양 액션 간 비대칭 처리 금지
 - Context: 사용자가 비밀번호에 의도적/비의도적 공백 포함 가입 시 로그인 불가 버그. password는 양쪽 모두 trim 제거(원본 유지), email은 양쪽 모두 trim 적용으로 통일.
 
-## [Issue #387 | feat/387/회원탈퇴-ui | 2026-04-30]
-- Violation: aria-describedby가 정적 힌트 텍스트만 가리키고 입력 검증 결과를 알리는 라이브 영역이 없음
-- Rule: WCAG 4.1.3 (Status Messages) — 사용자가 입력한 값에 대한 검증 결과는 스크린리더에 즉시 통지되어야 함
-- Context: DeleteAccountConfirm의 이메일 재입력 필드가 aria-describedby로 정적 힌트만 가리켜 잘못된 이메일을 입력해도 음성 안내가 없었음. 같은 paragraph를 role="status" aria-live="polite" + 입력값에 따라 텍스트가 바뀌는 동적 메시지로 전환하고, aria-invalid도 함께 토글하도록 수정.
-
 ## [PR #391 코멘트 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
-- Violation: 이메일 표시 요소에 aria-hidden 적용으로 스크린 리더 접근 불가
-- Rule: WCAG 접근성 — 사용자가 참조해야 할 정보는 스크린 리더에서 읽혀야 함
-- Context: DeleteAccountConfirm에서 사용자가 재입력해야 할 이메일 주소를 표시하는 <p>에 aria-hidden이 적용되어 스크린 리더 사용자가 이메일 확인 불가. aria-hidden 제거.
-
 - Violation: describe 레이블과 실제 테스트 케이스 의미 불일치
 - Rule: MISTAKES.md Tests #9 — describe 텍스트는 내부 it()들의 공통 전제조건만 커버해야 함
 - Context: describe('이메일 검증 (email_mismatch)') 블록 안에 이메일이 일치하여 성공하는 케이스가 포함됨. 별도 describe('이메일 정규화') 블록으로 분리.
@@ -76,6 +67,11 @@
 - Violation: 특정 기능 전용 훅을 공유 hooks/ 디렉토리에 배치
 - Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
 - Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
+
+## [PR #403 Round 4 | feat/398/contact-us-form | 2026-05-01]
+- Violation: 컴포넌트 파일에서 같은 디렉터리 컴포넌트를 상대 경로('./')로 import
+- Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지, 경로 별칭(@/) 사용 필수
+- Context: ContactForm.tsx가 ContactSubmittedNotice, ContactTextField, ContactTextareaField를 './' 상대 경로로 import. @/components/contact/... 로 변경.
 
 ## [PR #403 Round 3 | feat/398/contact-us-form | 2026-05-01]
 - Violation: domain/ 함수에서 상대 경로 import 사용

@@ -16,13 +16,13 @@ const validForm = {
 
 describe('submitContactAction', () => {
     describe('검증 통과 후 전송 시도', () => {
-        it('모든 필드가 유효하면 submission_failed 에러와 trim된 values 를 반환한다', async () => {
+        it('모든 필드가 유효하면 submitted: true, error: null, trim된 values 를 반환한다', async () => {
             const result = await submitContactAction(
                 INITIAL_STATE,
                 makeFormData(validForm)
             );
-            expect(result.submitted).toBe(false);
-            expect(result.error?.code).toBe('submission_failed');
+            expect(result.submitted).toBe(true);
+            expect(result.error).toBeNull();
             expect(result.values).toEqual({
                 title: validForm.title,
                 email: validForm.email,

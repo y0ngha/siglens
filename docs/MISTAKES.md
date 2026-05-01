@@ -483,6 +483,20 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Replace <span> with <button>, add aria-describedby + role="tooltip" pattern
    ❌ <span title="Information">ⓘ</span>  // title-only, no keyboard access
    ✅ <button aria-describedby="tooltip-id" className="focus-visible:ring"><span id="tooltip-id" role="tooltip">Information</span></button>
+
+6. aria-describedby pointing to static text only for validation feedback
+   → Input validation results must be announced immediately to screen readers via live region
+   → aria-describedby alone is insufficient for dynamic validation state; requires role="status" aria-live="polite"
+   → Dynamic message text must change based on input validity, and aria-invalid must toggle in sync
+   ❌ <p id="hint">Enter a valid email</p>; <input aria-describedby="hint">  // static hint, no validation feedback announced
+   ✅ <p id="status" role="status" aria-live="polite">{isValid ? 'Valid' : 'Invalid email format'}</p>; <input aria-invalid={!isValid} aria-describedby="status">
+
+7. Using aria-hidden on content users must reference
+   → aria-hidden must only hide decorative or duplicated content invisible to screen readers
+   → If a user must read or reference the content, aria-hidden will cause accessibility failure
+   → Remove aria-hidden from informational content (instructions, data fields, confirmation values)
+   ❌ <p aria-hidden>Email: user@example.com</p>  // user needs to verify email before deletion confirmation
+   ✅ <p>Email: user@example.com</p>  // make visible and accessible to screen readers
 ```
 
 ---
