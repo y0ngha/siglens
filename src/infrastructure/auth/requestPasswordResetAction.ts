@@ -31,8 +31,7 @@ export async function requestPasswordResetAction(
         { email },
         { users: repo, emailTokens, emailDispatcher },
         {
-            buildMessage: token =>
-                buildPasswordResetEmail({ email, token }),
+            buildMessage: token => buildPasswordResetEmail({ email, token }),
         }
     );
 
