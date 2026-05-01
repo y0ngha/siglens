@@ -7,11 +7,28 @@ import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
 } from '@/domain/contact/constants';
-import type { ContactFormField } from '@/domain/contact/formTypes';
+import type { ContactFormError, ContactFormField } from '@/domain/types';
 import { CONTACT_ERROR_MESSAGES } from '@/lib/contactErrorMessages';
 import { ContactSubmittedNotice } from './ContactSubmittedNotice';
 import { ContactTextField } from './ContactTextField';
 import { ContactTextareaField } from './ContactTextareaField';
+
+function getFieldError(
+    error: ContactFormError | null,
+    field: ContactFormField
+): string | undefined {
+    return error?.field === field
+        ? CONTACT_ERROR_MESSAGES[error.code]
+        : undefined;
+}
+
+function getSubmissionError(
+    error: ContactFormError | null
+): string | undefined {
+    return error && error.field === undefined
+        ? CONTACT_ERROR_MESSAGES[error.code]
+        : undefined;
+}
 
 export function ContactForm() {
     const [state, formAction] = useContactForm();
@@ -21,14 +38,7 @@ export function ContactForm() {
         return <ContactSubmittedNotice />;
     }
 
-    const fieldError = (field: ContactFormField): string | undefined =>
-        state.error?.field === field
-            ? CONTACT_ERROR_MESSAGES[state.error.code]
-            : undefined;
-    const submissionError =
-        state.error && state.error.field === undefined
-            ? CONTACT_ERROR_MESSAGES[state.error.code]
-            : undefined;
+    const submissionError = getSubmissionError(state.error);
     const emailDefault = state.error
         ? state.values.email
         : (currentUser.data?.email ?? '');
@@ -55,7 +65,7 @@ export function ContactForm() {
                 maxLength={CONTACT_TITLE_MAX_LENGTH}
                 placeholder="문의 제목을 입력해 주세요"
                 defaultValue={state.values.title}
-                error={fieldError('title')}
+                error={getFieldError(state.error, 'title')}
             />
 
             <ContactTextField
@@ -68,7 +78,7 @@ export function ContactForm() {
                 required
                 placeholder="answer@example.com"
                 defaultValue={emailDefault}
-                error={fieldError('email')}
+                error={getFieldError(state.error, 'email')}
             />
 
             <ContactTextareaField
@@ -79,7 +89,7 @@ export function ContactForm() {
                 maxLength={CONTACT_CONTENT_MAX_LENGTH}
                 placeholder="자세한 내용을 입력해 주세요"
                 defaultValue={state.values.content}
-                error={fieldError('content')}
+                error={getFieldError(state.error, 'content')}
             />
 
             <SubmitButton label="문의 보내기" pendingLabel="전송 중…" />

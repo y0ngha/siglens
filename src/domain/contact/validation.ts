@@ -2,12 +2,12 @@ import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_EMAIL_PATTERN,
     CONTACT_TITLE_MAX_LENGTH,
-} from './constants';
+} from '@/domain/contact/constants';
 import type {
     ContactFormError,
     ContactFormField,
     ContactFormValues,
-} from './formTypes';
+} from '@/domain/types';
 
 export interface ValidationSuccess {
     ok: true;

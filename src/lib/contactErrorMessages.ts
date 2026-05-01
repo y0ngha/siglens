@@ -2,7 +2,7 @@ import {
     CONTACT_CONTENT_MAX_LENGTH,
     CONTACT_TITLE_MAX_LENGTH,
 } from '@/domain/contact/constants';
-import type { ContactFormErrorCode } from '@/domain/contact/formTypes';
+import type { ContactFormErrorCode } from '@/domain/types';
 
 export const CONTACT_ERROR_MESSAGES: Record<ContactFormErrorCode, string> = {
     title_required: '제목을 입력해 주세요.',

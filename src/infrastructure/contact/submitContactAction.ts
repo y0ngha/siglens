@@ -1,21 +1,21 @@
 'use server';
 
-import type { ContactFormState } from '@/domain/contact/formTypes';
+import type { ContactFormState } from '@/domain/types';
 import { validateContactInput } from '@/domain/contact/validation';
+
+function getVal(formData: FormData, key: string): string {
+    const val = formData.get(key);
+    return typeof val === 'string' ? val : '';
+}
 
 export async function submitContactAction(
     _prev: ContactFormState,
     formData: FormData
 ): Promise<ContactFormState> {
-    const getVal = (key: string) => {
-        const val = formData.get(key);
-        return typeof val === 'string' ? val : '';
-    };
-
     const rawValues = {
-        title: getVal('title'),
-        email: getVal('email'),
-        content: getVal('content'),
+        title: getVal(formData, 'title'),
+        email: getVal(formData, 'email'),
+        content: getVal(formData, 'content'),
     };
 
     const validation = validateContactInput(rawValues);

@@ -1,5 +1,5 @@
 import { submitContactAction } from '@/infrastructure/contact/submitContactAction';
-import type { ContactFormState } from '@/domain/contact/formTypes';
+import type { ContactFormState } from '@/domain/types';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 
 const INITIAL_STATE: ContactFormState = {
@@ -15,7 +15,7 @@ const validForm = {
 };
 
 describe('submitContactAction', () => {
-    describe('검증 통과', () => {
+    describe('검증 통과 후 전송 시도', () => {
         it('모든 필드가 유효하면 submission_failed 에러와 trim된 values 를 반환한다', async () => {
             const result = await submitContactAction(
                 INITIAL_STATE,
