@@ -97,9 +97,9 @@ describe('model token maps', () => {
         expect(
             CLAUDE_MODEL_THINKING_BUDGET['claude-sonnet-4-6']
         ).toBeGreaterThan(0);
-        expect(
-            CLAUDE_MODEL_THINKING_BUDGET['claude-opus-4-7']
-        ).toBeGreaterThan(0);
+        expect(CLAUDE_MODEL_THINKING_BUDGET['claude-opus-4-7']).toBeGreaterThan(
+            0
+        );
     });
 
     it('GEMINI_MODEL_MAX_TOKENS uses 65536 for all Gemini models', () => {
@@ -107,9 +107,7 @@ describe('model token maps', () => {
         expect(GEMINI_MODEL_MAX_TOKENS['gemini-2.5-flash-lite']).toBe(65_536);
         expect(GEMINI_MODEL_MAX_TOKENS['gemini-2.5-pro']).toBe(65_536);
         expect(GEMINI_MODEL_MAX_TOKENS['gemini-3-flash-preview']).toBe(65_536);
-        expect(GEMINI_MODEL_MAX_TOKENS['gemini-3.1-pro-preview']).toBe(
-            65_536
-        );
+        expect(GEMINI_MODEL_MAX_TOKENS['gemini-3.1-pro-preview']).toBe(65_536);
     });
 
     it('GEMINI_MODEL_THINKING_BUDGET assigns 24576 to flash-lite, 32768 to others', () => {
@@ -133,9 +131,9 @@ describe('model token maps', () => {
             'claude-opus-4-7',
         ];
         for (const model of models) {
-            expect(
-                CLAUDE_MODEL_THINKING_BUDGET[model]
-            ).toBeLessThan(CLAUDE_MODEL_MAX_TOKENS[model]);
+            expect(CLAUDE_MODEL_THINKING_BUDGET[model]).toBeLessThan(
+                CLAUDE_MODEL_MAX_TOKENS[model]
+            );
         }
     });
 });

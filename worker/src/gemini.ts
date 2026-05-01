@@ -73,8 +73,7 @@ export async function callGemini(
                         // MAX_TOKENS + 빈 텍스트 응답을 유발한다.
                         // 호출 측에서 모델별 상한을 주입한다.
                         // flash-lite: 24576 / flash, pro: 32768
-                        thinkingBudget:
-                            options.thinkingBudget ?? defaultBudget,
+                        thinkingBudget: options.thinkingBudget ?? defaultBudget,
                         includeThoughts: false,
                     },
                 }),

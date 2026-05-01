@@ -43,9 +43,7 @@ async function callAnalysisAI(
 
     // siglens 미제공 모델은 user key 필수 (라우터에서 검증되지만 type narrowing을 위해 가드).
     if (apiKey === undefined) {
-        throw new Error(
-            'User API key required for non-siglens-provided model'
-        );
+        throw new Error('User API key required for non-siglens-provided model');
     }
 
     if (isClaudeModel(model)) {

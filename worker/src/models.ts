@@ -38,8 +38,8 @@ export function isSupportedModel(value: unknown): value is AIModel {
  * `TIER_CONFIG.models.free`는 `readonly TierModel[]`로 타입이 추론되어 deprecated 식별자가
  * 포함될 수 있으나, 런타임 값에는 deprecated가 없으므로 `readonly AIModel[]`로 cast한다.
  */
-export const SIGLENS_PROVIDED_MODELS: readonly AIModel[] =
-    TIER_CONFIG.models.free as readonly AIModel[];
+export const SIGLENS_PROVIDED_MODELS: readonly AIModel[] = TIER_CONFIG.models
+    .free as readonly AIModel[];
 
 const SIGLENS_PROVIDED_MODELS_LOOKUP: ReadonlySet<string> = new Set<string>(
     SIGLENS_PROVIDED_MODELS

@@ -1,8 +1,6 @@
 import { config } from './config.js';
 import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
-import {
-    GEMINI_MODEL_THINKING_BUDGET,
-} from './models.js';
+import { GEMINI_MODEL_THINKING_BUDGET } from './models.js';
 import type { GeminiModel } from './models.js';
 import {
     AI_RETRY_DELAY_MS,

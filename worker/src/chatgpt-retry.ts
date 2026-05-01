@@ -28,12 +28,9 @@ export async function callChatGPTWithRetry(
         signal,
         abortIfCumulativeDelayReachesMs,
     } = options;
-    return withRetry(
-        () => callChatGPT(prompt, { model, apiKey, signal }),
-        {
-            maxAttempts,
-            baseDelayMs: AI_RETRY_DELAY_MS,
-            abortIfCumulativeDelayReachesMs,
-        }
-    );
+    return withRetry(() => callChatGPT(prompt, { model, apiKey, signal }), {
+        maxAttempts,
+        baseDelayMs: AI_RETRY_DELAY_MS,
+        abortIfCumulativeDelayReachesMs,
+    });
 }

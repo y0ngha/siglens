@@ -84,16 +84,6 @@
 - Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
 - Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
 
-## [PR #403 Round 4 | feat/398/contact-us-form | 2026-05-01]
-- Violation: 컴포넌트 파일에서 같은 디렉터리 컴포넌트를 상대 경로('./')로 import
-- Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지, 경로 별칭(@/) 사용 필수
-- Context: ContactForm.tsx가 ContactSubmittedNotice, ContactTextField, ContactTextareaField를 './' 상대 경로로 import. @/components/contact/... 로 변경.
-
-## [PR #403 Round 3 | feat/398/contact-us-form | 2026-05-01]
-- Violation: domain/ 함수에서 상대 경로 import 사용
-- Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지, 경로 별칭(@/) 사용 필수
-- Context: domain/contact/validation.ts가 './constants', './formTypes' 상대 경로로 import. @/domain/contact/constants, @/domain/types로 변경.
-
 - Violation: hook 파일에서 @/domain/types가 아닌 도메인 서브모듈에서 타입 import
 - Rule: ARCHITECTURE.md — hook 파일(hooks/*.ts)의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
 - Context: useContactForm.ts가 @/domain/contact/formTypes에서 ContactFormState를 import. formTypes의 모든 타입을 domain/types.ts로 이동 후 @/domain/types로 수정.

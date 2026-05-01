@@ -1,8 +1,4 @@
-import {
-    isClaudeModel,
-    isGeminiModel,
-    isSupportedModel,
-} from './models.js';
+import { isClaudeModel, isGeminiModel, isSupportedModel } from './models.js';
 import type { AIModel, ClaudeModel, GeminiModel } from './models.js';
 
 function requireEnv(name: string): string {
@@ -22,9 +18,7 @@ export type AIProviderType = 'gemini' | 'claude';
 function parseAIProvider(value: string | undefined): AIProviderType {
     if (value === undefined) return 'gemini';
     if (value === 'claude' || value === 'gemini') return value;
-    throw new Error(
-        `AI_PROVIDER must be 'claude' or 'gemini' (got: ${value})`
-    );
+    throw new Error(`AI_PROVIDER must be 'claude' or 'gemini' (got: ${value})`);
 }
 
 function parseBriefingModel<T extends AIModel>(
@@ -35,9 +29,7 @@ function parseBriefingModel<T extends AIModel>(
     const raw = process.env[envName];
     if (raw === undefined || raw === '') return fallback;
     if (!isSupportedModel(raw)) {
-        throw new Error(
-            `${envName} is not a supported model (got: ${raw})`
-        );
+        throw new Error(`${envName} is not a supported model (got: ${raw})`);
     }
     if (!providerCheck(raw)) {
         throw new Error(

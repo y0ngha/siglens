@@ -1,8 +1,5 @@
 import { callClaude } from '../claude';
-import {
-    callClaudeReducingBudget,
-    callClaudeWithRetry,
-} from '../claude-retry';
+import { callClaudeReducingBudget, callClaudeWithRetry } from '../claude-retry';
 import type { ClaudeModel } from '../models';
 import { AI_RETRY_DELAY_MS, withRetry } from '../retry';
 
@@ -254,12 +251,9 @@ describe('claude-retry', () => {
             mockCallClaude.mockResolvedValueOnce('result');
 
             const budgetRef = { current: 16000 };
-            await callClaudeWithRetry(
-                'prompt',
-                MODEL_WITH_THINKING,
-                'key',
-                { budgetRef }
-            );
+            await callClaudeWithRetry('prompt', MODEL_WITH_THINKING, 'key', {
+                budgetRef,
+            });
 
             expect(mockCallClaude).toHaveBeenCalledWith(
                 'prompt',

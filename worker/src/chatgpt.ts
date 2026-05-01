@@ -92,9 +92,7 @@ export async function callChatGPT(
                 model,
                 finishReason,
             });
-            throw new Error(
-                `ChatGPT hit output token limit (model: ${model})`
-            );
+            throw new Error(`ChatGPT hit output token limit (model: ${model})`);
         }
 
         if (finishReason === 'content_filter') {

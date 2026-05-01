@@ -55,9 +55,7 @@ export async function callClaude(
     const requestedBudget = options.thinkingBudget ?? defaultBudget;
     // 모델이 thinking 미지원이면 강제로 비활성. requestedBudget=0이어도 비활성.
     const thinkingEnabled =
-        defaultBudget > 0 &&
-        requestedBudget > 0 &&
-        (options.thinking ?? true);
+        defaultBudget > 0 && requestedBudget > 0 && (options.thinking ?? true);
     const maxTokens = CLAUDE_MODEL_MAX_TOKENS[model];
 
     const client = getClient(apiKey);
