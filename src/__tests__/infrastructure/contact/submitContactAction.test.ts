@@ -15,7 +15,7 @@ const validForm = {
 };
 
 describe('submitContactAction', () => {
-    describe('검증 통과 후 전송 시도', () => {
+    describe('검증 성공', () => {
         it('모든 필드가 유효하면 submitted: true, error: null, trim된 values 를 반환한다', async () => {
             const result = await submitContactAction(
                 INITIAL_STATE,

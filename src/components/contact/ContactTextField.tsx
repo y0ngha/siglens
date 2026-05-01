@@ -1,10 +1,12 @@
 import { cn } from '@/lib/cn';
 
+type ContactInputType = 'text' | 'email';
+
 interface ContactTextFieldProps {
     id: string;
     name: string;
     label: string;
-    type: 'text' | 'email';
+    type: ContactInputType;
     autoComplete?: string;
     autoFocus?: boolean;
     required?: boolean;

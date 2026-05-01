@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #403 Round 5 | feat/398/contact-us-form | 2026-05-02]
+- Violation: 새로 만든 파일이 git에 추가되지 않은 채 PR 푸시되어 빌드가 차단됨
+- Rule: PR_FIX_FLOW Step 1-7 — 픽스 적용 후 모든 신규 파일을 commit/push 전에 git add로 추적해야 함
+- Context: src/components/contact/utils/contactFormUtils.ts가 로컬 파일 시스템에는 존재했지만 git 인덱스에는 없어 ContactForm.tsx의 import가 원격 빌드에서 해결되지 않음. 같은 라운드에서 lib/contactErrorMessages.ts는 dead code로 남게 됨. git add로 추적 후 다음 커밋에 포함.
+
 ## [Issue #369 PR-2 round 1 | feat/369/auth-social | 2026-04-28]
 - Violation: 멀티라인 JSDoc 주석 블록 (proxy.ts, infrastructure/auth/{db,getCurrentUser,applyAuthCookie,sessionCookieOptions}.ts)
 - Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
