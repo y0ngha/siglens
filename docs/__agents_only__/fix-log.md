@@ -23,6 +23,11 @@
 - Rule: 도메인 동작과 UI 메시지 동기화 — 코어가 책임지면 UI는 그 사실을 반영
 - Context: deleteAccount가 oauthAccounts + oauthRevoker deps로 provider 측 token revocation을 자동 수행하므로, DeleteAccountConfirm의 "각 provider 계정에서 직접 끊으세요" 안내 박스와 /privacy 약관 문구를 "탈퇴 시 자동으로 회수된다"로 갱신.
 
+## [PR #395 Round 6 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: infrastructure Server Action에서 네트워크 응답 없이 무한 대기 가능
+- Rule: MISTAKES.md Fire-and-Forget #1 — fetch 기반 외부 호출에는 반드시 타임아웃 설정
+- Context: ResendEmailDispatcher.sendEmail이 AbortSignal 없이 Resend SDK를 호출해 네트워크 지연 시 Server Action이 무기한 블로킹. AbortSignal.timeout + Promise.race 패턴으로 10초 타임아웃 추가.
+
 ## [PR #395 Round 5 | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: 동일 중간 타입 별칭 3개가 LocalInfraErrorCode와 동일한 값으로 중복 선언
 - Rule: CLAUDE.md — 작업 범위를 벗어나는 불필요한 추상화 추가 금지; 독립적 확장 계획이 없는 타입 별칭은 중복
