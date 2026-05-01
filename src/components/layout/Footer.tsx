@@ -45,7 +45,7 @@ export function Footer() {
                         <DotSeparator />
                         <ContactDialog
                             triggerLabel="문의하기"
-                            triggerClassName="text-secondary-500 hover:text-secondary-300 text-sm transition-colors rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500"
+                            triggerClassName="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
                         />
                         <DotSeparator />
                         <a
