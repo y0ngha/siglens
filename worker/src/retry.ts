@@ -1,6 +1,27 @@
 /** useAnalysis.ts가 이 문자열로 매칭하여 사용자 안내 메시지를 표시하는 5xx 소진 센티넬 코드. */
 export const AI_SERVER_UNSTABLE_CODE = 'AI_SERVER_UNSTABLE';
 
+/**
+ * Provider별 retry 모듈이 공유하는 정책 상수.
+ * 변경 시 모든 provider(Claude/Gemini/ChatGPT)의 동작이 함께 바뀐다.
+ */
+export const AI_RETRY_MAX_ATTEMPTS = 5;
+export const AI_RETRY_DELAY_MS = 5000;
+
+/**
+ * Provider 모듈이 throw하는 sentinel error에 해당 code가 붙어있는지 검사한다.
+ * Claude의 `CLAUDE_MAX_TOKENS`, Gemini의 `GEMINI_MAX_TOKENS` 모두 동일 패턴을 공유한다.
+ */
+export function hasErrorCode(error: unknown, code: string): boolean {
+    return (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        // 'code' in error 가드로 좁혀졌지만 TS가 { code: unknown }으로 완전 추론하지 못해 캐스트
+        (error as { code: unknown }).code === code
+    );
+}
+
 type ErrorKind = 'rate_limit' | 'server_error' | 'retryable' | 'none';
 
 const RETRY_ALLOWABLE_TIME_MS = 300_000;

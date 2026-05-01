@@ -84,16 +84,27 @@
 - Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
 - Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
 
-## [PR #403 Round 4 | feat/398/contact-us-form | 2026-05-01]
-- Violation: 컴포넌트 파일에서 같은 디렉터리 컴포넌트를 상대 경로('./')로 import
-- Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지, 경로 별칭(@/) 사용 필수
-- Context: ContactForm.tsx가 ContactSubmittedNotice, ContactTextField, ContactTextareaField를 './' 상대 경로로 import. @/components/contact/... 로 변경.
-
-## [PR #403 Round 3 | feat/398/contact-us-form | 2026-05-01]
-- Violation: domain/ 함수에서 상대 경로 import 사용
-- Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지, 경로 별칭(@/) 사용 필수
-- Context: domain/contact/validation.ts가 './constants', './formTypes' 상대 경로로 import. @/domain/contact/constants, @/domain/types로 변경.
-
 - Violation: hook 파일에서 @/domain/types가 아닌 도메인 서브모듈에서 타입 import
 - Rule: ARCHITECTURE.md — hook 파일(hooks/*.ts)의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
 - Context: useContactForm.ts가 @/domain/contact/formTypes에서 ContactFormState를 import. formTypes의 모든 타입을 domain/types.ts로 이동 후 @/domain/types로 수정.
+
+## [Issue #401 | feat/401/worker-ai-provider-enhancement | 2026-05-02]
+- Violation: 동일 정책 상수가 여러 retry 모듈에 중복 정의 (AI_RETRY_MAX_ATTEMPTS, AI_RETRY_DELAY_MS)
+- Rule: MISTAKES.md Design 1 / FF Cohesion — 함께 변해야 하는 상수는 single source of truth에 모아야 함
+- Context: claude-retry/gemini-retry/chatgpt-retry 세 파일이 `AI_RETRY_MAX_ATTEMPTS = 5`와 `AI_RETRY_DELAY_MS = 5000`을 각자 정의. 모두 retry.ts로 이동해 공유.
+
+- Violation: 동일 utility 함수(isMaxTokensError) 중복 구현
+- Rule: MISTAKES.md Coding Paradigm 1 — 새 함수 작성 전 기존 helper 확인
+- Context: claude-retry.ts와 gemini-retry.ts 양쪽이 `isMaxTokensError`를 동일 로직으로 정의. retry.ts에 `hasErrorCode(error, code)`로 추출하여 양쪽이 import.
+
+- Violation: 에러 처리 의도와 retryable 플래그 모순
+- Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
+- Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
+
+- Violation: process.env 값을 type alias로 force-cast (검증 없이 `as`)
+- Rule: MISTAKES.md TypeScript 7 — `as` 캐스트 시 runtime 보장 또는 가드 명시
+- Context: config.ts에서 `process.env.AI_PROVIDER as AIProviderType`, BRIEFING_CLAUDE_MODEL/BRIEFING_GEMINI_MODEL을 검증 없이 cast. parseAIProvider/parseBriefingModel 함수로 runtime 검증 후 throw 처리.
+
+- Violation: Array.find 후 type narrow를 위한 중복 type check
+- Rule: MISTAKES.md Coding Paradigm 4 — 결과에 영향 없는 로직 제거
+- Context: claude.ts에서 `find(b => b.type === 'text')` 후 `if (textBlock && textBlock.type === 'text')`로 재검사. find에 explicit type predicate(`(block): block is TextBlock`)을 적용해 후속 narrow 가드 제거.

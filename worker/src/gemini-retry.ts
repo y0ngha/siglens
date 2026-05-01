@@ -1,43 +1,26 @@
-import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
 import { config } from './config.js';
-import { withRetry } from './retry.js';
+import { callGemini, MAX_TOKENS_CODE } from './gemini.js';
+import { GEMINI_MODEL_THINKING_BUDGET } from './models.js';
+import type { GeminiModel } from './models.js';
+import {
+    AI_RETRY_DELAY_MS,
+    AI_RETRY_MAX_ATTEMPTS,
+    hasErrorCode,
+    withRetry,
+} from './retry.js';
+import {
+    DISABLED_THINKING_BUDGET,
+    getThinkingBudgetSequence,
+} from './thinking-budget.js';
+import type { BudgetRef } from './thinking-budget.js';
 
-const AI_RETRY_MAX_ATTEMPTS = 5;
 const AI_RETRY_MAX_ATTEMPTS_FREE = 3;
-export const AI_RETRY_DELAY_MS = 5000;
-export const THINKING_BUDGET_STEPS = [8192, 4096, 2048] as const;
-export type BudgetRef = { current: number };
-export const DISABLED_THINKING_BUDGET = 0;
-
-function isMaxTokensError(error: unknown): boolean {
-    return (
-        typeof error === 'object' &&
-        error !== null &&
-        'code' in error &&
-        // 'code' in error 가드로 좁혀졌지만 TS가 { code: unknown }으로 완전 추론하지 못해 캐스트
-        (error as { code: unknown }).code === MAX_TOKENS_CODE
-    );
-}
 
 // MAX_TOKENS 발생 시 thinking budget을 단계적으로 줄이며 같은 요청을 이어서 재시도한다.
-export function getThinkingBudgetSequence(initial: number): number[] {
-    const candidates = [
-        initial,
-        Math.floor(initial / 2),
-        ...THINKING_BUDGET_STEPS,
-        DISABLED_THINKING_BUDGET,
-    ];
-    return candidates.reduce<number[]>((acc, budget) => {
-        if (acc.length === 0 || budget < acc[acc.length - 1]) {
-            return [...acc, budget];
-        }
-        return acc;
-    }, []);
-}
-
 // budgetRef.current는 매 시도마다 업데이트되어 5xx 재시도 시 감소된 budget에서 재개한다
 export async function callGeminiReducingBudget(
     prompt: string,
+    model: GeminiModel,
     apiKey: string,
     signal: AbortSignal | undefined,
     budgetRef: BudgetRef
@@ -51,23 +34,23 @@ export async function callGeminiReducingBudget(
         try {
             return await callGemini(prompt, {
                 apiKey,
-                model: config.gemini.model,
-                thinking: budget > 0,
+                model,
+                thinking: budget > DISABLED_THINKING_BUDGET,
                 thinkingBudget: budget,
                 signal,
             });
         } catch (error) {
-            if (isMaxTokensError(error)) {
+            if (hasErrorCode(error, MAX_TOKENS_CODE)) {
                 const next = budgets[i + 1];
                 if (next !== undefined) {
                     console.warn(
-                        `[Worker] MAX_TOKENS (thinkingBudget=${budget}). Retrying with budget=${next}.`
+                        `[Worker] Gemini MAX_TOKENS (thinkingBudget=${budget}). Retrying with budget=${next}.`
                     );
                     continue;
                 }
                 // thinking off(budget=0)에서도 MAX_TOKENS → 응답 자체가 너무 긴 경우
                 console.error(
-                    '[Worker] MAX_TOKENS even with thinking disabled. Response is too long.'
+                    '[Worker] Gemini MAX_TOKENS even with thinking disabled. Response is too long.'
                 );
                 throw error;
             }
@@ -87,12 +70,13 @@ export interface GeminiWithRetryOptions {
     maxAttempts?: number;
     signal?: AbortSignal;
     abortIfCumulativeDelayReachesMs?: number;
-    // 미지정 시 config.gemini.thinkingBudget으로 초기화된 새 참조가 생성됨
+    /** 미지정 시 `GEMINI_MODEL_THINKING_BUDGET[model]`로 초기화된 새 참조가 생성됨 */
     budgetRef?: BudgetRef;
 }
 
 export async function callGeminiWithRetry(
     prompt: string,
+    model: GeminiModel,
     apiKey: string,
     options: GeminiWithRetryOptions = {}
 ): Promise<string> {
@@ -100,10 +84,11 @@ export async function callGeminiWithRetry(
         maxAttempts = AI_RETRY_MAX_ATTEMPTS,
         signal,
         abortIfCumulativeDelayReachesMs,
-        budgetRef = { current: config.gemini.thinkingBudget },
+        budgetRef = { current: GEMINI_MODEL_THINKING_BUDGET[model] },
     } = options;
     return withRetry(
-        () => callGeminiReducingBudget(prompt, apiKey, signal, budgetRef),
+        () =>
+            callGeminiReducingBudget(prompt, model, apiKey, signal, budgetRef),
         {
             maxAttempts,
             baseDelayMs: AI_RETRY_DELAY_MS,
@@ -112,17 +97,23 @@ export async function callGeminiWithRetry(
     );
 }
 
+/**
+ * Server-side Gemini 호출 (free → paid key fallback).
+ * Analyze에서 SIGLENS_PROVIDED_MODELS 호출 시 또는 briefing에서 사용한다.
+ * User key 경로는 `callGeminiWithRetry`를 직접 호출 (fallback 없음).
+ */
 export async function callGeminiWithKeyFallback(
     prompt: string,
+    model: GeminiModel,
     signal: AbortSignal | undefined,
     freeKeyDelayLimit: number
 ): Promise<string> {
     const { freeApiKey, apiKey } = config.gemini;
-    const budgetRef = { current: config.gemini.thinkingBudget };
+    const budgetRef = { current: GEMINI_MODEL_THINKING_BUDGET[model] };
 
     if (freeApiKey) {
         try {
-            return await callGeminiWithRetry(prompt, freeApiKey, {
+            return await callGeminiWithRetry(prompt, model, freeApiKey, {
                 maxAttempts: AI_RETRY_MAX_ATTEMPTS_FREE,
                 signal,
                 abortIfCumulativeDelayReachesMs: freeKeyDelayLimit,
@@ -131,10 +122,10 @@ export async function callGeminiWithKeyFallback(
         } catch (err) {
             if (err instanceof Error && err.name === 'AbortError') throw err;
             console.warn(
-                '[Worker] Free API key exhausted. Switching to paid key.'
+                '[Worker] Gemini free API key exhausted. Switching to paid key.'
             );
         }
     }
 
-    return callGeminiWithRetry(prompt, apiKey, { signal, budgetRef });
+    return callGeminiWithRetry(prompt, model, apiKey, { signal, budgetRef });
 }
