@@ -1,11 +1,9 @@
 'use server';
 
-import {
-    DrizzleOAuthAccountRepository,
-    DrizzleUserRepository,
-    compositeOAuthRevoker,
-    deleteAccount,
-} from '@y0ngha/siglens-core';
+import { DrizzleOAuthAccountRepository } from '@/infrastructure/db/oauthAccountRepository';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { deleteAccount } from '@/infrastructure/auth/use-cases/deleteAccount';
+import { compositeOAuthRevoker } from '@/infrastructure/auth/oauth/revoker';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DeleteAccountFormState } from '@/domain/auth/formTypes';

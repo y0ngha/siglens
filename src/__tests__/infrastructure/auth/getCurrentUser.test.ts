@@ -1,15 +1,24 @@
 jest.mock('server-only', () => ({}), { virtual: true });
 jest.mock('next/headers', () => ({ cookies: jest.fn() }));
-jest.mock('@y0ngha/siglens-core', () => ({
+jest.mock('@/infrastructure/db/client', () => ({
+    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: jest.fn(),
+}));
+jest.mock('@/infrastructure/auth/sessionCookie', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
+}));
+jest.mock('@/infrastructure/db/sessionRepository', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+}));
+jest.mock('@/infrastructure/db/userRepository', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
+}));
+jest.mock('@/infrastructure/auth/use-cases/findUserBySessionToken', () => ({
     findUserBySessionToken: jest.fn(),
-    createDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 
 import { cookies } from 'next/headers';
-import { findUserBySessionToken } from '@y0ngha/siglens-core';
+import { findUserBySessionToken } from '@/infrastructure/auth/use-cases/findUserBySessionToken';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
 

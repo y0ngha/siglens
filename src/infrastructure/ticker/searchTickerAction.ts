@@ -1,7 +1,8 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
-import { type TickerSearchResult, searchTicker } from '@y0ngha/siglens-core';
+import { searchTicker } from '@/infrastructure/ticker/use-cases/searchTicker';
+import type { TickerSearchResult } from '@/domain/types';
 
 export async function searchTickerAction(
     query: string

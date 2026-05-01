@@ -6,7 +6,7 @@ import type {
     RegisterUserError,
     RegisterUserErrorCode,
     VerifyEmailErrorCode,
-} from '@y0ngha/siglens-core';
+} from './types';
 
 export interface LoginFormState {
     error: { code: LoginUserErrorCode; message: string } | null;

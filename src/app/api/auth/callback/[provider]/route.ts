@@ -1,9 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import {
-    DrizzleSessionRepository,
-    DrizzleUserRepository,
-    socialLoginUser,
-} from '@y0ngha/siglens-core';
+import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { socialLoginUser } from '@/infrastructure/auth/use-cases/socialLoginUser';
 import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 import {

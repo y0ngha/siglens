@@ -1,9 +1,12 @@
-jest.mock('@y0ngha/siglens-core', () => ({
-    createEmailTokenStore: jest.fn(),
+jest.mock('@/infrastructure/auth/use-cases/verifyEmail', () => ({
     verifyEmail: jest.fn(),
 }));
+jest.mock('@/infrastructure/email/tokenStore', () => ({
+    createEmailTokenStore: jest.fn(),
+}));
 
-import { createEmailTokenStore, verifyEmail } from '@y0ngha/siglens-core';
+import { verifyEmail } from '@/infrastructure/auth/use-cases/verifyEmail';
+import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { verifyEmailAction } from '@/infrastructure/auth/verifyEmailAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';

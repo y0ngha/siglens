@@ -1,5 +1,5 @@
 import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
-import type { AuthSessionCookie } from '@y0ngha/siglens-core';
+import type { AuthSessionCookie } from '@/infrastructure/auth/use-cases/types';
 
 describe('applyAuthCookie', () => {
     it('AuthSessionCookie 메타를 next/headers cookies().set 형식으로 매핑한다', () => {

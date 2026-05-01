@@ -4,16 +4,23 @@ jest.mock('next/navigation', () => ({
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@y0ngha/siglens-core', () => ({
+jest.mock('@/infrastructure/db/client', () => ({
+    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: jest.fn(),
+}));
+jest.mock('@/infrastructure/auth/sessionCookie', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
+}));
+jest.mock('@/infrastructure/db/sessionRepository', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+}));
+jest.mock('@/infrastructure/auth/use-cases/logoutUser', () => ({
     logoutUser: jest.fn(),
-    createDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { logoutUser } from '@y0ngha/siglens-core';
+import { logoutUser } from '@/infrastructure/auth/use-cases/logoutUser';
 import { logoutAction } from '@/infrastructure/auth/logoutAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
 

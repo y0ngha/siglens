@@ -4,24 +4,35 @@ jest.mock('next/navigation', () => ({
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@y0ngha/siglens-core', () => ({
+jest.mock('@/infrastructure/db/client', () => ({
+    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: jest.fn(),
+}));
+jest.mock('@/infrastructure/db/sessionRepository', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+}));
+jest.mock('@/infrastructure/db/userRepository', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
+}));
+jest.mock('@/infrastructure/auth/bcrypt', () => ({
     bcryptPasswordHasher: { hashPassword: jest.fn() },
     bcryptPasswordVerifier: { verifyPassword: jest.fn() },
-    createEmailTokenStore: jest.fn(),
+}));
+jest.mock('@/infrastructure/auth/use-cases/loginUser', () => ({
     loginUser: jest.fn(),
+}));
+jest.mock('@/infrastructure/auth/use-cases/registerUser', () => ({
     registerUser: jest.fn(),
-    createDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+}));
+jest.mock('@/infrastructure/email/tokenStore', () => ({
+    createEmailTokenStore: jest.fn(),
 }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import {
-    createEmailTokenStore,
-    loginUser,
-    registerUser,
-} from '@y0ngha/siglens-core';
+import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
+import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
+import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { registerAction } from '@/infrastructure/auth/registerAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';

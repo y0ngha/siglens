@@ -1,8 +1,8 @@
 # Auth — 인증 흐름
 
-본 문서는 siglens 앱의 인증 흐름을 정리한다. 도메인 로직은 모두
-`@y0ngha/siglens-core`가 책임지며, 본 앱은 그 함수를 호출하는 얇은 어댑터(서버
-액션 · 라우트 핸들러 · UI · proxy)만 담당한다.
+본 문서는 siglens 앱의 인증 흐름을 정리한다. 인증 use-case와 관련 인프라는
+모두 본 레포(`siglens`)가 직접 소유하며, `@y0ngha/siglens-core`는 인증과 직접
+관련된 로직을 더 이상 보유하지 않는다(Phase 1~3 ejection 완료).
 
 ## 핵심 원칙
 
@@ -10,27 +10,36 @@
   되면 등급(tier 기반) 추가 혜택이 제공된다.
 - 보호 라우트는 **두지 않는다**. `proxy.ts`는 *이미 로그인된* 사용자가
   `/login`·`/signup`에 접근했을 때 `/`로 보내는 역방향 가드만 담당한다.
-- 모든 민감 도메인 로직(검증·해싱·세션 발급)은 siglens-core가 처리한다. 본 앱은
-  코어 함수를 호출하고 결과를 Next.js 환경에 매핑할 뿐이다.
+- 인증 use-case(register/login/logout/social/delete/email-verify/password-reset)는
+  `src/infrastructure/auth/use-cases/`에 직접 구현되어 있으며(이전에는
+  `@y0ngha/siglens-core`에서 import했음), 비밀번호 해싱(`bcryptjs`),
+  이메일 토큰 저장소, OAuth 어댑터, 사용자 DB 어댑터(Drizzle/Neon)도 모두
+  siglens가 직접 보유한다. siglens-core는 더 이상 인증 도메인을 알지 못한다.
 
 ## 의존성 / 환경 변수
 
 | 변수 | 용도 |
 |---|---|
-| `DATABASE_URL` | Neon Postgres 연결 (siglens-core가 사용) |
+| `DATABASE_URL` | Neon Postgres 연결 (siglens 로컬 Drizzle 클라이언트가 사용) |
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | Kakao OAuth (client_secret 미발급 앱이면 KAKAO_CLIENT_SECRET 생략 가능) |
 | `OAUTH_REDIRECT_BASE_URL` (없으면 `NEXT_PUBLIC_SITE_URL` fallback) | OAuth 콜백 URL 베이스 |
 | `RESEND_API_KEY` | 비밀번호 재설정 메일 발송용 Resend API key (없으면 noop dispatcher로 fallback) |
 | `EMAIL_FROM` (없으면 `Siglens <noreply@siglens.io>`) | 발신자 표시 |
 
-> **현재 활성화된 provider**: Google, Kakao. siglens-core 의 `OAuthProvider` 타입은 `apple`도 포함하지만 본 앱에서는 비활성. 추후 활성화 시 `providers.ts`의 `SUPPORTED_PROVIDERS` 와 `SocialLoginButtons` 의 PROVIDERS 배열에 추가하면 된다.
+> **현재 활성화된 provider**: Google, Kakao. siglens-core 의 `OAuthProvider` union 타입은 `apple`도 포함하지만 본 앱에서는 비활성. 추후 활성화 시 `providers.ts`의 `SUPPORTED_PROVIDERS` 와 `SocialLoginButtons` 의 PROVIDERS 배열에 추가하면 된다.
 
 ## 파일 맵
 
 ```
 src/infrastructure/auth/
-  db.ts                    siglens-core createDatabaseClient 싱글톤 캐시
+  use-cases/               # 인증 use-case 본체 (이전: @y0ngha/siglens-core).
+                            #   registerUser / loginUser / logoutUser /
+                            #   socialLoginUser / deleteAccount /
+                            #   findUserBySessionToken /
+                            #   requestEmailVerification / verifyEmail /
+                            #   requestPasswordReset / confirmPasswordReset
+  db.ts                    Drizzle/Neon 클라이언트 싱글톤 (siglens 로컬)
   applyAuthCookie.ts       AuthSessionCookie → next/headers cookies().set 매핑
   sessionCookieOptions.ts  isSecureCookieEnv() — NODE_ENV로 secure 플래그 결정
   getCurrentUser.ts        쿠키 → findUserBySessionToken (RSC/Server Action 전용)
@@ -45,10 +54,14 @@ src/infrastructure/auth/
   confirmPasswordResetAction.ts       'use server' — confirmPasswordReset(input.email 추가, emailTokens 주입) → 성공 시 redirect('/login?password_reset=1')
 
 src/infrastructure/email/
-  types.ts                 EmailDispatcher / EmailMessage 를 siglens-core에서 re-export (단일 import 경로 보장)
+  types.ts                 EmailDispatcher / EmailMessage (siglens 로컬 정의)
   resend.ts                ResendEmailDispatcher (RESEND_API_KEY 있을 때) / NoopEmailDispatcher fallback
   passwordResetEmail.ts    비밀번호 재설정 템플릿 — URL: /reset-password?email=…&token=…
   emailVerificationEmail.ts  회원가입 인증 코드 템플릿 — 6자리 코드 본문 노출
+
+> 모든 use-case 함수와 그 deps 인터페이스는 siglens 로컬 모듈에서 import한다:
+> `import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';`
+> 등. 더 이상 `@y0ngha/siglens-core`에서 import하지 않는다.
 
 src/domain/auth/redirect.ts sanitizeNextPath()
 
@@ -99,19 +112,19 @@ SignupForm(client)은 useActionState 3개의 결과를 derive해 phase를 결정
 [Form 1] 이메일 입력 → useRequestEmailVerification.formAction
 [Server Action] requestEmailVerificationAction
    → requestEmailVerification({ email }, { emailTokens, emailDispatcher }, { buildMessage })
-       ⤳ 코어가 6자리 코드 발급 + Redis(EmailTokenStore) pending 저장 + dispatcher 호출
+       ⤳ use-case가 6자리 코드 발급 + Redis(EmailTokenStore) pending 저장 + dispatcher 호출
    → { submitted: true }   ⇒ phase 자동 'code'
    ↓
 [Form 2] 코드 입력 + email hidden → useVerifyEmail.formAction
 [Server Action] verifyEmailAction
    → verifyEmail({ email, code }, { emailTokens })
-       ⤳ 코어가 Redis 조회 + 코드 일치 + TTL 확인 → pending → verified 상태 전이
+       ⤳ use-case가 Redis 조회 + 코드 일치 + TTL 확인 → pending → verified 상태 전이
    → { verified: true }   ⇒ phase 자동 'details'
    ↓
 [Form 3] 비밀번호 + 이름 입력 → useSignupForm.formAction
 [Server Action] registerAction
    → registerUser({ email, password, name }, { users, passwordHasher, emailTokens })
-       ⤳ 코어가 verified 확인 (아니면 email_not_verified 에러) + bcrypt hash + INSERT users
+       ⤳ use-case가 verified 확인 (아니면 email_not_verified 에러) + bcrypt hash + INSERT users
    → loginUser(...)   // 자동 로그인
    → cookies().set(applyAuthCookie(loginResult.cookie))
    → redirect(sanitizeNextPath(next))
@@ -163,27 +176,27 @@ phase 전이는 `useEffect`로 setState하지 않고 useActionState의 결과를
    ↓ ForgotPasswordForm submit
 [Server Action] requestPasswordResetAction
    → requestPasswordReset({ email }, { users, emailTokens, emailDispatcher }, { buildMessage })
-       ⤳ 코어가 사용자 조회 + token 발급 + Redis pending 저장 + dispatcher.sendEmail
+       ⤳ use-case가 사용자 조회 + token 발급 + Redis pending 저장 + dispatcher.sendEmail
    → 항상 { submitted: true } 반환 (enumeration 회피)
    ↓
 [메일 수신] 링크 클릭 → /reset-password?email=<email>&token=<raw>
    ↓ ResetPasswordForm submit (email + token 둘 다 hidden input으로 전달)
 [Server Action] confirmPasswordResetAction
    → confirmPasswordReset({ email, token, newPassword }, { users, passwordHasher, emailTokens })
-       ⤳ 코어가 Redis 조회 + 토큰 일치 + TTL 확인 + 비밀번호 강도 검증 + bcrypt hash + UPDATE users
+       ⤳ use-case가 Redis 조회 + 토큰 일치 + TTL 확인 + 비밀번호 강도 검증 + bcrypt hash + UPDATE users
    → 실패: 폼 상태로 invalid_token / expired_token / weak_password / invalid_password / invalid_email 반환
    → 성공: redirect('/login?password_reset=1') — 로그인은 별도 (의도적으로 자동로그인 안 함)
 [/login?password_reset=1] 상단에 "비밀번호 변경 완료" 안내 표시 후 로그인 폼
 ```
 
-소셜 가입 사용자에 대해서는 코어가 password_hash 없는 계정으로 토큰 발급을 거부하므로,
+소셜 가입 사용자에 대해서는 use-case가 password_hash 없는 계정으로 토큰 발급을 거부하므로,
 사용자 측에서는 enumeration 회피를 위해 동일한 success 메시지가 노출된다.
 
 dispatcher 정책: `RESEND_API_KEY` 환경변수가 설정되어 있을 때 `ResendEmailDispatcher`를
 사용하고, 없을 때 `NoopEmailDispatcher`(개발/CI 환경)로 fallback. EmailTokenStore는
-코어 `createEmailTokenStore()` 팩토리(Upstash Redis 자동 사용) 호출.
+siglens 로컬 `createEmailTokenStore()` 팩토리(Upstash Redis 자동 사용) 호출.
 
-코어가 OAuth provider unlink까지 함께 처리한다(deleteAccount는 `oauthAccounts`/`oauthRevoker` deps를 받아 provider별 token revocation을 자동 호출).
+deleteAccount use-case가 OAuth provider unlink까지 함께 처리한다(`oauthAccounts`/`oauthRevoker` deps를 받아 provider별 token revocation을 자동 호출).
 
 ### 로그아웃
 
@@ -250,7 +263,7 @@ DB lookup은 하지 않는다 — 만료/위조 쿠키는 페이지 안에서 us
 
 ## 쿠키 정책
 
-siglens-core가 반환하는 메타를 그대로 사용한다.
+siglens 로컬 auth use-case가 반환하는 `AuthSessionCookie` 메타를 그대로 사용한다.
 
 | 항목 | 값 |
 |---|---|
@@ -265,8 +278,8 @@ siglens-core가 반환하는 메타를 그대로 사용한다.
 
 - [x] open-redirect — `sanitizeNextPath`가 path-only 화이트리스트로 검증.
 - [x] enumeration 회피 — 로그인 실패 시 단일 generic 메시지 ("이메일 또는
-      비밀번호가 올바르지 않습니다"). 코어 측 `invalid_credentials` 단일 코드.
-- [x] 비밀번호 hashing — siglens-core `bcryptPasswordHasher` (cost 12).
+      비밀번호가 올바르지 않습니다"). loginUser use-case의 `invalid_credentials` 단일 코드.
+- [x] 비밀번호 hashing — siglens 로컬 `bcryptPasswordHasher` (cost 12, `bcryptjs`).
 - [x] 쿠키 secure(prod)/HttpOnly/SameSite=Lax/Path=/.
 - [x] CSRF state (PR-2 OAuth 콜백) — 32바이트 random + timing-safe compare +
       HttpOnly 쿠키 5분 TTL.
@@ -274,5 +287,4 @@ siglens-core가 반환하는 메타를 그대로 사용한다.
 
 ## 후속 이슈
 
-- siglens-core: 비밀번호 재설정 use-case는 별도 이슈 #42.
 - siglens: 비밀번호 재설정 UI는 별도 이슈 #388.

@@ -4,7 +4,7 @@ import {
     isKoreanInput,
     isValidTickerFormat,
 } from '@/domain/ticker';
-import type { AssetInfo, TickerSearchResult } from '@y0ngha/siglens-core';
+import type { AssetInfo, TickerSearchResult } from '@/domain/types';
 
 const makeResult = (symbol: string): TickerSearchResult => ({
     symbol,

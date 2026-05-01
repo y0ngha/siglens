@@ -1,8 +1,15 @@
-jest.mock('@y0ngha/siglens-core', () => ({
+jest.mock('@/infrastructure/db/client', () => ({
+    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: jest.fn(),
+}));
+jest.mock('@/infrastructure/db/userRepository', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-    createDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
-    createEmailTokenStore: jest.fn(),
+}));
+jest.mock('@/infrastructure/auth/use-cases/requestPasswordReset', () => ({
     requestPasswordReset: jest.fn(),
+}));
+jest.mock('@/infrastructure/email/tokenStore', () => ({
+    createEmailTokenStore: jest.fn(),
 }));
 
 const sendEmailMock = jest.fn();
@@ -19,10 +26,8 @@ jest.mock('@/infrastructure/email/passwordResetEmail', () => ({
     })),
 }));
 
-import {
-    createEmailTokenStore,
-    requestPasswordReset,
-} from '@y0ngha/siglens-core';
+import { requestPasswordReset } from '@/infrastructure/auth/use-cases/requestPasswordReset';
+import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
 import { requestPasswordResetAction } from '@/infrastructure/auth/requestPasswordResetAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';

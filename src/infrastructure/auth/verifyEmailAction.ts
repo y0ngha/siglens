@@ -1,6 +1,7 @@
 'use server';
 
-import { createEmailTokenStore, verifyEmail } from '@y0ngha/siglens-core';
+import { verifyEmail } from '@/infrastructure/auth/use-cases/verifyEmail';
+import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import type { VerifyEmailFormState } from '@/domain/auth/formTypes';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from './errorMessages';
 

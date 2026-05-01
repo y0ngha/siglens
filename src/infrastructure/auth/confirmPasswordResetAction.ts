@@ -1,11 +1,9 @@
 'use server';
 
-import {
-    DrizzleUserRepository,
-    bcryptPasswordHasher,
-    confirmPasswordReset,
-    createEmailTokenStore,
-} from '@y0ngha/siglens-core';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { bcryptPasswordHasher } from '@/infrastructure/auth/bcrypt';
+import { confirmPasswordReset } from '@/infrastructure/auth/use-cases/confirmPasswordReset';
+import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/domain/auth/formTypes';
 import { getAuthDatabaseClient } from './db';

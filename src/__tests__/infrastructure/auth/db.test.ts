@@ -1,53 +1,52 @@
-jest.mock('@y0ngha/siglens-core', () => ({
-    createDatabaseClient: jest.fn(),
+jest.mock('@/infrastructure/db/client', () => ({
+    getDatabaseClient: jest.fn(),
+    resetDatabaseClientForTests: jest.fn(),
 }));
 
-import { createDatabaseClient } from '@y0ngha/siglens-core';
+import {
+    getDatabaseClient,
+    resetDatabaseClientForTests,
+} from '@/infrastructure/db/client';
 import {
     getAuthDatabaseClient,
     resetAuthDatabaseClientForTests,
 } from '@/infrastructure/auth/db';
 
-const mockCreate = createDatabaseClient as jest.MockedFunction<
-    typeof createDatabaseClient
+const mockGet = getDatabaseClient as jest.MockedFunction<
+    typeof getDatabaseClient
 >;
+const mockReset = resetDatabaseClientForTests as jest.MockedFunction<
+    typeof resetDatabaseClientForTests
+>;
+
 const FAKE_CLIENT = { db: {}, sql: () => null } as unknown as ReturnType<
-    typeof createDatabaseClient
+    typeof getDatabaseClient
 >;
 
 describe('getAuthDatabaseClient', () => {
-    const originalEnv = process.env.DATABASE_URL;
-
     beforeEach(() => {
-        resetAuthDatabaseClientForTests();
-        mockCreate.mockReset();
-        mockCreate.mockReturnValue(FAKE_CLIENT);
-        process.env.DATABASE_URL = 'postgres://test';
+        mockGet.mockReset();
+        mockReset.mockReset();
+        mockGet.mockReturnValue(FAKE_CLIENT);
     });
 
-    afterEach(() => {
-        process.env.DATABASE_URL = originalEnv;
-    });
-
-    it('첫 호출 시 createDatabaseClient를 호출하고 결과를 반환한다', () => {
+    it('delegates to the shared getDatabaseClient and returns the result', () => {
         const result = getAuthDatabaseClient();
         expect(result).toBe(FAKE_CLIENT);
-        expect(mockCreate).toHaveBeenCalledWith({
-            databaseUrl: 'postgres://test',
+        expect(mockGet).toHaveBeenCalledTimes(1);
+    });
+
+    it('propagates errors thrown by the shared getDatabaseClient', () => {
+        mockGet.mockImplementation(() => {
+            throw new Error('DATABASE_URL environment variable is required');
         });
-    });
-
-    it('이후 호출은 캐시된 동일 인스턴스를 반환한다', () => {
-        const first = getAuthDatabaseClient();
-        const second = getAuthDatabaseClient();
-        expect(second).toBe(first);
-        expect(mockCreate).toHaveBeenCalledTimes(1);
-    });
-
-    it('DATABASE_URL이 비어 있으면 throw한다', () => {
-        delete process.env.DATABASE_URL;
         expect(() => getAuthDatabaseClient()).toThrow(
-            'DATABASE_URL is not configured'
+            'DATABASE_URL environment variable is required'
         );
+    });
+
+    it('forwards reset calls to the shared module', () => {
+        resetAuthDatabaseClientForTests();
+        expect(mockReset).toHaveBeenCalledTimes(1);
     });
 });

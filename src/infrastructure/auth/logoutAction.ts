@@ -2,11 +2,11 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
 import {
     AUTH_SESSION_COOKIE_NAME,
-    DrizzleSessionRepository,
-    logoutUser,
-} from '@y0ngha/siglens-core';
+} from '@/infrastructure/auth/sessionCookie';
+import { logoutUser } from '@/infrastructure/auth/use-cases/logoutUser';
 import { applyAuthCookie } from './applyAuthCookie';
 import { getAuthDatabaseClient } from './db';
 import { isSecureCookieEnv } from './sessionCookieOptions';

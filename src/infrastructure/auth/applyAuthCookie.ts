@@ -1,4 +1,4 @@
-import type { AuthSessionCookie } from '@y0ngha/siglens-core';
+import type { AuthSessionCookie } from './use-cases/types';
 import type { ResponseCookie } from './types';
 
 /** siglens-core의 AuthSessionCookie를 next/headers cookies().set() 형태로 변환한다. */

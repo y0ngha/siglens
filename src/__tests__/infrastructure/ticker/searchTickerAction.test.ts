@@ -1,13 +1,12 @@
 import { searchTickerAction } from '@/infrastructure/ticker/searchTickerAction';
-import { searchTicker } from '@y0ngha/siglens-core';
-import type { TickerSearchResult } from '@y0ngha/siglens-core';
+import { searchTicker } from '@/infrastructure/ticker/use-cases/searchTicker';
+import type { TickerSearchResult } from '@/domain/types';
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+jest.mock('@/infrastructure/ticker/use-cases/searchTicker', () => ({
     searchTicker: jest.fn(),
 }));
 
@@ -24,7 +23,7 @@ describe('searchTickerAction 함수는', () => {
         mockSearchTicker.mockReset();
     });
 
-    it('trim된 query를 siglens-core searchTicker에 전달한다', async () => {
+    it('trim된 query를 use-case searchTicker에 전달한다', async () => {
         mockSearchTicker.mockResolvedValueOnce(results);
 
         await searchTickerAction('  apple  ');

@@ -1,6 +1,6 @@
 'use server';
 
-import type { AuthUserRecord } from '@y0ngha/siglens-core';
+import type { AuthUserRecord } from '@/infrastructure/db/types';
 import { getCurrentUser } from './getCurrentUser';
 
 export async function currentUserAction(): Promise<AuthUserRecord | null> {

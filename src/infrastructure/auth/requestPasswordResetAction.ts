@@ -1,10 +1,8 @@
 'use server';
 
-import {
-    DrizzleUserRepository,
-    createEmailTokenStore,
-    requestPasswordReset,
-} from '@y0ngha/siglens-core';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { requestPasswordReset } from '@/infrastructure/auth/use-cases/requestPasswordReset';
+import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import type { ForgotPasswordFormState } from '@/domain/auth/formTypes';
 import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
 import { createEmailDispatcher } from '@/infrastructure/email/resend';

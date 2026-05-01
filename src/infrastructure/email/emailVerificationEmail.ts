@@ -1,4 +1,4 @@
-import type { EmailMessage } from '@y0ngha/siglens-core';
+import type { EmailMessage } from '@/infrastructure/email/tokenStore';
 
 // Duplicates @/lib/seo SITE_NAME and passwordResetEmail.ts — update all three if changed.
 const SITE_NAME = 'Siglens';
