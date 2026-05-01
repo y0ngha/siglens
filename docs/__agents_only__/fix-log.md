@@ -63,3 +63,16 @@
 - Violation: 동기 토큰 생성/해시 함수 테스트에서 불필요한 await 사용
 - Rule: 테스트는 실제 함수 계약을 반영해야 하며 동기 API를 비동기처럼 보이게 작성하지 않는다
 - Context: passwordResetTokenService 테스트가 string을 반환하는 generatePasswordResetToken/hashPasswordResetToken 호출에 await를 붙여 API 성격을 흐리게 했음. await와 async 테스트 선언을 제거.
+
+## [PR #403 | feat/398/contact-us-form | 2026-05-01]
+- Violation: <p role="alert">로 네이티브 ARIA role 덮어쓰기
+- Rule: MISTAKES.md Accessibility #1 — 시맨틱 요소의 native role을 role 속성으로 교체 금지
+- Context: ContactTextField, ContactTextareaField의 에러 메시지를 <p role="alert">로 렌더링. <div role="alert">로 교체.
+
+- Violation: cn()을 aria-describedby ID 조합에 오용
+- Rule: cn()은 Tailwind 클래스 병합 전용 유틸리티로 ARIA ID 문자열 조합에 사용 금지
+- Context: ContactTextareaField의 aria-describedby 값 조합에 cn()을 사용. 배열 filter+join 방식으로 교체.
+
+- Violation: 특정 기능 전용 훅을 공유 hooks/ 디렉토리에 배치
+- Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
+- Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
