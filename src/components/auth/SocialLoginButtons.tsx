@@ -16,13 +16,13 @@ const PROVIDERS: readonly SocialProvider[] = [
         buttonClassName:
             'bg-white text-secondary-900 hover:bg-secondary-100 ring-1 ring-secondary-200',
     },
-    {
-        id: 'kakao',
-        label: '카카오로 시작하기',
-        glyph: 'K',
-        buttonClassName:
-            'bg-brand-kakao text-secondary-900 hover:brightness-95',
-    },
+    // {
+    //     id: 'kakao',
+    //     label: '카카오로 시작하기',
+    //     glyph: 'K',
+    //     buttonClassName:
+    //         'bg-brand-kakao text-secondary-900 hover:brightness-95',
+    // },
 ];
 
 function buildHref(providerId: SupportedOAuthProvider, next?: string): string {
