@@ -89,3 +89,8 @@
 - Violation: 코어가 자동화한 OAuth revocation을 사용자에게 수동 안내 문구로 노출
 - Rule: 도메인 동작과 UI 메시지 동기화 — 코어가 책임지면 UI는 그 사실을 반영
 - Context: deleteAccount가 oauthAccounts + oauthRevoker deps로 provider 측 token revocation을 자동 수행하므로, DeleteAccountConfirm의 "각 provider 계정에서 직접 끊으세요" 안내 박스와 /privacy 약관 문구를 "탈퇴 시 자동으로 회수된다"로 갱신.
+
+## [PR #395 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: multi-step Server Action 폼에서 이전 단계로 되돌아갈 수 없어 잘못 입력한 이메일을 수정할 수 없음
+- Rule: FF.md Predictability — 사용자가 표시된 단계와 입력 상태를 예측 가능한 방식으로 되돌릴 수 있어야 함
+- Context: SignupForm의 phase가 useActionState 결과에서만 derive되어 코드 확인/상세 입력 단계에서 이메일 수정 수단이 없었음. flow를 key로 remount하는 이메일 수정 버튼을 추가해 인증 상태와 폼 입력을 함께 초기화.

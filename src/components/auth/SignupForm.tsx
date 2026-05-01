@@ -24,7 +24,17 @@ const STEP_LABEL: Record<Phase, string> = {
     details: '3단계: 비밀번호 및 표시 이름 설정',
 };
 
-function StepIndicator({ phase }: { phase: Phase }) {
+function derivePhase(submitted: boolean, verified: boolean): Phase {
+    if (verified) return 'details';
+    if (submitted) return 'code';
+    return 'email';
+}
+
+interface StepIndicatorProps {
+    phase: Phase;
+}
+
+function StepIndicator({ phase }: StepIndicatorProps) {
     return (
         <p
             aria-live="polite"
@@ -35,7 +45,39 @@ function StepIndicator({ phase }: { phase: Phase }) {
     );
 }
 
+interface EmailEditButtonProps {
+    onClick: () => void;
+}
+
+function EmailEditButton({ onClick }: EmailEditButtonProps) {
+    return (
+        <button
+            type="button"
+            onClick={onClick}
+            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 rounded-sm font-medium focus-visible:ring-2 focus-visible:ring-offset-2"
+        >
+            이메일 수정
+        </button>
+    );
+}
+
 export function SignupForm({ next }: SignupFormProps) {
+    const [resetKey, setResetKey] = useState(0);
+
+    const handleRestart = (): void => {
+        setResetKey(current => current + 1);
+    };
+
+    return (
+        <SignupFormFlow key={resetKey} next={next} onRestart={handleRestart} />
+    );
+}
+
+interface SignupFormFlowProps extends SignupFormProps {
+    onRestart: () => void;
+}
+
+function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const hintId = useId();
@@ -46,11 +88,7 @@ export function SignupForm({ next }: SignupFormProps) {
 
     // Phase는 각 useActionState 결과에서 직접 derive — useEffect+setPhase로 동기화하지 않는다
     // (react-hooks/set-state-in-effect 회피).
-    const phase: Phase = codeState.verified
-        ? 'details'
-        : emailState.submitted
-          ? 'code'
-          : 'email';
+    const phase = derivePhase(emailState.submitted, codeState.verified);
 
     const signupError = signupState.error;
     const signupEmailError =
@@ -95,7 +133,8 @@ export function SignupForm({ next }: SignupFormProps) {
                         <span className="text-secondary-100 font-mono break-all">
                             {email}
                         </span>
-                        로 인증 코드를 보냈어요. 메일을 확인해 주세요.
+                        로 인증 코드를 보냈어요.{' '}
+                        <EmailEditButton onClick={onRestart} />
                     </p>
                     <AuthFieldGroup
                         id="signup-code"
@@ -130,7 +169,8 @@ export function SignupForm({ next }: SignupFormProps) {
                         <span className="text-ui-success">✓</span> 인증 완료:{' '}
                         <span className="text-secondary-100 font-mono break-all">
                             {email}
-                        </span>
+                        </span>{' '}
+                        <EmailEditButton onClick={onRestart} />
                     </p>
                     <AuthFieldGroup
                         id="signup-name"

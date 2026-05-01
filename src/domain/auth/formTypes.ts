@@ -42,9 +42,11 @@ export interface ResetPasswordFormState {
     } | null;
 }
 
+export type RequestEmailVerificationErrorCode = 'redis_unavailable';
+
 export interface RequestEmailVerificationFormState {
     submitted: boolean;
-    error: { code: string; message: string } | null;
+    error: { code: RequestEmailVerificationErrorCode; message: string } | null;
 }
 
 export interface VerifyEmailFormState {

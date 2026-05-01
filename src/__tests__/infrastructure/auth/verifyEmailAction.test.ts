@@ -4,6 +4,7 @@ jest.mock('@y0ngha/siglens-core', () => ({
 }));
 
 import { createEmailTokenStore, verifyEmail } from '@y0ngha/siglens-core';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { verifyEmailAction } from '@/infrastructure/auth/verifyEmailAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 
@@ -35,6 +36,9 @@ describe('verifyEmailAction', () => {
             );
             expect(result.verified).toBe(false);
             expect(result.error?.code).toBe('invalid_verification_code');
+            expect(result.error?.message).toBe(
+                AUTH_SERVICE_UNAVAILABLE_MESSAGE
+            );
             expect(mockVerify).not.toHaveBeenCalled();
         });
     });

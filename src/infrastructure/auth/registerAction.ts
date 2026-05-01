@@ -15,12 +15,11 @@ import type { SignupFormState } from '@/domain/auth/formTypes';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { applyAuthCookie } from './applyAuthCookie';
 import { getAuthDatabaseClient } from './db';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from './errorMessages';
 import { isSecureCookieEnv } from './sessionCookieOptions';
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
-const REDIS_UNAVAILABLE_MESSAGE =
-    '서비스가 일시적으로 동작하지 않습니다. 잠시 후 다시 시도해주세요.';
 
 export async function registerAction(
     _prev: SignupFormState,
@@ -38,7 +37,7 @@ export async function registerAction(
             error: {
                 code: 'email_not_verified',
                 field: 'email',
-                message: REDIS_UNAVAILABLE_MESSAGE,
+                message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
             },
         };
     }

@@ -22,6 +22,7 @@ import {
     requestEmailVerification,
 } from '@y0ngha/siglens-core';
 import { buildEmailVerificationEmail } from '@/infrastructure/email/emailVerificationEmail';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { requestEmailVerificationAction } from '@/infrastructure/auth/requestEmailVerificationAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 
@@ -57,6 +58,9 @@ describe('requestEmailVerificationAction', () => {
             );
             expect(result.submitted).toBe(false);
             expect(result.error?.code).toBe('redis_unavailable');
+            expect(result.error?.message).toBe(
+                AUTH_SERVICE_UNAVAILABLE_MESSAGE
+            );
             expect(mockRequest).not.toHaveBeenCalled();
         });
     });

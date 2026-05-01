@@ -18,9 +18,6 @@ export async function requestPasswordResetAction(
 
     const emailTokens = createEmailTokenStore();
     if (!emailTokens) {
-        // Redis 미설정은 운영 환경 설정 오류. enumeration 회피를 위해 사용자에게는
-        // 동일한 success 응답을 돌려주고, 로그만 남긴다.
-        console.warn('[auth] Email token store not configured');
         return { submitted: true };
     }
 

@@ -2,6 +2,7 @@
 
 import { createEmailTokenStore, verifyEmail } from '@y0ngha/siglens-core';
 import type { VerifyEmailFormState } from '@/domain/auth/formTypes';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from './errorMessages';
 
 export async function verifyEmailAction(
     _prev: VerifyEmailFormState,
@@ -16,7 +17,7 @@ export async function verifyEmailAction(
             verified: false,
             error: {
                 code: 'invalid_verification_code',
-                message: '서비스가 일시적으로 동작하지 않습니다.',
+                message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
             },
         };
     }

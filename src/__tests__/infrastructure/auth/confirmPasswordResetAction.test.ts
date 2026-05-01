@@ -15,6 +15,7 @@ import {
     confirmPasswordReset,
     createEmailTokenStore,
 } from '@y0ngha/siglens-core';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { confirmPasswordResetAction } from '@/infrastructure/auth/confirmPasswordResetAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
@@ -51,6 +52,9 @@ describe('confirmPasswordResetAction', () => {
                 })
             );
             expect(result.error?.code).toBe('invalid_token');
+            expect(result.error?.message).toBe(
+                AUTH_SERVICE_UNAVAILABLE_MESSAGE
+            );
             expect(mockConfirm).not.toHaveBeenCalled();
         });
     });

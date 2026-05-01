@@ -22,6 +22,7 @@ import {
     loginUser,
     registerUser,
 } from '@y0ngha/siglens-core';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { registerAction } from '@/infrastructure/auth/registerAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
@@ -85,6 +86,9 @@ describe('registerAction', () => {
                 makeFormData({ email: 'a@b.com', password: 'Pass1234' })
             );
             expect(result.error?.code).toBe('email_not_verified');
+            expect(result.error?.message).toBe(
+                AUTH_SERVICE_UNAVAILABLE_MESSAGE
+            );
             expect(mockRegister).not.toHaveBeenCalled();
         });
     });
