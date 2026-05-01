@@ -86,8 +86,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     const [codeState, codeFormAction] = useVerifyEmail();
     const [signupState, signupFormAction] = useSignupForm();
 
-    // Phase는 각 useActionState 결과에서 직접 derive — useEffect+setPhase로 동기화하지 않는다
-    // (react-hooks/set-state-in-effect 회피).
+    // useActionState 결과에서 직접 derive — set-state-in-effect 회피.
     const phase = derivePhase(emailState.submitted, codeState.verified);
 
     const signupError = signupState.error;
@@ -114,7 +113,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         autoComplete="email"
                         required
                         defaultValue={email}
-                        onChange={event => setEmail(event.target.value)}
+                        onChange={event => setEmail(event.target.value.trim())}
                     />
                     <SubmitButton
                         label="인증 코드 받기"

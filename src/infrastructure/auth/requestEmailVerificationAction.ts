@@ -27,8 +27,7 @@ export async function requestEmailVerificationAction(
     }
     const emailDispatcher = createEmailDispatcher();
 
-    // 코어가 항상 ok: true 를 반환한다 (enumeration 회피). codeIssued/emailDispatched 는
-    // 운영 상황 디버깅용 필드로, UI 응답에는 영향을 주지 않는다.
+    // ok: true 고정 (enumeration 회피); codeIssued/emailDispatched 는 운영 디버깅용 필드.
     await requestEmailVerification(
         { email },
         { emailTokens, emailDispatcher },

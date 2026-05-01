@@ -56,7 +56,9 @@ describe('verifyEmailAction', () => {
             expect(result.verified).toBe(true);
             expect(result.error).toBeNull();
         });
+    });
 
+    describe('입력 정규화', () => {
         it('email/code 모두 trim하여 코어를 호출한다', async () => {
             mockVerify.mockResolvedValue({ ok: true });
             await verifyEmailAction(

@@ -177,6 +177,8 @@ describe('confirmPasswordResetAction', () => {
                     newPassword: 'NewPass1234',
                 },
                 expect.objectContaining({
+                    emailAuthUsers: expect.any(Object),
+                    users: expect.any(Object),
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),
                         get: expect.any(Function),
@@ -200,6 +202,8 @@ describe('confirmPasswordResetAction', () => {
             expect(mockConfirm).toHaveBeenCalledWith(
                 { email: '', token: 'tok', newPassword: 'NewPass1234' },
                 expect.objectContaining({
+                    emailAuthUsers: expect.any(Object),
+                    users: expect.any(Object),
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),
                         get: expect.any(Function),
@@ -224,6 +228,8 @@ describe('confirmPasswordResetAction', () => {
             expect(mockConfirm).toHaveBeenCalledWith(
                 { email: 'u@u.com', token: '', newPassword: 'NewPass1234' },
                 expect.objectContaining({
+                    emailAuthUsers: expect.any(Object),
+                    users: expect.any(Object),
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),
                         get: expect.any(Function),
@@ -245,6 +251,8 @@ describe('confirmPasswordResetAction', () => {
             expect(mockConfirm).toHaveBeenCalledWith(
                 { email: 'u@u.com', token: 'tok', newPassword: '' },
                 expect.objectContaining({
+                    emailAuthUsers: expect.any(Object),
+                    users: expect.any(Object),
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),
                         get: expect.any(Function),

@@ -2,6 +2,7 @@ import { Resend } from 'resend';
 import type { EmailDispatcher, EmailMessage } from '@y0ngha/siglens-core';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
+const EMAIL_SEND_TIMEOUT_MS = 10_000;
 const EMAIL_FROM_ENV = 'EMAIL_FROM';
 const DEFAULT_FROM = 'Siglens <noreply@siglens.io>';
 
@@ -27,14 +28,26 @@ export class ResendEmailDispatcher implements EmailDispatcher {
     }
 
     async sendEmail(message: EmailMessage): Promise<boolean> {
+        const signal = AbortSignal.timeout(EMAIL_SEND_TIMEOUT_MS);
         try {
-            const { error } = await this.client.emails.send({
-                from: this.from,
-                to: message.to,
-                subject: message.subject,
-                html: message.html,
-                text: message.text,
-            });
+            const { error } = await Promise.race([
+                this.client.emails.send({
+                    from: this.from,
+                    to: message.to,
+                    subject: message.subject,
+                    html: message.html,
+                    text: message.text,
+                }),
+                new Promise<never>((_, reject) =>
+                    signal.addEventListener(
+                        'abort',
+                        () => reject(signal.reason),
+                        {
+                            once: true,
+                        }
+                    )
+                ),
+            ]);
             return error === null;
         } catch {
             return false;
