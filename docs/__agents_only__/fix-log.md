@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #403 Round 5 | feat/398/contact-us-form | 2026-05-02]
+- Violation: 새로 만든 파일이 git에 추가되지 않은 채 PR 푸시되어 빌드가 차단됨
+- Rule: PR_FIX_FLOW Step 1-7 — 픽스 적용 후 모든 신규 파일을 commit/push 전에 git add로 추적해야 함
+- Context: src/components/contact/utils/contactFormUtils.ts가 로컬 파일 시스템에는 존재했지만 git 인덱스에는 없어 ContactForm.tsx의 import가 원격 빌드에서 해결되지 않음. 같은 라운드에서 lib/contactErrorMessages.ts는 dead code로 남게 됨. git add로 추적 후 다음 커밋에 포함.
+
 ## [Issue #369 PR-2 round 1 | feat/369/auth-social | 2026-04-28]
 - Violation: 멀티라인 JSDoc 주석 블록 (proxy.ts, infrastructure/auth/{db,getCurrentUser,applyAuthCookie,sessionCookieOptions}.ts)
 - Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
@@ -35,16 +40,7 @@
 - Rule: FF.md Predictability — 동일 입력에 대한 동일 처리 보장; 양 액션 간 비대칭 처리 금지
 - Context: 사용자가 비밀번호에 의도적/비의도적 공백 포함 가입 시 로그인 불가 버그. password는 양쪽 모두 trim 제거(원본 유지), email은 양쪽 모두 trim 적용으로 통일.
 
-## [Issue #387 | feat/387/회원탈퇴-ui | 2026-04-30]
-- Violation: aria-describedby가 정적 힌트 텍스트만 가리키고 입력 검증 결과를 알리는 라이브 영역이 없음
-- Rule: WCAG 4.1.3 (Status Messages) — 사용자가 입력한 값에 대한 검증 결과는 스크린리더에 즉시 통지되어야 함
-- Context: DeleteAccountConfirm의 이메일 재입력 필드가 aria-describedby로 정적 힌트만 가리켜 잘못된 이메일을 입력해도 음성 안내가 없었음. 같은 paragraph를 role="status" aria-live="polite" + 입력값에 따라 텍스트가 바뀌는 동적 메시지로 전환하고, aria-invalid도 함께 토글하도록 수정.
-
 ## [PR #391 코멘트 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
-- Violation: 이메일 표시 요소에 aria-hidden 적용으로 스크린 리더 접근 불가
-- Rule: WCAG 접근성 — 사용자가 참조해야 할 정보는 스크린 리더에서 읽혀야 함
-- Context: DeleteAccountConfirm에서 사용자가 재입력해야 할 이메일 주소를 표시하는 <p>에 aria-hidden이 적용되어 스크린 리더 사용자가 이메일 확인 불가. aria-hidden 제거.
-
 - Violation: describe 레이블과 실제 테스트 케이스 의미 불일치
 - Rule: MISTAKES.md Tests #9 — describe 텍스트는 내부 it()들의 공통 전제조건만 커버해야 함
 - Context: describe('이메일 검증 (email_mismatch)') 블록 안에 이메일이 일치하여 성공하는 케이스가 포함됨. 별도 describe('이메일 정규화') 블록으로 분리.
@@ -63,3 +59,30 @@
 - Violation: 동기 토큰 생성/해시 함수 테스트에서 불필요한 await 사용
 - Rule: 테스트는 실제 함수 계약을 반영해야 하며 동기 API를 비동기처럼 보이게 작성하지 않는다
 - Context: passwordResetTokenService 테스트가 string을 반환하는 generatePasswordResetToken/hashPasswordResetToken 호출에 await를 붙여 API 성격을 흐리게 했음. await와 async 테스트 선언을 제거.
+
+## [PR #403 | feat/398/contact-us-form | 2026-05-01]
+- Violation: <p role="alert">로 네이티브 ARIA role 덮어쓰기
+- Rule: MISTAKES.md Accessibility #1 — 시맨틱 요소의 native role을 role 속성으로 교체 금지
+- Context: ContactTextField, ContactTextareaField의 에러 메시지를 <p role="alert">로 렌더링. <div role="alert">로 교체.
+
+- Violation: cn()을 aria-describedby ID 조합에 오용
+- Rule: cn()은 Tailwind 클래스 병합 전용 유틸리티로 ARIA ID 문자열 조합에 사용 금지
+- Context: ContactTextareaField의 aria-describedby 값 조합에 cn()을 사용. 배열 filter+join 방식으로 교체.
+
+- Violation: 특정 기능 전용 훅을 공유 hooks/ 디렉토리에 배치
+- Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
+- Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
+
+## [PR #403 Round 4 | feat/398/contact-us-form | 2026-05-01]
+- Violation: 컴포넌트 파일에서 같은 디렉터리 컴포넌트를 상대 경로('./')로 import
+- Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지, 경로 별칭(@/) 사용 필수
+- Context: ContactForm.tsx가 ContactSubmittedNotice, ContactTextField, ContactTextareaField를 './' 상대 경로로 import. @/components/contact/... 로 변경.
+
+## [PR #403 Round 3 | feat/398/contact-us-form | 2026-05-01]
+- Violation: domain/ 함수에서 상대 경로 import 사용
+- Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지, 경로 별칭(@/) 사용 필수
+- Context: domain/contact/validation.ts가 './constants', './formTypes' 상대 경로로 import. @/domain/contact/constants, @/domain/types로 변경.
+
+- Violation: hook 파일에서 @/domain/types가 아닌 도메인 서브모듈에서 타입 import
+- Rule: ARCHITECTURE.md — hook 파일(hooks/*.ts)의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
+- Context: useContactForm.ts가 @/domain/contact/formTypes에서 ContactFormState를 import. formTypes의 모든 타입을 domain/types.ts로 이동 후 @/domain/types로 수정.

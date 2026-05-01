@@ -483,6 +483,20 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Replace <span> with <button>, add aria-describedby + role="tooltip" pattern
    ❌ <span title="Information">ⓘ</span>  // title-only, no keyboard access
    ✅ <button aria-describedby="tooltip-id" className="focus-visible:ring"><span id="tooltip-id" role="tooltip">Information</span></button>
+
+6. aria-describedby pointing to static text only for validation feedback
+   → Input validation results must be announced immediately to screen readers via live region
+   → aria-describedby alone is insufficient for dynamic validation state; requires role="status" aria-live="polite"
+   → Dynamic message text must change based on input validity, and aria-invalid must toggle in sync
+   ❌ <p id="hint">Enter a valid email</p>; <input aria-describedby="hint">  // static hint, no validation feedback announced
+   ✅ <p id="status" role="status" aria-live="polite">{isValid ? 'Valid' : 'Invalid email format'}</p>; <input aria-invalid={!isValid} aria-describedby="status">
+
+7. Using aria-hidden on content users must reference
+   → aria-hidden must only hide decorative or duplicated content invisible to screen readers
+   → If a user must read or reference the content, aria-hidden will cause accessibility failure
+   → Remove aria-hidden from informational content (instructions, data fields, confirmation values)
+   ❌ <p aria-hidden>Email: user@example.com</p>  // user needs to verify email before deletion confirmation
+   ✅ <p>Email: user@example.com</p>  // make visible and accessible to screen readers
 ```
 
 ---
@@ -746,19 +760,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Hook file (hooks/useLoginForm.ts) imports infrastructure; component uses hook only
    ✅ App-layer RSC files may import infrastructure (infrastructure ← app direction allowed)
 
-1. Type interfaces defined in implementation files instead of domain/types.ts
-   → All domain types (interfaces, unions, enums) must be centralized in domain/types.ts
-   → If multiple files reference the same type, move it to domain/types.ts for single source of truth
-   ❌ interface TickerCategory { id: string; name: string; } in domain/constants/popular-tickers.ts
-   ✅ export type TickerCategory = { id: string; name: string; } in domain/types.ts
-
-2. Pure utility functions placed in components/ instead of proper layers
+1. Pure utility functions placed in components/ instead of proper layers
    → Pure functions with no React dependencies must be in domain/ (business logic) or lib/ (UI utilities)
    → Utility functions extracted from components must go to utils/ subfolders, not remain in components/
    ❌ Pure function in components/dashboard/utils/ or inlined in SectorSignalPanel.tsx
    ✅ Pure function in domain/signals/ or dedicated utils/ subfolder with proper layer imports
 
-3. UI presentation types or configurations with display labels defined in domain/
+2. UI presentation types or configurations with display labels defined in domain/
    → domain/types.ts and domain/ modules must contain only pure business logic types
    → Presentation concerns (Korean labels, CSS class names, UI-specific configurations, display enums) belong in lib/ or component-specific modules
    ❌ SkillStat, SkillStatConfig, SKILL_STAT_CONFIG defined in domain/skills.ts with Korean display labels
@@ -766,7 +774,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Move presentation-specific types to lib/ (e.g., lib/skillStats.ts, lib/priceFormat.ts)
    ✅ domain/ contains only pure calculation functions: countSkillsByType, formatPrice logic, etc.
 
-4. Creating thin re-export wrappers around `@y0ngha/siglens-core`
+3. Creating thin re-export wrappers around `@y0ngha/siglens-core`
    → `@y0ngha/siglens-core` is the externalized SigLens domain — direct import from any layer is allowed (see ARCHITECTURE.md)
    → Wrapper files in `src/domain/` that only re-export from siglens-core add no information and should not exist
    → Other third-party packages (e.g. technicalindicators) remain prohibited inside domain/
