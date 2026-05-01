@@ -26,26 +26,19 @@ export interface ForgotPasswordFormState {
     submitted: boolean;
 }
 
-type LocalInfraErrorCode = 'redis_unavailable';
-
-type SignupLocalErrorCode = LocalInfraErrorCode;
+export type LocalInfraErrorCode = 'redis_unavailable';
 
 export interface SignupFormState {
     error: {
-        code:
-            | RegisterUserErrorCode
-            | 'auto_login_failed'
-            | SignupLocalErrorCode;
+        code: RegisterUserErrorCode | 'auto_login_failed' | LocalInfraErrorCode;
         field?: RegisterUserError['field'];
         message: string;
     } | null;
 }
 
-type ResetPasswordLocalErrorCode = LocalInfraErrorCode;
-
 export interface ResetPasswordFormState {
     error: {
-        code: ConfirmPasswordResetErrorCode | ResetPasswordLocalErrorCode;
+        code: ConfirmPasswordResetErrorCode | LocalInfraErrorCode;
         field?: ConfirmPasswordResetError['field'];
         message: string;
     } | null;
@@ -58,12 +51,10 @@ export interface RequestEmailVerificationFormState {
     error: { code: RequestEmailVerificationErrorCode; message: string } | null;
 }
 
-type VerifyEmailLocalErrorCode = LocalInfraErrorCode;
-
 export interface VerifyEmailFormState {
     verified: boolean;
     error: {
-        code: VerifyEmailErrorCode | VerifyEmailLocalErrorCode;
+        code: VerifyEmailErrorCode | LocalInfraErrorCode;
         message: string;
     } | null;
 }

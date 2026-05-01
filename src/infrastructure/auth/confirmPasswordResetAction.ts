@@ -30,6 +30,7 @@ export async function confirmPasswordResetAction(
     }
 
     const { db } = getAuthDatabaseClient();
+    // DrizzleUserRepository가 emailAuthUsers와 users 두 인터페이스를 모두 구현하므로 동일 인스턴스 전달.
     const userRepo = new DrizzleUserRepository(db);
     const result = await confirmPasswordReset(
         { email, token, newPassword },

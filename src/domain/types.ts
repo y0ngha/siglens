@@ -5,6 +5,7 @@ export type {
     DeleteAccountFormErrorCode,
     DeleteAccountFormState,
     ForgotPasswordFormState,
+    LocalInfraErrorCode,
     LoginFormState,
     RequestEmailVerificationErrorCode,
     RequestEmailVerificationFormState,

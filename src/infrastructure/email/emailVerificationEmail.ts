@@ -1,7 +1,7 @@
 import type { EmailMessage } from '@y0ngha/siglens-core';
 
-// Duplicates SITE_NAME from @/lib/seo — infrastructure cannot import lib.
-// Update both when the site name changes.
+// Duplicates SITE_NAME from @/lib/seo and passwordResetEmail.ts — infrastructure cannot import lib.
+// Update all three when the site name changes.
 const SITE_NAME = 'Siglens';
 
 interface BuildEmailVerificationEmailInput {
