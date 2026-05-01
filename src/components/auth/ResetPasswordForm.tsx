@@ -34,10 +34,10 @@ function describePasswordFieldError(
 
 export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const [password, setPassword] = useState('');
+    const hintId = useId();
     const [state, formAction] = useResetPasswordForm();
     const formError = describeFormError(state);
     const fieldError = describePasswordFieldError(state);
-    const hintId = useId();
     return (
         <form action={formAction} className="space-y-4" noValidate>
             <input type="hidden" name="email" value={email} />

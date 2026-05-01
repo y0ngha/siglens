@@ -25,6 +25,9 @@ interface BuildPasswordResetEmailInput {
 
 const RESET_PATH = '/reset-password';
 const SUBJECT = `${SITE_NAME} 비밀번호 재설정 안내`;
+// 만료 시각을 이메일 본문에 표시하지 않는다 — Redis TTL 기반으로 전환한 이후 코어가 만료 시간을
+// 이 함수에 전달하지 않으므로 정확한 시각을 표시할 수 없다.
+// 만료 시간 표기가 필요하다면 코어 buildMessage 인터페이스에 expiresAt 파라미터를 추가해야 한다.
 
 export function buildPasswordResetEmail({
     to,

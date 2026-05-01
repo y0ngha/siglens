@@ -68,7 +68,13 @@ describe('verifyEmailAction', () => {
             );
             expect(mockVerify).toHaveBeenCalledWith(
                 { email: 'user@example.com', code: '482917' },
-                expect.any(Object)
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                })
             );
         });
     });
@@ -123,7 +129,13 @@ describe('verifyEmailAction', () => {
             );
             expect(mockVerify).toHaveBeenCalledWith(
                 { email: '', code: '' },
-                expect.any(Object)
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                })
             );
         });
     });
