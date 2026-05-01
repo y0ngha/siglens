@@ -38,13 +38,25 @@ const mockBuild = buildPasswordResetEmail as jest.MockedFunction<
 const mockWaitUntil = waitUntil as jest.MockedFunction<typeof waitUntil>;
 
 describe('requestPasswordResetAction', () => {
+    let originalSiteUrl: string | undefined;
+
     beforeEach(() => {
         resetAuthDatabaseClientForTests();
         process.env.DATABASE_URL = 'postgres://test';
+        originalSiteUrl = process.env.NEXT_PUBLIC_SITE_URL;
+        delete process.env.NEXT_PUBLIC_SITE_URL;
         mockRequest.mockReset();
         sendEmailMock.mockReset();
         mockBuild.mockClear();
         mockWaitUntil.mockClear();
+    });
+
+    afterEach(() => {
+        if (originalSiteUrl === undefined) {
+            delete process.env.NEXT_PUBLIC_SITE_URL;
+            return;
+        }
+        process.env.NEXT_PUBLIC_SITE_URL = originalSiteUrl;
     });
 
     describe('항상 submitted: true 를 반환 (enumeration 회피)', () => {
@@ -87,6 +99,27 @@ describe('requestPasswordResetAction', () => {
                 expect.objectContaining({ signal: expect.any(AbortSignal) })
             );
             expect(mockWaitUntil).toHaveBeenCalledWith(expect.any(Promise));
+        });
+
+        it('NEXT_PUBLIC_SITE_URL이 설정되어 있으면 해당 URL로 비밀번호 재설정 메일을 구성한다', async () => {
+            process.env.NEXT_PUBLIC_SITE_URL = 'https://staging.siglens.io';
+            mockRequest.mockResolvedValue({
+                ok: true,
+                token: 'tok-2',
+                expiresAt: new Date('2026-05-01T00:00:00Z'),
+            });
+            sendEmailMock.mockResolvedValue(true);
+
+            await requestPasswordResetAction(
+                { submitted: false },
+                makeFormData({ email: 'user@example.com' })
+            );
+
+            expect(mockBuild).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    siteUrl: 'https://staging.siglens.io',
+                })
+            );
         });
     });
 

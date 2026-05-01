@@ -84,6 +84,31 @@ describe('ResendEmailDispatcher', () => {
             dispatcher.sendEmail(message, { signal: controller.signal })
         ).resolves.toBe(false);
     });
+
+    it('메일 발송 대기 중 AbortSignal이 abort되면 false를 반환한다', async () => {
+        const controller = new AbortController();
+        let resolveSend!: (value: {
+            data: { id: string } | null;
+            error: { message: string } | null;
+        }) => void;
+        sendMock.mockReturnValue(
+            new Promise(resolve => {
+                resolveSend = resolve;
+            })
+        );
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+
+        const sendPromise = dispatcher.sendEmail(message, {
+            signal: controller.signal,
+        });
+        controller.abort();
+
+        await expect(sendPromise).resolves.toBe(false);
+        resolveSend({ data: null, error: { message: 'ignored' } });
+    });
 });
 
 describe('createEmailDispatcher', () => {

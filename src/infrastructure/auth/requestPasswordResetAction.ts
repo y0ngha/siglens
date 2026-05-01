@@ -18,7 +18,10 @@ const EMAIL_SEND_TIMEOUT_MS = 10_000;
 const DEFAULT_SITE_URL = 'https://siglens.io';
 // Matches SITE_NAME in src/lib/seo.ts; keep email branding in sync with public SEO metadata.
 const SITE_NAME = 'Siglens';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SITE_URL;
+
+function readSiteUrl(): string {
+    return process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SITE_URL;
+}
 
 export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,
@@ -44,7 +47,7 @@ export async function requestPasswordResetAction(
             to: email,
             token: result.token,
             expiresAt: result.expiresAt,
-            siteUrl: SITE_URL,
+            siteUrl: readSiteUrl(),
             siteName: SITE_NAME,
         });
         waitUntil(
