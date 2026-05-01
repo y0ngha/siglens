@@ -164,7 +164,10 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         <AuthErrorAlert message={signupEmailError} />
                     ) : null}
                     <p className="text-secondary-300 text-sm">
-                        <span className="text-ui-success">✓</span> 인증 완료:{' '}
+                        <span className="text-ui-success" aria-hidden="true">
+                            ✓
+                        </span>{' '}
+                        인증 완료:{' '}
                         <span className="text-secondary-100 font-mono break-all">
                             {email}
                         </span>{' '}
