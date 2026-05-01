@@ -49,7 +49,12 @@ export interface RequestEmailVerificationFormState {
     error: { code: RequestEmailVerificationErrorCode; message: string } | null;
 }
 
+type VerifyEmailLocalErrorCode = 'redis_unavailable';
+
 export interface VerifyEmailFormState {
     verified: boolean;
-    error: { code: VerifyEmailErrorCode; message: string } | null;
+    error: {
+        code: VerifyEmailErrorCode | VerifyEmailLocalErrorCode;
+        message: string;
+    } | null;
 }

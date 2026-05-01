@@ -1,9 +1,11 @@
-import type { EmailMessage } from './types';
+import type { EmailMessage } from '@y0ngha/siglens-core';
 
 // Duplicates SITE_NAME / SITE_URL from @/lib/seo — infrastructure cannot import lib.
 // Update both when the site name or URL default changes.
 const SITE_NAME = 'Siglens';
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io';
+const SITE_URL = (
+    process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io'
+).replace(/\/$/, '');
 
 interface BuildPasswordResetEmailInput {
     to: string;

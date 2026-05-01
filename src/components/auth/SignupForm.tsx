@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useState } from 'react';
+import React, { useId, useMemo, useState } from 'react';
 import {
     useRequestEmailVerification,
     useVerifyEmail,
@@ -98,95 +98,124 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     const signupFormError =
         signupError && !signupError.field ? signupError.message : null;
 
-    const phaseForm: Record<Phase, React.ReactNode> = {
-        email: (
-            <form action={emailFormAction} className="space-y-4" noValidate>
-                {emailState.error ? (
-                    <AuthErrorAlert message={emailState.error.message} />
-                ) : null}
-                <AuthFieldGroup
-                    id="signup-email"
-                    name="email"
-                    label="이메일"
-                    type="email"
-                    autoComplete="email"
-                    required
-                    defaultValue={email}
-                    onChange={event => setEmail(event.target.value)}
-                />
-                <SubmitButton label="인증 코드 받기" pendingLabel="발송 중…" />
-            </form>
-        ),
-        code: (
-            <form action={codeFormAction} className="space-y-4" noValidate>
-                <input type="hidden" name="email" value={email} />
-                {codeState.error ? (
-                    <AuthErrorAlert message={codeState.error.message} />
-                ) : null}
-                <p className="text-secondary-300 text-sm">
-                    <span className="text-secondary-100 font-mono break-all">
-                        {email}
-                    </span>
-                    로 인증 코드를 보냈어요.{' '}
-                    <EmailEditButton onClick={onRestart} />
-                </p>
-                <AuthFieldGroup
-                    id="signup-code"
-                    name="code"
-                    label="인증 코드"
-                    type="text"
-                    autoComplete="one-time-code"
-                    required
-                    placeholder="6자리 코드"
-                />
-                <SubmitButton label="코드 확인" pendingLabel="확인 중…" />
-            </form>
-        ),
-        details: (
-            <form action={signupFormAction} className="space-y-4" noValidate>
-                <input type="hidden" name="email" value={email} />
-                {next ? <input type="hidden" name="next" value={next} /> : null}
-                {signupFormError ? (
-                    <AuthErrorAlert message={signupFormError} />
-                ) : null}
-                {signupEmailError ? (
-                    <AuthErrorAlert message={signupEmailError} />
-                ) : null}
-                <p className="text-secondary-300 text-sm">
-                    <span className="text-ui-success">✓</span> 인증 완료:{' '}
-                    <span className="text-secondary-100 font-mono break-all">
-                        {email}
-                    </span>{' '}
-                    <EmailEditButton onClick={onRestart} />
-                </p>
-                <AuthFieldGroup
-                    id="signup-name"
-                    name="name"
-                    label="표시 이름 (선택)"
-                    type="text"
-                    autoComplete="name"
-                    placeholder="다른 사용자에게 보이는 이름"
-                />
-                <PasswordField
-                    id="signup-password"
-                    name="password"
-                    label="비밀번호"
-                    autoComplete="new-password"
-                    required
-                    error={signupPasswordError}
-                    describedById={hintId}
-                    onChange={setPassword}
-                    hint={
-                        <PasswordStrengthHint
-                            password={password}
-                            descriptionId={hintId}
-                        />
-                    }
-                />
-                <SubmitButton label="회원가입" pendingLabel="가입 중…" />
-            </form>
-        ),
-    };
+    const phaseForm = useMemo<Record<Phase, React.ReactNode>>(
+        () => ({
+            email: (
+                <form action={emailFormAction} className="space-y-4" noValidate>
+                    {emailState.error ? (
+                        <AuthErrorAlert message={emailState.error.message} />
+                    ) : null}
+                    <AuthFieldGroup
+                        id="signup-email"
+                        name="email"
+                        label="이메일"
+                        type="email"
+                        autoComplete="email"
+                        required
+                        defaultValue={email}
+                        onChange={event => setEmail(event.target.value)}
+                    />
+                    <SubmitButton
+                        label="인증 코드 받기"
+                        pendingLabel="발송 중…"
+                    />
+                </form>
+            ),
+            code: (
+                <form action={codeFormAction} className="space-y-4" noValidate>
+                    <input type="hidden" name="email" value={email} />
+                    {codeState.error ? (
+                        <AuthErrorAlert message={codeState.error.message} />
+                    ) : null}
+                    <p className="text-secondary-300 text-sm">
+                        <span className="text-secondary-100 font-mono break-all">
+                            {email}
+                        </span>
+                        로 인증 코드를 보냈어요.{' '}
+                        <EmailEditButton onClick={onRestart} />
+                    </p>
+                    <AuthFieldGroup
+                        id="signup-code"
+                        name="code"
+                        label="인증 코드"
+                        type="text"
+                        autoComplete="one-time-code"
+                        required
+                        placeholder="6자리 코드"
+                        error={codeState.error?.message}
+                    />
+                    <SubmitButton label="코드 확인" pendingLabel="확인 중…" />
+                </form>
+            ),
+            details: (
+                <form
+                    action={signupFormAction}
+                    className="space-y-4"
+                    noValidate
+                >
+                    <input type="hidden" name="email" value={email} />
+                    {next ? (
+                        <input type="hidden" name="next" value={next} />
+                    ) : null}
+                    {signupFormError ? (
+                        <AuthErrorAlert message={signupFormError} />
+                    ) : null}
+                    {signupEmailError ? (
+                        <AuthErrorAlert message={signupEmailError} />
+                    ) : null}
+                    <p className="text-secondary-300 text-sm">
+                        <span className="text-ui-success">✓</span> 인증 완료:{' '}
+                        <span className="text-secondary-100 font-mono break-all">
+                            {email}
+                        </span>{' '}
+                        <EmailEditButton onClick={onRestart} />
+                    </p>
+                    <AuthFieldGroup
+                        id="signup-name"
+                        name="name"
+                        label="표시 이름 (선택)"
+                        type="text"
+                        autoComplete="name"
+                        placeholder="다른 사용자에게 보이는 이름"
+                    />
+                    <PasswordField
+                        id="signup-password"
+                        name="password"
+                        label="비밀번호"
+                        autoComplete="new-password"
+                        required
+                        error={signupPasswordError}
+                        describedById={hintId}
+                        onChange={setPassword}
+                        hint={
+                            <PasswordStrengthHint
+                                password={password}
+                                descriptionId={hintId}
+                            />
+                        }
+                    />
+                    <SubmitButton label="회원가입" pendingLabel="가입 중…" />
+                </form>
+            ),
+        }),
+        [
+            emailFormAction,
+            emailState,
+            email,
+            setEmail,
+            codeFormAction,
+            codeState,
+            signupFormAction,
+            signupFormError,
+            signupEmailError,
+            signupPasswordError,
+            next,
+            onRestart,
+            password,
+            hintId,
+            setPassword,
+        ]
+    );
 
     return (
         <div className="space-y-4">

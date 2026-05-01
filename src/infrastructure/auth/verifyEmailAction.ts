@@ -16,7 +16,7 @@ export async function verifyEmailAction(
         return {
             verified: false,
             error: {
-                code: 'invalid_verification_code',
+                code: 'redis_unavailable',
                 message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
             },
         };

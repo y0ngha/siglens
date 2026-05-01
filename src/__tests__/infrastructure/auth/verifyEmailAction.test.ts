@@ -25,7 +25,7 @@ describe('verifyEmailAction', () => {
     });
 
     describe('Redis 미설정', () => {
-        it('createEmailTokenStore가 null이면 invalid_verification_code 에러를 반환한다', async () => {
+        it('createEmailTokenStore가 null이면 redis_unavailable 에러를 반환한다', async () => {
             mockCreateTokenStore.mockReturnValue(null);
             const result = await verifyEmailAction(
                 { verified: false, error: null },
@@ -35,7 +35,7 @@ describe('verifyEmailAction', () => {
                 })
             );
             expect(result.verified).toBe(false);
-            expect(result.error?.code).toBe('invalid_verification_code');
+            expect(result.error?.code).toBe('redis_unavailable');
             expect(result.error?.message).toBe(
                 AUTH_SERVICE_UNAVAILABLE_MESSAGE
             );

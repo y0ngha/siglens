@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import type { EmailDispatcher, EmailMessage } from './types';
+import type { EmailDispatcher, EmailMessage } from '@y0ngha/siglens-core';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
 const EMAIL_FROM_ENV = 'EMAIL_FROM';

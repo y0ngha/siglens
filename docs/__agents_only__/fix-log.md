@@ -14,6 +14,16 @@
 - Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
 
+## [PR #395 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: 동일 실패 원인(Redis 미설정)에 대해 verifyEmailAction과 requestEmailVerificationAction이 서로 다른 error.code 반환
+- Rule: MISTAKES.md Predictability #1.5 — 동일 입력 경로는 대칭적으로 처리
+- Context: verifyEmailAction에서 createEmailTokenStore() === null 시 'invalid_verification_code'를 반환했으나, requestEmailVerificationAction은 동일 조건에서 'redis_unavailable'을 반환. VerifyEmailFormState error.code 타입에 VerifyEmailLocalErrorCode('redis_unavailable')를 추가하고 verifyEmailAction을 통일.
+
+## [PR #395 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: code 단계 AuthFieldGroup에 error prop 미전달 → aria-invalid 미설정
+- Rule: MISTAKES.md Accessibility #1.6 — aria-invalid는 입력 필드 검증 상태를 반영해야 함
+- Context: SignupForm.tsx code 단계에서 codeState.error가 있어도 AuthFieldGroup에 error prop이 없어 aria-invalid가 설정되지 않음. error={codeState.error?.message} 추가.
+
 ## [Issue #394 stubs removal | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: 미배포 코어 API stub 모듈을 임시로 두고 import 경로를 우회
 - Rule: 단일 의존성 원칙 — 외부 패키지 export가 정식 출시되면 stub은 즉시 제거하고 import 경로를 통일
