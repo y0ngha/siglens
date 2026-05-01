@@ -8,7 +8,9 @@ jest.mock('@y0ngha/siglens-core', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
-    DrizzleOAuthAccountRepository: jest.fn().mockImplementation(() => ({})),
+    DrizzleOAuthAccountRepository: jest
+        .fn()
+        .mockImplementation(() => ({ findByUserId: jest.fn() })),
     compositeOAuthRevoker: { revokeToken: jest.fn() },
     deleteAccount: jest.fn(),
     findUserBySessionToken: jest.fn(),
@@ -133,7 +135,9 @@ describe('deleteAccountAction', () => {
             expect(mockDelete).toHaveBeenCalledWith(
                 { userId: 'u1' },
                 expect.objectContaining({
-                    oauthAccounts: expect.any(Object),
+                    oauthAccounts: expect.objectContaining({
+                        findByUserId: expect.any(Function),
+                    }),
                     oauthRevoker: expect.objectContaining({
                         revokeToken: expect.any(Function),
                     }),
@@ -174,7 +178,9 @@ describe('deleteAccountAction', () => {
             expect(mockDelete).toHaveBeenCalledWith(
                 { userId: 'u1' },
                 expect.objectContaining({
-                    oauthAccounts: expect.any(Object),
+                    oauthAccounts: expect.objectContaining({
+                        findByUserId: expect.any(Function),
+                    }),
                     oauthRevoker: expect.objectContaining({
                         revokeToken: expect.any(Function),
                     }),
