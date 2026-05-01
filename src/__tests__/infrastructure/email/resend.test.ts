@@ -42,19 +42,6 @@ describe('ResendEmailDispatcher', () => {
         });
     });
 
-    it('AbortSignal이 전달되어도 완료 전에 abort되지 않으면 true를 반환한다', async () => {
-        sendMock.mockResolvedValue({ data: { id: 'abc' }, error: null });
-        const dispatcher = new ResendEmailDispatcher({
-            apiKey: 'k',
-            from: 'noreply@siglens.io',
-        });
-        await expect(
-            dispatcher.sendEmail(message, {
-                signal: new AbortController().signal,
-            })
-        ).resolves.toBe(true);
-    });
-
     it('Resend가 error를 반환하면 false를 반환한다', async () => {
         sendMock.mockResolvedValue({ data: null, error: { message: 'fail' } });
         const dispatcher = new ResendEmailDispatcher({
@@ -71,43 +58,6 @@ describe('ResendEmailDispatcher', () => {
             from: 'noreply@siglens.io',
         });
         await expect(dispatcher.sendEmail(message)).resolves.toBe(false);
-    });
-
-    it('AbortSignal이 이미 aborted 상태이면 false를 반환한다', async () => {
-        const controller = new AbortController();
-        controller.abort();
-        const dispatcher = new ResendEmailDispatcher({
-            apiKey: 'k',
-            from: 'noreply@siglens.io',
-        });
-        await expect(
-            dispatcher.sendEmail(message, { signal: controller.signal })
-        ).resolves.toBe(false);
-    });
-
-    it('메일 발송 대기 중 AbortSignal이 abort되면 false를 반환한다', async () => {
-        const controller = new AbortController();
-        let resolveSend!: (value: {
-            data: { id: string } | null;
-            error: { message: string } | null;
-        }) => void;
-        sendMock.mockReturnValue(
-            new Promise(resolve => {
-                resolveSend = resolve;
-            })
-        );
-        const dispatcher = new ResendEmailDispatcher({
-            apiKey: 'k',
-            from: 'noreply@siglens.io',
-        });
-
-        const sendPromise = dispatcher.sendEmail(message, {
-            signal: controller.signal,
-        });
-        controller.abort();
-
-        await expect(sendPromise).resolves.toBe(false);
-        resolveSend({ data: null, error: { message: 'ignored' } });
     });
 });
 

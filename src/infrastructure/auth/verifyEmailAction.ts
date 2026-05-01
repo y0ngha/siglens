@@ -1,8 +1,7 @@
 'use server';
 
+import { createEmailTokenStore, verifyEmail } from '@y0ngha/siglens-core';
 import type { VerifyEmailFormState } from '@/domain/auth/formTypes';
-// TODO(siglens-core#55): replace with real exports once the new core ships.
-import { createEmailTokenStore, verifyEmail } from '@/domain/auth/coreStubs';
 
 export async function verifyEmailAction(
     _prev: VerifyEmailFormState,
@@ -12,6 +11,15 @@ export async function verifyEmailAction(
     const code = String(formData.get('code') ?? '').trim();
 
     const emailTokens = createEmailTokenStore();
+    if (!emailTokens) {
+        return {
+            verified: false,
+            error: {
+                code: 'invalid_verification_code',
+                message: '서비스가 일시적으로 동작하지 않습니다.',
+            },
+        };
+    }
     const result = await verifyEmail({ email, code }, { emailTokens });
 
     if (!result.ok) {

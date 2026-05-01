@@ -3,15 +3,15 @@
 import {
     DrizzleUserRepository,
     bcryptPasswordHasher,
+    confirmPasswordReset,
+    createEmailTokenStore,
 } from '@y0ngha/siglens-core';
 import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/domain/auth/formTypes';
-// TODO(siglens-core#55): replace with real exports once the new core ships.
-import {
-    createEmailTokenStore,
-    confirmPasswordResetV2,
-} from '@/domain/auth/coreStubs';
 import { getAuthDatabaseClient } from './db';
+
+const REDIS_UNAVAILABLE_MESSAGE =
+    '서비스가 일시적으로 동작하지 않습니다. 잠시 후 다시 시도해주세요.';
 
 export async function confirmPasswordResetAction(
     _prev: ResetPasswordFormState,
@@ -21,13 +21,25 @@ export async function confirmPasswordResetAction(
     const token = String(formData.get('token') ?? '');
     const newPassword = String(formData.get('newPassword') ?? '');
 
+    const emailTokens = createEmailTokenStore();
+    if (!emailTokens) {
+        return {
+            error: {
+                code: 'invalid_token',
+                message: REDIS_UNAVAILABLE_MESSAGE,
+            },
+        };
+    }
+
     const { db } = getAuthDatabaseClient();
-    const result = await confirmPasswordResetV2(
+    const userRepo = new DrizzleUserRepository(db);
+    const result = await confirmPasswordReset(
         { email, token, newPassword },
         {
-            users: new DrizzleUserRepository(db),
+            emailAuthUsers: userRepo,
+            users: userRepo,
+            emailTokens,
             passwordHasher: bcryptPasswordHasher,
-            emailTokens: createEmailTokenStore(),
         }
     );
 

@@ -1,6 +1,11 @@
 'use server';
 
-import { DrizzleUserRepository, deleteAccount } from '@y0ngha/siglens-core';
+import {
+    DrizzleOAuthAccountRepository,
+    DrizzleUserRepository,
+    compositeOAuthRevoker,
+    deleteAccount,
+} from '@y0ngha/siglens-core';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DeleteAccountFormState } from '@/domain/auth/formTypes';
@@ -40,7 +45,11 @@ export async function deleteAccountAction(
     const { db } = getAuthDatabaseClient();
     const result = await deleteAccount(
         { userId: user.id },
-        { users: new DrizzleUserRepository(db) },
+        {
+            users: new DrizzleUserRepository(db),
+            oauthAccounts: new DrizzleOAuthAccountRepository(db),
+            oauthRevoker: compositeOAuthRevoker,
+        },
         { secureCookie: isSecureCookieEnv() }
     );
 

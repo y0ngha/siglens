@@ -1,15 +1,12 @@
 import type {
+    ConfirmPasswordResetError,
+    ConfirmPasswordResetErrorCode,
     DeleteAccountErrorCode,
     LoginUserErrorCode,
-} from '@y0ngha/siglens-core';
-// TODO(siglens-core#55): replace with real types once new core publishes.
-import type {
-    ConfirmPasswordResetV2Error,
-    ConfirmPasswordResetV2ErrorCode,
-    RegisterUserV2Error,
-    RegisterUserV2ErrorCode,
+    RegisterUserError,
+    RegisterUserErrorCode,
     VerifyEmailErrorCode,
-} from '@/domain/auth/coreStubs';
+} from '@y0ngha/siglens-core';
 
 export interface LoginFormState {
     error: { code: LoginUserErrorCode; message: string } | null;
@@ -17,8 +14,8 @@ export interface LoginFormState {
 
 export interface SignupFormState {
     error: {
-        code: RegisterUserV2ErrorCode | 'auto_login_failed';
-        field?: RegisterUserV2Error['field'];
+        code: RegisterUserErrorCode | 'auto_login_failed';
+        field?: RegisterUserError['field'];
         message: string;
     } | null;
 }
@@ -39,8 +36,8 @@ export interface ForgotPasswordFormState {
 
 export interface ResetPasswordFormState {
     error: {
-        code: ConfirmPasswordResetV2ErrorCode;
-        field?: ConfirmPasswordResetV2Error['field'];
+        code: ConfirmPasswordResetErrorCode;
+        field?: ConfirmPasswordResetError['field'];
         message: string;
     } | null;
 }

@@ -65,28 +65,12 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
             <ul className="text-secondary-300 list-disc space-y-1 pl-5 text-sm">
                 <li>이메일, 표시 이름, 아바타가 즉시 영구 파기됩니다.</li>
                 <li>
-                    모든 활성 세션이 종료되고 본 서비스의 OAuth 연결 정보가
-                    삭제됩니다.
+                    모든 활성 세션이 종료되고 OAuth 연결이 자동으로 해제됩니다.
                 </li>
                 <li>
                     법령상 보유 사유가 있는 경우 해당 기간 동안만 보유됩니다.
                 </li>
             </ul>
-            <div
-                role="note"
-                aria-label="외부 OAuth 권한 안내"
-                className="border-secondary-800 bg-secondary-900/60 text-secondary-300 rounded-md border p-3 text-xs leading-relaxed"
-            >
-                <p className="text-secondary-200 mb-1 font-semibold">
-                    소셜 로그인을 이용하셨나요?
-                </p>
-                <p>
-                    본 서비스의 회원 정보는 즉시 파기되지만, Google·Kakao 등
-                    외부 계정에 등록된 앱 접근 권한은 자동으로 끊기지 않습니다.
-                    완전히 분리하시려면 각 provider 계정 설정에서 직접 연결을
-                    해제해주세요.
-                </p>
-            </div>
             <div className="space-y-2">
                 <label
                     htmlFor="delete-account-email"

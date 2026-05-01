@@ -5,12 +5,12 @@ import {
     DrizzleUserRepository,
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
+    createEmailTokenStore,
     loginUser,
+    registerUser,
 } from '@y0ngha/siglens-core';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-// TODO(siglens-core#55): replace with real exports once the new core ships.
-import { createEmailTokenStore, registerUserV2 } from '@/domain/auth/coreStubs';
 import type { SignupFormState } from '@/domain/auth/formTypes';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { applyAuthCookie } from './applyAuthCookie';
@@ -19,6 +19,8 @@ import { isSecureCookieEnv } from './sessionCookieOptions';
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
+const REDIS_UNAVAILABLE_MESSAGE =
+    '서비스가 일시적으로 동작하지 않습니다. 잠시 후 다시 시도해주세요.';
 
 export async function registerAction(
     _prev: SignupFormState,
@@ -30,18 +32,23 @@ export async function registerAction(
     const name = rawName ? rawName : undefined;
     const next = sanitizeNextPath(formData.get('next')?.toString());
 
+    const emailTokens = createEmailTokenStore();
+    if (!emailTokens) {
+        return {
+            error: {
+                code: 'email_not_verified',
+                field: 'email',
+                message: REDIS_UNAVAILABLE_MESSAGE,
+            },
+        };
+    }
+
     const { db } = getAuthDatabaseClient();
     const userRepo = new DrizzleUserRepository(db);
 
-    // 새 시그니처: deps에 emailTokens 추가. 코어가 verified 상태를 확인하여
-    // verified가 아니면 email_not_verified 에러를 반환한다.
-    const registerResult = await registerUserV2(
+    const registerResult = await registerUser(
         { email, password, name },
-        {
-            users: userRepo,
-            passwordHasher: bcryptPasswordHasher,
-            emailTokens: createEmailTokenStore(),
-        }
+        { users: userRepo, passwordHasher: bcryptPasswordHasher, emailTokens }
     );
 
     if (!registerResult.ok) {

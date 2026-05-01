@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import type { EmailDispatcher, EmailMessage, SendEmailOptions } from './types';
+import type { EmailDispatcher, EmailMessage } from './types';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
 const EMAIL_FROM_ENV = 'EMAIL_FROM';
@@ -17,26 +17,6 @@ function readResendConfig(): ResendConfig | null {
     return { apiKey, from };
 }
 
-function createAbortError(): Error {
-    return new Error('Email send aborted');
-}
-
-function withAbortSignal<T>(
-    promise: Promise<T>,
-    signal?: AbortSignal
-): Promise<T> {
-    if (signal === undefined) return promise;
-    if (signal.aborted) return Promise.reject(createAbortError());
-
-    return new Promise((resolve, reject) => {
-        const handleAbort = (): void => reject(createAbortError());
-        signal.addEventListener('abort', handleAbort, { once: true });
-        promise
-            .then(resolve, reject)
-            .finally(() => signal.removeEventListener('abort', handleAbort));
-    });
-}
-
 export class ResendEmailDispatcher implements EmailDispatcher {
     private readonly client: Resend;
     private readonly from: string;
@@ -46,21 +26,15 @@ export class ResendEmailDispatcher implements EmailDispatcher {
         this.from = config.from;
     }
 
-    async sendEmail(
-        message: EmailMessage,
-        options?: SendEmailOptions
-    ): Promise<boolean> {
+    async sendEmail(message: EmailMessage): Promise<boolean> {
         try {
-            const { error } = await withAbortSignal(
-                this.client.emails.send({
-                    from: this.from,
-                    to: message.to,
-                    subject: message.subject,
-                    html: message.html,
-                    text: message.text,
-                }),
-                options?.signal
-            );
+            const { error } = await this.client.emails.send({
+                from: this.from,
+                to: message.to,
+                subject: message.subject,
+                html: message.html,
+                text: message.text,
+            });
             return error === null;
         } catch {
             return false;

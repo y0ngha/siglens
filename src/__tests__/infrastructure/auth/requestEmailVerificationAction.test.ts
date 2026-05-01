@@ -1,8 +1,6 @@
-const requestEmailVerificationMock = jest.fn();
-const createEmailTokenStoreMock = jest.fn(() => ({}));
-jest.mock('@/domain/auth/coreStubs', () => ({
-    requestEmailVerification: requestEmailVerificationMock,
-    createEmailTokenStore: createEmailTokenStoreMock,
+jest.mock('@y0ngha/siglens-core', () => ({
+    createEmailTokenStore: jest.fn(),
+    requestEmailVerification: jest.fn(),
 }));
 
 const sendEmailMock = jest.fn();
@@ -19,24 +17,57 @@ jest.mock('@/infrastructure/email/emailVerificationEmail', () => ({
     })),
 }));
 
+import {
+    createEmailTokenStore,
+    requestEmailVerification,
+} from '@y0ngha/siglens-core';
 import { buildEmailVerificationEmail } from '@/infrastructure/email/emailVerificationEmail';
 import { requestEmailVerificationAction } from '@/infrastructure/auth/requestEmailVerificationAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 
+const mockRequest = requestEmailVerification as jest.MockedFunction<
+    typeof requestEmailVerification
+>;
+const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
+    typeof createEmailTokenStore
+>;
 const mockBuild = buildEmailVerificationEmail as jest.MockedFunction<
     typeof buildEmailVerificationEmail
 >;
 
 describe('requestEmailVerificationAction', () => {
     beforeEach(() => {
-        requestEmailVerificationMock.mockReset();
+        mockRequest.mockReset();
         sendEmailMock.mockReset();
         mockBuild.mockClear();
+        mockCreateTokenStore.mockReset();
+        mockCreateTokenStore.mockReturnValue({
+            set: jest.fn(),
+            get: jest.fn(),
+            delete: jest.fn(),
+        });
+    });
+
+    describe('Redis 미설정', () => {
+        it('createEmailTokenStore가 null이면 redis_unavailable 에러를 반환한다', async () => {
+            mockCreateTokenStore.mockReturnValue(null);
+            const result = await requestEmailVerificationAction(
+                { submitted: false, error: null },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(result.submitted).toBe(false);
+            expect(result.error?.code).toBe('redis_unavailable');
+            expect(mockRequest).not.toHaveBeenCalled();
+        });
     });
 
     describe('성공', () => {
-        it('코어 ok=true 시 submitted: true 와 error: null 을 반환한다', async () => {
-            requestEmailVerificationMock.mockResolvedValue({ ok: true });
+        it('코어 호출 후 submitted: true 와 error: null 을 반환한다', async () => {
+            mockRequest.mockResolvedValue({
+                ok: true,
+                codeIssued: true,
+                emailDispatched: true,
+            });
             const result = await requestEmailVerificationAction(
                 { submitted: false, error: null },
                 makeFormData({ email: 'user@example.com' })
@@ -45,13 +76,30 @@ describe('requestEmailVerificationAction', () => {
             expect(result.error).toBeNull();
         });
 
+        it('codeIssued: false 응답에도 submitted: true 를 반환한다 (enumeration 회피)', async () => {
+            mockRequest.mockResolvedValue({
+                ok: true,
+                codeIssued: false,
+                emailDispatched: false,
+            });
+            const result = await requestEmailVerificationAction(
+                { submitted: false, error: null },
+                makeFormData({ email: 'invalid' })
+            );
+            expect(result.submitted).toBe(true);
+        });
+
         it('buildMessage 콜백을 호출하면 to/code가 채워진 메시지를 반환한다', async () => {
-            requestEmailVerificationMock.mockResolvedValue({ ok: true });
+            mockRequest.mockResolvedValue({
+                ok: true,
+                codeIssued: true,
+                emailDispatched: true,
+            });
             await requestEmailVerificationAction(
                 { submitted: false, error: null },
                 makeFormData({ email: 'user@example.com' })
             );
-            const callArgs = requestEmailVerificationMock.mock.calls[0]!;
+            const callArgs = mockRequest.mock.calls[0]!;
             const options = callArgs[2] as {
                 buildMessage: (code: string) => unknown;
             };
@@ -64,33 +112,36 @@ describe('requestEmailVerificationAction', () => {
         });
     });
 
-    describe('실패', () => {
-        it('코어 ok=false 시 폼 상태로 에러를 반환한다', async () => {
-            requestEmailVerificationMock.mockResolvedValue({
-                ok: false,
-                error: {
-                    code: 'rate_limited',
-                    message: '너무 자주 요청',
-                },
-            });
-            const result = await requestEmailVerificationAction(
-                { submitted: false, error: null },
-                makeFormData({ email: 'user@example.com' })
-            );
-            expect(result.submitted).toBe(false);
-            expect(result.error?.code).toBe('rate_limited');
-        });
-    });
-
     describe('입력 정규화', () => {
         it('email은 trim 후 코어로 전달한다', async () => {
-            requestEmailVerificationMock.mockResolvedValue({ ok: true });
+            mockRequest.mockResolvedValue({
+                ok: true,
+                codeIssued: true,
+                emailDispatched: true,
+            });
             await requestEmailVerificationAction(
                 { submitted: false, error: null },
                 makeFormData({ email: '  user@example.com  ' })
             );
-            expect(requestEmailVerificationMock).toHaveBeenCalledWith(
+            expect(mockRequest).toHaveBeenCalledWith(
                 { email: 'user@example.com' },
+                expect.any(Object),
+                expect.any(Object)
+            );
+        });
+
+        it('email 키가 없으면 빈 문자열로 코어를 호출한다', async () => {
+            mockRequest.mockResolvedValue({
+                ok: true,
+                codeIssued: false,
+                emailDispatched: false,
+            });
+            await requestEmailVerificationAction(
+                { submitted: false, error: null },
+                makeFormData({})
+            );
+            expect(mockRequest).toHaveBeenCalledWith(
+                { email: '' },
                 expect.any(Object),
                 expect.any(Object)
             );
