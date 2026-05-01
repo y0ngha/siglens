@@ -3,20 +3,13 @@ import type {
     ConfirmPasswordResetErrorCode,
     DeleteAccountErrorCode,
     LoginUserErrorCode,
+    RegisterUserError,
     RegisterUserErrorCode,
-    RegisterUserErrorField,
+    VerifyEmailErrorCode,
 } from '@y0ngha/siglens-core';
 
 export interface LoginFormState {
     error: { code: LoginUserErrorCode; message: string } | null;
-}
-
-export interface SignupFormState {
-    error: {
-        code: RegisterUserErrorCode | 'auto_login_failed';
-        field?: RegisterUserErrorField;
-        message: string;
-    } | null;
 }
 
 export type DeleteAccountFormErrorCode =
@@ -33,10 +26,33 @@ export interface ForgotPasswordFormState {
     submitted: boolean;
 }
 
+export type LocalInfraErrorCode = 'redis_unavailable';
+
+export interface SignupFormState {
+    error: {
+        code: RegisterUserErrorCode | 'auto_login_failed' | LocalInfraErrorCode;
+        field?: RegisterUserError['field'];
+        message: string;
+    } | null;
+}
+
 export interface ResetPasswordFormState {
     error: {
-        code: ConfirmPasswordResetErrorCode;
+        code: ConfirmPasswordResetErrorCode | LocalInfraErrorCode;
         field?: ConfirmPasswordResetError['field'];
+        message: string;
+    } | null;
+}
+
+export interface RequestEmailVerificationFormState {
+    submitted: boolean;
+    error: { code: LocalInfraErrorCode; message: string } | null;
+}
+
+export interface VerifyEmailFormState {
+    verified: boolean;
+    error: {
+        code: VerifyEmailErrorCode | LocalInfraErrorCode;
         message: string;
     } | null;
 }

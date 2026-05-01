@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { DeleteAccountFormState } from '@/domain/auth/formTypes';
+import type { DeleteAccountFormState } from '@/domain/types';
 import { deleteAccountAction } from '@/infrastructure/auth/deleteAccountAction';
 
 const INITIAL_STATE: DeleteAccountFormState = { error: null };

@@ -1,8 +1,6 @@
 jest.mock('@y0ngha/siglens-core', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-    createDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
     createEmailTokenStore: jest.fn(),
-    requestPasswordReset: jest.fn(),
+    requestEmailVerification: jest.fn(),
 }));
 
 const sendEmailMock = jest.fn();
@@ -10,38 +8,36 @@ jest.mock('@/infrastructure/email/resend', () => ({
     createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
 }));
 
-jest.mock('@/infrastructure/email/passwordResetEmail', () => ({
-    buildPasswordResetEmail: jest.fn(({ email, token }) => ({
-        to: email,
-        subject: 'subject',
-        html: `html-${email}-${token}`,
-        text: `text-${email}-${token}`,
+jest.mock('@/infrastructure/email/emailVerificationEmail', () => ({
+    buildEmailVerificationEmail: jest.fn(({ to, code }) => ({
+        to,
+        subject: 'subj',
+        html: `html-${code}`,
+        text: `text-${code}`,
     })),
 }));
 
 import {
     createEmailTokenStore,
-    requestPasswordReset,
+    requestEmailVerification,
 } from '@y0ngha/siglens-core';
-import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
-import { requestPasswordResetAction } from '@/infrastructure/auth/requestPasswordResetAction';
-import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
+import { buildEmailVerificationEmail } from '@/infrastructure/email/emailVerificationEmail';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
+import { requestEmailVerificationAction } from '@/infrastructure/auth/requestEmailVerificationAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
 
-const mockRequest = requestPasswordReset as jest.MockedFunction<
-    typeof requestPasswordReset
+const mockRequest = requestEmailVerification as jest.MockedFunction<
+    typeof requestEmailVerification
 >;
 const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
     typeof createEmailTokenStore
 >;
-const mockBuild = buildPasswordResetEmail as jest.MockedFunction<
-    typeof buildPasswordResetEmail
+const mockBuild = buildEmailVerificationEmail as jest.MockedFunction<
+    typeof buildEmailVerificationEmail
 >;
 
-describe('requestPasswordResetAction', () => {
+describe('requestEmailVerificationAction', () => {
     beforeEach(() => {
-        resetAuthDatabaseClientForTests();
-        process.env.DATABASE_URL = 'postgres://test';
         mockRequest.mockReset();
         sendEmailMock.mockReset();
         mockBuild.mockClear();
@@ -54,57 +50,73 @@ describe('requestPasswordResetAction', () => {
     });
 
     describe('Redis 미설정', () => {
-        it('createEmailTokenStore가 null이면 즉시 submitted: true를 반환한다', async () => {
+        it('createEmailTokenStore가 null이면 redis_unavailable 에러를 반환한다', async () => {
             mockCreateTokenStore.mockReturnValue(null);
-            const result = await requestPasswordResetAction(
-                { submitted: false },
+            const result = await requestEmailVerificationAction(
+                { submitted: false, error: null },
                 makeFormData({ email: 'user@example.com' })
             );
-            expect(result.submitted).toBe(true);
+            expect(result.submitted).toBe(false);
+            expect(result.error?.code).toBe('redis_unavailable');
+            expect(result.error?.message).toBe(
+                AUTH_SERVICE_UNAVAILABLE_MESSAGE
+            );
             expect(mockRequest).not.toHaveBeenCalled();
         });
     });
 
-    describe('항상 submitted: true 를 반환 (enumeration 회피)', () => {
-        it('코어 호출 후 submitted: true 를 반환한다', async () => {
+    describe('코어 ok: true 시 submitted: true 반환', () => {
+        it('코어 호출 후 submitted: true 와 error: null 을 반환한다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
-                tokenIssued: true,
+                codeIssued: true,
                 emailDispatched: true,
             });
-            const result = await requestPasswordResetAction(
-                { submitted: false },
+            const result = await requestEmailVerificationAction(
+                { submitted: false, error: null },
                 makeFormData({ email: 'user@example.com' })
+            );
+            expect(result.submitted).toBe(true);
+            expect(result.error).toBeNull();
+        });
+    });
+
+    describe('항상 submitted: true 반환 (enumeration 회피)', () => {
+        it('codeIssued: false 응답에도 submitted: true 를 반환한다', async () => {
+            mockRequest.mockResolvedValue({
+                ok: true,
+                codeIssued: false,
+                emailDispatched: false,
+            });
+            const result = await requestEmailVerificationAction(
+                { submitted: false, error: null },
+                makeFormData({ email: 'invalid' })
             );
             expect(result.submitted).toBe(true);
         });
     });
 
     describe('buildMessage 콜백', () => {
-        it('코어에 buildMessage 콜백을 전달하며, 호출 시 email/token이 채워진 메시지를 반환한다', async () => {
+        it('buildMessage 콜백을 호출하면 to/code가 채워진 메시지를 반환한다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
-                tokenIssued: true,
+                codeIssued: true,
                 emailDispatched: true,
             });
-            await requestPasswordResetAction(
-                { submitted: false },
+            await requestEmailVerificationAction(
+                { submitted: false, error: null },
                 makeFormData({ email: 'user@example.com' })
             );
             const callArgs = mockRequest.mock.calls[0]!;
             const options = callArgs[2] as {
-                buildMessage: (token: string) => unknown;
+                buildMessage: (code: string) => unknown;
             };
-            const message = options.buildMessage('the-token') as {
-                to: string;
-                html: string;
-            };
+            const message = options.buildMessage('482917') as { to: string };
             expect(mockBuild).toHaveBeenCalledWith({
-                email: 'user@example.com',
-                token: 'the-token',
+                to: 'user@example.com',
+                code: '482917',
             });
             expect(message.to).toBe('user@example.com');
-            expect(message.html).toContain('the-token');
         });
     });
 
@@ -112,11 +124,11 @@ describe('requestPasswordResetAction', () => {
         it('email은 trim 후 코어로 전달한다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
-                tokenIssued: true,
+                codeIssued: true,
                 emailDispatched: true,
             });
-            await requestPasswordResetAction(
-                { submitted: false },
+            await requestEmailVerificationAction(
+                { submitted: false, error: null },
                 makeFormData({ email: '  user@example.com  ' })
             );
             expect(mockRequest).toHaveBeenCalledWith(
@@ -138,11 +150,11 @@ describe('requestPasswordResetAction', () => {
         it('email 키가 없으면 빈 문자열로 코어를 호출한다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
-                tokenIssued: false,
+                codeIssued: false,
                 emailDispatched: false,
             });
-            await requestPasswordResetAction(
-                { submitted: false },
+            await requestEmailVerificationAction(
+                { submitted: false, error: null },
                 makeFormData({})
             );
             expect(mockRequest).toHaveBeenCalledWith(

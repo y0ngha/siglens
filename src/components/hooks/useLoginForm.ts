@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { LoginFormState } from '@/domain/auth/formTypes';
+import type { LoginFormState } from '@/domain/types';
 import { loginAction } from '@/infrastructure/auth/loginAction';
 
 const INITIAL_STATE: LoginFormState = { error: null };

@@ -8,6 +8,7 @@ interface AuthFieldGroupProps {
     defaultValue?: string;
     placeholder?: string;
     error?: string;
+    onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
 export function AuthFieldGroup({
@@ -20,6 +21,7 @@ export function AuthFieldGroup({
     defaultValue,
     placeholder,
     error,
+    onChange,
 }: AuthFieldGroupProps) {
     const errorId = `${id}-error`;
     return (
@@ -38,6 +40,7 @@ export function AuthFieldGroup({
                 required={required}
                 defaultValue={defaultValue}
                 placeholder={placeholder}
+                onChange={onChange}
                 aria-invalid={!!error}
                 aria-describedby={error ? errorId : undefined}
                 className="border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 h-12 w-full rounded-md border px-4 text-sm focus:border-blue-500 focus:ring-2 focus:ring-blue-500/40 focus:outline-none"

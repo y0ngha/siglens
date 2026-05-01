@@ -1,19 +1,21 @@
 'use server';
 
-import type { SignupFormState } from '@/domain/auth/formTypes';
-import { sanitizeNextPath } from '@/domain/auth/redirect';
 import {
     DrizzleSessionRepository,
     DrizzleUserRepository,
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
+    createEmailTokenStore,
     loginUser,
     registerUser,
 } from '@y0ngha/siglens-core';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
+import type { SignupFormState } from '@/domain/auth/formTypes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { applyAuthCookie } from './applyAuthCookie';
 import { getAuthDatabaseClient } from './db';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from './errorMessages';
 import { isSecureCookieEnv } from './sessionCookieOptions';
 
 const AUTO_LOGIN_FAILED_MESSAGE =
@@ -29,13 +31,22 @@ export async function registerAction(
     const name = rawName ? rawName : undefined;
     const next = sanitizeNextPath(formData.get('next')?.toString());
 
+    const emailTokens = createEmailTokenStore();
+    if (!emailTokens) {
+        return {
+            error: {
+                code: 'redis_unavailable',
+                message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+            },
+        };
+    }
+
     const { db } = getAuthDatabaseClient();
     const userRepo = new DrizzleUserRepository(db);
 
     const registerResult = await registerUser(
         { email, password, name },
-        userRepo,
-        bcryptPasswordHasher
+        { users: userRepo, passwordHasher: bcryptPasswordHasher, emailTokens }
     );
 
     if (!registerResult.ok) {

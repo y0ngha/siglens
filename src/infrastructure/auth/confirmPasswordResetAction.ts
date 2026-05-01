@@ -4,26 +4,41 @@ import {
     DrizzleUserRepository,
     bcryptPasswordHasher,
     confirmPasswordReset,
+    createEmailTokenStore,
 } from '@y0ngha/siglens-core';
 import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/domain/auth/formTypes';
 import { getAuthDatabaseClient } from './db';
-import { passwordResetTokenHasher } from './passwordResetTokenService';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from './errorMessages';
 
 export async function confirmPasswordResetAction(
     _prev: ResetPasswordFormState,
     formData: FormData
 ): Promise<ResetPasswordFormState> {
+    const email = String(formData.get('email') ?? '').trim();
     const token = String(formData.get('token') ?? '');
     const newPassword = String(formData.get('newPassword') ?? '');
 
+    const emailTokens = createEmailTokenStore();
+    if (!emailTokens) {
+        return {
+            error: {
+                code: 'redis_unavailable',
+                message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+            },
+        };
+    }
+
     const { db } = getAuthDatabaseClient();
+    // DrizzleUserRepository가 emailAuthUsers와 users 두 인터페이스를 모두 구현하므로 동일 인스턴스 전달.
+    const userRepo = new DrizzleUserRepository(db);
     const result = await confirmPasswordReset(
-        { token, newPassword },
+        { email, token, newPassword },
         {
-            passwordResets: new DrizzleUserRepository(db),
+            emailAuthUsers: userRepo,
+            users: userRepo,
+            emailTokens,
             passwordHasher: bcryptPasswordHasher,
-            tokenHasher: passwordResetTokenHasher,
         }
     );
 

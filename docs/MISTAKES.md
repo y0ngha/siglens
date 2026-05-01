@@ -400,6 +400,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Extract to const (regular code) or useMemo (hooks)
 
 9. Test describe text promises assertions not verified by its it() cases
+   → describe() block name must describe only the preconditions/feature shared by all its it() cases
+   → If a test case contradicts the describe text, move it to a separate describe block
+   ❌ describe('이메일 검증 (email_mismatch)') { it('이메일이 일치하여 성공', ...) }  // contradicts mismatch premise
+   ✅ describe('이메일 불일치') { it(...mismatch case...) }; describe('이메일 정규화') { it(...match case...) }
 
 10. Type field added but test mock objects not updated
     → All mock/fixture objects must match the updated interface
@@ -433,6 +437,20 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Hard-coded expected values (e.g., TTL seconds) without mocking time sources cause flaky tests
     ❌ analyzeAction test: expect(ttl).toBe(86400); without mocking new Date()
     ✅ jest.mock('@/infrastructure/cache/config', ...); mock Date to fixed timestamp before assertions
+
+15. jest.spyOn created without assertion, or assertion uses expect.any() for new dependencies
+    → Every spy must have a corresponding assertion that validates the spy was called and with correct arguments
+    → When dependencies are added, replace generic expect.any(Object) with expect.objectContaining({...}) to verify new fields
+    ❌ jest.spyOn(console, 'warn'); /* code that never calls console.warn */; spy.mockRestore()
+    ❌ expect(mockDelete).toHaveBeenCalledWith(expect.any(Object))  // new deps oauthAccounts/oauthRevoker not verified
+    ✅ Remove spy if assertion is missing or code path never executes
+    ✅ expect(mockDelete).toHaveBeenCalledWith(expect.objectContaining({ oauthAccounts: {...}, oauthRevoker: {...} }))
+
+16. New dependency added to function but not tested for presence in call chain
+    → When a function signature adds a new parameter (deps, options, etc.), all call sites must verify the new parameter is passed
+    → Test assertion must explicitly check the new dependency is received and used
+    ❌ deleteAccountAction(oauthAccounts, oauthRevoker) added, but test asserts deleteAccountAction called without verifying deps passed
+    ✅ Assertion explicitly checks both oauthAccounts and oauthRevoker are included in the deps passed
 ```
 
 ---
@@ -444,6 +462,28 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Native roles (paragraph, complementary) must not be replaced with role attributes
    → Use <div role="note"> instead of <p role="note"> or <aside role="note">
    → Use semantic elements without explicit role unless the role fundamentally differs
+
+1.5. Hiding reference content with aria-hidden when user must see it
+   → aria-hidden="true" removes element from accessibility tree but is still visual
+   → Content that users must read/reference (email address to re-enter, confirmation text) must NOT have aria-hidden
+   → Only decorative or redundant content (duplicate labels, visual spacers, icons that have text alternatives) should be hidden
+   ❌ <p aria-hidden="true">{userEmail}</p> where user must re-enter the email address
+   ✅ <p>{userEmail}</p>  // visible to all, accessible to screen readers
+   ✅ <p aria-hidden="true"><Icon /></p>  // decorative icon has aria-label on button instead
+
+1.6. aria-describedby points to static text when validation result is dynamic
+   → aria-describedby must point to content that changes to reflect current input state
+   → For validation errors: wrap validation text in role="status" aria-live="polite" to auto-announce on change
+   → aria-invalid must also toggle to reflect validation state
+   ❌ aria-describedby="hint" where hint is static "Enter valid email"; validation error not announced to screen readers
+   ✅ <div role="status" aria-live="polite" id="validation-msg">{error || 'Enter valid email'}</div>
+      + <input aria-describedby="validation-msg" aria-invalid={!!error} />
+
+1.7. aria-label text differs from visible heading/label text
+   → aria-label for landmarks/sections must match or closely mirror visible text
+   → Inconsistency creates cognitive dissonance for screen reader users (two different names for same section)
+   ❌ <section aria-label="위험 작업" children={<h2>위험존</h2>} />  // aria-label and heading differ
+   ✅ <section aria-label="위험존"><h2>위험존</h2></section>  // both use same text
 
 2. ARIA tablist pattern incomplete (missing roving tabindex or arrow key handlers)
    → tablist requires both roving tabindex AND arrow key navigation to be fully accessible
@@ -640,6 +680,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Unrelated changes must be moved to separate PRs or reverted
    → If a related change is necessary, document the reason in a comment or commit message
 
+1.5. Asymmetric input handling across related functions
+   → When the same user input (e.g. password, email) flows through multiple functions, apply consistent normalization
+   → One path calling .trim() while another doesn't creates silent bugs where passwords/emails hash differently
+   ❌ registerAction calls password.trim() before hashing, but loginAction calls bcrypt.compare(password) without trim
+      → User passwords with spaces register successfully but fail to login
+   ✅ Consistent across both: either trim on both paths, or trim on neither (validate server-side normalization centrally)
+   ✅ Apply same rule to email: trim on both registerAction and loginAction, or neither
+
 2. Conditional checks that duplicate type system guarantees
    → If a type system guarantees a field is present, do not add optional chaining or truthiness checks
    ❌ !!assetInfo?.name  // when AssetInfo.name is required
@@ -653,6 +701,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ useEffect(() => { ... snapToPoint ... }, [isFullSnap, snapToPoint])  // snapToPoint from useEffectEvent is stable
    ✅ useEffect(() => { ... slot ... }, [isFullSnap, slot])  // all dynamic deps included
    ✅ useEffect(() => { ... snapToPoint ... }, [isFullSnap])  // useEffectEvent results excluded
+
+3.5. Multi-step forms without ability to navigate backward
+   → Users must be able to return to previous steps to correct input
+   → State derived only from Server Action results prevents backward navigation (user cannot undo entry)
+   ❌ SignupForm phase state derives from useActionState result only; once advanced to next step, email field becomes read-only
+   ✅ Add explicit "Edit" button that remounts form with flow={} or similar key to reset step while preserving auth state
 
 4. Documentation examples contradict actual business logic
    → Skill documents must reflect actual system capabilities and conditions

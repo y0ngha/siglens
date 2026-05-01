@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { ForgotPasswordFormState } from '@/domain/auth/formTypes';
+import type { ForgotPasswordFormState } from '@/domain/types';
 import { requestPasswordResetAction } from '@/infrastructure/auth/requestPasswordResetAction';
 
 const INITIAL_STATE: ForgotPasswordFormState = { submitted: false };

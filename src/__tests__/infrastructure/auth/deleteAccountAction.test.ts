@@ -8,6 +8,10 @@ jest.mock('@y0ngha/siglens-core', () => ({
     AUTH_SESSION_COOKIE_NAME: 'siglens_session',
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+    DrizzleOAuthAccountRepository: jest
+        .fn()
+        .mockImplementation(() => ({ findByUserId: jest.fn() })),
+    compositeOAuthRevoker: { revokeToken: jest.fn() },
     deleteAccount: jest.fn(),
     findUserBySessionToken: jest.fn(),
     createDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
@@ -33,6 +37,7 @@ const USER = {
     name: null,
     avatarUrl: null,
     tier: 'free' as const,
+    emailVerified: true,
     createdAt: new Date('2026-01-01T00:00:00Z'),
     updatedAt: new Date('2026-01-01T00:00:00Z'),
 };
@@ -129,7 +134,14 @@ describe('deleteAccountAction', () => {
             ).rejects.toThrow('NEXT_REDIRECT:/?account_deleted=1');
             expect(mockDelete).toHaveBeenCalledWith(
                 { userId: 'u1' },
-                expect.any(Object),
+                expect.objectContaining({
+                    oauthAccounts: expect.objectContaining({
+                        findByUserId: expect.any(Function),
+                    }),
+                    oauthRevoker: expect.objectContaining({
+                        revokeToken: expect.any(Function),
+                    }),
+                }),
                 expect.objectContaining({ secureCookie: false })
             );
         });
@@ -163,6 +175,18 @@ describe('deleteAccountAction', () => {
                     makeFormData({ email: 'user@example.com' })
                 )
             ).rejects.toThrow('NEXT_REDIRECT:/?account_deleted=1');
+            expect(mockDelete).toHaveBeenCalledWith(
+                { userId: 'u1' },
+                expect.objectContaining({
+                    oauthAccounts: expect.objectContaining({
+                        findByUserId: expect.any(Function),
+                    }),
+                    oauthRevoker: expect.objectContaining({
+                        revokeToken: expect.any(Function),
+                    }),
+                }),
+                expect.any(Object)
+            );
             expect(setSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     name: 'siglens_session',

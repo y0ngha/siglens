@@ -35,25 +35,36 @@
 - Rule: 시스템 경계(외부 API)의 예측 불가능한 응답은 try/catch로 감싸 결과 객체로 변환
 - Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
-## [PR #389 | feat/369/auth-email | 2026-04-29]
-- Violation: registerAction이 password에 .trim() 적용, loginAction은 trim 없이 사용 — 회원가입 시 trim된 비밀번호로 해시되어 로그인 시 verify 실패
-- Rule: FF.md Predictability — 동일 입력에 대한 동일 처리 보장; 양 액션 간 비대칭 처리 금지
-- Context: 사용자가 비밀번호에 의도적/비의도적 공백 포함 가입 시 로그인 불가 버그. password는 양쪽 모두 trim 제거(원본 유지), email은 양쪽 모두 trim 적용으로 통일.
 
+## [Issue #394 stubs removal | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: 미배포 코어 API stub 모듈을 임시로 두고 import 경로를 우회
+- Rule: 단일 의존성 원칙 — 외부 패키지 export가 정식 출시되면 stub은 즉시 제거하고 import 경로를 통일
+- Context: siglens-core 0.2.1 배포로 모든 새 API(requestEmailVerification, verifyEmail, EmailTokenStore, V2 PasswordReset, V2 RegisterUser, OAuthRevoker, DrizzleOAuthAccountRepository)가 실 export됨. coreStubs.ts 삭제, 모든 import를 @y0ngha/siglens-core로 교체. EmailMessage/EmailDispatcher 또한 코어 export를 그대로 re-export하여 단일 경로 유지.
+
+- Violation: 코어가 자동화한 OAuth revocation을 사용자에게 수동 안내 문구로 노출
+- Rule: 도메인 동작과 UI 메시지 동기화 — 코어가 책임지면 UI는 그 사실을 반영
+- Context: deleteAccount가 oauthAccounts + oauthRevoker deps로 provider 측 token revocation을 자동 수행하므로, DeleteAccountConfirm의 "각 provider 계정에서 직접 끊으세요" 안내 박스와 /privacy 약관 문구를 "탈퇴 시 자동으로 회수된다"로 갱신.
+
+## [PR #395 Round 6 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: infrastructure Server Action에서 네트워크 응답 없이 무한 대기 가능
+- Rule: MISTAKES.md Fire-and-Forget #1 — fetch 기반 외부 호출에는 반드시 타임아웃 설정
+- Context: ResendEmailDispatcher.sendEmail이 AbortSignal 없이 Resend SDK를 호출해 네트워크 지연 시 Server Action이 무기한 블로킹. AbortSignal.timeout + Promise.race 패턴으로 10초 타임아웃 추가.
+
+## [PR #395 Round 5 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: 동일 중간 타입 별칭 3개가 LocalInfraErrorCode와 동일한 값으로 중복 선언
+- Rule: CLAUDE.md — 작업 범위를 벗어나는 불필요한 추상화 추가 금지; 독립적 확장 계획이 없는 타입 별칭은 중복
+- Context: formTypes.ts에서 SignupLocalErrorCode / ResetPasswordLocalErrorCode / VerifyEmailLocalErrorCode가 모두 LocalInfraErrorCode와 동일. LocalInfraErrorCode를 export로 승격하고 중간 별칭 3개를 제거하여 인터페이스에서 직접 참조.
+
+## [PR #395 Round 4 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: code 단계에서 동일한 codeState.error.message가 AuthErrorAlert와 AuthFieldGroup.error prop 두 곳에 동시 표시
+- Rule: 동일 정보를 두 채널로 동시 노출하지 않음 — 하나의 에러는 하나의 UI 위치에서만 표시
+- Context: SignupForm.tsx code phase에서 AuthErrorAlert와 AuthFieldGroup error prop에 모두 codeState.error.message를 전달하여 사용자에게 동일 에러가 중복 노출됨. AuthFieldGroup error prop 제거로 AuthErrorAlert 단일 표시로 통일.
 ## [PR #391 코멘트 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
 - Violation: describe 레이블과 실제 테스트 케이스 의미 불일치
 - Rule: MISTAKES.md Tests #9 — describe 텍스트는 내부 it()들의 공통 전제조건만 커버해야 함
 - Context: describe('이메일 검증 (email_mismatch)') 블록 안에 이메일이 일치하여 성공하는 케이스가 포함됨. 별도 describe('이메일 정규화') 블록으로 분리.
 
-## [PR #391 Suggestion 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
-- Violation: section의 aria-label이 시각적 h2 헤딩 텍스트와 불일치
-- Rule: WCAG 접근성 — aria-label은 가능한 한 visible text와 일치시켜 인지 불일치 방지
-- Context: account/page.tsx에서 위험존 section의 aria-label이 "위험 작업"이고 h2가 "위험존"으로 달라, 스크린 리더와 시각 사용자 간 용어 불일치. aria-label="위험존"으로 통일.
 
-## [Issue #388 | feat/388/비밀번호-재설정-ui | 2026-05-01]
-- Violation: fire-and-forget 주석을 달아두고 실제로는 await로 dispatcher 호출 결과를 기다림
-- Rule: MISTAKES.md Fire-and-Forget Operations #1 — fire-and-forget이라면 진짜로 caller를 막지 않아야 함
-- Context: requestPasswordResetAction에서 이메일 발송을 async로 진행할 의도였으나 await가 들어가 Resend 응답을 기다리는 동안 Server Action이 블록됨. void 호출로 변경하고 dispatcher.sendEmail 자체가 boolean 반환 + 내부 swallow 한다는 점을 주석으로 명시.
 
 ## [PR #393 | feat/388/비밀번호-재설정-ui | 2026-05-01]
 - Violation: 동기 토큰 생성/해시 함수 테스트에서 불필요한 await 사용

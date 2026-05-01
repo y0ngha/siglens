@@ -1,7 +1,7 @@
 'use client';
 
 import { useActionState } from 'react';
-import type { SignupFormState } from '@/domain/auth/formTypes';
+import type { SignupFormState } from '@/domain/types';
 import { registerAction } from '@/infrastructure/auth/registerAction';
 
 const INITIAL_STATE: SignupFormState = { error: null };
