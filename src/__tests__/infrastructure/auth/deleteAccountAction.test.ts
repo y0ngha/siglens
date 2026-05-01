@@ -132,7 +132,12 @@ describe('deleteAccountAction', () => {
             ).rejects.toThrow('NEXT_REDIRECT:/?account_deleted=1');
             expect(mockDelete).toHaveBeenCalledWith(
                 { userId: 'u1' },
-                expect.any(Object),
+                expect.objectContaining({
+                    oauthAccounts: expect.any(Object),
+                    oauthRevoker: expect.objectContaining({
+                        revokeToken: expect.any(Function),
+                    }),
+                }),
                 expect.objectContaining({ secureCookie: false })
             );
         });
@@ -166,6 +171,16 @@ describe('deleteAccountAction', () => {
                     makeFormData({ email: 'user@example.com' })
                 )
             ).rejects.toThrow('NEXT_REDIRECT:/?account_deleted=1');
+            expect(mockDelete).toHaveBeenCalledWith(
+                { userId: 'u1' },
+                expect.objectContaining({
+                    oauthAccounts: expect.any(Object),
+                    oauthRevoker: expect.objectContaining({
+                        revokeToken: expect.any(Function),
+                    }),
+                }),
+                expect.any(Object)
+            );
             expect(setSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
                     name: 'siglens_session',

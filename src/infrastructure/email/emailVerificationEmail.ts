@@ -1,5 +1,8 @@
-import { SITE_NAME } from '@/lib/seo';
 import type { EmailMessage } from './types';
+
+// Duplicates SITE_NAME from @/lib/seo — infrastructure cannot import lib.
+// Update both when the site name changes.
+const SITE_NAME = 'Siglens';
 
 interface BuildEmailVerificationEmailInput {
     to: string;

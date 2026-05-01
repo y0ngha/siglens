@@ -54,7 +54,7 @@ function EmailEditButton({ onClick }: EmailEditButtonProps) {
         <button
             type="button"
             onClick={onClick}
-            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 rounded-sm font-medium focus-visible:ring-2 focus-visible:ring-offset-2"
+            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 rounded-sm font-medium focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
         >
             이메일 수정
         </button>

@@ -69,14 +69,12 @@ describe('requestPasswordResetAction', () => {
 
         it('Redis 미설정 시에도 submitted: true 를 반환하고 코어를 호출하지 않는다', async () => {
             mockCreateTokenStore.mockReturnValue(null);
-            const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
             const result = await requestPasswordResetAction(
                 { submitted: false },
                 makeFormData({ email: 'user@example.com' })
             );
             expect(result.submitted).toBe(true);
             expect(mockRequest).not.toHaveBeenCalled();
-            warnSpy.mockRestore();
         });
     });
 
