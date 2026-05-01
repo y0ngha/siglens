@@ -1,5 +1,6 @@
 'use server';
 
+import { waitUntil } from '@vercel/functions';
 import {
     DrizzleUserRepository,
     requestPasswordReset,
@@ -12,6 +13,12 @@ import {
     passwordResetTokenGenerator,
     passwordResetTokenHasher,
 } from './passwordResetTokenService';
+
+const EMAIL_SEND_TIMEOUT_MS = 10_000;
+const DEFAULT_SITE_URL = 'https://siglens.io';
+// Matches SITE_NAME in src/lib/seo.ts; keep email branding in sync with public SEO metadata.
+const SITE_NAME = 'Siglens';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SITE_URL;
 
 export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,
@@ -37,11 +44,14 @@ export async function requestPasswordResetAction(
             to: email,
             token: result.token,
             expiresAt: result.expiresAt,
+            siteUrl: SITE_URL,
+            siteName: SITE_NAME,
         });
-        // fire-and-forget — 발송 결과를 기다리지 않는다. dispatcher.sendEmail은 boolean을
-        // 반환하며 내부에서 에러를 swallow하므로 caller로 예외가 새지 않는다.
-        // enumeration 방지를 위해 발송 성공/실패와 무관하게 동일한 응답을 반환한다.
-        void dispatcher.sendEmail(message);
+        waitUntil(
+            dispatcher.sendEmail(message, {
+                signal: AbortSignal.timeout(EMAIL_SEND_TIMEOUT_MS),
+            })
+        );
     }
 
     return { submitted: true };

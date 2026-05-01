@@ -1,5 +1,5 @@
 import { Resend } from 'resend';
-import type { EmailDispatcher, EmailMessage } from './types';
+import type { EmailDispatcher, EmailMessage, SendEmailOptions } from './types';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
 const EMAIL_FROM_ENV = 'EMAIL_FROM';
@@ -17,6 +17,26 @@ function readResendConfig(): ResendConfig | null {
     return { apiKey, from };
 }
 
+function createAbortError(): Error {
+    return new Error('Email send aborted');
+}
+
+function withAbortSignal<T>(
+    promise: Promise<T>,
+    signal?: AbortSignal
+): Promise<T> {
+    if (signal === undefined) return promise;
+    if (signal.aborted) return Promise.reject(createAbortError());
+
+    return new Promise((resolve, reject) => {
+        const handleAbort = (): void => reject(createAbortError());
+        signal.addEventListener('abort', handleAbort, { once: true });
+        promise
+            .then(resolve, reject)
+            .finally(() => signal.removeEventListener('abort', handleAbort));
+    });
+}
+
 export class ResendEmailDispatcher implements EmailDispatcher {
     private readonly client: Resend;
     private readonly from: string;
@@ -26,28 +46,30 @@ export class ResendEmailDispatcher implements EmailDispatcher {
         this.from = config.from;
     }
 
-    async sendEmail(message: EmailMessage): Promise<boolean> {
-        const { error } = await this.client.emails.send({
-            from: this.from,
-            to: message.to,
-            subject: message.subject,
-            html: message.html,
-            text: message.text,
-        });
-        if (error) {
-            console.warn('[email] Resend send failed', error);
+    async sendEmail(
+        message: EmailMessage,
+        options?: SendEmailOptions
+    ): Promise<boolean> {
+        try {
+            const { error } = await withAbortSignal(
+                this.client.emails.send({
+                    from: this.from,
+                    to: message.to,
+                    subject: message.subject,
+                    html: message.html,
+                    text: message.text,
+                }),
+                options?.signal
+            );
+            return error === null;
+        } catch {
             return false;
         }
-        return true;
     }
 }
 
 class NoopEmailDispatcher implements EmailDispatcher {
-    async sendEmail(message: EmailMessage): Promise<boolean> {
-        // 운영 환경에서 RESEND_API_KEY 누락은 설정 오류이므로 경고를 남긴다.
-        console.warn(
-            `[email] RESEND_API_KEY not configured; email to ${message.to} dropped (subject: "${message.subject}")`
-        );
+    async sendEmail(): Promise<boolean> {
         return false;
     }
 }

@@ -4,6 +4,10 @@ jest.mock('@y0ngha/siglens-core', () => ({
     createDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 
+jest.mock('@vercel/functions', () => ({
+    waitUntil: jest.fn(),
+}));
+
 const sendEmailMock = jest.fn();
 jest.mock('@/infrastructure/email/resend', () => ({
     createEmailDispatcher: jest.fn(() => ({ sendEmail: sendEmailMock })),
@@ -18,6 +22,7 @@ jest.mock('@/infrastructure/email/passwordResetEmail', () => ({
     })),
 }));
 
+import { waitUntil } from '@vercel/functions';
 import { requestPasswordReset } from '@y0ngha/siglens-core';
 import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
 import { requestPasswordResetAction } from '@/infrastructure/auth/requestPasswordResetAction';
@@ -30,6 +35,7 @@ const mockRequest = requestPasswordReset as jest.MockedFunction<
 const mockBuild = buildPasswordResetEmail as jest.MockedFunction<
     typeof buildPasswordResetEmail
 >;
+const mockWaitUntil = waitUntil as jest.MockedFunction<typeof waitUntil>;
 
 describe('requestPasswordResetAction', () => {
     beforeEach(() => {
@@ -38,6 +44,7 @@ describe('requestPasswordResetAction', () => {
         mockRequest.mockReset();
         sendEmailMock.mockReset();
         mockBuild.mockClear();
+        mockWaitUntil.mockClear();
     });
 
     describe('항상 submitted: true 를 반환 (enumeration 회피)', () => {
@@ -55,7 +62,7 @@ describe('requestPasswordResetAction', () => {
             expect(sendEmailMock).not.toHaveBeenCalled();
         });
 
-        it('등록된 이메일이면 submitted: true 를 반환하고 메일을 발송한다', async () => {
+        it('등록된 이메일이면 submitted: true 를 반환하고 메일 발송을 waitUntil에 등록한다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
                 token: 'tok-1',
@@ -71,11 +78,15 @@ describe('requestPasswordResetAction', () => {
                 expect.objectContaining({
                     to: 'user@example.com',
                     token: 'tok-1',
+                    siteUrl: 'https://siglens.io',
+                    siteName: 'Siglens',
                 })
             );
             expect(sendEmailMock).toHaveBeenCalledWith(
-                expect.objectContaining({ to: 'user@example.com' })
+                expect.objectContaining({ to: 'user@example.com' }),
+                expect.objectContaining({ signal: expect.any(AbortSignal) })
             );
+            expect(mockWaitUntil).toHaveBeenCalledWith(expect.any(Promise));
         });
     });
 

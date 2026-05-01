@@ -1,11 +1,12 @@
 import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
-import { SITE_URL } from '@/lib/seo';
 
 describe('buildPasswordResetEmail', () => {
     const baseInput = {
         to: 'user@example.com',
         token: 'raw-token-123',
         expiresAt: new Date('2026-05-01T00:00:00Z'),
+        siteUrl: 'https://siglens.io',
+        siteName: 'Siglens',
     };
 
     it('수신자 이메일을 to에 그대로 설정한다', () => {
@@ -20,9 +21,20 @@ describe('buildPasswordResetEmail', () => {
 
     it('html과 text 모두에 token이 포함된 reset URL이 들어간다', () => {
         const message = buildPasswordResetEmail(baseInput);
-        const expectedUrl = `${SITE_URL}/reset-password?token=raw-token-123`;
+        const expectedUrl =
+            'https://siglens.io/reset-password?token=raw-token-123';
         expect(message.html).toContain(expectedUrl);
         expect(message.text).toContain(expectedUrl);
+    });
+
+    it('siteUrl 끝의 슬래시는 중복하지 않는다', () => {
+        const message = buildPasswordResetEmail({
+            ...baseInput,
+            siteUrl: 'https://siglens.io/',
+        });
+        expect(message.text).toContain(
+            'https://siglens.io/reset-password?token=raw-token-123'
+        );
     });
 
     it('token에 URL 예약 문자가 있어도 이스케이프된다', () => {

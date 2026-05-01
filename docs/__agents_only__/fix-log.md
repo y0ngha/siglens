@@ -58,3 +58,8 @@
 - Violation: fire-and-forget 주석을 달아두고 실제로는 await로 dispatcher 호출 결과를 기다림
 - Rule: MISTAKES.md Fire-and-Forget Operations #1 — fire-and-forget이라면 진짜로 caller를 막지 않아야 함
 - Context: requestPasswordResetAction에서 이메일 발송을 async로 진행할 의도였으나 await가 들어가 Resend 응답을 기다리는 동안 Server Action이 블록됨. void 호출로 변경하고 dispatcher.sendEmail 자체가 boolean 반환 + 내부 swallow 한다는 점을 주석으로 명시.
+
+## [PR #393 | feat/388/비밀번호-재설정-ui | 2026-05-01]
+- Violation: 동기 토큰 생성/해시 함수 테스트에서 불필요한 await 사용
+- Rule: 테스트는 실제 함수 계약을 반영해야 하며 동기 API를 비동기처럼 보이게 작성하지 않는다
+- Context: passwordResetTokenService 테스트가 string을 반환하는 generatePasswordResetToken/hashPasswordResetToken 호출에 await를 붙여 API 성격을 흐리게 했음. await와 async 테스트 선언을 제거.
