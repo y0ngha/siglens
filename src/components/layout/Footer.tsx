@@ -44,7 +44,7 @@ export function Footer() {
                         </Link>
                         <DotSeparator />
                         <ContactDialog
-                            triggerLabel="오류 제보하기"
+                            triggerLabel="문의하기"
                             triggerClassName="text-secondary-500 hover:text-secondary-300 text-sm transition-colors rounded focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500"
                         />
                         <DotSeparator />
