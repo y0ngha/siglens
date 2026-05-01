@@ -12,14 +12,6 @@ export interface LoginFormState {
     error: { code: LoginUserErrorCode; message: string } | null;
 }
 
-export interface SignupFormState {
-    error: {
-        code: RegisterUserErrorCode | 'auto_login_failed';
-        field?: RegisterUserError['field'];
-        message: string;
-    } | null;
-}
-
 export type DeleteAccountFormErrorCode =
     | DeleteAccountErrorCode
     | 'not_authenticated'
@@ -34,7 +26,22 @@ export interface ForgotPasswordFormState {
     submitted: boolean;
 }
 
-type ResetPasswordLocalErrorCode = 'redis_unavailable';
+type LocalInfraErrorCode = 'redis_unavailable';
+
+type SignupLocalErrorCode = LocalInfraErrorCode;
+
+export interface SignupFormState {
+    error: {
+        code:
+            | RegisterUserErrorCode
+            | 'auto_login_failed'
+            | SignupLocalErrorCode;
+        field?: RegisterUserError['field'];
+        message: string;
+    } | null;
+}
+
+type ResetPasswordLocalErrorCode = LocalInfraErrorCode;
 
 export interface ResetPasswordFormState {
     error: {
@@ -44,14 +51,14 @@ export interface ResetPasswordFormState {
     } | null;
 }
 
-export type RequestEmailVerificationErrorCode = 'redis_unavailable';
+export type RequestEmailVerificationErrorCode = LocalInfraErrorCode;
 
 export interface RequestEmailVerificationFormState {
     submitted: boolean;
     error: { code: RequestEmailVerificationErrorCode; message: string } | null;
 }
 
-type VerifyEmailLocalErrorCode = 'redis_unavailable';
+type VerifyEmailLocalErrorCode = LocalInfraErrorCode;
 
 export interface VerifyEmailFormState {
     verified: boolean;

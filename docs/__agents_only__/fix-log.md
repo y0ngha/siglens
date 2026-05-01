@@ -42,6 +42,11 @@
 - Rule: MISTAKES.md Domain Functions #3 — module-level constants frozen at load time; use per-call evaluation instead
 - Context: SITE_URL을 buildSiteUrl() lazy 함수로 교체하여 테스트에서 process.env.NEXT_PUBLIC_SITE_URL 오버라이드 가능. 누락된 env 설정 분기 및 trailing slash 정규화 테스트 추가.
 
+## [PR #395 Round 4 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: code 단계에서 동일한 codeState.error.message가 AuthErrorAlert와 AuthFieldGroup.error prop 두 곳에 동시 표시
+- Rule: 동일 정보를 두 채널로 동시 노출하지 않음 — 하나의 에러는 하나의 UI 위치에서만 표시
+- Context: SignupForm.tsx code phase에서 AuthErrorAlert와 AuthFieldGroup error prop에 모두 codeState.error.message를 전달하여 사용자에게 동일 에러가 중복 노출됨. AuthFieldGroup error prop 제거로 AuthErrorAlert 단일 표시로 통일.
+
 ## [PR #395 Round 2 | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: 새 deps(emailTokens 등) 추가 시 테스트 단언에서 expect.any(Object)로 가려 새 의존성 전달 여부 미검증
 - Rule: MISTAKES.md #15/#16 — 새 의존성이 추가되면 호출 단언에 expect.objectContaining({...})으로 명시적 검증 필요

@@ -35,8 +35,7 @@ export async function registerAction(
     if (!emailTokens) {
         return {
             error: {
-                code: 'email_not_verified',
-                field: 'email',
+                code: 'redis_unavailable',
                 message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
             },
         };

@@ -143,7 +143,6 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         autoComplete="one-time-code"
                         required
                         placeholder="6자리 코드"
-                        error={codeState.error?.message}
                     />
                     <SubmitButton label="코드 확인" pendingLabel="확인 중…" />
                 </form>
