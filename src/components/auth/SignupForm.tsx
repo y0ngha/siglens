@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useId, useMemo, useState } from 'react';
+import { useId, useState } from 'react';
 import {
     useRequestEmailVerification,
     useVerifyEmail,
@@ -98,9 +98,10 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     const signupFormError =
         signupError && !signupError.field ? signupError.message : null;
 
-    const phaseForm = useMemo<Record<Phase, React.ReactNode>>(
-        () => ({
-            email: (
+    return (
+        <div className="space-y-4">
+            <StepIndicator phase={phase} />
+            {phase === 'email' && (
                 <form action={emailFormAction} className="space-y-4" noValidate>
                     {emailState.error ? (
                         <AuthErrorAlert message={emailState.error.message} />
@@ -120,8 +121,8 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         pendingLabel="발송 중…"
                     />
                 </form>
-            ),
-            code: (
+            )}
+            {phase === 'code' && (
                 <form action={codeFormAction} className="space-y-4" noValidate>
                     <input type="hidden" name="email" value={email} />
                     {codeState.error ? (
@@ -146,8 +147,8 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                     />
                     <SubmitButton label="코드 확인" pendingLabel="확인 중…" />
                 </form>
-            ),
-            details: (
+            )}
+            {phase === 'details' && (
                 <form
                     action={signupFormAction}
                     className="space-y-4"
@@ -196,31 +197,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                     />
                     <SubmitButton label="회원가입" pendingLabel="가입 중…" />
                 </form>
-            ),
-        }),
-        [
-            emailFormAction,
-            emailState,
-            email,
-            setEmail,
-            codeFormAction,
-            codeState,
-            signupFormAction,
-            signupFormError,
-            signupEmailError,
-            signupPasswordError,
-            next,
-            onRestart,
-            password,
-            hintId,
-            setPassword,
-        ]
-    );
-
-    return (
-        <div className="space-y-4">
-            <StepIndicator phase={phase} />
-            {phaseForm[phase]}
+            )}
         </div>
     );
 }

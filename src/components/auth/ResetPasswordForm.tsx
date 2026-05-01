@@ -1,7 +1,7 @@
 'use client';
 
 import { useId, useState } from 'react';
-import type { ResetPasswordFormState } from '@/domain/auth/formTypes';
+import type { ResetPasswordFormState } from '@/domain/types';
 import { useResetPasswordForm } from '@/components/hooks/useResetPasswordForm';
 import { AuthErrorAlert } from './AuthErrorAlert';
 import { PasswordField } from './PasswordField';
@@ -21,6 +21,7 @@ const EXPIRED_TOKEN_MESSAGE =
 function describeFormError(state: ResetPasswordFormState): string | null {
     if (state.error?.code === 'invalid_token') return INVALID_TOKEN_MESSAGE;
     if (state.error?.code === 'expired_token') return EXPIRED_TOKEN_MESSAGE;
+    if (state.error?.code === 'redis_unavailable') return state.error.message;
     return null;
 }
 

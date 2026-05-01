@@ -41,7 +41,7 @@ describe('confirmPasswordResetAction', () => {
     });
 
     describe('Redis 미설정', () => {
-        it('createEmailTokenStore가 null이면 invalid_token 에러를 반환한다', async () => {
+        it('createEmailTokenStore가 null이면 redis_unavailable 에러를 반환한다', async () => {
             mockCreateTokenStore.mockReturnValue(null);
             const result = await confirmPasswordResetAction(
                 { error: null },
@@ -51,7 +51,7 @@ describe('confirmPasswordResetAction', () => {
                     newPassword: 'NewPass1234',
                 })
             );
-            expect(result.error?.code).toBe('invalid_token');
+            expect(result.error?.code).toBe('redis_unavailable');
             expect(result.error?.message).toBe(
                 AUTH_SERVICE_UNAVAILABLE_MESSAGE
             );
@@ -180,6 +180,7 @@ describe('confirmPasswordResetAction', () => {
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),
                         get: expect.any(Function),
+                        delete: expect.any(Function),
                     }),
                     passwordHasher: expect.any(Object),
                 })
@@ -202,6 +203,7 @@ describe('confirmPasswordResetAction', () => {
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),
                         get: expect.any(Function),
+                        delete: expect.any(Function),
                     }),
                     passwordHasher: expect.any(Object),
                 })
@@ -225,6 +227,7 @@ describe('confirmPasswordResetAction', () => {
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),
                         get: expect.any(Function),
+                        delete: expect.any(Function),
                     }),
                     passwordHasher: expect.any(Object),
                 })
@@ -245,6 +248,7 @@ describe('confirmPasswordResetAction', () => {
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),
                         get: expect.any(Function),
+                        delete: expect.any(Function),
                     }),
                     passwordHasher: expect.any(Object),
                 })

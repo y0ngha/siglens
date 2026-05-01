@@ -53,6 +53,18 @@ describe('requestPasswordResetAction', () => {
         });
     });
 
+    describe('Redis 미설정', () => {
+        it('createEmailTokenStore가 null이면 즉시 submitted: true를 반환한다', async () => {
+            mockCreateTokenStore.mockReturnValue(null);
+            const result = await requestPasswordResetAction(
+                { submitted: false },
+                makeFormData({ email: 'user@example.com' })
+            );
+            expect(result.submitted).toBe(true);
+            expect(mockRequest).not.toHaveBeenCalled();
+        });
+    });
+
     describe('항상 submitted: true 를 반환 (enumeration 회피)', () => {
         it('코어 호출 후 submitted: true 를 반환한다', async () => {
             mockRequest.mockResolvedValue({
@@ -65,16 +77,6 @@ describe('requestPasswordResetAction', () => {
                 makeFormData({ email: 'user@example.com' })
             );
             expect(result.submitted).toBe(true);
-        });
-
-        it('Redis 미설정 시에도 submitted: true 를 반환하고 코어를 호출하지 않는다', async () => {
-            mockCreateTokenStore.mockReturnValue(null);
-            const result = await requestPasswordResetAction(
-                { submitted: false },
-                makeFormData({ email: 'user@example.com' })
-            );
-            expect(result.submitted).toBe(true);
-            expect(mockRequest).not.toHaveBeenCalled();
         });
     });
 

@@ -23,7 +23,7 @@ export async function confirmPasswordResetAction(
     if (!emailTokens) {
         return {
             error: {
-                code: 'invalid_token',
+                code: 'redis_unavailable',
                 message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
             },
         };

@@ -34,9 +34,11 @@ export interface ForgotPasswordFormState {
     submitted: boolean;
 }
 
+type ResetPasswordLocalErrorCode = 'redis_unavailable';
+
 export interface ResetPasswordFormState {
     error: {
-        code: ConfirmPasswordResetErrorCode;
+        code: ConfirmPasswordResetErrorCode | ResetPasswordLocalErrorCode;
         field?: ConfirmPasswordResetError['field'];
         message: string;
     } | null;

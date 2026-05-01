@@ -106,7 +106,13 @@ describe('registerAction', () => {
             await registerAction({ error: null }, makeFormData({}));
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ email: '', password: '' }),
-                expect.objectContaining({ emailTokens: expect.any(Object) })
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                })
             );
         });
 
@@ -131,7 +137,13 @@ describe('registerAction', () => {
                     email: 'a@b.com',
                     password: '  Pass1234  ',
                 }),
-                expect.objectContaining({ emailTokens: expect.any(Object) })
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                })
             );
         });
 
@@ -155,7 +167,13 @@ describe('registerAction', () => {
             ).rejects.toThrow('NEXT_REDIRECT:/');
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ name: undefined }),
-                expect.objectContaining({ emailTokens: expect.any(Object) })
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                })
             );
         });
     });
@@ -256,7 +274,13 @@ describe('registerAction', () => {
             ).rejects.toThrow('NEXT_REDIRECT:/market');
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ name: 'Holly' }),
-                expect.objectContaining({ emailTokens: expect.any(Object) })
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                })
             );
             expect(setSpy).toHaveBeenCalledWith(
                 expect.objectContaining({ value: 'tok' })

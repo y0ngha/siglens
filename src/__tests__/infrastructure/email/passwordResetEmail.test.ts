@@ -1,8 +1,14 @@
 import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
 
-const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io';
+const DEFAULT_BASE_URL = 'https://siglens.io';
 
 describe('buildPasswordResetEmail', () => {
+    const originalEnv = process.env.NEXT_PUBLIC_SITE_URL;
+
+    afterEach(() => {
+        process.env.NEXT_PUBLIC_SITE_URL = originalEnv;
+    });
+
     const baseInput = {
         to: 'user@example.com',
         email: 'user@example.com',
@@ -19,14 +25,34 @@ describe('buildPasswordResetEmail', () => {
         expect(message.subject).toContain('비밀번호 재설정');
     });
 
-    it('html과 text 모두에 email + token이 포함된 reset URL이 들어간다', () => {
+    it('NEXT_PUBLIC_SITE_URL 미설정 시 기본 도메인으로 reset URL을 생성한다', () => {
+        delete process.env.NEXT_PUBLIC_SITE_URL;
         const message = buildPasswordResetEmail(baseInput);
-        const expectedUrl = `${BASE_URL}/reset-password?email=user%40example.com&token=raw-token-123`;
+        const expectedUrl = `${DEFAULT_BASE_URL}/reset-password?email=user%40example.com&token=raw-token-123`;
         expect(message.html).toContain(expectedUrl);
         expect(message.text).toContain(expectedUrl);
     });
 
+    it('NEXT_PUBLIC_SITE_URL 설정 시 해당 도메인으로 reset URL을 생성한다', () => {
+        process.env.NEXT_PUBLIC_SITE_URL = 'https://custom.example.com';
+        const message = buildPasswordResetEmail(baseInput);
+        const expectedUrl =
+            'https://custom.example.com/reset-password?email=user%40example.com&token=raw-token-123';
+        expect(message.html).toContain(expectedUrl);
+        expect(message.text).toContain(expectedUrl);
+    });
+
+    it('NEXT_PUBLIC_SITE_URL 끝의 슬래시는 중복하지 않는다', () => {
+        process.env.NEXT_PUBLIC_SITE_URL = 'https://custom.example.com/';
+        const message = buildPasswordResetEmail(baseInput);
+        expect(message.html).not.toContain('//reset-password');
+        expect(message.html).toContain(
+            'https://custom.example.com/reset-password'
+        );
+    });
+
     it('token에 URL 예약 문자가 있어도 이스케이프된다', () => {
+        delete process.env.NEXT_PUBLIC_SITE_URL;
         const message = buildPasswordResetEmail({
             ...baseInput,
             token: 'a+b/c=',

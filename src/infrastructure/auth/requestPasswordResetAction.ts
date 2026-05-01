@@ -17,6 +17,8 @@ export async function requestPasswordResetAction(
     const email = String(formData.get('email') ?? '').trim();
 
     const emailTokens = createEmailTokenStore();
+    // Enumeration avoidance: always return submitted:true so callers cannot distinguish
+    // "user not found" from "Redis unavailable" via the response.
     if (!emailTokens) {
         return { submitted: true };
     }
