@@ -19,11 +19,6 @@
 - Rule: MISTAKES.md Predictability #1.5 — 동일 입력 경로는 대칭적으로 처리
 - Context: verifyEmailAction에서 createEmailTokenStore() === null 시 'invalid_verification_code'를 반환했으나, requestEmailVerificationAction은 동일 조건에서 'redis_unavailable'을 반환. VerifyEmailFormState error.code 타입에 VerifyEmailLocalErrorCode('redis_unavailable')를 추가하고 verifyEmailAction을 통일.
 
-## [PR #395 | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: code 단계 AuthFieldGroup에 error prop 미전달 → aria-invalid 미설정
-- Rule: MISTAKES.md Accessibility #1.6 — aria-invalid는 입력 필드 검증 상태를 반영해야 함
-- Context: SignupForm.tsx code 단계에서 codeState.error가 있어도 AuthFieldGroup에 error prop이 없어 aria-invalid가 설정되지 않음. error={codeState.error?.message} 추가.
-
 ## [Issue #394 stubs removal | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: 미배포 코어 API stub 모듈을 임시로 두고 import 경로를 우회
 - Rule: 단일 의존성 원칙 — 외부 패키지 export가 정식 출시되면 stub은 즉시 제거하고 import 경로를 통일
@@ -47,13 +42,5 @@
 - Rule: 동일 정보를 두 채널로 동시 노출하지 않음 — 하나의 에러는 하나의 UI 위치에서만 표시
 - Context: SignupForm.tsx code phase에서 AuthErrorAlert와 AuthFieldGroup error prop에 모두 codeState.error.message를 전달하여 사용자에게 동일 에러가 중복 노출됨. AuthFieldGroup error prop 제거로 AuthErrorAlert 단일 표시로 통일.
 
-## [PR #395 Round 2 | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: 새 deps(emailTokens 등) 추가 시 테스트 단언에서 expect.any(Object)로 가려 새 의존성 전달 여부 미검증
-- Rule: MISTAKES.md #15/#16 — 새 의존성이 추가되면 호출 단언에 expect.objectContaining({...})으로 명시적 검증 필요
-- Context: confirmPasswordResetAction·registerAction·requestEmailVerificationAction·requestPasswordResetAction 4개 테스트 파일에서 반복 발생. emailTokens, emailDispatcher, passwordHasher 필드를 objectContaining으로 교체.
-
-- Violation: describe 블록 이름이 내부 it() 케이스의 전제조건과 불일치
-- Rule: MISTAKES.md #9 — describe() 이름은 내부 it() 케이스의 공통 전제조건만 표현해야 함
-- Context: requestEmailVerificationAction 테스트에서 describe('성공') 블록 안에 codeIssued:false(코드 미발급) 케이스가 포함되어 이름과 의미가 불일치. 별도 describe('항상 submitted:true 반환 (enumeration 회피)')로 분리.
 
 
