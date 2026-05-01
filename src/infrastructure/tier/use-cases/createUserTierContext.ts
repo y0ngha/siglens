@@ -1,8 +1,5 @@
 import { DEFAULT_TIER, type UserTierContext } from '@y0ngha/siglens-core';
-import type {
-    CreateUserTierContextInput,
-    UserTierDependencies,
-} from './types';
+import type { CreateUserTierContextInput, UserTierDependencies } from './types';
 
 /**
  * Build request-scoped tier context for middleware/server handlers.

@@ -22,4 +22,3 @@ export function tryReadDatabaseConfig(): DatabaseConfig | null {
     if (!databaseUrl) return null;
     return { databaseUrl };
 }
-

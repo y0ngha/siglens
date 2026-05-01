@@ -2,10 +2,7 @@ import { eq } from 'drizzle-orm';
 import { oauthAccounts } from './schema';
 import type { SiglensDatabase } from './types';
 import { decryptToken, tryReadEncryptionKey } from './tokenEncryption';
-import type {
-    OAuthAccountRecord,
-    OAuthAccountRepository,
-} from './types';
+import type { OAuthAccountRecord, OAuthAccountRepository } from './types';
 
 const oauthAccountColumns = {
     id: oauthAccounts.id,

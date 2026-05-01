@@ -76,9 +76,7 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
  *
  * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
  */
-export class DrizzleAssetTranslationRepository
-    implements AssetTranslationRepository
-{
+export class DrizzleAssetTranslationRepository implements AssetTranslationRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
     async findBySymbol(symbol: string): Promise<AssetTranslationRecord | null> {

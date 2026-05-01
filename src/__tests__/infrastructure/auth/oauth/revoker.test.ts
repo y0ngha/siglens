@@ -14,9 +14,8 @@ import { compositeOAuthRevoker } from '@/infrastructure/auth/oauth/revoker';
 
 describe('compositeOAuthRevoker', () => {
     it('delegates to the registered adapter for a known provider', async () => {
-        const { googleOAuthRevokerAdapter } = await import(
-            '@/infrastructure/auth/oauth/googleRevoker'
-        );
+        const { googleOAuthRevokerAdapter } =
+            await import('@/infrastructure/auth/oauth/googleRevoker');
 
         await compositeOAuthRevoker.revokeToken('google', {
             accessToken: 'access-token',
@@ -30,9 +29,8 @@ describe('compositeOAuthRevoker', () => {
     });
 
     it('delegates to the kakao adapter for kakao provider', async () => {
-        const { kakaoOAuthRevokerAdapter } = await import(
-            '@/infrastructure/auth/oauth/kakaoRevoker'
-        );
+        const { kakaoOAuthRevokerAdapter } =
+            await import('@/infrastructure/auth/oauth/kakaoRevoker');
 
         await compositeOAuthRevoker.revokeToken('kakao', {
             accessToken: 'kakao-access-token',

@@ -25,8 +25,9 @@ jest.mock('@/infrastructure/ai/gemini', () => ({
 }));
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
-const mockRequestChatCompletion =
-    requestChatCompletion as jest.MockedFunction<typeof requestChatCompletion>;
+const mockRequestChatCompletion = requestChatCompletion as jest.MockedFunction<
+    typeof requestChatCompletion
+>;
 
 const MINIMAL_ANALYSIS: AnalysisResponse = {
     summary: 'AAPL trending up.',
