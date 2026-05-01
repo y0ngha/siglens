@@ -7,10 +7,15 @@ export async function submitContactAction(
     _prev: ContactFormState,
     formData: FormData
 ): Promise<ContactFormState> {
+    const getVal = (key: string) => {
+        const val = formData.get(key);
+        return typeof val === 'string' ? val : '';
+    };
+
     const rawValues = {
-        title: String(formData.get('title') ?? ''),
-        email: String(formData.get('email') ?? ''),
-        content: String(formData.get('content') ?? ''),
+        title: getVal('title'),
+        email: getVal('email'),
+        content: getVal('content'),
     };
 
     const validation = validateContactInput(rawValues);
@@ -22,20 +27,7 @@ export async function submitContactAction(
         };
     }
 
-    // TODO(#398): siglens-core 의 ContactSubmissionRepository / submitContactInquiry
-    // 머지되면 여기서 호출. 현재는 검증만 통과하면 즉시 성공 처리.
-    // import { DrizzleContactSubmissionRepository, submitContactInquiry } from '@y0ngha/siglens-core';
-    // const { db } = getAuthDatabaseClient();
-    // const repo = new DrizzleContactSubmissionRepository(db);
-    // const result = await submitContactInquiry(validation.values, { repository: repo });
-    // if (!result.ok) {
-    //     return {
-    //         submitted: false,
-    //         error: { code: 'submission_failed', message: '문의 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' },
-    //         values: rawValues,
-    //     };
-    // }
-
+    // TODO(#398): submitContactInquiry 호출로 교체
     return {
         submitted: true,
         error: null,

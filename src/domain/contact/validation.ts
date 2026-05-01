@@ -3,7 +3,11 @@ import {
     CONTACT_EMAIL_PATTERN,
     CONTACT_TITLE_MAX_LENGTH,
 } from './constants';
-import type { ContactFormError, ContactFormValues } from './formTypes';
+import type {
+    ContactFormError,
+    ContactFormField,
+    ContactFormValues,
+} from './formTypes';
 
 export interface ValidationSuccess {
     ok: true;
@@ -62,7 +66,7 @@ export function validateContactInput(raw: ContactFormValues): ValidationResult {
 
 function failure(
     code: ContactFormError['code'],
-    field: ContactFormError['field'],
+    field: ContactFormField,
     message: string
 ): ValidationFailure {
     return { ok: false, error: { code, field, message } };
