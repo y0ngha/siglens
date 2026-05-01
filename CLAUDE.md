@@ -140,7 +140,7 @@ app (RSC/Route)← May import from infrastructure, domain, lib.
 components     ← May import from domain, lib.
                Component files (.tsx): Direct imports from infrastructure are prohibited.
                Hook files (hooks/): May import fetch functions from infrastructure only
-                 → Limited to queryFn/mutationFn connection purpose
+                 → Limited to queryFn/mutationFn connection or useActionState Server Action connection purpose
                  → Type imports must be from @/domain/types or @y0ngha/siglens-core
 
 lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.

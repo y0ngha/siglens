@@ -738,7 +738,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ```
 0. Component (.tsx) files importing directly from infrastructure or infrastructure types
    → `.tsx` component files are prohibited from importing @/infrastructure modules or types
-   → Hook files (`hooks/*.ts`) may import fetch/Server Action functions from infrastructure for queryFn/mutationFn use only
+   → Hook files (`hooks/*.ts`) may import fetch/Server Action functions from infrastructure for queryFn/mutationFn or useActionState Server Action connection use only
    → Component files must receive all data/actions through hook abstractions
    ❌ LoginForm.tsx: `import { loginAction } from '@/infrastructure/auth'`  // direct infrastructure import in .tsx
    ❌ SocialLoginButtons.tsx: `import { SupportedOAuthProvider } from '@/infrastructure/oauth'`  // infrastructure type in .tsx

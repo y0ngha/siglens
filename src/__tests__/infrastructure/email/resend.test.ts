@@ -42,15 +42,72 @@ describe('ResendEmailDispatcher', () => {
         });
     });
 
+    it('AbortSignal이 전달되어도 완료 전에 abort되지 않으면 true를 반환한다', async () => {
+        sendMock.mockResolvedValue({ data: { id: 'abc' }, error: null });
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+        await expect(
+            dispatcher.sendEmail(message, {
+                signal: new AbortController().signal,
+            })
+        ).resolves.toBe(true);
+    });
+
     it('Resend가 error를 반환하면 false를 반환한다', async () => {
         sendMock.mockResolvedValue({ data: null, error: { message: 'fail' } });
         const dispatcher = new ResendEmailDispatcher({
             apiKey: 'k',
             from: 'noreply@siglens.io',
         });
-        const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
         await expect(dispatcher.sendEmail(message)).resolves.toBe(false);
-        warnSpy.mockRestore();
+    });
+
+    it('Resend SDK가 reject하면 false를 반환한다', async () => {
+        sendMock.mockRejectedValue(new Error('network error'));
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+        await expect(dispatcher.sendEmail(message)).resolves.toBe(false);
+    });
+
+    it('AbortSignal이 이미 aborted 상태이면 false를 반환한다', async () => {
+        const controller = new AbortController();
+        controller.abort();
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+        await expect(
+            dispatcher.sendEmail(message, { signal: controller.signal })
+        ).resolves.toBe(false);
+    });
+
+    it('메일 발송 대기 중 AbortSignal이 abort되면 false를 반환한다', async () => {
+        const controller = new AbortController();
+        let resolveSend!: (value: {
+            data: { id: string } | null;
+            error: { message: string } | null;
+        }) => void;
+        sendMock.mockReturnValue(
+            new Promise(resolve => {
+                resolveSend = resolve;
+            })
+        );
+        const dispatcher = new ResendEmailDispatcher({
+            apiKey: 'k',
+            from: 'noreply@siglens.io',
+        });
+
+        const sendPromise = dispatcher.sendEmail(message, {
+            signal: controller.signal,
+        });
+        controller.abort();
+
+        await expect(sendPromise).resolves.toBe(false);
+        resolveSend({ data: null, error: { message: 'ignored' } });
     });
 });
 
@@ -75,7 +132,6 @@ describe('createEmailDispatcher', () => {
 
     it('RESEND_API_KEY가 없으면 noop dispatcher를 반환하여 항상 false', async () => {
         const dispatcher = createEmailDispatcher();
-        const warnSpy = jest.spyOn(console, 'warn').mockImplementation();
         const result = await dispatcher.sendEmail({
             to: 't@t.com',
             subject: 's',
@@ -84,7 +140,6 @@ describe('createEmailDispatcher', () => {
         });
         expect(result).toBe(false);
         expect(ResendCtor).not.toHaveBeenCalled();
-        warnSpy.mockRestore();
     });
 
     it('RESEND_API_KEY가 있으면 ResendEmailDispatcher를 반환한다', () => {

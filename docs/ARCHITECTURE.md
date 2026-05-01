@@ -52,7 +52,7 @@ app            ← infrastructure, domain, lib import 가능
 components     ← domain, lib import 가능
                  컴포넌트 파일(.tsx): infrastructure 직접 import 금지
                  훅 파일(hooks/): infrastructure의 fetch 함수만 import 가능
-                   → useQuery/useMutation의 queryFn/mutationFn 연결 목적에 한함
+                   → useQuery/useMutation의 queryFn/mutationFn 연결 또는 useActionState의 Server Action 연결 목적에 한함
                    → 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서 수행
                  'use client' 필수 표기
 ```

@@ -12,6 +12,7 @@ import {
 } from '@y0ngha/siglens-core';
 import type {
     AnalysisResponse,
+    ChatActionResult,
     ChatErrorCode,
     ChatLoadingPhase,
     ChatMessage,
@@ -50,6 +51,18 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
 
 function isValidChatModel(value: string): value is ChatModel {
     return VALID_CHAT_MODELS.some(model => model === value);
+}
+
+function resolveAiContent(result: ChatActionResult): string {
+    if (result.ok) {
+        return result.message;
+    }
+
+    if (typeof result.error === 'string') {
+        return ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error;
+    }
+
+    return result.error.message;
 }
 
 export interface UseChatOptions {
@@ -143,12 +156,7 @@ export function useChat({
             setLoadingPhase(null);
         },
         onSuccess: result => {
-            const aiContent = result.ok
-                ? result.message
-                : typeof result.error === 'string'
-                  ? (ERROR_MESSAGES[result.error] ??
-                    ERROR_MESSAGES.server_error)
-                  : result.error.message;
+            const aiContent = resolveAiContent(result);
             const aiMessage: ChatMessage = {
                 role: 'model',
                 content: aiContent,
