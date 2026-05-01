@@ -217,6 +217,7 @@ yarn format
 
 | Document | Contents |
 |---|---|
+| `docs/SCOPE.md` | **siglens vs siglens-core 분담** — 결정 트리, 의존 방향, 안티 패턴 (양쪽 레포 공통 source-of-truth) |
 | `docs/SERVICE.md` | Product overview, target users, tech stack, Skills system |
 | `docs/ARCHITECTURE.md` | Layer structure, dependency direction rules, folder layout |
 | `docs/DOMAIN.md` | Indicator calculation specs, candle patterns, Skills system, business rules |
