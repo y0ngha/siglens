@@ -106,7 +106,7 @@ describe('registerAction', () => {
             await registerAction({ error: null }, makeFormData({}));
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ email: '', password: '' }),
-                expect.any(Object)
+                expect.objectContaining({ emailTokens: expect.any(Object) })
             );
         });
 
@@ -131,7 +131,7 @@ describe('registerAction', () => {
                     email: 'a@b.com',
                     password: '  Pass1234  ',
                 }),
-                expect.any(Object)
+                expect.objectContaining({ emailTokens: expect.any(Object) })
             );
         });
 
@@ -155,7 +155,7 @@ describe('registerAction', () => {
             ).rejects.toThrow('NEXT_REDIRECT:/');
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ name: undefined }),
-                expect.any(Object)
+                expect.objectContaining({ emailTokens: expect.any(Object) })
             );
         });
     });
@@ -256,7 +256,7 @@ describe('registerAction', () => {
             ).rejects.toThrow('NEXT_REDIRECT:/market');
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ name: 'Holly' }),
-                expect.any(Object)
+                expect.objectContaining({ emailTokens: expect.any(Object) })
             );
             expect(setSpy).toHaveBeenCalledWith(
                 expect.objectContaining({ value: 'tok' })

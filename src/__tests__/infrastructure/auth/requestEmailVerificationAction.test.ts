@@ -65,7 +65,7 @@ describe('requestEmailVerificationAction', () => {
         });
     });
 
-    describe('성공', () => {
+    describe('코어 ok: true 시 submitted: true 반환', () => {
         it('코어 호출 후 submitted: true 와 error: null 을 반환한다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
@@ -79,8 +79,10 @@ describe('requestEmailVerificationAction', () => {
             expect(result.submitted).toBe(true);
             expect(result.error).toBeNull();
         });
+    });
 
-        it('codeIssued: false 응답에도 submitted: true 를 반환한다 (enumeration 회피)', async () => {
+    describe('항상 submitted: true 반환 (enumeration 회피)', () => {
+        it('codeIssued: false 응답에도 submitted: true 를 반환한다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
                 codeIssued: false,
@@ -92,7 +94,9 @@ describe('requestEmailVerificationAction', () => {
             );
             expect(result.submitted).toBe(true);
         });
+    });
 
+    describe('buildMessage 콜백', () => {
         it('buildMessage 콜백을 호출하면 to/code가 채워진 메시지를 반환한다', async () => {
             mockRequest.mockResolvedValue({
                 ok: true,
@@ -129,7 +133,10 @@ describe('requestEmailVerificationAction', () => {
             );
             expect(mockRequest).toHaveBeenCalledWith(
                 { email: 'user@example.com' },
-                expect.any(Object),
+                expect.objectContaining({
+                    emailTokens: expect.any(Object),
+                    emailDispatcher: expect.any(Object),
+                }),
                 expect.any(Object)
             );
         });
@@ -146,7 +153,10 @@ describe('requestEmailVerificationAction', () => {
             );
             expect(mockRequest).toHaveBeenCalledWith(
                 { email: '' },
-                expect.any(Object),
+                expect.objectContaining({
+                    emailTokens: expect.any(Object),
+                    emailDispatcher: expect.any(Object),
+                }),
                 expect.any(Object)
             );
         });

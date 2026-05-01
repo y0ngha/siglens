@@ -176,7 +176,13 @@ describe('confirmPasswordResetAction', () => {
                     token: 'tok-x',
                     newPassword: 'NewPass1234',
                 },
-                expect.any(Object)
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                    }),
+                    passwordHasher: expect.any(Object),
+                })
             );
         });
     });
@@ -192,7 +198,13 @@ describe('confirmPasswordResetAction', () => {
             ).rejects.toThrow();
             expect(mockConfirm).toHaveBeenCalledWith(
                 { email: '', token: 'tok', newPassword: 'NewPass1234' },
-                expect.any(Object)
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                    }),
+                    passwordHasher: expect.any(Object),
+                })
             );
         });
 
@@ -209,7 +221,13 @@ describe('confirmPasswordResetAction', () => {
             ).rejects.toThrow();
             expect(mockConfirm).toHaveBeenCalledWith(
                 { email: 'u@u.com', token: '', newPassword: 'NewPass1234' },
-                expect.any(Object)
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                    }),
+                    passwordHasher: expect.any(Object),
+                })
             );
         });
 
@@ -223,7 +241,13 @@ describe('confirmPasswordResetAction', () => {
             ).rejects.toThrow();
             expect(mockConfirm).toHaveBeenCalledWith(
                 { email: 'u@u.com', token: 'tok', newPassword: '' },
-                expect.any(Object)
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                    }),
+                    passwordHasher: expect.any(Object),
+                })
             );
         });
     });

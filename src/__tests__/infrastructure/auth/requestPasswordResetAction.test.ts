@@ -120,7 +120,10 @@ describe('requestPasswordResetAction', () => {
             );
             expect(mockRequest).toHaveBeenCalledWith(
                 { email: 'user@example.com' },
-                expect.any(Object),
+                expect.objectContaining({
+                    emailTokens: expect.any(Object),
+                    emailDispatcher: expect.any(Object),
+                }),
                 expect.any(Object)
             );
         });
@@ -137,7 +140,10 @@ describe('requestPasswordResetAction', () => {
             );
             expect(mockRequest).toHaveBeenCalledWith(
                 { email: '' },
-                expect.any(Object),
+                expect.objectContaining({
+                    emailTokens: expect.any(Object),
+                    emailDispatcher: expect.any(Object),
+                }),
                 expect.any(Object)
             );
         });

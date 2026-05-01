@@ -1,5 +1,6 @@
 import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
-import { SITE_URL } from '@/lib/seo';
+
+const BASE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io';
 
 describe('buildPasswordResetEmail', () => {
     const baseInput = {
@@ -20,7 +21,7 @@ describe('buildPasswordResetEmail', () => {
 
     it('html과 text 모두에 email + token이 포함된 reset URL이 들어간다', () => {
         const message = buildPasswordResetEmail(baseInput);
-        const expectedUrl = `${SITE_URL}/reset-password?email=user%40example.com&token=raw-token-123`;
+        const expectedUrl = `${BASE_URL}/reset-password?email=user%40example.com&token=raw-token-123`;
         expect(message.html).toContain(expectedUrl);
         expect(message.text).toContain(expectedUrl);
     });
