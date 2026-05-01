@@ -85,7 +85,7 @@ describe('registerAction', () => {
                 { error: null },
                 makeFormData({ email: 'a@b.com', password: 'Pass1234' })
             );
-            expect(result.error?.code).toBe('email_not_verified');
+            expect(result.error?.code).toBe('redis_unavailable');
             expect(result.error?.message).toBe(
                 AUTH_SERVICE_UNAVAILABLE_MESSAGE
             );

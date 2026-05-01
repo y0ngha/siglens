@@ -1,6 +1,7 @@
-import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
-
-const DEFAULT_BASE_URL = 'https://siglens.io';
+import {
+    DEFAULT_SITE_URL,
+    buildPasswordResetEmail,
+} from '@/infrastructure/email/passwordResetEmail';
 
 describe('buildPasswordResetEmail', () => {
     const originalEnv = process.env.NEXT_PUBLIC_SITE_URL;
@@ -28,7 +29,7 @@ describe('buildPasswordResetEmail', () => {
     it('NEXT_PUBLIC_SITE_URL 미설정 시 기본 도메인으로 reset URL을 생성한다', () => {
         delete process.env.NEXT_PUBLIC_SITE_URL;
         const message = buildPasswordResetEmail(baseInput);
-        const expectedUrl = `${DEFAULT_BASE_URL}/reset-password?email=user%40example.com&token=raw-token-123`;
+        const expectedUrl = `${DEFAULT_SITE_URL}/reset-password?email=user%40example.com&token=raw-token-123`;
         expect(message.html).toContain(expectedUrl);
         expect(message.text).toContain(expectedUrl);
     });
