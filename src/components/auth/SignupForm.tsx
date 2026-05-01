@@ -125,9 +125,6 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
             {phase === 'code' && (
                 <form action={codeFormAction} className="space-y-4" noValidate>
                     <input type="hidden" name="email" value={email} />
-                    {codeState.error ? (
-                        <AuthErrorAlert message={codeState.error.message} />
-                    ) : null}
                     <p className="text-secondary-300 text-sm">
                         <span className="text-secondary-100 font-mono break-all">
                             {email}
@@ -143,7 +140,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         autoComplete="one-time-code"
                         required
                         placeholder="6자리 코드"
-                        invalid={!!codeState.error}
+                        error={codeState.error?.message}
                     />
                     <SubmitButton label="코드 확인" pendingLabel="확인 중…" />
                 </form>

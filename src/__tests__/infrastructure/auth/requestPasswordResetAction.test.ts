@@ -124,7 +124,9 @@ describe('requestPasswordResetAction', () => {
                 { email: 'user@example.com' },
                 expect.objectContaining({
                     emailTokens: expect.any(Object),
-                    emailDispatcher: expect.any(Object),
+                    emailDispatcher: expect.objectContaining({
+                        sendEmail: expect.any(Function),
+                    }),
                 }),
                 expect.any(Object)
             );
@@ -144,7 +146,9 @@ describe('requestPasswordResetAction', () => {
                 { email: '' },
                 expect.objectContaining({
                     emailTokens: expect.any(Object),
-                    emailDispatcher: expect.any(Object),
+                    emailDispatcher: expect.objectContaining({
+                        sendEmail: expect.any(Function),
+                    }),
                 }),
                 expect.any(Object)
             );

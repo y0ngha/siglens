@@ -135,7 +135,9 @@ describe('requestEmailVerificationAction', () => {
                 { email: 'user@example.com' },
                 expect.objectContaining({
                     emailTokens: expect.any(Object),
-                    emailDispatcher: expect.any(Object),
+                    emailDispatcher: expect.objectContaining({
+                        sendEmail: expect.any(Function),
+                    }),
                 }),
                 expect.any(Object)
             );
@@ -155,7 +157,9 @@ describe('requestEmailVerificationAction', () => {
                 { email: '' },
                 expect.objectContaining({
                     emailTokens: expect.any(Object),
-                    emailDispatcher: expect.any(Object),
+                    emailDispatcher: expect.objectContaining({
+                        sendEmail: expect.any(Function),
+                    }),
                 }),
                 expect.any(Object)
             );
