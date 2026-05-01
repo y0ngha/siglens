@@ -29,8 +29,8 @@ export async function submitContactAction(
 
     // TODO(#398): submitContactInquiry 호출로 교체
     return {
-        submitted: true,
-        error: null,
-        values: { title: '', email: '', content: '' },
+        submitted: false,
+        error: { code: 'submission_failed' },
+        values: validation.values,
     };
 }

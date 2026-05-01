@@ -12,7 +12,6 @@ export type ContactFormErrorCode =
 export interface ContactFormError {
     code: ContactFormErrorCode;
     field?: ContactFormField;
-    message: string;
 }
 
 export interface ContactFormValues {

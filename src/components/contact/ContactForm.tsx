@@ -8,6 +8,7 @@ import {
     CONTACT_TITLE_MAX_LENGTH,
 } from '@/domain/contact/constants';
 import type { ContactFormField } from '@/domain/contact/formTypes';
+import { CONTACT_ERROR_MESSAGES } from '@/lib/contactErrorMessages';
 import { ContactSubmittedNotice } from './ContactSubmittedNotice';
 import { ContactTextField } from './ContactTextField';
 import { ContactTextareaField } from './ContactTextareaField';
@@ -21,10 +22,12 @@ export function ContactForm() {
     }
 
     const fieldError = (field: ContactFormField): string | undefined =>
-        state.error?.field === field ? state.error.message : undefined;
+        state.error?.field === field
+            ? CONTACT_ERROR_MESSAGES[state.error.code]
+            : undefined;
     const submissionError =
         state.error && state.error.field === undefined
-            ? state.error.message
+            ? CONTACT_ERROR_MESSAGES[state.error.code]
             : undefined;
     const emailDefault = state.error
         ? state.values.email

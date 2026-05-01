@@ -27,38 +27,22 @@ export function validateContactInput(raw: ContactFormValues): ValidationResult {
     const content = raw.content.trim();
 
     if (title.length === 0) {
-        return failure('title_required', 'title', '제목을 입력해 주세요.');
+        return failure('title_required', 'title');
     }
     if (title.length > CONTACT_TITLE_MAX_LENGTH) {
-        return failure(
-            'title_too_long',
-            'title',
-            `제목은 ${CONTACT_TITLE_MAX_LENGTH}자 이내로 입력해 주세요.`
-        );
+        return failure('title_too_long', 'title');
     }
     if (email.length === 0) {
-        return failure('email_required', 'email', '이메일을 입력해 주세요.');
+        return failure('email_required', 'email');
     }
     if (!CONTACT_EMAIL_PATTERN.test(email)) {
-        return failure(
-            'email_invalid',
-            'email',
-            '올바른 이메일 형식이 아닙니다.'
-        );
+        return failure('email_invalid', 'email');
     }
     if (content.length === 0) {
-        return failure(
-            'content_required',
-            'content',
-            '문의 내용을 입력해 주세요.'
-        );
+        return failure('content_required', 'content');
     }
     if (content.length > CONTACT_CONTENT_MAX_LENGTH) {
-        return failure(
-            'content_too_long',
-            'content',
-            `문의 내용은 ${CONTACT_CONTENT_MAX_LENGTH}자 이내로 입력해 주세요.`
-        );
+        return failure('content_too_long', 'content');
     }
 
     return { ok: true, values: { title, email, content } };
@@ -66,8 +50,7 @@ export function validateContactInput(raw: ContactFormValues): ValidationResult {
 
 function failure(
     code: ContactFormError['code'],
-    field: ContactFormField,
-    message: string
+    field: ContactFormField
 ): ValidationFailure {
-    return { ok: false, error: { code, field, message } };
+    return { ok: false, error: { code, field } };
 }
