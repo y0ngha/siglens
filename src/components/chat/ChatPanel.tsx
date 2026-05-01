@@ -28,6 +28,7 @@ const MODEL_DISPLAY_MAP: Record<
         label: 'Flash Lite',
         fullName: 'Gemini 2.5 Flash Lite',
     },
+    'gemini-2.5-pro': { label: 'Pro', fullName: 'Gemini 2.5 Pro' },
 };
 
 const CHAT_MODEL_OPTIONS = VALID_CHAT_MODELS.map(id => ({

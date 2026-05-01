@@ -10,7 +10,7 @@ import {
 } from 'react';
 import type {
     AnalysisResponse,
-    SubmitAnalysisResult,
+    SubmitAnalysisGatedResult,
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
@@ -117,44 +117,61 @@ export function useAnalysis({
         isPending: isSubmitting,
         reset,
         mutate,
-    } = useMutation<SubmitAnalysisResult, Error, AnalyzeMutationVariables>({
-        mutationFn: ({ force, symbol: mutSymbol, fmpSymbol: mutFmpSymbol }) => {
-            lastForceRef.current = force;
-            return submitAnalysisAction(
-                mutSymbol,
-                latestTimeframeRef.current,
+    } = useMutation<SubmitAnalysisGatedResult, Error, AnalyzeMutationVariables>(
+        {
+            mutationFn: ({
                 force,
-                mutFmpSymbol
-            );
-        },
-        onMutate: () => {
-            setPollError(null);
-            setAnalysisResult(null);
-        },
-        onSuccess: (data, variables) => {
-            if (data.status === 'cached') {
-                currentJobIdRef.current = null;
-                setAnalysisResult(data.result);
-                // 캐시 히트 = 분석 완료 → force 경로만 쿨다운 시작
-                if (variables.force) {
-                    setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
+                symbol: mutSymbol,
+                fmpSymbol: mutFmpSymbol,
+            }) => {
+                lastForceRef.current = force;
+                return submitAnalysisAction(
+                    mutSymbol,
+                    latestTimeframeRef.current,
+                    force,
+                    mutFmpSymbol
+                );
+            },
+            onMutate: () => {
+                setPollError(null);
+                setAnalysisResult(null);
+            },
+            onSuccess: (data, variables) => {
+                if (data.status === 'cached') {
+                    currentJobIdRef.current = null;
+                    setAnalysisResult(data.result);
+                    // 캐시 히트 = 분석 완료 → force 경로만 쿨다운 시작
+                    if (variables.force) {
+                        setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
+                    }
+                } else if (data.status === 'submitted') {
+                    currentJobIdRef.current = data.jobId;
+                    setIsPolling(true);
+                    // submitted 단계에서는 쿨다운을 시작하지 않는다.
+                    // polling 완료(done) 시에만 쿨다운을 시작한다.
+                } else {
+                    // tier gate / 일일 사용 한도 초과
+                    currentJobIdRef.current = null;
+                    setPollError(data.error.message);
+                    if (variables.force) {
+                        void releaseReanalyzeCooldown(
+                            latestRef.current.symbol,
+                            latestTimeframeRef.current
+                        );
+                        setReanalyzeCooldownMs(0);
+                    }
                 }
-            } else if (data.status === 'submitted') {
-                currentJobIdRef.current = data.jobId;
-                setIsPolling(true);
-                // submitted 단계에서는 쿨다운을 시작하지 않는다.
-                // polling 완료(done) 시에만 쿨다운을 시작한다.
-            }
-        },
-        onError: (_error, { force, symbol: mutSymbol }) => {
-            if (!force) return;
-            void releaseReanalyzeCooldown(
-                mutSymbol,
-                latestTimeframeRef.current
-            );
-            setReanalyzeCooldownMs(0);
-        },
-    });
+            },
+            onError: (_error, { force, symbol: mutSymbol }) => {
+                if (!force) return;
+                void releaseReanalyzeCooldown(
+                    mutSymbol,
+                    latestTimeframeRef.current
+                );
+                setReanalyzeCooldownMs(0);
+            },
+        }
+    );
 
     // 4. Derived variables
     const analysis = analysisResult ?? initialAnalysis;

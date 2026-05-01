@@ -12,6 +12,7 @@ import {
 } from '@y0ngha/siglens-core';
 import type {
     AnalysisResponse,
+    ChatActionResult,
     ChatErrorCode,
     ChatLoadingPhase,
     ChatMessage,
@@ -44,10 +45,24 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     server_busy:
         'AI 서버가 지금 바빠요. 다른 모델로 변경 후 다시 시도해주세요.',
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
+    model_not_allowed:
+        '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
 };
 
 function isValidChatModel(value: string): value is ChatModel {
     return VALID_CHAT_MODELS.some(model => model === value);
+}
+
+function resolveAiContent(result: ChatActionResult): string {
+    if (result.ok) {
+        return result.message;
+    }
+
+    if (typeof result.error === 'string') {
+        return ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error;
+    }
+
+    return result.error.message;
 }
 
 export interface UseChatOptions {
@@ -141,9 +156,7 @@ export function useChat({
             setLoadingPhase(null);
         },
         onSuccess: result => {
-            const aiContent = result.ok
-                ? result.message
-                : (ERROR_MESSAGES[result.error] ?? ERROR_MESSAGES.server_error);
+            const aiContent = resolveAiContent(result);
             const aiMessage: ChatMessage = {
                 role: 'model',
                 content: aiContent,

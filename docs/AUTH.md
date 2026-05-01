@@ -21,6 +21,8 @@
 | `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth |
 | `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | Kakao OAuth (client_secret 미발급 앱이면 KAKAO_CLIENT_SECRET 생략 가능) |
 | `OAUTH_REDIRECT_BASE_URL` (없으면 `NEXT_PUBLIC_SITE_URL` fallback) | OAuth 콜백 URL 베이스 |
+| `RESEND_API_KEY` | 비밀번호 재설정 메일 발송용 Resend API key (없으면 noop dispatcher로 fallback) |
+| `EMAIL_FROM` (없으면 `Siglens <noreply@siglens.io>`) | 발신자 표시 |
 
 > **현재 활성화된 provider**: Google, Kakao. siglens-core 의 `OAuthProvider` 타입은 `apple`도 포함하지만 본 앱에서는 비활성. 추후 활성화 시 `providers.ts`의 `SUPPORTED_PROVIDERS` 와 `SocialLoginButtons` 의 PROVIDERS 배열에 추가하면 된다.
 
@@ -37,6 +39,14 @@ src/infrastructure/auth/
   loginAction.ts           'use server' — loginUser → cookie set → redirect(sanitizeNextPath)
   logoutAction.ts          'use server' — logoutUser → 만료 cookie set → redirect('/')
   deleteAccountAction.ts   'use server' — getCurrentUser + 이메일 일치 검증 → deleteAccount → 만료 cookie set → redirect('/?account_deleted=1')
+  passwordResetTokenService.ts        crypto.randomBytes(32) base64url generator + sha256 hasher
+  requestPasswordResetAction.ts       'use server' — requestPasswordReset → token 있으면 buildPasswordResetEmail + dispatcher.sendEmail (fire-and-forget) → 항상 submitted: true
+  confirmPasswordResetAction.ts       'use server' — confirmPasswordReset → 성공 시 redirect('/login?password_reset=1')
+
+src/infrastructure/email/
+  types.ts                 EmailMessage / EmailDispatcher 인터페이스
+  resend.ts                ResendEmailDispatcher (RESEND_API_KEY 있을 때) / NoopEmailDispatcher fallback
+  passwordResetEmail.ts    domain-aware 템플릿 빌더 (한국어 본문 + 한국 시간대 만료 표기)
 
 src/domain/auth/redirect.ts sanitizeNextPath()
 
@@ -64,8 +74,14 @@ src/app/login/error.tsx    클라이언트 에러 fallback
 src/app/signup/page.tsx    RSC — AuthCardShell + SignupForm
 src/app/account/page.tsx          RSC — 프로필 정보 + 위험존(회원 탈퇴 진입)
 src/app/account/delete/page.tsx   RSC — AuthCardShell + DeleteAccountConfirm
+src/app/forgot-password/page.tsx  RSC — AuthCardShell + ForgotPasswordForm
+src/app/reset-password/page.tsx   RSC — token 쿼리 → AuthCardShell + ResetPasswordForm
 src/components/auth/DeleteAccountConfirm.tsx  이메일 재입력 확인 폼
+src/components/auth/ForgotPasswordForm.tsx    이메일 입력 + 발송 후 안내 메시지
+src/components/auth/ResetPasswordForm.tsx     새 비밀번호 입력 (PasswordField + StrengthHint)
 src/components/hooks/useDeleteAccountForm.ts  useActionState wrapper
+src/components/hooks/useForgotPasswordForm.ts useActionState wrapper
+src/components/hooks/useResetPasswordForm.ts  useActionState wrapper
 ```
 
 ## 시퀀스
@@ -119,6 +135,37 @@ src/components/hooks/useDeleteAccountForm.ts  useActionState wrapper
 
 가드 전략은 다른 회원 전용 페이지와 동일하다. proxy.ts는 변경하지 않으며, RSC가
 `getCurrentUser()` 결과로 직접 `/login?next=/account/delete` 로 리다이렉트한다.
+
+### 비밀번호 재설정
+
+```
+[/login] "비밀번호를 잊으셨나요?" 링크 → /forgot-password
+   ↓ ForgotPasswordForm submit (useActionState)
+[Server Action] requestPasswordResetAction
+   → requestPasswordReset({ email }, { users, passwordResets, tokenGenerator, tokenHasher })
+       ⤳ 코어가 사용자 조회 + token 발급(혹은 token: null) + INSERT password_resets
+   → result.token !== null 이면:
+       buildPasswordResetEmail({ to, token, expiresAt }) → dispatcher.sendEmail (fire-and-forget)
+   → 항상 { submitted: true } 반환 (enumeration 회피)
+   ↓
+[메일 수신] 링크 클릭 → /reset-password?token=<raw>
+   ↓ ResetPasswordForm submit
+[Server Action] confirmPasswordResetAction
+   → confirmPasswordReset({ token, newPassword }, { passwordResets, passwordHasher, tokenHasher })
+       ⤳ 코어가 token 해시 검증 + 만료 확인 + 비밀번호 강도 검증 + bcrypt hash + UPDATE
+   → 실패: 폼 상태로 invalid_token / expired_token / weak_password / invalid_password 반환
+   → 성공: redirect('/login?password_reset=1') — 로그인은 별도 (의도적으로 자동로그인 안 함)
+[/login?password_reset=1] 상단에 "비밀번호 변경 완료" 안내 표시 후 로그인 폼
+```
+
+소셜 가입 사용자에 대해서는 코어 `requestPasswordReset`이 password_hash가 없는 계정에
+`token: null`을 반환하므로, 메일이 발송되지 않고 자연스럽게 흐름이 끊긴다. 사용자에게는
+enumeration 회피를 위해 동일한 success 메시지가 노출된다.
+
+이메일 dispatcher는 `RESEND_API_KEY` 환경변수가 설정되어 있을 때 `ResendEmailDispatcher`를,
+없을 때 `NoopEmailDispatcher`(개발/CI 환경)를 사용한다. 향후 코어가 이메일 발송을
+직접 책임지게 되면(siglens-core#53) consumer 측 dispatcher는 deps로 주입만 하고
+빌더는 코어로 이전된다.
 
 ### 로그아웃
 

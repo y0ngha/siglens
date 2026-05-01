@@ -41,10 +41,6 @@
 - Context: DeleteAccountConfirm의 이메일 재입력 필드가 aria-describedby로 정적 힌트만 가리켜 잘못된 이메일을 입력해도 음성 안내가 없었음. 같은 paragraph를 role="status" aria-live="polite" + 입력값에 따라 텍스트가 바뀌는 동적 메시지로 전환하고, aria-invalid도 함께 토글하도록 수정.
 
 ## [PR #391 코멘트 반영 | feat/387/회원탈퇴-ui | 2026-04-30]
-- Violation: 기본 Tailwind 색상 직접 사용 — text-blue-400, hover:text-blue-300, focus-visible:ring-blue-500, focus-visible:ring-red-400, focus:border-blue-500, focus:ring-blue-500/40, aria-invalid:border-red-500
-- Rule: MISTAKES.md 0.5 — 모든 색상은 시맨틱 토큰(primary-*, ui-danger 등) 사용, 기본 Tailwind 색상(blue-*, red-*) 직접 사용 금지
-- Context: DeleteAccountConfirm.tsx, account/page.tsx, account/delete/page.tsx, HeaderUserMenu.tsx의 신규 추가 요소들에 blue-*/red-* 기본 색상 클래스가 적용됨. 각각 primary-500/ui-danger 시맨틱 토큰으로 교체.
-
 - Violation: 이메일 표시 요소에 aria-hidden 적용으로 스크린 리더 접근 불가
 - Rule: WCAG 접근성 — 사용자가 참조해야 할 정보는 스크린 리더에서 읽혀야 함
 - Context: DeleteAccountConfirm에서 사용자가 재입력해야 할 이메일 주소를 표시하는 <p>에 aria-hidden이 적용되어 스크린 리더 사용자가 이메일 확인 불가. aria-hidden 제거.
@@ -57,3 +53,13 @@
 - Violation: section의 aria-label이 시각적 h2 헤딩 텍스트와 불일치
 - Rule: WCAG 접근성 — aria-label은 가능한 한 visible text와 일치시켜 인지 불일치 방지
 - Context: account/page.tsx에서 위험존 section의 aria-label이 "위험 작업"이고 h2가 "위험존"으로 달라, 스크린 리더와 시각 사용자 간 용어 불일치. aria-label="위험존"으로 통일.
+
+## [Issue #388 | feat/388/비밀번호-재설정-ui | 2026-05-01]
+- Violation: fire-and-forget 주석을 달아두고 실제로는 await로 dispatcher 호출 결과를 기다림
+- Rule: MISTAKES.md Fire-and-Forget Operations #1 — fire-and-forget이라면 진짜로 caller를 막지 않아야 함
+- Context: requestPasswordResetAction에서 이메일 발송을 async로 진행할 의도였으나 await가 들어가 Resend 응답을 기다리는 동안 Server Action이 블록됨. void 호출로 변경하고 dispatcher.sendEmail 자체가 boolean 반환 + 내부 swallow 한다는 점을 주석으로 명시.
+
+## [PR #393 | feat/388/비밀번호-재설정-ui | 2026-05-01]
+- Violation: 동기 토큰 생성/해시 함수 테스트에서 불필요한 await 사용
+- Rule: 테스트는 실제 함수 계약을 반영해야 하며 동기 API를 비동기처럼 보이게 작성하지 않는다
+- Context: passwordResetTokenService 테스트가 string을 반환하는 generatePasswordResetToken/hashPasswordResetToken 호출에 await를 붙여 API 성격을 흐리게 했음. await와 async 테스트 선언을 제거.

@@ -20,8 +20,15 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
 };
 
 interface LoginPageProps {
-    searchParams: Promise<{ next?: string; error?: string }>;
+    searchParams: Promise<{
+        next?: string;
+        error?: string;
+        password_reset?: string;
+    }>;
 }
+
+const PASSWORD_RESET_SUCCESS_MESSAGE =
+    '비밀번호가 성공적으로 변경되었습니다. 새 비밀번호로 로그인해주세요.';
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
     const params = await searchParams;
@@ -30,22 +37,42 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
     const initialError = params.error
         ? OAUTH_ERROR_MESSAGES[params.error]
         : undefined;
+    const passwordResetSuccess = params.password_reset === '1';
     return (
         <AuthCardShell
             title="다시 만나서 반가워요"
             subtitle="Sign in to continue"
             footer={
-                <p>
-                    처음이세요?{' '}
-                    <Link
-                        href="/signup"
-                        className="font-medium text-blue-400 underline-offset-4 hover:text-blue-300 hover:underline focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
-                    >
-                        회원가입 →
-                    </Link>
-                </p>
+                <div className="space-y-2">
+                    <p>
+                        <Link
+                            href="/forgot-password"
+                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                            비밀번호를 잊으셨나요?
+                        </Link>
+                    </p>
+                    <p>
+                        처음이세요?{' '}
+                        <Link
+                            href="/signup"
+                            className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 font-medium underline-offset-4 hover:underline focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                            회원가입 →
+                        </Link>
+                    </p>
+                </div>
             }
         >
+            {passwordResetSuccess ? (
+                <div
+                    role="status"
+                    aria-live="polite"
+                    className="border-ui-success/30 bg-ui-success/5 text-ui-success mb-4 rounded-md border p-3 text-sm"
+                >
+                    {PASSWORD_RESET_SUCCESS_MESSAGE}
+                </div>
+            ) : null}
             <LoginForm next={nextParam} initialError={initialError} />
             <SocialLoginButtons next={nextParam} />
         </AuthCardShell>

@@ -2,7 +2,7 @@
 
 import { waitUntil } from '@vercel/functions';
 import {
-    type SubmitAnalysisResult,
+    type SubmitAnalysisGatedResult,
     type Timeframe,
     submitAnalysis,
 } from '@y0ngha/siglens-core';
@@ -12,6 +12,6 @@ export async function submitAnalysisAction(
     timeframe: Timeframe,
     force?: boolean,
     fmpSymbol?: string
-): Promise<SubmitAnalysisResult> {
+): Promise<SubmitAnalysisGatedResult> {
     return submitAnalysis(symbol, timeframe, force, fmpSymbol, { waitUntil });
 }
