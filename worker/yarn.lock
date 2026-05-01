@@ -5,9 +5,9 @@ __metadata:
   version: 8
   cacheKey: 10c0
 
-"@anthropic-ai/sdk@npm:0.81.0":
-  version: 0.81.0
-  resolution: "@anthropic-ai/sdk@npm:0.81.0"
+"@anthropic-ai/sdk@npm:0.92.0":
+  version: 0.92.0
+  resolution: "@anthropic-ai/sdk@npm:0.92.0"
   dependencies:
     json-schema-to-ts: "npm:^3.1.1"
   peerDependencies:
@@ -17,7 +17,7 @@ __metadata:
       optional: true
   bin:
     anthropic-ai-sdk: bin/cli
-  checksum: 10c0/9ce1de04f88c05a74e67d07e8707d74815df8a9ad4977fbd7ad6fc146cef521214f11c4faeab5f5c00d76ee5671bf4e223dadf0e2f98c2c979aa9e33c8f89d8d
+  checksum: 10c0/a06f2ebc4dce6e3ee36e3cc938b9fb952a6eebaa3b4478351770d0bf264aa3cb141a5a6854cdc93d1693218415d626338f66d0c446e1d1fa2402a02dcd890610
   languageName: node
   linkType: hard
 
@@ -1264,6 +1264,20 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@y0ngha/siglens-core@npm:^0.4.0":
+  version: 0.4.0
+  resolution: "@y0ngha/siglens-core@npm:0.4.0::__archiveUrl=https%3A%2F%2Fnpm.pkg.github.com%2Fdownload%2F%40y0ngha%2Fsiglens-core%2F0.4.0%2F3913186c46cb83208bfeb3834766988ff0e58372"
+  dependencies:
+    bcryptjs: "npm:^3.0.3"
+  peerDependencies:
+    "@google/genai": ^1.50.1
+    "@neondatabase/serverless": ^1.1.0
+    "@upstash/redis": ^1.37.0
+    drizzle-orm: ^0.45.2
+  checksum: 10c0/76f9772d13dd0289ca31389630eb30be2e600fb540a3178528850fd402b1f4dadcac6c42e90dad5fef00424ccac9468c2d0b92801808fcbaaa6aa39f3abe7836
+  languageName: node
+  linkType: hard
+
 "abbrev@npm:^4.0.0":
   version: 4.0.0
   resolution: "abbrev@npm:4.0.0"
@@ -1459,6 +1473,15 @@ __metadata:
   bin:
     baseline-browser-mapping: dist/cli.cjs
   checksum: 10c0/065d90f98099dd0d7b6e1c284f7133d0eaebf571a7ee3e9e0740862dbd64cf040f4447404269bc8b1fd4015dead68c3a026e541a214050375df6bde20706ec8b
+  languageName: node
+  linkType: hard
+
+"bcryptjs@npm:^3.0.3":
+  version: 3.0.3
+  resolution: "bcryptjs@npm:3.0.3"
+  bin:
+    bcrypt: bin/bcrypt
+  checksum: 10c0/127c94699f07eab5fbbb89d600c3f0e36ae6fd001e028139740b41fffb62a23a2743523fb88f442ae3308a27d4843b97ccb9e436d78f5c5899be187d0972c6d5
   languageName: node
   linkType: hard
 
@@ -3658,6 +3681,23 @@ __metadata:
   languageName: node
   linkType: hard
 
+"openai@npm:6.35.0":
+  version: 6.35.0
+  resolution: "openai@npm:6.35.0"
+  peerDependencies:
+    ws: ^8.18.0
+    zod: ^3.25 || ^4.0
+  peerDependenciesMeta:
+    ws:
+      optional: true
+    zod:
+      optional: true
+  bin:
+    openai: bin/cli
+  checksum: 10c0/b5be8c9c26b8991bc06e94d2de9ec046d7e8497f3828f8ff3cd7796cfd5e39e464a52afa2f4959003183e61a909c6ee261ca4380a61cb1f2e9a56629058314ed
+  languageName: node
+  linkType: hard
+
 "p-limit@npm:^2.2.0":
   version: 2.3.0
   resolution: "p-limit@npm:2.3.0"
@@ -4133,14 +4173,16 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "siglens-worker@workspace:."
   dependencies:
-    "@anthropic-ai/sdk": "npm:0.81.0"
+    "@anthropic-ai/sdk": "npm:0.92.0"
     "@google/genai": "npm:^1.50.1"
     "@types/express": "npm:^5.0.2"
     "@types/jest": "npm:^29.5.14"
     "@types/node": "npm:^22.15.3"
     "@upstash/redis": "npm:^1.34.3"
+    "@y0ngha/siglens-core": "npm:^0.4.0"
     express: "npm:^5.2.1"
     jest: "npm:^29.7.0"
+    openai: "npm:6.35.0"
     ts-jest: "npm:^29.3.2"
     tsx: "npm:^4.19.4"
     typescript: "npm:^5.8.3"

@@ -1,9 +1,21 @@
 import { Redis } from '@upstash/redis';
 import express, { type Request, type Response } from 'express';
 import { constants } from 'node:http2';
-import { callClaude } from './claude.js';
+import { callChatGPTWithRetry } from './chatgpt-retry.js';
+import { callClaudeWithRetry } from './claude-retry.js';
 import { config } from './config.js';
-import { callGeminiWithKeyFallback } from './gemini-retry.js';
+import {
+    callGeminiWithKeyFallback,
+    callGeminiWithRetry,
+} from './gemini-retry.js';
+import {
+    isChatGPTModel,
+    isClaudeModel,
+    isGeminiModel,
+    isSiglensProvided,
+    isSupportedModel,
+} from './models.js';
+import type { AIModel } from './models.js';
 
 const {
     HTTP_STATUS_BAD_REQUEST,
@@ -21,23 +33,68 @@ const activeJobs = new Map<string, AbortController>();
 
 async function callAnalysisAI(
     prompt: string,
+    model: AIModel,
+    userApiKey: string | undefined,
     signal?: AbortSignal
 ): Promise<string> {
-    if (config.aiProvider === 'claude') return callClaude(prompt, signal);
-    return callGeminiWithKeyFallback(
-        prompt,
-        signal,
-        ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS
-    );
+    const apiKey = isSiglensProvided(model)
+        ? resolveServerApiKey(model)
+        : userApiKey;
+
+    // siglens 미제공 모델은 user key 필수 (라우터에서 검증되지만 type narrowing을 위해 가드).
+    if (apiKey === undefined) {
+        throw new Error(
+            'User API key required for non-siglens-provided model'
+        );
+    }
+
+    if (isClaudeModel(model)) {
+        return callClaudeWithRetry(prompt, model, apiKey, { signal });
+    }
+    if (isChatGPTModel(model)) {
+        return callChatGPTWithRetry(prompt, model, apiKey, { signal });
+    }
+    if (isGeminiModel(model)) {
+        // siglens 제공 Gemini 모델은 free→paid fallback 사용.
+        // user key Gemini 모델은 fallback 없이 직접 호출.
+        if (isSiglensProvided(model)) {
+            return callGeminiWithKeyFallback(
+                prompt,
+                model,
+                signal,
+                ANALYSIS_FREE_KEY_MAX_RETRY_DELAY_MS
+            );
+        }
+        return callGeminiWithRetry(prompt, model, apiKey, { signal });
+    }
+    // AIModel union의 모든 분기를 type predicate로 처리했으므로 도달 불가.
+    /* istanbul ignore next */
+    throw new Error(`Unsupported model: ${model}`);
+}
+
+function resolveServerApiKey(model: AIModel): string {
+    if (isClaudeModel(model)) return config.claude.apiKey;
+    if (isChatGPTModel(model)) return config.chatgpt.apiKey;
+    if (isGeminiModel(model)) return config.gemini.apiKey;
+    /* istanbul ignore next */
+    throw new Error(`Unsupported model: ${model}`);
 }
 
 async function callBriefingAI(
     prompt: string,
     signal?: AbortSignal
 ): Promise<string> {
-    if (config.aiProvider === 'claude') return callClaude(prompt, signal);
+    if (config.aiProvider === 'claude') {
+        return callClaudeWithRetry(
+            prompt,
+            config.briefing.claudeModel,
+            config.claude.apiKey,
+            { signal }
+        );
+    }
     return callGeminiWithKeyFallback(
         prompt,
+        config.briefing.geminiModel,
         signal,
         BRIEFING_MAX_RETRY_DELAY_MS
     );
@@ -54,6 +111,7 @@ const redis = new Redis({
 interface AnalyzeRequest {
     jobId: string;
     prompt: string;
+    model: AIModel;
 }
 
 app.get('/health', (_req: Request, res: Response) => {
@@ -94,18 +152,41 @@ app.post('/analyze', (req: Request, res: Response) => {
         return;
     }
 
-    // express req.body는 any 타입; 실제 필드는 아래 if문에서 검증
-    const { jobId, prompt } = req.body as AnalyzeRequest;
+    // X-AI-API-KEY: user-provided key. siglens 미제공 모델 호출 시 필수.
+    const userApiKeyHeader = req.headers['x-ai-api-key'];
+    const userApiKey =
+        typeof userApiKeyHeader === 'string' && userApiKeyHeader !== ''
+            ? userApiKeyHeader
+            : undefined;
 
-    if (!jobId || !prompt) {
+    // express req.body는 any 타입; 실제 필드는 아래 if문에서 검증
+    const body = req.body as {
+        jobId?: string;
+        prompt?: string;
+        model?: unknown;
+    };
+
+    const { jobId, prompt, model } = body;
+    if (!jobId || !prompt || !isSupportedModel(model)) {
         res.status(HTTP_STATUS_BAD_REQUEST).json({
-            error: 'jobId and prompt are required',
+            error: 'jobId, prompt, and a valid model are required',
         });
         return;
     }
 
+    if (!isSiglensProvided(model) && !userApiKey) {
+        res.status(HTTP_STATUS_BAD_REQUEST).json({
+            error: 'X-AI-API-KEY header is required for this model',
+        });
+        return;
+    }
+
+    const validatedRequest: AnalyzeRequest = { jobId, prompt, model };
+
     console.log(
-        `[Worker] Job received: ${jobId} (prompt: ${(prompt.length / 1024).toFixed(1)}KB)`
+        `[Worker] Job received: ${jobId} (model: ${model}, prompt: ${(
+            prompt.length / 1024
+        ).toFixed(1)}KB)`
     );
 
     const controller = new AbortController();
@@ -113,7 +194,7 @@ app.post('/analyze', (req: Request, res: Response) => {
 
     // Cloud Run은 요청 처리 중에만 CPU를 할당하므로,
     // 응답을 보내지 않고 AI 완료까지 요청을 열어둔다.
-    void processJob(jobId, prompt, controller)
+    void processJob(validatedRequest, userApiKey, controller)
         .then(() => {
             res.json({ status: 'done', jobId });
         })
@@ -147,10 +228,12 @@ async function cleanupCancelledJob(jobId: string): Promise<void> {
 }
 
 async function processJob(
-    jobId: string,
-    prompt: string,
+    request: AnalyzeRequest,
+    userApiKey: string | undefined,
     controller: AbortController
 ): Promise<void> {
+    const { jobId, prompt, model } = request;
+
     // AI 호출 전 취소 여부 확인 (제출과 처리 사이에 취소됐을 수 있음)
     if (controller.signal.aborted || (await isCancelled(jobId))) {
         console.log(`[Worker] Job ${jobId} cancelled before processing`);
@@ -163,7 +246,12 @@ async function processJob(
     });
 
     try {
-        const result = await callAnalysisAI(prompt, controller.signal);
+        const result = await callAnalysisAI(
+            prompt,
+            model,
+            userApiKey,
+            controller.signal
+        );
 
         if (!result || result.trim() === '') {
             throw new Error('AI returned an empty response');
