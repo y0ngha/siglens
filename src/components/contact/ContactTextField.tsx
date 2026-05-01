@@ -49,19 +49,19 @@ export function ContactTextField({
                 aria-invalid={Boolean(error)}
                 aria-describedby={error ? errorId : undefined}
                 className={cn(
-                    'border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-primary-500/40 h-12 w-full rounded-md border px-4 text-sm focus:ring-2 focus:outline-none',
+                    'border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus-visible:border-primary-500 focus-visible:ring-primary-500/40 h-12 w-full rounded-md border px-4 text-sm focus-visible:ring-2 focus-visible:outline-none',
                     error && 'border-ui-danger/60'
                 )}
             />
             {error ? (
-                <p
+                <div
                     id={errorId}
                     role="alert"
                     className="text-ui-danger flex items-start gap-1 text-sm"
                 >
                     <span aria-hidden>⚠</span>
                     <span>{error}</span>
-                </p>
+                </div>
             ) : null}
         </div>
     );

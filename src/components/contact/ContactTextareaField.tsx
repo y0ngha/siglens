@@ -42,9 +42,12 @@ export function ContactTextareaField({
                 defaultValue={defaultValue}
                 placeholder={placeholder}
                 aria-invalid={Boolean(error)}
-                aria-describedby={cn(error && errorId, helperId) || undefined}
+                aria-describedby={
+                    [error && errorId, helperId].filter(Boolean).join(' ') ||
+                    undefined
+                }
                 className={cn(
-                    'border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-primary-500/40 min-h-32 w-full resize-y rounded-md border px-4 py-3 text-sm leading-relaxed focus:ring-2 focus:outline-none',
+                    'border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus-visible:border-primary-500 focus-visible:ring-primary-500/40 min-h-32 w-full resize-y rounded-md border px-4 py-3 text-sm leading-relaxed focus-visible:ring-2 focus-visible:outline-none',
                     error && 'border-ui-danger/60'
                 )}
             />
@@ -52,14 +55,14 @@ export function ContactTextareaField({
                 최대 {maxLength.toLocaleString('ko-KR')}자
             </p>
             {error ? (
-                <p
+                <div
                     id={errorId}
                     role="alert"
                     className="text-ui-danger flex items-start gap-1 text-sm"
                 >
                     <span aria-hidden>⚠</span>
                     <span>{error}</span>
-                </p>
+                </div>
             ) : null}
         </div>
     );

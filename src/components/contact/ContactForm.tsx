@@ -1,7 +1,7 @@
 'use client';
 
 import { SubmitButton } from '@/components/auth/SubmitButton';
-import { useContactForm } from '@/components/hooks/useContactForm';
+import { useContactForm } from '@/components/contact/hooks/useContactForm';
 import { useCurrentUser } from '@/components/hooks/useCurrentUser';
 import {
     CONTACT_CONTENT_MAX_LENGTH,
@@ -56,6 +56,7 @@ export function ContactForm() {
             />
 
             <ContactTextField
+                key={currentUser.data?.email ?? 'loading'}
                 id="contact-email"
                 name="email"
                 label="이메일"
