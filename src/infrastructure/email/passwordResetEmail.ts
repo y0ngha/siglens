@@ -4,9 +4,12 @@ import type { EmailMessage } from '@y0ngha/siglens-core';
 // Update both when the site name or URL default changes.
 const SITE_NAME = 'Siglens';
 
+// Matches SITE_URL in @/lib/seo — update both when the default URL changes.
+export const DEFAULT_SITE_URL = 'https://siglens.io';
+
 // Resolved per-call so tests can override NEXT_PUBLIC_SITE_URL via process.env (Domain #3).
 function buildSiteUrl(): string {
-    return (process.env.NEXT_PUBLIC_SITE_URL ?? 'https://siglens.io').replace(
+    return (process.env.NEXT_PUBLIC_SITE_URL ?? DEFAULT_SITE_URL).replace(
         /\/$/,
         ''
     );
