@@ -36,7 +36,7 @@
         "@types/jest": "^30.0.0",
         "@upstash/redis": "^1.37.0",
         "@vercel/functions": "^3.4.3",
-        "@y0ngha/siglens-core": "0.2.1",
+        "@y0ngha/siglens-core": "0.4.0",
         "clsx": "^2.1.1",
         "drizzle-orm": "^0.45.2",
         "lightweight-charts": "^5.1.0",
