@@ -13,10 +13,6 @@
 - Rule: 시스템 경계(외부 API)의 예측 불가능한 응답은 try/catch로 감싸 결과 객체로 변환
 - Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
-## [PR #389 | feat/369/auth-email | 2026-04-29]
-- Violation: registerAction이 password에 .trim() 적용, loginAction은 trim 없이 사용 — 회원가입 시 trim된 비밀번호로 해시되어 로그인 시 verify 실패
-- Rule: FF.md Predictability — 동일 입력에 대한 동일 처리 보장; 양 액션 간 비대칭 처리 금지
-- Context: 사용자가 비밀번호에 의도적/비의도적 공백 포함 가입 시 로그인 불가 버그. password는 양쪽 모두 trim 제거(원본 유지), email은 양쪽 모두 trim 적용으로 통일.
 
 ## [Issue #394 stubs removal | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: 미배포 코어 API stub 모듈을 임시로 두고 import 경로를 우회
@@ -27,8 +23,13 @@
 - Rule: 도메인 동작과 UI 메시지 동기화 — 코어가 책임지면 UI는 그 사실을 반영
 - Context: deleteAccount가 oauthAccounts + oauthRevoker deps로 provider 측 token revocation을 자동 수행하므로, DeleteAccountConfirm의 "각 provider 계정에서 직접 끊으세요" 안내 박스와 /privacy 약관 문구를 "탈퇴 시 자동으로 회수된다"로 갱신.
 
-## [PR #395 | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: multi-step Server Action 폼에서 이전 단계로 되돌아갈 수 없어 잘못 입력한 이메일을 수정할 수 없음
-- Rule: FF.md Predictability — 사용자가 표시된 단계와 입력 상태를 예측 가능한 방식으로 되돌릴 수 있어야 함
-- Context: SignupForm의 phase가 useActionState 결과에서만 derive되어 코드 확인/상세 입력 단계에서 이메일 수정 수단이 없었음. flow를 key로 remount하는 이메일 수정 버튼을 추가해 인증 상태와 폼 입력을 함께 초기화.
+## [PR #395 Round 2 | feat/394/email-verification-redis-migration | 2026-05-01]
+- Violation: 새 deps(emailTokens 등) 추가 시 테스트 단언에서 expect.any(Object)로 가려 새 의존성 전달 여부 미검증
+- Rule: MISTAKES.md #15/#16 — 새 의존성이 추가되면 호출 단언에 expect.objectContaining({...})으로 명시적 검증 필요
+- Context: confirmPasswordResetAction·registerAction·requestEmailVerificationAction·requestPasswordResetAction 4개 테스트 파일에서 반복 발생. emailTokens, emailDispatcher, passwordHasher 필드를 objectContaining으로 교체.
+
+- Violation: describe 블록 이름이 내부 it() 케이스의 전제조건과 불일치
+- Rule: MISTAKES.md #9 — describe() 이름은 내부 it() 케이스의 공통 전제조건만 표현해야 함
+- Context: requestEmailVerificationAction 테스트에서 describe('성공') 블록 안에 codeIssued:false(코드 미발급) 케이스가 포함되어 이름과 의미가 불일치. 별도 describe('항상 submitted:true 반환 (enumeration 회피)')로 분리.
+
 
