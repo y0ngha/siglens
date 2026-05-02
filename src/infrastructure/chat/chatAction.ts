@@ -46,7 +46,10 @@ export async function chatAction(
         const requiredProvider = getRequiredProviderForModel(model);
         const { db } = getDatabaseClient();
         const repo = new DrizzleUserApiKeyRepository(db);
-        const keyRecord = await repo.findByUserAndProvider(user.id, requiredProvider);
+        const keyRecord = await repo.findByUserAndProvider(
+            user.id,
+            requiredProvider
+        );
         if (keyRecord === null) {
             return { ok: false, error: 'user_api_key_required' };
         }

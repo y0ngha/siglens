@@ -15,10 +15,10 @@ export interface ApiKeyFormsReturn {
 }
 
 export function useApiKeyForms(): ApiKeyFormsReturn {
-    const [saveState, saveFormAction] = useActionState<ApiKeyActionState, FormData>(
-        saveApiKeyAction,
-        INITIAL_STATE
-    );
+    const [saveState, saveFormAction] = useActionState<
+        ApiKeyActionState,
+        FormData
+    >(saveApiKeyAction, INITIAL_STATE);
     const [deleteState, deleteFormAction] = useActionState<
         ApiKeyActionState,
         FormData

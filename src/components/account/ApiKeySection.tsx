@@ -130,11 +130,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
             {isRegistered && (
                 <>
                     <form action={deleteFormAction} className="mt-2" noValidate>
-                        <input
-                            type="hidden"
-                            name="provider"
-                            value={provider}
-                        />
+                        <input type="hidden" name="provider" value={provider} />
                         <SubmitButton
                             label="삭제"
                             pendingLabel="삭제 중…"

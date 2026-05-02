@@ -33,7 +33,9 @@ export function PremiumModelGateModal({
         onClose();
     };
 
-    const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>): void => {
+    const handleBackdropClick = (
+        e: React.MouseEvent<HTMLDialogElement>
+    ): void => {
         if (e.target === dialogRef.current) {
             safeClose();
         }
@@ -53,7 +55,7 @@ export function PremiumModelGateModal({
             ref={dialogRef}
             onClick={handleBackdropClick}
             onClose={safeClose}
-            className="bg-transparent backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm"
+            className="backdrop:bg-secondary-950/80 bg-transparent backdrop:backdrop-blur-sm"
         >
             <div className="bg-secondary-900 ring-secondary-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl ring-1">
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
@@ -69,7 +71,14 @@ export function PremiumModelGateModal({
                         className={cn('h-8 w-8', iconColorClass)}
                         aria-hidden="true"
                     >
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <rect
+                            x="3"
+                            y="11"
+                            width="18"
+                            height="11"
+                            rx="2"
+                            ry="2"
+                        />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
                     <h2 className="text-secondary-50 font-semibold">{title}</h2>
