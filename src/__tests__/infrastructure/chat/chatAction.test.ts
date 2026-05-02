@@ -165,6 +165,20 @@ describe('chatAction 함수는', () => {
         );
     });
 
+    it('premium 모델 요청 시 model_not_allowed를 반환한다', async () => {
+        const result = await chatAction(
+            'AAPL',
+            '1Day',
+            MINIMAL_ANALYSIS,
+            [],
+            '질문',
+            'claude-opus-4-7'
+        );
+
+        expect(result).toEqual({ ok: false, error: 'model_not_allowed' });
+        expect(mockRequestChatCompletion).not.toHaveBeenCalled();
+    });
+
     it('GEMINI_API_KEY 미설정 시 server_error를 반환한다', async () => {
         delete process.env.GEMINI_API_KEY;
 

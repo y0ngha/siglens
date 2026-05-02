@@ -1,8 +1,10 @@
 'use client';
 
-import { useActionState } from 'react';
+import { useActionState, useEffect } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import { saveApiKeyAction } from '@/infrastructure/llm/saveApiKeyAction';
 import { deleteApiKeyAction } from '@/infrastructure/llm/deleteApiKeyAction';
+import { QUERY_KEYS } from '@/lib/queryConfig';
 import type { ApiKeyActionState } from '@/domain/types';
 
 const INITIAL_STATE: ApiKeyActionState = { status: 'idle', message: null };
@@ -15,6 +17,8 @@ export interface ApiKeyFormsReturn {
 }
 
 export function useApiKeyForms(): ApiKeyFormsReturn {
+    const queryClient = useQueryClient();
+
     const [saveState, saveFormAction] = useActionState<
         ApiKeyActionState,
         FormData
@@ -23,6 +27,14 @@ export function useApiKeyForms(): ApiKeyFormsReturn {
         ApiKeyActionState,
         FormData
     >(deleteApiKeyAction, INITIAL_STATE);
+
+    useEffect(() => {
+        if (saveState.status === 'success' || deleteState.status === 'success') {
+            void queryClient.invalidateQueries({
+                queryKey: QUERY_KEYS.registeredProviders(),
+            });
+        }
+    }, [saveState.status, deleteState.status, queryClient]);
 
     return { saveState, saveFormAction, deleteState, deleteFormAction };
 }

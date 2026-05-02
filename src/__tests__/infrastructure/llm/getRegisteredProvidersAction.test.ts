@@ -88,6 +88,18 @@ describe('getRegisteredProvidersAction', () => {
         }
     });
 
+    it('DB 조회 실패 시 빈 배열을 반환한다', async () => {
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+        mockFindByUser.mockRejectedValue(new Error('DB connection failed'));
+
+        const result = await getRegisteredProvidersAction();
+
+        expect(result).toEqual([]);
+    });
+
     it('결과가 provider 기준 알파벳 오름차순으로 정렬되어 있다', async () => {
         mockGetCurrentUser.mockResolvedValue({
             id: 'user-1',

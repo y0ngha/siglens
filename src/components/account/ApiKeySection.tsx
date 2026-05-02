@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import type { LlmProvider, RegisteredProvider } from '@/domain/llm';
+import type { LlmProvider } from '@/domain/llm';
 import { useApiKeyForms } from '@/components/account/hooks/useApiKeyForms';
 
 const PROVIDER_LABELS: Record<LlmProvider, string> = {
@@ -161,12 +161,12 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
 }
 
 interface ApiKeySectionProps {
-    registeredProviders: RegisteredProvider[];
+    registeredProviders: LlmProvider[];
 }
 
 export function ApiKeySection({ registeredProviders }: ApiKeySectionProps) {
     const registeredSet = useMemo(
-        () => new Set(registeredProviders.map(({ provider }) => provider)),
+        () => new Set(registeredProviders),
         [registeredProviders]
     );
 

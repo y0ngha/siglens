@@ -14,13 +14,14 @@ export const metadata: Metadata = {
 };
 
 export default async function AccountPage() {
-    const [user, registeredProviders] = await Promise.all([
+    const [user, rawProviders] = await Promise.all([
         getCurrentUser(),
         getRegisteredProvidersAction(),
     ]);
     if (!user) {
         redirect('/login?next=/account');
     }
+    const registeredProviders = rawProviders.map(({ provider }) => provider);
     return (
         <main className="bg-secondary-950 min-h-[calc(100dvh-3.5rem)] px-4 py-12">
             <div className="mx-auto w-full max-w-2xl space-y-6">

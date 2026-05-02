@@ -12,6 +12,8 @@ interface PremiumModelGateModalProps {
     onClose: () => void;
 }
 
+const TITLE_ID = 'premium-model-gate-title';
+
 export function PremiumModelGateModal({
     mode,
     providerLabel,
@@ -54,6 +56,7 @@ export function PremiumModelGateModal({
     return (
         <dialog
             ref={dialogRef}
+            aria-labelledby={TITLE_ID}
             onClick={handleBackdropClick}
             onClose={safeClose}
             className="backdrop:bg-secondary-950/80 bg-transparent backdrop:backdrop-blur-sm"
@@ -82,7 +85,7 @@ export function PremiumModelGateModal({
                         />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
-                    <h2 className="text-secondary-50 font-semibold">{title}</h2>
+                    <h2 id={TITLE_ID} className="text-secondary-50 font-semibold">{title}</h2>
                     <p className="text-secondary-300 text-sm">{body}</p>
                 </div>
 

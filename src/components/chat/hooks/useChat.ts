@@ -9,6 +9,8 @@ import {
 import {
     GEMINI_2_5_FLASH_MODEL,
     VALID_CHAT_MODELS,
+    TIER_CONFIG,
+    getProviderForModel,
 } from '@y0ngha/siglens-core';
 import type {
     AnalysisResponse,
@@ -18,13 +20,9 @@ import type {
     ChatMessage,
     ModelId,
     Timeframe,
-} from '@y0ngha/siglens-core';
-import type {
-    AuthUserRecord,
-    GateMode,
     LlmProvider,
-    RegisteredProvider,
-} from '@/domain/types';
+} from '@y0ngha/siglens-core';
+import type { GateMode } from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
@@ -56,6 +54,7 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
     model_not_allowed:
         '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
+    // TODO(byok-adapter): BYOK 어댑터 구현 후 chatAction에서 이 코드가 반환됩니다
     user_api_key_required:
         '이 모델을 사용하려면 API 키를 등록해야 해요. 계정 설정에서 등록해주세요.',
 };
@@ -99,9 +98,6 @@ export interface UseChatReturn {
     handleModelChange: (model: ModelId) => void;
     gateModal: GateModalState | null;
     dismissGate: () => void;
-    openGate: (state: GateModalState) => void;
-    currentUser: AuthUserRecord | null | undefined;
-    registeredProviders: RegisteredProvider[];
 }
 
 export function useChat({
@@ -231,15 +227,22 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
-    const handleModelChange = useCallback((model: ModelId) => {
+    const handleModelChange = useCallback((model: ModelId): void => {
+        if (!(TIER_CONFIG.models.free as readonly string[]).includes(model)) {
+            const requiredProvider = getProviderForModel(model);
+            if (!currentUser) {
+                setGateModal({ mode: 'auth', provider: requiredProvider });
+                return;
+            }
+            if (!registeredProviders.some(p => p.provider === requiredProvider)) {
+                setGateModal({ mode: 'byok', provider: requiredProvider });
+                return;
+            }
+        }
         setSelectedModel(model);
-    }, []);
+    }, [currentUser, registeredProviders]);
 
-    const openGate = useCallback((state: GateModalState) => {
-        setGateModal(state);
-    }, []);
-
-    const dismissGate = useCallback(() => {
+    const dismissGate = useCallback((): void => {
         setGateModal(null);
     }, []);
 
@@ -365,8 +368,5 @@ export function useChat({
         handleModelChange,
         gateModal,
         dismissGate,
-        openGate,
-        currentUser,
-        registeredProviders,
     };
 }
