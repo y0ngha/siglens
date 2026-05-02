@@ -1,5 +1,8 @@
 import { Resend } from 'resend';
-import type { EmailDispatcher, EmailMessage } from '@y0ngha/siglens-core';
+import type {
+    EmailDispatcher,
+    EmailMessage,
+} from '@/infrastructure/email/tokenStore';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
 const EMAIL_SEND_TIMEOUT_MS = 10_000;

@@ -1,4 +1,7 @@
-import type { OAuthProviderAdapter, OAuthProfileResult } from './types';
+import type {
+    OAuthProviderAdapter,
+    OAuthProfileResult,
+} from '@/infrastructure/auth/oauth/types';
 
 const AUTHORIZE_URL = 'https://kauth.kakao.com/oauth/authorize';
 const TOKEN_URL = 'https://kauth.kakao.com/oauth/token';

@@ -3,10 +3,10 @@
 import { useId, useState } from 'react';
 import type { ResetPasswordFormState } from '@/domain/types';
 import { useResetPasswordForm } from '@/components/hooks/useResetPasswordForm';
-import { AuthErrorAlert } from './AuthErrorAlert';
-import { PasswordField } from './PasswordField';
-import { PasswordStrengthHint } from './PasswordStrengthHint';
-import { SubmitButton } from './SubmitButton';
+import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
+import { PasswordField } from '@/components/auth/PasswordField';
+import { PasswordStrengthHint } from '@/components/auth/PasswordStrengthHint';
+import { SubmitButton } from '@/components/auth/SubmitButton';
 
 interface ResetPasswordFormProps {
     email: string;

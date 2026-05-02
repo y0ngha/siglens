@@ -12,6 +12,7 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
+import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 
 async function getClientIp(): Promise<string> {
     const headersList = await headers();
@@ -35,17 +36,22 @@ export async function chatAction(
 
     try {
         const clientIp = await getClientIp();
-        return await requestChatCompletion({
-            clientIp,
-            symbol,
-            timeframe,
-            analysis,
-            history,
-            userMessage,
-            model,
-            freeApiKey: process.env.GEMINI_CHAT_FREE_API_KEY,
-            paidApiKey,
-        });
+        return await requestChatCompletion(
+            {
+                clientIp,
+                symbol,
+                timeframe,
+                analysis,
+                history,
+                userMessage,
+                model,
+                freeApiKey: process.env.GEMINI_CHAT_FREE_API_KEY,
+                paidApiKey,
+            },
+            {
+                callAiProvider: callGeminiWithKeyFallback,
+            }
+        );
     } catch {
         return { ok: false, error: 'server_error' };
     }

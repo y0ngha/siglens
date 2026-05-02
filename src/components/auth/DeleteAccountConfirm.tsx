@@ -5,7 +5,7 @@ import { useFormStatus } from 'react-dom';
 import Link from 'next/link';
 import { useDeleteAccountForm } from '@/components/hooks/useDeleteAccountForm';
 import { cn } from '@/lib/cn';
-import { AuthErrorAlert } from './AuthErrorAlert';
+import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
 
 const INPUT_HINT_ID = 'delete-account-email-hint';
 const HINT_DEFAULT = '이메일이 일치해야 탈퇴 버튼이 활성화됩니다.';

@@ -1,6 +1,8 @@
-jest.mock('@y0ngha/siglens-core', () => ({
-    createEmailTokenStore: jest.fn(),
+jest.mock('@/infrastructure/auth/use-cases/requestEmailVerification', () => ({
     requestEmailVerification: jest.fn(),
+}));
+jest.mock('@/infrastructure/email/tokenStore', () => ({
+    createEmailTokenStore: jest.fn(),
 }));
 
 const sendEmailMock = jest.fn();
@@ -17,10 +19,8 @@ jest.mock('@/infrastructure/email/emailVerificationEmail', () => ({
     })),
 }));
 
-import {
-    createEmailTokenStore,
-    requestEmailVerification,
-} from '@y0ngha/siglens-core';
+import { requestEmailVerification } from '@/infrastructure/auth/use-cases/requestEmailVerification';
+import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { buildEmailVerificationEmail } from '@/infrastructure/email/emailVerificationEmail';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { requestEmailVerificationAction } from '@/infrastructure/auth/requestEmailVerificationAction';

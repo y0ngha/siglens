@@ -14,7 +14,7 @@ import { TERMS_PATH } from '@/lib/legal';
 import { BacktestHero } from '@/components/backtesting/BacktestHero';
 import { BacktestTabs } from '@/components/backtesting/BacktestTabs';
 import { JsonLd } from '@/components/ui/JsonLd';
-import backtestData from './data.json';
+import backtestData from '@/app/backtesting/data.json';
 import { validateBacktestData } from '@/domain/backtest/validate';
 
 // JSON import typed as any; validateBacktestData ensures shape at load time

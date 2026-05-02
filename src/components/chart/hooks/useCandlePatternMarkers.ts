@@ -99,9 +99,7 @@ const entryToMarkerEntry = (
     };
 };
 
-/**
- * Maps selected CandlePatternEntry[] to CandlePatternMarkerEntry[] for chart rendering.
- */
+/** Maps selected CandlePatternEntry[] to CandlePatternMarkerEntry[] for chart rendering. */
 const toMarkerEntries = (
     entries: CandlePatternEntry[],
     detectionBars: Bar[]

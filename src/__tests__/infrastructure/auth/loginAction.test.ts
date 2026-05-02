@@ -4,17 +4,26 @@ jest.mock('next/navigation', () => ({
         throw new Error(`NEXT_REDIRECT:${path}`);
     }),
 }));
-jest.mock('@y0ngha/siglens-core', () => ({
+jest.mock('@/infrastructure/db/client', () => ({
+    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    resetDatabaseClientForTests: jest.fn(),
+}));
+jest.mock('@/infrastructure/db/sessionRepository', () => ({
     DrizzleSessionRepository: jest.fn().mockImplementation(() => ({})),
+}));
+jest.mock('@/infrastructure/db/userRepository', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
+}));
+jest.mock('@/infrastructure/auth/bcrypt', () => ({
     bcryptPasswordVerifier: { verifyPassword: jest.fn() },
+}));
+jest.mock('@/infrastructure/auth/use-cases/loginUser', () => ({
     loginUser: jest.fn(),
-    createDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
 }));
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import { loginUser } from '@y0ngha/siglens-core';
+import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import { loginAction } from '@/infrastructure/auth/loginAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
 import { makeFormData } from '@/__tests__/utils/makeFormData';

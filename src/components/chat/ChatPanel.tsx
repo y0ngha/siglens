@@ -19,10 +19,9 @@ interface ChatModelOption {
     fullName: string;
 }
 
-const MODEL_DISPLAY_MAP: Record<
-    ChatModel,
-    { label: string; fullName: string }
-> = {
+type ChatModelDisplay = Pick<ChatModelOption, 'label' | 'fullName'>;
+
+const MODEL_DISPLAY_MAP: Partial<Record<ChatModel, ChatModelDisplay>> = {
     'gemini-2.5-flash': { label: 'Flash', fullName: 'Gemini 2.5 Flash' },
     'gemini-2.5-flash-lite': {
         label: 'Flash Lite',
@@ -31,9 +30,13 @@ const MODEL_DISPLAY_MAP: Record<
     'gemini-2.5-pro': { label: 'Pro', fullName: 'Gemini 2.5 Pro' },
 };
 
+function getModelDisplay(id: ChatModel): ChatModelDisplay {
+    return MODEL_DISPLAY_MAP[id] ?? { label: id, fullName: id };
+}
+
 const CHAT_MODEL_OPTIONS = VALID_CHAT_MODELS.map(id => ({
     id,
-    ...MODEL_DISPLAY_MAP[id],
+    ...getModelDisplay(id),
 })) satisfies ReadonlyArray<ChatModelOption>;
 
 const LOADING_MESSAGES = {
@@ -86,7 +89,7 @@ export function ChatPanel({
         handleKeyDown,
     } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
 
-    const selectedModelOption = MODEL_DISPLAY_MAP[selectedModel];
+    const selectedModelOption = getModelDisplay(selectedModel);
 
     const handleDropdownToggle = () => {
         if (!isOpen && triggerRef.current) {

@@ -4,10 +4,10 @@ import type {
     DashboardTimeframe,
     SectorSignalsResult,
 } from '@y0ngha/siglens-core';
-import { useSectorSignalState } from './hooks/useSectorSignalState';
-import { SectorTabs } from './SectorTabs';
-import { TimeframeSelector } from './TimeframeSelector';
-import { SignalSubsection } from './SignalSubsection';
+import { useSectorSignalState } from '@/components/dashboard/hooks/useSectorSignalState';
+import { SectorTabs } from '@/components/dashboard/SectorTabs';
+import { TimeframeSelector } from '@/components/dashboard/TimeframeSelector';
+import { SignalSubsection } from '@/components/dashboard/SignalSubsection';
 
 interface SectorSignalPanelProps {
     data: SectorSignalsResult;

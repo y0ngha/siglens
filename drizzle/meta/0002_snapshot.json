@@ -1,0 +1,479 @@
+{
+    "id": "342b7b34-a543-4bd1-b75d-fb13a7fb182a",
+    "prevId": "3f967030-16dd-4395-822c-2644ed89805e",
+    "version": "7",
+    "dialect": "postgresql",
+    "tables": {
+        "public.asset_translations": {
+            "name": "asset_translations",
+            "schema": "",
+            "columns": {
+                "symbol": {
+                    "name": "symbol",
+                    "type": "varchar(32)",
+                    "primaryKey": true,
+                    "notNull": true
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "korean_name": {
+                    "name": "korean_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "fmp_symbol": {
+                    "name": "fmp_symbol",
+                    "type": "varchar(64)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.korean_tickers": {
+            "name": "korean_tickers",
+            "schema": "",
+            "columns": {
+                "symbol": {
+                    "name": "symbol",
+                    "type": "varchar(32)",
+                    "primaryKey": true,
+                    "notNull": true
+                },
+                "korean_name": {
+                    "name": "korean_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "exchange": {
+                    "name": "exchange",
+                    "type": "varchar(32)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "exchange_full_name": {
+                    "name": "exchange_full_name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.oauth_accounts": {
+            "name": "oauth_accounts",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "user_id": {
+                    "name": "user_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "provider": {
+                    "name": "provider",
+                    "type": "oauth_provider",
+                    "typeSchema": "public",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "provider_account_id": {
+                    "name": "provider_account_id",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {
+                "oauth_accounts_user_id_idx": {
+                    "name": "oauth_accounts_user_id_idx",
+                    "columns": [
+                        {
+                            "expression": "user_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "oauth_accounts_provider_account_uidx": {
+                    "name": "oauth_accounts_provider_account_uidx",
+                    "columns": [
+                        {
+                            "expression": "provider",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "provider_account_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": true,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {
+                "oauth_accounts_user_id_users_id_fk": {
+                    "name": "oauth_accounts_user_id_users_id_fk",
+                    "tableFrom": "oauth_accounts",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.sessions": {
+            "name": "sessions",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "user_id": {
+                    "name": "user_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "expires_at": {
+                    "name": "expires_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {
+                "sessions_user_id_idx": {
+                    "name": "sessions_user_id_idx",
+                    "columns": [
+                        {
+                            "expression": "user_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "sessions_expires_at_idx": {
+                    "name": "sessions_expires_at_idx",
+                    "columns": [
+                        {
+                            "expression": "expires_at",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {
+                "sessions_user_id_users_id_fk": {
+                    "name": "sessions_user_id_users_id_fk",
+                    "tableFrom": "sessions",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "cascade",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.usage_logs": {
+            "name": "usage_logs",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "user_id": {
+                    "name": "user_id",
+                    "type": "uuid",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "ip_hash": {
+                    "name": "ip_hash",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "action_type": {
+                    "name": "action_type",
+                    "type": "usage_action_type",
+                    "typeSchema": "public",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "model_used": {
+                    "name": "model_used",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "date": {
+                    "name": "date",
+                    "type": "date",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {
+                "usage_logs_user_id_idx": {
+                    "name": "usage_logs_user_id_idx",
+                    "columns": [
+                        {
+                            "expression": "user_id",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                },
+                "usage_logs_ip_hash_date_idx": {
+                    "name": "usage_logs_ip_hash_date_idx",
+                    "columns": [
+                        {
+                            "expression": "ip_hash",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        },
+                        {
+                            "expression": "date",
+                            "isExpression": false,
+                            "asc": true,
+                            "nulls": "last"
+                        }
+                    ],
+                    "isUnique": false,
+                    "concurrently": false,
+                    "method": "btree",
+                    "with": {}
+                }
+            },
+            "foreignKeys": {
+                "usage_logs_user_id_users_id_fk": {
+                    "name": "usage_logs_user_id_users_id_fk",
+                    "tableFrom": "usage_logs",
+                    "tableTo": "users",
+                    "columnsFrom": ["user_id"],
+                    "columnsTo": ["id"],
+                    "onDelete": "set null",
+                    "onUpdate": "no action"
+                }
+            },
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {},
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        },
+        "public.users": {
+            "name": "users",
+            "schema": "",
+            "columns": {
+                "id": {
+                    "name": "id",
+                    "type": "uuid",
+                    "primaryKey": true,
+                    "notNull": true,
+                    "default": "gen_random_uuid()"
+                },
+                "email": {
+                    "name": "email",
+                    "type": "varchar(320)",
+                    "primaryKey": false,
+                    "notNull": true
+                },
+                "password_hash": {
+                    "name": "password_hash",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "name": {
+                    "name": "name",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "avatar_url": {
+                    "name": "avatar_url",
+                    "type": "text",
+                    "primaryKey": false,
+                    "notNull": false
+                },
+                "tier": {
+                    "name": "tier",
+                    "type": "user_tier",
+                    "typeSchema": "public",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "'free'"
+                },
+                "created_at": {
+                    "name": "created_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                },
+                "updated_at": {
+                    "name": "updated_at",
+                    "type": "timestamp with time zone",
+                    "primaryKey": false,
+                    "notNull": true,
+                    "default": "now()"
+                }
+            },
+            "indexes": {},
+            "foreignKeys": {},
+            "compositePrimaryKeys": {},
+            "uniqueConstraints": {
+                "users_email_unique": {
+                    "name": "users_email_unique",
+                    "nullsNotDistinct": false,
+                    "columns": ["email"]
+                }
+            },
+            "policies": {},
+            "checkConstraints": {},
+            "isRLSEnabled": false
+        }
+    },
+    "enums": {
+        "public.oauth_provider": {
+            "name": "oauth_provider",
+            "schema": "public",
+            "values": ["google", "kakao", "apple"]
+        },
+        "public.usage_action_type": {
+            "name": "usage_action_type",
+            "schema": "public",
+            "values": ["analysis", "chatbot", "premium_model"]
+        },
+        "public.user_tier": {
+            "name": "user_tier",
+            "schema": "public",
+            "values": ["free", "member", "pro"]
+        }
+    },
+    "schemas": {},
+    "sequences": {},
+    "roles": {},
+    "policies": {},
+    "views": {},
+    "_meta": {
+        "columns": {},
+        "schemas": {},
+        "tables": {}
+    }
+}

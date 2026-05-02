@@ -3,15 +3,15 @@
 import { Suspense } from 'react';
 import { cn } from '@/lib/cn';
 import { ErrorBoundary } from 'react-error-boundary';
-import { IndexCard } from './IndexCard';
+import { IndexCard } from '@/components/dashboard/IndexCard';
 import {
     BriefingCard,
     BriefingErrorCard,
     BriefingLoadingCard,
-} from './BriefingCard';
-import { useBriefing } from './hooks/useBriefing';
-import { useMarketSummary } from './hooks/useMarketSummary';
-import { MarketSummaryPanelSkeleton } from './MarketSummaryPanelSkeleton';
+} from '@/components/dashboard/BriefingCard';
+import { useBriefing } from '@/components/dashboard/hooks/useBriefing';
+import { useMarketSummary } from '@/components/dashboard/hooks/useMarketSummary';
+import { MarketSummaryPanelSkeleton } from '@/components/dashboard/MarketSummaryPanelSkeleton';
 import { SECTOR_GROUPS } from '@/domain/constants/dashboard-tickers';
 import type {
     MarketSectorData,

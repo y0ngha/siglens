@@ -1,9 +1,8 @@
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
-import { getAssetInfo } from '@y0ngha/siglens-core';
-import type { AssetInfo } from '@y0ngha/siglens-core';
+import { getAssetInfo } from '@/infrastructure/ticker/use-cases/getAssetInfo';
+import type { AssetInfo } from '@/domain/types';
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
+jest.mock('@/infrastructure/ticker/use-cases/getAssetInfo', () => ({
     getAssetInfo: jest.fn(),
 }));
 
@@ -18,7 +17,7 @@ describe('getAssetInfoAction 함수는', () => {
         mockGetAssetInfo.mockReset();
     });
 
-    it('symbol을 대문자로 변환해 siglens-core getAssetInfo에 전달한다', async () => {
+    it('symbol을 대문자로 변환해 use-case getAssetInfo에 전달한다', async () => {
         mockGetAssetInfo.mockResolvedValueOnce(assetInfo);
 
         await getAssetInfoAction('aapl');

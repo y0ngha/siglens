@@ -1,14 +1,52 @@
 # Fix Log
 
+## [PR #405 Round 4 | refactor/scope-realignment-phase-0 | 2026-05-02]
+- Violation: deleteAccount.ts revokeOAuthTokens가 명령형 forEach + void Promise로 fire-and-forget 처리
+- Rule: CONVENTIONS.md — 명령형 forEach 대신 선언형 map + Promise.allSettled 사용 (FP 일관성)
+- Context: forEach 내부 .catch로 개별 에러 흡수 + 외부 void Promise.allSettled로 묶어 동일한 fire-and-forget + 에러 개별 처리 동작 유지. 테스트 무수정 통과(883/101).
+
+## [PR #405 Round 2 | refactor/scope-realignment-phase-0 | 2026-05-02]
+- Violation: domain/types.ts가 @/infrastructure/db/types에서 AuthUserRecord 타입을 re-export (역방향 레이어 의존)
+- Rule: ARCHITECTURE.md — domain은 infrastructure에 의존 금지 (단방향 infra → domain)
+- Context: AuthUserRecord 정의를 src/domain/auth/types.ts로 이동(@y0ngha/siglens-core의 UserTier만 사용). domain/types.ts는 './auth/types'에서 re-export, infrastructure/db/types.ts는 @/domain/auth/types에서 import 후 re-export하는 방향으로 정정.
+
+- Violation: tokenEncryption.ts 헤더 문구에 "sync obligation" 언급 (Phase 6 완료했으므로 불필요)
+- Rule: Phase 6 마이그레이션 완료 후 더 이상 siglens-core와의 동기화 의무 없음 — 헤더를 과거시제로 갱신
+- Context: tokenEncryption.ts의 "Sync obligation" 문구를 "Phase 6 of the scope-realignment refactor moved the DB layer fully into siglens"로 변경; 동기화 명령문 제거.
+
+- Violation: userApiKeys 테이블의 JSDoc 멀티라인 주석
+- Rule: CLAUDE.md — 단일 줄 주석으로 통일 (WHY 노트 보존)
+- Context: userApiKeys의 JSDoc 블록을 한 줄로 압축하되 AES-256-GCM 암호화 특성 유지.
+
+## [PR #405 | refactor/scope-realignment-phase-0 | 2026-05-02]
+- Violation: components/hooks/useCurrentUser.ts가 @/infrastructure/db/types에서 AuthUserRecord 타입을 직접 import
+- Rule: ARCHITECTURE.md — hooks/*.ts의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
+- Context: 인증된 현재 유저 조회 훅이 인프라 레이어 타입에 직접 의존. AuthUserRecord를 @/domain/types에서 재노출하고 hook을 @/domain/types 경로로 변경.
+
+- Violation: createAuthSession이 인라인 객체 리터럴을 반환 타입으로 사용
+- Rule: CONVENTIONS.md TypeScript Rules — 함수 반환 타입은 익명 객체 리터럴 대신 명명된 인터페이스로 선언
+- Context: src/infrastructure/auth/sessionCookie.ts의 createAuthSession이 `Promise<{ session, cookie }>`를 사용. CreateAuthSessionResult 인터페이스를 추출.
+
+- Violation: ChatPanel.tsx의 getModelDisplay가 인라인 객체 반환 타입 선언
+- Rule: CONVENTIONS.md TypeScript Rules — 인라인 객체 리터럴 대신 명명된 타입 사용 (기존 ChatModelOption에서 Pick으로 파생 가능)
+- Context: 동일 파일 내 ChatModelOption 인터페이스가 이미 동일 형태를 보유. `Pick<ChatModelOption, 'label' | 'fullName'>` 별칭으로 교체.
+
+- Violation: LLM_PROVIDER_VALUES 상수가 src/domain/llm/constants.ts와 src/infrastructure/db/constants.ts 양쪽에 동일하게 정의
+- Rule: ARCHITECTURE.md — infrastructure는 domain에서 import 가능; 동일 상수 중복 정의 금지
+- Context: infra DB 상수가 domain의 단일 진실 공급원을 우회. infrastructure 측 정의를 제거하고 @/domain/llm에서 import 후 재노출.
+
+- Violation: drizzle/0004_add_oauth_token_columns.sql가 _journal.json에 등재되지 않은 채 0006_striped_marauders.sql과 SQL이 완전 중복
+- Rule: drizzle 마이그레이션은 _journal.json 등재 순서로 적용되며, 등재되지 않은 파일은 dead-code이자 drizzle-kit migrate 시 0006에서 컬럼 중복 오류 유발
+- Context: orphan SQL 파일을 git rm으로 삭제. _journal.json은 변경 없음.
+
+- Violation: drizzle/0004_petite_medusa.sql이 email_verified DEFAULT true로 추가되어 0005에서 false로 되돌리기 전 가입한 사용자들이 자동 검증 처리됨
+- Rule: 운영 DB에 이미 적용된 마이그레이션은 사후 편집 금지 — 보정이 필요하면 새 forward migration 추가
+- Context: 두 마이그레이션 모두 _journal에 등재되어 적용된 상태. 0004를 retroactive 수정하지 않고 0005에 사후 보존 사유와 향후 처리 가이드를 SQL 주석으로 명시.
+
 ## [PR #403 Round 5 | feat/398/contact-us-form | 2026-05-02]
 - Violation: 새로 만든 파일이 git에 추가되지 않은 채 PR 푸시되어 빌드가 차단됨
 - Rule: PR_FIX_FLOW Step 1-7 — 픽스 적용 후 모든 신규 파일을 commit/push 전에 git add로 추적해야 함
 - Context: src/components/contact/utils/contactFormUtils.ts가 로컬 파일 시스템에는 존재했지만 git 인덱스에는 없어 ContactForm.tsx의 import가 원격 빌드에서 해결되지 않음. 같은 라운드에서 lib/contactErrorMessages.ts는 dead code로 남게 됨. git add로 추적 후 다음 커밋에 포함.
-
-## [Issue #369 PR-2 round 1 | feat/369/auth-social | 2026-04-28]
-- Violation: 멀티라인 JSDoc 주석 블록 (proxy.ts, infrastructure/auth/{db,getCurrentUser,applyAuthCookie,sessionCookieOptions}.ts)
-- Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
-- Context: 인증 어댑터 파일들이 2~4줄 JSDoc 블록으로 작성됨. 한 줄로 압축.
 
 
 ## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
@@ -84,10 +122,17 @@
 - Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
 - Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
 
+
+## [PR #403 Round 3 | feat/398/contact-us-form | 2026-05-01]
 - Violation: hook 파일에서 @/domain/types가 아닌 도메인 서브모듈에서 타입 import
 - Rule: ARCHITECTURE.md — hook 파일(hooks/*.ts)의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
 - Context: useContactForm.ts가 @/domain/contact/formTypes에서 ContactFormState를 import. formTypes의 모든 타입을 domain/types.ts로 이동 후 @/domain/types로 수정.
 
+
+## [PR #405 follow-up | refactor/scope-realignment-phase-0 | 2026-05-02]
+- Violation: future siglens work risked re-introducing analysis logic locally instead of in siglens-core
+- Rule: SCOPE.md §3 (dependency direction) — analysis secret sauce stays in core
+- Context: added siglens-side §0 work-boundary checklist + CLAUDE.md cross-repo scope guard so that analysis-related task descriptions trigger an explicit redirect-or-confirm step before any code is written.
 ## [Issue #401 | feat/401/worker-ai-provider-enhancement | 2026-05-02]
 - Violation: 동일 정책 상수가 여러 retry 모듈에 중복 정의 (AI_RETRY_MAX_ATTEMPTS, AI_RETRY_DELAY_MS)
 - Rule: MISTAKES.md Design 1 / FF Cohesion — 함께 변해야 하는 상수는 single source of truth에 모아야 함
@@ -108,3 +153,7 @@
 - Violation: Array.find 후 type narrow를 위한 중복 type check
 - Rule: MISTAKES.md Coding Paradigm 4 — 결과에 영향 없는 로직 제거
 - Context: claude.ts에서 `find(b => b.type === 'text')` 후 `if (textBlock && textBlock.type === 'text')`로 재검사. find에 explicit type predicate(`(block): block is TextBlock`)을 적용해 후속 narrow 가드 제거.
+
+
+## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
+- Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).

@@ -1,4 +1,5 @@
-import type { OAuthProvider, SocialLoginUserInput } from '@y0ngha/siglens-core';
+import type { OAuthProvider } from '@y0ngha/siglens-core';
+import type { SocialLoginUserInput } from '@/infrastructure/auth/use-cases/types';
 
 /** OAuth 콜백 처리 단계의 실패 사유. */
 export type OAuthProfileFailureReason =

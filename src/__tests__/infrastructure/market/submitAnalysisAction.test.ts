@@ -1,6 +1,6 @@
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import { submitAnalysis } from '@y0ngha/siglens-core';
-import type { SubmitAnalysisResult } from '@y0ngha/siglens-core';
+import type { SubmitAnalysisGatedResult } from '@y0ngha/siglens-core';
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
@@ -15,7 +15,7 @@ const mockSubmitAnalysis = submitAnalysis as jest.MockedFunction<
     typeof submitAnalysis
 >;
 
-const cachedResult: SubmitAnalysisResult = {
+const cachedResult: SubmitAnalysisGatedResult = {
     status: 'cached',
     result: { summary: 'cached' } as never,
 };

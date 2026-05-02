@@ -1,4 +1,4 @@
-import type { TickerCategory } from '@y0ngha/siglens-core';
+import type { TickerCategory } from '@/domain/types';
 
 export const TICKER_CATEGORIES: readonly TickerCategory[] = [
     {

@@ -35,6 +35,7 @@ describe('getRemainingTokensAction 함수는', () => {
         mockCreateChatTokenStore.mockReturnValue({
             tryConsumeToken: jest.fn(),
             getRemainingTokens: mockGetRemainingTokens,
+            refundConsumedToken: jest.fn().mockResolvedValue(undefined),
         });
     });
 

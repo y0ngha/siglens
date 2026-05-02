@@ -2,17 +2,15 @@
 
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
-import {
-    DrizzleSessionRepository,
-    DrizzleUserRepository,
-    bcryptPasswordVerifier,
-    loginUser,
-} from '@y0ngha/siglens-core';
+import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { bcryptPasswordVerifier } from '@/infrastructure/auth/bcrypt';
+import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import type { LoginFormState } from '@/domain/auth/formTypes';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
-import { applyAuthCookie } from './applyAuthCookie';
-import { getAuthDatabaseClient } from './db';
-import { isSecureCookieEnv } from './sessionCookieOptions';
+import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
+import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 
 export async function loginAction(
     _prev: LoginFormState,

@@ -5,6 +5,7 @@ import {
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
 import type { AnalysisResponse, ChatActionResult } from '@y0ngha/siglens-core';
+import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 import { headers } from 'next/headers';
 
 jest.mock('next/headers', () => ({
@@ -19,9 +20,13 @@ jest.mock('@y0ngha/siglens-core', () => ({
     requestChatCompletion: jest.fn(),
 }));
 
+jest.mock('@/infrastructure/ai/gemini', () => ({
+    callGeminiWithKeyFallback: jest.fn(),
+}));
+
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const mockRequestChatCompletion = requestChatCompletion as jest.MockedFunction<
-    (params: unknown) => Promise<ChatActionResult>
+    typeof requestChatCompletion
 >;
 
 const MINIMAL_ANALYSIS: AnalysisResponse = {
@@ -85,17 +90,20 @@ describe('chatAction 함수는', () => {
         );
 
         expect(result).toBe(SUCCESS_RESULT);
-        expect(mockRequestChatCompletion).toHaveBeenCalledWith({
-            clientIp: '1.2.3.4',
-            symbol: 'AAPL',
-            timeframe: '1Day',
-            analysis: MINIMAL_ANALYSIS,
-            history,
-            userMessage: '지금 사도 돼?',
-            model: GEMINI_2_5_FLASH_LITE_MODEL,
-            freeApiKey: undefined,
-            paidApiKey: 'paid-api-key',
-        });
+        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+            {
+                clientIp: '1.2.3.4',
+                symbol: 'AAPL',
+                timeframe: '1Day',
+                analysis: MINIMAL_ANALYSIS,
+                history,
+                userMessage: '지금 사도 돼?',
+                model: GEMINI_2_5_FLASH_LITE_MODEL,
+                freeApiKey: undefined,
+                paidApiKey: 'paid-api-key',
+            },
+            { callAiProvider: callGeminiWithKeyFallback }
+        );
     });
 
     it('model을 생략하면 core의 기본 채팅 모델을 전달한다', async () => {
@@ -104,6 +112,9 @@ describe('chatAction 함수는', () => {
         expect(mockRequestChatCompletion).toHaveBeenCalledWith(
             expect.objectContaining({
                 model: GEMINI_2_5_FLASH_MODEL,
+            }),
+            expect.objectContaining({
+                callAiProvider: callGeminiWithKeyFallback,
             })
         );
     });
@@ -117,7 +128,8 @@ describe('chatAction 함수는', () => {
             expect.objectContaining({
                 freeApiKey: 'free-api-key',
                 paidApiKey: 'paid-api-key',
-            })
+            }),
+            expect.anything()
         );
     });
 
@@ -133,7 +145,8 @@ describe('chatAction 함수는', () => {
         expect(mockRequestChatCompletion).toHaveBeenCalledWith(
             expect.objectContaining({
                 clientIp: '1.2.3.4',
-            })
+            }),
+            expect.anything()
         );
     });
 
@@ -147,7 +160,8 @@ describe('chatAction 함수는', () => {
         expect(mockRequestChatCompletion).toHaveBeenCalledWith(
             expect.objectContaining({
                 clientIp: 'unknown',
-            })
+            }),
+            expect.anything()
         );
     });
 

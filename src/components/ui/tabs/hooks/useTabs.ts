@@ -9,7 +9,7 @@ import {
     useRef,
 } from 'react';
 import { useRovingKeyboardNav } from '@/components/hooks/useRovingKeyboardNav';
-import { buildPanelId, buildTabId } from '../utils/tabIds';
+import { buildPanelId, buildTabId } from '@/components/ui/tabs/utils/tabIds';
 
 interface UseTabsOptions<T extends string> {
     tabs: readonly T[];

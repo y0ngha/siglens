@@ -1,7 +1,7 @@
 import type { SupportedOAuthProvider } from '@/domain/types';
-import { googleOAuthAdapter } from './google';
-import { kakaoOAuthAdapter } from './kakao';
-import type { OAuthProviderAdapter } from './types';
+import { googleOAuthAdapter } from '@/infrastructure/auth/oauth/google';
+import { kakaoOAuthAdapter } from '@/infrastructure/auth/oauth/kakao';
+import type { OAuthProviderAdapter } from '@/infrastructure/auth/oauth/types';
 
 const SUPPORTED_PROVIDERS: readonly SupportedOAuthProvider[] = [
     'google',

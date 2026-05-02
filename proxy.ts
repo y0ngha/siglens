@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { AUTH_SESSION_COOKIE_NAME } from '@y0ngha/siglens-core';
+import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
 
 /** 이미 로그인된 사용자가 /login·/signup 진입 시 / 로 보내는 역방향 가드. 그 외 라우트는 모두 통과. */
 export function proxy(req: NextRequest): NextResponse {

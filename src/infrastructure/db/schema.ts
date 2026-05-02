@@ -1,0 +1,194 @@
+import {
+    boolean,
+    date,
+    index,
+    pgEnum,
+    pgTable,
+    text,
+    timestamp,
+    uniqueIndex,
+    uuid,
+    varchar,
+} from 'drizzle-orm/pg-core';
+import {
+    LLM_PROVIDER_VALUES,
+    OAUTH_PROVIDER_VALUES,
+    USAGE_ACTION_TYPE_VALUES,
+    USER_TIER_VALUES,
+} from '@/infrastructure/db/constants';
+
+const EMAIL_MAX_LENGTH = 320;
+const SYMBOL_MAX_LENGTH = 32;
+const EXCHANGE_MAX_LENGTH = 32;
+const FMP_SYMBOL_MAX_LENGTH = 64;
+
+const nowFn = (): Date => new Date();
+
+/** Postgres enum for user subscription tier. */
+export const userTierEnum = pgEnum('user_tier', USER_TIER_VALUES);
+
+/** Postgres enum for usage action types tracked in usage logs. */
+export const usageActionTypeEnum = pgEnum(
+    'usage_action_type',
+    USAGE_ACTION_TYPE_VALUES
+);
+
+/** Postgres enum for supported OAuth providers. */
+export const oauthProviderEnum = pgEnum(
+    'oauth_provider',
+    OAUTH_PROVIDER_VALUES
+);
+
+/** Postgres enum for supported LLM providers whose API keys are stored per user. */
+export const llmProviderEnum = pgEnum('llm_provider', LLM_PROVIDER_VALUES);
+
+/** Registered users — one row per account, keyed by UUID. */
+export const users = pgTable('users', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: varchar('email', { length: EMAIL_MAX_LENGTH }).notNull().unique(),
+    passwordHash: text('password_hash'),
+    name: text('name'),
+    avatarUrl: text('avatar_url'),
+    tier: userTierEnum('tier').notNull().default('free'),
+    emailVerified: boolean('email_verified').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow()
+        .$onUpdateFn(nowFn),
+});
+
+/** Auth sessions — linked to a user and expire at a fixed timestamp. */
+export const sessions = pgTable(
+    'sessions',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        index('sessions_user_id_idx').on(table.userId),
+        index('sessions_expires_at_idx').on(table.expiresAt),
+    ]
+);
+
+/** Per-request usage log for rate-limiting and analytics. */
+export const usageLogs = pgTable(
+    'usage_logs',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id').references(() => users.id, {
+            onDelete: 'set null',
+        }),
+        ipHash: text('ip_hash').notNull(),
+        actionType: usageActionTypeEnum('action_type').notNull(),
+        modelUsed: text('model_used').notNull(),
+        date: date('date').notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        index('usage_logs_user_id_idx').on(table.userId),
+        index('usage_logs_ip_hash_date_idx').on(table.ipHash, table.date),
+    ]
+);
+
+/** Linked OAuth accounts — one row per (user, provider) pair. */
+export const oauthAccounts = pgTable(
+    'oauth_accounts',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        provider: oauthProviderEnum('provider').notNull(),
+        providerAccountId: text('provider_account_id').notNull(),
+        accessToken: text('access_token'),
+        refreshToken: text('refresh_token'),
+        tokenExpiresAt: timestamp('token_expires_at', { withTimezone: true }),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        index('oauth_accounts_user_id_idx').on(table.userId),
+        uniqueIndex('oauth_accounts_provider_account_uidx').on(
+            table.provider,
+            table.providerAccountId
+        ),
+    ]
+);
+
+/** User-supplied LLM API keys (at most one per user–provider pair); encrypted_api_key stores AES-256-GCM ciphertext; plaintext never persisted. */
+export const userApiKeys = pgTable(
+    'user_api_keys',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        provider: llmProviderEnum('provider').notNull(),
+        encryptedApiKey: text('encrypted_api_key').notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        index('user_api_keys_user_id_idx').on(table.userId),
+        uniqueIndex('user_api_keys_user_provider_uidx').on(
+            table.userId,
+            table.provider
+        ),
+    ]
+);
+
+/** Korean stock ticker metadata — keyed by ticker symbol. */
+export const koreanTickers = pgTable('korean_tickers', {
+    symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).primaryKey(),
+    koreanName: text('korean_name').notNull(),
+    name: text('name').notNull(),
+    exchange: varchar('exchange', { length: EXCHANGE_MAX_LENGTH }).notNull(),
+    exchangeFullName: text('exchange_full_name').notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow()
+        .$onUpdateFn(nowFn),
+});
+
+/** Korean–English asset name translations — keyed by ticker symbol. */
+export const assetTranslations = pgTable('asset_translations', {
+    symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).primaryKey(),
+    name: text('name').notNull(),
+    koreanName: text('korean_name').notNull(),
+    fmpSymbol: varchar('fmp_symbol', {
+        length: FMP_SYMBOL_MAX_LENGTH,
+    }).notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+        .notNull()
+        .defaultNow()
+        .$onUpdateFn(nowFn),
+});
+
+/** Contact form submissions from visitors. */
+export const inquiries = pgTable('inquiries', {
+    id: uuid('id').primaryKey().defaultRandom(),
+    title: text('title').notNull(),
+    content: text('content').notNull(),
+    email: varchar('email', { length: EMAIL_MAX_LENGTH }).notNull(),
+    answered: boolean('answered').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true })
+        .notNull()
+        .defaultNow(),
+});

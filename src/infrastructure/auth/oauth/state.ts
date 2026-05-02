@@ -1,7 +1,7 @@
 import { randomBytes, timingSafeEqual } from 'crypto';
 import type { SupportedOAuthProvider } from '@/domain/types';
-import type { ResponseCookie } from '../types';
-import { isSecureCookieEnv } from '../sessionCookieOptions';
+import type { ResponseCookie } from '@/infrastructure/auth/types';
+import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 
 /** OAuth state 쿠키 이름. */
 export const OAUTH_STATE_COOKIE_NAME = 'siglens_oauth_state';

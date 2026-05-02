@@ -3,7 +3,7 @@ import { CARD_LINK_CLASSES } from '@/lib/cardStyles';
 import { cn } from '@/lib/cn';
 import { formatPriceChange, formatUsdPrice } from '@/lib/priceFormat';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
-import { SignalBadge } from './SignalBadge';
+import { SignalBadge } from '@/components/dashboard/SignalBadge';
 
 interface SignalStockCardProps {
     data: StockWithConflict;

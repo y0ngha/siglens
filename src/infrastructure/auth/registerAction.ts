@@ -1,22 +1,22 @@
 'use server';
 
+import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 import {
-    DrizzleSessionRepository,
-    DrizzleUserRepository,
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
-    createEmailTokenStore,
-    loginUser,
-    registerUser,
-} from '@y0ngha/siglens-core';
+} from '@/infrastructure/auth/bcrypt';
+import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
+import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
+import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { SignupFormState } from '@/domain/auth/formTypes';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
-import { applyAuthCookie } from './applyAuthCookie';
-import { getAuthDatabaseClient } from './db';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from './errorMessages';
-import { isSecureCookieEnv } from './sessionCookieOptions';
+import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
+import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
+import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
