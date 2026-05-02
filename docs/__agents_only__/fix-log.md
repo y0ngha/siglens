@@ -139,3 +139,16 @@
 
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).
+
+## [Issue #402 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: localStorage key constant placed in domain/ layer
+- Rule: ARCHITECTURE.md — domain/ must contain only pure business logic; config/storage keys belong in lib/
+- Context: `LOCAL_STORAGE_PROVIDER_KEY` was initially created in `src/domain/llm/types.ts` but localStorage keys are UI/persistence configuration, not domain logic. Moved to `src/lib/storageKeys.ts`.
+
+- Violation: `as` cast without explanatory comment in production code
+- Rule: MISTAKES.md TypeScript rule 7 — every safe-cast `as` must have a comment explaining the guarantee
+- Context: `MODEL_SPECS[modelId as keyof typeof MODEL_SPECS]` in providerDefaults.ts and `(VALID_PROVIDERS as string[])` in useSelectedProvider.ts both lacked comments. Added inline comments.
+
+- Violation: Derived constant recreated every render without useMemo
+- Rule: MISTAKES.md rule 10 — derived constants from props must be wrapped in useMemo
+- Context: `resolvedModels` in ModelSelector.tsx was computed on every render; since handleKeyDown depended on it, useCallback provided no stabilization benefit. Wrapped with useMemo([allowedModels]).
