@@ -1,5 +1,7 @@
 'use client';
 
+import Image from 'next/image';
+
 const STEPS = [
     {
         step: 1,
@@ -65,10 +67,13 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
                                 <p className="mb-2 text-xs text-slate-400">
                                     {description}
                                 </p>
-                                <img
+                                <Image
                                     src={img}
                                     alt={`${step}단계 안내`}
+                                    width={300}
+                                    height={120}
                                     className="w-full rounded-lg"
+                                    unoptimized
                                 />
                             </div>
                         </div>
