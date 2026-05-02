@@ -1,10 +1,6 @@
 import { Redis } from '@upstash/redis';
 
-/**
- * Purpose tag used to namespace email-token Redis keys so that a password
- * reset token never collides with an email-verification token for the same
- * email address.
- */
+/** Purpose tag namespacing email-token Redis keys so password-reset and email-verification tokens for the same email never collide. */
 export type EmailTokenPurpose = 'password_reset' | 'email_verification';
 
 /** Email message payload passed to an {@link EmailDispatcher} implementation. */
@@ -19,17 +15,7 @@ export interface EmailMessage {
     text: string;
 }
 
-/**
- * Persisted Redis value for an email token.
- *
- * - `pending` — token has been issued but not yet verified. The hashed token is
- *   stored so that the verification step can compare a freshly hashed user
- *   input against {@link tokenHash} in constant time.
- * - `verified` — only used by the email-verification flow. Once the user has
- *   confirmed their code, the value is replaced with a `verified` marker so
- *   that a later registration call can confirm the email is owned without
- *   asking for the code again.
- */
+/** Persisted Redis value for an email token: 'pending' (token issued; tokenHash stored for constant-time compare on verify) or 'verified' (email-verification flow only; marker so later registration confirms ownership without re-prompting the code). */
 export type EmailTokenValue =
     | { status: 'pending'; tokenHash: string }
     | { status: 'verified' };

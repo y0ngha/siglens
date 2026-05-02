@@ -17,13 +17,7 @@ const EMPTY_USAGE_COUNTS: UsageCounts = {
 
 const UTC_DATE_LENGTH = 10;
 
-/**
- * Mirrors `toUtcDateString` in @y0ngha/siglens-core
- * (src/infrastructure/usage/hash.ts — `@internal`).
- * Duplicated because the helper is not part of core's public API surface.
- * If the core copy changes (date-string format, padding, etc.), update this
- * file to match.
- */
+// Mirrors toUtcDateString in @y0ngha/siglens-core infrastructure/usage/hash.ts (@internal). Update if date-string format changes.
 function toUtcDateString(date: Date): string {
     return date.toISOString().slice(0, UTC_DATE_LENGTH);
 }

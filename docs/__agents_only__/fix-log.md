@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #405 Round 4 | refactor/scope-realignment-phase-0 | 2026-05-02]
+- Violation: deleteAccount.ts revokeOAuthTokens가 명령형 forEach + void Promise로 fire-and-forget 처리
+- Rule: CONVENTIONS.md — 명령형 forEach 대신 선언형 map + Promise.allSettled 사용 (FP 일관성)
+- Context: forEach 내부 .catch로 개별 에러 흡수 + 외부 void Promise.allSettled로 묶어 동일한 fire-and-forget + 에러 개별 처리 동작 유지. 테스트 무수정 통과(883/101).
+
 ## [PR #405 Round 2 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Violation: domain/types.ts가 @/infrastructure/db/types에서 AuthUserRecord 타입을 re-export (역방향 레이어 의존)
 - Rule: ARCHITECTURE.md — domain은 infrastructure에 의존 금지 (단방향 infra → domain)
@@ -42,11 +47,6 @@
 - Violation: 새로 만든 파일이 git에 추가되지 않은 채 PR 푸시되어 빌드가 차단됨
 - Rule: PR_FIX_FLOW Step 1-7 — 픽스 적용 후 모든 신규 파일을 commit/push 전에 git add로 추적해야 함
 - Context: src/components/contact/utils/contactFormUtils.ts가 로컬 파일 시스템에는 존재했지만 git 인덱스에는 없어 ContactForm.tsx의 import가 원격 빌드에서 해결되지 않음. 같은 라운드에서 lib/contactErrorMessages.ts는 dead code로 남게 됨. git add로 추적 후 다음 커밋에 포함.
-
-## [Issue #369 PR-2 round 1 | feat/369/auth-social | 2026-04-28]
-- Violation: 멀티라인 JSDoc 주석 블록 (proxy.ts, infrastructure/auth/{db,getCurrentUser,applyAuthCookie,sessionCookieOptions}.ts)
-- Rule: CONVENTIONS.md — 함수당 단일 줄 주석만 허용
-- Context: 인증 어댑터 파일들이 2~4줄 JSDoc 블록으로 작성됨. 한 줄로 압축.
 
 
 ## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
@@ -156,12 +156,4 @@
 
 
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Violation: relative-path imports used instead of `@/` aliases across src/ tree (150 occurrences in 79 files)
-- Rule: MISTAKES.md 7.6 / Components 0.1 — all imports must use `@/` aliases
-- Context: Phase 0 refactor introduced many siblings/parent imports (`./constants`, `./types`, `./schema`, `./tokenEncryption`, etc.) in domain/, infrastructure/, components/, and tests. Replaced all 150 occurrences with `@/...` aliases via worktree-wide AST-aware substitution. The single remaining `'../../proxy'` import in `__tests__/proxy.test.ts` is unavoidable because `proxy.ts` lives outside `src/` and has no alias.
-
-- Violation: multi-line JSDoc comment blocks on functions/types
-- Rule: CLAUDE.md "no multi-line comment blocks — one short line max" / MISTAKES.md Docs 4
-- Context: 18 three-line JSDoc blocks were auto-condensed to single-line `/** ... */`. Additional reviewer-listed multi-content blocks in `tokenEncryption.ts` (5), `oauth/revoker.ts` (1), `db/constants.ts` (1) were manually consolidated into single-line form, joining content with semicolons.
-
 - Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).

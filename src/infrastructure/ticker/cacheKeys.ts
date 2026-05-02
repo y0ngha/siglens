@@ -15,11 +15,9 @@ export const ASSET_INFO_CACHE_TTL_WITHOUT_KOREAN =
 /** 한국어 보유: 완성된 데이터 → 1년 장기 보존 */
 export const ASSET_INFO_CACHE_TTL_WITH_KOREAN = SECONDS_PER_YEAR;
 
-// Originally lived in @y0ngha/siglens-core; relocated to siglens (Phase 4) and is now single-owner here.
 /** 한국어 이름 매핑: 장기 보존 (sync 스크립트로 주기 갱신) */
 export const KOREAN_NAMES_CACHE_TTL = SECONDS_PER_YEAR;
 
-// Originally lived in @y0ngha/siglens-core; relocated to siglens (Phase 4) and is now single-owner here.
 /** 한국어 티커 캐시 키 (전체 매핑 한 번에 보관). */
 export const KOREAN_TICKERS_CACHE_KEY = 'korean:tickers';
 

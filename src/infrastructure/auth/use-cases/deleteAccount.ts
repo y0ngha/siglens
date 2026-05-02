@@ -45,16 +45,21 @@ async function revokeOAuthTokens(
     const revocableAccounts: RevocableOAuthAccount[] =
         accounts.filter(hasAccessToken);
 
-    revocableAccounts.forEach(account => {
-        void dependencies.oauthRevoker
-            .revokeToken(account.provider, {
-                accessToken: account.accessToken,
-                refreshToken: account.refreshToken,
-            })
-            .catch(error => {
-                console.warn('[deleteAccount] OAuth revokeToken failed', error);
-            });
-    });
+    void Promise.allSettled(
+        revocableAccounts.map(account =>
+            dependencies.oauthRevoker
+                .revokeToken(account.provider, {
+                    accessToken: account.accessToken,
+                    refreshToken: account.refreshToken,
+                })
+                .catch(error => {
+                    console.warn(
+                        '[deleteAccount] OAuth revokeToken failed',
+                        error
+                    );
+                })
+        )
+    );
 }
 
 const USER_NOT_FOUND_MESSAGE = 'User account does not exist';

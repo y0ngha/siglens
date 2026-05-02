@@ -1,16 +1,5 @@
-/**
- * Deliberate duplicate of OAuth token encryption helpers from `@y0ngha/siglens-core`.
- *
- * Source files in the core repo:
- * - `src/infrastructure/db/tokenEncryption.ts` (`encryptToken`, `decryptToken`,
- *   `tryParseEncryptionKey`)
- * - `src/infrastructure/db/config.ts` (`tryReadEncryptionKey`)
- *
- * These helpers were not part of the core library's public API surface and could
- * not be imported from `@y0ngha/siglens-core`. Phase 6 of the scope-realignment
- * refactor moved the DB layer fully into siglens with this file as the deduped
- * source of truth.
- */
+// Deliberate duplicate of @y0ngha/siglens-core's pre-Phase-6 internal helpers (tokenEncryption.ts: encryptToken/decryptToken/tryParseEncryptionKey + db/config.ts tryReadEncryptionKey).
+// Core no longer ships these (not part of its public API); siglens owns the canonical copy here as of Phase 6 scope-realignment.
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 
 const ALGORITHM = 'aes-256-gcm';
