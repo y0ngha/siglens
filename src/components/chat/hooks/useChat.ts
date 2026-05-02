@@ -16,7 +16,7 @@ import type {
     ChatErrorCode,
     ChatLoadingPhase,
     ChatMessage,
-    ChatModel,
+    ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { chatAction } from '@/infrastructure/chat/chatAction';
@@ -47,9 +47,11 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
     model_not_allowed:
         '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
+    user_api_key_required:
+        '이 모델을 사용하려면 API 키를 등록해야 해요. 계정 설정에서 등록해주세요.',
 };
 
-function isValidChatModel(value: string): value is ChatModel {
+function isValidModelId(value: string): value is ModelId {
     return VALID_CHAT_MODELS.some(model => model === value);
 }
 
@@ -79,8 +81,8 @@ export interface UseChatReturn {
     remainingTokens: number | null;
     sendMessage: (text: string) => Promise<void>;
     dismissAnalysisUpdated: () => void;
-    selectedModel: ChatModel;
-    handleModelChange: (model: ChatModel) => void;
+    selectedModel: ModelId;
+    handleModelChange: (model: ModelId) => void;
 }
 
 export function useChat({
@@ -94,7 +96,7 @@ export function useChat({
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
-    const [selectedModel, setSelectedModel] = useState<ChatModel>(
+    const [selectedModel, setSelectedModel] = useState<ModelId>(
         GEMINI_2_5_FLASH_MODEL
     );
 
@@ -197,7 +199,7 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
-    const handleModelChange = useCallback((model: ChatModel) => {
+    const handleModelChange = useCallback((model: ModelId) => {
         setSelectedModel(model);
     }, []);
 
@@ -223,7 +225,7 @@ export function useChat({
         try {
             const stored = localStorage.getItem(MODEL_STORAGE_KEY);
             // VALID_CHAT_MODELS comes from siglens-core and is the runtime source of truth.
-            if (stored !== null && isValidChatModel(stored)) {
+            if (stored !== null && isValidModelId(stored)) {
                 startTransition(() => {
                     setSelectedModel(stored);
                 });
