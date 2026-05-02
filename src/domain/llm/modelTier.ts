@@ -3,8 +3,7 @@ import type { ModelId, LlmProvider } from '@y0ngha/siglens-core';
 
 /** Returns true if the model is in the free tier. Does not use getAllowedModels to avoid tier-restriction bypass. */
 export function isFreeChatModel(model: ModelId): boolean {
-    // Cast is safe: TierModel (ModelId) is a string union; includes() accepts only the union
-    // member type, so widening to string[] is required for the runtime string comparison.
+    // includes() requires string[], not readonly ModelId[] — widening is safe since TIER_CONFIG.models.free is always strings.
     return (TIER_CONFIG.models.free as readonly string[]).includes(model);
 }
 

@@ -4,4 +4,4 @@ export {
     isFreeChatModel,
     getRequiredProviderForModel,
 } from '@/domain/llm/modelTier';
-export type { ApiKeyActionState, RegisteredProvider } from '@/domain/llm/types';
+export type { ApiKeyActionState, GateMode, RegisteredProvider } from '@/domain/llm/types';

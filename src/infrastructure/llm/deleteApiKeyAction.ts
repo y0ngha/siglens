@@ -3,10 +3,9 @@
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
-import { isLlmProvider } from '@/domain/llm';
+import { isLlmProvider, type ApiKeyActionState } from '@/domain/llm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import type { ApiKeyActionState } from '@/domain/llm';
 
 export async function deleteApiKeyAction(
     _prevState: ApiKeyActionState,
@@ -17,8 +16,8 @@ export async function deleteApiKeyAction(
         redirect('/login?next=/account');
     }
 
-    const rawProvider = formData.get('provider') as string;
-    if (!isLlmProvider(rawProvider)) {
+    const rawProvider = formData.get('provider');
+    if (typeof rawProvider !== 'string' || !isLlmProvider(rawProvider)) {
         return { status: 'error', message: '유효하지 않은 프로바이더입니다.' };
     }
 

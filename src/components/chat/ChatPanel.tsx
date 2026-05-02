@@ -9,8 +9,7 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { isFreeChatModel } from '@/domain/llm';
-import type { LlmProvider } from '@/domain/llm';
+import { isFreeChatModel, type LlmProvider } from '@/domain/llm';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
@@ -352,7 +351,7 @@ export function ChatPanel({
                                                 </div>
                                             </div>
                                             {!isFreeChatModel(option.id) && (
-                                                <span className="text-[9px] leading-none font-semibold text-amber-400 uppercase">
+                                                <span className="text-[9px] leading-none font-semibold text-ui-warning uppercase">
                                                     PRO
                                                 </span>
                                             )}

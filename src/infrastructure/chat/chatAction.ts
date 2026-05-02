@@ -11,10 +11,7 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { isFreeChatModel, getRequiredProviderForModel } from '@/domain/llm';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { getDatabaseClient } from '@/infrastructure/db/client';
-import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
+import { isFreeChatModel } from '@/domain/llm';
 import { headers } from 'next/headers';
 import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 
@@ -38,23 +35,10 @@ export async function chatAction(
         return { ok: false, error: 'server_error' };
     }
 
+    // Server-side guard: BYOK call adapter is implemented in a follow-up issue.
+    // Until then, premium model requests are rejected here even if the UI gate was bypassed.
     if (!isFreeChatModel(model)) {
-        const user = await getCurrentUser();
-        if (user === null) {
-            return { ok: false, error: 'model_not_allowed' };
-        }
-        const requiredProvider = getRequiredProviderForModel(model);
-        const { db } = getDatabaseClient();
-        const repo = new DrizzleUserApiKeyRepository(db);
-        const keyRecord = await repo.findByUserAndProvider(
-            user.id,
-            requiredProvider
-        );
-        if (keyRecord === null) {
-            return { ok: false, error: 'user_api_key_required' };
-        }
-        // User has a registered key. Actual BYOK call adapter is implemented in a follow-up issue;
-        // the request proceeds with the system Gemini key as an interim fallback.
+        return { ok: false, error: 'model_not_allowed' };
     }
 
     try {

@@ -19,12 +19,17 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { isFreeChatModel, getRequiredProviderForModel } from '@/domain/llm';
-import type { LlmProvider } from '@/domain/llm';
+import {
+    isFreeChatModel,
+    getRequiredProviderForModel,
+    type GateMode,
+    type LlmProvider,
+} from '@/domain/llm';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
+import { QUERY_KEYS } from '@/lib/queryConfig';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -78,6 +83,11 @@ export interface UseChatOptions {
     isAnalysisReady: boolean;
 }
 
+export interface GateModalState {
+    mode: GateMode;
+    provider: LlmProvider;
+}
+
 export interface UseChatReturn {
     messages: ChatMessage[];
     loadingPhase: ChatLoadingPhase | null;
@@ -87,7 +97,7 @@ export interface UseChatReturn {
     dismissAnalysisUpdated: () => void;
     selectedModel: ModelId;
     handleModelChange: (model: ModelId) => void;
-    gateModal: { mode: 'auth' | 'byok'; provider: LlmProvider } | null;
+    gateModal: GateModalState | null;
     dismissGate: () => void;
 }
 
@@ -105,10 +115,7 @@ export function useChat({
     const [selectedModel, setSelectedModel] = useState<ModelId>(
         GEMINI_2_5_FLASH_MODEL
     );
-    const [gateModal, setGateModal] = useState<{
-        mode: 'auth' | 'byok';
-        provider: LlmProvider;
-    } | null>(null);
+    const [gateModal, setGateModal] = useState<GateModalState | null>(null);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -131,21 +138,21 @@ export function useChat({
 
     const queryClient = useQueryClient();
     const { data: remainingTokensData } = useQuery({
-        queryKey: ['chat', 'remaining-tokens'],
+        queryKey: QUERY_KEYS.remainingTokens(),
         queryFn: getRemainingTokensAction,
         staleTime: 0,
     });
 
     const { data: currentUser } = useQuery({
-        queryKey: ['auth', 'current-user'],
+        queryKey: QUERY_KEYS.currentUser(),
         queryFn: currentUserAction,
-        staleTime: 5 * 60 * 1000, // 5 minutes
+        staleTime: 5 * 60 * 1000,
     });
 
     const { data: registeredProviders = [] } = useQuery({
-        queryKey: ['llm', 'registered-providers'],
+        queryKey: QUERY_KEYS.registeredProviders(),
         queryFn: getRegisteredProvidersAction,
-        staleTime: 60 * 1000, // 1 minute
+        staleTime: 60 * 1000,
     });
 
     const { mutateAsync } = useMutation({

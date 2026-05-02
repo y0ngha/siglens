@@ -3,9 +3,10 @@
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/cn';
+import type { GateMode } from '@/domain/llm';
 
 interface PremiumModelGateModalProps {
-    mode: 'auth' | 'byok';
+    mode: GateMode;
     providerLabel?: string;
     symbol?: string;
     onClose: () => void;
