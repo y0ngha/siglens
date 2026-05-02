@@ -1,4 +1,4 @@
-import type { OAuthProvider } from '@y0ngha/siglens-core';
+import type { OAuthProvider } from '@/domain/types';
 import type {
     AuthSessionRecord,
     AuthUserRecord,

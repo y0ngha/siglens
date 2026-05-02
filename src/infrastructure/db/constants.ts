@@ -1,8 +1,5 @@
-import type {
-    OAuthProvider,
-    Tier,
-    UsageActionType,
-} from '@y0ngha/siglens-core';
+import type { Tier, UsageActionType } from '@y0ngha/siglens-core';
+import type { OAuthProvider } from '@/domain/types';
 import { LLM_PROVIDER_VALUES } from '@/domain/llm';
 
 export { LLM_PROVIDER_VALUES };

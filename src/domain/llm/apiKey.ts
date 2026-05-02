@@ -1,5 +1,4 @@
-import type { LlmProvider } from '@y0ngha/siglens-core';
-import { LLM_PROVIDER_VALUES } from '@/domain/llm/constants';
+import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/domain/llm/constants';
 
 /** Trim a raw LLM API key string; returns `null` when the trimmed value is empty so callers can treat missing and blank uniformly. */
 export function normalizeLlmApiKey(apiKey: string): string | null {

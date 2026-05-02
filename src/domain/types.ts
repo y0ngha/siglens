@@ -1,5 +1,8 @@
+/** All OAuth providers known to the system (including those reserved but not yet active in the UI). */
+export type OAuthProvider = 'google' | 'kakao' | 'apple';
+
 /** siglens 앱에서 현재 활성화된 OAuth provider. */
-export type SupportedOAuthProvider = 'google' | 'kakao';
+export type SupportedOAuthProvider = Extract<OAuthProvider, 'google' | 'kakao'>;
 
 /** Common ticker fields shared by listing/search results. */
 export interface TickerBase {
