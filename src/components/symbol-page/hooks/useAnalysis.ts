@@ -333,7 +333,6 @@ export function useAnalysis({
         });
     }, [timeframeChangeCount, reset, mutate]);
 
-    // 모델 변경 시 진행 중인 워커 작업을 취소하고 새 분석을 자동 실행한다.
     useEffect(() => {
         if (modelId === prevModelIdRef.current) return;
         prevModelIdRef.current = modelId;

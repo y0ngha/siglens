@@ -76,45 +76,36 @@ export function ModelSelector({
             if (nonLockedProviders.length === 0) return;
 
             const currentIndex = nonLockedProviders.indexOf(selectedProvider);
-            let nextProvider: AIProvider | undefined;
-
-            switch (event.key) {
-                case 'ArrowRight': {
-                    event.preventDefault();
-                    const nextIdx =
-                        (currentIndex + 1) % nonLockedProviders.length;
-                    nextProvider = nonLockedProviders[nextIdx];
-                    break;
+            const len = nonLockedProviders.length;
+            const nextProvider = (() => {
+                switch (event.key) {
+                    case 'ArrowRight': {
+                        event.preventDefault();
+                        return nonLockedProviders[(currentIndex + 1) % len];
+                    }
+                    case 'ArrowLeft': {
+                        event.preventDefault();
+                        return nonLockedProviders[
+                            (currentIndex - 1 + len) % len
+                        ];
+                    }
+                    case 'Home': {
+                        event.preventDefault();
+                        return nonLockedProviders[0];
+                    }
+                    case 'End': {
+                        event.preventDefault();
+                        return nonLockedProviders[len - 1];
+                    }
+                    case ' ':
+                    case 'Enter': {
+                        event.preventDefault();
+                        return undefined;
+                    }
+                    default:
+                        return undefined;
                 }
-                case 'ArrowLeft': {
-                    event.preventDefault();
-                    const prevIdx =
-                        (currentIndex - 1 + nonLockedProviders.length) %
-                        nonLockedProviders.length;
-                    nextProvider = nonLockedProviders[prevIdx];
-                    break;
-                }
-                case 'Home': {
-                    event.preventDefault();
-                    nextProvider = nonLockedProviders[0];
-                    break;
-                }
-                case 'End': {
-                    event.preventDefault();
-                    nextProvider =
-                        nonLockedProviders[nonLockedProviders.length - 1];
-                    break;
-                }
-                case ' ':
-                case 'Enter': {
-                    event.preventDefault();
-                    // Space/Enter selects the currently focused option
-                    // (already selected, no-op needed — focus is handled via tabIndex)
-                    return;
-                }
-                default:
-                    return;
-            }
+            })();
 
             if (nextProvider !== undefined) {
                 onProviderChange(nextProvider);
@@ -241,12 +232,7 @@ export function ModelSelector({
     );
 }
 
-/**
- * Extracts a short display variant string from a ModelId.
- * e.g. "claude-sonnet-4-6" → "Sonnet 4.6"
- *      "gemini-2.5-pro"    → "2.5 Pro"
- *      "gpt-5.5"           → "5.5"
- */
+// ModelId → 짧은 표시 문자열 변환 (e.g. "claude-sonnet-4-6" → "Sonnet 4.6")
 function formatModelVariant(modelId: ModelId): string {
     // claude-* → extract after "claude-"
     const claudeMatch = /^claude-(.+)$/.exec(modelId);

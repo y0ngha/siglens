@@ -124,7 +124,8 @@ export function ChartContent({
 
     const [selectedProvider, setSelectedProvider] = useSelectedProvider();
 
-    const allowedModels = useMemo(() => getAllowedModels('free'), []);
+    const DEFAULT_TIER = 'free' as const;
+    const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);
 
     const modelId = useMemo(
         () =>
