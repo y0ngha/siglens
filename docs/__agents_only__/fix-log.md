@@ -9,10 +9,6 @@
 - Rule: MISTAKES.md #0 — 컴포넌트 render 외부 함수는 반환 타입 명시 필요
 - Context: `: void` 반환 타입 추가.
 
-- Violation: SaveApiKeyState, DeleteApiKeyState가 ApiKeyActionState의 의미 없는 alias
-- Rule: MISTAKES.md Coding Paradigm 1 — 새 타입 작성 전 기존 타입 확인; 동일 구조의 alias는 불필요한 indirection 추가
-- Context: alias 제거, 호출측 모두 ApiKeyActionState 직접 사용.
-
 - Violation: ApiKeySection.tsx, PremiumModelGateModal.tsx에서 raw Tailwind color(emerald-*, amber-*) 직접 사용
 - Rule: MISTAKES.md Design rule 0.5 — 모든 색상은 globals.css에 등록된 semantic token(ui-success, ui-warning, ui-danger) 사용
 - Context: text-emerald-*/bg-emerald-*/ring-emerald-* → ui-success 토큰, text-amber-* → ui-warning 토큰으로 교체.
@@ -84,11 +80,6 @@
 - Violation: infrastructure Server Action에서 네트워크 응답 없이 무한 대기 가능
 - Rule: MISTAKES.md Fire-and-Forget #1 — fetch 기반 외부 호출에는 반드시 타임아웃 설정
 - Context: ResendEmailDispatcher.sendEmail이 AbortSignal 없이 Resend SDK를 호출해 네트워크 지연 시 Server Action이 무기한 블로킹. AbortSignal.timeout + Promise.race 패턴으로 10초 타임아웃 추가.
-
-## [PR #395 Round 5 | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: 동일 중간 타입 별칭 3개가 LocalInfraErrorCode와 동일한 값으로 중복 선언
-- Rule: CLAUDE.md — 작업 범위를 벗어나는 불필요한 추상화 추가 금지; 독립적 확장 계획이 없는 타입 별칭은 중복
-- Context: formTypes.ts에서 SignupLocalErrorCode / ResetPasswordLocalErrorCode / VerifyEmailLocalErrorCode가 모두 LocalInfraErrorCode와 동일. LocalInfraErrorCode를 export로 승격하고 중간 별칭 3개를 제거하여 인터페이스에서 직접 참조.
 
 ## [PR #395 Round 4 | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: code 단계에서 동일한 codeState.error.message가 AuthErrorAlert와 AuthFieldGroup.error prop 두 곳에 동시 표시

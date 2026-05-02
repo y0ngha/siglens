@@ -3,7 +3,9 @@
 import { useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/domain/llm';
+import type { ApiKeyActionState } from '@/domain/llm';
 import { useApiKeyForms } from '@/components/account/hooks/useApiKeyForms';
+import { cn } from '@/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
 
 const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
@@ -12,19 +14,50 @@ const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
     openai: 'sk-...',
 };
 
+interface StatusMessageProps {
+    id: string;
+    state: ApiKeyActionState;
+    className?: string;
+}
+
+function StatusMessage({ id, state, className }: StatusMessageProps) {
+    return (
+        <div
+            id={id}
+            role="status"
+            aria-live="polite"
+            className={cn('min-h-[1.25rem] text-sm', className)}
+        >
+            {state.status === 'success' && (
+                <span className="text-ui-success">{state.message}</span>
+            )}
+            {state.status === 'error' && (
+                <span className="text-ui-danger">{state.message}</span>
+            )}
+        </div>
+    );
+}
+
 interface SubmitButtonProps {
     label: string;
     pendingLabel: string;
     className: string;
+    'aria-describedby'?: string;
 }
 
-function SubmitButton({ label, pendingLabel, className }: SubmitButtonProps) {
+function SubmitButton({
+    label,
+    pendingLabel,
+    className,
+    'aria-describedby': ariaDescribedby,
+}: SubmitButtonProps) {
     const { pending } = useFormStatus();
     return (
         <button
             type="submit"
             disabled={pending}
             aria-busy={pending}
+            aria-describedby={ariaDescribedby}
             className={className}
         >
             {pending ? pendingLabel : label}
@@ -119,19 +152,11 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                 </form>
             )}
 
-            <div
+            <StatusMessage
                 id={saveStatusId}
-                role="status"
-                aria-live="polite"
-                className="mt-1.5 min-h-[1.25rem] text-sm"
-            >
-                {saveState.status === 'success' && (
-                    <span className="text-ui-success">{saveState.message}</span>
-                )}
-                {saveState.status === 'error' && (
-                    <span className="text-ui-danger">{saveState.message}</span>
-                )}
-            </div>
+                state={saveState}
+                className="mt-1.5"
+            />
 
             {isRegistered && (
                 <>
@@ -140,26 +165,15 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                         <SubmitButton
                             label="삭제"
                             pendingLabel="삭제 중…"
+                            aria-describedby={deleteStatusId}
                             className="text-ui-danger border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
                         />
                     </form>
-                    <div
+                    <StatusMessage
                         id={deleteStatusId}
-                        role="status"
-                        aria-live="polite"
-                        className="mt-1 min-h-[1.25rem] text-sm"
-                    >
-                        {deleteState.status === 'success' && (
-                            <span className="text-ui-success">
-                                {deleteState.message}
-                            </span>
-                        )}
-                        {deleteState.status === 'error' && (
-                            <span className="text-ui-danger">
-                                {deleteState.message}
-                            </span>
-                        )}
-                    </div>
+                        state={deleteState}
+                        className="mt-1"
+                    />
                 </>
             )}
         </div>

@@ -199,6 +199,7 @@ export function useChat({
                     result.remainingTokens
                 );
             } else if (result.error === 'user_api_key_required') {
+                // TODO(byok-adapter): chatAction이 BYOK 어댑터 구현 후 이 분기가 실행됩니다
                 setGateModal({
                     mode: 'byok',
                     provider: getProviderForModel(selectedModel),

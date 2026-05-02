@@ -14,7 +14,7 @@ import { cn } from '@/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
-import { PremiumModelGateModal } from '@/components/account/PremiumModelGateModal';
+import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
 
 interface ChatModelOption {
     id: ModelId;
