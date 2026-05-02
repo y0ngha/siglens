@@ -151,7 +151,7 @@ export function ChatPanel({
         : '질문을 입력하세요… (Enter로 전송)';
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col overflow-hidden rounded-xl">
             {/* 헤더 */}
             <div className="border-secondary-700 flex items-center justify-between border-b px-3 py-2">
                 <span className="text-secondary-300 text-xs font-semibold">
