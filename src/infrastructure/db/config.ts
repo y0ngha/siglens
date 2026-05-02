@@ -1,10 +1,6 @@
 import type { DatabaseConfig } from './types';
 
-/**
- * Reads `DATABASE_URL` from the environment and returns a `DatabaseConfig`.
- * @returns A `DatabaseConfig` containing the resolved `databaseUrl`.
- * @throws {Error} When `DATABASE_URL` is not set.
- */
+/** Read `DATABASE_URL` from the environment and return a `DatabaseConfig`; throws when the variable is unset. */
 export function readDatabaseConfig(): DatabaseConfig {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) {
@@ -13,10 +9,7 @@ export function readDatabaseConfig(): DatabaseConfig {
     return { databaseUrl };
 }
 
-/**
- * Reads `DATABASE_URL` from the environment.
- * @returns A `DatabaseConfig` when the variable is set, or `null` when absent.
- */
+/** Read `DATABASE_URL` from the environment; returns `null` when the variable is absent. */
 export function tryReadDatabaseConfig(): DatabaseConfig | null {
     const databaseUrl = process.env.DATABASE_URL;
     if (!databaseUrl) return null;

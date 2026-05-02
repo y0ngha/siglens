@@ -19,9 +19,9 @@ interface ChatModelOption {
     fullName: string;
 }
 
-const MODEL_DISPLAY_MAP: Partial<
-    Record<ChatModel, { label: string; fullName: string }>
-> = {
+type ChatModelDisplay = Pick<ChatModelOption, 'label' | 'fullName'>;
+
+const MODEL_DISPLAY_MAP: Partial<Record<ChatModel, ChatModelDisplay>> = {
     'gemini-2.5-flash': { label: 'Flash', fullName: 'Gemini 2.5 Flash' },
     'gemini-2.5-flash-lite': {
         label: 'Flash Lite',
@@ -30,7 +30,7 @@ const MODEL_DISPLAY_MAP: Partial<
     'gemini-2.5-pro': { label: 'Pro', fullName: 'Gemini 2.5 Pro' },
 };
 
-function getModelDisplay(id: ChatModel): { label: string; fullName: string } {
+function getModelDisplay(id: ChatModel): ChatModelDisplay {
     return MODEL_DISPLAY_MAP[id] ?? { label: id, fullName: id };
 }
 

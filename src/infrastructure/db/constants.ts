@@ -1,9 +1,11 @@
 import type {
-    LlmProvider,
     OAuthProvider,
     Tier,
     UsageActionType,
 } from '@y0ngha/siglens-core';
+import { LLM_PROVIDER_VALUES } from '@/domain/llm';
+
+export { LLM_PROVIDER_VALUES };
 
 /**
  * Database enum values for the user `tier` column. Mirrors the
@@ -15,13 +17,6 @@ export const USER_TIER_VALUES = [
     'member',
     'pro',
 ] as const satisfies readonly Tier[];
-
-/** Database enum values for the user API key `provider` column. */
-export const LLM_PROVIDER_VALUES = [
-    'anthropic',
-    'google',
-    'openai',
-] as const satisfies readonly LlmProvider[];
 
 /** All valid usage action type values tracked in usage logs. */
 export const USAGE_ACTION_TYPE_VALUES = [

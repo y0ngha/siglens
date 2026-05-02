@@ -67,6 +67,8 @@ export type {
     VerifyEmailFormState,
 } from './auth/formTypes';
 
+export type { AuthUserRecord } from '@/infrastructure/db/types';
+
 export type ContactFormField = 'title' | 'email' | 'content';
 
 export type ContactFormErrorCode =

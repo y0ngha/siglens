@@ -1,7 +1,7 @@
 'use client';
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import type { AuthUserRecord } from '@/infrastructure/db/types';
+import type { AuthUserRecord } from '@/domain/types';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
 import {
     QUERY_GC_TIME_MS,

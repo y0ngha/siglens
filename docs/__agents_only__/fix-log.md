@@ -1,5 +1,30 @@
 # Fix Log
 
+## [PR #405 | refactor/scope-realignment-phase-0 | 2026-05-02]
+- Violation: components/hooks/useCurrentUser.ts가 @/infrastructure/db/types에서 AuthUserRecord 타입을 직접 import
+- Rule: ARCHITECTURE.md — hooks/*.ts의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
+- Context: 인증된 현재 유저 조회 훅이 인프라 레이어 타입에 직접 의존. AuthUserRecord를 @/domain/types에서 재노출하고 hook을 @/domain/types 경로로 변경.
+
+- Violation: createAuthSession이 인라인 객체 리터럴을 반환 타입으로 사용
+- Rule: CONVENTIONS.md TypeScript Rules — 함수 반환 타입은 익명 객체 리터럴 대신 명명된 인터페이스로 선언
+- Context: src/infrastructure/auth/sessionCookie.ts의 createAuthSession이 `Promise<{ session, cookie }>`를 사용. CreateAuthSessionResult 인터페이스를 추출.
+
+- Violation: ChatPanel.tsx의 getModelDisplay가 인라인 객체 반환 타입 선언
+- Rule: CONVENTIONS.md TypeScript Rules — 인라인 객체 리터럴 대신 명명된 타입 사용 (기존 ChatModelOption에서 Pick으로 파생 가능)
+- Context: 동일 파일 내 ChatModelOption 인터페이스가 이미 동일 형태를 보유. `Pick<ChatModelOption, 'label' | 'fullName'>` 별칭으로 교체.
+
+- Violation: LLM_PROVIDER_VALUES 상수가 src/domain/llm/constants.ts와 src/infrastructure/db/constants.ts 양쪽에 동일하게 정의
+- Rule: ARCHITECTURE.md — infrastructure는 domain에서 import 가능; 동일 상수 중복 정의 금지
+- Context: infra DB 상수가 domain의 단일 진실 공급원을 우회. infrastructure 측 정의를 제거하고 @/domain/llm에서 import 후 재노출.
+
+- Violation: drizzle/0004_add_oauth_token_columns.sql가 _journal.json에 등재되지 않은 채 0006_striped_marauders.sql과 SQL이 완전 중복
+- Rule: drizzle 마이그레이션은 _journal.json 등재 순서로 적용되며, 등재되지 않은 파일은 dead-code이자 drizzle-kit migrate 시 0006에서 컬럼 중복 오류 유발
+- Context: orphan SQL 파일을 git rm으로 삭제. _journal.json은 변경 없음.
+
+- Violation: drizzle/0004_petite_medusa.sql이 email_verified DEFAULT true로 추가되어 0005에서 false로 되돌리기 전 가입한 사용자들이 자동 검증 처리됨
+- Rule: 운영 DB에 이미 적용된 마이그레이션은 사후 편집 금지 — 보정이 필요하면 새 forward migration 추가
+- Context: 두 마이그레이션 모두 _journal에 등재되어 적용된 상태. 0004를 retroactive 수정하지 않고 0005에 사후 보존 사유와 향후 처리 가이드를 SQL 주석으로 명시.
+
 ## [PR #403 Round 5 | feat/398/contact-us-form | 2026-05-02]
 - Violation: 새로 만든 파일이 git에 추가되지 않은 채 PR 푸시되어 빌드가 차단됨
 - Rule: PR_FIX_FLOW Step 1-7 — 픽스 적용 후 모든 신규 파일을 commit/push 전에 git add로 추적해야 함
@@ -84,16 +109,8 @@
 - Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
 - Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
 
-## [PR #403 Round 4 | feat/398/contact-us-form | 2026-05-01]
-- Violation: 컴포넌트 파일에서 같은 디렉터리 컴포넌트를 상대 경로('./')로 import
-- Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지, 경로 별칭(@/) 사용 필수
-- Context: ContactForm.tsx가 ContactSubmittedNotice, ContactTextField, ContactTextareaField를 './' 상대 경로로 import. @/components/contact/... 로 변경.
 
 ## [PR #403 Round 3 | feat/398/contact-us-form | 2026-05-01]
-- Violation: domain/ 함수에서 상대 경로 import 사용
-- Rule: CONVENTIONS.md Import Path Rules — 상대 경로 금지, 경로 별칭(@/) 사용 필수
-- Context: domain/contact/validation.ts가 './constants', './formTypes' 상대 경로로 import. @/domain/contact/constants, @/domain/types로 변경.
-
 - Violation: hook 파일에서 @/domain/types가 아닌 도메인 서브모듈에서 타입 import
 - Rule: ARCHITECTURE.md — hook 파일(hooks/*.ts)의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
 - Context: useContactForm.ts가 @/domain/contact/formTypes에서 ContactFormState를 import. formTypes의 모든 타입을 domain/types.ts로 이동 후 @/domain/types로 수정.

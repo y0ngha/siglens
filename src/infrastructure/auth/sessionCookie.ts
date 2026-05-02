@@ -63,6 +63,12 @@ export function createExpiredSessionCookie(params?: {
     });
 }
 
+/** Result of {@link createAuthSession}: the persisted session record paired with its outgoing cookie. */
+export interface CreateAuthSessionResult {
+    session: AuthSessionRecord;
+    cookie: AuthSessionCookie;
+}
+
 /** @internal Shared session + cookie creation helper used by login use-cases. */
 export async function createAuthSession(params: {
     userId: string;
@@ -73,7 +79,7 @@ export async function createAuthSession(params: {
     secureCookie?: boolean;
     sameSite?: AuthSessionCookie['sameSite'];
     path?: string;
-}): Promise<{ session: AuthSessionRecord; cookie: AuthSessionCookie }> {
+}): Promise<CreateAuthSessionResult> {
     const sessionTtlSeconds =
         params.sessionTtlSeconds ?? DEFAULT_SESSION_TTL_SECONDS;
     const expiresAt = addSeconds(params.now, sessionTtlSeconds);

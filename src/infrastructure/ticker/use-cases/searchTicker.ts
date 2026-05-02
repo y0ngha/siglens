@@ -58,19 +58,7 @@ async function translateAndCache(
     await setKoreanTickers(entries);
 }
 
-/**
- * Search for tickers by symbol or company name, with bilingual support.
- *
- * Behaviour depends on the input language detected by {@link isKoreanInput}:
- * - **Korean input**: searched against the persistent Korean-name store.
- * - **English / symbol input**: cache lookup → FMP `searchBySymbol` +
- *   `searchByName` in parallel → filter to U.S. exchanges → deduplicate.
- *   Korean names are joined from the persistent store; symbols without a
- *   translation trigger a background translation job.
- *
- * Cache and background-translation failures are logged but never propagate.
- * Results are capped at 10 entries.
- */
+/** Search for tickers by symbol or company name with bilingual support; Korean queries hit the Korean-name store, others hit FMP via cache with background translation enrichment (capped at 10 entries). */
 export async function searchTicker(
     query: string,
     options?: BackgroundTaskOptions

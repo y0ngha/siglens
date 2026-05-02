@@ -128,13 +128,7 @@ async function translateAndPersist(
     );
 }
 
-/**
- * Resolve canonical asset information for a single ticker symbol.
- *
- * Pipeline: validate format → cache → asset_translations DB → FMP search →
- * Korean-name join (or background translation). Cache, DB, and translation
- * failures are logged but never propagate.
- */
+/** Resolve canonical asset information for a single ticker symbol via cache → DB → FMP, with optional background Korean-name translation. */
 export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
     const upper = symbol.toUpperCase();
     if (!isValidTickerFormat(upper)) return null;

@@ -103,6 +103,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ const CARD_CLASSES = cn('px-4 py-2', 'bg-white', 'border border-gray-200')
    → cn() enables proper class merging, conflict detection, and IDE support
 
+7.6. Relative import paths used instead of path aliases
+   → All imports must use path aliases (@/, @y0ngha/...) instead of relative paths (./, ../)
+   → Relative paths create brittle dependencies when files move and make refactoring difficult
+   → Path aliases are statically resolvable and enable IDE support
+   ❌ import { Component } from './'
+   ❌ import { util } from '../../../utils/someUtil'
+   ❌ import { type } from './types'
+   ✅ import { Component } from '@/components/contact'
+   ✅ import { util } from '@/utils/someUtil'
+   ✅ import { type } from '@/domain/types'
+
 8. Tight coupling between interface props and dependent files
    → Group related prop pairs into a single type (e.g. IndicatorToggleGroup { visible, onToggle })
 
