@@ -9,19 +9,17 @@ import {
 import {
     GEMINI_2_5_FLASH_MODEL,
     VALID_CHAT_MODELS,
-    TIER_CONFIG,
     getProviderForModel,
+    type AnalysisResponse,
+    type ChatActionResult,
+    type ChatErrorCode,
+    type ChatLoadingPhase,
+    type ChatMessage,
+    type ModelId,
+    type Timeframe,
+    type LlmProvider,
 } from '@y0ngha/siglens-core';
-import type {
-    AnalysisResponse,
-    ChatActionResult,
-    ChatErrorCode,
-    ChatLoadingPhase,
-    ChatMessage,
-    ModelId,
-    Timeframe,
-    LlmProvider,
-} from '@y0ngha/siglens-core';
+import { isFreeChatModel } from '@/domain/llm';
 import type { GateMode } from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
@@ -56,7 +54,7 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
         '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
     // TODO(byok-adapter): BYOK 어댑터 구현 후 chatAction에서 이 코드가 반환됩니다
     user_api_key_required:
-        '이 모델을 사용하려면 API 키를 등록해야 해요. 계정 설정에서 등록해주세요.',
+        '이 모델을 사용하려면 해당 공급사의 API 키를 먼저 등록해야 합니다.',
 };
 
 function isValidChatModel(value: string): value is ModelId {
@@ -229,9 +227,7 @@ export function useChat({
 
     const handleModelChange = useCallback(
         (model: ModelId): void => {
-            if (
-                !(TIER_CONFIG.models.free as readonly string[]).includes(model)
-            ) {
+            if (!isFreeChatModel(model)) {
                 const requiredProvider = getProviderForModel(model);
                 if (!currentUser) {
                     setGateModal({ mode: 'auth', provider: requiredProvider });

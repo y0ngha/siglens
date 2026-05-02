@@ -9,8 +9,9 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { isFreeChatModel, type LlmProvider } from '@/domain/llm';
+import { isFreeChatModel } from '@/domain/llm';
 import { cn } from '@/lib/cn';
+import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
 import { PremiumModelGateModal } from '@/components/account/PremiumModelGateModal';
@@ -45,12 +46,6 @@ const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ChatModelDisplay>> = {
     'gpt-5-mini': { label: 'GPT-5 Mini', fullName: 'GPT-5 Mini' },
     'gpt-5.4': { label: 'GPT-5.4', fullName: 'GPT-5.4' },
     'gpt-5.5': { label: 'GPT-5.5', fullName: 'GPT-5.5' },
-};
-
-const PROVIDER_LABEL: Record<LlmProvider, string> = {
-    anthropic: 'Anthropic',
-    google: 'Google',
-    openai: 'OpenAI',
 };
 
 function getModelDisplay(id: ModelId): ChatModelDisplay {
@@ -403,7 +398,7 @@ export function ChatPanel({
             {gateModal !== null && (
                 <PremiumModelGateModal
                     mode={gateModal.mode}
-                    providerLabel={PROVIDER_LABEL[gateModal.provider]}
+                    providerLabel={LLM_PROVIDER_LABELS[gateModal.provider]}
                     symbol={symbol}
                     onClose={dismissGate}
                 />

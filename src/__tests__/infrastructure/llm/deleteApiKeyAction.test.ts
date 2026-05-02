@@ -56,6 +56,17 @@ describe('deleteApiKeyAction', () => {
         expect(mockRedirect).toHaveBeenCalledWith('/login?next=/account');
     });
 
+    it('provider 필드가 없을 때 status: error를 반환한다', async () => {
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+
+        const result = await deleteApiKeyAction(IDLE_STATE, makeFormData({}));
+
+        expect(result.status).toBe('error');
+    });
+
     it('유효하지 않은 provider일 때 status: error를 반환한다', async () => {
         mockGetCurrentUser.mockResolvedValue({
             id: 'user-1',

@@ -62,6 +62,34 @@ describe('saveApiKeyAction', () => {
         expect(mockRedirect).toHaveBeenCalledWith('/login?next=/account');
     });
 
+    it('provider 필드가 없을 때 status: error를 반환한다', async () => {
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+
+        const result = await saveApiKeyAction(
+            IDLE_STATE,
+            makeFormData({ apiKey: 'sk-ant-test' })
+        );
+
+        expect(result.status).toBe('error');
+    });
+
+    it('apiKey 필드가 없을 때 status: error를 반환한다', async () => {
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+
+        const result = await saveApiKeyAction(
+            IDLE_STATE,
+            makeFormData({ provider: 'anthropic' })
+        );
+
+        expect(result.status).toBe('error');
+    });
+
     it('provider가 유효하지 않을 때 status: error를 반환한다', async () => {
         mockGetCurrentUser.mockResolvedValue({
             id: 'user-1',

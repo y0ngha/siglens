@@ -17,8 +17,6 @@ export interface ApiKeyFormsReturn {
 }
 
 export function useApiKeyForms(): ApiKeyFormsReturn {
-    const queryClient = useQueryClient();
-
     const [saveState, saveFormAction] = useActionState<
         ApiKeyActionState,
         FormData
@@ -27,6 +25,8 @@ export function useApiKeyForms(): ApiKeyFormsReturn {
         ApiKeyActionState,
         FormData
     >(deleteApiKeyAction, INITIAL_STATE);
+
+    const queryClient = useQueryClient();
 
     useEffect(() => {
         if (
