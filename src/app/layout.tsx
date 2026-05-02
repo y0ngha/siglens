@@ -5,6 +5,7 @@ import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Header } from '@/components/layout/Header';
 import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
+import { PwaBanner } from '@/components/pwa/PwaBanner';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import { ADSENSE_ENABLED } from '@/lib/adsense';
 import {
@@ -105,6 +106,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <SiteJsonLd />
                 <Suspense>
                     <ReactQueryProvider>
+                        <PwaBanner />
                         <Header />
                         {children}
                     </ReactQueryProvider>
