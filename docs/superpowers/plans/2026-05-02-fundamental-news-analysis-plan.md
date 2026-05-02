@@ -3707,13 +3707,18 @@ git add src/infrastructure/market/{submit,poll,cancel}{Fundamental,News,Overall}
 git commit -m "feat: 새 분석 9개 Server Action (submit/poll/cancel × Fundamental/News/Overall)"
 ```
 
-### Task 2.7: Gemini adapter — 모델 파라미터화
+### Task 2.7: AI provider 호출 wire-up (구 "Gemini adapter 모델 파라미터화")
 
 **Files:**
-- Modify: `src/infrastructure/ai/gemini.ts`
-- Test: 기존 테스트 + 새 case
+- Reuse: `src/infrastructure/ai/router.ts` (PR #409로 master에 이미 존재)
+- Reuse: `src/infrastructure/ai/{anthropic,openai,gemini,utils}.ts`
+- (필요 시) 새 분석 종류용 helper 추가
 
-> 기존 `gemini.ts`가 단일 모델 하드코딩이라면, 모델 ID 파라미터로 받도록 시그니처 변경. 호환성을 위해 디폴트 인자 유지.
+> **[2026-05-02 master sync 갱신]** 원래 spec/plan 작성 당시 단일 `gemini.ts` 어댑터 가정이었으나, **PR #408/409 머지로 master에 이미 멀티 provider router(`infrastructure/ai/router.ts`)와 모델 분기 로직이 일반화**되어 있다. 새 분석 use-case는 이 router를 그대로 호출하면 됨. flash-lite 분기도 router의 모델 ID 인자로 처리 가능.
+>
+> 따라서 이 task는 **신규 어댑터 작성이 아니라 wire-up 검증**으로 단순화:
+> - News 카드별 분석(`submitNewsCardAnalysis`)이 호출하는 worker dispatch에서 `model: 'gemini-2.5-flash-lite'` 전달이 router/worker 양쪽에서 정상 처리되는지 확인.
+> - 사용자 노출 모델 옵션은 master의 `useSelectedProvider` 훅 + `ModelSelector` 컴포넌트가 이미 결정.
 
 - [ ] **Step 1: 시그니처 변경**
 
@@ -3747,12 +3752,30 @@ git add src/infrastructure/ai/gemini.ts src/__tests__/infrastructure/ai/
 git commit -m "feat: Gemini adapter 모델 파라미터화 (flash-lite 분기 지원)"
 ```
 
-### Task 2.8: 사용자 전역 모델 선호 저장
+### Task 2.8: 사용자 전역 모델 선호 저장 — 기존 훅 재사용
 
 **Files:**
-- Create: `src/lib/preferredModel.ts`
-- Create: `src/components/chat/hooks/usePreferredModel.ts`
-- Test: `src/__tests__/lib/preferredModel.test.ts`
+- Reuse: `src/components/symbol-page/hooks/useSelectedProvider.ts` (PR #409로 master에 이미 존재)
+- Reuse: `src/lib/storageKeys.ts` (PR #409로 master에 이미 존재)
+- Reuse: `src/components/analysis/ModelSelector.tsx` (PR #409로 master에 이미 존재)
+- (필요 시) 새 분석 4종 페이지에서 동일 훅을 import해 사용
+
+> **[2026-05-02 master sync 갱신]** 원래 plan은 `src/lib/preferredModel.ts` + `usePreferredModel` 훅을 신규 작성하는 시나리오였으나, **PR #409 머지로 master에 이미 동등한 시스템이 존재**한다:
+> - `useSelectedProvider` 훅 = plan의 `usePreferredModel` 역할 (provider + model 선택 + localStorage 동기화)
+> - `storageKeys.ts` = localStorage 키 모음
+> - `ModelSelector` 컴포넌트 = 사용자 노출 UI
+> - `UserApiKeyRequiredModal` = BYOK 안내 모달
+>
+> 따라서 이 task는 **신규 작성이 아니라 재사용**으로 변경:
+> - 새 분석 4종 페이지(Fundamental, News, Overall, A 보강)에 `<ModelSelector />` 또는 `useSelectedProvider`를 import해 wire-up
+> - 페이지마다 다른 별도 훅 만들지 않음 — 사용자 전역 선호는 이미 한 곳에서 관리됨
+> - localStorage 키도 신규 추가 없음 — 기존 `storageKeys.ts`가 source-of-truth
+>
+> Step:
+> - [ ] **Step 1**: `useSelectedProvider` 훅의 시그니처와 반환값 확인 (`yarn tsc --noEmit` + 코드 read)
+> - [ ] **Step 2**: 4개 페이지의 AI 분석 트리거 컴포넌트(`FundamentalAiSummary`, `NewsAiSummary`, `OverallContent`, `NewsAugment`)에서 import + 사용
+> - [ ] **Step 3**: Server Action 호출 시 `useSelectedProvider`가 반환하는 `modelId`를 인자로 전달
+> - [ ] **Step 4**: BYOK 사용자가 자신의 키 모델을 선택하면 기존 `UserApiKeyRequiredModal` 흐름 그대로 작동하는지 검증
 
 - [ ] **Step 1: lib/preferredModel.ts**
 
