@@ -1,4 +1,4 @@
-import type { OAuthProvider } from '@y0ngha/siglens-core';
+import type { OAuthProvider } from '@/domain/types';
 import { googleOAuthRevokerAdapter } from '@/infrastructure/auth/oauth/googleRevoker';
 import { kakaoOAuthRevokerAdapter } from '@/infrastructure/auth/oauth/kakaoRevoker';
 import type {

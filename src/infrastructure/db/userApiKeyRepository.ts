@@ -1,4 +1,4 @@
-import type { LlmProvider } from '@y0ngha/siglens-core';
+import type { LlmProvider } from '@/domain/llm';
 import { and, eq, sql } from 'drizzle-orm';
 import { userApiKeys } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';

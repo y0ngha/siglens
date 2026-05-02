@@ -1,8 +1,5 @@
-import {
-    DEFAULT_TIER,
-    type OAuthProvider,
-    type Tier,
-} from '@y0ngha/siglens-core';
+import { DEFAULT_TIER, type Tier } from '@y0ngha/siglens-core';
+import type { OAuthProvider } from '@/domain/types';
 import { and, eq } from 'drizzle-orm';
 import { oauthAccounts, users } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';

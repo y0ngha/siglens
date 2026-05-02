@@ -1,4 +1,4 @@
-import type { OAuthProvider } from '@y0ngha/siglens-core';
+import type { OAuthProvider } from '@/domain/types';
 
 /** Parameters for revoking a provider OAuth token. */
 export interface RevokeTokenParams {
