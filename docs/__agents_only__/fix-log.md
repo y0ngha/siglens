@@ -31,6 +31,11 @@
 - Rule: 운영 DB에 이미 적용된 마이그레이션은 사후 편집 금지 — 보정이 필요하면 새 forward migration 추가
 - Context: 두 마이그레이션 모두 _journal에 등재되어 적용된 상태. 0004를 retroactive 수정하지 않고 0005에 사후 보존 사유와 향후 처리 가이드를 SQL 주석으로 명시.
 
+## [PR #408 Round 2 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
+- Violation: anthropic.ts의 `!block || block.type !== 'text'` 복합 조건에서 `block.type !== 'text'` 분기 미테스트
+- Rule: MISTAKES.md Infrastructure Functions #2 / Tests #7 — 100% 분기 커버리지 + provider 쌍 대칭성
+- Context: anthropic.test.ts에 tool_use 블록 반환 케이스 추가. openai.test.ts의 null/empty 파싱 에러 2개와 대칭.
+
 ## [PR #408 코멘트 반영 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
 - Violation: router.ts에서 상대 경로 import 사용 (`./anthropic`, `./gemini`, `./openai`)
 - Rule: MISTAKES.md 7.6 — 모든 import는 path alias 사용 필수
