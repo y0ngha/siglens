@@ -11,8 +11,43 @@ Do not start implementation, run commands, or invoke agents until you have read 
 | Issue number + implementation   | "이슈 #42 설계해줘 > (설계 후 승인되면)" "이슈 #42 구현해줘", #42 구현해줘", "이슈 15번 작업해줘" | Read `docs/ISSUE_IMPL_FLOW.md` |
 | PR number + fix/review comments | "PR #216 수정해줘", "#200 코멘트 반영해줘"                                     | Read `docs/PR_FIX_FLOW.md`     |
 | Issue creation                  | "이슈 만들어줘", "버그 리포트 생성해줘"                                            | Invoke `issue-agent`           |
+| Analysis-domain change          | "지표 추가해줘", "RSI 계산식 변경", "캔들 패턴 추가", "AI 프롬프트 수정", "Skills 추가/변경", "신호 임계값 조정", "분석 결과 정규화 변경", "대시보드 신호 스캐너 알고리즘", "티어 제한 정책 변경" | **STOP**. Read `docs/SCOPE.md` §0 (작업-경계 체크리스트) and §3 (결정 트리). If task belongs to siglens-core, halt and inform the user; do not implement locally. |
 
 If the request does not match any pattern above, proceed normally.
+
+---
+
+## ⛔ Cross-repo scope guard
+
+Before implementing anything that touches **analysis logic** in this repo,
+stop and confirm the work doesn't belong in `@y0ngha/siglens-core`.
+
+**Halt-and-redirect triggers** (any of these in the user's request):
+
+- Indicator calculation: "RSI 계산", "MACD 식 변경", new indicator
+- Signal detection: "골든크로스 임계값", "divergence 룰"
+- Candle / chart pattern: "헤드앤숄더 판정", "쐐기 패턴"
+- AI analysis prompt: "분석 프롬프트 수정", "system prompt 강화"
+- Response normalization: "AI 응답 검증", "key levels 클러스터링"
+- Skills system: ".md 파싱 룰", "Skill 카테고리 추가"
+- Cache/queue/cooldown: "분석 캐시 TTL", "Job 큐 lifecycle", "재분석 쿨다운"
+- Tier policy: "TIER_CONFIG 변경", "isAllowed 룰"
+- Dashboard signal scanner: "섹터 신호 스캔 알고리즘"
+- Chat prompt builder
+- Usage limit policy: "checkAnalysisLimit / checkChatbotLimit"
+
+**What you must do when triggered**:
+
+1. Read `docs/SCOPE.md` §0 and §3 (decision tree).
+2. If the task fits any "→ core" row in §0, **stop and tell the user**:
+   "이 작업은 `@y0ngha/siglens-core`에서 처리하는 게 맞아 보입니다.
+   siglens-core 레포에서 진행할까요? (아니면 siglens 측 어댑터 변경만
+   필요한지 다시 확인해 주세요.)"
+3. Do NOT implement the change in siglens locally as a workaround.
+
+This guard exists because over time generic backend code leaked into
+siglens-core; this refactor (Phase 0~7) put it back in siglens. New
+analysis logic landing in siglens would re-create the same drift.
 
 ---
 

@@ -17,6 +17,50 @@
 
 ---
 
+## 0. 작업-경계 체크리스트 (siglens 개발자 시점)
+
+> 새 작업을 받자마자 **가장 먼저** 본다. 작업 설명이 이 표의 어느 한 행에라도
+> 매칭되면 siglens-core 레포에서 진행할 일일 가능성이 높다. siglens 안에서
+> 구현하기 전에 잠시 멈추고 §3 결정 트리로 한 번 더 확인한다.
+
+### 다음 작업은 `@y0ngha/siglens-core` 영역일 가능성이 높습니다 — 시작 전에 확인하세요
+
+| 트리거 패턴 | 어디로 |
+|---|---|
+| 새 보조지표 추가 / 기존 지표 계산식 변경 (RSI, MACD 등) | → core |
+| 새 신호 감지(crossover, divergence 등) | → core |
+| 캔들 패턴 / 차트 패턴 판정 / 임계값 조정 | → core |
+| AI 분석 프롬프트 문구 / 구조 변경 | → core |
+| 응답 정규화 / 검증 / 후처리 룰 추가 | → core |
+| Skills (.md) 시스템 자체의 동작 변경 | → core |
+| 분석 캐시 키 / TTL / 만료 정책 변경 | → core |
+| 분석 Job 큐 라이프사이클 | → core |
+| 재분석 쿨다운 정책 | → core |
+| 대시보드 신호 스캐너 알고리즘 | → core |
+| 티어별 제한 정책 (TIER_CONFIG, isAllowed 등) | → core |
+| AI 챗 프롬프트 빌더 | → core |
+| 사용량 제한 정책 (checkAnalysisLimit, checkChatbotLimit) | → core |
+
+### 반대로, 다음은 siglens에 남는 작업입니다
+
+| 영역 | 어디로 |
+|---|---|
+| Server Action 어댑터, Next.js cookies/redirect 호출 | → siglens |
+| 인증 use-case (registerUser, loginUser, ...) 및 그 어댑터 | → siglens |
+| OAuth start/callback 라우트 | → siglens |
+| 이메일 발송 (Resend) 어댑터 | → siglens |
+| 사용자/세션/티어 set CRUD | → siglens |
+| BYOK API key 저장 / 암호화 | → siglens |
+| 한글 ticker 검색 / 매핑 use-case | → siglens |
+| Drizzle DB schema 및 모든 Repository 구현 | → siglens |
+| Gemini SDK 어댑터 (callAiProvider 구현) | → siglens |
+| UI 컴포넌트, hooks, 페이지, 디자인 | → siglens |
+| i18n / 표시 포맷 / 에러 토스트 | → siglens |
+
+이 두 표 어디에도 명확하지 않으면 SCOPE.md §3 결정 트리를 따라가세요.
+
+---
+
 ## 1. 두 프로젝트의 역할
 
 ### `@y0ngha/siglens-core` — 라이브러리
@@ -344,3 +388,4 @@ core를 분석 도메인으로 다시 좁히기 위한 단계별 작업.
 | 2026-05-02 | core scope를 "분석 도메인 + 분석 직결 인프라 + Skills"로 재정의, ejection 로드맵(Phase 0~7) 추가. |
 | 2026-05-02 | Phase 6 ejection 완료 — core는 더 이상 어떤 DB infrastructure도 소유하지 않는다. schema/client/config/constants와 마이그레이션 일체가 siglens로 이전되었으며, core는 추상 repository 인터페이스와 정책 함수만 보유한다. |
 | 2026-05-02 | Phase 7(문서 정리) 완료 — Refactoring complete. core scope realigned. Future expansions should consult this document before adding cross-repo functionality. core가 분석 secret sauce와 분석 직결 infrastructure만 소유한다는 원칙은 더 이상 ejection 대상이 아닌 안정 상태(stable steady-state)로 간주한다. |
+| 2026-05-02 (Phase 8) | siglens 시점의 작업-경계 체크리스트(§0) 추가. |

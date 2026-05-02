@@ -114,3 +114,9 @@
 - Violation: hook 파일에서 @/domain/types가 아닌 도메인 서브모듈에서 타입 import
 - Rule: ARCHITECTURE.md — hook 파일(hooks/*.ts)의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
 - Context: useContactForm.ts가 @/domain/contact/formTypes에서 ContactFormState를 import. formTypes의 모든 타입을 domain/types.ts로 이동 후 @/domain/types로 수정.
+
+
+## [PR #405 follow-up | refactor/scope-realignment-phase-0 | 2026-05-02]
+- Violation: future siglens work risked re-introducing analysis logic locally instead of in siglens-core
+- Rule: SCOPE.md §3 (dependency direction) — analysis secret sauce stays in core
+- Context: added siglens-side §0 work-boundary checklist + CLAUDE.md cross-repo scope guard so that analysis-related task descriptions trigger an explicit redirect-or-confirm step before any code is written.
