@@ -27,8 +27,7 @@ export async function getRegisteredProvidersAction(): Promise<
                 })
             )
             .toSorted((a, b) => a.provider.localeCompare(b.provider));
-    } catch (error) {
-        console.error('[getRegisteredProvidersAction] DB fetch failed:', error);
+    } catch {
         return [];
     }
 }

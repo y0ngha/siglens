@@ -63,7 +63,7 @@ export function PremiumModelGateModal({
         >
             <div className="bg-secondary-900 ring-secondary-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl ring-1">
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
-                    {/* Lock icon — inline SVG avoids lucide-react dependency */}
+                    {/* inline SVG avoids lucide-react dependency */}
                     <svg
                         xmlns="http://www.w3.org/2000/svg"
                         viewBox="0 0 24 24"
