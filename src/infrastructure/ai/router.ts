@@ -7,8 +7,7 @@ import { callOpenaiChat } from '@/infrastructure/ai/openai';
 export async function callAiProviderRouter(
     options: CallAiProviderOptions
 ): Promise<string> {
-    // Safe cast: getProviderForModel never throws — unknown strings fall through to
-    // prefix matching ('claude-'/'gemini-') and default to 'openai'.
+    // Safe cast: getProviderForModel matches model prefix and defaults to 'openai' for unknown strings.
     const provider = getProviderForModel(options.model as ModelId);
     switch (provider) {
         case 'anthropic':

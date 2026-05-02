@@ -10,10 +10,23 @@ jest.mock('@/infrastructure/ai/gemini', () => ({
     callGeminiWithKeyFallback: jest.fn(),
 }));
 
+jest.mock('@y0ngha/siglens-core', () => {
+    const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
+    return {
+        getProviderForModel: jest
+            .fn()
+            .mockImplementation(actual.getProviderForModel),
+    };
+});
+
 import { callAiProviderRouter } from '@/infrastructure/ai/router';
 import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
 import { callOpenaiChat } from '@/infrastructure/ai/openai';
 import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
+import { getProviderForModel } from '@y0ngha/siglens-core';
+import type { LlmProvider } from '@y0ngha/siglens-core';
 
 const mockCallAnthropicChat = callAnthropicChat as jest.MockedFunction<
     typeof callAnthropicChat
@@ -25,6 +38,9 @@ const mockCallGeminiWithKeyFallback =
     callGeminiWithKeyFallback as jest.MockedFunction<
         typeof callGeminiWithKeyFallback
     >;
+const mockGetProviderForModel = getProviderForModel as jest.MockedFunction<
+    typeof getProviderForModel
+>;
 
 const BASE_OPTIONS = {
     primaryApiKey: 'pk',
@@ -38,6 +54,11 @@ describe('callAiProviderRouter', () => {
         mockCallAnthropicChat.mockResolvedValue('anthropic response');
         mockCallOpenaiChat.mockResolvedValue('openai response');
         mockCallGeminiWithKeyFallback.mockResolvedValue('gemini response');
+        mockGetProviderForModel.mockImplementation(
+            jest.requireActual<typeof import('@y0ngha/siglens-core')>(
+                '@y0ngha/siglens-core'
+            ).getProviderForModel
+        );
     });
 
     describe('Anthropic 모델 라우팅', () => {
@@ -79,6 +100,21 @@ describe('callAiProviderRouter', () => {
             expect(mockCallOpenaiChat).toHaveBeenCalledWith(options);
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('알 수 없는 provider 처리', () => {
+        it('알 수 없는 provider이면 에러를 던진다', async () => {
+            mockGetProviderForModel.mockReturnValueOnce(
+                'unknown' as unknown as LlmProvider
+            );
+
+            await expect(
+                callAiProviderRouter({
+                    ...BASE_OPTIONS,
+                    model: 'gemini-2.5-flash',
+                })
+            ).rejects.toThrow('Unhandled AI provider');
         });
     });
 });

@@ -2,8 +2,13 @@ import { chatAction } from '@/infrastructure/chat/chatAction';
 import {
     GEMINI_2_5_FLASH_MODEL,
     requestChatCompletion,
+    getProviderForModel,
 } from '@y0ngha/siglens-core';
-import type { AnalysisResponse, ChatActionResult } from '@y0ngha/siglens-core';
+import type {
+    AnalysisResponse,
+    ChatActionResult,
+    LlmProvider,
+} from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
@@ -14,10 +19,18 @@ jest.mock('next/headers', () => ({
     headers: jest.fn(),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    requestChatCompletion: jest.fn(),
-}));
+jest.mock('@y0ngha/siglens-core', () => {
+    const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
+    return {
+        ...actual,
+        requestChatCompletion: jest.fn(),
+        getProviderForModel: jest
+            .fn()
+            .mockImplementation(actual.getProviderForModel),
+    };
+});
 
 jest.mock('@/infrastructure/ai/router', () => ({
     callAiProviderRouter: jest.fn(),
@@ -41,6 +54,9 @@ const mockRequestChatCompletion = requestChatCompletion as jest.MockedFunction<
 >;
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
     typeof getCurrentUser
+>;
+const mockGetProviderForModel = getProviderForModel as jest.MockedFunction<
+    typeof getProviderForModel
 >;
 
 const MINIMAL_ANALYSIS: AnalysisResponse = {
@@ -87,6 +103,11 @@ describe('chatAction 함수는', () => {
         );
         mockRequestChatCompletion.mockResolvedValue(SUCCESS_RESULT);
         mockGetCurrentUser.mockResolvedValue(null);
+        mockGetProviderForModel.mockImplementation(
+            jest.requireActual<typeof import('@y0ngha/siglens-core')>(
+                '@y0ngha/siglens-core'
+            ).getProviderForModel
+        );
     });
 
     afterEach(() => {
@@ -430,6 +451,27 @@ describe('chatAction 함수는', () => {
                     callAiProvider: callAiProviderRouter,
                 })
             );
+        });
+    });
+
+    describe('알 수 없는 provider 처리', () => {
+        it('getServerPaidKey가 알 수 없는 provider를 받으면 에러가 전파된다', async () => {
+            // getServerPaidKey is called outside the try block — the throw propagates
+            // rather than being caught as server_error.
+            mockGetProviderForModel.mockReturnValueOnce(
+                'unknown' as unknown as LlmProvider
+            );
+
+            await expect(
+                chatAction(
+                    'AAPL',
+                    '1Day',
+                    MINIMAL_ANALYSIS,
+                    [],
+                    '질문',
+                    'gemini-2.5-flash'
+                )
+            ).rejects.toThrow('Unhandled LLM provider');
         });
     });
 });

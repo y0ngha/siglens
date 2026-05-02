@@ -5,7 +5,6 @@ export interface ProviderTurn {
     content: string;
 }
 
-// Converts AiContents to provider-neutral user/assistant turns shared by all AI adapters.
 export function toProviderTurns(contents: AiContents): ProviderTurn[] {
     if (typeof contents === 'string') {
         return [{ role: 'user', content: contents }];

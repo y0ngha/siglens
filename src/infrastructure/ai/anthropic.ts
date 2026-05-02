@@ -12,9 +12,7 @@ interface AnthropicCallOptions {
 }
 
 function toAnthropicMessages(contents: AiContents): Anthropic.MessageParam[] {
-    // Safe cast: toProviderTurns returns { role: 'user' | 'assistant'; content: string }[]
-    // which is structurally compatible with MessageParam — role is always one of the two
-    // valid literals and string satisfies string | ContentBlockParam[] at runtime.
+    // Safe cast: ProviderTurn is structurally compatible with MessageParam (role literals + string content).
     return toProviderTurns(contents) as Anthropic.MessageParam[];
 }
 

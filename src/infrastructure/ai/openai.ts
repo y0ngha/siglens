@@ -17,9 +17,7 @@ function toOpenAiMessages(
         systemInstruction !== undefined
             ? [{ role: 'system', content: systemInstruction }]
             : [];
-    // Safe cast: toProviderTurns returns { role: 'user' | 'assistant'; content: string }[]
-    // which is structurally compatible with ChatCompletionMessageParam — role is always one
-    // of the two valid literals and string satisfies the content union at runtime.
+    // Safe cast: ProviderTurn is structurally compatible with ChatCompletionMessageParam (role literals + string content).
     const turns = toProviderTurns(
         contents
     ) as OpenAI.ChatCompletionMessageParam[];
