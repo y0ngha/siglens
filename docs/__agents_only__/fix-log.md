@@ -19,18 +19,6 @@
 - Context: userApiKeys의 JSDoc 블록을 한 줄로 압축하되 AES-256-GCM 암호화 특성 유지.
 
 ## [PR #405 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Violation: components/hooks/useCurrentUser.ts가 @/infrastructure/db/types에서 AuthUserRecord 타입을 직접 import
-- Rule: ARCHITECTURE.md — hooks/*.ts의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
-- Context: 인증된 현재 유저 조회 훅이 인프라 레이어 타입에 직접 의존. AuthUserRecord를 @/domain/types에서 재노출하고 hook을 @/domain/types 경로로 변경.
-
-- Violation: createAuthSession이 인라인 객체 리터럴을 반환 타입으로 사용
-- Rule: CONVENTIONS.md TypeScript Rules — 함수 반환 타입은 익명 객체 리터럴 대신 명명된 인터페이스로 선언
-- Context: src/infrastructure/auth/sessionCookie.ts의 createAuthSession이 `Promise<{ session, cookie }>`를 사용. CreateAuthSessionResult 인터페이스를 추출.
-
-- Violation: ChatPanel.tsx의 getModelDisplay가 인라인 객체 반환 타입 선언
-- Rule: CONVENTIONS.md TypeScript Rules — 인라인 객체 리터럴 대신 명명된 타입 사용 (기존 ChatModelOption에서 Pick으로 파생 가능)
-- Context: 동일 파일 내 ChatModelOption 인터페이스가 이미 동일 형태를 보유. `Pick<ChatModelOption, 'label' | 'fullName'>` 별칭으로 교체.
-
 - Violation: LLM_PROVIDER_VALUES 상수가 src/domain/llm/constants.ts와 src/infrastructure/db/constants.ts 양쪽에 동일하게 정의
 - Rule: ARCHITECTURE.md — infrastructure는 domain에서 import 가능; 동일 상수 중복 정의 금지
 - Context: infra DB 상수가 domain의 단일 진실 공급원을 우회. infrastructure 측 정의를 제거하고 @/domain/llm에서 import 후 재노출.
@@ -121,12 +109,6 @@
 - Violation: 특정 기능 전용 훅을 공유 hooks/ 디렉토리에 배치
 - Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
 - Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
-
-
-## [PR #403 Round 3 | feat/398/contact-us-form | 2026-05-01]
-- Violation: hook 파일에서 @/domain/types가 아닌 도메인 서브모듈에서 타입 import
-- Rule: ARCHITECTURE.md — hook 파일(hooks/*.ts)의 타입 import는 @/domain/types 또는 @y0ngha/siglens-core에서만 허용
-- Context: useContactForm.ts가 @/domain/contact/formTypes에서 ContactFormState를 import. formTypes의 모든 타입을 domain/types.ts로 이동 후 @/domain/types로 수정.
 
 
 ## [PR #405 follow-up | refactor/scope-realignment-phase-0 | 2026-05-02]
