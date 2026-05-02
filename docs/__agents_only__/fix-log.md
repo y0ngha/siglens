@@ -58,15 +58,6 @@
 - Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
 
-## [Issue #394 stubs removal | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: 미배포 코어 API stub 모듈을 임시로 두고 import 경로를 우회
-- Rule: 단일 의존성 원칙 — 외부 패키지 export가 정식 출시되면 stub은 즉시 제거하고 import 경로를 통일
-- Context: siglens-core 0.2.1 배포로 모든 새 API(requestEmailVerification, verifyEmail, EmailTokenStore, V2 PasswordReset, V2 RegisterUser, OAuthRevoker, DrizzleOAuthAccountRepository)가 실 export됨. coreStubs.ts 삭제, 모든 import를 @y0ngha/siglens-core로 교체. EmailMessage/EmailDispatcher 또한 코어 export를 그대로 re-export하여 단일 경로 유지.
-
-- Violation: 코어가 자동화한 OAuth revocation을 사용자에게 수동 안내 문구로 노출
-- Rule: 도메인 동작과 UI 메시지 동기화 — 코어가 책임지면 UI는 그 사실을 반영
-- Context: deleteAccount가 oauthAccounts + oauthRevoker deps로 provider 측 token revocation을 자동 수행하므로, DeleteAccountConfirm의 "각 provider 계정에서 직접 끊으세요" 안내 박스와 /privacy 약관 문구를 "탈퇴 시 자동으로 회수된다"로 갱신.
-
 ## [PR #395 Round 6 | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: infrastructure Server Action에서 네트워크 응답 없이 무한 대기 가능
 - Rule: MISTAKES.md Fire-and-Forget #1 — fetch 기반 외부 호출에는 반드시 타임아웃 설정
@@ -133,10 +124,6 @@
 - Rule: MISTAKES.md Coding Paradigm rule 4 — logic with no effect must be removed
 - Context: ModelSelector.tsx isSelected ? <span className={cn('text-sm', isSelected ? 'text-primary-300' : 'text-secondary-400')}> — the inner ternary always resolves to text-primary-300. Simplified to direct className.
 
-- Violation: JSX section comments explaining WHAT the code does
-- Rule: CLAUDE.md — "Don't explain WHAT the code does — well-named identifiers already do that"
-- Context: Five JSX comments (Lock icon, Diamond marker, Screen reader state, Provider label, Model variant sub-label) removed as structure is self-documenting.
-
 - Violation: formatModelVariant produces "Sonnet 4 6" instead of "Sonnet 4.6" for claude-sonnet-4-6
 - Rule: Output must match JSDoc examples in the same function
 - Context: Claude model IDs split by '-' produce ["sonnet", "4", "6"] then join with space → "Sonnet 4 6". Fixed by adding .replace(/(\d) (\d)/g, '$1.$2') to merge adjacent numeric parts with dots.
@@ -144,6 +131,11 @@
 - Violation: AnalysisStatusBanner bottom margin removed when ModelSelector was prepended
 - Rule: Consistent spacing — adding content above should not remove spacing below
 - Context: AnalysisStatusBanner className changed from mb-3 to mt-3, removing bottom gap to AnalysisPanel. Changed to my-3 to preserve both margins.
+
+## [PR #409 Round 3 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: `'free'` tier 문자열 리터럴이 컴포넌트 본문에 하드코딩됨
+- Rule: MISTAKES.md Coding Paradigm — magic constants must be extracted to module-level constants
+- Context: ChartContent.tsx의 `getAllowedModels('free')` 호출에서 `'free'`를 인라인 리터럴로 사용. `DEFAULT_TIER = 'free' as const`로 추출.
 
 ## [Issue #402 | feat/402/AI-모델-선택-UI | 2026-05-02]
 - Violation: localStorage key constant placed in domain/ layer

@@ -153,6 +153,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
 
+15.5. JSX section comments explaining WHAT the code does
+    → Well-named identifiers (components, functions, variables) are self-documenting; don't add comments repeating WHAT the code does
+    → Remove inline comments on JSX sections that describe component purpose, render behavior, or structural elements
+    → Comments should explain WHY non-obvious decisions were made, not describe the code structure itself
+    ❌ {/* Lock icon */} <Lock />
+    ❌ {/* Screen reader state update */} useEffect(() => { ... }, [deps])
+    ❌ {/* Provider label section */} <div>{provider.name}</div>
+    ✅ <Lock />  // element name is self-evident
+    ✅ useEffect(() => { ... }, [deps])  // deps array explains the update trigger
+    ✅ <div>{provider.name}</div>  // structure is clear from JSX
+
 21. Domain functions using imperative for-loop + push instead of higher-order functions
     → Domain functions must use map, filter, flatMap, reduce — never direct mutation with push/splice
     → Applies to all domain/ implementations; violation of functional programming paradigm
@@ -178,7 +189,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ Number.isFinite(tp) && tp > 0 && tp !== entryPrice; return early if invalid
     ✅ if (tp <= entryPrice) return ''; // meaningless result, prevent display
 
-16. Shared constants duplicated across module boundaries without documentation
+16. Temporary API stub modules left in codebase after external library release
+    → When an external package (e.g. @y0ngha/siglens-core) exports the API previously stubbed locally, immediately delete the stub and unify all imports to the real export
+    → Keeping stubs after release creates split dependencies and defeats the purpose of modularization
+    ❌ coreStubs.ts still present after siglens-core 0.2.1 exports all APIs; some files import from coreStubs, others from @y0ngha/siglens-core
+    ✅ Delete coreStubs.ts, replace all imports with @y0ngha/siglens-core; single dependency path maintained
+
+16.5. Shared constants duplicated across module boundaries without documentation
     → When a module cannot import shared constants (environment constraints), duplicate with explicit JSDoc linking to the source
     → Every duplicate must reference the original constant and document the sync requirement
     ❌ worker/src/index.ts: JOB_TTL_SECONDS = 3600  // matches queue.ts but no link or comment
