@@ -48,6 +48,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Separate number[]-based helpers from Bar[]-based wrappers for reuse
    → Across provider pairs: extract shared logic to infrastructure/ai/utils.ts
 
+1.1. Creating type aliases without independent expansion plans
+   → Do not create new type aliases for values that are structurally identical to existing types
+   → Each alias without a distinct purpose adds indirection without benefit
+   → Type aliases should exist only when they describe a semantically distinct role
+   ❌ SaveApiKeyState = ApiKeyActionState; DeleteApiKeyState = ApiKeyActionState  // identical structure, no semantic difference
+   ❌ SignupLocalErrorCode = LocalInfraErrorCode; ResetPasswordLocalErrorCode = LocalInfraErrorCode  // aliases instead of direct reuse
+   ✅ Use ApiKeyActionState directly in both save and delete operations
+   ✅ Export LocalInfraErrorCode, reference it directly without intermediate aliases
+
 2. Identical values queried or computed multiple times in a single function
    → Extract to a local const or assign once before using repeatedly
    → Applies to loop boundaries, array calculations, and function returns
@@ -392,6 +401,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ useChat.ts: ERROR_MESSAGES.server_busy = "위의 모델 선택기에서 다른 모델을 선택하세요"  // references ChatPanel dropdown location
     ✅ ERROR_MESSAGES.server_busy = "Change the model and retry"  // describes action, not location
     → When UI layout changes (dropdown moves), message remains correct without code change
+
+15. Feature-scoped hooks placed in components/hooks/ global directory
+    → Feature-specific hooks must live in components/{feature}/hooks/, not components/hooks/
+    → components/hooks/ is reserved for generic/reusable hooks shared across all features
+    ❌ useContactForm.ts, useApiKeyForms.ts in components/hooks/  // feature-specific hooks mixing with generic
+    ✅ components/contact/hooks/useContactForm.ts, components/account/hooks/useApiKeyForms.ts
+    → Layer dependency improves when hooks are colocated with their feature components
 ```
 
 ---

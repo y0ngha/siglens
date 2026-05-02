@@ -1,5 +1,22 @@
 # Fix Log
 
+## [Issue #396 | feat/396/llm-api-key-management | 2026-05-02]
+- Violation: ApiKeyActionState/RegisteredProvider 타입을 infrastructure/llm/types.ts에 정의 — components가 infrastructure에서 직접 type import
+- Rule: ARCHITECTURE.md — components는 infrastructure에서 import 금지; 타입은 domain에 두어야 layer 규칙 준수 가능
+- Context: domain/llm/types.ts로 이동 후 infrastructure/llm/types.ts에서 re-export. components는 @/domain/llm에서 import.
+
+- Violation: safeClose, handleBackdropClick 함수에 void 반환 타입 미선언
+- Rule: MISTAKES.md #0 — 컴포넌트 render 외부 함수는 반환 타입 명시 필요
+- Context: `: void` 반환 타입 추가.
+
+- Violation: ApiKeySection.tsx, PremiumModelGateModal.tsx에서 raw Tailwind color(emerald-*, amber-*) 직접 사용
+- Rule: MISTAKES.md Design rule 0.5 — 모든 색상은 globals.css에 등록된 semantic token(ui-success, ui-warning, ui-danger) 사용
+- Context: text-emerald-*/bg-emerald-*/ring-emerald-* → ui-success 토큰, text-amber-* → ui-warning 토큰으로 교체.
+
+- Violation: chatAction.ts에서 createDatabaseClient() (인수 필요)를 인수 없이 호출 — getDatabaseClient() (캐시된 싱글톤)를 써야 함
+- Rule: 함수 시그니처 불일치 — 인수 없이 호출 시 TypeScript 오류 발생
+- Context: createDatabaseClient() → getDatabaseClient()로 교체.
+
 ## [PR #405 Round 4 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Violation: deleteAccount.ts revokeOAuthTokens가 명령형 forEach + void Promise로 fire-and-forget 처리
 - Rule: CONVENTIONS.md — 명령형 forEach 대신 선언형 map + Promise.allSettled 사용 (FP 일관성)
@@ -28,27 +45,10 @@
 - Context: 두 마이그레이션 모두 _journal에 등재되어 적용된 상태. 0004를 retroactive 수정하지 않고 0005에 사후 보존 사유와 향후 처리 가이드를 SQL 주석으로 명시.
 
 ## [PR #408 Round 2 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
-- Violation: anthropic.ts의 `!block || block.type !== 'text'` 복합 조건에서 `block.type !== 'text'` 분기 미테스트
-- Rule: MISTAKES.md Infrastructure Functions #2 / Tests #7 — 100% 분기 커버리지 + provider 쌍 대칭성
-- Context: anthropic.test.ts에 tool_use 블록 반환 케이스 추가. openai.test.ts의 null/empty 파싱 에러 2개와 대칭.
-
 ## [PR #408 코멘트 반영 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
 - Violation: router.ts에서 상대 경로 import 사용 (`./anthropic`, `./gemini`, `./openai`)
 - Rule: MISTAKES.md 7.6 — 모든 import는 path alias 사용 필수
 - Context: src/infrastructure/ai/router.ts의 세 import를 `@/infrastructure/ai/...`로 교체.
-
-- Violation: OpenAI 빈 응답 시 빈 문자열 반환 — Anthropic(에러 throw)과 비대칭
-- Rule: MISTAKES.md Tests 7 — provider 쌍은 에러 처리도 대칭이어야 함
-- Context: callOpenai에서 choices[0]?.message.content == null이면 에러를 throw하도록 수정.
-
-- Violation: UserApiKeyRequiredModal 바깥 wrapper div에 aria-hidden="true"로 모달 전체가 접근성 트리에서 제거됨
-- Rule: MISTAKES.md Accessibility 1.5, 7 — aria-hidden은 장식적 컨텐츠에만 사용, 사용자가 읽어야 할 컨텐츠에 금지
-- Context: backdrop div의 aria-hidden="true" 제거. role="dialog" aria-modal="true" 내부 div가 접근성 트리에 노출됨.
-
-## [PR #403 Round 5 | feat/398/contact-us-form | 2026-05-02]
-- Violation: 새로 만든 파일이 git에 추가되지 않은 채 PR 푸시되어 빌드가 차단됨
-- Rule: PR_FIX_FLOW Step 1-7 — 픽스 적용 후 모든 신규 파일을 commit/push 전에 git add로 추적해야 함
-- Context: src/components/contact/utils/contactFormUtils.ts가 로컬 파일 시스템에는 존재했지만 git 인덱스에는 없어 ContactForm.tsx의 import가 원격 빌드에서 해결되지 않음. 같은 라운드에서 lib/contactErrorMessages.ts는 dead code로 남게 됨. git add로 추적 후 다음 커밋에 포함.
 
 
 ## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
@@ -81,11 +81,6 @@
 - Rule: MISTAKES.md Fire-and-Forget #1 — fetch 기반 외부 호출에는 반드시 타임아웃 설정
 - Context: ResendEmailDispatcher.sendEmail이 AbortSignal 없이 Resend SDK를 호출해 네트워크 지연 시 Server Action이 무기한 블로킹. AbortSignal.timeout + Promise.race 패턴으로 10초 타임아웃 추가.
 
-## [PR #395 Round 5 | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: 동일 중간 타입 별칭 3개가 LocalInfraErrorCode와 동일한 값으로 중복 선언
-- Rule: CLAUDE.md — 작업 범위를 벗어나는 불필요한 추상화 추가 금지; 독립적 확장 계획이 없는 타입 별칭은 중복
-- Context: formTypes.ts에서 SignupLocalErrorCode / ResetPasswordLocalErrorCode / VerifyEmailLocalErrorCode가 모두 LocalInfraErrorCode와 동일. LocalInfraErrorCode를 export로 승격하고 중간 별칭 3개를 제거하여 인터페이스에서 직접 참조.
-
 ## [PR #395 Round 4 | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: code 단계에서 동일한 codeState.error.message가 AuthErrorAlert와 AuthFieldGroup.error prop 두 곳에 동시 표시
 - Rule: 동일 정보를 두 채널로 동시 노출하지 않음 — 하나의 에러는 하나의 UI 위치에서만 표시
@@ -103,17 +98,9 @@
 - Context: passwordResetTokenService 테스트가 string을 반환하는 generatePasswordResetToken/hashPasswordResetToken 호출에 await를 붙여 API 성격을 흐리게 했음. await와 async 테스트 선언을 제거.
 
 ## [PR #403 | feat/398/contact-us-form | 2026-05-01]
-- Violation: <p role="alert">로 네이티브 ARIA role 덮어쓰기
-- Rule: MISTAKES.md Accessibility #1 — 시맨틱 요소의 native role을 role 속성으로 교체 금지
-- Context: ContactTextField, ContactTextareaField의 에러 메시지를 <p role="alert">로 렌더링. <div role="alert">로 교체.
-
 - Violation: cn()을 aria-describedby ID 조합에 오용
 - Rule: cn()은 Tailwind 클래스 병합 전용 유틸리티로 ARIA ID 문자열 조합에 사용 금지
 - Context: ContactTextareaField의 aria-describedby 값 조합에 cn()을 사용. 배열 filter+join 방식으로 교체.
-
-- Violation: 특정 기능 전용 훅을 공유 hooks/ 디렉토리에 배치
-- Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
-- Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
 
 
 ## [PR #405 follow-up | refactor/scope-realignment-phase-0 | 2026-05-02]
@@ -122,17 +109,9 @@
 - Context: added siglens-side §0 work-boundary checklist + CLAUDE.md cross-repo scope guard so that analysis-related task descriptions trigger an explicit redirect-or-confirm step before any code is written.
 
 ## [Issue #401 | feat/401/worker-ai-provider-enhancement | 2026-05-02]
-- Violation: 동일 정책 상수가 여러 retry 모듈에 중복 정의 (AI_RETRY_MAX_ATTEMPTS, AI_RETRY_DELAY_MS)
-- Rule: MISTAKES.md Design 1 / FF Cohesion — 함께 변해야 하는 상수는 single source of truth에 모아야 함
-- Context: claude-retry/gemini-retry/chatgpt-retry 세 파일이 `AI_RETRY_MAX_ATTEMPTS = 5`와 `AI_RETRY_DELAY_MS = 5000`을 각자 정의. 모두 retry.ts로 이동해 공유.
-
 - Violation: 에러 처리 의도와 retryable 플래그 모순
 - Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
 - Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
-
-- Violation: Array.find 후 type narrow를 위한 중복 type check
-- Rule: MISTAKES.md Coding Paradigm 4 — 결과에 영향 없는 로직 제거
-- Context: claude.ts에서 `find(b => b.type === 'text')` 후 `if (textBlock && textBlock.type === 'text')`로 재검사. find에 explicit type predicate(`(block): block is TextBlock`)을 적용해 후속 narrow 가드 제거.
 
 
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
@@ -151,10 +130,6 @@
 - Violation: VALID_PROVIDERS declared as mutable AIProvider[] instead of readonly
 - Rule: CONVENTIONS.md immutability — module-level constants should use readonly to prevent accidental mutation
 - Context: Inconsistent with other priority arrays in providerDefaults.ts which all use readonly. Changed to readonly AIProvider[].
-
-- Violation: Redundant ternary inside isSelected=true branch
-- Rule: MISTAKES.md Coding Paradigm rule 4 — logic with no effect must be removed
-- Context: ModelSelector.tsx isSelected ? <span className={cn('text-sm', isSelected ? 'text-primary-300' : 'text-secondary-400')}> — the inner ternary always resolves to text-primary-300. Simplified to direct className.
 
 - Violation: formatModelVariant produces "Sonnet 4 6" instead of "Sonnet 4.6" for claude-sonnet-4-6
 - Rule: Output must match JSDoc examples in the same function

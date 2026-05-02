@@ -1,21 +1,20 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
 import {
-    GEMINI_2_5_FLASH_MODEL,
     VALID_CHAT_MODELS,
-    getProviderForModel,
     type AnalysisResponse,
     type ModelId,
     type Timeframe,
 } from '@y0ngha/siglens-core';
+import { isFreeChatModel } from '@/domain/llm';
 import { cn } from '@/lib/cn';
+import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
-import { useCurrentUser } from '@/components/hooks/useCurrentUser';
-import { UserApiKeyRequiredModal } from '@/components/chat/UserApiKeyRequiredModal';
+import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
 
 interface ChatModelOption {
     id: ModelId;
@@ -86,8 +85,6 @@ export function ChatPanel({
         dropdownRef,
     ]);
 
-    const { data: currentUser } = useCurrentUser();
-
     const {
         messages,
         loadingPhase,
@@ -97,8 +94,8 @@ export function ChatPanel({
         dismissAnalysisUpdated,
         selectedModel,
         handleModelChange,
-        apiKeyModalOpen,
-        closeApiKeyModal,
+        gateModal,
+        dismissGate,
     } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
 
     const {
@@ -110,11 +107,6 @@ export function ChatPanel({
         handleSubmit,
         handleKeyDown,
     } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
-
-    const handleSwitchToFreeModel = useCallback(() => {
-        handleModelChange(GEMINI_2_5_FLASH_MODEL);
-        closeApiKeyModal();
-    }, [handleModelChange, closeApiKeyModal]);
 
     const selectedModelOption = getModelDisplay(selectedModel);
 
@@ -266,14 +258,6 @@ export function ChatPanel({
                 <div ref={messagesEndRef} />
             </div>
 
-            <UserApiKeyRequiredModal
-                open={apiKeyModalOpen}
-                onClose={closeApiKeyModal}
-                provider={getProviderForModel(selectedModel)}
-                loggedIn={!!currentUser}
-                onSwitchToFree={handleSwitchToFreeModel}
-            />
-
             {/* 입력 영역 */}
             <div className="border-secondary-700 border-t px-3 py-2">
                 <div className="text-secondary-600 mb-1.5 flex items-center gap-1.5 text-[10px]">
@@ -351,13 +335,20 @@ export function ChatPanel({
                                         <span className="w-3 text-[10px]">
                                             {selectedModel === option.id && '✓'}
                                         </span>
-                                        <div>
-                                            <div className="text-[11px] font-medium">
-                                                {option.label}
+                                        <div className="flex flex-1 items-center justify-between gap-2">
+                                            <div>
+                                                <div className="text-[11px] font-medium">
+                                                    {option.label}
+                                                </div>
+                                                <div className="text-secondary-500 text-[10px]">
+                                                    {option.fullName}
+                                                </div>
                                             </div>
-                                            <div className="text-secondary-500 text-[10px]">
-                                                {option.fullName}
-                                            </div>
+                                            {!isFreeChatModel(option.id) && (
+                                                <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
+                                                    PRO
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -402,6 +393,15 @@ export function ChatPanel({
                     </button>
                 </div>
             </div>
+
+            {gateModal !== null && (
+                <PremiumModelGateModal
+                    mode={gateModal.mode}
+                    providerLabel={LLM_PROVIDER_LABELS[gateModal.provider]}
+                    symbol={symbol}
+                    onClose={dismissGate}
+                />
+            )}
         </div>
     );
 }

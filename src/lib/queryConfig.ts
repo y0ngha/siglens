@@ -13,4 +13,6 @@ export const QUERY_KEYS = {
     briefing: (jobId: string) => ['briefing', jobId] as const,
     marketSummary: () => ['market-summary'] as const,
     currentUser: () => ['current-user'] as const,
+    remainingTokens: () => ['chat', 'remaining-tokens'] as const,
+    registeredProviders: () => ['llm', 'registered-providers'] as const,
 } as const;

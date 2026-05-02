@@ -1,0 +1,48 @@
+'use server';
+
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getDatabaseClient } from '@/infrastructure/db/client';
+import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
+import {
+    isLlmProvider,
+    normalizeLlmApiKey,
+    type ApiKeyActionState,
+} from '@/domain/llm';
+import { revalidatePath } from 'next/cache';
+import { redirect } from 'next/navigation';
+
+export async function saveApiKeyAction(
+    _prevState: ApiKeyActionState,
+    formData: FormData
+): Promise<ApiKeyActionState> {
+    const user = await getCurrentUser();
+    if (user === null) {
+        redirect('/login?next=/account');
+    }
+
+    const rawProvider = formData.get('provider');
+    if (typeof rawProvider !== 'string' || !isLlmProvider(rawProvider)) {
+        return { status: 'error', message: '유효하지 않은 프로바이더입니다.' };
+    }
+
+    const rawApiKey = formData.get('apiKey');
+    const apiKey = normalizeLlmApiKey(
+        typeof rawApiKey === 'string' ? rawApiKey : ''
+    );
+    if (apiKey === null) {
+        return { status: 'error', message: '유효하지 않은 API 키입니다.' };
+    }
+
+    try {
+        const { db } = getDatabaseClient();
+        await new DrizzleUserApiKeyRepository(db).upsert({
+            userId: user.id,
+            provider: rawProvider,
+            apiKey,
+        });
+        revalidatePath('/account');
+        return { status: 'success', message: 'API 키가 저장되었습니다.' };
+    } catch {
+        return { status: 'error', message: '저장 중 오류가 발생했습니다.' };
+    }
+}

@@ -9,18 +9,24 @@ import {
 import {
     GEMINI_2_5_FLASH_MODEL,
     VALID_CHAT_MODELS,
+    getProviderForModel,
+    type AnalysisResponse,
+    type ChatActionResult,
+    type ChatErrorCode,
+    type ChatLoadingPhase,
+    type ChatMessage,
+    type ModelId,
+    type Timeframe,
+    type LlmProvider,
 } from '@y0ngha/siglens-core';
-import type {
-    AnalysisResponse,
-    ChatActionResult,
-    ChatErrorCode,
-    ChatLoadingPhase,
-    ChatMessage,
-    ModelId,
-    Timeframe,
-} from '@y0ngha/siglens-core';
+import { isFreeChatModel } from '@/domain/llm';
+import type { GateMode } from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
+import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
+import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
+import { MS_PER_MINUTE } from '@/domain/constants/time';
+import { QUERY_KEYS } from '@/lib/queryConfig';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -34,6 +40,8 @@ import {
 
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
+const CURRENT_USER_STALE_MS = 5 * MS_PER_MINUTE;
+const REGISTERED_PROVIDERS_STALE_MS = MS_PER_MINUTE;
 const MODEL_STORAGE_KEY = 'siglens_chat_model';
 
 // Matches the siglens-core chat token limit; update only when the core policy changes.
@@ -47,6 +55,7 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
     model_not_allowed:
         '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
+    // TODO(byok-adapter): BYOK 어댑터 구현 후 chatAction에서 이 코드가 반환됩니다
     user_api_key_required:
         '이 모델은 본인 API 키가 필요해요. 키를 등록하면 사용할 수 있어요.',
 };
@@ -74,6 +83,11 @@ export interface UseChatOptions {
     isAnalysisReady: boolean;
 }
 
+export interface GateModalState {
+    mode: GateMode;
+    provider: LlmProvider;
+}
+
 export interface UseChatReturn {
     messages: ChatMessage[];
     loadingPhase: ChatLoadingPhase | null;
@@ -83,8 +97,8 @@ export interface UseChatReturn {
     dismissAnalysisUpdated: () => void;
     selectedModel: ModelId;
     handleModelChange: (model: ModelId) => void;
-    apiKeyModalOpen: boolean;
-    closeApiKeyModal: () => void;
+    gateModal: GateModalState | null;
+    dismissGate: () => void;
 }
 
 export function useChat({
@@ -101,7 +115,7 @@ export function useChat({
     const [selectedModel, setSelectedModel] = useState<ModelId>(
         GEMINI_2_5_FLASH_MODEL
     );
-    const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
+    const [gateModal, setGateModal] = useState<GateModalState | null>(null);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -124,9 +138,21 @@ export function useChat({
 
     const queryClient = useQueryClient();
     const { data: remainingTokensData } = useQuery({
-        queryKey: ['chat', 'remaining-tokens'],
+        queryKey: QUERY_KEYS.remainingTokens(),
         queryFn: getRemainingTokensAction,
         staleTime: 0,
+    });
+
+    const { data: currentUser } = useQuery({
+        queryKey: QUERY_KEYS.currentUser(),
+        queryFn: currentUserAction,
+        staleTime: CURRENT_USER_STALE_MS,
+    });
+
+    const { data: registeredProviders = [] } = useQuery({
+        queryKey: QUERY_KEYS.registeredProviders(),
+        queryFn: getRegisteredProvidersAction,
+        staleTime: REGISTERED_PROVIDERS_STALE_MS,
     });
 
     const { mutateAsync } = useMutation({
@@ -169,12 +195,15 @@ export function useChat({
             setMessages(prev => [...prev, aiMessage]);
             if (result.ok) {
                 queryClient.setQueryData(
-                    ['chat', 'remaining-tokens'],
+                    QUERY_KEYS.remainingTokens(),
                     result.remainingTokens
                 );
-            }
-            if (!result.ok && result.error === 'user_api_key_required') {
-                setApiKeyModalOpen(true);
+            } else if (result.error === 'user_api_key_required') {
+                // TODO(byok-adapter): chatAction이 BYOK 어댑터 구현 후 이 분기가 실행됩니다
+                setGateModal({
+                    mode: 'byok',
+                    provider: getProviderForModel(selectedModel),
+                });
             }
         },
         onError: () => {
@@ -205,11 +234,31 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
-    const handleModelChange = useCallback((model: ModelId) => {
-        setSelectedModel(model);
-    }, []);
+    const handleModelChange = useCallback(
+        (model: ModelId): void => {
+            if (!isFreeChatModel(model)) {
+                const requiredProvider = getProviderForModel(model);
+                if (!currentUser) {
+                    setGateModal({ mode: 'auth', provider: requiredProvider });
+                    return;
+                }
+                if (
+                    !registeredProviders.some(
+                        p => p.provider === requiredProvider
+                    )
+                ) {
+                    setGateModal({ mode: 'byok', provider: requiredProvider });
+                    return;
+                }
+            }
+            setSelectedModel(model);
+        },
+        [currentUser, registeredProviders]
+    );
 
-    const closeApiKeyModal = useCallback(() => setApiKeyModalOpen(false), []);
+    const dismissGate = useCallback((): void => {
+        setGateModal(null);
+    }, []);
 
     // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
     // inline render assignments can be stale under interrupted/discarded renders)
@@ -331,7 +380,7 @@ export function useChat({
         dismissAnalysisUpdated,
         selectedModel,
         handleModelChange,
-        apiKeyModalOpen,
-        closeApiKeyModal,
+        gateModal,
+        dismissGate,
     };
 }

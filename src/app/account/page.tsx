@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
+import { ApiKeySection } from '@/components/account/ApiKeySection';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
 import { SITE_NAME } from '@/lib/seo';
 
@@ -12,10 +14,14 @@ export const metadata: Metadata = {
 };
 
 export default async function AccountPage() {
-    const user = await getCurrentUser();
+    const [user, rawProviders] = await Promise.all([
+        getCurrentUser(),
+        getRegisteredProvidersAction(),
+    ]);
     if (!user) {
         redirect('/login?next=/account');
     }
+    const registeredProviders = rawProviders.map(({ provider }) => provider);
     return (
         <main className="bg-secondary-950 min-h-[calc(100dvh-3.5rem)] px-4 py-12">
             <div className="mx-auto w-full max-w-2xl space-y-6">
@@ -53,6 +59,13 @@ export default async function AccountPage() {
                             {TIER_LABEL[user.tier]}
                         </dd>
                     </dl>
+                </section>
+
+                <section
+                    aria-label="AI 모델 API 키"
+                    className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+                >
+                    <ApiKeySection registeredProviders={registeredProviders} />
                 </section>
 
                 <section
