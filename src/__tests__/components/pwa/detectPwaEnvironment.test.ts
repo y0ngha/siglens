@@ -9,7 +9,7 @@ describe('detectPwaEnvironment', () => {
             'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
             undefined,
             false,
-            undefined,
+            undefined
         );
         expect(result.isMobile).toBe(true);
         expect(result.isIos).toBe(true);
@@ -22,7 +22,7 @@ describe('detectPwaEnvironment', () => {
             'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
             undefined,
             false,
-            undefined,
+            undefined
         );
         expect(result.isMobile).toBe(true);
         expect(result.isIos).toBe(false);
@@ -34,7 +34,7 @@ describe('detectPwaEnvironment', () => {
             'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
             false,
             false,
-            undefined,
+            undefined
         );
         expect(result.isMobile).toBe(false);
     });
@@ -44,7 +44,7 @@ describe('detectPwaEnvironment', () => {
             'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) KAKAOTALK/10.0.0',
             undefined,
             false,
-            undefined,
+            undefined
         );
         expect(result.isInAppBrowser).toBe(true);
     });
@@ -54,7 +54,7 @@ describe('detectPwaEnvironment', () => {
             'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0) Instagram/280.0 FBAN',
             undefined,
             false,
-            undefined,
+            undefined
         );
         expect(result.isInAppBrowser).toBe(true);
     });
@@ -64,7 +64,7 @@ describe('detectPwaEnvironment', () => {
             'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1',
             undefined,
             true,
-            undefined,
+            undefined
         );
         expect(result.isStandalone).toBe(true);
     });
@@ -74,7 +74,7 @@ describe('detectPwaEnvironment', () => {
             'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) Safari/604.1',
             undefined,
             false,
-            true,
+            true
         );
         expect(result.isStandalone).toBe(true);
     });
@@ -84,7 +84,7 @@ describe('detectPwaEnvironment', () => {
             'Mozilla/5.0 (Linux; Android 13; Pixel 7) Chrome/120.0.0.0 Mobile Safari/537.36',
             false,
             false,
-            undefined,
+            undefined
         );
         expect(result.isMobile).toBe(false);
     });

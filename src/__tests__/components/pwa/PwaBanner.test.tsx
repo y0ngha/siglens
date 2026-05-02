@@ -36,8 +36,12 @@ describe('PwaBanner', () => {
             handleModalClose: jest.fn(),
         });
         render(<PwaBanner />);
-        expect(screen.getByRole('button', { name: '설치하기' })).toBeInTheDocument();
-        expect(screen.getByRole('button', { name: '배너 닫기' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: '설치하기' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByRole('button', { name: '배너 닫기' })
+        ).toBeInTheDocument();
     });
 
     it('닫기 버튼 클릭 → handleDismiss 호출', () => {

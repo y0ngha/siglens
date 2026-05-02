@@ -34,7 +34,7 @@ function resolveEnv(): PwaEnvironment {
         (navigator as { userAgentData?: { mobile?: boolean } }).userAgentData
             ?.mobile,
         window.matchMedia('(display-mode: standalone)').matches,
-        (navigator as { standalone?: boolean }).standalone,
+        (navigator as { standalone?: boolean }).standalone
     );
 }
 

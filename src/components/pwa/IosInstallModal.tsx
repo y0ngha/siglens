@@ -40,22 +40,22 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
     return (
         <div
             data-testid="ios-modal-backdrop"
-            className="fixed inset-0 z-50 flex items-center justify-center bg-secondary-950/80 px-4 backdrop-blur-sm"
+            className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center px-4 backdrop-blur-sm"
             onClick={onClose}
         >
             <div
                 data-testid="ios-modal-content"
-                className="w-full max-w-sm rounded-2xl border border-secondary-700 bg-secondary-800 p-5"
+                className="border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-2xl border p-5"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-base font-bold text-secondary-100">
+                    <h2 className="text-secondary-100 text-base font-bold">
                         홈 화면에 추가하기
                     </h2>
                     <button
                         onClick={onClose}
                         aria-label="닫기"
-                        className="text-xl leading-none text-secondary-500 transition-colors hover:text-secondary-300 focus-visible:ring-2 focus-visible:ring-primary-500 focus-visible:outline-none"
+                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 text-xl leading-none transition-colors focus-visible:ring-2 focus-visible:outline-none"
                     >
                         ×
                     </button>
@@ -64,16 +64,16 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
                     {STEPS.map(({ step, title, description, img }) => (
                         <div
                             key={step}
-                            className="flex gap-3 rounded-xl bg-secondary-900 p-3"
+                            className="bg-secondary-900 flex gap-3 rounded-xl p-3"
                         >
-                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary-600 text-xs font-bold text-white">
+                            <div className="bg-primary-600 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
                                 {step}
                             </div>
                             <div className="min-w-0 flex-1">
-                                <p className="mb-1 text-sm font-semibold text-secondary-200">
+                                <p className="text-secondary-200 mb-1 text-sm font-semibold">
                                     {title}
                                 </p>
-                                <p className="mb-2 text-xs text-secondary-400">
+                                <p className="text-secondary-400 mb-2 text-xs">
                                     {description}
                                 </p>
                                 <Image

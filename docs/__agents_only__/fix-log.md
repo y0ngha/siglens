@@ -1,21 +1,5 @@
 # Fix Log
 
-## [Issue #396 | feat/396/llm-api-key-management | 2026-05-02]
-- Violation: ApiKeyActionState/RegisteredProvider 타입을 infrastructure/llm/types.ts에 정의 — components가 infrastructure에서 직접 type import
-- Rule: ARCHITECTURE.md — components는 infrastructure에서 import 금지; 타입은 domain에 두어야 layer 규칙 준수 가능
-- Context: domain/llm/types.ts로 이동 후 infrastructure/llm/types.ts에서 re-export. components는 @/domain/llm에서 import.
-
-- Violation: safeClose, handleBackdropClick 함수에 void 반환 타입 미선언
-- Rule: MISTAKES.md #0 — 컴포넌트 render 외부 함수는 반환 타입 명시 필요
-- Context: `: void` 반환 타입 추가.
-
-- Violation: ApiKeySection.tsx, PremiumModelGateModal.tsx에서 raw Tailwind color(emerald-*, amber-*) 직접 사용
-- Rule: MISTAKES.md Design rule 0.5 — 모든 색상은 globals.css에 등록된 semantic token(ui-success, ui-warning, ui-danger) 사용
-- Context: text-emerald-*/bg-emerald-*/ring-emerald-* → ui-success 토큰, text-amber-* → ui-warning 토큰으로 교체.
-
-- Violation: chatAction.ts에서 createDatabaseClient() (인수 필요)를 인수 없이 호출 — getDatabaseClient() (캐시된 싱글톤)를 써야 함
-- Rule: 함수 시그니처 불일치 — 인수 없이 호출 시 TypeScript 오류 발생
-- Context: createDatabaseClient() → getDatabaseClient()로 교체.
 
 ## [PR #405 Round 4 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Violation: deleteAccount.ts revokeOAuthTokens가 명령형 forEach + void Promise로 fire-and-forget 처리
@@ -43,12 +27,6 @@
 - Violation: drizzle/0004_petite_medusa.sql이 email_verified DEFAULT true로 추가되어 0005에서 false로 되돌리기 전 가입한 사용자들이 자동 검증 처리됨
 - Rule: 운영 DB에 이미 적용된 마이그레이션은 사후 편집 금지 — 보정이 필요하면 새 forward migration 추가
 - Context: 두 마이그레이션 모두 _journal에 등재되어 적용된 상태. 0004를 retroactive 수정하지 않고 0005에 사후 보존 사유와 향후 처리 가이드를 SQL 주석으로 명시.
-
-## [PR #408 Round 2 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
-## [PR #408 코멘트 반영 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
-- Violation: router.ts에서 상대 경로 import 사용 (`./anthropic`, `./gemini`, `./openai`)
-- Rule: MISTAKES.md 7.6 — 모든 import는 path alias 사용 필수
-- Context: src/infrastructure/ai/router.ts의 세 import를 `@/infrastructure/ai/...`로 교체.
 
 
 ## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
@@ -117,11 +95,6 @@
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).
 
-## [PR #409 Round 2 | feat/402/AI-모델-선택-UI | 2026-05-02]
-- Violation: Duplicate import statements from the same module (@y0ngha/siglens-core) in ChartContent.tsx and providerDefaults.ts
-- Rule: MISTAKES.md Components #0 — ESLint import/no-duplicates; always consolidate imports from the same module
-- Context: ChartContent.tsx had separate type import and value import from @y0ngha/siglens-core. providerDefaults.ts same pattern. Merged into single import statement using inline type modifier.
-
 ## [PR #409 | feat/402/AI-모델-선택-UI | 2026-05-02]
 - Violation: Hook declaration order violated — useEffect declared before useCallback in useSelectedProvider.ts
 - Rule: CONVENTIONS.md Custom Hook Declaration Order — handlers (useCallback, step 5) must precede useEffect (step 7)
@@ -148,10 +121,6 @@
 - Violation: localStorage key constant placed in domain/ layer
 - Rule: ARCHITECTURE.md — domain/ must contain only pure business logic; config/storage keys belong in lib/
 - Context: `LOCAL_STORAGE_PROVIDER_KEY` was initially created in `src/domain/llm/types.ts` but localStorage keys are UI/persistence configuration, not domain logic. Moved to `src/lib/storageKeys.ts`.
-
-- Violation: `as` cast without explanatory comment in production code
-- Rule: MISTAKES.md TypeScript rule 7 — every safe-cast `as` must have a comment explaining the guarantee
-- Context: `MODEL_SPECS[modelId as keyof typeof MODEL_SPECS]` in providerDefaults.ts and `(VALID_PROVIDERS as string[])` in useSelectedProvider.ts both lacked comments. Added inline comments.
 
 - Violation: Derived constant recreated every render without useMemo
 - Rule: MISTAKES.md rule 10 — derived constants from props must be wrapped in useMemo
