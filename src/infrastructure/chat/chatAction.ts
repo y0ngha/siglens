@@ -37,6 +37,7 @@ export async function chatAction(
 
     // Server-side guard: BYOK call adapter is implemented in a follow-up issue.
     // Until then, premium model requests are rejected here even if the UI gate was bypassed.
+    // TODO(byok-adapter): when BYOK adapter lands, return 'user_api_key_required' for logged-in users with no key.
     if (!isFreeChatModel(model)) {
         return { ok: false, error: 'model_not_allowed' };
     }

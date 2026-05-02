@@ -3,7 +3,7 @@
 import { useActionState } from 'react';
 import { saveApiKeyAction } from '@/infrastructure/llm/saveApiKeyAction';
 import { deleteApiKeyAction } from '@/infrastructure/llm/deleteApiKeyAction';
-import type { ApiKeyActionState } from '@/domain/llm';
+import type { ApiKeyActionState } from '@/domain/types';
 
 const INITIAL_STATE: ApiKeyActionState = { status: 'idle', message: null };
 
