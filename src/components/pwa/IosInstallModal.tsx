@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect } from 'react';
 import Image from 'next/image';
+import { useEscapeKey } from '@/components/pwa/hooks/useEscapeKey';
+
+const MODAL_TITLE_ID = 'ios-modal-title';
 
 const STEPS = [
     {
@@ -29,13 +31,7 @@ interface IosInstallModalProps {
 }
 
 export function IosInstallModal({ onClose }: IosInstallModalProps) {
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onClose();
-        };
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [onClose]);
+    useEscapeKey(onClose);
 
     return (
         <div
@@ -45,11 +41,17 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
         >
             <div
                 data-testid="ios-modal-content"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={MODAL_TITLE_ID}
                 className="border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-2xl border p-5"
                 onClick={e => e.stopPropagation()}
             >
                 <div className="mb-4 flex items-center justify-between">
-                    <h2 className="text-secondary-100 text-base font-bold">
+                    <h2
+                        id={MODAL_TITLE_ID}
+                        className="text-secondary-100 text-base font-bold"
+                    >
                         홈 화면에 추가하기
                     </h2>
                     <button

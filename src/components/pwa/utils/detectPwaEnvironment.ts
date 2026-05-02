@@ -5,24 +5,17 @@ export interface PwaEnvironment {
     isStandalone: boolean;
 }
 
-/**
- * @param ua - navigator.userAgent
- * @param userAgentDataMobile - navigator.userAgentData?.mobile (undefined if unsupported)
- * @param isStandaloneMQ - window.matchMedia('(display-mode: standalone)').matches
- * @param navigatorStandalone - (navigator as any).standalone (iOS legacy)
- */
 export function detectPwaEnvironment(
     ua: string,
     userAgentDataMobile: boolean | undefined,
     isStandaloneMQ: boolean,
-    navigatorStandalone: boolean | undefined
+    navigatorStandalone: boolean | undefined,
 ): PwaEnvironment {
     const isMobile =
         userAgentDataMobile ?? /Mobi|Android|iPhone|iPad|iPod/i.test(ua);
     const isIos = /iPhone|iPad|iPod/i.test(ua);
-    const isInAppBrowser = /KAKAOTALK|Instagram|FBAN|FBAV|Line|NaverApp/i.test(
-        ua
-    );
+    const isInAppBrowser =
+        /KAKAOTALK|Instagram|FBAN|FBAV|Line|NaverApp/i.test(ua);
     const isStandalone = isStandaloneMQ || navigatorStandalone === true;
 
     return { isMobile, isIos, isInAppBrowser, isStandalone };

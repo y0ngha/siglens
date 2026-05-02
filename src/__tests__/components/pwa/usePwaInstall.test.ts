@@ -72,13 +72,9 @@ describe('usePwaInstall', () => {
         act(() => {
             window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
         });
-        act(() => {
-            void result.current.handleInstall();
-        });
+        act(() => { void result.current.handleInstall(); });
         expect(result.current.showIosModal).toBe(true);
-        act(() => {
-            result.current.handleModalClose();
-        });
+        act(() => { result.current.handleModalClose(); });
         expect(result.current.showIosModal).toBe(false);
     });
 
@@ -92,5 +88,16 @@ describe('usePwaInstall', () => {
             window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
         });
         expect(result.current.showBanner).toBe(false);
+    });
+
+    it('30초 폴백 타이머 → 모바일에서 showBanner=true', () => {
+        jest.useFakeTimers();
+        const { result } = renderHook(() => usePwaInstall());
+        expect(result.current.showBanner).toBe(false);
+        act(() => {
+            jest.advanceTimersByTime(30_000);
+        });
+        expect(result.current.showBanner).toBe(true);
+        jest.useRealTimers();
     });
 });

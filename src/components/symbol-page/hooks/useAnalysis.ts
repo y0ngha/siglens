@@ -24,6 +24,7 @@ import {
     tryAcquireReanalyzeCooldown,
 } from '@/infrastructure/market/reanalyzeCooldown';
 import { sleep } from '@/components/symbol-page/utils/sleep';
+import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
 interface AnalyzeMutationVariables {
     symbol: string;
@@ -148,9 +149,7 @@ export function useAnalysis({
                 if (data.status === 'cached') {
                     currentJobIdRef.current = null;
                     setAnalysisResult(data.result);
-                    window.dispatchEvent(
-                        new CustomEvent('siglens:pwa-trigger')
-                    );
+                    window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
                     // 캐시 히트 = 분석 완료 → force 경로만 쿨다운 시작
                     if (variables.force) {
                         setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
@@ -254,9 +253,7 @@ export function useAnalysis({
                     if (result.status === 'done') {
                         currentJobIdRef.current = null;
                         setAnalysisResult(result.result);
-                        window.dispatchEvent(
-                            new CustomEvent('siglens:pwa-trigger')
-                        );
+                        window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
                         if (lastForceRef.current) {
                             setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
                         }
