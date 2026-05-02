@@ -82,7 +82,7 @@ export function UserApiKeyRequiredModal({
                         <Link
                             href={ctaHref}
                             onClick={onClose}
-                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium text-white transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 text-secondary-50 flex h-9 items-center justify-center rounded-lg px-4 text-sm font-medium transition-colors focus-visible:ring-1 focus-visible:outline-none"
                         >
                             {ctaLabel}
                         </Link>

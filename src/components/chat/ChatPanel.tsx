@@ -7,11 +7,9 @@ import {
     GEMINI_2_5_FLASH_MODEL,
     VALID_CHAT_MODELS,
     getProviderForModel,
-} from '@y0ngha/siglens-core';
-import type {
-    AnalysisResponse,
-    ModelId,
-    Timeframe,
+    type AnalysisResponse,
+    type ModelId,
+    type Timeframe,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
