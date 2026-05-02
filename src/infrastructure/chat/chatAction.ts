@@ -2,24 +2,77 @@
 
 import {
     GEMINI_2_5_FLASH_MODEL,
+    TIER_CONFIG,
+    getProviderForModel,
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
 import type {
     AnalysisResponse,
     ChatActionResult,
     ChatMessage,
+    LlmProvider,
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { isFreeChatModel } from '@/domain/llm';
 import { headers } from 'next/headers';
-import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
+import { callAiProviderRouter } from '@/infrastructure/ai/router';
 
 async function getClientIp(): Promise<string> {
     const headersList = await headers();
     return (
         headersList.get('x-forwarded-for')?.split(',')[0].trim() ?? 'unknown'
     );
+}
+
+function getServerPaidKey(provider: LlmProvider): string | undefined {
+    switch (provider) {
+        case 'google':
+            return process.env.GEMINI_CHAT_API_KEY;
+        case 'anthropic':
+            return process.env.ANTHROPIC_CHAT_API_KEY;
+        case 'openai':
+            return process.env.OPENAI_CHAT_API_KEY;
+        default: {
+            const exhausted: never = provider;
+            throw new Error(`Unhandled LLM provider: ${String(exhausted)}`);
+        }
+    }
+}
+
+function getServerFreeKey(provider: LlmProvider): string | undefined {
+    // Only Google provides a free-quota fallback key; other providers use the paid key exclusively.
+    switch (provider) {
+        case 'google':
+            return process.env.GEMINI_CHAT_FREE_API_KEY;
+        case 'anthropic':
+        case 'openai':
+            return undefined;
+        default: {
+            const exhausted: never = provider;
+            throw new Error(`Unhandled LLM provider: ${String(exhausted)}`);
+        }
+    }
+}
+
+async function resolvePaidApiKey(
+    model: ModelId,
+    provider: LlmProvider,
+    serverPaidKey: string
+): Promise<string | undefined> {
+    // Safe cast: ModelId ⊆ string; Array.includes widens the argument type to string.
+    if ((TIER_CONFIG.models.free as readonly string[]).includes(model)) {
+        return serverPaidKey;
+    }
+    const user = await getCurrentUser();
+    if (!user) return undefined;
+    const { db } = getAuthDatabaseClient();
+    const repo = new DrizzleUserApiKeyRepository(db);
+    const record = await repo.findByUserAndProvider(user.id, provider);
+    return record?.apiKey;
+    // undefined → requestChatCompletion returns user_api_key_required
 }
 
 export async function chatAction(
@@ -30,20 +83,18 @@ export async function chatAction(
     userMessage: string,
     model: ModelId = GEMINI_2_5_FLASH_MODEL
 ): Promise<ChatActionResult> {
-    const paidApiKey = process.env.GEMINI_API_KEY;
-    if (!paidApiKey) {
+    const provider = getProviderForModel(model);
+    const serverPaidKey = getServerPaidKey(provider);
+    if (!serverPaidKey) {
         return { ok: false, error: 'server_error' };
     }
 
-    // Server-side guard: BYOK call adapter is implemented in a follow-up issue.
-    // Until then, premium model requests are rejected here even if the UI gate was bypassed.
-    // TODO(byok-adapter): when BYOK adapter lands, return 'user_api_key_required' for logged-in users with no key.
-    if (!isFreeChatModel(model)) {
-        return { ok: false, error: 'model_not_allowed' };
-    }
-
     try {
-        const clientIp = await getClientIp();
+        const [paidApiKey, clientIp] = await Promise.all([
+            resolvePaidApiKey(model, provider, serverPaidKey),
+            getClientIp(),
+        ]);
+
         return await requestChatCompletion(
             {
                 clientIp,
@@ -53,11 +104,11 @@ export async function chatAction(
                 history,
                 userMessage,
                 model,
-                freeApiKey: process.env.GEMINI_CHAT_FREE_API_KEY,
+                freeApiKey: getServerFreeKey(provider),
                 paidApiKey,
             },
             {
-                callAiProvider: callGeminiWithKeyFallback,
+                callAiProvider: callAiProviderRouter,
             }
         );
     } catch {

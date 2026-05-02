@@ -3,11 +3,11 @@
 import { useRef, useState } from 'react';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
-import { VALID_CHAT_MODELS } from '@y0ngha/siglens-core';
-import type {
-    AnalysisResponse,
-    ModelId,
-    Timeframe,
+import {
+    VALID_CHAT_MODELS,
+    type AnalysisResponse,
+    type ModelId,
+    type Timeframe,
 } from '@y0ngha/siglens-core';
 import { isFreeChatModel } from '@/domain/llm';
 import { cn } from '@/lib/cn';
@@ -31,21 +31,20 @@ const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ChatModelDisplay>> = {
         fullName: 'Gemini 2.5 Flash Lite',
     },
     'gemini-2.5-pro': { label: 'Pro', fullName: 'Gemini 2.5 Pro' },
-    'claude-haiku-3-5': {
-        label: 'Haiku',
-        fullName: 'Claude Haiku 3.5',
+    'gemini-3.1-pro-preview': {
+        label: '3.1 Pro',
+        fullName: 'Gemini 3.1 Pro Preview',
     },
-    'claude-sonnet-4-6': {
-        label: 'Sonnet',
-        fullName: 'Claude Sonnet 4.6',
+    'gemini-3-flash-preview': {
+        label: 'Flash 3',
+        fullName: 'Gemini 3 Flash Preview',
     },
-    'claude-opus-4-7': {
-        label: 'Opus',
-        fullName: 'Claude Opus 4.7',
-    },
-    'gpt-5-mini': { label: 'GPT-5 Mini', fullName: 'GPT-5 Mini' },
-    'gpt-5.4': { label: 'GPT-5.4', fullName: 'GPT-5.4' },
-    'gpt-5.5': { label: 'GPT-5.5', fullName: 'GPT-5.5' },
+    'claude-haiku-3-5': { label: 'Haiku', fullName: 'Claude Haiku 3.5' },
+    'claude-sonnet-4-6': { label: 'Sonnet', fullName: 'Claude Sonnet 4.6' },
+    'claude-opus-4-7': { label: 'Opus', fullName: 'Claude Opus 4.7' },
+    'gpt-5-mini': { label: 'GPT Mini', fullName: 'GPT-5 Mini' },
+    'gpt-5.4': { label: 'GPT 5.4', fullName: 'GPT-5.4' },
+    'gpt-5.5': { label: 'GPT 5.5', fullName: 'GPT-5.5' },
 };
 
 function getModelDisplay(id: ModelId): ChatModelDisplay {

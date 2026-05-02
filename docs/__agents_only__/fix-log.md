@@ -48,10 +48,6 @@
 - Context: userApiKeys의 JSDoc 블록을 한 줄로 압축하되 AES-256-GCM 암호화 특성 유지.
 
 ## [PR #405 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Violation: LLM_PROVIDER_VALUES 상수가 src/domain/llm/constants.ts와 src/infrastructure/db/constants.ts 양쪽에 동일하게 정의
-- Rule: ARCHITECTURE.md — infrastructure는 domain에서 import 가능; 동일 상수 중복 정의 금지
-- Context: infra DB 상수가 domain의 단일 진실 공급원을 우회. infrastructure 측 정의를 제거하고 @/domain/llm에서 import 후 재노출.
-
 - Violation: drizzle/0004_add_oauth_token_columns.sql가 _journal.json에 등재되지 않은 채 0006_striped_marauders.sql과 SQL이 완전 중복
 - Rule: drizzle 마이그레이션은 _journal.json 등재 순서로 적용되며, 등재되지 않은 파일은 dead-code이자 drizzle-kit migrate 시 0006에서 컬럼 중복 오류 유발
 - Context: orphan SQL 파일을 git rm으로 삭제. _journal.json은 변경 없음.
@@ -59,6 +55,24 @@
 - Violation: drizzle/0004_petite_medusa.sql이 email_verified DEFAULT true로 추가되어 0005에서 false로 되돌리기 전 가입한 사용자들이 자동 검증 처리됨
 - Rule: 운영 DB에 이미 적용된 마이그레이션은 사후 편집 금지 — 보정이 필요하면 새 forward migration 추가
 - Context: 두 마이그레이션 모두 _journal에 등재되어 적용된 상태. 0004를 retroactive 수정하지 않고 0005에 사후 보존 사유와 향후 처리 가이드를 SQL 주석으로 명시.
+
+## [PR #408 Round 2 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
+- Violation: anthropic.ts의 `!block || block.type !== 'text'` 복합 조건에서 `block.type !== 'text'` 분기 미테스트
+- Rule: MISTAKES.md Infrastructure Functions #2 / Tests #7 — 100% 분기 커버리지 + provider 쌍 대칭성
+- Context: anthropic.test.ts에 tool_use 블록 반환 케이스 추가. openai.test.ts의 null/empty 파싱 에러 2개와 대칭.
+
+## [PR #408 코멘트 반영 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
+- Violation: router.ts에서 상대 경로 import 사용 (`./anthropic`, `./gemini`, `./openai`)
+- Rule: MISTAKES.md 7.6 — 모든 import는 path alias 사용 필수
+- Context: src/infrastructure/ai/router.ts의 세 import를 `@/infrastructure/ai/...`로 교체.
+
+- Violation: OpenAI 빈 응답 시 빈 문자열 반환 — Anthropic(에러 throw)과 비대칭
+- Rule: MISTAKES.md Tests 7 — provider 쌍은 에러 처리도 대칭이어야 함
+- Context: callOpenai에서 choices[0]?.message.content == null이면 에러를 throw하도록 수정.
+
+- Violation: UserApiKeyRequiredModal 바깥 wrapper div에 aria-hidden="true"로 모달 전체가 접근성 트리에서 제거됨
+- Rule: MISTAKES.md Accessibility 1.5, 7 — aria-hidden은 장식적 컨텐츠에만 사용, 사용자가 읽어야 할 컨텐츠에 금지
+- Context: backdrop div의 aria-hidden="true" 제거. role="dialog" aria-modal="true" 내부 div가 접근성 트리에 노출됨.
 
 ## [PR #403 Round 5 | feat/398/contact-us-form | 2026-05-02]
 - Violation: 새로 만든 파일이 git에 추가되지 않은 채 PR 푸시되어 빌드가 차단됨
@@ -90,15 +104,6 @@
 - Rule: 시스템 경계(외부 API)의 예측 불가능한 응답은 try/catch로 감싸 결과 객체로 변환
 - Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
-
-## [Issue #394 stubs removal | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: 미배포 코어 API stub 모듈을 임시로 두고 import 경로를 우회
-- Rule: 단일 의존성 원칙 — 외부 패키지 export가 정식 출시되면 stub은 즉시 제거하고 import 경로를 통일
-- Context: siglens-core 0.2.1 배포로 모든 새 API(requestEmailVerification, verifyEmail, EmailTokenStore, V2 PasswordReset, V2 RegisterUser, OAuthRevoker, DrizzleOAuthAccountRepository)가 실 export됨. coreStubs.ts 삭제, 모든 import를 @y0ngha/siglens-core로 교체. EmailMessage/EmailDispatcher 또한 코어 export를 그대로 re-export하여 단일 경로 유지.
-
-- Violation: 코어가 자동화한 OAuth revocation을 사용자에게 수동 안내 문구로 노출
-- Rule: 도메인 동작과 UI 메시지 동기화 — 코어가 책임지면 UI는 그 사실을 반영
-- Context: deleteAccount가 oauthAccounts + oauthRevoker deps로 provider 측 token revocation을 자동 수행하므로, DeleteAccountConfirm의 "각 provider 계정에서 직접 끊으세요" 안내 박스와 /privacy 약관 문구를 "탈퇴 시 자동으로 회수된다"로 갱신.
 
 ## [PR #395 Round 6 | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: infrastructure Server Action에서 네트워크 응답 없이 무한 대기 가능
@@ -144,22 +149,15 @@
 - Violation: future siglens work risked re-introducing analysis logic locally instead of in siglens-core
 - Rule: SCOPE.md §3 (dependency direction) — analysis secret sauce stays in core
 - Context: added siglens-side §0 work-boundary checklist + CLAUDE.md cross-repo scope guard so that analysis-related task descriptions trigger an explicit redirect-or-confirm step before any code is written.
+
 ## [Issue #401 | feat/401/worker-ai-provider-enhancement | 2026-05-02]
 - Violation: 동일 정책 상수가 여러 retry 모듈에 중복 정의 (AI_RETRY_MAX_ATTEMPTS, AI_RETRY_DELAY_MS)
 - Rule: MISTAKES.md Design 1 / FF Cohesion — 함께 변해야 하는 상수는 single source of truth에 모아야 함
 - Context: claude-retry/gemini-retry/chatgpt-retry 세 파일이 `AI_RETRY_MAX_ATTEMPTS = 5`와 `AI_RETRY_DELAY_MS = 5000`을 각자 정의. 모두 retry.ts로 이동해 공유.
 
-- Violation: 동일 utility 함수(isMaxTokensError) 중복 구현
-- Rule: MISTAKES.md Coding Paradigm 1 — 새 함수 작성 전 기존 helper 확인
-- Context: claude-retry.ts와 gemini-retry.ts 양쪽이 `isMaxTokensError`를 동일 로직으로 정의. retry.ts에 `hasErrorCode(error, code)`로 추출하여 양쪽이 import.
-
 - Violation: 에러 처리 의도와 retryable 플래그 모순
 - Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
 - Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
-
-- Violation: process.env 값을 type alias로 force-cast (검증 없이 `as`)
-- Rule: MISTAKES.md TypeScript 7 — `as` 캐스트 시 runtime 보장 또는 가드 명시
-- Context: config.ts에서 `process.env.AI_PROVIDER as AIProviderType`, BRIEFING_CLAUDE_MODEL/BRIEFING_GEMINI_MODEL을 검증 없이 cast. parseAIProvider/parseBriefingModel 함수로 runtime 검증 후 throw 처리.
 
 - Violation: Array.find 후 type narrow를 위한 중복 type check
 - Rule: MISTAKES.md Coding Paradigm 4 — 결과에 영향 없는 로직 제거
@@ -168,3 +166,47 @@
 
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).
+
+## [PR #409 Round 2 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: Duplicate import statements from the same module (@y0ngha/siglens-core) in ChartContent.tsx and providerDefaults.ts
+- Rule: MISTAKES.md Components #0 — ESLint import/no-duplicates; always consolidate imports from the same module
+- Context: ChartContent.tsx had separate type import and value import from @y0ngha/siglens-core. providerDefaults.ts same pattern. Merged into single import statement using inline type modifier.
+
+## [PR #409 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: Hook declaration order violated — useEffect declared before useCallback in useSelectedProvider.ts
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — handlers (useCallback, step 5) must precede useEffect (step 7)
+- Context: useSelectedProvider declared useEffect on line 19 and useCallback on line 27; reordered to useCallback first.
+
+- Violation: VALID_PROVIDERS declared as mutable AIProvider[] instead of readonly
+- Rule: CONVENTIONS.md immutability — module-level constants should use readonly to prevent accidental mutation
+- Context: Inconsistent with other priority arrays in providerDefaults.ts which all use readonly. Changed to readonly AIProvider[].
+
+- Violation: Redundant ternary inside isSelected=true branch
+- Rule: MISTAKES.md Coding Paradigm rule 4 — logic with no effect must be removed
+- Context: ModelSelector.tsx isSelected ? <span className={cn('text-sm', isSelected ? 'text-primary-300' : 'text-secondary-400')}> — the inner ternary always resolves to text-primary-300. Simplified to direct className.
+
+- Violation: formatModelVariant produces "Sonnet 4 6" instead of "Sonnet 4.6" for claude-sonnet-4-6
+- Rule: Output must match JSDoc examples in the same function
+- Context: Claude model IDs split by '-' produce ["sonnet", "4", "6"] then join with space → "Sonnet 4 6". Fixed by adding .replace(/(\d) (\d)/g, '$1.$2') to merge adjacent numeric parts with dots.
+
+- Violation: AnalysisStatusBanner bottom margin removed when ModelSelector was prepended
+- Rule: Consistent spacing — adding content above should not remove spacing below
+- Context: AnalysisStatusBanner className changed from mb-3 to mt-3, removing bottom gap to AnalysisPanel. Changed to my-3 to preserve both margins.
+
+## [PR #409 Round 3 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: `'free'` tier 문자열 리터럴이 컴포넌트 본문에 하드코딩됨
+- Rule: MISTAKES.md Coding Paradigm — magic constants must be extracted to module-level constants
+- Context: ChartContent.tsx의 `getAllowedModels('free')` 호출에서 `'free'`를 인라인 리터럴로 사용. `DEFAULT_TIER = 'free' as const`로 추출.
+
+## [Issue #402 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: localStorage key constant placed in domain/ layer
+- Rule: ARCHITECTURE.md — domain/ must contain only pure business logic; config/storage keys belong in lib/
+- Context: `LOCAL_STORAGE_PROVIDER_KEY` was initially created in `src/domain/llm/types.ts` but localStorage keys are UI/persistence configuration, not domain logic. Moved to `src/lib/storageKeys.ts`.
+
+- Violation: `as` cast without explanatory comment in production code
+- Rule: MISTAKES.md TypeScript rule 7 — every safe-cast `as` must have a comment explaining the guarantee
+- Context: `MODEL_SPECS[modelId as keyof typeof MODEL_SPECS]` in providerDefaults.ts and `(VALID_PROVIDERS as string[])` in useSelectedProvider.ts both lacked comments. Added inline comments.
+
+- Violation: Derived constant recreated every render without useMemo
+- Rule: MISTAKES.md rule 10 — derived constants from props must be wrapped in useMemo
+- Context: `resolvedModels` in ModelSelector.tsx was computed on every render; since handleKeyDown depended on it, useCallback provided no stabilization benefit. Wrapped with useMemo([allowedModels]).
