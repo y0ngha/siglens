@@ -1,9 +1,80 @@
 'use client';
 
+const STEPS = [
+    {
+        step: 1,
+        title: 'Safari 하단 공유 버튼을 탭하세요',
+        description: '화면 아래 가운데에 있는 위쪽 화살표 모양 아이콘입니다',
+        img: '/pwa/ios-step1.svg',
+    },
+    {
+        step: 2,
+        title: "'홈 화면에 추가'를 선택하세요",
+        description: '공유 메뉴를 아래로 스크롤하면 나타납니다',
+        img: '/pwa/ios-step2.svg',
+    },
+    {
+        step: 3,
+        title: "우측 상단 '추가'를 탭하면 완료!",
+        description: 'SigLens 아이콘이 홈 화면에 추가됩니다',
+        img: '/pwa/ios-step3.svg',
+    },
+] as const;
+
 interface IosInstallModalProps {
     onClose: () => void;
 }
 
-export function IosInstallModal({ onClose: _onClose }: IosInstallModalProps) {
-    return null;
+export function IosInstallModal({ onClose }: IosInstallModalProps) {
+    return (
+        <div
+            data-testid="ios-modal-backdrop"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4"
+            onClick={onClose}
+        >
+            <div
+                data-testid="ios-modal-content"
+                className="w-full max-w-sm rounded-2xl border border-slate-700 bg-slate-800 p-5"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="mb-4 flex items-center justify-between">
+                    <h2 className="text-base font-bold text-slate-100">
+                        홈 화면에 추가하기
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        aria-label="닫기"
+                        className="text-xl leading-none text-slate-500"
+                    >
+                        ×
+                    </button>
+                </div>
+                <div className="space-y-3">
+                    {STEPS.map(({ step, title, description, img }) => (
+                        <div
+                            key={step}
+                            className="flex gap-3 rounded-xl bg-slate-900 p-3"
+                        >
+                            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                                {step}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="mb-1 text-sm font-semibold text-slate-200">
+                                    {title}
+                                </p>
+                                <p className="mb-2 text-xs text-slate-400">
+                                    {description}
+                                </p>
+                                <img
+                                    src={img}
+                                    alt={`${step}단계 안내`}
+                                    className="w-full rounded-lg"
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
 }
