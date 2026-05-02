@@ -34,11 +34,12 @@ export function resolveDefaultModelForProvider(
     const allowedSet = new Set(allowedModels);
 
     const match = priorityList.find(
-        (modelId) =>
+        modelId =>
             allowedSet.has(modelId) &&
             modelId in MODEL_SPECS &&
             // PROVIDER_PRIORITY_MAP only contains keys defined in MODEL_SPECS, so the cast is safe
-            MODEL_SPECS[modelId as keyof typeof MODEL_SPECS].provider === provider
+            MODEL_SPECS[modelId as keyof typeof MODEL_SPECS].provider ===
+                provider
     );
 
     return match ?? null;

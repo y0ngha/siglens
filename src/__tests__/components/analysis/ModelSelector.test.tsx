@@ -70,7 +70,9 @@ describe('ModelSelector', () => {
 
     it('clicking an unlocked option calls onProviderChange with correct provider', async () => {
         const user = userEvent.setup();
-        const { onProviderChange } = renderSelector({ selectedProvider: 'claude' });
+        const { onProviderChange } = renderSelector({
+            selectedProvider: 'claude',
+        });
 
         const geminiOption = screen
             .getAllByRole('radio')
@@ -82,7 +84,9 @@ describe('ModelSelector', () => {
 
     it('clicking a locked option does NOT call onProviderChange', async () => {
         const user = userEvent.setup();
-        const { onProviderChange } = renderSelector({ selectedProvider: 'claude' });
+        const { onProviderChange } = renderSelector({
+            selectedProvider: 'claude',
+        });
 
         const chatgptOption = screen
             .getAllByRole('radio')
@@ -94,7 +98,9 @@ describe('ModelSelector', () => {
 
     it('ArrowRight moves selection to next option and fires onProviderChange', async () => {
         const user = userEvent.setup();
-        const { onProviderChange } = renderSelector({ selectedProvider: 'claude' });
+        const { onProviderChange } = renderSelector({
+            selectedProvider: 'claude',
+        });
 
         const claudeOption = screen
             .getAllByRole('radio')
@@ -109,7 +115,9 @@ describe('ModelSelector', () => {
 
     it('ArrowLeft wraps from first to last non-locked option', async () => {
         const user = userEvent.setup();
-        const { onProviderChange } = renderSelector({ selectedProvider: 'claude' });
+        const { onProviderChange } = renderSelector({
+            selectedProvider: 'claude',
+        });
 
         const claudeOption = screen
             .getAllByRole('radio')

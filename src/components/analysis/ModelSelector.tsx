@@ -43,8 +43,16 @@ export function ModelSelector({
     const resolvedModels = useMemo(
         () =>
             PROVIDER_CONFIG.map(({ provider, displayName }) => {
-                const modelId = resolveDefaultModelForProvider(provider, allowedModels);
-                return { provider, displayName, modelId, isLocked: modelId === null };
+                const modelId = resolveDefaultModelForProvider(
+                    provider,
+                    allowedModels
+                );
+                return {
+                    provider,
+                    displayName,
+                    modelId,
+                    isLocked: modelId === null,
+                };
             }),
         [allowedModels]
     );
@@ -149,9 +157,7 @@ export function ModelSelector({
                                 tabIndex={isSelected ? 0 : -1}
                                 data-provider={provider}
                                 title={isLocked ? 'Pro 등급 전용' : undefined}
-                                onClick={() =>
-                                    handleSelect(provider, isLocked)
-                                }
+                                onClick={() => handleSelect(provider, isLocked)}
                                 onKeyDown={e => {
                                     if (
                                         (e.key === ' ' || e.key === 'Enter') &&
@@ -162,8 +168,8 @@ export function ModelSelector({
                                     }
                                 }}
                                 className={cn(
-                                    'relative flex cursor-pointer select-none flex-col items-center gap-1 border-r px-2 py-2.5 transition-colors last:border-r-0',
-                                    'focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500',
+                                    'relative flex cursor-pointer flex-col items-center gap-1 border-r px-2 py-2.5 transition-colors select-none last:border-r-0',
+                                    'focus-visible:ring-primary-500 focus-visible:ring-1 focus-visible:outline-none',
                                     isSelected
                                         ? 'border-r-secondary-700 bg-primary-500/10'
                                         : 'border-r-secondary-700',

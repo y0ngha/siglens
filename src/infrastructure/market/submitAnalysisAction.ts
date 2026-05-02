@@ -15,5 +15,8 @@ export async function submitAnalysisAction(
     fmpSymbol?: string,
     modelId?: ModelId
 ): Promise<SubmitAnalysisGatedResult> {
-    return submitAnalysis(symbol, timeframe, force, fmpSymbol, { waitUntil, modelId });
+    return submitAnalysis(symbol, timeframe, force, fmpSymbol, {
+        waitUntil,
+        modelId,
+    });
 }

@@ -121,13 +121,12 @@ export function ChartContent({
 
     const [selectedProvider, setSelectedProvider] = useSelectedProvider();
 
-    const allowedModels = useMemo(
-        () => getAllowedModels('free'),
-        []
-    );
+    const allowedModels = useMemo(() => getAllowedModels('free'), []);
 
     const modelId = useMemo(
-        () => resolveDefaultModelForProvider(selectedProvider, allowedModels) ?? undefined,
+        () =>
+            resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
+            undefined,
         [selectedProvider, allowedModels]
     );
 
