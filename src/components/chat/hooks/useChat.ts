@@ -51,6 +51,8 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
     model_not_allowed:
         '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
+    user_api_key_required:
+        '이 모델을 사용하려면 API 키를 등록해야 해요. 계정 설정에서 등록해주세요.',
 };
 
 function isValidChatModel(value: string): value is ModelId {

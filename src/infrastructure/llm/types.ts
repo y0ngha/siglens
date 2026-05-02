@@ -1,14 +1,6 @@
-import type { LlmProvider } from '@/domain/llm';
+export type { ApiKeyActionState, RegisteredProvider } from '@/domain/llm/types';
 
-export interface ApiKeyActionState {
-    status: 'idle' | 'success' | 'error';
-    message: string | null;
-}
+import type { ApiKeyActionState } from '@/domain/llm/types';
 
 export type SaveApiKeyState = ApiKeyActionState;
 export type DeleteApiKeyState = ApiKeyActionState;
-
-export interface RegisteredProvider {
-    provider: LlmProvider;
-    updatedAt: Date;
-}

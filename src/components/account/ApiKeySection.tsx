@@ -2,9 +2,8 @@
 
 import { useState } from 'react';
 import { useFormStatus } from 'react-dom';
-import type { LlmProvider } from '@/domain/llm';
-import { useApiKeyForms } from '@/components/hooks/useApiKeyForms';
-import type { RegisteredProvider } from '@/infrastructure/llm/types';
+import type { LlmProvider, RegisteredProvider } from '@/domain/llm';
+import { useApiKeyForms } from '@/components/account/hooks/useApiKeyForms';
 
 const PROVIDER_LABELS: Record<LlmProvider, string> = {
     anthropic: 'Anthropic',
