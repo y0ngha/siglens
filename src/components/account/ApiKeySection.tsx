@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
+import { LLM_PROVIDER_VALUES } from '@/domain/llm';
 import type { LlmProvider } from '@/domain/llm';
 import { useApiKeyForms } from '@/components/account/hooks/useApiKeyForms';
 import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
@@ -11,8 +12,6 @@ const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
     google: 'AIza...',
     openai: 'sk-...',
 };
-
-const PROVIDERS: LlmProvider[] = ['anthropic', 'google', 'openai'];
 
 interface SubmitButtonProps {
     label: string;
@@ -41,7 +40,6 @@ interface ProviderCardProps {
 
 function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
     // editMode: true only when an already-registered provider's "재등록" is active
-    // Unregistered providers always show the input (showSaveInput = !isRegistered || editMode)
     const [editMode, setEditMode] = useState(false);
     const { saveState, saveFormAction, deleteState, deleteFormAction } =
         useApiKeyForms();
@@ -189,7 +187,7 @@ export function ApiKeySection({ registeredProviders }: ApiKeySectionProps) {
                     등록한 키는 계정에만 저장되며 AES-256으로 암호화됩니다.
                 </p>
             </div>
-            {PROVIDERS.map(provider => (
+            {LLM_PROVIDER_VALUES.map(provider => (
                 <ProviderCard
                     key={`${provider}-${String(registeredSet.has(provider))}`}
                     provider={provider}

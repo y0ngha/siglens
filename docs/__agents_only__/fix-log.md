@@ -5,10 +5,6 @@
 - Rule: ARCHITECTURE.md — components는 infrastructure에서 import 금지; 타입은 domain에 두어야 layer 규칙 준수 가능
 - Context: domain/llm/types.ts로 이동 후 infrastructure/llm/types.ts에서 re-export. components는 @/domain/llm에서 import.
 
-- Violation: useApiKeyForms.ts를 components/hooks/(전역 훅 디렉토리)에 배치 — feature-scoped hook을 전역에 혼입
-- Rule: ARCHITECTURE.md — feature 전용 hook은 components/{feature}/hooks/에 두어야 함 (components/hooks/는 범용 훅 전용)
-- Context: components/account/hooks/useApiKeyForms.ts로 이동.
-
 - Violation: safeClose, handleBackdropClick 함수에 void 반환 타입 미선언
 - Rule: MISTAKES.md #0 — 컴포넌트 render 외부 함수는 반환 타입 명시 필요
 - Context: `: void` 반환 타입 추가.
@@ -114,10 +110,6 @@
 - Violation: cn()을 aria-describedby ID 조합에 오용
 - Rule: cn()은 Tailwind 클래스 병합 전용 유틸리티로 ARIA ID 문자열 조합에 사용 금지
 - Context: ContactTextareaField의 aria-describedby 값 조합에 cn()을 사용. 배열 filter+join 방식으로 교체.
-
-- Violation: 특정 기능 전용 훅을 공유 hooks/ 디렉토리에 배치
-- Rule: ARCHITECTURE.md — components/hooks/는 범용 훅 전용, 기능 특화 훅은 해당 기능 폴더의 hooks/ 서브폴더에 위치
-- Context: useContactForm.ts가 components/hooks/에 위치. components/contact/hooks/로 이동.
 
 
 ## [PR #405 follow-up | refactor/scope-realignment-phase-0 | 2026-05-02]

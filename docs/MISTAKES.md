@@ -392,6 +392,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ useChat.ts: ERROR_MESSAGES.server_busy = "위의 모델 선택기에서 다른 모델을 선택하세요"  // references ChatPanel dropdown location
     ✅ ERROR_MESSAGES.server_busy = "Change the model and retry"  // describes action, not location
     → When UI layout changes (dropdown moves), message remains correct without code change
+
+15. Feature-scoped hooks placed in components/hooks/ global directory
+    → Feature-specific hooks must live in components/{feature}/hooks/, not components/hooks/
+    → components/hooks/ is reserved for generic/reusable hooks shared across all features
+    ❌ useContactForm.ts, useApiKeyForms.ts in components/hooks/  // feature-specific hooks mixing with generic
+    ✅ components/contact/hooks/useContactForm.ts, components/account/hooks/useApiKeyForms.ts
+    → Layer dependency improves when hooks are colocated with their feature components
 ```
 
 ---

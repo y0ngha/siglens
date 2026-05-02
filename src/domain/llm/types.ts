@@ -2,8 +2,10 @@ import type { LlmProvider } from '@/domain/llm/constants';
 
 export type GateMode = 'auth' | 'byok';
 
+export type ApiKeyActionStatus = 'idle' | 'success' | 'error';
+
 export interface ApiKeyActionState {
-    status: 'idle' | 'success' | 'error';
+    status: ApiKeyActionStatus;
     message: string | null;
 }
 
