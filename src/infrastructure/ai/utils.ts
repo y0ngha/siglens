@@ -11,8 +11,7 @@ export function toProviderTurns(contents: AiContents): ProviderTurn[] {
         return [{ role: 'user', content: contents }];
     }
     return contents.map((turn: GeminiContent) => ({
-        role:
-            turn.role === 'model' ? ('assistant' as const) : ('user' as const),
+        role: turn.role === 'model' ? 'assistant' : 'user',
         content: turn.parts.map(p => p.text ?? '').join(''),
     }));
 }
