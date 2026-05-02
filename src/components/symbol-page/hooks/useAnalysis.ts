@@ -148,6 +148,7 @@ export function useAnalysis({
                 if (data.status === 'cached') {
                     currentJobIdRef.current = null;
                     setAnalysisResult(data.result);
+                    window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
                     // 캐시 히트 = 분석 완료 → force 경로만 쿨다운 시작
                     if (variables.force) {
                         setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
@@ -251,6 +252,7 @@ export function useAnalysis({
                     if (result.status === 'done') {
                         currentJobIdRef.current = null;
                         setAnalysisResult(result.result);
+                        window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
                         if (lastForceRef.current) {
                             setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
                         }
