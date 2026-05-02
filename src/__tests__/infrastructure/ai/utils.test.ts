@@ -10,6 +10,11 @@ describe('toProviderTurns', () => {
     });
 
     describe('GeminiContent[] contents', () => {
+        it('빈 배열이면 빈 배열을 반환한다', () => {
+            const result = toProviderTurns([]);
+            expect(result).toEqual([]);
+        });
+
         it('role이 user인 턴은 user로 변환한다', () => {
             const contents: GeminiContent[] = [
                 { role: 'user', parts: [{ text: 'Hi' }] },

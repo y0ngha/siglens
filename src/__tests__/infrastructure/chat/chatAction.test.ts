@@ -191,7 +191,7 @@ describe('chatAction 함수는', () => {
     });
 
     describe('서버 키가 없을 때', () => {
-        it('서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+        it('Gemini 서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
             delete process.env.GEMINI_CHAT_API_KEY;
 
             const result = await chatAction(
@@ -201,6 +201,34 @@ describe('chatAction 함수는', () => {
                 [],
                 '질문',
                 'gemini-2.5-flash'
+            );
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(mockRequestChatCompletion).not.toHaveBeenCalled();
+        });
+
+        it('Anthropic 서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'claude-haiku-3-5'
+            );
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(mockRequestChatCompletion).not.toHaveBeenCalled();
+        });
+
+        it('OpenAI 서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gpt-5-mini'
             );
 
             expect(result).toEqual({ ok: false, error: 'server_error' });
