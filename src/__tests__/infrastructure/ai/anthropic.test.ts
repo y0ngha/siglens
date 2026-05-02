@@ -36,7 +36,9 @@ describe('callAnthropicChat', () => {
             expect(result).toBe('Hello');
             expect(MockAnthropic).toHaveBeenCalledWith({ apiKey: 'pk' });
             expect(mockCreate).toHaveBeenCalledTimes(1);
-            expect(mockCreate.mock.calls[0][0]).toMatchObject({ model: 'claude-haiku-3-5' });
+            expect(mockCreate.mock.calls[0][0]).toMatchObject({
+                model: 'claude-haiku-3-5',
+            });
         });
 
         it('primary key가 실패하면 fallback key로 재시도한다', async () => {
@@ -71,7 +73,9 @@ describe('callAnthropicChat', () => {
             });
 
             expect(result).toBe('Fallback only');
-            expect(MockAnthropic).toHaveBeenCalledWith({ apiKey: 'fallback-key' });
+            expect(MockAnthropic).toHaveBeenCalledWith({
+                apiKey: 'fallback-key',
+            });
             expect(mockCreate).toHaveBeenCalledTimes(1);
         });
     });

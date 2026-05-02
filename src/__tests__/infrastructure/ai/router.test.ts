@@ -15,9 +15,16 @@ import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
 import { callOpenaiChat } from '@/infrastructure/ai/openai';
 import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 
-const mockCallAnthropicChat = callAnthropicChat as jest.MockedFunction<typeof callAnthropicChat>;
-const mockCallOpenaiChat = callOpenaiChat as jest.MockedFunction<typeof callOpenaiChat>;
-const mockCallGeminiWithKeyFallback = callGeminiWithKeyFallback as jest.MockedFunction<typeof callGeminiWithKeyFallback>;
+const mockCallAnthropicChat = callAnthropicChat as jest.MockedFunction<
+    typeof callAnthropicChat
+>;
+const mockCallOpenaiChat = callOpenaiChat as jest.MockedFunction<
+    typeof callOpenaiChat
+>;
+const mockCallGeminiWithKeyFallback =
+    callGeminiWithKeyFallback as jest.MockedFunction<
+        typeof callGeminiWithKeyFallback
+    >;
 
 const BASE_OPTIONS = {
     primaryApiKey: 'pk',

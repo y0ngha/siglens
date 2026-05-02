@@ -3,7 +3,11 @@
 import { useRef, useState } from 'react';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
-import { GEMINI_2_5_FLASH_MODEL, VALID_CHAT_MODELS, getProviderForModel } from '@y0ngha/siglens-core';
+import {
+    GEMINI_2_5_FLASH_MODEL,
+    VALID_CHAT_MODELS,
+    getProviderForModel,
+} from '@y0ngha/siglens-core';
 import type {
     AnalysisResponse,
     ModelId,
@@ -30,8 +34,14 @@ const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ChatModelDisplay>> = {
         fullName: 'Gemini 2.5 Flash Lite',
     },
     'gemini-2.5-pro': { label: 'Pro', fullName: 'Gemini 2.5 Pro' },
-    'gemini-3.1-pro-preview': { label: '3.1 Pro', fullName: 'Gemini 3.1 Pro Preview' },
-    'gemini-3-flash-preview': { label: 'Flash 3', fullName: 'Gemini 3 Flash Preview' },
+    'gemini-3.1-pro-preview': {
+        label: '3.1 Pro',
+        fullName: 'Gemini 3.1 Pro Preview',
+    },
+    'gemini-3-flash-preview': {
+        label: 'Flash 3',
+        fullName: 'Gemini 3 Flash Preview',
+    },
     'claude-haiku-3-5': { label: 'Haiku', fullName: 'Claude Haiku 3.5' },
     'claude-sonnet-4-6': { label: 'Sonnet', fullName: 'Claude Sonnet 4.6' },
     'claude-opus-4-7': { label: 'Opus', fullName: 'Claude Opus 4.7' },

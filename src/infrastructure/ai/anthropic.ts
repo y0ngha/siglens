@@ -1,5 +1,9 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type { AiContents, CallAiProviderOptions, GeminiContent } from '@y0ngha/siglens-core';
+import type {
+    AiContents,
+    CallAiProviderOptions,
+    GeminiContent,
+} from '@y0ngha/siglens-core';
 
 const ANTHROPIC_MAX_TOKENS = 8192;
 
@@ -16,7 +20,7 @@ function toAnthropicMessages(contents: AiContents): Anthropic.MessageParam[] {
     }
     return contents.map((turn: GeminiContent) => ({
         role: turn.role === 'model' ? 'assistant' : 'user',
-        content: turn.parts.map((p) => p.text).join(''),
+        content: turn.parts.map(p => p.text).join(''),
     }));
 }
 
@@ -31,11 +35,15 @@ async function callAnthropic({
         model,
         max_tokens: ANTHROPIC_MAX_TOKENS,
         messages: toAnthropicMessages(contents),
-        ...(systemInstruction !== undefined ? { system: systemInstruction } : {}),
+        ...(systemInstruction !== undefined
+            ? { system: systemInstruction }
+            : {}),
     });
     const block = response.content[0];
     if (!block || block.type !== 'text') {
-        throw new Error(`Anthropic returned no text content (stop_reason: ${response.stop_reason})`);
+        throw new Error(
+            `Anthropic returned no text content (stop_reason: ${response.stop_reason})`
+        );
     }
     return block.text;
 }
@@ -50,10 +58,20 @@ export async function callAnthropicChat({
 }: CallAiProviderOptions): Promise<string> {
     if (primaryApiKey) {
         try {
-            return await callAnthropic({ apiKey: primaryApiKey, model, contents, systemInstruction });
+            return await callAnthropic({
+                apiKey: primaryApiKey,
+                model,
+                contents,
+                systemInstruction,
+            });
         } catch {
             // primary key failed (quota/rate limit) — fall through to fallback key
         }
     }
-    return callAnthropic({ apiKey: fallbackApiKey, model, contents, systemInstruction });
+    return callAnthropic({
+        apiKey: fallbackApiKey,
+        model,
+        contents,
+        systemInstruction,
+    });
 }

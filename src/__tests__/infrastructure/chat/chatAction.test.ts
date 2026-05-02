@@ -121,7 +121,14 @@ describe('chatAction 함수는', () => {
         it('GEMINI_CHAT_FREE_API_KEY가 설정되면 freeApiKey도 함께 전달한다', async () => {
             process.env.GEMINI_CHAT_FREE_API_KEY = 'gemini-free-key';
 
-            await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문', 'gemini-2.5-flash');
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -228,11 +235,23 @@ describe('chatAction 함수는', () => {
         });
 
         it('premium 모델이고 로그인 + 사용자 키 등록이면 사용자 키를 전달한다', async () => {
-            const mockFindByUserAndProvider = jest.fn().mockResolvedValue({ apiKey: 'user-personal-key' });
-            (DrizzleUserApiKeyRepository as jest.MockedClass<typeof DrizzleUserApiKeyRepository>)
-                .mockImplementation(() => ({ findByUserAndProvider: mockFindByUserAndProvider } as unknown as DrizzleUserApiKeyRepository));
+            const mockFindByUserAndProvider = jest
+                .fn()
+                .mockResolvedValue({ apiKey: 'user-personal-key' });
+            (
+                DrizzleUserApiKeyRepository as jest.MockedClass<
+                    typeof DrizzleUserApiKeyRepository
+                >
+            ).mockImplementation(
+                () =>
+                    ({
+                        findByUserAndProvider: mockFindByUserAndProvider,
+                    }) as unknown as DrizzleUserApiKeyRepository
+            );
             (getAuthDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
-            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<ReturnType<typeof getCurrentUser>>);
+            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
+                ReturnType<typeof getCurrentUser>
+            >);
 
             await chatAction(
                 'AAPL',
@@ -250,15 +269,28 @@ describe('chatAction 함수는', () => {
                 expect.anything()
             );
             expect(DrizzleUserApiKeyRepository).toHaveBeenCalledWith({});
-            expect(mockFindByUserAndProvider).toHaveBeenCalledWith('user-1', 'anthropic');
+            expect(mockFindByUserAndProvider).toHaveBeenCalledWith(
+                'user-1',
+                'anthropic'
+            );
         });
 
         it('premium 모델이고 로그인했지만 키 미등록이면 paidApiKey를 undefined로 전달한다', async () => {
             const mockFindByUserAndProvider = jest.fn().mockResolvedValue(null);
-            (DrizzleUserApiKeyRepository as jest.MockedClass<typeof DrizzleUserApiKeyRepository>)
-                .mockImplementation(() => ({ findByUserAndProvider: mockFindByUserAndProvider } as unknown as DrizzleUserApiKeyRepository));
+            (
+                DrizzleUserApiKeyRepository as jest.MockedClass<
+                    typeof DrizzleUserApiKeyRepository
+                >
+            ).mockImplementation(
+                () =>
+                    ({
+                        findByUserAndProvider: mockFindByUserAndProvider,
+                    }) as unknown as DrizzleUserApiKeyRepository
+            );
             (getAuthDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
-            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<ReturnType<typeof getCurrentUser>>);
+            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
+                ReturnType<typeof getCurrentUser>
+            >);
 
             await chatAction(
                 'AAPL',
@@ -286,7 +318,14 @@ describe('chatAction 함수는', () => {
                 >
             );
 
-            await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문', 'gemini-2.5-flash');
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({ clientIp: '1.2.3.4' }),
@@ -296,10 +335,19 @@ describe('chatAction 함수는', () => {
 
         it('x-forwarded-for 헤더가 없으면 unknown을 전달한다', async () => {
             mockHeaders.mockResolvedValue(
-                makeHeadersMap() as unknown as Awaited<ReturnType<typeof headers>>
+                makeHeadersMap() as unknown as Awaited<
+                    ReturnType<typeof headers>
+                >
             );
 
-            await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문', 'gemini-2.5-flash');
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({ clientIp: 'unknown' }),
@@ -325,7 +373,9 @@ describe('chatAction 함수는', () => {
 
     describe('에러 처리', () => {
         it('core use-case가 에러를 던지면 server_error를 반환한다', async () => {
-            mockRequestChatCompletion.mockRejectedValue(new Error('core failed'));
+            mockRequestChatCompletion.mockRejectedValue(
+                new Error('core failed')
+            );
 
             const result = await chatAction(
                 'AAPL',

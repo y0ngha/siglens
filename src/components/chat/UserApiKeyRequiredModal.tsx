@@ -49,7 +49,7 @@ export function UserApiKeyRequiredModal({
 
     return (
         <div
-            className="fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm bg-secondary-950/80"
+            className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
             aria-hidden="true"
         >
             <div
@@ -59,10 +59,10 @@ export function UserApiKeyRequiredModal({
                 aria-labelledby="api-key-modal-title"
                 tabIndex={-1}
                 className={cn(
-                    'border border-secondary-700 bg-secondary-800 rounded-xl shadow-2xl w-full max-w-sm outline-none'
+                    'border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-xl border shadow-2xl outline-none'
                 )}
             >
-                <div className="border-b border-secondary-700 flex items-center justify-between px-5 py-4">
+                <div className="border-secondary-700 flex items-center justify-between border-b px-5 py-4">
                     <h2
                         id="api-key-modal-title"
                         className="text-secondary-100 text-sm font-semibold"
@@ -79,7 +79,7 @@ export function UserApiKeyRequiredModal({
                     </button>
                 </div>
 
-                <div className="px-5 py-4 flex flex-col gap-4">
+                <div className="flex flex-col gap-4 px-5 py-4">
                     <p className="text-secondary-400 text-sm leading-relaxed">
                         {bodyText}
                     </p>
@@ -96,7 +96,7 @@ export function UserApiKeyRequiredModal({
                         <button
                             type="button"
                             onClick={onSwitchToFree}
-                            className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 flex h-9 items-center justify-center rounded-lg border border-secondary-700 px-4 text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                            className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 border-secondary-700 flex h-9 items-center justify-center rounded-lg border px-4 text-sm transition-colors focus-visible:ring-1 focus-visible:outline-none"
                         >
                             무료 모델로 계속하기
                         </button>

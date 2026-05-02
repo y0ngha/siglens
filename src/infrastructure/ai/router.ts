@@ -4,7 +4,9 @@ import { callAnthropicChat } from './anthropic';
 import { callGeminiWithKeyFallback } from './gemini';
 import { callOpenaiChat } from './openai';
 
-export async function callAiProviderRouter(options: CallAiProviderOptions): Promise<string> {
+export async function callAiProviderRouter(
+    options: CallAiProviderOptions
+): Promise<string> {
     // Safe cast: getProviderForModel never throws — unknown strings fall through to
     // prefix matching ('claude-'/'gemini-') and default to 'openai'.
     const provider = getProviderForModel(options.model as ModelId);

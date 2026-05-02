@@ -60,7 +60,7 @@ function getServerFreeKey(provider: LlmProvider): string | undefined {
 async function resolvePaidApiKey(
     model: ModelId,
     provider: LlmProvider,
-    serverPaidKey: string,
+    serverPaidKey: string
 ): Promise<string | undefined> {
     if ((TIER_CONFIG.models.free as readonly string[]).includes(model)) {
         return serverPaidKey;

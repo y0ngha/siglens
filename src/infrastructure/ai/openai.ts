@@ -1,5 +1,9 @@
 import OpenAI from 'openai';
-import type { AiContents, CallAiProviderOptions, GeminiContent } from '@y0ngha/siglens-core';
+import type {
+    AiContents,
+    CallAiProviderOptions,
+    GeminiContent,
+} from '@y0ngha/siglens-core';
 
 interface OpenAiCallOptions {
     apiKey: string;
@@ -10,7 +14,7 @@ interface OpenAiCallOptions {
 
 function toOpenAiMessages(
     contents: AiContents,
-    systemInstruction?: string,
+    systemInstruction?: string
 ): OpenAI.ChatCompletionMessageParam[] {
     const system: OpenAI.ChatCompletionMessageParam[] =
         systemInstruction !== undefined
@@ -24,8 +28,8 @@ function toOpenAiMessages(
     const turns: OpenAI.ChatCompletionMessageParam[] = contents.map(
         (turn: GeminiContent) => ({
             role: turn.role === 'model' ? 'assistant' : 'user',
-            content: turn.parts.map((p) => p.text).join(''),
-        }),
+            content: turn.parts.map(p => p.text).join(''),
+        })
     );
     return [...system, ...turns];
 }
@@ -54,10 +58,20 @@ export async function callOpenaiChat({
 }: CallAiProviderOptions): Promise<string> {
     if (primaryApiKey) {
         try {
-            return await callOpenai({ apiKey: primaryApiKey, model, contents, systemInstruction });
+            return await callOpenai({
+                apiKey: primaryApiKey,
+                model,
+                contents,
+                systemInstruction,
+            });
         } catch {
             // primary key failed (quota/rate limit) — fall through to fallback key
         }
     }
-    return callOpenai({ apiKey: fallbackApiKey, model, contents, systemInstruction });
+    return callOpenai({
+        apiKey: fallbackApiKey,
+        model,
+        contents,
+        systemInstruction,
+    });
 }
