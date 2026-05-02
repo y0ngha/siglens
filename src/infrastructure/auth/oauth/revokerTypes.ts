@@ -8,9 +8,7 @@ export interface RevokeTokenParams {
     refreshToken: string | null;
 }
 
-/**
- * @internal Per-provider adapter that revokes an OAuth grant at the provider side.
- */
+/** @internal Per-provider adapter that revokes an OAuth grant at the provider side. */
 export interface OAuthRevokerAdapter {
     /**
      * Revoke the given OAuth token at the provider.
@@ -20,9 +18,7 @@ export interface OAuthRevokerAdapter {
     revokeToken(params: RevokeTokenParams): Promise<void>;
 }
 
-/**
- * Provider-agnostic revoker that routes to the appropriate {@link OAuthRevokerAdapter}.
- */
+/** Provider-agnostic revoker that routes to the appropriate {@link OAuthRevokerAdapter}. */
 export interface OAuthRevoker {
     /**
      * Revoke tokens for the given provider.

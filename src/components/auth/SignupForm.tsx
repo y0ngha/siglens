@@ -6,11 +6,11 @@ import {
     useVerifyEmail,
 } from '@/components/hooks/useEmailVerificationForms';
 import { useSignupForm } from '@/components/hooks/useSignupForm';
-import { AuthErrorAlert } from './AuthErrorAlert';
-import { AuthFieldGroup } from './AuthFieldGroup';
-import { PasswordField } from './PasswordField';
-import { PasswordStrengthHint } from './PasswordStrengthHint';
-import { SubmitButton } from './SubmitButton';
+import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
+import { AuthFieldGroup } from '@/components/auth/AuthFieldGroup';
+import { PasswordField } from '@/components/auth/PasswordField';
+import { PasswordStrengthHint } from '@/components/auth/PasswordStrengthHint';
+import { SubmitButton } from '@/components/auth/SubmitButton';
 
 interface SignupFormProps {
     next?: string;

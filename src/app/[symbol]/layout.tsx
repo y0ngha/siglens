@@ -1,4 +1,4 @@
-import { SymbolLayoutClient } from './SymbolLayoutClient';
+import { SymbolLayoutClient } from '@/app/[symbol]/SymbolLayoutClient';
 import type { ReactNode } from 'react';
 
 interface SymbolLayoutProps {

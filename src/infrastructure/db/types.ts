@@ -4,11 +4,12 @@ import type {
     LlmProvider,
     OAuthProvider,
     Tier,
-    UserTier,
 } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry } from '@/domain/types';
 import type { AuthUserRecord } from '@/domain/auth/types';
-import type * as schema from './schema';
+import type * as schema from '@/infrastructure/db/schema';
+
+export type { AuthUserRecord };
 
 /** Connection configuration required to instantiate a database client. */
 export interface DatabaseConfig {
@@ -36,9 +37,7 @@ export interface EmailAuthUserRecord extends AuthUserRecord {
     passwordHash: string | null;
 }
 
-/**
- * Persisted auth session record.
- */
+/** Persisted auth session record. */
 export interface AuthSessionRecord {
     /** Session identifier used as the session token. */
     id: string;
@@ -50,9 +49,7 @@ export interface AuthSessionRecord {
     createdAt: Date;
 }
 
-/**
- * Input for creating a new email-based user account.
- */
+/** Input for creating a new email-based user account. */
 export interface CreateEmailUserInput {
     /** Normalized email address (lowercased, trimmed). */
     email: string;
@@ -70,9 +67,7 @@ export interface CreateEmailUserInput {
     emailVerified?: boolean;
 }
 
-/**
- * Input for creating a new OAuth-based user account and provider link.
- */
+/** Input for creating a new OAuth-based user account and provider link. */
 export interface CreateOAuthUserInput {
     /** Normalized email address (lowercased, trimmed). */
     email: string;
@@ -115,9 +110,7 @@ export interface OAuthAccountRecord {
     createdAt: Date;
 }
 
-/**
- * Input for creating a new persisted session.
- */
+/** Input for creating a new persisted session. */
 export interface CreateSessionInput {
     /** User that owns the session. */
     userId: string;
@@ -185,25 +178,19 @@ export interface UserApiKeyMetaRecord {
     updatedAt: Date;
 }
 
-/**
- * A stored user API key including the decrypted plaintext value.
- */
+/** A stored user API key including the decrypted plaintext value. */
 export interface UserApiKeyRecord extends UserApiKeyMetaRecord {
     apiKey: string;
 }
 
-/**
- * Input for inserting or replacing a user's API key for one provider.
- */
+/** Input for inserting or replacing a user's API key for one provider. */
 export interface UpsertUserApiKeyInput {
     userId: string;
     provider: LlmProvider;
     apiKey: string;
 }
 
-/**
- * Persistence operations for user-supplied LLM API keys.
- */
+/** Persistence operations for user-supplied LLM API keys. */
 export interface UserApiKeyRepository {
     upsert(input: UpsertUserApiKeyInput): Promise<UserApiKeyMetaRecord>;
     findByUser(userId: string): Promise<UserApiKeyMetaRecord[]>;

@@ -1,5 +1,5 @@
 import type { BacktestCase } from '@y0ngha/siglens-core';
-import { BacktestCaseCard } from './BacktestCaseCard';
+import { BacktestCaseCard } from '@/components/backtesting/BacktestCaseCard';
 
 interface BacktestCaseListProps {
     cases: BacktestCase[];

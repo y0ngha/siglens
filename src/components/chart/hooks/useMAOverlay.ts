@@ -7,7 +7,7 @@ import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 import {
     type IndicatorDataAccessor,
     useMovingAverageOverlay,
-} from './useMovingAverageOverlay';
+} from '@/components/chart/hooks/useMovingAverageOverlay';
 
 const getMaData: IndicatorDataAccessor = (indicators, period) =>
     indicators.ma[period];

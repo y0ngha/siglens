@@ -10,7 +10,7 @@ import type {
     LoginUserInput,
     LoginUserOptions,
     LoginUserResult,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 const INVALID_CREDENTIALS_MESSAGE = 'Email or password is incorrect';
 

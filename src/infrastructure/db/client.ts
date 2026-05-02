@@ -1,8 +1,11 @@
 import { neon } from '@neondatabase/serverless';
 import { drizzle } from 'drizzle-orm/neon-http';
-import { readDatabaseConfig, tryReadDatabaseConfig } from './config';
-import * as schema from './schema';
-import type { DatabaseClient, DatabaseConfig } from './types';
+import {
+    readDatabaseConfig,
+    tryReadDatabaseConfig,
+} from '@/infrastructure/db/config';
+import * as schema from '@/infrastructure/db/schema';
+import type { DatabaseClient, DatabaseConfig } from '@/infrastructure/db/types';
 
 let cachedClient: DatabaseClient | null = null;
 

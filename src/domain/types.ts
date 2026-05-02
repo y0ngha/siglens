@@ -65,9 +65,9 @@ export type {
     ResetPasswordFormState,
     SignupFormState,
     VerifyEmailFormState,
-} from './auth/formTypes';
+} from '@/domain/auth/formTypes';
 
-export type { AuthUserRecord } from './auth/types';
+export type { AuthUserRecord } from '@/domain/auth/types';
 
 export type ContactFormField = 'title' | 'email' | 'content';
 

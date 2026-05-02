@@ -3,7 +3,7 @@
 import { verifyEmail } from '@/infrastructure/auth/use-cases/verifyEmail';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import type { VerifyEmailFormState } from '@/domain/auth/formTypes';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from './errorMessages';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 
 export async function verifyEmailAction(
     _prev: VerifyEmailFormState,

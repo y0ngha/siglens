@@ -2,8 +2,8 @@ import type {
     CreateUsageLogInput,
     UsageLogRepository,
 } from '@y0ngha/siglens-core';
-import { usageLogs } from './schema';
-import type { SiglensDatabase } from './types';
+import { usageLogs } from '@/infrastructure/db/schema';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
 
 /**
  * Drizzle ORM implementation of {@link UsageLogRepository} backed by a Neon

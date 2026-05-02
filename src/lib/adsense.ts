@@ -1,6 +1,4 @@
-/**
- * Google AdSense 설정 및 상수
- */
+/** Google AdSense 설정 및 상수 */
 
 export const ADSENSE_PUBLISHER_ID =
     process.env.NEXT_PUBLIC_ADSENSE_PUBLISHER_ID ?? '';

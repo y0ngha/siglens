@@ -153,3 +153,15 @@
 - Violation: Array.find 후 type narrow를 위한 중복 type check
 - Rule: MISTAKES.md Coding Paradigm 4 — 결과에 영향 없는 로직 제거
 - Context: claude.ts에서 `find(b => b.type === 'text')` 후 `if (textBlock && textBlock.type === 'text')`로 재검사. find에 explicit type predicate(`(block): block is TextBlock`)을 적용해 후속 narrow 가드 제거.
+
+
+## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
+- Violation: relative-path imports used instead of `@/` aliases across src/ tree (150 occurrences in 79 files)
+- Rule: MISTAKES.md 7.6 / Components 0.1 — all imports must use `@/` aliases
+- Context: Phase 0 refactor introduced many siblings/parent imports (`./constants`, `./types`, `./schema`, `./tokenEncryption`, etc.) in domain/, infrastructure/, components/, and tests. Replaced all 150 occurrences with `@/...` aliases via worktree-wide AST-aware substitution. The single remaining `'../../proxy'` import in `__tests__/proxy.test.ts` is unavoidable because `proxy.ts` lives outside `src/` and has no alias.
+
+- Violation: multi-line JSDoc comment blocks on functions/types
+- Rule: CLAUDE.md "no multi-line comment blocks — one short line max" / MISTAKES.md Docs 4
+- Context: 18 three-line JSDoc blocks were auto-condensed to single-line `/** ... */`. Additional reviewer-listed multi-content blocks in `tokenEncryption.ts` (5), `oauth/revoker.ts` (1), `db/constants.ts` (1) were manually consolidated into single-line form, joining content with semicolons.
+
+- Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).

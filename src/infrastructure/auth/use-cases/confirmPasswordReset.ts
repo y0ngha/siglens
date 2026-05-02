@@ -6,13 +6,13 @@ import {
 import {
     PASSWORD_RESET_EXPIRED_TOKEN_CODE,
     PASSWORD_RESET_INVALID_TOKEN_CODE,
-} from './constants';
+} from '@/infrastructure/auth/use-cases/constants';
 import type {
     ConfirmPasswordResetDependencies,
     ConfirmPasswordResetError,
     ConfirmPasswordResetInput,
     ConfirmPasswordResetResult,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 const PURPOSE = 'password_reset' as const;
 const INVALID_TOKEN_MESSAGE = 'Password reset token is invalid';

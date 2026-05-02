@@ -18,10 +18,7 @@ const IV_BYTE_LENGTH = 12;
 const SEPARATOR = ':';
 const PARTS_COUNT = 3;
 
-/**
- * @internal Encrypt a plain-text OAuth token using AES-256-GCM.
- * Returns a `iv:ciphertext:tag` base64 string suitable for database storage.
- */
+/** @internal Encrypt a plain-text OAuth token using AES-256-GCM; returns `iv:ciphertext:tag` base64 string. */
 export function encryptToken(plaintext: string, keyHex: string): string {
     const key = Buffer.from(keyHex, 'hex');
     const iv = randomBytes(IV_BYTE_LENGTH);
@@ -38,10 +35,7 @@ export function encryptToken(plaintext: string, keyHex: string): string {
     ].join(SEPARATOR);
 }
 
-/**
- * @internal Decrypt a token produced by {@link encryptToken}.
- * Returns the plaintext, or null when decryption fails (wrong key, corrupted data).
- */
+/** @internal Decrypt a token produced by {@link encryptToken}; returns plaintext, or null when decryption fails. */
 export function decryptToken(encrypted: string, keyHex: string): string | null {
     const parts = encrypted.split(SEPARATOR);
     if (parts.length !== PARTS_COUNT) {
@@ -66,11 +60,7 @@ export function decryptToken(encrypted: string, keyHex: string): string | null {
 
 const ENCRYPTION_KEY_BYTE_LENGTH = 32;
 
-/**
- * @internal Validate a 32-byte AES-256 key supplied as a hex string. Returns
- * the raw hex string when the decoded byte length is exactly 32 bytes, or
- * `null` when absent or incorrectly sized.
- */
+/** @internal Validate a 32-byte AES-256 hex key; returns the raw hex string when valid, or null when absent or incorrectly sized. */
 function tryParseEncryptionKey(raw: string | undefined): string | null {
     if (!raw) {
         return null;
@@ -79,19 +69,12 @@ function tryParseEncryptionKey(raw: string | undefined): string | null {
     return bytes.length === ENCRYPTION_KEY_BYTE_LENGTH ? raw : null;
 }
 
-/**
- * @internal Read and validate the OAuth token encryption key from the environment.
- * Returns the hex key string when valid, or null when absent or incorrectly sized.
- */
+/** @internal Read and validate the OAuth token encryption key from the environment; returns the hex key string when valid, or null otherwise. */
 export function tryReadEncryptionKey(): string | null {
     return tryParseEncryptionKey(process.env.OAUTH_TOKEN_ENCRYPTION_KEY);
 }
 
-/**
- * @internal Read and validate the LLM API key encryption key from the
- * environment. Returns the hex key string when valid, or null when absent or
- * incorrectly sized.
- */
+/** @internal Read and validate the LLM API key encryption key from the environment; returns the hex key string when valid, or null otherwise. */
 export function tryReadLlmApiKeyEncryptionKey(): string | null {
     return tryParseEncryptionKey(process.env.LLM_API_KEY_ENCRYPTION_KEY);
 }

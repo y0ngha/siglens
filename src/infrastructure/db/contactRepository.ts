@@ -1,5 +1,5 @@
-import { inquiries } from './schema';
-import type { SiglensDatabase } from './types';
+import { inquiries } from '@/infrastructure/db/schema';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
 
 /** Input required to create a new inquiry record. */
 export interface ContactInput {

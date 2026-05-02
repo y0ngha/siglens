@@ -8,7 +8,7 @@ import type {
     SkillDisplay,
     SkillType,
 } from '@y0ngha/siglens-core';
-import type { SkillsProvider } from './types';
+import type { SkillsProvider } from '@/infrastructure/skills/types';
 
 const SKILLS_DIR = join(process.cwd(), 'skills');
 

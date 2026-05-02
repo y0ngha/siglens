@@ -1,14 +1,15 @@
 import { constants } from 'node:http2';
-import { REVOKE_TIMEOUT_MS } from './revokerConstants';
-import type { OAuthRevokerAdapter, RevokeTokenParams } from './revokerTypes';
+import { REVOKE_TIMEOUT_MS } from '@/infrastructure/auth/oauth/revokerConstants';
+import type {
+    OAuthRevokerAdapter,
+    RevokeTokenParams,
+} from '@/infrastructure/auth/oauth/revokerTypes';
 
 const { HTTP_STATUS_OK } = constants;
 
 const UNLINK_URL = 'https://kapi.kakao.com/v1/user/unlink';
 
-/**
- * @internal Kakao OAuth adapter — unlinks the user from the Kakao app using the access token.
- */
+/** @internal Kakao OAuth adapter — unlinks the user from the Kakao app using the access token. */
 export const kakaoOAuthRevokerAdapter: OAuthRevokerAdapter = {
     async revokeToken({ accessToken }: RevokeTokenParams): Promise<void> {
         const response = await fetch(UNLINK_URL, {

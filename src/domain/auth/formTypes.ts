@@ -6,7 +6,7 @@ import type {
     RegisterUserError,
     RegisterUserErrorCode,
     VerifyEmailErrorCode,
-} from './types';
+} from '@/domain/auth/types';
 
 export interface LoginFormState {
     error: { code: LoginUserErrorCode; message: string } | null;

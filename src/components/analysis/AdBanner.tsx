@@ -6,7 +6,7 @@ import {
     ADSENSE_PUBLISHER_ID,
     ADSENSE_SLOTS,
 } from '@/lib/adsense';
-import { useAdSensePush } from './hooks/useAdSensePush';
+import { useAdSensePush } from '@/components/analysis/hooks/useAdSensePush';
 
 export type AdBannerSlot = 'analysis-progress' | 'analysis-panel-bottom';
 

@@ -1,4 +1,7 @@
-import { INVALID_EMAIL_CODE, WEAK_PASSWORD_CODE } from './constants';
+import {
+    INVALID_EMAIL_CODE,
+    WEAK_PASSWORD_CODE,
+} from '@/domain/auth/constants';
 
 /** Validation error code shared across auth use-cases. */
 export type AuthValidationErrorCode = 'invalid_email' | 'weak_password';

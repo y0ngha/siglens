@@ -6,8 +6,8 @@ import { confirmPasswordReset } from '@/infrastructure/auth/use-cases/confirmPas
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { redirect } from 'next/navigation';
 import type { ResetPasswordFormState } from '@/domain/auth/formTypes';
-import { getAuthDatabaseClient } from './db';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from './errorMessages';
+import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 
 export async function confirmPasswordResetAction(
     _prev: ResetPasswordFormState,

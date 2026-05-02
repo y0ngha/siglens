@@ -6,7 +6,7 @@ import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import type { ForgotPasswordFormState } from '@/domain/auth/formTypes';
 import { buildPasswordResetEmail } from '@/infrastructure/email/passwordResetEmail';
 import { createEmailDispatcher } from '@/infrastructure/email/resend';
-import { getAuthDatabaseClient } from './db';
+import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 
 export async function requestPasswordResetAction(
     _prev: ForgotPasswordFormState,

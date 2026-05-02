@@ -7,10 +7,10 @@ import { compositeOAuthRevoker } from '@/infrastructure/auth/oauth/revoker';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import type { DeleteAccountFormState } from '@/domain/auth/formTypes';
-import { applyAuthCookie } from './applyAuthCookie';
-import { getAuthDatabaseClient } from './db';
-import { getCurrentUser } from './getCurrentUser';
-import { isSecureCookieEnv } from './sessionCookieOptions';
+import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
+import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 
 const NOT_AUTHENTICATED_MESSAGE = '로그인이 필요합니다.';
 const EMAIL_MISMATCH_MESSAGE =

@@ -2,10 +2,10 @@
 
 import type { LoginFormState } from '@/domain/auth/formTypes';
 import { useLoginForm } from '@/components/hooks/useLoginForm';
-import { AuthErrorAlert } from './AuthErrorAlert';
-import { AuthFieldGroup } from './AuthFieldGroup';
-import { PasswordField } from './PasswordField';
-import { SubmitButton } from './SubmitButton';
+import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
+import { AuthFieldGroup } from '@/components/auth/AuthFieldGroup';
+import { PasswordField } from '@/components/auth/PasswordField';
+import { SubmitButton } from '@/components/auth/SubmitButton';
 
 interface LoginFormProps {
     next?: string;

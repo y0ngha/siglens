@@ -7,8 +7,8 @@ import {
     type UsageRepository,
 } from '@y0ngha/siglens-core';
 import { and, count, eq } from 'drizzle-orm';
-import { usageLogs } from './schema';
-import type { SiglensDatabase } from './types';
+import { usageLogs } from '@/infrastructure/db/schema';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
 
 const EMPTY_USAGE_COUNTS: UsageCounts = {
     analysis: 0,
@@ -40,9 +40,7 @@ function toUsageCounts(
     );
 }
 
-/**
- * Drizzle ORM implementation of {@link UsageRepository} backed by usage_logs.
- */
+/** Drizzle ORM implementation of {@link UsageRepository} backed by usage_logs. */
 export class DrizzleUsageRepository implements UsageRepository {
     constructor(private readonly db: SiglensDatabase) {}
 

@@ -1,8 +1,14 @@
 import { eq } from 'drizzle-orm';
-import { oauthAccounts } from './schema';
-import type { SiglensDatabase } from './types';
-import { decryptToken, tryReadEncryptionKey } from './tokenEncryption';
-import type { OAuthAccountRecord, OAuthAccountRepository } from './types';
+import { oauthAccounts } from '@/infrastructure/db/schema';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
+import {
+    decryptToken,
+    tryReadEncryptionKey,
+} from '@/infrastructure/db/tokenEncryption';
+import type {
+    OAuthAccountRecord,
+    OAuthAccountRepository,
+} from '@/infrastructure/db/types';
 
 const oauthAccountColumns = {
     id: oauthAccounts.id,
@@ -25,9 +31,7 @@ function decryptAccountToken(
     return decryptToken(encrypted, encryptionKey);
 }
 
-/**
- * Drizzle ORM implementation of {@link OAuthAccountRepository} backed by Neon PostgreSQL.
- */
+/** Drizzle ORM implementation of {@link OAuthAccountRepository} backed by Neon PostgreSQL. */
 export class DrizzleOAuthAccountRepository implements OAuthAccountRepository {
     constructor(private readonly db: SiglensDatabase) {}
 

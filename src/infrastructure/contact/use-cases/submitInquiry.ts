@@ -1,5 +1,5 @@
 import type { ContactInput } from '@/infrastructure/db/contactRepository';
-import type { SubmitInquiryDeps } from './types';
+import type { SubmitInquiryDeps } from '@/infrastructure/contact/use-cases/types';
 
 /** Persist a visitor's contact form submission to the database. */
 export async function submitInquiry(

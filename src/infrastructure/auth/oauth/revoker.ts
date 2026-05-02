@@ -1,21 +1,18 @@
 import type { OAuthProvider } from '@y0ngha/siglens-core';
-import { googleOAuthRevokerAdapter } from './googleRevoker';
-import { kakaoOAuthRevokerAdapter } from './kakaoRevoker';
+import { googleOAuthRevokerAdapter } from '@/infrastructure/auth/oauth/googleRevoker';
+import { kakaoOAuthRevokerAdapter } from '@/infrastructure/auth/oauth/kakaoRevoker';
 import type {
     OAuthRevoker,
     OAuthRevokerAdapter,
     RevokeTokenParams,
-} from './revokerTypes';
+} from '@/infrastructure/auth/oauth/revokerTypes';
 
 const ADAPTER_MAP: Partial<Record<OAuthProvider, OAuthRevokerAdapter>> = {
     google: googleOAuthRevokerAdapter,
     kakao: kakaoOAuthRevokerAdapter,
 };
 
-/**
- * Composite OAuth revoker that delegates to provider-specific adapters.
- * Providers without a registered adapter are silently skipped.
- */
+/** Composite OAuth revoker that delegates to provider-specific adapters; providers without a registered adapter are silently skipped. */
 export const compositeOAuthRevoker: OAuthRevoker = {
     async revokeToken(
         provider: OAuthProvider,
@@ -29,4 +26,7 @@ export const compositeOAuthRevoker: OAuthRevoker = {
     },
 };
 
-export type { OAuthRevoker, RevokeTokenParams } from './revokerTypes';
+export type {
+    OAuthRevoker,
+    RevokeTokenParams,
+} from '@/infrastructure/auth/oauth/revokerTypes';

@@ -1,12 +1,12 @@
 import type { KoreanTickerEntry } from '@/domain/types';
 import { eq, inArray, sql } from 'drizzle-orm';
-import { assetTranslations, koreanTickers } from './schema';
-import type { SiglensDatabase } from './types';
+import { assetTranslations, koreanTickers } from '@/infrastructure/db/schema';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
     KoreanTickerRepository,
-} from './types';
+} from '@/infrastructure/db/types';
 
 const koreanTickerColumns = {
     symbol: koreanTickers.symbol,

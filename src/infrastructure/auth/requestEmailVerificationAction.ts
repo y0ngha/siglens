@@ -5,7 +5,7 @@ import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import type { RequestEmailVerificationFormState } from '@/domain/auth/formTypes';
 import { buildEmailVerificationEmail } from '@/infrastructure/email/emailVerificationEmail';
 import { createEmailDispatcher } from '@/infrastructure/email/resend';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from './errorMessages';
+import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 
 export async function requestEmailVerificationAction(
     _prev: RequestEmailVerificationFormState,

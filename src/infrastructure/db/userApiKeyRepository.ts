@@ -1,18 +1,18 @@
 import type { LlmProvider } from '@y0ngha/siglens-core';
 import { and, eq, sql } from 'drizzle-orm';
-import { userApiKeys } from './schema';
-import type { SiglensDatabase } from './types';
+import { userApiKeys } from '@/infrastructure/db/schema';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
 import {
     decryptToken,
     encryptToken,
     tryReadLlmApiKeyEncryptionKey,
-} from './tokenEncryption';
+} from '@/infrastructure/db/tokenEncryption';
 import type {
     UpsertUserApiKeyInput,
     UserApiKeyMetaRecord,
     UserApiKeyRecord,
     UserApiKeyRepository,
-} from './types';
+} from '@/infrastructure/db/types';
 
 const userApiKeyMetaColumns = {
     id: userApiKeys.id,

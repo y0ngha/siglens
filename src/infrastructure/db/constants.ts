@@ -7,11 +7,7 @@ import { LLM_PROVIDER_VALUES } from '@/domain/llm';
 
 export { LLM_PROVIDER_VALUES };
 
-/**
- * Database enum values for the user `tier` column. Mirrors the
- * `Tier` union exported from `@y0ngha/siglens-core` so the Postgres enum
- * stays in lockstep with the type used by tier-gating logic.
- */
+/** Database enum values for the user `tier` column; mirrors the `Tier` union from `@y0ngha/siglens-core` to keep the Postgres enum in lockstep. */
 export const USER_TIER_VALUES = [
     'free',
     'member',

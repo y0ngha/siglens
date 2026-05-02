@@ -6,13 +6,13 @@ import {
 import {
     EMAIL_ALREADY_EXISTS_CODE,
     EMAIL_NOT_VERIFIED_CODE,
-} from './constants';
+} from '@/infrastructure/auth/use-cases/constants';
 import type {
     RegisterUserDependencies,
     RegisterUserError,
     RegisterUserInput,
     RegisterUserResult,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 const PURPOSE = 'email_verification' as const;
 const EMAIL_ALREADY_EXISTS_MESSAGE = 'Email is already registered';

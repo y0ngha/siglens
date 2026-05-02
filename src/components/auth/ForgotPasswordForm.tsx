@@ -1,8 +1,8 @@
 'use client';
 
 import { useForgotPasswordForm } from '@/components/hooks/useForgotPasswordForm';
-import { AuthFieldGroup } from './AuthFieldGroup';
-import { SubmitButton } from './SubmitButton';
+import { AuthFieldGroup } from '@/components/auth/AuthFieldGroup';
+import { SubmitButton } from '@/components/auth/SubmitButton';
 
 const SUCCESS_TITLE = '메일을 확인해 주세요';
 const SUCCESS_DESCRIPTION =

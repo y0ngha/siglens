@@ -2,7 +2,7 @@ import type {
     AuthSessionRecord,
     SessionRepository,
 } from '@/infrastructure/db/types';
-import type { AuthSessionCookie } from './use-cases/types';
+import type { AuthSessionCookie } from '@/infrastructure/auth/use-cases/types';
 
 /** Default cookie name used for the auth session token. */
 export const AUTH_SESSION_COOKIE_NAME = 'siglens_session';

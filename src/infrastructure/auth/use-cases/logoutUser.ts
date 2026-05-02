@@ -4,7 +4,7 @@ import type {
     LogoutUserInput,
     LogoutUserOptions,
     LogoutUserResult,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 /** Log out a user by invalidating their persisted session token. */
 export async function logoutUser(

@@ -6,13 +6,13 @@ import {
 import {
     EMAIL_VERIFICATION_CODE_LENGTH,
     EMAIL_VERIFICATION_PENDING_TTL_SECONDS,
-} from './constants';
+} from '@/infrastructure/auth/use-cases/constants';
 import type {
     RequestEmailVerificationDependencies,
     RequestEmailVerificationInput,
     RequestEmailVerificationOptions,
     RequestEmailVerificationResult,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 const PURPOSE = 'email_verification' as const;
 

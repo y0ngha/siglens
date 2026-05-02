@@ -2,7 +2,7 @@ import type { UserTier } from '@y0ngha/siglens-core';
 import type {
     AuthValidationErrorCode,
     AuthValidationErrorField,
-} from './validation';
+} from '@/domain/auth/validation';
 
 /** A persisted user account record returned from the database. */
 export interface AuthUserRecord {

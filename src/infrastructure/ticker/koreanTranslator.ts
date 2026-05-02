@@ -13,8 +13,8 @@
  * Sync obligation: if those helpers change in core, update this file to match.
  */
 import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
-import { tryReadTranslatorConfig } from './config';
-import type { TranslatorEntry } from './types';
+import { tryReadTranslatorConfig } from '@/infrastructure/ticker/config';
+import type { TranslatorEntry } from '@/infrastructure/ticker/types';
 
 const MARKDOWN_CODE_BLOCK_PATTERN = /```(?:json)?\s*\n?([\s\S]*?)\n?```/;
 

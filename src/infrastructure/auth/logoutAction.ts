@@ -5,9 +5,9 @@ import { redirect } from 'next/navigation';
 import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
 import { logoutUser } from '@/infrastructure/auth/use-cases/logoutUser';
-import { applyAuthCookie } from './applyAuthCookie';
-import { getAuthDatabaseClient } from './db';
-import { isSecureCookieEnv } from './sessionCookieOptions';
+import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
+import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 
 export async function logoutAction(): Promise<void> {
     const cookieStore = await cookies();

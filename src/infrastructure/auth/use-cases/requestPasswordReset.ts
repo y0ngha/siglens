@@ -6,13 +6,13 @@ import {
 import {
     PASSWORD_RESET_TOKEN_BYTE_LENGTH,
     PASSWORD_RESET_TTL_SECONDS,
-} from './constants';
+} from '@/infrastructure/auth/use-cases/constants';
 import type {
     RequestPasswordResetDependencies,
     RequestPasswordResetInput,
     RequestPasswordResetOptions,
     RequestPasswordResetResult,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 const PURPOSE = 'password_reset' as const;
 

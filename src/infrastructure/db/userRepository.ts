@@ -4,9 +4,12 @@ import {
     type Tier,
 } from '@y0ngha/siglens-core';
 import { and, eq } from 'drizzle-orm';
-import { oauthAccounts, users } from './schema';
-import type { SiglensDatabase } from './types';
-import { encryptToken, tryReadEncryptionKey } from './tokenEncryption';
+import { oauthAccounts, users } from '@/infrastructure/db/schema';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
+import {
+    encryptToken,
+    tryReadEncryptionKey,
+} from '@/infrastructure/db/tokenEncryption';
 import type {
     AuthUserRecord,
     CreateEmailUserInput,
@@ -16,7 +19,7 @@ import type {
     OAuthUserRepository,
     UserRepository,
     UserTierRepository,
-} from './types';
+} from '@/infrastructure/db/types';
 
 class OAuthAccountConflictError extends Error {}
 

@@ -3,13 +3,13 @@ import {
     hashEmailToken,
     safeCompareTokenHashes,
 } from '@/infrastructure/auth/tokenUtils';
-import { EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS } from './constants';
+import { EMAIL_VERIFICATION_VERIFIED_TTL_SECONDS } from '@/infrastructure/auth/use-cases/constants';
 import type {
     VerifyEmailDependencies,
     VerifyEmailError,
     VerifyEmailInput,
     VerifyEmailResult,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 const PURPOSE = 'email_verification' as const;
 const INVALID_CODE_MESSAGE = 'Verification code is invalid';

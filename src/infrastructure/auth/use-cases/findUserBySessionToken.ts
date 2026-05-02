@@ -2,7 +2,7 @@ import type { AuthUserRecord } from '@/infrastructure/db/types';
 import type {
     FindUserBySessionTokenDependencies,
     FindUserBySessionTokenOptions,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 /** Resolve a session cookie token to its owning user. */
 export async function findUserBySessionToken(

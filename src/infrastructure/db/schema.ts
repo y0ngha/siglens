@@ -15,7 +15,7 @@ import {
     OAUTH_PROVIDER_VALUES,
     USAGE_ACTION_TYPE_VALUES,
     USER_TIER_VALUES,
-} from './constants';
+} from '@/infrastructure/db/constants';
 
 const EMAIL_MAX_LENGTH = 320;
 const SYMBOL_MAX_LENGTH = 32;

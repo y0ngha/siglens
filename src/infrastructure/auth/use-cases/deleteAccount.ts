@@ -6,7 +6,7 @@ import type {
     DeleteAccountInput,
     DeleteAccountOptions,
     DeleteAccountResult,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 type RevocableOAuthAccount = Omit<OAuthAccountRecord, 'accessToken'> & {
     accessToken: string;

@@ -1,4 +1,7 @@
-import type { OAuthProviderAdapter, OAuthProfileResult } from './types';
+import type {
+    OAuthProviderAdapter,
+    OAuthProfileResult,
+} from '@/infrastructure/auth/oauth/types';
 
 const AUTHORIZE_URL = 'https://accounts.google.com/o/oauth2/v2/auth';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';

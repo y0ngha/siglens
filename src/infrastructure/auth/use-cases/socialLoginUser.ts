@@ -1,14 +1,14 @@
 import { normalizeEmail, validateEmail } from '@/domain/auth/validation';
 import type { AuthUserRecord } from '@/infrastructure/db/types';
 import { createAuthSession } from '@/infrastructure/auth/sessionCookie';
-import { EMAIL_ALREADY_EXISTS_CODE } from './constants';
+import { EMAIL_ALREADY_EXISTS_CODE } from '@/infrastructure/auth/use-cases/constants';
 import type {
     SocialLoginUserDependencies,
     SocialLoginUserError,
     SocialLoginUserInput,
     SocialLoginUserOptions,
     SocialLoginUserResult,
-} from './types';
+} from '@/infrastructure/auth/use-cases/types';
 
 const EMAIL_ALREADY_EXISTS_MESSAGE =
     'Email is already registered with another login method';

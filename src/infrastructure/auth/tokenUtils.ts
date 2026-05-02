@@ -13,9 +13,7 @@ export function generateUrlSafeToken(byteLength: number): string {
     return randomBytes(byteLength).toString('base64url');
 }
 
-/**
- * @internal Generate a fixed-length numeric verification code for manual entry.
- */
+/** @internal Generate a fixed-length numeric verification code for manual entry. */
 export function generateNumericCode(digits: number): string {
     const upperExclusive = Math.pow(NUMERIC_CODE_RADIX, digits);
     return randomInt(0, upperExclusive)
@@ -28,9 +26,7 @@ export function hashEmailToken(rawToken: string): string {
     return createHash('sha256').update(rawToken).digest('hex');
 }
 
-/**
- * @internal Compare two SHA-256 hex email-token digests in constant time.
- */
+/** @internal Compare two SHA-256 hex email-token digests in constant time. */
 export function safeCompareTokenHashes(a: string, b: string): boolean {
     if (!SHA256_HEX_PATTERN.test(a) || !SHA256_HEX_PATTERN.test(b)) {
         return false;

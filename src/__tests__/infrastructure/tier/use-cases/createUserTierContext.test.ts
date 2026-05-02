@@ -1,5 +1,5 @@
 import { createUserTierContext } from '@/infrastructure/tier/use-cases/createUserTierContext';
-import { makeUserTierRepositoryMock } from './helpers';
+import { makeUserTierRepositoryMock } from '@/__tests__/infrastructure/tier/use-cases/helpers';
 
 describe('createUserTierContext', () => {
     it('returns free context without repository access for anonymous requests', async () => {
