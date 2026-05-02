@@ -4,11 +4,20 @@ import { useCallback, useEffect, useState } from 'react';
 import {
     detectPwaEnvironment,
     type PwaEnvironment,
-} from './detectPwaEnvironment';
+} from '@/components/pwa/utils/detectPwaEnvironment';
 
 interface BeforeInstallPromptEvent extends Event {
     prompt(): Promise<void>;
     userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+}
+
+export interface UsePwaInstallReturn {
+    showBanner: boolean;
+    showIosModal: boolean;
+    isIos: boolean;
+    handleInstall: () => Promise<void>;
+    handleDismiss: () => void;
+    handleModalClose: () => void;
 }
 
 const EMPTY_ENV: PwaEnvironment = {
@@ -29,7 +38,7 @@ function resolveEnv(): PwaEnvironment {
     );
 }
 
-export function usePwaInstall() {
+export function usePwaInstall(): UsePwaInstallReturn {
     const [showBanner, setShowBanner] = useState(false);
     const [showIosModal, setShowIosModal] = useState(false);
     // Lazy initializer: runs once on mount, avoids setState-in-effect
@@ -57,9 +66,15 @@ export function usePwaInstall() {
         window.addEventListener('beforeinstallprompt', handlePrompt);
         window.addEventListener('siglens:pwa-trigger', handleTrigger);
 
+        // 30s fallback: trigger banner if analysis doesn't fire the event first
+        const fallbackId = setTimeout(() => {
+            if (canShow) setShowBanner(true);
+        }, 30_000);
+
         return () => {
             window.removeEventListener('beforeinstallprompt', handlePrompt);
             window.removeEventListener('siglens:pwa-trigger', handleTrigger);
+            clearTimeout(fallbackId);
         };
     }, [env.isMobile, env.isStandalone, env.isInAppBrowser]);
 

@@ -1,7 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import { detectPwaEnvironment } from '@/components/pwa/hooks/detectPwaEnvironment';
+import { detectPwaEnvironment } from '@/components/pwa/utils/detectPwaEnvironment';
 
 describe('detectPwaEnvironment', () => {
     it('iPhone UA → isMobile=true, isIos=true', () => {

@@ -5,31 +5,31 @@ import '@testing-library/jest-dom';
 import { renderHook, act } from '@testing-library/react';
 import { usePwaInstall } from '@/components/pwa/hooks/usePwaInstall';
 
-beforeAll(() => {
-    Object.defineProperty(window, 'matchMedia', {
-        writable: true,
-        value: (query: string) => ({
-            matches: false,
-            media: query,
-            addEventListener: jest.fn(),
-            removeEventListener: jest.fn(),
-            dispatchEvent: jest.fn(),
-        }),
-    });
-    Object.defineProperty(navigator, 'serviceWorker', {
-        writable: true,
-        value: { register: jest.fn().mockResolvedValue(undefined) },
-    });
-});
-
-beforeEach(() => {
-    Object.defineProperty(navigator, 'userAgent', {
-        value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
-        configurable: true,
-    });
-});
-
 describe('usePwaInstall', () => {
+    beforeAll(() => {
+        Object.defineProperty(window, 'matchMedia', {
+            writable: true,
+            value: (query: string) => ({
+                matches: false,
+                media: query,
+                addEventListener: jest.fn(),
+                removeEventListener: jest.fn(),
+                dispatchEvent: jest.fn(),
+            }),
+        });
+        Object.defineProperty(navigator, 'serviceWorker', {
+            writable: true,
+            value: { register: jest.fn().mockResolvedValue(undefined) },
+        });
+    });
+
+    beforeEach(() => {
+        Object.defineProperty(navigator, 'userAgent', {
+            value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
+            configurable: true,
+        });
+    });
+
     it('초기 상태: showBanner=false, showIosModal=false', () => {
         const { result } = renderHook(() => usePwaInstall());
         expect(result.current.showBanner).toBe(false);

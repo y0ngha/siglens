@@ -39,4 +39,11 @@ describe('IosInstallModal', () => {
         fireEvent.click(screen.getByTestId('ios-modal-content'));
         expect(onClose).not.toHaveBeenCalled();
     });
+
+    it('Escape 키 → onClose 호출', () => {
+        const onClose = jest.fn();
+        render(<IosInstallModal onClose={onClose} />);
+        fireEvent.keyDown(window, { key: 'Escape' });
+        expect(onClose).toHaveBeenCalledTimes(1);
+    });
 });

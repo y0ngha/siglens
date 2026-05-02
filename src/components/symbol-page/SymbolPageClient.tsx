@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useEffect } from 'react';
+import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
@@ -46,13 +46,6 @@ export function SymbolPageClient({
         useTimeframeChange(symbol);
     const assetInfo = useAssetInfo(symbol);
     const isHydrated = useHydrated();
-
-    useEffect(() => {
-        const id = setTimeout(() => {
-            window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
-        }, 30_000);
-        return () => clearTimeout(id);
-    }, []);
 
     return (
         <SymbolPageProvider indicatorCount={indicatorCount}>
