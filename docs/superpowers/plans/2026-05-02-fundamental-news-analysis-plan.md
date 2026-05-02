@@ -22,6 +22,35 @@
 
 ---
 
+## Per-task Skill Invocation Rules (필독)
+
+각 task 진행 전 아래 스킬을 **반드시 invoke**해서 가이드를 컨텍스트에 적재한 뒤 코드 작성. 모든 subagent에 동일 적용.
+
+| Task 종류 | 의무 스킬 (순서대로 invoke) |
+|---|---|
+| **UI 컴포넌트 / 페이지 / 라우트 / 디자인** (예: Phase 2 Task 2.9–2.16) | `frontend-design` → `web-design-guidelines` → `seo-audit` → `vercel-react-best-practices` → `next-cache-components` |
+| **TypeScript 타입 / 도메인 함수 / 응답 정규화 / use-case / Server Action / Repository / Provider** (예: Phase 1 전체, Phase 2 Task 2.1–2.8, 2.17) | `typescript-expert` → `typescript-advanced-types` |
+| **신규 기능 검토 (해당 시)** | `brainstorming` — 이미 완료됨. 추가 큰 결정이 필요해지면 재개. |
+
+CLAUDE.md Skill Usage Rules와 일관. 각 task 시작 시 subagent dispatch prompt에 의무 스킬을 명시적으로 박아 호출.
+
+---
+
+## Worktree Isolation (필독)
+
+모든 코드 변경은 **워크트리 내에서만** 발생해야 함. 메인 브랜치(`master`/`main`) 또는 메인 폴더(`/Users/y0ngha/Project/siglens`, `/Users/y0ngha/Project/siglens-core`) 절대 수정 금지.
+
+| 항목 | 메인 (수정 금지) | 워크트리 (작업) |
+|---|---|---|
+| siglens | `/Users/y0ngha/Project/siglens` (master) | `/Users/y0ngha/Project/siglens-fund-news-analysis` (`feat/fundamental-news-analysis`) |
+| siglens-core | `/Users/y0ngha/Project/siglens-core` (main) | `/Users/y0ngha/Project/siglens-core-fund-news` (`feat/fundamental-news-analysis`) — Phase 0 Task 0.1에서 생성 |
+
+**Subagent dispatch 시 cwd 명시 필수**. 모든 git 명령은 워크트리 경로에서. 메인 폴더에서 `git status`만 확인하는 것은 OK이나 `git add`/`git commit`은 워크트리에서.
+
+워크트리 정리는 PR 머지 + 배포 검증 완료 후 (Task 3.3) 일괄 진행.
+
+---
+
 ## File Map
 
 ### Phase 1 — siglens-core (워크트리: `/Users/y0ngha/Project/siglens-core-fund-news`)
