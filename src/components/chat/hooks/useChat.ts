@@ -16,11 +16,15 @@ import type {
     ChatErrorCode,
     ChatLoadingPhase,
     ChatMessage,
-    ChatModel,
+    ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import { isFreeChatModel, getRequiredProviderForModel } from '@/domain/llm';
+import type { LlmProvider } from '@/domain/llm';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
+import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
+import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -49,7 +53,7 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
         '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
 };
 
-function isValidChatModel(value: string): value is ChatModel {
+function isValidChatModel(value: string): value is ModelId {
     return VALID_CHAT_MODELS.some(model => model === value);
 }
 
@@ -79,8 +83,10 @@ export interface UseChatReturn {
     remainingTokens: number | null;
     sendMessage: (text: string) => Promise<void>;
     dismissAnalysisUpdated: () => void;
-    selectedModel: ChatModel;
-    handleModelChange: (model: ChatModel) => void;
+    selectedModel: ModelId;
+    handleModelChange: (model: ModelId) => void;
+    gateModal: { mode: 'auth' | 'byok'; provider: LlmProvider } | null;
+    dismissGate: () => void;
 }
 
 export function useChat({
@@ -94,9 +100,13 @@ export function useChat({
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
-    const [selectedModel, setSelectedModel] = useState<ChatModel>(
+    const [selectedModel, setSelectedModel] = useState<ModelId>(
         GEMINI_2_5_FLASH_MODEL
     );
+    const [gateModal, setGateModal] = useState<{
+        mode: 'auth' | 'byok';
+        provider: LlmProvider;
+    } | null>(null);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -122,6 +132,18 @@ export function useChat({
         queryKey: ['chat', 'remaining-tokens'],
         queryFn: getRemainingTokensAction,
         staleTime: 0,
+    });
+
+    const { data: currentUser } = useQuery({
+        queryKey: ['auth', 'current-user'],
+        queryFn: currentUserAction,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+
+    const { data: registeredProviders = [] } = useQuery({
+        queryKey: ['llm', 'registered-providers'],
+        queryFn: getRegisteredProvidersAction,
+        staleTime: 60 * 1000, // 1 minute
     });
 
     const { mutateAsync } = useMutation({
@@ -197,8 +219,29 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
-    const handleModelChange = useCallback((model: ChatModel) => {
-        setSelectedModel(model);
+    const handleModelChange = useCallback(
+        (model: ModelId) => {
+            if (!isFreeChatModel(model)) {
+                const requiredProvider = getRequiredProviderForModel(model);
+                if (!currentUser) {
+                    setGateModal({ mode: 'auth', provider: requiredProvider });
+                    return; // do NOT change model
+                }
+                const hasKey = registeredProviders.some(
+                    p => p.provider === requiredProvider
+                );
+                if (!hasKey) {
+                    setGateModal({ mode: 'byok', provider: requiredProvider });
+                    return; // do NOT change model
+                }
+            }
+            setSelectedModel(model);
+        },
+        [currentUser, registeredProviders]
+    );
+
+    const dismissGate = useCallback(() => {
+        setGateModal(null);
     }, []);
 
     // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
@@ -321,5 +364,7 @@ export function useChat({
         dismissAnalysisUpdated,
         selectedModel,
         handleModelChange,
+        gateModal,
+        dismissGate,
     };
 }

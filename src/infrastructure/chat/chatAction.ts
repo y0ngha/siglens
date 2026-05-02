@@ -8,9 +8,10 @@ import type {
     AnalysisResponse,
     ChatActionResult,
     ChatMessage,
-    ChatModel,
+    ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import { isFreeChatModel } from '@/domain/llm';
 import { headers } from 'next/headers';
 import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
 
@@ -27,11 +28,18 @@ export async function chatAction(
     analysis: AnalysisResponse,
     history: ChatMessage[],
     userMessage: string,
-    model: ChatModel = GEMINI_2_5_FLASH_MODEL
+    model: ModelId = GEMINI_2_5_FLASH_MODEL
 ): Promise<ChatActionResult> {
     const paidApiKey = process.env.GEMINI_API_KEY;
     if (!paidApiKey) {
         return { ok: false, error: 'server_error' };
+    }
+
+    if (!isFreeChatModel(model)) {
+        // Server-side guard: Premium model reached server without BYOK key
+        // In a future PR, this will check the user's registered API key
+        // For now, reject to prevent silent fallback to free-tier behavior
+        return { ok: false, error: 'model_not_allowed' };
     }
 
     try {

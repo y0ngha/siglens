@@ -6,31 +6,55 @@ import { MarkdownText } from '@/components/ui/MarkdownText';
 import { VALID_CHAT_MODELS } from '@y0ngha/siglens-core';
 import type {
     AnalysisResponse,
-    ChatModel,
+    ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import { isFreeChatModel } from '@/domain/llm';
+import type { LlmProvider } from '@/domain/llm';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
+import { PremiumModelGateModal } from '@/components/account/PremiumModelGateModal';
 
 interface ChatModelOption {
-    id: ChatModel;
+    id: ModelId;
     label: string;
     fullName: string;
 }
 
 type ChatModelDisplay = Pick<ChatModelOption, 'label' | 'fullName'>;
 
-const MODEL_DISPLAY_MAP: Partial<Record<ChatModel, ChatModelDisplay>> = {
+const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ChatModelDisplay>> = {
     'gemini-2.5-flash': { label: 'Flash', fullName: 'Gemini 2.5 Flash' },
     'gemini-2.5-flash-lite': {
         label: 'Flash Lite',
         fullName: 'Gemini 2.5 Flash Lite',
     },
     'gemini-2.5-pro': { label: 'Pro', fullName: 'Gemini 2.5 Pro' },
+    'claude-haiku-3-5': {
+        label: 'Haiku',
+        fullName: 'Claude Haiku 3.5',
+    },
+    'claude-sonnet-4-6': {
+        label: 'Sonnet',
+        fullName: 'Claude Sonnet 4.6',
+    },
+    'claude-opus-4-7': {
+        label: 'Opus',
+        fullName: 'Claude Opus 4.7',
+    },
+    'gpt-5-mini': { label: 'GPT-5 Mini', fullName: 'GPT-5 Mini' },
+    'gpt-5.4': { label: 'GPT-5.4', fullName: 'GPT-5.4' },
+    'gpt-5.5': { label: 'GPT-5.5', fullName: 'GPT-5.5' },
 };
 
-function getModelDisplay(id: ChatModel): ChatModelDisplay {
+const PROVIDER_LABEL: Record<LlmProvider, string> = {
+    anthropic: 'Anthropic',
+    google: 'Google',
+    openai: 'OpenAI',
+};
+
+function getModelDisplay(id: ModelId): ChatModelDisplay {
     return MODEL_DISPLAY_MAP[id] ?? { label: id, fullName: id };
 }
 
@@ -77,6 +101,8 @@ export function ChatPanel({
         dismissAnalysisUpdated,
         selectedModel,
         handleModelChange,
+        gateModal,
+        dismissGate,
     } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
 
     const {
@@ -316,13 +342,20 @@ export function ChatPanel({
                                         <span className="w-3 text-[10px]">
                                             {selectedModel === option.id && '✓'}
                                         </span>
-                                        <div>
-                                            <div className="text-[11px] font-medium">
-                                                {option.label}
+                                        <div className="flex flex-1 items-center justify-between gap-2">
+                                            <div>
+                                                <div className="text-[11px] font-medium">
+                                                    {option.label}
+                                                </div>
+                                                <div className="text-secondary-500 text-[10px]">
+                                                    {option.fullName}
+                                                </div>
                                             </div>
-                                            <div className="text-secondary-500 text-[10px]">
-                                                {option.fullName}
-                                            </div>
+                                            {!isFreeChatModel(option.id) && (
+                                                <span className="text-amber-400 text-[9px] font-semibold uppercase leading-none">
+                                                    PRO
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
                                 ))}
@@ -367,6 +400,15 @@ export function ChatPanel({
                     </button>
                 </div>
             </div>
+
+            {gateModal !== null && (
+                <PremiumModelGateModal
+                    mode={gateModal.mode}
+                    providerLabel={PROVIDER_LABEL[gateModal.provider]}
+                    symbol={symbol}
+                    onClose={dismissGate}
+                />
+            )}
         </div>
     );
 }
