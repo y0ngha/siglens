@@ -1,5 +1,8 @@
-import { MODEL_SPECS } from '@y0ngha/siglens-core';
-import type { AIProvider, ModelId } from '@y0ngha/siglens-core';
+import {
+    MODEL_SPECS,
+    type AIProvider,
+    type ModelId,
+} from '@y0ngha/siglens-core';
 
 export const CLAUDE_MODEL_PRIORITY: readonly ModelId[] = [
     'claude-opus-4-7',
