@@ -290,6 +290,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
       import { formatPriceChange } from '@/lib/priceFormat';
    ✅ import { formatUsdPrice, formatPriceChange } from '@/lib/priceFormat';
 
+0.1. Relative path imports instead of path aliases
+   → All imports must use @/ path aliases, never relative paths (./, ../)
+   → Applies to all layers: components, domain, infrastructure, lib
+   → Path aliases enable safe refactoring and improve code clarity across layers
+   ❌ import { formatPrice } from '../../lib/priceFormat'
+   ❌ import { validateInput } from './validation'
+   ✅ import { formatPrice } from '@/lib/priceFormat'
+   ✅ import { validateInput } from '@/domain/contact/validation'
+
 1. External callback prop in useEffect dependency array → infinite loops
    → Use useEffectEvent to wrap callback props
 

@@ -318,10 +318,20 @@ FMP_API_KEY=
 ALPACA_API_KEY=
 ALPACA_API_SECRET=
 
-# AI Provider (필수)
-AI_PROVIDER=claude          # claude | gemini (기본값: claude)
-ANTHROPIC_API_KEY=          # claude 사용 시 필수
-GEMINI_API_KEY=             # gemini 사용 시 필수
+# Worker — Briefing 전용 provider 선택
+AI_PROVIDER=gemini          # claude | gemini (기본값: gemini)
+                            # /analyze 라우팅과는 무관 — analyze는 client가 보낸 model로 결정됨
+
+# Worker — 모든 server-side AI provider key (필수)
+# /analyze에서 SIGLENS_PROVIDED_MODELS 호출 시 + briefing에서 사용
+ANTHROPIC_API_KEY=          # 필수
+GEMINI_API_KEY=             # 필수
+GEMINI_FREE_API_KEY=        # 선택 — Gemini free tier 우선 시도 (없으면 paid key 단독 사용)
+OPENAI_API_KEY=             # 필수 — gpt-5-mini 무료 제공 등 server key 호출 위해
+
+# Worker — Briefing model 기본값 (선택)
+BRIEFING_CLAUDE_MODEL=claude-haiku-3-5      # 기본값
+BRIEFING_GEMINI_MODEL=gemini-2.5-flash-lite # 기본값
 
 # Upstash Redis (선택 — 미설정 시 캐시 없이 동작)
 UPSTASH_REDIS_REST_URL=             # Upstash Redis REST URL
@@ -377,3 +387,70 @@ FMP_API_KEY=    # 필수. 없으면 검색 결과 빈 배열 반환
 TRANSLATE_API_KEY=              # 필수. 없으면 번역 비활성화
 TRANSLATE_MODEL=gemini-2.5-flash  # 기본값
 ```
+
+---
+
+## Worker Internal API
+
+Worker(`/worker`)는 siglens-core의 `submitAnalysis` / `submitBriefing` / `cancelAnalysisJob`이 호출하는 내부 서비스이다.
+
+### POST `/analyze`
+
+**Headers**
+
+| 이름 | 필수 | 설명 |
+|---|---|---|
+| `X-Worker-Secret` | ✅ | `WORKER_SECRET` env와 일치해야 한다. |
+| `X-AI-API-KEY` | 조건부 | `model`이 siglens 제공 모델(아래 표)이 아니면 필수. siglens 제공 모델이면 무시되고 server key 사용. |
+
+**Body**
+
+```typescript
+interface AnalyzeRequest {
+    jobId: string;
+    prompt: string;
+    model: AIModel;     // siglens-core의 TierModel — 아래 11종 중 하나
+}
+```
+
+**지원 모델 및 키 정책**
+
+| 모델 | Provider | siglens 제공 (server key) |
+|---|---|---|
+| `gemini-2.5-flash` | Gemini | ✅ |
+| `gemini-2.5-flash-lite` | Gemini | ✅ |
+| `claude-haiku-3-5` | Claude | ✅ |
+| `gpt-5-mini` | ChatGPT | ✅ |
+| `gemini-2.5-pro` | Gemini | ❌ user key |
+| `gemini-3-flash-preview` | Gemini | ❌ user key |
+| `gemini-3.1-pro-preview` | Gemini | ❌ user key |
+| `claude-sonnet-4-6` | Claude | ❌ user key |
+| `claude-opus-4-7` | Claude | ❌ user key |
+| `gpt-5.4` | ChatGPT | ❌ user key |
+| `gpt-5.5` | ChatGPT | ❌ user key |
+
+`siglens 제공` 모델은 `siglens-core`의 `TIER_CONFIG.models.free`와 동일하다. 갱신 시 worker `models.ts`의 `SIGLENS_PROVIDED_MODELS`도 자동 동기화된다.
+
+**Response**
+
+| 코드 | Body |
+|---|---|
+| 200 | `{ status: 'done', jobId }` |
+| 400 | `{ error: '...' }` — model 누락/미지원 또는 user key 누락 |
+| 401 | `{ error: 'Unauthorized' }` |
+| 500 | `{ status: 'error', jobId }` |
+
+처리 결과는 Upstash Redis에 `job:{jobId}:status` / `job:{jobId}:result` 키로 저장되며 호출 측은 `pollAnalysisAction`으로 조회한다.
+
+### POST `/briefing`
+
+**Headers**: `X-Worker-Secret`만 사용. user key 없음.
+**Body**: `{ jobId, prompt }`
+**Provider**: `AI_PROVIDER` env에 의해 결정 (`claude` | `gemini`).
+**Model**: `BRIEFING_CLAUDE_MODEL` 또는 `BRIEFING_GEMINI_MODEL` env로 결정.
+
+### POST `/cancel`
+
+**Headers**: `X-Worker-Secret`만 사용.
+**Body**: `{ jobId }`
+실행 중인 job의 `AbortController.abort()`를 호출한다.
