@@ -16,7 +16,7 @@ import type {
     ChatErrorCode,
     ChatLoadingPhase,
     ChatMessage,
-    ChatModel,
+    ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { chatAction } from '@/infrastructure/chat/chatAction';
@@ -47,9 +47,11 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
     model_not_allowed:
         '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
+    user_api_key_required:
+        '이 모델은 본인 API 키가 필요해요. 키를 등록하면 사용할 수 있어요.',
 };
 
-function isValidChatModel(value: string): value is ChatModel {
+function isValidChatModel(value: string): value is ModelId {
     return VALID_CHAT_MODELS.some(model => model === value);
 }
 
@@ -79,8 +81,10 @@ export interface UseChatReturn {
     remainingTokens: number | null;
     sendMessage: (text: string) => Promise<void>;
     dismissAnalysisUpdated: () => void;
-    selectedModel: ChatModel;
-    handleModelChange: (model: ChatModel) => void;
+    selectedModel: ModelId;
+    handleModelChange: (model: ModelId) => void;
+    apiKeyModalOpen: boolean;
+    closeApiKeyModal: () => void;
 }
 
 export function useChat({
@@ -94,9 +98,10 @@ export function useChat({
         null
     );
     const [analysisUpdated, setAnalysisUpdated] = useState(false);
-    const [selectedModel, setSelectedModel] = useState<ChatModel>(
+    const [selectedModel, setSelectedModel] = useState<ModelId>(
         GEMINI_2_5_FLASH_MODEL
     );
+    const [apiKeyModalOpen, setApiKeyModalOpen] = useState(false);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -168,6 +173,9 @@ export function useChat({
                     result.remainingTokens
                 );
             }
+            if (!result.ok && result.error === 'user_api_key_required') {
+                setApiKeyModalOpen(true);
+            }
         },
         onError: () => {
             setMessages(prev => [
@@ -197,9 +205,11 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
-    const handleModelChange = useCallback((model: ChatModel) => {
+    const handleModelChange = useCallback((model: ModelId) => {
         setSelectedModel(model);
     }, []);
+
+    const closeApiKeyModal = useCallback(() => setApiKeyModalOpen(false), []);
 
     // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
     // inline render assignments can be stale under interrupted/discarded renders)
@@ -321,5 +331,7 @@ export function useChat({
         dismissAnalysisUpdated,
         selectedModel,
         handleModelChange,
+        apiKeyModalOpen,
+        closeApiKeyModal,
     };
 }

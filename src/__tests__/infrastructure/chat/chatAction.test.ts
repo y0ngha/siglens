@@ -1,32 +1,62 @@
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import {
-    GEMINI_2_5_FLASH_LITE_MODEL,
     GEMINI_2_5_FLASH_MODEL,
     requestChatCompletion,
+    getProviderForModel,
 } from '@y0ngha/siglens-core';
-import type { AnalysisResponse, ChatActionResult } from '@y0ngha/siglens-core';
-import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
+import type {
+    AnalysisResponse,
+    ChatActionResult,
+    LlmProvider,
+} from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
+import { callAiProviderRouter } from '@/infrastructure/ai/router';
 
 jest.mock('next/headers', () => ({
     headers: jest.fn(),
 }));
 
-jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
-    GEMINI_2_5_FLASH_MODEL: 'gemini-2.5-flash',
-    GEMINI_2_5_FLASH_LITE_MODEL: 'gemini-2.5-flash-lite',
-    VALID_CHAT_MODELS: ['gemini-2.5-flash', 'gemini-2.5-flash-lite'],
-    requestChatCompletion: jest.fn(),
+jest.mock('@y0ngha/siglens-core', () => {
+    const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
+    return {
+        ...actual,
+        requestChatCompletion: jest.fn(),
+        getProviderForModel: jest
+            .fn()
+            .mockImplementation(actual.getProviderForModel),
+    };
+});
+
+jest.mock('@/infrastructure/ai/router', () => ({
+    callAiProviderRouter: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/ai/gemini', () => ({
-    callGeminiWithKeyFallback: jest.fn(),
+jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+    getCurrentUser: jest.fn(),
+}));
+
+jest.mock('@/infrastructure/auth/db', () => ({
+    getAuthDatabaseClient: jest.fn(),
+}));
+
+jest.mock('@/infrastructure/db/userApiKeyRepository', () => ({
+    DrizzleUserApiKeyRepository: jest.fn(),
 }));
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const mockRequestChatCompletion = requestChatCompletion as jest.MockedFunction<
     typeof requestChatCompletion
+>;
+const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+    typeof getCurrentUser
+>;
+const mockGetProviderForModel = getProviderForModel as jest.MockedFunction<
+    typeof getProviderForModel
 >;
 
 const MINIMAL_ANALYSIS: AnalysisResponse = {
@@ -62,149 +92,386 @@ function makeHeadersMap(xForwardedFor?: string) {
 describe('chatAction 함수는', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        process.env.GEMINI_API_KEY = 'paid-api-key';
+        process.env.GEMINI_CHAT_API_KEY = 'gemini-paid-key';
         delete process.env.GEMINI_CHAT_FREE_API_KEY;
+        delete process.env.ANTHROPIC_CHAT_API_KEY;
+        delete process.env.OPENAI_CHAT_API_KEY;
         mockHeaders.mockResolvedValue(
             makeHeadersMap('1.2.3.4') as unknown as Awaited<
                 ReturnType<typeof headers>
             >
         );
         mockRequestChatCompletion.mockResolvedValue(SUCCESS_RESULT);
+        mockGetCurrentUser.mockResolvedValue(null);
+        mockGetProviderForModel.mockImplementation(
+            jest.requireActual<typeof import('@y0ngha/siglens-core')>(
+                '@y0ngha/siglens-core'
+            ).getProviderForModel
+        );
     });
 
     afterEach(() => {
-        delete process.env.GEMINI_API_KEY;
+        delete process.env.GEMINI_CHAT_API_KEY;
         delete process.env.GEMINI_CHAT_FREE_API_KEY;
+        delete process.env.ANTHROPIC_CHAT_API_KEY;
+        delete process.env.OPENAI_CHAT_API_KEY;
     });
 
-    it('core 채팅 use-case에 요청 정보를 위임하고 결과를 반환한다', async () => {
-        const history = [{ role: 'user' as const, content: '이전 질문' }];
+    describe('Gemini 모델을 사용할 때', () => {
+        it('free Gemini 모델은 서버 paid key로 요청한다', async () => {
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '지금 사도 돼?',
+                'gemini-2.5-flash'
+            );
 
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            history,
-            '지금 사도 돼?',
-            GEMINI_2_5_FLASH_LITE_MODEL
-        );
+            expect(result).toBe(SUCCESS_RESULT);
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    paidApiKey: 'gemini-paid-key',
+                    freeApiKey: undefined,
+                    model: 'gemini-2.5-flash',
+                }),
+                { callAiProvider: callAiProviderRouter }
+            );
+        });
 
-        expect(result).toBe(SUCCESS_RESULT);
-        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
-            {
-                clientIp: '1.2.3.4',
-                symbol: 'AAPL',
-                timeframe: '1Day',
-                analysis: MINIMAL_ANALYSIS,
-                history,
-                userMessage: '지금 사도 돼?',
-                model: GEMINI_2_5_FLASH_LITE_MODEL,
-                freeApiKey: undefined,
-                paidApiKey: 'paid-api-key',
-            },
-            { callAiProvider: callGeminiWithKeyFallback }
-        );
+        it('GEMINI_CHAT_FREE_API_KEY가 설정되면 freeApiKey도 함께 전달한다', async () => {
+            process.env.GEMINI_CHAT_FREE_API_KEY = 'gemini-free-key';
+
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    paidApiKey: 'gemini-paid-key',
+                    freeApiKey: 'gemini-free-key',
+                }),
+                expect.anything()
+            );
+        });
     });
 
-    it('model을 생략하면 core의 기본 채팅 모델을 전달한다', async () => {
-        await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+    describe('Anthropic 모델을 사용할 때', () => {
+        it('free Anthropic 모델은 서버 paid key로 요청하고 freeApiKey는 undefined이다', async () => {
+            process.env.ANTHROPIC_CHAT_API_KEY = 'anthr-key';
+            delete process.env.GEMINI_CHAT_API_KEY;
 
-        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
-            expect.objectContaining({
-                model: GEMINI_2_5_FLASH_MODEL,
-            }),
-            expect.objectContaining({
-                callAiProvider: callGeminiWithKeyFallback,
-            })
-        );
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'claude-haiku-3-5'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    paidApiKey: 'anthr-key',
+                    freeApiKey: undefined,
+                    model: 'claude-haiku-3-5',
+                }),
+                { callAiProvider: callAiProviderRouter }
+            );
+        });
     });
 
-    it('free API key가 있으면 core use-case에 함께 전달한다', async () => {
-        process.env.GEMINI_CHAT_FREE_API_KEY = 'free-api-key';
+    describe('OpenAI 모델을 사용할 때', () => {
+        it('free OpenAI 모델은 서버 paid key로 요청하고 freeApiKey는 undefined이다', async () => {
+            process.env.OPENAI_CHAT_API_KEY = 'oai-key';
+            delete process.env.GEMINI_CHAT_API_KEY;
 
-        await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gpt-5-mini'
+            );
 
-        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
-            expect.objectContaining({
-                freeApiKey: 'free-api-key',
-                paidApiKey: 'paid-api-key',
-            }),
-            expect.anything()
-        );
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    paidApiKey: 'oai-key',
+                    freeApiKey: undefined,
+                    model: 'gpt-5-mini',
+                }),
+                { callAiProvider: callAiProviderRouter }
+            );
+        });
     });
 
-    it('x-forwarded-for에 여러 IP가 있으면 첫 번째 IP만 전달한다', async () => {
-        mockHeaders.mockResolvedValue(
-            makeHeadersMap('1.2.3.4, 5.6.7.8') as unknown as Awaited<
-                ReturnType<typeof headers>
-            >
-        );
+    describe('서버 키가 없을 때', () => {
+        it('Gemini 서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+            delete process.env.GEMINI_CHAT_API_KEY;
 
-        await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
 
-        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
-            expect.objectContaining({
-                clientIp: '1.2.3.4',
-            }),
-            expect.anything()
-        );
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(mockRequestChatCompletion).not.toHaveBeenCalled();
+        });
+
+        it('Anthropic 서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'claude-haiku-3-5'
+            );
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(mockRequestChatCompletion).not.toHaveBeenCalled();
+        });
+
+        it('OpenAI 서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gpt-5-mini'
+            );
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(mockRequestChatCompletion).not.toHaveBeenCalled();
+        });
     });
 
-    it('x-forwarded-for 헤더가 없으면 unknown을 전달한다', async () => {
-        mockHeaders.mockResolvedValue(
-            makeHeadersMap() as unknown as Awaited<ReturnType<typeof headers>>
-        );
+    describe('premium 모델 + 사용자 API key 조회', () => {
+        beforeEach(() => {
+            process.env.ANTHROPIC_CHAT_API_KEY = 'anthr-key';
+            delete process.env.GEMINI_CHAT_API_KEY;
+        });
 
-        await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+        it('premium 모델이고 로그인되지 않았으면 paidApiKey를 undefined로 전달한다', async () => {
+            mockGetCurrentUser.mockResolvedValue(null);
 
-        expect(mockRequestChatCompletion).toHaveBeenCalledWith(
-            expect.objectContaining({
-                clientIp: 'unknown',
-            }),
-            expect.anything()
-        );
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'claude-opus-4-7'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    paidApiKey: undefined,
+                }),
+                expect.anything()
+            );
+        });
+
+        it('premium 모델이고 로그인 + 사용자 키 등록이면 사용자 키를 전달한다', async () => {
+            const mockFindByUserAndProvider = jest
+                .fn()
+                .mockResolvedValue({ apiKey: 'user-personal-key' });
+            (
+                DrizzleUserApiKeyRepository as jest.MockedClass<
+                    typeof DrizzleUserApiKeyRepository
+                >
+            ).mockImplementation(
+                () =>
+                    ({
+                        findByUserAndProvider: mockFindByUserAndProvider,
+                    }) as unknown as DrizzleUserApiKeyRepository
+            );
+            (getAuthDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
+            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
+                ReturnType<typeof getCurrentUser>
+            >);
+
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'claude-opus-4-7'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    paidApiKey: 'user-personal-key',
+                }),
+                expect.anything()
+            );
+            expect(DrizzleUserApiKeyRepository).toHaveBeenCalledWith({});
+            expect(mockFindByUserAndProvider).toHaveBeenCalledWith(
+                'user-1',
+                'anthropic'
+            );
+        });
+
+        it('premium 모델이고 로그인했지만 키 미등록이면 paidApiKey를 undefined로 전달한다', async () => {
+            const mockFindByUserAndProvider = jest.fn().mockResolvedValue(null);
+            (
+                DrizzleUserApiKeyRepository as jest.MockedClass<
+                    typeof DrizzleUserApiKeyRepository
+                >
+            ).mockImplementation(
+                () =>
+                    ({
+                        findByUserAndProvider: mockFindByUserAndProvider,
+                    }) as unknown as DrizzleUserApiKeyRepository
+            );
+            (getAuthDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
+            mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
+                ReturnType<typeof getCurrentUser>
+            >);
+
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'claude-opus-4-7'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    paidApiKey: undefined,
+                }),
+                expect.anything()
+            );
+        });
     });
 
-    it('GEMINI_API_KEY 미설정 시 server_error를 반환한다', async () => {
-        delete process.env.GEMINI_API_KEY;
+    describe('클라이언트 IP 처리', () => {
+        it('x-forwarded-for에 여러 IP가 있으면 첫 번째 IP만 전달한다', async () => {
+            mockHeaders.mockResolvedValue(
+                makeHeadersMap('1.2.3.4, 5.6.7.8') as unknown as Awaited<
+                    ReturnType<typeof headers>
+                >
+            );
 
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '질문'
-        );
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
 
-        expect(result).toEqual({ ok: false, error: 'server_error' });
-        expect(mockRequestChatCompletion).not.toHaveBeenCalled();
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ clientIp: '1.2.3.4' }),
+                expect.anything()
+            );
+        });
+
+        it('x-forwarded-for 헤더가 없으면 unknown을 전달한다', async () => {
+            mockHeaders.mockResolvedValue(
+                makeHeadersMap() as unknown as Awaited<
+                    ReturnType<typeof headers>
+                >
+            );
+
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ clientIp: 'unknown' }),
+                expect.anything()
+            );
+        });
+
+        it('headers() 조회가 실패하면 server_error를 반환한다', async () => {
+            mockHeaders.mockRejectedValue(new Error('headers unavailable'));
+
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
+
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+        });
     });
 
-    it('headers 조회 실패 시 server_error를 반환한다', async () => {
-        mockHeaders.mockRejectedValue(new Error('headers unavailable'));
+    describe('에러 처리', () => {
+        it('core use-case가 에러를 던지면 server_error를 반환한다', async () => {
+            mockRequestChatCompletion.mockRejectedValue(
+                new Error('core failed')
+            );
 
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '질문'
-        );
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
 
-        expect(result).toEqual({ ok: false, error: 'server_error' });
+            expect(result).toEqual({ ok: false, error: 'server_error' });
+        });
     });
 
-    it('core use-case가 에러를 던지면 server_error를 반환한다', async () => {
-        mockRequestChatCompletion.mockRejectedValue(new Error('core failed'));
+    describe('기본 모델', () => {
+        it('model을 생략하면 GEMINI_2_5_FLASH_MODEL을 core에 전달한다', async () => {
+            await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
 
-        const result = await chatAction(
-            'AAPL',
-            '1Day',
-            MINIMAL_ANALYSIS,
-            [],
-            '질문'
-        );
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    model: GEMINI_2_5_FLASH_MODEL,
+                }),
+                expect.objectContaining({
+                    callAiProvider: callAiProviderRouter,
+                })
+            );
+        });
+    });
 
-        expect(result).toEqual({ ok: false, error: 'server_error' });
+    describe('알 수 없는 provider 처리', () => {
+        it('getServerPaidKey가 알 수 없는 provider를 받으면 에러가 전파된다', async () => {
+            // getServerPaidKey is called outside the try block — the throw propagates
+            // rather than being caught as server_error.
+            mockGetProviderForModel.mockReturnValueOnce(
+                'unknown' as unknown as LlmProvider
+            );
+
+            await expect(
+                chatAction(
+                    'AAPL',
+                    '1Day',
+                    MINIMAL_ANALYSIS,
+                    [],
+                    '질문',
+                    'gemini-2.5-flash'
+                )
+            ).rejects.toThrow('Unhandled LLM provider');
+        });
     });
 });

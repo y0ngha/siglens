@@ -27,6 +27,24 @@
 - Rule: 운영 DB에 이미 적용된 마이그레이션은 사후 편집 금지 — 보정이 필요하면 새 forward migration 추가
 - Context: 두 마이그레이션 모두 _journal에 등재되어 적용된 상태. 0004를 retroactive 수정하지 않고 0005에 사후 보존 사유와 향후 처리 가이드를 SQL 주석으로 명시.
 
+## [PR #408 Round 2 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
+- Violation: anthropic.ts의 `!block || block.type !== 'text'` 복합 조건에서 `block.type !== 'text'` 분기 미테스트
+- Rule: MISTAKES.md Infrastructure Functions #2 / Tests #7 — 100% 분기 커버리지 + provider 쌍 대칭성
+- Context: anthropic.test.ts에 tool_use 블록 반환 케이스 추가. openai.test.ts의 null/empty 파싱 에러 2개와 대칭.
+
+## [PR #408 코멘트 반영 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
+- Violation: router.ts에서 상대 경로 import 사용 (`./anthropic`, `./gemini`, `./openai`)
+- Rule: MISTAKES.md 7.6 — 모든 import는 path alias 사용 필수
+- Context: src/infrastructure/ai/router.ts의 세 import를 `@/infrastructure/ai/...`로 교체.
+
+- Violation: OpenAI 빈 응답 시 빈 문자열 반환 — Anthropic(에러 throw)과 비대칭
+- Rule: MISTAKES.md Tests 7 — provider 쌍은 에러 처리도 대칭이어야 함
+- Context: callOpenai에서 choices[0]?.message.content == null이면 에러를 throw하도록 수정.
+
+- Violation: UserApiKeyRequiredModal 바깥 wrapper div에 aria-hidden="true"로 모달 전체가 접근성 트리에서 제거됨
+- Rule: MISTAKES.md Accessibility 1.5, 7 — aria-hidden은 장식적 컨텐츠에만 사용, 사용자가 읽어야 할 컨텐츠에 금지
+- Context: backdrop div의 aria-hidden="true" 제거. role="dialog" aria-modal="true" 내부 div가 접근성 트리에 노출됨.
+
 ## [PR #403 Round 5 | feat/398/contact-us-form | 2026-05-02]
 - Violation: 새로 만든 파일이 git에 추가되지 않은 채 PR 푸시되어 빌드가 차단됨
 - Rule: PR_FIX_FLOW Step 1-7 — 픽스 적용 후 모든 신규 파일을 commit/push 전에 git add로 추적해야 함
@@ -102,6 +120,20 @@
 - Violation: future siglens work risked re-introducing analysis logic locally instead of in siglens-core
 - Rule: SCOPE.md §3 (dependency direction) — analysis secret sauce stays in core
 - Context: added siglens-side §0 work-boundary checklist + CLAUDE.md cross-repo scope guard so that analysis-related task descriptions trigger an explicit redirect-or-confirm step before any code is written.
+
+## [Issue #401 | feat/401/worker-ai-provider-enhancement | 2026-05-02]
+- Violation: 동일 정책 상수가 여러 retry 모듈에 중복 정의 (AI_RETRY_MAX_ATTEMPTS, AI_RETRY_DELAY_MS)
+- Rule: MISTAKES.md Design 1 / FF Cohesion — 함께 변해야 하는 상수는 single source of truth에 모아야 함
+- Context: claude-retry/gemini-retry/chatgpt-retry 세 파일이 `AI_RETRY_MAX_ATTEMPTS = 5`와 `AI_RETRY_DELAY_MS = 5000`을 각자 정의. 모두 retry.ts로 이동해 공유.
+
+- Violation: 에러 처리 의도와 retryable 플래그 모순
+- Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
+- Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
+
+- Violation: Array.find 후 type narrow를 위한 중복 type check
+- Rule: MISTAKES.md Coding Paradigm 4 — 결과에 영향 없는 로직 제거
+- Context: claude.ts에서 `find(b => b.type === 'text')` 후 `if (textBlock && textBlock.type === 'text')`로 재검사. find에 explicit type predicate(`(block): block is TextBlock`)을 적용해 후속 narrow 가드 제거.
+
 
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).

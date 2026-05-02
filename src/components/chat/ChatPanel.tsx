@@ -1,36 +1,54 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
-import { VALID_CHAT_MODELS } from '@y0ngha/siglens-core';
-import type {
-    AnalysisResponse,
-    ChatModel,
-    Timeframe,
+import {
+    GEMINI_2_5_FLASH_MODEL,
+    VALID_CHAT_MODELS,
+    getProviderForModel,
+    type AnalysisResponse,
+    type ModelId,
+    type Timeframe,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
+import { useCurrentUser } from '@/components/hooks/useCurrentUser';
+import { UserApiKeyRequiredModal } from '@/components/chat/UserApiKeyRequiredModal';
 
 interface ChatModelOption {
-    id: ChatModel;
+    id: ModelId;
     label: string;
     fullName: string;
 }
 
 type ChatModelDisplay = Pick<ChatModelOption, 'label' | 'fullName'>;
 
-const MODEL_DISPLAY_MAP: Partial<Record<ChatModel, ChatModelDisplay>> = {
+const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ChatModelDisplay>> = {
     'gemini-2.5-flash': { label: 'Flash', fullName: 'Gemini 2.5 Flash' },
     'gemini-2.5-flash-lite': {
         label: 'Flash Lite',
         fullName: 'Gemini 2.5 Flash Lite',
     },
     'gemini-2.5-pro': { label: 'Pro', fullName: 'Gemini 2.5 Pro' },
+    'gemini-3.1-pro-preview': {
+        label: '3.1 Pro',
+        fullName: 'Gemini 3.1 Pro Preview',
+    },
+    'gemini-3-flash-preview': {
+        label: 'Flash 3',
+        fullName: 'Gemini 3 Flash Preview',
+    },
+    'claude-haiku-3-5': { label: 'Haiku', fullName: 'Claude Haiku 3.5' },
+    'claude-sonnet-4-6': { label: 'Sonnet', fullName: 'Claude Sonnet 4.6' },
+    'claude-opus-4-7': { label: 'Opus', fullName: 'Claude Opus 4.7' },
+    'gpt-5-mini': { label: 'GPT Mini', fullName: 'GPT-5 Mini' },
+    'gpt-5.4': { label: 'GPT 5.4', fullName: 'GPT-5.4' },
+    'gpt-5.5': { label: 'GPT 5.5', fullName: 'GPT-5.5' },
 };
 
-function getModelDisplay(id: ChatModel): ChatModelDisplay {
+function getModelDisplay(id: ModelId): ChatModelDisplay {
     return MODEL_DISPLAY_MAP[id] ?? { label: id, fullName: id };
 }
 
@@ -68,6 +86,8 @@ export function ChatPanel({
         dropdownRef,
     ]);
 
+    const { data: currentUser } = useCurrentUser();
+
     const {
         messages,
         loadingPhase,
@@ -77,6 +97,8 @@ export function ChatPanel({
         dismissAnalysisUpdated,
         selectedModel,
         handleModelChange,
+        apiKeyModalOpen,
+        closeApiKeyModal,
     } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
 
     const {
@@ -88,6 +110,11 @@ export function ChatPanel({
         handleSubmit,
         handleKeyDown,
     } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
+
+    const handleSwitchToFreeModel = useCallback(() => {
+        handleModelChange(GEMINI_2_5_FLASH_MODEL);
+        closeApiKeyModal();
+    }, [handleModelChange, closeApiKeyModal]);
 
     const selectedModelOption = getModelDisplay(selectedModel);
 
@@ -238,6 +265,14 @@ export function ChatPanel({
 
                 <div ref={messagesEndRef} />
             </div>
+
+            <UserApiKeyRequiredModal
+                open={apiKeyModalOpen}
+                onClose={closeApiKeyModal}
+                provider={getProviderForModel(selectedModel)}
+                loggedIn={!!currentUser}
+                onSwitchToFree={handleSwitchToFreeModel}
+            />
 
             {/* 입력 영역 */}
             <div className="border-secondary-700 border-t px-3 py-2">
