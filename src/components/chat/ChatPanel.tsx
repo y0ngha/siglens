@@ -115,7 +115,11 @@ export function ChatPanel({
                     openGate({ mode: 'auth', provider: requiredProvider });
                     return;
                 }
-                if (!registeredProviders.some(p => p.provider === requiredProvider)) {
+                if (
+                    !registeredProviders.some(
+                        p => p.provider === requiredProvider
+                    )
+                ) {
                     openGate({ mode: 'byok', provider: requiredProvider });
                     return;
                 }
