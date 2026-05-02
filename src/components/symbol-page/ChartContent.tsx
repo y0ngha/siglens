@@ -173,7 +173,7 @@ export function ChartContent({
                 />
                 <AnalysisStatusBanner
                     status={analysisStatus}
-                    className="mt-3"
+                    className="my-3"
                 />
                 <AnalysisPanel
                     symbol={symbol}

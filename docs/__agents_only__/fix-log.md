@@ -19,10 +19,6 @@
 - Context: userApiKeys의 JSDoc 블록을 한 줄로 압축하되 AES-256-GCM 암호화 특성 유지.
 
 ## [PR #405 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Violation: LLM_PROVIDER_VALUES 상수가 src/domain/llm/constants.ts와 src/infrastructure/db/constants.ts 양쪽에 동일하게 정의
-- Rule: ARCHITECTURE.md — infrastructure는 domain에서 import 가능; 동일 상수 중복 정의 금지
-- Context: infra DB 상수가 domain의 단일 진실 공급원을 우회. infrastructure 측 정의를 제거하고 @/domain/llm에서 import 후 재노출.
-
 - Violation: drizzle/0004_add_oauth_token_columns.sql가 _journal.json에 등재되지 않은 채 0006_striped_marauders.sql과 SQL이 완전 중복
 - Rule: drizzle 마이그레이션은 _journal.json 등재 순서로 적용되며, 등재되지 않은 파일은 dead-code이자 drizzle-kit migrate 시 0006에서 컬럼 중복 오류 유발
 - Context: orphan SQL 파일을 git rm으로 삭제. _journal.json은 변경 없음.
@@ -115,30 +111,34 @@
 - Violation: future siglens work risked re-introducing analysis logic locally instead of in siglens-core
 - Rule: SCOPE.md §3 (dependency direction) — analysis secret sauce stays in core
 - Context: added siglens-side §0 work-boundary checklist + CLAUDE.md cross-repo scope guard so that analysis-related task descriptions trigger an explicit redirect-or-confirm step before any code is written.
-## [Issue #401 | feat/401/worker-ai-provider-enhancement | 2026-05-02]
-- Violation: 동일 정책 상수가 여러 retry 모듈에 중복 정의 (AI_RETRY_MAX_ATTEMPTS, AI_RETRY_DELAY_MS)
-- Rule: MISTAKES.md Design 1 / FF Cohesion — 함께 변해야 하는 상수는 single source of truth에 모아야 함
-- Context: claude-retry/gemini-retry/chatgpt-retry 세 파일이 `AI_RETRY_MAX_ATTEMPTS = 5`와 `AI_RETRY_DELAY_MS = 5000`을 각자 정의. 모두 retry.ts로 이동해 공유.
-
-- Violation: 동일 utility 함수(isMaxTokensError) 중복 구현
-- Rule: MISTAKES.md Coding Paradigm 1 — 새 함수 작성 전 기존 helper 확인
-- Context: claude-retry.ts와 gemini-retry.ts 양쪽이 `isMaxTokensError`를 동일 로직으로 정의. retry.ts에 `hasErrorCode(error, code)`로 추출하여 양쪽이 import.
-
-- Violation: 에러 처리 의도와 retryable 플래그 모순
-- Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
-- Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
-
-- Violation: process.env 값을 type alias로 force-cast (검증 없이 `as`)
-- Rule: MISTAKES.md TypeScript 7 — `as` 캐스트 시 runtime 보장 또는 가드 명시
-- Context: config.ts에서 `process.env.AI_PROVIDER as AIProviderType`, BRIEFING_CLAUDE_MODEL/BRIEFING_GEMINI_MODEL을 검증 없이 cast. parseAIProvider/parseBriefingModel 함수로 runtime 검증 후 throw 처리.
-
-- Violation: Array.find 후 type narrow를 위한 중복 type check
-- Rule: MISTAKES.md Coding Paradigm 4 — 결과에 영향 없는 로직 제거
-- Context: claude.ts에서 `find(b => b.type === 'text')` 후 `if (textBlock && textBlock.type === 'text')`로 재검사. find에 explicit type predicate(`(block): block is TextBlock`)을 적용해 후속 narrow 가드 제거.
-
 
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).
+
+## [PR #409 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: Hook declaration order violated — useEffect declared before useCallback in useSelectedProvider.ts
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — handlers (useCallback, step 5) must precede useEffect (step 7)
+- Context: useSelectedProvider declared useEffect on line 19 and useCallback on line 27; reordered to useCallback first.
+
+- Violation: VALID_PROVIDERS declared as mutable AIProvider[] instead of readonly
+- Rule: CONVENTIONS.md immutability — module-level constants should use readonly to prevent accidental mutation
+- Context: Inconsistent with other priority arrays in providerDefaults.ts which all use readonly. Changed to readonly AIProvider[].
+
+- Violation: Redundant ternary inside isSelected=true branch
+- Rule: MISTAKES.md Coding Paradigm rule 4 — logic with no effect must be removed
+- Context: ModelSelector.tsx isSelected ? <span className={cn('text-sm', isSelected ? 'text-primary-300' : 'text-secondary-400')}> — the inner ternary always resolves to text-primary-300. Simplified to direct className.
+
+- Violation: JSX section comments explaining WHAT the code does
+- Rule: CLAUDE.md — "Don't explain WHAT the code does — well-named identifiers already do that"
+- Context: Five JSX comments (Lock icon, Diamond marker, Screen reader state, Provider label, Model variant sub-label) removed as structure is self-documenting.
+
+- Violation: formatModelVariant produces "Sonnet 4 6" instead of "Sonnet 4.6" for claude-sonnet-4-6
+- Rule: Output must match JSDoc examples in the same function
+- Context: Claude model IDs split by '-' produce ["sonnet", "4", "6"] then join with space → "Sonnet 4 6". Fixed by adding .replace(/(\d) (\d)/g, '$1.$2') to merge adjacent numeric parts with dots.
+
+- Violation: AnalysisStatusBanner bottom margin removed when ModelSelector was prepended
+- Rule: Consistent spacing — adding content above should not remove spacing below
+- Context: AnalysisStatusBanner className changed from mb-3 to mt-3, removing bottom gap to AnalysisPanel. Changed to my-3 to preserve both margins.
 
 ## [Issue #402 | feat/402/AI-모델-선택-UI | 2026-05-02]
 - Violation: localStorage key constant placed in domain/ layer

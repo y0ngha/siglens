@@ -179,7 +179,6 @@ export function ModelSelector({
                                               'hover:bg-secondary-700/30'
                                 )}
                             >
-                                {/* Lock icon for locked providers */}
                                 {isLocked && (
                                     <span
                                         className="text-secondary-500 absolute top-1 right-1"
@@ -200,17 +199,9 @@ export function ModelSelector({
                                     </span>
                                 )}
 
-                                {/* Diamond marker */}
                                 <span aria-hidden="true">
                                     {isSelected ? (
-                                        <span
-                                            className={cn(
-                                                'text-sm',
-                                                isSelected
-                                                    ? 'text-primary-300'
-                                                    : 'text-secondary-400'
-                                            )}
-                                        >
+                                        <span className="text-primary-300 text-sm">
                                             ◆
                                         </span>
                                     ) : (
@@ -220,13 +211,11 @@ export function ModelSelector({
                                     )}
                                 </span>
 
-                                {/* Screen reader state */}
                                 <span className="sr-only">
                                     {isSelected ? '선택됨' : '선택 안됨'}
                                     {isLocked ? ', Pro 등급 전용' : ''}
                                 </span>
 
-                                {/* Provider label */}
                                 <span
                                     className={cn(
                                         'text-xs font-medium tracking-[0.15em] uppercase',
@@ -238,7 +227,6 @@ export function ModelSelector({
                                     {displayName}
                                 </span>
 
-                                {/* Model variant sub-label */}
                                 <span className="text-secondary-500 font-mono text-[10px] tabular-nums">
                                     {modelId !== null
                                         ? formatModelVariant(modelId)
@@ -266,12 +254,11 @@ function formatModelVariant(modelId: ModelId): string {
         return claudeMatch[1]
             .split('-')
             .map(part => {
-                // numeric parts: join with dot (e.g. "4-6" → "4.6")
-                // non-numeric parts: capitalize
                 if (/^\d+$/.test(part)) return part;
                 return part.charAt(0).toUpperCase() + part.slice(1);
             })
-            .join(' ');
+            .join(' ')
+            .replace(/(\d) (\d)/g, '$1.$2');
     }
 
     // gemini-* → drop "gemini-" prefix
