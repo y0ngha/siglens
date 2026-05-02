@@ -351,7 +351,7 @@ export function ChatPanel({
                                                 </div>
                                             </div>
                                             {!isFreeChatModel(option.id) && (
-                                                <span className="text-[9px] leading-none font-semibold text-ui-warning uppercase">
+                                                <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
                                                     PRO
                                                 </span>
                                             )}
