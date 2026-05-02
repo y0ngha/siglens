@@ -6,12 +6,12 @@ import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepos
 import { isLlmProvider } from '@/domain/llm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import type { DeleteApiKeyState } from '@/infrastructure/llm/types';
+import type { ApiKeyActionState } from '@/domain/llm';
 
 export async function deleteApiKeyAction(
-    _prevState: DeleteApiKeyState,
+    _prevState: ApiKeyActionState,
     formData: FormData
-): Promise<DeleteApiKeyState> {
+): Promise<ApiKeyActionState> {
     const user = await getCurrentUser();
     if (user === null) {
         redirect('/login?next=/account');

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef } from 'react';
 import Link from 'next/link';
+import { cn } from '@/lib/cn';
 
 interface PremiumModelGateModalProps {
     mode: 'auth' | 'byok';
@@ -17,17 +18,26 @@ export function PremiumModelGateModal({
     onClose,
 }: PremiumModelGateModalProps) {
     const dialogRef = useRef<HTMLDialogElement>(null);
+    const closedRef = useRef(false);
 
     const isAuth = mode === 'auth';
-    const iconColorClass = isAuth ? 'text-amber-400' : 'text-emerald-400';
+    const iconColorClass = isAuth ? 'text-ui-warning' : 'text-ui-success';
     const title = isAuth ? '프리미엄 모델 사용 안내' : 'API 키 등록 필요';
     const body = isAuth
         ? '프리미엄 모델을 사용하려면 로그인이 필요합니다.'
         : `${providerLabel ?? ''} API 키를 등록하면 이 모델을 사용할 수 있습니다.`;
 
-    const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    const safeClose = (): void => {
+        if (closedRef.current) return;
+        closedRef.current = true;
+        onClose();
+    };
+
+    const handleBackdropClick = (
+        e: React.MouseEvent<HTMLDialogElement>
+    ): void => {
         if (e.target === dialogRef.current) {
-            onClose();
+            safeClose();
         }
     };
 
@@ -44,8 +54,8 @@ export function PremiumModelGateModal({
         <dialog
             ref={dialogRef}
             onClick={handleBackdropClick}
-            onClose={onClose}
-            className="bg-transparent backdrop:bg-secondary-950/80 backdrop:backdrop-blur-sm"
+            onClose={safeClose}
+            className="backdrop:bg-secondary-950/80 bg-transparent backdrop:backdrop-blur-sm"
         >
             <div className="bg-secondary-900 ring-secondary-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl ring-1">
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
@@ -58,10 +68,17 @@ export function PremiumModelGateModal({
                         strokeWidth="2"
                         strokeLinecap="round"
                         strokeLinejoin="round"
-                        className={`h-8 w-8 ${iconColorClass}`}
+                        className={cn('h-8 w-8', iconColorClass)}
                         aria-hidden="true"
                     >
-                        <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                        <rect
+                            x="3"
+                            y="11"
+                            width="18"
+                            height="11"
+                            rx="2"
+                            ry="2"
+                        />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
                     <h2 className="text-secondary-50 font-semibold">{title}</h2>
@@ -98,7 +115,7 @@ export function PremiumModelGateModal({
                     )}
                     <button
                         type="button"
-                        onClick={onClose}
+                        onClick={safeClose}
                         className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 rounded-lg px-4 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                     >
                         닫기
