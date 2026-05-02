@@ -1,0 +1,8 @@
+<svg width="300" height="80" xmlns="http://www.w3.org/2000/svg">
+  <rect width="300" height="80" fill="#1c1c1e" rx="10"/>
+  <line x1="0" y1="44" x2="300" y2="44" stroke="#3a3a3c" stroke-width="1"/>
+  <text x="150" y="24" font-size="13" fill="#ebebf5" font-family="-apple-system,sans-serif" text-anchor="middle" font-weight="600">홈 화면에 추가</text>
+  <text x="20" y="66" font-size="16" fill="#636366" font-family="-apple-system,sans-serif">취소</text>
+  <rect x="240" y="52" width="48" height="20" fill="#0a84ff" rx="6"/>
+  <text x="264" y="66" font-size="15" fill="white" font-family="-apple-system,sans-serif" font-weight="600" text-anchor="middle">추가</text>
+</svg>
