@@ -115,6 +115,11 @@
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).
 
+## [PR #409 Round 2 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: Duplicate import statements from the same module (@y0ngha/siglens-core) in ChartContent.tsx and providerDefaults.ts
+- Rule: MISTAKES.md Components #0 — ESLint import/no-duplicates; always consolidate imports from the same module
+- Context: ChartContent.tsx had separate type import and value import from @y0ngha/siglens-core. providerDefaults.ts same pattern. Merged into single import statement using inline type modifier.
+
 ## [PR #409 | feat/402/AI-모델-선택-UI | 2026-05-02]
 - Violation: Hook declaration order violated — useEffect declared before useCallback in useSelectedProvider.ts
 - Rule: CONVENTIONS.md Custom Hook Declaration Order — handlers (useCallback, step 5) must precede useEffect (step 7)
