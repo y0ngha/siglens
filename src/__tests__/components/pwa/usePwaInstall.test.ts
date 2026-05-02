@@ -72,9 +72,13 @@ describe('usePwaInstall', () => {
         act(() => {
             window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
         });
-        act(() => { void result.current.handleInstall(); });
+        act(() => {
+            void result.current.handleInstall();
+        });
         expect(result.current.showIosModal).toBe(true);
-        act(() => { result.current.handleModalClose(); });
+        act(() => {
+            result.current.handleModalClose();
+        });
         expect(result.current.showIosModal).toBe(false);
     });
 

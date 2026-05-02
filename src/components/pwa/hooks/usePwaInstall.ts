@@ -39,7 +39,7 @@ function resolveEnv(): PwaEnvironment {
             ?.mobile,
         window.matchMedia('(display-mode: standalone)').matches,
         // standalone은 iOS Safari 전용 확장; TS 표준 Navigator 타입에 미포함
-        (navigator as { standalone?: boolean }).standalone,
+        (navigator as { standalone?: boolean }).standalone
     );
 }
 

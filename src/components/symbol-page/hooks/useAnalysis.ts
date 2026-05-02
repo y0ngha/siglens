@@ -253,7 +253,9 @@ export function useAnalysis({
                     if (result.status === 'done') {
                         currentJobIdRef.current = null;
                         setAnalysisResult(result.result);
-                        window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+                        window.dispatchEvent(
+                            new CustomEvent(PWA_TRIGGER_EVENT)
+                        );
                         if (lastForceRef.current) {
                             setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
                         }

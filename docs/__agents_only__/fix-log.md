@@ -125,3 +125,28 @@
 - Violation: Derived constant recreated every render without useMemo
 - Rule: MISTAKES.md rule 10 — derived constants from props must be wrapped in useMemo
 - Context: `resolvedModels` in ModelSelector.tsx was computed on every render; since handleKeyDown depended on it, useCallback provided no stabilization benefit. Wrapped with useMemo([allowedModels]).
+
+## [PR #412 | worktree-feat-pwa | 2026-05-03]
+- Violation: 매직 상수 `'siglens:pwa-trigger'` 문자열이 useAnalysis.ts와 usePwaInstall.ts 두 파일에 하드코딩되어 중복
+- Rule: MISTAKES.md #15 — 하드코딩된 상수는 모듈 레벨 상수로 추출
+- Context: src/lib/pwaEvents.ts에 PWA_TRIGGER_EVENT 상수 추출 후 두 파일에서 import
+
+- Violation: 단일 useEffect 내에 SW 등록, 이벤트 리스너, setTimeout 세 가지 사이드이펙트 혼합
+- Rule: CONVENTIONS.md useEffect Side Effect Isolation — 관심사별 useEffect 분리
+- Context: usePwaInstall.ts에서 SW 등록 effect, 이벤트+타이머 effect 두 개로 분리
+
+- Violation: useCallback 핸들러가 useEffect 뒤에 선언됨
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — useState→useRef→useCallback→useEffect 순서
+- Context: usePwaInstall.ts handleInstall/handleDismiss/handleModalClose를 useEffect 앞으로 이동
+
+- Violation: DOM keydown 이벤트 리스너를 IosInstallModal 컴포넌트 useEffect에 직접 등록
+- Rule: MISTAKES.md Components #7 — DOM 이벤트 리스너는 커스텀 훅으로 추출
+- Context: useEscapeKey 훅 생성 후 IosInstallModal에서 사용
+
+- Violation: 4행 JSDoc @param 블록이 함수 파라미터만 나열
+- Rule: CLAUDE.md 코멘트 원칙 — WHY가 자명하지 않을 때만 작성; WHAT 설명 주석 제거
+- Context: detectPwaEnvironment.ts에서 JSDoc 블록 전체 제거
+
+- Violation: SW 등록 실패를 .catch(() => {})로 묵음 처리
+- Rule: MISTAKES.md Domain Functions #2 — 에러를 완전히 삼키지 말 것
+- Context: console.warn('[PWA] SW 등록 실패', err)로 변경
