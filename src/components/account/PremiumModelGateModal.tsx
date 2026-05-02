@@ -21,7 +21,7 @@ export function PremiumModelGateModal({
     const closedRef = useRef(false);
 
     const isAuth = mode === 'auth';
-    const iconColorClass = isAuth ? 'text-amber-400' : 'text-emerald-400';
+    const iconColorClass = isAuth ? 'text-ui-warning' : 'text-ui-success';
     const title = isAuth ? '프리미엄 모델 사용 안내' : 'API 키 등록 필요';
     const body = isAuth
         ? '프리미엄 모델을 사용하려면 로그인이 필요합니다.'

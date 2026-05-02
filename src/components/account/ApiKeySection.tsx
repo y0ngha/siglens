@@ -60,7 +60,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                         {PROVIDER_LABELS[provider]}
                     </span>
                     {isRegistered ? (
-                        <span className="bg-emerald-500/10 text-emerald-300 ring-emerald-500/30 rounded-full px-2 py-0.5 text-xs ring-1">
+                        <span className="bg-ui-success/10 text-ui-success ring-ui-success/30 rounded-full px-2 py-0.5 text-xs ring-1">
                             등록됨
                         </span>
                     ) : (
@@ -120,7 +120,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                 className="mt-1.5 min-h-[1.25rem] text-sm"
             >
                 {saveState.status === 'success' && (
-                    <span className="text-emerald-400">{saveState.message}</span>
+                    <span className="text-ui-success">{saveState.message}</span>
                 )}
                 {saveState.status === 'error' && (
                     <span className="text-ui-danger">{saveState.message}</span>
@@ -148,7 +148,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                         className="mt-1 min-h-[1.25rem] text-sm"
                     >
                         {deleteState.status === 'success' && (
-                            <span className="text-emerald-400">
+                            <span className="text-ui-success">
                                 {deleteState.message}
                             </span>
                         )}
