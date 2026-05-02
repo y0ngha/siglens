@@ -246,6 +246,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ interface Props { size?: 'sm' | 'lg'; fields: readonly { label: string; key: string }[] }
    ✅ type ButtonSize = 'sm' | 'lg'; interface FieldDef { label: string; key: string }; interface Props { size?: ButtonSize; fields: readonly FieldDef[] }
 
+5.5. Function return types using inline object literals instead of named types
+   → All function return types must use named interfaces/types, not inline object shapes
+   → Applies especially to Promise<{ field, field }> patterns in Server Actions, utilities, and infrastructure functions
+   → Improves type reusability, API clarity, and readability
+   ❌ async function createAuthSession(data): Promise<{ session: Session; cookie: string }> { ... }
+   ❌ const getModelDisplay = (): { label: string; fullName: string } => { ... }
+   ✅ interface CreateAuthSessionResult { session: Session; cookie: string }; async function createAuthSession(...): Promise<CreateAuthSessionResult> { ... }
+   ✅ type ModelDisplayInfo = Pick<ChatModelOption, 'label' | 'fullName'>; const getModelDisplay = (): ModelDisplayInfo => { ... }
+
 6. Union literals with 3+ occurrences in different files → not extracted to named type
    → Domain indicators frequently repeat trend/direction unions across result types
    → When a union appears in 2+ result types, extract to domain/types.ts
@@ -833,6 +842,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ LoginForm.tsx: `import { useLoginForm } from '@/components/hooks/useLoginForm'`  // hook abstraction
    ✅ Hook file (hooks/useLoginForm.ts) imports infrastructure; component uses hook only
    ✅ App-layer RSC files may import infrastructure (infrastructure ← app direction allowed)
+
+0.5. Hook file type imports from infrastructure or domain submodules
+   → Hook files must import types only from @/domain/types or @y0ngha/siglens-core
+   → Infrastructure types and domain submodule types (e.g., @/domain/auth/types, @/infrastructure/db/types) violate layer dependencies
+   → Types must be centralized in @/domain/types.ts barrel export
+   ❌ hooks/useCurrentUser.ts: `import { AuthUserRecord } from '@/infrastructure/db/types'`
+   ❌ hooks/useContactForm.ts: `import { ContactFormState } from '@/domain/contact/formTypes'`
+   ✅ hooks/useCurrentUser.ts: `import { AuthUserRecord } from '@/domain/types'`  // re-exported from @/domain/auth/types
+   ✅ hooks/useContactForm.ts: `import { ContactFormState } from '@/domain/types'`  // moved to @/domain/types
 
 1. Pure utility functions placed in components/ instead of proper layers
    → Pure functions with no React dependencies must be in domain/ (business logic) or lib/ (UI utilities)

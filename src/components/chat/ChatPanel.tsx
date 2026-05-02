@@ -151,7 +151,7 @@ export function ChatPanel({
         : '질문을 입력하세요… (Enter로 전송)';
 
     return (
-        <div className="flex flex-col">
+        <div className="flex flex-col overflow-hidden rounded-xl">
             {/* 헤더 */}
             <div className="border-secondary-700 flex items-center justify-between border-b px-3 py-2">
                 <span className="text-secondary-300 text-xs font-semibold">
@@ -349,8 +349,9 @@ export function ChatPanel({
                         disabled={isInputDisabled}
                         placeholder={placeholder}
                         rows={1}
+                        enterKeyHint="send"
                         className={cn(
-                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[32px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-xs leading-relaxed transition-colors outline-none',
+                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[44px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-base leading-relaxed transition-colors outline-none md:min-h-[32px] md:text-xs',
                             'focus:border-primary-500',
                             isInputDisabled && 'cursor-not-allowed opacity-50'
                         )}

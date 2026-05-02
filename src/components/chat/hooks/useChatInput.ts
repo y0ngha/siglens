@@ -1,5 +1,6 @@
 'use client';
 
+import type { ChatLoadingPhase, ChatMessage } from '@y0ngha/siglens-core';
 import {
     type KeyboardEvent,
     type RefObject,
@@ -8,7 +9,6 @@ import {
     useRef,
     useState,
 } from 'react';
-import type { ChatLoadingPhase, ChatMessage } from '@y0ngha/siglens-core';
 
 interface UseChatInputOptions {
     messages: readonly ChatMessage[];
@@ -50,7 +50,11 @@ export function useChatInput({
 
     const handleKeyDown = useCallback(
         (e: KeyboardEvent<HTMLTextAreaElement>): void => {
-            if (e.key === 'Enter' && !e.shiftKey) {
+            if (
+                e.key === 'Enter' &&
+                !e.shiftKey &&
+                !e.nativeEvent.isComposing
+            ) {
                 e.preventDefault();
                 void handleSubmit();
             }

@@ -178,11 +178,25 @@ cp .env.example .env.local
 ```
 
 필수 환경변수:
-- `ALPACA_API_KEY` / `ALPACA_SECRET_KEY` — [Alpaca Markets](https://alpaca.markets)에서 발급 (시세 데이터)
-- `FMP_API_KEY` — [Financial Modeling Prep](https://site.financialmodelingprep.com/developer)에서 발급 (종목 정보)
-- `ANTHROPIC_API_KEY` — [Anthropic Console](https://console.anthropic.com)에서 발급 (AI 분석 리포트)
-- `GEMINI_API_KEY` — [Google AI Studio](https://aistudio.google.com/apikey)에서 발급 (AI 챗봇)
-- `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` — [Upstash](https://upstash.com)에서 발급 (캐시)
+
+| 변수 | 발급처 | 용도 |
+|------|--------|------|
+| `FMP_API_KEY` | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer) | 시세 · 종목 데이터 |
+| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | AI 분석 리포트 · 챗봇 (유료 키) |
+| `GEMINI_CHAT_FREE_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | 챗봇 quota 소진 시 fallback (무료 키) |
+| `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | [Upstash](https://upstash.com) | 분석 캐시 |
+| `DATABASE_URL` | [Neon](https://neon.tech) | PostgreSQL (인증 · 사용자 데이터) |
+| `OAUTH_TOKEN_ENCRYPTION_KEY` / `LLM_API_KEY_ENCRYPTION_KEY` | `openssl rand -hex 32` 로 생성 | DB 저장 시 토큰 · API 키 암호화 |
+
+선택 환경변수 (기능별 필요):
+
+| 변수 | 용도 |
+|------|------|
+| `GOOGLE_CLIENT_ID` / `GOOGLE_CLIENT_SECRET` | Google OAuth 로그인 |
+| `KAKAO_REST_API_KEY` / `KAKAO_CLIENT_SECRET` | Kakao OAuth 로그인 |
+| `RESEND_API_KEY` / `EMAIL_FROM` | 이메일 발송 |
+| `NEXT_PUBLIC_ADSENSE_*` | Google AdSense |
+| `SIGLENS_GITHUB_TOKEN` | `@y0ngha/siglens-core` 설치 (GitHub Packages) |
 
 ### Run Development Server
 

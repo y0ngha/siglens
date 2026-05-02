@@ -28,7 +28,7 @@ export function FloatingChatButton({
     return (
         <>
             {isOpen && (
-                <div className="border-secondary-700 bg-secondary-900 fixed inset-x-2 bottom-18 z-50 overflow-hidden rounded-xl border shadow-2xl md:inset-x-auto md:right-6 md:bottom-20 md:w-95">
+                <div className="border-secondary-700 bg-secondary-900 fixed inset-x-2 bottom-18 z-50 rounded-xl border shadow-2xl md:inset-x-auto md:right-6 md:bottom-20 md:w-95">
                     <ChatPanel
                         symbol={symbol}
                         timeframe={timeframe}
