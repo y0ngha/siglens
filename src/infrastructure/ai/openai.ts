@@ -1,9 +1,6 @@
 import OpenAI from 'openai';
-import type {
-    AiContents,
-    CallAiProviderOptions,
-    GeminiContent,
-} from '@y0ngha/siglens-core';
+import type { AiContents, CallAiProviderOptions } from '@y0ngha/siglens-core';
+import { toProviderTurns } from '@/infrastructure/ai/utils';
 
 interface OpenAiCallOptions {
     apiKey: string;
@@ -20,17 +17,12 @@ function toOpenAiMessages(
         systemInstruction !== undefined
             ? [{ role: 'system', content: systemInstruction }]
             : [];
-
-    if (typeof contents === 'string') {
-        return [...system, { role: 'user', content: contents }];
-    }
-
-    const turns: OpenAI.ChatCompletionMessageParam[] = contents.map(
-        (turn: GeminiContent) => ({
-            role: turn.role === 'model' ? 'assistant' : 'user',
-            content: turn.parts.map(p => p.text).join(''),
-        })
-    );
+    // Safe cast: toProviderTurns returns { role: 'user' | 'assistant'; content: string }[]
+    // which is structurally compatible with ChatCompletionMessageParam — role is always one
+    // of the two valid literals and string satisfies the content union at runtime.
+    const turns = toProviderTurns(
+        contents
+    ) as OpenAI.ChatCompletionMessageParam[];
     return [...system, ...turns];
 }
 
@@ -45,7 +37,11 @@ async function callOpenai({
         model,
         messages: toOpenAiMessages(contents, systemInstruction),
     });
-    return response.choices[0]?.message.content ?? '';
+    const content = response.choices[0]?.message.content;
+    if (content == null) {
+        throw new Error('OpenAI returned no text content');
+    }
+    return content;
 }
 
 /** Call OpenAI with primary→fallback key fallback; primary errors are swallowed, fallback errors propagate. */

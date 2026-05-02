@@ -1,8 +1,8 @@
 import { getProviderForModel } from '@y0ngha/siglens-core';
 import type { CallAiProviderOptions, ModelId } from '@y0ngha/siglens-core';
-import { callAnthropicChat } from './anthropic';
-import { callGeminiWithKeyFallback } from './gemini';
-import { callOpenaiChat } from './openai';
+import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
+import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
+import { callOpenaiChat } from '@/infrastructure/ai/openai';
 
 export async function callAiProviderRouter(
     options: CallAiProviderOptions

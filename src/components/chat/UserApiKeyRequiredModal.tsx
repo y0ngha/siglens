@@ -4,7 +4,6 @@ import { useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { useFocusTrap } from '@/components/hooks/useFocusTrap';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
-import { cn } from '@/lib/cn';
 import type { LlmProvider } from '@y0ngha/siglens-core';
 
 const PROVIDER_DISPLAY: Record<LlmProvider, string> = {
@@ -48,19 +47,14 @@ export function UserApiKeyRequiredModal({
         : '회원가입하고 본인의 API 키를 등록하면 이 모델을 사용할 수 있어요.';
 
     return (
-        <div
-            className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm"
-            aria-hidden="true"
-        >
+        <div className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
             <div
                 ref={dialogRef}
                 role="dialog"
                 aria-modal="true"
                 aria-labelledby="api-key-modal-title"
                 tabIndex={-1}
-                className={cn(
-                    'border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-xl border shadow-2xl outline-none'
-                )}
+                className="border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-xl border shadow-2xl outline-none"
             >
                 <div className="border-secondary-700 flex items-center justify-between border-b px-5 py-4">
                     <h2

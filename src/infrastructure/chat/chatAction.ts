@@ -62,6 +62,8 @@ async function resolvePaidApiKey(
     provider: LlmProvider,
     serverPaidKey: string
 ): Promise<string | undefined> {
+    // Safe cast: TIER_CONFIG.models.free is readonly ModelId[] and ModelId ⊆ string;
+    // Array.prototype.includes widens the parameter type to string when called with a string arg.
     if ((TIER_CONFIG.models.free as readonly string[]).includes(model)) {
         return serverPaidKey;
     }

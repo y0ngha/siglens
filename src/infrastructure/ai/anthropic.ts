@@ -1,9 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk';
-import type {
-    AiContents,
-    CallAiProviderOptions,
-    GeminiContent,
-} from '@y0ngha/siglens-core';
+import type { AiContents, CallAiProviderOptions } from '@y0ngha/siglens-core';
+import { toProviderTurns } from '@/infrastructure/ai/utils';
 
 const ANTHROPIC_MAX_TOKENS = 8192;
 
@@ -15,13 +12,10 @@ interface AnthropicCallOptions {
 }
 
 function toAnthropicMessages(contents: AiContents): Anthropic.MessageParam[] {
-    if (typeof contents === 'string') {
-        return [{ role: 'user', content: contents }];
-    }
-    return contents.map((turn: GeminiContent) => ({
-        role: turn.role === 'model' ? 'assistant' : 'user',
-        content: turn.parts.map(p => p.text).join(''),
-    }));
+    // Safe cast: toProviderTurns returns { role: 'user' | 'assistant'; content: string }[]
+    // which is structurally compatible with MessageParam — role is always one of the two
+    // valid literals and string satisfies string | ContentBlockParam[] at runtime.
+    return toProviderTurns(contents) as Anthropic.MessageParam[];
 }
 
 async function callAnthropic({

@@ -35,6 +35,9 @@ describe('callOpenaiChat', () => {
             expect(result).toBe('Hi');
             expect(MockOpenAI).toHaveBeenCalledWith({ apiKey: 'pk' });
             expect(mockCreate).toHaveBeenCalledTimes(1);
+            expect(mockCreate.mock.calls[0][0]).toMatchObject({
+                model: 'gpt-5-mini',
+            });
         });
 
         it('primary key가 실패하면 fallback key로 재시도한다', async () => {
@@ -97,15 +100,28 @@ describe('callOpenaiChat', () => {
     });
 
     describe('응답 파싱', () => {
-        it('choices 배열이 비어있으면 빈 문자열을 반환한다', async () => {
-            mockCreate.mockResolvedValue({ choices: [] });
-
-            const result = await callOpenaiChat({
-                ...BASE_OPTIONS,
-                primaryApiKey: undefined,
+        it('응답 content가 null이면 에러를 던진다', async () => {
+            mockCreate.mockResolvedValue({
+                choices: [{ message: { content: null } }],
             });
 
-            expect(result).toBe('');
+            await expect(
+                callOpenaiChat({
+                    ...BASE_OPTIONS,
+                    primaryApiKey: undefined,
+                })
+            ).rejects.toThrow('OpenAI returned no text content');
+        });
+
+        it('choices 배열이 비어있으면 에러를 던진다', async () => {
+            mockCreate.mockResolvedValue({ choices: [] });
+
+            await expect(
+                callOpenaiChat({
+                    ...BASE_OPTIONS,
+                    primaryApiKey: undefined,
+                })
+            ).rejects.toThrow('OpenAI returned no text content');
         });
     });
 });
