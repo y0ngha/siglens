@@ -150,3 +150,12 @@
 - Violation: SW 등록 실패를 .catch(() => {})로 묵음 처리
 - Rule: MISTAKES.md Domain Functions #2 — 에러를 완전히 삼키지 말 것
 - Context: console.warn('[PWA] SW 등록 실패', err)로 변경
+
+## [PR #412 Round 2 | worktree-feat-pwa | 2026-05-03]
+- Violation: useEscapeKey에서 외부 콜백 prop을 useEffect deps에 직접 포함
+- Rule: MISTAKES.md Components #1 — 외부 콜백은 useEffectEvent로 감싸야 함
+- Context: useEscapeKey.ts에서 [onEscape] deps → useEffectEvent 래핑 후 [] deps로 변경
+
+- Violation: usePwaInstall.test.ts에서 PWA_TRIGGER_EVENT 상수값을 하드코딩
+- Rule: MISTAKES.md #15 — 하드코딩된 상수는 import 후 사용
+- Context: 3곳의 'siglens:pwa-trigger' → import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents' 후 교체
