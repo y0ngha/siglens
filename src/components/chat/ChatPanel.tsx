@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
 import {
@@ -112,6 +112,11 @@ export function ChatPanel({
         handleSubmit,
         handleKeyDown,
     } = useChatInput({ messages, loadingPhase, isAnalysisReady, sendMessage });
+
+    const handleSwitchToFreeModel = useCallback(() => {
+        handleModelChange(GEMINI_2_5_FLASH_MODEL);
+        closeApiKeyModal();
+    }, [handleModelChange, closeApiKeyModal]);
 
     const selectedModelOption = getModelDisplay(selectedModel);
 
@@ -268,10 +273,7 @@ export function ChatPanel({
                 onClose={closeApiKeyModal}
                 provider={getProviderForModel(selectedModel)}
                 loggedIn={!!currentUser}
-                onSwitchToFree={() => {
-                    handleModelChange(GEMINI_2_5_FLASH_MODEL);
-                    closeApiKeyModal();
-                }}
+                onSwitchToFree={handleSwitchToFreeModel}
             />
 
             {/* 입력 영역 */}

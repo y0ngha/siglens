@@ -116,7 +116,23 @@ describe('callAnthropicChat', () => {
                     ...BASE_OPTIONS,
                     primaryApiKey: undefined,
                 })
-            ).rejects.toThrow();
+            ).rejects.toThrow('Anthropic returned no text content');
+        });
+
+        it('content[0]이 text 타입이 아니면 에러를 던진다', async () => {
+            mockCreate.mockResolvedValue({
+                content: [
+                    { type: 'tool_use', id: 'call_1', name: 'tool', input: {} },
+                ],
+                stop_reason: 'tool_use',
+            });
+
+            await expect(
+                callAnthropicChat({
+                    ...BASE_OPTIONS,
+                    primaryApiKey: undefined,
+                })
+            ).rejects.toThrow('Anthropic returned no text content');
         });
     });
 });
