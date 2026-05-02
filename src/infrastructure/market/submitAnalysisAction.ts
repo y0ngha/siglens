@@ -2,6 +2,7 @@
 
 import { waitUntil } from '@vercel/functions';
 import {
+    type ModelId,
     type SubmitAnalysisGatedResult,
     type Timeframe,
     submitAnalysis,
@@ -11,7 +12,8 @@ export async function submitAnalysisAction(
     symbol: string,
     timeframe: Timeframe,
     force?: boolean,
-    fmpSymbol?: string
+    fmpSymbol?: string,
+    modelId?: ModelId
 ): Promise<SubmitAnalysisGatedResult> {
-    return submitAnalysis(symbol, timeframe, force, fmpSymbol, { waitUntil });
+    return submitAnalysis(symbol, timeframe, force, fmpSymbol, { waitUntil, modelId });
 }

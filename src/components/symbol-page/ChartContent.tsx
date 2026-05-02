@@ -4,14 +4,17 @@ import type { ReactNode } from 'react';
 import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
+import { getAllowedModels } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
+import { ModelSelector } from '@/components/analysis/ModelSelector';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
 import { useAnalysisDerivedData } from '@/components/symbol-page/hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from '@/components/symbol-page/hooks/useAnalysisDisplay';
 import { useActionPricesVisibility } from '@/components/symbol-page/hooks/useActionPricesVisibility';
+import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import {
     PANEL_MAX_WIDTH,
     PANEL_MIN_WIDTH,
@@ -23,6 +26,7 @@ import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus
 import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -102,6 +106,31 @@ export function ChartContent({
 }: ChartContentProps) {
     const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
 
+    const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
+        usePanelResize();
+
+    const {
+        handleStockChartReady,
+        handleStockChartRemove,
+        handleVolumeChartReady,
+        handleVolumeChartRemove,
+    } = useChartSync();
+
+    const { actionPricesVisible, setActionPricesVisible } =
+        useActionPricesVisibility();
+
+    const [selectedProvider, setSelectedProvider] = useSelectedProvider();
+
+    const allowedModels = useMemo(
+        () => getAllowedModels('free'),
+        []
+    );
+
+    const modelId = useMemo(
+        () => resolveDefaultModelForProvider(selectedProvider, allowedModels) ?? undefined,
+        [selectedProvider, allowedModels]
+    );
+
     const {
         analysis,
         isAnalyzing,
@@ -116,20 +145,8 @@ export function ChartContent({
         initialAnalysisFailed,
         fmpSymbol,
         timeframeChangeCount,
+        modelId,
     });
-
-    const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
-        usePanelResize();
-
-    const {
-        handleStockChartReady,
-        handleStockChartRemove,
-        handleVolumeChartReady,
-        handleVolumeChartRemove,
-    } = useChartSync();
-
-    const { actionPricesVisible, setActionPricesVisible } =
-        useActionPricesVisibility();
 
     const { displayAnalyzing, handleProgressFinished } =
         useAnalysisDisplay(isAnalyzing);
@@ -149,9 +166,15 @@ export function ChartContent({
     const analysisContent = useMemo(
         () => (
             <>
+                <ModelSelector
+                    selectedProvider={selectedProvider}
+                    onProviderChange={setSelectedProvider}
+                    allowedModels={allowedModels}
+                    disabled={isAnalyzing}
+                />
                 <AnalysisStatusBanner
                     status={analysisStatus}
-                    className="mb-3"
+                    className="mt-3"
                 />
                 <AnalysisPanel
                     symbol={symbol}
@@ -170,11 +193,14 @@ export function ChartContent({
             </>
         ),
         [
+            selectedProvider,
+            setSelectedProvider,
+            allowedModels,
+            isAnalyzing,
             symbol,
             analysisStatus,
             analysis,
             clusteredKeyLevels,
-            isAnalyzing,
             displayAnalyzing,
             progressPhaseIndex,
             progressTipIndex,
