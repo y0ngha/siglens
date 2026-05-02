@@ -7,6 +7,7 @@ import type {
     UserTier,
 } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry } from '@/domain/types';
+import type { AuthUserRecord } from '@/domain/auth/types';
 import type * as schema from './schema';
 
 /** Connection configuration required to instantiate a database client. */
@@ -29,31 +30,7 @@ export interface DatabaseClient {
     sql: NeonSqlClient;
 }
 
-/**
- * A persisted user account record returned from the database.
- */
-export interface AuthUserRecord {
-    /** Unique user identifier (UUID). */
-    id: string;
-    /** Normalized (lowercased, trimmed) email address. */
-    email: string;
-    /** Optional display name; null when not provided at registration. */
-    name: string | null;
-    /** Optional avatar image URL; null when not provided at registration. */
-    avatarUrl: string | null;
-    /** Subscription tier assigned to the user. */
-    tier: UserTier;
-    /** Whether the email address has been verified by the user. */
-    emailVerified: boolean;
-    /** Timestamp when the account was created. */
-    createdAt: Date;
-    /** Timestamp when the account was last updated. */
-    updatedAt: Date;
-}
-
-/**
- * Email-auth user record including the password hash needed for credential checks.
- */
+/** Email-auth user record including the password hash needed for credential checks. */
 export interface EmailAuthUserRecord extends AuthUserRecord {
     /** Hashed password for email/password authentication; null for OAuth-only users. */
     passwordHash: string | null;

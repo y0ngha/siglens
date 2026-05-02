@@ -127,12 +127,7 @@ export const oauthAccounts = pgTable(
     ]
 );
 
-/**
- * User-supplied LLM API keys — at most one row per (user, provider) pair.
- *
- * The `encrypted_api_key` column stores AES-256-GCM ciphertext; the plaintext
- * key is never persisted. Encryption is performed by the consumer application.
- */
+/** User-supplied LLM API keys (at most one per user–provider pair); encrypted_api_key stores AES-256-GCM ciphertext; plaintext never persisted. */
 export const userApiKeys = pgTable(
     'user_api_keys',
     {

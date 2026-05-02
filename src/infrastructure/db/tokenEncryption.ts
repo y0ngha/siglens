@@ -6,11 +6,10 @@
  *   `tryParseEncryptionKey`)
  * - `src/infrastructure/db/config.ts` (`tryReadEncryptionKey`)
  *
- * These helpers are not part of the core library's public API surface, so they
- * cannot be imported from `@y0ngha/siglens-core`. Phase 6 of the scope-realignment
- * refactor will move the DB layer fully into siglens and dedupe this file.
- *
- * Sync obligation: if the core copy changes, update this file to match.
+ * These helpers were not part of the core library's public API surface and could
+ * not be imported from `@y0ngha/siglens-core`. Phase 6 of the scope-realignment
+ * refactor moved the DB layer fully into siglens with this file as the deduped
+ * source of truth.
  */
 import { createCipheriv, createDecipheriv, randomBytes } from 'node:crypto';
 

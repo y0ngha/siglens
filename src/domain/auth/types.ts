@@ -1,7 +1,28 @@
+import type { UserTier } from '@y0ngha/siglens-core';
 import type {
     AuthValidationErrorCode,
     AuthValidationErrorField,
 } from './validation';
+
+/** A persisted user account record returned from the database. */
+export interface AuthUserRecord {
+    /** Unique user identifier (UUID). */
+    id: string;
+    /** Normalized (lowercased, trimmed) email address. */
+    email: string;
+    /** Optional display name; null when not provided at registration. */
+    name: string | null;
+    /** Optional avatar image URL; null when not provided at registration. */
+    avatarUrl: string | null;
+    /** Subscription tier assigned to the user. */
+    tier: UserTier;
+    /** Whether the email address has been verified by the user. */
+    emailVerified: boolean;
+    /** Timestamp when the account was created. */
+    createdAt: Date;
+    /** Timestamp when the account was last updated. */
+    updatedAt: Date;
+}
 
 /** Error code returned when user registration fails. */
 export type RegisterUserErrorCode =
