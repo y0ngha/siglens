@@ -10,6 +10,7 @@ import {
 } from 'react';
 import type {
     AnalysisResponse,
+    ModelId,
     SubmitAnalysisGatedResult,
     Timeframe,
 } from '@y0ngha/siglens-core';
@@ -28,6 +29,7 @@ interface AnalyzeMutationVariables {
     symbol: string;
     force: boolean;
     fmpSymbol?: string;
+    modelId?: ModelId;
 }
 
 /**
@@ -56,6 +58,7 @@ interface UseAnalysisOptions {
      * 0이면 초기 마운트, 1 이상이면 타임프레임 변경으로 인한 마운트다.
      */
     timeframeChangeCount: number;
+    modelId?: ModelId;
 }
 
 /**
@@ -85,6 +88,7 @@ export function useAnalysis({
     initialAnalysisFailed,
     fmpSymbol,
     timeframeChangeCount,
+    modelId,
 }: UseAnalysisOptions): UseAnalysisResult {
     // 1. useState
     const [analysisResult, setAnalysisResult] =
@@ -102,7 +106,9 @@ export function useAnalysis({
         fmpSymbol,
     });
     const latestTimeframeRef = useRef<Timeframe>(timeframe);
+    const latestModelIdRef = useRef<ModelId | undefined>(modelId);
     const prevTimeframeChangeCountRef = useRef(0);
+    const prevModelIdRef = useRef<ModelId | undefined>(modelId);
     // 현재 진행 중인 워커 job ID. 타임프레임 변경 시 취소 신호 전달에 사용.
     const currentJobIdRef = useRef<string | null>(null);
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
@@ -123,13 +129,15 @@ export function useAnalysis({
                 force,
                 symbol: mutSymbol,
                 fmpSymbol: mutFmpSymbol,
+                modelId: mutModelId,
             }) => {
                 lastForceRef.current = force;
                 return submitAnalysisAction(
                     mutSymbol,
                     latestTimeframeRef.current,
                     force,
-                    mutFmpSymbol
+                    mutFmpSymbol,
+                    mutModelId
                 );
             },
             onMutate: () => {
@@ -202,6 +210,7 @@ export function useAnalysis({
                 symbol: latestSymbol,
                 force: true,
                 fmpSymbol: latestFmpSymbol,
+                modelId: latestModelIdRef.current,
             });
         })();
     }, [reset, mutate]);
@@ -212,6 +221,7 @@ export function useAnalysis({
     useLayoutEffect(() => {
         latestRef.current = { symbol, fmpSymbol };
         latestTimeframeRef.current = timeframe;
+        latestModelIdRef.current = modelId;
     });
 
     // 7. useEffect
@@ -296,6 +306,7 @@ export function useAnalysis({
             symbol: latestRef.current.symbol,
             force: false,
             fmpSymbol: latestRef.current.fmpSymbol,
+            modelId: latestModelIdRef.current,
         });
     }, [mutate]);
 
@@ -318,8 +329,28 @@ export function useAnalysis({
             symbol: latestRef.current.symbol,
             force: false,
             fmpSymbol: latestRef.current.fmpSymbol,
+            modelId: latestModelIdRef.current,
         });
     }, [timeframeChangeCount, reset, mutate]);
+
+    useEffect(() => {
+        if (modelId === prevModelIdRef.current) return;
+        prevModelIdRef.current = modelId;
+
+        const jobId = currentJobIdRef.current;
+        if (jobId) {
+            void cancelAnalysisJobAction(jobId);
+            currentJobIdRef.current = null;
+        }
+
+        reset();
+        mutate({
+            symbol: latestRef.current.symbol,
+            force: false,
+            fmpSymbol: latestRef.current.fmpSymbol,
+            modelId,
+        });
+    }, [modelId, reset, mutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
     // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.

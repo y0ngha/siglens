@@ -19,10 +19,6 @@
 - Context: userApiKeys의 JSDoc 블록을 한 줄로 압축하되 AES-256-GCM 암호화 특성 유지.
 
 ## [PR #405 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Violation: LLM_PROVIDER_VALUES 상수가 src/domain/llm/constants.ts와 src/infrastructure/db/constants.ts 양쪽에 동일하게 정의
-- Rule: ARCHITECTURE.md — infrastructure는 domain에서 import 가능; 동일 상수 중복 정의 금지
-- Context: infra DB 상수가 domain의 단일 진실 공급원을 우회. infrastructure 측 정의를 제거하고 @/domain/llm에서 import 후 재노출.
-
 - Violation: drizzle/0004_add_oauth_token_columns.sql가 _journal.json에 등재되지 않은 채 0006_striped_marauders.sql과 SQL이 완전 중복
 - Rule: drizzle 마이그레이션은 _journal.json 등재 순서로 적용되며, 등재되지 않은 파일은 dead-code이자 drizzle-kit migrate 시 0006에서 컬럼 중복 오류 유발
 - Context: orphan SQL 파일을 git rm으로 삭제. _journal.json은 변경 없음.
@@ -80,15 +76,6 @@
 - Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
 
-## [Issue #394 stubs removal | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: 미배포 코어 API stub 모듈을 임시로 두고 import 경로를 우회
-- Rule: 단일 의존성 원칙 — 외부 패키지 export가 정식 출시되면 stub은 즉시 제거하고 import 경로를 통일
-- Context: siglens-core 0.2.1 배포로 모든 새 API(requestEmailVerification, verifyEmail, EmailTokenStore, V2 PasswordReset, V2 RegisterUser, OAuthRevoker, DrizzleOAuthAccountRepository)가 실 export됨. coreStubs.ts 삭제, 모든 import를 @y0ngha/siglens-core로 교체. EmailMessage/EmailDispatcher 또한 코어 export를 그대로 re-export하여 단일 경로 유지.
-
-- Violation: 코어가 자동화한 OAuth revocation을 사용자에게 수동 안내 문구로 노출
-- Rule: 도메인 동작과 UI 메시지 동기화 — 코어가 책임지면 UI는 그 사실을 반영
-- Context: deleteAccount가 oauthAccounts + oauthRevoker deps로 provider 측 token revocation을 자동 수행하므로, DeleteAccountConfirm의 "각 provider 계정에서 직접 끊으세요" 안내 박스와 /privacy 약관 문구를 "탈퇴 시 자동으로 회수된다"로 갱신.
-
 ## [PR #395 Round 6 | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: infrastructure Server Action에서 네트워크 응답 없이 무한 대기 가능
 - Rule: MISTAKES.md Fire-and-Forget #1 — fetch 기반 외부 호출에는 반드시 타임아웃 설정
@@ -133,6 +120,7 @@
 - Violation: future siglens work risked re-introducing analysis logic locally instead of in siglens-core
 - Rule: SCOPE.md §3 (dependency direction) — analysis secret sauce stays in core
 - Context: added siglens-side §0 work-boundary checklist + CLAUDE.md cross-repo scope guard so that analysis-related task descriptions trigger an explicit redirect-or-confirm step before any code is written.
+
 ## [Issue #401 | feat/401/worker-ai-provider-enhancement | 2026-05-02]
 - Violation: 동일 정책 상수가 여러 retry 모듈에 중복 정의 (AI_RETRY_MAX_ATTEMPTS, AI_RETRY_DELAY_MS)
 - Rule: MISTAKES.md Design 1 / FF Cohesion — 함께 변해야 하는 상수는 single source of truth에 모아야 함
@@ -149,3 +137,47 @@
 
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).
+
+## [PR #409 Round 2 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: Duplicate import statements from the same module (@y0ngha/siglens-core) in ChartContent.tsx and providerDefaults.ts
+- Rule: MISTAKES.md Components #0 — ESLint import/no-duplicates; always consolidate imports from the same module
+- Context: ChartContent.tsx had separate type import and value import from @y0ngha/siglens-core. providerDefaults.ts same pattern. Merged into single import statement using inline type modifier.
+
+## [PR #409 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: Hook declaration order violated — useEffect declared before useCallback in useSelectedProvider.ts
+- Rule: CONVENTIONS.md Custom Hook Declaration Order — handlers (useCallback, step 5) must precede useEffect (step 7)
+- Context: useSelectedProvider declared useEffect on line 19 and useCallback on line 27; reordered to useCallback first.
+
+- Violation: VALID_PROVIDERS declared as mutable AIProvider[] instead of readonly
+- Rule: CONVENTIONS.md immutability — module-level constants should use readonly to prevent accidental mutation
+- Context: Inconsistent with other priority arrays in providerDefaults.ts which all use readonly. Changed to readonly AIProvider[].
+
+- Violation: Redundant ternary inside isSelected=true branch
+- Rule: MISTAKES.md Coding Paradigm rule 4 — logic with no effect must be removed
+- Context: ModelSelector.tsx isSelected ? <span className={cn('text-sm', isSelected ? 'text-primary-300' : 'text-secondary-400')}> — the inner ternary always resolves to text-primary-300. Simplified to direct className.
+
+- Violation: formatModelVariant produces "Sonnet 4 6" instead of "Sonnet 4.6" for claude-sonnet-4-6
+- Rule: Output must match JSDoc examples in the same function
+- Context: Claude model IDs split by '-' produce ["sonnet", "4", "6"] then join with space → "Sonnet 4 6". Fixed by adding .replace(/(\d) (\d)/g, '$1.$2') to merge adjacent numeric parts with dots.
+
+- Violation: AnalysisStatusBanner bottom margin removed when ModelSelector was prepended
+- Rule: Consistent spacing — adding content above should not remove spacing below
+- Context: AnalysisStatusBanner className changed from mb-3 to mt-3, removing bottom gap to AnalysisPanel. Changed to my-3 to preserve both margins.
+
+## [PR #409 Round 3 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: `'free'` tier 문자열 리터럴이 컴포넌트 본문에 하드코딩됨
+- Rule: MISTAKES.md Coding Paradigm — magic constants must be extracted to module-level constants
+- Context: ChartContent.tsx의 `getAllowedModels('free')` 호출에서 `'free'`를 인라인 리터럴로 사용. `DEFAULT_TIER = 'free' as const`로 추출.
+
+## [Issue #402 | feat/402/AI-모델-선택-UI | 2026-05-02]
+- Violation: localStorage key constant placed in domain/ layer
+- Rule: ARCHITECTURE.md — domain/ must contain only pure business logic; config/storage keys belong in lib/
+- Context: `LOCAL_STORAGE_PROVIDER_KEY` was initially created in `src/domain/llm/types.ts` but localStorage keys are UI/persistence configuration, not domain logic. Moved to `src/lib/storageKeys.ts`.
+
+- Violation: `as` cast without explanatory comment in production code
+- Rule: MISTAKES.md TypeScript rule 7 — every safe-cast `as` must have a comment explaining the guarantee
+- Context: `MODEL_SPECS[modelId as keyof typeof MODEL_SPECS]` in providerDefaults.ts and `(VALID_PROVIDERS as string[])` in useSelectedProvider.ts both lacked comments. Added inline comments.
+
+- Violation: Derived constant recreated every render without useMemo
+- Rule: MISTAKES.md rule 10 — derived constants from props must be wrapped in useMemo
+- Context: `resolvedModels` in ModelSelector.tsx was computed on every render; since handleKeyDown depended on it, useCallback provided no stabilization benefit. Wrapped with useMemo([allowedModels]).

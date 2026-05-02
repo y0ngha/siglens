@@ -1,6 +1,6 @@
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import { submitAnalysis } from '@y0ngha/siglens-core';
-import type { SubmitAnalysisGatedResult } from '@y0ngha/siglens-core';
+import type { ModelId, SubmitAnalysisGatedResult } from '@y0ngha/siglens-core';
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
@@ -35,7 +35,7 @@ describe('submitAnalysisAction 함수는', () => {
             '1Day',
             true,
             '^AAPL',
-            { waitUntil: expect.any(Function) }
+            expect.objectContaining({ waitUntil: expect.any(Function) })
         );
     });
 
@@ -45,5 +45,34 @@ describe('submitAnalysisAction 함수는', () => {
         const result = await submitAnalysisAction('AAPL', '1Day');
 
         expect(result).toBe(cachedResult);
+    });
+
+    it('forwards modelId to submitAnalysis options when provided', async () => {
+        mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+
+        const modelId = 'claude-opus-4-5' as ModelId;
+        await submitAnalysisAction('AAPL', '1Day', false, '^AAPL', modelId);
+
+        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            '1Day',
+            false,
+            '^AAPL',
+            expect.objectContaining({ modelId })
+        );
+    });
+
+    it('passes modelId as undefined in options when modelId is omitted', async () => {
+        mockSubmitAnalysis.mockResolvedValueOnce(cachedResult);
+
+        await submitAnalysisAction('AAPL', '1Day', false, '^AAPL');
+
+        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            '1Day',
+            false,
+            '^AAPL',
+            expect.objectContaining({ modelId: undefined })
+        );
     });
 });
