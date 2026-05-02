@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { useFormStatus } from 'react-dom';
 import type { LlmProvider, RegisteredProvider } from '@/domain/llm';
 import { useApiKeyForms } from '@/components/account/hooks/useApiKeyForms';
@@ -105,7 +105,7 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                         <button
                             type="button"
                             onClick={() => setShowSaveInput(false)}
-                            className="text-secondary-400 hover:text-secondary-200 inline-flex h-10 shrink-0 items-center justify-center px-2 text-sm transition-colors focus-visible:outline-none"
+                            className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 inline-flex h-10 shrink-0 items-center justify-center px-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
                             취소
                         </button>
@@ -165,8 +165,9 @@ interface ApiKeySectionProps {
 }
 
 export function ApiKeySection({ registeredProviders }: ApiKeySectionProps) {
-    const registeredSet = new Set(
-        registeredProviders.map(({ provider }) => provider)
+    const registeredSet = useMemo(
+        () => new Set(registeredProviders.map(({ provider }) => provider)),
+        [registeredProviders]
     );
 
     return (

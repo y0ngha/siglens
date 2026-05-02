@@ -19,12 +19,12 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import {
-    isFreeChatModel,
-    getRequiredProviderForModel,
-    type GateMode,
-    type LlmProvider,
-} from '@/domain/llm';
+import type {
+    AuthUserRecord,
+    GateMode,
+    LlmProvider,
+    RegisteredProvider,
+} from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
@@ -99,6 +99,9 @@ export interface UseChatReturn {
     handleModelChange: (model: ModelId) => void;
     gateModal: GateModalState | null;
     dismissGate: () => void;
+    openGate: (state: GateModalState) => void;
+    currentUser: AuthUserRecord | null | undefined;
+    registeredProviders: RegisteredProvider[];
 }
 
 export function useChat({
@@ -195,7 +198,7 @@ export function useChat({
             setMessages(prev => [...prev, aiMessage]);
             if (result.ok) {
                 queryClient.setQueryData(
-                    ['chat', 'remaining-tokens'],
+                    QUERY_KEYS.remainingTokens(),
                     result.remainingTokens
                 );
             }
@@ -228,26 +231,13 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
-    const handleModelChange = useCallback(
-        (model: ModelId) => {
-            if (!isFreeChatModel(model)) {
-                const requiredProvider = getRequiredProviderForModel(model);
-                if (!currentUser) {
-                    setGateModal({ mode: 'auth', provider: requiredProvider });
-                    return; // do NOT change model
-                }
-                const hasKey = registeredProviders.some(
-                    p => p.provider === requiredProvider
-                );
-                if (!hasKey) {
-                    setGateModal({ mode: 'byok', provider: requiredProvider });
-                    return; // do NOT change model
-                }
-            }
-            setSelectedModel(model);
-        },
-        [currentUser, registeredProviders]
-    );
+    const handleModelChange = useCallback((model: ModelId) => {
+        setSelectedModel(model);
+    }, []);
+
+    const openGate = useCallback((state: GateModalState) => {
+        setGateModal(state);
+    }, []);
 
     const dismissGate = useCallback(() => {
         setGateModal(null);
@@ -375,5 +365,8 @@ export function useChat({
         handleModelChange,
         gateModal,
         dismissGate,
+        openGate,
+        currentUser,
+        registeredProviders,
     };
 }

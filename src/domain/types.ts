@@ -72,6 +72,13 @@ export type {
 
 export type { AuthUserRecord } from '@/domain/auth/types';
 
+export type {
+    ApiKeyActionState,
+    GateMode,
+    RegisteredProvider,
+} from '@/domain/llm/types';
+export type { LlmProvider } from '@/domain/llm/constants';
+
 export type ContactFormField = 'title' | 'email' | 'content';
 
 export type ContactFormErrorCode =

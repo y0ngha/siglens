@@ -1,9 +1,9 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
-import { VALID_CHAT_MODELS } from '@y0ngha/siglens-core';
+import { VALID_CHAT_MODELS, getProviderForModel } from '@y0ngha/siglens-core';
 import type {
     AnalysisResponse,
     ModelId,
@@ -102,7 +102,32 @@ export function ChatPanel({
         handleModelChange,
         gateModal,
         dismissGate,
+        openGate,
+        currentUser,
+        registeredProviders,
     } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
+
+    const handleGatedModelChange = useCallback(
+        (model: ModelId) => {
+            if (!isFreeChatModel(model)) {
+                const requiredProvider = getProviderForModel(model);
+                if (!currentUser) {
+                    openGate({ mode: 'auth', provider: requiredProvider });
+                    return;
+                }
+                if (
+                    !registeredProviders.some(
+                        p => p.provider === requiredProvider
+                    )
+                ) {
+                    openGate({ mode: 'byok', provider: requiredProvider });
+                    return;
+                }
+            }
+            handleModelChange(model);
+        },
+        [currentUser, registeredProviders, handleModelChange, openGate]
+    );
 
     const {
         inputValue,
@@ -138,7 +163,7 @@ export function ChatPanel({
             case 'ArrowDown': {
                 e.preventDefault();
                 const nextIdx = (currentIndex + 1) % CHAT_MODEL_OPTIONS.length;
-                handleModelChange(CHAT_MODEL_OPTIONS[nextIdx]!.id);
+                handleGatedModelChange(CHAT_MODEL_OPTIONS[nextIdx]!.id);
                 optionRefs.current[nextIdx]?.focus();
                 break;
             }
@@ -147,19 +172,19 @@ export function ChatPanel({
                 const prevIdx =
                     (currentIndex - 1 + CHAT_MODEL_OPTIONS.length) %
                     CHAT_MODEL_OPTIONS.length;
-                handleModelChange(CHAT_MODEL_OPTIONS[prevIdx]!.id);
+                handleGatedModelChange(CHAT_MODEL_OPTIONS[prevIdx]!.id);
                 optionRefs.current[prevIdx]?.focus();
                 break;
             }
             case 'Home':
                 e.preventDefault();
-                handleModelChange(CHAT_MODEL_OPTIONS[0]!.id);
+                handleGatedModelChange(CHAT_MODEL_OPTIONS[0]!.id);
                 optionRefs.current[0]?.focus();
                 break;
             case 'End': {
                 e.preventDefault();
                 const lastIdx = CHAT_MODEL_OPTIONS.length - 1;
-                handleModelChange(CHAT_MODEL_OPTIONS[lastIdx]!.id);
+                handleGatedModelChange(CHAT_MODEL_OPTIONS[lastIdx]!.id);
                 optionRefs.current[lastIdx]?.focus();
                 break;
             }
@@ -316,7 +341,7 @@ export function ChatPanel({
                                             selectedModel === option.id
                                         }
                                         onClick={() => {
-                                            handleModelChange(option.id);
+                                            handleGatedModelChange(option.id);
                                             close();
                                             triggerRef.current?.focus();
                                         }}
@@ -326,7 +351,9 @@ export function ChatPanel({
                                                 e.key === ' '
                                             ) {
                                                 e.preventDefault();
-                                                handleModelChange(option.id);
+                                                handleGatedModelChange(
+                                                    option.id
+                                                );
                                                 close();
                                                 triggerRef.current?.focus();
                                             }
