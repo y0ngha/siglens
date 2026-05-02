@@ -19,8 +19,12 @@ import type {
     ModelId,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import { isFreeChatModel, getRequiredProviderForModel } from '@/domain/llm';
+import type { LlmProvider } from '@/domain/llm';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
+import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
+import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -47,11 +51,9 @@ const ERROR_MESSAGES: Record<ChatErrorCode, string> = {
     server_error: '일시적인 오류가 발생했어요. 다시 시도해주세요.',
     model_not_allowed:
         '선택한 모델은 현재 회원 등급에서 사용할 수 없어요. 다른 모델을 선택해주세요.',
-    user_api_key_required:
-        '이 모델을 사용하려면 API 키를 등록해야 해요. 계정 설정에서 등록해주세요.',
 };
 
-function isValidModelId(value: string): value is ModelId {
+function isValidChatModel(value: string): value is ModelId {
     return VALID_CHAT_MODELS.some(model => model === value);
 }
 
@@ -83,6 +85,8 @@ export interface UseChatReturn {
     dismissAnalysisUpdated: () => void;
     selectedModel: ModelId;
     handleModelChange: (model: ModelId) => void;
+    gateModal: { mode: 'auth' | 'byok'; provider: LlmProvider } | null;
+    dismissGate: () => void;
 }
 
 export function useChat({
@@ -99,6 +103,10 @@ export function useChat({
     const [selectedModel, setSelectedModel] = useState<ModelId>(
         GEMINI_2_5_FLASH_MODEL
     );
+    const [gateModal, setGateModal] = useState<{
+        mode: 'auth' | 'byok';
+        provider: LlmProvider;
+    } | null>(null);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -124,6 +132,18 @@ export function useChat({
         queryKey: ['chat', 'remaining-tokens'],
         queryFn: getRemainingTokensAction,
         staleTime: 0,
+    });
+
+    const { data: currentUser } = useQuery({
+        queryKey: ['auth', 'current-user'],
+        queryFn: currentUserAction,
+        staleTime: 5 * 60 * 1000, // 5 minutes
+    });
+
+    const { data: registeredProviders = [] } = useQuery({
+        queryKey: ['llm', 'registered-providers'],
+        queryFn: getRegisteredProvidersAction,
+        staleTime: 60 * 1000, // 1 minute
     });
 
     const { mutateAsync } = useMutation({
@@ -199,8 +219,29 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
-    const handleModelChange = useCallback((model: ModelId) => {
-        setSelectedModel(model);
+    const handleModelChange = useCallback(
+        (model: ModelId) => {
+            if (!isFreeChatModel(model)) {
+                const requiredProvider = getRequiredProviderForModel(model);
+                if (!currentUser) {
+                    setGateModal({ mode: 'auth', provider: requiredProvider });
+                    return; // do NOT change model
+                }
+                const hasKey = registeredProviders.some(
+                    p => p.provider === requiredProvider
+                );
+                if (!hasKey) {
+                    setGateModal({ mode: 'byok', provider: requiredProvider });
+                    return; // do NOT change model
+                }
+            }
+            setSelectedModel(model);
+        },
+        [currentUser, registeredProviders]
+    );
+
+    const dismissGate = useCallback(() => {
+        setGateModal(null);
     }, []);
 
     // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;
@@ -225,7 +266,7 @@ export function useChat({
         try {
             const stored = localStorage.getItem(MODEL_STORAGE_KEY);
             // VALID_CHAT_MODELS comes from siglens-core and is the runtime source of truth.
-            if (stored !== null && isValidModelId(stored)) {
+            if (stored !== null && isValidChatModel(stored)) {
                 startTransition(() => {
                     setSelectedModel(stored);
                 });
@@ -323,5 +364,7 @@ export function useChat({
         dismissAnalysisUpdated,
         selectedModel,
         handleModelChange,
+        gateModal,
+        dismissGate,
     };
 }
