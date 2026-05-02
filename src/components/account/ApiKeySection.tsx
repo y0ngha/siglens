@@ -46,10 +46,10 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
     const { saveState, saveFormAction, deleteState, deleteFormAction } =
         useApiKeyForms();
 
-    // Blocker 4: when isRegistered changes (e.g. deletion → false), the parent key
+    // when isRegistered changes (e.g. deletion → false), the parent key
     // remounts this component, so editMode resets to false and the form opens via !isRegistered.
 
-    // Blocker 5: for re-registration, close the form optimistically on submit.
+    // for re-registration, close the form optimistically on submit.
     // On failure, the error appears in the status region below; user can click 재등록 to retry.
     const handleSave = (formData: FormData): void => {
         if (isRegistered) setEditMode(false);

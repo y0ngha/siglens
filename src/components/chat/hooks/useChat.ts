@@ -25,6 +25,7 @@ import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
+import { MS_PER_MINUTE } from '@/domain/constants/time';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -39,6 +40,8 @@ import {
 
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
+const CURRENT_USER_STALE_MS = 5 * MS_PER_MINUTE;
+const REGISTERED_PROVIDERS_STALE_MS = MS_PER_MINUTE;
 const MODEL_STORAGE_KEY = 'siglens_chat_model';
 
 // Matches the siglens-core chat token limit; update only when the core policy changes.
@@ -143,13 +146,13 @@ export function useChat({
     const { data: currentUser } = useQuery({
         queryKey: QUERY_KEYS.currentUser(),
         queryFn: currentUserAction,
-        staleTime: 5 * 60 * 1000,
+        staleTime: CURRENT_USER_STALE_MS,
     });
 
     const { data: registeredProviders = [] } = useQuery({
         queryKey: QUERY_KEYS.registeredProviders(),
         queryFn: getRegisteredProvidersAction,
-        staleTime: 60 * 1000,
+        staleTime: REGISTERED_PROVIDERS_STALE_MS,
     });
 
     const { mutateAsync } = useMutation({
