@@ -6,12 +6,12 @@ import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepos
 import { isLlmProvider, normalizeLlmApiKey } from '@/domain/llm';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
-import type { SaveApiKeyState } from '@/infrastructure/llm/types';
+import type { ApiKeyActionState } from '@/domain/llm';
 
 export async function saveApiKeyAction(
-    _prevState: SaveApiKeyState,
+    _prevState: ApiKeyActionState,
     formData: FormData
-): Promise<SaveApiKeyState> {
+): Promise<ApiKeyActionState> {
     const user = await getCurrentUser();
     if (user === null) {
         redirect('/login?next=/account');

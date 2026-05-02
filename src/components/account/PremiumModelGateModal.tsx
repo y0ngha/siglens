@@ -27,13 +27,13 @@ export function PremiumModelGateModal({
         ? '프리미엄 모델을 사용하려면 로그인이 필요합니다.'
         : `${providerLabel ?? ''} API 키를 등록하면 이 모델을 사용할 수 있습니다.`;
 
-    const safeClose = () => {
+    const safeClose = (): void => {
         if (closedRef.current) return;
         closedRef.current = true;
         onClose();
     };
 
-    const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>) => {
+    const handleBackdropClick = (e: React.MouseEvent<HTMLDialogElement>): void => {
         if (e.target === dialogRef.current) {
             safeClose();
         }

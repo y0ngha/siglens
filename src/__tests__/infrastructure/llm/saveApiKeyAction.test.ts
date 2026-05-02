@@ -25,7 +25,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { saveApiKeyAction } from '@/infrastructure/llm/saveApiKeyAction';
 import { makeFormData } from '@/__tests__/utils/makeFormData';
-import type { SaveApiKeyState } from '@/infrastructure/llm/types';
+import type { ApiKeyActionState } from '@/domain/llm';
 
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
     typeof getCurrentUser
@@ -35,7 +35,7 @@ const mockRevalidatePath = revalidatePath as jest.MockedFunction<
 >;
 const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
 
-const IDLE_STATE: SaveApiKeyState = { status: 'idle', message: null };
+const IDLE_STATE: ApiKeyActionState = { status: 'idle', message: null };
 
 describe('saveApiKeyAction', () => {
     beforeEach(() => {
