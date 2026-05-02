@@ -85,7 +85,12 @@ export function PremiumModelGateModal({
                         />
                         <path d="M7 11V7a5 5 0 0 1 10 0v4" />
                     </svg>
-                    <h2 id={TITLE_ID} className="text-secondary-50 font-semibold">{title}</h2>
+                    <h2
+                        id={TITLE_ID}
+                        className="text-secondary-50 font-semibold"
+                    >
+                        {title}
+                    </h2>
                     <p className="text-secondary-300 text-sm">{body}</p>
                 </div>
 

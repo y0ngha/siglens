@@ -326,9 +326,7 @@ export function ChatPanel({
                                                 e.key === ' '
                                             ) {
                                                 e.preventDefault();
-                                                handleModelChange(
-                                                    option.id
-                                                );
+                                                handleModelChange(option.id);
                                                 close();
                                                 triggerRef.current?.focus();
                                             }

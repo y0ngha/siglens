@@ -29,7 +29,10 @@ export function useApiKeyForms(): ApiKeyFormsReturn {
     >(deleteApiKeyAction, INITIAL_STATE);
 
     useEffect(() => {
-        if (saveState.status === 'success' || deleteState.status === 'success') {
+        if (
+            saveState.status === 'success' ||
+            deleteState.status === 'success'
+        ) {
             void queryClient.invalidateQueries({
                 queryKey: QUERY_KEYS.registeredProviders(),
             });

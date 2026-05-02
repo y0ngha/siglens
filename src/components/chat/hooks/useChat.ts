@@ -227,20 +227,29 @@ export function useChat({
         setAnalysisUpdated(false);
     }, []);
 
-    const handleModelChange = useCallback((model: ModelId): void => {
-        if (!(TIER_CONFIG.models.free as readonly string[]).includes(model)) {
-            const requiredProvider = getProviderForModel(model);
-            if (!currentUser) {
-                setGateModal({ mode: 'auth', provider: requiredProvider });
-                return;
+    const handleModelChange = useCallback(
+        (model: ModelId): void => {
+            if (
+                !(TIER_CONFIG.models.free as readonly string[]).includes(model)
+            ) {
+                const requiredProvider = getProviderForModel(model);
+                if (!currentUser) {
+                    setGateModal({ mode: 'auth', provider: requiredProvider });
+                    return;
+                }
+                if (
+                    !registeredProviders.some(
+                        p => p.provider === requiredProvider
+                    )
+                ) {
+                    setGateModal({ mode: 'byok', provider: requiredProvider });
+                    return;
+                }
             }
-            if (!registeredProviders.some(p => p.provider === requiredProvider)) {
-                setGateModal({ mode: 'byok', provider: requiredProvider });
-                return;
-            }
-        }
-        setSelectedModel(model);
-    }, [currentUser, registeredProviders]);
+            setSelectedModel(model);
+        },
+        [currentUser, registeredProviders]
+    );
 
     const dismissGate = useCallback((): void => {
         setGateModal(null);
