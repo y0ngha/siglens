@@ -74,7 +74,6 @@ export function usePwaInstall(): UsePwaInstallReturn {
 
     const handleModalClose = useCallback(() => setShowIosModal(false), []);
 
-    // Register SW once on mount
     useEffect(() => {
         if ('serviceWorker' in navigator) {
             navigator.serviceWorker
@@ -83,7 +82,6 @@ export function usePwaInstall(): UsePwaInstallReturn {
         }
     }, []);
 
-    // Sync event listeners and fallback timer when env changes
     useEffect(() => {
         const canShow =
             env.isMobile && !env.isStandalone && !env.isInAppBrowser;

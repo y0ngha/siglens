@@ -4,6 +4,7 @@
 import '@testing-library/jest-dom';
 import { renderHook, act } from '@testing-library/react';
 import { usePwaInstall } from '@/components/pwa/hooks/usePwaInstall';
+import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
 describe('usePwaInstall', () => {
     beforeAll(() => {
@@ -39,7 +40,7 @@ describe('usePwaInstall', () => {
     it('siglens:pwa-trigger 이벤트 → iPhone이면 showBanner=true', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
+            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
         });
         expect(result.current.showBanner).toBe(true);
     });
@@ -47,7 +48,7 @@ describe('usePwaInstall', () => {
     it('handleDismiss → showBanner=false', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
+            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
         });
         expect(result.current.showBanner).toBe(true);
         act(() => {
@@ -59,7 +60,7 @@ describe('usePwaInstall', () => {
     it('iOS에서 handleInstall → showIosModal=true', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
+            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
         });
         act(() => {
             void result.current.handleInstall();
@@ -70,15 +71,11 @@ describe('usePwaInstall', () => {
     it('handleModalClose → showIosModal=false', () => {
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
+            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
         });
-        act(() => {
-            void result.current.handleInstall();
-        });
+        act(() => { void result.current.handleInstall(); });
         expect(result.current.showIosModal).toBe(true);
-        act(() => {
-            result.current.handleModalClose();
-        });
+        act(() => { result.current.handleModalClose(); });
         expect(result.current.showIosModal).toBe(false);
     });
 
@@ -89,7 +86,7 @@ describe('usePwaInstall', () => {
         });
         const { result } = renderHook(() => usePwaInstall());
         act(() => {
-            window.dispatchEvent(new CustomEvent('siglens:pwa-trigger'));
+            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
         });
         expect(result.current.showBanner).toBe(false);
     });

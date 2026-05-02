@@ -73,4 +73,17 @@ describe('PwaBanner', () => {
         fireEvent.click(screen.getByRole('button', { name: '설치하기' }));
         expect(handleInstall).toHaveBeenCalledTimes(1);
     });
+
+    it('isIos=true && showIosModal=true → IosInstallModal 렌더', () => {
+        mockUsePwaInstall.mockReturnValue({
+            showBanner: true,
+            showIosModal: true,
+            isIos: true,
+            handleInstall: jest.fn(),
+            handleDismiss: jest.fn(),
+            handleModalClose: jest.fn(),
+        });
+        render(<PwaBanner />);
+        expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
 });
