@@ -13,6 +13,10 @@ import {
     TTL_T2_24H,
     TTL_T2_1H,
 } from '@/lib/fundamental/cacheTtl';
+import type {
+    FundamentalSectorPerformanceInput,
+    FundamentalSectorHistoricalInput,
+} from '@y0ngha/siglens-core';
 
 // ─── T4: 30 days ────────────────────────────────────────────────────────────
 
@@ -99,7 +103,9 @@ export { todayKstIsoDate } from '@/lib/dateKey';
 
 // ─── T2: 1 hour (date-keyed) ─────────────────────────────────────────────────
 
-export function getSectorSnapshot(date: string) {
+export function getSectorSnapshot(
+    date: string
+): Promise<FundamentalSectorPerformanceInput[]> {
     return unstable_cache(
         async () =>
             new FmpFundamentalClient().getSectorPerformanceSnapshot(date),
@@ -110,7 +116,9 @@ export function getSectorSnapshot(date: string) {
 
 // ─── T2: 24 hours (sector-keyed) ────────────────────────────────────────────
 
-export function getHistoricalSector(sector: string) {
+export function getHistoricalSector(
+    sector: string
+): Promise<FundamentalSectorHistoricalInput[]> {
     return unstable_cache(
         async () =>
             new FmpFundamentalClient().getHistoricalSectorPerformance(sector),
