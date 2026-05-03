@@ -11,7 +11,10 @@ import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
-import { isEnrichedRow, toEnrichedNewsItem } from '@/infrastructure/market/newsEnrichment';
+import {
+    isEnrichedRow,
+    toEnrichedNewsItem,
+} from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/lib/dateKey';
 
 /**

@@ -1,4 +1,9 @@
-import type { EnrichedNewsItem, NewsCardAnalysis, NewsCategory, NewsSentiment } from '@y0ngha/siglens-core';
+import type {
+    EnrichedNewsItem,
+    NewsCardAnalysis,
+    NewsCategory,
+    NewsSentiment,
+} from '@y0ngha/siglens-core';
 import type { NewsRow } from '@/infrastructure/db/newsRepository';
 
 /**

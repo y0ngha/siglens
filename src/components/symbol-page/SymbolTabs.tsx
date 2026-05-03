@@ -38,7 +38,10 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     const upper = symbol.toUpperCase();
 
     return (
-        <nav aria-label="분석 종류" className="border-border flex overflow-x-auto border-b">
+        <nav
+            aria-label="분석 종류"
+            className="border-border flex overflow-x-auto border-b"
+        >
             {TABS.map(t => {
                 const href = t.hrefBuilder(upper);
                 const active = pathname === href;
