@@ -13,6 +13,7 @@ import {
     AUGMENT_AND_OVERALL_POLL_INTERVAL_MS,
     MAX_DEPENDENCY_RETRIES,
 } from '@/lib/pollingConfig';
+import { MS_PER_SECOND } from '@/domain/constants/time';
 
 type OverallAnalysisState =
     | { status: 'idle' }
@@ -31,7 +32,102 @@ export interface UseOverallAnalysisReturn {
     trigger: () => void;
 }
 
-// State machine; each trigger cancels any in-flight run via the alive flag + clearTimeout.
+// trigger 호출마다 만들어지는 실행 컨텍스트. 모듈 레벨 run/poll 함수가 클로저 대신 명시적으로 받는다.
+interface RunContext {
+    symbol: string;
+    timeframe: Timeframe;
+    modelId: ModelId;
+    setState: (state: OverallAnalysisState) => void;
+    isAlive: () => boolean;
+    setRetryHandle: (h: ReturnType<typeof setTimeout> | null) => void;
+    setPollHandle: (h: ReturnType<typeof setTimeout> | null) => void;
+}
+
+async function pollOverallJob(jobId: string, ctx: RunContext): Promise<void> {
+    const polled = await pollOverallAnalysisAction(jobId);
+    if (!ctx.isAlive()) return;
+
+    if (polled.status === 'processing') {
+        const handle = setTimeout(() => {
+            void pollOverallJob(jobId, ctx);
+        }, AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
+        ctx.setPollHandle(handle);
+        return;
+    }
+    if (polled.status === 'done') {
+        ctx.setState({ status: 'done', result: polled.result });
+        return;
+    }
+    ctx.setState({
+        status: 'error',
+        error: polled.error ?? '분석 중 오류가 발생했습니다.',
+    });
+}
+
+async function runOverallAnalysis(
+    ctx: RunContext,
+    dependencyRetryCount: number
+): Promise<void> {
+    ctx.setState({ status: 'submitting' });
+
+    const submitted = await submitOverallAnalysisAction(
+        ctx.symbol,
+        ctx.timeframe,
+        ctx.modelId
+    );
+
+    if (!ctx.isAlive()) return;
+
+    if (submitted.status === 'cached') {
+        ctx.setState({ status: 'done', result: submitted.result });
+        return;
+    }
+
+    if (submitted.status === 'pending_dependencies') {
+        if (dependencyRetryCount >= MAX_DEPENDENCY_RETRIES) {
+            const timeoutSeconds = Math.round(
+                (MAX_DEPENDENCY_RETRIES *
+                    AUGMENT_AND_OVERALL_POLL_INTERVAL_MS) /
+                    MS_PER_SECOND
+            );
+            ctx.setState({
+                status: 'error',
+                error: `AI 종합 분석 의존성 분석이 ${timeoutSeconds}초 안에 완료되지 않았습니다. 잠시 후 다시 시도해주세요.`,
+            });
+            return;
+        }
+        ctx.setState({
+            status: 'pending_dependencies',
+            pendingJobs: submitted.pendingJobs,
+        });
+        // Retry the full submit after a delay; core will re-check cache hits.
+        const handle = setTimeout(() => {
+            void runOverallAnalysis(ctx, dependencyRetryCount + 1);
+        }, AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
+        ctx.setRetryHandle(handle);
+        return;
+    }
+
+    if (submitted.status === 'error') {
+        const errorMsg =
+            typeof submitted.error === 'string'
+                ? submitted.error
+                : '분석 중 오류가 발생했습니다.';
+        ctx.setState({
+            status: 'error',
+            error: errorMsg,
+            axis: submitted.axis,
+        });
+        return;
+    }
+
+    // status === 'submitted' — start polling
+    const { jobId } = submitted;
+    ctx.setState({ status: 'polling' });
+    void pollOverallJob(jobId, ctx);
+}
+
+// 얇은 coordinator — 클로저로 alive flag와 setTimeout 핸들을 관리하고 run/poll에 위임한다.
 export function useOverallAnalysis(
     symbol: string,
     timeframe: Timeframe,
@@ -41,7 +137,6 @@ export function useOverallAnalysis(
         status: 'idle',
     });
 
-    // Holds the cancel function for the currently in-flight run.
     const cleanupRef = useRef<CleanupFn | null>(null);
 
     const trigger = useCallback(() => {
@@ -51,7 +146,6 @@ export function useOverallAnalysis(
         let alive = true;
         let retryHandle: ReturnType<typeof setTimeout> | null = null;
         let pollHandle: ReturnType<typeof setTimeout> | null = null;
-        let dependencyRetryCount = 0;
 
         cleanupRef.current = () => {
             alive = false;
@@ -59,86 +153,21 @@ export function useOverallAnalysis(
             if (pollHandle !== null) clearTimeout(pollHandle);
         };
 
-        async function run(): Promise<void> {
-            setState({ status: 'submitting' });
+        const ctx: RunContext = {
+            symbol,
+            timeframe,
+            modelId,
+            setState,
+            isAlive: () => alive,
+            setRetryHandle: h => {
+                retryHandle = h;
+            },
+            setPollHandle: h => {
+                pollHandle = h;
+            },
+        };
 
-            const submitted = await submitOverallAnalysisAction(
-                symbol,
-                timeframe,
-                modelId
-            );
-
-            if (!alive) return;
-
-            if (submitted.status === 'cached') {
-                setState({ status: 'done', result: submitted.result });
-                return;
-            }
-
-            if (submitted.status === 'pending_dependencies') {
-                if (dependencyRetryCount >= MAX_DEPENDENCY_RETRIES) {
-                    const timeoutSeconds = Math.round(
-                        (MAX_DEPENDENCY_RETRIES *
-                            AUGMENT_AND_OVERALL_POLL_INTERVAL_MS) /
-                            1000
-                    );
-                    setState({
-                        status: 'error',
-                        error: `AI 종합 분석 의존성 분석이 ${timeoutSeconds}초 안에 완료되지 않았습니다. 잠시 후 다시 시도해주세요.`,
-                    });
-                    return;
-                }
-                dependencyRetryCount += 1;
-                setState({
-                    status: 'pending_dependencies',
-                    pendingJobs: submitted.pendingJobs,
-                });
-                // Retry the full submit after a delay; core will re-check cache hits.
-                retryHandle = setTimeout(() => {
-                    void run();
-                }, AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
-                return;
-            }
-
-            if (submitted.status === 'error') {
-                const errorMsg =
-                    typeof submitted.error === 'string'
-                        ? submitted.error
-                        : '분석 중 오류가 발생했습니다.';
-                setState({
-                    status: 'error',
-                    error: errorMsg,
-                    axis: submitted.axis,
-                });
-                return;
-            }
-
-            // status === 'submitted' — start polling
-            const { jobId } = submitted;
-            setState({ status: 'polling' });
-
-            const poll = async (): Promise<void> => {
-                const polled = await pollOverallAnalysisAction(jobId);
-                if (!alive) return;
-
-                if (polled.status === 'processing') {
-                    pollHandle = setTimeout(() => {
-                        void poll();
-                    }, AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
-                } else if (polled.status === 'done') {
-                    setState({ status: 'done', result: polled.result });
-                } else {
-                    setState({
-                        status: 'error',
-                        error: polled.error ?? '분석 중 오류가 발생했습니다.',
-                    });
-                }
-            };
-
-            void poll();
-        }
-
-        void run();
+        void runOverallAnalysis(ctx, 0);
     }, [symbol, timeframe, modelId]);
 
     // Cancel on unmount.

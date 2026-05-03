@@ -183,16 +183,16 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
 });
 
 const collectMdFiles = async (dir: string): Promise<string[]> => {
-    let entries: Dirent[];
-    try {
-        entries = await readdir(dir, { withFileTypes: true });
-    } catch (error) {
-        // Missing skills subdirectory is treated as empty (e.g. fundamental/news
-        // directories created lazily as Skill `.md` catalogs are added).
-        // Node.js FS errors always carry .code; non-FS errors yield code === undefined and don't pass the ENOENT check, so the cast is safe.
-        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
-        throw error;
-    }
+    // Missing skills subdirectory is treated as empty (e.g. fundamental/news
+    // directories created lazily as Skill `.md` catalogs are added).
+    // Node.js FS errors always carry .code; non-FS errors yield code === undefined and don't pass the ENOENT check, so the cast is safe.
+    const entries = await readdir(dir, { withFileTypes: true }).catch(
+        (error: unknown) => {
+            if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+            throw error;
+        }
+    );
+    if (entries === null) return [];
     const results = await Promise.all(
         entries.map(async (entry: Dirent) => {
             const fullPath = join(dir, entry.name);

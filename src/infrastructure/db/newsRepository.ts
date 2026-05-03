@@ -124,6 +124,7 @@ function toNewsRow(row: NewsDbRow): NewsRow {
         titleKo: row.titleKo,
         bodyKo: row.bodyKo,
         summaryKo: row.summaryKo,
+        // attachAnalysis가 NewsCardAnalysis 값으로만 write하므로 row.sentiment/category는 NewsSentiment/NewsCategory enum 또는 null로 신뢰 가능.
         sentiment: row.sentiment as NewsSentiment | null,
         category: row.category as NewsCategory | null,
         analyzedAt: row.analyzedAt,

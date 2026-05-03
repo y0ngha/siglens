@@ -13,13 +13,16 @@ export async function ensureNewsCardsAnalyzedAction(
     const { db } = getDatabaseClient();
     const repo = new DrizzleNewsRepository(db);
 
-    let fresh;
-    try {
-        fresh = await newsClient.fetchNews(symbol, '7d');
-    } catch (err) {
-        console.error('[ensureNewsCardsAnalyzedAction] FMP fetch failed:', err);
-        return;
-    }
+    const fresh = await newsClient
+        .fetchNews(symbol, '7d')
+        .catch((err: unknown) => {
+            console.error(
+                '[ensureNewsCardsAnalyzedAction] FMP fetch failed:',
+                err
+            );
+            return null;
+        });
+    if (fresh === null) return;
 
     for (const item of fresh) {
         try {

@@ -181,34 +181,10 @@
 - Rule: MISTAKES.md Components 11 — Function/interface names become inaccurate after architectural changes
 - Context: Reviewed suggested renames (NewsPublicFields, NewsItemBase) but each has trade-offs without clear winner. Deferred for naming committee discussion (not blockers per blocker scope).
 
-- Violation: toGradesAction in fundamentalClient.ts is module-private but had @internal JSDoc tag
-- Rule: MISTAKES.md Documentation Sync 3 — @internal inconsistent with visibility (not exported yet marked internal)
-- Context: Removed @internal, kept description; function is internal via scope (no export), not via documentation.
-
-- Violation: useOverallAnalysis hardcoded "1분" in error message instead of computed from MAX_DEPENDENCY_RETRIES * poll interval
-- Rule: MISTAKES.md Coding Paradigm 15 — Hardcoded literals in messages; values out of sync when constants change
-- Context: Changed to `${Math.round((MAX_DEPENDENCY_RETRIES * AUGMENT_AND_OVERALL_POLL_INTERVAL_MS) / 1000)}초` computed from constants.
-
-- Violation: SectorDirectionCard had `const N = 30` magic number for sparkline days
-- Rule: MISTAKES.md Coding Paradigm 15 — All magic numbers extracted to named constants
-- Context: Extracted to module-level `SPARKLINE_DAYS = 30` with JSDoc.
-
-- Violation: `[...Array(N)]` magic number patterns across 6 loading.tsx and skeleton files
-- Rule: MISTAKES.md Coding Paradigm 15 — Named constants for render-count magic numbers
-- Context: Each file extracted local constants: SKELETON_LINE_COUNT (3 files: 3 lines), SKELETON_SECTION_COUNT (3 loading.tsx files: 6/5/3 sections).
-
 ## [PR #413 R18 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: NewsDisplayItem.sentiment and .category were `string | null`, losing type safety
 - Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards; DB columns backed by domain enums must be cast at repository boundary
 - Context: Now typed `NewsSentiment | null` / `NewsCategory | null` from @y0ngha/siglens-core with trust model comment in toNewsRow: "DB는 sentiment/category를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다."
-
-- Violation: 17+ @internal tags on exported interfaces in src/infrastructure/fmp/types.ts
-- Rule: MISTAKES.md Documentation Sync 3 — @internal contradicts export visibility; exported symbols are consumable
-- Context: Removed all @internal tags via sed. Mass occurrence in single file; RawFmpPriceTargetPeriod (non-exported) @internal also removed for consistency.
-
-- Violation: @internal tag on non-exported interface NewsDbRow in src/infrastructure/db/newsRepository.ts
-- Rule: MISTAKES.md Documentation Sync 3 — @internal redundant when function/type is already module-private by scope
-- Context: Removed tag, kept description. Same precedent as R17 (toGradesAction).
 
 ## [PR #413 R19 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: SectorDirectionCard.tsx hardcoded literal "최근 30거래일 섹터 수익률" in JSX while using SPARKLINE_DAYS=30 constant

@@ -219,16 +219,17 @@ export function FutureDirectionCard({
                                     ['컨센서스', ptConsensus.targetConsensus],
                                     ['상단', ptConsensus.targetHigh],
                                 ] as [string, number | null][]
-                            ).map(([label, val]) => (
-                                <div key={label}>
-                                    <dt className="text-secondary-400 text-xs">
-                                        {label}
-                                    </dt>
-                                    <dd className="font-mono text-sm font-medium tabular-nums">
-                                        {fmtUsd(val)}
-                                    </dd>
-                                </div>
-                            ))
+                            ) // 위 리터럴 entries가 항상 [라벨, ptConsensus 필드] 튜플이므로 narrowing 안전.
+                                .map(([label, val]) => (
+                                    <div key={label}>
+                                        <dt className="text-secondary-400 text-xs">
+                                            {label}
+                                        </dt>
+                                        <dd className="font-mono text-sm font-medium tabular-nums">
+                                            {fmtUsd(val)}
+                                        </dd>
+                                    </div>
+                                ))
                         }
                     </dl>
                     {ptSummary !== null && (
