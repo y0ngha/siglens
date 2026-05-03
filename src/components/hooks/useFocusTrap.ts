@@ -81,5 +81,6 @@ export function useFocusTrap(
                 previouslyFocused.focus();
             }
         };
+        // react-hooks/exhaustive-deps requires the ref param even though RefObject identity is stable.
     }, [active, ref]);
 }

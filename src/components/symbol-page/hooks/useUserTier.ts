@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery, type UseQueryResult } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { DEFAULT_TIER, type Tier } from '@y0ngha/siglens-core';
 import { getUserTierAction } from '@/infrastructure/tier/getUserTierAction';
 import {
@@ -14,7 +14,6 @@ interface UseUserTierResult {
     tier: Tier;
     /** True until the first server response lands. */
     isLoading: boolean;
-    query: UseQueryResult<Tier>;
 }
 
 /** 현재 사용자의 구독 tier 해석 — 게스트/미저장 사용자는 DEFAULT_TIER로 폴백. */
@@ -29,6 +28,5 @@ export function useUserTier(): UseUserTierResult {
     return {
         tier: query.data ?? DEFAULT_TIER,
         isLoading: query.isLoading,
-        query,
     };
 }

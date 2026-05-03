@@ -71,6 +71,48 @@ function isKnownModelId(modelId: string): boolean {
     return allTiers.some(models => models.includes(modelId));
 }
 
+type ByokOutcome =
+    | { kind: 'allowed'; userApiKey?: string }
+    | { kind: 'blocked'; result: AnalysisGateBlockedResult };
+
+/** Resolves BYOK outcome for a known modelId: free → allowed, premium → tier+BYOK gate. */
+async function resolveByokOutcome(
+    userId: string | null,
+    modelId: ModelId,
+    isFreeModel: boolean,
+    isTierAllowed: boolean
+): Promise<ByokOutcome> {
+    if (isFreeModel) {
+        return { kind: 'allowed' };
+    }
+    // Premium model — require BYOK unless the user's tier already includes it.
+    if (userId === null) {
+        return { kind: 'blocked', result: buildGateError('tier_premium_blocked') };
+    }
+
+    const llmProvider = getProviderForModel(modelId);
+    try {
+        const repo = new DrizzleUserApiKeyRepository(getDatabaseClient().db);
+        const record = await repo.findByUserAndProvider(userId, llmProvider);
+        if (record === null) {
+            if (!isTierAllowed) {
+                return {
+                    kind: 'blocked',
+                    result: buildGateError('tier_premium_blocked'),
+                };
+            }
+            // Tier covers the model and BYOK is not registered — fall through.
+            return { kind: 'allowed' };
+        }
+        return { kind: 'allowed', userApiKey: record.apiKey };
+    } catch (error) {
+        if (error instanceof LlmApiKeyDecryptionFailedError) {
+            return { kind: 'blocked', result: buildGateError('api_key_corrupted') };
+        }
+        throw error;
+    }
+}
+
 /** 서버사이드 tier + BYOK 게이트 후 core의 submitAnalysis에 위임. */
 export async function submitAnalysisAction(
     symbol: string,
@@ -112,44 +154,19 @@ export async function submitAnalysisAction(
     const isFreeModel = freeModels.includes(modelId);
     const isTierAllowed = tierModels.includes(modelId);
 
-    let userApiKey: string | undefined;
-
-    if (!isFreeModel) {
-        // Premium model — require BYOK unless the user's tier already includes it.
-        if (userId === null) {
-            return buildGateError('tier_premium_blocked');
-        }
-
-        const llmProvider = getProviderForModel(modelId);
-        try {
-            const repo = new DrizzleUserApiKeyRepository(
-                getDatabaseClient().db
-            );
-            const record = await repo.findByUserAndProvider(
-                userId,
-                llmProvider
-            );
-            if (record === null) {
-                if (!isTierAllowed) {
-                    return buildGateError('tier_premium_blocked');
-                }
-                // Tier covers the model and BYOK is not registered — fall through.
-            } else {
-                userApiKey = record.apiKey;
-            }
-        } catch (error) {
-            if (error instanceof LlmApiKeyDecryptionFailedError) {
-                return buildGateError('api_key_corrupted');
-            }
-            throw error;
-        }
-    }
+    const byok = await resolveByokOutcome(
+        userId,
+        modelId,
+        isFreeModel,
+        isTierAllowed
+    );
+    if (byok.kind === 'blocked') return byok.result;
 
     // Only include userApiKey when actually present so consumers can
     // distinguish "no BYOK" from "BYOK = undefined" via `'userApiKey' in opts`.
     return submitAnalysis(symbol, timeframe, force, fmpSymbol, {
         waitUntil,
         modelId,
-        ...(userApiKey !== undefined ? { userApiKey } : {}),
+        ...(byok.userApiKey !== undefined ? { userApiKey: byok.userApiKey } : {}),
     });
 }
