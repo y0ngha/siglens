@@ -95,22 +95,6 @@
 ## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).
 
-## [PR #409 | feat/402/AI-모델-선택-UI | 2026-05-02]
-- Violation: Hook declaration order violated — useEffect declared before useCallback in useSelectedProvider.ts
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — handlers (useCallback, step 5) must precede useEffect (step 7)
-- Context: useSelectedProvider declared useEffect on line 19 and useCallback on line 27; reordered to useCallback first.
-
-- Violation: VALID_PROVIDERS declared as mutable AIProvider[] instead of readonly
-- Rule: CONVENTIONS.md immutability — module-level constants should use readonly to prevent accidental mutation
-- Context: Inconsistent with other priority arrays in providerDefaults.ts which all use readonly. Changed to readonly AIProvider[].
-
-- Violation: formatModelVariant produces "Sonnet 4 6" instead of "Sonnet 4.6" for claude-sonnet-4-6
-- Rule: Output must match JSDoc examples in the same function
-- Context: Claude model IDs split by '-' produce ["sonnet", "4", "6"] then join with space → "Sonnet 4 6". Fixed by adding .replace(/(\d) (\d)/g, '$1.$2') to merge adjacent numeric parts with dots.
-
-- Violation: AnalysisStatusBanner bottom margin removed when ModelSelector was prepended
-- Rule: Consistent spacing — adding content above should not remove spacing below
-- Context: AnalysisStatusBanner className changed from mb-3 to mt-3, removing bottom gap to AnalysisPanel. Changed to my-3 to preserve both margins.
 
 ## [PR #409 Round 3 | feat/402/AI-모델-선택-UI | 2026-05-02]
 - Violation: `'free'` tier 문자열 리터럴이 컴포넌트 본문에 하드코딩됨
@@ -135,10 +119,6 @@
 - Rule: CONVENTIONS.md useEffect Side Effect Isolation — 관심사별 useEffect 분리
 - Context: usePwaInstall.ts에서 SW 등록 effect, 이벤트+타이머 effect 두 개로 분리
 
-- Violation: useCallback 핸들러가 useEffect 뒤에 선언됨
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — useState→useRef→useCallback→useEffect 순서
-- Context: usePwaInstall.ts handleInstall/handleDismiss/handleModalClose를 useEffect 앞으로 이동
-
 - Violation: DOM keydown 이벤트 리스너를 IosInstallModal 컴포넌트 useEffect에 직접 등록
 - Rule: MISTAKES.md Components #7 — DOM 이벤트 리스너는 커스텀 훅으로 추출
 - Context: useEscapeKey 훅 생성 후 IosInstallModal에서 사용
@@ -156,6 +136,8 @@
 - Rule: MISTAKES.md Components #1 — 외부 콜백은 useEffectEvent로 감싸야 함
 - Context: useEscapeKey.ts에서 [onEscape] deps → useEffectEvent 래핑 후 [] deps로 변경
 
-- Violation: usePwaInstall.test.ts에서 PWA_TRIGGER_EVENT 상수값을 하드코딩
-- Rule: MISTAKES.md #15 — 하드코딩된 상수는 import 후 사용
-- Context: 3곳의 'siglens:pwa-trigger' → import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents' 후 교체
+
+## [PR #412 Round 3 | worktree-feat-pwa | 2026-05-03]
+- Violation: detectPwaEnvironment 순수 함수가 components/pwa/utils/에 배치됨
+- Rule: MISTAKES.md Architecture #1 — React 의존성 없는 순수 함수는 lib/ 또는 domain/에 위치
+- Context: src/components/pwa/utils/detectPwaEnvironment.ts → src/lib/pwa/detectPwaEnvironment.ts로 이동
