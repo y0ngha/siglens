@@ -173,3 +173,41 @@ export function buildSymbolFundamentalSeoContent(
         ],
     };
 }
+
+export interface SymbolNewsSeoContent {
+    title: string;
+    fullTitle: string;
+    description: string;
+    url: string;
+    keywords: string[];
+}
+
+/**
+ * Build SEO metadata for the `/[symbol]/news` page.
+ *
+ * @param symbol - Raw ticker symbol (case-insensitive; normalised to uppercase internally).
+ */
+export function buildSymbolNewsSeoContent(symbol: string): SymbolNewsSeoContent {
+    const upper = symbol.toUpperCase();
+    const title = `${upper} 뉴스 분석`;
+    const fullTitle = `${upper} 최신 뉴스 + AI 분석 | ${SITE_NAME}`;
+    return {
+        title,
+        fullTitle,
+        description: `${upper}의 최신 뉴스, sentiment 분석, 어닝 일정, 애널리스트 등급 변경 등 종합 정보.`,
+        url: `${SITE_URL}/${upper}/news`,
+        keywords: [
+            upper,
+            `${upper} 뉴스 분석`,
+            `${upper} 뉴스`,
+            `${upper} sentiment`,
+            `${upper} 어닝 발표`,
+            `${upper} 애널리스트 등급`,
+            '뉴스 분석',
+            '뉴스 sentiment',
+            '어닝 발표',
+            '애널리스트 등급',
+            '주식 뉴스',
+        ],
+    };
+}

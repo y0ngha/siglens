@@ -42,6 +42,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
                 priority: 0.8,
             },
             {
+                url: `${SITE_URL}/${ticker}/news`,
+                lastModified: SITEMAP_DATE,
+                changeFrequency: 'hourly' as const,
+                priority: 0.78,
+            },
+            {
                 url: `${SITE_URL}/${ticker}/fundamental`,
                 lastModified: SITEMAP_DATE,
                 changeFrequency: 'weekly' as const,
