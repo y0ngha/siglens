@@ -13,25 +13,8 @@ import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
+import { isEnrichedRow } from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/lib/dateKey';
-import type { NewsRow } from '@/infrastructure/db/newsRepository';
-
-/**
- * Type predicate: narrows a `NewsRow` to `EnrichedNewsItem`.
- *
- * A row is considered fully enriched when it has a translated title (`titleKo`),
- * a summary (`summaryKo`), a non-null sentiment, and a non-null category.
- *
- * @internal
- */
-function isEnrichedRow(row: NewsRow): row is NewsRow & EnrichedNewsItem {
-    return (
-        row.titleKo !== null &&
-        row.summaryKo !== null &&
-        row.sentiment !== null &&
-        row.category !== null
-    );
-}
 
 /**
  * Server Action: submit an overall (3-axis) analysis job for the given symbol.
