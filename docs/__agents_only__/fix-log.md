@@ -50,11 +50,6 @@
 - Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
 
-## [PR #395 Round 6 | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: infrastructure Server Action에서 네트워크 응답 없이 무한 대기 가능
-- Rule: MISTAKES.md Fire-and-Forget #1 — fetch 기반 외부 호출에는 반드시 타임아웃 설정
-- Context: ResendEmailDispatcher.sendEmail이 AbortSignal 없이 Resend SDK를 호출해 네트워크 지연 시 Server Action이 무기한 블로킹. AbortSignal.timeout + Promise.race 패턴으로 10초 타임아웃 추가.
-
 ## [PR #395 Round 4 | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: code 단계에서 동일한 codeState.error.message가 AuthErrorAlert와 AuthFieldGroup.error prop 두 곳에 동시 표시
 - Rule: 동일 정보를 두 채널로 동시 노출하지 않음 — 하나의 에러는 하나의 UI 위치에서만 표시
@@ -88,9 +83,4 @@
 - Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
 
 
-
-## [Issue #402 | feat/402/AI-모델-선택-UI | 2026-05-02]
-- Violation: Derived constant recreated every render without useMemo
-- Rule: MISTAKES.md rule 10 — derived constants from props must be wrapped in useMemo
-- Context: `resolvedModels` in ModelSelector.tsx was computed on every render; since handleKeyDown depended on it, useCallback provided no stabilization benefit. Wrapped with useMemo([allowedModels]).
 
