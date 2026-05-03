@@ -1,9 +1,7 @@
 /**
  * @jest-environment jsdom
  */
-import '@testing-library/jest-dom';
-import { renderHook } from '@testing-library/react';
-import { fireEvent } from '@testing-library/react';
+import { renderHook, fireEvent } from '@testing-library/react';
 import { useEscapeKey } from '@/components/pwa/hooks/useEscapeKey';
 
 describe('useEscapeKey', () => {

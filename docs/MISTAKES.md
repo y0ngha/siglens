@@ -157,10 +157,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 15. Hardcoded literals in function names or calculations
     → All magic numbers and constant values must be extracted to module-level constants
     → Function names must remain accurate when the underlying constant value changes
+    → String literals (event names, storage keys, magic strings) must be extracted to constants, not duplicated across files
     ❌ function computeSecondsUntilKst17() { ... } where 17 is hardcoded; renaming breaks if constant changes
     ❌ Math.round(rawPrice * 100) / 100 with no constant for decimal factor
+    ❌ 'siglens:pwa-trigger' string used in multiple files without constant
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
+    ✅ const PWA_TRIGGER_EVENT = 'siglens:pwa-trigger'; import in all files using the event
 
 15.5. JSX section comments explaining WHAT the code does
     → Well-named identifiers (components, functions, variables) are self-documenting; don't add comments repeating WHAT the code does
@@ -216,7 +219,8 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → All hook calls must be declared before derived variables (const x = ...), handlers, or effects
     ❌ const timeframe = computeTimeframe(); useQuery(...)
     ✅ useQuery(...); const timeframe = computeTimeframe();
-    → Ordering: useState/useRef → useQuery/useMutation → derived variables → handlers → useEffect
+    → Ordering: useState/useRef → useQuery/useMutation → useCallback/useMemo → derived variables → handlers → useEffect
+    → useCallback and useMemo must be declared before any useEffect that depends on them
 
 17.5. for loop with .push() inside useMemo, reduce, or other functional expressions
     → Loop accumulation must use spread, map, filter, flatMap, or reduce — never direct mutation

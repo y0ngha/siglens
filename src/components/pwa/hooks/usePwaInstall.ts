@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import {
     detectPwaEnvironment,
     type PwaEnvironment,
-} from '@/components/pwa/utils/detectPwaEnvironment';
+} from '@/lib/pwa/detectPwaEnvironment';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
 interface BeforeInstallPromptEvent extends Event {
@@ -58,7 +58,11 @@ export function usePwaInstall(): UsePwaInstallReturn {
         if (env.isIos) {
             setShowIosModal(true);
         } else if (deferredPrompt) {
-            await deferredPrompt.prompt();
+            try {
+                await deferredPrompt.prompt();
+            } catch (err) {
+                console.warn('[PWA] prompt 실패', err);
+            }
             setDeferredPrompt(null);
             setShowBanner(false);
         }

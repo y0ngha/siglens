@@ -4,13 +4,11 @@
 import '@testing-library/jest-dom';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { PwaBanner } from '@/components/pwa/PwaBanner';
-
-jest.mock('@/components/pwa/hooks/usePwaInstall', () => ({
-    usePwaInstall: jest.fn(),
-}));
-
 import { usePwaInstall } from '@/components/pwa/hooks/usePwaInstall';
-const mockUsePwaInstall = usePwaInstall as jest.Mock;
+
+jest.mock('@/components/pwa/hooks/usePwaInstall');
+
+const mockUsePwaInstall = jest.mocked(usePwaInstall);
 
 describe('PwaBanner', () => {
     it('showBanner=false이면 아무것도 렌더하지 않는다', () => {
