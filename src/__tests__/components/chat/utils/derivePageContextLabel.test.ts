@@ -1,4 +1,4 @@
-import { deriveLabel } from '@/components/chat/hooks/usePageContextLabel';
+import { deriveLabel } from '@/components/chat/utils/derivePageContextLabel';
 
 describe('deriveLabel', () => {
     describe('symbol base page', () => {
