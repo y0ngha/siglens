@@ -1,3 +1,5 @@
+import type { ChatMessage } from '@y0ngha/siglens-core';
+
 /** All OAuth providers known to the system (including those reserved but not yet active in the UI). */
 export type OAuthProvider = 'google' | 'kakao' | 'apple';
 
@@ -115,8 +117,6 @@ export interface PwaEnvironment {
 }
 
 // ─── Chat display types ───────────────────────────────────────────────────────
-
-import type { ChatMessage } from '@y0ngha/siglens-core';
 
 /**
  * UI-only system message emitted when the chatbot's page-level analysis
