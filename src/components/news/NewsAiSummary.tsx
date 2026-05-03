@@ -9,7 +9,7 @@ import {
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
 import { cn } from '@/lib/cn';
-import { useNewsAnalysis } from './hooks/useNewsAnalysis';
+import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
 
 const DEFAULT_TIER = 'free' as const;
 

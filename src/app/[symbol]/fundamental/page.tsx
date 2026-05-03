@@ -16,7 +16,7 @@ import {
     getSectorSnapshot,
     getHistoricalSector,
     todayKstIsoDate,
-} from './fundamentalData';
+} from '@/app/[symbol]/fundamental/fundamentalData';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
 import { PeersTable } from '@/components/fundamental/sections/PeersTable';

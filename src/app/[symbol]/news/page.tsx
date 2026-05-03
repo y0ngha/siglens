@@ -7,7 +7,7 @@ import {
     getNextEarningsCalendar,
     getLatestEarningsReport,
     todayKstIsoDate,
-} from './newsData';
+} from '@/app/[symbol]/news/newsData';
 import { NewsList } from '@/components/news/sections/NewsList';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
 import { AnalystActions } from '@/components/news/sections/AnalystActions';

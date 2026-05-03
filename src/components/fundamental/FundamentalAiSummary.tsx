@@ -4,13 +4,14 @@ import { type CSSProperties, useMemo } from 'react';
 import {
     getAllowedModels,
     type FundamentalAnalysisResponse,
+    type FundamentalCategory,
     type FundamentalCategoryAssessment,
     type FundamentalSentiment,
 } from '@y0ngha/siglens-core';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { cn } from '@/lib/cn';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
-import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
+import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
 
 const DEFAULT_TIER = 'free' as const;
 
@@ -26,7 +27,7 @@ const SENTIMENT_CLASS: Record<FundamentalSentiment, string> = {
     bearish: 'bg-ui-danger/10 text-chart-bearish',
 };
 
-const CATEGORY_LABEL: Record<string, string> = {
+const CATEGORY_LABEL: Record<FundamentalCategory, string> = {
     valuation: '밸류에이션',
     profitability: '수익성',
     growth: '성장성',

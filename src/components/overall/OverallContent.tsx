@@ -5,16 +5,16 @@ import { cn } from '@/lib/cn';
 import { getAllowedModels, type Timeframe } from '@y0ngha/siglens-core';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
-import { useOverallAnalysis } from './hooks/useOverallAnalysis';
-import { OverallTriggerCta } from './OverallTriggerCta';
-import { DependencyProgress } from './DependencyProgress';
-import { OverallSummary } from './sections/OverallSummary';
-import { TechnicalSummary } from './sections/TechnicalSummary';
-import { FundamentalSummary } from './sections/FundamentalSummary';
-import { NewsSummary } from './sections/NewsSummary';
-import { ThreeAxisConclusion } from './sections/ThreeAxisConclusion';
-import { ScenarioAnalysis } from './sections/ScenarioAnalysis';
-import { RiskFactors } from './sections/RiskFactors';
+import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
+import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
+import { DependencyProgress } from '@/components/overall/DependencyProgress';
+import { OverallSummary } from '@/components/overall/sections/OverallSummary';
+import { TechnicalSummary } from '@/components/overall/sections/TechnicalSummary';
+import { FundamentalSummary } from '@/components/overall/sections/FundamentalSummary';
+import { NewsSummary } from '@/components/overall/sections/NewsSummary';
+import { ThreeAxisConclusion } from '@/components/overall/sections/ThreeAxisConclusion';
+import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis';
+import { RiskFactors } from '@/components/overall/sections/RiskFactors';
 
 const DEFAULT_TIER = 'free' as const;
 
