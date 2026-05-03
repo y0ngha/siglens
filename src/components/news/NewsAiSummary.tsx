@@ -35,7 +35,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
@@ -54,7 +54,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 </span>
             </div>
 
-            <p className="mb-5 text-sm leading-relaxed text-muted-foreground">
+            <p className="text-muted-foreground mb-5 text-sm leading-relaxed">
                 {result.currentDriverKo}
             </p>
 
@@ -65,9 +65,12 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {result.keyEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="flex gap-2 text-sm text-muted-foreground"
+                                className="text-muted-foreground flex gap-2 text-sm"
                             >
-                                <span aria-hidden="true" className="mt-0.5 shrink-0">
+                                <span
+                                    aria-hidden="true"
+                                    className="mt-0.5 shrink-0"
+                                >
                                     •
                                 </span>
                                 {event}
@@ -82,13 +85,19 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                     <h3 className="mb-2 text-sm font-semibold">
                         향후 주의 이벤트
                     </h3>
-                    <ul className="space-y-1.5" aria-label="향후 주의 이벤트 목록">
+                    <ul
+                        className="space-y-1.5"
+                        aria-label="향후 주의 이벤트 목록"
+                    >
                         {result.upcomingEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="flex gap-2 text-sm text-muted-foreground"
+                                className="text-muted-foreground flex gap-2 text-sm"
                             >
-                                <span aria-hidden="true" className="mt-0.5 shrink-0">
+                                <span
+                                    aria-hidden="true"
+                                    className="mt-0.5 shrink-0"
+                                >
                                     •
                                 </span>
                                 {event}
@@ -134,7 +143,7 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
         return (
             <section
                 aria-labelledby="news-ai-summary-error-heading"
-                className="rounded-xl border border-destructive/30 bg-card p-6"
+                className="border-destructive/30 bg-card rounded-xl border p-6"
             >
                 <h2
                     id="news-ai-summary-error-heading"
@@ -142,7 +151,7 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
                 >
                     AI 뉴스 종합 분석
                 </h2>
-                <p className="text-sm text-destructive" role="alert">
+                <p className="text-destructive text-sm" role="alert">
                     {state.error ?? '분석 중 오류가 발생했습니다.'}
                 </p>
             </section>
@@ -158,7 +167,7 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
         <section
             aria-labelledby="news-ai-summary-loading-heading"
             aria-busy="true"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="news-ai-summary-loading-heading"
@@ -169,10 +178,10 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
             <div className="flex items-center gap-3">
                 <div
                     aria-hidden="true"
-                    className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent"
+                    className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
                 />
                 <p
-                    className="text-sm text-muted-foreground"
+                    className="text-muted-foreground text-sm"
                     aria-live="polite"
                     aria-atomic="true"
                 >
@@ -183,7 +192,7 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
                 {[...Array(3)].map((_, i) => (
                     <div
                         key={i}
-                        className="h-4 w-[var(--skeleton-w)] animate-pulse rounded bg-muted"
+                        className="bg-muted h-4 w-[var(--skeleton-w)] animate-pulse rounded"
                         style={
                             {
                                 '--skeleton-w': `${85 - i * 12}%`,

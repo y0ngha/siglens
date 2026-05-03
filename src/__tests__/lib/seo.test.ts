@@ -94,7 +94,9 @@ describe('buildSymbolOverallSeoContent', () => {
     it('소문자 입력을 대문자로 정규화한다', () => {
         const content = buildSymbolOverallSeoContent('aapl');
         expect(content.title).toBe('AAPL AI 종합 분석');
-        expect(content.fullTitle).toBe('AAPL 기술 + 펀더 + 뉴스 통합 AI 분석 | Siglens');
+        expect(content.fullTitle).toBe(
+            'AAPL 기술 + 펀더 + 뉴스 통합 AI 분석 | Siglens'
+        );
     });
 
     it('URL이 절대 경로 /[SYMBOL]/overall 형식이다', () => {

@@ -213,7 +213,9 @@ export const news = pgTable(
         symbol: text('symbol').notNull(),
         source: text('source').notNull(),
         url: text('url').notNull().unique(),
-        publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
+        publishedAt: timestamp('published_at', {
+            withTimezone: true,
+        }).notNull(),
         titleEn: text('title_en').notNull(),
         titleKo: text('title_ko'),
         bodyEn: text('body_en'),
@@ -230,7 +232,10 @@ export const news = pgTable(
         analyzedAt: timestamp('analyzed_at', { withTimezone: true }),
     },
     table => [
-        index('news_symbol_published_at_idx').on(table.symbol, table.publishedAt),
+        index('news_symbol_published_at_idx').on(
+            table.symbol,
+            table.publishedAt
+        ),
         index('news_published_at_idx').on(table.publishedAt),
     ]
 );

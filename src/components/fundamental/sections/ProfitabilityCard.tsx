@@ -12,8 +12,7 @@ interface MetricBarProps {
 }
 
 function MetricBar({ label, value, description }: MetricBarProps) {
-    const displayValue =
-        value !== null ? `${(value * 100).toFixed(1)}%` : '—';
+    const displayValue = value !== null ? `${(value * 100).toFixed(1)}%` : '—';
 
     // Clamp fill width 0–100% for progress bar visualisation (ratio expected 0–1)
     const fillPct =
@@ -62,7 +61,7 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
     return (
         <section
             aria-labelledby="profitability-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="profitability-heading"
@@ -70,7 +69,7 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
             >
                 수익성
             </h2>
-            <div className="divide-y divide-border/50">
+            <div className="divide-border/50 divide-y">
                 <MetricBar
                     label="ROE"
                     value={ratios.returnOnEquityTTM}

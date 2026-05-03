@@ -8,7 +8,7 @@ export default function NewsLoading() {
             {[...Array(5)].map((_, i) => (
                 <div
                     key={i}
-                    className="h-32 animate-pulse rounded-xl bg-muted"
+                    className="bg-muted h-32 animate-pulse rounded-xl"
                     aria-hidden="true"
                 />
             ))}

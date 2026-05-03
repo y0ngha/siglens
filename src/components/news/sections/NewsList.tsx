@@ -75,8 +75,8 @@ function NewsCard({ item }: NewsCardProps) {
     }).format(new Date(item.publishedAt));
 
     return (
-        <article className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50">
-            <h3 className="text-balance font-semibold leading-snug">
+        <article className="border-border bg-card hover:border-primary/50 rounded-xl border p-4 transition-colors">
+            <h3 className="leading-snug font-semibold text-balance">
                 {item.titleKo ?? item.titleEn}
             </h3>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
@@ -84,22 +84,22 @@ function NewsCard({ item }: NewsCardProps) {
                     <SentimentBadge value={item.sentiment} />
                 )}
                 {item.category !== null && (
-                    <span className="rounded bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                    <span className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs">
                         {item.category}
                     </span>
                 )}
                 <time
                     dateTime={item.publishedAt}
-                    className="text-xs text-muted-foreground"
+                    className="text-muted-foreground text-xs"
                 >
                     {publishedDate}
                 </time>
-                <span className="text-xs text-muted-foreground">
+                <span className="text-muted-foreground text-xs">
                     {item.source}
                 </span>
             </div>
             {item.summaryKo !== null && (
-                <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
                     {item.summaryKo}
                 </p>
             )}
@@ -107,7 +107,7 @@ function NewsCard({ item }: NewsCardProps) {
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="mt-2 inline-block text-xs text-primary transition-opacity hover:opacity-70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                className="text-primary focus-visible:ring-primary mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
             >
                 원문 보기 →
             </a>
@@ -132,7 +132,7 @@ export function NewsList({ items }: NewsListProps) {
         return (
             <section
                 aria-labelledby="news-list-heading"
-                className="rounded-xl border border-border bg-card p-6"
+                className="border-border bg-card rounded-xl border p-6"
             >
                 <h2
                     id="news-list-heading"
@@ -140,7 +140,7 @@ export function NewsList({ items }: NewsListProps) {
                 >
                     최근 뉴스
                 </h2>
-                <p className="text-sm text-muted-foreground">
+                <p className="text-muted-foreground text-sm">
                     최근 7일간 뉴스가 없습니다.
                 </p>
             </section>
@@ -148,10 +148,7 @@ export function NewsList({ items }: NewsListProps) {
     }
 
     return (
-        <section
-            aria-labelledby="news-list-heading"
-            className="space-y-3"
-        >
+        <section aria-labelledby="news-list-heading" className="space-y-3">
             <h2
                 id="news-list-heading"
                 className="text-lg font-semibold tracking-tight"
@@ -159,7 +156,7 @@ export function NewsList({ items }: NewsListProps) {
                 최근 뉴스
             </h2>
             <ul className="space-y-3">
-                {items.map((item) => (
+                {items.map(item => (
                     <li key={item.id}>
                         <NewsCard item={item} />
                     </li>

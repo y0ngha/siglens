@@ -53,13 +53,13 @@ export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
                 <Link
                     key={p}
                     href={HREF[p](symbol)}
-                    className="rounded-xl border border-border p-6 transition-colors hover:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="border-border hover:border-primary focus-visible:ring-primary rounded-xl border p-6 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                     <h3 className="font-semibold">
                         <span aria-hidden="true">→ </span>
                         {LABEL[p]}
                     </h3>
-                    <p className="mt-2 text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mt-2 text-sm">
                         {DESCRIPTION[p]}
                     </p>
                 </Link>

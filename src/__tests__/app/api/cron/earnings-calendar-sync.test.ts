@@ -28,7 +28,9 @@ jest.mock('@/infrastructure/db/client', () => ({
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 
-const MockFmpNewsClient = FmpNewsClient as jest.MockedClass<typeof FmpNewsClient>;
+const MockFmpNewsClient = FmpNewsClient as jest.MockedClass<
+    typeof FmpNewsClient
+>;
 const MockEarningsCalendarRepository =
     DrizzleEarningsCalendarRepository as jest.MockedClass<
         typeof DrizzleEarningsCalendarRepository

@@ -10,7 +10,7 @@ export function TechnicalSummary({ bullets }: TechnicalSummaryProps) {
     return (
         <section
             aria-labelledby="technical-summary-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="technical-summary-heading"

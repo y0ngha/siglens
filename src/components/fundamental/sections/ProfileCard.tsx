@@ -21,7 +21,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
     return (
         <section
             aria-labelledby="profile-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -40,7 +40,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
                     </p>
                 </div>
                 <div className="text-right">
-                    <span className="text-muted-foreground text-xs uppercase tracking-widest">
+                    <span className="text-muted-foreground text-xs tracking-widest uppercase">
                         시가총액
                     </span>
                     <p className="font-mono text-lg font-medium tabular-nums">

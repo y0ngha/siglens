@@ -30,10 +30,7 @@ export async function ensureNewsCardsAnalyzedAction(
     try {
         fresh = await newsClient.fetchNews(symbol, '7d');
     } catch (err) {
-        console.error(
-            '[ensureNewsCardsAnalyzedAction] FMP fetch failed:',
-            err
-        );
+        console.error('[ensureNewsCardsAnalyzedAction] FMP fetch failed:', err);
         return;
     }
 

@@ -21,13 +21,7 @@ interface GradesBarProps {
     strongSell: number;
 }
 
-function GradesBar({
-    strongBuy,
-    buy,
-    hold,
-    sell,
-    strongSell,
-}: GradesBarProps) {
+function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
     const total = strongBuy + buy + hold + sell + strongSell;
     if (total === 0) return null;
 
@@ -49,27 +43,21 @@ function GradesBar({
                     <div
                         title={`매수 ${buy}`}
                         className="bg-ui-success/60 h-3 w-[var(--bar-w)]"
-                        style={
-                            { '--bar-w': `${pct(buy)}%` } as CSSProperties
-                        }
+                        style={{ '--bar-w': `${pct(buy)}%` } as CSSProperties}
                     />
                 )}
                 {hold > 0 && (
                     <div
                         title={`중립 ${hold}`}
                         className="bg-ui-warning h-3 w-[var(--bar-w)]"
-                        style={
-                            { '--bar-w': `${pct(hold)}%` } as CSSProperties
-                        }
+                        style={{ '--bar-w': `${pct(hold)}%` } as CSSProperties}
                     />
                 )}
                 {sell > 0 && (
                     <div
                         title={`매도 ${sell}`}
                         className="bg-ui-danger/60 h-3 w-[var(--bar-w)]"
-                        style={
-                            { '--bar-w': `${pct(sell)}%` } as CSSProperties
-                        }
+                        style={{ '--bar-w': `${pct(sell)}%` } as CSSProperties}
                     />
                 )}
                 {strongSell > 0 && (
@@ -167,7 +155,7 @@ export function FutureDirectionCard({
     return (
         <section
             aria-labelledby="future-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="future-heading"
@@ -178,11 +166,11 @@ export function FutureDirectionCard({
 
             {estimates !== null && (
                 <div className="mb-5">
-                    <h3 className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-widest">
+                    <h3 className="text-muted-foreground mb-2 text-xs font-medium tracking-widest uppercase">
                         애널리스트 추정
                     </h3>
                     <dl className="grid grid-cols-2 gap-3">
-                        <div className="rounded-lg bg-muted/40 px-4 py-3">
+                        <div className="bg-muted/40 rounded-lg px-4 py-3">
                             <dt className="text-muted-foreground text-xs">
                                 EPS 컨센서스
                             </dt>
@@ -190,7 +178,7 @@ export function FutureDirectionCard({
                                 {fmtUsd(estimates.estimatedEpsAvg)}
                             </dd>
                         </div>
-                        <div className="rounded-lg bg-muted/40 px-4 py-3">
+                        <div className="bg-muted/40 rounded-lg px-4 py-3">
                             <dt className="text-muted-foreground text-xs">
                                 매출 컨센서스
                             </dt>
@@ -204,13 +192,13 @@ export function FutureDirectionCard({
 
             {ptConsensus !== null && (
                 <div className="mb-5">
-                    <h3 className="text-muted-foreground mb-2 text-xs font-medium uppercase tracking-widest">
+                    <h3 className="text-muted-foreground mb-2 text-xs font-medium tracking-widest uppercase">
                         목표 주가
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
-                        {(
-                            // TS infers (string | number | null)[][] from the entries array; the source
-                            // data is structurally [string, number | null] per the priceTargetSummary shape.
+                        {// TS infers (string | number | null)[][] from the entries array; the source
+                        // data is structurally [string, number | null] per the priceTargetSummary shape.
+                        (
                             [
                                 ['하단', ptConsensus.targetLow],
                                 ['중앙값', ptConsensus.targetMedian],
@@ -231,19 +219,13 @@ export function FutureDirectionCard({
                     {ptSummary !== null && (
                         <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
                             <div className="flex gap-1">
-                                <dt className="text-muted-foreground">
-                                    1개월
-                                </dt>
+                                <dt className="text-muted-foreground">1개월</dt>
                                 <dd className="font-mono">
-                                    {fmtUsd(
-                                        ptSummary.lastMonth.avgPriceTarget
-                                    )}
+                                    {fmtUsd(ptSummary.lastMonth.avgPriceTarget)}
                                 </dd>
                             </div>
                             <div className="flex gap-1">
-                                <dt className="text-muted-foreground">
-                                    3개월
-                                </dt>
+                                <dt className="text-muted-foreground">3개월</dt>
                                 <dd className="font-mono">
                                     {fmtUsd(
                                         ptSummary.lastQuarter.avgPriceTarget
@@ -255,9 +237,7 @@ export function FutureDirectionCard({
                                     12개월
                                 </dt>
                                 <dd className="font-mono">
-                                    {fmtUsd(
-                                        ptSummary.lastYear.avgPriceTarget
-                                    )}
+                                    {fmtUsd(ptSummary.lastYear.avgPriceTarget)}
                                 </dd>
                             </div>
                         </dl>
@@ -267,7 +247,7 @@ export function FutureDirectionCard({
 
             {grades !== null && (
                 <div>
-                    <h3 className="text-muted-foreground mb-1 text-xs font-medium uppercase tracking-widest">
+                    <h3 className="text-muted-foreground mb-1 text-xs font-medium tracking-widest uppercase">
                         투자의견 컨센서스
                     </h3>
                     <GradesBar

@@ -76,9 +76,7 @@ export class DrizzleEarningsCalendarRepository {
         const rows = await this.db
             .select()
             .from(earningsCalendar)
-            .where(
-                between(earningsCalendar.earningsDate, fromDate, toDate)
-            )
+            .where(between(earningsCalendar.earningsDate, fromDate, toDate))
             .orderBy(earningsCalendar.earningsDate);
 
         return rows.map(toCalendarItem);
@@ -92,8 +90,7 @@ export function toCalendarRow(
     return {
         symbol: item.symbol,
         earningsDate: item.earningsDate,
-        epsActual:
-            item.epsActual !== null ? String(item.epsActual) : null,
+        epsActual: item.epsActual !== null ? String(item.epsActual) : null,
         epsEstimated:
             item.epsEstimated !== null ? String(item.epsEstimated) : null,
         revenueActual:
@@ -125,9 +122,7 @@ function toCalendarItem(row: {
         revenueActual:
             row.revenueActual !== null ? Number(row.revenueActual) : null,
         revenueEstimated:
-            row.revenueEstimated !== null
-                ? Number(row.revenueEstimated)
-                : null,
+            row.revenueEstimated !== null ? Number(row.revenueEstimated) : null,
         lastUpdated: (() => {
             if (row.lastUpdated === null) {
                 throw new Error(

@@ -12,7 +12,7 @@ export function OverallTriggerCta({ onTrigger }: OverallTriggerCtaProps) {
     return (
         <section
             aria-labelledby="overall-cta-heading"
-            className="rounded-xl border border-border bg-card p-12 text-center"
+            className="border-border bg-card rounded-xl border p-12 text-center"
         >
             <h2
                 id="overall-cta-heading"
@@ -26,7 +26,7 @@ export function OverallTriggerCta({ onTrigger }: OverallTriggerCtaProps) {
             <button
                 type="button"
                 onClick={onTrigger}
-                className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary mt-6 inline-flex items-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2"
+                className="bg-primary text-primary-foreground hover:bg-primary/90 focus-visible:ring-primary mt-6 inline-flex items-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
                 AI 종합 분석 받기
             </button>

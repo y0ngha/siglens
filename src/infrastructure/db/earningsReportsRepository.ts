@@ -33,10 +33,7 @@ export class DrizzleEarningsReportsRepository {
                 rawPayload,
             })
             .onConflictDoUpdate({
-                target: [
-                    earningsReports.symbol,
-                    earningsReports.earningsDate,
-                ],
+                target: [earningsReports.symbol, earningsReports.earningsDate],
                 set: {
                     rawPayload: sql`excluded.raw_payload`,
                     fetchedAt: sql`excluded.fetched_at`,

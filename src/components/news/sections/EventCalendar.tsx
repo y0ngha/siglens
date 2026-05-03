@@ -1,4 +1,7 @@
-import type { EarningsCalendarItem, EarningsReport } from '@y0ngha/siglens-core';
+import type {
+    EarningsCalendarItem,
+    EarningsReport,
+} from '@y0ngha/siglens-core';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -27,12 +30,12 @@ interface EarningsCalendarCardProps {
 
 function EarningsCalendarCard({ item }: EarningsCalendarCardProps) {
     return (
-        <div className="rounded-lg border border-border bg-card p-4">
+        <div className="border-border bg-card rounded-lg border p-4">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-semibold">다음 어닝 발표</h3>
                 <time
                     dateTime={item.earningsDate}
-                    className="text-sm text-muted-foreground tabular-nums"
+                    className="text-muted-foreground text-sm tabular-nums"
                 >
                     {formatDate(item.earningsDate)}
                 </time>
@@ -42,7 +45,7 @@ function EarningsCalendarCard({ item }: EarningsCalendarCardProps) {
                     {item.epsEstimated !== null && (
                         <>
                             <dt className="text-muted-foreground">EPS 예상</dt>
-                            <dd className="tabular-nums font-medium">
+                            <dd className="font-medium tabular-nums">
                                 {formatCurrency(item.epsEstimated)}
                             </dd>
                         </>
@@ -50,7 +53,7 @@ function EarningsCalendarCard({ item }: EarningsCalendarCardProps) {
                     {item.revenueEstimated !== null && (
                         <>
                             <dt className="text-muted-foreground">매출 예상</dt>
-                            <dd className="tabular-nums font-medium">
+                            <dd className="font-medium tabular-nums">
                                 {new Intl.NumberFormat('en-US', {
                                     style: 'currency',
                                     currency: 'USD',
@@ -72,12 +75,12 @@ interface LatestEarningsCardProps {
 
 function LatestEarningsCard({ report }: LatestEarningsCardProps) {
     return (
-        <div className="rounded-lg border border-border bg-card p-4">
+        <div className="border-border bg-card rounded-lg border p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-semibold">최근 어닝 발표</h3>
                 <time
                     dateTime={report.earningsDate}
-                    className="text-sm text-muted-foreground tabular-nums"
+                    className="text-muted-foreground text-sm tabular-nums"
                 >
                     {formatDate(report.earningsDate)}
                 </time>
@@ -108,10 +111,7 @@ export function EventCalendar({
     }
 
     return (
-        <section
-            aria-labelledby="event-calendar-heading"
-            className="space-y-3"
-        >
+        <section aria-labelledby="event-calendar-heading" className="space-y-3">
             <h2
                 id="event-calendar-heading"
                 className="text-lg font-semibold tracking-tight"

@@ -1,4 +1,8 @@
-import { FmpNewsClient, computeCutoff, hashUrlToId } from '@/infrastructure/fmp/newsClient';
+import {
+    FmpNewsClient,
+    computeCutoff,
+    hashUrlToId,
+} from '@/infrastructure/fmp/newsClient';
 
 const mockFetch = jest.fn();
 
@@ -44,7 +48,9 @@ describe('hashUrlToId', () => {
     });
 
     it('produces different IDs for different URLs', () => {
-        expect(hashUrlToId('https://a.com/1')).not.toBe(hashUrlToId('https://b.com/2'));
+        expect(hashUrlToId('https://a.com/1')).not.toBe(
+            hashUrlToId('https://b.com/2')
+        );
     });
 
     it('contains only base64url-safe characters', () => {
@@ -91,7 +97,9 @@ describe('FmpNewsClient', () => {
         it('fetchNews throws when FMP_API_KEY is not set', async () => {
             delete process.env.FMP_API_KEY;
             const client = new FmpNewsClient();
-            await expect(client.fetchNews('AAPL', '24h')).rejects.toThrow('FMP_API_KEY');
+            await expect(client.fetchNews('AAPL', '24h')).rejects.toThrow(
+                'FMP_API_KEY'
+            );
         });
     });
 
@@ -109,7 +117,9 @@ describe('FmpNewsClient', () => {
         it('fetchEarningsCalendarAll throws with status in message', async () => {
             mockError(500);
             const client = new FmpNewsClient();
-            await expect(client.fetchEarningsCalendarAll()).rejects.toThrow('500');
+            await expect(client.fetchEarningsCalendarAll()).rejects.toThrow(
+                '500'
+            );
         });
     });
 
@@ -152,7 +162,7 @@ describe('FmpNewsClient', () => {
             const result = await client.fetchNews('AAPL', '24h');
             const item = result[0]!;
             expect(item.symbol).toBe('AAPL');
-            expect(item.source).toBe('Reuters');        // site → source
+            expect(item.source).toBe('Reuters'); // site → source
             expect(item.publishedAt).toBe('2024-06-01T08:00:00Z'); // publishedDate → publishedAt
             expect(item.titleEn).toBe('Apple Q2 Results'); // title → titleEn
             expect(item.bodyEn).toBe('Apple reported...'); // text → bodyEn
@@ -238,12 +248,12 @@ describe('FmpNewsClient', () => {
             expect(result).toHaveLength(1);
             expect(result[0]).toEqual({
                 symbol: 'AAPL',
-                earningsDate: '2024-08-01',  // date → earningsDate
-                epsActual: 1.52,             // eps → epsActual
+                earningsDate: '2024-08-01', // date → earningsDate
+                epsActual: 1.52, // eps → epsActual
                 epsEstimated: 1.48,
                 revenueActual: 90_753_000_000, // revenue → revenueActual
                 revenueEstimated: 89_000_000_000,
-                lastUpdated: '2024-07-30',   // updatedFromDate → lastUpdated
+                lastUpdated: '2024-07-30', // updatedFromDate → lastUpdated
             });
         });
 
@@ -253,7 +263,7 @@ describe('FmpNewsClient', () => {
                     symbol: 'XYZ',
                     date: '2024-09-15',
                     eps: null,
-                    epsEstimated: 0.80,
+                    epsEstimated: 0.8,
                     revenue: null,
                     revenueEstimated: null,
                     updatedFromDate: '2024-09-14',
@@ -285,7 +295,10 @@ describe('FmpNewsClient', () => {
             ]);
             const client = new FmpNewsClient();
             const result = await client.fetchEarningsReport('AAPL');
-            expect(result).toEqual({ symbol: 'AAPL', earningsDate: '2024-08-01' });
+            expect(result).toEqual({
+                symbol: 'AAPL',
+                earningsDate: '2024-08-01',
+            });
         });
 
         it('returns null when array is empty', async () => {

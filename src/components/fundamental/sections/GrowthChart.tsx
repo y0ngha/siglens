@@ -18,9 +18,7 @@ interface GrowthBarProps {
 function GrowthBar({ label, value, description }: GrowthBarProps) {
     const pct = value !== null ? value * 100 : null;
     const formattedPct =
-        pct !== null
-            ? `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`
-            : '—';
+        pct !== null ? `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%` : '—';
 
     const fillAbs = pct !== null ? Math.min(100, Math.abs(pct)) : 0;
     const isPositive = pct !== null ? pct >= 0 : true;
@@ -79,7 +77,11 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
                         width={`${fillAbs / 2}%`}
                         height="6"
                         rx="3"
-                        className={isPositive ? 'fill-chart-bullish' : 'fill-chart-bearish'}
+                        className={
+                            isPositive
+                                ? 'fill-chart-bullish'
+                                : 'fill-chart-bearish'
+                        }
                     />
                 )}
             </svg>
@@ -96,7 +98,7 @@ export function GrowthChart({ growth }: GrowthChartProps) {
     return (
         <section
             aria-labelledby="growth-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="growth-heading"
@@ -107,7 +109,7 @@ export function GrowthChart({ growth }: GrowthChartProps) {
             <p className="text-muted-foreground mb-4 text-xs">
                 전년 동기 대비(YoY) 성장률
             </p>
-            <div className="divide-y divide-border/50">
+            <div className="divide-border/50 divide-y">
                 <GrowthBar
                     label="매출 성장률"
                     value={growth.growthRevenue}

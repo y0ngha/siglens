@@ -10,7 +10,7 @@ export function RiskFactors({ factors }: RiskFactorsProps) {
     return (
         <section
             aria-labelledby="risk-factors-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="risk-factors-heading"

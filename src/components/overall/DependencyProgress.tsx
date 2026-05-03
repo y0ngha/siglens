@@ -27,7 +27,7 @@ export function DependencyProgress({ pendingJobs }: DependencyProgressProps) {
         <section
             aria-labelledby="dependency-progress-heading"
             aria-busy="true"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="dependency-progress-heading"

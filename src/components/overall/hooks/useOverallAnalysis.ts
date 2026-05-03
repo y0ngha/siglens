@@ -42,7 +42,9 @@ export function useOverallAnalysis(
     timeframe: Timeframe,
     modelId: ModelId
 ): { state: OverallAnalysisState; trigger: () => void } {
-    const [state, setState] = useState<OverallAnalysisState>({ status: 'idle' });
+    const [state, setState] = useState<OverallAnalysisState>({
+        status: 'idle',
+    });
 
     // Holds the cancel function for the currently in-flight run.
     const cleanupRef = useRef<CleanupFn | null>(null);

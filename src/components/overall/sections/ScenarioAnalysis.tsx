@@ -1,4 +1,7 @@
-import type { OverallScenario, OverallScenarioName } from '@y0ngha/siglens-core';
+import type {
+    OverallScenario,
+    OverallScenarioName,
+} from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 
 const SCENARIO_LABEL: Record<OverallScenarioName, string> = {
@@ -26,7 +29,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     return (
         <section
             aria-labelledby="scenario-analysis-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="scenario-analysis-heading"
@@ -38,7 +41,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                 {scenarios.map(scenario => (
                     <li
                         key={scenario.name}
-                        className="rounded-lg bg-muted/40 p-4"
+                        className="bg-muted/40 rounded-lg p-4"
                     >
                         <div className="mb-2 flex items-center gap-2">
                             <span

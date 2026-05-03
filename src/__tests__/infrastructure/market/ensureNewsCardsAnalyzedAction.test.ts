@@ -1,7 +1,11 @@
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
 import { submitNewsCardAnalysis } from '@y0ngha/siglens-core';
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
-import type { NewsItem, NewsCardAnalysis, SubmitNewsCardAnalysisResult } from '@y0ngha/siglens-core';
+import type {
+    NewsItem,
+    NewsCardAnalysis,
+    SubmitNewsCardAnalysisResult,
+} from '@y0ngha/siglens-core';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -38,10 +42,14 @@ import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
 >;
-const MockFmpNewsClient = FmpNewsClient as jest.MockedClass<typeof FmpNewsClient>;
+const MockFmpNewsClient = FmpNewsClient as jest.MockedClass<
+    typeof FmpNewsClient
+>;
 
 const mockSubmitNewsCardAnalysis =
-    submitNewsCardAnalysis as jest.MockedFunction<typeof submitNewsCardAnalysis>;
+    submitNewsCardAnalysis as jest.MockedFunction<
+        typeof submitNewsCardAnalysis
+    >;
 
 const NEWS_ITEM_1: NewsItem = {
     id: 'item-001',
@@ -102,10 +110,11 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             () => ({ fetchNews: mockFetchNews }) as never
         );
         MockNewsRepository.mockImplementation(
-            () => ({
-                upsertNewsItem: mockUpsertNewsItem,
-                attachAnalysis: mockAttachAnalysis,
-            }) as never
+            () =>
+                ({
+                    upsertNewsItem: mockUpsertNewsItem,
+                    attachAnalysis: mockAttachAnalysis,
+                }) as never
         );
     });
 

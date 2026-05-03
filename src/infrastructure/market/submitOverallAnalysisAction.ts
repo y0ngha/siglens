@@ -64,7 +64,7 @@ export async function submitOverallAnalysisAction(
 
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
         .filter(isEnrichedRow)
-        .map((row) => ({
+        .map(row => ({
             id: row.id,
             symbol: row.symbol,
             source: row.source,
@@ -79,7 +79,8 @@ export async function submitOverallAnalysisAction(
                 // isEnrichedRow predicate above guarantees summaryKo is non-null at runtime
                 summaryKo: row.summaryKo as string,
                 // isEnrichedRow predicate above guarantees sentiment is one of NewsSentiment literals
-                sentiment: row.sentiment as EnrichedNewsItem['card']['sentiment'],
+                sentiment:
+                    row.sentiment as EnrichedNewsItem['card']['sentiment'],
                 // isEnrichedRow predicate above guarantees category is one of NewsCategory literals
                 category: row.category as EnrichedNewsItem['card']['category'],
             },

@@ -13,7 +13,7 @@ export function ThreeAxisConclusion({ text }: ThreeAxisConclusionProps) {
     return (
         <section
             aria-labelledby="three-axis-conclusion-heading"
-            className="rounded-xl border border-primary/30 bg-primary/5 p-6"
+            className="border-primary/30 bg-primary/5 rounded-xl border p-6"
         >
             <h2
                 id="three-axis-conclusion-heading"
@@ -21,7 +21,9 @@ export function ThreeAxisConclusion({ text }: ThreeAxisConclusionProps) {
             >
                 3축 종합 결론
             </h2>
-            <p className="text-sm leading-relaxed whitespace-pre-line">{text}</p>
+            <p className="text-sm leading-relaxed whitespace-pre-line">
+                {text}
+            </p>
         </section>
     );
 }

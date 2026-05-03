@@ -10,7 +10,7 @@ export function OverallSummary({ headline }: OverallSummaryProps) {
     return (
         <section
             aria-labelledby="overall-summary-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="overall-summary-heading"

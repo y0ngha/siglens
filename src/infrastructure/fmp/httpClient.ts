@@ -20,14 +20,13 @@ export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
  */
 export async function fmpGet<T>(
     path: string,
-    query: Record<string, string> = {},
+    query: Record<string, string> = {}
 ): Promise<T> {
     const { apiKey } = readFmpConfig();
     const params = new URLSearchParams({ ...query, apikey: apiKey });
-    const res = await fetch(
-        `${FMP_STABLE_BASE}/${path}?${params.toString()}`,
-        { cache: 'no-store' },
-    );
+    const res = await fetch(`${FMP_STABLE_BASE}/${path}?${params.toString()}`, {
+        cache: 'no-store',
+    });
     if (!res.ok) {
         throw new Error(`FMP ${path} ${res.status}`);
     }

@@ -31,7 +31,7 @@ function HealthMetric({ label, value, hint, badge }: HealthMetricProps) {
                   : 'bg-muted text-muted-foreground';
 
     return (
-        <div className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 last:border-b-0">
+        <div className="border-border flex items-baseline justify-between gap-4 border-b py-2.5 last:border-b-0">
             <div>
                 <span className="text-sm font-medium">{label}</span>
                 {hint !== undefined && (
@@ -59,18 +59,14 @@ function HealthMetric({ label, value, hint, badge }: HealthMetricProps) {
     );
 }
 
-function altmanBadge(
-    z: number | null
-): HealthMetricProps['badge'] {
+function altmanBadge(z: number | null): HealthMetricProps['badge'] {
     if (z === null) return undefined;
     if (z > 2.99) return { text: '안전', variant: 'good' };
     if (z > 1.81) return { text: '경계', variant: 'warn' };
     return { text: '위험', variant: 'bad' };
 }
 
-function piotroskiBadge(
-    p: number | null
-): HealthMetricProps['badge'] {
+function piotroskiBadge(p: number | null): HealthMetricProps['badge'] {
     if (p === null) return undefined;
     if (p >= 8) return { text: '강함', variant: 'good' };
     if (p >= 5) return { text: '보통', variant: 'neutral' };
@@ -104,7 +100,7 @@ export function FinancialHealthCard({
     return (
         <section
             aria-labelledby="health-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="health-heading"

@@ -45,7 +45,7 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="ai-summary-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
@@ -69,15 +69,12 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
             </p>
 
             {result.categoryAssessments.length > 0 && (
-                <ul
-                    aria-label="카테고리별 평가"
-                    className="mb-5 space-y-3"
-                >
+                <ul aria-label="카테고리별 평가" className="mb-5 space-y-3">
                     {result.categoryAssessments.map(
                         (a: FundamentalCategoryAssessment) => (
                             <li
                                 key={a.category}
-                                className="rounded-lg bg-muted/40 p-3"
+                                className="bg-muted/40 rounded-lg p-3"
                             >
                                 <div className="mb-1 flex items-center gap-2">
                                     <span className="text-sm font-medium">
@@ -111,7 +108,10 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
                                 key={i}
                                 className="text-muted-foreground flex gap-2 text-sm"
                             >
-                                <span aria-hidden="true" className="mt-0.5 shrink-0">
+                                <span
+                                    aria-hidden="true"
+                                    className="mt-0.5 shrink-0"
+                                >
                                     •
                                 </span>
                                 {risk}
@@ -155,7 +155,7 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
         return (
             <section
                 aria-labelledby="ai-summary-error-heading"
-                className="rounded-xl border border-destructive/30 bg-card p-6"
+                className="border-destructive/30 bg-card rounded-xl border p-6"
             >
                 <h2
                     id="ai-summary-error-heading"
@@ -179,7 +179,7 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
         <section
             aria-labelledby="ai-summary-loading-heading"
             aria-busy="true"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="ai-summary-loading-heading"

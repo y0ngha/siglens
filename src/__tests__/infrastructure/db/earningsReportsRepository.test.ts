@@ -82,7 +82,7 @@ describe('DrizzleEarningsReportsRepository', () => {
             const repo = new DrizzleEarningsReportsRepository(db);
             // Call twice to simulate update path (DB mock always resolves)
             await repo.upsert(report, rawPayload);
-            await repo.upsert(report, { ...rawPayload, eps: 1.60 });
+            await repo.upsert(report, { ...rawPayload, eps: 1.6 });
             expect(onConflictDoUpdate).toHaveBeenCalledTimes(2);
         });
     });

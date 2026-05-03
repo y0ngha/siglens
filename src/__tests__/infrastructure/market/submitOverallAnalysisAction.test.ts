@@ -50,13 +50,13 @@ import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsC
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
 >;
-const MockCalRepository =
-    DrizzleEarningsCalendarRepository as jest.MockedClass<
-        typeof DrizzleEarningsCalendarRepository
-    >;
+const MockCalRepository = DrizzleEarningsCalendarRepository as jest.MockedClass<
+    typeof DrizzleEarningsCalendarRepository
+>;
 
-const mockSubmitOverallAnalysis =
-    submitOverallAnalysis as jest.MockedFunction<typeof submitOverallAnalysis>;
+const mockSubmitOverallAnalysis = submitOverallAnalysis as jest.MockedFunction<
+    typeof submitOverallAnalysis
+>;
 
 const ANALYZED_ROW = {
     id: 'abc123',
@@ -184,7 +184,11 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        const result = await submitOverallAnalysisAction('AAPL', '1Day', MODEL_ID);
+        const result = await submitOverallAnalysisAction(
+            'AAPL',
+            '1Day',
+            MODEL_ID
+        );
 
         expect(result).toBe(SUBMITTED_RESULT);
     });

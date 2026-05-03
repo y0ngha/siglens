@@ -25,7 +25,11 @@ import type {
     NewsTimeRange,
 } from '@y0ngha/siglens-core';
 import { fmpGet } from '@/infrastructure/fmp/httpClient';
-import type { RawFmpEarningsCalendarItem, RawFmpEarningsReport, RawFmpNews } from '@/infrastructure/fmp/types';
+import type {
+    RawFmpEarningsCalendarItem,
+    RawFmpEarningsReport,
+    RawFmpNews,
+} from '@/infrastructure/fmp/types';
 
 /** Maximum article count to request per `NewsTimeRange` value. */
 const RANGE_TO_LIMIT: Record<NewsTimeRange, number> = {
@@ -87,8 +91,8 @@ export class FmpNewsClient implements NewsProvider {
         });
         const cutoff = computeCutoff(range);
         return raw
-            .filter((n) => new Date(n.publishedDate) >= cutoff)
-            .map((n) => ({
+            .filter(n => new Date(n.publishedDate) >= cutoff)
+            .map(n => ({
                 id: hashUrlToId(n.url),
                 symbol: n.symbol,
                 source: n.site,
@@ -109,8 +113,9 @@ export class FmpNewsClient implements NewsProvider {
      * @returns All scheduled earnings events across all symbols.
      */
     async fetchEarningsCalendarAll(): Promise<EarningsCalendarItem[]> {
-        const raw = await fmpGet<RawFmpEarningsCalendarItem[]>('earnings-calendar');
-        return raw.map((r) => ({
+        const raw =
+            await fmpGet<RawFmpEarningsCalendarItem[]>('earnings-calendar');
+        return raw.map(r => ({
             symbol: r.symbol,
             earningsDate: r.date,
             epsActual: r.eps,
@@ -128,7 +133,9 @@ export class FmpNewsClient implements NewsProvider {
      * @returns The most recent earnings report, or `null` when unavailable.
      */
     async fetchEarningsReport(symbol: string): Promise<EarningsReport | null> {
-        const raw = await fmpGet<RawFmpEarningsReport[]>('earnings', { symbol });
+        const raw = await fmpGet<RawFmpEarningsReport[]>('earnings', {
+            symbol,
+        });
         const r = raw[0];
         if (!r) return null;
         return {

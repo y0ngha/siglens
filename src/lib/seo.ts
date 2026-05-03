@@ -187,7 +187,9 @@ export interface SymbolNewsSeoContent {
  *
  * @param symbol - Raw ticker symbol (case-insensitive; normalised to uppercase internally).
  */
-export function buildSymbolNewsSeoContent(symbol: string): SymbolNewsSeoContent {
+export function buildSymbolNewsSeoContent(
+    symbol: string
+): SymbolNewsSeoContent {
     const upper = symbol.toUpperCase();
     const title = `${upper} 뉴스 분석`;
     const fullTitle = `${upper} 최신 뉴스 + AI 분석 | ${SITE_NAME}`;

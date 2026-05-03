@@ -2,10 +2,7 @@
 
 import { useMemo, type CSSProperties } from 'react';
 import { cn } from '@/lib/cn';
-import {
-    getAllowedModels,
-    type Timeframe,
-} from '@y0ngha/siglens-core';
+import { getAllowedModels, type Timeframe } from '@y0ngha/siglens-core';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
 import { useOverallAnalysis } from './hooks/useOverallAnalysis';
@@ -65,7 +62,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
             <section
                 aria-labelledby="overall-loading-heading"
                 aria-busy="true"
-                className="rounded-xl border border-border bg-card p-6"
+                className="border-border bg-card rounded-xl border p-6"
             >
                 <h2
                     id="overall-loading-heading"
@@ -111,7 +108,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
         return (
             <section
                 aria-labelledby="overall-error-heading"
-                className="rounded-xl border border-destructive/30 bg-card p-6"
+                className="border-destructive/30 bg-card rounded-xl border p-6"
             >
                 <h2
                     id="overall-error-heading"
@@ -126,7 +123,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
                 <button
                     type="button"
                     onClick={trigger}
-                    className="text-primary mt-3 rounded-sm text-sm underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
+                    className="text-primary focus-visible:ring-primary mt-3 rounded-sm text-sm underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                     다시 시도
                 </button>

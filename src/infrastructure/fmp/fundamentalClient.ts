@@ -64,7 +64,8 @@ function toGradesAction(raw: string): GradesAction {
     if (lower === 'upgrade') return 'upgrade';
     if (lower === 'downgrade') return 'downgrade';
     if (lower === 'maintained' || lower === 'reiterated') return 'maintained';
-    if (lower === 'initiated' || lower === 'initiated coverage') return 'initiated';
+    if (lower === 'initiated' || lower === 'initiated coverage')
+        return 'initiated';
     return 'other';
 }
 
@@ -104,8 +105,12 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param symbol - Ticker symbol.
      * @returns Domain-neutral valuation metrics, or `null` when unavailable.
      */
-    async getKeyMetricsTtm(symbol: string): Promise<FundamentalValuationMetrics | null> {
-        const arr = await fmpGet<RawFmpKeyMetricsTtm[]>('key-metrics-ttm', { symbol });
+    async getKeyMetricsTtm(
+        symbol: string
+    ): Promise<FundamentalValuationMetrics | null> {
+        const arr = await fmpGet<RawFmpKeyMetricsTtm[]>('key-metrics-ttm', {
+            symbol,
+        });
         const r = arr[0];
         if (!r) return null;
         return {
@@ -144,8 +149,13 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param symbol - Ticker symbol.
      * @returns Domain-neutral cash flow input, or `null` when unavailable.
      */
-    async getCashFlowStatement(symbol: string): Promise<FundamentalCashFlowInput | null> {
-        const arr = await fmpGet<RawFmpCashFlowStatement[]>('cash-flow-statement', { symbol });
+    async getCashFlowStatement(
+        symbol: string
+    ): Promise<FundamentalCashFlowInput | null> {
+        const arr = await fmpGet<RawFmpCashFlowStatement[]>(
+            'cash-flow-statement',
+            { symbol }
+        );
         const r = arr[0];
         if (!r) return null;
         return { operatingCashFlow: r.operatingCashFlow };
@@ -157,8 +167,13 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param symbol - Ticker symbol.
      * @returns Domain-neutral growth input, or `null` when unavailable.
      */
-    async getIncomeStatementGrowth(symbol: string): Promise<FundamentalGrowthInput | null> {
-        const arr = await fmpGet<RawFmpIncomeGrowth[]>('income-statement-growth', { symbol });
+    async getIncomeStatementGrowth(
+        symbol: string
+    ): Promise<FundamentalGrowthInput | null> {
+        const arr = await fmpGet<RawFmpIncomeGrowth[]>(
+            'income-statement-growth',
+            { symbol }
+        );
         const r = arr[0];
         if (!r) return null;
         return {
@@ -173,7 +188,9 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param symbol - Ticker symbol.
      * @returns Domain-neutral financial scores input, or `null` when unavailable.
      */
-    async getFinancialScores(symbol: string): Promise<FundamentalFinancialScoresInput | null> {
+    async getFinancialScores(
+        symbol: string
+    ): Promise<FundamentalFinancialScoresInput | null> {
         const arr = await fmpGet<RawFmpFinancialScore[]>('score', { symbol });
         const r = arr[0];
         if (!r) return null;
@@ -191,7 +208,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      */
     async getStockPeers(symbol: string): Promise<FundamentalPeerInput[]> {
         const arr = await fmpGet<RawFmpStockPeer[]>('stock-peers', { symbol });
-        return arr.map((r) => ({
+        return arr.map(r => ({
             symbol: r.symbol,
             companyName: r.companyName,
             marketCap: r.marketCap,
@@ -204,8 +221,12 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param symbol - Ticker symbol.
      * @returns Domain-neutral analyst estimate input, or `null` when unavailable.
      */
-    async getAnalystEstimates(symbol: string): Promise<FundamentalAnalystEstimateInput | null> {
-        const arr = await fmpGet<RawFmpAnalystEstimate[]>('analyst-estimates', { symbol });
+    async getAnalystEstimates(
+        symbol: string
+    ): Promise<FundamentalAnalystEstimateInput | null> {
+        const arr = await fmpGet<RawFmpAnalystEstimate[]>('analyst-estimates', {
+            symbol,
+        });
         const r = arr[0];
         if (!r) return null;
         return {
@@ -221,12 +242,15 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param limit  - Maximum number of events (default {@link DEFAULT_GRADES_LIMIT}).
      * @returns Recent grading actions sorted descending by date.
      */
-    async getGrades(symbol: string, limit = DEFAULT_GRADES_LIMIT): Promise<GradesEvent[]> {
+    async getGrades(
+        symbol: string,
+        limit = DEFAULT_GRADES_LIMIT
+    ): Promise<GradesEvent[]> {
         const arr = await fmpGet<RawFmpGradesEvent[]>('grades', {
             symbol,
             limit: String(limit),
         });
-        return arr.map((r) => ({
+        return arr.map(r => ({
             symbol: r.symbol,
             date: r.date,
             gradingCompany: r.gradingCompany,
@@ -242,8 +266,12 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param symbol - Ticker symbol.
      * @returns Domain-neutral grades consensus input, or `null` when unavailable.
      */
-    async getGradesConsensus(symbol: string): Promise<FundamentalGradesConsensusInput | null> {
-        const arr = await fmpGet<RawFmpGradesConsensus[]>('grades-consensus', { symbol });
+    async getGradesConsensus(
+        symbol: string
+    ): Promise<FundamentalGradesConsensusInput | null> {
+        const arr = await fmpGet<RawFmpGradesConsensus[]>('grades-consensus', {
+            symbol,
+        });
         const r = arr[0];
         if (!r) return null;
         return {
@@ -261,8 +289,13 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param symbol - Ticker symbol.
      * @returns Domain-neutral price target consensus input, or `null` when unavailable.
      */
-    async getPriceTargetConsensus(symbol: string): Promise<FundamentalPriceTargetConsensusInput | null> {
-        const arr = await fmpGet<RawFmpPriceTargetConsensus[]>('price-target-consensus', { symbol });
+    async getPriceTargetConsensus(
+        symbol: string
+    ): Promise<FundamentalPriceTargetConsensusInput | null> {
+        const arr = await fmpGet<RawFmpPriceTargetConsensus[]>(
+            'price-target-consensus',
+            { symbol }
+        );
         const r = arr[0];
         if (!r) return null;
         return {
@@ -279,8 +312,13 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param symbol - Ticker symbol.
      * @returns Domain-neutral price target summary input, or `null` when unavailable.
      */
-    async getPriceTargetSummary(symbol: string): Promise<FundamentalPriceTargetSummaryInput | null> {
-        const arr = await fmpGet<RawFmpPriceTargetSummary[]>('price-target-summary', { symbol });
+    async getPriceTargetSummary(
+        symbol: string
+    ): Promise<FundamentalPriceTargetSummaryInput | null> {
+        const arr = await fmpGet<RawFmpPriceTargetSummary[]>(
+            'price-target-summary',
+            { symbol }
+        );
         const r = arr[0];
         if (!r) return null;
         return {
@@ -296,9 +334,14 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param date - Trading date in `YYYY-MM-DD` format.
      * @returns Array of domain-neutral sector performance entries for that date.
      */
-    async getSectorPerformanceSnapshot(date: string): Promise<FundamentalSectorPerformanceInput[]> {
-        const arr = await fmpGet<RawFmpSectorPerformance[]>('sector-performance', { date });
-        return arr.map((r) => ({
+    async getSectorPerformanceSnapshot(
+        date: string
+    ): Promise<FundamentalSectorPerformanceInput[]> {
+        const arr = await fmpGet<RawFmpSectorPerformance[]>(
+            'sector-performance',
+            { date }
+        );
+        return arr.map(r => ({
             sector: r.sector,
             changesPercentage: r.changesPercentage,
         }));
@@ -310,11 +353,16 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @param sector - Sector name as returned by FMP (e.g. `"Technology"`).
      * @returns Array of domain-neutral historical sector performance entries.
      */
-    async getHistoricalSectorPerformance(sector: string): Promise<FundamentalSectorHistoricalInput[]> {
-        const arr = await fmpGet<RawFmpHistoricalSectorPerformance[]>('historical-sector-performance', {
-            sector,
-        });
-        return arr.map((r) => ({
+    async getHistoricalSectorPerformance(
+        sector: string
+    ): Promise<FundamentalSectorHistoricalInput[]> {
+        const arr = await fmpGet<RawFmpHistoricalSectorPerformance[]>(
+            'historical-sector-performance',
+            {
+                sector,
+            }
+        );
+        return arr.map(r => ({
             date: r.date,
             sector: r.sector,
             changesPercentage: r.changesPercentage,
@@ -328,7 +376,9 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
      * @returns Domain-neutral earnings report, or `null` when unavailable.
      */
     async getEarningsReport(symbol: string): Promise<EarningsReport | null> {
-        const arr = await fmpGet<RawFmpEarningsReport[]>('earnings', { symbol });
+        const arr = await fmpGet<RawFmpEarningsReport[]>('earnings', {
+            symbol,
+        });
         const r = arr[0];
         if (!r) return null;
         return {

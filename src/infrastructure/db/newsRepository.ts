@@ -102,9 +102,7 @@ export class DrizzleNewsRepository {
                 analyzedAt: news.analyzedAt,
             })
             .from(news)
-            .where(
-                and(eq(news.symbol, symbol), gte(news.publishedAt, cutoff))
-            )
+            .where(and(eq(news.symbol, symbol), gte(news.publishedAt, cutoff)))
             .orderBy(desc(news.publishedAt));
 
         return rows.map(toNewsRow);

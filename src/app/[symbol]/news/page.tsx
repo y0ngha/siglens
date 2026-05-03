@@ -90,7 +90,10 @@ async function EventCalendarSection({ symbol }: { symbol: string }) {
         getLatestEarningsReport(symbol),
     ]);
     return (
-        <EventCalendar nextEarnings={nextEarnings} latestReport={latestReport} />
+        <EventCalendar
+            nextEarnings={nextEarnings}
+            latestReport={latestReport}
+        />
     );
 }
 
@@ -105,7 +108,7 @@ function SectionSkeleton() {
     return (
         <div
             aria-hidden="true"
-            className="h-32 animate-pulse rounded-xl bg-muted"
+            className="bg-muted h-32 animate-pulse rounded-xl"
         />
     );
 }
@@ -133,7 +136,10 @@ export default async function NewsPage({ params }: Props) {
     // Page renders with existing DB data; subsequent loads benefit from
     // newly analysed cards. Errors are swallowed inside the action.
     void ensureNewsCardsAnalyzedAction(upper).catch((error: unknown) => {
-        console.error('[NewsPage] ensureNewsCardsAnalyzedAction failed:', error);
+        console.error(
+            '[NewsPage] ensureNewsCardsAnalyzedAction failed:',
+            error
+        );
     });
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([

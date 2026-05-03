@@ -186,10 +186,9 @@ describe('DrizzleNewsRepository', () => {
             };
             const { db } = makeSelectDb([analyzedRow]);
             const repo = new DrizzleNewsRepository(db);
-            const [result] = (await repo.listBySymbol(
-                'AAPL',
-                86_400_000
-            )) as [NewsRow];
+            const [result] = (await repo.listBySymbol('AAPL', 86_400_000)) as [
+                NewsRow,
+            ];
 
             expect(result.sentiment).toBe('bullish');
             expect(result.category).toBe('other');

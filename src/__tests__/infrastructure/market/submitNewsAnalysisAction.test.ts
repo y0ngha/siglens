@@ -46,10 +46,9 @@ import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsC
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
 >;
-const MockCalRepository =
-    DrizzleEarningsCalendarRepository as jest.MockedClass<
-        typeof DrizzleEarningsCalendarRepository
-    >;
+const MockCalRepository = DrizzleEarningsCalendarRepository as jest.MockedClass<
+    typeof DrizzleEarningsCalendarRepository
+>;
 
 const mockSubmitNewsAnalysis = submitNewsAnalysis as jest.MockedFunction<
     typeof submitNewsAnalysis

@@ -67,7 +67,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
             role="tablist"
             aria-label="분석 종류"
             onKeyDown={handleKey}
-            className="flex overflow-x-auto border-b border-border"
+            className="border-border flex overflow-x-auto border-b"
         >
             {TABS.map(t => {
                 const href = t.hrefBuilder(upper);
@@ -80,9 +80,9 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                         aria-selected={active}
                         tabIndex={active ? 0 : -1}
                         className={cn(
-                            'whitespace-nowrap px-4 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2',
+                            'focus-visible:ring-primary px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                             active
-                                ? 'border-b-2 border-primary font-medium text-foreground'
+                                ? 'border-primary text-foreground border-b-2 font-medium'
                                 : 'text-muted-foreground hover:text-foreground'
                         )}
                     >

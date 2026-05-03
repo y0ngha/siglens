@@ -20,7 +20,7 @@ function MetricRow({ label, value, description, digits = 2 }: MetricRowProps) {
             : '—';
 
     return (
-        <div className="flex items-baseline justify-between gap-4 border-b border-border py-2.5 last:border-b-0">
+        <div className="border-border flex items-baseline justify-between gap-4 border-b py-2.5 last:border-b-0">
             <div>
                 <span className="text-sm font-medium" translate="no">
                     {label}
@@ -45,7 +45,7 @@ export function ValuationCard({ metrics }: ValuationCardProps) {
     return (
         <section
             aria-labelledby="valuation-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="valuation-heading"

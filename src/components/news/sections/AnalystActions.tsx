@@ -33,7 +33,7 @@ function GradeRow({ event }: GradeRowProps) {
     }).format(new Date(event.date));
 
     return (
-        <li className="flex flex-wrap items-start gap-3 rounded-lg border border-border bg-card p-3 text-sm">
+        <li className="border-border bg-card flex flex-wrap items-start gap-3 rounded-lg border p-3 text-sm">
             <span
                 className={cn(
                     'shrink-0 rounded px-2 py-0.5 text-xs font-medium',
@@ -45,17 +45,17 @@ function GradeRow({ event }: GradeRowProps) {
             <div className="min-w-0 flex-1">
                 <p className="font-medium">{event.gradingCompany}</p>
                 {event.previousGrade !== null ? (
-                    <p className="mt-0.5 text-xs text-muted-foreground">
+                    <p className="text-muted-foreground mt-0.5 text-xs">
                         {event.previousGrade}
                         <span aria-hidden="true"> → </span>
                         <span className="sr-only">에서 </span>
-                        <span className="font-medium text-foreground">
+                        <span className="text-foreground font-medium">
                             {event.newGrade}
                         </span>
                     </p>
                 ) : (
-                    <p className="mt-0.5 text-xs text-muted-foreground">
-                        <span className="font-medium text-foreground">
+                    <p className="text-muted-foreground mt-0.5 text-xs">
+                        <span className="text-foreground font-medium">
                             {event.newGrade}
                         </span>
                     </p>
@@ -63,7 +63,7 @@ function GradeRow({ event }: GradeRowProps) {
             </div>
             <time
                 dateTime={event.date}
-                className="shrink-0 text-xs tabular-nums text-muted-foreground"
+                className="text-muted-foreground shrink-0 text-xs tabular-nums"
             >
                 {dateFormatted}
             </time>
@@ -101,7 +101,10 @@ export function AnalystActions({ events }: AnalystActionsProps) {
             </h2>
             <ul className="space-y-2" aria-label="애널리스트 등급 변경 목록">
                 {events.map((event, index) => (
-                    <GradeRow key={`${event.date}-${event.gradingCompany}-${index}`} event={event} />
+                    <GradeRow
+                        key={`${event.date}-${event.gradingCompany}-${index}`}
+                        event={event}
+                    />
                 ))}
             </ul>
         </section>

@@ -17,7 +17,7 @@ export function PeersTable({ peers }: PeersTableProps) {
     return (
         <section
             aria-labelledby="peers-heading"
-            className="rounded-xl border border-border bg-card p-6"
+            className="border-border bg-card rounded-xl border p-6"
         >
             <h2
                 id="peers-heading"
@@ -28,7 +28,7 @@ export function PeersTable({ peers }: PeersTableProps) {
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="text-muted-foreground border-b border-border text-left text-xs uppercase tracking-widest">
+                        <tr className="text-muted-foreground border-border border-b text-left text-xs tracking-widest uppercase">
                             <th className="pb-2 font-medium">티커</th>
                             <th className="pb-2 font-medium">회사명</th>
                             <th className="pb-2 text-right font-medium">
@@ -40,7 +40,7 @@ export function PeersTable({ peers }: PeersTableProps) {
                         {peers.map(peer => (
                             <tr
                                 key={peer.symbol}
-                                className="hover:bg-muted/40 border-b border-border/50 transition-colors last:border-b-0"
+                                className="hover:bg-muted/40 border-border/50 border-b transition-colors last:border-b-0"
                             >
                                 <td className="py-2.5 pr-4">
                                     <Link

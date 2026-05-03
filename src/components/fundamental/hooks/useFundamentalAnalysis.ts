@@ -3,7 +3,10 @@
 import { useEffect, useState } from 'react';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
-import type { FundamentalAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
+import type {
+    FundamentalAnalysisResponse,
+    ModelId,
+} from '@y0ngha/siglens-core';
 
 const POLL_INTERVAL_MS = 2500;
 
