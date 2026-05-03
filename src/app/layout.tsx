@@ -98,7 +98,9 @@ interface RootLayoutProps {
     readonly children: ReactNode;
 }
 
-export default async function RootLayout({ children }: RootLayoutProps) {
+// Fetches the current user inside a Suspense boundary so dynamic auth data
+// (cookies → DB) does not block static prerender (Next.js 16 cacheComponents).
+async function HeaderWithUser() {
     const authUser = await getCurrentUser();
     const currentUser: HeaderUserMenuUser | null = authUser
         ? {
@@ -107,6 +109,10 @@ export default async function RootLayout({ children }: RootLayoutProps) {
               tier: authUser.tier,
           }
         : null;
+    return <Header currentUser={currentUser} />;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html
             lang="ko"
@@ -114,13 +120,13 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         >
             <body className="flex min-h-full flex-col">
                 <SiteJsonLd />
-                <Suspense>
-                    <ReactQueryProvider>
-                        <PwaBanner />
-                        <Header currentUser={currentUser} />
-                        {children}
-                    </ReactQueryProvider>
-                </Suspense>
+                <ReactQueryProvider>
+                    <PwaBanner />
+                    <Suspense fallback={<Header currentUser={null} />}>
+                        <HeaderWithUser />
+                    </Suspense>
+                    {children}
+                </ReactQueryProvider>
                 {ADSENSE_ENABLED && (
                     <Script
                         async
