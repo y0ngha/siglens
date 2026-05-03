@@ -142,10 +142,7 @@ describe('DrizzleEarningsCalendarRepository', () => {
             const repo = new DrizzleEarningsCalendarRepository(db);
             await expect(
                 repo.getNextForSymbol('AAPL', '2025-09-01')
-            ).rejects.toThrow(/AAPL/);
-            await expect(
-                repo.getNextForSymbol('AAPL', '2025-09-01')
-            ).rejects.toThrow(/2025-11-01/);
+            ).rejects.toThrow(/AAPL.*2025-11-01/);
         });
     });
 

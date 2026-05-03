@@ -139,14 +139,6 @@
 - Rule: CLAUDE.md layer dependency — lib/ must contain external UI utility wrappers only; pure functions with side effects belong in infrastructure
 - Context: Moved lib/dateKey.ts → infrastructure/utils/dateKey.ts; updated 4 import sites (fundamental/page.tsx, news/page.tsx, submitOverallAnalysisAction.ts, submitNewsAnalysisAction.ts).
 
-- Violation: newsLookback.ts had magic-number chain `7 * 24 * 60 * 60 * 1_000` with no named constant
-- Rule: MISTAKES.md 15 — Hardcoded literals in calculations must be extracted to named module-level constants
-- Context: Replaced with `7 * MS_PER_DAY` imported from @/domain/constants/time.
-
-- Violation: fundamentalData.ts created `new FmpFundamentalClient()` in each of 13 cache functions (duplicate instantiation)
-- Rule: MISTAKES.md Coding Paradigm 2 — Identical values computed multiple times in single function/module
-- Context: Extracted single module-level `const fundamentalClient = new FmpFundamentalClient();` and replaced all 13 call sites.
-
 ## [PR #413 R11 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: useOverallAnalysis hook return type was inline `{ state: ...; trigger: () => void }` instead of named interface
 - Rule: MISTAKES.md TypeScript 5.5 — Function return types using inline object literals instead of named types
@@ -165,51 +157,19 @@
 - Rule: MISTAKES.md Tests 12, 14 — All time-dependent utility functions must have test coverage including edge cases
 - Context: Created src/__tests__/infrastructure/utils/dateKey.test.ts with 3 cases: UTC midnight, late evening (date crossover), early morning paths via jest.spyOn(Date, 'now').
 
-- Violation: RSC wrapper comment on news/page.tsx and matching comment on fundamental/page.tsx; 3 lines each of redundant WHAT-description
-- Rule: MISTAKES.md Readability 3 — Self-explanatory code (type-named interface, Suspense pattern) requires no WHAT comment
-- Context: Both removed; code is self-documenting via SymbolSectionProps interface name and Suspense boundary structure.
-
 ## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03 — Deferred]
 - Question: Hooks importing infrastructure (useFundamentalAnalysis, useNewsAnalysis, useOverallAnalysis, useNewsAugment)
 - Rule: CLAUDE.md hook→infrastructure imports limited to queryFn/mutationFn or useActionState Server Action connection
 - Context: Current code uses useEffect polling state machines instead of Server Action callback. Architecture sufficient for async job-poll pattern (polling model was intentional design choice for stale background analysis). Deferred to separate cleanup pass requiring architectural rework not warranted in this PR scope.
 
 ## [PR #413 R13 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: NewsList.tsx RSC section component had WHAT JSDoc describing "RSC가 문서 화면 리스트를 렌더한다"
-- Rule: MISTAKES.md Readability 3 — Self-explanatory code (Suspense pattern, component name) requires no WHAT comment
-- Context: Removed WHAT comment.
-
-- Violation: OverallContent.tsx client orchestrator had WHAT JSDoc on component definition
-- Rule: MISTAKES.md Readability 3 — Self-explanatory code requires no WHAT comment
-- Context: Removed WHAT comment.
-
 - Violation: OverallContent.tsx had inline `// status === 'done'` comment after `if (state.status !== 'done') return null;` guard
 - Rule: MISTAKES.md Readability 2 — Guard clause already narrows type; post-guard comment stating the narrowed state is dead code
 - Context: Removed comment; guard already establishes the invariant.
-
-- Violation: newsData.ts getGradeEvents created `new FmpFundamentalClient()` inline, while sibling fundamentalData.ts uses module-level singleton
-- Rule: MISTAKES.md Coding Paradigm 2 — Inconsistent instantiation pattern between sibling modules
-- Context: Extracted module-level `const fundamentalClient = new FmpFundamentalClient();` in newsData.ts to match fundamentalData.ts pattern.
-
-- Violation: newsClient.ts `fetchEarningsCalendarAll` 2-line comment `// FMP does not support per-symbol filtering...`
-- Rule: MISTAKES.md Readability — Multi-line comments should be compressed to single line when possible
-- Context: Compressed to single line.
-
-- Violation: ensureNewsCardsAnalyzedAction.ts 2-line `// 'submitted' case:...` comment
-- Rule: MISTAKES.md Readability — Multi-line comments should be compressed to single line when possible
-- Context: Compressed to single line.
 
 ## [PR #413 R15 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: useAnalysis.ts: eslint-disable react-hooks/set-state-in-effect with poll useEffect pattern reverted to poll-async-IIFE + cooldown async-IIFE useEffect
 - Rule: MISTAKES.md #13 — eslint-disable suppresses lint warnings instead of fixing root cause; restructure code to eliminate the warning
 - Context: Partial React Query refactor reverted; poll/cooldown use async-IIFE patterns where setState happens inside callback, not synchronously in effect body. Pattern does not trigger rule because setState is wrapped in async callback scope.
-
-- Violation: src/infrastructure/db/schema.ts multi-line JSDoc on `news`, `earningsCalendar`, `earningsReports` table definitions
-- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line descriptions unnecessary; compress to single line
-- Context: All 3 compressed to single-line `/** ... */` format.
-
-- Violation: src/__tests__/infrastructure/fmp/newsClient.test.ts hardcoded time literals `60 * 60 * 1_000` × 3 (ms per hour)
-- Rule: MISTAKES.md #15 — Hardcoded literals in calculations must be extracted to named module-level constants; extends to test files
-- Context: Imported `MS_PER_HOUR` from @/domain/constants/time, replaced 3 occurrences.
 
 

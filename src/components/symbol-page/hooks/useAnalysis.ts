@@ -26,7 +26,7 @@ import {
     tryAcquireReanalyzeCooldown,
 } from '@/infrastructure/market/reanalyzeCooldown';
 import { sleep } from '@/components/symbol-page/utils/sleep';
-import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/infrastructure/market/pollingConfig';
+import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 
 interface AnalyzeMutationVariables {
     symbol: string;

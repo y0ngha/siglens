@@ -9,7 +9,7 @@ import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitF
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { sleep } from '@/components/symbol-page/utils/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/infrastructure/market/pollingConfig';
+import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 async function fetchFundamentalAnalysis(

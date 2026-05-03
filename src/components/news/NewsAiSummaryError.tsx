@@ -1,10 +1,11 @@
 'use client';
 
-interface NewsAiSummaryErrorProps {
-    error: unknown;
-}
+import type { FallbackProps } from 'react-error-boundary';
 
-export function NewsAiSummaryError({ error }: NewsAiSummaryErrorProps) {
+export function NewsAiSummaryError({
+    error,
+    resetErrorBoundary,
+}: FallbackProps) {
     const message =
         error instanceof Error ? error.message : '분석 중 오류가 발생했습니다.';
 
@@ -22,6 +23,13 @@ export function NewsAiSummaryError({ error }: NewsAiSummaryErrorProps) {
             <p className="text-ui-danger text-sm" role="alert">
                 {message}
             </p>
+            <button
+                type="button"
+                onClick={resetErrorBoundary}
+                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 mt-4 rounded px-3 py-1.5 text-xs text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            >
+                다시 시도
+            </button>
         </section>
     );
 }

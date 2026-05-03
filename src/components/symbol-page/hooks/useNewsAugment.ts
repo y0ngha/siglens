@@ -6,7 +6,7 @@ import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnal
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { sleep } from '@/components/symbol-page/utils/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/infrastructure/market/pollingConfig';
+import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 
 // `null` is returned for the no-news case so the consumer can render nothing without throwing.
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.

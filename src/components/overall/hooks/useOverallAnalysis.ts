@@ -9,9 +9,10 @@ import type {
     OverallAxis,
     Timeframe,
 } from '@y0ngha/siglens-core';
-import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/infrastructure/market/pollingConfig';
-
-const MAX_DEPENDENCY_RETRIES = 20; // 20 × 3 s = 60 s wall-clock
+import {
+    AUGMENT_AND_OVERALL_POLL_INTERVAL_MS,
+    MAX_DEPENDENCY_RETRIES,
+} from '@/lib/pollingConfig';
 
 type OverallAnalysisState =
     | { status: 'idle' }

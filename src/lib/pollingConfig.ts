@@ -8,3 +8,6 @@ export const AUGMENT_AND_OVERALL_POLL_INTERVAL_MS = 3000;
 
 /** 차트 페이지 메인 분석 — 워커가 다단계 작업을 수행해 길게 잡는다. */
 export const CHART_ANALYSIS_POLL_INTERVAL_MS = 10000;
+
+/** Overall 분석 의존성(3축) 충족 대기 최대 횟수 — AUGMENT_AND_OVERALL_POLL_INTERVAL_MS × 20 = 60s wall-clock. */
+export const MAX_DEPENDENCY_RETRIES = 20;
