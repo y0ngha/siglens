@@ -113,6 +113,15 @@
 - Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
 - Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
 
+## [PR #413 R4 | feat/fundamental-news-analysis | 2026-05-02]
+- Violation: isEnrichedRow predicate used `NewsRow & EnrichedNewsItem` as the narrowed type, forcing 4 `as` casts in downstream mappers
+- Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards
+- Context: Introduced `EnrichedNewsRow extends NewsRow` with non-null fields + `toEnrichedNewsItem` mapper; replaced inline map+as-cast blocks in submitNewsAnalysisAction and submitOverallAnalysisAction with `.filter(isEnrichedRow).map(toEnrichedNewsItem)`.
+
+- Violation: SymbolTabs used `role="tablist"` + `role="tab"` on `<Link>` elements that navigate to different URLs
+- Rule: WCAG / ARIA Authoring Practices — tablist/tab is for same-page panel switching; URL navigation uses `<nav>` + `aria-current="page"`
+- Context: Converted SymbolTabs from div[role=tablist]+Link[role=tab]+aria-selected+tabIndex+handleKey to nav[aria-label]+Link[aria-current]. Removed keyboard arrow-key handler (nav landmark does not require it per ARIA contract).
+
 ## [Phase 2 cumulative | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: `.tsx` 컴포넌트 파일에서 `@/infrastructure/` 직접 import (Task 2.9, 2.10, 2.11에서 반복)
 - Rule: MISTAKES.md Architecture 0 — Component (.tsx) files importing directly from infrastructure
