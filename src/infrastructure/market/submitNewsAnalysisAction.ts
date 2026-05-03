@@ -11,7 +11,7 @@ import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
-import { isEnrichedRow } from '@/infrastructure/market/newsEnrichment';
+import { isEnrichedRow, toEnrichedNewsItem } from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/lib/dateKey';
 
 /**
@@ -40,27 +40,7 @@ export async function submitNewsAnalysisAction(
 
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
         .filter(isEnrichedRow)
-        .map(row => ({
-            id: row.id,
-            symbol: row.symbol,
-            source: row.source,
-            url: row.url,
-            publishedAt: row.publishedAt,
-            titleEn: row.titleEn,
-            bodyEn: row.bodyEn,
-            card: {
-                // isEnrichedRow predicate above guarantees titleKo is non-null at runtime
-                titleKo: row.titleKo as string,
-                bodyKo: row.bodyKo,
-                // isEnrichedRow predicate above guarantees summaryKo is non-null at runtime
-                summaryKo: row.summaryKo as string,
-                // isEnrichedRow predicate above guarantees sentiment is one of NewsSentiment literals
-                sentiment:
-                    row.sentiment as EnrichedNewsItem['card']['sentiment'],
-                // isEnrichedRow predicate above guarantees category is one of NewsCategory literals
-                category: row.category as EnrichedNewsItem['card']['category'],
-            },
-        }));
+        .map(toEnrichedNewsItem);
 
     return submitNewsAnalysis({
         symbol,
