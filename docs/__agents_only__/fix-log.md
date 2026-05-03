@@ -82,5 +82,18 @@
 - Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
 - Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
 
+## [Phase 2 cumulative | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: `.tsx` 컴포넌트 파일에서 `@/infrastructure/` 직접 import (Task 2.9, 2.10, 2.11에서 반복)
+- Rule: MISTAKES.md Architecture 0 — Component (.tsx) files importing directly from infrastructure
+- Context: 3개 task에서 동일 패턴 (FundamentalAiSummary, NewsList, OverallTriggerCta 각각 infra import → hooks로 이동). 패턴은 이미 MISTAKES.md에 문서화됨.
+
+- Violation: `as` 타입 단언 시 보증 주석 누락 (Task 2.1, 2.5, 2.6, 2.9, 2.11에서 반복)
+- Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards
+- Context: 4+ 수정 사례 (httpClient, Server Action mappers, FutureDirectionCard, URL params). 패턴은 이미 MISTAKES.md에 문서화됨.
+
+- Violation: 함수 반환 타입으로 인라인 객체 리터럴 사용 (Task 2.3, 2.4, 2.10에서 반복)
+- Rule: MISTAKES.md TypeScript 5.5 — Function return types using inline object literals
+- Context: NewsDbRow, NewsList 등에서 명명된 타입으로 추출됨. 패턴은 이미 MISTAKES.md에 문서화됨.
+
 
 
