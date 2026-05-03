@@ -2,14 +2,7 @@
 
 import { cancelOverallAnalysisJob } from '@y0ngha/siglens-core';
 
-/**
- * Server Action: send a cancellation signal for an in-flight overall analysis job.
- *
- * Errors are swallowed — cancellation is best-effort and the caller does not
- * need to handle failure.
- *
- * @param jobId - Job identifier returned by {@link submitOverallAnalysisAction}.
- */
+/** Server Action: best-effort cancel for `jobId` from {@link submitOverallAnalysisAction}; errors are swallowed. */
 export async function cancelOverallAnalysisJobAction(
     jobId: string
 ): Promise<void> {

@@ -5,20 +5,7 @@ import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 
-/**
- * Server Action: fetch fresh news from FMP, upsert each item to the DB,
- * and trigger per-card flash-lite analysis (one-shot).
- *
- * Called as fire-and-forget on news page entry — the page renders with
- * whatever rows are already in the DB; subsequent loads benefit from the
- * freshly analysed cards.
- *
- * Error handling:
- * - FMP or DB failures are caught per-item and logged; the action always
- *   resolves without throwing so the caller's `void` dispatch is safe.
- *
- * @param symbol - Uppercased U.S. equity ticker (e.g. `"AAPL"`).
- */
+/** Server Action: fetch fresh FMP news for `symbol`, upsert to DB, and trigger per-card AI analysis (fire-and-forget safe — per-item errors are logged, never thrown). */
 export async function ensureNewsCardsAnalyzedAction(
     symbol: string
 ): Promise<void> {

@@ -17,17 +17,7 @@ import {
 } from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/lib/dateKey';
 
-/**
- * Server Action: submit a news analysis job for the given symbol.
- *
- * Loads the last 7 days of news from the DB, filters to fully-analyzed cards,
- * looks up the next upcoming earnings event, then delegates to
- * `submitNewsAnalysis` from siglens-core.
- *
- * @param symbol  - U.S. equity ticker (e.g. `"AAPL"`).
- * @param modelId - LLM model identifier used for analysis and cache scoping.
- * @returns Submission outcome — `cached`, `submitted`, or `error`.
- */
+/** Server Action: load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
 export async function submitNewsAnalysisAction(
     symbol: string,
     modelId: SubmitNewsAnalysisOptions['modelId']

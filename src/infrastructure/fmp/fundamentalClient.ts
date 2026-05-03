@@ -262,12 +262,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /**
-     * Fetch the sector performance snapshot for a single trading date.
-     *
-     * @param date - Trading date in `YYYY-MM-DD` format.
-     * @returns Array of domain-neutral sector performance entries for that date.
-     */
+    /** Fetch sector performance for `date` (YYYY-MM-DD); returns domain-neutral entries. */
     async getSectorPerformanceSnapshot(
         date: string
     ): Promise<FundamentalSectorPerformanceInput[]> {
@@ -281,12 +276,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         }));
     }
 
-    /**
-     * Fetch historical daily sector performance for a given sector name.
-     *
-     * @param sector - Sector name as returned by FMP (e.g. `"Technology"`).
-     * @returns Array of domain-neutral historical sector performance entries.
-     */
+    /** Fetch historical daily sector performance for `sector` (FMP sector name, e.g. `"Technology"`). */
     async getHistoricalSectorPerformance(
         sector: string
     ): Promise<FundamentalSectorHistoricalInput[]> {

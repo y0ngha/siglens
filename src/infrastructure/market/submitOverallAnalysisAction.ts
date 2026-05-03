@@ -19,22 +19,7 @@ import {
 } from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/lib/dateKey';
 
-/**
- * Server Action: submit an overall (3-axis) analysis job for the given symbol.
- *
- * Loads the last 7 days of news from the DB, filters to fully-analyzed cards,
- * looks up the next upcoming earnings event, then delegates to
- * `submitOverallAnalysis` from siglens-core with an FMP-backed fundamental
- * provider.
- *
- * The `technical` axis options are left empty (pre-Phase 4 behavior); tier and
- * usage checks are skipped until Phase 4.
- *
- * @param symbol    - U.S. equity ticker (e.g. `"AAPL"`).
- * @param timeframe - Bar resolution for the technical analysis axis.
- * @param modelId   - LLM model identifier scoped across all three axes.
- * @returns Submission outcome — `cached`, `submitted`, `pending_dependencies`, or `error`.
- */
+/** Server Action: submit a 3-axis overall analysis job; loads enriched news + earnings from DB, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
 export async function submitOverallAnalysisAction(
     symbol: string,
     timeframe: Timeframe,
