@@ -6,6 +6,7 @@ import {
     getGradeEvents,
     getNextEarningsCalendar,
     getLatestEarningsReport,
+    todayKstIsoDate,
 } from './newsData';
 import { NewsList } from '@/components/news/sections/NewsList';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
@@ -83,8 +84,9 @@ async function NewsListSection({ symbol }: { symbol: string }) {
 }
 
 async function EventCalendarSection({ symbol }: { symbol: string }) {
+    const today = todayKstIsoDate();
     const [nextEarnings, latestReport] = await Promise.all([
-        getNextEarningsCalendar(symbol),
+        getNextEarningsCalendar(symbol, today),
         getLatestEarningsReport(symbol),
     ]);
     return (

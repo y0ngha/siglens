@@ -25,6 +25,8 @@ import {
     NEWS_EARNINGS_REPORT_TTL_S,
 } from '@/lib/news/cacheTtl';
 
+export { todayKstIsoDate } from '@/lib/dateKey';
+
 // ─── T1: 15 minutes ──────────────────────────────────────────────────────────
 
 export async function getNewsList(symbol: string): Promise<NewsRow[]> {
@@ -50,7 +52,8 @@ export async function getGradeEvents(symbol: string): Promise<GradesEvent[]> {
 // ─── T3: 7 days ──────────────────────────────────────────────────────────────
 
 export async function getNextEarningsCalendar(
-    symbol: string
+    symbol: string,
+    today: string
 ): Promise<EarningsCalendarItem | null> {
     'use cache';
     cacheLife({ revalidate: NEWS_EARNINGS_REPORT_TTL_S });
@@ -58,7 +61,6 @@ export async function getNextEarningsCalendar(
 
     const { db } = getDatabaseClient();
     const repo = new DrizzleEarningsCalendarRepository(db);
-    const today = new Date().toISOString().slice(0, 10);
     return repo.getNextForSymbol(symbol, today);
 }
 

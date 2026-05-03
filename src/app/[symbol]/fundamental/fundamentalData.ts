@@ -94,18 +94,8 @@ export const getPriceTargetSummary = unstable_cache(
     { revalidate: TTL_T2_24H, tags: ['fundamental:price-target-summary'] }
 );
 
-// ─── KST date helper ─────────────────────────────────────────────────────────
-
-/**
- * Returns today's date in KST as an ISO-8601 date string (YYYY-MM-DD).
- *
- * Called at server render time; with a 1h TTL the staleness window is bounded
- * to at most one hour even when the date rolls over at midnight KST.
- */
-export function todayKstIsoDate(): string {
-    const kstOffsetMs = 9 * 60 * 60 * 1000;
-    return new Date(Date.now() + kstOffsetMs).toISOString().slice(0, 10);
-}
+// ─── KST date helper (re-exported for page layer convenience) ─────────────────
+export { todayKstIsoDate } from '@/lib/dateKey';
 
 // ─── T2: 1 hour (date-keyed) ─────────────────────────────────────────────────
 
