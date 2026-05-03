@@ -20,7 +20,11 @@ import {
     type LlmProvider,
 } from '@y0ngha/siglens-core';
 import { isFreeChatModel } from '@/domain/llm';
-import type { GateMode } from '@/domain/types';
+import type {
+    ContextSwitchMessage,
+    DisplayMessage,
+    GateMode,
+} from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
@@ -38,26 +42,6 @@ import {
     useRef,
     useState,
 } from 'react';
-
-/**
- * UI-only system message emitted when the chatbot's page-level analysis
- * context switches (user navigates between symbol sub-pages).
- *
- * Never sent to the LLM — filtered out before prompt construction.
- */
-export interface ContextSwitchMessage {
-    role: 'system';
-    kind: 'context_switch';
-    /** Korean label of the page the chatbot context switched to. */
-    label: string;
-}
-
-/**
- * Union of all message shapes that can appear in the chat display history.
- * `ChatMessage` (user | model) comes from siglens-core; `ContextSwitchMessage`
- * is a UI-only addition that is never forwarded to the LLM.
- */
-export type DisplayMessage = ChatMessage | ContextSwitchMessage;
 
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;

@@ -1,7 +1,7 @@
 'use client';
 
 import type { ChatLoadingPhase } from '@y0ngha/siglens-core';
-import type { DisplayMessage } from '@/components/chat/hooks/useChat';
+import type { DisplayMessage } from '@/domain/types';
 import {
     type KeyboardEvent,
     type RefObject,

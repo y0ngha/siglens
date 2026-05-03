@@ -113,3 +113,27 @@ export interface PwaEnvironment {
     isInAppBrowser: boolean;
     isStandalone: boolean;
 }
+
+// ─── Chat display types ───────────────────────────────────────────────────────
+
+import type { ChatMessage } from '@y0ngha/siglens-core';
+
+/**
+ * UI-only system message emitted when the chatbot's page-level analysis
+ * context switches (user navigates between symbol sub-pages).
+ *
+ * Never sent to the LLM — filtered out before prompt construction.
+ */
+export interface ContextSwitchMessage {
+    role: 'system';
+    kind: 'context_switch';
+    /** Korean label of the page the chatbot context switched to. */
+    label: string;
+}
+
+/**
+ * Union of all message shapes that can appear in the chat display history.
+ * `ChatMessage` (user | model) comes from siglens-core; `ContextSwitchMessage`
+ * is a UI-only addition that is never forwarded to the LLM.
+ */
+export type DisplayMessage = ChatMessage | ContextSwitchMessage;
