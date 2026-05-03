@@ -18,6 +18,7 @@ import { useAnalysisDerivedData } from '@/components/symbol-page/hooks/useAnalys
 import { useAnalysisDisplay } from '@/components/symbol-page/hooks/useAnalysisDisplay';
 import { useActionPricesVisibility } from '@/components/symbol-page/hooks/useActionPricesVisibility';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
+import { useUserTier } from '@/components/symbol-page/hooks/useUserTier';
 import {
     PANEL_MAX_WIDTH,
     PANEL_MIN_WIDTH,
@@ -125,8 +126,12 @@ export function ChartContent({
 
     const [selectedProvider, setSelectedProvider] = useSelectedProvider();
 
-    const DEFAULT_TIER = 'free' as const;
-    const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);
+    // Resolve the user's tier from the server (guests fall back to 'free') so
+    // the model picker reflects the actual entitlement instead of a hardcoded
+    // value. The single source of truth for tier→model mapping lives in
+    // siglens-core's TIER_CONFIG.
+    const { tier } = useUserTier();
+    const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
 
     const modelId = useMemo(
         () =>

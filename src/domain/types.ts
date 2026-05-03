@@ -2,7 +2,7 @@
 export type OAuthProvider = 'google' | 'kakao' | 'apple';
 
 /** siglens 앱에서 현재 활성화된 OAuth provider. */
-export type SupportedOAuthProvider = Extract<OAuthProvider, 'google' | 'kakao'>;
+export type SupportedOAuthProvider = Extract<OAuthProvider, 'google'>;
 
 /** Common ticker fields shared by listing/search results. */
 export interface TickerBase {

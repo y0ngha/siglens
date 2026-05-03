@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { eq, lt } from 'drizzle-orm';
 import { sessions } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 import type {
@@ -47,5 +47,14 @@ export class DrizzleSessionRepository implements SessionRepository {
             .returning({ id: sessions.id });
 
         return deletedSessions.length > 0;
+    }
+
+    async deleteExpiredSessions(now: Date = new Date()): Promise<number> {
+        const deleted = await this.db
+            .delete(sessions)
+            .where(lt(sessions.expiresAt, now))
+            .returning({ id: sessions.id });
+
+        return deleted.length;
     }
 }

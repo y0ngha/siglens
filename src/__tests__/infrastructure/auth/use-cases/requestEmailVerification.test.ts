@@ -44,6 +44,7 @@ function makeDependencies(options?: {
                 set: setToken,
                 get: jest.fn(),
                 delete: jest.fn(),
+                consume: jest.fn(),
             },
             emailDispatcher: { sendEmail },
         },

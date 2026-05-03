@@ -63,6 +63,17 @@ export function tryReadEncryptionKey(): string | null {
     return tryParseEncryptionKey(process.env.OAUTH_TOKEN_ENCRYPTION_KEY);
 }
 
+/** Read the OAuth token encryption key, throwing when absent or invalid; use this whenever silently storing null tokens would be unacceptable (e.g. during OAuth signup token persistence). */
+export function requireOauthTokenEncryptionKey(): string {
+    const encryptionKey = tryReadEncryptionKey();
+    if (encryptionKey === null) {
+        throw new Error(
+            'OAUTH_TOKEN_ENCRYPTION_KEY environment variable is required for OAuth token encryption'
+        );
+    }
+    return encryptionKey;
+}
+
 /** @internal Read and validate the LLM API key encryption key from the environment; returns the hex key string when valid, or null otherwise. */
 export function tryReadLlmApiKeyEncryptionKey(): string | null {
     return tryParseEncryptionKey(process.env.LLM_API_KEY_ENCRYPTION_KEY);

@@ -7,10 +7,11 @@ import {
 describe('isOAuthProvider', () => {
     it('활성화된 provider 문자열은 true를 반환한다', () => {
         expect(isOAuthProvider('google')).toBe(true);
-        expect(isOAuthProvider('kakao')).toBe(true);
     });
     it('siglens-core가 알지만 siglens 앱에서 비활성화된 provider는 false', () => {
         expect(isOAuthProvider('apple')).toBe(false);
+        // Kakao login은 현재 비활성화되어 있다. (SUPPORTED_PROVIDERS 참고)
+        expect(isOAuthProvider('kakao')).toBe(false);
     });
     it('지원하지 않는 문자열은 false를 반환한다', () => {
         expect(isOAuthProvider('facebook')).toBe(false);
@@ -21,7 +22,6 @@ describe('isOAuthProvider', () => {
 describe('getOAuthAdapter', () => {
     it('각 provider id에 대응하는 어댑터를 반환한다', () => {
         expect(getOAuthAdapter('google').id).toBe('google');
-        expect(getOAuthAdapter('kakao').id).toBe('kakao');
     });
 });
 
@@ -45,8 +45,8 @@ describe('buildOAuthRedirectUri', () => {
     it('OAUTH_REDIRECT_BASE_URL이 없으면 NEXT_PUBLIC_SITE_URL로 fallback한다', () => {
         delete process.env.OAUTH_REDIRECT_BASE_URL;
         process.env.NEXT_PUBLIC_SITE_URL = 'https://siglens.app';
-        expect(buildOAuthRedirectUri('kakao')).toBe(
-            'https://siglens.app/api/auth/callback/kakao'
+        expect(buildOAuthRedirectUri('google')).toBe(
+            'https://siglens.app/api/auth/callback/google'
         );
     });
 

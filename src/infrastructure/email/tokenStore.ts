@@ -20,15 +20,9 @@ export type EmailTokenValue =
     | { status: 'pending'; tokenHash: string }
     | { status: 'verified' };
 
-/**
- * Redis-backed key-value store for email-token state. Keys are derived from
- * `(purpose, email)` pairs by the implementation; callers never see raw keys.
- */
+/** Redis 기반 email-token KV store; 키는 구현체가 (purpose, email)에서 파생. */
 export interface EmailTokenStore {
-    /**
-     * Persist {@link value} under `(purpose, email)` with the given TTL.
-     * Overwrites any existing value for the same pair.
-     */
+    /** (purpose, email)에 value를 TTL과 함께 저장 (덮어쓰기). */
     set(
         purpose: EmailTokenPurpose,
         email: string,
@@ -36,31 +30,27 @@ export interface EmailTokenStore {
         ttlSeconds: number
     ): Promise<void>;
 
-    /**
-     * Read the persisted value for `(purpose, email)`, or `null` when no entry
-     * exists or the entry has expired.
-     */
+    /** (purpose, email) 값을 읽거나, 없거나 만료 시 null. */
     get(
         purpose: EmailTokenPurpose,
         email: string
     ): Promise<EmailTokenValue | null>;
 
-    /** Delete the entry for `(purpose, email)`. No-op when no entry exists. */
+    /** (purpose, email) 항목 삭제 — 없으면 no-op. */
     delete(purpose: EmailTokenPurpose, email: string): Promise<void>;
+
+    // 단일 사용 토큰(비밀번호 재설정 등) 재사용 방지를 위해 동시 caller 중 단 하나만
+    // non-null을 받도록 atomic read+delete 보장 필수.
+    /** (purpose, email)을 atomic하게 읽고 삭제 — 사전 값 또는 null 반환. */
+    consume(
+        purpose: EmailTokenPurpose,
+        email: string
+    ): Promise<EmailTokenValue | null>;
 }
 
-/**
- * Abstraction for delivering transactional emails.
- *
- * Consumers inject their own implementation (Resend, SendGrid, SMTP, etc.)
- * into use-cases that need to dispatch email.
- */
+/** 트랜잭셔널 이메일 발송 추상 (Resend/SendGrid/SMTP 등을 use-case에 주입). */
 export interface EmailDispatcher {
-    /**
-     * Send a transactional email message.
-     *
-     * @returns `true` when accepted for delivery, `false` otherwise.
-     */
+    /** 메시지 발송 — 전송 수락 시 true, 거절 시 false. */
     sendEmail(message: EmailMessage): Promise<boolean>;
 }
 
@@ -69,7 +59,8 @@ const KEY_PREFIX = 'email_token';
 interface UpstashConfig {
     url: string;
     token: string;
-    readonlyToken: string;
+    /** Optional read-only token; null when the env var is unset (no separate reader is created in that case). */
+    readonlyToken: string | null;
 }
 
 interface RedisPair {
@@ -84,11 +75,12 @@ function readUpstashConfig(): UpstashConfig | null {
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
     if (!url || !token) return null;
-    return {
-        url,
-        token,
-        readonlyToken: process.env.UPSTASH_REDIS_REST_READONLY_TOKEN ?? '',
-    };
+    // Treat empty string as "unset" so a literal empty env var doesn't collide
+    // with a real readonly token in the cache key below.
+    const rawReadonly = process.env.UPSTASH_REDIS_REST_READONLY_TOKEN;
+    const readonlyToken =
+        rawReadonly === undefined || rawReadonly === '' ? null : rawReadonly;
+    return { url, token, readonlyToken };
 }
 
 /** @internal Test-only reset of the cached Redis client pair. */
@@ -106,26 +98,28 @@ export function buildEmailTokenKey(
 }
 
 function getRedisPair(config: UpstashConfig): RedisPair {
-    const configKey = `${config.url}:${config.token}:${config.readonlyToken}`;
+    // Encode "no readonly token" distinctly from "configured empty string" so a
+    // future change in env handling can never collide identities. The 2-segment
+    // form is reserved for the unset case; the 3-segment form for configured.
+    const configKey =
+        config.readonlyToken === null
+            ? `${config.url}:${config.token}`
+            : `${config.url}:${config.token}:${config.readonlyToken}`;
     if (cachedRedisPair !== null && cachedConfigKey === configKey) {
         return cachedRedisPair;
     }
 
     const writer = new Redis({ url: config.url, token: config.token });
-    const reader = config.readonlyToken
-        ? new Redis({ url: config.url, token: config.readonlyToken })
-        : writer;
+    const reader =
+        config.readonlyToken !== null
+            ? new Redis({ url: config.url, token: config.readonlyToken })
+            : writer;
     cachedRedisPair = { writer, reader };
     cachedConfigKey = configKey;
     return cachedRedisPair;
 }
 
-/**
- * Construct an {@link EmailTokenStore} backed by Upstash Redis.
- *
- * Returns `null` when the required env vars are not present so callers can
- * decide how to degrade.
- */
+/** Upstash Redis 기반 EmailTokenStore 생성 — 환경변수 부재 시 null (caller가 graceful degrade 결정). */
 export function createEmailTokenStore(): EmailTokenStore | null {
     const config = readUpstashConfig();
     if (!config) return null;
@@ -145,6 +139,15 @@ export function createEmailTokenStore(): EmailTokenStore | null {
         },
         async delete(purpose, email) {
             await writer.del(buildEmailTokenKey(purpose, email));
+        },
+        async consume(purpose, email) {
+            // Upstash Redis exposes GETDEL which atomically returns the value
+            // and deletes the key in a single round-trip. This is the primitive
+            // that prevents two concurrent password-reset confirmations from
+            // both observing the same pending token.
+            const key = buildEmailTokenKey(purpose, email);
+            const value = await writer.getdel<EmailTokenValue>(key);
+            return value ?? null;
         },
     };
 }

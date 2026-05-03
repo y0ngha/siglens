@@ -1,3 +1,14 @@
+// Service Worker cache name.
+//
+// IMPORTANT: bump this version on every deploy that ships breaking cache
+// changes (new precache entries, removed/renamed routes, changed offline
+// fallback). The activate handler purges any cache whose name does not
+// match CACHE_NAME, so bumping is what triggers stale-cache cleanup.
+//
+// We could not adopt build-time substitution here without invasive build
+// changes (Next does not pipe a per-deploy ID into public/* by default
+// and a meta-tag handshake adds runtime complexity). The manual-bump
+// policy is the lowest-risk option for now.
 const CACHE_NAME = 'siglens-v1';
 
 // Only precache the offline fallback page at install time.
@@ -12,6 +23,10 @@ self.addEventListener('install', event => {
     event.waitUntil(
         caches.open(CACHE_NAME).then(cache => cache.addAll(PRECACHE_URLS)),
     );
+    // skipWaiting() activates the new SW immediately. The client-side
+    // registration listens for `controllerchange` and performs a soft
+    // reload so the freshly-activated SW does not serve stale cached
+    // HTML against newly-loaded hashed JS chunks (hydration mismatch).
     self.skipWaiting();
 });
 

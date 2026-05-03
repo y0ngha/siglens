@@ -2,17 +2,20 @@ import {
     hashUsageIp,
     type RecordUsageInput,
     type UsageActionType,
-    type UsageCounts,
     type UsageLogRecord,
-    type UsageRepository,
 } from '@y0ngha/siglens-core';
 import { and, count, eq } from 'drizzle-orm';
 import { usageLogs } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
+import type {
+    SiglensUsageCounts,
+    SiglensUsageRepository,
+} from '@/infrastructure/db/usageCounts';
 
-const EMPTY_USAGE_COUNTS: UsageCounts = {
+const EMPTY_USAGE_COUNTS: SiglensUsageCounts = {
     analysis: 0,
     chatbot: 0,
+    premium_model: 0,
 };
 
 const UTC_DATE_LENGTH = 10;
@@ -24,7 +27,7 @@ function toUtcDateString(date: Date): string {
 
 function toUsageCounts(
     rows: readonly { actionType: UsageActionType; count: number | string }[]
-): UsageCounts {
+): SiglensUsageCounts {
     return rows.reduce(
         (counts, row) => ({
             ...counts,
@@ -34,8 +37,8 @@ function toUsageCounts(
     );
 }
 
-/** Drizzle ORM implementation of {@link UsageRepository} backed by usage_logs. */
-export class DrizzleUsageRepository implements UsageRepository {
+/** Drizzle ORM implementation of {@link SiglensUsageRepository} backed by usage_logs. */
+export class DrizzleUsageRepository implements SiglensUsageRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
     async recordUsage(input: RecordUsageInput): Promise<UsageLogRecord> {
@@ -65,7 +68,7 @@ export class DrizzleUsageRepository implements UsageRepository {
     async getUsageToday(
         ipHash: string,
         now: Date = new Date()
-    ): Promise<UsageCounts> {
+    ): Promise<SiglensUsageCounts> {
         const rows = await this.db
             .select({
                 actionType: usageLogs.actionType,

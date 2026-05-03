@@ -1,11 +1,11 @@
 import { DEFAULT_TIER, type Tier } from '@y0ngha/siglens-core';
 import type { OAuthProvider } from '@/domain/types';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { oauthAccounts, users } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 import {
     encryptToken,
-    tryReadEncryptionKey,
+    requireOauthTokenEncryptionKey,
 } from '@/infrastructure/db/tokenEncryption';
 import type {
     AuthUserRecord,
@@ -22,9 +22,9 @@ class OAuthAccountConflictError extends Error {}
 
 function encryptOptional(
     token: string | undefined,
-    encryptionKey: string | null
+    encryptionKey: string
 ): string | null {
-    if (token === undefined || encryptionKey === null) {
+    if (token === undefined) {
         return null;
     }
     return encryptToken(token, encryptionKey);
@@ -95,7 +95,7 @@ export class DrizzleUserRepository
     ): Promise<boolean> {
         const updatedUsers = await this.db
             .update(users)
-            .set({ passwordHash })
+            .set({ passwordHash, updatedAt: sql`now()` })
             .where(eq(users.id, userId))
             .returning({ id: users.id });
 
@@ -155,6 +155,11 @@ export class DrizzleUserRepository
     async createOAuthUser(
         input: CreateOAuthUserInput
     ): Promise<AuthUserRecord | null> {
+        // Resolve encryption key BEFORE opening the transaction so that a missing
+        // OAUTH_TOKEN_ENCRYPTION_KEY aborts the entire operation instead of
+        // silently persisting null tokens for fresh OAuth signups.
+        const encryptionKey = requireOauthTokenEncryptionKey();
+
         try {
             return await this.db.transaction(async tx => {
                 const [user] = await tx
@@ -173,8 +178,6 @@ export class DrizzleUserRepository
                 if (user === undefined) {
                     return null;
                 }
-
-                const encryptionKey = tryReadEncryptionKey();
 
                 const [account] = await tx
                     .insert(oauthAccounts)
@@ -228,7 +231,7 @@ export class DrizzleUserRepository
     async updateUserTier(userId: string, tier: Tier): Promise<Tier | null> {
         const [user] = await this.db
             .update(users)
-            .set({ tier })
+            .set({ tier, updatedAt: sql`now()` })
             .where(eq(users.id, userId))
             .returning({ tier: users.tier });
 

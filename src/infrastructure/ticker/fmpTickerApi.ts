@@ -15,6 +15,31 @@ const US_EXCHANGES: ReadonlySet<string> = new Set([
 
 type FmpEndpoint = 'search-symbol' | 'search-name';
 
+/** Type guard validating per-element FMP response shape before trusting it as `FmpSearchResult`. */
+function isFmpSearchResultLike(value: unknown): value is FmpSearchResult {
+    if (value === null || typeof value !== 'object') return false;
+    const v = value as Record<string, unknown>;
+    return (
+        typeof v.symbol === 'string' &&
+        typeof v.name === 'string' &&
+        typeof v.currency === 'string' &&
+        typeof v.exchange === 'string' &&
+        typeof v.exchangeFullName === 'string'
+    );
+}
+
+/** Filter raw FMP rows down to validated `FmpSearchResult` entries; logs and drops malformed rows. */
+function toFmpSearchResults(raw: readonly unknown[]): FmpSearchResult[] {
+    const valid = raw.filter(isFmpSearchResultLike);
+    const dropped = raw.length - valid.length;
+    if (dropped > 0) {
+        console.warn(
+            `[fmpTickerApi] dropped ${dropped} malformed FMP row(s) (missing required fields)`
+        );
+    }
+    return valid;
+}
+
 export function toTickerSearchResult(fmp: FmpSearchResult): TickerSearchResult {
     return {
         symbol: fmp.symbol,
@@ -52,10 +77,10 @@ async function fetchFmpEndpoint(
         if (!res.ok) return [];
         const raw: unknown = await res.json();
         // FMP search endpoints return a JSON array of records matching FmpSearchResult.
-        // We verify array shape via Array.isArray; per-element shape is not validated at
-        // runtime — caller-side `filterUsExchanges` and `toTickerSearchResult` rely on
-        // FMP's documented response contract. Cast scope is limited to this boundary.
-        return Array.isArray(raw) ? (raw as FmpSearchResult[]) : [];
+        // We validate per-element shape with `toFmpSearchResults` so malformed rows
+        // (missing required fields) are dropped before reaching downstream consumers
+        // (`filterUsExchanges`, `toTickerSearchResult`).
+        return Array.isArray(raw) ? toFmpSearchResults(raw) : [];
     } catch {
         return [];
     }

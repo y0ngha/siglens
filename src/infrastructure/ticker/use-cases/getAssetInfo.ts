@@ -20,6 +20,7 @@ import {
     setKoreanTickers,
 } from '@/infrastructure/ticker/use-cases/koreanNameStore';
 import type { AssetInfoMatch } from '@/infrastructure/ticker/use-cases/types';
+import { createSingleFlight } from '@/infrastructure/ticker/utils/singleFlight';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { AssetInfo, KoreanTickerEntry } from '@/domain/types';
 
@@ -100,32 +101,47 @@ async function persistTranslation(
     );
 }
 
-async function translateAndPersist(
+/** Single-flight registry for fire-and-forget translate-and-persist work; collapses concurrent calls for the same symbol into one Gemini request. */
+const translationSingleFlight = createSingleFlight<void>();
+
+function translateAndPersist(
     symbol: string,
     match: AssetInfoMatch,
     cache: CacheProvider | null
 ): Promise<void> {
-    const translated = await translateCompanyNames([
-        { symbol, name: match.name },
-    ]);
-    const koreanName = translated[symbol];
-    if (!koreanName) return;
+    return translationSingleFlight.run(symbol, async () => {
+        const translated = await translateCompanyNames([
+            { symbol, name: match.name },
+        ]);
+        const koreanName = translated[symbol];
+        if (!koreanName) return;
 
-    const entry: KoreanTickerEntry = {
-        symbol,
-        name: match.name,
-        koreanName,
-        exchange: match.exchange,
-        exchangeFullName: match.exchangeFullName,
-    };
-    await setKoreanTickers([entry]);
-    await persistTranslation(
-        symbol,
-        match.symbol,
-        match.name,
-        koreanName,
-        cache
-    );
+        // Mapping intent (do not invert):
+        // - korean_tickers.symbol holds the canonical (cashtag) symbol, e.g. "AAPL"
+        // - asset_translations.symbol holds the canonical symbol (PK)
+        // - asset_translations.fmp_symbol holds the FMP-side symbol, e.g. "AAPL.MX"
+        // For US equities canonical === fmpSymbol; they diverge for indices etc.
+        const entry: KoreanTickerEntry = {
+            symbol,
+            name: match.name,
+            koreanName,
+            exchange: match.exchange,
+            exchangeFullName: match.exchangeFullName,
+        };
+        await setKoreanTickers([entry]);
+        await persistTranslation(
+            symbol,
+            match.symbol,
+            match.name,
+            koreanName,
+            cache
+        );
+    });
+}
+
+/** @internal Test helper — clears the in-flight registry between cases. */
+export function _resetInFlightTranslationsForTest(): void {
+    translationSingleFlight._resetForTest();
 }
 
 /** Resolve canonical asset information for a single ticker symbol via cache → DB → FMP, with optional background Korean-name translation. */

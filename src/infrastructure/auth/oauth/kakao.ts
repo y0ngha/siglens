@@ -1,3 +1,4 @@
+// NOTE: Kakao login is currently disabled — see SUPPORTED_PROVIDERS in providers.ts.
 import type {
     OAuthProviderAdapter,
     OAuthProfileResult,

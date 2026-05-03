@@ -158,7 +158,7 @@ describe('DrizzleUsageRepository', () => {
         expect(from).toHaveBeenCalledWith(usageLogs);
         expect(where).toHaveBeenCalledWith(expect.any(Object));
         expect(groupBy).toHaveBeenCalledWith(usageLogs.actionType);
-        expect(result).toEqual({ analysis: 2, chatbot: 3 });
+        expect(result).toEqual({ analysis: 2, chatbot: 3, premium_model: 0 });
     });
 
     it('returns zero for action types with no rows today', async () => {
@@ -170,7 +170,7 @@ describe('DrizzleUsageRepository', () => {
             new Date('2026-04-28T12:00:00.000Z')
         );
 
-        expect(result).toEqual({ analysis: 4, chatbot: 0 });
+        expect(result).toEqual({ analysis: 4, chatbot: 0, premium_model: 0 });
     });
 
     it('returns zero counts when no usage rows exist today', async () => {
@@ -182,7 +182,22 @@ describe('DrizzleUsageRepository', () => {
             new Date('2026-04-28T12:00:00.000Z')
         );
 
-        expect(result).toEqual({ analysis: 0, chatbot: 0 });
+        expect(result).toEqual({ analysis: 0, chatbot: 0, premium_model: 0 });
+    });
+
+    it('returns the premium_model count when DB rows exist for it', async () => {
+        const { db } = makeUsageCountDb([
+            { actionType: 'analysis', count: 1 },
+            { actionType: 'premium_model', count: 5 },
+        ]);
+        const repository = new DrizzleUsageRepository(db);
+
+        const result = await repository.getUsageToday(
+            'hashed-ip',
+            new Date('2026-04-28T12:00:00.000Z')
+        );
+
+        expect(result).toEqual({ analysis: 1, chatbot: 0, premium_model: 5 });
     });
 
     it('uses the infrastructure clock when counting today usage without a date override', async () => {
@@ -193,6 +208,6 @@ describe('DrizzleUsageRepository', () => {
 
         const result = await repository.getUsageToday('hashed-ip');
 
-        expect(result).toEqual({ analysis: 0, chatbot: 1 });
+        expect(result).toEqual({ analysis: 0, chatbot: 1, premium_model: 0 });
     });
 });

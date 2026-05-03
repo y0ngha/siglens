@@ -1,3 +1,4 @@
+import type { AuthUserRecord } from '@/domain/auth/types';
 import {
     normalizeEmail,
     validateEmail,
@@ -54,24 +55,36 @@ export async function registerUser(
 
     const existingUser = await dependencies.users.findByEmail(email);
     if (existingUser !== null) {
+        // Existing account → keep the marker around so the user can hit
+        // "register" again without re-verifying. The marker will TTL-expire on
+        // its own. This intentionally does NOT delete the marker.
         return { ok: false, error: emailAlreadyExistsError() };
     }
 
-    const passwordHash = await dependencies.passwordHasher.hashPassword(
-        input.password
-    );
-    const user = await dependencies.users.createEmailUser({
-        email,
-        passwordHash,
-        name: input.name?.trim() || null,
-        avatarUrl: input.avatarUrl?.trim() || null,
-        emailVerified: true,
-    });
+    // Once we're past the email-already-exists gate, the verified marker has
+    // served its purpose. Clear it under finally so that an exception thrown by
+    // hashPassword / createEmailUser doesn't leave the marker pinned for its
+    // remaining 30-minute TTL (otherwise an attacker who could read DB could
+    // still treat the email as "already verified" until expiry).
+    let user: AuthUserRecord | null = null;
+    try {
+        const passwordHash = await dependencies.passwordHasher.hashPassword(
+            input.password
+        );
+        user = await dependencies.users.createEmailUser({
+            email,
+            passwordHash,
+            name: input.name?.trim() || null,
+            avatarUrl: input.avatarUrl?.trim() || null,
+            emailVerified: true,
+        });
+    } finally {
+        await dependencies.emailTokens.delete(PURPOSE, email);
+    }
 
     if (user === null) {
         return { ok: false, error: emailAlreadyExistsError() };
     }
 
-    await dependencies.emailTokens.delete(PURPOSE, email);
     return { ok: true, user };
 }

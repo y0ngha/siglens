@@ -184,6 +184,102 @@ describe('createEmailTokenStore', () => {
         });
     });
 
+    it('cache key disambiguates "readonly token unset" from a configured value', () => {
+        // Configure with no readonly token first; this caches one Redis pair.
+        setEnv({
+            UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
+            UPSTASH_REDIS_REST_TOKEN: 'master-token',
+            UPSTASH_REDIS_REST_READONLY_TOKEN: '',
+        });
+        createEmailTokenStore();
+        const callsAfterUnset = MockRedis.mock.calls.length;
+
+        // Now configure a readonly token equal to the empty string. With the
+        // old `?? ''` sentinel, this would collide with the unset case (config
+        // key identical: "...:master-token:"). After the fix, the keys differ:
+        // "url:master-token" vs "url:master-token:somevalue".
+        setEnv({
+            UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
+            UPSTASH_REDIS_REST_TOKEN: 'master-token',
+            UPSTASH_REDIS_REST_READONLY_TOKEN: 'configured-readonly',
+        });
+        createEmailTokenStore();
+        // A new pair (writer + reader) must have been created.
+        expect(MockRedis.mock.calls.length).toBeGreaterThan(callsAfterUnset);
+    });
+
+    describe('consume()', () => {
+        beforeEach(() => {
+            setEnv({
+                UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',
+                UPSTASH_REDIS_REST_TOKEN: 'master-token',
+                UPSTASH_REDIS_REST_READONLY_TOKEN: '',
+            });
+        });
+
+        it('atomically returns and deletes the value via writer.getdel', async () => {
+            const stored: EmailTokenValue = {
+                status: 'pending',
+                tokenHash: 'hash',
+            };
+            const mockGetdel = jest.fn().mockResolvedValue(stored);
+            MockRedis.mockImplementation(() => ({
+                get: jest.fn(),
+                set: jest.fn(),
+                del: jest.fn(),
+                getdel: mockGetdel,
+            }));
+
+            const store = createEmailTokenStore()!;
+            const value = await store.consume(
+                'password_reset',
+                'user@example.com'
+            );
+            expect(mockGetdel).toHaveBeenCalledWith(
+                'email_token:password_reset:user@example.com'
+            );
+            expect(value).toEqual(stored);
+        });
+
+        it('returns null when the key did not exist', async () => {
+            const mockGetdel = jest.fn().mockResolvedValue(null);
+            MockRedis.mockImplementation(() => ({
+                get: jest.fn(),
+                set: jest.fn(),
+                del: jest.fn(),
+                getdel: mockGetdel,
+            }));
+
+            const store = createEmailTokenStore()!;
+            const value = await store.consume(
+                'password_reset',
+                'user@example.com'
+            );
+            expect(value).toBeNull();
+        });
+
+        it('returns the raw stored value without filtering by status', async () => {
+            // consume() must hand back whatever shape getdel returns; status
+            // gating is the caller's responsibility (e.g. confirmPasswordReset
+            // must verify status === 'pending' itself).
+            const stored: EmailTokenValue = { status: 'verified' };
+            const mockGetdel = jest.fn().mockResolvedValue(stored);
+            MockRedis.mockImplementation(() => ({
+                get: jest.fn(),
+                set: jest.fn(),
+                del: jest.fn(),
+                getdel: mockGetdel,
+            }));
+
+            const store = createEmailTokenStore()!;
+            const value = await store.consume(
+                'password_reset',
+                'user@example.com'
+            );
+            expect(value).toEqual(stored);
+        });
+    });
+
     it('reader uses readonly client when readonly token is set', async () => {
         setEnv({
             UPSTASH_REDIS_REST_URL: 'https://example.upstash.io',

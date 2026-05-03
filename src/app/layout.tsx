@@ -4,9 +4,11 @@ import { Suspense } from 'react';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Header } from '@/components/layout/Header';
+import type { HeaderUserMenuUser } from '@/components/layout/HeaderUserMenu';
 import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
 import { PwaBanner } from '@/components/pwa/PwaBanner';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { ADSENSE_ENABLED } from '@/lib/adsense';
 import {
     OG_IMAGE_HEIGHT,
@@ -96,7 +98,15 @@ interface RootLayoutProps {
     readonly children: ReactNode;
 }
 
-export default function RootLayout({ children }: RootLayoutProps) {
+export default async function RootLayout({ children }: RootLayoutProps) {
+    const authUser = await getCurrentUser();
+    const currentUser: HeaderUserMenuUser | null = authUser
+        ? {
+              email: authUser.email,
+              name: authUser.name,
+              tier: authUser.tier,
+          }
+        : null;
     return (
         <html
             lang="ko"
@@ -107,7 +117,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <Suspense>
                     <ReactQueryProvider>
                         <PwaBanner />
-                        <Header />
+                        <Header currentUser={currentUser} />
                         {children}
                     </ReactQueryProvider>
                 </Suspense>

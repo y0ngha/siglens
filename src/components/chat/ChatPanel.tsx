@@ -171,7 +171,6 @@ export function ChatPanel({
 
     return (
         <div className="flex flex-col overflow-hidden rounded-xl">
-            {/* 헤더 */}
             <div className="border-secondary-700 flex items-center justify-between border-b px-3 py-2">
                 <span className="text-secondary-300 text-xs font-semibold">
                     💬 AI에게 물어보기
@@ -180,7 +179,7 @@ export function ChatPanel({
                     <button
                         type="button"
                         onClick={onClose}
-                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 rounded text-sm leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 -mr-1 flex h-11 w-11 items-center justify-center rounded text-sm leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none md:h-6 md:w-6"
                         aria-label="채팅 닫기"
                     >
                         ✕
@@ -188,7 +187,6 @@ export function ChatPanel({
                 )}
             </div>
 
-            {/* 재분석 업데이트 배너 */}
             {analysisUpdated && (
                 <div className="bg-primary-900/30 border-primary-700/50 flex items-center justify-between border-b px-3 py-1.5">
                     <span className="text-primary-300 text-xs">
@@ -235,7 +233,6 @@ export function ChatPanel({
                     </div>
                 ))}
 
-                {/* 로딩 말풍선 */}
                 {loadingPhase !== null && (
                     <div className="bg-secondary-700/50 max-w-[85%] rounded-lg rounded-tl-sm p-2.5">
                         <p className="text-secondary-400 text-xs">
@@ -258,7 +255,6 @@ export function ChatPanel({
                 <div ref={messagesEndRef} />
             </div>
 
-            {/* 입력 영역 */}
             <div className="border-secondary-700 border-t px-3 py-2">
                 <div className="text-secondary-600 mb-1.5 flex items-center gap-1.5 text-[10px]">
                     <div className="relative">
@@ -376,6 +372,8 @@ export function ChatPanel({
                         placeholder={placeholder}
                         rows={1}
                         enterKeyHint="send"
+                        autoCapitalize="sentences"
+                        autoCorrect="on"
                         className={cn(
                             'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[44px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-base leading-relaxed transition-colors outline-none md:min-h-[32px] md:text-xs',
                             'focus:border-primary-500',
@@ -386,7 +384,7 @@ export function ChatPanel({
                         type="button"
                         onClick={() => void handleSubmit()}
                         disabled={isInputDisabled || inputValue.trim() === ''}
-                        className="bg-primary-600 hover:bg-primary-500 disabled:bg-secondary-700 disabled:text-secondary-500 focus-visible:ring-primary-500 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed"
+                        className="bg-primary-600 hover:bg-primary-500 disabled:bg-secondary-700 disabled:text-secondary-500 focus-visible:ring-primary-500 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-white transition-colors focus-visible:ring-1 focus-visible:outline-none disabled:cursor-not-allowed md:h-8 md:w-8"
                         aria-label="전송"
                     >
                         ↑

@@ -14,6 +14,26 @@ import type {
     UserApiKeyRepository,
 } from '@/infrastructure/db/types';
 
+/**
+ * Thrown when a stored ciphertext exists but cannot be decrypted with the
+ * configured `LLM_API_KEY_ENCRYPTION_KEY`. Distinct from the "no row" case so
+ * callers can prompt the user to re-register their key instead of silently
+ * downgrading them to the free-tier path.
+ */
+export class LlmApiKeyDecryptionFailedError extends Error {
+    readonly code = 'api_key_corrupted' as const;
+
+    constructor(
+        readonly userId: string,
+        readonly provider: LlmProvider
+    ) {
+        super(
+            `Failed to decrypt stored API key for user=${userId} provider=${provider}`
+        );
+        this.name = 'LlmApiKeyDecryptionFailedError';
+    }
+}
+
 const userApiKeyMetaColumns = {
     id: userApiKeys.id,
     userId: userApiKeys.userId,
@@ -103,7 +123,15 @@ export class DrizzleUserApiKeyRepository implements UserApiKeyRepository {
         const encryptionKey = requireLlmEncryptionKey();
         const apiKey = decryptToken(row.encryptedApiKey, encryptionKey);
         if (apiKey === null) {
-            return null;
+            // Row exists but the stored ciphertext failed to decrypt.
+            // Surface this as a typed error so callers do not silently treat
+            // the user as "no BYOK key registered". userId/provider are
+            // non-secret context for observability.
+            console.error(
+                '[userApiKeyRepository] Failed to decrypt stored API key',
+                { userId, provider }
+            );
+            throw new LlmApiKeyDecryptionFailedError(userId, provider);
         }
 
         const { encryptedApiKey: _, ...meta } = row;

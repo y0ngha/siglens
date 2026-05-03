@@ -50,7 +50,10 @@ jest.mock('@/infrastructure/ticker/koreanTranslator', () => ({
     translateCompanyNames: () => translateCompanyNamesMock(),
 }));
 
-import { searchTicker } from '@/infrastructure/ticker/use-cases/searchTicker';
+import {
+    _resetInFlightTranslationsForTest,
+    searchTicker,
+} from '@/infrastructure/ticker/use-cases/searchTicker';
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',
@@ -70,6 +73,7 @@ const microsoft: FmpSearchResult = {
 
 describe('searchTicker', () => {
     beforeEach(() => {
+        _resetInFlightTranslationsForTest();
         mockCache.get.mockReset();
         mockCache.set.mockReset();
         mockCache.set.mockResolvedValue(undefined);
@@ -176,6 +180,43 @@ describe('searchTicker', () => {
 
         await searchTicker('AAPL');
         expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+    });
+
+    it('동시 요청 시 동일한 번역 작업은 single-flight 로 한 번만 호출된다', async () => {
+        // C7 single-flight: concurrent searchTicker calls for the same uncached
+        // missing-translation set must collapse into one translateCompanyNames
+        // invocation. Hold the translate promise open until all callers have
+        // attached so the second call sees the in-flight entry.
+        let resolveTranslate: (
+            value: Record<string, string>
+        ) => void = () => {};
+        const translatePromise = new Promise<Record<string, string>>(
+            resolve => {
+                resolveTranslate = resolve;
+            }
+        );
+        mockCache.get.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        searchByNameMock.mockResolvedValue([]);
+        getKoreanNamesMock.mockResolvedValue({});
+        translateCompanyNamesMock.mockReturnValue(translatePromise);
+
+        const callers = await Promise.all([
+            searchTicker('AAPL'),
+            searchTicker('AAPL'),
+            searchTicker('AAPL'),
+            searchTicker('AAPL'),
+            searchTicker('AAPL'),
+        ]);
+
+        // All callers complete (fire-and-forget translation does not block them)
+        expect(callers).toHaveLength(5);
+        // Single-flight: only one translateCompanyNames call across 5 callers.
+        expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+
+        // Resolve the promise so the .finally cleanup runs before next test.
+        resolveTranslate({ AAPL: '애플' });
+        await translatePromise;
     });
 
     it('waitUntil이 제공되면 번역과 캐시 저장 promise를 등록한다', async () => {

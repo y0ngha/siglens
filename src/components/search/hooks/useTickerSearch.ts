@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { QUERY_KEYS, TICKER_SEARCH_STALE_TIME_MS } from '@/lib/queryConfig';
 import { searchTickerAction } from '@/infrastructure/ticker/searchTickerAction';
 import type { TickerSearchResult } from '@/domain/types';
 
@@ -25,6 +25,9 @@ export function useTickerSearch(query: string): UseTickerSearchResult {
         queryKey: QUERY_KEYS.tickerSearch(debouncedQuery),
         queryFn: () => searchTickerAction(debouncedQuery),
         enabled: isDebouncedQueryReady,
+        // FMP catalogue updates daily — long staleTime is safe and protects
+        // the FMP free-tier rate limit during typing sessions.
+        staleTime: TICKER_SEARCH_STALE_TIME_MS,
     });
 
     useEffect(() => {

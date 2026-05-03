@@ -14,6 +14,7 @@ function makeDependencies(sessionInvalidated: boolean): {
                 createSession: jest.fn(),
                 findSession: jest.fn(),
                 deleteSession,
+                deleteExpiredSessions: jest.fn(),
             },
         },
         deleteSession,

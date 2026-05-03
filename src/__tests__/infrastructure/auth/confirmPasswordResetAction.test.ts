@@ -44,6 +44,7 @@ describe('confirmPasswordResetAction', () => {
             set: jest.fn(),
             get: jest.fn(),
             delete: jest.fn(),
+            consume: jest.fn(),
         });
     });
 

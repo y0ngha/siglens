@@ -1,7 +1,6 @@
 'use client';
 
 import { LogoutButton } from '@/components/auth/LogoutButton';
-import { useCurrentUser } from '@/components/hooks/useCurrentUser';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
@@ -16,27 +15,29 @@ const TIER_DOT_COLOR: Record<Tier, string> = {
     pro: 'bg-ui-warning',
 };
 
-interface UserSummary {
-    email: string;
-    name: string | null;
+/** Minimal serializable user shape passed across the RSC boundary; decoupled from `AuthUserRecord` to avoid shipping Date fields the menu doesn't read. */
+export interface HeaderUserMenuUser {
+    readonly email: string;
+    readonly name: string | null;
+    readonly tier: Tier;
 }
 
-function getInitial(user: UserSummary): string {
+interface HeaderUserMenuProps {
+    /** Current user; null when guest. Fetched server-side in Header. */
+    readonly currentUser: HeaderUserMenuUser | null;
+}
+
+function getInitial(user: HeaderUserMenuUser): string {
     const source = user.name && user.name.length > 0 ? user.name : user.email;
     return source.charAt(0).toUpperCase();
 }
 
-export function HeaderUserMenu() {
+export function HeaderUserMenu({ currentUser }: HeaderUserMenuProps) {
     const containerRef = useRef<HTMLDivElement>(null);
-    const { data: user, isPending } = useCurrentUser();
     const { isOpen, close, toggle } = usePopoverToggle(containerRef);
     useEscapeKey(close, isOpen);
 
-    if (isPending) {
-        return <div aria-hidden className="size-10" />;
-    }
-
-    if (!user) {
+    if (!currentUser) {
         return (
             <nav aria-label="인증" className="flex items-center gap-2">
                 <Link
@@ -55,9 +56,9 @@ export function HeaderUserMenu() {
         );
     }
 
-    const initial = getInitial(user);
-    const tierColor = TIER_DOT_COLOR[user.tier];
-    const tierLabel = TIER_LABEL[user.tier];
+    const initial = getInitial(currentUser);
+    const tierColor = TIER_DOT_COLOR[currentUser.tier];
+    const tierLabel = TIER_LABEL[currentUser.tier];
     return (
         <div ref={containerRef} className="relative">
             <button
@@ -66,7 +67,7 @@ export function HeaderUserMenu() {
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
                 aria-label={`사용자 메뉴 (${tierLabel})`}
-                className="bg-secondary-800 text-secondary-100 hover:bg-secondary-700 relative flex size-10 items-center justify-center rounded-full text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:outline-none"
+                className="bg-secondary-800 text-secondary-100 hover:bg-secondary-700 focus-visible:ring-primary-500 relative flex size-10 items-center justify-center rounded-full text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
                 <span aria-hidden>{initial}</span>
                 <span
@@ -85,11 +86,11 @@ export function HeaderUserMenu() {
                 >
                     <div className="border-secondary-800 border-b px-3 py-2 text-sm">
                         <p className="text-secondary-50 font-semibold">
-                            {user.name ?? user.email}
+                            {currentUser.name ?? currentUser.email}
                         </p>
-                        {user.name ? (
+                        {currentUser.name ? (
                             <p className="text-secondary-400 text-xs">
-                                {user.email}
+                                {currentUser.email}
                             </p>
                         ) : null}
                         <p className="text-secondary-400 mt-1 flex items-center gap-1.5 text-xs">

@@ -1,17 +1,22 @@
-'use client';
-
 import Image from 'next/image';
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/cn';
-import { HeaderUserMenu } from '@/components/layout/HeaderUserMenu';
+import { HeaderNav } from '@/components/layout/HeaderNav';
+import {
+    HeaderUserMenu,
+    type HeaderUserMenuUser,
+} from '@/components/layout/HeaderUserMenu';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { SITE_NAME } from '@/lib/seo';
 
 const NAV_ITEMS = [{ href: '/market', label: '시장 분석' }] as const;
 
-export function Header() {
-    const pathname = usePathname();
+interface HeaderProps {
+    /** Resolved current user (server-fetched in `app/layout.tsx`); null for guests. */
+    readonly currentUser: HeaderUserMenuUser | null;
+}
+
+/** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
+export function Header({ currentUser }: HeaderProps) {
     return (
         <header
             className="bg-secondary-900/90 supports-backdrop-filter:bg-secondary-900/75 border-secondary-800 sticky top-0 z-50 border-b backdrop-blur-md"
@@ -40,36 +45,12 @@ export function Header() {
                         {SITE_NAME}
                     </span>
                 </Link>
-                <nav
-                    aria-label="주요 네비게이션"
-                    className="flex gap-1 sm:gap-4"
-                >
-                    {NAV_ITEMS.map(item => {
-                        const isActive =
-                            pathname === item.href ||
-                            pathname.startsWith(`${item.href}/`);
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                aria-current={isActive ? 'page' : undefined}
-                                className={cn(
-                                    'focus-visible:ring-primary-500 -mb-px flex min-h-11 touch-manipulation items-center border-b-2 px-2 text-xs font-semibold tracking-[0.12em] uppercase transition-colors focus-visible:rounded focus-visible:ring-2 focus-visible:outline-none',
-                                    isActive
-                                        ? 'text-secondary-100 border-primary-500'
-                                        : 'text-secondary-400 hover:text-secondary-100 border-transparent'
-                                )}
-                            >
-                                {item.label}
-                            </Link>
-                        );
-                    })}
-                </nav>
+                <HeaderNav items={NAV_ITEMS} />
                 <div className="ml-auto flex w-full max-w-40 min-w-0 justify-end sm:max-w-xs">
                     <TickerAutocomplete size="sm" />
                 </div>
                 <div className="flex shrink-0 items-center">
-                    <HeaderUserMenu />
+                    <HeaderUserMenu currentUser={currentUser} />
                 </div>
             </div>
         </header>

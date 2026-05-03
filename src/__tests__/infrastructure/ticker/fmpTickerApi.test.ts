@@ -115,4 +115,23 @@ describe('searchBySymbol/searchByName', () => {
         mockFetch.mockRejectedValueOnce(new Error('network down'));
         await expect(searchBySymbol('AAPL')).resolves.toEqual([]);
     });
+
+    it('필수 필드가 누락된 row 는 검증 단계에서 제외하고 유효한 row 만 반환한다', async () => {
+        const malformed = { symbol: 'BAD' }; // missing name/currency/exchange/exchangeFullName
+        const warnSpy = jest
+            .spyOn(console, 'warn')
+            .mockImplementation(() => undefined);
+        mockFetch.mockResolvedValueOnce({
+            ok: true,
+            json: async () => [apple, malformed],
+        });
+
+        const result = await searchBySymbol('AAPL');
+
+        expect(result).toEqual([apple]);
+        expect(warnSpy).toHaveBeenCalledWith(
+            expect.stringContaining('dropped 1 malformed FMP row')
+        );
+        warnSpy.mockRestore();
+    });
 });

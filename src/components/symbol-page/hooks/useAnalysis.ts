@@ -11,11 +11,13 @@ import {
 import type {
     AnalysisResponse,
     ModelId,
-    SubmitAnalysisGatedResult,
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
-import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
+import {
+    submitAnalysisAction,
+    type SubmitAnalysisActionResult,
+} from '@/infrastructure/market/submitAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
 import {
@@ -37,6 +39,9 @@ interface AnalyzeMutationVariables {
  * 진실값은 Redis(서버)이며 클라이언트는 표시 목적으로만 카운트다운한다.
  */
 const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
+
+/** 캐시 히트(force=false 즉시 응답) 시 적용하는 짧은 클라이언트 쿨다운 — 같은 캐시의 빠른 반복 호출 방지. */
+const CACHE_HIT_COOLDOWN_MS = 30_000;
 
 const POLL_INTERVAL_MS = 10000;
 
@@ -83,6 +88,24 @@ interface UseAnalysisResult {
     cooldownNotice: CooldownNotice | null;
 }
 
+/** Cancel any in-flight worker job, then issue a new mutation. Cancel failures are logged and swallowed so the new mutation always proceeds. */
+async function cancelPendingThenRemutate(
+    jobId: string | null,
+    issueMutation: () => void
+): Promise<void> {
+    if (jobId !== null) {
+        try {
+            await cancelAnalysisJobAction(jobId);
+        } catch (error) {
+            console.warn(
+                '[useAnalysis] cancel failed; proceeding with new mutation',
+                error
+            );
+        }
+    }
+    issueMutation();
+}
+
 export function useAnalysis({
     symbol,
     timeframe,
@@ -125,63 +148,71 @@ export function useAnalysis({
         isPending: isSubmitting,
         reset,
         mutate,
-    } = useMutation<SubmitAnalysisGatedResult, Error, AnalyzeMutationVariables>(
-        {
-            mutationFn: ({
+    } = useMutation<
+        SubmitAnalysisActionResult,
+        Error,
+        AnalyzeMutationVariables
+    >({
+        mutationFn: ({
+            force,
+            symbol: mutSymbol,
+            fmpSymbol: mutFmpSymbol,
+            modelId: mutModelId,
+        }) => {
+            lastForceRef.current = force;
+            return submitAnalysisAction(
+                mutSymbol,
+                latestTimeframeRef.current,
                 force,
-                symbol: mutSymbol,
-                fmpSymbol: mutFmpSymbol,
-                modelId: mutModelId,
-            }) => {
-                lastForceRef.current = force;
-                return submitAnalysisAction(
-                    mutSymbol,
-                    latestTimeframeRef.current,
-                    force,
-                    mutFmpSymbol,
-                    mutModelId
+                mutFmpSymbol,
+                mutModelId
+            );
+        },
+        onMutate: () => {
+            setPollError(null);
+            setAnalysisResult(null);
+        },
+        onSuccess: (data, variables) => {
+            if (data.status === 'cached') {
+                currentJobIdRef.current = null;
+                setAnalysisResult(data.result);
+                // force 경로는 정상 5분 쿨다운, 일반 캐시 히트는 짧은
+                // 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.
+                setReanalyzeCooldownMs(prev =>
+                    Math.max(
+                        prev,
+                        variables.force
+                            ? REANALYZE_COOLDOWN_MS
+                            : CACHE_HIT_COOLDOWN_MS
+                    )
                 );
-            },
-            onMutate: () => {
-                setPollError(null);
-                setAnalysisResult(null);
-            },
-            onSuccess: (data, variables) => {
-                if (data.status === 'cached') {
-                    currentJobIdRef.current = null;
-                    setAnalysisResult(data.result);
-                    // 캐시 히트 = 분석 완료 → force 경로만 쿨다운 시작
-                    if (variables.force) {
-                        setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
-                    }
-                } else if (data.status === 'submitted') {
-                    currentJobIdRef.current = data.jobId;
-                    setIsPolling(true);
-                    // submitted 단계에서는 쿨다운을 시작하지 않는다.
-                    // polling 완료(done) 시에만 쿨다운을 시작한다.
-                } else {
-                    // tier gate / 일일 사용 한도 초과
-                    currentJobIdRef.current = null;
-                    setPollError(data.error.message);
-                    if (variables.force) {
-                        void releaseReanalyzeCooldown(
-                            latestRef.current.symbol,
-                            latestTimeframeRef.current
-                        );
-                        setReanalyzeCooldownMs(0);
-                    }
+            } else if (data.status === 'submitted') {
+                currentJobIdRef.current = data.jobId;
+                setIsPolling(true);
+                // submitted 단계에서는 쿨다운을 시작하지 않는다.
+                // polling 완료(done) 시에만 쿨다운을 시작한다.
+            } else {
+                // tier gate / 일일 사용 한도 초과
+                currentJobIdRef.current = null;
+                setPollError(data.error.message);
+                if (variables.force) {
+                    void releaseReanalyzeCooldown(
+                        latestRef.current.symbol,
+                        latestTimeframeRef.current
+                    );
+                    setReanalyzeCooldownMs(0);
                 }
-            },
-            onError: (_error, { force, symbol: mutSymbol }) => {
-                if (!force) return;
-                void releaseReanalyzeCooldown(
-                    mutSymbol,
-                    latestTimeframeRef.current
-                );
-                setReanalyzeCooldownMs(0);
-            },
-        }
-    );
+            }
+        },
+        onError: (_error, { force, symbol: mutSymbol }) => {
+            if (!force) return;
+            void releaseReanalyzeCooldown(
+                mutSymbol,
+                latestTimeframeRef.current
+            );
+            setReanalyzeCooldownMs(0);
+        },
+    });
 
     // 4. Derived variables
     const analysis = analysisResult ?? initialAnalysis;
@@ -321,17 +352,19 @@ export function useAnalysis({
 
         // 진행 중인 워커 작업에 취소 신호를 보낸다. reset() 호출 이전에 jobId를 캡처해야 한다.
         const jobId = currentJobIdRef.current;
-        if (jobId) {
-            void cancelAnalysisJobAction(jobId);
-            currentJobIdRef.current = null;
-        }
+        currentJobIdRef.current = null;
 
         reset();
-        mutate({
-            symbol: latestRef.current.symbol,
-            force: false,
-            fmpSymbol: latestRef.current.fmpSymbol,
-            modelId: latestModelIdRef.current,
+        // 이전 폴링 effect는 reset()으로 submitData가 undefined가 되며 cleanup된다.
+        // 그 후에 cancel RPC가 끝날 때까지 기다린 다음 새 mutation을 발사해
+        // 이전 작업의 결과가 새 mutation 상태로 흘러들지 않도록 한다.
+        void cancelPendingThenRemutate(jobId, () => {
+            mutate({
+                symbol: latestRef.current.symbol,
+                force: false,
+                fmpSymbol: latestRef.current.fmpSymbol,
+                modelId: latestModelIdRef.current,
+            });
         });
     }, [timeframeChangeCount, reset, mutate]);
 
@@ -340,17 +373,16 @@ export function useAnalysis({
         prevModelIdRef.current = modelId;
 
         const jobId = currentJobIdRef.current;
-        if (jobId) {
-            void cancelAnalysisJobAction(jobId);
-            currentJobIdRef.current = null;
-        }
+        currentJobIdRef.current = null;
 
         reset();
-        mutate({
-            symbol: latestRef.current.symbol,
-            force: false,
-            fmpSymbol: latestRef.current.fmpSymbol,
-            modelId,
+        void cancelPendingThenRemutate(jobId, () => {
+            mutate({
+                symbol: latestRef.current.symbol,
+                force: false,
+                fmpSymbol: latestRef.current.fmpSymbol,
+                modelId,
+            });
         });
     }, [modelId, reset, mutate]);
 

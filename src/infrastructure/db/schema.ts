@@ -22,6 +22,10 @@ const SYMBOL_MAX_LENGTH = 32;
 const EXCHANGE_MAX_LENGTH = 32;
 const FMP_SYMBOL_MAX_LENGTH = 64;
 
+// Repositories also set updated_at explicitly via `sql`now()`` in their
+// `update()` / `onConflictDoUpdate()` calls; this $onUpdateFn(nowFn) hook is
+// only a safety net for direct ORM updates that forget the explicit assignment
+// (Drizzle does not invoke $onUpdateFn on `onConflictDoUpdate`).
 const nowFn = (): Date => new Date();
 
 /** Postgres enum for user subscription tier. */

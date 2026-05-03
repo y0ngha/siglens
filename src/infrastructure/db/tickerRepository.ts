@@ -60,11 +60,17 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             .values(entries.map(toKoreanTickerRow))
             .onConflictDoUpdate({
                 target: koreanTickers.symbol,
+                // Drizzle's onConflictDoUpdate does not trigger schema-level
+                // $onUpdateFn hooks; set updated_at explicitly. We use sql`now()`
+                // (DB-server clock) rather than new Date() (app-server clock) so
+                // timestamps stay monotonic across concurrent app instances
+                // writing to the same row.
                 set: {
                     name: sql`excluded.name`,
                     koreanName: sql`excluded.korean_name`,
                     exchange: sql`excluded.exchange`,
                     exchangeFullName: sql`excluded.exchange_full_name`,
+                    updatedAt: sql`now()`,
                 },
             });
     }
@@ -95,10 +101,16 @@ export class DrizzleAssetTranslationRepository implements AssetTranslationReposi
             .values(record)
             .onConflictDoUpdate({
                 target: assetTranslations.symbol,
+                // Drizzle's onConflictDoUpdate does not trigger schema-level
+                // $onUpdateFn hooks; set updated_at explicitly. We use sql`now()`
+                // (DB-server clock) rather than new Date() (app-server clock) so
+                // timestamps stay monotonic across concurrent app instances
+                // writing to the same row.
                 set: {
                     name: sql`excluded.name`,
                     koreanName: sql`excluded.korean_name`,
                     fmpSymbol: sql`excluded.fmp_symbol`,
+                    updatedAt: sql`now()`,
                 },
             });
     }

@@ -11,6 +11,7 @@ import {
 } from '@/infrastructure/auth/oauth/providers';
 import {
     OAUTH_STATE_COOKIE_NAME,
+    OAuthStateSecretMisconfiguredError,
     expiredOAuthStateCookie,
     verifyOAuthState,
 } from '@/infrastructure/auth/oauth/state';
@@ -51,7 +52,17 @@ export async function GET(
         return redirectToLoginWithError(req, 'oauth_unknown');
     }
 
-    const stateResult = verifyOAuthState(provider, queryState, stateCookie);
+    let stateResult;
+    try {
+        stateResult = verifyOAuthState(provider, queryState, stateCookie);
+    } catch (error) {
+        if (error instanceof OAuthStateSecretMisconfiguredError) {
+            // Fail closed: when the HMAC secret is misconfigured, refuse the callback
+            // rather than fall back to unsigned validation.
+            return redirectToLoginWithError(req, 'oauth_unknown');
+        }
+        throw error;
+    }
     if (!stateResult.ok) {
         return redirectToLoginWithError(req, 'oauth_unknown');
     }

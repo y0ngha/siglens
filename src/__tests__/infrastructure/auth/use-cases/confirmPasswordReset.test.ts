@@ -30,8 +30,7 @@ function makeDependencies(options?: {
     hashedNewPassword?: string;
 }): {
     dependencies: ConfirmPasswordResetDependencies;
-    getToken: ReturnType<typeof jest.fn>;
-    deleteToken: ReturnType<typeof jest.fn>;
+    consumeToken: ReturnType<typeof jest.fn>;
     findEmailAuthUserByEmail: ReturnType<typeof jest.fn>;
     updatePassword: ReturnType<typeof jest.fn>;
     hashPassword: ReturnType<typeof jest.fn>;
@@ -48,13 +47,12 @@ function makeDependencies(options?: {
     const updateResult = options?.updatePasswordResult ?? true;
     const hashed = options?.hashedNewPassword ?? 'new-hashed-password';
 
-    const getToken = jest
+    const consumeToken = jest
         .fn<
             Promise<EmailTokenValue | null>,
             [purpose: EmailTokenPurpose, email: string]
         >()
         .mockResolvedValue(storedToken);
-    const deleteToken = jest.fn().mockResolvedValue(undefined);
     const findEmailAuthUserByEmail = jest.fn().mockResolvedValue(foundUser);
     const updatePassword = jest.fn().mockResolvedValue(updateResult);
     const hashPassword = jest.fn().mockResolvedValue(hashed);
@@ -71,13 +69,13 @@ function makeDependencies(options?: {
             },
             emailTokens: {
                 set: jest.fn(),
-                get: getToken,
-                delete: deleteToken,
+                get: jest.fn(),
+                delete: jest.fn(),
+                consume: consumeToken,
             },
             passwordHasher: { hashPassword },
         },
-        getToken,
-        deleteToken,
+        consumeToken,
         findEmailAuthUserByEmail,
         updatePassword,
         hashPassword,
@@ -86,7 +84,8 @@ function makeDependencies(options?: {
 
 describe('confirmPasswordReset', () => {
     it('returns weak_password error when password fails validation', async () => {
-        const { dependencies, getToken, updatePassword } = makeDependencies();
+        const { dependencies, consumeToken, updatePassword } =
+            makeDependencies();
 
         const result = await confirmPasswordReset(
             { email: 'user@example.com', token: RAW_TOKEN, newPassword: 'abc' },
@@ -95,11 +94,11 @@ describe('confirmPasswordReset', () => {
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('weak_password');
-        expect(getToken).not.toHaveBeenCalled();
+        expect(consumeToken).not.toHaveBeenCalled();
         expect(updatePassword).not.toHaveBeenCalled();
     });
 
-    it('returns expired_token error when no Redis entry exists', async () => {
+    it('returns expired_token error when consume returns null', async () => {
         const { dependencies, updatePassword } = makeDependencies({
             storedToken: null,
         });
@@ -124,7 +123,7 @@ describe('confirmPasswordReset', () => {
         expect(updatePassword).not.toHaveBeenCalled();
     });
 
-    it('returns invalid_token error when stored entry is in verified state', async () => {
+    it('returns invalid_token error when consumed entry is in verified state', async () => {
         const { dependencies } = makeDependencies({
             storedToken: { status: 'verified' },
         });
@@ -143,7 +142,7 @@ describe('confirmPasswordReset', () => {
     });
 
     it('returns invalid_token error when the supplied token does not match', async () => {
-        const { dependencies, deleteToken } = makeDependencies();
+        const { dependencies, updatePassword } = makeDependencies();
 
         const result = await confirmPasswordReset(
             {
@@ -156,7 +155,8 @@ describe('confirmPasswordReset', () => {
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('invalid_token');
-        expect(deleteToken).not.toHaveBeenCalled();
+        // The token has already been consumed atomically — there's no extra delete to make.
+        expect(updatePassword).not.toHaveBeenCalled();
     });
 
     it('returns invalid_token error when the user no longer exists', async () => {
@@ -194,7 +194,7 @@ describe('confirmPasswordReset', () => {
     });
 
     it('returns invalid_token when updatePassword fails', async () => {
-        const { dependencies, deleteToken } = makeDependencies({
+        const { dependencies } = makeDependencies({
             updatePasswordResult: false,
         });
 
@@ -209,17 +209,26 @@ describe('confirmPasswordReset', () => {
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('invalid_token');
-        expect(deleteToken).not.toHaveBeenCalled();
     });
 
-    it('updates the password hash and deletes the Redis entry on success', async () => {
-        const {
-            dependencies,
-            getToken,
-            deleteToken,
-            updatePassword,
-            hashPassword,
-        } = makeDependencies();
+    it('atomically consumes the token before any password update on success', async () => {
+        const { dependencies, consumeToken, updatePassword, hashPassword } =
+            makeDependencies();
+
+        // Track call order: consume must happen before hashPassword/updatePassword.
+        const callOrder: string[] = [];
+        consumeToken.mockImplementation(async () => {
+            callOrder.push('consume');
+            return { status: 'pending', tokenHash: STORED_TOKEN_HASH };
+        });
+        hashPassword.mockImplementation(async () => {
+            callOrder.push('hash');
+            return 'new-hashed-password';
+        });
+        updatePassword.mockImplementation(async () => {
+            callOrder.push('update');
+            return true;
+        });
 
         const result = await confirmPasswordReset(
             {
@@ -231,7 +240,7 @@ describe('confirmPasswordReset', () => {
         );
 
         expect(result).toEqual({ ok: true });
-        expect(getToken).toHaveBeenCalledWith(
+        expect(consumeToken).toHaveBeenCalledWith(
             'password_reset',
             'user@example.com'
         );
@@ -240,9 +249,50 @@ describe('confirmPasswordReset', () => {
             'user-1',
             'new-hashed-password'
         );
-        expect(deleteToken).toHaveBeenCalledWith(
-            'password_reset',
-            'user@example.com'
-        );
+        expect(callOrder).toEqual(['consume', 'hash', 'update']);
+    });
+
+    it('only one of two concurrent consumers updates the password', async () => {
+        // Simulate the atomic semantics: the first consume returns the value,
+        // every subsequent consume on the same key returns null. Both callers
+        // share the same dependency container; only the winning caller should
+        // reach updatePassword.
+        const { dependencies, consumeToken, updatePassword } =
+            makeDependencies();
+        let consumed = false;
+        consumeToken.mockImplementation(async () => {
+            if (consumed) return null;
+            consumed = true;
+            return { status: 'pending', tokenHash: STORED_TOKEN_HASH };
+        });
+
+        const [resultA, resultB] = await Promise.all([
+            confirmPasswordReset(
+                {
+                    email: 'user@example.com',
+                    token: RAW_TOKEN,
+                    newPassword: NEW_PASSWORD,
+                },
+                dependencies
+            ),
+            confirmPasswordReset(
+                {
+                    email: 'user@example.com',
+                    token: RAW_TOKEN,
+                    newPassword: NEW_PASSWORD,
+                },
+                dependencies
+            ),
+        ]);
+
+        const successes = [resultA, resultB].filter(r => r.ok);
+        const failures = [resultA, resultB].filter(r => !r.ok);
+        expect(successes).toHaveLength(1);
+        expect(failures).toHaveLength(1);
+        const failure = failures[0];
+        if (failure && !failure.ok) {
+            expect(failure.error.code).toBe('expired_token');
+        }
+        expect(updatePassword).toHaveBeenCalledTimes(1);
     });
 });

@@ -19,6 +19,7 @@ import {
     fireAndForget,
     type BackgroundTaskOptions,
 } from '@/infrastructure/ticker/use-cases/types';
+import { createSingleFlight } from '@/infrastructure/ticker/utils/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/domain/types';
 
@@ -42,20 +43,34 @@ function toKoreanEntry(
     ];
 }
 
-async function translateAndCache(
-    unmapped: TickerSearchResult[]
-): Promise<void> {
-    const translated = await translateCompanyNames(
-        unmapped.map(r => ({ symbol: r.symbol, name: r.name }))
-    );
+/** Single-flight registry keyed by sorted-symbol list; collapses concurrent identical search queries into one Gemini call. */
+const translationSingleFlight = createSingleFlight<void>();
 
-    const unmappedMap = new Map(unmapped.map(r => [r.symbol, r]));
+function buildInFlightKey(symbols: readonly string[]): string {
+    return [...symbols].sort().join(',');
+}
 
-    const entries = Object.entries(translated).flatMap<KoreanTickerEntry>(
-        ([symbol, koreanName]) => toKoreanEntry(symbol, koreanName, unmappedMap)
-    );
+function translateAndCache(unmapped: TickerSearchResult[]): Promise<void> {
+    const key = buildInFlightKey(unmapped.map(r => r.symbol));
+    return translationSingleFlight.run(key, async () => {
+        const translated = await translateCompanyNames(
+            unmapped.map(r => ({ symbol: r.symbol, name: r.name }))
+        );
 
-    await setKoreanTickers(entries);
+        const unmappedMap = new Map(unmapped.map(r => [r.symbol, r]));
+
+        const entries = Object.entries(translated).flatMap<KoreanTickerEntry>(
+            ([symbol, koreanName]) =>
+                toKoreanEntry(symbol, koreanName, unmappedMap)
+        );
+
+        await setKoreanTickers(entries);
+    });
+}
+
+/** @internal Test helper — clears the in-flight registry between cases. */
+export function _resetInFlightTranslationsForTest(): void {
+    translationSingleFlight._resetForTest();
 }
 
 /** Search for tickers by symbol or company name with bilingual support; Korean queries hit the Korean-name store, others hit FMP via cache with background translation enrichment (capped at 10 entries). */

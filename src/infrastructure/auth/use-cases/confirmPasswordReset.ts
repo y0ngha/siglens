@@ -34,7 +34,9 @@ function expiredTokenError(): ConfirmPasswordResetError {
     };
 }
 
-/** Consume a password reset token and replace the user's password hash. */
+// 동시성 계약: 비밀번호 업데이트 전에 토큰을 atomic consume(read+delete) → 동시 요청 둘이
+// 같은 토큰으로 모두 성공하지 못하도록 보장. consume race를 이긴 caller만 rehash 수행.
+/** 비밀번호 재설정 토큰을 소비하고 사용자 비밀번호 해시를 교체. */
 export async function confirmPasswordReset(
     input: ConfirmPasswordResetInput,
     dependencies: ConfirmPasswordResetDependencies
@@ -46,7 +48,10 @@ export async function confirmPasswordReset(
     }
 
     const email = normalizeEmail(input.email);
-    const stored = await dependencies.emailTokens.get(PURPOSE, email);
+
+    // Atomically consume the token first. Any racing caller will receive null
+    // here and bail out with expired_token below.
+    const stored = await dependencies.emailTokens.consume(PURPOSE, email);
 
     if (stored === null) {
         return { ok: false, error: expiredTokenError() };
@@ -79,6 +84,5 @@ export async function confirmPasswordReset(
         return { ok: false, error: invalidTokenError() };
     }
 
-    await dependencies.emailTokens.delete(PURPOSE, email);
     return { ok: true };
 }

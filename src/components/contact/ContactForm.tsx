@@ -24,6 +24,10 @@ export function ContactForm() {
     }
 
     const submissionError = getSubmissionError(state.error);
+
+    // Email field is uncontrolled (defaultValue). Once the form has been
+    // re-rendered with an action result, prefer the user's input over the
+    // logged-in email so we don't clobber what they typed.
     const emailDefault = state.error
         ? state.values.email
         : (currentUser.data?.email ?? '');
@@ -53,18 +57,21 @@ export function ContactForm() {
                 error={getFieldError(state.error, 'title')}
             />
 
-            <ContactTextField
-                key={currentUser.data?.email ?? 'loading'}
-                id="contact-email"
-                name="email"
-                label="이메일"
-                type="email"
-                autoComplete="email"
-                required
-                placeholder="answer@example.com"
-                defaultValue={emailDefault}
-                error={getFieldError(state.error, 'email')}
-            />
+            {currentUser.isPending ? (
+                <ContactEmailFieldSkeleton />
+            ) : (
+                <ContactTextField
+                    id="contact-email"
+                    name="email"
+                    label="이메일"
+                    type="email"
+                    autoComplete="email"
+                    required
+                    placeholder="answer@example.com"
+                    defaultValue={emailDefault}
+                    error={getFieldError(state.error, 'email')}
+                />
+            )}
 
             <ContactTextareaField
                 id="contact-content"
@@ -79,5 +86,20 @@ export function ContactForm() {
 
             <SubmitButton label="문의 보내기" pendingLabel="전송 중…" />
         </form>
+    );
+}
+
+/** Visible while the current-user query is pending; prevents a remount that would wipe user input once the query resolves. */
+function ContactEmailFieldSkeleton() {
+    return (
+        <div className="space-y-2" aria-busy="true">
+            <span className="text-secondary-200 block text-sm font-medium">
+                이메일
+            </span>
+            <div
+                aria-hidden
+                className="border-secondary-700 bg-secondary-900/60 h-12 w-full animate-pulse rounded-md border"
+            />
+        </div>
     );
 }
