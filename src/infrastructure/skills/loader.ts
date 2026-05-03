@@ -202,20 +202,31 @@ const countMdFiles = async (subdir: string): Promise<number> => {
 
 export async function countSkillFiles(): Promise<SkillCounts> {
     'use cache';
-    const [indicators, candlesticks, patterns, strategies, supportResistance] =
-        await Promise.all([
-            countMdFiles('indicators'),
-            countMdFiles('candlesticks'),
-            countMdFiles('patterns'),
-            countMdFiles('strategies'),
-            countMdFiles('support-resistance'),
-        ]);
+    const [
+        indicators,
+        candlesticks,
+        patterns,
+        strategies,
+        supportResistance,
+        fundamental,
+        news,
+    ] = await Promise.all([
+        countMdFiles('indicators'),
+        countMdFiles('candlesticks'),
+        countMdFiles('patterns'),
+        countMdFiles('strategies'),
+        countMdFiles('support-resistance'),
+        countMdFiles('fundamental'),
+        countMdFiles('news'),
+    ]);
     return {
         indicators,
         candlesticks,
         patterns,
         strategies,
         supportResistance,
+        fundamental,
+        news,
     };
 }
 
