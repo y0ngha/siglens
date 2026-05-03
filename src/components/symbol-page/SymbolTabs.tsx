@@ -2,7 +2,6 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useRef } from 'react';
 import { cn } from '@/lib/cn';
 
 /** All segment tab definitions for the 4 symbol analysis pages. */
@@ -31,44 +30,15 @@ interface SymbolTabsProps {
 }
 
 /**
- * Header segment tabs for the 4 analysis pages of a single symbol.
- *
- * Renders a WCAG-compliant `tablist` with keyboard navigation:
- * `←` / `→` move focus between tabs; `Home` / `End` jump to first/last.
- * Each tab is a Next.js `<Link>` so navigation is prefetched.
+ * Header navigation strip for the 4 analysis pages of a single symbol.
+ * Uses nav + aria-current per WCAG (URL-based view switching, not tablist).
  */
 export function SymbolTabs({ symbol }: SymbolTabsProps) {
     const pathname = usePathname();
-    const tabsRef = useRef<HTMLDivElement>(null);
     const upper = symbol.toUpperCase();
 
-    function handleKey(e: React.KeyboardEvent<HTMLDivElement>): void {
-        const tabs = Array.from(
-            tabsRef.current?.querySelectorAll<HTMLAnchorElement>(
-                '[role="tab"]'
-            ) ?? []
-        );
-        if (tabs.length === 0) return;
-        const current = tabs.findIndex(t => t === document.activeElement);
-        let next = current;
-        if (e.key === 'ArrowRight') next = (current + 1) % tabs.length;
-        else if (e.key === 'ArrowLeft')
-            next = (current - 1 + tabs.length) % tabs.length;
-        else if (e.key === 'Home') next = 0;
-        else if (e.key === 'End') next = tabs.length - 1;
-        else return;
-        e.preventDefault();
-        tabs[next].focus();
-    }
-
     return (
-        <div
-            ref={tabsRef}
-            role="tablist"
-            aria-label="분석 종류"
-            onKeyDown={handleKey}
-            className="border-border flex overflow-x-auto border-b"
-        >
+        <nav aria-label="분석 종류" className="border-border flex overflow-x-auto border-b">
             {TABS.map(t => {
                 const href = t.hrefBuilder(upper);
                 const active = pathname === href;
@@ -76,10 +46,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                     <Link
                         key={t.key}
                         href={href}
-                        // 같은 객체(종목)의 다른 뷰를 전환하는 의미라 tablist + tab 패턴을 선택. URL은 path-based로 유지(SEO + 직접 진입 가능).
-                        role="tab"
-                        aria-selected={active}
-                        tabIndex={active ? 0 : -1}
+                        aria-current={active ? 'page' : undefined}
                         className={cn(
                             'focus-visible:ring-primary px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                             active
@@ -91,6 +58,6 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                     </Link>
                 );
             })}
-        </div>
+        </nav>
     );
 }
