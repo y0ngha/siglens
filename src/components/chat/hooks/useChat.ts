@@ -381,7 +381,7 @@ export function useChat({
         const prev = previousLabelRef.current;
         previousLabelRef.current = currentLabel;
 
-        // Skip initial mount (prev === currentLabel on first run)
+        // Skip initial mount (prev is null on first render) or when label is unavailable.
         if (prev === null || currentLabel === null) return;
         if (prev === currentLabel) return;
 

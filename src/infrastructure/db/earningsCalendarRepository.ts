@@ -1,4 +1,4 @@
-import { and, between, eq, gte, sql } from 'drizzle-orm';
+import { and, eq, gte, sql } from 'drizzle-orm';
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import { earningsCalendar } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
@@ -48,20 +48,6 @@ export class DrizzleEarningsCalendarRepository {
             .limit(1);
 
         return row !== undefined ? toCalendarItem(row) : null;
-    }
-
-    /** Earnings events whose `earningsDate` falls in `[fromDate, toDate]` (inclusive, ISO date). */
-    async listForRange(
-        fromDate: string,
-        toDate: string
-    ): Promise<EarningsCalendarItem[]> {
-        const rows = await this.db
-            .select()
-            .from(earningsCalendar)
-            .where(between(earningsCalendar.earningsDate, fromDate, toDate))
-            .orderBy(earningsCalendar.earningsDate);
-
-        return rows.map(toCalendarItem);
     }
 }
 

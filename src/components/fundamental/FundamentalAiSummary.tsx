@@ -71,8 +71,7 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
                             >
                                 <div className="mb-1 flex items-center gap-2">
                                     <span className="text-sm font-medium">
-                                        {CATEGORY_LABEL[a.category] ??
-                                            a.category}
+                                        {CATEGORY_LABEL[a.category]}
                                     </span>
                                     <span
                                         className={cn(

@@ -61,22 +61,6 @@ function makeSelectLimitDb(rows: unknown[]): {
     };
 }
 
-function makeSelectOrderByDb(rows: unknown[]): {
-    db: SiglensDatabase;
-    select: jest.Mock;
-    orderBy: jest.Mock;
-} {
-    const orderBy = jest.fn().mockResolvedValue(rows);
-    const where = jest.fn(() => ({ orderBy }));
-    const from = jest.fn(() => ({ where }));
-    const select = jest.fn(() => ({ from }));
-    return {
-        db: { select } as unknown as SiglensDatabase,
-        select,
-        orderBy,
-    };
-}
-
 // Use the production mapper to produce DB row fixtures — exercises the same
 // code path as upsertMany and avoids duplicating the mapping logic in tests.
 const toDbRow = toCalendarRow;
@@ -143,28 +127,6 @@ describe('DrizzleEarningsCalendarRepository', () => {
             await expect(
                 repo.getNextForSymbol('AAPL', '2025-09-01')
             ).rejects.toThrow(/AAPL.*2025-11-01/);
-        });
-    });
-
-    describe('listForRange', () => {
-        it('범위 내 모든 항목을 반환한다', async () => {
-            const { db, orderBy } = makeSelectOrderByDb([
-                toDbRow(appleQ2),
-                toDbRow(appleQ3),
-            ]);
-            const repo = new DrizzleEarningsCalendarRepository(db);
-            const results = await repo.listForRange('2025-08-01', '2025-12-31');
-
-            expect(results).toHaveLength(2);
-            expect(results[0]?.symbol).toBe('AAPL');
-            expect(orderBy).toHaveBeenCalledTimes(1);
-        });
-
-        it('범위 내 항목이 없으면 빈 배열을 반환한다', async () => {
-            const { db } = makeSelectOrderByDb([]);
-            const repo = new DrizzleEarningsCalendarRepository(db);
-            const results = await repo.listForRange('2099-01-01', '2099-12-31');
-            expect(results).toEqual([]);
         });
     });
 });

@@ -13,7 +13,7 @@ interface SectorDirectionCardProps {
     historical: FundamentalSectorHistoricalInput[];
 }
 
-/** 스파크라인에 사용할 최근 일수. 변경 시 SectorDirectionCard JSDoc 메시지도 같이 갱신. */
+/** 스파크라인에 사용할 최근 일수. JSX 레이블에서도 같은 상수를 참조한다. */
 const SPARKLINE_DAYS = 30;
 
 interface SectorSparklineProps {
@@ -109,7 +109,7 @@ export function SectorDirectionCard({
             {historical.length >= 2 && (
                 <div>
                     <p className="text-secondary-400 mb-2 text-xs">
-                        최근 30거래일 섹터 수익률
+                        최근 {SPARKLINE_DAYS}거래일 섹터 수익률
                     </p>
                     <SectorSparkline data={historical} />
                 </div>

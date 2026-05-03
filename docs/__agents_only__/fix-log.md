@@ -144,10 +144,6 @@
 - Rule: MISTAKES.md TypeScript 5.5 — Function return types using inline object literals instead of named types
 - Context: Extracted `export interface UseOverallAnalysisReturn` named interface; hook now returns UseOverallAnalysisReturn.
 
-- Violation: `useMemo(() => getAllowedModels(DEFAULT_TIER), [])` with empty deps in 4 files (FundamentalAiSummary, NewsAiSummary, OverallContent, NewsAugment)
-- Rule: MISTAKES.md Coding Paradigm 10 — Derived constants recreated on every render without memoization
-- Context: Replaced with module-level `const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);` constant; modelId useMemo deps reduced.
-
 ## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: toEarningsReport in src/infrastructure/db/earningsReportsRepository.ts had inline parameter type { symbol: string; earningsDate: string } while sibling earningsCalendarRepository.ts uses named EarningsCalendarDbRow interface
 - Rule: MISTAKES.md TypeScript 5.5 — Inline object parameter type instead of named interface; breaks sibling consistency
@@ -181,10 +177,6 @@
 - Rule: MISTAKES.md Components 17 — Hook order: useState/useRef → useQuery/useMutation → useCallback/useMemo → derived variables
 - Context: Moved after useMutation group, before useMemo calculations with explanatory comment.
 
-- Violation: ContextSwitchMessage and DisplayMessage UI-only types defined in src/domain/types.ts
-- Rule: CLAUDE.md Architecture #2 — domain/ must remain presentation-free; UI types belong in lib/
-- Context: Created src/lib/chat/types.ts and moved both types there. Updated imports in useChat.ts and useChatInput.ts.
-
 - Violation: NewsDisplayItem component name lacks clear semantic meaning for news object representation
 - Rule: MISTAKES.md Components 11 — Function/interface names become inaccurate after architectural changes
 - Context: Reviewed suggested renames (NewsPublicFields, NewsItemBase) but each has trade-offs without clear winner. Deferred for naming committee discussion (not blockers per blocker scope).
@@ -206,10 +198,6 @@
 - Context: Each file extracted local constants: SKELETON_LINE_COUNT (3 files: 3 lines), SKELETON_SECTION_COUNT (3 loading.tsx files: 6/5/3 sections).
 
 ## [PR #413 R18 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: NewsDisplayItem (UI presentation type) was in src/domain/types.ts — Architecture #2 violation
-- Rule: CLAUDE.md Architecture #2 — domain/ must remain presentation-free; UI types belong in lib/
-- Context: Created src/lib/news/types.ts and moved NewsDisplayItem there. 2nd recurrence same pattern (R17 ContextSwitchMessage). Strong candidate for PR checklist promotion.
-
 - Violation: NewsDisplayItem.sentiment and .category were `string | null`, losing type safety
 - Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards; DB columns backed by domain enums must be cast at repository boundary
 - Context: Now typed `NewsSentiment | null` / `NewsCategory | null` from @y0ngha/siglens-core with trust model comment in toNewsRow: "DB는 sentiment/category를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다."
@@ -221,5 +209,22 @@
 - Violation: @internal tag on non-exported interface NewsDbRow in src/infrastructure/db/newsRepository.ts
 - Rule: MISTAKES.md Documentation Sync 3 — @internal redundant when function/type is already module-private by scope
 - Context: Removed tag, kept description. Same precedent as R17 (toGradesAction).
+
+## [PR #413 R19 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: SectorDirectionCard.tsx hardcoded literal "최근 30거래일 섹터 수익률" in JSX while using SPARKLINE_DAYS=30 constant
+- Rule: MISTAKES.md Coding Paradigm 15 — Magic number drifts from constant when literal also hardcoded elsewhere
+- Context: Replaced hardcoded literal with template string using constant: `최근 {SPARKLINE_DAYS}거래일 섹터 수익률`. Updated JSDoc to document JSX dependency.
+
+- Violation: FundamentalAiSummary.tsx used `CATEGORY_LABEL[a.category] ?? a.category` as fallback after total Record lookup
+- Rule: MISTAKES.md Predictability 2 — Dead code fallback when type system guarantees field presence
+- Context: CATEGORY_LABEL is a total Record<FundamentalCategory, string> — the ?? branch never runs. Removed fallback.
+
+- Violation: useChat.ts effect comment "Skip initial mount (prev === currentLabel on first run)" was misleading
+- Rule: MISTAKES.md Readability 2 — Comment describing implementation detail instead of actual behavior
+- Context: Updated to "Skip initial mount (prev is null on first render) or when label is unavailable" to match actual exit condition.
+
+- Violation: earningsCalendarRepository.ts defined unused listForRange(from, to) method and test cases
+- Rule: YAGNI — Infrastructure methods should land in PR that uses them, not pre-emptively
+- Context: Removed method (never called from production), dropped unused between import, makeSelectOrderByDb mock, and 2 test cases. Cron and per-symbol use cases already covered by upsertMany and getNextForSymbol.
 
 
