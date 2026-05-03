@@ -121,6 +121,14 @@ async function runOverallAnalysis(
         return;
     }
 
+    if (submitted.status === 'limit_error') {
+        ctx.setState({
+            status: 'error',
+            error: '오늘 분석 한도를 모두 사용했어요. 내일 다시 시도해 주세요.',
+        });
+        return;
+    }
+
     // status === 'submitted' — start polling
     const { jobId } = submitted;
     ctx.setState({ status: 'polling' });

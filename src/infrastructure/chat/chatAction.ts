@@ -27,10 +27,21 @@ async function getClientIp(): Promise<string> {
     );
 }
 
-function getServerPaidKey(provider: LlmProvider): string | undefined {
+/**
+ * Server-owned primary chat key per provider, mapped to core's `freeApiKey`.
+ *
+ * 0.7.3 semantics: `freeApiKey` is the server-owned primary credential that
+ * core forwards to the AI provider. Without it core returns `server_error`
+ * for every request. Google additionally honors `GEMINI_CHAT_FREE_API_KEY`
+ * as the preferred primary; it falls back to `GEMINI_CHAT_API_KEY`.
+ */
+function getServerPrimaryKey(provider: LlmProvider): string | undefined {
     switch (provider) {
         case 'google':
-            return process.env.GEMINI_CHAT_API_KEY;
+            return (
+                process.env.GEMINI_CHAT_FREE_API_KEY ??
+                process.env.GEMINI_CHAT_API_KEY
+            );
         case 'anthropic':
             return process.env.ANTHROPIC_CHAT_API_KEY;
         case 'openai':
@@ -42,29 +53,22 @@ function getServerPaidKey(provider: LlmProvider): string | undefined {
     }
 }
 
-function getServerFreeKey(provider: LlmProvider): string | undefined {
-    // Only Google provides a free-quota fallback key; other providers use the paid key exclusively.
-    switch (provider) {
-        case 'google':
-            return process.env.GEMINI_CHAT_FREE_API_KEY;
-        case 'anthropic':
-        case 'openai':
-            return undefined;
-        default: {
-            const exhausted: never = provider;
-            throw new Error(`Unhandled LLM provider: ${String(exhausted)}`);
-        }
-    }
-}
-
-async function resolvePaidApiKey(
+/**
+ * Resolve user-registered BYOK key for the given premium model, mapped to
+ * core's `paidApiKey` (the fallback credential).
+ *
+ * 0.7.3 semantics: free-tier models do not require a BYOK; core covers them
+ * via `freeApiKey` alone. Premium models on a non-pro tier require a BYOK —
+ * returning `undefined` lets core respond with `user_api_key_required` so
+ * the UI can prompt the user to register a key.
+ */
+async function resolveUserByokKey(
     model: ModelId,
-    provider: LlmProvider,
-    serverPaidKey: string
+    provider: LlmProvider
 ): Promise<string | undefined> {
     // Safe cast: ModelId ⊆ string; Array.includes widens the argument type to string.
     if ((TIER_CONFIG.models.free as readonly string[]).includes(model)) {
-        return serverPaidKey;
+        return undefined;
     }
     const user = await getCurrentUser();
     if (!user) return undefined;
@@ -72,7 +76,6 @@ async function resolvePaidApiKey(
     const repo = new DrizzleUserApiKeyRepository(db);
     const record = await repo.findByUserAndProvider(user.id, provider);
     return record?.apiKey;
-    // undefined → requestChatCompletion returns user_api_key_required
 }
 
 export async function chatAction(
@@ -83,15 +86,15 @@ export async function chatAction(
     userMessage: string,
     model: ModelId = GEMINI_2_5_FLASH_MODEL
 ): Promise<ChatActionResult> {
-    const provider = getProviderForModel(model);
-    const serverPaidKey = getServerPaidKey(provider);
-    if (!serverPaidKey) {
-        return { ok: false, error: 'server_error' };
-    }
-
     try {
+        const provider = getProviderForModel(model);
+        const freeApiKey = getServerPrimaryKey(provider);
+        if (!freeApiKey) {
+            return { ok: false, error: 'server_error' };
+        }
+
         const [paidApiKey, clientIp] = await Promise.all([
-            resolvePaidApiKey(model, provider, serverPaidKey),
+            resolveUserByokKey(model, provider),
             getClientIp(),
         ]);
 
@@ -104,7 +107,7 @@ export async function chatAction(
                 history,
                 userMessage,
                 model,
-                freeApiKey: getServerFreeKey(provider),
+                freeApiKey,
                 paidApiKey,
             },
             {

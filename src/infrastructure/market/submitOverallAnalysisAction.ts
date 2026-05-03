@@ -25,28 +25,32 @@ export async function submitOverallAnalysisAction(
     timeframe: Timeframe,
     modelId: SubmitOverallAnalysisOptions['modelId']
 ): Promise<SubmitOverallAnalysisResult> {
-    const { db } = getDatabaseClient();
-    const newsRepo = new DrizzleNewsRepository(db);
-    const calRepo = new DrizzleEarningsCalendarRepository(db);
+    try {
+        const { db } = getDatabaseClient();
+        const newsRepo = new DrizzleNewsRepository(db);
+        const calRepo = new DrizzleEarningsCalendarRepository(db);
 
-    const [rows, next] = await Promise.all([
-        newsRepo.listBySymbol(symbol, NEWS_LOOKBACK_MS),
-        calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
-    ]);
+        const [rows, next] = await Promise.all([
+            newsRepo.listBySymbol(symbol, NEWS_LOOKBACK_MS),
+            calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
+        ]);
 
-    const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
-        .filter(isEnrichedRow)
-        .map(toEnrichedNewsItem);
+        const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
+            .filter(isEnrichedRow)
+            .map(toEnrichedNewsItem);
 
-    return submitOverallAnalysis({
-        symbol,
-        timeframe,
-        modelId,
-        fundamentalProvider: new FmpFundamentalClient(),
-        news: enrichedNews,
-        upcomingCalendar: next !== null ? [next] : [],
-        // Pre-Phase 4: no tier/usage/userApiKey overrides needed.
-        technical: {},
-        waitUntil,
-    });
+        return await submitOverallAnalysis({
+            symbol,
+            timeframe,
+            modelId,
+            fundamentalProvider: new FmpFundamentalClient(),
+            newsItems: enrichedNews,
+            upcomingCalendar: next !== null ? [next] : [],
+            // Pre-Phase 4: no tier/usage/userApiKey overrides needed.
+            technical: {},
+            waitUntil,
+        });
+    } catch (e) {
+        return { status: 'error', axis: 'technical', error: e };
+    }
 }

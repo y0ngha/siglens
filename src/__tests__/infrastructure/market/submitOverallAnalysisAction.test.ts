@@ -150,8 +150,8 @@ describe('submitOverallAnalysisAction 함수는', () => {
         await submitOverallAnalysisAction('AAPL', '1Day', MODEL_ID);
 
         const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
-        expect(callArg?.news).toHaveLength(1);
-        const item = callArg?.news[0] as EnrichedNewsItem;
+        expect(callArg?.newsItems).toHaveLength(1);
+        const item = callArg?.newsItems?.[0] as EnrichedNewsItem;
         expect(item.card.titleKo).toBe('애플 실적 예상치 상회');
     });
 
@@ -191,5 +191,21 @@ describe('submitOverallAnalysisAction 함수는', () => {
         );
 
         expect(result).toBe(SUBMITTED_RESULT);
+    });
+
+    it('내부에서 예외가 발생하면 status: error를 반환한다', async () => {
+        mockListBySymbol.mockResolvedValue([]);
+        mockGetNextForSymbol.mockResolvedValue(null);
+        mockSubmitOverallAnalysis.mockRejectedValueOnce(
+            new Error('unexpected')
+        );
+
+        const result = await submitOverallAnalysisAction(
+            'AAPL',
+            '1Day',
+            MODEL_ID
+        );
+
+        expect(result).toMatchObject({ status: 'error', axis: 'technical' });
     });
 });

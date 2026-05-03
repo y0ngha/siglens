@@ -92,7 +92,7 @@ function makeHeadersMap(xForwardedFor?: string) {
 describe('chatAction 함수는', () => {
     beforeEach(() => {
         jest.clearAllMocks();
-        process.env.GEMINI_CHAT_API_KEY = 'gemini-paid-key';
+        process.env.GEMINI_CHAT_API_KEY = 'gemini-server-key';
         delete process.env.GEMINI_CHAT_FREE_API_KEY;
         delete process.env.ANTHROPIC_CHAT_API_KEY;
         delete process.env.OPENAI_CHAT_API_KEY;
@@ -118,7 +118,7 @@ describe('chatAction 함수는', () => {
     });
 
     describe('Gemini 모델을 사용할 때', () => {
-        it('free Gemini 모델은 서버 paid key로 요청한다', async () => {
+        it('free Gemini 모델은 GEMINI_CHAT_API_KEY를 freeApiKey로 전달한다', async () => {
             const result = await chatAction(
                 'AAPL',
                 '1Day',
@@ -131,15 +131,15 @@ describe('chatAction 함수는', () => {
             expect(result).toBe(SUCCESS_RESULT);
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    paidApiKey: 'gemini-paid-key',
-                    freeApiKey: undefined,
+                    freeApiKey: 'gemini-server-key',
+                    paidApiKey: undefined,
                     model: 'gemini-2.5-flash',
                 }),
                 { callAiProvider: callAiProviderRouter }
             );
         });
 
-        it('GEMINI_CHAT_FREE_API_KEY가 설정되면 freeApiKey도 함께 전달한다', async () => {
+        it('GEMINI_CHAT_FREE_API_KEY가 설정되면 freeApiKey로 우선 사용한다', async () => {
             process.env.GEMINI_CHAT_FREE_API_KEY = 'gemini-free-key';
 
             await chatAction(
@@ -153,8 +153,8 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    paidApiKey: 'gemini-paid-key',
                     freeApiKey: 'gemini-free-key',
+                    paidApiKey: undefined,
                 }),
                 expect.anything()
             );
@@ -162,7 +162,7 @@ describe('chatAction 함수는', () => {
     });
 
     describe('Anthropic 모델을 사용할 때', () => {
-        it('free Anthropic 모델은 서버 paid key로 요청하고 freeApiKey는 undefined이다', async () => {
+        it('free Anthropic 모델은 ANTHROPIC_CHAT_API_KEY를 freeApiKey로 전달한다', async () => {
             process.env.ANTHROPIC_CHAT_API_KEY = 'anthr-key';
             delete process.env.GEMINI_CHAT_API_KEY;
 
@@ -177,8 +177,8 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    paidApiKey: 'anthr-key',
-                    freeApiKey: undefined,
+                    freeApiKey: 'anthr-key',
+                    paidApiKey: undefined,
                     model: 'claude-haiku-3-5',
                 }),
                 { callAiProvider: callAiProviderRouter }
@@ -187,7 +187,7 @@ describe('chatAction 함수는', () => {
     });
 
     describe('OpenAI 모델을 사용할 때', () => {
-        it('free OpenAI 모델은 서버 paid key로 요청하고 freeApiKey는 undefined이다', async () => {
+        it('free OpenAI 모델은 OPENAI_CHAT_API_KEY를 freeApiKey로 전달한다', async () => {
             process.env.OPENAI_CHAT_API_KEY = 'oai-key';
             delete process.env.GEMINI_CHAT_API_KEY;
 
@@ -202,8 +202,8 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    paidApiKey: 'oai-key',
-                    freeApiKey: undefined,
+                    freeApiKey: 'oai-key',
+                    paidApiKey: undefined,
                     model: 'gpt-5-mini',
                 }),
                 { callAiProvider: callAiProviderRouter }
@@ -212,7 +212,7 @@ describe('chatAction 함수는', () => {
     });
 
     describe('서버 키가 없을 때', () => {
-        it('Gemini 서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+        it('Gemini 서버 primary key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
             delete process.env.GEMINI_CHAT_API_KEY;
 
             const result = await chatAction(
@@ -228,7 +228,7 @@ describe('chatAction 함수는', () => {
             expect(mockRequestChatCompletion).not.toHaveBeenCalled();
         });
 
-        it('Anthropic 서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+        it('Anthropic 서버 primary key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
             const result = await chatAction(
                 'AAPL',
                 '1Day',
@@ -242,7 +242,7 @@ describe('chatAction 함수는', () => {
             expect(mockRequestChatCompletion).not.toHaveBeenCalled();
         });
 
-        it('OpenAI 서버 paid key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
+        it('OpenAI 서버 primary key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
             const result = await chatAction(
                 'AAPL',
                 '1Day',
@@ -277,13 +277,14 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
+                    freeApiKey: 'anthr-key',
                     paidApiKey: undefined,
                 }),
                 expect.anything()
             );
         });
 
-        it('premium 모델이고 로그인 + 사용자 키 등록이면 사용자 키를 전달한다', async () => {
+        it('premium 모델이고 로그인 + 사용자 키 등록이면 paidApiKey로 사용자 키를 전달한다', async () => {
             const mockFindByUserAndProvider = jest
                 .fn()
                 .mockResolvedValue({ apiKey: 'user-personal-key' });
@@ -313,6 +314,7 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
+                    freeApiKey: 'anthr-key',
                     paidApiKey: 'user-personal-key',
                 }),
                 expect.anything()
@@ -352,6 +354,7 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
+                    freeApiKey: 'anthr-key',
                     paidApiKey: undefined,
                 }),
                 expect.anything()
@@ -455,23 +458,20 @@ describe('chatAction 함수는', () => {
     });
 
     describe('알 수 없는 provider 처리', () => {
-        it('getServerPaidKey가 알 수 없는 provider를 받으면 에러가 전파된다', async () => {
-            // getServerPaidKey is called outside the try block — the throw propagates
-            // rather than being caught as server_error.
+        it('알 수 없는 provider로 요청하면 server_error를 반환한다', async () => {
             mockGetProviderForModel.mockReturnValueOnce(
                 'unknown' as unknown as LlmProvider
             );
 
-            await expect(
-                chatAction(
-                    'AAPL',
-                    '1Day',
-                    MINIMAL_ANALYSIS,
-                    [],
-                    '질문',
-                    'gemini-2.5-flash'
-                )
-            ).rejects.toThrow('Unhandled LLM provider');
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
+            expect(result).toEqual({ ok: false, error: 'server_error' });
         });
     });
 });
