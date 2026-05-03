@@ -1,23 +1,14 @@
 'use client';
 
-import { useMemo } from 'react';
 import {
-    DEFAULT_TIER,
-    getAllowedModels,
     type FundamentalAnalysisResponse,
     type FundamentalCategory,
     type FundamentalCategoryAssessment,
     type FundamentalSentiment,
 } from '@y0ngha/siglens-core';
-import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { cn } from '@/lib/cn';
-import {
-    FALLBACK_MODEL_ID,
-    resolveDefaultModelForProvider,
-} from '@/domain/llm/providerDefaults';
+import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
-
-const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);
 
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',
@@ -131,14 +122,7 @@ interface FundamentalAiSummaryProps {
 }
 
 export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
-    const [selectedProvider] = useSelectedProvider();
-    const modelId = useMemo(
-        () =>
-            resolveDefaultModelForProvider(selectedProvider, ALLOWED_MODELS) ??
-            FALLBACK_MODEL_ID,
-        [selectedProvider]
-    );
-
+    const modelId = useDefaultModelId();
     const result = useFundamentalAnalysis(symbol, modelId);
 
     return <FundamentalAiSummaryView result={result} />;

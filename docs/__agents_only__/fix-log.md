@@ -199,4 +199,17 @@
 - Rule: MISTAKES.md Readability — Multi-line comments should be compressed to single line when possible
 - Context: Compressed to single line.
 
+## [PR #413 R15 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: useAnalysis.ts: eslint-disable react-hooks/set-state-in-effect with poll useEffect pattern reverted to poll-async-IIFE + cooldown async-IIFE useEffect
+- Rule: MISTAKES.md #13 — eslint-disable suppresses lint warnings instead of fixing root cause; restructure code to eliminate the warning
+- Context: Partial React Query refactor reverted; poll/cooldown use async-IIFE patterns where setState happens inside callback, not synchronously in effect body. Pattern does not trigger rule because setState is wrapped in async callback scope.
+
+- Violation: src/infrastructure/db/schema.ts multi-line JSDoc on `news`, `earningsCalendar`, `earningsReports` table definitions
+- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line descriptions unnecessary; compress to single line
+- Context: All 3 compressed to single-line `/** ... */` format.
+
+- Violation: src/__tests__/infrastructure/fmp/newsClient.test.ts hardcoded time literals `60 * 60 * 1_000` × 3 (ms per hour)
+- Rule: MISTAKES.md #15 — Hardcoded literals in calculations must be extracted to named module-level constants; extends to test files
+- Context: Imported `MS_PER_HOUR` from @/domain/constants/time, replaced 3 occurrences.
+
 

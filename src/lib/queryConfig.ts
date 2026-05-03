@@ -40,7 +40,4 @@ export const QUERY_KEYS = {
         ['news-analysis', symbol, modelId] as const,
     newsAugment: (symbol: string, modelId: ModelId) =>
         ['news-augment', symbol, modelId] as const,
-    analysisJob: (jobId: string) => ['analysis-job', jobId] as const,
-    reanalyzeCooldown: (symbol: string, timeframe: Timeframe) =>
-        ['reanalyze-cooldown', symbol, timeframe] as const,
 } as const;

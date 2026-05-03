@@ -200,12 +200,7 @@ export const inquiries = pgTable('inquiries', {
         .defaultNow(),
 });
 
-/**
- * News articles fetched from FMP — one row per article URL.
- * `id` is a FMP-derived hash of the URL.
- * `titleKo`, `bodyKo`, `summaryKo`, `sentiment`, and `category` are populated
- * after LLM card-analysis; until then the columns are null.
- */
+/** FMP에서 fetch한 뉴스 기사. LLM 카드 분석 전에는 titleKo/bodyKo/summaryKo/sentiment/category가 null. */
 export const news = pgTable(
     'news',
     {
@@ -240,11 +235,7 @@ export const news = pgTable(
     ]
 );
 
-/**
- * Scheduled and reported earnings events keyed by (symbol, earnings_date).
- * Actual figures (`epsActual`, `revenueActual`) are populated once the
- * earnings event has been reported.
- */
+/** (symbol, earnings_date) 복합키 어닝 이벤트. epsActual/revenueActual은 발표 후 채워짐. */
 export const earningsCalendar = pgTable(
     'earnings_calendar',
     {
@@ -266,11 +257,7 @@ export const earningsCalendar = pgTable(
     ]
 );
 
-/**
- * Raw FMP earnings report payloads keyed by (symbol, earnings_date).
- * The `rawPayload` column stores the full FMP response so it can be
- * parsed or re-processed without re-fetching.
- */
+/** (symbol, earnings_date) 복합키 raw FMP 어닝 리포트. rawPayload는 재파싱용 전체 응답. */
 export const earningsReports = pgTable(
     'earnings_reports',
     {

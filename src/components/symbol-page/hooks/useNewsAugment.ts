@@ -9,9 +9,11 @@ import { QUERY_KEYS } from '@/lib/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/infrastructure/market/pollingConfig';
 
 // `null` is returned for the no-news case so the consumer can render nothing without throwing.
+// AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 async function fetchNewsAugment(
     symbol: string,
-    modelId: ModelId
+    modelId: ModelId,
+    signal: AbortSignal
 ): Promise<NewsAnalysisResponse | null> {
     const submitted = await submitNewsAnalysisAction(symbol, modelId);
 
@@ -26,8 +28,9 @@ async function fetchNewsAugment(
     }
 
     const { jobId } = submitted;
-    while (true) {
+    while (!signal.aborted) {
         await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
+        if (signal.aborted) throw new Error('aborted');
         const polled = await pollNewsAnalysisAction(jobId);
         if (polled.status === 'done') return polled.result;
         if (polled.status === 'error') {
@@ -36,6 +39,7 @@ async function fetchNewsAugment(
             );
         }
     }
+    throw new Error('aborted');
 }
 
 export function useNewsAugment(
@@ -44,7 +48,7 @@ export function useNewsAugment(
 ): NewsAnalysisResponse | null {
     const { data } = useSuspenseQuery({
         queryKey: QUERY_KEYS.newsAugment(symbol, modelId),
-        queryFn: () => fetchNewsAugment(symbol, modelId),
+        queryFn: ({ signal }) => fetchNewsAugment(symbol, modelId, signal),
     });
     return data;
 }

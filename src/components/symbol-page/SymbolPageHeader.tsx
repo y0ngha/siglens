@@ -65,7 +65,6 @@ export function SymbolPageHeader({
                     onChange={onTimeframeChange}
                 />
             </div>
-            {/* SymbolTabs는 usePathname() 사용 — Suspense로 감싸 PPR prerender shell이 정적 스켈레톤으로 완료되도록 함 */}
             <div className="-mx-4 mt-3">
                 <Suspense fallback={<SymbolTabsSkeleton />}>
                     <SymbolTabs symbol={symbol} />

@@ -1,16 +1,8 @@
 'use client';
 
-import { useMemo } from 'react';
 import Link from 'next/link';
-import { DEFAULT_TIER, getAllowedModels } from '@y0ngha/siglens-core';
-import {
-    FALLBACK_MODEL_ID,
-    resolveDefaultModelForProvider,
-} from '@/domain/llm/providerDefaults';
-import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
+import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useNewsAugment } from '@/components/symbol-page/hooks/useNewsAugment';
-
-const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);
 
 interface NewsAugmentProps {
     /** Ticker symbol (already uppercased). */
@@ -19,14 +11,7 @@ interface NewsAugmentProps {
 
 // Shares cache with the news page — resolves immediately if the user visited news first.
 export function NewsAugment({ symbol }: NewsAugmentProps) {
-    const [selectedProvider] = useSelectedProvider();
-    const modelId = useMemo(
-        () =>
-            resolveDefaultModelForProvider(selectedProvider, ALLOWED_MODELS) ??
-            FALLBACK_MODEL_ID,
-        [selectedProvider]
-    );
-
+    const modelId = useDefaultModelId();
     const result = useNewsAugment(symbol, modelId);
 
     if (result === null) return null;

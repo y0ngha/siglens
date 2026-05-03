@@ -11,9 +11,11 @@ import { sleep } from '@/components/symbol-page/utils/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/infrastructure/market/pollingConfig';
 
+// AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 async function fetchFundamentalAnalysis(
     symbol: string,
-    modelId: ModelId
+    modelId: ModelId,
+    signal: AbortSignal
 ): Promise<FundamentalAnalysisResponse> {
     const submitted = await submitFundamentalAnalysisAction(symbol, modelId);
 
@@ -27,14 +29,16 @@ async function fetchFundamentalAnalysis(
     }
 
     const { jobId } = submitted;
-    while (true) {
+    while (!signal.aborted) {
         await sleep(FUNDAMENTAL_NEWS_POLL_INTERVAL_MS);
+        if (signal.aborted) throw new Error('aborted');
         const polled = await pollFundamentalAnalysisAction(jobId);
         if (polled.status === 'done') return polled.result;
         if (polled.status === 'error') {
             throw new Error(polled.error ?? '분석 중 오류가 발생했습니다.');
         }
     }
+    throw new Error('aborted');
 }
 
 export function useFundamentalAnalysis(
@@ -43,7 +47,8 @@ export function useFundamentalAnalysis(
 ): FundamentalAnalysisResponse {
     const { data } = useSuspenseQuery({
         queryKey: QUERY_KEYS.fundamentalAnalysis(symbol, modelId),
-        queryFn: () => fetchFundamentalAnalysis(symbol, modelId),
+        queryFn: ({ signal }) =>
+            fetchFundamentalAnalysis(symbol, modelId, signal),
     });
     return data;
 }

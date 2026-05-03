@@ -3,6 +3,7 @@ import {
     computeCutoff,
     hashUrlToId,
 } from '@/infrastructure/fmp/newsClient';
+import { MS_PER_HOUR } from '@/domain/constants/time';
 
 const mockFetch = jest.fn();
 
@@ -22,17 +23,17 @@ describe('computeCutoff', () => {
 
     it('returns 24 hours before now for "24h"', () => {
         const cutoff = computeCutoff('24h');
-        expect(cutoff.getTime()).toBe(FIXED_NOW_MS - 24 * 60 * 60 * 1_000);
+        expect(cutoff.getTime()).toBe(FIXED_NOW_MS - 24 * MS_PER_HOUR);
     });
 
     it('returns 7 days (168 h) before now for "7d"', () => {
         const cutoff = computeCutoff('7d');
-        expect(cutoff.getTime()).toBe(FIXED_NOW_MS - 168 * 60 * 60 * 1_000);
+        expect(cutoff.getTime()).toBe(FIXED_NOW_MS - 168 * MS_PER_HOUR);
     });
 
     it('returns 30 days (720 h) before now for "30d"', () => {
         const cutoff = computeCutoff('30d');
-        expect(cutoff.getTime()).toBe(FIXED_NOW_MS - 720 * 60 * 60 * 1_000);
+        expect(cutoff.getTime()).toBe(FIXED_NOW_MS - 720 * MS_PER_HOUR);
     });
 });
 

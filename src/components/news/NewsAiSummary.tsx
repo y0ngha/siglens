@@ -1,21 +1,12 @@
 'use client';
 
-import { useMemo } from 'react';
 import {
-    DEFAULT_TIER,
-    getAllowedModels,
     type NewsAnalysisResponse,
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
-import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
-import {
-    FALLBACK_MODEL_ID,
-    resolveDefaultModelForProvider,
-} from '@/domain/llm/providerDefaults';
 import { cn } from '@/lib/cn';
+import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
-
-const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -117,14 +108,7 @@ interface NewsAiSummaryProps {
 }
 
 export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
-    const [selectedProvider] = useSelectedProvider();
-    const modelId = useMemo(
-        () =>
-            resolveDefaultModelForProvider(selectedProvider, ALLOWED_MODELS) ??
-            FALLBACK_MODEL_ID,
-        [selectedProvider]
-    );
-
+    const modelId = useDefaultModelId();
     const result = useNewsAnalysis(symbol, modelId);
 
     return <NewsAiSummaryView result={result} />;

@@ -1,17 +1,9 @@
 'use client';
 
-import { useMemo, type CSSProperties } from 'react';
+import { type CSSProperties } from 'react';
 import { cn } from '@/lib/cn';
-import {
-    DEFAULT_TIER,
-    getAllowedModels,
-    type Timeframe,
-} from '@y0ngha/siglens-core';
-import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
-import {
-    FALLBACK_MODEL_ID,
-    resolveDefaultModelForProvider,
-} from '@/domain/llm/providerDefaults';
+import { type Timeframe } from '@y0ngha/siglens-core';
+import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
 import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
 import { DependencyProgress } from '@/components/overall/DependencyProgress';
@@ -23,22 +15,13 @@ import { ThreeAxisConclusion } from '@/components/overall/sections/ThreeAxisConc
 import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis';
 import { RiskFactors } from '@/components/overall/sections/RiskFactors';
 
-const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);
-
 interface OverallContentProps {
     symbol: string;
     timeframe: Timeframe;
 }
 
 export function OverallContent({ symbol, timeframe }: OverallContentProps) {
-    const [selectedProvider] = useSelectedProvider();
-    const modelId = useMemo(
-        () =>
-            resolveDefaultModelForProvider(selectedProvider, ALLOWED_MODELS) ??
-            FALLBACK_MODEL_ID,
-        [selectedProvider]
-    );
-
+    const modelId = useDefaultModelId();
     const { state, trigger } = useOverallAnalysis(symbol, timeframe, modelId);
 
     if (state.status === 'idle') {
