@@ -43,7 +43,7 @@ export async function submitOverallAnalysisAction(
         timeframe,
         modelId,
         fundamentalProvider: new FmpFundamentalClient(),
-        news: enrichedNews,
+        newsItems: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],
         // Pre-Phase 4: no tier/usage/userApiKey overrides needed.
         technical: {},
