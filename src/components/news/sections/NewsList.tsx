@@ -1,6 +1,25 @@
-import type { NewsRow } from '@/infrastructure/db/newsRepository';
 import type { NewsSentiment } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
+
+/**
+ * Minimal shape that `NewsList` needs to render a single news card.
+ *
+ * Mirrors the fields from `NewsRow` (NewsItem + nullable analysis columns)
+ * without importing from infrastructure. The page-layer RSC fetcher resolves
+ * the actual `NewsRow` values and passes them down as this type — structural
+ * compatibility is guaranteed by the shared field names.
+ */
+export interface NewsDisplayItem {
+    id: string;
+    publishedAt: string;
+    titleEn: string;
+    titleKo: string | null;
+    sentiment: string | null;
+    category: string | null;
+    summaryKo: string | null;
+    url: string;
+    source: string;
+}
 
 // ─── Sentiment badge ──────────────────────────────────────────────────────────
 
@@ -43,7 +62,7 @@ function SentimentBadge({ value }: SentimentBadgeProps) {
 // ─── News card ────────────────────────────────────────────────────────────────
 
 interface NewsCardProps {
-    item: NewsRow;
+    item: NewsDisplayItem;
 }
 
 function NewsCard({ item }: NewsCardProps) {
@@ -57,7 +76,7 @@ function NewsCard({ item }: NewsCardProps) {
 
     return (
         <article className="rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/50">
-            <h3 className="text-[text-wrap:balance] font-semibold leading-snug">
+            <h3 className="text-balance font-semibold leading-snug">
                 {item.titleKo ?? item.titleEn}
             </h3>
             <div className="mt-1.5 flex flex-wrap items-center gap-2">
@@ -99,7 +118,7 @@ function NewsCard({ item }: NewsCardProps) {
 // ─── Section ──────────────────────────────────────────────────────────────────
 
 interface NewsListProps {
-    items: NewsRow[];
+    items: NewsDisplayItem[];
 }
 
 /**
