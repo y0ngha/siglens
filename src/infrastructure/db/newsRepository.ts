@@ -1,8 +1,13 @@
 import { and, desc, eq, gte, sql } from 'drizzle-orm';
-import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
+import type {
+    NewsCardAnalysis,
+    NewsCategory,
+    NewsItem,
+    NewsSentiment,
+} from '@y0ngha/siglens-core';
 import { news } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
-import type { NewsDisplayItem } from '@/domain/types';
+import type { NewsDisplayItem } from '@/lib/news/types';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {
@@ -88,7 +93,7 @@ export class DrizzleNewsRepository {
     }
 }
 
-/** @internal Shape of a single row read from the `news` table. */
+/** Shape of a single row read from the `news` table. */
 interface NewsDbRow {
     id: string;
     symbol: string;
@@ -105,7 +110,8 @@ interface NewsDbRow {
     analyzedAt: Date | null;
 }
 
-/** Map a DB row to the {@link NewsRow} domain shape. */
+// DB는 sentiment/category를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다.
+// 잘못된 값은 표시 단의 isNewsSentiment 가드(NewsList.tsx)가 fallback 처리한다.
 function toNewsRow(row: NewsDbRow): NewsRow {
     return {
         id: row.id,
@@ -118,8 +124,8 @@ function toNewsRow(row: NewsDbRow): NewsRow {
         titleKo: row.titleKo,
         bodyKo: row.bodyKo,
         summaryKo: row.summaryKo,
-        sentiment: row.sentiment,
-        category: row.category,
+        sentiment: row.sentiment as NewsSentiment | null,
+        category: row.category as NewsCategory | null,
         analyzedAt: row.analyzedAt,
     };
 }

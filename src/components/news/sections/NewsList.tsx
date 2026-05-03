@@ -1,6 +1,6 @@
 import type { NewsSentiment } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
-import type { NewsDisplayItem } from '@/domain/types';
+import type { NewsDisplayItem } from '@/lib/news/types';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',

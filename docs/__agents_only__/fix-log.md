@@ -205,4 +205,21 @@
 - Rule: MISTAKES.md Coding Paradigm 15 — Named constants for render-count magic numbers
 - Context: Each file extracted local constants: SKELETON_LINE_COUNT (3 files: 3 lines), SKELETON_SECTION_COUNT (3 loading.tsx files: 6/5/3 sections).
 
+## [PR #413 R18 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: NewsDisplayItem (UI presentation type) was in src/domain/types.ts — Architecture #2 violation
+- Rule: CLAUDE.md Architecture #2 — domain/ must remain presentation-free; UI types belong in lib/
+- Context: Created src/lib/news/types.ts and moved NewsDisplayItem there. 2nd recurrence same pattern (R17 ContextSwitchMessage). Strong candidate for PR checklist promotion.
+
+- Violation: NewsDisplayItem.sentiment and .category were `string | null`, losing type safety
+- Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards; DB columns backed by domain enums must be cast at repository boundary
+- Context: Now typed `NewsSentiment | null` / `NewsCategory | null` from @y0ngha/siglens-core with trust model comment in toNewsRow: "DB는 sentiment/category를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다."
+
+- Violation: 17+ @internal tags on exported interfaces in src/infrastructure/fmp/types.ts
+- Rule: MISTAKES.md Documentation Sync 3 — @internal contradicts export visibility; exported symbols are consumable
+- Context: Removed all @internal tags via sed. Mass occurrence in single file; RawFmpPriceTargetPeriod (non-exported) @internal also removed for consistency.
+
+- Violation: @internal tag on non-exported interface NewsDbRow in src/infrastructure/db/newsRepository.ts
+- Rule: MISTAKES.md Documentation Sync 3 — @internal redundant when function/type is already module-private by scope
+- Context: Removed tag, kept description. Same precedent as R17 (toGradesAction).
+
 

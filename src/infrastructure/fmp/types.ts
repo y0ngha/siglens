@@ -1,6 +1,6 @@
 // FMP-specific raw response shapes — internal to infrastructure/fmp/ only; mirrors siglens-core Raw* shapes for local extension.
 
-/** @internal Raw FMP company profile. `mktCap` must be mapped → `marketCap`. */
+/** Raw FMP company profile. `mktCap` must be mapped → `marketCap`. */
 export interface RawFmpProfile {
     symbol: string;
     companyName: string;
@@ -13,7 +13,7 @@ export interface RawFmpProfile {
     description: string | null;
 }
 
-/** @internal Raw FMP TTM key metrics (valuation multiples). */
+/** Raw FMP TTM key metrics (valuation multiples). */
 export interface RawFmpKeyMetricsTtm {
     peRatioTTM: number | null;
     priceToSalesRatioTTM: number | null;
@@ -23,7 +23,7 @@ export interface RawFmpKeyMetricsTtm {
     epsTTM: number | null;
 }
 
-/** @internal Raw FMP TTM ratios (profitability + health). */
+/** Raw FMP TTM ratios (profitability + health). */
 export interface RawFmpRatiosTtm {
     returnOnEquityTTM: number | null;
     returnOnAssetsTTM: number | null;
@@ -33,32 +33,32 @@ export interface RawFmpRatiosTtm {
     currentRatioTTM: number | null;
 }
 
-/** @internal Raw FMP income statement growth (year-over-year). */
+/** Raw FMP income statement growth (year-over-year). */
 export interface RawFmpIncomeGrowth {
     growthRevenue: number | null;
     growthEPS: number | null;
 }
 
-/** @internal Raw FMP financial scores (Altman Z-score + Piotroski F-score). */
+/** Raw FMP financial scores (Altman Z-score + Piotroski F-score). */
 export interface RawFmpFinancialScore {
     altmanZScore: number | null;
     piotroskiScore: number | null;
 }
 
-/** @internal Raw FMP stock peer entry. */
+/** Raw FMP stock peer entry. */
 export interface RawFmpStockPeer {
     symbol: string;
     companyName: string;
     marketCap: number;
 }
 
-/** @internal Raw FMP analyst estimate (next-quarter averages). */
+/** Raw FMP analyst estimate (next-quarter averages). */
 export interface RawFmpAnalystEstimate {
     estimatedEpsAvg: number | null;
     estimatedRevenueAvg: number | null;
 }
 
-/** @internal Raw FMP analyst grades (individual rating-change event). */
+/** Raw FMP analyst grades (individual rating-change event). */
 export interface RawFmpGradesEvent {
     symbol: string;
     date: string;
@@ -68,7 +68,7 @@ export interface RawFmpGradesEvent {
     action: string;
 }
 
-/** @internal Raw FMP analyst grade consensus breakdown. */
+/** Raw FMP analyst grade consensus breakdown. */
 export interface RawFmpGradesConsensus {
     strongBuy: number;
     buy: number;
@@ -77,7 +77,7 @@ export interface RawFmpGradesConsensus {
     strongSell: number;
 }
 
-/** @internal Raw FMP price target consensus. */
+/** Raw FMP price target consensus. */
 export interface RawFmpPriceTargetConsensus {
     targetHigh: number | null;
     targetLow: number | null;
@@ -85,43 +85,43 @@ export interface RawFmpPriceTargetConsensus {
     targetConsensus: number | null;
 }
 
-/** @internal Single lookback-window slice of {@link RawFmpPriceTargetSummary}. */
+/** Single lookback-window slice of {@link RawFmpPriceTargetSummary}. */
 interface RawFmpPriceTargetPeriod {
     avgPriceTarget: number | null;
 }
 
-/** @internal Raw FMP price target summary (grouped by lookback window). */
+/** Raw FMP price target summary (grouped by lookback window). */
 export interface RawFmpPriceTargetSummary {
     lastMonth: RawFmpPriceTargetPeriod;
     lastQuarter: RawFmpPriceTargetPeriod;
     lastYear: RawFmpPriceTargetPeriod;
 }
 
-/** @internal Raw FMP sector performance snapshot (one entry per sector per date). */
+/** Raw FMP sector performance snapshot (one entry per sector per date). */
 export interface RawFmpSectorPerformance {
     sector: string;
     changesPercentage: number;
 }
 
-/** @internal Raw FMP historical sector performance entry (one row per date per sector). */
+/** Raw FMP historical sector performance entry (one row per date per sector). */
 export interface RawFmpHistoricalSectorPerformance {
     date: string;
     sector: string;
     changesPercentage: number;
 }
 
-/** @internal Raw FMP cash flow statement (operating cash flow subset). */
+/** Raw FMP cash flow statement (operating cash flow subset). */
 export interface RawFmpCashFlowStatement {
     operatingCashFlow: number | null;
 }
 
-/** @internal Raw FMP earnings report for a symbol. */
+/** Raw FMP earnings report for a symbol. */
 export interface RawFmpEarningsReport {
     symbol: string;
     earningsDate: string;
 }
 
-/** @internal Raw FMP news article from `/stable/news/stock`. */
+/** Raw FMP news article from `/stable/news/stock`. */
 export interface RawFmpNews {
     symbol: string;
     publishedDate: string;
@@ -131,7 +131,7 @@ export interface RawFmpNews {
     url: string;
 }
 
-/** @internal Raw FMP earnings calendar entry from `/stable/earnings-calendar`. */
+/** Raw FMP earnings calendar entry from `/stable/earnings-calendar`. */
 export interface RawFmpEarningsCalendarItem {
     symbol: string;
     date: string;
