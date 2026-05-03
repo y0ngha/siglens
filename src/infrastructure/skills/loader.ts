@@ -18,6 +18,8 @@ const SKILL_CATEGORIES: readonly SkillCategory[] = [
     'continuation_bullish',
     'continuation_bearish',
     'neutral',
+    'fundamental',
+    'news',
 ];
 
 const parseYamlValue = (value: string): unknown => {

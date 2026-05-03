@@ -20,11 +20,13 @@ const RANGE_TO_LIMIT: Record<NewsTimeRange, number> = {
     '30d': 300,
 };
 
+const HOURS_PER_DAY = 24;
+
 /** Hours to subtract from `Date.now()` to compute the cutoff per `NewsTimeRange`. */
 const RANGE_TO_HOURS: Record<NewsTimeRange, number> = {
-    '24h': 24,
-    '7d': 168,
-    '30d': 720,
+    '24h': HOURS_PER_DAY,
+    '7d': 7 * HOURS_PER_DAY,
+    '30d': 30 * HOURS_PER_DAY,
 };
 
 /** Cutoff `Date` for filtering articles older than the given `NewsTimeRange`. */

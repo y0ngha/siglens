@@ -41,7 +41,7 @@ export async function ensureNewsCardsAnalyzedAction(
             if (result.status === 'cached') {
                 await repo.attachAnalysis(item.id, result.result, new Date());
             }
-            // 'submitted' case: worker processes async; next page load picks up the result from per-card Redis cache via DB.
+            // 'submitted': worker finishes async → Redis cache populated → next ensureNewsCardsAnalyzedAction call gets status='cached' and calls attachAnalysis to persist to DB.
         } catch (err) {
             console.error(
                 `[ensureNewsCardsAnalyzedAction] card analysis failed for ${item.id}:`,
