@@ -128,6 +128,8 @@ export function useChat({
     const prevAnalysisRef = useRef<AnalysisResponse | null>(null);
     // null on mount — used to skip the initial effect run in the key-change effect
     const prevKeyRef = useRef<string | null>(null);
+    // null on mount — used to skip emitting a context-switch system message on initial render
+    const previousLabelRef = useRef<string | null>(null);
     // latest-value refs: let sendMessage read current values without being in its dep array
     const messagesRef = useRef(messages);
     const loadingPhaseRef = useRef(loadingPhase);
@@ -162,8 +164,6 @@ export function useChat({
     });
 
     const currentLabel = usePageContextLabel();
-    // null on mount — used to skip emitting a system message on initial render
-    const previousLabelRef = useRef<string | null>(currentLabel);
 
     const { mutateAsync } = useMutation({
         mutationFn: ({
@@ -363,9 +363,6 @@ export function useChat({
         }
     }, [analysis, isAnalysisReady]);
 
-    // 페이지 전환 시 컨텍스트 시스템 메시지 추가:
-    // pathname이 변경될 때 (초기 마운트 제외) 새로운 페이지 컨텍스트 레이블로
-    // UI-only system message를 conversation에 추가한다.
     // LLM 프롬프트에는 포함되지 않음 — sendMessage에서 필터링된다.
     useEffect(() => {
         const prev = previousLabelRef.current;
