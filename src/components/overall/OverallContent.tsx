@@ -23,6 +23,8 @@ import { ThreeAxisConclusion } from '@/components/overall/sections/ThreeAxisConc
 import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis';
 import { RiskFactors } from '@/components/overall/sections/RiskFactors';
 
+const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);
+
 interface OverallContentProps {
     symbol: string;
     timeframe: Timeframe;
@@ -31,12 +33,11 @@ interface OverallContentProps {
 /** Client orchestrator for `/[symbol]/overall`; renders the `useOverallAnalysis` state machine. */
 export function OverallContent({ symbol, timeframe }: OverallContentProps) {
     const [selectedProvider] = useSelectedProvider();
-    const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);
     const modelId = useMemo(
         () =>
-            resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
+            resolveDefaultModelForProvider(selectedProvider, ALLOWED_MODELS) ??
             FALLBACK_MODEL_ID,
-        [selectedProvider, allowedModels]
+        [selectedProvider]
     );
 
     const { state, trigger } = useOverallAnalysis(symbol, timeframe, modelId);

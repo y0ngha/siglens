@@ -15,6 +15,8 @@ import {
 import { cn } from '@/lib/cn';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
 
+const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);
+
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
     neutral: '중립',
@@ -120,12 +122,11 @@ interface NewsAiSummaryProps {
 
 export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
     const [selectedProvider] = useSelectedProvider();
-    const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);
     const modelId = useMemo(
         () =>
-            resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
+            resolveDefaultModelForProvider(selectedProvider, ALLOWED_MODELS) ??
             FALLBACK_MODEL_ID,
-        [selectedProvider, allowedModels]
+        [selectedProvider]
     );
 
     const state = useNewsAnalysis(symbol, modelId);

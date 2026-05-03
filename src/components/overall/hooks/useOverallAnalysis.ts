@@ -26,12 +26,17 @@ type OverallAnalysisState =
 
 type CleanupFn = () => void;
 
+export interface UseOverallAnalysisReturn {
+    state: OverallAnalysisState;
+    trigger: () => void;
+}
+
 // State machine; each trigger cancels any in-flight run via the alive flag + clearTimeout.
 export function useOverallAnalysis(
     symbol: string,
     timeframe: Timeframe,
     modelId: ModelId
-): { state: OverallAnalysisState; trigger: () => void } {
+): UseOverallAnalysisReturn {
     const [state, setState] = useState<OverallAnalysisState>({
         status: 'idle',
     });

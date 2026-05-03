@@ -11,6 +11,7 @@ import type {
     RawFmpEarningsReport,
     RawFmpNews,
 } from '@/infrastructure/fmp/types';
+import { MS_PER_HOUR } from '@/domain/constants/time';
 
 /** Maximum article count to request per `NewsTimeRange` value. */
 const RANGE_TO_LIMIT: Record<NewsTimeRange, number> = {
@@ -26,13 +27,13 @@ const RANGE_TO_HOURS: Record<NewsTimeRange, number> = {
     '30d': 720,
 };
 
-/** @internal Cutoff `Date` for filtering articles older than the given `NewsTimeRange`. */
+/** Cutoff `Date` for filtering articles older than the given `NewsTimeRange`. */
 export function computeCutoff(range: NewsTimeRange): Date {
     const hours = RANGE_TO_HOURS[range];
-    return new Date(Date.now() - hours * 60 * 60 * 1_000);
+    return new Date(Date.now() - hours * MS_PER_HOUR);
 }
 
-/** @internal Stable URL-safe 32-char ID from a news article URL (base64url, truncated). */
+/** Stable URL-safe 32-char ID from a news article URL (base64url, truncated). */
 export function hashUrlToId(url: string): string {
     return Buffer.from(url).toString('base64url').slice(0, 32);
 }

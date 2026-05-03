@@ -77,12 +77,6 @@ interface AnalystActionsProps {
     events: GradesEvent[];
 }
 
-/**
- * RSC section: recent analyst grade change events.
- *
- * Data is fetched by the parent section wrapper in `page.tsx` and passed as
- * a typed prop — this component never touches infrastructure directly.
- */
 export function AnalystActions({ events }: AnalystActionsProps) {
     if (events.length === 0) {
         return null;

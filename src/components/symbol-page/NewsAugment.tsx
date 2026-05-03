@@ -10,6 +10,8 @@ import {
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { useNewsAugment } from '@/components/symbol-page/hooks/useNewsAugment';
 
+const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);
+
 interface NewsAugmentProps {
     /** Ticker symbol (already uppercased). */
     symbol: string;
@@ -18,12 +20,11 @@ interface NewsAugmentProps {
 // Shares cache with the news page — resolves immediately if the user visited news first.
 export function NewsAugment({ symbol }: NewsAugmentProps) {
     const [selectedProvider] = useSelectedProvider();
-    const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);
     const modelId = useMemo(
         () =>
-            resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
+            resolveDefaultModelForProvider(selectedProvider, ALLOWED_MODELS) ??
             FALLBACK_MODEL_ID,
-        [selectedProvider, allowedModels]
+        [selectedProvider]
     );
 
     const state = useNewsAugment(symbol, modelId);

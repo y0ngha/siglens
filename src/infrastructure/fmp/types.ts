@@ -1,15 +1,4 @@
-/**
- * FMP-specific raw response shapes for the FMP fundamental and news adapters.
- *
- * These types are internal to the `infrastructure/fmp/` layer — they represent
- * what FMP's `/stable/*` endpoints actually return over the wire.
- * They must never be exported beyond this directory; callers receive domain
- * input types returned by the adapter methods.
- *
- * All `Raw*` type definitions mirror the siglens-core published `Raw*` shapes
- * (see `@y0ngha/siglens-core` `infrastructure/fundamental/types.d.ts`) but live
- * here so the siglens app can extend or narrow them without touching the core.
- */
+// FMP-specific raw response shapes — internal to infrastructure/fmp/ only; mirrors siglens-core Raw* shapes for local extension.
 
 /** @internal Raw FMP company profile. `mktCap` must be mapped → `marketCap`. */
 export interface RawFmpProfile {

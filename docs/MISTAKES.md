@@ -131,6 +131,10 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 10. Derived constants recreated on every render without memoization
     → Wrap with useMemo for objects/maps derived from props/state
+    → Exception: pure function calls with static inputs (no props/state deps) → extract to module-level const, not useMemo
+    ❌ const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), [])  // static function, empty deps misses the point
+    ✅ const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);  // module-level constant, reused across renders
+    → Recurring: R11 found 4 instances (FundamentalAiSummary, NewsAiSummary, OverallContent, NewsAugment)
 
 11. Function/interface names become inaccurate after architectural changes
     → When replacing HTTP calls with Server Actions, renaming patterns, or moving code, update the names
@@ -158,12 +162,15 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → All magic numbers and constant values must be extracted to module-level constants
     → Function names must remain accurate when the underlying constant value changes
     → String literals (event names, storage keys, magic strings) must be extracted to constants, not duplicated across files
+    → Time calculations (milliseconds per second, hour, day) must use imported time constants from @/domain/constants/time
     ❌ function computeSecondsUntilKst17() { ... } where 17 is hardcoded; renaming breaks if constant changes
     ❌ Math.round(rawPrice * 100) / 100 with no constant for decimal factor
     ❌ 'siglens:pwa-trigger' string used in multiple files without constant
+    ❌ hours * 60 * 60 * 1_000 (ms per hour) or 9 * 60 * 60 * 1000 (KST offset) hardcoded in 2+ places
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
     ✅ const PWA_TRIGGER_EVENT = 'siglens:pwa-trigger'; import in all files using the event
+    ✅ import { MS_PER_HOUR, KST_OFFSET_HOURS } from '@/domain/constants/time'; use hours * MS_PER_HOUR
 
 15.5. JSX section comments explaining WHAT the code does — recurring pattern (3+ occurrences)
     → Well-named identifiers (components, functions, variables) are self-documenting; don't add comments repeating WHAT the code does
@@ -684,20 +691,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ FMP_INTRADAY_TIMEFRAME_MAP extended to include 30min, 4hour; docs/API.md still lists only 1Min-1Hour
    ✅ docs/API.md Timeframe table updated to include all current mappings
 
-3. Inline code comments reference removed or changed implementation
-   → Module-level JSDoc blocks must document current behavior, not legacy/removed code
-   → Single-line summaries only; multi-paragraph docstrings must be condensed to one line per function
-   ❌ tooltipPosition.ts module docs reference getBoundingClientRect() after it was removed from function
-   ❌ ai-levels.ts multi-paragraph JSDoc blocks documenting design rationale instead of current signature
-   ✅ Module comment: "Calculate tooltip position from DOMRect bounds"
-   ✅ Function comment: "Transform input levels with reconciliation rules"
-   → When changing function implementation, update related comments immediately
+3. @internal annotation on exported functions when tests legitimately import them
+   → Functions marked @internal must either be private (not exported) or actually internal
+   → When tests import and test a function, remove @internal annotation (inconsistency signals poor testing API design)
+   ❌ export function computeCutoff(…) { } with @internal JSDoc, yet newsClient.test.ts imports and tests it
+   ✅ Remove @internal; function is part of the public test interface
+   → Applies to: infrastructure utilities, domain helpers used in tests
 
-4. Multi-line JSDoc blocks for single-line function descriptions — recurring across 8+ PR rounds
+4. Multi-line JSDoc blocks for single-line function descriptions — recurring across 11+ PR rounds
    → All function comments must be single-line only; multi-line blocks add unnecessary verbosity
    → This pattern persists in new code even though documented; enforce at code review
    → Extract context/explanation into commit messages or documentation links if needed
-   → Applies to: file-top comments, component purpose descriptions, algorithm explanations, trust notes
+   → Applies to: file-top comments, component purpose descriptions, algorithm explanations, trust notes, type-export JSDoc
    ❌ /**
       * Handles authentication
       * Sets up the session and applies cookies
@@ -706,10 +711,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
       * We trust this source because...
       * It undergoes validation at...
       */
+   ❌ /**
+      * Caching configuration for news articles
+      * Defines TTL values for different news sources
+      */
    ✅ // Handles authentication and session setup
    ✅ // Trusted source (see validate-source.ts for detail)
-   → Recurring violation: 8+ consecutive PR rounds (R3, R7, R10); appears in newly-written code
+   ✅ // Caching configuration for news articles
+   → Recurring violation: 11+ consecutive PR rounds (R3, R7, R10, R11); appears in newly-written code
    → Enforce: remove multi-line JSDoc from new features during PR review
+   → Applies to file-top blocks, type exports, component JSDoc, constant descriptions
 ```
 
 ---

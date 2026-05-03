@@ -154,4 +154,25 @@
 - Rule: MISTAKES.md Coding Paradigm 2 — Identical values computed multiple times in single function/module
 - Context: Extracted single module-level `const fundamentalClient = new FmpFundamentalClient();` and replaced all 13 call sites.
 
+## [PR #413 R11 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: Multi-line JSDoc blocks in 4 NEW files: src/infrastructure/fmp/types.ts (file-top 9-line block), src/components/news/sections/AnalystActions.tsx (component 4-line JSDoc), src/lib/news/cacheTtl.ts (file-top 7-line block), src/lib/chat/derivePageContextLabel.ts (STATIC_ROUTES 2-line JSDoc)
+- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line function descriptions; enforce single-line only
+- Context: All multi-line JSDoc blocks compressed to single-line // comments.
+
+- Violation: useOverallAnalysis hook return type was inline `{ state: ...; trigger: () => void }` instead of named interface
+- Rule: MISTAKES.md TypeScript 5.5 — Function return types using inline object literals instead of named types
+- Context: Extracted `export interface UseOverallAnalysisReturn` named interface; hook now returns UseOverallAnalysisReturn.
+
+- Violation: Magic numbers in 2 places: src/infrastructure/fmp/newsClient.ts `hours * 60 * 60 * 1_000` and src/infrastructure/utils/dateKey.ts `9 * 60 * 60 * 1000`
+- Rule: MISTAKES.md 15 — Hardcoded literals in calculations must be extracted to named module-level constants
+- Context: Both replaced with imports from @/domain/constants/time (MS_PER_HOUR, KST_OFFSET_HOURS).
+
+- Violation: @internal annotation on exported functions used by tests (computeCutoff, hashUrlToId in src/infrastructure/fmp/newsClient.ts)
+- Rule: MISTAKES.md Documentation Sync 3 — Inconsistency between JSDoc intent and actual usage
+- Context: Removed @internal annotations since test file newsClient.test.ts legitimately imports both functions for testing.
+
+- Violation: `useMemo(() => getAllowedModels(DEFAULT_TIER), [])` with empty deps in 4 files (FundamentalAiSummary, NewsAiSummary, OverallContent, NewsAugment)
+- Rule: MISTAKES.md Coding Paradigm 10 — Derived constants recreated on every render without memoization
+- Context: Replaced with module-level `const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);` constant; modelId useMemo deps reduced.
+
 

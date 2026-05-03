@@ -1,11 +1,3 @@
-/**
- * TTL constants for news section data caching.
- *
- * TTL tiers (news-specific):
- * - T1: 15 minutes   — news list (articles change frequently throughout the day)
- * - T2: 12 hours     — analyst grades events (change a few times per day)
- * - T3: 7 days       — earnings reports (very slow-changing)
- */
 import {
     SECONDS_PER_DAY,
     SECONDS_PER_HOUR,

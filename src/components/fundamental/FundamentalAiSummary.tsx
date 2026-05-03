@@ -17,6 +17,8 @@ import {
 } from '@/domain/llm/providerDefaults';
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
 
+const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);
+
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',
     neutral: '중립',
@@ -130,12 +132,11 @@ interface FundamentalAiSummaryProps {
 
 export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     const [selectedProvider] = useSelectedProvider();
-    const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);
     const modelId = useMemo(
         () =>
-            resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
+            resolveDefaultModelForProvider(selectedProvider, ALLOWED_MODELS) ??
             FALLBACK_MODEL_ID,
-        [selectedProvider, allowedModels]
+        [selectedProvider]
     );
 
     const state = useFundamentalAnalysis(symbol, modelId);

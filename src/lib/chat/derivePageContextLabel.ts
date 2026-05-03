@@ -1,7 +1,4 @@
-/**
- * Static (non-symbol) top-level routes defined in the Next.js app directory.
- * Kept in sync with `src/app/` — add entries whenever a new static route is created.
- */
+// Keep in sync with src/app/ — add entries whenever a new top-level static route is created.
 const STATIC_ROUTES = new Set([
     'account',
     'api',
