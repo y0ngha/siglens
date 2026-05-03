@@ -51,7 +51,7 @@ import type {
 } from '@/infrastructure/fmp/types';
 
 /** Default number of recent grading events returned by `getGrades`. */
-const DEFAULT_GRADES_LIMIT = 10;
+export const DEFAULT_GRADES_LIMIT = 10;
 
 /**
  * Map a FMP action string to the domain `GradesAction` union.

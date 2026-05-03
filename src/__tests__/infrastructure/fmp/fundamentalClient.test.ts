@@ -1,4 +1,4 @@
-import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
+import { DEFAULT_GRADES_LIMIT, FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 
 const mockFetch = jest.fn();
 
@@ -404,7 +404,7 @@ describe('FmpFundamentalClient', () => {
             const client = new FmpFundamentalClient();
             await client.getGrades('AAPL');
             const url: string = mockFetch.mock.calls[0][0] as string;
-            expect(url).toContain('limit=10');
+            expect(url).toContain(`limit=${DEFAULT_GRADES_LIMIT}`);
         });
 
         it('returns empty array when FMP returns empty', async () => {
