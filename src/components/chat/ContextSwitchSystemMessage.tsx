@@ -1,5 +1,3 @@
-'use client';
-
 interface ContextSwitchSystemMessageProps {
     /** Korean label for the page the chatbot context switched to. */
     label: string;
@@ -21,7 +19,7 @@ export function ContextSwitchSystemMessage({
             role="status"
             aria-live="polite"
         >
-            📊 {label} 페이지로 전환되었습니다. 이전 페이지의 분석 컨텍스트는 더
+            {label} 페이지로 전환되었습니다. 이전 페이지의 분석 컨텍스트는 더
             이상 적용되지 않습니다.
         </div>
     );
