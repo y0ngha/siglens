@@ -1,4 +1,4 @@
-import { and, between, gte, sql } from 'drizzle-orm';
+import { and, between, eq, gte, sql } from 'drizzle-orm';
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import { earningsCalendar } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
@@ -55,7 +55,7 @@ export class DrizzleEarningsCalendarRepository {
             .from(earningsCalendar)
             .where(
                 and(
-                    sql`${earningsCalendar.symbol} = ${symbol}`,
+                    eq(earningsCalendar.symbol, symbol),
                     gte(earningsCalendar.earningsDate, fromDate)
                 )
             )
@@ -85,8 +85,10 @@ export class DrizzleEarningsCalendarRepository {
     }
 }
 
-/** Map an {@link EarningsCalendarItem} to a DB insert row. */
-function toCalendarRow(item: EarningsCalendarItem) {
+/** @internal Map an {@link EarningsCalendarItem} to a DB insert row. */
+export function toCalendarRow(
+    item: EarningsCalendarItem
+): typeof earningsCalendar.$inferInsert {
     return {
         symbol: item.symbol,
         earningsDate: item.earningsDate,
@@ -126,6 +128,13 @@ function toCalendarItem(row: {
             row.revenueEstimated !== null
                 ? Number(row.revenueEstimated)
                 : null,
-        lastUpdated: row.lastUpdated ?? '',
+        lastUpdated: (() => {
+            if (row.lastUpdated === null) {
+                throw new Error(
+                    `earnings_calendar row missing lastUpdated for ${row.symbol} ${row.earningsDate}`
+                );
+            }
+            return row.lastUpdated;
+        })(),
     };
 }

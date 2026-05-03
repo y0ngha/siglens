@@ -27,6 +27,10 @@ export class DrizzleNewsRepository {
     /**
      * Insert or update a news item by `id`.
      * Identity fields only — analysis columns are left unchanged on conflict.
+     *
+     * `rawPayload` is intentionally not written by upsertNewsItem.
+     * The raw FMP payload is the FMP adapter's responsibility — if needed, a
+     * future hook on the adapter side can write it via a separate update.
      */
     async upsertNewsItem(item: NewsItem): Promise<void> {
         await this.db
@@ -53,11 +57,13 @@ export class DrizzleNewsRepository {
 
     /**
      * Attach LLM-produced card analysis (translation + sentiment) to an
-     * existing `news` row identified by `id`. Sets `analyzed_at` to now.
+     * existing `news` row identified by `id`. Sets `analyzed_at` to
+     * `analyzedAt` (defaults to `new Date()` when not supplied).
      */
     async attachAnalysis(
         id: string,
-        analysis: NewsCardAnalysis
+        analysis: NewsCardAnalysis,
+        analyzedAt: Date = new Date()
     ): Promise<void> {
         await this.db
             .update(news)
@@ -67,7 +73,7 @@ export class DrizzleNewsRepository {
                 summaryKo: analysis.summaryKo,
                 sentiment: analysis.sentiment,
                 category: analysis.category,
-                analyzedAt: new Date(),
+                analyzedAt,
             })
             .where(eq(news.id, id));
     }
@@ -105,8 +111,8 @@ export class DrizzleNewsRepository {
     }
 }
 
-/** Map a DB row to the {@link NewsRow} domain shape. */
-function toNewsRow(row: {
+/** @internal Shape of a single row read from the `news` table. */
+interface NewsDbRow {
     id: string;
     symbol: string;
     source: string;
@@ -120,7 +126,10 @@ function toNewsRow(row: {
     sentiment: string | null;
     category: string | null;
     analyzedAt: Date | null;
-}): NewsRow {
+}
+
+/** Map a DB row to the {@link NewsRow} domain shape. */
+function toNewsRow(row: NewsDbRow): NewsRow {
     return {
         id: row.id,
         symbol: row.symbol,
