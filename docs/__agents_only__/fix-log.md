@@ -1,5 +1,10 @@
 # Fix Log
 
+## [chore/upgrade-siglens-core-0.7.3 | Round 1 | 2026-05-04]
+- Violation: None — review-agent approved with zero findings
+- Rule: N/A
+- Context: Branch upgrades @y0ngha/siglens-core from 0.7.2 to 0.7.3 and applies five fixes for consumer-side breakages (useOverallAnalysis limit_error case, submitOverallAnalysisAction newsItems rename, chatAction key semantics, router comment). All changes approved on round 1.
+
 ## [Tasks 2.12–2.14 R1 | feat/fundamental-news-analysis | 2026-05-02]
 - Violation: SymbolPageHeader.tsx had orphaned border-secondary-700 class (border color with no border-direction after border-b removal)
 - Rule: MISTAKES.md rule 4 — Remove logic/code that has no effect (dead CSS)
