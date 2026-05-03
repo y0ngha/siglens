@@ -183,7 +183,15 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
 });
 
 const collectMdFiles = async (dir: string): Promise<string[]> => {
-    const entries = await readdir(dir, { withFileTypes: true });
+    let entries: Dirent[];
+    try {
+        entries = await readdir(dir, { withFileTypes: true });
+    } catch (error) {
+        // Missing skills subdirectory is treated as empty (e.g. fundamental/news
+        // directories created lazily as Skill `.md` catalogs are added).
+        if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
+        throw error;
+    }
     const results = await Promise.all(
         entries.map(async (entry: Dirent) => {
             const fullPath = join(dir, entry.name);
