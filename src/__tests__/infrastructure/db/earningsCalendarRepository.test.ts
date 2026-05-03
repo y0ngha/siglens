@@ -134,6 +134,19 @@ describe('DrizzleEarningsCalendarRepository', () => {
             const result = await repo.getNextForSymbol('AAPL', '2099-01-01');
             expect(result).toBeNull();
         });
+
+        it('throws when DB row has null lastUpdated', async () => {
+            const { db } = makeSelectLimitDb([
+                { ...toDbRow(appleQ3), lastUpdated: null },
+            ]);
+            const repo = new DrizzleEarningsCalendarRepository(db);
+            await expect(
+                repo.getNextForSymbol('AAPL', '2025-09-01')
+            ).rejects.toThrow(/AAPL/);
+            await expect(
+                repo.getNextForSymbol('AAPL', '2025-09-01')
+            ).rejects.toThrow(/2025-11-01/);
+        });
     });
 
     describe('listForRange', () => {
