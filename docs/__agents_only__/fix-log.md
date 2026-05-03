@@ -7,10 +7,6 @@
 - Context: forEach 내부 .catch로 개별 에러 흡수 + 외부 void Promise.allSettled로 묶어 동일한 fire-and-forget + 에러 개별 처리 동작 유지. 테스트 무수정 통과(883/101).
 
 ## [PR #405 Round 2 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Violation: domain/types.ts가 @/infrastructure/db/types에서 AuthUserRecord 타입을 re-export (역방향 레이어 의존)
-- Rule: ARCHITECTURE.md — domain은 infrastructure에 의존 금지 (단방향 infra → domain)
-- Context: AuthUserRecord 정의를 src/domain/auth/types.ts로 이동(@y0ngha/siglens-core의 UserTier만 사용). domain/types.ts는 './auth/types'에서 re-export, infrastructure/db/types.ts는 @/domain/auth/types에서 import 후 re-export하는 방향으로 정정.
-
 - Violation: tokenEncryption.ts 헤더 문구에 "sync obligation" 언급 (Phase 6 완료했으므로 불필요)
 - Rule: Phase 6 마이그레이션 완료 후 더 이상 siglens-core와의 동기화 의무 없음 — 헤더를 과거시제로 갱신
 - Context: tokenEncryption.ts의 "Sync obligation" 문구를 "Phase 6 of the scope-realignment refactor moved the DB layer fully into siglens"로 변경; 동기화 명령문 제거.
@@ -91,9 +87,6 @@
 - Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
 - Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
 
-
-## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).
 
 
 ## [Issue #402 | feat/402/AI-모델-선택-UI | 2026-05-02]
