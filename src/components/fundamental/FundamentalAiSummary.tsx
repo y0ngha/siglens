@@ -1,0 +1,289 @@
+'use client';
+
+import { type CSSProperties, useEffect, useMemo, useState } from 'react';
+import {
+    getAllowedModels,
+    type FundamentalAnalysisResponse,
+    type FundamentalCategoryAssessment,
+    type FundamentalSentiment,
+} from '@y0ngha/siglens-core';
+import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
+import { cn } from '@/lib/cn';
+import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
+import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
+import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
+
+const DEFAULT_TIER = 'free' as const;
+const POLL_INTERVAL_MS = 2500;
+
+type AnalysisStatus = 'idle' | 'submitting' | 'polling' | 'done' | 'error';
+
+interface AnalysisState {
+    status: AnalysisStatus;
+    result?: FundamentalAnalysisResponse;
+    error?: string;
+}
+
+const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
+    bullish: '긍정',
+    neutral: '중립',
+    bearish: '부정',
+};
+
+const SENTIMENT_CLASS: Record<FundamentalSentiment, string> = {
+    bullish: 'bg-ui-success/10 text-chart-bullish',
+    neutral: 'bg-ui-warning/10 text-ui-warning',
+    bearish: 'bg-ui-danger/10 text-chart-bearish',
+};
+
+const CATEGORY_LABEL: Record<string, string> = {
+    valuation: '밸류에이션',
+    profitability: '수익성',
+    growth: '성장성',
+    health: '재무 건전성',
+    futureDirection: '미래 방향',
+};
+
+interface FundamentalAiSummaryViewProps {
+    result: FundamentalAnalysisResponse;
+}
+
+/**
+ * Renders a completed fundamental AI analysis result.
+ */
+function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
+    return (
+        <section
+            aria-labelledby="ai-summary-heading"
+            className="rounded-xl border border-border bg-card p-6"
+        >
+            <div className="mb-4 flex items-center justify-between gap-3">
+                <h2
+                    id="ai-summary-heading"
+                    className="text-lg font-semibold tracking-tight"
+                >
+                    AI 펀더멘털 분석
+                </h2>
+                <span
+                    className={cn(
+                        'rounded px-2 py-0.5 text-xs font-medium',
+                        SENTIMENT_CLASS[result.overallSentiment]
+                    )}
+                >
+                    {SENTIMENT_LABEL[result.overallSentiment]}
+                </span>
+            </div>
+
+            <p className="text-muted-foreground mb-5 text-sm leading-relaxed">
+                {result.overallConclusionKo}
+            </p>
+
+            {result.categoryAssessments.length > 0 && (
+                <ul
+                    aria-label="카테고리별 평가"
+                    className="mb-5 space-y-3"
+                >
+                    {result.categoryAssessments.map(
+                        (a: FundamentalCategoryAssessment) => (
+                            <li
+                                key={a.category}
+                                className="rounded-lg bg-muted/40 p-3"
+                            >
+                                <div className="mb-1 flex items-center gap-2">
+                                    <span className="text-sm font-medium">
+                                        {CATEGORY_LABEL[a.category] ??
+                                            a.category}
+                                    </span>
+                                    <span
+                                        className={cn(
+                                            'rounded px-1.5 py-0.5 text-xs font-medium',
+                                            SENTIMENT_CLASS[a.sentiment]
+                                        )}
+                                    >
+                                        {SENTIMENT_LABEL[a.sentiment]}
+                                    </span>
+                                </div>
+                                <p className="text-muted-foreground text-sm leading-relaxed">
+                                    {a.rationaleKo}
+                                </p>
+                            </li>
+                        )
+                    )}
+                </ul>
+            )}
+
+            {result.riskFactorsKo.length > 0 && (
+                <div>
+                    <h3 className="mb-2 text-sm font-semibold">위험 요인</h3>
+                    <ul className="space-y-1.5">
+                        {result.riskFactorsKo.map((risk, i) => (
+                            <li
+                                key={i}
+                                className="text-muted-foreground flex gap-2 text-sm"
+                            >
+                                <span aria-hidden="true" className="mt-0.5 shrink-0">
+                                    •
+                                </span>
+                                {risk}
+                            </li>
+                        ))}
+                    </ul>
+                </div>
+            )}
+        </section>
+    );
+}
+
+interface FundamentalAiSummaryProps {
+    symbol: string;
+}
+
+/**
+ * Client component: triggers fundamental AI analysis on mount, polls
+ * for completion, and renders the result.
+ *
+ * Uses `useSelectedProvider` to pick the model. Polling interval: 2.5 s.
+ */
+export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
+    const [selectedProvider] = useSelectedProvider();
+    const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);
+    const modelId = useMemo(
+        () =>
+            resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
+            'claude-haiku-3-5',
+        [selectedProvider, allowedModels]
+    );
+
+    const [state, setState] = useState<AnalysisState>({ status: 'idle' });
+
+    useEffect(() => {
+        let alive = true;
+        let pollHandle: ReturnType<typeof setTimeout> | null = null;
+
+        async function run(): Promise<void> {
+            setState({ status: 'submitting' });
+
+            const submitted = await submitFundamentalAnalysisAction(
+                symbol,
+                modelId
+            );
+
+            if (!alive) return;
+
+            if (submitted.status === 'cached') {
+                setState({ status: 'done', result: submitted.result });
+                return;
+            }
+
+            if (submitted.status === 'error') {
+                const errorMsg =
+                    submitted.code === 'fetch_failed'
+                        ? (submitted.error ?? '데이터를 불러오지 못했습니다.')
+                        : '사용량 한도를 초과했습니다.';
+                setState({ status: 'error', error: errorMsg });
+                return;
+            }
+
+            // status === 'submitted' — start polling
+            const { jobId } = submitted;
+            setState({ status: 'polling' });
+
+            const poll = async (): Promise<void> => {
+                const polled = await pollFundamentalAnalysisAction(jobId);
+                if (!alive) return;
+
+                if (polled.status === 'processing') {
+                    pollHandle = setTimeout(() => {
+                        void poll();
+                    }, POLL_INTERVAL_MS);
+                } else if (polled.status === 'done') {
+                    setState({ status: 'done', result: polled.result });
+                } else {
+                    setState({
+                        status: 'error',
+                        error: polled.error ?? '분석 중 오류가 발생했습니다.',
+                    });
+                }
+            };
+
+            void poll();
+        }
+
+        void run();
+
+        return () => {
+            alive = false;
+            if (pollHandle !== null) clearTimeout(pollHandle);
+        };
+    }, [symbol, modelId]);
+
+    if (state.status === 'done' && state.result !== undefined) {
+        return <FundamentalAiSummaryView result={state.result} />;
+    }
+
+    if (state.status === 'error') {
+        return (
+            <section
+                aria-labelledby="ai-summary-error-heading"
+                className="rounded-xl border border-destructive/30 bg-card p-6"
+            >
+                <h2
+                    id="ai-summary-error-heading"
+                    className="mb-2 text-lg font-semibold tracking-tight"
+                >
+                    AI 펀더멘털 분석
+                </h2>
+                <p className="text-destructive text-sm" role="alert">
+                    {state.error ?? '분석 중 오류가 발생했습니다.'}
+                </p>
+            </section>
+        );
+    }
+
+    const loadingLabel =
+        state.status === 'submitting'
+            ? 'AI 분석 요청 중…'
+            : 'AI 펀더멘털 분석 진행 중…';
+
+    return (
+        <section
+            aria-labelledby="ai-summary-loading-heading"
+            aria-busy="true"
+            className="rounded-xl border border-border bg-card p-6"
+        >
+            <h2
+                id="ai-summary-loading-heading"
+                className="mb-4 text-lg font-semibold tracking-tight"
+            >
+                AI 펀더멘털 분석
+            </h2>
+            <div className="flex items-center gap-3">
+                <div
+                    aria-hidden="true"
+                    className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+                />
+                <p
+                    className="text-muted-foreground text-sm"
+                    aria-live="polite"
+                    aria-atomic="true"
+                >
+                    {loadingLabel}
+                </p>
+            </div>
+            <div className="mt-4 space-y-2">
+                {[...Array(3)].map((_, i) => (
+                    <div
+                        key={i}
+                        className="bg-muted h-4 w-[var(--skeleton-w)] animate-pulse rounded"
+                        style={
+                            {
+                                '--skeleton-w': `${85 - i * 12}%`,
+                            } as CSSProperties
+                        }
+                        aria-hidden="true"
+                    />
+                ))}
+            </div>
+        </section>
+    );
+}

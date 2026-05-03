@@ -131,3 +131,45 @@ export const BACKTESTING_KEYWORDS = [
     'AI 분석 신뢰도',
     'Magnificent 7 분석',
 ];
+
+export interface SymbolFundamentalSeoContent {
+    title: string;
+    fullTitle: string;
+    description: string;
+    url: string;
+    keywords: string[];
+}
+
+/**
+ * Build SEO metadata for the `/[symbol]/fundamental` page.
+ *
+ * @param symbol - Raw ticker symbol (case-insensitive; normalised to uppercase internally).
+ */
+export function buildSymbolFundamentalSeoContent(
+    symbol: string
+): SymbolFundamentalSeoContent {
+    const upper = symbol.toUpperCase();
+    const title = `${upper} 펀더멘털 분석`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    return {
+        title,
+        fullTitle,
+        description: `${upper}의 PER·PSR·EPS·ROE·재무 건전성·애널리스트 컨센서스·섹터 방향 등 펀더멘털 종합 AI 분석.`,
+        url: `${SITE_URL}/${upper}/fundamental`,
+        keywords: [
+            upper,
+            `${upper} 펀더멘털 분석`,
+            `${upper} 재무 분석`,
+            `${upper} 밸류에이션`,
+            `${upper} 애널리스트 컨센서스`,
+            '펀더멘털 분석',
+            'PER',
+            'PSR',
+            'EPS',
+            'ROE',
+            '재무 건전성',
+            '애널리스트 컨센서스',
+            '목표 주가',
+        ],
+    };
+}

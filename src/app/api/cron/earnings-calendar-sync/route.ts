@@ -14,8 +14,6 @@ import { getDatabaseClient } from '@/infrastructure/db/client';
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 
-export const runtime = 'nodejs';
-export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/cron/earnings-calendar-sync
