@@ -18,7 +18,7 @@
 | siglens | `/Users/y0ngha/Project/siglens-fund-news-analysis` (워크트리, 이미 생성됨) | `feat/fundamental-news-analysis` (base: `master`) |
 | siglens-worker | 변경 없음 (일반화된 prompt → AI 호출 패턴이라 새 분석 종류 추가에 코드 변경 불필요) | — |
 
-**Phase 순서**: Phase 1 (siglens-core)을 먼저 완성 → npm publish (예: `0.8.0-beta.1`) → Phase 2 (siglens)에서 새 버전 import.
+**Phase 순서**: Phase 1 (siglens-core)을 먼저 완성 → npm publish (예: `0.7.2`) → Phase 2 (siglens)에서 새 버전 import.
 
 ---
 
@@ -101,15 +101,15 @@ CLAUDE.md Skill Usage Rules와 일관. 각 task 시작 시 subagent dispatch pro
 | `src/__tests__/infrastructure/cache/config.test.ts` | 새 캐시 키 빌더 테스트 | 수정 |
 | `src/__tests__/infrastructure/skills/loader.test.ts` | 새 카테고리 스캔 테스트 | 수정 |
 | `src/__tests__/domain/chat/buildChatPrompt.test.ts` | currentAnalysisContext 파라미터 테스트 | 수정 |
-| `package.json` | version bump (`0.7.1` → `0.8.0-beta.1`) | 수정 |
-| `CHANGELOG.md` | 0.8.0-beta.1 변경 항목 | 수정 |
+| `package.json` | version bump (`0.7.1` → `0.7.2`) | 수정 |
+| `CHANGELOG.md` | 0.7.2 변경 항목 | 수정 |
 | `docs/PUBLIC_API.md` | 새 export 인벤토리 갱신 | 수정 |
 
 ### Phase 2 — siglens (워크트리: `/Users/y0ngha/Project/siglens-fund-news-analysis`)
 
 | 파일 | 역할 | 생성/수정 |
 |------|------|----------|
-| `package.json` | `@y0ngha/siglens-core` 0.8.0-beta.1로 업데이트 | 수정 |
+| `package.json` | `@y0ngha/siglens-core` 0.7.2로 업데이트 | 수정 |
 | `src/infrastructure/fmp/fundamentalClient.ts` | `FundamentalDataProvider` 구현 (16개 fetch) | 생성 |
 | `src/infrastructure/fmp/newsClient.ts` | `NewsProvider` 구현 (news, earnings-calendar, earnings) | 생성 |
 | `src/infrastructure/fmp/types.ts` | FMP 응답 타입 (raw + 정규화 변환 함수) | 생성 |
@@ -2858,16 +2858,16 @@ Expected: 해당 export 라인 모두 출력
 
 ### Task 1.20: 버전 bump + CHANGELOG + PR 생성 + npm publish
 
-- [ ] **Step 1: package.json version 0.7.1 → 0.8.0-beta.1**
+- [ ] **Step 1: package.json version 0.7.1 → 0.7.2**
 
 ```bash
-yarn version --new-version 0.8.0-beta.1 --no-git-tag-version
+yarn version --new-version 0.7.2 --no-git-tag-version
 ```
 
 - [ ] **Step 2: CHANGELOG.md 항목 추가**
 
 ```markdown
-## 0.8.0-beta.1 (2026-05-02)
+## 0.7.2 (2026-05-02)
 
 ### feat
 - 새 분석 use-case 3종: `submitFundamentalAnalysis`, `submitNewsAnalysis`, `submitOverallAnalysis` (각 poll/cancel 동반)
@@ -2881,7 +2881,7 @@ yarn version --new-version 0.8.0-beta.1 --no-git-tag-version
 
 ```bash
 git add package.json CHANGELOG.md
-git commit -m "chore: 0.8.0-beta.1 릴리스 준비"
+git commit -m "chore: 0.7.2 릴리스 준비"
 ```
 
 - [ ] **Step 4: PR 생성 (siglens-core, base: main)**
@@ -2899,7 +2899,7 @@ yarn publish --tag beta --access public
 
 (또는 `npm publish --tag beta`)
 
-Expected: `@y0ngha/siglens-core@0.8.0-beta.1` 게시 완료
+Expected: `@y0ngha/siglens-core@0.7.2` 게시 완료
 
 ---
 
@@ -2915,7 +2915,7 @@ Expected: `@y0ngha/siglens-core@0.8.0-beta.1` 게시 완료
 
 ```bash
 cd /Users/y0ngha/Project/siglens-fund-news-analysis
-yarn add @y0ngha/siglens-core@0.8.0-beta.1
+yarn add @y0ngha/siglens-core@0.7.2
 ```
 
 - [ ] **Step 2: TypeScript 컴파일 확인 (기존 코드는 깨지지 않아야 함)**
@@ -2927,7 +2927,7 @@ Expected: PASS (새 export는 unused 경고만 가능)
 
 ```bash
 git add package.json yarn.lock
-git commit -m "chore: siglens-core 0.8.0-beta.1 의존성 업데이트"
+git commit -m "chore: siglens-core 0.7.2 의존성 업데이트"
 ```
 
 ### Task 2.1: FMP Fundamental Client (`FundamentalDataProvider` 구현)
@@ -4542,7 +4542,7 @@ Focus on layer dependency rules, type-safety, error handling, accessibility on t
 Create a PR for siglens worktree.
 - base: master
 - title: feat: 펀더/뉴스/AI 종합 분석 페이지 추가
-- body: spec 링크 + 핵심 결정 요약 + cross-repo 의존성 (siglens-core 0.8.0-beta.1) 명시
+- body: spec 링크 + 핵심 결정 요약 + cross-repo 의존성 (siglens-core 0.7.2) 명시
 ```
 
 - [ ] **Step 5: siglens-core PR 본문에 siglens PR 링크 역방향 연결**
