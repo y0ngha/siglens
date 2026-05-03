@@ -126,12 +126,7 @@ export class FmpNewsClient implements NewsProvider {
         }));
     }
 
-    /**
-     * Fetch the latest earnings report for a symbol.
-     *
-     * @param symbol - Ticker symbol (e.g. `"AAPL"`).
-     * @returns The most recent earnings report, or `null` when unavailable.
-     */
+    /** Fetch the latest earnings report for a symbol; returns `null` when unavailable. */
     async fetchEarningsReport(symbol: string): Promise<EarningsReport | null> {
         const raw = await fmpGet<RawFmpEarningsReport[]>('earnings', {
             symbol,

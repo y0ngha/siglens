@@ -53,12 +53,7 @@ import type {
 /** Default number of recent grading events returned by `getGrades`. */
 export const DEFAULT_GRADES_LIMIT = 10;
 
-/**
- * Map a FMP action string to the domain `GradesAction` union.
- * Unknown strings fall back to `'other'`.
- *
- * @internal
- */
+/** @internal Map a FMP action string to the domain `GradesAction` union; unknown strings fall back to `'other'`. */
 function toGradesAction(raw: string): GradesAction {
     const lower = raw.toLowerCase();
     if (lower === 'upgrade') return 'upgrade';
@@ -77,12 +72,7 @@ function toGradesAction(raw: string): GradesAction {
  * before returning — the adapter is the boundary responsible for this translation.
  */
 export class FmpFundamentalClient implements FundamentalDataProvider {
-    /**
-     * Fetch company profile and map `mktCap` → `marketCap`.
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral profile, or `null` when FMP returns an empty array.
-     */
+    /** Fetch company profile and map `mktCap` → `marketCap`; returns `null` when FMP returns an empty array. */
     async getProfile(symbol: string): Promise<FundamentalProfileInput | null> {
         const arr = await fmpGet<RawFmpProfile[]>('profile', { symbol });
         const r = arr[0];
@@ -99,12 +89,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /**
-     * Fetch TTM key metrics (valuation multiples + EPS).
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral valuation metrics, or `null` when unavailable.
-     */
+    /** Fetch TTM key metrics (valuation multiples + EPS); returns `null` when unavailable. */
     async getKeyMetricsTtm(
         symbol: string
     ): Promise<FundamentalValuationMetrics | null> {
@@ -123,12 +108,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /**
-     * Fetch TTM profitability and financial health ratios.
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral ratios input, or `null` when unavailable.
-     */
+    /** Fetch TTM profitability and financial health ratios; returns `null` when unavailable. */
     async getRatiosTtm(symbol: string): Promise<FundamentalRatiosInput | null> {
         const arr = await fmpGet<RawFmpRatiosTtm[]>('ratios-ttm', { symbol });
         const r = arr[0];
@@ -143,12 +123,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /**
-     * Fetch the latest annual cash flow statement (operating cash flow subset).
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral cash flow input, or `null` when unavailable.
-     */
+    /** Fetch the latest annual cash flow statement (operating cash flow subset); returns `null` when unavailable. */
     async getCashFlowStatement(
         symbol: string
     ): Promise<FundamentalCashFlowInput | null> {
@@ -161,12 +136,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         return { operatingCashFlow: r.operatingCashFlow };
     }
 
-    /**
-     * Fetch YoY income statement growth (revenue + EPS).
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral growth input, or `null` when unavailable.
-     */
+    /** Fetch YoY income statement growth (revenue + EPS); returns `null` when unavailable. */
     async getIncomeStatementGrowth(
         symbol: string
     ): Promise<FundamentalGrowthInput | null> {
@@ -182,12 +152,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /**
-     * Fetch Altman Z-score and Piotroski F-score.
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral financial scores input, or `null` when unavailable.
-     */
+    /** Fetch Altman Z-score and Piotroski F-score; returns `null` when unavailable. */
     async getFinancialScores(
         symbol: string
     ): Promise<FundamentalFinancialScoresInput | null> {
@@ -200,12 +165,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /**
-     * Fetch the peer list for relative valuation context.
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Array of domain-neutral peer inputs; empty when unavailable.
-     */
+    /** Fetch the peer list for relative valuation context; returns an empty array when unavailable. */
     async getStockPeers(symbol: string): Promise<FundamentalPeerInput[]> {
         const arr = await fmpGet<RawFmpStockPeer[]>('stock-peers', { symbol });
         return arr.map(r => ({
@@ -215,12 +175,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         }));
     }
 
-    /**
-     * Fetch next-quarter analyst EPS + revenue consensus estimates.
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral analyst estimate input, or `null` when unavailable.
-     */
+    /** Fetch next-quarter analyst EPS + revenue consensus estimates; returns `null` when unavailable. */
     async getAnalystEstimates(
         symbol: string
     ): Promise<FundamentalAnalystEstimateInput | null> {
@@ -235,13 +190,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /**
-     * Fetch recent analyst grade-change events for a symbol.
-     *
-     * @param symbol - Ticker symbol.
-     * @param limit  - Maximum number of events (default {@link DEFAULT_GRADES_LIMIT}).
-     * @returns Recent grading actions sorted descending by date.
-     */
+    /** Fetch recent analyst grade-change events; `limit` defaults to `DEFAULT_GRADES_LIMIT`; returns events sorted descending by date. */
     async getGrades(
         symbol: string,
         limit = DEFAULT_GRADES_LIMIT
@@ -260,12 +209,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         }));
     }
 
-    /**
-     * Fetch the current buy/hold/sell grade consensus breakdown.
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral grades consensus input, or `null` when unavailable.
-     */
+    /** Fetch the current buy/hold/sell grade consensus breakdown; returns `null` when unavailable. */
     async getGradesConsensus(
         symbol: string
     ): Promise<FundamentalGradesConsensusInput | null> {
@@ -283,12 +227,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /**
-     * Fetch analyst price target consensus (high / low / median / mean).
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral price target consensus input, or `null` when unavailable.
-     */
+    /** Fetch analyst price target consensus (high / low / median / mean); returns `null` when unavailable. */
     async getPriceTargetConsensus(
         symbol: string
     ): Promise<FundamentalPriceTargetConsensusInput | null> {
@@ -306,12 +245,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /**
-     * Fetch rolling average price targets (1-month, 3-month, 12-month).
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral price target summary input, or `null` when unavailable.
-     */
+    /** Fetch rolling average price targets (1-month, 3-month, 12-month); returns `null` when unavailable. */
     async getPriceTargetSummary(
         symbol: string
     ): Promise<FundamentalPriceTargetSummaryInput | null> {
@@ -369,12 +303,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         }));
     }
 
-    /**
-     * Fetch the latest earnings report for a symbol.
-     *
-     * @param symbol - Ticker symbol.
-     * @returns Domain-neutral earnings report, or `null` when unavailable.
-     */
+    /** Fetch the latest earnings report for a symbol; returns `null` when unavailable. */
     async getEarningsReport(symbol: string): Promise<EarningsReport | null> {
         const arr = await fmpGet<RawFmpEarningsReport[]>('earnings', {
             symbol,

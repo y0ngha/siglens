@@ -14,17 +14,7 @@ import { getDatabaseClient } from '@/infrastructure/db/client';
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 
-/**
- * PATCH /api/cron/earnings-calendar-sync
- *
- * Fetches the full FMP earnings calendar and bulk-upserts all items into the
- * `earnings_calendar` table. Returns `{ inserted: number }` on success.
- *
- * HTTP method is PATCH (idempotent batch upsert — partial resource update semantics).
- *
- * @param req - Incoming HTTP request; must carry a valid Vercel Cron bearer token.
- * @returns 200 JSON `{ inserted: number }` on success, 401 when unauthorised.
- */
+/** PATCH /api/cron/earnings-calendar-sync — fetches the full FMP earnings calendar and bulk-upserts into `earnings_calendar`; returns `{ inserted: number }` on success, 401 when unauthorised. */
 export async function PATCH(req: Request): Promise<Response> {
     const cronSecret = process.env.CRON_SECRET;
     const auth = req.headers.get('authorization');
