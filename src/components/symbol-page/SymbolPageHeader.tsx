@@ -4,6 +4,7 @@ import Link from 'next/link';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import type { AssetInfo } from '@/domain/types';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
+import { SymbolTabs } from '@/components/symbol-page/SymbolTabs';
 
 interface SymbolPageHeaderProps {
     symbol: string;
@@ -22,7 +23,7 @@ export function SymbolPageHeader({
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
 
     return (
-        <header className="border-secondary-700 border-b px-4 py-3">
+        <header className="border-secondary-700 px-4 py-3">
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <Link
@@ -61,6 +62,9 @@ export function SymbolPageHeader({
                     value={timeframe}
                     onChange={onTimeframeChange}
                 />
+            </div>
+            <div className="-mx-4 mt-3">
+                <SymbolTabs symbol={symbol} />
             </div>
         </header>
     );
