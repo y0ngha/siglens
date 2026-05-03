@@ -2,6 +2,7 @@ import {
     buildSymbolSeoContent,
     buildSymbolFundamentalSeoContent,
     buildSymbolNewsSeoContent,
+    buildSymbolOverallSeoContent,
 } from '@/lib/seo';
 
 describe('buildSymbolSeoContent', () => {
@@ -86,5 +87,48 @@ describe('buildSymbolNewsSeoContent', () => {
     it('fullTitle에 브랜드명이 포함된다', () => {
         const content = buildSymbolNewsSeoContent('AMZN');
         expect(content.fullTitle).toContain('Siglens');
+    });
+});
+
+describe('buildSymbolOverallSeoContent', () => {
+    it('소문자 입력을 대문자로 정규화한다', () => {
+        const content = buildSymbolOverallSeoContent('aapl');
+        expect(content.title).toBe('AAPL AI 종합 분석');
+        expect(content.fullTitle).toBe('AAPL 기술 + 펀더 + 뉴스 통합 AI 분석 | Siglens');
+    });
+
+    it('URL이 절대 경로 /[SYMBOL]/overall 형식이다', () => {
+        const content = buildSymbolOverallSeoContent('NVDA');
+        expect(content.url).toBe('https://siglens.io/NVDA/overall');
+    });
+
+    it('title에 브랜드명이 포함되지 않는다 (루트 레이아웃이 자동 추가)', () => {
+        const content = buildSymbolOverallSeoContent('TSLA');
+        expect(content.title).not.toContain('Siglens');
+        expect(content.title).not.toContain('|');
+    });
+
+    it('fullTitle에 브랜드명이 포함된다', () => {
+        const content = buildSymbolOverallSeoContent('MSFT');
+        expect(content.fullTitle).toContain('Siglens');
+    });
+
+    it('description에 티커와 핵심 키워드가 포함된다', () => {
+        const content = buildSymbolOverallSeoContent('AAPL');
+        expect(content.description).toContain('AAPL');
+        expect(content.description).toContain('시나리오');
+    });
+
+    it('keywords 배열에 티커와 종합 분석 관련 용어가 포함된다', () => {
+        const content = buildSymbolOverallSeoContent('AAPL');
+        expect(content.keywords).toContain('AAPL');
+        expect(content.keywords).toContain('AAPL AI 종합 분석');
+        expect(content.keywords).toContain('AI 종합 분석');
+        expect(content.keywords).toContain('시나리오 분석');
+    });
+
+    it('[SYMBOL] 플레이스홀더가 결과에 포함되지 않는다', () => {
+        const content = buildSymbolOverallSeoContent('AMZN');
+        expect(JSON.stringify(content)).not.toContain('[SYMBOL]');
     });
 });

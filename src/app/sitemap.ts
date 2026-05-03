@@ -53,6 +53,12 @@ export default function sitemap(): MetadataRoute.Sitemap {
                 changeFrequency: 'weekly' as const,
                 priority: 0.75,
             },
+            {
+                url: `${SITE_URL}/${ticker}/overall`,
+                lastModified: SITEMAP_DATE,
+                changeFrequency: 'weekly' as const,
+                priority: 0.73,
+            },
         ]),
         {
             url: `${SITE_URL}${PRIVACY_PATH}`,

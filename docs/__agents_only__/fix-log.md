@@ -1,5 +1,30 @@
 # Fix Log
 
+## [Task 2.11 | feat/fundamental-news-analysis | 2026-05-02]
+- Violation: OverallContent.tsx used `style={{ width: '...' }}` inline for skeleton widths
+- Rule: MISTAKES.md rule 7 — Never use inline style for layout/styling; use CSS custom property + Tailwind pattern
+- Context: Changed to `style={{ '--skeleton-w': '...' } as CSSProperties}` + `className="w-[var(--skeleton-w)]"`.
+
+- Violation: ScenarioAnalysis.tsx used template literal `` `... ${SCENARIO_CLASS[...]}` `` to combine Tailwind classes
+- Rule: MISTAKES.md rule 7.5 — All dynamic/conditional Tailwind className combinations must use cn() utility, not template literals
+- Context: Replaced with cn('rounded px-2 py-0.5 text-xs font-medium', SCENARIO_CLASS[scenario.name]).
+
+## [Issue #396 | feat/396/llm-api-key-management | 2026-05-02]
+- Violation: ApiKeyActionState/RegisteredProvider 타입을 infrastructure/llm/types.ts에 정의 — components가 infrastructure에서 직접 type import
+- Rule: ARCHITECTURE.md — components는 infrastructure에서 import 금지; 타입은 domain에 두어야 layer 규칙 준수 가능
+- Context: domain/llm/types.ts로 이동 후 infrastructure/llm/types.ts에서 re-export. components는 @/domain/llm에서 import.
+
+- Violation: safeClose, handleBackdropClick 함수에 void 반환 타입 미선언
+- Rule: MISTAKES.md #0 — 컴포넌트 render 외부 함수는 반환 타입 명시 필요
+- Context: `: void` 반환 타입 추가.
+
+- Violation: ApiKeySection.tsx, PremiumModelGateModal.tsx에서 raw Tailwind color(emerald-*, amber-*) 직접 사용
+- Rule: MISTAKES.md Design rule 0.5 — 모든 색상은 globals.css에 등록된 semantic token(ui-success, ui-warning, ui-danger) 사용
+- Context: text-emerald-*/bg-emerald-*/ring-emerald-* → ui-success 토큰, text-amber-* → ui-warning 토큰으로 교체.
+
+- Violation: chatAction.ts에서 createDatabaseClient() (인수 필요)를 인수 없이 호출 — getDatabaseClient() (캐시된 싱글톤)를 써야 함
+- Rule: 함수 시그니처 불일치 — 인수 없이 호출 시 TypeScript 오류 발생
+- Context: createDatabaseClient() → getDatabaseClient()로 교체.
 
 ## [PR #405 Round 4 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Violation: deleteAccount.ts revokeOAuthTokens가 명령형 forEach + void Promise로 fire-and-forget 처리

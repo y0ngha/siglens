@@ -211,3 +211,43 @@ export function buildSymbolNewsSeoContent(symbol: string): SymbolNewsSeoContent 
         ],
     };
 }
+
+export interface SymbolOverallSeoContent {
+    title: string;
+    fullTitle: string;
+    description: string;
+    url: string;
+    keywords: string[];
+}
+
+/**
+ * Build SEO metadata for the `/[symbol]/overall` page.
+ *
+ * @param symbol - Raw ticker symbol (case-insensitive; normalised to uppercase internally).
+ */
+export function buildSymbolOverallSeoContent(
+    symbol: string
+): SymbolOverallSeoContent {
+    const upper = symbol.toUpperCase();
+    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
+    const title = `${upper} AI 종합 분석`;
+    const fullTitle = `${upper} 기술 + 펀더 + 뉴스 통합 AI 분석 | ${SITE_NAME}`;
+    return {
+        title,
+        fullTitle,
+        description: `${upper}의 기술적 분석, 펀더멘털, 뉴스를 통합한 AI 종합 결론과 시나리오 분석.`,
+        url: `${SITE_URL}/${upper}/overall`,
+        keywords: [
+            upper,
+            `${upper} AI 종합 분석`,
+            `${upper} 시나리오 분석`,
+            `${upper} 3축 분석`,
+            'AI 종합 분석',
+            '시나리오 분석',
+            '3축 분석',
+            '기술적 분석',
+            '펀더멘털 분석',
+            '뉴스 분석',
+        ],
+    };
+}
