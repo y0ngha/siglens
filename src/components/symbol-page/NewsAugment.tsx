@@ -15,7 +15,6 @@ interface NewsAugmentProps {
     symbol: string;
 }
 
-// Shows the "current driver" paragraph from the News analysis result.
 // Shares cache with the news page — resolves immediately if the user visited news first.
 export function NewsAugment({ symbol }: NewsAugmentProps) {
     const [selectedProvider] = useSelectedProvider();

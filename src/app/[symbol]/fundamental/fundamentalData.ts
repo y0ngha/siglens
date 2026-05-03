@@ -131,9 +131,6 @@ export async function getPriceTargetSummary(
     return new FmpFundamentalClient().getPriceTargetSummary(symbol);
 }
 
-// ─── KST date helper (re-exported for page layer convenience) ─────────────────
-export { todayKstIsoDate } from '@/lib/dateKey';
-
 // ─── T2: 1 hour (date-keyed) ─────────────────────────────────────────────────
 
 export async function getSectorSnapshot(

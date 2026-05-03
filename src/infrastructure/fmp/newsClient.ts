@@ -1,22 +1,3 @@
-/**
- * FMP implementation of `NewsProvider`.
- *
- * Fetches news articles, earnings calendar entries, and earnings reports from
- * FMP `/stable/news/stock`, `/stable/earnings-calendar`, and `/stable/earnings`.
- *
- * Field-name mapping decisions (FMP → domain):
- * - `publishedDate` → `publishedAt`
- * - `site`          → `source`
- * - `title`         → `titleEn`
- * - `text`          → `bodyEn`
- * - `date`          → `earningsDate`          (earnings calendar)
- * - `eps`           → `epsActual`             (earnings calendar)
- * - `revenue`       → `revenueActual`         (earnings calendar)
- * - `updatedFromDate` → `lastUpdated`         (earnings calendar)
- *
- * The `id` for each news item is derived by base64url-encoding the article URL
- * and truncating to 32 characters — this makes IDs stable and URL-safe.
- */
 import type {
     EarningsCalendarItem,
     EarningsReport,

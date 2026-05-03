@@ -15,8 +15,8 @@ import {
     getPriceTargetSummary,
     getSectorSnapshot,
     getHistoricalSector,
-    todayKstIsoDate,
 } from '@/app/[symbol]/fundamental/fundamentalData';
+import { todayKstIsoDate } from '@/lib/dateKey';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
 import { PeersTable } from '@/components/fundamental/sections/PeersTable';

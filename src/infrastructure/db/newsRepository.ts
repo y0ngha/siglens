@@ -15,23 +15,10 @@ export interface NewsRow extends NewsItem {
     analyzedAt: Date | null;
 }
 
-/**
- * Drizzle ORM implementation backed by the `news` table in Neon PostgreSQL.
- * Handles raw FMP article storage and LLM card-analysis attachment.
- *
- * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
- */
 export class DrizzleNewsRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
-    /**
-     * Insert or update a news item by `id`.
-     * Identity fields only — analysis columns are left unchanged on conflict.
-     *
-     * `rawPayload` is intentionally not written by upsertNewsItem.
-     * The raw FMP payload is the FMP adapter's responsibility — if needed, a
-     * future hook on the adapter side can write it via a separate update.
-     */
+    // Identity fields only on conflict — analysis columns (titleKo, sentiment, etc.) are written by attachAnalysis.
     async upsertNewsItem(item: NewsItem): Promise<void> {
         await this.db
             .insert(news)
@@ -55,11 +42,6 @@ export class DrizzleNewsRepository {
             });
     }
 
-    /**
-     * Attach LLM-produced card analysis (translation + sentiment) to an
-     * existing `news` row identified by `id`. Sets `analyzed_at` to
-     * `analyzedAt` (defaults to `new Date()` when not supplied).
-     */
     async attachAnalysis(
         id: string,
         analysis: NewsCardAnalysis,
@@ -78,10 +60,6 @@ export class DrizzleNewsRepository {
             .where(eq(news.id, id));
     }
 
-    /**
-     * List news articles for a symbol published within the last `sinceMs`
-     * milliseconds, ordered by `publishedAt` descending.
-     */
     async listBySymbol(symbol: string, sinceMs: number): Promise<NewsRow[]> {
         const cutoff = new Date(Date.now() - sinceMs);
 

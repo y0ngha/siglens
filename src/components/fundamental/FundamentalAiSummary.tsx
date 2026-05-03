@@ -41,9 +41,6 @@ interface FundamentalAiSummaryViewProps {
     result: FundamentalAnalysisResponse;
 }
 
-/**
- * Renders a completed fundamental AI analysis result.
- */
 function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
     return (
         <section
@@ -131,13 +128,6 @@ interface FundamentalAiSummaryProps {
     symbol: string;
 }
 
-/**
- * Client component: triggers fundamental AI analysis on mount, polls
- * for completion, and renders the result.
- *
- * Uses `useSelectedProvider` to pick the model.
- * All polling/state logic is delegated to `useFundamentalAnalysis`.
- */
 export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     const [selectedProvider] = useSelectedProvider();
     const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);

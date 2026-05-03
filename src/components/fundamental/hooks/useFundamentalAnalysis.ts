@@ -15,12 +15,6 @@ type FundamentalAnalysisState =
     | { status: 'done'; result: FundamentalAnalysisResponse }
     | { status: 'error'; error: string };
 
-/**
- * Hook: triggers fundamental AI analysis on mount, polls for completion,
- * and returns the current state.
- *
- * Polling interval: 2.5 s.
- */
 export function useFundamentalAnalysis(
     symbol: string,
     modelId: ModelId

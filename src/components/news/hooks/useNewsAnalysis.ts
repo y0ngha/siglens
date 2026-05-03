@@ -12,13 +12,6 @@ type NewsAnalysisState =
     | { status: 'done'; result: NewsAnalysisResponse }
     | { status: 'error'; error: string };
 
-/**
- * Hook: triggers news AI analysis on mount, polls for completion,
- * and returns the current state.
- *
- * Polling interval: 2.5 s.
- * Cleans up on unmount — no stale state updates after navigation.
- */
 export function useNewsAnalysis(
     symbol: string,
     modelId: ModelId

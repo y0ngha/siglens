@@ -29,8 +29,6 @@ import {
     NEWS_EARNINGS_REPORT_TTL_S,
 } from '@/lib/news/cacheTtl';
 
-export { todayKstIsoDate } from '@/lib/dateKey';
-
 // ─── T1: 15 minutes ──────────────────────────────────────────────────────────
 
 export async function getNewsList(symbol: string): Promise<NewsRow[]> {

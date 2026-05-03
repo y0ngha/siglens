@@ -13,18 +13,7 @@ type NewsAugmentState =
     | { status: 'done'; result: NewsAnalysisResponse }
     | { status: 'error'; error: string };
 
-/**
- * A2+A3 augment: News analysis result for the chart page.
- *
- * Shares the same analysis cache with the `/[symbol]/news` page —
- * a cache hit resolves immediately without triggering a new analysis job.
- *
- * Returns `{ status: 'idle' }` when there is no recent news to analyze,
- * so the caller can gracefully omit the augment section.
- *
- * @param symbol  - Ticker symbol (already uppercased).
- * @param modelId - LLM model to use for analysis and cache scoping.
- */
+// Returns `{ status: 'idle' }` for the no-news case so callers can omit the augment silently.
 export function useNewsAugment(
     symbol: string,
     modelId: ModelId
@@ -38,6 +27,8 @@ export function useNewsAugment(
         let pollHandle: ReturnType<typeof setTimeout> | null = null;
 
         async function run(): Promise<void> {
+            // Reset on symbol/modelId change so the previous symbol's 'done' state isn't shown.
+            setState({ status: 'loading' });
             const submitted = await submitNewsAnalysisAction(symbol, modelId);
             if (!alive) return;
 
