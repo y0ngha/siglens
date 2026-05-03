@@ -25,7 +25,8 @@ import {
     releaseReanalyzeCooldown,
     tryAcquireReanalyzeCooldown,
 } from '@/infrastructure/market/reanalyzeCooldown';
-import { sleep } from '@/components/symbol-page/utils/sleep';
+import { sleep } from '@/lib/sleep';
+import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 
 interface AnalyzeMutationVariables {
     symbol: string;
@@ -42,8 +43,6 @@ const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
 /** 캐시 히트(force=false 즉시 응답) 시 적용하는 짧은 클라이언트 쿨다운 — 같은 캐시의 빠른 반복 호출 방지. */
 const CACHE_HIT_COOLDOWN_MS = 30_000;
-
-const POLL_INTERVAL_MS = 10000;
 
 interface UseAnalysisOptions {
     symbol: string;
@@ -88,24 +87,6 @@ interface UseAnalysisResult {
     cooldownNotice: CooldownNotice | null;
 }
 
-/** Cancel any in-flight worker job, then issue a new mutation. Cancel failures are logged and swallowed so the new mutation always proceeds. */
-async function cancelPendingThenRemutate(
-    jobId: string | null,
-    issueMutation: () => void
-): Promise<void> {
-    if (jobId !== null) {
-        try {
-            await cancelAnalysisJobAction(jobId);
-        } catch (error) {
-            console.warn(
-                '[useAnalysis] cancel failed; proceeding with new mutation',
-                error
-            );
-        }
-    }
-    issueMutation();
-}
-
 export function useAnalysis({
     symbol,
     timeframe,
@@ -141,7 +122,8 @@ export function useAnalysis({
     const initialAnalysisFailedRef = useRef(initialAnalysisFailed);
     // polling 완료 시 force 경로 쿨다운 처리를 위해 마지막 요청의 force 여부를 추적
     const lastForceRef = useRef(false);
-    // 3. useMutation
+
+    // 3. useMutation — submit
     const {
         data: submitData,
         error: submitError,
@@ -214,14 +196,22 @@ export function useAnalysis({
         },
     });
 
-    // 4. Derived variables
+    // 4. useMutation — cancel
+    const { mutate: cancelMutate } = useMutation({
+        mutationFn: (jobId: string) => cancelAnalysisJobAction(jobId),
+        onError: error => {
+            console.warn('[useAnalysis] cancel failed', error);
+        },
+    });
+
+    // 5. Derived variables
     const analysis = analysisResult ?? initialAnalysis;
     const isAnalyzing = isSubmitting || isPolling;
     const analysisError = submitError?.message ?? pollError ?? null;
     // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
     const isCountdownActive = reanalyzeCooldownMs > 0;
 
-    // 5. Handlers
+    // 6. Handlers
     // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
     // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
     const handleReanalyze = useCallback((): void => {
@@ -248,7 +238,7 @@ export function useAnalysis({
         })();
     }, [reset, mutate]);
 
-    // 6. useLayoutEffect
+    // 7. useLayoutEffect
     // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
     useLayoutEffect(() => {
@@ -257,9 +247,10 @@ export function useAnalysis({
         latestModelIdRef.current = modelId;
     });
 
-    // 7. useEffect
+    // 8. useEffect
 
-    // 폴링 — submit 결과가 'submitted'이면 polling 시작
+    // 폴링 — submit 결과가 'submitted'이면 polling 시작.
+    // setState는 async IIFE 내부에서 호출되므로 react-hooks/set-state-in-effect 규칙 위반이 아니다.
     useEffect(() => {
         if (
             !submitData ||
@@ -274,7 +265,7 @@ export function useAnalysis({
 
         void (async () => {
             while (!cancelled) {
-                await sleep(POLL_INTERVAL_MS);
+                await sleep(CHART_ANALYSIS_POLL_INTERVAL_MS);
                 if (cancelled) break;
 
                 try {
@@ -350,23 +341,18 @@ export function useAnalysis({
         }
         prevTimeframeChangeCountRef.current = timeframeChangeCount;
 
-        // 진행 중인 워커 작업에 취소 신호를 보낸다. reset() 호출 이전에 jobId를 캡처해야 한다.
         const jobId = currentJobIdRef.current;
         currentJobIdRef.current = null;
 
+        if (jobId !== null) cancelMutate(jobId);
         reset();
-        // 이전 폴링 effect는 reset()으로 submitData가 undefined가 되며 cleanup된다.
-        // 그 후에 cancel RPC가 끝날 때까지 기다린 다음 새 mutation을 발사해
-        // 이전 작업의 결과가 새 mutation 상태로 흘러들지 않도록 한다.
-        void cancelPendingThenRemutate(jobId, () => {
-            mutate({
-                symbol: latestRef.current.symbol,
-                force: false,
-                fmpSymbol: latestRef.current.fmpSymbol,
-                modelId: latestModelIdRef.current,
-            });
+        mutate({
+            symbol: latestRef.current.symbol,
+            force: false,
+            fmpSymbol: latestRef.current.fmpSymbol,
+            modelId: latestModelIdRef.current,
         });
-    }, [timeframeChangeCount, reset, mutate]);
+    }, [timeframeChangeCount, reset, mutate, cancelMutate]);
 
     useEffect(() => {
         if (modelId === prevModelIdRef.current) return;
@@ -375,16 +361,15 @@ export function useAnalysis({
         const jobId = currentJobIdRef.current;
         currentJobIdRef.current = null;
 
+        if (jobId !== null) cancelMutate(jobId);
         reset();
-        void cancelPendingThenRemutate(jobId, () => {
-            mutate({
-                symbol: latestRef.current.symbol,
-                force: false,
-                fmpSymbol: latestRef.current.fmpSymbol,
-                modelId,
-            });
+        mutate({
+            symbol: latestRef.current.symbol,
+            force: false,
+            fmpSymbol: latestRef.current.fmpSymbol,
+            modelId,
         });
-    }, [modelId, reset, mutate]);
+    }, [modelId, reset, mutate, cancelMutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
     // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.
@@ -398,7 +383,8 @@ export function useAnalysis({
         };
     }, [isCountdownActive]);
 
-    // 마운트 시점 및 심볼/타임프레임 변경 시 서버에서 쿨다운 진실값을 동기화한다.
+    // 마운트 / symbol·timeframe 변경 시 서버 쿨다운 진실값을 동기화한다.
+    // setState는 async IIFE 내부에서 호출되므로 react-hooks/set-state-in-effect 규칙 위반이 아니다.
     useEffect(() => {
         let cancelled = false;
         void (async () => {

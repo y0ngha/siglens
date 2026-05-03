@@ -1,8 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import React, { useEffect, useEffectEvent, useMemo } from 'react';
+import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { ErrorBoundary } from 'react-error-boundary';
 import {
     getAllowedModels,
     type AnalysisResponse,
@@ -32,6 +33,7 @@ import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisP
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
+import { NewsAugment } from '@/components/symbol-page/NewsAugment';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -200,6 +202,11 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
+                <ErrorBoundary fallback={null}>
+                    <Suspense fallback={null}>
+                        <NewsAugment symbol={symbol} />
+                    </Suspense>
+                </ErrorBoundary>
             </>
         ),
         [

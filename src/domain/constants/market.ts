@@ -1,5 +1,8 @@
 import type { Timeframe } from '@y0ngha/siglens-core';
 
+/** Valid U.S. ticker symbols: 1–8 uppercase letters or dots. */
+export const VALID_TICKER_RE = /^[A-Z.]{1,8}$/;
+
 export const DEFAULT_TIMEFRAME: Timeframe = '1Day';
 
 export const TIMEFRAMES: readonly Timeframe[] = [

@@ -34,12 +34,32 @@ export default function sitemap(): MetadataRoute.Sitemap {
             changeFrequency: 'monthly' as const,
             priority: 0.9,
         },
-        ...POPULAR_TICKERS.map(ticker => ({
-            url: `${SITE_URL}/${ticker}`,
-            lastModified: SITEMAP_DATE,
-            changeFrequency: 'daily' as const,
-            priority: 0.8,
-        })),
+        ...POPULAR_TICKERS.flatMap(ticker => [
+            {
+                url: `${SITE_URL}/${ticker}`,
+                lastModified: SITEMAP_DATE,
+                changeFrequency: 'daily' as const,
+                priority: 0.8,
+            },
+            {
+                url: `${SITE_URL}/${ticker}/news`,
+                lastModified: SITEMAP_DATE,
+                changeFrequency: 'hourly' as const,
+                priority: 0.78,
+            },
+            {
+                url: `${SITE_URL}/${ticker}/fundamental`,
+                lastModified: SITEMAP_DATE,
+                changeFrequency: 'weekly' as const,
+                priority: 0.75,
+            },
+            {
+                url: `${SITE_URL}/${ticker}/overall`,
+                lastModified: SITEMAP_DATE,
+                changeFrequency: 'weekly' as const,
+                priority: 0.73,
+            },
+        ]),
         {
             url: `${SITE_URL}${PRIVACY_PATH}`,
             lastModified: SITEMAP_DATE,

@@ -57,6 +57,13 @@
             "when": 1777639136103,
             "tag": "0007_motionless_morph",
             "breakpoints": true
+        },
+        {
+            "idx": 8,
+            "version": "7",
+            "when": 1777787989245,
+            "tag": "0008_mushy_quasar",
+            "breakpoints": true
         }
     ]
 }

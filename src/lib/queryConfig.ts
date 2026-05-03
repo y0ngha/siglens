@@ -1,4 +1,4 @@
-import type { Timeframe } from '@y0ngha/siglens-core';
+import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 
 /** Default cache freshness for queries without a domain-specific cadence. */
@@ -34,4 +34,10 @@ export const QUERY_KEYS = {
     userTier: () => ['user-tier'] as const,
     remainingTokens: () => ['chat', 'remaining-tokens'] as const,
     registeredProviders: () => ['llm', 'registered-providers'] as const,
+    fundamentalAnalysis: (symbol: string, modelId: ModelId) =>
+        ['fundamental-analysis', symbol, modelId] as const,
+    newsAnalysis: (symbol: string, modelId: ModelId) =>
+        ['news-analysis', symbol, modelId] as const,
+    newsAugment: (symbol: string, modelId: ModelId) =>
+        ['news-augment', symbol, modelId] as const,
 } as const;

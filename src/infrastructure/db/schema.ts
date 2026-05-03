@@ -2,8 +2,11 @@ import {
     boolean,
     date,
     index,
+    jsonb,
+    numeric,
     pgEnum,
     pgTable,
+    primaryKey,
     text,
     timestamp,
     uniqueIndex,
@@ -196,3 +199,74 @@ export const inquiries = pgTable('inquiries', {
         .notNull()
         .defaultNow(),
 });
+
+/** FMP에서 fetch한 뉴스 기사. LLM 카드 분석 전에는 titleKo/bodyKo/summaryKo/sentiment/category가 null. */
+export const news = pgTable(
+    'news',
+    {
+        id: text('id').primaryKey(),
+        symbol: text('symbol').notNull(),
+        source: text('source').notNull(),
+        url: text('url').notNull().unique(),
+        publishedAt: timestamp('published_at', {
+            withTimezone: true,
+        }).notNull(),
+        titleEn: text('title_en').notNull(),
+        titleKo: text('title_ko'),
+        bodyEn: text('body_en'),
+        bodyKo: text('body_ko'),
+        summaryKo: text('summary_ko'),
+        /** LLM-assigned sentiment: 'bullish' | 'neutral' | 'bearish' */
+        sentiment: text('sentiment'),
+        /** LLM-assigned category: NewsCategory value */
+        category: text('category'),
+        rawPayload: jsonb('raw_payload'),
+        fetchedAt: timestamp('fetched_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        analyzedAt: timestamp('analyzed_at', { withTimezone: true }),
+    },
+    table => [
+        index('news_symbol_published_at_idx').on(
+            table.symbol,
+            table.publishedAt
+        ),
+        index('news_published_at_idx').on(table.publishedAt),
+    ]
+);
+
+/** (symbol, earnings_date) 복합키 어닝 이벤트. epsActual/revenueActual은 발표 후 채워짐. */
+export const earningsCalendar = pgTable(
+    'earnings_calendar',
+    {
+        symbol: text('symbol').notNull(),
+        earningsDate: date('earnings_date').notNull(),
+        epsActual: numeric('eps_actual'),
+        epsEstimated: numeric('eps_estimated'),
+        revenueActual: numeric('revenue_actual'),
+        revenueEstimated: numeric('revenue_estimated'),
+        lastUpdated: date('last_updated'),
+        rawPayload: jsonb('raw_payload'),
+        fetchedAt: timestamp('fetched_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        primaryKey({ columns: [table.symbol, table.earningsDate] }),
+        index('earnings_calendar_date_idx').on(table.earningsDate),
+    ]
+);
+
+/** (symbol, earnings_date) 복합키 raw FMP 어닝 리포트. rawPayload는 재파싱용 전체 응답. */
+export const earningsReports = pgTable(
+    'earnings_reports',
+    {
+        symbol: text('symbol').notNull(),
+        earningsDate: date('earnings_date').notNull(),
+        rawPayload: jsonb('raw_payload').notNull(),
+        fetchedAt: timestamp('fetched_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [primaryKey({ columns: [table.symbol, table.earningsDate] })]
+);

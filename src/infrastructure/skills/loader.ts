@@ -18,6 +18,8 @@ const SKILL_CATEGORIES: readonly SkillCategory[] = [
     'continuation_bullish',
     'continuation_bearish',
     'neutral',
+    'fundamental',
+    'news',
 ];
 
 const parseYamlValue = (value: string): unknown => {
@@ -183,7 +185,16 @@ const toSkill = (data: Record<string, unknown>, content: string): Skill => ({
 });
 
 const collectMdFiles = async (dir: string): Promise<string[]> => {
-    const entries = await readdir(dir, { withFileTypes: true });
+    // Missing skills subdirectory is treated as empty (e.g. fundamental/news
+    // directories created lazily as Skill `.md` catalogs are added).
+    // Node.js FS errors always carry .code; non-FS errors yield code === undefined and don't pass the ENOENT check, so the cast is safe.
+    const entries = await readdir(dir, { withFileTypes: true }).catch(
+        (error: unknown) => {
+            if ((error as NodeJS.ErrnoException).code === 'ENOENT') return null;
+            throw error;
+        }
+    );
+    if (entries === null) return [];
     const results = await Promise.all(
         entries.map(async (entry: Dirent) => {
             const fullPath = join(dir, entry.name);
@@ -202,20 +213,31 @@ const countMdFiles = async (subdir: string): Promise<number> => {
 
 export async function countSkillFiles(): Promise<SkillCounts> {
     'use cache';
-    const [indicators, candlesticks, patterns, strategies, supportResistance] =
-        await Promise.all([
-            countMdFiles('indicators'),
-            countMdFiles('candlesticks'),
-            countMdFiles('patterns'),
-            countMdFiles('strategies'),
-            countMdFiles('support-resistance'),
-        ]);
+    const [
+        indicators,
+        candlesticks,
+        patterns,
+        strategies,
+        supportResistance,
+        fundamental,
+        news,
+    ] = await Promise.all([
+        countMdFiles('indicators'),
+        countMdFiles('candlesticks'),
+        countMdFiles('patterns'),
+        countMdFiles('strategies'),
+        countMdFiles('support-resistance'),
+        countMdFiles('fundamental'),
+        countMdFiles('news'),
+    ]);
     return {
         indicators,
         candlesticks,
         patterns,
         strategies,
         supportResistance,
+        fundamental,
+        news,
     };
 }
 

@@ -131,3 +131,88 @@ export const BACKTESTING_KEYWORDS = [
     'AI 분석 신뢰도',
     'Magnificent 7 분석',
 ];
+
+/** Build SEO metadata for the `/[symbol]/fundamental` page. */
+export function buildSymbolFundamentalSeoContent(
+    symbol: string
+): SymbolSeoContent {
+    const upper = symbol.toUpperCase();
+    const title = `${upper} 펀더멘털 분석`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    return {
+        ticker: upper,
+        title,
+        fullTitle,
+        description: `${upper}의 PER·PSR·EPS·ROE·재무 건전성·애널리스트 컨센서스·섹터 방향 등 펀더멘털 종합 AI 분석.`,
+        url: `${SITE_URL}/${upper}/fundamental`,
+        keywords: [
+            upper,
+            `${upper} 펀더멘털 분석`,
+            `${upper} 재무 분석`,
+            `${upper} 밸류에이션`,
+            `${upper} 애널리스트 컨센서스`,
+            '펀더멘털 분석',
+            'PER',
+            'PSR',
+            'EPS',
+            'ROE',
+            '재무 건전성',
+            '애널리스트 컨센서스',
+            '목표 주가',
+        ],
+    };
+}
+
+/** Build SEO metadata for the `/[symbol]/news` page. */
+export function buildSymbolNewsSeoContent(symbol: string): SymbolSeoContent {
+    const upper = symbol.toUpperCase();
+    const title = `${upper} 뉴스 분석`;
+    const fullTitle = `${upper} 최신 뉴스 + AI 분석 | ${SITE_NAME}`;
+    return {
+        ticker: upper,
+        title,
+        fullTitle,
+        description: `${upper}의 최신 뉴스, sentiment 분석, 어닝 일정, 애널리스트 등급 변경 등 종합 정보.`,
+        url: `${SITE_URL}/${upper}/news`,
+        keywords: [
+            upper,
+            `${upper} 뉴스 분석`,
+            `${upper} 뉴스`,
+            `${upper} sentiment`,
+            `${upper} 어닝 발표`,
+            `${upper} 애널리스트 등급`,
+            '뉴스 분석',
+            '뉴스 sentiment',
+            '어닝 발표',
+            '애널리스트 등급',
+            '주식 뉴스',
+        ],
+    };
+}
+
+/** Build SEO metadata for the `/[symbol]/overall` page. */
+export function buildSymbolOverallSeoContent(symbol: string): SymbolSeoContent {
+    const upper = symbol.toUpperCase();
+    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
+    const title = `${upper} AI 종합 분석`;
+    const fullTitle = `${upper} 기술 + 펀더 + 뉴스 통합 AI 분석 | ${SITE_NAME}`;
+    return {
+        ticker: upper,
+        title,
+        fullTitle,
+        description: `${upper}의 기술적 분석, 펀더멘털, 뉴스를 통합한 AI 종합 결론과 시나리오 분석.`,
+        url: `${SITE_URL}/${upper}/overall`,
+        keywords: [
+            upper,
+            `${upper} AI 종합 분석`,
+            `${upper} 시나리오 분석`,
+            `${upper} 3축 분석`,
+            'AI 종합 분석',
+            '시나리오 분석',
+            '3축 분석',
+            '기술적 분석',
+            '펀더멘털 분석',
+            '뉴스 분석',
+        ],
+    };
+}

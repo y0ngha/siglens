@@ -1,0 +1,17 @@
+name: Earnings Calendar Cron
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC = 15:00 KST 매일 (미국 정규장 마감 후)
+  workflow_dispatch: # 수동 트리거 (디버깅용)
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger earnings-calendar sync
+        run: |
+          curl -fsS -X PATCH \
+            "${{ secrets.SIGLENS_PRODUCTION_URL }}/api/cron/earnings-calendar-sync" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

@@ -112,6 +112,40 @@ gh api repos/y0ngha/siglens/pulls/comments/{comment_id}/replies \
   -f body="This review comment will not be applied. {rejection reason}"
 ```
 
+#### 1-6a. Oscillation Detection (escalate to user)
+
+**Trigger**: Before applying any fix, check whether the comment **reverses** a fix you applied in an earlier round of the same PR. If so, **stop and ask the user** before touching code.
+
+This rule exists because automated reviewers (bot reviewers especially) sometimes give contradictory advice across rounds — telling you to move a file from `A` to `B` in one round, then from `B` back to `A` in the next. Each oscillation cycle is wasted effort; some user judgment is needed to decide which side of the loop to honor.
+
+**How to detect**:
+1. Read `docs/__agents_only__/fix-log.md` for the same PR number before triaging the new round.
+2. For each new review comment, check whether **the same file or symbol** was the subject of a prior round's fix.
+3. Flag as oscillation when the new comment's directive contradicts the prior fix's outcome:
+   - "Move X to lib/" earlier ↔ "Move X out of lib/" now
+   - "Add @internal" earlier ↔ "Remove @internal" now
+   - "Compress JSDoc" earlier ↔ "Expand to multi-line for clarity" now
+   - "Rename A to B" earlier ↔ "B is wrong, use C" now (where the original A would still be valid)
+
+**Other red flags from the reviewer that warrant escalation** (not strict oscillation, but related fact-confusion):
+- Reviewer cites a previous round number that did not actually contain the claimed decision (fabricated history)
+- Reviewer cites a rule from `MISTAKES.md` / `CONVENTIONS.md` that does not exist or says the opposite
+
+**What to do when oscillation is detected**:
+1. **Do not apply the conflicting fix.**
+2. Pause and report to the user with this template:
+   > 🚨 **Oscillation 발견 — R{N-1}와 R{N}가 충돌합니다**
+   >
+   > **R{N-1}** (적용됨): "{이전 라운드 reviewer 권고와 적용 결과 1줄}"
+   >
+   > **R{N}** (지금): "{이번 라운드 reviewer 권고 1줄}"
+   >
+   > 이 항목을 ① 이번 라운드 권고대로 되돌릴지, ② 무시하고 R{N-1} 결정을 유지할지, ③ 별도 결정이 필요한지 알려주세요.
+3. Apply non-conflicting blockers/suggestions in the same round normally; only the oscillation item is paused.
+4. Record the user's decision in `fix-log.md` so the next round can reference it.
+
+**Do not** silently apply a fix that reverses a prior round even if it sounds reasonable — the cost is one user message; the benefit is preventing infinite ping-pong loops.
+
 #### 1-7. Apply Fixes
 
 Read all comments first, then apply all fixes in a single pass.

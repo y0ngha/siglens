@@ -1,6 +1,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { HeaderNav } from '@/components/layout/HeaderNav';
+import { HeaderNavStatic } from '@/components/layout/HeaderNavStatic';
 import {
     HeaderUserMenu,
     type HeaderUserMenuUser,
@@ -45,7 +47,10 @@ export function Header({ currentUser }: HeaderProps) {
                         {SITE_NAME}
                     </span>
                 </Link>
-                <HeaderNav items={NAV_ITEMS} />
+                {/* HeaderNav는 usePathname() 사용 — Suspense로 감싸 PPR prerender shell이 정적 fallback으로 완료되도록 함 */}
+                <Suspense fallback={<HeaderNavStatic items={NAV_ITEMS} />}>
+                    <HeaderNav items={NAV_ITEMS} />
+                </Suspense>
                 <div className="ml-auto flex w-full max-w-40 min-w-0 justify-end sm:max-w-xs">
                     <TickerAutocomplete size="sm" />
                 </div>

@@ -98,7 +98,8 @@ interface RootLayoutProps {
     readonly children: ReactNode;
 }
 
-export default async function RootLayout({ children }: RootLayoutProps) {
+// 쿠키 → DB 조회를 Suspense 경계 안으로 격리해 Next.js 16 cacheComponents의 정적 prerender를 차단하지 않도록 함.
+async function HeaderWithUser() {
     const authUser = await getCurrentUser();
     const currentUser: HeaderUserMenuUser | null = authUser
         ? {
@@ -107,6 +108,10 @@ export default async function RootLayout({ children }: RootLayoutProps) {
               tier: authUser.tier,
           }
         : null;
+    return <Header currentUser={currentUser} />;
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html
             lang="ko"
@@ -114,13 +119,13 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         >
             <body className="flex min-h-full flex-col">
                 <SiteJsonLd />
-                <Suspense>
-                    <ReactQueryProvider>
-                        <PwaBanner />
-                        <Header currentUser={currentUser} />
-                        {children}
-                    </ReactQueryProvider>
-                </Suspense>
+                <ReactQueryProvider>
+                    <PwaBanner />
+                    <Suspense fallback={<Header currentUser={null} />}>
+                        <HeaderWithUser />
+                    </Suspense>
+                    {children}
+                </ReactQueryProvider>
                 {ADSENSE_ENABLED && (
                     <Script
                         async

@@ -4,6 +4,9 @@ import {
     type ModelId,
 } from '@y0ngha/siglens-core';
 
+/** Default model when no provider-specific resolved model is available. Centralized to avoid drift across consumers. */
+export const FALLBACK_MODEL_ID = 'claude-haiku-3-5' as const satisfies ModelId;
+
 export const CLAUDE_MODEL_PRIORITY: readonly ModelId[] = [
     'claude-opus-4-7',
     'claude-sonnet-4-6',
