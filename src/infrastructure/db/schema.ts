@@ -2,8 +2,11 @@ import {
     boolean,
     date,
     index,
+    jsonb,
+    numeric,
     pgEnum,
     pgTable,
+    primaryKey,
     text,
     timestamp,
     uniqueIndex,
@@ -196,3 +199,82 @@ export const inquiries = pgTable('inquiries', {
         .notNull()
         .defaultNow(),
 });
+
+/**
+ * News articles fetched from FMP — one row per article URL.
+ * `id` is a FMP-derived hash of the URL.
+ * `titleKo`, `bodyKo`, `summaryKo`, `sentiment`, and `category` are populated
+ * after LLM card-analysis; until then the columns are null.
+ */
+export const news = pgTable(
+    'news',
+    {
+        id: text('id').primaryKey(),
+        symbol: text('symbol').notNull(),
+        source: text('source').notNull(),
+        url: text('url').notNull().unique(),
+        publishedAt: timestamp('published_at', { withTimezone: true }).notNull(),
+        titleEn: text('title_en').notNull(),
+        titleKo: text('title_ko'),
+        bodyEn: text('body_en'),
+        bodyKo: text('body_ko'),
+        summaryKo: text('summary_ko'),
+        /** LLM-assigned sentiment: 'bullish' | 'neutral' | 'bearish' */
+        sentiment: text('sentiment'),
+        /** LLM-assigned category: NewsCategory value */
+        category: text('category'),
+        rawPayload: jsonb('raw_payload'),
+        fetchedAt: timestamp('fetched_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        analyzedAt: timestamp('analyzed_at', { withTimezone: true }),
+    },
+    table => [
+        index('news_symbol_published_at_idx').on(table.symbol, table.publishedAt),
+        index('news_published_at_idx').on(table.publishedAt),
+    ]
+);
+
+/**
+ * Scheduled and reported earnings events keyed by (symbol, earnings_date).
+ * Actual figures (`epsActual`, `revenueActual`) are populated once the
+ * earnings event has been reported.
+ */
+export const earningsCalendar = pgTable(
+    'earnings_calendar',
+    {
+        symbol: text('symbol').notNull(),
+        earningsDate: date('earnings_date').notNull(),
+        epsActual: numeric('eps_actual'),
+        epsEstimated: numeric('eps_estimated'),
+        revenueActual: numeric('revenue_actual'),
+        revenueEstimated: numeric('revenue_estimated'),
+        lastUpdated: date('last_updated'),
+        rawPayload: jsonb('raw_payload'),
+        fetchedAt: timestamp('fetched_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        primaryKey({ columns: [table.symbol, table.earningsDate] }),
+        index('earnings_calendar_date_idx').on(table.earningsDate),
+    ]
+);
+
+/**
+ * Raw FMP earnings report payloads keyed by (symbol, earnings_date).
+ * The `rawPayload` column stores the full FMP response so it can be
+ * parsed or re-processed without re-fetching.
+ */
+export const earningsReports = pgTable(
+    'earnings_reports',
+    {
+        symbol: text('symbol').notNull(),
+        earningsDate: date('earnings_date').notNull(),
+        rawPayload: jsonb('raw_payload').notNull(),
+        fetchedAt: timestamp('fetched_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [primaryKey({ columns: [table.symbol, table.earningsDate] })]
+);
