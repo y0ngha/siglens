@@ -77,9 +77,14 @@ export function useOverallAnalysis(
 
             if (submitted.status === 'pending_dependencies') {
                 if (dependencyRetryCount >= MAX_DEPENDENCY_RETRIES) {
+                    const timeoutSeconds = Math.round(
+                        (MAX_DEPENDENCY_RETRIES *
+                            AUGMENT_AND_OVERALL_POLL_INTERVAL_MS) /
+                            1000
+                    );
                     setState({
                         status: 'error',
-                        error: 'AI 종합 분석 의존성 분석이 1분 안에 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
+                        error: `AI 종합 분석 의존성 분석이 ${timeoutSeconds}초 안에 완료되지 않았습니다. 잠시 후 다시 시도해주세요.`,
                     });
                     return;
                 }

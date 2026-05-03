@@ -4,12 +4,6 @@ interface ProfileCardProps {
     profile: FundamentalProfileInput;
 }
 
-/**
- * RSC section: company identity card — name, sector, industry, CEO,
- * market cap, and business description.
- *
- * Data is fetched by the parent RSC page and passed as a typed prop.
- */
 export function ProfileCard({ profile }: ProfileCardProps) {
     const formattedMarketCap = new Intl.NumberFormat('ko-KR', {
         notation: 'compact',

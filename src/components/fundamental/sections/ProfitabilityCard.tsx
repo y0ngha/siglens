@@ -51,12 +51,6 @@ function MetricBar({ label, value, description }: MetricBarProps) {
     );
 }
 
-/**
- * RSC section: TTM profitability metrics — ROE, ROA, operating margin,
- * net margin — visualised with subtle progress bars.
- *
- * Data is fetched by the parent RSC page and passed as a typed prop.
- */
 export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
     return (
         <section

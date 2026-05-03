@@ -20,11 +20,8 @@ import {
     type LlmProvider,
 } from '@y0ngha/siglens-core';
 import { isFreeChatModel } from '@/domain/llm';
-import type {
-    ContextSwitchMessage,
-    DisplayMessage,
-    GateMode,
-} from '@/domain/types';
+import type { GateMode } from '@/domain/types';
+import type { ContextSwitchMessage, DisplayMessage } from '@/lib/chat/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
@@ -37,6 +34,7 @@ import {
     startTransition,
     useCallback,
     useEffect,
+    useEffectEvent,
     useLayoutEffect,
     useMemo,
     useRef,
@@ -167,8 +165,6 @@ export function useChat({
         staleTime: REGISTERED_PROVIDERS_STALE_MS,
     });
 
-    const currentLabel = usePageContextLabel();
-
     const { mutateAsync } = useMutation({
         mutationFn: ({
             currentMessages,
@@ -227,6 +223,9 @@ export function useChat({
             ]);
         },
     });
+
+    // 페이지 컨텍스트 라벨은 내부적으로 useMemo를 쓰므로 useMutation 이후, useMemo 그룹과 함께 위치한다.
+    const currentLabel = usePageContextLabel();
 
     const storageKey = useMemo(
         () => buildStorageKey(symbol, timeframe),
@@ -365,7 +364,19 @@ export function useChat({
         }
     }, [analysis, isAnalysisReady]);
 
+    // 컨텍스트 스위치 system 메시지 삽입은 useEffectEvent로 격리해 effect 본문에서 setState를 직접 호출하지 않는다.
     // LLM 프롬프트에는 포함되지 않음 — sendMessage에서 필터링된다.
+    const appendContextSwitch = useEffectEvent((label: string) => {
+        const systemMessage: ContextSwitchMessage = {
+            role: 'system',
+            kind: 'context_switch',
+            label,
+        };
+        startTransition(() => {
+            setMessages(msgs => [...msgs, systemMessage]);
+        });
+    });
+
     useEffect(() => {
         const prev = previousLabelRef.current;
         previousLabelRef.current = currentLabel;
@@ -374,14 +385,7 @@ export function useChat({
         if (prev === null || currentLabel === null) return;
         if (prev === currentLabel) return;
 
-        const systemMessage: ContextSwitchMessage = {
-            role: 'system',
-            kind: 'context_switch',
-            label: currentLabel,
-        };
-        startTransition(() => {
-            setMessages(msgs => [...msgs, systemMessage]);
-        });
+        appendContextSwitch(currentLabel);
     }, [currentLabel]);
 
     // messages 변경 시 localStorage 동기화

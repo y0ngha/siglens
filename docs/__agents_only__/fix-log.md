@@ -172,4 +172,37 @@
 - Rule: MISTAKES.md #13 — eslint-disable suppresses lint warnings instead of fixing root cause; restructure code to eliminate the warning
 - Context: Partial React Query refactor reverted; poll/cooldown use async-IIFE patterns where setState happens inside callback, not synchronously in effect body. Pattern does not trigger rule because setState is wrapped in async callback scope.
 
+## [PR #413 R17 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: ProfileCard.tsx, ProfitabilityCard.tsx, SectorDirectionCard.tsx had multi-line JSDoc blocks for component purpose description
+- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line function descriptions; component names already self-explanatory
+- Context: Compressed to single-line or removed. Pattern recurring 13th+ consecutive round.
+
+- Violation: usePageContextLabel() hook (containing useMemo) was between useQuery group and useMutation in useChat.ts hook ordering
+- Rule: MISTAKES.md Components 17 — Hook order: useState/useRef → useQuery/useMutation → useCallback/useMemo → derived variables
+- Context: Moved after useMutation group, before useMemo calculations with explanatory comment.
+
+- Violation: ContextSwitchMessage and DisplayMessage UI-only types defined in src/domain/types.ts
+- Rule: CLAUDE.md Architecture #2 — domain/ must remain presentation-free; UI types belong in lib/
+- Context: Created src/lib/chat/types.ts and moved both types there. Updated imports in useChat.ts and useChatInput.ts.
+
+- Violation: NewsDisplayItem component name lacks clear semantic meaning for news object representation
+- Rule: MISTAKES.md Components 11 — Function/interface names become inaccurate after architectural changes
+- Context: Reviewed suggested renames (NewsPublicFields, NewsItemBase) but each has trade-offs without clear winner. Deferred for naming committee discussion (not blockers per blocker scope).
+
+- Violation: toGradesAction in fundamentalClient.ts is module-private but had @internal JSDoc tag
+- Rule: MISTAKES.md Documentation Sync 3 — @internal inconsistent with visibility (not exported yet marked internal)
+- Context: Removed @internal, kept description; function is internal via scope (no export), not via documentation.
+
+- Violation: useOverallAnalysis hardcoded "1분" in error message instead of computed from MAX_DEPENDENCY_RETRIES * poll interval
+- Rule: MISTAKES.md Coding Paradigm 15 — Hardcoded literals in messages; values out of sync when constants change
+- Context: Changed to `${Math.round((MAX_DEPENDENCY_RETRIES * AUGMENT_AND_OVERALL_POLL_INTERVAL_MS) / 1000)}초` computed from constants.
+
+- Violation: SectorDirectionCard had `const N = 30` magic number for sparkline days
+- Rule: MISTAKES.md Coding Paradigm 15 — All magic numbers extracted to named constants
+- Context: Extracted to module-level `SPARKLINE_DAYS = 30` with JSDoc.
+
+- Violation: `[...Array(N)]` magic number patterns across 6 loading.tsx and skeleton files
+- Rule: MISTAKES.md Coding Paradigm 15 — Named constants for render-count magic numbers
+- Context: Each file extracted local constants: SKELETON_LINE_COUNT (3 files: 3 lines), SKELETON_SECTION_COUNT (3 loading.tsx files: 6/5/3 sections).
+
 

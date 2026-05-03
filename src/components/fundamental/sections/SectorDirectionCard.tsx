@@ -13,15 +13,17 @@ interface SectorDirectionCardProps {
     historical: FundamentalSectorHistoricalInput[];
 }
 
+/** 스파크라인에 사용할 최근 일수. 변경 시 SectorDirectionCard JSDoc 메시지도 같이 갱신. */
+const SPARKLINE_DAYS = 30;
+
 interface SectorSparklineProps {
     data: FundamentalSectorHistoricalInput[];
 }
 
 /** Inline SVG mini sparkline for sector historical performance. Normalises last N data points to a fixed height band. */
 function SectorSparkline({ data }: SectorSparklineProps) {
-    const N = 30;
     // API returns newest-first; reverse to chronological order for display
-    const recent = data.slice(0, N).toReversed();
+    const recent = data.slice(0, SPARKLINE_DAYS).toReversed();
     if (recent.length < 2) return null;
 
     const values = recent.map(d => d.changesPercentage);
@@ -61,12 +63,6 @@ function SectorSparkline({ data }: SectorSparklineProps) {
     );
 }
 
-/**
- * RSC section: sector performance — today's change percentage and 30-day
- * sparkline for the company's sector.
- *
- * Data is fetched by the parent RSC page and passed as typed props.
- */
 export function SectorDirectionCard({
     sector,
     snapshot,

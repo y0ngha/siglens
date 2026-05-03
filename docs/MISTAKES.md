@@ -390,11 +390,14 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Hooks are Client Components and will fail without the directive when parent is async Server Component
 
 10. setState called directly in useEffect body (react-hooks/set-state-in-effect)
-    → If the state being reset logically belongs to "mutation starts", move it to useMutation's onMutate callback
+    → React 19 canonical fix: useEffectEvent wraps derivation logic, setState happens inside Event scope (stable, escapes linting)
+    → Alternative: If state reset logically belongs to "mutation starts", move to useMutation's onMutate callback
     → onMutate fires synchronously before the mutationFn, satisfies the linter, and centralizes reset logic
-    ❌ useEffect(() => { setPollError(null); setAnalysisResult(null); mutate(...); }, [deps])
-    ✅ useMutation({ onMutate: () => { setPollError(null); setAnalysisResult(null); }, ... })
-    → For state that must reset on every mutate call site, onMutate is the single source of truth
+    ❌ useEffect(() => { setPollError(null); setAnalysisResult(null); mutate(...); }, [deps])  // setState synchronously in effect body
+    ✅ useEffect pattern (React 19): const handleDerive = useEffectEvent(() => { setMessages(...); }); useEffect(() => { handleDerive(); }, [deps])
+    ✅ useMutation pattern: useMutation({ onMutate: () => { setPollError(null); setAnalysisResult(null); }, ... })
+    → React 19: useEffectEvent is preferred when effect triggers derivation but setState should not re-run effect
+    → Mutations: For state that must reset on every mutate call site, onMutate is the single source of truth
     → Note: useCallback does NOT help — the linter traces into useCallback bodies and still flags setState
 
 11. URL synchronization using initial props instead of current local state

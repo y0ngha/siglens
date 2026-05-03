@@ -15,6 +15,8 @@ import { ThreeAxisConclusion } from '@/components/overall/sections/ThreeAxisConc
 import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis';
 import { RiskFactors } from '@/components/overall/sections/RiskFactors';
 
+const SKELETON_LINE_COUNT = 3;
+
 interface OverallContentProps {
     symbol: string;
     timeframe: Timeframe;
@@ -63,7 +65,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
                     </p>
                 </div>
                 <div className="mt-4 space-y-2">
-                    {[...Array(3)].map((_, i) => (
+                    {[...Array(SKELETON_LINE_COUNT)].map((_, i) => (
                         <div
                             key={i}
                             className={cn(

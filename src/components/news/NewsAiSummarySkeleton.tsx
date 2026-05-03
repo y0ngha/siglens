@@ -1,5 +1,7 @@
 import { type CSSProperties } from 'react';
 
+const SKELETON_LINE_COUNT = 3;
+
 export function NewsAiSummarySkeleton() {
     return (
         <section
@@ -27,7 +29,7 @@ export function NewsAiSummarySkeleton() {
                 </p>
             </div>
             <div className="mt-4 space-y-2">
-                {[...Array(3)].map((_, i) => (
+                {[...Array(SKELETON_LINE_COUNT)].map((_, i) => (
                     <div
                         key={i}
                         className="bg-secondary-700 h-4 w-[var(--skeleton-w)] animate-pulse rounded"

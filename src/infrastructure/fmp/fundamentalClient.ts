@@ -39,7 +39,7 @@ import type {
 /** Default number of recent grading events returned by `getGrades`. */
 export const DEFAULT_GRADES_LIMIT = 10;
 
-/** @internal Map a FMP action string to the domain `GradesAction` union; unknown strings fall back to `'other'`. */
+/** Map a FMP action string to the domain `GradesAction` union; unknown strings fall back to `'other'`. */
 function toGradesAction(raw: string): GradesAction {
     const lower = raw.toLowerCase();
     if (lower === 'upgrade') return 'upgrade';
