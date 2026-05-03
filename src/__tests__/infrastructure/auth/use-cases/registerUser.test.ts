@@ -70,6 +70,7 @@ function makeDependencies(options?: {
                 set: jest.fn(),
                 get: getToken,
                 delete: deleteToken,
+                consume: jest.fn(),
             },
         },
         findByEmail,
@@ -160,6 +161,61 @@ describe('registerUser', () => {
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_already_exists');
         expect(createEmailUser).not.toHaveBeenCalled();
+    });
+
+    it('preserves the verified marker on email_already_exists so the user can retry', async () => {
+        const { dependencies, deleteToken } = makeDependencies({
+            existingUser: makeUser('user@example.com'),
+        });
+
+        const result = await registerUser(
+            { email: 'user@example.com', password: 'Password1' },
+            dependencies
+        );
+
+        expect(result.ok).toBe(false);
+        // Marker MUST stay so the user doesn't have to re-verify.
+        expect(deleteToken).not.toHaveBeenCalled();
+    });
+
+    it('clears the verified marker when createEmailUser throws', async () => {
+        const { dependencies, deleteToken } = makeDependencies();
+        (
+            dependencies.users.createEmailUser as jest.Mock
+        ).mockRejectedValueOnce(new Error('database is on fire'));
+
+        await expect(
+            registerUser(
+                { email: 'user@example.com', password: 'Password1' },
+                dependencies
+            )
+        ).rejects.toThrow('database is on fire');
+
+        // Even on failure, the marker MUST be cleared; otherwise it would linger
+        // for its 30-minute TTL and let the email be reused as "verified".
+        expect(deleteToken).toHaveBeenCalledWith(
+            'email_verification',
+            'user@example.com'
+        );
+    });
+
+    it('clears the verified marker when hashPassword throws', async () => {
+        const { dependencies, deleteToken } = makeDependencies();
+        (
+            dependencies.passwordHasher.hashPassword as jest.Mock
+        ).mockRejectedValueOnce(new Error('hash failure'));
+
+        await expect(
+            registerUser(
+                { email: 'user@example.com', password: 'Password1' },
+                dependencies
+            )
+        ).rejects.toThrow('hash failure');
+
+        expect(deleteToken).toHaveBeenCalledWith(
+            'email_verification',
+            'user@example.com'
+        );
     });
 
     it('returns email_already_exists when createEmailUser races to a conflict', async () => {

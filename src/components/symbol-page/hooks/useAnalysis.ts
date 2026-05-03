@@ -11,11 +11,13 @@ import {
 import type {
     AnalysisResponse,
     ModelId,
-    SubmitAnalysisGatedResult,
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
-import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
+import {
+    submitAnalysisAction,
+    type SubmitAnalysisActionResult,
+} from '@/infrastructure/market/submitAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
 import {
@@ -37,6 +39,13 @@ interface AnalyzeMutationVariables {
  * 진실값은 Redis(서버)이며 클라이언트는 표시 목적으로만 카운트다운한다.
  */
 const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
+
+/**
+ * 캐시 히트(=force=false 재분석에서 즉시 응답) 시 사용하는 짧은 쿨다운.
+ * 사용자가 같은 캐시 결과를 빠르게 재호출해 리소스를 낭비하지 않도록 막되,
+ * 다음 분석을 너무 오래 잠그지는 않는다.
+ */
+const CACHE_HIT_COOLDOWN_MS = 30_000;
 
 const POLL_INTERVAL_MS = 10000;
 
@@ -125,7 +134,11 @@ export function useAnalysis({
         isPending: isSubmitting,
         reset,
         mutate,
-    } = useMutation<SubmitAnalysisGatedResult, Error, AnalyzeMutationVariables>(
+    } = useMutation<
+        SubmitAnalysisActionResult,
+        Error,
+        AnalyzeMutationVariables
+    >(
         {
             mutationFn: ({
                 force,
@@ -150,10 +163,16 @@ export function useAnalysis({
                 if (data.status === 'cached') {
                     currentJobIdRef.current = null;
                     setAnalysisResult(data.result);
-                    // 캐시 히트 = 분석 완료 → force 경로만 쿨다운 시작
-                    if (variables.force) {
-                        setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
-                    }
+                    // force 경로는 정상 5분 쿨다운, 일반 캐시 히트는 짧은
+                    // 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.
+                    setReanalyzeCooldownMs(prev =>
+                        Math.max(
+                            prev,
+                            variables.force
+                                ? REANALYZE_COOLDOWN_MS
+                                : CACHE_HIT_COOLDOWN_MS
+                        )
+                    );
                 } else if (data.status === 'submitted') {
                     currentJobIdRef.current = data.jobId;
                     setIsPolling(true);
@@ -321,18 +340,28 @@ export function useAnalysis({
 
         // 진행 중인 워커 작업에 취소 신호를 보낸다. reset() 호출 이전에 jobId를 캡처해야 한다.
         const jobId = currentJobIdRef.current;
-        if (jobId) {
-            void cancelAnalysisJobAction(jobId);
-            currentJobIdRef.current = null;
-        }
+        currentJobIdRef.current = null;
 
         reset();
-        mutate({
-            symbol: latestRef.current.symbol,
-            force: false,
-            fmpSymbol: latestRef.current.fmpSymbol,
-            modelId: latestModelIdRef.current,
-        });
+        // 이전 폴링 effect는 reset()으로 submitData가 undefined가 되며 cleanup된다.
+        // 그 후에 cancel RPC가 끝날 때까지 기다린 다음 새 mutation을 발사해
+        // 이전 작업의 결과가 새 mutation 상태로 흘러들지 않도록 한다.
+        void (async () => {
+            if (jobId) {
+                try {
+                    await cancelAnalysisJobAction(jobId);
+                } catch {
+                    // cancelAnalysisJobAction은 내부에서 모든 에러를 흡수하므로
+                    // 일반 흐름에서 도달하지 않지만, 방어적으로 mutate를 진행한다.
+                }
+            }
+            mutate({
+                symbol: latestRef.current.symbol,
+                force: false,
+                fmpSymbol: latestRef.current.fmpSymbol,
+                modelId: latestModelIdRef.current,
+            });
+        })();
     }, [timeframeChangeCount, reset, mutate]);
 
     useEffect(() => {
@@ -340,18 +369,24 @@ export function useAnalysis({
         prevModelIdRef.current = modelId;
 
         const jobId = currentJobIdRef.current;
-        if (jobId) {
-            void cancelAnalysisJobAction(jobId);
-            currentJobIdRef.current = null;
-        }
+        currentJobIdRef.current = null;
 
         reset();
-        mutate({
-            symbol: latestRef.current.symbol,
-            force: false,
-            fmpSymbol: latestRef.current.fmpSymbol,
-            modelId,
-        });
+        void (async () => {
+            if (jobId) {
+                try {
+                    await cancelAnalysisJobAction(jobId);
+                } catch {
+                    // 동일 — cancel 실패 시에도 새 mutation은 진행한다.
+                }
+            }
+            mutate({
+                symbol: latestRef.current.symbol,
+                force: false,
+                fmpSymbol: latestRef.current.fmpSymbol,
+                modelId,
+            });
+        })();
     }, [modelId, reset, mutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.

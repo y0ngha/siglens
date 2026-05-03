@@ -158,6 +158,24 @@ function makeUpdateDb(rows: unknown[]): {
 }
 
 describe('DrizzleUserRepository', () => {
+    // createOAuthUser now requires OAUTH_TOKEN_ENCRYPTION_KEY to be present and
+    // valid. Tests below that exercise non-OAuth paths are unaffected, but tests
+    // that hit createOAuthUser depend on this env var being set. The dedicated
+    // "token encryption in createOAuthUser" describe overrides / clears it.
+    const ORIGINAL_OAUTH_ENC = process.env['OAUTH_TOKEN_ENCRYPTION_KEY'];
+
+    beforeEach(() => {
+        process.env['OAUTH_TOKEN_ENCRYPTION_KEY'] = VALID_KEY_HEX;
+    });
+
+    afterEach(() => {
+        if (ORIGINAL_OAUTH_ENC === undefined) {
+            delete process.env['OAUTH_TOKEN_ENCRYPTION_KEY'];
+        } else {
+            process.env['OAUTH_TOKEN_ENCRYPTION_KEY'] = ORIGINAL_OAUTH_ENC;
+        }
+    });
+
     it('returns a user found by email', async () => {
         const { db, select, from, where, limit } = makeSelectDb([userRecord]);
         const repository = new DrizzleUserRepository(db);
@@ -468,28 +486,45 @@ describe('DrizzleUserRepository', () => {
             );
         });
 
-        it('stores null tokens when encryption key is absent', async () => {
-            process.env['OAUTH_TOKEN_ENCRYPTION_KEY'] = String('');
-            const { db, accountValues } = makeTransactionDb({
+        it('throws and aborts the transaction when the encryption key is absent', async () => {
+            delete process.env['OAUTH_TOKEN_ENCRYPTION_KEY'];
+            const { db, transaction } = makeTransactionDb({
                 userRows: [userRecord],
                 accountRows: [{ id: 'oauth-account-1' }],
             });
             const repository = new DrizzleUserRepository(db);
 
-            await repository.createOAuthUser({
-                email: 'user@example.com',
-                provider: 'google',
-                providerAccountId: 'provider-user-1',
-                accessToken: 'plain-access-token',
-                refreshToken: 'plain-refresh-token',
-            });
-
-            expect(accountValues).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    accessToken: null,
-                    refreshToken: null,
+            await expect(
+                repository.createOAuthUser({
+                    email: 'user@example.com',
+                    provider: 'google',
+                    providerAccountId: 'provider-user-1',
+                    accessToken: 'plain-access-token',
+                    refreshToken: 'plain-refresh-token',
                 })
-            );
+            ).rejects.toThrow(/OAUTH_TOKEN_ENCRYPTION_KEY/);
+
+            // Transaction must NOT be opened when the encryption key is missing.
+            expect(transaction).not.toHaveBeenCalled();
+        });
+
+        it('throws when the encryption key is present but malformed (wrong length)', async () => {
+            process.env['OAUTH_TOKEN_ENCRYPTION_KEY'] = 'deadbeef';
+            const { db, transaction } = makeTransactionDb({
+                userRows: [userRecord],
+                accountRows: [{ id: 'oauth-account-1' }],
+            });
+            const repository = new DrizzleUserRepository(db);
+
+            await expect(
+                repository.createOAuthUser({
+                    email: 'user@example.com',
+                    provider: 'google',
+                    providerAccountId: 'provider-user-1',
+                })
+            ).rejects.toThrow(/OAUTH_TOKEN_ENCRYPTION_KEY/);
+
+            expect(transaction).not.toHaveBeenCalled();
         });
     });
 
@@ -573,10 +608,24 @@ describe('DrizzleUserRepository', () => {
         const result = await repository.updateUserTier('user-1', 'pro');
 
         expect(update).toHaveBeenCalledWith(expect.any(Object));
-        expect(set).toHaveBeenCalledWith({ tier: 'pro' });
+        expect(set).toHaveBeenCalledWith(
+            expect.objectContaining({
+                tier: 'pro',
+                updatedAt: expect.anything(),
+            })
+        );
         expect(where).toHaveBeenCalledWith(expect.any(Object));
         expect(returning).toHaveBeenCalledWith({ tier: expect.any(Object) });
         expect(result).toBe('pro');
+    });
+
+    it('updateUserTier 는 updatedAt 을 명시적으로 set 한다 (timestamp advances on update)', async () => {
+        const { db, set } = makeUpdateDb([{ tier: 'pro' }]);
+        const repository = new DrizzleUserRepository(db);
+        await repository.updateUserTier('user-1', 'pro');
+        const passedSet = set.mock.calls[0][0] as Record<string, unknown>;
+        expect(passedSet).toHaveProperty('updatedAt');
+        expect(passedSet.updatedAt).toBeDefined();
     });
 
     it('returns null when no user tier is updated', async () => {
@@ -601,7 +650,12 @@ describe('DrizzleUserRepository', () => {
         );
 
         expect(update).toHaveBeenCalledWith(users);
-        expect(set).toHaveBeenCalledWith({ passwordHash: 'new-password-hash' });
+        expect(set).toHaveBeenCalledWith(
+            expect.objectContaining({
+                passwordHash: 'new-password-hash',
+                updatedAt: expect.anything(),
+            })
+        );
         expect(where).toHaveBeenCalledWith(expect.any(Object));
         expect(result).toBe(true);
     });

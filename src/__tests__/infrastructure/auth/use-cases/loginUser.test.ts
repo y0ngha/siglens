@@ -69,7 +69,12 @@ function makeDependencies(options?: {
     return {
         dependencies: {
             users: { findEmailAuthUserByEmail },
-            sessions: { createSession, findSession: jest.fn(), deleteSession },
+            sessions: {
+                createSession,
+                findSession: jest.fn(),
+                deleteSession,
+                deleteExpiredSessions: jest.fn(),
+            },
             passwordVerifier: { verifyPassword },
         },
         findEmailAuthUserByEmail,

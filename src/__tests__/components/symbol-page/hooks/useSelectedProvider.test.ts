@@ -4,6 +4,7 @@
 import { renderHook, act } from '@testing-library/react';
 import { LOCAL_STORAGE_PROVIDER_KEY } from '@/lib/storageKeys';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
+import { AI_PROVIDER_VALUES } from '@/domain/llm';
 
 let store: Record<string, string> = {};
 const localStorageMock = {
@@ -70,5 +71,21 @@ describe('useSelectedProvider', () => {
             result.current[1]('gemini');
         });
         expect(store[LOCAL_STORAGE_PROVIDER_KEY]).toBe('gemini');
+    });
+
+    it.each(AI_PROVIDER_VALUES)(
+        'accepts the core provider value "%s" from localStorage',
+        provider => {
+            store[LOCAL_STORAGE_PROVIDER_KEY] = provider;
+            const { result } = renderHook(() => useSelectedProvider());
+            expect(result.current[0]).toBe(provider);
+        }
+    );
+
+    it('rejects an unknown provider that is not in core AI_PROVIDER_VALUES', () => {
+        store[LOCAL_STORAGE_PROVIDER_KEY] = 'mistral';
+        const { result } = renderHook(() => useSelectedProvider());
+        // falls back to default
+        expect(result.current[0]).toBe('claude');
     });
 });

@@ -82,7 +82,12 @@ function makeDependencies(options?: {
                 findByEmail,
                 createOAuthUser,
             },
-            sessions: { createSession, findSession: jest.fn(), deleteSession },
+            sessions: {
+                createSession,
+                findSession: jest.fn(),
+                deleteSession,
+                deleteExpiredSessions: jest.fn(),
+            },
         },
         findByOAuthAccount,
         findByEmail,

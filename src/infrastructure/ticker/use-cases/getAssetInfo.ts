@@ -100,32 +100,63 @@ async function persistTranslation(
     );
 }
 
+/**
+ * Per-symbol in-flight registry for background translate-and-persist work.
+ *
+ * `translateAndPersist` is invoked fire-and-forget from {@link getAssetInfo}.
+ * Without single-flight, N concurrent requests for the same uncached symbol
+ * each call Gemini independently. The registry collapses concurrent calls to
+ * one shared Promise; the entry is cleared in `.finally()` so failures do not
+ * permanently block retries on the next call.
+ */
+const inFlightTranslations = new Map<string, Promise<void>>();
+
 async function translateAndPersist(
     symbol: string,
     match: AssetInfoMatch,
     cache: CacheProvider | null
 ): Promise<void> {
-    const translated = await translateCompanyNames([
-        { symbol, name: match.name },
-    ]);
-    const koreanName = translated[symbol];
-    if (!koreanName) return;
+    const existing = inFlightTranslations.get(symbol);
+    if (existing) return existing;
 
-    const entry: KoreanTickerEntry = {
-        symbol,
-        name: match.name,
-        koreanName,
-        exchange: match.exchange,
-        exchangeFullName: match.exchangeFullName,
-    };
-    await setKoreanTickers([entry]);
-    await persistTranslation(
-        symbol,
-        match.symbol,
-        match.name,
-        koreanName,
-        cache
-    );
+    const work = (async () => {
+        const translated = await translateCompanyNames([
+            { symbol, name: match.name },
+        ]);
+        const koreanName = translated[symbol];
+        if (!koreanName) return;
+
+        // Mapping intent (do not invert):
+        // - korean_tickers.symbol holds the canonical (cashtag) symbol, e.g. "AAPL"
+        // - asset_translations.symbol holds the canonical symbol (PK)
+        // - asset_translations.fmp_symbol holds the FMP-side symbol, e.g. "AAPL.MX"
+        // For US equities canonical === fmpSymbol; they diverge for indices etc.
+        const entry: KoreanTickerEntry = {
+            symbol,
+            name: match.name,
+            koreanName,
+            exchange: match.exchange,
+            exchangeFullName: match.exchangeFullName,
+        };
+        await setKoreanTickers([entry]);
+        await persistTranslation(
+            symbol,
+            match.symbol,
+            match.name,
+            koreanName,
+            cache
+        );
+    })().finally(() => {
+        inFlightTranslations.delete(symbol);
+    });
+
+    inFlightTranslations.set(symbol, work);
+    return work;
+}
+
+/** @internal Test helper — clears the in-flight registry between cases. */
+export function _resetInFlightTranslationsForTest(): void {
+    inFlightTranslations.clear();
 }
 
 /** Resolve canonical asset information for a single ticker symbol via cache → DB → FMP, with optional background Korean-name translation. */

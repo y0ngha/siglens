@@ -4,7 +4,10 @@ import {
     getOAuthAdapter,
     isOAuthProvider,
 } from '@/infrastructure/auth/oauth/providers';
-import { issueOAuthState } from '@/infrastructure/auth/oauth/state';
+import {
+    OAuthStateSecretMisconfiguredError,
+    issueOAuthState,
+} from '@/infrastructure/auth/oauth/state';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
 
 interface StartRouteParams {
@@ -22,7 +25,19 @@ export async function GET(
         );
     }
     const next = sanitizeNextPath(req.nextUrl.searchParams.get('next'));
-    const { state, cookie } = issueOAuthState(provider, next);
+    let state: string;
+    let cookie: ReturnType<typeof issueOAuthState>['cookie'];
+    try {
+        ({ state, cookie } = issueOAuthState(provider, next));
+    } catch (error) {
+        if (error instanceof OAuthStateSecretMisconfiguredError) {
+            // Fail closed: never start an OAuth flow without a signed state.
+            return NextResponse.redirect(
+                new URL('/login?error=oauth_unknown', req.url)
+            );
+        }
+        throw error;
+    }
     const redirectUri = buildOAuthRedirectUri(provider);
     const authorizeUrl = getOAuthAdapter(provider).authorizeUrl({
         state,

@@ -61,6 +61,7 @@ function makeDependencies(options: {
                 createSession: jest.fn(),
                 findSession,
                 deleteSession: jest.fn(),
+                deleteExpiredSessions: jest.fn(),
             },
         },
         findSession,

@@ -42,20 +42,48 @@ function toKoreanEntry(
     ];
 }
 
+/**
+ * In-flight registry keyed by the deterministic sorted symbol list. Collapses
+ * concurrent identical search queries into a single Gemini call. Cleared in
+ * `.finally()` so failures do not block subsequent retries.
+ */
+const inFlightTranslations = new Map<string, Promise<void>>();
+
+function buildInFlightKey(symbols: readonly string[]): string {
+    return [...symbols].sort().join(',');
+}
+
 async function translateAndCache(
     unmapped: TickerSearchResult[]
 ): Promise<void> {
-    const translated = await translateCompanyNames(
-        unmapped.map(r => ({ symbol: r.symbol, name: r.name }))
-    );
+    const key = buildInFlightKey(unmapped.map(r => r.symbol));
+    const existing = inFlightTranslations.get(key);
+    if (existing) return existing;
 
-    const unmappedMap = new Map(unmapped.map(r => [r.symbol, r]));
+    const work = (async () => {
+        const translated = await translateCompanyNames(
+            unmapped.map(r => ({ symbol: r.symbol, name: r.name }))
+        );
 
-    const entries = Object.entries(translated).flatMap<KoreanTickerEntry>(
-        ([symbol, koreanName]) => toKoreanEntry(symbol, koreanName, unmappedMap)
-    );
+        const unmappedMap = new Map(unmapped.map(r => [r.symbol, r]));
 
-    await setKoreanTickers(entries);
+        const entries = Object.entries(translated).flatMap<KoreanTickerEntry>(
+            ([symbol, koreanName]) =>
+                toKoreanEntry(symbol, koreanName, unmappedMap)
+        );
+
+        await setKoreanTickers(entries);
+    })().finally(() => {
+        inFlightTranslations.delete(key);
+    });
+
+    inFlightTranslations.set(key, work);
+    return work;
+}
+
+/** @internal Test helper — clears the in-flight registry between cases. */
+export function _resetInFlightTranslationsForTest(): void {
+    inFlightTranslations.clear();
 }
 
 /** Search for tickers by symbol or company name with bilingual support; Korean queries hit the Korean-name store, others hit FMP via cache with background translation enrichment (capped at 10 entries). */

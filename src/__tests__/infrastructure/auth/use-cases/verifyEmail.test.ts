@@ -34,6 +34,7 @@ function makeDependencies(options?: { stored?: EmailTokenValue | null }): {
                 set: setToken,
                 get: getToken,
                 delete: jest.fn(),
+                consume: jest.fn(),
             },
         },
         getToken,

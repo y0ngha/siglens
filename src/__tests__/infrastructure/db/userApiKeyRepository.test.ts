@@ -1,5 +1,8 @@
 import { encryptToken } from '@/infrastructure/db/tokenEncryption';
-import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
+import {
+    DrizzleUserApiKeyRepository,
+    LlmApiKeyDecryptionFailedError,
+} from '@/infrastructure/db/userApiKeyRepository';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 
 const VALID_KEY_HEX = 'b'.repeat(64);
@@ -261,7 +264,7 @@ describe('DrizzleUserApiKeyRepository.findByUserAndProvider', () => {
         });
     });
 
-    it('returns null when the ciphertext cannot be decrypted with the configured key', async () => {
+    it('throws LlmApiKeyDecryptionFailedError when ciphertext cannot be decrypted with the configured key', async () => {
         const encryptedWithOtherKey = encryptToken(
             PLAINTEXT_API_KEY,
             OTHER_KEY_HEX
@@ -270,10 +273,39 @@ describe('DrizzleUserApiKeyRepository.findByUserAndProvider', () => {
             { ...metaRow, encryptedApiKey: encryptedWithOtherKey },
         ]);
         const repo = new DrizzleUserApiKeyRepository(db);
+        const consoleErrorSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
 
-        const result = await repo.findByUserAndProvider('user-1', 'anthropic');
+        await expect(
+            repo.findByUserAndProvider('user-1', 'anthropic')
+        ).rejects.toBeInstanceOf(LlmApiKeyDecryptionFailedError);
 
-        expect(result).toBeNull();
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('attaches userId/provider context to the decryption error', async () => {
+        const encryptedWithOtherKey = encryptToken(
+            PLAINTEXT_API_KEY,
+            OTHER_KEY_HEX
+        );
+        const { db } = makeFindByUserAndProviderDb([
+            { ...metaRow, encryptedApiKey: encryptedWithOtherKey },
+        ]);
+        const repo = new DrizzleUserApiKeyRepository(db);
+        const consoleErrorSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        await expect(
+            repo.findByUserAndProvider('user-1', 'anthropic')
+        ).rejects.toMatchObject({
+            code: 'api_key_corrupted',
+            userId: 'user-1',
+            provider: 'anthropic',
+        });
+
+        consoleErrorSpy.mockRestore();
     });
 });
 

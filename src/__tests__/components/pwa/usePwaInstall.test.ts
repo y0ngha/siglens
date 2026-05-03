@@ -7,6 +7,7 @@ import {
     usePwaInstall,
     PWA_BANNER_FALLBACK_DELAY_MS,
 } from '@/components/pwa/hooks/usePwaInstall';
+import { _resetRegisterServiceWorkerForTests } from '@/lib/pwa/registerServiceWorker';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
 describe('usePwaInstall', () => {
@@ -23,7 +24,11 @@ describe('usePwaInstall', () => {
         });
         Object.defineProperty(navigator, 'serviceWorker', {
             writable: true,
-            value: { register: jest.fn().mockResolvedValue(undefined) },
+            value: {
+                register: jest.fn().mockResolvedValue(undefined),
+                addEventListener: jest.fn(),
+                controller: null,
+            },
         });
     });
 
@@ -33,6 +38,7 @@ describe('usePwaInstall', () => {
     });
 
     beforeEach(() => {
+        _resetRegisterServiceWorkerForTests();
         Object.defineProperty(navigator, 'userAgent', {
             value: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1',
             configurable: true,

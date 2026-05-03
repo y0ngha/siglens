@@ -121,12 +121,20 @@ describe('saveApiKeyAction', () => {
         expect(result.status).toBe('error');
     });
 
-    it('DB upsert 실패 시 status: error를 반환한다', async () => {
+    it('Postgres SQLSTATE 에러 발생 시 storage_unavailable 코드를 반환한다', async () => {
+        // SQLSTATE-shaped errors (e.g. 23505 unique violation, 08006 connection
+        // failure) are surfaced as DB-layer failures.
         mockGetCurrentUser.mockResolvedValue({
             id: 'user-1',
             email: 'test@example.com',
         } as never);
-        mockUpsert.mockRejectedValue(new Error('DB connection failed'));
+        const dbError = Object.assign(new Error('unique violation'), {
+            code: '23505',
+        });
+        mockUpsert.mockRejectedValue(dbError);
+        const consoleErrorSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
 
         const result = await saveApiKeyAction(
             IDLE_STATE,
@@ -134,6 +142,70 @@ describe('saveApiKeyAction', () => {
         );
 
         expect(result.status).toBe('error');
+        expect(result.code).toBe('storage_unavailable');
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('SQLSTATE 패턴이 아닌 예외 발생 시 unknown 코드를 반환한다', async () => {
+        // Non-DB unexpected exceptions must NOT masquerade as storage_unavailable;
+        // they fall through to `unknown` so the user sees a generic-error UX
+        // rather than a misleading "retry later" message.
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+        mockUpsert.mockRejectedValue(new Error('unexpected non-db failure'));
+        const consoleErrorSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const result = await saveApiKeyAction(
+            IDLE_STATE,
+            makeFormData({ provider: 'anthropic', apiKey: 'sk-ant-test-1234' })
+        );
+
+        expect(result.status).toBe('error');
+        expect(result.code).toBe('unknown');
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('암호화 키 미설정 시 server_misconfigured 코드를 반환한다', async () => {
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+        mockUpsert.mockRejectedValue(
+            new Error(
+                'LLM_API_KEY_ENCRYPTION_KEY environment variable is required for user API key encryption'
+            )
+        );
+        const consoleErrorSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        const result = await saveApiKeyAction(
+            IDLE_STATE,
+            makeFormData({ provider: 'anthropic', apiKey: 'sk-ant-test-1234' })
+        );
+
+        expect(result.status).toBe('error');
+        expect(result.code).toBe('server_misconfigured');
+        consoleErrorSpy.mockRestore();
+    });
+
+    it('apiKey 정규화 실패 시 invalid_key_format 코드를 반환한다', async () => {
+        mockGetCurrentUser.mockResolvedValue({
+            id: 'user-1',
+            email: 'test@example.com',
+        } as never);
+
+        const result = await saveApiKeyAction(
+            IDLE_STATE,
+            makeFormData({ provider: 'anthropic', apiKey: '   ' })
+        );
+
+        expect(result.status).toBe('error');
+        expect(result.code).toBe('invalid_key_format');
     });
 
     it('정상 입력 시 upsert 호출 + revalidatePath("/account") + status: success', async () => {

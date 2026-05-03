@@ -34,7 +34,14 @@ function expiredTokenError(): ConfirmPasswordResetError {
     };
 }
 
-/** Consume a password reset token and replace the user's password hash. */
+/**
+ * Consume a password reset token and replace the user's password hash.
+ *
+ * Concurrency contract: the token MUST be atomically consumed (read + delete in
+ * a single round-trip) BEFORE any password update so that two concurrent
+ * confirmation requests with the same token cannot both succeed. The actual
+ * password rehash happens only for the caller that won the consume race.
+ */
 export async function confirmPasswordReset(
     input: ConfirmPasswordResetInput,
     dependencies: ConfirmPasswordResetDependencies
@@ -46,7 +53,10 @@ export async function confirmPasswordReset(
     }
 
     const email = normalizeEmail(input.email);
-    const stored = await dependencies.emailTokens.get(PURPOSE, email);
+
+    // Atomically consume the token first. Any racing caller will receive null
+    // here and bail out with expired_token below.
+    const stored = await dependencies.emailTokens.consume(PURPOSE, email);
 
     if (stored === null) {
         return { ok: false, error: expiredTokenError() };
@@ -79,6 +89,5 @@ export async function confirmPasswordReset(
         return { ok: false, error: invalidTokenError() };
     }
 
-    await dependencies.emailTokens.delete(PURPOSE, email);
     return { ok: true };
 }

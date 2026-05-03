@@ -1,16 +1,15 @@
 import type { SupportedOAuthProvider } from '@/domain/types';
 import { googleOAuthAdapter } from '@/infrastructure/auth/oauth/google';
-import { kakaoOAuthAdapter } from '@/infrastructure/auth/oauth/kakao';
 import type { OAuthProviderAdapter } from '@/infrastructure/auth/oauth/types';
 
-const SUPPORTED_PROVIDERS: readonly SupportedOAuthProvider[] = [
-    'google',
-    'kakao',
-];
+// NOTE: Kakao login is currently disabled — its adapter is intentionally excluded
+// from SUPPORTED_PROVIDERS and ADAPTERS so that /api/auth/kakao/start and the
+// callback route reject the provider. Re-enable by adding 'kakao' back here and
+// re-introducing kakaoOAuthAdapter.
+const SUPPORTED_PROVIDERS: readonly SupportedOAuthProvider[] = ['google'];
 
 const ADAPTERS: Record<SupportedOAuthProvider, OAuthProviderAdapter> = {
     google: googleOAuthAdapter,
-    kakao: kakaoOAuthAdapter,
 };
 
 export function getOAuthAdapter(

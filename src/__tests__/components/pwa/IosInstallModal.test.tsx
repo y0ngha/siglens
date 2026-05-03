@@ -46,4 +46,33 @@ describe('IosInstallModal', () => {
         fireEvent.keyDown(document, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
     });
+
+    it('mount시 모달 내부의 첫 번째 focusable(닫기 버튼)에 포커스가 이동한다', () => {
+        const trigger = document.createElement('button');
+        trigger.setAttribute('data-testid', 'trigger');
+        document.body.appendChild(trigger);
+        trigger.focus();
+        expect(document.activeElement).toBe(trigger);
+
+        render(<IosInstallModal onClose={jest.fn()} />);
+        expect(document.activeElement).toBe(
+            screen.getByRole('button', { name: '닫기' })
+        );
+        document.body.removeChild(trigger);
+    });
+
+    it('unmount시 trigger 요소로 포커스가 복원된다', () => {
+        const trigger = document.createElement('button');
+        document.body.appendChild(trigger);
+        trigger.focus();
+
+        const { unmount } = render(<IosInstallModal onClose={jest.fn()} />);
+        // Sanity check: focus moved into modal.
+        expect(document.activeElement).toBe(
+            screen.getByRole('button', { name: '닫기' })
+        );
+        unmount();
+        expect(document.activeElement).toBe(trigger);
+        document.body.removeChild(trigger);
+    });
 });

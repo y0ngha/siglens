@@ -1,3 +1,4 @@
+// NOTE: Kakao login is currently disabled — see SUPPORTED_PROVIDERS in providers.ts.
 import { constants } from 'node:http2';
 import { REVOKE_TIMEOUT_MS } from '@/infrastructure/auth/oauth/revokerConstants';
 import type {

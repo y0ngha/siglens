@@ -47,6 +47,19 @@ export interface EmailTokenStore {
 
     /** Delete the entry for `(purpose, email)`. No-op when no entry exists. */
     delete(purpose: EmailTokenPurpose, email: string): Promise<void>;
+
+    /**
+     * Atomically read and delete the entry for `(purpose, email)`. Returns the
+     * pre-deletion value when the entry existed, or `null` when no entry was
+     * present. Implementations MUST guarantee that at most one concurrent caller
+     * receives a non-null result for the same `(purpose, email)` pair so that
+     * single-use tokens (password reset, etc.) cannot be replayed within a
+     * concurrency race.
+     */
+    consume(
+        purpose: EmailTokenPurpose,
+        email: string
+    ): Promise<EmailTokenValue | null>;
 }
 
 /**
@@ -69,7 +82,8 @@ const KEY_PREFIX = 'email_token';
 interface UpstashConfig {
     url: string;
     token: string;
-    readonlyToken: string;
+    /** Optional read-only token; null when the env var is unset (no separate reader is created in that case). */
+    readonlyToken: string | null;
 }
 
 interface RedisPair {
@@ -84,11 +98,12 @@ function readUpstashConfig(): UpstashConfig | null {
     const url = process.env.UPSTASH_REDIS_REST_URL;
     const token = process.env.UPSTASH_REDIS_REST_TOKEN;
     if (!url || !token) return null;
-    return {
-        url,
-        token,
-        readonlyToken: process.env.UPSTASH_REDIS_REST_READONLY_TOKEN ?? '',
-    };
+    // Treat empty string as "unset" so a literal empty env var doesn't collide
+    // with a real readonly token in the cache key below.
+    const rawReadonly = process.env.UPSTASH_REDIS_REST_READONLY_TOKEN;
+    const readonlyToken =
+        rawReadonly === undefined || rawReadonly === '' ? null : rawReadonly;
+    return { url, token, readonlyToken };
 }
 
 /** @internal Test-only reset of the cached Redis client pair. */
@@ -106,15 +121,22 @@ export function buildEmailTokenKey(
 }
 
 function getRedisPair(config: UpstashConfig): RedisPair {
-    const configKey = `${config.url}:${config.token}:${config.readonlyToken}`;
+    // Encode "no readonly token" distinctly from "configured empty string" so a
+    // future change in env handling can never collide identities. The 2-segment
+    // form is reserved for the unset case; the 3-segment form for configured.
+    const configKey =
+        config.readonlyToken === null
+            ? `${config.url}:${config.token}`
+            : `${config.url}:${config.token}:${config.readonlyToken}`;
     if (cachedRedisPair !== null && cachedConfigKey === configKey) {
         return cachedRedisPair;
     }
 
     const writer = new Redis({ url: config.url, token: config.token });
-    const reader = config.readonlyToken
-        ? new Redis({ url: config.url, token: config.readonlyToken })
-        : writer;
+    const reader =
+        config.readonlyToken !== null
+            ? new Redis({ url: config.url, token: config.readonlyToken })
+            : writer;
     cachedRedisPair = { writer, reader };
     cachedConfigKey = configKey;
     return cachedRedisPair;
@@ -145,6 +167,15 @@ export function createEmailTokenStore(): EmailTokenStore | null {
         },
         async delete(purpose, email) {
             await writer.del(buildEmailTokenKey(purpose, email));
+        },
+        async consume(purpose, email) {
+            // Upstash Redis exposes GETDEL which atomically returns the value
+            // and deletes the key in a single round-trip. This is the primitive
+            // that prevents two concurrent password-reset confirmations from
+            // both observing the same pending token.
+            const key = buildEmailTokenKey(purpose, email);
+            const value = await writer.getdel<EmailTokenValue>(key);
+            return value ?? null;
         },
     };
 }

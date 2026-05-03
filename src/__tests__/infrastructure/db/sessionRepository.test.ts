@@ -145,4 +145,36 @@ describe('DrizzleSessionRepository', () => {
 
         expect(result).toBe(false);
     });
+
+    it('returns the number of expired sessions deleted', async () => {
+        const {
+            db,
+            delete: deleteFn,
+            where,
+            returning,
+        } = makeDeleteDb([{ id: 'a' }, { id: 'b' }, { id: 'c' }]);
+        const repository = new DrizzleSessionRepository(db);
+        const now = new Date('2026-04-30T00:00:00.000Z');
+
+        const result = await repository.deleteExpiredSessions(now);
+
+        expect(deleteFn).toHaveBeenCalledWith(expect.any(Object));
+        expect(where).toHaveBeenCalledWith(expect.any(Object));
+        expect(returning).toHaveBeenCalledWith({ id: expect.any(Object) });
+        expect(result).toBe(3);
+    });
+
+    it('returns 0 when no sessions are expired', async () => {
+        const { db } = makeDeleteDb([]);
+        const repository = new DrizzleSessionRepository(db);
+        const result = await repository.deleteExpiredSessions(new Date());
+        expect(result).toBe(0);
+    });
+
+    it('uses the current time when no `now` argument is supplied', async () => {
+        const { db } = makeDeleteDb([{ id: 'expired' }]);
+        const repository = new DrizzleSessionRepository(db);
+        const result = await repository.deleteExpiredSessions();
+        expect(result).toBe(1);
+    });
 });

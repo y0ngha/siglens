@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type PwaEnvironment } from '@/domain/types';
 import { detectPwaEnvironment } from '@/lib/pwa/detectPwaEnvironment';
+import { registerServiceWorker } from '@/lib/pwa/registerServiceWorker';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
 type PromptOutcome = 'accepted' | 'dismissed';
@@ -81,11 +82,7 @@ export function usePwaInstall(): UsePwaInstallReturn {
     const handleModalClose = useCallback(() => setShowIosModal(false), []);
 
     useEffect(() => {
-        if ('serviceWorker' in navigator) {
-            navigator.serviceWorker
-                .register('/sw.js')
-                .catch(err => console.warn('[PWA] SW 등록 실패', err));
-        }
+        registerServiceWorker();
     }, []);
 
     useEffect(() => {

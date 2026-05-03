@@ -8,7 +8,7 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { BARS_STALE_TIME_MS, QUERY_KEYS } from '@/lib/queryConfig';
 
 interface UseBarsOptions {
     symbol: string;
@@ -29,6 +29,9 @@ export function useBars({
     const { data } = useSuspenseQuery<BarsData, Error>({
         queryKey: QUERY_KEYS.bars(symbol, timeframe),
         queryFn: () => getBarsAction(symbol, timeframe, fmpSymbol),
+        // OHLCV bars update on the order of seconds during market hours; a
+        // short staleTime keeps repaints fresh without thrashing the API.
+        staleTime: BARS_STALE_TIME_MS,
     });
 
     return { bars: data.bars, indicators: data.indicators };

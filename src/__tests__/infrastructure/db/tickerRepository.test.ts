@@ -123,8 +123,22 @@ describe('DrizzleKoreanTickerRepository', () => {
                 koreanName: expect.anything(),
                 exchange: expect.anything(),
                 exchangeFullName: expect.anything(),
+                updatedAt: expect.anything(),
             },
         });
+    });
+
+    it('upsertMany 는 onConflictDoUpdate 의 set 에 updatedAt 을 명시적으로 포함한다', async () => {
+        const { db, onConflictDoUpdate } = makeUpsertDb();
+        const repo = new DrizzleKoreanTickerRepository(db);
+        await repo.upsertMany([apple]);
+        const passedSet = onConflictDoUpdate.mock.calls[0][0].set as Record<
+            string,
+            unknown
+        >;
+        expect(passedSet).toHaveProperty('updatedAt');
+        // sql`now()` produces an SQL chunk object — must not be undefined/null.
+        expect(passedSet.updatedAt).toBeDefined();
     });
 });
 
@@ -160,7 +174,20 @@ describe('DrizzleAssetTranslationRepository', () => {
                 name: expect.anything(),
                 koreanName: expect.anything(),
                 fmpSymbol: expect.anything(),
+                updatedAt: expect.anything(),
             },
         });
+    });
+
+    it('upsert 는 onConflictDoUpdate 의 set 에 updatedAt 을 명시적으로 포함한다', async () => {
+        const { db, onConflictDoUpdate } = makeUpsertDb();
+        const repo = new DrizzleAssetTranslationRepository(db);
+        await repo.upsert(record);
+        const passedSet = onConflictDoUpdate.mock.calls[0][0].set as Record<
+            string,
+            unknown
+        >;
+        expect(passedSet).toHaveProperty('updatedAt');
+        expect(passedSet.updatedAt).toBeDefined();
     });
 });

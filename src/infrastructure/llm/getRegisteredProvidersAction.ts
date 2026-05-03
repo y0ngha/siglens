@@ -27,7 +27,14 @@ export async function getRegisteredProvidersAction(): Promise<
                 })
             )
             .toSorted((a, b) => a.provider.localeCompare(b.provider));
-    } catch {
+    } catch (error) {
+        // Preserve the [] return shape for backward compatibility with the
+        // existing UI consumer, but never silently swallow the failure — log
+        // for observability so DB outages remain debuggable.
+        console.error(
+            '[getRegisteredProvidersAction] Failed to load registered providers',
+            error
+        );
         return [];
     }
 }

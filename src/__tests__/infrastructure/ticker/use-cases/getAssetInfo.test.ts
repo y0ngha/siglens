@@ -71,7 +71,10 @@ jest.mock('@/infrastructure/ticker/koreanTranslator', () => ({
     translateCompanyNames: () => translateCompanyNamesMock(),
 }));
 
-import { getAssetInfo } from '@/infrastructure/ticker/use-cases/getAssetInfo';
+import {
+    _resetInFlightTranslationsForTest,
+    getAssetInfo,
+} from '@/infrastructure/ticker/use-cases/getAssetInfo';
 
 const apple: FmpSearchResult = {
     symbol: 'AAPL',
@@ -92,6 +95,7 @@ const dbRecord: AssetTranslationRecord = {
 
 describe('getAssetInfo', () => {
     beforeEach(() => {
+        _resetInFlightTranslationsForTest();
         mockCache.get.mockReset();
         mockCache.set.mockReset();
         mockCache.set.mockResolvedValue(undefined);
@@ -317,6 +321,34 @@ describe('getAssetInfo', () => {
             name: 'Apple Inc.',
             fmpSymbol: 'AAPL.MX',
         });
+    });
+
+    it('동일 symbol 에 대한 동시 호출은 single-flight 로 묶여 Gemini 번역기를 정확히 1회만 호출한다', async () => {
+        mockCache.get.mockResolvedValue(null);
+        mockRepository.findBySymbol.mockResolvedValue(null);
+        searchBySymbolMock.mockResolvedValue([apple]);
+        getKoreanNamesMock.mockResolvedValue({});
+
+        // Hold the translator promise open until all concurrent callers have
+        // attached to the same in-flight Promise.
+        let resolveTranslate: (v: Record<string, string>) => void = () => {};
+        translateCompanyNamesMock.mockReturnValue(
+            new Promise<Record<string, string>>(resolve => {
+                resolveTranslate = resolve;
+            })
+        );
+
+        const concurrent = await Promise.all(
+            Array.from({ length: 5 }, () => getAssetInfo('AAPL'))
+        );
+
+        expect(concurrent.every(r => r?.symbol === 'AAPL')).toBe(true);
+
+        // All 5 fire-and-forget translations should share a single Gemini call.
+        expect(translateCompanyNamesMock).toHaveBeenCalledTimes(1);
+
+        resolveTranslate({ AAPL: '애플' });
+        await new Promise(resolve => setImmediate(resolve));
     });
 
     it('번역 저장 시 canonical symbol 과 FMP symbol 을 함께 보존한다', async () => {
