@@ -196,25 +196,27 @@ export function FutureDirectionCard({
                         목표 주가
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
-                        {// TS infers (string | number | null)[][] from the entries array; the source
-                        // data is structurally [string, number | null] per the priceTargetSummary shape.
-                        (
-                            [
-                                ['하단', ptConsensus.targetLow],
-                                ['중앙값', ptConsensus.targetMedian],
-                                ['컨센서스', ptConsensus.targetConsensus],
-                                ['상단', ptConsensus.targetHigh],
-                            ] as [string, number | null][]
-                        ).map(([label, val]) => (
-                            <div key={label}>
-                                <dt className="text-muted-foreground text-xs">
-                                    {label}
-                                </dt>
-                                <dd className="font-mono text-sm font-medium tabular-nums">
-                                    {fmtUsd(val)}
-                                </dd>
-                            </div>
-                        ))}
+                        {
+                            // TS infers (string | number | null)[][] from the entries array; the source
+                            // data is structurally [string, number | null] per the priceTargetSummary shape.
+                            (
+                                [
+                                    ['하단', ptConsensus.targetLow],
+                                    ['중앙값', ptConsensus.targetMedian],
+                                    ['컨센서스', ptConsensus.targetConsensus],
+                                    ['상단', ptConsensus.targetHigh],
+                                ] as [string, number | null][]
+                            ).map(([label, val]) => (
+                                <div key={label}>
+                                    <dt className="text-muted-foreground text-xs">
+                                        {label}
+                                    </dt>
+                                    <dd className="font-mono text-sm font-medium tabular-nums">
+                                        {fmtUsd(val)}
+                                    </dd>
+                                </div>
+                            ))
+                        }
                     </dl>
                     {ptSummary !== null && (
                         <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
