@@ -1,7 +1,9 @@
 'use client';
 
 import Image from 'next/image';
-import { useEscapeKey } from '@/components/pwa/hooks/useEscapeKey';
+import { useRef } from 'react';
+import { useEscapeKey } from '@/components/hooks/useEscapeKey';
+import { useFocusTrap } from '@/components/hooks/useFocusTrap';
 
 const MODAL_TITLE_ID = 'ios-modal-title';
 
@@ -34,7 +36,9 @@ interface IosInstallModalProps {
 }
 
 export function IosInstallModal({ onClose }: IosInstallModalProps) {
-    useEscapeKey(onClose);
+    const dialogRef = useRef<HTMLDivElement>(null);
+    useEscapeKey(onClose, true);
+    useFocusTrap(dialogRef, true);
 
     return (
         <div
@@ -43,6 +47,7 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
             onClick={onClose}
         >
             <div
+                ref={dialogRef}
                 data-testid="ios-modal-content"
                 role="dialog"
                 aria-modal="true"

@@ -7,9 +7,11 @@ import {
 } from '@/lib/pwa/detectPwaEnvironment';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
+type PromptOutcome = 'accepted' | 'dismissed';
+
 interface BeforeInstallPromptEvent extends Event {
     prompt(): Promise<void>;
-    userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
+    userChoice: Promise<{ outcome: PromptOutcome }>;
 }
 
 export interface UsePwaInstallReturn {
@@ -44,7 +46,6 @@ function resolveEnv(): PwaEnvironment {
 }
 
 export function usePwaInstall(): UsePwaInstallReturn {
-    // Hook order: useState → useRef → useCallback → useEffect
     const [showBanner, setShowBanner] = useState(false);
     const [showIosModal, setShowIosModal] = useState(false);
     // Lazy initializer: SSR returns EMPTY_ENV; re-runs on client with real window

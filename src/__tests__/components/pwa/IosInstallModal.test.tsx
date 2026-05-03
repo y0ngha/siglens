@@ -43,7 +43,7 @@ describe('IosInstallModal', () => {
     it('Escape 키 → onClose 호출', () => {
         const onClose = jest.fn();
         render(<IosInstallModal onClose={onClose} />);
-        fireEvent.keyDown(window, { key: 'Escape' });
+        fireEvent.keyDown(document, { key: 'Escape' });
         expect(onClose).toHaveBeenCalledTimes(1);
     });
 });
