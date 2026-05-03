@@ -348,10 +348,12 @@ earnings_reports (
 - 인프라: **GitHub Actions Cron** (`.github/workflows/earnings-calendar-cron.yml`)
   - Vercel Cron → GitHub Actions 전환 이유: Vercel Cron은 Pro plan 필요; GitHub Actions Cron은 무료. 일별 스케줄의 ±15분 레이턴시 허용 범위이므로 GitHub Actions로 충분.
   - 스케줄: `0 6 * * *` UTC
+  - **HTTP Method: `PATCH`** — REST 형식에 맞춰 GET → PATCH (Cron의 batch upsert는 부분 자원 갱신 의미).
   - 인증: `Authorization: Bearer CRON_SECRET` (route handler 동일 패턴 유지)
   - 수동 실행: `workflow_dispatch` 지원 (디버깅용)
 - Idempotent upsert (PK 충돌 시 fetched_at만 갱신)
 - 실패 시 다음 사이클까지 stale (T3 fallback, 사용자 진입 시점에 정시 fetch 트리거 가능)
+- 운영 가이드 (secrets, 수동 트리거, 모니터링): [`docs/CRON.md`](../../CRON.md)
 
 ---
 

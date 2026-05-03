@@ -12,6 +12,6 @@ jobs:
     steps:
       - name: Trigger earnings-calendar sync
         run: |
-          curl -fsS -X GET \
+          curl -fsS -X PATCH \
             "${{ secrets.SIGLENS_PRODUCTION_URL }}/api/cron/earnings-calendar-sync" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"

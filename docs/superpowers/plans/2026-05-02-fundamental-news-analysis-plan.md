@@ -3507,6 +3507,11 @@ git commit -m "feat: news/earnings repository 구현"
 > **Cron 인프라 변경 (2026-05-02):** Vercel Cron → GitHub Actions Cron으로 전환.
 > 이유: Vercel Cron은 Pro 플랜 필요; GitHub Actions Cron은 무료. 일별 스케줄(`0 6 * * *` UTC)은 ±15분 레이턴시 허용 범위이므로 GitHub Actions로 충분.
 > 인증 방식 동일: `Authorization: Bearer CRON_SECRET`.
+>
+> **HTTP Method 변경 (2026-05-02):** GET → PATCH.
+> REST 형식에 맞춰 GET → PATCH (Cron의 batch upsert는 부분 자원 갱신 의미).
+>
+> 운영 가이드 (secrets, 수동 트리거, 모니터링): [`docs/CRON.md`](../../CRON.md)
 
 **Files:**
 - Create: `src/app/api/cron/earnings-calendar-sync/route.ts`
@@ -3525,10 +3530,12 @@ import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/repositor
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function GET(req: Request): Promise<Response> {
+// REST 형식에 맞춰 GET → PATCH (Cron의 batch upsert는 부분 자원 갱신 의미).
+export async function PATCH(req: Request): Promise<Response> {
     // Authorization: Bearer CRON_SECRET (GitHub Actions Cron에서 전달)
+    const cronSecret = process.env.CRON_SECRET;
     const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
         return new NextResponse('unauthorized', { status: 401 });
     }
     const client = new FmpNewsClient();
@@ -3557,7 +3564,7 @@ jobs:
     steps:
       - name: Trigger earnings-calendar sync
         run: |
-          curl -fsS -X GET \
+          curl -fsS -X PATCH \
             "${{ secrets.SIGLENS_PRODUCTION_URL }}/api/cron/earnings-calendar-sync" \
             -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
 ```
@@ -3568,7 +3575,7 @@ jobs:
 
 ```typescript
 // src/__tests__/app/api/cron/earnings-calendar-sync.test.ts
-import { GET } from '@/app/api/cron/earnings-calendar-sync/route';
+import { PATCH } from '@/app/api/cron/earnings-calendar-sync/route';
 
 jest.mock('@/infrastructure/fmp/newsClient', () => ({
     FmpNewsClient: class { fetchEarningsCalendarAll = async () => [{ symbol: 'AAPL', earningsDate: '2026-08-01' }]; },
