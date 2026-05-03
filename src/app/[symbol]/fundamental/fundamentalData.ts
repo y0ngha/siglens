@@ -12,7 +12,7 @@ import {
     TTL_T3_7D,
     TTL_T2_24H,
     TTL_T2_1H,
-} from '@/components/fundamental/sections/cache';
+} from '@/lib/fundamental/cacheTtl';
 
 // ─── T4: 30 days ────────────────────────────────────────────────────────────
 
@@ -93,6 +93,19 @@ export const getPriceTargetSummary = unstable_cache(
     ['fundamental:price-target-summary'],
     { revalidate: TTL_T2_24H, tags: ['fundamental:price-target-summary'] }
 );
+
+// ─── KST date helper ─────────────────────────────────────────────────────────
+
+/**
+ * Returns today's date in KST as an ISO-8601 date string (YYYY-MM-DD).
+ *
+ * Called at server render time; with a 1h TTL the staleness window is bounded
+ * to at most one hour even when the date rolls over at midnight KST.
+ */
+export function todayKstIsoDate(): string {
+    const kstOffsetMs = 9 * 60 * 60 * 1000;
+    return new Date(Date.now() + kstOffsetMs).toISOString().slice(0, 10);
+}
 
 // ─── T2: 1 hour (date-keyed) ─────────────────────────────────────────────────
 
