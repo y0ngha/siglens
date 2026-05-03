@@ -24,7 +24,6 @@ export class DrizzleEarningsCalendarRepository {
                     revenueActual: sql`excluded.revenue_actual`,
                     revenueEstimated: sql`excluded.revenue_estimated`,
                     lastUpdated: sql`excluded.last_updated`,
-                    rawPayload: sql`excluded.raw_payload`,
                     fetchedAt: sql`excluded.fetched_at`,
                 },
             });

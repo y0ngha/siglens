@@ -3,7 +3,6 @@
 import {
     type FundamentalAnalysisResponse,
     type FundamentalCategory,
-    type FundamentalCategoryAssessment,
     type FundamentalSentiment,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
@@ -63,31 +62,29 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
 
             {result.categoryAssessments.length > 0 && (
                 <ul aria-label="카테고리별 평가" className="mb-5 space-y-3">
-                    {result.categoryAssessments.map(
-                        (a: FundamentalCategoryAssessment) => (
-                            <li
-                                key={a.category}
-                                className="bg-secondary-800/40 rounded-lg p-3"
-                            >
-                                <div className="mb-1 flex items-center gap-2">
-                                    <span className="text-sm font-medium">
-                                        {CATEGORY_LABEL[a.category]}
-                                    </span>
-                                    <span
-                                        className={cn(
-                                            'rounded px-1.5 py-0.5 text-xs font-medium',
-                                            SENTIMENT_CLASS[a.sentiment]
-                                        )}
-                                    >
-                                        {SENTIMENT_LABEL[a.sentiment]}
-                                    </span>
-                                </div>
-                                <p className="text-secondary-400 text-sm leading-relaxed">
-                                    {a.rationaleKo}
-                                </p>
-                            </li>
-                        )
-                    )}
+                    {result.categoryAssessments.map(a => (
+                        <li
+                            key={a.category}
+                            className="bg-secondary-800/40 rounded-lg p-3"
+                        >
+                            <div className="mb-1 flex items-center gap-2">
+                                <span className="text-sm font-medium">
+                                    {CATEGORY_LABEL[a.category]}
+                                </span>
+                                <span
+                                    className={cn(
+                                        'rounded px-1.5 py-0.5 text-xs font-medium',
+                                        SENTIMENT_CLASS[a.sentiment]
+                                    )}
+                                >
+                                    {SENTIMENT_LABEL[a.sentiment]}
+                                </span>
+                            </div>
+                            <p className="text-secondary-400 text-sm leading-relaxed">
+                                {a.rationaleKo}
+                            </p>
+                        </li>
+                    ))}
                 </ul>
             )}
 

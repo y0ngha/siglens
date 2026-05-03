@@ -1,4 +1,3 @@
-// fundamental/news 페이지 RSC 섹션의 Suspense fallback으로 공유 사용된다.
 export function SectionSkeleton() {
     return (
         <div
