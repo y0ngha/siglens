@@ -28,7 +28,7 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
             <div className="mb-2 flex items-baseline justify-between gap-2">
                 <div>
                     <span className="text-sm font-medium">{label}</span>
-                    <span className="text-muted-foreground ml-1.5 text-xs">
+                    <span className="text-secondary-400 ml-1.5 text-xs">
                         {description}
                     </span>
                 </div>
@@ -36,7 +36,7 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
                     className={cn(
                         'font-mono text-sm font-semibold tabular-nums',
                         pct === null
-                            ? 'text-muted-foreground'
+                            ? 'text-secondary-400'
                             : isPositive
                               ? 'text-chart-bullish'
                               : 'text-chart-bearish'
@@ -60,14 +60,14 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
                     width="100%"
                     height="6"
                     rx="3"
-                    className="fill-muted"
+                    className="fill-secondary-700"
                 />
                 <line
                     x1="50%"
                     y1="1"
                     x2="50%"
                     y2="11"
-                    className="stroke-border"
+                    className="stroke-secondary-700"
                     strokeWidth="1"
                 />
                 {pct !== null && (
@@ -98,7 +98,7 @@ export function GrowthChart({ growth }: GrowthChartProps) {
     return (
         <section
             aria-labelledby="growth-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="growth-heading"
@@ -106,10 +106,10 @@ export function GrowthChart({ growth }: GrowthChartProps) {
             >
                 성장성
             </h2>
-            <p className="text-muted-foreground mb-4 text-xs">
+            <p className="text-secondary-400 mb-4 text-xs">
                 전년 동기 대비(YoY) 성장률
             </p>
-            <div className="divide-border/50 divide-y">
+            <div className="divide-secondary-700/50 divide-y">
                 <GrowthBar
                     label="매출 성장률"
                     value={growth.growthRevenue}

@@ -23,7 +23,7 @@ function MetricBar({ label, value, description }: MetricBarProps) {
             <div className="flex items-baseline justify-between gap-2">
                 <div>
                     <span className="text-sm font-medium">{label}</span>
-                    <span className="text-muted-foreground ml-1.5 text-xs">
+                    <span className="text-secondary-400 ml-1.5 text-xs">
                         {description}
                     </span>
                 </div>
@@ -35,10 +35,10 @@ function MetricBar({ label, value, description }: MetricBarProps) {
                 <div
                     role="presentation"
                     aria-hidden="true"
-                    className="bg-muted mt-1.5 h-1.5 w-full overflow-hidden rounded-full"
+                    className="bg-secondary-700 mt-1.5 h-1.5 w-full overflow-hidden rounded-full"
                 >
                     <div
-                        className="bg-primary h-full w-[var(--fill-pct)] rounded-full transition-all"
+                        className="bg-primary-600 h-full w-[var(--fill-pct)] rounded-full transition-all"
                         style={
                             {
                                 '--fill-pct': `${fillPct}%`,
@@ -61,7 +61,7 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
     return (
         <section
             aria-labelledby="profitability-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="profitability-heading"
@@ -69,7 +69,7 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
             >
                 수익성
             </h2>
-            <div className="divide-border/50 divide-y">
+            <div className="divide-secondary-700/50 divide-y">
                 <MetricBar
                     label="ROE"
                     value={ratios.returnOnEquityTTM}

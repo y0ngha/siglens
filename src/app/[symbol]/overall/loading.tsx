@@ -8,7 +8,7 @@ export default function OverallLoading() {
             {[...Array(3)].map((_, i) => (
                 <div
                     key={i}
-                    className="bg-muted h-32 animate-pulse rounded-xl"
+                    className="bg-secondary-700 h-32 animate-pulse rounded-xl"
                     aria-hidden="true"
                 />
             ))}

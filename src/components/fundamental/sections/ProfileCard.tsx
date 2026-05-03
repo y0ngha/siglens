@@ -21,7 +21,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
     return (
         <section
             aria-labelledby="profile-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
@@ -30,17 +30,17 @@ export function ProfileCard({ profile }: ProfileCardProps) {
                         className="text-xl font-semibold tracking-tight"
                     >
                         {profile.companyName}
-                        <span className="text-muted-foreground ml-2 text-base font-normal">
+                        <span className="text-secondary-400 ml-2 text-base font-normal">
                             ({profile.symbol})
                         </span>
                     </h2>
-                    <p className="text-muted-foreground mt-1 text-sm">
+                    <p className="text-secondary-400 mt-1 text-sm">
                         {profile.sector}
                         {profile.industry ? ` / ${profile.industry}` : ''}
                     </p>
                 </div>
                 <div className="text-right">
-                    <span className="text-muted-foreground text-xs tracking-widest uppercase">
+                    <span className="text-secondary-400 text-xs tracking-widest uppercase">
                         시가총액
                     </span>
                     <p className="font-mono text-lg font-medium tabular-nums">
@@ -52,7 +52,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
             <dl className="mt-4 grid grid-cols-1 gap-y-2 sm:grid-cols-2">
                 {profile.ceo !== null && (
                     <div className="flex gap-2">
-                        <dt className="text-muted-foreground w-10 shrink-0 text-sm">
+                        <dt className="text-secondary-400 w-10 shrink-0 text-sm">
                             CEO
                         </dt>
                         <dd className="text-sm">{profile.ceo}</dd>
@@ -60,7 +60,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
                 )}
                 {profile.website !== null && (
                     <div className="flex gap-2">
-                        <dt className="text-muted-foreground w-10 shrink-0 text-sm">
+                        <dt className="text-secondary-400 w-10 shrink-0 text-sm">
                             웹
                         </dt>
                         <dd className="text-sm">
@@ -68,7 +68,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
                                 href={profile.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:text-foreground text-muted-foreground underline underline-offset-2 transition-colors"
+                                className="hover:text-secondary-100 text-secondary-400 underline underline-offset-2 transition-colors"
                                 translate="no"
                             >
                                 {profile.website.replace(/^https?:\/\//, '')}
@@ -79,7 +79,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
             </dl>
 
             {profile.description !== null && (
-                <p className="text-muted-foreground mt-4 line-clamp-4 text-sm leading-relaxed">
+                <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
                     {profile.description}
                 </p>
             )}

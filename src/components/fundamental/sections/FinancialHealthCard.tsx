@@ -28,14 +28,14 @@ function HealthMetric({ label, value, hint, badge }: HealthMetricProps) {
                 ? 'bg-ui-danger/10 text-chart-bearish'
                 : badge.variant === 'warn'
                   ? 'bg-ui-warning/10 text-ui-warning'
-                  : 'bg-muted text-muted-foreground';
+                  : 'bg-secondary-700 text-secondary-400';
 
     return (
-        <div className="border-border flex items-baseline justify-between gap-4 border-b py-2.5 last:border-b-0">
+        <div className="border-secondary-700 flex items-baseline justify-between gap-4 border-b py-2.5 last:border-b-0">
             <div>
                 <span className="text-sm font-medium">{label}</span>
                 {hint !== undefined && (
-                    <span className="text-muted-foreground ml-1.5 text-xs">
+                    <span className="text-secondary-400 ml-1.5 text-xs">
                         {hint}
                     </span>
                 )}
@@ -100,7 +100,7 @@ export function FinancialHealthCard({
     return (
         <section
             aria-labelledby="health-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="health-heading"

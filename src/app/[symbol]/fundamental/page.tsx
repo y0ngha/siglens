@@ -183,7 +183,7 @@ function SectionSkeleton() {
     return (
         <div
             aria-hidden="true"
-            className="bg-muted h-32 animate-pulse rounded-xl"
+            className="bg-secondary-700 h-32 animate-pulse rounded-xl"
         />
     );
 }

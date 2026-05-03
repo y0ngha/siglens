@@ -46,7 +46,7 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="ai-summary-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
@@ -65,7 +65,7 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
                 </span>
             </div>
 
-            <p className="text-muted-foreground mb-5 text-sm leading-relaxed">
+            <p className="text-secondary-400 mb-5 text-sm leading-relaxed">
                 {result.overallConclusionKo}
             </p>
 
@@ -75,7 +75,7 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
                         (a: FundamentalCategoryAssessment) => (
                             <li
                                 key={a.category}
-                                className="bg-muted/40 rounded-lg p-3"
+                                className="bg-secondary-800/40 rounded-lg p-3"
                             >
                                 <div className="mb-1 flex items-center gap-2">
                                     <span className="text-sm font-medium">
@@ -91,7 +91,7 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
                                         {SENTIMENT_LABEL[a.sentiment]}
                                     </span>
                                 </div>
-                                <p className="text-muted-foreground text-sm leading-relaxed">
+                                <p className="text-secondary-400 text-sm leading-relaxed">
                                     {a.rationaleKo}
                                 </p>
                             </li>
@@ -107,7 +107,7 @@ function FundamentalAiSummaryView({ result }: FundamentalAiSummaryViewProps) {
                         {result.riskFactorsKo.map((risk, i) => (
                             <li
                                 key={i}
-                                className="text-muted-foreground flex gap-2 text-sm"
+                                className="text-secondary-400 flex gap-2 text-sm"
                             >
                                 <span
                                     aria-hidden="true"
@@ -156,7 +156,7 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
         return (
             <section
                 aria-labelledby="ai-summary-error-heading"
-                className="border-destructive/30 bg-card rounded-xl border p-6"
+                className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6"
             >
                 <h2
                     id="ai-summary-error-heading"
@@ -164,7 +164,7 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
                 >
                     AI 펀더멘털 분석
                 </h2>
-                <p className="text-destructive text-sm" role="alert">
+                <p className="text-ui-danger text-sm" role="alert">
                     {state.error ?? '분석 중 오류가 발생했습니다.'}
                 </p>
             </section>
@@ -180,7 +180,7 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
         <section
             aria-labelledby="ai-summary-loading-heading"
             aria-busy="true"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="ai-summary-loading-heading"
@@ -191,10 +191,10 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
             <div className="flex items-center gap-3">
                 <div
                     aria-hidden="true"
-                    className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+                    className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
                 />
                 <p
-                    className="text-muted-foreground text-sm"
+                    className="text-secondary-400 text-sm"
                     aria-live="polite"
                     aria-atomic="true"
                 >
@@ -205,7 +205,7 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
                 {[...Array(3)].map((_, i) => (
                     <div
                         key={i}
-                        className="bg-muted h-4 w-[var(--skeleton-w)] animate-pulse rounded"
+                        className="bg-secondary-700 h-4 w-[var(--skeleton-w)] animate-pulse rounded"
                         style={
                             {
                                 '--skeleton-w': `${85 - i * 12}%`,

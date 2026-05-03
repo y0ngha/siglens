@@ -30,12 +30,12 @@ interface EarningsCalendarCardProps {
 
 function EarningsCalendarCard({ item }: EarningsCalendarCardProps) {
     return (
-        <div className="border-border bg-card rounded-lg border p-4">
+        <div className="border-secondary-700 bg-secondary-800 rounded-lg border p-4">
             <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-semibold">다음 어닝 발표</h3>
                 <time
                     dateTime={item.earningsDate}
-                    className="text-muted-foreground text-sm tabular-nums"
+                    className="text-secondary-400 text-sm tabular-nums"
                 >
                     {formatDate(item.earningsDate)}
                 </time>
@@ -44,7 +44,7 @@ function EarningsCalendarCard({ item }: EarningsCalendarCardProps) {
                 <dl className="mt-2 grid grid-cols-2 gap-3 text-sm">
                     {item.epsEstimated !== null && (
                         <>
-                            <dt className="text-muted-foreground">EPS 예상</dt>
+                            <dt className="text-secondary-400">EPS 예상</dt>
                             <dd className="font-medium tabular-nums">
                                 {formatCurrency(item.epsEstimated)}
                             </dd>
@@ -52,7 +52,7 @@ function EarningsCalendarCard({ item }: EarningsCalendarCardProps) {
                     )}
                     {item.revenueEstimated !== null && (
                         <>
-                            <dt className="text-muted-foreground">매출 예상</dt>
+                            <dt className="text-secondary-400">매출 예상</dt>
                             <dd className="font-medium tabular-nums">
                                 {new Intl.NumberFormat('en-US', {
                                     style: 'currency',
@@ -75,12 +75,12 @@ interface LatestEarningsCardProps {
 
 function LatestEarningsCard({ report }: LatestEarningsCardProps) {
     return (
-        <div className="border-border bg-card rounded-lg border p-4">
+        <div className="border-secondary-700 bg-secondary-800 rounded-lg border p-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
                 <h3 className="font-semibold">최근 어닝 발표</h3>
                 <time
                     dateTime={report.earningsDate}
-                    className="text-muted-foreground text-sm tabular-nums"
+                    className="text-secondary-400 text-sm tabular-nums"
                 >
                     {formatDate(report.earningsDate)}
                 </time>

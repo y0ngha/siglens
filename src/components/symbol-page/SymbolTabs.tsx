@@ -40,7 +40,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
     return (
         <nav
             aria-label="분석 종류"
-            className="border-border flex overflow-x-auto border-b"
+            className="border-secondary-700 flex overflow-x-auto border-b"
         >
             {TABS.map(t => {
                 const href = t.hrefBuilder(upper);
@@ -51,10 +51,10 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                         href={href}
                         aria-current={active ? 'page' : undefined}
                         className={cn(
-                            'focus-visible:ring-primary px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
+                            'focus-visible:ring-primary-500 px-4 py-2 text-sm whitespace-nowrap focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none',
                             active
-                                ? 'border-primary text-foreground border-b-2 font-medium'
-                                : 'text-muted-foreground hover:text-foreground'
+                                ? 'border-primary-500 text-secondary-100 border-b-2 font-medium'
+                                : 'text-secondary-400 hover:text-secondary-100'
                         )}
                     >
                         {t.label}

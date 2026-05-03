@@ -62,7 +62,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
             <section
                 aria-labelledby="overall-loading-heading"
                 aria-busy="true"
-                className="border-border bg-card rounded-xl border p-6"
+                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
             >
                 <h2
                     id="overall-loading-heading"
@@ -73,10 +73,10 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
                 <div className="flex items-center gap-3">
                     <div
                         aria-hidden="true"
-                        className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none"
+                        className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none"
                     />
                     <p
-                        className="text-muted-foreground text-sm"
+                        className="text-secondary-400 text-sm"
                         aria-live="polite"
                         aria-atomic="true"
                     >
@@ -88,7 +88,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
                         <div
                             key={i}
                             className={cn(
-                                'bg-muted h-4 animate-pulse rounded motion-reduce:animate-none',
+                                'bg-secondary-700 h-4 animate-pulse rounded motion-reduce:animate-none',
                                 'w-[var(--skeleton-w)]'
                             )}
                             style={
@@ -108,7 +108,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
         return (
             <section
                 aria-labelledby="overall-error-heading"
-                className="border-destructive/30 bg-card rounded-xl border p-6"
+                className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6"
             >
                 <h2
                     id="overall-error-heading"
@@ -116,14 +116,14 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
                 >
                     AI 종합 분석
                 </h2>
-                <p className="text-destructive text-sm" role="alert">
+                <p className="text-ui-danger text-sm" role="alert">
                     {state.error ?? '분석 중 오류가 발생했습니다.'}
                     {state.axis !== undefined ? ` (${state.axis} 축 실패)` : ''}
                 </p>
                 <button
                     type="button"
                     onClick={trigger}
-                    className="text-primary focus-visible:ring-primary mt-3 rounded-sm text-sm underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    className="text-primary-400 focus-visible:ring-primary-500 mt-3 rounded-sm text-sm underline-offset-2 hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                     다시 시도
                 </button>

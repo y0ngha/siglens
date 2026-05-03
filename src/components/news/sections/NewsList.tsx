@@ -32,7 +32,7 @@ const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bullish: 'bg-ui-success/10 text-chart-bullish',
     bearish: 'bg-ui-danger/10 text-chart-bearish',
-    neutral: 'bg-muted text-muted-foreground',
+    neutral: 'bg-secondary-700 text-secondary-400',
 };
 
 const VALID_SENTIMENTS = new Set<string>(['bullish', 'bearish', 'neutral']);
@@ -75,7 +75,7 @@ function NewsCard({ item }: NewsCardProps) {
     }).format(new Date(item.publishedAt));
 
     return (
-        <article className="border-border bg-card hover:border-primary/50 rounded-xl border p-4 transition-colors">
+        <article className="border-secondary-700 bg-secondary-800 hover:border-primary-500/50 rounded-xl border p-4 transition-colors">
             <h3 className="leading-snug font-semibold text-balance">
                 {item.titleKo ?? item.titleEn}
             </h3>
@@ -84,22 +84,22 @@ function NewsCard({ item }: NewsCardProps) {
                     <SentimentBadge value={item.sentiment} />
                 )}
                 {item.category !== null && (
-                    <span className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs">
+                    <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
                         {item.category}
                     </span>
                 )}
                 <time
                     dateTime={item.publishedAt}
-                    className="text-muted-foreground text-xs"
+                    className="text-secondary-400 text-xs"
                 >
                     {publishedDate}
                 </time>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-secondary-400 text-xs">
                     {item.source}
                 </span>
             </div>
             {item.summaryKo !== null && (
-                <p className="text-muted-foreground mt-2 text-sm leading-relaxed">
+                <p className="text-secondary-400 mt-2 text-sm leading-relaxed">
                     {item.summaryKo}
                 </p>
             )}
@@ -107,7 +107,7 @@ function NewsCard({ item }: NewsCardProps) {
                 href={item.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary focus-visible:ring-primary mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
+                className="text-primary-400 focus-visible:ring-primary-500 mt-2 inline-block text-xs transition-opacity hover:opacity-70 focus-visible:ring-2 focus-visible:outline-none"
             >
                 원문 보기 →
             </a>
@@ -132,7 +132,7 @@ export function NewsList({ items }: NewsListProps) {
         return (
             <section
                 aria-labelledby="news-list-heading"
-                className="border-border bg-card rounded-xl border p-6"
+                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
             >
                 <h2
                     id="news-list-heading"
@@ -140,7 +140,7 @@ export function NewsList({ items }: NewsListProps) {
                 >
                     최근 뉴스
                 </h2>
-                <p className="text-muted-foreground text-sm">
+                <p className="text-secondary-400 text-sm">
                     최근 7일간 뉴스가 없습니다.
                 </p>
             </section>

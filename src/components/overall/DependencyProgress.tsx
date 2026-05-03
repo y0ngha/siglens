@@ -27,7 +27,7 @@ export function DependencyProgress({ pendingJobs }: DependencyProgressProps) {
         <section
             aria-labelledby="dependency-progress-heading"
             aria-busy="true"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="dependency-progress-heading"
@@ -36,7 +36,7 @@ export function DependencyProgress({ pendingJobs }: DependencyProgressProps) {
                 의존성 분석 진행 중 ({completed}/{total})
             </h2>
             <p
-                className="text-muted-foreground mt-1 text-sm"
+                className="text-secondary-400 mt-1 text-sm"
                 aria-live="polite"
                 aria-atomic="true"
             >
@@ -50,7 +50,7 @@ export function DependencyProgress({ pendingJobs }: DependencyProgressProps) {
                             {isPending ? (
                                 <span
                                     aria-hidden="true"
-                                    className="border-primary h-4 w-4 shrink-0 animate-pulse rounded-full border-2 border-t-transparent motion-reduce:animate-none"
+                                    className="border-primary-500 h-4 w-4 shrink-0 animate-pulse rounded-full border-2 border-t-transparent motion-reduce:animate-none"
                                 />
                             ) : (
                                 <span
@@ -63,7 +63,7 @@ export function DependencyProgress({ pendingJobs }: DependencyProgressProps) {
                             <span className="text-sm">
                                 {AXIS_LABEL[axis]}
                                 {isPending ? (
-                                    <span className="text-muted-foreground">
+                                    <span className="text-secondary-400">
                                         {' '}
                                         — 진행 중…
                                     </span>

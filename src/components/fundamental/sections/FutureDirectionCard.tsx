@@ -78,7 +78,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="bg-ui-success block h-2 w-2 rounded-sm"
                         aria-hidden="true"
                     />
-                    <dt className="text-muted-foreground">강력 매수</dt>
+                    <dt className="text-secondary-400">강력 매수</dt>
                     <dd className="font-mono font-medium">{strongBuy}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -86,7 +86,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="bg-ui-success/60 block h-2 w-2 rounded-sm"
                         aria-hidden="true"
                     />
-                    <dt className="text-muted-foreground">매수</dt>
+                    <dt className="text-secondary-400">매수</dt>
                     <dd className="font-mono font-medium">{buy}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -94,7 +94,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="bg-ui-warning block h-2 w-2 rounded-sm"
                         aria-hidden="true"
                     />
-                    <dt className="text-muted-foreground">중립</dt>
+                    <dt className="text-secondary-400">중립</dt>
                     <dd className="font-mono font-medium">{hold}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -102,7 +102,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="bg-ui-danger/60 block h-2 w-2 rounded-sm"
                         aria-hidden="true"
                     />
-                    <dt className="text-muted-foreground">매도</dt>
+                    <dt className="text-secondary-400">매도</dt>
                     <dd className="font-mono font-medium">{sell}</dd>
                 </div>
                 <div className="flex items-center gap-1">
@@ -110,7 +110,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="bg-ui-danger block h-2 w-2 rounded-sm"
                         aria-hidden="true"
                     />
-                    <dt className="text-muted-foreground">강력 매도</dt>
+                    <dt className="text-secondary-400">강력 매도</dt>
                     <dd className="font-mono font-medium">{strongSell}</dd>
                 </div>
             </dl>
@@ -155,7 +155,7 @@ export function FutureDirectionCard({
     return (
         <section
             aria-labelledby="future-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="future-heading"
@@ -166,20 +166,20 @@ export function FutureDirectionCard({
 
             {estimates !== null && (
                 <div className="mb-5">
-                    <h3 className="text-muted-foreground mb-2 text-xs font-medium tracking-widest uppercase">
+                    <h3 className="text-secondary-400 mb-2 text-xs font-medium tracking-widest uppercase">
                         애널리스트 추정
                     </h3>
                     <dl className="grid grid-cols-2 gap-3">
-                        <div className="bg-muted/40 rounded-lg px-4 py-3">
-                            <dt className="text-muted-foreground text-xs">
+                        <div className="bg-secondary-800/40 rounded-lg px-4 py-3">
+                            <dt className="text-secondary-400 text-xs">
                                 EPS 컨센서스
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
                                 {fmtUsd(estimates.estimatedEpsAvg)}
                             </dd>
                         </div>
-                        <div className="bg-muted/40 rounded-lg px-4 py-3">
-                            <dt className="text-muted-foreground text-xs">
+                        <div className="bg-secondary-800/40 rounded-lg px-4 py-3">
+                            <dt className="text-secondary-400 text-xs">
                                 매출 컨센서스
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
@@ -192,7 +192,7 @@ export function FutureDirectionCard({
 
             {ptConsensus !== null && (
                 <div className="mb-5">
-                    <h3 className="text-muted-foreground mb-2 text-xs font-medium tracking-widest uppercase">
+                    <h3 className="text-secondary-400 mb-2 text-xs font-medium tracking-widest uppercase">
                         목표 주가
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
@@ -208,7 +208,7 @@ export function FutureDirectionCard({
                                 ] as [string, number | null][]
                             ).map(([label, val]) => (
                                 <div key={label}>
-                                    <dt className="text-muted-foreground text-xs">
+                                    <dt className="text-secondary-400 text-xs">
                                         {label}
                                     </dt>
                                     <dd className="font-mono text-sm font-medium tabular-nums">
@@ -221,13 +221,13 @@ export function FutureDirectionCard({
                     {ptSummary !== null && (
                         <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-xs">
                             <div className="flex gap-1">
-                                <dt className="text-muted-foreground">1개월</dt>
+                                <dt className="text-secondary-400">1개월</dt>
                                 <dd className="font-mono">
                                     {fmtUsd(ptSummary.lastMonth.avgPriceTarget)}
                                 </dd>
                             </div>
                             <div className="flex gap-1">
-                                <dt className="text-muted-foreground">3개월</dt>
+                                <dt className="text-secondary-400">3개월</dt>
                                 <dd className="font-mono">
                                     {fmtUsd(
                                         ptSummary.lastQuarter.avgPriceTarget
@@ -235,7 +235,7 @@ export function FutureDirectionCard({
                                 </dd>
                             </div>
                             <div className="flex gap-1">
-                                <dt className="text-muted-foreground">
+                                <dt className="text-secondary-400">
                                     12개월
                                 </dt>
                                 <dd className="font-mono">
@@ -249,7 +249,7 @@ export function FutureDirectionCard({
 
             {grades !== null && (
                 <div>
-                    <h3 className="text-muted-foreground mb-1 text-xs font-medium tracking-widest uppercase">
+                    <h3 className="text-secondary-400 mb-1 text-xs font-medium tracking-widest uppercase">
                         투자의견 컨센서스
                     </h3>
                     <GradesBar

@@ -17,7 +17,7 @@ export function PeersTable({ peers }: PeersTableProps) {
     return (
         <section
             aria-labelledby="peers-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="peers-heading"
@@ -28,7 +28,7 @@ export function PeersTable({ peers }: PeersTableProps) {
             <div className="overflow-x-auto">
                 <table className="w-full text-sm">
                     <thead>
-                        <tr className="text-muted-foreground border-border border-b text-left text-xs tracking-widest uppercase">
+                        <tr className="text-secondary-400 border-secondary-700 border-b text-left text-xs tracking-widest uppercase">
                             <th className="pb-2 font-medium">티커</th>
                             <th className="pb-2 font-medium">회사명</th>
                             <th className="pb-2 text-right font-medium">
@@ -40,18 +40,18 @@ export function PeersTable({ peers }: PeersTableProps) {
                         {peers.map(peer => (
                             <tr
                                 key={peer.symbol}
-                                className="hover:bg-muted/40 border-border/50 border-b transition-colors last:border-b-0"
+                                className="hover:bg-secondary-800/40 border-secondary-700/50 border-b transition-colors last:border-b-0"
                             >
                                 <td className="py-2.5 pr-4">
                                     <Link
                                         href={`/${peer.symbol}/fundamental`}
-                                        className="text-primary font-mono font-medium hover:underline"
+                                        className="text-primary-400 font-mono font-medium hover:underline"
                                         translate="no"
                                     >
                                         {peer.symbol}
                                     </Link>
                                 </td>
-                                <td className="text-muted-foreground py-2.5 pr-4">
+                                <td className="text-secondary-400 py-2.5 pr-4">
                                     {peer.companyName}
                                 </td>
                                 <td className="py-2.5 text-right font-mono tabular-nums">

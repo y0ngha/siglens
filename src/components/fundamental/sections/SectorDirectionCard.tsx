@@ -55,7 +55,7 @@ function SectorSparkline({
             <polyline
                 points={points}
                 fill="none"
-                className="stroke-primary"
+                className="stroke-primary-500"
                 strokeWidth="1.5"
                 strokeLinejoin="round"
                 strokeLinecap="round"
@@ -82,7 +82,7 @@ export function SectorDirectionCard({
     return (
         <section
             aria-labelledby="sector-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="sector-heading"
@@ -92,7 +92,7 @@ export function SectorDirectionCard({
             </h2>
             {sector !== '' && (
                 <p
-                    className="text-muted-foreground mb-4 text-sm"
+                    className="text-secondary-400 mb-4 text-sm"
                     translate="no"
                 >
                     {sector}
@@ -101,7 +101,7 @@ export function SectorDirectionCard({
 
             {todayPct !== null && (
                 <div className="mb-4 flex items-center gap-3">
-                    <span className="text-muted-foreground text-sm">오늘</span>
+                    <span className="text-secondary-400 text-sm">오늘</span>
                     <span
                         className={cn(
                             'font-mono text-2xl font-bold tabular-nums',
@@ -118,7 +118,7 @@ export function SectorDirectionCard({
 
             {historical.length >= 2 && (
                 <div>
-                    <p className="text-muted-foreground mb-2 text-xs">
+                    <p className="text-secondary-400 mb-2 text-xs">
                         최근 30거래일 섹터 수익률
                     </p>
                     <SectorSparkline data={historical} />

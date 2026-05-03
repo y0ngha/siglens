@@ -13,7 +13,7 @@ export function ThreeAxisConclusion({ text }: ThreeAxisConclusionProps) {
     return (
         <section
             aria-labelledby="three-axis-conclusion-heading"
-            className="border-primary/30 bg-primary/5 rounded-xl border p-6"
+            className="border-primary-500/30 bg-primary-600/5 rounded-xl border p-6"
         >
             <h2
                 id="three-axis-conclusion-heading"

@@ -29,7 +29,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     return (
         <section
             aria-labelledby="scenario-analysis-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="scenario-analysis-heading"
@@ -41,7 +41,7 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                 {scenarios.map(scenario => (
                     <li
                         key={scenario.name}
-                        className="bg-muted/40 rounded-lg p-4"
+                        className="bg-secondary-800/40 rounded-lg p-4"
                     >
                         <div className="mb-2 flex items-center gap-2">
                             <span
@@ -53,14 +53,14 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                                 {SCENARIO_LABEL[scenario.name]}
                             </span>
                         </div>
-                        <p className="text-muted-foreground mb-1.5 text-sm leading-relaxed">
-                            <span className="text-foreground font-medium">
+                        <p className="text-secondary-400 mb-1.5 text-sm leading-relaxed">
+                            <span className="text-secondary-100 font-medium">
                                 트리거 조건:{' '}
                             </span>
                             {scenario.triggerConditionKo}
                         </p>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
-                            <span className="text-foreground font-medium">
+                        <p className="text-secondary-400 text-sm leading-relaxed">
+                            <span className="text-secondary-100 font-medium">
                                 예상 가격대:{' '}
                             </span>
                             {scenario.priceRangeKo}

@@ -35,7 +35,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
@@ -54,7 +54,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 </span>
             </div>
 
-            <p className="text-muted-foreground mb-5 text-sm leading-relaxed">
+            <p className="text-secondary-400 mb-5 text-sm leading-relaxed">
                 {result.currentDriverKo}
             </p>
 
@@ -65,7 +65,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {result.keyEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="text-muted-foreground flex gap-2 text-sm"
+                                className="text-secondary-400 flex gap-2 text-sm"
                             >
                                 <span
                                     aria-hidden="true"
@@ -92,7 +92,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {result.upcomingEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="text-muted-foreground flex gap-2 text-sm"
+                                className="text-secondary-400 flex gap-2 text-sm"
                             >
                                 <span
                                     aria-hidden="true"
@@ -143,7 +143,7 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
         return (
             <section
                 aria-labelledby="news-ai-summary-error-heading"
-                className="border-destructive/30 bg-card rounded-xl border p-6"
+                className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6"
             >
                 <h2
                     id="news-ai-summary-error-heading"
@@ -151,7 +151,7 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
                 >
                     AI 뉴스 종합 분석
                 </h2>
-                <p className="text-destructive text-sm" role="alert">
+                <p className="text-ui-danger text-sm" role="alert">
                     {state.error ?? '분석 중 오류가 발생했습니다.'}
                 </p>
             </section>
@@ -167,7 +167,7 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
         <section
             aria-labelledby="news-ai-summary-loading-heading"
             aria-busy="true"
-            className="border-border bg-card rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
                 id="news-ai-summary-loading-heading"
@@ -178,10 +178,10 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
             <div className="flex items-center gap-3">
                 <div
                     aria-hidden="true"
-                    className="border-primary h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+                    className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
                 />
                 <p
-                    className="text-muted-foreground text-sm"
+                    className="text-secondary-400 text-sm"
                     aria-live="polite"
                     aria-atomic="true"
                 >
@@ -192,7 +192,7 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
                 {[...Array(3)].map((_, i) => (
                     <div
                         key={i}
-                        className="bg-muted h-4 w-[var(--skeleton-w)] animate-pulse rounded"
+                        className="bg-secondary-700 h-4 w-[var(--skeleton-w)] animate-pulse rounded"
                         style={
                             {
                                 '--skeleton-w': `${85 - i * 12}%`,

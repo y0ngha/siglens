@@ -14,9 +14,9 @@ const ACTION_LABEL: Record<GradesAction, string> = {
 const ACTION_CLASS: Record<GradesAction, string> = {
     upgrade: 'bg-ui-success/10 text-chart-bullish',
     downgrade: 'bg-ui-danger/10 text-chart-bearish',
-    maintained: 'bg-muted text-muted-foreground',
+    maintained: 'bg-secondary-700 text-secondary-400',
     initiated: 'bg-ui-warning/10 text-ui-warning',
-    other: 'bg-muted text-muted-foreground',
+    other: 'bg-secondary-700 text-secondary-400',
 };
 
 // ─── Grade row ────────────────────────────────────────────────────────────────
@@ -33,7 +33,7 @@ function GradeRow({ event }: GradeRowProps) {
     }).format(new Date(event.date));
 
     return (
-        <li className="border-border bg-card flex flex-wrap items-start gap-3 rounded-lg border p-3 text-sm">
+        <li className="border-secondary-700 bg-secondary-800 flex flex-wrap items-start gap-3 rounded-lg border p-3 text-sm">
             <span
                 className={cn(
                     'shrink-0 rounded px-2 py-0.5 text-xs font-medium',
@@ -45,17 +45,17 @@ function GradeRow({ event }: GradeRowProps) {
             <div className="min-w-0 flex-1">
                 <p className="font-medium">{event.gradingCompany}</p>
                 {event.previousGrade !== null ? (
-                    <p className="text-muted-foreground mt-0.5 text-xs">
+                    <p className="text-secondary-400 mt-0.5 text-xs">
                         {event.previousGrade}
                         <span aria-hidden="true"> → </span>
                         <span className="sr-only">에서 </span>
-                        <span className="text-foreground font-medium">
+                        <span className="text-secondary-100 font-medium">
                             {event.newGrade}
                         </span>
                     </p>
                 ) : (
-                    <p className="text-muted-foreground mt-0.5 text-xs">
-                        <span className="text-foreground font-medium">
+                    <p className="text-secondary-400 mt-0.5 text-xs">
+                        <span className="text-secondary-100 font-medium">
                             {event.newGrade}
                         </span>
                     </p>
@@ -63,7 +63,7 @@ function GradeRow({ event }: GradeRowProps) {
             </div>
             <time
                 dateTime={event.date}
-                className="text-muted-foreground shrink-0 text-xs tabular-nums"
+                className="text-secondary-400 shrink-0 text-xs tabular-nums"
             >
                 {dateFormatted}
             </time>
