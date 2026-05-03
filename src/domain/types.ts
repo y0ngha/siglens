@@ -106,3 +106,10 @@ export interface ContactFormState {
     error: ContactFormError | null;
     values: ContactFormValues;
 }
+
+export interface PwaEnvironment {
+    isMobile: boolean;
+    isIos: boolean;
+    isInAppBrowser: boolean;
+    isStandalone: boolean;
+}

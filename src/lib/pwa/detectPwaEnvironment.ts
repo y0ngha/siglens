@@ -1,9 +1,4 @@
-export interface PwaEnvironment {
-    isMobile: boolean;
-    isIos: boolean;
-    isInAppBrowser: boolean;
-    isStandalone: boolean;
-}
+import { type PwaEnvironment } from '@/domain/types';
 
 export function detectPwaEnvironment(
     ua: string,

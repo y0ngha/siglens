@@ -30,6 +30,7 @@ import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
+import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -136,6 +137,7 @@ export function ChartContent({
 
     const {
         analysis,
+        analysisResult,
         isAnalyzing,
         analysisError,
         handleReanalyze,
@@ -228,6 +230,12 @@ export function ChartContent({
     useEffect(() => {
         notifyMobileContent(mobileContent);
     }, [mobileContent]);
+
+    useEffect(() => {
+        if (analysisResult) {
+            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+        }
+    }, [analysisResult]);
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">

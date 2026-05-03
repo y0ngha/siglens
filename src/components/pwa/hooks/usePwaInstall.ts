@@ -1,10 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    detectPwaEnvironment,
-    type PwaEnvironment,
-} from '@/lib/pwa/detectPwaEnvironment';
+import { type PwaEnvironment } from '@/domain/types';
+import { detectPwaEnvironment } from '@/lib/pwa/detectPwaEnvironment';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
 type PromptOutcome = 'accepted' | 'dismissed';
@@ -48,26 +46,25 @@ function resolveEnv(): PwaEnvironment {
 export function usePwaInstall(): UsePwaInstallReturn {
     const [showBanner, setShowBanner] = useState(false);
     const [showIosModal, setShowIosModal] = useState(false);
-    // Lazy initializer: SSR returns EMPTY_ENV; re-runs on client with real window
+    // Lazy initializer: SSR prerender returns EMPTY_ENV (window undefined); client mount re-runs with real window
     const [env] = useState<PwaEnvironment>(resolveEnv);
-    const [deferredPrompt, setDeferredPrompt] =
-        useState<BeforeInstallPromptEvent | null>(null);
 
+    const deferredPromptRef = useRef<BeforeInstallPromptEvent | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
     const handleInstall = useCallback(async () => {
         if (env.isIos) {
             setShowIosModal(true);
-        } else if (deferredPrompt) {
+        } else if (deferredPromptRef.current) {
             try {
-                await deferredPrompt.prompt();
+                await deferredPromptRef.current.prompt();
             } catch (err) {
                 console.warn('[PWA] prompt 실패', err);
             }
-            setDeferredPrompt(null);
+            deferredPromptRef.current = null;
             setShowBanner(false);
         }
-    }, [env.isIos, deferredPrompt]);
+    }, [env.isIos]);
 
     const handleDismiss = useCallback(() => {
         setShowBanner(false);
@@ -95,7 +92,7 @@ export function usePwaInstall(): UsePwaInstallReturn {
         const handlePrompt = (e: Event) => {
             e.preventDefault();
             // beforeinstallprompt 이벤트는 항상 BeforeInstallPromptEvent임이 보장됨
-            setDeferredPrompt(e as BeforeInstallPromptEvent);
+            deferredPromptRef.current = e as BeforeInstallPromptEvent;
         };
 
         const handleTrigger = () => {

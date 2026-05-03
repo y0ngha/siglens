@@ -26,14 +26,14 @@ export function PwaBanner() {
                 </span>
                 <button
                     onClick={handleInstall}
-                    className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 shrink-0 rounded-full px-3 py-1 text-xs font-semibold text-white transition-colors focus-visible:ring-1 focus-visible:outline-none"
                 >
                     설치하기
                 </button>
                 <button
                     onClick={handleDismiss}
                     aria-label="배너 닫기"
-                    className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 shrink-0 text-lg leading-none transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 shrink-0 text-lg leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
                 >
                     ×
                 </button>
