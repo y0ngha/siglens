@@ -13,15 +13,12 @@ interface SectorDirectionCardProps {
     historical: FundamentalSectorHistoricalInput[];
 }
 
-/**
- * Inline SVG mini sparkline for sector historical performance.
- * Normalises the last N data points to a fixed height band.
- */
-function SectorSparkline({
-    data,
-}: {
+interface SectorSparklineProps {
     data: FundamentalSectorHistoricalInput[];
-}) {
+}
+
+/** Inline SVG mini sparkline for sector historical performance. Normalises last N data points to a fixed height band. */
+function SectorSparkline({ data }: SectorSparklineProps) {
     const N = 30;
     // API returns newest-first; reverse to chronological order for display
     const recent = data.slice(0, N).toReversed();
