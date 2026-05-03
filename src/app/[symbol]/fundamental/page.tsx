@@ -163,8 +163,6 @@ async function SectorDirectionSection({ sector }: { sector: string }) {
     );
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
 function SectionSkeleton() {
     return (
         <div
@@ -173,8 +171,6 @@ function SectionSkeleton() {
         />
     );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function FundamentalPage({ params }: Props) {
     const { symbol } = await params;

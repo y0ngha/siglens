@@ -14,8 +14,6 @@ export interface NewsDisplayItem {
     source: string;
 }
 
-// ─── Sentiment badge ──────────────────────────────────────────────────────────
-
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
     bearish: '부정',
@@ -51,8 +49,6 @@ function SentimentBadge({ value }: SentimentBadgeProps) {
         </span>
     );
 }
-
-// ─── News card ────────────────────────────────────────────────────────────────
 
 interface NewsCardProps {
     item: NewsDisplayItem;
@@ -108,13 +104,10 @@ function NewsCard({ item }: NewsCardProps) {
     );
 }
 
-// ─── Section ──────────────────────────────────────────────────────────────────
-
 interface NewsListProps {
     items: NewsDisplayItem[];
 }
 
-/** RSC section: renders the list of news cards for a symbol. Never touches infrastructure. */
 export function NewsList({ items }: NewsListProps) {
     if (items.length === 0) {
         return (

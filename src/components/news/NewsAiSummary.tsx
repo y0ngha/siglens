@@ -29,8 +29,6 @@ const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bearish: 'bg-ui-danger/10 text-chart-bearish',
 };
 
-// ─── Result view ──────────────────────────────────────────────────────────────
-
 interface NewsAiSummaryViewProps {
     result: NewsAnalysisResponse;
 }
@@ -113,8 +111,6 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
         </section>
     );
 }
-
-// ─── Main component ───────────────────────────────────────────────────────────
 
 interface NewsAiSummaryProps {
     symbol: string;

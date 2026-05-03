@@ -95,8 +95,6 @@ async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
     return <AnalystActions events={events} />;
 }
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-
 function SectionSkeleton() {
     return (
         <div
@@ -105,8 +103,6 @@ function SectionSkeleton() {
         />
     );
 }
-
-// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function NewsPage({ params }: Props) {
     const { symbol } = await params;

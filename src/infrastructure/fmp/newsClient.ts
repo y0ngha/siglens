@@ -60,8 +60,7 @@ export class FmpNewsClient implements NewsProvider {
             }));
     }
 
-    // FMP does not support per-symbol filtering on the stable calendar endpoint —
-    // callers must filter by symbol at the repository layer after DB caching.
+    // FMP stable calendar endpoint has no per-symbol filter; callers filter at the repository layer after DB caching.
     async fetchEarningsCalendarAll(): Promise<EarningsCalendarItem[]> {
         const raw =
             await fmpGet<RawFmpEarningsCalendarItem[]>('earnings-calendar');

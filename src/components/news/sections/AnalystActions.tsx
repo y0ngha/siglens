@@ -1,8 +1,6 @@
 import type { GradesAction, GradesEvent } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 
-// ─── Action label + styling ───────────────────────────────────────────────────
-
 const ACTION_LABEL: Record<GradesAction, string> = {
     upgrade: '상향',
     downgrade: '하향',
@@ -18,8 +16,6 @@ const ACTION_CLASS: Record<GradesAction, string> = {
     initiated: 'bg-ui-warning/10 text-ui-warning',
     other: 'bg-secondary-700 text-secondary-400',
 };
-
-// ─── Grade row ────────────────────────────────────────────────────────────────
 
 interface GradeRowProps {
     event: GradesEvent;
@@ -70,8 +66,6 @@ function GradeRow({ event }: GradeRowProps) {
         </li>
     );
 }
-
-// ─── Section ──────────────────────────────────────────────────────────────────
 
 interface AnalystActionsProps {
     events: GradesEvent[];

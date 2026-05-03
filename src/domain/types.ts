@@ -116,8 +116,6 @@ export interface PwaEnvironment {
     isStandalone: boolean;
 }
 
-// ─── Chat display types ───────────────────────────────────────────────────────
-
 /** UI-only system message emitted on chatbot page-context switch; filtered out before LLM prompt construction. */
 export interface ContextSwitchMessage {
     role: 'system';

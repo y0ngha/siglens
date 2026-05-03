@@ -24,8 +24,6 @@ import type {
 
 const fundamentalClient = new FmpFundamentalClient();
 
-// ─── T4: 30 days ────────────────────────────────────────────────────────────
-
 export async function getProfile(
     symbol: string
 ): Promise<FundamentalProfileInput | null> {
@@ -43,8 +41,6 @@ export async function getStockPeers(
     cacheTag(`fundamental:stock-peers:${symbol}`);
     return fundamentalClient.getStockPeers(symbol);
 }
-
-// ─── T3: 7 days ─────────────────────────────────────────────────────────────
 
 export async function getKeyMetricsTtm(
     symbol: string
@@ -91,8 +87,6 @@ export async function getCashFlowStatement(
     return fundamentalClient.getCashFlowStatement(symbol);
 }
 
-// ─── T2: 24 hours ────────────────────────────────────────────────────────────
-
 export async function getAnalystEstimates(
     symbol: string
 ): Promise<FundamentalAnalystEstimateInput | null> {
@@ -129,8 +123,6 @@ export async function getPriceTargetSummary(
     return fundamentalClient.getPriceTargetSummary(symbol);
 }
 
-// ─── T2: 1 hour (date-keyed) ─────────────────────────────────────────────────
-
 export async function getSectorSnapshot(
     date: string
 ): Promise<FundamentalSectorPerformanceInput[]> {
@@ -139,8 +131,6 @@ export async function getSectorSnapshot(
     cacheTag(`fundamental:sector-snapshot:${date}`);
     return fundamentalClient.getSectorPerformanceSnapshot(date);
 }
-
-// ─── T2: 24 hours (sector-keyed) ────────────────────────────────────────────
 
 export async function getHistoricalSector(
     sector: string

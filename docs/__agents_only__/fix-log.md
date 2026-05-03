@@ -201,4 +201,37 @@
 - Rule: CLAUDE.md hook→infrastructure imports limited to queryFn/mutationFn or useActionState Server Action connection
 - Context: Current code uses useEffect polling state machines instead of Server Action callback. Architecture sufficient for async job-poll pattern (polling model was intentional design choice for stale background analysis). Deferred to separate cleanup pass requiring architectural rework not warranted in this PR scope.
 
+## [PR #413 R13 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: `// ─── ... ───` visual section separator WHAT comments across 9 files (24 occurrences): fundamental/fundamentalData.ts (5), fundamental/page.tsx (2), news/newsData.ts (3), news/page.tsx (2), NewsList.tsx (3), AnalystActions.tsx (3), EventCalendar.tsx (3), NewsAiSummary.tsx (2), domain/types.ts (1)
+- Rule: MISTAKES.md Readability — Visual section separators (──────) are dead comments when function/interface names already organize the file
+- Context: Removed all 24 occurrences. Section comments explain WHAT code is grouped below, but file structure (function names, interface definitions, export order) already conveys this organization.
+
+- Violation: EventCalendar.tsx RSC component had multi-line JSDoc block on return type
+- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line function descriptions; enforce single-line only
+- Context: Removed JSDoc entirely; component name is self-explanatory. This is the 12th consecutive round flagging multi-line JSDoc in NEW component code.
+
+- Violation: NewsList.tsx RSC section component had WHAT JSDoc describing "RSC가 문서 화면 리스트를 렌더한다"
+- Rule: MISTAKES.md Readability 3 — Self-explanatory code (Suspense pattern, component name) requires no WHAT comment
+- Context: Removed WHAT comment.
+
+- Violation: OverallContent.tsx client orchestrator had WHAT JSDoc on component definition
+- Rule: MISTAKES.md Readability 3 — Self-explanatory code requires no WHAT comment
+- Context: Removed WHAT comment.
+
+- Violation: OverallContent.tsx had inline `// status === 'done'` comment after `if (state.status !== 'done') return null;` guard
+- Rule: MISTAKES.md Readability 2 — Guard clause already narrows type; post-guard comment stating the narrowed state is dead code
+- Context: Removed comment; guard already establishes the invariant.
+
+- Violation: newsData.ts getGradeEvents created `new FmpFundamentalClient()` inline, while sibling fundamentalData.ts uses module-level singleton
+- Rule: MISTAKES.md Coding Paradigm 2 — Inconsistent instantiation pattern between sibling modules
+- Context: Extracted module-level `const fundamentalClient = new FmpFundamentalClient();` in newsData.ts to match fundamentalData.ts pattern.
+
+- Violation: newsClient.ts `fetchEarningsCalendarAll` 2-line comment `// FMP does not support per-symbol filtering...`
+- Rule: MISTAKES.md Readability — Multi-line comments should be compressed to single line when possible
+- Context: Compressed to single line.
+
+- Violation: ensureNewsCardsAnalyzedAction.ts 2-line `// 'submitted' case:...` comment
+- Rule: MISTAKES.md Readability — Multi-line comments should be compressed to single line when possible
+- Context: Compressed to single line.
+
 

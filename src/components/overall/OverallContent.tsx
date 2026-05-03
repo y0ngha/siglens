@@ -30,7 +30,6 @@ interface OverallContentProps {
     timeframe: Timeframe;
 }
 
-/** Client orchestrator for `/[symbol]/overall`; renders the `useOverallAnalysis` state machine. */
 export function OverallContent({ symbol, timeframe }: OverallContentProps) {
     const [selectedProvider] = useSelectedProvider();
     const modelId = useMemo(
@@ -130,7 +129,6 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
 
     if (state.status !== 'done') return null;
 
-    // status === 'done'
     const r = state.result;
     return (
         <div className="space-y-6">

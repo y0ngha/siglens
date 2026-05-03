@@ -17,7 +17,7 @@ import {
     NEWS_EARNINGS_REPORT_TTL_S,
 } from '@/lib/news/cacheTtl';
 
-// ─── T1: 15 minutes ──────────────────────────────────────────────────────────
+const fundamentalClient = new FmpFundamentalClient();
 
 export async function getNewsList(symbol: string): Promise<NewsRow[]> {
     'use cache';
@@ -29,17 +29,13 @@ export async function getNewsList(symbol: string): Promise<NewsRow[]> {
     return repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
 }
 
-// ─── T2: 12 hours ────────────────────────────────────────────────────────────
-
 export async function getGradeEvents(symbol: string): Promise<GradesEvent[]> {
     'use cache';
     cacheLife({ revalidate: NEWS_GRADES_TTL_S });
     cacheTag(`news:grades:${symbol}`);
 
-    return new FmpFundamentalClient().getGrades(symbol);
+    return fundamentalClient.getGrades(symbol);
 }
-
-// ─── T3: 7 days ──────────────────────────────────────────────────────────────
 
 export async function getNextEarningsCalendar(
     symbol: string,

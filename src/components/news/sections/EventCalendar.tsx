@@ -3,8 +3,6 @@ import type {
     EarningsReport,
 } from '@y0ngha/siglens-core';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 function formatDate(dateStr: string): string {
     return new Intl.DateTimeFormat('ko-KR', {
         year: 'numeric',
@@ -21,8 +19,6 @@ function formatCurrency(value: number | null): string {
         maximumFractionDigits: 2,
     }).format(value);
 }
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 interface EarningsCalendarCardProps {
     item: EarningsCalendarItem;
@@ -89,19 +85,11 @@ function LatestEarningsCard({ report }: LatestEarningsCardProps) {
     );
 }
 
-// ─── Section ──────────────────────────────────────────────────────────────────
-
 interface EventCalendarProps {
     nextEarnings: EarningsCalendarItem | null;
     latestReport: EarningsReport | null;
 }
 
-/**
- * RSC section: earnings calendar (next scheduled event) and latest report.
- *
- * Data is fetched by the parent section wrapper in `page.tsx` and passed as
- * typed props — this component never touches infrastructure directly.
- */
 export function EventCalendar({
     nextEarnings,
     latestReport,
