@@ -1,6 +1,6 @@
 'use client';
 
-import { type CSSProperties, useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, useMemo } from 'react';
 import {
     getAllowedModels,
     type FundamentalAnalysisResponse,
@@ -10,19 +10,9 @@ import {
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { cn } from '@/lib/cn';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
-import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
-import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
+import { useFundamentalAnalysis } from './hooks/useFundamentalAnalysis';
 
 const DEFAULT_TIER = 'free' as const;
-const POLL_INTERVAL_MS = 2500;
-
-type AnalysisStatus = 'idle' | 'submitting' | 'polling' | 'done' | 'error';
-
-interface AnalysisState {
-    status: AnalysisStatus;
-    result?: FundamentalAnalysisResponse;
-    error?: string;
-}
 
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',
@@ -142,7 +132,8 @@ interface FundamentalAiSummaryProps {
  * Client component: triggers fundamental AI analysis on mount, polls
  * for completion, and renders the result.
  *
- * Uses `useSelectedProvider` to pick the model. Polling interval: 2.5 s.
+ * Uses `useSelectedProvider` to pick the model.
+ * All polling/state logic is delegated to `useFundamentalAnalysis`.
  */
 export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     const [selectedProvider] = useSelectedProvider();
@@ -154,70 +145,9 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
         [selectedProvider, allowedModels]
     );
 
-    const [state, setState] = useState<AnalysisState>({ status: 'idle' });
+    const state = useFundamentalAnalysis(symbol, modelId);
 
-    useEffect(() => {
-        let alive = true;
-        let pollHandle: ReturnType<typeof setTimeout> | null = null;
-
-        async function run(): Promise<void> {
-            setState({ status: 'submitting' });
-
-            const submitted = await submitFundamentalAnalysisAction(
-                symbol,
-                modelId
-            );
-
-            if (!alive) return;
-
-            if (submitted.status === 'cached') {
-                setState({ status: 'done', result: submitted.result });
-                return;
-            }
-
-            if (submitted.status === 'error') {
-                const errorMsg =
-                    submitted.code === 'fetch_failed'
-                        ? (submitted.error ?? '데이터를 불러오지 못했습니다.')
-                        : '사용량 한도를 초과했습니다.';
-                setState({ status: 'error', error: errorMsg });
-                return;
-            }
-
-            // status === 'submitted' — start polling
-            const { jobId } = submitted;
-            setState({ status: 'polling' });
-
-            const poll = async (): Promise<void> => {
-                const polled = await pollFundamentalAnalysisAction(jobId);
-                if (!alive) return;
-
-                if (polled.status === 'processing') {
-                    pollHandle = setTimeout(() => {
-                        void poll();
-                    }, POLL_INTERVAL_MS);
-                } else if (polled.status === 'done') {
-                    setState({ status: 'done', result: polled.result });
-                } else {
-                    setState({
-                        status: 'error',
-                        error: polled.error ?? '분석 중 오류가 발생했습니다.',
-                    });
-                }
-            };
-
-            void poll();
-        }
-
-        void run();
-
-        return () => {
-            alive = false;
-            if (pollHandle !== null) clearTimeout(pollHandle);
-        };
-    }, [symbol, modelId]);
-
-    if (state.status === 'done' && state.result !== undefined) {
+    if (state.status === 'done') {
         return <FundamentalAiSummaryView result={state.result} />;
     }
 
