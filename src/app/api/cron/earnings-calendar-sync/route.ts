@@ -1,0 +1,43 @@
+/**
+ * Vercel Cron route: sync the FMP earnings calendar to the DB.
+ *
+ * Scheduled at 06:00 UTC (= 15:00 KST) — immediately after U.S. pre-market
+ * opens, before the trading session begins.
+ *
+ * Authentication: Vercel Cron sets `Authorization: Bearer <CRON_SECRET>` on
+ * every invocation. Any other caller receives 401.
+ *
+ * @see https://vercel.com/docs/cron-jobs
+ */
+import { NextResponse } from 'next/server';
+import { getDatabaseClient } from '@/infrastructure/db/client';
+import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
+import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
+
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
+
+/**
+ * GET /api/cron/earnings-calendar-sync
+ *
+ * Fetches the full FMP earnings calendar and bulk-upserts all items into the
+ * `earnings_calendar` table. Returns `{ inserted: number }` on success.
+ *
+ * @param req - Incoming HTTP request; must carry a valid Vercel Cron bearer token.
+ * @returns 200 JSON `{ inserted: number }` on success, 401 when unauthorised.
+ */
+export async function GET(req: Request): Promise<Response> {
+    const auth = req.headers.get('authorization');
+    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+        return new NextResponse('unauthorized', { status: 401 });
+    }
+
+    const client = new FmpNewsClient();
+    const items = await client.fetchEarningsCalendarAll();
+
+    const { db } = getDatabaseClient();
+    const repo = new DrizzleEarningsCalendarRepository(db);
+    await repo.upsertMany(items);
+
+    return NextResponse.json({ inserted: items.length });
+}

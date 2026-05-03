@@ -4,5 +4,11 @@
             "master": true
         }
     },
-    "ignoreCommand": "git log -1 --pretty=%B | grep -q '^chore: release' && exit 1 || exit 0"
+    "ignoreCommand": "git log -1 --pretty=%B | grep -q '^chore: release' && exit 1 || exit 0",
+    "crons": [
+        {
+            "path": "/api/cron/earnings-calendar-sync",
+            "schedule": "0 6 * * *"
+        }
+    ]
 }
