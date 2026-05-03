@@ -9,17 +9,20 @@
  *
  * @see https://vercel.com/docs/cron-jobs
  */
+import { constants } from 'node:http2';
 import { NextResponse } from 'next/server';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
+
+const { HTTP_STATUS_UNAUTHORIZED } = constants;
 
 /** PATCH /api/cron/earnings-calendar-sync — fetches the full FMP earnings calendar and bulk-upserts into `earnings_calendar`; returns `{ inserted: number }` on success, 401 when unauthorised. */
 export async function PATCH(req: Request): Promise<Response> {
     const cronSecret = process.env.CRON_SECRET;
     const auth = req.headers.get('authorization');
     if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
-        return new NextResponse('unauthorized', { status: 401 });
+        return new NextResponse('unauthorized', { status: HTTP_STATUS_UNAUTHORIZED });
     }
 
     const client = new FmpNewsClient();
