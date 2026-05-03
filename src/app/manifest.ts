@@ -28,12 +28,12 @@ export default function manifest(): MetadataRoute.Manifest {
             {
                 name: '시장 개요',
                 url: '/market',
-                icons: [{ src: '/icon96.png', sizes: '96x96' }],
+                icons: [{ src: '/icon96.png', sizes: '96x96', type: 'image/png' }],
             },
             {
                 name: '종목 검색',
                 url: '/?focus=search',
-                icons: [{ src: '/icon96.png', sizes: '96x96' }],
+                icons: [{ src: '/icon96.png', sizes: '96x96', type: 'image/png' }],
             },
         ],
     };

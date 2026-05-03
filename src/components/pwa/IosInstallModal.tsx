@@ -7,27 +7,29 @@ import { useFocusTrap } from '@/components/hooks/useFocusTrap';
 
 const MODAL_TITLE_ID = 'ios-modal-title';
 
+const IOS_STEP_HEIGHTS = { step1: 70, step2: 120, step3: 80 } as const;
+
 const STEPS = [
     {
         step: 1,
         title: 'Safari 하단 공유 버튼을 탭하세요',
         description: '화면 아래 가운데에 있는 위쪽 화살표 모양 아이콘입니다',
         img: '/pwa/ios-step1.svg',
-        height: 70,
+        height: IOS_STEP_HEIGHTS.step1,
     },
     {
         step: 2,
         title: "'홈 화면에 추가'를 선택하세요",
         description: '공유 메뉴를 아래로 스크롤하면 나타납니다',
         img: '/pwa/ios-step2.svg',
-        height: 120,
+        height: IOS_STEP_HEIGHTS.step2,
     },
     {
         step: 3,
         title: "우측 상단 '추가'를 탭하면 완료!",
         description: 'SigLens 아이콘이 홈 화면에 추가됩니다',
         img: '/pwa/ios-step3.svg',
-        height: 80,
+        height: IOS_STEP_HEIGHTS.step3,
     },
 ] as const;
 

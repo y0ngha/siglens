@@ -21,7 +21,7 @@ export interface UsePwaInstallReturn {
     handleModalClose: () => void;
 }
 
-const PWA_BANNER_FALLBACK_DELAY_MS = 30_000;
+export const PWA_BANNER_FALLBACK_DELAY_MS = 30_000;
 
 const EMPTY_ENV: PwaEnvironment = {
     isMobile: false,

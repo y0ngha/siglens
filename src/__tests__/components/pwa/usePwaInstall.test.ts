@@ -3,7 +3,10 @@
  */
 import '@testing-library/jest-dom';
 import { renderHook, act } from '@testing-library/react';
-import { usePwaInstall } from '@/components/pwa/hooks/usePwaInstall';
+import {
+    usePwaInstall,
+    PWA_BANNER_FALLBACK_DELAY_MS,
+} from '@/components/pwa/hooks/usePwaInstall';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
 describe('usePwaInstall', () => {
@@ -104,7 +107,7 @@ describe('usePwaInstall', () => {
         const { result } = renderHook(() => usePwaInstall());
         expect(result.current.showBanner).toBe(false);
         act(() => {
-            jest.advanceTimersByTime(30_000);
+            jest.advanceTimersByTime(PWA_BANNER_FALLBACK_DELAY_MS);
         });
         expect(result.current.showBanner).toBe(true);
     });
