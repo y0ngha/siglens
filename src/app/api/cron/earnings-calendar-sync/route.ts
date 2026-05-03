@@ -1,8 +1,8 @@
 /**
  * Vercel Cron route: sync the FMP earnings calendar to the DB.
  *
- * Scheduled at 06:00 UTC (= 15:00 KST) — immediately after U.S. pre-market
- * opens, before the trading session begins.
+ * Scheduled at 06:00 UTC (= 15:00 KST) — after U.S. market close.
+ * HTTP method: PATCH (idempotent batch upsert, REST 형식에 맞춰 GET → PATCH).
  *
  * Authentication: Vercel Cron sets `Authorization: Bearer <CRON_SECRET>` on
  * every invocation. Any other caller receives 401.
@@ -15,17 +15,20 @@ import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 
 /**
- * GET /api/cron/earnings-calendar-sync
+ * PATCH /api/cron/earnings-calendar-sync
  *
  * Fetches the full FMP earnings calendar and bulk-upserts all items into the
  * `earnings_calendar` table. Returns `{ inserted: number }` on success.
  *
+ * HTTP method is PATCH (idempotent batch upsert — partial resource update semantics).
+ *
  * @param req - Incoming HTTP request; must carry a valid Vercel Cron bearer token.
  * @returns 200 JSON `{ inserted: number }` on success, 401 when unauthorised.
  */
-export async function GET(req: Request): Promise<Response> {
+export async function PATCH(req: Request): Promise<Response> {
+    const cronSecret = process.env.CRON_SECRET;
     const auth = req.headers.get('authorization');
-    if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
+    if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
         return new NextResponse('unauthorized', { status: 401 });
     }
 

@@ -1,4 +1,4 @@
-import { GET } from '@/app/api/cron/earnings-calendar-sync/route';
+import { PATCH } from '@/app/api/cron/earnings-calendar-sync/route';
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 
 // ---------------------------------------------------------------------------
@@ -42,7 +42,7 @@ function makeRequest(authHeader?: string): Request {
         ? { authorization: authHeader }
         : {};
     return new Request('http://localhost/api/cron/earnings-calendar-sync', {
-        method: 'GET',
+        method: 'PATCH',
         headers,
     });
 }
@@ -63,7 +63,7 @@ const SAMPLE_ITEM: EarningsCalendarItem = {
 // Tests
 // ---------------------------------------------------------------------------
 
-describe('GET /api/cron/earnings-calendar-sync', () => {
+describe('PATCH /api/cron/earnings-calendar-sync', () => {
     const originalSecret = process.env.CRON_SECRET;
 
     beforeAll(() => {
@@ -80,13 +80,24 @@ describe('GET /api/cron/earnings-calendar-sync', () => {
     });
 
     it('returns 401 when Authorization header is missing', async () => {
-        const res = await GET(makeRequest());
+        const res = await PATCH(makeRequest());
 
         expect(res.status).toBe(401);
     });
 
+    it('returns 401 when CRON_SECRET env var is unset even if header is "Bearer undefined"', async () => {
+        const saved = process.env.CRON_SECRET;
+        delete process.env.CRON_SECRET;
+        try {
+            const res = await PATCH(makeRequest('Bearer undefined'));
+            expect(res.status).toBe(401);
+        } finally {
+            process.env.CRON_SECRET = saved;
+        }
+    });
+
     it('returns 401 when Authorization header contains a wrong secret', async () => {
-        const res = await GET(makeRequest('Bearer wrong-secret'));
+        const res = await PATCH(makeRequest('Bearer wrong-secret'));
 
         expect(res.status).toBe(401);
     });
@@ -104,7 +115,7 @@ describe('GET /api/cron/earnings-calendar-sync', () => {
             () => ({ upsertMany: mockUpsertMany }) as never
         );
 
-        const res = await GET(makeRequest(`Bearer ${CRON_SECRET}`));
+        const res = await PATCH(makeRequest(`Bearer ${CRON_SECRET}`));
         const body = (await res.json()) as { inserted: number };
 
         expect(res.status).toBe(200);
@@ -123,7 +134,7 @@ describe('GET /api/cron/earnings-calendar-sync', () => {
             () => ({ upsertMany: mockUpsertMany }) as never
         );
 
-        const res = await GET(makeRequest(`Bearer ${CRON_SECRET}`));
+        const res = await PATCH(makeRequest(`Bearer ${CRON_SECRET}`));
         const body = (await res.json()) as { inserted: number };
 
         expect(res.status).toBe(200);
