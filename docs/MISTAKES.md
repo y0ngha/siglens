@@ -757,29 +757,6 @@ This file contains only **recurring gotchas** that agents keep missing despite e
       - Add a compile-time check: `const _check: SkillCategory = SKILL_CATEGORIES[0];` paired with a satisfies clause on the array literal
       - Extract the mirror into a named const inside `siglens-core` itself and re-export
 
-4. Multi-line JSDoc blocks for single-line function descriptions — recurring across 11+ PR rounds
-   → All function comments must be single-line only; multi-line blocks add unnecessary verbosity
-   → This pattern persists in new code even though documented; enforce at code review
-   → Extract context/explanation into commit messages or documentation links if needed
-   → Applies to: file-top comments, component purpose descriptions, algorithm explanations, trust notes, type-export JSDoc
-   ❌ /**
-      * Handles authentication
-      * Sets up the session and applies cookies
-      */
-   ❌ /**
-      * We trust this source because...
-      * It undergoes validation at...
-      */
-   ❌ /**
-      * Caching configuration for news articles
-      * Defines TTL values for different news sources
-      */
-   ✅ // Handles authentication and session setup
-   ✅ // Trusted source (see validate-source.ts for detail)
-   ✅ // Caching configuration for news articles
-   → Recurring violation: 11+ consecutive PR rounds (R3, R7, R10, R11); appears in newly-written code
-   → Enforce: remove multi-line JSDoc from new features during PR review
-   → Applies to file-top blocks, type exports, component JSDoc, constant descriptions
 ```
 
 ---
