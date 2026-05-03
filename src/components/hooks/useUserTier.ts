@@ -17,11 +17,7 @@ interface UseUserTierResult {
     query: UseQueryResult<Tier>;
 }
 
-/**
- * Resolves the current user's subscription tier on the client. Mirrors
- * {@link import('./useCurrentUser').useCurrentUser} in shape; guests and
- * users without a persisted tier degrade to {@link DEFAULT_TIER}.
- */
+/** 현재 사용자의 구독 tier 해석 — 게스트/미저장 사용자는 DEFAULT_TIER로 폴백. */
 export function useUserTier(): UseUserTierResult {
     const query = useQuery<Tier>({
         queryKey: QUERY_KEYS.userTier(),

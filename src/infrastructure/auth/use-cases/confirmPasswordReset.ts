@@ -34,14 +34,9 @@ function expiredTokenError(): ConfirmPasswordResetError {
     };
 }
 
-/**
- * Consume a password reset token and replace the user's password hash.
- *
- * Concurrency contract: the token MUST be atomically consumed (read + delete in
- * a single round-trip) BEFORE any password update so that two concurrent
- * confirmation requests with the same token cannot both succeed. The actual
- * password rehash happens only for the caller that won the consume race.
- */
+// 동시성 계약: 비밀번호 업데이트 전에 토큰을 atomic consume(read+delete) → 동시 요청 둘이
+// 같은 토큰으로 모두 성공하지 못하도록 보장. consume race를 이긴 caller만 rehash 수행.
+/** 비밀번호 재설정 토큰을 소비하고 사용자 비밀번호 해시를 교체. */
 export async function confirmPasswordReset(
     input: ConfirmPasswordResetInput,
     dependencies: ConfirmPasswordResetDependencies

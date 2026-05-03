@@ -1,32 +1,16 @@
 import type { UsageCounts, UsageRepository } from '@y0ngha/siglens-core';
 
-/**
- * Siglens-side augmentation of {@link UsageCounts}.
- *
- * Upstream `UsageCounts` in `@y0ngha/siglens-core` (v0.7.1) only declares
- * `analysis` and `chatbot`, even though core's own `UsageActionType` enum and
- * the `usage_action_type` Postgres enum (drizzle migration `0002_*`) include
- * `'premium_model'`. Until core publishes a release that adds it to
- * `UsageCounts`, siglens consumers that need the premium-model bucket use
- * this widened type.
- *
- * Sync obligation: when core adds `premium_model` to `UsageCounts`, drop this
- * augmentation and import `UsageCounts` directly.
- */
+// core@0.7.1 UsageCounts는 analysis/chatbot만 선언. usage_action_type enum과 UsageActionType은
+// 이미 'premium_model'을 포함하므로 core가 타입을 확장하기 전까지 siglens는 widened 타입 사용.
+// Sync obligation: core가 premium_model을 UsageCounts에 추가하면 본 augmentation 제거하고 직접 import.
+/** SiglensUsageCounts: core UsageCounts에 premium_model 버킷을 추가한 widened 타입. */
 export type SiglensUsageCounts = UsageCounts & {
-    /** Number of premium-model requests recorded for the UTC day. */
+    /** UTC 일자 기준 premium-model 요청 수. */
     premium_model: number;
 };
 
-/**
- * Siglens-side augmentation of {@link UsageRepository} that exposes the wider
- * {@link SiglensUsageCounts} from `getUsageToday`. Siglens consumers (tier
- * limit checks, dashboards) should depend on this interface rather than
- * `UsageRepository` so that `premium_model` is not narrowed away by the
- * upstream type. Core consumers that only need `analysis`/`chatbot` continue
- * to work via structural sub-typing because `SiglensUsageCounts` is a
- * superset of `UsageCounts`.
- */
+// 구조적 서브타이핑상 SiglensUsageCounts ⊃ UsageCounts → core consumer도 본 인터페이스 호환.
+/** UsageRepository 확장: getUsageToday가 premium_model 포함 SiglensUsageCounts 반환. */
 export interface SiglensUsageRepository extends UsageRepository {
     getUsageToday(ipHash: string, now?: Date): Promise<SiglensUsageCounts>;
 }

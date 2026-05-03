@@ -11,21 +11,9 @@ const FOCUSABLE_SELECTOR = [
     '[tabindex]:not([tabindex="-1"])',
 ].join(', ');
 
-/**
- * Modal focus trap.
- *
- * Responsibilities while `active`:
- * 1. Move focus into the dialog on mount (first focusable child, or the
- *    container itself if it has `tabindex` and no focusable child).
- * 2. Wrap Tab / Shift+Tab so focus cannot leave the dialog.
- * 3. Restore focus to the element that was focused before the trap
- *    armed when the trap deactivates.
- *
- * Combined here (rather than split into a separate `useInitialFocus` /
- * `useRestoreFocus`) because all three behaviors share one lifecycle
- * — they arm and disarm together, and splitting them would duplicate
- * the `active` guard at every call site.
- */
+// 모달용 포커스 트랩: 진입 시 포커스 이동 + Tab/Shift+Tab 순환 + 해제 시 트리거 복원.
+// 세 동작이 같은 lifecycle을 공유하므로 단일 훅으로 결합 (분리 시 active 가드 중복 발생).
+/** Modal focus trap (initial focus + Tab wrap + restore on deactivate). */
 export function useFocusTrap(
     ref: RefObject<HTMLElement | null>,
     active: boolean

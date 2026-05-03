@@ -61,8 +61,10 @@ export class DrizzleKoreanTickerRepository implements KoreanTickerRepository {
             .onConflictDoUpdate({
                 target: koreanTickers.symbol,
                 // Drizzle's onConflictDoUpdate does not trigger schema-level
-                // $onUpdateFn hooks; set updated_at explicitly so concurrent
-                // upserts advance the timestamp.
+                // $onUpdateFn hooks; set updated_at explicitly. We use sql`now()`
+                // (DB-server clock) rather than new Date() (app-server clock) so
+                // timestamps stay monotonic across concurrent app instances
+                // writing to the same row.
                 set: {
                     name: sql`excluded.name`,
                     koreanName: sql`excluded.korean_name`,
@@ -100,8 +102,10 @@ export class DrizzleAssetTranslationRepository implements AssetTranslationReposi
             .onConflictDoUpdate({
                 target: assetTranslations.symbol,
                 // Drizzle's onConflictDoUpdate does not trigger schema-level
-                // $onUpdateFn hooks; set updated_at explicitly so concurrent
-                // upserts advance the timestamp.
+                // $onUpdateFn hooks; set updated_at explicitly. We use sql`now()`
+                // (DB-server clock) rather than new Date() (app-server clock) so
+                // timestamps stay monotonic across concurrent app instances
+                // writing to the same row.
                 set: {
                     name: sql`excluded.name`,
                     koreanName: sql`excluded.korean_name`,

@@ -11,9 +11,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { getDatabaseClient } from '@/infrastructure/db/client';
-import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
+import {
+    DrizzleUserApiKeyRepository,
+    LlmApiKeyDecryptionFailedError,
+} from '@/infrastructure/db/userApiKeyRepository';
 import { getUserTier } from '@/infrastructure/tier/use-cases/getUserTier';
-import { LlmApiKeyDecryptionFailedError } from '@/infrastructure/db/userApiKeyRepository';
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 
 /** Machine-readable codes for siglens-side analysis gate denials. */
@@ -56,11 +58,7 @@ function buildGateError(
     };
 }
 
-/**
- * Returns true when `modelId` is recognized in `TIER_CONFIG.models` for any
- * tier. We treat unknown identifiers as invalid so the caller cannot route
- * arbitrary strings into the analysis worker.
- */
+/** TIER_CONFIG.models의 어느 등급에든 등재된 modelId인지 검사 (미등록 ID는 차단). */
 function isKnownModelId(modelId: string): boolean {
     // `TIER_CONFIG.models` values are typed as `readonly TierModel[]` (string
     // literal union). Widening to `readonly string[]` is a TS structural
@@ -73,12 +71,7 @@ function isKnownModelId(modelId: string): boolean {
     return allTiers.some(models => models.includes(modelId));
 }
 
-/**
- * Authoritative server-side tier + BYOK gate executed before delegating to
- * core's `submitAnalysis`. Mirrors the BYOK resolution pattern used by
- * `chatAction` so the analysis pipeline cannot be invoked with a model the
- * user is not entitled to.
- */
+/** 서버사이드 tier + BYOK 게이트 후 core의 submitAnalysis에 위임. */
 export async function submitAnalysisAction(
     symbol: string,
     timeframe: Timeframe,

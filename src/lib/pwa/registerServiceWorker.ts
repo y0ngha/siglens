@@ -1,13 +1,5 @@
-/**
- * Registers the Service Worker and arranges a soft reload when a new
- * worker takes control. Without this, an already-open tab can keep
- * serving stale cached HTML against newly-loaded hashed JS chunks,
- * causing React hydration mismatches after a deploy.
- *
- * Idempotent: the underlying browser API treats repeated registrations
- * for the same script URL as a no-op, but we still guard with a module
- * flag so the controllerchange listener is attached only once.
- */
+// SW 등록 + controllerchange 시 소프트 리로드 → 캐시된 HTML과 신규 JS 청크 간 hydration mismatch 방지.
+// 모듈 플래그로 controllerchange 리스너 1회 부착 보장 (브라우저 register 자체는 idempotent).
 let registered = false;
 
 export interface RegisterServiceWorkerOptions {
@@ -17,6 +9,7 @@ export interface RegisterServiceWorkerOptions {
     readonly serviceWorker?: ServiceWorkerContainer;
 }
 
+/** Service Worker 등록 + 신규 SW 인계 시 페이지 소프트 리로드 (idempotent). */
 export function registerServiceWorker(
     options: RegisterServiceWorkerOptions = {}
 ): void {

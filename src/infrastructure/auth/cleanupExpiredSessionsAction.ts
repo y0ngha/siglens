@@ -1,5 +1,6 @@
 'use server';
 
+import { timingSafeEqual } from 'crypto';
 import { headers } from 'next/headers';
 import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
@@ -18,19 +19,17 @@ export class CleanupUnauthorizedError extends Error {
     }
 }
 
-/**
- * Delete all sessions whose `expiresAt` is in the past.
- *
- * Invoke from a scheduled cron or admin route; not yet wired. Exposed as a
- * Server Action so any future scheduler (Vercel Cron, GitHub Action, admin
- * page) can call it without re-wiring the database client.
- *
- * Caller MUST send `Authorization: Bearer ${CRON_SECRET}`. The action throws
- * {@link CleanupUnauthorizedError} when the header is missing or the secret
- * env var is unset (fail-closed). This is defence-in-depth — Server Action
- * IDs are not publicly enumerable but a bulk-delete entry point should not
- * trust obscurity alone.
- */
+/** Authorization Bearer 토큰을 타이밍-세이프하게 비교 (verifyOAuthState 패턴과 일치). */
+function safeBearerCompare(actual: string | null, expected: string): boolean {
+    if (actual === null) return false;
+    const expectedToken = `Bearer ${expected}`;
+    const a = Buffer.from(actual);
+    const b = Buffer.from(expectedToken);
+    if (a.length !== b.length) return false;
+    return timingSafeEqual(a, b);
+}
+
+/** 만료된 세션 일괄 삭제 — `Authorization: Bearer ${CRON_SECRET}` 필수 (fail-closed). */
 export async function cleanupExpiredSessionsAction(): Promise<CleanupExpiredSessionsResult> {
     const expected = process.env.CRON_SECRET;
     if (!expected) {
@@ -38,7 +37,7 @@ export async function cleanupExpiredSessionsAction(): Promise<CleanupExpiredSess
     }
     const headerList = await headers();
     const authorization = headerList.get('authorization');
-    if (authorization !== `Bearer ${expected}`) {
+    if (!safeBearerCompare(authorization, expected)) {
         throw new CleanupUnauthorizedError();
     }
 

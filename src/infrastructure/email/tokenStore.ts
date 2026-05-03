@@ -20,15 +20,9 @@ export type EmailTokenValue =
     | { status: 'pending'; tokenHash: string }
     | { status: 'verified' };
 
-/**
- * Redis-backed key-value store for email-token state. Keys are derived from
- * `(purpose, email)` pairs by the implementation; callers never see raw keys.
- */
+/** Redis 기반 email-token KV store; 키는 구현체가 (purpose, email)에서 파생. */
 export interface EmailTokenStore {
-    /**
-     * Persist {@link value} under `(purpose, email)` with the given TTL.
-     * Overwrites any existing value for the same pair.
-     */
+    /** (purpose, email)에 value를 TTL과 함께 저장 (덮어쓰기). */
     set(
         purpose: EmailTokenPurpose,
         email: string,
@@ -36,44 +30,27 @@ export interface EmailTokenStore {
         ttlSeconds: number
     ): Promise<void>;
 
-    /**
-     * Read the persisted value for `(purpose, email)`, or `null` when no entry
-     * exists or the entry has expired.
-     */
+    /** (purpose, email) 값을 읽거나, 없거나 만료 시 null. */
     get(
         purpose: EmailTokenPurpose,
         email: string
     ): Promise<EmailTokenValue | null>;
 
-    /** Delete the entry for `(purpose, email)`. No-op when no entry exists. */
+    /** (purpose, email) 항목 삭제 — 없으면 no-op. */
     delete(purpose: EmailTokenPurpose, email: string): Promise<void>;
 
-    /**
-     * Atomically read and delete the entry for `(purpose, email)`. Returns the
-     * pre-deletion value when the entry existed, or `null` when no entry was
-     * present. Implementations MUST guarantee that at most one concurrent caller
-     * receives a non-null result for the same `(purpose, email)` pair so that
-     * single-use tokens (password reset, etc.) cannot be replayed within a
-     * concurrency race.
-     */
+    // 단일 사용 토큰(비밀번호 재설정 등) 재사용 방지를 위해 동시 caller 중 단 하나만
+    // non-null을 받도록 atomic read+delete 보장 필수.
+    /** (purpose, email)을 atomic하게 읽고 삭제 — 사전 값 또는 null 반환. */
     consume(
         purpose: EmailTokenPurpose,
         email: string
     ): Promise<EmailTokenValue | null>;
 }
 
-/**
- * Abstraction for delivering transactional emails.
- *
- * Consumers inject their own implementation (Resend, SendGrid, SMTP, etc.)
- * into use-cases that need to dispatch email.
- */
+/** 트랜잭셔널 이메일 발송 추상 (Resend/SendGrid/SMTP 등을 use-case에 주입). */
 export interface EmailDispatcher {
-    /**
-     * Send a transactional email message.
-     *
-     * @returns `true` when accepted for delivery, `false` otherwise.
-     */
+    /** 메시지 발송 — 전송 수락 시 true, 거절 시 false. */
     sendEmail(message: EmailMessage): Promise<boolean>;
 }
 
@@ -142,12 +119,7 @@ function getRedisPair(config: UpstashConfig): RedisPair {
     return cachedRedisPair;
 }
 
-/**
- * Construct an {@link EmailTokenStore} backed by Upstash Redis.
- *
- * Returns `null` when the required env vars are not present so callers can
- * decide how to degrade.
- */
+/** Upstash Redis 기반 EmailTokenStore 생성 — 환경변수 부재 시 null (caller가 graceful degrade 결정). */
 export function createEmailTokenStore(): EmailTokenStore | null {
     const config = readUpstashConfig();
     if (!config) return null;

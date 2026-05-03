@@ -14,11 +14,8 @@ export const OAUTH_STATE_TTL_SECONDS = OAUTH_STATE_TTL_MINUTES * 60;
 const HMAC_SECRET_MIN_BYTES = 32;
 const SIGNATURE_SEPARATOR = '.';
 
-/**
- * Domain error raised when OAUTH_STATE_HMAC_SECRET is missing or shorter than
- * {@link HMAC_SECRET_MIN_BYTES}. Caught by route handlers to fail closed (i.e.
- * refuse to issue/verify state) rather than fall back to unsigned payloads.
- */
+// Route handler는 이 오류를 잡아 fail-closed 처리 (서명 없는 state로 폴백 금지).
+/** OAUTH_STATE_HMAC_SECRET 미설정 또는 최소 바이트 미달 시 발생. */
 export class OAuthStateSecretMisconfiguredError extends Error {
     constructor(message: string) {
         super(message);
@@ -116,11 +113,7 @@ export function expiredOAuthStateCookie(): ResponseCookie {
     };
 }
 
-/**
- * state 검증 — 쿠키 ↔ 쿼리 토큰 timing-safe 비교 + provider/만료/HMAC 서명 검사.
- * Throws {@link OAuthStateSecretMisconfiguredError} when OAUTH_STATE_HMAC_SECRET
- * is missing or invalid; callers must fail closed in that case.
- */
+/** state 검증 — 쿠키↔쿼리 timing-safe + provider/만료/HMAC 서명 검사 (HMAC 미설정 시 throw → fail-closed). */
 export function verifyOAuthState(
     provider: SupportedOAuthProvider,
     queryState: string,
