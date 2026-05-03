@@ -132,26 +132,15 @@ export const BACKTESTING_KEYWORDS = [
     'Magnificent 7 분석',
 ];
 
-export interface SymbolFundamentalSeoContent {
-    title: string;
-    fullTitle: string;
-    description: string;
-    url: string;
-    keywords: string[];
-}
-
-/**
- * Build SEO metadata for the `/[symbol]/fundamental` page.
- *
- * @param symbol - Raw ticker symbol (case-insensitive; normalised to uppercase internally).
- */
+/** Build SEO metadata for the `/[symbol]/fundamental` page. */
 export function buildSymbolFundamentalSeoContent(
     symbol: string
-): SymbolFundamentalSeoContent {
+): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const title = `${upper} 펀더멘털 분석`;
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
+        ticker: upper,
         title,
         fullTitle,
         description: `${upper}의 PER·PSR·EPS·ROE·재무 건전성·애널리스트 컨센서스·섹터 방향 등 펀더멘털 종합 AI 분석.`,
@@ -174,26 +163,15 @@ export function buildSymbolFundamentalSeoContent(
     };
 }
 
-export interface SymbolNewsSeoContent {
-    title: string;
-    fullTitle: string;
-    description: string;
-    url: string;
-    keywords: string[];
-}
-
-/**
- * Build SEO metadata for the `/[symbol]/news` page.
- *
- * @param symbol - Raw ticker symbol (case-insensitive; normalised to uppercase internally).
- */
+/** Build SEO metadata for the `/[symbol]/news` page. */
 export function buildSymbolNewsSeoContent(
     symbol: string
-): SymbolNewsSeoContent {
+): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const title = `${upper} 뉴스 분석`;
     const fullTitle = `${upper} 최신 뉴스 + AI 분석 | ${SITE_NAME}`;
     return {
+        ticker: upper,
         title,
         fullTitle,
         description: `${upper}의 최신 뉴스, sentiment 분석, 어닝 일정, 애널리스트 등급 변경 등 종합 정보.`,
@@ -214,27 +192,16 @@ export function buildSymbolNewsSeoContent(
     };
 }
 
-export interface SymbolOverallSeoContent {
-    title: string;
-    fullTitle: string;
-    description: string;
-    url: string;
-    keywords: string[];
-}
-
-/**
- * Build SEO metadata for the `/[symbol]/overall` page.
- *
- * @param symbol - Raw ticker symbol (case-insensitive; normalised to uppercase internally).
- */
+/** Build SEO metadata for the `/[symbol]/overall` page. */
 export function buildSymbolOverallSeoContent(
     symbol: string
-): SymbolOverallSeoContent {
+): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
     const title = `${upper} AI 종합 분석`;
     const fullTitle = `${upper} 기술 + 펀더 + 뉴스 통합 AI 분석 | ${SITE_NAME}`;
     return {
+        ticker: upper,
         title,
         fullTitle,
         description: `${upper}의 기술적 분석, 펀더멘털, 뉴스를 통합한 AI 종합 결론과 시나리오 분석.`,
