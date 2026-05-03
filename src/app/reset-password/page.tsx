@@ -19,9 +19,7 @@ const MISSING_PARAMS_MESSAGE =
     '재설정 링크가 올바르지 않습니다. 비밀번호 찾기를 다시 시도해주세요.';
 
 // Awaits searchParams (dynamic) — must be inside Suspense for PPR.
-async function ResetPasswordContent({
-    searchParams,
-}: ResetPasswordPageProps) {
+async function ResetPasswordContent({ searchParams }: ResetPasswordPageProps) {
     const params = await searchParams;
     const email = params.email ?? '';
     const token = params.token ?? '';

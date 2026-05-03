@@ -2,7 +2,11 @@
 
 import { useMemo, type CSSProperties } from 'react';
 import { cn } from '@/lib/cn';
-import { DEFAULT_TIER, getAllowedModels, type Timeframe } from '@y0ngha/siglens-core';
+import {
+    DEFAULT_TIER,
+    getAllowedModels,
+    type Timeframe,
+} from '@y0ngha/siglens-core';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import {
     FALLBACK_MODEL_ID,

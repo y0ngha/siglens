@@ -58,7 +58,9 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         title={`강력 매수 ${strongBuy}`}
                         className="bg-ui-success h-3 w-[var(--bar-w)]"
                         style={
-                            { '--bar-w': `${pct(strongBuy, total)}%` } as CSSProperties
+                            {
+                                '--bar-w': `${pct(strongBuy, total)}%`,
+                            } as CSSProperties
                         }
                     />
                 )}
@@ -66,21 +68,33 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                     <div
                         title={`매수 ${buy}`}
                         className="bg-ui-success/60 h-3 w-[var(--bar-w)]"
-                        style={{ '--bar-w': `${pct(buy, total)}%` } as CSSProperties}
+                        style={
+                            {
+                                '--bar-w': `${pct(buy, total)}%`,
+                            } as CSSProperties
+                        }
                     />
                 )}
                 {hold > 0 && (
                     <div
                         title={`중립 ${hold}`}
                         className="bg-ui-warning h-3 w-[var(--bar-w)]"
-                        style={{ '--bar-w': `${pct(hold, total)}%` } as CSSProperties}
+                        style={
+                            {
+                                '--bar-w': `${pct(hold, total)}%`,
+                            } as CSSProperties
+                        }
                     />
                 )}
                 {sell > 0 && (
                     <div
                         title={`매도 ${sell}`}
                         className="bg-ui-danger/60 h-3 w-[var(--bar-w)]"
-                        style={{ '--bar-w': `${pct(sell, total)}%` } as CSSProperties}
+                        style={
+                            {
+                                '--bar-w': `${pct(sell, total)}%`,
+                            } as CSSProperties
+                        }
                     />
                 )}
                 {strongSell > 0 && (
