@@ -18,7 +18,7 @@ import { useAnalysisDerivedData } from '@/components/symbol-page/hooks/useAnalys
 import { useAnalysisDisplay } from '@/components/symbol-page/hooks/useAnalysisDisplay';
 import { useActionPricesVisibility } from '@/components/symbol-page/hooks/useActionPricesVisibility';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
-import { useUserTier } from '@/components/hooks/useUserTier';
+import { useUserTier } from '@/components/symbol-page/hooks/useUserTier';
 import {
     PANEL_MAX_WIDTH,
     PANEL_MIN_WIDTH,

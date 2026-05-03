@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { type PwaEnvironment } from '@/domain/types';
 import { detectPwaEnvironment } from '@/lib/pwa/detectPwaEnvironment';
-import { registerServiceWorker } from '@/lib/pwa/registerServiceWorker';
+import { registerServiceWorker } from '@/components/pwa/utils/registerServiceWorker';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 
 type PromptOutcome = 'accepted' | 'dismissed';

@@ -1,14 +1,4 @@
-/**
- * Markdown-fence-stripping JSON parser shared by AI/LLM call sites.
- *
- * These helpers (`stripMarkdownCodeBlock`, `parseJsonResponse`) originate in
- * `@y0ngha/siglens-core` (`src/domain/utils.ts`) but are not part of core's
- * public API surface, so consumers cannot import them. Until core exposes them,
- * siglens keeps a local copy here and call sites should reuse from this module
- * rather than re-duplicating the implementation.
- *
- * Sync obligation: if the core helpers change, mirror the update here.
- */
+// Local mirror of `@y0ngha/siglens-core` JSON helpers (not yet exported by core's public API).
 
 const MARKDOWN_CODE_BLOCK_PATTERN = /```(?:json)?\s*\n?([\s\S]*?)\n?```/;
 
@@ -18,14 +8,7 @@ export function stripMarkdownCodeBlock(text: string): string {
     return match ? match[1].trim() : text.trim();
 }
 
-/**
- * Parse a JSON response from an LLM call, transparently stripping a markdown
- * code-fence wrapper if the model returned ```json ... ```.
- *
- * @param text - Raw LLM response text.
- * @param source - Caller name used in the error message for easier debugging.
- * @throws When the (un-fenced) text is not valid JSON.
- */
+/** Parse a JSON LLM response, transparently stripping a ```json``` markdown fence if present. */
 export function parseJsonResponse(text: string, source: string): unknown {
     try {
         return JSON.parse(stripMarkdownCodeBlock(text));

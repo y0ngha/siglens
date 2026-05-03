@@ -40,11 +40,7 @@ interface AnalyzeMutationVariables {
  */
 const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
-/**
- * 캐시 히트(=force=false 재분석에서 즉시 응답) 시 사용하는 짧은 쿨다운.
- * 사용자가 같은 캐시 결과를 빠르게 재호출해 리소스를 낭비하지 않도록 막되,
- * 다음 분석을 너무 오래 잠그지는 않는다.
- */
+/** 캐시 히트(force=false 즉시 응답) 시 적용하는 짧은 클라이언트 쿨다운 — 같은 캐시의 빠른 반복 호출 방지. */
 const CACHE_HIT_COOLDOWN_MS = 30_000;
 
 const POLL_INTERVAL_MS = 10000;

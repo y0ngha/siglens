@@ -6,13 +6,7 @@ import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 import { getUserTier } from '@/infrastructure/tier/use-cases/getUserTier';
 
-/**
- * Server action that resolves the current user's tier for client-side gating.
- *
- * Returns {@link DEFAULT_TIER} (`'free'`) for guests and for authenticated
- * users without a persisted tier row, mirroring the server-side gates used by
- * the analysis and chat pipelines.
- */
+/** Resolve the current user's tier for client-side gating; falls back to DEFAULT_TIER for guests/unset users. */
 export async function getUserTierAction(): Promise<Tier> {
     const user = await getCurrentUser();
     if (user === null) {

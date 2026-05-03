@@ -4,7 +4,7 @@
 import {
     registerServiceWorker,
     _resetRegisterServiceWorkerForTests,
-} from '@/lib/pwa/registerServiceWorker';
+} from '@/components/pwa/utils/registerServiceWorker';
 
 interface FakeContainer {
     register: jest.Mock;

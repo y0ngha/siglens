@@ -5,36 +5,19 @@ import { MS_PER_MINUTE } from '@/domain/constants/time';
 export const QUERY_STALE_TIME_MS = MS_PER_MINUTE;
 export const QUERY_GC_TIME_MS = 300_000;
 
-/**
- * Market summary refreshes during U.S. market hours; 1 minute keeps the
- * dashboard responsive without thrashing the FMP free-tier rate limit.
- */
+/** Market summary refreshes during U.S. market hours; 1 minute fits FMP free-tier rate limits. */
 export const MARKET_SUMMARY_STALE_TIME_MS = MS_PER_MINUTE;
 
-/**
- * Ticker autocomplete results change rarely (FMP catalogue updates daily).
- * 5 minutes is well within FMP free-tier headroom and avoids re-querying
- * during a typing session.
- */
+/** FMP ticker catalogue updates daily; 5 min avoids re-querying during a typing session. */
 export const TICKER_SEARCH_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 
-/**
- * Korean-translation lookups for tickers are immutable once cached on the
- * server; client-side staleness can be aggressive.
- */
+/** Korean translations are immutable once cached server-side, so client staleness can be aggressive. */
 export const KOREAN_TRANSLATION_STALE_TIME_MS = 60 * MS_PER_MINUTE;
 
-/**
- * Asset metadata (sector, industry, fmpSymbol) changes infrequently. Long
- * staleness keeps repeated symbol-page navigations cache-warm.
- */
+/** Asset metadata (sector/industry/fmpSymbol) changes infrequently; long staleness keeps repeat nav warm. */
 export const ASSET_INFO_STALE_TIME_MS = 30 * MS_PER_MINUTE;
 
-/**
- * OHLCV bar data updates every 30 seconds during market hours (Alpaca cadence).
- * Use a short staleTime so chart repaints reflect the latest bar without
- * re-fetching mid-render.
- */
+/** OHLCV bars update every 30s during market hours (Alpaca cadence). */
 export const BARS_STALE_TIME_MS = 30_000;
 
 /** The current user's tier rarely changes within a session. */
