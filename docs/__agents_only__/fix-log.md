@@ -114,6 +114,27 @@
 - Rule: WCAG / ARIA Authoring Practices — tablist/tab is for same-page panel switching; URL navigation uses `<nav>` + `aria-current="page"`
 - Context: Converted SymbolTabs from div[role=tablist]+Link[role=tab]+aria-selected+tabIndex+handleKey to nav[aria-label]+Link[aria-current]. Removed keyboard arrow-key handler (nav landmark does not require it per ARIA contract).
 
+## [PR #413 Round 20 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: newsRepository.ts imported NewsDisplayItem from @/lib/news/types (infrastructure importing lib)
+- Rule: CLAUDE.md Layer Dependency Rules — infrastructure ← domain only; infrastructure cannot import lib
+- Context: Blocker B1. NewsDisplayItem moved from src/lib/news/types.ts to src/domain/types.ts. Note: R18 reviewer originally said NewsDisplayItem should move OUT of domain (UI type purity); R20 reviewer said move BACK to domain (layer rule enforcement). R20 ruling is structurally correct — domain is the only layer importable by both components/ and infrastructure/. Trade-off acknowledged: presentation-adjacent types tolerated in domain when cross-layer sharing required.
+
+- Violation: httpClient.ts exported @internal JSDoc tag on non-exported FMP_FETCH_TIMEOUT_MS constant
+- Rule: MISTAKES.md Documentation Sync 3 — @internal on non-exported symbols is redundant (4th recurrence: R12, R17, R18, R20)
+- Context: Suggestion S1. FMP_FETCH_TIMEOUT_MS is non-exported (local to module), so @internal tag adds no semantic value. Removed.
+
+- Violation: ChatPanel.tsx had WHAT comment "Narrowed to ChatMessage (role: 'user' | 'model') past this point"
+- Rule: CONVENTIONS.md — comments only for WHY non-obvious; type narrowing behavior is self-evident from TypeScript
+- Context: Suggestion S2. Comment describes TypeScript narrowing behavior rather than explaining a WHY decision. Type system is the documentation; removed comment.
+
+- Violation: derivePageContextLabel.ts used 3 sequential if statements instead of object map for subpage lookup
+- Rule: CONVENTIONS.md Declarative Code — prefer data structures (map, lookup) over imperative conditionals
+- Context: Suggestion S3. Replaced if-else chain with SUBPAGE_LABEL record lookup + fallback to BASE_SYMBOL_LABEL.
+
+- Violation: 3 loading.tsx files had enumeration comments listing section names ("// Profile + Valuation + Peers + ...")
+- Rule: MISTAKES.md Documentation Sync 4 — Comments enumerating structure drift risk; structure = source of truth
+- Context: Suggestion S4. Removed WHAT enumeration comments from fundamental/news/overall loading.tsx files. Comment lists matched constant value, but drifted during refactors; better to let code speak.
+
 
 ## [PR #413 R7 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: useNewsAugment.ts run() 함수가 submitNewsAnalysisAction 호출 전 상태를 'loading'으로 초기화하지 않아, 이전 symbol/modelId의 'done' 상태가 persist
