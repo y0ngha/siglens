@@ -17,6 +17,14 @@ const STATIC_ROUTES = new Set([
 // Case-insensitive so both /AAPL and /aapl resolve correctly.
 const SYMBOL_PATH_RE = /^\/([A-Z.]{1,8})(\/(fundamental|news|overall))?$/i;
 
+const SUBPAGE_LABEL: Record<string, string> = {
+    fundamental: '펀더 분석',
+    news: '뉴스 분석',
+    overall: 'AI 종합 분석',
+};
+
+const BASE_SYMBOL_LABEL = '차트 분석';
+
 /** Korean page-context label from pathname; `null` on non-symbol pages (e.g. `/account`). */
 export function deriveLabel(pathname: string): string | null {
     const match = SYMBOL_PATH_RE.exec(pathname);
@@ -29,8 +37,5 @@ export function deriveLabel(pathname: string): string | null {
 
     // Lowercase the captured sub-page so case-insensitive matches resolve correctly.
     const subpage = match[3]?.toLowerCase();
-    if (subpage === 'fundamental') return '펀더 분석';
-    if (subpage === 'news') return '뉴스 분석';
-    if (subpage === 'overall') return 'AI 종합 분석';
-    return '차트 분석'; // base symbol page
+    return SUBPAGE_LABEL[subpage ?? ''] ?? BASE_SYMBOL_LABEL;
 }

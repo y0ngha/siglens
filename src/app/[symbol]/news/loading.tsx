@@ -1,4 +1,3 @@
-// AiSummary + NewsList + EventCalendar + AnalystActions + CrossLink = 5 sections.
 const SKELETON_SECTION_COUNT = 5;
 
 export default function NewsLoading() {

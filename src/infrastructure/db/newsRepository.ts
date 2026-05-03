@@ -7,7 +7,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { news } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
-import type { NewsDisplayItem } from '@/lib/news/types';
+import type { NewsDisplayItem } from '@/domain/types';
 
 /** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
 export interface NewsRow extends NewsDisplayItem {

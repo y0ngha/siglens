@@ -226,7 +226,6 @@ export function ChatPanel({
                         );
                     }
 
-                    // Narrowed to ChatMessage (role: 'user' | 'model') past this point.
                     return (
                         <div
                             key={`${msg.role}-${i}`}

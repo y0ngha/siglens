@@ -1,4 +1,3 @@
-// Profile + Valuation + Peers + Profitability + Growth + FinancialHealth = 6 sections.
 const SKELETON_SECTION_COUNT = 6;
 
 export default function FundamentalLoading() {

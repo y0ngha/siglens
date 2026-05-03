@@ -1,4 +1,3 @@
-// OverallContent + CrossLinkCards + 1 spacer placeholder = 3 sections.
 const SKELETON_SECTION_COUNT = 3;
 
 export default function OverallLoading() {

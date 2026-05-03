@@ -3,7 +3,7 @@ import { readFmpConfig } from '@y0ngha/siglens-core';
 /** Base URL for all FMP `/stable/*` endpoints. */
 export const FMP_STABLE_BASE = 'https://financialmodelingprep.com/stable';
 
-/** @internal Timeout for all FMP fetch calls (ms). */
+/** Timeout for all FMP fetch calls (ms). */
 const FMP_FETCH_TIMEOUT_MS = 10_000;
 
 /** GET FMP /stable/<path>; appends apikey automatically; throws if FMP_API_KEY missing or non-2xx response. */
