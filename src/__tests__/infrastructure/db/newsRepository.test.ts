@@ -111,7 +111,8 @@ describe('DrizzleNewsRepository', () => {
         it('update + set + where 를 호출한다', async () => {
             const { db, update, set, where } = makeUpdateDb();
             const repo = new DrizzleNewsRepository(db);
-            await repo.attachAnalysis('abc123', analysis);
+            const analyzedAt = new Date('2025-08-01T12:00:00.000Z');
+            await repo.attachAnalysis('abc123', analysis, analyzedAt);
 
             expect(update).toHaveBeenCalledTimes(1);
             expect(set).toHaveBeenCalledTimes(1);
@@ -121,6 +122,7 @@ describe('DrizzleNewsRepository', () => {
             expect(setArg['titleKo']).toBe('애플 사상 최고가 달성');
             expect(setArg['sentiment']).toBe('bullish');
             expect(setArg['category']).toBe('other');
+            expect(setArg['analyzedAt']).toBe(analyzedAt);
         });
     });
 

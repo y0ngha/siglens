@@ -1,6 +1,9 @@
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
-import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
+import {
+    DrizzleEarningsCalendarRepository,
+    toCalendarRow,
+} from '@/infrastructure/db/earningsCalendarRepository';
 
 const appleQ2: EarningsCalendarItem = {
     symbol: 'AAPL',
@@ -74,23 +77,9 @@ function makeSelectOrderByDb(rows: unknown[]): {
     };
 }
 
-// DB row shape (numeric fields are strings from Postgres numeric type)
-function toDbRow(item: EarningsCalendarItem) {
-    return {
-        symbol: item.symbol,
-        earningsDate: item.earningsDate,
-        epsActual: item.epsActual !== null ? String(item.epsActual) : null,
-        epsEstimated:
-            item.epsEstimated !== null ? String(item.epsEstimated) : null,
-        revenueActual:
-            item.revenueActual !== null ? String(item.revenueActual) : null,
-        revenueEstimated:
-            item.revenueEstimated !== null
-                ? String(item.revenueEstimated)
-                : null,
-        lastUpdated: item.lastUpdated,
-    };
-}
+// Use the production mapper to produce DB row fixtures — exercises the same
+// code path as upsertMany and avoids duplicating the mapping logic in tests.
+const toDbRow = toCalendarRow;
 
 // --- Tests ---
 
