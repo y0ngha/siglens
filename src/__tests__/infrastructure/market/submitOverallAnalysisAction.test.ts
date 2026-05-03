@@ -167,6 +167,18 @@ describe('submitOverallAnalysisAction 함수는', () => {
         );
     });
 
+    it('다음 실적 발표가 없으면 upcomingCalendar는 빈 배열이다', async () => {
+        mockListBySymbol.mockResolvedValue([]);
+        mockGetNextForSymbol.mockResolvedValue(null);
+        mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
+
+        await submitOverallAnalysisAction('AAPL', '1Day', MODEL_ID);
+
+        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ upcomingCalendar: [] })
+        );
+    });
+
     it('underlying 함수의 결과를 그대로 반환한다', async () => {
         mockListBySymbol.mockResolvedValue([]);
         mockGetNextForSymbol.mockResolvedValue(null);

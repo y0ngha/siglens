@@ -12,13 +12,8 @@ import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
+import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import type { NewsRow } from '@/infrastructure/db/newsRepository';
-
-/**
- * Lookback window used when querying recent news for the overall analysis.
- * 7 days expressed in milliseconds, matching the `NewsTimeRange` `'7d'` window.
- */
-const NEWS_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1_000;
 
 /**
  * Type predicate: narrows a `NewsRow` to `EnrichedNewsItem`.
@@ -78,10 +73,14 @@ export async function submitOverallAnalysisAction(
             titleEn: row.titleEn,
             bodyEn: row.bodyEn,
             card: {
+                // isEnrichedRow predicate above guarantees titleKo is non-null at runtime
                 titleKo: row.titleKo as string,
                 bodyKo: row.bodyKo,
+                // isEnrichedRow predicate above guarantees summaryKo is non-null at runtime
                 summaryKo: row.summaryKo as string,
+                // isEnrichedRow predicate above guarantees sentiment is one of NewsSentiment literals
                 sentiment: row.sentiment as EnrichedNewsItem['card']['sentiment'],
+                // isEnrichedRow predicate above guarantees category is one of NewsCategory literals
                 category: row.category as EnrichedNewsItem['card']['category'],
             },
         }));

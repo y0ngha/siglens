@@ -1,5 +1,6 @@
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
 import { submitFundamentalAnalysis } from '@y0ngha/siglens-core';
+import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import type {
     ModelId,
     SubmitFundamentalAnalysisResult,
@@ -74,11 +75,9 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             'gemini-2.5-flash' as ModelId
         );
 
-        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
-            expect.objectContaining({
-                dataProvider: expect.any(Object),
-            })
-        );
+        const call = mockSubmitFundamentalAnalysis.mock.calls[0]?.[0];
+        expect(call?.dataProvider).toBeDefined();
+        expect(FmpFundamentalClient).toHaveBeenCalled();
     });
 
     it('underlying 함수의 cached 결과를 그대로 반환한다', async () => {
