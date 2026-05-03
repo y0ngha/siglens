@@ -2,7 +2,7 @@
 
 import { usePathname } from 'next/navigation';
 import { useMemo } from 'react';
-import { deriveLabel } from '@/components/chat/utils/derivePageContextLabel';
+import { deriveLabel } from '@/lib/chat/derivePageContextLabel';
 
 /**
  * Returns the Korean page-context label for the current pathname.
