@@ -2,16 +2,18 @@
 
 import { type CSSProperties, useMemo } from 'react';
 import {
+    DEFAULT_TIER,
     getAllowedModels,
     type NewsAnalysisResponse,
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
-import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
+import {
+    FALLBACK_MODEL_ID,
+    resolveDefaultModelForProvider,
+} from '@/domain/llm/providerDefaults';
 import { cn } from '@/lib/cn';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
-
-const DEFAULT_TIER = 'free' as const;
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -116,20 +118,13 @@ interface NewsAiSummaryProps {
     symbol: string;
 }
 
-/**
- * Client component: triggers news AI analysis on mount, polls for
- * completion, and renders the result.
- *
- * Uses `useSelectedProvider` to pick the model.
- * All polling/state logic is delegated to `useNewsAnalysis`.
- */
 export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
     const [selectedProvider] = useSelectedProvider();
     const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);
     const modelId = useMemo(
         () =>
             resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
-            'claude-haiku-3-5',
+            FALLBACK_MODEL_ID,
         [selectedProvider, allowedModels]
     );
 

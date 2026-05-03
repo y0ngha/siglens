@@ -136,5 +136,13 @@
 - Rule: Module boundaries — data modules should not re-export lib utilities; consumers import directly from source
 - Context: Removed todayKstIsoDate re-exports. pages now import directly from @/lib/dateKey, clarifying data module role.
 
+## [PR #413 R8 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: SymbolTabsSkeleton.tsx nav element had both `aria-hidden="true"` and `aria-label="분석 종류"`
+- Rule: MISTAKES.md Accessibility 1.5 — aria-hidden removes element from a11y tree; aria-label on hidden element is meaningless
+- Context: Removed aria-label since aria-hidden="true" already hides from screen readers.
+
+- Violation: toCalendarRow marked @internal but exported; used by test file
+- Rule: Inconsistency between JSDoc intent and actual usage
+- Context: Kept export, removed @internal annotation since test file legitimately imports it.
 
 

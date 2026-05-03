@@ -1,6 +1,10 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
-import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
+import {
+    DEFAULT_TIMEFRAME,
+    isValidTimeframe,
+    VALID_TICKER_RE,
+} from '@/domain/constants/market';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/components/overall/OverallContent';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
@@ -12,9 +16,6 @@ import {
     OG_IMAGE_WIDTH,
     SITE_NAME,
 } from '@/lib/seo';
-
-/** Regex for valid U.S. ticker symbols: 1–8 uppercase letters or dots. */
-const VALID_TICKER_RE = /^[A-Z.]{1,8}$/;
 
 interface Props {
     params: Promise<{ symbol: string }>;

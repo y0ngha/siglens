@@ -5,12 +5,6 @@ interface PeersTableProps {
     peers: FundamentalPeerInput[];
 }
 
-/**
- * RSC section: peer comparison table — lists peer tickers with market cap
- * and links to each peer's fundamental page.
- *
- * Data is fetched by the parent RSC page and passed as a typed prop.
- */
 export function PeersTable({ peers }: PeersTableProps) {
     if (peers.length === 0) return null;
 

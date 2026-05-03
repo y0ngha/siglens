@@ -5,12 +5,7 @@ import {
     type PollNewsAnalysisResult,
 } from '@y0ngha/siglens-core';
 
-/**
- * Server Action: poll the result of a previously submitted news analysis job.
- *
- * @param jobId - Job identifier returned by {@link submitNewsAnalysisAction}.
- * @returns Current job state — `processing`, `done`, or `error`.
- */
+/** Server Action: poll a previously submitted news analysis job; returns `processing`, `done`, or `error`. */
 export async function pollNewsAnalysisAction(
     jobId: string
 ): Promise<PollNewsAnalysisResult> {

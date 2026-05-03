@@ -3,21 +3,10 @@ import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import { earningsCalendar } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 
-/**
- * Drizzle ORM implementation backed by the `earnings_calendar` table.
- * Handles bulk upsert of FMP earnings calendar data and targeted lookups.
- *
- * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
- */
 export class DrizzleEarningsCalendarRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
-    /**
-     * Bulk-insert or update earnings calendar items.
-     * On conflict (symbol, earnings_date), all numeric and date fields are
-     * updated via `EXCLUDED.*` so stale estimates are replaced by fresh data.
-     * Empty arrays are a no-op.
-     */
+    // No-op on empty input. On conflict, all numeric/date fields are replaced via EXCLUDED.*.
     async upsertMany(items: EarningsCalendarItem[]): Promise<void> {
         if (items.length === 0) return;
 
@@ -41,11 +30,7 @@ export class DrizzleEarningsCalendarRepository {
             });
     }
 
-    /**
-     * Return the next upcoming (or same-day) earnings event for `symbol`
-     * on or after `fromDate` (ISO date string, e.g. `"2025-08-01"`).
-     * Returns `null` when no upcoming event is found.
-     */
+    /** Next upcoming (or same-day) earnings event for `symbol` on/after `fromDate` (ISO date); `null` when none. */
     async getNextForSymbol(
         symbol: string,
         fromDate: string
@@ -65,10 +50,7 @@ export class DrizzleEarningsCalendarRepository {
         return row !== undefined ? toCalendarItem(row) : null;
     }
 
-    /**
-     * Return all earnings events whose `earningsDate` falls within
-     * `[fromDate, toDate]` (inclusive, ISO date strings).
-     */
+    /** Earnings events whose `earningsDate` falls in `[fromDate, toDate]` (inclusive, ISO date). */
     async listForRange(
         fromDate: string,
         toDate: string
@@ -83,7 +65,7 @@ export class DrizzleEarningsCalendarRepository {
     }
 }
 
-/** @internal Map an {@link EarningsCalendarItem} to a DB insert row. */
+/** Map an {@link EarningsCalendarItem} to a DB insert row. */
 export function toCalendarRow(
     item: EarningsCalendarItem
 ): typeof earningsCalendar.$inferInsert {
@@ -123,13 +105,23 @@ function toCalendarItem(row: {
             row.revenueActual !== null ? Number(row.revenueActual) : null,
         revenueEstimated:
             row.revenueEstimated !== null ? Number(row.revenueEstimated) : null,
-        lastUpdated: (() => {
-            if (row.lastUpdated === null) {
-                throw new Error(
-                    `earnings_calendar row missing lastUpdated for ${row.symbol} ${row.earningsDate}`
-                );
-            }
-            return row.lastUpdated;
-        })(),
+        lastUpdated: requireLastUpdated(
+            row.lastUpdated,
+            row.symbol,
+            row.earningsDate
+        ),
     };
+}
+
+function requireLastUpdated(
+    lastUpdated: string | null,
+    symbol: string,
+    earningsDate: string
+): string {
+    if (lastUpdated === null) {
+        throw new Error(
+            `earnings_calendar row missing lastUpdated for ${symbol} ${earningsDate}`
+        );
+    }
+    return lastUpdated;
 }

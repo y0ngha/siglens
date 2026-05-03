@@ -3,27 +3,11 @@ import type { EarningsReport } from '@y0ngha/siglens-core';
 import { earningsReports } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 
-/**
- * Drizzle ORM implementation backed by the `earnings_reports` table.
- * Stores raw FMP earnings report payloads alongside the domain key fields.
- *
- * `rawPayload` is accepted as a separate argument because {@link EarningsReport}
- * only carries `symbol` and `earningsDate` — the raw response JSON must be
- * preserved in the DB without polluting the domain type.
- *
- * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
- */
+// rawPayload is a separate arg because EarningsReport carries only symbol+earningsDate; full JSON is preserved for audit/re-parse.
 export class DrizzleEarningsReportsRepository {
     constructor(private readonly db: SiglensDatabase) {}
 
-    /**
-     * Insert or update a single earnings report.
-     * On conflict (symbol, earnings_date), `raw_payload` and `fetched_at`
-     * are replaced with the new values.
-     *
-     * @param report - Domain earnings report (symbol + earningsDate).
-     * @param rawPayload - Full FMP API response object to persist for audit / re-parsing.
-     */
+    /** Upsert a single report; on conflict, `raw_payload` + `fetched_at` are replaced. */
     async upsert(report: EarningsReport, rawPayload: unknown): Promise<void> {
         await this.db
             .insert(earningsReports)
@@ -41,10 +25,7 @@ export class DrizzleEarningsReportsRepository {
             });
     }
 
-    /**
-     * Return the most recently fetched earnings report for `symbol`,
-     * or `null` when no report has been stored yet.
-     */
+    /** Most recently fetched earnings report for `symbol`, or `null` when none stored. */
     async getLatestForSymbol(symbol: string): Promise<EarningsReport | null> {
         const [row] = await this.db
             .select({

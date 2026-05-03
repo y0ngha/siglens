@@ -8,6 +8,7 @@ import {
     getLatestEarningsReport,
 } from '@/app/[symbol]/news/newsData';
 import { todayKstIsoDate } from '@/lib/dateKey';
+import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { NewsList } from '@/components/news/sections/NewsList';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
 import { AnalystActions } from '@/components/news/sections/AnalystActions';
@@ -23,9 +24,6 @@ import {
 } from '@/lib/seo';
 import { waitUntil } from '@vercel/functions';
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
-
-/** Regex for valid U.S. ticker symbols: 1–8 uppercase letters or dots. */
-const VALID_TICKER_RE = /^[A-Z.]{1,8}$/;
 
 interface Props {
     params: Promise<{ symbol: string }>;

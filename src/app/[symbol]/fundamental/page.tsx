@@ -17,6 +17,7 @@ import {
     getHistoricalSector,
 } from '@/app/[symbol]/fundamental/fundamentalData';
 import { todayKstIsoDate } from '@/lib/dateKey';
+import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
 import { PeersTable } from '@/components/fundamental/sections/PeersTable';
@@ -35,9 +36,6 @@ import {
     OG_IMAGE_WIDTH,
     SITE_NAME,
 } from '@/lib/seo';
-
-/** Regex for valid U.S. ticker symbols: 1–8 uppercase letters or dots. */
-const VALID_TICKER_RE = /^[A-Z.]{1,8}$/;
 
 interface Props {
     params: Promise<{ symbol: string }>;

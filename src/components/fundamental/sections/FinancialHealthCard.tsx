@@ -73,12 +73,6 @@ function piotroskiBadge(p: number | null): HealthMetricProps['badge'] {
     return { text: '약함', variant: 'bad' };
 }
 
-/**
- * RSC section: financial health — debt ratio, current ratio, operating
- * cash flow, Altman Z-score, Piotroski F-score.
- *
- * Data is fetched by the parent RSC page and passed as typed props.
- */
 export function FinancialHealthCard({
     ratios,
     scores,
