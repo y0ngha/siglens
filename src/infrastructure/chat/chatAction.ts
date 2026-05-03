@@ -86,13 +86,13 @@ export async function chatAction(
     userMessage: string,
     model: ModelId = GEMINI_2_5_FLASH_MODEL
 ): Promise<ChatActionResult> {
-    const provider = getProviderForModel(model);
-    const freeApiKey = getServerPrimaryKey(provider);
-    if (!freeApiKey) {
-        return { ok: false, error: 'server_error' };
-    }
-
     try {
+        const provider = getProviderForModel(model);
+        const freeApiKey = getServerPrimaryKey(provider);
+        if (!freeApiKey) {
+            return { ok: false, error: 'server_error' };
+        }
+
         const [paidApiKey, clientIp] = await Promise.all([
             resolveUserByokKey(model, provider),
             getClientIp(),

@@ -458,23 +458,20 @@ describe('chatAction 함수는', () => {
     });
 
     describe('알 수 없는 provider 처리', () => {
-        it('getServerPrimaryKey가 알 수 없는 provider를 받으면 에러가 전파된다', async () => {
-            // getServerPrimaryKey is called outside the try block — the throw propagates
-            // rather than being caught as server_error.
+        it('알 수 없는 provider로 요청하면 server_error를 반환한다', async () => {
             mockGetProviderForModel.mockReturnValueOnce(
                 'unknown' as unknown as LlmProvider
             );
 
-            await expect(
-                chatAction(
-                    'AAPL',
-                    '1Day',
-                    MINIMAL_ANALYSIS,
-                    [],
-                    '질문',
-                    'gemini-2.5-flash'
-                )
-            ).rejects.toThrow('Unhandled LLM provider');
+            const result = await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
+            expect(result).toEqual({ ok: false, error: 'server_error' });
         });
     });
 });

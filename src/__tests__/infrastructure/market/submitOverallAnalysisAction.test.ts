@@ -192,4 +192,20 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
         expect(result).toBe(SUBMITTED_RESULT);
     });
+
+    it('내부에서 예외가 발생하면 status: error를 반환한다', async () => {
+        mockListBySymbol.mockResolvedValue([]);
+        mockGetNextForSymbol.mockResolvedValue(null);
+        mockSubmitOverallAnalysis.mockRejectedValueOnce(
+            new Error('unexpected')
+        );
+
+        const result = await submitOverallAnalysisAction(
+            'AAPL',
+            '1Day',
+            MODEL_ID
+        );
+
+        expect(result).toMatchObject({ status: 'error', axis: 'technical' });
+    });
 });
