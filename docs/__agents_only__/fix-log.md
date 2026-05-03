@@ -175,4 +175,30 @@
 - Rule: MISTAKES.md Coding Paradigm 10 — Derived constants recreated on every render without memoization
 - Context: Replaced with module-level `const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);` constant; modelId useMemo deps reduced.
 
+## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: ContextSwitchMessage and DisplayMessage in src/domain/types.ts had multi-paragraph JSDoc blocks
+- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line function descriptions; enforce single-line only
+- Context: Both multi-line JSDoc blocks compressed to single-line comments. 9th–10th consecutive round flagging this pattern in NEW code.
+
+- Violation: deriveLabel in src/lib/chat/derivePageContextLabel.ts marked @internal but imported by src/__tests__/lib/chat/derivePageContextLabel.test.ts
+- Rule: MISTAKES.md Documentation Sync 3 — Inconsistency between JSDoc intent (@internal) and actual usage (exported + tested)
+- Context: Removed @internal annotation. Same pattern as R8 toCalendarRow + R11 computeCutoff/hashUrlToId.
+
+- Violation: toEarningsReport in src/infrastructure/db/earningsReportsRepository.ts had inline parameter type { symbol: string; earningsDate: string } while sibling earningsCalendarRepository.ts uses named EarningsCalendarDbRow interface
+- Rule: MISTAKES.md TypeScript 5.5 — Inline object parameter type instead of named interface; breaks sibling consistency
+- Context: Extracted EarningsReportDbRow named interface; toEarningsReport now uses named type matching earningsCalendarRepository pattern.
+
+- Violation: src/infrastructure/utils/dateKey.ts (added in R10) had no corresponding test file
+- Rule: MISTAKES.md Tests 12, 14 — All time-dependent utility functions must have test coverage including edge cases
+- Context: Created src/__tests__/infrastructure/utils/dateKey.test.ts with 3 cases: UTC midnight, late evening (date crossover), early morning paths via jest.spyOn(Date, 'now').
+
+- Violation: RSC wrapper comment on news/page.tsx and matching comment on fundamental/page.tsx; 3 lines each of redundant WHAT-description
+- Rule: MISTAKES.md Readability 3 — Self-explanatory code (type-named interface, Suspense pattern) requires no WHAT comment
+- Context: Both removed; code is self-documenting via SymbolSectionProps interface name and Suspense boundary structure.
+
+## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03 — Deferred]
+- Question: Hooks importing infrastructure (useFundamentalAnalysis, useNewsAnalysis, useOverallAnalysis, useNewsAugment)
+- Rule: CLAUDE.md hook→infrastructure imports limited to queryFn/mutationFn or useActionState Server Action connection
+- Context: Current code uses useEffect polling state machines instead of Server Action callback. Architecture sufficient for async job-poll pattern (polling model was intentional design choice for stale background analysis). Deferred to separate cleanup pass requiring architectural rework not warranted in this PR scope.
+
 

@@ -79,10 +79,6 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-// Thin async RSC wrappers — each fetches data and passes props to a presentational
-// section in components/fundamental/sections/. Suspense boundaries on the page
-// let each section stream independently.
-
 interface SymbolSectionProps {
     symbol: string;
 }

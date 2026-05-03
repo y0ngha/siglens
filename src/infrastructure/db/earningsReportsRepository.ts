@@ -41,11 +41,13 @@ export class DrizzleEarningsReportsRepository {
     }
 }
 
-/** Map a raw DB row back to {@link EarningsReport}. */
-function toEarningsReport(row: {
+interface EarningsReportDbRow {
     symbol: string;
     earningsDate: string;
-}): EarningsReport {
+}
+
+/** Map a raw DB row back to {@link EarningsReport}. */
+function toEarningsReport(row: EarningsReportDbRow): EarningsReport {
     return {
         symbol: row.symbol,
         earningsDate: row.earningsDate,

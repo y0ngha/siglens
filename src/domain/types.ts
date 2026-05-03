@@ -118,12 +118,7 @@ export interface PwaEnvironment {
 
 // ─── Chat display types ───────────────────────────────────────────────────────
 
-/**
- * UI-only system message emitted when the chatbot's page-level analysis
- * context switches (user navigates between symbol sub-pages).
- *
- * Never sent to the LLM — filtered out before prompt construction.
- */
+/** UI-only system message emitted on chatbot page-context switch; filtered out before LLM prompt construction. */
 export interface ContextSwitchMessage {
     role: 'system';
     kind: 'context_switch';
@@ -131,9 +126,5 @@ export interface ContextSwitchMessage {
     label: string;
 }
 
-/**
- * Union of all message shapes that can appear in the chat display history.
- * `ChatMessage` (user | model) comes from siglens-core; `ContextSwitchMessage`
- * is a UI-only addition that is never forwarded to the LLM.
- */
+/** Chat display history union — `ChatMessage` (LLM-bound) + UI-only `ContextSwitchMessage`. */
 export type DisplayMessage = ChatMessage | ContextSwitchMessage;
