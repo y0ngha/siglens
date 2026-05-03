@@ -31,6 +31,7 @@ import { FundamentalAiSummarySkeleton } from '@/components/fundamental/Fundament
 import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
 import { ErrorBoundary } from 'react-error-boundary';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
+import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
@@ -162,15 +163,6 @@ async function SectorDirectionSection({ sector }: { sector: string }) {
             sector={sector}
             snapshot={snapshot}
             historical={historical}
-        />
-    );
-}
-
-function SectionSkeleton() {
-    return (
-        <div
-            aria-hidden="true"
-            className="bg-secondary-700 h-32 animate-pulse rounded-xl"
         />
     );
 }

@@ -39,15 +39,18 @@ import type {
 /** Default number of recent grading events returned by `getGrades`. */
 export const DEFAULT_GRADES_LIMIT = 10;
 
+const GRADES_ACTION_MAP: Record<string, GradesAction> = {
+    upgrade: 'upgrade',
+    downgrade: 'downgrade',
+    maintained: 'maintained',
+    reiterated: 'maintained',
+    initiated: 'initiated',
+    'initiated coverage': 'initiated',
+};
+
 /** Map a FMP action string to the domain `GradesAction` union; unknown strings fall back to `'other'`. */
 function toGradesAction(raw: string): GradesAction {
-    const lower = raw.toLowerCase();
-    if (lower === 'upgrade') return 'upgrade';
-    if (lower === 'downgrade') return 'downgrade';
-    if (lower === 'maintained' || lower === 'reiterated') return 'maintained';
-    if (lower === 'initiated' || lower === 'initiated coverage')
-        return 'initiated';
-    return 'other';
+    return GRADES_ACTION_MAP[raw.toLowerCase()] ?? 'other';
 }
 
 /** FMP adapter implementing `FundamentalDataProvider`. Uses `fmpGet` for all HTTP calls. */

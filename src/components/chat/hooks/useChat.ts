@@ -20,8 +20,11 @@ import {
     type LlmProvider,
 } from '@y0ngha/siglens-core';
 import { isFreeChatModel } from '@/domain/llm';
-import type { GateMode } from '@/domain/types';
-import type { ContextSwitchMessage, DisplayMessage } from '@/lib/chat/types';
+import type {
+    ContextSwitchMessage,
+    DisplayMessage,
+    GateMode,
+} from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';

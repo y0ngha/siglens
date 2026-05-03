@@ -17,6 +17,7 @@ import { NewsAiSummarySkeleton } from '@/components/news/NewsAiSummarySkeleton';
 import { NewsAiSummaryError } from '@/components/news/NewsAiSummaryError';
 import { ErrorBoundary } from 'react-error-boundary';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
+import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
@@ -96,15 +97,6 @@ async function EventCalendarSection({ symbol }: SymbolSectionProps) {
 async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
     const events = await getGradeEvents(symbol);
     return <AnalystActions events={events} />;
-}
-
-function SectionSkeleton() {
-    return (
-        <div
-            aria-hidden="true"
-            className="bg-secondary-700 h-32 animate-pulse rounded-xl"
-        />
-    );
 }
 
 export default async function NewsPage({ params }: Props) {

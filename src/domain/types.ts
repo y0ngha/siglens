@@ -1,4 +1,8 @@
-import type { NewsCategory, NewsSentiment } from '@y0ngha/siglens-core';
+import type {
+    ChatMessage,
+    NewsCategory,
+    NewsSentiment,
+} from '@y0ngha/siglens-core';
 
 /** All OAuth providers known to the system (including those reserved but not yet active in the UI). */
 export type OAuthProvider = 'google' | 'kakao' | 'apple';
@@ -130,3 +134,14 @@ export interface NewsDisplayItem {
     url: string;
     source: string;
 }
+
+/** UI-only system message emitted on chatbot page-context switch; filtered out before LLM prompt construction. */
+export interface ContextSwitchMessage {
+    role: 'system';
+    kind: 'context_switch';
+    /** Korean label of the page the chatbot context switched to. */
+    label: string;
+}
+
+/** Chat display history union — `ChatMessage` (LLM-bound) + UI-only `ContextSwitchMessage`. */
+export type DisplayMessage = ChatMessage | ContextSwitchMessage;

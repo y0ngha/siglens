@@ -8,6 +8,7 @@ const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     neutral: '중립',
 };
 
+// neutral은 fundamental의 ui-warning과 의도적으로 다르다 — 뉴스의 '중립'은 정보 없음에 가까워 차분한 톤을 사용한다.
 const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bullish: 'bg-ui-success/10 text-chart-bullish',
     bearish: 'bg-ui-danger/10 text-chart-bearish',
