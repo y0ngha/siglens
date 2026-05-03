@@ -69,7 +69,9 @@ function readHmacSecret(): Buffer {
 }
 
 function signPayload(encodedPayload: string, secret: Buffer): string {
-    return createHmac('sha256', secret).update(encodedPayload).digest('base64url');
+    return createHmac('sha256', secret)
+        .update(encodedPayload)
+        .digest('base64url');
 }
 
 /** state 발급 — 쿼리에 실릴 토큰과 HttpOnly 쿠키 메타를 함께 반환. */

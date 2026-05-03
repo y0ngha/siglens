@@ -180,9 +180,9 @@ describe('registerUser', () => {
 
     it('clears the verified marker when createEmailUser throws', async () => {
         const { dependencies, deleteToken } = makeDependencies();
-        (
-            dependencies.users.createEmailUser as jest.Mock
-        ).mockRejectedValueOnce(new Error('database is on fire'));
+        (dependencies.users.createEmailUser as jest.Mock).mockRejectedValueOnce(
+            new Error('database is on fire')
+        );
 
         await expect(
             registerUser(

@@ -47,7 +47,9 @@ const GATE_MESSAGES: Record<AnalysisGateErrorCode, string> = {
         '저장된 API 키를 복호화하지 못했습니다. 키를 다시 등록해 주세요.',
 };
 
-function buildGateError(code: AnalysisGateErrorCode): AnalysisGateBlockedResult {
+function buildGateError(
+    code: AnalysisGateErrorCode
+): AnalysisGateBlockedResult {
     return {
         status: 'error',
         error: { code, message: GATE_MESSAGES[code] },
@@ -65,9 +67,9 @@ function isKnownModelId(modelId: string): boolean {
     // limitation for `.includes(modelId: string)` — `Array.prototype.includes`
     // refuses non-literal arguments otherwise. The cast is safe because we
     // only read members; we never write back through this view.
-    const allTiers = Object.values(TIER_CONFIG.models) as readonly (
-        readonly string[]
-    )[];
+    const allTiers = Object.values(
+        TIER_CONFIG.models
+    ) as readonly (readonly string[])[];
     return allTiers.some(models => models.includes(modelId));
 }
 
@@ -105,9 +107,7 @@ export async function submitAnalysisAction(
             : await getUserTier(
                   { userId },
                   {
-                      users: new DrizzleUserRepository(
-                          getDatabaseClient().db
-                      ),
+                      users: new DrizzleUserRepository(getDatabaseClient().db),
                   }
               );
 

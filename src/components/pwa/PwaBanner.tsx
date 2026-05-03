@@ -29,7 +29,7 @@ export function PwaBanner() {
                 aria-hidden={!showBanner}
                 className={cn(
                     BANNER_SHELL_CLASS,
-                    !showBanner && 'invisible pointer-events-none'
+                    !showBanner && 'pointer-events-none invisible'
                 )}
             >
                 <span className="text-base" aria-hidden="true">

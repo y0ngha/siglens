@@ -72,7 +72,7 @@ export function HeaderUserMenu({ currentUser }: HeaderUserMenuProps) {
                 aria-haspopup="menu"
                 aria-expanded={isOpen}
                 aria-label={`사용자 메뉴 (${tierLabel})`}
-                className="bg-secondary-800 text-secondary-100 hover:bg-secondary-700 relative flex size-10 items-center justify-center rounded-full text-sm font-semibold transition-colors focus-visible:ring-primary-500 focus-visible:ring-2 focus-visible:outline-none"
+                className="bg-secondary-800 text-secondary-100 hover:bg-secondary-700 focus-visible:ring-primary-500 relative flex size-10 items-center justify-center rounded-full text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
                 <span aria-hidden>{initial}</span>
                 <span

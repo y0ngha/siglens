@@ -132,9 +132,7 @@ describe('ContactForm', () => {
         });
         render(<ContactForm />);
 
-        expect(
-            screen.getByText('문의가 접수되었습니다')
-        ).toBeInTheDocument();
+        expect(screen.getByText('문의가 접수되었습니다')).toBeInTheDocument();
     });
 
     it('submission_failed 에러는 폼 상단의 alert 로 노출된다', () => {

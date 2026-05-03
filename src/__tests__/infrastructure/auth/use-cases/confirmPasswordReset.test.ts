@@ -212,12 +212,8 @@ describe('confirmPasswordReset', () => {
     });
 
     it('atomically consumes the token before any password update on success', async () => {
-        const {
-            dependencies,
-            consumeToken,
-            updatePassword,
-            hashPassword,
-        } = makeDependencies();
+        const { dependencies, consumeToken, updatePassword, hashPassword } =
+            makeDependencies();
 
         // Track call order: consume must happen before hashPassword/updatePassword.
         const callOrder: string[] = [];

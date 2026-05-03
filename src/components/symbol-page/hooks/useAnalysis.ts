@@ -138,69 +138,67 @@ export function useAnalysis({
         SubmitAnalysisActionResult,
         Error,
         AnalyzeMutationVariables
-    >(
-        {
-            mutationFn: ({
+    >({
+        mutationFn: ({
+            force,
+            symbol: mutSymbol,
+            fmpSymbol: mutFmpSymbol,
+            modelId: mutModelId,
+        }) => {
+            lastForceRef.current = force;
+            return submitAnalysisAction(
+                mutSymbol,
+                latestTimeframeRef.current,
                 force,
-                symbol: mutSymbol,
-                fmpSymbol: mutFmpSymbol,
-                modelId: mutModelId,
-            }) => {
-                lastForceRef.current = force;
-                return submitAnalysisAction(
-                    mutSymbol,
-                    latestTimeframeRef.current,
-                    force,
-                    mutFmpSymbol,
-                    mutModelId
+                mutFmpSymbol,
+                mutModelId
+            );
+        },
+        onMutate: () => {
+            setPollError(null);
+            setAnalysisResult(null);
+        },
+        onSuccess: (data, variables) => {
+            if (data.status === 'cached') {
+                currentJobIdRef.current = null;
+                setAnalysisResult(data.result);
+                // force 경로는 정상 5분 쿨다운, 일반 캐시 히트는 짧은
+                // 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.
+                setReanalyzeCooldownMs(prev =>
+                    Math.max(
+                        prev,
+                        variables.force
+                            ? REANALYZE_COOLDOWN_MS
+                            : CACHE_HIT_COOLDOWN_MS
+                    )
                 );
-            },
-            onMutate: () => {
-                setPollError(null);
-                setAnalysisResult(null);
-            },
-            onSuccess: (data, variables) => {
-                if (data.status === 'cached') {
-                    currentJobIdRef.current = null;
-                    setAnalysisResult(data.result);
-                    // force 경로는 정상 5분 쿨다운, 일반 캐시 히트는 짧은
-                    // 쿨다운(30s) — 같은 결과 즉시 재호출로 인한 스팸 방지.
-                    setReanalyzeCooldownMs(prev =>
-                        Math.max(
-                            prev,
-                            variables.force
-                                ? REANALYZE_COOLDOWN_MS
-                                : CACHE_HIT_COOLDOWN_MS
-                        )
+            } else if (data.status === 'submitted') {
+                currentJobIdRef.current = data.jobId;
+                setIsPolling(true);
+                // submitted 단계에서는 쿨다운을 시작하지 않는다.
+                // polling 완료(done) 시에만 쿨다운을 시작한다.
+            } else {
+                // tier gate / 일일 사용 한도 초과
+                currentJobIdRef.current = null;
+                setPollError(data.error.message);
+                if (variables.force) {
+                    void releaseReanalyzeCooldown(
+                        latestRef.current.symbol,
+                        latestTimeframeRef.current
                     );
-                } else if (data.status === 'submitted') {
-                    currentJobIdRef.current = data.jobId;
-                    setIsPolling(true);
-                    // submitted 단계에서는 쿨다운을 시작하지 않는다.
-                    // polling 완료(done) 시에만 쿨다운을 시작한다.
-                } else {
-                    // tier gate / 일일 사용 한도 초과
-                    currentJobIdRef.current = null;
-                    setPollError(data.error.message);
-                    if (variables.force) {
-                        void releaseReanalyzeCooldown(
-                            latestRef.current.symbol,
-                            latestTimeframeRef.current
-                        );
-                        setReanalyzeCooldownMs(0);
-                    }
+                    setReanalyzeCooldownMs(0);
                 }
-            },
-            onError: (_error, { force, symbol: mutSymbol }) => {
-                if (!force) return;
-                void releaseReanalyzeCooldown(
-                    mutSymbol,
-                    latestTimeframeRef.current
-                );
-                setReanalyzeCooldownMs(0);
-            },
-        }
-    );
+            }
+        },
+        onError: (_error, { force, symbol: mutSymbol }) => {
+            if (!force) return;
+            void releaseReanalyzeCooldown(
+                mutSymbol,
+                latestTimeframeRef.current
+            );
+            setReanalyzeCooldownMs(0);
+        },
+    });
 
     // 4. Derived variables
     const analysis = analysisResult ?? initialAnalysis;

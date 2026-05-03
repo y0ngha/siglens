@@ -14,12 +14,7 @@ function Dialog({ active }: DialogProps) {
     const ref = useRef<HTMLDivElement>(null);
     useFocusTrap(ref, active);
     return (
-        <div
-            ref={ref}
-            role="dialog"
-            tabIndex={-1}
-            data-testid="dialog"
-        >
+        <div ref={ref} role="dialog" tabIndex={-1} data-testid="dialog">
             <button data-testid="dialog-close">close</button>
             <button data-testid="dialog-action">action</button>
         </div>
@@ -44,9 +39,7 @@ describe('useFocusTrap', () => {
         expect(document.activeElement).toBe(trigger);
 
         render(<Harness active={true} />);
-        expect(document.activeElement).toBe(
-            screen.getByTestId('dialog-close')
-        );
+        expect(document.activeElement).toBe(screen.getByTestId('dialog-close'));
         document.body.removeChild(trigger);
     });
 
@@ -57,9 +50,7 @@ describe('useFocusTrap', () => {
         expect(document.activeElement).toBe(trigger);
 
         rerender(<Harness active={true} />);
-        expect(document.activeElement).toBe(
-            screen.getByTestId('dialog-close')
-        );
+        expect(document.activeElement).toBe(screen.getByTestId('dialog-close'));
 
         rerender(<Harness active={false} />);
         expect(document.activeElement).toBe(trigger);

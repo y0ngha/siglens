@@ -28,11 +28,9 @@ export const AI_PROVIDER_VALUES = [
 // If core adds e.g. 'mistral' to AIProvider, `Exclude<...>` becomes
 // `'mistral'` (non-never), the conditional returns `never`, and the
 // `const = true` assignment fails to typecheck — forcing an update here.
-type _AiProviderExhaustivenessCheck = Exclude<
-    AIProvider,
-    (typeof AI_PROVIDER_VALUES)[number]
-> extends never
-    ? true
-    : never;
+type _AiProviderExhaustivenessCheck =
+    Exclude<AIProvider, (typeof AI_PROVIDER_VALUES)[number]> extends never
+        ? true
+        : never;
 const _aiProviderExhaustive: _AiProviderExhaustivenessCheck = true;
 void _aiProviderExhaustive;

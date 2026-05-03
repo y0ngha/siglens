@@ -78,9 +78,9 @@ describe('issueOAuthState / verifyOAuthState', () => {
         const { state, cookie } = issueOAuthState('google', '/', FIXED_NOW);
         const dotIndex = cookie.value.indexOf('.');
         const tampered = `${cookie.value.slice(0, dotIndex + 1)}AAAAAA`;
-        expect(
-            verifyOAuthState('google', state, tampered, FIXED_NOW)
-        ).toEqual({ ok: false });
+        expect(verifyOAuthState('google', state, tampered, FIXED_NOW)).toEqual({
+            ok: false,
+        });
     });
 
     it('payload가 변경되면 거부한다 (payload tampering)', () => {
@@ -100,9 +100,9 @@ describe('issueOAuthState / verifyOAuthState', () => {
         ).toString('base64url');
         expect(forged).not.toBe(originalPayload);
         const tampered = `${forged}.${signature}`;
-        expect(
-            verifyOAuthState('google', state, tampered, FIXED_NOW)
-        ).toEqual({ ok: false });
+        expect(verifyOAuthState('google', state, tampered, FIXED_NOW)).toEqual({
+            ok: false,
+        });
     });
 
     it('cookie payload가 JSON primitive (null/숫자/문자열)이면 거부한다', () => {

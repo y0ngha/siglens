@@ -187,7 +187,9 @@ describe('searchTicker', () => {
         // missing-translation set must collapse into one translateCompanyNames
         // invocation. Hold the translate promise open until all callers have
         // attached so the second call sees the in-flight entry.
-        let resolveTranslate: (value: Record<string, string>) => void = () => {};
+        let resolveTranslate: (
+            value: Record<string, string>
+        ) => void = () => {};
         const translatePromise = new Promise<Record<string, string>>(
             resolve => {
                 resolveTranslate = resolve;
