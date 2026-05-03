@@ -27,6 +27,7 @@ import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 import { QUERY_KEYS } from '@/lib/queryConfig';
+import { usePageContextLabel } from '@/components/chat/hooks/usePageContextLabel';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -37,6 +38,26 @@ import {
     useRef,
     useState,
 } from 'react';
+
+/**
+ * UI-only system message emitted when the chatbot's page-level analysis
+ * context switches (user navigates between symbol sub-pages).
+ *
+ * Never sent to the LLM — filtered out before prompt construction.
+ */
+export interface ContextSwitchMessage {
+    role: 'system';
+    kind: 'context_switch';
+    /** Korean label of the page the chatbot context switched to. */
+    label: string;
+}
+
+/**
+ * Union of all message shapes that can appear in the chat display history.
+ * `ChatMessage` (user | model) comes from siglens-core; `ContextSwitchMessage`
+ * is a UI-only addition that is never forwarded to the LLM.
+ */
+export type DisplayMessage = ChatMessage | ContextSwitchMessage;
 
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
@@ -89,7 +110,8 @@ export interface GateModalState {
 }
 
 export interface UseChatReturn {
-    messages: ChatMessage[];
+    /** Full display history including UI-only system messages. */
+    messages: DisplayMessage[];
     loadingPhase: ChatLoadingPhase | null;
     analysisUpdated: boolean;
     remainingTokens: number | null;
@@ -107,7 +129,7 @@ export function useChat({
     analysis,
     isAnalysisReady,
 }: UseChatOptions): UseChatReturn {
-    const [messages, setMessages] = useState<ChatMessage[]>([]);
+    const [messages, setMessages] = useState<DisplayMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
     );
@@ -154,6 +176,10 @@ export function useChat({
         queryFn: getRegisteredProvidersAction,
         staleTime: REGISTERED_PROVIDERS_STALE_MS,
     });
+
+    const currentLabel = usePageContextLabel();
+    // null on mount — used to skip emitting a system message on initial render
+    const previousLabelRef = useRef<string | null>(currentLabel);
 
     const { mutateAsync } = useMutation({
         mutationFn: ({
@@ -225,7 +251,11 @@ export function useChat({
             // loadingPhase or analysis change mid-flight (stale closure is intentional —
             // in-flight requests use the snapshot captured when the user submitted)
             if (loadingPhaseRef.current !== null || !isAnalysisReady) return;
-            await mutateAsync({ currentMessages: messagesRef.current, text });
+            // Filter out UI-only system messages before forwarding history to the LLM.
+            const llmMessages = messagesRef.current.filter(
+                (m): m is ChatMessage => m.role !== 'system'
+            );
+            await mutateAsync({ currentMessages: llmMessages, text });
         },
         [isAnalysisReady, mutateAsync]
     );
@@ -349,8 +379,31 @@ export function useChat({
         }
     }, [analysis, isAnalysisReady]);
 
+    // 페이지 전환 시 컨텍스트 시스템 메시지 추가:
+    // pathname이 변경될 때 (초기 마운트 제외) 새로운 페이지 컨텍스트 레이블로
+    // UI-only system message를 conversation에 추가한다.
+    // LLM 프롬프트에는 포함되지 않음 — sendMessage에서 필터링된다.
+    useEffect(() => {
+        const prev = previousLabelRef.current;
+        previousLabelRef.current = currentLabel;
+
+        // Skip initial mount (prev === currentLabel on first run)
+        if (prev === null || currentLabel === null) return;
+        if (prev === currentLabel) return;
+
+        const systemMessage: ContextSwitchMessage = {
+            role: 'system',
+            kind: 'context_switch',
+            label: currentLabel,
+        };
+        startTransition(() => {
+            setMessages(msgs => [...msgs, systemMessage]);
+        });
+    }, [currentLabel]);
+
     // messages 변경 시 localStorage 동기화
     // — 첫 실행(messages=[])은 스킵, storageKey 변경 직후 낡은 messages 저장 방지
+    // — UI-only system messages를 필터링하여 LLM 히스토리만 저장한다
     useEffect(() => {
         if (!didSaveMountRef.current) {
             didSaveMountRef.current = true;
@@ -360,7 +413,10 @@ export function useChat({
             isKeyChangePendingRef.current = false;
             return;
         }
-        saveSession(storageKey, messages);
+        const persistableMessages = messages.filter(
+            (m): m is ChatMessage => m.role !== 'system'
+        );
+        saveSession(storageKey, persistableMessages);
     }, [messages, storageKey]);
 
     useEffect(() => {

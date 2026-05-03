@@ -1,6 +1,7 @@
 'use client';
 
-import type { ChatLoadingPhase, ChatMessage } from '@y0ngha/siglens-core';
+import type { ChatLoadingPhase } from '@y0ngha/siglens-core';
+import type { DisplayMessage } from '@/components/chat/hooks/useChat';
 import {
     type KeyboardEvent,
     type RefObject,
@@ -11,7 +12,7 @@ import {
 } from 'react';
 
 interface UseChatInputOptions {
-    messages: readonly ChatMessage[];
+    messages: readonly DisplayMessage[];
     loadingPhase: ChatLoadingPhase | null;
     isAnalysisReady: boolean;
     sendMessage: (text: string) => Promise<void>;

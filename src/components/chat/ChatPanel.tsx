@@ -14,6 +14,7 @@ import { cn } from '@/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
+import { ContextSwitchSystemMessage } from '@/components/chat/ContextSwitchSystemMessage';
 import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
 
 interface ChatModelOption {
@@ -215,23 +216,35 @@ export function ChatPanel({
                 )}
 
                 {/* 메시지 목록은 append-only이므로 role+index 키가 안전하다 */}
-                {messages.map((msg, i) => (
-                    <div
-                        key={`${msg.role}-${i}`}
-                        className={cn(
-                            'max-w-[85%] rounded-lg p-2.5 text-xs leading-relaxed',
-                            msg.role === 'user'
-                                ? 'bg-primary-600/80 ml-auto rounded-tr-sm text-white'
-                                : 'bg-secondary-700/50 text-secondary-200 rounded-tl-sm'
-                        )}
-                    >
-                        {msg.role === 'user' ? (
-                            msg.content
-                        ) : (
-                            <MarkdownText>{msg.content}</MarkdownText>
-                        )}
-                    </div>
-                ))}
+                {messages.map((msg, i) => {
+                    if (msg.role === 'system') {
+                        return (
+                            <ContextSwitchSystemMessage
+                                key={`system-${i}`}
+                                label={msg.label}
+                            />
+                        );
+                    }
+
+                    // Narrowed to ChatMessage (role: 'user' | 'model') past this point.
+                    return (
+                        <div
+                            key={`${msg.role}-${i}`}
+                            className={cn(
+                                'max-w-[85%] rounded-lg p-2.5 text-xs leading-relaxed',
+                                msg.role === 'user'
+                                    ? 'bg-primary-600/80 ml-auto rounded-tr-sm text-white'
+                                    : 'bg-secondary-700/50 text-secondary-200 rounded-tl-sm'
+                            )}
+                        >
+                            {msg.role === 'user' ? (
+                                msg.content
+                            ) : (
+                                <MarkdownText>{msg.content}</MarkdownText>
+                            )}
+                        </div>
+                    );
+                })}
 
                 {loadingPhase !== null && (
                     <div className="bg-secondary-700/50 max-w-[85%] rounded-lg rounded-tl-sm p-2.5">
