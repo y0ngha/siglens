@@ -20,21 +20,7 @@ const STATIC_ROUTES = new Set([
 // Case-insensitive so both /AAPL and /aapl resolve correctly.
 const SYMBOL_PATH_RE = /^\/([A-Z.]{1,8})(\/(fundamental|news|overall))?$/i;
 
-/**
- * Derives the Korean page-context label from the current pathname.
- *
- * Returns `null` when the current page is not a symbol detail page
- * (e.g. `/account`, `/login`).
- *
- * @example
- * // On /AAPL             → '차트 분석'
- * // On /AAPL/fundamental → '펀더 분석'
- * // On /AAPL/news        → '뉴스 분석'
- * // On /AAPL/overall     → 'AI 종합 분석'
- * // On /account          → null
- *
- * @internal
- */
+/** @internal Korean page-context label from pathname; `null` on non-symbol pages (e.g. `/account`). */
 export function deriveLabel(pathname: string): string | null {
     const match = SYMBOL_PATH_RE.exec(pathname);
     if (!match) return null;

@@ -11,10 +11,7 @@ interface GrowthBarProps {
     description: string;
 }
 
-/**
- * Inline SVG bar for a single growth metric.
- * Positive = green, negative = red. Range clamps at ±100% for display.
- */
+/** Inline SVG bar for a single growth metric. Positive = green, negative = red; clamps at ±100%. */
 function GrowthBar({ label, value, description }: GrowthBarProps) {
     const pct = value !== null ? value * 100 : null;
     const formattedPct =
@@ -46,7 +43,7 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
                 </span>
             </div>
 
-            {/* Inline SVG bar — no chart library; RSC-safe */}
+            {/* chart library 없이 RSC-safe하게 렌더링 */}
             <svg
                 width="100%"
                 height="12"
@@ -89,11 +86,7 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
     );
 }
 
-/**
- * RSC section: YoY revenue and EPS growth bars (inline SVG — no chart library).
- *
- * Data is fetched by the parent RSC page and passed as a typed prop.
- */
+/** RSC section: YoY revenue and EPS growth bars (inline SVG). */
 export function GrowthChart({ growth }: GrowthChartProps) {
     return (
         <section

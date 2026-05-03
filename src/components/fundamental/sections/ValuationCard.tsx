@@ -36,11 +36,7 @@ function MetricRow({ label, value, description, digits = 2 }: MetricRowProps) {
     );
 }
 
-/**
- * RSC section: TTM valuation multiples — PER, PSR, PBR, PEG, EV/EBITDA, EPS.
- *
- * Data is fetched by the parent RSC page and passed as a typed prop.
- */
+/** RSC section: TTM valuation multiples — PER, PSR, PBR, PEG, EV/EBITDA, EPS. */
 export function ValuationCard({ metrics }: ValuationCardProps) {
     return (
         <section

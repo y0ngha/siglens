@@ -3,7 +3,10 @@
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { DEFAULT_TIER, getAllowedModels } from '@y0ngha/siglens-core';
-import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
+import {
+    FALLBACK_MODEL_ID,
+    resolveDefaultModelForProvider,
+} from '@/domain/llm/providerDefaults';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { useNewsAugment } from '@/components/symbol-page/hooks/useNewsAugment';
 
@@ -12,23 +15,15 @@ interface NewsAugmentProps {
     symbol: string;
 }
 
-/**
- * A2+A3 chart page news augment.
- *
- * Shows the "current driver" paragraph from the News analysis result.
- * The analysis result is shared with the `/[symbol]/news` page via cache —
- * if the user visited the News page first, this resolves immediately.
- *
- * Returns `null` while loading, on error, or when there is no recent news.
- * The chart page layout is not disrupted by missing news data.
- */
+// Shows the "current driver" paragraph from the News analysis result.
+// Shares cache with the news page — resolves immediately if the user visited news first.
 export function NewsAugment({ symbol }: NewsAugmentProps) {
     const [selectedProvider] = useSelectedProvider();
     const allowedModels = useMemo(() => getAllowedModels(DEFAULT_TIER), []);
     const modelId = useMemo(
         () =>
             resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
-            'claude-haiku-3-5',
+            FALLBACK_MODEL_ID,
         [selectedProvider, allowedModels]
     );
 

@@ -2,9 +2,7 @@ interface TechnicalSummaryProps {
     bullets: string[];
 }
 
-/**
- * Renders technical analysis bullet points from the overall analysis result.
- */
+/** RSC section: technical analysis bullet points from the overall analysis result. */
 export function TechnicalSummary({ bullets }: TechnicalSummaryProps) {
     if (bullets.length === 0) return null;
     return (

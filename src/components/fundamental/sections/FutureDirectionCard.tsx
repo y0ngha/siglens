@@ -21,11 +21,34 @@ interface GradesBarProps {
     strongSell: number;
 }
 
+function pct(value: number, total: number): string {
+    return ((value / total) * 100).toFixed(1);
+}
+
+function fmtUsd(v: number | null): string {
+    return v !== null
+        ? new Intl.NumberFormat('ko-KR', {
+              style: 'currency',
+              currency: 'USD',
+              maximumFractionDigits: 2,
+          }).format(v)
+        : '—';
+}
+
+function fmtBig(v: number | null): string {
+    return v !== null
+        ? new Intl.NumberFormat('ko-KR', {
+              notation: 'compact',
+              style: 'currency',
+              currency: 'USD',
+              maximumFractionDigits: 1,
+          }).format(v)
+        : '—';
+}
+
 function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
     const total = strongBuy + buy + hold + sell + strongSell;
     if (total === 0) return null;
-
-    const pct = (n: number) => ((n / total) * 100).toFixed(1);
 
     return (
         <div className="mt-3">
@@ -35,7 +58,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         title={`강력 매수 ${strongBuy}`}
                         className="bg-ui-success h-3 w-[var(--bar-w)]"
                         style={
-                            { '--bar-w': `${pct(strongBuy)}%` } as CSSProperties
+                            { '--bar-w': `${pct(strongBuy, total)}%` } as CSSProperties
                         }
                     />
                 )}
@@ -43,21 +66,21 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                     <div
                         title={`매수 ${buy}`}
                         className="bg-ui-success/60 h-3 w-[var(--bar-w)]"
-                        style={{ '--bar-w': `${pct(buy)}%` } as CSSProperties}
+                        style={{ '--bar-w': `${pct(buy, total)}%` } as CSSProperties}
                     />
                 )}
                 {hold > 0 && (
                     <div
                         title={`중립 ${hold}`}
                         className="bg-ui-warning h-3 w-[var(--bar-w)]"
-                        style={{ '--bar-w': `${pct(hold)}%` } as CSSProperties}
+                        style={{ '--bar-w': `${pct(hold, total)}%` } as CSSProperties}
                     />
                 )}
                 {sell > 0 && (
                     <div
                         title={`매도 ${sell}`}
                         className="bg-ui-danger/60 h-3 w-[var(--bar-w)]"
-                        style={{ '--bar-w': `${pct(sell)}%` } as CSSProperties}
+                        style={{ '--bar-w': `${pct(sell, total)}%` } as CSSProperties}
                     />
                 )}
                 {strongSell > 0 && (
@@ -66,7 +89,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                         className="bg-ui-danger h-3 w-[var(--bar-w)]"
                         style={
                             {
-                                '--bar-w': `${pct(strongSell)}%`,
+                                '--bar-w': `${pct(strongSell, total)}%`,
                             } as CSSProperties
                         }
                     />
@@ -118,12 +141,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
     );
 }
 
-/**
- * RSC section: analyst consensus — EPS/revenue estimates, buy/sell
- * breakdown bar, and price target range.
- *
- * Data is fetched by the parent RSC page and passed as typed props.
- */
+/** RSC section: analyst consensus — EPS/revenue estimates, buy/sell breakdown bar, and price target range. */
 export function FutureDirectionCard({
     estimates,
     grades,
@@ -132,25 +150,6 @@ export function FutureDirectionCard({
 }: FutureDirectionCardProps) {
     if (estimates === null && grades === null && ptConsensus === null)
         return null;
-
-    const fmtUsd = (v: number | null) =>
-        v !== null
-            ? new Intl.NumberFormat('ko-KR', {
-                  style: 'currency',
-                  currency: 'USD',
-                  maximumFractionDigits: 2,
-              }).format(v)
-            : '—';
-
-    const fmtBig = (v: number | null) =>
-        v !== null
-            ? new Intl.NumberFormat('ko-KR', {
-                  notation: 'compact',
-                  style: 'currency',
-                  currency: 'USD',
-                  maximumFractionDigits: 1,
-              }).format(v)
-            : '—';
 
     return (
         <section

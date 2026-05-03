@@ -34,13 +34,7 @@ interface CrossLinkCardsProps {
     current: PageKey;
 }
 
-/**
- * Cross-link cards displayed at the bottom of each analysis page.
- *
- * Renders the 3 sibling pages (excluding the current one), with a label
- * and a short description for each. Uses semantic `<section>` + `<h3>` markup.
- * Focus states are visible via `focus-visible:ring-2` on each card link.
- */
+/** Cross-link cards at the bottom of each analysis page — renders the 3 sibling pages. */
 export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
     const others = ALL_PAGES.filter(p => p !== current);
 

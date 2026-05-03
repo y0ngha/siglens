@@ -1,9 +1,3 @@
-/**
- * Shared FMP HTTP helper used by all FMP infrastructure clients.
- *
- * Centralises the `readFmpConfig` call and `fetch` logic so that
- * `fundamentalClient.ts` and `newsClient.ts` do not duplicate the same code.
- */
 import { readFmpConfig } from '@y0ngha/siglens-core';
 
 /** Base URL for all FMP `/stable/*` endpoints. */

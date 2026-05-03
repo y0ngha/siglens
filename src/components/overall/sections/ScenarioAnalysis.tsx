@@ -20,10 +20,7 @@ interface ScenarioAnalysisProps {
     scenarios: OverallScenario[];
 }
 
-/**
- * Renders the bullish / neutral / bearish scenario analysis with trigger
- * conditions and projected price ranges.
- */
+/** RSC section: bullish/neutral/bearish scenarios with trigger conditions and projected price ranges. */
 export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
     if (scenarios.length === 0) return null;
     return (

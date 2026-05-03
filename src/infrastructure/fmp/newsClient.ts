@@ -45,45 +45,20 @@ const RANGE_TO_HOURS: Record<NewsTimeRange, number> = {
     '30d': 720,
 };
 
-/**
- * Compute the cutoff `Date` for a given `NewsTimeRange`.
- * Articles published before this date are excluded.
- *
- * @internal
- */
+/** @internal Cutoff `Date` for filtering articles older than the given `NewsTimeRange`. */
 export function computeCutoff(range: NewsTimeRange): Date {
     const hours = RANGE_TO_HOURS[range];
     return new Date(Date.now() - hours * 60 * 60 * 1_000);
 }
 
-/**
- * Derive a stable, URL-safe 32-character ID from a news article URL.
- *
- * Uses base64url encoding so the result is safe to embed in query-strings
- * and database primary keys without further escaping.
- *
- * @internal
- */
+/** @internal Stable URL-safe 32-char ID from a news article URL (base64url, truncated). */
 export function hashUrlToId(url: string): string {
     return Buffer.from(url).toString('base64url').slice(0, 32);
 }
 
-/**
- * FMP adapter implementing `NewsProvider`.
- *
- * Uses the shared `fmpGet` helper (see `httpClient.ts`) for all HTTP calls.
- */
+/** FMP adapter implementing `NewsProvider`. Uses `fmpGet` for all HTTP calls. */
 export class FmpNewsClient implements NewsProvider {
-    /**
-     * Fetch recent news articles for a symbol within the given time window.
-     *
-     * Requests up to `RANGE_TO_LIMIT[range]` articles from FMP, then filters
-     * out any articles published before the computed cutoff date.
-     *
-     * @param symbol - Ticker symbol (e.g. `"AAPL"`).
-     * @param range  - Lookback window (`'24h'` | `'7d'` | `'30d'`).
-     * @returns Ordered list of news items (most recent first).
-     */
+    /** Fetch news articles for a symbol within the given time window (most recent first). */
     async fetchNews(symbol: string, range: NewsTimeRange): Promise<NewsItem[]> {
         const raw = await fmpGet<RawFmpNews[]>('news/stock', {
             symbols: symbol,
@@ -103,15 +78,8 @@ export class FmpNewsClient implements NewsProvider {
             }));
     }
 
-    /**
-     * Fetch the full earnings calendar from FMP.
-     *
-     * FMP does not support per-symbol filtering on the stable calendar endpoint,
-     * so the full result is returned — callers must filter by symbol at the
-     * repository layer (e.g. after DB caching in Task 2.5).
-     *
-     * @returns All scheduled earnings events across all symbols.
-     */
+    // FMP does not support per-symbol filtering on the stable calendar endpoint —
+    // callers must filter by symbol at the repository layer after DB caching.
     async fetchEarningsCalendarAll(): Promise<EarningsCalendarItem[]> {
         const raw =
             await fmpGet<RawFmpEarningsCalendarItem[]>('earnings-calendar');

@@ -26,17 +26,8 @@ type OverallAnalysisState =
 
 type CleanupFn = () => void;
 
-/**
- * Hook: exposes a `trigger` callback that starts the overall AI analysis
- * state machine. After the user fires the CTA once, it transitions through:
- *
- *   idle → submitting → (pending_dependencies → retry) | polling → done | error
- *
- * Polling interval: 3 s. Dependency retry interval: 3 s.
- *
- * Each call to `trigger` cancels any in-flight run (alive flag + clearTimeout).
- * Cleanup also runs on component unmount.
- */
+// State machine: idle → submitting → (pending_dependencies → retry) | polling → done | error.
+// Each `trigger` call cancels any in-flight run via the alive flag + clearTimeout.
 export function useOverallAnalysis(
     symbol: string,
     timeframe: Timeframe,

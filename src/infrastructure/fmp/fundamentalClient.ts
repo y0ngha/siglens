@@ -64,13 +64,7 @@ function toGradesAction(raw: string): GradesAction {
     return 'other';
 }
 
-/**
- * FMP adapter implementing `FundamentalDataProvider`.
- *
- * Uses the shared `fmpGet` helper (see `httpClient.ts`) for all HTTP calls.
- * All methods map the FMP raw response shapes to domain-neutral input types
- * before returning — the adapter is the boundary responsible for this translation.
- */
+/** FMP adapter implementing `FundamentalDataProvider`. Uses `fmpGet` for all HTTP calls. */
 export class FmpFundamentalClient implements FundamentalDataProvider {
     /** Fetch company profile and map `mktCap` → `marketCap`; returns `null` when FMP returns an empty array. */
     async getProfile(symbol: string): Promise<FundamentalProfileInput | null> {

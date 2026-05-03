@@ -29,10 +29,7 @@ interface SymbolTabsProps {
     symbol: string;
 }
 
-/**
- * Header navigation strip for the 4 analysis pages of a single symbol.
- * Uses nav + aria-current per WCAG (URL-based view switching, not tablist).
- */
+/** Header nav strip for the 4 analysis pages of a symbol. Uses nav + aria-current (URL-based, not tablist). */
 export function SymbolTabs({ symbol }: SymbolTabsProps) {
     const pathname = usePathname();
     const upper = symbol.toUpperCase();

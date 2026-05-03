@@ -1,14 +1,7 @@
 import type { NewsSentiment } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 
-/**
- * Minimal shape that `NewsList` needs to render a single news card.
- *
- * Mirrors the fields from `NewsRow` (NewsItem + nullable analysis columns)
- * without importing from infrastructure. The page-layer RSC fetcher resolves
- * the actual `NewsRow` values and passes them down as this type — structural
- * compatibility is guaranteed by the shared field names.
- */
+// Mirrors NewsRow fields without importing from infrastructure — structural compatibility guaranteed by shared field names.
 export interface NewsDisplayItem {
     id: string;
     publishedAt: string;
@@ -121,12 +114,7 @@ interface NewsListProps {
     items: NewsDisplayItem[];
 }
 
-/**
- * RSC section: renders the list of news cards for a symbol.
- *
- * Data is fetched by the parent RSC section wrapper in `page.tsx` and
- * passed as a typed prop — this component never touches infrastructure.
- */
+/** RSC section: renders the list of news cards for a symbol. Never touches infrastructure. */
 export function NewsList({ items }: NewsListProps) {
     if (items.length === 0) {
         return (
