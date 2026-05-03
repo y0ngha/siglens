@@ -1,8 +1,9 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import React, { useEffect, useEffectEvent, useMemo } from 'react';
+import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
+import { ErrorBoundary } from 'react-error-boundary';
 import {
     getAllowedModels,
     type AnalysisResponse,
@@ -201,7 +202,11 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
-                <NewsAugment symbol={symbol} />
+                <ErrorBoundary fallback={null}>
+                    <Suspense fallback={null}>
+                        <NewsAugment symbol={symbol} />
+                    </Suspense>
+                </ErrorBoundary>
             </>
         ),
         [

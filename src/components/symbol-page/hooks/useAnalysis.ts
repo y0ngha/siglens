@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import {
     useCallback,
     useEffect,
@@ -25,7 +25,7 @@ import {
     releaseReanalyzeCooldown,
     tryAcquireReanalyzeCooldown,
 } from '@/infrastructure/market/reanalyzeCooldown';
-import { sleep } from '@/components/symbol-page/utils/sleep';
+import { QUERY_KEYS } from '@/lib/queryConfig';
 
 interface AnalyzeMutationVariables {
     symbol: string;
@@ -88,24 +88,6 @@ interface UseAnalysisResult {
     cooldownNotice: CooldownNotice | null;
 }
 
-/** Cancel any in-flight worker job, then issue a new mutation. Cancel failures are logged and swallowed so the new mutation always proceeds. */
-async function cancelPendingThenRemutate(
-    jobId: string | null,
-    issueMutation: () => void
-): Promise<void> {
-    if (jobId !== null) {
-        try {
-            await cancelAnalysisJobAction(jobId);
-        } catch (error) {
-            console.warn(
-                '[useAnalysis] cancel failed; proceeding with new mutation',
-                error
-            );
-        }
-    }
-    issueMutation();
-}
-
 export function useAnalysis({
     symbol,
     timeframe,
@@ -122,7 +104,6 @@ export function useAnalysis({
     const [cooldownNotice, setCooldownNotice] = useState<CooldownNotice | null>(
         null
     );
-    const [isPolling, setIsPolling] = useState(false);
     const [pollError, setPollError] = useState<string | null>(null);
 
     // 2. useRef
@@ -141,7 +122,10 @@ export function useAnalysis({
     const initialAnalysisFailedRef = useRef(initialAnalysisFailed);
     // polling 완료 시 force 경로 쿨다운 처리를 위해 마지막 요청의 force 여부를 추적
     const lastForceRef = useRef(false);
-    // 3. useMutation
+    // 폴링 결과의 useEffect 처리에서 동일 데이터 중복 처리 방지
+    const handledPollRef = useRef<unknown>(null);
+
+    // 3. useMutation — submit
     const {
         data: submitData,
         error: submitError,
@@ -171,6 +155,7 @@ export function useAnalysis({
         onMutate: () => {
             setPollError(null);
             setAnalysisResult(null);
+            handledPollRef.current = null;
         },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
@@ -188,7 +173,6 @@ export function useAnalysis({
                 );
             } else if (data.status === 'submitted') {
                 currentJobIdRef.current = data.jobId;
-                setIsPolling(true);
                 // submitted 단계에서는 쿨다운을 시작하지 않는다.
                 // polling 완료(done) 시에만 쿨다운을 시작한다.
             } else {
@@ -214,14 +198,49 @@ export function useAnalysis({
         },
     });
 
-    // 4. Derived variables
+    // 4. useMutation — cancel
+    const { mutate: cancelMutate } = useMutation({
+        mutationFn: (jobId: string) => cancelAnalysisJobAction(jobId),
+        onError: error => {
+            console.warn('[useAnalysis] cancel failed', error);
+        },
+    });
+
+    // 5. useQuery — polling (submitted 후 jobId가 있을 때만 활성화)
+    const pollingJobId =
+        submitData?.status === 'submitted' ? submitData.jobId : null;
+    const { data: pollData } = useQuery({
+        queryKey: pollingJobId
+            ? QUERY_KEYS.analysisJob(pollingJobId)
+            : ['analysis-job', '__disabled__'],
+        queryFn: () => pollAnalysisAction(pollingJobId!),
+        enabled: pollingJobId !== null,
+        refetchInterval: query => {
+            const data = query.state.data;
+            return data?.status === 'processing' ? POLL_INTERVAL_MS : false;
+        },
+        // 폴링 결과는 캐시될 필요 없음 (jobId는 일회성)
+        gcTime: 0,
+    });
+
+    // 6. useQuery — cooldown TTL 동기화 (서버 진실값)
+    const { data: cooldownTtlMs } = useQuery({
+        queryKey: QUERY_KEYS.reanalyzeCooldown(symbol, timeframe),
+        queryFn: () => fetchReanalyzeCooldownMs(symbol, timeframe),
+        // 서버 카운터는 실시간 변하지 않음; 마운트 시 한번만 가져오면 충분
+        staleTime: Infinity,
+        gcTime: 0,
+    });
+
+    // 7. Derived variables
     const analysis = analysisResult ?? initialAnalysis;
+    const isPolling = pollData?.status === 'processing';
     const isAnalyzing = isSubmitting || isPolling;
     const analysisError = submitError?.message ?? pollError ?? null;
     // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
     const isCountdownActive = reanalyzeCooldownMs > 0;
 
-    // 5. Handlers
+    // 8. Handlers
     // latestRef 패턴을 사용하므로 symbol을 deps에서 제외하고 안정적인 함수 참조를 유지한다.
     // Redis 기반 쿨다운을 atomic하게 점유한 뒤에만 mutation을 실행한다.
     const handleReanalyze = useCallback((): void => {
@@ -248,7 +267,7 @@ export function useAnalysis({
         })();
     }, [reset, mutate]);
 
-    // 6. useLayoutEffect
+    // 9. useLayoutEffect
     // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
     useLayoutEffect(() => {
@@ -257,80 +276,49 @@ export function useAnalysis({
         latestModelIdRef.current = modelId;
     });
 
-    // 7. useEffect
+    // 10. useEffect
 
-    // 폴링 — submit 결과가 'submitted'이면 polling 시작
+    // 폴링 결과의 done/error 전이는 cooldown release 같은 외부 사이드이펙트가 동반되므로
+    // 렌더 시 derive 불가능 — setState in effect 패턴이 불가피하다. handledPollRef로 중복 처리는 차단.
     useEffect(() => {
-        if (
-            !submitData ||
-            submitData.status !== 'submitted' ||
-            !submitData.jobId
-        ) {
+        if (!pollData) return;
+        if (handledPollRef.current === pollData) return;
+        handledPollRef.current = pollData;
+
+        if (pollData.status === 'done') {
+            currentJobIdRef.current = null;
+            // eslint-disable-next-line react-hooks/set-state-in-effect
+            setAnalysisResult(pollData.result);
+            if (lastForceRef.current) {
+                setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
+            }
             return;
         }
-
-        const jobId = submitData.jobId;
-        let cancelled = false;
-
-        void (async () => {
-            while (!cancelled) {
-                await sleep(POLL_INTERVAL_MS);
-                if (cancelled) break;
-
-                try {
-                    const result = await pollAnalysisAction(jobId);
-                    if (cancelled) break;
-
-                    if (result.status === 'done') {
-                        currentJobIdRef.current = null;
-                        setAnalysisResult(result.result);
-                        if (lastForceRef.current) {
-                            setReanalyzeCooldownMs(REANALYZE_COOLDOWN_MS);
-                        }
-                        setIsPolling(false);
-                        return;
-                    }
-                    if (result.status === 'error') {
-                        currentJobIdRef.current = null;
-                        // worker/src/retry.ts AI_SERVER_UNSTABLE_CODE 센티넬과 동기화 필요
-                        const errorMessage =
-                            result.error === 'AI_SERVER_UNSTABLE'
-                                ? "죄송합니다. AI 서버가 불안정합니다. 잠시 후 다시 시도해 주세요. 반복해서 발생할 경우 하단 '오류 제보하기'를 이용해 주세요."
-                                : result.error;
-                        setPollError(errorMessage);
-                        if (lastForceRef.current) {
-                            void releaseReanalyzeCooldown(
-                                latestRef.current.symbol,
-                                latestTimeframeRef.current
-                            );
-                            setReanalyzeCooldownMs(0);
-                        }
-                        setIsPolling(false);
-                        return;
-                    }
-                    // 'processing' → 다음 poll 계속
-                } catch {
-                    if (cancelled) break;
-                    currentJobIdRef.current = null;
-                    setPollError('분석 결과 조회에 실패했습니다.');
-                    if (lastForceRef.current) {
-                        void releaseReanalyzeCooldown(
-                            latestRef.current.symbol,
-                            latestTimeframeRef.current
-                        );
-                        setReanalyzeCooldownMs(0);
-                    }
-                    setIsPolling(false);
-                    return;
-                }
+        if (pollData.status === 'error') {
+            currentJobIdRef.current = null;
+            // worker/src/retry.ts AI_SERVER_UNSTABLE_CODE 센티넬과 동기화 필요
+            const errorMessage =
+                pollData.error === 'AI_SERVER_UNSTABLE'
+                    ? "죄송합니다. AI 서버가 불안정합니다. 잠시 후 다시 시도해 주세요. 반복해서 발생할 경우 하단 '오류 제보하기'를 이용해 주세요."
+                    : pollData.error;
+            setPollError(errorMessage);
+            if (lastForceRef.current) {
+                void releaseReanalyzeCooldown(
+                    latestRef.current.symbol,
+                    latestTimeframeRef.current
+                );
+                setReanalyzeCooldownMs(0);
             }
-        })();
+        }
+    }, [pollData]);
 
-        return () => {
-            cancelled = true;
-            setIsPolling(false);
-        };
-    }, [submitData]);
+    // 서버 쿨다운 TTL은 외부 진실값 — 1초 카운트다운 interval과 mutation onSuccess 등 다중 소스가
+    // 같은 state를 갱신하므로 derive 불가능하다.
+    useEffect(() => {
+        if (cooldownTtlMs === undefined) return;
+        // eslint-disable-next-line react-hooks/set-state-in-effect
+        setReanalyzeCooldownMs(cooldownTtlMs);
+    }, [cooldownTtlMs]);
 
     // 서버에서 초기 AI 분석이 실패한 경우 마운트 직후 자동으로 재분석을 실행한다.
     useEffect(() => {
@@ -350,23 +338,18 @@ export function useAnalysis({
         }
         prevTimeframeChangeCountRef.current = timeframeChangeCount;
 
-        // 진행 중인 워커 작업에 취소 신호를 보낸다. reset() 호출 이전에 jobId를 캡처해야 한다.
         const jobId = currentJobIdRef.current;
         currentJobIdRef.current = null;
 
+        if (jobId !== null) cancelMutate(jobId);
         reset();
-        // 이전 폴링 effect는 reset()으로 submitData가 undefined가 되며 cleanup된다.
-        // 그 후에 cancel RPC가 끝날 때까지 기다린 다음 새 mutation을 발사해
-        // 이전 작업의 결과가 새 mutation 상태로 흘러들지 않도록 한다.
-        void cancelPendingThenRemutate(jobId, () => {
-            mutate({
-                symbol: latestRef.current.symbol,
-                force: false,
-                fmpSymbol: latestRef.current.fmpSymbol,
-                modelId: latestModelIdRef.current,
-            });
+        mutate({
+            symbol: latestRef.current.symbol,
+            force: false,
+            fmpSymbol: latestRef.current.fmpSymbol,
+            modelId: latestModelIdRef.current,
         });
-    }, [timeframeChangeCount, reset, mutate]);
+    }, [timeframeChangeCount, reset, mutate, cancelMutate]);
 
     useEffect(() => {
         if (modelId === prevModelIdRef.current) return;
@@ -375,16 +358,15 @@ export function useAnalysis({
         const jobId = currentJobIdRef.current;
         currentJobIdRef.current = null;
 
+        if (jobId !== null) cancelMutate(jobId);
         reset();
-        void cancelPendingThenRemutate(jobId, () => {
-            mutate({
-                symbol: latestRef.current.symbol,
-                force: false,
-                fmpSymbol: latestRef.current.fmpSymbol,
-                modelId,
-            });
+        mutate({
+            symbol: latestRef.current.symbol,
+            force: false,
+            fmpSymbol: latestRef.current.fmpSymbol,
+            modelId,
         });
-    }, [modelId, reset, mutate]);
+    }, [modelId, reset, mutate, cancelMutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
     // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.
@@ -397,19 +379,6 @@ export function useAnalysis({
             window.clearInterval(intervalId);
         };
     }, [isCountdownActive]);
-
-    // 마운트 시점 및 심볼/타임프레임 변경 시 서버에서 쿨다운 진실값을 동기화한다.
-    useEffect(() => {
-        let cancelled = false;
-        void (async () => {
-            const remaining = await fetchReanalyzeCooldownMs(symbol, timeframe);
-            if (cancelled) return;
-            setReanalyzeCooldownMs(remaining);
-        })();
-        return () => {
-            cancelled = true;
-        };
-    }, [symbol, timeframe]);
 
     return {
         analysis,

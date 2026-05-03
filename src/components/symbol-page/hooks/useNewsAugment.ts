@@ -1,90 +1,51 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useSuspenseQuery } from '@tanstack/react-query';
+import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
-import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
+import { sleep } from '@/components/symbol-page/utils/sleep';
+import { QUERY_KEYS } from '@/lib/queryConfig';
 
-/** Polling interval for in-flight news analysis jobs (ms). */
 const POLL_INTERVAL_MS = 3000;
 
-type NewsAugmentState =
-    | { status: 'loading' | 'idle' }
-    | { status: 'done'; result: NewsAnalysisResponse }
-    | { status: 'error'; error: string };
+// `null` is returned for the no-news case so the consumer can render nothing without throwing.
+async function fetchNewsAugment(
+    symbol: string,
+    modelId: ModelId
+): Promise<NewsAnalysisResponse | null> {
+    const submitted = await submitNewsAnalysisAction(symbol, modelId);
 
-// Returns `{ status: 'idle' }` for the no-news case so callers can omit the augment silently.
+    if (submitted.status === 'cached') return submitted.result;
+    if (submitted.status === 'error') {
+        if (submitted.code === 'no_news') return null;
+        throw new Error(
+            typeof submitted.error === 'string'
+                ? submitted.error
+                : '뉴스 분석 요청 중 오류가 발생했습니다.'
+        );
+    }
+
+    const { jobId } = submitted;
+    while (true) {
+        await sleep(POLL_INTERVAL_MS);
+        const polled = await pollNewsAnalysisAction(jobId);
+        if (polled.status === 'done') return polled.result;
+        if (polled.status === 'error') {
+            throw new Error(
+                polled.error ?? '뉴스 분석 중 오류가 발생했습니다.'
+            );
+        }
+    }
+}
+
 export function useNewsAugment(
     symbol: string,
     modelId: ModelId
-): NewsAugmentState {
-    const [state, setState] = useState<NewsAugmentState>({
-        status: 'loading',
+): NewsAnalysisResponse | null {
+    const { data } = useSuspenseQuery({
+        queryKey: QUERY_KEYS.newsAugment(symbol, modelId),
+        queryFn: () => fetchNewsAugment(symbol, modelId),
     });
-
-    useEffect(() => {
-        let alive = true;
-        let pollHandle: ReturnType<typeof setTimeout> | null = null;
-
-        async function run(): Promise<void> {
-            // Reset on symbol/modelId change so the previous symbol's 'done' state isn't shown.
-            setState({ status: 'loading' });
-            const submitted = await submitNewsAnalysisAction(symbol, modelId);
-            if (!alive) return;
-
-            if (submitted.status === 'cached') {
-                setState({ status: 'done', result: submitted.result });
-                return;
-            }
-
-            if (submitted.status === 'error') {
-                if (submitted.code === 'no_news') {
-                    // Graceful: no recent news — hide augment section silently.
-                    setState({ status: 'idle' });
-                    return;
-                }
-                setState({
-                    status: 'error',
-                    error:
-                        typeof submitted.error === 'string'
-                            ? submitted.error
-                            : '뉴스 분석 요청 중 오류가 발생했습니다.',
-                });
-                return;
-            }
-
-            // status === 'submitted' — start polling
-            const { jobId } = submitted;
-
-            const poll = async (): Promise<void> => {
-                const polled = await pollNewsAnalysisAction(jobId);
-                if (!alive) return;
-
-                if (polled.status === 'processing') {
-                    pollHandle = setTimeout(() => {
-                        void poll();
-                    }, POLL_INTERVAL_MS);
-                } else if (polled.status === 'done') {
-                    setState({ status: 'done', result: polled.result });
-                } else {
-                    setState({
-                        status: 'error',
-                        error:
-                            polled.error ?? '뉴스 분석 중 오류가 발생했습니다.',
-                    });
-                }
-            };
-
-            void poll();
-        }
-
-        void run();
-
-        return () => {
-            alive = false;
-            if (pollHandle !== null) clearTimeout(pollHandle);
-        };
-    }, [symbol, modelId]);
-
-    return state;
+    return data;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import { type CSSProperties, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
     DEFAULT_TIER,
     getAllowedModels,
@@ -139,75 +139,7 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
         [selectedProvider]
     );
 
-    const state = useFundamentalAnalysis(symbol, modelId);
+    const result = useFundamentalAnalysis(symbol, modelId);
 
-    if (state.status === 'done') {
-        return <FundamentalAiSummaryView result={state.result} />;
-    }
-
-    if (state.status === 'error') {
-        return (
-            <section
-                aria-labelledby="ai-summary-error-heading"
-                className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6"
-            >
-                <h2
-                    id="ai-summary-error-heading"
-                    className="mb-2 text-lg font-semibold tracking-tight"
-                >
-                    AI 펀더멘털 분석
-                </h2>
-                <p className="text-ui-danger text-sm" role="alert">
-                    {state.error ?? '분석 중 오류가 발생했습니다.'}
-                </p>
-            </section>
-        );
-    }
-
-    const loadingLabel =
-        state.status === 'submitting'
-            ? 'AI 분석 요청 중…'
-            : 'AI 펀더멘털 분석 진행 중…';
-
-    return (
-        <section
-            aria-labelledby="ai-summary-loading-heading"
-            aria-busy="true"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
-        >
-            <h2
-                id="ai-summary-loading-heading"
-                className="mb-4 text-lg font-semibold tracking-tight"
-            >
-                AI 펀더멘털 분석
-            </h2>
-            <div className="flex items-center gap-3">
-                <div
-                    aria-hidden="true"
-                    className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
-                />
-                <p
-                    className="text-secondary-400 text-sm"
-                    aria-live="polite"
-                    aria-atomic="true"
-                >
-                    {loadingLabel}
-                </p>
-            </div>
-            <div className="mt-4 space-y-2">
-                {[...Array(3)].map((_, i) => (
-                    <div
-                        key={i}
-                        className="bg-secondary-700 h-4 w-[var(--skeleton-w)] animate-pulse rounded"
-                        style={
-                            {
-                                '--skeleton-w': `${85 - i * 12}%`,
-                            } as CSSProperties
-                        }
-                        aria-hidden="true"
-                    />
-                ))}
-            </div>
-        </section>
-    );
+    return <FundamentalAiSummaryView result={result} />;
 }

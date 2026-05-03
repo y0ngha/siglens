@@ -114,10 +114,6 @@
 - Rule: WCAG / ARIA Authoring Practices — tablist/tab is for same-page panel switching; URL navigation uses `<nav>` + `aria-current="page"`
 - Context: Converted SymbolTabs from div[role=tablist]+Link[role=tab]+aria-selected+tabIndex+handleKey to nav[aria-label]+Link[aria-current]. Removed keyboard arrow-key handler (nav landmark does not require it per ARIA contract).
 
-## [Phase 2 cumulative | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: `.tsx` 컴포넌트 파일에서 `@/infrastructure/` 직접 import (Task 2.9, 2.10, 2.11에서 반복)
-- Rule: MISTAKES.md Architecture 0 — Component (.tsx) files importing directly from infrastructure
-- Context: 3개 task에서 동일 패턴 (FundamentalAiSummary, NewsList, OverallTriggerCta 각각 infra import → hooks로 이동). 패턴은 이미 MISTAKES.md에 문서화됨.
 
 ## [PR #413 R7 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: useNewsAugment.ts run() 함수가 submitNewsAnalysisAction 호출 전 상태를 'loading'으로 초기화하지 않아, 이전 symbol/modelId의 'done' 상태가 persist
@@ -133,9 +129,6 @@
 - Rule: MISTAKES.md Accessibility 1.5 — aria-hidden removes element from a11y tree; aria-label on hidden element is meaningless
 - Context: Removed aria-label since aria-hidden="true" already hides from screen readers.
 
-- Violation: toCalendarRow marked @internal but exported; used by test file
-- Rule: Inconsistency between JSDoc intent and actual usage
-- Context: Kept export, removed @internal annotation since test file legitimately imports it.
 
 ## [PR #413 R10 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: FinancialHealthCard had nested ternary (3 levels) for conditional BadgeVariant class assignment
@@ -155,35 +148,15 @@
 - Context: Extracted single module-level `const fundamentalClient = new FmpFundamentalClient();` and replaced all 13 call sites.
 
 ## [PR #413 R11 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: Multi-line JSDoc blocks in 4 NEW files: src/infrastructure/fmp/types.ts (file-top 9-line block), src/components/news/sections/AnalystActions.tsx (component 4-line JSDoc), src/lib/news/cacheTtl.ts (file-top 7-line block), src/lib/chat/derivePageContextLabel.ts (STATIC_ROUTES 2-line JSDoc)
-- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line function descriptions; enforce single-line only
-- Context: All multi-line JSDoc blocks compressed to single-line // comments.
-
 - Violation: useOverallAnalysis hook return type was inline `{ state: ...; trigger: () => void }` instead of named interface
 - Rule: MISTAKES.md TypeScript 5.5 — Function return types using inline object literals instead of named types
 - Context: Extracted `export interface UseOverallAnalysisReturn` named interface; hook now returns UseOverallAnalysisReturn.
-
-- Violation: Magic numbers in 2 places: src/infrastructure/fmp/newsClient.ts `hours * 60 * 60 * 1_000` and src/infrastructure/utils/dateKey.ts `9 * 60 * 60 * 1000`
-- Rule: MISTAKES.md 15 — Hardcoded literals in calculations must be extracted to named module-level constants
-- Context: Both replaced with imports from @/domain/constants/time (MS_PER_HOUR, KST_OFFSET_HOURS).
-
-- Violation: @internal annotation on exported functions used by tests (computeCutoff, hashUrlToId in src/infrastructure/fmp/newsClient.ts)
-- Rule: MISTAKES.md Documentation Sync 3 — Inconsistency between JSDoc intent and actual usage
-- Context: Removed @internal annotations since test file newsClient.test.ts legitimately imports both functions for testing.
 
 - Violation: `useMemo(() => getAllowedModels(DEFAULT_TIER), [])` with empty deps in 4 files (FundamentalAiSummary, NewsAiSummary, OverallContent, NewsAugment)
 - Rule: MISTAKES.md Coding Paradigm 10 — Derived constants recreated on every render without memoization
 - Context: Replaced with module-level `const ALLOWED_MODELS = getAllowedModels(DEFAULT_TIER);` constant; modelId useMemo deps reduced.
 
 ## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: ContextSwitchMessage and DisplayMessage in src/domain/types.ts had multi-paragraph JSDoc blocks
-- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line function descriptions; enforce single-line only
-- Context: Both multi-line JSDoc blocks compressed to single-line comments. 9th–10th consecutive round flagging this pattern in NEW code.
-
-- Violation: deriveLabel in src/lib/chat/derivePageContextLabel.ts marked @internal but imported by src/__tests__/lib/chat/derivePageContextLabel.test.ts
-- Rule: MISTAKES.md Documentation Sync 3 — Inconsistency between JSDoc intent (@internal) and actual usage (exported + tested)
-- Context: Removed @internal annotation. Same pattern as R8 toCalendarRow + R11 computeCutoff/hashUrlToId.
-
 - Violation: toEarningsReport in src/infrastructure/db/earningsReportsRepository.ts had inline parameter type { symbol: string; earningsDate: string } while sibling earningsCalendarRepository.ts uses named EarningsCalendarDbRow interface
 - Rule: MISTAKES.md TypeScript 5.5 — Inline object parameter type instead of named interface; breaks sibling consistency
 - Context: Extracted EarningsReportDbRow named interface; toEarningsReport now uses named type matching earningsCalendarRepository pattern.
@@ -202,14 +175,6 @@
 - Context: Current code uses useEffect polling state machines instead of Server Action callback. Architecture sufficient for async job-poll pattern (polling model was intentional design choice for stale background analysis). Deferred to separate cleanup pass requiring architectural rework not warranted in this PR scope.
 
 ## [PR #413 R13 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: `// ─── ... ───` visual section separator WHAT comments across 9 files (24 occurrences): fundamental/fundamentalData.ts (5), fundamental/page.tsx (2), news/newsData.ts (3), news/page.tsx (2), NewsList.tsx (3), AnalystActions.tsx (3), EventCalendar.tsx (3), NewsAiSummary.tsx (2), domain/types.ts (1)
-- Rule: MISTAKES.md Readability — Visual section separators (──────) are dead comments when function/interface names already organize the file
-- Context: Removed all 24 occurrences. Section comments explain WHAT code is grouped below, but file structure (function names, interface definitions, export order) already conveys this organization.
-
-- Violation: EventCalendar.tsx RSC component had multi-line JSDoc block on return type
-- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line function descriptions; enforce single-line only
-- Context: Removed JSDoc entirely; component name is self-explanatory. This is the 12th consecutive round flagging multi-line JSDoc in NEW component code.
-
 - Violation: NewsList.tsx RSC section component had WHAT JSDoc describing "RSC가 문서 화면 리스트를 렌더한다"
 - Rule: MISTAKES.md Readability 3 — Self-explanatory code (Suspense pattern, component name) requires no WHAT comment
 - Context: Removed WHAT comment.

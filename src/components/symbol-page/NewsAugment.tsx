@@ -27,15 +27,15 @@ export function NewsAugment({ symbol }: NewsAugmentProps) {
         [selectedProvider]
     );
 
-    const state = useNewsAugment(symbol, modelId);
+    const result = useNewsAugment(symbol, modelId);
 
-    if (state.status !== 'done') return null;
+    if (result === null) return null;
 
     return (
         <aside className="border-secondary-700 mt-4 rounded-xl border p-4">
             <h3 className="text-sm font-semibold">뉴스 자료 종합</h3>
             <p className="text-secondary-400 mt-2 text-sm">
-                {state.result.currentDriverKo}
+                {result.currentDriverKo}
             </p>
             <Link
                 href={`/${symbol}/news`}

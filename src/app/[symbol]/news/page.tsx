@@ -13,6 +13,9 @@ import { NewsList } from '@/components/news/sections/NewsList';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
 import { AnalystActions } from '@/components/news/sections/AnalystActions';
 import { NewsAiSummary } from '@/components/news/NewsAiSummary';
+import { NewsAiSummarySkeleton } from '@/components/news/NewsAiSummarySkeleton';
+import { NewsAiSummaryError } from '@/components/news/NewsAiSummaryError';
+import { ErrorBoundary } from 'react-error-boundary';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { JsonLd } from '@/components/ui/JsonLd';
 import {
@@ -131,7 +134,11 @@ export default async function NewsPage({ params }: Props) {
         <>
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                <NewsAiSummary symbol={upper} />
+                <ErrorBoundary FallbackComponent={NewsAiSummaryError}>
+                    <Suspense fallback={<NewsAiSummarySkeleton />}>
+                        <NewsAiSummary symbol={upper} />
+                    </Suspense>
+                </ErrorBoundary>
 
                 <Suspense fallback={<SectionSkeleton />}>
                     <NewsListSection symbol={upper} />

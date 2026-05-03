@@ -27,6 +27,9 @@ import { FinancialHealthCard } from '@/components/fundamental/sections/Financial
 import { FutureDirectionCard } from '@/components/fundamental/sections/FutureDirectionCard';
 import { SectorDirectionCard } from '@/components/fundamental/sections/SectorDirectionCard';
 import { FundamentalAiSummary } from '@/components/fundamental/FundamentalAiSummary';
+import { FundamentalAiSummarySkeleton } from '@/components/fundamental/FundamentalAiSummarySkeleton';
+import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
+import { ErrorBoundary } from 'react-error-boundary';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { JsonLd } from '@/components/ui/JsonLd';
 import {
@@ -229,7 +232,11 @@ export default async function FundamentalPage({ params }: Props) {
                     <SectorDirectionSection sector={sector} />
                 </Suspense>
 
-                <FundamentalAiSummary symbol={upper} />
+                <ErrorBoundary FallbackComponent={FundamentalAiSummaryError}>
+                    <Suspense fallback={<FundamentalAiSummarySkeleton />}>
+                        <FundamentalAiSummary symbol={upper} />
+                    </Suspense>
+                </ErrorBoundary>
 
                 <CrossLinkCards symbol={upper} current="fundamental" />
             </main>
