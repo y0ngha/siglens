@@ -105,6 +105,36 @@ import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
   ✅ Record<keyof Interface, ...>로 컴파일 타임 동기화 강제
 ```
 
+**Cross-layer 타입 — domain이 유일한 공유 지점**
+
+`components/`와 `infrastructure/` 양쪽에서 동일한 타입을 import해야 하는 경우, 그 타입은 **반드시 `domain/types.ts`(또는 `domain/<subgroup>/types.ts`)에 위치**한다. 표면상 "presentation-adjacent"한 타입(예: `NewsDisplayItem`, `ContextSwitchMessage`)이라도 cross-layer 공유가 필요하면 domain이 정답이다.
+
+이유: `infrastructure ← lib`는 금지된 의존 방향이며, hook 파일은 `@/domain/types` 또는 `@y0ngha/siglens-core`에서만 타입을 import할 수 있다 (위 hook 규칙 참고). 따라서 `lib/`에 cross-layer 타입을 두면 한쪽 사용처가 반드시 레이어 위반을 일으킨다.
+
+```typescript
+// ❌ presentation에 가까워 보여서 lib에 두면 infrastructure에서 import 불가
+// src/lib/news/types.ts
+export interface NewsDisplayItem { ... }
+
+// src/infrastructure/db/newsRepository.ts
+import type { NewsDisplayItem } from '@/lib/news/types'; // 위반 — infrastructure ← lib
+
+// ✅ cross-layer 공유 필요 → domain에 두고 양쪽이 import
+// src/domain/types.ts
+export interface NewsDisplayItem { ... }
+
+// src/infrastructure/db/newsRepository.ts
+import type { NewsDisplayItem } from '@/domain/types';
+
+// src/components/news/sections/NewsList.tsx
+import type { NewsDisplayItem } from '@/domain/types';
+```
+
+판단 순서:
+1. 단일 레이어에서만 쓰이는 presentation 타입 → 그 레이어 안에 둔다 (`components/feature/types.ts`, `lib/feature/types.ts`)
+2. cross-layer 공유가 필요한 타입 → **무조건 domain** (이름이 "Display"이든 "DTO"이든 무관)
+3. `infrastructure` 내부에서만 쓰이는 raw response 타입 → `infrastructure/<adapter>/types.ts`에 두고 같은 디렉터리 내에서만 사용
+
 **순환 의존성 금지**
 
 ```

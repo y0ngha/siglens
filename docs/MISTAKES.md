@@ -163,14 +163,29 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     → Function names must remain accurate when the underlying constant value changes
     → String literals (event names, storage keys, magic strings) must be extracted to constants, not duplicated across files
     → Time calculations (milliseconds per second, hour, day) must use imported time constants from @/domain/constants/time
+    → **Drift trap**: when a constant exists in a file, every literal use of the same value in that file (including JSX text, error messages, JSDoc, and tests) must reference the constant. Forgetting one creates silent divergence.
     ❌ function computeSecondsUntilKst17() { ... } where 17 is hardcoded; renaming breaks if constant changes
     ❌ Math.round(rawPrice * 100) / 100 with no constant for decimal factor
     ❌ 'siglens:pwa-trigger' string used in multiple files without constant
     ❌ hours * 60 * 60 * 1_000 (ms per hour) or 9 * 60 * 60 * 1000 (KST offset) hardcoded in 2+ places
+    ❌ const SPARKLINE_DAYS = 30; ... <p>최근 30거래일 섹터 수익률</p>  // 상수 변경 시 JSX 라벨이 drift
+    ❌ Math.round(MAX_RETRIES * INTERVAL_MS / 1000) ms→s 변환에 1000 매직 넘버
     ✅ const CACHE_EXPIRY_HOUR_KST = 17; function computeSecondsUntilCacheExpiry() { ... }
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
     ✅ const PWA_TRIGGER_EVENT = 'siglens:pwa-trigger'; import in all files using the event
-    ✅ import { MS_PER_HOUR, KST_OFFSET_HOURS } from '@/domain/constants/time'; use hours * MS_PER_HOUR
+    ✅ import { MS_PER_HOUR, KST_OFFSET_HOURS, MS_PER_SECOND } from '@/domain/constants/time'; use hours * MS_PER_HOUR
+    ✅ <p>{`최근 ${SPARKLINE_DAYS}거래일 섹터 수익률`}</p>  // 상수와 JSX가 항상 일치
+
+15.4. Visual section separator comments (`// ─── Title ───────────`) inside source files
+    → Box-drawing characters used to "organize" sections in code are WHAT-comments in disguise (they label what's below).
+    → Function/interface/type names already organize the file; section labels add visual noise that drifts whenever sections move.
+    → R13 found 24 occurrences in a single PR (9 files, 3 separators each typical) — pattern recurs across all new feature files.
+    ❌ // ─── T1: 15 minutes ──────────────────────────────────────────────────
+       export async function getNewsList(...) { ... }
+    ❌ // ─── Sentiment badge ─────────────────────────────────────────────────
+       const SENTIMENT_LABEL = { ... };
+    ✅ export async function getNewsList(...) { ... }  // function name conveys the section
+    ✅ const SENTIMENT_LABEL = { ... };
 
 15.5. JSX section comments explaining WHAT the code does — recurring pattern (3+ occurrences)
     → Well-named identifiers (components, functions, variables) are self-documenting; don't add comments repeating WHAT the code does
@@ -424,6 +439,24 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ❌ useChat.ts: ERROR_MESSAGES.server_busy = "위의 모델 선택기에서 다른 모델을 선택하세요"  // references ChatPanel dropdown location
     ✅ ERROR_MESSAGES.server_busy = "Change the model and retry"  // describes action, not location
     → When UI layout changes (dropdown moves), message remains correct without code change
+
+14.5. Nested async functions defined inside `useCallback` / `useEffect` body — closure-bound, untestable
+    → State-machine `run`/`poll`/`retry` functions defined inside a hook's `trigger` useCallback inherit closure dependencies (alive flag, retry counter, setTimeout handles, setState) implicitly — they can't be unit-tested in isolation and FF Readability suffers from the viewpoint shift.
+    → Extract to **module-level async functions** that take an explicit context object (e.g., `RunContext { symbol, modelId, setState, isAlive, setRetryHandle }`). The hook becomes a thin coordinator that builds the context and dispatches.
+    ❌ const trigger = useCallback(() => {
+         let alive = true;
+         async function run() { ... uses alive, setState, retryHandle ... }
+         async function poll() { ... uses alive, pollHandle, setState ... }
+         void run();
+       }, [deps]);
+    ✅ async function runAnalysis(ctx: RunContext, dependencyRetryCount: number): Promise<void> { ... uses ctx.isAlive(), ctx.setState ... }
+       async function pollJob(jobId: string, ctx: RunContext): Promise<void> { ... }
+
+       const trigger = useCallback(() => {
+           let alive = true; let retryHandle = null; let pollHandle = null;
+           const ctx: RunContext = { ..., isAlive: () => alive, setRetryHandle: h => { retryHandle = h; }, ... };
+           void runAnalysis(ctx, 0);
+       }, [deps]);
 
 15. Feature-scoped hooks placed in components/hooks/ global directory
     → Feature-specific hooks must live in components/{feature}/hooks/, not components/hooks/
@@ -694,12 +727,35 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ FMP_INTRADAY_TIMEFRAME_MAP extended to include 30min, 4hour; docs/API.md still lists only 1Min-1Hour
    ✅ docs/API.md Timeframe table updated to include all current mappings
 
+2.5. Comments describing TypeScript narrowing or type-system behavior already evident from code
+    → Don't write comments restating what the type system already proves: "narrowed to ChatMessage past this point", "type is non-null here after the guard", etc.
+    → If a reader needs to understand the narrowing, they read the guard above it; comment adds nothing.
+    → R20 example: `// Narrowed to ChatMessage (role: 'user' | 'model') past this point.` — the `if (msg.role === 'system') return ...;` guard already proves this.
+    ❌ if (state.status !== 'done') return null;
+       // status === 'done' past this point  ← TS already narrows; comment is redundant
+       const r = state.result;
+    ✅ if (state.status !== 'done') return null;
+       const r = state.result;  // TS narrows; no comment needed
+
 3. @internal annotation on exported functions when tests legitimately import them
    → Functions marked @internal must either be private (not exported) or actually internal
    → When tests import and test a function, remove @internal annotation (inconsistency signals poor testing API design)
    ❌ export function computeCutoff(…) { } with @internal JSDoc, yet newsClient.test.ts imports and tests it
    ✅ Remove @internal; function is part of the public test interface
    → Applies to: infrastructure utilities, domain helpers used in tests
+
+5. Local enum mirror falls behind upstream `@y0ngha/siglens-core` union expansion — runtime data filtered out silently
+   → Whenever you keep a local `readonly T[]` to validate `value is T` (e.g., `isSkillCategory`), the array must contain every member of the upstream union; siglens-core version bumps that add union members are a sync trigger.
+   → This is not a TypeScript-detectable bug — `readonly SkillCategory[]` accepts a strict-subset literal silently. Discovery happens only when filtered data goes missing at runtime.
+   → Caused R24 production bug: `SKILL_CATEGORIES` missed `'fundamental'`, `'news'` after siglens-core 0.7.2 expanded the union → 6 new skill files parsed with `category: undefined` → siglens-core prompt builder filtered them out → skills never used.
+   ❌ const SKILL_CATEGORIES: readonly SkillCategory[] = ['reversal_bullish', 'reversal_bearish', 'continuation_bullish', 'continuation_bearish', 'neutral'];
+      // siglens-core 0.7.2 added 'fundamental' | 'news' but local mirror not updated
+   ✅ const SKILL_CATEGORIES: readonly SkillCategory[] = ['reversal_bullish', 'reversal_bearish', 'continuation_bullish', 'continuation_bearish', 'neutral', 'fundamental', 'news'];
+      // every union member present
+   → Enforcement options:
+      - Use `Object.keys(map) as T[]` when an upstream `Record<T, ...>` lookup is available
+      - Add a compile-time check: `const _check: SkillCategory = SKILL_CATEGORIES[0];` paired with a satisfies clause on the array literal
+      - Extract the mirror into a named const inside `siglens-core` itself and re-export
 
 4. Multi-line JSDoc blocks for single-line function descriptions — recurring across 11+ PR rounds
    → All function comments must be single-line only; multi-line blocks add unnecessary verbosity
@@ -825,6 +881,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Inconsistency makes the code harder to follow and prone to off-by-one errors
    ❌ callGeminiWithRetry accepts abortIfDelayExceedsMs, internally maps to abortIfCumulativeDelayReachesMs
    ✅ Interface and implementation use identical parameter names; mapping logic is transparent
+
+7. YAGNI: infrastructure methods landed pre-emptively without a production caller in the same PR
+   → New repository / adapter methods must land in the PR that consumes them, not "for future use"
+   → Premature methods accumulate maintenance cost (tests, mock helpers, type churn) for zero current benefit; if requirements change before use, the design is wrong anyway.
+   → R19 example: `earningsCalendarRepository.listForRange(from, to)` defined + tested but never called from production. Removed (method, 2 test cases, `between` import, mock helper).
+   ❌ Add `repo.listForRange()` because "we might need it for monthly reports"
+   ✅ Add `repo.listForRange()` in the PR that introduces the monthly report consumer
 ```
 
 ---
