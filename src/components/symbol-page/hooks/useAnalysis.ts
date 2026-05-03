@@ -26,6 +26,7 @@ import {
     tryAcquireReanalyzeCooldown,
 } from '@/infrastructure/market/reanalyzeCooldown';
 import { QUERY_KEYS } from '@/lib/queryConfig';
+import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/infrastructure/market/pollingConfig';
 
 interface AnalyzeMutationVariables {
     symbol: string;
@@ -42,8 +43,6 @@ const REANALYZE_COOLDOWN_MS = 5 * MS_PER_MINUTE;
 
 /** 캐시 히트(force=false 즉시 응답) 시 적용하는 짧은 클라이언트 쿨다운 — 같은 캐시의 빠른 반복 호출 방지. */
 const CACHE_HIT_COOLDOWN_MS = 30_000;
-
-const POLL_INTERVAL_MS = 10000;
 
 interface UseAnalysisOptions {
     symbol: string;
@@ -217,7 +216,9 @@ export function useAnalysis({
         enabled: pollingJobId !== null,
         refetchInterval: query => {
             const data = query.state.data;
-            return data?.status === 'processing' ? POLL_INTERVAL_MS : false;
+            return data?.status === 'processing'
+                ? CHART_ANALYSIS_POLL_INTERVAL_MS
+                : false;
         },
         // 폴링 결과는 캐시될 필요 없음 (jobId는 일회성)
         gcTime: 0,

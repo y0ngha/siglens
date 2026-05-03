@@ -98,8 +98,7 @@ interface RootLayoutProps {
     readonly children: ReactNode;
 }
 
-// Fetches the current user inside a Suspense boundary so dynamic auth data
-// (cookies → DB) does not block static prerender (Next.js 16 cacheComponents).
+// 쿠키 → DB 조회를 Suspense 경계 안으로 격리해 Next.js 16 cacheComponents의 정적 prerender를 차단하지 않도록 함.
 async function HeaderWithUser() {
     const authUser = await getCurrentUser();
     const currentUser: HeaderUserMenuUser | null = authUser

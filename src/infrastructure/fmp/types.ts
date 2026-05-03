@@ -85,11 +85,16 @@ export interface RawFmpPriceTargetConsensus {
     targetConsensus: number | null;
 }
 
+/** @internal Single lookback-window slice of {@link RawFmpPriceTargetSummary}. */
+interface RawFmpPriceTargetPeriod {
+    avgPriceTarget: number | null;
+}
+
 /** @internal Raw FMP price target summary (grouped by lookback window). */
 export interface RawFmpPriceTargetSummary {
-    lastMonth: { avgPriceTarget: number | null };
-    lastQuarter: { avgPriceTarget: number | null };
-    lastYear: { avgPriceTarget: number | null };
+    lastMonth: RawFmpPriceTargetPeriod;
+    lastQuarter: RawFmpPriceTargetPeriod;
+    lastYear: RawFmpPriceTargetPeriod;
 }
 
 /** @internal Raw FMP sector performance snapshot (one entry per sector per date). */

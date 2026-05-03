@@ -47,9 +47,7 @@ export function Header({ currentUser }: HeaderProps) {
                         {SITE_NAME}
                     </span>
                 </Link>
-                {/* HeaderNav uses usePathname() — wrap in Suspense so the static
-                    prerender shell renders HeaderNavStatic (no active state)
-                    and the pathname-aware nav streams in on the client. */}
+                {/* HeaderNav는 usePathname() 사용 — Suspense로 감싸 PPR prerender shell이 정적 fallback으로 완료되도록 함 */}
                 <Suspense fallback={<HeaderNavStatic items={NAV_ITEMS} />}>
                     <HeaderNav items={NAV_ITEMS} />
                 </Suspense>

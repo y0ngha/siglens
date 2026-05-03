@@ -1,18 +1,6 @@
 import type { NewsSentiment } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
-
-// Mirrors NewsRow fields without importing from infrastructure — structural compatibility guaranteed by shared field names.
-export interface NewsDisplayItem {
-    id: string;
-    publishedAt: string;
-    titleEn: string;
-    titleKo: string | null;
-    sentiment: string | null;
-    category: string | null;
-    summaryKo: string | null;
-    url: string;
-    source: string;
-}
+import type { NewsDisplayItem } from '@/domain/types';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',

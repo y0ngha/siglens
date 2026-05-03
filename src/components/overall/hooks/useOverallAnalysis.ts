@@ -9,9 +9,8 @@ import type {
     OverallAxis,
     Timeframe,
 } from '@y0ngha/siglens-core';
+import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/infrastructure/market/pollingConfig';
 
-const POLL_INTERVAL_MS = 3000;
-const DEPENDENCY_RETRY_MS = 3000;
 const MAX_DEPENDENCY_RETRIES = 20; // 20 × 3 s = 60 s wall-clock
 
 type OverallAnalysisState =
@@ -91,7 +90,7 @@ export function useOverallAnalysis(
                 // Retry the full submit after a delay; core will re-check cache hits.
                 retryHandle = setTimeout(() => {
                     void run();
-                }, DEPENDENCY_RETRY_MS);
+                }, AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
                 return;
             }
 
@@ -119,7 +118,7 @@ export function useOverallAnalysis(
                 if (polled.status === 'processing') {
                     pollHandle = setTimeout(() => {
                         void poll();
-                    }, POLL_INTERVAL_MS);
+                    }, AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
                 } else if (polled.status === 'done') {
                     setState({ status: 'done', result: polled.result });
                 } else {

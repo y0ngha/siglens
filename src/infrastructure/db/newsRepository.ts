@@ -2,16 +2,17 @@ import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type { NewsCardAnalysis, NewsItem } from '@y0ngha/siglens-core';
 import { news } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
+import type { NewsDisplayItem } from '@/domain/types';
 
-/** Domain-level row returned from the `news` table. */
-export interface NewsRow extends NewsItem {
-    titleKo: string | null;
+/** Domain-level row returned from the `news` table; extends the display projection with persistence-only fields. */
+export interface NewsRow extends NewsDisplayItem {
+    /** Original English body — needed for re-analysis but not displayed. */
+    bodyEn: string | null;
+    /** Korean body translation; null before analysis. */
     bodyKo: string | null;
-    summaryKo: string | null;
-    /** LLM-assigned sentiment label; null before analysis. */
-    sentiment: string | null;
-    /** LLM-assigned news category; null before analysis. */
-    category: string | null;
+    /** Symbol/issuer the news belongs to — present on `NewsItem` but not in `NewsDisplayItem`. */
+    symbol: string;
+    /** Timestamp the LLM analysis was attached; null before analysis. */
     analyzedAt: Date | null;
 }
 

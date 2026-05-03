@@ -9,13 +9,7 @@ interface HeaderNavStaticProps {
     readonly items: ReadonlyArray<NavItem>;
 }
 
-/**
- * Static fallback for HeaderNav — renders nav links without active-state
- * detection so there is no dynamic data access (usePathname).
- *
- * Used as the Suspense fallback inside Header so the static PPR prerender
- * shell can complete without accessing request-time data.
- */
+// Static HeaderNav fallback — usePathname 없이 PPR prerender shell이 정적으로 완료되도록 Suspense fallback 역할.
 export function HeaderNavStatic({ items }: HeaderNavStaticProps) {
     return (
         <nav aria-label="주요 네비게이션" className="flex gap-1 sm:gap-4">

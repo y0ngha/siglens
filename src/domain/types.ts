@@ -126,3 +126,18 @@ export interface ContextSwitchMessage {
 
 /** Chat display history union — `ChatMessage` (LLM-bound) + UI-only `ContextSwitchMessage`. */
 export type DisplayMessage = ChatMessage | ContextSwitchMessage;
+
+// ─── News display types ──────────────────────────────────────────────────────
+
+/** Display-side projection of a news item; `infrastructure/db/newsRepository.NewsRow` extends this with persistence-only fields. */
+export interface NewsDisplayItem {
+    id: string;
+    publishedAt: string;
+    titleEn: string;
+    titleKo: string | null;
+    sentiment: string | null;
+    category: string | null;
+    summaryKo: string | null;
+    url: string;
+    source: string;
+}

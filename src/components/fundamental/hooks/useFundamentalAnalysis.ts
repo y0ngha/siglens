@@ -9,8 +9,7 @@ import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitF
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { sleep } from '@/components/symbol-page/utils/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-
-const POLL_INTERVAL_MS = 2500;
+import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/infrastructure/market/pollingConfig';
 
 async function fetchFundamentalAnalysis(
     symbol: string,
@@ -29,7 +28,7 @@ async function fetchFundamentalAnalysis(
 
     const { jobId } = submitted;
     while (true) {
-        await sleep(POLL_INTERVAL_MS);
+        await sleep(FUNDAMENTAL_NEWS_POLL_INTERVAL_MS);
         const polled = await pollFundamentalAnalysisAction(jobId);
         if (polled.status === 'done') return polled.result;
         if (polled.status === 'error') {
