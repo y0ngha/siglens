@@ -49,14 +49,6 @@ export function useOverallAnalysis(
     // Holds the cancel function for the currently in-flight run.
     const cleanupRef = useRef<CleanupFn | null>(null);
 
-    // Cancel on unmount.
-    useEffect(
-        () => () => {
-            cleanupRef.current?.();
-        },
-        []
-    );
-
     const trigger = useCallback(() => {
         // Cancel any prior in-flight run before starting a new one.
         cleanupRef.current?.();
@@ -148,6 +140,14 @@ export function useOverallAnalysis(
 
         void run();
     }, [symbol, timeframe, modelId]);
+
+    // Cancel on unmount.
+    useEffect(
+        () => () => {
+            cleanupRef.current?.();
+        },
+        []
+    );
 
     return { state, trigger };
 }
