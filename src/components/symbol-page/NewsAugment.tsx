@@ -2,12 +2,10 @@
 
 import { useMemo } from 'react';
 import Link from 'next/link';
-import { getAllowedModels } from '@y0ngha/siglens-core';
+import { DEFAULT_TIER, getAllowedModels } from '@y0ngha/siglens-core';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { useNewsAugment } from '@/components/symbol-page/hooks/useNewsAugment';
-
-const DEFAULT_TIER = 'free' as const;
 
 interface NewsAugmentProps {
     /** Ticker symbol (already uppercased). */

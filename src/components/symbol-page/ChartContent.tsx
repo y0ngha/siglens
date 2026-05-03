@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import {
+    DEFAULT_TIER,
     getAllowedModels,
     type AnalysisResponse,
     type Timeframe,
