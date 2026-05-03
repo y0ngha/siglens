@@ -1,0 +1,106 @@
+'use client';
+
+import Image from 'next/image';
+import { useRef } from 'react';
+import { useEscapeKey } from '@/components/hooks/useEscapeKey';
+import { useFocusTrap } from '@/components/hooks/useFocusTrap';
+
+const MODAL_TITLE_ID = 'ios-modal-title';
+
+const IOS_STEP_HEIGHTS = { step1: 70, step2: 120, step3: 80 } as const;
+
+const STEPS = [
+    {
+        step: 1,
+        title: 'Safari 하단 공유 버튼을 탭하세요',
+        description: '화면 아래 가운데에 있는 위쪽 화살표 모양 아이콘입니다',
+        img: '/pwa/ios-step1.svg',
+        height: IOS_STEP_HEIGHTS.step1,
+    },
+    {
+        step: 2,
+        title: "'홈 화면에 추가'를 선택하세요",
+        description: '공유 메뉴를 아래로 스크롤하면 나타납니다',
+        img: '/pwa/ios-step2.svg',
+        height: IOS_STEP_HEIGHTS.step2,
+    },
+    {
+        step: 3,
+        title: "우측 상단 '추가'를 탭하면 완료!",
+        description: 'SigLens 아이콘이 홈 화면에 추가됩니다',
+        img: '/pwa/ios-step3.svg',
+        height: IOS_STEP_HEIGHTS.step3,
+    },
+] as const;
+
+interface IosInstallModalProps {
+    onClose: () => void;
+}
+
+export function IosInstallModal({ onClose }: IosInstallModalProps) {
+    const dialogRef = useRef<HTMLDivElement>(null);
+    useEscapeKey(onClose, true);
+    useFocusTrap(dialogRef, true);
+
+    return (
+        <div
+            data-testid="ios-modal-backdrop"
+            className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center px-4 backdrop-blur-sm"
+            onClick={onClose}
+        >
+            <div
+                ref={dialogRef}
+                data-testid="ios-modal-content"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby={MODAL_TITLE_ID}
+                className="border-secondary-700 bg-secondary-800 w-full max-w-sm rounded-2xl border p-5"
+                onClick={e => e.stopPropagation()}
+            >
+                <div className="mb-4 flex items-center justify-between">
+                    <h2
+                        id={MODAL_TITLE_ID}
+                        className="text-secondary-100 text-base font-bold"
+                    >
+                        홈 화면에 추가하기
+                    </h2>
+                    <button
+                        onClick={onClose}
+                        aria-label="닫기"
+                        className="text-secondary-500 hover:text-secondary-300 focus-visible:ring-primary-500 text-xl leading-none transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                    >
+                        ×
+                    </button>
+                </div>
+                <div className="space-y-3">
+                    {STEPS.map(({ step, title, description, img, height }) => (
+                        <div
+                            key={step}
+                            className="bg-secondary-900 flex gap-3 rounded-xl p-3"
+                        >
+                            <div className="bg-primary-600 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold text-white">
+                                {step}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                                <p className="text-secondary-200 mb-1 text-sm font-semibold">
+                                    {title}
+                                </p>
+                                <p className="text-secondary-400 mb-2 text-xs">
+                                    {description}
+                                </p>
+                                <Image
+                                    src={img}
+                                    alt={`${step}단계 안내`}
+                                    width={300}
+                                    height={height}
+                                    className="w-full rounded-lg"
+                                    unoptimized
+                                />
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        </div>
+    );
+}

@@ -72,6 +72,8 @@ export interface CooldownNotice {
 
 interface UseAnalysisResult {
     analysis: AnalysisResponse;
+    /** 새 분석이 완료됐을 때만 값이 세팅됨. initialAnalysis 기반 초기 로드엔 null. */
+    analysisResult: AnalysisResponse | null;
     isAnalyzing: boolean;
     analysisError: string | null;
     handleReanalyze: () => void;
@@ -379,6 +381,7 @@ export function useAnalysis({
 
     return {
         analysis,
+        analysisResult,
         isAnalyzing,
         analysisError,
         handleReanalyze,

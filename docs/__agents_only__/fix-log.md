@@ -1,21 +1,5 @@
 # Fix Log
 
-## [Issue #396 | feat/396/llm-api-key-management | 2026-05-02]
-- Violation: ApiKeyActionState/RegisteredProvider 타입을 infrastructure/llm/types.ts에 정의 — components가 infrastructure에서 직접 type import
-- Rule: ARCHITECTURE.md — components는 infrastructure에서 import 금지; 타입은 domain에 두어야 layer 규칙 준수 가능
-- Context: domain/llm/types.ts로 이동 후 infrastructure/llm/types.ts에서 re-export. components는 @/domain/llm에서 import.
-
-- Violation: safeClose, handleBackdropClick 함수에 void 반환 타입 미선언
-- Rule: MISTAKES.md #0 — 컴포넌트 render 외부 함수는 반환 타입 명시 필요
-- Context: `: void` 반환 타입 추가.
-
-- Violation: ApiKeySection.tsx, PremiumModelGateModal.tsx에서 raw Tailwind color(emerald-*, amber-*) 직접 사용
-- Rule: MISTAKES.md Design rule 0.5 — 모든 색상은 globals.css에 등록된 semantic token(ui-success, ui-warning, ui-danger) 사용
-- Context: text-emerald-*/bg-emerald-*/ring-emerald-* → ui-success 토큰, text-amber-* → ui-warning 토큰으로 교체.
-
-- Violation: chatAction.ts에서 createDatabaseClient() (인수 필요)를 인수 없이 호출 — getDatabaseClient() (캐시된 싱글톤)를 써야 함
-- Rule: 함수 시그니처 불일치 — 인수 없이 호출 시 TypeScript 오류 발생
-- Context: createDatabaseClient() → getDatabaseClient()로 교체.
 
 ## [PR #405 Round 4 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Violation: deleteAccount.ts revokeOAuthTokens가 명령형 forEach + void Promise로 fire-and-forget 처리
@@ -23,10 +7,6 @@
 - Context: forEach 내부 .catch로 개별 에러 흡수 + 외부 void Promise.allSettled로 묶어 동일한 fire-and-forget + 에러 개별 처리 동작 유지. 테스트 무수정 통과(883/101).
 
 ## [PR #405 Round 2 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Violation: domain/types.ts가 @/infrastructure/db/types에서 AuthUserRecord 타입을 re-export (역방향 레이어 의존)
-- Rule: ARCHITECTURE.md — domain은 infrastructure에 의존 금지 (단방향 infra → domain)
-- Context: AuthUserRecord 정의를 src/domain/auth/types.ts로 이동(@y0ngha/siglens-core의 UserTier만 사용). domain/types.ts는 './auth/types'에서 re-export, infrastructure/db/types.ts는 @/domain/auth/types에서 import 후 re-export하는 방향으로 정정.
-
 - Violation: tokenEncryption.ts 헤더 문구에 "sync obligation" 언급 (Phase 6 완료했으므로 불필요)
 - Rule: Phase 6 마이그레이션 완료 후 더 이상 siglens-core와의 동기화 의무 없음 — 헤더를 과거시제로 갱신
 - Context: tokenEncryption.ts의 "Sync obligation" 문구를 "Phase 6 of the scope-realignment refactor moved the DB layer fully into siglens"로 변경; 동기화 명령문 제거.
@@ -43,12 +23,6 @@
 - Violation: drizzle/0004_petite_medusa.sql이 email_verified DEFAULT true로 추가되어 0005에서 false로 되돌리기 전 가입한 사용자들이 자동 검증 처리됨
 - Rule: 운영 DB에 이미 적용된 마이그레이션은 사후 편집 금지 — 보정이 필요하면 새 forward migration 추가
 - Context: 두 마이그레이션 모두 _journal에 등재되어 적용된 상태. 0004를 retroactive 수정하지 않고 0005에 사후 보존 사유와 향후 처리 가이드를 SQL 주석으로 명시.
-
-## [PR #408 Round 2 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
-## [PR #408 코멘트 반영 | feat/73/챗봇-멀티-provider-모델-선택 | 2026-05-02]
-- Violation: router.ts에서 상대 경로 import 사용 (`./anthropic`, `./gemini`, `./openai`)
-- Rule: MISTAKES.md 7.6 — 모든 import는 path alias 사용 필수
-- Context: src/infrastructure/ai/router.ts의 세 import를 `@/infrastructure/ai/...`로 교체.
 
 
 ## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
@@ -75,11 +49,6 @@
 - Rule: 시스템 경계(외부 API)의 예측 불가능한 응답은 try/catch로 감싸 결과 객체로 변환
 - Context: tokenResponse.ok가 200이라도 본문이 JSON이 아닐 수 있어 await response.json()가 SyntaxError를 throw할 수 있음. google/kakao/apple 세 어댑터 모두에 동일 패턴 적용.
 
-
-## [PR #395 Round 6 | feat/394/email-verification-redis-migration | 2026-05-01]
-- Violation: infrastructure Server Action에서 네트워크 응답 없이 무한 대기 가능
-- Rule: MISTAKES.md Fire-and-Forget #1 — fetch 기반 외부 호출에는 반드시 타임아웃 설정
-- Context: ResendEmailDispatcher.sendEmail이 AbortSignal 없이 Resend SDK를 호출해 네트워크 지연 시 Server Action이 무기한 블로킹. AbortSignal.timeout + Promise.race 패턴으로 10초 타임아웃 추가.
 
 ## [PR #395 Round 4 | feat/394/email-verification-redis-migration | 2026-05-01]
 - Violation: code 단계에서 동일한 codeState.error.message가 AuthErrorAlert와 AuthFieldGroup.error prop 두 곳에 동시 표시
@@ -114,45 +83,4 @@
 - Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
 
 
-## [PR #405 Round 3 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Suggestion applied: `useCurrentUser.ts` and `currentUserAction.ts` now import `AuthUserRecord` directly from `@/domain/auth/types` instead of via `@/domain/types` barrel or `@/infrastructure/db/types`, improving dependency direction (domain types live in domain).
 
-## [PR #409 Round 2 | feat/402/AI-모델-선택-UI | 2026-05-02]
-- Violation: Duplicate import statements from the same module (@y0ngha/siglens-core) in ChartContent.tsx and providerDefaults.ts
-- Rule: MISTAKES.md Components #0 — ESLint import/no-duplicates; always consolidate imports from the same module
-- Context: ChartContent.tsx had separate type import and value import from @y0ngha/siglens-core. providerDefaults.ts same pattern. Merged into single import statement using inline type modifier.
-
-## [PR #409 | feat/402/AI-모델-선택-UI | 2026-05-02]
-- Violation: Hook declaration order violated — useEffect declared before useCallback in useSelectedProvider.ts
-- Rule: CONVENTIONS.md Custom Hook Declaration Order — handlers (useCallback, step 5) must precede useEffect (step 7)
-- Context: useSelectedProvider declared useEffect on line 19 and useCallback on line 27; reordered to useCallback first.
-
-- Violation: VALID_PROVIDERS declared as mutable AIProvider[] instead of readonly
-- Rule: CONVENTIONS.md immutability — module-level constants should use readonly to prevent accidental mutation
-- Context: Inconsistent with other priority arrays in providerDefaults.ts which all use readonly. Changed to readonly AIProvider[].
-
-- Violation: formatModelVariant produces "Sonnet 4 6" instead of "Sonnet 4.6" for claude-sonnet-4-6
-- Rule: Output must match JSDoc examples in the same function
-- Context: Claude model IDs split by '-' produce ["sonnet", "4", "6"] then join with space → "Sonnet 4 6". Fixed by adding .replace(/(\d) (\d)/g, '$1.$2') to merge adjacent numeric parts with dots.
-
-- Violation: AnalysisStatusBanner bottom margin removed when ModelSelector was prepended
-- Rule: Consistent spacing — adding content above should not remove spacing below
-- Context: AnalysisStatusBanner className changed from mb-3 to mt-3, removing bottom gap to AnalysisPanel. Changed to my-3 to preserve both margins.
-
-## [PR #409 Round 3 | feat/402/AI-모델-선택-UI | 2026-05-02]
-- Violation: `'free'` tier 문자열 리터럴이 컴포넌트 본문에 하드코딩됨
-- Rule: MISTAKES.md Coding Paradigm — magic constants must be extracted to module-level constants
-- Context: ChartContent.tsx의 `getAllowedModels('free')` 호출에서 `'free'`를 인라인 리터럴로 사용. `DEFAULT_TIER = 'free' as const`로 추출.
-
-## [Issue #402 | feat/402/AI-모델-선택-UI | 2026-05-02]
-- Violation: localStorage key constant placed in domain/ layer
-- Rule: ARCHITECTURE.md — domain/ must contain only pure business logic; config/storage keys belong in lib/
-- Context: `LOCAL_STORAGE_PROVIDER_KEY` was initially created in `src/domain/llm/types.ts` but localStorage keys are UI/persistence configuration, not domain logic. Moved to `src/lib/storageKeys.ts`.
-
-- Violation: `as` cast without explanatory comment in production code
-- Rule: MISTAKES.md TypeScript rule 7 — every safe-cast `as` must have a comment explaining the guarantee
-- Context: `MODEL_SPECS[modelId as keyof typeof MODEL_SPECS]` in providerDefaults.ts and `(VALID_PROVIDERS as string[])` in useSelectedProvider.ts both lacked comments. Added inline comments.
-
-- Violation: Derived constant recreated every render without useMemo
-- Rule: MISTAKES.md rule 10 — derived constants from props must be wrapped in useMemo
-- Context: `resolvedModels` in ModelSelector.tsx was computed on every render; since handleKeyDown depended on it, useCallback provided no stabilization benefit. Wrapped with useMemo([allowedModels]).
