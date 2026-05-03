@@ -189,6 +189,7 @@ const collectMdFiles = async (dir: string): Promise<string[]> => {
     } catch (error) {
         // Missing skills subdirectory is treated as empty (e.g. fundamental/news
         // directories created lazily as Skill `.md` catalogs are added).
+        // Node.js FS errors always carry .code; non-FS errors yield code === undefined and don't pass the ENOENT check, so the cast is safe.
         if ((error as NodeJS.ErrnoException).code === 'ENOENT') return [];
         throw error;
     }

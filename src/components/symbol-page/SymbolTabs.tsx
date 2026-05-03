@@ -76,6 +76,7 @@ export function SymbolTabs({ symbol }: SymbolTabsProps) {
                     <Link
                         key={t.key}
                         href={href}
+                        // 같은 객체(종목)의 다른 뷰를 전환하는 의미라 tablist + tab 패턴을 선택. URL은 path-based로 유지(SEO + 직접 진입 가능).
                         role="tab"
                         aria-selected={active}
                         tabIndex={active ? 0 : -1}
