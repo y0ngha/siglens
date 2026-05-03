@@ -62,7 +62,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
                                 href={profile.website}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="hover:text-secondary-100 text-secondary-400 underline underline-offset-2 transition-colors"
+                                className="hover:text-secondary-100 text-secondary-400 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 rounded-sm underline underline-offset-2 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                                 translate="no"
                             >
                                 {profile.website.replace(/^https?:\/\//, '')}

@@ -39,7 +39,7 @@ export function PeersTable({ peers }: PeersTableProps) {
                                 <td className="py-2.5 pr-4">
                                     <Link
                                         href={`/${peer.symbol}/fundamental`}
-                                        className="text-primary-400 font-mono font-medium hover:underline"
+                                        className="text-primary-400 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 rounded-sm font-mono font-medium hover:underline focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                                         translate="no"
                                     >
                                         {peer.symbol}
