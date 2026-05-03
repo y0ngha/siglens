@@ -11,6 +11,7 @@ import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
+import { todayKstIsoDate } from '@/lib/dateKey';
 import type { NewsRow } from '@/infrastructure/db/newsRepository';
 
 /**
@@ -52,7 +53,7 @@ export async function submitNewsAnalysisAction(
 
     const [rows, next] = await Promise.all([
         newsRepo.listBySymbol(symbol, NEWS_LOOKBACK_MS),
-        calRepo.getNextForSymbol(symbol, new Date().toISOString().slice(0, 10)),
+        calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
     ]);
 
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
