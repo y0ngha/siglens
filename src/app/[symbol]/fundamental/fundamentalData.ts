@@ -103,26 +103,30 @@ export { todayKstIsoDate } from '@/lib/dateKey';
 
 // ─── T2: 1 hour (date-keyed) ─────────────────────────────────────────────────
 
+const _getSectorSnapshot = unstable_cache(
+    async (date: string) =>
+        new FmpFundamentalClient().getSectorPerformanceSnapshot(date),
+    ['fundamental:sectorSnapshot'],
+    { revalidate: TTL_T2_1H, tags: ['fundamental:sector-snapshot'] }
+);
+
 export function getSectorSnapshot(
     date: string
 ): Promise<FundamentalSectorPerformanceInput[]> {
-    return unstable_cache(
-        async () =>
-            new FmpFundamentalClient().getSectorPerformanceSnapshot(date),
-        ['fundamental:sector-snapshot', date],
-        { revalidate: TTL_T2_1H, tags: ['fundamental:sector-snapshot'] }
-    )();
+    return _getSectorSnapshot(date);
 }
 
 // ─── T2: 24 hours (sector-keyed) ────────────────────────────────────────────
 
+const _getHistoricalSector = unstable_cache(
+    async (sector: string) =>
+        new FmpFundamentalClient().getHistoricalSectorPerformance(sector),
+    ['fundamental:sectorHistorical'],
+    { revalidate: TTL_T2_24H, tags: ['fundamental:historical-sector'] }
+);
+
 export function getHistoricalSector(
     sector: string
 ): Promise<FundamentalSectorHistoricalInput[]> {
-    return unstable_cache(
-        async () =>
-            new FmpFundamentalClient().getHistoricalSectorPerformance(sector),
-        ['fundamental:historical-sector', sector],
-        { revalidate: TTL_T2_24H, tags: ['fundamental:historical-sector'] }
-    )();
+    return _getHistoricalSector(sector);
 }
