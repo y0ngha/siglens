@@ -4,9 +4,9 @@
 
 **Goal:** siglens에 기본적 분석(`/[symbol]/fundamental`), 뉴스 분석(`/[symbol]/news`), AI 종합 분석(`/[symbol]/overall`) 페이지를 추가하고, 차트 페이지에 가벼운 뉴스 보강 섹션을 추가한다.
 
-**Architecture:** Cross-repo. siglens-core(npm)에 새 use-case 3종(submit/poll/cancel × Fundamental/News/Overall) + 프롬프트 빌더 + 응답 정규화 + Provider 인터페이스(`FundamentalDataProvider`, `NewsProvider`) + Skills loader 확장 + 챗봇 프롬프트 빌더 확장을 추가. siglens(Next.js)는 FMP `/stable/*` 어댑터, Drizzle 스키마 3개(`news`, `earnings_calendar`, `earnings_reports`), Vercel Cron, 페이지 라우트 3개 + 차트 페이지 보강, 헤더 세그먼트 탭 + cross-link 카드, 챗봇 컨텍스트 전환 UI, Skills `.md` 카탈로그 신규 카테고리 2종(`fundamental/`, `news/`)를 추가.
+**Architecture:** Cross-repo. siglens-core(npm)에 새 use-case 3종(submit/poll/cancel × Fundamental/News/Overall) + 프롬프트 빌더 + 응답 정규화 + Provider 인터페이스(`FundamentalDataProvider`, `NewsProvider`) + Skills loader 확장 + 챗봇 프롬프트 빌더 확장을 추가. siglens(Next.js)는 FMP `/stable/*` 어댑터, Drizzle 스키마 3개(`news`, `earnings_calendar`, `earnings_reports`), GitHub Actions Cron, 페이지 라우트 3개 + 차트 페이지 보강, 헤더 세그먼트 탭 + cross-link 카드, 챗봇 컨텍스트 전환 UI, Skills `.md` 카탈로그 신규 카테고리 2종(`fundamental/`, `news/`)를 추가.
 
-**Tech Stack:** TypeScript, Next.js 16(App Router, RSC + Suspense streaming), React 19, `@y0ngha/siglens-core`(분석 도메인), Drizzle ORM(Neon Postgres), `@upstash/redis`(분석 캐시 + Job 큐), Vercel Cron, Gemini SDK(`gemini-2.5-flash-lite` 번역/sentiment 전용 + 사용자 노출 모델), Jest(단위/통합).
+**Tech Stack:** TypeScript, Next.js 16(App Router, RSC + Suspense streaming), React 19, `@y0ngha/siglens-core`(분석 도메인), Drizzle ORM(Neon Postgres), `@upstash/redis`(분석 캐시 + Job 큐), GitHub Actions Cron, Gemini SDK(`gemini-2.5-flash-lite` 번역/sentiment 전용 + 사용자 노출 모델), Jest(단위/통합).
 
 ---
 
@@ -120,8 +120,8 @@ CLAUDE.md Skill Usage Rules와 일관. 각 task 시작 시 subagent dispatch pro
 | `src/infrastructure/db/repositories/newsRepository.ts` | upsert/get/listBySymbol | 생성 |
 | `src/infrastructure/db/repositories/earningsCalendarRepository.ts` | upsert/getNextForSymbol/listForRange | 생성 |
 | `src/infrastructure/db/repositories/earningsReportsRepository.ts` | upsert/getLatestForSymbol | 생성 |
-| `src/app/api/cron/earnings-calendar-sync/route.ts` | Vercel Cron 핸들러: FMP fetch → upsert | 생성 |
-| `vercel.json` | crons 항목 추가 (`/api/cron/earnings-calendar-sync` 1일 1회 06:00 UTC) | 수정 |
+| `src/app/api/cron/earnings-calendar-sync/route.ts` | GitHub Actions Cron 핸들러: FMP fetch → upsert | 생성 |
+| `.github/workflows/earnings-calendar-cron.yml` | GitHub Actions Cron 워크플로우 (`0 6 * * *` UTC, Bearer 인증) | 생성 |
 | `src/infrastructure/market/submitFundamentalAnalysisAction.ts` | Server Action — siglens-core `submitFundamentalAnalysis` 호출 | 생성 |
 | `src/infrastructure/market/pollFundamentalAnalysisAction.ts` | Server Action | 생성 |
 | `src/infrastructure/market/cancelFundamentalAnalysisJobAction.ts` | Server Action | 생성 |
@@ -3504,9 +3504,13 @@ git commit -m "feat: news/earnings repository 구현"
 
 ### Task 2.5: Cron — earnings-calendar 1일 1회 sync
 
+> **Cron 인프라 변경 (2026-05-02):** Vercel Cron → GitHub Actions Cron으로 전환.
+> 이유: Vercel Cron은 Pro 플랜 필요; GitHub Actions Cron은 무료. 일별 스케줄(`0 6 * * *` UTC)은 ±15분 레이턴시 허용 범위이므로 GitHub Actions로 충분.
+> 인증 방식 동일: `Authorization: Bearer CRON_SECRET`.
+
 **Files:**
 - Create: `src/app/api/cron/earnings-calendar-sync/route.ts`
-- Modify: `vercel.json`
+- Create: `.github/workflows/earnings-calendar-cron.yml`
 - Test: `src/__tests__/app/api/cron/earnings-calendar-sync.test.ts`
 
 - [ ] **Step 1: 라우트 구현**
@@ -3522,7 +3526,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(req: Request): Promise<Response> {
-    // Vercel Cron은 Authorization 헤더로 CRON_SECRET 전달
+    // Authorization: Bearer CRON_SECRET (GitHub Actions Cron에서 전달)
     const auth = req.headers.get('authorization');
     if (auth !== `Bearer ${process.env.CRON_SECRET}`) {
         return new NextResponse('unauthorized', { status: 401 });
@@ -3535,14 +3539,27 @@ export async function GET(req: Request): Promise<Response> {
 }
 ```
 
-- [ ] **Step 2: vercel.json 갱신**
+- [ ] **Step 2: GitHub Actions Cron 워크플로우 생성**
 
-```json
-{
-  "crons": [
-    { "path": "/api/cron/earnings-calendar-sync", "schedule": "0 6 * * *" }
-  ]
-}
+```yaml
+# .github/workflows/earnings-calendar-cron.yml
+name: Earnings Calendar Cron
+
+on:
+  schedule:
+    - cron: '0 6 * * *' # 06:00 UTC = 15:00 KST 매일 (미국 정규장 마감 후)
+  workflow_dispatch: # 수동 트리거 (디버깅용)
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger earnings-calendar sync
+        run: |
+          curl -fsS -X GET \
+            "${{ secrets.SIGLENS_PRODUCTION_URL }}/api/cron/earnings-calendar-sync" \
+            -H "Authorization: Bearer ${{ secrets.CRON_SECRET }}"
 ```
 
 (매일 06:00 UTC = 한국 시간 15:00, 미장 마감 후)
@@ -3585,8 +3602,8 @@ Expected: PASS
 - [ ] **Step 4: Commit**
 
 ```bash
-git add src/app/api/cron/earnings-calendar-sync/route.ts vercel.json src/__tests__/app/api/cron/earnings-calendar-sync.test.ts
-git commit -m "feat: earnings-calendar Cron sync (Vercel Cron 06:00 UTC)"
+git add src/app/api/cron/earnings-calendar-sync/route.ts .github/workflows/earnings-calendar-cron.yml src/__tests__/app/api/cron/earnings-calendar-sync.test.ts
+git commit -m "feat: earnings-calendar Cron sync (GitHub Actions Cron 06:00 UTC)"
 ```
 
 ### Task 2.6: Server Actions — submit/poll/cancel × 3
@@ -4559,7 +4576,7 @@ Create a PR for siglens worktree.
 ### Task 3.2: 프로덕션 배포 후 smoke
 
 - [ ] Vercel 배포 후 4개 페이지 manual 확인
-- [ ] Cron 트리거 manual 한 번 실행 (다음 06:00 UTC 기다리지 않기 위해)
+- [ ] GitHub Actions `workflow_dispatch`로 Cron 수동 트리거 1회 실행 (다음 06:00 UTC 기다리지 않기 위해)
 - [ ] 뉴스 카드 LLM 호출 1건 동작 확인 (DB row의 `analyzed_at` 채워지는지)
 - [ ] Overall 분석 한 번 트리거 + 30분 안에 완료 확인
 
