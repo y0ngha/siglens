@@ -1,7 +1,3 @@
-// `use cache`-backed data fetchers for the fundamental analysis page.
-// Lives in the `app/` layer so infrastructure imports are allowed.
-// Section components in `components/fundamental/sections/` receive resolved
-// domain types as props — they never touch infrastructure directly.
 import { cacheLife, cacheTag } from 'next/cache';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import {
@@ -26,6 +22,8 @@ import type {
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
 
+const fundamentalClient = new FmpFundamentalClient();
+
 // ─── T4: 30 days ────────────────────────────────────────────────────────────
 
 export async function getProfile(
@@ -34,7 +32,7 @@ export async function getProfile(
     'use cache';
     cacheLife({ revalidate: TTL_T4_30D });
     cacheTag(`fundamental:profile:${symbol}`);
-    return new FmpFundamentalClient().getProfile(symbol);
+    return fundamentalClient.getProfile(symbol);
 }
 
 export async function getStockPeers(
@@ -43,7 +41,7 @@ export async function getStockPeers(
     'use cache';
     cacheLife({ revalidate: TTL_T4_30D });
     cacheTag(`fundamental:stock-peers:${symbol}`);
-    return new FmpFundamentalClient().getStockPeers(symbol);
+    return fundamentalClient.getStockPeers(symbol);
 }
 
 // ─── T3: 7 days ─────────────────────────────────────────────────────────────
@@ -54,7 +52,7 @@ export async function getKeyMetricsTtm(
     'use cache';
     cacheLife({ revalidate: TTL_T3_7D });
     cacheTag(`fundamental:key-metrics-ttm:${symbol}`);
-    return new FmpFundamentalClient().getKeyMetricsTtm(symbol);
+    return fundamentalClient.getKeyMetricsTtm(symbol);
 }
 
 export async function getRatiosTtm(
@@ -63,7 +61,7 @@ export async function getRatiosTtm(
     'use cache';
     cacheLife({ revalidate: TTL_T3_7D });
     cacheTag(`fundamental:ratios-ttm:${symbol}`);
-    return new FmpFundamentalClient().getRatiosTtm(symbol);
+    return fundamentalClient.getRatiosTtm(symbol);
 }
 
 export async function getIncomeStatementGrowth(
@@ -72,7 +70,7 @@ export async function getIncomeStatementGrowth(
     'use cache';
     cacheLife({ revalidate: TTL_T3_7D });
     cacheTag(`fundamental:income-statement-growth:${symbol}`);
-    return new FmpFundamentalClient().getIncomeStatementGrowth(symbol);
+    return fundamentalClient.getIncomeStatementGrowth(symbol);
 }
 
 export async function getFinancialScores(
@@ -81,7 +79,7 @@ export async function getFinancialScores(
     'use cache';
     cacheLife({ revalidate: TTL_T3_7D });
     cacheTag(`fundamental:financial-scores:${symbol}`);
-    return new FmpFundamentalClient().getFinancialScores(symbol);
+    return fundamentalClient.getFinancialScores(symbol);
 }
 
 export async function getCashFlowStatement(
@@ -90,7 +88,7 @@ export async function getCashFlowStatement(
     'use cache';
     cacheLife({ revalidate: TTL_T3_7D });
     cacheTag(`fundamental:cash-flow-statement:${symbol}`);
-    return new FmpFundamentalClient().getCashFlowStatement(symbol);
+    return fundamentalClient.getCashFlowStatement(symbol);
 }
 
 // ─── T2: 24 hours ────────────────────────────────────────────────────────────
@@ -101,7 +99,7 @@ export async function getAnalystEstimates(
     'use cache';
     cacheLife({ revalidate: TTL_T2_24H });
     cacheTag(`fundamental:analyst-estimates:${symbol}`);
-    return new FmpFundamentalClient().getAnalystEstimates(symbol);
+    return fundamentalClient.getAnalystEstimates(symbol);
 }
 
 export async function getGradesConsensus(
@@ -110,7 +108,7 @@ export async function getGradesConsensus(
     'use cache';
     cacheLife({ revalidate: TTL_T2_24H });
     cacheTag(`fundamental:grades-consensus:${symbol}`);
-    return new FmpFundamentalClient().getGradesConsensus(symbol);
+    return fundamentalClient.getGradesConsensus(symbol);
 }
 
 export async function getPriceTargetConsensus(
@@ -119,7 +117,7 @@ export async function getPriceTargetConsensus(
     'use cache';
     cacheLife({ revalidate: TTL_T2_24H });
     cacheTag(`fundamental:price-target-consensus:${symbol}`);
-    return new FmpFundamentalClient().getPriceTargetConsensus(symbol);
+    return fundamentalClient.getPriceTargetConsensus(symbol);
 }
 
 export async function getPriceTargetSummary(
@@ -128,7 +126,7 @@ export async function getPriceTargetSummary(
     'use cache';
     cacheLife({ revalidate: TTL_T2_24H });
     cacheTag(`fundamental:price-target-summary:${symbol}`);
-    return new FmpFundamentalClient().getPriceTargetSummary(symbol);
+    return fundamentalClient.getPriceTargetSummary(symbol);
 }
 
 // ─── T2: 1 hour (date-keyed) ─────────────────────────────────────────────────
@@ -139,7 +137,7 @@ export async function getSectorSnapshot(
     'use cache';
     cacheLife({ revalidate: TTL_T2_1H });
     cacheTag(`fundamental:sector-snapshot:${date}`);
-    return new FmpFundamentalClient().getSectorPerformanceSnapshot(date);
+    return fundamentalClient.getSectorPerformanceSnapshot(date);
 }
 
 // ─── T2: 24 hours (sector-keyed) ────────────────────────────────────────────
@@ -150,5 +148,5 @@ export async function getHistoricalSector(
     'use cache';
     cacheLife({ revalidate: TTL_T2_24H });
     cacheTag(`fundamental:historical-sector:${sector}`);
-    return new FmpFundamentalClient().getHistoricalSectorPerformance(sector);
+    return fundamentalClient.getHistoricalSectorPerformance(sector);
 }

@@ -20,10 +20,6 @@ export async function fmpGet<T>(
     if (!res.ok) {
         throw new Error(`FMP ${path} ${res.status}`);
     }
-    // FMP API responses are trusted to match the caller-provided T shape.
-    // Each adapter method (FmpFundamentalClient.*, FmpNewsClient.*) is responsible
-    // for type-narrowing the result via explicit field mapping before passing
-    // it across the layer boundary. Runtime malformation surfaces as a TypeError
-    // in the calling mapper rather than silent corruption.
+    // Adapter methods narrow the result via explicit field mapping; malformation surfaces as TypeError in the mapper.
     return (await res.json()) as T;
 }

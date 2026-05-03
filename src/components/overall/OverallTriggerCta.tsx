@@ -4,10 +4,6 @@ interface OverallTriggerCtaProps {
     onTrigger: () => void;
 }
 
-/**
- * Initial call-to-action card shown when the overall analysis has not been
- * triggered yet. Clicking the button starts the 3-axis AI analysis.
- */
 export function OverallTriggerCta({ onTrigger }: OverallTriggerCtaProps) {
     return (
         <section

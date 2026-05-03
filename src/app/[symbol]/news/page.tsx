@@ -7,7 +7,7 @@ import {
     getNextEarningsCalendar,
     getLatestEarningsReport,
 } from '@/app/[symbol]/news/newsData';
-import { todayKstIsoDate } from '@/lib/dateKey';
+import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { NewsList } from '@/components/news/sections/NewsList';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
@@ -29,9 +29,6 @@ interface Props {
     params: Promise<{ symbol: string }>;
 }
 
-/**
- * Generate page-level SEO metadata for `/[symbol]/news`.
- */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
@@ -115,15 +112,6 @@ function SectionSkeleton() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-/**
- * RSC page: `/[symbol]/news`.
- *
- * Fire-and-forget: triggers `ensureNewsCardsAnalyzedAction` so that on
- * future loads the news cards will have AI-generated translations +
- * sentiment. The current render always shows whatever is already in the DB.
- *
- * Streams each of the 4 sections independently via Suspense.
- */
 export default async function NewsPage({ params }: Props) {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
@@ -132,10 +120,7 @@ export default async function NewsPage({ params }: Props) {
         notFound();
     }
 
-    // Fire-and-forget: fetch fresh news + trigger per-card analysis.
-    // Page renders with existing DB data; subsequent loads benefit from
-    // newly analysed cards. waitUntil keeps the serverless function alive
-    // until the promise settles without blocking the response stream.
+    // waitUntil keeps the serverless function alive past response completion so the analysis settles without blocking the stream.
     waitUntil(
         ensureNewsCardsAnalyzedAction(upper).catch((error: unknown) => {
             console.error(
@@ -154,7 +139,6 @@ export default async function NewsPage({ params }: Props) {
         <>
             <JsonLd data={breadcrumbJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                {/* AI Summary — Client component, no Suspense needed (renders loading state itself) */}
                 <NewsAiSummary symbol={upper} />
 
                 <Suspense fallback={<SectionSkeleton />}>

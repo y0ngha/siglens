@@ -22,9 +22,6 @@ interface Props {
     searchParams: Promise<{ tf?: string }>;
 }
 
-/**
- * Generate page-level SEO metadata for `/[symbol]/overall`.
- */
 export async function generateMetadata({
     params,
 }: Pick<Props, 'params'>): Promise<Metadata> {
@@ -65,18 +62,7 @@ export async function generateMetadata({
     };
 }
 
-/**
- * RSC page: `/[symbol]/overall`.
- *
- * Thin shell that:
- *   1. Validates the symbol parameter.
- *   2. Injects BreadcrumbList JSON-LD for SEO.
- *   3. Mounts the client-side `OverallContent` orchestrator.
- *   4. Renders `CrossLinkCards` for sibling page navigation.
- *
- * The `?tf=` query param forwards the timeframe to the client component;
- * the canonical URL strips it (query params are excluded from `alternates.canonical`).
- */
+// `?tf=` is read into a Client prop; canonical URL excludes it so search engines see one URL per page.
 export default async function OverallPage({ params, searchParams }: Props) {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();

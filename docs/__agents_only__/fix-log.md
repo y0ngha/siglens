@@ -119,18 +119,10 @@
 - Rule: MISTAKES.md Architecture 0 — Component (.tsx) files importing directly from infrastructure
 - Context: 3개 task에서 동일 패턴 (FundamentalAiSummary, NewsList, OverallTriggerCta 각각 infra import → hooks로 이동). 패턴은 이미 MISTAKES.md에 문서화됨.
 
-- Violation: 함수 반환 타입으로 인라인 객체 리터럴 사용 (Task 2.3, 2.4, 2.10에서 반복)
-- Rule: MISTAKES.md TypeScript 5.5 — Function return types using inline object literals
-- Context: NewsDbRow, NewsList 등에서 명명된 타입으로 추출됨. 패턴은 이미 MISTAKES.md에 문서화됨.
-
 ## [PR #413 R7 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: useNewsAugment.ts run() 함수가 submitNewsAnalysisAction 호출 전 상태를 'loading'으로 초기화하지 않아, 이전 symbol/modelId의 'done' 상태가 persist
 - Rule: MISTAKES.md Components 6.5 — State/function/documentation divergence
 - Context: Added `setState({ status: 'loading' })` at top of run() to reset state before async operation. Symbol/modelId change now properly clears prior result state.
-
-- Violation: NewsAugment.tsx에서 WHAT 주석 "Shows the 'current driver' paragraph from the News analysis result."로 JSX 섹션 설명
-- Rule: MISTAKES.md 15.5 — JSX section comments explaining WHAT the code does
-- Context: Removed WHAT comment. Retained WHY comment about cache sharing with FundamentalAiSummary to explain design rationale.
 
 - Violation: todayKstIsoDate를 fundamentalData.ts와 newsData.ts에서 re-export하여 page.tsx 편의성을 위해 중간 계층 생성
 - Rule: Module boundaries — data modules should not re-export lib utilities; consumers import directly from source
@@ -144,5 +136,22 @@
 - Violation: toCalendarRow marked @internal but exported; used by test file
 - Rule: Inconsistency between JSDoc intent and actual usage
 - Context: Kept export, removed @internal annotation since test file legitimately imports it.
+
+## [PR #413 R10 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: FinancialHealthCard had nested ternary (3 levels) for conditional BadgeVariant class assignment
+- Rule: MISTAKES.md Coding Paradigm 7 — Nested ternaries 3+ times; extract to helper or declarative map
+- Context: Replaced with `BADGE_VARIANT_CLASS: Record<BadgeVariant, string>` object map + extracted `BadgeVariant` type alias per CONVENTIONS.md declarative paradigm.
+
+- Violation: lib/dateKey.ts called Date.now() (side effect), violating lib/ pure function requirement
+- Rule: CLAUDE.md layer dependency — lib/ must contain external UI utility wrappers only; pure functions with side effects belong in infrastructure
+- Context: Moved lib/dateKey.ts → infrastructure/utils/dateKey.ts; updated 4 import sites (fundamental/page.tsx, news/page.tsx, submitOverallAnalysisAction.ts, submitNewsAnalysisAction.ts).
+
+- Violation: newsLookback.ts had magic-number chain `7 * 24 * 60 * 60 * 1_000` with no named constant
+- Rule: MISTAKES.md 15 — Hardcoded literals in calculations must be extracted to named module-level constants
+- Context: Replaced with `7 * MS_PER_DAY` imported from @/domain/constants/time.
+
+- Violation: fundamentalData.ts created `new FmpFundamentalClient()` in each of 13 cache functions (duplicate instantiation)
+- Rule: MISTAKES.md Coding Paradigm 2 — Identical values computed multiple times in single function/module
+- Context: Extracted single module-level `const fundamentalClient = new FmpFundamentalClient();` and replaced all 13 call sites.
 
 

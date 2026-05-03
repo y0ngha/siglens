@@ -6,10 +6,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import type { NewsRow } from '@/infrastructure/db/newsRepository';
 
-/**
- * A NewsRow that has been LLM-enriched: titleKo, summaryKo, sentiment, and
- * category are guaranteed non-null. bodyKo remains optional even when enriched.
- */
+/** LLM-enriched NewsRow — titleKo/summaryKo/sentiment/category are guaranteed non-null; bodyKo stays optional. */
 export interface EnrichedNewsRow extends NewsRow {
     titleKo: string;
     summaryKo: string;

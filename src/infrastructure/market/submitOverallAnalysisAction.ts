@@ -17,7 +17,7 @@ import {
     isEnrichedRow,
     toEnrichedNewsItem,
 } from '@/infrastructure/market/newsEnrichment';
-import { todayKstIsoDate } from '@/lib/dateKey';
+import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 
 /** Server Action: submit a 3-axis overall analysis job; loads enriched news + earnings from DB, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
 export async function submitOverallAnalysisAction(

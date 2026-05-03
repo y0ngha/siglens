@@ -12,11 +12,6 @@ interface DependencyProgressProps {
     pendingJobs: Record<OverallAxis, string | undefined>;
 }
 
-/**
- * Displays per-axis dependency resolution progress while waiting for all
- * three axes (technical / fundamental / news) to complete before the overall
- * analysis can be submitted.
- */
 export function DependencyProgress({ pendingJobs }: DependencyProgressProps) {
     const completed = AXIS_ORDER.filter(
         axis => pendingJobs[axis] === undefined

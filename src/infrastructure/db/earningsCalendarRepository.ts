@@ -85,8 +85,7 @@ export function toCalendarRow(
     };
 }
 
-/** Map a raw DB row back to {@link EarningsCalendarItem}. */
-function toCalendarItem(row: {
+interface EarningsCalendarDbRow {
     symbol: string;
     earningsDate: string;
     epsActual: string | null;
@@ -94,7 +93,10 @@ function toCalendarItem(row: {
     revenueActual: string | null;
     revenueEstimated: string | null;
     lastUpdated: string | null;
-}): EarningsCalendarItem {
+}
+
+/** Map a raw DB row back to {@link EarningsCalendarItem}. */
+function toCalendarItem(row: EarningsCalendarDbRow): EarningsCalendarItem {
     return {
         symbol: row.symbol,
         earningsDate: row.earningsDate,

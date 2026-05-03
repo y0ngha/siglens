@@ -11,24 +11,25 @@ interface FinancialHealthCardProps {
     cashFlow: FundamentalCashFlowInput | null;
 }
 
+type BadgeVariant = 'good' | 'warn' | 'bad' | 'neutral';
+
+const BADGE_VARIANT_CLASS: Record<BadgeVariant, string> = {
+    good: 'bg-ui-success/10 text-chart-bullish',
+    bad: 'bg-ui-danger/10 text-chart-bearish',
+    warn: 'bg-ui-warning/10 text-ui-warning',
+    neutral: 'bg-secondary-700 text-secondary-400',
+};
+
 interface HealthMetricProps {
     label: string;
     value: string;
     hint?: string;
-    badge?: { text: string; variant: 'good' | 'warn' | 'bad' | 'neutral' };
+    badge?: { text: string; variant: BadgeVariant };
 }
 
 function HealthMetric({ label, value, hint, badge }: HealthMetricProps) {
     const badgeClass =
-        badge === undefined
-            ? ''
-            : badge.variant === 'good'
-              ? 'bg-ui-success/10 text-chart-bullish'
-              : badge.variant === 'bad'
-                ? 'bg-ui-danger/10 text-chart-bearish'
-                : badge.variant === 'warn'
-                  ? 'bg-ui-warning/10 text-ui-warning'
-                  : 'bg-secondary-700 text-secondary-400';
+        badge === undefined ? '' : BADGE_VARIANT_CLASS[badge.variant];
 
     return (
         <div className="border-secondary-700 flex items-baseline justify-between gap-4 border-b py-2.5 last:border-b-0">

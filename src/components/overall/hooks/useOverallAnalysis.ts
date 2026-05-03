@@ -26,8 +26,7 @@ type OverallAnalysisState =
 
 type CleanupFn = () => void;
 
-// State machine: idle → submitting → (pending_dependencies → retry) | polling → done | error.
-// Each `trigger` call cancels any in-flight run via the alive flag + clearTimeout.
+// State machine; each trigger cancels any in-flight run via the alive flag + clearTimeout.
 export function useOverallAnalysis(
     symbol: string,
     timeframe: Timeframe,

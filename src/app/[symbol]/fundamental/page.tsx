@@ -16,7 +16,7 @@ import {
     getSectorSnapshot,
     getHistoricalSector,
 } from '@/app/[symbol]/fundamental/fundamentalData';
-import { todayKstIsoDate } from '@/lib/dateKey';
+import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
@@ -41,9 +41,6 @@ interface Props {
     params: Promise<{ symbol: string }>;
 }
 
-/**
- * Generate page-level SEO metadata for `/[symbol]/fundamental`.
- */
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
@@ -183,12 +180,6 @@ function SectionSkeleton() {
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
-/**
- * RSC page: `/[symbol]/fundamental`.
- *
- * Fetches the company profile first (needed for sector + notFound guard),
- * then streams each of the 9 sections independently via Suspense.
- */
 export default async function FundamentalPage({ params }: Props) {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
@@ -197,8 +188,7 @@ export default async function FundamentalPage({ params }: Props) {
         notFound();
     }
 
-    // Profile is fetched early: (1) notFound guard, (2) resolve sector for SectorDirectionSection.
-    // Shares the same unstable_cache key as ProfileSection — no duplicate HTTP call.
+    // Early fetch for notFound guard + sector resolution; shares the same `use cache` key as ProfileSection so no duplicate HTTP call.
     const profile = await getProfile(upper);
     if (profile === null) {
         notFound();

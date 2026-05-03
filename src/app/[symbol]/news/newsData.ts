@@ -1,15 +1,3 @@
-/**
- * `use cache`-backed data fetchers for the news page.
- *
- * Lives in the `app/` layer so infrastructure imports are allowed.
- * Section components in `components/news/sections/` receive resolved
- * domain types as props — they never touch infrastructure directly.
- *
- * Caching:
- * - News list:          T1 (15 min) — revalidate: NEWS_LIST_TTL_S
- * - Grades events:      T2 (12 h)   — revalidate: NEWS_GRADES_TTL_S
- * - Earnings calendar:  T3 (7 d)    — revalidate: NEWS_EARNINGS_REPORT_TTL_S
- */
 import { cacheLife, cacheTag } from 'next/cache';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';

@@ -15,7 +15,7 @@ import {
     isEnrichedRow,
     toEnrichedNewsItem,
 } from '@/infrastructure/market/newsEnrichment';
-import { todayKstIsoDate } from '@/lib/dateKey';
+import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 
 /** Server Action: load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
 export async function submitNewsAnalysisAction(

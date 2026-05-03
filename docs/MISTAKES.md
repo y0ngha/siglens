@@ -165,16 +165,21 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ const PRICE_DECIMAL_FACTOR = 100; Math.round(rawPrice * PRICE_DECIMAL_FACTOR) / PRICE_DECIMAL_FACTOR
     ✅ const PWA_TRIGGER_EVENT = 'siglens:pwa-trigger'; import in all files using the event
 
-15.5. JSX section comments explaining WHAT the code does
+15.5. JSX section comments explaining WHAT the code does — recurring pattern (3+ occurrences)
     → Well-named identifiers (components, functions, variables) are self-documenting; don't add comments repeating WHAT the code does
     → Remove inline comments on JSX sections that describe component purpose, render behavior, or structural elements
     → Comments should explain WHY non-obvious decisions were made, not describe the code structure itself
+    → This pattern appears in new code frequently; enforce removal during PR review
     ❌ {/* Lock icon */} <Lock />
     ❌ {/* Screen reader state update */} useEffect(() => { ... }, [deps])
     ❌ {/* Provider label section */} <div>{provider.name}</div>
+    ❌ {/* AI Summary — Client component, no Suspense needed (renders loading state itself) */} <NewsAiSummary />
+    ❌ {/* Shows the 'current driver' paragraph from the News analysis result */} <div>{newsResult.driver}</div>
     ✅ <Lock />  // element name is self-evident
     ✅ useEffect(() => { ... }, [deps])  // deps array explains the update trigger
     ✅ <div>{provider.name}</div>  // structure is clear from JSX
+    ✅ <NewsAiSummary />  // component name is self-explanatory
+    → Recurring: 3 instances in PR #413 (R7 NewsAugment, R10 news/page, plus component removal)
 
 21. Domain functions using imperative for-loop + push instead of higher-order functions
     → Domain functions must use map, filter, flatMap, reduce — never direct mutation with push/splice
@@ -276,14 +281,18 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ interface Props { size?: 'sm' | 'lg'; fields: readonly { label: string; key: string }[] }
    ✅ type ButtonSize = 'sm' | 'lg'; interface FieldDef { label: string; key: string }; interface Props { size?: ButtonSize; fields: readonly FieldDef[] }
 
-5.5. Function return types using inline object literals instead of named types
+5.5. Function return types using inline object literals instead of named types — recurring (appears 2+ times per PR)
    → All function return types must use named interfaces/types, not inline object shapes
    → Applies especially to Promise<{ field, field }> patterns in Server Actions, utilities, and infrastructure functions
    → Improves type reusability, API clarity, and readability
+   → This pattern persists across feature branches; enforce extraction during code review
    ❌ async function createAuthSession(data): Promise<{ session: Session; cookie: string }> { ... }
    ❌ const getModelDisplay = (): { label: string; fullName: string } => { ... }
+   ❌ export function toCalendarItem(row): { date: string; symbol: string; event: string; expected: number; actual: number; surprise: number; importance: string } { ... }
    ✅ interface CreateAuthSessionResult { session: Session; cookie: string }; async function createAuthSession(...): Promise<CreateAuthSessionResult> { ... }
    ✅ type ModelDisplayInfo = Pick<ChatModelOption, 'label' | 'fullName'>; const getModelDisplay = (): ModelDisplayInfo => { ... }
+   ✅ interface EarningsCalendarDbRow { date: string; symbol: string; ... }; export function toCalendarItem(row): EarningsCalendarDbRow { ... }
+   → Recurring: Phase 2 cumulative (NewsDbRow, NewsList), PR #413 R10 (EarningsCalendarDbRow)
 
 6. Union literals with 3+ occurrences in different files → not extracted to named type
    → Domain indicators frequently repeat trend/direction unions across result types
@@ -684,14 +693,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Function comment: "Transform input levels with reconciliation rules"
    → When changing function implementation, update related comments immediately
 
-4. Multi-line JSDoc blocks for single-line function descriptions
+4. Multi-line JSDoc blocks for single-line function descriptions — recurring across 8+ PR rounds
    → All function comments must be single-line only; multi-line blocks add unnecessary verbosity
+   → This pattern persists in new code even though documented; enforce at code review
    → Extract context/explanation into commit messages or documentation links if needed
+   → Applies to: file-top comments, component purpose descriptions, algorithm explanations, trust notes
    ❌ /**
       * Handles authentication
       * Sets up the session and applies cookies
       */
+   ❌ /**
+      * We trust this source because...
+      * It undergoes validation at...
+      */
    ✅ // Handles authentication and session setup
+   ✅ // Trusted source (see validate-source.ts for detail)
+   → Recurring violation: 8+ consecutive PR rounds (R3, R7, R10); appears in newly-written code
+   → Enforce: remove multi-line JSDoc from new features during PR review
 ```
 
 ---
