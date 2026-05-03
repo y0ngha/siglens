@@ -21,6 +21,7 @@ import {
     OG_IMAGE_WIDTH,
     SITE_NAME,
 } from '@/lib/seo';
+import { waitUntil } from '@vercel/functions';
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
 
 /** Regex for valid U.S. ticker symbols: 1–8 uppercase letters or dots. */
@@ -134,13 +135,16 @@ export default async function NewsPage({ params }: Props) {
 
     // Fire-and-forget: fetch fresh news + trigger per-card analysis.
     // Page renders with existing DB data; subsequent loads benefit from
-    // newly analysed cards. Errors are swallowed inside the action.
-    void ensureNewsCardsAnalyzedAction(upper).catch((error: unknown) => {
-        console.error(
-            '[NewsPage] ensureNewsCardsAnalyzedAction failed:',
-            error
-        );
-    });
+    // newly analysed cards. waitUntil keeps the serverless function alive
+    // until the promise settles without blocking the response stream.
+    waitUntil(
+        ensureNewsCardsAnalyzedAction(upper).catch((error: unknown) => {
+            console.error(
+                '[NewsPage] ensureNewsCardsAnalyzedAction failed:',
+                error
+            );
+        })
+    );
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: `/${upper}` },
