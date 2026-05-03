@@ -2,6 +2,7 @@
 
 import { type CSSProperties, useMemo } from 'react';
 import {
+    DEFAULT_TIER,
     getAllowedModels,
     type FundamentalAnalysisResponse,
     type FundamentalCategory,
@@ -10,10 +11,11 @@ import {
 } from '@y0ngha/siglens-core';
 import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
 import { cn } from '@/lib/cn';
-import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
+import {
+    FALLBACK_MODEL_ID,
+    resolveDefaultModelForProvider,
+} from '@/domain/llm/providerDefaults';
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
-
-const DEFAULT_TIER = 'free' as const;
 
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',
@@ -142,7 +144,7 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     const modelId = useMemo(
         () =>
             resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
-            'claude-haiku-3-5',
+            FALLBACK_MODEL_ID,
         [selectedProvider, allowedModels]
     );
 
