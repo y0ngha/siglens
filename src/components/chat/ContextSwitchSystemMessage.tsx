@@ -1,6 +1,6 @@
 'use client';
 
-interface Props {
+interface ContextSwitchSystemMessageProps {
     /** Korean label for the page the chatbot context switched to. */
     label: string;
 }
@@ -12,7 +12,9 @@ interface Props {
  *
  * Rendered inline between conversation turns — not a modal or banner.
  */
-export function ContextSwitchSystemMessage({ label }: Props) {
+export function ContextSwitchSystemMessage({
+    label,
+}: ContextSwitchSystemMessageProps) {
     return (
         <div
             className="bg-secondary-800 text-secondary-300 my-2 rounded-md px-3 py-2 text-xs"

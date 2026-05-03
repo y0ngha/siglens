@@ -65,6 +65,11 @@
 ## [Round 1 — Skipped findings]
 - `src/app/[symbol]/page.tsx:144` and `src/app/market/page.tsx:13` (recommended): RSC에서 siglens-core 함수를 직접 호출하는 패턴은 기존 관례이며 이번 PR이 도입한 변경이 아님. RSC는 underlying async 함수를 직접 호출하고, 클라이언트용 Server Action wrapper는 별도 hook 경로로 사용하는 분리 패턴이 의도됨. PR 범위 밖이므로 skip.
 
+## [PR #413 R3 | feat/fundamental-news-analysis | 2026-05-02]
+- Violation: domain/types.ts 파일 중단부(~113행)에 import type { ChatMessage } from '@y0ngha/siglens-core' 선언
+- Rule: ESLint import/first — 모든 import는 파일 최상단에 위치해야 함
+- Context: DisplayMessage/ContextSwitchMessage 타입 추가 시 import를 파일 하단에 삽입. 최상단으로 이동.
+
 ## [PR #390 | feat/369/auth-social | 2026-04-28]
 - Violation: OAuth 콜백에서 쿠키에 저장된 next 경로를 검증 없이 그대로 redirect로 사용
 - Rule: Open Redirect 방어 — 사용자 변조 가능 입력은 사용 시점마다 sanitize (defense-in-depth)
