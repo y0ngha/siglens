@@ -22,7 +22,9 @@ export async function PATCH(req: Request): Promise<Response> {
     const cronSecret = process.env.CRON_SECRET;
     const auth = req.headers.get('authorization');
     if (!cronSecret || auth !== `Bearer ${cronSecret}`) {
-        return new NextResponse('unauthorized', { status: HTTP_STATUS_UNAUTHORIZED });
+        return new NextResponse('unauthorized', {
+            status: HTTP_STATUS_UNAUTHORIZED,
+        });
     }
 
     const client = new FmpNewsClient();

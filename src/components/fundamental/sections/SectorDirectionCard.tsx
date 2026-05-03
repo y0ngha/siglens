@@ -91,10 +91,7 @@ export function SectorDirectionCard({
                 섹터 방향
             </h2>
             {sector !== '' && (
-                <p
-                    className="text-secondary-400 mb-4 text-sm"
-                    translate="no"
-                >
+                <p className="text-secondary-400 mb-4 text-sm" translate="no">
                     {sector}
                 </p>
             )}

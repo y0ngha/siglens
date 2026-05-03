@@ -164,9 +164,7 @@ export function buildSymbolFundamentalSeoContent(
 }
 
 /** Build SEO metadata for the `/[symbol]/news` page. */
-export function buildSymbolNewsSeoContent(
-    symbol: string
-): SymbolSeoContent {
+export function buildSymbolNewsSeoContent(symbol: string): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     const title = `${upper} 뉴스 분석`;
     const fullTitle = `${upper} 최신 뉴스 + AI 분석 | ${SITE_NAME}`;
@@ -193,9 +191,7 @@ export function buildSymbolNewsSeoContent(
 }
 
 /** Build SEO metadata for the `/[symbol]/overall` page. */
-export function buildSymbolOverallSeoContent(
-    symbol: string
-): SymbolSeoContent {
+export function buildSymbolOverallSeoContent(symbol: string): SymbolSeoContent {
     const upper = symbol.toUpperCase();
     // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
     const title = `${upper} AI 종합 분석`;

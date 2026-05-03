@@ -26,7 +26,7 @@ export function OverallTriggerCta({ onTrigger }: OverallTriggerCtaProps) {
             <button
                 type="button"
                 onClick={onTrigger}
-                className="bg-primary-600 text-white hover:bg-primary-700 focus-visible:ring-primary-500 mt-6 inline-flex items-center rounded-md px-6 py-3 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 mt-6 inline-flex items-center rounded-md px-6 py-3 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
                 AI 종합 분석 받기
             </button>

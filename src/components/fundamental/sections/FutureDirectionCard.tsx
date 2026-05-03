@@ -235,9 +235,7 @@ export function FutureDirectionCard({
                                 </dd>
                             </div>
                             <div className="flex gap-1">
-                                <dt className="text-secondary-400">
-                                    12개월
-                                </dt>
+                                <dt className="text-secondary-400">12개월</dt>
                                 <dd className="font-mono">
                                     {fmtUsd(ptSummary.lastYear.avgPriceTarget)}
                                 </dd>
