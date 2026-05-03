@@ -12,6 +12,7 @@ import type {
 
 const POLL_INTERVAL_MS = 3000;
 const DEPENDENCY_RETRY_MS = 3000;
+const MAX_DEPENDENCY_RETRIES = 20; // 20 × 3 s = 60 s wall-clock
 
 type OverallAnalysisState =
     | { status: 'idle' }
@@ -61,6 +62,7 @@ export function useOverallAnalysis(
         let alive = true;
         let retryHandle: ReturnType<typeof setTimeout> | null = null;
         let pollHandle: ReturnType<typeof setTimeout> | null = null;
+        let dependencyRetryCount = 0;
 
         cleanupRef.current = () => {
             alive = false;
@@ -85,6 +87,14 @@ export function useOverallAnalysis(
             }
 
             if (submitted.status === 'pending_dependencies') {
+                if (dependencyRetryCount >= MAX_DEPENDENCY_RETRIES) {
+                    setState({
+                        status: 'error',
+                        error: 'AI 종합 분석 의존성 분석이 1분 안에 완료되지 않았습니다. 잠시 후 다시 시도해주세요.',
+                    });
+                    return;
+                }
+                dependencyRetryCount += 1;
                 setState({
                     status: 'pending_dependencies',
                     pendingJobs: submitted.pendingJobs,

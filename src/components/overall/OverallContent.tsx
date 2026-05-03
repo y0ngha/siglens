@@ -23,7 +23,7 @@ const DEFAULT_TIER = 'free' as const;
 
 interface OverallContentProps {
     symbol: string;
-    timeframe: string;
+    timeframe: Timeframe;
 }
 
 /**
@@ -46,11 +46,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
         [selectedProvider, allowedModels]
     );
 
-    const { state, trigger } = useOverallAnalysis(
-        symbol,
-        timeframe as Timeframe,
-        modelId
-    );
+    const { state, trigger } = useOverallAnalysis(symbol, timeframe, modelId);
 
     if (state.status === 'idle') {
         return <OverallTriggerCta onTrigger={trigger} />;
@@ -130,7 +126,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
                 <button
                     type="button"
                     onClick={trigger}
-                    className="text-primary mt-3 text-sm underline-offset-2 hover:underline focus-visible:outline-none focus-visible:underline"
+                    className="text-primary mt-3 rounded-sm text-sm underline-offset-2 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
                 >
                     다시 시도
                 </button>

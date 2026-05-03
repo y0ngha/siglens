@@ -1,5 +1,7 @@
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
+import type { Timeframe } from '@y0ngha/siglens-core';
 import { OverallContent } from '@/components/overall/OverallContent';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -83,7 +85,7 @@ export default async function OverallPage({ params, searchParams }: Props) {
     }
 
     const { tf } = await searchParams;
-    const timeframe = tf ?? '1Day';
+    const timeframe: Timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: `/${upper}` },

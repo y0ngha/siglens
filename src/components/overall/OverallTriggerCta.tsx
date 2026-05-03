@@ -1,3 +1,5 @@
+'use client';
+
 interface OverallTriggerCtaProps {
     onTrigger: () => void;
 }
