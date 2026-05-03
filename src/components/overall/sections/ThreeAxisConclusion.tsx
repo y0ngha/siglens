@@ -2,12 +2,7 @@ interface ThreeAxisConclusionProps {
     text: string;
 }
 
-/**
- * Renders the central 3-axis synthesis conclusion — the focal result of the
- * overall analysis combining technical + fundamental + news signals.
- *
- * Visually elevated relative to the individual axis summary sections.
- */
+// Visually elevated vs sibling axis summaries — the focal synthesis section.
 export function ThreeAxisConclusion({ text }: ThreeAxisConclusionProps) {
     if (!text) return null;
     return (

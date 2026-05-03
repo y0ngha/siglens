@@ -2,9 +2,6 @@ interface OverallSummaryProps {
     headline: string;
 }
 
-/**
- * Renders the top-level headline sentence from the overall analysis result.
- */
 export function OverallSummary({ headline }: OverallSummaryProps) {
     if (!headline) return null;
     return (

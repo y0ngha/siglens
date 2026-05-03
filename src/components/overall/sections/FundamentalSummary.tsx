@@ -2,9 +2,6 @@ interface FundamentalSummaryProps {
     bullets: string[];
 }
 
-/**
- * Renders fundamental analysis bullet points from the overall analysis result.
- */
 export function FundamentalSummary({ bullets }: FundamentalSummaryProps) {
     if (bullets.length === 0) return null;
     return (

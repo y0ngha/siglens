@@ -1,17 +1,3 @@
-/**
- * FMP implementation of `FundamentalDataProvider`.
- *
- * Each method fetches from a FMP `/stable/*` endpoint and maps the FMP raw
- * response shape to the domain-neutral input type expected by
- * `normalizeFundamentalSnapshot` (and other siglens-core use-cases).
- *
- * Field-name mapping decisions (FMP → domain):
- * - `mktCap`              → `marketCap`           (getProfile)
- * - `targetHigh/Low/…`   → `targetHigh/Low/…`     (getPriceTargetConsensus — identical)
- * - `lastMonth/Quarter/…` → `lastMonth/Quarter/…` (getPriceTargetSummary — identical)
- * - `changesPercentage`   → `changesPercentage`    (sector endpoints — identical)
- * - Grades action strings are normalised to `GradesAction` union via `toGradesAction`.
- */
 import type {
     EarningsReport,
     FundamentalAnalystEstimateInput,

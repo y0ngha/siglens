@@ -82,44 +82,45 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-// ─── Thin async RSC wrappers (fetch + pass props) ─────────────────────────────
-// These live in app/ so they can call infrastructure-backed data fetchers.
-// Each wraps one or more data calls and passes resolved props to the
-// presentational component in components/fundamental/sections/.
-// Individual Suspense boundaries in the main page allow each to stream
-// independently.
+// Thin async RSC wrappers — each fetches data and passes props to a presentational
+// section in components/fundamental/sections/. Suspense boundaries on the page
+// let each section stream independently.
 
-async function ProfileSection({ symbol }: { symbol: string }) {
+interface SymbolSectionProps {
+    symbol: string;
+}
+
+async function ProfileSection({ symbol }: SymbolSectionProps) {
     const profile = await getProfile(symbol);
     if (profile === null) return null;
     return <ProfileCard profile={profile} />;
 }
 
-async function ValuationSection({ symbol }: { symbol: string }) {
+async function ValuationSection({ symbol }: SymbolSectionProps) {
     const metrics = await getKeyMetricsTtm(symbol);
     if (metrics === null) return null;
     return <ValuationCard metrics={metrics} />;
 }
 
-async function PeersSection({ symbol }: { symbol: string }) {
+async function PeersSection({ symbol }: SymbolSectionProps) {
     const peers = await getStockPeers(symbol);
     if (peers.length === 0) return null;
     return <PeersTable peers={peers} />;
 }
 
-async function ProfitabilitySection({ symbol }: { symbol: string }) {
+async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
     const ratios = await getRatiosTtm(symbol);
     if (ratios === null) return null;
     return <ProfitabilityCard ratios={ratios} />;
 }
 
-async function GrowthSection({ symbol }: { symbol: string }) {
+async function GrowthSection({ symbol }: SymbolSectionProps) {
     const growth = await getIncomeStatementGrowth(symbol);
     if (growth === null) return null;
     return <GrowthChart growth={growth} />;
 }
 
-async function FinancialHealthSection({ symbol }: { symbol: string }) {
+async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
     const [ratios, scores, cashFlow] = await Promise.all([
         getRatiosTtm(symbol),
         getFinancialScores(symbol),
@@ -135,7 +136,7 @@ async function FinancialHealthSection({ symbol }: { symbol: string }) {
     );
 }
 
-async function FutureDirectionSection({ symbol }: { symbol: string }) {
+async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
     const [estimates, grades, ptConsensus, ptSummary] = await Promise.all([
         getAnalystEstimates(symbol),
         getGradesConsensus(symbol),
@@ -154,13 +155,7 @@ async function FutureDirectionSection({ symbol }: { symbol: string }) {
     );
 }
 
-async function SectorDirectionSection({
-    symbol: _symbol,
-    sector,
-}: {
-    symbol: string;
-    sector: string;
-}) {
+async function SectorDirectionSection({ sector }: { sector: string }) {
     const today = todayKstIsoDate();
     const [snapshot, historical] = await Promise.all([
         getSectorSnapshot(today),
@@ -249,7 +244,7 @@ export default async function FundamentalPage({ params }: Props) {
                 </Suspense>
 
                 <Suspense fallback={<SectionSkeleton />}>
-                    <SectorDirectionSection symbol={upper} sector={sector} />
+                    <SectorDirectionSection sector={sector} />
                 </Suspense>
 
                 <FundamentalAiSummary symbol={upper} />

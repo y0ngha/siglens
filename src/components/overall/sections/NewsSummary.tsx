@@ -2,9 +2,6 @@ interface NewsSummaryProps {
     bullets: string[];
 }
 
-/**
- * Renders news analysis bullet points from the overall analysis result.
- */
 export function NewsSummary({ bullets }: NewsSummaryProps) {
     if (bullets.length === 0) return null;
     return (

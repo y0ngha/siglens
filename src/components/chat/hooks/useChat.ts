@@ -69,6 +69,10 @@ function isValidChatModel(value: string): value is ModelId {
     return VALID_CHAT_MODELS.some(model => model === value);
 }
 
+function isChatMessage(m: DisplayMessage): m is ChatMessage {
+    return m.role !== 'system';
+}
+
 function resolveAiContent(result: ChatActionResult): string {
     if (result.ok) {
         return result.message;
@@ -236,9 +240,7 @@ export function useChat({
             // in-flight requests use the snapshot captured when the user submitted)
             if (loadingPhaseRef.current !== null || !isAnalysisReady) return;
             // Filter out UI-only system messages before forwarding history to the LLM.
-            const llmMessages = messagesRef.current.filter(
-                (m): m is ChatMessage => m.role !== 'system'
-            );
+            const llmMessages = messagesRef.current.filter(isChatMessage);
             await mutateAsync({ currentMessages: llmMessages, text });
         },
         [isAnalysisReady, mutateAsync]
@@ -394,9 +396,7 @@ export function useChat({
             isKeyChangePendingRef.current = false;
             return;
         }
-        const persistableMessages = messages.filter(
-            (m): m is ChatMessage => m.role !== 'system'
-        );
+        const persistableMessages = messages.filter(isChatMessage);
         saveSession(storageKey, persistableMessages);
     }, [messages, storageKey]);
 

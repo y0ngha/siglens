@@ -2,9 +2,6 @@ interface RiskFactorsProps {
     factors: string[];
 }
 
-/**
- * Renders the risk factor bullet points from the overall analysis result.
- */
 export function RiskFactors({ factors }: RiskFactorsProps) {
     if (factors.length === 0) return null;
     return (

@@ -1,11 +1,3 @@
-/**
- * TTL constants for fundamental section data caching, aligned with plan §3.2.
- *
- * TTL tiers:
- * - T2: Real-time / 1h–24h  — analyst data, sector snapshots
- * - T3: Weekly 7d           — ratios, growth, health (earnings-calendar aware; 7d static fallback)
- * - T4: Monthly 30d         — profile, peers (very slow-changing)
- */
 import { SECONDS_PER_DAY, SECONDS_PER_HOUR } from '@/domain/constants/time';
 
 /** T4: 30 days — company profile, peer list (very slow-changing). */

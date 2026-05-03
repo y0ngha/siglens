@@ -70,19 +70,20 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
 }
 
-// ─── Thin async RSC wrappers (fetch + pass props) ─────────────────────────────
-// These live in app/ so they can call infrastructure-backed data fetchers.
-// Each wraps one or more data calls and passes resolved props to the
-// presentational component in components/news/sections/.
-// Individual Suspense boundaries in the main page allow each to stream
-// independently.
+// Thin async RSC wrappers — each fetches data and passes props to a presentational
+// section in components/news/sections/. Suspense boundaries on the page let each
+// section stream independently.
 
-async function NewsListSection({ symbol }: { symbol: string }) {
+interface SymbolSectionProps {
+    symbol: string;
+}
+
+async function NewsListSection({ symbol }: SymbolSectionProps) {
     const items = await getNewsList(symbol);
     return <NewsList items={items} />;
 }
 
-async function EventCalendarSection({ symbol }: { symbol: string }) {
+async function EventCalendarSection({ symbol }: SymbolSectionProps) {
     const today = todayKstIsoDate();
     const [nextEarnings, latestReport] = await Promise.all([
         getNextEarningsCalendar(symbol, today),
@@ -96,7 +97,7 @@ async function EventCalendarSection({ symbol }: { symbol: string }) {
     );
 }
 
-async function AnalystActionsSection({ symbol }: { symbol: string }) {
+async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
     const events = await getGradeEvents(symbol);
     return <AnalystActions events={events} />;
 }
