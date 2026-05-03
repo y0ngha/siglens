@@ -37,10 +37,6 @@
 - Rule: Phase 6 마이그레이션 완료 후 더 이상 siglens-core와의 동기화 의무 없음 — 헤더를 과거시제로 갱신
 - Context: tokenEncryption.ts의 "Sync obligation" 문구를 "Phase 6 of the scope-realignment refactor moved the DB layer fully into siglens"로 변경; 동기화 명령문 제거.
 
-- Violation: userApiKeys 테이블의 JSDoc 멀티라인 주석
-- Rule: CLAUDE.md — 단일 줄 주석으로 통일 (WHY 노트 보존)
-- Context: userApiKeys의 JSDoc 블록을 한 줄로 압축하되 AES-256-GCM 암호화 특성 유지.
-
 ## [PR #405 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Violation: drizzle/0004_add_oauth_token_columns.sql가 _journal.json에 등재되지 않은 채 0006_striped_marauders.sql과 SQL이 완전 중복
 - Rule: drizzle 마이그레이션은 _journal.json 등재 순서로 적용되며, 등재되지 않은 파일은 dead-code이자 drizzle-kit migrate 시 0006에서 컬럼 중복 오류 유발
@@ -114,10 +110,6 @@
 - Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
 
 ## [PR #413 R4 | feat/fundamental-news-analysis | 2026-05-02]
-- Violation: isEnrichedRow predicate used `NewsRow & EnrichedNewsItem` as the narrowed type, forcing 4 `as` casts in downstream mappers
-- Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards
-- Context: Introduced `EnrichedNewsRow extends NewsRow` with non-null fields + `toEnrichedNewsItem` mapper; replaced inline map+as-cast blocks in submitNewsAnalysisAction and submitOverallAnalysisAction with `.filter(isEnrichedRow).map(toEnrichedNewsItem)`.
-
 - Violation: SymbolTabs used `role="tablist"` + `role="tab"` on `<Link>` elements that navigate to different URLs
 - Rule: WCAG / ARIA Authoring Practices — tablist/tab is for same-page panel switching; URL navigation uses `<nav>` + `aria-current="page"`
 - Context: Converted SymbolTabs from div[role=tablist]+Link[role=tab]+aria-selected+tabIndex+handleKey to nav[aria-label]+Link[aria-current]. Removed keyboard arrow-key handler (nav landmark does not require it per ARIA contract).
@@ -127,13 +119,22 @@
 - Rule: MISTAKES.md Architecture 0 — Component (.tsx) files importing directly from infrastructure
 - Context: 3개 task에서 동일 패턴 (FundamentalAiSummary, NewsList, OverallTriggerCta 각각 infra import → hooks로 이동). 패턴은 이미 MISTAKES.md에 문서화됨.
 
-- Violation: `as` 타입 단언 시 보증 주석 누락 (Task 2.1, 2.5, 2.6, 2.9, 2.11에서 반복)
-- Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards
-- Context: 4+ 수정 사례 (httpClient, Server Action mappers, FutureDirectionCard, URL params). 패턴은 이미 MISTAKES.md에 문서화됨.
-
 - Violation: 함수 반환 타입으로 인라인 객체 리터럴 사용 (Task 2.3, 2.4, 2.10에서 반복)
 - Rule: MISTAKES.md TypeScript 5.5 — Function return types using inline object literals
 - Context: NewsDbRow, NewsList 등에서 명명된 타입으로 추출됨. 패턴은 이미 MISTAKES.md에 문서화됨.
+
+## [PR #413 R7 | feat/fundamental-news-analysis | 2026-05-03]
+- Violation: useNewsAugment.ts run() 함수가 submitNewsAnalysisAction 호출 전 상태를 'loading'으로 초기화하지 않아, 이전 symbol/modelId의 'done' 상태가 persist
+- Rule: MISTAKES.md Components 6.5 — State/function/documentation divergence
+- Context: Added `setState({ status: 'loading' })` at top of run() to reset state before async operation. Symbol/modelId change now properly clears prior result state.
+
+- Violation: NewsAugment.tsx에서 WHAT 주석 "Shows the 'current driver' paragraph from the News analysis result."로 JSX 섹션 설명
+- Rule: MISTAKES.md 15.5 — JSX section comments explaining WHAT the code does
+- Context: Removed WHAT comment. Retained WHY comment about cache sharing with FundamentalAiSummary to explain design rationale.
+
+- Violation: todayKstIsoDate를 fundamentalData.ts와 newsData.ts에서 re-export하여 page.tsx 편의성을 위해 중간 계층 생성
+- Rule: Module boundaries — data modules should not re-export lib utilities; consumers import directly from source
+- Context: Removed todayKstIsoDate re-exports. pages now import directly from @/lib/dateKey, clarifying data module role.
 
 
 
