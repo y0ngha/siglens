@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { SignupForm } from '@/components/auth/SignupForm';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
@@ -16,10 +17,20 @@ interface SignupPageProps {
     searchParams: Promise<{ next?: string }>;
 }
 
-export default async function SignupPage({ searchParams }: SignupPageProps) {
+// Awaits searchParams (dynamic) — must be inside Suspense for PPR.
+async function SignupContent({ searchParams }: SignupPageProps) {
     const params = await searchParams;
     const next = sanitizeNextPath(params.next);
     const nextParam = next === '/' ? undefined : next;
+    return (
+        <>
+            <SignupForm next={nextParam} />
+            <SocialLoginButtons next={nextParam} />
+        </>
+    );
+}
+
+export default function SignupPage({ searchParams }: SignupPageProps) {
     return (
         <AuthCardShell
             title="회원이 되면 더 많은 걸 볼 수 있어요"
@@ -36,8 +47,9 @@ export default async function SignupPage({ searchParams }: SignupPageProps) {
                 </p>
             }
         >
-            <SignupForm next={nextParam} />
-            <SocialLoginButtons next={nextParam} />
+            <Suspense>
+                <SignupContent searchParams={searchParams} />
+            </Suspense>
         </AuthCardShell>
     );
 }

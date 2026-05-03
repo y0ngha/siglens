@@ -122,7 +122,8 @@ interface MarketPageProps {
     searchParams: Promise<SearchParams>;
 }
 
-export default async function MarketPage({ searchParams }: MarketPageProps) {
+// Awaits searchParams (dynamic) and prefetches market data — must be inside Suspense for PPR.
+async function MarketContent({ searchParams }: MarketPageProps) {
     const params = await searchParams;
     const initialTimeframe: DashboardTimeframe = isDashboardTimeframe(
         params.timeframe
@@ -142,6 +143,28 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
         queryFn: () => getMarketSummaryAction(),
     });
 
+    return (
+        <>
+            <HydrationBoundary state={dehydrate(queryClient)}>
+                <Suspense fallback={<MarketSummaryPanelSkeleton />}>
+                    <MarketSummaryPanel />
+                </Suspense>
+            </HydrationBoundary>
+            <Suspense
+                key={initialTimeframe}
+                fallback={<SectorSignalPanelSkeleton />}
+            >
+                <SectorSignalSection
+                    initialSector={initialSector}
+                    initialTimeframe={initialTimeframe}
+                />
+            </Suspense>
+            <SignalTypeGuide />
+        </>
+    );
+}
+
+export default function MarketPage({ searchParams }: MarketPageProps) {
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
@@ -160,21 +183,16 @@ export default async function MarketPage({ searchParams }: MarketPageProps) {
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <h1 className="sr-only">미국 주식 기술적 신호 대시보드</h1>
-            <HydrationBoundary state={dehydrate(queryClient)}>
-                <Suspense fallback={<MarketSummaryPanelSkeleton />}>
-                    <MarketSummaryPanel />
-                </Suspense>
-            </HydrationBoundary>
             <Suspense
-                key={initialTimeframe}
-                fallback={<SectorSignalPanelSkeleton />}
+                fallback={
+                    <>
+                        <MarketSummaryPanelSkeleton />
+                        <SectorSignalPanelSkeleton />
+                    </>
+                }
             >
-                <SectorSignalSection
-                    initialSector={initialSector}
-                    initialTimeframe={initialTimeframe}
-                />
+                <MarketContent searchParams={searchParams} />
             </Suspense>
-            <SignalTypeGuide />
         </>
     );
 }

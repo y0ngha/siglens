@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { redirect } from 'next/navigation';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { DeleteAccountConfirm } from '@/components/auth/DeleteAccountConfirm';
@@ -12,11 +13,16 @@ export const metadata: Metadata = {
     robots: { index: false, follow: false },
 };
 
-export default async function DeleteAccountPage() {
+// Reads cookies via getCurrentUser — must be inside Suspense for PPR.
+async function DeleteAccountContent() {
     const user = await getCurrentUser();
     if (!user) {
         redirect('/login?next=/account/delete');
     }
+    return <DeleteAccountConfirm userEmail={user.email} />;
+}
+
+export default function DeleteAccountPage() {
     return (
         <AuthCardShell
             title="회원 탈퇴"
@@ -33,7 +39,9 @@ export default async function DeleteAccountPage() {
                 </p>
             }
         >
-            <DeleteAccountConfirm userEmail={user.email} />
+            <Suspense>
+                <DeleteAccountContent />
+            </Suspense>
         </AuthCardShell>
     );
 }

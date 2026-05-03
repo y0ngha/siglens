@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
@@ -19,6 +20,9 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
     oauth_unknown: '소셜 로그인 중 알 수 없는 오류가 발생했습니다.',
 };
 
+const PASSWORD_RESET_SUCCESS_MESSAGE =
+    '비밀번호가 성공적으로 변경되었습니다. 새 비밀번호로 로그인해주세요.';
+
 interface LoginPageProps {
     searchParams: Promise<{
         next?: string;
@@ -27,10 +31,8 @@ interface LoginPageProps {
     }>;
 }
 
-const PASSWORD_RESET_SUCCESS_MESSAGE =
-    '비밀번호가 성공적으로 변경되었습니다. 새 비밀번호로 로그인해주세요.';
-
-export default async function LoginPage({ searchParams }: LoginPageProps) {
+// Awaits searchParams (dynamic) — must be inside Suspense for PPR.
+async function LoginContent({ searchParams }: LoginPageProps) {
     const params = await searchParams;
     const next = sanitizeNextPath(params.next);
     const nextParam = next === '/' ? undefined : next;
@@ -38,6 +40,24 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
         ? OAUTH_ERROR_MESSAGES[params.error]
         : undefined;
     const passwordResetSuccess = params.password_reset === '1';
+    return (
+        <>
+            {passwordResetSuccess ? (
+                <div
+                    role="status"
+                    aria-live="polite"
+                    className="border-ui-success/30 bg-ui-success/5 text-ui-success mb-4 rounded-md border p-3 text-sm"
+                >
+                    {PASSWORD_RESET_SUCCESS_MESSAGE}
+                </div>
+            ) : null}
+            <LoginForm next={nextParam} initialError={initialError} />
+            <SocialLoginButtons next={nextParam} />
+        </>
+    );
+}
+
+export default function LoginPage({ searchParams }: LoginPageProps) {
     return (
         <AuthCardShell
             title="다시 만나서 반가워요"
@@ -64,17 +84,9 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
                 </div>
             }
         >
-            {passwordResetSuccess ? (
-                <div
-                    role="status"
-                    aria-live="polite"
-                    className="border-ui-success/30 bg-ui-success/5 text-ui-success mb-4 rounded-md border p-3 text-sm"
-                >
-                    {PASSWORD_RESET_SUCCESS_MESSAGE}
-                </div>
-            ) : null}
-            <LoginForm next={nextParam} initialError={initialError} />
-            <SocialLoginButtons next={nextParam} />
+            <Suspense>
+                <LoginContent searchParams={searchParams} />
+            </Suspense>
         </AuthCardShell>
     );
 }

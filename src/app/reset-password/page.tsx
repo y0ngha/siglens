@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { ResetPasswordForm } from '@/components/auth/ResetPasswordForm';
 import { SITE_NAME } from '@/lib/seo';
@@ -17,13 +18,29 @@ interface ResetPasswordPageProps {
 const MISSING_PARAMS_MESSAGE =
     '재설정 링크가 올바르지 않습니다. 비밀번호 찾기를 다시 시도해주세요.';
 
-export default async function ResetPasswordPage({
+// Awaits searchParams (dynamic) — must be inside Suspense for PPR.
+async function ResetPasswordContent({
     searchParams,
 }: ResetPasswordPageProps) {
     const params = await searchParams;
     const email = params.email ?? '';
     const token = params.token ?? '';
     const ready = email.length > 0 && token.length > 0;
+    return ready ? (
+        <ResetPasswordForm email={email} token={token} />
+    ) : (
+        <div
+            role="alert"
+            className="border-ui-danger/30 bg-ui-danger/5 text-ui-danger rounded-md border p-3 text-sm"
+        >
+            {MISSING_PARAMS_MESSAGE}
+        </div>
+    );
+}
+
+export default function ResetPasswordPage({
+    searchParams,
+}: ResetPasswordPageProps) {
     return (
         <AuthCardShell
             title="새 비밀번호 설정"
@@ -39,16 +56,9 @@ export default async function ResetPasswordPage({
                 </p>
             }
         >
-            {ready ? (
-                <ResetPasswordForm email={email} token={token} />
-            ) : (
-                <div
-                    role="alert"
-                    className="border-ui-danger/30 bg-ui-danger/5 text-ui-danger rounded-md border p-3 text-sm"
-                >
-                    {MISSING_PARAMS_MESSAGE}
-                </div>
-            )}
+            <Suspense>
+                <ResetPasswordContent searchParams={searchParams} />
+            </Suspense>
         </AuthCardShell>
     );
 }

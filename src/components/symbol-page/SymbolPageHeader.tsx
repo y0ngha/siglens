@@ -1,10 +1,12 @@
 'use client';
 
 import Link from 'next/link';
+import { Suspense } from 'react';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import type { AssetInfo } from '@/domain/types';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { SymbolTabs } from '@/components/symbol-page/SymbolTabs';
+import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
 
 interface SymbolPageHeaderProps {
     symbol: string;
@@ -63,8 +65,12 @@ export function SymbolPageHeader({
                     onChange={onTimeframeChange}
                 />
             </div>
+            {/* SymbolTabs uses usePathname() — wrap in Suspense so the static
+                prerender shell can complete with the static skeleton. */}
             <div className="-mx-4 mt-3">
-                <SymbolTabs symbol={symbol} />
+                <Suspense fallback={<SymbolTabsSkeleton />}>
+                    <SymbolTabs symbol={symbol} />
+                </Suspense>
             </div>
         </header>
     );
