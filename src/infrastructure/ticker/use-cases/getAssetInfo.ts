@@ -20,6 +20,7 @@ import {
     setKoreanTickers,
 } from '@/infrastructure/ticker/use-cases/koreanNameStore';
 import type { AssetInfoMatch } from '@/infrastructure/ticker/use-cases/types';
+import { createSingleFlight } from '@/infrastructure/ticker/utils/singleFlight';
 import { createCacheProvider, type CacheProvider } from '@y0ngha/siglens-core';
 import type { AssetInfo, KoreanTickerEntry } from '@/domain/types';
 
@@ -100,26 +101,15 @@ async function persistTranslation(
     );
 }
 
-/**
- * Per-symbol in-flight registry for background translate-and-persist work.
- *
- * `translateAndPersist` is invoked fire-and-forget from {@link getAssetInfo}.
- * Without single-flight, N concurrent requests for the same uncached symbol
- * each call Gemini independently. The registry collapses concurrent calls to
- * one shared Promise; the entry is cleared in `.finally()` so failures do not
- * permanently block retries on the next call.
- */
-const inFlightTranslations = new Map<string, Promise<void>>();
+/** Single-flight registry for fire-and-forget translate-and-persist work; collapses concurrent calls for the same symbol into one Gemini request. */
+const translationSingleFlight = createSingleFlight<void>();
 
-async function translateAndPersist(
+function translateAndPersist(
     symbol: string,
     match: AssetInfoMatch,
     cache: CacheProvider | null
 ): Promise<void> {
-    const existing = inFlightTranslations.get(symbol);
-    if (existing) return existing;
-
-    const work = (async () => {
+    return translationSingleFlight.run(symbol, async () => {
         const translated = await translateCompanyNames([
             { symbol, name: match.name },
         ]);
@@ -146,17 +136,12 @@ async function translateAndPersist(
             koreanName,
             cache
         );
-    })().finally(() => {
-        inFlightTranslations.delete(symbol);
     });
-
-    inFlightTranslations.set(symbol, work);
-    return work;
 }
 
 /** @internal Test helper — clears the in-flight registry between cases. */
 export function _resetInFlightTranslationsForTest(): void {
-    inFlightTranslations.clear();
+    translationSingleFlight._resetForTest();
 }
 
 /** Resolve canonical asset information for a single ticker symbol via cache → DB → FMP, with optional background Korean-name translation. */

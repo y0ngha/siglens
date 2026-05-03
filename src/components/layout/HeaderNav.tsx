@@ -13,12 +13,7 @@ interface HeaderNavProps {
     readonly items: ReadonlyArray<NavItem>;
 }
 
-/**
- * Client island for the primary nav. Split out of {@link Header} so the
- * surrounding Header can stay a Server Component and fetch the current
- * user once per request via `getCurrentUser()`. Active-link detection
- * needs `usePathname()`, so this slice must remain a Client Component.
- */
+/** Client island for the primary nav; isolated so the surrounding Header can stay an RSC while `usePathname()` runs client-side. */
 export function HeaderNav({ items }: HeaderNavProps) {
     const pathname = usePathname();
     return (

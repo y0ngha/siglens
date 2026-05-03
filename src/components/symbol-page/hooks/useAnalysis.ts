@@ -88,6 +88,24 @@ interface UseAnalysisResult {
     cooldownNotice: CooldownNotice | null;
 }
 
+/** Cancel any in-flight worker job, then issue a new mutation. Cancel failures are logged and swallowed so the new mutation always proceeds. */
+async function cancelPendingThenRemutate(
+    jobId: string | null,
+    issueMutation: () => void
+): Promise<void> {
+    if (jobId !== null) {
+        try {
+            await cancelAnalysisJobAction(jobId);
+        } catch (error) {
+            console.warn(
+                '[useAnalysis] cancel failed; proceeding with new mutation',
+                error
+            );
+        }
+    }
+    issueMutation();
+}
+
 export function useAnalysis({
     symbol,
     timeframe,
@@ -340,22 +358,14 @@ export function useAnalysis({
         // 이전 폴링 effect는 reset()으로 submitData가 undefined가 되며 cleanup된다.
         // 그 후에 cancel RPC가 끝날 때까지 기다린 다음 새 mutation을 발사해
         // 이전 작업의 결과가 새 mutation 상태로 흘러들지 않도록 한다.
-        void (async () => {
-            if (jobId) {
-                try {
-                    await cancelAnalysisJobAction(jobId);
-                } catch {
-                    // cancelAnalysisJobAction은 내부에서 모든 에러를 흡수하므로
-                    // 일반 흐름에서 도달하지 않지만, 방어적으로 mutate를 진행한다.
-                }
-            }
+        void cancelPendingThenRemutate(jobId, () => {
             mutate({
                 symbol: latestRef.current.symbol,
                 force: false,
                 fmpSymbol: latestRef.current.fmpSymbol,
                 modelId: latestModelIdRef.current,
             });
-        })();
+        });
     }, [timeframeChangeCount, reset, mutate]);
 
     useEffect(() => {
@@ -366,21 +376,14 @@ export function useAnalysis({
         currentJobIdRef.current = null;
 
         reset();
-        void (async () => {
-            if (jobId) {
-                try {
-                    await cancelAnalysisJobAction(jobId);
-                } catch {
-                    // 동일 — cancel 실패 시에도 새 mutation은 진행한다.
-                }
-            }
+        void cancelPendingThenRemutate(jobId, () => {
             mutate({
                 symbol: latestRef.current.symbol,
                 force: false,
                 fmpSymbol: latestRef.current.fmpSymbol,
                 modelId,
             });
-        })();
+        });
     }, [modelId, reset, mutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.

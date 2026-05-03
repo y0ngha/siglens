@@ -151,11 +151,7 @@ export interface SessionRepository {
     createSession(input: CreateSessionInput): Promise<AuthSessionRecord>;
     findSession(sessionToken: string): Promise<AuthSessionRecord | null>;
     deleteSession(sessionToken: string): Promise<boolean>;
-    /**
-     * Bulk-delete every session whose `expiresAt` is strictly less than `now`.
-     * Returns the number of rows deleted. Intended to be invoked from a
-     * scheduled cron job or admin route — never on the request hot path.
-     */
+    /** Bulk-delete sessions where `expiresAt < now`; returns deleted count. Intended for cron/admin routes only — never on the request hot path. */
     deleteExpiredSessions(now?: Date): Promise<number>;
 }
 

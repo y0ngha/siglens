@@ -89,11 +89,7 @@ export function ContactForm() {
     );
 }
 
-/**
- * Visible while the current-user query is pending, so the email input
- * isn't mounted with a stale default and remounted (wiping user input)
- * once the query resolves.
- */
+/** Visible while the current-user query is pending; prevents a remount that would wipe user input once the query resolves. */
 function ContactEmailFieldSkeleton() {
     return (
         <div className="space-y-2" aria-busy="true">

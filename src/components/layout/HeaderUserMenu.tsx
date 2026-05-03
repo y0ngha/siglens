@@ -15,12 +15,7 @@ const TIER_DOT_COLOR: Record<Tier, string> = {
     pro: 'bg-ui-warning',
 };
 
-/**
- * Minimal serializable user shape passed from the Server Component
- * Header. Decoupled from `AuthUserRecord` so we don't ship Date
- * objects (createdAt/updatedAt) or fields the menu doesn't read across
- * the RSC boundary.
- */
+/** Minimal serializable user shape passed across the RSC boundary; decoupled from `AuthUserRecord` to avoid shipping Date fields the menu doesn't read. */
 export interface HeaderUserMenuUser {
     readonly email: string;
     readonly name: string | null;

@@ -6,30 +6,17 @@ import {
     type HeaderUserMenuUser,
 } from '@/components/layout/HeaderUserMenu';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { SITE_NAME } from '@/lib/seo';
 
 const NAV_ITEMS = [{ href: '/market', label: '시장 분석' }] as const;
 
-/**
- * Server Component shell.
- *
- * Fetches the current user once per request via `getCurrentUser()` and
- * passes a serializable subset down to the {@link HeaderUserMenu}
- * client island. This avoids the prior pattern where every render of
- * Header (or any client tree above it) re-ran the `useCurrentUser`
- * React Query check from scratch.
- */
-export async function Header() {
-    const authUser = await getCurrentUser();
-    const currentUser: HeaderUserMenuUser | null = authUser
-        ? {
-              email: authUser.email,
-              name: authUser.name,
-              tier: authUser.tier,
-          }
-        : null;
+interface HeaderProps {
+    /** Resolved current user (server-fetched in `app/layout.tsx`); null for guests. */
+    readonly currentUser: HeaderUserMenuUser | null;
+}
 
+/** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
+export function Header({ currentUser }: HeaderProps) {
     return (
         <header
             className="bg-secondary-900/90 supports-backdrop-filter:bg-secondary-900/75 border-secondary-800 sticky top-0 z-50 border-b backdrop-blur-md"

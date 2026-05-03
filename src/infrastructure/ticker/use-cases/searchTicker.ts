@@ -19,6 +19,7 @@ import {
     fireAndForget,
     type BackgroundTaskOptions,
 } from '@/infrastructure/ticker/use-cases/types';
+import { createSingleFlight } from '@/infrastructure/ticker/utils/singleFlight';
 import { createCacheProvider } from '@y0ngha/siglens-core';
 import type { KoreanTickerEntry, TickerSearchResult } from '@/domain/types';
 
@@ -42,25 +43,16 @@ function toKoreanEntry(
     ];
 }
 
-/**
- * In-flight registry keyed by the deterministic sorted symbol list. Collapses
- * concurrent identical search queries into a single Gemini call. Cleared in
- * `.finally()` so failures do not block subsequent retries.
- */
-const inFlightTranslations = new Map<string, Promise<void>>();
+/** Single-flight registry keyed by sorted-symbol list; collapses concurrent identical search queries into one Gemini call. */
+const translationSingleFlight = createSingleFlight<void>();
 
 function buildInFlightKey(symbols: readonly string[]): string {
     return [...symbols].sort().join(',');
 }
 
-async function translateAndCache(
-    unmapped: TickerSearchResult[]
-): Promise<void> {
+function translateAndCache(unmapped: TickerSearchResult[]): Promise<void> {
     const key = buildInFlightKey(unmapped.map(r => r.symbol));
-    const existing = inFlightTranslations.get(key);
-    if (existing) return existing;
-
-    const work = (async () => {
+    return translationSingleFlight.run(key, async () => {
         const translated = await translateCompanyNames(
             unmapped.map(r => ({ symbol: r.symbol, name: r.name }))
         );
@@ -73,17 +65,12 @@ async function translateAndCache(
         );
 
         await setKoreanTickers(entries);
-    })().finally(() => {
-        inFlightTranslations.delete(key);
     });
-
-    inFlightTranslations.set(key, work);
-    return work;
 }
 
 /** @internal Test helper — clears the in-flight registry between cases. */
 export function _resetInFlightTranslationsForTest(): void {
-    inFlightTranslations.clear();
+    translationSingleFlight._resetForTest();
 }
 
 /** Search for tickers by symbol or company name with bilingual support; Korean queries hit the Korean-name store, others hit FMP via cache with background translation enrichment (capped at 10 entries). */
