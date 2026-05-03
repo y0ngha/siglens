@@ -28,6 +28,7 @@ describe('usePwaInstall', () => {
     });
 
     afterEach(() => {
+        jest.clearAllTimers();
         jest.useRealTimers();
     });
 
@@ -100,6 +101,61 @@ describe('usePwaInstall', () => {
             window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
         });
         expect(result.current.showBanner).toBe(false);
+    });
+
+    it('Android: beforeinstallprompt → handleInstall → prompt() 호출, accepted 시 showBanner=false', async () => {
+        Object.defineProperty(navigator, 'userAgent', {
+            value: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+            configurable: true,
+        });
+
+        const mockPrompt = jest.fn().mockResolvedValue(undefined);
+        const promptEvent = Object.assign(new Event('beforeinstallprompt'), {
+            prompt: mockPrompt,
+            userChoice: Promise.resolve({ outcome: 'accepted' as const }),
+        });
+
+        const { result } = renderHook(() => usePwaInstall());
+
+        act(() => {
+            window.dispatchEvent(promptEvent);
+        });
+
+        await act(async () => {
+            await result.current.handleInstall();
+        });
+
+        expect(mockPrompt).toHaveBeenCalledTimes(1);
+        expect(result.current.showBanner).toBe(false);
+    });
+
+    it('Android: beforeinstallprompt → handleInstall → dismissed 시 showBanner 유지', async () => {
+        Object.defineProperty(navigator, 'userAgent', {
+            value: 'Mozilla/5.0 (Linux; Android 13; Pixel 7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Mobile Safari/537.36',
+            configurable: true,
+        });
+
+        const mockPrompt = jest.fn().mockResolvedValue(undefined);
+        const promptEvent = Object.assign(new Event('beforeinstallprompt'), {
+            prompt: mockPrompt,
+            userChoice: Promise.resolve({ outcome: 'dismissed' as const }),
+        });
+
+        const { result } = renderHook(() => usePwaInstall());
+
+        act(() => {
+            window.dispatchEvent(promptEvent);
+        });
+        act(() => {
+            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+        });
+
+        await act(async () => {
+            await result.current.handleInstall();
+        });
+
+        expect(mockPrompt).toHaveBeenCalledTimes(1);
+        expect(result.current.showBanner).toBe(true);
     });
 
     it('30초 폴백 타이머 → 모바일에서 showBanner=true', () => {

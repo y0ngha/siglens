@@ -56,13 +56,17 @@ export function usePwaInstall(): UsePwaInstallReturn {
         if (env.isIos) {
             setShowIosModal(true);
         } else if (deferredPromptRef.current) {
+            const prompt = deferredPromptRef.current;
+            deferredPromptRef.current = null;
             try {
-                await deferredPromptRef.current.prompt();
+                await prompt.prompt();
+                const { outcome } = await prompt.userChoice;
+                if (outcome === 'accepted') {
+                    setShowBanner(false);
+                }
             } catch (err) {
                 console.warn('[PWA] prompt 실패', err);
             }
-            deferredPromptRef.current = null;
-            setShowBanner(false);
         }
     }, [env.isIos]);
 
