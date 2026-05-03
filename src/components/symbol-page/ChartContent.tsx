@@ -32,6 +32,7 @@ import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisP
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
+import { NewsAugment } from '@/components/symbol-page/NewsAugment';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -200,6 +201,7 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
+                <NewsAugment symbol={symbol} />
             </>
         ),
         [
