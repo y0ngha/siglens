@@ -1,13 +1,14 @@
 # Fix Log
 
+## [Tasks 2.12–2.14 R1 | feat/fundamental-news-analysis | 2026-05-02]
+- Violation: SymbolPageHeader.tsx had orphaned border-secondary-700 class (border color with no border-direction after border-b removal)
+- Rule: MISTAKES.md rule 4 — Remove logic/code that has no effect (dead CSS)
+- Context: Removed border-secondary-700 from header className since no border-direction utility is present.
+
 ## [Task 2.11 | feat/fundamental-news-analysis | 2026-05-02]
 - Violation: OverallContent.tsx used `style={{ width: '...' }}` inline for skeleton widths
 - Rule: MISTAKES.md rule 7 — Never use inline style for layout/styling; use CSS custom property + Tailwind pattern
 - Context: Changed to `style={{ '--skeleton-w': '...' } as CSSProperties}` + `className="w-[var(--skeleton-w)]"`.
-
-- Violation: ScenarioAnalysis.tsx used template literal `` `... ${SCENARIO_CLASS[...]}` `` to combine Tailwind classes
-- Rule: MISTAKES.md rule 7.5 — All dynamic/conditional Tailwind className combinations must use cn() utility, not template literals
-- Context: Replaced with cn('rounded px-2 py-0.5 text-xs font-medium', SCENARIO_CLASS[scenario.name]).
 
 ## [Issue #396 | feat/396/llm-api-key-management | 2026-05-02]
 - Violation: ApiKeyActionState/RegisteredProvider 타입을 infrastructure/llm/types.ts에 정의 — components가 infrastructure에서 직접 type import
