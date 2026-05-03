@@ -87,7 +87,10 @@ async function resolveByokOutcome(
     }
     // Premium model — require BYOK unless the user's tier already includes it.
     if (userId === null) {
-        return { kind: 'blocked', result: buildGateError('tier_premium_blocked') };
+        return {
+            kind: 'blocked',
+            result: buildGateError('tier_premium_blocked'),
+        };
     }
 
     const llmProvider = getProviderForModel(modelId);
@@ -107,7 +110,10 @@ async function resolveByokOutcome(
         return { kind: 'allowed', userApiKey: record.apiKey };
     } catch (error) {
         if (error instanceof LlmApiKeyDecryptionFailedError) {
-            return { kind: 'blocked', result: buildGateError('api_key_corrupted') };
+            return {
+                kind: 'blocked',
+                result: buildGateError('api_key_corrupted'),
+            };
         }
         throw error;
     }
@@ -167,6 +173,8 @@ export async function submitAnalysisAction(
     return submitAnalysis(symbol, timeframe, force, fmpSymbol, {
         waitUntil,
         modelId,
-        ...(byok.userApiKey !== undefined ? { userApiKey: byok.userApiKey } : {}),
+        ...(byok.userApiKey !== undefined
+            ? { userApiKey: byok.userApiKey }
+            : {}),
     });
 }
