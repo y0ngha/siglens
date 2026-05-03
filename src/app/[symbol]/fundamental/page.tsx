@@ -15,6 +15,7 @@ import {
     getPriceTargetSummary,
     getSectorSnapshot,
     getHistoricalSector,
+    todayKstIsoDate,
 } from './fundamentalData';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
@@ -162,7 +163,7 @@ async function SectorDirectionSection({
     symbol: string;
     sector: string;
 }) {
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayKstIsoDate();
     const [snapshot, historical] = await Promise.all([
         getSectorSnapshot(today),
         sector !== '' ? getHistoricalSector(sector) : Promise.resolve([]),

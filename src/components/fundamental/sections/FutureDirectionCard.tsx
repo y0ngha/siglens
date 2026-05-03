@@ -209,6 +209,8 @@ export function FutureDirectionCard({
                     </h3>
                     <dl className="grid grid-cols-2 gap-x-6 gap-y-2 sm:grid-cols-4">
                         {(
+                            // TS infers (string | number | null)[][] from the entries array; the source
+                            // data is structurally [string, number | null] per the priceTargetSummary shape.
                             [
                                 ['하단', ptConsensus.targetLow],
                                 ['중앙값', ptConsensus.targetMedian],
