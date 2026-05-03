@@ -81,15 +81,15 @@ export function FinancialHealthCard({
 }: FinancialHealthCardProps) {
     if (ratios === null && scores === null) return null;
 
+    const ocf = cashFlow?.operatingCashFlow ?? null;
     const formattedOcf =
-        cashFlow?.operatingCashFlow !== null &&
-        cashFlow?.operatingCashFlow !== undefined
+        ocf !== null
             ? new Intl.NumberFormat('ko-KR', {
                   notation: 'compact',
                   maximumFractionDigits: 1,
                   style: 'currency',
                   currency: 'USD',
-              }).format(cashFlow.operatingCashFlow)
+              }).format(ocf)
             : '—';
 
     return (

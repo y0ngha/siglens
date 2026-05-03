@@ -1,4 +1,4 @@
-const TAB_LABELS = ['차트', '뉴스', '펀더', '종합'] as const;
+import { TABS } from '@/components/symbol-page/SymbolTabs';
 
 // Static SymbolTabs fallback — no usePathname so the PPR prerender shell can resolve.
 export function SymbolTabsSkeleton() {
@@ -7,12 +7,12 @@ export function SymbolTabsSkeleton() {
             aria-hidden="true"
             className="border-secondary-700 flex overflow-x-auto border-b"
         >
-            {TAB_LABELS.map(label => (
+            {TABS.map(tab => (
                 <span
-                    key={label}
+                    key={tab.key}
                     className="text-secondary-400 px-4 py-2 text-sm whitespace-nowrap"
                 >
-                    {label}
+                    {tab.label}
                 </span>
             ))}
         </nav>

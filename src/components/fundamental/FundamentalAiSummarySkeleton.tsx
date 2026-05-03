@@ -1,6 +1,8 @@
 import { type CSSProperties } from 'react';
 
 const SKELETON_LINE_COUNT = 3;
+const SKELETON_WIDTH_START_PCT = 85;
+const SKELETON_WIDTH_STEP_PCT = 12;
 
 export function FundamentalAiSummarySkeleton() {
     return (
@@ -35,7 +37,7 @@ export function FundamentalAiSummarySkeleton() {
                         className="bg-secondary-700 h-4 w-[var(--skeleton-w)] animate-pulse rounded"
                         style={
                             {
-                                '--skeleton-w': `${85 - i * 12}%`,
+                                '--skeleton-w': `${SKELETON_WIDTH_START_PCT - i * SKELETON_WIDTH_STEP_PCT}%`,
                             } as CSSProperties
                         }
                         aria-hidden="true"

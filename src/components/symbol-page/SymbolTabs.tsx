@@ -4,8 +4,8 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/cn';
 
-/** All segment tab definitions for the 4 symbol analysis pages. */
-const TABS = [
+/** All segment tab definitions for the 4 symbol analysis pages. SymbolTabsSkeleton uses the labels from this single source of truth. */
+export const TABS = [
     { key: 'chart', label: '차트', hrefBuilder: (s: string) => `/${s}` },
     {
         key: 'news',

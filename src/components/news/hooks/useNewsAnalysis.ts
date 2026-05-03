@@ -4,7 +4,7 @@ import { useSuspenseQuery } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
-import { sleep } from '@/components/symbol-page/utils/sleep';
+import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 

@@ -16,6 +16,8 @@ import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis
 import { RiskFactors } from '@/components/overall/sections/RiskFactors';
 
 const SKELETON_LINE_COUNT = 3;
+const SKELETON_WIDTH_START_PCT = 85;
+const SKELETON_WIDTH_STEP_PCT = 12;
 
 interface OverallContentProps {
     symbol: string;
@@ -74,7 +76,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
                             )}
                             style={
                                 {
-                                    '--skeleton-w': `${85 - i * 12}%`,
+                                    '--skeleton-w': `${SKELETON_WIDTH_START_PCT - i * SKELETON_WIDTH_STEP_PCT}%`,
                                 } as CSSProperties
                             }
                             aria-hidden="true"
