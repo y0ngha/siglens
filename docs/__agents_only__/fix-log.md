@@ -1,5 +1,30 @@
 # Fix Log
 
+## [PR #417 Round 4 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: loadKoreanFont에 인라인 매직 넘버 `60 * 60 * 24 * 7` (7일 초)
+- Rule: MISTAKES.md #15 — 매직 넘버는 모듈 레벨 상수로 추출
+- Context: `import { SECONDS_PER_DAY } from '@/domain/constants/time'`로 이미 존재하는 시간 상수 활용. `const FONT_REVALIDATE_SECONDS = 7 * SECONDS_PER_DAY` 도입.
+
+- Doc policy update (REJECTED B1 → 문서 수정으로 처리): `infrastructure ← lib` 금지 규칙 완화
+- Rule: ARCHITECTURE.md, CLAUDE.md(root), src/lib/CLAUDE.md 일괄 갱신
+- Context: lib/og.ts에 색상/레이아웃 순수 상수만 두고 사이드 이펙트 함수(loadKoreanFont)는 R2에서 이미 infrastructure로 옮겼다. 그러나 색상 상수는 lib에 남아 infrastructure(buildSymbolOgImage.tsx)에서 import해야 했고, 이는 기존 "infrastructure ← domain only" 규칙 위반. 사용자 결정으로 규칙을 "infrastructure ← domain + lib (lib must be pure utilities/constants only)"로 명시 완화. 단 cross-layer 타입은 여전히 domain/types.ts에만 두기로 유지(hook 측 import 경로 보호).
+
+- Doc policy clarification (REJECTED B3 → 문서 수정으로 처리): MISTAKES.md #0 적용 범위 명시
+- Rule: MISTAKES.md #0 (Non-component function or Route Handler missing explicit return type)
+- Context: 사용자 의도는 "순수 함수/로직 함수"의 반환 타입 명시였고, Next.js 파일 컨벤션(page.tsx, layout.tsx, opengraph-image.tsx, sitemap.ts, robots.ts, manifest.ts 등)은 Next가 시그니처를 보장하므로 예외라는 점을 문서화. 룰 제목과 본문 모두 "Pure function or logic-bearing function" + 예외 목록으로 갱신.
+
+- Suggestion S1 적용: 4개 page에 반복되던 `const getAssetInfoCached = cache(getAssetInfoAction)` 패턴
+- Rule: FF Cohesion — 동일 코드 N번 반복은 한 곳으로 모은다
+- Context: `src/infrastructure/ticker/getAssetInfoCached.ts`로 추출. React.cache는 per-request scope이므로 모듈 레벨에 한 번만 정의해도 동일 동작.
+
+- Suggestion S2 적용: SymbolPageClient bottomSlot 주석 WHAT → WHY로 교체
+- Rule: 주석은 코드로 자명하지 않은 이유를 적는다
+- Context: "차트 컨테이너 아래에 렌더" → "서버 컴포넌트가 SEO용 cross-link를 주입하기 위한 슬롯".
+
+- Suggestion S3 적용: package.json predev/prebuild 명령어 중복
+- Rule: FF Cohesion — drift 방지
+- Context: `copy:backtesting` 공유 스크립트로 추출하고 predev/prebuild는 `yarn copy:backtesting`을 호출.
+
 ## [PR #417 Round 3 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: 신규 infrastructure 함수 `buildSymbolOgImage` (src/infrastructure/og/buildSymbolOgImage.tsx) 단위 테스트 부재
 - Rule: CONVENTIONS.md "infrastructure/ 100% (필수)" + MISTAKES.md Tests #12 — every new infra function must have a unit test file

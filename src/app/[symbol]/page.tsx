@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { cache } from 'react';
 import {
     dehydrate,
     HydrationBoundary,
@@ -9,7 +8,7 @@ import {
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
-import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import {
@@ -22,9 +21,6 @@ import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { buildDisplayName } from '@/domain/ticker';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/components/ui/JsonLd';
-
-// React.cache로 generateMetadata와 page body의 중복 fetch를 동일 render pass 안에서 dedupe.
-const getAssetInfoCached = cache(getAssetInfoAction);
 
 const FALLBACK_ANALYSIS: AnalysisResponse = {
     summary: 'AI 분석을 일시적으로 사용할 수 없습니다.',

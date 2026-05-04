@@ -1,4 +1,4 @@
-import { Suspense, cache } from 'react';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import {
@@ -17,7 +17,7 @@ import {
     getHistoricalSector,
 } from '@/app/[symbol]/fundamental/fundamentalData';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
-import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildDisplayName } from '@/domain/ticker';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
@@ -40,9 +40,6 @@ import {
     buildSymbolFundamentalSeoContent,
     SITE_NAME,
 } from '@/lib/seo';
-
-// React.cache로 generateMetadata와 page body의 중복 fetch를 동일 render pass 안에서 dedupe.
-const getAssetInfoCached = cache(getAssetInfoAction);
 
 interface Props {
     params: Promise<{ symbol: string }>;

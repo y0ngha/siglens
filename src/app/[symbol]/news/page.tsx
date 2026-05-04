@@ -1,4 +1,4 @@
-import { Suspense, cache } from 'react';
+import { Suspense } from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import {
@@ -10,7 +10,7 @@ import {
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildDisplayName } from '@/domain/ticker';
-import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { NewsList } from '@/components/news/sections/NewsList';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
 import { AnalystActions } from '@/components/news/sections/AnalystActions';
@@ -30,9 +30,6 @@ import {
 } from '@/lib/seo';
 import { waitUntil } from '@vercel/functions';
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
-
-// React.cache로 generateMetadata와 page body의 중복 fetch를 동일 render pass 안에서 dedupe.
-const getAssetInfoCached = cache(getAssetInfoAction);
 
 // JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
 const JSON_LD_NEWS_MAX_ITEMS = 10;

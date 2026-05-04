@@ -28,7 +28,7 @@ interface SymbolPageClientProps {
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
     indicatorCount: number;
-    // 차트 컨테이너(viewport-height) 아래에 렌더링되는 SEO 크로스링크 슬롯.
+    // 서버 컴포넌트가 SEO용 cross-link를 주입하기 위한 슬롯 — viewport-height 차트 아래 영역에 노출.
     bottomSlot?: ReactNode;
 }
 

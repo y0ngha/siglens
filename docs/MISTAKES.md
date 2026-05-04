@@ -11,16 +11,19 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ## Coding Paradigm
 
 ```
-0. Non-component function or Route Handler missing explicit return type
-   → All functions outside component render scope must declare return type explicitly
-   → Applies to Server Actions, Route Handlers (GET/POST), custom hooks, infrastructure functions
-   → Prevents type inference errors and makes API contracts explicit
-   ❌ async function loginAction(data: FormData) { ... }  // no Promise<Result> declaration
-   ❌ export async function GET(req: Request) { ... }  // no Promise<NextResponse> declaration
-   ❌ const useCurrentUser = () => { ... }  // no UseQueryResult explicit return
+0. Pure function or logic-bearing function missing explicit return type
+   → 적용 대상: 순수 함수, 비즈니스 로직 함수, 도메인/인프라 헬퍼, 커스텀 훅, Server Actions, API Route Handlers (GET/POST/PUT/DELETE)
+   → 의도: 타입 추론 오류 방지 + API 계약 명시
+   → 예외 (Next.js 파일 컨벤션 — 명시적 반환 타입 불필요): `app/**/page.tsx`, `app/**/layout.tsx`, `app/**/loading.tsx`, `app/**/error.tsx`, `app/**/not-found.tsx`, `app/**/template.tsx`, `app/**/opengraph-image.tsx`, `app/**/twitter-image.tsx`, `app/**/icon.tsx`, `app/**/apple-icon.tsx`, `app/**/sitemap.ts`, `app/**/robots.ts`, `app/**/manifest.ts` — Next.js가 시그니처를 보장하고 반환 타입이 자명하므로 명시 불필요
+   ❌ async function loginAction(data: FormData) { ... }  // no Promise<Result> declaration (Server Action)
+   ❌ export async function GET(req: Request) { ... }  // no Promise<NextResponse> declaration (Route Handler)
+   ❌ const useCurrentUser = () => { ... }  // no UseQueryResult explicit return (custom hook)
+   ❌ function compute(a: number, b: number) { return a + b; }  // pure function
    ✅ async function loginAction(data: FormData): Promise<LoginResult> { ... }
    ✅ export async function GET(req: Request): Promise<NextResponse> { ... }
    ✅ const useCurrentUser = (): UseQueryResult<User, Error> => { ... }
+   ✅ function compute(a: number, b: number): number { return a + b; }
+   ✅ export default async function Image({ params }) { ... }  // opengraph-image.tsx — 예외 적용
 
 0.5. Tailwind color tokens used directly; design system tokens not applied
    → All colors must come from src/lib/design/tailwind-config.ts semantic tokens

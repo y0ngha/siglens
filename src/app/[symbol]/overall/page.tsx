@@ -1,4 +1,3 @@
-import { cache } from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import {
@@ -8,7 +7,7 @@ import {
 } from '@/domain/constants/market';
 import type { Timeframe } from '@y0ngha/siglens-core';
 import { buildDisplayName } from '@/domain/ticker';
-import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { OverallContent } from '@/components/overall/OverallContent';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -17,9 +16,6 @@ import {
     buildSymbolOverallSeoContent,
     SITE_NAME,
 } from '@/lib/seo';
-
-// React.cache로 generateMetadata와 page body의 중복 fetch를 동일 render pass 안에서 dedupe.
-const getAssetInfoCached = cache(getAssetInfoAction);
 
 interface Props {
     params: Promise<{ symbol: string }>;
