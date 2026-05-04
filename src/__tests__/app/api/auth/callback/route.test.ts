@@ -1,7 +1,3 @@
-// ---------------------------------------------------------------------------
-// Module mocks
-// ---------------------------------------------------------------------------
-
 jest.mock('@/infrastructure/db/userRepository', () => ({
     DrizzleUserRepository: jest.fn(),
 }));
@@ -48,10 +44,6 @@ jest.mock('@/domain/auth/redirect', () => ({
     sanitizeNextPath: jest.fn().mockImplementation((p: string) => p || '/'),
 }));
 
-// ---------------------------------------------------------------------------
-// Imports (after mocks)
-// ---------------------------------------------------------------------------
-
 import { NextRequest } from 'next/server';
 import { GET } from '@/app/api/auth/callback/[provider]/route';
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
@@ -63,10 +55,6 @@ import {
     isOAuthProvider,
 } from '@/infrastructure/auth/oauth/providers';
 import { verifyOAuthState } from '@/infrastructure/auth/oauth/state';
-
-// ---------------------------------------------------------------------------
-// Typed mocks
-// ---------------------------------------------------------------------------
 
 const MockUserRepository = DrizzleUserRepository as jest.MockedClass<
     typeof DrizzleUserRepository
@@ -89,10 +77,6 @@ const mockIsOAuthProvider = isOAuthProvider as jest.MockedFunction<
 const mockVerifyOAuthState = verifyOAuthState as jest.MockedFunction<
     typeof verifyOAuthState
 >;
-
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
 
 const FAKE_PROFILE = {
     provider: 'google' as const,
@@ -143,10 +127,6 @@ function makeRequest(
 }
 
 const DEFAULT_PARAMS = { params: Promise.resolve({ provider: 'google' }) };
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('GET /api/auth/callback/[provider]', () => {
     let mockUserRepo: jest.Mocked<InstanceType<typeof DrizzleUserRepository>>;
@@ -221,6 +201,21 @@ describe('GET /api/auth/callback/[provider]', () => {
             const location = res.headers.get('location') ?? '';
             expect(location).toContain('error=oauth_email_conflict');
             expect(location).toContain(encodeURIComponent(FAKE_PROFILE.email));
+        });
+    });
+
+    describe('pendingStore 미설정', () => {
+        it('pendingStore가 null이면 oauth_unknown으로 리다이렉트한다', async () => {
+            mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue(null);
+            const req = makeRequest(
+                { state: 'valid-state', code: 'auth-code' },
+                { oauth_state: 'cookie-state' }
+            );
+            const res = await GET(req, DEFAULT_PARAMS);
+
+            expect(res.status).toBe(307);
+            const location = res.headers.get('location') ?? '';
+            expect(location).toContain('error=oauth_unknown');
         });
     });
 

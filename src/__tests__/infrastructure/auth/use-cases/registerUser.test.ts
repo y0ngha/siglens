@@ -279,6 +279,22 @@ describe('registerUser', () => {
         if (!result.ok) expect(result.error.code).toBe('email_already_exists');
     });
 
+    it('clears the verified marker even when createEmailUser returns null (tx null branch)', async () => {
+        const { dependencies, deleteToken, createEmailUser } =
+            makeDependencies();
+        (createEmailUser as jest.Mock).mockResolvedValue(null);
+
+        const result = await registerUser(DEFAULT_INPUT, dependencies);
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.code).toBe('email_already_exists');
+        // Marker must be cleared via finally even in the null-return path.
+        expect(deleteToken).toHaveBeenCalledWith(
+            'email_verification',
+            'user@example.com'
+        );
+    });
+
     it('inserts agreement rows for each agreedTermsId using tx inside a transaction', async () => {
         const { dependencies, insertMany, transaction } = makeDependencies();
 
