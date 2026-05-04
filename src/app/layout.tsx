@@ -137,7 +137,10 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                     <PwaBanner />
                     <Suspense
                         fallback={
-                            <Header currentUser={null} loadingUserMenu={hasSession} />
+                            <Header
+                                currentUser={null}
+                                loadingUserMenu={hasSession}
+                            />
                         }
                     >
                         <HeaderWithUser />

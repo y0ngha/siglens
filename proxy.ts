@@ -1,5 +1,5 @@
-import { NextResponse, type NextRequest } from 'next/server';
 import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
+import { NextResponse, type NextRequest } from 'next/server';
 
 /**
  * 두 가지 가드를 처리하는 미들웨어 함수.

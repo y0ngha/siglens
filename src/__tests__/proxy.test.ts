@@ -40,16 +40,16 @@ describe('proxy', () => {
         mockNext.mockClear();
     });
 
-    describe('세션 쿠키가 있을 때', () => {
-        const guardedPaths = [
+    describe('역방향 가드 — guest-only 경로', () => {
+        const guestOnlyPaths = [
             '/login',
             '/signup',
             '/forgot-password',
             '/reset-password',
         ];
 
-        it.each(guardedPaths)(
-            '%s — 값이 비어있지 않으면 / 로 redirect한다',
+        it.each(guestOnlyPaths)(
+            '%s — 세션이 있으면 / 로 redirect한다',
             path => {
                 proxy(makeRequest('valid-token', path));
                 expect(mockRedirect).toHaveBeenCalledTimes(1);
@@ -59,18 +59,43 @@ describe('proxy', () => {
             }
         );
 
-        it('값이 빈 문자열이면 next()로 통과시킨다', () => {
+        it.each(guestOnlyPaths)(
+            '%s — 세션이 없으면 next()로 통과시킨다',
+            path => {
+                proxy(makeRequest(undefined, path));
+                expect(mockNext).toHaveBeenCalledTimes(1);
+                expect(mockRedirect).not.toHaveBeenCalled();
+            }
+        );
+
+        it('세션 값이 빈 문자열이면 next()로 통과시킨다', () => {
             proxy(makeRequest(''));
             expect(mockNext).toHaveBeenCalledTimes(1);
             expect(mockRedirect).not.toHaveBeenCalled();
         });
     });
 
-    describe('세션 쿠키가 없을 때', () => {
-        it('next()로 통과시킨다', () => {
-            proxy(makeRequest(undefined));
-            expect(mockNext).toHaveBeenCalledTimes(1);
-            expect(mockRedirect).not.toHaveBeenCalled();
-        });
+    describe('전방 가드 — auth-required 경로', () => {
+        const authRequiredPaths = ['/account', '/account/delete'];
+
+        it.each(authRequiredPaths)(
+            '%s — 세션이 없으면 /login 으로 redirect한다',
+            path => {
+                proxy(makeRequest(undefined, path));
+                expect(mockRedirect).toHaveBeenCalledTimes(1);
+                const calledUrl = mockRedirect.mock.calls[0]![0] as URL;
+                expect(calledUrl.pathname).toBe('/login');
+                expect(mockNext).not.toHaveBeenCalled();
+            }
+        );
+
+        it.each(authRequiredPaths)(
+            '%s — 세션이 있으면 next()로 통과시킨다',
+            path => {
+                proxy(makeRequest('valid-token', path));
+                expect(mockNext).toHaveBeenCalledTimes(1);
+                expect(mockRedirect).not.toHaveBeenCalled();
+            }
+        );
     });
 });

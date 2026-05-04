@@ -26,7 +26,7 @@ function StatusMessage({ id, state, className }: StatusMessageProps) {
             id={id}
             role="status"
             aria-live="polite"
-            className={cn('min-h-[1.25rem] text-sm', className)}
+            className={cn('min-h-5 text-sm', className)}
         >
             {state.status === 'success' && (
                 <span className="text-ui-success">{state.message}</span>
