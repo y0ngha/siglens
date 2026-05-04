@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { OAuthConsentForm } from '@/components/auth/OAuthConsentForm';
 import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
+import { cancelOAuthSignupAction } from '@/infrastructure/auth/cancelOAuthSignupAction';
 import { SITE_NAME } from '@/lib/seo';
 import type { Metadata } from 'next';
 
@@ -40,6 +41,7 @@ async function ConsentContent({ searchParams }: PageProps) {
             email={profile.email}
             name={profile.name}
             avatarUrl={profile.avatarUrl}
+            cancelAction={cancelOAuthSignupAction}
         />
     );
 }

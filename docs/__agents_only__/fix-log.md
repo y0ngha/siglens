@@ -1,5 +1,24 @@
 # Fix Log
 
+## [PR #420 Round 2 | master | 2026-05-04]
+- B3: `ParsedSeed.kind` inline union literal `'privacy' | 'tos'` — should use `TermsKind` named alias from `constants.ts` for single source of truth.
+  - Rule: MISTAKES.md §5.2 — inline union literals should use named type aliases
+- S1: Replaced custom `slugify` in `legal-toc.ts` with `github-slugger` (already transitive dep). Added `transformIgnorePatterns` to `jest.config.js` to handle ESM-only package.
+
+## [PR #420 Round 1 | master | 2026-05-04]
+- B2: `finalizeOAuthSignupAction` missing outer try-catch — MISTAKES.md Coding Paradigm 0.7 (Server Actions must catch all throws, never propagate to client). Wrapped full body; re-throws NEXT_REDIRECT, redirects on other errors.
+  - Rule: MISTAKES.md Coding Paradigm 0.7 — Server Actions must catch all throws
+- B3: `CheckboxBoxProps` defined inline in component parameter — MISTAKES.md Components 13 requires named interface declared above component. Extracted interface above `CheckboxBox`.
+  - Rule: MISTAKES.md Components 13 — props interfaces must be named and declared above component
+- B5: `seedTerms.ts` used `list.push()` (array mutation) — MISTAKES.md §5 prohibits array mutation via push. Changed to spread: `[...list, seed.version]`.
+  - Rule: MISTAKES.md §5 — no array mutation via push
+- B6: `[...versions].sort()` — spread was unnecessary since `toSorted()` doesn't mutate. Changed to `versions.toSorted()`.
+- B7: `legal-toc.ts` used imperative `for + push` — refactored to declarative `map`.
+- B8: `OAuthConsentForm.tsx` had inline `useEffect` for pageshow event — MISTAKES.md Components 7 requires DOM event listeners in useEffect to be extracted to custom hooks. Extracted to `usePageShowReload` hook.
+  - Rule: MISTAKES.md Components 7 — DOM event listeners in useEffect must be extracted to custom hooks
+- Fix: `consent/page.tsx` had `export const dynamic = 'force-dynamic'` incompatible with `cacheComponents: true`. Removed — searchParams already makes page dynamic.
+- Fix: `privacy/page.tsx`, `terms/page.tsx` — DB access in async page component triggers "Uncached data outside Suspense" with `cacheComponents: true`. Split into inner async components wrapped in Suspense.
+
 ## [PR #417 Round 6 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: \`@type: 'FinancialProduct'\` JSON-LD 의미 부적합 — schema.org/FinancialProduct는 대출/카드/보험 등 금융 상품 자체용이고 주식 분석 서비스에는 맞지 않음. WebPage about.Corporation으로 이미 금융 entity 신호 제공 중이라 중복.
 - Rule: schema.org type semantic 정합성
@@ -33,10 +52,6 @@
 - Context: P1.1에서 visible static SEO 콘텐츠 블록을 `<section>`으로 추가. 내부 `<h2>`에 id 부여하고 `<section aria-labelledby>`로 연결.
 
 ## [PR #417 Round 1 | worktree-seo-overhaul-49 | 2026-05-04]
-- Violation: `lib/og.ts` exposed `loadKoreanFont()` performing CDN `fetch()` (network I/O side effect) inside the lib layer
-- Rule: `src/lib/CLAUDE.md` — "Pure functions only, no side effects" (mirrors ARCHITECTURE.md layer constraint)
-- Context: Created during P3.3 (dynamic OG image route). Moved to `src/infrastructure/og/loadKoreanFont.ts`; `lib/og.ts` now contains only pure color constants (OG_BG, OG_FG, OG_ACCENT, OG_MUTED). Same pattern caught in earlier review (P3.3 round 2 moved og-shared.ts to lib/og.ts), but the `loadKoreanFont` part of that move kept the side effect inside lib — second review caught the residual.
-
 - Violation: schema.org `Article.datePublished` set to `new Date().toISOString()` (request time) — Googlebot interprets every crawl as a fresh publication
 - Rule: schema.org Article semantics — `datePublished` is original publication time, not request time; for content updates use `dateModified`
 - Context: Added during P3.1 (news Article JSON-LD). Replaced with `SITE_BUILD_DATE.toISOString()` for `datePublished` and kept `new Date().toISOString()` as `dateModified` (background card analysis genuinely changes per request). Promoted `SITE_BUILD_DATE` to `@/lib/seo` so news/page.tsx and sitemap.ts share one source instead of duplicating `parseBuildDate`.
@@ -143,9 +158,6 @@
 - Rule: MISTAKES.md Coding Paradigm 7 — Nested ternaries 3+ times; extract to helper or declarative map
 - Context: Replaced with `BADGE_VARIANT_CLASS: Record<BadgeVariant, string>` object map + extracted `BadgeVariant` type alias per CONVENTIONS.md declarative paradigm.
 
-- Violation: lib/dateKey.ts called Date.now() (side effect), violating lib/ pure function requirement
-- Rule: CLAUDE.md layer dependency — lib/ must contain external UI utility wrappers only; pure functions with side effects belong in infrastructure
-- Context: Moved lib/dateKey.ts → infrastructure/utils/dateKey.ts; updated 4 import sites (fundamental/page.tsx, news/page.tsx, submitOverallAnalysisAction.ts, submitNewsAnalysisAction.ts).
 
 ## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03 — Deferred]
 - Question: Hooks importing infrastructure (useFundamentalAnalysis, useNewsAnalysis, useOverallAnalysis, useNewsAugment)
@@ -168,18 +180,6 @@
 - Violation: SubmitButton.tsx had `focus-visible:ring-primary-500` without `focus-visible:ring-offset-2` / `ring-offset-{color}` while peer buttons in the same PR (DangerSubmitButton, error retry buttons, PasswordField toggle) all carried the offset pair
 - Rule: WAI-ARIA keyboard accessibility — same-color ring on same-color background needs ring-offset for sufficient contrast; cross-component consistency
 - Context: Added `focus-visible:ring-offset-secondary-900 focus-visible:ring-offset-2` to align with the form's AuthCardShell `bg-secondary-900/80` surrounding background.
-
-## [Phase 7 OAuth Consent Flow | Spec compliance R1 | 2026-05-04]
-- Violation: OAuthConsentForm.tsx (component .tsx file) imported cancelOAuthSignupAction directly from infrastructure
-- Rule: MISTAKES.md Architecture 0 — Component (.tsx) files prohibited from importing @/infrastructure; use hook abstraction
-- Context: Component should import through a hook; hook file provides queryFn/mutationFn/useActionState connection point.
-
-
-
-## [Phase 7 OAuth Consent Flow | Spec compliance R2 | 2026-05-04]
-- Violation: useCancelOAuthSignup.ts was a thin hook with no connection logic (no queryFn, no useActionState, pure pass-through)
-- Rule: MISTAKES.md Components 5.5 — Remove pass-through props and hooks that add no abstraction value; they increase boilerplate
-- Context: If hook only re-exports an action, component should call the action directly (when appropriate) or hook should be removed.
 
 ## [Phase 7 OAuth Consent Flow | Spec compliance R2 | 2026-05-04]
 - Violation: finalizeOAuthSignupAction.ts variable `let createdUserId` may be uninitialized from TypeScript perspective when returned

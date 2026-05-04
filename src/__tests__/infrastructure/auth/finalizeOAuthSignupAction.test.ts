@@ -68,16 +68,16 @@ const SAMPLE_PROFILE = {
 const SAMPLE_TERMS_P = {
     id: 'terms-p',
     kind: 'privacy' as const,
-    version: '1.0',
-    content: '',
+    version: 1,
+    body: '',
     effectiveDate: new Date(),
     createdAt: new Date(),
 };
 const SAMPLE_TERMS_T = {
     id: 'terms-t',
     kind: 'tos' as const,
-    version: '1.0',
-    content: '',
+    version: 1,
+    body: '',
     effectiveDate: new Date(),
     createdAt: new Date(),
 };

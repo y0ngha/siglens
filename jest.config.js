@@ -14,6 +14,8 @@ module.exports = {
     moduleNameMapper: {
         '^@/(.*)$': '<rootDir>/src/$1',
     },
+    // github-slugger is ESM-only; transform it via ts-jest so Jest can consume it
+    transformIgnorePatterns: ['/node_modules/(?!github-slugger)'],
     // domain, infrastructure만 커버리지 측정
     collectCoverageFrom: [
         'src/domain/**/*.ts',

@@ -6,8 +6,8 @@ import type { OAuthProvider, SupportedOAuthProvider } from '@/domain/types';
 import { ConsentCheckboxGroup } from '@/components/auth/ConsentCheckboxGroup';
 import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
 import { useFinalizeOAuthSignup } from '@/components/auth/hooks/useFinalizeOAuthSignup';
-import { useCancelOAuthSignup } from '@/components/auth/hooks/useCancelOAuthSignup';
 import { usePageShowReload } from '@/components/auth/hooks/usePageShowReload';
+import type { cancelOAuthSignupAction } from '@/infrastructure/auth/cancelOAuthSignupAction';
 
 interface OAuthConsentFormProps {
     token: string;
@@ -15,6 +15,7 @@ interface OAuthConsentFormProps {
     email: string;
     name?: string;
     avatarUrl?: string;
+    cancelAction: typeof cancelOAuthSignupAction;
 }
 
 const PROVIDER_LABEL: Partial<Record<OAuthProvider, string>> = {
@@ -28,11 +29,11 @@ export function OAuthConsentForm({
     email,
     name,
     avatarUrl,
+    cancelAction,
 }: OAuthConsentFormProps) {
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [tosChecked, setTosChecked] = useState(false);
     const [finalizeState, finalizeFormAction] = useFinalizeOAuthSignup();
-    const cancelFormAction = useCancelOAuthSignup();
     usePageShowReload();
 
     const consentError =
@@ -104,7 +105,7 @@ export function OAuthConsentForm({
                 </button>
             </form>
 
-            <form action={cancelFormAction}>
+            <form action={cancelAction}>
                 <input type="hidden" name="token" value={token} />
                 <button
                     type="submit"
