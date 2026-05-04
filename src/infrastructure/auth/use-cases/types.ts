@@ -1,10 +1,8 @@
-import type { OAuthProvider } from '@/domain/types';
 import type {
     AuthSessionRecord,
     AuthUserRecord,
     EmailAuthUserRepository,
     OAuthAccountRepository,
-    OAuthUserRepository,
     SessionRepository,
     UserRepository,
 } from '@/infrastructure/db/types';
@@ -110,42 +108,6 @@ export type LoginUserResult =
           cookie: AuthSessionCookie;
       }
     | { ok: false; error: LoginUserError };
-
-export type SocialLoginUserErrorCode =
-    | 'invalid_oauth_profile'
-    | 'email_already_exists';
-
-export interface SocialLoginUserInput {
-    provider: OAuthProvider;
-    providerAccountId: string;
-    email: string;
-    name?: string;
-    avatarUrl?: string;
-    accessToken?: string;
-    refreshToken?: string;
-    tokenExpiresAt?: Date;
-}
-
-export interface SocialLoginUserError {
-    code: SocialLoginUserErrorCode;
-    message: string;
-}
-
-export interface SocialLoginUserDependencies {
-    users: OAuthUserRepository;
-    sessions: SessionRepository;
-}
-
-export type SocialLoginUserOptions = AuthSessionOptions;
-
-export type SocialLoginUserResult =
-    | {
-          ok: true;
-          user: AuthUserRecord;
-          session: AuthSessionRecord;
-          cookie: AuthSessionCookie;
-      }
-    | { ok: false; error: SocialLoginUserError };
 
 export interface LogoutUserInput {
     sessionToken: string;

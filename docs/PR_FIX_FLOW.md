@@ -82,6 +82,8 @@ gh api repos/y0ngha/siglens/pulls/{PR number}/comments \
     '[.[] | select(.created_at > ($since | rtrimstr("\n"))) | {id: .id, path: .path, line: .line, body: .body}]'
 
 # Step 3: Filter reviews submitted after the latest commit
+# Tip: Use `[-1:]` (descending, limit 1) to quickly confirm whether any new review exists before doing a full parse.
+# Example quick-check: gh api repos/y0ngha/siglens/pulls/{PR number}/reviews | jq '.[-1] | {state, submitted_at, body_preview: .body[:120]}'
 gh api repos/y0ngha/siglens/pulls/{PR number}/reviews \
   | jq --rawfile since /tmp/latest_commit_date.txt \
     '[.[] | select(.submitted_at > ($since | rtrimstr("\n"))) | {id: .id, state: .state, submitted_at: .submitted_at, body: .body}]'
