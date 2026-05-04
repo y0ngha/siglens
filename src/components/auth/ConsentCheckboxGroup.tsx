@@ -20,6 +20,7 @@ interface ConsentRowProps {
     detailLabel: string;
     checked: boolean;
     invalid: boolean;
+    errorId?: string;
     onChange: (checked: boolean) => void;
 }
 
@@ -128,6 +129,7 @@ function ConsentRow({
     detailLabel,
     checked,
     invalid,
+    errorId,
     onChange,
 }: ConsentRowProps) {
     return (
@@ -152,6 +154,7 @@ function ConsentRow({
                         required: true,
                         'aria-required': true,
                         'aria-invalid': invalid ? true : undefined,
+                        'aria-describedby': errorId,
                         onChange: e => onChange(e.target.checked),
                     }}
                 />
@@ -188,6 +191,7 @@ export function ConsentCheckboxGroup({
     const masterId = useId();
     const privacyId = useId();
     const tosId = useId();
+    const errorId = useId();
 
     const allChecked = privacyChecked && tosChecked;
     const someChecked = privacyChecked || tosChecked;
@@ -234,6 +238,7 @@ export function ConsentCheckboxGroup({
                 detailLabel="개인정보처리방침 자세히 보기"
                 checked={privacyChecked}
                 invalid={Boolean(error) && !privacyChecked}
+                errorId={error ? errorId : undefined}
                 onChange={onPrivacyChange}
             />
             <ConsentRow
@@ -243,11 +248,13 @@ export function ConsentCheckboxGroup({
                 detailLabel="이용약관 자세히 보기"
                 checked={tosChecked}
                 invalid={Boolean(error) && !tosChecked}
+                errorId={error ? errorId : undefined}
                 onChange={onTosChange}
             />
             {error ? (
                 <p
-                    role="alert"
+                    id={errorId}
+                    role="status"
                     aria-live="polite"
                     className="text-ui-danger text-xs"
                 >

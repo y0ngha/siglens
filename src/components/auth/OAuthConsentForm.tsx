@@ -5,7 +5,7 @@ import Image from 'next/image';
 import type { OAuthProvider, SupportedOAuthProvider } from '@/domain/types';
 import { ConsentCheckboxGroup } from '@/components/auth/ConsentCheckboxGroup';
 import { useFinalizeOAuthSignup } from '@/components/auth/hooks/useFinalizeOAuthSignup';
-import { usePageShowReload } from '@/components/auth/hooks/usePageShowReload';
+import { usePageShowReload } from '@/components/hooks/usePageShowReload';
 
 interface OAuthConsentFormProps {
     token: string;

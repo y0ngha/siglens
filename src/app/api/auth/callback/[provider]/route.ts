@@ -129,10 +129,9 @@ export async function GET(
         return redirectToLoginWithError(req, 'oauth_unknown');
     }
 
-    let token: string;
-    try {
-        token = await pendingStore.save({
-            // `provider` was already narrowed to SupportedOAuthProvider by isOAuthProvider() above.
+    // `provider` was already narrowed to SupportedOAuthProvider by isOAuthProvider() above.
+    const token = await pendingStore
+        .save({
             provider,
             email: profileResult.profile.email,
             providerAccountId: profileResult.profile.providerAccountId,
@@ -143,10 +142,9 @@ export async function GET(
             tokenExpiresAt: profileResult.profile.tokenExpiresAt?.toISOString(),
             next: stateResult.next,
             createdAt: new Date().toISOString(),
-        });
-    } catch {
-        return redirectToLoginWithError(req, 'oauth_unknown');
-    }
+        })
+        .catch(() => null);
+    if (!token) return redirectToLoginWithError(req, 'oauth_unknown');
 
     const consentUrl = new URL('/signup/oauth/consent', req.url);
     consentUrl.searchParams.set('token', token);

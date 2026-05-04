@@ -64,12 +64,11 @@ export function validateSeedFiles(seeds: readonly ParsedSeed[]): void {
     }
     for (const [kind, versions] of byKind) {
         const sorted = versions.toSorted((a, b) => a - b);
-        for (let i = 0; i < sorted.length; i += 1) {
-            if (sorted[i] !== i + 1) {
-                throw new Error(
-                    `version gap detected for kind=${kind}: expected ${i + 1}, got ${sorted[i]}`
-                );
-            }
+        const gapIdx = sorted.findIndex((v, i) => v !== i + 1);
+        if (gapIdx !== -1) {
+            throw new Error(
+                `version gap detected for kind=${kind}: expected ${gapIdx + 1}, got ${sorted[gapIdx]}`
+            );
         }
     }
 }

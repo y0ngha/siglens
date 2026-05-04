@@ -1,5 +1,19 @@
 # Fix Log
 
+## [PR #420 Round 11 | master | 2026-05-05]
+- B1: `cancelOAuthSignupAction.ts` — entire action body not wrapped in outer try-catch; unexpected exceptions would propagate to client (MISTAKES.md §0.7). Wrapped in outer try-catch; re-throws NEXT_REDIRECT, falls back to redirect('/login') for other errors.
+  - Rule: MISTAKES.md §0.7 — Server Actions must catch all throws, never propagate to client
+- B2: `ConsentCheckboxGroup.tsx` — `role="alert"` + `aria-live="polite"` conflict; role="alert" implicitly sets aria-live="assertive", creating unpredictable screen reader behavior. Changed to `role="status"` (keeps explicit aria-live="polite").
+  - Rule: ARIA semantics — role="alert" conflicts with explicit aria-live="polite"
+- B3: `ConsentCheckboxGroup.tsx` — error `<p>` had no `id`; invalid checkboxes had no `aria-describedby` connection to error message. Added `const errorId = useId()`, `id={errorId}` on error element, `errorId` prop on ConsentRow, `aria-describedby: errorId` on checkbox inputs.
+  - Rule: ARIA accessibility — form inputs with errors must have aria-describedby pointing to error message
+- S1: `route.ts` ([provider] callback) — `let token; try { token = await ... } catch { return ... }` imperative pattern (MISTAKES.md §14). Replaced with declarative `const token = await pendingStore.save({...}).catch(() => null); if (!token) return ...`
+  - Rule: MISTAKES.md §14 — Imperative exception handling within try-catch should use declarative .catch() or ?. chains
+- S2: `usePageShowReload.ts` moved from `src/components/auth/hooks/` to `src/components/hooks/` (generic bfcache hook placed in auth feature subfolder instead of global hooks dir, MISTAKES.md Components §15). Updated import in OAuthConsentForm.tsx.
+  - Rule: MISTAKES.md Components §15 — Feature-agnostic utilities belong in global directories, not feature-specific subdirs
+- S3: `seedTerms.ts` — imperative `for (let i = 0; ...)` index loop for version gap detection. Replaced with declarative `findIndex` pattern.
+  - Rule: MISTAKES.md §5 — Declarative patterns (map, filter, reduce, findIndex) preferred over imperative loops
+
 ## [PR #420 Round 10 | master | 2026-05-05]
 - B1: `ConsentCheckboxGroup.tsx` — `text-white` raw Tailwind color used for checkmark SVG icon. MISTAKES.md §0.5 prohibits raw color references. Changed to `text-secondary-50` (design system semantic token).
   - Rule: MISTAKES.md §0.5 — Use design system semantic tokens, not raw Tailwind colors
