@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import Script from 'next/script';
+import { cookies } from 'next/headers';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Header } from '@/components/layout/Header';
 import type { HeaderUserMenuUser } from '@/components/layout/HeaderUserMenu';
@@ -9,6 +10,7 @@ import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
 import { PwaBanner } from '@/components/pwa/PwaBanner';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { AUTH_HINT_COOKIE_NAME } from '@/lib/auth/cookieNames';
 import { ADSENSE_ENABLED } from '@/lib/adsense';
 import {
     ROOT_KEYWORDS,
@@ -102,12 +104,32 @@ interface RootLayoutProps {
 }
 
 /**
- * DB 세션 조회를 Suspense 경계 안으로 격리해 navigation blocking을 방지한다.
- * fallback은 HeaderUserMenuFallback(클라이언트 컴포넌트)이 담당한다:
- *   JS 하이드레이션 직후 document.cookie의 siglens_auth 힌트 쿠키를 읽어
- *   비로그인 사용자에게는 즉시 로그인/회원가입 버튼을 표시하고,
- *   로그인 사용자에게는 스켈레톤을 유지하다가 실제 프로필로 교체한다.
+ * 두 단계 Suspense로 header flash를 원천 제거한다.
+ *
+ * 1단계(HeaderWithHint): hint 쿠키만 읽는다 — I/O 없음, 거의 즉시 완료.
+ *    → 쿠키 있음: 내부 fallback을 skeleton으로 설정 (로그인 상태 힌트)
+ *    → 쿠키 없음: 내부 fallback을 로그인/회원가입으로 설정 (이미 정답, flash 없음)
+ *
+ * 2단계(HeaderWithUser): DB 세션 조회 — blocking 작업이므로 Suspense 안에 격리.
+ *    → 완료 후 실제 auth 상태로 교체.
+ *
+ * 외부 Suspense(skeleton)는 hint 쿠키 읽기가 완료될 때까지만 표시되며
+ * cookies()는 메모리 조회라 실질적으로 비가시 구간이다.
  */
+async function HeaderWithHint() {
+    const cookieStore = await cookies();
+    const hasSession = !!cookieStore.get(AUTH_HINT_COOKIE_NAME)?.value;
+    return (
+        <Suspense
+            fallback={
+                <Header currentUser={null} loadingUserMenu={hasSession} />
+            }
+        >
+            <HeaderWithUser />
+        </Suspense>
+    );
+}
+
 async function HeaderWithUser() {
     const authUser = await getCurrentUser();
     const currentUser: HeaderUserMenuUser | null = authUser
@@ -130,8 +152,10 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <SiteJsonLd />
                 <ReactQueryProvider>
                     <PwaBanner />
-                    <Suspense fallback={<Header currentUser={null} fallback />}>
-                        <HeaderWithUser />
+                    <Suspense
+                        fallback={<Header currentUser={null} loadingUserMenu />}
+                    >
+                        <HeaderWithHint />
                     </Suspense>
                     {children}
                 </ReactQueryProvider>

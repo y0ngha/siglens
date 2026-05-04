@@ -7,7 +7,6 @@ import {
     HeaderUserMenu,
     type HeaderUserMenuUser,
 } from '@/components/layout/HeaderUserMenu';
-import { HeaderUserMenuFallback } from '@/components/layout/HeaderUserMenuFallback';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { SITE_NAME } from '@/lib/seo';
 
@@ -17,15 +16,16 @@ interface HeaderProps {
     /** Resolved current user (server-fetched in `app/layout.tsx`); null for guests. */
     readonly currentUser: HeaderUserMenuUser | null;
     /**
-     * When true, renders HeaderUserMenuFallback instead of HeaderUserMenu.
-     * Used as the Suspense fallback in layout — the client component reads the
-     * hint cookie to show the correct auth state without server-side cookie access.
+     * When true, renders a skeleton for the user menu instead of its real content.
+     * Used as the Suspense fallback:
+     *   - outer fallback: always true (hint cookie not yet read)
+     *   - inner fallback: true only when the hint cookie signals an active session
      */
-    readonly fallback?: boolean;
+    readonly loadingUserMenu?: boolean;
 }
 
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
-export function Header({ currentUser, fallback }: HeaderProps) {
+export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
     return (
         <header
             className="bg-secondary-900/90 supports-backdrop-filter:bg-secondary-900/75 border-secondary-800 sticky top-0 z-50 border-b backdrop-blur-md"
@@ -62,11 +62,10 @@ export function Header({ currentUser, fallback }: HeaderProps) {
                     <TickerAutocomplete size="sm" />
                 </div>
                 <div className="flex shrink-0 items-center">
-                    {fallback ? (
-                        <HeaderUserMenuFallback />
-                    ) : (
-                        <HeaderUserMenu currentUser={currentUser} />
-                    )}
+                    <HeaderUserMenu
+                        currentUser={currentUser}
+                        loading={loadingUserMenu}
+                    />
                 </div>
             </div>
         </header>
