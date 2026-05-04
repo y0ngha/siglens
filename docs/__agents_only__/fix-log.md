@@ -1,5 +1,16 @@
 # Fix Log
 
+## [PR #420 Round 15 | master | 2026-05-05]
+- B1: `src/__tests__/infrastructure/auth/cancelOAuthSignupAction.test.ts` — `redirect` mock was `jest.fn()` (not throwing), so the outer try-catch block was never exercised. Fixed by changing mock to throw NEXT_REDIRECT (matching other test files in PR), updating all tests to use `rejects.toThrow('NEXT_REDIRECT')`, and adding a new test for unexpected internal error → /login redirect (outer catch Branch 2).
+  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
+- B2: `src/__tests__/infrastructure/auth/registerAction.test.ts` — `!privacyTerms || !tosTerms` OR condition's second branch (`tosTerms` null while `privacyTerms` exists) was never tested due to short-circuit evaluation. Fixed by adding two separate tests: one for `privacyTerms` only null, one for `tosTerms` only null.
+  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
+- S1: `src/domain/auth/formTypes.ts` — `FinalizeOAuthSignupState.error` was an inline object type. Extracted to named `FinalizeOAuthSignupError` type alias.
+  - Rule: MISTAKES.md TypeScript §5/§5.2 — inline object types should use named type aliases
+- S2: `src/__tests__/infrastructure/auth/registerAction.test.ts` — email normalization behavior test was missing. Added `'email 키가 없으면 빈 문자열로 처리한다'` test using `makeConsentFormData({ email: '' })`.
+  - Rule: Test coverage — email normalization edge case should have dedicated test
+- S3 (skipped — False Positive): `src/infrastructure/auth/finalizeOAuthSignupAction.ts` — reviewer suggested changing `tx as unknown as SiglensDatabase` to `tx as SiglensDatabase`. Reverted: `PgTransaction<NeonHttpQueryResultHKT, ...>` doesn't overlap with `NeonHttpDatabase<...>` (SiglensDatabase), causing TS error 2352. The double cast is required.
+
 ## [PR #420 Round 14 | master | 2026-05-05]
 - B1: `src/__tests__/infrastructure/auth/registerAction.test.ts` — success case used `expect.anything()` as second argument to `toHaveBeenCalledWith()`. MISTAKES.md Tests §15/§16 forbids `expect.anything()`. Replaced with `expect.objectContaining({ emailTokens: expect.objectContaining({set, get, delete}), db: expect.objectContaining({transaction}) })`.
   - Rule: MISTAKES.md Tests §15/§16 — forbids `expect.anything()` in assertion

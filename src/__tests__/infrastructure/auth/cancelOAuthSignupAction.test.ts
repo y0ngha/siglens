@@ -30,7 +30,9 @@ describe('cancelOAuthSignupAction', () => {
 
         const fd = new FormData();
         fd.set('token', 'tok');
-        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow('NEXT_REDIRECT');
+        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+            'NEXT_REDIRECT'
+        );
 
         expect(deleteMock).toHaveBeenCalledWith('tok');
         expect(mockRedirect).toHaveBeenCalledWith('/login');
@@ -38,7 +40,9 @@ describe('cancelOAuthSignupAction', () => {
 
     it('redirects to /login even without token', async () => {
         const fd = new FormData();
-        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow('NEXT_REDIRECT');
+        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+            'NEXT_REDIRECT'
+        );
         expect(mockRedirect).toHaveBeenCalledWith('/login');
     });
 
@@ -46,7 +50,9 @@ describe('cancelOAuthSignupAction', () => {
         mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue(null);
         const fd = new FormData();
         fd.set('token', 'tok');
-        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow('NEXT_REDIRECT');
+        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+            'NEXT_REDIRECT'
+        );
         expect(mockRedirect).toHaveBeenCalledWith('/login');
     });
 
@@ -60,7 +66,9 @@ describe('cancelOAuthSignupAction', () => {
         });
         const fd = new FormData();
         fd.set('token', 'tok');
-        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow('NEXT_REDIRECT');
+        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+            'NEXT_REDIRECT'
+        );
         expect(deleteMock).toHaveBeenCalledWith('tok');
         expect(mockRedirect).toHaveBeenCalledWith('/login');
     });
@@ -71,7 +79,9 @@ describe('cancelOAuthSignupAction', () => {
         });
         const fd = new FormData();
         fd.set('token', 'tok');
-        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow('NEXT_REDIRECT');
+        await expect(cancelOAuthSignupAction(fd)).rejects.toThrow(
+            'NEXT_REDIRECT'
+        );
         expect(mockRedirect).toHaveBeenCalledWith('/login');
     });
 });

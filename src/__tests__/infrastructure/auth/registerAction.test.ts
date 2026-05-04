@@ -192,11 +192,13 @@ describe('registerAction', () => {
             MockTermsRepository.mockImplementation(
                 () =>
                     ({
-                        findActive: jest.fn().mockImplementation((kind: string) =>
-                            kind === 'privacy'
-                                ? Promise.resolve(null)
-                                : Promise.resolve(FAKE_TOS_TERMS)
-                        ),
+                        findActive: jest
+                            .fn()
+                            .mockImplementation((kind: string) =>
+                                kind === 'privacy'
+                                    ? Promise.resolve(null)
+                                    : Promise.resolve(FAKE_TOS_TERMS)
+                            ),
                         upsertFromSeed: jest.fn(),
                     }) as unknown as InstanceType<typeof DrizzleTermsRepository>
             );
@@ -212,11 +214,13 @@ describe('registerAction', () => {
             MockTermsRepository.mockImplementation(
                 () =>
                     ({
-                        findActive: jest.fn().mockImplementation((kind: string) =>
-                            kind === 'tos'
-                                ? Promise.resolve(null)
-                                : Promise.resolve(FAKE_PRIVACY_TERMS)
-                        ),
+                        findActive: jest
+                            .fn()
+                            .mockImplementation((kind: string) =>
+                                kind === 'tos'
+                                    ? Promise.resolve(null)
+                                    : Promise.resolve(FAKE_PRIVACY_TERMS)
+                            ),
                         upsertFromSeed: jest.fn(),
                     }) as unknown as InstanceType<typeof DrizzleTermsRepository>
             );

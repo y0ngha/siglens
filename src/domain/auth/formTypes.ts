@@ -68,7 +68,10 @@ export interface VerifyEmailFormState {
     } | null;
 }
 
-export type FinalizeOAuthSignupError = { code: 'consent_required'; message: string };
+export type FinalizeOAuthSignupError = {
+    code: 'consent_required';
+    message: string;
+};
 
 export interface FinalizeOAuthSignupState {
     error?: FinalizeOAuthSignupError;
