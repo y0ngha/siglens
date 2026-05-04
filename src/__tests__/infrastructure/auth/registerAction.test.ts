@@ -390,7 +390,16 @@ describe('registerAction', () => {
             ).rejects.toThrow('NEXT_REDIRECT:/market');
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ name: 'Holly' }),
-                expect.anything()
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
+                    }),
+                })
             );
             expect(setSpy).toHaveBeenCalledWith(
                 expect.objectContaining({ value: 'tok' })

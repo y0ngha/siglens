@@ -48,7 +48,7 @@ const components: Components = {
             return (
                 <Link
                     href={href ?? '#'}
-                    className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                    className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 rounded-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
                     {children}
                 </Link>
@@ -59,7 +59,7 @@ const components: Components = {
                 href={href}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 rounded-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                className="text-primary-400 hover:text-primary-300 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 rounded-sm transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
             >
                 {children}
             </a>

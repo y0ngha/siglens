@@ -6,9 +6,9 @@ import { z } from 'zod';
 import {
     TERMS_KIND_VALUES,
     type TermsKind,
-} from '../../src/infrastructure/db/constants';
-import { DrizzleTermsRepository } from '../../src/infrastructure/db/termsRepository';
-import { getDatabaseClient } from '../../src/infrastructure/db/client';
+} from '@/infrastructure/db/constants';
+import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
+import { getDatabaseClient } from '@/infrastructure/db/client';
 
 const FrontmatterSchema = z.object({
     kind: z.enum(TERMS_KIND_VALUES),

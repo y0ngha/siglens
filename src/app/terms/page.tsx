@@ -123,7 +123,7 @@ export default function TermsPage() {
         <>
             <JsonLd data={JSON_LD} />
             <JsonLd data={BREADCRUMB_JSON_LD} />
-            <Suspense>
+            <Suspense fallback={<div className="animate-pulse" aria-hidden="true" />}>
                 <TermsContent />
             </Suspense>
         </>
