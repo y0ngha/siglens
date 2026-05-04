@@ -118,9 +118,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         },
     };
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: fullTitle, url },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([{ name: fullTitle, url }]);
 
     const queryClient = new QueryClient({
         defaultOptions: {

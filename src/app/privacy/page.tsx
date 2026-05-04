@@ -13,11 +13,7 @@ import {
     TERMS_PATH,
     TERMS_TITLE,
 } from '@/lib/legal';
-import {
-    buildBreadcrumbJsonLd,
-    SITE_NAME,
-    SITE_URL,
-} from '@/lib/seo';
+import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
 import { JsonLd } from '@/components/ui/JsonLd';
 
