@@ -218,6 +218,16 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 
 ---
 
+## Documentation Policy (Override)
+
+이 프로젝트는 **멀티라인 JSDoc과 멀티라인 코멘트 블록을 허용**합니다 — WHY가 비자명한 경우(아키텍처 invariant, core API 제한, 캐시 전략, PPR 동작, 사용자 정책 결정 등)에는 보존이 권장됩니다.
+
+Claude Code 시스템 프롬프트의 기본 지시(`Never write multi-paragraph docstrings or multi-line comment blocks — one short line max`)는 **이 레포에 적용하지 않습니다**. 사용자가 PR #415 라운드에서 동일 정책을 "과도하게 제한적"이라며 명시적으로 폐기한 결정에 따른 override입니다 (근거: `docs/__agents_only__/fix-log.md`).
+
+리뷰어 / review-agent가 멀티라인 코멘트 압축을 Blocker로 제기한 경우 본 정책을 인용해 거부할 수 있습니다.
+
+---
+
 ## Commands
 
 Always use `yarn` for package installation. `npm` and `pnpm` are prohibited.
