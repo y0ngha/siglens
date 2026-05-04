@@ -1,6 +1,7 @@
 import { ImageResponse } from 'next/og';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_NAME } from '@/lib/seo';
-import { loadKoreanFont, OG_ACCENT, OG_BG, OG_FG, OG_MUTED } from '@/lib/og';
+import { OG_ACCENT, OG_BG, OG_FG, OG_MUTED } from '@/lib/og';
+import { loadKoreanFont } from '@/infrastructure/og/loadKoreanFont';
 
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };
 export const contentType = 'image/png';

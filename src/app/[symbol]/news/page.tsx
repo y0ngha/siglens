@@ -24,6 +24,7 @@ import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolNewsSeoContent,
+    SITE_BUILD_DATE,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
@@ -147,13 +148,17 @@ export default async function NewsPage({ params }: Props) {
         { name: '뉴스 분석', url: `/${upper}/news` },
     ]);
 
+    // datePublished는 페이지(요약 콘텐츠)가 처음 노출되는 빌드 시각으로 고정. 매 요청마다 변동시키면 Googlebot이 매번 "방금 발행"으로 간주.
+    // dateModified는 실제 카드 분석이 백그라운드에서 갱신되므로 요청 시각으로 둔다.
+    const nowIso = new Date().toISOString();
     const aiArticleJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: `${displayName} 최근 뉴스 AI 요약`,
         description: `${displayName} 관련 최신 뉴스의 sentiment와 핵심 이슈를 한국어로 정리합니다.`,
         inLanguage: 'ko',
-        datePublished: new Date().toISOString(),
+        datePublished: SITE_BUILD_DATE.toISOString(),
+        dateModified: nowIso,
         isPartOf: { '@type': 'WebPage', url },
         author: {
             '@type': 'Organization',

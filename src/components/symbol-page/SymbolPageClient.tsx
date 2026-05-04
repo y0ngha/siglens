@@ -28,10 +28,7 @@ interface SymbolPageClientProps {
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
     indicatorCount: number;
-    /**
-     * Slot rendered below the chart UI for SEO-oriented cross-links.
-     * Visible only after the user scrolls past the viewport-height chart container.
-     */
+    // 차트 컨테이너(viewport-height) 아래에 렌더링되는 SEO 크로스링크 슬롯.
     bottomSlot?: ReactNode;
 }
 

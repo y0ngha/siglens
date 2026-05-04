@@ -1,18 +1,8 @@
 import type { MetadataRoute } from 'next';
 import { PRIVACY_PATH, TERMS_PATH } from '@/lib/legal';
-import { SITE_URL } from '@/lib/seo';
+import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
-
-function parseBuildDate(): Date {
-    const raw = process.env.NEXT_BUILD_DATE;
-    if (raw) {
-        const d = new Date(raw);
-        if (!isNaN(d.getTime())) return d;
-    }
-    return new Date();
-}
-
-const SITEMAP_DATE = parseBuildDate();
+import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
 
 type SitemapId = 'static' | 'tickers';
 
@@ -47,7 +37,7 @@ export default function sitemap({
     const TODAY_AT_MARKET_CLOSE =
         todayCloseCandidate.getTime() <= NOW.getTime()
             ? todayCloseCandidate
-            : new Date(todayCloseCandidate.getTime() - 24 * 60 * 60 * 1000);
+            : new Date(todayCloseCandidate.getTime() - MS_PER_DAY);
 
     if (id === 'static') {
         return [
@@ -65,19 +55,19 @@ export default function sitemap({
             },
             {
                 url: `${SITE_URL}/backtesting`,
-                lastModified: SITEMAP_DATE,
+                lastModified: SITE_BUILD_DATE,
                 changeFrequency: 'monthly' as const,
                 priority: 0.9,
             },
             {
                 url: `${SITE_URL}${PRIVACY_PATH}`,
-                lastModified: SITEMAP_DATE,
+                lastModified: SITE_BUILD_DATE,
                 changeFrequency: 'yearly' as const,
                 priority: 0.3,
             },
             {
                 url: `${SITE_URL}${TERMS_PATH}`,
-                lastModified: SITEMAP_DATE,
+                lastModified: SITE_BUILD_DATE,
                 changeFrequency: 'yearly' as const,
                 priority: 0.3,
             },
@@ -85,7 +75,7 @@ export default function sitemap({
     }
 
     // id is narrowed to 'tickers' by exhaustive SitemapId union.
-    const ONE_HOUR_AGO = new Date(NOW.getTime() - 60 * 60 * 1000);
+    const ONE_HOUR_AGO = new Date(NOW.getTime() - MS_PER_HOUR);
     return POPULAR_TICKERS.flatMap(ticker => [
         {
             url: `${SITE_URL}/${ticker}`,

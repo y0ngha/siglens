@@ -8,6 +8,18 @@ export const SITE_URL =
 
 export const SITE_NAME = 'Siglens';
 
+// 빌드 시각 — 매 요청마다 변동되면 안 되는 schema.org datePublished 등에 사용.
+// NEXT_BUILD_DATE env가 있으면 우선, 없으면 모듈 로드 시각(deploy 시점)을 한 번만 캐시.
+function parseBuildDate(): Date {
+    const raw = process.env.NEXT_BUILD_DATE;
+    if (raw) {
+        const d = new Date(raw);
+        if (!isNaN(d.getTime())) return d;
+    }
+    return new Date();
+}
+export const SITE_BUILD_DATE = parseBuildDate();
+
 export const SITE_DESCRIPTION =
     '테슬라 PER이 비싼지, AAPL 어닝이 언제인지, 차트가 좋아 보이는지 — 미국 주식을 볼 때 궁금한 것들을 티커 하나로 확인합니다. 보조지표 25종 기반 차트 분석부터 펀더멘털, 뉴스, 셋을 합친 종합 결론까지 보여주고, 2년치 AI 백테스팅 결과도 함께 공개합니다.';
 
