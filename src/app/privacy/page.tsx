@@ -1,7 +1,6 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
 import { LegalPageShell } from '@/components/legal/LegalPageShell';
 import { PolicySection, type TocItem } from '@/components/legal/PolicySection';
+import { JsonLd } from '@/components/ui/JsonLd';
 import { CONTACT_EMAIL } from '@/lib/contact';
 import {
     INVESTMENT_DISCLAIMER,
@@ -13,9 +12,10 @@ import {
     TERMS_PATH,
     TERMS_TITLE,
 } from '@/lib/legal';
-import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/lib/seo';
 import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
-import { JsonLd } from '@/components/ui/JsonLd';
+import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/lib/seo';
+import type { Metadata } from 'next';
+import Link from 'next/link';
 
 const PAGE_URL = `${SITE_URL}${PRIVACY_PATH}`;
 
@@ -360,13 +360,22 @@ export default function PrivacyPage() {
                             <strong className="text-secondary-200">
                                 Anthropic, PBC
                             </strong>
-                            &nbsp;(미국): AI 기반 기술적 분석 생성 (Claude API)
+                            &nbsp;(미국): AI 기반 분석 생성 및 채팅 응답 생성
+                            (Claude API)
                         </li>
                         <li>
                             <strong className="text-secondary-200">
                                 Google LLC
                             </strong>
-                            &nbsp;(미국): AI 채팅 응답 생성 (Gemini API)
+                            &nbsp;(미국): AI 기반 분석 생성 및 채팅 응답 생성
+                            (Gemini API)
+                        </li>
+                        <li>
+                            <strong className="text-secondary-200">
+                                OpenAI Inc
+                            </strong>
+                            &nbsp;(미국): AI 기반 분석 생성 및 채팅 응답 생성
+                            (ChatGPT API)
                         </li>
                     </ul>
                 </PolicySection>
