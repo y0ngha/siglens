@@ -17,7 +17,8 @@ import type {
 
 const PURPOSE = 'email_verification' as const;
 const EMAIL_ALREADY_EXISTS_MESSAGE = '이미 사용 중인 이메일입니다.';
-const EMAIL_NOT_VERIFIED_MESSAGE = '이메일 인증을 완료해야 회원가입이 가능합니다.';
+const EMAIL_NOT_VERIFIED_MESSAGE =
+    '이메일 인증을 완료해야 회원가입이 가능합니다.';
 
 function emailAlreadyExistsError(): RegisterUserError {
     return {

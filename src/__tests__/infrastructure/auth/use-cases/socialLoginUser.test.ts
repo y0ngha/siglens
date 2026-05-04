@@ -210,8 +210,7 @@ describe('socialLoginUser', () => {
             ok: false,
             error: {
                 code: 'email_already_exists',
-                message:
-                    '이미 다른 로그인 방법으로 가입된 이메일입니다.',
+                message: '이미 다른 로그인 방법으로 가입된 이메일입니다.',
             },
         });
     });
@@ -319,8 +318,7 @@ describe('socialLoginUser', () => {
             ok: false,
             error: {
                 code: 'email_already_exists',
-                message:
-                    '이미 다른 로그인 방법으로 가입된 이메일입니다.',
+                message: '이미 다른 로그인 방법으로 가입된 이메일입니다.',
             },
         });
     });

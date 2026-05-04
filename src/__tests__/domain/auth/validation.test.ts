@@ -55,8 +55,7 @@ describe('validatePassword', () => {
         expect(result).toEqual({
             code: 'weak_password',
             field: 'password',
-            message:
-                '비밀번호는 8자 이상이며 영문자와 숫자를 포함해야 합니다.',
+            message: '비밀번호는 8자 이상이며 영문자와 숫자를 포함해야 합니다.',
         });
     });
 

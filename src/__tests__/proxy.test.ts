@@ -50,7 +50,7 @@ describe('proxy', () => {
 
         it.each(guardedPaths)(
             '%s — 값이 비어있지 않으면 / 로 redirect한다',
-            (path) => {
+            path => {
                 proxy(makeRequest('valid-token', path));
                 expect(mockRedirect).toHaveBeenCalledTimes(1);
                 const calledUrl = mockRedirect.mock.calls[0]![0] as URL;
