@@ -6,15 +6,20 @@ import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
 
 type SitemapId = 'static' | 'tickers';
 
-export async function generateSitemaps(): Promise<{ id: SitemapId }[]> {
+interface SitemapSegment {
+    id: SitemapId;
+}
+
+// 미국 주식 시장 마감 시각(UTC). 16:00 ET = 20:00 UTC (DST 미고려, 신호 용도라 충분).
+const US_MARKET_CLOSE_UTC_HOUR = 20;
+
+export async function generateSitemaps(): Promise<SitemapSegment[]> {
     return [{ id: 'static' }, { id: 'tickers' }];
 }
 
 export default function sitemap({
     id,
-}: {
-    id: SitemapId;
-}): MetadataRoute.Sitemap {
+}: SitemapSegment): MetadataRoute.Sitemap {
     // Per-axis lastModified timestamps. These are signals to Google about
     // change frequency, not exact change times. We avoid per-ticker DB
     // lookups (would block sitemap generation on N queries) and instead
@@ -28,7 +33,7 @@ export default function sitemap({
             NOW.getUTCFullYear(),
             NOW.getUTCMonth(),
             NOW.getUTCDate(),
-            20,
+            US_MARKET_CLOSE_UTC_HOUR,
             0,
             0,
             0
@@ -74,7 +79,6 @@ export default function sitemap({
         ];
     }
 
-    // id is narrowed to 'tickers' by exhaustive SitemapId union.
     const ONE_HOUR_AGO = new Date(NOW.getTime() - MS_PER_HOUR);
     return POPULAR_TICKERS.flatMap(ticker => [
         {

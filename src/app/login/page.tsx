@@ -7,6 +7,8 @@ import { SITE_NAME, SITE_URL } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
+// noindex 페이지에도 canonical을 두는 이유: ?next=/path 같은 쿼리 변형 URL이 외부에 공유되더라도
+// "원본은 /login 하나"라는 신호를 명확히 해 두면 일부 크롤러/공유 도구가 변형을 강조하지 않게 된다.
 export const metadata: Metadata = {
     title: '로그인',
     description: `${SITE_NAME}에 로그인하여 회원 전용 기능을 이용해보세요.`,

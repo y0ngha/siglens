@@ -1,5 +1,30 @@
 # Fix Log
 
+## [PR #417 Round 2 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: `Promise<{ id: SitemapId }[]>` inline object literal in return type of `generateSitemaps()`
+- Rule: MISTAKES.md TypeScript #5.5 — Function return types using inline object literals instead of named types
+- Context: Created during P4.1 sitemap split. Extracted to `interface SitemapSegment { id: SitemapId }` and reused in both `generateSitemaps()` return and `sitemap()` parameter destructure type.
+
+- Violation: Magic number `20` for US market close UTC hour in sitemap.ts
+- Rule: MISTAKES.md #15 — All magic numbers must be extracted to module-level constants
+- Context: P3.7 originally inlined `Date.UTC(..., 20, 0, 0, 0)`. Extracted to `const US_MARKET_CLOSE_UTC_HOUR = 20`.
+
+- Violation: `assetInfo` null handling asymmetric between generateMetadata (ternary) and page body (direct pass) in fundamental/page.tsx
+- Rule: MISTAKES.md Predictability #1.5 — Asymmetric input handling across related functions (extends to consistent null-guard style)
+- Context: `buildDisplayName` accepts nullable assetInfo so the page body was technically correct, but the asymmetry was a maintenance trap. Unified to ternary pattern matching generateMetadata, plus added a comment explaining why fundamental allows assetInfo=null (FMP profile-only ticker support, distinct from news/overall behavior).
+
+- Violation: OG image layout magic numbers (top:56, right:72, fontSize:32/240/64, padding:'80px') duplicated across 4 opengraph-image.tsx files
+- Rule: MISTAKES.md #15 drift trap — when a constant exists in a file, every literal use of the same value must reference the constant
+- Context: P3.3 inlined identical layout numbers in 4 OG route files. Extracted to OG_CONTAINER_PADDING / OG_TICKER_FONT_SIZE / OG_LABEL_FONT_SIZE / OG_SITE_NAME_FONT_SIZE / OG_SITE_NAME_TOP / OG_SITE_NAME_RIGHT / OG_LABEL_MARGIN_TOP in lib/og.ts. Also extracted shared JSX to infrastructure/og/buildSymbolOgImage.tsx factory; 4 route files reduced to 16-line thin wrappers each.
+
+- Violation: `newsItems.slice(0, 10)` magic number in news/page.tsx
+- Rule: MISTAKES.md #15
+- Context: Extracted to `const JSON_LD_NEWS_MAX_ITEMS = 10` with comment referencing Google ItemList guideline.
+
+- Violation: TypeScript narrowing comment "id is narrowed to 'tickers' by exhaustive SitemapId union"
+- Rule: MISTAKES.md #2.5 — Comments describing TypeScript narrowing already evident from code
+- Context: Removed; the `if (id === 'static') return [...]` guard above already proves narrowing.
+
 ## [PR #417 Round 1 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: `lib/og.ts` exposed `loadKoreanFont()` performing CDN `fetch()` (network I/O side effect) inside the lib layer
 - Rule: `src/lib/CLAUDE.md` — "Pure functions only, no side effects" (mirrors ARCHITECTURE.md layer constraint)

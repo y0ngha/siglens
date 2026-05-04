@@ -184,8 +184,13 @@ export default async function FundamentalPage({ params }: Props) {
         notFound();
     }
 
+    // 펀더멘털 페이지는 FMP profile만 있으면 렌더 가능 — assetInfo(우리 자체 자산 디렉터리)에 등록되지
+    // 않은 종목도 PER/ROE/애널리스트 컨센서스를 보여줄 수 있어야 한다. 따라서 news/overall과 달리
+    // assetInfo null을 notFound()로 막지 않고 ticker fallback을 허용한다 (generateMetadata와 동일 패턴).
     const sector = profile.sector ?? '';
-    const displayName = buildDisplayName(assetInfo, upper);
+    const displayName = assetInfo
+        ? buildDisplayName(assetInfo, upper)
+        : upper;
     const { fullTitle, description, url } = buildSymbolFundamentalSeoContent(
         upper,
         {

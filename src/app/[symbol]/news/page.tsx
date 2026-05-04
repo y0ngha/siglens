@@ -34,6 +34,9 @@ import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNew
 // React.cache로 generateMetadata와 page body의 중복 fetch를 동일 render pass 안에서 dedupe.
 const getAssetInfoCached = cache(getAssetInfoAction);
 
+// JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
+const JSON_LD_NEWS_MAX_ITEMS = 10;
+
 interface Props {
     params: Promise<{ symbol: string }>;
 }
@@ -184,7 +187,9 @@ export default async function NewsPage({ params }: Props) {
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
                   name: `${displayName} 최신 뉴스`,
-                  itemListElement: newsItems.slice(0, 10).map((item, idx) => ({
+                  itemListElement: newsItems
+                      .slice(0, JSON_LD_NEWS_MAX_ITEMS)
+                      .map((item, idx) => ({
                       '@type': 'ListItem',
                       position: idx + 1,
                       item: {
