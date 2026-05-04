@@ -61,11 +61,10 @@ export function createPendingOAuthSignupStore(
             return tryParse(raw);
         },
         async consume(token) {
-            const key = buildKey(token);
-            // Safe: client.get() returns the value written by save() via JSON.stringify(PendingOAuthSignup).
-            const raw = (await client.get(key)) as string | null;
-            if (raw === null) return null;
-            await client.del(key);
+            // Safe: client.getdel() atomically returns the value written by save() via JSON.stringify(PendingOAuthSignup) and deletes the key.
+            const raw = (await client.getdel(
+                buildKey(token)
+            )) as string | null;
             return tryParse(raw);
         },
         async delete(token) {

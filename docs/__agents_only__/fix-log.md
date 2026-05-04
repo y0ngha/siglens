@@ -1,5 +1,13 @@
 # Fix Log
 
+## [PR #420 Round 6 | master | 2026-05-04]
+- B1: `formatKoreanDate` 타임존 버그 — `getFullYear/Month/Date`는 프로세스 로컬(UTC) 기준이라 KST 날짜가 하루 밀림. `Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul' })`로 교체.
+  - Rule: 서버 UTC 환경에서 로컬 날짜 API 금지
+- B2: `PolicySection.tsx`의 `export type { TocItem }` backward-compat re-export 제거. `LegalPageShell.tsx`가 `@/lib/legal-toc`에서 직접 import하도록 변경.
+  - Rule: CLAUDE.md — 역호환 re-export 금지
+- S1: `consume` 비원자적 get+del → `client.getdel()` 단일 원자 연산으로 교체. 테스트 mock에 `getdel` 추가.
+- S2: `[WebkitTapHighlightColor:transparent]` → `[-webkit-tap-highlight-color:transparent]` (Tailwind arbitrary 벤더 접두사 소문자 하이픈)
+
 ## [PR #420 Round 5 | master | 2026-05-04]
 - B1: `OAuthConsentForm.tsx` — `formError` dead code 제거. `FinalizeOAuthSignupState.error.code`가 `'consent_required'` 리터럴이므로 `!== 'consent_required'` 조건은 항상 false. `formError` 변수·`AuthErrorAlert` 블록 제거.
   - Rule: MISTAKES.md §4 — Remove logic/code that has no effect

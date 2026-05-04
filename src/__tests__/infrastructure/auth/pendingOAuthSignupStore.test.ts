@@ -12,6 +12,11 @@ describe('PendingOAuthSignupStore', () => {
                 store.set(key, value);
             }),
             get: jest.fn(async (key: string) => store.get(key) ?? null),
+            getdel: jest.fn(async (key: string) => {
+                const value = store.get(key) ?? null;
+                store.delete(key);
+                return value;
+            }),
             del: jest.fn(async (key: string) => {
                 store.delete(key);
             }),

@@ -15,8 +15,10 @@ export const TERMS_FULL_TITLE = `${TERMS_TITLE} | ${SITE_NAME}`;
 export const TERMS_DESCRIPTION = `${SITE_NAME} 서비스 이용약관 — 서비스 이용 조건, 투자 정보 면책 조항, 사용자 권리와 의무를 안내합니다.`;
 
 export function formatKoreanDate(date: Date): string {
-    const yyyy = date.getFullYear();
-    const mm = date.getMonth() + 1;
-    const dd = date.getDate();
-    return `${yyyy}년 ${mm}월 ${dd}일`;
+    return new Intl.DateTimeFormat('ko-KR', {
+        timeZone: 'Asia/Seoul',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+    }).format(date);
 }
