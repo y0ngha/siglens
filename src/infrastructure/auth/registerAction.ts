@@ -102,6 +102,7 @@ export async function registerAction(
             };
         }
 
+        const secure = isSecureCookieEnv();
         const loginResult = await loginUser(
             { email, password },
             {
@@ -109,7 +110,7 @@ export async function registerAction(
                 sessions: new DrizzleSessionRepository(db),
                 passwordVerifier: bcryptPasswordVerifier,
             },
-            { secureCookie: isSecureCookieEnv() }
+            { secureCookie: secure }
         );
 
         if (!loginResult.ok) {
@@ -126,7 +127,7 @@ export async function registerAction(
         cookieStore.set(
             createAuthHintCookie({
                 maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
-                secure: isSecureCookieEnv(),
+                secure,
             })
         );
         redirect(next);

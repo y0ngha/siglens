@@ -119,11 +119,12 @@ export async function finalizeOAuthSignupAction(
             })
             .catch(() => redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable));
 
+        const secure = isSecureCookieEnv();
         const { cookie } = await createAuthSession({
             userId: createdUserId,
             sessions: sessionRepo,
             now: new Date(),
-            secureCookie: isSecureCookieEnv(),
+            secureCookie: secure,
         });
 
         const cookieStore = await cookies();
@@ -131,7 +132,7 @@ export async function finalizeOAuthSignupAction(
         cookieStore.set(
             createAuthHintCookie({
                 maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
-                secure: isSecureCookieEnv(),
+                secure,
             })
         );
 

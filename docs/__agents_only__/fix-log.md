@@ -1,5 +1,9 @@
 # Fix Log
 
+## [PR #420 Round 7 | master | 2026-05-05]
+- B1/B2/B3: `isSecureCookieEnv()` 동일 함수 내 2회 중복 호출 — `finalizeOAuthSignupAction.ts`, `registerAction.ts`, `route.ts` 세 파일 모두 `const secure = isSecureCookieEnv()`로 추출 후 재사용.
+  - Rule: MISTAKES.md §2 — 동일 함수 내 중복 호출 금지
+
 ## [PR #420 Round 6 | master | 2026-05-04]
 - B1: `formatKoreanDate` 타임존 버그 — `getFullYear/Month/Date`는 프로세스 로컬(UTC) 기준이라 KST 날짜가 하루 밀림. `Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul' })`로 교체.
   - Rule: 서버 UTC 환경에서 로컬 날짜 API 금지

@@ -90,11 +90,12 @@ export async function GET(
         profileResult.profile.providerAccountId
     );
     if (existingOAuthUser !== null) {
+        const secure = isSecureCookieEnv();
         const { cookie } = await createAuthSession({
             userId: existingOAuthUser.id,
             sessions: sessionRepo,
             now: new Date(),
-            secureCookie: isSecureCookieEnv(),
+            secureCookie: secure,
         });
         const response = NextResponse.redirect(
             new URL(sanitizeNextPath(stateResult.next), req.url)
@@ -103,7 +104,7 @@ export async function GET(
         response.cookies.set(
             createAuthHintCookie({
                 maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
-                secure: isSecureCookieEnv(),
+                secure,
             })
         );
         response.cookies.set(expiredOAuthStateCookie());
