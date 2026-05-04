@@ -1,6 +1,5 @@
 'use server';
 
-import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
 import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
@@ -31,37 +30,105 @@ export async function registerAction(
     _prev: SignupFormState,
     formData: FormData
 ): Promise<SignupFormState> {
-    const email = String(formData.get('email') ?? '').trim();
-    const password = String(formData.get('password') ?? '');
-    const rawName = String(formData.get('name') ?? '').trim();
-    const name = rawName ? rawName : undefined;
-    const next = sanitizeNextPath(formData.get('next')?.toString());
-    const agreedPrivacy = formData.get('agreed_privacy');
-    const agreedTos = formData.get('agreed_tos');
+    try {
+        const email = String(formData.get('email') ?? '').trim();
+        const password = String(formData.get('password') ?? '');
+        const rawName = String(formData.get('name') ?? '').trim();
+        const name = rawName ? rawName : undefined;
+        const next = sanitizeNextPath(formData.get('next')?.toString());
+        // null (field absent) and 'false' (unchecked) both fail the !== 'true' check
+        const agreedPrivacy = formData.get('agreed_privacy');
+        const agreedTos = formData.get('agreed_tos');
 
-    if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
-        return {
-            error: { code: 'consent_required', message: CONSENT_REQUIRED_MESSAGE },
-        };
-    }
+        if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
+            return {
+                error: { code: 'consent_required', message: CONSENT_REQUIRED_MESSAGE },
+            };
+        }
 
-    const emailTokens = createEmailTokenStore();
-    if (!emailTokens) {
-        return {
-            error: {
-                code: 'redis_unavailable',
-                message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+        const emailTokens = createEmailTokenStore();
+        if (!emailTokens) {
+            return {
+                error: {
+                    code: 'redis_unavailable',
+                    message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+                },
+            };
+        }
+
+        const { db } = getAuthDatabaseClient();
+        const termsRepo = new DrizzleTermsRepository(db);
+        const [privacyTerms, tosTerms] = await Promise.all([
+            termsRepo.findActive('privacy'),
+            termsRepo.findActive('tos'),
+        ]);
+        if (!privacyTerms || !tosTerms) {
+            return {
+                error: {
+                    code: 'service_unavailable',
+                    message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+                },
+            };
+        }
+
+        const userRepo = new DrizzleUserRepository(db);
+
+        const registerResult = await registerUser(
+            { email, password, name, agreedTermsIds: [privacyTerms.id, tosTerms.id] },
+            {
+                users: userRepo,
+                passwordHasher: bcryptPasswordHasher,
+                emailTokens,
+                db,
+            }
+        );
+
+        if (!registerResult.ok) {
+            return {
+                error: {
+                    code: registerResult.error.code,
+                    field: registerResult.error.field,
+                    message: registerResult.error.message,
+                },
+            };
+        }
+
+        const loginResult = await loginUser(
+            { email, password },
+            {
+                users: userRepo,
+                sessions: new DrizzleSessionRepository(db),
+                passwordVerifier: bcryptPasswordVerifier,
             },
-        };
-    }
+            { secureCookie: isSecureCookieEnv() }
+        );
 
-    const { db } = getAuthDatabaseClient();
-    const termsRepo = new DrizzleTermsRepository(db);
-    const [privacyTerms, tosTerms] = await Promise.all([
-        termsRepo.findActive('privacy'),
-        termsRepo.findActive('tos'),
-    ]);
-    if (!privacyTerms || !tosTerms) {
+        if (!loginResult.ok) {
+            return {
+                error: {
+                    code: 'auto_login_failed',
+                    message: AUTO_LOGIN_FAILED_MESSAGE,
+                },
+            };
+        }
+
+        const cookieStore = await cookies();
+        cookieStore.set(applyAuthCookie(loginResult.cookie));
+        cookieStore.set(
+            createAuthHintCookie({
+                maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
+                secure: isSecureCookieEnv(),
+            })
+        );
+        redirect(next);
+    } catch (err) {
+        // Re-throw Next.js redirect (not an error — it's a control-flow signal).
+        if (
+            err instanceof Error &&
+            err.message.startsWith('NEXT_REDIRECT')
+        ) {
+            throw err;
+        }
         return {
             error: {
                 code: 'service_unavailable',
@@ -69,57 +136,4 @@ export async function registerAction(
             },
         };
     }
-
-    const userRepo = new DrizzleUserRepository(db);
-    const agreementRepo = new DrizzleAgreementRepository(db);
-
-    const registerResult = await registerUser(
-        { email, password, name, agreedTermsIds: [privacyTerms.id, tosTerms.id] },
-        {
-            users: userRepo,
-            passwordHasher: bcryptPasswordHasher,
-            emailTokens,
-            agreements: agreementRepo,
-            db,
-        }
-    );
-
-    if (!registerResult.ok) {
-        return {
-            error: {
-                code: registerResult.error.code,
-                field: registerResult.error.field,
-                message: registerResult.error.message,
-            },
-        };
-    }
-
-    const loginResult = await loginUser(
-        { email, password },
-        {
-            users: userRepo,
-            sessions: new DrizzleSessionRepository(db),
-            passwordVerifier: bcryptPasswordVerifier,
-        },
-        { secureCookie: isSecureCookieEnv() }
-    );
-
-    if (!loginResult.ok) {
-        return {
-            error: {
-                code: 'auto_login_failed',
-                message: AUTO_LOGIN_FAILED_MESSAGE,
-            },
-        };
-    }
-
-    const cookieStore = await cookies();
-    cookieStore.set(applyAuthCookie(loginResult.cookie));
-    cookieStore.set(
-        createAuthHintCookie({
-            maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
-            secure: isSecureCookieEnv(),
-        })
-    );
-    redirect(next);
 }

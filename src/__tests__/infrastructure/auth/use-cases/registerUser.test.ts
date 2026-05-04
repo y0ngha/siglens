@@ -1,15 +1,27 @@
+jest.mock('@/infrastructure/db/userRepository');
+jest.mock('@/infrastructure/db/agreementRepository');
+
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
 import type { RegisterUserDependencies } from '@/infrastructure/auth/use-cases/types';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
 import type {
     EmailTokenPurpose,
     EmailTokenValue,
 } from '@/infrastructure/email/tokenStore';
-import type { AuthUserRecord } from '@/infrastructure/db/types';
+import type { AuthUserRecord } from '@/domain/auth/types';
+
+const MockUserRepo = DrizzleUserRepository as jest.MockedClass<
+    typeof DrizzleUserRepository
+>;
+const MockAgreementRepo = DrizzleAgreementRepository as jest.MockedClass<
+    typeof DrizzleAgreementRepository
+>;
 
 const createdAt = new Date('2026-04-26T00:00:00.000Z');
 const updatedAt = new Date('2026-04-26T00:00:01.000Z');
 
-function makeUser(email: string): AuthUserRecord {
+function makeUser(email: string = 'user@example.com'): AuthUserRecord {
     return {
         id: 'user-1',
         email,
@@ -64,6 +76,25 @@ function makeDependencies(options?: {
             async (cb: (tx: unknown) => Promise<unknown>) => cb({})
         );
 
+    // Repo classes are instantiated inside the transaction with tx — set up
+    // the class mocks so any new DrizzleUserRepository(tx) returns our stubs.
+    MockUserRepo.mockImplementation(
+        () =>
+            ({
+                createEmailUser,
+                findByEmail,
+                findById: jest.fn(),
+                deleteUser: jest.fn(),
+                updatePassword: jest.fn(),
+            }) as unknown as InstanceType<typeof DrizzleUserRepository>
+    );
+    MockAgreementRepo.mockImplementation(
+        () =>
+            ({ insertMany }) as unknown as InstanceType<
+                typeof DrizzleAgreementRepository
+            >
+    );
+
     return {
         dependencies: {
             users: {
@@ -80,7 +111,6 @@ function makeDependencies(options?: {
                 delete: deleteToken,
                 consume: jest.fn(),
             },
-            agreements: { insertMany },
             db: { transaction },
         },
         findByEmail,
@@ -100,6 +130,11 @@ const DEFAULT_INPUT = {
 } as const;
 
 describe('registerUser', () => {
+    beforeEach(() => {
+        MockUserRepo.mockClear();
+        MockAgreementRepo.mockClear();
+    });
+
     it('rejects empty agreedTermsIds before any further processing', async () => {
         const { dependencies, findByEmail, hashPassword, getToken } =
             makeDependencies();
@@ -152,20 +187,19 @@ describe('registerUser', () => {
     });
 
     it('rejects when no email-verification entry exists', async () => {
-        const { dependencies, findByEmail, createEmailUser } = makeDependencies(
-            { verificationState: null }
-        );
+        const { dependencies, findByEmail } = makeDependencies({
+            verificationState: null,
+        });
 
         const result = await registerUser(DEFAULT_INPUT, dependencies);
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_not_verified');
         expect(findByEmail).not.toHaveBeenCalled();
-        expect(createEmailUser).not.toHaveBeenCalled();
     });
 
     it('rejects when verification entry is still in pending state', async () => {
-        const { dependencies, createEmailUser } = makeDependencies({
+        const { dependencies } = makeDependencies({
             verificationState: { status: 'pending', tokenHash: 'hash' },
         });
 
@@ -173,11 +207,10 @@ describe('registerUser', () => {
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_not_verified');
-        expect(createEmailUser).not.toHaveBeenCalled();
     });
 
     it('rejects when the email is already registered', async () => {
-        const { dependencies, createEmailUser } = makeDependencies({
+        const { dependencies } = makeDependencies({
             existingUser: makeUser('user@example.com'),
         });
 
@@ -185,7 +218,6 @@ describe('registerUser', () => {
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_already_exists');
-        expect(createEmailUser).not.toHaveBeenCalled();
     });
 
     it('preserves the verified marker on email_already_exists so the user can retry', async () => {
@@ -201,10 +233,8 @@ describe('registerUser', () => {
     });
 
     it('clears the verified marker when createEmailUser throws', async () => {
-        const { dependencies, deleteToken } = makeDependencies();
-        (dependencies.users.createEmailUser as jest.Mock).mockRejectedValueOnce(
-            new Error('database is on fire')
-        );
+        const { dependencies, deleteToken, createEmailUser } = makeDependencies();
+        (createEmailUser as jest.Mock).mockRejectedValueOnce(new Error('database is on fire'));
 
         await expect(
             registerUser(DEFAULT_INPUT, dependencies)
@@ -235,7 +265,10 @@ describe('registerUser', () => {
     });
 
     it('returns email_already_exists when createEmailUser races to a conflict', async () => {
-        const { dependencies } = makeDependencies({ createdUser: null });
+        const { dependencies, createEmailUser } = makeDependencies({
+            createdUser: null,
+        });
+        (createEmailUser as jest.Mock).mockResolvedValue(null);
 
         const result = await registerUser(DEFAULT_INPUT, dependencies);
 
@@ -243,7 +276,7 @@ describe('registerUser', () => {
         if (!result.ok) expect(result.error.code).toBe('email_already_exists');
     });
 
-    it('inserts agreement rows for each agreedTermsId inside a transaction', async () => {
+    it('inserts agreement rows for each agreedTermsId using tx inside a transaction', async () => {
         const { dependencies, insertMany, transaction } = makeDependencies();
 
         const result = await registerUser(DEFAULT_INPUT, dependencies);

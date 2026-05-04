@@ -14,6 +14,9 @@ import type {
     RegisterUserInput,
     RegisterUserResult,
 } from '@/infrastructure/auth/use-cases/types';
+import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
 
 const PURPOSE = 'email_verification' as const;
 const EMAIL_ALREADY_EXISTS_MESSAGE = '이미 사용 중인 이메일입니다.';
@@ -80,8 +83,14 @@ export async function registerUser(
         const passwordHash = await dependencies.passwordHasher.hashPassword(
             input.password
         );
-        user = await dependencies.db.transaction(async () => {
-            const created = await dependencies.users.createEmailUser({
+        // Use tx to ensure user creation and agreement insertion are atomic.
+        // Both DrizzleUserRepository and DrizzleAgreementRepository are
+        // instantiated with the transaction client so all queries run in the
+        // same Neon batch request.
+        user = await dependencies.db.transaction(async tx => {
+            // Safe: Transactor.transaction always passes a SiglensDatabase tx to its callback.
+            const txDb = tx as SiglensDatabase;
+            const created = await new DrizzleUserRepository(txDb).createEmailUser({
                 email,
                 passwordHash,
                 name: input.name?.trim() || null,
@@ -89,7 +98,7 @@ export async function registerUser(
                 emailVerified: true,
             });
             if (created === null) return null;
-            await dependencies.agreements.insertMany(
+            await new DrizzleAgreementRepository(txDb).insertMany(
                 input.agreedTermsIds.map(termsId => ({
                     userId: created.id,
                     termsId,

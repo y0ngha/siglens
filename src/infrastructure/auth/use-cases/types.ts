@@ -18,8 +18,6 @@ import type {
     EmailMessage,
     EmailTokenStore,
 } from '@/infrastructure/email/tokenStore';
-import type { AgreementRepository } from '@/infrastructure/db/agreementRepository';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
 import type {
     ConfirmPasswordResetError,
     ConfirmPasswordResetErrorCode,
@@ -54,12 +52,16 @@ export type RegisterUserResult =
     | { ok: true; user: AuthUserRecord }
     | { ok: false; error: RegisterUserError };
 
+/** Minimal database transactor contract for the use-case layer. */
+export interface Transactor {
+    transaction<T>(fn: (tx: unknown) => Promise<T>): Promise<T>;
+}
+
 export interface RegisterUserDependencies {
     users: UserRepository;
     passwordHasher: PasswordHasher;
     emailTokens: EmailTokenStore;
-    agreements: AgreementRepository;
-    db: Pick<SiglensDatabase, 'transaction'>;
+    db: Transactor;
 }
 
 export interface LoginUserInput {
