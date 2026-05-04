@@ -4,6 +4,7 @@ import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { OAuthConsentForm } from '@/components/auth/OAuthConsentForm';
 import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
 import { cancelOAuthSignupAction } from '@/infrastructure/auth/cancelOAuthSignupAction';
+import { OAUTH_ERROR_REDIRECT } from '@/infrastructure/auth/errorMessages';
 import { SITE_NAME } from '@/lib/seo';
 import type { Metadata } from 'next';
 
@@ -21,17 +22,17 @@ async function ConsentContent({ searchParams }: PageProps) {
     const params = await searchParams;
     const token = params.token;
     if (!token) {
-        redirect('/login?error=oauth_consent_invalid');
+        redirect(OAUTH_ERROR_REDIRECT.consentInvalid);
     }
 
     const store = createPendingOAuthSignupStoreFromEnv();
     if (!store) {
-        redirect('/login?error=service_unavailable');
+        redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
     }
 
     const profile = await store.peek(token);
     if (!profile) {
-        redirect('/login?error=oauth_consent_expired');
+        redirect(OAUTH_ERROR_REDIRECT.consentExpired);
     }
 
     return (

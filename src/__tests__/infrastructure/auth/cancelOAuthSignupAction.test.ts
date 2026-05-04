@@ -36,4 +36,27 @@ describe('cancelOAuthSignupAction', () => {
         await cancelOAuthSignupAction(fd);
         expect(redirect).toHaveBeenCalledWith('/login');
     });
+
+    it('redirects to /login when store is unavailable (null)', async () => {
+        mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue(null);
+        const fd = new FormData();
+        fd.set('token', 'tok');
+        await cancelOAuthSignupAction(fd);
+        expect(redirect).toHaveBeenCalledWith('/login');
+    });
+
+    it('redirects to /login even when store.delete throws (best-effort cleanup)', async () => {
+        const deleteMock = jest.fn().mockRejectedValue(new Error('Redis down'));
+        mockCreatePendingOAuthSignupStoreFromEnv.mockReturnValue({
+            delete: deleteMock,
+            save: jest.fn(),
+            peek: jest.fn(),
+            consume: jest.fn(),
+        });
+        const fd = new FormData();
+        fd.set('token', 'tok');
+        await cancelOAuthSignupAction(fd);
+        expect(deleteMock).toHaveBeenCalledWith('tok');
+        expect(redirect).toHaveBeenCalledWith('/login');
+    });
 });

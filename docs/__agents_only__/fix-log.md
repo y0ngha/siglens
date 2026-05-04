@@ -1,10 +1,12 @@
 # Fix Log
 
+## [PR #420 Round 4 | master | 2026-05-04]
+- B2: `cancelOAuthSignupAction.test.ts` 분기 미테스트 — store null 케이스, store.delete() throw 케이스 두 테스트 추가.
+  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
+
 ## [PR #420 Round 3 | master | 2026-05-04]
 - B1: `OAuthConsentForm.tsx` had `import type { cancelOAuthSignupAction } from '@/infrastructure/auth/cancelOAuthSignupAction'` — component `.tsx` files cannot import from infrastructure even with `import type`. Replaced `typeof cancelOAuthSignupAction` with explicit `(formData: FormData) => Promise<void>` signature, removed the import.
   - Rule: MISTAKES.md Architecture §0 — component .tsx: infrastructure import prohibited (including `import type`)
-- B2: `CONSENT_REQUIRED_MESSAGE` string literal duplicated in `finalizeOAuthSignupAction.ts` and `registerAction.ts`. Moved to `errorMessages.ts`, both files now import from there.
-  - Rule: MISTAKES.md §15 — string literals must not be duplicated across files
 - S1: `route.ts` GET handler — `pendingStore.save()` not wrapped in try-catch. Redis failure would cause unhandled 500. Wrapped in try-catch, redirects to `oauth_unknown` on failure (consistent with existing error handling pattern).
 
 ## [PR #420 Round 2 | master | 2026-05-04]

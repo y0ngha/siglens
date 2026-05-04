@@ -18,7 +18,10 @@ import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
 import type { FinalizeOAuthSignupState } from '@/domain/auth/formTypes';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
-import { CONSENT_REQUIRED_MESSAGE } from '@/infrastructure/auth/errorMessages';
+import {
+    CONSENT_REQUIRED_MESSAGE,
+    OAUTH_ERROR_REDIRECT,
+} from '@/infrastructure/auth/errorMessages';
 
 export type { FinalizeOAuthSignupState };
 
@@ -32,7 +35,7 @@ export async function finalizeOAuthSignupAction(
         const agreedTos = String(formData.get('agreed_tos') ?? '');
 
         if (!token) {
-            redirect('/login?error=oauth_consent_invalid');
+            redirect(OAUTH_ERROR_REDIRECT.consentInvalid);
         }
 
         if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
@@ -46,12 +49,12 @@ export async function finalizeOAuthSignupAction(
 
         const store = createPendingOAuthSignupStoreFromEnv();
         if (!store) {
-            redirect('/login?error=service_unavailable');
+            redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
         }
 
         const profile = await store.peek(token);
         if (!profile) {
-            redirect('/login?error=oauth_consent_expired');
+            redirect(OAUTH_ERROR_REDIRECT.consentExpired);
         }
 
         const { db } = getAuthDatabaseClient();
@@ -61,12 +64,12 @@ export async function finalizeOAuthSignupAction(
             termsRepo.findActive('tos'),
         ]);
         if (!termsP || !termsT) {
-            redirect('/login?error=service_unavailable');
+            redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
         }
 
         const consumed = await store.consume(token);
         if (!consumed) {
-            redirect('/login?error=oauth_consent_expired');
+            redirect(OAUTH_ERROR_REDIRECT.consentExpired);
         }
 
         const userRepo = new DrizzleUserRepository(db);
@@ -74,7 +77,7 @@ export async function finalizeOAuthSignupAction(
 
         const conflict = await userRepo.findByEmail(consumed.email);
         if (conflict) {
-            redirect('/login?error=oauth_email_conflict');
+            redirect(OAUTH_ERROR_REDIRECT.emailConflict);
         }
 
         // .catch(() => redirect(...)) — redirect() returns `never`, so the resolved type is `string | never` = `string`.
@@ -116,7 +119,7 @@ export async function finalizeOAuthSignupAction(
                 ]);
                 return created.id;
             })
-            .catch(() => redirect('/login?error=service_unavailable'));
+            .catch(() => redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable));
 
         const { cookie } = await createAuthSession({
             userId: createdUserId,
@@ -140,6 +143,6 @@ export async function finalizeOAuthSignupAction(
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;
         }
-        redirect('/login?error=service_unavailable');
+        redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
     }
 }
