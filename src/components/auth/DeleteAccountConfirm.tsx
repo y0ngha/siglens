@@ -110,7 +110,7 @@ export function DeleteAccountConfirm({ userEmail }: DeleteAccountConfirmProps) {
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
                 <Link
                     href="/account"
-                    className="text-secondary-200 border-secondary-700 hover:bg-secondary-800 focus-visible:ring-primary-500 inline-flex h-12 items-center justify-center rounded-md border px-5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none sm:flex-1"
+                    className="text-secondary-200 border-secondary-700 hover:bg-secondary-800 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-900 inline-flex h-12 items-center justify-center rounded-md border px-5 text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none sm:flex-1"
                 >
                     취소
                 </Link>

@@ -324,3 +324,8 @@
 - Context: Removed method (never called from production), dropped unused between import, makeSelectOrderByDb mock, and 2 test cases. Cron and per-symbol use cases already covered by upsertMany and getNextForSymbol.
 
 
+
+## [PR #416 | fix/wig-cleanup | 2026-05-04]
+- Violation: SubmitButton.tsx had `focus-visible:ring-primary-500` without `focus-visible:ring-offset-2` / `ring-offset-{color}` while peer buttons in the same PR (DangerSubmitButton, error retry buttons, PasswordField toggle) all carried the offset pair
+- Rule: WAI-ARIA keyboard accessibility — same-color ring on same-color background needs ring-offset for sufficient contrast; cross-component consistency
+- Context: Added `focus-visible:ring-offset-secondary-900 focus-visible:ring-offset-2` to align with the form's AuthCardShell `bg-secondary-900/80` surrounding background.
