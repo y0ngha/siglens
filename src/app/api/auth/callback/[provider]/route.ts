@@ -111,9 +111,15 @@ export async function GET(
     }
 
     // Email already registered with password → conflict error
-    const existingEmailUser = await userRepo.findByEmail(profileResult.profile.email);
+    const existingEmailUser = await userRepo.findByEmail(
+        profileResult.profile.email
+    );
     if (existingEmailUser !== null) {
-        return redirectToLoginWithError(req, 'oauth_email_conflict', profileResult.profile.email);
+        return redirectToLoginWithError(
+            req,
+            'oauth_email_conflict',
+            profileResult.profile.email
+        );
     }
 
     // New user → save to pending store and redirect to consent page

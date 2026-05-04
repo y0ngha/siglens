@@ -18,10 +18,17 @@ import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementReposit
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 
 const mockRedirect = redirect as unknown as jest.Mock;
-const mockCreateStore = createPendingOAuthSignupStoreFromEnv as unknown as jest.Mock;
-const MockTermsRepo = DrizzleTermsRepository as jest.MockedClass<typeof DrizzleTermsRepository>;
-const MockUserRepo = DrizzleUserRepository as jest.MockedClass<typeof DrizzleUserRepository>;
-const MockAgreementRepo = DrizzleAgreementRepository as jest.MockedClass<typeof DrizzleAgreementRepository>;
+const mockCreateStore =
+    createPendingOAuthSignupStoreFromEnv as unknown as jest.Mock;
+const MockTermsRepo = DrizzleTermsRepository as jest.MockedClass<
+    typeof DrizzleTermsRepository
+>;
+const MockUserRepo = DrizzleUserRepository as jest.MockedClass<
+    typeof DrizzleUserRepository
+>;
+const MockAgreementRepo = DrizzleAgreementRepository as jest.MockedClass<
+    typeof DrizzleAgreementRepository
+>;
 const mockGetAuthDb = getAuthDatabaseClient as unknown as jest.Mock;
 
 const SAMPLE_PROFILE = {
@@ -60,15 +67,17 @@ function buildFormData(over: Record<string, string> = {}): FormData {
     return fd;
 }
 
-function setupMocks(options: {
-    storeAvailable?: boolean;
-    peekResult?: typeof SAMPLE_PROFILE | null;
-    consumeResult?: typeof SAMPLE_PROFILE | null;
-    privacyTerms?: typeof SAMPLE_TERMS_P | null;
-    tosTerms?: typeof SAMPLE_TERMS_T | null;
-    existingUser?: { id: string } | null;
-    transactionThrows?: boolean;
-} = {}): void {
+function setupMocks(
+    options: {
+        storeAvailable?: boolean;
+        peekResult?: typeof SAMPLE_PROFILE | null;
+        consumeResult?: typeof SAMPLE_PROFILE | null;
+        privacyTerms?: typeof SAMPLE_TERMS_P | null;
+        tosTerms?: typeof SAMPLE_TERMS_T | null;
+        existingUser?: { id: string } | null;
+        transactionThrows?: boolean;
+    } = {}
+): void {
     const {
         storeAvailable = true,
         peekResult = SAMPLE_PROFILE,
@@ -92,9 +101,13 @@ function setupMocks(options: {
     MockTermsRepo.mockImplementation(
         () =>
             ({
-                findActive: jest.fn().mockImplementation((kind: string) =>
-                    Promise.resolve(kind === 'privacy' ? privacyTerms : tosTerms)
-                ),
+                findActive: jest
+                    .fn()
+                    .mockImplementation((kind: string) =>
+                        Promise.resolve(
+                            kind === 'privacy' ? privacyTerms : tosTerms
+                        )
+                    ),
             }) as unknown as InstanceType<typeof DrizzleTermsRepository>
     );
 
@@ -102,7 +115,9 @@ function setupMocks(options: {
         () =>
             ({
                 findByEmail: jest.fn().mockResolvedValue(existingUser),
-                createOAuthUser: jest.fn().mockResolvedValue({ id: 'new-user-id' }),
+                createOAuthUser: jest
+                    .fn()
+                    .mockResolvedValue({ id: 'new-user-id' }),
             }) as unknown as InstanceType<typeof DrizzleUserRepository>
     );
 
@@ -115,13 +130,22 @@ function setupMocks(options: {
 
     const txMock = transactionThrows
         ? jest.fn().mockRejectedValue(new Error('db error'))
-        : jest.fn().mockImplementation(async (cb: (tx: unknown) => Promise<string>) => cb({}));
+        : jest
+              .fn()
+              .mockImplementation(
+                  async (cb: (tx: unknown) => Promise<string>) => cb({})
+              );
 
     mockGetAuthDb.mockReturnValue({ db: { transaction: txMock } });
 }
 
-async function expectRedirectTo(url: string, fd: FormData = buildFormData()): Promise<void> {
-    await expect(finalizeOAuthSignupAction({}, fd)).rejects.toThrow('NEXT_REDIRECT');
+async function expectRedirectTo(
+    url: string,
+    fd: FormData = buildFormData()
+): Promise<void> {
+    await expect(finalizeOAuthSignupAction({}, fd)).rejects.toThrow(
+        'NEXT_REDIRECT'
+    );
     expect(mockRedirect).toHaveBeenCalledWith(url);
 }
 
@@ -147,7 +171,10 @@ describe('finalizeOAuthSignupAction', () => {
     });
 
     it('redirects to oauth_consent_invalid when token is empty', async () => {
-        await expectRedirectTo('/login?error=oauth_consent_invalid', buildFormData({ token: '' }));
+        await expectRedirectTo(
+            '/login?error=oauth_consent_invalid',
+            buildFormData({ token: '' })
+        );
     });
 
     it('redirects to service_unavailable when pending store is unavailable', async () => {

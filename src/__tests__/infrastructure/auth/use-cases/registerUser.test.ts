@@ -72,8 +72,8 @@ function makeDependencies(options?: {
     const insertMany = jest.fn().mockResolvedValue(undefined);
     const transaction = jest
         .fn()
-        .mockImplementation(
-            async (cb: (tx: unknown) => Promise<unknown>) => cb({})
+        .mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) =>
+            cb({})
         );
 
     // Repo classes are instantiated inside the transaction with tx — set up
@@ -233,12 +233,15 @@ describe('registerUser', () => {
     });
 
     it('clears the verified marker when createEmailUser throws', async () => {
-        const { dependencies, deleteToken, createEmailUser } = makeDependencies();
-        (createEmailUser as jest.Mock).mockRejectedValueOnce(new Error('database is on fire'));
+        const { dependencies, deleteToken, createEmailUser } =
+            makeDependencies();
+        (createEmailUser as jest.Mock).mockRejectedValueOnce(
+            new Error('database is on fire')
+        );
 
-        await expect(
-            registerUser(DEFAULT_INPUT, dependencies)
-        ).rejects.toThrow('database is on fire');
+        await expect(registerUser(DEFAULT_INPUT, dependencies)).rejects.toThrow(
+            'database is on fire'
+        );
 
         // Even on failure, the marker MUST be cleared; otherwise it would linger
         // for its 30-minute TTL and let the email be reused as "verified".
@@ -254,9 +257,9 @@ describe('registerUser', () => {
             dependencies.passwordHasher.hashPassword as jest.Mock
         ).mockRejectedValueOnce(new Error('hash failure'));
 
-        await expect(
-            registerUser(DEFAULT_INPUT, dependencies)
-        ).rejects.toThrow('hash failure');
+        await expect(registerUser(DEFAULT_INPUT, dependencies)).rejects.toThrow(
+            'hash failure'
+        );
 
         expect(deleteToken).toHaveBeenCalledWith(
             'email_verification',

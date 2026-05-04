@@ -55,7 +55,9 @@ describe('ConsentCheckboxGroup', () => {
         render(<Renderer initialPrivacy initialTos />);
         const master = screen.getByLabelText('모두 동의');
         await user.click(master);
-        expect(screen.getByLabelText(/개인정보 수집·이용 동의/)).not.toBeChecked();
+        expect(
+            screen.getByLabelText(/개인정보 수집·이용 동의/)
+        ).not.toBeChecked();
         expect(screen.getByLabelText(/서비스 이용약관 동의/)).not.toBeChecked();
     });
 
@@ -80,22 +82,29 @@ describe('ConsentCheckboxGroup', () => {
     });
 
     it('renders error message with role=alert and aria-live=polite', () => {
-        render(<Renderer error="개인정보처리방침과 이용약관에 동의해주세요." />);
+        render(
+            <Renderer error="개인정보처리방침과 이용약관에 동의해주세요." />
+        );
         const alert = screen.getByRole('alert');
-        expect(alert).toHaveTextContent('개인정보처리방침과 이용약관에 동의해주세요.');
+        expect(alert).toHaveTextContent(
+            '개인정보처리방침과 이용약관에 동의해주세요.'
+        );
         expect(alert).toHaveAttribute('aria-live', 'polite');
     });
 
     it('individual checkboxes are required and aria-required', () => {
         render(<Renderer />);
-        const privacy = screen.getByLabelText(/개인정보 수집·이용 동의/) as HTMLInputElement;
+        const privacy = screen.getByLabelText(
+            /개인정보 수집·이용 동의/
+        ) as HTMLInputElement;
         expect(privacy).toBeRequired();
         expect(privacy).toHaveAttribute('aria-required', 'true');
     });
 
     it('detail links open in new tab with rel=noopener and aria-label', () => {
         render(<Renderer />);
-        const privacyLink = screen.getByLabelText('개인정보처리방침 자세히 보기');
+        const privacyLink =
+            screen.getByLabelText('개인정보처리방침 자세히 보기');
         expect(privacyLink).toHaveAttribute('target', '_blank');
         expect(privacyLink.getAttribute('rel')).toContain('noopener');
     });

@@ -44,11 +44,15 @@ function tryParse(value: string | null): PendingOAuthSignup | null {
     }
 }
 
-export function createPendingOAuthSignupStore(client: Redis): PendingOAuthSignupStore {
+export function createPendingOAuthSignupStore(
+    client: Redis
+): PendingOAuthSignupStore {
     return {
         async save(profile) {
             const token = generateToken();
-            await client.set(buildKey(token), JSON.stringify(profile), { ex: TTL_SECONDS });
+            await client.set(buildKey(token), JSON.stringify(profile), {
+                ex: TTL_SECONDS,
+            });
             return token;
         },
         async peek(token) {

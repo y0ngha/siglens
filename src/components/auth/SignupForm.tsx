@@ -109,9 +109,13 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     const signupPasswordError =
         signupError?.field === 'password' ? signupError.message : undefined;
     const consentErrorMessage =
-        signupError?.code === 'consent_required' ? signupError.message : undefined;
+        signupError?.code === 'consent_required'
+            ? signupError.message
+            : undefined;
     const signupFormError =
-        signupError && !signupError.field && signupError.code !== 'consent_required'
+        signupError &&
+        !signupError.field &&
+        signupError.code !== 'consent_required'
             ? signupError.message
             : null;
 

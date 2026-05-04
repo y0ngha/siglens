@@ -66,7 +66,9 @@ jest.mock('react-markdown', () => {
                         i++;
                     }
                     const Ul = components['ul'] as
-                        | React.ComponentType<{ children: React.ReactElement[] }>
+                        | React.ComponentType<{
+                              children: React.ReactElement[];
+                          }>
                         | undefined;
                     elements.push(
                         Ul ? (
@@ -107,19 +109,11 @@ jest.mock('react-markdown', () => {
                         }
                         if (last < line.length) parts.push(line.slice(last));
                         elements.push(
-                            P ? (
-                                <P key={i}>{parts}</P>
-                            ) : (
-                                <p key={i}>{parts}</p>
-                            )
+                            P ? <P key={i}>{parts}</P> : <p key={i}>{parts}</p>
                         );
                     } else {
                         elements.push(
-                            P ? (
-                                <P key={i}>{line}</P>
-                            ) : (
-                                <p key={i}>{line}</p>
-                            )
+                            P ? <P key={i}>{line}</P> : <p key={i}>{line}</p>
                         );
                     }
                 }

@@ -95,9 +95,7 @@ const FAKE_TOS_TERMS = {
 };
 
 /** Helper that always includes consent fields by default. */
-function makeConsentFormData(
-    overrides: Record<string, string> = {}
-): FormData {
+function makeConsentFormData(overrides: Record<string, string> = {}): FormData {
     return makeFormData({
         email: 'a@b.com',
         password: 'Pass1234',
@@ -196,7 +194,9 @@ describe('registerAction', () => {
                 makeConsentFormData()
             );
             expect(result.error?.code).toBe('redis_unavailable');
-            expect(result.error?.message).toBe(AUTH_SERVICE_UNAVAILABLE_MESSAGE);
+            expect(result.error?.message).toBe(
+                AUTH_SERVICE_UNAVAILABLE_MESSAGE
+            );
             expect(mockRegister).not.toHaveBeenCalled();
         });
     });
@@ -213,7 +213,10 @@ describe('registerAction', () => {
             });
             await registerAction(
                 { error: null },
-                makeConsentFormData({ email: '  a@b.com  ', password: '  Pass1234  ' })
+                makeConsentFormData({
+                    email: '  a@b.com  ',
+                    password: '  Pass1234  ',
+                })
             );
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({

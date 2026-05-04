@@ -159,7 +159,9 @@ function ConsentRow({
                     }}
                 />
                 <span className="text-secondary-300 text-sm">
-                    <span className="text-secondary-400 mr-1 text-xs">(필수)</span>
+                    <span className="text-secondary-400 mr-1 text-xs">
+                        (필수)
+                    </span>
                     {label}
                 </span>
             </span>
@@ -200,9 +202,11 @@ export function ConsentCheckboxGroup({
     }
 
     return (
-        <fieldset className="border-secondary-800 touch-manipulation space-y-3 border-y py-4 [WebkitTapHighlightColor:transparent]">
+        <fieldset className="border-secondary-800 [WebkitTapHighlightColor:transparent] touch-manipulation space-y-3 border-y py-4">
             <legend className="sr-only">동의 항목</legend>
-            <p className="text-secondary-400 text-xs">계속하려면 아래 항목에 동의해주세요.</p>
+            <p className="text-secondary-400 text-xs">
+                계속하려면 아래 항목에 동의해주세요.
+            </p>
             <label
                 htmlFor={masterId}
                 className="flex min-h-[44px] cursor-pointer items-center gap-2 py-1"
@@ -217,9 +221,15 @@ export function ConsentCheckboxGroup({
                         'aria-controls': `${privacyId} ${tosId}`,
                     }}
                 />
-                <span className="text-secondary-100 text-sm font-semibold">모두 동의</span>
+                <span className="text-secondary-100 text-sm font-semibold">
+                    모두 동의
+                </span>
             </label>
-            <div role="separator" aria-hidden="true" className="border-secondary-800 border-t" />
+            <div
+                role="separator"
+                aria-hidden="true"
+                className="border-secondary-800 border-t"
+            />
             <ConsentRow
                 id={privacyId}
                 label="개인정보 수집·이용 동의"
@@ -239,7 +249,11 @@ export function ConsentCheckboxGroup({
                 onChange={onTosChange}
             />
             {error ? (
-                <p role="alert" aria-live="polite" className="text-ui-danger text-xs">
+                <p
+                    role="alert"
+                    aria-live="polite"
+                    className="text-ui-danger text-xs"
+                >
                     {error}
                 </p>
             ) : null}

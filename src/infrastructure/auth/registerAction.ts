@@ -23,8 +23,7 @@ import { DEFAULT_SESSION_TTL_SECONDS } from '@/infrastructure/auth/sessionCookie
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
-const CONSENT_REQUIRED_MESSAGE =
-    '개인정보처리방침과 이용약관에 동의해주세요.';
+const CONSENT_REQUIRED_MESSAGE = '개인정보처리방침과 이용약관에 동의해주세요.';
 
 export async function registerAction(
     _prev: SignupFormState,
@@ -42,7 +41,10 @@ export async function registerAction(
 
         if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
             return {
-                error: { code: 'consent_required', message: CONSENT_REQUIRED_MESSAGE },
+                error: {
+                    code: 'consent_required',
+                    message: CONSENT_REQUIRED_MESSAGE,
+                },
             };
         }
 
@@ -74,7 +76,12 @@ export async function registerAction(
         const userRepo = new DrizzleUserRepository(db);
 
         const registerResult = await registerUser(
-            { email, password, name, agreedTermsIds: [privacyTerms.id, tosTerms.id] },
+            {
+                email,
+                password,
+                name,
+                agreedTermsIds: [privacyTerms.id, tosTerms.id],
+            },
             {
                 users: userRepo,
                 passwordHasher: bcryptPasswordHasher,
@@ -123,10 +130,7 @@ export async function registerAction(
         redirect(next);
     } catch (err) {
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
-        if (
-            err instanceof Error &&
-            err.message.startsWith('NEXT_REDIRECT')
-        ) {
+        if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;
         }
         return {

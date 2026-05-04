@@ -37,7 +37,10 @@ export async function finalizeOAuthSignupAction(
 
     if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
         return {
-            error: { code: 'consent_required', message: CONSENT_REQUIRED_MESSAGE },
+            error: {
+                code: 'consent_required',
+                message: CONSENT_REQUIRED_MESSAGE,
+            },
         };
     }
 
@@ -75,33 +78,45 @@ export async function finalizeOAuthSignupAction(
     }
 
     // .catch(() => redirect(...)) — redirect() returns `never`, so the resolved type is `string | never` = `string`.
-    const createdUserId = await db.transaction(async tx => {
-        // Safe: db.transaction always passes a SiglensDatabase tx to its callback.
-        const txDb = tx as unknown as SiglensDatabase;
-        const txUserRepo = new DrizzleUserRepository(txDb);
-        const txAgreementRepo = new DrizzleAgreementRepository(txDb);
-        const created = await txUserRepo.createOAuthUser({
-            email: consumed.email,
-            provider: consumed.provider,
-            providerAccountId: consumed.providerAccountId,
-            name: consumed.name,
-            avatarUrl: consumed.avatarUrl,
-            accessToken: consumed.accessToken,
-            refreshToken: consumed.refreshToken,
-            tokenExpiresAt: consumed.tokenExpiresAt
-                ? new Date(consumed.tokenExpiresAt)
-                : undefined,
-        });
-        if (!created) {
-            throw new Error('createOAuthUser returned null');
-        }
-        const now = new Date();
-        await txAgreementRepo.insertMany([
-            { userId: created.id, termsId: termsP.id, agreed: true, agreedAt: now },
-            { userId: created.id, termsId: termsT.id, agreed: true, agreedAt: now },
-        ]);
-        return created.id;
-    }).catch(() => redirect('/login?error=service_unavailable'));
+    const createdUserId = await db
+        .transaction(async tx => {
+            // Safe: db.transaction always passes a SiglensDatabase tx to its callback.
+            const txDb = tx as unknown as SiglensDatabase;
+            const txUserRepo = new DrizzleUserRepository(txDb);
+            const txAgreementRepo = new DrizzleAgreementRepository(txDb);
+            const created = await txUserRepo.createOAuthUser({
+                email: consumed.email,
+                provider: consumed.provider,
+                providerAccountId: consumed.providerAccountId,
+                name: consumed.name,
+                avatarUrl: consumed.avatarUrl,
+                accessToken: consumed.accessToken,
+                refreshToken: consumed.refreshToken,
+                tokenExpiresAt: consumed.tokenExpiresAt
+                    ? new Date(consumed.tokenExpiresAt)
+                    : undefined,
+            });
+            if (!created) {
+                throw new Error('createOAuthUser returned null');
+            }
+            const now = new Date();
+            await txAgreementRepo.insertMany([
+                {
+                    userId: created.id,
+                    termsId: termsP.id,
+                    agreed: true,
+                    agreedAt: now,
+                },
+                {
+                    userId: created.id,
+                    termsId: termsT.id,
+                    agreed: true,
+                    agreedAt: now,
+                },
+            ]);
+            return created.id;
+        })
+        .catch(() => redirect('/login?error=service_unavailable'));
 
     const { cookie } = await createAuthSession({
         userId: createdUserId,

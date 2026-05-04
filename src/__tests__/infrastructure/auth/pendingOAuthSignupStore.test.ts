@@ -36,7 +36,7 @@ describe('PendingOAuthSignupStore', () => {
         const token = await store.save(sample);
 
         expect(token).toMatch(/^[a-f0-9]{64}$/);
-        expect((client.set as jest.Mock)).toHaveBeenCalledWith(
+        expect(client.set as jest.Mock).toHaveBeenCalledWith(
             `pending_oauth_signup:${token}`,
             JSON.stringify(sample),
             expect.objectContaining({ ex: 600 })

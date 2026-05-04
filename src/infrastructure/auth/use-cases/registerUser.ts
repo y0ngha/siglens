@@ -90,7 +90,9 @@ export async function registerUser(
         user = await dependencies.db.transaction(async tx => {
             // Safe: Transactor.transaction always passes a SiglensDatabase tx to its callback.
             const txDb = tx as SiglensDatabase;
-            const created = await new DrizzleUserRepository(txDb).createEmailUser({
+            const created = await new DrizzleUserRepository(
+                txDb
+            ).createEmailUser({
                 email,
                 passwordHash,
                 name: input.name?.trim() || null,

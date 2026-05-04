@@ -106,19 +106,13 @@ describe('seedTerms — validateSeedFiles', () => {
 
     it('rejects version gap', () => {
         expect(() =>
-            validateSeedFiles([
-                makeSeed('privacy', 1),
-                makeSeed('privacy', 3),
-            ])
+            validateSeedFiles([makeSeed('privacy', 1), makeSeed('privacy', 3)])
         ).toThrow(/version gap/);
     });
 
     it('rejects duplicate (kind, version)', () => {
         expect(() =>
-            validateSeedFiles([
-                makeSeed('privacy', 1),
-                makeSeed('privacy', 1),
-            ])
+            validateSeedFiles([makeSeed('privacy', 1), makeSeed('privacy', 1)])
         ).toThrow(/duplicate/);
     });
 });
