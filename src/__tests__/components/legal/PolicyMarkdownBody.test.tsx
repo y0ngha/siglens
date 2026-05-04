@@ -9,7 +9,7 @@ import { render, screen } from '@testing-library/react';
 // react-markdown and its plugins are ESM-only. Mock the module with a minimal
 // implementation that parses the markdown just enough for structural testing.
 jest.mock('react-markdown', () => {
-    const React = require('react');
+    const React = jest.requireActual<typeof import('react')>('react');
     return {
         __esModule: true,
         default: function ReactMarkdown({

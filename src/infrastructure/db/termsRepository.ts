@@ -53,6 +53,7 @@ export class DrizzleTermsRepository implements TermsRepository {
         const row = rows[0];
         return {
             id: row.id,
+            // Safe: pgEnum('terms_kind', TERMS_KIND_VALUES) constrains the DB column to TermsKind values.
             kind: row.kind as TermsKind,
             version: row.version,
             effectiveDate: row.effectiveDate,

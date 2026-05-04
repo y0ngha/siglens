@@ -1,9 +1,7 @@
 import type { ReactNode } from 'react';
+import type { TocItem } from '@/lib/legal-toc';
 
-export interface TocItem {
-    id: string;
-    label: string;
-}
+export type { TocItem };
 
 interface PolicySectionProps {
     id: string;
