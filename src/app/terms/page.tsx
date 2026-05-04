@@ -61,7 +61,7 @@ export const metadata: Metadata = {
     title: TERMS_TITLE,
     description: TERMS_DESCRIPTION,
     robots: {
-        index: false,
+        index: true,
         follow: true,
     },
     alternates: {
@@ -120,7 +120,7 @@ export default function TermsPage() {
                 breadcrumbTitle={TERMS_TITLE}
                 eyebrow="TERMS OF SERVICE"
                 title={TERMS_TITLE}
-                intro={`본 약관은 ${SITE_NAME}(이하 "운영자")이 제공하는 웹 서비스의 이용 조건 및 운영자와 이용자 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다. 서비스를 이용하기 전에 본 약관을 주의 깊게 읽어 주시기 바랍니다.`}
+                intro={`본 약관은 ${SITE_NAME}(이하 "운영자")이 제공하는 미국 주식 기술적 분석 웹 서비스의 이용 조건 및 운영자와 이용자 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다. 서비스를 이용하기 전에 본 약관을 주의 깊게 읽어 주시기 바랍니다.`}
                 effectiveDate={LEGAL_EFFECTIVE_DATE}
                 toc={TOC}
                 topNotice={topNotice}

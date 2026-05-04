@@ -81,11 +81,15 @@ export const metadata: Metadata = {
     alternates: {
         canonical: SITE_URL,
     },
+    // Google Search Console token: set NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION env var.
     verification: {
         other: {
             'naver-site-verification':
                 '14d27c128365a7edc27cb6fb330aeea2c9760fa2',
         },
+        ...(process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+            ? { google: process.env.NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION }
+            : {}),
     },
 };
 

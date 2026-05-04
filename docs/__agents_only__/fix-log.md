@@ -149,10 +149,6 @@
 - Rule: CONVENTIONS.md Declarative Code — prefer data structures (map, lookup) over imperative conditionals
 - Context: Suggestion S3. Replaced if-else chain with SUBPAGE_LABEL record lookup + fallback to BASE_SYMBOL_LABEL.
 
-- Violation: 3 loading.tsx files had enumeration comments listing section names ("// Profile + Valuation + Peers + ...")
-- Rule: MISTAKES.md Documentation Sync 4 — Comments enumerating structure drift risk; structure = source of truth
-- Context: Suggestion S4. Removed WHAT enumeration comments from fundamental/news/overall loading.tsx files. Comment lists matched constant value, but drifted during refactors; better to let code speak.
-
 
 ## [PR #413 R7 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: useNewsAugment.ts run() 함수가 submitNewsAnalysisAction 호출 전 상태를 'loading'으로 초기화하지 않아, 이전 symbol/modelId의 'done' 상태가 persist
@@ -208,10 +204,6 @@
 - Context: Partial React Query refactor reverted; poll/cooldown use async-IIFE patterns where setState happens inside callback, not synchronously in effect body. Pattern does not trigger rule because setState is wrapped in async callback scope.
 
 ## [PR #413 R17 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: ProfileCard.tsx, ProfitabilityCard.tsx, SectorDirectionCard.tsx had multi-line JSDoc blocks for component purpose description
-- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line function descriptions; component names already self-explanatory
-- Context: Compressed to single-line or removed. Pattern recurring 13th+ consecutive round.
-
 - Violation: usePageContextLabel() hook (containing useMemo) was between useQuery group and useMutation in useChat.ts hook ordering
 - Rule: MISTAKES.md Components 17 — Hook order: useState/useRef → useQuery/useMutation → useCallback/useMemo → derived variables
 - Context: Moved after useMutation group, before useMemo calculations with explanatory comment.

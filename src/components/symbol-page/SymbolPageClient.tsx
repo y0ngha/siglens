@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
@@ -28,6 +28,11 @@ interface SymbolPageClientProps {
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
     indicatorCount: number;
+    /**
+     * Slot rendered below the chart UI for SEO-oriented cross-links.
+     * Visible only after the user scrolls past the viewport-height chart container.
+     */
+    bottomSlot?: ReactNode;
 }
 
 export function SymbolPageClient({
@@ -35,6 +40,7 @@ export function SymbolPageClient({
     initialAnalysis,
     initialAnalysisFailed,
     indicatorCount,
+    bottomSlot,
 }: SymbolPageClientProps) {
     const {
         sheetSnap,
@@ -85,6 +91,11 @@ export function SymbolPageClient({
                     </MobileAnalysisSheet>
                 )}
             </div>
+            {bottomSlot && (
+                <div className="bg-secondary-900 text-secondary-200 mx-auto w-full max-w-5xl px-4 pb-12">
+                    {bottomSlot}
+                </div>
+            )}
         </SymbolPageProvider>
     );
 }

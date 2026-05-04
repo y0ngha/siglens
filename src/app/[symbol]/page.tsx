@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { cache } from 'react';
 import {
     dehydrate,
     HydrationBoundary,
@@ -13,15 +14,17 @@ import { countSkillFiles } from '@/infrastructure/skills/loader';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import {
     buildBreadcrumbJsonLd,
-    buildSymbolDescription,
     buildSymbolSeoContent,
-    OG_IMAGE_HEIGHT,
-    OG_IMAGE_WIDTH,
     SITE_NAME,
+    SITE_URL,
 } from '@/lib/seo';
+import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { buildDisplayName } from '@/domain/ticker';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/components/ui/JsonLd';
+
+// React.cache로 generateMetadata와 page body의 중복 fetch를 동일 render pass 안에서 dedupe.
+const getAssetInfoCached = cache(getAssetInfoAction);
 
 const FALLBACK_ANALYSIS: AnalysisResponse = {
     summary: 'AI 분석을 일시적으로 사용할 수 없습니다.',
@@ -46,10 +49,22 @@ interface Props {
 
 export async function generateMetadata({
     params,
-}: Omit<Props, 'searchParams'>): Promise<Metadata> {
+    searchParams,
+}: Props): Promise<Metadata> {
     const { symbol } = await params;
+    const { tf } = await searchParams;
+    const ticker = symbol.toUpperCase();
+    const assetInfo = await getAssetInfoCached(ticker);
+    const displayName = assetInfo
+        ? buildDisplayName(assetInfo, ticker)
+        : ticker;
     const { title, fullTitle, description, url, keywords } =
-        buildSymbolSeoContent(symbol);
+        buildSymbolSeoContent(ticker, {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+        });
+
+    const hasTfVariant = tf !== undefined;
 
     return {
         title,
@@ -65,21 +80,15 @@ export async function generateMetadata({
             description,
             url,
             locale: 'ko_KR',
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: fullTitle,
-                },
-            ],
         },
         twitter: {
             card: 'summary_large_image',
             title: fullTitle,
             description,
-            images: ['/og-image.png'],
         },
+        ...(hasTfVariant && {
+            robots: { index: false, follow: true },
+        }),
     };
 }
 
@@ -89,25 +98,42 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     const initialTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
     const ticker = symbol.toUpperCase();
     const [assetInfo, skillCounts] = await Promise.all([
-        getAssetInfoAction(ticker),
+        getAssetInfoCached(ticker),
         countSkillFiles(),
     ]);
     if (!assetInfo) return notFound();
 
     const displayName = buildDisplayName(assetInfo, ticker);
-    const { url } = buildSymbolSeoContent(ticker);
+    const { description, url } = buildSymbolSeoContent(ticker, {
+        displayName,
+        koreanName: assetInfo.koreanName,
+    });
 
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
         name: `${displayName} 주가 AI 분석 | ${SITE_NAME}`,
-        description: buildSymbolDescription(displayName),
+        description,
         url,
         inLanguage: 'ko',
         about: {
             '@type': 'Corporation',
             name: displayName,
             tickerSymbol: ticker,
+        },
+    };
+
+    const financialProductJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'FinancialProduct',
+        name: `${displayName} 주가 분석`,
+        description,
+        url,
+        serviceType: 'Stock',
+        provider: {
+            '@type': 'Organization',
+            name: SITE_NAME,
+            url: SITE_URL,
         },
     };
 
@@ -137,6 +163,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     return (
         <>
             <JsonLd data={jsonLd} />
+            <JsonLd data={financialProductJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <section className="sr-only">
                 <h2>{displayName} 기술적 분석</h2>
@@ -162,6 +189,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                     // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
                     initialAnalysisFailed={true}
                     indicatorCount={skillCounts.indicators}
+                    bottomSlot={
+                        <CrossLinkCards symbol={ticker} current="chart" />
+                    }
                 />
             </HydrationBoundary>
         </>

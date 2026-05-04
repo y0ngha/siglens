@@ -3,14 +3,15 @@ import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { LoginForm } from '@/components/auth/LoginForm';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
-import { SITE_NAME } from '@/lib/seo';
+import { SITE_NAME, SITE_URL } from '@/lib/seo';
 import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
     title: '로그인',
     description: `${SITE_NAME}에 로그인하여 회원 전용 기능을 이용해보세요.`,
-    robots: { index: false, follow: false },
+    alternates: { canonical: `${SITE_URL}/login` },
+    robots: { index: false, follow: true },
 };
 
 const OAUTH_ERROR_MESSAGES: Record<string, string> = {
@@ -61,7 +62,7 @@ export default function LoginPage({ searchParams }: LoginPageProps) {
     return (
         <AuthCardShell
             title="다시 만나서 반가워요"
-            subtitle="Sign in to continue"
+            subtitle="이메일과 비밀번호로 로그인"
             footer={
                 <div className="space-y-2">
                     <p>

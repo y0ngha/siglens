@@ -57,21 +57,6 @@ export default async function Home() {
         sameAs: ['https://github.com/y0ngha/siglens'],
     };
 
-    const websiteJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'WebSite',
-        name: SITE_NAME,
-        url: SITE_URL,
-        potentialAction: {
-            '@type': 'SearchAction',
-            target: {
-                '@type': 'EntryPoint',
-                urlTemplate: `${SITE_URL}/{search_term_string}`,
-            },
-            'query-input': 'required name=search_term_string',
-        },
-    };
-
     const faqJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'FAQPage',
@@ -81,7 +66,7 @@ export default async function Home() {
                 name: `${SITE_NAME}는 어떤 서비스인가요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '미국 주식 티커를 입력하면 RSI, MACD, 볼린저밴드 등 보조지표와 캔들 패턴, 지지·저항 레벨을 AI가 자동 해석해 주는 무료 웹 서비스입니다. 회원가입 없이 바로 이용할 수 있습니다.',
+                    text: '미국 주식 티커를 입력하면 차트(보조지표·캔들·지지/저항), 실적과 밸류에이션, 최근 뉴스 흐름을 각각 정리하고 셋을 묶은 종합 결론까지 보여주는 무료 웹 서비스입니다. 회원가입 없이 바로 이용할 수 있습니다.',
                 },
             },
             {
@@ -89,7 +74,7 @@ export default async function Home() {
                 name: 'AI 대화로 무엇을 물어볼 수 있나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '분석된 차트와 지표 데이터를 맥락으로, 현재 추세·진입 타이밍·지표 해석·패턴 의미·전략 비교 등을 자유롭게 질문할 수 있습니다. 답변은 화면에 표시된 분석 결과를 근거로 생성됩니다.',
+                    text: 'Siglens 챗봇은 현재 보고 있는 종목의 차트와 지표 데이터를 맥락으로, 추세 해석·진입 타이밍·지표 의미·패턴 비교·전략 토론 같은 질문에 답합니다. 답변은 화면에 표시된 분석 결과를 근거로 생성됩니다.',
                 },
             },
             {
@@ -97,7 +82,39 @@ export default async function Home() {
                 name: '오늘의 시장 현황에서 어떤 신호를 볼 수 있나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '11개 섹터의 선도 종목을 매일 스캔해 골든크로스, 데드크로스, RSI 다이버전스, 볼린저 스퀴즈 등 기술적 신호가 포착된 티커를 보여줍니다. 관심 종목을 클릭하면 상세 AI 분석 페이지로 바로 이동합니다.',
+                    text: 'Siglens의 /market 페이지에서는 11개 섹터의 선도 종목을 매일 스캔해 골든크로스, 데드크로스, RSI 다이버전스, 볼린저 스퀴즈 같은 기술적 신호가 포착된 티커를 정리해 보여줍니다. 관심 종목을 클릭하면 해당 티커의 상세 AI 분석 페이지로 이동합니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '특정 종목의 PER이나 ROE 같은 실적 지표는 어디서 보나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '종목 페이지의 펀더멘털 탭에서 PER, PBR, ROE, 영업이익률 같은 밸류에이션·수익성 지표와 동종 업계 평균 비교를 함께 볼 수 있습니다. 예를 들어 애플이라면 /AAPL/fundamental 경로에서 확인합니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '어닝 발표나 뉴스 분위기를 확인하고 싶을 때는 어디로 가야 하나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '종목 페이지의 뉴스 탭에서 최근 어닝 결과, 가이던스, 주요 이벤트와 함께 뉴스 sentiment(긍정·중립·부정 분포)를 정리해 보여줍니다. 예를 들어 테슬라는 /TSLA/news 경로이며, 차트만으로 설명되지 않는 가격 움직임을 점검할 때 유용합니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '차트와 실적, 뉴스를 합친 결론은 어디서 볼 수 있나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '종목 페이지의 종합 분석 탭에서 세 축의 분석을 묶어 강세·약세 시나리오, 핵심 모니터링 포인트, 위험 요인을 함께 정리한 결론을 확인할 수 있습니다. 예를 들어 엔비디아는 /NVDA/overall 경로입니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'AI 분석이 실제로 얼마나 맞는지 궁금할 때는요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '/backtesting 페이지에서 주요 종목을 대상으로 한 2년치 기술적 분석과 AI 예측의 적중률, 누적 수익률 시뮬레이션을 공개하고 있어 분석 결과를 신뢰할지 판단할 때 참고할 수 있습니다.',
                 },
             },
             {
@@ -114,28 +131,33 @@ export default async function Home() {
     const howToJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
-        name: `${SITE_NAME}로 미국 주식 시장 분석·기술적 분석·AI 대화하는 방법`,
-        description: `${SITE_NAME}에서 미국 주식 종목의 기술적 신호를 AI로 자동 해석하고, 분석 결과를 바탕으로 AI와 대화하는 방법입니다.`,
+        name: `${SITE_NAME}로 미국 주식을 차트·실적·뉴스로 살펴보고 종합 결론까지 받는 방법`,
+        description: `${SITE_NAME}에서 한 종목을 차트, 실적, 뉴스 세 축으로 살펴보고, 셋을 묶은 종합 결론과 시나리오를 받는 흐름입니다.`,
         step: [
             {
                 '@type': 'HowToStep',
-                name: '종목명, 심볼 입력',
-                text: '분석하고 싶은 미국 주식 종목명, 심볼을 검색창에 입력합니다. 예: 애플, 테슬라, 엔비디아, AAPL, TSLA, NVDA',
+                name: '종목명·심볼 입력',
+                text: '분석하고 싶은 미국 주식 종목명이나 심볼을 검색창에 입력합니다. 예: 애플, 테슬라, 엔비디아, AAPL, TSLA, NVDA.',
             },
             {
                 '@type': 'HowToStep',
-                name: '자동 분석',
-                text: `보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지/저항 ${skillCounts.supportResistance}종이 자동으로 분석됩니다.`,
+                name: '차트 분석 살펴보기',
+                text: `종목 페이지에서 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지·저항 레벨 ${skillCounts.supportResistance}종 기준으로 추세와 진입 후보 구간을 살펴봅니다.`,
             },
             {
                 '@type': 'HowToStep',
-                name: 'AI 리포트 확인',
-                text: '추세, 리스크, 진입 추천, 시그널, 차트 패턴, 전략 분석, 주요 지지/저항 레벨을 AI 리포트로 한 화면에서 확인합니다.',
+                name: '실적과 뉴스로 보강하기',
+                text: '종목 페이지의 펀더멘털 탭에서 PER·PBR·ROE 같은 밸류에이션과 수익성 지표를, 뉴스 탭에서 어닝 발표와 뉴스 sentiment를 확인해 차트가 보여주지 않는 배경을 보강합니다. 예: /AAPL/fundamental, /AAPL/news.',
             },
             {
                 '@type': 'HowToStep',
-                name: 'AI 대화',
-                text: '분석 결과를 바탕으로 AI와 직접 대화하세요. 차트 해석, 지표 의미, 매매 전략 등 궁금한 점을 질문하면 분석 데이터 맥락에 맞는 답변을 즉시 받을 수 있습니다.',
+                name: '종합 결론 확인',
+                text: '종합 분석 탭(예: /AAPL/overall)에서 차트·실적·뉴스 세 축을 묶은 종합 결론, 강세·약세 시나리오, 모니터링 포인트, 위험 요인을 함께 확인합니다.',
+            },
+            {
+                '@type': 'HowToStep',
+                name: 'AI에게 추가 질문',
+                text: '판단이 애매할 때는 챗봇에게 직접 질문할 수 있습니다. 현재 보고 있는 종목 데이터를 맥락으로, 지표 해석·시나리오 비교·매매 전략 같은 질문에 답변을 받습니다.',
             },
         ],
     };
@@ -144,7 +166,6 @@ export default async function Home() {
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={organizationJsonLd} />
-            <JsonLd data={websiteJsonLd} />
             <JsonLd data={howToJsonLd} />
             <JsonLd data={faqJsonLd} />
             <a
@@ -164,16 +185,16 @@ export default async function Home() {
                             미국 주식 AI 분석 플랫폼, SIGLENS
                         </p>
                         <h1 className="text-secondary-100 mx-auto max-w-sm text-[2.2rem] leading-[1.1] font-bold tracking-tight text-balance sm:max-w-2xl sm:text-5xl lg:mx-0 lg:text-6xl">
-                            복잡한 차트 분석을
+                            복잡한 미국 주식 분석을
                             <br />
                             <span className="text-primary-300">
-                                한 번에 정리합니다
+                                읽기 좋게 정리합니다
                             </span>
                         </h1>
                         <p className="text-secondary-400 mx-auto mt-5 max-w-sm text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">
-                            티커를 입력하면 RSI, MACD, 볼린저밴드 등 보조지표{' '}
-                            {skillCounts.indicators}종과 차트 패턴, 전략 신호를
-                            AI가 분석해 핵심 근거만 보여줍니다.
+                            티커를 입력하면 보조지표 {skillCounts.indicators}종
+                            기반 차트 흐름, 실적과 밸류에이션, 최근 뉴스를 각각
+                            정리하고, 셋을 합친 종합 결론까지 함께 보여줍니다.
                         </p>
                         <div
                             id="search"

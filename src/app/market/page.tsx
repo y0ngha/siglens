@@ -29,15 +29,23 @@ import {
 } from '@/lib/seo';
 import { JsonLd } from '@/components/ui/JsonLd';
 
-const MARKET_TITLE = `오늘의 미국 주식, 섹터별 기술적 신호 | ${SITE_NAME}`;
+// Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
+const MARKET_TITLE = '오늘의 미국 주식, 섹터별 기술적 신호';
+const MARKET_FULL_TITLE = `${MARKET_TITLE} | ${SITE_NAME}`;
 const MARKET_DESCRIPTION =
-    '오늘 움직임이 큰 미국 주식을 섹터별로 확인하세요. 11개 섹터 선도 종목에서 골든크로스, RSI 다이버전스, 볼린저 스퀴즈가 포착된 티커를 보여주고, 클릭 한 번으로 AI 분석으로 이동합니다.';
+    '오늘 미국 주식 시장이 어떻게 움직였는지 11개 섹터로 나눠 보여줍니다. AI 반도체, 빅테크, 헬스케어, 핀테크 같은 섹터에서 골든크로스, RSI 다이버전스, 볼린저 스퀴즈 신호가 잡힌 종목을 추리고, 누르면 해당 종목의 AI 분석으로 넘어갑니다.';
 const MARKET_URL = `${SITE_URL}/market`;
 const MARKET_KEYWORDS = [
     ...ROOT_KEYWORDS,
     '미국 주식 시장 개요',
-    '미국 시장 동향',
-    '섹터별 종목',
+    '오늘의 종목',
+    '오늘 매수 종목',
+    '거래량 급증',
+    '장중 신호',
+    '섹터 ETF 신호',
+    'AI 반도체 종목',
+    '빅테크 종목',
+    '헬스케어 종목',
     '골든크로스 스캐너',
     'RSI 다이버전스',
     '볼린저 스퀴즈',
@@ -65,7 +73,7 @@ export async function generateMetadata({
         keywords: MARKET_KEYWORDS,
         alternates: { canonical: MARKET_URL },
         openGraph: {
-            title: MARKET_TITLE,
+            title: MARKET_FULL_TITLE,
             description: MARKET_DESCRIPTION,
             url: MARKET_URL,
             siteName: SITE_NAME,
@@ -76,13 +84,13 @@ export async function generateMetadata({
                     url: '/og-image.png',
                     width: OG_IMAGE_WIDTH,
                     height: OG_IMAGE_HEIGHT,
-                    alt: MARKET_TITLE,
+                    alt: MARKET_FULL_TITLE,
                 },
             ],
         },
         twitter: {
             card: 'summary_large_image',
-            title: MARKET_TITLE,
+            title: MARKET_FULL_TITLE,
             description: MARKET_DESCRIPTION,
             images: ['/og-image.png'],
         },
@@ -168,7 +176,7 @@ export default function MarketPage({ searchParams }: MarketPageProps) {
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: MARKET_TITLE,
+        name: MARKET_FULL_TITLE,
         description: MARKET_DESCRIPTION,
         url: MARKET_URL,
         inLanguage: 'ko',
@@ -178,11 +186,28 @@ export default function MarketPage({ searchParams }: MarketPageProps) {
         { name: '시장 현황', url: MARKET_URL },
     ]);
 
+    // ItemList 항목 URL은 noindex되는 ?sector= 변형이 아니라 canonical /market 으로 통일.
+    // 섹터 식별자는 ListItem 내 name 필드(괄호 안 sector.symbol)에 표기한다.
+    const itemListJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'ItemList',
+        name: '미국 주식 11개 섹터 신호 스캐너',
+        itemListElement: SIGNAL_SECTORS.map((sector, idx) => ({
+            '@type': 'ListItem',
+            position: idx + 1,
+            name: `${sector.koreanName} (${sector.sectorName} · ${sector.symbol})`,
+            url: MARKET_URL,
+        })),
+    };
+
     return (
         <>
             <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
-            <h1 className="sr-only">미국 주식 기술적 신호 대시보드</h1>
+            <JsonLd data={itemListJsonLd} />
+            <h1 className="text-secondary-100 px-6 pt-10 text-2xl font-bold tracking-tight text-balance sm:text-3xl lg:px-[15vw]">
+                {MARKET_TITLE}
+            </h1>
             <Suspense
                 fallback={
                     <>

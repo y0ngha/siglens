@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     title: PRIVACY_TITLE,
     description: PRIVACY_DESCRIPTION,
     robots: {
-        index: false,
+        index: true,
         follow: true,
     },
     alternates: {

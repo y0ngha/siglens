@@ -744,6 +744,29 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Remove @internal; function is part of the public test interface
    → Applies to: infrastructure utilities, domain helpers used in tests
 
+4. Multi-line JSDoc blocks for single-line descriptions; structural enumeration comments that drift
+   → Component/function names are self-documenting; redundant multi-line JSDoc wastes space
+   → Comments enumerating structure (e.g., "// Profile + Valuation + Peers + ...") drift when code changes
+   → Remove unnecessary JSDoc; let structure and code speak for itself
+   ❌ /**
+      * ProfileCard component renders the profile section
+      * Displays key metrics and data
+      */
+      export const ProfileCard = () => { ... }
+   ❌ // ─── Profile + Valuation + Peers + Markets ──────
+      export function SymbolContent() { ... }
+      // Profile section
+      <Profile />
+      // Valuation section
+      <Valuation />
+   ✅ export const ProfileCard = () => { ... }  // name is self-explanatory
+   ✅ export function SymbolContent() { ... }
+      <Profile />
+      <Valuation />
+      <Peers />
+      <Markets />  // let JSX element names convey structure
+   → Recurring pattern: R17, R20 — multi-line JSDoc appears frequently on component/hook definitions with no substantive doc content
+
 5. Local enum mirror falls behind upstream `@y0ngha/siglens-core` union expansion — runtime data filtered out silently
    → Whenever you keep a local `readonly T[]` to validate `value is T` (e.g., `isSkillCategory`), the array must contain every member of the upstream union; siglens-core version bumps that add union members are a sync trigger.
    → This is not a TypeScript-detectable bug — `readonly SkillCategory[]` accepts a strict-subset literal silently. Discovery happens only when filtered data goes missing at runtime.

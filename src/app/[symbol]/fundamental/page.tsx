@@ -1,4 +1,4 @@
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
 import {
@@ -17,7 +17,9 @@ import {
     getHistoricalSector,
 } from '@/app/[symbol]/fundamental/fundamentalData';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
+import { buildDisplayName } from '@/domain/ticker';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
 import { PeersTable } from '@/components/fundamental/sections/PeersTable';
@@ -36,10 +38,11 @@ import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,
-    OG_IMAGE_HEIGHT,
-    OG_IMAGE_WIDTH,
     SITE_NAME,
 } from '@/lib/seo';
+
+// React.cache로 generateMetadata와 page body의 중복 fetch를 동일 render pass 안에서 dedupe.
+const getAssetInfoCached = cache(getAssetInfoAction);
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -48,8 +51,13 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
+    const assetInfo = await getAssetInfoCached(upper);
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { title, fullTitle, description, url, keywords } =
-        buildSymbolFundamentalSeoContent(upper);
+        buildSymbolFundamentalSeoContent(upper, {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+        });
 
     return {
         title,
@@ -65,20 +73,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             description,
             url,
             locale: 'ko_KR',
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: fullTitle,
-                },
-            ],
         },
         twitter: {
             card: 'summary_large_image',
             title: fullTitle,
             description,
-            images: ['/og-image.png'],
         },
     };
 }
@@ -176,22 +175,77 @@ export default async function FundamentalPage({ params }: Props) {
     }
 
     // Early fetch for notFound guard + sector resolution; shares the same `use cache` key as ProfileSection so no duplicate HTTP call.
-    const profile = await getProfile(upper);
+    // assetInfo는 한국어 종목명을 displayName에 합치기 위해 병렬로 가져온다.
+    const [profile, assetInfo] = await Promise.all([
+        getProfile(upper),
+        getAssetInfoCached(upper),
+    ]);
     if (profile === null) {
         notFound();
     }
 
     const sector = profile.sector ?? '';
+    const displayName = buildDisplayName(assetInfo, upper);
+    const { fullTitle, description, url } = buildSymbolFundamentalSeoContent(
+        upper,
+        {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+            sector: sector !== '' ? sector : undefined,
+        }
+    );
+
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: fullTitle,
+        description,
+        url,
+        inLanguage: 'ko',
+        about: {
+            '@type': 'Corporation',
+            name: displayName,
+            tickerSymbol: upper,
+        },
+    };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: `/${upper}` },
         { name: '펀더멘털 분석', url: `/${upper}/fundamental` },
     ]);
 
+    const faqJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+            {
+                '@type': 'Question',
+                name: `${displayName} 펀더멘털 분석에서 무엇을 볼 수 있나요?`,
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '회사 프로필, PER·PSR·EPS 같은 밸류에이션 지표, ROE와 마진으로 보는 수익성, 부채와 현금흐름을 통한 재무 건전성, 애널리스트 컨센서스와 목표 주가를 함께 볼 수 있습니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'PER, ROE 같은 지표는 어떻게 해석하나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'PER이 높으면 시장이 미래 성장에 프리미엄을 주고 있다는 신호이고, ROE는 자기자본 대비 얼마나 많은 이익을 내고 있는지 보여줍니다. 동종업계 평균과 비교하며 봐야 의미가 살아납니다.',
+                },
+            },
+        ],
+    };
+
     return (
         <>
+            <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
+            <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+                <h1 className="sr-only">
+                    {displayName} 재무지표와 애널리스트 의견
+                </h1>
                 <Suspense fallback={<SectionSkeleton />}>
                     <ProfileSection symbol={upper} />
                 </Suspense>
