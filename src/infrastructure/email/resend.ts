@@ -1,8 +1,8 @@
-import { Resend } from 'resend';
 import type {
     EmailDispatcher,
     EmailMessage,
 } from '@/infrastructure/email/tokenStore';
+import { Resend } from 'resend';
 
 const RESEND_API_KEY_ENV = 'RESEND_API_KEY';
 const EMAIL_SEND_TIMEOUT_MS = 10_000;
@@ -17,7 +17,7 @@ interface ResendConfig {
 function readResendConfig(): ResendConfig | null {
     const apiKey = process.env[RESEND_API_KEY_ENV];
     if (!apiKey) return null;
-    const from = process.env[EMAIL_FROM_ENV] ?? DEFAULT_FROM;
+    const from = process.env[EMAIL_FROM_ENV] || DEFAULT_FROM;
     return { apiKey, from };
 }
 
