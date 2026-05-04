@@ -1,5 +1,10 @@
 # Fix Log
 
+## [PR #420 Round 5 | master | 2026-05-04]
+- B1: `OAuthConsentForm.tsx` — `formError` dead code 제거. `FinalizeOAuthSignupState.error.code`가 `'consent_required'` 리터럴이므로 `!== 'consent_required'` 조건은 항상 false. `formError` 변수·`AuthErrorAlert` 블록 제거.
+  - Rule: MISTAKES.md §4 — Remove logic/code that has no effect
+- S1: `finalizeOAuthSignupAction.ts` — 소비처 없는 `export type { FinalizeOAuthSignupState }` re-export 제거 (YAGNI).
+
 ## [PR #420 Round 4 | master | 2026-05-04]
 - B2: `cancelOAuthSignupAction.test.ts` 분기 미테스트 — store null 케이스, store.delete() throw 케이스 두 테스트 추가.
   - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage

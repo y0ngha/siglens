@@ -23,8 +23,6 @@ import {
     OAUTH_ERROR_REDIRECT,
 } from '@/infrastructure/auth/errorMessages';
 
-export type { FinalizeOAuthSignupState };
-
 export async function finalizeOAuthSignupAction(
     _prev: FinalizeOAuthSignupState,
     formData: FormData

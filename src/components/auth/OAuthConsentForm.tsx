@@ -4,7 +4,6 @@ import { useState } from 'react';
 import Image from 'next/image';
 import type { OAuthProvider, SupportedOAuthProvider } from '@/domain/types';
 import { ConsentCheckboxGroup } from '@/components/auth/ConsentCheckboxGroup';
-import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
 import { useFinalizeOAuthSignup } from '@/components/auth/hooks/useFinalizeOAuthSignup';
 import { usePageShowReload } from '@/components/auth/hooks/usePageShowReload';
 
@@ -37,10 +36,6 @@ export function OAuthConsentForm({
 
     const consentError =
         finalizeState.error?.code === 'consent_required'
-            ? finalizeState.error.message
-            : undefined;
-    const formError =
-        finalizeState.error && finalizeState.error.code !== 'consent_required'
             ? finalizeState.error.message
             : undefined;
 
@@ -88,7 +83,6 @@ export function OAuthConsentForm({
                     name="agreed_tos"
                     value={tosChecked ? 'true' : 'false'}
                 />
-                {formError ? <AuthErrorAlert message={formError} /> : null}
                 <ConsentCheckboxGroup
                     privacyChecked={privacyChecked}
                     tosChecked={tosChecked}
