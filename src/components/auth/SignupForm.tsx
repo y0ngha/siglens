@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useCallback, useEffect, useId, useState } from 'react';
 import {
     useRequestEmailVerification,
     useVerifyEmail,
@@ -64,9 +64,20 @@ function EmailEditButton({ onClick }: EmailEditButtonProps) {
 export function SignupForm({ next }: SignupFormProps) {
     const [resetKey, setResetKey] = useState(0);
 
-    const handleRestart = (): void => {
+    const handleRestart = useCallback((): void => {
         setResetKey(current => current + 1);
-    };
+    }, []);
+
+    // 브라우저 bfcache로 페이지가 복원될 경우 1단계로 초기화
+    useEffect(() => {
+        const handlePageShow = (event: PageTransitionEvent): void => {
+            if (event.persisted) {
+                handleRestart();
+            }
+        };
+        window.addEventListener('pageshow', handlePageShow);
+        return () => window.removeEventListener('pageshow', handlePageShow);
+    }, [handleRestart]);
 
     return (
         <SignupFormFlow key={resetKey} next={next} onRestart={handleRestart} />

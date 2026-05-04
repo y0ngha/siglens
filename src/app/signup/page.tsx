@@ -1,4 +1,6 @@
 import { Suspense } from 'react';
+
+export const dynamic = 'force-dynamic';
 import { AuthCardShell } from '@/components/auth/AuthCardShell';
 import { SignupForm } from '@/components/auth/SignupForm';
 import { SocialLoginButtons } from '@/components/auth/SocialLoginButtons';
