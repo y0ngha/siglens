@@ -11,7 +11,6 @@
 import '@testing-library/jest-dom';
 import React from 'react';
 import { render, screen } from '@testing-library/react';
-import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { ChatPanel } from '@/components/chat/ChatPanel';
 
 jest.mock('@/components/ui/MarkdownText', () => ({
@@ -35,32 +34,21 @@ jest.mock('@/components/chat/hooks/useChat', () => ({
     }),
 }));
 
-const MINIMAL_ANALYSIS: AnalysisResponse = {
-    summary: 'AAPL trending up.',
-    trend: 'bullish',
-    riskLevel: 'medium',
-    indicatorResults: [],
-    keyLevels: { support: [], resistance: [] },
-    priceTargets: {
-        bullish: { targets: [], condition: '' },
-        bearish: { targets: [], condition: '' },
-    },
-    patternSummaries: [],
-    strategyResults: [],
-    candlePatterns: [],
-    trendlines: [],
-};
+let mockIsAnalysisReady = true;
+jest.mock('@/components/chat/hooks/useSymbolChat', () => ({
+    useSymbolChat: () => ({
+        context: null,
+        timeframe: '1Day',
+        isAnalysisReady: mockIsAnalysisReady,
+        publish: jest.fn(),
+        clear: jest.fn(),
+    }),
+}));
 
 function renderPanel(overrides: Partial<{ onClose: () => void }> = {}) {
+    mockIsAnalysisReady = true;
     return render(
-        <ChatPanel
-            symbol="AAPL"
-            timeframe="1Day"
-            analysis={MINIMAL_ANALYSIS}
-            currentAnalysisContext={null}
-            isAnalysisReady={true}
-            onClose={overrides.onClose}
-        />
+        <ChatPanel symbol="AAPL" onClose={overrides.onClose} />
     );
 }
 
@@ -128,43 +116,22 @@ describe('ChatPanel', () => {
         });
 
         it('placeholder reflects ready/not-ready state', () => {
-            const { rerender } = render(
-                <ChatPanel
-                    symbol="AAPL"
-                    timeframe="1Day"
-                    analysis={MINIMAL_ANALYSIS}
-                    currentAnalysisContext={null}
-                    isAnalysisReady={false}
-                />
-            );
+            mockIsAnalysisReady = false;
+            const { rerender } = render(<ChatPanel symbol="AAPL" />);
             expect(
                 screen.getByPlaceholderText(/분석이 완료된 후/)
             ).toBeInTheDocument();
 
-            rerender(
-                <ChatPanel
-                    symbol="AAPL"
-                    timeframe="1Day"
-                    analysis={MINIMAL_ANALYSIS}
-                    currentAnalysisContext={null}
-                    isAnalysisReady={true}
-                />
-            );
+            mockIsAnalysisReady = true;
+            rerender(<ChatPanel symbol="AAPL" />);
             expect(
                 screen.getByPlaceholderText(/질문을 입력하세요/)
             ).toBeInTheDocument();
         });
 
         it('input is disabled when analysis is not ready (prevents stuck typing on mobile)', () => {
-            render(
-                <ChatPanel
-                    symbol="AAPL"
-                    timeframe="1Day"
-                    analysis={MINIMAL_ANALYSIS}
-                    currentAnalysisContext={null}
-                    isAnalysisReady={false}
-                />
-            );
+            mockIsAnalysisReady = false;
+            render(<ChatPanel symbol="AAPL" />);
             const textarea = screen.getByPlaceholderText(
                 /분석이 완료된 후/
             ) as HTMLTextAreaElement;

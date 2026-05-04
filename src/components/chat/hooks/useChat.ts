@@ -15,9 +15,7 @@ import {
     type ChatErrorCode,
     type ChatLoadingPhase,
     type ChatMessage,
-    type CurrentAnalysisContext,
     type ModelId,
-    type Timeframe,
     type LlmProvider,
 } from '@y0ngha/siglens-core';
 import { isFreeChatModel } from '@/domain/llm';
@@ -31,8 +29,11 @@ import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingToke
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
+import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
+import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { usePageContextLabel } from '@/components/chat/hooks/usePageContextLabel';
+import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -89,26 +90,6 @@ function resolveAiContent(result: ChatActionResult): string {
 
 export interface UseChatOptions {
     symbol: string;
-    timeframe: Timeframe;
-    /**
-     * Chart's technical AnalysisResponse. Required because core's
-     * `buildChatPrompt` mandates an `analysis` parameter and unconditionally
-     * embeds it as the primary "=== ANALYSIS DATA ===" block in the system
-     * prompt. On non-chart pages the caller passes
-     * `CHAT_NON_CHART_BASELINE_ANALYSIS` (a stub whose `summary` redirects the
-     * LLM to the `## Current analysis context` section), while
-     * `currentAnalysisContext` carries the actual page payload.
-     */
-    analysis: AnalysisResponse;
-    /**
-     * Tagged union describing the analysis result on the user's current page
-     * (technical / fundamental / news / overall). Forwarded as-is to core's
-     * optional `currentAnalysisContext` so the system prompt receives a
-     * `## Current analysis context` block with the matching live numbers.
-     * `null` when no page-level analysis is yet available.
-     */
-    currentAnalysisContext: CurrentAnalysisContext | null;
-    isAnalysisReady: boolean;
 }
 
 export interface GateModalState {
@@ -130,13 +111,22 @@ export interface UseChatReturn {
     dismissGate: () => void;
 }
 
-export function useChat({
-    symbol,
-    timeframe,
-    analysis,
-    currentAnalysisContext,
-    isAnalysisReady,
-}: UseChatOptions): UseChatReturn {
+export function useChat({ symbol }: UseChatOptions): UseChatReturn {
+    const {
+        context,
+        timeframe: timeframeFromCtx,
+        isAnalysisReady,
+    } = useSymbolChat();
+    // Core's `buildChatPrompt` requires an `analysis: AnalysisResponse` and `timeframe: Timeframe`
+    // even on non-chart pages. We fall back to `CHAT_NON_CHART_BASELINE_ANALYSIS` (whose summary
+    // redirects the LLM to `## Current analysis context`) and `DEFAULT_TIMEFRAME` so non-chart
+    // pages still produce a valid request. The real per-page payload travels via `context`.
+    const timeframe = timeframeFromCtx ?? DEFAULT_TIMEFRAME;
+    const analysis =
+        context !== null && context.kind === 'technical'
+            ? context.payload
+            : CHAT_NON_CHART_BASELINE_ANALYSIS;
+    const currentAnalysisContext = context;
     const [messages, setMessages] = useState<DisplayMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null

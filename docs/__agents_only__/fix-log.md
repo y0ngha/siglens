@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #418 Round 4 | chore/pr-413-review-fixes | 2026-05-04]
+- Violation: FloatingChatButton/ChatPanel가 currentAnalysisContext / analysis / timeframe / isAnalysisReady를 그대로 pass-through (Props Drilling)
+- Rule: MISTAKES.md #5.5 — Intermediate components must not pass-through props they do not directly use
+- Context: useChat이 useSymbolChat()을 직접 소비하도록 리팩토링. ChatPanel은 onClose + symbol만 받고 isAnalysisReady는 useSymbolChat()으로 직접 조회. FloatingChatButton은 symbol만 받음. SymbolLayoutClient의 SymbolChatLauncher 중간 컴포넌트 제거. ChatPanel.test.tsx도 useSymbolChat 모킹으로 갱신.
+
+- Refactor: OverallContent.tsx의 useMemo 내 복합 삼항식 → buildChatState named helper로 추출
+- Rule: MISTAKES.md #9 — Complex anonymous expressions should be named
+- Context: 두 분기 각각이 3개 필드 객체를 반환하던 멀티 스테이트먼트 삼항식을 컴포넌트 외부 named helper로 추출. OverallAnalysisState / SymbolChatState 타입 export 추가.
+
+- Test added: useNewsAugment cache-only contract 4건
+- Rule: 컴포넌트 hook이지만 핵심 동작 contract(cache-only via skipToken + QUERY_KEYS.newsAnalysis 키 공유)을 문서화하는 회귀 방지 테스트
+- Context: src/__tests__/components/symbol-page/hooks/useNewsAugment.test.tsx 신규. 빈 캐시 → null / 캐시 hit → 그 값 / fetch 시작 안함(skipToken) / modelId 다르면 cross-populate 안함.
+
 ## [PR #418 Round 3 | chore/pr-413-review-fixes | 2026-05-04]
 - Decision: 'multi-line JSDoc/comment 압축' Blocker 3건 (useNewsAugment, SymbolChatContext, SymbolLayoutClient) 모두 거부 — 사용자 판단으로 보존
 - Reason: PR #415 라운드에서 동일 정책(MISTAKES.md Documentation Sync 규칙 4)이 사용자에 의해 '과도하게 제한적'이라며 폐기됨. R3 reviewer가 근거로 인용한 'CLAUDE.md ─ Never write multi-paragraph docstrings...' 문구는 프로젝트 CLAUDE.md/CONVENTIONS.md/MISTAKES.md에는 존재하지 않으며 Claude Code 시스템 프롬프트(CLI 빌트인)의 문구임이 확인됨
@@ -17,10 +30,6 @@
 - Violation: usePublishSymbolChat single useEffect re-runs both publish and clear on every state change → null flicker between transitions
 - Rule: FF Predictability 2-D — effects with distinct lifecycles (per-update publish vs unmount-only clear) should be split, not coalesced
 - Context: SymbolChatContext.usePublishSymbolChat had `useEffect(() => { publish(state); return () => clear(); }, [state, publish, clear])`. Reviewer flagged that on intra-page state change (e.g. analysis loading → done) the cleanup runs first, briefly resetting context to null before re-publishing. Split into two effects: `useEffect([state, publish], publish)` + `useEffect([clear], unmount-only clear)`.
-
-- Violation: useSymbolChat / usePublishSymbolChat (custom hooks) exported from SymbolChatContext.tsx (component file) instead of hooks/ subfolder
-- Rule: CONVENTIONS.md — "Custom hooks must always be placed in a `hooks/` subfolder. Never mix component files, hook files, or utility files at the same directory level."
-- Context: Moved both hooks to src/components/chat/hooks/useSymbolChat.ts. SymbolChatContext.tsx now exports SymbolChatProvider + types/Context object only. Updated 5 consumer imports (SymbolLayoutClient, ChartContent, FundamentalAiSummary, NewsAiSummary, OverallContent).
 
 ## [PR #415 Round 2 | chore/upgrade-siglens-core-0.7.3 | 2026-05-04]
 - Violation: chatAction's getProviderForModel/getServerPrimaryKey calls placed outside try-catch block — 0.7.3 throws on unknown modelId
@@ -196,16 +205,7 @@
 - Rule: CLAUDE.md layer dependency — lib/ must contain external UI utility wrappers only; pure functions with side effects belong in infrastructure
 - Context: Moved lib/dateKey.ts → infrastructure/utils/dateKey.ts; updated 4 import sites (fundamental/page.tsx, news/page.tsx, submitOverallAnalysisAction.ts, submitNewsAnalysisAction.ts).
 
-## [PR #413 R11 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: useOverallAnalysis hook return type was inline `{ state: ...; trigger: () => void }` instead of named interface
-- Rule: MISTAKES.md TypeScript 5.5 — Function return types using inline object literals instead of named types
-- Context: Extracted `export interface UseOverallAnalysisReturn` named interface; hook now returns UseOverallAnalysisReturn.
-
 ## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: toEarningsReport in src/infrastructure/db/earningsReportsRepository.ts had inline parameter type { symbol: string; earningsDate: string } while sibling earningsCalendarRepository.ts uses named EarningsCalendarDbRow interface
-- Rule: MISTAKES.md TypeScript 5.5 — Inline object parameter type instead of named interface; breaks sibling consistency
-- Context: Extracted EarningsReportDbRow named interface; toEarningsReport now uses named type matching earningsCalendarRepository pattern.
-
 - Violation: src/infrastructure/utils/dateKey.ts (added in R10) had no corresponding test file
 - Rule: MISTAKES.md Tests 12, 14 — All time-dependent utility functions must have test coverage including edge cases
 - Context: Created src/__tests__/infrastructure/utils/dateKey.test.ts with 3 cases: UTC midnight, late evening (date crossover), early morning paths via jest.spyOn(Date, 'now').

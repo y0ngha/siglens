@@ -15,7 +15,7 @@ import {
 } from '@/lib/pollingConfig';
 import { MS_PER_SECOND } from '@/domain/constants/time';
 
-type OverallAnalysisState =
+export type OverallAnalysisState =
     | { status: 'idle' }
     | {
           status: 'pending_dependencies';

@@ -971,6 +971,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ hooks/useCurrentUser.ts: `import { AuthUserRecord } from '@/domain/types'`  // re-exported from @/domain/auth/types
    ✅ hooks/useContactForm.ts: `import { ContactFormState } from '@/domain/types'`  // moved to @/domain/types
 
+0.6. Helper files (hooks, utilities) mixed at same directory level as component files
+   → Custom hooks must always live in a `hooks/` subfolder
+   → Pure utility functions must always live in a `utils/` subfolder
+   → Never place component files, hook files, and utility files at the same directory level
+   → Enforces CONVENTIONS.md modularity — each concern (UI, logic, helpers) isolated in subfolders
+   ❌ src/components/symbol-page/useSymbolChat.ts (hook at component level)
+   ❌ src/components/symbol-page/SymbolTabsConfig.ts (utility at component level)
+   ✅ src/components/symbol-page/hooks/useSymbolChat.ts (hooks in dedicated subfolder)
+   ✅ src/components/symbol-page/utils/symbolTabsConfig.ts (utilities in dedicated subfolder)
+
 1. Pure utility functions placed in components/ instead of proper layers
    → Pure functions with no React dependencies must be in domain/ (business logic) or lib/ (UI utilities)
    → Utility functions extracted from components must go to utils/ subfolders, not remain in components/

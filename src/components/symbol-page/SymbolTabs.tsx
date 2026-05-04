@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/cn';
-import { TABS } from '@/components/symbol-page/SymbolTabsConfig';
+import { TABS } from '@/components/symbol-page/utils/symbolTabsConfig';
 
 interface SymbolTabsProps {
     /** Ticker symbol. Will be uppercased internally. */

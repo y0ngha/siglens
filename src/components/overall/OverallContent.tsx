@@ -4,8 +4,14 @@ import { type CSSProperties, useMemo } from 'react';
 import { cn } from '@/lib/cn';
 import { type Timeframe } from '@y0ngha/siglens-core';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
-import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
-import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import {
+    useOverallAnalysis,
+    type OverallAnalysisState,
+} from '@/components/overall/hooks/useOverallAnalysis';
+import {
+    usePublishSymbolChat,
+    type SymbolChatState,
+} from '@/components/chat/hooks/useSymbolChat';
 import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
 import { DependencyProgress } from '@/components/overall/DependencyProgress';
 import { OverallSummary } from '@/components/overall/sections/OverallSummary';
@@ -25,31 +31,29 @@ interface OverallContentProps {
     timeframe: Timeframe;
 }
 
+// Publish the overall result to the chat context only when it's available.
+// For non-done states we return `null` context so the chatbot doesn't reference
+// partial/stale data (and the input stays disabled via isAnalysisReady).
+function buildChatState(
+    state: OverallAnalysisState,
+    timeframe: Timeframe
+): SymbolChatState {
+    if (state.status === 'done') {
+        return {
+            context: { kind: 'overall', payload: state.result } as const,
+            timeframe,
+            isAnalysisReady: true,
+        };
+    }
+    return { context: null, timeframe, isAnalysisReady: false };
+}
+
 export function OverallContent({ symbol, timeframe }: OverallContentProps) {
     const modelId = useDefaultModelId();
     const { state, trigger } = useOverallAnalysis(symbol, timeframe, modelId);
 
-    // Publish the overall result to the chat context only when it's available.
-    // For non-done states we publish `null` so the chatbot doesn't reference
-    // partial/stale data (and the input stays disabled via isAnalysisReady).
-    // The hook is called unconditionally — only the `chatState.context` flips
-    // between the union and `null` based on status.
     const chatState = useMemo(
-        () =>
-            state.status === 'done'
-                ? {
-                      context: {
-                          kind: 'overall',
-                          payload: state.result,
-                      } as const,
-                      timeframe,
-                      isAnalysisReady: true,
-                  }
-                : {
-                      context: null,
-                      timeframe,
-                      isAnalysisReady: false,
-                  },
+        () => buildChatState(state, timeframe),
         [state, timeframe]
     );
     usePublishSymbolChat(chatState);

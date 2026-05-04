@@ -1,4 +1,4 @@
-import { TABS } from '@/components/symbol-page/SymbolTabsConfig';
+import { TABS } from '@/components/symbol-page/utils/symbolTabsConfig';
 
 // Static SymbolTabs fallback — no usePathname so the PPR prerender shell can resolve.
 export function SymbolTabsSkeleton() {

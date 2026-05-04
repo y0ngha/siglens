@@ -7,6 +7,8 @@ import {
     type SymbolChatState,
 } from '@/components/chat/SymbolChatContext';
 
+export type { SymbolChatState };
+
 export function useSymbolChat(): SymbolChatContextValue {
     const ctx = useContext(SymbolChatContext);
     if (!ctx)
