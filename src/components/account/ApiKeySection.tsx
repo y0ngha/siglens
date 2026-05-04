@@ -1,12 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
-import { useFormStatus } from 'react-dom';
-import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/domain/llm';
-import type { ApiKeyActionState } from '@/domain/llm';
 import { useApiKeyForms } from '@/components/account/hooks/useApiKeyForms';
+import type { ApiKeyActionState } from '@/domain/llm';
+import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/domain/llm';
 import { cn } from '@/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
+import { useMemo, useState } from 'react';
+import { useFormStatus } from 'react-dom';
 
 const PROVIDER_PLACEHOLDERS: Record<LlmProvider, string> = {
     anthropic: 'sk-ant-...',
@@ -197,7 +197,7 @@ export function ApiKeySection({ registeredProviders }: ApiKeySectionProps) {
                     AI 모델 API 키
                 </h2>
                 <p className="text-secondary-400 mt-1 text-sm">
-                    등록한 키는 계정에만 저장되며 AES-256으로 암호화됩니다.
+                    등록한 키는 계정에만 저장되며 안전한 방식으로 암호화됩니다.
                 </p>
             </div>
             {LLM_PROVIDER_VALUES.map(provider => (
