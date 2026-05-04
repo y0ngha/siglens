@@ -20,8 +20,8 @@ interface SymbolLayoutHeaderProps {
  * would force the whole route to be dynamic under Next.js Cache Components).
  */
 export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
-    const ticker = symbol.toUpperCase();
     const assetInfo = useAssetInfo(symbol);
+    const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
 
     return (

@@ -45,6 +45,8 @@ interface ChartScrollLockGateProps {
 function ChartScrollLockGate({ symbol }: ChartScrollLockGateProps) {
     const pathname = usePathname();
     const ticker = symbol.toUpperCase();
+    // Match both upper- and lower-case URL forms so direct hits like `/aapl` (Next.js
+    // does not auto-canonicalize ticker case) still receive the chart-only scroll lock.
     const isChartPage = pathname === `/${ticker}` || pathname === `/${symbol}`;
     if (!isChartPage) return null;
     return <ChartScrollLockEffect />;

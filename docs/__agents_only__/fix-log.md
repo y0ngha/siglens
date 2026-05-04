@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #418 Round 5 | chore/pr-413-review-fixes | 2026-05-04]
+- Refactor: OverallContent.tsx의 buildChatState 순수 헬퍼를 utils/buildChatState.ts로 분리
+- Rule: CONVENTIONS.md / MISTAKES.md Architecture #1 — 컴포넌트 파일에서 추출한 순수 함수는 utils/ 서브폴더로
+- Context: buildChatState은 React 의존성 없는 순수 함수. components/overall/utils/buildChatState.ts 신규 생성. OverallAnalysisState/SymbolChatState 타입 import는 그대로.
+
+- Test improvement: useNewsAugment.test.tsx의 'does not start a fetch' 단언을 부정→긍정으로 강화
+- Rule: 테스트 단언은 undefined 값 통과 우려가 있는 부정 단언 대신 긍정 단언 사용
+- Context: expect(state?.fetchStatus).not.toBe('fetching') / .not.toBe('success') → expect(state).toBeDefined() / .fetchStatus.toBe('idle') / .status.toBe('pending').
+
+- Doc: ChartScrollLockGate의 pathname 이중 체크 (/${ticker} || /${symbol}) 의도 WHY 주석 추가
+- Rule: MISTAKES.md WHY-주석 가이드 — 비자명한 분기에 의도 주석
+- Context: Next.js가 ticker case를 자동 canonicalize 하지 않으므로 직접 진입 케이스(/aapl) 호환을 위함을 1줄 주석으로 명시.
+
 ## [PR #418 Round 4 | chore/pr-413-review-fixes | 2026-05-04]
 - Violation: FloatingChatButton/ChatPanel가 currentAnalysisContext / analysis / timeframe / isAnalysisReady를 그대로 pass-through (Props Drilling)
 - Rule: MISTAKES.md #5.5 — Intermediate components must not pass-through props they do not directly use

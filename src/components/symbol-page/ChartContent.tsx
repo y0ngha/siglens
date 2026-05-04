@@ -234,16 +234,6 @@ export function ChartContent({
 
     const notifyMobileContent = useEffectEvent(onMobileSheetContent);
 
-    useEffect(() => {
-        notifyMobileContent(mobileContent);
-    }, [mobileContent]);
-
-    useEffect(() => {
-        if (analysisResult) {
-            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
-        }
-    }, [analysisResult]);
-
     // Publish chart state to the layout-mounted FloatingChatButton so it survives
     // navigation between the 4 symbol pages. Layout owns the button; we only feed it.
     // Memoize the published object so usePublishSymbolChat's effect re-runs only when
@@ -257,6 +247,16 @@ export function ChartContent({
         [analysis, timeframe, displayAnalyzing]
     );
     usePublishSymbolChat(chatState);
+
+    useEffect(() => {
+        notifyMobileContent(mobileContent);
+    }, [mobileContent]);
+
+    useEffect(() => {
+        if (analysisResult) {
+            window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
+        }
+    }, [analysisResult]);
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">

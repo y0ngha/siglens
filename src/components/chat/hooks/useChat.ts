@@ -117,16 +117,6 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         timeframe: timeframeFromCtx,
         isAnalysisReady,
     } = useSymbolChat();
-    // Core's `buildChatPrompt` requires an `analysis: AnalysisResponse` and `timeframe: Timeframe`
-    // even on non-chart pages. We fall back to `CHAT_NON_CHART_BASELINE_ANALYSIS` (whose summary
-    // redirects the LLM to `## Current analysis context`) and `DEFAULT_TIMEFRAME` so non-chart
-    // pages still produce a valid request. The real per-page payload travels via `context`.
-    const timeframe = timeframeFromCtx ?? DEFAULT_TIMEFRAME;
-    const analysis =
-        context !== null && context.kind === 'technical'
-            ? context.payload
-            : CHAT_NON_CHART_BASELINE_ANALYSIS;
-    const currentAnalysisContext = context;
     const [messages, setMessages] = useState<DisplayMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
@@ -160,13 +150,30 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     // mount guard: save effect skips first run (messages = []) then sets true
     const didSaveMountRef = useRef(false);
     // storageKey captured at mount — mount effect reads this ref so deps array stays []
-    const initialStorageKeyRef = useRef(buildStorageKey(symbol, timeframe));
+    const initialStorageKeyRef = useRef(
+        buildStorageKey(symbol, timeframeFromCtx ?? DEFAULT_TIMEFRAME)
+    );
     // storageKey just changed but messages haven't updated yet — skip that save cycle
     const isKeyChangePendingRef = useRef(false);
     // current storageKey ref — lets analysis effect read latest key without deps array entry
-    const storageKeyRef = useRef(buildStorageKey(symbol, timeframe));
+    const storageKeyRef = useRef(
+        buildStorageKey(symbol, timeframeFromCtx ?? DEFAULT_TIMEFRAME)
+    );
     // true until isAnalysisReady first becomes true — distinguishes page-refresh from re-analysis
     const isFirstAnalysisReadyRef = useRef(true);
+
+    // Derived from context — placed after refs (per the React Hook order convention) and
+    // before queries/mutations so they can reference these computed values.
+    // Core's `buildChatPrompt` requires `analysis: AnalysisResponse` and `timeframe: Timeframe`
+    // even on non-chart pages; we fall back to `CHAT_NON_CHART_BASELINE_ANALYSIS` (whose summary
+    // redirects the LLM to `## Current analysis context`) and `DEFAULT_TIMEFRAME` so non-chart
+    // pages still produce a valid request. The real per-page payload travels via `context`.
+    const timeframe = timeframeFromCtx ?? DEFAULT_TIMEFRAME;
+    const analysis =
+        context !== null && context.kind === 'technical'
+            ? context.payload
+            : CHAT_NON_CHART_BASELINE_ANALYSIS;
+    const currentAnalysisContext = context;
 
     const queryClient = useQueryClient();
     const { data: remainingTokensData } = useQuery({

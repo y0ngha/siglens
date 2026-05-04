@@ -55,17 +55,19 @@ describe('useNewsAugment (cache-only contract)', () => {
         expect(result.current).toBe(SAMPLE_RESULT);
     });
 
-    it('does not start a fetch — never enters fetching state', async () => {
+    it('does not start a fetch — query stays in idle/pending under skipToken', async () => {
         const client = new QueryClient();
         renderHook(() => useNewsAugment(SYMBOL, MODEL_ID), {
             wrapper: makeWrapper(client),
         });
-        // skipToken contract: query is registered but never moves out of idle.
+        // skipToken contract: query is registered (state defined) and the fetch is never
+        // initiated — fetchStatus stays 'idle', status stays 'pending' until cache seed.
         const state = client.getQueryState(
             QUERY_KEYS.newsAnalysis(SYMBOL, MODEL_ID)
         );
-        expect(state?.fetchStatus).not.toBe('fetching');
-        expect(state?.status).not.toBe('success');
+        expect(state).toBeDefined();
+        expect(state?.fetchStatus).toBe('idle');
+        expect(state?.status).toBe('pending');
     });
 
     it('does not cross-populate when modelId differs', () => {

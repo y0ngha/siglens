@@ -4,14 +4,9 @@ import { type CSSProperties, useMemo } from 'react';
 import { cn } from '@/lib/cn';
 import { type Timeframe } from '@y0ngha/siglens-core';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
-import {
-    useOverallAnalysis,
-    type OverallAnalysisState,
-} from '@/components/overall/hooks/useOverallAnalysis';
-import {
-    usePublishSymbolChat,
-    type SymbolChatState,
-} from '@/components/chat/hooks/useSymbolChat';
+import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { buildChatState } from '@/components/overall/utils/buildChatState';
 import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
 import { DependencyProgress } from '@/components/overall/DependencyProgress';
 import { OverallSummary } from '@/components/overall/sections/OverallSummary';
@@ -29,23 +24,6 @@ const SKELETON_WIDTH_STEP_PCT = 12;
 interface OverallContentProps {
     symbol: string;
     timeframe: Timeframe;
-}
-
-// Publish the overall result to the chat context only when it's available.
-// For non-done states we return `null` context so the chatbot doesn't reference
-// partial/stale data (and the input stays disabled via isAnalysisReady).
-function buildChatState(
-    state: OverallAnalysisState,
-    timeframe: Timeframe
-): SymbolChatState {
-    if (state.status === 'done') {
-        return {
-            context: { kind: 'overall', payload: state.result } as const,
-            timeframe,
-            isAnalysisReady: true,
-        };
-    }
-    return { context: null, timeframe, isAnalysisReady: false };
 }
 
 export function OverallContent({ symbol, timeframe }: OverallContentProps) {
