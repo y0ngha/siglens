@@ -1,4 +1,7 @@
-// 동적 OG image 라우트(`opengraph-image.tsx`)에서 공유하는 색상·레이아웃 상수.
+// 동적 OG image 라우트(`opengraph-image.tsx`)와 정적 og-image 메타 양쪽에서 공유하는 OG 상수.
+export const OG_IMAGE_WIDTH = 1200;
+export const OG_IMAGE_HEIGHT = 630;
+
 export const OG_BG = '#0f172a';
 export const OG_FG = '#ffffff';
 export const OG_ACCENT = '#3b82f6';

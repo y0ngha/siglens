@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #417 Round 6 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: chart page \`WebPage.name\`이 옛 카피("\${displayName} 주가 AI 분석 | Siglens")로 하드코딩 — title 전면 갱신 후에도 JSON-LD에는 반영 안 됨, 4개 page family 패턴(\`fullTitle\` 사용)과 불일치
+- Rule: FF Cohesion — 같은 페이지 내 유사 용도의 name 필드 일관성
+- Context: P2.1에서 buildSymbolSeoContent title을 갱신했으나 page body의 WebPage JSON-LD name은 옛 형식 그대로. \`buildSymbolSeoContent.fullTitle\`을 destructure해서 WebPage.name으로 사용. breadcrumbJsonLd도 \`fullTitle\`로 통일.
+
+- Violation: \`@type: 'FinancialProduct'\` JSON-LD 의미 부적합 — schema.org/FinancialProduct는 대출/카드/보험 등 금융 상품 자체용이고 주식 분석 서비스에는 맞지 않음. WebPage about.Corporation으로 이미 금융 entity 신호 제공 중이라 중복.
+- Rule: schema.org type semantic 정합성
+- Context: P2.1에서 추가됐으나 WebPage about.Corporation으로 충분. 안전하게 제거 (Service로 교체할 수도 있으나 about.Corporation과 정보가 중복되어 가치 적음).
+
+- Violation: OG 상수 \`lib/seo.ts\`(width/height)와 \`lib/og.ts\`(색상/레이아웃)에 분산
+- Rule: FF Cohesion 3-A — 함께 변경되는 코드는 같은 위치에
+- Context: \`OG_IMAGE_WIDTH/OG_IMAGE_HEIGHT\`를 \`lib/og.ts\`로 이동하고 모든 consumer(layout, privacy, terms, backtesting, market, 4개 OG 라우트, infra/og/buildSymbolOgImage) import 경로 갱신.
+
 ## [PR #417 Round 5 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: 신규 infrastructure 함수 `getAssetInfoCached` 단위 테스트 부재
 - Rule: CONVENTIONS.md infrastructure/ 100%, MISTAKES.md Tests #12

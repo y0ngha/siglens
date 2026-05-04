@@ -15,7 +15,6 @@ import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
     SITE_NAME,
-    SITE_URL,
 } from '@/lib/seo';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { buildDisplayName } from '@/domain/ticker';
@@ -100,7 +99,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     if (!assetInfo) return notFound();
 
     const displayName = buildDisplayName(assetInfo, ticker);
-    const { description, url } = buildSymbolSeoContent(ticker, {
+    const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
         displayName,
         koreanName: assetInfo.koreanName,
     });
@@ -108,7 +107,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: `${displayName} 주가 AI 분석 | ${SITE_NAME}`,
+        name: fullTitle,
         description,
         url,
         inLanguage: 'ko',
@@ -119,25 +118,8 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         },
     };
 
-    const financialProductJsonLd = {
-        '@context': 'https://schema.org',
-        '@type': 'FinancialProduct',
-        name: `${displayName} 주가 분석`,
-        description,
-        url,
-        serviceType: 'Stock',
-        provider: {
-            '@type': 'Organization',
-            name: SITE_NAME,
-            url: SITE_URL,
-        },
-    };
-
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        {
-            name: `${displayName} 주가 AI 분석`,
-            url,
-        },
+        { name: fullTitle, url },
     ]);
 
     const queryClient = new QueryClient({
@@ -159,7 +141,6 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     return (
         <>
             <JsonLd data={jsonLd} />
-            <JsonLd data={financialProductJsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
             <section className="sr-only">
                 <h2>{displayName} 기술적 분석</h2>

@@ -1,4 +1,4 @@
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
 import { buildSymbolOgImage } from '@/infrastructure/og/buildSymbolOgImage';
 
 export const size = { width: OG_IMAGE_WIDTH, height: OG_IMAGE_HEIGHT };

@@ -11,14 +11,13 @@ import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { ADSENSE_ENABLED } from '@/lib/adsense';
 import {
-    OG_IMAGE_HEIGHT,
-    OG_IMAGE_WIDTH,
     ROOT_KEYWORDS,
     ROOT_TITLE,
     SITE_DESCRIPTION,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
 import './globals.css';
 
 const geistSans = Geist({

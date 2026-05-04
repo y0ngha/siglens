@@ -161,9 +161,6 @@ export function buildBreadcrumbJsonLd(
     };
 }
 
-export const OG_IMAGE_WIDTH = 1200;
-export const OG_IMAGE_HEIGHT = 630;
-
 export const BACKTESTING_PATH = '/backtesting';
 export const BACKTESTING_URL = `${SITE_URL}${BACKTESTING_PATH}`;
 // Root layout template appends "| Siglens" — exclude brand name to prevent duplication

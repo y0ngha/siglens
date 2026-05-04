@@ -1,10 +1,12 @@
 import { ImageResponse } from 'next/og';
-import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH, SITE_NAME } from '@/lib/seo';
+import { SITE_NAME } from '@/lib/seo';
 import {
     OG_ACCENT,
     OG_BG,
     OG_CONTAINER_PADDING,
     OG_FG,
+    OG_IMAGE_HEIGHT,
+    OG_IMAGE_WIDTH,
     OG_LABEL_FONT_SIZE,
     OG_LABEL_MARGIN_TOP,
     OG_MUTED,

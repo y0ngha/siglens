@@ -6,11 +6,10 @@ import {
     BACKTESTING_TITLE,
     BACKTESTING_URL,
     buildBreadcrumbJsonLd,
-    OG_IMAGE_HEIGHT,
-    OG_IMAGE_WIDTH,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
 import { TERMS_PATH } from '@/lib/legal';
 import { BacktestHero } from '@/components/backtesting/BacktestHero';
 import { BacktestTabs } from '@/components/backtesting/BacktestTabs';
