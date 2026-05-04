@@ -2,6 +2,7 @@
  * @jest-environment jsdom
  */
 import '@testing-library/jest-dom';
+import { useState } from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConsentCheckboxGroup } from '@/components/auth/ConsentCheckboxGroup';
@@ -16,8 +17,8 @@ describe('ConsentCheckboxGroup', () => {
         initialTos?: boolean;
         error?: string;
     } = {}) {
-        const [p, setP] = require('react').useState(initialPrivacy);
-        const [t, setT] = require('react').useState(initialTos);
+        const [p, setP] = useState(initialPrivacy);
+        const [t, setT] = useState(initialTos);
         return (
             <ConsentCheckboxGroup
                 privacyChecked={p}
@@ -99,9 +100,19 @@ describe('ConsentCheckboxGroup', () => {
         expect(privacyLink.getAttribute('rel')).toContain('noopener');
     });
 
-    it('error highlights only the unchecked rows (border-ui-danger)', () => {
+    it('error marks only unchecked rows as invalid via aria-invalid', () => {
         render(<Renderer initialPrivacy={false} initialTos error="에러" />);
-        const privacyRow = screen.getByLabelText(/개인정보 수집·이용 동의/).closest('label');
-        expect(privacyRow?.className).toContain('border-ui-danger');
+        const privacy = screen.getByLabelText(/개인정보 수집·이용 동의/);
+        const tos = screen.getByLabelText(/서비스 이용약관 동의/);
+        expect(privacy).toHaveAttribute('aria-invalid', 'true');
+        expect(tos).not.toHaveAttribute('aria-invalid');
+    });
+
+    it('error does not mark checked rows as invalid', () => {
+        render(<Renderer initialPrivacy initialTos error="에러" />);
+        const privacy = screen.getByLabelText(/개인정보 수집·이용 동의/);
+        const tos = screen.getByLabelText(/서비스 이용약관 동의/);
+        expect(privacy).not.toHaveAttribute('aria-invalid');
+        expect(tos).not.toHaveAttribute('aria-invalid');
     });
 });

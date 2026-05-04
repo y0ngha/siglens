@@ -45,6 +45,12 @@ function ExternalArrowIcon() {
     );
 }
 
+/**
+ * Custom styled checkbox with support for the indeterminate state.
+ * `indeterminate` is intentionally optional — ConsentRow omits it (not relevant
+ * for individual consent items), while the master checkbox uses it to signal
+ * "some but not all checked".
+ */
 function CheckboxBox({
     checked,
     indeterminate,
@@ -148,7 +154,7 @@ function ConsentRow({
                         id,
                         required: true,
                         'aria-required': true,
-                        'aria-invalid': invalid || undefined,
+                        'aria-invalid': invalid ? true : undefined,
                         onChange: e => onChange(e.target.checked),
                     }}
                 />
@@ -180,6 +186,7 @@ export function ConsentCheckboxGroup({
     onTosChange,
     error,
 }: ConsentCheckboxGroupProps) {
+    const masterId = useId();
     const privacyId = useId();
     const tosId = useId();
 
@@ -193,17 +200,11 @@ export function ConsentCheckboxGroup({
     }
 
     return (
-        <fieldset
-            className="border-secondary-800 space-y-3 border-y py-4"
-            style={{
-                touchAction: 'manipulation',
-                WebkitTapHighlightColor: 'transparent',
-            }}
-        >
+        <fieldset className="border-secondary-800 touch-manipulation space-y-3 border-y py-4 [WebkitTapHighlightColor:transparent]">
             <legend className="sr-only">동의 항목</legend>
             <p className="text-secondary-400 text-xs">계속하려면 아래 항목에 동의해주세요.</p>
             <label
-                htmlFor="signup-consent-master"
+                htmlFor={masterId}
                 className="flex min-h-[44px] cursor-pointer items-center gap-2 py-1"
             >
                 <CheckboxBox
@@ -211,7 +212,7 @@ export function ConsentCheckboxGroup({
                     indeterminate={indeterminate}
                     invalid={false}
                     inputProps={{
-                        id: 'signup-consent-master',
+                        id: masterId,
                         onChange: e => handleMasterChange(e.target.checked),
                         'aria-controls': `${privacyId} ${tosId}`,
                     }}
