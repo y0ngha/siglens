@@ -1,13 +1,5 @@
 # Fix Log
 
-## [PR #415 Round 2 | chore/upgrade-siglens-core-0.7.3 | 2026-05-04]
-- Violation: chatAction's getProviderForModel/getServerPrimaryKey calls placed outside try-catch block — 0.7.3 throws on unknown modelId
-- Rule: Server Actions must not propagate exceptions to the client — all throw paths must be caught and returned as { ok: false, error: 'server_error' }
-- Context: Moved getProviderForModel + getServerPrimaryKey inside try block. Updated chatAction.test.ts to assert resolves({ ok: false }) instead of rejects.toThrow. Removed comment describing old behavior.
-
-- Violation: submitOverallAnalysisAction had no try-catch — unexpected throws (e.g. DB failure, core throw) would crash the Server Action
-- Rule: Server Actions must return typed error results instead of propagating uncaught exceptions
-- Context: Wrapped entire body in try-catch; returns { status: 'error', axis: 'technical', error: e } on failure. Added corresponding test case.
 
 ## [PR #415 Doc Policy Removal | chore/upgrade-siglens-core-0.7.3 | 2026-05-04]
 - Policy removed: MISTAKES.md Documentation Sync 규칙 4 (다중 라인 JSDoc 금지) — PR #415 review comments triggered by this rule were rejected; rule removed per user decision
@@ -243,3 +235,8 @@
 - Context: Removed method (never called from production), dropped unused between import, makeSelectOrderByDb mock, and 2 test cases. Cron and per-symbol use cases already covered by upsertMany and getNextForSymbol.
 
 
+
+## [PR #416 | fix/wig-cleanup | 2026-05-04]
+- Violation: SubmitButton.tsx had `focus-visible:ring-primary-500` without `focus-visible:ring-offset-2` / `ring-offset-{color}` while peer buttons in the same PR (DangerSubmitButton, error retry buttons, PasswordField toggle) all carried the offset pair
+- Rule: WAI-ARIA keyboard accessibility — same-color ring on same-color background needs ring-offset for sufficient contrast; cross-component consistency
+- Context: Added `focus-visible:ring-offset-secondary-900 focus-visible:ring-offset-2` to align with the form's AuthCardShell `bg-secondary-900/80` surrounding background.
