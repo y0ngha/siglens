@@ -2,8 +2,7 @@ import postgres from 'postgres';
 import { readFileSync } from 'fs';
 import crypto from 'crypto';
 
-const databaseUrl =
-    process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
+const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
 
 if (!databaseUrl) {
     throw new Error('DATABASE_URL environment variable is required');
@@ -28,7 +27,7 @@ async function runMigrations() {
     const applied = await sql<{ hash: string }[]>`
         SELECT hash FROM drizzle.__drizzle_migrations
     `;
-    const appliedHashes = new Set(applied.map((r) => r.hash));
+    const appliedHashes = new Set(applied.map(r => r.hash));
 
     for (const entry of journal.entries) {
         const migrationSql = readFileSync(
@@ -47,8 +46,8 @@ async function runMigrations() {
 
         const statements = migrationSql
             .split('--> statement-breakpoint')
-            .map((s) => s.trim())
-            .filter((s) => s.length > 0);
+            .map(s => s.trim())
+            .filter(s => s.length > 0);
 
         let allAlreadyExisted = true;
 
@@ -81,7 +80,7 @@ async function runMigrations() {
     console.log('Migrations complete');
 }
 
-runMigrations().catch((err) => {
+runMigrations().catch(err => {
     console.error('Migration failed:', err);
     process.exit(1);
 });
