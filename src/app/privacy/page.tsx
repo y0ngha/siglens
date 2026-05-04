@@ -13,13 +13,8 @@ import {
     TERMS_PATH,
     TERMS_TITLE,
 } from '@/lib/legal';
-import {
-    buildBreadcrumbJsonLd,
-    OG_IMAGE_HEIGHT,
-    OG_IMAGE_WIDTH,
-    SITE_NAME,
-    SITE_URL,
-} from '@/lib/seo';
+import { buildBreadcrumbJsonLd, SITE_NAME, SITE_URL } from '@/lib/seo';
+import { OG_IMAGE_HEIGHT, OG_IMAGE_WIDTH } from '@/lib/og';
 import { JsonLd } from '@/components/ui/JsonLd';
 
 const PAGE_URL = `${SITE_URL}${PRIVACY_PATH}`;
@@ -60,7 +55,7 @@ export const metadata: Metadata = {
     title: PRIVACY_TITLE,
     description: PRIVACY_DESCRIPTION,
     robots: {
-        index: false,
+        index: true,
         follow: true,
     },
     alternates: {

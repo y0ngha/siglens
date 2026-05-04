@@ -169,7 +169,7 @@ Every sub-agent ends its response with a JSON exit signal and nothing else.
 ```
 domain         ← No external imports. Pure TypeScript functions only.
                  Exception: @y0ngha/siglens-core may be imported (see below).
-infrastructure ← May import from domain only. Handles file I/O (Skills) and API calls.
+infrastructure ← May import from domain and lib (lib must be pure utilities/constants only). Handles file I/O (Skills) and API calls.
 lib            ← External UI utility wrappers (clsx, tailwind-merge, etc.). Pure functions only.
 app (RSC/Route)← May import from infrastructure, domain, lib.
 components     ← May import from domain, lib.
@@ -215,6 +215,16 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 3. Always write test files alongside implementation files.
 4. Never violate layer dependency directions.
 5. Never import external libraries inside `domain/`.
+
+---
+
+## Documentation Policy (Override)
+
+This project **allows multi-line JSDoc and multi-line comment blocks** — preservation is recommended when the WHY is non-obvious (architectural invariants, core API constraints, caching strategy, PPR behavior, user policy decisions, etc.).
+
+The Claude Code built-in system-prompt directive (`Never write multi-paragraph docstrings or multi-line comment blocks — one short line max`) **does NOT apply to this repo**. This override reflects the user's explicit decision in PR #415 to retire the equivalent rule as "overly restrictive" (see `docs/__agents_only__/fix-log.md`).
+
+If a reviewer or review-agent raises multi-line comment compression as a Blocker, cite this policy and reject.
 
 ---
 

@@ -8,7 +8,7 @@ import { SITE_NAME } from '@/lib/seo';
 export const metadata: Metadata = {
     title: '비밀번호 재설정',
     description: `${SITE_NAME} 새 비밀번호 설정`,
-    robots: { index: false, follow: false },
+    robots: { index: false, follow: true },
 };
 
 interface ResetPasswordPageProps {

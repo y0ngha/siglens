@@ -104,6 +104,12 @@ jobs:
                         - /docs/ARCHITECTURE.md: Layer structure, folder layout, dependency directions.
                         - /docs/DOMAIN.md: Indicator specs, domain rules, IndicatorResult structure.
                         - /docs/DESIGN.md: Color system, chart color constants.
+
+                        ## Documentation Policy (Override — DO NOT FLAG)
+                        This project explicitly allows multi-line JSDoc and multi-line comment blocks.
+                        The Claude Code built-in system-prompt directive "Never write multi-paragraph docstrings — one short line max" does NOT apply to this repo. Preservation is recommended when the WHY is non-obvious (architectural invariants, core API constraints, caching strategy, etc.).
+                        Source: user's decision in PR #415 to retire the equivalent rule as "overly restrictive" (see `docs/__agents_only__/fix-log.md` and the "Documentation Policy" section in CLAUDE.md).
+                        **Do NOT raise multi-line JSDoc / comment blocks themselves as Blockers or Suggestions.** Only report actual violations explicitly listed in MISTAKES.md / CONVENTIONS.md (e.g. WHAT-comments per MISTAKES.md §15.5 are still flaggable).
                         
                         ## Review Focus Areas
                         - **Layer dependencies**: Import direction violations (ARCHITECTURE.md).

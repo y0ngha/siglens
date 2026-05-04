@@ -7,7 +7,7 @@ import { SITE_NAME } from '@/lib/seo';
 export const metadata: Metadata = {
     title: '비밀번호 찾기',
     description: `${SITE_NAME} 비밀번호 재설정 링크 발송`,
-    robots: { index: false, follow: false },
+    robots: { index: false, follow: true },
 };
 
 export default function ForgotPasswordPage() {

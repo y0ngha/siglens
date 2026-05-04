@@ -8,17 +8,15 @@ import {
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
 import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
-import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import {
     buildBreadcrumbJsonLd,
-    buildSymbolDescription,
     buildSymbolSeoContent,
-    OG_IMAGE_HEIGHT,
-    OG_IMAGE_WIDTH,
     SITE_NAME,
 } from '@/lib/seo';
+import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { buildDisplayName } from '@/domain/ticker';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -30,10 +28,22 @@ interface Props {
 
 export async function generateMetadata({
     params,
-}: Omit<Props, 'searchParams'>): Promise<Metadata> {
+    searchParams,
+}: Props): Promise<Metadata> {
     const { symbol } = await params;
+    const { tf } = await searchParams;
+    const ticker = symbol.toUpperCase();
+    const assetInfo = await getAssetInfoCached(ticker);
+    const displayName = assetInfo
+        ? buildDisplayName(assetInfo, ticker)
+        : ticker;
     const { title, fullTitle, description, url, keywords } =
-        buildSymbolSeoContent(symbol);
+        buildSymbolSeoContent(ticker, {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+        });
+
+    const hasTfVariant = tf !== undefined;
 
     return {
         title,
@@ -49,21 +59,15 @@ export async function generateMetadata({
             description,
             url,
             locale: 'ko_KR',
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: fullTitle,
-                },
-            ],
         },
         twitter: {
             card: 'summary_large_image',
             title: fullTitle,
             description,
-            images: ['/og-image.png'],
         },
+        ...(hasTfVariant && {
+            robots: { index: false, follow: true },
+        }),
     };
 }
 
@@ -73,19 +77,22 @@ export default async function SymbolPage({ params, searchParams }: Props) {
     const initialTimeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
     const ticker = symbol.toUpperCase();
     const [assetInfo, skillCounts] = await Promise.all([
-        getAssetInfoAction(ticker),
+        getAssetInfoCached(ticker),
         countSkillFiles(),
     ]);
     if (!assetInfo) return notFound();
 
     const displayName = buildDisplayName(assetInfo, ticker);
-    const { url } = buildSymbolSeoContent(ticker);
+    const { fullTitle, description, url } = buildSymbolSeoContent(ticker, {
+        displayName,
+        koreanName: assetInfo.koreanName,
+    });
 
     const jsonLd = {
         '@context': 'https://schema.org',
         '@type': 'WebPage',
-        name: `${displayName} 주가 AI 분석 | ${SITE_NAME}`,
-        description: buildSymbolDescription(displayName),
+        name: fullTitle,
+        description,
         url,
         inLanguage: 'ko',
         about: {
@@ -95,12 +102,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
         },
     };
 
-    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        {
-            name: `${displayName} 주가 AI 분석`,
-            url,
-        },
-    ]);
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([{ name: fullTitle, url }]);
 
     const queryClient = new QueryClient({
         defaultOptions: {
@@ -146,6 +148,9 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                     // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
                     initialAnalysisFailed={true}
                     indicatorCount={skillCounts.indicators}
+                    bottomSlot={
+                        <CrossLinkCards symbol={ticker} current="chart" />
+                    }
                 />
             </HydrationBoundary>
         </>

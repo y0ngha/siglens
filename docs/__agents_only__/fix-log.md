@@ -43,6 +43,107 @@
 - Violation: usePublishSymbolChat single useEffect re-runs both publish and clear on every state change → null flicker between transitions
 - Rule: FF Predictability 2-D — effects with distinct lifecycles (per-update publish vs unmount-only clear) should be split, not coalesced
 - Context: SymbolChatContext.usePublishSymbolChat had `useEffect(() => { publish(state); return () => clear(); }, [state, publish, clear])`. Reviewer flagged that on intra-page state change (e.g. analysis loading → done) the cleanup runs first, briefly resetting context to null before re-publishing. Split into two effects: `useEffect([state, publish], publish)` + `useEffect([clear], unmount-only clear)`.
+## [PR #417 Round 6 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: chart page \`WebPage.name\`이 옛 카피("\${displayName} 주가 AI 분석 | Siglens")로 하드코딩 — title 전면 갱신 후에도 JSON-LD에는 반영 안 됨, 4개 page family 패턴(\`fullTitle\` 사용)과 불일치
+- Rule: FF Cohesion — 같은 페이지 내 유사 용도의 name 필드 일관성
+- Context: P2.1에서 buildSymbolSeoContent title을 갱신했으나 page body의 WebPage JSON-LD name은 옛 형식 그대로. \`buildSymbolSeoContent.fullTitle\`을 destructure해서 WebPage.name으로 사용. breadcrumbJsonLd도 \`fullTitle\`로 통일.
+
+- Violation: \`@type: 'FinancialProduct'\` JSON-LD 의미 부적합 — schema.org/FinancialProduct는 대출/카드/보험 등 금융 상품 자체용이고 주식 분석 서비스에는 맞지 않음. WebPage about.Corporation으로 이미 금융 entity 신호 제공 중이라 중복.
+- Rule: schema.org type semantic 정합성
+- Context: P2.1에서 추가됐으나 WebPage about.Corporation으로 충분. 안전하게 제거 (Service로 교체할 수도 있으나 about.Corporation과 정보가 중복되어 가치 적음).
+
+- Violation: OG 상수 \`lib/seo.ts\`(width/height)와 \`lib/og.ts\`(색상/레이아웃)에 분산
+- Rule: FF Cohesion 3-A — 함께 변경되는 코드는 같은 위치에
+- Context: \`OG_IMAGE_WIDTH/OG_IMAGE_HEIGHT\`를 \`lib/og.ts\`로 이동하고 모든 consumer(layout, privacy, terms, backtesting, market, 4개 OG 라우트, infra/og/buildSymbolOgImage) import 경로 갱신.
+
+## [PR #417 Round 5 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: 신규 infrastructure 함수 `getAssetInfoCached` 단위 테스트 부재
+- Rule: CONVENTIONS.md infrastructure/ 100%, MISTAKES.md Tests #12
+- Context: R4에서 4개 페이지 중복을 제거하면서 추출한 새 infrastructure 파일. 테스트 누락 → 위임 동작(action 결과 pass-through) + null 반환 + jest 환경 동작 3 케이스로 커버.
+
+- Violation: 워크트리 \`CLAUDE.md\` 갱신 누락 — R4 fix-log에 갱신 완료로 기재되어 있으나 실제로는 main 레포의 CLAUDE.md만 수정되어 있고 워크트리의 같은 파일은 옛 내용("infrastructure ← May import from domain only")을 그대로 갖고 있었다
+- Rule: 변경 사항은 실제 commit 대상(워크트리)의 파일에 적용해야 함
+- Context: R4에서 절대경로로 \`/Users/y0ngha/Project/siglens/CLAUDE.md\`(메인 레포)를 수정해 워크트리의 같은 파일은 미반영. 워크트리의 \`CLAUDE.md\`도 동일하게 \"May import from domain and lib (lib must be pure utilities/constants only)\"로 갱신.
+
+## [PR #417 Round 4 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: loadKoreanFont에 인라인 매직 넘버 `60 * 60 * 24 * 7` (7일 초)
+- Rule: MISTAKES.md #15 — 매직 넘버는 모듈 레벨 상수로 추출
+- Context: `import { SECONDS_PER_DAY } from '@/domain/constants/time'`로 이미 존재하는 시간 상수 활용. `const FONT_REVALIDATE_SECONDS = 7 * SECONDS_PER_DAY` 도입.
+
+- Doc policy update (REJECTED B1 → 문서 수정으로 처리): `infrastructure ← lib` 금지 규칙 완화
+- Rule: ARCHITECTURE.md, CLAUDE.md(root), src/lib/CLAUDE.md 일괄 갱신
+- Context: lib/og.ts에 색상/레이아웃 순수 상수만 두고 사이드 이펙트 함수(loadKoreanFont)는 R2에서 이미 infrastructure로 옮겼다. 그러나 색상 상수는 lib에 남아 infrastructure(buildSymbolOgImage.tsx)에서 import해야 했고, 이는 기존 "infrastructure ← domain only" 규칙 위반. 사용자 결정으로 규칙을 "infrastructure ← domain + lib (lib must be pure utilities/constants only)"로 명시 완화. 단 cross-layer 타입은 여전히 domain/types.ts에만 두기로 유지(hook 측 import 경로 보호).
+
+- Doc policy clarification (REJECTED B3 → 문서 수정으로 처리): MISTAKES.md #0 적용 범위 명시
+- Rule: MISTAKES.md #0 (Non-component function or Route Handler missing explicit return type)
+- Context: 사용자 의도는 "순수 함수/로직 함수"의 반환 타입 명시였고, Next.js 파일 컨벤션(page.tsx, layout.tsx, opengraph-image.tsx, sitemap.ts, robots.ts, manifest.ts 등)은 Next가 시그니처를 보장하므로 예외라는 점을 문서화. 룰 제목과 본문 모두 "Pure function or logic-bearing function" + 예외 목록으로 갱신.
+
+- Suggestion S1 적용: 4개 page에 반복되던 `const getAssetInfoCached = cache(getAssetInfoAction)` 패턴
+- Rule: FF Cohesion — 동일 코드 N번 반복은 한 곳으로 모은다
+- Context: `src/infrastructure/ticker/getAssetInfoCached.ts`로 추출. React.cache는 per-request scope이므로 모듈 레벨에 한 번만 정의해도 동일 동작.
+
+- Suggestion S2 적용: SymbolPageClient bottomSlot 주석 WHAT → WHY로 교체
+- Rule: 주석은 코드로 자명하지 않은 이유를 적는다
+- Context: "차트 컨테이너 아래에 렌더" → "서버 컴포넌트가 SEO용 cross-link를 주입하기 위한 슬롯".
+
+- Suggestion S3 적용: package.json predev/prebuild 명령어 중복
+- Rule: FF Cohesion — drift 방지
+- Context: `copy:backtesting` 공유 스크립트로 추출하고 predev/prebuild는 `yarn copy:backtesting`을 호출.
+
+## [PR #417 Round 3 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: 신규 infrastructure 함수 `buildSymbolOgImage` (src/infrastructure/og/buildSymbolOgImage.tsx) 단위 테스트 부재
+- Rule: CONVENTIONS.md "infrastructure/ 100% (필수)" + MISTAKES.md Tests #12 — every new infra function must have a unit test file
+- Context: P3.3 → R2에서 OG 라우트 4개 중복을 제거하면서 새로 만든 공유 팩토리. R3 reviewer가 테스트 누락 지적. `next/og.ImageResponse`와 `loadKoreanFont`를 mock하여 fonts 옵션 분기 + size 옵션 검증 3개 케이스 추가.
+
+- Violation: 신규 infrastructure 함수 `loadKoreanFont` (src/infrastructure/og/loadKoreanFont.ts) 단위 테스트 부재
+- Rule: CONVENTIONS.md infrastructure/ 100%, MISTAKES.md Tests #12
+- Context: R1에서 lib/og.ts에서 infrastructure로 이동하면서 테스트를 추가하지 않았음. global.fetch mock으로 (a) 성공 (b) res.ok=false (c) fetch throw (d) arrayBuffer throw 4 분기 모두 커버.
+
+- Violation: fundamental/page.tsx generateMetadata와 page body 간 sector opt 비대칭 — `<meta description>`은 sector 없는 카피, JSON-LD WebPage description은 sector 보강 카피로 갈라짐
+- Rule: FF Predictability — 동일 의미의 메타 description이 두 갈래로 갈라지면 reviewer/Google 모두 혼란
+- Context: P2.4 의도된 비대칭(generateMetadata에서 getProfile 추가 fetch 회피). 의도 코멘트만 추가하여 향후 reviewer가 silent drift로 오인하지 않도록 명시.
+
+- Violation: backtesting/page.tsx 면책 고지가 `<aside>`로 감싸져 있어 ARIA `complementary` role이 적용 — 면책 고지는 보완 콘텐츠가 아니라 필수 법적 노트
+- Rule: ARIA semantics — `<aside>`는 제거해도 메인 콘텐츠 이해에 지장이 없는 보완 콘텐츠 전용
+- Context: P4.6에서 `<footer>` → `<aside>`(글로벌 Footer landmark 중복 회피) 변경. R1 reviewer가 footer 원복 권고 → 거절(글로벌 Footer 충돌). R3 reviewer가 `<div role="note" aria-label>` 옵션 제시. 두 우려 모두 해소되는 third path를 채택.
+
+- Violation: overall/page.tsx 인트로 `<section>`에 accessible name 없음 — 스크린 리더 랜드마크 탐색에서 generic으로 처리
+- Rule: ARIA — `<section>`은 aria-labelledby로 접근 가능 이름이 명시되어야 랜드마크로 인식
+- Context: P1.1에서 visible static SEO 콘텐츠 블록을 `<section>`으로 추가. 내부 `<h2>`에 id 부여하고 `<section aria-labelledby>`로 연결.
+
+## [PR #417 Round 2 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: `Promise<{ id: SitemapId }[]>` inline object literal in return type of `generateSitemaps()`
+- Rule: MISTAKES.md TypeScript #5.5 — Function return types using inline object literals instead of named types
+- Context: Created during P4.1 sitemap split. Extracted to `interface SitemapSegment { id: SitemapId }` and reused in both `generateSitemaps()` return and `sitemap()` parameter destructure type.
+
+- Violation: Magic number `20` for US market close UTC hour in sitemap.ts
+- Rule: MISTAKES.md #15 — All magic numbers must be extracted to module-level constants
+- Context: P3.7 originally inlined `Date.UTC(..., 20, 0, 0, 0)`. Extracted to `const US_MARKET_CLOSE_UTC_HOUR = 20`.
+
+- Violation: `assetInfo` null handling asymmetric between generateMetadata (ternary) and page body (direct pass) in fundamental/page.tsx
+- Rule: MISTAKES.md Predictability #1.5 — Asymmetric input handling across related functions (extends to consistent null-guard style)
+- Context: `buildDisplayName` accepts nullable assetInfo so the page body was technically correct, but the asymmetry was a maintenance trap. Unified to ternary pattern matching generateMetadata, plus added a comment explaining why fundamental allows assetInfo=null (FMP profile-only ticker support, distinct from news/overall behavior).
+
+- Violation: OG image layout magic numbers (top:56, right:72, fontSize:32/240/64, padding:'80px') duplicated across 4 opengraph-image.tsx files
+- Rule: MISTAKES.md #15 drift trap — when a constant exists in a file, every literal use of the same value must reference the constant
+- Context: P3.3 inlined identical layout numbers in 4 OG route files. Extracted to OG_CONTAINER_PADDING / OG_TICKER_FONT_SIZE / OG_LABEL_FONT_SIZE / OG_SITE_NAME_FONT_SIZE / OG_SITE_NAME_TOP / OG_SITE_NAME_RIGHT / OG_LABEL_MARGIN_TOP in lib/og.ts. Also extracted shared JSX to infrastructure/og/buildSymbolOgImage.tsx factory; 4 route files reduced to 16-line thin wrappers each.
+
+- Violation: `newsItems.slice(0, 10)` magic number in news/page.tsx
+- Rule: MISTAKES.md #15
+- Context: Extracted to `const JSON_LD_NEWS_MAX_ITEMS = 10` with comment referencing Google ItemList guideline.
+
+- Violation: TypeScript narrowing comment "id is narrowed to 'tickers' by exhaustive SitemapId union"
+- Rule: MISTAKES.md #2.5 — Comments describing TypeScript narrowing already evident from code
+- Context: Removed; the `if (id === 'static') return [...]` guard above already proves narrowing.
+
+## [PR #417 Round 1 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: `lib/og.ts` exposed `loadKoreanFont()` performing CDN `fetch()` (network I/O side effect) inside the lib layer
+- Rule: `src/lib/CLAUDE.md` — "Pure functions only, no side effects" (mirrors ARCHITECTURE.md layer constraint)
+- Context: Created during P3.3 (dynamic OG image route). Moved to `src/infrastructure/og/loadKoreanFont.ts`; `lib/og.ts` now contains only pure color constants (OG_BG, OG_FG, OG_ACCENT, OG_MUTED). Same pattern caught in earlier review (P3.3 round 2 moved og-shared.ts to lib/og.ts), but the `loadKoreanFont` part of that move kept the side effect inside lib — second review caught the residual.
+
+- Violation: schema.org `Article.datePublished` set to `new Date().toISOString()` (request time) — Googlebot interprets every crawl as a fresh publication
+- Rule: schema.org Article semantics — `datePublished` is original publication time, not request time; for content updates use `dateModified`
+- Context: Added during P3.1 (news Article JSON-LD). Replaced with `SITE_BUILD_DATE.toISOString()` for `datePublished` and kept `new Date().toISOString()` as `dateModified` (background card analysis genuinely changes per request). Promoted `SITE_BUILD_DATE` to `@/lib/seo` so news/page.tsx and sitemap.ts share one source instead of duplicating `parseBuildDate`.
 
 ## [PR #415 Round 2 | chore/upgrade-siglens-core-0.7.3 | 2026-05-04]
 - Violation: chatAction's getProviderForModel/getServerPrimaryKey calls placed outside try-catch block — 0.7.3 throws on unknown modelId
@@ -189,10 +290,6 @@
 - Rule: CONVENTIONS.md Declarative Code — prefer data structures (map, lookup) over imperative conditionals
 - Context: Suggestion S3. Replaced if-else chain with SUBPAGE_LABEL record lookup + fallback to BASE_SYMBOL_LABEL.
 
-- Violation: 3 loading.tsx files had enumeration comments listing section names ("// Profile + Valuation + Peers + ...")
-- Rule: MISTAKES.md Documentation Sync 4 — Comments enumerating structure drift risk; structure = source of truth
-- Context: Suggestion S4. Removed WHAT enumeration comments from fundamental/news/overall loading.tsx files. Comment lists matched constant value, but drifted during refactors; better to let code speak.
-
 
 ## [PR #413 R7 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: useNewsAugment.ts run() 함수가 submitNewsAnalysisAction 호출 전 상태를 'loading'으로 초기화하지 않아, 이전 symbol/modelId의 'done' 상태가 persist
@@ -239,10 +336,6 @@
 - Context: Partial React Query refactor reverted; poll/cooldown use async-IIFE patterns where setState happens inside callback, not synchronously in effect body. Pattern does not trigger rule because setState is wrapped in async callback scope.
 
 ## [PR #413 R17 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: ProfileCard.tsx, ProfitabilityCard.tsx, SectorDirectionCard.tsx had multi-line JSDoc blocks for component purpose description
-- Rule: MISTAKES.md Documentation Sync 4 — Multi-line JSDoc blocks for single-line function descriptions; component names already self-explanatory
-- Context: Compressed to single-line or removed. Pattern recurring 13th+ consecutive round.
-
 - Violation: usePageContextLabel() hook (containing useMemo) was between useQuery group and useMutation in useChat.ts hook ordering
 - Rule: MISTAKES.md Components 17 — Hook order: useState/useRef → useQuery/useMutation → useCallback/useMemo → derived variables
 - Context: Moved after useMutation group, before useMemo calculations with explanatory comment.

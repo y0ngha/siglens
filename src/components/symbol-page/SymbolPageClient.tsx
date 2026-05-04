@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense } from 'react';
+import { Suspense, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { ErrorBoundary } from 'react-error-boundary';
 import type { AnalysisResponse } from '@y0ngha/siglens-core';
@@ -28,6 +28,8 @@ interface SymbolPageClientProps {
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
     indicatorCount: number;
+    // 서버 컴포넌트가 SEO용 cross-link를 주입하기 위한 슬롯 — viewport-height 차트 아래 영역에 노출.
+    bottomSlot?: ReactNode;
 }
 
 export function SymbolPageClient({
@@ -35,6 +37,7 @@ export function SymbolPageClient({
     initialAnalysis,
     initialAnalysisFailed,
     indicatorCount,
+    bottomSlot,
 }: SymbolPageClientProps) {
     const {
         sheetSnap,
@@ -92,6 +95,11 @@ export function SymbolPageClient({
                     </MobileAnalysisSheet>
                 )}
             </div>
+            {bottomSlot && (
+                <div className="bg-secondary-900 text-secondary-200 mx-auto w-full max-w-5xl px-4 pb-12">
+                    {bottomSlot}
+                </div>
+            )}
         </SymbolPageProvider>
     );
 }
