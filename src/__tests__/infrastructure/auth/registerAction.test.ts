@@ -187,6 +187,46 @@ describe('registerAction', () => {
             expect(result.error?.code).toBe('service_unavailable');
             expect(mockRegister).not.toHaveBeenCalled();
         });
+
+        it('privacyTerms만 없으면 service_unavailable을 반환한다', async () => {
+            MockTermsRepository.mockImplementation(
+                () =>
+                    ({
+                        findActive: jest.fn().mockImplementation((kind: string) =>
+                            kind === 'privacy'
+                                ? Promise.resolve(null)
+                                : Promise.resolve(FAKE_TOS_TERMS)
+                        ),
+                        upsertFromSeed: jest.fn(),
+                    }) as unknown as InstanceType<typeof DrizzleTermsRepository>
+            );
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData()
+            );
+            expect(result.error?.code).toBe('service_unavailable');
+            expect(mockRegister).not.toHaveBeenCalled();
+        });
+
+        it('tosTerms만 없으면 service_unavailable을 반환한다', async () => {
+            MockTermsRepository.mockImplementation(
+                () =>
+                    ({
+                        findActive: jest.fn().mockImplementation((kind: string) =>
+                            kind === 'tos'
+                                ? Promise.resolve(null)
+                                : Promise.resolve(FAKE_PRIVACY_TERMS)
+                        ),
+                        upsertFromSeed: jest.fn(),
+                    }) as unknown as InstanceType<typeof DrizzleTermsRepository>
+            );
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData()
+            );
+            expect(result.error?.code).toBe('service_unavailable');
+            expect(mockRegister).not.toHaveBeenCalled();
+        });
     });
 
     describe('Redis 미설정', () => {
@@ -205,6 +245,34 @@ describe('registerAction', () => {
     });
 
     describe('입력 정규화', () => {
+        it('email 키가 없으면 빈 문자열로 처리한다', async () => {
+            mockRegister.mockResolvedValue({
+                ok: false,
+                error: {
+                    code: 'invalid_email',
+                    field: 'email' as const,
+                    message: 'Email format is invalid',
+                },
+            });
+            await registerAction(
+                { error: null },
+                makeConsentFormData({ email: '' })
+            );
+            expect(mockRegister).toHaveBeenCalledWith(
+                expect.objectContaining({ email: '', password: 'Pass1234' }),
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
+                    }),
+                })
+            );
+        });
+
         it('email은 trim하고 password는 원본을 유지한다', async () => {
             mockRegister.mockResolvedValue({
                 ok: false,
