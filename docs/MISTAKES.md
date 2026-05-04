@@ -310,13 +310,21 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ interface Bars { bars: BarData[] }  // but implementation checks bars ?? []
    ✅ interface Bars { bars?: BarData[] }  // interface reflects runtime reality
 
-5. Inline type annotations used instead of named type aliases
+5. Duplicate type definitions across multiple files — same type declared 2+ times
+   → Define type once in the canonical module; export and re-import everywhere
+   → Duplicates cause drift when one definition is updated and the other isn't
+   ❌ TocItem defined identically in both PolicySection.tsx and lib/legal-toc.ts
+   ❌ NewsDbRow defined separately in database module and API response module (different shapes)
+   ✅ Define TocItem in lib/legal-toc.ts once; PolicySection.tsx imports: `import { TocItem } from '@/lib/legal-toc'`
+   ✅ Use named interfaces/types from centralized barrel (lib/ for UI types, domain/types.ts for domain types)
+
+5.2. Inline type annotations used instead of named type aliases
    → Extract repeated or reusable type patterns to named type aliases
    → Applies to union literals, object shapes, and field patterns used in component props or constants
    ❌ interface Props { size?: 'sm' | 'lg'; fields: readonly { label: string; key: string }[] }
    ✅ type ButtonSize = 'sm' | 'lg'; interface FieldDef { label: string; key: string }; interface Props { size?: ButtonSize; fields: readonly FieldDef[] }
 
-5.5. Function return types using inline object literals instead of named types — recurring (appears 2+ times per PR)
+5.3. Function return types using inline object literals instead of named types — recurring (appears 2+ times per PR)
    → All function return types must use named interfaces/types, not inline object shapes
    → Applies especially to Promise<{ field, field }> patterns in Server Actions, utilities, and infrastructure functions
    → Improves type reusability, API clarity, and readability
