@@ -22,6 +22,10 @@ export function PwaBanner() {
         handleModalClose,
     } = usePwaInstall();
 
+    if (!showBanner) {
+        return null;
+    }
+
     return (
         <>
             <div
@@ -36,7 +40,7 @@ export function PwaBanner() {
                     📈
                 </span>
                 <span className="text-secondary-200 min-w-0 flex-1 truncate text-xs">
-                    SigLens 앱으로 설치하면 더 빠르게 접속할 수 있어요
+                    앱으로 설치하면 더 빠르게 접속할 수 있어요
                 </span>
                 <button
                     type="button"

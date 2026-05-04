@@ -1,9 +1,9 @@
 'use client';
 
-import Image from 'next/image';
-import { useRef } from 'react';
 import { useEscapeKey } from '@/components/hooks/useEscapeKey';
 import { useFocusTrap } from '@/components/hooks/useFocusTrap';
+import Image from 'next/image';
+import { useRef } from 'react';
 
 const MODAL_TITLE_ID = 'ios-modal-title';
 
@@ -45,7 +45,7 @@ export function IosInstallModal({ onClose }: IosInstallModalProps) {
     return (
         <div
             data-testid="ios-modal-backdrop"
-            className="bg-secondary-950/80 fixed inset-0 z-50 flex items-center justify-center px-4 backdrop-blur-sm"
+            className="bg-secondary-950/80 fixed inset-0 z-9999 flex items-center justify-center px-4 backdrop-blur-sm"
             onClick={onClose}
         >
             <div

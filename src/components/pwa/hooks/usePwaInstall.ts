@@ -1,10 +1,10 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { registerServiceWorker } from '@/components/pwa/utils/registerServiceWorker';
 import { type PwaEnvironment } from '@/domain/types';
 import { detectPwaEnvironment } from '@/lib/pwa/detectPwaEnvironment';
-import { registerServiceWorker } from '@/components/pwa/utils/registerServiceWorker';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 type PromptOutcome = 'accepted' | 'dismissed';
 
@@ -22,7 +22,7 @@ export interface UsePwaInstallReturn {
     handleModalClose: () => void;
 }
 
-export const PWA_BANNER_FALLBACK_DELAY_MS = 30_000;
+export const PWA_BANNER_FALLBACK_DELAY_MS = 100;
 
 const EMPTY_ENV: PwaEnvironment = {
     isMobile: false,
