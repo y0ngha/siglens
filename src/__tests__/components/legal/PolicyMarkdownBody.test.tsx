@@ -3,8 +3,8 @@
  */
 
 import '@testing-library/jest-dom';
-import React from 'react';
 import { render, screen } from '@testing-library/react';
+import React from 'react';
 
 // react-markdown and its plugins are ESM-only. Mock the module with a minimal
 // implementation that parses the markdown just enough for structural testing.
@@ -148,7 +148,7 @@ describe('PolicyMarkdownBody', () => {
     });
 
     it('renders external link with target=_blank rel=noopener', () => {
-        const md = '문의 [메일](mailto:dev.y0ngha@gmail.com)';
+        const md = '문의 [메일](mailto:stock.siglens@gmail.com)';
         const { container } = render(<PolicyMarkdownBody markdown={md} />);
         const anchor = container.querySelector('a[href^="mailto:"]');
         expect(anchor?.getAttribute('target')).toBe('_blank');
