@@ -11,9 +11,9 @@ import type {
 } from '@/infrastructure/auth/use-cases/types';
 
 const EMAIL_ALREADY_EXISTS_MESSAGE =
-    'Email is already registered with another login method';
+    '이미 다른 로그인 방법으로 가입된 이메일입니다.';
 const INVALID_OAUTH_PROFILE_MESSAGE =
-    'OAuth profile is missing a valid email or account identifier';
+    'OAuth 프로필에서 유효한 이메일 또는 계정 정보를 찾을 수 없습니다.';
 
 function normalizeOptionalProfileValue(
     value: string | undefined

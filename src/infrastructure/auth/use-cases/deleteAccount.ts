@@ -62,7 +62,7 @@ async function revokeOAuthTokens(
     );
 }
 
-const USER_NOT_FOUND_MESSAGE = 'User account does not exist';
+const USER_NOT_FOUND_MESSAGE = '사용자 계정을 찾을 수 없습니다.';
 
 function userNotFoundError(): DeleteAccountError {
     return {

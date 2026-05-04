@@ -15,8 +15,8 @@ import type {
 } from '@/infrastructure/auth/use-cases/types';
 
 const PURPOSE = 'password_reset' as const;
-const INVALID_TOKEN_MESSAGE = 'Password reset token is invalid';
-const EXPIRED_TOKEN_MESSAGE = 'Password reset token has expired';
+const INVALID_TOKEN_MESSAGE = '비밀번호 재설정 토큰이 유효하지 않습니다.';
+const EXPIRED_TOKEN_MESSAGE = '비밀번호 재설정 토큰이 만료되었습니다.';
 
 function invalidTokenError(): ConfirmPasswordResetError {
     return {

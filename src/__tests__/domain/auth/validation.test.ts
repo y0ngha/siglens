@@ -28,7 +28,7 @@ describe('validateEmail', () => {
         expect(result).toEqual({
             code: 'invalid_email',
             field: 'email',
-            message: 'Email format is invalid',
+            message: '올바른 이메일 형식이 아닙니다.',
         });
     });
 
@@ -56,7 +56,7 @@ describe('validatePassword', () => {
             code: 'weak_password',
             field: 'password',
             message:
-                'Password must be at least 8 characters and include letters and numbers',
+                '비밀번호는 8자 이상이며 영문자와 숫자를 포함해야 합니다.',
         });
     });
 

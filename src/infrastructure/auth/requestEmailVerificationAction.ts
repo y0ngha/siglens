@@ -6,12 +6,13 @@ import type { RequestEmailVerificationFormState } from '@/domain/auth/formTypes'
 import { buildEmailVerificationEmail } from '@/infrastructure/email/emailVerificationEmail';
 import { createEmailDispatcher } from '@/infrastructure/email/resend';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
+import { normalizeEmail } from '@/domain/auth/validation';
 
 export async function requestEmailVerificationAction(
     _prev: RequestEmailVerificationFormState,
     formData: FormData
 ): Promise<RequestEmailVerificationFormState> {
-    const email = String(formData.get('email') ?? '').trim();
+    const email = normalizeEmail(String(formData.get('email') ?? ''));
 
     const emailTokens = createEmailTokenStore();
     if (!emailTokens) {

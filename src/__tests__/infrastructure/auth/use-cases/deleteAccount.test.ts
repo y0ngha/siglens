@@ -119,7 +119,7 @@ describe('deleteAccount', () => {
             ok: false,
             error: {
                 code: 'user_not_found',
-                message: 'User account does not exist',
+                message: '사용자 계정을 찾을 수 없습니다.',
             },
         });
     });

@@ -158,7 +158,7 @@ describe('socialLoginUser', () => {
             error: {
                 code: 'invalid_oauth_profile',
                 message:
-                    'OAuth profile is missing a valid email or account identifier',
+                    'OAuth 프로필에서 유효한 이메일 또는 계정 정보를 찾을 수 없습니다.',
             },
         });
         expect(findByOAuthAccount).not.toHaveBeenCalled();
@@ -187,7 +187,7 @@ describe('socialLoginUser', () => {
             error: {
                 code: 'invalid_oauth_profile',
                 message:
-                    'OAuth profile is missing a valid email or account identifier',
+                    'OAuth 프로필에서 유효한 이메일 또는 계정 정보를 찾을 수 없습니다.',
             },
         });
         expect(findByOAuthAccount).not.toHaveBeenCalled();
@@ -211,7 +211,7 @@ describe('socialLoginUser', () => {
             error: {
                 code: 'email_already_exists',
                 message:
-                    'Email is already registered with another login method',
+                    '이미 다른 로그인 방법으로 가입된 이메일입니다.',
             },
         });
     });
@@ -320,7 +320,7 @@ describe('socialLoginUser', () => {
             error: {
                 code: 'email_already_exists',
                 message:
-                    'Email is already registered with another login method',
+                    '이미 다른 로그인 방법으로 가입된 이메일입니다.',
             },
         });
     });

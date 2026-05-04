@@ -117,7 +117,7 @@ describe('confirmPasswordReset', () => {
             error: {
                 code: 'expired_token',
                 field: 'token',
-                message: 'Password reset token has expired',
+                message: '비밀번호 재설정 토큰이 만료되었습니다.',
             },
         });
         expect(updatePassword).not.toHaveBeenCalled();

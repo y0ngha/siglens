@@ -12,8 +12,8 @@ import type {
 } from '@/infrastructure/auth/use-cases/types';
 
 const PURPOSE = 'email_verification' as const;
-const INVALID_CODE_MESSAGE = 'Verification code is invalid';
-const EXPIRED_CODE_MESSAGE = 'Verification code has expired';
+const INVALID_CODE_MESSAGE = '인증 코드가 올바르지 않습니다.';
+const EXPIRED_CODE_MESSAGE = '인증 코드가 만료되었습니다.';
 
 function invalidCodeError(): VerifyEmailError {
     return {

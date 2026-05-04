@@ -51,7 +51,7 @@ describe('loginAction', () => {
             ok: false,
             error: {
                 code: 'invalid_credentials',
-                message: 'Email or password is incorrect',
+                message: '이메일 또는 비밀번호가 올바르지 않습니다.',
             },
         });
         await loginAction({ error: null }, makeFormData({}));
@@ -67,7 +67,7 @@ describe('loginAction', () => {
             ok: false,
             error: {
                 code: 'invalid_credentials',
-                message: 'Email or password is incorrect',
+                message: '이메일 또는 비밀번호가 올바르지 않습니다.',
             },
         });
         await loginAction(
@@ -86,7 +86,7 @@ describe('loginAction', () => {
             ok: false,
             error: {
                 code: 'invalid_credentials',
-                message: 'Email or password is incorrect',
+                message: '이메일 또는 비밀번호가 올바르지 않습니다.',
             },
         });
         const result = await loginAction(

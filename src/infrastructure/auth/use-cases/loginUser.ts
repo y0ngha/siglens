@@ -12,7 +12,7 @@ import type {
     LoginUserResult,
 } from '@/infrastructure/auth/use-cases/types';
 
-const INVALID_CREDENTIALS_MESSAGE = 'Email or password is incorrect';
+const INVALID_CREDENTIALS_MESSAGE = '이메일 또는 비밀번호가 올바르지 않습니다.';
 
 function invalidCredentialsError(): LoginUserError {
     return {

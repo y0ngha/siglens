@@ -56,7 +56,7 @@ describe('verifyEmail', () => {
             error: {
                 code: 'expired_verification_code',
                 field: 'code',
-                message: 'Verification code has expired',
+                message: '인증 코드가 만료되었습니다.',
             },
         });
         expect(setToken).not.toHaveBeenCalled();
@@ -89,7 +89,7 @@ describe('verifyEmail', () => {
             error: {
                 code: 'invalid_verification_code',
                 field: 'code',
-                message: 'Verification code is invalid',
+                message: '인증 코드가 올바르지 않습니다.',
             },
         });
         expect(setToken).not.toHaveBeenCalled();
@@ -108,7 +108,7 @@ describe('verifyEmail', () => {
             error: {
                 code: 'invalid_verification_code',
                 field: 'code',
-                message: 'Verification code is invalid',
+                message: '인증 코드가 올바르지 않습니다.',
             },
         });
         expect(getToken).not.toHaveBeenCalled();
