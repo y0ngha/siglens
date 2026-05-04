@@ -15,10 +15,12 @@ const NAV_ITEMS = [{ href: '/market', label: '시장 분석' }] as const;
 interface HeaderProps {
     /** Resolved current user (server-fetched in `app/layout.tsx`); null for guests. */
     readonly currentUser: HeaderUserMenuUser | null;
+    /** When true, renders a skeleton for the user menu instead of login/signup buttons. Used as Suspense fallback hint. */
+    readonly loadingUserMenu?: boolean;
 }
 
 /** Presentational shell; receives resolved current user as a prop so layer rules forbid direct infrastructure access here. */
-export function Header({ currentUser }: HeaderProps) {
+export function Header({ currentUser, loadingUserMenu }: HeaderProps) {
     return (
         <header
             className="bg-secondary-900/90 supports-backdrop-filter:bg-secondary-900/75 border-secondary-800 sticky top-0 z-50 border-b backdrop-blur-md"
@@ -55,7 +57,10 @@ export function Header({ currentUser }: HeaderProps) {
                     <TickerAutocomplete size="sm" />
                 </div>
                 <div className="flex shrink-0 items-center">
-                    <HeaderUserMenu currentUser={currentUser} />
+                    <HeaderUserMenu
+                        currentUser={currentUser}
+                        loading={loadingUserMenu}
+                    />
                 </div>
             </div>
         </header>
