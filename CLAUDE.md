@@ -112,6 +112,14 @@ All other findings should be fixed. When in doubt, fix it.
 
 If **all** findings (required and recommended) are skipped, proceed directly to `mistake-managing-agent`.
 
+### Regression Detection
+
+When review-agent marks a finding as a **regression** (a fix applied in a previous round that was reintroduced):
+
+1. **Stop and notify the user before fixing.** Do not silently repair it.
+2. Report: which round originally fixed it, what reintroduced it, and what the systemic cause is.
+3. Only proceed to fix after notifying the user.
+
 ### Invoking review-agent (Round 2+)
 
 review-agent runs in an independent context each round — it has no memory of previous rounds.

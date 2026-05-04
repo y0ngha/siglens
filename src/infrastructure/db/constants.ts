@@ -24,3 +24,7 @@ export const OAUTH_PROVIDER_VALUES = [
     'kakao',
     'apple',
 ] as const satisfies readonly OAuthProvider[];
+
+/** Legal terms document kinds tracked in the `terms` table. */
+export const TERMS_KIND_VALUES = ['privacy', 'tos'] as const;
+export type TermsKind = (typeof TERMS_KIND_VALUES)[number];

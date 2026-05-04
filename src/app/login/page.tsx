@@ -21,6 +21,11 @@ const OAUTH_ERROR_MESSAGES: Record<string, string> = {
         '이미 비밀번호로 가입된 이메일입니다. 비밀번호로 로그인해주세요.',
     oauth_profile_invalid: '소셜 로그인 정보를 확인할 수 없습니다.',
     oauth_unknown: '소셜 로그인 중 알 수 없는 오류가 발생했습니다.',
+    oauth_consent_invalid:
+        '잘못된 가입 요청입니다. 처음부터 다시 시작해주세요.',
+    oauth_consent_expired: '가입 시간이 만료되었습니다. 다시 시도해주세요.',
+    service_unavailable:
+        '서비스를 일시적으로 이용할 수 없습니다. 잠시 후 다시 시도해주세요.',
 };
 
 const PASSWORD_RESET_SUCCESS_MESSAGE =

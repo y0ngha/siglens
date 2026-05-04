@@ -32,9 +32,16 @@ export type RequestEmailVerificationErrorCode =
     | LocalInfraErrorCode
     | 'invalid_email';
 
+export type SignupFormErrorCode =
+    | RegisterUserErrorCode
+    | 'auto_login_failed'
+    | 'consent_required'
+    | 'service_unavailable'
+    | LocalInfraErrorCode;
+
 export interface SignupFormState {
     error: {
-        code: RegisterUserErrorCode | 'auto_login_failed' | LocalInfraErrorCode;
+        code: SignupFormErrorCode;
         field?: RegisterUserError['field'];
         message: string;
     } | null;
@@ -59,4 +66,13 @@ export interface VerifyEmailFormState {
         code: VerifyEmailErrorCode | LocalInfraErrorCode;
         message: string;
     } | null;
+}
+
+export type FinalizeOAuthSignupError = {
+    code: 'consent_required';
+    message: string;
+};
+
+export interface FinalizeOAuthSignupState {
+    error?: FinalizeOAuthSignupError;
 }

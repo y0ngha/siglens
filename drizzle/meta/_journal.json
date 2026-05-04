@@ -71,6 +71,13 @@
             "when": 1777881251760,
             "tag": "0009_sloppy_virginia_dare",
             "breakpoints": true
+        },
+        {
+            "idx": 10,
+            "version": "7",
+            "when": 1777893197741,
+            "tag": "0010_light_unus",
+            "breakpoints": true
         }
     ]
 }

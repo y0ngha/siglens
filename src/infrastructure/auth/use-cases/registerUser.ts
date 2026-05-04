@@ -14,11 +14,15 @@ import type {
     RegisterUserInput,
     RegisterUserResult,
 } from '@/infrastructure/auth/use-cases/types';
+import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
 
 const PURPOSE = 'email_verification' as const;
 const EMAIL_ALREADY_EXISTS_MESSAGE = '이미 사용 중인 이메일입니다.';
 const EMAIL_NOT_VERIFIED_MESSAGE =
     '이메일 인증을 완료해야 회원가입이 가능합니다.';
+const INVALID_INPUT_MESSAGE = '필수 동의 항목을 확인해주세요.';
 
 function emailAlreadyExistsError(): RegisterUserError {
     return {
@@ -41,6 +45,13 @@ export async function registerUser(
     input: RegisterUserInput,
     dependencies: RegisterUserDependencies
 ): Promise<RegisterUserResult> {
+    if (input.agreedTermsIds.length === 0) {
+        return {
+            ok: false,
+            error: { code: 'invalid_input', message: INVALID_INPUT_MESSAGE },
+        };
+    }
+
     const email = normalizeEmail(input.email);
     const emailError = validateEmail(email);
     if (emailError !== null) return { ok: false, error: emailError };
@@ -67,16 +78,37 @@ export async function registerUser(
     // remaining 30-minute TTL (otherwise an attacker who could read DB could
     // still treat the email as "already verified" until expiry).
     let user: AuthUserRecord | null = null;
+    const now = new Date();
     try {
         const passwordHash = await dependencies.passwordHasher.hashPassword(
             input.password
         );
-        user = await dependencies.users.createEmailUser({
-            email,
-            passwordHash,
-            name: input.name?.trim() || null,
-            avatarUrl: input.avatarUrl?.trim() || null,
-            emailVerified: true,
+        // Use tx to ensure user creation and agreement insertion are atomic.
+        // Both DrizzleUserRepository and DrizzleAgreementRepository are
+        // instantiated with the transaction client so all queries run in the
+        // same Neon batch request.
+        user = await dependencies.db.transaction(async tx => {
+            // Safe: Transactor.transaction always passes a SiglensDatabase tx to its callback.
+            const txDb = tx as SiglensDatabase;
+            const created = await new DrizzleUserRepository(
+                txDb
+            ).createEmailUser({
+                email,
+                passwordHash,
+                name: input.name?.trim() || null,
+                avatarUrl: input.avatarUrl?.trim() || null,
+                emailVerified: true,
+            });
+            if (created === null) return null;
+            await new DrizzleAgreementRepository(txDb).insertMany(
+                input.agreedTermsIds.map(termsId => ({
+                    userId: created.id,
+                    termsId,
+                    agreed: true,
+                    agreedAt: now,
+                }))
+            );
+            return created;
         });
     } finally {
         await dependencies.emailTokens.delete(PURPOSE, email);

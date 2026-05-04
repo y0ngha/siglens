@@ -5,7 +5,10 @@ jest.mock('next/navigation', () => ({
     }),
 }));
 jest.mock('@/infrastructure/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    getDatabaseClient: jest.fn(() => ({
+        db: { transaction: jest.fn() },
+        sql: () => null,
+    })),
     resetDatabaseClientForTests: jest.fn(),
 }));
 jest.mock('@/infrastructure/db/sessionRepository', () => ({
@@ -13,6 +16,12 @@ jest.mock('@/infrastructure/db/sessionRepository', () => ({
 }));
 jest.mock('@/infrastructure/db/userRepository', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
+}));
+jest.mock('@/infrastructure/db/agreementRepository', () => ({
+    DrizzleAgreementRepository: jest.fn().mockImplementation(() => ({})),
+}));
+jest.mock('@/infrastructure/db/termsRepository', () => ({
+    DrizzleTermsRepository: jest.fn(),
 }));
 jest.mock('@/infrastructure/auth/bcrypt', () => ({
     bcryptPasswordHasher: { hashPassword: jest.fn() },
@@ -33,6 +42,8 @@ import { redirect } from 'next/navigation';
 import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { getDatabaseClient } from '@/infrastructure/db/client';
+import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { registerAction } from '@/infrastructure/auth/registerAction';
 import { resetAuthDatabaseClientForTests } from '@/infrastructure/auth/db';
@@ -45,6 +56,12 @@ const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
     typeof createEmailTokenStore
 >;
 const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
+const mockGetDatabaseClient = getDatabaseClient as jest.MockedFunction<
+    typeof getDatabaseClient
+>;
+const MockTermsRepository = DrizzleTermsRepository as jest.MockedClass<
+    typeof DrizzleTermsRepository
+>;
 
 const FAKE_USER = {
     id: 'u1',
@@ -68,6 +85,33 @@ const FAKE_COOKIE = {
     maxAgeSeconds: 60,
 };
 
+const FAKE_PRIVACY_TERMS = {
+    id: 'terms-privacy-id',
+    kind: 'privacy' as const,
+    version: 1,
+    effectiveDate: new Date('2026-04-30'),
+    body: '',
+};
+
+const FAKE_TOS_TERMS = {
+    id: 'terms-tos-id',
+    kind: 'tos' as const,
+    version: 1,
+    effectiveDate: new Date('2026-04-30'),
+    body: '',
+};
+
+/** Helper that always includes consent fields by default. */
+function makeConsentFormData(overrides: Record<string, string> = {}): FormData {
+    return makeFormData({
+        email: 'a@b.com',
+        password: 'Pass1234',
+        agreed_privacy: 'true',
+        agreed_tos: 'true',
+        ...overrides,
+    });
+}
+
 describe('registerAction', () => {
     let setSpy: jest.Mock;
 
@@ -88,6 +132,109 @@ describe('registerAction', () => {
             consume: jest.fn(),
         });
         mockRedirect.mockClear();
+        // Default: active terms exist for both kinds
+        MockTermsRepository.mockImplementation(
+            () =>
+                ({
+                    findActive: jest.fn().mockImplementation((kind: string) => {
+                        if (kind === 'privacy')
+                            return Promise.resolve(FAKE_PRIVACY_TERMS);
+                        if (kind === 'tos')
+                            return Promise.resolve(FAKE_TOS_TERMS);
+                        return Promise.resolve(null);
+                    }),
+                    upsertFromSeed: jest.fn(),
+                }) as unknown as InstanceType<typeof DrizzleTermsRepository>
+        );
+    });
+
+    describe('동의 검증', () => {
+        it('agreed_privacy가 false이면 consent_required를 반환한다', async () => {
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData({ agreed_privacy: 'false' })
+            );
+            expect(result.error?.code).toBe('consent_required');
+            expect(mockRegister).not.toHaveBeenCalled();
+        });
+
+        it('agreed_tos가 누락되면 consent_required를 반환한다', async () => {
+            const fd = makeConsentFormData();
+            fd.delete('agreed_tos');
+            const result = await registerAction({ error: null }, fd);
+            expect(result.error?.code).toBe('consent_required');
+            expect(mockRegister).not.toHaveBeenCalled();
+        });
+
+        it('두 항목 모두 미동의이면 consent_required를 반환한다', async () => {
+            const result = await registerAction(
+                { error: null },
+                makeFormData({ email: 'a@b.com', password: 'Pass1234' })
+            );
+            expect(result.error?.code).toBe('consent_required');
+        });
+    });
+
+    describe('약관 DB 조회', () => {
+        it('활성 약관이 없으면 service_unavailable을 반환한다', async () => {
+            MockTermsRepository.mockImplementation(
+                () =>
+                    ({
+                        findActive: jest.fn().mockResolvedValue(null),
+                        upsertFromSeed: jest.fn(),
+                    }) as unknown as InstanceType<typeof DrizzleTermsRepository>
+            );
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData()
+            );
+            expect(result.error?.code).toBe('service_unavailable');
+            expect(mockRegister).not.toHaveBeenCalled();
+        });
+
+        it('privacyTerms만 없으면 service_unavailable을 반환한다', async () => {
+            MockTermsRepository.mockImplementation(
+                () =>
+                    ({
+                        findActive: jest
+                            .fn()
+                            .mockImplementation((kind: string) =>
+                                kind === 'privacy'
+                                    ? Promise.resolve(null)
+                                    : Promise.resolve(FAKE_TOS_TERMS)
+                            ),
+                        upsertFromSeed: jest.fn(),
+                    }) as unknown as InstanceType<typeof DrizzleTermsRepository>
+            );
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData()
+            );
+            expect(result.error?.code).toBe('service_unavailable');
+            expect(mockRegister).not.toHaveBeenCalled();
+        });
+
+        it('tosTerms만 없으면 service_unavailable을 반환한다', async () => {
+            MockTermsRepository.mockImplementation(
+                () =>
+                    ({
+                        findActive: jest
+                            .fn()
+                            .mockImplementation((kind: string) =>
+                                kind === 'tos'
+                                    ? Promise.resolve(null)
+                                    : Promise.resolve(FAKE_PRIVACY_TERMS)
+                            ),
+                        upsertFromSeed: jest.fn(),
+                    }) as unknown as InstanceType<typeof DrizzleTermsRepository>
+            );
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData()
+            );
+            expect(result.error?.code).toBe('service_unavailable');
+            expect(mockRegister).not.toHaveBeenCalled();
+        });
     });
 
     describe('Redis 미설정', () => {
@@ -95,7 +242,7 @@ describe('registerAction', () => {
             mockCreateTokenStore.mockReturnValue(null);
             const result = await registerAction(
                 { error: null },
-                makeFormData({ email: 'a@b.com', password: 'Pass1234' })
+                makeConsentFormData()
             );
             expect(result.error?.code).toBe('redis_unavailable');
             expect(result.error?.message).toBe(
@@ -106,23 +253,29 @@ describe('registerAction', () => {
     });
 
     describe('입력 정규화', () => {
-        it('formData에 email/password 키가 없으면 빈 문자열로 호출한다', async () => {
+        it('email 키가 없으면 빈 문자열로 처리한다', async () => {
             mockRegister.mockResolvedValue({
                 ok: false,
                 error: {
                     code: 'invalid_email',
-                    field: 'email',
+                    field: 'email' as const,
                     message: 'Email format is invalid',
                 },
             });
-            await registerAction({ error: null }, makeFormData({}));
+            await registerAction(
+                { error: null },
+                makeConsentFormData({ email: '' })
+            );
             expect(mockRegister).toHaveBeenCalledWith(
-                expect.objectContaining({ email: '', password: '' }),
+                expect.objectContaining({ email: '', password: 'Pass1234' }),
                 expect.objectContaining({
                     emailTokens: expect.objectContaining({
                         set: expect.any(Function),
                         get: expect.any(Function),
                         delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
                     }),
                 })
             );
@@ -139,7 +292,7 @@ describe('registerAction', () => {
             });
             await registerAction(
                 { error: null },
-                makeFormData({
+                makeConsentFormData({
                     email: '  a@b.com  ',
                     password: '  Pass1234  ',
                 })
@@ -154,6 +307,9 @@ describe('registerAction', () => {
                         set: expect.any(Function),
                         get: expect.any(Function),
                         delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
                     }),
                 })
             );
@@ -170,11 +326,7 @@ describe('registerAction', () => {
             await expect(
                 registerAction(
                     { error: null },
-                    makeFormData({
-                        email: 'a@b.com',
-                        password: 'Pass1234',
-                        name: '   ',
-                    })
+                    makeConsentFormData({ name: '   ' })
                 )
             ).rejects.toThrow('NEXT_REDIRECT:/');
             expect(mockRegister).toHaveBeenCalledWith(
@@ -184,6 +336,39 @@ describe('registerAction', () => {
                         set: expect.any(Function),
                         get: expect.any(Function),
                         delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
+                    }),
+                })
+            );
+        });
+    });
+
+    describe('약관 ID 전달', () => {
+        it('agreedTermsIds로 활성 약관 ID 두 개를 전달한다', async () => {
+            mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
+            mockLogin.mockResolvedValue({
+                ok: true,
+                user: FAKE_USER,
+                session: { id: 's1' } as never,
+                cookie: FAKE_COOKIE,
+            });
+            await expect(
+                registerAction({ error: null }, makeConsentFormData())
+            ).rejects.toThrow('NEXT_REDIRECT');
+            expect(mockRegister).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    agreedTermsIds: ['terms-privacy-id', 'terms-tos-id'],
+                }),
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
                     }),
                 })
             );
@@ -202,7 +387,7 @@ describe('registerAction', () => {
             });
             const result = await registerAction(
                 { error: null },
-                makeFormData({ email: 'a@b.com', password: 'weak' })
+                makeConsentFormData()
             );
             expect(result.error?.code).toBe('weak_password');
             expect(result.error?.field).toBe('password');
@@ -221,7 +406,7 @@ describe('registerAction', () => {
             });
             const result = await registerAction(
                 { error: null },
-                makeFormData({ email: 'a@b.com', password: 'Pass1234' })
+                makeConsentFormData()
             );
             expect(result.error?.code).toBe('email_already_exists');
             expect(result.error?.field).toBe('email');
@@ -239,10 +424,22 @@ describe('registerAction', () => {
             });
             const result = await registerAction(
                 { error: null },
-                makeFormData({ email: 'a@b.com', password: 'Pass1234' })
+                makeConsentFormData()
             );
             expect(result.error?.code).toBe('email_not_verified');
             expect(mockLogin).not.toHaveBeenCalled();
+        });
+
+        it('예상치 못한 내부 에러 발생 시 service_unavailable을 반환한다', async () => {
+            mockGetDatabaseClient.mockImplementationOnce(() => {
+                throw new Error('Unexpected db error');
+            });
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData()
+            );
+            expect(result.error?.code).toBe('service_unavailable');
+            expect(mockRegister).not.toHaveBeenCalled();
         });
 
         it('회원가입 성공 후 자동 로그인이 실패하면 auto_login_failed 에러를 반환한다', async () => {
@@ -256,7 +453,7 @@ describe('registerAction', () => {
             });
             const result = await registerAction(
                 { error: null },
-                makeFormData({ email: 'a@b.com', password: 'Pass1234' })
+                makeConsentFormData()
             );
             expect(result.error?.code).toBe('auto_login_failed');
             expect(setSpy).not.toHaveBeenCalled();
@@ -276,12 +473,7 @@ describe('registerAction', () => {
             await expect(
                 registerAction(
                     { error: null },
-                    makeFormData({
-                        email: 'a@b.com',
-                        password: 'Pass1234',
-                        name: '  Holly  ',
-                        next: '/market',
-                    })
+                    makeConsentFormData({ name: '  Holly  ', next: '/market' })
                 )
             ).rejects.toThrow('NEXT_REDIRECT:/market');
             expect(mockRegister).toHaveBeenCalledWith(
@@ -291,6 +483,9 @@ describe('registerAction', () => {
                         set: expect.any(Function),
                         get: expect.any(Function),
                         delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
                     }),
                 })
             );

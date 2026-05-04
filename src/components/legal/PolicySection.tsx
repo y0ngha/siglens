@@ -1,10 +1,5 @@
 import type { ReactNode } from 'react';
 
-export interface TocItem {
-    id: string;
-    label: string;
-}
-
 interface PolicySectionProps {
     id: string;
     title: string;

@@ -1,7 +1,7 @@
 import { cn } from '@/lib/cn';
 import { Footer } from '@/components/layout/Footer';
 import { LegalBreadcrumb } from '@/components/legal/LegalBreadcrumb';
-import type { TocItem } from '@/components/legal/PolicySection';
+import type { TocItem } from '@/lib/legal-toc';
 import type { ReactNode } from 'react';
 
 interface LegalPageShellProps {

@@ -1,10 +1,8 @@
-import type { OAuthProvider } from '@/domain/types';
 import type {
     AuthSessionRecord,
     AuthUserRecord,
     EmailAuthUserRepository,
     OAuthAccountRepository,
-    OAuthUserRepository,
     SessionRepository,
     UserRepository,
 } from '@/infrastructure/db/types';
@@ -45,16 +43,23 @@ export interface RegisterUserInput {
     password: string;
     name?: string;
     avatarUrl?: string;
+    agreedTermsIds: readonly string[];
 }
 
 export type RegisterUserResult =
     | { ok: true; user: AuthUserRecord }
     | { ok: false; error: RegisterUserError };
 
+/** Minimal database transactor contract for the use-case layer. */
+export interface Transactor {
+    transaction<T>(fn: (tx: unknown) => Promise<T>): Promise<T>;
+}
+
 export interface RegisterUserDependencies {
     users: UserRepository;
     passwordHasher: PasswordHasher;
     emailTokens: EmailTokenStore;
+    db: Transactor;
 }
 
 export interface LoginUserInput {
@@ -103,42 +108,6 @@ export type LoginUserResult =
           cookie: AuthSessionCookie;
       }
     | { ok: false; error: LoginUserError };
-
-export type SocialLoginUserErrorCode =
-    | 'invalid_oauth_profile'
-    | 'email_already_exists';
-
-export interface SocialLoginUserInput {
-    provider: OAuthProvider;
-    providerAccountId: string;
-    email: string;
-    name?: string;
-    avatarUrl?: string;
-    accessToken?: string;
-    refreshToken?: string;
-    tokenExpiresAt?: Date;
-}
-
-export interface SocialLoginUserError {
-    code: SocialLoginUserErrorCode;
-    message: string;
-}
-
-export interface SocialLoginUserDependencies {
-    users: OAuthUserRepository;
-    sessions: SessionRepository;
-}
-
-export type SocialLoginUserOptions = AuthSessionOptions;
-
-export type SocialLoginUserResult =
-    | {
-          ok: true;
-          user: AuthUserRecord;
-          session: AuthSessionRecord;
-          cookie: AuthSessionCookie;
-      }
-    | { ok: false; error: SocialLoginUserError };
 
 export interface LogoutUserInput {
     sessionToken: string;

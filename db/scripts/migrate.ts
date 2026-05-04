@@ -1,6 +1,7 @@
 import postgres from 'postgres';
 import { readFileSync } from 'fs';
 import crypto from 'crypto';
+import path from 'path';
 
 const databaseUrl = process.env.DIRECT_DATABASE_URL || process.env.DATABASE_URL;
 
@@ -17,11 +18,12 @@ interface JournalEntry {
     when: number;
 }
 
-async function runMigrations() {
+async function runMigrations(): Promise<void> {
     const sql = postgres(databaseUrl!, { max: 1 });
+    const drizzleRoot = path.resolve(__dirname, '../../drizzle');
 
     const journal: { entries: JournalEntry[] } = JSON.parse(
-        readFileSync('./drizzle/meta/_journal.json', 'utf-8')
+        readFileSync(path.join(drizzleRoot, 'meta/_journal.json'), 'utf-8')
     );
 
     const applied = await sql<{ hash: string }[]>`
@@ -31,7 +33,7 @@ async function runMigrations() {
 
     for (const entry of journal.entries) {
         const migrationSql = readFileSync(
-            `./drizzle/${entry.tag}.sql`,
+            path.join(drizzleRoot, `${entry.tag}.sql`),
             'utf-8'
         );
         const hash = crypto
