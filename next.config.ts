@@ -1,6 +1,8 @@
 import type { NextConfig } from 'next';
 
 const nextConfig: NextConfig = {
+    allowedDevOrigins: ['172.30.1.26'],
+
     // React Compiler (Next.js 16 stable)
     reactCompiler: true,
 
