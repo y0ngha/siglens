@@ -179,18 +179,16 @@ export default async function NewsPage({ params }: Props) {
                   '@context': 'https://schema.org',
                   '@type': 'ItemList',
                   name: `${displayName} 최신 뉴스`,
-                  itemListElement: newsItems
-                      .slice(0, 10)
-                      .map((item, idx) => ({
-                          '@type': 'ListItem',
-                          position: idx + 1,
-                          item: {
-                              '@type': 'NewsArticle',
-                              headline: item.titleKo ?? item.titleEn,
-                              url: item.url,
-                              datePublished: item.publishedAt,
-                          },
-                      })),
+                  itemListElement: newsItems.slice(0, 10).map((item, idx) => ({
+                      '@type': 'ListItem',
+                      position: idx + 1,
+                      item: {
+                          '@type': 'NewsArticle',
+                          headline: item.titleKo ?? item.titleEn,
+                          url: item.url,
+                          datePublished: item.publishedAt,
+                      },
+                  })),
               }
             : null;
 
@@ -201,9 +199,7 @@ export default async function NewsPage({ params }: Props) {
             <JsonLd data={aiArticleJsonLd} />
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
-                <h1 className="sr-only">
-                    {displayName} 최신 뉴스와 어닝 일정
-                </h1>
+                <h1 className="sr-only">{displayName} 최신 뉴스와 어닝 일정</h1>
                 <ErrorBoundary FallbackComponent={NewsAiSummaryError}>
                     <Suspense fallback={<NewsAiSummarySkeleton />}>
                         <NewsAiSummary symbol={upper} />

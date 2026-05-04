@@ -133,9 +133,9 @@ export default async function OverallPage({ params, searchParams }: Props) {
                         세 가지 축을 같이 살펴봅니다.
                     </p>
                     <p className="text-secondary-400 text-sm leading-relaxed">
-                        세 축을 합쳐 강세 시나리오와 약세 시나리오를 각각 정리하고,
-                        어떤 가격대에서 진입을 고려해 볼 만한지, 어떤 신호가
-                        나오면 시나리오가 깨지는지를 함께 짚습니다.
+                        세 축을 합쳐 강세 시나리오와 약세 시나리오를 각각
+                        정리하고, 어떤 가격대에서 진입을 고려해 볼 만한지, 어떤
+                        신호가 나오면 시나리오가 깨지는지를 함께 짚습니다.
                     </p>
                     <p className="text-secondary-400 text-sm leading-relaxed">
                         실적 발표, 가이던스 변화, 매크로 이벤트처럼 시나리오를
