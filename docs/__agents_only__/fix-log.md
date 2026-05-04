@@ -290,6 +290,14 @@
 - Context: Must guarantee createdUserId is assigned before return in all code paths.
 
 
+## [PR #420 Round 18 | master | 2026-05-05]
+- B1: `src/__tests__/infrastructure/auth/finalizeOAuthSignupAction.test.ts` — outer catch second branch (non-NEXT_REDIRECT error → service_unavailable redirect) was untested. Added `'예상치 못한 내부 에러 발생 시 service_unavailable로 리다이렉트한다'` test using `mockCreateStore.mockImplementation(() => { throw new Error(...) })`. Pattern: cancelOAuthSignupAction.test.ts had the equivalent test added in Round 15; finalizeOAuthSignupAction.test.ts had been missed.
+  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
+- S1: `db/scripts/migrate.ts` — `runMigrations` function was missing explicit `Promise<void>` return type. Added.
+  - Rule: MISTAKES.md §0 — explicit return type annotations for functions
+- S2: `src/__tests__/infrastructure/auth/registerAction.test.ts` — outer catch second branch (`return { error: { code: 'service_unavailable', ... } }` for non-NEXT_REDIRECT errors) was untested. Added import for `getDatabaseClient` + `mockGetDatabaseClient` mock, and `'예상치 못한 내부 에러 발생 시 service_unavailable을 반환한다'` test.
+  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
+
 ## [PR #420 Round 17 | master | 2026-05-05]
 - B1: `src/__tests__/app/api/auth/callback/route.test.ts` — `pendingStore === null` branch (Redis unconfigured path) was not tested. Added `describe('pendingStore 미설정')` with test verifying `oauth_unknown` redirect when `createPendingOAuthSignupStoreFromEnv` returns null.
   - Rule: MISTAKES.md §22 — 100% branch coverage
