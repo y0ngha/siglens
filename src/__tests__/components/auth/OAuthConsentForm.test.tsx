@@ -8,9 +8,6 @@ import { OAuthConsentForm } from '@/components/auth/OAuthConsentForm';
 jest.mock('@/infrastructure/auth/finalizeOAuthSignupAction', () => ({
     finalizeOAuthSignupAction: jest.fn(),
 }));
-jest.mock('@/infrastructure/auth/cancelOAuthSignupAction', () => ({
-    cancelOAuthSignupAction: jest.fn(),
-}));
 
 describe('OAuthConsentForm', () => {
     const baseProps = {

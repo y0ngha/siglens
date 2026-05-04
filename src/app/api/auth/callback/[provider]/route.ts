@@ -84,7 +84,6 @@ export async function GET(
     const userRepo = new DrizzleUserRepository(db);
     const sessionRepo = new DrizzleSessionRepository(db);
 
-    // Existing OAuth account → immediate login
     const existingOAuthUser = await userRepo.findByOAuthAccount(
         profileResult.profile.provider,
         profileResult.profile.providerAccountId
@@ -111,7 +110,6 @@ export async function GET(
         return response;
     }
 
-    // Email already registered with password → conflict error
     const existingEmailUser = await userRepo.findByEmail(
         profileResult.profile.email
     );
@@ -123,7 +121,6 @@ export async function GET(
         );
     }
 
-    // New user → save to pending store and redirect to consent page
     const pendingStore = createPendingOAuthSignupStoreFromEnv();
     if (!pendingStore) {
         return redirectToLoginWithError(req, 'oauth_unknown');

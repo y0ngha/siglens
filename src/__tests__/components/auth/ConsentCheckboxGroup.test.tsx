@@ -81,15 +81,15 @@ describe('ConsentCheckboxGroup', () => {
         expect(master.checked).toBe(false);
     });
 
-    it('renders error message with role=alert and aria-live=polite', () => {
+    it('renders error message with role=status and aria-live=polite', () => {
         render(
             <Renderer error="개인정보처리방침과 이용약관에 동의해주세요." />
         );
-        const alert = screen.getByRole('alert');
-        expect(alert).toHaveTextContent(
+        const status = screen.getByRole('status');
+        expect(status).toHaveTextContent(
             '개인정보처리방침과 이용약관에 동의해주세요.'
         );
-        expect(alert).toHaveAttribute('aria-live', 'polite');
+        expect(status).toHaveAttribute('aria-live', 'polite');
     });
 
     it('individual checkboxes are required and aria-required', () => {

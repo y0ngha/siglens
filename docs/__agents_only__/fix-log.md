@@ -1,5 +1,13 @@
 # Fix Log
 
+## [PR #420 Round 12 | master | 2026-05-05]
+- B1: `ConsentCheckboxGroup.test.tsx` — test queries `getByRole('alert')` but component now renders `role="status"`; test would fail at runtime (MISTAKES.md Tests §1 — test must sync with implementation). Changed query to `getByRole('status')` and updated test description accordingly.
+  - Rule: MISTAKES.md Tests §1 — test must sync with implementation
+- S1: `OAuthConsentForm.test.tsx` — `jest.mock('@/infrastructure/auth/cancelOAuthSignupAction', ...)` is dead; OAuthConsentForm receives cancelAction as a prop, never imports the action. Removed the unnecessary mock.
+  - Rule: MISTAKES.md §4 — Remove logic/code that has no effect (dead code)
+- S2: `route.ts` ([provider] callback) — 3 WHAT-comments (`Existing OAuth account → immediate login`, `Email already registered`, `New user →`) violate CLAUDE.md comment policy; code already expresses intent. Removed all 3 comments.
+  - Rule: CLAUDE.md comment policy — comments should explain WHY, not WHAT (code expresses WHAT)
+
 ## [PR #420 Round 11 | master | 2026-05-05]
 - B1: `cancelOAuthSignupAction.ts` — entire action body not wrapped in outer try-catch; unexpected exceptions would propagate to client (MISTAKES.md §0.7). Wrapped in outer try-catch; re-throws NEXT_REDIRECT, falls back to redirect('/login') for other errors.
   - Rule: MISTAKES.md §0.7 — Server Actions must catch all throws, never propagate to client
