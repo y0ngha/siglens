@@ -118,7 +118,10 @@ export async function finalizeOAuthSignupAction(
                 return created.id;
             })
             .catch(err => {
-                console.error('[finalizeOAuthSignupAction] transaction failed:', err);
+                console.error(
+                    '[finalizeOAuthSignupAction] transaction failed:',
+                    err
+                );
                 return redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
             });
 
