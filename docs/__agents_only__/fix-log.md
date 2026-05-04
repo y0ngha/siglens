@@ -290,6 +290,13 @@
 - Context: Must guarantee createdUserId is assigned before return in all code paths.
 
 
+## [PR #420 Round 16 | master | 2026-05-05]
+- B1: `src/infrastructure/auth/use-cases/types.ts` — 6 dead `SocialLoginUser*` type definitions were left after `socialLoginUser.ts` was deleted. Removed `SocialLoginUserErrorCode`, `SocialLoginUserInput`, `SocialLoginUserError`, `SocialLoginUserDependencies`, `SocialLoginUserOptions`, `SocialLoginUserResult`, and their unused imports (`OAuthProvider`, `OAuthUserRepository`).
+  - Rule: MISTAKES.md §4 — Remove logic/code that has no effect
+- S1: `src/__tests__/app/api/auth/callback/route.test.ts` — New test file added covering 3 key branches of the OAuth callback route handler: existing OAuth account login, email conflict redirect, and pendingStore.save failure.
+  - Rule: MISTAKES.md Tests §12 — test coverage for critical business paths
+- S2 (skipped — intentional design): `registerUser.ts` DI pattern (`createTransactionalRepositories` factory) — reviewer noted "현 설계가 의도적이라면 pass". Confirmed intentional, skipped.
+
 ## [Phase 7 OAuth Consent Flow | Code quality R1 | 2026-05-04]
 - Violation: route.ts cast comment inaccurate — stated narrowing was "isOAuthProvider narrows profile.provider" when actually narrowing URL param
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained

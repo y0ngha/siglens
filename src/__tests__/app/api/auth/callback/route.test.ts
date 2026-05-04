@@ -15,7 +15,9 @@ jest.mock('@/infrastructure/auth/applyAuthCookie', () => ({
     applyAuthCookie: jest.fn().mockReturnValue({ name: 'auth', value: 'v' }),
 }));
 jest.mock('@/infrastructure/auth/authHintCookie', () => ({
-    createAuthHintCookie: jest.fn().mockReturnValue({ name: 'hint', value: '1' }),
+    createAuthHintCookie: jest
+        .fn()
+        .mockReturnValue({ name: 'hint', value: '1' }),
 }));
 jest.mock('@/infrastructure/auth/sessionCookie', () => ({
     createAuthSession: jest.fn(),
@@ -25,14 +27,18 @@ jest.mock('@/infrastructure/auth/pendingOAuthSignupStore', () => ({
     createPendingOAuthSignupStoreFromEnv: jest.fn(),
 }));
 jest.mock('@/infrastructure/auth/oauth/providers', () => ({
-    buildOAuthRedirectUri: jest.fn().mockReturnValue('https://example.com/callback/google'),
+    buildOAuthRedirectUri: jest
+        .fn()
+        .mockReturnValue('https://example.com/callback/google'),
     getOAuthAdapter: jest.fn(),
     isOAuthProvider: jest.fn(),
 }));
 jest.mock('@/infrastructure/auth/oauth/state', () => ({
     OAUTH_STATE_COOKIE_NAME: 'oauth_state',
     OAuthStateSecretMisconfiguredError: class OAuthStateSecretMisconfiguredError extends Error {},
-    expiredOAuthStateCookie: jest.fn().mockReturnValue({ name: 'oauth_state', value: '', maxAge: 0 }),
+    expiredOAuthStateCookie: jest
+        .fn()
+        .mockReturnValue({ name: 'oauth_state', value: '', maxAge: 0 }),
     verifyOAuthState: jest.fn(),
 }));
 jest.mock('@/infrastructure/auth/sessionCookieOptions', () => ({
@@ -52,20 +58,37 @@ import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
 import { createAuthSession } from '@/infrastructure/auth/sessionCookie';
 import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
-import { getOAuthAdapter, isOAuthProvider } from '@/infrastructure/auth/oauth/providers';
+import {
+    getOAuthAdapter,
+    isOAuthProvider,
+} from '@/infrastructure/auth/oauth/providers';
 import { verifyOAuthState } from '@/infrastructure/auth/oauth/state';
 
 // ---------------------------------------------------------------------------
 // Typed mocks
 // ---------------------------------------------------------------------------
 
-const MockUserRepository = DrizzleUserRepository as jest.MockedClass<typeof DrizzleUserRepository>;
-const MockSessionRepository = DrizzleSessionRepository as jest.MockedClass<typeof DrizzleSessionRepository>;
-const mockCreateAuthSession = createAuthSession as jest.MockedFunction<typeof createAuthSession>;
-const mockCreatePendingOAuthSignupStoreFromEnv = jest.mocked(createPendingOAuthSignupStoreFromEnv);
-const mockGetOAuthAdapter = getOAuthAdapter as jest.MockedFunction<typeof getOAuthAdapter>;
-const mockIsOAuthProvider = isOAuthProvider as jest.MockedFunction<typeof isOAuthProvider>;
-const mockVerifyOAuthState = verifyOAuthState as jest.MockedFunction<typeof verifyOAuthState>;
+const MockUserRepository = DrizzleUserRepository as jest.MockedClass<
+    typeof DrizzleUserRepository
+>;
+const MockSessionRepository = DrizzleSessionRepository as jest.MockedClass<
+    typeof DrizzleSessionRepository
+>;
+const mockCreateAuthSession = createAuthSession as jest.MockedFunction<
+    typeof createAuthSession
+>;
+const mockCreatePendingOAuthSignupStoreFromEnv = jest.mocked(
+    createPendingOAuthSignupStoreFromEnv
+);
+const mockGetOAuthAdapter = getOAuthAdapter as jest.MockedFunction<
+    typeof getOAuthAdapter
+>;
+const mockIsOAuthProvider = isOAuthProvider as jest.MockedFunction<
+    typeof isOAuthProvider
+>;
+const mockVerifyOAuthState = verifyOAuthState as jest.MockedFunction<
+    typeof verifyOAuthState
+>;
 
 // ---------------------------------------------------------------------------
 // Fixtures
@@ -104,9 +127,14 @@ const FAKE_COOKIE = {
     maxAgeSeconds: 86400,
 };
 
-function makeRequest(searchParams: Record<string, string> = {}, cookies: Record<string, string> = {}): NextRequest {
+function makeRequest(
+    searchParams: Record<string, string> = {},
+    cookies: Record<string, string> = {}
+): NextRequest {
     const url = new URL('https://example.com/api/auth/callback/google');
-    Object.entries(searchParams).forEach(([k, v]) => url.searchParams.set(k, v));
+    Object.entries(searchParams).forEach(([k, v]) =>
+        url.searchParams.set(k, v)
+    );
     const req = new NextRequest(url);
     Object.entries(cookies).forEach(([k, v]) => {
         req.cookies.set(k, v);
@@ -122,7 +150,9 @@ const DEFAULT_PARAMS = { params: Promise.resolve({ provider: 'google' }) };
 
 describe('GET /api/auth/callback/[provider]', () => {
     let mockUserRepo: jest.Mocked<InstanceType<typeof DrizzleUserRepository>>;
-    let mockSessionRepo: jest.Mocked<InstanceType<typeof DrizzleSessionRepository>>;
+    let mockSessionRepo: jest.Mocked<
+        InstanceType<typeof DrizzleSessionRepository>
+    >;
 
     beforeEach(() => {
         jest.clearAllMocks();
