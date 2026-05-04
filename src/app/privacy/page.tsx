@@ -2,6 +2,7 @@ import { PolicyMarkdownBody } from '@/components/legal/PolicyMarkdownBody';
 import { LegalPageShell } from '@/components/legal/LegalPageShell';
 import { JsonLd } from '@/components/ui/JsonLd';
 import {
+    formatKoreanDate,
     INVESTMENT_DISCLAIMER,
     PRIVACY_DESCRIPTION,
     PRIVACY_FULL_TITLE,
@@ -91,13 +92,6 @@ const bottomNotice = (
         </p>
     </div>
 );
-
-function formatKoreanDate(date: Date): string {
-    const yyyy = date.getFullYear();
-    const mm = date.getMonth() + 1;
-    const dd = date.getDate();
-    return `${yyyy}년 ${mm}월 ${dd}일`;
-}
 
 export default async function PrivacyPage() {
     const { db } = getDatabaseClient();
