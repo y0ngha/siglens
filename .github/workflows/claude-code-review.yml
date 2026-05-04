@@ -106,10 +106,10 @@ jobs:
                         - /docs/DESIGN.md: Color system, chart color constants.
 
                         ## Documentation Policy (Override — DO NOT FLAG)
-                        이 프로젝트는 멀티라인 JSDoc / 멀티라인 코멘트 블록을 명시적으로 허용합니다.
-                        Claude Code 시스템 프롬프트 기본값인 "Never write multi-paragraph docstrings — one short line max" 지시는 이 레포에 적용하지 않습니다. WHY가 비자명한 경우(아키텍처 invariant, core API 제한, 캐시 전략 등) 멀티라인 보존이 권장입니다.
-                        근거: 사용자가 PR #415에서 동일 정책을 "과도하게 제한적"이라며 폐기한 결정 (docs/__agents_only__/fix-log.md, CLAUDE.md "Documentation Policy" 섹션 참조).
-                        **멀티라인 JSDoc / 코멘트 블록 그 자체를 Blocker / Suggestion으로 제기하지 마세요.** 진짜 위반(MISTAKES.md / CONVENTIONS.md 명시 항목)만 보고하세요.
+                        This project explicitly allows multi-line JSDoc and multi-line comment blocks.
+                        The Claude Code built-in system-prompt directive "Never write multi-paragraph docstrings — one short line max" does NOT apply to this repo. Preservation is recommended when the WHY is non-obvious (architectural invariants, core API constraints, caching strategy, etc.).
+                        Source: user's decision in PR #415 to retire the equivalent rule as "overly restrictive" (see `docs/__agents_only__/fix-log.md` and the "Documentation Policy" section in CLAUDE.md).
+                        **Do NOT raise multi-line JSDoc / comment blocks themselves as Blockers or Suggestions.** Only report actual violations explicitly listed in MISTAKES.md / CONVENTIONS.md (e.g. WHAT-comments per MISTAKES.md §15.5 are still flaggable).
                         
                         ## Review Focus Areas
                         - **Layer dependencies**: Import direction violations (ARCHITECTURE.md).
