@@ -3,7 +3,10 @@ import { readFileSync } from 'fs';
 import { glob } from 'glob';
 import matter from 'gray-matter';
 import { z } from 'zod';
-import { TERMS_KIND_VALUES, type TermsKind } from '../../src/infrastructure/db/constants';
+import {
+    TERMS_KIND_VALUES,
+    type TermsKind,
+} from '../../src/infrastructure/db/constants';
 import { DrizzleTermsRepository } from '../../src/infrastructure/db/termsRepository';
 import { getDatabaseClient } from '../../src/infrastructure/db/client';
 

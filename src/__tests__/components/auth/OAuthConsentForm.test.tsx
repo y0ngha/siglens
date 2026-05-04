@@ -19,7 +19,8 @@ describe('OAuthConsentForm', () => {
         email: 'new@example.com',
         name: 'Hong Gildong',
         avatarUrl: undefined,
-        cancelAction: jest.fn() as unknown as typeof import('@/infrastructure/auth/cancelOAuthSignupAction').cancelOAuthSignupAction,
+        cancelAction:
+            jest.fn() as unknown as typeof import('@/infrastructure/auth/cancelOAuthSignupAction').cancelOAuthSignupAction,
     };
 
     it('renders profile email and name', () => {
