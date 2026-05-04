@@ -25,6 +25,6 @@ describe('buildEmailVerificationEmail', () => {
     it('text는 안내 문구를 포함한다', () => {
         const message = buildEmailVerificationEmail(baseInput);
         expect(message.text).toContain('인증 코드');
-        expect(message.text).toContain('만료');
+        expect(message.text).toContain('30분');
     });
 });
