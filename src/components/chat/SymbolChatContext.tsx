@@ -3,8 +3,6 @@
 import {
     createContext,
     useCallback,
-    useContext,
-    useEffect,
     useMemo,
     useState,
     type ReactNode,
@@ -24,7 +22,7 @@ import type { CurrentAnalysisContext, Timeframe } from '@y0ngha/siglens-core';
  * `isAnalysisReady=false` and the panel still renders previously persisted
  * messages from localStorage.
  */
-interface SymbolChatState {
+export interface SymbolChatState {
     /** In-view analysis result tagged by page kind. `null` until publish. */
     context: CurrentAnalysisContext | null;
     /**
@@ -37,12 +35,14 @@ interface SymbolChatState {
     isAnalysisReady: boolean;
 }
 
-interface SymbolChatContextValue extends SymbolChatState {
+export interface SymbolChatContextValue extends SymbolChatState {
     publish: (next: SymbolChatState) => void;
     clear: () => void;
 }
 
-const SymbolChatContext = createContext<SymbolChatContextValue | null>(null);
+export const SymbolChatContext = createContext<SymbolChatContextValue | null>(
+    null
+);
 
 interface SymbolChatProviderProps {
     children: ReactNode;
@@ -91,27 +91,4 @@ export function SymbolChatProvider({ children }: SymbolChatProviderProps) {
             {children}
         </SymbolChatContext.Provider>
     );
-}
-
-export function useSymbolChat(): SymbolChatContextValue {
-    const ctx = useContext(SymbolChatContext);
-    if (!ctx)
-        throw new Error('useSymbolChat must be used inside SymbolChatProvider');
-    return ctx;
-}
-
-/**
- * Page-level publish helper. Each page (chart / fundamental / news / overall)
- * calls this once its analysis result is available. The cleanup clears the
- * context on unmount so a stale payload from the previous page doesn't leak
- * across navigations.
- */
-export function usePublishSymbolChat(state: SymbolChatState): void {
-    const { publish, clear } = useSymbolChat();
-    useEffect(() => {
-        publish(state);
-        return () => {
-            clear();
-        };
-    }, [state, publish, clear]);
 }

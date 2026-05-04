@@ -5,7 +5,7 @@ import { cn } from '@/lib/cn';
 import { type Timeframe } from '@y0ngha/siglens-core';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
-import { usePublishSymbolChat } from '@/components/chat/SymbolChatContext';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
 import { DependencyProgress } from '@/components/overall/DependencyProgress';
 import { OverallSummary } from '@/components/overall/sections/OverallSummary';

@@ -4,10 +4,8 @@ import { type ReactNode } from 'react';
 import { usePathname } from 'next/navigation';
 import { useBodyScrollLock } from '@/components/hooks/useBodyScrollLock';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
-import {
-    SymbolChatProvider,
-    useSymbolChat,
-} from '@/components/chat/SymbolChatContext';
+import { SymbolChatProvider } from '@/components/chat/SymbolChatContext';
+import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { SymbolLayoutHeader } from '@/components/symbol-page/SymbolLayoutHeader';
 import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';

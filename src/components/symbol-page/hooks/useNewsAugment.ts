@@ -1,6 +1,6 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
+import { skipToken, useQuery } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 
@@ -19,9 +19,9 @@ import { QUERY_KEYS } from '@/lib/queryConfig';
  * cache hit and renders the augment.
  *
  * Both hooks share the same queryKey (`QUERY_KEYS.newsAnalysis`) so a single
- * RQ entry serves both pages within a session. `enabled: false` ensures this
- * hook never triggers a fetch — it just subscribes to whatever the news page
- * has already cached.
+ * RQ entry serves both pages within a session. `queryFn: skipToken` is the v5
+ * idiomatic way to declare "never fetch" — it subscribes to whatever the news
+ * page has already cached without triggering its own fetch.
  */
 export function useNewsAugment(
     symbol: string,
@@ -29,7 +29,7 @@ export function useNewsAugment(
 ): NewsAnalysisResponse | null {
     const { data } = useQuery<NewsAnalysisResponse>({
         queryKey: QUERY_KEYS.newsAnalysis(symbol, modelId),
-        enabled: false,
+        queryFn: skipToken,
     });
     return data ?? null;
 }

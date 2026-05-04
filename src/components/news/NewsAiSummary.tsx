@@ -8,7 +8,7 @@ import {
 import { cn } from '@/lib/cn';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
-import { usePublishSymbolChat } from '@/components/chat/SymbolChatContext';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',

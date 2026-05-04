@@ -29,7 +29,7 @@ import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStat
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
-import { usePublishSymbolChat } from '@/components/chat/SymbolChatContext';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 import { NewsAugment } from '@/components/symbol-page/NewsAugment';

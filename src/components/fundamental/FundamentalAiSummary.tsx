@@ -9,7 +9,7 @@ import {
 import { cn } from '@/lib/cn';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
-import { usePublishSymbolChat } from '@/components/chat/SymbolChatContext';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',

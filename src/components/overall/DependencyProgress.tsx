@@ -46,7 +46,7 @@ export function DependencyProgress({
                 의존성 분석 진행 중 ({completed}/{total})
             </h2>
             <p className="text-secondary-400 mt-1 text-sm">
-                3개 축 분석이 완료되면 종합 분석을 생성합니다…
+                {total}개 축 분석이 완료되면 종합 분석을 생성합니다…
             </p>
             <p
                 className="text-secondary-400 mt-1 text-sm"

@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #418 Round 2 | chore/pr-413-review-fixes | 2026-05-04]
+- Violation: usePublishSymbolChat single useEffect re-runs both publish and clear on every state change → null flicker between transitions
+- Rule: FF Predictability 2-D — effects with distinct lifecycles (per-update publish vs unmount-only clear) should be split, not coalesced
+- Context: SymbolChatContext.usePublishSymbolChat had `useEffect(() => { publish(state); return () => clear(); }, [state, publish, clear])`. Reviewer flagged that on intra-page state change (e.g. analysis loading → done) the cleanup runs first, briefly resetting context to null before re-publishing. Split into two effects: `useEffect([state, publish], publish)` + `useEffect([clear], unmount-only clear)`.
+
+- Violation: useSymbolChat / usePublishSymbolChat (custom hooks) exported from SymbolChatContext.tsx (component file) instead of hooks/ subfolder
+- Rule: CONVENTIONS.md — "Custom hooks must always be placed in a `hooks/` subfolder. Never mix component files, hook files, or utility files at the same directory level."
+- Context: Moved both hooks to src/components/chat/hooks/useSymbolChat.ts. SymbolChatContext.tsx now exports SymbolChatProvider + types/Context object only. Updated 5 consumer imports (SymbolLayoutClient, ChartContent, FundamentalAiSummary, NewsAiSummary, OverallContent).
+
 ## [PR #415 Round 2 | chore/upgrade-siglens-core-0.7.3 | 2026-05-04]
 - Violation: chatAction's getProviderForModel/getServerPrimaryKey calls placed outside try-catch block — 0.7.3 throws on unknown modelId
 - Rule: Server Actions must not propagate exceptions to the client — all throw paths must be caught and returned as { ok: false, error: 'server_error' }
