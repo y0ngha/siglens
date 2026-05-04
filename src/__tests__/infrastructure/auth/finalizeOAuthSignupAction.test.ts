@@ -246,6 +246,13 @@ describe('finalizeOAuthSignupAction', () => {
         await expectRedirectTo('/login?error=service_unavailable');
     });
 
+    it('예상치 못한 내부 에러 발생 시 service_unavailable로 리다이렉트한다', async () => {
+        mockCreateStore.mockImplementation(() => {
+            throw new Error('Unexpected internal error');
+        });
+        await expectRedirectTo('/login?error=service_unavailable');
+    });
+
     it('성공 시 세션 쿠키를 설정하고 next 경로로 리다이렉트', async () => {
         setupMocks();
         const mockCookieSet = jest.fn();

@@ -42,6 +42,7 @@ import { redirect } from 'next/navigation';
 import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { registerAction } from '@/infrastructure/auth/registerAction';
@@ -55,6 +56,9 @@ const mockCreateTokenStore = createEmailTokenStore as jest.MockedFunction<
     typeof createEmailTokenStore
 >;
 const mockRedirect = redirect as jest.MockedFunction<typeof redirect>;
+const mockGetDatabaseClient = getDatabaseClient as jest.MockedFunction<
+    typeof getDatabaseClient
+>;
 const MockTermsRepository = DrizzleTermsRepository as jest.MockedClass<
     typeof DrizzleTermsRepository
 >;
@@ -424,6 +428,18 @@ describe('registerAction', () => {
             );
             expect(result.error?.code).toBe('email_not_verified');
             expect(mockLogin).not.toHaveBeenCalled();
+        });
+
+        it('예상치 못한 내부 에러 발생 시 service_unavailable을 반환한다', async () => {
+            mockGetDatabaseClient.mockImplementationOnce(() => {
+                throw new Error('Unexpected db error');
+            });
+            const result = await registerAction(
+                { error: null },
+                makeConsentFormData()
+            );
+            expect(result.error?.code).toBe('service_unavailable');
+            expect(mockRegister).not.toHaveBeenCalled();
         });
 
         it('회원가입 성공 후 자동 로그인이 실패하면 auto_login_failed 에러를 반환한다', async () => {

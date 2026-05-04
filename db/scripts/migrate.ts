@@ -18,7 +18,7 @@ interface JournalEntry {
     when: number;
 }
 
-async function runMigrations() {
+async function runMigrations(): Promise<void> {
     const sql = postgres(databaseUrl!, { max: 1 });
     const drizzleRoot = path.resolve(__dirname, '../../drizzle');
 
