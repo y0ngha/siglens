@@ -9,10 +9,7 @@
 import '@testing-library/jest-dom';
 import React from 'react';
 import { renderHook } from '@testing-library/react';
-import {
-    QueryClient,
-    QueryClientProvider,
-} from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { useNewsAugment } from '@/components/symbol-page/hooks/useNewsAugment';
@@ -40,10 +37,9 @@ function makeWrapper(client: QueryClient) {
 describe('useNewsAugment (cache-only contract)', () => {
     it('returns null when QUERY_KEYS.newsAnalysis is empty', () => {
         const client = new QueryClient();
-        const { result } = renderHook(
-            () => useNewsAugment(SYMBOL, MODEL_ID),
-            { wrapper: makeWrapper(client) }
-        );
+        const { result } = renderHook(() => useNewsAugment(SYMBOL, MODEL_ID), {
+            wrapper: makeWrapper(client),
+        });
         expect(result.current).toBeNull();
     });
 
@@ -53,10 +49,9 @@ describe('useNewsAugment (cache-only contract)', () => {
             QUERY_KEYS.newsAnalysis(SYMBOL, MODEL_ID),
             SAMPLE_RESULT
         );
-        const { result } = renderHook(
-            () => useNewsAugment(SYMBOL, MODEL_ID),
-            { wrapper: makeWrapper(client) }
-        );
+        const { result } = renderHook(() => useNewsAugment(SYMBOL, MODEL_ID), {
+            wrapper: makeWrapper(client),
+        });
         expect(result.current).toBe(SAMPLE_RESULT);
     });
 

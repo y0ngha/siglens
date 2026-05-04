@@ -47,9 +47,7 @@ jest.mock('@/components/chat/hooks/useSymbolChat', () => ({
 
 function renderPanel(overrides: Partial<{ onClose: () => void }> = {}) {
     mockIsAnalysisReady = true;
-    return render(
-        <ChatPanel symbol="AAPL" onClose={overrides.onClose} />
-    );
+    return render(<ChatPanel symbol="AAPL" onClose={overrides.onClose} />);
 }
 
 describe('ChatPanel', () => {
