@@ -60,6 +60,8 @@ export async function deleteAccountAction(
 
     const cookieStore = await cookies();
     cookieStore.set(applyAuthCookie(result.cookie));
-    cookieStore.set(createExpiredAuthHintCookie({ secure: isSecureCookieEnv() }));
+    cookieStore.set(
+        createExpiredAuthHintCookie({ secure: isSecureCookieEnv() })
+    );
     redirect('/?account_deleted=1');
 }

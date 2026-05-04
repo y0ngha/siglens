@@ -24,7 +24,10 @@ describe('createAuthHintCookie', () => {
     });
 
     it('secure: false를 전달하면 false다', () => {
-        const cookie = createAuthHintCookie({ maxAgeSeconds: 100, secure: false });
+        const cookie = createAuthHintCookie({
+            maxAgeSeconds: 100,
+            secure: false,
+        });
         expect(cookie.secure).toBe(false);
     });
 

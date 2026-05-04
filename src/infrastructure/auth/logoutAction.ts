@@ -21,7 +21,9 @@ export async function logoutAction(): Promise<void> {
             { secureCookie: isSecureCookieEnv() }
         );
         cookieStore.set(applyAuthCookie(result.cookie));
-        cookieStore.set(createExpiredAuthHintCookie({ secure: isSecureCookieEnv() }));
+        cookieStore.set(
+            createExpiredAuthHintCookie({ secure: isSecureCookieEnv() })
+        );
     }
     redirect('/');
 }

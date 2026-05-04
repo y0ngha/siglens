@@ -21,7 +21,7 @@ export function HeaderUserMenuFallback() {
     useEffect(() => {
         const hasHint = document.cookie
             .split(';')
-            .some((c) => c.trim().startsWith(`${AUTH_HINT_COOKIE_NAME}=`));
+            .some(c => c.trim().startsWith(`${AUTH_HINT_COOKIE_NAME}=`));
         if (!hasHint) {
             setShowLoginLinks(true);
         }

@@ -291,7 +291,7 @@ export default function PrivacyPage() {
                         서비스 파라미터만 전송됩니다.
                     </p>
 
-                    <p className="mt-4 font-medium text-secondary-200">
+                    <p className="text-secondary-200 mt-4 font-medium">
                         개인정보 처리 위탁 및 국외 이전 업체
                     </p>
                     <ul className="list-disc space-y-1.5 pl-5">
@@ -299,17 +299,17 @@ export default function PrivacyPage() {
                             <strong className="text-secondary-200">
                                 Vercel Inc.
                             </strong>
-                            &nbsp;(미국): 웹 서비스 호스팅 및 서버리스 컴퓨팅
-                            — 서비스 접속에 따른 IP 주소 등 접속 정보가
+                            &nbsp;(미국): 웹 서비스 호스팅 및 서버리스 컴퓨팅 —
+                            서비스 접속에 따른 IP 주소 등 접속 정보가
                             처리됩니다.
                         </li>
                         <li>
                             <strong className="text-secondary-200">
                                 Upstash, Inc.
                             </strong>
-                            &nbsp;(미국): AI 질문 횟수 제한 (Redis) — IP
-                            주소를 SHA-256으로 해시 처리한 가명 식별자가
-                            저장되며, 24시간 후 자동 삭제됩니다.
+                            &nbsp;(미국): AI 질문 횟수 제한 (Redis) — IP 주소를
+                            SHA-256으로 해시 처리한 가명 식별자가 저장되며,
+                            24시간 후 자동 삭제됩니다.
                         </li>
                         <li>
                             <strong className="text-secondary-200">
@@ -331,17 +331,17 @@ export default function PrivacyPage() {
                                 Kakao Corp.
                             </strong>
                             &nbsp;(대한민국): 카카오 계정으로 소셜 로그인을
-                            선택한 경우의 OAuth 인증 위탁 — 이메일·프로필
-                            정보가 처리됩니다.
+                            선택한 경우의 OAuth 인증 위탁 — 이메일·프로필 정보가
+                            처리됩니다.
                         </li>
                     </ul>
-                    <p className="mt-2 text-sm text-secondary-400">
+                    <p className="text-secondary-400 mt-2 text-sm">
                         운영자는 위 업체가 해당 정보를 서비스 제공 목적 외로
                         사용하지 않도록 각 업체의 개인정보 보호 정책을 확인하고
                         계약상 의무를 부과하고 있습니다.
                     </p>
 
-                    <p className="mt-4 font-medium text-secondary-200">
+                    <p className="text-secondary-200 mt-4 font-medium">
                         외부 API 연동 (개인정보 미이전)
                     </p>
                     <p>

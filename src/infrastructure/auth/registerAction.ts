@@ -82,6 +82,11 @@ export async function registerAction(
 
     const cookieStore = await cookies();
     cookieStore.set(applyAuthCookie(loginResult.cookie));
-    cookieStore.set(createAuthHintCookie({ maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS, secure: isSecureCookieEnv() }));
+    cookieStore.set(
+        createAuthHintCookie({
+            maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
+            secure: isSecureCookieEnv(),
+        })
+    );
     redirect(next);
 }
