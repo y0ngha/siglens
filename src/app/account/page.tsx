@@ -1,12 +1,12 @@
-import type { Metadata } from 'next';
-import Link from 'next/link';
-import { Suspense } from 'react';
-import { redirect } from 'next/navigation';
+import { ApiKeySection } from '@/components/account/ApiKeySection';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
-import { ApiKeySection } from '@/components/account/ApiKeySection';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
 import { SITE_NAME } from '@/lib/seo';
+import type { Metadata } from 'next';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
 
 export const metadata: Metadata = {
     title: '계정 설정',
@@ -59,17 +59,9 @@ async function AccountContent() {
             </section>
 
             <section
-                aria-label="위험존"
+                aria-label="위험영역"
                 className="border-ui-danger/30 bg-ui-danger/5 space-y-4 rounded-2xl border p-6"
             >
-                <div>
-                    <h2 className="text-ui-danger text-lg font-semibold">
-                        위험존
-                    </h2>
-                    <p className="text-secondary-300 mt-1 text-sm">
-                        아래 작업은 되돌릴 수 없습니다.
-                    </p>
-                </div>
                 <div className="border-secondary-800 bg-secondary-900/60 flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                         <h3 className="text-secondary-100 text-sm font-semibold">
