@@ -96,9 +96,7 @@ export function SymbolChatProvider({ children }: SymbolChatProviderProps) {
 export function useSymbolChat(): SymbolChatContextValue {
     const ctx = useContext(SymbolChatContext);
     if (!ctx)
-        throw new Error(
-            'useSymbolChat must be used inside SymbolChatProvider'
-        );
+        throw new Error('useSymbolChat must be used inside SymbolChatProvider');
     return ctx;
 }
 

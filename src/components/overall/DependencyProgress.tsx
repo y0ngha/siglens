@@ -27,10 +27,7 @@ export function DependencyProgress({
         axis => pendingJobs[axis] === undefined
     ).length;
     const total = AXIS_ORDER.length;
-    const remainingRetries = Math.max(
-        0,
-        MAX_DEPENDENCY_RETRIES - retryCount
-    );
+    const remainingRetries = Math.max(0, MAX_DEPENDENCY_RETRIES - retryCount);
     const remainingSeconds = Math.round(
         (remainingRetries * AUGMENT_AND_OVERALL_POLL_INTERVAL_MS) /
             MS_PER_SECOND
