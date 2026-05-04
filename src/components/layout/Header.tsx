@@ -1,6 +1,3 @@
-import Image from 'next/image';
-import Link from 'next/link';
-import { Suspense } from 'react';
 import { HeaderNav } from '@/components/layout/HeaderNav';
 import { HeaderNavStatic } from '@/components/layout/HeaderNavStatic';
 import {
@@ -9,6 +6,9 @@ import {
 } from '@/components/layout/HeaderUserMenu';
 import { TickerAutocomplete } from '@/components/search/TickerAutocomplete';
 import { SITE_NAME } from '@/lib/seo';
+import Image from 'next/image';
+import Link from 'next/link';
+import { Suspense } from 'react';
 
 const NAV_ITEMS = [{ href: '/market', label: '시장 분석' }] as const;
 
