@@ -9,6 +9,8 @@ import {
 } from '@/app/[symbol]/news/newsData';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
+import { buildDisplayName } from '@/domain/ticker';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { NewsList } from '@/components/news/sections/NewsList';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
 import { AnalystActions } from '@/components/news/sections/AnalystActions';
@@ -22,12 +24,15 @@ import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolNewsSeoContent,
-    OG_IMAGE_HEIGHT,
-    OG_IMAGE_WIDTH,
+    SITE_BUILD_DATE,
     SITE_NAME,
+    SITE_URL,
 } from '@/lib/seo';
 import { waitUntil } from '@vercel/functions';
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
+
+// JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
+const JSON_LD_NEWS_MAX_ITEMS = 10;
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -36,8 +41,13 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
+    const assetInfo = await getAssetInfoCached(upper);
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { title, fullTitle, description, url, keywords } =
-        buildSymbolNewsSeoContent(upper);
+        buildSymbolNewsSeoContent(upper, {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+        });
 
     return {
         title,
@@ -53,20 +63,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             description,
             url,
             locale: 'ko_KR',
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: fullTitle,
-                },
-            ],
         },
         twitter: {
             card: 'summary_large_image',
             title: fullTitle,
             description,
-            images: ['/og-image.png'],
         },
     };
 }
@@ -107,6 +108,17 @@ export default async function NewsPage({ params }: Props) {
         notFound();
     }
 
+    const assetInfo = await getAssetInfoCached(upper);
+    if (!assetInfo) {
+        notFound();
+    }
+
+    const displayName = buildDisplayName(assetInfo, upper);
+    const { fullTitle, description, url } = buildSymbolNewsSeoContent(upper, {
+        displayName,
+        koreanName: assetInfo.koreanName,
+    });
+
     // waitUntil keeps the serverless function alive past response completion so the analysis settles without blocking the stream.
     waitUntil(
         ensureNewsCardsAnalyzedAction(upper).catch((error: unknown) => {
@@ -117,15 +129,84 @@ export default async function NewsPage({ params }: Props) {
         })
     );
 
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: fullTitle,
+        description,
+        url,
+        inLanguage: 'ko',
+        about: {
+            '@type': 'Corporation',
+            name: displayName,
+            tickerSymbol: upper,
+        },
+    };
+
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: `/${upper}` },
         { name: '뉴스 분석', url: `/${upper}/news` },
     ]);
 
+    // datePublished는 페이지(요약 콘텐츠)가 처음 노출되는 빌드 시각으로 고정. 매 요청마다 변동시키면 Googlebot이 매번 "방금 발행"으로 간주.
+    // dateModified는 실제 카드 분석이 백그라운드에서 갱신되므로 요청 시각으로 둔다.
+    const nowIso = new Date().toISOString();
+    const aiArticleJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'Article',
+        headline: `${displayName} 최근 뉴스 AI 요약`,
+        description: `${displayName} 관련 최신 뉴스의 sentiment와 핵심 이슈를 한국어로 정리합니다.`,
+        inLanguage: 'ko',
+        datePublished: SITE_BUILD_DATE.toISOString(),
+        dateModified: nowIso,
+        isPartOf: { '@type': 'WebPage', url },
+        author: {
+            '@type': 'Organization',
+            name: SITE_NAME,
+            url: SITE_URL,
+        },
+        publisher: {
+            '@type': 'Organization',
+            name: SITE_NAME,
+            url: SITE_URL,
+            logo: {
+                '@type': 'ImageObject',
+                url: `${SITE_URL}/icon512.png`,
+            },
+        },
+    };
+
+    // getNewsList uses `'use cache'`, so this call is deduped against NewsListSection's fetch.
+    const newsItems = await getNewsList(upper);
+    const newsListJsonLd =
+        newsItems.length > 0
+            ? {
+                  '@context': 'https://schema.org',
+                  '@type': 'ItemList',
+                  name: `${displayName} 최신 뉴스`,
+                  itemListElement: newsItems
+                      .slice(0, JSON_LD_NEWS_MAX_ITEMS)
+                      .map((item, idx) => ({
+                          '@type': 'ListItem',
+                          position: idx + 1,
+                          item: {
+                              '@type': 'NewsArticle',
+                              headline: item.titleKo ?? item.titleEn,
+                              url: item.url,
+                              datePublished: item.publishedAt,
+                          },
+                      })),
+              }
+            : null;
+
     return (
         <>
+            <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
+            <JsonLd data={aiArticleJsonLd} />
+            {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+                <h1 className="sr-only">{displayName} 최신 뉴스와 어닝 일정</h1>
                 <ErrorBoundary FallbackComponent={NewsAiSummaryError}>
                     <Suspense fallback={<NewsAiSummarySkeleton />}>
                         <NewsAiSummary symbol={upper} />

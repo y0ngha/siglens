@@ -33,17 +33,21 @@ domain         ← 외부 import 없음 (단, @y0ngha/siglens-core는 예외 —
                  technicalindicators 라이브러리도 금지
                  (계산 로직을 직접 구현)
 
-infrastructure ← domain import 가능
+infrastructure ← domain, lib import 가능 (lib는 순수 상수/유틸 한정)
                  외부 API (Alpaca, Claude) 호출 담당
                  Skills 파일 I/O 담당
                  Redis 캐시 관리 담당 (cache/)
                  인터페이스(types.ts)를 반드시 먼저 정의
+                 lib import 예: OG image color/layout 상수 (lib/og.ts) —
+                 infrastructure 인프라(infrastructure/og/buildSymbolOgImage.tsx)에서
+                 이미지 생성 시 색상 상수만 가져와 사용
 
 lib            ← 외부 UI 유틸리티를 wrapping하는 순수 함수 레이어
                  domain에 넣을 수 없는 외부 패키지만 허용 (clsx, tailwind-merge 등)
                  사이드 이펙트 없는 순수 함수 형태로만 작성
                  React Query 키 팩토리(QUERY_KEYS) 및 설정 상수 포함
                  domain 타입(Timeframe 등) import 허용 — 키 팩토리 타입 안전성 확보 목적
+                 infrastructure에서 import 가능 (단, lib에는 사이드 이펙트가 없어야 함)
 
 app            ← infrastructure, domain, lib import 가능
                  RSC에서 데이터 fetch 및 조합
@@ -109,7 +113,7 @@ import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 
 `components/`와 `infrastructure/` 양쪽에서 동일한 타입을 import해야 하는 경우, 그 타입은 **반드시 `domain/types.ts`(또는 `domain/<subgroup>/types.ts`)에 위치**한다. 표면상 "presentation-adjacent"한 타입(예: `NewsDisplayItem`, `ContextSwitchMessage`)이라도 cross-layer 공유가 필요하면 domain이 정답이다.
 
-이유: `infrastructure ← lib`는 금지된 의존 방향이며, hook 파일은 `@/domain/types` 또는 `@y0ngha/siglens-core`에서만 타입을 import할 수 있다 (위 hook 규칙 참고). 따라서 `lib/`에 cross-layer 타입을 두면 한쪽 사용처가 반드시 레이어 위반을 일으킨다.
+이유: `infrastructure ← lib`로 순수 utility(상수·color token·React Query key factory 등) import는 허용되지만, **타입은 여전히 domain이 정답**이다. hook 파일은 `@/domain/types` 또는 `@y0ngha/siglens-core`에서만 타입을 import할 수 있어(위 hook 규칙), `lib/`에 cross-layer 타입을 두면 hook 측 사용처가 레이어 위반을 일으킨다. lib import는 "타입 단방향(domain→lib는 OK, lib→타입공유는 NO)" 원칙을 유지하기 위해 lib에는 **상수와 순수 함수만** 두고 타입은 두지 않는다.
 
 ```typescript
 // ❌ presentation에 가까워 보여서 lib에 두면 infrastructure에서 import 불가
@@ -117,7 +121,7 @@ import type { Bar, IndicatorResult } from '@y0ngha/siglens-core';
 export interface NewsDisplayItem { ... }
 
 // src/infrastructure/db/newsRepository.ts
-import type { NewsDisplayItem } from '@/lib/news/types'; // 위반 — infrastructure ← lib
+import type { NewsDisplayItem } from '@/lib/news/types'; // 위반 — lib에 cross-layer 타입을 두면 hook 측 import 경로가 깨짐
 
 // ✅ cross-layer 공유 필요 → domain에 두고 양쪽이 import
 // src/domain/types.ts

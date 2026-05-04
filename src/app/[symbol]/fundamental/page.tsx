@@ -17,7 +17,9 @@ import {
     getHistoricalSector,
 } from '@/app/[symbol]/fundamental/fundamentalData';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
+import { buildDisplayName } from '@/domain/ticker';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
 import { PeersTable } from '@/components/fundamental/sections/PeersTable';
@@ -36,8 +38,6 @@ import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,
-    OG_IMAGE_HEIGHT,
-    OG_IMAGE_WIDTH,
     SITE_NAME,
 } from '@/lib/seo';
 
@@ -48,8 +48,17 @@ interface Props {
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
+    const assetInfo = await getAssetInfoCached(upper);
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    // sector는 의도적으로 generateMetadata에서 사용하지 않는다. sector는 FMP getProfile 응답에만 있고
+    // generateMetadata에서 별도 fetch하면 페이지 본문과 합쳐 round-trip이 두 배가 된다(SEO 메타에 sector 한 줄 더
+    // 넣는 비용이 비대칭으로 큼). 결과적으로 <meta description>은 sector 없는 base 카피, 페이지 본문 JSON-LD는
+    // sector 보강 카피라는 차이가 있지만, 두 description 모두 동일 함수에서 파생되므로 핵심 의미는 일치한다.
     const { title, fullTitle, description, url, keywords } =
-        buildSymbolFundamentalSeoContent(upper);
+        buildSymbolFundamentalSeoContent(upper, {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+        });
 
     return {
         title,
@@ -65,20 +74,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
             description,
             url,
             locale: 'ko_KR',
-            images: [
-                {
-                    url: '/og-image.png',
-                    width: OG_IMAGE_WIDTH,
-                    height: OG_IMAGE_HEIGHT,
-                    alt: fullTitle,
-                },
-            ],
         },
         twitter: {
             card: 'summary_large_image',
             title: fullTitle,
             description,
-            images: ['/og-image.png'],
         },
     };
 }
@@ -176,22 +176,80 @@ export default async function FundamentalPage({ params }: Props) {
     }
 
     // Early fetch for notFound guard + sector resolution; shares the same `use cache` key as ProfileSection so no duplicate HTTP call.
-    const profile = await getProfile(upper);
+    // assetInfo는 한국어 종목명을 displayName에 합치기 위해 병렬로 가져온다.
+    const [profile, assetInfo] = await Promise.all([
+        getProfile(upper),
+        getAssetInfoCached(upper),
+    ]);
     if (profile === null) {
         notFound();
     }
 
+    // 펀더멘털 페이지는 FMP profile만 있으면 렌더 가능 — assetInfo(우리 자체 자산 디렉터리)에 등록되지
+    // 않은 종목도 PER/ROE/애널리스트 컨센서스를 보여줄 수 있어야 한다. 따라서 news/overall과 달리
+    // assetInfo null을 notFound()로 막지 않고 ticker fallback을 허용한다 (generateMetadata와 동일 패턴).
     const sector = profile.sector ?? '';
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    const { fullTitle, description, url } = buildSymbolFundamentalSeoContent(
+        upper,
+        {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+            sector: sector !== '' ? sector : undefined,
+        }
+    );
+
+    const jsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: fullTitle,
+        description,
+        url,
+        inLanguage: 'ko',
+        about: {
+            '@type': 'Corporation',
+            name: displayName,
+            tickerSymbol: upper,
+        },
+    };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: upper, url: `/${upper}` },
         { name: '펀더멘털 분석', url: `/${upper}/fundamental` },
     ]);
 
+    const faqJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+            {
+                '@type': 'Question',
+                name: `${displayName} 펀더멘털 분석에서 무엇을 볼 수 있나요?`,
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '회사 프로필, PER·PSR·EPS 같은 밸류에이션 지표, ROE와 마진으로 보는 수익성, 부채와 현금흐름을 통한 재무 건전성, 애널리스트 컨센서스와 목표 주가를 함께 볼 수 있습니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: 'PER, ROE 같은 지표는 어떻게 해석하나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'PER이 높으면 시장이 미래 성장에 프리미엄을 주고 있다는 신호이고, ROE는 자기자본 대비 얼마나 많은 이익을 내고 있는지 보여줍니다. 동종업계 평균과 비교하며 봐야 의미가 살아납니다.',
+                },
+            },
+        ],
+    };
+
     return (
         <>
+            <JsonLd data={jsonLd} />
             <JsonLd data={breadcrumbJsonLd} />
+            <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+                <h1 className="sr-only">
+                    {displayName} 재무지표와 애널리스트 의견
+                </h1>
                 <Suspense fallback={<SectionSkeleton />}>
                     <ProfileSection symbol={upper} />
                 </Suspense>
