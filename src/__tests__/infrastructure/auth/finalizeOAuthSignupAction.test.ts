@@ -71,7 +71,6 @@ const SAMPLE_TERMS_P = {
     version: 1,
     body: '',
     effectiveDate: new Date(),
-    createdAt: new Date(),
 };
 const SAMPLE_TERMS_T = {
     id: 'terms-t',
@@ -79,7 +78,6 @@ const SAMPLE_TERMS_T = {
     version: 1,
     body: '',
     effectiveDate: new Date(),
-    createdAt: new Date(),
 };
 
 function buildFormData(over: Record<string, string> = {}): FormData {
@@ -233,6 +231,18 @@ describe('finalizeOAuthSignupAction', () => {
 
     it('redirects to service_unavailable when DB transaction throws', async () => {
         setupMocks({ transactionThrows: true });
+        await expectRedirectTo('/login?error=service_unavailable');
+    });
+
+    it('redirects to service_unavailable when createOAuthUser returns null inside transaction', async () => {
+        setupMocks();
+        MockUserRepo.mockImplementation(
+            () =>
+                ({
+                    findByEmail: jest.fn().mockResolvedValue(null),
+                    createOAuthUser: jest.fn().mockResolvedValue(null),
+                }) as unknown as InstanceType<typeof DrizzleUserRepository>
+        );
         await expectRedirectTo('/login?error=service_unavailable');
     });
 

@@ -87,15 +87,17 @@ async function main(): Promise<void> {
     const { db } = getDatabaseClient();
     const repo = new DrizzleTermsRepository(db);
 
-    for (const seed of seeds) {
-        await repo.upsertFromSeed({
-            kind: seed.kind,
-            version: seed.version,
-            effectiveDate: seed.effectiveDate,
-            body: seed.body,
-        });
-        console.log(`[seed] ${seed.kind} v${seed.version}: upserted`);
-    }
+    await Promise.all(
+        seeds.map(async seed => {
+            await repo.upsertFromSeed({
+                kind: seed.kind,
+                version: seed.version,
+                effectiveDate: seed.effectiveDate,
+                body: seed.body,
+            });
+            console.log(`[seed] ${seed.kind} v${seed.version}: upserted`);
+        })
+    );
 }
 
 main().catch(err => {

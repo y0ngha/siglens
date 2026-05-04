@@ -1,5 +1,13 @@
 # Fix Log
 
+## [PR #420 Round 13 | master | 2026-05-05]
+- B1: `finalizeOAuthSignupAction.test.ts` — `if (!created) { throw new Error('createOAuthUser returned null') }` branch inside transaction not covered. Added test that overrides MockUserRepo to return null from createOAuthUser and asserts redirect to /login?error=service_unavailable (MISTAKES.md Infrastructure §2 — 100% branch coverage).
+  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
+- S1: `finalizeOAuthSignupAction.test.ts` — SAMPLE_TERMS_P/T fixtures had `createdAt: new Date()` which is not a field in TermsRecord interface. Removed `createdAt` from both fixtures.
+  - Rule: MISTAKES.md Tests §2 — mock keys must match actual return type
+- S2: `db/scripts/seedTerms.ts` — sequential for...of + await loop for independent upsertFromSeed calls. Converted to Promise.all(seeds.map(async seed => { ... })) for parallel execution (MISTAKES.md §5 — prefer declarative patterns).
+  - Rule: MISTAKES.md §5 — prefer declarative patterns over imperative loops
+
 ## [PR #420 Round 12 | master | 2026-05-05]
 - B1: `ConsentCheckboxGroup.test.tsx` — test queries `getByRole('alert')` but component now renders `role="status"`; test would fail at runtime (MISTAKES.md Tests §1 — test must sync with implementation). Changed query to `getByRole('status')` and updated test description accordingly.
   - Rule: MISTAKES.md Tests §1 — test must sync with implementation
