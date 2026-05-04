@@ -44,7 +44,7 @@ async function AccountContent() {
                             <span className="text-secondary-500">미설정</span>
                         )}
                     </dd>
-                    <dt className="text-secondary-400">Tier</dt>
+                    <dt className="text-secondary-400">회원 등급</dt>
                     <dd className="text-secondary-100">
                         {TIER_LABEL[user.tier]}
                     </dd>
