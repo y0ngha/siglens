@@ -109,13 +109,28 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                     )}
                 </div>
                 {isRegistered && !showSaveInput && (
-                    <button
-                        type="button"
-                        onClick={() => setEditMode(true)}
-                        className="border-secondary-700 text-secondary-300 hover:bg-secondary-800 focus-visible:ring-primary-500 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                    >
-                        재등록
-                    </button>
+                    <div className="flex items-center gap-2">
+                        <button
+                            type="button"
+                            onClick={() => setEditMode(true)}
+                            className="border-secondary-700 text-secondary-300 hover:bg-secondary-800 focus-visible:ring-primary-500 rounded-md border px-3 py-1.5 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                            재등록
+                        </button>
+                        <form action={deleteFormAction} noValidate>
+                            <input
+                                type="hidden"
+                                name="provider"
+                                value={provider}
+                            />
+                            <SubmitButton
+                                label="삭제"
+                                pendingLabel="삭제 중…"
+                                aria-describedby={deleteStatusId}
+                                className="text-ui-danger border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger inline-flex h-7 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
+                            />
+                        </form>
+                    </div>
                 )}
             </div>
 
@@ -152,29 +167,20 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                 </form>
             )}
 
-            <StatusMessage
-                id={saveStatusId}
-                state={saveState}
-                className="mt-1.5"
-            />
+            {showSaveInput && (
+                <StatusMessage
+                    id={saveStatusId}
+                    state={saveState}
+                    className="mt-1.5"
+                />
+            )}
 
-            {isRegistered && (
-                <>
-                    <form action={deleteFormAction} className="mt-2" noValidate>
-                        <input type="hidden" name="provider" value={provider} />
-                        <SubmitButton
-                            label="삭제"
-                            pendingLabel="삭제 중…"
-                            aria-describedby={deleteStatusId}
-                            className="text-ui-danger border-ui-danger/40 hover:bg-ui-danger/10 focus-visible:ring-ui-danger inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none disabled:opacity-50"
-                        />
-                    </form>
-                    <StatusMessage
-                        id={deleteStatusId}
-                        state={deleteState}
-                        className="mt-1"
-                    />
-                </>
+            {isRegistered && deleteState.status !== 'idle' && (
+                <StatusMessage
+                    id={deleteStatusId}
+                    state={deleteState}
+                    className="mt-1"
+                />
             )}
         </div>
     );
