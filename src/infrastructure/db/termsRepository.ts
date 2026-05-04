@@ -1,7 +1,7 @@
-import { and, desc, eq, lte, sql } from 'drizzle-orm';
-import { terms } from '@/infrastructure/db/schema';
 import type { TermsKind } from '@/infrastructure/db/constants';
+import { terms } from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { and, desc, eq, lte, sql } from 'drizzle-orm';
 
 /** Public-facing record returned by the repository. */
 export interface TermsRecord {
@@ -70,8 +70,12 @@ export class DrizzleTermsRepository implements TermsRepository {
                 effectiveDate: input.effectiveDate,
                 body: input.body,
             })
-            .onConflictDoNothing({
+            .onConflictDoUpdate({
                 target: [terms.kind, terms.version],
+                set: {
+                    effectiveDate: input.effectiveDate,
+                    body: input.body,
+                },
             });
     }
 }
