@@ -757,7 +757,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Remove @internal; function is part of the public test interface
    → Applies to: infrastructure utilities, domain helpers used in tests
 
-4. Multi-line JSDoc blocks for single-line descriptions; structural enumeration comments that drift
+4. @internal annotation on non-exported symbols (redundant) — recurring 4+ times
+   → @internal JSDoc tag is semantically redundant on non-exported (private) symbols
+   → Symbols not exported are already internal by definition; the tag adds no value
+   → Remove @internal from any symbol lacking export keyword
+   ❌ const FMP_FETCH_TIMEOUT_MS = 5000; // @internal tag when const is not exported
+   ✅ const FMP_FETCH_TIMEOUT_MS = 5000;  // private by definition, @internal unnecessary
+   ❌ // @internal
+      const INTERNAL_FLAG = true;  // missing export, tag redundant
+   ✅ const INTERNAL_FLAG = true;  // no @internal; unexported means internal
+
+5. Multi-line JSDoc blocks for single-line descriptions; structural enumeration comments that drift
    → Component/function names are self-documenting; redundant multi-line JSDoc wastes space
    → Comments enumerating structure (e.g., "// Profile + Valuation + Peers + ...") drift when code changes
    → Remove unnecessary JSDoc; let structure and code speak for itself
@@ -780,7 +790,7 @@ This file contains only **recurring gotchas** that agents keep missing despite e
       <Markets />  // let JSX element names convey structure
    → Recurring pattern: R17, R20 — multi-line JSDoc appears frequently on component/hook definitions with no substantive doc content
 
-5. Local enum mirror falls behind upstream `@y0ngha/siglens-core` union expansion — runtime data filtered out silently
+6. Local enum mirror falls behind upstream `@y0ngha/siglens-core` union expansion — runtime data filtered out silently
    → Whenever you keep a local `readonly T[]` to validate `value is T` (e.g., `isSkillCategory`), the array must contain every member of the upstream union; siglens-core version bumps that add union members are a sync trigger.
    → This is not a TypeScript-detectable bug — `readonly SkillCategory[]` accepts a strict-subset literal silently. Discovery happens only when filtered data goes missing at runtime.
    → Caused R24 production bug: `SKILL_CATEGORIES` missed `'fundamental'`, `'news'` after siglens-core 0.7.2 expanded the union → 6 new skill files parsed with `category: undefined` → siglens-core prompt builder filtered them out → skills never used.
@@ -996,6 +1006,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ❌ hooks/useContactForm.ts: `import { ContactFormState } from '@/domain/contact/formTypes'`
    ✅ hooks/useCurrentUser.ts: `import { AuthUserRecord } from '@/domain/types'`  // re-exported from @/domain/auth/types
    ✅ hooks/useContactForm.ts: `import { ContactFormState } from '@/domain/types'`  // moved to @/domain/types
+
+0.6. Helper files (hooks, utilities) mixed at same directory level as component files
+   → Custom hooks must always live in a `hooks/` subfolder
+   → Pure utility functions must always live in a `utils/` subfolder
+   → Never place component files, hook files, and utility files at the same directory level
+   → Enforces CONVENTIONS.md modularity — each concern (UI, logic, helpers) isolated in subfolders
+   ❌ src/components/symbol-page/useSymbolChat.ts (hook at component level)
+   ❌ src/components/symbol-page/SymbolTabsConfig.ts (utility at component level)
+   ✅ src/components/symbol-page/hooks/useSymbolChat.ts (hooks in dedicated subfolder)
+   ✅ src/components/symbol-page/utils/symbolTabsConfig.ts (utilities in dedicated subfolder)
 
 1. Pure utility functions placed in components/ instead of proper layers
    → Pure functions with no React dependencies must be in domain/ (business logic) or lib/ (UI utilities)

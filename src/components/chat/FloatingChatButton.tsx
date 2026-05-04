@@ -2,21 +2,14 @@
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { useChatButtonState } from '@/components/chat/hooks/useChatButtonState';
-import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
+import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 
 interface FloatingChatButtonProps {
     symbol: string;
-    timeframe: Timeframe;
-    analysis: AnalysisResponse;
-    isAnalysisReady: boolean;
 }
 
-export function FloatingChatButton({
-    symbol,
-    timeframe,
-    analysis,
-    isAnalysisReady,
-}: FloatingChatButtonProps) {
+export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
+    const { isAnalysisReady } = useSymbolChat();
     const {
         isOpen,
         showTooltip,
@@ -29,13 +22,7 @@ export function FloatingChatButton({
         <>
             {isOpen && (
                 <div className="border-secondary-700 bg-secondary-900 fixed inset-x-2 bottom-18 z-50 rounded-xl border shadow-2xl md:inset-x-auto md:right-6 md:bottom-20 md:w-95">
-                    <ChatPanel
-                        symbol={symbol}
-                        timeframe={timeframe}
-                        analysis={analysis}
-                        isAnalysisReady={isAnalysisReady}
-                        onClose={handleClose}
-                    />
+                    <ChatPanel symbol={symbol} onClose={handleClose} />
                 </div>
             )}
             {showTooltip && !isOpen && (

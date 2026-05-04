@@ -7,8 +7,8 @@ import type { AnalysisResponse } from '@y0ngha/siglens-core';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
 import { ChartContent } from '@/components/symbol-page/ChartContent';
-import { SymbolPageHeader } from '@/components/symbol-page/SymbolPageHeader';
 import { SymbolPageProvider } from '@/components/symbol-page/SymbolPageContext';
+import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 import { useMobileSheet } from '@/components/symbol-page/hooks/useMobileSheet';
 import { useTimeframeChange } from '@/components/symbol-page/hooks/useTimeframeChange';
@@ -52,14 +52,21 @@ export function SymbolPageClient({
 
     return (
         <SymbolPageProvider indicatorCount={indicatorCount}>
-            <div className="bg-secondary-900 text-secondary-200 flex h-[calc(100dvh-3.5rem)] flex-col overflow-hidden">
-                <SymbolPageHeader
-                    symbol={symbol}
-                    assetInfo={assetInfo}
-                    timeframe={timeframe}
-                    onTimeframeChange={handleTimeframeChange}
-                />
-
+            {/* Chart page is the only `/[symbol]/*` route that fills the remaining
+                viewport height and disables outer scrolling. The layout header sits
+                above this container; combined with the site header (3.5rem) and the
+                layout header's intrinsic height, the chart fills the rest via the
+                `useBodyScrollLock` html/body lock applied in SymbolLayoutClient. */}
+            <div className="bg-secondary-900 text-secondary-200 flex min-h-0 flex-1 flex-col overflow-hidden">
+                {/* Chart-only timeframe controls live inside the scroll-locked chart
+                    container so the layout header can stay free of useSearchParams
+                    (which would force PPR to mark the whole route as dynamic). */}
+                <div className="border-secondary-700 flex items-center justify-end border-b px-4 py-2 sm:py-1.5">
+                    <TimeframeSelector
+                        value={timeframe}
+                        onChange={handleTimeframeChange}
+                    />
+                </div>
                 <div className="relative flex min-h-0 flex-1 overflow-hidden">
                     <ErrorBoundary
                         FallbackComponent={ChartErrorFallback}

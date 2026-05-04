@@ -3,17 +3,13 @@
 import { useRef, useState } from 'react';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
-import {
-    VALID_CHAT_MODELS,
-    type AnalysisResponse,
-    type ModelId,
-    type Timeframe,
-} from '@y0ngha/siglens-core';
+import { VALID_CHAT_MODELS, type ModelId } from '@y0ngha/siglens-core';
 import { isFreeChatModel } from '@/domain/llm';
 import { cn } from '@/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
+import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { ContextSwitchSystemMessage } from '@/components/chat/ContextSwitchSystemMessage';
 import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
 
@@ -64,19 +60,11 @@ const LOADING_MESSAGES = {
 
 interface ChatPanelProps {
     symbol: string;
-    timeframe: Timeframe;
-    analysis: AnalysisResponse;
-    isAnalysisReady: boolean;
     onClose?: () => void;
 }
 
-export function ChatPanel({
-    symbol,
-    timeframe,
-    analysis,
-    isAnalysisReady,
-    onClose,
-}: ChatPanelProps) {
+export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
+    const { isAnalysisReady } = useSymbolChat();
     const triggerRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
     const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -97,7 +85,7 @@ export function ChatPanel({
         handleModelChange,
         gateModal,
         dismissGate,
-    } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
+    } = useChat({ symbol });
 
     const {
         inputValue,

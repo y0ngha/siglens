@@ -3,27 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
 import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
-import type {
-    ModelId,
-    OverallAnalysisResponse,
-    OverallAxis,
-    Timeframe,
-} from '@y0ngha/siglens-core';
+import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
 import {
     AUGMENT_AND_OVERALL_POLL_INTERVAL_MS,
     MAX_DEPENDENCY_RETRIES,
 } from '@/lib/pollingConfig';
 import { MS_PER_SECOND } from '@/domain/constants/time';
-
-type OverallAnalysisState =
-    | { status: 'idle' }
-    | {
-          status: 'pending_dependencies';
-          pendingJobs: Record<OverallAxis, string | undefined>;
-      }
-    | { status: 'submitting' | 'polling' }
-    | { status: 'done'; result: OverallAnalysisResponse }
-    | { status: 'error'; error: string; axis?: OverallAxis };
+import type { OverallAnalysisState } from '@/components/overall/types';
 
 type CleanupFn = () => void;
 
@@ -68,7 +54,11 @@ async function runOverallAnalysis(
     ctx: RunContext,
     dependencyRetryCount: number
 ): Promise<void> {
-    ctx.setState({ status: 'submitting' });
+    // 첫 호출에서만 submitting 스피너를 띄운다. retry는 `pending_dependencies` 스냅샷을
+    // 유지해 DependencyProgress가 깜빡이지 않도록 한다 (한 틱 동안 generic spinner로 전환되지 않음).
+    if (dependencyRetryCount === 0) {
+        ctx.setState({ status: 'submitting' });
+    }
 
     const submitted = await submitOverallAnalysisAction(
         ctx.symbol,
@@ -99,6 +89,7 @@ async function runOverallAnalysis(
         ctx.setState({
             status: 'pending_dependencies',
             pendingJobs: submitted.pendingJobs,
+            retryCount: dependencyRetryCount,
         });
         // Retry the full submit after a delay; core will re-check cache hits.
         const handle = setTimeout(() => {

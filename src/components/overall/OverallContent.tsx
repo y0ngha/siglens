@@ -1,10 +1,12 @@
 'use client';
 
-import { type CSSProperties } from 'react';
+import { type CSSProperties, useMemo } from 'react';
 import { cn } from '@/lib/cn';
 import { type Timeframe } from '@y0ngha/siglens-core';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { buildChatState } from '@/components/overall/utils/buildChatState';
 import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
 import { DependencyProgress } from '@/components/overall/DependencyProgress';
 import { OverallSummary } from '@/components/overall/sections/OverallSummary';
@@ -28,12 +30,25 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
     const modelId = useDefaultModelId();
     const { state, trigger } = useOverallAnalysis(symbol, timeframe, modelId);
 
+    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
+    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
+    const chatState = useMemo(
+        () => buildChatState(state, timeframe),
+        [state, timeframe]
+    );
+    usePublishSymbolChat(chatState);
+
     if (state.status === 'idle') {
         return <OverallTriggerCta onTrigger={trigger} />;
     }
 
     if (state.status === 'pending_dependencies') {
-        return <DependencyProgress pendingJobs={state.pendingJobs} />;
+        return (
+            <DependencyProgress
+                pendingJobs={state.pendingJobs}
+                retryCount={state.retryCount}
+            />
+        );
     }
 
     if (state.status === 'submitting' || state.status === 'polling') {

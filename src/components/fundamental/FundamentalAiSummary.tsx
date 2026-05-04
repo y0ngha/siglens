@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import {
     type FundamentalAnalysisResponse,
     type FundamentalCategory,
@@ -8,6 +9,7 @@ import {
 import { cn } from '@/lib/cn';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',
@@ -120,6 +122,23 @@ interface FundamentalAiSummaryProps {
 export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     const modelId = useDefaultModelId();
     const result = useFundamentalAnalysis(symbol, modelId);
+
+    // Publish the in-view fundamental result to the layout-mounted chat panel
+    // so the chatbot's system prompt receives `## Current analysis context`
+    // with this page's numbers (not stale chart context). `timeframe` is null —
+    // fundamental analysis is timeframe-agnostic; the launcher falls back to
+    // DEFAULT_TIMEFRAME for the chat request.
+    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
+    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
+    const chatState = useMemo(
+        () => ({
+            context: { kind: 'fundamental', payload: result } as const,
+            timeframe: null,
+            isAnalysisReady: true,
+        }),
+        [result]
+    );
+    usePublishSymbolChat(chatState);
 
     return <FundamentalAiSummaryView result={result} />;
 }

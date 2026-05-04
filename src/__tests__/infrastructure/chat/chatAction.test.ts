@@ -7,6 +7,8 @@ import {
 import type {
     AnalysisResponse,
     ChatActionResult,
+    CurrentAnalysisContext,
+    FundamentalAnalysisResponse,
     LlmProvider,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
@@ -453,6 +455,87 @@ describe('chatAction 함수는', () => {
                 expect.objectContaining({
                     callAiProvider: callAiProviderRouter,
                 })
+            );
+        });
+    });
+
+    describe('currentAnalysisContext 전달', () => {
+        it('생략하면 core 호출에 currentAnalysisContext 키가 포함되지 않는다', async () => {
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash'
+            );
+
+            const params = mockRequestChatCompletion.mock.calls[0]![0];
+            expect(params).not.toHaveProperty('currentAnalysisContext');
+        });
+
+        it('null로 전달하면 core 호출에 currentAnalysisContext 키가 포함되지 않는다', async () => {
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash',
+                null
+            );
+
+            const params = mockRequestChatCompletion.mock.calls[0]![0];
+            expect(params).not.toHaveProperty('currentAnalysisContext');
+        });
+
+        it('technical 컨텍스트는 그대로 core에 전달한다', async () => {
+            const ctx: CurrentAnalysisContext = {
+                kind: 'technical',
+                payload: MINIMAL_ANALYSIS,
+            };
+
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash',
+                ctx
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ currentAnalysisContext: ctx }),
+                expect.anything()
+            );
+        });
+
+        it('fundamental 컨텍스트는 그대로 core에 전달한다', async () => {
+            const fundamentalPayload: FundamentalAnalysisResponse = {
+                overallSentiment: 'bullish',
+                overallConclusionKo: 'AAPL 펀더멘털 양호.',
+                categoryAssessments: [],
+                riskFactorsKo: [],
+            };
+            const ctx: CurrentAnalysisContext = {
+                kind: 'fundamental',
+                payload: fundamentalPayload,
+            };
+
+            await chatAction(
+                'AAPL',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문',
+                'gemini-2.5-flash',
+                ctx
+            );
+
+            expect(mockRequestChatCompletion).toHaveBeenCalledWith(
+                expect.objectContaining({ currentAnalysisContext: ctx }),
+                expect.anything()
             );
         });
     });

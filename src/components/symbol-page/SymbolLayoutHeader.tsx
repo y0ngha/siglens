@@ -2,25 +2,25 @@
 
 import Link from 'next/link';
 import { Suspense } from 'react';
-import type { Timeframe } from '@y0ngha/siglens-core';
-import type { AssetInfo } from '@/domain/types';
-import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { SymbolTabs } from '@/components/symbol-page/SymbolTabs';
 import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
+import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 
-interface SymbolPageHeaderProps {
+interface SymbolLayoutHeaderProps {
+    /** Ticker from the dynamic route param. Internally upper-cased for the breadcrumb. */
     symbol: string;
-    assetInfo: AssetInfo | undefined;
-    timeframe: Timeframe;
-    onTimeframeChange: (tf: Timeframe) => void;
 }
 
-export function SymbolPageHeader({
-    symbol,
-    assetInfo,
-    timeframe,
-    onTimeframeChange,
-}: SymbolPageHeaderProps) {
+/**
+ * Layout-level header rendered on every `/[symbol]/*` page.
+ *
+ * Contains the page-agnostic UI: SIGLENS logo, ticker breadcrumb, and SymbolTabs.
+ * Chart-specific controls (TimeframeSelector) live inside the chart page's own
+ * scroll-locked container so the layout stays free of `useSearchParams` (which
+ * would force the whole route to be dynamic under Next.js Cache Components).
+ */
+export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
+    const assetInfo = useAssetInfo(symbol);
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
 
@@ -50,20 +50,6 @@ export function SymbolPageHeader({
                         ({ticker})<span className="sr-only"> 기술적 분석</span>
                     </h1>
                 </div>
-                <div className="flex items-center gap-3">
-                    <div className="hidden sm:block">
-                        <TimeframeSelector
-                            value={timeframe}
-                            onChange={onTimeframeChange}
-                        />
-                    </div>
-                </div>
-            </div>
-            <div className="mt-2 sm:hidden">
-                <TimeframeSelector
-                    value={timeframe}
-                    onChange={onTimeframeChange}
-                />
             </div>
             <div className="-mx-4 mt-3">
                 <Suspense fallback={<SymbolTabsSkeleton />}>

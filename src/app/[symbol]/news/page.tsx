@@ -1,35 +1,36 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
 import {
-    getNewsList,
     getGradeEvents,
-    getNextEarningsCalendar,
     getLatestEarningsReport,
+    getNewsList,
+    getNextEarningsCalendar,
 } from '@/app/[symbol]/news/newsData';
-import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
-import { VALID_TICKER_RE } from '@/domain/constants/market';
-import { buildDisplayName } from '@/domain/ticker';
-import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { NewsList } from '@/components/news/sections/NewsList';
-import { EventCalendar } from '@/components/news/sections/EventCalendar';
-import { AnalystActions } from '@/components/news/sections/AnalystActions';
 import { NewsAiSummary } from '@/components/news/NewsAiSummary';
-import { NewsAiSummarySkeleton } from '@/components/news/NewsAiSummarySkeleton';
 import { NewsAiSummaryError } from '@/components/news/NewsAiSummaryError';
-import { ErrorBoundary } from 'react-error-boundary';
+import { NewsAiSummarySkeleton } from '@/components/news/NewsAiSummarySkeleton';
+import { AnalystActions } from '@/components/news/sections/AnalystActions';
+import { EventCalendar } from '@/components/news/sections/EventCalendar';
+import { NewsList } from '@/components/news/sections/NewsList';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
+import { VALID_TICKER_RE } from '@/domain/constants/market';
+import { buildDisplayName } from '@/domain/ticker';
+import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
+import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolNewsSeoContent,
+    buildSymbolSeoContent,
     SITE_BUILD_DATE,
     SITE_NAME,
     SITE_URL,
 } from '@/lib/seo';
 import { waitUntil } from '@vercel/functions';
-import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 
 // JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
 const JSON_LD_NEWS_MAX_ITEMS = 10;
@@ -144,8 +145,8 @@ export default async function NewsPage({ params }: Props) {
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: `/${upper}` },
-        { name: '뉴스 분석', url: `/${upper}/news` },
+        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: '뉴스 분석', url: buildSymbolNewsSeoContent(upper).url },
     ]);
 
     // datePublished는 페이지(요약 콘텐츠)가 처음 노출되는 빌드 시각으로 고정. 매 요청마다 변동시키면 Googlebot이 매번 "방금 발행"으로 간주.

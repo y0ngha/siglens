@@ -18,11 +18,15 @@ async function fetchNewsAnalysis(
 
     if (submitted.status === 'cached') return submitted.result;
     if (submitted.status === 'error') {
-        const message =
-            submitted.code === 'no_news'
-                ? '분석할 뉴스가 없습니다. 잠시 후 다시 시도해 주세요.'
-                : '사용량 한도를 초과했습니다.';
-        throw new Error(message);
+        if (submitted.code === 'no_news') {
+            throw new Error(
+                '분석할 뉴스가 없습니다. 잠시 후 다시 시도해 주세요.'
+            );
+        }
+        if (submitted.code === 'usage_limit_exceeded') {
+            throw new Error(submitted.error.message);
+        }
+        throw new Error('분석 중 오류가 발생했습니다.');
     }
 
     const { jobId } = submitted;

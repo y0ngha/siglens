@@ -1,45 +1,46 @@
-import { Suspense } from 'react';
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
 import {
-    getProfile,
-    getKeyMetricsTtm,
-    getRatiosTtm,
-    getStockPeers,
-    getIncomeStatementGrowth,
-    getFinancialScores,
-    getCashFlowStatement,
     getAnalystEstimates,
+    getCashFlowStatement,
+    getFinancialScores,
     getGradesConsensus,
+    getHistoricalSector,
+    getIncomeStatementGrowth,
+    getKeyMetricsTtm,
     getPriceTargetConsensus,
     getPriceTargetSummary,
+    getProfile,
+    getRatiosTtm,
     getSectorSnapshot,
-    getHistoricalSector,
+    getStockPeers,
 } from '@/app/[symbol]/fundamental/fundamentalData';
-import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
-import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { VALID_TICKER_RE } from '@/domain/constants/market';
-import { buildDisplayName } from '@/domain/ticker';
-import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
-import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
-import { PeersTable } from '@/components/fundamental/sections/PeersTable';
-import { ProfitabilityCard } from '@/components/fundamental/sections/ProfitabilityCard';
-import { GrowthChart } from '@/components/fundamental/sections/GrowthChart';
+import { FundamentalAiSummary } from '@/components/fundamental/FundamentalAiSummary';
+import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
+import { FundamentalAiSummarySkeleton } from '@/components/fundamental/FundamentalAiSummarySkeleton';
 import { FinancialHealthCard } from '@/components/fundamental/sections/FinancialHealthCard';
 import { FutureDirectionCard } from '@/components/fundamental/sections/FutureDirectionCard';
+import { GrowthChart } from '@/components/fundamental/sections/GrowthChart';
+import { PeersTable } from '@/components/fundamental/sections/PeersTable';
+import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
+import { ProfitabilityCard } from '@/components/fundamental/sections/ProfitabilityCard';
 import { SectorDirectionCard } from '@/components/fundamental/sections/SectorDirectionCard';
-import { FundamentalAiSummary } from '@/components/fundamental/FundamentalAiSummary';
-import { FundamentalAiSummarySkeleton } from '@/components/fundamental/FundamentalAiSummarySkeleton';
-import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
-import { ErrorBoundary } from 'react-error-boundary';
+import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
 import { JsonLd } from '@/components/ui/JsonLd';
+import { VALID_TICKER_RE } from '@/domain/constants/market';
+import { buildDisplayName } from '@/domain/ticker';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
+import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,
+    buildSymbolSeoContent,
     SITE_NAME,
 } from '@/lib/seo';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -214,8 +215,11 @@ export default async function FundamentalPage({ params }: Props) {
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: `/${upper}` },
-        { name: '펀더멘털 분석', url: `/${upper}/fundamental` },
+        { name: upper, url: buildSymbolSeoContent(upper).url },
+        {
+            name: '펀더멘털 분석',
+            url: buildSymbolFundamentalSeoContent(upper).url,
+        },
     ]);
 
     const faqJsonLd = {

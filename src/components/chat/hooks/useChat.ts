@@ -16,7 +16,6 @@ import {
     type ChatLoadingPhase,
     type ChatMessage,
     type ModelId,
-    type Timeframe,
     type LlmProvider,
 } from '@y0ngha/siglens-core';
 import { isFreeChatModel } from '@/domain/llm';
@@ -30,8 +29,11 @@ import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingToke
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
+import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
+import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { usePageContextLabel } from '@/components/chat/hooks/usePageContextLabel';
+import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -88,9 +90,6 @@ function resolveAiContent(result: ChatActionResult): string {
 
 export interface UseChatOptions {
     symbol: string;
-    timeframe: Timeframe;
-    analysis: AnalysisResponse;
-    isAnalysisReady: boolean;
 }
 
 export interface GateModalState {
@@ -112,12 +111,15 @@ export interface UseChatReturn {
     dismissGate: () => void;
 }
 
-export function useChat({
-    symbol,
-    timeframe,
-    analysis,
-    isAnalysisReady,
-}: UseChatOptions): UseChatReturn {
+export function useChat({ symbol }: UseChatOptions): UseChatReturn {
+    // 훅 선언 순서 예외: useSymbolChat()을 useState/useRef보다 먼저 호출함.
+    // 아래 storageKeyRef/initialStorageKeyRef 초기값이 timeframeFromCtx에 의존해야 하기 때문에
+    // 일반 순서(useState → useRef → context hook)로 두면 ref 초기화 시점에 timeframeFromCtx가 미정의됨.
+    const {
+        context,
+        timeframe: timeframeFromCtx,
+        isAnalysisReady,
+    } = useSymbolChat();
     const [messages, setMessages] = useState<DisplayMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
@@ -133,7 +135,17 @@ export function useChat({
     const prevAnalysisRef = useRef<AnalysisResponse | null>(null);
     // null on mount — used to skip the initial effect run in the key-change effect
     const prevKeyRef = useRef<string | null>(null);
-    // null on mount — used to skip emitting a context-switch system message on initial render
+    // null on mount — used to skip emitting a context-switch system message on initial render.
+    // KNOWN LIMITATION (Task 5 → follow-up / Task 6 domain):
+    //   This ref only tracks transitions while `useChat` is mounted. `useChat` lives inside
+    //   `ChatPanel`, which is mounted only when the panel is open (isOpen=true). If the user
+    //   navigates between symbol pages while the chat panel is closed, `useChat` is unmounted
+    //   for the entire transition; on next open `previousLabelRef` is null again and the
+    //   first-mount guard suppresses the context-switch system message that would have
+    //   announced the symbol/timeframe change. The transition message is silently lost.
+    //   This is still strictly better than the pre-PR-413 behavior (where `useChat` was
+    //   remounted on every navigation regardless of panel state). A proper fix likely
+    //   requires hoisting context-switch detection above ChatPanel — see Task 6.
     const previousLabelRef = useRef<string | null>(null);
     // latest-value refs: let sendMessage read current values without being in its dep array
     const messagesRef = useRef(messages);
@@ -141,13 +153,30 @@ export function useChat({
     // mount guard: save effect skips first run (messages = []) then sets true
     const didSaveMountRef = useRef(false);
     // storageKey captured at mount — mount effect reads this ref so deps array stays []
-    const initialStorageKeyRef = useRef(buildStorageKey(symbol, timeframe));
+    const initialStorageKeyRef = useRef(
+        buildStorageKey(symbol, timeframeFromCtx ?? DEFAULT_TIMEFRAME)
+    );
     // storageKey just changed but messages haven't updated yet — skip that save cycle
     const isKeyChangePendingRef = useRef(false);
     // current storageKey ref — lets analysis effect read latest key without deps array entry
-    const storageKeyRef = useRef(buildStorageKey(symbol, timeframe));
+    const storageKeyRef = useRef(
+        buildStorageKey(symbol, timeframeFromCtx ?? DEFAULT_TIMEFRAME)
+    );
     // true until isAnalysisReady first becomes true — distinguishes page-refresh from re-analysis
     const isFirstAnalysisReadyRef = useRef(true);
+
+    // Derived from context — placed after refs (per the React Hook order convention) and
+    // before queries/mutations so they can reference these computed values.
+    // Core's `buildChatPrompt` requires `analysis: AnalysisResponse` and `timeframe: Timeframe`
+    // even on non-chart pages; we fall back to `CHAT_NON_CHART_BASELINE_ANALYSIS` (whose summary
+    // redirects the LLM to `## Current analysis context`) and `DEFAULT_TIMEFRAME` so non-chart
+    // pages still produce a valid request. The real per-page payload travels via `context`.
+    const timeframe = timeframeFromCtx ?? DEFAULT_TIMEFRAME;
+    const analysis =
+        context !== null && context.kind === 'technical'
+            ? context.payload
+            : CHAT_NON_CHART_BASELINE_ANALYSIS;
+    const currentAnalysisContext = context;
 
     const queryClient = useQueryClient();
     const { data: remainingTokensData } = useQuery({
@@ -182,7 +211,8 @@ export function useChat({
                 analysis,
                 currentMessages,
                 text,
-                selectedModel
+                selectedModel,
+                currentAnalysisContext
             ),
         onMutate: ({ currentMessages, text }) => {
             const userMessage: ChatMessage = { role: 'user', content: text };
@@ -340,6 +370,8 @@ export function useChat({
     // 분석이 더 최신이고 기존 채팅 내역이 있으면 배너를 표시한다.
     // — 1) 새로고침 후 첫 분석 완료 (page-refresh path)
     // — 2) 페이지 열린 상태에서 재분석으로 analysis 교체된 경우 (live re-analysis path)
+    // 비차트 페이지에서는 `analysis`가 모듈 상수(`CHAT_NON_CHART_BASELINE_ANALYSIS`)로
+    // 고정되어 `prev !== analysis`가 절대 true가 되지 않으므로 배너는 자연스럽게 비활성.
     useEffect(() => {
         const prev = prevAnalysisRef.current;
         prevAnalysisRef.current = analysis;

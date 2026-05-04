@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import {
     type NewsAnalysisResponse,
     type NewsSentiment,
@@ -7,6 +8,7 @@ import {
 import { cn } from '@/lib/cn';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -110,6 +112,20 @@ interface NewsAiSummaryProps {
 export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
     const modelId = useDefaultModelId();
     const result = useNewsAnalysis(symbol, modelId);
+
+    // Publish the in-view news result so the chatbot can reference live numbers
+    // from this page. `timeframe` is null — news analysis is timeframe-agnostic.
+    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
+    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
+    const chatState = useMemo(
+        () => ({
+            context: { kind: 'news', payload: result } as const,
+            timeframe: null,
+            isAnalysisReady: true,
+        }),
+        [result]
+    );
+    usePublishSymbolChat(chatState);
 
     return <NewsAiSummaryView result={result} />;
 }

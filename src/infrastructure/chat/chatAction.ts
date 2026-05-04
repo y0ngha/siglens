@@ -10,6 +10,7 @@ import type {
     AnalysisResponse,
     ChatActionResult,
     ChatMessage,
+    CurrentAnalysisContext,
     LlmProvider,
     ModelId,
     Timeframe,
@@ -84,7 +85,16 @@ export async function chatAction(
     analysis: AnalysisResponse,
     history: ChatMessage[],
     userMessage: string,
-    model: ModelId = GEMINI_2_5_FLASH_MODEL
+    model: ModelId = GEMINI_2_5_FLASH_MODEL,
+    /**
+     * Tagged union representing the analysis result the user is currently
+     * looking at (technical / fundamental / news / overall). When provided,
+     * core injects it into the system prompt as `## Current analysis context`
+     * so the assistant can reference live numbers from the user's page. Pass
+     * `null` (or omit) when no page-level analysis is available — core then
+     * falls back to its default behavior.
+     */
+    currentAnalysisContext: CurrentAnalysisContext | null = null
 ): Promise<ChatActionResult> {
     try {
         const provider = getProviderForModel(model);
@@ -109,6 +119,11 @@ export async function chatAction(
                 model,
                 freeApiKey,
                 paidApiKey,
+                // `undefined` (not `null`) when absent — core's optional field
+                // is `currentAnalysisContext?: CurrentAnalysisContext`.
+                ...(currentAnalysisContext !== null
+                    ? { currentAnalysisContext }
+                    : {}),
             },
             {
                 callAiProvider: callAiProviderRouter,

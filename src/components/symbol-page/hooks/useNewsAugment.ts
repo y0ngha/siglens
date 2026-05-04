@@ -1,54 +1,35 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { skipToken, useQuery } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
-import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
-import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
-import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 
-// `null` is returned for the no-news case so the consumer can render nothing without throwing.
-// AbortSignal로 unmount 시 폴링을 즉시 종료한다.
-async function fetchNewsAugment(
-    symbol: string,
-    modelId: ModelId,
-    signal: AbortSignal
-): Promise<NewsAnalysisResponse | null> {
-    const submitted = await submitNewsAnalysisAction(symbol, modelId);
-
-    if (submitted.status === 'cached') return submitted.result;
-    if (submitted.status === 'error') {
-        if (submitted.code === 'no_news') return null;
-        throw new Error(
-            typeof submitted.error === 'string'
-                ? submitted.error
-                : '뉴스 분석 요청 중 오류가 발생했습니다.'
-        );
-    }
-
-    const { jobId } = submitted;
-    while (!signal.aborted) {
-        await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
-        if (signal.aborted) throw new Error('aborted');
-        const polled = await pollNewsAnalysisAction(jobId);
-        if (polled.status === 'done') return polled.result;
-        if (polled.status === 'error') {
-            throw new Error(
-                polled.error ?? '뉴스 분석 중 오류가 발생했습니다.'
-            );
-        }
-    }
-    throw new Error('aborted');
-}
-
+/**
+ * Chart-page news augment — strictly cache-only.
+ *
+ * Returns the existing News-analysis result from the React Query cache
+ * (populated by `useNewsAnalysis` on `/AAPL/news`). On cache miss, returns
+ * `null` instead of submitting a new LLM job — the spec is explicit that the
+ * chart page must not spend money on news analysis.
+ *
+ * Background filling is handled by natural navigation: when the user visits
+ * `/AAPL/news`, `ensureNewsCardsAnalyzedAction` (RSC waitUntil) plus
+ * `useNewsAnalysis` together populate both the server-side Redis cache and
+ * this React Query entry. Subsequent navigation back to `/AAPL` then sees a
+ * cache hit and renders the augment.
+ *
+ * Both hooks share the same queryKey (`QUERY_KEYS.newsAnalysis`) so a single
+ * RQ entry serves both pages within a session. `queryFn: skipToken` is the v5
+ * idiomatic way to declare "never fetch" — it subscribes to whatever the news
+ * page has already cached without triggering its own fetch.
+ */
 export function useNewsAugment(
     symbol: string,
     modelId: ModelId
 ): NewsAnalysisResponse | null {
-    const { data } = useSuspenseQuery({
-        queryKey: QUERY_KEYS.newsAugment(symbol, modelId),
-        queryFn: ({ signal }) => fetchNewsAugment(symbol, modelId, signal),
+    const { data } = useQuery<NewsAnalysisResponse>({
+        queryKey: QUERY_KEYS.newsAnalysis(symbol, modelId),
+        queryFn: skipToken,
     });
-    return data;
+    return data ?? null;
 }

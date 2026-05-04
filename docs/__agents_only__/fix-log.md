@@ -1,5 +1,48 @@
 # Fix Log
 
+## [PR #418 Round 5 | chore/pr-413-review-fixes | 2026-05-04]
+- Refactor: OverallContent.tsx의 buildChatState 순수 헬퍼를 utils/buildChatState.ts로 분리
+- Rule: CONVENTIONS.md / MISTAKES.md Architecture #1 — 컴포넌트 파일에서 추출한 순수 함수는 utils/ 서브폴더로
+- Context: buildChatState은 React 의존성 없는 순수 함수. components/overall/utils/buildChatState.ts 신규 생성. OverallAnalysisState/SymbolChatState 타입 import는 그대로.
+
+- Test improvement: useNewsAugment.test.tsx의 'does not start a fetch' 단언을 부정→긍정으로 강화
+- Rule: 테스트 단언은 undefined 값 통과 우려가 있는 부정 단언 대신 긍정 단언 사용
+- Context: expect(state?.fetchStatus).not.toBe('fetching') / .not.toBe('success') → expect(state).toBeDefined() / .fetchStatus.toBe('idle') / .status.toBe('pending').
+
+- Doc: ChartScrollLockGate의 pathname 이중 체크 (/${ticker} || /${symbol}) 의도 WHY 주석 추가
+- Rule: MISTAKES.md WHY-주석 가이드 — 비자명한 분기에 의도 주석
+- Context: Next.js가 ticker case를 자동 canonicalize 하지 않으므로 직접 진입 케이스(/aapl) 호환을 위함을 1줄 주석으로 명시.
+
+## [PR #418 Round 4 | chore/pr-413-review-fixes | 2026-05-04]
+- Violation: FloatingChatButton/ChatPanel가 currentAnalysisContext / analysis / timeframe / isAnalysisReady를 그대로 pass-through (Props Drilling)
+- Rule: MISTAKES.md #5.5 — Intermediate components must not pass-through props they do not directly use
+- Context: useChat이 useSymbolChat()을 직접 소비하도록 리팩토링. ChatPanel은 onClose + symbol만 받고 isAnalysisReady는 useSymbolChat()으로 직접 조회. FloatingChatButton은 symbol만 받음. SymbolLayoutClient의 SymbolChatLauncher 중간 컴포넌트 제거. ChatPanel.test.tsx도 useSymbolChat 모킹으로 갱신.
+
+- Refactor: OverallContent.tsx의 useMemo 내 복합 삼항식 → buildChatState named helper로 추출
+- Rule: MISTAKES.md #9 — Complex anonymous expressions should be named
+- Context: 두 분기 각각이 3개 필드 객체를 반환하던 멀티 스테이트먼트 삼항식을 컴포넌트 외부 named helper로 추출. OverallAnalysisState / SymbolChatState 타입 export 추가.
+
+- Test added: useNewsAugment cache-only contract 4건
+- Rule: 컴포넌트 hook이지만 핵심 동작 contract(cache-only via skipToken + QUERY_KEYS.newsAnalysis 키 공유)을 문서화하는 회귀 방지 테스트
+- Context: src/__tests__/components/symbol-page/hooks/useNewsAugment.test.tsx 신규. 빈 캐시 → null / 캐시 hit → 그 값 / fetch 시작 안함(skipToken) / modelId 다르면 cross-populate 안함.
+
+## [PR #418 Round 3 | chore/pr-413-review-fixes | 2026-05-04]
+- Decision: 'multi-line JSDoc/comment 압축' Blocker 3건 (useNewsAugment, SymbolChatContext, SymbolLayoutClient) 모두 거부 — 사용자 판단으로 보존
+- Reason: PR #415 라운드에서 동일 정책(MISTAKES.md Documentation Sync 규칙 4)이 사용자에 의해 '과도하게 제한적'이라며 폐기됨. R3 reviewer가 근거로 인용한 'CLAUDE.md ─ Never write multi-paragraph docstrings...' 문구는 프로젝트 CLAUDE.md/CONVENTIONS.md/MISTAKES.md에는 존재하지 않으며 Claude Code 시스템 프롬프트(CLI 빌트인)의 문구임이 확인됨
+- Context: 3개 inline 코멘트(#3179627939, #3179630368, #3179630551)에 거부 사유 회신 게시. 향후 라운드에서도 동일 reviewer 권고가 재발할 수 있으므로 이 fix-log 항목을 oscillation 가드 근거로 사용
+
+- Suggestion accepted: layout.tsx의 단일 Suspense를 감싸던 불필요한 `<>...</>` 프래그먼트 제거
+- Rule: FF Readability 1-A — minimal syntactic noise
+- Context: SymbolLayout 함수 본문이 Suspense 하나만 반환하므로 fragment wrapper 불필요. 명확성 향상.
+
+- Suggestion rejected: FundamentalAiSummary/NewsAiSummary의 isAnalysisReady=true에 result 존재 여부 가드 추가 권고
+- Rule: FF Predictability — useSuspenseQuery는 로딩/에러 시 throw하므로 컴포넌트가 렌더되는 시점에 result는 항상 non-null. 반환 타입도 non-null로 좁혀져 있어 가드는 항상 true인 tautology
+- Context: OverallContent.tsx의 state.status === 'done' 가드는 useSuspenseQuery를 쓰지 않는 상태 머신 기반이라 다름. 패턴 비대칭이 아니라 의도된 차이
+
+## [PR #418 Round 2 | chore/pr-413-review-fixes | 2026-05-04]
+- Violation: usePublishSymbolChat single useEffect re-runs both publish and clear on every state change → null flicker between transitions
+- Rule: FF Predictability 2-D — effects with distinct lifecycles (per-update publish vs unmount-only clear) should be split, not coalesced
+- Context: SymbolChatContext.usePublishSymbolChat had `useEffect(() => { publish(state); return () => clear(); }, [state, publish, clear])`. Reviewer flagged that on intra-page state change (e.g. analysis loading → done) the cleanup runs first, briefly resetting context to null before re-publishing. Split into two effects: `useEffect([state, publish], publish)` + `useEffect([clear], unmount-only clear)`.
 ## [PR #417 Round 6 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: chart page \`WebPage.name\`이 옛 카피("\${displayName} 주가 AI 분석 | Siglens")로 하드코딩 — title 전면 갱신 후에도 JSON-LD에는 반영 안 됨, 4개 page family 패턴(\`fullTitle\` 사용)과 불일치
 - Rule: FF Cohesion — 같은 페이지 내 유사 용도의 name 필드 일관성
@@ -239,10 +282,6 @@
 - Rule: CLAUDE.md Layer Dependency Rules — infrastructure ← domain only; infrastructure cannot import lib
 - Context: Blocker B1. NewsDisplayItem moved from src/lib/news/types.ts to src/domain/types.ts. Note: R18 reviewer originally said NewsDisplayItem should move OUT of domain (UI type purity); R20 reviewer said move BACK to domain (layer rule enforcement). R20 ruling is structurally correct — domain is the only layer importable by both components/ and infrastructure/. Trade-off acknowledged: presentation-adjacent types tolerated in domain when cross-layer sharing required.
 
-- Violation: httpClient.ts exported @internal JSDoc tag on non-exported FMP_FETCH_TIMEOUT_MS constant
-- Rule: MISTAKES.md Documentation Sync 3 — @internal on non-exported symbols is redundant (4th recurrence: R12, R17, R18, R20)
-- Context: Suggestion S1. FMP_FETCH_TIMEOUT_MS is non-exported (local to module), so @internal tag adds no semantic value. Removed.
-
 - Violation: ChatPanel.tsx had WHAT comment "Narrowed to ChatMessage (role: 'user' | 'model') past this point"
 - Rule: CONVENTIONS.md — comments only for WHY non-obvious; type narrowing behavior is self-evident from TypeScript
 - Context: Suggestion S2. Comment describes TypeScript narrowing behavior rather than explaining a WHY decision. Type system is the documentation; removed comment.
@@ -276,16 +315,7 @@
 - Rule: CLAUDE.md layer dependency — lib/ must contain external UI utility wrappers only; pure functions with side effects belong in infrastructure
 - Context: Moved lib/dateKey.ts → infrastructure/utils/dateKey.ts; updated 4 import sites (fundamental/page.tsx, news/page.tsx, submitOverallAnalysisAction.ts, submitNewsAnalysisAction.ts).
 
-## [PR #413 R11 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: useOverallAnalysis hook return type was inline `{ state: ...; trigger: () => void }` instead of named interface
-- Rule: MISTAKES.md TypeScript 5.5 — Function return types using inline object literals instead of named types
-- Context: Extracted `export interface UseOverallAnalysisReturn` named interface; hook now returns UseOverallAnalysisReturn.
-
 ## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: toEarningsReport in src/infrastructure/db/earningsReportsRepository.ts had inline parameter type { symbol: string; earningsDate: string } while sibling earningsCalendarRepository.ts uses named EarningsCalendarDbRow interface
-- Rule: MISTAKES.md TypeScript 5.5 — Inline object parameter type instead of named interface; breaks sibling consistency
-- Context: Extracted EarningsReportDbRow named interface; toEarningsReport now uses named type matching earningsCalendarRepository pattern.
-
 - Violation: src/infrastructure/utils/dateKey.ts (added in R10) had no corresponding test file
 - Rule: MISTAKES.md Tests 12, 14 — All time-dependent utility functions must have test coverage including edge cases
 - Context: Created src/__tests__/infrastructure/utils/dateKey.test.ts with 3 cases: UTC midnight, late evening (date crossover), early morning paths via jest.spyOn(Date, 'now').

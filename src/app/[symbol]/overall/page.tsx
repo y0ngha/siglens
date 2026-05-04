@@ -1,21 +1,22 @@
-import { notFound } from 'next/navigation';
-import type { Metadata } from 'next';
+import { OverallContent } from '@/components/overall/OverallContent';
+import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
+import { JsonLd } from '@/components/ui/JsonLd';
 import {
     DEFAULT_TIMEFRAME,
     isValidTimeframe,
     VALID_TICKER_RE,
 } from '@/domain/constants/market';
-import type { Timeframe } from '@y0ngha/siglens-core';
 import { buildDisplayName } from '@/domain/ticker';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { OverallContent } from '@/components/overall/OverallContent';
-import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
-import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOverallSeoContent,
+    buildSymbolSeoContent,
     SITE_NAME,
 } from '@/lib/seo';
+import type { Timeframe } from '@y0ngha/siglens-core';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -106,8 +107,8 @@ export default async function OverallPage({ params, searchParams }: Props) {
     };
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: `/${upper}` },
-        { name: 'AI 종합 분석', url: `/${upper}/overall` },
+        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: 'AI 종합 분석', url: buildSymbolOverallSeoContent(upper).url },
     ]);
 
     return (
