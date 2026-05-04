@@ -53,7 +53,9 @@ export default function OAuthConsentPage({ searchParams }: PageProps) {
             title="소셜 로그인 가입"
             subtitle="아래 정보로 SigLens에 가입됩니다"
         >
-            <Suspense fallback={<div className="animate-pulse" aria-hidden="true" />}>
+            <Suspense
+                fallback={<div className="animate-pulse" aria-hidden="true" />}
+            >
                 <ConsentContent searchParams={searchParams} />
             </Suspense>
         </AuthCardShell>

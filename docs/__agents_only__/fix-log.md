@@ -1,5 +1,15 @@
 # Fix Log
 
+## [PR #420 Round 14 | master | 2026-05-05]
+- B1: `src/__tests__/infrastructure/auth/registerAction.test.ts` — success case used `expect.anything()` as second argument to `toHaveBeenCalledWith()`. MISTAKES.md Tests §15/§16 forbids `expect.anything()`. Replaced with `expect.objectContaining({ emailTokens: expect.objectContaining({set, get, delete}), db: expect.objectContaining({transaction}) })`.
+  - Rule: MISTAKES.md Tests §15/§16 — forbids `expect.anything()` in assertion
+- B2: `db/scripts/seedTerms.ts` — used relative imports (`../../src/infrastructure/db/...`) instead of `@/` path aliases. Changed all three imports to use `@/infrastructure/db/...`.
+  - Rule: MISTAKES.md CONVENTIONS.md — path aliases must use `@/` for better maintainability
+- S1: `src/components/legal/PolicyMarkdownBody.tsx` — focus ring on Link/anchor elements was missing `ring-offset` pair (`focus-visible:ring-offset-secondary-950 focus-visible:ring-offset-2`). Added the ring-offset classes.
+  - Rule: WAI-ARIA keyboard accessibility — focus ring needs ring-offset for sufficient contrast; cross-component consistency
+- S2: `src/app/privacy/page.tsx`, `src/app/terms/page.tsx`, `src/app/signup/oauth/consent/page.tsx` — Suspense boundaries were missing fallback prop (showing blank during DB fetch). Added `fallback={<div className="animate-pulse" aria-hidden="true" />}`.
+  - Rule: Suspense fallback — must provide visible loading indicator; missing fallback shows blank page to user during async fetch
+
 ## [PR #420 Round 13 | master | 2026-05-05]
 - B1: `finalizeOAuthSignupAction.test.ts` — `if (!created) { throw new Error('createOAuthUser returned null') }` branch inside transaction not covered. Added test that overrides MockUserRepo to return null from createOAuthUser and asserts redirect to /login?error=service_unavailable (MISTAKES.md Infrastructure §2 — 100% branch coverage).
   - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage

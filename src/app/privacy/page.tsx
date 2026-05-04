@@ -125,7 +125,9 @@ export default function PrivacyPage() {
         <>
             <JsonLd data={JSON_LD} />
             <JsonLd data={BREADCRUMB_JSON_LD} />
-            <Suspense fallback={<div className="animate-pulse" aria-hidden="true" />}>
+            <Suspense
+                fallback={<div className="animate-pulse" aria-hidden="true" />}
+            >
                 <PrivacyContent />
             </Suspense>
         </>
