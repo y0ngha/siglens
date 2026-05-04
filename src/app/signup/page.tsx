@@ -27,6 +27,9 @@ async function SignupContent({ searchParams }: SignupPageProps) {
     return (
         <>
             <SignupForm next={nextParam} />
+            <p className="text-secondary-500 mt-6 mb-2 text-xs">
+                소셜 로그인 시작 후 약관 동의 단계가 있습니다.
+            </p>
             <SocialLoginButtons next={nextParam} />
         </>
     );

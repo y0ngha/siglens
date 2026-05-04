@@ -1,9 +1,14 @@
 import { NextResponse, type NextRequest } from 'next/server';
 import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
-import { socialLoginUser } from '@/infrastructure/auth/use-cases/socialLoginUser';
 import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
+import { createAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import {
+    createAuthSession,
+    DEFAULT_SESSION_TTL_SECONDS,
+} from '@/infrastructure/auth/sessionCookie';
+import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
 import {
     buildOAuthRedirectUri,
     getOAuthAdapter,
@@ -76,30 +81,64 @@ export async function GET(
     }
 
     const { db } = getAuthDatabaseClient();
-    const result = await socialLoginUser(
-        profileResult.profile,
-        {
-            users: new DrizzleUserRepository(db),
-            sessions: new DrizzleSessionRepository(db),
-        },
-        { secureCookie: isSecureCookieEnv() }
-    );
+    const userRepo = new DrizzleUserRepository(db);
+    const sessionRepo = new DrizzleSessionRepository(db);
 
-    if (!result.ok) {
-        if (result.error.code === 'email_already_exists') {
-            return redirectToLoginWithError(
-                req,
-                'oauth_email_conflict',
-                profileResult.profile.email
-            );
-        }
-        return redirectToLoginWithError(req, 'oauth_profile_invalid');
+    // Existing OAuth account → immediate login
+    const existingOAuthUser = await userRepo.findByOAuthAccount(
+        profileResult.profile.provider,
+        profileResult.profile.providerAccountId
+    );
+    if (existingOAuthUser !== null) {
+        const { cookie } = await createAuthSession({
+            userId: existingOAuthUser.id,
+            sessions: sessionRepo,
+            now: new Date(),
+            secureCookie: isSecureCookieEnv(),
+        });
+        const response = NextResponse.redirect(
+            new URL(sanitizeNextPath(stateResult.next), req.url)
+        );
+        response.cookies.set(applyAuthCookie(cookie));
+        response.cookies.set(
+            createAuthHintCookie({
+                maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS,
+                secure: isSecureCookieEnv(),
+            })
+        );
+        response.cookies.set(expiredOAuthStateCookie());
+        return response;
     }
 
-    const response = NextResponse.redirect(
-        new URL(sanitizeNextPath(stateResult.next), req.url)
-    );
-    response.cookies.set(applyAuthCookie(result.cookie));
+    // Email already registered with password → conflict error
+    const existingEmailUser = await userRepo.findByEmail(profileResult.profile.email);
+    if (existingEmailUser !== null) {
+        return redirectToLoginWithError(req, 'oauth_email_conflict', profileResult.profile.email);
+    }
+
+    // New user → save to pending store and redirect to consent page
+    const pendingStore = createPendingOAuthSignupStoreFromEnv();
+    if (!pendingStore) {
+        return redirectToLoginWithError(req, 'oauth_unknown');
+    }
+
+    const token = await pendingStore.save({
+        // `provider` was already narrowed to SupportedOAuthProvider by isOAuthProvider() above.
+        provider,
+        email: profileResult.profile.email,
+        providerAccountId: profileResult.profile.providerAccountId,
+        name: profileResult.profile.name,
+        avatarUrl: profileResult.profile.avatarUrl,
+        accessToken: profileResult.profile.accessToken ?? '',
+        refreshToken: profileResult.profile.refreshToken,
+        tokenExpiresAt: profileResult.profile.tokenExpiresAt?.toISOString(),
+        next: stateResult.next,
+        createdAt: new Date().toISOString(),
+    });
+
+    const consentUrl = new URL('/signup/oauth/consent', req.url);
+    consentUrl.searchParams.set('token', token);
+    const response = NextResponse.redirect(consentUrl);
     response.cookies.set(expiredOAuthStateCookie());
     return response;
 }

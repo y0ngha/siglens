@@ -67,6 +67,7 @@ export interface TickerCategory {
 export type {
     DeleteAccountFormErrorCode,
     DeleteAccountFormState,
+    FinalizeOAuthSignupState,
     ForgotPasswordFormState,
     LocalInfraErrorCode,
     LoginFormState,
