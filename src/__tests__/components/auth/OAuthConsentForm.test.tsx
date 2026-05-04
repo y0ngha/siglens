@@ -19,7 +19,9 @@ describe('OAuthConsentForm', () => {
         email: 'new@example.com',
         name: 'Hong Gildong',
         avatarUrl: undefined,
-        cancelAction: jest.fn() as unknown as (formData: FormData) => Promise<void>,
+        cancelAction: jest.fn() as unknown as (
+            formData: FormData
+        ) => Promise<void>,
     };
 
     it('renders profile email and name', () => {
