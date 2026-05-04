@@ -1,40 +1,5 @@
 # Fix Log
 
-## [PR #418 Round 5 | chore/pr-413-review-fixes | 2026-05-04]
-- Refactor: OverallContent.tsx의 buildChatState 순수 헬퍼를 utils/buildChatState.ts로 분리
-- Rule: CONVENTIONS.md / MISTAKES.md Architecture #1 — 컴포넌트 파일에서 추출한 순수 함수는 utils/ 서브폴더로
-- Context: buildChatState은 React 의존성 없는 순수 함수. components/overall/utils/buildChatState.ts 신규 생성. OverallAnalysisState/SymbolChatState 타입 import는 그대로.
-
-- Test improvement: useNewsAugment.test.tsx의 'does not start a fetch' 단언을 부정→긍정으로 강화
-- Rule: 테스트 단언은 undefined 값 통과 우려가 있는 부정 단언 대신 긍정 단언 사용
-- Context: expect(state?.fetchStatus).not.toBe('fetching') / .not.toBe('success') → expect(state).toBeDefined() / .fetchStatus.toBe('idle') / .status.toBe('pending').
-
-- Doc: ChartScrollLockGate의 pathname 이중 체크 (/${ticker} || /${symbol}) 의도 WHY 주석 추가
-- Rule: MISTAKES.md WHY-주석 가이드 — 비자명한 분기에 의도 주석
-- Context: Next.js가 ticker case를 자동 canonicalize 하지 않으므로 직접 진입 케이스(/aapl) 호환을 위함을 1줄 주석으로 명시.
-
-## [PR #418 Round 4 | chore/pr-413-review-fixes | 2026-05-04]
-- Violation: FloatingChatButton/ChatPanel가 currentAnalysisContext / analysis / timeframe / isAnalysisReady를 그대로 pass-through (Props Drilling)
-- Rule: MISTAKES.md #5.5 — Intermediate components must not pass-through props they do not directly use
-- Context: useChat이 useSymbolChat()을 직접 소비하도록 리팩토링. ChatPanel은 onClose + symbol만 받고 isAnalysisReady는 useSymbolChat()으로 직접 조회. FloatingChatButton은 symbol만 받음. SymbolLayoutClient의 SymbolChatLauncher 중간 컴포넌트 제거. ChatPanel.test.tsx도 useSymbolChat 모킹으로 갱신.
-
-- Refactor: OverallContent.tsx의 useMemo 내 복합 삼항식 → buildChatState named helper로 추출
-- Rule: MISTAKES.md #9 — Complex anonymous expressions should be named
-- Context: 두 분기 각각이 3개 필드 객체를 반환하던 멀티 스테이트먼트 삼항식을 컴포넌트 외부 named helper로 추출. OverallAnalysisState / SymbolChatState 타입 export 추가.
-
-- Test added: useNewsAugment cache-only contract 4건
-- Rule: 컴포넌트 hook이지만 핵심 동작 contract(cache-only via skipToken + QUERY_KEYS.newsAnalysis 키 공유)을 문서화하는 회귀 방지 테스트
-- Context: src/__tests__/components/symbol-page/hooks/useNewsAugment.test.tsx 신규. 빈 캐시 → null / 캐시 hit → 그 값 / fetch 시작 안함(skipToken) / modelId 다르면 cross-populate 안함.
-
-## [PR #418 Round 3 | chore/pr-413-review-fixes | 2026-05-04]
-- Decision: 'multi-line JSDoc/comment 압축' Blocker 3건 (useNewsAugment, SymbolChatContext, SymbolLayoutClient) 모두 거부 — 사용자 판단으로 보존
-- Reason: PR #415 라운드에서 동일 정책(MISTAKES.md Documentation Sync 규칙 4)이 사용자에 의해 '과도하게 제한적'이라며 폐기됨. R3 reviewer가 근거로 인용한 'CLAUDE.md ─ Never write multi-paragraph docstrings...' 문구는 프로젝트 CLAUDE.md/CONVENTIONS.md/MISTAKES.md에는 존재하지 않으며 Claude Code 시스템 프롬프트(CLI 빌트인)의 문구임이 확인됨
-- Context: 3개 inline 코멘트(#3179627939, #3179630368, #3179630551)에 거부 사유 회신 게시. 향후 라운드에서도 동일 reviewer 권고가 재발할 수 있으므로 이 fix-log 항목을 oscillation 가드 근거로 사용
-
-- Suggestion accepted: layout.tsx의 단일 Suspense를 감싸던 불필요한 `<>...</>` 프래그먼트 제거
-- Rule: FF Readability 1-A — minimal syntactic noise
-- Context: SymbolLayout 함수 본문이 Suspense 하나만 반환하므로 fragment wrapper 불필요. 명확성 향상.
-
 ## [PR #417 Round 6 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: \`@type: 'FinancialProduct'\` JSON-LD 의미 부적합 — schema.org/FinancialProduct는 대출/카드/보험 등 금융 상품 자체용이고 주식 분석 서비스에는 맞지 않음. WebPage about.Corporation으로 이미 금융 entity 신호 제공 중이라 중복.
 - Rule: schema.org type semantic 정합성
@@ -67,23 +32,6 @@
 - Rule: ARIA — `<section>`은 aria-labelledby로 접근 가능 이름이 명시되어야 랜드마크로 인식
 - Context: P1.1에서 visible static SEO 콘텐츠 블록을 `<section>`으로 추가. 내부 `<h2>`에 id 부여하고 `<section aria-labelledby>`로 연결.
 
-## [PR #417 Round 2 | worktree-seo-overhaul-49 | 2026-05-04]
-- Violation: `Promise<{ id: SitemapId }[]>` inline object literal in return type of `generateSitemaps()`
-- Rule: MISTAKES.md TypeScript #5.5 — Function return types using inline object literals instead of named types
-- Context: Created during P4.1 sitemap split. Extracted to `interface SitemapSegment { id: SitemapId }` and reused in both `generateSitemaps()` return and `sitemap()` parameter destructure type.
-
-- Violation: `assetInfo` null handling asymmetric between generateMetadata (ternary) and page body (direct pass) in fundamental/page.tsx
-- Rule: MISTAKES.md Predictability #1.5 — Asymmetric input handling across related functions (extends to consistent null-guard style)
-- Context: `buildDisplayName` accepts nullable assetInfo so the page body was technically correct, but the asymmetry was a maintenance trap. Unified to ternary pattern matching generateMetadata, plus added a comment explaining why fundamental allows assetInfo=null (FMP profile-only ticker support, distinct from news/overall behavior).
-
-- Violation: OG image layout magic numbers (top:56, right:72, fontSize:32/240/64, padding:'80px') duplicated across 4 opengraph-image.tsx files
-- Rule: MISTAKES.md #15 drift trap — when a constant exists in a file, every literal use of the same value must reference the constant
-- Context: P3.3 inlined identical layout numbers in 4 OG route files. Extracted to OG_CONTAINER_PADDING / OG_TICKER_FONT_SIZE / OG_LABEL_FONT_SIZE / OG_SITE_NAME_FONT_SIZE / OG_SITE_NAME_TOP / OG_SITE_NAME_RIGHT / OG_LABEL_MARGIN_TOP in lib/og.ts. Also extracted shared JSX to infrastructure/og/buildSymbolOgImage.tsx factory; 4 route files reduced to 16-line thin wrappers each.
-
-- Violation: TypeScript narrowing comment "id is narrowed to 'tickers' by exhaustive SitemapId union"
-- Rule: MISTAKES.md #2.5 — Comments describing TypeScript narrowing already evident from code
-- Context: Removed; the `if (id === 'static') return [...]` guard above already proves narrowing.
-
 ## [PR #417 Round 1 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: `lib/og.ts` exposed `loadKoreanFont()` performing CDN `fetch()` (network I/O side effect) inside the lib layer
 - Rule: `src/lib/CLAUDE.md` — "Pure functions only, no side effects" (mirrors ARCHITECTURE.md layer constraint)
@@ -111,19 +59,6 @@
 - Violation: OverallContent.tsx used `style={{ width: '...' }}` inline for skeleton widths
 - Rule: MISTAKES.md rule 7 — Never use inline style for layout/styling; use CSS custom property + Tailwind pattern
 - Context: Changed to `style={{ '--skeleton-w': '...' } as CSSProperties}` + `className="w-[var(--skeleton-w)]"`.
-
-## [Issue #396 | feat/396/llm-api-key-management | 2026-05-02]
-- Violation: ApiKeyActionState/RegisteredProvider 타입을 infrastructure/llm/types.ts에 정의 — components가 infrastructure에서 직접 type import
-- Rule: ARCHITECTURE.md — components는 infrastructure에서 import 금지; 타입은 domain에 두어야 layer 규칙 준수 가능
-- Context: domain/llm/types.ts로 이동 후 infrastructure/llm/types.ts에서 re-export. components는 @/domain/llm에서 import.
-
-- Violation: safeClose, handleBackdropClick 함수에 void 반환 타입 미선언
-- Rule: MISTAKES.md #0 — 컴포넌트 render 외부 함수는 반환 타입 명시 필요
-- Context: `: void` 반환 타입 추가.
-
-- Violation: ApiKeySection.tsx, PremiumModelGateModal.tsx에서 raw Tailwind color(emerald-*, amber-*) 직접 사용
-- Rule: MISTAKES.md Design rule 0.5 — 모든 색상은 globals.css에 등록된 semantic token(ui-success, ui-warning, ui-danger) 사용
-- Context: text-emerald-*/bg-emerald-*/ring-emerald-* → ui-success 토큰, text-amber-* → ui-warning 토큰으로 교체.
 
 ## [PR #405 Round 2 | refactor/scope-realignment-phase-0 | 2026-05-02]
 - Violation: tokenEncryption.ts 헤더 문구에 "sync obligation" 언급 (Phase 6 완료했으므로 불필요)
@@ -153,11 +88,6 @@
 
 ## [Round 1 — Skipped findings]
 - `src/app/[symbol]/page.tsx:144` and `src/app/market/page.tsx:13` (recommended): RSC에서 siglens-core 함수를 직접 호출하는 패턴은 기존 관례이며 이번 PR이 도입한 변경이 아님. RSC는 underlying async 함수를 직접 호출하고, 클라이언트용 Server Action wrapper는 별도 hook 경로로 사용하는 분리 패턴이 의도됨. PR 범위 밖이므로 skip.
-
-## [PR #413 R3 | feat/fundamental-news-analysis | 2026-05-02]
-- Violation: domain/types.ts 파일 중단부(~113행)에 import type { ChatMessage } from '@y0ngha/siglens-core' 선언
-- Rule: ESLint import/first — 모든 import는 파일 최상단에 위치해야 함
-- Context: DisplayMessage/ContextSwitchMessage 타입 추가 시 import를 파일 하단에 삽입. 최상단으로 이동.
 
 ## [PR #390 | feat/369/auth-social | 2026-04-28]
 - Violation: OAuth 콜백에서 쿠키에 저장된 next 경로를 검증 없이 그대로 redirect로 사용
@@ -202,34 +132,6 @@
 - Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
 - Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
 
-## [PR #413 R4 | feat/fundamental-news-analysis | 2026-05-02]
-- Violation: SymbolTabs used `role="tablist"` + `role="tab"` on `<Link>` elements that navigate to different URLs
-- Rule: WCAG / ARIA Authoring Practices — tablist/tab is for same-page panel switching; URL navigation uses `<nav>` + `aria-current="page"`
-- Context: Converted SymbolTabs from div[role=tablist]+Link[role=tab]+aria-selected+tabIndex+handleKey to nav[aria-label]+Link[aria-current]. Removed keyboard arrow-key handler (nav landmark does not require it per ARIA contract).
-
-## [PR #413 Round 20 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: newsRepository.ts imported NewsDisplayItem from @/lib/news/types (infrastructure importing lib)
-- Rule: CLAUDE.md Layer Dependency Rules — infrastructure ← domain only; infrastructure cannot import lib
-- Context: Blocker B1. NewsDisplayItem moved from src/lib/news/types.ts to src/domain/types.ts. Note: R18 reviewer originally said NewsDisplayItem should move OUT of domain (UI type purity); R20 reviewer said move BACK to domain (layer rule enforcement). R20 ruling is structurally correct — domain is the only layer importable by both components/ and infrastructure/. Trade-off acknowledged: presentation-adjacent types tolerated in domain when cross-layer sharing required.
-
-- Violation: ChatPanel.tsx had WHAT comment "Narrowed to ChatMessage (role: 'user' | 'model') past this point"
-- Rule: CONVENTIONS.md — comments only for WHY non-obvious; type narrowing behavior is self-evident from TypeScript
-- Context: Suggestion S2. Comment describes TypeScript narrowing behavior rather than explaining a WHY decision. Type system is the documentation; removed comment.
-
-- Violation: derivePageContextLabel.ts used 3 sequential if statements instead of object map for subpage lookup
-- Rule: CONVENTIONS.md Declarative Code — prefer data structures (map, lookup) over imperative conditionals
-- Context: Suggestion S3. Replaced if-else chain with SUBPAGE_LABEL record lookup + fallback to BASE_SYMBOL_LABEL.
-
-
-## [PR #413 R7 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: useNewsAugment.ts run() 함수가 submitNewsAnalysisAction 호출 전 상태를 'loading'으로 초기화하지 않아, 이전 symbol/modelId의 'done' 상태가 persist
-- Rule: MISTAKES.md Components 6.5 — State/function/documentation divergence
-- Context: Added `setState({ status: 'loading' })` at top of run() to reset state before async operation. Symbol/modelId change now properly clears prior result state.
-
-- Violation: todayKstIsoDate를 fundamentalData.ts와 newsData.ts에서 re-export하여 page.tsx 편의성을 위해 중간 계층 생성
-- Rule: Module boundaries — data modules should not re-export lib utilities; consumers import directly from source
-- Context: Removed todayKstIsoDate re-exports. pages now import directly from @/lib/dateKey, clarifying data module role.
-
 ## [PR #413 R8 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: SymbolTabsSkeleton.tsx nav element had both `aria-hidden="true"` and `aria-label="분석 종류"`
 - Rule: MISTAKES.md Accessibility 1.5 — aria-hidden removes element from a11y tree; aria-label on hidden element is meaningless
@@ -245,11 +147,6 @@
 - Rule: CLAUDE.md layer dependency — lib/ must contain external UI utility wrappers only; pure functions with side effects belong in infrastructure
 - Context: Moved lib/dateKey.ts → infrastructure/utils/dateKey.ts; updated 4 import sites (fundamental/page.tsx, news/page.tsx, submitOverallAnalysisAction.ts, submitNewsAnalysisAction.ts).
 
-## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: src/infrastructure/utils/dateKey.ts (added in R10) had no corresponding test file
-- Rule: MISTAKES.md Tests 12, 14 — All time-dependent utility functions must have test coverage including edge cases
-- Context: Created src/__tests__/infrastructure/utils/dateKey.test.ts with 3 cases: UTC midnight, late evening (date crossover), early morning paths via jest.spyOn(Date, 'now').
-
 ## [PR #413 R12 | feat/fundamental-news-analysis | 2026-05-03 — Deferred]
 - Question: Hooks importing infrastructure (useFundamentalAnalysis, useNewsAnalysis, useOverallAnalysis, useNewsAugment)
 - Rule: CLAUDE.md hook→infrastructure imports limited to queryFn/mutationFn or useActionState Server Action connection
@@ -260,32 +157,10 @@
 - Rule: MISTAKES.md #13 — eslint-disable suppresses lint warnings instead of fixing root cause; restructure code to eliminate the warning
 - Context: Partial React Query refactor reverted; poll/cooldown use async-IIFE patterns where setState happens inside callback, not synchronously in effect body. Pattern does not trigger rule because setState is wrapped in async callback scope.
 
-## [PR #413 R17 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: usePageContextLabel() hook (containing useMemo) was between useQuery group and useMutation in useChat.ts hook ordering
-- Rule: MISTAKES.md Components 17 — Hook order: useState/useRef → useQuery/useMutation → useCallback/useMemo → derived variables
-- Context: Moved after useMutation group, before useMemo calculations with explanatory comment.
-
-- Violation: NewsDisplayItem component name lacks clear semantic meaning for news object representation
-- Rule: MISTAKES.md Components 11 — Function/interface names become inaccurate after architectural changes
-- Context: Reviewed suggested renames (NewsPublicFields, NewsItemBase) but each has trade-offs without clear winner. Deferred for naming committee discussion (not blockers per blocker scope).
-
 ## [PR #413 R18 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: NewsDisplayItem.sentiment and .category were `string | null`, losing type safety
 - Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards; DB columns backed by domain enums must be cast at repository boundary
 - Context: Now typed `NewsSentiment | null` / `NewsCategory | null` from @y0ngha/siglens-core with trust model comment in toNewsRow: "DB는 sentiment/category를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다."
-
-## [PR #413 R19 | feat/fundamental-news-analysis | 2026-05-03]
-- Violation: SectorDirectionCard.tsx hardcoded literal "최근 30거래일 섹터 수익률" in JSX while using SPARKLINE_DAYS=30 constant
-- Rule: MISTAKES.md Coding Paradigm 15 — Magic number drifts from constant when literal also hardcoded elsewhere
-- Context: Replaced hardcoded literal with template string using constant: `최근 {SPARKLINE_DAYS}거래일 섹터 수익률`. Updated JSDoc to document JSX dependency.
-
-- Violation: FundamentalAiSummary.tsx used `CATEGORY_LABEL[a.category] ?? a.category` as fallback after total Record lookup
-- Rule: MISTAKES.md Predictability 2 — Dead code fallback when type system guarantees field presence
-- Context: CATEGORY_LABEL is a total Record<FundamentalCategory, string> — the ?? branch never runs. Removed fallback.
-
-- Violation: earningsCalendarRepository.ts defined unused listForRange(from, to) method and test cases
-- Rule: YAGNI — Infrastructure methods should land in PR that uses them, not pre-emptively
-- Context: Removed method (never called from production), dropped unused between import, makeSelectOrderByDb mock, and 2 test cases. Cron and per-symbol use cases already covered by upsertMany and getNextForSymbol.
 
 
 

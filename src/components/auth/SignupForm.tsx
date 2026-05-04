@@ -142,7 +142,8 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         로 인증 코드를 보냈어요.{' '}
                         <EmailEditButton onClick={onRestart} />
                     </p>
-                    {codeState.error?.code === 'redis_unavailable' ? (
+                    {codeState.error?.code === 'redis_unavailable' ||
+                    codeState.error?.code === 'email_already_exists' ? (
                         <AuthErrorAlert message={codeState.error.message} />
                     ) : null}
                     <AuthFieldGroup
@@ -154,7 +155,8 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         required
                         placeholder="6자리 코드"
                         error={
-                            codeState.error?.code !== 'redis_unavailable'
+                            codeState.error?.code !== 'redis_unavailable' &&
+                            codeState.error?.code !== 'email_already_exists'
                                 ? codeState.error?.message
                                 : undefined
                         }

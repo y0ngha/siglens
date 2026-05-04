@@ -17,6 +17,8 @@ import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
+import { createAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
+import { DEFAULT_SESSION_TTL_SECONDS } from '@/infrastructure/auth/sessionCookie';
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
@@ -78,6 +80,8 @@ export async function registerAction(
         };
     }
 
-    (await cookies()).set(applyAuthCookie(loginResult.cookie));
+    const cookieStore = await cookies();
+    cookieStore.set(applyAuthCookie(loginResult.cookie));
+    cookieStore.set(createAuthHintCookie({ maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS, secure: isSecureCookieEnv() }));
     redirect(next);
 }

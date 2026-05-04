@@ -25,12 +25,6 @@ export interface HeaderUserMenuUser {
 interface HeaderUserMenuProps {
     /** Current user; null when guest. Fetched server-side in Header. */
     readonly currentUser: HeaderUserMenuUser | null;
-    /**
-     * When true, renders a skeleton placeholder instead of login/signup buttons.
-     * Set by the Suspense fallback when a session cookie exists, signalling that
-     * the user is likely logged in while the DB lookup is still in flight.
-     */
-    readonly loading?: boolean;
 }
 
 function getInitial(user: HeaderUserMenuUser): string {
@@ -38,19 +32,10 @@ function getInitial(user: HeaderUserMenuUser): string {
     return source.charAt(0).toUpperCase();
 }
 
-export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
+export function HeaderUserMenu({ currentUser }: HeaderUserMenuProps) {
     const containerRef = useRef<HTMLDivElement>(null);
     const { isOpen, close, toggle } = usePopoverToggle(containerRef);
     useEscapeKey(close, isOpen);
-
-    if (loading) {
-        return (
-            <div
-                className="bg-secondary-800 size-10 animate-pulse rounded-full"
-                aria-hidden
-            />
-        );
-    }
 
     if (!currentUser) {
         return (

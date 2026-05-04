@@ -2,7 +2,6 @@ import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
 import { Suspense } from 'react';
 import Script from 'next/script';
-import { cookies } from 'next/headers';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Header } from '@/components/layout/Header';
 import type { HeaderUserMenuUser } from '@/components/layout/HeaderUserMenu';
@@ -10,7 +9,6 @@ import { SiteJsonLd } from '@/components/layout/SiteJsonLd';
 import { PwaBanner } from '@/components/pwa/PwaBanner';
 import { ReactQueryProvider } from '@/components/providers/ReactQueryProvider';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { AUTH_SESSION_COOKIE_NAME } from '@/infrastructure/auth/sessionCookie';
 import { ADSENSE_ENABLED } from '@/lib/adsense';
 import {
     ROOT_KEYWORDS,
@@ -105,10 +103,10 @@ interface RootLayoutProps {
 
 /**
  * DB 세션 조회를 Suspense 경계 안으로 격리해 navigation blocking을 방지한다.
- * fallback은 layout에서 cookies()로 읽은 세션 쿠키 존재 여부에 따라 결정된다:
- *   - 쿠키 있음 → 스켈레톤 원형(로그인 상태 힌트), DB 조회 완료 후 실제 프로필로 교체
- *   - 쿠키 없음 → 로그인/회원가입 버튼(이미 정답이므로 flash 없음)
- * cookies()는 요청 헤더 메모리 조회이므로 I/O가 없어 navigation을 block하지 않는다.
+ * fallback은 HeaderUserMenuFallback(클라이언트 컴포넌트)이 담당한다:
+ *   JS 하이드레이션 직후 document.cookie의 siglens_auth 힌트 쿠키를 읽어
+ *   비로그인 사용자에게는 즉시 로그인/회원가입 버튼을 표시하고,
+ *   로그인 사용자에게는 스켈레톤을 유지하다가 실제 프로필로 교체한다.
  */
 async function HeaderWithUser() {
     const authUser = await getCurrentUser();
@@ -122,10 +120,7 @@ async function HeaderWithUser() {
     return <Header currentUser={currentUser} />;
 }
 
-export default async function RootLayout({ children }: RootLayoutProps) {
-    const cookieStore = await cookies();
-    const hasSession = !!cookieStore.get(AUTH_SESSION_COOKIE_NAME)?.value;
-
+export default function RootLayout({ children }: RootLayoutProps) {
     return (
         <html
             lang="ko"
@@ -135,14 +130,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
                 <SiteJsonLd />
                 <ReactQueryProvider>
                     <PwaBanner />
-                    <Suspense
-                        fallback={
-                            <Header
-                                currentUser={null}
-                                loadingUserMenu={hasSession}
-                            />
-                        }
-                    >
+                    <Suspense fallback={<Header currentUser={null} fallback />}>
                         <HeaderWithUser />
                     </Suspense>
                     {children}

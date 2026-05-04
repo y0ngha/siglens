@@ -285,9 +285,14 @@ export default function PrivacyPage() {
                     title="6. 개인정보 처리의 위탁 및 국외 이전"
                 >
                     <p>
-                        운영자는 서비스 운영을 위해 다음과 같은 글로벌 인프라
-                        제공 업체의 서비스를 이용하고 있으며, 이에 따라 이용자의
-                        접속 정보 등 일부 정보가 국외로 이전될 수 있습니다.
+                        운영자는 서비스 운영을 위해 외부 인프라 및 API 서비스를
+                        이용하고 있습니다. 이 중 일부 업체에는 개인정보가
+                        이전되며, 나머지 업체에는 개인정보가 포함되지 않은
+                        서비스 파라미터만 전송됩니다.
+                    </p>
+
+                    <p className="mt-4 font-medium text-secondary-200">
+                        개인정보 처리 위탁 및 국외 이전 업체
                     </p>
                     <ul className="list-disc space-y-1.5 pl-5">
                         <li>
@@ -295,7 +300,56 @@ export default function PrivacyPage() {
                                 Vercel Inc.
                             </strong>
                             &nbsp;(미국): 웹 서비스 호스팅 및 서버리스 컴퓨팅
+                            — 서비스 접속에 따른 IP 주소 등 접속 정보가
+                            처리됩니다.
                         </li>
+                        <li>
+                            <strong className="text-secondary-200">
+                                Upstash, Inc.
+                            </strong>
+                            &nbsp;(미국): AI 질문 횟수 제한 (Redis) — IP
+                            주소를 SHA-256으로 해시 처리한 가명 식별자가
+                            저장되며, 24시간 후 자동 삭제됩니다.
+                        </li>
+                        <li>
+                            <strong className="text-secondary-200">
+                                Neon, Inc.
+                            </strong>
+                            &nbsp;(미국): 회원 계정·세션·등급 정보의 PostgreSQL
+                            데이터베이스 저장
+                        </li>
+                        <li>
+                            <strong className="text-secondary-200">
+                                Google LLC
+                            </strong>
+                            &nbsp;(미국): Google 계정으로 소셜 로그인을 선택한
+                            경우의 OAuth 인증 위탁 — 이메일·프로필 정보가
+                            처리됩니다.
+                        </li>
+                        <li>
+                            <strong className="text-secondary-200">
+                                Kakao Corp.
+                            </strong>
+                            &nbsp;(대한민국): 카카오 계정으로 소셜 로그인을
+                            선택한 경우의 OAuth 인증 위탁 — 이메일·프로필
+                            정보가 처리됩니다.
+                        </li>
+                    </ul>
+                    <p className="mt-2 text-sm text-secondary-400">
+                        운영자는 위 업체가 해당 정보를 서비스 제공 목적 외로
+                        사용하지 않도록 각 업체의 개인정보 보호 정책을 확인하고
+                        계약상 의무를 부과하고 있습니다.
+                    </p>
+
+                    <p className="mt-4 font-medium text-secondary-200">
+                        외부 API 연동 (개인정보 미이전)
+                    </p>
+                    <p>
+                        아래 업체에는 종목 티커·분석 파라미터 등 서비스 요청
+                        데이터만 전송되며, 이용자를 특정할 수 있는 개인정보는
+                        포함되지 않습니다.
+                    </p>
+                    <ul className="list-disc space-y-1.5 pl-5">
                         <li>
                             <strong className="text-secondary-200">
                                 Alpaca Securities LLC
@@ -314,42 +368,7 @@ export default function PrivacyPage() {
                             </strong>
                             &nbsp;(미국): AI 채팅 응답 생성 (Gemini API)
                         </li>
-                        <li>
-                            <strong className="text-secondary-200">
-                                Upstash, Inc.
-                            </strong>
-                            &nbsp;(미국): 분석 결과 캐시 및 AI 질문 횟수 제한
-                            (Redis)
-                        </li>
-                        <li>
-                            <strong className="text-secondary-200">
-                                Neon, Inc.
-                            </strong>
-                            &nbsp;(미국): 회원 계정·세션·등급 정보의 PostgreSQL
-                            데이터베이스 저장
-                        </li>
-                        <li>
-                            <strong className="text-secondary-200">
-                                Google LLC
-                            </strong>
-                            &nbsp;(미국): Google 계정으로 소셜 로그인을 선택한
-                            경우의 OAuth 인증 위탁
-                        </li>
-                        <li>
-                            <strong className="text-secondary-200">
-                                Kakao Corp.
-                            </strong>
-                            &nbsp;(대한민국): 카카오 계정으로 소셜 로그인을
-                            선택한 경우의 OAuth 인증 위탁
-                        </li>
                     </ul>
-                    <p>
-                        상기 업체로 이전되는 정보에는 이용자가 입력한 종목 티커,
-                        요청 일시, 서비스 접속에 따른 IP 주소 등이 포함될 수
-                        있으며, 운영자는 해당 정보가 서비스 제공 목적 외로
-                        사용되지 않도록 각 업체의 개인정보 보호 정책을 확인하고
-                        계약상 의무를 부과하고 있습니다.
-                    </p>
                 </PolicySection>
 
                 <PolicySection id="cookies" title="7. 쿠키 및 로컬 스토리지">

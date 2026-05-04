@@ -1,6 +1,5 @@
-import Link from 'next/link';
-import { CurrentYear } from '@/components/layout/CurrentYear';
 import { ContactDialog } from '@/components/layout/ContactDialog';
+import { CurrentYear } from '@/components/layout/CurrentYear';
 import { DotSeparator } from '@/components/ui/DotSeparator';
 import {
     INVESTMENT_DISCLAIMER,
@@ -9,6 +8,7 @@ import {
     TERMS_PATH,
     TERMS_TITLE,
 } from '@/lib/legal';
+import Link from 'next/link';
 
 export function Footer() {
     return (
@@ -47,7 +47,7 @@ export function Footer() {
                             triggerLabel="문의하기"
                             triggerClassName="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
                         />
-                        <DotSeparator />
+                        {/* <DotSeparator />
                         <a
                             href="https://github.com/y0ngha/siglens"
                             target="_blank"
@@ -56,7 +56,7 @@ export function Footer() {
                             className="text-secondary-500 hover:text-secondary-300 text-sm transition-colors"
                         >
                             GitHub에서 기여하기 →
-                        </a>
+                        </a> */}
                     </nav>
                 </div>
             </div>

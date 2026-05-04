@@ -11,6 +11,7 @@ import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
+import { createExpiredAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
 
 const NOT_AUTHENTICATED_MESSAGE = '로그인이 필요합니다.';
 const EMAIL_MISMATCH_MESSAGE =
@@ -57,6 +58,8 @@ export async function deleteAccountAction(
         };
     }
 
-    (await cookies()).set(applyAuthCookie(result.cookie));
+    const cookieStore = await cookies();
+    cookieStore.set(applyAuthCookie(result.cookie));
+    cookieStore.set(createExpiredAuthHintCookie({ secure: isSecureCookieEnv() }));
     redirect('/?account_deleted=1');
 }

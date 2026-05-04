@@ -11,6 +11,8 @@ import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
+import { createAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
+import { DEFAULT_SESSION_TTL_SECONDS } from '@/infrastructure/auth/sessionCookie';
 
 export async function loginAction(
     _prev: LoginFormState,
@@ -37,6 +39,8 @@ export async function loginAction(
         };
     }
 
-    (await cookies()).set(applyAuthCookie(result.cookie));
+    const cookieStore = await cookies();
+    cookieStore.set(applyAuthCookie(result.cookie));
+    cookieStore.set(createAuthHintCookie({ maxAgeSeconds: DEFAULT_SESSION_TTL_SECONDS, secure: isSecureCookieEnv() }));
     redirect(next);
 }

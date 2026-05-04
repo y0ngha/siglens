@@ -49,7 +49,8 @@ export type DeleteAccountErrorCode = 'user_not_found';
 /** Error code returned when email verification fails. */
 export type VerifyEmailErrorCode =
     | 'invalid_verification_code'
-    | 'expired_verification_code';
+    | 'expired_verification_code'
+    | 'email_already_exists';
 
 /** Error code returned when password reset confirmation fails. */
 export type ConfirmPasswordResetErrorCode =
