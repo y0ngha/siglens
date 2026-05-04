@@ -2,6 +2,7 @@ import {
     boolean,
     date,
     index,
+    integer,
     jsonb,
     numeric,
     pgEnum,
@@ -16,6 +17,7 @@ import {
 import {
     LLM_PROVIDER_VALUES,
     OAUTH_PROVIDER_VALUES,
+    TERMS_KIND_VALUES,
     USAGE_ACTION_TYPE_VALUES,
     USER_TIER_VALUES,
 } from '@/infrastructure/db/constants';
@@ -269,4 +271,65 @@ export const earningsReports = pgTable(
             .defaultNow(),
     },
     table => [primaryKey({ columns: [table.symbol, table.earningsDate] })]
+);
+
+/** Postgres enum for legal terms document kinds. */
+export const termsKindEnum = pgEnum('terms_kind', TERMS_KIND_VALUES);
+
+/** Versioned legal documents (privacy policy, terms of service).
+ *  Active version = WHERE kind = ? AND effective_date <= NOW()
+ *                   ORDER BY effective_date DESC LIMIT 1. */
+export const terms = pgTable(
+    'terms',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        kind: termsKindEnum('kind').notNull(),
+        version: integer('version').notNull(),
+        effectiveDate: timestamp('effective_date', {
+            withTimezone: true,
+        }).notNull(),
+        body: text('body').notNull(),
+        createdAt: timestamp('created_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+    },
+    table => [
+        uniqueIndex('terms_kind_version_uidx').on(table.kind, table.version),
+        index('terms_kind_effective_date_idx').on(
+            table.kind,
+            table.effectiveDate
+        ),
+    ]
+);
+
+/** User agreement records — one row per (user, terms) pair.
+ *  Mutable: `agreed` and `updatedAt` change if user revokes/re-grants
+ *  consent (future feature for optional terms). */
+export const agreements = pgTable(
+    'agreements',
+    {
+        id: uuid('id').primaryKey().defaultRandom(),
+        userId: uuid('user_id')
+            .notNull()
+            .references(() => users.id, { onDelete: 'cascade' }),
+        termsId: uuid('terms_id')
+            .notNull()
+            .references(() => terms.id, { onDelete: 'restrict' }),
+        agreed: boolean('agreed').notNull(),
+        agreedAt: timestamp('agreed_at', { withTimezone: true })
+            .notNull()
+            .defaultNow(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    },
+    table => [
+        uniqueIndex('agreements_user_terms_uidx').on(
+            table.userId,
+            table.termsId
+        ),
+        index('agreements_user_id_idx').on(table.userId),
+        index('agreements_terms_id_idx').on(table.termsId),
+    ]
 );
