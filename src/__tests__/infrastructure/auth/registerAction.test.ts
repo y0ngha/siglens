@@ -5,7 +5,10 @@ jest.mock('next/navigation', () => ({
     }),
 }));
 jest.mock('@/infrastructure/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+    getDatabaseClient: jest.fn(() => ({
+        db: { transaction: jest.fn() },
+        sql: () => null,
+    })),
     resetDatabaseClientForTests: jest.fn(),
 }));
 jest.mock('@/infrastructure/db/sessionRepository', () => ({
@@ -262,7 +265,16 @@ describe('registerAction', () => {
                 expect.objectContaining({
                     agreedTermsIds: ['terms-privacy-id', 'terms-tos-id'],
                 }),
-                expect.anything()
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
+                    }),
+                })
             );
         });
     });

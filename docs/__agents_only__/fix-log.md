@@ -1,5 +1,13 @@
 # Fix Log
 
+## [PR #420 Round 8 | master | 2026-05-05]
+- B1: `tryParse` catch 분기 미테스트 — `pendingOAuthSignupStore.test.ts`에 corrupted JSON 케이스 추가.
+  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
+- B2: `termsRepository.test.ts` mock row `effective_date`(snake_case) → `effectiveDate`(camelCase) 수정, `findActive` 성공 케이스에 `effectiveDate` 검증 추가.
+  - Rule: MISTAKES.md Tests §2 — mock 키가 실제 반환 타입과 일치해야 함
+- B3: `registerAction.test.ts` `expect.anything()` → `expect.objectContaining({ emailTokens, db })` 명시 검증. db mock에 `transaction` 함수 추가.
+  - Rule: 의존성 주입 검증 — db 인자 포함 여부 명시
+
 ## [PR #420 Round 7 | master | 2026-05-05]
 - B1/B2/B3: `isSecureCookieEnv()` 동일 함수 내 2회 중복 호출 — `finalizeOAuthSignupAction.ts`, `registerAction.ts`, `route.ts` 세 파일 모두 `const secure = isSecureCookieEnv()`로 추출 후 재사용.
   - Rule: MISTAKES.md §2 — 동일 함수 내 중복 호출 금지

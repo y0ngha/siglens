@@ -88,4 +88,14 @@ describe('PendingOAuthSignupStore', () => {
 
         expect(await sut.peek('nonexistent')).toBeNull();
     });
+
+    it('peek returns null for corrupted (non-JSON) stored value', async () => {
+        const { client } = makeRedis();
+        (client.get as jest.Mock).mockResolvedValueOnce('{{invalid-json}}');
+        const sut = createPendingOAuthSignupStore(client);
+
+        const result = await sut.peek('some-token');
+
+        expect(result).toBeNull();
+    });
 });

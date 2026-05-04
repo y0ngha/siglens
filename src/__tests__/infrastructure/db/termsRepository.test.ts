@@ -5,7 +5,7 @@ interface InsertedRow {
     id: string;
     kind: 'privacy' | 'tos';
     version: number;
-    effective_date: Date;
+    effectiveDate: Date;
     body: string;
 }
 
@@ -29,12 +29,13 @@ function makeMockDb(rows: InsertedRow[]): SiglensDatabase {
 describe('DrizzleTermsRepository', () => {
     describe('findActive', () => {
         it('returns the latest effective version for the given kind', async () => {
+            const effectiveDate = new Date('2026-04-30T00:00:00+09:00');
             const db = makeMockDb([
                 {
                     id: 't1',
                     kind: 'privacy',
                     version: 2,
-                    effective_date: new Date('2026-04-30T00:00:00+09:00'),
+                    effectiveDate,
                     body: '## v2 body',
                 },
             ]);
@@ -45,6 +46,7 @@ describe('DrizzleTermsRepository', () => {
             expect(result).not.toBeNull();
             expect(result?.kind).toBe('privacy');
             expect(result?.version).toBe(2);
+            expect(result?.effectiveDate).toEqual(effectiveDate);
         });
 
         it('returns null when no active version exists', async () => {
