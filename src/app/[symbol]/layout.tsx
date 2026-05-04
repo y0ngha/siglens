@@ -17,13 +17,9 @@ interface SymbolLayoutProps {
 // resolution even though `children` is composed inside the same boundary here.
 export default function SymbolLayout({ children, params }: SymbolLayoutProps) {
     return (
-        <>
-            <Suspense fallback={<SymbolHeaderShellFallback />}>
-                <SymbolLayoutChrome params={params}>
-                    {children}
-                </SymbolLayoutChrome>
-            </Suspense>
-        </>
+        <Suspense fallback={<SymbolHeaderShellFallback />}>
+            <SymbolLayoutChrome params={params}>{children}</SymbolLayoutChrome>
+        </Suspense>
     );
 }
 

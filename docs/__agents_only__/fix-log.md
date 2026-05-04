@@ -1,5 +1,18 @@
 # Fix Log
 
+## [PR #418 Round 3 | chore/pr-413-review-fixes | 2026-05-04]
+- Decision: 'multi-line JSDoc/comment 압축' Blocker 3건 (useNewsAugment, SymbolChatContext, SymbolLayoutClient) 모두 거부 — 사용자 판단으로 보존
+- Reason: PR #415 라운드에서 동일 정책(MISTAKES.md Documentation Sync 규칙 4)이 사용자에 의해 '과도하게 제한적'이라며 폐기됨. R3 reviewer가 근거로 인용한 'CLAUDE.md ─ Never write multi-paragraph docstrings...' 문구는 프로젝트 CLAUDE.md/CONVENTIONS.md/MISTAKES.md에는 존재하지 않으며 Claude Code 시스템 프롬프트(CLI 빌트인)의 문구임이 확인됨
+- Context: 3개 inline 코멘트(#3179627939, #3179630368, #3179630551)에 거부 사유 회신 게시. 향후 라운드에서도 동일 reviewer 권고가 재발할 수 있으므로 이 fix-log 항목을 oscillation 가드 근거로 사용
+
+- Suggestion accepted: layout.tsx의 단일 Suspense를 감싸던 불필요한 `<>...</>` 프래그먼트 제거
+- Rule: FF Readability 1-A — minimal syntactic noise
+- Context: SymbolLayout 함수 본문이 Suspense 하나만 반환하므로 fragment wrapper 불필요. 명확성 향상.
+
+- Suggestion rejected: FundamentalAiSummary/NewsAiSummary의 isAnalysisReady=true에 result 존재 여부 가드 추가 권고
+- Rule: FF Predictability — useSuspenseQuery는 로딩/에러 시 throw하므로 컴포넌트가 렌더되는 시점에 result는 항상 non-null. 반환 타입도 non-null로 좁혀져 있어 가드는 항상 true인 tautology
+- Context: OverallContent.tsx의 state.status === 'done' 가드는 useSuspenseQuery를 쓰지 않는 상태 머신 기반이라 다름. 패턴 비대칭이 아니라 의도된 차이
+
 ## [PR #418 Round 2 | chore/pr-413-review-fixes | 2026-05-04]
 - Violation: usePublishSymbolChat single useEffect re-runs both publish and clear on every state change → null flicker between transitions
 - Rule: FF Predictability 2-D — effects with distinct lifecycles (per-update publish vs unmount-only clear) should be split, not coalesced
@@ -145,10 +158,6 @@
 - Violation: newsRepository.ts imported NewsDisplayItem from @/lib/news/types (infrastructure importing lib)
 - Rule: CLAUDE.md Layer Dependency Rules — infrastructure ← domain only; infrastructure cannot import lib
 - Context: Blocker B1. NewsDisplayItem moved from src/lib/news/types.ts to src/domain/types.ts. Note: R18 reviewer originally said NewsDisplayItem should move OUT of domain (UI type purity); R20 reviewer said move BACK to domain (layer rule enforcement). R20 ruling is structurally correct — domain is the only layer importable by both components/ and infrastructure/. Trade-off acknowledged: presentation-adjacent types tolerated in domain when cross-layer sharing required.
-
-- Violation: httpClient.ts exported @internal JSDoc tag on non-exported FMP_FETCH_TIMEOUT_MS constant
-- Rule: MISTAKES.md Documentation Sync 3 — @internal on non-exported symbols is redundant (4th recurrence: R12, R17, R18, R20)
-- Context: Suggestion S1. FMP_FETCH_TIMEOUT_MS is non-exported (local to module), so @internal tag adds no semantic value. Removed.
 
 - Violation: ChatPanel.tsx had WHAT comment "Narrowed to ChatMessage (role: 'user' | 'model') past this point"
 - Rule: CONVENTIONS.md — comments only for WHY non-obvious; type narrowing behavior is self-evident from TypeScript

@@ -744,6 +744,16 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ Remove @internal; function is part of the public test interface
    → Applies to: infrastructure utilities, domain helpers used in tests
 
+4. @internal annotation on non-exported symbols (redundant) — recurring 4+ times
+   → @internal JSDoc tag is semantically redundant on non-exported (private) symbols
+   → Symbols not exported are already internal by definition; the tag adds no value
+   → Remove @internal from any symbol lacking export keyword
+   ❌ const FMP_FETCH_TIMEOUT_MS = 5000; // @internal tag when const is not exported
+   ✅ const FMP_FETCH_TIMEOUT_MS = 5000;  // private by definition, @internal unnecessary
+   ❌ // @internal
+      const INTERNAL_FLAG = true;  // missing export, tag redundant
+   ✅ const INTERNAL_FLAG = true;  // no @internal; unexported means internal
+
 5. Local enum mirror falls behind upstream `@y0ngha/siglens-core` union expansion — runtime data filtered out silently
    → Whenever you keep a local `readonly T[]` to validate `value is T` (e.g., `isSkillCategory`), the array must contain every member of the upstream union; siglens-core version bumps that add union members are a sync trigger.
    → This is not a TypeScript-detectable bug — `readonly SkillCategory[]` accepts a strict-subset literal silently. Discovery happens only when filtered data goes missing at runtime.
