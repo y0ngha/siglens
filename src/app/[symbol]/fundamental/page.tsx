@@ -188,9 +188,7 @@ export default async function FundamentalPage({ params }: Props) {
     // 않은 종목도 PER/ROE/애널리스트 컨센서스를 보여줄 수 있어야 한다. 따라서 news/overall과 달리
     // assetInfo null을 notFound()로 막지 않고 ticker fallback을 허용한다 (generateMetadata와 동일 패턴).
     const sector = profile.sector ?? '';
-    const displayName = assetInfo
-        ? buildDisplayName(assetInfo, upper)
-        : upper;
+    const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
     const { fullTitle, description, url } = buildSymbolFundamentalSeoContent(
         upper,
         {

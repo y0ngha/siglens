@@ -17,9 +17,7 @@ export async function generateSitemaps(): Promise<SitemapSegment[]> {
     return [{ id: 'static' }, { id: 'tickers' }];
 }
 
-export default function sitemap({
-    id,
-}: SitemapSegment): MetadataRoute.Sitemap {
+export default function sitemap({ id }: SitemapSegment): MetadataRoute.Sitemap {
     // Per-axis lastModified timestamps. These are signals to Google about
     // change frequency, not exact change times. We avoid per-ticker DB
     // lookups (would block sitemap generation on N queries) and instead

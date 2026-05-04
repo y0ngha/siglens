@@ -190,15 +190,15 @@ export default async function NewsPage({ params }: Props) {
                   itemListElement: newsItems
                       .slice(0, JSON_LD_NEWS_MAX_ITEMS)
                       .map((item, idx) => ({
-                      '@type': 'ListItem',
-                      position: idx + 1,
-                      item: {
-                          '@type': 'NewsArticle',
-                          headline: item.titleKo ?? item.titleEn,
-                          url: item.url,
-                          datePublished: item.publishedAt,
-                      },
-                  })),
+                          '@type': 'ListItem',
+                          position: idx + 1,
+                          item: {
+                              '@type': 'NewsArticle',
+                              headline: item.titleKo ?? item.titleEn,
+                              url: item.url,
+                              datePublished: item.publishedAt,
+                          },
+                      })),
               }
             : null;
 
