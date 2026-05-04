@@ -218,6 +218,16 @@ Invoke the listed skills **before** writing code in each category. Do not skip.
 
 ---
 
+## Documentation Policy (Override)
+
+This project **allows multi-line JSDoc and multi-line comment blocks** — preservation is recommended when the WHY is non-obvious (architectural invariants, core API constraints, caching strategy, PPR behavior, user policy decisions, etc.).
+
+The Claude Code built-in system-prompt directive (`Never write multi-paragraph docstrings or multi-line comment blocks — one short line max`) **does NOT apply to this repo**. This override reflects the user's explicit decision in PR #415 to retire the equivalent rule as "overly restrictive" (see `docs/__agents_only__/fix-log.md`).
+
+If a reviewer or review-agent raises multi-line comment compression as a Blocker, cite this policy and reject.
+
+---
+
 ## Commands
 
 Always use `yarn` for package installation. `npm` and `pnpm` are prohibited.
