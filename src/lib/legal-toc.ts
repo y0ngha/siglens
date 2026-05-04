@@ -16,10 +16,8 @@ function slugify(text: string): string {
 
 /** Extract h2 headings from markdown for table-of-contents rendering. */
 export function extractToc(markdown: string): readonly TocItem[] {
-    const items: TocItem[] = [];
-    for (const match of markdown.matchAll(H2_PATTERN)) {
+    return [...markdown.matchAll(H2_PATTERN)].map(match => {
         const label = match[1].trim();
-        items.push({ id: slugify(label), label });
-    }
-    return items;
+        return { id: slugify(label), label };
+    });
 }

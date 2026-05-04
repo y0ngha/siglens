@@ -6,8 +6,6 @@ import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pend
 import { SITE_NAME } from '@/lib/seo';
 import type { Metadata } from 'next';
 
-export const dynamic = 'force-dynamic';
-
 export const metadata: Metadata = {
     title: '소셜 로그인 가입 동의',
     description: `${SITE_NAME} 소셜 로그인 가입 약관 동의`,

@@ -175,17 +175,6 @@
 - Context: Component should import through a hook; hook file provides queryFn/mutationFn/useActionState connection point.
 
 
-## [Phase 7 OAuth Consent Flow | Spec compliance R1 | 2026-05-04]
-- Violation: finalizeOAuthSignupAction.ts catch block used oauth_email_conflict error code for all errors; incorrect error mapping
-- Rule: MISTAKES.md Coding Paradigm 0.7 — Server Actions must catch all paths and map errors correctly (not default all cases to one code)
-- Context: Distinct error conditions (validation failure, email conflict, unexpected error) must be mapped to distinct error codes.
-
-
-## [Phase 7 OAuth Consent Flow | Spec compliance R1 | 2026-05-04]
-- Violation: pendingOAuthSignupStore.ts cast JSON.parse result without comment explaining the guarantee
-- Rule: MISTAKES.md TypeScript 7 — Safe-cast `as` requires comment explaining why runtime type is guaranteed
-- Context: Parse output should include JSDoc comment documenting the guarantee (e.g., "form state validator ensures shape").
-
 
 ## [Phase 7 OAuth Consent Flow | Spec compliance R2 | 2026-05-04]
 - Violation: useCancelOAuthSignup.ts was a thin hook with no connection logic (no queryFn, no useActionState, pure pass-through)
@@ -202,9 +191,4 @@
 - Violation: route.ts cast comment inaccurate — stated narrowing was "isOAuthProvider narrows profile.provider" when actually narrowing URL param
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained
 - Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
-
-## [Phase 7 OAuth Consent Flow | Code quality R1 | 2026-05-04]
-- Violation: finalizeOAuthSignupAction.test.ts had critically incomplete branch coverage — only ~2 of ~10 branches tested
-- Rule: MISTAKES.md Tests 12 & Infrastructure Functions 2 — All Server Actions and infrastructure must have 100% branch coverage
-- Context: Missing test cases for: error conditions, validation failures, email conflict, edge cases, null/undefined guards.
 

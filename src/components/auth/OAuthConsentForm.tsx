@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import Image from 'next/image';
 import type { OAuthProvider, SupportedOAuthProvider } from '@/domain/types';
 import { ConsentCheckboxGroup } from '@/components/auth/ConsentCheckboxGroup';
 import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
 import { useFinalizeOAuthSignup } from '@/components/auth/hooks/useFinalizeOAuthSignup';
 import { useCancelOAuthSignup } from '@/components/auth/hooks/useCancelOAuthSignup';
+import { usePageShowReload } from '@/components/auth/hooks/usePageShowReload';
 
 interface OAuthConsentFormProps {
     token: string;
@@ -32,16 +33,7 @@ export function OAuthConsentForm({
     const [tosChecked, setTosChecked] = useState(false);
     const [finalizeState, finalizeFormAction] = useFinalizeOAuthSignup();
     const cancelFormAction = useCancelOAuthSignup();
-
-    useEffect(() => {
-        const handlePageShow = (event: PageTransitionEvent): void => {
-            if (event.persisted) {
-                window.location.reload();
-            }
-        };
-        window.addEventListener('pageshow', handlePageShow);
-        return () => window.removeEventListener('pageshow', handlePageShow);
-    }, []);
+    usePageShowReload();
 
     const consentError =
         finalizeState.error?.code === 'consent_required'

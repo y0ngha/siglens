@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { LegalPageShell } from '@/components/legal/LegalPageShell';
@@ -91,7 +92,7 @@ const topNotice = (
     </div>
 );
 
-export default async function TermsPage() {
+async function TermsContent() {
     const { db } = getDatabaseClient();
     const repo = new DrizzleTermsRepository(db);
     const terms = await repo.findActive('tos');
@@ -103,20 +104,28 @@ export default async function TermsPage() {
     const toc = extractToc(terms.body);
 
     return (
+        <LegalPageShell
+            breadcrumbTitle={TERMS_TITLE}
+            eyebrow="TERMS OF SERVICE"
+            title={TERMS_TITLE}
+            intro={`본 약관은 ${SITE_NAME}(이하 "운영자")이 제공하는 미국 주식 기술적 분석 웹 서비스의 이용 조건 및 운영자와 이용자 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다. 서비스를 이용하기 전에 본 약관을 주의 깊게 읽어 주시기 바랍니다.`}
+            effectiveDate={formatKoreanDate(terms.effectiveDate)}
+            toc={toc}
+            topNotice={topNotice}
+        >
+            <PolicyMarkdownBody markdown={terms.body} />
+        </LegalPageShell>
+    );
+}
+
+export default function TermsPage() {
+    return (
         <>
             <JsonLd data={JSON_LD} />
             <JsonLd data={BREADCRUMB_JSON_LD} />
-            <LegalPageShell
-                breadcrumbTitle={TERMS_TITLE}
-                eyebrow="TERMS OF SERVICE"
-                title={TERMS_TITLE}
-                intro={`본 약관은 ${SITE_NAME}(이하 "운영자")이 제공하는 미국 주식 기술적 분석 웹 서비스의 이용 조건 및 운영자와 이용자 간의 권리, 의무 및 책임 사항을 규정함을 목적으로 합니다. 서비스를 이용하기 전에 본 약관을 주의 깊게 읽어 주시기 바랍니다.`}
-                effectiveDate={formatKoreanDate(terms.effectiveDate)}
-                toc={toc}
-                topNotice={topNotice}
-            >
-                <PolicyMarkdownBody markdown={terms.body} />
-            </LegalPageShell>
+            <Suspense>
+                <TermsContent />
+            </Suspense>
         </>
     );
 }

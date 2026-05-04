@@ -45,23 +45,20 @@ function ExternalArrowIcon() {
     );
 }
 
-/**
- * Custom styled checkbox with support for the indeterminate state.
- * `indeterminate` is intentionally optional — ConsentRow omits it (not relevant
- * for individual consent items), while the master checkbox uses it to signal
- * "some but not all checked".
- */
+interface CheckboxBoxProps {
+    checked: boolean;
+    /** Omitted for individual consent items; used by the master checkbox to signal "some but not all checked". */
+    indeterminate?: boolean;
+    invalid: boolean;
+    inputProps: React.InputHTMLAttributes<HTMLInputElement>;
+}
+
 function CheckboxBox({
     checked,
     indeterminate,
     invalid,
     inputProps,
-}: {
-    checked: boolean;
-    indeterminate?: boolean;
-    invalid: boolean;
-    inputProps: React.InputHTMLAttributes<HTMLInputElement>;
-}) {
+}: CheckboxBoxProps) {
     const ref = useRef<HTMLInputElement | null>(null);
 
     useEffect(() => {

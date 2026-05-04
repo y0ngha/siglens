@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { PolicyMarkdownBody } from '@/components/legal/PolicyMarkdownBody';
 import { LegalPageShell } from '@/components/legal/LegalPageShell';
 import { JsonLd } from '@/components/ui/JsonLd';
@@ -93,7 +94,7 @@ const bottomNotice = (
     </div>
 );
 
-export default async function PrivacyPage() {
+async function PrivacyContent() {
     const { db } = getDatabaseClient();
     const repo = new DrizzleTermsRepository(db);
     const terms = await repo.findActive('privacy');
@@ -105,20 +106,28 @@ export default async function PrivacyPage() {
     const toc = extractToc(terms.body);
 
     return (
+        <LegalPageShell
+            breadcrumbTitle={PRIVACY_TITLE}
+            eyebrow="PRIVACY POLICY"
+            title={PRIVACY_TITLE}
+            intro={`${SITE_NAME}(이하 "운영자")는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 등 관련 법령을 준수하기 위하여 노력하고 있습니다. 운영자는 개인정보처리방침을 통하여 이용자가 제공하는 개인정보가 어떠한 용도와 방식으로 이용되고 있으며, 개인정보 보호를 위해 어떠한 조치가 취해지고 있는지 알려드립니다.`}
+            effectiveDate={formatKoreanDate(terms.effectiveDate)}
+            toc={toc}
+            bottomNotice={bottomNotice}
+        >
+            <PolicyMarkdownBody markdown={terms.body} />
+        </LegalPageShell>
+    );
+}
+
+export default function PrivacyPage() {
+    return (
         <>
             <JsonLd data={JSON_LD} />
             <JsonLd data={BREADCRUMB_JSON_LD} />
-            <LegalPageShell
-                breadcrumbTitle={PRIVACY_TITLE}
-                eyebrow="PRIVACY POLICY"
-                title={PRIVACY_TITLE}
-                intro={`${SITE_NAME}(이하 "운영자")는 이용자의 개인정보를 중요시하며, 「개인정보 보호법」 등 관련 법령을 준수하기 위하여 노력하고 있습니다. 운영자는 개인정보처리방침을 통하여 이용자가 제공하는 개인정보가 어떠한 용도와 방식으로 이용되고 있으며, 개인정보 보호를 위해 어떠한 조치가 취해지고 있는지 알려드립니다.`}
-                effectiveDate={formatKoreanDate(terms.effectiveDate)}
-                toc={toc}
-                bottomNotice={bottomNotice}
-            >
-                <PolicyMarkdownBody markdown={terms.body} />
-            </LegalPageShell>
+            <Suspense>
+                <PrivacyContent />
+            </Suspense>
         </>
     );
 }

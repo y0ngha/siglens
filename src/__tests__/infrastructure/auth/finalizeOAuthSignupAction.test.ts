@@ -2,7 +2,29 @@ jest.mock('@/infrastructure/auth/pendingOAuthSignupStore');
 jest.mock('@/infrastructure/db/termsRepository');
 jest.mock('@/infrastructure/db/userRepository');
 jest.mock('@/infrastructure/db/agreementRepository');
+jest.mock('@/infrastructure/db/sessionRepository');
 jest.mock('@/infrastructure/auth/db');
+jest.mock('@/infrastructure/auth/sessionCookie', () => ({
+    createAuthSession: jest.fn(),
+    DEFAULT_SESSION_TTL_SECONDS: 7776000,
+}));
+jest.mock('next/headers', () => ({
+    cookies: jest.fn(),
+}));
+jest.mock('@/infrastructure/auth/applyAuthCookie', () => ({
+    applyAuthCookie: jest.fn((c: unknown) => c),
+}));
+jest.mock('@/infrastructure/auth/authHintCookie', () => ({
+    createAuthHintCookie: jest.fn(() => ({ name: 'auth_hint', value: 'true' })),
+}));
+jest.mock('@/infrastructure/auth/sessionCookieOptions', () => ({
+    isSecureCookieEnv: jest.fn(() => false),
+}));
+jest.mock('@/domain/auth/redirect', () => ({
+    sanitizeNextPath: jest.fn((p: unknown) =>
+        typeof p === 'string' ? p : '/'
+    ),
+}));
 jest.mock('next/navigation', () => ({
     redirect: jest.fn().mockImplementation((url: string) => {
         throw Object.assign(new Error('NEXT_REDIRECT'), { url });
@@ -16,6 +38,8 @@ import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
+import { createAuthSession } from '@/infrastructure/auth/sessionCookie';
+import { cookies } from 'next/headers';
 
 const mockRedirect = redirect as unknown as jest.Mock;
 const mockCreateStore =
@@ -210,5 +234,21 @@ describe('finalizeOAuthSignupAction', () => {
     it('redirects to service_unavailable when DB transaction throws', async () => {
         setupMocks({ transactionThrows: true });
         await expectRedirectTo('/login?error=service_unavailable');
+    });
+
+    it('성공 시 세션 쿠키를 설정하고 next 경로로 리다이렉트', async () => {
+        setupMocks();
+        const mockCookieSet = jest.fn();
+        (cookies as jest.Mock).mockResolvedValue({ set: mockCookieSet });
+        (createAuthSession as jest.Mock).mockResolvedValue({
+            cookie: { name: 'session', value: 'test-session' },
+        });
+
+        await expectRedirectTo('/');
+
+        expect(createAuthSession as jest.Mock).toHaveBeenCalledWith(
+            expect.objectContaining({ userId: 'new-user-id' })
+        );
+        expect(mockCookieSet).toHaveBeenCalledTimes(2);
     });
 });

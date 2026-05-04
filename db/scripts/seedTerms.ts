@@ -57,11 +57,10 @@ export function validateSeedFiles(seeds: readonly ParsedSeed[]): void {
                 `duplicate seed for ${seed.kind} v${seed.version} (${seed.sourceFile})`
             );
         }
-        list.push(seed.version);
-        byKind.set(seed.kind, list);
+        byKind.set(seed.kind, [...list, seed.version]);
     }
     for (const [kind, versions] of byKind) {
-        const sorted = [...versions].sort((a, b) => a - b);
+        const sorted = versions.toSorted((a, b) => a - b);
         for (let i = 0; i < sorted.length; i += 1) {
             if (sorted[i] !== i + 1) {
                 throw new Error(
