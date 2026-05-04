@@ -16,14 +16,16 @@ import type { SignupFormState } from '@/domain/auth/formTypes';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
-import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
+import {
+    AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+    CONSENT_REQUIRED_MESSAGE,
+} from '@/infrastructure/auth/errorMessages';
 import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
 import { createAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
 import { DEFAULT_SESSION_TTL_SECONDS } from '@/infrastructure/auth/sessionCookie';
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
-const CONSENT_REQUIRED_MESSAGE = '개인정보처리방침과 이용약관에 동의해주세요.';
 
 export async function registerAction(
     _prev: SignupFormState,

@@ -2,3 +2,6 @@
 
 export const AUTH_SERVICE_UNAVAILABLE_MESSAGE =
     '서비스가 일시적으로 동작하지 않습니다. 잠시 후 다시 시도해주세요.';
+
+export const CONSENT_REQUIRED_MESSAGE =
+    '개인정보처리방침과 이용약관에 동의해주세요.';

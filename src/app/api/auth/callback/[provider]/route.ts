@@ -128,19 +128,24 @@ export async function GET(
         return redirectToLoginWithError(req, 'oauth_unknown');
     }
 
-    const token = await pendingStore.save({
-        // `provider` was already narrowed to SupportedOAuthProvider by isOAuthProvider() above.
-        provider,
-        email: profileResult.profile.email,
-        providerAccountId: profileResult.profile.providerAccountId,
-        name: profileResult.profile.name,
-        avatarUrl: profileResult.profile.avatarUrl,
-        accessToken: profileResult.profile.accessToken ?? '',
-        refreshToken: profileResult.profile.refreshToken,
-        tokenExpiresAt: profileResult.profile.tokenExpiresAt?.toISOString(),
-        next: stateResult.next,
-        createdAt: new Date().toISOString(),
-    });
+    let token: string;
+    try {
+        token = await pendingStore.save({
+            // `provider` was already narrowed to SupportedOAuthProvider by isOAuthProvider() above.
+            provider,
+            email: profileResult.profile.email,
+            providerAccountId: profileResult.profile.providerAccountId,
+            name: profileResult.profile.name,
+            avatarUrl: profileResult.profile.avatarUrl,
+            accessToken: profileResult.profile.accessToken ?? '',
+            refreshToken: profileResult.profile.refreshToken,
+            tokenExpiresAt: profileResult.profile.tokenExpiresAt?.toISOString(),
+            next: stateResult.next,
+            createdAt: new Date().toISOString(),
+        });
+    } catch {
+        return redirectToLoginWithError(req, 'oauth_unknown');
+    }
 
     const consentUrl = new URL('/signup/oauth/consent', req.url);
     consentUrl.searchParams.set('token', token);

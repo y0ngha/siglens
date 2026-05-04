@@ -18,10 +18,9 @@ import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 import { sanitizeNextPath } from '@/domain/auth/redirect';
 import type { FinalizeOAuthSignupState } from '@/domain/auth/formTypes';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
+import { CONSENT_REQUIRED_MESSAGE } from '@/infrastructure/auth/errorMessages';
 
 export type { FinalizeOAuthSignupState };
-
-const CONSENT_REQUIRED_MESSAGE = '개인정보처리방침과 이용약관에 동의해주세요.';
 
 export async function finalizeOAuthSignupAction(
     _prev: FinalizeOAuthSignupState,

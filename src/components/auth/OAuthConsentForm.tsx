@@ -7,7 +7,6 @@ import { ConsentCheckboxGroup } from '@/components/auth/ConsentCheckboxGroup';
 import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
 import { useFinalizeOAuthSignup } from '@/components/auth/hooks/useFinalizeOAuthSignup';
 import { usePageShowReload } from '@/components/auth/hooks/usePageShowReload';
-import type { cancelOAuthSignupAction } from '@/infrastructure/auth/cancelOAuthSignupAction';
 
 interface OAuthConsentFormProps {
     token: string;
@@ -15,7 +14,7 @@ interface OAuthConsentFormProps {
     email: string;
     name?: string;
     avatarUrl?: string;
-    cancelAction: typeof cancelOAuthSignupAction;
+    cancelAction: (formData: FormData) => Promise<void>;
 }
 
 const PROVIDER_LABEL: Partial<Record<OAuthProvider, string>> = {
