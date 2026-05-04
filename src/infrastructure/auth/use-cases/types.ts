@@ -18,6 +18,8 @@ import type {
     EmailMessage,
     EmailTokenStore,
 } from '@/infrastructure/email/tokenStore';
+import type { AgreementRepository } from '@/infrastructure/db/agreementRepository';
+import type { SiglensDatabase } from '@/infrastructure/db/types';
 import type {
     ConfirmPasswordResetError,
     ConfirmPasswordResetErrorCode,
@@ -45,6 +47,7 @@ export interface RegisterUserInput {
     password: string;
     name?: string;
     avatarUrl?: string;
+    agreedTermsIds: readonly string[];
 }
 
 export type RegisterUserResult =
@@ -55,6 +58,8 @@ export interface RegisterUserDependencies {
     users: UserRepository;
     passwordHasher: PasswordHasher;
     emailTokens: EmailTokenStore;
+    agreements: AgreementRepository;
+    db: Pick<SiglensDatabase, 'transaction'>;
 }
 
 export interface LoginUserInput {

@@ -28,7 +28,8 @@ export interface AuthUserRecord {
 export type RegisterUserErrorCode =
     | AuthValidationErrorCode
     | 'email_already_exists'
-    | 'email_not_verified';
+    | 'email_not_verified'
+    | 'invalid_input';
 
 /** Input field associated with a registration validation error. */
 export type RegisterUserErrorField = AuthValidationErrorField;
@@ -36,7 +37,7 @@ export type RegisterUserErrorField = AuthValidationErrorField;
 /** Structured validation/conflict error returned when registration fails. */
 export interface RegisterUserError {
     code: RegisterUserErrorCode;
-    field: RegisterUserErrorField;
+    field?: RegisterUserErrorField;
     message: string;
 }
 

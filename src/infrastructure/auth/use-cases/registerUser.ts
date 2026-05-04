@@ -19,6 +19,7 @@ const PURPOSE = 'email_verification' as const;
 const EMAIL_ALREADY_EXISTS_MESSAGE = '이미 사용 중인 이메일입니다.';
 const EMAIL_NOT_VERIFIED_MESSAGE =
     '이메일 인증을 완료해야 회원가입이 가능합니다.';
+const INVALID_INPUT_MESSAGE = '필수 동의 항목을 확인해주세요.';
 
 function emailAlreadyExistsError(): RegisterUserError {
     return {
@@ -41,6 +42,13 @@ export async function registerUser(
     input: RegisterUserInput,
     dependencies: RegisterUserDependencies
 ): Promise<RegisterUserResult> {
+    if (input.agreedTermsIds.length === 0) {
+        return {
+            ok: false,
+            error: { code: 'invalid_input', message: INVALID_INPUT_MESSAGE },
+        };
+    }
+
     const email = normalizeEmail(input.email);
     const emailError = validateEmail(email);
     if (emailError !== null) return { ok: false, error: emailError };
@@ -67,16 +75,29 @@ export async function registerUser(
     // remaining 30-minute TTL (otherwise an attacker who could read DB could
     // still treat the email as "already verified" until expiry).
     let user: AuthUserRecord | null = null;
+    const now = new Date();
     try {
         const passwordHash = await dependencies.passwordHasher.hashPassword(
             input.password
         );
-        user = await dependencies.users.createEmailUser({
-            email,
-            passwordHash,
-            name: input.name?.trim() || null,
-            avatarUrl: input.avatarUrl?.trim() || null,
-            emailVerified: true,
+        user = await dependencies.db.transaction(async () => {
+            const created = await dependencies.users.createEmailUser({
+                email,
+                passwordHash,
+                name: input.name?.trim() || null,
+                avatarUrl: input.avatarUrl?.trim() || null,
+                emailVerified: true,
+            });
+            if (created === null) return null;
+            await dependencies.agreements.insertMany(
+                input.agreedTermsIds.map(termsId => ({
+                    userId: created.id,
+                    termsId,
+                    agreed: true,
+                    agreedAt: now,
+                }))
+            );
+            return created;
         });
     } finally {
         await dependencies.emailTokens.delete(PURPOSE, email);

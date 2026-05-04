@@ -1,6 +1,8 @@
 'use server';
 
+import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
 import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 import {
     bcryptPasswordHasher,
@@ -22,6 +24,8 @@ import { DEFAULT_SESSION_TTL_SECONDS } from '@/infrastructure/auth/sessionCookie
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
+const CONSENT_REQUIRED_MESSAGE =
+    '개인정보처리방침과 이용약관에 동의해주세요.';
 
 export async function registerAction(
     _prev: SignupFormState,
@@ -32,6 +36,14 @@ export async function registerAction(
     const rawName = String(formData.get('name') ?? '').trim();
     const name = rawName ? rawName : undefined;
     const next = sanitizeNextPath(formData.get('next')?.toString());
+    const agreedPrivacy = formData.get('agreed_privacy');
+    const agreedTos = formData.get('agreed_tos');
+
+    if (agreedPrivacy !== 'true' || agreedTos !== 'true') {
+        return {
+            error: { code: 'consent_required', message: CONSENT_REQUIRED_MESSAGE },
+        };
+    }
 
     const emailTokens = createEmailTokenStore();
     if (!emailTokens) {
@@ -44,11 +56,32 @@ export async function registerAction(
     }
 
     const { db } = getAuthDatabaseClient();
+    const termsRepo = new DrizzleTermsRepository(db);
+    const [privacyTerms, tosTerms] = await Promise.all([
+        termsRepo.findActive('privacy'),
+        termsRepo.findActive('tos'),
+    ]);
+    if (!privacyTerms || !tosTerms) {
+        return {
+            error: {
+                code: 'service_unavailable',
+                message: AUTH_SERVICE_UNAVAILABLE_MESSAGE,
+            },
+        };
+    }
+
     const userRepo = new DrizzleUserRepository(db);
+    const agreementRepo = new DrizzleAgreementRepository(db);
 
     const registerResult = await registerUser(
-        { email, password, name },
-        { users: userRepo, passwordHasher: bcryptPasswordHasher, emailTokens }
+        { email, password, name, agreedTermsIds: [privacyTerms.id, tosTerms.id] },
+        {
+            users: userRepo,
+            passwordHasher: bcryptPasswordHasher,
+            emailTokens,
+            agreements: agreementRepo,
+            db,
+        }
     );
 
     if (!registerResult.ok) {

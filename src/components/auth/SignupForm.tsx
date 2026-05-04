@@ -8,6 +8,7 @@ import {
 import { useSignupForm } from '@/components/hooks/useSignupForm';
 import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
 import { AuthFieldGroup } from '@/components/auth/AuthFieldGroup';
+import { ConsentCheckboxGroup } from '@/components/auth/ConsentCheckboxGroup';
 import { PasswordField } from '@/components/auth/PasswordField';
 import { PasswordStrengthHint } from '@/components/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/components/auth/SubmitButton';
@@ -91,6 +92,8 @@ interface SignupFormFlowProps extends SignupFormProps {
 function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [privacyChecked, setPrivacyChecked] = useState(false);
+    const [tosChecked, setTosChecked] = useState(false);
     const hintId = useId();
 
     const [emailState, emailFormAction] = useRequestEmailVerification();
@@ -105,8 +108,12 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
         signupError?.field === 'email' ? signupError.message : undefined;
     const signupPasswordError =
         signupError?.field === 'password' ? signupError.message : undefined;
+    const consentErrorMessage =
+        signupError?.code === 'consent_required' ? signupError.message : undefined;
     const signupFormError =
-        signupError && !signupError.field ? signupError.message : null;
+        signupError && !signupError.field && signupError.code !== 'consent_required'
+            ? signupError.message
+            : null;
 
     return (
         <div className="space-y-4">
@@ -174,6 +181,16 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                     {next ? (
                         <input type="hidden" name="next" value={next} />
                     ) : null}
+                    <input
+                        type="hidden"
+                        name="agreed_privacy"
+                        value={privacyChecked ? 'true' : 'false'}
+                    />
+                    <input
+                        type="hidden"
+                        name="agreed_tos"
+                        value={tosChecked ? 'true' : 'false'}
+                    />
                     {signupFormError ? (
                         <AuthErrorAlert message={signupFormError} />
                     ) : null}
@@ -213,6 +230,13 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                                 descriptionId={hintId}
                             />
                         }
+                    />
+                    <ConsentCheckboxGroup
+                        privacyChecked={privacyChecked}
+                        tosChecked={tosChecked}
+                        onPrivacyChange={setPrivacyChecked}
+                        onTosChange={setTosChecked}
+                        error={consentErrorMessage}
                     />
                     <SubmitButton label="회원가입" pendingLabel="가입 중…" />
                 </form>

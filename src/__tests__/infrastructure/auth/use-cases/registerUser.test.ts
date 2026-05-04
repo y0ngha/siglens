@@ -33,6 +33,8 @@ function makeDependencies(options?: {
     hashPassword: ReturnType<typeof jest.fn>;
     getToken: ReturnType<typeof jest.fn>;
     deleteToken: ReturnType<typeof jest.fn>;
+    insertMany: ReturnType<typeof jest.fn>;
+    transaction: ReturnType<typeof jest.fn>;
 } {
     const findByEmail = jest
         .fn()
@@ -55,6 +57,12 @@ function makeDependencies(options?: {
         >()
         .mockResolvedValue(verificationState);
     const deleteToken = jest.fn().mockResolvedValue(undefined);
+    const insertMany = jest.fn().mockResolvedValue(undefined);
+    const transaction = jest
+        .fn()
+        .mockImplementation(
+            async (cb: (tx: unknown) => Promise<unknown>) => cb({})
+        );
 
     return {
         dependencies: {
@@ -72,22 +80,48 @@ function makeDependencies(options?: {
                 delete: deleteToken,
                 consume: jest.fn(),
             },
+            agreements: { insertMany },
+            db: { transaction },
         },
         findByEmail,
         createEmailUser,
         hashPassword,
         getToken,
         deleteToken,
+        insertMany,
+        transaction,
     };
 }
 
+const DEFAULT_INPUT = {
+    email: 'user@example.com',
+    password: 'Password1',
+    agreedTermsIds: ['terms-privacy-id', 'terms-tos-id'],
+} as const;
+
 describe('registerUser', () => {
+    it('rejects empty agreedTermsIds before any further processing', async () => {
+        const { dependencies, findByEmail, hashPassword, getToken } =
+            makeDependencies();
+
+        const result = await registerUser(
+            { ...DEFAULT_INPUT, agreedTermsIds: [] },
+            dependencies
+        );
+
+        expect(result.ok).toBe(false);
+        if (!result.ok) expect(result.error.code).toBe('invalid_input');
+        expect(findByEmail).not.toHaveBeenCalled();
+        expect(hashPassword).not.toHaveBeenCalled();
+        expect(getToken).not.toHaveBeenCalled();
+    });
+
     it('rejects invalid email before repository access', async () => {
         const { dependencies, findByEmail, hashPassword, getToken } =
             makeDependencies();
 
         const result = await registerUser(
-            { email: 'invalid-email', password: 'Password1' },
+            { ...DEFAULT_INPUT, email: 'invalid-email' },
             dependencies
         );
 
@@ -108,7 +142,7 @@ describe('registerUser', () => {
         const { dependencies, findByEmail } = makeDependencies();
 
         const result = await registerUser(
-            { email: 'user@example.com', password: 'short' },
+            { ...DEFAULT_INPUT, password: 'short' },
             dependencies
         );
 
@@ -122,10 +156,7 @@ describe('registerUser', () => {
             { verificationState: null }
         );
 
-        const result = await registerUser(
-            { email: 'user@example.com', password: 'Password1' },
-            dependencies
-        );
+        const result = await registerUser(DEFAULT_INPUT, dependencies);
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_not_verified');
@@ -138,10 +169,7 @@ describe('registerUser', () => {
             verificationState: { status: 'pending', tokenHash: 'hash' },
         });
 
-        const result = await registerUser(
-            { email: 'user@example.com', password: 'Password1' },
-            dependencies
-        );
+        const result = await registerUser(DEFAULT_INPUT, dependencies);
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_not_verified');
@@ -153,10 +181,7 @@ describe('registerUser', () => {
             existingUser: makeUser('user@example.com'),
         });
 
-        const result = await registerUser(
-            { email: 'user@example.com', password: 'Password1' },
-            dependencies
-        );
+        const result = await registerUser(DEFAULT_INPUT, dependencies);
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_already_exists');
@@ -168,10 +193,7 @@ describe('registerUser', () => {
             existingUser: makeUser('user@example.com'),
         });
 
-        const result = await registerUser(
-            { email: 'user@example.com', password: 'Password1' },
-            dependencies
-        );
+        const result = await registerUser(DEFAULT_INPUT, dependencies);
 
         expect(result.ok).toBe(false);
         // Marker MUST stay so the user doesn't have to re-verify.
@@ -185,10 +207,7 @@ describe('registerUser', () => {
         );
 
         await expect(
-            registerUser(
-                { email: 'user@example.com', password: 'Password1' },
-                dependencies
-            )
+            registerUser(DEFAULT_INPUT, dependencies)
         ).rejects.toThrow('database is on fire');
 
         // Even on failure, the marker MUST be cleared; otherwise it would linger
@@ -206,10 +225,7 @@ describe('registerUser', () => {
         ).mockRejectedValueOnce(new Error('hash failure'));
 
         await expect(
-            registerUser(
-                { email: 'user@example.com', password: 'Password1' },
-                dependencies
-            )
+            registerUser(DEFAULT_INPUT, dependencies)
         ).rejects.toThrow('hash failure');
 
         expect(deleteToken).toHaveBeenCalledWith(
@@ -221,13 +237,29 @@ describe('registerUser', () => {
     it('returns email_already_exists when createEmailUser races to a conflict', async () => {
         const { dependencies } = makeDependencies({ createdUser: null });
 
-        const result = await registerUser(
-            { email: 'user@example.com', password: 'Password1' },
-            dependencies
-        );
+        const result = await registerUser(DEFAULT_INPUT, dependencies);
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_already_exists');
+    });
+
+    it('inserts agreement rows for each agreedTermsId inside a transaction', async () => {
+        const { dependencies, insertMany, transaction } = makeDependencies();
+
+        const result = await registerUser(DEFAULT_INPUT, dependencies);
+
+        expect(result.ok).toBe(true);
+        expect(transaction).toHaveBeenCalledTimes(1);
+        expect(insertMany).toHaveBeenCalledWith([
+            expect.objectContaining({
+                termsId: 'terms-privacy-id',
+                agreed: true,
+            }),
+            expect.objectContaining({
+                termsId: 'terms-tos-id',
+                agreed: true,
+            }),
+        ]);
     });
 
     it('creates the user with emailVerified true and clears the Redis entry on success', async () => {
@@ -242,8 +274,8 @@ describe('registerUser', () => {
 
         const result = await registerUser(
             {
+                ...DEFAULT_INPUT,
                 email: ' User@Example.COM ',
-                password: 'Password1',
                 name: '  Ada  ',
                 avatarUrl: '  https://avatars.example.com/ada.png  ',
             },
@@ -275,8 +307,7 @@ describe('registerUser', () => {
 
         await registerUser(
             {
-                email: 'user@example.com',
-                password: 'Password1',
+                ...DEFAULT_INPUT,
                 name: '   ',
                 avatarUrl: '   ',
             },
