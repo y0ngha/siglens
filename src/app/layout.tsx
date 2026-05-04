@@ -1,6 +1,5 @@
 import type { Metadata, Viewport } from 'next';
 import type { ReactNode } from 'react';
-import { Suspense } from 'react';
 import Script from 'next/script';
 import { Geist, Geist_Mono } from 'next/font/google';
 import { Header } from '@/components/layout/Header';
@@ -101,7 +100,8 @@ interface RootLayoutProps {
     readonly children: ReactNode;
 }
 
-// 쿠키 → DB 조회를 Suspense 경계 안으로 격리해 Next.js 16 cacheComponents의 정적 prerender를 차단하지 않도록 함.
+// cookies() 호출이 이미 동적 렌더링을 트리거하므로, Suspense로 격리해도 PPR 이점이 없다.
+// 대신 DB 조회 완료 후 올바른 auth 상태로 HTML을 한 번에 전송해 header flash를 제거한다.
 async function HeaderWithUser() {
     const authUser = await getCurrentUser();
     const currentUser: HeaderUserMenuUser | null = authUser
@@ -124,9 +124,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
                 <SiteJsonLd />
                 <ReactQueryProvider>
                     <PwaBanner />
-                    <Suspense fallback={<Header currentUser={null} />}>
-                        <HeaderWithUser />
-                    </Suspense>
+                    <HeaderWithUser />
                     {children}
                 </ReactQueryProvider>
                 {ADSENSE_ENABLED && (
