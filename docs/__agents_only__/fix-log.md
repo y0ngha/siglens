@@ -1,5 +1,26 @@
 # Fix Log
 
+## [PR #417 Round 3 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: 신규 infrastructure 함수 `buildSymbolOgImage` (src/infrastructure/og/buildSymbolOgImage.tsx) 단위 테스트 부재
+- Rule: CONVENTIONS.md "infrastructure/ 100% (필수)" + MISTAKES.md Tests #12 — every new infra function must have a unit test file
+- Context: P3.3 → R2에서 OG 라우트 4개 중복을 제거하면서 새로 만든 공유 팩토리. R3 reviewer가 테스트 누락 지적. `next/og.ImageResponse`와 `loadKoreanFont`를 mock하여 fonts 옵션 분기 + size 옵션 검증 3개 케이스 추가.
+
+- Violation: 신규 infrastructure 함수 `loadKoreanFont` (src/infrastructure/og/loadKoreanFont.ts) 단위 테스트 부재
+- Rule: CONVENTIONS.md infrastructure/ 100%, MISTAKES.md Tests #12
+- Context: R1에서 lib/og.ts에서 infrastructure로 이동하면서 테스트를 추가하지 않았음. global.fetch mock으로 (a) 성공 (b) res.ok=false (c) fetch throw (d) arrayBuffer throw 4 분기 모두 커버.
+
+- Violation: fundamental/page.tsx generateMetadata와 page body 간 sector opt 비대칭 — `<meta description>`은 sector 없는 카피, JSON-LD WebPage description은 sector 보강 카피로 갈라짐
+- Rule: FF Predictability — 동일 의미의 메타 description이 두 갈래로 갈라지면 reviewer/Google 모두 혼란
+- Context: P2.4 의도된 비대칭(generateMetadata에서 getProfile 추가 fetch 회피). 의도 코멘트만 추가하여 향후 reviewer가 silent drift로 오인하지 않도록 명시.
+
+- Violation: backtesting/page.tsx 면책 고지가 `<aside>`로 감싸져 있어 ARIA `complementary` role이 적용 — 면책 고지는 보완 콘텐츠가 아니라 필수 법적 노트
+- Rule: ARIA semantics — `<aside>`는 제거해도 메인 콘텐츠 이해에 지장이 없는 보완 콘텐츠 전용
+- Context: P4.6에서 `<footer>` → `<aside>`(글로벌 Footer landmark 중복 회피) 변경. R1 reviewer가 footer 원복 권고 → 거절(글로벌 Footer 충돌). R3 reviewer가 `<div role="note" aria-label>` 옵션 제시. 두 우려 모두 해소되는 third path를 채택.
+
+- Violation: overall/page.tsx 인트로 `<section>`에 accessible name 없음 — 스크린 리더 랜드마크 탐색에서 generic으로 처리
+- Rule: ARIA — `<section>`은 aria-labelledby로 접근 가능 이름이 명시되어야 랜드마크로 인식
+- Context: P1.1에서 visible static SEO 콘텐츠 블록을 `<section>`으로 추가. 내부 `<h2>`에 id 부여하고 `<section aria-labelledby>`로 연결.
+
 ## [PR #417 Round 2 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: `Promise<{ id: SitemapId }[]>` inline object literal in return type of `generateSitemaps()`
 - Rule: MISTAKES.md TypeScript #5.5 — Function return types using inline object literals instead of named types

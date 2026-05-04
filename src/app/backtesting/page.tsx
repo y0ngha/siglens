@@ -116,13 +116,17 @@ export default function BacktestingPage() {
                         <BacktestTabs cases={data.cases} tickers={TICKERS} />
                     </Suspense>
                 </main>
-                <aside className="border-secondary-800 border-t px-6 py-4">
+                <div
+                    role="note"
+                    aria-label="투자 면책 고지"
+                    className="border-secondary-800 border-t px-6 py-4"
+                >
                     <p className="text-secondary-600 text-center text-[11px]">
                         * 본 결과는 과거 데이터 기반 백테스팅이며 미래 수익을
                         보장하지 않습니다. 투자 판단의 책임은 투자자 본인에게
                         있습니다.
                     </p>
-                </aside>
+                </div>
             </div>
         </>
     );

@@ -122,8 +122,14 @@ export default async function OverallPage({ params, searchParams }: Props) {
                 <h1 className="sr-only">
                     {displayName} 차트·실적·뉴스 종합 분석
                 </h1>
-                <section className="border-secondary-800 bg-secondary-800/30 space-y-3 rounded-lg border p-5">
-                    <h2 className="text-secondary-300 text-base font-semibold">
+                <section
+                    aria-labelledby="overall-guide-heading"
+                    className="border-secondary-800 bg-secondary-800/30 space-y-3 rounded-lg border p-5"
+                >
+                    <h2
+                        id="overall-guide-heading"
+                        className="text-secondary-300 text-base font-semibold"
+                    >
                         {displayName} 종합 분석은 어떻게 봐야 할까
                     </h2>
                     <p className="text-secondary-400 text-sm leading-relaxed">

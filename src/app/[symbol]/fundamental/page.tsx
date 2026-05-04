@@ -53,6 +53,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const upper = symbol.toUpperCase();
     const assetInfo = await getAssetInfoCached(upper);
     const displayName = assetInfo ? buildDisplayName(assetInfo, upper) : upper;
+    // sector는 의도적으로 generateMetadata에서 사용하지 않는다. sector는 FMP getProfile 응답에만 있고
+    // generateMetadata에서 별도 fetch하면 페이지 본문과 합쳐 round-trip이 두 배가 된다(SEO 메타에 sector 한 줄 더
+    // 넣는 비용이 비대칭으로 큼). 결과적으로 <meta description>은 sector 없는 base 카피, 페이지 본문 JSON-LD는
+    // sector 보강 카피라는 차이가 있지만, 두 description 모두 동일 함수에서 파생되므로 핵심 의미는 일치한다.
     const { title, fullTitle, description, url, keywords } =
         buildSymbolFundamentalSeoContent(upper, {
             displayName,
