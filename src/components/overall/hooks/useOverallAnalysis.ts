@@ -20,6 +20,8 @@ type OverallAnalysisState =
     | {
           status: 'pending_dependencies';
           pendingJobs: Record<OverallAxis, string | undefined>;
+          // 0 = 첫 진입, 1+ = polling 횟수. ETA 표시(`약 N초 남음`)에 사용.
+          retryCount: number;
       }
     | { status: 'submitting' | 'polling' }
     | { status: 'done'; result: OverallAnalysisResponse }
@@ -68,7 +70,11 @@ async function runOverallAnalysis(
     ctx: RunContext,
     dependencyRetryCount: number
 ): Promise<void> {
-    ctx.setState({ status: 'submitting' });
+    // 첫 호출에서만 submitting 스피너를 띄운다. retry는 `pending_dependencies` 스냅샷을
+    // 유지해 DependencyProgress가 깜빡이지 않도록 한다 (한 틱 동안 generic spinner로 전환되지 않음).
+    if (dependencyRetryCount === 0) {
+        ctx.setState({ status: 'submitting' });
+    }
 
     const submitted = await submitOverallAnalysisAction(
         ctx.symbol,
@@ -99,6 +105,7 @@ async function runOverallAnalysis(
         ctx.setState({
             status: 'pending_dependencies',
             pendingJobs: submitted.pendingJobs,
+            retryCount: dependencyRetryCount,
         });
         // Retry the full submit after a delay; core will re-check cache hits.
         const handle = setTimeout(() => {

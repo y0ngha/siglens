@@ -6,7 +6,7 @@ import {
     QueryClient,
 } from '@tanstack/react-query';
 import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
-import type { AnalysisResponse } from '@y0ngha/siglens-core';
+import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { getAssetInfoAction } from '@/infrastructure/ticker/getAssetInfoAction';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
@@ -22,22 +22,6 @@ import {
 import { buildDisplayName } from '@/domain/ticker';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/components/ui/JsonLd';
-
-const FALLBACK_ANALYSIS: AnalysisResponse = {
-    summary: 'AI 분석을 일시적으로 사용할 수 없습니다.',
-    trend: 'neutral',
-    indicatorResults: [],
-    riskLevel: 'medium',
-    keyLevels: { support: [], resistance: [] },
-    priceTargets: {
-        bullish: { targets: [], condition: '' },
-        bearish: { targets: [], condition: '' },
-    },
-    patternSummaries: [],
-    strategyResults: [],
-    candlePatterns: [],
-    trendlines: [],
-};
 
 interface Props {
     params: Promise<{ symbol: string }>;

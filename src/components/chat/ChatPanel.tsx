@@ -6,6 +6,7 @@ import { MarkdownText } from '@/components/ui/MarkdownText';
 import {
     VALID_CHAT_MODELS,
     type AnalysisResponse,
+    type CurrentAnalysisContext,
     type ModelId,
     type Timeframe,
 } from '@y0ngha/siglens-core';
@@ -65,7 +66,10 @@ const LOADING_MESSAGES = {
 interface ChatPanelProps {
     symbol: string;
     timeframe: Timeframe;
+    /** Chart's technical analysis (CHAT_NON_CHART_BASELINE_ANALYSIS on non-chart pages — core embeds this in the prompt). */
     analysis: AnalysisResponse;
+    /** Current page's analysis result tagged by kind (technical / fundamental / news / overall). */
+    currentAnalysisContext: CurrentAnalysisContext | null;
     isAnalysisReady: boolean;
     onClose?: () => void;
 }
@@ -74,6 +78,7 @@ export function ChatPanel({
     symbol,
     timeframe,
     analysis,
+    currentAnalysisContext,
     isAnalysisReady,
     onClose,
 }: ChatPanelProps) {
@@ -97,7 +102,13 @@ export function ChatPanel({
         handleModelChange,
         gateModal,
         dismissGate,
-    } = useChat({ symbol, timeframe, analysis, isAnalysisReady });
+    } = useChat({
+        symbol,
+        timeframe,
+        analysis,
+        currentAnalysisContext,
+        isAnalysisReady,
+    });
 
     const {
         inputValue,

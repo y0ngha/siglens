@@ -57,6 +57,7 @@ function renderPanel(overrides: Partial<{ onClose: () => void }> = {}) {
             symbol="AAPL"
             timeframe="1Day"
             analysis={MINIMAL_ANALYSIS}
+            currentAnalysisContext={null}
             isAnalysisReady={true}
             onClose={overrides.onClose}
         />
@@ -132,6 +133,7 @@ describe('ChatPanel', () => {
                     symbol="AAPL"
                     timeframe="1Day"
                     analysis={MINIMAL_ANALYSIS}
+                    currentAnalysisContext={null}
                     isAnalysisReady={false}
                 />
             );
@@ -144,6 +146,7 @@ describe('ChatPanel', () => {
                     symbol="AAPL"
                     timeframe="1Day"
                     analysis={MINIMAL_ANALYSIS}
+                    currentAnalysisContext={null}
                     isAnalysisReady={true}
                 />
             );
@@ -158,6 +161,7 @@ describe('ChatPanel', () => {
                     symbol="AAPL"
                     timeframe="1Day"
                     analysis={MINIMAL_ANALYSIS}
+                    currentAnalysisContext={null}
                     isAnalysisReady={false}
                 />
             );

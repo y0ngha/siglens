@@ -22,6 +22,7 @@ import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolNewsSeoContent,
+    buildSymbolSeoContent,
     OG_IMAGE_HEIGHT,
     OG_IMAGE_WIDTH,
     SITE_NAME,
@@ -118,8 +119,8 @@ export default async function NewsPage({ params }: Props) {
     );
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: `/${upper}` },
-        { name: '뉴스 분석', url: `/${upper}/news` },
+        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: '뉴스 분석', url: buildSymbolNewsSeoContent(upper).url },
     ]);
 
     return (

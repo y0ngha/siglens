@@ -1,10 +1,11 @@
 'use client';
 
-import { type CSSProperties } from 'react';
+import { type CSSProperties, useMemo } from 'react';
 import { cn } from '@/lib/cn';
 import { type Timeframe } from '@y0ngha/siglens-core';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
+import { usePublishSymbolChat } from '@/components/chat/SymbolChatContext';
 import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
 import { DependencyProgress } from '@/components/overall/DependencyProgress';
 import { OverallSummary } from '@/components/overall/sections/OverallSummary';
@@ -28,12 +29,42 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
     const modelId = useDefaultModelId();
     const { state, trigger } = useOverallAnalysis(symbol, timeframe, modelId);
 
+    // Publish the overall result to the chat context only when it's available.
+    // For non-done states we publish `null` so the chatbot doesn't reference
+    // partial/stale data (and the input stays disabled via isAnalysisReady).
+    // The hook is called unconditionally — only the `chatState.context` flips
+    // between the union and `null` based on status.
+    const chatState = useMemo(
+        () =>
+            state.status === 'done'
+                ? {
+                      context: {
+                          kind: 'overall',
+                          payload: state.result,
+                      } as const,
+                      timeframe,
+                      isAnalysisReady: true,
+                  }
+                : {
+                      context: null,
+                      timeframe,
+                      isAnalysisReady: false,
+                  },
+        [state, timeframe]
+    );
+    usePublishSymbolChat(chatState);
+
     if (state.status === 'idle') {
         return <OverallTriggerCta onTrigger={trigger} />;
     }
 
     if (state.status === 'pending_dependencies') {
-        return <DependencyProgress pendingJobs={state.pendingJobs} />;
+        return (
+            <DependencyProgress
+                pendingJobs={state.pendingJobs}
+                retryCount={state.retryCount}
+            />
+        );
     }
 
     if (state.status === 'submitting' || state.status === 'polling') {

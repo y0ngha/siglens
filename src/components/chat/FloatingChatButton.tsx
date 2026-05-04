@@ -2,12 +2,17 @@
 
 import { ChatPanel } from '@/components/chat/ChatPanel';
 import { useChatButtonState } from '@/components/chat/hooks/useChatButtonState';
-import type { AnalysisResponse, Timeframe } from '@y0ngha/siglens-core';
+import type {
+    AnalysisResponse,
+    CurrentAnalysisContext,
+    Timeframe,
+} from '@y0ngha/siglens-core';
 
 interface FloatingChatButtonProps {
     symbol: string;
     timeframe: Timeframe;
     analysis: AnalysisResponse;
+    currentAnalysisContext: CurrentAnalysisContext | null;
     isAnalysisReady: boolean;
 }
 
@@ -15,6 +20,7 @@ export function FloatingChatButton({
     symbol,
     timeframe,
     analysis,
+    currentAnalysisContext,
     isAnalysisReady,
 }: FloatingChatButtonProps) {
     const {
@@ -33,6 +39,7 @@ export function FloatingChatButton({
                         symbol={symbol}
                         timeframe={timeframe}
                         analysis={analysis}
+                        currentAnalysisContext={currentAnalysisContext}
                         isAnalysisReady={isAnalysisReady}
                         onClose={handleClose}
                     />

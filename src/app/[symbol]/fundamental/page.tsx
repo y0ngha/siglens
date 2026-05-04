@@ -36,6 +36,7 @@ import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,
+    buildSymbolSeoContent,
     OG_IMAGE_HEIGHT,
     OG_IMAGE_WIDTH,
     SITE_NAME,
@@ -184,8 +185,11 @@ export default async function FundamentalPage({ params }: Props) {
     const sector = profile.sector ?? '';
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: `/${upper}` },
-        { name: '펀더멘털 분석', url: `/${upper}/fundamental` },
+        { name: upper, url: buildSymbolSeoContent(upper).url },
+        {
+            name: '펀더멘털 분석',
+            url: buildSymbolFundamentalSeoContent(upper).url,
+        },
     ]);
 
     return (

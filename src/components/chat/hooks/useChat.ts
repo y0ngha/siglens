@@ -15,6 +15,7 @@ import {
     type ChatErrorCode,
     type ChatLoadingPhase,
     type ChatMessage,
+    type CurrentAnalysisContext,
     type ModelId,
     type Timeframe,
     type LlmProvider,
@@ -89,7 +90,24 @@ function resolveAiContent(result: ChatActionResult): string {
 export interface UseChatOptions {
     symbol: string;
     timeframe: Timeframe;
+    /**
+     * Chart's technical AnalysisResponse. Required because core's
+     * `buildChatPrompt` mandates an `analysis` parameter and unconditionally
+     * embeds it as the primary "=== ANALYSIS DATA ===" block in the system
+     * prompt. On non-chart pages the caller passes
+     * `CHAT_NON_CHART_BASELINE_ANALYSIS` (a stub whose `summary` redirects the
+     * LLM to the `## Current analysis context` section), while
+     * `currentAnalysisContext` carries the actual page payload.
+     */
     analysis: AnalysisResponse;
+    /**
+     * Tagged union describing the analysis result on the user's current page
+     * (technical / fundamental / news / overall). Forwarded as-is to core's
+     * optional `currentAnalysisContext` so the system prompt receives a
+     * `## Current analysis context` block with the matching live numbers.
+     * `null` when no page-level analysis is yet available.
+     */
+    currentAnalysisContext: CurrentAnalysisContext | null;
     isAnalysisReady: boolean;
 }
 
@@ -116,6 +134,7 @@ export function useChat({
     symbol,
     timeframe,
     analysis,
+    currentAnalysisContext,
     isAnalysisReady,
 }: UseChatOptions): UseChatReturn {
     const [messages, setMessages] = useState<DisplayMessage[]>([]);
@@ -133,7 +152,17 @@ export function useChat({
     const prevAnalysisRef = useRef<AnalysisResponse | null>(null);
     // null on mount — used to skip the initial effect run in the key-change effect
     const prevKeyRef = useRef<string | null>(null);
-    // null on mount — used to skip emitting a context-switch system message on initial render
+    // null on mount — used to skip emitting a context-switch system message on initial render.
+    // KNOWN LIMITATION (Task 5 → follow-up / Task 6 domain):
+    //   This ref only tracks transitions while `useChat` is mounted. `useChat` lives inside
+    //   `ChatPanel`, which is mounted only when the panel is open (isOpen=true). If the user
+    //   navigates between symbol pages while the chat panel is closed, `useChat` is unmounted
+    //   for the entire transition; on next open `previousLabelRef` is null again and the
+    //   first-mount guard suppresses the context-switch system message that would have
+    //   announced the symbol/timeframe change. The transition message is silently lost.
+    //   This is still strictly better than the pre-PR-413 behavior (where `useChat` was
+    //   remounted on every navigation regardless of panel state). A proper fix likely
+    //   requires hoisting context-switch detection above ChatPanel — see Task 6.
     const previousLabelRef = useRef<string | null>(null);
     // latest-value refs: let sendMessage read current values without being in its dep array
     const messagesRef = useRef(messages);
@@ -182,7 +211,8 @@ export function useChat({
                 analysis,
                 currentMessages,
                 text,
-                selectedModel
+                selectedModel,
+                currentAnalysisContext
             ),
         onMutate: ({ currentMessages, text }) => {
             const userMessage: ChatMessage = { role: 'user', content: text };
@@ -340,6 +370,8 @@ export function useChat({
     // 분석이 더 최신이고 기존 채팅 내역이 있으면 배너를 표시한다.
     // — 1) 새로고침 후 첫 분석 완료 (page-refresh path)
     // — 2) 페이지 열린 상태에서 재분석으로 analysis 교체된 경우 (live re-analysis path)
+    // 비차트 페이지에서는 `analysis`가 모듈 상수(`CHAT_NON_CHART_BASELINE_ANALYSIS`)로
+    // 고정되어 `prev !== analysis`가 절대 true가 되지 않으므로 배너는 자연스럽게 비활성.
     useEffect(() => {
         const prev = prevAnalysisRef.current;
         prevAnalysisRef.current = analysis;

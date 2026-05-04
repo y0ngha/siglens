@@ -1,9 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
+import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import { ErrorBoundary } from 'react-error-boundary';
 import {
     getAllowedModels,
     type AnalysisResponse,
@@ -30,7 +29,7 @@ import type { AnalysisStatus } from '@/components/symbol-page/utils/analysisStat
 import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus';
 import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
-import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
+import { usePublishSymbolChat } from '@/components/chat/SymbolChatContext';
 import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 import { NewsAugment } from '@/components/symbol-page/NewsAugment';
@@ -202,11 +201,7 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
-                <ErrorBoundary fallback={null}>
-                    <Suspense fallback={null}>
-                        <NewsAugment symbol={symbol} />
-                    </Suspense>
-                </ErrorBoundary>
+                <NewsAugment symbol={symbol} />
             </>
         ),
         [
@@ -248,6 +243,20 @@ export function ChartContent({
             window.dispatchEvent(new CustomEvent(PWA_TRIGGER_EVENT));
         }
     }, [analysisResult]);
+
+    // Publish chart state to the layout-mounted FloatingChatButton so it survives
+    // navigation between the 4 symbol pages. Layout owns the button; we only feed it.
+    // Memoize the published object so usePublishSymbolChat's effect re-runs only when
+    // one of the three values actually changes, not on every ChartContent render.
+    const chatState = useMemo(
+        () => ({
+            context: { kind: 'technical', payload: analysis } as const,
+            timeframe,
+            isAnalysisReady: !displayAnalyzing,
+        }),
+        [analysis, timeframe, displayAnalyzing]
+    );
+    usePublishSymbolChat(chatState);
 
     return (
         <div className="flex h-full w-full flex-col md:flex-row">
@@ -317,12 +326,6 @@ export function ChartContent({
             >
                 {analysisContent}
             </aside>
-            <FloatingChatButton
-                symbol={symbol}
-                timeframe={timeframe}
-                analysis={analysis}
-                isAnalysisReady={!displayAnalyzing}
-            />
 
             {/* 드래그 중 전체 화면 오버레이 — 텍스트 선택 방지 */}
             {isDragging && (

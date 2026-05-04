@@ -36,8 +36,10 @@ export const QUERY_KEYS = {
     registeredProviders: () => ['llm', 'registered-providers'] as const,
     fundamentalAnalysis: (symbol: string, modelId: ModelId) =>
         ['fundamental-analysis', symbol, modelId] as const,
+    // News augment (chart page) and news analysis (news page) share this key so
+    // a single React Query entry serves both pages within a session — preventing
+    // a duplicate fetch when the user navigates between /AAPL and /AAPL/news.
+    // Augment consumers may use `select` to project to a narrower shape.
     newsAnalysis: (symbol: string, modelId: ModelId) =>
         ['news-analysis', symbol, modelId] as const,
-    newsAugment: (symbol: string, modelId: ModelId) =>
-        ['news-augment', symbol, modelId] as const,
 } as const;

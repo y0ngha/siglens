@@ -1,4 +1,9 @@
 import type { OverallAxis } from '@y0ngha/siglens-core';
+import {
+    AUGMENT_AND_OVERALL_POLL_INTERVAL_MS,
+    MAX_DEPENDENCY_RETRIES,
+} from '@/lib/pollingConfig';
+import { MS_PER_SECOND } from '@/domain/constants/time';
 
 const AXIS_LABEL: Record<OverallAxis, string> = {
     technical: '기술적 분석',
@@ -10,13 +15,26 @@ const AXIS_ORDER: readonly OverallAxis[] = ['technical', 'fundamental', 'news'];
 
 interface DependencyProgressProps {
     pendingJobs: Record<OverallAxis, string | undefined>;
+    // 의존성 polling 누적 횟수. 0이면 첫 진입(아직 한 번도 retry 안 함).
+    retryCount: number;
 }
 
-export function DependencyProgress({ pendingJobs }: DependencyProgressProps) {
+export function DependencyProgress({
+    pendingJobs,
+    retryCount,
+}: DependencyProgressProps) {
     const completed = AXIS_ORDER.filter(
         axis => pendingJobs[axis] === undefined
     ).length;
     const total = AXIS_ORDER.length;
+    const remainingRetries = Math.max(
+        0,
+        MAX_DEPENDENCY_RETRIES - retryCount
+    );
+    const remainingSeconds = Math.round(
+        (remainingRetries * AUGMENT_AND_OVERALL_POLL_INTERVAL_MS) /
+            MS_PER_SECOND
+    );
 
     return (
         <section
@@ -30,12 +48,15 @@ export function DependencyProgress({ pendingJobs }: DependencyProgressProps) {
             >
                 의존성 분석 진행 중 ({completed}/{total})
             </h2>
+            <p className="text-secondary-400 mt-1 text-sm">
+                3개 축 분석이 완료되면 종합 분석을 생성합니다…
+            </p>
             <p
                 className="text-secondary-400 mt-1 text-sm"
                 aria-live="polite"
                 aria-atomic="true"
             >
-                3개 축 분석이 완료되면 종합 분석을 생성합니다…
+                {remainingSeconds > 0 ? `약 ${remainingSeconds}초 남음` : ''}
             </p>
             <ul aria-label="축별 진행 상태" className="mt-4 space-y-3">
                 {AXIS_ORDER.map(axis => {

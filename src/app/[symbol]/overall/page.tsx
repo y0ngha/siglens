@@ -12,6 +12,7 @@ import { JsonLd } from '@/components/ui/JsonLd';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolOverallSeoContent,
+    buildSymbolSeoContent,
     OG_IMAGE_HEIGHT,
     OG_IMAGE_WIDTH,
     SITE_NAME,
@@ -75,8 +76,8 @@ export default async function OverallPage({ params, searchParams }: Props) {
     const timeframe: Timeframe = isValidTimeframe(tf) ? tf : DEFAULT_TIMEFRAME;
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
-        { name: upper, url: `/${upper}` },
-        { name: 'AI 종합 분석', url: `/${upper}/overall` },
+        { name: upper, url: buildSymbolSeoContent(upper).url },
+        { name: 'AI 종합 분석', url: buildSymbolOverallSeoContent(upper).url },
     ]);
 
     return (
