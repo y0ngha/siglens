@@ -267,7 +267,6 @@ describe('registerAction', () => {
                 })
             );
         });
-
     });
 
     describe('약관 ID 전달', () => {
