@@ -21,8 +21,8 @@ export interface AuthValidationError {
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;
-const INVALID_EMAIL_MESSAGE = 'Email format is invalid';
-const WEAK_PASSWORD_MESSAGE = `Password must be at least ${MIN_PASSWORD_LENGTH} characters and include letters and numbers`;
+const INVALID_EMAIL_MESSAGE = '올바른 이메일 형식이 아닙니다.';
+const WEAK_PASSWORD_MESSAGE = `비밀번호는 ${MIN_PASSWORD_LENGTH}자 이상이며 영문자와 숫자를 포함해야 합니다.`;
 
 /** @internal Normalizes an email address for consistent storage and lookup. */
 export function normalizeEmail(email: string): string {

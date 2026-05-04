@@ -28,6 +28,10 @@ export interface ForgotPasswordFormState {
 
 export type LocalInfraErrorCode = 'redis_unavailable';
 
+export type RequestEmailVerificationErrorCode =
+    | LocalInfraErrorCode
+    | 'invalid_email';
+
 export interface SignupFormState {
     error: {
         code: RegisterUserErrorCode | 'auto_login_failed' | LocalInfraErrorCode;
@@ -46,7 +50,7 @@ export interface ResetPasswordFormState {
 
 export interface RequestEmailVerificationFormState {
     submitted: boolean;
-    error: { code: LocalInfraErrorCode; message: string } | null;
+    error: { code: RequestEmailVerificationErrorCode; message: string } | null;
 }
 
 export interface VerifyEmailFormState {

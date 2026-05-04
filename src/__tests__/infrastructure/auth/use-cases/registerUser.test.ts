@@ -96,7 +96,7 @@ describe('registerUser', () => {
             error: {
                 code: 'invalid_email',
                 field: 'email',
-                message: 'Email format is invalid',
+                message: '올바른 이메일 형식이 아닙니다.',
             },
         });
         expect(findByEmail).not.toHaveBeenCalled();
