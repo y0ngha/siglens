@@ -34,7 +34,17 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    ✅ className="text-ui-danger"  // UI semantic token
    ✅ className="bg-brand-kakao"  // brand token registered in tailwind.config.ts
 
-0. Concurrent fetch without respecting provider rate limits
+0.7. Server Actions throwing uncaught exceptions instead of returning typed error results
+   → Server Actions must never propagate exceptions to the client; all throw paths must be caught
+   → Wrap entire action body in try-catch and return a consistent error shape (e.g., { ok: false, error: 'server_error' })
+   → Applies to all Server Actions (sync, async, file-backed, or calling external APIs)
+   → Unexpected throws (DB failure, API timeout, unhandled edge cases) propagate as 500 errors and break the client
+   ❌ export async function chatAction(input): Promise<ChatResult> { return getProviderForModel(model); }  // getProviderForModel may throw on unknown modelId
+   ❌ async function submitAnalysisAction(params) { return db.query(...); }  // DB failure throws uncaught to client
+   ✅ export async function chatAction(input): Promise<ChatResult | { ok: false; error: string }> { try { return getProviderForModel(model); } catch (e) { return { ok: false, error: 'server_error' }; } }
+   ✅ async function submitAnalysisAction(params): Promise<AnalysisResult> { try { return db.query(...); } catch (e) { return { status: 'error', axis: 'technical', error: e }; } }
+
+0.8. Concurrent fetch without respecting provider rate limits
    → Always use fetchInChunks or sequential await for multiple API calls
    → Never use Promise.all/Promise.allSettled when calls exceed FETCH_CONCURRENCY threshold
    → Rate limits: FMP=250/min, Alpaca=various, Gemini=API-tier dependent
