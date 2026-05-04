@@ -290,6 +290,14 @@
 - Context: Must guarantee createdUserId is assigned before return in all code paths.
 
 
+## [PR #420 Round 17 | master | 2026-05-05]
+- B1: `src/__tests__/app/api/auth/callback/route.test.ts` — `pendingStore === null` branch (Redis unconfigured path) was not tested. Added `describe('pendingStore 미설정')` with test verifying `oauth_unknown` redirect when `createPendingOAuthSignupStoreFromEnv` returns null.
+  - Rule: MISTAKES.md §22 — 100% branch coverage
+- B2: `src/__tests__/infrastructure/auth/use-cases/registerUser.test.ts` — `created === null` branch inside the transaction was not explicitly tested. Added `'clears the verified marker even when createEmailUser returns null (tx null branch)'` test, verifying that the `finally` block clears the email token even in the null-return code path.
+  - Rule: MISTAKES.md §22 — 100% branch coverage
+- S1: `src/__tests__/app/api/auth/callback/route.test.ts` — Removed 5 WHAT-comment section headers (`// Module mocks`, `// Imports (after mocks)`, `// Typed mocks`, `// Fixtures`, `// Tests`).
+  - Rule: MISTAKES.md §15.4 — comments should explain WHY, not WHAT
+
 ## [PR #420 Round 16 | master | 2026-05-05]
 - B1: `src/infrastructure/auth/use-cases/types.ts` — 6 dead `SocialLoginUser*` type definitions were left after `socialLoginUser.ts` was deleted. Removed `SocialLoginUserErrorCode`, `SocialLoginUserInput`, `SocialLoginUserError`, `SocialLoginUserDependencies`, `SocialLoginUserOptions`, `SocialLoginUserResult`, and their unused imports (`OAuthProvider`, `OAuthUserRepository`).
   - Rule: MISTAKES.md §4 — Remove logic/code that has no effect
