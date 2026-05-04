@@ -58,6 +58,11 @@ describe('ChatPanel', () => {
         Element.prototype.scrollIntoView = jest.fn();
     });
 
+    beforeEach(() => {
+        // 모듈 스코프 mock state는 테스트 간 순서 의존성을 만들 수 있으므로 명시적 초기화.
+        mockIsAnalysisReady = true;
+    });
+
     describe('PR #407 mobile-input regression guards', () => {
         it('outermost wrapper carries overflow-hidden + rounded-xl (the moved classes)', () => {
             const { container } = renderPanel();

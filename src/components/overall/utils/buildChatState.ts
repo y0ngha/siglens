@@ -1,5 +1,5 @@
 import { type Timeframe } from '@y0ngha/siglens-core';
-import { type OverallAnalysisState } from '@/components/overall/hooks/useOverallAnalysis';
+import { type OverallAnalysisState } from '@/components/overall/types';
 import { type SymbolChatState } from '@/components/chat/hooks/useSymbolChat';
 
 // Publish the overall result to the chat context only when it's available.

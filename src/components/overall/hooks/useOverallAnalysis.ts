@@ -3,29 +3,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
 import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
-import type {
-    ModelId,
-    OverallAnalysisResponse,
-    OverallAxis,
-    Timeframe,
-} from '@y0ngha/siglens-core';
+import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
 import {
     AUGMENT_AND_OVERALL_POLL_INTERVAL_MS,
     MAX_DEPENDENCY_RETRIES,
 } from '@/lib/pollingConfig';
 import { MS_PER_SECOND } from '@/domain/constants/time';
-
-export type OverallAnalysisState =
-    | { status: 'idle' }
-    | {
-          status: 'pending_dependencies';
-          pendingJobs: Record<OverallAxis, string | undefined>;
-          // 0 = 첫 진입, 1+ = polling 횟수. ETA 표시(`약 N초 남음`)에 사용.
-          retryCount: number;
-      }
-    | { status: 'submitting' | 'polling' }
-    | { status: 'done'; result: OverallAnalysisResponse }
-    | { status: 'error'; error: string; axis?: OverallAxis };
+import type { OverallAnalysisState } from '@/components/overall/types';
 
 type CleanupFn = () => void;
 

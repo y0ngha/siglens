@@ -112,6 +112,9 @@ export interface UseChatReturn {
 }
 
 export function useChat({ symbol }: UseChatOptions): UseChatReturn {
+    // 훅 선언 순서 예외: useSymbolChat()을 useState/useRef보다 먼저 호출함.
+    // 아래 storageKeyRef/initialStorageKeyRef 초기값이 timeframeFromCtx에 의존해야 하기 때문에
+    // 일반 순서(useState → useRef → context hook)로 두면 ref 초기화 시점에 timeframeFromCtx가 미정의됨.
     const {
         context,
         timeframe: timeframeFromCtx,

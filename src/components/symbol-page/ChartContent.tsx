@@ -238,6 +238,8 @@ export function ChartContent({
     // navigation between the 4 symbol pages. Layout owns the button; we only feed it.
     // Memoize the published object so usePublishSymbolChat's effect re-runs only when
     // one of the three values actually changes, not on every ChartContent render.
+    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
+    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
     const chatState = useMemo(
         () => ({
             context: { kind: 'technical', payload: analysis } as const,

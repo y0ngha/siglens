@@ -115,6 +115,8 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
 
     // Publish the in-view news result so the chatbot can reference live numbers
     // from this page. `timeframe` is null — news analysis is timeframe-agnostic.
+    // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
+    // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
     const chatState = useMemo(
         () => ({
             context: { kind: 'news', payload: result } as const,
