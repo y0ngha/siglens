@@ -1,5 +1,14 @@
 # Fix Log
 
+## [PR #417 Round 5 | worktree-seo-overhaul-49 | 2026-05-04]
+- Violation: 신규 infrastructure 함수 `getAssetInfoCached` 단위 테스트 부재
+- Rule: CONVENTIONS.md infrastructure/ 100%, MISTAKES.md Tests #12
+- Context: R4에서 4개 페이지 중복을 제거하면서 추출한 새 infrastructure 파일. 테스트 누락 → 위임 동작(action 결과 pass-through) + null 반환 + jest 환경 동작 3 케이스로 커버.
+
+- Violation: 워크트리 \`CLAUDE.md\` 갱신 누락 — R4 fix-log에 갱신 완료로 기재되어 있으나 실제로는 main 레포의 CLAUDE.md만 수정되어 있고 워크트리의 같은 파일은 옛 내용("infrastructure ← May import from domain only")을 그대로 갖고 있었다
+- Rule: 변경 사항은 실제 commit 대상(워크트리)의 파일에 적용해야 함
+- Context: R4에서 절대경로로 \`/Users/y0ngha/Project/siglens/CLAUDE.md\`(메인 레포)를 수정해 워크트리의 같은 파일은 미반영. 워크트리의 \`CLAUDE.md\`도 동일하게 \"May import from domain and lib (lib must be pure utilities/constants only)\"로 갱신.
+
 ## [PR #417 Round 4 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: loadKoreanFont에 인라인 매직 넘버 `60 * 60 * 24 * 7` (7일 초)
 - Rule: MISTAKES.md #15 — 매직 넘버는 모듈 레벨 상수로 추출
