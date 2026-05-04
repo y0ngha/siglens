@@ -33,7 +33,10 @@ const MockDrizzleUserRepository = DrizzleUserRepository as jest.MockedClass<
 function mockUserRepo(existingUser: object | null) {
     const findByEmail = jest.fn().mockResolvedValue(existingUser);
     MockDrizzleUserRepository.mockImplementation(
-        () => ({ findByEmail }) as unknown as InstanceType<typeof DrizzleUserRepository>
+        () =>
+            ({ findByEmail }) as unknown as InstanceType<
+                typeof DrizzleUserRepository
+            >
     );
     mockGetAuthDatabaseClient.mockReturnValue({
         db: {} as never,
