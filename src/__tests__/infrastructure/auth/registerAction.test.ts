@@ -226,7 +226,16 @@ describe('registerAction', () => {
                     email: 'a@b.com',
                     password: '  Pass1234  ',
                 }),
-                expect.anything()
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
+                    }),
+                })
             );
         });
 
@@ -246,10 +255,22 @@ describe('registerAction', () => {
             ).rejects.toThrow('NEXT_REDIRECT:/');
             expect(mockRegister).toHaveBeenCalledWith(
                 expect.objectContaining({ name: undefined }),
-                expect.anything()
+                expect.objectContaining({
+                    emailTokens: expect.objectContaining({
+                        set: expect.any(Function),
+                        get: expect.any(Function),
+                        delete: expect.any(Function),
+                    }),
+                    db: expect.objectContaining({
+                        transaction: expect.any(Function),
+                    }),
+                })
             );
         });
 
+    });
+
+    describe('약관 ID 전달', () => {
         it('agreedTermsIds로 활성 약관 ID 두 개를 전달한다', async () => {
             mockRegister.mockResolvedValue({ ok: true, user: FAKE_USER });
             mockLogin.mockResolvedValue({

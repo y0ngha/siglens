@@ -48,24 +48,24 @@ export function createPendingOAuthSignupStore(
     client: Redis
 ): PendingOAuthSignupStore {
     return {
-        async save(profile) {
+        async save(profile: PendingOAuthSignup): Promise<string> {
             const token = generateToken();
             await client.set(buildKey(token), JSON.stringify(profile), {
                 ex: TTL_SECONDS,
             });
             return token;
         },
-        async peek(token) {
+        async peek(token: string): Promise<PendingOAuthSignup | null> {
             // Safe: client.get() returns the value written by save() via JSON.stringify(PendingOAuthSignup).
             const raw = (await client.get(buildKey(token))) as string | null;
             return tryParse(raw);
         },
-        async consume(token) {
+        async consume(token: string): Promise<PendingOAuthSignup | null> {
             // Safe: client.getdel() atomically returns the value written by save() via JSON.stringify(PendingOAuthSignup) and deletes the key.
             const raw = (await client.getdel(buildKey(token))) as string | null;
             return tryParse(raw);
         },
-        async delete(token) {
+        async delete(token: string): Promise<void> {
             await client.del(buildKey(token));
         },
     };

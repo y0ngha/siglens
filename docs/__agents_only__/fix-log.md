@@ -1,5 +1,17 @@
 # Fix Log
 
+## [PR #420 Round 10 | master | 2026-05-05]
+- B1: `ConsentCheckboxGroup.tsx` — `text-white` raw Tailwind color used for checkmark SVG icon. MISTAKES.md §0.5 prohibits raw color references. Changed to `text-secondary-50` (design system semantic token).
+  - Rule: MISTAKES.md §0.5 — Use design system semantic tokens, not raw Tailwind colors
+- B2: `registerAction.test.ts` — 2 occurrences of `expect.anything()` as second argument in `toHaveBeenCalledWith()`. MISTAKES.md Tests §15/§16 forbids `expect.anything()`. Replaced with `expect.objectContaining({ emailTokens: expect.objectContaining({...}), db: expect.objectContaining({...}) })`. Also moved `agreedTermsIds` test from `'입력 정규화'` describe block to new `'약관 ID 전달'` describe block (correct category).
+  - Rule: MISTAKES.md Tests §15/§16 — forbids `expect.anything()` in assertion
+- B3: `termsRepository.test.ts` — `InsertedRow.kind: 'privacy' | 'tos'` inline union instead of named type. MISTAKES.md TypeScript §5/§5.2 requires named type alias. Added `import type { TermsKind }` and changed to `kind: TermsKind`.
+  - Rule: MISTAKES.md TypeScript §5/§5.2 — inline union literals should use named type aliases
+- S1: `pendingOAuthSignupStore.ts` — object literal methods missing explicit return type annotations. Added explicit return types to all 4 methods (save, peek, consume, delete).
+  - Rule: MISTAKES.md §0 — explicit return type annotations for methods
+- S2: `legal-toc.test.ts` — missing test for github-slugger duplicate slug deduplication behavior. Added test verifying -1, -2 suffix for repeated headings.
+  - Rule: Test coverage — slug deduplication is internal utility behavior and should have dedicated test
+
 ## [PR #420 Round 9 | master | 2026-05-05]
 - M1: `registerAction.ts` — catch block returned `service_unavailable` without logging unexpected runtime errors, making debugging difficult. Added `console.error('[registerAction] unexpected error:', err)` before returning error.
   - Rule: Error logging in catch blocks — debugging requires visibility into root causes

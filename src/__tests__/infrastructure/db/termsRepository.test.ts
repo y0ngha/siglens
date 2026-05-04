@@ -1,9 +1,10 @@
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
+import type { TermsKind } from '@/infrastructure/db/constants';
 
 interface InsertedRow {
     id: string;
-    kind: 'privacy' | 'tos';
+    kind: TermsKind;
     version: number;
     effectiveDate: Date;
     body: string;

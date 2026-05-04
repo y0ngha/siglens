@@ -90,7 +90,7 @@ function CheckboxBox({
                 <svg
                     aria-hidden="true"
                     viewBox="0 0 16 16"
-                    className="pointer-events-none absolute inset-0 m-auto size-3 text-white"
+                    className="pointer-events-none absolute inset-0 m-auto size-3 text-secondary-50"
                 >
                     <path
                         fill="none"
@@ -106,7 +106,7 @@ function CheckboxBox({
                 <svg
                     aria-hidden="true"
                     viewBox="0 0 16 16"
-                    className="pointer-events-none absolute inset-0 m-auto size-3 text-white"
+                    className="pointer-events-none absolute inset-0 m-auto size-3 text-secondary-50"
                 >
                     <path
                         fill="none"

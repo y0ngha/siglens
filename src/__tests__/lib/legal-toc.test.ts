@@ -25,4 +25,13 @@ describe('extractToc', () => {
     it('returns empty array when no h2 found', () => {
         expect(extractToc('단순 본문 텍스트')).toEqual([]);
     });
+
+    it('deduplicates slugs for repeated headings by appending -1, -2 suffix', () => {
+        const md = `## 수집\n\n본문\n\n## 수집\n\n본문\n\n## 수집\n\n본문\n`;
+        const toc = extractToc(md);
+        expect(toc).toHaveLength(3);
+        expect(toc[0].id).toBe('수집');
+        expect(toc[1].id).toBe('수집-1');
+        expect(toc[2].id).toBe('수집-2');
+    });
 });
