@@ -10014,6 +10014,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"postgres@npm:^3.4.9":
+  version: 3.4.9
+  resolution: "postgres@npm:3.4.9"
+  checksum: 10c0/b767dd2258df0f6523ce1ec0bce0a87e93c6fb961c97be0059f8ea2bc4c57c6057689258361a0988f0bb61d636483d35f0c591620566218f7083c78ab7955862
+  languageName: node
+  linkType: hard
+
 "prelude-ls@npm:^1.2.1":
   version: 1.2.1
   resolution: "prelude-ls@npm:1.2.1"
@@ -10928,6 +10935,7 @@ __metadata:
     lightweight-charts: "npm:^5.1.0"
     next: "npm:16.2.0"
     openai: "npm:^6.35.0"
+    postgres: "npm:^3.4.9"
     prettier: "npm:^3.7.4"
     prettier-plugin-tailwindcss: "npm:^0.7.2"
     react: "npm:19.2.4"
