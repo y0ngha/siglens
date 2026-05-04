@@ -60,7 +60,7 @@ async function runMigrations() {
                 const code =
                     (err as { code?: string })?.code ??
                     (err as { cause?: { code?: string } })?.cause?.code;
-                if (!ALREADY_EXISTS_CODES.has(code)) {
+                if (!code || !ALREADY_EXISTS_CODES.has(code)) {
                     await sql.end();
                     throw err;
                 }
