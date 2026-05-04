@@ -72,9 +72,8 @@ export function SocialLoginButtons({ next }: SocialLoginButtonsProps) {
             <div
                 aria-hidden
                 className="border-secondary-800 text-secondary-500 my-6 flex items-center gap-3 border-t pt-3 text-xs tracking-[0.2em] uppercase"
-            >
-                <span className="bg-secondary-900/80 -mt-3 px-2">또는</span>
-            </div>
+            />
+
             {PROVIDERS.map(provider => (
                 <a
                     key={provider.id}
