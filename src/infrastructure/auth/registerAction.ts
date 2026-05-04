@@ -136,6 +136,7 @@ export async function registerAction(
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;
         }
+        console.error('[registerAction] unexpected error:', err);
         return {
             error: {
                 code: 'service_unavailable',

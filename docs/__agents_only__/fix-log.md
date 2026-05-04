@@ -1,5 +1,11 @@
 # Fix Log
 
+## [PR #420 Round 9 | master | 2026-05-05]
+- M1: `registerAction.ts` — catch block returned `service_unavailable` without logging unexpected runtime errors, making debugging difficult. Added `console.error('[registerAction] unexpected error:', err)` before returning error.
+  - Rule: Error logging in catch blocks — debugging requires visibility into root causes
+- M2: `finalizeOAuthSignupAction.ts` — transaction .catch() and outer catch block redirected to serviceUnavailable without logging, making root cause analysis impossible. Added `console.error('[finalizeOAuthSignupAction] transaction failed:', err)` in .catch() and `console.error('[finalizeOAuthSignupAction] unexpected error:', err)` in outer catch.
+  - Rule: Error logging in catch blocks — debugging requires visibility into root causes
+
 ## [PR #420 Round 8 | master | 2026-05-05]
 - B1: `tryParse` catch 분기 미테스트 — `pendingOAuthSignupStore.test.ts`에 corrupted JSON 케이스 추가.
   - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage

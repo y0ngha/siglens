@@ -117,7 +117,10 @@ export async function finalizeOAuthSignupAction(
                 ]);
                 return created.id;
             })
-            .catch(() => redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable));
+            .catch(err => {
+                console.error('[finalizeOAuthSignupAction] transaction failed:', err);
+                return redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+            });
 
         const secure = isSecureCookieEnv();
         const { cookie } = await createAuthSession({
@@ -142,6 +145,7 @@ export async function finalizeOAuthSignupAction(
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;
         }
+        console.error('[finalizeOAuthSignupAction] unexpected error:', err);
         redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
     }
 }
