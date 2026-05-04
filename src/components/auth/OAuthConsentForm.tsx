@@ -31,7 +31,8 @@ export function OAuthConsentForm({
 }: OAuthConsentFormProps) {
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [tosChecked, setTosChecked] = useState(false);
-    const [finalizeState, finalizeFormAction] = useFinalizeOAuthSignup();
+    const [finalizeState, finalizeFormAction, isPending] =
+        useFinalizeOAuthSignup();
     usePageShowReload();
 
     const consentError =
@@ -92,9 +93,11 @@ export function OAuthConsentForm({
                 />
                 <button
                     type="submit"
-                    className="bg-primary-500 hover:bg-primary-400 text-secondary-950 focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-950 inline-flex h-12 w-full items-center justify-center rounded-md text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+                    disabled={isPending}
+                    aria-disabled={isPending}
+                    className="bg-primary-500 hover:bg-primary-400 text-secondary-950 focus-visible:ring-primary-400 focus-visible:ring-offset-secondary-950 inline-flex h-12 w-full items-center justify-center rounded-md text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none disabled:opacity-60 disabled:cursor-not-allowed"
                 >
-                    가입 완료
+                    {isPending ? '처리 중...' : '가입 완료'}
                 </button>
             </form>
 

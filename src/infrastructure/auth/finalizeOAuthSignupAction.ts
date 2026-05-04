@@ -117,11 +117,7 @@ export async function finalizeOAuthSignupAction(
                 ]);
                 return created.id;
             })
-            .catch(err => {
-                console.error(
-                    '[finalizeOAuthSignupAction] transaction failed:',
-                    err
-                );
+            .catch(() => {
                 return redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
             });
 
@@ -148,7 +144,6 @@ export async function finalizeOAuthSignupAction(
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;
         }
-        console.error('[finalizeOAuthSignupAction] unexpected error:', err);
         redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
     }
 }
