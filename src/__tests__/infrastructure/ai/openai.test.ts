@@ -70,7 +70,10 @@ describe('callOpenaiChat', () => {
         it('systemInstruction을 instructions로 전달한다', async () => {
             mockCreate.mockResolvedValue({ output_text: 'ok' });
 
-            await callOpenaiChat({ ...BASE_OPTIONS, systemInstruction: 'Be concise' });
+            await callOpenaiChat({
+                ...BASE_OPTIONS,
+                systemInstruction: 'Be concise',
+            });
 
             const call = mockCreate.mock.calls[0][0];
             expect(call.instructions).toBe('Be concise');

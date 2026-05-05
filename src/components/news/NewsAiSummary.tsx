@@ -38,7 +38,7 @@ function StatusCard({ phase }: StatusCardProps) {
         <section
             aria-labelledby="news-ai-summary-status-heading"
             aria-busy="true"
-            className="border-secondary-700 bg-secondary-800 motion-safe:animate-[fade-in_200ms_ease-out] rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <h2
                 id="news-ai-summary-status-heading"
@@ -92,7 +92,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
-            className="border-secondary-700 bg-secondary-800 motion-safe:animate-[fade-in_200ms_ease-out] rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
@@ -124,7 +124,10 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                                 key={i}
                                 className="text-secondary-400 flex gap-2 text-sm"
                             >
-                                <span aria-hidden="true" className="mt-0.5 shrink-0">
+                                <span
+                                    aria-hidden="true"
+                                    className="mt-0.5 shrink-0"
+                                >
                                     •
                                 </span>
                                 {event}
@@ -148,7 +151,10 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                                 key={i}
                                 className="text-secondary-400 flex gap-2 text-sm"
                             >
-                                <span aria-hidden="true" className="text-ui-warning mt-0.5 shrink-0">
+                                <span
+                                    aria-hidden="true"
+                                    className="text-ui-warning mt-0.5 shrink-0"
+                                >
                                     ⚠
                                 </span>
                                 {event}

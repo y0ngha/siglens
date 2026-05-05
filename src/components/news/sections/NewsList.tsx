@@ -111,7 +111,7 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
         <article
             className={cn(
                 'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 rounded-xl border p-4 transition-[colors,transform] hover:-translate-y-px',
-                isHighImpact && 'border-l-[3px] border-l-ui-warning'
+                isHighImpact && 'border-l-ui-warning border-l-[3px]'
             )}
         >
             <h3
@@ -224,7 +224,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                 <button
                     type="button"
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="border-secondary-700 text-secondary-400 hover:text-secondary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 w-full rounded-lg border py-2 text-sm transition-colors"
+                    className="border-secondary-700 text-secondary-400 hover:text-secondary-100 focus-visible:ring-primary-500 w-full rounded-lg border py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                     더보기 ({items.length - visibleCount}개 남음)
                 </button>

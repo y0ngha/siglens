@@ -1,6 +1,10 @@
 import { toProviderTurns } from '@/infrastructure/ai/utils';
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
-import type { AiContents, CallAiProviderOptions, ModelSpec } from '@y0ngha/siglens-core';
+import type {
+    AiContents,
+    CallAiProviderOptions,
+    ModelSpec,
+} from '@y0ngha/siglens-core';
 import OpenAI from 'openai';
 
 // apiModelId로 ModelSpec을 역방향 조회한다.
@@ -10,7 +14,9 @@ function findSpecByApiModelId(apiModelId: string): ModelSpec | undefined {
     );
 }
 
-function toResponsesInput(contents: AiContents): string | OpenAI.Responses.ResponseInput {
+function toResponsesInput(
+    contents: AiContents
+): string | OpenAI.Responses.ResponseInput {
     if (typeof contents === 'string') {
         return contents;
     }
@@ -34,10 +40,14 @@ export async function callOpenaiChat({
     const response = await client.responses.create({
         model,
         input: toResponsesInput(contents),
-        ...(systemInstruction !== undefined ? { instructions: systemInstruction } : {}),
+        ...(systemInstruction !== undefined
+            ? { instructions: systemInstruction }
+            : {}),
         max_output_tokens: spec.maxOutputTokens,
         temperature: spec.temperature,
-        ...(spec.effort !== undefined ? { reasoning: { effort: spec.effort } } : {}),
+        ...(spec.effort !== undefined
+            ? { reasoning: { effort: spec.effort } }
+            : {}),
     });
 
     const text = response.output_text;

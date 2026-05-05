@@ -9,8 +9,7 @@ export function useIsMobileViewport(): boolean {
 
     useEffect(() => {
         const mediaQueryList = window.matchMedia(MOBILE_VIEWPORT_MEDIA_QUERY);
-        const syncViewport = () =>
-            setIsMobileViewport(mediaQueryList.matches);
+        const syncViewport = () => setIsMobileViewport(mediaQueryList.matches);
 
         syncViewport();
         mediaQueryList.addEventListener('change', syncViewport);

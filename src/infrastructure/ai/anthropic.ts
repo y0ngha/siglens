@@ -1,7 +1,11 @@
 import { toProviderTurns } from '@/infrastructure/ai/utils';
 import Anthropic from '@anthropic-ai/sdk';
 import { MODEL_SPECS } from '@y0ngha/siglens-core';
-import type { AiContents, CallAiProviderOptions, ModelSpec } from '@y0ngha/siglens-core';
+import type {
+    AiContents,
+    CallAiProviderOptions,
+    ModelSpec,
+} from '@y0ngha/siglens-core';
 
 // apiModelId(e.g. 'claude-sonnet-4-6')로 ModelSpec을 역방향 조회한다.
 function findSpecByApiModelId(apiModelId: string): ModelSpec | undefined {
@@ -33,7 +37,9 @@ export async function callAnthropicChat({
         model,
         max_tokens: maxTokens,
         messages: toAnthropicMessages(contents),
-        ...(systemInstruction !== undefined ? { system: systemInstruction } : {}),
+        ...(systemInstruction !== undefined
+            ? { system: systemInstruction }
+            : {}),
         ...(adaptiveThinking
             ? {
                   thinking: {

@@ -55,7 +55,7 @@ async function analyzeAndPersist(
         }
     }
     console.warn(
-        `[ensureNewsCardsAnalyzedAction] poll timeout after ${POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS / 1000}s — ${item.id}`
+        `[ensureNewsCardsAnalyzedAction] poll timeout after ${(POLL_MAX_ATTEMPTS * POLL_INTERVAL_MS) / 1000}s — ${item.id}`
     );
 }
 

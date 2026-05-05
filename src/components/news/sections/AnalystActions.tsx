@@ -137,7 +137,7 @@ export function AnalystActions({ events }: AnalystActionsProps) {
                 <button
                     type="button"
                     onClick={() => setVisibleCount(c => c + PAGE_SIZE)}
-                    className="border-secondary-700 text-secondary-400 hover:text-secondary-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 w-full rounded-lg border py-2 text-sm transition-colors"
+                    className="border-secondary-700 text-secondary-400 hover:text-secondary-100 focus-visible:ring-primary-500 w-full rounded-lg border py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                 >
                     더보기 ({events.length - visibleCount}개 남음)
                 </button>

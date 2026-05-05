@@ -96,7 +96,10 @@ describe('callAnthropicChat', () => {
 
             expect(result).toBe('deep answer');
             const call = mockCreate.mock.calls[0][0];
-            expect(call.thinking).toEqual({ type: 'adaptive', display: 'omitted' });
+            expect(call.thinking).toEqual({
+                type: 'adaptive',
+                display: 'omitted',
+            });
             expect(call.output_config).toEqual({ effort: 'medium' });
             expect(call).not.toHaveProperty('temperature');
         });
@@ -104,7 +107,11 @@ describe('callAnthropicChat', () => {
         it('thinking + text 혼합 응답에서 text 블록을 추출한다', async () => {
             mockCreate.mockResolvedValue({
                 content: [
-                    { type: 'thinking', thinking: 'reasoning...', signature: 'sig' },
+                    {
+                        type: 'thinking',
+                        thinking: 'reasoning...',
+                        signature: 'sig',
+                    },
                     { type: 'text', text: 'final answer' },
                 ],
                 stop_reason: 'end_turn',
