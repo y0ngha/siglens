@@ -21,6 +21,7 @@ const EXPIRED_TOKEN_MESSAGE =
 function describeFormError(state: ResetPasswordFormState): string | null {
     if (state.error?.code === 'invalid_token') return INVALID_TOKEN_MESSAGE;
     if (state.error?.code === 'expired_token') return EXPIRED_TOKEN_MESSAGE;
+    if (state.error?.code === 'same_password') return state.error.message;
     if (state.error?.code === 'redis_unavailable') return state.error.message;
     return null;
 }
@@ -48,6 +49,8 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
                 return;
             }
             setConfirmError(null);
+            setPassword('');
+            setConfirmPassword('');
             formAction(formData);
         },
         [formAction, password, confirmPassword]

@@ -39,7 +39,6 @@ function expiredTokenError(): ConfirmPasswordResetError {
 function samePasswordError(): ConfirmPasswordResetError {
     return {
         code: 'same_password',
-        field: 'password',
         message: SAME_PASSWORD_MESSAGE,
     };
 }
@@ -59,7 +58,21 @@ export async function confirmPasswordReset(
 
     const email = normalizeEmail(input.email);
 
-    // Atomically consume the token first. Any racing caller will receive null
+    // Check same-password before consuming the token so the link stays valid
+    // and the user can retry with a different password.
+    const user =
+        await dependencies.emailAuthUsers.findEmailAuthUserByEmail(email);
+    if (user !== null && user.passwordHash !== null) {
+        const isSamePassword = await dependencies.passwordVerifier.verifyPassword(
+            input.newPassword,
+            user.passwordHash
+        );
+        if (isSamePassword) {
+            return { ok: false, error: samePasswordError() };
+        }
+    }
+
+    // Atomically consume the token. Any racing caller will receive null
     // here and bail out with expired_token below.
     const stored = await dependencies.emailTokens.consume(PURPOSE, email);
 
@@ -76,18 +89,8 @@ export async function confirmPasswordReset(
         return { ok: false, error: invalidTokenError() };
     }
 
-    const user =
-        await dependencies.emailAuthUsers.findEmailAuthUserByEmail(email);
     if (user === null || user.passwordHash === null) {
         return { ok: false, error: invalidTokenError() };
-    }
-
-    const isSamePassword = await dependencies.passwordVerifier.verifyPassword(
-        input.newPassword,
-        user.passwordHash
-    );
-    if (isSamePassword) {
-        return { ok: false, error: samePasswordError() };
     }
 
     const passwordHash = await dependencies.passwordHasher.hashPassword(

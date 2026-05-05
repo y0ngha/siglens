@@ -181,10 +181,9 @@ describe('confirmPasswordReset', () => {
         if (!result.ok) expect(result.error.code).toBe('invalid_token');
     });
 
-    it('returns same_password error when new password matches the current one', async () => {
-        const { dependencies, updatePassword, verifyPassword } = makeDependencies({
-            isSamePassword: true,
-        });
+    it('returns same_password error and does not consume the token', async () => {
+        const { dependencies, consumeToken, updatePassword, verifyPassword } =
+            makeDependencies({ isSamePassword: true });
 
         const result = await confirmPasswordReset(
             {
@@ -199,11 +198,11 @@ describe('confirmPasswordReset', () => {
             ok: false,
             error: {
                 code: 'same_password',
-                field: 'password',
                 message: '현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.',
             },
         });
         expect(verifyPassword).toHaveBeenCalledWith(NEW_PASSWORD, 'old-hash');
+        expect(consumeToken).not.toHaveBeenCalled();
         expect(updatePassword).not.toHaveBeenCalled();
     });
 
@@ -291,7 +290,7 @@ describe('confirmPasswordReset', () => {
             'user-1',
             'new-hashed-password'
         );
-        expect(callOrder).toEqual(['consume', 'verify', 'hash', 'update']);
+        expect(callOrder).toEqual(['verify', 'consume', 'hash', 'update']);
     });
 
     it('only one of two concurrent consumers updates the password', async () => {
