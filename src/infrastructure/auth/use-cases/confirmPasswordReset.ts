@@ -17,6 +17,8 @@ import type {
 const PURPOSE = 'password_reset' as const;
 const INVALID_TOKEN_MESSAGE = '비밀번호 재설정 토큰이 유효하지 않습니다.';
 const EXPIRED_TOKEN_MESSAGE = '비밀번호 재설정 토큰이 만료되었습니다.';
+const SAME_PASSWORD_MESSAGE =
+    '현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.';
 
 function invalidTokenError(): ConfirmPasswordResetError {
     return {
@@ -31,6 +33,14 @@ function expiredTokenError(): ConfirmPasswordResetError {
         code: PASSWORD_RESET_EXPIRED_TOKEN_CODE,
         field: 'token',
         message: EXPIRED_TOKEN_MESSAGE,
+    };
+}
+
+function samePasswordError(): ConfirmPasswordResetError {
+    return {
+        code: 'same_password',
+        field: 'password',
+        message: SAME_PASSWORD_MESSAGE,
     };
 }
 
@@ -70,6 +80,14 @@ export async function confirmPasswordReset(
         await dependencies.emailAuthUsers.findEmailAuthUserByEmail(email);
     if (user === null || user.passwordHash === null) {
         return { ok: false, error: invalidTokenError() };
+    }
+
+    const isSamePassword = await dependencies.passwordVerifier.verifyPassword(
+        input.newPassword,
+        user.passwordHash
+    );
+    if (isSamePassword) {
+        return { ok: false, error: samePasswordError() };
     }
 
     const passwordHash = await dependencies.passwordHasher.hashPassword(

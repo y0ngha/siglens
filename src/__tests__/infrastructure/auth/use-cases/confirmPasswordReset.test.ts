@@ -28,12 +28,14 @@ function makeDependencies(options?: {
     user?: EmailAuthUserRecord | null;
     updatePasswordResult?: boolean;
     hashedNewPassword?: string;
+    isSamePassword?: boolean;
 }): {
     dependencies: ConfirmPasswordResetDependencies;
     consumeToken: ReturnType<typeof jest.fn>;
     findEmailAuthUserByEmail: ReturnType<typeof jest.fn>;
     updatePassword: ReturnType<typeof jest.fn>;
     hashPassword: ReturnType<typeof jest.fn>;
+    verifyPassword: ReturnType<typeof jest.fn>;
 } {
     const defaultStored: EmailTokenValue = {
         status: 'pending',
@@ -46,6 +48,7 @@ function makeDependencies(options?: {
     const foundUser = options && 'user' in options ? options.user : user;
     const updateResult = options?.updatePasswordResult ?? true;
     const hashed = options?.hashedNewPassword ?? 'new-hashed-password';
+    const samePassword = options?.isSamePassword ?? false;
 
     const consumeToken = jest
         .fn<
@@ -56,6 +59,7 @@ function makeDependencies(options?: {
     const findEmailAuthUserByEmail = jest.fn().mockResolvedValue(foundUser);
     const updatePassword = jest.fn().mockResolvedValue(updateResult);
     const hashPassword = jest.fn().mockResolvedValue(hashed);
+    const verifyPassword = jest.fn().mockResolvedValue(samePassword);
 
     return {
         dependencies: {
@@ -74,11 +78,13 @@ function makeDependencies(options?: {
                 consume: consumeToken,
             },
             passwordHasher: { hashPassword },
+            passwordVerifier: { verifyPassword },
         },
         consumeToken,
         findEmailAuthUserByEmail,
         updatePassword,
         hashPassword,
+        verifyPassword,
     };
 }
 
@@ -175,6 +181,32 @@ describe('confirmPasswordReset', () => {
         if (!result.ok) expect(result.error.code).toBe('invalid_token');
     });
 
+    it('returns same_password error when new password matches the current one', async () => {
+        const { dependencies, updatePassword, verifyPassword } = makeDependencies({
+            isSamePassword: true,
+        });
+
+        const result = await confirmPasswordReset(
+            {
+                email: 'user@example.com',
+                token: RAW_TOKEN,
+                newPassword: NEW_PASSWORD,
+            },
+            dependencies
+        );
+
+        expect(result).toEqual({
+            ok: false,
+            error: {
+                code: 'same_password',
+                field: 'password',
+                message: '현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.',
+            },
+        });
+        expect(verifyPassword).toHaveBeenCalledWith(NEW_PASSWORD, 'old-hash');
+        expect(updatePassword).not.toHaveBeenCalled();
+    });
+
     it('returns invalid_token error when the user has no password hash', async () => {
         const { dependencies } = makeDependencies({
             user: { ...user, passwordHash: null },
@@ -212,14 +244,23 @@ describe('confirmPasswordReset', () => {
     });
 
     it('atomically consumes the token before any password update on success', async () => {
-        const { dependencies, consumeToken, updatePassword, hashPassword } =
-            makeDependencies();
+        const {
+            dependencies,
+            consumeToken,
+            updatePassword,
+            hashPassword,
+            verifyPassword,
+        } = makeDependencies();
 
-        // Track call order: consume must happen before hashPassword/updatePassword.
+        // Track call order: consume must happen before verify/hash/updatePassword.
         const callOrder: string[] = [];
         consumeToken.mockImplementation(async () => {
             callOrder.push('consume');
             return { status: 'pending', tokenHash: STORED_TOKEN_HASH };
+        });
+        verifyPassword.mockImplementation(async () => {
+            callOrder.push('verify');
+            return false;
         });
         hashPassword.mockImplementation(async () => {
             callOrder.push('hash');
@@ -244,12 +285,13 @@ describe('confirmPasswordReset', () => {
             'password_reset',
             'user@example.com'
         );
+        expect(verifyPassword).toHaveBeenCalledWith(NEW_PASSWORD, 'old-hash');
         expect(hashPassword).toHaveBeenCalledWith(NEW_PASSWORD);
         expect(updatePassword).toHaveBeenCalledWith(
             'user-1',
             'new-hashed-password'
         );
-        expect(callOrder).toEqual(['consume', 'hash', 'update']);
+        expect(callOrder).toEqual(['consume', 'verify', 'hash', 'update']);
     });
 
     it('only one of two concurrent consumers updates the password', async () => {

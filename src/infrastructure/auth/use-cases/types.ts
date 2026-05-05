@@ -194,6 +194,7 @@ export interface ConfirmPasswordResetDependencies {
     users: UserRepository;
     emailTokens: EmailTokenStore;
     passwordHasher: PasswordHasher;
+    passwordVerifier: PasswordVerifier;
 }
 
 export interface RequestEmailVerificationInput {

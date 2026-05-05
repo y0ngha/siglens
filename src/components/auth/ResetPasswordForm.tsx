@@ -34,6 +34,8 @@ function describePasswordFieldError(
 
 export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [confirmError, setConfirmError] = useState<string | null>(null);
     const hintId = useId();
     const [state, formAction] = useResetPasswordForm();
     const formError = describeFormError(state);
@@ -41,10 +43,14 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
 
     const handleAction = useCallback(
         (formData: FormData) => {
-            setPassword('');
+            if (password !== confirmPassword) {
+                setConfirmError('비밀번호가 일치하지 않습니다.');
+                return;
+            }
+            setConfirmError(null);
             formAction(formData);
         },
-        [formAction]
+        [formAction, password, confirmPassword]
     );
 
     return (
@@ -58,7 +64,11 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
                 label="새 비밀번호"
                 autoComplete="new-password"
                 required
-                onChange={setPassword}
+                value={password}
+                onChange={value => {
+                    setPassword(value);
+                    if (confirmError) setConfirmError(null);
+                }}
                 error={fieldError ?? undefined}
                 describedById={hintId}
                 hint={
@@ -67,6 +77,19 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
                         descriptionId={hintId}
                     />
                 }
+            />
+            <PasswordField
+                id="reset-password-confirm"
+                name="confirmPassword"
+                label="새 비밀번호 확인"
+                autoComplete="new-password"
+                required
+                value={confirmPassword}
+                onChange={value => {
+                    setConfirmPassword(value);
+                    if (confirmError) setConfirmError(null);
+                }}
+                error={confirmError ?? undefined}
             />
             <SubmitButton label="비밀번호 변경" pendingLabel="변경 중…" />
         </form>
