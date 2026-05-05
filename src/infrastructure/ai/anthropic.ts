@@ -1,8 +1,14 @@
 import { toProviderTurns } from '@/infrastructure/ai/utils';
 import Anthropic from '@anthropic-ai/sdk';
-import type { AiContents, CallAiProviderOptions } from '@y0ngha/siglens-core';
+import { MODEL_SPECS } from '@y0ngha/siglens-core';
+import type { AiContents, CallAiProviderOptions, ModelSpec } from '@y0ngha/siglens-core';
 
-const ANTHROPIC_MAX_TOKENS = 8192;
+// apiModelId(e.g. 'claude-sonnet-4-6')로 ModelSpec을 역방향 조회한다.
+function findSpecByApiModelId(apiModelId: string): ModelSpec | undefined {
+    return (Object.values(MODEL_SPECS) as ModelSpec[]).find(
+        s => s.apiModelId === apiModelId
+    );
+}
 
 function toAnthropicMessages(contents: AiContents): Anthropic.MessageParam[] {
     // Safe cast: ProviderTurn is structurally compatible with MessageParam (role literals + string content).
@@ -15,17 +21,32 @@ export async function callAnthropicChat({
     contents,
     systemInstruction,
 }: CallAiProviderOptions): Promise<string> {
+    const spec = findSpecByApiModelId(model);
+    // spec.effort があれば Sonnet/Opus → adaptive thinking。なければ haiku → temperature。
+    const adaptiveThinking = spec?.effort !== undefined;
+    const maxTokens = spec?.maxOutputTokens ?? 8_192;
+
     const client = new Anthropic({ apiKey: serverApiKey });
     const response = await client.messages.create({
         model,
-        max_tokens: ANTHROPIC_MAX_TOKENS,
+        max_tokens: maxTokens,
         messages: toAnthropicMessages(contents),
-        ...(systemInstruction !== undefined
-            ? { system: systemInstruction }
-            : {}),
+        ...(systemInstruction !== undefined ? { system: systemInstruction } : {}),
+        ...(adaptiveThinking
+            ? {
+                  thinking: {
+                      type: 'adaptive' as const,
+                      display: 'omitted' as const,
+                  },
+                  output_config: { effort: spec!.effort },
+              }
+            : { temperature: spec?.temperature ?? 0 }),
     });
-    const block = response.content[0];
-    if (!block || block.type !== 'text') {
+
+    const block = response.content.find(b => b.type === 'text') as
+        | Anthropic.TextBlock
+        | undefined;
+    if (!block) {
         throw new Error(
             `Anthropic returned no text content (stop_reason: ${response.stop_reason})`
         );

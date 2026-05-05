@@ -1,20 +1,22 @@
 import { toProviderTurns } from '@/infrastructure/ai/utils';
-import type { AiContents, CallAiProviderOptions } from '@y0ngha/siglens-core';
+import { MODEL_SPECS } from '@y0ngha/siglens-core';
+import type { AiContents, CallAiProviderOptions, ModelSpec } from '@y0ngha/siglens-core';
 import OpenAI from 'openai';
 
-function toOpenAiMessages(
-    contents: AiContents,
-    systemInstruction?: string
-): OpenAI.ChatCompletionMessageParam[] {
-    const system: OpenAI.ChatCompletionMessageParam[] =
-        systemInstruction !== undefined
-            ? [{ role: 'system', content: systemInstruction }]
-            : [];
-    // Safe cast: ProviderTurn is structurally compatible with ChatCompletionMessageParam (role literals + string content).
-    const turns = toProviderTurns(
-        contents
-    ) as OpenAI.ChatCompletionMessageParam[];
-    return [...system, ...turns];
+// apiModelId로 ModelSpec을 역방향 조회한다.
+function findSpecByApiModelId(apiModelId: string): ModelSpec | undefined {
+    return (Object.values(MODEL_SPECS) as ModelSpec[]).find(
+        s => s.apiModelId === apiModelId
+    );
+}
+
+function toResponsesInput(contents: AiContents): string | OpenAI.Responses.ResponseInput {
+    if (typeof contents === 'string') {
+        return contents;
+    }
+    // 다중 턴 대화 → Responses API EasyInputMessage 배열로 변환
+    // toProviderTurns이 role: 'user'|'assistant' 로 변환해준다.
+    return toProviderTurns(contents) as OpenAI.Responses.EasyInputMessage[];
 }
 
 export async function callOpenaiChat({
@@ -23,14 +25,23 @@ export async function callOpenaiChat({
     contents,
     systemInstruction,
 }: CallAiProviderOptions): Promise<string> {
+    const spec = findSpecByApiModelId(model);
     const client = new OpenAI({ apiKey: serverApiKey });
-    const response = await client.chat.completions.create({
+
+    const response = await client.responses.create({
         model,
-        messages: toOpenAiMessages(contents, systemInstruction),
+        input: toResponsesInput(contents),
+        ...(systemInstruction !== undefined ? { instructions: systemInstruction } : {}),
+        ...(spec?.maxOutputTokens !== undefined
+            ? { max_output_tokens: spec.maxOutputTokens }
+            : {}),
+        ...(spec?.temperature !== undefined ? { temperature: spec.temperature } : {}),
+        ...(spec?.reasoning ? { reasoning: { effort: spec.reasoning.effort } } : {}),
     });
-    const content = response.choices[0]?.message.content;
-    if (content == null) {
+
+    const text = response.output_text;
+    if (!text) {
         throw new Error('OpenAI returned no text content');
     }
-    return content;
+    return text;
 }

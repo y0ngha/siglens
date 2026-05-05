@@ -1,6 +1,6 @@
 const mockCreate = jest.fn();
 const MockOpenAI = jest.fn().mockImplementation(() => ({
-    chat: { completions: { create: mockCreate } },
+    responses: { create: mockCreate },
 }));
 
 jest.mock('openai', () => ({
@@ -13,8 +13,13 @@ import { callOpenaiChat } from '@/infrastructure/ai/openai';
 const BASE_OPTIONS = {
     serverApiKey: 'server-key',
     userApiKey: undefined,
-    model: 'gpt-5-mini',
+    model: 'gpt-5-mini', // apiModelId
     contents: 'Hello',
+} as const;
+
+const GPT5_OPTIONS = {
+    ...BASE_OPTIONS,
+    model: 'gpt-5.5', // apiModelId with reasoning
 } as const;
 
 describe('callOpenaiChat', () => {
@@ -24,9 +29,7 @@ describe('callOpenaiChat', () => {
 
     describe('API 키 라우팅', () => {
         it('serverApiKey로 OpenAI를 호출한다', async () => {
-            mockCreate.mockResolvedValue({
-                choices: [{ message: { content: 'Hi' } }],
-            });
+            mockCreate.mockResolvedValue({ output_text: 'Hi' });
 
             const result = await callOpenaiChat(BASE_OPTIONS);
 
@@ -36,9 +39,7 @@ describe('callOpenaiChat', () => {
         });
 
         it('userApiKey가 있어도 serverApiKey만 사용한다', async () => {
-            mockCreate.mockResolvedValue({
-                choices: [{ message: { content: 'Hi' } }],
-            });
+            mockCreate.mockResolvedValue({ output_text: 'Hi' });
 
             await callOpenaiChat({ ...BASE_OPTIONS, userApiKey: 'user-key' });
 
@@ -55,19 +56,66 @@ describe('callOpenaiChat', () => {
         });
     });
 
+    describe('Responses API 파라미터', () => {
+        it('input과 instructions로 호출한다', async () => {
+            mockCreate.mockResolvedValue({ output_text: 'ok' });
+
+            await callOpenaiChat(BASE_OPTIONS);
+
+            const call = mockCreate.mock.calls[0][0];
+            expect(call).toHaveProperty('input', 'Hello');
+            expect(call).not.toHaveProperty('messages');
+        });
+
+        it('systemInstruction을 instructions로 전달한다', async () => {
+            mockCreate.mockResolvedValue({ output_text: 'ok' });
+
+            await callOpenaiChat({ ...BASE_OPTIONS, systemInstruction: 'Be concise' });
+
+            const call = mockCreate.mock.calls[0][0];
+            expect(call.instructions).toBe('Be concise');
+        });
+
+        it('systemInstruction이 없으면 instructions를 포함하지 않는다', async () => {
+            mockCreate.mockResolvedValue({ output_text: 'ok' });
+
+            await callOpenaiChat(BASE_OPTIONS);
+
+            const call = mockCreate.mock.calls[0][0];
+            expect(call).not.toHaveProperty('instructions');
+        });
+
+        it('reasoning 지원 모델에 reasoning.effort를 전달한다', async () => {
+            mockCreate.mockResolvedValue({ output_text: 'deep answer' });
+
+            await callOpenaiChat(GPT5_OPTIONS);
+
+            const call = mockCreate.mock.calls[0][0];
+            expect(call.reasoning).toBeDefined();
+            expect(call.reasoning.effort).toBeDefined();
+        });
+
+        it('gpt-5-mini에 reasoning.effort low를 전달한다', async () => {
+            mockCreate.mockResolvedValue({ output_text: 'ok' });
+
+            await callOpenaiChat(BASE_OPTIONS);
+
+            const call = mockCreate.mock.calls[0][0];
+            expect(call.reasoning).toEqual({ effort: 'low' });
+        });
+    });
+
     describe('응답 파싱', () => {
-        it('응답 content가 null이면 에러를 던진다', async () => {
-            mockCreate.mockResolvedValue({
-                choices: [{ message: { content: null } }],
-            });
+        it('output_text가 없으면 에러를 던진다', async () => {
+            mockCreate.mockResolvedValue({ output_text: '' });
 
             await expect(callOpenaiChat(BASE_OPTIONS)).rejects.toThrow(
                 'OpenAI returned no text content'
             );
         });
 
-        it('choices 배열이 비어있으면 에러를 던진다', async () => {
-            mockCreate.mockResolvedValue({ choices: [] });
+        it('output_text가 null이면 에러를 던진다', async () => {
+            mockCreate.mockResolvedValue({ output_text: null });
 
             await expect(callOpenaiChat(BASE_OPTIONS)).rejects.toThrow(
                 'OpenAI returned no text content'

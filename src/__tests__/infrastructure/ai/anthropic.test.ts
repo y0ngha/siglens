@@ -13,8 +13,13 @@ import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
 const BASE_OPTIONS = {
     serverApiKey: 'server-key',
     userApiKey: undefined,
-    model: 'claude-haiku-4-5',
+    model: 'claude-haiku-4-5-20251001', // haiku apiModelId
     contents: 'Hello',
+} as const;
+
+const SONNET_OPTIONS = {
+    ...BASE_OPTIONS,
+    model: 'claude-sonnet-4-6', // sonnet apiModelId
 } as const;
 
 describe('callAnthropicChat', () => {
@@ -64,6 +69,53 @@ describe('callAnthropicChat', () => {
         });
     });
 
+    describe('haiku — temperature 모드', () => {
+        it('thinking 없이 temperature로 호출한다', async () => {
+            mockCreate.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await callAnthropicChat(BASE_OPTIONS);
+
+            const call = mockCreate.mock.calls[0][0];
+            expect(call).not.toHaveProperty('thinking');
+            expect(call).not.toHaveProperty('output_config');
+            expect(call.temperature).toBeDefined();
+        });
+    });
+
+    describe('Sonnet/Opus — adaptive thinking 모드', () => {
+        it('adaptive thinking과 effort로 호출한다', async () => {
+            mockCreate.mockResolvedValue({
+                content: [{ type: 'text', text: 'deep answer' }],
+                stop_reason: 'end_turn',
+            });
+
+            const result = await callAnthropicChat(SONNET_OPTIONS);
+
+            expect(result).toBe('deep answer');
+            const call = mockCreate.mock.calls[0][0];
+            expect(call.thinking).toEqual({ type: 'adaptive', display: 'omitted' });
+            expect(call.output_config).toEqual({ effort: 'medium' });
+            expect(call).not.toHaveProperty('temperature');
+        });
+
+        it('thinking + text 혼합 응답에서 text 블록을 추출한다', async () => {
+            mockCreate.mockResolvedValue({
+                content: [
+                    { type: 'thinking', thinking: 'reasoning...', signature: 'sig' },
+                    { type: 'text', text: 'final answer' },
+                ],
+                stop_reason: 'end_turn',
+            });
+
+            const result = await callAnthropicChat(SONNET_OPTIONS);
+
+            expect(result).toBe('final answer');
+        });
+    });
+
     describe('응답 파싱', () => {
         it('content 배열이 비어있으면 에러를 던진다', async () => {
             mockCreate.mockResolvedValue({
@@ -76,7 +128,7 @@ describe('callAnthropicChat', () => {
             );
         });
 
-        it('content[0]이 text 타입이 아니면 에러를 던진다', async () => {
+        it('content에 text 타입이 없으면 에러를 던진다', async () => {
             mockCreate.mockResolvedValue({
                 content: [
                     { type: 'tool_use', id: 'call_1', name: 'tool', input: {} },
