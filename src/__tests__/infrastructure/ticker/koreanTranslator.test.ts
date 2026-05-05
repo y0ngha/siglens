@@ -9,8 +9,8 @@ import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator'
 describe('translateCompanyNames', () => {
     beforeEach(() => {
         callGeminiMock.mockReset();
-        process.env.TRANSLATE_API_KEY = 'paid-key';
-        process.env.TRANSLATE_FREE_API_KEY = 'free-key';
+        process.env.TRANSLATE_API_KEY = 'server-api-key';
+        process.env.TRANSLATE_FREE_API_KEY = 'user-api-key';
         process.env.TRANSLATE_MODEL = 'gemini-test';
     });
 
@@ -41,8 +41,8 @@ describe('translateCompanyNames', () => {
         ]);
         expect(result).toEqual({ AAPL: '애플', NVDA: '엔비디아' });
         expect(callGeminiMock).toHaveBeenCalledWith({
-            primaryApiKey: 'free-key',
-            fallbackApiKey: 'paid-key',
+            userApiKey: 'user-api-key',
+            serverApiKey: 'server-api-key',
             model: 'gemini-test',
             contents: expect.stringContaining('AAPL: Apple Inc.'),
         });

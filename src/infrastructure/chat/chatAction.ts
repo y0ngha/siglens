@@ -19,7 +19,6 @@ import type {
 import {
     DEFAULT_TIER,
     GEMINI_2_5_FLASH_MODEL,
-    TIER_CONFIG,
     getProviderForModel,
     requestChatCompletion,
 } from '@y0ngha/siglens-core';
@@ -66,30 +65,16 @@ function getServerPrimaryKey(provider: LlmProvider): string | undefined {
  */
 interface UserContext {
     tierContext: UserTierContext;
-    paidApiKey: string | undefined;
+    userApiKey: string | undefined;
 }
 
-async function resolveUserContext(
-    model: ModelId,
-    provider: LlmProvider
-): Promise<UserContext> {
-    // Safe cast: ModelId ⊆ string; Array.includes refuses a wider string
-    // argument against a readonly literal-union without the widening cast.
-    const isFreeModel = (TIER_CONFIG.models.free as readonly string[]).includes(
-        model
-    );
-    if (isFreeModel) {
-        return {
-            tierContext: { userId: null, tier: DEFAULT_TIER },
-            paidApiKey: undefined,
-        };
-    }
-
+async function resolveUserContext(provider: LlmProvider): Promise<UserContext> {
     const user = await getCurrentUser();
+
     if (!user) {
         return {
             tierContext: { userId: null, tier: DEFAULT_TIER },
-            paidApiKey: undefined,
+            userApiKey: undefined,
         };
     }
 
@@ -103,7 +88,7 @@ async function resolveUserContext(
     if (tier === 'pro') {
         return {
             tierContext: { userId: user.id, tier },
-            paidApiKey: undefined,
+            userApiKey: undefined,
         };
     }
 
@@ -112,7 +97,7 @@ async function resolveUserContext(
     ).findByUserAndProvider(user.id, provider);
     return {
         tierContext: { userId: user.id, tier },
-        paidApiKey: record?.apiKey,
+        userApiKey: record?.apiKey,
     };
 }
 
@@ -135,17 +120,18 @@ export async function chatAction(
 ): Promise<ChatActionResult> {
     try {
         const provider = getProviderForModel(model);
-        const freeApiKey = getServerPrimaryKey(provider);
-        if (!freeApiKey) {
+        const serverApiKey = getServerPrimaryKey(provider);
+
+        if (!serverApiKey) {
             return { ok: false, error: 'server_error' };
         }
 
-        const [{ tierContext, paidApiKey }, clientIp] = await Promise.all([
-            resolveUserContext(model, provider),
+        const [{ tierContext, userApiKey }, clientIp] = await Promise.all([
+            resolveUserContext(provider),
             getClientIp(),
         ]);
 
-        return await requestChatCompletion(
+        const r = await requestChatCompletion(
             {
                 clientIp,
                 symbol,
@@ -154,8 +140,8 @@ export async function chatAction(
                 history,
                 userMessage,
                 model,
-                freeApiKey,
-                paidApiKey,
+                serverApiKey,
+                userApiKey,
                 tierContext,
                 // `undefined` (not `null`) when absent — core's optional field
                 // is `currentAnalysisContext?: CurrentAnalysisContext`.
@@ -167,8 +153,9 @@ export async function chatAction(
                 callAiProvider: callAiProviderRouter,
             }
         );
-    } catch (err) {
-        console.error('Error occurred while fetching chat completion:', err);
+        console.log(r);
+        return r;
+    } catch {
         return { ok: false, error: 'server_error' };
     }
 }

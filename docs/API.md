@@ -326,7 +326,7 @@ AI_PROVIDER=gemini          # claude | gemini (기본값: gemini)
 # /analyze에서 SIGLENS_PROVIDED_MODELS 호출 시 + briefing에서 사용
 ANTHROPIC_API_KEY=          # 필수
 GEMINI_CHAT_API_KEY=             # 필수
-GEMINI_FREE_API_KEY=        # 선택 — Gemini free tier 우선 시도 (없으면 paid key 단독 사용)
+GEMINI_FREE_API_KEY=        # 선택 — Gemini free tier 우선 시도 (없으면 server api key 단독 사용)
 OPENAI_API_KEY=             # 필수 — gpt-5-mini 무료 제공 등 server key 호출 위해
 
 # Worker — Briefing model 기본값 (선택)

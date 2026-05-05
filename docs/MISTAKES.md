@@ -960,8 +960,8 @@ This file contains only **recurring gotchas** that agents keep missing despite e
    → Local state initialized on each call gets reset, losing reductions/calculations from previous attempts
    → Use ref-based accumulation (budgetRef.current) or single instance patterns to preserve state across retries
    ❌ callGeminiWithRetry reinitializes thinkingBudget from config on each retry, losing consumed budget
-   ❌ callGeminiWithFallback creates new budgetRef for paid key, resetting to initial on Free→Paid fallback
-   ✅ Create budgetRef once in callGeminiWithKeyFallback, pass to both free and paid key calls
+   ❌ callGeminiWithFallback creates new budgetRef for server api key, resetting to initial on Free→Paid fallback
+   ✅ Create budgetRef once in callGeminiWithKeyFallback, pass to both free and server api key calls
    ✅ Preserve reduced budget across withRetry retries by threading mutable ref through call chain
 
 4.6. Option parameter names must express control flow semantics, not implementation details

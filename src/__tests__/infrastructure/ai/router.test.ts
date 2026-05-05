@@ -7,7 +7,7 @@ jest.mock('@/infrastructure/ai/openai', () => ({
 }));
 
 jest.mock('@/infrastructure/ai/gemini', () => ({
-    callGeminiWithKeyFallback: jest.fn(),
+    callGeminiChat: jest.fn(),
 }));
 
 jest.mock('@y0ngha/siglens-core', () => {
@@ -15,18 +15,19 @@ jest.mock('@y0ngha/siglens-core', () => {
         '@y0ngha/siglens-core'
     );
     return {
+        MODEL_SPECS: actual.MODEL_SPECS,
         getProviderForModel: jest
             .fn()
             .mockImplementation(actual.getProviderForModel),
     };
 });
 
-import { callAiProviderRouter } from '@/infrastructure/ai/router';
 import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
+import { callGeminiChat } from '@/infrastructure/ai/gemini';
 import { callOpenaiChat } from '@/infrastructure/ai/openai';
-import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
-import { getProviderForModel } from '@y0ngha/siglens-core';
+import { callAiProviderRouter } from '@/infrastructure/ai/router';
 import type { LlmProvider } from '@y0ngha/siglens-core';
+import { getProviderForModel } from '@y0ngha/siglens-core';
 
 const mockCallAnthropicChat = callAnthropicChat as jest.MockedFunction<
     typeof callAnthropicChat
@@ -35,16 +36,16 @@ const mockCallOpenaiChat = callOpenaiChat as jest.MockedFunction<
     typeof callOpenaiChat
 >;
 const mockCallGeminiWithKeyFallback =
-    callGeminiWithKeyFallback as jest.MockedFunction<
-        typeof callGeminiWithKeyFallback
+    callGeminiChat as jest.MockedFunction<
+        typeof callGeminiChat
     >;
 const mockGetProviderForModel = getProviderForModel as jest.MockedFunction<
     typeof getProviderForModel
 >;
 
 const BASE_OPTIONS = {
-    primaryApiKey: 'pk',
-    fallbackApiKey: 'fk',
+    userApiKey: 'pk',
+    serverApiKey: 'fk',
     contents: 'Hello',
 } as const;
 
@@ -69,21 +70,27 @@ describe('callAiProviderRouter', () => {
 
             expect(result).toBe('anthropic response');
             expect(mockCallAnthropicChat).toHaveBeenCalledTimes(1);
-            expect(mockCallAnthropicChat).toHaveBeenCalledWith(options);
+            expect(mockCallAnthropicChat).toHaveBeenCalledWith({
+                ...options,
+                model: 'claude-haiku-3-5-20251001',
+            });
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
         });
     });
 
     describe('Google 모델 라우팅', () => {
-        it('gemini-2.5-flash 모델은 callGeminiWithKeyFallback에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
+        it('gemini-2.5-flash 모델은 callGeminiChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
             const options = { ...BASE_OPTIONS, model: 'gemini-2.5-flash' };
 
             const result = await callAiProviderRouter(options);
 
             expect(result).toBe('gemini response');
             expect(mockCallGeminiWithKeyFallback).toHaveBeenCalledTimes(1);
-            expect(mockCallGeminiWithKeyFallback).toHaveBeenCalledWith(options);
+            expect(mockCallGeminiWithKeyFallback).toHaveBeenCalledWith({
+                ...options,
+                model: 'gemini-2.5-flash',
+            });
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
         });
@@ -97,7 +104,10 @@ describe('callAiProviderRouter', () => {
 
             expect(result).toBe('openai response');
             expect(mockCallOpenaiChat).toHaveBeenCalledTimes(1);
-            expect(mockCallOpenaiChat).toHaveBeenCalledWith(options);
+            expect(mockCallOpenaiChat).toHaveBeenCalledWith({
+                ...options,
+                model: 'gpt-5-mini',
+            });
             expect(mockCallAnthropicChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
         });

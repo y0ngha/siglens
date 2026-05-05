@@ -11,7 +11,7 @@ describe('tryReadTranslatorConfig', () => {
         expect(tryReadTranslatorConfig()).toBeNull();
     });
 
-    it('필수 키만 있을 때 free key는 undefined, model은 default', () => {
+    it('필수 키만 있을 때 user api key는 undefined, model은 default', () => {
         process.env.TRANSLATE_API_KEY = 'paid';
         expect(tryReadTranslatorConfig()).toEqual({
             apiKey: 'paid',

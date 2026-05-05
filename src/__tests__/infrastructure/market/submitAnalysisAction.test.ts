@@ -39,10 +39,10 @@ jest.mock('@/infrastructure/db/userApiKeyRepository', () => {
     };
 });
 
-import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
-import { submitAnalysis } from '@y0ngha/siglens-core';
-import type { ModelId, SubmitAnalysisGatedResult } from '@y0ngha/siglens-core';
 import { LlmApiKeyDecryptionFailedError } from '@/infrastructure/db/userApiKeyRepository';
+import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
+import type { ModelId, SubmitAnalysisGatedResult } from '@y0ngha/siglens-core';
+import { submitAnalysis } from '@y0ngha/siglens-core';
 
 const mockSubmitAnalysis = submitAnalysis as jest.MockedFunction<
     typeof submitAnalysis
@@ -148,7 +148,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
 
         expect(result).toBe(cachedResult);
         // userApiKey must be absent — without BYOK, core uses its server-side
-        // paid key. Forwarding undefined/null/'' would all be wrong, so we
+        // server api key. Forwarding undefined/null/'' would all be wrong, so we
         // pin the exact options shape rather than a partial match.
         const lastCall = mockSubmitAnalysis.mock.calls.at(-1);
         expect(lastCall).toBeDefined();

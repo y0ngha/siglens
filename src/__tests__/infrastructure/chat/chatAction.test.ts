@@ -1,9 +1,8 @@
+import { callAiProviderRouter } from '@/infrastructure/ai/router';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { chatAction } from '@/infrastructure/chat/chatAction';
-import {
-    GEMINI_2_5_FLASH_MODEL,
-    requestChatCompletion,
-    getProviderForModel,
-} from '@y0ngha/siglens-core';
+import { getDatabaseClient } from '@/infrastructure/db/client';
+import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
 import type {
     AnalysisResponse,
     ChatActionResult,
@@ -11,11 +10,12 @@ import type {
     FundamentalAnalysisResponse,
     LlmProvider,
 } from '@y0ngha/siglens-core';
+import {
+    GEMINI_2_5_FLASH_MODEL,
+    getProviderForModel,
+    requestChatCompletion,
+} from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
-import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
-import { callAiProviderRouter } from '@/infrastructure/ai/router';
 
 jest.mock('next/headers', () => ({
     headers: jest.fn(),
@@ -42,12 +42,16 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
     getCurrentUser: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/auth/db', () => ({
-    getAuthDatabaseClient: jest.fn(),
+jest.mock('@/infrastructure/db/client', () => ({
+    getDatabaseClient: jest.fn(),
 }));
 
 jest.mock('@/infrastructure/db/userApiKeyRepository', () => ({
     DrizzleUserApiKeyRepository: jest.fn(),
+}));
+
+jest.mock('@/infrastructure/tier/use-cases/getUserTier', () => ({
+    getUserTier: jest.fn().mockResolvedValue('free'),
 }));
 
 const mockHeaders = headers as jest.MockedFunction<typeof headers>;
@@ -120,7 +124,7 @@ describe('chatAction 함수는', () => {
     });
 
     describe('Gemini 모델을 사용할 때', () => {
-        it('free Gemini 모델은 GEMINI_CHAT_API_KEY를 freeApiKey로 전달한다', async () => {
+        it('free Gemini 모델은 GEMINI_CHAT_API_KEY를 serverApiKey로 전달한다', async () => {
             const result = await chatAction(
                 'AAPL',
                 '1Day',
@@ -133,16 +137,16 @@ describe('chatAction 함수는', () => {
             expect(result).toBe(SUCCESS_RESULT);
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    freeApiKey: 'gemini-server-key',
-                    paidApiKey: undefined,
+                    serverApiKey: 'gemini-server-key',
+                    userApiKey: undefined,
                     model: 'gemini-2.5-flash',
                 }),
                 { callAiProvider: callAiProviderRouter }
             );
         });
 
-        it('GEMINI_CHAT_FREE_API_KEY가 설정되면 freeApiKey로 우선 사용한다', async () => {
-            process.env.GEMINI_CHAT_FREE_API_KEY = 'gemini-free-key';
+        it('GEMINI_CHAT_FREE_API_KEY가 설정되면 serverApiKey로 우선 사용한다', async () => {
+            process.env.GEMINI_CHAT_FREE_API_KEY = 'gemini-user-api-key';
 
             await chatAction(
                 'AAPL',
@@ -155,8 +159,8 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    freeApiKey: 'gemini-free-key',
-                    paidApiKey: undefined,
+                    serverApiKey: 'gemini-user-api-key',
+                    userApiKey: undefined,
                 }),
                 expect.anything()
             );
@@ -164,7 +168,7 @@ describe('chatAction 함수는', () => {
     });
 
     describe('Anthropic 모델을 사용할 때', () => {
-        it('free Anthropic 모델은 ANTHROPIC_CHAT_API_KEY를 freeApiKey로 전달한다', async () => {
+        it('free Anthropic 모델은 ANTHROPIC_CHAT_API_KEY를 serverApiKey로 전달한다', async () => {
             process.env.ANTHROPIC_CHAT_API_KEY = 'anthr-key';
             delete process.env.GEMINI_CHAT_API_KEY;
 
@@ -179,8 +183,8 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    freeApiKey: 'anthr-key',
-                    paidApiKey: undefined,
+                    serverApiKey: 'anthr-key',
+                    userApiKey: undefined,
                     model: 'claude-haiku-3-5',
                 }),
                 { callAiProvider: callAiProviderRouter }
@@ -189,7 +193,7 @@ describe('chatAction 함수는', () => {
     });
 
     describe('OpenAI 모델을 사용할 때', () => {
-        it('free OpenAI 모델은 OPENAI_CHAT_API_KEY를 freeApiKey로 전달한다', async () => {
+        it('free OpenAI 모델은 OPENAI_CHAT_API_KEY를 serverApiKey로 전달한다', async () => {
             process.env.OPENAI_CHAT_API_KEY = 'oai-key';
             delete process.env.GEMINI_CHAT_API_KEY;
 
@@ -204,8 +208,8 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    freeApiKey: 'oai-key',
-                    paidApiKey: undefined,
+                    serverApiKey: 'oai-key',
+                    userApiKey: undefined,
                     model: 'gpt-5-mini',
                 }),
                 { callAiProvider: callAiProviderRouter }
@@ -265,7 +269,7 @@ describe('chatAction 함수는', () => {
             delete process.env.GEMINI_CHAT_API_KEY;
         });
 
-        it('premium 모델이고 로그인되지 않았으면 paidApiKey를 undefined로 전달한다', async () => {
+        it('premium 모델이고 로그인되지 않았으면 userApiKey를 undefined로 전달한다', async () => {
             mockGetCurrentUser.mockResolvedValue(null);
 
             await chatAction(
@@ -279,14 +283,14 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    freeApiKey: 'anthr-key',
-                    paidApiKey: undefined,
+                    serverApiKey: 'anthr-key',
+                    userApiKey: undefined,
                 }),
                 expect.anything()
             );
         });
 
-        it('premium 모델이고 로그인 + 사용자 키 등록이면 paidApiKey로 사용자 키를 전달한다', async () => {
+        it('premium 모델이고 로그인 + 사용자 키 등록이면 userApiKey로 사용자 키를 전달한다', async () => {
             const mockFindByUserAndProvider = jest
                 .fn()
                 .mockResolvedValue({ apiKey: 'user-personal-key' });
@@ -300,7 +304,7 @@ describe('chatAction 함수는', () => {
                         findByUserAndProvider: mockFindByUserAndProvider,
                     }) as unknown as DrizzleUserApiKeyRepository
             );
-            (getAuthDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
+            (getDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
                 ReturnType<typeof getCurrentUser>
             >);
@@ -316,11 +320,12 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    freeApiKey: 'anthr-key',
-                    paidApiKey: 'user-personal-key',
+                    serverApiKey: 'anthr-key',
+                    userApiKey: 'user-personal-key',
                 }),
                 expect.anything()
             );
+            expect(getDatabaseClient).toHaveBeenCalled();
             expect(DrizzleUserApiKeyRepository).toHaveBeenCalledWith({});
             expect(mockFindByUserAndProvider).toHaveBeenCalledWith(
                 'user-1',
@@ -328,7 +333,7 @@ describe('chatAction 함수는', () => {
             );
         });
 
-        it('premium 모델이고 로그인했지만 키 미등록이면 paidApiKey를 undefined로 전달한다', async () => {
+        it('premium 모델이고 로그인했지만 키 미등록이면 userApiKey를 undefined로 전달한다', async () => {
             const mockFindByUserAndProvider = jest.fn().mockResolvedValue(null);
             (
                 DrizzleUserApiKeyRepository as jest.MockedClass<
@@ -340,7 +345,7 @@ describe('chatAction 함수는', () => {
                         findByUserAndProvider: mockFindByUserAndProvider,
                     }) as unknown as DrizzleUserApiKeyRepository
             );
-            (getAuthDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
+            (getDatabaseClient as jest.Mock).mockReturnValue({ db: {} });
             mockGetCurrentUser.mockResolvedValue({ id: 'user-1' } as Awaited<
                 ReturnType<typeof getCurrentUser>
             >);
@@ -356,8 +361,8 @@ describe('chatAction 함수는', () => {
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
-                    freeApiKey: 'anthr-key',
-                    paidApiKey: undefined,
+                    serverApiKey: 'anthr-key',
+                    userApiKey: undefined,
                 }),
                 expect.anything()
             );

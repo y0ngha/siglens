@@ -5,8 +5,10 @@
 process.env.ALPACA_API_KEY = 'test-alpaca-key';
 process.env.ALPACA_API_SECRET = 'test-alpaca-secret';
 process.env.AI_PROVIDER = 'claude';
-process.env.ANTHROPIC_API_KEY = 'test-anthropic-key';
+process.env.GEMINI_CHAT_FREE_API_KEY = 'test-gemini-user-api-key';
 process.env.GEMINI_CHAT_API_KEY = 'test-gemini-key';
+process.env.ANTHROPIC_CHAT_API_KEY = 'test-anthropic-key';
+process.env.OPENAI_CHAT_API_KEY = 'test-openai-key';
 process.env.DATABASE_URL = 'test-database-url';
 
 // next/cache의 런타임 API('use cache' 지시자, cacheLife, cacheTag)는
