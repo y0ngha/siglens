@@ -70,12 +70,8 @@ export class DrizzleTermsRepository implements TermsRepository {
                 effectiveDate: input.effectiveDate,
                 body: input.body,
             })
-            .onConflictDoUpdate({
+            .onConflictDoNothing({
                 target: [terms.kind, terms.version],
-                set: {
-                    effectiveDate: input.effectiveDate,
-                    body: input.body,
-                },
             });
     }
 }

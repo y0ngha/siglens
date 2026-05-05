@@ -33,11 +33,12 @@ function buildKey(token: string): string {
     return `${NAMESPACE}:${token}`;
 }
 
-function tryParse(value: string | null): PendingOAuthSignup | null {
-    if (value === null) return null;
+function tryParse(value: unknown): PendingOAuthSignup | null {
+    if (value === null || value === undefined) return null;
+    // Upstash Redis auto-deserializes stored JSON, so value may already be an object.
+    if (typeof value === 'object') return value as PendingOAuthSignup;
+    if (typeof value !== 'string') return null;
     try {
-        // This value was serialized by save() via JSON.stringify(PendingOAuthSignup),
-        // so the shape is guaranteed as long as the key's TTL hasn't been corrupted externally.
         return JSON.parse(value) as PendingOAuthSignup;
     } catch {
         return null;
@@ -56,13 +57,11 @@ export function createPendingOAuthSignupStore(
             return token;
         },
         async peek(token: string): Promise<PendingOAuthSignup | null> {
-            // Safe: client.get() returns the value written by save() via JSON.stringify(PendingOAuthSignup).
-            const raw = (await client.get(buildKey(token))) as string | null;
+            const raw = await client.get(buildKey(token));
             return tryParse(raw);
         },
         async consume(token: string): Promise<PendingOAuthSignup | null> {
-            // Safe: client.getdel() atomically returns the value written by save() via JSON.stringify(PendingOAuthSignup) and deletes the key.
-            const raw = (await client.getdel(buildKey(token))) as string | null;
+            const raw = await client.getdel(buildKey(token));
             return tryParse(raw);
         },
         async delete(token: string): Promise<void> {

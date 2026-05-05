@@ -1,7 +1,10 @@
 'use server';
 
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
-import { bcryptPasswordHasher } from '@/infrastructure/auth/bcrypt';
+import {
+    bcryptPasswordHasher,
+    bcryptPasswordVerifier,
+} from '@/infrastructure/auth/bcrypt';
 import { confirmPasswordReset } from '@/infrastructure/auth/use-cases/confirmPasswordReset';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { redirect } from 'next/navigation';
@@ -37,6 +40,7 @@ export async function confirmPasswordResetAction(
             users: userRepo,
             emailTokens,
             passwordHasher: bcryptPasswordHasher,
+            passwordVerifier: bcryptPasswordVerifier,
         }
     );
 

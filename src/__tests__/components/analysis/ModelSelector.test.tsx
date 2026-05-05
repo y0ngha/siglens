@@ -3,38 +3,32 @@
  */
 
 import '@testing-library/jest-dom';
-import React from 'react';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ModelSelector } from '@/components/analysis/ModelSelector';
-import type { AIProvider, ModelId } from '@y0ngha/siglens-core';
-
-jest.mock('@/domain/llm/providerDefaults', () => ({
-    resolveDefaultModelForProvider: jest.fn((provider: string) =>
-        provider === 'chatgpt' ? null : `${provider}-model`
-    ),
-}));
+import type { ModelId } from '@y0ngha/siglens-core';
 
 const ALLOWED_MODELS: readonly ModelId[] = [
+    'gemini-2.5-flash-lite',
+    'gemini-2.5-flash',
     'claude-sonnet-4-6',
-    'gemini-2.5-pro',
 ] as const;
 
 function renderSelector(
     props: Partial<{
-        selectedProvider: AIProvider;
-        onProviderChange: (p: AIProvider) => void;
+        selectedModel: ModelId;
+        onModelChange: (m: ModelId) => void;
         allowedModels: readonly ModelId[];
         disabled: boolean;
     }> = {}
 ) {
-    const onProviderChange = props.onProviderChange ?? jest.fn();
+    const onModelChange = props.onModelChange ?? jest.fn();
     return {
-        onProviderChange,
+        onModelChange,
         ...render(
             <ModelSelector
-                selectedProvider={props.selectedProvider ?? 'claude'}
-                onProviderChange={onProviderChange}
+                selectedModel={props.selectedModel ?? 'gemini-2.5-flash-lite'}
+                onModelChange={onModelChange}
                 allowedModels={props.allowedModels ?? ALLOWED_MODELS}
                 disabled={props.disabled}
             />
@@ -43,105 +37,72 @@ function renderSelector(
 }
 
 describe('ModelSelector', () => {
-    it('renders 3 provider options', () => {
+    it('renders trigger button with selected model label', () => {
+        renderSelector({ selectedModel: 'gemini-2.5-flash-lite' });
+        expect(
+            screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+        ).toBeInTheDocument();
+        expect(screen.getByText('Flash Lite')).toBeInTheDocument();
+    });
+
+    it('opens dropdown on trigger click and shows allowed models', async () => {
+        const user = userEvent.setup();
         renderSelector();
-        const options = screen.getAllByRole('radio');
-        expect(options).toHaveLength(3);
-    });
 
-    it('selected provider has aria-checked="true", others have aria-checked="false"', () => {
-        renderSelector({ selectedProvider: 'gemini' });
-        const options = screen.getAllByRole('radio');
-
-        const claudeOption = options.find(
-            o => o.getAttribute('data-provider') === 'claude'
-        );
-        const geminiOption = options.find(
-            o => o.getAttribute('data-provider') === 'gemini'
-        );
-        const chatgptOption = options.find(
-            o => o.getAttribute('data-provider') === 'chatgpt'
+        await user.click(
+            screen.getByRole('button', { name: 'AI 분석 모델 선택' })
         );
 
-        expect(claudeOption).toHaveAttribute('aria-checked', 'false');
-        expect(geminiOption).toHaveAttribute('aria-checked', 'true');
-        expect(chatgptOption).toHaveAttribute('aria-checked', 'false');
+        const listbox = screen.getByRole('listbox');
+        expect(listbox).toBeInTheDocument();
+        expect(screen.getByText('Flash')).toBeInTheDocument();
+        expect(screen.getByText('Sonnet')).toBeInTheDocument();
     });
 
-    it('clicking an unlocked option calls onProviderChange with correct provider', async () => {
+    it('clicking a model option calls onModelChange and closes dropdown', async () => {
         const user = userEvent.setup();
-        const { onProviderChange } = renderSelector({
-            selectedProvider: 'claude',
+        const { onModelChange } = renderSelector({
+            selectedModel: 'gemini-2.5-flash-lite',
         });
 
-        const geminiOption = screen
-            .getAllByRole('radio')
-            .find(o => o.getAttribute('data-provider') === 'gemini');
+        await user.click(
+            screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+        );
 
-        await user.click(geminiOption!);
-        expect(onProviderChange).toHaveBeenCalledWith('gemini');
+        const flashOption = screen
+            .getAllByRole('option')
+            .find(
+                o =>
+                    o.textContent?.includes('Flash') &&
+                    !o.textContent?.includes('Lite')
+            );
+        await user.click(flashOption!);
+
+        expect(onModelChange).toHaveBeenCalledWith('gemini-2.5-flash');
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
 
-    it('clicking a locked option does NOT call onProviderChange', async () => {
+    it('disabled prop prevents dropdown from opening', async () => {
         const user = userEvent.setup();
-        const { onProviderChange } = renderSelector({
-            selectedProvider: 'claude',
-        });
+        renderSelector({ disabled: true });
 
-        const chatgptOption = screen
-            .getAllByRole('radio')
-            .find(o => o.getAttribute('data-provider') === 'chatgpt');
+        await user.click(
+            screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+        );
 
-        await user.click(chatgptOption!);
-        expect(onProviderChange).not.toHaveBeenCalled();
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
 
-    it('ArrowRight moves selection to next option and fires onProviderChange', async () => {
+    it('Escape closes the dropdown', async () => {
         const user = userEvent.setup();
-        const { onProviderChange } = renderSelector({
-            selectedProvider: 'claude',
-        });
+        renderSelector();
 
-        const claudeOption = screen
-            .getAllByRole('radio')
-            .find(o => o.getAttribute('data-provider') === 'claude');
+        await user.click(
+            screen.getByRole('button', { name: 'AI 분석 모델 선택' })
+        );
+        expect(screen.getByRole('listbox')).toBeInTheDocument();
 
-        claudeOption!.focus();
-        await user.keyboard('{ArrowRight}');
-
-        // next non-locked after claude is gemini (chatgpt is locked)
-        expect(onProviderChange).toHaveBeenCalledWith('gemini');
-    });
-
-    it('ArrowLeft wraps from first to last non-locked option', async () => {
-        const user = userEvent.setup();
-        const { onProviderChange } = renderSelector({
-            selectedProvider: 'claude',
-        });
-
-        const claudeOption = screen
-            .getAllByRole('radio')
-            .find(o => o.getAttribute('data-provider') === 'claude');
-
-        claudeOption!.focus();
-        await user.keyboard('{ArrowLeft}');
-
-        // prev from claude wraps to last non-locked = gemini
-        expect(onProviderChange).toHaveBeenCalledWith('gemini');
-    });
-
-    it('disabled prop: all clicks are no-ops', async () => {
-        const user = userEvent.setup();
-        const { onProviderChange } = renderSelector({
-            selectedProvider: 'claude',
-            disabled: true,
-        });
-
-        const options = screen.getAllByRole('radio');
-        for (const option of options) {
-            await user.click(option);
-        }
-
-        expect(onProviderChange).not.toHaveBeenCalled();
+        await user.keyboard('{Escape}');
+        expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
     });
 });

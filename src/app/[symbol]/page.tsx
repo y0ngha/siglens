@@ -1,25 +1,24 @@
-import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
-import {
-    dehydrate,
-    HydrationBoundary,
-    QueryClient,
-} from '@tanstack/react-query';
-import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
+import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
+import { JsonLd } from '@/components/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
+import { DEFAULT_TIMEFRAME, isValidTimeframe } from '@/domain/constants/market';
+import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
-import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { countSkillFiles } from '@/infrastructure/skills/loader';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolSeoContent,
     SITE_NAME,
 } from '@/lib/seo';
-import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
-import { buildDisplayName } from '@/domain/ticker';
-import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
-import { JsonLd } from '@/components/ui/JsonLd';
+import {
+    dehydrate,
+    HydrationBoundary,
+    QueryClient,
+} from '@tanstack/react-query';
+import type { Metadata } from 'next';
+import { notFound } from 'next/navigation';
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -149,7 +148,8 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                     initialAnalysisFailed={true}
                     indicatorCount={skillCounts.indicators}
                     bottomSlot={
-                        <CrossLinkCards symbol={ticker} current="chart" />
+                        // <CrossLinkCards symbol={ticker} current="chart" />
+                        null
                     }
                 />
             </HydrationBoundary>

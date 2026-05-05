@@ -1,22 +1,10 @@
-jest.mock('@/infrastructure/db/userRepository');
-jest.mock('@/infrastructure/db/agreementRepository');
-
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
 import type { RegisterUserDependencies } from '@/infrastructure/auth/use-cases/types';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
-import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
 import type {
     EmailTokenPurpose,
     EmailTokenValue,
 } from '@/infrastructure/email/tokenStore';
 import type { AuthUserRecord } from '@/domain/auth/types';
-
-const MockUserRepo = DrizzleUserRepository as jest.MockedClass<
-    typeof DrizzleUserRepository
->;
-const MockAgreementRepo = DrizzleAgreementRepository as jest.MockedClass<
-    typeof DrizzleAgreementRepository
->;
 
 const createdAt = new Date('2026-04-26T00:00:00.000Z');
 const updatedAt = new Date('2026-04-26T00:00:01.000Z');
@@ -42,11 +30,11 @@ function makeDependencies(options?: {
     dependencies: RegisterUserDependencies;
     findByEmail: ReturnType<typeof jest.fn>;
     createEmailUser: ReturnType<typeof jest.fn>;
+    deleteUser: ReturnType<typeof jest.fn>;
     hashPassword: ReturnType<typeof jest.fn>;
     getToken: ReturnType<typeof jest.fn>;
     deleteToken: ReturnType<typeof jest.fn>;
     insertMany: ReturnType<typeof jest.fn>;
-    transaction: ReturnType<typeof jest.fn>;
 } {
     const findByEmail = jest
         .fn()
@@ -56,6 +44,7 @@ function makeDependencies(options?: {
             ? options.createdUser
             : makeUser('user@example.com');
     const createEmailUser = jest.fn().mockResolvedValue(createdUser);
+    const deleteUser = jest.fn().mockResolvedValue(true);
     const hashPassword = jest.fn().mockResolvedValue('hashed-password');
 
     const verificationState =
@@ -70,30 +59,6 @@ function makeDependencies(options?: {
         .mockResolvedValue(verificationState);
     const deleteToken = jest.fn().mockResolvedValue(undefined);
     const insertMany = jest.fn().mockResolvedValue(undefined);
-    const transaction = jest
-        .fn()
-        .mockImplementation(async (cb: (tx: unknown) => Promise<unknown>) =>
-            cb({})
-        );
-
-    // Repo classes are instantiated inside the transaction with tx — set up
-    // the class mocks so any new DrizzleUserRepository(tx) returns our stubs.
-    MockUserRepo.mockImplementation(
-        () =>
-            ({
-                createEmailUser,
-                findByEmail,
-                findById: jest.fn(),
-                deleteUser: jest.fn(),
-                updatePassword: jest.fn(),
-            }) as unknown as InstanceType<typeof DrizzleUserRepository>
-    );
-    MockAgreementRepo.mockImplementation(
-        () =>
-            ({ insertMany }) as unknown as InstanceType<
-                typeof DrizzleAgreementRepository
-            >
-    );
 
     return {
         dependencies: {
@@ -101,9 +66,10 @@ function makeDependencies(options?: {
                 findByEmail,
                 findById: jest.fn(),
                 createEmailUser,
-                deleteUser: jest.fn(),
+                deleteUser,
                 updatePassword: jest.fn(),
             },
+            agreements: { insertMany },
             passwordHasher: { hashPassword },
             emailTokens: {
                 set: jest.fn(),
@@ -111,15 +77,14 @@ function makeDependencies(options?: {
                 delete: deleteToken,
                 consume: jest.fn(),
             },
-            db: { transaction },
         },
         findByEmail,
         createEmailUser,
+        deleteUser,
         hashPassword,
         getToken,
         deleteToken,
         insertMany,
-        transaction,
     };
 }
 
@@ -130,11 +95,6 @@ const DEFAULT_INPUT = {
 } as const;
 
 describe('registerUser', () => {
-    beforeEach(() => {
-        MockUserRepo.mockClear();
-        MockAgreementRepo.mockClear();
-    });
-
     it('rejects empty agreedTermsIds before any further processing', async () => {
         const { dependencies, findByEmail, hashPassword, getToken } =
             makeDependencies();
@@ -228,11 +188,24 @@ describe('registerUser', () => {
         const result = await registerUser(DEFAULT_INPUT, dependencies);
 
         expect(result.ok).toBe(false);
-        // Marker MUST stay so the user doesn't have to re-verify.
         expect(deleteToken).not.toHaveBeenCalled();
     });
 
-    it('clears the verified marker when createEmailUser throws', async () => {
+    it('preserves the verified marker when hashPassword throws', async () => {
+        const { dependencies, deleteToken } = makeDependencies();
+        (
+            dependencies.passwordHasher.hashPassword as jest.Mock
+        ).mockRejectedValueOnce(new Error('hash failure'));
+
+        await expect(registerUser(DEFAULT_INPUT, dependencies)).rejects.toThrow(
+            'hash failure'
+        );
+
+        // On failure the marker must be preserved so the user can retry without re-verifying.
+        expect(deleteToken).not.toHaveBeenCalled();
+    });
+
+    it('preserves the verified marker when createEmailUser throws', async () => {
         const { dependencies, deleteToken, createEmailUser } =
             makeDependencies();
         (createEmailUser as jest.Mock).mockRejectedValueOnce(
@@ -243,65 +216,45 @@ describe('registerUser', () => {
             'database is on fire'
         );
 
-        // Even on failure, the marker MUST be cleared; otherwise it would linger
-        // for its 30-minute TTL and let the email be reused as "verified".
-        expect(deleteToken).toHaveBeenCalledWith(
-            'email_verification',
-            'user@example.com'
-        );
+        // On failure the marker must be preserved so the user can retry without re-verifying.
+        expect(deleteToken).not.toHaveBeenCalled();
     });
 
-    it('clears the verified marker when hashPassword throws', async () => {
-        const { dependencies, deleteToken } = makeDependencies();
-        (
-            dependencies.passwordHasher.hashPassword as jest.Mock
-        ).mockRejectedValueOnce(new Error('hash failure'));
-
-        await expect(registerUser(DEFAULT_INPUT, dependencies)).rejects.toThrow(
-            'hash failure'
-        );
-
-        expect(deleteToken).toHaveBeenCalledWith(
-            'email_verification',
-            'user@example.com'
-        );
-    });
-
-    it('returns email_already_exists when createEmailUser races to a conflict', async () => {
-        const { dependencies, createEmailUser } = makeDependencies({
+    it('preserves the verified marker when createEmailUser returns null (race conflict)', async () => {
+        const { dependencies, deleteToken } = makeDependencies({
             createdUser: null,
         });
-        (createEmailUser as jest.Mock).mockResolvedValue(null);
 
         const result = await registerUser(DEFAULT_INPUT, dependencies);
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_already_exists');
+        // email_already_exists (race) — preserve the marker, consistent with the pre-insert early-return path.
+        expect(deleteToken).not.toHaveBeenCalled();
     });
 
-    it('clears the verified marker even when createEmailUser returns null (tx null branch)', async () => {
-        const { dependencies, deleteToken, createEmailUser } =
+    it('compensates by deleting the user when insertMany throws', async () => {
+        const { dependencies, deleteUser, deleteToken, insertMany } =
             makeDependencies();
-        (createEmailUser as jest.Mock).mockResolvedValue(null);
-
-        const result = await registerUser(DEFAULT_INPUT, dependencies);
-
-        expect(result.ok).toBe(false);
-        if (!result.ok) expect(result.error.code).toBe('email_already_exists');
-        // Marker must be cleared via finally even in the null-return path.
-        expect(deleteToken).toHaveBeenCalledWith(
-            'email_verification',
-            'user@example.com'
+        (insertMany as jest.Mock).mockRejectedValueOnce(
+            new Error('agreements insert failed')
         );
+
+        await expect(registerUser(DEFAULT_INPUT, dependencies)).rejects.toThrow(
+            'agreements insert failed'
+        );
+
+        expect(deleteUser).toHaveBeenCalledWith('user-1');
+        // Verified marker must be preserved so the user can retry without re-verifying.
+        expect(deleteToken).not.toHaveBeenCalled();
     });
 
-    it('inserts agreement rows for each agreedTermsId using tx inside a transaction', async () => {
-        const { dependencies, insertMany, transaction } = makeDependencies();
+    it('inserts agreement rows for each agreedTermsId', async () => {
+        const { dependencies, insertMany } = makeDependencies();
 
         const result = await registerUser(DEFAULT_INPUT, dependencies);
 
         expect(result.ok).toBe(true);
-        expect(transaction).toHaveBeenCalledTimes(1);
         expect(insertMany).toHaveBeenCalledWith([
             expect.objectContaining({
                 termsId: 'terms-privacy-id',

@@ -1,18 +1,18 @@
 'use client';
 
-import { Suspense, type ReactNode } from 'react';
-import dynamic from 'next/dynamic';
-import { ErrorBoundary } from 'react-error-boundary';
-import type { AnalysisResponse } from '@y0ngha/siglens-core';
-import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
-import { ChartContent } from '@/components/symbol-page/ChartContent';
-import { SymbolPageProvider } from '@/components/symbol-page/SymbolPageContext';
+import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
+import { useHydrated } from '@/components/hooks/useHydrated';
+import { ChartContent } from '@/components/symbol-page/ChartContent';
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 import { useMobileSheet } from '@/components/symbol-page/hooks/useMobileSheet';
 import { useTimeframeChange } from '@/components/symbol-page/hooks/useTimeframeChange';
-import { useHydrated } from '@/components/hooks/useHydrated';
+import { SymbolPageProvider } from '@/components/symbol-page/SymbolPageContext';
+import type { AnalysisResponse } from '@y0ngha/siglens-core';
+import dynamic from 'next/dynamic';
+import { Suspense, type ReactNode } from 'react';
+import { ErrorBoundary } from 'react-error-boundary';
 
 // vaul의 aria-hidden 주입이 hydration과 겹쳐 mismatch 발생 — ssr: false로 hydration 완료 후 마운트.
 const MobileAnalysisSheet = dynamic(

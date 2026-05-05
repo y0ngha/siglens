@@ -57,7 +57,8 @@ export type VerifyEmailErrorCode =
 export type ConfirmPasswordResetErrorCode =
     | AuthValidationErrorCode
     | 'invalid_token'
-    | 'expired_token';
+    | 'expired_token'
+    | 'same_password';
 
 /** Structured error returned when password reset confirmation fails. */
 export interface ConfirmPasswordResetError {

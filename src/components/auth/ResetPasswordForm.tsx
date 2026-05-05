@@ -1,12 +1,12 @@
 'use client';
 
-import { useId, useState } from 'react';
-import type { ResetPasswordFormState } from '@/domain/types';
-import { useResetPasswordForm } from '@/components/hooks/useResetPasswordForm';
 import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
 import { PasswordField } from '@/components/auth/PasswordField';
 import { PasswordStrengthHint } from '@/components/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/components/auth/SubmitButton';
+import { useResetPasswordForm } from '@/components/hooks/useResetPasswordForm';
+import type { ResetPasswordFormState } from '@/domain/types';
+import { useCallback, useId, useState } from 'react';
 
 interface ResetPasswordFormProps {
     email: string;
@@ -21,6 +21,7 @@ const EXPIRED_TOKEN_MESSAGE =
 function describeFormError(state: ResetPasswordFormState): string | null {
     if (state.error?.code === 'invalid_token') return INVALID_TOKEN_MESSAGE;
     if (state.error?.code === 'expired_token') return EXPIRED_TOKEN_MESSAGE;
+    if (state.error?.code === 'same_password') return state.error.message;
     if (state.error?.code === 'redis_unavailable') return state.error.message;
     return null;
 }
@@ -34,12 +35,29 @@ function describePasswordFieldError(
 
 export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [confirmError, setConfirmError] = useState<string | null>(null);
     const hintId = useId();
     const [state, formAction] = useResetPasswordForm();
     const formError = describeFormError(state);
     const fieldError = describePasswordFieldError(state);
+
+    const handleAction = useCallback(
+        (formData: FormData) => {
+            if (password !== confirmPassword) {
+                setConfirmError('비밀번호가 일치하지 않습니다.');
+                return;
+            }
+            setConfirmError(null);
+            setPassword('');
+            setConfirmPassword('');
+            formAction(formData);
+        },
+        [formAction, password, confirmPassword]
+    );
+
     return (
-        <form action={formAction} className="space-y-4" noValidate>
+        <form action={handleAction} className="space-y-4" noValidate>
             <input type="hidden" name="email" value={email} />
             <input type="hidden" name="token" value={token} />
             {formError ? <AuthErrorAlert message={formError} /> : null}
@@ -49,7 +67,11 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
                 label="새 비밀번호"
                 autoComplete="new-password"
                 required
-                onChange={setPassword}
+                value={password}
+                onChange={value => {
+                    setPassword(value);
+                    if (confirmError) setConfirmError(null);
+                }}
                 error={fieldError ?? undefined}
                 describedById={hintId}
                 hint={
@@ -58,6 +80,19 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
                         descriptionId={hintId}
                     />
                 }
+            />
+            <PasswordField
+                id="reset-password-confirm"
+                name="confirmPassword"
+                label="새 비밀번호 확인"
+                autoComplete="new-password"
+                required
+                value={confirmPassword}
+                onChange={value => {
+                    setConfirmPassword(value);
+                    if (confirmError) setConfirmError(null);
+                }}
+                error={confirmError ?? undefined}
             />
             <SubmitButton label="비밀번호 변경" pendingLabel="변경 중…" />
         </form>

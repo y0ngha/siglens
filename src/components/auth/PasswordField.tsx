@@ -1,5 +1,6 @@
 'use client';
 
+import { EyeIcon } from '@/components/ui/EyeIcon';
 import { useState, type ReactNode } from 'react';
 
 interface PasswordFieldProps {
@@ -8,6 +9,7 @@ interface PasswordFieldProps {
     label: string;
     autoComplete: 'current-password' | 'new-password';
     required?: boolean;
+    value?: string;
     error?: string;
     hint?: ReactNode;
     describedById?: string;
@@ -20,6 +22,7 @@ export function PasswordField({
     label,
     autoComplete,
     required,
+    value,
     error,
     hint,
     describedById,
@@ -51,6 +54,7 @@ export function PasswordField({
                     type={visible ? 'text' : 'password'}
                     autoComplete={autoComplete}
                     required={required}
+                    {...(value !== undefined ? { value } : {})}
                     onChange={e => onChange?.(e.target.value)}
                     onKeyUp={e => setCapsLock(e.getModifierState('CapsLock'))}
                     onBlur={() => setCapsLock(false)}
@@ -65,7 +69,7 @@ export function PasswordField({
                     aria-pressed={visible}
                     className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                    <span aria-hidden>{visible ? '🙈' : '👁'}</span>
+                    <EyeIcon isVisible={visible} className="h-5 w-5" />
                 </button>
             </div>
             {capsLock ? (

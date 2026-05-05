@@ -1,11 +1,11 @@
 'use server';
 
-import {
-    GEMINI_2_5_FLASH_MODEL,
-    TIER_CONFIG,
-    getProviderForModel,
-    requestChatCompletion,
-} from '@y0ngha/siglens-core';
+import { callAiProviderRouter } from '@/infrastructure/ai/router';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { getDatabaseClient } from '@/infrastructure/db/client';
+import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { getUserTier } from '@/infrastructure/tier/use-cases/getUserTier';
 import type {
     AnalysisResponse,
     ChatActionResult,
@@ -14,12 +14,16 @@ import type {
     LlmProvider,
     ModelId,
     Timeframe,
+    UserTierContext,
+} from '@y0ngha/siglens-core';
+import {
+    DEFAULT_TIER,
+    GEMINI_2_5_FLASH_MODEL,
+    TIER_CONFIG,
+    getProviderForModel,
+    requestChatCompletion,
 } from '@y0ngha/siglens-core';
 import { headers } from 'next/headers';
-import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
-import { DrizzleUserApiKeyRepository } from '@/infrastructure/db/userApiKeyRepository';
-import { callAiProviderRouter } from '@/infrastructure/ai/router';
 
 async function getClientIp(): Promise<string> {
     const headersList = await headers();
@@ -29,12 +33,8 @@ async function getClientIp(): Promise<string> {
 }
 
 /**
- * Server-owned primary chat key per provider, mapped to core's `freeApiKey`.
- *
- * 0.7.3 semantics: `freeApiKey` is the server-owned primary credential that
- * core forwards to the AI provider. Without it core returns `server_error`
- * for every request. Google additionally honors `GEMINI_CHAT_FREE_API_KEY`
- * as the preferred primary; it falls back to `GEMINI_CHAT_API_KEY`.
+ * Server-owned key per provider forwarded to core as `freeApiKey`.
+ * Used for free models (any tier) and pro-tier premium models.
  */
 function getServerPrimaryKey(provider: LlmProvider): string | undefined {
     switch (provider) {
@@ -55,28 +55,65 @@ function getServerPrimaryKey(provider: LlmProvider): string | undefined {
 }
 
 /**
- * Resolve user-registered BYOK key for the given premium model, mapped to
- * core's `paidApiKey` (the fallback credential).
+ * Resolve the user's tier and BYOK key for the given model.
  *
- * 0.7.3 semantics: free-tier models do not require a BYOK; core covers them
- * via `freeApiKey` alone. Premium models on a non-pro tier require a BYOK —
- * returning `undefined` lets core respond with `user_api_key_required` so
- * the UI can prompt the user to register a key.
+ * - Free models: no user context needed → default tier, no paidApiKey.
+ * - Premium models + no session: default tier, no paidApiKey → core
+ *   returns `user_api_key_required`.
+ * - Premium models + pro tier: server covers the cost → tier returned,
+ *   no paidApiKey (BYOK is ignored even if registered).
+ * - Premium models + non-pro tier: BYOK looked up from DB.
  */
-async function resolveUserByokKey(
+interface UserContext {
+    tierContext: UserTierContext;
+    paidApiKey: string | undefined;
+}
+
+async function resolveUserContext(
     model: ModelId,
     provider: LlmProvider
-): Promise<string | undefined> {
-    // Safe cast: ModelId ⊆ string; Array.includes widens the argument type to string.
-    if ((TIER_CONFIG.models.free as readonly string[]).includes(model)) {
-        return undefined;
+): Promise<UserContext> {
+    // Safe cast: ModelId ⊆ string; Array.includes refuses a wider string
+    // argument against a readonly literal-union without the widening cast.
+    const isFreeModel = (TIER_CONFIG.models.free as readonly string[]).includes(
+        model
+    );
+    if (isFreeModel) {
+        return {
+            tierContext: { userId: null, tier: DEFAULT_TIER },
+            paidApiKey: undefined,
+        };
     }
+
     const user = await getCurrentUser();
-    if (!user) return undefined;
-    const { db } = getAuthDatabaseClient();
-    const repo = new DrizzleUserApiKeyRepository(db);
-    const record = await repo.findByUserAndProvider(user.id, provider);
-    return record?.apiKey;
+    if (!user) {
+        return {
+            tierContext: { userId: null, tier: DEFAULT_TIER },
+            paidApiKey: undefined,
+        };
+    }
+
+    const { db } = getDatabaseClient();
+    const tier = await getUserTier(
+        { userId: user.id },
+        { users: new DrizzleUserRepository(db) }
+    );
+
+    // Pro tier: server covers premium model costs; BYOK not needed.
+    if (tier === 'pro') {
+        return {
+            tierContext: { userId: user.id, tier },
+            paidApiKey: undefined,
+        };
+    }
+
+    const record = await new DrizzleUserApiKeyRepository(
+        db
+    ).findByUserAndProvider(user.id, provider);
+    return {
+        tierContext: { userId: user.id, tier },
+        paidApiKey: record?.apiKey,
+    };
 }
 
 export async function chatAction(
@@ -103,8 +140,8 @@ export async function chatAction(
             return { ok: false, error: 'server_error' };
         }
 
-        const [paidApiKey, clientIp] = await Promise.all([
-            resolveUserByokKey(model, provider),
+        const [{ tierContext, paidApiKey }, clientIp] = await Promise.all([
+            resolveUserContext(model, provider),
             getClientIp(),
         ]);
 
@@ -119,6 +156,7 @@ export async function chatAction(
                 model,
                 freeApiKey,
                 paidApiKey,
+                tierContext,
                 // `undefined` (not `null`) when absent — core's optional field
                 // is `currentAnalysisContext?: CurrentAnalysisContext`.
                 ...(currentAnalysisContext !== null
@@ -129,7 +167,8 @@ export async function chatAction(
                 callAiProvider: callAiProviderRouter,
             }
         );
-    } catch {
+    } catch (err) {
+        console.error('Error occurred while fetching chat completion:', err);
         return { ok: false, error: 'server_error' };
     }
 }

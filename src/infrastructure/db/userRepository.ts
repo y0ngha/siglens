@@ -18,8 +18,6 @@ import type {
     UserTierRepository,
 } from '@/infrastructure/db/types';
 
-class OAuthAccountConflictError extends Error {}
-
 function encryptOptional(
     token: string | undefined,
     encryptionKey: string
@@ -155,67 +153,64 @@ export class DrizzleUserRepository
     async createOAuthUser(
         input: CreateOAuthUserInput
     ): Promise<AuthUserRecord | null> {
-        // Resolve encryption key BEFORE opening the transaction so that a missing
+        // Resolve encryption key BEFORE any DB write so that a missing
         // OAUTH_TOKEN_ENCRYPTION_KEY aborts the entire operation instead of
         // silently persisting null tokens for fresh OAuth signups.
         const encryptionKey = requireOauthTokenEncryptionKey();
 
-        try {
-            return await this.db.transaction(async tx => {
-                const [user] = await tx
-                    .insert(users)
-                    .values({
-                        email: input.email,
-                        passwordHash: null,
-                        name: input.name ?? null,
-                        avatarUrl: input.avatarUrl ?? null,
-                        tier: DEFAULT_TIER,
-                        emailVerified: true,
-                    })
-                    .onConflictDoNothing({ target: users.email })
-                    .returning(authUserColumns);
+        const [user] = await this.db
+            .insert(users)
+            .values({
+                email: input.email,
+                passwordHash: null,
+                name: input.name ?? null,
+                avatarUrl: input.avatarUrl ?? null,
+                tier: DEFAULT_TIER,
+                emailVerified: true,
+            })
+            .onConflictDoNothing({ target: users.email })
+            .returning(authUserColumns);
 
-                if (user === undefined) {
-                    return null;
-                }
-
-                const [account] = await tx
-                    .insert(oauthAccounts)
-                    .values({
-                        userId: user.id,
-                        provider: input.provider,
-                        providerAccountId: input.providerAccountId,
-                        accessToken: encryptOptional(
-                            input.accessToken,
-                            encryptionKey
-                        ),
-                        refreshToken: encryptOptional(
-                            input.refreshToken,
-                            encryptionKey
-                        ),
-                        tokenExpiresAt: input.tokenExpiresAt ?? null,
-                    })
-                    .onConflictDoNothing({
-                        target: [
-                            oauthAccounts.provider,
-                            oauthAccounts.providerAccountId,
-                        ],
-                    })
-                    .returning({ id: oauthAccounts.id });
-
-                if (account === undefined) {
-                    throw new OAuthAccountConflictError();
-                }
-
-                return user;
-            });
-        } catch (error) {
-            if (error instanceof OAuthAccountConflictError) {
-                return null;
-            }
-
-            throw error;
+        if (user === undefined) {
+            return null;
         }
+
+        const [account] = await this.db
+            .insert(oauthAccounts)
+            .values({
+                userId: user.id,
+                provider: input.provider,
+                providerAccountId: input.providerAccountId,
+                accessToken: encryptOptional(input.accessToken, encryptionKey),
+                refreshToken: encryptOptional(
+                    input.refreshToken,
+                    encryptionKey
+                ),
+                tokenExpiresAt: input.tokenExpiresAt ?? null,
+            })
+            .onConflictDoNothing({
+                target: [
+                    oauthAccounts.provider,
+                    oauthAccounts.providerAccountId,
+                ],
+            })
+            .returning({ id: oauthAccounts.id });
+
+        if (account === undefined) {
+            await this.db
+                .delete(users)
+                .where(eq(users.id, user.id))
+                .returning({ id: users.id })
+                .catch(deleteErr => {
+                    console.warn(
+                        '[createOAuthUser] compensating delete failed — user row may be orphaned',
+                        deleteErr
+                    );
+                });
+            return null;
+        }
+
+        return user;
     }
 
     async getUserTier(userId: string): Promise<Tier | null> {

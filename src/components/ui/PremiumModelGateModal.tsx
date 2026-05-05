@@ -1,14 +1,15 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import Link from 'next/link';
-import { cn } from '@/lib/cn';
+import { useEscapeKey } from '@/components/hooks/useEscapeKey';
+import { useFocusTrap } from '@/components/hooks/useFocusTrap';
 import type { GateMode } from '@/domain/llm';
+import { cn } from '@/lib/cn';
+import Link from 'next/link';
+import { useEffect, useRef } from 'react';
 
 interface PremiumModelGateModalProps {
     mode: GateMode;
     providerLabel?: string;
-    symbol?: string;
     onClose: () => void;
 }
 
@@ -17,51 +18,43 @@ const TITLE_ID = 'premium-model-gate-title';
 export function PremiumModelGateModal({
     mode,
     providerLabel,
-    symbol,
     onClose,
 }: PremiumModelGateModalProps) {
-    const dialogRef = useRef<HTMLDialogElement>(null);
-    const closedRef = useRef(false);
+    const panelRef = useRef<HTMLDivElement>(null);
+
+    useFocusTrap(panelRef, true);
+    useEscapeKey(onClose, true);
+
+    useEffect(() => {
+        panelRef.current?.focus();
+    }, []);
 
     const isAuth = mode === 'auth';
     const iconColorClass = isAuth ? 'text-ui-warning' : 'text-ui-success';
     const title = isAuth ? '프리미엄 모델 사용 안내' : 'API 키 등록 필요';
     const body = isAuth
-        ? '프리미엄 모델을 사용하려면 로그인이 필요합니다.'
-        : `${providerLabel ?? ''} API 키를 등록하면 이 모델을 사용할 수 있습니다.`;
-
-    const safeClose = (): void => {
-        if (closedRef.current) return;
-        closedRef.current = true;
-        onClose();
-    };
-
-    const handleBackdropClick = (
-        e: React.MouseEvent<HTMLDialogElement>
-    ): void => {
-        if (e.target === dialogRef.current) {
-            safeClose();
-        }
-    };
-
-    useEffect(() => {
-        const dialog = dialogRef.current;
-        if (dialog === null) return;
-        dialog.showModal();
-        return () => {
-            dialog.close();
-        };
-    }, []);
+        ? '회원가입 후 API 키를 등록하면 이 모델을 사용할 수 있어요.'
+        : `${providerLabel ?? ''} API 키를 등록하면 이 모델을 사용할 수 있어요.`;
 
     return (
-        <dialog
-            ref={dialogRef}
-            aria-labelledby={TITLE_ID}
-            onClick={handleBackdropClick}
-            onClose={safeClose}
-            className="backdrop:bg-secondary-950/80 bg-transparent backdrop:backdrop-blur-sm"
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4"
+            aria-modal="true"
         >
-            <div className="bg-secondary-900 ring-secondary-800 w-full max-w-sm rounded-2xl p-6 shadow-2xl ring-1">
+            {/* backdrop */}
+            <div
+                className="bg-secondary-950/80 absolute inset-0 backdrop-blur-sm"
+                onClick={onClose}
+                aria-hidden="true"
+            />
+
+            <div
+                ref={panelRef}
+                role="dialog"
+                aria-labelledby={TITLE_ID}
+                tabIndex={-1}
+                className="bg-secondary-900 ring-secondary-800 relative w-full max-w-sm rounded-2xl p-6 shadow-2xl ring-1 outline-none"
+            >
                 <div className="mb-4 flex flex-col items-center gap-3 text-center">
                     {/* inline SVG avoids lucide-react dependency */}
                     <svg
@@ -91,46 +84,38 @@ export function PremiumModelGateModal({
                     >
                         {title}
                     </h2>
-                    <p className="text-secondary-300 text-sm">{body}</p>
+                    <p className="text-secondary-300 text-sm leading-relaxed">
+                        {body}
+                    </p>
                 </div>
 
                 <div className="flex flex-col gap-2">
                     {isAuth ? (
-                        <>
-                            <Link
-                                href={
-                                    symbol !== undefined
-                                        ? `/login?next=/${symbol}`
-                                        : '/login'
-                                }
-                                className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 rounded-lg px-4 py-2 text-center text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                            >
-                                로그인
-                            </Link>
-                            <Link
-                                href="/signup"
-                                className="bg-secondary-700 hover:bg-secondary-600 text-secondary-200 focus-visible:ring-primary-500 rounded-lg px-4 py-2 text-center text-sm font-medium transition-colors focus-visible:ring-2 focus-visible:outline-none"
-                            >
-                                회원가입
-                            </Link>
-                        </>
+                        <Link
+                            href="/signup"
+                            onClick={onClose}
+                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        >
+                            회원가입 하러 가기
+                        </Link>
                     ) : (
                         <Link
                             href="/account"
-                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 rounded-lg px-4 py-2 text-center text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                            onClick={onClose}
+                            className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 flex h-10 items-center justify-center rounded-lg px-4 text-sm font-medium text-white transition-colors focus-visible:ring-2 focus-visible:outline-none"
                         >
-                            API 키 등록하러 가기
+                            등록하러 가기
                         </Link>
                     )}
                     <button
                         type="button"
-                        onClick={safeClose}
-                        className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 rounded-lg px-4 py-2 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
+                        onClick={onClose}
+                        className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 flex h-10 items-center justify-center rounded-lg px-4 text-sm transition-colors focus-visible:ring-2 focus-visible:outline-none"
                     >
                         닫기
                     </button>
                 </div>
             </div>
-        </dialog>
+        </div>
     );
 }

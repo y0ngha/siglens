@@ -97,7 +97,8 @@ function setupMocks(
         privacyTerms?: typeof SAMPLE_TERMS_P | null;
         tosTerms?: typeof SAMPLE_TERMS_T | null;
         existingUser?: { id: string } | null;
-        transactionThrows?: boolean;
+        createOAuthUserResult?: { id: string } | null;
+        insertManyThrows?: boolean;
     } = {}
 ): void {
     const {
@@ -107,7 +108,8 @@ function setupMocks(
         privacyTerms = SAMPLE_TERMS_P,
         tosTerms = SAMPLE_TERMS_T,
         existingUser = null,
-        transactionThrows = false,
+        createOAuthUserResult = { id: 'new-user-id' },
+        insertManyThrows = false,
     } = options;
 
     if (!storeAvailable) {
@@ -139,26 +141,21 @@ function setupMocks(
                 findByEmail: jest.fn().mockResolvedValue(existingUser),
                 createOAuthUser: jest
                     .fn()
-                    .mockResolvedValue({ id: 'new-user-id' }),
+                    .mockResolvedValue(createOAuthUserResult),
+                deleteUser: jest.fn().mockResolvedValue(true),
             }) as unknown as InstanceType<typeof DrizzleUserRepository>
     );
 
     MockAgreementRepo.mockImplementation(
         () =>
             ({
-                insertMany: jest.fn().mockResolvedValue(undefined),
+                insertMany: insertManyThrows
+                    ? jest.fn().mockRejectedValue(new Error('db error'))
+                    : jest.fn().mockResolvedValue(undefined),
             }) as unknown as InstanceType<typeof DrizzleAgreementRepository>
     );
 
-    const txMock = transactionThrows
-        ? jest.fn().mockRejectedValue(new Error('db error'))
-        : jest
-              .fn()
-              .mockImplementation(
-                  async (cb: (tx: unknown) => Promise<string>) => cb({})
-              );
-
-    mockGetAuthDb.mockReturnValue({ db: { transaction: txMock } });
+    mockGetAuthDb.mockReturnValue({ db: {} });
 }
 
 async function expectRedirectTo(
@@ -229,21 +226,29 @@ describe('finalizeOAuthSignupAction', () => {
         await expectRedirectTo('/login?error=oauth_email_conflict');
     });
 
-    it('redirects to service_unavailable when DB transaction throws', async () => {
-        setupMocks({ transactionThrows: true });
-        await expectRedirectTo('/login?error=service_unavailable');
-    });
+    it('redirects to service_unavailable when agreement insertion throws and compensates by deleting the user', async () => {
+        setupMocks({ insertManyThrows: true });
 
-    it('redirects to service_unavailable when createOAuthUser returns null inside transaction', async () => {
-        setupMocks();
+        const deleteUser = jest.fn().mockResolvedValue(true);
         MockUserRepo.mockImplementation(
             () =>
                 ({
                     findByEmail: jest.fn().mockResolvedValue(null),
-                    createOAuthUser: jest.fn().mockResolvedValue(null),
+                    createOAuthUser: jest
+                        .fn()
+                        .mockResolvedValue({ id: 'new-user-id' }),
+                    deleteUser,
                 }) as unknown as InstanceType<typeof DrizzleUserRepository>
         );
+
         await expectRedirectTo('/login?error=service_unavailable');
+
+        expect(deleteUser).toHaveBeenCalledWith('new-user-id');
+    });
+
+    it('redirects to oauth_email_conflict when createOAuthUser returns null (race condition)', async () => {
+        setupMocks({ createOAuthUserResult: null });
+        await expectRedirectTo('/login?error=oauth_email_conflict');
     });
 
     it('예상치 못한 내부 에러 발생 시 service_unavailable로 리다이렉트한다', async () => {

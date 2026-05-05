@@ -1,4 +1,3 @@
-import type { AuthUserRecord } from '@/domain/auth/types';
 import {
     normalizeEmail,
     validateEmail,
@@ -14,9 +13,6 @@ import type {
     RegisterUserInput,
     RegisterUserResult,
 } from '@/infrastructure/auth/use-cases/types';
-import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
 
 const PURPOSE = 'email_verification' as const;
 const EMAIL_ALREADY_EXISTS_MESSAGE = '이미 사용 중인 이메일입니다.';
@@ -72,51 +68,47 @@ export async function registerUser(
         return { ok: false, error: emailAlreadyExistsError() };
     }
 
-    // Once we're past the email-already-exists gate, the verified marker has
-    // served its purpose. Clear it under finally so that an exception thrown by
-    // hashPassword / createEmailUser doesn't leave the marker pinned for its
-    // remaining 30-minute TTL (otherwise an attacker who could read DB could
-    // still treat the email as "already verified" until expiry).
-    let user: AuthUserRecord | null = null;
     const now = new Date();
-    try {
-        const passwordHash = await dependencies.passwordHasher.hashPassword(
-            input.password
-        );
-        // Use tx to ensure user creation and agreement insertion are atomic.
-        // Both DrizzleUserRepository and DrizzleAgreementRepository are
-        // instantiated with the transaction client so all queries run in the
-        // same Neon batch request.
-        user = await dependencies.db.transaction(async tx => {
-            // Safe: Transactor.transaction always passes a SiglensDatabase tx to its callback.
-            const txDb = tx as SiglensDatabase;
-            const created = await new DrizzleUserRepository(
-                txDb
-            ).createEmailUser({
-                email,
-                passwordHash,
-                name: input.name?.trim() || null,
-                avatarUrl: input.avatarUrl?.trim() || null,
-                emailVerified: true,
-            });
-            if (created === null) return null;
-            await new DrizzleAgreementRepository(txDb).insertMany(
-                input.agreedTermsIds.map(termsId => ({
-                    userId: created.id,
-                    termsId,
-                    agreed: true,
-                    agreedAt: now,
-                }))
-            );
-            return created;
-        });
-    } finally {
-        await dependencies.emailTokens.delete(PURPOSE, email);
-    }
+    const passwordHash = await dependencies.passwordHasher.hashPassword(
+        input.password
+    );
+
+    const user = await dependencies.users.createEmailUser({
+        email,
+        passwordHash,
+        name: input.name?.trim() || null,
+        avatarUrl: input.avatarUrl?.trim() || null,
+        emailVerified: true,
+    });
 
     if (user === null) {
         return { ok: false, error: emailAlreadyExistsError() };
     }
 
+    // Insert agreements after user creation. On failure, compensate by
+    // deleting the user so the registration can be retried without hitting
+    // email_already_exists on the next attempt.
+    try {
+        await dependencies.agreements.insertMany(
+            input.agreedTermsIds.map(termsId => ({
+                userId: user.id,
+                termsId,
+                agreed: true,
+                agreedAt: now,
+            }))
+        );
+    } catch (err) {
+        // Best-effort rollback — log secondary failure so degradation is observable.
+        await dependencies.users.deleteUser(user.id).catch(deleteErr => {
+            console.warn(
+                '[registerUser] compensating delete failed — user row may be orphaned',
+                deleteErr
+            );
+        });
+        throw err;
+    }
+
+    // Registration succeeded — clear the verified marker now that it has served its purpose.
+    await dependencies.emailTokens.delete(PURPOSE, email);
     return { ok: true, user };
 }

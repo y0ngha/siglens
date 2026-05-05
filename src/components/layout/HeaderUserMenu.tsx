@@ -6,6 +6,7 @@ import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { TIER_LABEL } from '@/lib/auth/tierLabel';
 import { cn } from '@/lib/cn';
 import type { Tier } from '@y0ngha/siglens-core';
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRef } from 'react';
 
@@ -20,6 +21,7 @@ export interface HeaderUserMenuUser {
     readonly email: string;
     readonly name: string | null;
     readonly tier: Tier;
+    readonly avatarUrl: string | null;
 }
 
 interface HeaderUserMenuProps {
@@ -85,7 +87,17 @@ export function HeaderUserMenu({ currentUser, loading }: HeaderUserMenuProps) {
                 aria-label={`사용자 메뉴 (${tierLabel})`}
                 className="bg-secondary-800 text-secondary-100 hover:bg-secondary-700 focus-visible:ring-primary-500 relative flex size-10 items-center justify-center rounded-full text-sm font-semibold transition-colors focus-visible:ring-2 focus-visible:outline-none"
             >
-                <span aria-hidden>{initial}</span>
+                {currentUser.avatarUrl ? (
+                    <Image
+                        src={currentUser.avatarUrl}
+                        alt="아바타 이미지"
+                        width={40}
+                        height={40}
+                        className="size-full rounded-full object-cover"
+                    />
+                ) : (
+                    <span aria-hidden>{initial}</span>
+                )}
                 <span
                     aria-hidden
                     className={cn(

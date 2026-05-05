@@ -78,12 +78,12 @@ function makeDeleteDb(rows: unknown[]): {
     };
 }
 
-function makeTransactionDb(options: {
+function makeOAuthInsertDb(options: {
     userRows: unknown[];
     accountRows: unknown[];
+    deleteRows?: unknown[];
 }): {
     db: SiglensDatabase;
-    transaction: ReturnType<typeof jest.fn>;
     insert: ReturnType<typeof jest.fn>;
     userValues: ReturnType<typeof jest.fn>;
     accountValues: ReturnType<typeof jest.fn>;
@@ -91,7 +91,16 @@ function makeTransactionDb(options: {
     accountOnConflictDoNothing: ReturnType<typeof jest.fn>;
     userReturning: ReturnType<typeof jest.fn>;
     accountReturning: ReturnType<typeof jest.fn>;
+    deleteFn: ReturnType<typeof jest.fn>;
+    deleteWhere: ReturnType<typeof jest.fn>;
+    deleteReturning: ReturnType<typeof jest.fn>;
 } {
+    const deleteReturning = jest
+        .fn()
+        .mockResolvedValue(options.deleteRows ?? []);
+    const deleteWhere = jest.fn(() => ({ returning: deleteReturning }));
+    const deleteFn = jest.fn(() => ({ where: deleteWhere }));
+
     const userReturning = jest.fn().mockResolvedValue(options.userRows);
     const accountReturning = jest.fn().mockResolvedValue(options.accountRows);
     const userOnConflictDoNothing = jest.fn(() => ({
@@ -110,12 +119,9 @@ function makeTransactionDb(options: {
         .fn()
         .mockReturnValueOnce({ values: userValues })
         .mockReturnValueOnce({ values: accountValues });
-    const tx = { insert };
-    const transaction = jest.fn(async callback => callback(tx));
 
     return {
-        db: { transaction } as unknown as SiglensDatabase,
-        transaction,
+        db: { insert, delete: deleteFn } as unknown as SiglensDatabase,
         insert,
         userValues,
         accountValues,
@@ -123,16 +129,24 @@ function makeTransactionDb(options: {
         accountOnConflictDoNothing,
         userReturning,
         accountReturning,
+        deleteFn,
+        deleteWhere,
+        deleteReturning,
     };
 }
 
-function makeFailingTransactionDb(error: Error): {
+function makeFailingOAuthInsertDb(error: Error): {
     db: SiglensDatabase;
+    insert: ReturnType<typeof jest.fn>;
 } {
-    const transaction = jest.fn().mockRejectedValue(error);
+    const returning = jest.fn().mockRejectedValue(error);
+    const onConflictDoNothing = jest.fn(() => ({ returning }));
+    const values = jest.fn(() => ({ onConflictDoNothing }));
+    const insert = jest.fn(() => ({ values }));
 
     return {
-        db: { transaction } as unknown as SiglensDatabase,
+        db: { insert } as unknown as SiglensDatabase,
+        insert,
     };
 }
 
@@ -383,7 +397,7 @@ describe('DrizzleUserRepository', () => {
 
     it('creates a free-tier OAuth user and provider account link', async () => {
         const { db, userValues, accountValues, accountOnConflictDoNothing } =
-            makeTransactionDb({
+            makeOAuthInsertDb({
                 userRows: [userRecord],
                 accountRows: [{ id: 'oauth-account-1' }],
             });
@@ -419,7 +433,7 @@ describe('DrizzleUserRepository', () => {
     });
 
     it('creates an OAuth user with avatarUrl provided', async () => {
-        const { db, userValues } = makeTransactionDb({
+        const { db, userValues } = makeOAuthInsertDb({
             userRows: [userRecord],
             accountRows: [{ id: 'oauth-account-1' }],
         });
@@ -450,7 +464,7 @@ describe('DrizzleUserRepository', () => {
         });
 
         it('encrypts access and refresh tokens before storage', async () => {
-            const { db, accountValues } = makeTransactionDb({
+            const { db, accountValues } = makeOAuthInsertDb({
                 userRows: [userRecord],
                 accountRows: [{ id: 'oauth-account-1' }],
             });
@@ -486,9 +500,9 @@ describe('DrizzleUserRepository', () => {
             );
         });
 
-        it('throws and aborts the transaction when the encryption key is absent', async () => {
+        it('throws and does not write to DB when the encryption key is absent', async () => {
             delete process.env['OAUTH_TOKEN_ENCRYPTION_KEY'];
-            const { db, transaction } = makeTransactionDb({
+            const { db, insert } = makeOAuthInsertDb({
                 userRows: [userRecord],
                 accountRows: [{ id: 'oauth-account-1' }],
             });
@@ -504,13 +518,13 @@ describe('DrizzleUserRepository', () => {
                 })
             ).rejects.toThrow(/OAUTH_TOKEN_ENCRYPTION_KEY/);
 
-            // Transaction must NOT be opened when the encryption key is missing.
-            expect(transaction).not.toHaveBeenCalled();
+            // No DB writes must happen when the encryption key is missing.
+            expect(insert).not.toHaveBeenCalled();
         });
 
         it('throws when the encryption key is present but malformed (wrong length)', async () => {
             process.env['OAUTH_TOKEN_ENCRYPTION_KEY'] = 'deadbeef';
-            const { db, transaction } = makeTransactionDb({
+            const { db, insert } = makeOAuthInsertDb({
                 userRows: [userRecord],
                 accountRows: [{ id: 'oauth-account-1' }],
             });
@@ -524,14 +538,14 @@ describe('DrizzleUserRepository', () => {
                 })
             ).rejects.toThrow(/OAUTH_TOKEN_ENCRYPTION_KEY/);
 
-            expect(transaction).not.toHaveBeenCalled();
+            expect(insert).not.toHaveBeenCalled();
         });
     });
 
     it('returns null when OAuth user creation conflicts on email', async () => {
-        const { db, insert } = makeTransactionDb({
+        const { db, insert } = makeOAuthInsertDb({
             userRows: [],
-            accountRows: [{ id: 'oauth-account-1' }],
+            accountRows: [],
         });
         const repository = new DrizzleUserRepository(db);
 
@@ -545,10 +559,11 @@ describe('DrizzleUserRepository', () => {
         expect(result).toBeNull();
     });
 
-    it('returns null when OAuth provider account link conflicts', async () => {
-        const { db } = makeTransactionDb({
+    it('returns null and compensates by deleting the user when oauth account link conflicts', async () => {
+        const { db, insert, deleteFn, deleteWhere } = makeOAuthInsertDb({
             userRows: [userRecord],
             accountRows: [],
+            deleteRows: [{ id: 'user-1' }],
         });
         const repository = new DrizzleUserRepository(db);
 
@@ -558,12 +573,15 @@ describe('DrizzleUserRepository', () => {
             providerAccountId: 'provider-user-1',
         });
 
+        expect(insert).toHaveBeenCalledTimes(2);
+        expect(deleteFn).toHaveBeenCalledWith(users);
+        expect(deleteWhere).toHaveBeenCalledWith(expect.any(Object));
         expect(result).toBeNull();
     });
 
     it('rethrows unexpected OAuth user creation failures', async () => {
         const error = new Error('database unavailable');
-        const { db } = makeFailingTransactionDb(error);
+        const { db } = makeFailingOAuthInsertDb(error);
         const repository = new DrizzleUserRepository(db);
 
         await expect(
