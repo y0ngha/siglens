@@ -63,6 +63,13 @@ interface UseAnalysisOptions {
      */
     timeframeChangeCount: number;
     modelId?: ModelId;
+    /**
+     * useSelectedModel이 localStorage에서 저장된 모델을 읽어 hydration이 완료됐는지 여부.
+     * false인 동안에는 초기 기본값(DEFAULT_MODEL)을 사용 중이므로
+     * initialAnalysisFailed 자동 재분석과 model-change 재분석을 보류한다.
+     * undefined이면 hydration 추적을 하지 않는다(하위 호환).
+     */
+    isModelHydrated?: boolean;
 }
 
 /**
@@ -95,6 +102,7 @@ export function useAnalysis({
     fmpSymbol,
     timeframeChangeCount,
     modelId,
+    isModelHydrated,
 }: UseAnalysisOptions): UseAnalysisResult {
     // 1. useState
     const [analysisResult, setAnalysisResult] =
@@ -115,6 +123,14 @@ export function useAnalysis({
     const latestModelIdRef = useRef<ModelId | undefined>(modelId);
     const prevTimeframeChangeCountRef = useRef(0);
     const prevModelIdRef = useRef<ModelId | undefined>(modelId);
+    /**
+     * localStorage hydration으로 인한 model 변경(마운트 직후 DEFAULT_MODEL → 저장값)을
+     * 사용자 의도 변경과 구분하기 위한 플래그.
+     * isModelHydrated가 처음 true가 됐을 때 prevModelIdRef를 동기화한 뒤 true로 설정한다.
+     */
+    const hasHandledModelHydrationRef = useRef(
+        isModelHydrated !== false // undefined(추적 안 함)이면 처음부터 true로 취급
+    );
     // 현재 진행 중인 워커 job ID. 타임프레임 변경 시 취소 신호 전달에 사용.
     const currentJobIdRef = useRef<string | null>(null);
     // 초기 마운트 시 서버 분석 실패 여부를 캡처한다.
@@ -323,16 +339,18 @@ export function useAnalysis({
         };
     }, [submitData]);
 
-    // 서버에서 초기 AI 분석이 실패한 경우 마운트 직후 자동으로 재분석을 실행한다.
+    // 서버에서 초기 AI 분석이 실패한 경우, localStorage hydration이 완료된 뒤 자동으로 재분석을 실행한다.
+    // isModelHydrated=false 동안에는 기본값(DEFAULT_MODEL)이 사용 중이므로 hydration 완료까지 대기한다.
     useEffect(() => {
         if (!initialAnalysisFailedRef.current) return;
+        if (isModelHydrated === false) return;
         mutate({
             symbol: latestRef.current.symbol,
             force: false,
             fmpSymbol: latestRef.current.fmpSymbol,
             modelId: latestModelIdRef.current,
         });
-    }, [mutate]);
+    }, [mutate, isModelHydrated]);
 
     // 타임프레임 변경 시 진행 중인 워커 작업을 취소하고, 이전 mutation 상태를 초기화한 뒤 새 분석을 자동 실행한다.
     useEffect(() => {
@@ -355,6 +373,14 @@ export function useAnalysis({
     }, [timeframeChangeCount, reset, mutate, cancelMutate]);
 
     useEffect(() => {
+        // localStorage에서 저장된 모델을 처음 읽는 시점(hydration)은 사용자 변경이 아니므로
+        // prevModelIdRef를 동기화만 하고 재분석은 트리거하지 않는다.
+        if (!hasHandledModelHydrationRef.current && isModelHydrated !== false) {
+            hasHandledModelHydrationRef.current = true;
+            prevModelIdRef.current = modelId;
+            return;
+        }
+
         if (modelId === prevModelIdRef.current) return;
         prevModelIdRef.current = modelId;
 
@@ -369,7 +395,7 @@ export function useAnalysis({
             fmpSymbol: latestRef.current.fmpSymbol,
             modelId,
         });
-    }, [modelId, reset, mutate, cancelMutate]);
+    }, [modelId, isModelHydrated, reset, mutate, cancelMutate]);
 
     // 쿨다운이 활성화된 동안 1초마다 로컬에서 카운트다운한다.
     // isCountdownActive(0 → 양수 전환)가 true가 될 때만 인터벌을 시작해 중복 시작을 방지한다.

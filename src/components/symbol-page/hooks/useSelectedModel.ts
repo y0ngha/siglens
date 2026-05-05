@@ -11,9 +11,10 @@ const DEFAULT_MODEL: ModelId = GEMINI_2_5_FLASH_LITE_MODEL;
 
 export function useSelectedModel(
     allowedModels: readonly ModelId[]
-): [ModelId, (m: ModelId) => void] {
+): [ModelId, (m: ModelId) => void, boolean] {
     const [selectedModel, setSelectedModelState] =
         useState<ModelId>(DEFAULT_MODEL);
+    const [isHydrated, setIsHydrated] = useState(false);
 
     const setSelectedModel = useCallback((model: ModelId): void => {
         if (typeof window !== 'undefined') {
@@ -31,7 +32,10 @@ export function useSelectedModel(
             stored !== null && allowedModels.includes(stored)
                 ? stored
                 : DEFAULT_MODEL;
-        startTransition(() => setSelectedModelState(resolved));
+        startTransition(() => {
+            setSelectedModelState(resolved);
+            setIsHydrated(true);
+        });
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
@@ -48,5 +52,5 @@ export function useSelectedModel(
         }
     }, [allowedModels, selectedModel]);
 
-    return [selectedModel, setSelectedModel];
+    return [selectedModel, setSelectedModel, isHydrated];
 }
