@@ -6,6 +6,7 @@ interface AuthFieldGroupProps {
     autoComplete?: string;
     required?: boolean;
     defaultValue?: string;
+    value?: string;
     placeholder?: string;
     error?: string;
     onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
@@ -19,6 +20,7 @@ export function AuthFieldGroup({
     autoComplete,
     required,
     defaultValue,
+    value,
     placeholder,
     error,
     onChange,
@@ -39,6 +41,7 @@ export function AuthFieldGroup({
                 autoComplete={autoComplete}
                 required={required}
                 defaultValue={defaultValue}
+                {...(value !== undefined ? { value } : {})}
                 placeholder={placeholder}
                 onChange={onChange}
                 aria-invalid={!!error}

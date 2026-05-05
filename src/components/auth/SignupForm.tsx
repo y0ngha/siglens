@@ -91,6 +91,7 @@ interface SignupFormFlowProps extends SignupFormProps {
 
 function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     const [email, setEmail] = useState('');
+    const [name, setName] = useState('');
     const [password, setPassword] = useState('');
     const [privacyChecked, setPrivacyChecked] = useState(false);
     const [tosChecked, setTosChecked] = useState(false);
@@ -218,6 +219,8 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         type="text"
                         autoComplete="name"
                         placeholder="다른 사용자에게 보이는 이름"
+                        value={name}
+                        onChange={event => setName(event.target.value)}
                     />
                     <PasswordField
                         id="signup-password"
