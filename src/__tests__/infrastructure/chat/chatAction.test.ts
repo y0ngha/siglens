@@ -178,14 +178,14 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'claude-haiku-3-5'
+                'claude-haiku-4-5'
             );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
                     serverApiKey: 'anthr-key',
                     userApiKey: undefined,
-                    model: 'claude-haiku-3-5',
+                    model: 'claude-haiku-4-5',
                 }),
                 { callAiProvider: callAiProviderRouter }
             );
@@ -241,7 +241,7 @@ describe('chatAction 함수는', () => {
                 MINIMAL_ANALYSIS,
                 [],
                 '질문',
-                'claude-haiku-3-5'
+                'claude-haiku-4-5'
             );
 
             expect(result).toEqual({ ok: false, error: 'server_error' });

@@ -1,17 +1,17 @@
 'use client';
 
-import { useRef, useState } from 'react';
-import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
-import { MarkdownText } from '@/components/ui/MarkdownText';
-import { VALID_CHAT_MODELS, type ModelId } from '@y0ngha/siglens-core';
-import { isFreeChatModel } from '@/domain/llm';
-import { cn } from '@/lib/cn';
-import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
+import { ContextSwitchSystemMessage } from '@/components/chat/ContextSwitchSystemMessage';
 import { useChat } from '@/components/chat/hooks/useChat';
 import { useChatInput } from '@/components/chat/hooks/useChatInput';
 import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
-import { ContextSwitchSystemMessage } from '@/components/chat/ContextSwitchSystemMessage';
+import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
+import { MarkdownText } from '@/components/ui/MarkdownText';
 import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
+import { isFreeChatModel } from '@/domain/llm';
+import { cn } from '@/lib/cn';
+import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
+import { VALID_CHAT_MODELS, type ModelId } from '@y0ngha/siglens-core';
+import { useRef, useState } from 'react';
 
 interface ChatModelOption {
     id: ModelId;
@@ -36,7 +36,7 @@ const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ChatModelDisplay>> = {
         label: 'Flash 3',
         fullName: 'Gemini 3 Flash Preview',
     },
-    'claude-haiku-3-5': { label: 'Haiku', fullName: 'Claude Haiku 3.5' },
+    'claude-haiku-4-5': { label: 'Haiku', fullName: 'Claude Haiku 3.5' },
     'claude-sonnet-4-6': { label: 'Sonnet', fullName: 'Claude Sonnet 4.6' },
     'claude-opus-4-7': { label: 'Opus', fullName: 'Claude Opus 4.7' },
     'gpt-5-mini': { label: 'GPT Mini', fullName: 'GPT-5 Mini' },

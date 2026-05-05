@@ -6,13 +6,13 @@
  * surface as test failures instead of silent regressions.
  */
 
-import '@testing-library/jest-dom';
-import React from 'react';
-import { renderHook } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
-import { QUERY_KEYS } from '@/lib/queryConfig';
 import { useNewsAugment } from '@/components/symbol-page/hooks/useNewsAugment';
+import { QUERY_KEYS } from '@/lib/queryConfig';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import '@testing-library/jest-dom';
+import { renderHook } from '@testing-library/react';
+import type { ModelId, NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import React from 'react';
 
 const SYMBOL = 'AAPL';
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
@@ -77,7 +77,7 @@ describe('useNewsAugment (cache-only contract)', () => {
             SAMPLE_RESULT
         );
         const { result } = renderHook(
-            () => useNewsAugment(SYMBOL, 'claude-haiku-3-5' as ModelId),
+            () => useNewsAugment(SYMBOL, 'claude-haiku-4-5' as ModelId),
             { wrapper: makeWrapper(client) }
         );
         expect(result.current).toBeNull();

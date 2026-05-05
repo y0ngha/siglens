@@ -1,9 +1,9 @@
+import { isFreeChatModel } from '@/domain/llm/modelTier';
 import {
-    GEMINI_2_5_FLASH_MODEL,
     GEMINI_2_5_FLASH_LITE_MODEL,
+    GEMINI_2_5_FLASH_MODEL,
     GEMINI_2_5_PRO_MODEL,
 } from '@y0ngha/siglens-core';
-import { isFreeChatModel } from '@/domain/llm/modelTier';
 
 describe('isFreeChatModel', () => {
     it('gemini-2.5-flash는 Free 모델이다', () => {
@@ -14,8 +14,8 @@ describe('isFreeChatModel', () => {
         expect(isFreeChatModel(GEMINI_2_5_FLASH_LITE_MODEL)).toBe(true);
     });
 
-    it('claude-haiku-3-5는 Free 모델이다', () => {
-        expect(isFreeChatModel('claude-haiku-3-5')).toBe(true);
+    it('claude-haiku-4-5는 Free 모델이다', () => {
+        expect(isFreeChatModel('claude-haiku-4-5')).toBe(true);
     });
 
     it('gpt-5-mini는 Free 모델이다', () => {

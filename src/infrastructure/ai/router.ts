@@ -1,8 +1,12 @@
-import { MODEL_SPECS, getProviderForModel } from '@y0ngha/siglens-core';
-import type { ActiveModelId, CallAiProviderOptions, ModelId } from '@y0ngha/siglens-core';
 import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
 import { callGeminiChat } from '@/infrastructure/ai/gemini';
 import { callOpenaiChat } from '@/infrastructure/ai/openai';
+import type {
+    ActiveModelId,
+    CallAiProviderOptions,
+    ModelId,
+} from '@y0ngha/siglens-core';
+import { MODEL_SPECS, getProviderForModel } from '@y0ngha/siglens-core';
 
 export async function callAiProviderRouter(
     options: CallAiProviderOptions
@@ -12,8 +16,8 @@ export async function callAiProviderRouter(
     // safe in normal flow; the throw surfaces wiring bugs instead of silently misrouting.
     const provider = getProviderForModel(options.model as ModelId);
 
-    // Internal model key (e.g. 'claude-haiku-3-5') → provider API model ID
-    // (e.g. 'claude-haiku-3-5-20251001'). The two may differ; always use apiModelId
+    // Internal model key (e.g. 'claude-haiku-4-5') → provider API model ID
+    // (e.g. 'claude-haiku-4-5-20251001'). The two may differ; always use apiModelId
     // for the actual SDK call so the provider recognises the model.
     const apiOptions: CallAiProviderOptions =
         options.model in MODEL_SPECS

@@ -35,10 +35,9 @@ const mockCallAnthropicChat = callAnthropicChat as jest.MockedFunction<
 const mockCallOpenaiChat = callOpenaiChat as jest.MockedFunction<
     typeof callOpenaiChat
 >;
-const mockCallGeminiWithKeyFallback =
-    callGeminiChat as jest.MockedFunction<
-        typeof callGeminiChat
-    >;
+const mockCallGeminiWithKeyFallback = callGeminiChat as jest.MockedFunction<
+    typeof callGeminiChat
+>;
 const mockGetProviderForModel = getProviderForModel as jest.MockedFunction<
     typeof getProviderForModel
 >;
@@ -63,8 +62,8 @@ describe('callAiProviderRouter', () => {
     });
 
     describe('Anthropic 모델 라우팅', () => {
-        it('claude-haiku-3-5 모델은 callAnthropicChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
-            const options = { ...BASE_OPTIONS, model: 'claude-haiku-3-5' };
+        it('claude-haiku-4-5 모델은 callAnthropicChat에 위임하고 다른 어댑터는 호출하지 않는다', async () => {
+            const options = { ...BASE_OPTIONS, model: 'claude-haiku-4-5' };
 
             const result = await callAiProviderRouter(options);
 
@@ -72,7 +71,7 @@ describe('callAiProviderRouter', () => {
             expect(mockCallAnthropicChat).toHaveBeenCalledTimes(1);
             expect(mockCallAnthropicChat).toHaveBeenCalledWith({
                 ...options,
-                model: 'claude-haiku-3-5-20251001',
+                model: 'claude-haiku-4-5-20251001',
             });
             expect(mockCallOpenaiChat).not.toHaveBeenCalled();
             expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();

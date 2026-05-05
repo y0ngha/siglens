@@ -26,7 +26,7 @@ const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ModelDisplay>> = {
         label: 'Flash 3',
         fullName: 'Gemini 3 Flash Preview',
     },
-    'claude-haiku-3-5': { label: 'Haiku', fullName: 'Claude Haiku 3.5' },
+    'claude-haiku-4-5': { label: 'Haiku', fullName: 'Claude Haiku 4.5' },
     'claude-sonnet-4-6': { label: 'Sonnet', fullName: 'Claude Sonnet 4.6' },
     'claude-opus-4-7': { label: 'Opus', fullName: 'Claude Opus 4.7' },
     'gpt-5-mini': { label: 'GPT Mini', fullName: 'GPT-5 Mini' },

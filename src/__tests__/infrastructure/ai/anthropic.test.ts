@@ -12,7 +12,7 @@ import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
 
 const BASE_OPTIONS = {
     serverApiKey: 'server-key',
-    model: 'claude-haiku-3-5',
+    model: 'claude-haiku-4-5',
     contents: 'Hello',
 } as const;
 
@@ -31,7 +31,9 @@ describe('callAnthropicChat', () => {
             const result = await callAnthropicChat(BASE_OPTIONS);
 
             expect(result).toBe('Hello');
-            expect(MockAnthropic).toHaveBeenCalledWith({ apiKey: 'server-key' });
+            expect(MockAnthropic).toHaveBeenCalledWith({
+                apiKey: 'server-key',
+            });
             expect(mockCreate).toHaveBeenCalledTimes(1);
         });
 
@@ -41,16 +43,23 @@ describe('callAnthropicChat', () => {
                 stop_reason: 'end_turn',
             });
 
-            await callAnthropicChat({ ...BASE_OPTIONS, userApiKey: 'user-key' });
+            await callAnthropicChat({
+                ...BASE_OPTIONS,
+                userApiKey: 'user-key',
+            });
 
-            expect(MockAnthropic).toHaveBeenCalledWith({ apiKey: 'server-key' });
+            expect(MockAnthropic).toHaveBeenCalledWith({
+                apiKey: 'server-key',
+            });
             expect(MockAnthropic).toHaveBeenCalledTimes(1);
         });
 
         it('호출이 실패하면 에러가 전파된다', async () => {
             mockCreate.mockRejectedValue(new Error('api error'));
 
-            await expect(callAnthropicChat(BASE_OPTIONS)).rejects.toThrow('api error');
+            await expect(callAnthropicChat(BASE_OPTIONS)).rejects.toThrow(
+                'api error'
+            );
         });
     });
 
