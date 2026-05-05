@@ -17,7 +17,7 @@ import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
 import { useAnalysisDerivedData } from '@/components/symbol-page/hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from '@/components/symbol-page/hooks/useAnalysisDisplay';
 import { useActionPricesVisibility } from '@/components/symbol-page/hooks/useActionPricesVisibility';
-import { useSelectedProvider } from '@/components/symbol-page/hooks/useSelectedProvider';
+import { useSelectedModel } from '@/components/symbol-page/hooks/useSelectedModel';
 import { useUserTier } from '@/components/symbol-page/hooks/useUserTier';
 import {
     PANEL_MAX_WIDTH,
@@ -30,7 +30,6 @@ import { getAnalysisStatus } from '@/components/symbol-page/utils/analysisStatus
 import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
-import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
 import { NewsAugment } from '@/components/symbol-page/NewsAugment';
 
@@ -125,8 +124,6 @@ export function ChartContent({
     const { actionPricesVisible, setActionPricesVisible } =
         useActionPricesVisibility();
 
-    const [selectedProvider, setSelectedProvider] = useSelectedProvider();
-
     // Resolve the user's tier from the server (guests fall back to 'free') so
     // the model picker reflects the actual entitlement instead of a hardcoded
     // value. The single source of truth for tier→model mapping lives in
@@ -134,12 +131,7 @@ export function ChartContent({
     const { tier } = useUserTier();
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
 
-    const modelId = useMemo(
-        () =>
-            resolveDefaultModelForProvider(selectedProvider, allowedModels) ??
-            undefined,
-        [selectedProvider, allowedModels]
-    );
+    const [modelId, setModelId] = useSelectedModel(allowedModels);
 
     const {
         analysis,
@@ -178,8 +170,8 @@ export function ChartContent({
         () => (
             <>
                 <ModelSelector
-                    selectedProvider={selectedProvider}
-                    onProviderChange={setSelectedProvider}
+                    selectedModel={modelId}
+                    onModelChange={setModelId}
                     allowedModels={allowedModels}
                     disabled={isAnalyzing}
                 />
@@ -205,8 +197,8 @@ export function ChartContent({
             </>
         ),
         [
-            selectedProvider,
-            setSelectedProvider,
+            modelId,
+            setModelId,
             allowedModels,
             isAnalyzing,
             symbol,

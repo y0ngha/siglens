@@ -1,269 +1,206 @@
 'use client';
 
-import { useRef, useCallback, useMemo } from 'react';
-import type { AIProvider, ModelId } from '@y0ngha/siglens-core';
-import { resolveDefaultModelForProvider } from '@/domain/llm/providerDefaults';
+import { useRef } from 'react';
+import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
+import type { ModelId } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 
-const PROVIDER_ORDER: readonly AIProvider[] = ['claude', 'gemini', 'chatgpt'];
-
-const PROVIDER_DISPLAY_NAME: Record<AIProvider, string> = {
-    claude: 'CLAUDE',
-    gemini: 'GEMINI',
-    chatgpt: 'CHATGPT',
-};
-
-interface ProviderConfig {
-    provider: AIProvider;
-    displayName: string;
+interface ModelDisplay {
+    label: string;
+    fullName: string;
 }
 
-const PROVIDER_CONFIG: readonly ProviderConfig[] = PROVIDER_ORDER.map(
-    provider => ({
-        provider,
-        displayName: PROVIDER_DISPLAY_NAME[provider],
-    })
-);
+const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ModelDisplay>> = {
+    'gemini-2.5-flash-lite': {
+        label: 'Flash Lite',
+        fullName: 'Gemini 2.5 Flash Lite',
+    },
+    'gemini-2.5-flash': { label: 'Flash', fullName: 'Gemini 2.5 Flash' },
+    'gemini-2.5-pro': { label: 'Pro', fullName: 'Gemini 2.5 Pro' },
+    'gemini-3.1-pro-preview': {
+        label: '3.1 Pro',
+        fullName: 'Gemini 3.1 Pro Preview',
+    },
+    'gemini-3-flash-preview': {
+        label: 'Flash 3',
+        fullName: 'Gemini 3 Flash Preview',
+    },
+    'claude-haiku-3-5': { label: 'Haiku', fullName: 'Claude Haiku 3.5' },
+    'claude-sonnet-4-6': { label: 'Sonnet', fullName: 'Claude Sonnet 4.6' },
+    'claude-opus-4-7': { label: 'Opus', fullName: 'Claude Opus 4.7' },
+    'gpt-5-mini': { label: 'GPT Mini', fullName: 'GPT-5 Mini' },
+    'gpt-5.4': { label: 'GPT 5.4', fullName: 'GPT-5.4' },
+    'gpt-5.5': { label: 'GPT 5.5', fullName: 'GPT-5.5' },
+};
+
+function getModelDisplay(id: ModelId): ModelDisplay {
+    return MODEL_DISPLAY_MAP[id] ?? { label: id, fullName: id };
+}
 
 interface ModelSelectorProps {
-    selectedProvider: AIProvider;
-    onProviderChange: (provider: AIProvider) => void;
+    selectedModel: ModelId;
+    onModelChange: (model: ModelId) => void;
     allowedModels: readonly ModelId[];
     disabled?: boolean;
 }
 
 export function ModelSelector({
-    selectedProvider,
-    onProviderChange,
+    selectedModel,
+    onModelChange,
     allowedModels,
     disabled = false,
 }: ModelSelectorProps) {
-    const groupRef = useRef<HTMLDivElement>(null);
+    const triggerRef = useRef<HTMLButtonElement>(null);
+    const dropdownRef = useRef<HTMLDivElement>(null);
+    const optionRefs = useRef<(HTMLDivElement | null)[]>([]);
+    const { isOpen, toggle, close } = usePopoverToggle([
+        triggerRef,
+        dropdownRef,
+    ]);
 
-    const resolvedModels = useMemo(
-        () =>
-            PROVIDER_CONFIG.map(({ provider, displayName }) => {
-                const modelId = resolveDefaultModelForProvider(
-                    provider,
-                    allowedModels
-                );
-                return {
-                    provider,
-                    displayName,
-                    modelId,
-                    isLocked: modelId === null,
-                };
-            }),
-        [allowedModels]
-    );
+    const selectedDisplay = getModelDisplay(selectedModel);
 
-    const handleSelect = useCallback(
-        (provider: AIProvider, isLocked: boolean): void => {
-            if (disabled || isLocked) return;
-            onProviderChange(provider);
-        },
-        [disabled, onProviderChange]
-    );
+    const handleToggle = () => {
+        if (disabled) return;
+        toggle();
+        if (!isOpen) {
+            const selectedIdx = allowedModels.indexOf(selectedModel);
+            setTimeout(() => optionRefs.current[selectedIdx]?.focus(), 0);
+        }
+    };
 
-    const handleKeyDown = useCallback(
-        (event: React.KeyboardEvent<HTMLDivElement>): void => {
-            if (disabled) return;
-
-            const nonLockedProviders = resolvedModels
-                .filter(m => !m.isLocked)
-                .map(m => m.provider);
-
-            if (nonLockedProviders.length === 0) return;
-
-            const currentIndex = nonLockedProviders.indexOf(selectedProvider);
-            const len = nonLockedProviders.length;
-            const nextProvider = (() => {
-                switch (event.key) {
-                    case 'ArrowRight': {
-                        event.preventDefault();
-                        return nonLockedProviders[(currentIndex + 1) % len];
-                    }
-                    case 'ArrowLeft': {
-                        event.preventDefault();
-                        return nonLockedProviders[
-                            (currentIndex - 1 + len) % len
-                        ];
-                    }
-                    case 'Home': {
-                        event.preventDefault();
-                        return nonLockedProviders[0];
-                    }
-                    case 'End': {
-                        event.preventDefault();
-                        return nonLockedProviders[len - 1];
-                    }
-                    case ' ':
-                    case 'Enter': {
-                        event.preventDefault();
-                        return undefined;
-                    }
-                    default:
-                        return undefined;
-                }
-            })();
-
-            if (nextProvider !== undefined) {
-                onProviderChange(nextProvider);
-                // Sync DOM focus to the newly selected option
-                const group = groupRef.current;
-                if (group !== null) {
-                    const button = group.querySelector<HTMLElement>(
-                        `[data-provider="${nextProvider}"]`
-                    );
-                    button?.focus();
-                }
+    const handleListboxKeyDown = (e: React.KeyboardEvent<HTMLDivElement>) => {
+        const currentIndex = allowedModels.indexOf(selectedModel);
+        switch (e.key) {
+            case 'ArrowDown': {
+                e.preventDefault();
+                const nextIdx = (currentIndex + 1) % allowedModels.length;
+                onModelChange(allowedModels[nextIdx]!);
+                optionRefs.current[nextIdx]?.focus();
+                break;
             }
-        },
-        [disabled, resolvedModels, selectedProvider, onProviderChange]
-    );
+            case 'ArrowUp': {
+                e.preventDefault();
+                const prevIdx =
+                    (currentIndex - 1 + allowedModels.length) %
+                    allowedModels.length;
+                onModelChange(allowedModels[prevIdx]!);
+                optionRefs.current[prevIdx]?.focus();
+                break;
+            }
+            case 'Home':
+                e.preventDefault();
+                onModelChange(allowedModels[0]!);
+                optionRefs.current[0]?.focus();
+                break;
+            case 'End': {
+                e.preventDefault();
+                const lastIdx = allowedModels.length - 1;
+                onModelChange(allowedModels[lastIdx]!);
+                optionRefs.current[lastIdx]?.focus();
+                break;
+            }
+            case 'Escape':
+                e.preventDefault();
+                close();
+                triggerRef.current?.focus();
+                break;
+        }
+    };
 
     return (
         <div className="flex flex-col gap-1.5">
             <span className="text-secondary-500 text-xs font-medium tracking-[0.15em] uppercase">
                 AI MODEL
             </span>
-            <div
-                ref={groupRef}
-                role="radiogroup"
-                aria-label="AI 분석 모델 선택"
-                className="border-secondary-700 grid grid-cols-3 overflow-hidden rounded-md border"
-                onKeyDown={handleKeyDown}
-            >
-                {resolvedModels.map(
-                    ({ provider, displayName, modelId, isLocked }) => {
-                        const isSelected = provider === selectedProvider;
-                        const isEffectivelyDisabled = disabled || isLocked;
+            <div className="relative">
+                <button
+                    ref={triggerRef}
+                    type="button"
+                    onClick={handleToggle}
+                    disabled={disabled}
+                    aria-haspopup="listbox"
+                    aria-expanded={isOpen}
+                    aria-label="AI 분석 모델 선택"
+                    className={cn(
+                        'border-secondary-700 hover:bg-secondary-700/30 focus-visible:ring-primary-500 flex w-full items-center justify-between rounded-md border px-3 py-2 transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                        disabled && 'cursor-not-allowed opacity-60'
+                    )}
+                >
+                    <span className="text-secondary-300 text-xs font-medium">
+                        {selectedDisplay.label}
+                    </span>
+                    <span
+                        className={cn(
+                            'text-secondary-500 text-xs transition-transform duration-150',
+                            isOpen && 'rotate-180'
+                        )}
+                        aria-hidden="true"
+                    >
+                        ▾
+                    </span>
+                </button>
 
-                        return (
-                            <div
-                                key={provider}
-                                role="radio"
-                                aria-checked={isSelected}
-                                aria-disabled={isEffectivelyDisabled}
-                                tabIndex={isSelected ? 0 : -1}
-                                data-provider={provider}
-                                title={isLocked ? 'Pro 등급 전용' : undefined}
-                                onClick={() => handleSelect(provider, isLocked)}
-                                onKeyDown={e => {
-                                    if (
-                                        (e.key === ' ' || e.key === 'Enter') &&
-                                        !isEffectivelyDisabled
-                                    ) {
-                                        e.preventDefault();
-                                        handleSelect(provider, isLocked);
-                                    }
-                                }}
-                                className={cn(
-                                    'relative flex cursor-pointer flex-col items-center gap-1 border-r px-2 py-2.5 transition-colors select-none last:border-r-0',
-                                    'focus-visible:ring-primary-500 focus-visible:ring-1 focus-visible:outline-none',
-                                    isSelected
-                                        ? 'border-r-secondary-700 bg-primary-500/10'
-                                        : 'border-r-secondary-700',
-                                    isEffectivelyDisabled
-                                        ? 'cursor-not-allowed opacity-60'
-                                        : !isSelected &&
-                                              'hover:bg-secondary-700/30'
-                                )}
-                            >
-                                {isLocked && (
-                                    <span
-                                        className="text-secondary-500 absolute top-1 right-1"
-                                        aria-hidden="true"
-                                    >
-                                        <svg
-                                            xmlns="http://www.w3.org/2000/svg"
-                                            viewBox="0 0 16 16"
-                                            fill="currentColor"
-                                            className="h-2.5 w-2.5"
-                                        >
-                                            <path
-                                                fillRule="evenodd"
-                                                d="M8 1a3.5 3.5 0 0 0-3.5 3.5V7A1.5 1.5 0 0 0 3 8.5v4A1.5 1.5 0 0 0 4.5 14h7a1.5 1.5 0 0 0 1.5-1.5v-4A1.5 1.5 0 0 0 11 7V4.5A3.5 3.5 0 0 0 8 1Zm2 6V4.5a2 2 0 1 0-4 0V7h4Z"
-                                                clipRule="evenodd"
-                                            />
-                                        </svg>
-                                    </span>
-                                )}
-
-                                <span aria-hidden="true">
-                                    {isSelected ? (
-                                        <span className="text-primary-300 text-sm">
-                                            ◆
-                                        </span>
-                                    ) : (
-                                        <span className="text-secondary-400 text-sm">
-                                            ◇
-                                        </span>
-                                    )}
-                                </span>
-
-                                <span className="sr-only">
-                                    {isSelected ? '선택됨' : '선택 안됨'}
-                                    {isLocked ? ', Pro 등급 전용' : ''}
-                                </span>
-
-                                <span
+                {isOpen && (
+                    <div
+                        ref={dropdownRef}
+                        role="listbox"
+                        aria-label="AI 분석 모델 목록"
+                        onKeyDown={handleListboxKeyDown}
+                        className="border-secondary-600 bg-secondary-800 absolute top-full left-0 z-10 mt-1 w-full overflow-hidden rounded-lg border shadow-lg"
+                    >
+                        {allowedModels.map((modelId, i) => {
+                            const display = getModelDisplay(modelId);
+                            const isSelected = modelId === selectedModel;
+                            return (
+                                <div
+                                    key={modelId}
+                                    ref={el => {
+                                        optionRefs.current[i] = el;
+                                    }}
+                                    role="option"
+                                    tabIndex={isSelected ? 0 : -1}
+                                    aria-selected={isSelected}
+                                    onClick={() => {
+                                        onModelChange(modelId);
+                                        close();
+                                        triggerRef.current?.focus();
+                                    }}
+                                    onKeyDown={e => {
+                                        if (
+                                            e.key === 'Enter' ||
+                                            e.key === ' '
+                                        ) {
+                                            e.preventDefault();
+                                            onModelChange(modelId);
+                                            close();
+                                            triggerRef.current?.focus();
+                                        }
+                                    }}
                                     className={cn(
-                                        'text-xs font-medium tracking-[0.15em] uppercase',
+                                        'focus-visible:ring-primary-500 flex min-h-[44px] w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
                                         isSelected
-                                            ? 'text-primary-300'
-                                            : 'text-secondary-400'
+                                            ? 'text-primary-300 bg-primary-900/20'
+                                            : 'text-secondary-300 hover:bg-secondary-700'
                                     )}
                                 >
-                                    {displayName}
-                                </span>
-
-                                <span className="text-secondary-500 font-mono text-[10px] tabular-nums">
-                                    {modelId !== null
-                                        ? formatModelVariant(modelId)
-                                        : '—'}
-                                </span>
-                            </div>
-                        );
-                    }
+                                    <span className="w-3 text-[10px]">
+                                        {isSelected && '✓'}
+                                    </span>
+                                    <div>
+                                        <div className="text-[11px] font-medium">
+                                            {display.label}
+                                        </div>
+                                        <div className="text-secondary-500 text-[10px]">
+                                            {display.fullName}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
                 )}
             </div>
         </div>
     );
-}
-
-// ModelId → 짧은 표시 문자열 변환 (e.g. "claude-sonnet-4-6" → "Sonnet 4.6")
-function formatModelVariant(modelId: ModelId): string {
-    // claude-* → extract after "claude-"
-    const claudeMatch = /^claude-(.+)$/.exec(modelId);
-    if (claudeMatch !== null) {
-        return claudeMatch[1]
-            .split('-')
-            .map(part => {
-                if (/^\d+$/.test(part)) return part;
-                return part.charAt(0).toUpperCase() + part.slice(1);
-            })
-            .join(' ')
-            .replace(/(\d) (\d)/g, '$1.$2');
-    }
-
-    // gemini-* → drop "gemini-" prefix
-    const geminiMatch = /^gemini-(.+)$/.exec(modelId);
-    if (geminiMatch !== null) {
-        return geminiMatch[1]
-            .split('-')
-            .map(part => {
-                if (/^\d/.test(part)) return part;
-                return part.charAt(0).toUpperCase() + part.slice(1);
-            })
-            .join(' ');
-    }
-
-    // gpt-* → drop "gpt-" prefix
-    const gptMatch = /^gpt-(.+)$/.exec(modelId);
-    if (gptMatch !== null) {
-        return gptMatch[1];
-    }
-
-    return modelId;
 }
