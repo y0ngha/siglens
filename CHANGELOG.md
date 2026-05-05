@@ -195,7 +195,7 @@
 * AI 분석 시 인덱스 심볼 fmpSymbol 전달 누락 수정 ([2b0a861](https://github.com/y0ngha/siglens/commit/2b0a861dae9b5c090403a2c11f5bde000c58b2dc))
 * **backtest:** FMP /stable returns flat array not {historical} ([47fc506](https://github.com/y0ngha/siglens/commit/47fc506b2844daf34f461beb8020631576df4983))
 * **backtest:** retry on Gemini 503 with exponential backoff ([83be2b4](https://github.com/y0ngha/siglens/commit/83be2b40a9fa929301a105dcc31814801de87994))
-* **backtest:** switch to paid Gemini API (GEMINI_API_KEY) ([6d5cd92](https://github.com/y0ngha/siglens/commit/6d5cd92d2b0796f4e17e5c5a5cd4c7615ccb6eb9))
+* **backtest:** switch to paid Gemini API (GEMINI_CHAT_API_KEY) ([6d5cd92](https://github.com/y0ngha/siglens/commit/6d5cd92d2b0796f4e17e5c5a5cd4c7615ccb6eb9))
 * **backtest:** truncate AI summary at sentence boundary (250 chars) ([6a44c51](https://github.com/y0ngha/siglens/commit/6a44c51da2a9220842bef430d868e680ee7fee3b))
 * barsApi 날짜 형식을 RFC3339으로 표준화 ([96a3cb2](https://github.com/y0ngha/siglens/commit/96a3cb236f4c67c1c6e0706521ab61ce3229a234))
 * cap stored chat messages at 40; fix vaul aria-hidden hydration mismatch ([28ee730](https://github.com/y0ngha/siglens/commit/28ee730625f89e42e1caf6c0e8190622292e3747))

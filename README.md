@@ -182,7 +182,7 @@ cp .env.example .env.local
 | 변수 | 발급처 | 용도 |
 |------|--------|------|
 | `FMP_API_KEY` | [Financial Modeling Prep](https://site.financialmodelingprep.com/developer) | 시세 · 종목 데이터 |
-| `GEMINI_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | AI 분석 리포트 · 챗봇 (유료 키) |
+| `GEMINI_CHAT_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | AI 분석 리포트 · 챗봇 (유료 키) |
 | `GEMINI_CHAT_FREE_API_KEY` | [Google AI Studio](https://aistudio.google.com/apikey) | 챗봇 quota 소진 시 fallback (무료 키) |
 | `UPSTASH_REDIS_REST_URL` / `UPSTASH_REDIS_REST_TOKEN` | [Upstash](https://upstash.com) | 분석 캐시 |
 | `DATABASE_URL` | [Neon](https://neon.tech) | PostgreSQL (인증 · 사용자 데이터) |
