@@ -1,4 +1,4 @@
-import { callGeminiWithKeyFallback } from '@/infrastructure/ai/gemini';
+import { callGeminiChat } from '@/infrastructure/ai/gemini';
 import { parseJsonResponse } from '@/infrastructure/ai/parseJsonResponse';
 import { tryReadTranslatorConfig } from '@/infrastructure/ticker/config';
 import type { TranslatorEntry } from '@/infrastructure/ticker/types';
@@ -26,12 +26,24 @@ export async function translateCompanyNames(
     if (!config) return {};
 
     try {
-        const text = await callGeminiWithKeyFallback({
-            userApiKey: config.freeApiKey,
-            serverApiKey: config.apiKey,
-            model: config.model,
-            contents: buildTranslatePrompt(entries),
-        });
+        const text = await (async () => {
+            if (config.freeApiKey) {
+                try {
+                    return await callGeminiChat({
+                        serverApiKey: config.freeApiKey,
+                        model: config.model,
+                        contents: buildTranslatePrompt(entries),
+                    });
+                } catch {
+                    // freeApiKey failed — fall through to primary key
+                }
+            }
+            return callGeminiChat({
+                serverApiKey: config.apiKey,
+                model: config.model,
+                contents: buildTranslatePrompt(entries),
+            });
+        })();
         const parsed = parseJsonResponse(text, 'koreanTranslator');
         return isStringRecord(parsed) ? parsed : {};
     } catch {

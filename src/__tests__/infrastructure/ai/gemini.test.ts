@@ -12,6 +12,7 @@ jest.mock('@google/genai', () => {
 import { callGeminiChat } from '@/infrastructure/ai/gemini';
 
 const BASE_OPTIONS = {
+    userApiKey: undefined,
     serverApiKey: 'server-key',
     model: 'gemini-2.0-flash',
     contents: 'Hello',
