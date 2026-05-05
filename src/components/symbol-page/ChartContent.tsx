@@ -134,7 +134,8 @@ export function ChartContent({
     const { tier } = useUserTier();
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
 
-    const [modelId, setModelId, isModelHydrated] = useSelectedModel(allowedModels);
+    const [modelId, setModelId, isModelHydrated] =
+        useSelectedModel(allowedModels);
     const { gateModal, dismissGate, handleModelChange } = useAnalysisModelGate({
         setModel: setModelId,
     });
