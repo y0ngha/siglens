@@ -19,6 +19,7 @@
         "db:generate": "dotenv -e .env.local -- drizzle-kit generate",
         "db:migrate": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/migrate.ts",
         "db:seed:terms": "dotenv -e .env.local -- node_modules/.bin/tsx db/scripts/seedTerms.ts",
+        "db:migrate:tickers": "dotenv -e .env.local -- node_modules/.bin/tsx scripts/seed-korean-tickers.ts",
         "test": "jest",
         "test-watch": "jest --watch",
         "test-coverage": "jest --coverage",
