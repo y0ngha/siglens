@@ -8,6 +8,7 @@ interface PasswordFieldProps {
     label: string;
     autoComplete: 'current-password' | 'new-password';
     required?: boolean;
+    value?: string;
     error?: string;
     hint?: ReactNode;
     describedById?: string;
@@ -20,6 +21,7 @@ export function PasswordField({
     label,
     autoComplete,
     required,
+    value,
     error,
     hint,
     describedById,
@@ -51,6 +53,7 @@ export function PasswordField({
                     type={visible ? 'text' : 'password'}
                     autoComplete={autoComplete}
                     required={required}
+                    {...(value !== undefined ? { value } : {})}
                     onChange={e => onChange?.(e.target.value)}
                     onKeyUp={e => setCapsLock(e.getModifierState('CapsLock'))}
                     onBlur={() => setCapsLock(false)}

@@ -1,4 +1,3 @@
-import type { AuthUserRecord } from '@/domain/auth/types';
 import {
     normalizeEmail,
     validateEmail,
@@ -72,51 +71,41 @@ export async function registerUser(
         return { ok: false, error: emailAlreadyExistsError() };
     }
 
-    // Once we're past the email-already-exists gate, the verified marker has
-    // served its purpose. Clear it under finally so that an exception thrown by
-    // hashPassword / createEmailUser doesn't leave the marker pinned for its
-    // remaining 30-minute TTL (otherwise an attacker who could read DB could
-    // still treat the email as "already verified" until expiry).
-    let user: AuthUserRecord | null = null;
     const now = new Date();
-    try {
-        const passwordHash = await dependencies.passwordHasher.hashPassword(
-            input.password
-        );
-        // Use tx to ensure user creation and agreement insertion are atomic.
-        // Both DrizzleUserRepository and DrizzleAgreementRepository are
-        // instantiated with the transaction client so all queries run in the
-        // same Neon batch request.
-        user = await dependencies.db.transaction(async tx => {
-            // Safe: Transactor.transaction always passes a SiglensDatabase tx to its callback.
-            const txDb = tx as SiglensDatabase;
-            const created = await new DrizzleUserRepository(
-                txDb
-            ).createEmailUser({
-                email,
-                passwordHash,
-                name: input.name?.trim() || null,
-                avatarUrl: input.avatarUrl?.trim() || null,
-                emailVerified: true,
-            });
-            if (created === null) return null;
-            await new DrizzleAgreementRepository(txDb).insertMany(
-                input.agreedTermsIds.map(termsId => ({
-                    userId: created.id,
-                    termsId,
-                    agreed: true,
-                    agreedAt: now,
-                }))
-            );
-            return created;
+    const passwordHash = await dependencies.passwordHasher.hashPassword(
+        input.password
+    );
+    // Use tx to ensure user creation and agreement insertion are atomic.
+    // Both DrizzleUserRepository and DrizzleAgreementRepository are
+    // instantiated with the transaction client so all queries run in the
+    // same Neon batch request.
+    const user = await dependencies.db.transaction(async tx => {
+        // Safe: Transactor.transaction always passes a SiglensDatabase tx to its callback.
+        const txDb = tx as SiglensDatabase;
+        const created = await new DrizzleUserRepository(txDb).createEmailUser({
+            email,
+            passwordHash,
+            name: input.name?.trim() || null,
+            avatarUrl: input.avatarUrl?.trim() || null,
+            emailVerified: true,
         });
-    } finally {
-        await dependencies.emailTokens.delete(PURPOSE, email);
-    }
+        if (created === null) return null;
+        await new DrizzleAgreementRepository(txDb).insertMany(
+            input.agreedTermsIds.map(termsId => ({
+                userId: created.id,
+                termsId,
+                agreed: true,
+                agreedAt: now,
+            }))
+        );
+        return created;
+    });
 
     if (user === null) {
         return { ok: false, error: emailAlreadyExistsError() };
     }
 
+    // Registration succeeded — clear the verified marker now that it has served its purpose.
+    await dependencies.emailTokens.delete(PURPOSE, email);
     return { ok: true, user };
 }

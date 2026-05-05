@@ -232,7 +232,7 @@ describe('registerUser', () => {
         expect(deleteToken).not.toHaveBeenCalled();
     });
 
-    it('clears the verified marker when createEmailUser throws', async () => {
+    it('preserves the verified marker when createEmailUser throws', async () => {
         const { dependencies, deleteToken, createEmailUser } =
             makeDependencies();
         (createEmailUser as jest.Mock).mockRejectedValueOnce(
@@ -243,15 +243,11 @@ describe('registerUser', () => {
             'database is on fire'
         );
 
-        // Even on failure, the marker MUST be cleared; otherwise it would linger
-        // for its 30-minute TTL and let the email be reused as "verified".
-        expect(deleteToken).toHaveBeenCalledWith(
-            'email_verification',
-            'user@example.com'
-        );
+        // On failure the marker must be preserved so the user can retry without re-verifying.
+        expect(deleteToken).not.toHaveBeenCalled();
     });
 
-    it('clears the verified marker when hashPassword throws', async () => {
+    it('preserves the verified marker when hashPassword throws', async () => {
         const { dependencies, deleteToken } = makeDependencies();
         (
             dependencies.passwordHasher.hashPassword as jest.Mock
@@ -261,10 +257,8 @@ describe('registerUser', () => {
             'hash failure'
         );
 
-        expect(deleteToken).toHaveBeenCalledWith(
-            'email_verification',
-            'user@example.com'
-        );
+        // On failure the marker must be preserved so the user can retry without re-verifying.
+        expect(deleteToken).not.toHaveBeenCalled();
     });
 
     it('returns email_already_exists when createEmailUser races to a conflict', async () => {
@@ -279,7 +273,7 @@ describe('registerUser', () => {
         if (!result.ok) expect(result.error.code).toBe('email_already_exists');
     });
 
-    it('clears the verified marker even when createEmailUser returns null (tx null branch)', async () => {
+    it('preserves the verified marker when createEmailUser returns null (tx null branch)', async () => {
         const { dependencies, deleteToken, createEmailUser } =
             makeDependencies();
         (createEmailUser as jest.Mock).mockResolvedValue(null);
@@ -288,11 +282,8 @@ describe('registerUser', () => {
 
         expect(result.ok).toBe(false);
         if (!result.ok) expect(result.error.code).toBe('email_already_exists');
-        // Marker must be cleared via finally even in the null-return path.
-        expect(deleteToken).toHaveBeenCalledWith(
-            'email_verification',
-            'user@example.com'
-        );
+        // email_already_exists (race) — preserve the marker, consistent with the pre-tx early-return path.
+        expect(deleteToken).not.toHaveBeenCalled();
     });
 
     it('inserts agreement rows for each agreedTermsId using tx inside a transaction', async () => {

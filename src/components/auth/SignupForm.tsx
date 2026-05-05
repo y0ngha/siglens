@@ -225,6 +225,7 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
                         label="비밀번호"
                         autoComplete="new-password"
                         required
+                        value={password}
                         error={signupPasswordError}
                         describedById={hintId}
                         onChange={setPassword}
