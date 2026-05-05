@@ -1,5 +1,6 @@
 'use client';
 
+import { EyeIcon } from '@/components/ui/EyeIcon';
 import { useState, type ReactNode } from 'react';
 
 interface PasswordFieldProps {
@@ -68,7 +69,7 @@ export function PasswordField({
                     aria-pressed={visible}
                     className="text-secondary-400 hover:text-secondary-200 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-950 absolute inset-y-0 right-0 flex w-12 items-center justify-center rounded-r-md focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                    <span aria-hidden>{visible ? '🙈' : '👁'}</span>
+                    <EyeIcon isVisible={visible} className="h-5 w-5" />
                 </button>
             </div>
             {capsLock ? (
