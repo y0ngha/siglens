@@ -48,7 +48,9 @@ describe('callOpenaiChat', () => {
         it('호출이 실패하면 에러가 전파된다', async () => {
             mockCreate.mockRejectedValue(new Error('api error'));
 
-            await expect(callOpenaiChat(BASE_OPTIONS)).rejects.toThrow('api error');
+            await expect(callOpenaiChat(BASE_OPTIONS)).rejects.toThrow(
+                'api error'
+            );
         });
     });
 

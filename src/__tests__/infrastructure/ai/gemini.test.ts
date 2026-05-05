@@ -44,7 +44,9 @@ describe('callGeminiChat', () => {
         it('호출이 실패하면 에러가 전파된다', async () => {
             mockGenerateContent.mockRejectedValue(new Error('api error'));
 
-            await expect(callGeminiChat(BASE_OPTIONS)).rejects.toThrow('api error');
+            await expect(callGeminiChat(BASE_OPTIONS)).rejects.toThrow(
+                'api error'
+            );
         });
     });
 
@@ -62,7 +64,10 @@ describe('callGeminiChat', () => {
         it('systemInstruction이 있으면 config에 포함한다', async () => {
             mockGenerateContent.mockResolvedValue({ text: 'ok' });
 
-            await callGeminiChat({ ...BASE_OPTIONS, systemInstruction: 'Be concise.' });
+            await callGeminiChat({
+                ...BASE_OPTIONS,
+                systemInstruction: 'Be concise.',
+            });
 
             expect(mockGenerateContent).toHaveBeenCalledWith(
                 expect.objectContaining({

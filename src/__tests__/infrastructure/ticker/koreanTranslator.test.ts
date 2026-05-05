@@ -57,8 +57,14 @@ describe('translateCompanyNames', () => {
         ]);
         expect(result).toEqual({ AAPL: '애플' });
         expect(callGeminiMock).toHaveBeenCalledTimes(2);
-        expect(callGeminiMock).toHaveBeenNthCalledWith(1, expect.objectContaining({ serverApiKey: 'free-api-key' }));
-        expect(callGeminiMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ serverApiKey: 'server-api-key' }));
+        expect(callGeminiMock).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({ serverApiKey: 'free-api-key' })
+        );
+        expect(callGeminiMock).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({ serverApiKey: 'server-api-key' })
+        );
     });
 
     it('freeApiKey 없으면 apiKey로 직접 호출한다', async () => {
@@ -66,7 +72,9 @@ describe('translateCompanyNames', () => {
         callGeminiMock.mockResolvedValue('{"AAPL":"애플"}');
         await translateCompanyNames([{ symbol: 'AAPL', name: 'Apple Inc.' }]);
         expect(callGeminiMock).toHaveBeenCalledTimes(1);
-        expect(callGeminiMock).toHaveBeenCalledWith(expect.objectContaining({ serverApiKey: 'server-api-key' }));
+        expect(callGeminiMock).toHaveBeenCalledWith(
+            expect.objectContaining({ serverApiKey: 'server-api-key' })
+        );
     });
 
     it('JSON 파싱 실패 시 빈 객체 반환', async () => {

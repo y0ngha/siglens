@@ -20,7 +20,9 @@ export async function callAnthropicChat({
         model,
         max_tokens: ANTHROPIC_MAX_TOKENS,
         messages: toAnthropicMessages(contents),
-        ...(systemInstruction !== undefined ? { system: systemInstruction } : {}),
+        ...(systemInstruction !== undefined
+            ? { system: systemInstruction }
+            : {}),
     });
     const block = response.content[0];
     if (!block || block.type !== 'text') {
