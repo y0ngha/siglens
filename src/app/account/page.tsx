@@ -83,6 +83,56 @@ async function AccountContent() {
     );
 }
 
+function SkeletonLine({ className }: { className?: string }) {
+    return (
+        <div
+            className={`bg-secondary-800 animate-pulse rounded ${className ?? ''}`}
+        />
+    );
+}
+
+function AccountContentSkeleton() {
+    return (
+        <>
+            {/* 프로필 섹션 */}
+            <section
+                aria-label="프로필 로딩 중"
+                className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+            >
+                <SkeletonLine className="h-6 w-16" />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-[120px_1fr]">
+                    <SkeletonLine className="h-4 w-12" />
+                    <SkeletonLine className="h-4 w-48" />
+                    <SkeletonLine className="h-4 w-16" />
+                    <SkeletonLine className="h-4 w-24" />
+                    <SkeletonLine className="h-4 w-16" />
+                    <SkeletonLine className="h-4 w-16" />
+                </div>
+            </section>
+
+            {/* AI 모델 API 키 섹션 */}
+            <section
+                aria-label="AI 모델 API 키 로딩 중"
+                className="ring-secondary-800 bg-secondary-900/80 space-y-4 rounded-2xl p-6 ring-1 backdrop-blur-xl"
+            >
+                <SkeletonLine className="h-6 w-32" />
+                <SkeletonLine className="h-4 w-64" />
+                {[0, 1, 2].map(i => (
+                    <div
+                        key={i}
+                        className="ring-secondary-800 bg-secondary-900/60 rounded-xl p-4 ring-1"
+                    >
+                        <div className="flex items-center gap-2">
+                            <SkeletonLine className="h-4 w-20" />
+                            <SkeletonLine className="h-5 w-12 rounded-full" />
+                        </div>
+                    </div>
+                ))}
+            </section>
+        </>
+    );
+}
+
 export default function AccountPage() {
     return (
         <main className="bg-secondary-950 min-h-[calc(100dvh-3.5rem)] px-4 py-12">
@@ -95,7 +145,7 @@ export default function AccountPage() {
                         프로필 정보를 확인하고 계정을 관리합니다.
                     </p>
                 </header>
-                <Suspense>
+                <Suspense fallback={<AccountContentSkeleton />}>
                     <AccountContent />
                 </Suspense>
             </div>
