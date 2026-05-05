@@ -286,68 +286,73 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                                 aria-label="AI 모델 목록"
                                 onKeyDown={handleListboxKeyDown}
                                 className={cn(
-                                    'border-secondary-600 bg-secondary-800 absolute left-0 z-10 min-w-[160px] overflow-hidden rounded-lg border shadow-lg',
+                                    'border-secondary-600 bg-secondary-800 absolute left-0 z-10 min-w-[160px] rounded-lg border shadow-lg',
                                     opensUpward
                                         ? 'bottom-full mb-1'
                                         : 'top-full mt-1'
                                 )}
                             >
-                                {CHAT_MODEL_OPTIONS.map((option, i) => (
-                                    <div
-                                        key={option.id}
-                                        ref={el => {
-                                            optionRefs.current[i] = el;
-                                        }}
-                                        role="option"
-                                        tabIndex={
-                                            selectedModel === option.id ? 0 : -1
-                                        }
-                                        aria-selected={
-                                            selectedModel === option.id
-                                        }
-                                        onClick={() => {
-                                            handleModelChange(option.id);
-                                            close();
-                                            triggerRef.current?.focus();
-                                        }}
-                                        onKeyDown={e => {
-                                            if (
-                                                e.key === 'Enter' ||
-                                                e.key === ' '
-                                            ) {
-                                                e.preventDefault();
+                                <div className="max-h-[264px] overflow-y-auto overscroll-contain">
+                                    {CHAT_MODEL_OPTIONS.map((option, i) => (
+                                        <div
+                                            key={option.id}
+                                            ref={el => {
+                                                optionRefs.current[i] = el;
+                                            }}
+                                            role="option"
+                                            tabIndex={
+                                                selectedModel === option.id
+                                                    ? 0
+                                                    : -1
+                                            }
+                                            aria-selected={
+                                                selectedModel === option.id
+                                            }
+                                            onClick={() => {
                                                 handleModelChange(option.id);
                                                 close();
                                                 triggerRef.current?.focus();
-                                            }
-                                        }}
-                                        className={cn(
-                                            'focus-visible:ring-primary-500 flex min-h-[44px] w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
-                                            selectedModel === option.id
-                                                ? 'text-primary-300 bg-primary-900/20'
-                                                : 'text-secondary-300 hover:bg-secondary-700'
-                                        )}
-                                    >
-                                        <span className="w-3 text-[10px]">
-                                            {selectedModel === option.id && '✓'}
-                                        </span>
-                                        <div className="flex flex-1 items-center justify-between gap-2">
-                                            <div>
-                                                <div className="text-[11px] font-medium">
-                                                    {option.label}
-                                                </div>
-                                                <div className="text-secondary-500 text-[10px]">
-                                                    {option.fullName}
-                                                </div>
-                                            </div>
-                                            {!isFreeChatModel(option.id) && (
-                                                <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
-                                                    PRO
-                                                </span>
+                                            }}
+                                            onKeyDown={e => {
+                                                if (
+                                                    e.key === 'Enter' ||
+                                                    e.key === ' '
+                                                ) {
+                                                    e.preventDefault();
+                                                    handleModelChange(option.id);
+                                                    close();
+                                                    triggerRef.current?.focus();
+                                                }
+                                            }}
+                                            className={cn(
+                                                'focus-visible:ring-primary-500 flex min-h-[44px] w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                                                selectedModel === option.id
+                                                    ? 'text-primary-300 bg-primary-900/20'
+                                                    : 'text-secondary-300 hover:bg-secondary-700'
                                             )}
+                                        >
+                                            <span className="w-3 text-[10px]">
+                                                {selectedModel === option.id &&
+                                                    '✓'}
+                                            </span>
+                                            <div className="flex flex-1 items-center justify-between gap-2">
+                                                <div>
+                                                    <div className="text-[11px] font-medium">
+                                                        {option.label}
+                                                    </div>
+                                                    <div className="text-secondary-500 text-[10px]">
+                                                        {option.fullName}
+                                                    </div>
+                                                </div>
+                                                {!isFreeChatModel(option.id) && (
+                                                    <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
+                                                        PRO
+                                                    </span>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                ))}
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
@@ -396,7 +401,6 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                 <PremiumModelGateModal
                     mode={gateModal.mode}
                     providerLabel={LLM_PROVIDER_LABELS[gateModal.provider]}
-                    symbol={symbol}
                     onClose={dismissGate}
                 />
             )}

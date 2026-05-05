@@ -1,9 +1,10 @@
 'use client';
 
-import { useRef } from 'react';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
-import type { ModelId } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
+import { isFreeChatModel } from '@/domain/llm';
+import type { ModelId } from '@y0ngha/siglens-core';
+import { useRef } from 'react';
 
 interface ModelDisplay {
     label: string;
@@ -109,11 +110,11 @@ export function ModelSelector({
     };
 
     return (
-        <div className="flex flex-col gap-1.5">
-            <span className="text-secondary-500 text-xs font-medium tracking-[0.15em] uppercase">
+        <div className="mb-4 flex flex-row items-center gap-3">
+            <span className="text-secondary-500 text-xs font-medium tracking-[0.15em] whitespace-nowrap uppercase">
                 AI MODEL
             </span>
-            <div className="relative">
+            <div className="relative flex-1">
                 <button
                     ref={triggerRef}
                     type="button"
@@ -147,57 +148,66 @@ export function ModelSelector({
                         role="listbox"
                         aria-label="AI 분석 모델 목록"
                         onKeyDown={handleListboxKeyDown}
-                        className="border-secondary-600 bg-secondary-800 absolute top-full left-0 z-10 mt-1 w-full overflow-hidden rounded-lg border shadow-lg"
+                        className="border-secondary-600 bg-secondary-800 absolute top-full left-0 z-10 mt-1 w-full rounded-lg border shadow-lg"
                     >
-                        {allowedModels.map((modelId, i) => {
-                            const display = getModelDisplay(modelId);
-                            const isSelected = modelId === selectedModel;
-                            return (
-                                <div
-                                    key={modelId}
-                                    ref={el => {
-                                        optionRefs.current[i] = el;
-                                    }}
-                                    role="option"
-                                    tabIndex={isSelected ? 0 : -1}
-                                    aria-selected={isSelected}
-                                    onClick={() => {
-                                        onModelChange(modelId);
-                                        close();
-                                        triggerRef.current?.focus();
-                                    }}
-                                    onKeyDown={e => {
-                                        if (
-                                            e.key === 'Enter' ||
-                                            e.key === ' '
-                                        ) {
-                                            e.preventDefault();
+                        <div className="max-h-[264px] overflow-y-auto overscroll-contain">
+                            {allowedModels.map((modelId, i) => {
+                                const display = getModelDisplay(modelId);
+                                const isSelected = modelId === selectedModel;
+                                return (
+                                    <div
+                                        key={modelId}
+                                        ref={el => {
+                                            optionRefs.current[i] = el;
+                                        }}
+                                        role="option"
+                                        tabIndex={isSelected ? 0 : -1}
+                                        aria-selected={isSelected}
+                                        onClick={() => {
                                             onModelChange(modelId);
                                             close();
                                             triggerRef.current?.focus();
-                                        }
-                                    }}
-                                    className={cn(
-                                        'focus-visible:ring-primary-500 flex min-h-[44px] w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
-                                        isSelected
-                                            ? 'text-primary-300 bg-primary-900/20'
-                                            : 'text-secondary-300 hover:bg-secondary-700'
-                                    )}
-                                >
-                                    <span className="w-3 text-[10px]">
-                                        {isSelected && '✓'}
-                                    </span>
-                                    <div>
-                                        <div className="text-[11px] font-medium">
-                                            {display.label}
-                                        </div>
-                                        <div className="text-secondary-500 text-[10px]">
-                                            {display.fullName}
+                                        }}
+                                        onKeyDown={e => {
+                                            if (
+                                                e.key === 'Enter' ||
+                                                e.key === ' '
+                                            ) {
+                                                e.preventDefault();
+                                                onModelChange(modelId);
+                                                close();
+                                                triggerRef.current?.focus();
+                                            }
+                                        }}
+                                        className={cn(
+                                            'focus-visible:ring-primary-500 flex min-h-11 w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                                            isSelected
+                                                ? 'text-primary-300 bg-primary-900/20'
+                                                : 'text-secondary-300 hover:bg-secondary-700'
+                                        )}
+                                    >
+                                        <span className="w-3 text-[10px]">
+                                            {isSelected && '✓'}
+                                        </span>
+                                        <div className="flex flex-1 items-center justify-between gap-2">
+                                            <div>
+                                                <div className="text-[11px] font-medium">
+                                                    {display.label}
+                                                </div>
+                                                <div className="text-secondary-500 text-[10px]">
+                                                    {display.fullName}
+                                                </div>
+                                            </div>
+                                            {!isFreeChatModel(modelId) && (
+                                                <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
+                                                    PRO
+                                                </span>
+                                            )}
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
+                                );
+                            })}
+                        </div>
                     </div>
                 )}
             </div>

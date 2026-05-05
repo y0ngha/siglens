@@ -18,7 +18,10 @@ import { useAnalysisDerivedData } from '@/components/symbol-page/hooks/useAnalys
 import { useAnalysisDisplay } from '@/components/symbol-page/hooks/useAnalysisDisplay';
 import { useActionPricesVisibility } from '@/components/symbol-page/hooks/useActionPricesVisibility';
 import { useSelectedModel } from '@/components/symbol-page/hooks/useSelectedModel';
+import { useAnalysisModelGate } from '@/components/symbol-page/hooks/useAnalysisModelGate';
 import { useUserTier } from '@/components/symbol-page/hooks/useUserTier';
+import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
+import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
 import {
     PANEL_MAX_WIDTH,
     PANEL_MIN_WIDTH,
@@ -132,6 +135,9 @@ export function ChartContent({
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
 
     const [modelId, setModelId] = useSelectedModel(allowedModels);
+    const { gateModal, dismissGate, handleModelChange } = useAnalysisModelGate(
+        { setModel: setModelId }
+    );
 
     const {
         analysis,
@@ -171,7 +177,7 @@ export function ChartContent({
             <>
                 <ModelSelector
                     selectedModel={modelId}
-                    onModelChange={setModelId}
+                    onModelChange={handleModelChange}
                     allowedModels={allowedModels}
                     disabled={isAnalyzing}
                 />
@@ -198,7 +204,7 @@ export function ChartContent({
         ),
         [
             modelId,
-            setModelId,
+            handleModelChange,
             allowedModels,
             isAnalyzing,
             symbol,
@@ -324,6 +330,14 @@ export function ChartContent({
             {/* 드래그 중 전체 화면 오버레이 — 텍스트 선택 방지 */}
             {isDragging && (
                 <div className="fixed inset-0 z-50 cursor-col-resize" />
+            )}
+
+            {gateModal !== null && (
+                <PremiumModelGateModal
+                    mode={gateModal.mode}
+                    providerLabel={LLM_PROVIDER_LABELS[gateModal.provider]}
+                    onClose={dismissGate}
+                />
             )}
         </div>
     );
