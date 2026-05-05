@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useId, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import {
     useRequestEmailVerification,
     useVerifyEmail,
@@ -80,6 +80,13 @@ export function SignupForm({ next }: SignupFormProps) {
         return () => window.removeEventListener('pageshow', handlePageShow);
     }, [handleRestart]);
 
+    // Next.js router cache로 컴포넌트가 메모리에 유지된 채 뒤로가기가 발생하면
+    // popstate 이벤트로 감지해 1단계로 초기화
+    useEffect(() => {
+        window.addEventListener('popstate', handleRestart);
+        return () => window.removeEventListener('popstate', handleRestart);
+    }, [handleRestart]);
+
     return (
         <SignupFormFlow key={resetKey} next={next} onRestart={handleRestart} />
     );
@@ -103,6 +110,16 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
 
     // useActionState 결과에서 직접 derive — set-state-in-effect 회피.
     const phase = derivePhase(emailState.submitted, codeState.verified);
+
+    // Next.js router cache가 useActionState를 이전 세션 값으로 hydrate한 채
+    // 컴포넌트를 리마운트할 수 있다. 마운트 시점에 이미 non-initial 상태라면
+    // 뒤로가기로 복원된 것이므로 paint 전에 1단계로 리셋한다.
+    const restoredFromCacheRef = useRef(emailState.submitted || codeState.verified);
+    useLayoutEffect(() => {
+        if (restoredFromCacheRef.current) {
+            onRestart();
+        }
+    }, [onRestart]);
 
     const signupError = signupState.error;
     const signupEmailError =

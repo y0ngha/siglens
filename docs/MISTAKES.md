@@ -597,6 +597,12 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ## Accessibility (WAI-ARIA)
 
 ```
+0.5. Error logging in catch blocks prevents debugging
+   → Unexpected errors in catch blocks must log details before returning error results
+   → Logging makes root cause analysis possible; returning error silently hides debugging info
+   ❌ catch (err) { return { error: 'service_unavailable' }; }  // no visibility into root cause
+   ✅ catch (err) { console.error('[moduleName] operation failed:', err); return { error: 'service_unavailable' }; }
+
 1. Overwriting native ARIA role of semantic elements
    → Native roles (paragraph, complementary) must not be replaced with role attributes
    → Use <div role="note"> instead of <p role="note"> or <aside role="note">
@@ -652,10 +658,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 4. Missing focus-visible:ring on interactive buttons
    → All interactive buttons must have keyboard focus indicator
    → Apply focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500 to every button
+   → When button's background color matches ring color, add ring-offset to ensure sufficient contrast (WCAG 1.4.11 Non-text Contrast)
    ❌ <button className="px-4 py-2 bg-primary-600">Click</button>  // no focus indicator
+   ❌ <button className="px-4 py-2 bg-secondary-900 focus-visible:ring-secondary-900">  // ring and bg same color, insufficient contrast
    ✅ <button className="px-4 py-2 bg-primary-600 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500">Click</button>
+   ✅ <button className="px-4 py-2 bg-secondary-900 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-primary-500 focus-visible:ring-offset-2 focus-visible:ring-offset-secondary-950">Click</button>  // offset ensures contrast
    → Includes: TabsPill, DropdownPortal buttons, info icons, action buttons in AnalysisPanel, IndicatorToolbar
-   → Omission violates keyboard accessibility (WCAG 2.4.7 Focus Visible)
+   → Omission violates keyboard accessibility (WCAG 2.4.7 Focus Visible, WCAG 1.4.11 Non-text Contrast)
 
 5. Interactive info icons using <span title="..."> only — not keyboard accessible
    → Tooltips must be keyboard-accessible; title attribute ignored by keyboard users and screen readers

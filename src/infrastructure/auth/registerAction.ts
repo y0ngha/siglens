@@ -1,28 +1,29 @@
 'use server';
 
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import type { SignupFormState } from '@/domain/auth/formTypes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
+import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
+import { createAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
 import {
     bcryptPasswordHasher,
     bcryptPasswordVerifier,
 } from '@/infrastructure/auth/bcrypt';
-import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
-import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
-import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
-import type { SignupFormState } from '@/domain/auth/formTypes';
-import { sanitizeNextPath } from '@/domain/auth/redirect';
-import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
 import {
     AUTH_SERVICE_UNAVAILABLE_MESSAGE,
     CONSENT_REQUIRED_MESSAGE,
 } from '@/infrastructure/auth/errorMessages';
-import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
-import { createAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
 import { DEFAULT_SESSION_TTL_SECONDS } from '@/infrastructure/auth/sessionCookie';
+import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
+import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
+import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
+import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
+import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 const AUTO_LOGIN_FAILED_MESSAGE =
     '회원가입은 완료되었으나 자동 로그인에 실패했습니다. 로그인 페이지에서 다시 시도해주세요.';
@@ -66,6 +67,7 @@ export async function registerAction(
             termsRepo.findActive('privacy'),
             termsRepo.findActive('tos'),
         ]);
+
         if (!privacyTerms || !tosTerms) {
             return {
                 error: {
@@ -86,9 +88,9 @@ export async function registerAction(
             },
             {
                 users: userRepo,
+                agreements: new DrizzleAgreementRepository(db),
                 passwordHasher: bcryptPasswordHasher,
                 emailTokens,
-                db,
             }
         );
 
@@ -132,6 +134,7 @@ export async function registerAction(
         );
         redirect(next);
     } catch (err) {
+        console.error('Error in registerAction:', err);
         // Re-throw Next.js redirect (not an error — it's a control-flow signal).
         if (err instanceof Error && err.message.startsWith('NEXT_REDIRECT')) {
             throw err;

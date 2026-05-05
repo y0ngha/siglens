@@ -6,7 +6,7 @@ jest.mock('next/navigation', () => ({
 }));
 jest.mock('@/infrastructure/db/client', () => ({
     getDatabaseClient: jest.fn(() => ({
-        db: { transaction: jest.fn() },
+        db: {},
         sql: () => null,
     })),
     resetDatabaseClientForTests: jest.fn(),
@@ -18,7 +18,7 @@ jest.mock('@/infrastructure/db/userRepository', () => ({
     DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
 }));
 jest.mock('@/infrastructure/db/agreementRepository', () => ({
-    DrizzleAgreementRepository: jest.fn().mockImplementation(() => ({})),
+    DrizzleAgreementRepository: jest.fn(),
 }));
 jest.mock('@/infrastructure/db/termsRepository', () => ({
     DrizzleTermsRepository: jest.fn(),
@@ -43,6 +43,7 @@ import { loginUser } from '@/infrastructure/auth/use-cases/loginUser';
 import { registerUser } from '@/infrastructure/auth/use-cases/registerUser';
 import { createEmailTokenStore } from '@/infrastructure/email/tokenStore';
 import { getDatabaseClient } from '@/infrastructure/db/client';
+import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
 import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
 import { AUTH_SERVICE_UNAVAILABLE_MESSAGE } from '@/infrastructure/auth/errorMessages';
 import { registerAction } from '@/infrastructure/auth/registerAction';
@@ -274,9 +275,7 @@ describe('registerAction', () => {
                         get: expect.any(Function),
                         delete: expect.any(Function),
                     }),
-                    db: expect.objectContaining({
-                        transaction: expect.any(Function),
-                    }),
+                    agreements: expect.any(DrizzleAgreementRepository),
                 })
             );
         });
@@ -308,9 +307,7 @@ describe('registerAction', () => {
                         get: expect.any(Function),
                         delete: expect.any(Function),
                     }),
-                    db: expect.objectContaining({
-                        transaction: expect.any(Function),
-                    }),
+                    agreements: expect.any(DrizzleAgreementRepository),
                 })
             );
         });
@@ -337,9 +334,7 @@ describe('registerAction', () => {
                         get: expect.any(Function),
                         delete: expect.any(Function),
                     }),
-                    db: expect.objectContaining({
-                        transaction: expect.any(Function),
-                    }),
+                    agreements: expect.any(DrizzleAgreementRepository),
                 })
             );
         });
@@ -367,9 +362,7 @@ describe('registerAction', () => {
                         get: expect.any(Function),
                         delete: expect.any(Function),
                     }),
-                    db: expect.objectContaining({
-                        transaction: expect.any(Function),
-                    }),
+                    agreements: expect.any(DrizzleAgreementRepository),
                 })
             );
         });
@@ -484,9 +477,7 @@ describe('registerAction', () => {
                         get: expect.any(Function),
                         delete: expect.any(Function),
                     }),
-                    db: expect.objectContaining({
-                        transaction: expect.any(Function),
-                    }),
+                    agreements: expect.any(DrizzleAgreementRepository),
                 })
             );
             expect(setSpy).toHaveBeenCalledWith(

@@ -1,3 +1,4 @@
+import type { AgreementRepository } from '@/infrastructure/db/agreementRepository';
 import type {
     AuthSessionRecord,
     AuthUserRecord,
@@ -50,16 +51,11 @@ export type RegisterUserResult =
     | { ok: true; user: AuthUserRecord }
     | { ok: false; error: RegisterUserError };
 
-/** Minimal database transactor contract for the use-case layer. */
-export interface Transactor {
-    transaction<T>(fn: (tx: unknown) => Promise<T>): Promise<T>;
-}
-
 export interface RegisterUserDependencies {
     users: UserRepository;
+    agreements: AgreementRepository;
     passwordHasher: PasswordHasher;
     emailTokens: EmailTokenStore;
-    db: Transactor;
 }
 
 export interface LoginUserInput {

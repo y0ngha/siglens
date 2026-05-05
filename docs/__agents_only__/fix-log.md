@@ -1,19 +1,9 @@
 # Fix Log
 
 ## [PR #420 Round 15 | master | 2026-05-05]
-- B1: `src/__tests__/infrastructure/auth/cancelOAuthSignupAction.test.ts` — `redirect` mock was `jest.fn()` (not throwing), so the outer try-catch block was never exercised. Fixed by changing mock to throw NEXT_REDIRECT (matching other test files in PR), updating all tests to use `rejects.toThrow('NEXT_REDIRECT')`, and adding a new test for unexpected internal error → /login redirect (outer catch Branch 2).
-  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
-- B2: `src/__tests__/infrastructure/auth/registerAction.test.ts` — `!privacyTerms || !tosTerms` OR condition's second branch (`tosTerms` null while `privacyTerms` exists) was never tested due to short-circuit evaluation. Fixed by adding two separate tests: one for `privacyTerms` only null, one for `tosTerms` only null.
-  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
-- S1: `src/domain/auth/formTypes.ts` — `FinalizeOAuthSignupState.error` was an inline object type. Extracted to named `FinalizeOAuthSignupError` type alias.
-  - Rule: MISTAKES.md TypeScript §5/§5.2 — inline object types should use named type aliases
-- S2: `src/__tests__/infrastructure/auth/registerAction.test.ts` — email normalization behavior test was missing. Added `'email 키가 없으면 빈 문자열로 처리한다'` test using `makeConsentFormData({ email: '' })`.
-  - Rule: Test coverage — email normalization edge case should have dedicated test
 - S3 (skipped — False Positive): `src/infrastructure/auth/finalizeOAuthSignupAction.ts` — reviewer suggested changing `tx as unknown as SiglensDatabase` to `tx as SiglensDatabase`. Reverted: `PgTransaction<NeonHttpQueryResultHKT, ...>` doesn't overlap with `NeonHttpDatabase<...>` (SiglensDatabase), causing TS error 2352. The double cast is required.
 
 ## [PR #420 Round 14 | master | 2026-05-05]
-- B1: `src/__tests__/infrastructure/auth/registerAction.test.ts` — success case used `expect.anything()` as second argument to `toHaveBeenCalledWith()`. MISTAKES.md Tests §15/§16 forbids `expect.anything()`. Replaced with `expect.objectContaining({ emailTokens: expect.objectContaining({set, get, delete}), db: expect.objectContaining({transaction}) })`.
-  - Rule: MISTAKES.md Tests §15/§16 — forbids `expect.anything()` in assertion
 - B2: `db/scripts/seedTerms.ts` — used relative imports (`../../src/infrastructure/db/...`) instead of `@/` path aliases. Changed all three imports to use `@/infrastructure/db/...`.
   - Rule: MISTAKES.md CONVENTIONS.md — path aliases must use `@/` for better maintainability
 - S1: `src/components/legal/PolicyMarkdownBody.tsx` — focus ring on Link/anchor elements was missing `ring-offset` pair (`focus-visible:ring-offset-secondary-950 focus-visible:ring-offset-2`). Added the ring-offset classes.
@@ -21,47 +11,21 @@
 - S2: `src/app/privacy/page.tsx`, `src/app/terms/page.tsx`, `src/app/signup/oauth/consent/page.tsx` — Suspense boundaries were missing fallback prop (showing blank during DB fetch). Added `fallback={<div className="animate-pulse" aria-hidden="true" />}`.
   - Rule: Suspense fallback — must provide visible loading indicator; missing fallback shows blank page to user during async fetch
 
-## [PR #420 Round 13 | master | 2026-05-05]
-- B1: `finalizeOAuthSignupAction.test.ts` — `if (!created) { throw new Error('createOAuthUser returned null') }` branch inside transaction not covered. Added test that overrides MockUserRepo to return null from createOAuthUser and asserts redirect to /login?error=service_unavailable (MISTAKES.md Infrastructure §2 — 100% branch coverage).
-  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
-- S1: `finalizeOAuthSignupAction.test.ts` — SAMPLE_TERMS_P/T fixtures had `createdAt: new Date()` which is not a field in TermsRecord interface. Removed `createdAt` from both fixtures.
-  - Rule: MISTAKES.md Tests §2 — mock keys must match actual return type
-- S2: `db/scripts/seedTerms.ts` — sequential for...of + await loop for independent upsertFromSeed calls. Converted to Promise.all(seeds.map(async seed => { ... })) for parallel execution (MISTAKES.md §5 — prefer declarative patterns).
-  - Rule: MISTAKES.md §5 — prefer declarative patterns over imperative loops
-
 ## [PR #420 Round 12 | master | 2026-05-05]
-- B1: `ConsentCheckboxGroup.test.tsx` — test queries `getByRole('alert')` but component now renders `role="status"`; test would fail at runtime (MISTAKES.md Tests §1 — test must sync with implementation). Changed query to `getByRole('status')` and updated test description accordingly.
-  - Rule: MISTAKES.md Tests §1 — test must sync with implementation
-- S1: `OAuthConsentForm.test.tsx` — `jest.mock('@/infrastructure/auth/cancelOAuthSignupAction', ...)` is dead; OAuthConsentForm receives cancelAction as a prop, never imports the action. Removed the unnecessary mock.
-  - Rule: MISTAKES.md §4 — Remove logic/code that has no effect (dead code)
 - S2: `route.ts` ([provider] callback) — 3 WHAT-comments (`Existing OAuth account → immediate login`, `Email already registered`, `New user →`) violate CLAUDE.md comment policy; code already expresses intent. Removed all 3 comments.
   - Rule: CLAUDE.md comment policy — comments should explain WHY, not WHAT (code expresses WHAT)
 
 ## [PR #420 Round 11 | master | 2026-05-05]
-- B1: `cancelOAuthSignupAction.ts` — entire action body not wrapped in outer try-catch; unexpected exceptions would propagate to client (MISTAKES.md §0.7). Wrapped in outer try-catch; re-throws NEXT_REDIRECT, falls back to redirect('/login') for other errors.
-  - Rule: MISTAKES.md §0.7 — Server Actions must catch all throws, never propagate to client
-- B2: `ConsentCheckboxGroup.tsx` — `role="alert"` + `aria-live="polite"` conflict; role="alert" implicitly sets aria-live="assertive", creating unpredictable screen reader behavior. Changed to `role="status"` (keeps explicit aria-live="polite").
-  - Rule: ARIA semantics — role="alert" conflicts with explicit aria-live="polite"
 - B3: `ConsentCheckboxGroup.tsx` — error `<p>` had no `id`; invalid checkboxes had no `aria-describedby` connection to error message. Added `const errorId = useId()`, `id={errorId}` on error element, `errorId` prop on ConsentRow, `aria-describedby: errorId` on checkbox inputs.
   - Rule: ARIA accessibility — form inputs with errors must have aria-describedby pointing to error message
 - S1: `route.ts` ([provider] callback) — `let token; try { token = await ... } catch { return ... }` imperative pattern (MISTAKES.md §14). Replaced with declarative `const token = await pendingStore.save({...}).catch(() => null); if (!token) return ...`
   - Rule: MISTAKES.md §14 — Imperative exception handling within try-catch should use declarative .catch() or ?. chains
 - S2: `usePageShowReload.ts` moved from `src/components/auth/hooks/` to `src/components/hooks/` (generic bfcache hook placed in auth feature subfolder instead of global hooks dir, MISTAKES.md Components §15). Updated import in OAuthConsentForm.tsx.
   - Rule: MISTAKES.md Components §15 — Feature-agnostic utilities belong in global directories, not feature-specific subdirs
-- S3: `seedTerms.ts` — imperative `for (let i = 0; ...)` index loop for version gap detection. Replaced with declarative `findIndex` pattern.
-  - Rule: MISTAKES.md §5 — Declarative patterns (map, filter, reduce, findIndex) preferred over imperative loops
 
 ## [PR #420 Round 10 | master | 2026-05-05]
-- B1: `ConsentCheckboxGroup.tsx` — `text-white` raw Tailwind color used for checkmark SVG icon. MISTAKES.md §0.5 prohibits raw color references. Changed to `text-secondary-50` (design system semantic token).
-  - Rule: MISTAKES.md §0.5 — Use design system semantic tokens, not raw Tailwind colors
-- B2: `registerAction.test.ts` — 2 occurrences of `expect.anything()` as second argument in `toHaveBeenCalledWith()`. MISTAKES.md Tests §15/§16 forbids `expect.anything()`. Replaced with `expect.objectContaining({ emailTokens: expect.objectContaining({...}), db: expect.objectContaining({...}) })`. Also moved `agreedTermsIds` test from `'입력 정규화'` describe block to new `'약관 ID 전달'` describe block (correct category).
-  - Rule: MISTAKES.md Tests §15/§16 — forbids `expect.anything()` in assertion
-- B3: `termsRepository.test.ts` — `InsertedRow.kind: 'privacy' | 'tos'` inline union instead of named type. MISTAKES.md TypeScript §5/§5.2 requires named type alias. Added `import type { TermsKind }` and changed to `kind: TermsKind`.
-  - Rule: MISTAKES.md TypeScript §5/§5.2 — inline union literals should use named type aliases
 - S1: `pendingOAuthSignupStore.ts` — object literal methods missing explicit return type annotations. Added explicit return types to all 4 methods (save, peek, consume, delete).
   - Rule: MISTAKES.md §0 — explicit return type annotations for methods
-- S2: `legal-toc.test.ts` — missing test for github-slugger duplicate slug deduplication behavior. Added test verifying -1, -2 suffix for repeated headings.
-  - Rule: Test coverage — slug deduplication is internal utility behavior and should have dedicated test
 
 ## [PR #420 Round 9 | master | 2026-05-05]
 - M1: `registerAction.ts` — catch block returned `service_unavailable` without logging unexpected runtime errors, making debugging difficult. Added `console.error('[registerAction] unexpected error:', err)` before returning error.
@@ -70,16 +34,8 @@
   - Rule: Error logging in catch blocks — debugging requires visibility into root causes
 
 ## [PR #420 Round 8 | master | 2026-05-05]
-- B1: `tryParse` catch 분기 미테스트 — `pendingOAuthSignupStore.test.ts`에 corrupted JSON 케이스 추가.
-  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
-- B2: `termsRepository.test.ts` mock row `effective_date`(snake_case) → `effectiveDate`(camelCase) 수정, `findActive` 성공 케이스에 `effectiveDate` 검증 추가.
-  - Rule: MISTAKES.md Tests §2 — mock 키가 실제 반환 타입과 일치해야 함
 - B3: `registerAction.test.ts` `expect.anything()` → `expect.objectContaining({ emailTokens, db })` 명시 검증. db mock에 `transaction` 함수 추가.
   - Rule: 의존성 주입 검증 — db 인자 포함 여부 명시
-
-## [PR #420 Round 7 | master | 2026-05-05]
-- B1/B2/B3: `isSecureCookieEnv()` 동일 함수 내 2회 중복 호출 — `finalizeOAuthSignupAction.ts`, `registerAction.ts`, `route.ts` 세 파일 모두 `const secure = isSecureCookieEnv()`로 추출 후 재사용.
-  - Rule: MISTAKES.md §2 — 동일 함수 내 중복 호출 금지
 
 ## [PR #420 Round 6 | master | 2026-05-04]
 - B1: `formatKoreanDate` 타임존 버그 — `getFullYear/Month/Date`는 프로세스 로컬(UTC) 기준이라 KST 날짜가 하루 밀림. `Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul' })`로 교체.
@@ -90,35 +46,17 @@
 - S2: `[WebkitTapHighlightColor:transparent]` → `[-webkit-tap-highlight-color:transparent]` (Tailwind arbitrary 벤더 접두사 소문자 하이픈)
 
 ## [PR #420 Round 5 | master | 2026-05-04]
-- B1: `OAuthConsentForm.tsx` — `formError` dead code 제거. `FinalizeOAuthSignupState.error.code`가 `'consent_required'` 리터럴이므로 `!== 'consent_required'` 조건은 항상 false. `formError` 변수·`AuthErrorAlert` 블록 제거.
-  - Rule: MISTAKES.md §4 — Remove logic/code that has no effect
 - S1: `finalizeOAuthSignupAction.ts` — 소비처 없는 `export type { FinalizeOAuthSignupState }` re-export 제거 (YAGNI).
 
-## [PR #420 Round 4 | master | 2026-05-04]
-- B2: `cancelOAuthSignupAction.test.ts` 분기 미테스트 — store null 케이스, store.delete() throw 케이스 두 테스트 추가.
-  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
-
 ## [PR #420 Round 3 | master | 2026-05-04]
-- B1: `OAuthConsentForm.tsx` had `import type { cancelOAuthSignupAction } from '@/infrastructure/auth/cancelOAuthSignupAction'` — component `.tsx` files cannot import from infrastructure even with `import type`. Replaced `typeof cancelOAuthSignupAction` with explicit `(formData: FormData) => Promise<void>` signature, removed the import.
-  - Rule: MISTAKES.md Architecture §0 — component .tsx: infrastructure import prohibited (including `import type`)
 - S1: `route.ts` GET handler — `pendingStore.save()` not wrapped in try-catch. Redis failure would cause unhandled 500. Wrapped in try-catch, redirects to `oauth_unknown` on failure (consistent with existing error handling pattern).
 
 ## [PR #420 Round 2 | master | 2026-05-04]
-- B3: `ParsedSeed.kind` inline union literal `'privacy' | 'tos'` — should use `TermsKind` named alias from `constants.ts` for single source of truth.
-  - Rule: MISTAKES.md §5.2 — inline union literals should use named type aliases
 - S1: Replaced custom `slugify` in `legal-toc.ts` with `github-slugger` (already transitive dep). Added `transformIgnorePatterns` to `jest.config.js` to handle ESM-only package.
 
 ## [PR #420 Round 1 | master | 2026-05-04]
-- B2: `finalizeOAuthSignupAction` missing outer try-catch — MISTAKES.md Coding Paradigm 0.7 (Server Actions must catch all throws, never propagate to client). Wrapped full body; re-throws NEXT_REDIRECT, redirects on other errors.
-  - Rule: MISTAKES.md Coding Paradigm 0.7 — Server Actions must catch all throws
-- B3: `CheckboxBoxProps` defined inline in component parameter — MISTAKES.md Components 13 requires named interface declared above component. Extracted interface above `CheckboxBox`.
-  - Rule: MISTAKES.md Components 13 — props interfaces must be named and declared above component
-- B5: `seedTerms.ts` used `list.push()` (array mutation) — MISTAKES.md §5 prohibits array mutation via push. Changed to spread: `[...list, seed.version]`.
-  - Rule: MISTAKES.md §5 — no array mutation via push
 - B6: `[...versions].sort()` — spread was unnecessary since `toSorted()` doesn't mutate. Changed to `versions.toSorted()`.
 - B7: `legal-toc.ts` used imperative `for + push` — refactored to declarative `map`.
-- B8: `OAuthConsentForm.tsx` had inline `useEffect` for pageshow event — MISTAKES.md Components 7 requires DOM event listeners in useEffect to be extracted to custom hooks. Extracted to `usePageShowReload` hook.
-  - Rule: MISTAKES.md Components 7 — DOM event listeners in useEffect must be extracted to custom hooks
 - Fix: `consent/page.tsx` had `export const dynamic = 'force-dynamic'` incompatible with `cacheComponents: true`. Removed — searchParams already makes page dynamic.
 - Fix: `privacy/page.tsx`, `terms/page.tsx` — DB access in async page component triggers "Uncached data outside Suspense" with `cacheComponents: true`. Split into inner async components wrapped in Suspense.
 
@@ -144,15 +82,6 @@
 - Suggestion S2 적용: SymbolPageClient bottomSlot 주석 WHAT → WHY로 교체
 - Rule: 주석은 코드로 자명하지 않은 이유를 적는다
 - Context: "차트 컨테이너 아래에 렌더" → "서버 컴포넌트가 SEO용 cross-link를 주입하기 위한 슬롯".
-
-## [PR #417 Round 3 | worktree-seo-overhaul-49 | 2026-05-04]
-- Violation: backtesting/page.tsx 면책 고지가 `<aside>`로 감싸져 있어 ARIA `complementary` role이 적용 — 면책 고지는 보완 콘텐츠가 아니라 필수 법적 노트
-- Rule: ARIA semantics — `<aside>`는 제거해도 메인 콘텐츠 이해에 지장이 없는 보완 콘텐츠 전용
-- Context: P4.6에서 `<footer>` → `<aside>`(글로벌 Footer landmark 중복 회피) 변경. R1 reviewer가 footer 원복 권고 → 거절(글로벌 Footer 충돌). R3 reviewer가 `<div role="note" aria-label>` 옵션 제시. 두 우려 모두 해소되는 third path를 채택.
-
-- Violation: overall/page.tsx 인트로 `<section>`에 accessible name 없음 — 스크린 리더 랜드마크 탐색에서 generic으로 처리
-- Rule: ARIA — `<section>`은 aria-labelledby로 접근 가능 이름이 명시되어야 랜드마크로 인식
-- Context: P1.1에서 visible static SEO 콘텐츠 블록을 `<section>`으로 추가. 내부 `<h2>`에 id 부여하고 `<section aria-labelledby>`로 연결.
 
 ## [PR #417 Round 1 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: schema.org `Article.datePublished` set to `new Date().toISOString()` (request time) — Googlebot interprets every crawl as a fresh publication
@@ -276,14 +205,6 @@
 - Violation: NewsDisplayItem.sentiment and .category were `string | null`, losing type safety
 - Rule: MISTAKES.md TypeScript 7 — Using `as` type assertions instead of type guards; DB columns backed by domain enums must be cast at repository boundary
 - Context: Now typed `NewsSentiment | null` / `NewsCategory | null` from @y0ngha/siglens-core with trust model comment in toNewsRow: "DB는 sentiment/category를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다."
-
-
-
-## [PR #416 | fix/wig-cleanup | 2026-05-04]
-- Violation: SubmitButton.tsx had `focus-visible:ring-primary-500` without `focus-visible:ring-offset-2` / `ring-offset-{color}` while peer buttons in the same PR (DangerSubmitButton, error retry buttons, PasswordField toggle) all carried the offset pair
-- Rule: WAI-ARIA keyboard accessibility — same-color ring on same-color background needs ring-offset for sufficient contrast; cross-component consistency
-- Context: Added `focus-visible:ring-offset-secondary-900 focus-visible:ring-offset-2` to align with the form's AuthCardShell `bg-secondary-900/80` surrounding background.
-
 ## [Phase 7 OAuth Consent Flow | Spec compliance R2 | 2026-05-04]
 - Violation: finalizeOAuthSignupAction.ts variable `let createdUserId` may be uninitialized from TypeScript perspective when returned
 - Rule: MISTAKES.md Coding Paradigm 0 — Non-null return type implies value is always assigned; use const + ternary/null coalescing
