@@ -97,17 +97,18 @@ async function resolveByokOutcome(
     try {
         const repo = new DrizzleUserApiKeyRepository(getDatabaseClient().db);
         const record = await repo.findByUserAndProvider(userId, llmProvider);
-        if (record === null) {
-            if (!isTierAllowed) {
+        if (!isTierAllowed) {
+            if (record === null) {
                 return {
                     kind: 'blocked',
                     result: buildGateError('tier_premium_blocked'),
                 };
             }
-            // Tier covers the model and BYOK is not registered — fall through.
-            return { kind: 'allowed' };
+            // Tier doesn't cover the model but user has BYOK — use it.
+            return { kind: 'allowed', userApiKey: record.apiKey };
         }
-        return { kind: 'allowed', userApiKey: record.apiKey };
+        // Tier covers the model: server pays regardless of BYOK registration.
+        return { kind: 'allowed' };
     } catch (error) {
         if (error instanceof LlmApiKeyDecryptionFailedError) {
             return {

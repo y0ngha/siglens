@@ -220,8 +220,8 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                             className={cn(
                                 'max-w-[85%] rounded-lg p-2.5 text-xs leading-relaxed',
                                 msg.role === 'user'
-                                    ? 'bg-primary-600/80 ml-auto rounded-tr-sm text-white'
-                                    : 'bg-secondary-700/50 text-secondary-200 rounded-tl-sm'
+                                    ? 'bg-primary-600/80 self-end rounded-tr-sm text-white'
+                                    : 'bg-secondary-700/50 text-secondary-200 self-start rounded-tl-sm'
                             )}
                         >
                             {msg.role === 'user' ? (
@@ -234,7 +234,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                 })}
 
                 {loadingPhase !== null && (
-                    <div className="bg-secondary-700/50 max-w-[85%] rounded-lg rounded-tl-sm p-2.5">
+                    <div className="bg-secondary-700/50 max-w-[85%] self-start rounded-lg rounded-tl-sm p-2.5">
                         <p className="text-secondary-400 text-xs">
                             {LOADING_MESSAGES[loadingPhase]}
                         </p>
