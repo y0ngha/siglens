@@ -222,6 +222,8 @@ export const news = pgTable(
         sentiment: text('sentiment'),
         /** LLM-assigned category: NewsCategory value */
         category: text('category'),
+        /** LLM-assigned price impact magnitude: 'high' | 'medium' | 'low' | 'negligible' */
+        priceImpact: text('price_impact'),
         rawPayload: jsonb('raw_payload'),
         fetchedAt: timestamp('fetched_at', { withTimezone: true })
             .notNull()

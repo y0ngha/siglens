@@ -2,6 +2,7 @@ import { and, desc, eq, gte, sql } from 'drizzle-orm';
 import type {
     NewsCardAnalysis,
     NewsCategory,
+    NewsImpact,
     NewsItem,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
@@ -61,6 +62,7 @@ export class DrizzleNewsRepository {
                 summaryKo: analysis.summaryKo,
                 sentiment: analysis.sentiment,
                 category: analysis.category,
+                priceImpact: analysis.priceImpact,
                 analyzedAt,
             })
             .where(eq(news.id, id));
@@ -83,6 +85,7 @@ export class DrizzleNewsRepository {
                 summaryKo: news.summaryKo,
                 sentiment: news.sentiment,
                 category: news.category,
+                priceImpact: news.priceImpact,
                 analyzedAt: news.analyzedAt,
             })
             .from(news)
@@ -107,11 +110,12 @@ interface NewsDbRow {
     summaryKo: string | null;
     sentiment: string | null;
     category: string | null;
+    priceImpact: string | null;
     analyzedAt: Date | null;
 }
 
-// DB는 sentiment/category를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다.
-// 잘못된 값은 표시 단의 isNewsSentiment 가드(NewsList.tsx)가 fallback 처리한다.
+// DB는 sentiment/category/priceImpact를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다.
+// 잘못된 값은 표시 단의 guard 함수들이 fallback 처리한다.
 function toNewsRow(row: NewsDbRow): NewsRow {
     return {
         id: row.id,
@@ -124,9 +128,10 @@ function toNewsRow(row: NewsDbRow): NewsRow {
         titleKo: row.titleKo,
         bodyKo: row.bodyKo,
         summaryKo: row.summaryKo,
-        // attachAnalysis가 NewsCardAnalysis 값으로만 write하므로 row.sentiment/category는 NewsSentiment/NewsCategory enum 또는 null로 신뢰 가능.
+        // attachAnalysis가 NewsCardAnalysis 값으로만 write하므로 각 필드는 enum 또는 null로 신뢰 가능.
         sentiment: row.sentiment as NewsSentiment | null,
         category: row.category as NewsCategory | null,
+        priceImpact: row.priceImpact as NewsImpact | null,
         analyzedAt: row.analyzedAt,
     };
 }

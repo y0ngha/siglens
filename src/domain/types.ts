@@ -1,6 +1,7 @@
 import type {
     ChatMessage,
     NewsCategory,
+    NewsImpact,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
 
@@ -132,6 +133,7 @@ export interface NewsDisplayItem {
     sentiment: NewsSentiment | null;
     category: NewsCategory | null;
     summaryKo: string | null;
+    priceImpact: NewsImpact | null;
     url: string;
     source: string;
 }

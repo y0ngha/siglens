@@ -21,6 +21,7 @@ const analysis: NewsCardAnalysis = {
     summaryKo: '애플 주가 신기록.',
     sentiment: 'bullish',
     category: 'other',
+    priceImpact: 'medium',
 };
 
 // --- DB mock helpers ---
@@ -122,6 +123,7 @@ describe('DrizzleNewsRepository', () => {
             expect(setArg['titleKo']).toBe('애플 사상 최고가 달성');
             expect(setArg['sentiment']).toBe('bullish');
             expect(setArg['category']).toBe('other');
+            expect(setArg['priceImpact']).toBe('medium');
             expect(setArg['analyzedAt']).toBe(analyzedAt);
         });
     });
@@ -140,6 +142,7 @@ describe('DrizzleNewsRepository', () => {
             summaryKo: string | null;
             sentiment: string | null;
             category: string | null;
+            priceImpact: string | null;
             analyzedAt: Date | null;
         }
 
@@ -156,6 +159,7 @@ describe('DrizzleNewsRepository', () => {
             summaryKo: null,
             sentiment: null,
             category: null,
+            priceImpact: null,
             analyzedAt: null,
         };
 
@@ -182,6 +186,7 @@ describe('DrizzleNewsRepository', () => {
                 summaryKo: '애플 주가 신기록.',
                 sentiment: 'bullish',
                 category: 'other',
+                priceImpact: 'medium',
                 analyzedAt: new Date('2025-08-01T12:00:00.000Z'),
             };
             const { db } = makeSelectDb([analyzedRow]);
