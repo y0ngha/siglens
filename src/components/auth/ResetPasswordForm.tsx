@@ -1,12 +1,12 @@
 'use client';
 
-import { useId, useState } from 'react';
-import type { ResetPasswordFormState } from '@/domain/types';
-import { useResetPasswordForm } from '@/components/hooks/useResetPasswordForm';
 import { AuthErrorAlert } from '@/components/auth/AuthErrorAlert';
 import { PasswordField } from '@/components/auth/PasswordField';
 import { PasswordStrengthHint } from '@/components/auth/PasswordStrengthHint';
 import { SubmitButton } from '@/components/auth/SubmitButton';
+import { useResetPasswordForm } from '@/components/hooks/useResetPasswordForm';
+import type { ResetPasswordFormState } from '@/domain/types';
+import { useCallback, useId, useState } from 'react';
 
 interface ResetPasswordFormProps {
     email: string;
@@ -38,8 +38,17 @@ export function ResetPasswordForm({ email, token }: ResetPasswordFormProps) {
     const [state, formAction] = useResetPasswordForm();
     const formError = describeFormError(state);
     const fieldError = describePasswordFieldError(state);
+
+    const handleAction = useCallback(
+        (formData: FormData) => {
+            setPassword('');
+            formAction(formData);
+        },
+        [formAction]
+    );
+
     return (
-        <form action={formAction} className="space-y-4" noValidate>
+        <form action={handleAction} className="space-y-4" noValidate>
             <input type="hidden" name="email" value={email} />
             <input type="hidden" name="token" value={token} />
             {formError ? <AuthErrorAlert message={formError} /> : null}
