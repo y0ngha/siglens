@@ -1,27 +1,26 @@
 'use server';
 
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import type { FinalizeOAuthSignupState } from '@/domain/auth/formTypes';
+import { sanitizeNextPath } from '@/domain/auth/redirect';
 import { applyAuthCookie } from '@/infrastructure/auth/applyAuthCookie';
 import { createAuthHintCookie } from '@/infrastructure/auth/authHintCookie';
-import {
-    createAuthSession,
-    DEFAULT_SESSION_TTL_SECONDS,
-} from '@/infrastructure/auth/sessionCookie';
 import { getAuthDatabaseClient } from '@/infrastructure/auth/db';
-import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
-import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
-import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
-import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
-import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
-import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
-import { sanitizeNextPath } from '@/domain/auth/redirect';
-import type { FinalizeOAuthSignupState } from '@/domain/auth/formTypes';
-import type { SiglensDatabase } from '@/infrastructure/db/types';
 import {
     CONSENT_REQUIRED_MESSAGE,
     OAUTH_ERROR_REDIRECT,
 } from '@/infrastructure/auth/errorMessages';
+import { createPendingOAuthSignupStoreFromEnv } from '@/infrastructure/auth/pendingOAuthSignupStore';
+import {
+    createAuthSession,
+    DEFAULT_SESSION_TTL_SECONDS,
+} from '@/infrastructure/auth/sessionCookie';
+import { isSecureCookieEnv } from '@/infrastructure/auth/sessionCookieOptions';
+import { DrizzleAgreementRepository } from '@/infrastructure/db/agreementRepository';
+import { DrizzleSessionRepository } from '@/infrastructure/db/sessionRepository';
+import { DrizzleTermsRepository } from '@/infrastructure/db/termsRepository';
+import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import { cookies } from 'next/headers';
+import { redirect } from 'next/navigation';
 
 export async function finalizeOAuthSignupAction(
     _prev: FinalizeOAuthSignupState,
@@ -78,52 +77,48 @@ export async function finalizeOAuthSignupAction(
             redirect(OAUTH_ERROR_REDIRECT.emailConflict);
         }
 
-        // .catch(() => redirect(...)) — redirect() returns `never`, so the resolved type is `string | never` = `string`.
-        const createdUserId = await db
-            .transaction(async tx => {
-                // Safe: db.transaction always passes a SiglensDatabase tx to its callback.
-                const txDb = tx as unknown as SiglensDatabase;
-                const txUserRepo = new DrizzleUserRepository(txDb);
-                const txAgreementRepo = new DrizzleAgreementRepository(txDb);
-                const created = await txUserRepo.createOAuthUser({
-                    email: consumed.email,
-                    provider: consumed.provider,
-                    providerAccountId: consumed.providerAccountId,
-                    name: consumed.name,
-                    avatarUrl: consumed.avatarUrl,
-                    accessToken: consumed.accessToken,
-                    refreshToken: consumed.refreshToken,
-                    tokenExpiresAt: consumed.tokenExpiresAt
-                        ? new Date(consumed.tokenExpiresAt)
-                        : undefined,
-                });
-                if (!created) {
-                    throw new Error('createOAuthUser returned null');
-                }
-                const now = new Date();
-                await txAgreementRepo.insertMany([
-                    {
-                        userId: created.id,
-                        termsId: termsP.id,
-                        agreed: true,
-                        agreedAt: now,
-                    },
-                    {
-                        userId: created.id,
-                        termsId: termsT.id,
-                        agreed: true,
-                        agreedAt: now,
-                    },
-                ]);
-                return created.id;
-            })
-            .catch(() => {
-                return redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
-            });
+        const createdUser = await userRepo.createOAuthUser({
+            email: consumed.email,
+            provider: consumed.provider,
+            providerAccountId: consumed.providerAccountId,
+            name: consumed.name,
+            avatarUrl: consumed.avatarUrl,
+            accessToken: consumed.accessToken,
+            refreshToken: consumed.refreshToken,
+            tokenExpiresAt: consumed.tokenExpiresAt
+                ? new Date(consumed.tokenExpiresAt)
+                : undefined,
+        });
+
+        if (!createdUser) {
+            redirect(OAUTH_ERROR_REDIRECT.emailConflict);
+        }
+
+        const agreementRepo = new DrizzleAgreementRepository(db);
+        const now = new Date();
+        try {
+            await agreementRepo.insertMany([
+                {
+                    userId: createdUser.id,
+                    termsId: termsP.id,
+                    agreed: true,
+                    agreedAt: now,
+                },
+                {
+                    userId: createdUser.id,
+                    termsId: termsT.id,
+                    agreed: true,
+                    agreedAt: now,
+                },
+            ]);
+        } catch {
+            await userRepo.deleteUser(createdUser.id);
+            redirect(OAUTH_ERROR_REDIRECT.serviceUnavailable);
+        }
 
         const secure = isSecureCookieEnv();
         const { cookie } = await createAuthSession({
-            userId: createdUserId,
+            userId: createdUser.id,
             sessions: sessionRepo,
             now: new Date(),
             secureCookie: secure,
