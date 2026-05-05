@@ -32,7 +32,10 @@ export function PasswordStrengthHint({
     descriptionId,
 }: PasswordStrengthHintProps) {
     return (
-        <ul id={descriptionId} className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs">
+        <ul
+            id={descriptionId}
+            className="mt-1 flex flex-wrap gap-x-3 gap-y-1 text-xs"
+        >
             {RULES.map(rule => {
                 const ok = rule.test(password);
                 return (

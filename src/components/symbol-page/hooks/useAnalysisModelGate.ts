@@ -1,7 +1,11 @@
 'use client';
 
 import { useCallback, useState } from 'react';
-import { getProviderForModel, type ModelId, type LlmProvider } from '@y0ngha/siglens-core';
+import {
+    getProviderForModel,
+    type ModelId,
+    type LlmProvider,
+} from '@y0ngha/siglens-core';
 import { isFreeChatModel } from '@/domain/llm';
 import type { GateMode } from '@/domain/llm';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';

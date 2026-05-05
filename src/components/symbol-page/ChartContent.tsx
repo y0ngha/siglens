@@ -135,9 +135,9 @@ export function ChartContent({
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
 
     const [modelId, setModelId] = useSelectedModel(allowedModels);
-    const { gateModal, dismissGate, handleModelChange } = useAnalysisModelGate(
-        { setModel: setModelId }
-    );
+    const { gateModal, dismissGate, handleModelChange } = useAnalysisModelGate({
+        setModel: setModelId,
+    });
 
     const {
         analysis,

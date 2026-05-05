@@ -23,16 +23,6 @@
 - S2: `usePageShowReload.ts` moved from `src/components/auth/hooks/` to `src/components/hooks/` (generic bfcache hook placed in auth feature subfolder instead of global hooks dir, MISTAKES.md Components §15). Updated import in OAuthConsentForm.tsx.
   - Rule: MISTAKES.md Components §15 — Feature-agnostic utilities belong in global directories, not feature-specific subdirs
 
-## [PR #420 Round 10 | master | 2026-05-05]
-- S1: `pendingOAuthSignupStore.ts` — object literal methods missing explicit return type annotations. Added explicit return types to all 4 methods (save, peek, consume, delete).
-  - Rule: MISTAKES.md §0 — explicit return type annotations for methods
-
-## [PR #420 Round 9 | master | 2026-05-05]
-- M1: `registerAction.ts` — catch block returned `service_unavailable` without logging unexpected runtime errors, making debugging difficult. Added `console.error('[registerAction] unexpected error:', err)` before returning error.
-  - Rule: Error logging in catch blocks — debugging requires visibility into root causes
-- M2: `finalizeOAuthSignupAction.ts` — transaction .catch() and outer catch block redirected to serviceUnavailable without logging, making root cause analysis impossible. Added `console.error('[finalizeOAuthSignupAction] transaction failed:', err)` in .catch() and `console.error('[finalizeOAuthSignupAction] unexpected error:', err)` in outer catch.
-  - Rule: Error logging in catch blocks — debugging requires visibility into root causes
-
 ## [PR #420 Round 8 | master | 2026-05-05]
 - B3: `registerAction.test.ts` `expect.anything()` → `expect.objectContaining({ emailTokens, db })` 명시 검증. db mock에 `transaction` 함수 추가.
   - Rule: 의존성 주입 검증 — db 인자 포함 여부 명시
@@ -210,22 +200,6 @@
 - Rule: MISTAKES.md Coding Paradigm 0 — Non-null return type implies value is always assigned; use const + ternary/null coalescing
 - Context: Must guarantee createdUserId is assigned before return in all code paths.
 
-
-## [PR #420 Round 18 | master | 2026-05-05]
-- B1: `src/__tests__/infrastructure/auth/finalizeOAuthSignupAction.test.ts` — outer catch second branch (non-NEXT_REDIRECT error → service_unavailable redirect) was untested. Added `'예상치 못한 내부 에러 발생 시 service_unavailable로 리다이렉트한다'` test using `mockCreateStore.mockImplementation(() => { throw new Error(...) })`. Pattern: cancelOAuthSignupAction.test.ts had the equivalent test added in Round 15; finalizeOAuthSignupAction.test.ts had been missed.
-  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
-- S1: `db/scripts/migrate.ts` — `runMigrations` function was missing explicit `Promise<void>` return type. Added.
-  - Rule: MISTAKES.md §0 — explicit return type annotations for functions
-- S2: `src/__tests__/infrastructure/auth/registerAction.test.ts` — outer catch second branch (`return { error: { code: 'service_unavailable', ... } }` for non-NEXT_REDIRECT errors) was untested. Added import for `getDatabaseClient` + `mockGetDatabaseClient` mock, and `'예상치 못한 내부 에러 발생 시 service_unavailable을 반환한다'` test.
-  - Rule: MISTAKES.md Infrastructure §2 — 100% branch coverage
-
-## [PR #420 Round 17 | master | 2026-05-05]
-- B1: `src/__tests__/app/api/auth/callback/route.test.ts` — `pendingStore === null` branch (Redis unconfigured path) was not tested. Added `describe('pendingStore 미설정')` with test verifying `oauth_unknown` redirect when `createPendingOAuthSignupStoreFromEnv` returns null.
-  - Rule: MISTAKES.md §22 — 100% branch coverage
-- B2: `src/__tests__/infrastructure/auth/use-cases/registerUser.test.ts` — `created === null` branch inside the transaction was not explicitly tested. Added `'clears the verified marker even when createEmailUser returns null (tx null branch)'` test, verifying that the `finally` block clears the email token even in the null-return code path.
-  - Rule: MISTAKES.md §22 — 100% branch coverage
-- S1: `src/__tests__/app/api/auth/callback/route.test.ts` — Removed 5 WHAT-comment section headers (`// Module mocks`, `// Imports (after mocks)`, `// Typed mocks`, `// Fixtures`, `// Tests`).
-  - Rule: MISTAKES.md §15.4 — comments should explain WHY, not WHAT
 
 ## [PR #420 Round 16 | master | 2026-05-05]
 - B1: `src/infrastructure/auth/use-cases/types.ts` — 6 dead `SocialLoginUser*` type definitions were left after `socialLoginUser.ts` was deleted. Removed `SocialLoginUserErrorCode`, `SocialLoginUserInput`, `SocialLoginUserError`, `SocialLoginUserDependencies`, `SocialLoginUserOptions`, `SocialLoginUserResult`, and their unused imports (`OAuthProvider`, `OAuthUserRepository`).

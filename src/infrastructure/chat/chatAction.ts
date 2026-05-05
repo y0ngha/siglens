@@ -107,10 +107,9 @@ async function resolveUserContext(
         };
     }
 
-    const record = await new DrizzleUserApiKeyRepository(db).findByUserAndProvider(
-        user.id,
-        provider
-    );
+    const record = await new DrizzleUserApiKeyRepository(
+        db
+    ).findByUserAndProvider(user.id, provider);
     return {
         tierContext: { userId: user.id, tier },
         paidApiKey: record?.apiKey,

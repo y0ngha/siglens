@@ -309,7 +309,6 @@ function ChevronIcon({ isOpen }: ChevronIconProps) {
     );
 }
 
-
 type ConfidenceLevel = 'high' | 'medium';
 
 const CONFIDENCE_BADGE_CONFIG: Record<

@@ -319,7 +319,9 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                                                     e.key === ' '
                                                 ) {
                                                     e.preventDefault();
-                                                    handleModelChange(option.id);
+                                                    handleModelChange(
+                                                        option.id
+                                                    );
                                                     close();
                                                     triggerRef.current?.focus();
                                                 }
@@ -344,7 +346,9 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                                                         {option.fullName}
                                                     </div>
                                                 </div>
-                                                {!isFreeChatModel(option.id) && (
+                                                {!isFreeChatModel(
+                                                    option.id
+                                                ) && (
                                                     <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
                                                         PRO
                                                     </span>

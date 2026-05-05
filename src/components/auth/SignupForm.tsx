@@ -1,6 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
+import {
+    useCallback,
+    useEffect,
+    useId,
+    useLayoutEffect,
+    useRef,
+    useState,
+} from 'react';
 import {
     useRequestEmailVerification,
     useVerifyEmail,
@@ -114,7 +121,9 @@ function SignupFormFlow({ next, onRestart }: SignupFormFlowProps) {
     // Next.js router cache가 useActionState를 이전 세션 값으로 hydrate한 채
     // 컴포넌트를 리마운트할 수 있다. 마운트 시점에 이미 non-initial 상태라면
     // 뒤로가기로 복원된 것이므로 paint 전에 1단계로 리셋한다.
-    const restoredFromCacheRef = useRef(emailState.submitted || codeState.verified);
+    const restoredFromCacheRef = useRef(
+        emailState.submitted || codeState.verified
+    );
     useLayoutEffect(() => {
         if (restoredFromCacheRef.current) {
             onRestart();

@@ -1,8 +1,8 @@
 'use client';
 
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
-import { cn } from '@/lib/cn';
 import { isFreeChatModel } from '@/domain/llm';
+import { cn } from '@/lib/cn';
 import type { ModelId } from '@y0ngha/siglens-core';
 import { useRef } from 'react';
 
@@ -150,7 +150,7 @@ export function ModelSelector({
                         onKeyDown={handleListboxKeyDown}
                         className="border-secondary-600 bg-secondary-800 absolute top-full left-0 z-10 mt-1 w-full rounded-lg border shadow-lg"
                     >
-                        <div className="max-h-[264px] overflow-y-auto overscroll-contain">
+                        <div className="max-h-66 overflow-y-auto overscroll-contain">
                             {allowedModels.map((modelId, i) => {
                                 const display = getModelDisplay(modelId);
                                 const isSelected = modelId === selectedModel;

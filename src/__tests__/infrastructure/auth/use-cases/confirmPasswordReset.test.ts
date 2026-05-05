@@ -122,9 +122,11 @@ describe('confirmPasswordReset', () => {
     });
 
     it('returns expired_token error when the token does not exist', async () => {
-        const { dependencies, consumeToken, updatePassword } = makeDependencies({
-            peekedToken: null,
-        });
+        const { dependencies, consumeToken, updatePassword } = makeDependencies(
+            {
+                peekedToken: null,
+            }
+        );
 
         const result = await confirmPasswordReset(
             {
@@ -196,7 +198,8 @@ describe('confirmPasswordReset', () => {
     });
 
     it('returns invalid_token error when the supplied token does not match', async () => {
-        const { dependencies, consumeToken, updatePassword } = makeDependencies();
+        const { dependencies, consumeToken, updatePassword } =
+            makeDependencies();
 
         const result = await confirmPasswordReset(
             {
@@ -265,7 +268,8 @@ describe('confirmPasswordReset', () => {
             ok: false,
             error: {
                 code: 'same_password',
-                message: '현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.',
+                message:
+                    '현재 비밀번호와 동일한 비밀번호는 사용할 수 없습니다.',
             },
         });
         expect(verifyPassword).toHaveBeenCalledWith(NEW_PASSWORD, 'old-hash');
@@ -334,7 +338,10 @@ describe('confirmPasswordReset', () => {
         );
 
         expect(result).toEqual({ ok: true });
-        expect(getToken).toHaveBeenCalledWith('password_reset', 'user@example.com');
+        expect(getToken).toHaveBeenCalledWith(
+            'password_reset',
+            'user@example.com'
+        );
         expect(consumeToken).toHaveBeenCalledWith(
             'password_reset',
             'user@example.com'
@@ -345,7 +352,13 @@ describe('confirmPasswordReset', () => {
             'user-1',
             'new-hashed-password'
         );
-        expect(callOrder).toEqual(['get', 'verify', 'consume', 'hash', 'update']);
+        expect(callOrder).toEqual([
+            'get',
+            'verify',
+            'consume',
+            'hash',
+            'update',
+        ]);
     });
 
     it('only one of two concurrent consumers updates the password', async () => {

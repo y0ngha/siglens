@@ -1,7 +1,10 @@
 'use client';
 
 import { startTransition, useCallback, useEffect, useState } from 'react';
-import { GEMINI_2_5_FLASH_LITE_MODEL, type ModelId } from '@y0ngha/siglens-core';
+import {
+    GEMINI_2_5_FLASH_LITE_MODEL,
+    type ModelId,
+} from '@y0ngha/siglens-core';
 import { LOCAL_STORAGE_ANALYSIS_MODEL_KEY } from '@/lib/storageKeys';
 
 const DEFAULT_MODEL: ModelId = GEMINI_2_5_FLASH_LITE_MODEL;
@@ -34,7 +37,10 @@ export function useSelectedModel(
 
     // Re-validate when tier changes (e.g., user logs in/out)
     useEffect(() => {
-        if (allowedModels.length > 0 && !allowedModels.includes(selectedModel)) {
+        if (
+            allowedModels.length > 0 &&
+            !allowedModels.includes(selectedModel)
+        ) {
             const fallback = allowedModels.includes(DEFAULT_MODEL)
                 ? DEFAULT_MODEL
                 : (allowedModels[0] ?? DEFAULT_MODEL);

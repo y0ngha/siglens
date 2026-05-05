@@ -71,7 +71,11 @@ describe('ModelSelector', () => {
 
         const flashOption = screen
             .getAllByRole('option')
-            .find(o => o.textContent?.includes('Flash') && !o.textContent?.includes('Lite'));
+            .find(
+                o =>
+                    o.textContent?.includes('Flash') &&
+                    !o.textContent?.includes('Lite')
+            );
         await user.click(flashOption!);
 
         expect(onModelChange).toHaveBeenCalledWith('gemini-2.5-flash');
