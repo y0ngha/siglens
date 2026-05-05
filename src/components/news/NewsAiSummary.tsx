@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { Suspense, useMemo } from 'react';
 import {
     type NewsAnalysisResponse,
     type NewsSentiment,
@@ -9,6 +9,7 @@ import { cn } from '@/lib/cn';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { useWaitForNewsCards } from '@/components/news/hooks/useWaitForNewsCards';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -22,6 +23,67 @@ const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bearish: 'bg-ui-danger/10 text-chart-bearish',
 };
 
+// ---------------------------------------------------------------------------
+// 상태 표시 카드 (데이터 수집 중 / 분석 중)
+// ---------------------------------------------------------------------------
+
+interface StatusCardProps {
+    phase: 'fetching' | 'analyzing';
+}
+
+function StatusCard({ phase }: StatusCardProps) {
+    const isFetching = phase === 'fetching';
+
+    return (
+        <section
+            aria-labelledby="news-ai-summary-status-heading"
+            aria-busy="true"
+            className="border-secondary-700 bg-secondary-800 motion-safe:animate-[fade-in_200ms_ease-out] rounded-xl border p-6"
+        >
+            <h2
+                id="news-ai-summary-status-heading"
+                className="mb-4 text-lg font-semibold tracking-tight"
+            >
+                AI 뉴스 종합 분석
+            </h2>
+            <div className="flex items-center gap-3">
+                <div
+                    aria-hidden="true"
+                    className={cn(
+                        'h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none',
+                        isFetching
+                            ? 'border-secondary-400'
+                            : 'border-primary-500'
+                    )}
+                />
+                <p
+                    className="text-secondary-400 text-sm"
+                    aria-live="polite"
+                    aria-atomic="true"
+                >
+                    {isFetching
+                        ? '뉴스 데이터를 수집하고 있어요…'
+                        : 'AI 종합 분석 중이에요…'}
+                </p>
+            </div>
+            <p className="text-secondary-500 mt-2 text-xs">
+                {isFetching
+                    ? '최신 뉴스를 가져온 후 AI 분석을 시작합니다.'
+                    : '수집된 뉴스를 종합 분석하고 있습니다. 잠시만 기다려 주세요.'}
+            </p>
+            <div className="mt-4 space-y-2" aria-hidden="true">
+                <div className="bg-secondary-700 h-4 w-[91%] animate-pulse rounded motion-reduce:animate-none" />
+                <div className="bg-secondary-700 h-4 w-[67%] animate-pulse rounded motion-reduce:animate-none" />
+                <div className="bg-secondary-700 h-4 w-[79%] animate-pulse rounded motion-reduce:animate-none" />
+            </div>
+        </section>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// 분석 결과 뷰
+// ---------------------------------------------------------------------------
+
 interface NewsAiSummaryViewProps {
     result: NewsAnalysisResponse;
 }
@@ -30,7 +92,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 motion-safe:animate-[fade-in_200ms_ease-out] rounded-xl border p-6"
         >
             <div className="mb-4 flex items-center justify-between gap-3">
                 <h2
@@ -49,7 +111,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 </span>
             </div>
 
-            <p className="text-secondary-400 mb-5 text-sm leading-relaxed">
+            <p className="text-secondary-400 mb-4 text-sm leading-relaxed">
                 {result.currentDriverKo}
             </p>
 
@@ -62,10 +124,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                                 key={i}
                                 className="text-secondary-400 flex gap-2 text-sm"
                             >
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-0.5 shrink-0"
-                                >
+                                <span aria-hidden="true" className="mt-0.5 shrink-0">
                                     •
                                 </span>
                                 {event}
@@ -89,11 +148,8 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                                 key={i}
                                 className="text-secondary-400 flex gap-2 text-sm"
                             >
-                                <span
-                                    aria-hidden="true"
-                                    className="mt-0.5 shrink-0"
-                                >
-                                    •
+                                <span aria-hidden="true" className="text-ui-warning mt-0.5 shrink-0">
+                                    ⚠
                                 </span>
                                 {event}
                             </li>
@@ -105,11 +161,15 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     );
 }
 
-interface NewsAiSummaryProps {
+// ---------------------------------------------------------------------------
+// 종합 분석 실행 컴포넌트 (useSuspenseQuery로 suspend)
+// ---------------------------------------------------------------------------
+
+interface NewsAiSummaryContentProps {
     symbol: string;
 }
 
-export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
+function NewsAiSummaryContent({ symbol }: NewsAiSummaryContentProps) {
     const modelId = useDefaultModelId();
     const result = useNewsAnalysis(symbol, modelId);
 
@@ -128,4 +188,32 @@ export function NewsAiSummary({ symbol }: NewsAiSummaryProps) {
     usePublishSymbolChat(chatState);
 
     return <NewsAiSummaryView result={result} />;
+}
+
+// ---------------------------------------------------------------------------
+// Public export
+// ---------------------------------------------------------------------------
+
+interface NewsAiSummaryProps {
+    symbol: string;
+    /**
+     * Whether the SSR snapshot already contained at least one AI-enriched
+     * news card. When `false`, the component waits for background enrichment
+     * to produce the first enriched card before triggering aggregate analysis.
+     */
+    hasEnrichedNews: boolean;
+}
+
+export function NewsAiSummary({ symbol, hasEnrichedNews }: NewsAiSummaryProps) {
+    const isCardsReady = useWaitForNewsCards(symbol, hasEnrichedNews);
+
+    if (!isCardsReady) {
+        return <StatusCard phase="fetching" />;
+    }
+
+    return (
+        <Suspense fallback={<StatusCard phase="analyzing" />}>
+            <NewsAiSummaryContent symbol={symbol} />
+        </Suspense>
+    );
 }
