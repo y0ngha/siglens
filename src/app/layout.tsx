@@ -137,6 +137,7 @@ async function HeaderWithUser() {
               email: authUser.email,
               name: authUser.name,
               tier: authUser.tier,
+              avatarUrl: authUser.avatarUrl,
           }
         : null;
     return <Header currentUser={currentUser} />;
