@@ -27,6 +27,7 @@ describe('HeaderUserMenu', () => {
                     email: 'user@example.com',
                     name: 'Yongha',
                     tier: 'member',
+                    avatarUrl: null,
                 }}
             />
         );
@@ -38,6 +39,21 @@ describe('HeaderUserMenu', () => {
         expect(trigger).toHaveTextContent('Y');
     });
 
+    it('avatarUrl이 있으면 이미지를 렌더한다', () => {
+        render(
+            <HeaderUserMenu
+                currentUser={{
+                    email: 'user@example.com',
+                    name: 'Yongha',
+                    tier: 'member',
+                    avatarUrl: 'https://lh3.googleusercontent.com/a/avatar.jpg',
+                }}
+            />
+        );
+        const img = screen.getByRole('img');
+        expect(img).toBeInTheDocument();
+    });
+
     it('트리거 클릭시 메뉴가 열리고 이름과 이메일이 표시된다', () => {
         render(
             <HeaderUserMenu
@@ -45,6 +61,7 @@ describe('HeaderUserMenu', () => {
                     email: 'user@example.com',
                     name: 'Yongha',
                     tier: 'free',
+                    avatarUrl: null,
                 }}
             />
         );
@@ -65,6 +82,7 @@ describe('HeaderUserMenu', () => {
                     email: 'alice@example.com',
                     name: null,
                     tier: 'pro',
+                    avatarUrl: null,
                 }}
             />
         );
