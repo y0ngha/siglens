@@ -14,6 +14,12 @@ async function fetchNewsAnalysis(
     modelId: ModelId,
     signal: AbortSignal
 ): Promise<NewsAnalysisResponse> {
+    // Next.js Server Action 호출이 Router pending 상태를 업데이트하는데,
+    // useSuspenseQuery suspend 중에 이 업데이트가 발생하면
+    // "Cannot update Router while rendering" 경고가 발생한다.
+    // 마이크로태스크 한 틱을 yield해 현재 렌더 사이클이 끝난 뒤 Action이 호출되도록 보장.
+    await Promise.resolve();
+    if (signal.aborted) throw new Error('aborted');
     const submitted = await submitNewsAnalysisAction(symbol, modelId);
 
     if (submitted.status === 'cached') return submitted.result;

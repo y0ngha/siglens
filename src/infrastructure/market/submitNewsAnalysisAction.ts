@@ -10,7 +10,7 @@ import {
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
-import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import {
     isEnrichedRow,
     toEnrichedNewsItem,
@@ -27,13 +27,23 @@ export async function submitNewsAnalysisAction(
     const calRepo = new DrizzleEarningsCalendarRepository(db);
 
     const [rows, next] = await Promise.all([
-        newsRepo.listBySymbol(symbol, NEWS_LOOKBACK_MS),
+        newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
         calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
     ]);
 
     const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
         .filter(isEnrichedRow)
         .map(toEnrichedNewsItem);
+
+    console.log(
+        `[submitNewsAnalysisAction] symbol=${symbol} rows=${rows.length} enriched=${enrichedNews.length} lookbackMs=${NEWS_ANALYSIS_LOOKBACK_MS}`
+    );
+    if (rows.length > 0 && enrichedNews.length === 0) {
+        const sample = rows[0];
+        console.log(
+            `[submitNewsAnalysisAction] enrichment 누락 sample — titleKo=${sample.titleKo} summaryKo=${sample.summaryKo} sentiment=${sample.sentiment} category=${sample.category}`
+        );
+    }
 
     return submitNewsAnalysis({
         symbol,

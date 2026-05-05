@@ -2,16 +2,18 @@ import type {
     EnrichedNewsItem,
     NewsCardAnalysis,
     NewsCategory,
+    NewsImpact,
     NewsSentiment,
 } from '@y0ngha/siglens-core';
 import type { NewsRow } from '@/infrastructure/db/newsRepository';
 
-/** LLM-enriched NewsRow — titleKo/summaryKo/sentiment/category are guaranteed non-null; bodyKo stays optional. */
+/** LLM-enriched NewsRow — titleKo/summaryKo/sentiment/category/priceImpact are guaranteed non-null; bodyKo stays optional. */
 export interface EnrichedNewsRow extends NewsRow {
     titleKo: string;
     summaryKo: string;
     sentiment: NewsSentiment;
     category: NewsCategory;
+    priceImpact: NewsImpact;
     bodyKo: string | null;
 }
 
@@ -21,7 +23,8 @@ export function isEnrichedRow(row: NewsRow): row is EnrichedNewsRow {
         row.titleKo !== null &&
         row.summaryKo !== null &&
         row.sentiment !== null &&
-        row.category !== null
+        row.category !== null &&
+        row.priceImpact !== null
     );
 }
 
@@ -33,6 +36,7 @@ export function toEnrichedNewsItem(row: EnrichedNewsRow): EnrichedNewsItem {
         summaryKo: row.summaryKo,
         sentiment: row.sentiment,
         category: row.category,
+        priceImpact: row.priceImpact,
     };
     return {
         id: row.id,

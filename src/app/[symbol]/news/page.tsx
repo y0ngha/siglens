@@ -79,7 +79,7 @@ interface SymbolSectionProps {
 
 async function NewsListSection({ symbol }: SymbolSectionProps) {
     const items = await getNewsList(symbol);
-    return <NewsList items={items} />;
+    return <NewsList items={items} symbol={symbol} />;
 }
 
 async function EventCalendarSection({ symbol }: SymbolSectionProps) {
@@ -179,6 +179,9 @@ export default async function NewsPage({ params }: Props) {
 
     // getNewsList uses `'use cache'`, so this call is deduped against NewsListSection's fetch.
     const newsItems = await getNewsList(upper);
+    // At least one AI-enriched card means aggregate analysis can start immediately.
+    const hasEnrichedNews = newsItems.some(item => item.sentiment !== null);
+
     const newsListJsonLd =
         newsItems.length > 0
             ? {
@@ -210,7 +213,10 @@ export default async function NewsPage({ params }: Props) {
                 <h1 className="sr-only">{displayName} 최신 뉴스와 어닝 일정</h1>
                 <ErrorBoundary FallbackComponent={NewsAiSummaryError}>
                     <Suspense fallback={<NewsAiSummarySkeleton />}>
-                        <NewsAiSummary symbol={upper} />
+                        <NewsAiSummary
+                            symbol={upper}
+                            hasEnrichedNews={hasEnrichedNews}
+                        />
                     </Suspense>
                 </ErrorBoundary>
 

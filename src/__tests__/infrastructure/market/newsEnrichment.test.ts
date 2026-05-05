@@ -18,6 +18,7 @@ const baseRow: NewsRow = {
     summaryKo: '요약',
     sentiment: 'bullish',
     category: 'earnings',
+    priceImpact: 'high',
     analyzedAt: new Date('2026-05-01T12:30:00Z'),
 };
 
@@ -42,7 +43,11 @@ describe('isEnrichedRow 타입 가드는', () => {
         expect(isEnrichedRow({ ...baseRow, category: null })).toBe(false);
     });
 
-    it('bodyKo가 null이어도 다른 네 필드가 채워져 있으면 true를 반환한다', () => {
+    it('priceImpact가 null이면 false를 반환한다', () => {
+        expect(isEnrichedRow({ ...baseRow, priceImpact: null })).toBe(false);
+    });
+
+    it('bodyKo가 null이어도 다른 필드가 채워져 있으면 true를 반환한다', () => {
         expect(isEnrichedRow({ ...baseRow, bodyKo: null })).toBe(true);
     });
 });
@@ -54,6 +59,7 @@ describe('toEnrichedNewsItem 매퍼는', () => {
         summaryKo: '요약',
         sentiment: 'bullish',
         category: 'earnings',
+        priceImpact: 'high',
     };
 
     it('NewsRow의 식별 필드를 EnrichedNewsItem의 같은 키로 옮긴다', () => {
@@ -77,6 +83,7 @@ describe('toEnrichedNewsItem 매퍼는', () => {
             summaryKo: '요약',
             sentiment: 'bullish',
             category: 'earnings',
+            priceImpact: 'high',
         });
     });
 

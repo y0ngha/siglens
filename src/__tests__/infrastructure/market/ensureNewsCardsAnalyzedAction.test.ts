@@ -1,10 +1,14 @@
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
-import { submitNewsCardAnalysis } from '@y0ngha/siglens-core';
+import {
+    submitNewsCardAnalysis,
+    pollNewsCardAnalysis,
+} from '@y0ngha/siglens-core';
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import type {
     NewsItem,
     NewsCardAnalysis,
     SubmitNewsCardAnalysisResult,
+    PollNewsCardAnalysisResult,
 } from '@y0ngha/siglens-core';
 
 // ---------------------------------------------------------------------------
@@ -14,6 +18,11 @@ import type {
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     submitNewsCardAnalysis: jest.fn(),
+    pollNewsCardAnalysis: jest.fn(),
+}));
+
+jest.mock('@/lib/sleep', () => ({
+    sleep: jest.fn().mockResolvedValue(undefined),
 }));
 
 jest.mock('@/infrastructure/fmp/newsClient', () => ({
@@ -51,6 +60,10 @@ const mockSubmitNewsCardAnalysis =
         typeof submitNewsCardAnalysis
     >;
 
+const mockPollNewsCardAnalysis = pollNewsCardAnalysis as jest.MockedFunction<
+    typeof pollNewsCardAnalysis
+>;
+
 const NEWS_ITEM_1: NewsItem = {
     id: 'item-001',
     symbol: 'AAPL',
@@ -77,6 +90,7 @@ const CARD_ANALYSIS: NewsCardAnalysis = {
     summaryKo: '긍정적 실적 발표',
     sentiment: 'bullish',
     category: 'earnings',
+    priceImpact: 'high',
 };
 
 const CACHED_RESULT: SubmitNewsCardAnalysisResult = {
@@ -87,6 +101,16 @@ const CACHED_RESULT: SubmitNewsCardAnalysisResult = {
 const SUBMITTED_RESULT: SubmitNewsCardAnalysisResult = {
     status: 'submitted',
     jobId: 'job-card-001',
+};
+
+const POLL_DONE: PollNewsCardAnalysisResult = {
+    status: 'done',
+    result: CARD_ANALYSIS,
+};
+
+const POLL_ERROR: PollNewsCardAnalysisResult = {
+    status: 'error',
+    error: 'LLM worker failed',
 };
 
 // ---------------------------------------------------------------------------
@@ -101,6 +125,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockSubmitNewsCardAnalysis.mockReset();
+        mockPollNewsCardAnalysis.mockReset();
 
         mockFetchNews = jest.fn();
         mockUpsertNewsItem = jest.fn().mockResolvedValue(undefined);
@@ -120,7 +145,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     it('FMP에서 7일치 뉴스를 가져온다', async () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -129,7 +154,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     it('각 뉴스 아이템을 DB에 upsert한다', async () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -140,7 +165,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     it('각 뉴스 아이템에 대해 submitNewsCardAnalysis를 호출한다', async () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -153,7 +178,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
     });
 
-    it('캐시 결과(cached)가 있으면 attachAnalysis를 호출한다', async () => {
+    it('캐시 결과(cached)가 있으면 즉시 attachAnalysis를 호출한다', async () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
         mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
 
@@ -164,15 +189,63 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             CARD_ANALYSIS,
             expect.any(Date)
         );
+        expect(mockPollNewsCardAnalysis).not.toHaveBeenCalled();
     });
 
-    it('submitted 결과면 attachAnalysis를 호출하지 않는다', async () => {
-        mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+    describe('submitted 결과는', () => {
+        it('pollNewsCardAnalysis를 호출한다', async () => {
+            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
-        await ensureNewsCardsAnalyzedAction('AAPL');
+            await ensureNewsCardsAnalyzedAction('AAPL');
 
-        expect(mockAttachAnalysis).not.toHaveBeenCalled();
+            expect(mockPollNewsCardAnalysis).toHaveBeenCalledWith(
+                SUBMITTED_RESULT.jobId
+            );
+        });
+
+        it('poll 완료(done) 시 attachAnalysis를 호출한다', async () => {
+            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockAttachAnalysis).toHaveBeenCalledWith(
+                NEWS_ITEM_1.id,
+                CARD_ANALYSIS,
+                expect.any(Date)
+            );
+        });
+
+        it('poll 에러(error) 시 attachAnalysis를 호출하지 않는다', async () => {
+            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_ERROR);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockAttachAnalysis).not.toHaveBeenCalled();
+        });
+
+        it('processing 후 done이 되면 attachAnalysis를 호출한다', async () => {
+            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis
+                .mockResolvedValueOnce({ status: 'processing' })
+                .mockResolvedValueOnce({ status: 'processing' })
+                .mockResolvedValueOnce(POLL_DONE);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockPollNewsCardAnalysis).toHaveBeenCalledTimes(3);
+            expect(mockAttachAnalysis).toHaveBeenCalledWith(
+                NEWS_ITEM_1.id,
+                CARD_ANALYSIS,
+                expect.any(Date)
+            );
+        });
     });
 
     it('FMP fetch 실패 시 reject하지 않고 조용히 리턴한다', async () => {
@@ -185,37 +258,33 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         expect(mockUpsertNewsItem).not.toHaveBeenCalled();
     });
 
-    it('upsert 실패한 아이템은 건너뛰고 나머지를 처리한다', async () => {
+    it('upsert 실패해도 모든 아이템의 카드 분석을 시도한다', async () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        // First upsert fails, second succeeds
         mockUpsertNewsItem
             .mockRejectedValueOnce(new Error('DB constraint error'))
             .mockResolvedValueOnce(undefined);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
 
         await expect(
             ensureNewsCardsAnalyzedAction('AAPL')
         ).resolves.toBeUndefined();
 
-        // Only the second item's card analysis is attempted
-        expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
-        expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
-            item: NEWS_ITEM_2,
-        });
+        // 새 구현: upsert 실패 여부와 무관하게 모든 아이템 분석 시도
+        expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
     });
 
     it('카드 분석 실패 시 reject하지 않고 계속 진행한다', async () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
         mockSubmitNewsCardAnalysis
             .mockRejectedValueOnce(new Error('LLM timeout'))
-            .mockResolvedValueOnce(SUBMITTED_RESULT);
+            .mockResolvedValueOnce(CACHED_RESULT);
 
         await expect(
             ensureNewsCardsAnalyzedAction('AAPL')
         ).resolves.toBeUndefined();
 
-        // Both items attempted; first fails silently, second succeeds
         expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
+        expect(mockAttachAnalysis).toHaveBeenCalledTimes(1);
     });
 
     it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
