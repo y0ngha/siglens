@@ -1,3 +1,4 @@
+import { waitUntil } from '@vercel/functions';
 import { isValidTickerFormat } from '@/domain/ticker';
 import { DrizzleAssetTranslationRepository } from '@/infrastructure/db/tickerRepository';
 import type {
@@ -190,18 +191,22 @@ export async function getAssetInfo(symbol: string): Promise<AssetInfo | null> {
     };
 
     if (koreanName) {
-        persistTranslation(upper, fmpSymbol, name, koreanName, cache).catch(e =>
-            console.warn('[getAssetInfo] persist failed', e)
+        waitUntil(
+            persistTranslation(upper, fmpSymbol, name, koreanName, cache).catch(
+                e => console.warn('[getAssetInfo] persist failed', e)
+            )
         );
         return info;
     }
 
-    translateAndPersist(
-        upper,
-        { symbol: fmpSymbol, name, exchange, exchangeFullName },
-        cache
-    ).catch(e =>
-        console.warn('[getAssetInfo] background translation failed', e)
+    waitUntil(
+        translateAndPersist(
+            upper,
+            { symbol: fmpSymbol, name, exchange, exchangeFullName },
+            cache
+        ).catch(e =>
+            console.warn('[getAssetInfo] background translation failed', e)
+        )
     );
 
     setCacheBestEffort(
