@@ -1,9 +1,9 @@
 'use client';
 
-import { useEffect, useId, useRef } from 'react';
-import Link from 'next/link';
 import { cn } from '@/lib/cn';
 import { PRIVACY_PATH, TERMS_PATH } from '@/lib/legal';
+import Link from 'next/link';
+import { useEffect, useId, useRef } from 'react';
 
 interface ConsentCheckboxGroupProps {
     privacyChecked: boolean;
@@ -136,7 +136,7 @@ function ConsentRow({
         <label
             htmlFor={id}
             className={cn(
-                'group flex min-h-[44px] cursor-pointer flex-col gap-1 py-1 sm:flex-row sm:items-center sm:justify-between',
+                'group flex min-h-11 cursor-pointer flex-col gap-1 py-1 sm:flex-row sm:items-center sm:justify-between',
                 'border-l pl-3 transition-colors duration-200',
                 invalid
                     ? 'border-ui-danger'
@@ -210,7 +210,7 @@ export function ConsentCheckboxGroup({
             </p>
             <label
                 htmlFor={masterId}
-                className="flex min-h-[44px] cursor-pointer items-center gap-2 py-1"
+                className="flex min-h-11 cursor-pointer items-center gap-2 py-1"
             >
                 <CheckboxBox
                     checked={allChecked}
