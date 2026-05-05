@@ -1,17 +1,17 @@
 'use client';
 
 import {
+    SNAP_FULL,
+    SNAP_PEEK,
+    type SnapPoint,
+} from '@/components/symbol-page/constants/mobileSheet';
+import {
     type RefObject,
     useCallback,
     useEffect,
     useRef,
     useState,
 } from 'react';
-import {
-    SNAP_FULL,
-    SNAP_PEEK,
-    type SnapPoint,
-} from '@/components/symbol-page/constants/mobileSheet';
 
 interface UseMobileAnalysisSheetOptions {
     activeSnap: SnapPoint;
@@ -46,7 +46,7 @@ export function useMobileAnalysisSheet({
     useEffect(() => {
         let timeoutId: ReturnType<typeof setTimeout> | null = null;
         const frameId = window.requestAnimationFrame(() => {
-            timeoutId = window.setTimeout(
+            timeoutId = setTimeout(
                 () => setIsOpen(true),
                 MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS
             );
