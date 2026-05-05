@@ -31,6 +31,7 @@ export async function translateCompanyNames(
                 try {
                     return await callGeminiChat({
                         serverApiKey: config.freeApiKey,
+                        userApiKey: undefined,
                         model: config.model,
                         contents: buildTranslatePrompt(entries),
                     });
@@ -40,6 +41,7 @@ export async function translateCompanyNames(
             }
             return callGeminiChat({
                 serverApiKey: config.apiKey,
+                userApiKey: undefined,
                 model: config.model,
                 contents: buildTranslatePrompt(entries),
             });

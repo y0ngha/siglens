@@ -12,6 +12,7 @@ import { callOpenaiChat } from '@/infrastructure/ai/openai';
 
 const BASE_OPTIONS = {
     serverApiKey: 'server-key',
+    userApiKey: undefined,
     model: 'gpt-5-mini',
     contents: 'Hello',
 } as const;

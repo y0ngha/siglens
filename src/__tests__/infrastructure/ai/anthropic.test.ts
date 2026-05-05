@@ -12,6 +12,7 @@ import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
 
 const BASE_OPTIONS = {
     serverApiKey: 'server-key',
+    userApiKey: undefined,
     model: 'claude-haiku-4-5',
     contents: 'Hello',
 } as const;

@@ -1,3 +1,4 @@
+import type { OAuthProvider } from '@/domain/types';
 import type { AgreementRepository } from '@/infrastructure/db/agreementRepository';
 import type {
     AuthSessionRecord,
@@ -38,6 +39,17 @@ export type {
     RegisterUserErrorField,
     VerifyEmailErrorCode,
 };
+
+export interface SocialLoginUserInput {
+    provider: OAuthProvider;
+    providerAccountId: string;
+    email: string;
+    name?: string;
+    avatarUrl?: string;
+    accessToken?: string;
+    refreshToken?: string;
+    tokenExpiresAt?: Date;
+}
 
 export interface RegisterUserInput {
     email: string;
