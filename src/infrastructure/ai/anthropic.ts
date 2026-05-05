@@ -22,9 +22,11 @@ export async function callAnthropicChat({
     systemInstruction,
 }: CallAiProviderOptions): Promise<string> {
     const spec = findSpecByApiModelId(model);
-    // spec.effort があれば Sonnet/Opus → adaptive thinking。なければ haiku → temperature。
-    const adaptiveThinking = spec?.effort !== undefined;
-    const maxTokens = spec?.maxOutputTokens ?? 8_192;
+    if (!spec) {
+        throw new Error(`Unknown model: ${model}`);
+    }
+    const adaptiveThinking = spec.effort !== undefined;
+    const maxTokens = spec.maxOutputTokens;
 
     const client = new Anthropic({ apiKey: serverApiKey });
     const response = await client.messages.create({
@@ -38,9 +40,9 @@ export async function callAnthropicChat({
                       type: 'adaptive' as const,
                       display: 'omitted' as const,
                   },
-                  output_config: { effort: spec!.effort },
+                  output_config: { effort: spec.effort },
               }
-            : { temperature: spec?.temperature ?? 0 }),
+            : { temperature: spec.temperature }),
     });
 
     const block = response.content.find(b => b.type === 'text') as

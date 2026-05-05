@@ -4,6 +4,7 @@ import { ChartErrorFallback } from '@/components/chart/ChartErrorFallback';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { TimeframeSelector } from '@/components/chart/TimeframeSelector';
 import { useHydrated } from '@/components/hooks/useHydrated';
+import { useIsMobileViewport } from '@/components/hooks/useIsMobileViewport';
 import { ChartContent } from '@/components/symbol-page/ChartContent';
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 import { useMobileSheet } from '@/components/symbol-page/hooks/useMobileSheet';
@@ -49,6 +50,7 @@ export function SymbolPageClient({
         useTimeframeChange(symbol);
     const assetInfo = useAssetInfo(symbol);
     const isHydrated = useHydrated();
+    const isMobileViewport = useIsMobileViewport();
 
     return (
         <SymbolPageProvider indicatorCount={indicatorCount}>
@@ -86,7 +88,7 @@ export function SymbolPageClient({
                     </ErrorBoundary>
                 </div>
                 {/* Suspense 경계 밖에서 렌더링하여 타임프레임 전환 시 바텀시트가 사라지지 않도록 한다 */}
-                {isHydrated && (
+                {isHydrated && isMobileViewport && (
                     <MobileAnalysisSheet
                         activeSnap={sheetSnap}
                         onActiveSnapChange={setSheetSnap}

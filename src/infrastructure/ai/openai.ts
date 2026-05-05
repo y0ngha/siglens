@@ -26,17 +26,18 @@ export async function callOpenaiChat({
     systemInstruction,
 }: CallAiProviderOptions): Promise<string> {
     const spec = findSpecByApiModelId(model);
+    if (!spec) {
+        throw new Error(`Unknown model: ${model}`);
+    }
     const client = new OpenAI({ apiKey: serverApiKey });
 
     const response = await client.responses.create({
         model,
         input: toResponsesInput(contents),
         ...(systemInstruction !== undefined ? { instructions: systemInstruction } : {}),
-        ...(spec?.maxOutputTokens !== undefined
-            ? { max_output_tokens: spec.maxOutputTokens }
-            : {}),
-        ...(spec?.temperature !== undefined ? { temperature: spec.temperature } : {}),
-        ...(spec?.reasoning ? { reasoning: { effort: spec.reasoning.effort } } : {}),
+        max_output_tokens: spec.maxOutputTokens,
+        temperature: spec.temperature,
+        ...(spec.effort !== undefined ? { reasoning: { effort: spec.effort } } : {}),
     });
 
     const text = response.output_text;
