@@ -1,5 +1,6 @@
 'use client';
 
+import { ApiKeyInput } from '@/components/account/ApiKeyInput';
 import { useApiKeyForms } from '@/components/account/hooks/useApiKeyForms';
 import type { ApiKeyActionState } from '@/domain/llm';
 import { LLM_PROVIDER_VALUES, type LlmProvider } from '@/domain/llm';
@@ -141,14 +142,11 @@ function ProviderCard({ provider, isRegistered }: ProviderCardProps) {
                     noValidate
                 >
                     <input type="hidden" name="provider" value={provider} />
-                    <input
-                        type="password"
+                    <ApiKeyInput
                         name="apiKey"
-                        required
                         placeholder={PROVIDER_PLACEHOLDERS[provider]}
                         aria-label={`${LLM_PROVIDER_LABELS[provider]} API 키`}
                         aria-describedby={saveStatusId}
-                        className="border-secondary-700 bg-secondary-950 text-secondary-50 placeholder:text-secondary-500 focus:border-primary-500 focus:ring-primary-500/40 h-10 min-w-0 flex-1 rounded-md border px-3 font-mono text-sm focus:ring-2 focus:outline-none"
                     />
                     <SubmitButton
                         label="저장"
