@@ -41,7 +41,7 @@
         "@tanstack/react-query": "^5.95.2",
         "@upstash/redis": "^1.37.0",
         "@vercel/functions": "^3.4.3",
-        "@y0ngha/siglens-core": "0.7.10",
+        "@y0ngha/siglens-core": "0.7.11",
         "bcryptjs": "^3.0.3",
         "clsx": "^2.1.1",
         "drizzle-orm": "^0.45.2",
