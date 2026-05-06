@@ -134,10 +134,17 @@ export async function submitAnalysisAction(
 
     // No model selected → preserve previous behavior (let core pick a default).
     if (modelId === undefined) {
-        return submitAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
-            waitUntil,
-            modelId,
-        });
+        return submitAnalysis(
+            symbol,
+            companyName,
+            timeframe,
+            force,
+            fmpSymbol,
+            {
+                waitUntil,
+                modelId,
+            }
+        );
     }
 
     if (!isKnownModelId(modelId)) {

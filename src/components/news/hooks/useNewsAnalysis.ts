@@ -21,7 +21,11 @@ async function fetchNewsAnalysis(
     // 마이크로태스크 한 틱을 yield해 현재 렌더 사이클이 끝난 뒤 Action이 호출되도록 보장.
     await Promise.resolve();
     if (signal.aborted) throw new Error('aborted');
-    const submitted = await submitNewsAnalysisAction(symbol, companyName, modelId);
+    const submitted = await submitNewsAnalysisAction(
+        symbol,
+        companyName,
+        modelId
+    );
 
     if (submitted.status === 'cached') return submitted.result;
     if (submitted.status === 'error') {

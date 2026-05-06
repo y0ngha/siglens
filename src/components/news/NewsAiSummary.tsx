@@ -176,7 +176,10 @@ interface NewsAiSummaryContentProps {
     companyName: string;
 }
 
-function NewsAiSummaryContent({ symbol, companyName }: NewsAiSummaryContentProps) {
+function NewsAiSummaryContent({
+    symbol,
+    companyName,
+}: NewsAiSummaryContentProps) {
     const modelId = useDefaultModelId();
     const result = useNewsAnalysis(symbol, companyName, modelId);
 
@@ -212,7 +215,11 @@ interface NewsAiSummaryProps {
     hasEnrichedNews: boolean;
 }
 
-export function NewsAiSummary({ symbol, companyName, hasEnrichedNews }: NewsAiSummaryProps) {
+export function NewsAiSummary({
+    symbol,
+    companyName,
+    hasEnrichedNews,
+}: NewsAiSummaryProps) {
     const isCardsReady = useWaitForNewsCards(symbol, hasEnrichedNews);
 
     if (!isCardsReady) {

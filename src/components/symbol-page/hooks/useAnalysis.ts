@@ -118,7 +118,11 @@ export function useAnalysis({
     const [pollError, setPollError] = useState<string | null>(null);
 
     // 2. useRef
-    const latestRef = useRef<{ symbol: string; companyName: string; fmpSymbol?: string }>({
+    const latestRef = useRef<{
+        symbol: string;
+        companyName: string;
+        fmpSymbol?: string;
+    }>({
         symbol,
         companyName,
         fmpSymbol,

@@ -465,7 +465,14 @@ describe('chatAction 함수는', () => {
 
     describe('기본 모델', () => {
         it('model을 생략하면 GEMINI_2_5_FLASH_MODEL을 core에 전달한다', async () => {
-            await chatAction('AAPL', 'Apple Inc.', '1Day', MINIMAL_ANALYSIS, [], '질문');
+            await chatAction(
+                'AAPL',
+                'Apple Inc.',
+                '1Day',
+                MINIMAL_ANALYSIS,
+                [],
+                '질문'
+            );
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({

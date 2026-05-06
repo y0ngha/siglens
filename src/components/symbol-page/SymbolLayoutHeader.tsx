@@ -29,8 +29,13 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
     const ticker = symbol.toUpperCase();
     const hasCompanyName = !!assetInfo && assetInfo.name !== ticker;
 
-    const { modelId, allowedModels, handleModelChange, gateModal, dismissGate } =
-        useSymbolModel();
+    const {
+        modelId,
+        allowedModels,
+        handleModelChange,
+        gateModal,
+        dismissGate,
+    } = useSymbolModel();
 
     return (
         <header className="px-4 py-3">

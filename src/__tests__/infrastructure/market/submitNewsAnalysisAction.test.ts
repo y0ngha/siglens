@@ -186,7 +186,11 @@ describe('submitNewsAnalysisAction 함수는', () => {
         };
         mockSubmitNewsAnalysis.mockResolvedValueOnce(noNewsResult);
 
-        const result = await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+        const result = await submitNewsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            MODEL_ID
+        );
 
         expect(result).toBe(noNewsResult);
     });

@@ -214,12 +214,11 @@ export function useOverallAnalysis(
                         ? err.message
                         : '분석 중 오류가 발생했습니다.',
                 axis:
-                    err instanceof OverallAnalysisError
-                        ? err.axis
-                        : undefined,
+                    err instanceof OverallAnalysisError ? err.axis : undefined,
             };
         }
-        if (query.data !== undefined) return { status: 'done', result: query.data };
+        if (query.data !== undefined)
+            return { status: 'done', result: query.data };
         if (progress?.phase === 'pending_dependencies') {
             return {
                 status: 'pending_dependencies',

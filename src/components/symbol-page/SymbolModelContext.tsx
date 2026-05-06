@@ -28,9 +28,9 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
     const { tier } = useUserTier();
     const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
     const [modelId, setModelId, isHydrated] = useSelectedModel(allowedModels);
-    const { gateModal, dismissGate, handleModelChange } = useAnalysisModelGate(
-        { setModel: setModelId }
-    );
+    const { gateModal, dismissGate, handleModelChange } = useAnalysisModelGate({
+        setModel: setModelId,
+    });
 
     const value = useMemo(
         () => ({
@@ -41,7 +41,14 @@ export function SymbolModelProvider({ children }: SymbolModelProviderProps) {
             dismissGate,
             handleModelChange,
         }),
-        [modelId, allowedModels, isHydrated, gateModal, dismissGate, handleModelChange]
+        [
+            modelId,
+            allowedModels,
+            isHydrated,
+            gateModal,
+            dismissGate,
+            handleModelChange,
+        ]
     );
 
     return (

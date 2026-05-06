@@ -3,10 +3,7 @@
 import type { ReactNode } from 'react';
 import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
-import {
-    type AnalysisResponse,
-    type Timeframe,
-} from '@y0ngha/siglens-core';
+import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
@@ -310,7 +307,6 @@ export function ChartContent({
             {isDragging && (
                 <div className="fixed inset-0 z-50 cursor-col-resize" />
             )}
-
         </div>
     );
 }
