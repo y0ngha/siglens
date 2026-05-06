@@ -231,14 +231,15 @@ export function useOverallAnalysis(
         return { status: 'submitting' };
     }, [triggered, query.isError, query.error, query.data, progress]);
 
+    const { refetch } = query;
     const trigger = useCallback(() => {
         setProgress(null);
         if (!triggered) {
             setTriggered(true);
         } else {
-            void query.refetch();
+            void refetch();
         }
-    }, [triggered, query.refetch]);
+    }, [triggered, refetch]);
 
     return { state, trigger };
 }
