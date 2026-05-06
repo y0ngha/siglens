@@ -4,10 +4,8 @@ import {
     TTL_T4_30D,
     TTL_T3_7D,
     TTL_T2_24H,
-    TTL_T2_1H,
 } from '@/lib/fundamental/cacheTtl';
 import type {
-    FundamentalSectorPerformanceInput,
     FundamentalSectorHistoricalInput,
     FundamentalProfileInput,
     FundamentalPeerInput,
@@ -121,15 +119,6 @@ export async function getPriceTargetSummary(
     cacheLife({ revalidate: TTL_T2_24H });
     cacheTag(`fundamental:price-target-summary:${symbol}`);
     return fundamentalClient.getPriceTargetSummary(symbol);
-}
-
-export async function getSectorSnapshot(
-    date: string
-): Promise<FundamentalSectorPerformanceInput[]> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T2_1H });
-    cacheTag(`fundamental:sector-snapshot:${date}`);
-    return fundamentalClient.getSectorPerformanceSnapshot(date);
 }
 
 export async function getHistoricalSector(

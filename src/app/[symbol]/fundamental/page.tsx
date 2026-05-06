@@ -10,7 +10,6 @@ import {
     getPriceTargetSummary,
     getProfile,
     getRatiosTtm,
-    getSectorSnapshot,
     getStockPeers,
 } from '@/app/[symbol]/fundamental/fundamentalData';
 import { FundamentalAiSummary } from '@/components/fundamental/FundamentalAiSummary';
@@ -30,7 +29,6 @@ import { JsonLd } from '@/components/ui/JsonLd';
 import { VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildDisplayName } from '@/domain/ticker';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
-import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import {
     buildBreadcrumbJsonLd,
     buildSymbolFundamentalSeoContent,
@@ -154,15 +152,11 @@ async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
 }
 
 async function SectorDirectionSection({ sector }: { sector: string }) {
-    const today = todayKstIsoDate();
-    const [snapshot, historical] = await Promise.all([
-        getSectorSnapshot(today),
-        sector !== '' ? getHistoricalSector(sector) : Promise.resolve([]),
-    ]);
+    const historical =
+        sector !== '' ? await getHistoricalSector(sector) : [];
     return (
         <SectorDirectionCard
             sector={sector}
-            snapshot={snapshot}
             historical={historical}
         />
     );

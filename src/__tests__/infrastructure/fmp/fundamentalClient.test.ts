@@ -536,6 +536,9 @@ describe('FmpFundamentalClient', () => {
                 sector: 'Energy',
                 changesPercentage: -0.45,
             });
+            const url: string = mockFetch.mock.calls[0][0] as string;
+            expect(url).toContain('sector-performance-snapshot');
+            expect(url).toContain('date=2024-01-15');
         });
 
         it('returns empty array when FMP returns empty', async () => {

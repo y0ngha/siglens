@@ -1,5 +1,4 @@
 import type {
-    FundamentalSectorPerformanceInput,
     FundamentalSectorHistoricalInput,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
@@ -7,8 +6,6 @@ import { cn } from '@/lib/cn';
 interface SectorDirectionCardProps {
     /** Sector name for display (resolved from company profile). */
     sector: string;
-    /** Today's sector performance snapshot. */
-    snapshot: FundamentalSectorPerformanceInput[];
     /** Historical daily sector performance (newest-first from FMP). */
     historical: FundamentalSectorHistoricalInput[];
 }
@@ -65,12 +62,11 @@ function SectorSparkline({ data }: SectorSparklineProps) {
 
 export function SectorDirectionCard({
     sector,
-    snapshot,
     historical,
 }: SectorDirectionCardProps) {
-    const sectorEntry = snapshot.find(s => s.sector === sector);
-    const todayPct = sectorEntry?.changesPercentage ?? null;
-    const isPositive = todayPct !== null && todayPct >= 0;
+    const latest = historical[0] ?? null;
+    const latestPct = latest?.changesPercentage ?? null;
+    const isPositive = latestPct !== null && latestPct >= 0;
 
     return (
         <section
@@ -89,9 +85,11 @@ export function SectorDirectionCard({
                 </p>
             )}
 
-            {todayPct !== null && (
+            {latestPct !== null && (
                 <div className="mb-4 flex items-center gap-3">
-                    <span className="text-secondary-400 text-sm">오늘</span>
+                    <span className="text-secondary-400 text-sm">
+                        최근 {latest?.date}
+                    </span>
                     <span
                         className={cn(
                             'font-mono text-2xl font-bold tabular-nums',
@@ -101,7 +99,7 @@ export function SectorDirectionCard({
                         )}
                     >
                         {isPositive ? '+' : ''}
-                        {todayPct.toFixed(2)}%
+                        {latestPct.toFixed(2)}%
                     </span>
                 </div>
             )}

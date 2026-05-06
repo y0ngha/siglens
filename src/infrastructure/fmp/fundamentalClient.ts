@@ -250,7 +250,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         date: string
     ): Promise<FundamentalSectorPerformanceInput[]> {
         const arr = await fmpGet<RawFmpSectorPerformance[]>(
-            'sector-performance',
+            'sector-performance-snapshot',
             { date }
         );
         return arr.map(r => ({
