@@ -281,11 +281,11 @@ describe('FmpNewsClient', () => {
                 {
                     symbol: 'AAPL',
                     date: '2024-08-01',
-                    eps: 1.52,
+                    epsActual: 1.52,
                     epsEstimated: 1.48,
-                    revenue: 90_753_000_000,
+                    revenueActual: 90_753_000_000,
                     revenueEstimated: 89_000_000_000,
-                    updatedFromDate: '2024-07-30',
+                    lastUpdated: '2024-07-30',
                 },
             ]);
             const client = new FmpNewsClient();
@@ -298,7 +298,28 @@ describe('FmpNewsClient', () => {
                 epsEstimated: 1.48,
                 revenueActual: 90_753_000_000, // revenue → revenueActual
                 revenueEstimated: 89_000_000_000,
-                lastUpdated: '2024-07-30', // updatedFromDate → lastUpdated
+                lastUpdated: '2024-07-30',
+            });
+        });
+
+        it('supports legacy eps/revenue/updatedFromDate field names', async () => {
+            mockOk([
+                {
+                    symbol: 'AAPL',
+                    date: '2024-08-01',
+                    eps: 1.52,
+                    epsEstimated: 1.48,
+                    revenue: 90_753_000_000,
+                    revenueEstimated: 89_000_000_000,
+                    updatedFromDate: '2024-07-30',
+                },
+            ]);
+            const client = new FmpNewsClient();
+            const result = await client.fetchEarningsCalendarAll();
+            expect(result[0]).toMatchObject({
+                epsActual: 1.52,
+                revenueActual: 90_753_000_000,
+                lastUpdated: '2024-07-30',
             });
         });
 
@@ -335,12 +356,21 @@ describe('FmpNewsClient', () => {
     describe('fetchEarningsReport', () => {
         it('returns the first earnings report', async () => {
             mockOk([
-                { symbol: 'AAPL', earningsDate: '2024-08-01' },
-                { symbol: 'AAPL', earningsDate: '2024-05-02' },
+                { symbol: 'AAPL', date: '2024-08-01' },
+                { symbol: 'AAPL', date: '2024-05-02' },
             ]);
             const client = new FmpNewsClient();
             const result = await client.fetchEarningsReport('AAPL');
             expect(result).toEqual({
+                symbol: 'AAPL',
+                earningsDate: '2024-08-01',
+            });
+        });
+
+        it('supports legacy earningsDate field name', async () => {
+            mockOk([{ symbol: 'AAPL', earningsDate: '2024-08-01' }]);
+            const client = new FmpNewsClient();
+            expect(await client.fetchEarningsReport('AAPL')).toEqual({
                 symbol: 'AAPL',
                 earningsDate: '2024-08-01',
             });

@@ -1,13 +1,13 @@
 // FMP-specific raw response shapes — internal to infrastructure/fmp/ only; mirrors siglens-core Raw* shapes for local extension.
 
-/** Raw FMP company profile. `mktCap` must be mapped → `marketCap`. */
+/** Raw FMP company profile. */
 export interface RawFmpProfile {
     symbol: string;
     companyName: string;
     sector: string;
     industry: string;
-    /** FMP-specific field; adapters must map to `FundamentalProfileInput.marketCap`. */
-    mktCap: number;
+    marketCap?: number | null;
+    mktCap?: number | null;
     ceo: string | null;
     website: string | null;
     description: string | null;
@@ -15,22 +15,33 @@ export interface RawFmpProfile {
 
 /** Raw FMP TTM key metrics (valuation multiples). */
 export interface RawFmpKeyMetricsTtm {
-    peRatioTTM: number | null;
-    priceToSalesRatioTTM: number | null;
-    pbRatioTTM: number | null;
-    pegRatioTTM: number | null;
-    enterpriseValueOverEBITDATTM: number | null;
-    epsTTM: number | null;
+    peRatioTTM?: number | null;
+    priceToSalesRatioTTM?: number | null;
+    pbRatioTTM?: number | null;
+    pegRatioTTM?: number | null;
+    enterpriseValueOverEBITDATTM?: number | null;
+    evToEBITDATTM?: number | null;
+    epsTTM?: number | null;
+    returnOnEquityTTM?: number | null;
+    returnOnAssetsTTM?: number | null;
+    currentRatioTTM?: number | null;
 }
 
 /** Raw FMP TTM ratios (profitability + health). */
 export interface RawFmpRatiosTtm {
-    returnOnEquityTTM: number | null;
-    returnOnAssetsTTM: number | null;
-    operatingProfitMarginTTM: number | null;
-    netProfitMarginTTM: number | null;
-    debtRatioTTM: number | null;
-    currentRatioTTM: number | null;
+    returnOnEquityTTM?: number | null;
+    returnOnAssetsTTM?: number | null;
+    operatingProfitMarginTTM?: number | null;
+    netProfitMarginTTM?: number | null;
+    debtRatioTTM?: number | null;
+    debtToAssetsRatioTTM?: number | null;
+    currentRatioTTM?: number | null;
+    priceToEarningsRatioTTM?: number | null;
+    priceToSalesRatioTTM?: number | null;
+    priceToBookRatioTTM?: number | null;
+    priceToEarningsGrowthRatioTTM?: number | null;
+    enterpriseValueMultipleTTM?: number | null;
+    netIncomePerShareTTM?: number | null;
 }
 
 /** Raw FMP income statement growth (year-over-year). */
@@ -49,13 +60,16 @@ export interface RawFmpFinancialScore {
 export interface RawFmpStockPeer {
     symbol: string;
     companyName: string;
-    marketCap: number;
+    marketCap?: number | null;
+    mktCap?: number | null;
 }
 
-/** Raw FMP analyst estimate (next-quarter averages). */
+/** Raw FMP analyst estimate (annual averages). */
 export interface RawFmpAnalystEstimate {
-    estimatedEpsAvg: number | null;
-    estimatedRevenueAvg: number | null;
+    estimatedEpsAvg?: number | null;
+    epsAvg?: number | null;
+    estimatedRevenueAvg?: number | null;
+    revenueAvg?: number | null;
 }
 
 /** Raw FMP analyst grades (individual rating-change event). */
@@ -85,29 +99,33 @@ export interface RawFmpPriceTargetConsensus {
     targetConsensus: number | null;
 }
 
-/** Single lookback-window slice of {@link RawFmpPriceTargetSummary}. */
-interface RawFmpPriceTargetPeriod {
-    avgPriceTarget: number | null;
-}
-
-/** Raw FMP price target summary (grouped by lookback window). */
+/** Raw FMP price target summary. */
 export interface RawFmpPriceTargetSummary {
-    lastMonth: RawFmpPriceTargetPeriod;
-    lastQuarter: RawFmpPriceTargetPeriod;
-    lastYear: RawFmpPriceTargetPeriod;
+    symbol: string;
+    lastMonthCount: number;
+    lastMonthAvgPriceTarget: number | null;
+    lastQuarterCount: number;
+    lastQuarterAvgPriceTarget: number | null;
+    lastYearCount: number;
+    lastYearAvgPriceTarget: number | null;
+    allTimeCount: number;
+    allTimeAvgPriceTarget: number | null;
+    publishers: string;
 }
 
 /** Raw FMP sector performance snapshot (one entry per sector per date). */
 export interface RawFmpSectorPerformance {
     sector: string;
-    changesPercentage: number;
+    changesPercentage?: number | null;
+    averageChange?: number | null;
 }
 
 /** Raw FMP historical sector performance entry (one row per date per sector). */
 export interface RawFmpHistoricalSectorPerformance {
     date: string;
     sector: string;
-    changesPercentage: number;
+    changesPercentage?: number | null;
+    averageChange?: number | null;
 }
 
 /** Raw FMP cash flow statement (operating cash flow subset). */
@@ -118,7 +136,8 @@ export interface RawFmpCashFlowStatement {
 /** Raw FMP earnings report for a symbol. */
 export interface RawFmpEarningsReport {
     symbol: string;
-    earningsDate: string;
+    date?: string;
+    earningsDate?: string;
 }
 
 /** Raw FMP news article from `/stable/news/stock`. */
@@ -135,9 +154,12 @@ export interface RawFmpNews {
 export interface RawFmpEarningsCalendarItem {
     symbol: string;
     date: string;
-    eps: number | null;
+    eps?: number | null;
+    epsActual?: number | null;
     epsEstimated: number | null;
-    revenue: number | null;
+    revenue?: number | null;
+    revenueActual?: number | null;
     revenueEstimated: number | null;
-    updatedFromDate: string;
+    updatedFromDate?: string;
+    lastUpdated?: string;
 }

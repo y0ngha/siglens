@@ -1,6 +1,7 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     FundamentalAnalysisResponse,
     ModelId,
@@ -10,6 +11,11 @@ import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFunda
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+
+export type FundamentalAnalysisState =
+    | { status: 'loading' }
+    | { status: 'done'; result: FundamentalAnalysisResponse }
+    | { status: 'error'; error: Error; retry: () => void };
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 async function fetchFundamentalAnalysis(
@@ -44,11 +50,47 @@ async function fetchFundamentalAnalysis(
 export function useFundamentalAnalysis(
     symbol: string,
     modelId: ModelId
-): FundamentalAnalysisResponse {
-    const { data } = useSuspenseQuery({
-        queryKey: QUERY_KEYS.fundamentalAnalysis(symbol, modelId),
+): FundamentalAnalysisState {
+    const queryClient = useQueryClient();
+    const queryKey = useMemo(
+        () => QUERY_KEYS.fundamentalAnalysis(symbol, modelId),
+        [symbol, modelId]
+    );
+
+    const query = useQuery({
+        queryKey,
         queryFn: ({ signal }) =>
             fetchFundamentalAnalysis(symbol, modelId, signal),
+        enabled: false,
+        retry: false,
+        staleTime: Infinity,
     });
-    return data;
+
+    const { refetch } = query;
+    useEffect(() => {
+        if (queryClient.getQueryData(queryKey) === undefined) {
+            void refetch();
+        }
+    }, [queryClient, queryKey, refetch]);
+
+    const retry = useCallback(() => {
+        void refetch();
+    }, [refetch]);
+
+    if (query.isError) {
+        return {
+            status: 'error',
+            error:
+                query.error instanceof Error
+                    ? query.error
+                    : new Error('분석 중 오류가 발생했습니다.'),
+            retry,
+        };
+    }
+
+    if (query.data !== undefined) {
+        return { status: 'done', result: query.data };
+    }
+
+    return { status: 'loading' };
 }

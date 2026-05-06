@@ -1,7 +1,4 @@
-import {
-    DEFAULT_GRADES_LIMIT,
-    FmpFundamentalClient,
-} from '@/infrastructure/fmp/fundamentalClient';
+import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 
 const mockFetch = jest.fn();
 
@@ -60,12 +57,11 @@ describe('FmpFundamentalClient', () => {
             await expect(client.getProfile('AAPL')).rejects.toThrow('404');
         });
 
-        it('getKeyMetricsTtm throws with status in message', async () => {
+        it('getKeyMetricsTtm returns null when both optional endpoints fail', async () => {
+            mockError(500);
             mockError(500);
             const client = new FmpFundamentalClient();
-            await expect(client.getKeyMetricsTtm('AAPL')).rejects.toThrow(
-                '500'
-            );
+            await expect(client.getKeyMetricsTtm('AAPL')).resolves.toBeNull();
         });
     });
 
@@ -74,14 +70,14 @@ describe('FmpFundamentalClient', () => {
     // ------------------------------------------------------------------ //
 
     describe('getProfile', () => {
-        it('maps mktCap → marketCap and returns all fields', async () => {
+        it('maps marketCap and returns all fields', async () => {
             mockOk([
                 {
                     symbol: 'AAPL',
                     companyName: 'Apple Inc.',
                     sector: 'Technology',
                     industry: 'Consumer Electronics',
-                    mktCap: 3_000_000_000_000,
+                    marketCap: 3_000_000_000_000,
                     ceo: 'Tim Cook',
                     website: 'https://apple.com',
                     description: 'Apple designs consumer electronics.',
@@ -148,6 +144,22 @@ describe('FmpFundamentalClient', () => {
             expect(result?.website).toBeNull();
             expect(result?.description).toBeNull();
         });
+
+        it('returns null when market cap is missing', async () => {
+            mockOk([
+                {
+                    symbol: 'TEST',
+                    companyName: 'Test Corp',
+                    sector: 'Finance',
+                    industry: 'Banking',
+                    ceo: null,
+                    website: null,
+                    description: null,
+                },
+            ]);
+            const client = new FmpFundamentalClient();
+            expect(await client.getProfile('TEST')).toBeNull();
+        });
     });
 
     // ------------------------------------------------------------------ //
@@ -158,12 +170,16 @@ describe('FmpFundamentalClient', () => {
         it('returns mapped TTM key metrics', async () => {
             mockOk([
                 {
-                    peRatioTTM: 28.5,
+                    evToEBITDATTM: 22.0,
+                },
+            ]);
+            mockOk([
+                {
+                    priceToEarningsRatioTTM: 28.5,
                     priceToSalesRatioTTM: 7.2,
-                    pbRatioTTM: 45.1,
-                    pegRatioTTM: 2.3,
-                    enterpriseValueOverEBITDATTM: 22.0,
-                    epsTTM: 6.11,
+                    priceToBookRatioTTM: 45.1,
+                    priceToEarningsGrowthRatioTTM: 2.3,
+                    netIncomePerShareTTM: 6.11,
                 },
             ]);
             const client = new FmpFundamentalClient();
@@ -180,8 +196,32 @@ describe('FmpFundamentalClient', () => {
 
         it('returns null when array is empty', async () => {
             mockOk([]);
+            mockOk([]);
             const client = new FmpFundamentalClient();
             expect(await client.getKeyMetricsTtm('X')).toBeNull();
+        });
+
+        it('uses key metrics when ratios fallback request fails', async () => {
+            mockOk([
+                {
+                    peRatioTTM: 28.5,
+                    priceToSalesRatioTTM: 7.2,
+                    pbRatioTTM: 45.1,
+                    pegRatioTTM: 2.3,
+                    enterpriseValueOverEBITDATTM: 22,
+                    epsTTM: 6.11,
+                },
+            ]);
+            mockError(400);
+            const client = new FmpFundamentalClient();
+            expect(await client.getKeyMetricsTtm('AAPL')).toEqual({
+                peRatioTTM: 28.5,
+                priceToSalesRatioTTM: 7.2,
+                pbRatioTTM: 45.1,
+                pegRatioTTM: 2.3,
+                enterpriseValueOverEBITDATTM: 22,
+                epsTTM: 6.11,
+            });
         });
     });
 
@@ -193,6 +233,35 @@ describe('FmpFundamentalClient', () => {
         it('returns mapped TTM ratios', async () => {
             mockOk([
                 {
+                    operatingProfitMarginTTM: 0.3,
+                    netProfitMarginTTM: 0.25,
+                    debtToAssetsRatioTTM: 0.31,
+                    currentRatioTTM: 0.94,
+                },
+            ]);
+            mockOk([
+                {
+                    returnOnEquityTTM: 1.47,
+                    returnOnAssetsTTM: 0.28,
+                },
+            ]);
+            const client = new FmpFundamentalClient();
+            const result = await client.getRatiosTtm('AAPL');
+            expect(result?.returnOnEquityTTM).toBe(1.47);
+            expect(result?.currentRatioTTM).toBe(0.94);
+            expect(result?.debtRatioTTM).toBe(0.31);
+        });
+
+        it('returns null when array is empty', async () => {
+            mockOk([]);
+            mockOk([]);
+            const client = new FmpFundamentalClient();
+            expect(await client.getRatiosTtm('X')).toBeNull();
+        });
+
+        it('uses ratios when key metrics fallback request fails', async () => {
+            mockOk([
+                {
                     returnOnEquityTTM: 1.47,
                     returnOnAssetsTTM: 0.28,
                     operatingProfitMarginTTM: 0.3,
@@ -201,16 +270,16 @@ describe('FmpFundamentalClient', () => {
                     currentRatioTTM: 0.94,
                 },
             ]);
+            mockError(400);
             const client = new FmpFundamentalClient();
-            const result = await client.getRatiosTtm('AAPL');
-            expect(result?.returnOnEquityTTM).toBe(1.47);
-            expect(result?.currentRatioTTM).toBe(0.94);
-        });
-
-        it('returns null when array is empty', async () => {
-            mockOk([]);
-            const client = new FmpFundamentalClient();
-            expect(await client.getRatiosTtm('X')).toBeNull();
+            expect(await client.getRatiosTtm('AAPL')).toEqual({
+                returnOnEquityTTM: 1.47,
+                returnOnAssetsTTM: 0.28,
+                operatingProfitMarginTTM: 0.3,
+                netProfitMarginTTM: 0.25,
+                debtRatioTTM: 0.31,
+                currentRatioTTM: 0.94,
+            });
         });
     });
 
@@ -283,12 +352,12 @@ describe('FmpFundamentalClient', () => {
                 {
                     symbol: 'MSFT',
                     companyName: 'Microsoft',
-                    marketCap: 2_800_000_000_000,
+                    mktCap: 2_800_000_000_000,
                 },
                 {
                     symbol: 'GOOGL',
                     companyName: 'Alphabet',
-                    marketCap: 1_900_000_000_000,
+                    mktCap: 1_900_000_000_000,
                 },
             ]);
             const client = new FmpFundamentalClient();
@@ -306,6 +375,12 @@ describe('FmpFundamentalClient', () => {
             const client = new FmpFundamentalClient();
             expect(await client.getStockPeers('X')).toEqual([]);
         });
+
+        it('skips peer entries without finite market cap', async () => {
+            mockOk([{ symbol: 'BAD', companyName: 'Bad Data' }]);
+            const client = new FmpFundamentalClient();
+            expect(await client.getStockPeers('AAPL')).toEqual([]);
+        });
     });
 
     // ------------------------------------------------------------------ //
@@ -314,13 +389,23 @@ describe('FmpFundamentalClient', () => {
 
     describe('getAnalystEstimates', () => {
         it('returns consensus estimate fields', async () => {
-            mockOk([
-                { estimatedEpsAvg: 1.58, estimatedRevenueAvg: 95_000_000_000 },
-            ]);
+            mockOk([{ epsAvg: 1.58, revenueAvg: 95_000_000_000 }]);
             const client = new FmpFundamentalClient();
             const result = await client.getAnalystEstimates('AAPL');
             expect(result?.estimatedEpsAvg).toBe(1.58);
             expect(result?.estimatedRevenueAvg).toBe(95_000_000_000);
+        });
+
+        it('passes required Financial Estimates API query parameters', async () => {
+            mockOk([]);
+            const client = new FmpFundamentalClient();
+            await client.getAnalystEstimates('AAPL');
+            const url: string = mockFetch.mock.calls[0][0] as string;
+            expect(url).toContain('analyst-estimates');
+            expect(url).toContain('symbol=AAPL');
+            expect(url).toContain('period=annual');
+            expect(url).toContain('page=0');
+            expect(url).toContain('limit=10');
         });
 
         it('returns null when array is empty', async () => {
@@ -408,22 +493,6 @@ describe('FmpFundamentalClient', () => {
             expect(result[0]!.action).toBe('other');
         });
 
-        it('passes limit query parameter', async () => {
-            mockOk([]);
-            const client = new FmpFundamentalClient();
-            await client.getGrades('AAPL', 5);
-            const url: string = mockFetch.mock.calls[0][0] as string;
-            expect(url).toContain('limit=5');
-        });
-
-        it('uses default limit when none provided', async () => {
-            mockOk([]);
-            const client = new FmpFundamentalClient();
-            await client.getGrades('AAPL');
-            const url: string = mockFetch.mock.calls[0][0] as string;
-            expect(url).toContain(`limit=${DEFAULT_GRADES_LIMIT}`);
-        });
-
         it('returns empty array when FMP returns empty', async () => {
             mockOk([]);
             const client = new FmpFundamentalClient();
@@ -495,16 +564,44 @@ describe('FmpFundamentalClient', () => {
         it('returns mapped rolling average price targets', async () => {
             mockOk([
                 {
-                    lastMonth: { avgPriceTarget: 205 },
-                    lastQuarter: { avgPriceTarget: 200 },
-                    lastYear: { avgPriceTarget: 190 },
+                    symbol: 'AAPL',
+                    lastMonthCount: 1,
+                    lastMonthAvgPriceTarget: 200.75,
+                    lastQuarterCount: 3,
+                    lastQuarterAvgPriceTarget: 204.2,
+                    lastYearCount: 48,
+                    lastYearAvgPriceTarget: 232.99,
+                    allTimeCount: 167,
+                    allTimeAvgPriceTarget: 201.21,
+                    publishers:
+                        '["Benzinga","StreetInsider","TheFly","Pulse 2.0","TipRanks Contributor","MarketWatch","Investing","Barrons","Investor\'s Business Daily"]',
                 },
             ]);
             const client = new FmpFundamentalClient();
             const result = await client.getPriceTargetSummary('AAPL');
-            expect(result?.lastMonth.avgPriceTarget).toBe(205);
-            expect(result?.lastQuarter.avgPriceTarget).toBe(200);
-            expect(result?.lastYear.avgPriceTarget).toBe(190);
+            expect(result?.lastMonth.avgPriceTarget).toBe(200.75);
+            expect(result?.lastQuarter.avgPriceTarget).toBe(204.2);
+            expect(result?.lastYear.avgPriceTarget).toBe(232.99);
+        });
+
+        it('maps missing average fields to null', async () => {
+            mockOk([
+                {
+                    symbol: 'AAPL',
+                    lastMonthCount: 0,
+                    lastQuarterCount: 0,
+                    lastYearCount: 0,
+                    allTimeCount: 0,
+                    publishers: '[]',
+                },
+            ]);
+            const client = new FmpFundamentalClient();
+            const result = await client.getPriceTargetSummary('AAPL');
+            expect(result).toEqual({
+                lastMonth: { avgPriceTarget: null },
+                lastQuarter: { avgPriceTarget: null },
+                lastYear: { avgPriceTarget: null },
+            });
         });
 
         it('returns null when array is empty', async () => {
@@ -521,8 +618,8 @@ describe('FmpFundamentalClient', () => {
     describe('getSectorPerformanceSnapshot', () => {
         it('returns mapped sector performance entries for a date', async () => {
             mockOk([
-                { sector: 'Technology', changesPercentage: 1.23 },
-                { sector: 'Energy', changesPercentage: -0.45 },
+                { sector: 'Technology', averageChange: 1.23 },
+                { sector: 'Energy', averageChange: -0.45 },
             ]);
             const client = new FmpFundamentalClient();
             const result =
@@ -548,6 +645,14 @@ describe('FmpFundamentalClient', () => {
                 await client.getSectorPerformanceSnapshot('2024-01-15')
             ).toEqual([]);
         });
+
+        it('skips entries without finite sector performance value', async () => {
+            mockOk([{ sector: 'Technology' }]);
+            const client = new FmpFundamentalClient();
+            expect(
+                await client.getSectorPerformanceSnapshot('2024-01-15')
+            ).toEqual([]);
+        });
     });
 
     // ------------------------------------------------------------------ //
@@ -560,12 +665,12 @@ describe('FmpFundamentalClient', () => {
                 {
                     date: '2024-01-15',
                     sector: 'Technology',
-                    changesPercentage: 1.5,
+                    averageChange: 1.5,
                 },
                 {
                     date: '2024-01-14',
                     sector: 'Technology',
-                    changesPercentage: -0.3,
+                    averageChange: -0.3,
                 },
             ]);
             const client = new FmpFundamentalClient();
@@ -586,6 +691,14 @@ describe('FmpFundamentalClient', () => {
                 await client.getHistoricalSectorPerformance('Technology')
             ).toEqual([]);
         });
+
+        it('skips historical entries without finite sector performance value', async () => {
+            mockOk([{ date: '2024-01-15', sector: 'Technology' }]);
+            const client = new FmpFundamentalClient();
+            expect(
+                await client.getHistoricalSectorPerformance('Technology')
+            ).toEqual([]);
+        });
     });
 
     // ------------------------------------------------------------------ //
@@ -595,12 +708,21 @@ describe('FmpFundamentalClient', () => {
     describe('getEarningsReport', () => {
         it('returns the first earnings report entry', async () => {
             mockOk([
-                { symbol: 'AAPL', earningsDate: '2024-02-01' },
-                { symbol: 'AAPL', earningsDate: '2023-11-02' },
+                { symbol: 'AAPL', date: '2024-02-01' },
+                { symbol: 'AAPL', date: '2023-11-02' },
             ]);
             const client = new FmpFundamentalClient();
             const result = await client.getEarningsReport('AAPL');
             expect(result).toEqual({
+                symbol: 'AAPL',
+                earningsDate: '2024-02-01',
+            });
+        });
+
+        it('supports legacy earningsDate field name', async () => {
+            mockOk([{ symbol: 'AAPL', earningsDate: '2024-02-01' }]);
+            const client = new FmpFundamentalClient();
+            expect(await client.getEarningsReport('AAPL')).toEqual({
                 symbol: 'AAPL',
                 earningsDate: '2024-02-01',
             });

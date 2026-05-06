@@ -38,6 +38,9 @@ import type {
 
 /** Default number of recent grading events returned by `getGrades`. */
 export const DEFAULT_GRADES_LIMIT = 10;
+const ANALYST_ESTIMATES_PERIOD = 'annual';
+const ANALYST_ESTIMATES_PAGE = '0';
+const ANALYST_ESTIMATES_LIMIT = '10';
 
 const GRADES_ACTION_MAP: Record<string, GradesAction> = {
     upgrade: 'upgrade',
@@ -53,19 +56,44 @@ function toGradesAction(raw: string): GradesAction {
     return GRADES_ACTION_MAP[raw.toLowerCase()] ?? 'other';
 }
 
+function toFiniteNumber(value: number | null | undefined): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function toEarningsDate(value: RawFmpEarningsReport): string | null {
+    return typeof value.date === 'string'
+        ? value.date
+        : typeof value.earningsDate === 'string'
+          ? value.earningsDate
+          : null;
+}
+
+async function getOptionalArray<T>(
+    path: string,
+    query: Record<string, string>
+): Promise<T[]> {
+    try {
+        return await fmpGet<T[]>(path, query);
+    } catch {
+        return [];
+    }
+}
+
 /** FMP adapter implementing `FundamentalDataProvider`. Uses `fmpGet` for all HTTP calls. */
 export class FmpFundamentalClient implements FundamentalDataProvider {
-    /** Fetch company profile and map `mktCap` → `marketCap`; returns `null` when FMP returns an empty array. */
+    /** Fetch company profile; returns `null` when FMP returns an empty array. */
     async getProfile(symbol: string): Promise<FundamentalProfileInput | null> {
         const arr = await fmpGet<RawFmpProfile[]>('profile', { symbol });
         const r = arr[0];
         if (!r) return null;
+        const marketCap = toFiniteNumber(r.marketCap ?? r.mktCap);
+        if (marketCap === null) return null;
         return {
             symbol: r.symbol,
             companyName: r.companyName,
             sector: r.sector,
             industry: r.industry,
-            marketCap: r.mktCap, // FMP: mktCap → domain: marketCap
+            marketCap,
             ceo: r.ceo,
             website: r.website,
             description: r.description,
@@ -76,33 +104,67 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
     async getKeyMetricsTtm(
         symbol: string
     ): Promise<FundamentalValuationMetrics | null> {
-        const arr = await fmpGet<RawFmpKeyMetricsTtm[]>('key-metrics-ttm', {
-            symbol,
-        });
-        const r = arr[0];
-        if (!r) return null;
+        const [arr, ratiosArr] = await Promise.all([
+            getOptionalArray<RawFmpKeyMetricsTtm>('key-metrics-ttm', {
+                symbol,
+            }),
+            getOptionalArray<RawFmpRatiosTtm>('ratios-ttm', { symbol }),
+        ]);
+        const metrics = arr[0] ?? null;
+        const ratios = ratiosArr[0] ?? null;
+        if (metrics === null && ratios === null) return null;
         return {
-            peRatioTTM: r.peRatioTTM,
-            priceToSalesRatioTTM: r.priceToSalesRatioTTM,
-            pbRatioTTM: r.pbRatioTTM,
-            pegRatioTTM: r.pegRatioTTM,
-            enterpriseValueOverEBITDATTM: r.enterpriseValueOverEBITDATTM,
-            epsTTM: r.epsTTM,
+            peRatioTTM: toFiniteNumber(
+                ratios?.priceToEarningsRatioTTM ?? metrics?.peRatioTTM
+            ),
+            priceToSalesRatioTTM: toFiniteNumber(
+                ratios?.priceToSalesRatioTTM ?? metrics?.priceToSalesRatioTTM
+            ),
+            pbRatioTTM: toFiniteNumber(
+                ratios?.priceToBookRatioTTM ?? metrics?.pbRatioTTM
+            ),
+            pegRatioTTM: toFiniteNumber(
+                ratios?.priceToEarningsGrowthRatioTTM ?? metrics?.pegRatioTTM
+            ),
+            enterpriseValueOverEBITDATTM: toFiniteNumber(
+                metrics?.evToEBITDATTM ??
+                    ratios?.enterpriseValueMultipleTTM ??
+                    metrics?.enterpriseValueOverEBITDATTM
+            ),
+            epsTTM: toFiniteNumber(
+                ratios?.netIncomePerShareTTM ?? metrics?.epsTTM
+            ),
         };
     }
 
     /** Fetch TTM profitability and financial health ratios; returns `null` when unavailable. */
     async getRatiosTtm(symbol: string): Promise<FundamentalRatiosInput | null> {
-        const arr = await fmpGet<RawFmpRatiosTtm[]>('ratios-ttm', { symbol });
-        const r = arr[0];
-        if (!r) return null;
+        const [arr, metricsArr] = await Promise.all([
+            getOptionalArray<RawFmpRatiosTtm>('ratios-ttm', { symbol }),
+            getOptionalArray<RawFmpKeyMetricsTtm>('key-metrics-ttm', {
+                symbol,
+            }),
+        ]);
+        const ratios = arr[0] ?? null;
+        const metrics = metricsArr[0] ?? null;
+        if (ratios === null && metrics === null) return null;
         return {
-            returnOnEquityTTM: r.returnOnEquityTTM,
-            returnOnAssetsTTM: r.returnOnAssetsTTM,
-            operatingProfitMarginTTM: r.operatingProfitMarginTTM,
-            netProfitMarginTTM: r.netProfitMarginTTM,
-            debtRatioTTM: r.debtRatioTTM,
-            currentRatioTTM: r.currentRatioTTM,
+            returnOnEquityTTM: toFiniteNumber(
+                metrics?.returnOnEquityTTM ?? ratios?.returnOnEquityTTM
+            ),
+            returnOnAssetsTTM: toFiniteNumber(
+                metrics?.returnOnAssetsTTM ?? ratios?.returnOnAssetsTTM
+            ),
+            operatingProfitMarginTTM: toFiniteNumber(
+                ratios?.operatingProfitMarginTTM
+            ),
+            netProfitMarginTTM: toFiniteNumber(ratios?.netProfitMarginTTM),
+            debtRatioTTM: toFiniteNumber(
+                ratios?.debtToAssetsRatioTTM ?? ratios?.debtRatioTTM
+            ),
+            currentRatioTTM: toFiniteNumber(
+                ratios?.currentRatioTTM ?? metrics?.currentRatioTTM
+            ),
         };
     }
 
@@ -116,7 +178,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         );
         const r = arr[0];
         if (!r) return null;
-        return { operatingCashFlow: r.operatingCashFlow };
+        return { operatingCashFlow: toFiniteNumber(r.operatingCashFlow) };
     }
 
     /** Fetch YoY income statement growth (revenue + EPS); returns `null` when unavailable. */
@@ -130,8 +192,8 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         const r = arr[0];
         if (!r) return null;
         return {
-            growthRevenue: r.growthRevenue,
-            growthEPS: r.growthEPS,
+            growthRevenue: toFiniteNumber(r.growthRevenue),
+            growthEPS: toFiniteNumber(r.growthEPS),
         };
     }
 
@@ -145,44 +207,52 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         const r = arr[0];
         if (!r) return null;
         return {
-            altmanZScore: r.altmanZScore,
-            piotroskiScore: r.piotroskiScore,
+            altmanZScore: toFiniteNumber(r.altmanZScore),
+            piotroskiScore: toFiniteNumber(r.piotroskiScore),
         };
     }
 
     /** Fetch the peer list for relative valuation context; returns an empty array when unavailable. */
     async getStockPeers(symbol: string): Promise<FundamentalPeerInput[]> {
         const arr = await fmpGet<RawFmpStockPeer[]>('stock-peers', { symbol });
-        return arr.map(r => ({
-            symbol: r.symbol,
-            companyName: r.companyName,
-            marketCap: r.marketCap,
-        }));
+        return arr.flatMap(r => {
+            const marketCap = toFiniteNumber(r.marketCap ?? r.mktCap);
+            return marketCap === null
+                ? []
+                : [
+                      {
+                          symbol: r.symbol,
+                          companyName: r.companyName,
+                          marketCap,
+                      },
+                  ];
+        });
     }
 
-    /** Fetch next-quarter analyst EPS + revenue consensus estimates; returns `null` when unavailable. */
+    /** Fetch annual analyst EPS + revenue consensus estimates; returns `null` when unavailable. */
     async getAnalystEstimates(
         symbol: string
     ): Promise<FundamentalAnalystEstimateInput | null> {
         const arr = await fmpGet<RawFmpAnalystEstimate[]>('analyst-estimates', {
             symbol,
+            period: ANALYST_ESTIMATES_PERIOD,
+            page: ANALYST_ESTIMATES_PAGE,
+            limit: ANALYST_ESTIMATES_LIMIT,
         });
         const r = arr[0];
         if (!r) return null;
         return {
-            estimatedEpsAvg: r.estimatedEpsAvg,
-            estimatedRevenueAvg: r.estimatedRevenueAvg,
+            estimatedEpsAvg: toFiniteNumber(r.epsAvg ?? r.estimatedEpsAvg),
+            estimatedRevenueAvg: toFiniteNumber(
+                r.revenueAvg ?? r.estimatedRevenueAvg
+            ),
         };
     }
 
     /** Fetch recent analyst grade-change events; `limit` defaults to `DEFAULT_GRADES_LIMIT`; returns events sorted descending by date. */
-    async getGrades(
-        symbol: string,
-        limit = DEFAULT_GRADES_LIMIT
-    ): Promise<GradesEvent[]> {
+    async getGrades(symbol: string): Promise<GradesEvent[]> {
         const arr = await fmpGet<RawFmpGradesEvent[]>('grades', {
             symbol,
-            limit: String(limit),
         });
         return arr.map(r => ({
             symbol: r.symbol,
@@ -223,10 +293,10 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         const r = arr[0];
         if (!r) return null;
         return {
-            targetHigh: r.targetHigh,
-            targetLow: r.targetLow,
-            targetMedian: r.targetMedian,
-            targetConsensus: r.targetConsensus,
+            targetHigh: toFiniteNumber(r.targetHigh),
+            targetLow: toFiniteNumber(r.targetLow),
+            targetMedian: toFiniteNumber(r.targetMedian),
+            targetConsensus: toFiniteNumber(r.targetConsensus),
         };
     }
 
@@ -241,9 +311,15 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         const r = arr[0];
         if (!r) return null;
         return {
-            lastMonth: { avgPriceTarget: r.lastMonth.avgPriceTarget },
-            lastQuarter: { avgPriceTarget: r.lastQuarter.avgPriceTarget },
-            lastYear: { avgPriceTarget: r.lastYear.avgPriceTarget },
+            lastMonth: {
+                avgPriceTarget: toFiniteNumber(r.lastMonthAvgPriceTarget),
+            },
+            lastQuarter: {
+                avgPriceTarget: toFiniteNumber(r.lastQuarterAvgPriceTarget),
+            },
+            lastYear: {
+                avgPriceTarget: toFiniteNumber(r.lastYearAvgPriceTarget),
+            },
         };
     }
 
@@ -255,10 +331,14 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
             'sector-performance-snapshot',
             { date }
         );
-        return arr.map(r => ({
-            sector: r.sector,
-            changesPercentage: r.changesPercentage,
-        }));
+        return arr.flatMap(r => {
+            const changesPercentage = toFiniteNumber(
+                r.averageChange ?? r.changesPercentage
+            );
+            return changesPercentage === null
+                ? []
+                : [{ sector: r.sector, changesPercentage }];
+        });
     }
 
     /** Fetch historical daily sector performance for `sector` (FMP sector name, e.g. `"Technology"`). */
@@ -271,11 +351,14 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
                 sector,
             }
         );
-        return arr.map(r => ({
-            date: r.date,
-            sector: r.sector,
-            changesPercentage: r.changesPercentage,
-        }));
+        return arr.flatMap(r => {
+            const changesPercentage = toFiniteNumber(
+                r.averageChange ?? r.changesPercentage
+            );
+            return changesPercentage === null
+                ? []
+                : [{ date: r.date, sector: r.sector, changesPercentage }];
+        });
     }
 
     /** Fetch the latest earnings report for a symbol; returns `null` when unavailable. */
@@ -285,9 +368,11 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         });
         const r = arr[0];
         if (!r) return null;
+        const earningsDate = toEarningsDate(r);
+        if (earningsDate === null) return null;
         return {
             symbol: r.symbol,
-            earningsDate: r.earningsDate,
+            earningsDate,
         };
     }
 }

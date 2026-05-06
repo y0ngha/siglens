@@ -116,6 +116,18 @@ export function hashUrlToId(url: string): string {
     return Buffer.from(url).toString('base64url').slice(0, 32);
 }
 
+function toFiniteNumber(value: number | null | undefined): number | null {
+    return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function toEarningsDate(value: RawFmpEarningsReport): string | null {
+    return typeof value.date === 'string'
+        ? value.date
+        : typeof value.earningsDate === 'string'
+          ? value.earningsDate
+          : null;
+}
+
 /** FMP adapter implementing `NewsProvider`. Uses `fmpGet` for all HTTP calls. */
 export class FmpNewsClient implements NewsProvider {
     /** Fetch news articles for a symbol within the given time window (most recent first). */
@@ -149,15 +161,26 @@ export class FmpNewsClient implements NewsProvider {
     async fetchEarningsCalendarAll(): Promise<EarningsCalendarItem[]> {
         const raw =
             await fmpGet<RawFmpEarningsCalendarItem[]>('earnings-calendar');
-        return raw.map(r => ({
-            symbol: r.symbol,
-            earningsDate: r.date,
-            epsActual: r.eps,
-            epsEstimated: r.epsEstimated,
-            revenueActual: r.revenue,
-            revenueEstimated: r.revenueEstimated,
-            lastUpdated: r.updatedFromDate,
-        }));
+        return raw.flatMap(r => {
+            const lastUpdated = r.lastUpdated ?? r.updatedFromDate;
+            if (typeof r.symbol !== 'string' || typeof r.date !== 'string') {
+                return [];
+            }
+            if (typeof lastUpdated !== 'string') return [];
+            return [
+                {
+                    symbol: r.symbol,
+                    earningsDate: r.date,
+                    epsActual: toFiniteNumber(r.epsActual ?? r.eps),
+                    epsEstimated: toFiniteNumber(r.epsEstimated),
+                    revenueActual: toFiniteNumber(
+                        r.revenueActual ?? r.revenue
+                    ),
+                    revenueEstimated: toFiniteNumber(r.revenueEstimated),
+                    lastUpdated,
+                },
+            ];
+        });
     }
 
     /** Fetch the latest earnings report for a symbol; returns `null` when unavailable. */
@@ -167,9 +190,11 @@ export class FmpNewsClient implements NewsProvider {
         });
         const r = raw[0];
         if (!r) return null;
+        const earningsDate = toEarningsDate(r);
+        if (earningsDate === null) return null;
         return {
             symbol: r.symbol,
-            earningsDate: r.earningsDate,
+            earningsDate,
         };
     }
 }

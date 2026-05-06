@@ -10,6 +10,8 @@ import { cn } from '@/lib/cn';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
+import { FundamentalAiSummarySkeleton } from '@/components/fundamental/FundamentalAiSummarySkeleton';
 
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',
@@ -119,10 +121,7 @@ interface FundamentalAiSummaryProps {
     symbol: string;
 }
 
-export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
-    const modelId = useDefaultModelId();
-    const result = useFundamentalAnalysis(symbol, modelId);
-
+function FundamentalAiSummaryContent({ result }: FundamentalAiSummaryViewProps) {
     // Publish the in-view fundamental result to the layout-mounted chat panel
     // so the chatbot's system prompt receives `## Current analysis context`
     // with this page's numbers (not stale chart context). `timeframe` is null —
@@ -141,4 +140,24 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
     usePublishSymbolChat(chatState);
 
     return <FundamentalAiSummaryView result={result} />;
+}
+
+export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
+    const modelId = useDefaultModelId();
+    const state = useFundamentalAnalysis(symbol, modelId);
+
+    if (state.status === 'loading') {
+        return <FundamentalAiSummarySkeleton />;
+    }
+
+    if (state.status === 'error') {
+        return (
+            <FundamentalAiSummaryError
+                error={state.error}
+                resetErrorBoundary={state.retry}
+            />
+        );
+    }
+
+    return <FundamentalAiSummaryContent result={state.result} />;
 }
