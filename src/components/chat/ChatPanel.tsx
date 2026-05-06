@@ -82,6 +82,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
         sendMessage,
         dismissAnalysisUpdated,
         selectedModel,
+        isModelHydrated,
         handleModelChange,
         gateModal,
         dismissGate,
@@ -258,6 +259,11 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
             <div className="border-secondary-700 border-t px-3 py-2">
                 <div className="text-secondary-600 mb-1.5 flex items-center gap-1.5 text-[10px]">
                     <div className="relative">
+                        {!isModelHydrated ? (
+                            <div className="bg-secondary-700 w-16 animate-pulse rounded px-1.5 py-0.5 text-[10px]">
+                                &nbsp;
+                            </div>
+                        ) : (
                         <button
                             ref={triggerRef}
                             type="button"
@@ -278,6 +284,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                                 ▾
                             </span>
                         </button>
+                        )}
 
                         {isOpen && (
                             <div

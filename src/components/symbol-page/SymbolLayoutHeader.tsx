@@ -64,14 +64,19 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                     </h1>
                 </div>
 
-                <ModelSelector
-                    selectedModel={modelId}
-                    onModelChange={handleModelChange}
-                    allowedModels={allowedModels}
-                    className="w-36 shrink-0"
-                    showLabel={false}
-                    dropdownAlign="right"
-                />
+                <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-secondary-500 whitespace-nowrap text-xs">
+                        AI 분석 모델
+                    </span>
+                    <ModelSelector
+                        selectedModel={modelId}
+                        onModelChange={handleModelChange}
+                        allowedModels={allowedModels}
+                        className="w-36"
+                        showLabel={false}
+                        dropdownAlign="right"
+                    />
+                </div>
             </div>
 
             <div className="-mx-4 mt-3">

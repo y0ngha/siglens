@@ -107,6 +107,7 @@ export interface UseChatReturn {
     sendMessage: (text: string) => Promise<void>;
     dismissAnalysisUpdated: () => void;
     selectedModel: ModelId;
+    isModelHydrated: boolean;
     handleModelChange: (model: ModelId) => void;
     gateModal: GateModalState | null;
     dismissGate: () => void;
@@ -132,7 +133,11 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     const [selectedModel, setSelectedModel] = useState<ModelId>(
         GEMINI_2_5_FLASH_MODEL
     );
+    const [isModelHydrated, setIsModelHydrated] = useState(false);
     const [gateModal, setGateModal] = useState<GateModalState | null>(null);
+    // Mount guard for the model write effect: skip the first run so the default value
+    // does not overwrite a stored model before the read effect restores it.
+    const isModelWriteMountRef = useRef(true);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -338,15 +343,24 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
             if (stored !== null && isValidChatModel(stored)) {
                 startTransition(() => {
                     setSelectedModel(stored);
+                    setIsModelHydrated(true);
                 });
+            } else {
+                startTransition(() => setIsModelHydrated(true));
             }
         } catch {
             // 스토리지 접근 불가 시 무시
+            startTransition(() => setIsModelHydrated(true));
         }
     }, []);
 
     // selectedModel 변경 시 localStorage 동기화
+    // 첫 실행(mount 직후)은 스킵 — 기본값이 저장된 모델을 덮어쓰는 것을 방지한다.
     useEffect(() => {
+        if (isModelWriteMountRef.current) {
+            isModelWriteMountRef.current = false;
+            return;
+        }
         try {
             localStorage.setItem(MODEL_STORAGE_KEY, selectedModel);
         } catch {
@@ -460,6 +474,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         sendMessage,
         dismissAnalysisUpdated,
         selectedModel,
+        isModelHydrated,
         handleModelChange,
         gateModal,
         dismissGate,
