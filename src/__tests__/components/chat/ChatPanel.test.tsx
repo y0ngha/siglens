@@ -8,10 +8,10 @@
  * on a real device or simulator.
  */
 
-import '@testing-library/jest-dom';
-import React from 'react';
-import { render, screen } from '@testing-library/react';
 import { ChatPanel } from '@/components/chat/ChatPanel';
+import '@testing-library/jest-dom';
+import { render, screen } from '@testing-library/react';
+import React from 'react';
 
 jest.mock('@/components/ui/MarkdownText', () => ({
     MarkdownText: ({ children }: { children: React.ReactNode }) => (
@@ -92,7 +92,7 @@ describe('ChatPanel', () => {
             const textarea = screen.getByPlaceholderText(
                 /질문을 입력하세요/
             ) as HTMLTextAreaElement;
-            expect(textarea.className).toContain('min-h-[44px]');
+            expect(textarea.className).toContain('min-h-11');
         });
 
         it('send button meets 44px minimum tap target on mobile (md:h-8 only on desktop)', () => {
