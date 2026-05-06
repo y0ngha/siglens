@@ -1,21 +1,21 @@
 'use client';
 
-import { type CSSProperties, useMemo } from 'react';
-import { cn } from '@/lib/cn';
-import { type Timeframe } from '@y0ngha/siglens-core';
-import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
-import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
-import { buildChatState } from '@/components/overall/utils/buildChatState';
-import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
 import { DependencyProgress } from '@/components/overall/DependencyProgress';
-import { OverallSummary } from '@/components/overall/sections/OverallSummary';
-import { TechnicalSummary } from '@/components/overall/sections/TechnicalSummary';
+import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
+import { OverallTriggerCta } from '@/components/overall/OverallTriggerCta';
 import { FundamentalSummary } from '@/components/overall/sections/FundamentalSummary';
 import { NewsSummary } from '@/components/overall/sections/NewsSummary';
-import { ThreeAxisConclusion } from '@/components/overall/sections/ThreeAxisConclusion';
-import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis';
+import { OverallSummary } from '@/components/overall/sections/OverallSummary';
 import { RiskFactors } from '@/components/overall/sections/RiskFactors';
+import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis';
+import { TechnicalSummary } from '@/components/overall/sections/TechnicalSummary';
+import { ThreeAxisConclusion } from '@/components/overall/sections/ThreeAxisConclusion';
+import { buildChatState } from '@/components/overall/utils/buildChatState';
+import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
+import { cn } from '@/lib/cn';
+import { type Timeframe } from '@y0ngha/siglens-core';
+import { type CSSProperties, useMemo } from 'react';
 
 const SKELETON_LINE_COUNT = 3;
 const SKELETON_WIDTH_START_PCT = 85;
@@ -23,12 +23,22 @@ const SKELETON_WIDTH_STEP_PCT = 12;
 
 interface OverallContentProps {
     symbol: string;
+    companyName: string;
     timeframe: Timeframe;
 }
 
-export function OverallContent({ symbol, timeframe }: OverallContentProps) {
+export function OverallContent({
+    symbol,
+    companyName,
+    timeframe,
+}: OverallContentProps) {
     const modelId = useDefaultModelId();
-    const { state, trigger } = useOverallAnalysis(symbol, timeframe, modelId);
+    const { state, trigger } = useOverallAnalysis(
+        symbol,
+        companyName,
+        timeframe,
+        modelId
+    );
 
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
@@ -87,7 +97,7 @@ export function OverallContent({ symbol, timeframe }: OverallContentProps) {
                             key={i}
                             className={cn(
                                 'bg-secondary-700 h-4 animate-pulse rounded motion-reduce:animate-none',
-                                'w-[var(--skeleton-w)]'
+                                'w-(--skeleton-w)'
                             )}
                             style={
                                 {

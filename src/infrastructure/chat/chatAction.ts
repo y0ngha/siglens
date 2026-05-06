@@ -103,6 +103,7 @@ async function resolveUserContext(provider: LlmProvider): Promise<UserContext> {
 
 export async function chatAction(
     symbol: string,
+    companyName: string,
     timeframe: Timeframe,
     analysis: AnalysisResponse,
     history: ChatMessage[],
@@ -135,6 +136,7 @@ export async function chatAction(
             {
                 clientIp,
                 symbol,
+                companyName,
                 timeframe,
                 analysis,
                 history,

@@ -146,7 +146,7 @@ export default async function OverallPage({ params, searchParams }: Props) {
                         한 번 훑어보면 도움이 됩니다.
                     </p>
                 </section>
-                <OverallContent symbol={upper} timeframe={timeframe} />
+                <OverallContent symbol={upper} companyName={assetInfo.name} timeframe={timeframe} />
                 <CrossLinkCards symbol={upper} current="overall" />
             </main>
         </>

@@ -30,6 +30,7 @@ import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 
 interface AnalyzeMutationVariables {
     symbol: string;
+    companyName: string;
     force: boolean;
     fmpSymbol?: string;
     modelId?: ModelId;
@@ -46,6 +47,7 @@ const CACHE_HIT_COOLDOWN_MS = 30_000;
 
 interface UseAnalysisOptions {
     symbol: string;
+    companyName: string;
     /** latestTimeframeRef를 통해 analyzeAction 호출 시 최신 timeframe 값을 읽기 위한 채널 */
     timeframe: Timeframe;
     initialAnalysis: AnalysisResponse;
@@ -96,6 +98,7 @@ interface UseAnalysisResult {
 
 export function useAnalysis({
     symbol,
+    companyName,
     timeframe,
     initialAnalysis,
     initialAnalysisFailed,
@@ -115,8 +118,9 @@ export function useAnalysis({
     const [pollError, setPollError] = useState<string | null>(null);
 
     // 2. useRef
-    const latestRef = useRef<{ symbol: string; fmpSymbol?: string }>({
+    const latestRef = useRef<{ symbol: string; companyName: string; fmpSymbol?: string }>({
         symbol,
+        companyName,
         fmpSymbol,
     });
     const latestTimeframeRef = useRef<Timeframe>(timeframe);
@@ -154,12 +158,14 @@ export function useAnalysis({
         mutationFn: ({
             force,
             symbol: mutSymbol,
+            companyName: mutCompanyName,
             fmpSymbol: mutFmpSymbol,
             modelId: mutModelId,
         }) => {
             lastForceRef.current = force;
             return submitAnalysisAction(
                 mutSymbol,
+                mutCompanyName,
                 latestTimeframeRef.current,
                 force,
                 mutFmpSymbol,
@@ -247,6 +253,7 @@ export function useAnalysis({
             reset();
             mutate({
                 symbol: latestSymbol,
+                companyName: latestRef.current.companyName,
                 force: true,
                 fmpSymbol: latestFmpSymbol,
                 modelId: latestModelIdRef.current,
@@ -258,7 +265,7 @@ export function useAnalysis({
     // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
     useLayoutEffect(() => {
-        latestRef.current = { symbol, fmpSymbol };
+        latestRef.current = { symbol, companyName, fmpSymbol };
         latestTimeframeRef.current = timeframe;
         latestModelIdRef.current = modelId;
     });
@@ -346,6 +353,7 @@ export function useAnalysis({
         if (isModelHydrated === false) return;
         mutate({
             symbol: latestRef.current.symbol,
+            companyName: latestRef.current.companyName,
             force: false,
             fmpSymbol: latestRef.current.fmpSymbol,
             modelId: latestModelIdRef.current,
@@ -366,6 +374,7 @@ export function useAnalysis({
         reset();
         mutate({
             symbol: latestRef.current.symbol,
+            companyName: latestRef.current.companyName,
             force: false,
             fmpSymbol: latestRef.current.fmpSymbol,
             modelId: latestModelIdRef.current,
@@ -391,6 +400,7 @@ export function useAnalysis({
         reset();
         mutate({
             symbol: latestRef.current.symbol,
+            companyName: latestRef.current.companyName,
             force: false,
             fmpSymbol: latestRef.current.fmpSymbol,
             modelId,

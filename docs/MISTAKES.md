@@ -189,6 +189,26 @@ This file contains only **recurring gotchas** that agents keep missing despite e
     ✅ import { MS_PER_HOUR, KST_OFFSET_HOURS, MS_PER_SECOND } from '@/domain/constants/time'; use hours * MS_PER_HOUR
     ✅ <p>{`최근 ${SPARKLINE_DAYS}거래일 섹터 수익률`}</p>  // 상수와 JSX가 항상 일치
 
+15.3. Inline comments explaining WHAT code does instead of WHY
+    → Comments must explain WHY a decision was made, not WHAT the code does (code structure is self-evident)
+    → Code names, function signatures, and control flow already express intent; comments restating them add noise and drift when code changes
+    → Remove comments that label code sections, describe state transitions, or restate function behavior
+    → This pattern recurs across all code contexts (route handlers, callbacks, hooks, components)
+    ❌ // Existing OAuth account → immediate login
+       if (oauthRecord) { return redirect('/dashboard'); }
+    ❌ // Email already registered
+       if (emailExists) { return error('email_conflict'); }
+    ❌ // New user →
+       const userId = await createUser(...);
+    ❌ // Check if token exists
+       if (!token) { return null; }
+    ✅ if (oauthRecord) { return redirect('/dashboard'); }  // control flow is clear
+    ✅ if (emailExists) { return error('email_conflict'); }  // variable name + error code express intent
+    ✅ const userId = await createUser(...);  // function name describes action
+    ✅ if (!token) { return null; }  // guard logic is self-explanatory
+    → Exceptions: comments explaining WHY a guard exists (e.g., "// guard against negative value which breaks downstream log calculation") are acceptable
+    → Recurring: PR #420 R12 (3 comments in route.ts), current session (6+ additional removals across multiple files)
+
 15.4. Visual section separator comments (`// ─── Title ───────────`) inside source files
     → Box-drawing characters used to "organize" sections in code are WHAT-comments in disguise (they label what's below).
     → Function/interface/type names already organize the file; section labels add visual noise that drifts whenever sections move.

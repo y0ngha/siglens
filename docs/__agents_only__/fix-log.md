@@ -11,10 +11,6 @@
 - S2: `src/app/privacy/page.tsx`, `src/app/terms/page.tsx`, `src/app/signup/oauth/consent/page.tsx` — Suspense boundaries were missing fallback prop (showing blank during DB fetch). Added `fallback={<div className="animate-pulse" aria-hidden="true" />}`.
   - Rule: Suspense fallback — must provide visible loading indicator; missing fallback shows blank page to user during async fetch
 
-## [PR #420 Round 12 | master | 2026-05-05]
-- S2: `route.ts` ([provider] callback) — 3 WHAT-comments (`Existing OAuth account → immediate login`, `Email already registered`, `New user →`) violate CLAUDE.md comment policy; code already expresses intent. Removed all 3 comments.
-  - Rule: CLAUDE.md comment policy — comments should explain WHY, not WHAT (code expresses WHAT)
-
 ## [PR #420 Round 11 | master | 2026-05-05]
 - B3: `ConsentCheckboxGroup.tsx` — error `<p>` had no `id`; invalid checkboxes had no `aria-describedby` connection to error message. Added `const errorId = useId()`, `id={errorId}` on error element, `errorId` prop on ConsentRow, `aria-describedby: errorId` on checkbox inputs.
   - Rule: ARIA accessibility — form inputs with errors must have aria-describedby pointing to error message

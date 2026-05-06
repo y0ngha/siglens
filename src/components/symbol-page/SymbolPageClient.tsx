@@ -26,6 +26,7 @@ const MobileAnalysisSheet = dynamic(
 
 interface SymbolPageClientProps {
     symbol: string;
+    companyName: string;
     initialAnalysis: AnalysisResponse;
     initialAnalysisFailed: boolean;
     indicatorCount: number;
@@ -35,6 +36,7 @@ interface SymbolPageClientProps {
 
 export function SymbolPageClient({
     symbol,
+    companyName,
     initialAnalysis,
     initialAnalysisFailed,
     indicatorCount,
@@ -77,6 +79,7 @@ export function SymbolPageClient({
                         <Suspense fallback={<ChartSkeleton />}>
                             <ChartContent
                                 symbol={symbol}
+                                companyName={companyName}
                                 timeframe={timeframe}
                                 timeframeChangeCount={timeframeChangeCount}
                                 initialAnalysis={initialAnalysis}

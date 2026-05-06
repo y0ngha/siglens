@@ -173,11 +173,12 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
 
 interface NewsAiSummaryContentProps {
     symbol: string;
+    companyName: string;
 }
 
-function NewsAiSummaryContent({ symbol }: NewsAiSummaryContentProps) {
+function NewsAiSummaryContent({ symbol, companyName }: NewsAiSummaryContentProps) {
     const modelId = useDefaultModelId();
-    const result = useNewsAnalysis(symbol, modelId);
+    const result = useNewsAnalysis(symbol, companyName, modelId);
 
     // Publish the in-view news result so the chatbot can reference live numbers
     // from this page. `timeframe` is null — news analysis is timeframe-agnostic.
@@ -202,6 +203,7 @@ function NewsAiSummaryContent({ symbol }: NewsAiSummaryContentProps) {
 
 interface NewsAiSummaryProps {
     symbol: string;
+    companyName: string;
     /**
      * Whether the SSR snapshot already contained at least one AI-enriched
      * news card. When `false`, the component waits for background enrichment
@@ -210,7 +212,7 @@ interface NewsAiSummaryProps {
     hasEnrichedNews: boolean;
 }
 
-export function NewsAiSummary({ symbol, hasEnrichedNews }: NewsAiSummaryProps) {
+export function NewsAiSummary({ symbol, companyName, hasEnrichedNews }: NewsAiSummaryProps) {
     const isCardsReady = useWaitForNewsCards(symbol, hasEnrichedNews);
 
     if (!isCardsReady) {
@@ -219,7 +221,7 @@ export function NewsAiSummary({ symbol, hasEnrichedNews }: NewsAiSummaryProps) {
 
     return (
         <Suspense fallback={<StatusCard phase="analyzing" />}>
-            <NewsAiSummaryContent symbol={symbol} />
+            <NewsAiSummaryContent symbol={symbol} companyName={companyName} />
         </Suspense>
     );
 }

@@ -11,6 +11,7 @@ import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 async function fetchNewsAnalysis(
     symbol: string,
+    companyName: string,
     modelId: ModelId,
     signal: AbortSignal
 ): Promise<NewsAnalysisResponse> {
@@ -20,7 +21,7 @@ async function fetchNewsAnalysis(
     // 마이크로태스크 한 틱을 yield해 현재 렌더 사이클이 끝난 뒤 Action이 호출되도록 보장.
     await Promise.resolve();
     if (signal.aborted) throw new Error('aborted');
-    const submitted = await submitNewsAnalysisAction(symbol, modelId);
+    const submitted = await submitNewsAnalysisAction(symbol, companyName, modelId);
 
     if (submitted.status === 'cached') return submitted.result;
     if (submitted.status === 'error') {
@@ -50,11 +51,13 @@ async function fetchNewsAnalysis(
 
 export function useNewsAnalysis(
     symbol: string,
+    companyName: string,
     modelId: ModelId
 ): NewsAnalysisResponse {
     const { data } = useSuspenseQuery({
         queryKey: QUERY_KEYS.newsAnalysis(symbol, modelId),
-        queryFn: ({ signal }) => fetchNewsAnalysis(symbol, modelId, signal),
+        queryFn: ({ signal }) =>
+            fetchNewsAnalysis(symbol, companyName, modelId, signal),
     });
     return data;
 }

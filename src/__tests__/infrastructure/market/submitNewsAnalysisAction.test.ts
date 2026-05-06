@@ -129,7 +129,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitNewsAnalysisAction('AAPL', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
         expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ symbol: 'AAPL', modelId: MODEL_ID })
@@ -141,7 +141,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitNewsAnalysisAction('AAPL', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
         const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
         expect(callArg?.news).toHaveLength(1);
@@ -155,7 +155,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextForSymbol.mockResolvedValue(NEXT_EARNINGS);
         mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitNewsAnalysisAction('AAPL', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
         expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -169,7 +169,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitNewsAnalysisAction('AAPL', MODEL_ID);
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
         expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [] })
@@ -186,7 +186,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
         };
         mockSubmitNewsAnalysis.mockResolvedValueOnce(noNewsResult);
 
-        const result = await submitNewsAnalysisAction('AAPL', MODEL_ID);
+        const result = await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
 
         expect(result).toBe(noNewsResult);
     });

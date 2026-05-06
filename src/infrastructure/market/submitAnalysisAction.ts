@@ -123,6 +123,7 @@ async function resolveByokOutcome(
 /** 서버사이드 tier + BYOK 게이트 후 core의 submitAnalysis에 위임. */
 export async function submitAnalysisAction(
     symbol: string,
+    companyName: string,
     timeframe: Timeframe,
     force?: boolean,
     fmpSymbol?: string,
@@ -133,7 +134,7 @@ export async function submitAnalysisAction(
 
     // No model selected → preserve previous behavior (let core pick a default).
     if (modelId === undefined) {
-        return submitAnalysis(symbol, timeframe, force, fmpSymbol, {
+        return submitAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
             waitUntil,
             modelId,
         });
@@ -171,7 +172,7 @@ export async function submitAnalysisAction(
 
     // Only include userApiKey when actually present so consumers can
     // distinguish "no BYOK" from "BYOK = undefined" via `'userApiKey' in opts`.
-    return submitAnalysis(symbol, timeframe, force, fmpSymbol, {
+    return submitAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
         waitUntil,
         modelId,
         ...(byok.userApiKey !== undefined

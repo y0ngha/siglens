@@ -127,6 +127,7 @@ describe('chatAction 함수는', () => {
         it('free Gemini 모델은 GEMINI_CHAT_API_KEY를 serverApiKey로 전달한다', async () => {
             const result = await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -150,6 +151,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -174,6 +176,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -199,6 +202,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -223,6 +227,7 @@ describe('chatAction 함수는', () => {
 
             const result = await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -237,6 +242,7 @@ describe('chatAction 함수는', () => {
         it('Anthropic 서버 primary key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
             const result = await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -251,6 +257,7 @@ describe('chatAction 함수는', () => {
         it('OpenAI 서버 primary key가 미설정이면 server_error를 반환하고 core를 호출하지 않는다', async () => {
             const result = await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -274,6 +281,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -311,6 +319,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -352,6 +361,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -379,6 +389,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -401,6 +412,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -419,6 +431,7 @@ describe('chatAction 함수는', () => {
 
             const result = await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -438,6 +451,7 @@ describe('chatAction 함수는', () => {
 
             const result = await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -451,7 +465,7 @@ describe('chatAction 함수는', () => {
 
     describe('기본 모델', () => {
         it('model을 생략하면 GEMINI_2_5_FLASH_MODEL을 core에 전달한다', async () => {
-            await chatAction('AAPL', '1Day', MINIMAL_ANALYSIS, [], '질문');
+            await chatAction('AAPL', 'Apple Inc.', '1Day', MINIMAL_ANALYSIS, [], '질문');
 
             expect(mockRequestChatCompletion).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -468,6 +482,7 @@ describe('chatAction 함수는', () => {
         it('생략하면 core 호출에 currentAnalysisContext 키가 포함되지 않는다', async () => {
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -482,6 +497,7 @@ describe('chatAction 함수는', () => {
         it('null로 전달하면 core 호출에 currentAnalysisContext 키가 포함되지 않는다', async () => {
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -502,6 +518,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -530,6 +547,7 @@ describe('chatAction 함수는', () => {
 
             await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],
@@ -553,6 +571,7 @@ describe('chatAction 함수는', () => {
 
             const result = await chatAction(
                 'AAPL',
+                'Apple Inc.',
                 '1Day',
                 MINIMAL_ANALYSIS,
                 [],

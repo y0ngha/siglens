@@ -20,6 +20,7 @@ import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 /** Server Action: load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
 export async function submitNewsAnalysisAction(
     symbol: string,
+    companyName: string,
     modelId: SubmitNewsAnalysisOptions['modelId']
 ): Promise<SubmitNewsAnalysisResult> {
     const { db } = getDatabaseClient();
@@ -47,6 +48,7 @@ export async function submitNewsAnalysisAction(
 
     return submitNewsAnalysis({
         symbol,
+        companyName,
         modelId,
         news: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],

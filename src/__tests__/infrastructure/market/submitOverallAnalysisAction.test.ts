@@ -131,7 +131,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitOverallAnalysisAction('AAPL', '1Day', MODEL_ID);
+        await submitOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
         expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -147,7 +147,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitOverallAnalysisAction('AAPL', '1Day', MODEL_ID);
+        await submitOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
         const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg?.newsItems).toHaveLength(1);
@@ -160,7 +160,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockGetNextForSymbol.mockResolvedValue(NEXT_EARNINGS);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitOverallAnalysisAction('AAPL', '1Day', MODEL_ID);
+        await submitOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
         expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [NEXT_EARNINGS] })
@@ -172,7 +172,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
-        await submitOverallAnalysisAction('AAPL', '1Day', MODEL_ID);
+        await submitOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
 
         expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ upcomingCalendar: [] })
@@ -186,6 +186,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
         const result = await submitOverallAnalysisAction(
             'AAPL',
+            'Apple Inc.',
             '1Day',
             MODEL_ID
         );
@@ -202,6 +203,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
         const result = await submitOverallAnalysisAction(
             'AAPL',
+            'Apple Inc.',
             '1Day',
             MODEL_ID
         );

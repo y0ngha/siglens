@@ -33,7 +33,7 @@ export async function callAnthropicChat({
     const maxTokens = spec.maxOutputTokens;
 
     const client = new Anthropic({ apiKey: serverApiKey });
-    const response = await client.messages.create({
+    const stream = client.messages.stream({
         model,
         max_tokens: maxTokens,
         messages: toAnthropicMessages(contents),
@@ -50,6 +50,7 @@ export async function callAnthropicChat({
               }
             : { temperature: spec.temperature }),
     });
+    const response = await stream.finalMessage();
 
     const block = response.content.find(b => b.type === 'text') as
         | Anthropic.TextBlock

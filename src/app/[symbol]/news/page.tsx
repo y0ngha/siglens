@@ -215,6 +215,7 @@ export default async function NewsPage({ params }: Props) {
                     <Suspense fallback={<NewsAiSummarySkeleton />}>
                         <NewsAiSummary
                             symbol={upper}
+                            companyName={assetInfo?.name ?? upper}
                             hasEnrichedNews={hasEnrichedNews}
                         />
                     </Suspense>

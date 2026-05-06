@@ -34,6 +34,7 @@ import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/domain/chat/fallbackAnalysis
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { usePageContextLabel } from '@/components/chat/hooks/usePageContextLabel';
 import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -120,6 +121,9 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         timeframe: timeframeFromCtx,
         isAnalysisReady,
     } = useSymbolChat();
+    // useAssetInfo is cached via React Query — no extra network call when SymbolLayoutHeader already called it.
+    const assetInfo = useAssetInfo(symbol);
+    const companyName = assetInfo?.name ?? symbol;
     const [messages, setMessages] = useState<DisplayMessage[]>([]);
     const [loadingPhase, setLoadingPhase] = useState<ChatLoadingPhase | null>(
         null
@@ -207,6 +211,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         }) =>
             chatAction(
                 symbol,
+                companyName,
                 timeframe,
                 analysis,
                 currentMessages,
