@@ -194,7 +194,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
             )}
 
             {/* 메시지 영역 — 고정 높이, 내부 스크롤 */}
-            <div className="flex h-[320px] flex-col gap-2 overflow-y-auto px-3 py-2">
+            <div className="flex h-80 flex-col gap-2 overflow-y-auto px-3 py-2">
                 {messages.length === 0 && loadingPhase === null && (
                     <div className="bg-secondary-700/30 rounded-lg rounded-tl-sm p-3">
                         <p className="text-secondary-400 text-xs leading-relaxed">
@@ -293,13 +293,13 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                                 aria-label="AI 모델 목록"
                                 onKeyDown={handleListboxKeyDown}
                                 className={cn(
-                                    'border-secondary-600 bg-secondary-800 absolute left-0 z-10 min-w-[160px] rounded-lg border shadow-lg',
+                                    'border-secondary-600 bg-secondary-800 absolute left-0 z-10 min-w-40 rounded-lg border shadow-lg',
                                     opensUpward
                                         ? 'bottom-full mb-1'
                                         : 'top-full mt-1'
                                 )}
                             >
-                                <div className="max-h-[264px] overflow-y-auto overscroll-contain">
+                                <div className="max-h-66 overflow-y-auto overscroll-contain">
                                     {CHAT_MODEL_OPTIONS.map((option, i) => (
                                         <div
                                             key={option.id}
@@ -334,7 +334,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                                                 }
                                             }}
                                             className={cn(
-                                                'focus-visible:ring-primary-500 flex min-h-[44px] w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
+                                                'focus-visible:ring-primary-500 flex min-h-11 w-full cursor-pointer items-center gap-2 px-3 transition-colors focus-visible:ring-1 focus-visible:outline-none',
                                                 selectedModel === option.id
                                                     ? 'text-primary-300 bg-primary-900/20'
                                                     : 'text-secondary-300 hover:bg-secondary-700'
@@ -391,7 +391,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                         autoCapitalize="sentences"
                         autoCorrect="on"
                         className={cn(
-                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-[44px] flex-1 resize-none rounded-lg border px-3 py-1.5 text-base leading-relaxed transition-colors outline-none md:min-h-[32px] md:text-xs',
+                            'border-secondary-600 bg-secondary-800 text-secondary-200 placeholder:text-secondary-600 min-h-11 flex-1 resize-none rounded-lg border px-3 py-1.5 text-base leading-relaxed transition-colors outline-none md:min-h-8 md:text-xs',
                             'focus:border-primary-500',
                             isInputDisabled && 'cursor-not-allowed opacity-50'
                         )}
