@@ -1,3 +1,21 @@
+import { fmpGet } from '@/infrastructure/fmp/httpClient';
+import type {
+    RawFmpAnalystEstimate,
+    RawFmpCashFlowStatement,
+    RawFmpEarningsReport,
+    RawFmpFinancialScore,
+    RawFmpGradesConsensus,
+    RawFmpGradesEvent,
+    RawFmpHistoricalSectorPerformance,
+    RawFmpIncomeGrowth,
+    RawFmpKeyMetricsTtm,
+    RawFmpPriceTargetConsensus,
+    RawFmpPriceTargetSummary,
+    RawFmpProfile,
+    RawFmpRatiosTtm,
+    RawFmpSectorPerformance,
+    RawFmpStockPeer,
+} from '@/infrastructure/fmp/types';
 import type {
     EarningsReport,
     FundamentalAnalystEstimateInput,
@@ -17,24 +35,6 @@ import type {
     GradesAction,
     GradesEvent,
 } from '@y0ngha/siglens-core';
-import { fmpGet } from '@/infrastructure/fmp/httpClient';
-import type {
-    RawFmpAnalystEstimate,
-    RawFmpCashFlowStatement,
-    RawFmpEarningsReport,
-    RawFmpFinancialScore,
-    RawFmpGradesConsensus,
-    RawFmpGradesEvent,
-    RawFmpHistoricalSectorPerformance,
-    RawFmpIncomeGrowth,
-    RawFmpKeyMetricsTtm,
-    RawFmpPriceTargetConsensus,
-    RawFmpPriceTargetSummary,
-    RawFmpProfile,
-    RawFmpRatiosTtm,
-    RawFmpSectorPerformance,
-    RawFmpStockPeer,
-} from '@/infrastructure/fmp/types';
 
 /** Default number of recent grading events returned by `getGrades`. */
 export const DEFAULT_GRADES_LIMIT = 10;
@@ -139,7 +139,9 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
     async getFinancialScores(
         symbol: string
     ): Promise<FundamentalFinancialScoresInput | null> {
-        const arr = await fmpGet<RawFmpFinancialScore[]>('score', { symbol });
+        const arr = await fmpGet<RawFmpFinancialScore[]>('financial-scores', {
+            symbol,
+        });
         const r = arr[0];
         if (!r) return null;
         return {

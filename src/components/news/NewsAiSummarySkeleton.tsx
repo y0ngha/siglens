@@ -34,7 +34,7 @@ export function NewsAiSummarySkeleton() {
                 {[...Array(SKELETON_LINE_COUNT)].map((_, i) => (
                     <div
                         key={i}
-                        className="bg-secondary-700 h-4 w-[var(--skeleton-w)] animate-pulse rounded motion-reduce:animate-none"
+                        className="bg-secondary-700 h-4 w-(--skeleton-w) animate-pulse rounded motion-reduce:animate-none"
                         style={
                             {
                                 '--skeleton-w': `${SKELETON_WIDTH_START_PCT - i * SKELETON_WIDTH_STEP_PCT}%`,

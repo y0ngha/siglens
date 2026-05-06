@@ -1,5 +1,3 @@
-'use client';
-
 import type { FallbackProps } from 'react-error-boundary';
 
 export function NewsAiSummaryError({
@@ -20,7 +18,7 @@ export function NewsAiSummaryError({
             >
                 AI 뉴스 종합 분석
             </h2>
-            <p className="text-ui-danger text-sm break-words" role="alert">
+            <p className="text-ui-danger text-sm wrap-break-word" role="alert">
                 {message}
             </p>
             <button

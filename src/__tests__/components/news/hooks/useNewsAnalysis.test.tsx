@@ -1,13 +1,13 @@
 /**
  * @jest-environment jsdom
  */
-import { act, renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { renderToString } from 'react-dom/server';
-import type { ReactNode } from 'react';
-import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
-import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
+import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook, waitFor } from '@testing-library/react';
+import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
+import type { ReactNode } from 'react';
+import { renderToString } from 'react-dom/server';
 
 jest.mock('@/infrastructure/market/submitNewsAnalysisAction', () => ({
     submitNewsAnalysisAction: jest.fn(),

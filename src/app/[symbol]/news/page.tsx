@@ -5,7 +5,7 @@ import {
     getNextEarningsCalendar,
 } from '@/app/[symbol]/news/newsData';
 import { NewsAiSummary } from '@/components/news/NewsAiSummary';
-import { NewsAiSummaryError } from '@/components/news/NewsAiSummaryError';
+import { NewsAiSummaryErrorBoundary } from '@/components/news/NewsAiSummaryErrorBoundary';
 import { NewsAiSummarySkeleton } from '@/components/news/NewsAiSummarySkeleton';
 import { AnalystActions } from '@/components/news/sections/AnalystActions';
 import { EventCalendar } from '@/components/news/sections/EventCalendar';
@@ -30,7 +30,6 @@ import { waitUntil } from '@vercel/functions';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import { ErrorBoundary } from 'react-error-boundary';
 
 // JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
 const JSON_LD_NEWS_MAX_ITEMS = 10;
@@ -211,7 +210,7 @@ export default async function NewsPage({ params }: Props) {
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
             <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">{displayName} 최신 뉴스와 어닝 일정</h1>
-                <ErrorBoundary FallbackComponent={NewsAiSummaryError}>
+                <NewsAiSummaryErrorBoundary>
                     <Suspense fallback={<NewsAiSummarySkeleton />}>
                         <NewsAiSummary
                             symbol={upper}
@@ -219,7 +218,7 @@ export default async function NewsPage({ params }: Props) {
                             hasEnrichedNews={hasEnrichedNews}
                         />
                     </Suspense>
-                </ErrorBoundary>
+                </NewsAiSummaryErrorBoundary>
 
                 <Suspense fallback={<SectionSkeleton />}>
                     <NewsListSection symbol={upper} />
