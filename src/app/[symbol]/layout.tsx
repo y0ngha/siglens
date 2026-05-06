@@ -41,7 +41,7 @@ async function SymbolLayoutChrome({
 function SymbolHeaderShellFallback() {
     return (
         <header className="px-4 py-3" aria-hidden="true">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-4">
                 <div className="flex items-center gap-2">
                     <span className="text-secondary-500 font-mono text-xs tracking-[0.2em] uppercase">
                         SIGLENS
@@ -49,6 +49,7 @@ function SymbolHeaderShellFallback() {
                     <span className="text-secondary-700">/</span>
                     <span className="bg-secondary-700 inline-block h-5 w-32 animate-pulse rounded" />
                 </div>
+                <span className="bg-secondary-700 inline-block h-8 w-36 shrink-0 animate-pulse rounded-md" />
             </div>
             <div className="-mx-4 mt-3">
                 <SymbolTabsSkeleton />

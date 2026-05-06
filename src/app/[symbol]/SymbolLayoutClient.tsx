@@ -6,6 +6,7 @@ import { useBodyScrollLock } from '@/components/hooks/useBodyScrollLock';
 import { FloatingChatButton } from '@/components/chat/FloatingChatButton';
 import { SymbolChatProvider } from '@/components/chat/SymbolChatContext';
 import { SymbolLayoutHeader } from '@/components/symbol-page/SymbolLayoutHeader';
+import { SymbolModelProvider } from '@/components/symbol-page/SymbolModelContext';
 
 interface SymbolLayoutClientProps {
     symbol: string;
@@ -30,10 +31,12 @@ export function SymbolLayoutClient({
 }: SymbolLayoutClientProps) {
     return (
         <SymbolChatProvider>
-            <ChartScrollLockGate symbol={symbol} />
-            <SymbolLayoutHeader symbol={symbol} />
-            {children}
-            <FloatingChatButton symbol={symbol} />
+            <SymbolModelProvider>
+                <ChartScrollLockGate symbol={symbol} />
+                <SymbolLayoutHeader symbol={symbol} />
+                {children}
+                <FloatingChatButton symbol={symbol} />
+            </SymbolModelProvider>
         </SymbolChatProvider>
     );
 }

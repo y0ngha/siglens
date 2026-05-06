@@ -43,6 +43,12 @@ interface ModelSelectorProps {
     onModelChange: (model: ModelId) => void;
     allowedModels: readonly ModelId[];
     disabled?: boolean;
+    /** Outer wrapper className. Defaults to `"mb-4"` when omitted. */
+    className?: string;
+    /** Show the "AI MODEL" label to the left of the trigger. Defaults to `true`. */
+    showLabel?: boolean;
+    /** Dropdown opening direction. Defaults to `"left"`. */
+    dropdownAlign?: 'left' | 'right';
 }
 
 export function ModelSelector({
@@ -50,6 +56,9 @@ export function ModelSelector({
     onModelChange,
     allowedModels,
     disabled = false,
+    className = 'mb-4',
+    showLabel = true,
+    dropdownAlign = 'left',
 }: ModelSelectorProps) {
     const triggerRef = useRef<HTMLButtonElement>(null);
     const dropdownRef = useRef<HTMLDivElement>(null);
@@ -110,10 +119,12 @@ export function ModelSelector({
     };
 
     return (
-        <div className="mb-4 flex flex-row items-center gap-3">
-            <span className="text-secondary-500 text-xs font-medium tracking-[0.15em] whitespace-nowrap uppercase">
-                AI MODEL
-            </span>
+        <div className={cn('flex flex-row items-center gap-3', className)}>
+            {showLabel && (
+                <span className="text-secondary-500 text-xs font-medium tracking-[0.15em] whitespace-nowrap uppercase">
+                    AI MODEL
+                </span>
+            )}
             <div className="relative flex-1">
                 <button
                     ref={triggerRef}
@@ -148,7 +159,10 @@ export function ModelSelector({
                         role="listbox"
                         aria-label="AI 분석 모델 목록"
                         onKeyDown={handleListboxKeyDown}
-                        className="border-secondary-600 bg-secondary-800 absolute top-full left-0 z-10 mt-1 w-full rounded-lg border shadow-lg"
+                        className={cn(
+                            'border-secondary-600 bg-secondary-800 absolute top-full z-10 mt-1 w-full min-w-44 rounded-lg border shadow-lg',
+                            dropdownAlign === 'right' ? 'right-0' : 'left-0'
+                        )}
                     >
                         <div className="max-h-66 overflow-y-auto overscroll-contain">
                             {allowedModels.map((modelId, i) => {

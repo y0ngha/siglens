@@ -4,24 +4,18 @@ import type { ReactNode } from 'react';
 import React, { useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import {
-    getAllowedModels,
     type AnalysisResponse,
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
-import { ModelSelector } from '@/components/analysis/ModelSelector';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
 import { useAnalysisDerivedData } from '@/components/symbol-page/hooks/useAnalysisDerivedData';
 import { useAnalysisDisplay } from '@/components/symbol-page/hooks/useAnalysisDisplay';
 import { useActionPricesVisibility } from '@/components/symbol-page/hooks/useActionPricesVisibility';
-import { useSelectedModel } from '@/components/symbol-page/hooks/useSelectedModel';
-import { useAnalysisModelGate } from '@/components/symbol-page/hooks/useAnalysisModelGate';
-import { useUserTier } from '@/components/symbol-page/hooks/useUserTier';
-import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
-import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
+import { useSymbolModel } from '@/components/symbol-page/SymbolModelContext';
 import {
     PANEL_MAX_WIDTH,
     PANEL_MIN_WIDTH,
@@ -92,6 +86,7 @@ function AnalysisStatusBanner({
 
 interface ChartContentProps {
     symbol: string;
+    companyName: string;
     timeframe: Timeframe;
     /** 타임프레임이 변경된 누적 횟수. Suspense remount 시 초기 마운트와 타임프레임 변경을 구분한다. */
     timeframeChangeCount: number;
@@ -105,6 +100,7 @@ interface ChartContentProps {
 
 export function ChartContent({
     symbol,
+    companyName,
     timeframe,
     timeframeChangeCount,
     initialAnalysis,
@@ -127,18 +123,7 @@ export function ChartContent({
     const { actionPricesVisible, setActionPricesVisible } =
         useActionPricesVisibility();
 
-    // Resolve the user's tier from the server (guests fall back to 'free') so
-    // the model picker reflects the actual entitlement instead of a hardcoded
-    // value. The single source of truth for tier→model mapping lives in
-    // siglens-core's TIER_CONFIG.
-    const { tier } = useUserTier();
-    const allowedModels = useMemo(() => getAllowedModels(tier), [tier]);
-
-    const [modelId, setModelId, isModelHydrated] =
-        useSelectedModel(allowedModels);
-    const { gateModal, dismissGate, handleModelChange } = useAnalysisModelGate({
-        setModel: setModelId,
-    });
+    const { modelId, isHydrated: isModelHydrated } = useSymbolModel();
 
     const {
         analysis,
@@ -150,6 +135,7 @@ export function ChartContent({
         cooldownNotice,
     } = useAnalysis({
         symbol,
+        companyName,
         timeframe,
         initialAnalysis,
         initialAnalysisFailed,
@@ -177,15 +163,9 @@ export function ChartContent({
     const analysisContent = useMemo(
         () => (
             <>
-                <ModelSelector
-                    selectedModel={modelId}
-                    onModelChange={handleModelChange}
-                    allowedModels={allowedModels}
-                    disabled={isAnalyzing}
-                />
                 <AnalysisStatusBanner
                     status={analysisStatus}
-                    className="my-3"
+                    className="mb-3"
                 />
                 <AnalysisPanel
                     symbol={symbol}
@@ -205,9 +185,6 @@ export function ChartContent({
             </>
         ),
         [
-            modelId,
-            handleModelChange,
-            allowedModels,
             isAnalyzing,
             symbol,
             analysisStatus,
@@ -334,13 +311,6 @@ export function ChartContent({
                 <div className="fixed inset-0 z-50 cursor-col-resize" />
             )}
 
-            {gateModal !== null && (
-                <PremiumModelGateModal
-                    mode={gateModal.mode}
-                    providerLabel={LLM_PROVIDER_LABELS[gateModal.provider]}
-                    onClose={dismissGate}
-                />
-            )}
         </div>
     );
 }
