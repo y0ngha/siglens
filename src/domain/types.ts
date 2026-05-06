@@ -132,6 +132,7 @@ export interface NewsDisplayItem {
     titleKo: string | null;
     sentiment: NewsSentiment | null;
     category: NewsCategory | null;
+    bodyKo: string | null;
     summaryKo: string | null;
     priceImpact: NewsImpact | null;
     url: string;

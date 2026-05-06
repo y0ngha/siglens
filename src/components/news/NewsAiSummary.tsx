@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useMemo } from 'react';
+import { useMemo } from 'react';
 import {
     type NewsAnalysisResponse,
     type NewsSentiment,
@@ -38,7 +38,7 @@ function StatusCard({ phase }: StatusCardProps) {
         <section
             aria-labelledby="news-ai-summary-status-heading"
             aria-busy="true"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <h2
                 id="news-ai-summary-status-heading"
@@ -92,9 +92,9 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     return (
         <section
             aria-labelledby="news-ai-summary-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
+            className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
-            <div className="mb-4 flex items-center justify-between gap-3">
+            <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
                 <h2
                     id="news-ai-summary-heading"
                     className="text-lg font-semibold tracking-tight"
@@ -111,7 +111,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 </span>
             </div>
 
-            <p className="text-secondary-400 mb-4 text-sm leading-relaxed">
+            <p className="text-secondary-400 mb-4 break-words text-sm leading-relaxed">
                 {result.currentDriverKo}
             </p>
 
@@ -122,7 +122,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {result.keyEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="text-secondary-400 flex gap-2 text-sm"
+                                className="text-secondary-400 flex min-w-0 gap-2 break-words text-sm"
                             >
                                 <span
                                     aria-hidden="true"
@@ -130,7 +130,9 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                                 >
                                     •
                                 </span>
-                                {event}
+                                <span className="min-w-0 break-words">
+                                    {event}
+                                </span>
                             </li>
                         ))}
                     </ul>
@@ -149,7 +151,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {result.upcomingEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="text-secondary-400 flex gap-2 text-sm"
+                                className="text-secondary-400 flex min-w-0 gap-2 break-words text-sm"
                             >
                                 <span
                                     aria-hidden="true"
@@ -157,7 +159,9 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                                 >
                                     ⚠
                                 </span>
-                                {event}
+                                <span className="min-w-0 break-words">
+                                    {event}
+                                </span>
                             </li>
                         ))}
                     </ul>
@@ -167,8 +171,42 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
     );
 }
 
+interface NewsAiSummaryInlineErrorProps {
+    error: Error;
+    onRetry: () => void;
+}
+
+function NewsAiSummaryInlineError({
+    error,
+    onRetry,
+}: NewsAiSummaryInlineErrorProps) {
+    return (
+        <section
+            aria-labelledby="news-ai-summary-error-heading"
+            className="border-ui-danger/30 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
+        >
+            <h2
+                id="news-ai-summary-error-heading"
+                className="mb-2 text-lg font-semibold tracking-tight"
+            >
+                AI 뉴스 종합 분석
+            </h2>
+            <p className="text-ui-danger break-words text-sm" role="alert">
+                {error.message}
+            </p>
+            <button
+                type="button"
+                onClick={onRetry}
+                className="bg-primary-600 hover:bg-primary-700 focus-visible:ring-primary-500 focus-visible:ring-offset-secondary-800 mt-4 rounded px-3 py-1.5 text-xs text-white transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+            >
+                다시 시도
+            </button>
+        </section>
+    );
+}
+
 // ---------------------------------------------------------------------------
-// 종합 분석 실행 컴포넌트 (useSuspenseQuery로 suspend)
+// 종합 분석 실행 컴포넌트
 // ---------------------------------------------------------------------------
 
 interface NewsAiSummaryContentProps {
@@ -181,23 +219,46 @@ function NewsAiSummaryContent({
     companyName,
 }: NewsAiSummaryContentProps) {
     const modelId = useDefaultModelId();
-    const result = useNewsAnalysis(symbol, companyName, modelId);
+    const analysis = useNewsAnalysis(symbol, companyName, modelId);
 
     // Publish the in-view news result so the chatbot can reference live numbers
     // from this page. `timeframe` is null — news analysis is timeframe-agnostic.
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
     const chatState = useMemo(
-        () => ({
-            context: { kind: 'news', payload: result } as const,
-            timeframe: null,
-            isAnalysisReady: true,
-        }),
-        [result]
+        () =>
+            analysis.status === 'done'
+                ? ({
+                      context: {
+                          kind: 'news',
+                          payload: analysis.result,
+                      } as const,
+                      timeframe: null,
+                      isAnalysisReady: true,
+                  } as const)
+                : ({
+                      context: null,
+                      timeframe: null,
+                      isAnalysisReady: false,
+                  } as const),
+        [analysis]
     );
     usePublishSymbolChat(chatState);
 
-    return <NewsAiSummaryView result={result} />;
+    if (analysis.status === 'error') {
+        return (
+            <NewsAiSummaryInlineError
+                error={analysis.error}
+                onRetry={analysis.retry}
+            />
+        );
+    }
+
+    if (analysis.status === 'loading') {
+        return <StatusCard phase="analyzing" />;
+    }
+
+    return <NewsAiSummaryView result={analysis.result} />;
 }
 
 // ---------------------------------------------------------------------------
@@ -226,9 +287,5 @@ export function NewsAiSummary({
         return <StatusCard phase="fetching" />;
     }
 
-    return (
-        <Suspense fallback={<StatusCard phase="analyzing" />}>
-            <NewsAiSummaryContent symbol={symbol} companyName={companyName} />
-        </Suspense>
-    );
+    return <NewsAiSummaryContent symbol={symbol} companyName={companyName} />;
 }

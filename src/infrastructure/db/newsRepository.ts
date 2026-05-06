@@ -14,8 +14,6 @@ import type { NewsDisplayItem } from '@/domain/types';
 export interface NewsRow extends NewsDisplayItem {
     /** Original English body — needed for re-analysis but not displayed. */
     bodyEn: string | null;
-    /** Korean body translation; null before analysis. */
-    bodyKo: string | null;
     /** Symbol/issuer the news belongs to — present on `NewsItem` but not in `NewsDisplayItem`. */
     symbol: string;
     /** Timestamp the LLM analysis was attached; null before analysis. */
@@ -43,6 +41,7 @@ export class DrizzleNewsRepository {
                 set: {
                     symbol: sql`excluded.symbol`,
                     source: sql`excluded.source`,
+                    publishedAt: sql`excluded.published_at`,
                     titleEn: sql`excluded.title_en`,
                     bodyEn: sql`excluded.body_en`,
                 },

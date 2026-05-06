@@ -9,7 +9,7 @@ export function NewsAiSummarySkeleton() {
         <section
             aria-labelledby="news-ai-summary-loading-heading"
             aria-busy="true"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
         >
             <h2
                 id="news-ai-summary-loading-heading"
@@ -20,7 +20,7 @@ export function NewsAiSummarySkeleton() {
             <div className="flex items-center gap-3">
                 <div
                     aria-hidden="true"
-                    className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent"
+                    className="border-primary-500 h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none"
                 />
                 <p
                     className="text-secondary-400 text-sm"
@@ -34,7 +34,7 @@ export function NewsAiSummarySkeleton() {
                 {[...Array(SKELETON_LINE_COUNT)].map((_, i) => (
                     <div
                         key={i}
-                        className="bg-secondary-700 h-4 w-[var(--skeleton-w)] animate-pulse rounded"
+                        className="bg-secondary-700 h-4 w-[var(--skeleton-w)] animate-pulse rounded motion-reduce:animate-none"
                         style={
                             {
                                 '--skeleton-w': `${SKELETON_WIDTH_START_PCT - i * SKELETON_WIDTH_STEP_PCT}%`,

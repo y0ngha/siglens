@@ -1,12 +1,18 @@
 'use client';
 
-import { useSuspenseQuery } from '@tanstack/react-query';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+
+export type NewsAnalysisState =
+    | { status: 'loading' }
+    | { status: 'done'; result: NewsAnalysisResponse }
+    | { status: 'error'; error: Error; retry: () => void };
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 async function fetchNewsAnalysis(
@@ -15,11 +21,6 @@ async function fetchNewsAnalysis(
     modelId: ModelId,
     signal: AbortSignal
 ): Promise<NewsAnalysisResponse> {
-    // Next.js Server Action 호출이 Router pending 상태를 업데이트하는데,
-    // useSuspenseQuery suspend 중에 이 업데이트가 발생하면
-    // "Cannot update Router while rendering" 경고가 발생한다.
-    // 마이크로태스크 한 틱을 yield해 현재 렌더 사이클이 끝난 뒤 Action이 호출되도록 보장.
-    await Promise.resolve();
     if (signal.aborted) throw new Error('aborted');
     const submitted = await submitNewsAnalysisAction(
         symbol,
@@ -57,11 +58,47 @@ export function useNewsAnalysis(
     symbol: string,
     companyName: string,
     modelId: ModelId
-): NewsAnalysisResponse {
-    const { data } = useSuspenseQuery({
-        queryKey: QUERY_KEYS.newsAnalysis(symbol, modelId),
+): NewsAnalysisState {
+    const queryClient = useQueryClient();
+    const queryKey = useMemo(
+        () => QUERY_KEYS.newsAnalysis(symbol, modelId),
+        [symbol, modelId]
+    );
+
+    const query = useQuery({
+        queryKey,
         queryFn: ({ signal }) =>
             fetchNewsAnalysis(symbol, companyName, modelId, signal),
+        enabled: false,
+        retry: false,
+        staleTime: Infinity,
     });
-    return data;
+
+    const { refetch } = query;
+    useEffect(() => {
+        if (queryClient.getQueryData(queryKey) === undefined) {
+            void refetch();
+        }
+    }, [queryClient, queryKey, refetch]);
+
+    const retry = useCallback(() => {
+        void refetch();
+    }, [refetch]);
+
+    if (query.isError) {
+        return {
+            status: 'error',
+            error:
+                query.error instanceof Error
+                    ? query.error
+                    : new Error('분석 중 오류가 발생했습니다.'),
+            retry,
+        };
+    }
+
+    if (query.data !== undefined) {
+        return { status: 'done', result: query.data };
+    }
+
+    return { status: 'loading' };
 }

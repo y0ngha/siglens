@@ -35,6 +35,15 @@ const IMPACT_CLASS: Record<NewsImpact, string> = {
 const VALID_SENTIMENTS = new Set<string>(['bullish', 'bearish', 'neutral']);
 const VALID_IMPACTS = new Set<string>(['high', 'medium', 'low', 'negligible']);
 const PAGE_SIZE = 5;
+const NEWS_LIST_SKELETON_COUNT = 3;
+const NEWS_PUBLISHED_AT_FORMATTER = new Intl.DateTimeFormat('ko-KR', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'Asia/Seoul',
+});
 
 function isNewsSentiment(value: string): value is NewsSentiment {
     return VALID_SENTIMENTS.has(value);
@@ -46,6 +55,10 @@ function isNewsImpact(value: string): value is NewsImpact {
 
 function isPendingAnalysis(item: NewsDisplayItem): boolean {
     return item.sentiment === null || item.priceImpact === null;
+}
+
+export function formatNewsPublishedAt(publishedAt: string): string {
+    return `${NEWS_PUBLISHED_AT_FORMATTER.format(new Date(publishedAt))} KST`;
 }
 
 function SentimentBadge({ value }: { value: string }) {
@@ -95,28 +108,113 @@ function SummarySkeletonLine() {
     );
 }
 
+interface NewsTextSectionProps {
+    label: string;
+    text: string;
+}
+
+function NewsTextSection({ label, text }: NewsTextSectionProps) {
+    return (
+        <section className="border-secondary-700/70 mt-3 border-t pt-3">
+            <h4 className="text-secondary-300 mb-1 text-xs font-semibold">
+                {label}
+            </h4>
+            <p className="text-secondary-400 break-words text-sm leading-relaxed">
+                {text}
+            </p>
+        </section>
+    );
+}
+
+function NewsCardSkeleton() {
+    return (
+        <article
+            aria-hidden="true"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-4"
+        >
+            <div className="bg-secondary-700 h-5 w-4/5 animate-pulse rounded motion-reduce:animate-none" />
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+                <div className="bg-secondary-700 h-5 w-10 animate-pulse rounded motion-reduce:animate-none" />
+                <div className="bg-secondary-700 h-5 w-24 animate-pulse rounded motion-reduce:animate-none" />
+                <div className="bg-secondary-700 h-4 w-20 animate-pulse rounded motion-reduce:animate-none" />
+            </div>
+            <div className="mt-3 space-y-1.5">
+                <div className="bg-secondary-700/70 h-3.5 w-full animate-pulse rounded motion-reduce:animate-none" />
+                <div className="bg-secondary-700/70 h-3.5 w-2/3 animate-pulse rounded motion-reduce:animate-none" />
+            </div>
+        </article>
+    );
+}
+
+function NewsListLoadingState() {
+    return (
+        <section
+            aria-labelledby="news-list-heading"
+            aria-busy="true"
+            className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
+        >
+            <div className="flex items-center justify-between gap-3">
+                <h2
+                    id="news-list-heading"
+                    className="text-lg font-semibold tracking-tight"
+                >
+                    최근 뉴스
+                </h2>
+                <span className="text-secondary-400 text-xs" aria-live="polite">
+                    뉴스 수집 중…
+                </span>
+            </div>
+            <ul className="space-y-3">
+                {Array.from({ length: NEWS_LIST_SKELETON_COUNT }).map((_, i) => (
+                    <li key={i}>
+                        <NewsCardSkeleton />
+                    </li>
+                ))}
+            </ul>
+        </section>
+    );
+}
+
+function NewsRefreshStatusCard() {
+    return (
+        <div
+            role="status"
+            aria-live="polite"
+            className="border-primary-500/30 bg-primary-500/5 flex w-full max-w-full min-w-0 items-start gap-3 overflow-hidden rounded-xl border p-4"
+        >
+            <div
+                aria-hidden="true"
+                className="border-primary-400 mt-0.5 h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none"
+            />
+            <div className="min-w-0">
+                <p className="text-secondary-100 text-sm font-medium">
+                    최신 뉴스 확인 중…
+                </p>
+                <p className="text-secondary-400 mt-1 break-words text-xs leading-relaxed">
+                    기존 뉴스는 먼저 보여드리고, 새로 들어온 기사가 있으면
+                    자동으로 추가합니다.
+                </p>
+            </div>
+        </div>
+    );
+}
+
 function NewsCard({ item }: { item: NewsDisplayItem }) {
     const pending = isPendingAnalysis(item);
     const isHighImpact = !pending && item.priceImpact === 'high';
 
-    const publishedDate = new Intl.DateTimeFormat('ko-KR', {
-        year: 'numeric',
-        month: 'short',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-    }).format(new Date(item.publishedAt));
+    const publishedDate = formatNewsPublishedAt(item.publishedAt);
 
     return (
         <article
             className={cn(
-                'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 rounded-xl border p-4 transition-[colors,transform] hover:-translate-y-px',
+                'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-4 transition-[colors,transform] hover:-translate-y-px',
                 isHighImpact && 'border-l-ui-warning border-l-[3px]'
             )}
         >
             <h3
                 className={cn(
-                    'leading-snug font-semibold text-balance',
+                    'break-words leading-snug font-semibold text-balance',
                     pending && 'opacity-80'
                 )}
             >
@@ -153,11 +251,14 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
             {pending ? (
                 <SummarySkeletonLine />
             ) : (
-                item.summaryKo !== null && (
-                    <p className="text-secondary-400 mt-2 text-sm leading-relaxed">
-                        {item.summaryKo}
-                    </p>
-                )
+                <>
+                    {item.bodyKo !== null && (
+                        <NewsTextSection label="본문" text={item.bodyKo} />
+                    )}
+                    {item.summaryKo !== null && (
+                        <NewsTextSection label="요약" text={item.summaryKo} />
+                    )}
+                </>
             )}
 
             {!pending && (
@@ -180,14 +281,18 @@ interface NewsListProps {
 }
 
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
-    const items = useNewsCardPolling(symbol, initialItems);
+    const { items, isPolling } = useNewsCardPolling(symbol, initialItems);
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     if (items.length === 0) {
+        if (isPolling) {
+            return <NewsListLoadingState />;
+        }
+
         return (
             <section
                 aria-labelledby="news-list-heading"
-                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+                className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
             >
                 <h2
                     id="news-list-heading"
@@ -206,13 +311,17 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
     const hasMore = visibleCount < items.length;
 
     return (
-        <section aria-labelledby="news-list-heading" className="space-y-3">
+        <section
+            aria-labelledby="news-list-heading"
+            className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
+        >
             <h2
                 id="news-list-heading"
                 className="text-lg font-semibold tracking-tight"
             >
                 최근 뉴스
             </h2>
+            {isPolling ? <NewsRefreshStatusCard /> : null}
             <ul className="space-y-3">
                 {visible.map(item => (
                     <li key={item.id}>

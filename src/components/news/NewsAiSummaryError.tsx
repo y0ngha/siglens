@@ -12,7 +12,7 @@ export function NewsAiSummaryError({
     return (
         <section
             aria-labelledby="news-ai-summary-error-heading"
-            className="border-ui-danger/30 bg-secondary-800 rounded-xl border p-6"
+            className="border-ui-danger/30 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
         >
             <h2
                 id="news-ai-summary-error-heading"
@@ -20,7 +20,7 @@ export function NewsAiSummaryError({
             >
                 AI 뉴스 종합 분석
             </h2>
-            <p className="text-ui-danger text-sm" role="alert">
+            <p className="text-ui-danger break-words text-sm" role="alert">
                 {message}
             </p>
             <button

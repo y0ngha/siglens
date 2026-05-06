@@ -106,6 +106,17 @@ describe('DrizzleNewsRepository', () => {
             const row = values.mock.calls[0][0] as Record<string, unknown>;
             expect(row['bodyEn']).toBeNull();
         });
+
+        it('conflict 경로에서 publishedAt도 갱신한다', async () => {
+            const { db, onConflictDoUpdate } = makeUpsertDb();
+            const repo = new DrizzleNewsRepository(db);
+            await repo.upsertNewsItem(baseItem);
+
+            const conflictArg = onConflictDoUpdate.mock.calls[0][0] as {
+                set: Record<string, unknown>;
+            };
+            expect(conflictArg.set).toHaveProperty('publishedAt');
+        });
     });
 
     describe('attachAnalysis', () => {

@@ -2,6 +2,7 @@ import {
     FmpNewsClient,
     computeCutoff,
     hashUrlToId,
+    normalizeFmpPublishedDate,
 } from '@/infrastructure/fmp/newsClient';
 import { MS_PER_HOUR } from '@/domain/constants/time';
 
@@ -57,6 +58,26 @@ describe('hashUrlToId', () => {
     it('contains only base64url-safe characters', () => {
         const id = hashUrlToId('https://example.com/some-article?q=value&x=1');
         expect(id).toMatch(/^[A-Za-z0-9_-]+$/);
+    });
+});
+
+describe('normalizeFmpPublishedDate', () => {
+    it('timezone이 없는 FMP 뉴스 시간을 New York summer time 기준 UTC로 변환한다', () => {
+        expect(normalizeFmpPublishedDate('2026-05-06 07:35:21')).toBe(
+            '2026-05-06T11:35:21.000Z'
+        );
+    });
+
+    it('timezone이 없는 FMP 뉴스 시간을 New York standard time 기준 UTC로 변환한다', () => {
+        expect(normalizeFmpPublishedDate('2026-01-06 07:35:21')).toBe(
+            '2026-01-06T12:35:21.000Z'
+        );
+    });
+
+    it('timezone이 포함된 값은 해당 instant를 그대로 ISO로 정규화한다', () => {
+        expect(normalizeFmpPublishedDate('2026-05-06T07:35:21-04:00')).toBe(
+            '2026-05-06T11:35:21.000Z'
+        );
     });
 });
 
@@ -164,7 +185,7 @@ describe('FmpNewsClient', () => {
             const item = result[0]!;
             expect(item.symbol).toBe('AAPL');
             expect(item.source).toBe('Reuters'); // site → source
-            expect(item.publishedAt).toBe('2024-06-01T08:00:00Z'); // publishedDate → publishedAt
+            expect(item.publishedAt).toBe('2024-06-01T08:00:00.000Z'); // publishedDate → publishedAt
             expect(item.titleEn).toBe('Apple Q2 Results'); // title → titleEn
             expect(item.bodyEn).toBe('Apple reported...'); // text → bodyEn
             expect(item.url).toBe('https://reuters.com/aapl-q2');
@@ -224,6 +245,29 @@ describe('FmpNewsClient', () => {
             const client = new FmpNewsClient();
             const result = await client.fetchNews('AAPL', '24h');
             expect(result[0]!.bodyEn).toBeNull();
+        });
+
+        it('normalizes zone-less FMP publishedDate from New York time to UTC', async () => {
+            mockOk([
+                {
+                    ...withinWindow,
+                    publishedDate: '2024-06-01 08:00:00',
+                },
+            ]);
+            const client = new FmpNewsClient();
+            const result = await client.fetchNews('AAPL', '24h');
+            expect(result[0]!.publishedAt).toBe('2024-06-01T12:00:00.000Z');
+        });
+
+        it('skips malformed publishedDate articles without failing the whole fetch', async () => {
+            mockOk([
+                { ...withinWindow, publishedDate: 'not-a-date' },
+                withinWindow,
+            ]);
+            const client = new FmpNewsClient();
+            const result = await client.fetchNews('AAPL', '24h');
+            expect(result).toHaveLength(1);
+            expect(result[0]!.titleEn).toBe('Apple Q2 Results');
         });
     });
 

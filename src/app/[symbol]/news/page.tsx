@@ -209,7 +209,7 @@ export default async function NewsPage({ params }: Props) {
             <JsonLd data={breadcrumbJsonLd} />
             <JsonLd data={aiArticleJsonLd} />
             {newsListJsonLd ? <JsonLd data={newsListJsonLd} /> : null}
-            <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
+            <main className="mx-auto w-full max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">{displayName} 최신 뉴스와 어닝 일정</h1>
                 <ErrorBoundary FallbackComponent={NewsAiSummaryError}>
                     <Suspense fallback={<NewsAiSummarySkeleton />}>
