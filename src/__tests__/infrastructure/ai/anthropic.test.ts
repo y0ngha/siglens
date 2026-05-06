@@ -1,6 +1,7 @@
-const mockCreate = jest.fn();
+const mockFinalMessage = jest.fn();
+const mockStream = jest.fn().mockReturnValue({ finalMessage: mockFinalMessage });
 const MockAnthropic = jest.fn().mockImplementation(() => ({
-    messages: { create: mockCreate },
+    messages: { stream: mockStream },
 }));
 
 jest.mock('@anthropic-ai/sdk', () => ({
@@ -25,11 +26,12 @@ const SONNET_OPTIONS = {
 describe('callAnthropicChat', () => {
     beforeEach(() => {
         jest.clearAllMocks();
+        mockStream.mockReturnValue({ finalMessage: mockFinalMessage });
     });
 
     describe('API 키 라우팅', () => {
         it('serverApiKey로 Anthropic을 호출한다', async () => {
-            mockCreate.mockResolvedValue({
+            mockFinalMessage.mockResolvedValue({
                 content: [{ type: 'text', text: 'Hello' }],
                 stop_reason: 'end_turn',
             });
@@ -40,11 +42,11 @@ describe('callAnthropicChat', () => {
             expect(MockAnthropic).toHaveBeenCalledWith({
                 apiKey: 'server-key',
             });
-            expect(mockCreate).toHaveBeenCalledTimes(1);
+            expect(mockStream).toHaveBeenCalledTimes(1);
         });
 
         it('userApiKey가 있어도 serverApiKey만 사용한다', async () => {
-            mockCreate.mockResolvedValue({
+            mockFinalMessage.mockResolvedValue({
                 content: [{ type: 'text', text: 'Hello' }],
                 stop_reason: 'end_turn',
             });
@@ -61,7 +63,7 @@ describe('callAnthropicChat', () => {
         });
 
         it('호출이 실패하면 에러가 전파된다', async () => {
-            mockCreate.mockRejectedValue(new Error('api error'));
+            mockFinalMessage.mockRejectedValue(new Error('api error'));
 
             await expect(callAnthropicChat(BASE_OPTIONS)).rejects.toThrow(
                 'api error'
@@ -71,14 +73,14 @@ describe('callAnthropicChat', () => {
 
     describe('haiku — temperature 모드', () => {
         it('thinking 없이 temperature로 호출한다', async () => {
-            mockCreate.mockResolvedValue({
+            mockFinalMessage.mockResolvedValue({
                 content: [{ type: 'text', text: 'ok' }],
                 stop_reason: 'end_turn',
             });
 
             await callAnthropicChat(BASE_OPTIONS);
 
-            const call = mockCreate.mock.calls[0][0];
+            const call = mockStream.mock.calls[0][0];
             expect(call).not.toHaveProperty('thinking');
             expect(call).not.toHaveProperty('output_config');
             expect(call.temperature).toBeDefined();
@@ -87,7 +89,7 @@ describe('callAnthropicChat', () => {
 
     describe('Sonnet/Opus — adaptive thinking 모드', () => {
         it('adaptive thinking과 effort로 호출한다', async () => {
-            mockCreate.mockResolvedValue({
+            mockFinalMessage.mockResolvedValue({
                 content: [{ type: 'text', text: 'deep answer' }],
                 stop_reason: 'end_turn',
             });
@@ -95,7 +97,7 @@ describe('callAnthropicChat', () => {
             const result = await callAnthropicChat(SONNET_OPTIONS);
 
             expect(result).toBe('deep answer');
-            const call = mockCreate.mock.calls[0][0];
+            const call = mockStream.mock.calls[0][0];
             expect(call.thinking).toEqual({
                 type: 'adaptive',
                 display: 'omitted',
@@ -105,7 +107,7 @@ describe('callAnthropicChat', () => {
         });
 
         it('thinking + text 혼합 응답에서 text 블록을 추출한다', async () => {
-            mockCreate.mockResolvedValue({
+            mockFinalMessage.mockResolvedValue({
                 content: [
                     {
                         type: 'thinking',
@@ -125,7 +127,7 @@ describe('callAnthropicChat', () => {
 
     describe('응답 파싱', () => {
         it('content 배열이 비어있으면 에러를 던진다', async () => {
-            mockCreate.mockResolvedValue({
+            mockFinalMessage.mockResolvedValue({
                 content: [],
                 stop_reason: 'end_turn',
             });
@@ -136,7 +138,7 @@ describe('callAnthropicChat', () => {
         });
 
         it('content에 text 타입이 없으면 에러를 던진다', async () => {
-            mockCreate.mockResolvedValue({
+            mockFinalMessage.mockResolvedValue({
                 content: [
                     { type: 'tool_use', id: 'call_1', name: 'tool', input: {} },
                 ],

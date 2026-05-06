@@ -67,7 +67,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
     });
 
     it('modelId 미지정 시 core submitAnalysis로 그대로 위임한다', async () => {
-        await submitAnalysisAction('AAPL', '1Day', true, '^AAPL');
+        await submitAnalysisAction('AAPL', 'Apple', '1Day', true, '^AAPL');
         expect(mockSubmitAnalysis).toHaveBeenCalledTimes(1);
         expect(mockGetUserTier).not.toHaveBeenCalled();
     });
@@ -75,6 +75,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
     it('free tier + free model 게스트는 통과한다', async () => {
         const result = await submitAnalysisAction(
             'AAPL',
+            'Apple',
             '1Day',
             false,
             '^AAPL',
@@ -83,6 +84,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         expect(result).toBe(cachedResult);
         expect(mockSubmitAnalysis).toHaveBeenCalledWith(
             'AAPL',
+            'Apple',
             '1Day',
             false,
             '^AAPL',
@@ -93,6 +95,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
     it('free tier + premium model + BYOK 미등록 게스트는 차단한다', async () => {
         const result = await submitAnalysisAction(
             'AAPL',
+            'Apple',
             '1Day',
             false,
             '^AAPL',
@@ -114,6 +117,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
 
         const result = await submitAnalysisAction(
             'AAPL',
+            'Apple',
             '1Day',
             false,
             '^AAPL',
@@ -123,6 +127,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         expect(result).toBe(cachedResult);
         expect(mockSubmitAnalysis).toHaveBeenCalledWith(
             'AAPL',
+            'Apple',
             '1Day',
             false,
             '^AAPL',
@@ -140,6 +145,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
 
         const result = await submitAnalysisAction(
             'AAPL',
+            'Apple',
             '1Day',
             false,
             '^AAPL',
@@ -152,7 +158,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
         // pin the exact options shape rather than a partial match.
         const lastCall = mockSubmitAnalysis.mock.calls.at(-1);
         expect(lastCall).toBeDefined();
-        const opts = lastCall![4] as Record<string, unknown>;
+        const opts = lastCall![5] as Record<string, unknown>;
         expect(opts.modelId).toBe(PREMIUM_MODEL);
         expect(opts).not.toHaveProperty('userApiKey');
     });
@@ -160,6 +166,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
     it('알 수 없는 modelId는 invalid_model로 차단한다', async () => {
         const result = await submitAnalysisAction(
             'AAPL',
+            'Apple',
             '1Day',
             false,
             '^AAPL',
@@ -181,6 +188,7 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
 
         const result = await submitAnalysisAction(
             'AAPL',
+            'Apple',
             '1Day',
             false,
             '^AAPL',
