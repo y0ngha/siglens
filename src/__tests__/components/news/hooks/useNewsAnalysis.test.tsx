@@ -41,7 +41,9 @@ function makeWrapper() {
 
     return function Wrapper({ children }: { children: ReactNode }) {
         return (
-            <QueryClientProvider client={client}>{children}</QueryClientProvider>
+            <QueryClientProvider client={client}>
+                {children}
+            </QueryClientProvider>
         );
     };
 }

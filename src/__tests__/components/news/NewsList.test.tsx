@@ -79,7 +79,9 @@ describe('NewsList', () => {
         ).toBeInTheDocument();
         expect(screen.getByText('요약')).toBeInTheDocument();
         expect(
-            screen.getByText('신제품 발표가 투자심리에 긍정적으로 작용했습니다.')
+            screen.getByText(
+                '신제품 발표가 투자심리에 긍정적으로 작용했습니다.'
+            )
         ).toBeInTheDocument();
     });
 

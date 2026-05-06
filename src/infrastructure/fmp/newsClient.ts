@@ -132,8 +132,7 @@ export class FmpNewsClient implements NewsProvider {
             }))
             .filter(
                 (n): n is { raw: RawFmpNews; publishedAt: string } =>
-                    n.publishedAt !== null &&
-                    new Date(n.publishedAt) >= cutoff
+                    n.publishedAt !== null && new Date(n.publishedAt) >= cutoff
             )
             .map(({ raw, publishedAt }) => ({
                 id: hashUrlToId(raw.url),

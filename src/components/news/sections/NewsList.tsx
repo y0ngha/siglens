@@ -119,7 +119,7 @@ function NewsTextSection({ label, text }: NewsTextSectionProps) {
             <h4 className="text-secondary-300 mb-1 text-xs font-semibold">
                 {label}
             </h4>
-            <p className="text-secondary-400 break-words text-sm leading-relaxed">
+            <p className="text-secondary-400 text-sm leading-relaxed break-words">
                 {text}
             </p>
         </section>
@@ -165,11 +165,13 @@ function NewsListLoadingState() {
                 </span>
             </div>
             <ul className="space-y-3">
-                {Array.from({ length: NEWS_LIST_SKELETON_COUNT }).map((_, i) => (
-                    <li key={i}>
-                        <NewsCardSkeleton />
-                    </li>
-                ))}
+                {Array.from({ length: NEWS_LIST_SKELETON_COUNT }).map(
+                    (_, i) => (
+                        <li key={i}>
+                            <NewsCardSkeleton />
+                        </li>
+                    )
+                )}
             </ul>
         </section>
     );
@@ -190,7 +192,7 @@ function NewsRefreshStatusCard() {
                 <p className="text-secondary-100 text-sm font-medium">
                     최신 뉴스 확인 중…
                 </p>
-                <p className="text-secondary-400 mt-1 break-words text-xs leading-relaxed">
+                <p className="text-secondary-400 mt-1 text-xs leading-relaxed break-words">
                     기존 뉴스는 먼저 보여드리고, 새로 들어온 기사가 있으면
                     자동으로 추가합니다.
                 </p>
@@ -214,7 +216,7 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
         >
             <h3
                 className={cn(
-                    'break-words leading-snug font-semibold text-balance',
+                    'leading-snug font-semibold text-balance break-words',
                     pending && 'opacity-80'
                 )}
             >

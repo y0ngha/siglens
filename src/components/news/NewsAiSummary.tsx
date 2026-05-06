@@ -111,7 +111,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 </span>
             </div>
 
-            <p className="text-secondary-400 mb-4 break-words text-sm leading-relaxed">
+            <p className="text-secondary-400 mb-4 text-sm leading-relaxed break-words">
                 {result.currentDriverKo}
             </p>
 
@@ -122,7 +122,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {result.keyEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="text-secondary-400 flex min-w-0 gap-2 break-words text-sm"
+                                className="text-secondary-400 flex min-w-0 gap-2 text-sm break-words"
                             >
                                 <span
                                     aria-hidden="true"
@@ -151,7 +151,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {result.upcomingEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="text-secondary-400 flex min-w-0 gap-2 break-words text-sm"
+                                className="text-secondary-400 flex min-w-0 gap-2 text-sm break-words"
                             >
                                 <span
                                     aria-hidden="true"
@@ -191,7 +191,7 @@ function NewsAiSummaryInlineError({
             >
                 AI 뉴스 종합 분석
             </h2>
-            <p className="text-ui-danger break-words text-sm" role="alert">
+            <p className="text-ui-danger text-sm break-words" role="alert">
                 {error.message}
             </p>
             <button

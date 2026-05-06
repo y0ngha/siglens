@@ -20,7 +20,7 @@ export function NewsAiSummaryError({
             >
                 AI 뉴스 종합 분석
             </h2>
-            <p className="text-ui-danger break-words text-sm" role="alert">
+            <p className="text-ui-danger text-sm break-words" role="alert">
                 {message}
             </p>
             <button
