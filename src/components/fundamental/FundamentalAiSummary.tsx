@@ -121,7 +121,9 @@ interface FundamentalAiSummaryProps {
     symbol: string;
 }
 
-function FundamentalAiSummaryContent({ result }: FundamentalAiSummaryViewProps) {
+function FundamentalAiSummaryContent({
+    result,
+}: FundamentalAiSummaryViewProps) {
     // Publish the in-view fundamental result to the layout-mounted chat panel
     // so the chatbot's system prompt receives `## Current analysis context`
     // with this page's numbers (not stale chart context). `timeframe` is null —

@@ -173,9 +173,7 @@ export class FmpNewsClient implements NewsProvider {
                     earningsDate: r.date,
                     epsActual: toFiniteNumber(r.epsActual ?? r.eps),
                     epsEstimated: toFiniteNumber(r.epsEstimated),
-                    revenueActual: toFiniteNumber(
-                        r.revenueActual ?? r.revenue
-                    ),
+                    revenueActual: toFiniteNumber(r.revenueActual ?? r.revenue),
                     revenueEstimated: toFiniteNumber(r.revenueEstimated),
                     lastUpdated,
                 },
