@@ -1,10 +1,6 @@
 import { cacheLife, cacheTag } from 'next/cache';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
-import {
-    TTL_T4_30D,
-    TTL_T3_7D,
-    TTL_T2_24H,
-} from '@/lib/fundamental/cacheTtl';
+import { TTL_T4_30D, TTL_T3_7D, TTL_T2_24H } from '@/lib/fundamental/cacheTtl';
 import type {
     FundamentalSectorHistoricalInput,
     FundamentalProfileInput,

@@ -152,14 +152,8 @@ async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
 }
 
 async function SectorDirectionSection({ sector }: { sector: string }) {
-    const historical =
-        sector !== '' ? await getHistoricalSector(sector) : [];
-    return (
-        <SectorDirectionCard
-            sector={sector}
-            historical={historical}
-        />
-    );
+    const historical = sector !== '' ? await getHistoricalSector(sector) : [];
+    return <SectorDirectionCard sector={sector} historical={historical} />;
 }
 
 export default async function FundamentalPage({ params }: Props) {

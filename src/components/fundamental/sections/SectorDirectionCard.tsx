@@ -1,6 +1,4 @@
-import type {
-    FundamentalSectorHistoricalInput,
-} from '@y0ngha/siglens-core';
+import type { FundamentalSectorHistoricalInput } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 
 interface SectorDirectionCardProps {
