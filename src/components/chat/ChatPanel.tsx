@@ -264,26 +264,26 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                                 &nbsp;
                             </div>
                         ) : (
-                        <button
-                            ref={triggerRef}
-                            type="button"
-                            onClick={handleDropdownToggle}
-                            className="bg-secondary-700 hover:bg-secondary-600 text-secondary-400 focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors focus-visible:ring-1 focus-visible:outline-none"
-                            aria-haspopup="listbox"
-                            aria-expanded={isOpen}
-                            aria-label="AI 모델 선택"
-                        >
-                            <span>{selectedModelOption.label}</span>
-                            <span
-                                className={cn(
-                                    'transition-transform duration-150',
-                                    isOpen && 'rotate-180'
-                                )}
-                                aria-hidden="true"
+                            <button
+                                ref={triggerRef}
+                                type="button"
+                                onClick={handleDropdownToggle}
+                                className="bg-secondary-700 hover:bg-secondary-600 text-secondary-400 focus-visible:ring-primary-500 flex items-center gap-1 rounded px-1.5 py-0.5 transition-colors focus-visible:ring-1 focus-visible:outline-none"
+                                aria-haspopup="listbox"
+                                aria-expanded={isOpen}
+                                aria-label="AI 모델 선택"
                             >
-                                ▾
-                            </span>
-                        </button>
+                                <span>{selectedModelOption.label}</span>
+                                <span
+                                    className={cn(
+                                        'transition-transform duration-150',
+                                        isOpen && 'rotate-180'
+                                    )}
+                                    aria-hidden="true"
+                                >
+                                    ▾
+                                </span>
+                            </button>
                         )}
 
                         {isOpen && (

@@ -65,7 +65,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-secondary-500 whitespace-nowrap text-xs">
+                    <span className="text-secondary-500 text-xs whitespace-nowrap">
                         AI 분석 모델
                     </span>
                     <ModelSelector
