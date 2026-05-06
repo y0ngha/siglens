@@ -1,5 +1,7 @@
 const mockFinalMessage = jest.fn();
-const mockStream = jest.fn().mockReturnValue({ finalMessage: mockFinalMessage });
+const mockStream = jest
+    .fn()
+    .mockReturnValue({ finalMessage: mockFinalMessage });
 const MockAnthropic = jest.fn().mockImplementation(() => ({
     messages: { stream: mockStream },
 }));
