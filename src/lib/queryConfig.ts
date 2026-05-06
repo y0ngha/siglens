@@ -42,4 +42,10 @@ export const QUERY_KEYS = {
     // Augment consumers may use `select` to project to a narrower shape.
     newsAnalysis: (symbol: string, modelId: ModelId) =>
         ['news-analysis', symbol, modelId] as const,
+    overallAnalysis: (
+        symbol: string,
+        companyName: string,
+        timeframe: Timeframe,
+        modelId: ModelId
+    ) => ['overall-analysis', symbol, companyName, timeframe, modelId] as const,
 } as const;

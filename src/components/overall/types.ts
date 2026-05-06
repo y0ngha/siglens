@@ -3,6 +3,15 @@ import type {
     OverallAxis,
 } from '@y0ngha/siglens-core';
 
+export type ProgressState =
+    | { phase: 'submitting' }
+    | {
+          phase: 'pending_dependencies';
+          pendingJobs: Record<OverallAxis, string | undefined>;
+          retryCount: number;
+      }
+    | { phase: 'polling' };
+
 export type OverallAnalysisState =
     | { status: 'idle' }
     | {
