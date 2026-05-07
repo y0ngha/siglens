@@ -85,5 +85,20 @@ describe('FearGreedGroupBar', () => {
             const normalPctile = getByText(/60th/);
             expect(normalPctile.className).not.toContain('font-semibold');
         });
+
+        it('renders extreme percentile (>= 90) with font-semibold', () => {
+            const highExtreme: FearGreedGroup = {
+                ...flowGroup,
+                factors: [
+                    { key: 'volume_z', rawValue: 2.5, percentile: 92 },
+                    { key: 'buysell_imbalance', rawValue: 0.15, percentile: 60 },
+                ],
+            };
+            const { getByText } = render(
+                <FearGreedGroupBar group={highExtreme} />
+            );
+            const extremePctile = getByText(/92nd|92th/);
+            expect(extremePctile.className).toContain('font-semibold');
+        });
     });
 });

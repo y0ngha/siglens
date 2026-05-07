@@ -35,7 +35,7 @@ function classifyScore(score: number): FearGreedLabel {
 const EXTREME_PERCENTILE_LOW = 10;
 const EXTREME_PERCENTILE_HIGH = 90;
 
-// Pure presentational — renders directly inside a Server Component when invoked at RSC level.
+// No client-only APIs — RSC-safe, importable from both RSC and Client context.
 export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
     const score = Math.round(group.score);
     return (

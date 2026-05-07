@@ -60,9 +60,13 @@ const NEEDLE_TIP_LEN = 4;
 const NEEDLE_HALF_WIDTH = 6;
 const NEEDLE_INNER_GAP = 12;
 
-/** Tick label radial offset outside the arc. */
-const TICK_LABEL_RADIUS = GAUGE_RADIUS + 16;
+/** Tick label radial offset outside the arc, in SVG units. */
+const TICK_LABEL_OFFSET = 16;
+const TICK_LABEL_RADIUS = GAUGE_RADIUS + TICK_LABEL_OFFSET;
 const TICK_VALUES: ReadonlyArray<number> = [0, 25, 50, 75, 100];
+
+/** Degrees per score unit — 180° gauge arc spans 100 score units (180 / 100). */
+const DEGREES_PER_SCORE_UNIT = 1.8;
 
 /**
  * Shared semicircle gauge primitive. 0=left/EXTREME_FEAR, 100=right/EXTREME_GREED.
@@ -76,9 +80,10 @@ export function FearGreedGauge({
     size,
     periodLabel,
 }: FearGreedGaugeProps) {
-    // 0 → +180°(좌측), 100 → 0°(우측). 정적 needle을 우측 기준으로 그린 뒤 -score*1.8°
-    // 만큼 회전(시계 반대 방향, SVG 좌표계에서 음수 각도)시켜 위치를 잡는다.
-    const rotateDeg = -score * 1.8;
+    // 0 → +180°(좌측), 100 → 0°(우측). 정적 needle을 우측 기준으로 그린 뒤
+    // -score * DEGREES_PER_SCORE_UNIT 만큼 회전(시계 반대 방향, SVG 좌표계에서
+    // 음수 각도)시켜 위치를 잡는다.
+    const rotateDeg = -score * DEGREES_PER_SCORE_UNIT;
 
     // Static needle points at angle = 0 (rightmost). Rotated by <g transform=…>.
     const tipR = GAUGE_RADIUS + NEEDLE_TIP_LEN;

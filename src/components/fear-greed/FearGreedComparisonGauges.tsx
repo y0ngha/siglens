@@ -43,7 +43,7 @@ function classifyScore(score: number): FearGreedLabel {
 
 /** Renders the 4 historical reference points as CNN-style mini gauges so the user
  *  can compare current sentiment to past windows visually (not just numerically). */
-// Pure presentational — renders directly inside a Server Component when invoked at RSC level.
+// No client-only APIs — RSC-safe, importable from both RSC and Client context.
 export function FearGreedComparisonGauges({
     history,
 }: FearGreedComparisonGaugesProps) {
