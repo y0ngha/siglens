@@ -119,9 +119,7 @@ export function FearGreedHero({ snapshot }: FearGreedHeroProps) {
                         </text>
                     );
                 })}
-                <g
-                    transform={`rotate(${rotateDeg} ${GAUGE_CX} ${GAUGE_CY})`}
-                >
+                <g transform={`rotate(${rotateDeg} ${GAUGE_CX} ${GAUGE_CY})`}>
                     <polygon
                         points={`${tipX},${tipY} ${baseLeftX},${baseLeftY} ${baseRightX},${baseRightY}`}
                         className="fill-secondary-100"
