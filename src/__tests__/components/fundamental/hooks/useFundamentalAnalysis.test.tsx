@@ -2,6 +2,8 @@
  * @jest-environment jsdom
  */
 import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundamentalAnalysis';
+import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
+import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -17,10 +19,23 @@ jest.mock('@/infrastructure/market/pollFundamentalAnalysisAction', () => ({
     pollFundamentalAnalysisAction: jest.fn(),
 }));
 
-const mockSubmitFundamentalAnalysisAction =
-    submitFundamentalAnalysisAction as jest.MockedFunction<
-        typeof submitFundamentalAnalysisAction
-    >;
+jest.mock('@/infrastructure/market/cancelFundamentalAnalysisJobAction', () => ({
+    cancelFundamentalAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('@/lib/sleep', () => ({
+    sleep: jest.fn().mockResolvedValue(undefined),
+}));
+
+const mockSubmit = submitFundamentalAnalysisAction as jest.MockedFunction<
+    typeof submitFundamentalAnalysisAction
+>;
+const mockPoll = pollFundamentalAnalysisAction as jest.MockedFunction<
+    typeof pollFundamentalAnalysisAction
+>;
+const mockCancel = cancelFundamentalAnalysisJobAction as jest.MockedFunction<
+    typeof cancelFundamentalAnalysisJobAction
+>;
 
 const FUNDAMENTAL_RESULT: FundamentalAnalysisResponse = {
     overallSentiment: 'bullish',
@@ -55,8 +70,11 @@ function Probe() {
 
 describe('useFundamentalAnalysis', () => {
     beforeEach(() => {
-        mockSubmitFundamentalAnalysisAction.mockReset();
-        mockSubmitFundamentalAnalysisAction.mockResolvedValue({
+        mockSubmit.mockReset();
+        mockPoll.mockReset();
+        mockCancel.mockReset();
+        mockCancel.mockResolvedValue(undefined);
+        mockSubmit.mockResolvedValue({
             status: 'cached',
             result: FUNDAMENTAL_RESULT,
         });
@@ -77,7 +95,7 @@ describe('useFundamentalAnalysis', () => {
             </Wrapper>
         );
 
-        expect(mockSubmitFundamentalAnalysisAction).not.toHaveBeenCalled();
+        expect(mockSubmit).not.toHaveBeenCalled();
     });
 
     it('클라이언트 마운트 후 Server Action을 호출한다', async () => {
@@ -93,14 +111,14 @@ describe('useFundamentalAnalysis', () => {
         await waitFor(() => {
             expect(result.current.status).toBe('done');
         });
-        expect(mockSubmitFundamentalAnalysisAction).toHaveBeenCalledWith(
+        expect(mockSubmit).toHaveBeenCalledWith(
             'AAPL',
             'gemini-2.5-flash-lite'
         );
     });
 
     it('분석 실패 후 retry가 Server Action을 다시 호출한다', async () => {
-        mockSubmitFundamentalAnalysisAction
+        mockSubmit
             .mockRejectedValueOnce(new Error('temporary failure'))
             .mockResolvedValueOnce({
                 status: 'cached',
@@ -129,6 +147,83 @@ describe('useFundamentalAnalysis', () => {
         await waitFor(() => {
             expect(result.current.status).toBe('done');
         });
-        expect(mockSubmitFundamentalAnalysisAction).toHaveBeenCalledTimes(2);
+        expect(mockSubmit).toHaveBeenCalledTimes(2);
+    });
+
+    describe('cancel', () => {
+        it('polling 중 unmount 시 진행 중인 job을 cancel한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-fundamental-123',
+            });
+            // never resolves → 루프가 첫 poll 호출 직후 멈춰 OOM을 방지한다
+            mockPoll.mockImplementation(() => new Promise(() => {}));
+
+            const { unmount } = renderHook(
+                () =>
+                    useFundamentalAnalysis(
+                        'AAPL',
+                        'gemini-2.5-flash-lite'
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockPoll).toHaveBeenCalled();
+            });
+
+            unmount();
+
+            expect(mockCancel).toHaveBeenCalledWith('job-fundamental-123');
+        });
+
+        it('modelId 변경 시 이전 job을 cancel한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-fundamental-123',
+            });
+            mockPoll.mockImplementation(() => new Promise(() => {}));
+
+            const { rerender } = renderHook(
+                ({ modelId }: { modelId: string }) =>
+                    useFundamentalAnalysis('AAPL', modelId as never),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { modelId: 'gemini-2.5-flash-lite' },
+                }
+            );
+
+            await waitFor(() => {
+                expect(mockPoll).toHaveBeenCalled();
+            });
+
+            rerender({ modelId: 'gemini-2.5-flash' });
+
+            expect(mockCancel).toHaveBeenCalledWith('job-fundamental-123');
+        });
+
+        it('cached 응답 시 cancel을 호출하지 않는다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: FUNDAMENTAL_RESULT,
+            });
+
+            const { unmount } = renderHook(
+                () =>
+                    useFundamentalAnalysis(
+                        'AAPL',
+                        'gemini-2.5-flash-lite'
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalled();
+            });
+
+            unmount();
+
+            expect(mockCancel).not.toHaveBeenCalled();
+        });
     });
 });
