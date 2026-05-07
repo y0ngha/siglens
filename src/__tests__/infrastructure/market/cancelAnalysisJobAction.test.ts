@@ -24,9 +24,7 @@ describe('cancelAnalysisJobAction 함수는', () => {
     });
 
     it('underlying 함수가 reject하면 에러를 삼키고 undefined를 반환한다', async () => {
-        mockCancelAnalysisJob.mockRejectedValueOnce(
-            new Error('network error')
-        );
+        mockCancelAnalysisJob.mockRejectedValueOnce(new Error('network error'));
 
         await expect(
             cancelAnalysisJobAction('job-456')
