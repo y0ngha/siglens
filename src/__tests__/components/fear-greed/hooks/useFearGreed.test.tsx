@@ -2,7 +2,11 @@
  * @jest-environment jsdom
  */
 import { renderHook } from '@testing-library/react';
-import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
+import {
+    computeFearGreedIndex,
+    type Bar,
+    type BuySellVolumeResult,
+} from '@y0ngha/siglens-core';
 import { useFearGreed } from '@/components/fear-greed/hooks/useFearGreed';
 
 jest.mock('@y0ngha/siglens-core', () => {
@@ -46,6 +50,18 @@ describe('useFearGreed', () => {
             );
             expect(result.current.snapshot?.label).toBe('EXTREME_FEAR');
             expect(result.current.history).toHaveLength(2);
+        });
+    });
+
+    describe('when computeFearGreedIndex returns null', () => {
+        it('returns null snapshot when computeFearGreedIndex returns null', () => {
+            (
+                computeFearGreedIndex as jest.Mock
+            ).mockReturnValueOnce(null);
+            const { result } = renderHook(() =>
+                useFearGreed({ bars: [], buySellVolume: [] })
+            );
+            expect(result.current.snapshot).toBeNull();
         });
     });
 });

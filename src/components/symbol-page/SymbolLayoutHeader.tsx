@@ -67,7 +67,10 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
 
                 <div className="flex shrink-0 items-center gap-2">
                     <Suspense fallback={null}>
-                        <FearGreedHeaderChipMounted symbol={ticker} />
+                        <FearGreedHeaderChipMounted
+                            symbol={ticker}
+                            fmpSymbol={assetInfo?.fmpSymbol}
+                        />
                     </Suspense>
                     <span className="text-secondary-500 text-xs whitespace-nowrap">
                         AI 분석 모델

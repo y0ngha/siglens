@@ -20,8 +20,8 @@ interface SegmentDef {
  *   GREED         → text-ui-success/60    (#26a69a @ 60%) — lighter success
  *   EXTREME_GREED → text-ui-success       (#26a69a) — strongest success
  *
- * NEVER use raw Tailwind palette (e.g. yellow-500, red-400). The same tokens are
- * used in Task 5 (SelfNormWarningBadge → ui-warning) and Task 6 (FearGreedHeaderChip).
+ * NEVER use raw Tailwind palette (e.g. yellow-500, red-400).
+ * SelfNormWarningBadge와 FearGreedHeaderChip에서도 동일한 시맨틱 토큰을 사용한다.
  */
 const SEGMENTS: ReadonlyArray<SegmentDef> = [
     { from: 0, to: 25, strokeClass: 'text-ui-danger' },

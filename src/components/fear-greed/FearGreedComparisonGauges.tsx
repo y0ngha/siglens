@@ -10,11 +10,15 @@ interface PeriodDef {
     label: string;
 }
 
+const TRADING_DAYS_1W = 5;
+const TRADING_DAYS_1M = 21;
+const TRADING_DAYS_1Y = 252;
+
 const PERIODS: ReadonlyArray<PeriodDef> = [
     { key: 'now', daysBack: 0, label: 'Now' },
-    { key: '1w', daysBack: 5, label: '1주' },
-    { key: '1m', daysBack: 21, label: '1개월' },
-    { key: '1y', daysBack: 252, label: '1년' },
+    { key: '1w', daysBack: TRADING_DAYS_1W, label: '1주' },
+    { key: '1m', daysBack: TRADING_DAYS_1M, label: '1개월' },
+    { key: '1y', daysBack: TRADING_DAYS_1Y, label: '1년' },
 ];
 
 /** Renders the 4 historical reference points so the user can compare current sentiment to past windows. */
