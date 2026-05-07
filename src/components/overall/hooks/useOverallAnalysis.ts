@@ -131,7 +131,8 @@ async function waitForDependencies(
             )
         );
         remainingJobs = completedAxes.reduce(
-            (acc, axis) => (axis === null ? acc : { ...acc, [axis]: undefined }),
+            (acc, axis) =>
+                axis === null ? acc : { ...acc, [axis]: undefined },
             remainingJobs
         );
 
