@@ -28,13 +28,11 @@ export function useFearGreed({
     bars,
     buySellVolume,
 }: UseFearGreedInput): UseFearGreedResult {
-    const snapshot = useMemo(
-        () => computeFearGreedIndex(bars, buySellVolume),
+    return useMemo(
+        () => ({
+            snapshot: computeFearGreedIndex(bars, buySellVolume),
+            history: computeFearGreedHistory(bars, buySellVolume),
+        }),
         [bars, buySellVolume]
     );
-    const history = useMemo(
-        () => computeFearGreedHistory(bars, buySellVolume),
-        [bars, buySellVolume]
-    );
-    return { snapshot, history };
 }

@@ -31,18 +31,21 @@ const fakeBars: Bar[] = [];
 const fakeBsv: BuySellVolumeResult[] = [];
 
 describe('useFearGreed', () => {
-    it('returns snapshot and history derived from bars', () => {
-        const { result } = renderHook(() =>
-            useFearGreed({ bars: fakeBars, buySellVolume: fakeBsv })
-        );
-        expect(result.current.snapshot?.label).toBe('EXTREME_FEAR');
-        expect(result.current.history).toHaveLength(2);
-    });
+    describe('with mocked computeFearGreedIndex/History', () => {
+        it('returns snapshot and history derived from bars', () => {
+            const { result } = renderHook(() =>
+                useFearGreed({ bars: fakeBars, buySellVolume: fakeBsv })
+            );
+            expect(result.current.snapshot?.label).toBe('EXTREME_FEAR');
+            expect(result.current.history).toHaveLength(2);
+        });
 
-    it('returns defined result for empty bars (mock controls behavior)', () => {
-        const { result } = renderHook(() =>
-            useFearGreed({ bars: [], buySellVolume: [] })
-        );
-        expect(result.current).toBeDefined();
+        it('returns the mocked snapshot and history shape for empty bars input', () => {
+            const { result } = renderHook(() =>
+                useFearGreed({ bars: [], buySellVolume: [] })
+            );
+            expect(result.current.snapshot?.label).toBe('EXTREME_FEAR');
+            expect(result.current.history).toHaveLength(2);
+        });
     });
 });
