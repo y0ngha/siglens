@@ -15,7 +15,7 @@ const LABEL: Record<PageKey, string> = {
 
 const DESCRIPTION: Record<PageKey, string> = {
     chart: '기술적 지표 + AI 종합 리포트',
-    news: '실시간 뉴스 + sentiment 분석',
+    news: '실시간 뉴스 + 애널리스트 의견 분석',
     fundamental: '재무·밸류에이션·미래 방향',
     overall: '3축 통합 AI 결론 + 시나리오',
 };
@@ -49,10 +49,7 @@ export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
                     href={HREF[p](symbol)}
                     className="border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-xl border p-6 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                    <h3 className="font-semibold">
-                        <span aria-hidden="true">→ </span>
-                        {LABEL[p]}
-                    </h3>
+                    <h3 className="font-semibold">{LABEL[p]}</h3>
                     <p className="text-secondary-400 mt-2 text-sm">
                         {DESCRIPTION[p]}
                     </p>
