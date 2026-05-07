@@ -1,4 +1,5 @@
 import type { FearGreedWarning } from '@y0ngha/siglens-core';
+import { cn } from '@/lib/cn';
 
 interface SelfNormWarningBadgeProps {
     warning: FearGreedWarning;
@@ -12,10 +13,7 @@ const WARNING_TEXT: Record<NonNullable<FearGreedWarning>, string> = {
         '이 종목은 장기 강세 사이클입니다. 점수는 자기 분포 대비 상대적 위치를 의미합니다.',
 };
 
-/**
- * Spec §9 self-norm paradox를 사용자에게 직접 노출하는 작은 ⚠️ 배지.
- * 분석 탭 카드 + 공포지수 탭에만 사용 (헤더 chip은 노이즈 회피).
- */
+/** Inline ⚠️ badge surfacing the self-norm paradox to users when the score may not reflect raw sentiment. */
 export function SelfNormWarningBadge({
     warning,
     className,
@@ -23,11 +21,13 @@ export function SelfNormWarningBadge({
     if (!warning) return null;
     return (
         <span
-            className={`inline-flex items-center gap-1 rounded bg-yellow-900/30 px-2 py-0.5 text-xs text-yellow-200 ${className ?? ''}`}
-            title={WARNING_TEXT[warning]}
-            aria-label={WARNING_TEXT[warning]}
+            className={cn(
+                'bg-ui-warning/10 text-ui-warning border-ui-warning/30 inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs',
+                className
+            )}
         >
-            ⚠️ {WARNING_TEXT[warning]}
+            <span aria-hidden="true">⚠️</span>
+            {WARNING_TEXT[warning]}
         </span>
     );
 }

@@ -14,18 +14,26 @@ describe('SelfNormWarningBadge', () => {
             expect(container.firstChild).toBeNull();
         });
 
-        it('renders weakness text when CHRONIC_WEAKNESS', () => {
+        it('renders the full chronic-weakness sentence verbatim per spec §4.5', () => {
             const { getByText } = render(
                 <SelfNormWarningBadge warning="CHRONIC_WEAKNESS" />
             );
-            expect(getByText(/장기 약세 사이클/)).toBeInTheDocument();
+            expect(
+                getByText(
+                    '이 종목은 장기 약세 사이클입니다. 점수는 자기 분포 대비 상대적 위치를 의미합니다.'
+                )
+            ).toBeInTheDocument();
         });
 
-        it('renders strength text when CHRONIC_STRENGTH', () => {
+        it('renders the full chronic-strength sentence verbatim per spec §4.5', () => {
             const { getByText } = render(
                 <SelfNormWarningBadge warning="CHRONIC_STRENGTH" />
             );
-            expect(getByText(/장기 강세 사이클/)).toBeInTheDocument();
+            expect(
+                getByText(
+                    '이 종목은 장기 강세 사이클입니다. 점수는 자기 분포 대비 상대적 위치를 의미합니다.'
+                )
+            ).toBeInTheDocument();
         });
     });
 });
