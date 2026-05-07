@@ -1,9 +1,11 @@
 import {
     DrizzleAssetTranslationRepository,
     DrizzleKoreanTickerRepository,
+    DrizzleProfileDescriptionTranslationRepository,
 } from '@/infrastructure/db/tickerRepository';
 import type {
     AssetTranslationRecord,
+    ProfileDescriptionTranslationRecord,
     SiglensDatabase,
 } from '@/infrastructure/db/types';
 import type { KoreanTickerEntry } from '@/domain/types';
@@ -182,6 +184,52 @@ describe('DrizzleAssetTranslationRepository', () => {
     it('upsert 는 onConflictDoUpdate 의 set 에 updatedAt 을 명시적으로 포함한다', async () => {
         const { db, onConflictDoUpdate } = makeUpsertDb();
         const repo = new DrizzleAssetTranslationRepository(db);
+        await repo.upsert(record);
+        const passedSet = onConflictDoUpdate.mock.calls[0][0].set as Record<
+            string,
+            unknown
+        >;
+        expect(passedSet).toHaveProperty('updatedAt');
+        expect(passedSet.updatedAt).toBeDefined();
+    });
+});
+
+describe('DrizzleProfileDescriptionTranslationRepository', () => {
+    const record: ProfileDescriptionTranslationRecord = {
+        symbol: 'AAPL',
+        descriptionKo: '애플은 소비자 가전 제품을 설계합니다.',
+    };
+
+    it('findBySymbol 은 row 를 반환한다', async () => {
+        const { db } = makeFindBySymbolDb([record]);
+        const repo = new DrizzleProfileDescriptionTranslationRepository(db);
+        await expect(repo.findBySymbol('AAPL')).resolves.toEqual(record);
+    });
+
+    it('findBySymbol 은 row 가 없으면 null 을 반환한다', async () => {
+        const { db } = makeFindBySymbolDb([]);
+        const repo = new DrizzleProfileDescriptionTranslationRepository(db);
+        await expect(repo.findBySymbol('AAPL')).resolves.toBeNull();
+    });
+
+    it('upsert 는 insert + onConflictDoUpdate 를 호출한다', async () => {
+        const { db, insert, values, onConflictDoUpdate } = makeUpsertDb();
+        const repo = new DrizzleProfileDescriptionTranslationRepository(db);
+        await repo.upsert(record);
+        expect(insert).toHaveBeenCalledTimes(1);
+        expect(values).toHaveBeenCalledWith(record);
+        expect(onConflictDoUpdate).toHaveBeenCalledWith({
+            target: expect.anything(),
+            set: {
+                descriptionKo: expect.anything(),
+                updatedAt: expect.anything(),
+            },
+        });
+    });
+
+    it('upsert 는 onConflictDoUpdate 의 set 에 updatedAt 을 명시적으로 포함한다', async () => {
+        const { db, onConflictDoUpdate } = makeUpsertDb();
+        const repo = new DrizzleProfileDescriptionTranslationRepository(db);
         await repo.upsert(record);
         const passedSet = onConflictDoUpdate.mock.calls[0][0].set as Record<
             string,
