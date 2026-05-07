@@ -9,6 +9,7 @@ import {
     getPriceTargetConsensus,
     getPriceTargetSummary,
     getProfile,
+    getProfileDescriptionKo,
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[symbol]/fundamental/fundamentalData';
@@ -87,9 +88,12 @@ interface SymbolSectionProps {
 }
 
 async function ProfileSection({ symbol }: SymbolSectionProps) {
-    const profile = await getProfile(symbol);
+    const [profile, descriptionKo] = await Promise.all([
+        getProfile(symbol),
+        getProfileDescriptionKo(symbol),
+    ]);
     if (profile === null) return null;
-    return <ProfileCard profile={profile} />;
+    return <ProfileCard profile={profile} descriptionKo={descriptionKo} />;
 }
 
 async function ValuationSection({ symbol }: SymbolSectionProps) {
@@ -246,6 +250,12 @@ export default async function FundamentalPage({ params }: Props) {
                     <ProfileSection symbol={upper} />
                 </Suspense>
 
+                <ErrorBoundary FallbackComponent={FundamentalAiSummaryError}>
+                    <Suspense fallback={<FundamentalAiSummarySkeleton />}>
+                        <FundamentalAiSummary symbol={upper} />
+                    </Suspense>
+                </ErrorBoundary>
+
                 <Suspense fallback={<SectionSkeleton />}>
                     <ValuationSection symbol={upper} />
                 </Suspense>
@@ -273,12 +283,6 @@ export default async function FundamentalPage({ params }: Props) {
                 <Suspense fallback={<SectionSkeleton />}>
                     <SectorDirectionSection sector={sector} />
                 </Suspense>
-
-                <ErrorBoundary FallbackComponent={FundamentalAiSummaryError}>
-                    <Suspense fallback={<FundamentalAiSummarySkeleton />}>
-                        <FundamentalAiSummary symbol={upper} />
-                    </Suspense>
-                </ErrorBoundary>
 
                 <CrossLinkCards symbol={upper} current="fundamental" />
             </main>

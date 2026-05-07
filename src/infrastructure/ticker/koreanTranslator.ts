@@ -12,6 +12,12 @@ Companies:
 ${entryList}`;
 }
 
+function buildDescriptionTranslatePrompt(description: string): string {
+    return `Translate the following English company description to Korean. Return only the Korean translation, no explanations or extra text.
+
+${description}`;
+}
+
 function isStringRecord(value: unknown): value is Record<string, string> {
     if (value === null || typeof value !== 'object') return false;
     return Object.values(value).every(v => typeof v === 'string');
@@ -34,6 +40,7 @@ export async function translateCompanyNames(
                         userApiKey: undefined,
                         model: config.model,
                         contents: buildTranslatePrompt(entries),
+                        thinkingBudget: 0,
                     });
                 } catch {
                     // freeApiKey failed — fall through to primary key
@@ -44,11 +51,47 @@ export async function translateCompanyNames(
                 userApiKey: undefined,
                 model: config.model,
                 contents: buildTranslatePrompt(entries),
+                thinkingBudget: 0,
             });
         })();
         const parsed = parseJsonResponse(text, 'koreanTranslator');
         return isStringRecord(parsed) ? parsed : {};
     } catch {
         return {};
+    }
+}
+
+export async function translateCompanyDescription(
+    description: string
+): Promise<string | null> {
+    const config = tryReadTranslatorConfig();
+    if (!config) return null;
+
+    try {
+        const text = await (async () => {
+            if (config.freeApiKey) {
+                try {
+                    return await callGeminiChat({
+                        serverApiKey: config.freeApiKey,
+                        userApiKey: undefined,
+                        model: config.model,
+                        contents: buildDescriptionTranslatePrompt(description),
+                        thinkingBudget: 0,
+                    });
+                } catch {
+                    // freeApiKey failed — fall through to primary key
+                }
+            }
+            return callGeminiChat({
+                serverApiKey: config.apiKey,
+                userApiKey: undefined,
+                model: config.model,
+                contents: buildDescriptionTranslatePrompt(description),
+                thinkingBudget: 0,
+            });
+        })();
+        return text.trim() || null;
+    } catch {
+        return null;
     }
 }
