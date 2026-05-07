@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import React, { useEffect, useEffectEvent, useMemo } from 'react';
+import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
@@ -25,8 +25,7 @@ import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
-import { FearGreedCard } from '@/components/symbol-page/FearGreedCard';
-import { useFearGreed } from '@/components/symbol-page/hooks/useFearGreed';
+import { FearGreedCardMounted } from '@/components/symbol-page/FearGreedCardMounted';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -108,11 +107,6 @@ export function ChartContent({
 }: ChartContentProps) {
     const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
 
-    const { snapshot: fearGreedSnapshot } = useFearGreed({
-        bars,
-        buySellVolume: indicators.buySellVolume,
-    });
-
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
 
@@ -184,7 +178,12 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
-                <FearGreedCard snapshot={fearGreedSnapshot} />
+                <Suspense fallback={null}>
+                    <FearGreedCardMounted
+                        symbol={symbol}
+                        fmpSymbol={fmpSymbol}
+                    />
+                </Suspense>
             </>
         ),
         [
@@ -201,7 +200,7 @@ export function ChartContent({
             cooldownNotice,
             actionPricesVisible,
             setActionPricesVisible,
-            fearGreedSnapshot,
+            fmpSymbol,
         ]
     );
 
