@@ -55,7 +55,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <FearGreedPage symbol={ticker} />
+            <FearGreedPage symbol={ticker} fmpSymbol={assetInfo.fmpSymbol} />
         </HydrationBoundary>
     );
 }
