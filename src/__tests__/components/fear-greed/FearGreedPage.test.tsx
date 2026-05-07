@@ -47,10 +47,7 @@ describe('FearGreedPage', () => {
 
         it('renders Hero score and confidence footer', () => {
             const { getByText } = render(
-                <FearGreedPage
-                    symbol="NVDA"
-                    displayName="엔비디아, NVIDIA Corp"
-                />
+                <FearGreedPage symbol="NVDA" />
             );
             expect(getByText('50')).toBeInTheDocument();
             expect(getByText(/표본 200/)).toBeInTheDocument();
@@ -59,10 +56,7 @@ describe('FearGreedPage', () => {
 
         it('renders all groups', () => {
             const { getByText } = render(
-                <FearGreedPage
-                    symbol="NVDA"
-                    displayName="엔비디아, NVIDIA Corp"
-                />
+                <FearGreedPage symbol="NVDA" />
             );
             expect(getByText('Flow Group')).toBeInTheDocument();
             expect(getByText('Trend Group')).toBeInTheDocument();
@@ -76,10 +70,7 @@ describe('FearGreedPage', () => {
                 history: [],
             });
             const { getByText } = render(
-                <FearGreedPage
-                    symbol="NVDA"
-                    displayName="엔비디아, NVIDIA Corp"
-                />
+                <FearGreedPage symbol="NVDA" />
             );
             expect(
                 getByText(/공포·탐욕 지수 산출에 필요한 데이터가 부족합니다/)
@@ -94,10 +85,7 @@ describe('FearGreedPage', () => {
                 history: [],
             });
             const { getByText } = render(
-                <FearGreedPage
-                    symbol="NVDA"
-                    displayName="엔비디아, NVIDIA Corp"
-                />
+                <FearGreedPage symbol="NVDA" />
             );
             expect(getByText(/신뢰도 제한/)).toBeInTheDocument();
         });

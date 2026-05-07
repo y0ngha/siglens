@@ -16,14 +16,9 @@ import {
 interface FearGreedPageProps {
     symbol: string;
     fmpSymbol?: string;
-    displayName: string;
 }
 
-export function FearGreedPage({
-    symbol,
-    fmpSymbol,
-    displayName,
-}: FearGreedPageProps) {
+export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
     const { bars, indicators } = useBars({
         symbol,
         timeframe: DEFAULT_TIMEFRAME,
@@ -36,33 +31,34 @@ export function FearGreedPage({
 
     if (!snapshot) {
         return (
-            <main className="text-secondary-400 p-6 text-sm">
-                <h1 className="sr-only">
-                    {displayName} ({symbol}) 공포·탐욕 지수와 단기 sentiment
-                </h1>
+            <div className="text-secondary-400 p-6 text-sm">
                 공포·탐욕 지수 산출에 필요한 데이터가 부족합니다.
-            </main>
+            </div>
         );
     }
 
     return (
-        <main className="flex flex-col gap-6 p-4 md:p-6">
-            <h1 className="sr-only">
-                {displayName} ({symbol}) 공포·탐욕 지수와 단기 sentiment
-            </h1>
+        <div className="flex flex-col gap-6 p-4 md:p-6">
             <section className="flex flex-col gap-3">
+                <h2 className="sr-only">
+                    현재 공포·탐욕 지수와 기간별 비교
+                </h2>
                 <FearGreedHero snapshot={snapshot} />
                 <FearGreedComparisonGauges history={history} />
                 <SelfNormWarningBadge warning={snapshot.warning} />
             </section>
 
             <section className="flex flex-col gap-3">
+                <h2 className="sr-only">
+                    Flow·Trend 그룹별 score breakdown
+                </h2>
                 {snapshot.groups.map(group => (
                     <FearGreedGroupBar key={group.name} group={group} />
                 ))}
             </section>
 
             <section>
+                <h2 className="sr-only">최근 1년 공포·탐욕 지수 추이</h2>
                 <FearGreedHistoricalChart history={history} />
             </section>
 
@@ -73,6 +69,6 @@ export function FearGreedPage({
                         : CONFIDENCE_LIMITED_LABEL
                 }`}
             </footer>
-        </main>
+        </div>
     );
 }

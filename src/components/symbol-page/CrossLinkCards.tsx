@@ -1,7 +1,13 @@
 import Link from 'next/link';
 
 /** All cross-linked page types in the symbol sub-navigation. */
-const ALL_PAGES = ['chart', 'news', 'fundamental', 'overall'] as const;
+const ALL_PAGES = [
+    'chart',
+    'news',
+    'fundamental',
+    'fear-greed',
+    'overall',
+] as const;
 
 /** Union of all page keys. */
 type PageKey = (typeof ALL_PAGES)[number];
@@ -10,6 +16,7 @@ const LABEL: Record<PageKey, string> = {
     chart: '차트 분석',
     news: '뉴스 분석',
     fundamental: '펀더 분석',
+    'fear-greed': '공포·탐욕 지수',
     overall: 'AI 종합 분석',
 };
 
@@ -17,6 +24,7 @@ const DESCRIPTION: Record<PageKey, string> = {
     chart: '기술적 지표 + AI 종합 리포트',
     news: '실시간 뉴스 + sentiment 분석',
     fundamental: '재무·밸류에이션·미래 방향',
+    'fear-greed': '단기 매매 심리 0~100 점수',
     overall: '3축 통합 AI 결론 + 시나리오',
 };
 
@@ -24,6 +32,7 @@ const HREF: Record<PageKey, (symbol: string) => string> = {
     chart: symbol => `/${symbol}`,
     news: symbol => `/${symbol}/news`,
     fundamental: symbol => `/${symbol}/fundamental`,
+    'fear-greed': symbol => `/${symbol}/fear-greed`,
     overall: symbol => `/${symbol}/overall`,
 };
 
@@ -40,7 +49,7 @@ export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
 
     return (
         <section
-            className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-3"
+            className="mt-12 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4"
             aria-label="다른 분석 종류 보기"
         >
             {others.map(p => (
