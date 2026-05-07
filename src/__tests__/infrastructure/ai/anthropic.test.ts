@@ -115,7 +115,7 @@ describe('callAnthropicChat', () => {
                 type: 'adaptive',
                 display: 'omitted',
             });
-            expect(call.output_config).toEqual({ effort: 'medium' });
+            expect(call.output_config).toEqual({ effort: 'high' });
             expect(call).not.toHaveProperty('temperature');
         });
 
