@@ -1,11 +1,12 @@
+import type { ReactNode } from 'react';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 
 interface ProfileCardProps {
     profile: FundamentalProfile;
-    descriptionKo?: string | null;
+    descriptionSlot?: ReactNode;
 }
 
-export function ProfileCard({ profile, descriptionKo }: ProfileCardProps) {
+export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
     const formattedMarketCap = new Intl.NumberFormat('ko-KR', {
         notation: 'compact',
         maximumFractionDigits: 1,
@@ -73,11 +74,7 @@ export function ProfileCard({ profile, descriptionKo }: ProfileCardProps) {
                 )}
             </dl>
 
-            {profile.description !== null && (
-                <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
-                    {descriptionKo ?? profile.description}
-                </p>
-            )}
+            {descriptionSlot}
         </section>
     );
 }

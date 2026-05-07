@@ -229,9 +229,9 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
                 selectedModel,
                 currentAnalysisContext
             ),
-        onMutate: ({ currentMessages, text }) => {
+        onMutate: ({ text }) => {
             const userMessage: ChatMessage = { role: 'user', content: text };
-            setMessages([...currentMessages, userMessage]);
+            setMessages(prev => [...prev, userMessage]);
             setLoadingPhase('analyzing');
             phaseTimerRef.current = setTimeout(() => {
                 setLoadingPhase('generating');
