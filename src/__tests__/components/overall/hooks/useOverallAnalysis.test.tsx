@@ -79,7 +79,9 @@ function makeWrapper() {
     queryClients.push(client);
     return function Wrapper({ children }: { children: ReactNode }) {
         return (
-            <QueryClientProvider client={client}>{children}</QueryClientProvider>
+            <QueryClientProvider client={client}>
+                {children}
+            </QueryClientProvider>
         );
     };
 }
@@ -147,7 +149,10 @@ describe('useOverallAnalysis', () => {
             });
             mockPollOverall
                 .mockResolvedValueOnce({ status: 'processing' })
-                .mockResolvedValueOnce({ status: 'done', result: OVERALL_RESULT });
+                .mockResolvedValueOnce({
+                    status: 'done',
+                    result: OVERALL_RESULT,
+                });
 
             const { result } = renderHook(
                 () => useOverallAnalysis(...hookArgs()),

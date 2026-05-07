@@ -88,7 +88,8 @@ async function waitForDependencies(
                         remainingJobs = { ...remainingJobs, [axis]: undefined };
                     } else if (result.status === 'error') {
                         throw new OverallAnalysisError(
-                            result.error ?? `${axis} 분석 중 오류가 발생했습니다.`,
+                            result.error ??
+                                `${axis} 분석 중 오류가 발생했습니다.`,
                             axis
                         );
                     }

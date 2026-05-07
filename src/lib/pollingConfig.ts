@@ -8,4 +8,3 @@ export const AUGMENT_AND_OVERALL_POLL_INTERVAL_MS = 3000;
 
 /** 차트 페이지 메인 분석 — 워커가 다단계 작업을 수행해 길게 잡는다. */
 export const CHART_ANALYSIS_POLL_INTERVAL_MS = 10000;
-
