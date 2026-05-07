@@ -44,6 +44,18 @@ const PENDING_ITEM: NewsDisplayItem = {
     summaryKo: null,
 };
 
+// Advance fake timers exactly one POLL_INTERVAL at a time, flushing React
+// commits via `act` between ticks. Bulk `advanceTimersByTimeAsync(N * interval)`
+// does not guarantee per-tick microtask + commit completion under parallel-
+// worker load, which manifests as flaky call-count / state assertions.
+async function advancePolls(count: number) {
+    for (let i = 0; i < count; i++) {
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
+        });
+    }
+}
+
 describe('useNewsCardPolling', () => {
     beforeEach(() => {
         jest.useFakeTimers();
@@ -62,17 +74,13 @@ describe('useNewsCardPolling', () => {
         expect(result.current.items).toEqual([]);
         expect(result.current.isPolling).toBe(true);
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
-        });
+        await advancePolls(1);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledWith('AAPL');
         expect(result.current.items).toEqual([READY_ITEM]);
         expect(result.current.isPolling).toBe(true);
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(12_000);
-        });
+        await advancePolls(4);
 
         expect(result.current.isPolling).toBe(false);
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(5);
@@ -83,11 +91,7 @@ describe('useNewsCardPolling', () => {
 
         const { result } = renderHook(() => useNewsCardPolling('AAPL', []));
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(
-                POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS
-            );
-        });
+        await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
             EMPTY_SNAPSHOT_MAX_POLLS
@@ -107,17 +111,13 @@ describe('useNewsCardPolling', () => {
             useNewsCardPolling('AAPL', [PENDING_ITEM])
         );
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(15_000);
-        });
+        await advancePolls(5);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(5);
         expect(result.current.items).toEqual([PENDING_ITEM]);
         expect(result.current.isPolling).toBe(false);
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
-        });
+        await advancePolls(1);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(6);
         expect(result.current.items).toEqual([READY_ITEM]);
@@ -136,11 +136,7 @@ describe('useNewsCardPolling', () => {
             useNewsCardPolling('AAPL', [PENDING_ITEM])
         );
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(
-                POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS
-            );
-        });
+        await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
             EMPTY_SNAPSHOT_MAX_POLLS
@@ -148,9 +144,7 @@ describe('useNewsCardPolling', () => {
         expect(result.current.isPolling).toBe(false);
         expect(result.current.items).toEqual([PENDING_ITEM]);
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
-        });
+        await advancePolls(1);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(21);
         expect(result.current.items).toEqual([READY_ITEM]);
@@ -166,9 +160,7 @@ describe('useNewsCardPolling', () => {
         expect(result.current.items).toEqual([READY_ITEM]);
         expect(result.current.isPolling).toBe(true);
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(15_000);
-        });
+        await advancePolls(5);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(5);
         expect(result.current.isPolling).toBe(false);
@@ -180,9 +172,7 @@ describe('useNewsCardPolling', () => {
 
         renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete));
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 5);
-        });
+        await advancePolls(5);
 
         expect(onComplete).toHaveBeenCalledTimes(1);
         expect(onComplete).toHaveBeenCalledWith([READY_ITEM]);
@@ -197,11 +187,7 @@ describe('useNewsCardPolling', () => {
             useNewsCardPolling('AAPL', [PENDING_ITEM], onComplete)
         );
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(
-                MAX_POLL_DURATION_MS + POLL_INTERVAL_MS
-            );
-        });
+        await advancePolls(MAX_POLL_DURATION_MS / POLL_INTERVAL_MS + 1);
 
         expect(onComplete).toHaveBeenCalledTimes(1);
         expect(onComplete).toHaveBeenCalledWith([PENDING_ITEM]);
@@ -213,11 +199,7 @@ describe('useNewsCardPolling', () => {
 
         renderHook(() => useNewsCardPolling('AAPL', [], onComplete));
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(
-                POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS
-            );
-        });
+        await advancePolls(EMPTY_SNAPSHOT_MAX_POLLS);
 
         expect(onComplete).not.toHaveBeenCalled();
     });
@@ -231,11 +213,7 @@ describe('useNewsCardPolling', () => {
 
         renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete));
 
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(
-                POLL_INTERVAL_MS * MAX_CONSECUTIVE_FAILURES
-            );
-        });
+        await advancePolls(MAX_CONSECUTIVE_FAILURES);
 
         expect(onComplete).not.toHaveBeenCalled();
         expect(errorSpy).toHaveBeenCalledWith(
@@ -257,11 +235,7 @@ describe('useNewsCardPolling', () => {
         );
 
         // MAX_CONSECUTIVE_FAILURES 회 연속 실패 시 pollError가 설정되고 인터벌이 정리된다.
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(
-                POLL_INTERVAL_MS * MAX_CONSECUTIVE_FAILURES
-            );
-        });
+        await advancePolls(MAX_CONSECUTIVE_FAILURES);
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
             MAX_CONSECUTIVE_FAILURES
@@ -270,9 +244,7 @@ describe('useNewsCardPolling', () => {
         expect(result.current.pollError).toBe(dbError);
 
         // 폴링이 멈췄는지 확인 — 추가 시간 진행 후에도 호출 횟수가 늘지 않아야 한다.
-        await act(async () => {
-            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 10);
-        });
+        await advancePolls(10);
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
             MAX_CONSECUTIVE_FAILURES
         );
