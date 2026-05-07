@@ -4,6 +4,7 @@ import type {
     FundamentalCashFlowInput,
 } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 interface FinancialHealthCardProps {
     ratios: FundamentalRatiosInput | null;
@@ -25,9 +26,16 @@ interface HealthMetricProps {
     value: string;
     hint?: string;
     badge?: { text: string; variant: BadgeVariant };
+    tooltip?: string;
 }
 
-function HealthMetric({ label, value, hint, badge }: HealthMetricProps) {
+function HealthMetric({
+    label,
+    value,
+    hint,
+    badge,
+    tooltip,
+}: HealthMetricProps) {
     const badgeClass =
         badge === undefined ? '' : BADGE_VARIANT_CLASS[badge.variant];
 
@@ -35,6 +43,7 @@ function HealthMetric({ label, value, hint, badge }: HealthMetricProps) {
         <div className="border-secondary-700 flex items-baseline justify-between gap-4 border-b py-2.5 last:border-b-0">
             <div>
                 <span className="text-sm font-medium">{label}</span>
+                {tooltip !== undefined && <InfoTooltip>{tooltip}</InfoTooltip>}
                 {hint !== undefined && (
                     <span className="text-secondary-400 ml-1.5 text-xs">
                         {hint}
@@ -113,6 +122,7 @@ export function FinancialHealthCard({
                             : '—'
                     }
                     hint="Debt Ratio (TTM)"
+                    tooltip="총자산 대비 총부채. 0.5 이하 양호, 높을수록 재무 위험"
                 />
                 <HealthMetric
                     label="유동 비율"
@@ -123,6 +133,7 @@ export function FinancialHealthCard({
                             : '—'
                     }
                     hint="Current Ratio (TTM)"
+                    tooltip="유동자산 ÷ 유동부채. 1.5 이상 양호, 1 미만이면 단기 유동성 위험"
                 />
                 <HealthMetric
                     label="영업 현금흐름"
@@ -139,6 +150,7 @@ export function FinancialHealthCard({
                     }
                     hint="파산 위험 지수"
                     badge={altmanBadge(scores?.altmanZScore ?? null)}
+                    tooltip="파산 위험 예측. 2.99↑ 안전 / 1.81~2.99 경계 / 이하 위험"
                 />
                 <HealthMetric
                     label="피오트로스키 F-Score"
@@ -150,6 +162,7 @@ export function FinancialHealthCard({
                     }
                     hint="재무 건강 점수 (0–9)"
                     badge={piotroskiBadge(scores?.piotroskiScore ?? null)}
+                    tooltip="9가지 재무 기준 합산. 8~9 강함 / 5~7 보통 / 4↓ 약함"
                 />
             </div>
         </section>

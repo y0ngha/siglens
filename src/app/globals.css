@@ -73,6 +73,10 @@
     --font-mono: var(--font-geist-mono);
 }
 
+html {
+    overflow-x: hidden;
+}
+
 body {
     color: var(--color-secondary-50);
     background-color: var(--color-secondary-900);
