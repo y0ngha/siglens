@@ -10,13 +10,12 @@ import type {
 } from '@y0ngha/siglens-core';
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
 import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
+import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
+import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
+import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import {
-    AUGMENT_AND_OVERALL_POLL_INTERVAL_MS,
-    MAX_DEPENDENCY_RETRIES,
-} from '@/lib/pollingConfig';
-import { MS_PER_SECOND } from '@/domain/constants/time';
+import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import type {
     OverallAnalysisState,
     ProgressState,
@@ -26,6 +25,8 @@ export interface UseOverallAnalysisReturn {
     state: OverallAnalysisState;
     trigger: () => void;
 }
+
+const AXIS_ORDER: readonly OverallAxis[] = ['technical', 'fundamental', 'news'];
 
 /**
  * submitOverallAnalysisAction이 axis 정보와 함께 에러를 돌려줄 수 있으므로
@@ -46,9 +47,67 @@ function throwIfAborted(signal: AbortSignal): void {
         throw new DOMException('Overall analysis aborted', 'AbortError');
 }
 
+async function pollDependencyJob(
+    axis: OverallAxis,
+    jobId: string
+): Promise<{ status: string; error?: string }> {
+    switch (axis) {
+        case 'technical':
+            return pollAnalysisAction(jobId);
+        case 'fundamental':
+            return pollFundamentalAnalysisAction(jobId);
+        case 'news':
+            return pollNewsAnalysisAction(jobId);
+    }
+}
+
 /**
- * pending_dependencies 상태가 해소될 때까지 submit을 재귀적으로 재시도한다.
- * retryCount를 인자로 전달해 let 재할당 없이 순수하게 유지한다.
+ * pending_dependencies 응답에서 받은 각 axis jobId를 직접 polling해
+ * 모든 dependency가 완료될 때까지 대기한다.
+ * submit을 반복 호출하지 않으므로 중복 job이 생성되지 않는다.
+ */
+async function waitForDependencies(
+    initialPendingJobs: Record<OverallAxis, string | undefined>,
+    signal: AbortSignal,
+    onProgress: (p: ProgressState) => void
+): Promise<void> {
+    let remainingJobs = { ...initialPendingJobs };
+    let retryCount = 0;
+
+    while (AXIS_ORDER.some(axis => remainingJobs[axis] !== undefined)) {
+        throwIfAborted(signal);
+        await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
+        throwIfAborted(signal);
+
+        await Promise.all(
+            AXIS_ORDER.filter(axis => remainingJobs[axis] !== undefined).map(
+                async axis => {
+                    const jobId = remainingJobs[axis]!;
+                    const result = await pollDependencyJob(axis, jobId);
+                    if (result.status === 'done') {
+                        remainingJobs = { ...remainingJobs, [axis]: undefined };
+                    } else if (result.status === 'error') {
+                        throw new OverallAnalysisError(
+                            result.error ?? `${axis} 분석 중 오류가 발생했습니다.`,
+                            axis
+                        );
+                    }
+                }
+            )
+        );
+
+        retryCount++;
+        onProgress({
+            phase: 'pending_dependencies',
+            pendingJobs: remainingJobs,
+            retryCount,
+        });
+    }
+}
+
+/**
+ * submitOverallAnalysisAction을 호출하고, pending_dependencies이면
+ * 각 axis job을 직접 polling한 뒤 완료 후 한 번만 재submit한다.
  */
 async function submitUntilReady(
     symbol: string,
@@ -56,8 +115,7 @@ async function submitUntilReady(
     timeframe: Timeframe,
     modelId: ModelId,
     signal: AbortSignal,
-    onProgress: (p: ProgressState) => void,
-    retryCount: number
+    onProgress: (p: ProgressState) => void
 ): Promise<
     Exclude<
         Awaited<ReturnType<typeof submitOverallAnalysisAction>>,
@@ -74,33 +132,23 @@ async function submitUntilReady(
 
     if (submitted.status !== 'pending_dependencies') return submitted;
 
-    if (retryCount >= MAX_DEPENDENCY_RETRIES) {
-        const timeoutSeconds = Math.round(
-            (MAX_DEPENDENCY_RETRIES * AUGMENT_AND_OVERALL_POLL_INTERVAL_MS) /
-                MS_PER_SECOND
-        );
-        throw new OverallAnalysisError(
-            `AI 종합 분석 의존성 분석이 ${timeoutSeconds}초 안에 완료되지 않았습니다. 잠시 후 다시 시도해주세요.`
-        );
-    }
-
     onProgress({
         phase: 'pending_dependencies',
         pendingJobs: submitted.pendingJobs,
-        retryCount,
+        retryCount: 0,
     });
 
-    await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
+    await waitForDependencies(submitted.pendingJobs, signal, onProgress);
     throwIfAborted(signal);
 
+    // 모든 dependency 완료 후 재submit — 이번엔 pending_dependencies가 반환되지 않는다.
     return submitUntilReady(
         symbol,
         companyName,
         timeframe,
         modelId,
         signal,
-        onProgress,
-        retryCount + 1
+        onProgress
     );
 }
 
@@ -120,8 +168,7 @@ async function fetchOverallAnalysis(
         timeframe,
         modelId,
         signal,
-        onProgress,
-        0
+        onProgress
     );
 
     if (submitted.status === 'cached') return submitted.result;
