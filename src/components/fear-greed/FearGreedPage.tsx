@@ -44,19 +44,25 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
 
     return (
         <div className="flex flex-col gap-6 p-4 md:p-6">
-            <section className="flex flex-col gap-3">
-                <h2 className="sr-only">현재 공포·탐욕 지수와 기간별 비교</h2>
-                <FearGreedHero snapshot={snapshot} />
-                <FearGreedComparisonGauges history={history} />
-                <SelfNormWarningBadge warning={snapshot.warning} />
-            </section>
+            <div className="grid gap-6 md:grid-cols-2">
+                <section className="flex flex-col gap-3">
+                    <h2 className="sr-only">
+                        현재 공포·탐욕 지수와 기간별 비교
+                    </h2>
+                    <FearGreedHero snapshot={snapshot} />
+                    <FearGreedComparisonGauges history={history} />
+                    <SelfNormWarningBadge warning={snapshot.warning} />
+                </section>
 
-            <section className="flex flex-col gap-3">
-                <h2 className="sr-only">Flow·Trend 그룹별 score breakdown</h2>
-                {snapshot.groups.map(group => (
-                    <FearGreedGroupBar key={group.name} group={group} />
-                ))}
-            </section>
+                <section className="flex flex-col gap-3">
+                    <h2 className="sr-only">
+                        Flow·Trend 그룹별 score breakdown
+                    </h2>
+                    {snapshot.groups.map(group => (
+                        <FearGreedGroupBar key={group.name} group={group} />
+                    ))}
+                </section>
+            </div>
 
             <section>
                 <h2 className="sr-only">최근 1년 공포·탐욕 지수 추이</h2>
