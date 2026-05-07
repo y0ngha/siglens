@@ -5,19 +5,20 @@ import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NewsDisplayItem } from '@/domain/types';
-import { useNewsCardPolling } from '@/components/news/hooks/useNewsCardPolling';
+import { useNewsPollingWithInvalidation } from '@/components/news/hooks/useNewsPollingWithInvalidation';
 import {
     formatNewsPublishedAt,
     NewsList,
 } from '@/components/news/sections/NewsList';
 
-jest.mock('@/components/news/hooks/useNewsCardPolling', () => ({
-    useNewsCardPolling: jest.fn(),
+jest.mock('@/components/news/hooks/useNewsPollingWithInvalidation', () => ({
+    useNewsPollingWithInvalidation: jest.fn(),
 }));
 
-const mockUseNewsCardPolling = useNewsCardPolling as jest.MockedFunction<
-    typeof useNewsCardPolling
->;
+const mockUseNewsPollingWithInvalidation =
+    useNewsPollingWithInvalidation as jest.MockedFunction<
+        typeof useNewsPollingWithInvalidation
+    >;
 
 function renderWithClient(ui: React.ReactElement) {
     const queryClient = new QueryClient({
@@ -44,11 +45,11 @@ const READY_ITEM: NewsDisplayItem = {
 
 describe('NewsList', () => {
     beforeEach(() => {
-        mockUseNewsCardPolling.mockReset();
+        mockUseNewsPollingWithInvalidation.mockReset();
     });
 
     it('기존 뉴스가 있어도 최신 뉴스 확인 중이면 상단 상태 카드를 표시한다', () => {
-        mockUseNewsCardPolling.mockReturnValue({
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
             items: [READY_ITEM],
             isPolling: true,
             pollError: null,
@@ -61,7 +62,7 @@ describe('NewsList', () => {
     });
 
     it('최신 뉴스 확인이 끝나면 상단 상태 카드를 제거한다', () => {
-        mockUseNewsCardPolling.mockReturnValue({
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
             items: [READY_ITEM],
             isPolling: false,
             pollError: null,
@@ -76,7 +77,7 @@ describe('NewsList', () => {
     });
 
     it('분석 완료 뉴스는 본문과 요약을 구분해 표시한다', () => {
-        mockUseNewsCardPolling.mockReturnValue({
+        mockUseNewsPollingWithInvalidation.mockReturnValue({
             items: [READY_ITEM],
             isPolling: false,
             pollError: null,

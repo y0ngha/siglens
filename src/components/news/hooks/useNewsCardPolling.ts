@@ -34,7 +34,7 @@ function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     );
 }
 
-interface UseNewsCardPollingReturn {
+export interface UseNewsCardPollingReturn {
     items: NewsDisplayItem[];
     isPolling: boolean;
     pollError: Error | null;

@@ -9,10 +9,9 @@ import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { sleep } from '@/lib/sleep';
+import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
 
 const POLL_INTERVAL_MS = 2_000;
-/** Explicitly disables extended thinking for per-card translation/classification tasks. */
-const DISABLED_THINKING_BUDGET = 0;
 /**
  * Flash-lite typical wall-clock: <10 s. 30 attempts × 2 s = 60 s ceiling,
  * well within waitUntil's serverless budget.

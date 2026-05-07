@@ -1,12 +1,14 @@
 # Fix Log
 
+## [PR #423 Round 7 (S2) | feat/news-thinking-budget-and-refresh | 2026-05-07]
+- S2: `src/components/news/hooks/useNewsPollingWithInvalidation.ts` 신규 훅 생성. `useQueryClient` + 캐시 무효화 로직을 `NewsList.tsx`에서 분리. `NewsList`는 `useNewsPollingWithInvalidation` 단일 호출로 단순화(useState 2개만 유지). `NewsList.test.tsx` mock 대상도 함께 교체(`useNewsCardPolling` → `useNewsPollingWithInvalidation`).
+  - Rule: 단일 책임 — 컴포넌트는 렌더링에 집중, React Query 캐시 무효화 결정은 전용 훅으로 분리
+
 ## [PR #423 Round 6 | feat/news-thinking-budget-and-refresh | 2026-05-07]
 - B1: `src/components/news/sections/NewsList.tsx` — `useCallback(handlePollingComplete)`이 `useNewsCardPolling` 보다 앞에 선언됨. `onCompleteRef = useRef<OnPollingComplete>` 추가 후 `useNewsCardPolling`을 먼저 호출하고, `useCallback` 이후 `useLayoutEffect`로 ref 동기화.
   - Rule: MISTAKES.md #17 — 훅 선언 순서: useState/useRef → useQuery/useMutation 동등 → useCallback/useMemo
 - B2: `src/__tests__/components/news/hooks/useNewsCardPolling.test.tsx` — spy 생성 후 assertion 없음. `expect(errorSpy).toHaveBeenCalledWith(...)` 추가 (신규 테스트 + 기존 pollError 테스트 동일 패턴 모두 수정).
   - Rule: MISTAKES.md Tests #15 — 모든 spy에는 호출 여부 assertion 필요
-- B3: `src/__tests__/components/news/hooks/useNewsCardPolling.test.tsx` — `60_000` 매직 리터럴 3곳, `.toHaveBeenCalledTimes(20)` 2곳. `EMPTY_SNAPSHOT_MAX_POLLS` export 후 `POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS`로 교체.
-  - Rule: MISTAKES.md #15 / Tests #4 — 경계값 상수는 source export 후 import해 동기화
 - S1 (부분 적용): `ensureNewsCardsAnalyzedAction.ts` — `thinkingBudget: 0` → `DISABLED_THINKING_BUDGET` 로컬 상수로 추출. `'use server'` 파일은 async function만 export 가능하여 test import 동기화 불가. GitHub 코멘트로 제약 사유 설명.
 
 

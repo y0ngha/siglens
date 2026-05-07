@@ -1,15 +1,10 @@
 'use client';
 
-import { useCallback, useLayoutEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
-import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/cn';
 import type { NewsDisplayItem } from '@/domain/types';
-import {
-    useNewsCardPolling,
-    type OnPollingComplete,
-} from '@/components/news/hooks/useNewsCardPolling';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { useNewsPollingWithInvalidation } from '@/components/news/hooks/useNewsPollingWithInvalidation';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -288,61 +283,22 @@ interface NewsListProps {
     symbol: string;
 }
 
-function countEnriched(items: NewsDisplayItem[]): number {
-    return items.filter(item => !isPendingAnalysis(item)).length;
-}
-
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-    // Baseline enriched count captured at mount — used to decide whether new
-    // AI-analysed articles arrived so the aggregate analysis is only re-run
-    // when the input actually changed, not on every polling cycle end.
-    //
-    // Stored as state (not a ref) so the symbol-change reset below can use
-    // setState during render without triggering the react-hooks/refs lint rule.
-    const [initialEnrichedCount, setInitialEnrichedCount] = useState(() =>
-        countEnriched(initialItems)
-    );
     // Tracks the last rendered symbol for the render-time reset below.
     // Client-side navigation keeps the component mounted while delivering new
     // initialItems for the new symbol, so we must re-baseline explicitly.
     const [prevSymbol, setPrevSymbol] = useState(symbol);
-    const queryClient = useQueryClient();
-    // Stable holder so useNewsCardPolling (data-fetch hook) can be declared
-    // before useCallback, per MISTAKES.md #17 hook-ordering rule.
-    // Kept current via useLayoutEffect below.
-    const onCompleteRef = useRef<OnPollingComplete | undefined>(undefined);
 
-    // Reset baseline on symbol change — React "store information from previous
-    // renders" pattern. React discards this render and immediately re-renders
-    // with the updated state, so the new symbol's baseline is always current
-    // before any polling callback fires.
     if (prevSymbol !== symbol) {
         setPrevSymbol(symbol);
-        setInitialEnrichedCount(countEnriched(initialItems));
         setVisibleCount(PAGE_SIZE);
     }
 
-    const { items, isPolling, pollError } = useNewsCardPolling(
+    const { items, isPolling, pollError } = useNewsPollingWithInvalidation(
         symbol,
-        initialItems,
-        (finalItems: NewsDisplayItem[]) => onCompleteRef.current?.(finalItems)
+        initialItems
     );
-
-    const handlePollingComplete = useCallback(
-        (finalItems: NewsDisplayItem[]) => {
-            if (countEnriched(finalItems) > initialEnrichedCount) {
-                void queryClient.invalidateQueries({
-                    queryKey: QUERY_KEYS.newsAnalysisPrefix(symbol),
-                });
-            }
-        },
-        [queryClient, symbol, initialEnrichedCount]
-    );
-
-    useLayoutEffect(() => {
-        onCompleteRef.current = handlePollingComplete;
-    }, [handlePollingComplete]);
 
     // Surface persistent polling errors to the nearest error boundary so a
     // dedicated fallback UI can render instead of an indefinitely empty list.
