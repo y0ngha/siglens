@@ -13,6 +13,10 @@ import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAn
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
+import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
+import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
+import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
+import { cancelOverallAnalysisJobAction } from '@/infrastructure/market/cancelOverallAnalysisJobAction';
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
@@ -25,6 +29,19 @@ export interface UseOverallAnalysisReturn {
     state: OverallAnalysisState;
     trigger: () => void;
 }
+
+/**
+ * 현재 진행 중인 job 상태.
+ * pending_dependencies 단계에서는 각 axis jobId를,
+ * overall polling 단계에서는 overall jobId를 추적한다.
+ */
+type CurrentJobs =
+    | {
+          phase: 'dependencies';
+          jobs: Record<OverallAxis, string | undefined>;
+      }
+    | { phase: 'overall'; jobId: string }
+    | null;
 
 const AXIS_ORDER: readonly OverallAxis[] = ['technical', 'fundamental', 'news'];
 
@@ -69,10 +86,13 @@ async function pollDependencyJob(
 async function waitForDependencies(
     initialPendingJobs: Record<OverallAxis, string | undefined>,
     signal: AbortSignal,
-    onProgress: (p: ProgressState) => void
+    onProgress: (p: ProgressState) => void,
+    onJobsUpdate: (jobs: CurrentJobs) => void
 ): Promise<void> {
     let remainingJobs = { ...initialPendingJobs };
     let retryCount = 0;
+
+    onJobsUpdate({ phase: 'dependencies', jobs: remainingJobs });
 
     while (AXIS_ORDER.some(axis => remainingJobs[axis] !== undefined)) {
         throwIfAborted(signal);
@@ -97,6 +117,7 @@ async function waitForDependencies(
         );
 
         retryCount++;
+        onJobsUpdate({ phase: 'dependencies', jobs: remainingJobs });
         onProgress({
             phase: 'pending_dependencies',
             pendingJobs: remainingJobs,
@@ -115,13 +136,21 @@ async function submitUntilReady(
     timeframe: Timeframe,
     modelId: ModelId,
     signal: AbortSignal,
-    onProgress: (p: ProgressState) => void
+    onProgress: (p: ProgressState) => void,
+    onJobsUpdate: (jobs: CurrentJobs) => void,
+    depth = 0
 ): Promise<
     Exclude<
         Awaited<ReturnType<typeof submitOverallAnalysisAction>>,
         { status: 'pending_dependencies' }
     >
 > {
+    if (depth >= 3) {
+        throw new OverallAnalysisError(
+            '의존성 분석이 반복적으로 지연되고 있습니다. 잠시 후 다시 시도해 주세요.'
+        );
+    }
+
     const submitted = await submitOverallAnalysisAction(
         symbol,
         companyName,
@@ -138,7 +167,12 @@ async function submitUntilReady(
         retryCount: 0,
     });
 
-    await waitForDependencies(submitted.pendingJobs, signal, onProgress);
+    await waitForDependencies(
+        submitted.pendingJobs,
+        signal,
+        onProgress,
+        onJobsUpdate
+    );
     throwIfAborted(signal);
 
     // 모든 dependency 완료 후 재submit — 이번엔 pending_dependencies가 반환되지 않는다.
@@ -148,7 +182,9 @@ async function submitUntilReady(
         timeframe,
         modelId,
         signal,
-        onProgress
+        onProgress,
+        onJobsUpdate,
+        depth + 1
     );
 }
 
@@ -158,7 +194,8 @@ async function fetchOverallAnalysis(
     timeframe: Timeframe,
     modelId: ModelId,
     signal: AbortSignal,
-    onProgress: (p: ProgressState) => void
+    onProgress: (p: ProgressState) => void,
+    onJobsUpdate: (jobs: CurrentJobs) => void
 ): Promise<OverallAnalysisResponse> {
     onProgress({ phase: 'submitting' });
 
@@ -168,7 +205,8 @@ async function fetchOverallAnalysis(
         timeframe,
         modelId,
         signal,
-        onProgress
+        onProgress,
+        onJobsUpdate
     );
 
     if (submitted.status === 'cached') return submitted.result;
@@ -189,21 +227,26 @@ async function fetchOverallAnalysis(
     }
 
     const { jobId } = submitted;
+    onJobsUpdate({ phase: 'overall', jobId });
     onProgress({ phase: 'polling' });
 
-    while (!signal.aborted) {
-        await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
-        throwIfAborted(signal);
+    try {
+        while (!signal.aborted) {
+            await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
+            throwIfAborted(signal);
 
-        const polled = await pollOverallAnalysisAction(jobId);
-        throwIfAborted(signal);
+            const polled = await pollOverallAnalysisAction(jobId);
+            throwIfAborted(signal);
 
-        if (polled.status === 'done') return polled.result;
-        if (polled.status === 'error') {
-            throw new OverallAnalysisError(
-                polled.error ?? '분석 중 오류가 발생했습니다.'
-            );
+            if (polled.status === 'done') return polled.result;
+            if (polled.status === 'error') {
+                throw new OverallAnalysisError(
+                    polled.error ?? '분석 중 오류가 발생했습니다.'
+                );
+            }
         }
+    } finally {
+        onJobsUpdate(null);
     }
 
     throw new DOMException('Overall analysis aborted', 'AbortError');
@@ -216,24 +259,21 @@ export function useOverallAnalysis(
     modelId: ModelId
 ): UseOverallAnalysisReturn {
     const queryClient = useQueryClient();
-    const queryKey = QUERY_KEYS.overallAnalysis(
-        symbol,
-        companyName,
-        timeframe,
-        modelId
+    const queryKey = useMemo(
+        () => QUERY_KEYS.overallAnalysis(symbol, companyName, timeframe, modelId),
+        [symbol, companyName, timeframe, modelId]
     );
 
+    // 1. useState
     const [triggered, setTriggered] = useState(false);
     const [progress, setProgress] = useState<ProgressState | null>(null);
 
+    // 2. useRef
     // queryKey를 ref에 캡처해 mount 시 최초 렌더 기준으로 캐시를 확인한다.
     const queryKeyRef = useRef(queryKey);
-    useEffect(() => {
-        if (queryClient.getQueryData(queryKeyRef.current) !== undefined) {
-            setTriggered(true);
-        }
-    }, [queryClient]);
+    const currentJobsRef = useRef<CurrentJobs>(null);
 
+    // 3. useQuery
     const query = useQuery({
         queryKey,
         queryFn: ({ signal }) =>
@@ -243,13 +283,17 @@ export function useOverallAnalysis(
                 timeframe,
                 modelId,
                 signal,
-                setProgress
+                setProgress,
+                jobs => {
+                    currentJobsRef.current = jobs;
+                }
             ),
         enabled: triggered,
         retry: false,
         staleTime: Infinity,
     });
 
+    // 4. Derived variables
     const state = useMemo((): OverallAnalysisState => {
         if (!triggered) return { status: 'idle' };
         if (query.isError) {
@@ -277,6 +321,7 @@ export function useOverallAnalysis(
         return { status: 'submitting' };
     }, [triggered, query.isError, query.error, query.data, progress]);
 
+    // 5. Handlers
     const { refetch } = query;
     const trigger = useCallback(() => {
         setProgress(null);
@@ -286,6 +331,59 @@ export function useOverallAnalysis(
             void refetch();
         }
     }, [triggered, refetch]);
+
+    // 6. useEffect
+    useEffect(() => {
+        if (queryClient.getQueryData(queryKeyRef.current) !== undefined) {
+            setTriggered(true);
+        }
+    }, [queryClient]);
+
+    // symbol, companyName, timeframe, modelId 변경(queryKey 교체) 시, unmount 시
+    // 진행 중인 job을 cancel한다.
+    // fire-and-forget이므로 useMutation 없이 직접 호출한다.
+    useEffect(() => {
+        return () => {
+            const current = currentJobsRef.current;
+            if (current === null) return;
+            currentJobsRef.current = null;
+
+            if (current.phase === 'dependencies') {
+                const { technical, fundamental, news } = current.jobs;
+                if (technical !== undefined)
+                    void cancelAnalysisJobAction(technical).catch(error =>
+                        console.warn(
+                            '[useOverallAnalysis] cancel technical failed',
+                            error
+                        )
+                    );
+                if (fundamental !== undefined)
+                    void cancelFundamentalAnalysisJobAction(
+                        fundamental
+                    ).catch(error =>
+                        console.warn(
+                            '[useOverallAnalysis] cancel fundamental failed',
+                            error
+                        )
+                    );
+                if (news !== undefined)
+                    void cancelNewsAnalysisJobAction(news).catch(error =>
+                        console.warn(
+                            '[useOverallAnalysis] cancel news failed',
+                            error
+                        )
+                    );
+            } else {
+                void cancelOverallAnalysisJobAction(current.jobId).catch(
+                    error =>
+                        console.warn(
+                            '[useOverallAnalysis] cancel overall failed',
+                            error
+                        )
+                );
+            }
+        };
+    }, [queryKey]);
 
     return { state, trigger };
 }

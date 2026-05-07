@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type {
     FundamentalAnalysisResponse,
@@ -8,6 +8,7 @@ import type {
 } from '@y0ngha/siglens-core';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
+import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
@@ -21,7 +22,8 @@ export type FundamentalAnalysisState =
 async function fetchFundamentalAnalysis(
     symbol: string,
     modelId: ModelId,
-    signal: AbortSignal
+    signal: AbortSignal,
+    onJobId: (jobId: string | null) => void
 ): Promise<FundamentalAnalysisResponse> {
     const submitted = await submitFundamentalAnalysisAction(symbol, modelId);
 
@@ -34,15 +36,20 @@ async function fetchFundamentalAnalysis(
         throw new Error(message);
     }
 
-    const { jobId } = submitted;
-    while (!signal.aborted) {
-        await sleep(FUNDAMENTAL_NEWS_POLL_INTERVAL_MS);
-        if (signal.aborted) throw new Error('aborted');
-        const polled = await pollFundamentalAnalysisAction(jobId);
-        if (polled.status === 'done') return polled.result;
-        if (polled.status === 'error') {
-            throw new Error(polled.error ?? '분석 중 오류가 발생했습니다.');
+    onJobId(submitted.jobId);
+    try {
+        const { jobId } = submitted;
+        while (!signal.aborted) {
+            await sleep(FUNDAMENTAL_NEWS_POLL_INTERVAL_MS);
+            if (signal.aborted) break;
+            const polled = await pollFundamentalAnalysisAction(jobId);
+            if (polled.status === 'done') return polled.result;
+            if (polled.status === 'error') {
+                throw new Error(polled.error ?? '분석 중 오류가 발생했습니다.');
+            }
         }
+    } finally {
+        onJobId(null);
     }
     throw new Error('aborted');
 }
@@ -57,25 +64,51 @@ export function useFundamentalAnalysis(
         [symbol, modelId]
     );
 
+    // 1. useRef
+    const currentJobIdRef = useRef<string | null>(null);
+
+    // 2. useQuery
     const query = useQuery({
         queryKey,
         queryFn: ({ signal }) =>
-            fetchFundamentalAnalysis(symbol, modelId, signal),
+            fetchFundamentalAnalysis(symbol, modelId, signal, jobId => {
+                currentJobIdRef.current = jobId;
+            }),
         enabled: false,
         retry: false,
         staleTime: Infinity,
     });
 
+    // 3. Handlers
     const { refetch } = query;
+
+    const retry = useCallback(() => {
+        void refetch();
+    }, [refetch]);
+
+    // 4. useEffect
     useEffect(() => {
         if (queryClient.getQueryData(queryKey) === undefined) {
             void refetch();
         }
     }, [queryClient, queryKey, refetch]);
 
-    const retry = useCallback(() => {
-        void refetch();
-    }, [refetch]);
+    // symbol 또는 modelId 변경(queryKey 교체) 시, unmount 시 진행 중인 job을 cancel한다.
+    // fire-and-forget이므로 useMutation 없이 직접 호출한다.
+    useEffect(() => {
+        return () => {
+            const jobId = currentJobIdRef.current;
+            if (jobId !== null) {
+                currentJobIdRef.current = null;
+                void cancelFundamentalAnalysisJobAction(jobId).catch(error => {
+                    console.warn(
+                        '[useFundamentalAnalysis] cancel failed',
+                        error
+                    );
+                });
+            }
+        };
+    }, [queryKey]);
 
     if (query.isError) {
         return {
