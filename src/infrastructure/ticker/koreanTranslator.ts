@@ -1,7 +1,10 @@
 import { callGeminiChat } from '@/infrastructure/ai/gemini';
 import { parseJsonResponse } from '@/infrastructure/ai/parseJsonResponse';
 import { tryReadTranslatorConfig } from '@/infrastructure/ticker/config';
-import type { TranslatorConfig, TranslatorEntry } from '@/infrastructure/ticker/types';
+import type {
+    TranslatorConfig,
+    TranslatorEntry,
+} from '@/infrastructure/ticker/types';
 
 function buildTranslatePrompt(entries: readonly TranslatorEntry[]): string {
     const entryList = entries.map(e => `- ${e.symbol}: ${e.name}`).join('\n');
@@ -62,7 +65,10 @@ export async function translateCompanyNames(
     if (!config) return {};
 
     try {
-        const text = await callGeminiWithKeyFallback(config, buildTranslatePrompt(entries));
+        const text = await callGeminiWithKeyFallback(
+            config,
+            buildTranslatePrompt(entries)
+        );
         const parsed = parseJsonResponse(text, 'koreanTranslator');
         return isStringRecord(parsed) ? parsed : {};
     } catch {
@@ -77,7 +83,10 @@ export async function translateCompanyDescription(
     if (!config) return null;
 
     try {
-        const text = await callGeminiWithKeyFallback(config, buildDescriptionTranslatePrompt(description));
+        const text = await callGeminiWithKeyFallback(
+            config,
+            buildDescriptionTranslatePrompt(description)
+        );
         return text.trim() || null;
     } catch {
         return null;

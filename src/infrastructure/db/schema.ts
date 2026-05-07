@@ -176,6 +176,22 @@ export const koreanTickers = pgTable('korean_tickers', {
         .$onUpdateFn(nowFn),
 });
 
+/**
+ * Korean company description translations — one row per symbol, populated
+ * lazily on first visit and persisted permanently (no TTL / no deployment eviction).
+ */
+export const profileDescriptionTranslations = pgTable(
+    'profile_description_translations',
+    {
+        symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).primaryKey(),
+        descriptionKo: text('description_ko').notNull(),
+        updatedAt: timestamp('updated_at', { withTimezone: true })
+            .notNull()
+            .defaultNow()
+            .$onUpdateFn(nowFn),
+    }
+);
+
 /** Korean–English asset name translations — keyed by ticker symbol. */
 export const assetTranslations = pgTable('asset_translations', {
     symbol: varchar('symbol', { length: SYMBOL_MAX_LENGTH }).primaryKey(),

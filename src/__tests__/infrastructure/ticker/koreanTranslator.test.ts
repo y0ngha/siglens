@@ -64,11 +64,17 @@ describe('translateCompanyNames', () => {
         expect(callGeminiMock).toHaveBeenCalledTimes(2);
         expect(callGeminiMock).toHaveBeenNthCalledWith(
             1,
-            expect.objectContaining({ serverApiKey: 'free-api-key', thinkingBudget: 0 })
+            expect.objectContaining({
+                serverApiKey: 'free-api-key',
+                thinkingBudget: 0,
+            })
         );
         expect(callGeminiMock).toHaveBeenNthCalledWith(
             2,
-            expect.objectContaining({ serverApiKey: 'server-api-key', thinkingBudget: 0 })
+            expect.objectContaining({
+                serverApiKey: 'server-api-key',
+                thinkingBudget: 0,
+            })
         );
     });
 
@@ -78,7 +84,10 @@ describe('translateCompanyNames', () => {
         await translateCompanyNames([{ symbol: 'AAPL', name: 'Apple Inc.' }]);
         expect(callGeminiMock).toHaveBeenCalledTimes(1);
         expect(callGeminiMock).toHaveBeenCalledWith(
-            expect.objectContaining({ serverApiKey: 'server-api-key', thinkingBudget: 0 })
+            expect.objectContaining({
+                serverApiKey: 'server-api-key',
+                thinkingBudget: 0,
+            })
         );
     });
 
@@ -164,11 +173,17 @@ describe('translateCompanyDescription', () => {
         expect(callGeminiMock).toHaveBeenCalledTimes(2);
         expect(callGeminiMock).toHaveBeenNthCalledWith(
             1,
-            expect.objectContaining({ serverApiKey: 'free-api-key', thinkingBudget: 0 })
+            expect.objectContaining({
+                serverApiKey: 'free-api-key',
+                thinkingBudget: 0,
+            })
         );
         expect(callGeminiMock).toHaveBeenNthCalledWith(
             2,
-            expect.objectContaining({ serverApiKey: 'server-api-key', thinkingBudget: 0 })
+            expect.objectContaining({
+                serverApiKey: 'server-api-key',
+                thinkingBudget: 0,
+            })
         );
     });
 
@@ -185,7 +200,10 @@ describe('translateCompanyDescription', () => {
         await translateCompanyDescription('Description.');
         expect(callGeminiMock).toHaveBeenCalledTimes(1);
         expect(callGeminiMock).toHaveBeenCalledWith(
-            expect.objectContaining({ serverApiKey: 'server-api-key', thinkingBudget: 0 })
+            expect.objectContaining({
+                serverApiKey: 'server-api-key',
+                thinkingBudget: 0,
+            })
         );
     });
 
