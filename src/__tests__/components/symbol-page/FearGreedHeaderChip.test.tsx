@@ -58,4 +58,25 @@ describe('FearGreedHeaderChip', () => {
             expect(container.textContent).not.toContain('ⓘ');
         });
     });
+
+    describe('score rendering', () => {
+        it('rounds and renders the score', () => {
+            const { getByText } = render(
+                <FearGreedHeaderChip snapshot={{ ...make('GREED'), score: 67.4 }} />
+            );
+            expect(getByText('67')).toBeInTheDocument();
+        });
+    });
+
+    describe('aria-label', () => {
+        it('exposes label, score, and confidence note via aria-label', () => {
+            const { container } = render(
+                <FearGreedHeaderChip snapshot={{ ...make('GREED', 'limited'), score: 60.6 }} />
+            );
+            const chip = container.querySelector('[aria-label]');
+            expect(chip?.getAttribute('aria-label')).toBe(
+                '공포·탐욕 지수 탐욕 61점 (신뢰도 제한)'
+            );
+        });
+    });
 });

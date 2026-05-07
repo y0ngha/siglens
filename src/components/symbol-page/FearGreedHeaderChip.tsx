@@ -1,5 +1,3 @@
-'use client';
-
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 
@@ -11,17 +9,7 @@ const LABEL_TEXT: Record<FearGreedSnapshot['label'], string> = {
     EXTREME_GREED: '극탐욕',
 };
 
-/**
- * 5단계 sentiment 컬러 매핑. globals.css의 semantic tokens만 사용.
- *
- * Tokens 출처 (src/app/globals.css):
- * - --color-ui-danger   (#ef5350) → 공포(약세) 시그널
- * - --color-ui-success  (#26a69a) → 탐욕(강세) 시그널
- * - --color-secondary-* (slate)   → 중립 / 데이터 부족 placeholder
- *
- * 강도 차이는 별도 토큰(ui-danger-extreme 등)이 없으므로 alpha 단계
- * (/40 vs /20)로 표현한다. EXTREME = /40, 일반 = /20.
- */
+// alpha /40 vs /20 = EXTREME vs base intensity (no separate extreme tokens in design system).
 const LABEL_BG: Record<FearGreedSnapshot['label'], string> = {
     EXTREME_FEAR: 'bg-ui-danger/40 text-ui-danger',
     FEAR: 'bg-ui-danger/20 text-ui-danger',
@@ -44,18 +32,19 @@ export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
         );
     }
     const score = Math.round(snapshot.score);
+    const confidenceNote = snapshot.confidence === 'limited' ? ' (신뢰도 제한)' : '';
     return (
         <span
             className={cn(
                 'inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium',
                 LABEL_BG[snapshot.label]
             )}
-            aria-label={`공포·탐욕 지수 ${LABEL_TEXT[snapshot.label]} ${score}점`}
+            aria-label={`공포·탐욕 지수 ${LABEL_TEXT[snapshot.label]} ${score}점${confidenceNote}`}
         >
             <span>{LABEL_TEXT[snapshot.label]}</span>
             <span className="font-mono">{score}</span>
             {snapshot.confidence === 'limited' && (
-                <span className="text-secondary-300" aria-hidden>
+                <span className="text-secondary-300" aria-hidden="true">
                     ⓘ
                 </span>
             )}
