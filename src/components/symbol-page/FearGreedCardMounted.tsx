@@ -1,7 +1,7 @@
 'use client';
 
 import { useBars } from '@/components/symbol-page/hooks/useBars';
-import { useFearGreed } from '@/components/symbol-page/hooks/useFearGreed';
+import { useFearGreed } from '@/components/fear-greed/hooks/useFearGreed';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { FearGreedCard } from '@/components/symbol-page/FearGreedCard';
 

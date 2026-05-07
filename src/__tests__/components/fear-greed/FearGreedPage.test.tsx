@@ -25,12 +25,12 @@ jest.mock('@/components/symbol-page/hooks/useBars', () => ({
 }));
 
 const mockUseFearGreed = jest.fn();
-jest.mock('@/components/symbol-page/hooks/useFearGreed', () => ({
+jest.mock('@/components/fear-greed/hooks/useFearGreed', () => ({
     useFearGreed: (...args: unknown[]) => mockUseFearGreed(...args),
 }));
 
 // Mock the chart subcomponent (it uses lightweight-charts and is hard to render under jsdom).
-jest.mock('@/components/fear-greed/FearGreedHistoricalChart', () => ({
+jest.mock('@/components/chart/FearGreedHistoricalChart', () => ({
     FearGreedHistoricalChart: () => null,
 }));
 

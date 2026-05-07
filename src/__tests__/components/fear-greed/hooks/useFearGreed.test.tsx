@@ -3,7 +3,7 @@
  */
 import { renderHook } from '@testing-library/react';
 import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
-import { useFearGreed } from '@/components/symbol-page/hooks/useFearGreed';
+import { useFearGreed } from '@/components/fear-greed/hooks/useFearGreed';
 
 jest.mock('@y0ngha/siglens-core', () => {
     const actual = jest.requireActual('@y0ngha/siglens-core');

@@ -1,4 +1,3 @@
-import type { ReactElement } from 'react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 
 interface FearGreedComparisonGaugesProps {
@@ -18,20 +17,21 @@ const PERIODS: ReadonlyArray<PeriodDef> = [
     { key: '1y', daysBack: 252, label: '1년' },
 ];
 
-const MISSING_VALUE = '—';
-
 /** Renders the 4 historical reference points so the user can compare current sentiment to past windows. */
 // Pure presentational — renders directly inside a Server Component when invoked at RSC level.
 export function FearGreedComparisonGauges({
     history,
-}: FearGreedComparisonGaugesProps): ReactElement | null {
-    const valid = history.filter(p => p.score !== null);
+}: FearGreedComparisonGaugesProps) {
+    const valid = history.filter(
+        (p): p is FearGreedHistoryPoint & { score: number } => p.score !== null
+    );
     if (valid.length === 0) return null;
     const lastIdx = valid.length - 1;
     return (
         <ul className="flex justify-around gap-2 text-center text-xs">
             {PERIODS.map(p => {
                 const point = valid[Math.max(0, lastIdx - p.daysBack)];
+                // valid 배열은 score!==null 필터 통과 요소만 보유. 인덱스도 Math.max로 클램프 → point 항상 정의됨.
                 return (
                     <li
                         key={p.key}
@@ -39,9 +39,7 @@ export function FearGreedComparisonGauges({
                     >
                         <div className="text-secondary-400">{p.label}</div>
                         <div className="text-secondary-100 mt-1 text-base font-semibold tabular-nums">
-                            {point
-                                ? Math.round(point.score as number)
-                                : MISSING_VALUE}
+                            {Math.round(point.score)}
                         </div>
                     </li>
                 );

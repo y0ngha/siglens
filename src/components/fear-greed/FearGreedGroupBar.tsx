@@ -1,4 +1,4 @@
-import type { CSSProperties, ReactElement } from 'react';
+import type { CSSProperties } from 'react';
 import type { FearGreedGroup } from '@y0ngha/siglens-core';
 import {
     FACTOR_LABEL,
@@ -10,9 +10,7 @@ interface FearGreedGroupBarProps {
 }
 
 // Pure presentational — renders directly inside a Server Component when invoked at RSC level.
-export function FearGreedGroupBar({
-    group,
-}: FearGreedGroupBarProps): ReactElement {
+export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
     const score = Math.round(group.score);
     return (
         <section className="bg-secondary-800/40 flex flex-col gap-2 rounded p-3">
@@ -33,7 +31,7 @@ export function FearGreedGroupBar({
                 className="bg-secondary-700/40 relative h-2 overflow-hidden rounded"
             >
                 <div
-                    className="bg-primary-500 h-full w-[var(--bar-width)]"
+                    className="bg-primary-500 h-full w-(--bar-width)"
                     style={{ '--bar-width': `${score}%` } as CSSProperties}
                 />
             </div>

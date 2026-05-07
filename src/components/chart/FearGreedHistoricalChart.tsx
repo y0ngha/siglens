@@ -75,6 +75,7 @@ export function FearGreedHistoricalChart({
                     p.score !== null
             )
             .map(p => ({
+                // FearGreedHistoryPoint.date는 항상 'YYYY-MM-DD' 형식 — lightweight-charts Time(string) 계약 충족.
                 time: p.date as Time,
                 value: p.score,
             }));

@@ -1,5 +1,10 @@
 import type { FearGreedFactorKey, FearGreedLabel } from '@y0ngha/siglens-core';
 
+/** confidence === 'normal' 표시 라벨 — Hero/Card footer 양쪽에서 동일 사용. */
+export const CONFIDENCE_NORMAL_LABEL = '정상 산출';
+/** confidence === 'limited' 표시 라벨 — sampleSize 부족 시 표기. */
+export const CONFIDENCE_LIMITED_LABEL = '신뢰도 제한';
+
 /** Factor key → 한글 표시 라벨. UI는 이 객체로 일관 표시한다. */
 export const FACTOR_LABEL: Record<FearGreedFactorKey, string> = {
     volume_z: '거래량 z (방향성)',

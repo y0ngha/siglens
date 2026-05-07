@@ -31,7 +31,6 @@ export const USER_TIER_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 export const QUERY_KEYS = {
     bars: (symbol: string, timeframe: Timeframe) =>
         ['bars', symbol, timeframe] as const,
-    fearGreed: (symbol: string) => ['fearGreed', symbol] as const,
     tickerSearch: (query: string) => ['ticker-search', query] as const,
     assetInfo: (symbol: string) => ['asset-info', symbol] as const,
     briefing: (jobId: string) => ['briefing', jobId] as const,

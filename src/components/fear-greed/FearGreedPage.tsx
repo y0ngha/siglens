@@ -1,21 +1,22 @@
 'use client';
 
 import { useBars } from '@/components/symbol-page/hooks/useBars';
-import { useFearGreed } from '@/components/symbol-page/hooks/useFearGreed';
+import { useFearGreed } from '@/components/fear-greed/hooks/useFearGreed';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { FearGreedHero } from '@/components/fear-greed/FearGreedHero';
 import { FearGreedComparisonGauges } from '@/components/fear-greed/FearGreedComparisonGauges';
 import { FearGreedGroupBar } from '@/components/fear-greed/FearGreedGroupBar';
-import { FearGreedHistoricalChart } from '@/components/fear-greed/FearGreedHistoricalChart';
+import { FearGreedHistoricalChart } from '@/components/chart/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
+import {
+    CONFIDENCE_NORMAL_LABEL,
+    CONFIDENCE_LIMITED_LABEL,
+} from '@/components/fear-greed/utils/labels';
 
 interface FearGreedPageProps {
     symbol: string;
     fmpSymbol?: string;
 }
-
-const CONFIDENCE_NORMAL_LABEL = '정상 산출';
-const CONFIDENCE_LIMITED_LABEL = '신뢰도 제한';
 
 export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
     const { bars, indicators } = useBars({

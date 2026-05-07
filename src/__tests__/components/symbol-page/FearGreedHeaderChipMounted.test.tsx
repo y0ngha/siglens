@@ -11,7 +11,7 @@ jest.mock('@/components/symbol-page/hooks/useBars', () => ({
     })),
 }));
 
-jest.mock('@/components/symbol-page/hooks/useFearGreed', () => ({
+jest.mock('@/components/fear-greed/hooks/useFearGreed', () => ({
     useFearGreed: jest.fn(() => ({
         snapshot: {
             score: 50,

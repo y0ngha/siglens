@@ -2,13 +2,13 @@ import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
 // labels.ts is the canonical home for fearGreed UI helpers — symbol-page imports it as a consumer.
 import {
+    CONFIDENCE_NORMAL_LABEL,
+    CONFIDENCE_LIMITED_LABEL,
     FACTOR_LABEL,
     SENTIMENT_LABEL_TEXT,
     formatFactorRaw,
 } from '@/components/fear-greed/utils/labels';
 
-const CONFIDENCE_NORMAL_LABEL = '정상 산출';
-const CONFIDENCE_LIMITED_LABEL = '신뢰도 제한';
 const SCORE_LABEL_SEPARATOR = ' — ';
 
 interface FearGreedCardProps {

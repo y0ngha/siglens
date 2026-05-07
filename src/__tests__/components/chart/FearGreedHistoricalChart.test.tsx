@@ -30,7 +30,7 @@ jest.mock(
     { virtual: true }
 );
 
-import { FearGreedHistoricalChart } from '@/components/fear-greed/FearGreedHistoricalChart';
+import { FearGreedHistoricalChart } from '@/components/chart/FearGreedHistoricalChart';
 
 const history: FearGreedHistoryPoint[] = [
     { date: '2026-01-01', score: null, label: null },
