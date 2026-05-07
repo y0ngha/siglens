@@ -4,6 +4,7 @@ import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
+import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import { sleep } from '@/lib/sleep';
 import {
     pollNewsCardAnalysis,
@@ -22,11 +23,10 @@ const POLL_MAX_ATTEMPTS = 30;
  * Submit card analysis for a single item and wait for the worker to finish,
  * then persist the result to DB via `attachAnalysis`.
  *
- * Design: submitNewsCardAnalysis fires a background worker on the first call
- * (`submitted`) and returns the cached result on subsequent calls (`cached`).
- * Previous code only called attachAnalysis on `cached`, so the DB was always
- * one page-load behind. This function polls until done on `submitted` so the
- * DB is populated in the same waitUntil pass.
+ * Caller guarantees that `item` has not been analyzed yet (analyzedAt === null).
+ * The `cached` branch is kept for type compatibility with siglens-core 0.7.11;
+ * it will be removed once siglens-core ≥ 0.7.12 is deployed and the `cached`
+ * variant is dropped from `SubmitNewsCardAnalysisResult`.
  */
 async function analyzeAndPersist(
     item: NewsItem,
@@ -67,6 +67,11 @@ async function analyzeAndPersist(
  * Server Action: fetch fresh FMP news for `symbol`, upsert to DB, and
  * trigger per-card AI analysis for each item — polling until each worker
  * finishes so the result is persisted to DB in the same pass.
+ *
+ * DB-first: items that already have `analyzedAt` set are skipped — the DB
+ * is the primary store for news-card analysis results. This eliminates Redis
+ * result-caching for per-card analyses (siglens-core ≥ 0.7.12 removes the
+ * Redis write on the core side as well).
  *
  * Designed to run inside `waitUntil` so it doesn't block the response stream.
  * Per-item errors are logged and never thrown; other items continue normally.
@@ -116,14 +121,25 @@ export async function ensureNewsCardsAnalyzedAction(
         );
     }
 
-    // Analyze and persist all items in parallel — each polls its own worker.
+    if (fresh.length === 0) return;
+
+    // Read the current DB state after upsert so newly inserted rows are included.
+    const rows = await repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
+    const analyzedIds = new Set(
+        rows.filter(r => r.analyzedAt !== null).map(r => r.id)
+    );
+    const unanalyzed = fresh.filter(item => !analyzedIds.has(item.id));
+
+    if (unanalyzed.length === 0) return;
+
+    // Each item polls its own background worker independently.
     const analyzeSettled = await Promise.allSettled(
-        fresh.map(item => analyzeAndPersist(item, repo))
+        unanalyzed.map(item => analyzeAndPersist(item, repo))
     );
     const analyzeFailures = analyzeSettled.filter(r => r.status === 'rejected');
     if (analyzeFailures.length > 0) {
         console.error(
-            `[ensureNewsCardsAnalyzedAction] ${analyzeFailures.length}/${fresh.length} analyzeAndPersist failed`,
+            `[ensureNewsCardsAnalyzedAction] ${analyzeFailures.length}/${unanalyzed.length} analyzeAndPersist failed`,
             analyzeFailures.map(f =>
                 f.status === 'rejected' ? f.reason : null
             )

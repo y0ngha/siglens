@@ -1,5 +1,6 @@
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
 import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
+import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import {
     submitNewsCardAnalysis,
     pollNewsCardAnalysis,
@@ -40,6 +41,7 @@ jest.mock('@/infrastructure/db/newsRepository', () => ({
     DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
         upsertNewsItem: jest.fn(),
         attachAnalysis: jest.fn(),
+        listBySymbol: jest.fn().mockResolvedValue([]),
     })),
 }));
 
@@ -122,6 +124,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     let mockFetchNews: jest.Mock;
     let mockUpsertNewsItem: jest.Mock;
     let mockAttachAnalysis: jest.Mock;
+    let mockListBySymbol: jest.Mock;
 
     beforeEach(() => {
         jest.clearAllMocks();
@@ -131,6 +134,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockFetchNews = jest.fn();
         mockUpsertNewsItem = jest.fn().mockResolvedValue(undefined);
         mockAttachAnalysis = jest.fn().mockResolvedValue(undefined);
+        mockListBySymbol = jest.fn().mockResolvedValue([]);
 
         MockFmpNewsClient.mockImplementation(
             () => ({ fetchNews: mockFetchNews }) as never
@@ -140,6 +144,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 ({
                     upsertNewsItem: mockUpsertNewsItem,
                     attachAnalysis: mockAttachAnalysis,
+                    listBySymbol: mockListBySymbol,
                 }) as never
         );
     });
@@ -290,12 +295,59 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         expect(mockAttachAnalysis).toHaveBeenCalledTimes(1);
     });
 
+    describe('DB-first 필터링은', () => {
+        it('모든 아이템이 이미 분석 완료(analyzedAt != null)이면 카드 분석을 호출하지 않는다', async () => {
+            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockListBySymbol.mockResolvedValue([
+                { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
+            ]);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockListBySymbol).toHaveBeenCalledWith(
+                'AAPL',
+                NEWS_LOOKBACK_MS
+            );
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+        });
+
+        it('분석 완료된 아이템은 건너뛰고 미분석 아이템만 카드 분석을 호출한다', async () => {
+            mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
+            mockListBySymbol.mockResolvedValue([
+                { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
+                { id: NEWS_ITEM_2.id, analyzedAt: null },
+            ]);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
+
+            await ensureNewsCardsAnalyzedAction('AAPL');
+
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(1);
+            expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith(
+                expect.objectContaining({ item: NEWS_ITEM_2 })
+            );
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalledWith(
+                expect.objectContaining({ item: NEWS_ITEM_1 })
+            );
+        });
+
+        it('listBySymbol 실패 시 에러를 전파한다', async () => {
+            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockListBySymbol.mockRejectedValue(new Error('DB connection lost'));
+
+            await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
+                'DB connection lost'
+            );
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+        });
+    });
+
     it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
         mockFetchNews.mockResolvedValue([]);
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 
         expect(mockUpsertNewsItem).not.toHaveBeenCalled();
+        expect(mockListBySymbol).not.toHaveBeenCalled();
         expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
     });
 });
