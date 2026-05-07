@@ -55,8 +55,10 @@ export function FearGreedComparisonGauges({
     return (
         <ul className="flex flex-wrap items-end justify-around gap-2">
             {PERIODS.map(p => {
-                const point = valid[Math.max(0, lastIdx - p.daysBack)];
-                // valid 배열은 score!==null 필터 통과 요소만 보유. 인덱스도 Math.max로 클램프 → point 항상 정의됨.
+                // 0으로 클램프 — daysBack이 valid 길이를 초과하면 가장 오래된 entry로 폴백.
+                const idx = Math.max(0, lastIdx - p.daysBack);
+                // valid 배열은 score!==null 필터 통과 요소만 보유 → point는 항상 정의됨.
+                const point = valid[idx];
                 const score = Math.round(point.score);
                 const label = point.label ?? classifyScore(score);
                 return (

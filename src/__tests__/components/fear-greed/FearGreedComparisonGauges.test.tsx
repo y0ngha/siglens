@@ -27,15 +27,15 @@ describe('FearGreedComparisonGauges', () => {
             expect(getByText('1주')).toBeInTheDocument();
             expect(getByText('1개월')).toBeInTheDocument();
             expect(getByText('1년')).toBeInTheDocument();
-            // 4 mini gauges — each must show a rounded numeric score in a tabular-nums div
-            const scoreNodes = container.querySelectorAll('.tabular-nums');
-            expect(scoreNodes).toHaveLength(4);
-            scoreNodes.forEach(node => {
-                expect(node.textContent).toMatch(/^\d+$/);
-            });
-            // 4 mini gauges → 4 SVG role="img" elements
+            // 4 mini gauges → 4 SVG with role="img"; each aria-label encodes the
+            // period label + score so screen-reader users distinguish them.
             const svgs = container.querySelectorAll('svg[role="img"]');
             expect(svgs).toHaveLength(4);
+            svgs.forEach(svg => {
+                expect(svg.getAttribute('aria-label')).toMatch(
+                    /공포·탐욕 지수 \d+점/
+                );
+            });
         });
     });
 
