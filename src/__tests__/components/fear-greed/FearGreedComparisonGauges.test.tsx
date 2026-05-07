@@ -16,23 +16,26 @@ function makeHistory(scores: Array<number | null>): FearGreedHistoryPoint[] {
 
 describe('FearGreedComparisonGauges', () => {
     describe('with sufficient history', () => {
-        it('renders 4 tiles with rounded scores', () => {
+        it('renders 4 mini gauges with rounded scores and period labels', () => {
             const history = makeHistory(
                 Array.from({ length: 300 }, (_, i) => 50 + (i % 20))
             );
             const { getByText, container } = render(
                 <FearGreedComparisonGauges history={history} />
             );
-            expect(getByText('Now')).toBeInTheDocument();
+            expect(getByText('현재')).toBeInTheDocument();
             expect(getByText('1주')).toBeInTheDocument();
             expect(getByText('1개월')).toBeInTheDocument();
             expect(getByText('1년')).toBeInTheDocument();
-            // 4 tiles — each must show a rounded numeric score
+            // 4 mini gauges — each must show a rounded numeric score in a tabular-nums div
             const scoreNodes = container.querySelectorAll('.tabular-nums');
             expect(scoreNodes).toHaveLength(4);
             scoreNodes.forEach(node => {
                 expect(node.textContent).toMatch(/^\d+$/);
             });
+            // 4 mini gauges → 4 SVG role="img" elements
+            const svgs = container.querySelectorAll('svg[role="img"]');
+            expect(svgs).toHaveLength(4);
         });
     });
 

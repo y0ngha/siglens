@@ -1,4 +1,6 @@
-import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
+import type { FearGreedHistoryPoint, FearGreedLabel } from '@y0ngha/siglens-core';
+import { FearGreedGauge } from './FearGreedGauge';
+import { cn } from '@/lib/cn';
 
 interface FearGreedComparisonGaugesProps {
     history: FearGreedHistoryPoint[];
@@ -15,13 +17,29 @@ const TRADING_DAYS_1M = 21;
 const TRADING_DAYS_1Y = 252;
 
 const PERIODS: ReadonlyArray<PeriodDef> = [
-    { key: 'now', daysBack: 0, label: 'Now' },
+    { key: 'now', daysBack: 0, label: '현재' },
     { key: '1w', daysBack: TRADING_DAYS_1W, label: '1주' },
     { key: '1m', daysBack: TRADING_DAYS_1M, label: '1개월' },
     { key: '1y', daysBack: TRADING_DAYS_1Y, label: '1년' },
 ];
 
-/** Renders the 4 historical reference points so the user can compare current sentiment to past windows. */
+/**
+ * Score → 5단계 sentiment label classifier. Used as a fallback when a history
+ * point lacks `label` (older payloads may be score-only).
+ *
+ * Boundaries match @y0ngha/siglens-core's labelOf: [0,25) EXTREME_FEAR,
+ * [25,45) FEAR, [45,55) NEUTRAL, [55,75) GREED, [75,100] EXTREME_GREED.
+ */
+function classifyScore(score: number): FearGreedLabel {
+    if (score < 25) return 'EXTREME_FEAR';
+    if (score < 45) return 'FEAR';
+    if (score < 55) return 'NEUTRAL';
+    if (score < 75) return 'GREED';
+    return 'EXTREME_GREED';
+}
+
+/** Renders the 4 historical reference points as CNN-style mini gauges so the user
+ *  can compare current sentiment to past windows visually (not just numerically). */
 // Pure presentational — renders directly inside a Server Component when invoked at RSC level.
 export function FearGreedComparisonGauges({
     history,
@@ -32,19 +50,28 @@ export function FearGreedComparisonGauges({
     if (valid.length === 0) return null;
     const lastIdx = valid.length - 1;
     return (
-        <ul className="flex justify-around gap-2 text-center text-xs">
+        <ul className="flex flex-wrap items-end justify-around gap-2">
             {PERIODS.map(p => {
                 const point = valid[Math.max(0, lastIdx - p.daysBack)];
                 // valid 배열은 score!==null 필터 통과 요소만 보유. 인덱스도 Math.max로 클램프 → point 항상 정의됨.
+                const score = Math.round(point.score);
+                const label = point.label ?? classifyScore(score);
                 return (
                     <li
                         key={p.key}
-                        className="bg-secondary-800/40 flex-1 rounded p-2"
+                        className={cn(
+                            'flex-1 min-w-[100px] rounded-lg border p-1',
+                            p.key === 'now'
+                                ? 'border-primary-500/40'
+                                : 'border-secondary-700/40'
+                        )}
                     >
-                        <div className="text-secondary-400">{p.label}</div>
-                        <div className="text-secondary-100 mt-1 text-base font-semibold tabular-nums">
-                            {Math.round(point.score)}
-                        </div>
+                        <FearGreedGauge
+                            score={score}
+                            label={label}
+                            size="mini"
+                            periodLabel={p.label}
+                        />
                     </li>
                 );
             })}
