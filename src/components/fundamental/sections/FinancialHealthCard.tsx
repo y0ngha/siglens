@@ -31,7 +31,13 @@ interface HealthMetricProps {
     tooltip?: string;
 }
 
-function HealthMetric({ label, value, hint, badge, tooltip }: HealthMetricProps) {
+function HealthMetric({
+    label,
+    value,
+    hint,
+    badge,
+    tooltip,
+}: HealthMetricProps) {
     const badgeClass =
         badge === undefined ? '' : BADGE_VARIANT_CLASS[badge.variant];
 

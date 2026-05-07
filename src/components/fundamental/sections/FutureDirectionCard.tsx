@@ -189,7 +189,8 @@ export function FutureDirectionCard({
                             <dt className="text-secondary-400 text-xs">
                                 EPS 컨센서스
                                 <InfoTooltip>
-                                    애널리스트 EPS 평균 추정치. 실제 발표와 비교해 어닝 서프라이즈를 가늠
+                                    애널리스트 EPS 평균 추정치. 실제 발표와
+                                    비교해 어닝 서프라이즈를 가늠
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
@@ -223,21 +224,31 @@ export function FutureDirectionCard({
                             (
                                 [
                                     ['하단', ptConsensus.targetLow, undefined],
-                                    ['중앙값', ptConsensus.targetMedian, undefined],
+                                    [
+                                        '중앙값',
+                                        ptConsensus.targetMedian,
+                                        undefined,
+                                    ],
                                     [
                                         '컨센서스',
                                         ptConsensus.targetConsensus,
                                         '애널리스트 목표주가 하단·중앙·상단 범위',
                                     ],
                                     ['상단', ptConsensus.targetHigh, undefined],
-                                ] as [string, number | null, string | undefined][]
+                                ] as [
+                                    string,
+                                    number | null,
+                                    string | undefined,
+                                ][]
                             ) // 위 리터럴 entries가 항상 [라벨, ptConsensus 필드, tooltip?] 튜플이므로 narrowing 안전.
                                 .map(([label, val, tooltip]) => (
                                     <div key={label}>
                                         <dt className="text-secondary-400 text-xs">
                                             {label}
                                             {tooltip !== undefined && (
-                                                <InfoTooltip>{tooltip}</InfoTooltip>
+                                                <InfoTooltip>
+                                                    {tooltip}
+                                                </InfoTooltip>
                                             )}
                                         </dt>
                                         <dd className="font-mono text-sm font-medium tabular-nums">

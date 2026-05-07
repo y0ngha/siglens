@@ -15,7 +15,13 @@ interface MetricRowProps {
     tooltip?: string;
 }
 
-function MetricRow({ label, value, description, digits = 2, tooltip }: MetricRowProps) {
+function MetricRow({
+    label,
+    value,
+    description,
+    digits = 2,
+    tooltip,
+}: MetricRowProps) {
     const formatted =
         value !== null
             ? new Intl.NumberFormat('ko-KR', {

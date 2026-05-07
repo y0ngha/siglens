@@ -27,7 +27,9 @@ function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
             <div className="flex items-baseline justify-between gap-2">
                 <div>
                     <span className="text-sm font-medium">{label}</span>
-                    {tooltip !== undefined && <InfoTooltip>{tooltip}</InfoTooltip>}
+                    {tooltip !== undefined && (
+                        <InfoTooltip>{tooltip}</InfoTooltip>
+                    )}
                     <span className="text-secondary-400 ml-1.5 text-xs">
                         {description}
                     </span>
