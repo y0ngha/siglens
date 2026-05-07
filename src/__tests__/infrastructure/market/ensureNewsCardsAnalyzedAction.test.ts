@@ -304,7 +304,10 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
-            expect(mockListBySymbol).toHaveBeenCalledWith('AAPL', NEWS_LOOKBACK_MS);
+            expect(mockListBySymbol).toHaveBeenCalledWith(
+                'AAPL',
+                NEWS_LOOKBACK_MS
+            );
             expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
         });
 

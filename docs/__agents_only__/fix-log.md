@@ -1,5 +1,19 @@
 # Fix Log
 
+## [PR #425 Round 2 | refactor/news-card-db-first | 2026-05-07]
+
+- B1: Added expect(mockListBySymbol).toHaveBeenCalledWith('AAPL', NEWS_LOOKBACK_MS) assertion to "모든 아이템이 이미 분석 완료" test. Added NEWS_LOOKBACK_MS import from @/infrastructure/market/newsLookback.
+- Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths requires explicit assertions verifying the expected function calls and arguments
+- Context: DB-first filtering test enhanced to verify that listBySymbol was called with correct symbol and lookback parameters, ensuring the filtering logic correctly queries the database
+
+- S1: Added listBySymbol: jest.fn().mockResolvedValue([]) to module-level DrizzleNewsRepository mock factory.
+- Rule: MISTAKES.md Tests §6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
+- Context: MockNewsRepository now includes the listBySymbol method mock to cover all DB queries used by ensureNewsCardsAnalyzedAction
+
+- S2: Added if (fresh.length === 0) return; early return before repo.listBySymbol() call in ensureNewsCardsAnalyzedAction.ts. Added expect(mockListBySymbol).not.toHaveBeenCalled() to '뉴스가 없으면' test.
+- Rule: MISTAKES.md Coding Paradigm §1 / Performance — skip unnecessary DB queries when input data is empty; guard expensive operations with early returns
+- Context: When no fresh news items exist, skip the DB lookup entirely; test verifies the optimization by asserting listBySymbol was never called
+
 ## [PR #423 Round 7 (S2) | feat/news-thinking-budget-and-refresh | 2026-05-07]
 - S2: `src/components/news/hooks/useNewsPollingWithInvalidation.ts` 신규 훅 생성. `useQueryClient` + 캐시 무효화 로직을 `NewsList.tsx`에서 분리. `NewsList`는 `useNewsPollingWithInvalidation` 단일 호출로 단순화(useState 2개만 유지). `NewsList.test.tsx` mock 대상도 함께 교체(`useNewsCardPolling` → `useNewsPollingWithInvalidation`).
   - Rule: 단일 책임 — 컴포넌트는 렌더링에 집중, React Query 캐시 무효화 결정은 전용 훅으로 분리
