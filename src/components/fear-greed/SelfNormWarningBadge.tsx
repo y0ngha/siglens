@@ -22,7 +22,6 @@ export function SelfNormWarningBadge({
     return (
         <span
             role="status"
-            aria-live="polite"
             className={cn(
                 'bg-ui-warning/10 text-ui-warning border-ui-warning/30 inline-flex items-center gap-1 rounded border px-2 py-0.5 text-xs',
                 className

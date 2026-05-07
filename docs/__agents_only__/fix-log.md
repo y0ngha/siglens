@@ -1,5 +1,15 @@
 # Fix Log
 
+## [PR #428 Round 4 | feat/per-stock-fear-greed-ui | 2026-05-08]
+- B1: `src/components/symbol-page/CrossLinkCards.tsx` — master 머지 conflict marker(`<<<<<<<`/`=======`/`>>>>>>>`) 미해소로 빌드 실패. 사용자 지시에 따라 `fundamental: '펀더멘털 분석'`(master 측) 채택 + `'fear-greed': '공포·탐욕 지수'` 보존.
+  - Rule: 머지 conflict marker는 어떤 경우에도 커밋되어선 안 됨. TypeScript 파서가 인식 불가 → 컴파일 실패.
+- B2: `src/components/fear-greed/FearGreedComparisonGauges.tsx`, `FearGreedHero.tsx` — 상대 경로 `'./FearGreedGauge'` → path alias `'@/components/fear-greed/FearGreedGauge'`.
+  - Rule: MISTAKES.md §7.6 / Components §0.1 — import는 `@/` path alias만 사용. 상대 경로 금지.
+- S1: 5단계 sentiment 분류 임계값(25/45/55/75)을 `FEAR_GREED_SCORE_BOUNDARIES` 상수로 `utils/labels.ts`에 추출. `FearGreedGroupBar.tsx`/`FearGreedComparisonGauges.tsx` 두 곳의 `classifyScore` 함수에서 import해 사용. 함수 본문 자체는 의도적으로 duplicate 유지(이전 라운드 결정 — 3 call site가 추출 임계값).
+  - Rule: MISTAKES.md §15 — 매직 넘버는 module-level 상수로 추출하고 단일 source of truth 유지.
+- S2: `src/components/fear-greed/SelfNormWarningBadge.tsx` — `aria-live="polite"` 제거. `role="status"`가 WAI-ARIA 명세상 `aria-live="polite"`를 묵시적으로 포함.
+  - Rule: 중복된 ARIA 속성 제거 — implicit semantic은 명시하지 않음.
+
 ## [PR #426 Round 1 | feat/fundamental-info-tooltips-mobile-fixes | 2026-05-07]
 - B1: `ValuationCard.tsx`, `ProfitabilityCard.tsx`, `FinancialHealthCard.tsx`, `FutureDirectionCard.tsx` — `'use client'` 불필요하게 추가됨. RSC가 Client Component 자식을 렌더링할 때 부모에 `'use client'`가 필요 없음. 4개 파일에서 모두 제거.
   - Rule: `'use client'`는 해당 컴포넌트 자체가 hooks/event handler/browser API를 사용할 때만 선언. Client Component를 import하는 RSC 부모는 directive 불필요.

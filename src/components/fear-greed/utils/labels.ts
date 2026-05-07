@@ -1,5 +1,21 @@
 import type { FearGreedFactorKey, FearGreedLabel } from '@y0ngha/siglens-core';
 
+/**
+ * Score boundary thresholds for the 5-stage sentiment classifier — single
+ * source of truth shared between FearGreedGroupBar and FearGreedComparisonGauges.
+ * Must match `@y0ngha/siglens-core`'s `labelOf` and the gauge SEGMENTS.
+ *
+ * Semantics: [0, EXTREME_FEAR_MAX) → EXTREME_FEAR, [EXTREME_FEAR_MAX, FEAR_MAX)
+ * → FEAR, [FEAR_MAX, NEUTRAL_MAX) → NEUTRAL, [NEUTRAL_MAX, GREED_MAX) → GREED,
+ * [GREED_MAX, 100] → EXTREME_GREED.
+ */
+export const FEAR_GREED_SCORE_BOUNDARIES = {
+    EXTREME_FEAR_MAX: 25,
+    FEAR_MAX: 45,
+    NEUTRAL_MAX: 55,
+    GREED_MAX: 75,
+} as const;
+
 /** confidence === 'normal' 표시 라벨 — Hero/Card footer 양쪽에서 동일 사용. */
 export const CONFIDENCE_NORMAL_LABEL = '정상 산출';
 /** confidence === 'limited' 표시 라벨 — sampleSize 부족 시 표기. */
