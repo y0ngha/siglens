@@ -1,6 +1,6 @@
-import type { CSSProperties } from 'react';
-import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
+import type { CSSProperties, ReactNode } from 'react';
 
 interface ProfitabilityCardProps {
     ratios: FundamentalRatiosInput;
@@ -10,7 +10,7 @@ interface MetricBarProps {
     label: string;
     value: number | null;
     description: string;
-    tooltip?: string;
+    tooltip?: ReactNode;
 }
 
 function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
@@ -43,7 +43,7 @@ function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
                     className="bg-secondary-700 mt-1.5 h-1.5 w-full overflow-hidden rounded-full"
                 >
                     <div
-                        className="bg-primary-600 h-full w-[var(--fill-pct)] rounded-full transition-all"
+                        className="bg-primary-600 h-full w-(--fill-pct) rounded-full transition-all"
                         style={
                             {
                                 '--fill-pct': `${fillPct}%`,
@@ -73,25 +73,68 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
                     label="ROE"
                     value={ratios.returnOnEquityTTM}
                     description="자기자본이익률"
-                    tooltip="자기자본이익률. 주주 자본 대비 순이익 비율"
+                    tooltip={
+                        <>
+                            <p>
+                                주주가 투자한 돈으로 얼마만큼 이익을 냈는지
+                                보여주는 비율이에요.
+                            </p>
+                            <p>
+                                15% 이상이면 우수, 10~15%면 양호, 그 아래면
+                                평범한 수준으로 봐요.
+                            </p>
+                        </>
+                    }
                 />
                 <MetricBar
                     label="ROA"
                     value={ratios.returnOnAssetsTTM}
                     description="총자산이익률"
-                    tooltip="총자산이익률. 자산 전체 활용 효율성 지표"
+                    tooltip={
+                        <>
+                            <p>
+                                회사가 가진 자산 전체로 얼마만큼 이익을 냈는지
+                                보여주는 비율이에요.
+                            </p>
+                            <p>
+                                자산을 얼마나 효율적으로 굴리는지 알 수 있고, 5%
+                                이상이면 양호한 편이에요.
+                            </p>
+                        </>
+                    }
                 />
                 <MetricBar
                     label="영업이익률"
                     value={ratios.operatingProfitMarginTTM}
                     description="Operating Margin"
-                    tooltip="매출 대비 영업이익 비율. 핵심 사업 수익성"
+                    tooltip={
+                        <>
+                            <p>
+                                매출 100원당 본업으로 몇 원이 남는지 보여주는
+                                비율이에요.
+                            </p>
+                            <p>
+                                핵심 사업의 체력을 가장 잘 드러내고, 높을수록
+                                사업이 탄탄하다는 뜻이에요.
+                            </p>
+                        </>
+                    }
                 />
                 <MetricBar
                     label="순이익률"
                     value={ratios.netProfitMarginTTM}
                     description="Net Margin"
-                    tooltip="매출 대비 순이익 비율. 전체 비용 차감 후 실질 수익성"
+                    tooltip={
+                        <>
+                            <p>
+                                매출 100원에서 모든 비용·세금을 뺐을 때 실제로
+                                몇 원이 남는지 보여줘요.
+                            </p>
+                            <p>
+                                회사의 최종 수익성을 한눈에 보여주는 지표예요.
+                            </p>
+                        </>
+                    }
                 />
             </div>
         </section>
