@@ -1,5 +1,6 @@
-import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
+import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { SENTIMENT_LABEL_TEXT } from '@/components/fear-greed/utils/labels';
+import { cn } from '@/lib/cn';
 
 interface FearGreedHeroProps {
     snapshot: FearGreedSnapshot;
@@ -31,22 +32,49 @@ const SEGMENTS: ReadonlyArray<SegmentDef> = [
     { from: 75, to: 100, strokeClass: 'text-ui-success' },
 ];
 
+/** Sentiment-label → focal-stack text color (semantic tokens only). */
+const SENTIMENT_TEXT_COLOR: Record<FearGreedLabel, string> = {
+    EXTREME_FEAR: 'text-ui-danger',
+    FEAR: 'text-ui-warning',
+    NEUTRAL: 'text-secondary-300',
+    GREED: 'text-ui-success/80',
+    EXTREME_GREED: 'text-ui-success',
+};
+
 const GAUGE_CX = 100;
-const GAUGE_CY = 100;
+// Slight top padding so tick labels above the arc still fit the viewBox.
+const GAUGE_CY = 105;
 const GAUGE_RADIUS = 80;
 const GAUGE_STROKE_WIDTH = 14;
-const GAUGE_INDICATOR_RADIUS = 6;
 const GAUGE_VIEWBOX_W = 200;
-const GAUGE_VIEWBOX_H = 110;
+// Bumped from 110 → 130 to fit tick labels rendered outside the arc.
+const GAUGE_VIEWBOX_H = 130;
+
+/** Triangular needle geometry — drawn at angle=0 and rotated to score angle. */
+const NEEDLE_TIP_LEN = 4;
+const NEEDLE_HALF_WIDTH = 6;
+const NEEDLE_INNER_GAP = 12;
+
+/** Tick label radial offset outside the arc. */
+const TICK_LABEL_RADIUS = GAUGE_RADIUS + 16;
+const TICK_VALUES: ReadonlyArray<number> = [0, 25, 50, 75, 100];
 
 /** Hero semicircle gauge for the fearGreed page. 0=left/EXTREME_FEAR, 100=right/EXTREME_GREED. */
 export function FearGreedHero({ snapshot }: FearGreedHeroProps) {
     const score = Math.round(snapshot.score);
-    // 좌측 끝(EXTREME_FEAR)부터 우측 끝(EXTREME_GREED)으로 진행하는 반원 — 점수가
-    // 높을수록 indicator가 오른쪽으로 이동하도록 score=100을 angle=0(가장 우측)에 매핑.
-    const angle = (1 - score / 100) * Math.PI;
-    const px = GAUGE_CX + GAUGE_RADIUS * Math.cos(angle);
-    const py = GAUGE_CY - GAUGE_RADIUS * Math.sin(angle);
+    // 0 → +180°(좌측), 100 → 0°(우측). 정적 needle을 우측 기준으로 그린 뒤 -score*1.8°
+    // 만큼 회전(시계 반대 방향, SVG 좌표계에서 음수 각도)시켜 위치를 잡는다.
+    const rotateDeg = -score * 1.8;
+
+    // Static needle points at angle = 0 (rightmost). Rotated by <g transform=…>.
+    const tipR = GAUGE_RADIUS + NEEDLE_TIP_LEN;
+    const baseR = NEEDLE_INNER_GAP;
+    const tipX = GAUGE_CX + tipR;
+    const tipY = GAUGE_CY;
+    const baseLeftX = GAUGE_CX + baseR;
+    const baseLeftY = GAUGE_CY - NEEDLE_HALF_WIDTH;
+    const baseRightX = GAUGE_CX + baseR;
+    const baseRightY = GAUGE_CY + NEEDLE_HALF_WIDTH;
 
     return (
         <div className="flex flex-col items-center gap-2">
@@ -74,20 +102,55 @@ export function FearGreedHero({ snapshot }: FearGreedHeroProps) {
                         />
                     );
                 })}
+                {TICK_VALUES.map(value => {
+                    const a = (1 - value / 100) * Math.PI;
+                    const lx = GAUGE_CX + TICK_LABEL_RADIUS * Math.cos(a);
+                    const ly = GAUGE_CY - TICK_LABEL_RADIUS * Math.sin(a);
+                    return (
+                        <text
+                            key={value}
+                            x={lx}
+                            y={ly}
+                            textAnchor="middle"
+                            dominantBaseline="middle"
+                            className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
+                        >
+                            {value}
+                        </text>
+                    );
+                })}
+                <g
+                    transform={`rotate(${rotateDeg} ${GAUGE_CX} ${GAUGE_CY})`}
+                    className="motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out"
+                    style={{
+                        transformOrigin: `${GAUGE_CX}px ${GAUGE_CY}px`,
+                    }}
+                >
+                    <polygon
+                        points={`${tipX},${tipY} ${baseLeftX},${baseLeftY} ${baseRightX},${baseRightY}`}
+                        className="fill-secondary-100"
+                    />
+                </g>
                 <circle
-                    cx={px}
-                    cy={py}
-                    r={GAUGE_INDICATOR_RADIUS}
+                    cx={GAUGE_CX}
+                    cy={GAUGE_CY}
+                    r={4}
                     className="fill-secondary-100"
                 />
             </svg>
             <div className="text-center">
-                <div className="text-secondary-100 text-3xl font-bold tabular-nums">
+                <div className="text-secondary-100 text-5xl font-bold tabular-nums">
                     {score}
                 </div>
-                <div className="text-secondary-300 text-sm">
-                    / 100 — {SENTIMENT_LABEL_TEXT[snapshot.label]}
+                <div
+                    className={cn(
+                        'text-2xl font-semibold tracking-tight',
+                        SENTIMENT_TEXT_COLOR[snapshot.label]
+                    )}
+                >
+                    {SENTIMENT_LABEL_TEXT[snapshot.label]}
                 </div>
+                <div className="text-secondary-400 text-xs">/ 100</div>
             </div>
         </div>
     );
