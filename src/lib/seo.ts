@@ -361,7 +361,7 @@ export function buildSymbolFearGreedSeoContent(
     const upper = symbol.toUpperCase();
     const subject = opts.displayName ?? upper;
     // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
-    const title = `${subject} (${upper}) 공포·탐욕 지수`;
+    const title = `${upper} 공포·탐욕 지수 — 0~100 점수와 5단계 sentiment`;
     const fullTitle = `${title} | ${SITE_NAME}`;
     return {
         ticker: upper,
