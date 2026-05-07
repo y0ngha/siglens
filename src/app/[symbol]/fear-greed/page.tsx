@@ -46,6 +46,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
+    queryClient.setQueryData(QUERY_KEYS.assetInfo(ticker), assetInfo);
     await queryClient.prefetchQuery({
         queryKey: QUERY_KEYS.bars(ticker, DEFAULT_TIMEFRAME),
         queryFn: () =>
@@ -54,7 +55,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <FearGreedPage symbol={ticker} fmpSymbol={assetInfo.fmpSymbol} />
+            <FearGreedPage symbol={ticker} />
         </HydrationBoundary>
     );
 }

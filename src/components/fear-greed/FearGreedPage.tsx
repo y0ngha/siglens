@@ -1,8 +1,5 @@
-'use client';
-
 interface FearGreedPageProps {
     symbol: string;
-    fmpSymbol?: string;
 }
 
 /** Temporary stub — Task 13 will replace with the full composition. */
