@@ -225,6 +225,13 @@
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained
 - Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
 
+## [PR #425 Round 3 | refactor/news-card-db-first | 2026-05-07]
+- S1: Added "listBySymbol 실패 시 에러를 전파한다" test case inside "DB-first 필터링은" describe block. Verifies that listBySymbol rejection propagates (fail-fast design for DB-wide outage detection).
+  - Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths
+  - Context: Ensures error handling path is exercised when DB query fails; confirm that rejection surfaces to caller instead of being silently swallowed
+- S2: Updated comment at ensureNewsCardsAnalyzedAction.ts line 135 from "Analyze and persist unanalyzed items in parallel — each polls its own worker." to "Each item polls its own background worker independently." (removed WHAT prefix, kept WHY context).
+  - Rule: Comments should explain WHY, not redundantly describe WHAT the code already shows
+
 ## [PR #425 Round 1 | refactor/news-card-db-first | 2026-05-07]
 - B1: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing mockListBySymbol mock setup in beforeEach. Added `mockListBySymbol = jest.fn().mockResolvedValue([])` and `listBySymbol: mockListBySymbol` to MockNewsRepository.mockImplementation. Default empty array keeps all existing tests passing (all items treated as unanalyzed).
   - Rule: MISTAKES.md Tests #6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
