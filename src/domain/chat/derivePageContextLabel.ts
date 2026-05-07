@@ -20,7 +20,7 @@ const SYMBOL_PATH_RE = /^\/([A-Z.]{1,8})(\/(fundamental|news|overall))?$/i;
 type SymbolSubpage = 'fundamental' | 'news' | 'overall';
 
 const SUBPAGE_LABEL: Record<SymbolSubpage, string> = {
-    fundamental: '펀더 분석',
+    fundamental: '펀더멘털 분석',
     news: '뉴스 분석',
     overall: 'AI 종합 분석',
 };

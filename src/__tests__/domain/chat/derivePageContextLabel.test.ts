@@ -16,8 +16,8 @@ describe('deriveLabel', () => {
     });
 
     describe('sub-pages', () => {
-        it('/AAPL/fundamental → 펀더 분석', () => {
-            expect(deriveLabel('/AAPL/fundamental')).toBe('펀더 분석');
+        it('/AAPL/fundamental → 펀더멘털 분석', () => {
+            expect(deriveLabel('/AAPL/fundamental')).toBe('펀더멘털 분석');
         });
 
         it('/AAPL/news → 뉴스 분석', () => {
@@ -28,8 +28,8 @@ describe('deriveLabel', () => {
             expect(deriveLabel('/AAPL/overall')).toBe('AI 종합 분석');
         });
 
-        it('case-insensitive sub-page /AAPL/FUNDAMENTAL → 펀더 분석', () => {
-            expect(deriveLabel('/AAPL/FUNDAMENTAL')).toBe('펀더 분석');
+        it('case-insensitive sub-page /AAPL/FUNDAMENTAL → 펀더멘털 분석', () => {
+            expect(deriveLabel('/AAPL/FUNDAMENTAL')).toBe('펀더멘털 분석');
         });
     });
 
