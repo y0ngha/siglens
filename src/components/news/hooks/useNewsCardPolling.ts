@@ -26,7 +26,7 @@ const REFRESH_SNAPSHOT_MIN_POLLS = 5;
  * pending cards, we never poll beyond 5 minutes to avoid unbounded background
  * work in long-lived tabs.
  */
-const MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
+export const MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
 
 function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     return items.some(

@@ -1,12 +1,14 @@
 # Fix Log
 
+## [PR #423 Round 4 | feat/news-thinking-budget-and-refresh | 2026-05-07]
+- B1: `src/components/news/hooks/useNewsCardPolling.ts` — `MAX_POLL_DURATION_MS`가 export되지 않아 테스트에서 `300_000` 매직 리터럴 사용. `const` → `export const`로 변경하고 테스트에서 import.
+  - Rule: MISTAKES.md Tests §4 / §15 — 경계값 상수는 source에서 export 후 테스트에서 import해 동기화 유지
+- B2: `src/components/news/sections/NewsList.tsx` — `countEnriched`가 `sentiment !== null && priceImpact !== null` 조건을 직접 작성해 같은 파일의 `isPendingAnalysis`와 로직 중복. `!isPendingAnalysis(item)` 재사용으로 교체.
+  - Rule: MISTAKES.md §1 — 기존 헬퍼 확인 후 재사용; 조건 분산 시 silent divergence 위험
+
 ## [PR #423 Round 3 | feat/news-thinking-budget-and-refresh | 2026-05-07]
 - B1: `src/__tests__/components/news/NewsList.test.tsx` — `useQueryClient()` 추가로 `QueryClientProvider` 없이 렌더 시 `NoQueryClientSetError` 발생. `renderWithClient` 헬퍼 함수 추가, 전체 `render()` 호출을 교체.
   - Rule: MISTAKES.md Tests — React Query 훅을 사용하는 컴포넌트 테스트는 QueryClientProvider로 감싸야 함
-- S1a: `src/__tests__/components/news/hooks/useNewsCardPolling.test.tsx` — 분석 완료 경로(`onPollingComplete` 정상 호출) 테스트 추가.
-  - Rule: MISTAKES.md Infrastructure 2 — 신규 코드 경로는 테스트로 커버
-- S1b: `src/__tests__/components/news/hooks/useNewsCardPolling.test.tsx` — 타임아웃 경로(아이템 있을 때 `onPollingComplete` 호출) 테스트 추가.
-  - Rule: MISTAKES.md Infrastructure 2 — 신규 코드 경로는 테스트로 커버
 - S2: `src/components/news/sections/NewsList.tsx` — `countEnriched`가 `sentiment`만 확인해 `isPendingAnalysis`(sentiment + priceImpact 모두 확인)와 기준 불일치. `priceImpact !== null` 조건 추가.
   - Rule: 동일 도메인 개념의 판단 기준은 일관성 유지
 

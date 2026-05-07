@@ -286,9 +286,7 @@ interface NewsListProps {
 }
 
 function countEnriched(items: NewsDisplayItem[]): number {
-    return items.filter(
-        item => item.sentiment !== null && item.priceImpact !== null
-    ).length;
+    return items.filter(item => !isPendingAnalysis(item)).length;
 }
 
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {

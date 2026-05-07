@@ -6,6 +6,7 @@ import type { NewsDisplayItem } from '@/domain/types';
 import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
 import {
     MAX_CONSECUTIVE_FAILURES,
+    MAX_POLL_DURATION_MS,
     POLL_INTERVAL_MS,
     useNewsCardPolling,
 } from '@/components/news/hooks/useNewsCardPolling';
@@ -185,9 +186,10 @@ describe('useNewsCardPolling', () => {
             useNewsCardPolling('AAPL', [PENDING_ITEM], onComplete)
         );
 
-        // Advance past MAX_POLL_DURATION_MS (5 min) by one extra interval
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(300_000 + POLL_INTERVAL_MS);
+            await jest.advanceTimersByTimeAsync(
+                MAX_POLL_DURATION_MS + POLL_INTERVAL_MS
+            );
         });
 
         expect(onComplete).toHaveBeenCalledTimes(1);
