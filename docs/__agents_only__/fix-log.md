@@ -1,5 +1,13 @@
 # Fix Log
 
+## [PR #423 Round 1 | feat/news-thinking-budget-and-refresh | 2026-05-07]
+- B1: `src/components/news/sections/NewsList.tsx` — `useState(PAGE_SIZE)`가 `useCallback`, `useNewsCardPolling` 뒤에 선언됨. `useState` → `useQueryClient` → useCallback → custom hook 순으로 재정렬.
+  - Rule: MISTAKES.md §17 — 훅 선언 순서: useState/useRef → useQuery/useMutation → useCallback/useMemo → custom hooks
+- B2: `src/__tests__/infrastructure/market/ensureNewsCardsAnalyzedAction.test.ts` — `submitNewsCardAnalysis` 호출 검증 어서션에 `thinkingBudget: 0` 누락. 추가.
+  - Rule: MISTAKES.md Tests §15 — 어서션은 실제 호출 인자 전체를 검증해야 함
+- S1: `src/components/news/sections/NewsList.tsx` — `initialEnrichedCountRef`가 symbol 변경 시 초기화되지 않아 이전 symbol 기준 비교 발생. `useRef` → `useState`로 전환 후 render-time reset 패턴 적용 (`prevSymbol` 트래킹).
+  - Rule: React "store information from previous renders" 패턴 — client-side 내비게이션으로 컴포넌트가 재마운트 없이 symbol prop을 받을 때 파생 state도 함께 초기화 필요
+
 ## [PR #422 Round 2 | fix/post-9e88a2f9-audit | 2026-05-07]
 - B1: `src/infrastructure/db/newsRepository.ts` — enum mirror 배열을 `Record<T, true>` 형태로 교체해 siglens-core 측 enum 추가 시 컴파일 에러로 감지되도록 했음. `isNewsSentiment/Category/Impact` type guard 추출.
   - Rule: MISTAKES.md Documentation 6 — 외부 enum과 동기화되어야 하는 로컬 mirror는 컴파일 시점 exhaustiveness 검사 필수
