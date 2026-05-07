@@ -46,14 +46,24 @@ describe('FearGreedPage', () => {
         });
 
         it('renders Hero score and confidence footer', () => {
-            const { getByText } = render(<FearGreedPage symbol="NVDA" displayName="엔비디아, NVIDIA Corp" />);
+            const { getByText } = render(
+                <FearGreedPage
+                    symbol="NVDA"
+                    displayName="엔비디아, NVIDIA Corp"
+                />
+            );
             expect(getByText('50')).toBeInTheDocument();
             expect(getByText(/표본 200/)).toBeInTheDocument();
             expect(getByText(/정상 산출/)).toBeInTheDocument();
         });
 
         it('renders all groups', () => {
-            const { getByText } = render(<FearGreedPage symbol="NVDA" displayName="엔비디아, NVIDIA Corp" />);
+            const { getByText } = render(
+                <FearGreedPage
+                    symbol="NVDA"
+                    displayName="엔비디아, NVIDIA Corp"
+                />
+            );
             expect(getByText('Flow Group')).toBeInTheDocument();
             expect(getByText('Trend Group')).toBeInTheDocument();
         });
@@ -65,7 +75,12 @@ describe('FearGreedPage', () => {
                 snapshot: null,
                 history: [],
             });
-            const { getByText } = render(<FearGreedPage symbol="NVDA" displayName="엔비디아, NVIDIA Corp" />);
+            const { getByText } = render(
+                <FearGreedPage
+                    symbol="NVDA"
+                    displayName="엔비디아, NVIDIA Corp"
+                />
+            );
             expect(
                 getByText(/공포·탐욕 지수 산출에 필요한 데이터가 부족합니다/)
             ).toBeInTheDocument();
@@ -78,7 +93,12 @@ describe('FearGreedPage', () => {
                 snapshot: { ...baseSnapshot, confidence: 'limited' },
                 history: [],
             });
-            const { getByText } = render(<FearGreedPage symbol="NVDA" displayName="엔비디아, NVIDIA Corp" />);
+            const { getByText } = render(
+                <FearGreedPage
+                    symbol="NVDA"
+                    displayName="엔비디아, NVIDIA Corp"
+                />
+            );
             expect(getByText(/신뢰도 제한/)).toBeInTheDocument();
         });
     });
