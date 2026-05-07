@@ -57,4 +57,37 @@ describe('FearGreedGroupBar', () => {
             expect(getByText('100 / 100')).toBeInTheDocument();
         });
     });
+
+    describe('score-color fill', () => {
+        it('uses bg-ui-danger for fearful score (15)', () => {
+            const fearful = { ...flowGroup, score: 15 };
+            const { container } = render(
+                <FearGreedGroupBar group={fearful} />
+            );
+            const fill = container.querySelector(
+                '[role="progressbar"] > div'
+            );
+            expect(fill?.className).toContain('bg-ui-danger');
+        });
+    });
+
+    describe('extreme percentile emphasis', () => {
+        it('renders extreme percentile (< 10) with font-semibold', () => {
+            const { getByText } = render(
+                <FearGreedGroupBar group={flowGroup} />
+            );
+            // POC 거리 has percentile 5 → extreme low
+            const extremePctile = getByText(/5th/);
+            expect(extremePctile.className).toContain('font-semibold');
+        });
+
+        it('renders non-extreme percentile without font-semibold', () => {
+            const { getByText } = render(
+                <FearGreedGroupBar group={flowGroup} />
+            );
+            // Buy/Sell 불균형 has percentile 60 → not extreme
+            const normalPctile = getByText(/60th/);
+            expect(normalPctile.className).not.toContain('font-semibold');
+        });
+    });
 });
