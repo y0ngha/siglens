@@ -97,7 +97,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: ticker, url: buildSymbolSeoContent(ticker).url },
         {
-            name: '공포·탐욕 지수',
+            name: '공포 탐욕 지수',
             url: buildSymbolFearGreedSeoContent(ticker).url,
         },
     ]);
@@ -108,7 +108,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         mainEntity: [
             {
                 '@type': 'Question',
-                name: `${displayName} 공포·탐욕 지수는 무엇을 측정하나요?`,
+                name: `${displayName} 공포 탐욕 지수는 무엇을 측정하나요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: `${displayName}(${ticker}) 한 종목의 단기 매매 심리를 0~100 점수로 측정합니다. CNN의 시장 전체 Fear & Greed Index와 달리 종목별 자체 분포(self-normalization)로 산출하므로, 다른 종목과 점수를 직접 비교하기보다는 같은 종목의 시간 흐름 변화를 보는 데 적합합니다.`,
@@ -124,7 +124,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             },
             {
                 '@type': 'Question',
-                name: '5단계 sentiment 라벨은 어떻게 구분되나요?',
+                name: '5단계 분위기 라벨은 어떻게 구분되나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: '0~25 극공포, 25~45 공포, 45~55 중립, 55~75 탐욕, 75~100 극탐욕입니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.',
@@ -150,7 +150,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
             <JsonLd data={faqJsonLd} />
             <main className="mx-auto max-w-5xl space-y-6 px-4 py-8">
                 <h1 className="sr-only">
-                    {displayName} ({ticker}) 공포·탐욕 지수와 단기 sentiment
+                    {displayName} ({ticker}) 공포 탐욕 지수와 단기 매수 분위기
                 </h1>
                 <section
                     aria-labelledby="fear-greed-guide-heading"
@@ -160,13 +160,13 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         id="fear-greed-guide-heading"
                         className="text-secondary-300 text-base font-semibold"
                     >
-                        {displayName} 공포·탐욕 지수는 어떻게 봐야 할까
+                        {displayName} 공포 탐욕 지수는 어떻게 봐야 할까
                     </h2>
                     <p className="text-secondary-400 text-sm leading-relaxed">
                         {displayName}({ticker}) 한 종목의 단기 매매 심리를 0~100
                         점수로 나타냅니다. CNN의 시장 전체 Fear &amp; Greed
                         Index가 여러 자산을 합쳐 시장 감정을 보여 준다면, 이
-                        페이지는 한 종목의 거래량·체결 흐름·가격 위치를 그
+                        페이지는 한 종목의 거래량 흐름과 체결 흐름, 가격 위치를 그
                         종목의 자체 분포 안에서 환산해 점수로 만듭니다.
                     </p>
                     <p className="text-secondary-400 text-sm leading-relaxed">
