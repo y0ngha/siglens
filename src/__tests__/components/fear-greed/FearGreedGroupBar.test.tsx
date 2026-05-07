@@ -91,7 +91,11 @@ describe('FearGreedGroupBar', () => {
                 ...flowGroup,
                 factors: [
                     { key: 'volume_z', rawValue: 2.5, percentile: 92 },
-                    { key: 'buysell_imbalance', rawValue: 0.15, percentile: 60 },
+                    {
+                        key: 'buysell_imbalance',
+                        rawValue: 0.15,
+                        percentile: 60,
+                    },
                 ],
             };
             const { getByText } = render(
