@@ -2,9 +2,10 @@ import type { FundamentalProfile } from '@y0ngha/siglens-core';
 
 interface ProfileCardProps {
     profile: FundamentalProfile;
+    descriptionKo?: string | null;
 }
 
-export function ProfileCard({ profile }: ProfileCardProps) {
+export function ProfileCard({ profile, descriptionKo }: ProfileCardProps) {
     const formattedMarketCap = new Intl.NumberFormat('ko-KR', {
         notation: 'compact',
         maximumFractionDigits: 1,
@@ -74,7 +75,7 @@ export function ProfileCard({ profile }: ProfileCardProps) {
 
             {profile.description !== null && (
                 <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
-                    {profile.description}
+                    {descriptionKo ?? profile.description}
                 </p>
             )}
         </section>

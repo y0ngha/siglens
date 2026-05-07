@@ -1,5 +1,6 @@
 import { cacheLife, cacheTag } from 'next/cache';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
+import { translateCompanyDescription } from '@/infrastructure/ticker/koreanTranslator';
 import { TTL_T4_30D, TTL_T3_7D, TTL_T2_24H } from '@/lib/fundamental/cacheTtl';
 import type {
     FundamentalSectorHistoricalInput,
@@ -25,6 +26,17 @@ export async function getProfile(
     cacheLife({ revalidate: TTL_T4_30D });
     cacheTag(`fundamental:profile:${symbol}`);
     return fundamentalClient.getProfile(symbol);
+}
+
+export async function getProfileDescriptionKo(
+    symbol: string
+): Promise<string | null> {
+    'use cache';
+    cacheLife({ revalidate: TTL_T4_30D });
+    cacheTag(`fundamental:profile-description-ko:${symbol}`);
+    const profile = await getProfile(symbol);
+    if (profile === null || profile.description === null) return null;
+    return translateCompanyDescription(profile.description);
 }
 
 export async function getStockPeers(
