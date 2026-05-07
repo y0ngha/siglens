@@ -7,6 +7,7 @@ import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton'
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 import { useSymbolModel } from '@/components/symbol-page/SymbolModelContext';
 import { ModelSelector } from '@/components/analysis/ModelSelector';
+import { FearGreedHeaderChipMounted } from '@/components/symbol-page/FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
 import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
 
@@ -65,6 +66,9 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
+                    <Suspense fallback={null}>
+                        <FearGreedHeaderChipMounted symbol={ticker} />
+                    </Suspense>
                     <span className="text-secondary-500 text-xs whitespace-nowrap">
                         AI 분석 모델
                     </span>
