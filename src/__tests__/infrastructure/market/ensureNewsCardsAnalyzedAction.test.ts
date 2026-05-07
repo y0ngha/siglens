@@ -1,5 +1,6 @@
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
 import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
+import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import {
     submitNewsCardAnalysis,
     pollNewsCardAnalysis,
@@ -40,6 +41,7 @@ jest.mock('@/infrastructure/db/newsRepository', () => ({
     DrizzleNewsRepository: jest.fn().mockImplementation(() => ({
         upsertNewsItem: jest.fn(),
         attachAnalysis: jest.fn(),
+        listBySymbol: jest.fn().mockResolvedValue([]),
     })),
 }));
 
@@ -302,6 +304,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
+            expect(mockListBySymbol).toHaveBeenCalledWith('AAPL', NEWS_LOOKBACK_MS);
             expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
         });
 
@@ -331,6 +334,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         await ensureNewsCardsAnalyzedAction('AAPL');
 
         expect(mockUpsertNewsItem).not.toHaveBeenCalled();
+        expect(mockListBySymbol).not.toHaveBeenCalled();
         expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
     });
 });

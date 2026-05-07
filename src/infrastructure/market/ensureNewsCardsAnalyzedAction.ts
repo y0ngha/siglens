@@ -121,6 +121,8 @@ export async function ensureNewsCardsAnalyzedAction(
         );
     }
 
+    if (fresh.length === 0) return;
+
     // Read the current DB state after upsert so newly inserted rows are included.
     const rows = await repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
     const analyzedIds = new Set(
