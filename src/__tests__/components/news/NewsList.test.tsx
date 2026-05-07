@@ -3,6 +3,7 @@
  */
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import type { NewsDisplayItem } from '@/domain/types';
 import { useNewsCardPolling } from '@/components/news/hooks/useNewsCardPolling';
 import {
@@ -17,6 +18,15 @@ jest.mock('@/components/news/hooks/useNewsCardPolling', () => ({
 const mockUseNewsCardPolling = useNewsCardPolling as jest.MockedFunction<
     typeof useNewsCardPolling
 >;
+
+function renderWithClient(ui: React.ReactElement) {
+    const queryClient = new QueryClient({
+        defaultOptions: { queries: { retry: false } },
+    });
+    return render(
+        <QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>
+    );
+}
 
 const READY_ITEM: NewsDisplayItem = {
     id: 'news-1',
@@ -44,7 +54,7 @@ describe('NewsList', () => {
             pollError: null,
         });
 
-        render(<NewsList items={[READY_ITEM]} symbol="AAPL" />);
+        renderWithClient(<NewsList items={[READY_ITEM]} symbol="AAPL" />);
 
         expect(screen.getByText('최신 뉴스 확인 중…')).toBeInTheDocument();
         expect(screen.getByText('애플, 신제품 발표')).toBeInTheDocument();
@@ -57,7 +67,7 @@ describe('NewsList', () => {
             pollError: null,
         });
 
-        render(<NewsList items={[READY_ITEM]} symbol="AAPL" />);
+        renderWithClient(<NewsList items={[READY_ITEM]} symbol="AAPL" />);
 
         expect(
             screen.queryByText('최신 뉴스 확인 중…')
@@ -72,7 +82,7 @@ describe('NewsList', () => {
             pollError: null,
         });
 
-        render(<NewsList items={[READY_ITEM]} symbol="AAPL" />);
+        renderWithClient(<NewsList items={[READY_ITEM]} symbol="AAPL" />);
 
         expect(screen.getByText('본문')).toBeInTheDocument();
         expect(

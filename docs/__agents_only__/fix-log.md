@@ -1,5 +1,15 @@
 # Fix Log
 
+## [PR #423 Round 3 | feat/news-thinking-budget-and-refresh | 2026-05-07]
+- B1: `src/__tests__/components/news/NewsList.test.tsx` — `useQueryClient()` 추가로 `QueryClientProvider` 없이 렌더 시 `NoQueryClientSetError` 발생. `renderWithClient` 헬퍼 함수 추가, 전체 `render()` 호출을 교체.
+  - Rule: MISTAKES.md Tests — React Query 훅을 사용하는 컴포넌트 테스트는 QueryClientProvider로 감싸야 함
+- S1a: `src/__tests__/components/news/hooks/useNewsCardPolling.test.tsx` — 분석 완료 경로(`onPollingComplete` 정상 호출) 테스트 추가.
+  - Rule: MISTAKES.md Infrastructure 2 — 신규 코드 경로는 테스트로 커버
+- S1b: `src/__tests__/components/news/hooks/useNewsCardPolling.test.tsx` — 타임아웃 경로(아이템 있을 때 `onPollingComplete` 호출) 테스트 추가.
+  - Rule: MISTAKES.md Infrastructure 2 — 신규 코드 경로는 테스트로 커버
+- S2: `src/components/news/sections/NewsList.tsx` — `countEnriched`가 `sentiment`만 확인해 `isPendingAnalysis`(sentiment + priceImpact 모두 확인)와 기준 불일치. `priceImpact !== null` 조건 추가.
+  - Rule: 동일 도메인 개념의 판단 기준은 일관성 유지
+
 ## [PR #423 Round 2 | feat/news-thinking-budget-and-refresh | 2026-05-07]
 - B1: `src/components/news/sections/NewsList.tsx` — `useState(PAGE_SIZE)`가 `useCallback`, `useNewsCardPolling` 뒤에 선언됨. `useState` 계열 먼저 선언 후 `useQueryClient` → useCallback → custom hook 순으로 재정렬.
   - Rule: MISTAKES.md §17 — 훅 선언 순서: useState/useRef → useQuery/useMutation → useCallback/useMemo → custom hooks

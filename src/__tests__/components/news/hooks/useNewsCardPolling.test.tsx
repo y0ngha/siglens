@@ -162,6 +162,38 @@ describe('useNewsCardPolling', () => {
         expect(result.current.isPolling).toBe(false);
     });
 
+    it('분석 완료로 폴링 종료 시 onPollingComplete를 최종 아이템과 함께 호출한다', async () => {
+        const onComplete = jest.fn();
+        mockGetNewsCardsAction.mockResolvedValue([READY_ITEM]);
+
+        renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete));
+
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 5);
+        });
+
+        expect(onComplete).toHaveBeenCalledTimes(1);
+        expect(onComplete).toHaveBeenCalledWith([READY_ITEM]);
+    });
+
+    it('최대 폴링 시간 초과 시 아이템이 있으면 onPollingComplete를 호출한다', async () => {
+        const onComplete = jest.fn();
+        // PENDING items never become READY → polling continues until timeout
+        mockGetNewsCardsAction.mockResolvedValue([PENDING_ITEM]);
+
+        renderHook(() =>
+            useNewsCardPolling('AAPL', [PENDING_ITEM], onComplete)
+        );
+
+        // Advance past MAX_POLL_DURATION_MS (5 min) by one extra interval
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(300_000 + POLL_INTERVAL_MS);
+        });
+
+        expect(onComplete).toHaveBeenCalledTimes(1);
+        expect(onComplete).toHaveBeenCalledWith([PENDING_ITEM]);
+    });
+
     it('뉴스 스냅샷 조회가 연속 실패하면 폴링을 멈추고 pollError를 노출한다', async () => {
         const dbError = new Error('db unavailable');
         mockGetNewsCardsAction.mockRejectedValue(dbError);
