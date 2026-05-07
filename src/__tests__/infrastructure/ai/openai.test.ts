@@ -98,13 +98,13 @@ describe('callOpenaiChat', () => {
             expect(call.reasoning.effort).toBeDefined();
         });
 
-        it('gpt-5-mini에 reasoning.effort low를 전달한다', async () => {
+        it('gpt-5-mini에 reasoning.effort medium를 전달한다', async () => {
             mockCreate.mockResolvedValue({ output_text: 'ok' });
 
             await callOpenaiChat(BASE_OPTIONS);
 
             const call = mockCreate.mock.calls[0][0];
-            expect(call.reasoning).toEqual({ effort: 'low' });
+            expect(call.reasoning).toEqual({ effort: 'medium' });
         });
     });
 
