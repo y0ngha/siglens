@@ -27,7 +27,7 @@ import type {
     FundamentalPeerInput,
     FundamentalPriceTargetConsensusInput,
     FundamentalPriceTargetSummaryInput,
-    FundamentalProfileInput,
+    FundamentalProfile,
     FundamentalRatiosInput,
     FundamentalSectorHistoricalInput,
     FundamentalSectorPerformanceInput,
@@ -80,7 +80,7 @@ async function getOptionalArray<T>(
 /** FMP adapter implementing `FundamentalDataProvider`. Uses `fmpGet` for all HTTP calls. */
 export class FmpFundamentalClient implements FundamentalDataProvider {
     /** Fetch company profile; returns `null` when FMP returns an empty array. */
-    async getProfile(symbol: string): Promise<FundamentalProfileInput | null> {
+    async getProfile(symbol: string): Promise<FundamentalProfile | null> {
         const arr = await fmpGet<RawFmpProfile[]>('profile', { symbol });
         const r = arr[0];
         if (!r) return null;

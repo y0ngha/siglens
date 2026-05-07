@@ -175,17 +175,20 @@ describe('callAnthropicChat', () => {
         });
 
         it('잘못된 effort 값이 spec에 있으면 에러를 던진다', async () => {
-            const original =
-                MODEL_SPECS['claude-sonnet-4-6' as keyof typeof MODEL_SPECS];
-            // Override with an invalid effort value to simulate corrupted/forced spec
-            (
-                MODEL_SPECS as unknown as Record<
-                    string,
-                    typeof original & { effort?: string }
-                >
-            )['claude-sonnet-4-6'] = {
+            // Use a string-indexed view so we don't narrow `original` through the
+            // full MODEL_SPECS union (which would force the assignment shape to
+            // satisfy every spec member, e.g. gemini specs without `effort`).
+            const specs = MODEL_SPECS as unknown as Record<
+                string,
+                Record<string, unknown>
+            >;
+            const original = specs['claude-sonnet-4-6'];
+
+            specs['claude-sonnet-4-6'] = {
                 ...original,
-                effort: 'extreme' as unknown as typeof original.effort,
+                // Runtime invalid value to verify the validator throws. The
+                // string-indexed view above keeps this assignment well-typed.
+                effort: 'extreme',
             };
 
             try {
@@ -193,9 +196,7 @@ describe('callAnthropicChat', () => {
                     '[anthropic] Invalid effort value: extreme'
                 );
             } finally {
-                (MODEL_SPECS as unknown as Record<string, typeof original>)[
-                    'claude-sonnet-4-6'
-                ] = original;
+                specs['claude-sonnet-4-6'] = original;
             }
         });
     });
