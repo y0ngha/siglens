@@ -124,53 +124,58 @@ interface NewsDbRow {
 /**
  * Canonical enum values for the news analysis columns. The DB stores these
  * fields as raw text (no DB-level CHECK constraint), so we validate at the
- * read boundary instead of trusting the writer. Keep these arrays in sync
- * with the `NewsSentiment` / `NewsCategory` / `NewsImpact` types in
- * `@y0ngha/siglens-core`.
+ * read boundary instead of trusting the writer.
+ *
+ * The `Record<T, true>` shape forces compile-time exhaustiveness against the
+ * source-of-truth types in `@y0ngha/siglens-core` — if the core adds a new
+ * `NewsSentiment` / `NewsCategory` / `NewsImpact` member, TypeScript will
+ * reject this file until the new member is mirrored here, preventing the
+ * silent "valid value gets coerced to null at the boundary" failure.
  */
-const NEWS_SENTIMENTS = ['bullish', 'bearish', 'neutral'] as const;
-const NEWS_CATEGORIES = [
-    'earnings',
-    'm_and_a',
-    'guidance',
-    'regulation',
-    'macro',
-    'product',
-    'other',
-] as const;
-const NEWS_IMPACTS = ['high', 'medium', 'low', 'negligible'] as const;
+const NEWS_SENTIMENT_RECORD: Record<NewsSentiment, true> = {
+    bullish: true,
+    bearish: true,
+    neutral: true,
+};
+const NEWS_CATEGORY_RECORD: Record<NewsCategory, true> = {
+    earnings: true,
+    m_and_a: true,
+    guidance: true,
+    regulation: true,
+    macro: true,
+    product: true,
+    other: true,
+};
+const NEWS_IMPACT_RECORD: Record<NewsImpact, true> = {
+    high: true,
+    medium: true,
+    low: true,
+    negligible: true,
+};
+
+function isNewsSentiment(value: string): value is NewsSentiment {
+    return value in NEWS_SENTIMENT_RECORD;
+}
+function isNewsCategory(value: string): value is NewsCategory {
+    return value in NEWS_CATEGORY_RECORD;
+}
+function isNewsImpact(value: string): value is NewsImpact {
+    return value in NEWS_IMPACT_RECORD;
+}
 
 function toNewsSentiment(value: unknown): NewsSentiment | null {
-    if (value === null || value === undefined) return null;
     if (typeof value !== 'string') return null;
-    // `includes` 가드가 런타임 멤버십을 보증한다.
-    // `as` 캐스트는 안전: TS가 `Array<T>.includes(string)`을 element union으로
-    // 좁혀주지 않는 구조적 한계 때문이며, 런타임 위험은 없다.
-    return NEWS_SENTIMENTS.includes(value as NewsSentiment)
-        ? (value as NewsSentiment)
-        : null;
+    return isNewsSentiment(value) ? value : null;
 }
 
 function toNewsCategory(value: unknown): NewsCategory | null {
-    if (value === null || value === undefined) return null;
     if (typeof value !== 'string') return null;
-    // `includes` 가드가 런타임 멤버십을 보증한다.
-    // `as` 캐스트는 안전: TS가 `Array<T>.includes(string)`을 element union으로
-    // 좁혀주지 않는 구조적 한계 때문이며, 런타임 위험은 없다.
-    return NEWS_CATEGORIES.includes(value as NewsCategory)
-        ? (value as NewsCategory)
-        : null;
+    return isNewsCategory(value) ? value : null;
 }
 
 function toNewsImpact(value: unknown): NewsImpact | null {
-    if (value === null || value === undefined) return null;
     if (typeof value !== 'string') return null;
-    // `includes` 가드가 런타임 멤버십을 보증한다.
-    // `as` 캐스트는 안전: TS가 `Array<T>.includes(string)`을 element union으로
-    // 좁혀주지 않는 구조적 한계 때문이며, 런타임 위험은 없다.
-    return NEWS_IMPACTS.includes(value as NewsImpact)
-        ? (value as NewsImpact)
-        : null;
+    return isNewsImpact(value) ? value : null;
 }
 
 // DB는 sentiment/category/priceImpact를 raw text로 저장하므로 read 시점에 화이트리스트로 검증한다.

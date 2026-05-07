@@ -14,8 +14,7 @@ import React from 'react';
 
 // React Query is required by useChat. Provide a minimal client wrapper.
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-
-const MODEL_STORAGE_KEY = 'siglens_chat_model';
+import { MODEL_STORAGE_KEY } from '@/components/chat/hooks/useChat';
 
 // --- Module-level mocks ---------------------------------------------------
 

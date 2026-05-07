@@ -223,9 +223,11 @@ function NewsAiSummaryContent({
     // from this page. `timeframe` is null — news analysis is timeframe-agnostic.
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
-    // Decompose deps so the memo only recomputes when the specific fields it
-    // reads actually change, instead of on every `analysis` object identity
-    // flip from useNewsAnalysis.
+    //
+    // `analysis`는 discriminated union이라 `analysis.result`는 narrowing 후에만
+    // 접근 가능하므로 deps에는 객체 전체를 둔다. React Query가 `query.data`를
+    // memoize하므로 동일 분석에 대한 reference는 안정적 — 실제 데이터가 바뀔
+    // 때만 재계산된다.
     const chatState = useMemo(() => {
         const result = analysis.status === 'done' ? analysis.result : null;
         return result !== null
@@ -242,11 +244,6 @@ function NewsAiSummaryContent({
                   timeframe: null,
                   isAnalysisReady: false,
               } as const);
-        // analysis is a discriminated union — `analysis.result` is only
-        // structurally accessible via narrowing, so we depend on the whole
-        // object. React Query memoizes `query.data` so the reference stays
-        // stable across re-renders unless the underlying analysis actually
-        // changes; this keeps recomputation tied to real data churn.
     }, [analysis]);
     usePublishSymbolChat(chatState);
 

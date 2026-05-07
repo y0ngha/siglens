@@ -3,8 +3,9 @@
 import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/domain/types';
+import { MS_PER_MINUTE } from '@/domain/constants/time';
 
-const POLL_INTERVAL_MS = 3_000;
+export const POLL_INTERVAL_MS = 3_000;
 const EMPTY_SNAPSHOT_MAX_POLLS = 20;
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
 /**
@@ -12,12 +13,12 @@ const REFRESH_SNAPSHOT_MIN_POLLS = 5;
  * pending cards, we never poll beyond 5 minutes to avoid unbounded background
  * work in long-lived tabs.
  */
-const MAX_POLL_DURATION_MS = 5 * 60_000;
+const MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
 /**
  * Number of consecutive `getNewsCardsAction` failures before we surface the
  * error to the React error boundary via `pollError`.
  */
-const MAX_CONSECUTIVE_FAILURES = 3;
+export const MAX_CONSECUTIVE_FAILURES = 3;
 
 function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     return items.some(

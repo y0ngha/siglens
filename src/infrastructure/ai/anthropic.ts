@@ -11,8 +11,22 @@ import type {
  * Allowed reasoning effort values accepted by the Anthropic adaptive thinking
  * `output_config.effort` field. Hoisted to module scope so the runtime guard
  * stays cheap and shareable across calls.
+ *
+ * The `Record<NonNullable<ModelSpec['effort']>, true>` shape forces compile-
+ * time exhaustiveness against siglens-core: if the core widens `ModelSpec.effort`
+ * with a new literal, TypeScript will reject this file until the new value
+ * is mirrored — preventing the silent "valid effort gets thrown as invalid"
+ * failure mode.
  */
-const VALID_EFFORTS = ['low', 'medium', 'high'] as const;
+const VALID_EFFORT_RECORD: Record<NonNullable<ModelSpec['effort']>, true> = {
+    low: true,
+    medium: true,
+    high: true,
+};
+
+function isValidEffort(value: string): value is NonNullable<ModelSpec['effort']> {
+    return value in VALID_EFFORT_RECORD;
+}
 
 // apiModelId(e.g. 'claude-sonnet-4-6')로 ModelSpec을 역방향 조회한다.
 function findSpecByApiModelId(apiModelId: string): ModelSpec | undefined {
@@ -36,7 +50,7 @@ export async function callAnthropicChat({
     if (!spec) {
         throw new Error(`Unknown model: ${model}`);
     }
-    if (spec.effort !== undefined && !VALID_EFFORTS.includes(spec.effort)) {
+    if (spec.effort !== undefined && !isValidEffort(spec.effort)) {
         throw new Error(`[anthropic] Invalid effort value: ${spec.effort}`);
     }
     const adaptiveThinking = spec.effort !== undefined;

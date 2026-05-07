@@ -51,7 +51,7 @@ import {
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
 const CURRENT_USER_STALE_MS = 5 * MS_PER_MINUTE;
 const REGISTERED_PROVIDERS_STALE_MS = MS_PER_MINUTE;
-const MODEL_STORAGE_KEY = 'siglens_chat_model';
+export const MODEL_STORAGE_KEY = 'siglens_chat_model';
 
 // Matches the siglens-core chat token limit; update only when the core policy changes.
 const DAILY_CHAT_LIMIT = 5;

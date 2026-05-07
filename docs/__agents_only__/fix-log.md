@@ -1,5 +1,22 @@
 # Fix Log
 
+## [PR #422 Round 2 | fix/post-9e88a2f9-audit | 2026-05-07]
+- B1: `src/infrastructure/db/newsRepository.ts` — enum mirror 배열을 `Record<T, true>` 형태로 교체해 siglens-core 측 enum 추가 시 컴파일 에러로 감지되도록 했음. `isNewsSentiment/Category/Impact` type guard 추출.
+  - Rule: MISTAKES.md Documentation 6 — 외부 enum과 동기화되어야 하는 로컬 mirror는 컴파일 시점 exhaustiveness 검사 필수
+- B2: `src/__tests__/infrastructure/db/newsRepository.test.ts` — toNewsRow의 unknown 문자열 / 비문자열 입력 케이스 두 건 추가. validator 분기 100% 커버.
+  - Rule: MISTAKES.md Infrastructure 2 — 100% branch coverage
+- S1: `src/components/news/hooks/useNewsCardPolling.ts` — `MAX_POLL_DURATION_MS = 5 * 60_000`을 `5 * MS_PER_MINUTE`로 교체.
+  - Rule: MISTAKES.md #15 — 시간 계산은 `@/domain/constants/time` 상수 사용
+- S2: `useNewsCardPolling.ts` `POLL_INTERVAL_MS` / `MAX_CONSECUTIVE_FAILURES` export + 테스트 import. 매직넘버(`3_000`, `9_000`, `30_000`) 제거.
+  - Rule: MISTAKES.md Tests 4 — 경계값 상수는 source export 후 import해 동기화
+- S3: `src/components/chat/hooks/useChat.ts` `MODEL_STORAGE_KEY` export + `useChat.test.tsx`에서 로컬 재정의 제거 후 import.
+  - Rule: MISTAKES.md Tests 13 — 테스트는 production 코드를 직접 import해 검증
+- S4: `src/components/news/NewsAiSummary.tsx` `useMemo` 본문 내 dead code 위치 주석을 호출 앞 docblock에 통합.
+  - Rule: 주석은 실행 흐름이 도달하는 위치에 둔다
+- S6: `src/infrastructure/ai/anthropic.ts` `VALID_EFFORTS`도 `Record<NonNullable<ModelSpec['effort']>, true>` 패턴으로 교체. `isValidEffort` type guard 추출.
+  - Rule: B1과 동일 — 외부 enum union 추적
+- S5 (skipped — 이전 라운드 결정): `useSelectedModel.ts` `eslint-disable` 근본 수정은 별도 이슈로 트래킹.
+
 ## [PR #420 Round 15 | master | 2026-05-05]
 - S3 (skipped — False Positive): `src/infrastructure/auth/finalizeOAuthSignupAction.ts` — reviewer suggested changing `tx as unknown as SiglensDatabase` to `tx as SiglensDatabase`. Reverted: `PgTransaction<NeonHttpQueryResultHKT, ...>` doesn't overlap with `NeonHttpDatabase<...>` (SiglensDatabase), causing TS error 2352. The double cast is required.
 
