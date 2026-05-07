@@ -5,7 +5,6 @@ import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { translateCompanyDescription } from '@/infrastructure/ticker/koreanTranslator';
 import { TTL_T4_30D, TTL_T3_7D, TTL_T2_24H } from '@/lib/fundamental/cacheTtl';
 import type {
-    FundamentalSectorHistoricalInput,
     FundamentalProfile,
     FundamentalPeerInput,
     FundamentalValuationMetrics,
@@ -146,11 +145,4 @@ export async function getPriceTargetSummary(
     return fundamentalClient.getPriceTargetSummary(symbol);
 }
 
-export async function getHistoricalSector(
-    sector: string
-): Promise<FundamentalSectorHistoricalInput[]> {
-    'use cache';
-    cacheLife({ revalidate: TTL_T2_24H });
-    cacheTag(`fundamental:historical-sector:${sector}`);
-    return fundamentalClient.getHistoricalSectorPerformance(sector);
-}
+
