@@ -1,4 +1,7 @@
-import type { FearGreedHistoryPoint, FearGreedLabel } from '@y0ngha/siglens-core';
+import type {
+    FearGreedHistoryPoint,
+    FearGreedLabel,
+} from '@y0ngha/siglens-core';
 import { FearGreedGauge } from './FearGreedGauge';
 import { cn } from '@/lib/cn';
 
@@ -60,7 +63,7 @@ export function FearGreedComparisonGauges({
                     <li
                         key={p.key}
                         className={cn(
-                            'flex-1 min-w-[100px] rounded-lg border p-1',
+                            'min-w-[100px] flex-1 rounded-lg border p-1',
                             p.key === 'now'
                                 ? 'border-primary-500/40'
                                 : 'border-secondary-700/40'
