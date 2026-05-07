@@ -132,7 +132,7 @@ export async function ensureNewsCardsAnalyzedAction(
 
     if (unanalyzed.length === 0) return;
 
-    // Analyze and persist unanalyzed items in parallel — each polls its own worker.
+    // Each item polls its own background worker independently.
     const analyzeSettled = await Promise.allSettled(
         unanalyzed.map(item => analyzeAndPersist(item, repo))
     );

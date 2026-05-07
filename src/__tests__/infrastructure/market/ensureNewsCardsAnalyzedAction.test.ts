@@ -329,6 +329,16 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 expect.objectContaining({ item: NEWS_ITEM_1 })
             );
         });
+
+        it('listBySymbol 실패 시 에러를 전파한다', async () => {
+            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockListBySymbol.mockRejectedValue(new Error('DB connection lost'));
+
+            await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
+                'DB connection lost'
+            );
+            expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+        });
     });
 
     it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
