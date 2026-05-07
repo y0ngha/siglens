@@ -25,7 +25,8 @@ import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
-import { NewsAugment } from '@/components/symbol-page/NewsAugment';
+import { FearGreedCard } from '@/components/symbol-page/FearGreedCard';
+import { useFearGreed } from '@/components/symbol-page/hooks/useFearGreed';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -107,6 +108,11 @@ export function ChartContent({
 }: ChartContentProps) {
     const { bars, indicators } = useBars({ symbol, timeframe, fmpSymbol });
 
+    const { snapshot: fearGreedSnapshot } = useFearGreed({
+        bars,
+        buySellVolume: indicators.buySellVolume,
+    });
+
     const { panelWidth, isDragging, handleDragStart, handleKeyDown } =
         usePanelResize();
 
@@ -178,7 +184,7 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
-                <NewsAugment symbol={symbol} />
+                <FearGreedCard snapshot={fearGreedSnapshot} />
             </>
         ),
         [
@@ -195,6 +201,7 @@ export function ChartContent({
             cooldownNotice,
             actionPricesVisible,
             setActionPricesVisible,
+            fearGreedSnapshot,
         ]
     );
 
