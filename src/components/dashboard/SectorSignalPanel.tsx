@@ -75,7 +75,12 @@ export function SectorSignalPanel({
                     marker="◈"
                     variant="mixed"
                     stocks={mixedStocks}
-                    infoMessage="상승 신호와 하락 신호의 강도가 동일합니다. 방향을 알 수 없습니다."
+                    infoMessage={
+                        <>
+                            <p>상승 신호와 하락 신호의 강도가 비슷한 종목들이에요.</p>
+                            <p>어느 쪽으로 움직일지 방향이 명확하지 않으니 신중하게 보는 게 좋아요.</p>
+                        </>
+                    }
                 />
                 <SignalSubsection
                     title="하락 조짐"

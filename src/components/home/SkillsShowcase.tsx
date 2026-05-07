@@ -92,10 +92,11 @@ function ConfidenceInfoTooltip() {
                         : 'pointer-events-none opacity-0 sm:pointer-events-none sm:opacity-0'
                 )}
             >
-                <p className="text-secondary-300 leading-relaxed">
-                    분석 기법의 신뢰도 점수입니다. 50% 미만은 분석에서 제외되며,
-                    80% 이상은 높은 신뢰도로 분류됩니다.
-                </p>
+                <div className="text-secondary-300 leading-relaxed">
+                    <p>분석 기법의 신뢰도 점수예요.</p>
+                    <p>50% 미만이면 분석에서 제외돼요.</p>
+                    <p>80% 이상이면 높은 신뢰도로 분류해요.</p>
+                </div>
             </div>
         </div>
     );
