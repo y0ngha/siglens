@@ -24,26 +24,16 @@ const POLL_MAX_ATTEMPTS = 30;
  * then persist the result to DB via `attachAnalysis`.
  *
  * Caller guarantees that `item` has not been analyzed yet (analyzedAt === null).
- * The `cached` branch is kept for type compatibility with siglens-core 0.7.11;
- * it will be removed once siglens-core ≥ 0.7.12 is deployed and the `cached`
- * variant is dropped from `SubmitNewsCardAnalysisResult`.
  */
 async function analyzeAndPersist(
     item: NewsItem,
     repo: DrizzleNewsRepository
 ): Promise<void> {
-    const submitResult = await submitNewsCardAnalysis({
+    const { jobId } = await submitNewsCardAnalysis({
         item,
         thinkingBudget: DISABLED_THINKING_BUDGET,
     });
 
-    if (submitResult.status === 'cached') {
-        await repo.attachAnalysis(item.id, submitResult.result, new Date());
-        return;
-    }
-
-    // status === 'submitted': poll until the background worker finishes
-    const { jobId } = submitResult;
     for (let attempt = 0; attempt < POLL_MAX_ATTEMPTS; attempt++) {
         await sleep(POLL_INTERVAL_MS);
         const polled = await pollNewsCardAnalysis(jobId);
@@ -69,9 +59,7 @@ async function analyzeAndPersist(
  * finishes so the result is persisted to DB in the same pass.
  *
  * DB-first: items that already have `analyzedAt` set are skipped — the DB
- * is the primary store for news-card analysis results. This eliminates Redis
- * result-caching for per-card analyses (siglens-core ≥ 0.7.12 removes the
- * Redis write on the core side as well).
+ * is the primary store for news-card analysis results.
  *
  * Designed to run inside `waitUntil` so it doesn't block the response stream.
  * Per-item errors are logged and never thrown; other items continue normally.

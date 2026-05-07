@@ -96,11 +96,6 @@ const CARD_ANALYSIS: NewsCardAnalysis = {
     priceImpact: 'high',
 };
 
-const CACHED_RESULT: SubmitNewsCardAnalysisResult = {
-    status: 'cached',
-    result: CARD_ANALYSIS,
-};
-
 const SUBMITTED_RESULT: SubmitNewsCardAnalysisResult = {
     status: 'submitted',
     jobId: 'job-card-001',
@@ -151,7 +146,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     it('FMP에서 7일치 뉴스를 가져온다', async () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
+        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -160,7 +156,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     it('각 뉴스 아이템을 DB에 upsert한다', async () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
+        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -171,7 +168,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     it('각 뉴스 아이템에 대해 submitNewsCardAnalysis를 호출한다', async () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
+        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 
@@ -184,20 +182,6 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
             item: NEWS_ITEM_2,
             thinkingBudget: DISABLED_THINKING_BUDGET,
         });
-    });
-
-    it('캐시 결과(cached)가 있으면 즉시 attachAnalysis를 호출한다', async () => {
-        mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
-
-        await ensureNewsCardsAnalyzedAction('AAPL');
-
-        expect(mockAttachAnalysis).toHaveBeenCalledWith(
-            NEWS_ITEM_1.id,
-            CARD_ANALYSIS,
-            expect.any(Date)
-        );
-        expect(mockPollNewsCardAnalysis).not.toHaveBeenCalled();
     });
 
     describe('submitted 결과는', () => {
@@ -271,13 +255,13 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockUpsertNewsItem
             .mockRejectedValueOnce(new Error('DB constraint error'))
             .mockResolvedValueOnce(undefined);
-        mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
+        mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
         await expect(
             ensureNewsCardsAnalyzedAction('AAPL')
         ).resolves.toBeUndefined();
 
-        // 새 구현: upsert 실패 여부와 무관하게 모든 아이템 분석 시도
         expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
     });
 
@@ -285,7 +269,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
         mockSubmitNewsCardAnalysis
             .mockRejectedValueOnce(new Error('LLM timeout'))
-            .mockResolvedValueOnce(CACHED_RESULT);
+            .mockResolvedValueOnce(SUBMITTED_RESULT);
+        mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
         await expect(
             ensureNewsCardsAnalyzedAction('AAPL')
@@ -317,7 +302,8 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
                 { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
                 { id: NEWS_ITEM_2.id, analyzedAt: null },
             ]);
-            mockSubmitNewsCardAnalysis.mockResolvedValue(CACHED_RESULT);
+            mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
+            mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
             await ensureNewsCardsAnalyzedAction('AAPL');
 
