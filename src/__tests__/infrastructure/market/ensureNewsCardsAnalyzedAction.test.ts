@@ -172,9 +172,11 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
         expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
             item: NEWS_ITEM_1,
+            thinkingBudget: 0,
         });
         expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
             item: NEWS_ITEM_2,
+            thinkingBudget: 0,
         });
     });
 

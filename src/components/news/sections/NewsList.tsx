@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/cn';
@@ -290,21 +290,40 @@ function countEnriched(items: NewsDisplayItem[]): number {
 }
 
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
-    const queryClient = useQueryClient();
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
     // Baseline enriched count captured at mount — used to decide whether new
     // AI-analysed articles arrived so the aggregate analysis is only re-run
     // when the input actually changed, not on every polling cycle end.
-    const initialEnrichedCountRef = useRef(countEnriched(initialItems));
+    //
+    // Stored as state (not a ref) so the symbol-change reset below can use
+    // setState during render without triggering the react-hooks/refs lint rule.
+    const [initialEnrichedCount, setInitialEnrichedCount] = useState(() =>
+        countEnriched(initialItems)
+    );
+    // Tracks the last rendered symbol for the render-time reset below.
+    // Client-side navigation keeps the component mounted while delivering new
+    // initialItems for the new symbol, so we must re-baseline explicitly.
+    const [prevSymbol, setPrevSymbol] = useState(symbol);
+    const queryClient = useQueryClient();
+
+    // Reset baseline on symbol change — React "store information from previous
+    // renders" pattern. React discards this render and immediately re-renders
+    // with the updated state, so the new symbol's baseline is always current
+    // before any polling callback fires.
+    if (prevSymbol !== symbol) {
+        setPrevSymbol(symbol);
+        setInitialEnrichedCount(countEnriched(initialItems));
+    }
 
     const handlePollingComplete = useCallback(
         (finalItems: NewsDisplayItem[]) => {
-            if (countEnriched(finalItems) > initialEnrichedCountRef.current) {
+            if (countEnriched(finalItems) > initialEnrichedCount) {
                 void queryClient.invalidateQueries({
                     queryKey: QUERY_KEYS.newsAnalysisPrefix(symbol),
                 });
             }
         },
-        [queryClient, symbol]
+        [queryClient, symbol, initialEnrichedCount]
     );
 
     const { items, isPolling, pollError } = useNewsCardPolling(
@@ -312,7 +331,6 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
         initialItems,
         handlePollingComplete
     );
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     // Surface persistent polling errors to the nearest error boundary so a
     // dedicated fallback UI can render instead of an indefinitely empty list.

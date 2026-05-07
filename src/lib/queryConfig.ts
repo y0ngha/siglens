@@ -43,7 +43,9 @@ export const QUERY_KEYS = {
     newsAnalysis: (symbol: string, modelId: ModelId) =>
         ['news-analysis', symbol, modelId] as const,
     /** Prefix key — invalidates all modelId variants for a symbol at once. */
-    newsAnalysisPrefix: (symbol: string) => ['news-analysis', symbol] as const,
+    newsAnalysisPrefix: (
+        symbol: string
+    ): readonly ['news-analysis', string] => ['news-analysis', symbol],
     overallAnalysis: (
         symbol: string,
         companyName: string,
