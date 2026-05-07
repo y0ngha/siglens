@@ -1,15 +1,15 @@
 'use server';
 
-import {
-    submitNewsCardAnalysis,
-    pollNewsCardAnalysis,
-    type NewsItem,
-} from '@y0ngha/siglens-core';
-import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
-import { sleep } from '@/lib/sleep';
+import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
+import { sleep } from '@/lib/sleep';
+import {
+    pollNewsCardAnalysis,
+    submitNewsCardAnalysis,
+    type NewsItem,
+} from '@y0ngha/siglens-core';
 
 const POLL_INTERVAL_MS = 2_000;
 /**
@@ -88,10 +88,6 @@ export async function ensureNewsCardsAnalyzedAction(
             return null;
         });
     if (fresh === null) return;
-
-    console.log(
-        `[ensureNewsCardsAnalyzedAction] symbol=${symbol} fresh=${fresh.length}`
-    );
 
     // Upsert all items first so the DB row exists before attachAnalysis runs.
     //

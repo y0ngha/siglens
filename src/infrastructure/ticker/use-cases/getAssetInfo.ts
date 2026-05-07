@@ -54,6 +54,21 @@ function setCacheBestEffort(
         .catch(e => console.warn('[getAssetInfo] cache write failed', e));
 }
 
+/**
+ * Neon wraps the originating error as `cause.sourceError`. We unwrap it to
+ * detect AbortError, which fires on every navigation when Next.js cancels
+ * in-flight requests — this is expected behaviour and should not be logged.
+ */
+function isAbortError(e: unknown): boolean {
+    if (!(e instanceof Error)) return false;
+    if (e.name === 'AbortError') return true;
+    const neonError = (e as Error & { cause?: unknown }).cause;
+    if (!(neonError instanceof Error)) return false;
+    const sourceError = (neonError as Error & { sourceError?: unknown })
+        .sourceError;
+    return sourceError instanceof Error && sourceError.name === 'AbortError';
+}
+
 async function readFromDatabase(symbol: string): Promise<AssetInfo | null> {
     const repository = tryGetRepository();
     if (!repository) return null;
@@ -62,6 +77,7 @@ async function readFromDatabase(symbol: string): Promise<AssetInfo | null> {
         const record = await repository.findBySymbol(symbol);
         return record ? recordToAssetInfo(record) : null;
     } catch (e) {
+        if (isAbortError(e)) return null;
         console.warn('[getAssetInfo] DB read failed', e);
         return null;
     }
