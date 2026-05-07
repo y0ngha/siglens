@@ -4,6 +4,7 @@ import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
+import { buildSymbolFearGreedSeoContent } from '@/lib/seo';
 import {
     dehydrate,
     HydrationBoundary,
@@ -23,10 +24,16 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, ticker)
         : ticker;
+    const { title, description, url, keywords } =
+        buildSymbolFearGreedSeoContent(ticker, {
+            displayName,
+            koreanName: assetInfo?.koreanName,
+        });
     return {
-        title: `${displayName} (${ticker}) 공포·탐욕 지수 | SigLens`,
-        description: `${displayName} 종목의 단기 sentiment를 5단계 라벨과 0~100 점수로 측정합니다. 5-factor self-normalization 기반.`,
-        alternates: { canonical: `/${ticker}/fear-greed` },
+        title,
+        description,
+        keywords,
+        alternates: { canonical: url },
     };
 }
 
@@ -43,6 +50,8 @@ export default async function SymbolFearGreedPage({ params }: Props) {
         notFound();
     }
 
+    const displayName = buildDisplayName(assetInfo, ticker);
+
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
@@ -55,7 +64,11 @@ export default async function SymbolFearGreedPage({ params }: Props) {
 
     return (
         <HydrationBoundary state={dehydrate(queryClient)}>
-            <FearGreedPage symbol={ticker} fmpSymbol={assetInfo.fmpSymbol} />
+            <FearGreedPage
+                symbol={ticker}
+                fmpSymbol={assetInfo.fmpSymbol}
+                displayName={displayName}
+            />
         </HydrationBoundary>
     );
 }

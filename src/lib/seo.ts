@@ -352,3 +352,54 @@ function buildSymbolOverallKeywords(
         '뉴스 분석',
     ];
 }
+
+/** Build SEO metadata for the `/[symbol]/fear-greed` page. */
+export function buildSymbolFearGreedSeoContent(
+    symbol: string,
+    opts: BuildSymbolSeoOptions = {}
+): SymbolSeoContent {
+    const upper = symbol.toUpperCase();
+    const subject = opts.displayName ?? upper;
+    // Root layout template appends "| Siglens" — exclude brand name to prevent duplication.
+    const title = `${subject} (${upper}) 공포·탐욕 지수`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    return {
+        ticker: upper,
+        title,
+        fullTitle,
+        description: buildSymbolFearGreedDescription(subject, upper),
+        url: `${SITE_URL}/${upper}/fear-greed`,
+        keywords: buildSymbolFearGreedKeywords(upper, opts.koreanName),
+    };
+}
+
+function buildSymbolFearGreedDescription(
+    subject: string,
+    ticker: string
+): string {
+    return `${subject}(${ticker})의 단기 매매 심리를 0~100 점수와 5단계 라벨(극공포·공포·중립·탐욕·극탐욕)로 측정. Volume z, Buy/Sell 불균형, POC, MA200, 52w 위치 5-factor self-normalization 기반. Flow/Trend 그룹 breakdown과 1년 시계열 제공.`;
+}
+
+function buildSymbolFearGreedKeywords(
+    ticker: string,
+    koreanName?: string
+): string[] {
+    return [
+        `${ticker} 공포 지수`,
+        `${ticker} 탐욕 지수`,
+        `${ticker} sentiment`,
+        `${ticker} 단기 심리`,
+        '공포·탐욕 지수',
+        '투자 심리 지표',
+        'Fear Greed Index',
+        '단기 sentiment 분석',
+        '5-factor self-normalization',
+        ...(koreanName
+            ? [
+                  `${koreanName} 공포 지수`,
+                  `${koreanName} 탐욕 지수`,
+                  `${koreanName} 단기 심리`,
+              ]
+            : []),
+    ];
+}

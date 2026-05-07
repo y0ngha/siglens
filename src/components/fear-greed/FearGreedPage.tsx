@@ -16,9 +16,14 @@ import {
 interface FearGreedPageProps {
     symbol: string;
     fmpSymbol?: string;
+    displayName: string;
 }
 
-export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
+export function FearGreedPage({
+    symbol,
+    fmpSymbol,
+    displayName,
+}: FearGreedPageProps) {
     const { bars, indicators } = useBars({
         symbol,
         timeframe: DEFAULT_TIMEFRAME,
@@ -32,6 +37,9 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
     if (!snapshot) {
         return (
             <main className="text-secondary-400 p-6 text-sm">
+                <h1 className="sr-only">
+                    {displayName} ({symbol}) 공포·탐욕 지수와 단기 sentiment
+                </h1>
                 공포·탐욕 지수 산출에 필요한 데이터가 부족합니다.
             </main>
         );
@@ -39,6 +47,9 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
 
     return (
         <main className="flex flex-col gap-6 p-4 md:p-6">
+            <h1 className="sr-only">
+                {displayName} ({symbol}) 공포·탐욕 지수와 단기 sentiment
+            </h1>
             <section className="flex flex-col gap-3">
                 <FearGreedHero snapshot={snapshot} />
                 <FearGreedComparisonGauges history={history} />

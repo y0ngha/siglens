@@ -103,5 +103,11 @@ export default function sitemap({ id }: SitemapSegment): MetadataRoute.Sitemap {
             changeFrequency: 'weekly' as const,
             priority: 0.85,
         },
+        {
+            url: `${SITE_URL}/${ticker}/fear-greed`,
+            lastModified: TODAY_AT_MARKET_CLOSE,
+            changeFrequency: 'daily' as const,
+            priority: 0.78,
+        },
     ]);
 }
