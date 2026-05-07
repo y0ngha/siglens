@@ -67,15 +67,12 @@ export function useNewsAnalysis(
     modelId: ModelId
 ): NewsAnalysisState {
     const queryClient = useQueryClient();
+    const currentJobIdRef = useRef<string | null>(null);
     const queryKey = useMemo(
         () => QUERY_KEYS.newsAnalysis(symbol, modelId),
         [symbol, modelId]
     );
 
-    // 1. useRef
-    const currentJobIdRef = useRef<string | null>(null);
-
-    // 2. useQuery
     const query = useQuery({
         queryKey,
         queryFn: ({ signal }) =>
@@ -87,14 +84,12 @@ export function useNewsAnalysis(
         staleTime: Infinity,
     });
 
-    // 3. Handlers
     const { refetch } = query;
 
     const retry = useCallback(() => {
         void refetch();
     }, [refetch]);
 
-    // 4. useEffect
     useEffect(() => {
         if (queryClient.getQueryData(queryKey) === undefined) {
             void refetch();

@@ -260,22 +260,17 @@ export function useOverallAnalysis(
     modelId: ModelId
 ): UseOverallAnalysisReturn {
     const queryClient = useQueryClient();
+    const [triggered, setTriggered] = useState(false);
+    const [progress, setProgress] = useState<ProgressState | null>(null);
+    const currentJobsRef = useRef<CurrentJobs>(null);
     const queryKey = useMemo(
         () =>
             QUERY_KEYS.overallAnalysis(symbol, companyName, timeframe, modelId),
         [symbol, companyName, timeframe, modelId]
     );
-
-    // 1. useState
-    const [triggered, setTriggered] = useState(false);
-    const [progress, setProgress] = useState<ProgressState | null>(null);
-
-    // 2. useRef
     // queryKey를 ref에 캡처해 mount 시 최초 렌더 기준으로 캐시를 확인한다.
     const queryKeyRef = useRef(queryKey);
-    const currentJobsRef = useRef<CurrentJobs>(null);
 
-    // 3. useQuery
     const query = useQuery({
         queryKey,
         queryFn: ({ signal }) =>
@@ -295,7 +290,6 @@ export function useOverallAnalysis(
         staleTime: Infinity,
     });
 
-    // 4. Derived variables
     const state = useMemo((): OverallAnalysisState => {
         if (!triggered) return { status: 'idle' };
         if (query.isError) {
@@ -323,7 +317,6 @@ export function useOverallAnalysis(
         return { status: 'submitting' };
     }, [triggered, query.isError, query.error, query.data, progress]);
 
-    // 5. Handlers
     const { refetch } = query;
     const trigger = useCallback(() => {
         setProgress(null);
@@ -334,7 +327,6 @@ export function useOverallAnalysis(
         }
     }, [triggered, refetch]);
 
-    // 6. useEffect
     useEffect(() => {
         if (queryClient.getQueryData(queryKeyRef.current) !== undefined) {
             setTriggered(true);
