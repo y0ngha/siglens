@@ -31,8 +31,13 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
 
     if (!snapshot) {
         return (
-            <div className="text-secondary-400 p-6 text-sm">
-                공포·탐욕 지수 산출에 필요한 데이터가 부족합니다.
+            <div className="text-secondary-400 flex flex-col gap-2 p-6 text-sm">
+                <p>공포·탐욕 지수 산출에 필요한 데이터가 부족합니다.</p>
+                <p className="text-secondary-500 text-xs">
+                    상장한 지 얼마 되지 않았거나 거래량 데이터가 비어 있는
+                    종목일 수 있습니다. 며칠 뒤 다시 확인하거나, 같은 섹터의
+                    다른 종목을 살펴보세요.
+                </p>
             </div>
         );
     }
@@ -59,7 +64,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
             </section>
 
             <footer className="text-secondary-500 text-xs">
-                {`표본 ${snapshot.sampleSize} — ${
+                {`표본 ${snapshot.sampleSize} — ${
                     snapshot.confidence === 'normal'
                         ? CONFIDENCE_NORMAL_LABEL
                         : CONFIDENCE_LIMITED_LABEL

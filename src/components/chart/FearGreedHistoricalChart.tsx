@@ -83,5 +83,12 @@ export function FearGreedHistoricalChart({
         chartRef.current?.timeScale().fitContent();
     }, [history]);
 
-    return <div ref={containerRef} className="w-full" />;
+    return (
+        <div
+            ref={containerRef}
+            className="w-full"
+            role="img"
+            aria-label="최근 1년 공포·탐욕 지수 추이 차트"
+        />
+    );
 }

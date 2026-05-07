@@ -23,6 +23,25 @@ export const SENTIMENT_LABEL_TEXT: Record<FearGreedLabel, string> = {
     EXTREME_GREED: '극탐욕',
 };
 
+// Locale-aware formatters hoisted to module scope — Intl.NumberFormat instances
+// are expensive to construct, so we reuse one per precision tier.
+const PERCENT_1_DP_FORMAT = new Intl.NumberFormat('ko-KR', {
+    style: 'percent',
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+});
+
+const PERCENT_2_DP_FORMAT = new Intl.NumberFormat('ko-KR', {
+    style: 'percent',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+
+const VOLUME_Z_FORMAT = new Intl.NumberFormat('ko-KR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+});
+
 /** Raw value 표시 포맷터 — UI는 이 함수로 raw 값을 출력한다. */
 export function formatFactorRaw(
     key: FearGreedFactorKey,
@@ -30,14 +49,13 @@ export function formatFactorRaw(
 ): string {
     switch (key) {
         case 'volume_z':
-            return rawValue.toFixed(2);
+            return VOLUME_Z_FORMAT.format(rawValue);
         case 'buysell_imbalance':
-            return `${(rawValue * 100).toFixed(1)}%`;
+        case 'range_position':
+            return PERCENT_1_DP_FORMAT.format(rawValue);
         // poc_distance와 ma200_distance: 가격 거리 (%) — 동일 정밀도(소수 둘째 자리)
         case 'poc_distance':
         case 'ma200_distance':
-            return `${(rawValue * 100).toFixed(2)}%`;
-        case 'range_position':
-            return `${(rawValue * 100).toFixed(1)}%`;
+            return PERCENT_2_DP_FORMAT.format(rawValue);
     }
 }
