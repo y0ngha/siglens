@@ -1,0 +1,48 @@
+/**
+ * @jest-environment jsdom
+ */
+import { renderHook } from '@testing-library/react';
+import type { Bar, BuySellVolumeResult } from '@y0ngha/siglens-core';
+import { useFearGreed } from '@/components/symbol-page/hooks/useFearGreed';
+
+jest.mock('@y0ngha/siglens-core', () => {
+    const actual = jest.requireActual('@y0ngha/siglens-core');
+    return {
+        ...actual,
+        computeFearGreedIndex: jest.fn(() => ({
+            score: 18,
+            label: 'EXTREME_FEAR',
+            groups: [
+                { name: 'Flow', score: 30, factors: [] },
+                { name: 'Trend', score: 6, factors: [] },
+            ],
+            confidence: 'normal',
+            sampleSize: 412,
+            warning: null,
+        })),
+        computeFearGreedHistory: jest.fn(() => [
+            { date: '2026-05-01', score: 22, label: 'EXTREME_FEAR' },
+            { date: '2026-05-05', score: 18, label: 'EXTREME_FEAR' },
+        ]),
+    };
+});
+
+const fakeBars: Bar[] = [];
+const fakeBsv: BuySellVolumeResult[] = [];
+
+describe('useFearGreed', () => {
+    it('returns snapshot and history derived from bars', () => {
+        const { result } = renderHook(() =>
+            useFearGreed({ bars: fakeBars, buySellVolume: fakeBsv })
+        );
+        expect(result.current.snapshot?.label).toBe('EXTREME_FEAR');
+        expect(result.current.history).toHaveLength(2);
+    });
+
+    it('returns defined result for empty bars (mock controls behavior)', () => {
+        const { result } = renderHook(() =>
+            useFearGreed({ bars: [], buySellVolume: [] })
+        );
+        expect(result.current).toBeDefined();
+    });
+});
