@@ -55,9 +55,7 @@ describe('useFearGreed', () => {
 
     describe('when computeFearGreedIndex returns null', () => {
         it('returns null snapshot when computeFearGreedIndex returns null', () => {
-            (
-                computeFearGreedIndex as jest.Mock
-            ).mockReturnValueOnce(null);
+            (computeFearGreedIndex as jest.Mock).mockReturnValueOnce(null);
             const { result } = renderHook(() =>
                 useFearGreed({ bars: [], buySellVolume: [] })
             );
