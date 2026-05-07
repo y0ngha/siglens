@@ -144,5 +144,3 @@ export async function getPriceTargetSummary(
     cacheTag(`fundamental:price-target-summary:${symbol}`);
     return fundamentalClient.getPriceTargetSummary(symbol);
 }
-
-

@@ -108,7 +108,8 @@ async function waitForDependencies(
                         remainingJobs = { ...remainingJobs, [axis]: undefined };
                     } else if (result.status === 'error') {
                         throw new OverallAnalysisError(
-                            result.error ?? `${axis} 분석 중 오류가 발생했습니다.`,
+                            result.error ??
+                                `${axis} 분석 중 오류가 발생했습니다.`,
                             axis
                         );
                     }
@@ -260,7 +261,8 @@ export function useOverallAnalysis(
 ): UseOverallAnalysisReturn {
     const queryClient = useQueryClient();
     const queryKey = useMemo(
-        () => QUERY_KEYS.overallAnalysis(symbol, companyName, timeframe, modelId),
+        () =>
+            QUERY_KEYS.overallAnalysis(symbol, companyName, timeframe, modelId),
         [symbol, companyName, timeframe, modelId]
     );
 
@@ -358,13 +360,12 @@ export function useOverallAnalysis(
                         )
                     );
                 if (fundamental !== undefined)
-                    void cancelFundamentalAnalysisJobAction(
-                        fundamental
-                    ).catch(error =>
-                        console.warn(
-                            '[useOverallAnalysis] cancel fundamental failed',
-                            error
-                        )
+                    void cancelFundamentalAnalysisJobAction(fundamental).catch(
+                        error =>
+                            console.warn(
+                                '[useOverallAnalysis] cancel fundamental failed',
+                                error
+                            )
                     );
                 if (news !== undefined)
                     void cancelNewsAnalysisJobAction(news).catch(error =>
