@@ -31,7 +31,7 @@ async function analyzeAndPersist(
     item: NewsItem,
     repo: DrizzleNewsRepository
 ): Promise<void> {
-    const submitResult = await submitNewsCardAnalysis({ item });
+    const submitResult = await submitNewsCardAnalysis({ item, thinkingBudget: 0 });
 
     if (submitResult.status === 'cached') {
         await repo.attachAnalysis(item.id, submitResult.result, new Date());

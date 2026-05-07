@@ -1,10 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useCallback, useRef, useState } from 'react';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
+import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/cn';
 import type { NewsDisplayItem } from '@/domain/types';
 import { useNewsCardPolling } from '@/components/news/hooks/useNewsCardPolling';
+import { QUERY_KEYS } from '@/lib/queryConfig';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -283,10 +285,32 @@ interface NewsListProps {
     symbol: string;
 }
 
+function countEnriched(items: NewsDisplayItem[]): number {
+    return items.filter(item => item.sentiment !== null).length;
+}
+
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
+    const queryClient = useQueryClient();
+    // Baseline enriched count captured at mount — used to decide whether new
+    // AI-analysed articles arrived so the aggregate analysis is only re-run
+    // when the input actually changed, not on every polling cycle end.
+    const initialEnrichedCountRef = useRef(countEnriched(initialItems));
+
+    const handlePollingComplete = useCallback(
+        (finalItems: NewsDisplayItem[]) => {
+            if (countEnriched(finalItems) > initialEnrichedCountRef.current) {
+                void queryClient.invalidateQueries({
+                    queryKey: QUERY_KEYS.newsAnalysisPrefix(symbol),
+                });
+            }
+        },
+        [queryClient, symbol]
+    );
+
     const { items, isPolling, pollError } = useNewsCardPolling(
         symbol,
-        initialItems
+        initialItems,
+        handlePollingComplete
     );
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
