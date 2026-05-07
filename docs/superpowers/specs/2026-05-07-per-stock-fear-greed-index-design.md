@@ -301,6 +301,7 @@ export function computeFearGreedHistory(
 - **Tier 정책과의 상호작용**: 공포지수 자체는 분석 use-case가 아니라 *지표 산출*이므로 tier 게이팅 대상이 아니라고 판단. 공포지수 탭 자체는 무료 노출, 분석 prompt에 들어가는 자연어 해석은 기존 분석 tier 정책을 그대로 따름.
 - **시계열 차트의 인터랙션 (hover로 그날의 breakdown 보기)**: v1에는 점수 line만, hover-tooltip은 v2.
 - **POC 거리·MA200 거리 raw 값 크기**: 강력 반등·하락 종목에서 ±수백%에 이를 수 있다 (validation 실측: INTC에서 POC +151% / MA200 +176% 관측). percentile 정규화 후 점수에는 영향 없으나 UI에는 *raw 값을 그대로* 표시한다 (cap·σ 정규화 안 함). 직관 보강이 필요하면 sparkline 등으로 보완.
+- **만성 약세 종목 self-norm paradox**: 1년 이상 약세 사이클이 지속된 종목은 모든 factor의 자기 분포가 음수 영역에 쏠려, 약한 negative raw signal도 percentile 상위로 분류되어 GREED 라벨로 출현할 수 있다 (validation 실측: NVO 케이스 — Volume z +2.68, Buy/Sell −0.77, MA200 −8.25%, 52w 23%인 상태에서 점수 75.2 → EXTREME_GREED 관측). 이는 self-normalization의 *정의된 행동*이며 결함이 아니다 — "이 종목 자기 기준에서 현재가 분포 상위에 있는가"가 점수의 본질. UI 분석 탭 카드의 raw factor breakdown(특히 Trend 그룹의 MA200·52w 위치)으로 사용자가 점수의 원인을 즉시 확인할 수 있게 하는 것이 보강 수단이다. cross-stock baseline 도입은 self-norm 일관성을 깨므로 도입하지 않는다.
 
 ## 10. 변경 영향 요약
 
