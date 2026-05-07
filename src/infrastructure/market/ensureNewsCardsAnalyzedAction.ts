@@ -11,6 +11,8 @@ import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { sleep } from '@/lib/sleep';
 
 const POLL_INTERVAL_MS = 2_000;
+/** Explicitly disables extended thinking for per-card translation/classification tasks. */
+const DISABLED_THINKING_BUDGET = 0;
 /**
  * Flash-lite typical wall-clock: <10 s. 30 attempts × 2 s = 60 s ceiling,
  * well within waitUntil's serverless budget.
@@ -33,7 +35,7 @@ async function analyzeAndPersist(
 ): Promise<void> {
     const submitResult = await submitNewsCardAnalysis({
         item,
-        thinkingBudget: 0,
+        thinkingBudget: DISABLED_THINKING_BUDGET,
     });
 
     if (submitResult.status === 'cached') {

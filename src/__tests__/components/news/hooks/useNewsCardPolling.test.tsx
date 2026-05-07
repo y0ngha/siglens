@@ -5,6 +5,7 @@ import { act, renderHook } from '@testing-library/react';
 import type { NewsDisplayItem } from '@/domain/types';
 import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
 import {
+    EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_CONSECUTIVE_FAILURES,
     MAX_POLL_DURATION_MS,
     POLL_INTERVAL_MS,
@@ -83,10 +84,14 @@ describe('useNewsCardPolling', () => {
         const { result } = renderHook(() => useNewsCardPolling('AAPL', []));
 
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(60_000);
+            await jest.advanceTimersByTimeAsync(
+                POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS
+            );
         });
 
-        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(20);
+        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
+            EMPTY_SNAPSHOT_MAX_POLLS
+        );
         expect(result.current.items).toEqual([]);
         expect(result.current.isPolling).toBe(false);
     });
@@ -122,7 +127,9 @@ describe('useNewsCardPolling', () => {
         let callCount = 0;
         mockGetNewsCardsAction.mockImplementation(async () => {
             callCount += 1;
-            return callCount <= 20 ? [PENDING_ITEM] : [READY_ITEM];
+            return callCount <= EMPTY_SNAPSHOT_MAX_POLLS
+                ? [PENDING_ITEM]
+                : [READY_ITEM];
         });
 
         const { result } = renderHook(() =>
@@ -130,10 +137,14 @@ describe('useNewsCardPolling', () => {
         );
 
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(60_000);
+            await jest.advanceTimersByTimeAsync(
+                POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS
+            );
         });
 
-        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(20);
+        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
+            EMPTY_SNAPSHOT_MAX_POLLS
+        );
         expect(result.current.isPolling).toBe(false);
         expect(result.current.items).toEqual([PENDING_ITEM]);
 
@@ -203,7 +214,9 @@ describe('useNewsCardPolling', () => {
         renderHook(() => useNewsCardPolling('AAPL', [], onComplete));
 
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(60_000);
+            await jest.advanceTimersByTimeAsync(
+                POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS
+            );
         });
 
         expect(onComplete).not.toHaveBeenCalled();
@@ -225,6 +238,10 @@ describe('useNewsCardPolling', () => {
         });
 
         expect(onComplete).not.toHaveBeenCalled();
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[useNewsCardPolling] poll failed:',
+            expect.any(Error)
+        );
         errorSpy.mockRestore();
     });
 
@@ -260,6 +277,10 @@ describe('useNewsCardPolling', () => {
             MAX_CONSECUTIVE_FAILURES
         );
 
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[useNewsCardPolling] poll failed:',
+            expect.any(Error)
+        );
         errorSpy.mockRestore();
     });
 });

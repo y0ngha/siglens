@@ -1,11 +1,14 @@
 'use client';
 
-import { useCallback, useState } from 'react';
+import { useCallback, useLayoutEffect, useRef, useState } from 'react';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { useQueryClient } from '@tanstack/react-query';
 import { cn } from '@/lib/cn';
 import type { NewsDisplayItem } from '@/domain/types';
-import { useNewsCardPolling } from '@/components/news/hooks/useNewsCardPolling';
+import {
+    useNewsCardPolling,
+    type OnPollingComplete,
+} from '@/components/news/hooks/useNewsCardPolling';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
@@ -305,6 +308,10 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
     // initialItems for the new symbol, so we must re-baseline explicitly.
     const [prevSymbol, setPrevSymbol] = useState(symbol);
     const queryClient = useQueryClient();
+    // Stable holder so useNewsCardPolling (data-fetch hook) can be declared
+    // before useCallback, per MISTAKES.md #17 hook-ordering rule.
+    // Kept current via useLayoutEffect below.
+    const onCompleteRef = useRef<OnPollingComplete | undefined>(undefined);
 
     // Reset baseline on symbol change — React "store information from previous
     // renders" pattern. React discards this render and immediately re-renders
@@ -315,6 +322,12 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
         setInitialEnrichedCount(countEnriched(initialItems));
         setVisibleCount(PAGE_SIZE);
     }
+
+    const { items, isPolling, pollError } = useNewsCardPolling(
+        symbol,
+        initialItems,
+        (finalItems: NewsDisplayItem[]) => onCompleteRef.current?.(finalItems)
+    );
 
     const handlePollingComplete = useCallback(
         (finalItems: NewsDisplayItem[]) => {
@@ -327,11 +340,9 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
         [queryClient, symbol, initialEnrichedCount]
     );
 
-    const { items, isPolling, pollError } = useNewsCardPolling(
-        symbol,
-        initialItems,
-        handlePollingComplete
-    );
+    useLayoutEffect(() => {
+        onCompleteRef.current = handlePollingComplete;
+    }, [handlePollingComplete]);
 
     // Surface persistent polling errors to the nearest error boundary so a
     // dedicated fallback UI can render instead of an indefinitely empty list.
