@@ -614,6 +614,20 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 
 ---
 
+## SEO & Semantic Markup
+
+```
+1. schema.org type semantics violated — incorrect type reused for unrelated content
+   → Each schema.org type has a specific domain and purpose; reusing it for unrelated content misleads search engines
+   → Example: `@type: 'FinancialProduct'` is for loans, cards, insurance — not analysis services
+   → If content is already covered by another semantic type (e.g., WebPage about.Corporation), don't duplicate
+   → Audit before adding new JSON-LD blocks; ensure the type accurately describes the content
+   ❌ schema.org FinancialProduct for a stock analysis service (product domain is financial instruments, not services)
+   ✅ Schema already includes WebPage about.Corporation (covers service metadata) — reusing FinancialProduct is redundant
+   ❌ Article.datePublished set to request time instead of publication time
+   ✅ Article.datePublished = original publication; Article.dateModified = current timestamp for background analysis updates
+```
+
 ## Accessibility (WAI-ARIA)
 
 ```
@@ -885,6 +899,23 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 ```
 
 ---
+
+## Database & Migration
+
+```
+1. Drizzle migration files out of chronological order in _journal.json
+   → Migration _journal.json must record entries in timestamp order (earliest first)
+   → Out-of-order migrations violate drizzle-kit's assumption and can cause duplicate schema errors on re-apply
+   → If a migration is discovered out of order, don't retroactively edit applied migrations — add a new forward migration to correct the state
+   ❌ _journal.json: migration 0005 entries preceding 0004 entries (predated)
+   ✅ _journal.json: entries in ascending chronological order
+
+2. Orphan migration files not registered in _journal.json
+   → All SQL migration files must be registered in _journal.json, otherwise drizzle-kit migrate ignores them
+   → Unregistered files become dead code and create duplicate-schema-operation risk
+   ❌ drizzle/0004_add_oauth_token_columns.sql exists but not listed in _journal.json
+   ✅ Every .sql file in drizzle/ has a corresponding _journal.json entry
+```
 
 ## Predictability
 

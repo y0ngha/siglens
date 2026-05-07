@@ -85,6 +85,13 @@
             "when": 1778071030925,
             "tag": "0011_steep_oracle",
             "breakpoints": true
+        },
+        {
+            "idx": 12,
+            "version": "7",
+            "when": 1778157431000,
+            "tag": "0012_profile_description_translations",
+            "breakpoints": true
         }
     ]
 }
