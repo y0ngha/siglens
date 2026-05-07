@@ -191,8 +191,14 @@ function ReconciledLevelsBlock({
                 </span>
                 <InfoTooltip>
                     <div className="text-secondary-300">
-                        <p>AI가 제시한 값을 내부 데이터로 한 번 더 검증·보정한 결과예요.</p>
-                        <p>실시간 가격 흐름과 어긋난 부분이 있으면 여기서 조정돼요.</p>
+                        <p>
+                            AI가 제시한 값을 내부 데이터로 한 번 더 검증·보정한
+                            결과예요.
+                        </p>
+                        <p>
+                            실시간 가격 흐름과 어긋난 부분이 있으면 여기서
+                            조정돼요.
+                        </p>
                         <MarkdownText>{reason}</MarkdownText>
                     </div>
                 </InfoTooltip>
@@ -417,7 +423,10 @@ function KeyLevelsHeaderInfo() {
         <InfoTooltip>
             <div className="text-secondary-300">
                 <p>가까운 가격대에 여러 지표가 함께 모인 레벨이에요.</p>
-                <p>수렴된 지표가 많을수록 그 가격대의 지지·저항 신뢰도가 높다고 봐요.</p>
+                <p>
+                    수렴된 지표가 많을수록 그 가격대의 지지·저항 신뢰도가 높다고
+                    봐요.
+                </p>
             </div>
         </InfoTooltip>
     );
