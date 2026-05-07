@@ -1,5 +1,3 @@
-'use client';
-
 import type { CSSProperties } from 'react';
 import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';

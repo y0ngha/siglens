@@ -1,5 +1,3 @@
-'use client';
-
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 

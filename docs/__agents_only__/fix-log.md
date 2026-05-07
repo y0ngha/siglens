@@ -1,5 +1,12 @@
 # Fix Log
 
+## [PR #426 Round 1 | feat/fundamental-info-tooltips-mobile-fixes | 2026-05-07]
+- B1: `ValuationCard.tsx`, `ProfitabilityCard.tsx`, `FinancialHealthCard.tsx`, `FutureDirectionCard.tsx` — `'use client'` 불필요하게 추가됨. RSC가 Client Component 자식을 렌더링할 때 부모에 `'use client'`가 필요 없음. 4개 파일에서 모두 제거.
+  - Rule: `'use client'`는 해당 컴포넌트 자체가 hooks/event handler/browser API를 사용할 때만 선언. Client Component를 import하는 RSC 부모는 directive 불필요.
+- S1 (적용): `FutureDirectionCard.tsx` — '컨센서스' 목표주가 항목 툴팁을 `'애널리스트 목표주가 하단·중앙·상단 범위'` → `'애널리스트 목표주가 평균치'`로 변경. 기존 설명이 '컨센서스' 단일 항목이 아닌 전체 범위를 설명하는 오류.
+- S2 (거부): `globals.css` `overflow-x: hidden` — iOS Safari layout viewport 확장 버그 대응 의도적 수정. sticky header는 y축만 사용, 자식 스크롤 컨테이너는 독립 overflow-x 설정.
+- S3 (거부): `SymbolLayoutHeader.tsx` `z-50` — Tailwind z-index 스케일 유틸리티 클래스. 매직 넘버 아님. vaul Drawer.Content(z-40) 위에 헤더를 올리기 위한 의도적 값.
+
 ## [PR #423 Round 7 (S2) | feat/news-thinking-budget-and-refresh | 2026-05-07]
 - S2: `src/components/news/hooks/useNewsPollingWithInvalidation.ts` 신규 훅 생성. `useQueryClient` + 캐시 무효화 로직을 `NewsList.tsx`에서 분리. `NewsList`는 `useNewsPollingWithInvalidation` 단일 호출로 단순화(useState 2개만 유지). `NewsList.test.tsx` mock 대상도 함께 교체(`useNewsCardPolling` → `useNewsPollingWithInvalidation`).
   - Rule: 단일 책임 — 컴포넌트는 렌더링에 집중, React Query 캐시 무효화 결정은 전용 훅으로 분리

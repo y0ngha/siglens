@@ -1,5 +1,3 @@
-'use client';
-
 import type { CSSProperties } from 'react';
 import type {
     FundamentalAnalystEstimateInput,
@@ -232,7 +230,7 @@ export function FutureDirectionCard({
                                     [
                                         '컨센서스',
                                         ptConsensus.targetConsensus,
-                                        '애널리스트 목표주가 하단·중앙·상단 범위',
+                                        '애널리스트 목표주가 평균치',
                                     ],
                                     ['상단', ptConsensus.targetHigh, undefined],
                                 ] as [
