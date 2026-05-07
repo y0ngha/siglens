@@ -3,13 +3,10 @@
 import { useState, useEffect } from 'react';
 import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/domain/types';
-
-const POLL_INTERVAL_MS = 3_000;
-/**
- * Number of consecutive `getNewsCardsAction` failures before we surface the
- * error to the surrounding error boundary via `pollError`.
- */
-const MAX_CONSECUTIVE_FAILURES = 3;
+import {
+    POLL_INTERVAL_MS,
+    MAX_CONSECUTIVE_FAILURES,
+} from '@/components/news/constants';
 
 function hasAnyEnrichedCard(items: NewsDisplayItem[]): boolean {
     return items.some(item => item.sentiment !== null);

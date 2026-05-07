@@ -4,8 +4,13 @@ import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/domain/types';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
+import {
+    POLL_INTERVAL_MS,
+    MAX_CONSECUTIVE_FAILURES,
+} from '@/components/news/constants';
 
-export const POLL_INTERVAL_MS = 3_000;
+export { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES };
+
 const EMPTY_SNAPSHOT_MAX_POLLS = 20;
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
 /**
@@ -14,11 +19,6 @@ const REFRESH_SNAPSHOT_MIN_POLLS = 5;
  * work in long-lived tabs.
  */
 const MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
-/**
- * Number of consecutive `getNewsCardsAction` failures before we surface the
- * error to the React error boundary via `pollError`.
- */
-export const MAX_CONSECUTIVE_FAILURES = 3;
 
 function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     return items.some(
