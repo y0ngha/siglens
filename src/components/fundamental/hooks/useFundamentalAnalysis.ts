@@ -19,11 +19,14 @@ export type FundamentalAnalysisState =
     | { status: 'error'; error: Error; retry: () => void };
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
+// onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
+// retry/queryKey 변경으로 새 실행이 시작된 뒤에도 이전 실행의 finally가
+// 새 jobId를 null로 덮어쓰지 않는다.
 async function fetchFundamentalAnalysis(
     symbol: string,
     modelId: ModelId,
     signal: AbortSignal,
-    onJobId: (jobId: string | null) => void
+    onJobId: (jobId: string | null, expectedCurrent?: string | null) => void
 ): Promise<FundamentalAnalysisResponse> {
     const submitted = await submitFundamentalAnalysisAction(symbol, modelId);
 
@@ -49,7 +52,8 @@ async function fetchFundamentalAnalysis(
             }
         }
     } finally {
-        onJobId(null);
+        // 이 실행이 설정한 jobId가 ref에 그대로 있을 때만 null로 비운다.
+        onJobId(null, submitted.jobId);
     }
     throw new Error('aborted');
 }
@@ -68,9 +72,20 @@ export function useFundamentalAnalysis(
     const query = useQuery({
         queryKey,
         queryFn: ({ signal }) =>
-            fetchFundamentalAnalysis(symbol, modelId, signal, jobId => {
-                currentJobIdRef.current = jobId;
-            }),
+            fetchFundamentalAnalysis(
+                symbol,
+                modelId,
+                signal,
+                (jobId, expectedCurrent) => {
+                    if (
+                        expectedCurrent !== undefined &&
+                        currentJobIdRef.current !== expectedCurrent
+                    ) {
+                        return;
+                    }
+                    currentJobIdRef.current = jobId;
+                }
+            ),
         enabled: false,
         retry: false,
         staleTime: Infinity,

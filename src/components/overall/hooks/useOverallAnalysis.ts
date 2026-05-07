@@ -43,7 +43,19 @@ type CurrentJobs =
     | { phase: 'overall'; jobId: string }
     | null;
 
+/** dependency axis별 polling 함수의 공통 응답 형태. */
+interface DependencyPollResult {
+    status: string;
+    error?: string;
+}
+
 const AXIS_ORDER: readonly OverallAxis[] = ['technical', 'fundamental', 'news'];
+
+/**
+ * submitUntilReady 재진입 한도. dedup이 적용된 뒤에도 의존성 분석이 끊임없이
+ * 다시 pending 상태로 돌아가는 비정상 흐름을 멈추기 위한 안전망.
+ */
+const MAX_SUBMIT_RETRY_DEPTH = 3;
 
 /**
  * submitOverallAnalysisAction이 axis 정보와 함께 에러를 돌려줄 수 있으므로
@@ -67,7 +79,7 @@ function throwIfAborted(signal: AbortSignal): void {
 async function pollDependencyJob(
     axis: OverallAxis,
     jobId: string
-): Promise<{ status: string; error?: string }> {
+): Promise<DependencyPollResult> {
     switch (axis) {
         case 'technical':
             return pollAnalysisAction(jobId);
@@ -99,22 +111,28 @@ async function waitForDependencies(
         await sleep(AUGMENT_AND_OVERALL_POLL_INTERVAL_MS);
         throwIfAborted(signal);
 
-        await Promise.all(
+        // 병렬 폴링 결과를 모은 뒤 한 번에 remainingJobs를 갱신해 동시 mutation을
+        // 피한다. 두 callback이 같은 직전 값을 읽어 spread로 덮어쓰면 한쪽
+        // 변경이 사라지는 race를 막기 위함.
+        const completedAxes = await Promise.all(
             AXIS_ORDER.filter(axis => remainingJobs[axis] !== undefined).map(
-                async axis => {
+                async (axis): Promise<OverallAxis | null> => {
                     const jobId = remainingJobs[axis]!;
                     const result = await pollDependencyJob(axis, jobId);
-                    if (result.status === 'done') {
-                        remainingJobs = { ...remainingJobs, [axis]: undefined };
-                    } else if (result.status === 'error') {
+                    if (result.status === 'error') {
                         throw new OverallAnalysisError(
                             result.error ??
                                 `${axis} 분석 중 오류가 발생했습니다.`,
                             axis
                         );
                     }
+                    return result.status === 'done' ? axis : null;
                 }
             )
+        );
+        remainingJobs = completedAxes.reduce(
+            (acc, axis) => (axis === null ? acc : { ...acc, [axis]: undefined }),
+            remainingJobs
         );
 
         retryCount++;
@@ -146,7 +164,7 @@ async function submitUntilReady(
         { status: 'pending_dependencies' }
     >
 > {
-    if (depth >= 3) {
+    if (depth >= MAX_SUBMIT_RETRY_DEPTH) {
         throw new OverallAnalysisError(
             '의존성 분석이 반복적으로 지연되고 있습니다. 잠시 후 다시 시도해 주세요.'
         );
@@ -196,8 +214,19 @@ async function fetchOverallAnalysis(
     modelId: ModelId,
     signal: AbortSignal,
     onProgress: (p: ProgressState) => void,
-    onJobsUpdate: (jobs: CurrentJobs) => void
+    // expectedCurrent가 주어지면 ref가 일치할 때만 갱신한다. retry/queryKey
+    // 변경으로 새 실행이 시작된 뒤 이전 실행의 finally가 새 실행의 ref를 null로
+    // 덮어쓰는 race를 막기 위해 사용한다.
+    onJobsUpdate: (jobs: CurrentJobs, expectedCurrent?: CurrentJobs) => void
 ): Promise<OverallAnalysisResponse> {
+    // 이 실행이 마지막으로 ref에 기록한 값. finally에서 compare-and-clear의
+    // 비교 기준으로 사용한다 — 다른 실행이 ref를 갱신했다면 그 값을 보존한다.
+    let lastSetByThisRun: CurrentJobs = null;
+    const trackedUpdate = (jobs: CurrentJobs): void => {
+        lastSetByThisRun = jobs;
+        onJobsUpdate(jobs);
+    };
+
     onProgress({ phase: 'submitting' });
 
     const submitted = await submitUntilReady(
@@ -207,7 +236,7 @@ async function fetchOverallAnalysis(
         modelId,
         signal,
         onProgress,
-        onJobsUpdate
+        trackedUpdate
     );
 
     if (submitted.status === 'cached') return submitted.result;
@@ -228,7 +257,7 @@ async function fetchOverallAnalysis(
     }
 
     const { jobId } = submitted;
-    onJobsUpdate({ phase: 'overall', jobId });
+    trackedUpdate({ phase: 'overall', jobId });
     onProgress({ phase: 'polling' });
 
     try {
@@ -247,7 +276,9 @@ async function fetchOverallAnalysis(
             }
         }
     } finally {
-        onJobsUpdate(null);
+        // 이 실행이 마지막으로 기록한 값이 여전히 ref에 있을 때만 비운다.
+        // 새 실행이 ref를 갱신했다면 그 상태를 보존한다.
+        onJobsUpdate(null, lastSetByThisRun);
     }
 
     throw new DOMException('Overall analysis aborted', 'AbortError');
@@ -281,7 +312,13 @@ export function useOverallAnalysis(
                 modelId,
                 signal,
                 setProgress,
-                jobs => {
+                (jobs, expectedCurrent) => {
+                    if (
+                        expectedCurrent !== undefined &&
+                        currentJobsRef.current !== expectedCurrent
+                    ) {
+                        return;
+                    }
                     currentJobsRef.current = jobs;
                 }
             ),

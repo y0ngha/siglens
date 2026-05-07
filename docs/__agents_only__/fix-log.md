@@ -8,10 +8,6 @@
 - S3 (거부): `SymbolLayoutHeader.tsx` `z-50` — Tailwind z-index 스케일 유틸리티 클래스. 매직 넘버 아님. vaul Drawer.Content(z-40) 위에 헤더를 올리기 위한 의도적 값.
 ## [PR #425 Round 2 | refactor/news-card-db-first | 2026-05-07]
 
-- B1: Added expect(mockListBySymbol).toHaveBeenCalledWith('AAPL', NEWS_LOOKBACK_MS) assertion to "모든 아이템이 이미 분석 완료" test. Added NEWS_LOOKBACK_MS import from @/infrastructure/market/newsLookback.
-- Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths requires explicit assertions verifying the expected function calls and arguments
-- Context: DB-first filtering test enhanced to verify that listBySymbol was called with correct symbol and lookback parameters, ensuring the filtering logic correctly queries the database
-
 - S1: Added listBySymbol: jest.fn().mockResolvedValue([]) to module-level DrizzleNewsRepository mock factory.
 - Rule: MISTAKES.md Tests §6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
 - Context: MockNewsRepository now includes the listBySymbol method mock to cover all DB queries used by ensureNewsCardsAnalyzedAction
@@ -202,8 +198,6 @@
 
 
 ## [PR #420 Round 16 | master | 2026-05-05]
-- S1: `src/__tests__/app/api/auth/callback/route.test.ts` — New test file added covering 3 key branches of the OAuth callback route handler: existing OAuth account login, email conflict redirect, and pendingStore.save failure.
-  - Rule: MISTAKES.md Tests §12 — test coverage for critical business paths
 - S2 (skipped — intentional design): `registerUser.ts` DI pattern (`createTransactionalRepositories` factory) — reviewer noted "현 설계가 의도적이라면 pass". Confirmed intentional, skipped.
 
 ## [Phase 7 OAuth Consent Flow | Code quality R1 | 2026-05-04]
@@ -211,16 +205,9 @@
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained
 - Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
 
-## [PR #425 Round 3 | refactor/news-card-db-first | 2026-05-07]
-- S1: Added "listBySymbol 실패 시 에러를 전파한다" test case inside "DB-first 필터링은" describe block. Verifies that listBySymbol rejection propagates (fail-fast design for DB-wide outage detection).
-  - Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths
-  - Context: Ensures error handling path is exercised when DB query fails; confirm that rejection surfaces to caller instead of being silently swallowed
-
 ## [PR #425 Round 1 | refactor/news-card-db-first | 2026-05-07]
 - B1: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing mockListBySymbol mock setup in beforeEach. Added `mockListBySymbol = jest.fn().mockResolvedValue([])` and `listBySymbol: mockListBySymbol` to MockNewsRepository.mockImplementation. Default empty array keeps all existing tests passing (all items treated as unanalyzed).
   - Rule: MISTAKES.md Tests #6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
-- B2: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing test cases for DB-first filtering logic. Added new describe block "DB-first 필터링은" with two test cases: (1) "모든 아이템이 이미 분석 완료(analyzedAt != null)이면 카드 분석을 호출하지 않는다" — verifies early return when all items analyzed; (2) "분석 완료된 아이템은 건너뛰고 미분석 아이템만 카드 분석을 호출한다" — verifies mixed state filtering.
-  - Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths; DB-first filtering is the core refactor logic
 
 ## [Multi-domain audit + 7-task patch | Round 2 (approved) | 2026-05-07]
 - B3: `src/__tests__/components/chat/hooks/useChat.test.tsx:79` — ESLint react/display-name error: anonymous component returned from makeWrapper(). Fixed by giving it a named function declaration TestQueryWrapper.
