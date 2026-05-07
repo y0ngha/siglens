@@ -1,4 +1,4 @@
-import type { ReactElement } from 'react';
+import type { CSSProperties, ReactElement } from 'react';
 import type { FearGreedGroup } from '@y0ngha/siglens-core';
 import {
     FACTOR_LABEL,
@@ -10,7 +10,6 @@ interface FearGreedGroupBarProps {
 }
 
 // Pure presentational — renders directly inside a Server Component when invoked at RSC level.
-/** Renders one Flow/Trend group's score bar + per-factor breakdown for the fearGreed page. */
 export function FearGreedGroupBar({
     group,
 }: FearGreedGroupBarProps): ReactElement {
@@ -26,12 +25,16 @@ export function FearGreedGroupBar({
                 </span>
             </header>
             <div
-                className="bg-secondary-700/40 relative h-2 overflow-hidden rounded"
+                role="progressbar"
                 aria-label={`${group.name} 그룹 점수 ${score}`}
+                aria-valuenow={score}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                className="bg-secondary-700/40 relative h-2 overflow-hidden rounded"
             >
                 <div
-                    className="bg-primary-500 h-full"
-                    style={{ width: `${score}%` }}
+                    className="bg-primary-500 h-full w-[var(--bar-width)]"
+                    style={{ '--bar-width': `${score}%` } as CSSProperties}
                 />
             </div>
             <ul className="text-secondary-400 flex flex-col gap-1 text-xs">

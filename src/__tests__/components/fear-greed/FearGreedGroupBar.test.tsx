@@ -44,5 +44,19 @@ describe('FearGreedGroupBar', () => {
             const bar = container.querySelector('[aria-label]');
             expect(bar?.getAttribute('aria-label')).toBe('Flow 그룹 점수 31');
         });
+
+        it('rounds score 0.4 down to 0', () => {
+            const zeroish = { ...flowGroup, score: 0.4 };
+            const { getByText } = render(
+                <FearGreedGroupBar group={zeroish} />
+            );
+            expect(getByText('0 / 100')).toBeInTheDocument();
+        });
+
+        it('rounds score 99.6 up to 100', () => {
+            const oneish = { ...flowGroup, score: 99.6 };
+            const { getByText } = render(<FearGreedGroupBar group={oneish} />);
+            expect(getByText('100 / 100')).toBeInTheDocument();
+        });
     });
 });
