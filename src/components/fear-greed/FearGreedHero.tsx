@@ -121,10 +121,6 @@ export function FearGreedHero({ snapshot }: FearGreedHeroProps) {
                 })}
                 <g
                     transform={`rotate(${rotateDeg} ${GAUGE_CX} ${GAUGE_CY})`}
-                    className="motion-safe:transition-transform motion-safe:duration-700 motion-safe:ease-out"
-                    style={{
-                        transformOrigin: `${GAUGE_CX}px ${GAUGE_CY}px`,
-                    }}
                 >
                     <polygon
                         points={`${tipX},${tipY} ${baseLeftX},${baseLeftY} ${baseRightX},${baseRightY}`}

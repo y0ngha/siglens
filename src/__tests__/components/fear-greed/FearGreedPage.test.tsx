@@ -49,9 +49,9 @@ describe('FearGreedPage', () => {
             const { getByText, getAllByText } = render(
                 <FearGreedPage symbol="NVDA" />
             );
-            // Hero focal-stack score `50` collides with the gauge tick label `50`,
-            // so use getAllByText and assert at least one match.
-            expect(getAllByText('50').length).toBeGreaterThan(0);
+            // Hero focal-stack score `50` and the gauge tick label `50` both render,
+            // so we expect at least 2 matches (one for the focal score, one for the tick).
+            expect(getAllByText('50').length).toBeGreaterThanOrEqual(2);
             expect(getByText(/표본 200/)).toBeInTheDocument();
             expect(getByText(/정상 산출/)).toBeInTheDocument();
         });
