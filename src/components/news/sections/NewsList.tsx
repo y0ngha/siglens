@@ -4,7 +4,7 @@ import { useState } from 'react';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import type { NewsDisplayItem } from '@/domain/types';
-import { useNewsCardPolling } from '@/components/news/hooks/useNewsCardPolling';
+import { useNewsPollingWithInvalidation } from '@/components/news/hooks/useNewsPollingWithInvalidation';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -284,11 +284,21 @@ interface NewsListProps {
 }
 
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
-    const { items, isPolling, pollError } = useNewsCardPolling(
+    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+    // Tracks the last rendered symbol for the render-time reset below.
+    // Client-side navigation keeps the component mounted while delivering new
+    // initialItems for the new symbol, so we must re-baseline explicitly.
+    const [prevSymbol, setPrevSymbol] = useState(symbol);
+
+    if (prevSymbol !== symbol) {
+        setPrevSymbol(symbol);
+        setVisibleCount(PAGE_SIZE);
+    }
+
+    const { items, isPolling, pollError } = useNewsPollingWithInvalidation(
         symbol,
         initialItems
     );
-    const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
 
     // Surface persistent polling errors to the nearest error boundary so a
     // dedicated fallback UI can render instead of an indefinitely empty list.

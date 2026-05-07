@@ -9,16 +9,24 @@ import {
     MAX_CONSECUTIVE_FAILURES,
 } from '@/components/news/constants';
 
+/**
+ * Called once when polling terminates normally (all cards enriched, or timeout
+ * with at least some cards present). Receives the final card snapshot so the
+ * caller can decide whether any meaningful change occurred. Not called when
+ * polling ends due to an empty news list or consecutive errors.
+ */
+export type OnPollingComplete = (finalItems: NewsDisplayItem[]) => void;
+
 export { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES };
 
-const EMPTY_SNAPSHOT_MAX_POLLS = 20;
+export const EMPTY_SNAPSHOT_MAX_POLLS = 20;
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
 /**
  * Hard ceiling on overall polling duration. Even if a worker keeps returning
  * pending cards, we never poll beyond 5 minutes to avoid unbounded background
  * work in long-lived tabs.
  */
-const MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
+export const MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
 
 function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     return items.some(
@@ -26,7 +34,7 @@ function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     );
 }
 
-interface UseNewsCardPollingReturn {
+export interface UseNewsCardPollingReturn {
     items: NewsDisplayItem[];
     isPolling: boolean;
     pollError: Error | null;
@@ -52,7 +60,8 @@ interface UseNewsCardPollingReturn {
  */
 export function useNewsCardPolling(
     symbol: string,
-    initialItems: NewsDisplayItem[]
+    initialItems: NewsDisplayItem[],
+    onPollingComplete?: OnPollingComplete
 ): UseNewsCardPollingReturn {
     const [items, setItems] = useState(initialItems);
     const [isPolling, setIsPolling] = useState(true);
@@ -70,6 +79,8 @@ export function useNewsCardPolling(
     // (e.g., new SSR snapshot for the same symbol) should remount with `key={...}`.
     const [prevSymbol, setPrevSymbol] = useState(symbol);
     const latestItemsRef = useRef(initialItems);
+    // Keep the latest callback in a ref so the interval closure never goes stale.
+    const onPollingCompleteRef = useRef(onPollingComplete);
 
     if (prevSymbol !== symbol) {
         setPrevSymbol(symbol);
@@ -86,6 +97,10 @@ export function useNewsCardPolling(
         latestItemsRef.current = items;
     }, [items]);
 
+    useLayoutEffect(() => {
+        onPollingCompleteRef.current = onPollingComplete;
+    }, [onPollingComplete]);
+
     useEffect(() => {
         let pollCount = 0;
         let consecutiveFailures = 0;
@@ -95,6 +110,9 @@ export function useNewsCardPolling(
             if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
                 setIsPolling(false);
                 clearInterval(intervalId);
+                if (latestItemsRef.current.length > 0) {
+                    onPollingCompleteRef.current?.(latestItemsRef.current);
+                }
                 return;
             }
 
@@ -113,14 +131,19 @@ export function useNewsCardPolling(
                 }
 
                 if (
-                    (fresh.length === 0 &&
-                        pollCount >= EMPTY_SNAPSHOT_MAX_POLLS) ||
-                    (fresh.length > 0 &&
-                        !hasPendingAnalysis(fresh) &&
-                        pollCount >= REFRESH_SNAPSHOT_MIN_POLLS)
+                    fresh.length === 0 &&
+                    pollCount >= EMPTY_SNAPSHOT_MAX_POLLS
                 ) {
                     setIsPolling(false);
                     clearInterval(intervalId);
+                } else if (
+                    fresh.length > 0 &&
+                    !hasPendingAnalysis(fresh) &&
+                    pollCount >= REFRESH_SNAPSHOT_MIN_POLLS
+                ) {
+                    setIsPolling(false);
+                    clearInterval(intervalId);
+                    onPollingCompleteRef.current?.(fresh);
                 }
             } catch (err) {
                 pollCount += 1;

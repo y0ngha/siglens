@@ -1,4 +1,5 @@
 import { ensureNewsCardsAnalyzedAction } from '@/infrastructure/market/ensureNewsCardsAnalyzedAction';
+import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
 import {
     submitNewsCardAnalysis,
     pollNewsCardAnalysis,
@@ -172,9 +173,11 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
         expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
             item: NEWS_ITEM_1,
+            thinkingBudget: DISABLED_THINKING_BUDGET,
         });
         expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledWith({
             item: NEWS_ITEM_2,
+            thinkingBudget: DISABLED_THINKING_BUDGET,
         });
     });
 

@@ -42,6 +42,10 @@ export const QUERY_KEYS = {
     // Augment consumers may use `select` to project to a narrower shape.
     newsAnalysis: (symbol: string, modelId: ModelId) =>
         ['news-analysis', symbol, modelId] as const,
+    /** Prefix key — invalidates all modelId variants for a symbol at once. */
+    newsAnalysisPrefix: (
+        symbol: string
+    ): readonly ['news-analysis', string] => ['news-analysis', symbol],
     overallAnalysis: (
         symbol: string,
         companyName: string,

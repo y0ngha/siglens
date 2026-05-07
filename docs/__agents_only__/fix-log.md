@@ -1,48 +1,45 @@
 # Fix Log
 
+## [PR #423 Round 7 (S2) | feat/news-thinking-budget-and-refresh | 2026-05-07]
+- S2: `src/components/news/hooks/useNewsPollingWithInvalidation.ts` 신규 훅 생성. `useQueryClient` + 캐시 무효화 로직을 `NewsList.tsx`에서 분리. `NewsList`는 `useNewsPollingWithInvalidation` 단일 호출로 단순화(useState 2개만 유지). `NewsList.test.tsx` mock 대상도 함께 교체(`useNewsCardPolling` → `useNewsPollingWithInvalidation`).
+  - Rule: 단일 책임 — 컴포넌트는 렌더링에 집중, React Query 캐시 무효화 결정은 전용 훅으로 분리
+
+## [PR #423 Round 6 | feat/news-thinking-budget-and-refresh | 2026-05-07]
+- B1: `src/components/news/sections/NewsList.tsx` — `useCallback(handlePollingComplete)`이 `useNewsCardPolling` 보다 앞에 선언됨. `onCompleteRef = useRef<OnPollingComplete>` 추가 후 `useNewsCardPolling`을 먼저 호출하고, `useCallback` 이후 `useLayoutEffect`로 ref 동기화.
+  - Rule: MISTAKES.md #17 — 훅 선언 순서: useState/useRef → useQuery/useMutation 동등 → useCallback/useMemo
+- B2: `src/__tests__/components/news/hooks/useNewsCardPolling.test.tsx` — spy 생성 후 assertion 없음. `expect(errorSpy).toHaveBeenCalledWith(...)` 추가 (신규 테스트 + 기존 pollError 테스트 동일 패턴 모두 수정).
+  - Rule: MISTAKES.md Tests #15 — 모든 spy에는 호출 여부 assertion 필요
+- S1 (부분 적용): `ensureNewsCardsAnalyzedAction.ts` — `thinkingBudget: 0` → `DISABLED_THINKING_BUDGET` 로컬 상수로 추출. `'use server'` 파일은 async function만 export 가능하여 test import 동기화 불가. GitHub 코멘트로 제약 사유 설명.
+
+
+
+
+## [PR #423 Round 2 | feat/news-thinking-budget-and-refresh | 2026-05-07]
+- S1: `src/components/news/sections/NewsList.tsx` — `initialEnrichedCountRef`가 symbol 변경 시 초기화되지 않는 문제. reviewer 제안(render-time ref mutation)은 react-hooks/refs 위반이므로 `useRef` → `useState`로 전환 후 `prevSymbol` render-time reset 패턴 적용.
+  - Rule: react-hooks/refs — refs must not be mutated during render; use setState + prevState pattern instead
+
 ## [PR #422 Round 2 | fix/post-9e88a2f9-audit | 2026-05-07]
-- B1: `src/infrastructure/db/newsRepository.ts` — enum mirror 배열을 `Record<T, true>` 형태로 교체해 siglens-core 측 enum 추가 시 컴파일 에러로 감지되도록 했음. `isNewsSentiment/Category/Impact` type guard 추출.
-  - Rule: MISTAKES.md Documentation 6 — 외부 enum과 동기화되어야 하는 로컬 mirror는 컴파일 시점 exhaustiveness 검사 필수
-- B2: `src/__tests__/infrastructure/db/newsRepository.test.ts` — toNewsRow의 unknown 문자열 / 비문자열 입력 케이스 두 건 추가. validator 분기 100% 커버.
-  - Rule: MISTAKES.md Infrastructure 2 — 100% branch coverage
-- S1: `src/components/news/hooks/useNewsCardPolling.ts` — `MAX_POLL_DURATION_MS = 5 * 60_000`을 `5 * MS_PER_MINUTE`로 교체.
-  - Rule: MISTAKES.md #15 — 시간 계산은 `@/domain/constants/time` 상수 사용
-- S2: `useNewsCardPolling.ts` `POLL_INTERVAL_MS` / `MAX_CONSECUTIVE_FAILURES` export + 테스트 import. 매직넘버(`3_000`, `9_000`, `30_000`) 제거.
-  - Rule: MISTAKES.md Tests 4 — 경계값 상수는 source export 후 import해 동기화
 - S3: `src/components/chat/hooks/useChat.ts` `MODEL_STORAGE_KEY` export + `useChat.test.tsx`에서 로컬 재정의 제거 후 import.
   - Rule: MISTAKES.md Tests 13 — 테스트는 production 코드를 직접 import해 검증
 - S4: `src/components/news/NewsAiSummary.tsx` `useMemo` 본문 내 dead code 위치 주석을 호출 앞 docblock에 통합.
   - Rule: 주석은 실행 흐름이 도달하는 위치에 둔다
-- S6: `src/infrastructure/ai/anthropic.ts` `VALID_EFFORTS`도 `Record<NonNullable<ModelSpec['effort']>, true>` 패턴으로 교체. `isValidEffort` type guard 추출.
-  - Rule: B1과 동일 — 외부 enum union 추적
 - S5 (skipped — 이전 라운드 결정): `useSelectedModel.ts` `eslint-disable` 근본 수정은 별도 이슈로 트래킹.
 
 ## [PR #420 Round 15 | master | 2026-05-05]
 - S3 (skipped — False Positive): `src/infrastructure/auth/finalizeOAuthSignupAction.ts` — reviewer suggested changing `tx as unknown as SiglensDatabase` to `tx as SiglensDatabase`. Reverted: `PgTransaction<NeonHttpQueryResultHKT, ...>` doesn't overlap with `NeonHttpDatabase<...>` (SiglensDatabase), causing TS error 2352. The double cast is required.
 
-## [PR #420 Round 14 | master | 2026-05-05]
-- B2: `db/scripts/seedTerms.ts` — used relative imports (`../../src/infrastructure/db/...`) instead of `@/` path aliases. Changed all three imports to use `@/infrastructure/db/...`.
-  - Rule: MISTAKES.md CONVENTIONS.md — path aliases must use `@/` for better maintainability
-- S1: `src/components/legal/PolicyMarkdownBody.tsx` — focus ring on Link/anchor elements was missing `ring-offset` pair (`focus-visible:ring-offset-secondary-950 focus-visible:ring-offset-2`). Added the ring-offset classes.
-  - Rule: WAI-ARIA keyboard accessibility — focus ring needs ring-offset for sufficient contrast; cross-component consistency
-- S2: `src/app/privacy/page.tsx`, `src/app/terms/page.tsx`, `src/app/signup/oauth/consent/page.tsx` — Suspense boundaries were missing fallback prop (showing blank during DB fetch). Added `fallback={<div className="animate-pulse" aria-hidden="true" />}`.
-  - Rule: Suspense fallback — must provide visible loading indicator; missing fallback shows blank page to user during async fetch
 
 ## [PR #420 Round 11 | master | 2026-05-05]
 - B3: `ConsentCheckboxGroup.tsx` — error `<p>` had no `id`; invalid checkboxes had no `aria-describedby` connection to error message. Added `const errorId = useId()`, `id={errorId}` on error element, `errorId` prop on ConsentRow, `aria-describedby: errorId` on checkbox inputs.
   - Rule: ARIA accessibility — form inputs with errors must have aria-describedby pointing to error message
 - S1: `route.ts` ([provider] callback) — `let token; try { token = await ... } catch { return ... }` imperative pattern (MISTAKES.md §14). Replaced with declarative `const token = await pendingStore.save({...}).catch(() => null); if (!token) return ...`
   - Rule: MISTAKES.md §14 — Imperative exception handling within try-catch should use declarative .catch() or ?. chains
-- S2: `usePageShowReload.ts` moved from `src/components/auth/hooks/` to `src/components/hooks/` (generic bfcache hook placed in auth feature subfolder instead of global hooks dir, MISTAKES.md Components §15). Updated import in OAuthConsentForm.tsx.
-  - Rule: MISTAKES.md Components §15 — Feature-agnostic utilities belong in global directories, not feature-specific subdirs
 
 ## [PR #420 Round 8 | master | 2026-05-05]
 - B3: `registerAction.test.ts` `expect.anything()` → `expect.objectContaining({ emailTokens, db })` 명시 검증. db mock에 `transaction` 함수 추가.
   - Rule: 의존성 주입 검증 — db 인자 포함 여부 명시
 
 ## [PR #420 Round 6 | master | 2026-05-04]
-- B1: `formatKoreanDate` 타임존 버그 — `getFullYear/Month/Date`는 프로세스 로컬(UTC) 기준이라 KST 날짜가 하루 밀림. `Intl.DateTimeFormat('ko-KR', { timeZone: 'Asia/Seoul' })`로 교체.
-  - Rule: 서버 UTC 환경에서 로컬 날짜 API 금지
 - B2: `PolicySection.tsx`의 `export type { TocItem }` backward-compat re-export 제거. `LegalPageShell.tsx`가 `@/lib/legal-toc`에서 직접 import하도록 변경.
   - Rule: CLAUDE.md — 역호환 re-export 금지
 - S1: `consume` 비원자적 get+del → `client.getdel()` 단일 원자 연산으로 교체. 테스트 mock에 `getdel` 추가.
@@ -221,10 +218,3 @@
   - Rule: MISTAKES.md Components Rule 12 — Internal refs affecting state must be initialized before first use to prevent stale state propagation
 
 
-## [PR #422 R3 | fix/post-9e88a2f9-audit | 2026-05-07]
-- Violation: POLL_INTERVAL_MS / MAX_CONSECUTIVE_FAILURES silently-diverge 위험 — useWaitForNewsCards.ts에서 동일 값을 로컬로 재정의
-- Rule: MISTAKES.md #16.5 — 공유 상수를 각 파일에서 중복 정의하면 한쪽 변경이 다른 쪽에 조용히 전파되지 않는 silently-diverge 위험 발생
-- Context: useNewsCardPolling.ts가 export한 상수를 useWaitForNewsCards.ts가 동일 값으로 로컬 재정의. src/components/news/constants.ts로 추출 후 양쪽 모두 import.
-- Violation: console.log in infrastructure file (submitNewsAnalysisAction.ts)
-- Rule: MISTAKES.md Infrastructure #3 — No debug artifacts (console.log) in infrastructure files; logging belongs in higher layers
-- Context: DEBUG_VERBOSE_LOGS env-gated console.log 블록이 Server Action(infrastructure 레이어)에 남아있었음. 블록 전체 제거.

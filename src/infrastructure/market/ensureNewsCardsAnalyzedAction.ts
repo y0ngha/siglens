@@ -9,6 +9,7 @@ import { FmpNewsClient } from '@/infrastructure/fmp/newsClient';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { sleep } from '@/lib/sleep';
+import { DISABLED_THINKING_BUDGET } from '@/infrastructure/market/newsAnalysisConstants';
 
 const POLL_INTERVAL_MS = 2_000;
 /**
@@ -31,7 +32,10 @@ async function analyzeAndPersist(
     item: NewsItem,
     repo: DrizzleNewsRepository
 ): Promise<void> {
-    const submitResult = await submitNewsCardAnalysis({ item });
+    const submitResult = await submitNewsCardAnalysis({
+        item,
+        thinkingBudget: DISABLED_THINKING_BUDGET,
+    });
 
     if (submitResult.status === 'cached') {
         await repo.attachAnalysis(item.id, submitResult.result, new Date());

@@ -5,7 +5,9 @@ import { act, renderHook } from '@testing-library/react';
 import type { NewsDisplayItem } from '@/domain/types';
 import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
 import {
+    EMPTY_SNAPSHOT_MAX_POLLS,
     MAX_CONSECUTIVE_FAILURES,
+    MAX_POLL_DURATION_MS,
     POLL_INTERVAL_MS,
     useNewsCardPolling,
 } from '@/components/news/hooks/useNewsCardPolling';
@@ -82,10 +84,14 @@ describe('useNewsCardPolling', () => {
         const { result } = renderHook(() => useNewsCardPolling('AAPL', []));
 
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(60_000);
+            await jest.advanceTimersByTimeAsync(
+                POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS
+            );
         });
 
-        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(20);
+        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
+            EMPTY_SNAPSHOT_MAX_POLLS
+        );
         expect(result.current.items).toEqual([]);
         expect(result.current.isPolling).toBe(false);
     });
@@ -121,7 +127,9 @@ describe('useNewsCardPolling', () => {
         let callCount = 0;
         mockGetNewsCardsAction.mockImplementation(async () => {
             callCount += 1;
-            return callCount <= 20 ? [PENDING_ITEM] : [READY_ITEM];
+            return callCount <= EMPTY_SNAPSHOT_MAX_POLLS
+                ? [PENDING_ITEM]
+                : [READY_ITEM];
         });
 
         const { result } = renderHook(() =>
@@ -129,10 +137,14 @@ describe('useNewsCardPolling', () => {
         );
 
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(60_000);
+            await jest.advanceTimersByTimeAsync(
+                POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS
+            );
         });
 
-        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(20);
+        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
+            EMPTY_SNAPSHOT_MAX_POLLS
+        );
         expect(result.current.isPolling).toBe(false);
         expect(result.current.items).toEqual([PENDING_ITEM]);
 
@@ -160,6 +172,77 @@ describe('useNewsCardPolling', () => {
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(5);
         expect(result.current.isPolling).toBe(false);
+    });
+
+    it('분석 완료로 폴링 종료 시 onPollingComplete를 최종 아이템과 함께 호출한다', async () => {
+        const onComplete = jest.fn();
+        mockGetNewsCardsAction.mockResolvedValue([READY_ITEM]);
+
+        renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete));
+
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 5);
+        });
+
+        expect(onComplete).toHaveBeenCalledTimes(1);
+        expect(onComplete).toHaveBeenCalledWith([READY_ITEM]);
+    });
+
+    it('최대 폴링 시간 초과 시 아이템이 있으면 onPollingComplete를 호출한다', async () => {
+        const onComplete = jest.fn();
+        // PENDING items never become READY → polling continues until timeout
+        mockGetNewsCardsAction.mockResolvedValue([PENDING_ITEM]);
+
+        renderHook(() =>
+            useNewsCardPolling('AAPL', [PENDING_ITEM], onComplete)
+        );
+
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(
+                MAX_POLL_DURATION_MS + POLL_INTERVAL_MS
+            );
+        });
+
+        expect(onComplete).toHaveBeenCalledTimes(1);
+        expect(onComplete).toHaveBeenCalledWith([PENDING_ITEM]);
+    });
+
+    it('빈 뉴스 목록으로 폴링이 종료되면 onPollingComplete를 호출하지 않는다', async () => {
+        const onComplete = jest.fn();
+        mockGetNewsCardsAction.mockResolvedValue([]);
+
+        renderHook(() => useNewsCardPolling('AAPL', [], onComplete));
+
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(
+                POLL_INTERVAL_MS * EMPTY_SNAPSHOT_MAX_POLLS
+            );
+        });
+
+        expect(onComplete).not.toHaveBeenCalled();
+    });
+
+    it('연속 실패로 폴링이 종료되면 onPollingComplete를 호출하지 않는다', async () => {
+        const onComplete = jest.fn();
+        mockGetNewsCardsAction.mockRejectedValue(new Error('db unavailable'));
+        const errorSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete));
+
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(
+                POLL_INTERVAL_MS * MAX_CONSECUTIVE_FAILURES
+            );
+        });
+
+        expect(onComplete).not.toHaveBeenCalled();
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[useNewsCardPolling] poll failed:',
+            expect.any(Error)
+        );
+        errorSpy.mockRestore();
     });
 
     it('뉴스 스냅샷 조회가 연속 실패하면 폴링을 멈추고 pollError를 노출한다', async () => {
@@ -194,6 +277,10 @@ describe('useNewsCardPolling', () => {
             MAX_CONSECUTIVE_FAILURES
         );
 
+        expect(errorSpy).toHaveBeenCalledWith(
+            '[useNewsCardPolling] poll failed:',
+            expect.any(Error)
+        );
         errorSpy.mockRestore();
     });
 });
