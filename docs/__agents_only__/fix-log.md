@@ -211,6 +211,14 @@
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained
 - Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
 
+## [PR #425 Round 1 | refactor/news-card-db-first | 2026-05-07]
+- B1: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing mockListBySymbol mock setup in beforeEach. Added `mockListBySymbol = jest.fn().mockResolvedValue([])` and `listBySymbol: mockListBySymbol` to MockNewsRepository.mockImplementation. Default empty array keeps all existing tests passing (all items treated as unanalyzed).
+  - Rule: MISTAKES.md Tests #6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
+- B2: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing test cases for DB-first filtering logic. Added new describe block "DB-first 필터링은" with two test cases: (1) "모든 아이템이 이미 분석 완료(analyzedAt != null)이면 카드 분석을 호출하지 않는다" — verifies early return when all items analyzed; (2) "분석 완료된 아이템은 건너뛰고 미분석 아이템만 카드 분석을 호출한다" — verifies mixed state filtering.
+  - Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths; DB-first filtering is the core refactor logic
+- Suggestion: `src/actions/news/ensureNewsCardsAnalyzedAction.ts:124` — Removed WHAT comment "// DB-first filter: skip items that already have analysis results." Kept the WHY comment "// Read the current DB state after upsert so newly inserted rows are included."
+  - Rule: Comments should explain WHY, not redundantly describe WHAT the code already shows
+
 ## [Multi-domain audit + 7-task patch | Round 2 (approved) | 2026-05-07]
 - B3: `src/__tests__/components/chat/hooks/useChat.test.tsx:79` — ESLint react/display-name error: anonymous component returned from makeWrapper(). Fixed by giving it a named function declaration TestQueryWrapper.
   - Rule: MISTAKES.md Components Rule 9 — Custom hooks in test wrapper components must have display name
