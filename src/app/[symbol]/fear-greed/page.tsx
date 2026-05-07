@@ -166,8 +166,8 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                         {displayName}({ticker}) 한 종목의 단기 매매 심리를 0~100
                         점수로 나타냅니다. CNN의 시장 전체 Fear &amp; Greed
                         Index가 여러 자산을 합쳐 시장 감정을 보여 준다면, 이
-                        페이지는 한 종목의 거래량 흐름과 체결 흐름, 가격 위치를 그
-                        종목의 자체 분포 안에서 환산해 점수로 만듭니다.
+                        페이지는 한 종목의 거래량 흐름과 체결 흐름, 가격 위치를
+                        그 종목의 자체 분포 안에서 환산해 점수로 만듭니다.
                     </p>
                     <p className="text-secondary-400 text-sm leading-relaxed">
                         Volume z-score, Buy/Sell volume 불균형, Volume Profile

@@ -165,7 +165,8 @@ export default async function OverallPage({ params, searchParams }: Props) {
                         {displayName} 주가가 지금 어디쯤 와 있는지 한 페이지에서
                         정리해 봅니다. 차트의 추세와 주요 지지선과 저항선, 분기
                         실적 흐름, 최근 뉴스에서 시장이 무엇에 반응하고 있는지,
-                        그리고 단기 매수 분위기까지 네 가지 축을 같이 살펴봅니다.
+                        그리고 단기 매수 분위기까지 네 가지 축을 같이
+                        살펴봅니다.
                     </p>
                     <p className="text-secondary-400 text-sm leading-relaxed">
                         네 축을 합쳐 강세와 약세 시나리오를 각각 정리하고, 어떤

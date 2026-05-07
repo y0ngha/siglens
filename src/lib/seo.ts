@@ -392,7 +392,11 @@ export function buildSymbolFearGreedSeoContent(
         fullTitle,
         description: buildSymbolFearGreedDescription(subject),
         url: `${SITE_URL}/${upper}/fear-greed`,
-        keywords: buildSymbolFearGreedKeywords(upper, opts.sector, opts.koreanName),
+        keywords: buildSymbolFearGreedKeywords(
+            upper,
+            opts.sector,
+            opts.koreanName
+        ),
     };
 }
 

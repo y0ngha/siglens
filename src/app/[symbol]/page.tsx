@@ -159,8 +159,8 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                 <h2>{displayName} 기술적 분석</h2>
                 <p>
                     {displayName} 주가를 RSI, MACD, 볼린저밴드 등{' '}
-                    {skillCounts.indicators}종 보조지표로 해석하고, 도지나
-                    해머, 장악형 같은 주요 캔들 패턴과 차트 패턴을 자동으로
+                    {skillCounts.indicators}종 보조지표로 해석하고, 도지나 해머,
+                    장악형 같은 주요 캔들 패턴과 차트 패턴을 자동으로
                     감지합니다. 주요 지지선과 저항선 레벨, 매매 전략도 함께
                     확인할 수 있습니다.
                 </p>
