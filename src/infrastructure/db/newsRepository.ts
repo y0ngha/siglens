@@ -36,6 +36,14 @@ export class DrizzleNewsRepository {
                 titleEn: item.titleEn,
                 bodyEn: item.bodyEn ?? null,
             })
+            /**
+             * bodyKo intentionally NOT in the conflict update — it is
+             * write-once via attachAnalysis() (the LLM translation step) to
+             * avoid overwriting LLM-translated content with raw English on
+             * every FMP refetch. The same reasoning applies to titleKo,
+             * summaryKo, sentiment, category, priceImpact, and analyzedAt:
+             * those columns belong to the analysis step, not the fetch step.
+             */
             .onConflictDoUpdate({
                 target: news.id,
                 set: {
@@ -113,8 +121,51 @@ interface NewsDbRow {
     analyzedAt: Date | null;
 }
 
-// DB는 sentiment/category/priceImpact를 raw text로 저장하므로 LLM 결과를 신뢰해 좁혀준다.
-// 잘못된 값은 표시 단의 guard 함수들이 fallback 처리한다.
+/**
+ * Canonical enum values for the news analysis columns. The DB stores these
+ * fields as raw text (no DB-level CHECK constraint), so we validate at the
+ * read boundary instead of trusting the writer. Keep these arrays in sync
+ * with the `NewsSentiment` / `NewsCategory` / `NewsImpact` types in
+ * `@y0ngha/siglens-core`.
+ */
+const NEWS_SENTIMENTS = ['bullish', 'bearish', 'neutral'] as const;
+const NEWS_CATEGORIES = [
+    'earnings',
+    'm_and_a',
+    'guidance',
+    'regulation',
+    'macro',
+    'product',
+    'other',
+] as const;
+const NEWS_IMPACTS = ['high', 'medium', 'low', 'negligible'] as const;
+
+function toNewsSentiment(value: unknown): NewsSentiment | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value !== 'string') return null;
+    return NEWS_SENTIMENTS.includes(value as NewsSentiment)
+        ? (value as NewsSentiment)
+        : null;
+}
+
+function toNewsCategory(value: unknown): NewsCategory | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value !== 'string') return null;
+    return NEWS_CATEGORIES.includes(value as NewsCategory)
+        ? (value as NewsCategory)
+        : null;
+}
+
+function toNewsImpact(value: unknown): NewsImpact | null {
+    if (value === null || value === undefined) return null;
+    if (typeof value !== 'string') return null;
+    return NEWS_IMPACTS.includes(value as NewsImpact)
+        ? (value as NewsImpact)
+        : null;
+}
+
+// DB는 sentiment/category/priceImpact를 raw text로 저장하므로 read 시점에 화이트리스트로 검증한다.
+// 잘못된 값(스키마 변경, 수동 SQL 등)은 null로 떨어뜨려 표시 단 fallback이 처리하도록 한다.
 function toNewsRow(row: NewsDbRow): NewsRow {
     return {
         id: row.id,
@@ -127,10 +178,9 @@ function toNewsRow(row: NewsDbRow): NewsRow {
         titleKo: row.titleKo,
         bodyKo: row.bodyKo,
         summaryKo: row.summaryKo,
-        // attachAnalysis가 NewsCardAnalysis 값으로만 write하므로 각 필드는 enum 또는 null로 신뢰 가능.
-        sentiment: row.sentiment as NewsSentiment | null,
-        category: row.category as NewsCategory | null,
-        priceImpact: row.priceImpact as NewsImpact | null,
+        sentiment: toNewsSentiment(row.sentiment),
+        category: toNewsCategory(row.category),
+        priceImpact: toNewsImpact(row.priceImpact),
         analyzedAt: row.analyzedAt,
     };
 }

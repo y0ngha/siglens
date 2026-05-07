@@ -13,7 +13,15 @@ export interface RawFmpProfile {
     description: string | null;
 }
 
-/** Raw FMP TTM key metrics (valuation multiples). */
+/**
+ * Raw FMP TTM key metrics (valuation multiples).
+ *
+ * All fields are optional because FMP may split this data across two
+ * endpoints (`key-metrics-ttm` and `ratios-ttm`). Either endpoint may be
+ * unavailable or partially populated for a given symbol (small caps, recent
+ * IPOs, sector limitations). Runtime validation via `toFiniteNumber()` is
+ * required at the call site; don't trust field presence.
+ */
 export interface RawFmpKeyMetricsTtm {
     peRatioTTM?: number | null;
     priceToSalesRatioTTM?: number | null;
@@ -27,7 +35,15 @@ export interface RawFmpKeyMetricsTtm {
     currentRatioTTM?: number | null;
 }
 
-/** Raw FMP TTM ratios (profitability + health). */
+/**
+ * Raw FMP TTM ratios (profitability + health).
+ *
+ * All fields are optional because FMP may split this data across two
+ * endpoints (`key-metrics-ttm` and `ratios-ttm`). Either endpoint may be
+ * unavailable or partially populated for a given symbol (small caps, recent
+ * IPOs, sector limitations). Runtime validation via `toFiniteNumber()` is
+ * required at the call site; don't trust field presence.
+ */
 export interface RawFmpRatiosTtm {
     returnOnEquityTTM?: number | null;
     returnOnAssetsTTM?: number | null;

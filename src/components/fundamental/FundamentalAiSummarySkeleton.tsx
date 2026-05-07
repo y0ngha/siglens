@@ -34,7 +34,7 @@ export function FundamentalAiSummarySkeleton() {
                 {[...Array(SKELETON_LINE_COUNT)].map((_, i) => (
                     <div
                         key={i}
-                        className="bg-secondary-700 h-4 w-[var(--skeleton-w)] animate-pulse rounded"
+                        className="bg-secondary-700 h-4 w-(--skeleton-w) animate-pulse rounded"
                         style={
                             {
                                 '--skeleton-w': `${SKELETON_WIDTH_START_PCT - i * SKELETON_WIDTH_STEP_PCT}%`,

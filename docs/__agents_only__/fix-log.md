@@ -209,3 +209,11 @@
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained
 - Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
 
+## [Multi-domain audit + 7-task patch | Round 2 (approved) | 2026-05-07]
+- B3: `src/__tests__/components/chat/hooks/useChat.test.tsx:79` — ESLint react/display-name error: anonymous component returned from makeWrapper(). Fixed by giving it a named function declaration TestQueryWrapper.
+  - Rule: MISTAKES.md Components Rule 9 — Custom hooks in test wrapper components must have display name
+- B4: `src/__tests__/components/chat/hooks/useChat.test.tsx:107` — test failed because lastWrittenModelRef started as null and triggered redundant write-back of stored model on hydration. Fixed by initializing the ref to stored value in useChat.ts hydration effect before flipping isModelHydrated.
+  - Rule: MISTAKES.md Components Rule 12 — Internal refs affecting state must be initialized before first use to prevent stale state propagation
+- B5: `src/infrastructure/ai/router.ts:35` — isActiveModelId guard placed AFTER getProviderForModel call, making explicit "[router] Unknown model" error unreachable. Fixed by moving guard before getProviderForModel.
+  - Rule: MISTAKES.md Predictability 6 — Validation guards must execute before dependent operations; unreachable error paths indicate logical ordering violation
+

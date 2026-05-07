@@ -52,7 +52,7 @@ function StatusCard({ phase }: StatusCardProps) {
                     className={cn(
                         'h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none',
                         isFetching
-                            ? 'border-secondary-400'
+                            ? 'border-primary-400'
                             : 'border-primary-500'
                     )}
                 />
@@ -225,13 +225,18 @@ function NewsAiSummaryContent({
     // from this page. `timeframe` is null — news analysis is timeframe-agnostic.
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
+    // Decompose deps so the memo only recomputes when the specific fields it
+    // reads actually change, instead of on every `analysis` object identity
+    // flip from useNewsAnalysis.
+    const analysisResult =
+        analysis.status === 'done' ? analysis.result : null;
     const chatState = useMemo(
         () =>
-            analysis.status === 'done'
+            analysis.status === 'done' && analysisResult !== null
                 ? ({
                       context: {
                           kind: 'news',
-                          payload: analysis.result,
+                          payload: analysisResult,
                       } as const,
                       timeframe: null,
                       isAnalysisReady: true,
@@ -241,7 +246,7 @@ function NewsAiSummaryContent({
                       timeframe: null,
                       isAnalysisReady: false,
                   } as const),
-        [analysis]
+        [analysis.status, analysisResult]
     );
     usePublishSymbolChat(chatState);
 
@@ -281,7 +286,16 @@ export function NewsAiSummary({
     companyName,
     hasEnrichedNews,
 }: NewsAiSummaryProps) {
-    const isCardsReady = useWaitForNewsCards(symbol, hasEnrichedNews);
+    const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
+        symbol,
+        hasEnrichedNews
+    );
+
+    // Surface persistent polling errors to the surrounding error boundary
+    // (NewsAiSummaryErrorBoundary) so the fallback UI takes over.
+    if (pollError !== null) {
+        throw pollError;
+    }
 
     if (!isCardsReady) {
         return <StatusCard phase="fetching" />;

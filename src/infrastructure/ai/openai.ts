@@ -53,8 +53,11 @@ export async function callOpenaiChat({
     });
 
     const text = response.output_text;
-    if (!text) {
-        throw new Error('OpenAI returned no text content');
+    if (text === null || text === undefined) {
+        throw new Error('[openai] Provider returned null/undefined response');
+    }
+    if (text === '') {
+        console.warn('[openai] Provider returned empty string');
     }
     return text;
 }

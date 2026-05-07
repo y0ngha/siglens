@@ -326,8 +326,8 @@ AI_PROVIDER=gemini          # claude | gemini (기본값: gemini)
 # /analyze에서 SIGLENS_PROVIDED_MODELS 호출 시 + briefing에서 사용
 ANTHROPIC_API_KEY=          # 필수
 GEMINI_CHAT_API_KEY=             # 필수
-GEMINI_FREE_API_KEY=        # 선택 — Gemini free tier 우선 시도 (없으면 server api key 단독 사용)
-OPENAI_API_KEY=             # 필수 — gpt-5-mini 무료 제공 등 server key 호출 위해
+GEMINI_FREE_API_KEY=        # 선택 — Gemini free tier 우선 시도 (없으면 유료 키 단독 사용)
+OPENAI_API_KEY=             # 필수 — gpt-5-mini 무료 제공 등 유료 키 호출 위해
 
 # Worker — Briefing model 기본값 (선택)
 BRIEFING_CLAUDE_MODEL=claude-haiku-4-5      # 기본값
@@ -401,7 +401,7 @@ Worker(`/worker`)는 siglens-core의 `submitAnalysis` / `submitBriefing` / `canc
 | 이름 | 필수 | 설명 |
 |---|---|---|
 | `X-Worker-Secret` | ✅ | `WORKER_SECRET` env와 일치해야 한다. |
-| `X-AI-API-KEY` | 조건부 | `model`이 siglens 제공 모델(아래 표)이 아니면 필수. siglens 제공 모델이면 무시되고 server key 사용. |
+| `X-AI-API-KEY` | 조건부 | `model`이 siglens 제공 모델(아래 표)이 아니면 필수. siglens 제공 모델이면 무시되고 유료 키 사용. |
 
 **Body**
 
@@ -415,7 +415,7 @@ interface AnalyzeRequest {
 
 **지원 모델 및 키 정책**
 
-| 모델 | Provider | siglens 제공 (server key) |
+| 모델 | Provider | siglens 제공 (유료 키) |
 |---|---|---|
 | `gemini-2.5-flash` | Gemini | ✅ |
 | `gemini-2.5-flash-lite` | Gemini | ✅ |

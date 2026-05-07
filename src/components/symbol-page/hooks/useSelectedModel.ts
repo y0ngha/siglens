@@ -36,6 +36,10 @@ export function useSelectedModel(
             setSelectedModelState(resolved);
             setIsHydrated(true);
         });
+        // Hydration-only effect — intentionally omits `allowedModels` so the
+        // first read from localStorage runs once on mount with the initial
+        // tier snapshot. Re-validation when `allowedModels` changes (e.g.,
+        // after login/logout) is handled by the next effect below.
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 

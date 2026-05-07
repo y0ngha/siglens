@@ -36,8 +36,6 @@ import type {
     GradesEvent,
 } from '@y0ngha/siglens-core';
 
-/** Default number of recent grading events returned by `getGrades`. */
-export const DEFAULT_GRADES_LIMIT = 10;
 const ANALYST_ESTIMATES_PERIOD = 'annual';
 const ANALYST_ESTIMATES_PAGE = '0';
 const ANALYST_ESTIMATES_LIMIT = '10';
@@ -249,7 +247,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /** Fetch recent analyst grade-change events; `limit` defaults to `DEFAULT_GRADES_LIMIT`; returns events sorted descending by date. */
+    /** Fetch recent analyst grade-change events; returns events sorted descending by date. */
     async getGrades(symbol: string): Promise<GradesEvent[]> {
         const arr = await fmpGet<RawFmpGradesEvent[]>('grades', {
             symbol,

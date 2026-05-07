@@ -11,7 +11,18 @@ jest.mock('@anthropic-ai/sdk', () => ({
     default: MockAnthropic,
 }));
 
+jest.mock('@y0ngha/siglens-core', () => {
+    const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
+    return {
+        ...actual,
+        MODEL_SPECS: { ...actual.MODEL_SPECS },
+    };
+});
+
 import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
+import { MODEL_SPECS } from '@y0ngha/siglens-core';
 
 const BASE_OPTIONS = {
     serverApiKey: 'server-key',
@@ -150,6 +161,46 @@ describe('callAnthropicChat', () => {
             await expect(callAnthropicChat(BASE_OPTIONS)).rejects.toThrow(
                 'Anthropic returned no text content'
             );
+        });
+    });
+
+    describe('effort 검증', () => {
+        it('유효한 effort(medium)는 통과한다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await expect(
+                callAnthropicChat(SONNET_OPTIONS)
+            ).resolves.toBe('ok');
+        });
+
+        it('잘못된 effort 값이 spec에 있으면 에러를 던진다', async () => {
+            const original =
+                MODEL_SPECS['claude-sonnet-4-6' as keyof typeof MODEL_SPECS];
+            // Override with an invalid effort value to simulate corrupted/forced spec
+            (
+                MODEL_SPECS as unknown as Record<
+                    string,
+                    typeof original & { effort?: string }
+                >
+            )['claude-sonnet-4-6'] = {
+                ...original,
+                effort: 'extreme' as unknown as typeof original.effort,
+            };
+
+            try {
+                await expect(
+                    callAnthropicChat(SONNET_OPTIONS)
+                ).rejects.toThrow(
+                    '[anthropic] Invalid effort value: extreme'
+                );
+            } finally {
+                (
+                    MODEL_SPECS as unknown as Record<string, typeof original>
+                )['claude-sonnet-4-6'] = original;
+            }
         });
     });
 });

@@ -211,7 +211,10 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
         <article
             className={cn(
                 'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-4 transition-[colors,transform] hover:-translate-y-px',
-                isHighImpact && 'border-l-ui-warning border-l-[3px]'
+                // High-impact cards get a 3px left accent border. Bump left padding
+                // from `p-4` (16px) to 20px so content doesn't sit flush against
+                // the accent strip. Low-impact cards keep the default p-4.
+                isHighImpact && 'border-l-ui-warning border-l-[3px] pl-5'
             )}
         >
             <h3
@@ -283,8 +286,17 @@ interface NewsListProps {
 }
 
 export function NewsList({ items: initialItems, symbol }: NewsListProps) {
-    const { items, isPolling } = useNewsCardPolling(symbol, initialItems);
+    const { items, isPolling, pollError } = useNewsCardPolling(
+        symbol,
+        initialItems
+    );
     const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
+
+    // Surface persistent polling errors to the nearest error boundary so a
+    // dedicated fallback UI can render instead of an indefinitely empty list.
+    if (pollError !== null) {
+        throw pollError;
+    }
 
     if (items.length === 0) {
         if (isPolling) {

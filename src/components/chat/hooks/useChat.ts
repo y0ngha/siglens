@@ -135,9 +135,14 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     );
     const [isModelHydrated, setIsModelHydrated] = useState(false);
     const [gateModal, setGateModal] = useState<GateModalState | null>(null);
-    // Mount guard for the model write effect: skip the first run so the default value
-    // does not overwrite a stored model before the read effect restores it.
-    const isModelWriteMountRef = useRef(true);
+    // Tracks the last value written to localStorage by this hook instance.
+    // Replaces the previous mount-flag guard, which had a regression: when ChatPanel
+    // closes and reopens, the hook unmounts/remounts. With a fresh `isModelHydrated`
+    // already-true state but a stale "first run" flag perception, subsequent model
+    // changes could be silently skipped. Comparing against the last-written value
+    // (initialized to null so the first hydrated change always writes) is robust to
+    // remounts and avoids overwriting the stored model with the default on mount.
+    const lastWrittenModelRef = useRef<string | null>(null);
 
     const phaseTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     // null on first render — treated as "not yet compared" to prevent false banner on mount
@@ -335,12 +340,16 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     }, []);
 
     // 하이드레이션 후 저장된 모델 로드 (SSR/client mismatch 방지 — 마운트 1회만 실행)
-    // 선언 순서가 write effect보다 앞이어야 저장된 값을 읽을 수 있음
+    // 선언 순서가 write effect보다 앞이어야 저장된 값을 읽을 수 있음.
+    // 하이드레이션 직후 write effect가 "방금 읽어온 값"을 다시 같은 키로 쓰는
+    // 무의미한 setItem을 막기 위해 lastWrittenModelRef를 stored 값으로 초기화한다.
+    // 다음 사용자 변경 시점부터 정상적으로 setItem이 호출된다.
     useEffect(() => {
         try {
             const stored = localStorage.getItem(MODEL_STORAGE_KEY);
             // VALID_CHAT_MODELS comes from siglens-core and is the runtime source of truth.
             if (stored !== null && isValidChatModel(stored)) {
+                lastWrittenModelRef.current = stored;
                 startTransition(() => {
                     setSelectedModel(stored);
                     setIsModelHydrated(true);
@@ -355,18 +364,19 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
     }, []);
 
     // selectedModel 변경 시 localStorage 동기화
-    // 첫 실행(mount 직후)은 스킵 — 기본값이 저장된 모델을 덮어쓰는 것을 방지한다.
+    // - 하이드레이션 전(`isModelHydrated === false`)에는 스킵 — 기본값이 저장된 모델을 덮어쓰는 것을 방지한다.
+    // - 마지막으로 쓴 값과 동일하면 스킵 — 패널 close→open(훅 unmount/remount) 후에도
+    //   첫 하이드레이션 직후 값이 변경되면 정상적으로 다시 저장된다(B4 회귀 방지).
     useEffect(() => {
-        if (isModelWriteMountRef.current) {
-            isModelWriteMountRef.current = false;
-            return;
-        }
+        if (!isModelHydrated) return;
+        if (lastWrittenModelRef.current === selectedModel) return;
+        lastWrittenModelRef.current = selectedModel;
         try {
             localStorage.setItem(MODEL_STORAGE_KEY, selectedModel);
         } catch {
             // 스토리지 용량 초과 등 무시
         }
-    }, [selectedModel]);
+    }, [selectedModel, isModelHydrated]);
 
     // 심볼·타임프레임 변경 시 히스토리 교체 (null 체크로 마운트 첫 실행 스킵)
     useEffect(() => {

@@ -90,26 +90,45 @@ export async function ensureNewsCardsAnalyzedAction(
     );
 
     // Upsert all items first so the DB row exists before attachAnalysis runs.
-    await Promise.allSettled(
-        fresh.map(item =>
-            repo.upsertNewsItem(item).catch((err: unknown) => {
-                console.error(
-                    `[ensureNewsCardsAnalyzedAction] upsert failed ${item.id}:`,
-                    err
-                );
-            })
-        )
+    //
+    // We deliberately do NOT wrap upsert + analyze in a drizzle transaction:
+    // the analyze step calls an external LLM worker (`submitNewsCardAnalysis`)
+    // which can take seconds to minutes, and a long-lived DB transaction would
+    // hold connection-pool slots and risk pool exhaustion. Instead we use
+    // Promise.allSettled and aggregate failure stats — and abort early if a
+    // majority of upserts fail (likely a DB-wide outage, not transient).
+    const upsertSettled = await Promise.allSettled(
+        fresh.map(item => repo.upsertNewsItem(item))
     );
+    const upsertFailures = upsertSettled.filter(r => r.status === 'rejected');
+    if (upsertFailures.length > 0) {
+        console.error(
+            `[ensureNewsCardsAnalyzedAction] ${upsertFailures.length}/${fresh.length} upserts failed`,
+            upsertFailures.map(f =>
+                f.status === 'rejected' ? f.reason : null
+            )
+        );
+    }
+    if (upsertFailures.length > fresh.length / 2) {
+        // Majority of upserts failed — almost certainly a DB-wide outage.
+        // Throw so the caller (Server Action / waitUntil) knows to retry
+        // rather than silently proceeding to analyze partial data.
+        throw new Error(
+            `[ensureNewsCardsAnalyzedAction] majority upsert failure (${upsertFailures.length}/${fresh.length})`
+        );
+    }
 
     // Analyze and persist all items in parallel — each polls its own worker.
-    await Promise.allSettled(
-        fresh.map(item =>
-            analyzeAndPersist(item, repo).catch((err: unknown) => {
-                console.error(
-                    `[ensureNewsCardsAnalyzedAction] analyzeAndPersist failed ${item.id}:`,
-                    err
-                );
-            })
-        )
+    const analyzeSettled = await Promise.allSettled(
+        fresh.map(item => analyzeAndPersist(item, repo))
     );
+    const analyzeFailures = analyzeSettled.filter(r => r.status === 'rejected');
+    if (analyzeFailures.length > 0) {
+        console.error(
+            `[ensureNewsCardsAnalyzedAction] ${analyzeFailures.length}/${fresh.length} analyzeAndPersist failed`,
+            analyzeFailures.map(f =>
+                f.status === 'rejected' ? f.reason : null
+            )
+        );
+    }
 }

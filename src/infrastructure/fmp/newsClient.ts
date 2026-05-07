@@ -78,10 +78,23 @@ export function normalizeFmpPublishedDate(value: string): string {
     return new Date(utcMs).toISOString();
 }
 
+/**
+ * Module-level flag that throttles `tryNormalizeFmpPublishedDate` warn logs
+ * to a single occurrence per process. A bad FMP batch can contain dozens of
+ * malformed rows in one response, and emitting a `console.warn` for each
+ * would spam server logs without adding signal — one warning is enough to
+ * surface the issue to operators.
+ */
+let hasWarnedNormalizeFailure = false;
+
 function tryNormalizeFmpPublishedDate(value: string): string | null {
     try {
         return normalizeFmpPublishedDate(value);
     } catch {
+        if (!hasWarnedNormalizeFailure) {
+            hasWarnedNormalizeFailure = true;
+            console.warn(`[newsClient] failed to normalize date: ${value}`);
+        }
         return null;
     }
 }

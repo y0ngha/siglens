@@ -7,6 +7,13 @@ import type {
     ModelSpec,
 } from '@y0ngha/siglens-core';
 
+/**
+ * Allowed reasoning effort values accepted by the Anthropic adaptive thinking
+ * `output_config.effort` field. Hoisted to module scope so the runtime guard
+ * stays cheap and shareable across calls.
+ */
+const VALID_EFFORTS = ['low', 'medium', 'high'] as const;
+
 // apiModelId(e.g. 'claude-sonnet-4-6')로 ModelSpec을 역방향 조회한다.
 function findSpecByApiModelId(apiModelId: string): ModelSpec | undefined {
     return (Object.values(MODEL_SPECS) as ModelSpec[]).find(
@@ -28,6 +35,12 @@ export async function callAnthropicChat({
     const spec = findSpecByApiModelId(model);
     if (!spec) {
         throw new Error(`Unknown model: ${model}`);
+    }
+    if (
+        spec.effort !== undefined &&
+        !VALID_EFFORTS.includes(spec.effort)
+    ) {
+        throw new Error(`[anthropic] Invalid effort value: ${spec.effort}`);
     }
     const adaptiveThinking = spec.effort !== undefined;
     const maxTokens = spec.maxOutputTokens;

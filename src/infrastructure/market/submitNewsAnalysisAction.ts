@@ -36,14 +36,19 @@ export async function submitNewsAnalysisAction(
         .filter(isEnrichedRow)
         .map(toEnrichedNewsItem);
 
-    console.log(
-        `[submitNewsAnalysisAction] symbol=${symbol} rows=${rows.length} enriched=${enrichedNews.length} lookbackMs=${NEWS_ANALYSIS_LOOKBACK_MS}`
-    );
-    if (rows.length > 0 && enrichedNews.length === 0) {
-        const sample = rows[0];
+    // These logs include user-facing news content (titleKo, summaryKo) which
+    // can leak into shared log aggregators. Gate behind an explicit debug
+    // env flag so production logs stay clean. See .env.example.
+    if (process.env.NEXT_PUBLIC_DEBUG_LOGGING) {
         console.log(
-            `[submitNewsAnalysisAction] enrichment 누락 sample — titleKo=${sample.titleKo} summaryKo=${sample.summaryKo} sentiment=${sample.sentiment} category=${sample.category}`
+            `[submitNewsAnalysisAction] symbol=${symbol} rows=${rows.length} enriched=${enrichedNews.length} lookbackMs=${NEWS_ANALYSIS_LOOKBACK_MS}`
         );
+        if (rows.length > 0 && enrichedNews.length === 0) {
+            const sample = rows[0];
+            console.log(
+                `[submitNewsAnalysisAction] enrichment 누락 sample — titleKo=${sample.titleKo} summaryKo=${sample.summaryKo} sentiment=${sample.sentiment} category=${sample.category}`
+            );
+        }
     }
 
     return submitNewsAnalysis({

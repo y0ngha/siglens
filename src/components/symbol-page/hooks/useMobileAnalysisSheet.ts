@@ -26,6 +26,18 @@ interface UseMobileAnalysisSheetReturn {
     handleOpenChange: (open: boolean) => void;
 }
 
+/**
+ * Delay (ms) before flipping the mobile analysis sheet to `open=true` after
+ * mount. Empirically chosen to allow Vaul's hydration plus one paint cycle
+ * to complete before the sheet opens, which prevents the aria-hidden flicker
+ * and Header attribute mismatch described in the block comment above
+ * `useMobileAnalysisSheet`. Combined with `requestAnimationFrame`, 50ms gives
+ * one frame at 60fps (~16ms) plus a safety buffer for slower devices.
+ *
+ * Revisit this value if Vaul or the underlying Radix Dialog change their
+ * hydration timing — too small reintroduces the flicker, too large delays
+ * the perceived sheet appearance on mobile.
+ */
 export const MOBILE_ANALYSIS_SHEET_OPEN_DELAY_MS = 50;
 
 // MobileAnalysisSheet 내부의 state/refs/핸들러를 한 곳에 모은다.
