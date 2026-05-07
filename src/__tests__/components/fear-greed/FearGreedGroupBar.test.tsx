@@ -61,12 +61,8 @@ describe('FearGreedGroupBar', () => {
     describe('score-color fill', () => {
         it('uses bg-ui-danger for fearful score (15)', () => {
             const fearful = { ...flowGroup, score: 15 };
-            const { container } = render(
-                <FearGreedGroupBar group={fearful} />
-            );
-            const fill = container.querySelector(
-                '[role="progressbar"] > div'
-            );
+            const { container } = render(<FearGreedGroupBar group={fearful} />);
+            const fill = container.querySelector('[role="progressbar"] > div');
             expect(fill?.className).toContain('bg-ui-danger');
         });
     });
