@@ -143,6 +143,9 @@ const NEWS_IMPACTS = ['high', 'medium', 'low', 'negligible'] as const;
 function toNewsSentiment(value: unknown): NewsSentiment | null {
     if (value === null || value === undefined) return null;
     if (typeof value !== 'string') return null;
+    // `includes` 가드가 런타임 멤버십을 보증한다.
+    // `as` 캐스트는 안전: TS가 `Array<T>.includes(string)`을 element union으로
+    // 좁혀주지 않는 구조적 한계 때문이며, 런타임 위험은 없다.
     return NEWS_SENTIMENTS.includes(value as NewsSentiment)
         ? (value as NewsSentiment)
         : null;
@@ -151,6 +154,9 @@ function toNewsSentiment(value: unknown): NewsSentiment | null {
 function toNewsCategory(value: unknown): NewsCategory | null {
     if (value === null || value === undefined) return null;
     if (typeof value !== 'string') return null;
+    // `includes` 가드가 런타임 멤버십을 보증한다.
+    // `as` 캐스트는 안전: TS가 `Array<T>.includes(string)`을 element union으로
+    // 좁혀주지 않는 구조적 한계 때문이며, 런타임 위험은 없다.
     return NEWS_CATEGORIES.includes(value as NewsCategory)
         ? (value as NewsCategory)
         : null;
@@ -159,6 +165,9 @@ function toNewsCategory(value: unknown): NewsCategory | null {
 function toNewsImpact(value: unknown): NewsImpact | null {
     if (value === null || value === undefined) return null;
     if (typeof value !== 'string') return null;
+    // `includes` 가드가 런타임 멤버십을 보증한다.
+    // `as` 캐스트는 안전: TS가 `Array<T>.includes(string)`을 element union으로
+    // 좁혀주지 않는 구조적 한계 때문이며, 런타임 위험은 없다.
     return NEWS_IMPACTS.includes(value as NewsImpact)
         ? (value as NewsImpact)
         : null;

@@ -226,25 +226,28 @@ function NewsAiSummaryContent({
     // Decompose deps so the memo only recomputes when the specific fields it
     // reads actually change, instead of on every `analysis` object identity
     // flip from useNewsAnalysis.
-    const analysisResult = analysis.status === 'done' ? analysis.result : null;
-    const chatState = useMemo(
-        () =>
-            analysis.status === 'done' && analysisResult !== null
-                ? ({
-                      context: {
-                          kind: 'news',
-                          payload: analysisResult,
-                      } as const,
-                      timeframe: null,
-                      isAnalysisReady: true,
-                  } as const)
-                : ({
-                      context: null,
-                      timeframe: null,
-                      isAnalysisReady: false,
-                  } as const),
-        [analysis.status, analysisResult]
-    );
+    const chatState = useMemo(() => {
+        const result = analysis.status === 'done' ? analysis.result : null;
+        return result !== null
+            ? ({
+                  context: {
+                      kind: 'news',
+                      payload: result,
+                  } as const,
+                  timeframe: null,
+                  isAnalysisReady: true,
+              } as const)
+            : ({
+                  context: null,
+                  timeframe: null,
+                  isAnalysisReady: false,
+              } as const);
+        // analysis is a discriminated union — `analysis.result` is only
+        // structurally accessible via narrowing, so we depend on the whole
+        // object. React Query memoizes `query.data` so the reference stays
+        // stable across re-renders unless the underlying analysis actually
+        // changes; this keeps recomputation tied to real data churn.
+    }, [analysis]);
     usePublishSymbolChat(chatState);
 
     if (analysis.status === 'error') {

@@ -25,6 +25,12 @@ function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     );
 }
 
+interface UseNewsCardPollingReturn {
+    items: NewsDisplayItem[];
+    isPolling: boolean;
+    pollError: Error | null;
+}
+
 /**
  * Keeps the news card list up-to-date while background analysis is in progress.
  *
@@ -36,31 +42,36 @@ function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
  * `pollError` becomes non-null after `MAX_CONSECUTIVE_FAILURES` consecutive
  * polling errors so the consuming component can rethrow it for the surrounding
  * error boundary to catch.
+ *
+ * NOTE: `initialItems` is compared by reference for state-reset detection.
+ * Callers must pass a stable reference (typically the SSR snapshot) — passing
+ * a freshly-built array on every parent render will cause unnecessary state
+ * resets mid-poll. If reference stability cannot be guaranteed, memoize at
+ * the call site (`useMemo([initialItems])`) or remount with `key={symbol}`.
  */
 export function useNewsCardPolling(
     symbol: string,
     initialItems: NewsDisplayItem[]
-): {
-    items: NewsDisplayItem[];
-    isPolling: boolean;
-    pollError: Error | null;
-} {
+): UseNewsCardPollingReturn {
     const [items, setItems] = useState(initialItems);
     const [isPolling, setIsPolling] = useState(true);
     const [pollError, setPollError] = useState<Error | null>(null);
-    // Track the deps that should trigger a state reset. Comparing in render and
-    // calling setState during render is the React-recommended pattern for
-    // "store information from previous renders" — it avoids the
-    // `react-hooks/set-state-in-effect` lint error and the cascading-render
-    // cost of resetting state from inside an effect.
+    // Reset on symbol change in render (React-recommended "store information
+    // from previous renders" pattern). Avoids the
+    // `react-hooks/set-state-in-effect` warning and skips a redundant commit
+    // cycle vs. doing the reset from inside an effect.
     // https://react.dev/reference/react/useState#storing-information-from-previous-renders
+    //
+    // Only `symbol` is compared. `initialItems` is intentionally NOT in the
+    // reset key — array props in tests / unmemoized parents change identity on
+    // every render, which would re-fire setState during render and cause an
+    // infinite loop. Callers that need a state reset on a fresh `initialItems`
+    // (e.g., new SSR snapshot for the same symbol) should remount with `key={...}`.
     const [prevSymbol, setPrevSymbol] = useState(symbol);
-    const [prevInitialItems, setPrevInitialItems] = useState(initialItems);
     const latestItemsRef = useRef(initialItems);
 
-    if (prevSymbol !== symbol || prevInitialItems !== initialItems) {
+    if (prevSymbol !== symbol) {
         setPrevSymbol(symbol);
-        setPrevInitialItems(initialItems);
         setItems(initialItems);
         setIsPolling(true);
         setPollError(null);
@@ -135,7 +146,13 @@ export function useNewsCardPolling(
         }, POLL_INTERVAL_MS);
 
         return () => clearInterval(intervalId);
-    }, [symbol, initialItems]);
+        // Only `symbol` is in deps. `initialItems` is excluded on purpose —
+        // including it would restart the polling effect on every parent render
+        // with an unstable array prop, resetting `pollCount` and breaking the
+        // EMPTY_SNAPSHOT_MAX_POLLS / REFRESH_SNAPSHOT_MIN_POLLS thresholds.
+        // The reset-on-symbol-change branch above handles the only legitimate
+        // case where state needs to be cleared while the hook stays mounted.
+    }, [symbol]);
 
     return { items, isPolling, pollError };
 }

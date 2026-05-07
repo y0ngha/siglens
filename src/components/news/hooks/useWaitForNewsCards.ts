@@ -15,6 +15,11 @@ function hasAnyEnrichedCard(items: NewsDisplayItem[]): boolean {
     return items.some(item => item.sentiment !== null);
 }
 
+interface UseWaitForNewsCardsReturn {
+    isReady: boolean;
+    pollError: Error | null;
+}
+
 /**
  * Returns `isReady = true` when at least one enriched news card (with AI
  * analysis) is available in the DB for `symbol`.
@@ -32,21 +37,18 @@ function hasAnyEnrichedCard(items: NewsDisplayItem[]): boolean {
 export function useWaitForNewsCards(
     symbol: string,
     initiallyReady: boolean
-): { isReady: boolean; pollError: Error | null } {
+): UseWaitForNewsCardsReturn {
     const [isReady, setIsReady] = useState(initiallyReady);
     const [pollError, setPollError] = useState<Error | null>(null);
-    // Reset state in render when deps change (React-recommended pattern for
-    // adjusting state in response to prop changes — avoids the
-    // `react-hooks/set-state-in-effect` lint warning and skips a redundant
-    // commit cycle vs. resetting from inside an effect).
+    // Reset on symbol change in render (React-recommended pattern). Boolean
+    // `initiallyReady` is read inside the effect via deps; we don't compare it
+    // here to keep the reset trigger minimal and avoid any chance of
+    // render-time setState loops on unstable parent renders.
     // https://react.dev/reference/react/useState#storing-information-from-previous-renders
     const [prevSymbol, setPrevSymbol] = useState(symbol);
-    const [prevInitiallyReady, setPrevInitiallyReady] =
-        useState(initiallyReady);
 
-    if (prevSymbol !== symbol || prevInitiallyReady !== initiallyReady) {
+    if (prevSymbol !== symbol) {
         setPrevSymbol(symbol);
-        setPrevInitiallyReady(initiallyReady);
         setIsReady(initiallyReady);
         setPollError(null);
     }

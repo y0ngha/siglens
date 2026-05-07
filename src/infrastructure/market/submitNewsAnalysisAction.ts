@@ -39,7 +39,10 @@ export async function submitNewsAnalysisAction(
     // These logs include user-facing news content (titleKo, summaryKo) which
     // can leak into shared log aggregators. Gate behind an explicit debug
     // env flag so production logs stay clean. See .env.example.
-    if (process.env.NEXT_PUBLIC_DEBUG_LOGGING) {
+    // Note: must NOT be NEXT_PUBLIC_* — that prefix inlines the value into the
+    // client bundle, exposing the flag (and any future debug payloads it might
+    // gate) to end users. This Server Action is server-only.
+    if (process.env.DEBUG_VERBOSE_LOGS) {
         console.log(
             `[submitNewsAnalysisAction] symbol=${symbol} rows=${rows.length} enriched=${enrichedNews.length} lookbackMs=${NEWS_ANALYSIS_LOOKBACK_MS}`
         );

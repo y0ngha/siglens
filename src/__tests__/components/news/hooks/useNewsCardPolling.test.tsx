@@ -158,8 +158,9 @@ describe('useNewsCardPolling', () => {
         expect(result.current.isPolling).toBe(false);
     });
 
-    it('뉴스 스냅샷 조회가 계속 실패하면 제한 이후 폴링 상태를 닫는다', async () => {
-        mockGetNewsCardsAction.mockRejectedValue(new Error('db unavailable'));
+    it('뉴스 스냅샷 조회가 연속 실패하면 폴링을 멈추고 pollError를 노출한다', async () => {
+        const dbError = new Error('db unavailable');
+        mockGetNewsCardsAction.mockRejectedValue(dbError);
         const errorSpy = jest
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -168,12 +169,21 @@ describe('useNewsCardPolling', () => {
             useNewsCardPolling('AAPL', [READY_ITEM])
         );
 
+        // 3회 연속 실패 시 pollError가 설정되고 인터벌이 정리된다.
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(60_000);
+            await jest.advanceTimersByTimeAsync(9_000);
         });
 
-        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(20);
+        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(3);
         expect(result.current.isPolling).toBe(false);
+        expect(result.current.pollError).toBe(dbError);
+
+        // 폴링이 멈췄는지 확인 — 추가 시간 진행 후에도 호출 횟수가 늘지 않아야 한다.
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(30_000);
+        });
+        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(3);
+
         errorSpy.mockRestore();
     });
 });

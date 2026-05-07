@@ -41,6 +41,7 @@ describe('NewsList', () => {
         mockUseNewsCardPolling.mockReturnValue({
             items: [READY_ITEM],
             isPolling: true,
+            pollError: null,
         });
 
         render(<NewsList items={[READY_ITEM]} symbol="AAPL" />);
@@ -53,6 +54,7 @@ describe('NewsList', () => {
         mockUseNewsCardPolling.mockReturnValue({
             items: [READY_ITEM],
             isPolling: false,
+            pollError: null,
         });
 
         render(<NewsList items={[READY_ITEM]} symbol="AAPL" />);
@@ -67,6 +69,7 @@ describe('NewsList', () => {
         mockUseNewsCardPolling.mockReturnValue({
             items: [READY_ITEM],
             isPolling: false,
+            pollError: null,
         });
 
         render(<NewsList items={[READY_ITEM]} symbol="AAPL" />);

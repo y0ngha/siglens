@@ -211,9 +211,7 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
         <article
             className={cn(
                 'border-secondary-700 bg-secondary-800 hover:border-primary-500/50 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-4 transition-[colors,transform] hover:-translate-y-px',
-                // High-impact cards get a 3px left accent border. Bump left padding
-                // from `p-4` (16px) to 20px so content doesn't sit flush against
-                // the accent strip. Low-impact cards keep the default p-4.
+                // Bump left padding so content doesn't sit flush against the 3px accent strip.
                 isHighImpact && 'border-l-ui-warning border-l-[3px] pl-5'
             )}
         >
