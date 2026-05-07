@@ -15,14 +15,18 @@ type PageKey = (typeof ALL_PAGES)[number];
 const LABEL: Record<PageKey, string> = {
     chart: '차트 분석',
     news: '뉴스 분석',
+<<<<<<< feat/per-stock-fear-greed-ui
     fundamental: '펀더 분석',
     'fear-greed': '공포·탐욕 지수',
+=======
+    fundamental: '펀더멘털 분석',
+>>>>>>> master
     overall: 'AI 종합 분석',
 };
 
 const DESCRIPTION: Record<PageKey, string> = {
     chart: '기술적 지표 + AI 종합 리포트',
-    news: '실시간 뉴스 + sentiment 분석',
+    news: '실시간 뉴스 + 애널리스트 의견 분석',
     fundamental: '재무·밸류에이션·미래 방향',
     'fear-greed': '단기 매매 심리 0~100 점수',
     overall: '3축 통합 AI 결론 + 시나리오',
@@ -58,10 +62,7 @@ export function CrossLinkCards({ symbol, current }: CrossLinkCardsProps) {
                     href={HREF[p](symbol)}
                     className="border-secondary-700 hover:border-primary-500 focus-visible:ring-primary-500 rounded-xl border p-6 transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
                 >
-                    <h3 className="font-semibold">
-                        <span aria-hidden="true">→ </span>
-                        {LABEL[p]}
-                    </h3>
+                    <h3 className="font-semibold">{LABEL[p]}</h3>
                     <p className="text-secondary-400 mt-2 text-sm">
                         {DESCRIPTION[p]}
                     </p>

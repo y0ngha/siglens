@@ -6,7 +6,6 @@ import type {
     RawFmpFinancialScore,
     RawFmpGradesConsensus,
     RawFmpGradesEvent,
-    RawFmpHistoricalSectorPerformance,
     RawFmpIncomeGrowth,
     RawFmpKeyMetricsTtm,
     RawFmpPriceTargetConsensus,
@@ -339,24 +338,11 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         });
     }
 
-    /** Fetch historical daily sector performance for `sector` (FMP sector name, e.g. `"Technology"`). */
+    /** FMP historical-sector-performance data is unreliable on the current plan (returns stale dates). Stub returns empty so core omits sectorHistorical from the AI prompt. */
     async getHistoricalSectorPerformance(
-        sector: string
+        _sector: string
     ): Promise<FundamentalSectorHistoricalInput[]> {
-        const arr = await fmpGet<RawFmpHistoricalSectorPerformance[]>(
-            'historical-sector-performance',
-            {
-                sector,
-            }
-        );
-        return arr.flatMap(r => {
-            const changesPercentage = toFiniteNumber(
-                r.averageChange ?? r.changesPercentage
-            );
-            return changesPercentage === null
-                ? []
-                : [{ date: r.date, sector: r.sector, changesPercentage }];
-        });
+        return [];
     }
 
     /** Fetch the latest earnings report for a symbol; returns `null` when unavailable. */

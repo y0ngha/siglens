@@ -656,52 +656,6 @@ describe('FmpFundamentalClient', () => {
     });
 
     // ------------------------------------------------------------------ //
-    // getHistoricalSectorPerformance
-    // ------------------------------------------------------------------ //
-
-    describe('getHistoricalSectorPerformance', () => {
-        it('returns mapped historical sector entries', async () => {
-            mockOk([
-                {
-                    date: '2024-01-15',
-                    sector: 'Technology',
-                    averageChange: 1.5,
-                },
-                {
-                    date: '2024-01-14',
-                    sector: 'Technology',
-                    averageChange: -0.3,
-                },
-            ]);
-            const client = new FmpFundamentalClient();
-            const result =
-                await client.getHistoricalSectorPerformance('Technology');
-            expect(result).toHaveLength(2);
-            expect(result[0]).toEqual({
-                date: '2024-01-15',
-                sector: 'Technology',
-                changesPercentage: 1.5,
-            });
-        });
-
-        it('returns empty array when FMP returns empty', async () => {
-            mockOk([]);
-            const client = new FmpFundamentalClient();
-            expect(
-                await client.getHistoricalSectorPerformance('Technology')
-            ).toEqual([]);
-        });
-
-        it('skips historical entries without finite sector performance value', async () => {
-            mockOk([{ date: '2024-01-15', sector: 'Technology' }]);
-            const client = new FmpFundamentalClient();
-            expect(
-                await client.getHistoricalSectorPerformance('Technology')
-            ).toEqual([]);
-        });
-    });
-
-    // ------------------------------------------------------------------ //
     // getEarningsReport
     // ------------------------------------------------------------------ //
 

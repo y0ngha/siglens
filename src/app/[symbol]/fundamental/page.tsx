@@ -3,7 +3,6 @@ import {
     getCashFlowStatement,
     getFinancialScores,
     getGradesConsensus,
-    getHistoricalSector,
     getIncomeStatementGrowth,
     getKeyMetricsTtm,
     getPriceTargetConsensus,
@@ -13,6 +12,7 @@ import {
     getRatiosTtm,
     getStockPeers,
 } from '@/app/[symbol]/fundamental/fundamentalData';
+
 import { FundamentalAiSummary } from '@/components/fundamental/FundamentalAiSummary';
 import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from '@/components/fundamental/FundamentalAiSummarySkeleton';
@@ -22,7 +22,6 @@ import { GrowthChart } from '@/components/fundamental/sections/GrowthChart';
 import { PeersTable } from '@/components/fundamental/sections/PeersTable';
 import { ProfileCard } from '@/components/fundamental/sections/ProfileCard';
 import { ProfitabilityCard } from '@/components/fundamental/sections/ProfitabilityCard';
-import { SectorDirectionCard } from '@/components/fundamental/sections/SectorDirectionCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { SectionSkeleton } from '@/components/symbol-page/SectionSkeleton';
@@ -87,13 +86,104 @@ interface SymbolSectionProps {
     symbol: string;
 }
 
+function ProfileDescriptionSkeleton() {
+    return (
+        <div className="mt-4 space-y-2">
+            <div className="flex items-center gap-1.5">
+                <div className="border-secondary-500 h-2.5 w-2.5 animate-spin rounded-full border-2 border-t-transparent" />
+                <span className="text-secondary-500 text-xs">번역 중...</span>
+            </div>
+            <div className="animate-pulse space-y-1.5">
+                <div className="bg-secondary-700 h-3 w-full rounded" />
+                <div className="bg-secondary-700 h-3 w-[92%] rounded" />
+                <div className="bg-secondary-700 h-3 w-4/5 rounded" />
+                <div className="bg-secondary-700 h-3 w-3/5 rounded" />
+            </div>
+        </div>
+    );
+}
+
+function ProfileCardSkeleton({ symbol }: { symbol: string }) {
+    return (
+        <section
+            aria-labelledby="profile-heading"
+            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+        >
+            <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <h2
+                        id="profile-heading"
+                        className="text-xl font-semibold tracking-tight"
+                    >
+                        <span className="bg-secondary-700 inline-block h-5 w-36 animate-pulse rounded align-middle" />
+                        <span className="text-secondary-400 ml-2 text-base font-normal">
+                            ({symbol})
+                        </span>
+                    </h2>
+                    <div className="bg-secondary-700 mt-1 h-4 w-28 animate-pulse rounded" />
+                </div>
+                <div className="text-right">
+                    <span className="text-secondary-400 text-xs tracking-widest uppercase">
+                        시가총액
+                    </span>
+                    <div className="bg-secondary-700 mt-0.5 h-6 w-20 animate-pulse rounded" />
+                </div>
+            </div>
+
+            <dl className="mt-4 grid grid-cols-1 gap-y-2 sm:grid-cols-2">
+                <div className="flex gap-2">
+                    <dt className="text-secondary-400 w-10 shrink-0 text-sm">
+                        CEO
+                    </dt>
+                    <dd>
+                        <div className="bg-secondary-700 h-4 w-32 animate-pulse rounded" />
+                    </dd>
+                </div>
+                <div className="flex gap-2">
+                    <dt className="text-secondary-400 w-10 shrink-0 text-sm">
+                        웹
+                    </dt>
+                    <dd>
+                        <div className="bg-secondary-700 h-4 w-40 animate-pulse rounded" />
+                    </dd>
+                </div>
+            </dl>
+
+            <ProfileDescriptionSkeleton />
+        </section>
+    );
+}
+
+async function ProfileDescriptionSection({
+    symbol,
+    fallback,
+}: {
+    symbol: string;
+    fallback: string;
+}) {
+    const descriptionKo = await getProfileDescriptionKo(symbol);
+    return (
+        <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
+            {descriptionKo ?? fallback}
+        </p>
+    );
+}
+
 async function ProfileSection({ symbol }: SymbolSectionProps) {
-    const [profile, descriptionKo] = await Promise.all([
-        getProfile(symbol),
-        getProfileDescriptionKo(symbol),
-    ]);
+    const profile = await getProfile(symbol);
     if (profile === null) return null;
-    return <ProfileCard profile={profile} descriptionKo={descriptionKo} />;
+
+    const descriptionSlot =
+        profile.description !== null ? (
+            <Suspense fallback={<ProfileDescriptionSkeleton />}>
+                <ProfileDescriptionSection
+                    symbol={symbol}
+                    fallback={profile.description}
+                />
+            </Suspense>
+        ) : undefined;
+
+    return <ProfileCard profile={profile} descriptionSlot={descriptionSlot} />;
 }
 
 async function ValuationSection({ symbol }: SymbolSectionProps) {
@@ -153,11 +243,6 @@ async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
             ptSummary={ptSummary}
         />
     );
-}
-
-async function SectorDirectionSection({ sector }: { sector: string }) {
-    const historical = sector !== '' ? await getHistoricalSector(sector) : [];
-    return <SectorDirectionCard sector={sector} historical={historical} />;
 }
 
 export default async function FundamentalPage({ params }: Props) {
@@ -246,7 +331,7 @@ export default async function FundamentalPage({ params }: Props) {
                 <h1 className="sr-only">
                     {displayName} 재무지표와 애널리스트 의견
                 </h1>
-                <Suspense fallback={<SectionSkeleton />}>
+                <Suspense fallback={<ProfileCardSkeleton symbol={upper} />}>
                     <ProfileSection symbol={upper} />
                 </Suspense>
 
@@ -278,10 +363,6 @@ export default async function FundamentalPage({ params }: Props) {
 
                 <Suspense fallback={<SectionSkeleton />}>
                     <FutureDirectionSection symbol={upper} />
-                </Suspense>
-
-                <Suspense fallback={<SectionSkeleton />}>
-                    <SectorDirectionSection sector={sector} />
                 </Suspense>
 
                 <CrossLinkCards symbol={upper} current="fundamental" />

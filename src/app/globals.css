@@ -73,8 +73,17 @@
     --font-mono: var(--font-geist-mono);
 }
 
-html {
-    overflow-x: hidden;
+/*
+ * Tailwind v4 sr-only uses `position: absolute` with `left: auto`,
+ * which places the element at its natural flow position. On iOS Safari,
+ * this can extend past the viewport right edge when inside long text nodes
+ * (e.g. truncated headings), inflating document scrollWidth and breaking
+ * `fixed` element layout. Anchoring to (0,0) keeps the element at the
+ * containing block's origin; clip-path: inset(50%) still hides it visually.
+ */
+.sr-only {
+    top: 0 !important;
+    left: 0 !important;
 }
 
 body {

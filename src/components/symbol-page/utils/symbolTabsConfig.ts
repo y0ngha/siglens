@@ -13,7 +13,7 @@ export const TABS = [
     },
     {
         key: 'fundamental',
-        label: '펀더',
+        label: '펀더멘털',
         hrefBuilder: (s: string) => `/${s}/fundamental`,
     },
     {

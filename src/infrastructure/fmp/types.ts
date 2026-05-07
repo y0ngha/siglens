@@ -136,14 +136,6 @@ export interface RawFmpSectorPerformance {
     averageChange?: number | null;
 }
 
-/** Raw FMP historical sector performance entry (one row per date per sector). */
-export interface RawFmpHistoricalSectorPerformance {
-    date: string;
-    sector: string;
-    changesPercentage?: number | null;
-    averageChange?: number | null;
-}
-
 /** Raw FMP cash flow statement (operating cash flow subset). */
 export interface RawFmpCashFlowStatement {
     operatingCashFlow: number | null;
