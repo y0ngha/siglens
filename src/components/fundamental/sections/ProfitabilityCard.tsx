@@ -1,5 +1,8 @@
+'use client';
+
 import type { CSSProperties } from 'react';
 import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 interface ProfitabilityCardProps {
     ratios: FundamentalRatiosInput;
@@ -9,9 +12,10 @@ interface MetricBarProps {
     label: string;
     value: number | null;
     description: string;
+    tooltip?: string;
 }
 
-function MetricBar({ label, value, description }: MetricBarProps) {
+function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
     const displayValue = value !== null ? `${(value * 100).toFixed(1)}%` : '—';
 
     // Clamp fill width 0–100% for progress bar visualisation (ratio expected 0–1)
@@ -23,6 +27,7 @@ function MetricBar({ label, value, description }: MetricBarProps) {
             <div className="flex items-baseline justify-between gap-2">
                 <div>
                     <span className="text-sm font-medium">{label}</span>
+                    {tooltip !== undefined && <InfoTooltip>{tooltip}</InfoTooltip>}
                     <span className="text-secondary-400 ml-1.5 text-xs">
                         {description}
                     </span>
@@ -68,21 +73,25 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
                     label="ROE"
                     value={ratios.returnOnEquityTTM}
                     description="자기자본이익률"
+                    tooltip="자기자본이익률. 주주 자본 대비 순이익 비율"
                 />
                 <MetricBar
                     label="ROA"
                     value={ratios.returnOnAssetsTTM}
                     description="총자산이익률"
+                    tooltip="총자산이익률. 자산 전체 활용 효율성 지표"
                 />
                 <MetricBar
                     label="영업이익률"
                     value={ratios.operatingProfitMarginTTM}
                     description="Operating Margin"
+                    tooltip="매출 대비 영업이익 비율. 핵심 사업 수익성"
                 />
                 <MetricBar
                     label="순이익률"
                     value={ratios.netProfitMarginTTM}
                     description="Net Margin"
+                    tooltip="매출 대비 순이익 비율. 전체 비용 차감 후 실질 수익성"
                 />
             </div>
         </section>
