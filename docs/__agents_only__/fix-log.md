@@ -6,20 +6,6 @@
 - S1 (적용): `FutureDirectionCard.tsx` — '컨센서스' 목표주가 항목 툴팁을 `'애널리스트 목표주가 하단·중앙·상단 범위'` → `'애널리스트 목표주가 평균치'`로 변경. 기존 설명이 '컨센서스' 단일 항목이 아닌 전체 범위를 설명하는 오류.
 - S2 (거부): `globals.css` `overflow-x: hidden` — iOS Safari layout viewport 확장 버그 대응 의도적 수정. sticky header는 y축만 사용, 자식 스크롤 컨테이너는 독립 overflow-x 설정.
 - S3 (거부): `SymbolLayoutHeader.tsx` `z-50` — Tailwind z-index 스케일 유틸리티 클래스. 매직 넘버 아님. vaul Drawer.Content(z-40) 위에 헤더를 올리기 위한 의도적 값.
-## [PR #425 Round 2 | refactor/news-card-db-first | 2026-05-07]
-
-- B1: Added expect(mockListBySymbol).toHaveBeenCalledWith('AAPL', NEWS_LOOKBACK_MS) assertion to "모든 아이템이 이미 분석 완료" test. Added NEWS_LOOKBACK_MS import from @/infrastructure/market/newsLookback.
-- Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths requires explicit assertions verifying the expected function calls and arguments
-- Context: DB-first filtering test enhanced to verify that listBySymbol was called with correct symbol and lookback parameters, ensuring the filtering logic correctly queries the database
-
-- S1: Added listBySymbol: jest.fn().mockResolvedValue([]) to module-level DrizzleNewsRepository mock factory.
-- Rule: MISTAKES.md Tests §6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
-- Context: MockNewsRepository now includes the listBySymbol method mock to cover all DB queries used by ensureNewsCardsAnalyzedAction
-
-- S2: Added if (fresh.length === 0) return; early return before repo.listBySymbol() call in ensureNewsCardsAnalyzedAction.ts. Added expect(mockListBySymbol).not.toHaveBeenCalled() to '뉴스가 없으면' test.
-- Rule: MISTAKES.md Coding Paradigm §1 / Performance — skip unnecessary DB queries when input data is empty; guard expensive operations with early returns
-- Context: When no fresh news items exist, skip the DB lookup entirely; test verifies the optimization by asserting listBySymbol was never called
-
 ## [PR #423 Round 7 (S2) | feat/news-thinking-budget-and-refresh | 2026-05-07]
 - S2: `src/components/news/hooks/useNewsPollingWithInvalidation.ts` 신규 훅 생성. `useQueryClient` + 캐시 무효화 로직을 `NewsList.tsx`에서 분리. `NewsList`는 `useNewsPollingWithInvalidation` 단일 호출로 단순화(useState 2개만 유지). `NewsList.test.tsx` mock 대상도 함께 교체(`useNewsCardPolling` → `useNewsPollingWithInvalidation`).
   - Rule: 단일 책임 — 컴포넌트는 렌더링에 집중, React Query 캐시 무효화 결정은 전용 훅으로 분리
@@ -201,30 +187,10 @@
 - Context: Must guarantee createdUserId is assigned before return in all code paths.
 
 
-## [PR #420 Round 16 | master | 2026-05-05]
-- S1: `src/__tests__/app/api/auth/callback/route.test.ts` — New test file added covering 3 key branches of the OAuth callback route handler: existing OAuth account login, email conflict redirect, and pendingStore.save failure.
-  - Rule: MISTAKES.md Tests §12 — test coverage for critical business paths
-- S2 (skipped — intentional design): `registerUser.ts` DI pattern (`createTransactionalRepositories` factory) — reviewer noted "현 설계가 의도적이라면 pass". Confirmed intentional, skipped.
-
 ## [Phase 7 OAuth Consent Flow | Code quality R1 | 2026-05-04]
 - Violation: route.ts cast comment inaccurate — stated narrowing was "isOAuthProvider narrows profile.provider" when actually narrowing URL param
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained
 - Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
-
-## [PR #425 Round 3 | refactor/news-card-db-first | 2026-05-07]
-- S1: Added "listBySymbol 실패 시 에러를 전파한다" test case inside "DB-first 필터링은" describe block. Verifies that listBySymbol rejection propagates (fail-fast design for DB-wide outage detection).
-  - Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths
-  - Context: Ensures error handling path is exercised when DB query fails; confirm that rejection surfaces to caller instead of being silently swallowed
-- S2: Updated comment at ensureNewsCardsAnalyzedAction.ts line 135 from "Analyze and persist unanalyzed items in parallel — each polls its own worker." to "Each item polls its own background worker independently." (removed WHAT prefix, kept WHY context).
-  - Rule: Comments should explain WHY, not redundantly describe WHAT the code already shows
-
-## [PR #425 Round 1 | refactor/news-card-db-first | 2026-05-07]
-- B1: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing mockListBySymbol mock setup in beforeEach. Added `mockListBySymbol = jest.fn().mockResolvedValue([])` and `listBySymbol: mockListBySymbol` to MockNewsRepository.mockImplementation. Default empty array keeps all existing tests passing (all items treated as unanalyzed).
-  - Rule: MISTAKES.md Tests #6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
-- B2: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing test cases for DB-first filtering logic. Added new describe block "DB-first 필터링은" with two test cases: (1) "모든 아이템이 이미 분석 완료(analyzedAt != null)이면 카드 분석을 호출하지 않는다" — verifies early return when all items analyzed; (2) "분석 완료된 아이템은 건너뛰고 미분석 아이템만 카드 분석을 호출한다" — verifies mixed state filtering.
-  - Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths; DB-first filtering is the core refactor logic
-- Suggestion: `src/actions/news/ensureNewsCardsAnalyzedAction.ts:124` — Removed WHAT comment "// DB-first filter: skip items that already have analysis results." Kept the WHY comment "// Read the current DB state after upsert so newly inserted rows are included."
-  - Rule: Comments should explain WHY, not redundantly describe WHAT the code already shows
 
 ## [Multi-domain audit + 7-task patch | Round 2 (approved) | 2026-05-07]
 - B3: `src/__tests__/components/chat/hooks/useChat.test.tsx:79` — ESLint react/display-name error: anonymous component returned from makeWrapper(). Fixed by giving it a named function declaration TestQueryWrapper.
