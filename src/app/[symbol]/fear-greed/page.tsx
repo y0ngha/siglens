@@ -1,10 +1,16 @@
 import { FearGreedPage } from '@/components/fear-greed/FearGreedPage';
+import { JsonLd } from '@/components/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/domain/constants/market';
 import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
-import { buildSymbolFearGreedSeoContent } from '@/lib/seo';
+import {
+    buildBreadcrumbJsonLd,
+    buildSymbolFearGreedSeoContent,
+    buildSymbolSeoContent,
+    SITE_NAME,
+} from '@/lib/seo';
 import {
     dehydrate,
     HydrationBoundary,
@@ -24,7 +30,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const displayName = assetInfo
         ? buildDisplayName(assetInfo, ticker)
         : ticker;
-    const { title, description, url, keywords } =
+    const { title, fullTitle, description, url, keywords } =
         buildSymbolFearGreedSeoContent(ticker, {
             displayName,
             koreanName: assetInfo?.koreanName,
@@ -34,6 +40,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         description,
         keywords,
         alternates: { canonical: url },
+        openGraph: {
+            type: 'website',
+            siteName: SITE_NAME,
+            title: fullTitle,
+            description,
+            url,
+            locale: 'ko_KR',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: fullTitle,
+            description,
+        },
     };
 }
 
@@ -52,6 +71,67 @@ export default async function SymbolFearGreedPage({ params }: Props) {
 
     const displayName = buildDisplayName(assetInfo, ticker);
 
+    const { fullTitle, description, url } = buildSymbolFearGreedSeoContent(
+        ticker,
+        {
+            displayName,
+            koreanName: assetInfo.koreanName,
+        }
+    );
+
+    const webPageJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'WebPage',
+        name: fullTitle,
+        description,
+        url,
+        inLanguage: 'ko',
+        about: {
+            '@type': 'Corporation',
+            name: displayName,
+            tickerSymbol: ticker,
+        },
+    };
+
+    const breadcrumbJsonLd = buildBreadcrumbJsonLd([
+        { name: ticker, url: buildSymbolSeoContent(ticker).url },
+        {
+            name: '공포·탐욕 지수',
+            url: buildSymbolFearGreedSeoContent(ticker).url,
+        },
+    ]);
+
+    const faqJsonLd = {
+        '@context': 'https://schema.org',
+        '@type': 'FAQPage',
+        mainEntity: [
+            {
+                '@type': 'Question',
+                name: `${displayName} 공포·탐욕 지수는 무엇을 측정하나요?`,
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: `${displayName}(${ticker}) 한 종목의 단기 매매 심리를 0~100 점수로 측정합니다. CNN의 시장 전체 Fear & Greed Index와 달리 종목별 자체 분포(self-normalization)로 산출하므로, 다른 종목과 점수를 직접 비교하기보다는 같은 종목의 시간 흐름 변화를 보는 데 적합합니다.`,
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '점수는 어떤 5가지 요인으로 계산되나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: 'Volume z-score, Buy/Sell volume 불균형, Volume Profile POC 거리, MA200 이격, 52주 최고가 대비 위치 — 5개 factor 각각을 200영업일 분포 안에서 percentile로 환산한 뒤 가중 평균합니다. 각 factor가 Flow 그룹과 Trend 그룹으로 묶여 별도 점수로도 표시됩니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '5단계 sentiment 라벨은 어떻게 구분되나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '0~25 극공포, 25~45 공포, 45~55 중립, 55~75 탐욕, 75~100 극탐욕입니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.',
+                },
+            },
+        ],
+    };
+
     const queryClient = new QueryClient({
         defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
     });
@@ -63,12 +143,17 @@ export default async function SymbolFearGreedPage({ params }: Props) {
     });
 
     return (
-        <HydrationBoundary state={dehydrate(queryClient)}>
-            <FearGreedPage
-                symbol={ticker}
-                fmpSymbol={assetInfo.fmpSymbol}
-                displayName={displayName}
-            />
-        </HydrationBoundary>
+        <>
+            <JsonLd data={webPageJsonLd} />
+            <JsonLd data={breadcrumbJsonLd} />
+            <JsonLd data={faqJsonLd} />
+            <HydrationBoundary state={dehydrate(queryClient)}>
+                <FearGreedPage
+                    symbol={ticker}
+                    fmpSymbol={assetInfo.fmpSymbol}
+                    displayName={displayName}
+                />
+            </HydrationBoundary>
+        </>
     );
 }
