@@ -136,7 +136,9 @@ describe('translateCompanyDescription', () => {
     });
 
     it('freeApiKey로 번역 후 결과를 반환한다', async () => {
-        callGeminiMock.mockResolvedValue('애플은 소비자 가전 제품을 설계합니다.');
+        callGeminiMock.mockResolvedValue(
+            '애플은 소비자 가전 제품을 설계합니다.'
+        );
         const result = await translateCompanyDescription(
             'Apple designs consumer electronics.'
         );
