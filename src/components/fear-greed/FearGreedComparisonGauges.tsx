@@ -1,3 +1,4 @@
+import type { ReactElement } from 'react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 
 interface FearGreedComparisonGaugesProps {
@@ -19,13 +20,11 @@ const PERIODS: ReadonlyArray<PeriodDef> = [
 
 const MISSING_VALUE = '—';
 
-/**
- * 4 mini tiles showing Now / 1W / 1M / 1Y scores from the walk-forward history.
- * daysBack values approximate trading days (5 = 1 week, 21 = 1 month, 252 = 1 year).
- */
+/** Renders the 4 historical reference points so the user can compare current sentiment to past windows. */
+// Pure presentational — renders directly inside a Server Component when invoked at RSC level.
 export function FearGreedComparisonGauges({
     history,
-}: FearGreedComparisonGaugesProps) {
+}: FearGreedComparisonGaugesProps): ReactElement | null {
     const valid = history.filter(p => p.score !== null);
     if (valid.length === 0) return null;
     const lastIdx = valid.length - 1;
@@ -33,7 +32,6 @@ export function FearGreedComparisonGauges({
         <ul className="flex justify-around gap-2 text-center text-xs">
             {PERIODS.map(p => {
                 const point = valid[Math.max(0, lastIdx - p.daysBack)];
-                const score = point?.score;
                 return (
                     <li
                         key={p.key}
@@ -41,9 +39,7 @@ export function FearGreedComparisonGauges({
                     >
                         <div className="text-secondary-400">{p.label}</div>
                         <div className="text-secondary-100 mt-1 text-base font-semibold tabular-nums">
-                            {score === null || score === undefined
-                                ? MISSING_VALUE
-                                : Math.round(score)}
+                            {point ? Math.round(point.score as number) : MISSING_VALUE}
                         </div>
                     </li>
                 );

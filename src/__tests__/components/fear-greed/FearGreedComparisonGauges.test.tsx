@@ -17,23 +17,27 @@ function makeHistory(scores: Array<number | null>): FearGreedHistoryPoint[] {
 describe('FearGreedComparisonGauges', () => {
     describe('with sufficient history', () => {
         it('renders 4 tiles with rounded scores', () => {
-            // 300 valid points so 1y (daysBack=252) is reachable
             const history = makeHistory(
                 Array.from({ length: 300 }, (_, i) => 50 + (i % 20))
             );
-            const { getByText } = render(
+            const { getByText, container } = render(
                 <FearGreedComparisonGauges history={history} />
             );
             expect(getByText('Now')).toBeInTheDocument();
             expect(getByText('1주')).toBeInTheDocument();
             expect(getByText('1개월')).toBeInTheDocument();
             expect(getByText('1년')).toBeInTheDocument();
+            // 4 tiles — each must show a rounded numeric score
+            const scoreNodes = container.querySelectorAll('.tabular-nums');
+            expect(scoreNodes).toHaveLength(4);
+            scoreNodes.forEach(node => {
+                expect(node.textContent).toMatch(/^\d+$/);
+            });
         });
     });
 
     describe('with insufficient history', () => {
         it('clamps to first valid entry when daysBack exceeds available data', () => {
-            // Only 10 valid points; 1m (daysBack=21) and 1y (daysBack=252) both clamp to index 0
             const history = makeHistory(
                 Array.from({ length: 10 }, (_, i) => 30 + i)
             );
