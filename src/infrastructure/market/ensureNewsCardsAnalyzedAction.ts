@@ -121,7 +121,6 @@ export async function ensureNewsCardsAnalyzedAction(
         );
     }
 
-    // DB-first filter: skip items that already have analysis results.
     // Read the current DB state after upsert so newly inserted rows are included.
     const rows = await repo.listBySymbol(symbol, NEWS_LOOKBACK_MS);
     const analyzedIds = new Set(
