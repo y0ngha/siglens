@@ -49,9 +49,7 @@ describe('FearGreedComparisonGauges', () => {
         });
 
         it('returns null when all scores are null (warm-up only)', () => {
-            const history = makeHistory(
-                Array.from({ length: 5 }, () => null)
-            );
+            const history = makeHistory(Array.from({ length: 5 }, () => null));
             const { container } = render(
                 <FearGreedComparisonGauges history={history} />
             );

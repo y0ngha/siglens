@@ -50,7 +50,9 @@ describe('FearGreedHero', () => {
                 warning: null,
                 groups: [],
             };
-            const { getByText } = render(<FearGreedHero snapshot={greedSnap} />);
+            const { getByText } = render(
+                <FearGreedHero snapshot={greedSnap} />
+            );
             expect(getByText('60')).toBeInTheDocument();
             // Use anchored regex so '탐욕' doesn't also match '극탐욕'.
             expect(getByText(/(?:^|[^극])탐욕/)).toBeInTheDocument();

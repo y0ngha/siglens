@@ -25,7 +25,9 @@ describe('FearGreedHeaderChip', () => {
         // is now unrepresentable in the type and surfaces as `null` from
         // computeFearGreedIndex. We therefore only test the `null` path.
         it('renders "데이터 부족" when snapshot is null', () => {
-            const { getByText } = render(<FearGreedHeaderChip snapshot={null} />);
+            const { getByText } = render(
+                <FearGreedHeaderChip snapshot={null} />
+            );
             expect(getByText(/데이터 부족/)).toBeInTheDocument();
         });
     });
@@ -38,7 +40,9 @@ describe('FearGreedHeaderChip', () => {
             ['GREED' as const, '탐욕'],
             ['EXTREME_GREED' as const, '극탐욕'],
         ])('renders %s with text "%s"', (label, text) => {
-            const { getByText } = render(<FearGreedHeaderChip snapshot={make(label)} />);
+            const { getByText } = render(
+                <FearGreedHeaderChip snapshot={make(label)} />
+            );
             expect(getByText(text)).toBeInTheDocument();
         });
     });
@@ -62,7 +66,9 @@ describe('FearGreedHeaderChip', () => {
     describe('score rendering', () => {
         it('rounds and renders the score', () => {
             const { getByText } = render(
-                <FearGreedHeaderChip snapshot={{ ...make('GREED'), score: 67.4 }} />
+                <FearGreedHeaderChip
+                    snapshot={{ ...make('GREED'), score: 67.4 }}
+                />
             );
             expect(getByText('67')).toBeInTheDocument();
         });
@@ -71,7 +77,9 @@ describe('FearGreedHeaderChip', () => {
     describe('aria-label', () => {
         it('exposes label, score, and confidence note via aria-label', () => {
             const { container } = render(
-                <FearGreedHeaderChip snapshot={{ ...make('GREED', 'limited'), score: 60.6 }} />
+                <FearGreedHeaderChip
+                    snapshot={{ ...make('GREED', 'limited'), score: 60.6 }}
+                />
             );
             const chip = container.querySelector('[aria-label]');
             expect(chip?.getAttribute('aria-label')).toBe(

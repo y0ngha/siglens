@@ -39,7 +39,9 @@ export function FearGreedComparisonGauges({
                     >
                         <div className="text-secondary-400">{p.label}</div>
                         <div className="text-secondary-100 mt-1 text-base font-semibold tabular-nums">
-                            {point ? Math.round(point.score as number) : MISSING_VALUE}
+                            {point
+                                ? Math.round(point.score as number)
+                                : MISSING_VALUE}
                         </div>
                     </li>
                 );

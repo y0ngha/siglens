@@ -29,7 +29,9 @@ import { FearGreedHeaderChipMounted } from '@/components/symbol-page/FearGreedHe
 
 describe('FearGreedHeaderChipMounted', () => {
     it('renders the FearGreedHeaderChip with snapshot from useFearGreed', () => {
-        const { getByText } = render(<FearGreedHeaderChipMounted symbol="NVDA" />);
+        const { getByText } = render(
+            <FearGreedHeaderChipMounted symbol="NVDA" />
+        );
         expect(getByText(/중립/)).toBeInTheDocument();
     });
 });

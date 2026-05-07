@@ -47,9 +47,7 @@ describe('FearGreedGroupBar', () => {
 
         it('rounds score 0.4 down to 0', () => {
             const zeroish = { ...flowGroup, score: 0.4 };
-            const { getByText } = render(
-                <FearGreedGroupBar group={zeroish} />
-            );
+            const { getByText } = render(<FearGreedGroupBar group={zeroish} />);
             expect(getByText('0 / 100')).toBeInTheDocument();
         });
 

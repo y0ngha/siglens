@@ -25,7 +25,8 @@ export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
         );
     }
     const score = Math.round(snapshot.score);
-    const confidenceNote = snapshot.confidence === 'limited' ? ' (신뢰도 제한)' : '';
+    const confidenceNote =
+        snapshot.confidence === 'limited' ? ' (신뢰도 제한)' : '';
     return (
         <span
             className={cn(
