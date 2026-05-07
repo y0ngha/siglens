@@ -24,7 +24,9 @@ const VALID_EFFORT_RECORD: Record<NonNullable<ModelSpec['effort']>, true> = {
     high: true,
 };
 
-function isValidEffort(value: string): value is NonNullable<ModelSpec['effort']> {
+function isValidEffort(
+    value: string
+): value is NonNullable<ModelSpec['effort']> {
     return value in VALID_EFFORT_RECORD;
 }
 
