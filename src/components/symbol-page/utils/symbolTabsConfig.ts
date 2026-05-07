@@ -17,6 +17,11 @@ export const TABS = [
         hrefBuilder: (s: string) => `/${s}/fundamental`,
     },
     {
+        key: 'fear-greed',
+        label: '공포 지수',
+        hrefBuilder: (s: string) => `/${s}/fear-greed`,
+    },
+    {
         key: 'overall',
         label: '종합',
         hrefBuilder: (s: string) => `/${s}/overall`,
