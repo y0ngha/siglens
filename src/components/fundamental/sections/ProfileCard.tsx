@@ -1,7 +1,7 @@
-import type { FundamentalProfileInput } from '@y0ngha/siglens-core';
+import type { FundamentalProfile } from '@y0ngha/siglens-core';
 
 interface ProfileCardProps {
-    profile: FundamentalProfileInput;
+    profile: FundamentalProfile;
 }
 
 export function ProfileCard({ profile }: ProfileCardProps) {

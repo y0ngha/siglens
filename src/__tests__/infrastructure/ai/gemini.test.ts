@@ -51,8 +51,24 @@ describe('callGeminiChat', () => {
     });
 
     describe('응답 파싱', () => {
-        it('response.text가 undefined이면 빈 문자열을 반환한다', async () => {
+        it('response.text가 undefined이면 에러를 던진다', async () => {
             mockGenerateContent.mockResolvedValue({ text: undefined });
+
+            await expect(callGeminiChat(BASE_OPTIONS)).rejects.toThrow(
+                '[gemini] Provider returned null/undefined response'
+            );
+        });
+
+        it('response.text가 null이면 에러를 던진다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: null });
+
+            await expect(callGeminiChat(BASE_OPTIONS)).rejects.toThrow(
+                '[gemini] Provider returned null/undefined response'
+            );
+        });
+
+        it('response.text가 빈 문자열이면 그대로 반환한다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: '' });
 
             const result = await callGeminiChat(BASE_OPTIONS);
 

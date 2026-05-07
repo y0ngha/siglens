@@ -109,19 +109,34 @@ describe('callOpenaiChat', () => {
     });
 
     describe('응답 파싱', () => {
-        it('output_text가 없으면 에러를 던진다', async () => {
+        it('output_text가 빈 문자열이면 경고 로그 후 그대로 반환한다', async () => {
             mockCreate.mockResolvedValue({ output_text: '' });
+            const warnSpy = jest
+                .spyOn(console, 'warn')
+                .mockImplementation(() => {});
 
-            await expect(callOpenaiChat(BASE_OPTIONS)).rejects.toThrow(
-                'OpenAI returned no text content'
+            const result = await callOpenaiChat(BASE_OPTIONS);
+
+            expect(result).toBe('');
+            expect(warnSpy).toHaveBeenCalledWith(
+                '[openai] Provider returned empty string'
             );
+            warnSpy.mockRestore();
         });
 
         it('output_text가 null이면 에러를 던진다', async () => {
             mockCreate.mockResolvedValue({ output_text: null });
 
             await expect(callOpenaiChat(BASE_OPTIONS)).rejects.toThrow(
-                'OpenAI returned no text content'
+                '[openai] Provider returned null/undefined response'
+            );
+        });
+
+        it('output_text가 undefined이면 에러를 던진다', async () => {
+            mockCreate.mockResolvedValue({ output_text: undefined });
+
+            await expect(callOpenaiChat(BASE_OPTIONS)).rejects.toThrow(
+                '[openai] Provider returned null/undefined response'
             );
         });
     });

@@ -86,7 +86,7 @@ export function SectorDirectionCard({
             {latestPct !== null && (
                 <div className="mb-4 flex items-center gap-3">
                     <span className="text-secondary-400 text-sm">
-                        최근 {latest?.date}
+                        최근 영업일 ({latest?.date}) 기준
                     </span>
                     <span
                         className={cn(

@@ -126,4 +126,21 @@ describe('callAiProviderRouter', () => {
             ).rejects.toThrow('Unhandled AI provider');
         });
     });
+
+    describe('알 수 없는 모델 처리 (isActiveModelId 가드)', () => {
+        it('MODEL_SPECS에 없는 모델이면 [router] Unknown model 에러를 던진다', async () => {
+            await expect(
+                callAiProviderRouter({
+                    ...BASE_OPTIONS,
+                    model: 'totally-fake-model',
+                })
+            ).rejects.toThrow('[router] Unknown model: totally-fake-model');
+
+            // 가드가 getProviderForModel 호출 전에 throw하므로 provider 조회 자체가 시도되지 않아야 한다
+            expect(mockGetProviderForModel).not.toHaveBeenCalled();
+            expect(mockCallAnthropicChat).not.toHaveBeenCalled();
+            expect(mockCallOpenaiChat).not.toHaveBeenCalled();
+            expect(mockCallGeminiWithKeyFallback).not.toHaveBeenCalled();
+        });
+    });
 });

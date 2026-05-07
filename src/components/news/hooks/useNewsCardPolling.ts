@@ -1,17 +1,35 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useLayoutEffect, useRef } from 'react';
 import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
 import type { NewsDisplayItem } from '@/domain/types';
+import { MS_PER_MINUTE } from '@/domain/constants/time';
+import {
+    POLL_INTERVAL_MS,
+    MAX_CONSECUTIVE_FAILURES,
+} from '@/components/news/constants';
 
-const POLL_INTERVAL_MS = 3_000;
+export { POLL_INTERVAL_MS, MAX_CONSECUTIVE_FAILURES };
+
 const EMPTY_SNAPSHOT_MAX_POLLS = 20;
 const REFRESH_SNAPSHOT_MIN_POLLS = 5;
+/**
+ * Hard ceiling on overall polling duration. Even if a worker keeps returning
+ * pending cards, we never poll beyond 5 minutes to avoid unbounded background
+ * work in long-lived tabs.
+ */
+const MAX_POLL_DURATION_MS = 5 * MS_PER_MINUTE;
 
 function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
     return items.some(
         item => item.sentiment === null || item.priceImpact === null
     );
+}
+
+interface UseNewsCardPollingReturn {
+    items: NewsDisplayItem[];
+    isPolling: boolean;
+    pollError: Error | null;
 }
 
 /**
@@ -21,22 +39,69 @@ function hasPendingAnalysis(items: NewsDisplayItem[]): boolean {
  * local state with the fresh DB snapshot. Even when SSR already has analyzed
  * rows, the news page still runs a background FMP refresh, so the UI keeps a
  * short "checking latest news" state before treating the DB snapshot as final.
+ *
+ * `pollError` becomes non-null after `MAX_CONSECUTIVE_FAILURES` consecutive
+ * polling errors so the consuming component can rethrow it for the surrounding
+ * error boundary to catch.
+ *
+ * NOTE: `initialItems` is compared by reference for state-reset detection.
+ * Callers must pass a stable reference (typically the SSR snapshot) — passing
+ * a freshly-built array on every parent render will cause unnecessary state
+ * resets mid-poll. If reference stability cannot be guaranteed, memoize at
+ * the call site (`useMemo([initialItems])`) or remount with `key={symbol}`.
  */
 export function useNewsCardPolling(
     symbol: string,
     initialItems: NewsDisplayItem[]
-): { items: NewsDisplayItem[]; isPolling: boolean } {
+): UseNewsCardPollingReturn {
     const [items, setItems] = useState(initialItems);
     const [isPolling, setIsPolling] = useState(true);
+    const [pollError, setPollError] = useState<Error | null>(null);
+    // Reset on symbol change in render (React-recommended "store information
+    // from previous renders" pattern). Avoids the
+    // `react-hooks/set-state-in-effect` warning and skips a redundant commit
+    // cycle vs. doing the reset from inside an effect.
+    // https://react.dev/reference/react/useState#storing-information-from-previous-renders
+    //
+    // Only `symbol` is compared. `initialItems` is intentionally NOT in the
+    // reset key — array props in tests / unmemoized parents change identity on
+    // every render, which would re-fire setState during render and cause an
+    // infinite loop. Callers that need a state reset on a fresh `initialItems`
+    // (e.g., new SSR snapshot for the same symbol) should remount with `key={...}`.
+    const [prevSymbol, setPrevSymbol] = useState(symbol);
     const latestItemsRef = useRef(initialItems);
+
+    if (prevSymbol !== symbol) {
+        setPrevSymbol(symbol);
+        setItems(initialItems);
+        setIsPolling(true);
+        setPollError(null);
+    }
+
+    // Mirror committed `items` into the ref so the polling error handler can
+    // read the latest snapshot without depending on stale closure values. Done
+    // in useLayoutEffect (not in render) to satisfy the no-ref-mutation-during-
+    // render rule while still landing before any concurrent reads from setInterval.
+    useLayoutEffect(() => {
+        latestItemsRef.current = items;
+    }, [items]);
 
     useEffect(() => {
         let pollCount = 0;
+        let consecutiveFailures = 0;
+        const startTime = Date.now();
 
         const intervalId = setInterval(async () => {
+            if (Date.now() - startTime > MAX_POLL_DURATION_MS) {
+                setIsPolling(false);
+                clearInterval(intervalId);
+                return;
+            }
+
             try {
                 const fresh = await getNewsCardsAction(symbol);
                 pollCount += 1;
+                consecutiveFailures = 0;
                 latestItemsRef.current = fresh;
                 setItems(fresh);
 
@@ -59,7 +124,18 @@ export function useNewsCardPolling(
                 }
             } catch (err) {
                 pollCount += 1;
+                consecutiveFailures += 1;
                 console.error('[useNewsCardPolling] poll failed:', err);
+
+                if (consecutiveFailures >= MAX_CONSECUTIVE_FAILURES) {
+                    setPollError(
+                        err instanceof Error ? err : new Error(String(err))
+                    );
+                    setIsPolling(false);
+                    clearInterval(intervalId);
+                    return;
+                }
+
                 if (
                     pollCount >= EMPTY_SNAPSHOT_MAX_POLLS &&
                     !hasPendingAnalysis(latestItemsRef.current)
@@ -71,8 +147,13 @@ export function useNewsCardPolling(
         }, POLL_INTERVAL_MS);
 
         return () => clearInterval(intervalId);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
+        // Only `symbol` is in deps. `initialItems` is excluded on purpose —
+        // including it would restart the polling effect on every parent render
+        // with an unstable array prop, resetting `pollCount` and breaking the
+        // EMPTY_SNAPSHOT_MAX_POLLS / REFRESH_SNAPSHOT_MIN_POLLS thresholds.
+        // The reset-on-symbol-change branch above handles the only legitimate
+        // case where state needs to be cleared while the hook stays mounted.
+    }, [symbol]);
 
-    return { items, isPolling };
+    return { items, isPolling, pollError };
 }

@@ -27,7 +27,7 @@ import type {
     FundamentalPeerInput,
     FundamentalPriceTargetConsensusInput,
     FundamentalPriceTargetSummaryInput,
-    FundamentalProfileInput,
+    FundamentalProfile,
     FundamentalRatiosInput,
     FundamentalSectorHistoricalInput,
     FundamentalSectorPerformanceInput,
@@ -36,8 +36,6 @@ import type {
     GradesEvent,
 } from '@y0ngha/siglens-core';
 
-/** Default number of recent grading events returned by `getGrades`. */
-export const DEFAULT_GRADES_LIMIT = 10;
 const ANALYST_ESTIMATES_PERIOD = 'annual';
 const ANALYST_ESTIMATES_PAGE = '0';
 const ANALYST_ESTIMATES_LIMIT = '10';
@@ -82,7 +80,7 @@ async function getOptionalArray<T>(
 /** FMP adapter implementing `FundamentalDataProvider`. Uses `fmpGet` for all HTTP calls. */
 export class FmpFundamentalClient implements FundamentalDataProvider {
     /** Fetch company profile; returns `null` when FMP returns an empty array. */
-    async getProfile(symbol: string): Promise<FundamentalProfileInput | null> {
+    async getProfile(symbol: string): Promise<FundamentalProfile | null> {
         const arr = await fmpGet<RawFmpProfile[]>('profile', { symbol });
         const r = arr[0];
         if (!r) return null;
@@ -249,7 +247,7 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
         };
     }
 
-    /** Fetch recent analyst grade-change events; `limit` defaults to `DEFAULT_GRADES_LIMIT`; returns events sorted descending by date. */
+    /** Fetch recent analyst grade-change events; returns events sorted descending by date. */
     async getGrades(symbol: string): Promise<GradesEvent[]> {
         const arr = await fmpGet<RawFmpGradesEvent[]>('grades', {
             symbol,

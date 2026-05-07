@@ -15,5 +15,8 @@ export async function callGeminiChat({
             ? { config: { systemInstruction } }
             : {}),
     });
-    return response.text ?? '';
+    if (response.text === null || response.text === undefined) {
+        throw new Error('[gemini] Provider returned null/undefined response');
+    }
+    return response.text;
 }

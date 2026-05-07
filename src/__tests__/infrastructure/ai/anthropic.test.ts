@@ -11,7 +11,18 @@ jest.mock('@anthropic-ai/sdk', () => ({
     default: MockAnthropic,
 }));
 
+jest.mock('@y0ngha/siglens-core', () => {
+    const actual = jest.requireActual<typeof import('@y0ngha/siglens-core')>(
+        '@y0ngha/siglens-core'
+    );
+    return {
+        ...actual,
+        MODEL_SPECS: { ...actual.MODEL_SPECS },
+    };
+});
+
 import { callAnthropicChat } from '@/infrastructure/ai/anthropic';
+import { MODEL_SPECS } from '@y0ngha/siglens-core';
 
 const BASE_OPTIONS = {
     serverApiKey: 'server-key',
@@ -150,6 +161,43 @@ describe('callAnthropicChat', () => {
             await expect(callAnthropicChat(BASE_OPTIONS)).rejects.toThrow(
                 'Anthropic returned no text content'
             );
+        });
+    });
+
+    describe('effort 검증', () => {
+        it('유효한 effort(medium)는 통과한다', async () => {
+            mockFinalMessage.mockResolvedValue({
+                content: [{ type: 'text', text: 'ok' }],
+                stop_reason: 'end_turn',
+            });
+
+            await expect(callAnthropicChat(SONNET_OPTIONS)).resolves.toBe('ok');
+        });
+
+        it('잘못된 effort 값이 spec에 있으면 에러를 던진다', async () => {
+            // Use a string-indexed view so we don't narrow `original` through the
+            // full MODEL_SPECS union (which would force the assignment shape to
+            // satisfy every spec member, e.g. gemini specs without `effort`).
+            const specs = MODEL_SPECS as unknown as Record<
+                string,
+                Record<string, unknown>
+            >;
+            const original = specs['claude-sonnet-4-6'];
+
+            specs['claude-sonnet-4-6'] = {
+                ...original,
+                // Runtime invalid value to verify the validator throws. The
+                // string-indexed view above keeps this assignment well-typed.
+                effort: 'extreme',
+            };
+
+            try {
+                await expect(callAnthropicChat(SONNET_OPTIONS)).rejects.toThrow(
+                    '[anthropic] Invalid effort value: extreme'
+                );
+            } finally {
+                specs['claude-sonnet-4-6'] = original;
+            }
         });
     });
 });

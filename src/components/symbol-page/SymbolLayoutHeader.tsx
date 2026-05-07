@@ -72,7 +72,7 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         selectedModel={modelId}
                         onModelChange={handleModelChange}
                         allowedModels={allowedModels}
-                        className="w-36"
+                        className="w-28 sm:w-32 lg:w-36"
                         showLabel={false}
                         dropdownAlign="right"
                     />

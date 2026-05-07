@@ -51,9 +51,7 @@ function StatusCard({ phase }: StatusCardProps) {
                     aria-hidden="true"
                     className={cn(
                         'h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none',
-                        isFetching
-                            ? 'border-secondary-400'
-                            : 'border-primary-500'
+                        isFetching ? 'border-primary-400' : 'border-primary-500'
                     )}
                 />
                 <p
@@ -225,24 +223,28 @@ function NewsAiSummaryContent({
     // from this page. `timeframe` is null — news analysis is timeframe-agnostic.
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
-    const chatState = useMemo(
-        () =>
-            analysis.status === 'done'
-                ? ({
-                      context: {
-                          kind: 'news',
-                          payload: analysis.result,
-                      } as const,
-                      timeframe: null,
-                      isAnalysisReady: true,
-                  } as const)
-                : ({
-                      context: null,
-                      timeframe: null,
-                      isAnalysisReady: false,
-                  } as const),
-        [analysis]
-    );
+    //
+    // `analysis`는 discriminated union이라 `analysis.result`는 narrowing 후에만
+    // 접근 가능하므로 deps에는 객체 전체를 둔다. React Query가 `query.data`를
+    // memoize하므로 동일 분석에 대한 reference는 안정적 — 실제 데이터가 바뀔
+    // 때만 재계산된다.
+    const chatState = useMemo(() => {
+        const result = analysis.status === 'done' ? analysis.result : null;
+        return result !== null
+            ? ({
+                  context: {
+                      kind: 'news',
+                      payload: result,
+                  } as const,
+                  timeframe: null,
+                  isAnalysisReady: true,
+              } as const)
+            : ({
+                  context: null,
+                  timeframe: null,
+                  isAnalysisReady: false,
+              } as const);
+    }, [analysis]);
     usePublishSymbolChat(chatState);
 
     if (analysis.status === 'error') {
@@ -281,7 +283,16 @@ export function NewsAiSummary({
     companyName,
     hasEnrichedNews,
 }: NewsAiSummaryProps) {
-    const isCardsReady = useWaitForNewsCards(symbol, hasEnrichedNews);
+    const { isReady: isCardsReady, pollError } = useWaitForNewsCards(
+        symbol,
+        hasEnrichedNews
+    );
+
+    // Surface persistent polling errors to the surrounding error boundary
+    // (NewsAiSummaryErrorBoundary) so the fallback UI takes over.
+    if (pollError !== null) {
+        throw pollError;
+    }
 
     if (!isCardsReady) {
         return <StatusCard phase="fetching" />;

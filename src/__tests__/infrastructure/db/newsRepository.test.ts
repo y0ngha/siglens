@@ -210,5 +210,45 @@ describe('DrizzleNewsRepository', () => {
             expect(result.category).toBe('other');
             expect(result.titleKo).toBe('애플 사상 최고가 달성');
         });
+
+        it('알 수 없는 enum 문자열은 null 로 정규화한다', async () => {
+            // DB에 (수동 SQL 또는 스키마 변경 등으로) 등록되지 않은 값이 들어오면
+            // 표시 단의 fallback이 처리할 수 있도록 read 시점에 null로 떨어뜨려야 한다.
+            const corruptRow: DbRow = {
+                ...dbRow,
+                sentiment: 'unknown_value',
+                category: 'unknown_category',
+                priceImpact: 'unknown_impact',
+            };
+            const { db } = makeSelectDb([corruptRow]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = (await repo.listBySymbol('AAPL', 86_400_000)) as [
+                NewsRow,
+            ];
+
+            expect(result.sentiment).toBeNull();
+            expect(result.category).toBeNull();
+            expect(result.priceImpact).toBeNull();
+        });
+
+        it('비문자열 enum 값은 null 로 정규화한다', async () => {
+            // 타입 시스템 우회 또는 마이그레이션 사고로 비문자열이 들어와도
+            // crash 없이 null로 강등시켜야 한다.
+            const malformedRow = {
+                ...dbRow,
+                sentiment: 42,
+                category: true,
+                priceImpact: { broken: 'shape' },
+            } as unknown as DbRow;
+            const { db } = makeSelectDb([malformedRow]);
+            const repo = new DrizzleNewsRepository(db);
+            const [result] = (await repo.listBySymbol('AAPL', 86_400_000)) as [
+                NewsRow,
+            ];
+
+            expect(result.sentiment).toBeNull();
+            expect(result.category).toBeNull();
+            expect(result.priceImpact).toBeNull();
+        });
     });
 });

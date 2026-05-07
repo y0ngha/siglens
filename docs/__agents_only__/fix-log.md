@@ -1,5 +1,22 @@
 # Fix Log
 
+## [PR #422 Round 2 | fix/post-9e88a2f9-audit | 2026-05-07]
+- B1: `src/infrastructure/db/newsRepository.ts` — enum mirror 배열을 `Record<T, true>` 형태로 교체해 siglens-core 측 enum 추가 시 컴파일 에러로 감지되도록 했음. `isNewsSentiment/Category/Impact` type guard 추출.
+  - Rule: MISTAKES.md Documentation 6 — 외부 enum과 동기화되어야 하는 로컬 mirror는 컴파일 시점 exhaustiveness 검사 필수
+- B2: `src/__tests__/infrastructure/db/newsRepository.test.ts` — toNewsRow의 unknown 문자열 / 비문자열 입력 케이스 두 건 추가. validator 분기 100% 커버.
+  - Rule: MISTAKES.md Infrastructure 2 — 100% branch coverage
+- S1: `src/components/news/hooks/useNewsCardPolling.ts` — `MAX_POLL_DURATION_MS = 5 * 60_000`을 `5 * MS_PER_MINUTE`로 교체.
+  - Rule: MISTAKES.md #15 — 시간 계산은 `@/domain/constants/time` 상수 사용
+- S2: `useNewsCardPolling.ts` `POLL_INTERVAL_MS` / `MAX_CONSECUTIVE_FAILURES` export + 테스트 import. 매직넘버(`3_000`, `9_000`, `30_000`) 제거.
+  - Rule: MISTAKES.md Tests 4 — 경계값 상수는 source export 후 import해 동기화
+- S3: `src/components/chat/hooks/useChat.ts` `MODEL_STORAGE_KEY` export + `useChat.test.tsx`에서 로컬 재정의 제거 후 import.
+  - Rule: MISTAKES.md Tests 13 — 테스트는 production 코드를 직접 import해 검증
+- S4: `src/components/news/NewsAiSummary.tsx` `useMemo` 본문 내 dead code 위치 주석을 호출 앞 docblock에 통합.
+  - Rule: 주석은 실행 흐름이 도달하는 위치에 둔다
+- S6: `src/infrastructure/ai/anthropic.ts` `VALID_EFFORTS`도 `Record<NonNullable<ModelSpec['effort']>, true>` 패턴으로 교체. `isValidEffort` type guard 추출.
+  - Rule: B1과 동일 — 외부 enum union 추적
+- S5 (skipped — 이전 라운드 결정): `useSelectedModel.ts` `eslint-disable` 근본 수정은 별도 이슈로 트래킹.
+
 ## [PR #420 Round 15 | master | 2026-05-05]
 - S3 (skipped — False Positive): `src/infrastructure/auth/finalizeOAuthSignupAction.ts` — reviewer suggested changing `tx as unknown as SiglensDatabase` to `tx as SiglensDatabase`. Reverted: `PgTransaction<NeonHttpQueryResultHKT, ...>` doesn't overlap with `NeonHttpDatabase<...>` (SiglensDatabase), causing TS error 2352. The double cast is required.
 
@@ -83,11 +100,6 @@
 - Rule: N/A
 - Context: Branch upgrades @y0ngha/siglens-core from 0.7.2 to 0.7.3 and applies five fixes for consumer-side breakages (useOverallAnalysis limit_error case, submitOverallAnalysisAction newsItems rename, chatAction key semantics, router comment). All changes approved on round 1.
 
-## [Tasks 2.12–2.14 R1 | feat/fundamental-news-analysis | 2026-05-02]
-- Violation: SymbolPageHeader.tsx had orphaned border-secondary-700 class (border color with no border-direction after border-b removal)
-- Rule: MISTAKES.md rule 4 — Remove logic/code that has no effect (dead CSS)
-- Context: Removed border-secondary-700 from header className since no border-direction utility is present.
-
 ## [Task 2.11 | feat/fundamental-news-analysis | 2026-05-02]
 - Violation: OverallContent.tsx used `style={{ width: '...' }}` inline for skeleton widths
 - Rule: MISTAKES.md rule 7 — Never use inline style for layout/styling; use CSS custom property + Tailwind pattern
@@ -160,11 +172,6 @@
 - Rule: SCOPE.md §3 (dependency direction) — analysis secret sauce stays in core
 - Context: added siglens-side §0 work-boundary checklist + CLAUDE.md cross-repo scope guard so that analysis-related task descriptions trigger an explicit redirect-or-confirm step before any code is written.
 
-## [Issue #401 | feat/401/worker-ai-provider-enhancement | 2026-05-02]
-- Violation: 에러 처리 의도와 retryable 플래그 모순
-- Rule: MISTAKES.md Predictability 6 — 인터페이스/구현/문서 정합성
-- Context: chatgpt.ts에서 `finish_reason === 'length'` 처리 시 주석은 "재시도해도 결과는 같다"라고 적었지만 `{ retryable: true }`로 throw. ChatGPT는 budget 축소 등 mitigation이 없으므로 non-retryable로 변경.
-
 ## [PR #413 R8 | feat/fundamental-news-analysis | 2026-05-03]
 - Violation: SymbolTabsSkeleton.tsx nav element had both `aria-hidden="true"` and `aria-label="분석 종류"`
 - Rule: MISTAKES.md Accessibility 1.5 — aria-hidden removes element from a11y tree; aria-label on hidden element is meaningless
@@ -198,8 +205,6 @@
 
 
 ## [PR #420 Round 16 | master | 2026-05-05]
-- B1: `src/infrastructure/auth/use-cases/types.ts` — 6 dead `SocialLoginUser*` type definitions were left after `socialLoginUser.ts` was deleted. Removed `SocialLoginUserErrorCode`, `SocialLoginUserInput`, `SocialLoginUserError`, `SocialLoginUserDependencies`, `SocialLoginUserOptions`, `SocialLoginUserResult`, and their unused imports (`OAuthProvider`, `OAuthUserRepository`).
-  - Rule: MISTAKES.md §4 — Remove logic/code that has no effect
 - S1: `src/__tests__/app/api/auth/callback/route.test.ts` — New test file added covering 3 key branches of the OAuth callback route handler: existing OAuth account login, email conflict redirect, and pendingStore.save failure.
   - Rule: MISTAKES.md Tests §12 — test coverage for critical business paths
 - S2 (skipped — intentional design): `registerUser.ts` DI pattern (`createTransactionalRepositories` factory) — reviewer noted "현 설계가 의도적이라면 pass". Confirmed intentional, skipped.
@@ -209,3 +214,17 @@
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained
 - Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
 
+## [Multi-domain audit + 7-task patch | Round 2 (approved) | 2026-05-07]
+- B3: `src/__tests__/components/chat/hooks/useChat.test.tsx:79` — ESLint react/display-name error: anonymous component returned from makeWrapper(). Fixed by giving it a named function declaration TestQueryWrapper.
+  - Rule: MISTAKES.md Components Rule 9 — Custom hooks in test wrapper components must have display name
+- B4: `src/__tests__/components/chat/hooks/useChat.test.tsx:107` — test failed because lastWrittenModelRef started as null and triggered redundant write-back of stored model on hydration. Fixed by initializing the ref to stored value in useChat.ts hydration effect before flipping isModelHydrated.
+  - Rule: MISTAKES.md Components Rule 12 — Internal refs affecting state must be initialized before first use to prevent stale state propagation
+
+
+## [PR #422 R3 | fix/post-9e88a2f9-audit | 2026-05-07]
+- Violation: POLL_INTERVAL_MS / MAX_CONSECUTIVE_FAILURES silently-diverge 위험 — useWaitForNewsCards.ts에서 동일 값을 로컬로 재정의
+- Rule: MISTAKES.md #16.5 — 공유 상수를 각 파일에서 중복 정의하면 한쪽 변경이 다른 쪽에 조용히 전파되지 않는 silently-diverge 위험 발생
+- Context: useNewsCardPolling.ts가 export한 상수를 useWaitForNewsCards.ts가 동일 값으로 로컬 재정의. src/components/news/constants.ts로 추출 후 양쪽 모두 import.
+- Violation: console.log in infrastructure file (submitNewsAnalysisAction.ts)
+- Rule: MISTAKES.md Infrastructure #3 — No debug artifacts (console.log) in infrastructure files; logging belongs in higher layers
+- Context: DEBUG_VERBOSE_LOGS env-gated console.log 블록이 Server Action(infrastructure 레이어)에 남아있었음. 블록 전체 제거.

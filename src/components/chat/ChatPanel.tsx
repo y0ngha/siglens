@@ -36,7 +36,7 @@ const MODEL_DISPLAY_MAP: Partial<Record<ModelId, ChatModelDisplay>> = {
         label: 'Flash 3',
         fullName: 'Gemini 3 Flash Preview',
     },
-    'claude-haiku-4-5': { label: 'Haiku', fullName: 'Claude Haiku 3.5' },
+    'claude-haiku-4-5': { label: 'Haiku', fullName: 'Claude Haiku 4.5' },
     'claude-sonnet-4-6': { label: 'Sonnet', fullName: 'Claude Sonnet 4.6' },
     'claude-opus-4-7': { label: 'Opus', fullName: 'Claude Opus 4.7' },
     'gpt-5-mini': { label: 'GPT Mini', fullName: 'GPT-5 Mini' },
@@ -178,7 +178,11 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
             </div>
 
             {analysisUpdated && (
-                <div className="bg-primary-900/30 border-primary-700/50 flex items-center justify-between border-b px-3 py-1.5">
+                <div
+                    className="bg-primary-900/30 border-primary-700/50 flex items-center justify-between border-b px-3 py-1.5"
+                    role="status"
+                    aria-live="polite"
+                >
                     <span className="text-primary-300 text-xs">
                         분석이 업데이트됐어요 — 최신 결과 기반으로 이어서
                         질문하세요
@@ -235,7 +239,11 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                 })}
 
                 {loadingPhase !== null && (
-                    <div className="bg-secondary-700/50 max-w-[85%] self-start rounded-lg rounded-tl-sm p-2.5">
+                    <div
+                        className="bg-secondary-700/50 max-w-[85%] self-start rounded-lg rounded-tl-sm p-2.5"
+                        role="status"
+                        aria-live="polite"
+                    >
                         <p className="text-secondary-400 text-xs">
                             {LOADING_MESSAGES[loadingPhase]}
                         </p>

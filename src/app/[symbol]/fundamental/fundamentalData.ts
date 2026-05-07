@@ -3,7 +3,7 @@ import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { TTL_T4_30D, TTL_T3_7D, TTL_T2_24H } from '@/lib/fundamental/cacheTtl';
 import type {
     FundamentalSectorHistoricalInput,
-    FundamentalProfileInput,
+    FundamentalProfile,
     FundamentalPeerInput,
     FundamentalValuationMetrics,
     FundamentalRatiosInput,
@@ -20,7 +20,7 @@ const fundamentalClient = new FmpFundamentalClient();
 
 export async function getProfile(
     symbol: string
-): Promise<FundamentalProfileInput | null> {
+): Promise<FundamentalProfile | null> {
     'use cache';
     cacheLife({ revalidate: TTL_T4_30D });
     cacheTag(`fundamental:profile:${symbol}`);

@@ -4,7 +4,11 @@
 import { act, renderHook } from '@testing-library/react';
 import type { NewsDisplayItem } from '@/domain/types';
 import { getNewsCardsAction } from '@/infrastructure/market/getNewsCardsAction';
-import { useNewsCardPolling } from '@/components/news/hooks/useNewsCardPolling';
+import {
+    MAX_CONSECUTIVE_FAILURES,
+    POLL_INTERVAL_MS,
+    useNewsCardPolling,
+} from '@/components/news/hooks/useNewsCardPolling';
 
 jest.mock('@/infrastructure/market/getNewsCardsAction', () => ({
     getNewsCardsAction: jest.fn(),
@@ -57,7 +61,7 @@ describe('useNewsCardPolling', () => {
         expect(result.current.isPolling).toBe(true);
 
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(3_000);
+            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
         });
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledWith('AAPL');
@@ -106,7 +110,7 @@ describe('useNewsCardPolling', () => {
         expect(result.current.isPolling).toBe(false);
 
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(3_000);
+            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
         });
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(6);
@@ -133,7 +137,7 @@ describe('useNewsCardPolling', () => {
         expect(result.current.items).toEqual([PENDING_ITEM]);
 
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(3_000);
+            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
         });
 
         expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(21);
@@ -158,8 +162,9 @@ describe('useNewsCardPolling', () => {
         expect(result.current.isPolling).toBe(false);
     });
 
-    it('뉴스 스냅샷 조회가 계속 실패하면 제한 이후 폴링 상태를 닫는다', async () => {
-        mockGetNewsCardsAction.mockRejectedValue(new Error('db unavailable'));
+    it('뉴스 스냅샷 조회가 연속 실패하면 폴링을 멈추고 pollError를 노출한다', async () => {
+        const dbError = new Error('db unavailable');
+        mockGetNewsCardsAction.mockRejectedValue(dbError);
         const errorSpy = jest
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -168,12 +173,27 @@ describe('useNewsCardPolling', () => {
             useNewsCardPolling('AAPL', [READY_ITEM])
         );
 
+        // MAX_CONSECUTIVE_FAILURES 회 연속 실패 시 pollError가 설정되고 인터벌이 정리된다.
         await act(async () => {
-            await jest.advanceTimersByTimeAsync(60_000);
+            await jest.advanceTimersByTimeAsync(
+                POLL_INTERVAL_MS * MAX_CONSECUTIVE_FAILURES
+            );
         });
 
-        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(20);
+        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
+            MAX_CONSECUTIVE_FAILURES
+        );
         expect(result.current.isPolling).toBe(false);
+        expect(result.current.pollError).toBe(dbError);
+
+        // 폴링이 멈췄는지 확인 — 추가 시간 진행 후에도 호출 횟수가 늘지 않아야 한다.
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(POLL_INTERVAL_MS * 10);
+        });
+        expect(mockGetNewsCardsAction).toHaveBeenCalledTimes(
+            MAX_CONSECUTIVE_FAILURES
+        );
+
         errorSpy.mockRestore();
     });
 });
