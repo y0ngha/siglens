@@ -171,9 +171,7 @@ describe('callAnthropicChat', () => {
                 stop_reason: 'end_turn',
             });
 
-            await expect(
-                callAnthropicChat(SONNET_OPTIONS)
-            ).resolves.toBe('ok');
+            await expect(callAnthropicChat(SONNET_OPTIONS)).resolves.toBe('ok');
         });
 
         it('잘못된 effort 값이 spec에 있으면 에러를 던진다', async () => {
@@ -191,15 +189,13 @@ describe('callAnthropicChat', () => {
             };
 
             try {
-                await expect(
-                    callAnthropicChat(SONNET_OPTIONS)
-                ).rejects.toThrow(
+                await expect(callAnthropicChat(SONNET_OPTIONS)).rejects.toThrow(
                     '[anthropic] Invalid effort value: extreme'
                 );
             } finally {
-                (
-                    MODEL_SPECS as unknown as Record<string, typeof original>
-                )['claude-sonnet-4-6'] = original;
+                (MODEL_SPECS as unknown as Record<string, typeof original>)[
+                    'claude-sonnet-4-6'
+                ] = original;
             }
         });
     });

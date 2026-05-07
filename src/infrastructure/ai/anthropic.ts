@@ -36,10 +36,7 @@ export async function callAnthropicChat({
     if (!spec) {
         throw new Error(`Unknown model: ${model}`);
     }
-    if (
-        spec.effort !== undefined &&
-        !VALID_EFFORTS.includes(spec.effort)
-    ) {
+    if (spec.effort !== undefined && !VALID_EFFORTS.includes(spec.effort)) {
         throw new Error(`[anthropic] Invalid effort value: ${spec.effort}`);
     }
     const adaptiveThinking = spec.effort !== undefined;

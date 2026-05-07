@@ -104,9 +104,7 @@ export async function ensureNewsCardsAnalyzedAction(
     if (upsertFailures.length > 0) {
         console.error(
             `[ensureNewsCardsAnalyzedAction] ${upsertFailures.length}/${fresh.length} upserts failed`,
-            upsertFailures.map(f =>
-                f.status === 'rejected' ? f.reason : null
-            )
+            upsertFailures.map(f => (f.status === 'rejected' ? f.reason : null))
         );
     }
     if (upsertFailures.length > fresh.length / 2) {

@@ -51,9 +51,7 @@ function StatusCard({ phase }: StatusCardProps) {
                     aria-hidden="true"
                     className={cn(
                         'h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none',
-                        isFetching
-                            ? 'border-primary-400'
-                            : 'border-primary-500'
+                        isFetching ? 'border-primary-400' : 'border-primary-500'
                     )}
                 />
                 <p
@@ -228,8 +226,7 @@ function NewsAiSummaryContent({
     // Decompose deps so the memo only recomputes when the specific fields it
     // reads actually change, instead of on every `analysis` object identity
     // flip from useNewsAnalysis.
-    const analysisResult =
-        analysis.status === 'done' ? analysis.result : null;
+    const analysisResult = analysis.status === 'done' ? analysis.result : null;
     const chatState = useMemo(
         () =>
             analysis.status === 'done' && analysisResult !== null

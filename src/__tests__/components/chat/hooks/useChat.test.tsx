@@ -13,10 +13,7 @@ import { act, renderHook } from '@testing-library/react';
 import React from 'react';
 
 // React Query is required by useChat. Provide a minimal client wrapper.
-import {
-    QueryClient,
-    QueryClientProvider,
-} from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const MODEL_STORAGE_KEY = 'siglens_chat_model';
 
@@ -60,9 +57,7 @@ jest.mock('@/components/chat/utils/chatStorage', () => ({
     buildStorageKey: (symbol: string, tf: string) =>
         `siglens_chat_${symbol.toUpperCase()}_${tf}`,
     loadSession: jest.fn().mockReturnValue([]),
-    loadSessionFull: jest
-        .fn()
-        .mockReturnValue({ messages: [], savedAt: null }),
+    loadSessionFull: jest.fn().mockReturnValue({ messages: [], savedAt: null }),
     saveSession: jest.fn(),
 }));
 

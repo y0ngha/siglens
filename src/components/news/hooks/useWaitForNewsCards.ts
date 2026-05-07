@@ -44,10 +44,7 @@ export function useWaitForNewsCards(
     const [prevInitiallyReady, setPrevInitiallyReady] =
         useState(initiallyReady);
 
-    if (
-        prevSymbol !== symbol ||
-        prevInitiallyReady !== initiallyReady
-    ) {
+    if (prevSymbol !== symbol || prevInitiallyReady !== initiallyReady) {
         setPrevSymbol(symbol);
         setPrevInitiallyReady(initiallyReady);
         setIsReady(initiallyReady);
