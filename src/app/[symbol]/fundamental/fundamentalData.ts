@@ -1,5 +1,8 @@
 import { cacheLife, cacheTag } from 'next/cache';
+import { getDatabaseClient } from '@/infrastructure/db/client';
+import { DrizzleProfileDescriptionTranslationRepository } from '@/infrastructure/db/tickerRepository';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
+import { translateCompanyDescription } from '@/infrastructure/ticker/koreanTranslator';
 import { TTL_T4_30D, TTL_T3_7D, TTL_T2_24H } from '@/lib/fundamental/cacheTtl';
 import type {
     FundamentalSectorHistoricalInput,
@@ -25,6 +28,32 @@ export async function getProfile(
     cacheLife({ revalidate: TTL_T4_30D });
     cacheTag(`fundamental:profile:${symbol}`);
     return fundamentalClient.getProfile(symbol);
+}
+
+/**
+ * Returns the Korean translation of the company description, storing it in
+ * the DB on first call so it persists across deployments.
+ *
+ * Read path: DB lookup (instant on cache hit).
+ * Write path: Gemini translation → DB upsert (first visit per symbol only).
+ */
+export async function getProfileDescriptionKo(
+    symbol: string
+): Promise<string | null> {
+    const { db } = getDatabaseClient();
+    const repo = new DrizzleProfileDescriptionTranslationRepository(db);
+
+    const existing = await repo.findBySymbol(symbol);
+    if (existing !== null) return existing.descriptionKo;
+
+    const profile = await getProfile(symbol);
+    if (profile === null || profile.description === null) return null;
+
+    const translated = await translateCompanyDescription(profile.description);
+    if (translated === null) return null;
+
+    await repo.upsert({ symbol, descriptionKo: translated });
+    return translated;
 }
 
 export async function getStockPeers(

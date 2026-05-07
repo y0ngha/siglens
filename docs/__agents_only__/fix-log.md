@@ -6,6 +6,19 @@
 - S1 (적용): `FutureDirectionCard.tsx` — '컨센서스' 목표주가 항목 툴팁을 `'애널리스트 목표주가 하단·중앙·상단 범위'` → `'애널리스트 목표주가 평균치'`로 변경. 기존 설명이 '컨센서스' 단일 항목이 아닌 전체 범위를 설명하는 오류.
 - S2 (거부): `globals.css` `overflow-x: hidden` — iOS Safari layout viewport 확장 버그 대응 의도적 수정. sticky header는 y축만 사용, 자식 스크롤 컨테이너는 독립 overflow-x 설정.
 - S3 (거부): `SymbolLayoutHeader.tsx` `z-50` — Tailwind z-index 스케일 유틸리티 클래스. 매직 넘버 아님. vaul Drawer.Content(z-40) 위에 헤더를 올리기 위한 의도적 값.
+## [PR #425 Round 2 | refactor/news-card-db-first | 2026-05-07]
+
+- B1: Added expect(mockListBySymbol).toHaveBeenCalledWith('AAPL', NEWS_LOOKBACK_MS) assertion to "모든 아이템이 이미 분석 완료" test. Added NEWS_LOOKBACK_MS import from @/infrastructure/market/newsLookback.
+- Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths requires explicit assertions verifying the expected function calls and arguments
+- Context: DB-first filtering test enhanced to verify that listBySymbol was called with correct symbol and lookback parameters, ensuring the filtering logic correctly queries the database
+
+- S1: Added listBySymbol: jest.fn().mockResolvedValue([]) to module-level DrizzleNewsRepository mock factory.
+- Rule: MISTAKES.md Tests §6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
+- Context: MockNewsRepository now includes the listBySymbol method mock to cover all DB queries used by ensureNewsCardsAnalyzedAction
+
+- S2: Added if (fresh.length === 0) return; early return before repo.listBySymbol() call in ensureNewsCardsAnalyzedAction.ts. Added expect(mockListBySymbol).not.toHaveBeenCalled() to '뉴스가 없으면' test.
+- Rule: MISTAKES.md Coding Paradigm §1 / Performance — skip unnecessary DB queries when input data is empty; guard expensive operations with early returns
+- Context: When no fresh news items exist, skip the DB lookup entirely; test verifies the optimization by asserting listBySymbol was never called
 
 ## [PR #423 Round 7 (S2) | feat/news-thinking-budget-and-refresh | 2026-05-07]
 - S2: `src/components/news/hooks/useNewsPollingWithInvalidation.ts` 신규 훅 생성. `useQueryClient` + 캐시 무효화 로직을 `NewsList.tsx`에서 분리. `NewsList`는 `useNewsPollingWithInvalidation` 단일 호출로 단순화(useState 2개만 유지). `NewsList.test.tsx` mock 대상도 함께 교체(`useNewsCardPolling` → `useNewsPollingWithInvalidation`).
@@ -67,11 +80,6 @@
 - Fix: `consent/page.tsx` had `export const dynamic = 'force-dynamic'` incompatible with `cacheComponents: true`. Removed — searchParams already makes page dynamic.
 - Fix: `privacy/page.tsx`, `terms/page.tsx` — DB access in async page component triggers "Uncached data outside Suspense" with `cacheComponents: true`. Split into inner async components wrapped in Suspense.
 
-## [PR #417 Round 6 | worktree-seo-overhaul-49 | 2026-05-04]
-- Violation: \`@type: 'FinancialProduct'\` JSON-LD 의미 부적합 — schema.org/FinancialProduct는 대출/카드/보험 등 금융 상품 자체용이고 주식 분석 서비스에는 맞지 않음. WebPage about.Corporation으로 이미 금융 entity 신호 제공 중이라 중복.
-- Rule: schema.org type semantic 정합성
-- Context: P2.1에서 추가됐으나 WebPage about.Corporation으로 충분. 안전하게 제거 (Service로 교체할 수도 있으나 about.Corporation과 정보가 중복되어 가치 적음).
-
 ## [PR #417 Round 5 | worktree-seo-overhaul-49 | 2026-05-04]
 - Violation: 워크트리 \`CLAUDE.md\` 갱신 누락 — R4 fix-log에 갱신 완료로 기재되어 있으나 실제로는 main 레포의 CLAUDE.md만 수정되어 있고 워크트리의 같은 파일은 옛 내용("infrastructure ← May import from domain only")을 그대로 갖고 있었다
 - Rule: 변경 사항은 실제 commit 대상(워크트리)의 파일에 적용해야 함
@@ -89,11 +97,6 @@
 - Suggestion S2 적용: SymbolPageClient bottomSlot 주석 WHAT → WHY로 교체
 - Rule: 주석은 코드로 자명하지 않은 이유를 적는다
 - Context: "차트 컨테이너 아래에 렌더" → "서버 컴포넌트가 SEO용 cross-link를 주입하기 위한 슬롯".
-
-## [PR #417 Round 1 | worktree-seo-overhaul-49 | 2026-05-04]
-- Violation: schema.org `Article.datePublished` set to `new Date().toISOString()` (request time) — Googlebot interprets every crawl as a fresh publication
-- Rule: schema.org Article semantics — `datePublished` is original publication time, not request time; for content updates use `dateModified`
-- Context: Added during P3.1 (news Article JSON-LD). Replaced with `SITE_BUILD_DATE.toISOString()` for `datePublished` and kept `new Date().toISOString()` as `dateModified` (background card analysis genuinely changes per request). Promoted `SITE_BUILD_DATE` to `@/lib/seo` so news/page.tsx and sitemap.ts share one source instead of duplicating `parseBuildDate`.
 
 ## [PR #415 Doc Policy Removal | chore/upgrade-siglens-core-0.7.3 | 2026-05-04]
 - Policy removed: MISTAKES.md Documentation Sync 규칙 4 (다중 라인 JSDoc 금지) — PR #415 review comments triggered by this rule were rejected; rule removed per user decision
@@ -113,16 +116,6 @@
 - Violation: tokenEncryption.ts 헤더 문구에 "sync obligation" 언급 (Phase 6 완료했으므로 불필요)
 - Rule: Phase 6 마이그레이션 완료 후 더 이상 siglens-core와의 동기화 의무 없음 — 헤더를 과거시제로 갱신
 - Context: tokenEncryption.ts의 "Sync obligation" 문구를 "Phase 6 of the scope-realignment refactor moved the DB layer fully into siglens"로 변경; 동기화 명령문 제거.
-
-## [PR #405 | refactor/scope-realignment-phase-0 | 2026-05-02]
-- Violation: drizzle/0004_add_oauth_token_columns.sql가 _journal.json에 등재되지 않은 채 0006_striped_marauders.sql과 SQL이 완전 중복
-- Rule: drizzle 마이그레이션은 _journal.json 등재 순서로 적용되며, 등재되지 않은 파일은 dead-code이자 drizzle-kit migrate 시 0006에서 컬럼 중복 오류 유발
-- Context: orphan SQL 파일을 git rm으로 삭제. _journal.json은 변경 없음.
-
-- Violation: drizzle/0004_petite_medusa.sql이 email_verified DEFAULT true로 추가되어 0005에서 false로 되돌리기 전 가입한 사용자들이 자동 검증 처리됨
-- Rule: 운영 DB에 이미 적용된 마이그레이션은 사후 편집 금지 — 보정이 필요하면 새 forward migration 추가
-- Context: 두 마이그레이션 모두 _journal에 등재되어 적용된 상태. 0004를 retroactive 수정하지 않고 0005에 사후 보존 사유와 향후 처리 가이드를 SQL 주석으로 명시.
-
 
 ## [PR #389 round 2 | feat/369/auth-email | 2026-04-28]
 - Violation: Next.js error.tsx 컴포넌트 props 인터페이스에 `error: Error & { digest?: string }` 누락
@@ -217,6 +210,21 @@
 - Violation: route.ts cast comment inaccurate — stated narrowing was "isOAuthProvider narrows profile.provider" when actually narrowing URL param
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained
 - Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
+
+## [PR #425 Round 3 | refactor/news-card-db-first | 2026-05-07]
+- S1: Added "listBySymbol 실패 시 에러를 전파한다" test case inside "DB-first 필터링은" describe block. Verifies that listBySymbol rejection propagates (fail-fast design for DB-wide outage detection).
+  - Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths
+  - Context: Ensures error handling path is exercised when DB query fails; confirm that rejection surfaces to caller instead of being silently swallowed
+- S2: Updated comment at ensureNewsCardsAnalyzedAction.ts line 135 from "Analyze and persist unanalyzed items in parallel — each polls its own worker." to "Each item polls its own background worker independently." (removed WHAT prefix, kept WHY context).
+  - Rule: Comments should explain WHY, not redundantly describe WHAT the code already shows
+
+## [PR #425 Round 1 | refactor/news-card-db-first | 2026-05-07]
+- B1: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing mockListBySymbol mock setup in beforeEach. Added `mockListBySymbol = jest.fn().mockResolvedValue([])` and `listBySymbol: mockListBySymbol` to MockNewsRepository.mockImplementation. Default empty array keeps all existing tests passing (all items treated as unanalyzed).
+  - Rule: MISTAKES.md Tests #6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
+- B2: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing test cases for DB-first filtering logic. Added new describe block "DB-first 필터링은" with two test cases: (1) "모든 아이템이 이미 분석 완료(analyzedAt != null)이면 카드 분석을 호출하지 않는다" — verifies early return when all items analyzed; (2) "분석 완료된 아이템은 건너뛰고 미분석 아이템만 카드 분석을 호출한다" — verifies mixed state filtering.
+  - Rule: MISTAKES.md Tests §12 — Test coverage for critical business paths; DB-first filtering is the core refactor logic
+- Suggestion: `src/actions/news/ensureNewsCardsAnalyzedAction.ts:124` — Removed WHAT comment "// DB-first filter: skip items that already have analysis results." Kept the WHY comment "// Read the current DB state after upsert so newly inserted rows are included."
+  - Rule: Comments should explain WHY, not redundantly describe WHAT the code already shows
 
 ## [Multi-domain audit + 7-task patch | Round 2 (approved) | 2026-05-07]
 - B3: `src/__tests__/components/chat/hooks/useChat.test.tsx:79` — ESLint react/display-name error: anonymous component returned from makeWrapper(). Fixed by giving it a named function declaration TestQueryWrapper.

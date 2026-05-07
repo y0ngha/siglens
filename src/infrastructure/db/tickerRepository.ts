@@ -1,11 +1,17 @@
 import type { KoreanTickerEntry } from '@/domain/types';
 import { eq, inArray, sql } from 'drizzle-orm';
-import { assetTranslations, koreanTickers } from '@/infrastructure/db/schema';
+import {
+    assetTranslations,
+    koreanTickers,
+    profileDescriptionTranslations,
+} from '@/infrastructure/db/schema';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 import type {
     AssetTranslationRecord,
     AssetTranslationRepository,
     KoreanTickerRepository,
+    ProfileDescriptionTranslationRecord,
+    ProfileDescriptionTranslationRepository,
 } from '@/infrastructure/db/types';
 
 const koreanTickerColumns = {
@@ -110,6 +116,44 @@ export class DrizzleAssetTranslationRepository implements AssetTranslationReposi
                     name: sql`excluded.name`,
                     koreanName: sql`excluded.korean_name`,
                     fmpSymbol: sql`excluded.fmp_symbol`,
+                    updatedAt: sql`now()`,
+                },
+            });
+    }
+}
+
+/**
+ * Drizzle ORM implementation of {@link ProfileDescriptionTranslationRepository}.
+ * Reads/writes the `profile_description_translations` table.
+ *
+ * @param db - Drizzle-wrapped Neon database client; obtain via `createDatabaseClient`.
+ */
+export class DrizzleProfileDescriptionTranslationRepository implements ProfileDescriptionTranslationRepository {
+    constructor(private readonly db: SiglensDatabase) {}
+
+    async findBySymbol(
+        symbol: string
+    ): Promise<ProfileDescriptionTranslationRecord | null> {
+        const [row] = await this.db
+            .select({
+                symbol: profileDescriptionTranslations.symbol,
+                descriptionKo: profileDescriptionTranslations.descriptionKo,
+            })
+            .from(profileDescriptionTranslations)
+            .where(eq(profileDescriptionTranslations.symbol, symbol))
+            .limit(1);
+
+        return row ?? null;
+    }
+
+    async upsert(record: ProfileDescriptionTranslationRecord): Promise<void> {
+        await this.db
+            .insert(profileDescriptionTranslations)
+            .values(record)
+            .onConflictDoUpdate({
+                target: profileDescriptionTranslations.symbol,
+                set: {
+                    descriptionKo: sql`excluded.description_ko`,
                     updatedAt: sql`now()`,
                 },
             });

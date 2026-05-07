@@ -4,7 +4,10 @@ jest.mock('@/infrastructure/ai/gemini', () => ({
     callGeminiChat: (...args: unknown[]) => callGeminiMock(...args),
 }));
 
-import { translateCompanyNames } from '@/infrastructure/ticker/koreanTranslator';
+import {
+    translateCompanyDescription,
+    translateCompanyNames,
+} from '@/infrastructure/ticker/koreanTranslator';
 
 describe('translateCompanyNames', () => {
     beforeEach(() => {
@@ -43,8 +46,10 @@ describe('translateCompanyNames', () => {
         expect(callGeminiMock).toHaveBeenCalledTimes(1);
         expect(callGeminiMock).toHaveBeenCalledWith({
             serverApiKey: 'free-api-key',
+            userApiKey: undefined,
             model: 'gemini-test',
             contents: expect.stringContaining('AAPL: Apple Inc.'),
+            thinkingBudget: 0,
         });
     });
 
@@ -59,11 +64,17 @@ describe('translateCompanyNames', () => {
         expect(callGeminiMock).toHaveBeenCalledTimes(2);
         expect(callGeminiMock).toHaveBeenNthCalledWith(
             1,
-            expect.objectContaining({ serverApiKey: 'free-api-key' })
+            expect.objectContaining({
+                serverApiKey: 'free-api-key',
+                thinkingBudget: 0,
+            })
         );
         expect(callGeminiMock).toHaveBeenNthCalledWith(
             2,
-            expect.objectContaining({ serverApiKey: 'server-api-key' })
+            expect.objectContaining({
+                serverApiKey: 'server-api-key',
+                thinkingBudget: 0,
+            })
         );
     });
 
@@ -73,7 +84,10 @@ describe('translateCompanyNames', () => {
         await translateCompanyNames([{ symbol: 'AAPL', name: 'Apple Inc.' }]);
         expect(callGeminiMock).toHaveBeenCalledTimes(1);
         expect(callGeminiMock).toHaveBeenCalledWith(
-            expect.objectContaining({ serverApiKey: 'server-api-key' })
+            expect.objectContaining({
+                serverApiKey: 'server-api-key',
+                thinkingBudget: 0,
+            })
         );
     });
 
@@ -105,5 +119,98 @@ describe('translateCompanyNames', () => {
         expect(callGeminiMock).toHaveBeenCalledWith(
             expect.objectContaining({ model: 'gemini-2.5-flash' })
         );
+    });
+});
+
+describe('translateCompanyDescription', () => {
+    beforeEach(() => {
+        callGeminiMock.mockReset();
+        process.env.TRANSLATE_API_KEY = 'server-api-key';
+        process.env.TRANSLATE_FREE_API_KEY = 'free-api-key';
+        process.env.TRANSLATE_MODEL = 'gemini-test';
+    });
+
+    afterEach(() => {
+        delete process.env.TRANSLATE_API_KEY;
+        delete process.env.TRANSLATE_FREE_API_KEY;
+        delete process.env.TRANSLATE_MODEL;
+    });
+
+    it('TRANSLATE_API_KEY 가 없으면 null 반환', async () => {
+        delete process.env.TRANSLATE_API_KEY;
+        await expect(
+            translateCompanyDescription('Apple designs consumer electronics.')
+        ).resolves.toBeNull();
+        expect(callGeminiMock).not.toHaveBeenCalled();
+    });
+
+    it('freeApiKey로 번역 후 결과를 반환한다', async () => {
+        callGeminiMock.mockResolvedValue(
+            '애플은 소비자 가전 제품을 설계합니다.'
+        );
+        const result = await translateCompanyDescription(
+            'Apple designs consumer electronics.'
+        );
+        expect(result).toBe('애플은 소비자 가전 제품을 설계합니다.');
+        expect(callGeminiMock).toHaveBeenCalledTimes(1);
+        expect(callGeminiMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                serverApiKey: 'free-api-key',
+                thinkingBudget: 0,
+                contents: expect.stringContaining(
+                    'Apple designs consumer electronics.'
+                ),
+            })
+        );
+    });
+
+    it('freeApiKey 실패 시 apiKey로 fallback한다', async () => {
+        callGeminiMock
+            .mockRejectedValueOnce(new Error('quota'))
+            .mockResolvedValueOnce('번역된 설명');
+        const result = await translateCompanyDescription('Description.');
+        expect(result).toBe('번역된 설명');
+        expect(callGeminiMock).toHaveBeenCalledTimes(2);
+        expect(callGeminiMock).toHaveBeenNthCalledWith(
+            1,
+            expect.objectContaining({
+                serverApiKey: 'free-api-key',
+                thinkingBudget: 0,
+            })
+        );
+        expect(callGeminiMock).toHaveBeenNthCalledWith(
+            2,
+            expect.objectContaining({
+                serverApiKey: 'server-api-key',
+                thinkingBudget: 0,
+            })
+        );
+    });
+
+    it('LLM 호출 실패 시 null을 반환한다', async () => {
+        callGeminiMock.mockRejectedValue(new Error('all failed'));
+        await expect(
+            translateCompanyDescription('Description.')
+        ).resolves.toBeNull();
+    });
+
+    it('freeApiKey 없으면 apiKey로 직접 호출한다', async () => {
+        delete process.env.TRANSLATE_FREE_API_KEY;
+        callGeminiMock.mockResolvedValue('번역된 설명');
+        await translateCompanyDescription('Description.');
+        expect(callGeminiMock).toHaveBeenCalledTimes(1);
+        expect(callGeminiMock).toHaveBeenCalledWith(
+            expect.objectContaining({
+                serverApiKey: 'server-api-key',
+                thinkingBudget: 0,
+            })
+        );
+    });
+
+    it('빈 응답은 null로 반환한다', async () => {
+        callGeminiMock.mockResolvedValue('   ');
+        await expect(
+            translateCompanyDescription('Description.')
+        ).resolves.toBeNull();
     });
 });

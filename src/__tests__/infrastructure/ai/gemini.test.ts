@@ -101,4 +101,46 @@ describe('callGeminiChat', () => {
             expect(call).not.toHaveProperty('config');
         });
     });
+
+    describe('thinkingBudget', () => {
+        it('thinkingBudget: 0 이면 config.thinkingConfig에 포함한다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+            await callGeminiChat({ ...BASE_OPTIONS, thinkingBudget: 0 });
+
+            expect(mockGenerateContent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    config: { thinkingConfig: { thinkingBudget: 0 } },
+                })
+            );
+        });
+
+        it('thinkingBudget이 없으면 config를 포함하지 않는다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+            await callGeminiChat(BASE_OPTIONS);
+
+            const call = mockGenerateContent.mock.calls[0][0];
+            expect(call).not.toHaveProperty('config');
+        });
+
+        it('thinkingBudget과 systemInstruction을 함께 전달하면 config에 모두 포함한다', async () => {
+            mockGenerateContent.mockResolvedValue({ text: 'ok' });
+
+            await callGeminiChat({
+                ...BASE_OPTIONS,
+                systemInstruction: 'Be concise.',
+                thinkingBudget: 0,
+            });
+
+            expect(mockGenerateContent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    config: {
+                        systemInstruction: 'Be concise.',
+                        thinkingConfig: { thinkingBudget: 0 },
+                    },
+                })
+            );
+        });
+    });
 });

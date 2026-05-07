@@ -234,3 +234,19 @@ export interface AssetTranslationRepository {
     findBySymbol(symbol: string): Promise<AssetTranslationRecord | null>;
     upsert(record: AssetTranslationRecord): Promise<void>;
 }
+
+/** A persisted company description translation row. */
+export interface ProfileDescriptionTranslationRecord {
+    /** Canonical uppercase symbol (e.g. `"AAPL"`). */
+    symbol: string;
+    /** Korean translation of the FMP company description. */
+    descriptionKo: string;
+}
+
+/** Persistence operations for company description Korean translations. */
+export interface ProfileDescriptionTranslationRepository {
+    findBySymbol(
+        symbol: string
+    ): Promise<ProfileDescriptionTranslationRecord | null>;
+    upsert(record: ProfileDescriptionTranslationRecord): Promise<void>;
+}
