@@ -1,13 +1,6 @@
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
+import { SENTIMENT_LABEL_TEXT } from '@/components/fear-greed/utils/labels';
 import { cn } from '@/lib/cn';
-
-const LABEL_TEXT: Record<FearGreedSnapshot['label'], string> = {
-    EXTREME_FEAR: '극공포',
-    FEAR: '공포',
-    NEUTRAL: '중립',
-    GREED: '탐욕',
-    EXTREME_GREED: '극탐욕',
-};
 
 // alpha /40 vs /20 = EXTREME vs base intensity (no separate extreme tokens in design system).
 const LABEL_BG: Record<FearGreedSnapshot['label'], string> = {
@@ -39,9 +32,9 @@ export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
                 'inline-flex items-center gap-1 rounded px-2 py-0.5 text-xs font-medium',
                 LABEL_BG[snapshot.label]
             )}
-            aria-label={`공포·탐욕 지수 ${LABEL_TEXT[snapshot.label]} ${score}점${confidenceNote}`}
+            aria-label={`공포·탐욕 지수 ${SENTIMENT_LABEL_TEXT[snapshot.label]} ${score}점${confidenceNote}`}
         >
-            <span>{LABEL_TEXT[snapshot.label]}</span>
+            <span>{SENTIMENT_LABEL_TEXT[snapshot.label]}</span>
             <span className="font-mono">{score}</span>
             {snapshot.confidence === 'limited' && (
                 <span className="text-secondary-300" aria-hidden="true">

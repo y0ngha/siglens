@@ -1,4 +1,4 @@
-import type { FearGreedFactorKey } from '@y0ngha/siglens-core';
+import type { FearGreedFactorKey, FearGreedLabel } from '@y0ngha/siglens-core';
 
 /** Factor key → 한글 표시 라벨. UI는 이 객체로 일관 표시한다. */
 export const FACTOR_LABEL: Record<FearGreedFactorKey, string> = {
@@ -7,6 +7,15 @@ export const FACTOR_LABEL: Record<FearGreedFactorKey, string> = {
     poc_distance: 'POC 거리(60bar)',
     ma200_distance: 'MA200 거리',
     range_position: '52w 위치',
+};
+
+/** 5단계 sentiment label → 한글 표시 */
+export const SENTIMENT_LABEL_TEXT: Record<FearGreedLabel, string> = {
+    EXTREME_FEAR: '극공포',
+    FEAR: '공포',
+    NEUTRAL: '중립',
+    GREED: '탐욕',
+    EXTREME_GREED: '극탐욕',
 };
 
 /** Raw value 표시 포맷터 — UI는 이 함수로 raw 값을 출력한다. */

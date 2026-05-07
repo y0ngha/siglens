@@ -1,4 +1,5 @@
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
+import { SENTIMENT_LABEL_TEXT } from '@/components/fear-greed/utils/labels';
 
 interface FearGreedHeroProps {
     snapshot: FearGreedSnapshot;
@@ -30,58 +31,62 @@ const SEGMENTS: ReadonlyArray<SegmentDef> = [
     { from: 75, to: 100, strokeClass: 'text-ui-success' },
 ];
 
-const LABEL_TEXT: Record<FearGreedSnapshot['label'], string> = {
-    EXTREME_FEAR: '극공포',
-    FEAR: '공포',
-    NEUTRAL: '중립',
-    GREED: '탐욕',
-    EXTREME_GREED: '극탐욕',
-};
+const GAUGE_CX = 100;
+const GAUGE_CY = 100;
+const GAUGE_RADIUS = 80;
+const GAUGE_STROKE_WIDTH = 14;
+const GAUGE_INDICATOR_RADIUS = 6;
+const GAUGE_VIEWBOX_W = 200;
+const GAUGE_VIEWBOX_H = 110;
 
 /** Hero semicircle gauge for the fearGreed page. 0=left/EXTREME_FEAR, 100=right/EXTREME_GREED. */
 export function FearGreedHero({ snapshot }: FearGreedHeroProps) {
     const score = Math.round(snapshot.score);
-    const angle = (1 - score / 100) * Math.PI; // 100 → 0rad(우), 0 → π(좌)
-    const cx = 100;
-    const cy = 100;
-    const r = 80;
-    const px = cx + r * Math.cos(angle);
-    const py = cy - r * Math.sin(angle);
+    // 좌측 끝(EXTREME_FEAR)부터 우측 끝(EXTREME_GREED)으로 진행하는 반원 — 점수가
+    // 높을수록 indicator가 오른쪽으로 이동하도록 score=100을 angle=0(가장 우측)에 매핑.
+    const angle = (1 - score / 100) * Math.PI;
+    const px = GAUGE_CX + GAUGE_RADIUS * Math.cos(angle);
+    const py = GAUGE_CY - GAUGE_RADIUS * Math.sin(angle);
 
     return (
         <div className="flex flex-col items-center gap-2">
             <svg
-                viewBox="0 0 200 110"
+                viewBox={`0 0 ${GAUGE_VIEWBOX_W} ${GAUGE_VIEWBOX_H}`}
                 className="w-full max-w-[420px]"
                 role="img"
-                aria-label={`공포·탐욕 지수 ${score}점, ${LABEL_TEXT[snapshot.label]}`}
+                aria-label={`공포·탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[snapshot.label]}`}
             >
                 {SEGMENTS.map(seg => {
                     const a1 = (1 - seg.from / 100) * Math.PI;
                     const a2 = (1 - seg.to / 100) * Math.PI;
-                    const x1 = cx + r * Math.cos(a1);
-                    const y1 = cy - r * Math.sin(a1);
-                    const x2 = cx + r * Math.cos(a2);
-                    const y2 = cy - r * Math.sin(a2);
+                    const x1 = GAUGE_CX + GAUGE_RADIUS * Math.cos(a1);
+                    const y1 = GAUGE_CY - GAUGE_RADIUS * Math.sin(a1);
+                    const x2 = GAUGE_CX + GAUGE_RADIUS * Math.cos(a2);
+                    const y2 = GAUGE_CY - GAUGE_RADIUS * Math.sin(a2);
                     return (
                         <path
                             key={seg.from}
-                            d={`M ${x1} ${y1} A ${r} ${r} 0 0 1 ${x2} ${y2}`}
-                            strokeWidth={14}
+                            d={`M ${x1} ${y1} A ${GAUGE_RADIUS} ${GAUGE_RADIUS} 0 0 1 ${x2} ${y2}`}
+                            strokeWidth={GAUGE_STROKE_WIDTH}
                             fill="none"
                             stroke="currentColor"
                             className={seg.strokeClass}
                         />
                     );
                 })}
-                <circle cx={px} cy={py} r={6} className="fill-secondary-100" />
+                <circle
+                    cx={px}
+                    cy={py}
+                    r={GAUGE_INDICATOR_RADIUS}
+                    className="fill-secondary-100"
+                />
             </svg>
             <div className="text-center">
                 <div className="text-secondary-100 text-3xl font-bold tabular-nums">
                     {score}
                 </div>
                 <div className="text-secondary-300 text-sm">
-                    / 100 — {LABEL_TEXT[snapshot.label]}
+                    / 100 — {SENTIMENT_LABEL_TEXT[snapshot.label]}
                 </div>
             </div>
         </div>

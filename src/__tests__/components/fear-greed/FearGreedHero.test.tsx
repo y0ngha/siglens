@@ -39,4 +39,21 @@ describe('FearGreedHero', () => {
             expect(getByText('68')).toBeInTheDocument();
         });
     });
+
+    describe('with GREED snapshot', () => {
+        it('renders GREED label for score 60', () => {
+            const greedSnap: FearGreedSnapshot = {
+                score: 60,
+                label: 'GREED',
+                confidence: 'normal',
+                sampleSize: 200,
+                warning: null,
+                groups: [],
+            };
+            const { getByText } = render(<FearGreedHero snapshot={greedSnap} />);
+            expect(getByText('60')).toBeInTheDocument();
+            // Use anchored regex so '탐욕' doesn't also match '극탐욕'.
+            expect(getByText(/(?:^|[^극])탐욕/)).toBeInTheDocument();
+        });
+    });
 });
