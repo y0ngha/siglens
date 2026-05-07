@@ -37,7 +37,7 @@ describe('FearGreedCard', () => {
     describe('with snapshot', () => {
         it('renders score, label, and group breakdown', () => {
             const { getByText } = render(<FearGreedCard snapshot={sample} />);
-            expect(getByText('19')).toBeInTheDocument(); // rounded score
+            expect(getByText('19')).toBeInTheDocument();
             expect(getByText(/극공포/)).toBeInTheDocument();
             expect(getByText('Flow')).toBeInTheDocument();
             expect(getByText('Trend')).toBeInTheDocument();
@@ -52,6 +52,8 @@ describe('FearGreedCard', () => {
             const { getByText } = render(
                 <FearGreedCard snapshot={withWarning} />
             );
+            // CHRONIC_WEAKNESS text is internal to SelfNormWarningBadge; substring assertion guards
+            // against accidental removal from the rendered DOM, full-text guard lives in that file's tests.
             expect(getByText(/장기 약세 사이클/)).toBeInTheDocument();
         });
 
