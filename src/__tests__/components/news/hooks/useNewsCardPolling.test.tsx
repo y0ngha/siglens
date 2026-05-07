@@ -196,6 +196,38 @@ describe('useNewsCardPolling', () => {
         expect(onComplete).toHaveBeenCalledWith([PENDING_ITEM]);
     });
 
+    it('빈 뉴스 목록으로 폴링이 종료되면 onPollingComplete를 호출하지 않는다', async () => {
+        const onComplete = jest.fn();
+        mockGetNewsCardsAction.mockResolvedValue([]);
+
+        renderHook(() => useNewsCardPolling('AAPL', [], onComplete));
+
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(60_000);
+        });
+
+        expect(onComplete).not.toHaveBeenCalled();
+    });
+
+    it('연속 실패로 폴링이 종료되면 onPollingComplete를 호출하지 않는다', async () => {
+        const onComplete = jest.fn();
+        mockGetNewsCardsAction.mockRejectedValue(new Error('db unavailable'));
+        const errorSpy = jest
+            .spyOn(console, 'error')
+            .mockImplementation(() => {});
+
+        renderHook(() => useNewsCardPolling('AAPL', [READY_ITEM], onComplete));
+
+        await act(async () => {
+            await jest.advanceTimersByTimeAsync(
+                POLL_INTERVAL_MS * MAX_CONSECUTIVE_FAILURES
+            );
+        });
+
+        expect(onComplete).not.toHaveBeenCalled();
+        errorSpy.mockRestore();
+    });
+
     it('뉴스 스냅샷 조회가 연속 실패하면 폴링을 멈추고 pollError를 노출한다', async () => {
         const dbError = new Error('db unavailable');
         mockGetNewsCardsAction.mockRejectedValue(dbError);

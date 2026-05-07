@@ -313,6 +313,7 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
     if (prevSymbol !== symbol) {
         setPrevSymbol(symbol);
         setInitialEnrichedCount(countEnriched(initialItems));
+        setVisibleCount(PAGE_SIZE);
     }
 
     const handlePollingComplete = useCallback(
