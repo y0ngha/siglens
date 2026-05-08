@@ -79,6 +79,9 @@ async function fetchNewsAnalysis(
         }
         throw new Error('분석 중 오류가 발생했습니다.');
     }
+    if (submitted.status === 'key_error') {
+        throw new Error(submitted.error);
+    }
 
     onJobId(submitted.jobId);
     try {

@@ -199,6 +199,9 @@ export function useAnalysis({
                 setIsPolling(true);
                 // submitted 단계에서는 쿨다운을 시작하지 않는다.
                 // polling 완료(done) 시에만 쿨다운을 시작한다.
+            } else if (data.status === 'key_error') {
+                currentJobIdRef.current = null;
+                setPollError(data.error);
             } else {
                 // tier gate / 일일 사용 한도 초과
                 currentJobIdRef.current = null;

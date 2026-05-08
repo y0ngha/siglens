@@ -72,6 +72,9 @@ async function fetchFundamentalAnalysis(
                 : '사용량 한도를 초과했습니다.';
         throw new Error(message);
     }
+    if (submitted.status === 'key_error') {
+        throw new Error(submitted.error);
+    }
 
     onJobId(submitted.jobId);
     try {
