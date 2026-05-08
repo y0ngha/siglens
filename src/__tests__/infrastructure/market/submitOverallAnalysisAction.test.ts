@@ -1,10 +1,10 @@
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
-import { submitOverallAnalysis } from '@y0ngha/siglens-core';
-import type {
-    ModelId,
-    SubmitOverallAnalysisResult,
-    EnrichedNewsItem,
-    EarningsCalendarItem,
+import {
+    submitOverallAnalysis,
+    type ModelId,
+    type SubmitOverallAnalysisResult,
+    type EnrichedNewsItem,
+    type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
 
 // ---------------------------------------------------------------------------
@@ -59,10 +59,8 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import {
-    resolveTierAndByok,
-    type AnalysisGateError,
-} from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import type { AnalysisGateError } from '@/domain/types';
 
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository

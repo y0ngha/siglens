@@ -31,18 +31,16 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 // Typed mocks & fixtures
 // ---------------------------------------------------------------------------
 
-import { submitFundamentalAnalysis } from '@y0ngha/siglens-core';
+import {
+    submitFundamentalAnalysis,
+    type ModelId,
+    type SubmitFundamentalAnalysisResult,
+} from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import {
-    resolveTierAndByok,
-    type AnalysisGateError,
-} from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import type { AnalysisGateError } from '@/domain/types';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
-import type {
-    ModelId,
-    SubmitFundamentalAnalysisResult,
-} from '@y0ngha/siglens-core';
 
 const mockSubmitFundamentalAnalysis =
     submitFundamentalAnalysis as jest.MockedFunction<

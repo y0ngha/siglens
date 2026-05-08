@@ -18,13 +18,14 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
     })),
 }));
 
-import {
-    resolveTierAndByok,
-    type AnalysisGateError,
-} from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import type { AnalysisGateError } from '@/domain/types';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
-import type { ModelId, SubmitAnalysisGatedResult } from '@y0ngha/siglens-core';
-import { submitAnalysis } from '@y0ngha/siglens-core';
+import {
+    submitAnalysis,
+    type ModelId,
+    type SubmitAnalysisGatedResult,
+} from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 
 const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<

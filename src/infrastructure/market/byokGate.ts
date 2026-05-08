@@ -17,15 +17,7 @@ import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 import type {
     AnalysisGateError,
     AnalysisGateErrorCode,
-    AnalysisGateBlockedResult,
 } from '@/domain/analysis/gate';
-
-// Re-export for action files that imported from byokGate
-export type {
-    AnalysisGateError,
-    AnalysisGateErrorCode,
-    AnalysisGateBlockedResult,
-};
 
 const GATE_MESSAGES: Record<AnalysisGateErrorCode, string> = {
     tier_premium_blocked:

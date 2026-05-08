@@ -74,6 +74,9 @@ export function isGateBlockedResult(result: {
     // The array's element type is the literal union AnalysisGateErrorCode, but
     // .includes() on a literal-union array refuses non-literal arguments —
     // widen to readonly string[] for the lookup. Safe: read-only check, no mutation.
+    // result.error is proven non-null object with 'code' property by the guards above.
+    // TypeScript doesn't narrow 'object' + 'in' check to { code: unknown } — TS limitation.
     const code = (result.error as { code: unknown }).code;
-    return (GATE_ERROR_CODES as readonly string[]).includes(code as string);
+    // typeof guard avoids casting unknown to string; non-string code returns false.
+    return typeof code === 'string' && (GATE_ERROR_CODES as readonly string[]).includes(code);
 }
