@@ -6,11 +6,13 @@ import { cn } from '@/lib/cn';
 const { EXTREME_FEAR_MAX, FEAR_MAX, NEUTRAL_MAX, GREED_MAX } =
     FEAR_GREED_SCORE_BOUNDARIES;
 
+/** Visual variant — Hero is the focal stack; mini is for comparison tiles. */
+type FearGreedGaugeSize = 'hero' | 'mini';
+
 interface FearGreedGaugeProps {
     score: number;
     label: FearGreedLabel;
-    /** Visual variant — Hero is the focal stack; mini is for comparison tiles. */
-    size: 'hero' | 'mini';
+    size: FearGreedGaugeSize;
     /** Optional period label rendered under the score (e.g. "1주", "1개월"). Mini only. */
     periodLabel?: string;
 }

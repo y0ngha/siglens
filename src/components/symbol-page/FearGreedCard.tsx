@@ -1,6 +1,5 @@
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
-// labels.ts is the canonical home for fearGreed UI helpers — symbol-page imports it as a consumer.
 import {
     FACTOR_LABEL,
     SENTIMENT_LABEL_TEXT,

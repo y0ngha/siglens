@@ -7,8 +7,10 @@ interface FearGreedComparisonGaugesProps {
     history: FearGreedHistoryPoint[];
 }
 
+type PeriodKey = 'now' | '1w' | '1m' | '1y';
+
 interface PeriodDef {
-    key: 'now' | '1w' | '1m' | '1y';
+    key: PeriodKey;
     daysBack: number;
     label: string;
 }

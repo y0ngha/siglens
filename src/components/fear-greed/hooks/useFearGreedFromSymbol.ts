@@ -1,21 +1,15 @@
 'use client';
 
 import { useBars } from '@/components/symbol-page/hooks/useBars';
-import { useFearGreed } from '@/components/fear-greed/hooks/useFearGreed';
+import {
+    useFearGreed,
+    type UseFearGreedResult,
+} from '@/components/fear-greed/hooks/useFearGreed';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
-import type {
-    FearGreedHistoryPoint,
-    FearGreedSnapshot,
-} from '@y0ngha/siglens-core';
 
 interface UseFearGreedFromSymbolInput {
     symbol: string;
     fmpSymbol?: string;
-}
-
-interface UseFearGreedFromSymbolResult {
-    snapshot: FearGreedSnapshot | null;
-    history: FearGreedHistoryPoint[];
 }
 
 /**
@@ -27,7 +21,7 @@ interface UseFearGreedFromSymbolResult {
 export function useFearGreedFromSymbol({
     symbol,
     fmpSymbol,
-}: UseFearGreedFromSymbolInput): UseFearGreedFromSymbolResult {
+}: UseFearGreedFromSymbolInput): UseFearGreedResult {
     const { bars, indicators } = useBars({
         symbol,
         timeframe: DEFAULT_TIMEFRAME,

@@ -15,7 +15,7 @@ interface UseFearGreedInput {
     buySellVolume: BuySellVolumeResult[];
 }
 
-interface UseFearGreedResult {
+export interface UseFearGreedResult {
     snapshot: FearGreedSnapshot | null;
     history: FearGreedHistoryPoint[];
 }
