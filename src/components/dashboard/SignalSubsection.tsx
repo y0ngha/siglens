@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { StockWithConflict } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
@@ -8,7 +9,7 @@ interface SignalSubsectionProps {
     marker: string; // ▲ ▼ △ ▽ ◈
     variant: 'confirmed' | 'expected' | 'mixed';
     stocks: readonly StockWithConflict[];
-    infoMessage?: string;
+    infoMessage?: ReactNode;
 }
 
 const VARIANT_BORDER: Record<SignalSubsectionProps['variant'], string> = {
@@ -47,11 +48,11 @@ export function SignalSubsection({
                         </span>
                         {title}
                     </h3>
-                    {infoMessage && (
+                    {infoMessage !== undefined && infoMessage !== null && (
                         <InfoTooltip>
-                            <span className="text-secondary-300">
+                            <div className="text-secondary-300">
                                 {infoMessage}
-                            </span>
+                            </div>
                         </InfoTooltip>
                     )}
                 </div>

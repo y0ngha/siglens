@@ -5,6 +5,10 @@
  * 각 axis jobId를 직접 polling한 뒤 완료 후 한 번만 재submit하는지 검증한다.
  */
 import { useOverallAnalysis } from '@/components/overall/hooks/useOverallAnalysis';
+import { cancelAnalysisJobAction } from '@/infrastructure/market/cancelAnalysisJobAction';
+import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
+import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
+import { cancelOverallAnalysisJobAction } from '@/infrastructure/market/cancelOverallAnalysisJobAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
@@ -30,6 +34,18 @@ jest.mock('@/infrastructure/market/pollFundamentalAnalysisAction', () => ({
 jest.mock('@/infrastructure/market/pollNewsAnalysisAction', () => ({
     pollNewsAnalysisAction: jest.fn(),
 }));
+jest.mock('@/infrastructure/market/cancelAnalysisJobAction', () => ({
+    cancelAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('@/infrastructure/market/cancelFundamentalAnalysisJobAction', () => ({
+    cancelFundamentalAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('@/infrastructure/market/cancelNewsAnalysisJobAction', () => ({
+    cancelNewsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+}));
+jest.mock('@/infrastructure/market/cancelOverallAnalysisJobAction', () => ({
+    cancelOverallAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+}));
 jest.mock('@/lib/sleep', () => ({
     sleep: jest.fn().mockResolvedValue(undefined),
 }));
@@ -49,6 +65,19 @@ const mockPollFundamental =
     >;
 const mockPollNews = pollNewsAnalysisAction as jest.MockedFunction<
     typeof pollNewsAnalysisAction
+>;
+const mockCancelTechnical = cancelAnalysisJobAction as jest.MockedFunction<
+    typeof cancelAnalysisJobAction
+>;
+const mockCancelFundamental =
+    cancelFundamentalAnalysisJobAction as jest.MockedFunction<
+        typeof cancelFundamentalAnalysisJobAction
+    >;
+const mockCancelNews = cancelNewsAnalysisJobAction as jest.MockedFunction<
+    typeof cancelNewsAnalysisJobAction
+>;
+const mockCancelOverall = cancelOverallAnalysisJobAction as jest.MockedFunction<
+    typeof cancelOverallAnalysisJobAction
 >;
 
 const OVERALL_RESULT: OverallAnalysisResponse = {
@@ -97,6 +126,14 @@ describe('useOverallAnalysis', () => {
         mockPollTechnical.mockReset();
         mockPollFundamental.mockReset();
         mockPollNews.mockReset();
+        mockCancelTechnical.mockReset();
+        mockCancelFundamental.mockReset();
+        mockCancelNews.mockReset();
+        mockCancelOverall.mockReset();
+        mockCancelTechnical.mockResolvedValue(undefined);
+        mockCancelFundamental.mockResolvedValue(undefined);
+        mockCancelNews.mockResolvedValue(undefined);
+        mockCancelOverall.mockResolvedValue(undefined);
     });
 
     afterEach(() => {
@@ -441,6 +478,125 @@ describe('useOverallAnalysis', () => {
             );
 
             expect(mockSubmit).toHaveBeenCalledTimes(2);
+        });
+    });
+
+    describe('cancel', () => {
+        it('overall polling 중 unmount 시 overall jobId로 cancel을 호출한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'overall-job-123',
+            });
+            // never resolves → 루프가 첫 poll 호출 직후 멈춰 OOM을 방지한다
+            mockPollOverall.mockImplementation(() => new Promise(() => {}));
+
+            const { result, unmount } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => {
+                expect(mockPollOverall).toHaveBeenCalled();
+            });
+
+            unmount();
+
+            expect(mockCancelOverall).toHaveBeenCalledWith('overall-job-123');
+            expect(mockCancelTechnical).not.toHaveBeenCalled();
+            expect(mockCancelFundamental).not.toHaveBeenCalled();
+            expect(mockCancelNews).not.toHaveBeenCalled();
+        });
+
+        it('pending_dependencies 중 unmount 시 각 axis jobId로 cancel을 호출한다', async () => {
+            mockSubmit.mockResolvedValue(PENDING_DEPS);
+            mockPollTechnical.mockImplementation(() => new Promise(() => {}));
+            mockPollFundamental.mockImplementation(() => new Promise(() => {}));
+            mockPollNews.mockImplementation(() => new Promise(() => {}));
+
+            const { result, unmount } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => {
+                expect(mockPollTechnical).toHaveBeenCalled();
+            });
+
+            unmount();
+
+            expect(mockCancelTechnical).toHaveBeenCalledWith('job-t');
+            expect(mockCancelFundamental).toHaveBeenCalledWith('job-f');
+            expect(mockCancelNews).toHaveBeenCalledWith('job-n');
+            expect(mockCancelOverall).not.toHaveBeenCalled();
+        });
+
+        it('timeframe 변경(queryKey 교체) 시 진행 중인 overall job을 cancel한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'overall-job-123',
+            });
+            mockPollOverall.mockImplementation(() => new Promise(() => {}));
+
+            const { result, rerender } = renderHook(
+                ({ timeframe }: { timeframe: string }) =>
+                    useOverallAnalysis(
+                        'AAPL',
+                        'Apple Inc.',
+                        timeframe as never,
+                        'gemini-2.5-flash-lite'
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { timeframe: '1Day' },
+                }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => {
+                expect(mockPollOverall).toHaveBeenCalled();
+            });
+
+            rerender({ timeframe: '1Week' });
+
+            expect(mockCancelOverall).toHaveBeenCalledWith('overall-job-123');
+        });
+
+        it('cached 응답 시 unmount해도 cancel을 호출하지 않는다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: OVERALL_RESULT,
+            });
+
+            const { result, unmount } = renderHook(
+                () => useOverallAnalysis(...hookArgs()),
+                { wrapper: makeWrapper() }
+            );
+
+            act(() => {
+                result.current.trigger();
+            });
+
+            await waitFor(() => {
+                expect(result.current.state.status).toBe('done');
+            });
+
+            unmount();
+
+            expect(mockCancelOverall).not.toHaveBeenCalled();
+            expect(mockCancelTechnical).not.toHaveBeenCalled();
+            expect(mockCancelFundamental).not.toHaveBeenCalled();
+            expect(mockCancelNews).not.toHaveBeenCalled();
         });
     });
 });

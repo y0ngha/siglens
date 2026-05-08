@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type {
     FundamentalRatiosInput,
     FundamentalFinancialScoresInput,
@@ -26,7 +27,7 @@ interface HealthMetricProps {
     value: string;
     hint?: string;
     badge?: { text: string; variant: BadgeVariant };
-    tooltip?: string;
+    tooltip?: ReactNode;
 }
 
 function HealthMetric({
@@ -88,7 +89,7 @@ export function FinancialHealthCard({
     scores,
     cashFlow,
 }: FinancialHealthCardProps) {
-    if (ratios === null && scores === null) return null;
+    if (ratios === null && scores === null && cashFlow === null) return null;
 
     const ocf = cashFlow?.operatingCashFlow ?? null;
     const formattedOcf =
@@ -122,7 +123,16 @@ export function FinancialHealthCard({
                             : '—'
                     }
                     hint="Debt Ratio (TTM)"
-                    tooltip="총자산 대비 총부채. 0.5 이하 양호, 높을수록 재무 위험"
+                    tooltip={
+                        <>
+                            <p>회사 자산 중 빚이 차지하는 비중이에요.</p>
+                            <p>
+                                0.5 이하면 양호, 0.7 이상이면 부채 부담이 큰
+                                편이에요.
+                            </p>
+                            <p>너무 높으면 재무 위험이 커진다는 뜻이에요.</p>
+                        </>
+                    }
                 />
                 <HealthMetric
                     label="유동 비율"
@@ -133,12 +143,35 @@ export function FinancialHealthCard({
                             : '—'
                     }
                     hint="Current Ratio (TTM)"
-                    tooltip="유동자산 ÷ 유동부채. 1.5 이상 양호, 1 미만이면 단기 유동성 위험"
+                    tooltip={
+                        <>
+                            <p>
+                                1년 안에 갚아야 할 빚을, 1년 안에 현금화할 수
+                                있는 자산으로 갚을 수 있는지 보여주는 값이에요.
+                            </p>
+                            <p>1.5 이상이면 단기 자금 사정이 양호해요.</p>
+                            <p>
+                                1 미만이면 단기 자금난 위험이 있다는 뜻이에요.
+                            </p>
+                        </>
+                    }
                 />
                 <HealthMetric
                     label="영업 현금흐름"
                     value={formattedOcf}
                     hint="Operating Cash Flow"
+                    tooltip={
+                        <>
+                            <p>
+                                본업으로 실제로 들어온 현금이 얼마인지 보여주는
+                                값이에요.
+                            </p>
+                            <p>
+                                양수(+)면 본업으로 돈을 잘 벌고 있다는 뜻이에요.
+                            </p>
+                            <p>음수(−)면 영업에서 적자가 났다는 의미예요.</p>
+                        </>
+                    }
                 />
                 <HealthMetric
                     label="알트만 Z-Score"
@@ -150,7 +183,15 @@ export function FinancialHealthCard({
                     }
                     hint="파산 위험 지수"
                     badge={altmanBadge(scores?.altmanZScore ?? null)}
-                    tooltip="파산 위험 예측. 2.99↑ 안전 / 1.81~2.99 경계 / 이하 위험"
+                    tooltip={
+                        <>
+                            <p>회사의 파산 가능성을 예측하는 점수예요.</p>
+                            <p>
+                                2.99 이상이면 안전, 1.81~2.99는 경계 구간이에요.
+                            </p>
+                            <p>1.81 이하면 파산 위험 신호로 해석해요.</p>
+                        </>
+                    }
                 />
                 <HealthMetric
                     label="피오트로스키 F-Score"
@@ -162,7 +203,16 @@ export function FinancialHealthCard({
                     }
                     hint="재무 건강 점수 (0–9)"
                     badge={piotroskiBadge(scores?.piotroskiScore ?? null)}
-                    tooltip="9가지 재무 기준 합산. 8~9 강함 / 5~7 보통 / 4↓ 약함"
+                    tooltip={
+                        <>
+                            <p>
+                                9가지 재무 기준을 점수로 합산해 재무 건강 상태를
+                                평가하는 값이에요(0~9점).
+                            </p>
+                            <p>8~9점이면 매우 강함, 5~7점이면 보통이에요.</p>
+                            <p>4점 이하면 재무 상태가 약하다는 뜻이에요.</p>
+                        </>
+                    }
                 />
             </div>
         </section>
