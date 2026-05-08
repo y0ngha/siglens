@@ -6,7 +6,11 @@ interface SelfNormWarningBadgeProps {
     className?: string;
 }
 
-const WARNING_TEXT: Record<NonNullable<FearGreedWarning>, string> = {
+/**
+ * Self-norm 경고 메시지 — chronic 사이클 종목에서 score가 raw sentiment 대신
+ * 자기 분포 대비 상대 위치를 가리킨다는 사용자 안내. test에서도 import해서 검증.
+ */
+export const WARNING_TEXT: Record<NonNullable<FearGreedWarning>, string> = {
     CHRONIC_WEAKNESS:
         '이 종목은 장기 약세 사이클입니다. 점수는 자기 분포 대비 상대적 위치를 의미합니다.',
     CHRONIC_STRENGTH:

@@ -3,7 +3,10 @@
  */
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
+import {
+    SelfNormWarningBadge,
+    WARNING_TEXT,
+} from '@/components/fear-greed/SelfNormWarningBadge';
 
 describe('SelfNormWarningBadge', () => {
     describe('rendering by warning value', () => {
@@ -19,9 +22,7 @@ describe('SelfNormWarningBadge', () => {
                 <SelfNormWarningBadge warning="CHRONIC_WEAKNESS" />
             );
             expect(
-                getByText(
-                    '이 종목은 장기 약세 사이클입니다. 점수는 자기 분포 대비 상대적 위치를 의미합니다.'
-                )
+                getByText(WARNING_TEXT.CHRONIC_WEAKNESS)
             ).toBeInTheDocument();
         });
 
@@ -30,9 +31,7 @@ describe('SelfNormWarningBadge', () => {
                 <SelfNormWarningBadge warning="CHRONIC_STRENGTH" />
             );
             expect(
-                getByText(
-                    '이 종목은 장기 강세 사이클입니다. 점수는 자기 분포 대비 상대적 위치를 의미합니다.'
-                )
+                getByText(WARNING_TEXT.CHRONIC_STRENGTH)
             ).toBeInTheDocument();
         });
     });

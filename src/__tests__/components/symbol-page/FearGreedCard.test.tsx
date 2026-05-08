@@ -5,6 +5,12 @@ import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedCard } from '@/components/symbol-page/FearGreedCard';
+import { WARNING_TEXT } from '@/components/fear-greed/SelfNormWarningBadge';
+import {
+    CONFIDENCE_LIMITED_LABEL,
+    FACTOR_LABEL,
+    SENTIMENT_LABEL_TEXT,
+} from '@/lib/fearGreedLabels';
 
 const sample: FearGreedSnapshot = {
     score: 18.6,
@@ -38,10 +44,14 @@ describe('FearGreedCard', () => {
         it('renders score, label, and group breakdown', () => {
             const { getByText } = render(<FearGreedCard snapshot={sample} />);
             expect(getByText('19')).toBeInTheDocument();
-            expect(getByText(/극공포/)).toBeInTheDocument();
+            expect(
+                getByText(SENTIMENT_LABEL_TEXT.EXTREME_FEAR, { exact: false })
+            ).toBeInTheDocument();
             expect(getByText('Flow')).toBeInTheDocument();
             expect(getByText('Trend')).toBeInTheDocument();
-            expect(getByText(/MA200/)).toBeInTheDocument();
+            expect(
+                getByText(FACTOR_LABEL.ma200_distance, { exact: false })
+            ).toBeInTheDocument();
         });
 
         it('renders warning badge when warning is set', () => {
@@ -52,9 +62,9 @@ describe('FearGreedCard', () => {
             const { getByText } = render(
                 <FearGreedCard snapshot={withWarning} />
             );
-            // CHRONIC_WEAKNESS text is internal to SelfNormWarningBadge; substring assertion guards
-            // against accidental removal from the rendered DOM, full-text guard lives in that file's tests.
-            expect(getByText(/장기 약세 사이클/)).toBeInTheDocument();
+            expect(
+                getByText(WARNING_TEXT.CHRONIC_WEAKNESS)
+            ).toBeInTheDocument();
         });
 
         it('renders limited-confidence note', () => {
@@ -64,7 +74,9 @@ describe('FearGreedCard', () => {
                 sampleSize: 30,
             };
             const { getByText } = render(<FearGreedCard snapshot={limited} />);
-            expect(getByText(/신뢰도 제한/)).toBeInTheDocument();
+            expect(
+                getByText(CONFIDENCE_LIMITED_LABEL, { exact: false })
+            ).toBeInTheDocument();
         });
     });
 

@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedGroup } from '@y0ngha/siglens-core';
 import { FearGreedGroupBar } from '@/components/fear-greed/FearGreedGroupBar';
+import { FACTOR_LABEL } from '@/lib/fearGreedLabels';
 
 const flowGroup: FearGreedGroup = {
     name: 'Flow',
@@ -30,9 +31,15 @@ describe('FearGreedGroupBar', () => {
             const { getByText } = render(
                 <FearGreedGroupBar group={flowGroup} />
             );
-            expect(getByText(/거래량 z/)).toBeInTheDocument();
-            expect(getByText(/Buy\/Sell 불균형/)).toBeInTheDocument();
-            expect(getByText(/POC 거리/)).toBeInTheDocument();
+            expect(
+                getByText(FACTOR_LABEL.volume_z, { exact: false })
+            ).toBeInTheDocument();
+            expect(
+                getByText(FACTOR_LABEL.buysell_imbalance, { exact: false })
+            ).toBeInTheDocument();
+            expect(
+                getByText(FACTOR_LABEL.poc_distance, { exact: false })
+            ).toBeInTheDocument();
             // percentile rendering
             expect(getByText(/80th/)).toBeInTheDocument();
         });

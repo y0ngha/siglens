@@ -3,8 +3,12 @@
  */
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
-import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
+import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedHeaderChip } from '@/components/symbol-page/FearGreedHeaderChip';
+import {
+    CONFIDENCE_LIMITED_LABEL,
+    SENTIMENT_LABEL_TEXT,
+} from '@/lib/fearGreedLabels';
 
 const make = (
     label: FearGreedSnapshot['label'],
@@ -33,13 +37,9 @@ describe('FearGreedHeaderChip', () => {
     });
 
     describe('label rendering', () => {
-        it.each([
-            ['EXTREME_FEAR' as const, '극공포'],
-            ['FEAR' as const, '공포'],
-            ['NEUTRAL' as const, '중립'],
-            ['GREED' as const, '탐욕'],
-            ['EXTREME_GREED' as const, '극탐욕'],
-        ])('renders %s with text "%s"', (label, text) => {
+        it.each(
+            Object.entries(SENTIMENT_LABEL_TEXT) as [FearGreedLabel, string][]
+        )('renders %s with text "%s"', (label, text) => {
             const { getByText } = render(
                 <FearGreedHeaderChip snapshot={make(label)} />
             );
@@ -83,7 +83,7 @@ describe('FearGreedHeaderChip', () => {
             );
             const chip = container.querySelector('[aria-label]');
             expect(chip?.getAttribute('aria-label')).toBe(
-                '공포 탐욕 지수 탐욕 61점 (신뢰도 제한)'
+                `공포 탐욕 지수 ${SENTIMENT_LABEL_TEXT.GREED} 61점 (${CONFIDENCE_LIMITED_LABEL})`
             );
         });
     });

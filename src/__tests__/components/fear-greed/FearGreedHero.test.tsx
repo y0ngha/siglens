@@ -5,6 +5,7 @@ import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { FearGreedHero } from '@/components/fear-greed/FearGreedHero';
+import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
 
 const snapshot: FearGreedSnapshot = {
     score: 18,
@@ -20,14 +21,18 @@ describe('FearGreedHero', () => {
         it('renders score and label', () => {
             const { getByText } = render(<FearGreedHero snapshot={snapshot} />);
             expect(getByText('18')).toBeInTheDocument();
-            expect(getByText(/극공포/)).toBeInTheDocument();
+            expect(
+                getByText(SENTIMENT_LABEL_TEXT.EXTREME_FEAR)
+            ).toBeInTheDocument();
         });
 
         it('renders SVG with aria-label including score and label', () => {
             const { container } = render(<FearGreedHero snapshot={snapshot} />);
             const svg = container.querySelector('svg[role="img"]');
             expect(svg?.getAttribute('aria-label')).toContain('18');
-            expect(svg?.getAttribute('aria-label')).toContain('극공포');
+            expect(svg?.getAttribute('aria-label')).toContain(
+                SENTIMENT_LABEL_TEXT.EXTREME_FEAR
+            );
         });
     });
 
@@ -54,8 +59,9 @@ describe('FearGreedHero', () => {
                 <FearGreedHero snapshot={greedSnap} />
             );
             expect(getByText('60')).toBeInTheDocument();
-            // Use anchored regex so '탐욕' doesn't also match '극탐욕'.
-            expect(getByText(/(?:^|[^극])탐욕/)).toBeInTheDocument();
+            expect(
+                getByText(SENTIMENT_LABEL_TEXT.GREED)
+            ).toBeInTheDocument();
         });
     });
 });

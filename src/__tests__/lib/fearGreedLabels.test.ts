@@ -1,4 +1,9 @@
-import { formatConfidenceFooter, formatFactorRaw } from '@/lib/fearGreedLabels';
+import {
+    CONFIDENCE_LIMITED_LABEL,
+    CONFIDENCE_NORMAL_LABEL,
+    formatConfidenceFooter,
+    formatFactorRaw,
+} from '@/lib/fearGreedLabels';
 
 describe('formatFactorRaw', () => {
     it('volume_z는 소수 둘째 자리 일반 포맷으로 출력한다', () => {
@@ -24,15 +29,15 @@ describe('formatFactorRaw', () => {
 });
 
 describe('formatConfidenceFooter', () => {
-    it('confidence가 normal이면 "정상 산출" 라벨로 출력한다', () => {
+    it('confidence가 normal이면 정상 라벨로 출력한다', () => {
         expect(formatConfidenceFooter(200, 'normal')).toBe(
-            '표본 200 — 정상 산출'
+            `표본 200 — ${CONFIDENCE_NORMAL_LABEL}`
         );
     });
 
-    it('confidence가 limited이면 "신뢰도 제한" 라벨로 출력한다', () => {
+    it('confidence가 limited이면 제한 라벨로 출력한다', () => {
         expect(formatConfidenceFooter(45, 'limited')).toBe(
-            '표본 45 — 신뢰도 제한'
+            `표본 45 — ${CONFIDENCE_LIMITED_LABEL}`
         );
     });
 });

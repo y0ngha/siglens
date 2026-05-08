@@ -3,6 +3,7 @@
  */
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
+import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
 
 jest.mock('@/components/symbol-page/hooks/useBars', () => ({
     useBars: jest.fn(() => ({
@@ -32,6 +33,6 @@ describe('FearGreedHeaderChipMounted', () => {
         const { getByText } = render(
             <FearGreedHeaderChipMounted symbol="NVDA" />
         );
-        expect(getByText(/중립/)).toBeInTheDocument();
+        expect(getByText(SENTIMENT_LABEL_TEXT.NEUTRAL)).toBeInTheDocument();
     });
 });
