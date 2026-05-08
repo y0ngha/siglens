@@ -5,11 +5,13 @@ import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundam
 import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
+import { CANCEL_JOBS_API_PATH } from '@/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { FundamentalAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
 import { renderToString } from 'react-dom/server';
+import { readBlobText } from '@/__tests__/utils/readBlobText';
 
 jest.mock('@/infrastructure/market/submitFundamentalAnalysisAction', () => ({
     submitFundamentalAnalysisAction: jest.fn(),
@@ -216,6 +218,111 @@ describe('useFundamentalAnalysis', () => {
             unmount();
 
             expect(mockCancel).not.toHaveBeenCalled();
+        });
+
+        describe('pagehide', () => {
+            let sendBeaconMock: jest.Mock;
+
+            beforeEach(() => {
+                sendBeaconMock = jest.fn();
+                Object.defineProperty(navigator, 'sendBeacon', {
+                    value: sendBeaconMock,
+                    configurable: true,
+                    writable: true,
+                });
+            });
+
+            it('polling 중 pagehide 발화 시 sendBeacon으로 cancel을 전송한다', async () => {
+                mockSubmit.mockResolvedValue({
+                    status: 'submitted',
+                    jobId: 'job-fundamental-123',
+                });
+                mockPoll.mockImplementation(() => new Promise(() => {}));
+
+                renderHook(
+                    () =>
+                        useFundamentalAnalysis(
+                            'AAPL',
+                            'gemini-2.5-flash-lite'
+                        ),
+                    { wrapper: makeWrapper() }
+                );
+
+                await waitFor(() => {
+                    expect(mockPoll).toHaveBeenCalled();
+                });
+
+                window.dispatchEvent(new Event('pagehide'));
+
+                expect(sendBeaconMock).toHaveBeenCalledTimes(1);
+                const [url, blob] = sendBeaconMock.mock.calls[0] as [
+                    string,
+                    Blob,
+                ];
+                expect(url).toBe(CANCEL_JOBS_API_PATH);
+                expect(blob.type).toBe('application/json');
+
+                const text = await readBlobText(blob);
+                expect(JSON.parse(text)).toEqual({
+                    jobs: [
+                        { jobId: 'job-fundamental-123', type: 'fundamental' },
+                    ],
+                });
+            });
+
+            it('job 없을 때 pagehide 발화해도 sendBeacon을 호출하지 않는다', async () => {
+                mockSubmit.mockResolvedValue({
+                    status: 'cached',
+                    result: FUNDAMENTAL_RESULT,
+                });
+
+                renderHook(
+                    () =>
+                        useFundamentalAnalysis(
+                            'AAPL',
+                            'gemini-2.5-flash-lite'
+                        ),
+                    { wrapper: makeWrapper() }
+                );
+
+                await waitFor(() => {
+                    expect(mockSubmit).toHaveBeenCalled();
+                });
+
+                window.dispatchEvent(new Event('pagehide'));
+
+                expect(sendBeaconMock).not.toHaveBeenCalled();
+            });
+
+            it('pagehide 발화 후 unmount 시 이중 cancel이 발생하지 않는다', async () => {
+                mockSubmit.mockResolvedValue({
+                    status: 'submitted',
+                    jobId: 'job-fundamental-123',
+                });
+                mockPoll.mockImplementation(() => new Promise(() => {}));
+
+                const { unmount } = renderHook(
+                    () =>
+                        useFundamentalAnalysis(
+                            'AAPL',
+                            'gemini-2.5-flash-lite'
+                        ),
+                    { wrapper: makeWrapper() }
+                );
+
+                await waitFor(() => {
+                    expect(mockPoll).toHaveBeenCalled();
+                });
+
+                // pagehide가 ref를 null로 만든다
+                window.dispatchEvent(new Event('pagehide'));
+                expect(sendBeaconMock).toHaveBeenCalledTimes(1);
+
+                // unmount 시 ref가 null이므로 cancelFundamentalAnalysisJobAction은 호출되지 않는다
+                unmount();
+
+                expect(mockCancel).not.toHaveBeenCalled();
+            });
         });
     });
 });
