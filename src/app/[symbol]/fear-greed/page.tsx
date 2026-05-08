@@ -125,7 +125,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 name: '5단계 분위기 라벨은 어떻게 구분되나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: `0~${FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX} 극공포, ${FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX} 공포, ${FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX} 중립, ${FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX} 탐욕, ${FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX}~100 극탐욕입니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.`,
+                    text: `0~${FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX} 극심한 공포, ${FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX} 공포, ${FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX} 중립, ${FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX} 탐욕, ${FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX}~100 극심한 탐욕입니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.`,
                 },
             },
         ],

@@ -1,6 +1,11 @@
 import { Suspense, type ReactNode } from 'react';
+import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
 import { SymbolLayoutClient } from '@/app/[symbol]/SymbolLayoutClient';
 import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
+import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
+import { getBarsAction } from '@/infrastructure/market/getBarsAction';
+import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
+import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 
 interface SymbolLayoutProps {
     children: ReactNode;
@@ -33,7 +38,33 @@ async function SymbolLayoutChrome({
     children,
 }: SymbolLayoutChromeProps) {
     const { symbol } = await params;
-    return <SymbolLayoutClient symbol={symbol}>{children}</SymbolLayoutClient>;
+    const ticker = symbol.toUpperCase();
+    const assetInfo = await getAssetInfoCached(ticker);
+
+    // FearGreedHeaderChipMounted (in SymbolLayoutHeader) calls useBars with DEFAULT_TIMEFRAME
+    // via useSuspenseQuery + getBarsAction (a Server Action). Server Actions cannot be invoked
+    // during SSR rendering. Prefetching here and dehydrating into HydrationBoundary ensures
+    // every sub-page (/fundamental, /news, /overall, chart) satisfies the query from cache
+    // instead of calling getBarsAction during initial render.
+    const queryClient = new QueryClient({
+        defaultOptions: { queries: { staleTime: QUERY_STALE_TIME_MS } },
+    });
+
+    if (assetInfo) {
+        queryClient.setQueryData(QUERY_KEYS.assetInfo(ticker), assetInfo);
+    }
+
+    await queryClient.prefetchQuery({
+        queryKey: QUERY_KEYS.bars(ticker, DEFAULT_TIMEFRAME),
+        queryFn: () =>
+            getBarsAction(ticker, DEFAULT_TIMEFRAME, assetInfo?.fmpSymbol),
+    });
+
+    return (
+        <HydrationBoundary state={dehydrate(queryClient)}>
+            <SymbolLayoutClient symbol={symbol}>{children}</SymbolLayoutClient>
+        </HydrationBoundary>
+    );
 }
 
 // Static shell mirroring SymbolLayoutHeader's outer shape. Used as the PPR fallback

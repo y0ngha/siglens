@@ -1,5 +1,5 @@
-import type { FearGreedFactorKey, FearGreedLabel } from '@y0ngha/siglens-core';
 import type { SnapshotConfidence } from '@/domain/types';
+import type { FearGreedFactorKey, FearGreedLabel } from '@y0ngha/siglens-core';
 
 /** confidence === 'normal' 표시 라벨 — Hero/Card footer 양쪽에서 동일 사용. */
 export const CONFIDENCE_NORMAL_LABEL = '정상 산출';
@@ -24,11 +24,11 @@ export const FACTOR_LABEL: Record<FearGreedFactorKey, string> = {
 
 /** 5단계 sentiment label → 한글 표시 */
 export const SENTIMENT_LABEL_TEXT: Record<FearGreedLabel, string> = {
-    EXTREME_FEAR: '극공포',
+    EXTREME_FEAR: '극심한 공포',
     FEAR: '공포',
     NEUTRAL: '중립',
     GREED: '탐욕',
-    EXTREME_GREED: '극탐욕',
+    EXTREME_GREED: '극심한 탐욕',
 };
 
 // Locale-aware formatters hoisted to module scope — Intl.NumberFormat instances

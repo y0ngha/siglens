@@ -401,7 +401,7 @@ export function buildSymbolFearGreedSeoContent(
 }
 
 function buildSymbolFearGreedDescription(subject: string): string {
-    return `${subject} 매수세가 지금 강한지 약한지 궁금할 때 보는 페이지입니다. 거래량 흐름과 가격 위치를 묶어 0~100 점수로 정리하고, 극공포부터 극탐욕까지 5단계로 분위기를 보여줍니다. 1년 시계열로 흐름이 어떻게 바뀌어왔는지도 같이 확인합니다.`;
+    return `${subject} 매수세가 지금 강한지 약한지 궁금할 때 보는 페이지입니다. 거래량 흐름과 가격 위치를 묶어 0~100 점수로 정리하고, 극심한 공포부터 극심한 탐욕까지 5단계로 분위기를 보여줍니다. 1년 시계열로 흐름이 어떻게 바뀌어왔는지도 같이 확인합니다.`;
 }
 
 function buildSymbolFearGreedKeywords(
