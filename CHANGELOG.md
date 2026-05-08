@@ -1,5 +1,35 @@
 # Changelog
 
+## [0.11.2](https://github.com/y0ngha/siglens/compare/v0.11.1...v0.11.2) (2026-05-08)
+
+
+### Bug Fixes
+
+* 예외 로깅 추가 및 getCurrentUser try-catch 내부로 이동 ([8879173](https://github.com/y0ngha/siglens/commit/887917324a35e8b3492aedd9218e11b1f19fbb78))
+* 훅 선언 순서 수정 및 작업 취소 API 검증 강화 ([8f1f0d1](https://github.com/y0ngha/siglens/commit/8f1f0d103ad98f69a2c8c8c4c0260690c591e44c))
+* address PR [#430](https://github.com/y0ngha/siglens/issues/430) review (5 blockers + 2 suggestions) ([a99539c](https://github.com/y0ngha/siglens/commit/a99539c9c52529c128ae843b0b52fd13261548d1))
+* address PR [#432](https://github.com/y0ngha/siglens/issues/432) review — extract usePageHideCancel, move types to domain ([33dd06f](https://github.com/y0ngha/siglens/commit/33dd06f929298224b8c10f6708a71ae0617e47d4))
+* apply PR review feedback on cancel-job-on-page-unload ([abd6cb6](https://github.com/y0ngha/siglens/commit/abd6cb600773de06c2ea4169cf4e7d9e1815cfd8))
+* cancel analysis jobs on page unload via pagehide + sendBeacon ([52a7d75](https://github.com/y0ngha/siglens/commit/52a7d758a3535fef51fc5ec634059afc455159ff))
+* handle AnalysisGateBlockedResult in 3 consumer hooks + comment cleanup ([dbb99f4](https://github.com/y0ngha/siglens/commit/dbb99f41fabfe4c17f1cafc5c3105530a5e36046))
+* handle key_error status in 3 consumer hooks ([82eae67](https://github.com/y0ngha/siglens/commit/82eae67210d088ac4a469678a227e902dba93e35))
+* round 5 review (B1 test, S1-S4 cleanup, Q1 optimization) ([bbe7622](https://github.com/y0ngha/siglens/commit/bbe76222784737e2e666cca9d01bb224f7143b14))
+* round 6 review (B1 cast comment, B2 import dedup, S1 domain types, S2 redundant comment) ([4733bb0](https://github.com/y0ngha/siglens/commit/4733bb00cb2f0caecae32ce495fc2d6470311917))
+* round 7 review (B1 cast safety, B2-B5 import dedup, suggestion re-export cleanup) ([c1758d9](https://github.com/y0ngha/siglens/commit/c1758d937d3b0ccda7e5cf5713713abf6c9a86dd))
+
+
+### Features
+
+* extract shared tier+BYOK gate helper ([09c2bd8](https://github.com/y0ngha/siglens/commit/09c2bd8a78acf697180f5197b63ba6225178ef2b))
+* **fundamental:** tier + BYOK forwarding to siglens-core ([56a0d48](https://github.com/y0ngha/siglens/commit/56a0d481c8c56e63c8811946faf123d6e89a0af1))
+* **news:** tier + BYOK forwarding to siglens-core ([90014ca](https://github.com/y0ngha/siglens/commit/90014ca2c509d5b53f083f77cba0c41bf32f3dd9))
+* **overall:** tier + BYOK forwarding to siglens-core ([60400e7](https://github.com/y0ngha/siglens/commit/60400e7f8693a8f02d37f133cccd4de2981fc163))
+
+
+### Reverts
+
+* Revert "refactor: delegate isFreeChatModel to siglens-core isFreeModel" ([8ac6b36](https://github.com/y0ngha/siglens/commit/8ac6b36fa3e73d187a9855b6fbb3ce35acfb2c5a))
+
 ## [0.11.1](https://github.com/y0ngha/siglens/compare/v0.11.0...v0.11.1) (2026-05-08)
 
 # [0.11.0](https://github.com/y0ngha/siglens/compare/v0.10.2...v0.11.0) (2026-05-08)
