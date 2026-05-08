@@ -241,10 +241,7 @@ describe('useFundamentalAnalysis', () => {
 
                 renderHook(
                     () =>
-                        useFundamentalAnalysis(
-                            'AAPL',
-                            'gemini-2.5-flash-lite'
-                        ),
+                        useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
                     { wrapper: makeWrapper() }
                 );
 
@@ -278,10 +275,7 @@ describe('useFundamentalAnalysis', () => {
 
                 renderHook(
                     () =>
-                        useFundamentalAnalysis(
-                            'AAPL',
-                            'gemini-2.5-flash-lite'
-                        ),
+                        useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
                     { wrapper: makeWrapper() }
                 );
 
@@ -303,10 +297,7 @@ describe('useFundamentalAnalysis', () => {
 
                 const { unmount } = renderHook(
                     () =>
-                        useFundamentalAnalysis(
-                            'AAPL',
-                            'gemini-2.5-flash-lite'
-                        ),
+                        useFundamentalAnalysis('AAPL', 'gemini-2.5-flash-lite'),
                     { wrapper: makeWrapper() }
                 );
 

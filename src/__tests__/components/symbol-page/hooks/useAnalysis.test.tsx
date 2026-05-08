@@ -117,10 +117,7 @@ describe('useAnalysis', () => {
             mockPoll.mockImplementation(() => new Promise(() => {}));
 
             const { unmount } = renderHook(
-                () =>
-                    useAnalysis(
-                        makeOptions({ initialAnalysisFailed: true })
-                    ),
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
                 { wrapper: makeWrapper() }
             );
 
@@ -168,10 +165,7 @@ describe('useAnalysis', () => {
             mockPoll.mockImplementation(() => new Promise(() => {}));
 
             renderHook(
-                () =>
-                    useAnalysis(
-                        makeOptions({ initialAnalysisFailed: true })
-                    ),
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
                 { wrapper: makeWrapper() }
             );
 
@@ -198,10 +192,9 @@ describe('useAnalysis', () => {
                 result: INITIAL_ANALYSIS,
             });
 
-            renderHook(
-                () => useAnalysis(makeOptions()),
-                { wrapper: makeWrapper() }
-            );
+            renderHook(() => useAnalysis(makeOptions()), {
+                wrapper: makeWrapper(),
+            });
 
             await waitFor(() => {
                 expect(getReanalyzeCooldownMs).toHaveBeenCalled();
@@ -220,10 +213,7 @@ describe('useAnalysis', () => {
             mockPoll.mockImplementation(() => new Promise(() => {}));
 
             const { unmount } = renderHook(
-                () =>
-                    useAnalysis(
-                        makeOptions({ initialAnalysisFailed: true })
-                    ),
+                () => useAnalysis(makeOptions({ initialAnalysisFailed: true })),
                 { wrapper: makeWrapper() }
             );
 
