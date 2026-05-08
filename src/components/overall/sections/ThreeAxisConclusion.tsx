@@ -1,3 +1,5 @@
+import { MarkdownText } from '@/components/ui/MarkdownText';
+
 interface ThreeAxisConclusionProps {
     text: string;
 }
@@ -16,9 +18,7 @@ export function ThreeAxisConclusion({ text }: ThreeAxisConclusionProps) {
             >
                 3축 종합 결론
             </h2>
-            <p className="text-sm leading-relaxed whitespace-pre-line">
-                {text}
-            </p>
+            <MarkdownText className="text-sm">{text}</MarkdownText>
         </section>
     );
 }

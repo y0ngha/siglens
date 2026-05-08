@@ -1,3 +1,5 @@
+import { MarkdownText } from '@/components/ui/MarkdownText';
+
 interface NewsSummaryProps {
     bullets: string[];
 }
@@ -17,14 +19,16 @@ export function NewsSummary({ bullets }: NewsSummaryProps) {
             </h2>
             <ul aria-label="뉴스 분석 항목" className="space-y-2">
                 {bullets.map((bullet, i) => (
-                    <li
-                        key={i}
-                        className="text-secondary-400 flex gap-2 text-sm"
-                    >
-                        <span aria-hidden="true" className="mt-0.5 shrink-0">
+                    <li key={i} className="flex gap-2 text-sm">
+                        <span
+                            aria-hidden="true"
+                            className="text-secondary-400 mt-0.5 shrink-0"
+                        >
                             •
                         </span>
-                        {bullet}
+                        <MarkdownText className="text-secondary-400 min-w-0">
+                            {bullet}
+                        </MarkdownText>
                     </li>
                 ))}
             </ul>

@@ -2,6 +2,7 @@ import type {
     OverallScenario,
     OverallScenarioName,
 } from '@y0ngha/siglens-core';
+import { MarkdownText } from '@/components/ui/MarkdownText';
 import { cn } from '@/lib/cn';
 
 const SCENARIO_LABEL: Record<OverallScenarioName, string> = {
@@ -50,18 +51,22 @@ export function ScenarioAnalysis({ scenarios }: ScenarioAnalysisProps) {
                                 {SCENARIO_LABEL[scenario.name]}
                             </span>
                         </div>
-                        <p className="text-secondary-400 mb-1.5 text-sm leading-relaxed">
-                            <span className="text-secondary-100 font-medium">
-                                트리거 조건:{' '}
-                            </span>
-                            {scenario.triggerConditionKo}
-                        </p>
-                        <p className="text-secondary-400 text-sm leading-relaxed">
-                            <span className="text-secondary-100 font-medium">
-                                예상 가격대:{' '}
-                            </span>
-                            {scenario.priceRangeKo}
-                        </p>
+                        <div className="mb-1.5 text-sm">
+                            <p className="text-secondary-100 mb-0.5 font-medium">
+                                트리거 조건
+                            </p>
+                            <MarkdownText className="text-secondary-400">
+                                {scenario.triggerConditionKo}
+                            </MarkdownText>
+                        </div>
+                        <div className="text-sm">
+                            <p className="text-secondary-100 mb-0.5 font-medium">
+                                예상 가격대
+                            </p>
+                            <MarkdownText className="text-secondary-400">
+                                {scenario.priceRangeKo}
+                            </MarkdownText>
+                        </div>
                     </li>
                 ))}
             </ul>

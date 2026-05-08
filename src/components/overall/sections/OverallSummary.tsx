@@ -1,3 +1,5 @@
+import { MarkdownText } from '@/components/ui/MarkdownText';
+
 interface OverallSummaryProps {
     headline: string;
 }
@@ -15,9 +17,9 @@ export function OverallSummary({ headline }: OverallSummaryProps) {
             >
                 종합 요약
             </h2>
-            <p className="text-secondary-400 text-sm leading-relaxed">
+            <MarkdownText className="text-secondary-400 text-sm">
                 {headline}
-            </p>
+            </MarkdownText>
         </section>
     );
 }
