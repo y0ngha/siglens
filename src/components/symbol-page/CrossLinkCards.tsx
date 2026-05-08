@@ -25,7 +25,7 @@ const DESCRIPTION: Record<PageKey, string> = {
     news: '실시간 뉴스 + 애널리스트 의견 분석',
     fundamental: '재무·밸류에이션·미래 방향',
     'fear-greed': '단기 매매 심리 0~100 점수',
-    overall: '3축 통합 AI 결론 + 시나리오',
+    overall: '4축 통합 AI 결론 + 시나리오',
 };
 
 const HREF: Record<PageKey, (symbol: string) => string> = {

@@ -1,6 +1,14 @@
 
 # Fix Log
 
+## [PR #428 Round 7 | feat/per-stock-fear-greed-ui | 2026-05-08]
+- B1: `src/components/symbol-page/CrossLinkCards.tsx` — `DESCRIPTION['overall']` `'3축 통합 AI 결론 + 시나리오'` → `'4축 통합 AI 결론 + 시나리오'`. fear-greed가 4번째 축으로 추가됐는데 이 라벨만 누락.
+  - Rule: MISTAKES.md §6.5 — State/function/documentation divergence
+- S1: `labels.ts` — `FACTOR_LABEL.poc_distance: 'POC 거리(60bar)'`의 `60`은 siglens-core `POC_WINDOW_DEFAULT`와 동기 필요. JSDoc에 동기 요건 명시 (core가 public barrel에서 export하지 않아 직접 import 불가).
+  - Rule: MISTAKES.md §15 — drift trap, magic-number 동기화 주석
+- S2: `labels.ts` — `FEAR_GREED_SCORE_BOUNDARIES` JSDoc 강화 (siglens-core `FEAR_GREED_LABEL_CUTOFFS` / `composition.ts` 정확한 origin 명시).
+  - Rule: MISTAKES.md §16.5 — duplicate constant 추적성
+- Q1: `SymbolLayoutHeader.tsx` — `<Suspense fallback={null}>` 경계의 의도 주석 추가. `useBars`가 `useSuspenseQuery` 기반이라 경계는 valid (false alarm); 헤더 chip 로딩이 헤더 전체(모델 셀렉터·브레드크럼)로 새지 않게 격리하는 의도.
 
 ## [PR #428 SEO sweep | feat/per-stock-fear-greed-ui | 2026-05-08]
 - C1: `src/lib/seo.ts` — fear-greed 신규 axis가 사이트 전반 SEO 표면(SITE_DESCRIPTION, ROOT_KEYWORDS, sibling helper)에 반영되지 않은 점 정리. SITE_DESCRIPTION 4축 확장(매수 분위기 절). ROOT_KEYWORDS에 공포 탐욕 지수, 투자 심리 지표, 주식 매수 분위기, Fear Greed Index, 뉴스 분위기, 주식 호재/악재/이슈, 실적 발표/일정 등 9개 추가, '뉴스 sentiment' 제거. news description은 sentiment → 호재 분위기, 이슈, 소식, 분석 의견 자연어 재작성, 어닝/실적 동반. fear-greed description은 jargon 제거 후 sibling 톤(매수세가 강한지 약한지 궁금할 때)으로 재작성. overall description에 단기 매수 분위기 절 추가. 5개 sibling title의 `·` 모두 자연어 punctuation(쉼표/와)로 교체.
