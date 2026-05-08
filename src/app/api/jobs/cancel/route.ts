@@ -5,7 +5,7 @@ import {
     cancelNewsAnalysisJob,
     cancelOverallAnalysisJob,
 } from '@y0ngha/siglens-core';
-import type { CancelJobsBody, JobType } from '@/lib/cancelJobsApi';
+import type { CancelJobEntry, CancelJobsBody } from '@/domain/types';
 
 const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_NO_CONTENT } = constants;
 
@@ -14,7 +14,10 @@ export async function POST(request: Request): Promise<Response> {
     let jobs: CancelJobsBody['jobs'];
     try {
         const body: CancelJobsBody = await request.json();
-        if (!Array.isArray(body.jobs)) {
+        if (
+            !Array.isArray(body.jobs) ||
+            body.jobs.some(j => !j.jobId || !j.type)
+        ) {
             return new Response(null, { status: HTTP_STATUS_BAD_REQUEST });
         }
         jobs = body.jobs;
@@ -23,7 +26,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     await Promise.allSettled(
-        jobs.map(({ jobId, type }: { jobId: string; type: JobType }) => {
+        jobs.map(({ jobId, type }: CancelJobEntry) => {
             switch (type) {
                 case 'analysis':
                     return cancelAnalysisJob(jobId);
@@ -33,6 +36,8 @@ export async function POST(request: Request): Promise<Response> {
                     return cancelNewsAnalysisJob(jobId);
                 case 'overall':
                     return cancelOverallAnalysisJob(jobId);
+                default:
+                    console.warn('[cancel route] unknown job type:', type);
             }
         })
     );

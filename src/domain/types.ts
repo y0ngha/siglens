@@ -164,3 +164,7 @@ export interface ContextSwitchMessage {
 
 /** Chat display history union — `ChatMessage` (LLM-bound) + UI-only `ContextSwitchMessage`. */
 export type DisplayMessage = ChatMessage | ContextSwitchMessage;
+
+export type JobType = 'analysis' | 'fundamental' | 'news' | 'overall';
+export type CancelJobEntry = { jobId: string; type: JobType };
+export type CancelJobsBody = { jobs: CancelJobEntry[] };

@@ -10,6 +10,7 @@ import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsA
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
 
 export type NewsAnalysisState =
     | { status: 'loading' }
@@ -134,22 +135,14 @@ export function useNewsAnalysis(
         };
     }, [queryKey]);
 
-    // 브라우저 종료·새로고침·뒤로가기 등 페이지 언로드 시 진행 중인 job을 cancel한다.
-    // Server Action은 언로드 후 완료가 보장되지 않으므로 sendBeacon을 사용한다.
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
-    useEffect(() => {
-        function handlePageHide() {
-            const jobId = currentJobIdRef.current;
-            if (jobId === null) return;
-            currentJobIdRef.current = null;
-            navigator.sendBeacon(
-                '/api/jobs/cancel',
-                JSON.stringify({ jobs: [{ jobId, type: 'news' }] })
-            );
-        }
-        window.addEventListener('pagehide', handlePageHide);
-        return () => window.removeEventListener('pagehide', handlePageHide);
+    const getPageHideJobs = useCallback(() => {
+        const jobId = currentJobIdRef.current;
+        if (jobId === null) return null;
+        currentJobIdRef.current = null;
+        return [{ jobId, type: 'news' as const }];
     }, []);
+    usePageHideCancel(getPageHideJobs);
 
     if (query.isError) {
         return {
