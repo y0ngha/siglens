@@ -16,25 +16,20 @@ import {
     type ChatLoadingPhase,
     type ChatMessage,
     type ModelId,
-    type LlmProvider,
 } from '@y0ngha/siglens-core';
-import { isFreeChatModel } from '@/domain/llm';
-import type {
-    ContextSwitchMessage,
-    DisplayMessage,
-    GateMode,
-} from '@/domain/types';
+import type { ContextSwitchMessage, DisplayMessage } from '@/domain/types';
 import { chatAction } from '@/infrastructure/chat/chatAction';
 import { getRemainingTokensAction } from '@/infrastructure/chat/getRemainingTokensAction';
-import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
-import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
-import { MS_PER_MINUTE } from '@/domain/constants/time';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
 import { CHAT_NON_CHART_BASELINE_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { usePageContextLabel } from '@/components/chat/hooks/usePageContextLabel';
 import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
+import {
+    useModelGate,
+    type ModelGateState,
+} from '@/components/hooks/useModelGate';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
     startTransition,
@@ -49,8 +44,6 @@ import {
 
 // 분석 중 단계의 최소 표시 시간 (UX: 즉시 사라지면 깜빡이는 것처럼 보임)
 const ANALYZING_PHASE_MIN_DURATION_MS = 1500;
-const CURRENT_USER_STALE_MS = 5 * MS_PER_MINUTE;
-const REGISTERED_PROVIDERS_STALE_MS = MS_PER_MINUTE;
 export const MODEL_STORAGE_KEY = 'siglens_chat_model';
 
 // Matches the siglens-core chat token limit; update only when the core policy changes.
@@ -93,11 +86,6 @@ export interface UseChatOptions {
     symbol: string;
 }
 
-export interface GateModalState {
-    mode: GateMode;
-    provider: LlmProvider;
-}
-
 export interface UseChatReturn {
     /** Full display history including UI-only system messages. */
     messages: DisplayMessage[];
@@ -109,7 +97,7 @@ export interface UseChatReturn {
     selectedModel: ModelId;
     isModelHydrated: boolean;
     handleModelChange: (model: ModelId) => void;
-    gateModal: GateModalState | null;
+    gateModal: ModelGateState | null;
     dismissGate: () => void;
 }
 
@@ -134,7 +122,9 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         GEMINI_2_5_FLASH_MODEL
     );
     const [isModelHydrated, setIsModelHydrated] = useState(false);
-    const [gateModal, setGateModal] = useState<GateModalState | null>(null);
+    const { gateModal, dismissGate, handleModelChange, showGate } = useModelGate(
+        { onAllow: setSelectedModel }
+    );
     // Tracks the last value written to localStorage by this hook instance.
     // Replaces the previous mount-flag guard, which had a regression: when ChatPanel
     // closes and reopens, the hook unmounts/remounts. With a fresh `isModelHydrated`
@@ -199,18 +189,6 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         staleTime: 0,
     });
 
-    const { data: currentUser } = useQuery({
-        queryKey: QUERY_KEYS.currentUser(),
-        queryFn: currentUserAction,
-        staleTime: CURRENT_USER_STALE_MS,
-    });
-
-    const { data: registeredProviders = [] } = useQuery({
-        queryKey: QUERY_KEYS.registeredProviders(),
-        queryFn: getRegisteredProvidersAction,
-        staleTime: REGISTERED_PROVIDERS_STALE_MS,
-    });
-
     const { mutateAsync } = useMutation({
         mutationFn: ({
             currentMessages,
@@ -258,7 +236,7 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
                 );
             } else if (result.error === 'user_api_key_required') {
                 // TODO(byok-adapter): chatAction이 BYOK 어댑터 구현 후 이 분기가 실행됩니다
-                setGateModal({
+                showGate({
                     mode: 'byok',
                     provider: getProviderForModel(selectedModel),
                 });
@@ -295,32 +273,6 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
 
     const dismissAnalysisUpdated = useCallback(() => {
         setAnalysisUpdated(false);
-    }, []);
-
-    const handleModelChange = useCallback(
-        (model: ModelId): void => {
-            if (!isFreeChatModel(model)) {
-                const requiredProvider = getProviderForModel(model);
-                if (!currentUser) {
-                    setGateModal({ mode: 'auth', provider: requiredProvider });
-                    return;
-                }
-                if (
-                    !registeredProviders.some(
-                        p => p.provider === requiredProvider
-                    )
-                ) {
-                    setGateModal({ mode: 'byok', provider: requiredProvider });
-                    return;
-                }
-            }
-            setSelectedModel(model);
-        },
-        [currentUser, registeredProviders]
-    );
-
-    const dismissGate = useCallback((): void => {
-        setGateModal(null);
     }, []);
 
     // Sync latest-value refs after commit (useLayoutEffect is safe in concurrent React;

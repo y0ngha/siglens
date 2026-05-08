@@ -11,49 +11,59 @@ import type { GateMode } from '@/domain/llm';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
 import { useQuery } from '@tanstack/react-query';
-import { QUERY_KEYS } from '@/lib/queryConfig';
-import { MS_PER_MINUTE } from '@/domain/constants/time';
+import {
+    CURRENT_USER_STALE_TIME_MS,
+    QUERY_KEYS,
+    REGISTERED_PROVIDERS_STALE_TIME_MS,
+} from '@/lib/queryConfig';
 
-export interface AnalysisGateModalState {
+export interface ModelGateState {
     mode: GateMode;
     provider: LlmProvider;
 }
 
-const CURRENT_USER_STALE_MS = 5 * MS_PER_MINUTE;
-const REGISTERED_PROVIDERS_STALE_MS = MS_PER_MINUTE;
-
-interface UseAnalysisModelGateOptions {
-    setModel: (m: ModelId) => void;
+interface UseModelGateOptions {
+    /** Called when the model passes all gate checks. */
+    onAllow: (model: ModelId) => void;
 }
 
-interface UseAnalysisModelGateReturn {
-    gateModal: AnalysisGateModalState | null;
+interface UseModelGateReturn {
+    /** Active gate modal state, or null when no gate is triggered. */
+    gateModal: ModelGateState | null;
+    /** Dismiss the active gate modal. */
     dismissGate: () => void;
     /**
-     * Wraps setModel with a gate check.
-     * PRO 모델을 선택할 때 사용자 인증 및 API 키 등록 여부를 검사한다.
-     * 나중에 유료 구독제 도입 시 이 함수의 조건만 수정하면 된다.
+     * Wraps the model change with gate checks. Mirrors the server-side
+     * resolveUserContext logic in chatAction.ts:
+     * - free models always pass
+     * - premium models require auth (auth gate)
+     * - pro tier bypasses BYOK requirement (server covers cost)
+     * - non-pro tier requires a registered provider key (byok gate)
      */
     handleModelChange: (model: ModelId) => void;
+    /**
+     * Programmatically open a gate, e.g. when the server returns
+     * `user_api_key_required` after a chat send. The gate UI state is owned by
+     * this hook so consumers should not maintain their own copy.
+     */
+    showGate: (state: ModelGateState) => void;
 }
 
-export function useAnalysisModelGate({
-    setModel,
-}: UseAnalysisModelGateOptions): UseAnalysisModelGateReturn {
-    const [gateModal, setGateModal] = useState<AnalysisGateModalState | null>(
-        null
-    );
+export function useModelGate({
+    onAllow,
+}: UseModelGateOptions): UseModelGateReturn {
+    const [gateModal, setGateModal] = useState<ModelGateState | null>(null);
 
     const { data: currentUser } = useQuery({
         queryKey: QUERY_KEYS.currentUser(),
         queryFn: currentUserAction,
-        staleTime: CURRENT_USER_STALE_MS,
+        staleTime: CURRENT_USER_STALE_TIME_MS,
     });
 
     const { data: registeredProviders = [] } = useQuery({
         queryKey: QUERY_KEYS.registeredProviders(),
         queryFn: getRegisteredProvidersAction,
-        staleTime: REGISTERED_PROVIDERS_STALE_MS,
+        staleTime: REGISTERED_PROVIDERS_STALE_TIME_MS,
     });
 
     const handleModelChange = useCallback(
@@ -64,10 +74,8 @@ export function useAnalysisModelGate({
                     setGateModal({ mode: 'auth', provider: requiredProvider });
                     return;
                 }
-                // Pro tier: server covers premium model costs via its own API key.
-                // BYOK registration is not required.
                 if (currentUser.tier === 'pro') {
-                    setModel(model);
+                    onAllow(model);
                     return;
                 }
                 if (
@@ -79,14 +87,18 @@ export function useAnalysisModelGate({
                     return;
                 }
             }
-            setModel(model);
+            onAllow(model);
         },
-        [currentUser, registeredProviders, setModel]
+        [currentUser, registeredProviders, onAllow]
     );
 
     const dismissGate = useCallback((): void => {
         setGateModal(null);
     }, []);
 
-    return { gateModal, dismissGate, handleModelChange };
+    const showGate = useCallback((state: ModelGateState): void => {
+        setGateModal(state);
+    }, []);
+
+    return { gateModal, dismissGate, handleModelChange, showGate };
 }

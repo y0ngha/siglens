@@ -21,12 +21,12 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
     return (
         <>
             {isOpen && (
-                <div className="border-secondary-700 bg-secondary-900 fixed inset-x-2 bottom-18 z-50 rounded-xl border shadow-2xl md:inset-x-auto md:right-6 md:bottom-20 md:w-95">
+                <div className="border-secondary-700 bg-secondary-900 fixed inset-x-2 bottom-18 z-60 rounded-xl border shadow-2xl md:inset-x-auto md:right-6 md:bottom-20 md:w-95">
                     <ChatPanel symbol={symbol} onClose={handleClose} />
                 </div>
             )}
             {showTooltip && !isOpen && (
-                <div className="border-secondary-700 bg-secondary-800 fixed right-4 bottom-18 z-50 w-64 rounded-xl border px-4 py-3 shadow-xl md:right-6 md:bottom-22">
+                <div className="border-secondary-700 bg-secondary-800 fixed right-4 bottom-18 z-60 w-64 rounded-xl border px-4 py-3 shadow-xl md:right-6 md:bottom-22">
                     <button
                         type="button"
                         onClick={dismissTooltip}
@@ -44,7 +44,7 @@ export function FloatingChatButton({ symbol }: FloatingChatButtonProps) {
             <button
                 type="button"
                 onClick={handleButtonClick}
-                className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 fixed right-4 bottom-3 z-50 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-colors focus-visible:ring-1 focus-visible:outline-none md:right-6 md:bottom-6"
+                className="bg-primary-600 hover:bg-primary-500 focus-visible:ring-primary-500 fixed right-4 bottom-3 z-60 flex h-12 w-12 items-center justify-center rounded-full text-white shadow-lg transition-colors focus-visible:ring-1 focus-visible:outline-none md:right-6 md:bottom-6"
                 aria-label={isOpen ? 'AI 채팅 닫기' : 'AI 채팅 열기'}
                 aria-expanded={isOpen}
             >
