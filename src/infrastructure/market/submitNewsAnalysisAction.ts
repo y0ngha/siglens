@@ -16,13 +16,37 @@ import {
     toEnrichedNewsItem,
 } from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import {
+    resolveTierAndByok,
+    type AnalysisGateError,
+} from '@/infrastructure/market/byokGate';
 
-/** Server Action: load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
+/** Gate denial result mirroring core's `{ status: 'error' }` discriminator. */
+export interface AnalysisGateBlockedResult {
+    status: 'error';
+    error: AnalysisGateError;
+}
+
+/** Final return type — core's news result + our siglens-side gate errors. */
+export type SubmitNewsAnalysisActionResult =
+    | SubmitNewsAnalysisResult
+    | AnalysisGateBlockedResult;
+
+/** Server Action: tier + BYOK gate, then load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
 export async function submitNewsAnalysisAction(
     symbol: string,
     companyName: string,
     modelId: SubmitNewsAnalysisOptions['modelId']
-): Promise<SubmitNewsAnalysisResult> {
+): Promise<SubmitNewsAnalysisActionResult> {
+    const user = await getCurrentUser();
+    const userId = user?.id ?? null;
+
+    const gate = await resolveTierAndByok(userId, modelId);
+    if (gate.kind === 'blocked') {
+        return { status: 'error', error: gate.error };
+    }
+
     const { db } = getDatabaseClient();
     const newsRepo = new DrizzleNewsRepository(db);
     const calRepo = new DrizzleEarningsCalendarRepository(db);
@@ -43,5 +67,7 @@ export async function submitNewsAnalysisAction(
         news: enrichedNews,
         upcomingCalendar: next !== null ? [next] : [],
         waitUntil,
+        tier: gate.tier,
+        ...(gate.userApiKey !== undefined ? { userApiKey: gate.userApiKey } : {}),
     });
 }
