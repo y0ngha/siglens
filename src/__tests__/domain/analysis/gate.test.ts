@@ -16,7 +16,10 @@ describe('isGateBlockedResult', () => {
     it('returns true for all known gate codes', () => {
         for (const code of GATE_ERROR_CODES) {
             expect(
-                isGateBlockedResult({ status: 'error', error: { code, message: '' } })
+                isGateBlockedResult({
+                    status: 'error',
+                    error: { code, message: '' },
+                })
             ).toBe(true);
         }
     });
@@ -37,12 +40,17 @@ describe('isGateBlockedResult', () => {
     });
 
     it('returns false when error is null', () => {
-        expect(isGateBlockedResult({ status: 'error', error: null })).toBe(false);
+        expect(isGateBlockedResult({ status: 'error', error: null })).toBe(
+            false
+        );
     });
 
     it('returns false when error has no code field', () => {
         expect(
-            isGateBlockedResult({ status: 'error', error: { message: 'no code' } })
+            isGateBlockedResult({
+                status: 'error',
+                error: { message: 'no code' },
+            })
         ).toBe(false);
     });
 });
