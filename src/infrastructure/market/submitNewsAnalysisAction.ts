@@ -71,7 +71,8 @@ export async function submitNewsAnalysisAction(
                 ? { userApiKey: gate.userApiKey }
                 : {}),
         });
-    } catch {
+    } catch (err) {
+        console.error('[submitNewsAnalysisAction] unexpected error:', err);
         return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }

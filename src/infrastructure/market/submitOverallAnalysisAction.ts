@@ -40,10 +40,10 @@ export async function submitOverallAnalysisAction(
     timeframe: Timeframe,
     modelId: SubmitOverallAnalysisOptions['modelId']
 ): Promise<SubmitOverallAnalysisActionResult> {
-    const user = await getCurrentUser();
-    const userId = user?.id ?? null;
-
     try {
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
+
         const gate = await resolveTierAndByok(userId, modelId);
         if (gate.kind === 'blocked') {
             return { status: 'error', error: gate.error };
@@ -77,7 +77,8 @@ export async function submitOverallAnalysisAction(
                 ? { userApiKey: gate.userApiKey }
                 : {}),
         });
-    } catch {
+    } catch (err) {
+        console.error('[submitOverallAnalysisAction] unexpected error:', err);
         return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }

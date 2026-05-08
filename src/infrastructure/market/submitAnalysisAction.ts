@@ -67,7 +67,8 @@ export async function submitAnalysisAction(
                     : {}),
             }
         );
-    } catch {
+    } catch (err) {
+        console.error('[submitAnalysisAction] unexpected error:', err);
         return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }

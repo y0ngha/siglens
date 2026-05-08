@@ -46,7 +46,8 @@ export async function submitFundamentalAnalysisAction(
                 ? { userApiKey: gate.userApiKey }
                 : {}),
         });
-    } catch {
+    } catch (err) {
+        console.error('[submitFundamentalAnalysisAction] unexpected error:', err);
         return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }

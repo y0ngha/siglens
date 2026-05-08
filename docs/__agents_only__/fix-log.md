@@ -1,6 +1,22 @@
 
 # Fix Log
 
+## [PR #430 Round 2 | feat/analysis-key-routing | 2026-05-08]
+- Violation: `getCurrentUser()` called outside try-catch in `submitOverallAnalysisAction.ts` while the same call is inside try in the other 3 sibling actions — asymmetric failure handling
+  - Rule: MISTAKES.md I/O & Error Handling #1 — When one I/O operation in a module is protected with try-catch, all I/O operations at the same call depth must be equivalently protected
+  - Context: Only `submitOverallAnalysisAction` had `getCurrentUser()` before the try block; moving it inside ensures auth failures are caught and returned as `unexpected_error` instead of propagating uncaught
+- Violation: Anonymous `catch {}` blocks in all 4 action files swallow error info silently — no logging, no diagnostics
+  - Rule: MISTAKES.md Infrastructure Functions #3 — No debug artifacts, but errors must not be silently swallowed; log with `console.error` before returning gracefully
+  - Context: `catch {}` → `catch (err) { console.error('[submitXxxAction] unexpected error:', err); }` applied to all 4 submit action files (submitAnalysisAction, submitFundamentalAnalysisAction, submitNewsAnalysisAction, submitOverallAnalysisAction)
+
+## [PR #430 | feat/analysis-key-routing | 2026-05-08]
+- Violation: `AnalysisGateBlockedResult` interface defined independently in 4 action files instead of being centralized in `byokGate.ts`
+  - Rule: MISTAKES.md Architecture #1 — Shared infrastructure interfaces must be defined once in the module that owns them, not duplicated in consumers
+  - Context: Each of the 4 action files redeclared the same interface with identical shape; moved to byokGate.ts as the single source of truth and re-exported from consumers
+- Violation: `AnalysisGateErrorCode` type duplicated in `submitAnalysisAction.ts` despite already being defined in `byokGate.ts`
+  - Rule: MISTAKES.md Coding Paradigm #6 — Repeating identical type/logic across modules without a shared source
+  - Context: `buildGateError` was moved to byokGate.ts in a previous refactor but its dependent type was left behind as a stale duplicate; removed
+
 ## [PR #428 Round 16 | feat/per-stock-fear-greed-ui | 2026-05-08]
 - S1: `src/components/symbol-page/hooks/useDefaultModelId.ts` JSDoc — `'모든 분석 탭(뉴스·펀더·종합·차트 패널 내 공포지수 카드)'` → `'AI 분석 탭(뉴스, 펀더멘털, 종합)'`. fear-greed는 AI 모델이 필요 없는 순수 산출(`computeFearGreedIndex`)이라 이 hook을 사용하지 않음. NewsAugment 제거 라운드에서 잘못 갱신된 주석을 정확한 소비자 목록으로 정정.
   - Rule: MISTAKES.md §11 — JSDoc에 명시된 소비자 목록과 실제 사용처 동기화
