@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { CHART_COLORS } from '@/lib/chartColors';
+import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import {
     createChart,
     LineSeries,
@@ -9,8 +10,7 @@ import {
     type LineData,
     type Time,
 } from 'lightweight-charts';
-import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
-import { CHART_COLORS } from '@/lib/chartColors';
+import { useEffect, useRef } from 'react';
 
 interface FearGreedHistoricalChartProps {
     history: FearGreedHistoryPoint[];
@@ -18,7 +18,7 @@ interface FearGreedHistoricalChartProps {
 
 const CHART_HEIGHT = 240;
 const LINE_COLOR = CHART_COLORS.actionEntry; // primary-400 (#60a5fa)
-const LINE_WIDTH = 2;
+const LINE_WIDTH = 1;
 
 /**
  * 1-year fearGreed score line chart. Warm-up entries (`score === null`) are
@@ -50,11 +50,18 @@ export function FearGreedHistoricalChart({
                 horzLines: { color: CHART_COLORS.grid },
             },
             timeScale: { borderVisible: false },
-            rightPriceScale: { borderVisible: false },
+            rightPriceScale: {
+                borderVisible: false,
+                scaleMargins: { top: 0.1, bottom: 0.1 },
+            },
         });
         const series = chart.addSeries(LineSeries, {
             color: LINE_COLOR,
             lineWidth: LINE_WIDTH,
+            autoscaleInfoProvider: () => ({
+                priceRange: { minValue: 0, maxValue: 100 },
+                margins: { above: 0.1, below: 0.1 },
+            }),
         });
         chartRef.current = chart;
         seriesRef.current = series;

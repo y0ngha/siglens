@@ -12,6 +12,7 @@ export function FearGreedHero({ snapshot }: FearGreedHeroProps) {
             score={Math.round(snapshot.score)}
             label={snapshot.label}
             size="hero"
+            confidence={snapshot.confidence}
         />
     );
 }

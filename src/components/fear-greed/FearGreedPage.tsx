@@ -51,8 +51,10 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
                 </section>
             </div>
 
-            <section>
-                <h2 className="sr-only">최근 1년 공포 탐욕 지수 추이</h2>
+            <section className="flex flex-col gap-2">
+                <h2 className="text-secondary-300 text-sm font-medium">
+                    공포 탐욕 지수 추이 (최근 1년)
+                </h2>
                 <FearGreedHistoricalChart history={history} />
             </section>
 

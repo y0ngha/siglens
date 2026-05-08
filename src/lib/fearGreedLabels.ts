@@ -19,7 +19,7 @@ export const FACTOR_LABEL: Record<FearGreedFactorKey, string> = {
     buysell_imbalance: 'Buy/Sell 불균형',
     poc_distance: 'POC 거리(60bar)',
     ma200_distance: 'MA200 거리',
-    range_position: '52w 위치',
+    range_position: '52주 위치',
 };
 
 /** 5단계 sentiment label → 한글 표시 */

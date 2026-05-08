@@ -1,7 +1,10 @@
+import type { ReactNode } from 'react';
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
+import type { SnapshotConfidence } from '@/domain/types';
 import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
 import { FEAR_GREED_SCORE_BOUNDARIES } from '@/domain/fearGreed/classifier';
 import { cn } from '@/lib/cn';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 const { EXTREME_FEAR_MAX, FEAR_MAX, NEUTRAL_MAX, GREED_MAX } =
     FEAR_GREED_SCORE_BOUNDARIES;
@@ -15,6 +18,8 @@ interface FearGreedGaugeProps {
     size: FearGreedGaugeSize;
     /** Optional period label rendered under the score (e.g. "1주", "1개월"). Mini only. */
     periodLabel?: string;
+    /** Confidence level for the snapshot. Hero only — renders a badge next to the sentiment label. */
+    confidence?: SnapshotConfidence;
 }
 
 interface SegmentDef {
@@ -85,6 +90,66 @@ const TICK_VALUES: ReadonlyArray<number> = [
 const DEGREES_PER_SCORE_UNIT = 1.8;
 
 /**
+ * 0과 100은 게이지 수평 끝(y=GAUGE_CY)과 같은 높이라 arc와 겹친다.
+ * 아래로 14 units 내려 arc stroke 하단 바깥에 위치시킨다.
+ */
+function tickDy(value: number): number {
+    return value === 0 || value === 100 ? 14 : 0;
+}
+
+/** 0과 100은 viewbox 경계 근처이므로 시작/끝 기준으로 anchor해 잘림을 방지한다. */
+function tickTextAnchor(value: number): 'start' | 'end' | 'middle' {
+    if (value === 0) return 'start';
+    if (value === 100) return 'end';
+    return 'middle';
+}
+
+function buildAriaLabel(
+    score: number,
+    label: FearGreedLabel,
+    isHero: boolean,
+    periodLabel?: string
+): string {
+    if (isHero) return `공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`;
+    if (periodLabel)
+        return `${periodLabel} 공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`;
+    return `공포 탐욕 지수 ${score}점`;
+}
+
+/**
+ * Badge-specific labels intentionally differ from `fearGreedLabels.ts` footer constants:
+ * - Footer uses "정상 산출" (fits "표본 N — 정상 산출" phrasing).
+ * - Badge uses "신뢰도 정상" / "신뢰도 제한" (standalone status label, needs explicit "신뢰도" prefix).
+ */
+const CONFIDENCE_BADGE_CONFIG: Record<
+    SnapshotConfidence,
+    { className: string; label: string; tooltip: ReactNode }
+> = {
+    normal: {
+        className:
+            'bg-ui-success/10 text-ui-success border-ui-success/30 inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium',
+        label: '신뢰도 정상',
+        tooltip: (
+            <div className="text-secondary-300">
+                <p>표본 수가 충분해 신뢰도 높은 점수예요.</p>
+                <p>지표가 안정적으로 동작하고 있습니다.</p>
+            </div>
+        ),
+    },
+    limited: {
+        className:
+            'bg-ui-warning/10 text-ui-warning border-ui-warning/30 inline-flex items-center rounded border px-1.5 py-0.5 text-xs font-medium',
+        label: '신뢰도 제한',
+        tooltip: (
+            <div className="text-secondary-300">
+                <p>거래 데이터가 충분하지 않아 신뢰도가 제한돼요.</p>
+                <p>표본이 쌓이면 자동으로 정상 산출로 전환됩니다.</p>
+            </div>
+        ),
+    },
+};
+
+/**
  * Shared semicircle gauge primitive. 0=left/EXTREME_FEAR, 100=right/EXTREME_GREED.
  *
  * - `size='hero'`: full focal stack (large score + sentiment word + "/ 100"), tick labels rendered.
@@ -95,11 +160,12 @@ export function FearGreedGauge({
     label,
     size,
     periodLabel,
+    confidence,
 }: FearGreedGaugeProps) {
-    // 0 → +180°(좌측), 100 → 0°(우측). 정적 needle을 우측 기준으로 그린 뒤
-    // -score * DEGREES_PER_SCORE_UNIT 만큼 회전(시계 반대 방향, SVG 좌표계에서
-    // 음수 각도)시켜 위치를 잡는다.
-    const rotateDeg = -score * DEGREES_PER_SCORE_UNIT;
+    // needle은 오른쪽(score=100 위치)을 가리키도록 그려진다.
+    // score가 낮을수록 왼쪽(score=0 위치)으로 회전해야 하므로
+    // -(100 - score) * 1.8° 만큼 반시계 방향으로 회전시킨다.
+    const rotateDeg = -(100 - score) * DEGREES_PER_SCORE_UNIT;
 
     const tipR = GAUGE_RADIUS + NEEDLE_TIP_LEN;
     const baseR = NEEDLE_INNER_GAP;
@@ -111,11 +177,8 @@ export function FearGreedGauge({
     const baseRightY = GAUGE_CY + NEEDLE_HALF_WIDTH;
 
     const isHero = size === 'hero';
-    const ariaLabel = isHero
-        ? `공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`
-        : periodLabel
-          ? `${periodLabel} 공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`
-          : `공포 탐욕 지수 ${score}점`;
+    const ariaLabel = buildAriaLabel(score, label, isHero, periodLabel);
+    const badgeConfig = isHero && confidence ? CONFIDENCE_BADGE_CONFIG[confidence] : null;
 
     return (
         <div className="flex flex-col items-center gap-2">
@@ -150,13 +213,16 @@ export function FearGreedGauge({
                     TICK_VALUES.map(value => {
                         const a = (1 - value / 100) * Math.PI;
                         const lx = GAUGE_CX + TICK_LABEL_RADIUS * Math.cos(a);
-                        const ly = GAUGE_CY - TICK_LABEL_RADIUS * Math.sin(a);
+                        const ly =
+                            GAUGE_CY -
+                            TICK_LABEL_RADIUS * Math.sin(a) +
+                            tickDy(value);
                         return (
                             <text
                                 key={value}
                                 x={lx}
                                 y={ly}
-                                textAnchor="middle"
+                                textAnchor={tickTextAnchor(value)}
                                 dominantBaseline="middle"
                                 className="text-secondary-400 fill-current text-[10px] font-medium tabular-nums"
                             >
@@ -180,8 +246,13 @@ export function FearGreedGauge({
             <div className="text-center">
                 {isHero ? (
                     <>
-                        <div className="text-secondary-100 text-5xl font-bold tabular-nums">
-                            {score}
+                        <div className="flex items-baseline justify-center gap-1.5">
+                            <span className="text-secondary-100 text-5xl font-bold tabular-nums">
+                                {score}
+                            </span>
+                            <span className="text-secondary-400 text-xs">
+                                / 100
+                            </span>
                         </div>
                         <div
                             className={cn(
@@ -191,7 +262,16 @@ export function FearGreedGauge({
                         >
                             {SENTIMENT_LABEL_TEXT[label]}
                         </div>
-                        <div className="text-secondary-400 text-xs">/ 100</div>
+                        {badgeConfig && (
+                            <div className="mt-1 flex items-center justify-center">
+                                <span className={badgeConfig.className}>
+                                    {badgeConfig.label}
+                                </span>
+                                <InfoTooltip>
+                                    {badgeConfig.tooltip}
+                                </InfoTooltip>
+                            </div>
+                        )}
                     </>
                 ) : (
                     <>
