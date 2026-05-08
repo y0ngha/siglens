@@ -1,5 +1,8 @@
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
+import {
+    CONFIDENCE_LIMITED_LABEL,
+    SENTIMENT_LABEL_TEXT,
+} from '@/lib/fearGreedLabels';
 import { cn } from '@/lib/cn';
 
 // alpha /40 vs /20 = EXTREME vs base intensity (no separate extreme tokens in design system).
@@ -26,7 +29,9 @@ export function FearGreedHeaderChip({ snapshot }: FearGreedHeaderChipProps) {
     }
     const score = Math.round(snapshot.score);
     const confidenceNote =
-        snapshot.confidence === 'limited' ? ' (신뢰도 제한)' : '';
+        snapshot.confidence === 'limited'
+            ? ` (${CONFIDENCE_LIMITED_LABEL})`
+            : '';
     return (
         <span
             className={cn(

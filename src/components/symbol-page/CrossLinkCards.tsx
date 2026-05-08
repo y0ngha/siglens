@@ -16,7 +16,7 @@ const LABEL: Record<PageKey, string> = {
     chart: '차트 분석',
     news: '뉴스 분석',
     fundamental: '펀더멘털 분석',
-    'fear-greed': '공포·탐욕 지수',
+    'fear-greed': '공포 탐욕 지수',
     overall: 'AI 종합 분석',
 };
 

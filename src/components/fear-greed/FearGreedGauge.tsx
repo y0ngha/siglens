@@ -110,10 +110,10 @@ export function FearGreedGauge({
 
     const isHero = size === 'hero';
     const ariaLabel = isHero
-        ? `공포·탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`
+        ? `공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`
         : periodLabel
-          ? `${periodLabel} 공포·탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`
-          : `공포·탐욕 지수 ${score}점`;
+          ? `${periodLabel} 공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`
+          : `공포 탐욕 지수 ${score}점`;
 
     return (
         <div className="flex flex-col items-center gap-2">

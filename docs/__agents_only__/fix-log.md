@@ -1,6 +1,13 @@
 
 # Fix Log
 
+## [PR #428 Round 13 | feat/per-stock-fear-greed-ui | 2026-05-08]
+- B1: `FearGreedHeaderChip.tsx` aria-label 안의 `' (신뢰도 제한)'` 리터럴을 `CONFIDENCE_LIMITED_LABEL` 상수 참조로 교체. 동일 상수가 `lib/fearGreedLabels`에 이미 존재하고 테스트도 그 상수를 import해서 검증 중이었으나 production 코드만 hardcode 상태.
+  - Rule: MISTAKES.md §15 — String literal 중복 제거, 단일 source of truth
+- S1: `CrossLinkCards.tsx` `DESCRIPTION['fear-greed']` `'공포·탐욕 지수'` → `'공포 탐욕 지수'` (가운뎃점 제거). SEO sweep에서 가운뎃점 일괄 제거했는데 누락된 위치.
+- S2: `FearGreedGauge.tsx` aria-label 3개 분기, `FearGreedHistoricalChart.tsx` 차트 aria-label, `FearGreedComparisonGauges.test.tsx` regex 모두 `공포·탐욕` → `공포 탐욕`로 통일.
+  - Rule: 사용자 톤 가이드 — 가운뎃점은 일반 검색자가 입력하지 않는 punctuation, 스크린 리더가 '가운데점'으로 읽음
+
 ## [PR #428 Round 12 | feat/per-stock-fear-greed-ui | 2026-05-08]
 - B1: `SnapshotConfidence` 타입을 `src/lib/fearGreedLabels.ts` → `src/domain/types.ts`로 이동. lib/CLAUDE.md "타입은 lib에 두지 않는다" 규칙 위반(향후 hook이 lib에서 타입을 import하는 드리프트 통로 차단). `lib/fearGreedLabels.ts`는 `@/domain/types`에서 import.
   - Rule: lib/CLAUDE.md — cross-layer 공유 타입은 `domain/types.ts`에만

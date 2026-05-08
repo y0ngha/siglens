@@ -33,7 +33,7 @@ describe('FearGreedComparisonGauges', () => {
             expect(svgs).toHaveLength(4);
             svgs.forEach(svg => {
                 expect(svg.getAttribute('aria-label')).toMatch(
-                    /공포·탐욕 지수 \d+점/
+                    /공포 탐욕 지수 \d+점/
                 );
             });
         });
