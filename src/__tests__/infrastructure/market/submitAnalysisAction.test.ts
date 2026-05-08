@@ -195,4 +195,25 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             })
         );
     });
+
+    it('returns unexpected_error result when an unexpected error is thrown', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockRejectedValue(
+            new Error('db connection failed')
+        );
+
+        const result = await submitAnalysisAction(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            FREE_MODEL
+        );
+
+        expect(result).toMatchObject({
+            status: 'error',
+            error: expect.objectContaining({ code: 'unexpected_error' }),
+        });
+    });
 });

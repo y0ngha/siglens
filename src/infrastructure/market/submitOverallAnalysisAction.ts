@@ -21,14 +21,12 @@ import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import {
     resolveTierAndByok,
-    type AnalysisGateError,
+    buildGateError,
+    type AnalysisGateBlockedResult,
 } from '@/infrastructure/market/byokGate';
 
-/** Gate denial result mirroring core's `{ status: 'error' }` discriminator. */
-export interface AnalysisGateBlockedResult {
-    status: 'error';
-    error: AnalysisGateError;
-}
+// Re-export for consumers
+export type { AnalysisGateBlockedResult };
 
 /** Final return type — core's overall result + our siglens-side gate errors. */
 export type SubmitOverallAnalysisActionResult =
@@ -45,12 +43,12 @@ export async function submitOverallAnalysisAction(
     const user = await getCurrentUser();
     const userId = user?.id ?? null;
 
-    const gate = await resolveTierAndByok(userId, modelId);
-    if (gate.kind === 'blocked') {
-        return { status: 'error', error: gate.error };
-    }
-
     try {
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
+
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
         const calRepo = new DrizzleEarningsCalendarRepository(db);
@@ -79,7 +77,7 @@ export async function submitOverallAnalysisAction(
                 ? { userApiKey: gate.userApiKey }
                 : {}),
         });
-    } catch (e) {
-        return { status: 'error', axis: 'technical', error: e };
+    } catch {
+        return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }

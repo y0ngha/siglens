@@ -10,14 +10,12 @@ import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import {
     resolveTierAndByok,
-    type AnalysisGateError,
+    buildGateError,
+    type AnalysisGateBlockedResult,
 } from '@/infrastructure/market/byokGate';
 
-/** Gate denial result mirroring core's `{ status: 'error' }` discriminator. */
-export interface AnalysisGateBlockedResult {
-    status: 'error';
-    error: AnalysisGateError;
-}
+// Re-export for consumers
+export type { AnalysisGateBlockedResult };
 
 /** Final return type — core's fundamental result + our siglens-side gate errors. */
 export type SubmitFundamentalAnalysisActionResult =
@@ -29,22 +27,26 @@ export async function submitFundamentalAnalysisAction(
     symbol: string,
     modelId: SubmitFundamentalAnalysisOptions['modelId']
 ): Promise<SubmitFundamentalAnalysisActionResult> {
-    const user = await getCurrentUser();
-    const userId = user?.id ?? null;
+    try {
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
 
-    const gate = await resolveTierAndByok(userId, modelId);
-    if (gate.kind === 'blocked') {
-        return { status: 'error', error: gate.error };
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
+
+        return await submitFundamentalAnalysis({
+            symbol,
+            modelId,
+            dataProvider: new FmpFundamentalClient(),
+            waitUntil,
+            tier: gate.tier,
+            ...(gate.userApiKey !== undefined
+                ? { userApiKey: gate.userApiKey }
+                : {}),
+        });
+    } catch {
+        return { status: 'error', error: buildGateError('unexpected_error') };
     }
-
-    return submitFundamentalAnalysis({
-        symbol,
-        modelId,
-        dataProvider: new FmpFundamentalClient(),
-        waitUntil,
-        tier: gate.tier,
-        ...(gate.userApiKey !== undefined
-            ? { userApiKey: gate.userApiKey }
-            : {}),
-    });
 }

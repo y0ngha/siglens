@@ -19,14 +19,12 @@ import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import {
     resolveTierAndByok,
-    type AnalysisGateError,
+    buildGateError,
+    type AnalysisGateBlockedResult,
 } from '@/infrastructure/market/byokGate';
 
-/** Gate denial result mirroring core's `{ status: 'error' }` discriminator. */
-export interface AnalysisGateBlockedResult {
-    status: 'error';
-    error: AnalysisGateError;
-}
+// Re-export for consumers
+export type { AnalysisGateBlockedResult };
 
 /** Final return type — core's news result + our siglens-side gate errors. */
 export type SubmitNewsAnalysisActionResult =
@@ -39,37 +37,41 @@ export async function submitNewsAnalysisAction(
     companyName: string,
     modelId: SubmitNewsAnalysisOptions['modelId']
 ): Promise<SubmitNewsAnalysisActionResult> {
-    const user = await getCurrentUser();
-    const userId = user?.id ?? null;
+    try {
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
 
-    const gate = await resolveTierAndByok(userId, modelId);
-    if (gate.kind === 'blocked') {
-        return { status: 'error', error: gate.error };
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
+
+        const { db } = getDatabaseClient();
+        const newsRepo = new DrizzleNewsRepository(db);
+        const calRepo = new DrizzleEarningsCalendarRepository(db);
+
+        const [rows, next] = await Promise.all([
+            newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
+            calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
+        ]);
+
+        const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
+            .filter(isEnrichedRow)
+            .map(toEnrichedNewsItem);
+
+        return await submitNewsAnalysis({
+            symbol,
+            companyName,
+            modelId,
+            news: enrichedNews,
+            upcomingCalendar: next !== null ? [next] : [],
+            waitUntil,
+            tier: gate.tier,
+            ...(gate.userApiKey !== undefined
+                ? { userApiKey: gate.userApiKey }
+                : {}),
+        });
+    } catch {
+        return { status: 'error', error: buildGateError('unexpected_error') };
     }
-
-    const { db } = getDatabaseClient();
-    const newsRepo = new DrizzleNewsRepository(db);
-    const calRepo = new DrizzleEarningsCalendarRepository(db);
-
-    const [rows, next] = await Promise.all([
-        newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-        calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
-    ]);
-
-    const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
-        .filter(isEnrichedRow)
-        .map(toEnrichedNewsItem);
-
-    return submitNewsAnalysis({
-        symbol,
-        companyName,
-        modelId,
-        news: enrichedNews,
-        upcomingCalendar: next !== null ? [next] : [],
-        waitUntil,
-        tier: gate.tier,
-        ...(gate.userApiKey !== undefined
-            ? { userApiKey: gate.userApiKey }
-            : {}),
-    });
 }

@@ -258,7 +258,10 @@ describe('submitOverallAnalysisAction 함수는', () => {
             MODEL_ID
         );
 
-        expect(result).toMatchObject({ status: 'error', axis: 'technical' });
+        expect(result).toMatchObject({
+            status: 'error',
+            error: expect.objectContaining({ code: 'unexpected_error' }),
+        });
     });
 
     // -------------------------------------------------------------------------

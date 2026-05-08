@@ -209,4 +209,18 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
 
         expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
     });
+
+    it('returns unexpected_error result when an unexpected error is thrown', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockRejectedValue(
+            new Error('db connection failed')
+        );
+
+        const result = await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+
+        expect(result).toMatchObject({
+            status: 'error',
+            error: expect.objectContaining({ code: 'unexpected_error' }),
+        });
+    });
 });

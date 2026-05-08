@@ -19,11 +19,18 @@ import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
 export type AnalysisGateErrorCode =
     | 'tier_premium_blocked'
     | 'invalid_model'
-    | 'api_key_corrupted';
+    | 'api_key_corrupted'
+    | 'unexpected_error';
 
 export interface AnalysisGateError {
     code: AnalysisGateErrorCode;
     message: string;
+}
+
+/** Gate denial result mirroring core's `{ status: 'error' }` discriminator. */
+export interface AnalysisGateBlockedResult {
+    status: 'error';
+    error: AnalysisGateError;
 }
 
 const GATE_MESSAGES: Record<AnalysisGateErrorCode, string> = {
@@ -32,21 +39,25 @@ const GATE_MESSAGES: Record<AnalysisGateErrorCode, string> = {
     invalid_model: '알 수 없는 모델입니다.',
     api_key_corrupted:
         '저장된 API 키를 복호화하지 못했습니다. 키를 다시 등록해 주세요.',
+    unexpected_error:
+        '예상치 못한 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.',
 };
 
 export function buildGateError(code: AnalysisGateErrorCode): AnalysisGateError {
     return { code, message: GATE_MESSAGES[code] };
 }
 
+// Module-level cache: TIER_CONFIG is frozen, this is computed once at module load.
+// `TIER_CONFIG.models` values are typed as `readonly TierModel[]` (string-literal
+// union). Widening to `readonly string[]` lets `.includes(modelId: string)` accept
+// the wider arg; TS cannot express this constraint — runtime is guaranteed by TIER_CONFIG.
+const ALL_TIER_MODEL_LISTS = Object.values(
+    TIER_CONFIG.models
+) as readonly (readonly string[])[];
+
 /** TIER_CONFIG.models의 어느 등급에든 등재된 modelId인지 검사. */
 export function isKnownModelId(modelId: string): boolean {
-    // `TIER_CONFIG.models` values are typed as `readonly TierModel[]` (string-
-    // literal union). Widening to `readonly string[]` lets `.includes(modelId: string)`
-    // accept the wider arg; same pattern as in the original submitAnalysisAction.
-    const allTiers = Object.values(
-        TIER_CONFIG.models
-    ) as readonly (readonly string[])[];
-    return allTiers.some(models => models.includes(modelId));
+    return ALL_TIER_MODEL_LISTS.some(models => models.includes(modelId));
 }
 
 export type ByokOutcome =

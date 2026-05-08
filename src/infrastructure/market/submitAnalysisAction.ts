@@ -10,19 +10,12 @@ import {
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import {
     resolveTierAndByok,
-    type AnalysisGateError,
+    buildGateError,
+    type AnalysisGateBlockedResult,
 } from '@/infrastructure/market/byokGate';
 
-export type AnalysisGateErrorCode =
-    | 'tier_premium_blocked'
-    | 'invalid_model'
-    | 'api_key_corrupted';
-
-/** Gate denial result mirroring core's `{ status: 'error' }` discriminator. */
-export interface AnalysisGateBlockedResult {
-    status: 'error';
-    error: AnalysisGateError;
-}
+// Re-export for consumers
+export type { AnalysisGateBlockedResult };
 
 /** Final return type — core's gated result + our siglens-side gate errors. */
 export type SubmitAnalysisActionResult =
@@ -38,32 +31,43 @@ export async function submitAnalysisAction(
     fmpSymbol?: string,
     modelId?: ModelId
 ): Promise<SubmitAnalysisActionResult> {
-    const user = await getCurrentUser();
-    const userId = user?.id ?? null;
+    try {
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
 
-    // No model selected → preserve previous behavior (core picks a default).
-    if (modelId === undefined) {
-        return submitAnalysis(
+        // No model selected → preserve previous behavior (core picks a default).
+        if (modelId === undefined) {
+            return await submitAnalysis(
+                symbol,
+                companyName,
+                timeframe,
+                force,
+                fmpSymbol,
+                { waitUntil, modelId }
+            );
+        }
+
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
+
+        return await submitAnalysis(
             symbol,
             companyName,
             timeframe,
             force,
             fmpSymbol,
-            { waitUntil, modelId }
+            {
+                waitUntil,
+                modelId,
+                tierContext: { userId, tier: gate.tier },
+                ...(gate.userApiKey !== undefined
+                    ? { userApiKey: gate.userApiKey }
+                    : {}),
+            }
         );
+    } catch {
+        return { status: 'error', error: buildGateError('unexpected_error') };
     }
-
-    const gate = await resolveTierAndByok(userId, modelId);
-    if (gate.kind === 'blocked') {
-        return { status: 'error', error: gate.error };
-    }
-
-    return submitAnalysis(symbol, companyName, timeframe, force, fmpSymbol, {
-        waitUntil,
-        modelId,
-        tierContext: { userId, tier: gate.tier },
-        ...(gate.userApiKey !== undefined
-            ? { userApiKey: gate.userApiKey }
-            : {}),
-    });
 }

@@ -118,6 +118,15 @@ describe('resolveTierAndByok', () => {
             error: expect.objectContaining({ code: 'api_key_corrupted' }),
         });
     });
+
+    it('rethrows unexpected non-decryption errors', async () => {
+        mockGetUserTier.mockResolvedValue('free');
+        const boom = new Error('db connection failed');
+        mockFindByUserAndProvider.mockRejectedValue(boom);
+        await expect(resolveTierAndByok('u1', PREMIUM_MODEL)).rejects.toThrow(
+            boom
+        );
+    });
 });
 
 describe('buildGateError', () => {
