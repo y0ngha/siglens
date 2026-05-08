@@ -1,51 +1,41 @@
-const mockGetCurrentUser = jest.fn();
-const mockGetUserTier = jest.fn();
-const mockFindByUserAndProvider = jest.fn();
-
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
 }));
 
 jest.mock('@y0ngha/siglens-core', () => ({
-    ...jest.requireActual('@y0ngha/siglens-core'),
     submitAnalysis: jest.fn(),
 }));
 
 jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
-    getCurrentUser: (...args: unknown[]) => mockGetCurrentUser(...args),
+    getCurrentUser: jest.fn(),
 }));
 
-jest.mock('@/infrastructure/db/client', () => ({
-    getDatabaseClient: jest.fn(() => ({ db: {}, sql: () => null })),
+jest.mock('@/infrastructure/market/byokGate', () => ({
+    resolveTierAndByok: jest.fn(),
+    buildGateError: jest.fn((code: string) => ({
+        code,
+        message: `mock-${code}`,
+    })),
 }));
 
-jest.mock('@/infrastructure/db/userRepository', () => ({
-    DrizzleUserRepository: jest.fn().mockImplementation(() => ({})),
-}));
-
-jest.mock('@/infrastructure/tier/use-cases/getUserTier', () => ({
-    getUserTier: (...args: unknown[]) => mockGetUserTier(...args),
-}));
-
-jest.mock('@/infrastructure/db/userApiKeyRepository', () => {
-    const actual = jest.requireActual(
-        '@/infrastructure/db/userApiKeyRepository'
-    );
-    return {
-        ...actual,
-        DrizzleUserApiKeyRepository: jest.fn().mockImplementation(() => ({
-            findByUserAndProvider: mockFindByUserAndProvider,
-        })),
-    };
-});
-
-import { LlmApiKeyDecryptionFailedError } from '@/infrastructure/db/userApiKeyRepository';
+import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import type { AnalysisGateError } from '@/domain/types';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
-import type { ModelId, SubmitAnalysisGatedResult } from '@y0ngha/siglens-core';
-import { submitAnalysis } from '@y0ngha/siglens-core';
+import {
+    submitAnalysis,
+    type ModelId,
+    type SubmitAnalysisGatedResult,
+} from '@y0ngha/siglens-core';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 
+const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
+    typeof resolveTierAndByok
+>;
 const mockSubmitAnalysis = submitAnalysis as jest.MockedFunction<
     typeof submitAnalysis
+>;
+const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+    typeof getCurrentUser
 >;
 
 const cachedResult: SubmitAnalysisGatedResult = {
@@ -55,24 +45,165 @@ const cachedResult: SubmitAnalysisGatedResult = {
 
 const FREE_MODEL = 'gemini-2.5-flash-lite' as ModelId;
 const PREMIUM_MODEL = 'claude-opus-4-7' as ModelId;
-const UNKNOWN_MODEL = 'totally-not-a-model' as ModelId;
+
+const gateError: AnalysisGateError = {
+    code: 'tier_premium_blocked',
+    message: 'mock-tier_premium_blocked',
+};
 
 describe('submitAnalysisAction tier + BYOK gate', () => {
     beforeEach(() => {
         jest.clearAllMocks();
         mockSubmitAnalysis.mockResolvedValue(cachedResult);
         mockGetCurrentUser.mockResolvedValue(null);
-        mockGetUserTier.mockResolvedValue('free');
-        mockFindByUserAndProvider.mockResolvedValue(null);
     });
 
-    it('modelId 미지정 시 core submitAnalysis로 그대로 위임한다', async () => {
+    it('returns blocked result when gate.kind === "blocked"', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'blocked',
+            error: gateError,
+        });
+
+        const result = await submitAnalysisAction(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            PREMIUM_MODEL
+        );
+
+        expect(result).toEqual({ status: 'error', error: gateError });
+        expect(mockSubmitAnalysis).not.toHaveBeenCalled();
+    });
+
+    it('forwards tierContext to siglens-core when modelId is set', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'member' as never,
+        });
+
+        await submitAnalysisAction(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            FREE_MODEL
+        );
+
+        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            expect.objectContaining({
+                tierContext: { userId: 'u1', tier: 'member' },
+            })
+        );
+    });
+
+    it('forwards userApiKey when present in gate result', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+            userApiKey: 'usr-key',
+        });
+
+        await submitAnalysisAction(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            PREMIUM_MODEL
+        );
+
+        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            expect.objectContaining({ userApiKey: 'usr-key' })
+        );
+    });
+
+    it('omits userApiKey when not in gate result', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'pro' as never,
+            // no userApiKey
+        });
+
+        await submitAnalysisAction(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            PREMIUM_MODEL
+        );
+
+        const lastCall = mockSubmitAnalysis.mock.calls.at(-1);
+        expect(lastCall).toBeDefined();
+        const opts = lastCall![5] as Record<string, unknown>;
+        expect(opts).not.toHaveProperty('userApiKey');
+    });
+
+    it('bypasses gate and uses default model when modelId is undefined', async () => {
+        mockGetCurrentUser.mockResolvedValue(null);
+
         await submitAnalysisAction('AAPL', 'Apple', '1Day', true, '^AAPL');
+
+        expect(mockResolveTierAndByok).not.toHaveBeenCalled();
         expect(mockSubmitAnalysis).toHaveBeenCalledTimes(1);
-        expect(mockGetUserTier).not.toHaveBeenCalled();
+        const lastCall = mockSubmitAnalysis.mock.calls.at(-1);
+        const opts = lastCall![5] as Record<string, unknown>;
+        expect(opts).not.toHaveProperty('tierContext');
+        expect(opts).not.toHaveProperty('userApiKey');
     });
 
-    it('free tier + free model 게스트는 통과한다', async () => {
+    it('passes null userId when getCurrentUser returns null', async () => {
+        mockGetCurrentUser.mockResolvedValue(null);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+        });
+
+        await submitAnalysisAction(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            FREE_MODEL
+        );
+
+        expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, FREE_MODEL);
+        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            expect.objectContaining({
+                tierContext: { userId: null, tier: 'free' },
+            })
+        );
+    });
+
+    it('returns unexpected_error result when an unexpected error is thrown', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockRejectedValue(
+            new Error('db connection failed')
+        );
+
         const result = await submitAnalysisAction(
             'AAPL',
             'Apple',
@@ -81,124 +212,10 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             '^AAPL',
             FREE_MODEL
         );
-        expect(result).toBe(cachedResult);
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
-            'AAPL',
-            'Apple',
-            '1Day',
-            false,
-            '^AAPL',
-            expect.objectContaining({ modelId: FREE_MODEL })
-        );
-    });
 
-    it('free tier + premium model + BYOK 미등록 게스트는 차단한다', async () => {
-        const result = await submitAnalysisAction(
-            'AAPL',
-            'Apple',
-            '1Day',
-            false,
-            '^AAPL',
-            PREMIUM_MODEL
-        );
-        expect(result).toEqual({
+        expect(result).toMatchObject({
             status: 'error',
-            error: expect.objectContaining({ code: 'tier_premium_blocked' }),
+            error: expect.objectContaining({ code: 'unexpected_error' }),
         });
-        expect(mockSubmitAnalysis).not.toHaveBeenCalled();
-    });
-
-    it('free tier + premium model + BYOK 등록 시 통과하고 userApiKey가 core로 전달된다', async () => {
-        mockGetCurrentUser.mockResolvedValue({ id: 'u1' });
-        mockGetUserTier.mockResolvedValue('free');
-        mockFindByUserAndProvider.mockResolvedValue({
-            apiKey: 'sk-ant-byok',
-        });
-
-        const result = await submitAnalysisAction(
-            'AAPL',
-            'Apple',
-            '1Day',
-            false,
-            '^AAPL',
-            PREMIUM_MODEL
-        );
-
-        expect(result).toBe(cachedResult);
-        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
-            'AAPL',
-            'Apple',
-            '1Day',
-            false,
-            '^AAPL',
-            expect.objectContaining({
-                modelId: PREMIUM_MODEL,
-                userApiKey: 'sk-ant-byok',
-            })
-        );
-    });
-
-    it('paid tier (pro) + premium model 은 BYOK 없이도 통과한다', async () => {
-        mockGetCurrentUser.mockResolvedValue({ id: 'u1' });
-        mockGetUserTier.mockResolvedValue('pro');
-        mockFindByUserAndProvider.mockResolvedValue(null);
-
-        const result = await submitAnalysisAction(
-            'AAPL',
-            'Apple',
-            '1Day',
-            false,
-            '^AAPL',
-            PREMIUM_MODEL
-        );
-
-        expect(result).toBe(cachedResult);
-        // userApiKey must be absent — without BYOK, core uses its server-side
-        // server api key. Forwarding undefined/null/'' would all be wrong, so we
-        // pin the exact options shape rather than a partial match.
-        const lastCall = mockSubmitAnalysis.mock.calls.at(-1);
-        expect(lastCall).toBeDefined();
-        const opts = lastCall![5] as Record<string, unknown>;
-        expect(opts.modelId).toBe(PREMIUM_MODEL);
-        expect(opts).not.toHaveProperty('userApiKey');
-    });
-
-    it('알 수 없는 modelId는 invalid_model로 차단한다', async () => {
-        const result = await submitAnalysisAction(
-            'AAPL',
-            'Apple',
-            '1Day',
-            false,
-            '^AAPL',
-            UNKNOWN_MODEL
-        );
-        expect(result).toEqual({
-            status: 'error',
-            error: expect.objectContaining({ code: 'invalid_model' }),
-        });
-        expect(mockSubmitAnalysis).not.toHaveBeenCalled();
-    });
-
-    it('BYOK 복호화 실패 시 api_key_corrupted로 차단한다', async () => {
-        mockGetCurrentUser.mockResolvedValue({ id: 'u1' });
-        mockGetUserTier.mockResolvedValue('free');
-        mockFindByUserAndProvider.mockRejectedValue(
-            new LlmApiKeyDecryptionFailedError('u1', 'anthropic')
-        );
-
-        const result = await submitAnalysisAction(
-            'AAPL',
-            'Apple',
-            '1Day',
-            false,
-            '^AAPL',
-            PREMIUM_MODEL
-        );
-
-        expect(result).toEqual({
-            status: 'error',
-            error: expect.objectContaining({ code: 'api_key_corrupted' }),
-        });
-        expect(mockSubmitAnalysis).not.toHaveBeenCalled();
     });
 });

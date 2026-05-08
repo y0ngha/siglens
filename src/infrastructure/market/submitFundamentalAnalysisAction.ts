@@ -7,16 +7,47 @@ import {
     type SubmitFundamentalAnalysisResult,
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import {
+    resolveTierAndByok,
+    buildGateError,
+} from '@/infrastructure/market/byokGate';
+import type { AnalysisGateBlockedResult } from '@/domain/types';
 
-/** Server Action: submit a fundamental analysis job; delegates to siglens-core with FMP provider; returns `cached | submitted | error`. */
+/** Final return type — core's fundamental result + our siglens-side gate errors. */
+export type SubmitFundamentalAnalysisActionResult =
+    | SubmitFundamentalAnalysisResult
+    | AnalysisGateBlockedResult;
+
+/** Server Action: tier + BYOK gate, then submit fundamental analysis via siglens-core with FMP provider; returns `cached | submitted | error`. */
 export async function submitFundamentalAnalysisAction(
     symbol: string,
     modelId: SubmitFundamentalAnalysisOptions['modelId']
-): Promise<SubmitFundamentalAnalysisResult> {
-    return submitFundamentalAnalysis({
-        symbol,
-        modelId,
-        dataProvider: new FmpFundamentalClient(),
-        waitUntil,
-    });
+): Promise<SubmitFundamentalAnalysisActionResult> {
+    try {
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
+
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
+
+        return await submitFundamentalAnalysis({
+            symbol,
+            modelId,
+            dataProvider: new FmpFundamentalClient(),
+            waitUntil,
+            tier: gate.tier,
+            ...(gate.userApiKey !== undefined
+                ? { userApiKey: gate.userApiKey }
+                : {}),
+        });
+    } catch (err) {
+        console.error(
+            '[submitFundamentalAnalysisAction] unexpected error:',
+            err
+        );
+        return { status: 'error', error: buildGateError('unexpected_error') };
+    }
 }

@@ -7,6 +7,7 @@ import type {
     ModelId,
 } from '@y0ngha/siglens-core';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
+import { isGateBlockedResult } from '@/domain/analysis/gate';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { sleep } from '@/lib/sleep';
@@ -32,11 +33,18 @@ async function fetchFundamentalAnalysis(
 
     if (submitted.status === 'cached') return submitted.result;
     if (submitted.status === 'error') {
+        // Handle before the existing SubmitFundamentalAnalysisResult variants.
+        if (isGateBlockedResult(submitted)) {
+            throw new Error(submitted.error.message);
+        }
         const message =
             submitted.code === 'fetch_failed'
                 ? (submitted.error ?? '데이터를 불러오지 못했습니다.')
                 : '사용량 한도를 초과했습니다.';
         throw new Error(message);
+    }
+    if (submitted.status === 'key_error') {
+        throw new Error(submitted.error);
     }
 
     onJobId(submitted.jobId);

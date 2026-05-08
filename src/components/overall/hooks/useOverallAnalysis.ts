@@ -9,6 +9,7 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
+import { isGateBlockedResult } from '@/domain/analysis/gate';
 import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
@@ -58,8 +59,9 @@ const AXIS_ORDER: readonly OverallAxis[] = ['technical', 'fundamental', 'news'];
 const MAX_SUBMIT_RETRY_DEPTH = 3;
 
 /**
- * submitOverallAnalysisAction이 axis 정보와 함께 에러를 돌려줄 수 있으므로
- * 커스텀 에러 클래스로 axis를 보존한다.
+ * submitOverallAnalysisAction이 axis 정보와 함께 에러를 돌려줄 수 있어
+ * 커스텀 에러 클래스로 axis를 보존한다. 게이트 오류(AnalysisGateBlockedResult)는
+ * axis가 없으므로 undefined로 전달된다.
  */
 class OverallAnalysisError extends Error {
     constructor(
@@ -243,6 +245,10 @@ async function fetchOverallAnalysis(
     if (submitted.status === 'cached') return submitted.result;
 
     if (submitted.status === 'error') {
+        // AnalysisGateBlockedResult: error is { code: AnalysisGateErrorCode, message }, no axis.
+        if (isGateBlockedResult(submitted)) {
+            throw new OverallAnalysisError(submitted.error.message, undefined);
+        }
         throw new OverallAnalysisError(
             typeof submitted.error === 'string'
                 ? submitted.error
@@ -255,6 +261,9 @@ async function fetchOverallAnalysis(
         throw new OverallAnalysisError(
             '오늘 분석 한도를 모두 사용했어요. 내일 다시 시도해 주세요.'
         );
+    }
+    if (submitted.status === 'key_error') {
+        throw new OverallAnalysisError(submitted.error, undefined);
     }
 
     const { jobId } = submitted;

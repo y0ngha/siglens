@@ -1,10 +1,10 @@
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
-import { submitOverallAnalysis } from '@y0ngha/siglens-core';
-import type {
-    ModelId,
-    SubmitOverallAnalysisResult,
-    EnrichedNewsItem,
-    EarningsCalendarItem,
+import {
+    submitOverallAnalysis,
+    type ModelId,
+    type SubmitOverallAnalysisResult,
+    type EnrichedNewsItem,
+    type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
 
 // ---------------------------------------------------------------------------
@@ -40,12 +40,27 @@ jest.mock('@/infrastructure/db/earningsCalendarRepository', () => ({
     })),
 }));
 
+jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+    getCurrentUser: jest.fn(),
+}));
+
+jest.mock('@/infrastructure/market/byokGate', () => ({
+    resolveTierAndByok: jest.fn(),
+    buildGateError: jest.fn((code: string) => ({
+        code,
+        message: `mock-${code}`,
+    })),
+}));
+
 // ---------------------------------------------------------------------------
 // Typed mocks & fixtures
 // ---------------------------------------------------------------------------
 
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import type { AnalysisGateError } from '@/domain/types';
 
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
@@ -56,6 +71,12 @@ const MockCalRepository = DrizzleEarningsCalendarRepository as jest.MockedClass<
 
 const mockSubmitOverallAnalysis = submitOverallAnalysis as jest.MockedFunction<
     typeof submitOverallAnalysis
+>;
+const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+    typeof getCurrentUser
+>;
+const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
+    typeof resolveTierAndByok
 >;
 
 const ANALYZED_ROW = {
@@ -101,6 +122,12 @@ const SUBMITTED_RESULT: SubmitOverallAnalysisResult = {
 };
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
+const PREMIUM_MODEL = 'claude-opus-4-7' as ModelId;
+
+const gateError: AnalysisGateError = {
+    code: 'tier_premium_blocked',
+    message: 'mock-tier_premium_blocked',
+};
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -112,11 +139,13 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
     beforeEach(() => {
         mockSubmitOverallAnalysis.mockReset();
+        mockGetCurrentUser.mockReset();
+        mockResolveTierAndByok.mockReset();
         MockNewsRepository.mockClear();
         MockCalRepository.mockClear();
 
-        mockListBySymbol = jest.fn();
-        mockGetNextForSymbol = jest.fn();
+        mockListBySymbol = jest.fn().mockResolvedValue([]);
+        mockGetNextForSymbol = jest.fn().mockResolvedValue(null);
 
         MockNewsRepository.mockImplementation(
             () => ({ listBySymbol: mockListBySymbol }) as never
@@ -124,11 +153,16 @@ describe('submitOverallAnalysisAction 함수는', () => {
         MockCalRepository.mockImplementation(
             () => ({ getNextForSymbol: mockGetNextForSymbol }) as never
         );
+
+        mockGetCurrentUser.mockResolvedValue(null);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+        });
+        mockSubmitOverallAnalysis.mockResolvedValue(SUBMITTED_RESULT);
     });
 
     it('symbol, timeframe, modelId를 submitOverallAnalysis에 전달한다', async () => {
-        mockListBySymbol.mockResolvedValue([]);
-        mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
         await submitOverallAnalysisAction(
@@ -149,7 +183,6 @@ describe('submitOverallAnalysisAction 함수는', () => {
 
     it('titleKo가 null인 미분석 뉴스를 필터링하고 enrichedNews만 전달한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW, UNANALYZED_ROW]);
-        mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
         await submitOverallAnalysisAction(
@@ -166,7 +199,6 @@ describe('submitOverallAnalysisAction 함수는', () => {
     });
 
     it('다음 실적 발표가 있으면 upcomingCalendar에 포함한다', async () => {
-        mockListBySymbol.mockResolvedValue([]);
         mockGetNextForSymbol.mockResolvedValue(NEXT_EARNINGS);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
@@ -183,8 +215,6 @@ describe('submitOverallAnalysisAction 함수는', () => {
     });
 
     it('다음 실적 발표가 없으면 upcomingCalendar는 빈 배열이다', async () => {
-        mockListBySymbol.mockResolvedValue([]);
-        mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
         await submitOverallAnalysisAction(
@@ -200,8 +230,6 @@ describe('submitOverallAnalysisAction 함수는', () => {
     });
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {
-        mockListBySymbol.mockResolvedValue([]);
-        mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
         const result = await submitOverallAnalysisAction(
@@ -215,8 +243,6 @@ describe('submitOverallAnalysisAction 함수는', () => {
     });
 
     it('내부에서 예외가 발생하면 status: error를 반환한다', async () => {
-        mockListBySymbol.mockResolvedValue([]);
-        mockGetNextForSymbol.mockResolvedValue(null);
         mockSubmitOverallAnalysis.mockRejectedValueOnce(
             new Error('unexpected')
         );
@@ -228,6 +254,126 @@ describe('submitOverallAnalysisAction 함수는', () => {
             MODEL_ID
         );
 
-        expect(result).toMatchObject({ status: 'error', axis: 'technical' });
+        expect(result).toMatchObject({
+            status: 'error',
+            error: expect.objectContaining({ code: 'unexpected_error' }),
+        });
+    });
+
+    it('returns blocked result when gate.kind === "blocked"', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'blocked',
+            error: gateError,
+        });
+
+        const result = await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            PREMIUM_MODEL
+        );
+
+        expect(result).toEqual({ status: 'error', error: gateError });
+        // Gate fires before expensive DB fetch
+        expect(mockSubmitOverallAnalysis).not.toHaveBeenCalled();
+    });
+
+    it('forwards tier as top-level and technical axis tierContext when gate allowed', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'member' as never,
+        });
+
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID
+        );
+
+        const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
+        expect(callArg).toMatchObject({
+            tier: 'member',
+            technical: { tierContext: { tier: 'member' } },
+        });
+    });
+
+    it('forwards userApiKey as top-level when present in gate result', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+            userApiKey: 'usr-key',
+        });
+
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            PREMIUM_MODEL
+        );
+
+        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ userApiKey: 'usr-key' })
+        );
+    });
+
+    it('omits userApiKey when not in gate result', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'pro' as never,
+            // no userApiKey
+        });
+
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            PREMIUM_MODEL
+        );
+
+        const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
+        expect(callArg).toBeDefined();
+        expect(callArg).not.toHaveProperty('userApiKey');
+    });
+
+    it('passes null userId when getCurrentUser returns null', async () => {
+        mockGetCurrentUser.mockResolvedValue(null);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+        });
+
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID
+        );
+
+        expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+    });
+
+    it('technical axis tierContext.userId matches the resolved userId', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'user-abc' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'pro' as never,
+        });
+
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID
+        );
+
+        const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
+        expect(callArg?.technical).toMatchObject({
+            tierContext: { userId: 'user-abc', tier: 'pro' },
+        });
     });
 });

@@ -16,32 +16,60 @@ import {
     toEnrichedNewsItem,
 } from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import {
+    resolveTierAndByok,
+    buildGateError,
+} from '@/infrastructure/market/byokGate';
+import type { AnalysisGateBlockedResult } from '@/domain/types';
 
-/** Server Action: load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
+/** Final return type — core's news result + our siglens-side gate errors. */
+export type SubmitNewsAnalysisActionResult =
+    | SubmitNewsAnalysisResult
+    | AnalysisGateBlockedResult;
+
+/** Server Action: tier + BYOK gate, then load last-7d enriched news from DB + next earnings, then submit via siglens-core; returns `cached | submitted | error`. */
 export async function submitNewsAnalysisAction(
     symbol: string,
     companyName: string,
     modelId: SubmitNewsAnalysisOptions['modelId']
-): Promise<SubmitNewsAnalysisResult> {
-    const { db } = getDatabaseClient();
-    const newsRepo = new DrizzleNewsRepository(db);
-    const calRepo = new DrizzleEarningsCalendarRepository(db);
+): Promise<SubmitNewsAnalysisActionResult> {
+    try {
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
 
-    const [rows, next] = await Promise.all([
-        newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-        calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
-    ]);
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
 
-    const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
-        .filter(isEnrichedRow)
-        .map(toEnrichedNewsItem);
+        const { db } = getDatabaseClient();
+        const newsRepo = new DrizzleNewsRepository(db);
+        const calRepo = new DrizzleEarningsCalendarRepository(db);
 
-    return submitNewsAnalysis({
-        symbol,
-        companyName,
-        modelId,
-        news: enrichedNews,
-        upcomingCalendar: next !== null ? [next] : [],
-        waitUntil,
-    });
+        const [rows, next] = await Promise.all([
+            newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
+            calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
+        ]);
+
+        const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows
+            .filter(isEnrichedRow)
+            .map(toEnrichedNewsItem);
+
+        return await submitNewsAnalysis({
+            symbol,
+            companyName,
+            modelId,
+            news: enrichedNews,
+            upcomingCalendar: next !== null ? [next] : [],
+            waitUntil,
+            tier: gate.tier,
+            ...(gate.userApiKey !== undefined
+                ? { userApiKey: gate.userApiKey }
+                : {}),
+        });
+    } catch (err) {
+        console.error('[submitNewsAnalysisAction] unexpected error:', err);
+        return { status: 'error', error: buildGateError('unexpected_error') };
+    }
 }

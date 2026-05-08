@@ -1,12 +1,3 @@
-import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
-import { submitNewsAnalysis } from '@y0ngha/siglens-core';
-import type {
-    ModelId,
-    SubmitNewsAnalysisResult,
-    EnrichedNewsItem,
-    EarningsCalendarItem,
-} from '@y0ngha/siglens-core';
-
 // ---------------------------------------------------------------------------
 // Module mocks
 // ---------------------------------------------------------------------------
@@ -36,12 +27,35 @@ jest.mock('@/infrastructure/db/earningsCalendarRepository', () => ({
     })),
 }));
 
+jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
+    getCurrentUser: jest.fn(),
+}));
+
+jest.mock('@/infrastructure/market/byokGate', () => ({
+    resolveTierAndByok: jest.fn(),
+    buildGateError: jest.fn((code: string) => ({
+        code,
+        message: `mock-${code}`,
+    })),
+}));
+
 // ---------------------------------------------------------------------------
 // Typed mocks & fixtures
 // ---------------------------------------------------------------------------
 
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
+import {
+    submitNewsAnalysis,
+    type ModelId,
+    type SubmitNewsAnalysisResult,
+    type EnrichedNewsItem,
+    type EarningsCalendarItem,
+} from '@y0ngha/siglens-core';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import type { AnalysisGateError } from '@/domain/types';
+import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
 
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
@@ -52,6 +66,12 @@ const MockCalRepository = DrizzleEarningsCalendarRepository as jest.MockedClass<
 
 const mockSubmitNewsAnalysis = submitNewsAnalysis as jest.MockedFunction<
     typeof submitNewsAnalysis
+>;
+const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
+    typeof getCurrentUser
+>;
+const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
+    typeof resolveTierAndByok
 >;
 
 /** An analyzed DB news row (has titleKo, summaryKo, sentiment, category). */
@@ -99,6 +119,12 @@ const SUBMITTED_RESULT: SubmitNewsAnalysisResult = {
 };
 
 const MODEL_ID = 'gemini-2.5-flash' as ModelId;
+const PREMIUM_MODEL = 'claude-opus-4-7' as ModelId;
+
+const gateError: AnalysisGateError = {
+    code: 'tier_premium_blocked',
+    message: 'mock-tier_premium_blocked',
+};
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -112,9 +138,11 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockSubmitNewsAnalysis.mockReset();
         MockNewsRepository.mockClear();
         MockCalRepository.mockClear();
+        mockGetCurrentUser.mockReset();
+        mockResolveTierAndByok.mockReset();
 
-        mockListBySymbol = jest.fn();
-        mockGetNextForSymbol = jest.fn();
+        mockListBySymbol = jest.fn().mockResolvedValue([ANALYZED_ROW]);
+        mockGetNextForSymbol = jest.fn().mockResolvedValue(null);
 
         MockNewsRepository.mockImplementation(
             () => ({ listBySymbol: mockListBySymbol }) as never
@@ -122,6 +150,13 @@ describe('submitNewsAnalysisAction 함수는', () => {
         MockCalRepository.mockImplementation(
             () => ({ getNextForSymbol: mockGetNextForSymbol }) as never
         );
+
+        mockGetCurrentUser.mockResolvedValue(null);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+        });
+        mockSubmitNewsAnalysis.mockResolvedValue(SUBMITTED_RESULT);
     });
 
     it('symbol과 modelId를 siglens-core submitNewsAnalysis에 전달한다', async () => {
@@ -193,5 +228,98 @@ describe('submitNewsAnalysisAction 함수는', () => {
         );
 
         expect(result).toBe(noNewsResult);
+    });
+
+    it('returns blocked result when gate.kind === "blocked"', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'blocked',
+            error: gateError,
+        });
+
+        const result = await submitNewsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            PREMIUM_MODEL
+        );
+
+        expect(result).toEqual({ status: 'error', error: gateError });
+        expect(mockSubmitNewsAnalysis).not.toHaveBeenCalled();
+        // Gate fires before expensive DB fetches
+        expect(mockListBySymbol).not.toHaveBeenCalled();
+    });
+
+    it('forwards tier="member" to siglens-core when gate allowed', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'member' as never,
+        });
+
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+
+        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ tier: 'member' })
+        );
+    });
+
+    it('forwards userApiKey when present in gate result', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+            userApiKey: 'usr-key',
+        });
+
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', PREMIUM_MODEL);
+
+        expect(mockSubmitNewsAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ userApiKey: 'usr-key' })
+        );
+    });
+
+    it('omits userApiKey when not in gate result', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'pro' as never,
+            // no userApiKey
+        });
+
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', PREMIUM_MODEL);
+
+        const callArg = mockSubmitNewsAnalysis.mock.calls[0]?.[0];
+        expect(callArg).toBeDefined();
+        expect(callArg).not.toHaveProperty('userApiKey');
+    });
+
+    it('passes null userId when getCurrentUser returns null', async () => {
+        mockGetCurrentUser.mockResolvedValue(null);
+        mockResolveTierAndByok.mockResolvedValue({
+            kind: 'allowed',
+            tier: 'free' as never,
+        });
+
+        await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
+
+        expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
+    });
+
+    it('returns unexpected_error result when an unexpected error is thrown', async () => {
+        mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
+        mockResolveTierAndByok.mockRejectedValue(
+            new Error('db connection failed')
+        );
+
+        const result = await submitNewsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            MODEL_ID
+        );
+
+        expect(result).toMatchObject({
+            status: 'error',
+            error: expect.objectContaining({ code: 'unexpected_error' }),
+        });
     });
 });

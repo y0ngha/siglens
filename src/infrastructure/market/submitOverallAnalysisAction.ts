@@ -18,15 +18,34 @@ import {
     toEnrichedNewsItem,
 } from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import {
+    resolveTierAndByok,
+    buildGateError,
+} from '@/infrastructure/market/byokGate';
+import type { AnalysisGateBlockedResult } from '@/domain/types';
 
-/** Server Action: submit a 3-axis overall analysis job; loads enriched news + earnings from DB, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
+/** Final return type — core's overall result + our siglens-side gate errors. */
+export type SubmitOverallAnalysisActionResult =
+    | SubmitOverallAnalysisResult
+    | AnalysisGateBlockedResult;
+
+/** Server Action: tier + BYOK gate, then submit a 3-axis overall analysis job; loads enriched news + earnings from DB, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
 export async function submitOverallAnalysisAction(
     symbol: string,
     companyName: string,
     timeframe: Timeframe,
     modelId: SubmitOverallAnalysisOptions['modelId']
-): Promise<SubmitOverallAnalysisResult> {
+): Promise<SubmitOverallAnalysisActionResult> {
     try {
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
+
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
+
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
         const calRepo = new DrizzleEarningsCalendarRepository(db);
@@ -48,11 +67,15 @@ export async function submitOverallAnalysisAction(
             fundamentalProvider: new FmpFundamentalClient(),
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
-            // Pre-Phase 4: no tier/usage/userApiKey overrides needed.
-            technical: {},
+            technical: { tierContext: { userId, tier: gate.tier } },
             waitUntil,
+            tier: gate.tier,
+            ...(gate.userApiKey !== undefined
+                ? { userApiKey: gate.userApiKey }
+                : {}),
         });
-    } catch (e) {
-        return { status: 'error', axis: 'technical', error: e };
+    } catch (err) {
+        console.error('[submitOverallAnalysisAction] unexpected error:', err);
+        return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }

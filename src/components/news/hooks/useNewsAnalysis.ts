@@ -4,6 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
+import { isGateBlockedResult } from '@/domain/analysis/gate';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
 import { sleep } from '@/lib/sleep';
@@ -35,6 +36,10 @@ async function fetchNewsAnalysis(
 
     if (submitted.status === 'cached') return submitted.result;
     if (submitted.status === 'error') {
+        // Handle before the existing SubmitNewsAnalysisResult variants.
+        if (isGateBlockedResult(submitted)) {
+            throw new Error(submitted.error.message);
+        }
         if (submitted.code === 'no_news') {
             throw new Error(
                 '분석할 뉴스가 없습니다. 잠시 후 다시 시도해 주세요.'
@@ -44,6 +49,9 @@ async function fetchNewsAnalysis(
             throw new Error(submitted.error.message);
         }
         throw new Error('분석 중 오류가 발생했습니다.');
+    }
+    if (submitted.status === 'key_error') {
+        throw new Error(submitted.error);
     }
 
     onJobId(submitted.jobId);
