@@ -28,6 +28,7 @@ import {
 import { sleep } from '@/lib/sleep';
 import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
+import type { CancelJobEntry } from '@/domain/types';
 
 interface AnalyzeMutationVariables {
     symbol: string;
@@ -269,6 +270,15 @@ export function useAnalysis({
         })();
     }, [reset, mutate]);
 
+    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
+    const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
+        const jobId = currentJobIdRef.current;
+        if (jobId === null) return null;
+        currentJobIdRef.current = null;
+        return [{ jobId, type: 'analysis' as const }];
+    }, []);
+    usePageHideCancel(getPageHideJobs);
+
     // 7. useLayoutEffect
     // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
@@ -453,15 +463,6 @@ export function useAnalysis({
             }
         };
     }, [symbol]);
-
-    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
-    const getPageHideJobs = useCallback(() => {
-        const jobId = currentJobIdRef.current;
-        if (jobId === null) return null;
-        currentJobIdRef.current = null;
-        return [{ jobId, type: 'analysis' as const }];
-    }, []);
-    usePageHideCancel(getPageHideJobs);
 
     return {
         analysis,

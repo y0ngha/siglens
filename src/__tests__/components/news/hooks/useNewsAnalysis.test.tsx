@@ -328,11 +328,9 @@ describe('useNewsAnalysis', () => {
                     expect(mockPoll).toHaveBeenCalled();
                 });
 
-                // pagehide가 ref를 null로 만든다
                 window.dispatchEvent(new Event('pagehide'));
                 expect(sendBeaconMock).toHaveBeenCalledTimes(1);
 
-                // unmount 시 ref가 null이므로 cancelNewsAnalysisJobAction은 호출되지 않는다
                 unmount();
 
                 expect(mockCancel).not.toHaveBeenCalled();

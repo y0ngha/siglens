@@ -21,7 +21,8 @@ export async function POST(request: Request): Promise<Response> {
             return new Response(null, { status: HTTP_STATUS_BAD_REQUEST });
         }
         jobs = body.jobs;
-    } catch {
+    } catch (error) {
+        console.error('[cancel route] failed to parse request body:', error);
         return new Response(null, { status: HTTP_STATUS_BAD_REQUEST });
     }
 

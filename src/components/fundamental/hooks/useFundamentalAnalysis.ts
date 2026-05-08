@@ -14,6 +14,7 @@ import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
+import type { CancelJobEntry } from '@/domain/types';
 
 export type FundamentalAnalysisState =
     | { status: 'loading' }
@@ -106,6 +107,15 @@ export function useFundamentalAnalysis(
         void refetch();
     }, [refetch]);
 
+    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
+    const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
+        const jobId = currentJobIdRef.current;
+        if (jobId === null) return null;
+        currentJobIdRef.current = null;
+        return [{ jobId, type: 'fundamental' as const }];
+    }, []);
+    usePageHideCancel(getPageHideJobs);
+
     useEffect(() => {
         if (queryClient.getQueryData(queryKey) === undefined) {
             void refetch();
@@ -128,15 +138,6 @@ export function useFundamentalAnalysis(
             }
         };
     }, [queryKey]);
-
-    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
-    const getPageHideJobs = useCallback(() => {
-        const jobId = currentJobIdRef.current;
-        if (jobId === null) return null;
-        currentJobIdRef.current = null;
-        return [{ jobId, type: 'fundamental' as const }];
-    }, []);
-    usePageHideCancel(getPageHideJobs);
 
     if (query.isError) {
         return {

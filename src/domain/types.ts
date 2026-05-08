@@ -166,5 +166,10 @@ export interface ContextSwitchMessage {
 export type DisplayMessage = ChatMessage | ContextSwitchMessage;
 
 export type JobType = 'analysis' | 'fundamental' | 'news' | 'overall';
-export type CancelJobEntry = { jobId: string; type: JobType };
-export type CancelJobsBody = { jobs: CancelJobEntry[] };
+export interface CancelJobEntry {
+    jobId: string;
+    type: JobType;
+}
+export interface CancelJobsBody {
+    jobs: CancelJobEntry[];
+}
