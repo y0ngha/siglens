@@ -21,6 +21,8 @@ import { cancelOverallAnalysisJobAction } from '@/infrastructure/market/cancelOv
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import type { CancelJobEntry } from '@/domain/types';
+import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
 import type {
     OverallAnalysisState,
     ProgressState,
@@ -373,6 +375,46 @@ export function useOverallAnalysis(
             void refetch();
         }
     }, [triggered, refetch]);
+
+    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
+    const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
+        const current = currentJobsRef.current;
+        if (current === null) return null;
+        currentJobsRef.current = null;
+
+        const jobs: CancelJobEntry[] =
+            current.phase === 'dependencies'
+                ? [
+                      ...(current.jobs.technical !== undefined
+                          ? [
+                                {
+                                    jobId: current.jobs.technical,
+                                    type: 'analysis' as const,
+                                },
+                            ]
+                          : []),
+                      ...(current.jobs.fundamental !== undefined
+                          ? [
+                                {
+                                    jobId: current.jobs.fundamental,
+                                    type: 'fundamental' as const,
+                                },
+                            ]
+                          : []),
+                      ...(current.jobs.news !== undefined
+                          ? [
+                                {
+                                    jobId: current.jobs.news,
+                                    type: 'news' as const,
+                                },
+                            ]
+                          : []),
+                  ]
+                : [{ jobId: current.jobId, type: 'overall' as const }];
+
+        return jobs.length > 0 ? jobs : null;
+    }, []);
+    usePageHideCancel(getPageHideJobs);
 
     useEffect(() => {
         if (queryClient.getQueryData(queryKeyRef.current) !== undefined) {

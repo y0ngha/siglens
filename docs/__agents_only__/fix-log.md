@@ -1,6 +1,20 @@
 
 # Fix Log
 
+
+## [PR #432 Round 4 | fix/cancel-job-on-page-unload | 2026-05-09]
+- Violation: `getPageHideJobs = useCallback(...)` and `usePageHideCancel(...)` placed after two `useEffect` blocks in `useOverallAnalysis.ts`
+  - Rule: MISTAKES.md §17 — useCallback/useMemo must be declared before all useEffect blocks
+  - Context: The three other hooks (useFundamentalAnalysis, useNewsAnalysis, useAnalysis) had the correct order; useOverallAnalysis was missed during the round 3 fix
+- Violation: `route.ts` body validation used `!j.type` (falsy check only), allowing invalid type strings (e.g. `"unknown"`) to pass and silently return 204
+  - Rule: Infrastructure Functions — validate all inputs at API boundaries; invalid values must return 400
+  - Context: Added `VALID_JOB_TYPES` Set check so unrecognized job types are rejected with 400 rather than logged as a warning and treated as success
+
+## [PR #432 Round 2 | feat/pagehide-cancel | 2026-05-09]
+- Violation: None — review-agent approved with zero findings
+- Rule: N/A
+- Context: All round 1 findings fixed and approved; no additional issues identified in round 2.
+
 ## [PR #430 Round 2 | feat/analysis-key-routing | 2026-05-08]
 - Violation: `getCurrentUser()` called outside try-catch in `submitOverallAnalysisAction.ts` while the same call is inside try in the other 3 sibling actions — asymmetric failure handling
   - Rule: MISTAKES.md I/O & Error Handling #1 — When one I/O operation in a module is protected with try-catch, all I/O operations at the same call depth must be equivalently protected
@@ -80,12 +94,6 @@
 ## [PR #420 Round 15 | master | 2026-05-05]
 - S3 (skipped — False Positive): `src/infrastructure/auth/finalizeOAuthSignupAction.ts` — reviewer suggested changing `tx as unknown as SiglensDatabase` to `tx as SiglensDatabase`. Reverted: `PgTransaction<NeonHttpQueryResultHKT, ...>` doesn't overlap with `NeonHttpDatabase<...>` (SiglensDatabase), causing TS error 2352. The double cast is required.
 
-
-## [PR #420 Round 11 | master | 2026-05-05]
-- B3: `ConsentCheckboxGroup.tsx` — error `<p>` had no `id`; invalid checkboxes had no `aria-describedby` connection to error message. Added `const errorId = useId()`, `id={errorId}` on error element, `errorId` prop on ConsentRow, `aria-describedby: errorId` on checkbox inputs.
-  - Rule: ARIA accessibility — form inputs with errors must have aria-describedby pointing to error message
-- S1: `route.ts` ([provider] callback) — `let token; try { token = await ... } catch { return ... }` imperative pattern (MISTAKES.md §14). Replaced with declarative `const token = await pendingStore.save({...}).catch(() => null); if (!token) return ...`
-  - Rule: MISTAKES.md §14 — Imperative exception handling within try-catch should use declarative .catch() or ?. chains
 
 ## [PR #420 Round 8 | master | 2026-05-05]
 - B3: `registerAction.test.ts` `expect.anything()` → `expect.objectContaining({ emailTokens, db })` 명시 검증. db mock에 `transaction` 함수 추가.

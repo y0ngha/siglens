@@ -14,10 +14,12 @@ import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFunda
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
+import { CANCEL_JOBS_API_PATH } from '@/lib/cancelJobsApi';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { OverallAnalysisResponse } from '@y0ngha/siglens-core';
 import type { ReactNode } from 'react';
+import { readBlobText } from '@/__tests__/utils/readBlobText';
 
 jest.mock('@/infrastructure/market/submitOverallAnalysisAction', () => ({
     submitOverallAnalysisAction: jest.fn(),
@@ -597,6 +599,115 @@ describe('useOverallAnalysis', () => {
             expect(mockCancelTechnical).not.toHaveBeenCalled();
             expect(mockCancelFundamental).not.toHaveBeenCalled();
             expect(mockCancelNews).not.toHaveBeenCalled();
+        });
+
+        describe('pagehide', () => {
+            let sendBeaconMock: jest.Mock;
+
+            beforeEach(() => {
+                sendBeaconMock = jest.fn();
+                Object.defineProperty(navigator, 'sendBeacon', {
+                    value: sendBeaconMock,
+                    configurable: true,
+                    writable: true,
+                });
+            });
+
+            it('overall polling 중 pagehide 발화 시 sendBeacon으로 overall job cancel을 전송한다', async () => {
+                mockSubmit.mockResolvedValue({
+                    status: 'submitted',
+                    jobId: 'overall-job-123',
+                });
+                mockPollOverall.mockImplementation(() => new Promise(() => {}));
+
+                const { result } = renderHook(
+                    () => useOverallAnalysis(...hookArgs()),
+                    { wrapper: makeWrapper() }
+                );
+
+                act(() => {
+                    result.current.trigger();
+                });
+
+                await waitFor(() => {
+                    expect(mockPollOverall).toHaveBeenCalled();
+                });
+
+                window.dispatchEvent(new Event('pagehide'));
+
+                expect(sendBeaconMock).toHaveBeenCalledTimes(1);
+                const [url, blob] = sendBeaconMock.mock.calls[0] as [
+                    string,
+                    Blob,
+                ];
+                expect(url).toBe(CANCEL_JOBS_API_PATH);
+                expect(blob.type).toBe('application/json');
+
+                const text = await readBlobText(blob);
+                expect(JSON.parse(text)).toEqual({
+                    jobs: [{ jobId: 'overall-job-123', type: 'overall' }],
+                });
+            });
+
+            it('pending_dependencies 중 pagehide 발화 시 각 axis job cancel을 sendBeacon으로 전송한다', async () => {
+                mockSubmit.mockResolvedValue(PENDING_DEPS);
+                mockPollTechnical.mockImplementation(
+                    () => new Promise(() => {})
+                );
+                mockPollFundamental.mockImplementation(
+                    () => new Promise(() => {})
+                );
+                mockPollNews.mockImplementation(() => new Promise(() => {}));
+
+                const { result } = renderHook(
+                    () => useOverallAnalysis(...hookArgs()),
+                    { wrapper: makeWrapper() }
+                );
+
+                act(() => {
+                    result.current.trigger();
+                });
+
+                await waitFor(() => {
+                    expect(mockPollTechnical).toHaveBeenCalled();
+                });
+
+                window.dispatchEvent(new Event('pagehide'));
+
+                expect(sendBeaconMock).toHaveBeenCalledTimes(1);
+                const [url, blob] = sendBeaconMock.mock.calls[0] as [
+                    string,
+                    Blob,
+                ];
+                expect(url).toBe(CANCEL_JOBS_API_PATH);
+                expect(blob.type).toBe('application/json');
+
+                const text = await readBlobText(blob);
+                const body = JSON.parse(text) as {
+                    jobs: { jobId: string; type: string }[];
+                };
+                expect(body.jobs).toEqual(
+                    expect.arrayContaining([
+                        { jobId: 'job-t', type: 'analysis' },
+                        { jobId: 'job-f', type: 'fundamental' },
+                        { jobId: 'job-n', type: 'news' },
+                    ])
+                );
+                expect(body.jobs).toHaveLength(3);
+            });
+
+            it('job 없을 때 pagehide 발화해도 sendBeacon을 호출하지 않는다', async () => {
+                const { result } = renderHook(
+                    () => useOverallAnalysis(...hookArgs()),
+                    { wrapper: makeWrapper() }
+                );
+
+                // trigger 없이 idle 상태에서 pagehide 발화
+                expect(result.current.state.status).toBe('idle');
+                window.dispatchEvent(new Event('pagehide'));
+
+                expect(sendBeaconMock).not.toHaveBeenCalled();
+            });
         });
     });
 });

@@ -27,6 +27,8 @@ import {
 } from '@/infrastructure/market/reanalyzeCooldown';
 import { sleep } from '@/lib/sleep';
 import { CHART_ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
+import type { CancelJobEntry } from '@/domain/types';
 
 interface AnalyzeMutationVariables {
     symbol: string;
@@ -268,6 +270,15 @@ export function useAnalysis({
         })();
     }, [reset, mutate]);
 
+    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
+    const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
+        const jobId = currentJobIdRef.current;
+        if (jobId === null) return null;
+        currentJobIdRef.current = null;
+        return [{ jobId, type: 'analysis' as const }];
+    }, []);
+    usePageHideCancel(getPageHideJobs);
+
     // 7. useLayoutEffect
     // symbol, timeframe의 최신 렌더 값을 DOM 커밋 전에 동기 갱신하여
     // mutation 호출 시점에 stale closure를 방지한다.
@@ -439,6 +450,19 @@ export function useAnalysis({
             cancelled = true;
         };
     }, [symbol, timeframe]);
+
+    // fire-and-forget이므로 useMutation 없이 직접 호출한다.
+    useEffect(() => {
+        return () => {
+            const jobId = currentJobIdRef.current;
+            if (jobId !== null) {
+                currentJobIdRef.current = null;
+                void cancelAnalysisJobAction(jobId).catch(error => {
+                    console.warn('[useAnalysis] cancel failed', error);
+                });
+            }
+        };
+    }, [symbol]);
 
     return {
         analysis,

@@ -10,6 +10,8 @@ import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsA
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
+import type { CancelJobEntry } from '@/domain/types';
 
 export type NewsAnalysisState =
     | { status: 'loading' }
@@ -113,6 +115,15 @@ export function useNewsAnalysis(
     const retry = useCallback(() => {
         void refetch();
     }, [refetch]);
+
+    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
+    const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
+        const jobId = currentJobIdRef.current;
+        if (jobId === null) return null;
+        currentJobIdRef.current = null;
+        return [{ jobId, type: 'news' as const }];
+    }, []);
+    usePageHideCancel(getPageHideJobs);
 
     useEffect(() => {
         if (queryClient.getQueryData(queryKey) === undefined) {
