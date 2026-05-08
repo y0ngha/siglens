@@ -1,15 +1,15 @@
 'use client';
 
-import { useMemo } from 'react';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
+import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
+import { useWaitForNewsCards } from '@/components/news/hooks/useWaitForNewsCards';
+import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
+import { cn } from '@/lib/cn';
 import {
     type NewsAnalysisResponse,
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
-import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
-import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
-import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
-import { useWaitForNewsCards } from '@/components/news/hooks/useWaitForNewsCards';
+import { useMemo } from 'react';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -109,7 +109,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                 </span>
             </div>
 
-            <p className="text-secondary-400 mb-4 text-sm leading-relaxed break-words">
+            <p className="text-secondary-400 mb-4 text-sm leading-relaxed wrap-break-word">
                 {result.currentDriverKo}
             </p>
 
@@ -120,7 +120,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {result.keyEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="text-secondary-400 flex min-w-0 gap-2 text-sm break-words"
+                                className="text-secondary-400 flex min-w-0 gap-2 text-sm wrap-break-word"
                             >
                                 <span
                                     aria-hidden="true"
@@ -128,7 +128,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                                 >
                                     •
                                 </span>
-                                <span className="min-w-0 break-words">
+                                <span className="min-w-0 wrap-break-word">
                                     {event}
                                 </span>
                             </li>
@@ -149,7 +149,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                         {result.upcomingEventsKo.map((event, i) => (
                             <li
                                 key={i}
-                                className="text-secondary-400 flex min-w-0 gap-2 text-sm break-words"
+                                className="text-secondary-400 flex min-w-0 gap-2 text-sm wrap-break-word"
                             >
                                 <span
                                     aria-hidden="true"
@@ -157,7 +157,7 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
                                 >
                                     ⚠
                                 </span>
-                                <span className="min-w-0 break-words">
+                                <span className="min-w-0 wrap-break-word">
                                     {event}
                                 </span>
                             </li>
@@ -189,7 +189,7 @@ function NewsAiSummaryInlineError({
             >
                 AI 뉴스 종합 분석
             </h2>
-            <p className="text-ui-danger text-sm break-words" role="alert">
+            <p className="text-ui-danger text-sm wrap-break-word" role="alert">
                 {error.message}
             </p>
             <button

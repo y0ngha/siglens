@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
 import { isGateBlockedResult } from '@/domain/analysis/gate';
@@ -80,7 +80,6 @@ export function useNewsAnalysis(
     companyName: string,
     modelId: ModelId
 ): NewsAnalysisState {
-    const queryClient = useQueryClient();
     const currentJobIdRef = useRef<string | null>(null);
     const queryKey = useMemo(
         () => QUERY_KEYS.newsAnalysis(symbol, modelId),
@@ -105,7 +104,6 @@ export function useNewsAnalysis(
                     currentJobIdRef.current = jobId;
                 }
             ),
-        enabled: false,
         retry: false,
         staleTime: Infinity,
     });
@@ -124,12 +122,6 @@ export function useNewsAnalysis(
         return [{ jobId, type: 'news' as const }];
     }, []);
     usePageHideCancel(getPageHideJobs);
-
-    useEffect(() => {
-        if (queryClient.getQueryData(queryKey) === undefined) {
-            void refetch();
-        }
-    }, [queryClient, queryKey, refetch]);
 
     // symbol 또는 modelId 변경(queryKey 교체) 시, unmount 시 진행 중인 job을 cancel한다.
     // fire-and-forget이므로 useMutation 없이 직접 호출한다.
@@ -154,6 +146,12 @@ export function useNewsAnalysis(
                     : new Error('분석 중 오류가 발생했습니다.'),
             retry,
         };
+    }
+
+    // isFetching을 data보다 먼저 확인해야 background refetch(뉴스 갱신 후 재분석) 중에도
+    // 스피너가 표시된다. data 체크를 먼저 두면 이전 결과가 그대로 노출되어 스피너가 뜨지 않는다.
+    if (query.isFetching) {
+        return { status: 'loading' };
     }
 
     if (query.data !== undefined) {

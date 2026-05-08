@@ -6,6 +6,7 @@ import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsA
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
 import { CANCEL_JOBS_API_PATH } from '@/lib/cancelJobsApi';
+import { QUERY_KEYS } from '@/lib/queryConfig';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
 import type { NewsAnalysisResponse } from '@y0ngha/siglens-core';
@@ -153,6 +154,116 @@ describe('useNewsAnalysis', () => {
             expect(result.current.status).toBe('done');
         });
         expect(mockSubmit).toHaveBeenCalledTimes(2);
+    });
+
+    describe('뉴스 갱신 연동', () => {
+        it('invalidateQueries 호출 시 재분석이 실행되고 새 결과를 반환한다', async () => {
+            const updatedResult: NewsAnalysisResponse = {
+                ...NEWS_RESULT,
+                currentDriverKo: '업데이트된 분석 결과입니다.',
+            };
+            mockSubmit
+                .mockResolvedValueOnce({ status: 'cached', result: NEWS_RESULT })
+                .mockResolvedValueOnce({
+                    status: 'cached',
+                    result: updatedResult,
+                });
+
+            const wrapper = makeWrapper();
+            const client = queryClients[queryClients.length - 1];
+
+            const { result } = renderHook(
+                () =>
+                    useNewsAnalysis(
+                        'AAPL',
+                        'Apple Inc.',
+                        'gemini-2.5-flash-lite'
+                    ),
+                { wrapper }
+            );
+
+            await waitFor(() => {
+                expect(result.current.status).toBe('done');
+            });
+
+            act(() => {
+                void client.invalidateQueries({
+                    queryKey: QUERY_KEYS.newsAnalysisPrefix('AAPL'),
+                });
+            });
+
+            await waitFor(() => {
+                expect(result.current.status).toBe('done');
+                if (result.current.status !== 'done') return;
+                expect(result.current.result.currentDriverKo).toBe(
+                    '업데이트된 분석 결과입니다.'
+                );
+            });
+            expect(mockSubmit).toHaveBeenCalledTimes(2);
+        });
+
+        it('refetch 중 isFetching이 true이면 loading 상태를 반환한다', async () => {
+            // 두 번째 submit을 보류 상태로 두어 loading 중간 상태를 관찰한다
+            mockSubmit
+                .mockResolvedValueOnce({ status: 'cached', result: NEWS_RESULT })
+                .mockImplementationOnce(() => new Promise(() => {}));
+
+            const wrapper = makeWrapper();
+            const client = queryClients[queryClients.length - 1];
+
+            const { result, unmount } = renderHook(
+                () =>
+                    useNewsAnalysis(
+                        'AAPL',
+                        'Apple Inc.',
+                        'gemini-2.5-flash-lite'
+                    ),
+                { wrapper }
+            );
+
+            await waitFor(() => {
+                expect(result.current.status).toBe('done');
+            });
+
+            act(() => {
+                void client.invalidateQueries({
+                    queryKey: QUERY_KEYS.newsAnalysisPrefix('AAPL'),
+                });
+            });
+
+            await waitFor(() => {
+                expect(result.current.status).toBe('loading');
+            });
+
+            unmount();
+        });
+
+        it('invalidateQueries 없이 cached 데이터가 있으면 재분석을 실행하지 않는다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: NEWS_RESULT,
+            });
+
+            const wrapper = makeWrapper();
+
+            const { result, rerender } = renderHook(
+                () =>
+                    useNewsAnalysis(
+                        'AAPL',
+                        'Apple Inc.',
+                        'gemini-2.5-flash-lite'
+                    ),
+                { wrapper }
+            );
+
+            await waitFor(() => {
+                expect(result.current.status).toBe('done');
+            });
+
+            rerender();
+
+            expect(mockSubmit).toHaveBeenCalledTimes(1);
+        });
     });
 
     describe('cancel', () => {
