@@ -5,9 +5,16 @@ import {
     cancelNewsAnalysisJob,
     cancelOverallAnalysisJob,
 } from '@y0ngha/siglens-core';
-import type { CancelJobEntry, CancelJobsBody } from '@/domain/types';
+import type { CancelJobEntry, CancelJobsBody, JobType } from '@/domain/types';
 
 const { HTTP_STATUS_BAD_REQUEST, HTTP_STATUS_NO_CONTENT } = constants;
+
+const VALID_JOB_TYPES = new Set<JobType>([
+    'analysis',
+    'fundamental',
+    'news',
+    'overall',
+]);
 
 /** Cancel one or more analysis jobs. Called via sendBeacon on pagehide. */
 export async function POST(request: Request): Promise<Response> {
@@ -16,7 +23,12 @@ export async function POST(request: Request): Promise<Response> {
         const body: CancelJobsBody = await request.json();
         if (
             !Array.isArray(body.jobs) ||
-            body.jobs.some(j => !j.jobId || !j.type)
+            body.jobs.some(
+                j =>
+                    !j.jobId ||
+                    !j.type ||
+                    !VALID_JOB_TYPES.has(j.type as JobType)
+            )
         ) {
             return new Response(null, { status: HTTP_STATUS_BAD_REQUEST });
         }
