@@ -4,7 +4,7 @@ import {
     classifyScore,
     FACTOR_LABEL,
     formatFactorRaw,
-} from '@/components/fear-greed/utils/labels';
+} from '@/lib/fearGreedLabels';
 import { cn } from '@/lib/cn';
 
 interface FearGreedGroupBarProps {

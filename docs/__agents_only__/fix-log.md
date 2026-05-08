@@ -1,6 +1,20 @@
 
 # Fix Log
 
+## [PR #428 Round 8 | feat/per-stock-fear-greed-ui | 2026-05-08]
+- B1: `src/components/symbol-page/utils/symbolTabsConfig.ts` JSDoc — `"4 symbol analysis tabs"` → `"symbol analysis tabs"`. fear-greed 추가로 5개가 됐는데 JSDoc은 4개로 stale.
+  - Rule: MISTAKES.md §15 / §6.5 — drift trap, JSDoc 숫자 하드코딩 금지
+- B2: `src/app/[symbol]/fear-greed/page.tsx` — breadcrumb 안의 `buildSymbolFearGreedSeoContent(ticker).url` 중복 호출을 위 destructure 결과 `url` 재사용으로 교체.
+  - Rule: MISTAKES.md §2 — 동일 함수 중복 호출 제거
+- B3: `src/components/fear-greed/FearGreedGauge.tsx` — needle 피벗 원의 `r={4}` 매직 넘버를 `NEEDLE_PIVOT_RADIUS = 4` 모듈 상수로 추출.
+  - Rule: MISTAKES.md §15 — 같은 파일의 다른 geometry 상수와 일관성
+- B4: `src/components/fear-greed/utils/labels.ts` → `src/lib/fearGreedLabels.ts` 이동. React 의존성 없는 순수 유틸리티이고 `symbol-page/FearGreedCard.tsx`에서도 import 중이라 크로스 피처 의존성 발생. `git mv`로 이동 + 6개 import 경로 일괄 갱신.
+  - Rule: MISTAKES.md Architecture §1 — UI 유틸리티는 `lib/`에, 크로스 피처 import 발생 시 components/ 하위 금지
+- S5: `FearGreedComparisonGauges.tsx` — `valid 배열은 score!==null 필터 통과 요소만 보유 → point는 항상 정의됨.` 주석 제거. 위 line의 type guard가 이미 TS 타입 시스템에서 보장.
+  - Rule: MISTAKES.md §2.5 — TS narrowing 자명 주석 금지
+- S6: `SelfNormWarningBadge.tsx` — Heroicons SVG `strokeWidth={2}` → `WARNING_ICON_STROKE_WIDTH = 2` 상수 추출.
+  - Rule: MISTAKES.md §15 — 파일 내 일관성
+
 ## [PR #428 Round 7 | feat/per-stock-fear-greed-ui | 2026-05-08]
 - B1: `src/components/symbol-page/CrossLinkCards.tsx` — `DESCRIPTION['overall']` `'3축 통합 AI 결론 + 시나리오'` → `'4축 통합 AI 결론 + 시나리오'`. fear-greed가 4번째 축으로 추가됐는데 이 라벨만 누락.
   - Rule: MISTAKES.md §6.5 — State/function/documentation divergence

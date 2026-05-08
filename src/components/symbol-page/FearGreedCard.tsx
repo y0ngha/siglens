@@ -6,7 +6,7 @@ import {
     SENTIMENT_LABEL_TEXT,
     formatConfidenceFooter,
     formatFactorRaw,
-} from '@/components/fear-greed/utils/labels';
+} from '@/lib/fearGreedLabels';
 
 const SCORE_LABEL_SEPARATOR = ' — ';
 

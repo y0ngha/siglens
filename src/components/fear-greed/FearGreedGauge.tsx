@@ -1,5 +1,5 @@
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
-import { SENTIMENT_LABEL_TEXT } from '@/components/fear-greed/utils/labels';
+import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
 import { cn } from '@/lib/cn';
 
 interface FearGreedGaugeProps {
@@ -59,6 +59,8 @@ const GAUGE_VIEWBOX_H = 130;
 const NEEDLE_TIP_LEN = 4;
 const NEEDLE_HALF_WIDTH = 6;
 const NEEDLE_INNER_GAP = 12;
+/** 게이지 회전 중심을 시각적으로 anchor하는 작은 피벗 원의 반지름 (SVG units). */
+const NEEDLE_PIVOT_RADIUS = 4;
 
 /** Tick label radial offset outside the arc, in SVG units. */
 const TICK_LABEL_OFFSET = 16;
@@ -158,7 +160,7 @@ export function FearGreedGauge({
                 <circle
                     cx={GAUGE_CX}
                     cy={GAUGE_CY}
-                    r={4}
+                    r={NEEDLE_PIVOT_RADIUS}
                     className="fill-secondary-100"
                 />
             </svg>

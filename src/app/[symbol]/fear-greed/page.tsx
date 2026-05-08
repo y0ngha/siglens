@@ -96,10 +96,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
 
     const breadcrumbJsonLd = buildBreadcrumbJsonLd([
         { name: ticker, url: buildSymbolSeoContent(ticker).url },
-        {
-            name: '공포 탐욕 지수',
-            url: buildSymbolFearGreedSeoContent(ticker).url,
-        },
+        { name: '공포 탐욕 지수', url },
     ]);
 
     const faqJsonLd = {

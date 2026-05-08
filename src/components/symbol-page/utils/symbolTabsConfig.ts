@@ -1,5 +1,5 @@
 /**
- * Single source of truth for the 4 symbol analysis tabs. Kept in a non-`'use client'`
+ * Single source of truth for the symbol analysis tabs. Kept in a non-`'use client'`
  * module so both the client component (`SymbolTabs`) and server-rendered fallback
  * (`SymbolTabsSkeleton`, used by the RSC layout's PPR shell) can import it without
  * pulling in client-only modules.

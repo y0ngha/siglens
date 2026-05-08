@@ -8,7 +8,7 @@ import { FearGreedComparisonGauges } from '@/components/fear-greed/FearGreedComp
 import { FearGreedGroupBar } from '@/components/fear-greed/FearGreedGroupBar';
 import { FearGreedHistoricalChart } from '@/components/chart/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
-import { formatConfidenceFooter } from '@/components/fear-greed/utils/labels';
+import { formatConfidenceFooter } from '@/lib/fearGreedLabels';
 
 interface FearGreedPageProps {
     symbol: string;

@@ -1,6 +1,6 @@
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedGauge } from '@/components/fear-greed/FearGreedGauge';
-import { classifyScore } from '@/components/fear-greed/utils/labels';
+import { classifyScore } from '@/lib/fearGreedLabels';
 import { cn } from '@/lib/cn';
 
 interface FearGreedComparisonGaugesProps {
@@ -40,7 +40,6 @@ export function FearGreedComparisonGauges({
             {PERIODS.map(p => {
                 // 0으로 클램프 — daysBack이 valid 길이를 초과하면 가장 오래된 entry로 폴백.
                 const idx = Math.max(0, lastIdx - p.daysBack);
-                // valid 배열은 score!==null 필터 통과 요소만 보유 → point는 항상 정의됨.
                 const point = valid[idx];
                 const score = Math.round(point.score);
                 const label = point.label ?? classifyScore(score);

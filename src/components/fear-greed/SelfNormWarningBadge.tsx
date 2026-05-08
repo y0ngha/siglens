@@ -13,6 +13,9 @@ const WARNING_TEXT: Record<NonNullable<FearGreedWarning>, string> = {
         '이 종목은 장기 강세 사이클입니다. 점수는 자기 분포 대비 상대적 위치를 의미합니다.',
 };
 
+/** Heroicons exclamation-triangle outline 변형의 표준 stroke width (24px viewBox 기준). */
+const WARNING_ICON_STROKE_WIDTH = 2;
+
 /** Inline warning badge surfacing the self-norm paradox to users when the score may not reflect raw sentiment. */
 export function SelfNormWarningBadge({
     warning,
@@ -32,7 +35,7 @@ export function SelfNormWarningBadge({
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth={2}
+                strokeWidth={WARNING_ICON_STROKE_WIDTH}
                 className="h-4 w-4 shrink-0"
             >
                 <path

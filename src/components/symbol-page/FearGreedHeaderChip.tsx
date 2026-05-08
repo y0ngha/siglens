@@ -1,5 +1,5 @@
 import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
-import { SENTIMENT_LABEL_TEXT } from '@/components/fear-greed/utils/labels';
+import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
 import { cn } from '@/lib/cn';
 
 // alpha /40 vs /20 = EXTREME vs base intensity (no separate extreme tokens in design system).
