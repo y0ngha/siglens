@@ -69,7 +69,15 @@ const NEEDLE_PIVOT_RADIUS = 4;
 /** Tick label radial offset outside the arc, in SVG units. */
 const TICK_LABEL_OFFSET = 16;
 const TICK_LABEL_RADIUS = GAUGE_RADIUS + TICK_LABEL_OFFSET;
-const TICK_VALUES: ReadonlyArray<number> = [0, 25, 50, 75, 100];
+// 0과 100은 게이지 양 끝, 50은 시각적 중심선. 25/75는 EXTREME 경계로 boundary
+// 상수와 동기 — boundary가 바뀌면 눈금도 따라 움직여야 함.
+const TICK_VALUES: ReadonlyArray<number> = [
+    0,
+    EXTREME_FEAR_MAX,
+    50,
+    GREED_MAX,
+    100,
+];
 
 /** Degrees per score unit — 180° gauge arc spans 100 score units (180 / 100). */
 const DEGREES_PER_SCORE_UNIT = 1.8;
