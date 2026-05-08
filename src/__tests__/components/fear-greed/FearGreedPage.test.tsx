@@ -29,6 +29,10 @@ jest.mock('@/components/chart/FearGreedHistoricalChart', () => ({
     FearGreedHistoricalChart: () => null,
 }));
 
+jest.mock('@/components/chat/hooks/useSymbolChat', () => ({
+    usePublishSymbolChat: () => undefined,
+}));
+
 describe('FearGreedPage', () => {
     describe('with snapshot', () => {
         beforeEach(() => {

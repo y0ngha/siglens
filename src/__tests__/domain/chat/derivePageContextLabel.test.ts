@@ -28,6 +28,10 @@ describe('deriveLabel', () => {
             expect(deriveLabel('/AAPL/overall')).toBe('AI 종합 분석');
         });
 
+        it('/AAPL/fear-greed → 공포 탐욕 지수', () => {
+            expect(deriveLabel('/AAPL/fear-greed')).toBe('공포 탐욕 지수');
+        });
+
         it('case-insensitive sub-page /AAPL/FUNDAMENTAL → 펀더멘털 분석', () => {
             expect(deriveLabel('/AAPL/FUNDAMENTAL')).toBe('펀더멘털 분석');
         });

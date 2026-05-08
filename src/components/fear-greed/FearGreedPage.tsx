@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import { useFearGreedFromSymbol } from '@/components/fear-greed/hooks/useFearGreedFromSymbol';
 import { FearGreedHero } from '@/components/fear-greed/FearGreedHero';
 import { FearGreedComparisonGauges } from '@/components/fear-greed/FearGreedComparisonGauges';
@@ -7,6 +8,7 @@ import { FearGreedGroupBar } from '@/components/fear-greed/FearGreedGroupBar';
 import { FearGreedHistoricalChart } from '@/components/chart/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
 import { formatConfidenceFooter } from '@/lib/fearGreedLabels';
+import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 
 interface FearGreedPageProps {
     symbol: string;
@@ -15,6 +17,16 @@ interface FearGreedPageProps {
 
 export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
     const { snapshot, history } = useFearGreedFromSymbol({ symbol, fmpSymbol });
+
+    const chatState = useMemo(
+        () => ({
+            context: null as null,
+            timeframe: null,
+            isAnalysisReady: snapshot !== null,
+        }),
+        [snapshot]
+    );
+    usePublishSymbolChat(chatState);
 
     if (!snapshot) {
         return (
