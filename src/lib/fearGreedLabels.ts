@@ -1,7 +1,4 @@
-import type {
-    FearGreedFactorKey,
-    FearGreedLabel,
-} from '@y0ngha/siglens-core';
+import type { FearGreedFactorKey, FearGreedLabel } from '@y0ngha/siglens-core';
 import type { SnapshotConfidence } from '@/domain/types';
 
 /** confidence === 'normal' 표시 라벨 — Hero/Card footer 양쪽에서 동일 사용. */
