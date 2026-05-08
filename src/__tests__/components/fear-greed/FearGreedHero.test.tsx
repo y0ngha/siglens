@@ -59,9 +59,7 @@ describe('FearGreedHero', () => {
                 <FearGreedHero snapshot={greedSnap} />
             );
             expect(getByText('60')).toBeInTheDocument();
-            expect(
-                getByText(SENTIMENT_LABEL_TEXT.GREED)
-            ).toBeInTheDocument();
+            expect(getByText(SENTIMENT_LABEL_TEXT.GREED)).toBeInTheDocument();
         });
     });
 });
