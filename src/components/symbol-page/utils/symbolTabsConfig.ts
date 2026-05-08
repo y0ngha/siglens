@@ -18,7 +18,7 @@ export const TABS = [
     },
     {
         key: 'fear-greed',
-        label: '공포 지수',
+        label: '공포 탐욕 지수',
         hrefBuilder: (s: string) => `/${s}/fear-greed`,
     },
     {

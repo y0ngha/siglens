@@ -63,9 +63,6 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         )}
                         ({ticker})<span className="sr-only"> 기술적 분석</span>
                     </h1>
-                </div>
-
-                <div className="flex shrink-0 items-center gap-2">
                     {/* useBars가 useSuspenseQuery 기반이라 promise를 throw하면 부모 트리까지
                         suspend된다. 헤더 chip 로딩이 헤더 전체(모델 셀렉터·브레드크럼) 영역에
                         영향을 주지 않도록 여기서 경계를 잡고, 빈 chip 자리만 잠깐 보이게 한다. */}
@@ -75,6 +72,9 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                             fmpSymbol={assetInfo?.fmpSymbol}
                         />
                     </Suspense>
+                </div>
+
+                <div className="flex shrink-0 items-center gap-2">
                     <span className="text-secondary-500 text-xs whitespace-nowrap">
                         AI 분석 모델
                     </span>
