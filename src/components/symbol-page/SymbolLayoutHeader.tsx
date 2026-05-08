@@ -39,8 +39,8 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
     } = useSymbolModel();
 
     return (
-        <header className="relative z-40 px-4 py-3">
-            <div className="flex items-center justify-between gap-4">
+        <header className="relative z-45 px-4 py-3">
+            <div className="flex items-start justify-between gap-4 sm:items-center">
                 <div className="flex min-w-0 items-center gap-2">
                     <Link
                         href="/"
@@ -49,29 +49,32 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                         SIGLENS
                     </Link>
                     <span className="text-secondary-700">/</span>
-                    <h1 className="text-secondary-100 truncate text-lg font-semibold tracking-wide">
-                        {assetInfo?.koreanName && (
-                            <span className="text-secondary-300">
-                                {assetInfo.koreanName}
-                                {hasCompanyName ? ', ' : ' '}
-                            </span>
-                        )}
-                        {assetInfo && hasCompanyName && (
-                            <span className="text-secondary-200">
-                                {assetInfo.name}{' '}
-                            </span>
-                        )}
-                        ({ticker})<span className="sr-only"> 기술적 분석</span>
-                    </h1>
-                    {/* useBars가 useSuspenseQuery 기반이라 promise를 throw하면 부모 트리까지
-                        suspend된다. 헤더 chip 로딩이 헤더 전체(모델 셀렉터·브레드크럼) 영역에
-                        영향을 주지 않도록 여기서 경계를 잡고, 빈 chip 자리만 잠깐 보이게 한다. */}
-                    <Suspense fallback={null}>
-                        <FearGreedHeaderChipMounted
-                            symbol={ticker}
-                            fmpSymbol={assetInfo?.fmpSymbol}
-                        />
-                    </Suspense>
+                    <div className="flex min-w-0 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
+                        <h1 className="text-secondary-100 truncate text-lg font-semibold tracking-wide">
+                            {assetInfo?.koreanName && (
+                                <span className="text-secondary-300">
+                                    {assetInfo.koreanName}
+                                    {hasCompanyName ? ', ' : ' '}
+                                </span>
+                            )}
+                            {assetInfo && hasCompanyName && (
+                                <span className="text-secondary-200">
+                                    {assetInfo.name}{' '}
+                                </span>
+                            )}
+                            ({ticker})
+                            <span className="sr-only"> 기술적 분석</span>
+                        </h1>
+                        {/* useBars가 useSuspenseQuery 기반이라 promise를 throw하면 부모 트리까지
+                            suspend된다. 헤더 chip 로딩이 헤더 전체(모델 셀렉터·브레드크럼) 영역에
+                            영향을 주지 않도록 여기서 경계를 잡고, 빈 chip 자리만 잠깐 보이게 한다. */}
+                        <Suspense fallback={null}>
+                            <FearGreedHeaderChipMounted
+                                symbol={ticker}
+                                fmpSymbol={assetInfo?.fmpSymbol}
+                            />
+                        </Suspense>
+                    </div>
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">

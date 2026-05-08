@@ -64,6 +64,12 @@ export function useAnalysisModelGate({
                     setGateModal({ mode: 'auth', provider: requiredProvider });
                     return;
                 }
+                // Pro tier: server covers premium model costs via its own API key.
+                // BYOK registration is not required.
+                if (currentUser.tier === 'pro') {
+                    setModel(model);
+                    return;
+                }
                 if (
                     !registeredProviders.some(
                         p => p.provider === requiredProvider
