@@ -86,9 +86,10 @@ const GATE_ERROR_CODES = [
     'unexpected_error',
 ] as const;
 
-function isGateBlockedResult(
-    result: { status: 'error'; error?: unknown }
-): result is AnalysisGateBlockedResult {
+function isGateBlockedResult(result: {
+    status: 'error';
+    error?: unknown;
+}): result is AnalysisGateBlockedResult {
     return (
         typeof result.error === 'object' &&
         result.error !== null &&
