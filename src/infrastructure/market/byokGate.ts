@@ -14,24 +14,18 @@ import {
 } from '@/infrastructure/db/userApiKeyRepository';
 import { getUserTier } from '@/infrastructure/tier/use-cases/getUserTier';
 import { DrizzleUserRepository } from '@/infrastructure/db/userRepository';
+import type {
+    AnalysisGateError,
+    AnalysisGateErrorCode,
+    AnalysisGateBlockedResult,
+} from '@/domain/analysis/gate';
 
-/** Machine-readable codes for siglens-side analysis gate denials. */
-export type AnalysisGateErrorCode =
-    | 'tier_premium_blocked'
-    | 'invalid_model'
-    | 'api_key_corrupted'
-    | 'unexpected_error';
-
-export interface AnalysisGateError {
-    code: AnalysisGateErrorCode;
-    message: string;
-}
-
-/** Gate denial result mirroring core's `{ status: 'error' }` discriminator. */
-export interface AnalysisGateBlockedResult {
-    status: 'error';
-    error: AnalysisGateError;
-}
+// Re-export for action files that imported from byokGate
+export type {
+    AnalysisGateError,
+    AnalysisGateErrorCode,
+    AnalysisGateBlockedResult,
+};
 
 const GATE_MESSAGES: Record<AnalysisGateErrorCode, string> = {
     tier_premium_blocked:

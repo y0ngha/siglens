@@ -7,7 +7,7 @@ import type {
     ModelId,
 } from '@y0ngha/siglens-core';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
-import type { AnalysisGateBlockedResult } from '@/infrastructure/market/submitFundamentalAnalysisAction';
+import { isGateBlockedResult } from '@/domain/analysis/gate';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
 import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { sleep } from '@/lib/sleep';
@@ -18,33 +18,6 @@ export type FundamentalAnalysisState =
     | { status: 'loading' }
     | { status: 'done'; result: FundamentalAnalysisResponse }
     | { status: 'error'; error: Error; retry: () => void };
-
-/**
- * Narrows to AnalysisGateBlockedResult by checking for the gate-specific error shape.
- * AnalysisGateBlockedResult.error is { code: AnalysisGateErrorCode, message }.
- * SubmitFundamentalAnalysisLimitError.error is AnalysisLimitError (also an object),
- * so we distinguish by matching against known gate codes.
- */
-const GATE_ERROR_CODES = [
-    'tier_premium_blocked',
-    'invalid_model',
-    'api_key_corrupted',
-    'unexpected_error',
-] as const;
-
-function isGateBlockedResult(result: {
-    status: 'error';
-    error?: unknown;
-}): result is AnalysisGateBlockedResult {
-    return (
-        typeof result.error === 'object' &&
-        result.error !== null &&
-        'code' in result.error &&
-        (GATE_ERROR_CODES as readonly string[]).includes(
-            (result.error as { code: string }).code
-        )
-    );
-}
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 // onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
@@ -65,7 +38,6 @@ async function fetchFundamentalAnalysis(
         if (isGateBlockedResult(submitted)) {
             throw new Error(submitted.error.message);
         }
-        // SubmitFundamentalAnalysisLimitError / SubmitFundamentalAnalysisFetchError
         const message =
             submitted.code === 'fetch_failed'
                 ? (submitted.error ?? '데이터를 불러오지 못했습니다.')

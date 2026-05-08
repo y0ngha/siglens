@@ -9,7 +9,7 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
-import type { AnalysisGateBlockedResult } from '@/infrastructure/market/submitOverallAnalysisAction';
+import { isGateBlockedResult } from '@/domain/analysis/gate';
 import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
@@ -71,33 +71,6 @@ class OverallAnalysisError extends Error {
         super(message);
         this.name = 'OverallAnalysisError';
     }
-}
-
-/**
- * Narrows to AnalysisGateBlockedResult by checking for the gate-specific error shape.
- * AnalysisGateBlockedResult.error is { code: AnalysisGateErrorCode, message }.
- * SubmitOverallAnalysisError.error is unknown (may be string or object), so we
- * distinguish by matching against known gate codes.
- */
-const GATE_ERROR_CODES = [
-    'tier_premium_blocked',
-    'invalid_model',
-    'api_key_corrupted',
-    'unexpected_error',
-] as const;
-
-function isGateBlockedResult(result: {
-    status: 'error';
-    error?: unknown;
-}): result is AnalysisGateBlockedResult {
-    return (
-        typeof result.error === 'object' &&
-        result.error !== null &&
-        'code' in result.error &&
-        (GATE_ERROR_CODES as readonly string[]).includes(
-            (result.error as { code: string }).code
-        )
-    );
 }
 
 function throwIfAborted(signal: AbortSignal): void {
@@ -276,7 +249,6 @@ async function fetchOverallAnalysis(
         if (isGateBlockedResult(submitted)) {
             throw new OverallAnalysisError(submitted.error.message, undefined);
         }
-        // SubmitOverallAnalysisError: has axis + error payload (string or unknown).
         throw new OverallAnalysisError(
             typeof submitted.error === 'string'
                 ? submitted.error

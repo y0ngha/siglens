@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import type { NewsAnalysisResponse, ModelId } from '@y0ngha/siglens-core';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
-import type { AnalysisGateBlockedResult } from '@/infrastructure/market/submitNewsAnalysisAction';
+import { isGateBlockedResult } from '@/domain/analysis/gate';
 import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
 import { sleep } from '@/lib/sleep';
@@ -15,33 +15,6 @@ export type NewsAnalysisState =
     | { status: 'loading' }
     | { status: 'done'; result: NewsAnalysisResponse }
     | { status: 'error'; error: Error; retry: () => void };
-
-/**
- * Narrows to AnalysisGateBlockedResult by checking for the gate-specific error shape.
- * AnalysisGateBlockedResult.error is { code: AnalysisGateErrorCode, message }.
- * SubmitNewsAnalysisLimitError.error is AnalysisLimitError (also an object),
- * so we distinguish by matching against known gate codes.
- */
-const GATE_ERROR_CODES = [
-    'tier_premium_blocked',
-    'invalid_model',
-    'api_key_corrupted',
-    'unexpected_error',
-] as const;
-
-function isGateBlockedResult(result: {
-    status: 'error';
-    error?: unknown;
-}): result is AnalysisGateBlockedResult {
-    return (
-        typeof result.error === 'object' &&
-        result.error !== null &&
-        'code' in result.error &&
-        (GATE_ERROR_CODES as readonly string[]).includes(
-            (result.error as { code: string }).code
-        )
-    );
-}
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 // onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
@@ -68,7 +41,6 @@ async function fetchNewsAnalysis(
         if (isGateBlockedResult(submitted)) {
             throw new Error(submitted.error.message);
         }
-        // SubmitNewsAnalysisNoNewsError / SubmitNewsAnalysisLimitError
         if (submitted.code === 'no_news') {
             throw new Error(
                 '분석할 뉴스가 없습니다. 잠시 후 다시 시도해 주세요.'
