@@ -92,4 +92,3 @@ export function formatConfidenceFooter(
             : CONFIDENCE_LIMITED_LABEL;
     return `표본 ${sampleSize} — ${label}`;
 }
-
