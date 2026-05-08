@@ -4,6 +4,7 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
+import { FearGreedHistoricalChart } from '@/components/chart/FearGreedHistoricalChart';
 
 // lightweight-charts uses canvas internally — jsdom can't run it, so we mock.
 const mockSetData = jest.fn();
@@ -29,8 +30,6 @@ jest.mock(
     }),
     { virtual: true }
 );
-
-import { FearGreedHistoricalChart } from '@/components/chart/FearGreedHistoricalChart';
 
 const history: FearGreedHistoryPoint[] = [
     { date: '2026-01-01', score: null, label: null },

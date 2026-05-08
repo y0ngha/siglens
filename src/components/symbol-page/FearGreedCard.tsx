@@ -14,7 +14,7 @@ interface FearGreedCardProps {
     snapshot: FearGreedSnapshot | null;
 }
 
-/** 분석 탭 사이드패널의 fearGreed 카드 — Hero score + Flow/Trend 그룹 + factor breakdown + warning + confidence. */
+/** 분석 탭 사이드패널의 fearGreed 카드. */
 export function FearGreedCard({ snapshot }: FearGreedCardProps) {
     if (!snapshot) {
         return (

@@ -3,6 +3,8 @@
  */
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
+import { FearGreedCardMounted } from '@/components/symbol-page/FearGreedCardMounted';
+import { useBars } from '@/components/symbol-page/hooks/useBars';
 
 jest.mock('@/components/symbol-page/hooks/useBars', () => ({
     useBars: jest.fn(() => ({
@@ -24,9 +26,6 @@ jest.mock('@/components/fear-greed/hooks/useFearGreed', () => ({
         history: [],
     })),
 }));
-
-import { FearGreedCardMounted } from '@/components/symbol-page/FearGreedCardMounted';
-import { useBars } from '@/components/symbol-page/hooks/useBars';
 
 describe('FearGreedCardMounted', () => {
     it('always fetches 1Day bars regardless of caller context', () => {

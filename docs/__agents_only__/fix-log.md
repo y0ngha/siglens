@@ -1,6 +1,14 @@
 
 # Fix Log
 
+## [PR #428 Round 14 | feat/per-stock-fear-greed-ui | 2026-05-08]
+- B1: 4개 test 파일에서 `jest.mock`/`const` 뒤에 위치하던 import 문을 모두 최상단으로 이동. `import/first` 위반 정정. 영향 파일: `__tests__/components/chart/FearGreedHistoricalChart.test.tsx`, `__tests__/components/fear-greed/FearGreedPage.test.tsx`, `__tests__/components/symbol-page/{FearGreedCardMounted,FearGreedHeaderChipMounted}.test.tsx`. babel-jest의 `jest.mock` hoisting으로 동작은 동일.
+  - Rule: CONVENTIONS.md ESLint Rules — `import/first`
+- S1: `FearGreedCard.tsx` JSDoc — 컴포넌트 내부 구조 열거 제거 (`'분석 탭 사이드패널의 fearGreed 카드.'`로 단순화).
+  - Rule: MISTAKES.md §15.3 — 코드가 무엇을 하는지 열거하는 주석 금지
+- S2: `useFearGreedFromSymbol` shared hook 신규 추출. `FearGreedPage`, `FearGreedCardMounted`, `FearGreedHeaderChipMounted` 3곳의 동일 hook 체인(useBars + useFearGreed + DEFAULT_TIMEFRAME)을 단일 호출로 단순화. `FearGreedPage.test.tsx` mock도 `useFearGreedFromSymbol`로 교체.
+  - Rule: MISTAKES.md §1 — 동일 패턴 3곳 추출 임계값 도달
+
 ## [PR #428 Round 13 | feat/per-stock-fear-greed-ui | 2026-05-08]
 - B1: `FearGreedHeaderChip.tsx` aria-label 안의 `' (신뢰도 제한)'` 리터럴을 `CONFIDENCE_LIMITED_LABEL` 상수 참조로 교체. 동일 상수가 `lib/fearGreedLabels`에 이미 존재하고 테스트도 그 상수를 import해서 검증 중이었으나 production 코드만 hardcode 상태.
   - Rule: MISTAKES.md §15 — String literal 중복 제거, 단일 source of truth

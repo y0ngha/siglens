@@ -4,6 +4,7 @@
 import '@testing-library/jest-dom';
 import { render } from '@testing-library/react';
 import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
+import { FearGreedPage } from '@/components/fear-greed/FearGreedPage';
 
 const baseSnapshot: FearGreedSnapshot = {
     score: 50,
@@ -17,16 +18,10 @@ const baseSnapshot: FearGreedSnapshot = {
     warning: null,
 };
 
-jest.mock('@/components/symbol-page/hooks/useBars', () => ({
-    useBars: jest.fn(() => ({
-        bars: [],
-        indicators: { buySellVolume: [] },
-    })),
-}));
-
-const mockUseFearGreed = jest.fn();
-jest.mock('@/components/fear-greed/hooks/useFearGreed', () => ({
-    useFearGreed: (...args: unknown[]) => mockUseFearGreed(...args),
+const mockUseFearGreedFromSymbol = jest.fn();
+jest.mock('@/components/fear-greed/hooks/useFearGreedFromSymbol', () => ({
+    useFearGreedFromSymbol: (...args: unknown[]) =>
+        mockUseFearGreedFromSymbol(...args),
 }));
 
 // Mock the chart subcomponent (it uses lightweight-charts and is hard to render under jsdom).
@@ -34,12 +29,10 @@ jest.mock('@/components/chart/FearGreedHistoricalChart', () => ({
     FearGreedHistoricalChart: () => null,
 }));
 
-import { FearGreedPage } from '@/components/fear-greed/FearGreedPage';
-
 describe('FearGreedPage', () => {
     describe('with snapshot', () => {
         beforeEach(() => {
-            mockUseFearGreed.mockReturnValue({
+            mockUseFearGreedFromSymbol.mockReturnValue({
                 snapshot: baseSnapshot,
                 history: [],
             });
@@ -65,7 +58,7 @@ describe('FearGreedPage', () => {
 
     describe('without snapshot', () => {
         it('renders insufficient-data placeholder', () => {
-            mockUseFearGreed.mockReturnValue({
+            mockUseFearGreedFromSymbol.mockReturnValue({
                 snapshot: null,
                 history: [],
             });
@@ -78,7 +71,7 @@ describe('FearGreedPage', () => {
 
     describe('limited confidence', () => {
         it('renders limited confidence note', () => {
-            mockUseFearGreed.mockReturnValue({
+            mockUseFearGreedFromSymbol.mockReturnValue({
                 snapshot: { ...baseSnapshot, confidence: 'limited' },
                 history: [],
             });

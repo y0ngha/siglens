@@ -1,8 +1,6 @@
 'use client';
 
-import { useBars } from '@/components/symbol-page/hooks/useBars';
-import { useFearGreed } from '@/components/fear-greed/hooks/useFearGreed';
-import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
+import { useFearGreedFromSymbol } from '@/components/fear-greed/hooks/useFearGreedFromSymbol';
 import { FearGreedCard } from '@/components/symbol-page/FearGreedCard';
 
 interface FearGreedCardMountedProps {
@@ -15,14 +13,6 @@ export function FearGreedCardMounted({
     symbol,
     fmpSymbol,
 }: FearGreedCardMountedProps) {
-    const { bars, indicators } = useBars({
-        symbol,
-        timeframe: DEFAULT_TIMEFRAME,
-        fmpSymbol,
-    });
-    const { snapshot } = useFearGreed({
-        bars,
-        buySellVolume: indicators.buySellVolume,
-    });
+    const { snapshot } = useFearGreedFromSymbol({ symbol, fmpSymbol });
     return <FearGreedCard snapshot={snapshot} />;
 }
