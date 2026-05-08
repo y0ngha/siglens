@@ -66,7 +66,7 @@ export default async function Home() {
                 name: `${SITE_NAME}는 어떤 서비스인가요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '미국 주식 티커를 입력하면 차트(보조지표·캔들·지지/저항), 실적과 밸류에이션, 최근 뉴스 흐름을 각각 정리하고 셋을 묶은 종합 결론까지 보여주는 무료 웹 서비스입니다. 회원가입 없이 바로 이용할 수 있습니다.',
+                    text: '미국 주식 티커를 입력하면 차트(보조지표와 캔들 패턴, 지지선과 저항선), 실적과 밸류에이션, 최근 뉴스 흐름, 그리고 단기 매수 분위기(공포 탐욕 지수)까지 각각 정리하고 이걸 묶은 종합 결론까지 보여주는 무료 웹 서비스입니다. 회원가입 없이 바로 이용할 수 있습니다.',
                 },
             },
             {
@@ -74,7 +74,7 @@ export default async function Home() {
                 name: 'AI 대화로 무엇을 물어볼 수 있나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: 'Siglens 챗봇은 현재 보고 있는 종목의 차트와 지표 데이터를 맥락으로, 추세 해석·진입 타이밍·지표 의미·패턴 비교·전략 토론 같은 질문에 답합니다. 답변은 화면에 표시된 분석 결과를 근거로 생성됩니다.',
+                    text: 'Siglens 챗봇은 현재 보고 있는 종목의 차트와 지표 데이터를 맥락으로, 추세 해석, 진입 타이밍, 지표 의미, 패턴 비교, 전략 토론 같은 질문에 답합니다. 답변은 화면에 표시된 분석 결과를 근거로 생성됩니다.',
                 },
             },
             {
@@ -90,15 +90,23 @@ export default async function Home() {
                 name: '특정 종목의 PER이나 ROE 같은 실적 지표는 어디서 보나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '종목 페이지의 펀더멘털 탭에서 PER, PBR, ROE, 영업이익률 같은 밸류에이션·수익성 지표와 동종 업계 평균 비교를 함께 볼 수 있습니다. 예를 들어 애플이라면 /AAPL/fundamental 경로에서 확인합니다.',
+                    text: '종목 페이지의 펀더멘털 탭에서 PER, PBR, ROE, 영업이익률 같은 밸류에이션과 수익성 지표, 동종 업계 평균 비교를 함께 볼 수 있습니다. 예를 들어 애플이라면 /AAPL/fundamental 경로에서 확인합니다.',
                 },
             },
             {
                 '@type': 'Question',
-                name: '어닝 발표나 뉴스 분위기를 확인하고 싶을 때는 어디로 가야 하나요?',
+                name: '어닝과 실적 발표나 뉴스 분위기를 확인하고 싶을 때는 어디로 가야 하나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '종목 페이지의 뉴스 탭에서 최근 어닝 결과, 가이던스, 주요 이벤트와 함께 뉴스 sentiment(긍정·중립·부정 분포)를 정리해 보여줍니다. 예를 들어 테슬라는 /TSLA/news 경로이며, 차트만으로 설명되지 않는 가격 움직임을 점검할 때 유용합니다.',
+                    text: '종목 페이지의 뉴스 탭에서 최근 어닝과 실적 결과, 가이던스, 주요 이벤트와 함께 뉴스 분위기(호재, 중립, 악재 분포)를 정리해 보여줍니다. 예를 들어 테슬라는 /TSLA/news 경로이며, 차트만으로 설명되지 않는 가격 움직임을 점검할 때 유용합니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '지금 이 종목에 매수세가 강한지도 알 수 있나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '각 종목 페이지의 공포 탐욕 지수 탭(예: /AAPL/fear-greed)에서 거래량 흐름과 가격 위치를 묶어 0~100 점수로 단기 분위기를 확인합니다. 0에 가까울수록 매도세, 100에 가까울수록 매수세가 강하다는 뜻이고, 5단계 라벨로 극공포부터 극탐욕까지 보여줍니다.',
                 },
             },
             {
@@ -106,7 +114,7 @@ export default async function Home() {
                 name: '차트와 실적, 뉴스를 합친 결론은 어디서 볼 수 있나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '종목 페이지의 종합 분석 탭에서 세 축의 분석을 묶어 강세·약세 시나리오, 핵심 모니터링 포인트, 위험 요인을 함께 정리한 결론을 확인할 수 있습니다. 예를 들어 엔비디아는 /NVDA/overall 경로입니다.',
+                    text: '종목 페이지의 종합 분석 탭에서 차트, 실적, 뉴스, 공포 탐욕 지수를 묶어 강세와 약세 시나리오, 핵심 모니터링 포인트, 위험 요인을 함께 정리한 결론을 확인할 수 있습니다. 예를 들어 엔비디아는 /NVDA/overall 경로입니다.',
                 },
             },
             {
@@ -131,33 +139,38 @@ export default async function Home() {
     const howToJsonLd = {
         '@context': 'https://schema.org',
         '@type': 'HowTo',
-        name: `${SITE_NAME}로 미국 주식을 차트·실적·뉴스로 살펴보고 종합 결론까지 받는 방법`,
-        description: `${SITE_NAME}에서 한 종목을 차트, 실적, 뉴스 세 축으로 살펴보고, 셋을 묶은 종합 결론과 시나리오를 받는 흐름입니다.`,
+        name: `${SITE_NAME}로 미국 주식을 차트와 실적, 뉴스, 공포 탐욕 지수로 살펴보고 종합 결론까지 받는 방법`,
+        description: `${SITE_NAME}에서 한 종목을 차트, 실적, 뉴스, 공포 탐욕 지수 네 축으로 살펴보고, 넷을 묶은 종합 결론과 시나리오를 받는 흐름입니다.`,
         step: [
             {
                 '@type': 'HowToStep',
-                name: '종목명·심볼 입력',
+                name: '종목명이나 심볼 입력',
                 text: '분석하고 싶은 미국 주식 종목명이나 심볼을 검색창에 입력합니다. 예: 애플, 테슬라, 엔비디아, AAPL, TSLA, NVDA.',
             },
             {
                 '@type': 'HowToStep',
                 name: '차트 분석 살펴보기',
-                text: `종목 페이지에서 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지·저항 레벨 ${skillCounts.supportResistance}종 기준으로 추세와 진입 후보 구간을 살펴봅니다.`,
+                text: `종목 페이지에서 보조지표 ${skillCounts.indicators}종, 캔들 패턴 ${skillCounts.candlesticks}종, 차트 패턴 ${skillCounts.patterns}종, 전략 ${skillCounts.strategies}종, 지지선과 저항선 레벨 ${skillCounts.supportResistance}종 기준으로 추세와 진입 후보 구간을 살펴봅니다.`,
             },
             {
                 '@type': 'HowToStep',
                 name: '실적과 뉴스로 보강하기',
-                text: '종목 페이지의 펀더멘털 탭에서 PER·PBR·ROE 같은 밸류에이션과 수익성 지표를, 뉴스 탭에서 어닝 발표와 뉴스 sentiment를 확인해 차트가 보여주지 않는 배경을 보강합니다. 예: /AAPL/fundamental, /AAPL/news.',
+                text: '종목 페이지의 펀더멘털 탭에서 PER, PBR, ROE 같은 밸류에이션과 수익성 지표를, 뉴스 탭에서 어닝과 실적 발표, 뉴스 분위기를 확인해 차트가 보여주지 않는 배경을 보강합니다. 예: /AAPL/fundamental, /AAPL/news.',
+            },
+            {
+                '@type': 'HowToStep',
+                name: '단기 매수 분위기 확인',
+                text: '공포 탐욕 지수 탭(예: /AAPL/fear-greed)에서 단기 매수세가 강한지 약한지를 0~100 점수와 5단계 분위기로 확인합니다. 차트가 좋아 보여도 분위기가 너무 과열이면 진입 타이밍을 한 번 더 따져볼 수 있습니다.',
             },
             {
                 '@type': 'HowToStep',
                 name: '종합 결론 확인',
-                text: '종합 분석 탭(예: /AAPL/overall)에서 차트·실적·뉴스 세 축을 묶은 종합 결론, 강세·약세 시나리오, 모니터링 포인트, 위험 요인을 함께 확인합니다.',
+                text: '종합 분석 탭(예: /AAPL/overall)에서 차트, 실적, 뉴스, 공포 탐욕 지수를 묶은 종합 결론과 강세, 약세 시나리오, 모니터링 포인트, 위험 요인을 함께 확인합니다.',
             },
             {
                 '@type': 'HowToStep',
                 name: 'AI에게 추가 질문',
-                text: '판단이 애매할 때는 챗봇에게 직접 질문할 수 있습니다. 현재 보고 있는 종목 데이터를 맥락으로, 지표 해석·시나리오 비교·매매 전략 같은 질문에 답변을 받습니다.',
+                text: '판단이 애매할 때는 챗봇에게 직접 질문할 수 있습니다. 현재 보고 있는 종목 데이터를 맥락으로, 지표 해석, 시나리오 비교, 매매 전략 같은 질문에 답변을 받습니다.',
             },
         ],
     };
@@ -193,8 +206,9 @@ export default async function Home() {
                         </h1>
                         <p className="text-secondary-400 mx-auto mt-5 max-w-sm text-base leading-relaxed sm:max-w-2xl sm:text-lg lg:mx-0">
                             티커를 입력하면 보조지표 {skillCounts.indicators}종
-                            기반 차트 흐름, 실적과 밸류에이션, 최근 뉴스를 각각
-                            정리하고, 셋을 합친 종합 결론까지 함께 보여줍니다.
+                            기반 차트 흐름, 실적과 밸류에이션, 최근 뉴스, 그리고
+                            단기 매수 분위기까지 정리하고, 이걸 합친 종합 결론을
+                            함께 보여줍니다.
                         </p>
                         <div
                             id="search"

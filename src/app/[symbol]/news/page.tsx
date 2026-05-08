@@ -155,7 +155,7 @@ export default async function NewsPage({ params }: Props) {
         '@context': 'https://schema.org',
         '@type': 'Article',
         headline: `${displayName} 최근 뉴스 AI 요약`,
-        description: `${displayName} 관련 최신 뉴스의 sentiment와 핵심 이슈를 한국어로 정리합니다.`,
+        description: `${displayName} 관련 최신 뉴스의 호재나 악재 분위기와 핵심 이슈를 한국어로 정리합니다.`,
         inLanguage: 'ko',
         datePublished: SITE_BUILD_DATE.toISOString(),
         dateModified: nowIso,

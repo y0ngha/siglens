@@ -314,7 +314,7 @@ export default async function FundamentalPage({ params }: Props) {
                 name: `${displayName} 펀더멘털 분석에서 무엇을 볼 수 있나요?`,
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '회사 프로필, PER·PSR·EPS 같은 밸류에이션 지표, ROE와 마진으로 보는 수익성, 부채와 현금흐름을 통한 재무 건전성, 애널리스트 컨센서스와 목표 주가를 함께 볼 수 있습니다.',
+                    text: '회사 프로필, PER, PSR, EPS 같은 밸류에이션 지표, ROE와 마진으로 보는 수익성, 부채와 현금흐름을 통한 재무 건전성, 애널리스트 컨센서스와 목표 주가를 함께 볼 수 있습니다.',
                 },
             },
             {
@@ -323,6 +323,14 @@ export default async function FundamentalPage({ params }: Props) {
                 acceptedAnswer: {
                     '@type': 'Answer',
                     text: 'PER이 높으면 시장이 미래 성장에 프리미엄을 주고 있다는 신호이고, ROE는 자기자본 대비 얼마나 많은 이익을 내고 있는지 보여줍니다. 동종업계 평균과 비교하며 봐야 의미가 살아납니다.',
+                },
+            },
+            {
+                '@type': 'Question',
+                name: '동종업계 대비 비교는 어떻게 보나요?',
+                acceptedAnswer: {
+                    '@type': 'Answer',
+                    text: '같은 페이지의 동종업계 표(Peers)에서 같은 섹터의 다른 종목들과 PER, PSR, ROE, 마진 같은 핵심 지표를 한눈에 비교할 수 있습니다. 단일 종목의 절대값만 보면 비싸 보이거나 싸 보이는 착시를 줄여줍니다.',
                 },
             },
         ],

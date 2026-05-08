@@ -1,7 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import React, { useEffect, useEffectEvent, useMemo } from 'react';
+import React, { Suspense, useEffect, useEffectEvent, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
@@ -25,7 +25,7 @@ import { SNAP_PEEK } from '@/components/symbol-page/constants/mobileSheet';
 import { useAnalysisProgress } from '@/components/symbol-page/hooks/useAnalysisProgress';
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { PWA_TRIGGER_EVENT } from '@/lib/pwaEvents';
-import { NewsAugment } from '@/components/symbol-page/NewsAugment';
+import { FearGreedCardMounted } from '@/components/symbol-page/FearGreedCardMounted';
 
 const StockChart = dynamic(
     () => import('@/components/chart/StockChart').then(mod => mod.StockChart),
@@ -178,7 +178,12 @@ export function ChartContent({
                     actionPricesVisible={actionPricesVisible}
                     onActionPricesVisibilityChange={setActionPricesVisible}
                 />
-                <NewsAugment symbol={symbol} />
+                <Suspense fallback={null}>
+                    <FearGreedCardMounted
+                        symbol={symbol}
+                        fmpSymbol={fmpSymbol}
+                    />
+                </Suspense>
             </>
         ),
         [
@@ -195,6 +200,7 @@ export function ChartContent({
             cooldownNotice,
             actionPricesVisible,
             setActionPricesVisible,
+            fmpSymbol,
         ]
     );
 

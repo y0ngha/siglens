@@ -558,6 +558,13 @@ This file contains only **recurring gotchas** that agents keep missing despite e
 8. Repeated identical parameter object passed to multiple function calls
    → Extract to const (regular code) or useMemo (hooks)
 
+8.5. Mocked dependencies in beforeEach do not cover all methods called in the action under test
+   → When mocking a dependency (repository, service, client), the mock must implement ALL methods called by the code under test
+   → Missing methods cause runtime errors or incomplete test coverage
+   → Update mock implementations whenever the action adds a new dependency method call
+   ❌ MockNewsRepository.mockImplementation({ fetch: jest.fn() }) but ensureNewsCardsAnalyzedAction calls both fetch + listBySymbol
+   ✅ MockNewsRepository.mockImplementation({ fetch: jest.fn(), listBySymbol: jest.fn() }) with all methods tested
+
 9. Test describe text promises assertions not verified by its it() cases
    → describe() block name must describe only the preconditions/feature shared by all its it() cases
    → If a test case contradicts the describe text, move it to a separate describe block

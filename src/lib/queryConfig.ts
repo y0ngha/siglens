@@ -20,6 +20,11 @@ export const ASSET_INFO_STALE_TIME_MS = 30 * MS_PER_MINUTE;
 /** OHLCV bars update every 30s during market hours (Alpaca cadence). */
 export const BARS_STALE_TIME_MS = 30_000;
 
+/**
+ * fearGreed snapshot은 underlying bars의 staleTime을 그대로 따라간다 —
+ * useBars 결과로부터 즉석 산출하므로 자체 staleTime은 의미 없다. 별도 상수 미정의.
+ */
+
 /** The current user's tier rarely changes within a session. */
 export const USER_TIER_STALE_TIME_MS = 5 * MS_PER_MINUTE;
 
