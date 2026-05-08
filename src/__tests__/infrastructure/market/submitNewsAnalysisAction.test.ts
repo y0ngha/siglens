@@ -47,7 +47,10 @@ import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { submitNewsAnalysis } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok, type AnalysisGateError } from '@/infrastructure/market/byokGate';
+import {
+    resolveTierAndByok,
+    type AnalysisGateError,
+} from '@/infrastructure/market/byokGate';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
 import type {
     ModelId,

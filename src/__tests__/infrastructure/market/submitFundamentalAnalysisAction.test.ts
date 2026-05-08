@@ -34,7 +34,10 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 import { submitFundamentalAnalysis } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok, type AnalysisGateError } from '@/infrastructure/market/byokGate';
+import {
+    resolveTierAndByok,
+    type AnalysisGateError,
+} from '@/infrastructure/market/byokGate';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
 import type {
     ModelId,

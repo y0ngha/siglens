@@ -8,7 +8,10 @@ import {
 } from '@y0ngha/siglens-core';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok, buildGateError } from '@/infrastructure/market/byokGate';
+import {
+    resolveTierAndByok,
+    buildGateError,
+} from '@/infrastructure/market/byokGate';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's fundamental result + our siglens-side gate errors. */

@@ -59,7 +59,10 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok, type AnalysisGateError } from '@/infrastructure/market/byokGate';
+import {
+    resolveTierAndByok,
+    type AnalysisGateError,
+} from '@/infrastructure/market/byokGate';
 
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
