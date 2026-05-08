@@ -1,7 +1,4 @@
-import type {
-    FearGreedLabel,
-    FearGreedSnapshot,
-} from '@y0ngha/siglens-core';
+import type { FearGreedLabel, FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { SENTIMENT_LABEL_TEXT } from '@/components/fear-greed/utils/labels';
 import { cn } from '@/lib/cn';
 

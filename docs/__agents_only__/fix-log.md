@@ -1,6 +1,7 @@
 
 # Fix Log
 
+
 ## [PR #428 SEO sweep | feat/per-stock-fear-greed-ui | 2026-05-08]
 - C1: `src/lib/seo.ts` — fear-greed 신규 axis가 사이트 전반 SEO 표면(SITE_DESCRIPTION, ROOT_KEYWORDS, sibling helper)에 반영되지 않은 점 정리. SITE_DESCRIPTION 4축 확장(매수 분위기 절). ROOT_KEYWORDS에 공포 탐욕 지수, 투자 심리 지표, 주식 매수 분위기, Fear Greed Index, 뉴스 분위기, 주식 호재/악재/이슈, 실적 발표/일정 등 9개 추가, '뉴스 sentiment' 제거. news description은 sentiment → 호재 분위기, 이슈, 소식, 분석 의견 자연어 재작성, 어닝/실적 동반. fear-greed description은 jargon 제거 후 sibling 톤(매수세가 강한지 약한지 궁금할 때)으로 재작성. overall description에 단기 매수 분위기 절 추가. 5개 sibling title의 `·` 모두 자연어 punctuation(쉼표/와)로 교체.
   - Rule: 사용자 톤 가이드(자연어, 사람이 쓴 친근한 화법) + 가운뎃점은 일반 검색자가 입력하지 않는 punctuation.
