@@ -9,6 +9,7 @@ import type {
     Timeframe,
 } from '@y0ngha/siglens-core';
 import { submitOverallAnalysisAction } from '@/infrastructure/market/submitOverallAnalysisAction';
+import type { AnalysisGateBlockedResult } from '@/infrastructure/market/submitOverallAnalysisAction';
 import { pollOverallAnalysisAction } from '@/infrastructure/market/pollOverallAnalysisAction';
 import { pollAnalysisAction } from '@/infrastructure/market/pollAnalysisAction';
 import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFundamentalAnalysisAction';
@@ -58,8 +59,9 @@ const AXIS_ORDER: readonly OverallAxis[] = ['technical', 'fundamental', 'news'];
 const MAX_SUBMIT_RETRY_DEPTH = 3;
 
 /**
- * submitOverallAnalysisAction이 axis 정보와 함께 에러를 돌려줄 수 있으므로
- * 커스텀 에러 클래스로 axis를 보존한다.
+ * submitOverallAnalysisAction이 axis 정보와 함께 에러를 돌려줄 수 있어
+ * 커스텀 에러 클래스로 axis를 보존한다. 게이트 오류(AnalysisGateBlockedResult)는
+ * axis가 없으므로 undefined로 전달된다.
  */
 class OverallAnalysisError extends Error {
     constructor(
@@ -69,6 +71,32 @@ class OverallAnalysisError extends Error {
         super(message);
         this.name = 'OverallAnalysisError';
     }
+}
+
+/**
+ * Narrows to AnalysisGateBlockedResult by checking for the gate-specific error shape.
+ * AnalysisGateBlockedResult.error is { code: AnalysisGateErrorCode, message }.
+ * SubmitOverallAnalysisError.error is unknown (may be string or object), so we
+ * distinguish by matching against known gate codes.
+ */
+const GATE_ERROR_CODES = [
+    'tier_premium_blocked',
+    'invalid_model',
+    'api_key_corrupted',
+    'unexpected_error',
+] as const;
+
+function isGateBlockedResult(
+    result: { status: 'error'; error?: unknown }
+): result is AnalysisGateBlockedResult {
+    return (
+        typeof result.error === 'object' &&
+        result.error !== null &&
+        'code' in result.error &&
+        (GATE_ERROR_CODES as readonly string[]).includes(
+            (result.error as { code: string }).code
+        )
+    );
 }
 
 function throwIfAborted(signal: AbortSignal): void {
@@ -243,6 +271,11 @@ async function fetchOverallAnalysis(
     if (submitted.status === 'cached') return submitted.result;
 
     if (submitted.status === 'error') {
+        // AnalysisGateBlockedResult: error is { code: AnalysisGateErrorCode, message }, no axis.
+        if (isGateBlockedResult(submitted)) {
+            throw new OverallAnalysisError(submitted.error.message, undefined);
+        }
+        // SubmitOverallAnalysisError: has axis + error payload (string or unknown).
         throw new OverallAnalysisError(
             typeof submitted.error === 'string'
                 ? submitted.error

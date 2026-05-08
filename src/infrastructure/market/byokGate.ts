@@ -94,7 +94,7 @@ export async function resolveTierAndByok(
         return { kind: 'allowed', tier };
     }
 
-    // non-pro + premium → BYOK 필수.
+    // userId가 없으면 BYOK를 조회할 주체가 없어 차단.
     if (userId === null) {
         return {
             kind: 'blocked',
