@@ -78,5 +78,8 @@ export function isGateBlockedResult(result: {
     // TypeScript doesn't narrow 'object' + 'in' check to { code: unknown } — TS limitation.
     const code = (result.error as { code: unknown }).code;
     // typeof guard avoids casting unknown to string; non-string code returns false.
-    return typeof code === 'string' && (GATE_ERROR_CODES as readonly string[]).includes(code);
+    return (
+        typeof code === 'string' &&
+        (GATE_ERROR_CODES as readonly string[]).includes(code)
+    );
 }
