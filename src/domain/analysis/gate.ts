@@ -45,8 +45,9 @@ const GATE_ERROR_CODE_KEYS: Record<AnalysisGateErrorCode, true> = {
  * so the array stays in sync with the {@link AnalysisGateErrorCode} union
  * automatically.
  */
-export const GATE_ERROR_CODES: readonly AnalysisGateErrorCode[] =
-    Object.keys(GATE_ERROR_CODE_KEYS) as AnalysisGateErrorCode[];
+export const GATE_ERROR_CODES: readonly AnalysisGateErrorCode[] = Object.keys(
+    GATE_ERROR_CODE_KEYS
+) as AnalysisGateErrorCode[];
 
 /**
  * Type guard distinguishing `AnalysisGateBlockedResult` from sibling
