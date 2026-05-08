@@ -1,9 +1,8 @@
 'use client';
 
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
-import { isFreeChatModel } from '@/domain/llm';
 import { cn } from '@/lib/cn';
-import type { ModelId } from '@y0ngha/siglens-core';
+import { isFreeModel, type ModelId } from '@y0ngha/siglens-core';
 import { useRef } from 'react';
 
 interface ModelDisplay {
@@ -212,7 +211,7 @@ export function ModelSelector({
                                                     {display.fullName}
                                                 </div>
                                             </div>
-                                            {!isFreeChatModel(modelId) && (
+                                            {!isFreeModel(modelId) && (
                                                 <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">
                                                     PRO
                                                 </span>
