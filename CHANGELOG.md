@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.3](https://github.com/y0ngha/siglens/compare/v0.11.2...v0.11.3) (2026-05-08)
+
+
+### Bug Fixes
+
+* 뉴스 종합 분석 다시 진행 안하던 버그 수정 ([fcbe289](https://github.com/y0ngha/siglens/commit/fcbe289dd045156ce8bd4c33080492a50006f9ea))
+
 ## [0.11.2](https://github.com/y0ngha/siglens/compare/v0.11.1...v0.11.2) (2026-05-08)
 
 
