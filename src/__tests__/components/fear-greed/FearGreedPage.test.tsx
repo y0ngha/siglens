@@ -77,7 +77,9 @@ describe('FearGreedPage', () => {
             });
             const { getAllByText } = render(<FearGreedPage symbol="NVDA" />);
             // '신뢰도 제한'은 뱃지와 푸터 두 곳에 렌더링되므로 getAllByText로 확인한다.
-            expect(getAllByText(/신뢰도 제한/).length).toBeGreaterThanOrEqual(2);
+            expect(getAllByText(/신뢰도 제한/).length).toBeGreaterThanOrEqual(
+                2
+            );
         });
     });
 });

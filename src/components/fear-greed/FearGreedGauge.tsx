@@ -110,7 +110,8 @@ function buildAriaLabel(
     isHero: boolean,
     periodLabel?: string
 ): string {
-    if (isHero) return `공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`;
+    if (isHero)
+        return `공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`;
     if (periodLabel)
         return `${periodLabel} 공포 탐욕 지수 ${score}점, ${SENTIMENT_LABEL_TEXT[label]}`;
     return `공포 탐욕 지수 ${score}점`;
@@ -178,7 +179,8 @@ export function FearGreedGauge({
 
     const isHero = size === 'hero';
     const ariaLabel = buildAriaLabel(score, label, isHero, periodLabel);
-    const badgeConfig = isHero && confidence ? CONFIDENCE_BADGE_CONFIG[confidence] : null;
+    const badgeConfig =
+        isHero && confidence ? CONFIDENCE_BADGE_CONFIG[confidence] : null;
 
     return (
         <div className="flex flex-col items-center gap-2">
@@ -267,9 +269,7 @@ export function FearGreedGauge({
                                 <span className={badgeConfig.className}>
                                     {badgeConfig.label}
                                 </span>
-                                <InfoTooltip>
-                                    {badgeConfig.tooltip}
-                                </InfoTooltip>
+                                <InfoTooltip>{badgeConfig.tooltip}</InfoTooltip>
                             </div>
                         )}
                     </>
