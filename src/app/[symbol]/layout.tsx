@@ -1,5 +1,9 @@
 import { Suspense, type ReactNode } from 'react';
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
+import {
+    dehydrate,
+    HydrationBoundary,
+    QueryClient,
+} from '@tanstack/react-query';
 import { SymbolLayoutClient } from '@/app/[symbol]/SymbolLayoutClient';
 import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton';
 import { DEFAULT_TIMEFRAME } from '@/domain/constants/market';
