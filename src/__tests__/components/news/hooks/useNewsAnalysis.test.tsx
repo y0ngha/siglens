@@ -163,7 +163,10 @@ describe('useNewsAnalysis', () => {
                 currentDriverKo: '업데이트된 분석 결과입니다.',
             };
             mockSubmit
-                .mockResolvedValueOnce({ status: 'cached', result: NEWS_RESULT })
+                .mockResolvedValueOnce({
+                    status: 'cached',
+                    result: NEWS_RESULT,
+                })
                 .mockResolvedValueOnce({
                     status: 'cached',
                     result: updatedResult,
@@ -205,7 +208,10 @@ describe('useNewsAnalysis', () => {
         it('refetch 중 isFetching이 true이면 loading 상태를 반환한다', async () => {
             // 두 번째 submit을 보류 상태로 두어 loading 중간 상태를 관찰한다
             mockSubmit
-                .mockResolvedValueOnce({ status: 'cached', result: NEWS_RESULT })
+                .mockResolvedValueOnce({
+                    status: 'cached',
+                    result: NEWS_RESULT,
+                })
                 .mockImplementationOnce(() => new Promise(() => {}));
 
             const wrapper = makeWrapper();
