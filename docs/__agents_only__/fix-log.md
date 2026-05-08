@@ -1,6 +1,15 @@
 
 # Fix Log
 
+## [PR #428 Round 9 | feat/per-stock-fear-greed-ui | 2026-05-08]
+- B1: `src/components/fear-greed/FearGreedGauge.tsx` SEGMENTS의 25/45/55/75 매직 넘버를 `@/lib/fearGreedLabels`의 `FEAR_GREED_SCORE_BOUNDARIES`에서 destructure해서 사용. `fearGreedLabels.ts` JSDoc에 FearGreedGauge SEGMENTS 소비자도 명시.
+  - Rule: MISTAKES.md §15 / §16.5 — Drift trap, single source of truth
+- S1: `FearGreedGauge.tsx` `// Static needle points at angle = 0 (rightmost). Rotated by <g transform=…>.` 영문 WHAT 주석 제거. 위 라인의 한국어 주석이 동일 의도를 더 자세히 설명하고 있어 redundant.
+  - Rule: MISTAKES.md §15.3 — WHAT 주석 금지
+- S2: `formatConfidenceFooter`의 인라인 union `'normal' | 'limited'`을 `SnapshotConfidence` named type(`Exclude<FearGreedConfidence, 'insufficient'>`)으로 추출 후 export. `FearGreedConfidence`는 siglens-core가 이미 public barrel에서 export 중.
+  - Rule: CONVENTIONS.md TypeScript — 인라인 union을 named type으로 재사용
+- S3 (skip — false positive): `TRADING_DAYS_1W/1M/1Y` 상수는 `@/domain/constants/market`나 siglens-core 어디에도 정의 없음. 로컬 선언 그대로 유지.
+
 ## [PR #428 Round 8 | feat/per-stock-fear-greed-ui | 2026-05-08]
 - B1: `src/components/symbol-page/utils/symbolTabsConfig.ts` JSDoc — `"4 symbol analysis tabs"` → `"symbol analysis tabs"`. fear-greed 추가로 5개가 됐는데 JSDoc은 4개로 stale.
   - Rule: MISTAKES.md §15 / §6.5 — drift trap, JSDoc 숫자 하드코딩 금지

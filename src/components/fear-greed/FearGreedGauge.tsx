@@ -1,6 +1,12 @@
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
-import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
+import {
+    FEAR_GREED_SCORE_BOUNDARIES,
+    SENTIMENT_LABEL_TEXT,
+} from '@/lib/fearGreedLabels';
 import { cn } from '@/lib/cn';
+
+const { EXTREME_FEAR_MAX, FEAR_MAX, NEUTRAL_MAX, GREED_MAX } =
+    FEAR_GREED_SCORE_BOUNDARIES;
 
 interface FearGreedGaugeProps {
     score: number;
@@ -30,11 +36,11 @@ interface SegmentDef {
  * SelfNormWarningBadge와 FearGreedHeaderChip에서도 동일한 시맨틱 토큰을 사용한다.
  */
 const SEGMENTS: ReadonlyArray<SegmentDef> = [
-    { from: 0, to: 25, strokeClass: 'text-ui-danger' },
-    { from: 25, to: 45, strokeClass: 'text-ui-warning' },
-    { from: 45, to: 55, strokeClass: 'text-secondary-400' },
-    { from: 55, to: 75, strokeClass: 'text-ui-success/60' },
-    { from: 75, to: 100, strokeClass: 'text-ui-success' },
+    { from: 0, to: EXTREME_FEAR_MAX, strokeClass: 'text-ui-danger' },
+    { from: EXTREME_FEAR_MAX, to: FEAR_MAX, strokeClass: 'text-ui-warning' },
+    { from: FEAR_MAX, to: NEUTRAL_MAX, strokeClass: 'text-secondary-400' },
+    { from: NEUTRAL_MAX, to: GREED_MAX, strokeClass: 'text-ui-success/60' },
+    { from: GREED_MAX, to: 100, strokeClass: 'text-ui-success' },
 ];
 
 /** Sentiment-label → focal-stack text color (semantic tokens only). */
@@ -87,7 +93,6 @@ export function FearGreedGauge({
     // 음수 각도)시켜 위치를 잡는다.
     const rotateDeg = -score * DEGREES_PER_SCORE_UNIT;
 
-    // Static needle points at angle = 0 (rightmost). Rotated by <g transform=…>.
     const tipR = GAUGE_RADIUS + NEEDLE_TIP_LEN;
     const baseR = NEEDLE_INNER_GAP;
     const tipX = GAUGE_CX + tipR;

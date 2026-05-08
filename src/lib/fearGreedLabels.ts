@@ -1,8 +1,20 @@
-import type { FearGreedFactorKey, FearGreedLabel } from '@y0ngha/siglens-core';
+import type {
+    FearGreedConfidence,
+    FearGreedFactorKey,
+    FearGreedLabel,
+} from '@y0ngha/siglens-core';
+
+/**
+ * `FearGreedSnapshot.confidence`의 narrowed 형태(`'normal' | 'limited'`).
+ * core는 `FearGreedConfidence`에 `'insufficient'`를 포함하지만, snapshot이 반환되는
+ * 시점에는 이미 그 케이스가 걸러져 있다 (composition.ts의 LIMITED gate).
+ */
+export type SnapshotConfidence = Exclude<FearGreedConfidence, 'insufficient'>;
 
 /**
  * Score boundary thresholds for the 5-stage sentiment classifier — single
- * source of truth shared between FearGreedGroupBar and FearGreedComparisonGauges.
+ * source of truth shared between FearGreedGroupBar, FearGreedComparisonGauges,
+ * and FearGreedGauge SEGMENTS palette.
  *
  * **반드시 `@y0ngha/siglens-core`의 `FEAR_GREED_LABEL_CUTOFFS`와 동기 유지** —
  * 원본 정의: `node_modules/@y0ngha/siglens-core/dist/domain/indicators/fearGreed/composition.ts`
@@ -93,7 +105,7 @@ export function formatFactorRaw(
  */
 export function formatConfidenceFooter(
     sampleSize: number,
-    confidence: 'normal' | 'limited'
+    confidence: SnapshotConfidence
 ): string {
     const label =
         confidence === 'normal'
