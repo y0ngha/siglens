@@ -36,8 +36,7 @@ async function fetchNewsAnalysis(
 
     if (submitted.status === 'cached') return submitted.result;
     if (submitted.status === 'error') {
-        // AnalysisGateBlockedResult: error is { code: AnalysisGateErrorCode, message }
-        // — no top-level `code` field. Handle before the existing SubmitNewsAnalysisResult variants.
+        // Handle before the existing SubmitNewsAnalysisResult variants.
         if (isGateBlockedResult(submitted)) {
             throw new Error(submitted.error.message);
         }

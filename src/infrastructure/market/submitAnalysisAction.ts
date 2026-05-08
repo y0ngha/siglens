@@ -29,7 +29,7 @@ export async function submitAnalysisAction(
     modelId?: ModelId
 ): Promise<SubmitAnalysisActionResult> {
     try {
-        // No model selected → preserve previous behavior; no user lookup needed.
+        // no user lookup needed when modelId is absent
         if (modelId === undefined) {
             return await submitAnalysis(
                 symbol,
