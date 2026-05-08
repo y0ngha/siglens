@@ -127,6 +127,12 @@ describe('resolveTierAndByok', () => {
             boom
         );
     });
+
+    it('rethrows getUserTier errors', async () => {
+        const boom = new Error('db tier lookup failed');
+        mockGetUserTier.mockRejectedValue(boom);
+        await expect(resolveTierAndByok('u1', FREE_MODEL)).rejects.toThrow(boom);
+    });
 });
 
 describe('buildGateError', () => {

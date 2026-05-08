@@ -27,18 +27,26 @@ export interface AnalysisGateBlockedResult {
 }
 
 /**
- * All gate error codes as a runtime array. Used by `isGateBlockedResult`
- * to distinguish gate denials from other `status: 'error'` variants
- * (e.g. SubmitXxxLimitError) which also have an `error.code` field.
+ * Marker record forcing compile-time exhaustiveness for {@link GATE_ERROR_CODES}.
  *
- * Keep in sync with {@link AnalysisGateErrorCode}.
+ * The `Record<AnalysisGateErrorCode, true>` type ensures every union member
+ * appears as a key — adding a new code to `AnalysisGateErrorCode` will fail
+ * to compile until added here. The values are unused; only keys are read.
  */
-export const GATE_ERROR_CODES: readonly AnalysisGateErrorCode[] = [
-    'tier_premium_blocked',
-    'invalid_model',
-    'api_key_corrupted',
-    'unexpected_error',
-];
+const GATE_ERROR_CODE_KEYS: Record<AnalysisGateErrorCode, true> = {
+    tier_premium_blocked: true,
+    invalid_model: true,
+    api_key_corrupted: true,
+    unexpected_error: true,
+};
+
+/**
+ * All gate error codes as a runtime array. Derived from {@link GATE_ERROR_CODE_KEYS}
+ * so the array stays in sync with the {@link AnalysisGateErrorCode} union
+ * automatically.
+ */
+export const GATE_ERROR_CODES: readonly AnalysisGateErrorCode[] =
+    Object.keys(GATE_ERROR_CODE_KEYS) as AnalysisGateErrorCode[];
 
 /**
  * Type guard distinguishing `AnalysisGateBlockedResult` from sibling

@@ -160,10 +160,6 @@ describe('submitNewsAnalysisAction 함수는', () => {
         mockSubmitNewsAnalysis.mockResolvedValue(SUBMITTED_RESULT);
     });
 
-    // -------------------------------------------------------------------------
-    // Existing core logic tests
-    // -------------------------------------------------------------------------
-
     it('symbol과 modelId를 siglens-core submitNewsAnalysis에 전달한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW]);
         mockGetNextForSymbol.mockResolvedValue(null);
@@ -234,10 +230,6 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
         expect(result).toBe(noNewsResult);
     });
-
-    // -------------------------------------------------------------------------
-    // Gate behavior tests
-    // -------------------------------------------------------------------------
 
     it('returns blocked result when gate.kind === "blocked"', async () => {
         mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);

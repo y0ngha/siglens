@@ -90,10 +90,6 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
         mockSubmitFundamentalAnalysis.mockResolvedValue(SUBMITTED_RESULT);
     });
 
-    // -------------------------------------------------------------------------
-    // Existing core logic tests
-    // -------------------------------------------------------------------------
-
     it('siglens-core submitFundamentalAnalysis에 symbol과 modelId를 전달한다', async () => {
         mockSubmitFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
 
@@ -132,10 +128,6 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
 
         expect(result).toBe(SUBMITTED_RESULT);
     });
-
-    // -------------------------------------------------------------------------
-    // Gate behavior tests
-    // -------------------------------------------------------------------------
 
     it('returns blocked result when gate.kind === "blocked"', async () => {
         mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);

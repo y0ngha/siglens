@@ -162,10 +162,6 @@ describe('submitOverallAnalysisAction 함수는', () => {
         mockSubmitOverallAnalysis.mockResolvedValue(SUBMITTED_RESULT);
     });
 
-    // -------------------------------------------------------------------------
-    // Existing core logic tests
-    // -------------------------------------------------------------------------
-
     it('symbol, timeframe, modelId를 submitOverallAnalysis에 전달한다', async () => {
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
@@ -263,10 +259,6 @@ describe('submitOverallAnalysisAction 함수는', () => {
             error: expect.objectContaining({ code: 'unexpected_error' }),
         });
     });
-
-    // -------------------------------------------------------------------------
-    // Gate behavior tests
-    // -------------------------------------------------------------------------
 
     it('returns blocked result when gate.kind === "blocked"', async () => {
         mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);

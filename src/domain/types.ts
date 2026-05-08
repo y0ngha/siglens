@@ -96,6 +96,12 @@ export type {
 } from '@/domain/llm/types';
 export type { LlmProvider } from '@/domain/llm/constants';
 
+export type {
+    AnalysisGateError,
+    AnalysisGateBlockedResult,
+    AnalysisGateErrorCode,
+} from '@/domain/analysis/gate';
+
 export type ContactFormField = 'title' | 'email' | 'content';
 
 export type ContactFormErrorCode =

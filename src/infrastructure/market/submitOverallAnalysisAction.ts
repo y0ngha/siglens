@@ -25,9 +25,6 @@ import {
     type AnalysisGateBlockedResult,
 } from '@/infrastructure/market/byokGate';
 
-// Re-export for consumers
-export type { AnalysisGateBlockedResult };
-
 /** Final return type — core's overall result + our siglens-side gate errors. */
 export type SubmitOverallAnalysisActionResult =
     | SubmitOverallAnalysisResult

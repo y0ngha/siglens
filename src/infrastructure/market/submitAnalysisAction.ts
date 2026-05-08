@@ -14,9 +14,6 @@ import {
     type AnalysisGateBlockedResult,
 } from '@/infrastructure/market/byokGate';
 
-// Re-export for consumers
-export type { AnalysisGateBlockedResult };
-
 /** Final return type — core's gated result + our siglens-side gate errors. */
 export type SubmitAnalysisActionResult =
     | SubmitAnalysisGatedResult
@@ -32,10 +29,7 @@ export async function submitAnalysisAction(
     modelId?: ModelId
 ): Promise<SubmitAnalysisActionResult> {
     try {
-        const user = await getCurrentUser();
-        const userId = user?.id ?? null;
-
-        // No model selected → preserve previous behavior (core picks a default).
+        // No model selected → preserve previous behavior; no user lookup needed.
         if (modelId === undefined) {
             return await submitAnalysis(
                 symbol,
@@ -46,6 +40,9 @@ export async function submitAnalysisAction(
                 { waitUntil, modelId }
             );
         }
+
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
 
         const gate = await resolveTierAndByok(userId, modelId);
         if (gate.kind === 'blocked') {
