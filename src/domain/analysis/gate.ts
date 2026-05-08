@@ -45,6 +45,8 @@ const GATE_ERROR_CODE_KEYS: Record<AnalysisGateErrorCode, true> = {
  * so the array stays in sync with the {@link AnalysisGateErrorCode} union
  * automatically.
  */
+// Object.keys widens to string[], but GATE_ERROR_CODE_KEYS: Record<AnalysisGateErrorCode, true>
+// guarantees every union member appears as a key — TS limitation, not a runtime risk.
 export const GATE_ERROR_CODES: readonly AnalysisGateErrorCode[] = Object.keys(
     GATE_ERROR_CODE_KEYS
 ) as AnalysisGateErrorCode[];
@@ -69,7 +71,6 @@ export function isGateBlockedResult(result: {
     if (!('code' in result.error)) {
         return false;
     }
-    // After 'code' in result.error, TS narrows result.error to `object & {code: unknown}`.
     // The array's element type is the literal union AnalysisGateErrorCode, but
     // .includes() on a literal-union array refuses non-literal arguments —
     // widen to readonly string[] for the lookup. Safe: read-only check, no mutation.

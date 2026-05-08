@@ -1,5 +1,3 @@
-import type { AnalysisGateError } from '@/infrastructure/market/byokGate';
-
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
 }));
@@ -20,7 +18,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
     })),
 }));
 
-import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok, type AnalysisGateError } from '@/infrastructure/market/byokGate';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
 import type { ModelId, SubmitAnalysisGatedResult } from '@y0ngha/siglens-core';
 import { submitAnalysis } from '@y0ngha/siglens-core';

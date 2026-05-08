@@ -17,11 +17,8 @@ import {
 } from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import {
-    resolveTierAndByok,
-    buildGateError,
-    type AnalysisGateBlockedResult,
-} from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok, buildGateError } from '@/infrastructure/market/byokGate';
+import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's news result + our siglens-side gate errors. */
 export type SubmitNewsAnalysisActionResult =

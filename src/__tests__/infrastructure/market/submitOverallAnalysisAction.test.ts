@@ -6,7 +6,6 @@ import type {
     EnrichedNewsItem,
     EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
-import type { AnalysisGateError } from '@/infrastructure/market/byokGate';
 
 // ---------------------------------------------------------------------------
 // Module mocks
@@ -60,7 +59,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok, type AnalysisGateError } from '@/infrastructure/market/byokGate';
 
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository

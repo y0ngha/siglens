@@ -8,11 +8,8 @@ import {
     type Timeframe,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
-import {
-    resolveTierAndByok,
-    buildGateError,
-    type AnalysisGateBlockedResult,
-} from '@/infrastructure/market/byokGate';
+import { resolveTierAndByok, buildGateError } from '@/infrastructure/market/byokGate';
+import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's gated result + our siglens-side gate errors. */
 export type SubmitAnalysisActionResult =
