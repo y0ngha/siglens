@@ -122,9 +122,8 @@ export function useChat({ symbol }: UseChatOptions): UseChatReturn {
         GEMINI_2_5_FLASH_MODEL
     );
     const [isModelHydrated, setIsModelHydrated] = useState(false);
-    const { gateModal, dismissGate, handleModelChange, showGate } = useModelGate(
-        { onAllow: setSelectedModel }
-    );
+    const { gateModal, dismissGate, handleModelChange, showGate } =
+        useModelGate({ onAllow: setSelectedModel });
     // Tracks the last value written to localStorage by this hook instance.
     // Replaces the previous mount-flag guard, which had a regression: when ChatPanel
     // closes and reopens, the hook unmounts/remounts. With a fresh `isModelHydrated`

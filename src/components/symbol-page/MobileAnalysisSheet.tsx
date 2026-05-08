@@ -23,9 +23,7 @@ const POINTER_EVENTS_AUTO = 'auto';
 function useRestoreBodyPointerEvents(): void {
     useEffect(() => {
         const observer = new MutationObserver(() => {
-            if (
-                document.body.style.pointerEvents === POINTER_EVENTS_NONE
-            ) {
+            if (document.body.style.pointerEvents === POINTER_EVENTS_NONE) {
                 observer.disconnect();
                 document.body.style.pointerEvents = POINTER_EVENTS_AUTO;
                 observer.observe(document.body, {
