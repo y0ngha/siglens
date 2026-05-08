@@ -23,7 +23,10 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
 
 jest.mock('@/infrastructure/market/byokGate', () => ({
     resolveTierAndByok: jest.fn(),
-    buildGateError: jest.fn((code: string) => ({ code, message: `mock-${code}` })),
+    buildGateError: jest.fn((code: string) => ({
+        code,
+        message: `mock-${code}`,
+    })),
 }));
 
 // ---------------------------------------------------------------------------
@@ -35,11 +38,15 @@ import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
-import type { ModelId, SubmitFundamentalAnalysisResult } from '@y0ngha/siglens-core';
+import type {
+    ModelId,
+    SubmitFundamentalAnalysisResult,
+} from '@y0ngha/siglens-core';
 
-const mockSubmitFundamentalAnalysis = submitFundamentalAnalysis as jest.MockedFunction<
-    typeof submitFundamentalAnalysis
->;
+const mockSubmitFundamentalAnalysis =
+    submitFundamentalAnalysis as jest.MockedFunction<
+        typeof submitFundamentalAnalysis
+    >;
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
     typeof getCurrentUser
 >;
@@ -137,7 +144,10 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             error: gateError,
         });
 
-        const result = await submitFundamentalAnalysisAction('AAPL', PREMIUM_MODEL);
+        const result = await submitFundamentalAnalysisAction(
+            'AAPL',
+            PREMIUM_MODEL
+        );
 
         expect(result).toEqual({ status: 'error', error: gateError });
         // Gate fires before expensive provider fetch

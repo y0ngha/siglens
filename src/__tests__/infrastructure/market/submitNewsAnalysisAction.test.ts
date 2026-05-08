@@ -35,7 +35,10 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
 
 jest.mock('@/infrastructure/market/byokGate', () => ({
     resolveTierAndByok: jest.fn(),
-    buildGateError: jest.fn((code: string) => ({ code, message: `mock-${code}` })),
+    buildGateError: jest.fn((code: string) => ({
+        code,
+        message: `mock-${code}`,
+    })),
 }));
 
 // ---------------------------------------------------------------------------
@@ -243,7 +246,11 @@ describe('submitNewsAnalysisAction 함수는', () => {
             error: gateError,
         });
 
-        const result = await submitNewsAnalysisAction('AAPL', 'Apple Inc.', PREMIUM_MODEL);
+        const result = await submitNewsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            PREMIUM_MODEL
+        );
 
         expect(result).toEqual({ status: 'error', error: gateError });
         expect(mockSubmitNewsAnalysis).not.toHaveBeenCalled();

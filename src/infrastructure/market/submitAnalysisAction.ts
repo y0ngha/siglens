@@ -62,6 +62,8 @@ export async function submitAnalysisAction(
         waitUntil,
         modelId,
         tierContext: { userId, tier: gate.tier },
-        ...(gate.userApiKey !== undefined ? { userApiKey: gate.userApiKey } : {}),
+        ...(gate.userApiKey !== undefined
+            ? { userApiKey: gate.userApiKey }
+            : {}),
     });
 }

@@ -14,7 +14,10 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
 
 jest.mock('@/infrastructure/market/byokGate', () => ({
     resolveTierAndByok: jest.fn(),
-    buildGateError: jest.fn((code: string) => ({ code, message: `mock-${code}` })),
+    buildGateError: jest.fn((code: string) => ({
+        code,
+        message: `mock-${code}`,
+    })),
 }));
 
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';

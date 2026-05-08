@@ -43,9 +43,9 @@ export function isKnownModelId(modelId: string): boolean {
     // `TIER_CONFIG.models` values are typed as `readonly TierModel[]` (string-
     // literal union). Widening to `readonly string[]` lets `.includes(modelId: string)`
     // accept the wider arg; same pattern as in the original submitAnalysisAction.
-    const allTiers = Object.values(TIER_CONFIG.models) as readonly (
-        readonly string[]
-    )[];
+    const allTiers = Object.values(
+        TIER_CONFIG.models
+    ) as readonly (readonly string[])[];
     return allTiers.some(models => models.includes(modelId));
 }
 

@@ -43,6 +43,8 @@ export async function submitFundamentalAnalysisAction(
         dataProvider: new FmpFundamentalClient(),
         waitUntil,
         tier: gate.tier,
-        ...(gate.userApiKey !== undefined ? { userApiKey: gate.userApiKey } : {}),
+        ...(gate.userApiKey !== undefined
+            ? { userApiKey: gate.userApiKey }
+            : {}),
     });
 }

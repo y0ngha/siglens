@@ -75,7 +75,9 @@ export async function submitOverallAnalysisAction(
             technical: { tierContext: { userId, tier: gate.tier } },
             waitUntil,
             tier: gate.tier,
-            ...(gate.userApiKey !== undefined ? { userApiKey: gate.userApiKey } : {}),
+            ...(gate.userApiKey !== undefined
+                ? { userApiKey: gate.userApiKey }
+                : {}),
         });
     } catch (e) {
         return { status: 'error', axis: 'technical', error: e };

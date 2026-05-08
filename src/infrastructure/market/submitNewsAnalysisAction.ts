@@ -68,6 +68,8 @@ export async function submitNewsAnalysisAction(
         upcomingCalendar: next !== null ? [next] : [],
         waitUntil,
         tier: gate.tier,
-        ...(gate.userApiKey !== undefined ? { userApiKey: gate.userApiKey } : {}),
+        ...(gate.userApiKey !== undefined
+            ? { userApiKey: gate.userApiKey }
+            : {}),
     });
 }

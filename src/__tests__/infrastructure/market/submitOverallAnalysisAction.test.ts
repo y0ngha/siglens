@@ -47,7 +47,10 @@ jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
 
 jest.mock('@/infrastructure/market/byokGate', () => ({
     resolveTierAndByok: jest.fn(),
-    buildGateError: jest.fn((code: string) => ({ code, message: `mock-${code}` })),
+    buildGateError: jest.fn((code: string) => ({
+        code,
+        message: `mock-${code}`,
+    })),
 }));
 
 // ---------------------------------------------------------------------------
@@ -288,7 +291,12 @@ describe('submitOverallAnalysisAction 함수는', () => {
             tier: 'member' as never,
         });
 
-        await submitOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID
+        );
 
         const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg).toMatchObject({
@@ -305,7 +313,12 @@ describe('submitOverallAnalysisAction 함수는', () => {
             userApiKey: 'usr-key',
         });
 
-        await submitOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', PREMIUM_MODEL);
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            PREMIUM_MODEL
+        );
 
         expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ userApiKey: 'usr-key' })
@@ -320,7 +333,12 @@ describe('submitOverallAnalysisAction 함수는', () => {
             // no userApiKey
         });
 
-        await submitOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', PREMIUM_MODEL);
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            PREMIUM_MODEL
+        );
 
         const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg).toBeDefined();
@@ -334,7 +352,12 @@ describe('submitOverallAnalysisAction 함수는', () => {
             tier: 'free' as never,
         });
 
-        await submitOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID
+        );
 
         expect(mockResolveTierAndByok).toHaveBeenCalledWith(null, MODEL_ID);
     });
@@ -346,7 +369,12 @@ describe('submitOverallAnalysisAction 함수는', () => {
             tier: 'pro' as never,
         });
 
-        await submitOverallAnalysisAction('AAPL', 'Apple Inc.', '1Day', MODEL_ID);
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID
+        );
 
         const callArg = mockSubmitOverallAnalysis.mock.calls[0]?.[0];
         expect(callArg?.technical).toMatchObject({
