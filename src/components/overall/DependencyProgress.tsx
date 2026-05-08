@@ -1,4 +1,4 @@
-import { MS_PER_SECOND } from '@/domain/constants/time';
+import { MS_PER_SECOND, SECONDS_PER_MINUTE } from '@/domain/constants/time';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import type { OverallAxis } from '@y0ngha/siglens-core';
 
@@ -15,9 +15,9 @@ const AXIS_ORDER: readonly OverallAxis[] = ['technical', 'fundamental', 'news'];
  * 기술적 분석은 다단계 지표 계산으로 약 5분, 나머지는 약 1분.
  */
 const AXIS_ESTIMATED_SECONDS: Record<OverallAxis, number> = {
-    technical: 5 * 60,
-    news: 60,
-    fundamental: 60,
+    technical: 5 * SECONDS_PER_MINUTE,
+    news: SECONDS_PER_MINUTE,
+    fundamental: SECONDS_PER_MINUTE,
 };
 
 interface DependencyProgressProps {
@@ -48,7 +48,10 @@ export function DependencyProgress({
         0,
         estimatedTotalSeconds - elapsedSeconds
     );
-    const remainingMinutes = Math.max(1, Math.ceil(remainingSeconds / 60));
+    const remainingMinutes = Math.max(
+        1,
+        Math.ceil(remainingSeconds / SECONDS_PER_MINUTE)
+    );
 
     return (
         <section

@@ -1,5 +1,6 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { useEffect, useId, useRef, useState } from 'react';
 import { EyeIcon } from '@/components/ui/EyeIcon';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
@@ -177,10 +178,6 @@ interface ReconciledLevelsBlockProps {
     reason: string;
 }
 
-/** 툴팁 공통 안내 문구 (보정 경위 구체 사유 앞에 위치). */
-const RECONCILED_TOOLTIP_PREFIX =
-    'AI가 제시한 내용을 기반으로, 내부 데이터로 보정한 결과입니다.';
-
 function ReconciledLevelsBlock({
     exit,
     riskReward,
@@ -194,7 +191,14 @@ function ReconciledLevelsBlock({
                 </span>
                 <InfoTooltip>
                     <div className="text-secondary-300">
-                        <p>{RECONCILED_TOOLTIP_PREFIX}</p>
+                        <p>
+                            AI가 제시한 값을 내부 데이터로 한 번 더 검증·보정한
+                            결과예요.
+                        </p>
+                        <p>
+                            실시간 가격 흐름과 어긋난 부분이 있으면 여기서
+                            조정돼요.
+                        </p>
                         <MarkdownText>{reason}</MarkdownText>
                     </div>
                 </InfoTooltip>
@@ -313,20 +317,29 @@ type ConfidenceLevel = 'high' | 'medium';
 
 const CONFIDENCE_BADGE_CONFIG: Record<
     ConfidenceLevel,
-    { className: string; label: string; tooltip: string }
+    { className: string; label: string; tooltip: ReactNode }
 > = {
     high: {
         className:
             'text-chart-bullish bg-chart-bullish/10 border border-chart-bullish/30',
         label: '높은 신뢰도',
-        tooltip:
-            '신뢰도가 높은 패턴입니다. AI가 해당 패턴을 명확하게 감지했습니다.',
+        tooltip: (
+            <>
+                <p>신뢰도가 높은 패턴이에요.</p>
+                <p>AI가 이 패턴을 분명하게 감지했다는 뜻이에요.</p>
+            </>
+        ),
     },
     medium: {
         className:
             'text-ui-warning bg-ui-warning/10 border border-ui-warning/30',
         label: '중간 신뢰도',
-        tooltip: '신뢰도가 중간인 패턴입니다. 다른 지표와 함께 참고하세요.',
+        tooltip: (
+            <>
+                <p>신뢰도가 중간 정도인 패턴이에요.</p>
+                <p>단독으로 보기보다는 다른 지표와 함께 참고하는 게 좋아요.</p>
+            </>
+        ),
     },
 };
 
@@ -366,7 +379,7 @@ function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
                     role="tooltip"
                     className="bg-secondary-800 border-secondary-600 absolute bottom-full left-1/2 z-50 mb-1 w-48 -translate-x-1/2 rounded border p-2 text-xs leading-relaxed shadow-lg"
                 >
-                    <span className="text-secondary-300">{tooltip}</span>
+                    <div className="text-secondary-300">{tooltip}</div>
                     <span className="border-t-secondary-600 absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent" />
                 </div>
             )}
@@ -408,10 +421,13 @@ function ConfluenceInfo({ level }: ConfluenceInfoProps) {
 function KeyLevelsHeaderInfo() {
     return (
         <InfoTooltip>
-            <span className="text-secondary-300">
-                가까운 가격대의 지표들이 수렴된 레벨입니다. 수렴 지표가 많을수록
-                해당 가격대의 지지/저항 신뢰도가 높습니다.
-            </span>
+            <div className="text-secondary-300">
+                <p>가까운 가격대에 여러 지표가 함께 모인 레벨이에요.</p>
+                <p>
+                    수렴된 지표가 많을수록 그 가격대의 지지·저항 신뢰도가 높다고
+                    봐요.
+                </p>
+            </div>
         </InfoTooltip>
     );
 }

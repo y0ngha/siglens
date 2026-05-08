@@ -1,11 +1,11 @@
-import type { CSSProperties } from 'react';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import type {
     FundamentalAnalystEstimateInput,
     FundamentalGradesConsensusInput,
     FundamentalPriceTargetConsensusInput,
     FundamentalPriceTargetSummaryInput,
 } from '@y0ngha/siglens-core';
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import type { CSSProperties, ReactNode } from 'react';
 
 interface FutureDirectionCardProps {
     estimates: FundamentalAnalystEstimateInput | null;
@@ -57,7 +57,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {strongBuy > 0 && (
                     <div
                         title={`강력 매수 ${strongBuy}`}
-                        className="bg-ui-success h-3 w-[var(--bar-w)]"
+                        className="bg-ui-success h-3 w-(--bar-w)"
                         style={
                             {
                                 '--bar-w': `${pct(strongBuy, total)}%`,
@@ -68,7 +68,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {buy > 0 && (
                     <div
                         title={`매수 ${buy}`}
-                        className="bg-ui-success/60 h-3 w-[var(--bar-w)]"
+                        className="bg-ui-success/60 h-3 w-(--bar-w)"
                         style={
                             {
                                 '--bar-w': `${pct(buy, total)}%`,
@@ -79,7 +79,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {hold > 0 && (
                     <div
                         title={`중립 ${hold}`}
-                        className="bg-ui-warning h-3 w-[var(--bar-w)]"
+                        className="bg-ui-warning h-3 w-(--bar-w)"
                         style={
                             {
                                 '--bar-w': `${pct(hold, total)}%`,
@@ -90,7 +90,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {sell > 0 && (
                     <div
                         title={`매도 ${sell}`}
-                        className="bg-ui-danger/60 h-3 w-[var(--bar-w)]"
+                        className="bg-ui-danger/60 h-3 w-(--bar-w)"
                         style={
                             {
                                 '--bar-w': `${pct(sell, total)}%`,
@@ -101,7 +101,7 @@ function GradesBar({ strongBuy, buy, hold, sell, strongSell }: GradesBarProps) {
                 {strongSell > 0 && (
                     <div
                         title={`강력 매도 ${strongSell}`}
-                        className="bg-ui-danger h-3 w-[var(--bar-w)]"
+                        className="bg-ui-danger h-3 w-(--bar-w)"
                         style={
                             {
                                 '--bar-w': `${pct(strongSell, total)}%`,
@@ -187,8 +187,15 @@ export function FutureDirectionCard({
                             <dt className="text-secondary-400 text-xs">
                                 EPS 컨센서스
                                 <InfoTooltip>
-                                    애널리스트 EPS 평균 추정치. 실제 발표와
-                                    비교해 어닝 서프라이즈를 가늠
+                                    <p>
+                                        애널리스트들이 예측한 EPS(주당순이익)의
+                                        평균값이에요.
+                                    </p>
+                                    <p>
+                                        실제 발표값이 이보다 높으면 &lsquo;어닝
+                                        서프라이즈&rsquo;, 낮으면 &lsquo;어닝
+                                        쇼크&rsquo;라고 불러요.
+                                    </p>
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
@@ -199,7 +206,14 @@ export function FutureDirectionCard({
                             <dt className="text-secondary-400 text-xs">
                                 매출 컨센서스
                                 <InfoTooltip>
-                                    애널리스트 매출 평균 추정치. 성장성 기대치
+                                    <p>
+                                        애널리스트들이 예측한 매출의
+                                        평균값이에요.
+                                    </p>
+                                    <p>
+                                        시장이 기대하는 성장 수준을 가늠할 수
+                                        있는 지표예요.
+                                    </p>
                                 </InfoTooltip>
                             </dt>
                             <dd className="mt-1 font-mono text-lg font-semibold tabular-nums">
@@ -230,13 +244,23 @@ export function FutureDirectionCard({
                                     [
                                         '컨센서스',
                                         ptConsensus.targetConsensus,
-                                        '애널리스트 목표주가 평균치',
+                                        <>
+                                            <p>
+                                                애널리스트들이 제시한 목표주가의
+                                                평균이에요.
+                                            </p>
+                                            <p>
+                                                현재 주가보다 높으면 상승 여력이
+                                                있다고 보고, 낮으면 고평가
+                                                신호로 해석해요.
+                                            </p>
+                                        </>,
                                     ],
                                     ['상단', ptConsensus.targetHigh, undefined],
                                 ] as [
                                     string,
                                     number | null,
-                                    string | undefined,
+                                    ReactNode | undefined,
                                 ][]
                             ) // 위 리터럴 entries가 항상 [라벨, ptConsensus 필드, tooltip?] 튜플이므로 narrowing 안전.
                                 .map(([label, val, tooltip]) => (
@@ -288,7 +312,14 @@ export function FutureDirectionCard({
                     <h3 className="text-secondary-400 mb-1 text-xs font-medium tracking-widest uppercase">
                         투자의견 컨센서스
                         <InfoTooltip>
-                            애널리스트 매수/중립/매도 의견 분포
+                            <p>
+                                애널리스트들이 매수·중립·매도 중 어떤 의견을
+                                내고 있는지 분포예요.
+                            </p>
+                            <p>
+                                매수 의견이 많을수록 시장의 긍정적 시각이
+                                강하다는 뜻이에요.
+                            </p>
                         </InfoTooltip>
                     </h3>
                     <GradesBar

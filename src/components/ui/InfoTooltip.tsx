@@ -105,7 +105,7 @@ export function InfoTooltip({ children, className }: InfoTooltipProps) {
                         id={tooltipId}
                         role="tooltip"
                         className={cn(
-                            'bg-secondary-800 border-secondary-600 fixed top-(--tt) left-(--tl) z-9999 rounded border p-2 text-xs leading-relaxed shadow-lg',
+                            'bg-secondary-800 border-secondary-600 fixed top-(--tt) left-(--tl) z-9999 max-w-xs rounded border p-2 text-xs leading-relaxed shadow-lg',
                             positioned ? 'visible' : 'invisible'
                         )}
                         style={
