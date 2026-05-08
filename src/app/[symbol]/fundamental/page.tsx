@@ -103,7 +103,11 @@ function ProfileDescriptionSkeleton() {
     );
 }
 
-function ProfileCardSkeleton({ symbol }: { symbol: string }) {
+interface ProfileCardSkeletonProps {
+    symbol: string;
+}
+
+function ProfileCardSkeleton({ symbol }: ProfileCardSkeletonProps) {
     return (
         <section
             aria-labelledby="profile-heading"
@@ -154,13 +158,15 @@ function ProfileCardSkeleton({ symbol }: { symbol: string }) {
     );
 }
 
+interface ProfileDescriptionSectionProps {
+    symbol: string;
+    fallback: string;
+}
+
 async function ProfileDescriptionSection({
     symbol,
     fallback,
-}: {
-    symbol: string;
-    fallback: string;
-}) {
+}: ProfileDescriptionSectionProps) {
     const descriptionKo = await getProfileDescriptionKo(symbol);
     return (
         <p className="text-secondary-400 mt-4 line-clamp-4 text-sm leading-relaxed">
