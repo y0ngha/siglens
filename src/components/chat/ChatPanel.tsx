@@ -7,10 +7,9 @@ import { useSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { usePopoverToggle } from '@/components/hooks/usePopoverToggle';
 import { MarkdownText } from '@/components/ui/MarkdownText';
 import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
-import { isFreeChatModel } from '@/domain/llm';
 import { cn } from '@/lib/cn';
 import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
-import { VALID_CHAT_MODELS, type ModelId } from '@y0ngha/siglens-core';
+import { isFreeModel, VALID_CHAT_MODELS, type ModelId } from '@y0ngha/siglens-core';
 import { useRef, useState } from 'react';
 
 interface ChatModelOption {
@@ -361,7 +360,7 @@ export function ChatPanel({ symbol, onClose }: ChatPanelProps) {
                                                         {option.fullName}
                                                     </div>
                                                 </div>
-                                                {!isFreeChatModel(
+                                                {!isFreeModel(
                                                     option.id
                                                 ) && (
                                                     <span className="text-ui-warning text-[9px] leading-none font-semibold uppercase">

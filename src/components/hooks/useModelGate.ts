@@ -3,10 +3,10 @@
 import { useCallback, useState } from 'react';
 import {
     getProviderForModel,
+    isFreeModel,
     type ModelId,
     type LlmProvider,
 } from '@y0ngha/siglens-core';
-import { isFreeChatModel } from '@/domain/llm';
 import type { GateMode } from '@/domain/llm';
 import { currentUserAction } from '@/infrastructure/auth/currentUserAction';
 import { getRegisteredProvidersAction } from '@/infrastructure/llm/getRegisteredProvidersAction';
@@ -68,7 +68,7 @@ export function useModelGate({
 
     const handleModelChange = useCallback(
         (model: ModelId): void => {
-            if (!isFreeChatModel(model)) {
+            if (!isFreeModel(model)) {
                 const requiredProvider = getProviderForModel(model);
                 if (!currentUser) {
                     setGateModal({ mode: 'auth', provider: requiredProvider });
