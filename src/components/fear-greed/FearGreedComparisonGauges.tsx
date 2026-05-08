@@ -1,6 +1,6 @@
 import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedGauge } from '@/components/fear-greed/FearGreedGauge';
-import { classifyScore } from '@/lib/fearGreedLabels';
+import { classifyScore } from '@/domain/fearGreed/classifier';
 import { cn } from '@/lib/cn';
 
 interface FearGreedComparisonGaugesProps {
@@ -26,7 +26,6 @@ const PERIODS: ReadonlyArray<PeriodDef> = [
 
 /** Renders the 4 historical reference points as CNN-style mini gauges so the user
  *  can compare current sentiment to past windows visually (not just numerically). */
-// No client-only APIs — RSC-safe, importable from both RSC and Client context.
 export function FearGreedComparisonGauges({
     history,
 }: FearGreedComparisonGaugesProps) {

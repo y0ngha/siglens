@@ -1,38 +1,6 @@
 
 # Fix Log
 
-## [PR #428 Round 9 | feat/per-stock-fear-greed-ui | 2026-05-08]
-- B1: `src/components/fear-greed/FearGreedGauge.tsx` SEGMENTS의 25/45/55/75 매직 넘버를 `@/lib/fearGreedLabels`의 `FEAR_GREED_SCORE_BOUNDARIES`에서 destructure해서 사용. `fearGreedLabels.ts` JSDoc에 FearGreedGauge SEGMENTS 소비자도 명시.
-  - Rule: MISTAKES.md §15 / §16.5 — Drift trap, single source of truth
-- S1: `FearGreedGauge.tsx` `// Static needle points at angle = 0 (rightmost). Rotated by <g transform=…>.` 영문 WHAT 주석 제거. 위 라인의 한국어 주석이 동일 의도를 더 자세히 설명하고 있어 redundant.
-  - Rule: MISTAKES.md §15.3 — WHAT 주석 금지
-- S2: `formatConfidenceFooter`의 인라인 union `'normal' | 'limited'`을 `SnapshotConfidence` named type(`Exclude<FearGreedConfidence, 'insufficient'>`)으로 추출 후 export. `FearGreedConfidence`는 siglens-core가 이미 public barrel에서 export 중.
-  - Rule: CONVENTIONS.md TypeScript — 인라인 union을 named type으로 재사용
-- S3 (skip — false positive): `TRADING_DAYS_1W/1M/1Y` 상수는 `@/domain/constants/market`나 siglens-core 어디에도 정의 없음. 로컬 선언 그대로 유지.
-
-## [PR #428 Round 8 | feat/per-stock-fear-greed-ui | 2026-05-08]
-- B1: `src/components/symbol-page/utils/symbolTabsConfig.ts` JSDoc — `"4 symbol analysis tabs"` → `"symbol analysis tabs"`. fear-greed 추가로 5개가 됐는데 JSDoc은 4개로 stale.
-  - Rule: MISTAKES.md §15 / §6.5 — drift trap, JSDoc 숫자 하드코딩 금지
-- B2: `src/app/[symbol]/fear-greed/page.tsx` — breadcrumb 안의 `buildSymbolFearGreedSeoContent(ticker).url` 중복 호출을 위 destructure 결과 `url` 재사용으로 교체.
-  - Rule: MISTAKES.md §2 — 동일 함수 중복 호출 제거
-- B3: `src/components/fear-greed/FearGreedGauge.tsx` — needle 피벗 원의 `r={4}` 매직 넘버를 `NEEDLE_PIVOT_RADIUS = 4` 모듈 상수로 추출.
-  - Rule: MISTAKES.md §15 — 같은 파일의 다른 geometry 상수와 일관성
-- B4: `src/components/fear-greed/utils/labels.ts` → `src/lib/fearGreedLabels.ts` 이동. React 의존성 없는 순수 유틸리티이고 `symbol-page/FearGreedCard.tsx`에서도 import 중이라 크로스 피처 의존성 발생. `git mv`로 이동 + 6개 import 경로 일괄 갱신.
-  - Rule: MISTAKES.md Architecture §1 — UI 유틸리티는 `lib/`에, 크로스 피처 import 발생 시 components/ 하위 금지
-- S5: `FearGreedComparisonGauges.tsx` — `valid 배열은 score!==null 필터 통과 요소만 보유 → point는 항상 정의됨.` 주석 제거. 위 line의 type guard가 이미 TS 타입 시스템에서 보장.
-  - Rule: MISTAKES.md §2.5 — TS narrowing 자명 주석 금지
-- S6: `SelfNormWarningBadge.tsx` — Heroicons SVG `strokeWidth={2}` → `WARNING_ICON_STROKE_WIDTH = 2` 상수 추출.
-  - Rule: MISTAKES.md §15 — 파일 내 일관성
-
-## [PR #428 Round 7 | feat/per-stock-fear-greed-ui | 2026-05-08]
-- B1: `src/components/symbol-page/CrossLinkCards.tsx` — `DESCRIPTION['overall']` `'3축 통합 AI 결론 + 시나리오'` → `'4축 통합 AI 결론 + 시나리오'`. fear-greed가 4번째 축으로 추가됐는데 이 라벨만 누락.
-  - Rule: MISTAKES.md §6.5 — State/function/documentation divergence
-- S1: `labels.ts` — `FACTOR_LABEL.poc_distance: 'POC 거리(60bar)'`의 `60`은 siglens-core `POC_WINDOW_DEFAULT`와 동기 필요. JSDoc에 동기 요건 명시 (core가 public barrel에서 export하지 않아 직접 import 불가).
-  - Rule: MISTAKES.md §15 — drift trap, magic-number 동기화 주석
-- S2: `labels.ts` — `FEAR_GREED_SCORE_BOUNDARIES` JSDoc 강화 (siglens-core `FEAR_GREED_LABEL_CUTOFFS` / `composition.ts` 정확한 origin 명시).
-  - Rule: MISTAKES.md §16.5 — duplicate constant 추적성
-- Q1: `SymbolLayoutHeader.tsx` — `<Suspense fallback={null}>` 경계의 의도 주석 추가. `useBars`가 `useSuspenseQuery` 기반이라 경계는 valid (false alarm); 헤더 chip 로딩이 헤더 전체(모델 셀렉터·브레드크럼)로 새지 않게 격리하는 의도.
-
 ## [PR #428 SEO sweep | feat/per-stock-fear-greed-ui | 2026-05-08]
 - C1: `src/lib/seo.ts` — fear-greed 신규 axis가 사이트 전반 SEO 표면(SITE_DESCRIPTION, ROOT_KEYWORDS, sibling helper)에 반영되지 않은 점 정리. SITE_DESCRIPTION 4축 확장(매수 분위기 절). ROOT_KEYWORDS에 공포 탐욕 지수, 투자 심리 지표, 주식 매수 분위기, Fear Greed Index, 뉴스 분위기, 주식 호재/악재/이슈, 실적 발표/일정 등 9개 추가, '뉴스 sentiment' 제거. news description은 sentiment → 호재 분위기, 이슈, 소식, 분석 의견 자연어 재작성, 어닝/실적 동반. fear-greed description은 jargon 제거 후 sibling 톤(매수세가 강한지 약한지 궁금할 때)으로 재작성. overall description에 단기 매수 분위기 절 추가. 5개 sibling title의 `·` 모두 자연어 punctuation(쉼표/와)로 교체.
   - Rule: 사용자 톤 가이드(자연어, 사람이 쓴 친근한 화법) + 가운뎃점은 일반 검색자가 입력하지 않는 punctuation.

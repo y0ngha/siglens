@@ -1,8 +1,6 @@
 import type { FearGreedLabel } from '@y0ngha/siglens-core';
-import {
-    FEAR_GREED_SCORE_BOUNDARIES,
-    SENTIMENT_LABEL_TEXT,
-} from '@/lib/fearGreedLabels';
+import { SENTIMENT_LABEL_TEXT } from '@/lib/fearGreedLabels';
+import { FEAR_GREED_SCORE_BOUNDARIES } from '@/domain/fearGreed/classifier';
 import { cn } from '@/lib/cn';
 
 const { EXTREME_FEAR_MAX, FEAR_MAX, NEUTRAL_MAX, GREED_MAX } =

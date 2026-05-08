@@ -2,6 +2,7 @@ import { FearGreedPage } from '@/components/fear-greed/FearGreedPage';
 import { CrossLinkCards } from '@/components/symbol-page/CrossLinkCards';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { DEFAULT_TIMEFRAME, VALID_TICKER_RE } from '@/domain/constants/market';
+import { FEAR_GREED_SCORE_BOUNDARIES } from '@/domain/fearGreed/classifier';
 import { buildDisplayName } from '@/domain/ticker';
 import { getBarsAction } from '@/infrastructure/market/getBarsAction';
 import { getAssetInfoCached } from '@/infrastructure/ticker/getAssetInfoCached';
@@ -124,7 +125,7 @@ export default async function SymbolFearGreedPage({ params }: Props) {
                 name: '5단계 분위기 라벨은 어떻게 구분되나요?',
                 acceptedAnswer: {
                     '@type': 'Answer',
-                    text: '0~25 극공포, 25~45 공포, 45~55 중립, 55~75 탐욕, 75~100 극탐욕입니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.',
+                    text: `0~${FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX} 극공포, ${FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX} 공포, ${FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX} 중립, ${FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX}~${FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX} 탐욕, ${FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX}~100 극탐욕입니다. 표본 수가 60일 미만이면 신뢰도 "제한"으로 표시되며, 라벨은 데이터가 더 쌓인 뒤 다시 확인하는 게 안전합니다.`,
                 },
             },
         ],

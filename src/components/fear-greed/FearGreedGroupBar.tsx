@@ -1,10 +1,7 @@
 import type { CSSProperties } from 'react';
 import type { FearGreedGroup, FearGreedLabel } from '@y0ngha/siglens-core';
-import {
-    classifyScore,
-    FACTOR_LABEL,
-    formatFactorRaw,
-} from '@/lib/fearGreedLabels';
+import { FACTOR_LABEL, formatFactorRaw } from '@/lib/fearGreedLabels';
+import { classifyScore } from '@/domain/fearGreed/classifier';
 import { cn } from '@/lib/cn';
 
 interface FearGreedGroupBarProps {
@@ -23,7 +20,6 @@ const BAR_FILL_COLOR: Record<FearGreedLabel, string> = {
 const EXTREME_PERCENTILE_LOW = 10;
 const EXTREME_PERCENTILE_HIGH = 90;
 
-// No client-only APIs — RSC-safe, importable from both RSC and Client context.
 export function FearGreedGroupBar({ group }: FearGreedGroupBarProps) {
     const score = Math.round(group.score);
     return (
