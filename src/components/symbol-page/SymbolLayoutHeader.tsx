@@ -7,6 +7,7 @@ import { SymbolTabsSkeleton } from '@/components/symbol-page/SymbolTabsSkeleton'
 import { useAssetInfo } from '@/components/symbol-page/hooks/useAssetInfo';
 import { useSymbolModel } from '@/components/symbol-page/SymbolModelContext';
 import { ModelSelector } from '@/components/analysis/ModelSelector';
+import { FearGreedHeaderChipMounted } from '@/components/symbol-page/FearGreedHeaderChipMounted';
 import { PremiumModelGateModal } from '@/components/ui/PremiumModelGateModal';
 import { LLM_PROVIDER_LABELS } from '@/lib/llmProviderLabels';
 
@@ -65,6 +66,15 @@ export function SymbolLayoutHeader({ symbol }: SymbolLayoutHeaderProps) {
                 </div>
 
                 <div className="flex shrink-0 items-center gap-2">
+                    {/* useBars가 useSuspenseQuery 기반이라 promise를 throw하면 부모 트리까지
+                        suspend된다. 헤더 chip 로딩이 헤더 전체(모델 셀렉터·브레드크럼) 영역에
+                        영향을 주지 않도록 여기서 경계를 잡고, 빈 chip 자리만 잠깐 보이게 한다. */}
+                    <Suspense fallback={null}>
+                        <FearGreedHeaderChipMounted
+                            symbol={ticker}
+                            fmpSymbol={assetInfo?.fmpSymbol}
+                        />
+                    </Suspense>
                     <span className="text-secondary-500 text-xs whitespace-nowrap">
                         AI 분석 모델
                     </span>

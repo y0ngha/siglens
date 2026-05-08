@@ -54,11 +54,11 @@ export function computeFearGreedHistory(
 
 ## Working Environment
 
-- **Worktree**: `/Users/y0ngha/Project/siglens-fear-greed/`
-- **Branch**: `feat/per-stock-fear-greed-index`
-- **Master 영향**: 0. spec/plan은 master에 docs로 들어가 있고, 코드 변경은 모두 worktree에서.
+- **Worktree**: `/Users/y0ngha/Project/siglens-fear-greed-ui/`
+- **Branch**: `feat/per-stock-fear-greed-ui` (master 9b2b66c8에서 분기 — `siglens-core@0.8.0` 적용 완료 후)
+- **Master 영향**: 0. 모든 변경(plan update + 코드)은 worktree에서 수행하고 단일 PR로 머지.
 - **node_modules / .env.local**: 메인 폴더 symlink (`.gitignore` 처리됨).
-- 모든 task는 위 worktree 안에서 실행한다 (`cd /Users/y0ngha/Project/siglens-fear-greed/`).
+- 모든 task는 위 worktree 안에서 실행한다 (`cd /Users/y0ngha/Project/siglens-fear-greed-ui/`).
 
 ---
 
@@ -1010,8 +1010,8 @@ git commit -m "chore: remove NewsAugment (replaced by FearGreedCard)"
      { key: 'chart', label: '차트', hrefBuilder: (s: string) => `/${s}` },
      { key: 'news', label: '뉴스', hrefBuilder: (s: string) => `/${s}/news` },
      { key: 'fundamental', label: '펀더', hrefBuilder: (s: string) => `/${s}/fundamental` },
-     { key: 'overall', label: '종합', hrefBuilder: (s: string) => `/${s}/overall` },
 +    { key: 'fear-greed', label: '공포 지수', hrefBuilder: (s: string) => `/${s}/fear-greed` },
+     { key: 'overall', label: '종합', hrefBuilder: (s: string) => `/${s}/overall` },
  ] as const;
 ```
 

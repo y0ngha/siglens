@@ -10,9 +10,11 @@ describe('buildSymbolSeoContent', () => {
         const content = buildSymbolSeoContent('aapl');
 
         expect(content.ticker).toBe('AAPL');
-        expect(content.title).toBe('AAPL 주가 분석 — 차트·매매 신호·지지저항');
+        expect(content.title).toBe(
+            'AAPL 주가 분석 — 차트와 매매 신호, 지지저항'
+        );
         expect(content.fullTitle).toBe(
-            'AAPL 주가 분석 — 차트·매매 신호·지지저항 | Siglens'
+            'AAPL 주가 분석 — 차트와 매매 신호, 지지저항 | Siglens'
         );
         expect(content.description).toContain('AAPL');
         expect(content.url).toBe('https://siglens.io/AAPL');
@@ -40,7 +42,7 @@ describe('buildSymbolFundamentalSeoContent', () => {
     it('소문자 입력을 대문자로 정규화하고 title/fullTitle이 일관된 형태다', () => {
         const content = buildSymbolFundamentalSeoContent('aapl');
         expect(content.title).toBe(
-            'AAPL 펀더멘털 — PER·ROE와 애널리스트 컨센서스'
+            'AAPL 펀더멘털 — PER, ROE와 애널리스트 컨센서스'
         );
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
@@ -136,7 +138,7 @@ describe('buildSymbolNewsSeoContent', () => {
     it('소문자 입력을 대문자로 정규화하고 title/fullTitle이 일관된 형태다', () => {
         const content = buildSymbolNewsSeoContent('aapl');
         expect(content.title).toBe(
-            'AAPL 뉴스 — sentiment·어닝·애널리스트 등급 변경'
+            'AAPL 뉴스 — 호재 분위기, 어닝과 실적, 애널리스트 등급'
         );
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });
@@ -155,8 +157,10 @@ describe('buildSymbolNewsSeoContent', () => {
     it('description에 핵심 뉴스 키워드가 포함된다', () => {
         const content = buildSymbolNewsSeoContent('TSLA');
         expect(content.description).toContain('TSLA');
-        expect(content.description).toContain('sentiment');
+        expect(content.description).toContain('호재');
+        expect(content.description).toContain('분위기');
         expect(content.description).toContain('어닝');
+        expect(content.description).toContain('실적');
         expect(content.description).toContain('애널리스트');
     });
 
@@ -170,10 +174,18 @@ describe('buildSymbolNewsSeoContent', () => {
         const content = buildSymbolNewsSeoContent('AAPL');
         expect(content.keywords).toContain('AAPL');
         expect(content.keywords).toContain('AAPL 뉴스');
-        expect(content.keywords).toContain('AAPL 뉴스 분석');
+        expect(content.keywords).toContain('AAPL 호재');
+        expect(content.keywords).toContain('AAPL 악재');
+        expect(content.keywords).toContain('AAPL 뉴스 분위기');
+        expect(content.keywords).toContain('AAPL 소식');
+        expect(content.keywords).toContain('AAPL 이슈');
+        expect(content.keywords).toContain('AAPL 분석 의견');
         expect(content.keywords).toContain('AAPL 어닝 일정');
+        expect(content.keywords).toContain('AAPL 실적 발표');
         expect(content.keywords).toContain('AAPL 목표 주가');
         expect(content.keywords).toContain('뉴스 분석');
+        expect(content.keywords).toContain('뉴스 분위기');
+        expect(content.keywords).toContain('실적 발표');
         expect(content.keywords).toContain('애널리스트 등급');
     });
 
@@ -209,7 +221,7 @@ describe('buildSymbolOverallSeoContent', () => {
     it('소문자 입력을 대문자로 정규화하고 title/fullTitle이 일관된 형태다', () => {
         const content = buildSymbolOverallSeoContent('aapl');
         expect(content.title).toBe(
-            'AAPL 종합 분석 — 강세·약세 시나리오와 위험 요인'
+            'AAPL 종합 분석 — 강세와 약세 시나리오, 위험 요인'
         );
         expect(content.fullTitle).toBe(`${content.title} | Siglens`);
     });

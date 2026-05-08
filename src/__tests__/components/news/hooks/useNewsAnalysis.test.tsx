@@ -2,6 +2,8 @@
  * @jest-environment jsdom
  */
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
+import { cancelNewsAnalysisJobAction } from '@/infrastructure/market/cancelNewsAnalysisJobAction';
+import { pollNewsAnalysisAction } from '@/infrastructure/market/pollNewsAnalysisAction';
 import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnalysisAction';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { act, renderHook, waitFor } from '@testing-library/react';
@@ -17,10 +19,23 @@ jest.mock('@/infrastructure/market/pollNewsAnalysisAction', () => ({
     pollNewsAnalysisAction: jest.fn(),
 }));
 
-const mockSubmitNewsAnalysisAction =
-    submitNewsAnalysisAction as jest.MockedFunction<
-        typeof submitNewsAnalysisAction
-    >;
+jest.mock('@/infrastructure/market/cancelNewsAnalysisJobAction', () => ({
+    cancelNewsAnalysisJobAction: jest.fn().mockResolvedValue(undefined),
+}));
+
+jest.mock('@/lib/sleep', () => ({
+    sleep: jest.fn().mockResolvedValue(undefined),
+}));
+
+const mockSubmit = submitNewsAnalysisAction as jest.MockedFunction<
+    typeof submitNewsAnalysisAction
+>;
+const mockPoll = pollNewsAnalysisAction as jest.MockedFunction<
+    typeof pollNewsAnalysisAction
+>;
+const mockCancel = cancelNewsAnalysisJobAction as jest.MockedFunction<
+    typeof cancelNewsAnalysisJobAction
+>;
 
 const NEWS_RESULT: NewsAnalysisResponse = {
     overallSentiment: 'bullish',
@@ -55,8 +70,11 @@ function Probe() {
 
 describe('useNewsAnalysis', () => {
     beforeEach(() => {
-        mockSubmitNewsAnalysisAction.mockReset();
-        mockSubmitNewsAnalysisAction.mockResolvedValue({
+        mockSubmit.mockReset();
+        mockPoll.mockReset();
+        mockCancel.mockReset();
+        mockCancel.mockResolvedValue(undefined);
+        mockSubmit.mockResolvedValue({
             status: 'cached',
             result: NEWS_RESULT,
         });
@@ -77,7 +95,7 @@ describe('useNewsAnalysis', () => {
             </Wrapper>
         );
 
-        expect(mockSubmitNewsAnalysisAction).not.toHaveBeenCalled();
+        expect(mockSubmit).not.toHaveBeenCalled();
     });
 
     it('클라이언트 마운트 후 Server Action을 호출한다', async () => {
@@ -94,7 +112,7 @@ describe('useNewsAnalysis', () => {
         await waitFor(() => {
             expect(result.current.status).toBe('done');
         });
-        expect(mockSubmitNewsAnalysisAction).toHaveBeenCalledWith(
+        expect(mockSubmit).toHaveBeenCalledWith(
             'AAPL',
             'Apple Inc.',
             'gemini-2.5-flash-lite'
@@ -102,7 +120,7 @@ describe('useNewsAnalysis', () => {
     });
 
     it('분석 실패 후 retry가 Server Action을 다시 호출한다', async () => {
-        mockSubmitNewsAnalysisAction
+        mockSubmit
             .mockRejectedValueOnce(new Error('temporary failure'))
             .mockResolvedValueOnce({
                 status: 'cached',
@@ -132,6 +150,85 @@ describe('useNewsAnalysis', () => {
         await waitFor(() => {
             expect(result.current.status).toBe('done');
         });
-        expect(mockSubmitNewsAnalysisAction).toHaveBeenCalledTimes(2);
+        expect(mockSubmit).toHaveBeenCalledTimes(2);
+    });
+
+    describe('cancel', () => {
+        it('polling 중 unmount 시 진행 중인 job을 cancel한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-news-123',
+            });
+            // never resolves → 루프가 첫 poll 호출 직후 멈춰 OOM을 방지한다
+            mockPoll.mockImplementation(() => new Promise(() => {}));
+
+            const { unmount } = renderHook(
+                () =>
+                    useNewsAnalysis(
+                        'AAPL',
+                        'Apple Inc.',
+                        'gemini-2.5-flash-lite'
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockPoll).toHaveBeenCalled();
+            });
+
+            unmount();
+
+            expect(mockCancel).toHaveBeenCalledWith('job-news-123');
+        });
+
+        it('modelId 변경 시 이전 job을 cancel한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'submitted',
+                jobId: 'job-news-123',
+            });
+            mockPoll.mockImplementation(() => new Promise(() => {}));
+
+            const { rerender } = renderHook(
+                ({ modelId }: { modelId: string }) =>
+                    useNewsAnalysis('AAPL', 'Apple Inc.', modelId as never),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { modelId: 'gemini-2.5-flash-lite' },
+                }
+            );
+
+            await waitFor(() => {
+                expect(mockPoll).toHaveBeenCalled();
+            });
+
+            rerender({ modelId: 'gemini-2.5-flash' });
+
+            expect(mockCancel).toHaveBeenCalledWith('job-news-123');
+        });
+
+        it('cached 응답 시 cancel을 호출하지 않는다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: NEWS_RESULT,
+            });
+
+            const { unmount } = renderHook(
+                () =>
+                    useNewsAnalysis(
+                        'AAPL',
+                        'Apple Inc.',
+                        'gemini-2.5-flash-lite'
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalled();
+            });
+
+            unmount();
+
+            expect(mockCancel).not.toHaveBeenCalled();
+        });
     });
 });
