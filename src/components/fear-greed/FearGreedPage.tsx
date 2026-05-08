@@ -8,10 +8,7 @@ import { FearGreedComparisonGauges } from '@/components/fear-greed/FearGreedComp
 import { FearGreedGroupBar } from '@/components/fear-greed/FearGreedGroupBar';
 import { FearGreedHistoricalChart } from '@/components/chart/FearGreedHistoricalChart';
 import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
-import {
-    CONFIDENCE_NORMAL_LABEL,
-    CONFIDENCE_LIMITED_LABEL,
-} from '@/components/fear-greed/utils/labels';
+import { formatConfidenceFooter } from '@/components/fear-greed/utils/labels';
 
 interface FearGreedPageProps {
     symbol: string;
@@ -32,7 +29,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
     if (!snapshot) {
         return (
             <div className="text-secondary-400 flex flex-col gap-2 p-6 text-sm">
-                <p>공포·탐욕 지수 산출에 필요한 데이터가 부족합니다.</p>
+                <p>공포 탐욕 지수 산출에 필요한 데이터가 부족합니다.</p>
                 <p className="text-secondary-500 text-xs">
                     상장한 지 얼마 되지 않았거나 거래량 데이터가 비어 있는
                     종목일 수 있습니다. 며칠 뒤 다시 확인하거나, 같은 섹터의
@@ -47,7 +44,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
             <div className="grid gap-6 md:grid-cols-2">
                 <section className="flex flex-col gap-3">
                     <h2 className="sr-only">
-                        현재 공포·탐욕 지수와 기간별 비교
+                        현재 공포 탐욕 지수와 기간별 비교
                     </h2>
                     <FearGreedHero snapshot={snapshot} />
                     <FearGreedComparisonGauges history={history} />
@@ -56,7 +53,7 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
 
                 <section className="flex flex-col gap-3">
                     <h2 className="sr-only">
-                        Flow·Trend 그룹별 score breakdown
+                        Flow와 Trend 그룹별 score breakdown
                     </h2>
                     {snapshot.groups.map(group => (
                         <FearGreedGroupBar key={group.name} group={group} />
@@ -65,16 +62,15 @@ export function FearGreedPage({ symbol, fmpSymbol }: FearGreedPageProps) {
             </div>
 
             <section>
-                <h2 className="sr-only">최근 1년 공포·탐욕 지수 추이</h2>
+                <h2 className="sr-only">최근 1년 공포 탐욕 지수 추이</h2>
                 <FearGreedHistoricalChart history={history} />
             </section>
 
             <footer className="text-secondary-500 text-xs">
-                {`표본 ${snapshot.sampleSize} — ${
-                    snapshot.confidence === 'normal'
-                        ? CONFIDENCE_NORMAL_LABEL
-                        : CONFIDENCE_LIMITED_LABEL
-                }`}
+                {formatConfidenceFooter(
+                    snapshot.sampleSize,
+                    snapshot.confidence
+                )}
             </footer>
         </div>
     );

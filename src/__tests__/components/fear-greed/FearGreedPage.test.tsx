@@ -71,7 +71,7 @@ describe('FearGreedPage', () => {
             });
             const { getByText } = render(<FearGreedPage symbol="NVDA" />);
             expect(
-                getByText(/공포·탐욕 지수 산출에 필요한 데이터가 부족합니다/)
+                getByText(/공포 탐욕 지수 산출에 필요한 데이터가 부족합니다/)
             ).toBeInTheDocument();
         });
     });

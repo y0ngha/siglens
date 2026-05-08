@@ -1,8 +1,8 @@
 import type { CSSProperties } from 'react';
 import type { FearGreedGroup, FearGreedLabel } from '@y0ngha/siglens-core';
 import {
+    classifyScore,
     FACTOR_LABEL,
-    FEAR_GREED_SCORE_BOUNDARIES,
     formatFactorRaw,
 } from '@/components/fear-greed/utils/labels';
 import { cn } from '@/lib/cn';
@@ -19,18 +19,6 @@ const BAR_FILL_COLOR: Record<FearGreedLabel, string> = {
     GREED: 'bg-ui-success/70',
     EXTREME_GREED: 'bg-ui-success',
 };
-
-// NOTE: classifyScore is duplicated in FearGreedComparisonGauges.tsx.
-// Premature DRY — the two consumers may diverge later. Three call sites
-// would be the threshold for extraction.
-function classifyScore(score: number): FearGreedLabel {
-    if (score < FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX)
-        return 'EXTREME_FEAR';
-    if (score < FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX) return 'FEAR';
-    if (score < FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX) return 'NEUTRAL';
-    if (score < FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX) return 'GREED';
-    return 'EXTREME_GREED';
-}
 
 const EXTREME_PERCENTILE_LOW = 10;
 const EXTREME_PERCENTILE_HIGH = 90;

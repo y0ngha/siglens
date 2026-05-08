@@ -75,3 +75,32 @@ export function formatFactorRaw(
             return PERCENT_2_DP_FORMAT.format(rawValue);
     }
 }
+
+/**
+ * Confidence footer 표시 포맷터 — Hero footer(FearGreedPage)와 분석 탭 카드
+ * footer(FearGreedCard) 양쪽에서 동일 형태로 사용한다.
+ */
+export function formatConfidenceFooter(
+    sampleSize: number,
+    confidence: 'normal' | 'limited'
+): string {
+    const label =
+        confidence === 'normal'
+            ? CONFIDENCE_NORMAL_LABEL
+            : CONFIDENCE_LIMITED_LABEL;
+    return `표본 ${sampleSize} — ${label}`;
+}
+
+/**
+ * Score → 5단계 sentiment label classifier. FearGreedHistoryPoint.label이
+ * 비어 있을 때의 fallback과 score 기반 색상 매핑 양쪽에서 사용한다. 경계값은
+ * `FEAR_GREED_SCORE_BOUNDARIES`와 `@y0ngha/siglens-core`의 labelOf와 일치.
+ */
+export function classifyScore(score: number): FearGreedLabel {
+    if (score < FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX)
+        return 'EXTREME_FEAR';
+    if (score < FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX) return 'FEAR';
+    if (score < FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX) return 'NEUTRAL';
+    if (score < FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX) return 'GREED';
+    return 'EXTREME_GREED';
+}

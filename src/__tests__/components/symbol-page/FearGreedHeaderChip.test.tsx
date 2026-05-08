@@ -83,7 +83,7 @@ describe('FearGreedHeaderChip', () => {
             );
             const chip = container.querySelector('[aria-label]');
             expect(chip?.getAttribute('aria-label')).toBe(
-                '공포·탐욕 지수 탐욕 61점 (신뢰도 제한)'
+                '공포 탐욕 지수 탐욕 61점 (신뢰도 제한)'
             );
         });
     });

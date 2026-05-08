@@ -2,10 +2,9 @@ import type { FearGreedSnapshot } from '@y0ngha/siglens-core';
 import { SelfNormWarningBadge } from '@/components/fear-greed/SelfNormWarningBadge';
 // labels.ts is the canonical home for fearGreed UI helpers — symbol-page imports it as a consumer.
 import {
-    CONFIDENCE_NORMAL_LABEL,
-    CONFIDENCE_LIMITED_LABEL,
     FACTOR_LABEL,
     SENTIMENT_LABEL_TEXT,
+    formatConfidenceFooter,
     formatFactorRaw,
 } from '@/components/fear-greed/utils/labels';
 
@@ -21,7 +20,7 @@ export function FearGreedCard({ snapshot }: FearGreedCardProps) {
         return (
             <section className="bg-secondary-800/40 rounded p-3">
                 <div className="text-secondary-500 text-sm">
-                    공포·탐욕 지수 데이터 부족
+                    공포 탐욕 지수 데이터 부족
                 </div>
             </section>
         );
@@ -37,7 +36,7 @@ export function FearGreedCard({ snapshot }: FearGreedCardProps) {
                     id="fg-card-heading"
                     className="text-secondary-200 text-sm font-medium"
                 >
-                    공포·탐욕 지수
+                    공포 탐욕 지수
                 </h3>
                 <div className="flex items-center gap-2">
                     <span className="text-secondary-100 text-xl font-bold tabular-nums">
@@ -81,11 +80,10 @@ export function FearGreedCard({ snapshot }: FearGreedCardProps) {
             ))}
 
             <footer className="text-secondary-500 text-[10px]">
-                {`표본 ${snapshot.sampleSize} — ${
-                    snapshot.confidence === 'normal'
-                        ? CONFIDENCE_NORMAL_LABEL
-                        : CONFIDENCE_LIMITED_LABEL
-                }`}
+                {formatConfidenceFooter(
+                    snapshot.sampleSize,
+                    snapshot.confidence
+                )}
             </footer>
         </section>
     );

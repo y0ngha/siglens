@@ -1,9 +1,6 @@
-import type {
-    FearGreedHistoryPoint,
-    FearGreedLabel,
-} from '@y0ngha/siglens-core';
+import type { FearGreedHistoryPoint } from '@y0ngha/siglens-core';
 import { FearGreedGauge } from '@/components/fear-greed/FearGreedGauge';
-import { FEAR_GREED_SCORE_BOUNDARIES } from '@/components/fear-greed/utils/labels';
+import { classifyScore } from '@/components/fear-greed/utils/labels';
 import { cn } from '@/lib/cn';
 
 interface FearGreedComparisonGaugesProps {
@@ -26,20 +23,6 @@ const PERIODS: ReadonlyArray<PeriodDef> = [
     { key: '1m', daysBack: TRADING_DAYS_1M, label: '1개월' },
     { key: '1y', daysBack: TRADING_DAYS_1Y, label: '1년' },
 ];
-
-/**
- * Score → 5단계 sentiment label classifier. Used as a fallback when a history
- * point lacks `label` (older payloads may be score-only). Boundaries from
- * `FEAR_GREED_SCORE_BOUNDARIES` match `@y0ngha/siglens-core`'s `labelOf`.
- */
-function classifyScore(score: number): FearGreedLabel {
-    if (score < FEAR_GREED_SCORE_BOUNDARIES.EXTREME_FEAR_MAX)
-        return 'EXTREME_FEAR';
-    if (score < FEAR_GREED_SCORE_BOUNDARIES.FEAR_MAX) return 'FEAR';
-    if (score < FEAR_GREED_SCORE_BOUNDARIES.NEUTRAL_MAX) return 'NEUTRAL';
-    if (score < FEAR_GREED_SCORE_BOUNDARIES.GREED_MAX) return 'GREED';
-    return 'EXTREME_GREED';
-}
 
 /** Renders the 4 historical reference points as CNN-style mini gauges so the user
  *  can compare current sentiment to past windows visually (not just numerically). */

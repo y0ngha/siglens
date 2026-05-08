@@ -38,6 +38,6 @@ describe('FearGreedCardMounted', () => {
 
     it('renders the FearGreedCard with snapshot from useFearGreed', () => {
         const { getByText } = render(<FearGreedCardMounted symbol="NVDA" />);
-        expect(getByText(/공포·탐욕 지수/)).toBeInTheDocument();
+        expect(getByText(/공포 탐욕 지수/)).toBeInTheDocument();
     });
 });
