@@ -1,6 +1,11 @@
 
 # Fix Log
 
+## [PR #428 Round 16 | feat/per-stock-fear-greed-ui | 2026-05-08]
+- S1: `src/components/symbol-page/hooks/useDefaultModelId.ts` JSDoc — `'모든 분석 탭(뉴스·펀더·종합·차트 패널 내 공포지수 카드)'` → `'AI 분석 탭(뉴스, 펀더멘털, 종합)'`. fear-greed는 AI 모델이 필요 없는 순수 산출(`computeFearGreedIndex`)이라 이 hook을 사용하지 않음. NewsAugment 제거 라운드에서 잘못 갱신된 주석을 정확한 소비자 목록으로 정정.
+  - Rule: MISTAKES.md §11 — JSDoc에 명시된 소비자 목록과 실제 사용처 동기화
+- S2 (skipped — oscillation): `UseFearGreedResult`를 `domain/types.ts`로 이동 또는 inline 선언 권고. Round 15에서 duplicate type 제거를 위해 peer hook에서 import 패턴을 채택했으므로 round 16의 권고는 직전 결정과 직접 충돌. PR이 APPROVED 상태이고 reviewer 자신이 "참고만"이라 명시 → 사용자 결정으로 skip.
+
 ## [PR #428 Round 14 | feat/per-stock-fear-greed-ui | 2026-05-08]
 - B1: 4개 test 파일에서 `jest.mock`/`const` 뒤에 위치하던 import 문을 모두 최상단으로 이동. `import/first` 위반 정정. 영향 파일: `__tests__/components/chart/FearGreedHistoricalChart.test.tsx`, `__tests__/components/fear-greed/FearGreedPage.test.tsx`, `__tests__/components/symbol-page/{FearGreedCardMounted,FearGreedHeaderChipMounted}.test.tsx`. babel-jest의 `jest.mock` hoisting으로 동작은 동일.
   - Rule: CONVENTIONS.md ESLint Rules — `import/first`
@@ -9,19 +14,9 @@
 - S2: `useFearGreedFromSymbol` shared hook 신규 추출. `FearGreedPage`, `FearGreedCardMounted`, `FearGreedHeaderChipMounted` 3곳의 동일 hook 체인(useBars + useFearGreed + DEFAULT_TIMEFRAME)을 단일 호출로 단순화. `FearGreedPage.test.tsx` mock도 `useFearGreedFromSymbol`로 교체.
   - Rule: MISTAKES.md §1 — 동일 패턴 3곳 추출 임계값 도달
 
-## [PR #428 Round 13 | feat/per-stock-fear-greed-ui | 2026-05-08]
-- B1: `FearGreedHeaderChip.tsx` aria-label 안의 `' (신뢰도 제한)'` 리터럴을 `CONFIDENCE_LIMITED_LABEL` 상수 참조로 교체. 동일 상수가 `lib/fearGreedLabels`에 이미 존재하고 테스트도 그 상수를 import해서 검증 중이었으나 production 코드만 hardcode 상태.
-  - Rule: MISTAKES.md §15 — String literal 중복 제거, 단일 source of truth
-- S1: `CrossLinkCards.tsx` `DESCRIPTION['fear-greed']` `'공포·탐욕 지수'` → `'공포 탐욕 지수'` (가운뎃점 제거). SEO sweep에서 가운뎃점 일괄 제거했는데 누락된 위치.
-- S2: `FearGreedGauge.tsx` aria-label 3개 분기, `FearGreedHistoricalChart.tsx` 차트 aria-label, `FearGreedComparisonGauges.test.tsx` regex 모두 `공포·탐욕` → `공포 탐욕`로 통일.
-  - Rule: 사용자 톤 가이드 — 가운뎃점은 일반 검색자가 입력하지 않는 punctuation, 스크린 리더가 '가운데점'으로 읽음
-
 ## [PR #428 Round 12 | feat/per-stock-fear-greed-ui | 2026-05-08]
 - B1: `SnapshotConfidence` 타입을 `src/lib/fearGreedLabels.ts` → `src/domain/types.ts`로 이동. lib/CLAUDE.md "타입은 lib에 두지 않는다" 규칙 위반(향후 hook이 lib에서 타입을 import하는 드리프트 통로 차단). `lib/fearGreedLabels.ts`는 `@/domain/types`에서 import.
   - Rule: lib/CLAUDE.md — cross-layer 공유 타입은 `domain/types.ts`에만
-- B2: `FearGreedGauge.tsx` `TICK_VALUES = [0, 25, 50, 75, 100]`의 25/75를 `EXTREME_FEAR_MAX`/`GREED_MAX` 상수 참조로 교체. boundary가 변경되면 눈금 라벨도 동기 이동. 0/50/100은 게이지 양 끝과 시각적 중심으로 의도적 — 주석으로 명시.
-  - Rule: MISTAKES.md §15 — 같은 파일 내 동일 값은 상수 참조
-
 ## [PR #428 SEO sweep | feat/per-stock-fear-greed-ui | 2026-05-08]
 - C1: `src/lib/seo.ts` — fear-greed 신규 axis가 사이트 전반 SEO 표면(SITE_DESCRIPTION, ROOT_KEYWORDS, sibling helper)에 반영되지 않은 점 정리. SITE_DESCRIPTION 4축 확장(매수 분위기 절). ROOT_KEYWORDS에 공포 탐욕 지수, 투자 심리 지표, 주식 매수 분위기, Fear Greed Index, 뉴스 분위기, 주식 호재/악재/이슈, 실적 발표/일정 등 9개 추가, '뉴스 sentiment' 제거. news description은 sentiment → 호재 분위기, 이슈, 소식, 분석 의견 자연어 재작성, 어닝/실적 동반. fear-greed description은 jargon 제거 후 sibling 톤(매수세가 강한지 약한지 궁금할 때)으로 재작성. overall description에 단기 매수 분위기 절 추가. 5개 sibling title의 `·` 모두 자연어 punctuation(쉼표/와)로 교체.
   - Rule: 사용자 톤 가이드(자연어, 사람이 쓴 친근한 화법) + 가운뎃점은 일반 검색자가 입력하지 않는 punctuation.
@@ -44,16 +39,6 @@
 - S1 (적용): `FutureDirectionCard.tsx` — '컨센서스' 목표주가 항목 툴팁을 `'애널리스트 목표주가 하단·중앙·상단 범위'` → `'애널리스트 목표주가 평균치'`로 변경. 기존 설명이 '컨센서스' 단일 항목이 아닌 전체 범위를 설명하는 오류.
 - S2 (거부): `globals.css` `overflow-x: hidden` — iOS Safari layout viewport 확장 버그 대응 의도적 수정. sticky header는 y축만 사용, 자식 스크롤 컨테이너는 독립 overflow-x 설정.
 - S3 (거부): `SymbolLayoutHeader.tsx` `z-50` — Tailwind z-index 스케일 유틸리티 클래스. 매직 넘버 아님. vaul Drawer.Content(z-40) 위에 헤더를 올리기 위한 의도적 값.
-
-## [PR #425 Round 2 | refactor/news-card-db-first | 2026-05-07]
-
-- S1: Added listBySymbol: jest.fn().mockResolvedValue([]) to module-level DrizzleNewsRepository mock factory.
-- Rule: MISTAKES.md Tests §6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
-- Context: MockNewsRepository now includes the listBySymbol method mock to cover all DB queries used by ensureNewsCardsAnalyzedAction
-
-- S2: Added if (fresh.length === 0) return; early return before repo.listBySymbol() call in ensureNewsCardsAnalyzedAction.ts. Added expect(mockListBySymbol).not.toHaveBeenCalled() to '뉴스가 없으면' test.
-- Rule: MISTAKES.md Coding Paradigm §1 / Performance — skip unnecessary DB queries when input data is empty; guard expensive operations with early returns
-- Context: When no fresh news items exist, skip the DB lookup entirely; test verifies the optimization by asserting listBySymbol was never called
 
 ## [PR #423 Round 7 (S2) | feat/news-thinking-budget-and-refresh | 2026-05-07]
 - S2: `src/components/news/hooks/useNewsPollingWithInvalidation.ts` 신규 훅 생성. `useQueryClient` + 캐시 무효화 로직을 `NewsList.tsx`에서 분리. `NewsList`는 `useNewsPollingWithInvalidation` 단일 호출로 단순화(useState 2개만 유지). `NewsList.test.tsx` mock 대상도 함께 교체(`useNewsCardPolling` → `useNewsPollingWithInvalidation`).
@@ -241,10 +226,6 @@
 - Violation: route.ts cast comment inaccurate — stated narrowing was "isOAuthProvider narrows profile.provider" when actually narrowing URL param
 - Rule: Narrowing guard comments must accurately describe which variable is being constrained
 - Context: Comment should explain that isOAuthProvider checks the URL param, not a profile field.
-
-## [PR #425 Round 1 | refactor/news-card-db-first | 2026-05-07]
-- B1: `src/__tests__/actions/news/ensureNewsCardsAnalyzedAction.test.ts` — Missing mockListBySymbol mock setup in beforeEach. Added `mockListBySymbol = jest.fn().mockResolvedValue([])` and `listBySymbol: mockListBySymbol` to MockNewsRepository.mockImplementation. Default empty array keeps all existing tests passing (all items treated as unanalyzed).
-  - Rule: MISTAKES.md Tests #6 — Mocked dependencies in beforeEach must cover all methods called in the action under test
 
 ## [Multi-domain audit + 7-task patch | Round 2 (approved) | 2026-05-07]
 - B3: `src/__tests__/components/chat/hooks/useChat.test.tsx:79` — ESLint react/display-name error: anonymous component returned from makeWrapper(). Fixed by giving it a named function declaration TestQueryWrapper.
