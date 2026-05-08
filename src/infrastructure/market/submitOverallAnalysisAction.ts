@@ -18,14 +18,38 @@ import {
     toEnrichedNewsItem,
 } from '@/infrastructure/market/newsEnrichment';
 import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import {
+    resolveTierAndByok,
+    type AnalysisGateError,
+} from '@/infrastructure/market/byokGate';
 
-/** Server Action: submit a 3-axis overall analysis job; loads enriched news + earnings from DB, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
+/** Gate denial result mirroring core's `{ status: 'error' }` discriminator. */
+export interface AnalysisGateBlockedResult {
+    status: 'error';
+    error: AnalysisGateError;
+}
+
+/** Final return type — core's overall result + our siglens-side gate errors. */
+export type SubmitOverallAnalysisActionResult =
+    | SubmitOverallAnalysisResult
+    | AnalysisGateBlockedResult;
+
+/** Server Action: tier + BYOK gate, then submit a 3-axis overall analysis job; loads enriched news + earnings from DB, injects FMP provider; returns `cached | submitted | pending_dependencies | error`. */
 export async function submitOverallAnalysisAction(
     symbol: string,
     companyName: string,
     timeframe: Timeframe,
     modelId: SubmitOverallAnalysisOptions['modelId']
-): Promise<SubmitOverallAnalysisResult> {
+): Promise<SubmitOverallAnalysisActionResult> {
+    const user = await getCurrentUser();
+    const userId = user?.id ?? null;
+
+    const gate = await resolveTierAndByok(userId, modelId);
+    if (gate.kind === 'blocked') {
+        return { status: 'error', error: gate.error };
+    }
+
     try {
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
@@ -48,9 +72,10 @@ export async function submitOverallAnalysisAction(
             fundamentalProvider: new FmpFundamentalClient(),
             newsItems: enrichedNews,
             upcomingCalendar: next !== null ? [next] : [],
-            // Pre-Phase 4: no tier/usage/userApiKey overrides needed.
-            technical: {},
+            technical: { tierContext: { userId, tier: gate.tier } },
             waitUntil,
+            tier: gate.tier,
+            ...(gate.userApiKey !== undefined ? { userApiKey: gate.userApiKey } : {}),
         });
     } catch (e) {
         return { status: 'error', axis: 'technical', error: e };
