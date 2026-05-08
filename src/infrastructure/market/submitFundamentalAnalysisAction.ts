@@ -47,7 +47,10 @@ export async function submitFundamentalAnalysisAction(
                 : {}),
         });
     } catch (err) {
-        console.error('[submitFundamentalAnalysisAction] unexpected error:', err);
+        console.error(
+            '[submitFundamentalAnalysisAction] unexpected error:',
+            err
+        );
         return { status: 'error', error: buildGateError('unexpected_error') };
     }
 }
