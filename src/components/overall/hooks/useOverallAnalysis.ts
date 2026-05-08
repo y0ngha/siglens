@@ -21,6 +21,7 @@ import { cancelOverallAnalysisJobAction } from '@/infrastructure/market/cancelOv
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import type { CancelJobEntry } from '@/lib/cancelJobsApi';
 import type {
     OverallAnalysisState,
     ProgressState,
@@ -424,6 +425,40 @@ export function useOverallAnalysis(
             }
         };
     }, [queryKey]);
+
+    // 브라우저 종료·새로고침·뒤로가기 등 페이지 언로드 시 진행 중인 job을 cancel한다.
+    // Server Action은 언로드 후 완료가 보장되지 않으므로 sendBeacon을 사용한다.
+    // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
+    useEffect(() => {
+        function handlePageHide() {
+            const current = currentJobsRef.current;
+            if (current === null) return;
+            currentJobsRef.current = null;
+
+            let jobs: CancelJobEntry[];
+            if (current.phase === 'dependencies') {
+                const { technical, fundamental, news } = current.jobs;
+                jobs = [
+                    ...(technical !== undefined
+                        ? [{ jobId: technical, type: 'analysis' as const }]
+                        : []),
+                    ...(fundamental !== undefined
+                        ? [{ jobId: fundamental, type: 'fundamental' as const }]
+                        : []),
+                    ...(news !== undefined
+                        ? [{ jobId: news, type: 'news' as const }]
+                        : []),
+                ];
+            } else {
+                jobs = [{ jobId: current.jobId, type: 'overall' }];
+            }
+
+            if (jobs.length === 0) return;
+            navigator.sendBeacon('/api/jobs/cancel', JSON.stringify({ jobs }));
+        }
+        window.addEventListener('pagehide', handlePageHide);
+        return () => window.removeEventListener('pagehide', handlePageHide);
+    }, []);
 
     return { state, trigger };
 }
