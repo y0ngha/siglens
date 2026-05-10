@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.7](https://github.com/y0ngha/siglens/compare/v0.11.6...v0.11.7) (2026-05-10)
+
+
+### Bug Fixes
+
+* sitemap.xml 라우팅 우선순위 문제 해결 ([499a402](https://github.com/y0ngha/siglens/commit/499a402a7c05146146a6eb4c4a8dca99b0a65c52))
+
 ## [0.11.6](https://github.com/y0ngha/siglens/compare/v0.11.5...v0.11.6) (2026-05-10)
 
 
