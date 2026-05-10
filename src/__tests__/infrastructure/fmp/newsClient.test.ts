@@ -340,7 +340,10 @@ describe('FmpNewsClient', () => {
         it('filters out articles published before the cutoff', async () => {
             mockOk([withinPeriod, outsidePeriod]);
             const client = new FmpNewsClient();
-            const result = await client.fetchNewsForPeriod('AAPL', SEVEN_DAYS_MS);
+            const result = await client.fetchNewsForPeriod(
+                'AAPL',
+                SEVEN_DAYS_MS
+            );
             expect(result).toHaveLength(1);
             expect(result[0]!.titleEn).toBe('Apple within period');
         });
@@ -348,7 +351,10 @@ describe('FmpNewsClient', () => {
         it('maps FMP fields to NewsItem shape', async () => {
             mockOk([withinPeriod]);
             const client = new FmpNewsClient();
-            const result = await client.fetchNewsForPeriod('AAPL', SEVEN_DAYS_MS);
+            const result = await client.fetchNewsForPeriod(
+                'AAPL',
+                SEVEN_DAYS_MS
+            );
             const item = result[0]!;
             expect(item.symbol).toBe('AAPL');
             expect(item.source).toBe('Reuters');
@@ -359,7 +365,10 @@ describe('FmpNewsClient', () => {
         it('generates a stable 32-char SHA-256 ID from the URL', async () => {
             mockOk([withinPeriod]);
             const client = new FmpNewsClient();
-            const result = await client.fetchNewsForPeriod('AAPL', SEVEN_DAYS_MS);
+            const result = await client.fetchNewsForPeriod(
+                'AAPL',
+                SEVEN_DAYS_MS
+            );
             expect(result[0]!.id).toHaveLength(32);
             expect(result[0]!.id).toMatch(/^[A-Za-z0-9_-]+$/);
         });
@@ -367,14 +376,23 @@ describe('FmpNewsClient', () => {
         it('returns empty array when all articles are outside the period', async () => {
             mockOk([outsidePeriod]);
             const client = new FmpNewsClient();
-            const result = await client.fetchNewsForPeriod('AAPL', SEVEN_DAYS_MS);
+            const result = await client.fetchNewsForPeriod(
+                'AAPL',
+                SEVEN_DAYS_MS
+            );
             expect(result).toEqual([]);
         });
 
         it('skips malformed publishedDate without failing the whole fetch', async () => {
-            mockOk([{ ...withinPeriod, publishedDate: 'not-a-date' }, withinPeriod]);
+            mockOk([
+                { ...withinPeriod, publishedDate: 'not-a-date' },
+                withinPeriod,
+            ]);
             const client = new FmpNewsClient();
-            const result = await client.fetchNewsForPeriod('AAPL', SEVEN_DAYS_MS);
+            const result = await client.fetchNewsForPeriod(
+                'AAPL',
+                SEVEN_DAYS_MS
+            );
             expect(result).toHaveLength(1);
             expect(result[0]!.titleEn).toBe('Apple within period');
         });

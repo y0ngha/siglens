@@ -151,7 +151,10 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 
-        expect(mockFetchNewsForPeriod).toHaveBeenCalledWith('AAPL', NEWS_LOOKBACK_MS);
+        expect(mockFetchNewsForPeriod).toHaveBeenCalledWith(
+            'AAPL',
+            NEWS_LOOKBACK_MS
+        );
     });
 
     it('각 뉴스 아이템을 DB에 upsert한다', async () => {
@@ -241,7 +244,9 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     });
 
     it('FMP fetch 실패 시 reject하지 않고 조용히 리턴한다', async () => {
-        mockFetchNewsForPeriod.mockRejectedValue(new Error('FMP network error'));
+        mockFetchNewsForPeriod.mockRejectedValue(
+            new Error('FMP network error')
+        );
 
         await expect(
             ensureNewsCardsAnalyzedAction('AAPL')
@@ -311,7 +316,10 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('분석 완료된 아이템은 건너뛰고 미분석 아이템만 카드 분석을 호출한다', async () => {
-            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
+            mockFetchNewsForPeriod.mockResolvedValue([
+                NEWS_ITEM_1,
+                NEWS_ITEM_2,
+            ]);
             mockListBySymbol.mockResolvedValue([
                 { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
                 { id: NEWS_ITEM_2.id, analyzedAt: null },
