@@ -29,6 +29,13 @@ const nextConfig: NextConfig = {
         root: import.meta.dirname,
     },
 
+    // /sitemap.xml을 API Route Handler로 리라이트.
+    // app/sitemap.ts 메타데이터 파일이 [symbol] 다이나믹 라우트에 우선순위를 뺏기는
+    // Next.js 16 버그 회피 — 리라이트는 라우팅보다 먼저 실행되어 [symbol] 간섭 불가.
+    rewrites: async () => [
+        { source: '/sitemap.xml', destination: '/api/sitemap' },
+    ],
+
     headers: async () => [
         {
             source: '/(.*)',
