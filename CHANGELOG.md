@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.6](https://github.com/y0ngha/siglens/compare/v0.11.5...v0.11.6) (2026-05-10)
+
+
+### Bug Fixes
+
+* sitemap 인덱스 자동 생성 안 되는 문제 수정 ([1a5d8d9](https://github.com/y0ngha/siglens/commit/1a5d8d9c30490f0fd32d026a9d85501db59b9bf4))
+
 ## [0.11.5](https://github.com/y0ngha/siglens/compare/v0.11.4...v0.11.5) (2026-05-10)
 
 
