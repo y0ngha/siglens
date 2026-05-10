@@ -21,10 +21,8 @@ jest.mock('@/infrastructure/db/newsRepository', () => ({
     })),
 }));
 
-jest.mock('@/infrastructure/db/earningsCalendarRepository', () => ({
-    DrizzleEarningsCalendarRepository: jest.fn().mockImplementation(() => ({
-        getNextForSymbol: jest.fn(),
-    })),
+jest.mock('@/infrastructure/market/nextEarningsReport', () => ({
+    getNextEarningsReport: jest.fn(),
 }));
 
 jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
@@ -44,7 +42,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 // ---------------------------------------------------------------------------
 
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
-import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
+import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
 import {
     submitNewsAnalysis,
     type ModelId,
@@ -60,8 +58,8 @@ import { submitNewsAnalysisAction } from '@/infrastructure/market/submitNewsAnal
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
 >;
-const MockCalRepository = DrizzleEarningsCalendarRepository as jest.MockedClass<
-    typeof DrizzleEarningsCalendarRepository
+const mockGetNextEarningsReport = getNextEarningsReport as jest.MockedFunction<
+    typeof getNextEarningsReport
 >;
 
 const mockSubmitNewsAnalysis = submitNewsAnalysis as jest.MockedFunction<
@@ -132,23 +130,19 @@ const gateError: AnalysisGateError = {
 
 describe('submitNewsAnalysisAction 함수는', () => {
     let mockListBySymbol: jest.Mock;
-    let mockGetNextForSymbol: jest.Mock;
 
     beforeEach(() => {
         mockSubmitNewsAnalysis.mockReset();
         MockNewsRepository.mockClear();
-        MockCalRepository.mockClear();
+        mockGetNextEarningsReport.mockReset();
         mockGetCurrentUser.mockReset();
         mockResolveTierAndByok.mockReset();
 
         mockListBySymbol = jest.fn().mockResolvedValue([ANALYZED_ROW]);
-        mockGetNextForSymbol = jest.fn().mockResolvedValue(null);
+        mockGetNextEarningsReport.mockResolvedValue(null);
 
         MockNewsRepository.mockImplementation(
             () => ({ listBySymbol: mockListBySymbol }) as never
-        );
-        MockCalRepository.mockImplementation(
-            () => ({ getNextForSymbol: mockGetNextForSymbol }) as never
         );
 
         mockGetCurrentUser.mockResolvedValue(null);
@@ -161,7 +155,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
     it('symbol과 modelId를 siglens-core submitNewsAnalysis에 전달한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW]);
-        mockGetNextForSymbol.mockResolvedValue(null);
+        mockGetNextEarningsReport.mockResolvedValue(null);
         mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
@@ -173,7 +167,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
     it('titleKo가 null인 미분석 뉴스를 필터링하고 enrichedNews만 전달한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW, UNANALYZED_ROW]);
-        mockGetNextForSymbol.mockResolvedValue(null);
+        mockGetNextEarningsReport.mockResolvedValue(null);
         mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
@@ -187,7 +181,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
     it('다음 실적 발표가 있으면 upcomingCalendar에 포함한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW]);
-        mockGetNextForSymbol.mockResolvedValue(NEXT_EARNINGS);
+        mockGetNextEarningsReport.mockResolvedValue(NEXT_EARNINGS);
         mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
@@ -201,7 +195,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
     it('다음 실적 발표가 없으면 upcomingCalendar를 빈 배열로 전달한다', async () => {
         mockListBySymbol.mockResolvedValue([ANALYZED_ROW]);
-        mockGetNextForSymbol.mockResolvedValue(null);
+        mockGetNextEarningsReport.mockResolvedValue(null);
         mockSubmitNewsAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
         await submitNewsAnalysisAction('AAPL', 'Apple Inc.', MODEL_ID);
@@ -213,7 +207,7 @@ describe('submitNewsAnalysisAction 함수는', () => {
 
     it('underlying 함수의 결과를 그대로 반환한다', async () => {
         mockListBySymbol.mockResolvedValue([]);
-        mockGetNextForSymbol.mockResolvedValue(null);
+        mockGetNextEarningsReport.mockResolvedValue(null);
         const noNewsResult: SubmitNewsAnalysisResult = {
             status: 'error',
             code: 'no_news',

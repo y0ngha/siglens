@@ -166,13 +166,6 @@ describe('FmpNewsClient', () => {
             await expect(client.fetchNews('AAPL', '7d')).rejects.toThrow('429');
         });
 
-        it('fetchEarningsCalendarAll throws with status in message', async () => {
-            mockError(500);
-            const client = new FmpNewsClient();
-            await expect(client.fetchEarningsCalendarAll()).rejects.toThrow(
-                '500'
-            );
-        });
     });
 
     // ------------------------------------------------------------------ //
@@ -398,83 +391,6 @@ describe('FmpNewsClient', () => {
         });
     });
 
-    // ------------------------------------------------------------------ //
-    // fetchEarningsCalendarAll
-    // ------------------------------------------------------------------ //
-
-    describe('fetchEarningsCalendarAll', () => {
-        it('maps FMP earnings calendar fields to EarningsCalendarItem', async () => {
-            mockOk([
-                {
-                    symbol: 'AAPL',
-                    date: '2024-08-01',
-                    epsActual: 1.52,
-                    epsEstimated: 1.48,
-                    revenueActual: 90_753_000_000,
-                    revenueEstimated: 89_000_000_000,
-                    lastUpdated: '2024-07-30',
-                },
-            ]);
-            const client = new FmpNewsClient();
-            const result = await client.fetchEarningsCalendarAll();
-            expect(result).toHaveLength(1);
-            expect(result[0]).toEqual({
-                symbol: 'AAPL',
-                earningsDate: '2024-08-01', // date → earningsDate
-                epsActual: 1.52, // eps → epsActual
-                epsEstimated: 1.48,
-                revenueActual: 90_753_000_000, // revenue → revenueActual
-                revenueEstimated: 89_000_000_000,
-                lastUpdated: '2024-07-30',
-            });
-        });
-
-        it('supports legacy eps/revenue/updatedFromDate field names', async () => {
-            mockOk([
-                {
-                    symbol: 'AAPL',
-                    date: '2024-08-01',
-                    eps: 1.52,
-                    epsEstimated: 1.48,
-                    revenue: 90_753_000_000,
-                    revenueEstimated: 89_000_000_000,
-                    updatedFromDate: '2024-07-30',
-                },
-            ]);
-            const client = new FmpNewsClient();
-            const result = await client.fetchEarningsCalendarAll();
-            expect(result[0]).toMatchObject({
-                epsActual: 1.52,
-                revenueActual: 90_753_000_000,
-                lastUpdated: '2024-07-30',
-            });
-        });
-
-        it('handles null eps/revenue values', async () => {
-            mockOk([
-                {
-                    symbol: 'XYZ',
-                    date: '2024-09-15',
-                    eps: null,
-                    epsEstimated: 0.8,
-                    revenue: null,
-                    revenueEstimated: null,
-                    updatedFromDate: '2024-09-14',
-                },
-            ]);
-            const client = new FmpNewsClient();
-            const result = await client.fetchEarningsCalendarAll();
-            expect(result[0]!.epsActual).toBeNull();
-            expect(result[0]!.revenueActual).toBeNull();
-            expect(result[0]!.revenueEstimated).toBeNull();
-        });
-
-        it('returns empty array when FMP returns empty', async () => {
-            mockOk([]);
-            const client = new FmpNewsClient();
-            expect(await client.fetchEarningsCalendarAll()).toEqual([]);
-        });
-    });
 
     // ------------------------------------------------------------------ //
     // fetchEarningsReport

@@ -34,10 +34,8 @@ jest.mock('@/infrastructure/db/newsRepository', () => ({
     })),
 }));
 
-jest.mock('@/infrastructure/db/earningsCalendarRepository', () => ({
-    DrizzleEarningsCalendarRepository: jest.fn().mockImplementation(() => ({
-        getNextForSymbol: jest.fn(),
-    })),
+jest.mock('@/infrastructure/market/nextEarningsReport', () => ({
+    getNextEarningsReport: jest.fn(),
 }));
 
 jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
@@ -57,7 +55,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
 // ---------------------------------------------------------------------------
 
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
-import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
+import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
 import type { AnalysisGateError } from '@/domain/types';
@@ -65,8 +63,8 @@ import type { AnalysisGateError } from '@/domain/types';
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
 >;
-const MockCalRepository = DrizzleEarningsCalendarRepository as jest.MockedClass<
-    typeof DrizzleEarningsCalendarRepository
+const mockGetNextEarningsReport = getNextEarningsReport as jest.MockedFunction<
+    typeof getNextEarningsReport
 >;
 
 const mockSubmitOverallAnalysis = submitOverallAnalysis as jest.MockedFunction<
@@ -135,23 +133,19 @@ const gateError: AnalysisGateError = {
 
 describe('submitOverallAnalysisAction 함수는', () => {
     let mockListBySymbol: jest.Mock;
-    let mockGetNextForSymbol: jest.Mock;
 
     beforeEach(() => {
         mockSubmitOverallAnalysis.mockReset();
         mockGetCurrentUser.mockReset();
         mockResolveTierAndByok.mockReset();
         MockNewsRepository.mockClear();
-        MockCalRepository.mockClear();
+        mockGetNextEarningsReport.mockReset();
 
         mockListBySymbol = jest.fn().mockResolvedValue([]);
-        mockGetNextForSymbol = jest.fn().mockResolvedValue(null);
+        mockGetNextEarningsReport.mockResolvedValue(null);
 
         MockNewsRepository.mockImplementation(
             () => ({ listBySymbol: mockListBySymbol }) as never
-        );
-        MockCalRepository.mockImplementation(
-            () => ({ getNextForSymbol: mockGetNextForSymbol }) as never
         );
 
         mockGetCurrentUser.mockResolvedValue(null);
@@ -199,7 +193,7 @@ describe('submitOverallAnalysisAction 함수는', () => {
     });
 
     it('다음 실적 발표가 있으면 upcomingCalendar에 포함한다', async () => {
-        mockGetNextForSymbol.mockResolvedValue(NEXT_EARNINGS);
+        mockGetNextEarningsReport.mockResolvedValue(NEXT_EARNINGS);
         mockSubmitOverallAnalysis.mockResolvedValueOnce(SUBMITTED_RESULT);
 
         await submitOverallAnalysisAction(

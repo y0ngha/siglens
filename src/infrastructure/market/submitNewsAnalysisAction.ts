@@ -9,13 +9,12 @@ import {
 } from '@y0ngha/siglens-core';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
-import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import {
     isEnrichedRow,
     toEnrichedNewsItem,
 } from '@/infrastructure/market/newsEnrichment';
-import { todayKstIsoDate } from '@/infrastructure/utils/dateKey';
+import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import {
     resolveTierAndByok,
@@ -45,11 +44,10 @@ export async function submitNewsAnalysisAction(
 
         const { db } = getDatabaseClient();
         const newsRepo = new DrizzleNewsRepository(db);
-        const calRepo = new DrizzleEarningsCalendarRepository(db);
 
         const [rows, next] = await Promise.all([
             newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
-            calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
+            getNextEarningsReport(symbol, db),
         ]);
 
         const enrichedNews: ReadonlyArray<EnrichedNewsItem> = rows

@@ -3,7 +3,7 @@ import { SECONDS_PER_DAY } from '@/domain/constants/time';
 /** T4: 30 days — company profile, peer list (very slow-changing). */
 export const TTL_T4_30D = 30 * SECONDS_PER_DAY;
 
-/** T3: 7 days — ratios, growth, financial health (static fallback until earnings-calendar TTL is wired). */
+/** T3: 7 days — ratios, growth, financial health. */
 export const TTL_T3_7D = 7 * SECONDS_PER_DAY;
 
 /** T2: 24 hours — analyst estimates, grades consensus, price targets. */

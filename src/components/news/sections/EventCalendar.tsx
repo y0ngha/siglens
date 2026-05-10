@@ -2,7 +2,6 @@
 
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import type { EarningsReportComparisonItem } from '@/domain/types';
-import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import type React from 'react';
 
 const MATERIAL_SURPRISE_PCT = 2;
@@ -51,7 +50,7 @@ function formatRevenue(value: number | null): string {
 }
 
 interface EarningsCalendarCardProps {
-    item: EarningsCalendarItem;
+    item: EarningsReportComparisonItem;
 }
 
 function EarningsCalendarCard({ item }: EarningsCalendarCardProps) {
@@ -385,7 +384,7 @@ function formatSignedPercent(value: number): string {
 }
 
 interface EventCalendarProps {
-    nextEarnings: EarningsCalendarItem | null;
+    nextEarnings: EarningsReportComparisonItem | null;
     earningsReports: EarningsReportComparisonItem[];
 }
 

@@ -1,4 +1,5 @@
-import { desc, eq, sql } from 'drizzle-orm';
+import { and, desc, eq, gte, isNull, sql } from 'drizzle-orm';
+import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import type {
     EarningsReportComparisonItem,
     EarningsReportComparisonSlot,
@@ -40,6 +41,46 @@ export class DrizzleEarningsReportsRepository {
                     fetchedAt: sql`excluded.fetched_at`,
                 },
             });
+    }
+
+    /** Next upcoming (or same-day) earnings entry for `symbol` on/after `fromDate` (ISO date) where no actual values have been reported yet; `null` when none. */
+    async getNextForSymbol(
+        symbol: string,
+        fromDate: string
+    ): Promise<EarningsCalendarItem | null> {
+        const [row] = await this.db
+            .select({
+                symbol: earningsReports.symbol,
+                earningsDate: earningsReports.earningsDate,
+                epsActual: earningsReports.epsActual,
+                epsEstimated: earningsReports.epsEstimated,
+                revenueActual: earningsReports.revenueActual,
+                revenueEstimated: earningsReports.revenueEstimated,
+                lastUpdated: earningsReports.lastUpdated,
+            })
+            .from(earningsReports)
+            .where(
+                and(
+                    eq(earningsReports.symbol, symbol),
+                    gte(earningsReports.earningsDate, fromDate),
+                    isNull(earningsReports.epsActual),
+                    isNull(earningsReports.revenueActual)
+                )
+            )
+            .orderBy(earningsReports.earningsDate)
+            .limit(1);
+
+        if (row === undefined || row.lastUpdated === null) return null;
+
+        return {
+            symbol: row.symbol,
+            earningsDate: row.earningsDate,
+            epsActual: null,
+            epsEstimated: toNumberOrNull(row.epsEstimated),
+            revenueActual: null,
+            revenueEstimated: toNumberOrNull(row.revenueEstimated),
+            lastUpdated: row.lastUpdated,
+        };
     }
 
     async getLatestFetchedAt(symbol: string): Promise<Date | null> {

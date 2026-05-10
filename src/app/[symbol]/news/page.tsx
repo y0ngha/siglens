@@ -2,7 +2,6 @@ import {
     getEarningsReportComparison,
     getGradeEvents,
     getNewsList,
-    getNextEarningsCalendar,
 } from '@/app/[symbol]/news/newsData';
 import { NewsAiSummary } from '@/components/news/NewsAiSummary';
 import { NewsAiSummaryErrorBoundary } from '@/components/news/NewsAiSummaryErrorBoundary';
@@ -83,10 +82,9 @@ async function NewsListSection({ symbol }: SymbolSectionProps) {
 
 async function EventCalendarSection({ symbol }: SymbolSectionProps) {
     const today = todayKstIsoDate();
-    const [nextEarnings, earningsReports] = await Promise.all([
-        getNextEarningsCalendar(symbol, today),
-        getEarningsReportComparison(symbol, today),
-    ]);
+    const earningsReports = await getEarningsReportComparison(symbol, today);
+    const nextEarnings =
+        earningsReports.find(item => item.period === 'future') ?? null;
     return (
         <EventCalendar
             nextEarnings={nextEarnings}

@@ -1,0 +1,1 @@
+DROP TABLE "earnings_calendar" CASCADE;

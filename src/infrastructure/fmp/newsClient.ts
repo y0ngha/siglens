@@ -1,14 +1,11 @@
 import { createHash } from 'crypto';
 import type {
-    EarningsCalendarItem,
     EarningsReport,
     NewsItem,
-    NewsProvider,
     NewsTimeRange,
 } from '@y0ngha/siglens-core';
 import { fmpGet } from '@/infrastructure/fmp/httpClient';
 import type {
-    RawFmpEarningsCalendarItem,
     RawFmpEarningsReport,
     RawFmpNews,
 } from '@/infrastructure/fmp/types';
@@ -138,9 +135,6 @@ export function hashUrlToId(url: string): string {
     return createHash('sha256').update(url).digest('base64url').slice(0, 32);
 }
 
-function toFiniteNumber(value: number | null | undefined): number | null {
-    return typeof value === 'number' && Number.isFinite(value) ? value : null;
-}
 
 function toEarningsDate(value: RawFmpEarningsReport): string | null {
     return typeof value.date === 'string'
@@ -170,8 +164,8 @@ function mapRawToNewsItem(raw: RawFmpNews, publishedAt: string): NewsItem {
     };
 }
 
-/** FMP adapter implementing `NewsProvider`. Uses `fmpGet` for all HTTP calls. */
-export class FmpNewsClient implements NewsProvider {
+/** FMP adapter for news and earnings data. Uses `fmpGet` for all HTTP calls. */
+export class FmpNewsClient {
     /** Fetch news articles for a symbol within the given time window (most recent first). */
     async fetchNews(symbol: string, range: NewsTimeRange): Promise<NewsItem[]> {
         const raw = await fmpGet<RawFmpNews[]>('news/stock', {
@@ -216,30 +210,6 @@ export class FmpNewsClient implements NewsProvider {
                     n.publishedAt !== null && new Date(n.publishedAt) >= cutoff
             )
             .map(({ raw, publishedAt }) => mapRawToNewsItem(raw, publishedAt));
-    }
-
-    // FMP stable calendar endpoint has no per-symbol filter; callers filter at the repository layer after DB caching.
-    async fetchEarningsCalendarAll(): Promise<EarningsCalendarItem[]> {
-        const raw =
-            await fmpGet<RawFmpEarningsCalendarItem[]>('earnings-calendar');
-        return raw.flatMap(r => {
-            const lastUpdated = r.lastUpdated ?? r.updatedFromDate;
-            if (typeof r.symbol !== 'string' || typeof r.date !== 'string') {
-                return [];
-            }
-            if (typeof lastUpdated !== 'string') return [];
-            return [
-                {
-                    symbol: r.symbol,
-                    earningsDate: r.date,
-                    epsActual: toFiniteNumber(r.epsActual ?? r.eps),
-                    epsEstimated: toFiniteNumber(r.epsEstimated),
-                    revenueActual: toFiniteNumber(r.revenueActual ?? r.revenue),
-                    revenueEstimated: toFiniteNumber(r.revenueEstimated),
-                    lastUpdated,
-                },
-            ];
-        });
     }
 
     /** Fetch the latest earnings report for a symbol; returns `null` when unavailable. */

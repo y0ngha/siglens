@@ -165,16 +165,3 @@ export interface RawFmpNews {
     url: string;
 }
 
-/** Raw FMP earnings calendar entry from `/stable/earnings-calendar`. */
-export interface RawFmpEarningsCalendarItem {
-    symbol: string;
-    date: string;
-    eps?: number | null;
-    epsActual?: number | null;
-    epsEstimated: number | null;
-    revenue?: number | null;
-    revenueActual?: number | null;
-    revenueEstimated: number | null;
-    updatedFromDate?: string;
-    lastUpdated?: string;
-}

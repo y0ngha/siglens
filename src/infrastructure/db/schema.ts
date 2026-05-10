@@ -256,27 +256,6 @@ export const news = pgTable(
 );
 
 /** (symbol, earnings_date) 복합키 어닝 이벤트. epsActual/revenueActual은 발표 후 채워짐. */
-export const earningsCalendar = pgTable(
-    'earnings_calendar',
-    {
-        symbol: text('symbol').notNull(),
-        earningsDate: date('earnings_date').notNull(),
-        epsActual: numeric('eps_actual'),
-        epsEstimated: numeric('eps_estimated'),
-        revenueActual: numeric('revenue_actual'),
-        revenueEstimated: numeric('revenue_estimated'),
-        lastUpdated: date('last_updated'),
-        rawPayload: jsonb('raw_payload'),
-        fetchedAt: timestamp('fetched_at', { withTimezone: true })
-            .notNull()
-            .defaultNow(),
-    },
-    table => [
-        primaryKey({ columns: [table.symbol, table.earningsDate] }),
-        index('earnings_calendar_date_idx').on(table.earningsDate),
-    ]
-);
-
 /** (symbol, earnings_date) 복합키 raw FMP 어닝 리포트. rawPayload는 재파싱용 전체 응답. */
 export const earningsReports = pgTable(
     'earnings_reports',

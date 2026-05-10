@@ -1,16 +1,14 @@
 import { cacheLife, cacheTag } from 'next/cache';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
-import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
 import { DrizzleEarningsReportsRepository } from '@/infrastructure/db/earningsReportsRepository';
 import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { MS_PER_DAY } from '@/domain/constants/time';
 import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import type { NewsRow } from '@/infrastructure/db/newsRepository';
-import type { EarningsCalendarItem, GradesEvent } from '@y0ngha/siglens-core';
+import type { GradesEvent } from '@y0ngha/siglens-core';
 import type { EarningsReportComparisonItem } from '@/domain/types';
 import {
-    NEWS_EARNINGS_CALENDAR_TTL_S,
     NEWS_GRADES_TTL_S,
     NEWS_LIST_TTL_S,
 } from '@/lib/news/cacheTtl';
@@ -35,19 +33,6 @@ export async function getGradeEvents(symbol: string): Promise<GradesEvent[]> {
     cacheTag(`news:grades:${symbol}`);
 
     return fundamentalClient.getGrades(symbol);
-}
-
-export async function getNextEarningsCalendar(
-    symbol: string,
-    today: string
-): Promise<EarningsCalendarItem | null> {
-    'use cache';
-    cacheLife({ revalidate: NEWS_EARNINGS_CALENDAR_TTL_S });
-    cacheTag(`news:earnings-calendar:${symbol}`);
-
-    const { db } = getDatabaseClient();
-    const repo = new DrizzleEarningsCalendarRepository(db);
-    return repo.getNextForSymbol(symbol, today);
 }
 
 export async function getEarningsReportComparison(
