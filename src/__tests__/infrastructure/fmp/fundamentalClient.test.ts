@@ -688,4 +688,49 @@ describe('FmpFundamentalClient', () => {
             expect(await client.getEarningsReport('X')).toBeNull();
         });
     });
+
+    // ------------------------------------------------------------------ //
+    // getEarningsReports
+    // ------------------------------------------------------------------ //
+
+    describe('getEarningsReports', () => {
+        it('maps EPS and revenue fields for comparison storage', async () => {
+            const raw = {
+                symbol: 'AAPL',
+                date: '2026-04-30',
+                epsActual: 2.01,
+                epsEstimated: 1.95,
+                revenueActual: 111_184_000_000,
+                revenueEstimated: 109_457_600_000,
+                lastUpdated: '2026-05-10',
+            };
+            mockOk([raw]);
+            const client = new FmpFundamentalClient();
+
+            await expect(client.getEarningsReports('AAPL')).resolves.toEqual([
+                {
+                    symbol: 'AAPL',
+                    earningsDate: '2026-04-30',
+                    epsActual: 2.01,
+                    epsEstimated: 1.95,
+                    revenueActual: 111_184_000_000,
+                    revenueEstimated: 109_457_600_000,
+                    lastUpdated: '2026-05-10',
+                    rawPayload: raw,
+                },
+            ]);
+        });
+
+        it('passes limit=5 by default', async () => {
+            mockOk([]);
+            const client = new FmpFundamentalClient();
+
+            await client.getEarningsReports('MSFT');
+
+            const url = mockFetch.mock.calls[0][0] as string;
+            expect(url).toContain('symbol=MSFT');
+            expect(url).toContain('limit=5');
+            expect(url).toContain(`apikey=${TEST_API_KEY}`);
+        });
+    });
 });

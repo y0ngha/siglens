@@ -1,17 +1,27 @@
-import type { EarningsReport } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
-import { DrizzleEarningsReportsRepository } from '@/infrastructure/db/earningsReportsRepository';
-
-const report: EarningsReport = {
-    symbol: 'AAPL',
-    earningsDate: '2025-08-01',
-};
+import {
+    dedupeEarningsReportInputs,
+    DrizzleEarningsReportsRepository,
+    toComparisonItems,
+    type EarningsReportUpsertInput,
+} from '@/infrastructure/db/earningsReportsRepository';
 
 const rawPayload = {
     date: '2025-08-01',
     symbol: 'AAPL',
     eps: 1.53,
     revenue: 90_000_000_000,
+};
+
+const reportInput: EarningsReportUpsertInput = {
+    symbol: 'AAPL',
+    earningsDate: '2025-08-01',
+    epsActual: 1.53,
+    epsEstimated: 1.48,
+    revenueActual: 90_000_000_000,
+    revenueEstimated: 89_500_000_000,
+    lastUpdated: '2025-08-02',
+    rawPayload,
 };
 
 // --- DB mock helpers ---
@@ -50,71 +60,218 @@ function makeSelectLimitDb(rows: unknown[]): {
     };
 }
 
+function makeSelectWhereDb(rows: unknown[]): {
+    db: SiglensDatabase;
+    select: jest.Mock;
+} {
+    const where = jest.fn().mockResolvedValue(rows);
+    const from = jest.fn(() => ({ where }));
+    const select = jest.fn(() => ({ from }));
+    return {
+        db: { select } as unknown as SiglensDatabase,
+        select,
+    };
+}
+
 // --- Tests ---
 
 describe('DrizzleEarningsReportsRepository', () => {
-    describe('upsert', () => {
-        it('insert + onConflictDoUpdate 를 호출한다', async () => {
-            const { db, insert, values, onConflictDoUpdate } = makeUpsertDb();
+    describe('upsertMany', () => {
+        it('정규화된 EPS/매출 필드를 함께 저장한다', async () => {
+            const { db, values, onConflictDoUpdate } = makeUpsertDb();
             const repo = new DrizzleEarningsReportsRepository(db);
-            await repo.upsert(report, rawPayload);
 
-            expect(insert).toHaveBeenCalledTimes(1);
-            expect(values).toHaveBeenCalledTimes(1);
+            await repo.upsertMany([reportInput]);
 
-            const row = values.mock.calls[0][0] as Record<string, unknown>;
-            expect(row['symbol']).toBe('AAPL');
-            expect(row['earningsDate']).toBe('2025-08-01');
-            expect(row['rawPayload']).toBe(rawPayload);
-
+            const rows = values.mock.calls[0][0] as Record<string, unknown>[];
+            expect(rows).toEqual([
+                expect.objectContaining({
+                    symbol: 'AAPL',
+                    earningsDate: '2025-08-01',
+                    epsActual: '1.53',
+                    epsEstimated: '1.48',
+                    revenueActual: '90000000000',
+                    revenueEstimated: '89500000000',
+                    lastUpdated: '2025-08-02',
+                    rawPayload,
+                }),
+            ]);
             expect(onConflictDoUpdate).toHaveBeenCalledWith(
                 expect.objectContaining({
                     set: expect.objectContaining({
+                        epsActual: expect.anything(),
+                        epsEstimated: expect.anything(),
+                        revenueActual: expect.anything(),
+                        revenueEstimated: expect.anything(),
+                        lastUpdated: expect.anything(),
                         rawPayload: expect.anything(),
-                        fetchedAt: expect.anything(),
                     }),
                 })
             );
         });
 
-        it('update 경로: 기존 row 가 있어도 동일한 query chain 을 사용한다', async () => {
-            const { db, onConflictDoUpdate } = makeUpsertDb();
+        it('빈 배열에서는 insert 를 호출하지 않는다', async () => {
+            const { db, insert } = makeUpsertDb();
             const repo = new DrizzleEarningsReportsRepository(db);
-            // Call twice to simulate update path (DB mock always resolves)
-            await repo.upsert(report, rawPayload);
-            await repo.upsert(report, { ...rawPayload, eps: 1.6 });
-            expect(onConflictDoUpdate).toHaveBeenCalledTimes(2);
+
+            await repo.upsertMany([]);
+
+            expect(insert).not.toHaveBeenCalled();
+        });
+
+        it('같은 symbol + earningsDate 중복은 최신 lastUpdated 값만 저장한다', async () => {
+            const { db, values } = makeUpsertDb();
+            const repo = new DrizzleEarningsReportsRepository(db);
+            const staleReportInput: EarningsReportUpsertInput = {
+                ...reportInput,
+                epsActual: null,
+                lastUpdated: '2025-08-01',
+            };
+
+            await repo.upsertMany([reportInput, staleReportInput]);
+
+            const rows = values.mock.calls[0][0] as Record<string, unknown>[];
+            expect(rows).toHaveLength(1);
+            expect(rows[0]).toEqual(
+                expect.objectContaining({
+                    epsActual: '1.53',
+                    lastUpdated: '2025-08-02',
+                })
+            );
         });
     });
 
-    describe('getLatestForSymbol', () => {
-        it('row 가 있으면 EarningsReport 를 반환한다', async () => {
-            const { db } = makeSelectLimitDb([
-                { symbol: 'AAPL', earningsDate: '2025-08-01' },
-            ]);
+    describe('getLatestFetchedAt', () => {
+        it('가장 최근 fetchedAt 을 반환한다', async () => {
+            const fetchedAt = new Date('2026-05-10T00:00:00.000Z');
+            const { db } = makeSelectLimitDb([{ fetchedAt }]);
             const repo = new DrizzleEarningsReportsRepository(db);
-            const result = await repo.getLatestForSymbol('AAPL');
 
-            expect(result).not.toBeNull();
-            expect(result?.symbol).toBe('AAPL');
-            expect(result?.earningsDate).toBe('2025-08-01');
+            await expect(repo.getLatestFetchedAt('AAPL')).resolves.toBe(
+                fetchedAt
+            );
         });
 
         it('row 가 없으면 null 을 반환한다', async () => {
             const { db } = makeSelectLimitDb([]);
             const repo = new DrizzleEarningsReportsRepository(db);
-            const result = await repo.getLatestForSymbol('AAPL');
-            expect(result).toBeNull();
-        });
 
-        it('domain shape 에는 rawPayload 가 포함되지 않는다', async () => {
-            const { db } = makeSelectLimitDb([
-                { symbol: 'AAPL', earningsDate: '2025-08-01' },
+            await expect(repo.getLatestFetchedAt('AAPL')).resolves.toBeNull();
+        });
+    });
+
+    describe('getComparisonItems', () => {
+        it('past-2, past-1, future 순서로 비교 항목을 반환한다', async () => {
+            const { db } = makeSelectWhereDb([
+                {
+                    symbol: 'AAPL',
+                    earningsDate: '2026-07-30',
+                    epsActual: null,
+                    epsEstimated: '1.86',
+                    revenueActual: null,
+                    revenueEstimated: '107618800000',
+                    lastUpdated: '2026-05-10',
+                },
+                {
+                    symbol: 'AAPL',
+                    earningsDate: '2026-04-30',
+                    epsActual: '2.01',
+                    epsEstimated: '1.95',
+                    revenueActual: '111184000000',
+                    revenueEstimated: '109457600000',
+                    lastUpdated: '2026-05-10',
+                },
+                {
+                    symbol: 'AAPL',
+                    earningsDate: '2026-01-29',
+                    epsActual: '2.85',
+                    epsEstimated: '2.67',
+                    revenueActual: '143756000000',
+                    revenueEstimated: '138391000000',
+                    lastUpdated: '2026-04-29',
+                },
             ]);
             const repo = new DrizzleEarningsReportsRepository(db);
-            const result = await repo.getLatestForSymbol('AAPL');
 
-            expect(result).not.toHaveProperty('rawPayload');
+            await expect(
+                repo.getComparisonItems('AAPL', '2026-05-10')
+            ).resolves.toEqual([
+                expect.objectContaining({
+                    earningsDate: '2026-01-29',
+                    period: 'past',
+                    slot: 'past-2',
+                    epsActual: 2.85,
+                }),
+                expect.objectContaining({
+                    earningsDate: '2026-04-30',
+                    period: 'past',
+                    slot: 'past-1',
+                    revenueActual: 111184000000,
+                }),
+                expect.objectContaining({
+                    earningsDate: '2026-07-30',
+                    period: 'future',
+                    slot: 'recent-or-future',
+                    epsEstimated: 1.86,
+                }),
+            ]);
+        });
+    });
+
+    describe('toComparisonItems', () => {
+        it('미래 항목이 없으면 최근 과거 3개를 오래된 순서부터 반환한다', () => {
+            expect(
+                toComparisonItems(
+                    [
+                        {
+                            symbol: 'AAPL',
+                            earningsDate: '2026-04-30',
+                            epsActual: '2.01',
+                            epsEstimated: '1.95',
+                            revenueActual: '111184000000',
+                            revenueEstimated: '109457600000',
+                            lastUpdated: '2026-05-10',
+                        },
+                        {
+                            symbol: 'AAPL',
+                            earningsDate: '2026-01-29',
+                            epsActual: '2.85',
+                            epsEstimated: '2.67',
+                            revenueActual: '143756000000',
+                            revenueEstimated: '138391000000',
+                            lastUpdated: '2026-04-29',
+                        },
+                        {
+                            symbol: 'AAPL',
+                            earningsDate: '2025-10-30',
+                            epsActual: '1.85',
+                            epsEstimated: '1.77',
+                            revenueActual: '102466000000',
+                            revenueEstimated: '102240000000',
+                            lastUpdated: '2026-01-01',
+                        },
+                    ],
+                    '2026-05-10'
+                ).map(item => [item.earningsDate, item.slot])
+            ).toEqual([
+                ['2025-10-30', 'past-2'],
+                ['2026-01-29', 'past-1'],
+                ['2026-04-30', 'recent-or-future'],
+            ]);
+        });
+    });
+
+    describe('dedupeEarningsReportInputs', () => {
+        it('lastUpdated 가 같으면 값이 더 많이 채워진 항목을 남긴다', () => {
+            const sparse: EarningsReportUpsertInput = {
+                ...reportInput,
+                epsActual: null,
+                revenueActual: null,
+            };
+
+            expect(dedupeEarningsReportInputs([reportInput, sparse])).toEqual([
+                reportInput,
+            ]);
         });
     });
 });

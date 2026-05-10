@@ -3,9 +3,6 @@
 
 
 ## [PR #432 Round 4 | fix/cancel-job-on-page-unload | 2026-05-09]
-- Violation: `getPageHideJobs = useCallback(...)` and `usePageHideCancel(...)` placed after two `useEffect` blocks in `useOverallAnalysis.ts`
-  - Rule: MISTAKES.md §17 — useCallback/useMemo must be declared before all useEffect blocks
-  - Context: The three other hooks (useFundamentalAnalysis, useNewsAnalysis, useAnalysis) had the correct order; useOverallAnalysis was missed during the round 3 fix
 - Violation: `route.ts` body validation used `!j.type` (falsy check only), allowing invalid type strings (e.g. `"unknown"`) to pass and silently return 204
   - Rule: Infrastructure Functions — validate all inputs at API boundaries; invalid values must return 400
   - Context: Added `VALID_JOB_TYPES` Set check so unrecognized job types are rejected with 400 rather than logged as a warning and treated as success
@@ -73,8 +70,6 @@
   - Rule: 단일 책임 — 컴포넌트는 렌더링에 집중, React Query 캐시 무효화 결정은 전용 훅으로 분리
 
 ## [PR #423 Round 6 | feat/news-thinking-budget-and-refresh | 2026-05-07]
-- B1: `src/components/news/sections/NewsList.tsx` — `useCallback(handlePollingComplete)`이 `useNewsCardPolling` 보다 앞에 선언됨. `onCompleteRef = useRef<OnPollingComplete>` 추가 후 `useNewsCardPolling`을 먼저 호출하고, `useCallback` 이후 `useLayoutEffect`로 ref 동기화.
-  - Rule: MISTAKES.md #17 — 훅 선언 순서: useState/useRef → useQuery/useMutation 동등 → useCallback/useMemo
 - S1 (부분 적용): `ensureNewsCardsAnalyzedAction.ts` — `thinkingBudget: 0` → `DISABLED_THINKING_BUDGET` 로컬 상수로 추출. `'use server'` 파일은 async function만 export 가능하여 test import 동기화 불가. GitHub 코멘트로 제약 사유 설명.
 
 
@@ -254,5 +249,4 @@
   - Rule: MISTAKES.md Components Rule 9 — Custom hooks in test wrapper components must have display name
 - B4: `src/__tests__/components/chat/hooks/useChat.test.tsx:107` — test failed because lastWrittenModelRef started as null and triggered redundant write-back of stored model on hydration. Fixed by initializing the ref to stored value in useChat.ts hydration effect before flipping isModelHydrated.
   - Rule: MISTAKES.md Components Rule 12 — Internal refs affecting state must be initialized before first use to prevent stale state propagation
-
 

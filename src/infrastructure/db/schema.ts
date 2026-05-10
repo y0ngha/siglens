@@ -283,6 +283,11 @@ export const earningsReports = pgTable(
     {
         symbol: text('symbol').notNull(),
         earningsDate: date('earnings_date').notNull(),
+        epsActual: numeric('eps_actual'),
+        epsEstimated: numeric('eps_estimated'),
+        revenueActual: numeric('revenue_actual'),
+        revenueEstimated: numeric('revenue_estimated'),
+        lastUpdated: date('last_updated'),
         rawPayload: jsonb('raw_payload').notNull(),
         fetchedAt: timestamp('fetched_at', { withTimezone: true })
             .notNull()

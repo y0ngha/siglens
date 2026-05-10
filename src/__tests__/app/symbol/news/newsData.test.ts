@@ -1,0 +1,91 @@
+import type { EarningsReportComparisonItem } from '@/domain/types';
+
+const mockDb = {};
+const mockGetLatestFetchedAt = jest.fn();
+const mockGetComparisonItems = jest.fn();
+const mockUpsertMany = jest.fn();
+const mockGetEarningsReports = jest.fn();
+
+jest.mock('@/infrastructure/db/client', () => ({
+    getDatabaseClient: jest.fn(() => ({ db: mockDb })),
+}));
+
+jest.mock('@/infrastructure/db/earningsReportsRepository', () => ({
+    DrizzleEarningsReportsRepository: jest.fn().mockImplementation(() => ({
+        getLatestFetchedAt: mockGetLatestFetchedAt,
+        getComparisonItems: mockGetComparisonItems,
+        upsertMany: mockUpsertMany,
+    })),
+}));
+
+jest.mock('@/infrastructure/fmp/fundamentalClient', () => ({
+    FmpFundamentalClient: jest.fn().mockImplementation(() => ({
+        getEarningsReports: mockGetEarningsReports,
+        getGrades: jest.fn(),
+    })),
+}));
+
+import { getEarningsReportComparison } from '@/app/[symbol]/news/newsData';
+
+const COMPARISON_ITEM: EarningsReportComparisonItem = {
+    symbol: 'AAPL',
+    earningsDate: '2026-04-30',
+    epsActual: 2.01,
+    epsEstimated: 1.95,
+    revenueActual: 111_184_000_000,
+    revenueEstimated: 109_457_600_000,
+    lastUpdated: '2026-05-10',
+    period: 'past',
+    slot: 'recent-or-future',
+};
+
+describe('newsData getEarningsReportComparison', () => {
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockGetLatestFetchedAt.mockResolvedValue(new Date());
+        mockGetComparisonItems.mockResolvedValue([COMPARISON_ITEM]);
+        mockGetEarningsReports.mockResolvedValue([COMPARISON_ITEM]);
+        mockUpsertMany.mockResolvedValue(undefined);
+    });
+
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
+
+    it('DB 비교 데이터가 있고 최신이면 FMP 를 호출하지 않는다', async () => {
+        await expect(
+            getEarningsReportComparison('AAPL', '2026-05-10')
+        ).resolves.toEqual([COMPARISON_ITEM]);
+
+        expect(mockGetEarningsReports).not.toHaveBeenCalled();
+        expect(mockUpsertMany).not.toHaveBeenCalled();
+    });
+
+    it('fetchedAt 이 최신이어도 비교 데이터가 비어 있으면 FMP 로 정규화 데이터를 채운다', async () => {
+        mockGetComparisonItems
+            .mockResolvedValueOnce([])
+            .mockResolvedValueOnce([COMPARISON_ITEM]);
+
+        await expect(
+            getEarningsReportComparison('AAPL', '2026-05-10')
+        ).resolves.toEqual([COMPARISON_ITEM]);
+
+        expect(mockGetEarningsReports).toHaveBeenCalledWith('AAPL', 5);
+        expect(mockUpsertMany).toHaveBeenCalledWith([COMPARISON_ITEM]);
+        expect(mockGetComparisonItems).toHaveBeenCalledTimes(2);
+    });
+
+    it('FMP 갱신 실패 시 기존 DB 비교 데이터를 반환하고 예외를 전파하지 않는다', async () => {
+        const staleFetchedAt = new Date(Date.now() - 25 * 60 * 60 * 1000);
+        mockGetLatestFetchedAt.mockResolvedValue(staleFetchedAt);
+        mockGetEarningsReports.mockRejectedValue(new Error('rate limited'));
+        jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+        await expect(
+            getEarningsReportComparison('AAPL', '2026-05-10')
+        ).resolves.toEqual([COMPARISON_ITEM]);
+
+        expect(mockUpsertMany).not.toHaveBeenCalled();
+        expect(console.warn).toHaveBeenCalled();
+    });
+});

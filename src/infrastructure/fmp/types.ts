@@ -146,6 +146,13 @@ export interface RawFmpEarningsReport {
     symbol: string;
     date?: string;
     earningsDate?: string;
+    eps?: number | null;
+    epsActual?: number | null;
+    epsEstimated?: number | null;
+    revenue?: number | null;
+    revenueActual?: number | null;
+    revenueEstimated?: number | null;
+    lastUpdated?: string | null;
 }
 
 /** Raw FMP news article from `/stable/news/stock`. */

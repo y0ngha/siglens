@@ -154,6 +154,25 @@ export interface NewsDisplayItem {
     source: string;
 }
 
+export type EarningsReportPeriod = 'past' | 'future';
+export type EarningsReportComparisonSlot =
+    | 'past-2'
+    | 'past-1'
+    | 'recent-or-future';
+
+/** Cross-layer earnings report row used by DB fetch-through and the news-page comparison chart. */
+export interface EarningsReportComparisonItem {
+    symbol: string;
+    earningsDate: string;
+    epsActual: number | null;
+    epsEstimated: number | null;
+    revenueActual: number | null;
+    revenueEstimated: number | null;
+    lastUpdated: string | null;
+    period: EarningsReportPeriod;
+    slot: EarningsReportComparisonSlot;
+}
+
 /** UI-only system message emitted on chatbot page-context switch; filtered out before LLM prompt construction. */
 export interface ContextSwitchMessage {
     role: 'system';

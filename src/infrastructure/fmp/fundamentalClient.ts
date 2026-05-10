@@ -38,6 +38,18 @@ import type {
 const ANALYST_ESTIMATES_PERIOD = 'annual';
 const ANALYST_ESTIMATES_PAGE = '0';
 const ANALYST_ESTIMATES_LIMIT = '10';
+const EARNINGS_REPORT_LIMIT = 5;
+
+export interface FmpEarningsReportItem {
+    symbol: string;
+    earningsDate: string;
+    epsActual: number | null;
+    epsEstimated: number | null;
+    revenueActual: number | null;
+    revenueEstimated: number | null;
+    lastUpdated: string | null;
+    rawPayload: RawFmpEarningsReport;
+}
 
 const GRADES_ACTION_MAP: Record<string, GradesAction> = {
     upgrade: 'upgrade',
@@ -347,16 +359,46 @@ export class FmpFundamentalClient implements FundamentalDataProvider {
 
     /** Fetch the latest earnings report for a symbol; returns `null` when unavailable. */
     async getEarningsReport(symbol: string): Promise<EarningsReport | null> {
-        const arr = await fmpGet<RawFmpEarningsReport[]>('earnings', {
-            symbol,
-        });
+        const arr = await this.getEarningsReports(symbol, 1);
         const r = arr[0];
         if (!r) return null;
-        const earningsDate = toEarningsDate(r);
-        if (earningsDate === null) return null;
         return {
             symbol: r.symbol,
-            earningsDate,
+            earningsDate: r.earningsDate,
         };
     }
+
+    /** Fetch recent/upcoming earnings rows for news-page comparison; default limit keeps payload small. */
+    async getEarningsReports(
+        symbol: string,
+        limit = EARNINGS_REPORT_LIMIT
+    ): Promise<FmpEarningsReportItem[]> {
+        const arr = await fmpGet<RawFmpEarningsReport[]>('earnings', {
+            symbol,
+            limit: String(limit),
+        });
+
+        return arr.flatMap(toFmpEarningsReportItem);
+    }
+}
+
+function toFmpEarningsReportItem(
+    raw: RawFmpEarningsReport
+): FmpEarningsReportItem[] {
+    const earningsDate = toEarningsDate(raw);
+    if (earningsDate === null) return [];
+
+    return [
+        {
+            symbol: raw.symbol,
+            earningsDate,
+            epsActual: toFiniteNumber(raw.epsActual ?? raw.eps),
+            epsEstimated: toFiniteNumber(raw.epsEstimated),
+            revenueActual: toFiniteNumber(raw.revenueActual ?? raw.revenue),
+            revenueEstimated: toFiniteNumber(raw.revenueEstimated),
+            lastUpdated:
+                typeof raw.lastUpdated === 'string' ? raw.lastUpdated : null,
+            rawPayload: raw,
+        },
+    ];
 }
