@@ -13,15 +13,6 @@ interface SurpriseBadge {
     percent: number;
 }
 
-function formatDate(dateStr: string): string {
-    return new Intl.DateTimeFormat('ko-KR', {
-        timeZone: 'UTC',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-    }).format(new Date(dateStr));
-}
-
 function formatShortDate(dateStr: string): string {
     return new Intl.DateTimeFormat('ko-KR', {
         timeZone: 'UTC',
@@ -49,48 +40,6 @@ function formatRevenue(value: number | null): string {
     }).format(value);
 }
 
-interface EarningsCalendarCardProps {
-    item: EarningsReportComparisonItem;
-}
-
-function EarningsCalendarCard({ item }: EarningsCalendarCardProps) {
-    return (
-        <div className="border-secondary-700 bg-secondary-800 rounded-lg border p-4">
-            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
-                <h3 className="font-semibold">다음 어닝 발표</h3>
-                <time
-                    dateTime={item.earningsDate}
-                    className="text-secondary-400 text-sm tabular-nums"
-                >
-                    {formatDate(item.earningsDate)}
-                </time>
-            </div>
-            {item.epsEstimated !== null || item.revenueEstimated !== null ? (
-                <dl className="mt-2 grid grid-cols-2 gap-3 text-sm">
-                    {item.epsEstimated !== null ? (
-                        <>
-                            <dt className="text-secondary-400">EPS 컨센서스</dt>
-                            <dd className="font-medium tabular-nums">
-                                {formatCurrency(item.epsEstimated)}
-                            </dd>
-                        </>
-                    ) : null}
-                    {item.revenueEstimated !== null ? (
-                        <>
-                            <dt className="text-secondary-400">
-                                매출 컨센서스
-                            </dt>
-                            <dd className="font-medium tabular-nums">
-                                {formatRevenue(item.revenueEstimated)}
-                            </dd>
-                        </>
-                    ) : null}
-                </dl>
-            ) : null}
-        </div>
-    );
-}
-
 interface EarningsReportComparisonProps {
     items: EarningsReportComparisonItem[];
 }
@@ -108,7 +57,6 @@ function EarningsReportComparison({ items }: EarningsReportComparisonProps) {
     return (
         <div className="space-y-3">
             <div className="flex flex-wrap items-end justify-between gap-2">
-                <h3 className="font-semibold">실적 비교</h3>
                 <div className="text-secondary-400 flex gap-3 text-xs">
                     <span className="inline-flex items-center gap-1">
                         <span className="h-2 w-2 rounded-full bg-emerald-400" />
@@ -384,15 +332,11 @@ function formatSignedPercent(value: number): string {
 }
 
 interface EventCalendarProps {
-    nextEarnings: EarningsReportComparisonItem | null;
     earningsReports: EarningsReportComparisonItem[];
 }
 
-export function EventCalendar({
-    nextEarnings,
-    earningsReports,
-}: EventCalendarProps) {
-    if (nextEarnings === null && earningsReports.length === 0) {
+export function EventCalendar({ earningsReports }: EventCalendarProps) {
+    if (earningsReports.length === 0) {
         return null;
     }
 
@@ -402,14 +346,9 @@ export function EventCalendar({
                 id="event-calendar-heading"
                 className="text-lg font-semibold tracking-tight"
             >
-                어닝 일정
+                실적(어닝)
             </h2>
-            <div className="space-y-4">
-                {nextEarnings !== null ? (
-                    <EarningsCalendarCard item={nextEarnings} />
-                ) : null}
-                <EarningsReportComparison items={earningsReports} />
-            </div>
+            <EarningsReportComparison items={earningsReports} />
         </section>
     );
 }

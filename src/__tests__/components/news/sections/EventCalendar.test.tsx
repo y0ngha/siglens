@@ -48,10 +48,7 @@ const NEGATIVE_EPS_ITEM: EarningsReportComparisonItem = {
 describe('EventCalendar', () => {
     it('실제값과 컨센서스를 함께 표시하고 컨센서스 툴팁 트리거를 렌더링한다', () => {
         render(
-            <EventCalendar
-                nextEarnings={null}
-                earningsReports={[SURPRISE_ITEM, FUTURE_ITEM]}
-            />
+            <EventCalendar earningsReports={[SURPRISE_ITEM, FUTURE_ITEM]} />
         );
 
         expect(screen.getAllByText('컨센서스').length).toBeGreaterThan(0);
@@ -67,7 +64,6 @@ describe('EventCalendar', () => {
     it('과거 실적은 서프라이즈와 보합 뱃지를 표시하고 미래 실적에는 표시하지 않는다', () => {
         render(
             <EventCalendar
-                nextEarnings={null}
                 earningsReports={[INLINE_ITEM, SURPRISE_ITEM, FUTURE_ITEM]}
             />
         );
@@ -78,12 +74,7 @@ describe('EventCalendar', () => {
     });
 
     it('음수 EPS 막대는 음수 색상으로 구분한다', () => {
-        render(
-            <EventCalendar
-                nextEarnings={null}
-                earningsReports={[NEGATIVE_EPS_ITEM]}
-            />
-        );
+        render(<EventCalendar earningsReports={[NEGATIVE_EPS_ITEM]} />);
 
         const negativeBar = screen.getByLabelText('실제: -$0.50');
         expect(negativeBar).toHaveClass('bg-rose-400');

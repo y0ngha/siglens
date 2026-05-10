@@ -83,14 +83,7 @@ async function NewsListSection({ symbol }: SymbolSectionProps) {
 async function EventCalendarSection({ symbol }: SymbolSectionProps) {
     const today = todayKstIsoDate();
     const earningsReports = await getEarningsReportComparison(symbol, today);
-    const nextEarnings =
-        earningsReports.find(item => item.period === 'future') ?? null;
-    return (
-        <EventCalendar
-            nextEarnings={nextEarnings}
-            earningsReports={earningsReports}
-        />
-    );
+    return <EventCalendar earningsReports={earningsReports} />;
 }
 
 async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
