@@ -1,9 +1,9 @@
 'use client';
 
-import type React from 'react';
-import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
-import type { EarningsReportComparisonItem } from '@/domain/types';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import type { EarningsReportComparisonItem } from '@/domain/types';
+import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
+import type React from 'react';
 
 const MATERIAL_SURPRISE_PCT = 2;
 
@@ -292,7 +292,7 @@ function MetricBar({
             <span className="text-secondary-500 text-xs">{label}</span>
             <div className="bg-secondary-900 relative h-2 rounded-full">
                 {signed ? (
-                    <span className="bg-secondary-600 absolute top-[-2px] bottom-[-2px] left-1/2 w-px" />
+                    <span className="bg-secondary-600 absolute -top-0.5 -bottom-0.5 left-1/2 w-px" />
                 ) : null}
                 {value !== null ? (
                     <div
