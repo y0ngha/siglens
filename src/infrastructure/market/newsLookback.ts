@@ -8,4 +8,4 @@ export const NEWS_LOOKBACK_MS = 180 * MS_PER_DAY;
  * Narrower than `NEWS_LOOKBACK_MS` so the LLM focuses on recent drivers
  * rather than diluting the signal with older context.
  */
-export const NEWS_ANALYSIS_LOOKBACK_MS = 28 * MS_PER_DAY;
+export const NEWS_ANALYSIS_LOOKBACK_MS = 30 * MS_PER_DAY;
