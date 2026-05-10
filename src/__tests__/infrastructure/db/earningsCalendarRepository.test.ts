@@ -1,6 +1,7 @@
 import type { EarningsCalendarItem } from '@y0ngha/siglens-core';
 import type { SiglensDatabase } from '@/infrastructure/db/types';
 import {
+    dedupeCalendarItems,
     DrizzleEarningsCalendarRepository,
     toCalendarRow,
 } from '@/infrastructure/db/earningsCalendarRepository';
@@ -95,6 +96,75 @@ describe('DrizzleEarningsCalendarRepository', () => {
                     }),
                 })
             );
+        });
+
+        it('같은 symbol + earningsDate 항목은 최신 lastUpdated 값만 upsert 한다', async () => {
+            const { db, values } = makeUpsertDb();
+            const repo = new DrizzleEarningsCalendarRepository(db);
+            const revisedAppleQ2: EarningsCalendarItem = {
+                ...appleQ2,
+                epsActual: 1.62,
+                lastUpdated: '2025-08-03',
+            };
+
+            await repo.upsertMany([revisedAppleQ2, appleQ3, appleQ2]);
+
+            const rows = values.mock.calls[0][0] as ReturnType<
+                typeof toCalendarRow
+            >[];
+            expect(rows).toHaveLength(2);
+            expect(rows).toEqual([
+                toCalendarRow(revisedAppleQ2),
+                toCalendarRow(appleQ3),
+            ]);
+        });
+    });
+
+    describe('dedupeCalendarItems', () => {
+        it('symbol + earningsDate 중복에서는 최신 lastUpdated 항목을 남긴다', () => {
+            const revisedAppleQ2: EarningsCalendarItem = {
+                ...appleQ2,
+                epsEstimated: 1.5,
+                lastUpdated: '2025-08-03',
+            };
+
+            expect(
+                dedupeCalendarItems([revisedAppleQ2, appleQ3, appleQ2])
+            ).toEqual([revisedAppleQ2, appleQ3]);
+        });
+
+        it('lastUpdated 가 같으면 actual 값이 더 많이 채워진 항목을 남긴다', () => {
+            const estimatedOnly: EarningsCalendarItem = {
+                ...appleQ2,
+                epsActual: null,
+                revenueActual: null,
+                epsEstimated: 1.48,
+                revenueEstimated: 89_500_000_000,
+                lastUpdated: '2025-08-03',
+            };
+            const actualAvailable: EarningsCalendarItem = {
+                ...estimatedOnly,
+                epsActual: 1.62,
+            };
+
+            expect(
+                dedupeCalendarItems([actualAvailable, appleQ3, estimatedOnly])
+            ).toEqual([actualAvailable, appleQ3]);
+        });
+
+        it('lastUpdated 와 actual 개수가 같으면 전체 numeric 값이 더 많이 채워진 항목을 남긴다', () => {
+            const sparse: EarningsCalendarItem = {
+                ...appleQ2,
+                revenueActual: null,
+                revenueEstimated: null,
+                lastUpdated: '2025-08-03',
+            };
+            const richer: EarningsCalendarItem = {
+                ...sparse,
+                revenueEstimated: 89_500_000_000,
+            };
+
+            expect(dedupeCalendarItems([richer, sparse])).toEqual([richer]);
         });
     });
 

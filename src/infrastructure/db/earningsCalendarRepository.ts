@@ -8,11 +8,12 @@ export class DrizzleEarningsCalendarRepository {
 
     // No-op on empty input. On conflict, all numeric/date fields are replaced via EXCLUDED.*.
     async upsertMany(items: EarningsCalendarItem[]): Promise<void> {
-        if (items.length === 0) return;
+        const uniqueItems = dedupeCalendarItems(items);
+        if (uniqueItems.length === 0) return;
 
         await this.db
             .insert(earningsCalendar)
-            .values(items.map(toCalendarRow))
+            .values(uniqueItems.map(toCalendarRow))
             .onConflictDoUpdate({
                 target: [
                     earningsCalendar.symbol,
@@ -68,6 +69,69 @@ export function toCalendarRow(
                 : null,
         lastUpdated: item.lastUpdated,
     };
+}
+
+export function dedupeCalendarItems(
+    items: EarningsCalendarItem[]
+): EarningsCalendarItem[] {
+    const uniqueByKey = new Map<string, EarningsCalendarItem>();
+
+    for (const item of items) {
+        const key = toCalendarKey(item);
+        const existing = uniqueByKey.get(key);
+        if (
+            existing === undefined ||
+            shouldReplaceCalendarItem(existing, item)
+        ) {
+            uniqueByKey.set(key, item);
+        }
+    }
+
+    return Array.from(uniqueByKey.values());
+}
+
+function toCalendarKey(item: EarningsCalendarItem): string {
+    return `${item.symbol}:${item.earningsDate}`;
+}
+
+function shouldReplaceCalendarItem(
+    existing: EarningsCalendarItem,
+    candidate: EarningsCalendarItem
+): boolean {
+    if (candidate.lastUpdated !== existing.lastUpdated) {
+        return candidate.lastUpdated > existing.lastUpdated;
+    }
+
+    const candidateActualFieldCount = countActualFields(candidate);
+    const existingActualFieldCount = countActualFields(existing);
+    if (candidateActualFieldCount !== existingActualFieldCount) {
+        return candidateActualFieldCount > existingActualFieldCount;
+    }
+
+    const candidatePopulatedFieldCount = countPopulatedFields(candidate);
+    const existingPopulatedFieldCount = countPopulatedFields(existing);
+    if (candidatePopulatedFieldCount !== existingPopulatedFieldCount) {
+        return candidatePopulatedFieldCount > existingPopulatedFieldCount;
+    }
+
+    return true;
+}
+
+function countActualFields(item: EarningsCalendarItem): number {
+    return [item.epsActual, item.revenueActual].filter(isPresent).length;
+}
+
+function countPopulatedFields(item: EarningsCalendarItem): number {
+    return [
+        item.epsActual,
+        item.epsEstimated,
+        item.revenueActual,
+        item.revenueEstimated,
+    ].filter(isPresent).length;
+}
+
+function isPresent(value: number | null): boolean {
+    return value !== null;
 }
 
 interface EarningsCalendarDbRow {
