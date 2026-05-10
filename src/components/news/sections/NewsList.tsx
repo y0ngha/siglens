@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
+import { useNewsPollingWithInvalidation } from '@/components/news/hooks/useNewsPollingWithInvalidation';
+import type { NewsDisplayItem } from '@/domain/types';
 import { cn } from '@/lib/cn';
 import { NEWS_LIST_PERIOD_LABEL } from '@/lib/news/periodLabels';
-import type { NewsDisplayItem } from '@/domain/types';
-import { useNewsPollingWithInvalidation } from '@/components/news/hooks/useNewsPollingWithInvalidation';
+import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
+import { useState } from 'react';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -120,7 +120,7 @@ function NewsTextSection({ label, text }: NewsTextSectionProps) {
             <h4 className="text-secondary-300 mb-1 text-xs font-semibold">
                 {label}
             </h4>
-            <p className="text-secondary-400 text-sm leading-relaxed break-words">
+            <p className="text-secondary-400 text-sm leading-relaxed wrap-break-word">
                 {text}
             </p>
         </section>
@@ -198,7 +198,7 @@ function NewsRefreshStatusCard() {
                 <p className="text-secondary-100 text-sm font-medium">
                     최신 뉴스 확인 중…
                 </p>
-                <p className="text-secondary-400 mt-1 text-xs leading-relaxed break-words">
+                <p className="text-secondary-400 mt-1 text-xs leading-relaxed wrap-break-word">
                     기존 뉴스는 먼저 보여드리고, 새로 들어온 기사가 있으면
                     자동으로 추가합니다.
                 </p>
@@ -223,7 +223,7 @@ function NewsCard({ item }: { item: NewsDisplayItem }) {
         >
             <h3
                 className={cn(
-                    'leading-snug font-semibold text-balance break-words',
+                    'leading-snug font-semibold text-balance wrap-break-word',
                     pending && 'opacity-80'
                 )}
             >
