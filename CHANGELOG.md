@@ -1,5 +1,18 @@
 # Changelog
 
+## [0.11.5](https://github.com/y0ngha/siglens/compare/v0.11.4...v0.11.5) (2026-05-10)
+
+
+### Bug Fixes
+
+* 어닝 캘린더 갖고올 때 오류 수정 ([6981dd3](https://github.com/y0ngha/siglens/commit/6981dd3a40b8449c42fd0ddf4fbbbbc786d0ffaf))
+* tailwind 수정 ([813d3c4](https://github.com/y0ngha/siglens/commit/813d3c436c6bd80b34220976b7077687b41e95ca))
+
+
+### Features
+
+* 어닝 리포트 비교 데이터 연동 ([7f3db02](https://github.com/y0ngha/siglens/commit/7f3db024b74a4e62d74ab373b499d7095a27be3a))
+
 ## [0.11.4](https://github.com/y0ngha/siglens/compare/v0.11.3...v0.11.4) (2026-05-10)
 
 
