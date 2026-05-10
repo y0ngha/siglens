@@ -101,7 +101,7 @@ async function persistTranslation(
             });
         } catch (e) {
             console.warn('[getAssetInfo] DB upsert failed', e);
-            return;
+            // DB 실패여도 캐시는 갱신해야 12시간 영문 캐시가 유지되는 문제를 방지한다.
         }
     }
 

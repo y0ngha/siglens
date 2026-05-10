@@ -1,11 +1,10 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { useEffect, useId, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EyeIcon } from '@/components/ui/EyeIcon';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { MarkdownText } from '@/components/ui/MarkdownText';
-import { usePointerTooltip } from '@/components/hooks/usePointerTooltip';
 import type {
     ActionRecommendation,
     AnalysisResponse,
@@ -348,41 +347,21 @@ interface ConfidenceBadgeProps {
 }
 
 function ConfidenceBadge({ confidenceWeight }: ConfidenceBadgeProps) {
-    const { isVisible, toggle, handlePointerEnter, handlePointerLeave } =
-        usePointerTooltip();
-    const tooltipId = useId();
-
     const level: ConfidenceLevel =
         confidenceWeight >= HIGH_CONFIDENCE_WEIGHT ? 'high' : 'medium';
     const { className, label, tooltip } = CONFIDENCE_BADGE_CONFIG[level];
 
     return (
-        <span
-            className="relative"
-            onPointerEnter={handlePointerEnter}
-            onPointerLeave={handlePointerLeave}
-        >
-            <button
-                type="button"
-                onClick={toggle}
-                aria-describedby={isVisible ? tooltipId : undefined}
+        <span className="flex items-center">
+            <span
                 className={cn(
-                    'focus-visible:ring-primary-500 cursor-pointer rounded px-1.5 py-0.5 text-xs font-medium focus-visible:ring-1 focus-visible:outline-none',
+                    'rounded px-1.5 py-0.5 text-xs font-medium',
                     className
                 )}
             >
                 {label}
-            </button>
-            {isVisible && (
-                <div
-                    id={tooltipId}
-                    role="tooltip"
-                    className="bg-secondary-800 border-secondary-600 absolute bottom-full left-1/2 z-50 mb-1 w-48 -translate-x-1/2 rounded border p-2 text-xs leading-relaxed shadow-lg"
-                >
-                    <div className="text-secondary-300">{tooltip}</div>
-                    <span className="border-t-secondary-600 absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent" />
-                </div>
-            )}
+            </span>
+            <InfoTooltip>{tooltip}</InfoTooltip>
         </span>
     );
 }
@@ -813,7 +792,6 @@ export function AnalysisPanel({
                 key={cooldownNotice?.nonce}
                 notice={cooldownNotice}
             />
-            {/* 헤더 */}
             <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                     <span className="text-secondary-200 text-sm font-semibold">
@@ -885,7 +863,7 @@ export function AnalysisPanel({
                 스킬 감지 · {indicatorCount}종 인디케이터 적용
             </p>
 
-            {/* 요약 — 분석 중에는 진행 인디케이터로 대체.
+            {/* 분석 중에는 진행 인디케이터로 대체.
                 isAnalyzing이 false로 떨어진 직후에도 마무리 애니메이션이 끝날 때까지
                 showProgress=true가 유지되어 인디케이터가 잠시 더 노출된다. */}
             {showProgress ? (
@@ -900,15 +878,13 @@ export function AnalysisPanel({
                 </MarkdownText>
             )}
 
-            {/* 인디케이터/패턴/스킬/레벨/추세선/가격목표 등 본문 섹션 —
-                마무리 애니메이션이 끝나기 전(showProgress=true) 동안에는 노출하지 않는다.
+            {/* 마무리 애니메이션이 끝나기 전(showProgress=true) 동안에는 노출하지 않는다.
                 캐시 히트로 분석 결과가 즉시 도착해도 사용자가 5단계를 모두 본 뒤에야
                 결과가 한 번에 드러나도록 하기 위함이다. */}
             {!showProgress && (
                 <>
                     <div className="border-secondary-700 border-t" />
 
-                    {/* 매매 전략 추천 */}
                     {analysis.actionRecommendation && (
                         <ActionRecommendationSection
                             rec={analysis.actionRecommendation}
@@ -921,7 +897,6 @@ export function AnalysisPanel({
                         />
                     )}
 
-                    {/* 지지/저항 레벨 */}
                     {(keyLevels.support.length > 0 ||
                         keyLevels.resistance.length > 0 ||
                         keyLevels.poc !== undefined) && (
@@ -1014,7 +989,6 @@ export function AnalysisPanel({
                         </div>
                     )}
 
-                    {/* 추세선 */}
                     {analysis.trendlines.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <div className="flex items-center justify-between">
@@ -1033,7 +1007,6 @@ export function AnalysisPanel({
                         </div>
                     )}
 
-                    {/* 가격 목표 */}
                     {((analysis.priceTargets.bullish?.targets.length ?? 0) >
                         0 ||
                         (analysis.priceTargets.bearish?.targets.length ?? 0) >
@@ -1057,7 +1030,6 @@ export function AnalysisPanel({
                         </div>
                     )}
 
-                    {/* 보조지표 */}
                     {displayedIndicatorResults.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
@@ -1082,8 +1054,6 @@ export function AnalysisPanel({
                         </div>
                     )}
 
-                    {/* 캔들 패턴 (아코디언) */}
-                    {/* 패턴 상세 (아코디언) — 감지된 패턴만 표시, 없으면 안내 메시지 */}
                     <div className="flex flex-col gap-2">
                         <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
                             차트 패턴
@@ -1104,7 +1074,6 @@ export function AnalysisPanel({
                         )}
                     </div>
 
-                    {/* 전략 상세 (아코디언) — 감지된 전략만 표시 */}
                     {detectedStrategyResults.length > 0 && (
                         <div className="flex flex-col gap-2">
                             <span className="text-secondary-500 text-xs font-semibold tracking-wide uppercase">
@@ -1133,7 +1102,6 @@ export function AnalysisPanel({
                 </div>
             )}
 
-            {/* 분석 완료 후 패널 하단 광고 — 리포트를 다 읽은 사용자의 다음 행동 유도 */}
             {!showProgress && (
                 <AdBanner
                     isFreeUser={isFreeUser}

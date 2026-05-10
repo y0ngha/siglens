@@ -23,10 +23,6 @@ const SENTIMENT_CLASS: Record<NewsSentiment, string> = {
     bearish: 'bg-ui-danger/10 text-chart-bearish',
 };
 
-// ---------------------------------------------------------------------------
-// 상태 표시 카드 (데이터 수집 중 / 분석 중)
-// ---------------------------------------------------------------------------
-
 interface StatusCardProps {
     phase: 'fetching' | 'analyzing';
 }
@@ -50,8 +46,9 @@ function StatusCard({ phase }: StatusCardProps) {
                 <div
                     aria-hidden="true"
                     className={cn(
-                        'h-4 w-4 animate-spin rounded-full border-2 border-t-transparent motion-reduce:animate-none',
-                        isFetching ? 'border-primary-400' : 'border-primary-500'
+                        'h-4 w-4 animate-spin rounded-full border-2 motion-reduce:animate-none',
+                        isFetching ? 'border-primary-400' : 'border-primary-500',
+                        'border-t-transparent'
                     )}
                 />
                 <p
@@ -77,10 +74,6 @@ function StatusCard({ phase }: StatusCardProps) {
         </section>
     );
 }
-
-// ---------------------------------------------------------------------------
-// 분석 결과 뷰
-// ---------------------------------------------------------------------------
 
 interface NewsAiSummaryViewProps {
     result: NewsAnalysisResponse;
@@ -203,10 +196,6 @@ function NewsAiSummaryInlineError({
     );
 }
 
-// ---------------------------------------------------------------------------
-// 종합 분석 실행 컴포넌트
-// ---------------------------------------------------------------------------
-
 interface NewsAiSummaryContentProps {
     symbol: string;
     companyName: string;
@@ -219,8 +208,6 @@ function NewsAiSummaryContent({
     const modelId = useDefaultModelId();
     const analysis = useNewsAnalysis(symbol, companyName, modelId);
 
-    // Publish the in-view news result so the chatbot can reference live numbers
-    // from this page. `timeframe` is null — news analysis is timeframe-agnostic.
     // 훅 선언 순서 예외(MISTAKES.md #17): usePublishSymbolChat은 chatState(파생 변수)를
     // 인자로 받기 때문에 useMemo 뒤에 위치해야 한다.
     //
@@ -262,10 +249,6 @@ function NewsAiSummaryContent({
 
     return <NewsAiSummaryView result={analysis.result} />;
 }
-
-// ---------------------------------------------------------------------------
-// Public export
-// ---------------------------------------------------------------------------
 
 interface NewsAiSummaryProps {
     symbol: string;
