@@ -47,7 +47,9 @@ function StatusCard({ phase }: StatusCardProps) {
                     aria-hidden="true"
                     className={cn(
                         'h-4 w-4 animate-spin rounded-full border-2 motion-reduce:animate-none',
-                        isFetching ? 'border-primary-400' : 'border-primary-500',
+                        isFetching
+                            ? 'border-primary-400'
+                            : 'border-primary-500',
                         'border-t-transparent'
                     )}
                 />
