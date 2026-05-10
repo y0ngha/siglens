@@ -274,7 +274,7 @@ describe('getAssetInfo', () => {
         expect(mockRepository.upsert).not.toHaveBeenCalled();
     });
 
-    it('한국명 보유 + DB upsert 실패 시 결과는 반환하되 cache 는 갱신하지 않는다', async () => {
+    it('한국명 보유 + DB upsert 실패해도 cache 는 갱신된다', async () => {
         mockCache.get.mockResolvedValue(null);
         mockRepository.findBySymbol.mockResolvedValue(null);
         searchBySymbolMock.mockResolvedValue([apple]);
@@ -284,7 +284,11 @@ describe('getAssetInfo', () => {
         const result = await getAssetInfo('AAPL');
         expect(result?.koreanName).toBe('애플');
         await new Promise(resolve => setImmediate(resolve));
-        expect(mockCache.set).not.toHaveBeenCalled();
+        expect(mockCache.set).toHaveBeenCalledWith(
+            'asset-info:AAPL',
+            { symbol: 'AAPL', name: 'Apple Inc.', koreanName: '애플' },
+            expect.any(Number)
+        );
     });
 
     it('DB 클라이언트 없을 때 한국명 보유 경로는 cache 만 갱신', async () => {
