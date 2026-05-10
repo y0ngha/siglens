@@ -165,7 +165,6 @@ describe('FmpNewsClient', () => {
             const client = new FmpNewsClient();
             await expect(client.fetchNews('AAPL', '7d')).rejects.toThrow('429');
         });
-
     });
 
     // ------------------------------------------------------------------ //
@@ -390,7 +389,6 @@ describe('FmpNewsClient', () => {
             expect(result[0]!.titleEn).toBe('Apple within period');
         });
     });
-
 
     // ------------------------------------------------------------------ //
     // fetchEarningsReport

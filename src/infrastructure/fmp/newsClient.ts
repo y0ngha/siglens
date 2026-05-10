@@ -135,7 +135,6 @@ export function hashUrlToId(url: string): string {
     return createHash('sha256').update(url).digest('base64url').slice(0, 32);
 }
 
-
 function toEarningsDate(value: RawFmpEarningsReport): string | null {
     return typeof value.date === 'string'
         ? value.date

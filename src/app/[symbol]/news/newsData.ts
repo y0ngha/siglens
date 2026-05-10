@@ -8,10 +8,7 @@ import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import type { NewsRow } from '@/infrastructure/db/newsRepository';
 import type { GradesEvent } from '@y0ngha/siglens-core';
 import type { EarningsReportComparisonItem } from '@/domain/types';
-import {
-    NEWS_GRADES_TTL_S,
-    NEWS_LIST_TTL_S,
-} from '@/lib/news/cacheTtl';
+import { NEWS_GRADES_TTL_S, NEWS_LIST_TTL_S } from '@/lib/news/cacheTtl';
 
 const fundamentalClient = new FmpFundamentalClient();
 const EARNINGS_REPORT_FMP_LIMIT = 5;
