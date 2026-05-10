@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.11.4](https://github.com/y0ngha/siglens/compare/v0.11.3...v0.11.4) (2026-05-10)
+
+
+### Bug Fixes
+
+* 신뢰도 툴팁 z-index, 스피너 CSS, 번역 캐시, 뉴스 해시 충돌 4건 버그 수정 ([824ed83](https://github.com/y0ngha/siglens/commit/824ed83c447b5d9cc782e06c2405937cf3b5da66))
+
+
+### Features
+
+* AI 분석 뉴스 30일로 다시 변경 ([b703be2](https://github.com/y0ngha/siglens/commit/b703be22e76024aef648402ecb6166b309bf013b))
+
 ## [0.11.3](https://github.com/y0ngha/siglens/compare/v0.11.2...v0.11.3) (2026-05-08)
 
 
