@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { NewsImpact, NewsSentiment } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
+import { NEWS_LIST_PERIOD_LABEL } from '@/lib/news/periodLabels';
 import type { NewsDisplayItem } from '@/domain/types';
 import { useNewsPollingWithInvalidation } from '@/components/news/hooks/useNewsPollingWithInvalidation';
 
@@ -154,12 +155,17 @@ function NewsListLoadingState() {
             className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
         >
             <div className="flex items-center justify-between gap-3">
-                <h2
-                    id="news-list-heading"
-                    className="text-lg font-semibold tracking-tight"
-                >
-                    최근 뉴스
-                </h2>
+                <div className="flex min-w-0 items-center gap-2">
+                    <h2
+                        id="news-list-heading"
+                        className="text-lg font-semibold tracking-tight"
+                    >
+                        최근 뉴스
+                    </h2>
+                    <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                        {NEWS_LIST_PERIOD_LABEL}
+                    </span>
+                </div>
                 <span className="text-secondary-400 text-xs" aria-live="polite">
                     뉴스 수집 중…
                 </span>
@@ -316,14 +322,19 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
                 aria-labelledby="news-list-heading"
                 className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
             >
-                <h2
-                    id="news-list-heading"
-                    className="mb-3 text-lg font-semibold tracking-tight"
-                >
-                    최근 뉴스
-                </h2>
+                <div className="mb-3 flex items-center gap-2">
+                    <h2
+                        id="news-list-heading"
+                        className="text-lg font-semibold tracking-tight"
+                    >
+                        최근 뉴스
+                    </h2>
+                    <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                        {NEWS_LIST_PERIOD_LABEL}
+                    </span>
+                </div>
                 <p className="text-secondary-400 text-sm">
-                    최근 7일간 뉴스가 없습니다.
+                    {NEWS_LIST_PERIOD_LABEL}간 뉴스가 없습니다.
                 </p>
             </section>
         );
@@ -337,12 +348,17 @@ export function NewsList({ items: initialItems, symbol }: NewsListProps) {
             aria-labelledby="news-list-heading"
             className="w-full max-w-full min-w-0 space-y-3 overflow-hidden"
         >
-            <h2
-                id="news-list-heading"
-                className="text-lg font-semibold tracking-tight"
-            >
-                최근 뉴스
-            </h2>
+            <div className="flex items-center gap-2">
+                <h2
+                    id="news-list-heading"
+                    className="text-lg font-semibold tracking-tight"
+                >
+                    최근 뉴스
+                </h2>
+                <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                    {NEWS_LIST_PERIOD_LABEL}
+                </span>
+            </div>
             {isPolling ? <NewsRefreshStatusCard /> : null}
             <ul className="space-y-3">
                 {visible.map(item => (

@@ -10,6 +10,7 @@ import {
     type NewsSentiment,
 } from '@y0ngha/siglens-core';
 import { useMemo } from 'react';
+import { NEWS_ANALYSIS_PERIOD_LABEL } from '@/lib/news/periodLabels';
 
 const SENTIMENT_LABEL: Record<NewsSentiment, string> = {
     bullish: '긍정',
@@ -36,12 +37,17 @@ function StatusCard({ phase }: StatusCardProps) {
             aria-busy="true"
             className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
-            <h2
-                id="news-ai-summary-status-heading"
-                className="mb-4 text-lg font-semibold tracking-tight"
-            >
-                AI 뉴스 종합 분석
-            </h2>
+            <div className="mb-4 flex items-center gap-2">
+                <h2
+                    id="news-ai-summary-status-heading"
+                    className="text-lg font-semibold tracking-tight"
+                >
+                    AI 뉴스 종합 분석
+                </h2>
+                <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                    {NEWS_ANALYSIS_PERIOD_LABEL}
+                </span>
+            </div>
             <div className="flex items-center gap-3">
                 <div
                     aria-hidden="true"
@@ -88,12 +94,17 @@ function NewsAiSummaryView({ result }: NewsAiSummaryViewProps) {
             className="border-secondary-700 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6 motion-safe:animate-[fade-in_200ms_ease-out]"
         >
             <div className="mb-4 flex min-w-0 flex-wrap items-center justify-between gap-3">
-                <h2
-                    id="news-ai-summary-heading"
-                    className="text-lg font-semibold tracking-tight"
-                >
-                    AI 뉴스 종합 분석
-                </h2>
+                <div className="flex min-w-0 items-center gap-2">
+                    <h2
+                        id="news-ai-summary-heading"
+                        className="text-lg font-semibold tracking-tight"
+                    >
+                        AI 뉴스 종합 분석
+                    </h2>
+                    <span className="bg-secondary-700 text-secondary-400 shrink-0 rounded px-2 py-0.5 text-xs">
+                        {NEWS_ANALYSIS_PERIOD_LABEL}
+                    </span>
+                </div>
                 <span
                     className={cn(
                         'rounded px-2 py-0.5 text-xs font-medium',
@@ -178,12 +189,17 @@ function NewsAiSummaryInlineError({
             aria-labelledby="news-ai-summary-error-heading"
             className="border-ui-danger/30 bg-secondary-800 w-full max-w-full min-w-0 overflow-hidden rounded-xl border p-6"
         >
-            <h2
-                id="news-ai-summary-error-heading"
-                className="mb-2 text-lg font-semibold tracking-tight"
-            >
-                AI 뉴스 종합 분석
-            </h2>
+            <div className="mb-2 flex items-center gap-2">
+                <h2
+                    id="news-ai-summary-error-heading"
+                    className="text-lg font-semibold tracking-tight"
+                >
+                    AI 뉴스 종합 분석
+                </h2>
+                <span className="bg-secondary-700 text-secondary-400 rounded px-2 py-0.5 text-xs">
+                    {NEWS_ANALYSIS_PERIOD_LABEL}
+                </span>
+            </div>
             <p className="text-ui-danger text-sm wrap-break-word" role="alert">
                 {error.message}
             </p>

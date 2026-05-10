@@ -12,7 +12,7 @@ import { FmpFundamentalClient } from '@/infrastructure/fmp/fundamentalClient';
 import { getDatabaseClient } from '@/infrastructure/db/client';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { DrizzleEarningsCalendarRepository } from '@/infrastructure/db/earningsCalendarRepository';
-import { NEWS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
+import { NEWS_ANALYSIS_LOOKBACK_MS } from '@/infrastructure/market/newsLookback';
 import {
     isEnrichedRow,
     toEnrichedNewsItem,
@@ -51,7 +51,7 @@ export async function submitOverallAnalysisAction(
         const calRepo = new DrizzleEarningsCalendarRepository(db);
 
         const [rows, next] = await Promise.all([
-            newsRepo.listBySymbol(symbol, NEWS_LOOKBACK_MS),
+            newsRepo.listBySymbol(symbol, NEWS_ANALYSIS_LOOKBACK_MS),
             calRepo.getNextForSymbol(symbol, todayKstIsoDate()),
         ]);
 

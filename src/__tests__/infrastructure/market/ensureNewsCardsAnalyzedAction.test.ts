@@ -29,7 +29,7 @@ jest.mock('@/lib/sleep', () => ({
 
 jest.mock('@/infrastructure/fmp/newsClient', () => ({
     FmpNewsClient: jest.fn().mockImplementation(() => ({
-        fetchNews: jest.fn(),
+        fetchNewsForPeriod: jest.fn(),
     })),
 }));
 
@@ -116,7 +116,7 @@ const POLL_ERROR: PollNewsCardAnalysisResult = {
 // ---------------------------------------------------------------------------
 
 describe('ensureNewsCardsAnalyzedAction 함수는', () => {
-    let mockFetchNews: jest.Mock;
+    let mockFetchNewsForPeriod: jest.Mock;
     let mockUpsertNewsItem: jest.Mock;
     let mockAttachAnalysis: jest.Mock;
     let mockListBySymbol: jest.Mock;
@@ -126,13 +126,13 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         mockSubmitNewsCardAnalysis.mockReset();
         mockPollNewsCardAnalysis.mockReset();
 
-        mockFetchNews = jest.fn();
+        mockFetchNewsForPeriod = jest.fn();
         mockUpsertNewsItem = jest.fn().mockResolvedValue(undefined);
         mockAttachAnalysis = jest.fn().mockResolvedValue(undefined);
         mockListBySymbol = jest.fn().mockResolvedValue([]);
 
         MockFmpNewsClient.mockImplementation(
-            () => ({ fetchNews: mockFetchNews }) as never
+            () => ({ fetchNewsForPeriod: mockFetchNewsForPeriod }) as never
         );
         MockNewsRepository.mockImplementation(
             () =>
@@ -144,18 +144,18 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         );
     });
 
-    it('FMP에서 7일치 뉴스를 가져온다', async () => {
-        mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+    it('FMP에서 6개월치 뉴스를 가져온다', async () => {
+        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
         mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
         mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 
-        expect(mockFetchNews).toHaveBeenCalledWith('AAPL', '7d');
+        expect(mockFetchNewsForPeriod).toHaveBeenCalledWith('AAPL', NEWS_LOOKBACK_MS);
     });
 
     it('각 뉴스 아이템을 DB에 upsert한다', async () => {
-        mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
+        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
         mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
         mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
@@ -167,7 +167,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     });
 
     it('각 뉴스 아이템에 대해 submitNewsCardAnalysis를 호출한다', async () => {
-        mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
+        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
         mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
         mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
@@ -186,7 +186,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     describe('submitted 결과는', () => {
         it('pollNewsCardAnalysis를 호출한다', async () => {
-            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
             mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
@@ -198,7 +198,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('poll 완료(done) 시 attachAnalysis를 호출한다', async () => {
-            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
             mockPollNewsCardAnalysis.mockResolvedValue(POLL_DONE);
 
@@ -212,7 +212,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('poll 에러(error) 시 attachAnalysis를 호출하지 않는다', async () => {
-            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
             mockPollNewsCardAnalysis.mockResolvedValue(POLL_ERROR);
 
@@ -222,7 +222,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('processing 후 done이 되면 attachAnalysis를 호출한다', async () => {
-            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockSubmitNewsCardAnalysis.mockResolvedValue(SUBMITTED_RESULT);
             mockPollNewsCardAnalysis
                 .mockResolvedValueOnce({ status: 'processing' })
@@ -241,7 +241,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     });
 
     it('FMP fetch 실패 시 reject하지 않고 조용히 리턴한다', async () => {
-        mockFetchNews.mockRejectedValue(new Error('FMP network error'));
+        mockFetchNewsForPeriod.mockRejectedValue(new Error('FMP network error'));
 
         await expect(
             ensureNewsCardsAnalyzedAction('AAPL')
@@ -251,7 +251,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     });
 
     it('upsert 실패해도 모든 아이템의 카드 분석을 시도한다', async () => {
-        mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
+        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
         mockUpsertNewsItem
             .mockRejectedValueOnce(new Error('DB constraint error'))
             .mockResolvedValueOnce(undefined);
@@ -265,8 +265,22 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         expect(mockSubmitNewsCardAnalysis).toHaveBeenCalledTimes(2);
     });
 
+    it('upsert 과반 실패 시 에러를 throw한다', async () => {
+        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
+        // Both upserts fail → 2/2 > 50%, triggers majority-failure throw.
+        mockUpsertNewsItem
+            .mockRejectedValueOnce(new Error('DB down'))
+            .mockRejectedValueOnce(new Error('DB down'));
+
+        await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
+            'majority upsert failure'
+        );
+
+        expect(mockSubmitNewsCardAnalysis).not.toHaveBeenCalled();
+    });
+
     it('카드 분석 실패 시 reject하지 않고 계속 진행한다', async () => {
-        mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
+        mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
         mockSubmitNewsCardAnalysis
             .mockRejectedValueOnce(new Error('LLM timeout'))
             .mockResolvedValueOnce(SUBMITTED_RESULT);
@@ -282,7 +296,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
 
     describe('DB-first 필터링은', () => {
         it('모든 아이템이 이미 분석 완료(analyzedAt != null)이면 카드 분석을 호출하지 않는다', async () => {
-            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockListBySymbol.mockResolvedValue([
                 { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
             ]);
@@ -297,7 +311,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('분석 완료된 아이템은 건너뛰고 미분석 아이템만 카드 분석을 호출한다', async () => {
-            mockFetchNews.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1, NEWS_ITEM_2]);
             mockListBySymbol.mockResolvedValue([
                 { id: NEWS_ITEM_1.id, analyzedAt: new Date('2025-07-01') },
                 { id: NEWS_ITEM_2.id, analyzedAt: null },
@@ -317,7 +331,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
         });
 
         it('listBySymbol 실패 시 에러를 전파한다', async () => {
-            mockFetchNews.mockResolvedValue([NEWS_ITEM_1]);
+            mockFetchNewsForPeriod.mockResolvedValue([NEWS_ITEM_1]);
             mockListBySymbol.mockRejectedValue(new Error('DB connection lost'));
 
             await expect(ensureNewsCardsAnalyzedAction('AAPL')).rejects.toThrow(
@@ -328,7 +342,7 @@ describe('ensureNewsCardsAnalyzedAction 함수는', () => {
     });
 
     it('뉴스가 없으면 upsert와 카드 분석을 호출하지 않는다', async () => {
-        mockFetchNews.mockResolvedValue([]);
+        mockFetchNewsForPeriod.mockResolvedValue([]);
 
         await ensureNewsCardsAnalyzedAction('AAPL');
 

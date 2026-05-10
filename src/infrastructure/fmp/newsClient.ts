@@ -150,6 +150,26 @@ function toEarningsDate(value: RawFmpEarningsReport): string | null {
           : null;
 }
 
+/** Maximum article count for a single `fetchNewsForPeriod` request. */
+const LONG_PERIOD_LIMIT = 1000;
+
+/** Format a Date as YYYY-MM-DD (UTC). Used to build FMP `from` query param. */
+export function toYyyyMmDd(date: Date): string {
+    return date.toISOString().slice(0, 10);
+}
+
+function mapRawToNewsItem(raw: RawFmpNews, publishedAt: string): NewsItem {
+    return {
+        id: hashUrlToId(raw.url),
+        symbol: raw.symbol,
+        source: raw.site,
+        url: raw.url,
+        publishedAt,
+        titleEn: raw.title,
+        bodyEn: raw.text,
+    };
+}
+
 /** FMP adapter implementing `NewsProvider`. Uses `fmpGet` for all HTTP calls. */
 export class FmpNewsClient implements NewsProvider {
     /** Fetch news articles for a symbol within the given time window (most recent first). */
@@ -168,15 +188,34 @@ export class FmpNewsClient implements NewsProvider {
                 (n): n is { raw: RawFmpNews; publishedAt: string } =>
                     n.publishedAt !== null && new Date(n.publishedAt) >= cutoff
             )
-            .map(({ raw, publishedAt }) => ({
-                id: hashUrlToId(raw.url),
-                symbol: raw.symbol,
-                source: raw.site,
-                url: raw.url,
-                publishedAt,
-                titleEn: raw.title,
-                bodyEn: raw.text,
-            }));
+            .map(({ raw, publishedAt }) => mapRawToNewsItem(raw, publishedAt));
+    }
+
+    /**
+     * Fetch news articles for a symbol going back `lookbackMs` milliseconds
+     * from now. Uses FMP's `from` date parameter so periods longer than 30d
+     * (e.g. 6 months) are fully covered in a single request.
+     */
+    async fetchNewsForPeriod(
+        symbol: string,
+        lookbackMs: number
+    ): Promise<NewsItem[]> {
+        const cutoff = new Date(Date.now() - lookbackMs);
+        const raw = await fmpGet<RawFmpNews[]>('news/stock', {
+            symbols: symbol,
+            limit: String(LONG_PERIOD_LIMIT),
+            from: toYyyyMmDd(cutoff),
+        });
+        return raw
+            .map(n => ({
+                raw: n,
+                publishedAt: tryNormalizeFmpPublishedDate(n.publishedDate),
+            }))
+            .filter(
+                (n): n is { raw: RawFmpNews; publishedAt: string } =>
+                    n.publishedAt !== null && new Date(n.publishedAt) >= cutoff
+            )
+            .map(({ raw, publishedAt }) => mapRawToNewsItem(raw, publishedAt));
     }
 
     // FMP stable calendar endpoint has no per-symbol filter; callers filter at the repository layer after DB caching.

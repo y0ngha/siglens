@@ -72,7 +72,7 @@ export async function ensureNewsCardsAnalyzedAction(
     const repo = new DrizzleNewsRepository(db);
 
     const fresh = await newsClient
-        .fetchNews(symbol, '7d')
+        .fetchNewsForPeriod(symbol, NEWS_LOOKBACK_MS)
         .catch((err: unknown) => {
             console.error(
                 '[ensureNewsCardsAnalyzedAction] FMP fetch failed:',
