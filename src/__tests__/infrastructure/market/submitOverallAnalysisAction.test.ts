@@ -7,7 +7,6 @@ import {
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
 
-
 jest.mock('next/headers', () => ({
     headers: jest.fn(() => Promise.resolve(new Headers())),
 }));
@@ -125,7 +124,6 @@ const gateError: AnalysisGateError = {
     code: 'tier_premium_blocked',
     message: 'mock-tier_premium_blocked',
 };
-
 
 describe('submitOverallAnalysisAction 함수는', () => {
     let mockListBySymbol: jest.Mock;

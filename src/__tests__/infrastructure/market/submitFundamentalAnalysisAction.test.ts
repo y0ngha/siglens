@@ -1,4 +1,3 @@
-
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
 }));
@@ -69,7 +68,6 @@ const gateError: AnalysisGateError = {
     code: 'tier_premium_blocked',
     message: 'mock-tier_premium_blocked',
 };
-
 
 describe('submitFundamentalAnalysisAction 함수는', () => {
     beforeEach(() => {
