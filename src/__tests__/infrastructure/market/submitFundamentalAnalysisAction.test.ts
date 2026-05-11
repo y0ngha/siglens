@@ -6,6 +6,10 @@ jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
 }));
 
+jest.mock('next/headers', () => ({
+    headers: jest.fn(() => Promise.resolve(new Headers())),
+}));
+
 jest.mock('@y0ngha/siglens-core', () => ({
     ...jest.requireActual('@y0ngha/siglens-core'),
     submitFundamentalAnalysis: jest.fn(),

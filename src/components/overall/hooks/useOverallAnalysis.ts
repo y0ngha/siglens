@@ -75,6 +75,19 @@ class OverallAnalysisError extends Error {
     }
 }
 
+/**
+ * Sentinel thrown when the Server Action gates a bot request by returning
+ * `miss_no_trigger`. Caught at the hook level and surfaced as `'bot_blocked'`
+ * so the UI can render `BotBlockedNotice` instead of an error fallback.
+ */
+class BotBlockedError extends Error {
+    readonly isBotBlocked = true as const;
+    constructor() {
+        super('bot_blocked');
+        this.name = 'BotBlockedError';
+    }
+}
+
 function throwIfAborted(signal: AbortSignal): void {
     if (signal.aborted)
         throw new DOMException('Overall analysis aborted', 'AbortError');
@@ -246,6 +259,10 @@ async function fetchOverallAnalysis(
 
     if (submitted.status === 'cached') return submitted.result;
 
+    if (submitted.status === 'miss_no_trigger') {
+        throw new BotBlockedError();
+    }
+
     if (submitted.status === 'error') {
         // AnalysisGateBlockedResult: error is { code: AnalysisGateErrorCode, message }, no axis.
         if (isGateBlockedResult(submitted)) {
@@ -343,6 +360,9 @@ export function useOverallAnalysis(
         if (!triggered) return { status: 'idle' };
         if (query.isError) {
             const err = query.error;
+            if (err instanceof BotBlockedError) {
+                return { status: 'bot_blocked' };
+            }
             return {
                 status: 'error',
                 error:

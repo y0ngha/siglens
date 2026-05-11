@@ -1,6 +1,7 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
+import { headers } from 'next/headers';
 import {
     submitOverallAnalysis,
     type EnrichedNewsItem,
@@ -22,6 +23,7 @@ import {
     resolveTierAndByok,
     buildGateError,
 } from '@/infrastructure/market/byokGate';
+import { isBot } from '@/lib/isBot';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's overall result + our siglens-side gate errors. */
@@ -37,6 +39,9 @@ export async function submitOverallAnalysisAction(
     modelId: SubmitOverallAnalysisOptions['modelId']
 ): Promise<SubmitOverallAnalysisActionResult> {
     try {
+        const requestHeaders = await headers();
+        const skipEnqueueIfMiss = isBot(requestHeaders);
+
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
@@ -68,6 +73,7 @@ export async function submitOverallAnalysisAction(
             technical: { tierContext: { userId, tier: gate.tier } },
             waitUntil,
             tier: gate.tier,
+            skipEnqueueIfMiss,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),

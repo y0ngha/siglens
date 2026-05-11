@@ -12,6 +12,7 @@ import { ScenarioAnalysis } from '@/components/overall/sections/ScenarioAnalysis
 import { TechnicalSummary } from '@/components/overall/sections/TechnicalSummary';
 import { ThreeAxisConclusion } from '@/components/overall/sections/ThreeAxisConclusion';
 import { buildChatState } from '@/components/overall/utils/buildChatState';
+import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { cn } from '@/lib/cn';
 import { type Timeframe } from '@y0ngha/siglens-core';
@@ -50,6 +51,10 @@ export function OverallContent({
 
     if (state.status === 'idle') {
         return <OverallTriggerCta onTrigger={trigger} />;
+    }
+
+    if (state.status === 'bot_blocked') {
+        return <BotBlockedNotice />;
     }
 
     if (state.status === 'pending_dependencies') {

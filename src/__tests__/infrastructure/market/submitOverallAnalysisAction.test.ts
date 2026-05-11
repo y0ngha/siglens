@@ -11,6 +11,10 @@ import {
 // Module mocks
 // ---------------------------------------------------------------------------
 
+jest.mock('next/headers', () => ({
+    headers: jest.fn(() => Promise.resolve(new Headers())),
+}));
+
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
 }));
