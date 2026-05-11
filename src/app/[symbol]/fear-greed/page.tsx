@@ -20,6 +20,7 @@ import {
 } from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 
 interface Props {
     params: Promise<{ symbol: string }>;
@@ -59,6 +60,11 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function SymbolFearGreedPage({ params }: Props) {
+    // Cache Components: setQueryData/prefetchQuery below internally call
+    // Date.now() (`dataUpdatedAt`). `await params` doesn't satisfy the
+    // dynamic-data gate, so opt in explicitly via connection().
+    await connection();
+
     const { symbol } = await params;
     const ticker = symbol.toUpperCase();
 

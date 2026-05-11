@@ -28,6 +28,7 @@ import {
 import { waitUntil } from '@vercel/functions';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { connection } from 'next/server';
 import { Suspense } from 'react';
 
 // JSON-LD ItemList 최대 노출 — Google ItemList 가이드라인의 "주요 항목"만 노출하라는 권고에 맞춤.
@@ -92,6 +93,11 @@ async function AnalystActionsSection({ symbol }: SymbolSectionProps) {
 }
 
 export default async function NewsPage({ params }: Props) {
+    // Cache Components: `new Date().toISOString()` below (for the JSON-LD
+    // `dateModified`) reads Date.now(), which requires a prior dynamic-data
+    // accessor. `await params` doesn't qualify; opt in explicitly.
+    await connection();
+
     const { symbol } = await params;
     const upper = symbol.toUpperCase();
 

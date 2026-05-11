@@ -40,11 +40,39 @@ describe('parseJsonResponse', () => {
     });
 
     it('preserves the underlying SyntaxError as `cause` on malformed input', () => {
+        // expect.assertions guards against the throw silently not happening —
+        // Jest 30 removed the `fail()` global, so the older try/fail/catch
+        // pattern is no longer reliable here.
+        expect.assertions(2);
         try {
-            parseJsonResponse('{ bad', 'src');
-            fail('expected throw');
+            parseJsonResponse('not-json', 'src');
         } catch (error) {
+            expect(error).toBeInstanceOf(Error);
             expect((error as Error).cause).toBeInstanceOf(SyntaxError);
         }
+    });
+
+    // Salvage path — jsonrepair fallback for common LLM corruption.
+    it('salvages truncated JSON via jsonrepair', () => {
+        // Translator response cut off mid-object: jsonrepair closes the brace.
+        const truncated = '{"AAPL":"애플", "MSFT":"마이크로소프트"';
+        expect(parseJsonResponse(truncated, 'koreanTranslator')).toEqual({
+            AAPL: '애플',
+            MSFT: '마이크로소프트',
+        });
+    });
+
+    it('salvages JSON with trailing commas and unquoted keys', () => {
+        const broken = '{AAPL:"애플",}';
+        expect(parseJsonResponse(broken, 'koreanTranslator')).toEqual({
+            AAPL: '애플',
+        });
+    });
+
+    it('does not silently wrap non-JSON-shaped garbage as a string', () => {
+        // jsonrepair would happily turn this into `"random prose"`. Guard prevents that.
+        expect(() => parseJsonResponse('random prose', 'src')).toThrow(
+            /Failed to parse/
+        );
     });
 });
