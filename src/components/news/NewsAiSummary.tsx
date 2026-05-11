@@ -3,6 +3,7 @@
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { useNewsAnalysis } from '@/components/news/hooks/useNewsAnalysis';
 import { useWaitForNewsCards } from '@/components/news/hooks/useWaitForNewsCards';
+import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { useDefaultModelId } from '@/components/symbol-page/hooks/useDefaultModelId';
 import { cn } from '@/lib/cn';
 import {
@@ -259,6 +260,10 @@ function NewsAiSummaryContent({
                 onRetry={analysis.retry}
             />
         );
+    }
+
+    if (analysis.status === 'bot_blocked') {
+        return <BotBlockedNotice />;
     }
 
     if (analysis.status === 'loading') {

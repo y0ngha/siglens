@@ -1,6 +1,7 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
+import { headers } from 'next/headers';
 import {
     submitAnalysis,
     type ModelId,
@@ -12,6 +13,7 @@ import {
     resolveTierAndByok,
     buildGateError,
 } from '@/infrastructure/market/byokGate';
+import { isBot } from '@/infrastructure/http/isBot';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's gated result + our siglens-side gate errors. */
@@ -29,6 +31,9 @@ export async function submitAnalysisAction(
     modelId?: ModelId
 ): Promise<SubmitAnalysisActionResult> {
     try {
+        const requestHeaders = await headers();
+        const skipEnqueueIfMiss = isBot(requestHeaders);
+
         // no user lookup needed when modelId is absent
         if (modelId === undefined) {
             return await submitAnalysis(
@@ -37,7 +42,7 @@ export async function submitAnalysisAction(
                 timeframe,
                 force,
                 fmpSymbol,
-                { waitUntil, modelId }
+                { waitUntil, modelId, skipEnqueueIfMiss }
             );
         }
 
@@ -58,6 +63,7 @@ export async function submitAnalysisAction(
             {
                 waitUntil,
                 modelId,
+                skipEnqueueIfMiss,
                 tierContext: { userId, tier: gate.tier },
                 ...(gate.userApiKey !== undefined
                     ? { userApiKey: gate.userApiKey }

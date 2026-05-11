@@ -7,6 +7,7 @@ import { type AnalysisResponse, type Timeframe } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 import { ChartSkeleton } from '@/components/chart/ChartSkeleton';
 import { AnalysisPanel } from '@/components/analysis/AnalysisPanel';
+import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { useBars } from '@/components/symbol-page/hooks/useBars';
 import { useAnalysis } from '@/components/symbol-page/hooks/useAnalysis';
 import { useAnalysisDerivedData } from '@/components/symbol-page/hooks/useAnalysisDerivedData';
@@ -127,6 +128,7 @@ export function ChartContent({
         analysisResult,
         isAnalyzing,
         analysisError,
+        isBotBlocked,
         handleReanalyze,
         reanalyzeCooldownMs,
         cooldownNotice,
@@ -158,35 +160,39 @@ export function ChartContent({
         useAnalysisDerivedData(analysis, bars);
 
     const analysisContent = useMemo(
-        () => (
-            <>
-                <AnalysisStatusBanner
-                    status={analysisStatus}
-                    className="mb-3"
-                />
-                <AnalysisPanel
-                    symbol={symbol}
-                    analysis={analysis}
-                    keyLevels={clusteredKeyLevels}
-                    isAnalyzing={isAnalyzing}
-                    showProgress={displayAnalyzing}
-                    progressPhaseIndex={progressPhaseIndex}
-                    progressTipIndex={progressTipIndex}
-                    onReanalyze={handleReanalyze}
-                    reanalyzeCooldownMs={reanalyzeCooldownMs}
-                    cooldownNotice={cooldownNotice}
-                    actionPricesVisible={actionPricesVisible}
-                    onActionPricesVisibilityChange={setActionPricesVisible}
-                />
-                <Suspense fallback={null}>
-                    <FearGreedCardMounted
-                        symbol={symbol}
-                        fmpSymbol={fmpSymbol}
+        () =>
+            isBotBlocked ? (
+                <BotBlockedNotice />
+            ) : (
+                <>
+                    <AnalysisStatusBanner
+                        status={analysisStatus}
+                        className="mb-3"
                     />
-                </Suspense>
-            </>
-        ),
+                    <AnalysisPanel
+                        symbol={symbol}
+                        analysis={analysis}
+                        keyLevels={clusteredKeyLevels}
+                        isAnalyzing={isAnalyzing}
+                        showProgress={displayAnalyzing}
+                        progressPhaseIndex={progressPhaseIndex}
+                        progressTipIndex={progressTipIndex}
+                        onReanalyze={handleReanalyze}
+                        reanalyzeCooldownMs={reanalyzeCooldownMs}
+                        cooldownNotice={cooldownNotice}
+                        actionPricesVisible={actionPricesVisible}
+                        onActionPricesVisibilityChange={setActionPricesVisible}
+                    />
+                    <Suspense fallback={null}>
+                        <FearGreedCardMounted
+                            symbol={symbol}
+                            fmpSymbol={fmpSymbol}
+                        />
+                    </Suspense>
+                </>
+            ),
         [
+            isBotBlocked,
             isAnalyzing,
             symbol,
             analysisStatus,

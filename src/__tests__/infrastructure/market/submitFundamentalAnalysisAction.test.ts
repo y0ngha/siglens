@@ -1,9 +1,9 @@
-// ---------------------------------------------------------------------------
-// Module mocks
-// ---------------------------------------------------------------------------
-
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
+}));
+
+jest.mock('next/headers', () => ({
+    headers: jest.fn(() => Promise.resolve(new Headers())),
 }));
 
 jest.mock('@y0ngha/siglens-core', () => ({
@@ -27,10 +27,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
     })),
 }));
 
-// ---------------------------------------------------------------------------
-// Typed mocks & fixtures
-// ---------------------------------------------------------------------------
-
+import { headers } from 'next/headers';
 import {
     submitFundamentalAnalysis,
     type ModelId,
@@ -42,6 +39,7 @@ import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
 import type { AnalysisGateError } from '@/domain/types';
 import { submitFundamentalAnalysisAction } from '@/infrastructure/market/submitFundamentalAnalysisAction';
 
+const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const mockSubmitFundamentalAnalysis =
     submitFundamentalAnalysis as jest.MockedFunction<
         typeof submitFundamentalAnalysis
@@ -70,10 +68,6 @@ const gateError: AnalysisGateError = {
     code: 'tier_premium_blocked',
     message: 'mock-tier_premium_blocked',
 };
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('submitFundamentalAnalysisAction 함수는', () => {
     beforeEach(() => {
@@ -213,5 +207,31 @@ describe('submitFundamentalAnalysisAction 함수는', () => {
             status: 'error',
             error: expect.objectContaining({ code: 'unexpected_error' }),
         });
+    });
+
+    it('passes skipEnqueueIfMiss: true to siglens-core when request UA is a bot', async () => {
+        mockHeaders.mockResolvedValueOnce(
+            new Headers({
+                'user-agent':
+                    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+            })
+        );
+        mockSubmitFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+
+        await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+
+        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ skipEnqueueIfMiss: true })
+        );
+    });
+
+    it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
+        mockSubmitFundamentalAnalysis.mockResolvedValueOnce(CACHED_RESULT);
+
+        await submitFundamentalAnalysisAction('AAPL', MODEL_ID);
+
+        expect(mockSubmitFundamentalAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ skipEnqueueIfMiss: false })
+        );
     });
 });

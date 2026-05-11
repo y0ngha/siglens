@@ -22,4 +22,5 @@ export type OverallAnalysisState =
       }
     | { status: 'submitting' | 'polling' }
     | { status: 'done'; result: OverallAnalysisResponse }
+    | { status: 'bot_blocked' }
     | { status: 'error'; error: string; axis?: OverallAxis };

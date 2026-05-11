@@ -14,11 +14,13 @@ import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
+import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
 import type { CancelJobEntry } from '@/domain/types';
 
 export type FundamentalAnalysisState =
     | { status: 'loading' }
     | { status: 'done'; result: FundamentalAnalysisResponse }
+    | { status: 'bot_blocked' }
     | { status: 'error'; error: Error; retry: () => void };
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
@@ -34,6 +36,9 @@ async function fetchFundamentalAnalysis(
     const submitted = await submitFundamentalAnalysisAction(symbol, modelId);
 
     if (submitted.status === 'cached') return submitted.result;
+    if (submitted.status === 'miss_no_trigger') {
+        throw new BotBlockedError();
+    }
     if (submitted.status === 'error') {
         // Handle before the existing SubmitFundamentalAnalysisResult variants.
         if (isGateBlockedResult(submitted)) {
@@ -140,6 +145,9 @@ export function useFundamentalAnalysis(
     }, [queryKey]);
 
     if (query.isError) {
+        if (query.error instanceof BotBlockedError) {
+            return { status: 'bot_blocked' };
+        }
         return {
             status: 'error',
             error:

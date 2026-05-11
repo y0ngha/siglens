@@ -7,9 +7,9 @@ import {
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
 
-// ---------------------------------------------------------------------------
-// Module mocks
-// ---------------------------------------------------------------------------
+jest.mock('next/headers', () => ({
+    headers: jest.fn(() => Promise.resolve(new Headers())),
+}));
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
@@ -50,16 +50,14 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
     })),
 }));
 
-// ---------------------------------------------------------------------------
-// Typed mocks & fixtures
-// ---------------------------------------------------------------------------
-
+import { headers } from 'next/headers';
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
 import type { AnalysisGateError } from '@/domain/types';
 
+const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 const MockNewsRepository = DrizzleNewsRepository as jest.MockedClass<
     typeof DrizzleNewsRepository
 >;
@@ -126,10 +124,6 @@ const gateError: AnalysisGateError = {
     code: 'tier_premium_blocked',
     message: 'mock-tier_premium_blocked',
 };
-
-// ---------------------------------------------------------------------------
-// Tests
-// ---------------------------------------------------------------------------
 
 describe('submitOverallAnalysisAction 함수는', () => {
     let mockListBySymbol: jest.Mock;
@@ -369,5 +363,38 @@ describe('submitOverallAnalysisAction 함수는', () => {
         expect(callArg?.technical).toMatchObject({
             tierContext: { userId: 'user-abc', tier: 'pro' },
         });
+    });
+
+    it('passes skipEnqueueIfMiss: true to siglens-core when request UA is a bot', async () => {
+        mockHeaders.mockResolvedValueOnce(
+            new Headers({
+                'user-agent':
+                    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+            })
+        );
+
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID
+        );
+
+        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ skipEnqueueIfMiss: true })
+        );
+    });
+
+    it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
+        await submitOverallAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '1Day',
+            MODEL_ID
+        );
+
+        expect(mockSubmitOverallAnalysis).toHaveBeenCalledWith(
+            expect.objectContaining({ skipEnqueueIfMiss: false })
+        );
     });
 });

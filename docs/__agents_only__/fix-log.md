@@ -250,3 +250,11 @@
 - B4: `src/__tests__/components/chat/hooks/useChat.test.tsx:107` — test failed because lastWrittenModelRef started as null and triggered redundant write-back of stored model on hydration. Fixed by initializing the ref to stored value in useChat.ts hydration effect before flipping isModelHydrated.
   - Rule: MISTAKES.md Components Rule 12 — Internal refs affecting state must be initialized before first use to prevent stale state propagation
 
+
+## [PR #433 round 2 | feat/bot-redis-trigger-block | 2026-05-11]
+- Violation: Shared helper class placed at component-folder root instead of an exception/utility subfolder
+- Rule: components/CLAUDE.md folder structure — non-component, non-hook helpers belong in a dedicated subfolder (here: `exceptions/`); user requested `src/components/symbol-page/exceptions/` specifically for this case
+- Context: Blocker 1 — `BotBlockedError` was at `src/components/symbol-page/BotBlockedError.ts`; moved to `src/components/symbol-page/exceptions/BotBlockedError.ts` and updated 3 hook imports (fundamental/news/overall).
+- Violation: New dependency passed to a function is not asserted in the test call chain
+- Rule: Tests — when an Action gains a new parameter forwarded to a dependency, the test must explicitly assert that the parameter is received and that both true/false branches are covered
+- Context: Blocker 2 — 4 Server Actions started passing `skipEnqueueIfMiss` to siglens-core submit functions, but no test asserted it. Added bot-UA and non-bot-UA cases (2 each × 4 Actions = 8 new tests) using `mockHeaders.mockResolvedValueOnce(new Headers({...}))` to control isBot, and `expect.objectContaining({ skipEnqueueIfMiss: <bool> })` on the submit mock.
