@@ -22,8 +22,6 @@ import { resolve } from 'path';
 import { config } from 'dotenv';
 import { execSync } from 'child_process';
 
-config({ path: resolve(process.cwd(), '.env.local') });
-
 // --- Constants ---
 
 const FMP_BASE_URL = 'https://financialmodelingprep.com/stable';
@@ -41,6 +39,10 @@ const POPULAR_TICKERS_PATH = resolve(
     process.cwd(),
     'src/domain/constants/popular-tickers.ts'
 );
+const POPULAR_TICKERS_DECLARATION = 'export const POPULAR_TICKERS = [';
+const POPULAR_TICKERS_END = '] as const;';
+const TICKER_LITERAL_LINE_PATTERN =
+    /^(\s*)['"]([A-Z][A-Z0-9.-]*)['"],?(\s*(?:\/\/.*)?)?$/;
 
 // --- Types ---
 
@@ -70,6 +72,11 @@ interface TickerWeeklyVolume {
     price: number;
     marketCap: number | null;
     maxDailyChangePct: number;
+}
+
+export interface DeduplicatePopularTickersResult {
+    content: string;
+    removedTickers: readonly string[];
 }
 
 // --- CLI ---
@@ -116,15 +123,55 @@ function getLookbackDateRange(): { from: string; to: string } {
 // --- File operations ---
 
 function extractExistingTickers(fileContent: string): Set<string> {
-    const arrayStart = fileContent.indexOf('export const POPULAR_TICKERS');
+    const arrayStart = fileContent.indexOf(POPULAR_TICKERS_DECLARATION);
     if (arrayStart === -1) return new Set();
 
     const popularSection = fileContent.slice(arrayStart);
-    const matches = popularSection.match(/['"]([A-Z][A-Z0-9.]+)['"]/g);
+    const matches = popularSection.match(/['"]([A-Z][A-Z0-9.-]*)['"]/g);
     return new Set(matches ? matches.map(m => m.slice(1, -1)) : []);
 }
 
-function insertTrendingSection(
+export function deduplicatePopularTickerEntries(
+    fileContent: string
+): DeduplicatePopularTickersResult {
+    const arrayStart = fileContent.indexOf(POPULAR_TICKERS_DECLARATION);
+    const arrayEnd = fileContent.indexOf(POPULAR_TICKERS_END, arrayStart);
+
+    if (arrayStart === -1 || arrayEnd === -1) {
+        return { content: fileContent, removedTickers: [] };
+    }
+
+    const sectionStart = arrayStart + POPULAR_TICKERS_DECLARATION.length;
+    const beforeSection = fileContent.slice(0, sectionStart);
+    const section = fileContent.slice(sectionStart, arrayEnd);
+    const afterSection = fileContent.slice(arrayEnd);
+    const seenTickers = new Set<string>();
+    const removedTickers: string[] = [];
+
+    const deduplicatedSection = section
+        .split('\n')
+        .filter(line => {
+            const tickerMatch = line.match(TICKER_LITERAL_LINE_PATTERN);
+            if (!tickerMatch) return true;
+
+            const ticker = tickerMatch[2]!;
+            if (!seenTickers.has(ticker)) {
+                seenTickers.add(ticker);
+                return true;
+            }
+
+            removedTickers.push(ticker);
+            return false;
+        })
+        .join('\n');
+
+    return {
+        content: `${beforeSection}${deduplicatedSection}${afterSection}`,
+        removedTickers,
+    };
+}
+
+export function insertTrendingSection(
     fileContent: string,
     newTickers: string[]
 ): string {
@@ -141,7 +188,7 @@ function insertTrendingSection(
     const tickerLines = newTickers.map(t => `    '${t}',`).join('\n');
     const section = `\n    ${sectionHeader}\n${tickerLines}\n`;
 
-    const insertionPoint = fileContent.lastIndexOf('] as const;');
+    const insertionPoint = fileContent.lastIndexOf(POPULAR_TICKERS_END);
     if (insertionPoint === -1) {
         throw new Error('Could not find "] as const;" in popular-tickers.ts');
     }
@@ -151,6 +198,22 @@ function insertTrendingSection(
         section +
         fileContent.slice(insertionPoint)
     );
+}
+
+function writeAndFormatPopularTickersFile(fileContent: string): void {
+    writeFileSync(POPULAR_TICKERS_PATH, fileContent, 'utf-8');
+    console.log(`\nUpdated ${POPULAR_TICKERS_PATH}`);
+
+    try {
+        console.log('Running prettier...');
+        execSync(`yarn prettier --write "${POPULAR_TICKERS_PATH}"`, {
+            stdio: 'inherit',
+        });
+    } catch {
+        console.warn(
+            'Prettier failed — file was written but may need manual formatting.'
+        );
+    }
 }
 
 // --- FMP API ---
@@ -264,6 +327,8 @@ function printResults(tickers: TickerWeeklyVolume[]): void {
 // --- Main ---
 
 async function main(): Promise<void> {
+    config({ path: resolve(process.cwd(), '.env.local') });
+
     const { includeEtf } = parseArgs();
     const apiKey = process.env.FMP_API_KEY;
 
@@ -275,9 +340,18 @@ async function main(): Promise<void> {
     console.log(`ETF: ${includeEtf ? 'included' : 'excluded'}\n`);
 
     // 1. Read existing tickers
-    const fileContent = readFileSync(POPULAR_TICKERS_PATH, 'utf-8');
+    const originalFileContent = readFileSync(POPULAR_TICKERS_PATH, 'utf-8');
+    const initialDeduplication =
+        deduplicatePopularTickerEntries(originalFileContent);
+    const fileContent = initialDeduplication.content;
     const existingTickers = extractExistingTickers(fileContent);
     console.log(`Existing tickers: ${existingTickers.size}`);
+
+    if (initialDeduplication.removedTickers.length > 0) {
+        console.log(
+            `Duplicate tickers removed before update: ${initialDeduplication.removedTickers.join(', ')}`
+        );
+    }
 
     // 2. Fetch screener candidates
     console.log('Fetching screener candidates...');
@@ -293,6 +367,11 @@ async function main(): Promise<void> {
     );
 
     if (newCandidates.length === 0) {
+        if (fileContent !== originalFileContent) {
+            writeAndFormatPopularTickersFile(fileContent);
+            console.log('\nNo new candidates found. Duplicate cleanup done.');
+            return;
+        }
         console.log('\nNo new candidates found. Nothing to update.');
         return;
     }
@@ -331,6 +410,11 @@ async function main(): Promise<void> {
     const topTickers = filterAndRank(weeklyVolumes);
 
     if (topTickers.length === 0) {
+        if (fileContent !== originalFileContent) {
+            writeAndFormatPopularTickersFile(fileContent);
+            console.log('\nNo tickers passed filters. Duplicate cleanup done.');
+            return;
+        }
         console.log('\nNo tickers passed filters. Nothing to update.');
         return;
     }
@@ -340,34 +424,38 @@ async function main(): Promise<void> {
 
     // 7. Update file
     const newSymbols = topTickers.map(t => t.symbol);
-    const updatedContent = insertTrendingSection(fileContent, newSymbols);
+    const contentWithTrendingSection = insertTrendingSection(
+        fileContent,
+        newSymbols
+    );
+    const addedSymbols =
+        contentWithTrendingSection === fileContent ? [] : newSymbols;
+    const finalDeduplication = deduplicatePopularTickerEntries(
+        contentWithTrendingSection
+    );
+    const updatedContent = finalDeduplication.content;
 
-    if (updatedContent === fileContent) {
+    if (finalDeduplication.removedTickers.length > 0) {
+        console.log(
+            `Duplicate tickers removed after update: ${finalDeduplication.removedTickers.join(', ')}`
+        );
+    }
+
+    if (updatedContent === originalFileContent) {
         console.log('\nFile unchanged — already up to date for today.');
         return;
     }
 
-    writeFileSync(POPULAR_TICKERS_PATH, updatedContent, 'utf-8');
-    console.log(`\nUpdated ${POPULAR_TICKERS_PATH}`);
-
-    // 8. Format
-    try {
-        console.log('Running prettier...');
-        execSync(`yarn prettier --write "${POPULAR_TICKERS_PATH}"`, {
-            stdio: 'inherit',
-        });
-    } catch {
-        console.warn(
-            'Prettier failed — file was written but may need manual formatting.'
-        );
-    }
+    writeAndFormatPopularTickersFile(updatedContent);
 
     console.log(
-        `\nDone! Added ${newSymbols.length} tickers: ${newSymbols.join(', ')}`
+        `\nDone! Added ${addedSymbols.length} tickers: ${addedSymbols.join(', ')}`
     );
 }
 
-main().catch(error => {
-    console.error(error);
-    process.exit(1);
-});
+if (require.main === module) {
+    main().catch(error => {
+        console.error(error);
+        process.exit(1);
+    });
+}

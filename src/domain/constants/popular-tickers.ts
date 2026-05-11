@@ -255,9 +255,7 @@ export const POPULAR_TICKERS = [
     'GOOG',
 
     // --- Trending (2026-04-18) ---
-    'T',
     'ABT',
-    'C',
     'BSX',
     'PBR-A',
     'GLW',
@@ -267,7 +265,6 @@ export const POPULAR_TICKERS = [
     'HDB',
 
     // --- Trending (2026-04-27) ---
-    'T',
     'VALE',
     'LYG',
     'CSX',
@@ -276,17 +273,23 @@ export const POPULAR_TICKERS = [
     'NEE',
     'B',
     'BKR',
-    'C',
 
     // --- Trending (2026-05-04) ---
     'NOK',
-    'T',
     'CRWV',
     'ET',
     'WBD',
     'MO',
-    'B',
     'BE',
     'SHEL',
     'MCHP',
+
+    // --- Trending (2026-05-11) ---
+    'ANET',
+    'APH',
+    'WDC',
+    'CVS',
+    'SONY',
+    'USB',
+    'FTNT',
 ] as const;
