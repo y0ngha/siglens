@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.11.9](https://github.com/y0ngha/siglens/compare/v0.11.8...v0.11.9) (2026-05-11)
+
+
+### Bug Fixes
+
+* address PR [#433](https://github.com/y0ngha/siglens/issues/433) round-2 review (exceptions folder, skipEnqueueIfMiss assertions, label cleanup) ([08b6505](https://github.com/y0ngha/siglens/commit/08b65053e8caeb707e9ddc315f754c469dd90990))
+* connection 오류 및 JSON 오류 수정 ([ef97ba4](https://github.com/y0ngha/siglens/commit/ef97ba43283abdd78f60e2f71d0dfff012d7b0b1))
+
+
+### Features
+
+* Add BotBlockedNotice fallback component ([ef98a2e](https://github.com/y0ngha/siglens/commit/ef98a2e81e5092441a19ac9802f95580887d60fe))
+* Add isBot utility and bump siglens-core to 0.10.0 ([e445174](https://github.com/y0ngha/siglens/commit/e4451745c0f363e02478f6ccb5b7b8cc4e5b06a8))
+* Gate chart analysis Server Action against bot traffic ([02f5c90](https://github.com/y0ngha/siglens/commit/02f5c90f91f73f78cc33f1c78ff868bf24f4d9e3))
+* Gate fundamental analysis Server Action against bot traffic ([d5dd2a0](https://github.com/y0ngha/siglens/commit/d5dd2a0e131993a85dfba414fe0b3da85269600c))
+* Gate news analysis Server Action against bot traffic ([cbfea68](https://github.com/y0ngha/siglens/commit/cbfea6818fe6a1bae49e9c7e1ca8c7880cee1893))
+* Gate overall analysis Server Action against bot traffic ([19d657f](https://github.com/y0ngha/siglens/commit/19d657fc264a7b6303b59840a6378e05ac7f26f6))
+
 ## [0.11.8](https://github.com/y0ngha/siglens/compare/v0.11.7...v0.11.8) (2026-05-10)
 
 ## [0.11.7](https://github.com/y0ngha/siglens/compare/v0.11.6...v0.11.7) (2026-05-10)
