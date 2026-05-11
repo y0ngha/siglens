@@ -11,7 +11,7 @@ import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
-import { BotBlockedError } from '@/components/symbol-page/BotBlockedError';
+import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
 import type { CancelJobEntry } from '@/domain/types';
 
 export type NewsAnalysisState =

@@ -22,6 +22,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
     })),
 }));
 
+import { headers } from 'next/headers';
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
 import type { AnalysisGateError } from '@/domain/types';
 import { submitAnalysisAction } from '@/infrastructure/market/submitAnalysisAction';
@@ -31,6 +32,8 @@ import {
     type SubmitAnalysisGatedResult,
 } from '@y0ngha/siglens-core';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+
+const mockHeaders = headers as jest.MockedFunction<typeof headers>;
 
 const mockResolveTierAndByok = resolveTierAndByok as jest.MockedFunction<
     typeof resolveTierAndByok
@@ -199,6 +202,43 @@ describe('submitAnalysisAction tier + BYOK gate', () => {
             expect.objectContaining({
                 tierContext: { userId: null, tier: 'free' },
             })
+        );
+    });
+
+    it('passes skipEnqueueIfMiss: true to siglens-core when request UA is a bot', async () => {
+        mockHeaders.mockResolvedValueOnce(
+            new Headers({
+                'user-agent':
+                    'Mozilla/5.0 (compatible; Googlebot/2.1; +http://www.google.com/bot.html)',
+            })
+        );
+        mockGetCurrentUser.mockResolvedValue(null);
+
+        await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+
+        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            expect.objectContaining({ skipEnqueueIfMiss: true })
+        );
+    });
+
+    it('passes skipEnqueueIfMiss: false to siglens-core when request UA is not a bot', async () => {
+        // default mock returns an empty Headers → isBot resolves to false.
+        mockGetCurrentUser.mockResolvedValue(null);
+
+        await submitAnalysisAction('AAPL', 'Apple', '1Day', false, '^AAPL');
+
+        expect(mockSubmitAnalysis).toHaveBeenCalledWith(
+            'AAPL',
+            'Apple',
+            '1Day',
+            false,
+            '^AAPL',
+            expect.objectContaining({ skipEnqueueIfMiss: false })
         );
     });
 

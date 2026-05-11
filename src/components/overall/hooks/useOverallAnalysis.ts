@@ -23,7 +23,7 @@ import { QUERY_KEYS } from '@/lib/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import type { CancelJobEntry } from '@/domain/types';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
-import { BotBlockedError } from '@/components/symbol-page/BotBlockedError';
+import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
 import type {
     OverallAnalysisState,
     ProgressState,
