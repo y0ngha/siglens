@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.11.10](https://github.com/y0ngha/siglens/compare/v0.11.9...v0.11.10) (2026-05-11)
+
+
+### Bug Fixes
+
+* 분석 진행시 초기 모델 불러올 때 오류로 표현되는 부분 수정 ([b4c6bf7](https://github.com/y0ngha/siglens/commit/b4c6bf7b1114f049c294dec90dd57f00c3f0ecee))
+
 ## [0.11.9](https://github.com/y0ngha/siglens/compare/v0.11.8...v0.11.9) (2026-05-11)
 
 
