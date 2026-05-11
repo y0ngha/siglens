@@ -1,6 +1,7 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
+import { headers } from 'next/headers';
 import {
     submitNewsAnalysis,
     type EnrichedNewsItem,
@@ -20,6 +21,7 @@ import {
     resolveTierAndByok,
     buildGateError,
 } from '@/infrastructure/market/byokGate';
+import { isBot } from '@/lib/isBot';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's news result + our siglens-side gate errors. */
@@ -34,6 +36,9 @@ export async function submitNewsAnalysisAction(
     modelId: SubmitNewsAnalysisOptions['modelId']
 ): Promise<SubmitNewsAnalysisActionResult> {
     try {
+        const requestHeaders = await headers();
+        const skipEnqueueIfMiss = isBot(requestHeaders);
+
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
@@ -62,6 +67,7 @@ export async function submitNewsAnalysisAction(
             upcomingCalendar: next !== null ? [next] : [],
             waitUntil,
             tier: gate.tier,
+            skipEnqueueIfMiss,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),

@@ -16,7 +16,21 @@ import type { CancelJobEntry } from '@/domain/types';
 export type NewsAnalysisState =
     | { status: 'loading' }
     | { status: 'done'; result: NewsAnalysisResponse }
+    | { status: 'bot_blocked' }
     | { status: 'error'; error: Error; retry: () => void };
+
+/**
+ * Sentinel thrown when the Server Action gates a bot request by returning
+ * `miss_no_trigger`. Caught at the hook level and surfaced as `'bot_blocked'`
+ * so the UI can render `BotBlockedNotice` instead of an error fallback.
+ */
+class BotBlockedError extends Error {
+    readonly isBotBlocked = true as const;
+    constructor() {
+        super('bot_blocked');
+        this.name = 'BotBlockedError';
+    }
+}
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 // onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →
@@ -37,6 +51,9 @@ async function fetchNewsAnalysis(
     );
 
     if (submitted.status === 'cached') return submitted.result;
+    if (submitted.status === 'miss_no_trigger') {
+        throw new BotBlockedError();
+    }
     if (submitted.status === 'error') {
         // Handle before the existing SubmitNewsAnalysisResult variants.
         if (isGateBlockedResult(submitted)) {
@@ -138,6 +155,9 @@ export function useNewsAnalysis(
     }, [queryKey]);
 
     if (query.isError) {
+        if (query.error instanceof BotBlockedError) {
+            return { status: 'bot_blocked' };
+        }
         return {
             status: 'error',
             error:
