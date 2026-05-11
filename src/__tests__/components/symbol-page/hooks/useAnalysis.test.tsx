@@ -71,6 +71,7 @@ interface PartialOptions {
     initialAnalysisFailed?: boolean;
     timeframeChangeCount?: number;
     modelId?: string;
+    isModelHydrated?: boolean;
 }
 
 function makeOptions(overrides?: PartialOptions) {
@@ -82,6 +83,7 @@ function makeOptions(overrides?: PartialOptions) {
         initialAnalysisFailed: overrides?.initialAnalysisFailed ?? false,
         timeframeChangeCount: overrides?.timeframeChangeCount ?? 0,
         modelId: overrides?.modelId as never,
+        isModelHydrated: overrides?.isModelHydrated,
     };
 }
 
@@ -105,6 +107,68 @@ describe('useAnalysis', () => {
 
     afterEach(() => {
         queryClients.splice(0).forEach(client => client.clear());
+    });
+
+    describe('isModelHydrated', () => {
+        it('initialAnalysisFailed=true이고 isModelHydrated=false이면 mutate 전에도 isAnalyzing이 true다', () => {
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isModelHydrated: false,
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            expect(result.current.isAnalyzing).toBe(true);
+            expect(mockSubmit).not.toHaveBeenCalled();
+        });
+
+        it('isModelHydrated가 false→true로 전환되면 자동 재분석을 실행한다', async () => {
+            mockSubmit.mockResolvedValue({
+                status: 'cached',
+                result: INITIAL_ANALYSIS,
+            });
+
+            const { rerender } = renderHook(
+                ({ isModelHydrated }: { isModelHydrated: boolean }) =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: true,
+                            isModelHydrated,
+                        })
+                    ),
+                {
+                    wrapper: makeWrapper(),
+                    initialProps: { isModelHydrated: false },
+                }
+            );
+
+            expect(mockSubmit).not.toHaveBeenCalled();
+
+            rerender({ isModelHydrated: true });
+
+            await waitFor(() => {
+                expect(mockSubmit).toHaveBeenCalledTimes(1);
+            });
+        });
+
+        it('initialAnalysisFailed=false이면 isModelHydrated=false여도 isAnalyzing이 false다', () => {
+            const { result } = renderHook(
+                () =>
+                    useAnalysis(
+                        makeOptions({
+                            initialAnalysisFailed: false,
+                            isModelHydrated: false,
+                        })
+                    ),
+                { wrapper: makeWrapper() }
+            );
+
+            expect(result.current.isAnalyzing).toBe(false);
+        });
     });
 
     describe('cancel', () => {

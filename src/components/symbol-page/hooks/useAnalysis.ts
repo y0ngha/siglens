@@ -251,7 +251,10 @@ export function useAnalysis({
 
     // 5. Derived variables
     const analysis = analysisResult ?? initialAnalysis;
-    const isAnalyzing = isSubmitting || isPolling;
+    const isAnalyzing =
+        isSubmitting ||
+        isPolling ||
+        (initialAnalysisFailedRef.current && isModelHydrated === false);
     const analysisError = submitError?.message ?? pollError ?? null;
     // 쿨다운 카운트다운이 활성화된 상태. effect deps에 사용해 불필요한 재시작을 방지한다.
     const isCountdownActive = reanalyzeCooldownMs > 0;
