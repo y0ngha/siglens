@@ -1,6 +1,7 @@
 'use server';
 
 import { waitUntil } from '@vercel/functions';
+import { headers } from 'next/headers';
 import {
     submitFundamentalAnalysis,
     type SubmitFundamentalAnalysisOptions,
@@ -12,6 +13,7 @@ import {
     resolveTierAndByok,
     buildGateError,
 } from '@/infrastructure/market/byokGate';
+import { isBot } from '@/lib/isBot';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's fundamental result + our siglens-side gate errors. */
@@ -25,6 +27,9 @@ export async function submitFundamentalAnalysisAction(
     modelId: SubmitFundamentalAnalysisOptions['modelId']
 ): Promise<SubmitFundamentalAnalysisActionResult> {
     try {
+        const requestHeaders = await headers();
+        const skipEnqueueIfMiss = isBot(requestHeaders);
+
         const user = await getCurrentUser();
         const userId = user?.id ?? null;
 
@@ -39,6 +44,7 @@ export async function submitFundamentalAnalysisAction(
             dataProvider: new FmpFundamentalClient(),
             waitUntil,
             tier: gate.tier,
+            skipEnqueueIfMiss,
             ...(gate.userApiKey !== undefined
                 ? { userApiKey: gate.userApiKey }
                 : {}),

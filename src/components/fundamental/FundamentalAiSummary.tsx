@@ -12,6 +12,7 @@ import { useFundamentalAnalysis } from '@/components/fundamental/hooks/useFundam
 import { usePublishSymbolChat } from '@/components/chat/hooks/useSymbolChat';
 import { FundamentalAiSummaryError } from '@/components/fundamental/FundamentalAiSummaryError';
 import { FundamentalAiSummarySkeleton } from '@/components/fundamental/FundamentalAiSummarySkeleton';
+import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 
 const SENTIMENT_LABEL: Record<FundamentalSentiment, string> = {
     bullish: '긍정',
@@ -150,6 +151,10 @@ export function FundamentalAiSummary({ symbol }: FundamentalAiSummaryProps) {
 
     if (state.status === 'loading') {
         return <FundamentalAiSummarySkeleton />;
+    }
+
+    if (state.status === 'bot_blocked') {
+        return <BotBlockedNotice />;
     }
 
     if (state.status === 'error') {
