@@ -17,7 +17,6 @@ export function BotBlockedNotice({ className }: BotBlockedNoticeProps) {
     return (
         <div
             role="status"
-            aria-live="polite"
             className={cn(
                 'border-secondary-800 bg-secondary-900/60 space-y-2 rounded-md border p-4 text-sm',
                 className
