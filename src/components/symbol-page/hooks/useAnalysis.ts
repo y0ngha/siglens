@@ -91,6 +91,11 @@ interface UseAnalysisResult {
     analysisResult: AnalysisResponse | null;
     isAnalyzing: boolean;
     analysisError: string | null;
+    /**
+     * Server Action이 봇 트래픽으로 판정해 캐시 미스 시 워커 작업을 enqueue하지
+     * 않고 반환한 상태. UI에서 BotBlockedNotice를 렌더한다.
+     */
+    isBotBlocked: boolean;
     handleReanalyze: () => void;
     /** 다음 재분석까지 남은 ms. 0이면 즉시 가능. */
     reanalyzeCooldownMs: number;
@@ -118,6 +123,7 @@ export function useAnalysis({
     );
     const [isPolling, setIsPolling] = useState(false);
     const [pollError, setPollError] = useState<string | null>(null);
+    const [isBotBlocked, setIsBotBlocked] = useState(false);
 
     // 2. useRef
     const latestRef = useRef<{
@@ -181,6 +187,7 @@ export function useAnalysis({
         onMutate: () => {
             setPollError(null);
             setAnalysisResult(null);
+            setIsBotBlocked(false);
         },
         onSuccess: (data, variables) => {
             if (data.status === 'cached') {
@@ -201,6 +208,11 @@ export function useAnalysis({
                 setIsPolling(true);
                 // submitted 단계에서는 쿨다운을 시작하지 않는다.
                 // polling 완료(done) 시에만 쿨다운을 시작한다.
+            } else if (data.status === 'miss_no_trigger') {
+                // Server Action이 봇으로 판정해 워커 enqueue를 생략한 경우.
+                // initialAnalysis 대신 fallback UI를 렌더하도록 플래그 설정.
+                currentJobIdRef.current = null;
+                setIsBotBlocked(true);
             } else if (data.status === 'key_error') {
                 currentJobIdRef.current = null;
                 setPollError(data.error);
@@ -469,6 +481,7 @@ export function useAnalysis({
         analysisResult,
         isAnalyzing,
         analysisError,
+        isBotBlocked,
         handleReanalyze,
         reanalyzeCooldownMs,
         cooldownNotice,
