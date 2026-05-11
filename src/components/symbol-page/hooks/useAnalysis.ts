@@ -209,8 +209,10 @@ export function useAnalysis({
                 // submitted 단계에서는 쿨다운을 시작하지 않는다.
                 // polling 완료(done) 시에만 쿨다운을 시작한다.
             } else if (data.status === 'miss_no_trigger') {
-                // Server Action이 봇으로 판정해 워커 enqueue를 생략한 경우.
-                // initialAnalysis 대신 fallback UI를 렌더하도록 플래그 설정.
+                // 별도 boolean 상태로 추적하는 이유: 이 훅은 useMutation 기반이라
+                // useQuery처럼 에러 브랜치 narrowing으로 비-데이터 상태를 표현할
+                // 수 없다. 다른 세 분석 훅(fundamental/news/overall)은 useQuery
+                // 기반이라 BotBlockedError 던지기로 동일 의미를 표현한다.
                 currentJobIdRef.current = null;
                 setIsBotBlocked(true);
             } else if (data.status === 'key_error') {

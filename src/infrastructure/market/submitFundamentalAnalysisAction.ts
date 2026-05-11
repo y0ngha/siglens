@@ -13,7 +13,7 @@ import {
     resolveTierAndByok,
     buildGateError,
 } from '@/infrastructure/market/byokGate';
-import { isBot } from '@/lib/isBot';
+import { isBot } from '@/infrastructure/http/isBot';
 import type { AnalysisGateBlockedResult } from '@/domain/types';
 
 /** Final return type — core's fundamental result + our siglens-side gate errors. */

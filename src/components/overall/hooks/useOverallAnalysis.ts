@@ -23,6 +23,7 @@ import { QUERY_KEYS } from '@/lib/queryConfig';
 import { AUGMENT_AND_OVERALL_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import type { CancelJobEntry } from '@/domain/types';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
+import { BotBlockedError } from '@/components/symbol-page/BotBlockedError';
 import type {
     OverallAnalysisState,
     ProgressState,
@@ -72,19 +73,6 @@ class OverallAnalysisError extends Error {
     ) {
         super(message);
         this.name = 'OverallAnalysisError';
-    }
-}
-
-/**
- * Sentinel thrown when the Server Action gates a bot request by returning
- * `miss_no_trigger`. Caught at the hook level and surfaced as `'bot_blocked'`
- * so the UI can render `BotBlockedNotice` instead of an error fallback.
- */
-class BotBlockedError extends Error {
-    readonly isBotBlocked = true as const;
-    constructor() {
-        super('bot_blocked');
-        this.name = 'BotBlockedError';
     }
 }
 

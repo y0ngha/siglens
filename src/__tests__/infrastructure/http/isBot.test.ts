@@ -1,4 +1,4 @@
-import { isBot } from '@/lib/isBot';
+import { isBot } from '@/infrastructure/http/isBot';
 
 describe('isBot', () => {
     it('Googlebot User-Agent를 봇으로 판정한다', () => {

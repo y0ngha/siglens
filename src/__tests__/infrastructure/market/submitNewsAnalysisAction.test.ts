@@ -1,6 +1,4 @@
-// ---------------------------------------------------------------------------
 // Module mocks
-// ---------------------------------------------------------------------------
 
 jest.mock('@vercel/functions', () => ({
     waitUntil: jest.fn(),
@@ -41,9 +39,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
     })),
 }));
 
-// ---------------------------------------------------------------------------
 // Typed mocks & fixtures
-// ---------------------------------------------------------------------------
 
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
@@ -128,9 +124,7 @@ const gateError: AnalysisGateError = {
     message: 'mock-tier_premium_blocked',
 };
 
-// ---------------------------------------------------------------------------
 // Tests
-// ---------------------------------------------------------------------------
 
 describe('submitNewsAnalysisAction 함수는', () => {
     let mockListBySymbol: jest.Mock;

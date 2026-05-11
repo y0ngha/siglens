@@ -14,6 +14,7 @@ import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
+import { BotBlockedError } from '@/components/symbol-page/BotBlockedError';
 import type { CancelJobEntry } from '@/domain/types';
 
 export type FundamentalAnalysisState =
@@ -21,19 +22,6 @@ export type FundamentalAnalysisState =
     | { status: 'done'; result: FundamentalAnalysisResponse }
     | { status: 'bot_blocked' }
     | { status: 'error'; error: Error; retry: () => void };
-
-/**
- * Sentinel thrown when the Server Action gates a bot request by returning
- * `miss_no_trigger`. Caught at the hook level and surfaced as `'bot_blocked'`
- * so the UI can render `BotBlockedNotice` instead of an error fallback.
- */
-class BotBlockedError extends Error {
-    readonly isBotBlocked = true as const;
-    constructor() {
-        super('bot_blocked');
-        this.name = 'BotBlockedError';
-    }
-}
 
 // AbortSignal로 unmount 시 폴링을 즉시 종료한다.
 // onJobId는 두 번째 인자(expectedCurrent)를 받으면 ref가 일치할 때만 갱신한다 →

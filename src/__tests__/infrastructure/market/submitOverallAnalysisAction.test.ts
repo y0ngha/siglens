@@ -7,9 +7,7 @@ import {
     type EarningsCalendarItem,
 } from '@y0ngha/siglens-core';
 
-// ---------------------------------------------------------------------------
 // Module mocks
-// ---------------------------------------------------------------------------
 
 jest.mock('next/headers', () => ({
     headers: jest.fn(() => Promise.resolve(new Headers())),
@@ -54,9 +52,7 @@ jest.mock('@/infrastructure/market/byokGate', () => ({
     })),
 }));
 
-// ---------------------------------------------------------------------------
 // Typed mocks & fixtures
-// ---------------------------------------------------------------------------
 
 import { DrizzleNewsRepository } from '@/infrastructure/db/newsRepository';
 import { getNextEarningsReport } from '@/infrastructure/market/nextEarningsReport';
@@ -131,9 +127,7 @@ const gateError: AnalysisGateError = {
     message: 'mock-tier_premium_blocked',
 };
 
-// ---------------------------------------------------------------------------
 // Tests
-// ---------------------------------------------------------------------------
 
 describe('submitOverallAnalysisAction 함수는', () => {
     let mockListBySymbol: jest.Mock;
