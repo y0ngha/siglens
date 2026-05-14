@@ -73,8 +73,7 @@ function etMidnight(now: Date): Date {
     let day = 0;
     for (const part of parts) {
         if (part.type === 'year') year = Number.parseInt(part.value, 10);
-        else if (part.type === 'month')
-            month = Number.parseInt(part.value, 10);
+        else if (part.type === 'month') month = Number.parseInt(part.value, 10);
         else if (part.type === 'day') day = Number.parseInt(part.value, 10);
     }
     return new Date(Date.UTC(year, month - 1, day, 12));
