@@ -10,6 +10,7 @@ import type {
     OptionsContract,
     OptionsSnapshot,
 } from '@y0ngha/siglens-core';
+import { MS_PER_DAY } from '@/domain/constants/time';
 
 /**
  * Structural types mirroring yahoo-finance2 v3 CallOrPut / Option / OptionsResult.
@@ -53,8 +54,6 @@ export interface YahooOptionsResult {
     quote: { regularMarketPrice?: number };
     options: YahooOption[];
 }
-
-const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
  * Returns an instant anchored at noon UTC on the same *calendar day in
@@ -119,13 +118,13 @@ export function normalizeYahooExpiration(
         Math.round((expMidnight.getTime() - refMidnight.getTime()) / MS_PER_DAY)
     );
 
-    const calls = [...yexp.calls]
+    const calls = yexp.calls
         .map(normalizeYahooContract)
-        .sort((a, b) => a.strike - b.strike);
+        .toSorted((a, b) => a.strike - b.strike);
 
-    const puts = [...yexp.puts]
+    const puts = yexp.puts
         .map(normalizeYahooContract)
-        .sort((a, b) => a.strike - b.strike);
+        .toSorted((a, b) => a.strike - b.strike);
 
     return {
         expirationDate,
@@ -144,9 +143,9 @@ export function normalizeYahooSnapshot(
     response: YahooOptionsResult,
     now: Date
 ): OptionsSnapshot {
-    const chains = [...response.options]
+    const chains = response.options
         .map(exp => normalizeYahooExpiration(exp, now))
-        .sort((a, b) => a.expirationDate.localeCompare(b.expirationDate));
+        .toSorted((a, b) => a.expirationDate.localeCompare(b.expirationDate));
 
     return {
         symbol: response.underlyingSymbol,

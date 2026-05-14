@@ -5,7 +5,6 @@ import type { OptionsSnapshot, StrikeOpenInterest } from '@y0ngha/siglens-core';
 import { aggregateOpenInterest, calculateMaxPain } from '@y0ngha/siglens-core';
 
 interface OpenInterestChartProps {
-    symbol: string;
     expirationDate: string | 'all';
     snapshot: OptionsSnapshot;
 }

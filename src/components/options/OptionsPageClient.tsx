@@ -61,13 +61,11 @@ export function OptionsPageClient({
             </ErrorBoundary>
 
             <OptionsMetricsRow
-                symbol={symbol}
                 expirationDate={expirationDate}
                 snapshot={snapshot}
             />
 
             <OpenInterestChart
-                symbol={symbol}
                 expirationDate={expirationDate}
                 snapshot={snapshot}
             />

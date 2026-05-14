@@ -5,7 +5,6 @@ import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 import { summarizeChainForLlm } from '@y0ngha/siglens-core';
 
 interface OptionsMetricsRowProps {
-    symbol: string;
     /** 'YYYY-MM-DD' or 'all'. */
     expirationDate: string | 'all';
     /** Pre-fetched snapshot from the parent (HydrationBoundary-prefilled). */

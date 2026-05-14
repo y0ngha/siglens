@@ -64,8 +64,6 @@ export const QUERY_KEYS = {
         modelId: ModelId
     ) => ['overall-analysis', symbol, companyName, timeframe, modelId] as const,
     optionsSnapshot: (symbol: string) => ['options-snapshot', symbol] as const,
-    optionsChain: (symbol: string, expirationDate: string) =>
-        ['options-chain', symbol, expirationDate] as const,
     /**
      * Chart-page card signals derived from the nearest-expiration chain — there
      * is no user-facing expiration selector on that surface, so the key omits
