@@ -67,8 +67,21 @@ export const QUERY_KEYS = {
         ['options-snapshot', symbol] as const,
     optionsChain: (symbol: string, expirationDate: string) =>
         ['options-chain', symbol, expirationDate] as const,
-    optionsSignals: (symbol: string, expirationDate: string) =>
-        ['options-signals', symbol, expirationDate] as const,
-    optionsAnalysis: (symbol: string, modelId: ModelId) =>
-        ['options-analysis', symbol, modelId] as const,
+    /**
+     * Chart-page card signals derived from the nearest-expiration chain — there
+     * is no user-facing expiration selector on that surface, so the key omits
+     * expirationDate. The server action resolves nearest itself.
+     */
+    optionsSignals: (symbol: string) => ['options-signals', symbol] as const,
+    /**
+     * Options analysis cache scope. Expiration date is part of the key because
+     * the AI analysis output differs per expiration — the chip selector should
+     * trigger a new fetch when the user picks a different expiration.
+     */
+    optionsAnalysis: (
+        symbol: string,
+        expirationDate: string | 'all',
+        modelId: ModelId
+    ) =>
+        ['options-analysis', symbol, expirationDate, modelId] as const,
 } as const;

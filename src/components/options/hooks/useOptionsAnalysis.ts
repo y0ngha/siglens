@@ -107,8 +107,8 @@ export function useOptionsAnalysis({
     const queryClient = useQueryClient();
     const currentJobIdRef = useRef<string | null>(null);
     const queryKey = useMemo(
-        () => QUERY_KEYS.optionsAnalysis(symbol, modelId),
-        [symbol, modelId]
+        () => QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
+        [symbol, expirationDate, modelId]
     );
 
     const query = useQuery({
