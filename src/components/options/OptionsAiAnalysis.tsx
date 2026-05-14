@@ -143,7 +143,7 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
     return (
         <section
             aria-labelledby="options-ai-analysis-heading"
-            className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            className="border-primary-500/30 from-secondary-800 to-secondary-900 ring-primary-500/10 shadow-primary-500/5 rounded-xl border bg-gradient-to-br p-6 shadow-lg ring-1"
         >
             {/* Header */}
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
