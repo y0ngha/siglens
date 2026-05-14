@@ -2,6 +2,7 @@
 
 import { useRef, type KeyboardEvent } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { cn } from '@/lib/cn';
 import type { SlotMapping } from '@y0ngha/siglens-core';
 
 interface ExpirationSelectorProps {
@@ -21,10 +22,12 @@ interface TabDescriptor {
     sub?: string;
 }
 
-const ACTIVE_CHIP =
-    'border-primary-500 bg-primary-500/10 text-primary-400 focus-visible:ring-primary-500 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
-const INACTIVE_CHIP =
-    'border-secondary-600 text-secondary-300 hover:border-primary-500 hover:text-primary-400 focus-visible:ring-primary-500 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+const CHIP_BASE =
+    'focus-visible:ring-primary-500 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+const CHIP_ACTIVE =
+    'border-primary-500 bg-primary-500/10 text-primary-400';
+const CHIP_INACTIVE =
+    'border-secondary-600 text-secondary-300 hover:border-primary-500 hover:text-primary-400';
 
 /**
  * Tab-style expiration selector. Implements the WAI-ARIA tabs pattern:
@@ -118,7 +121,10 @@ export function ExpirationSelector({
                         tabIndex={active ? 0 : -1}
                         onClick={() => onChange(tab.value)}
                         onKeyDown={e => handleKeyDown(e, index)}
-                        className={active ? ACTIVE_CHIP : INACTIVE_CHIP}
+                        className={cn(
+                            CHIP_BASE,
+                            active ? CHIP_ACTIVE : CHIP_INACTIVE
+                        )}
                     >
                         <span>{tab.label}</span>
                         {tab.sub !== undefined && (

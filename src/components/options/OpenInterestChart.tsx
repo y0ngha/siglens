@@ -1,9 +1,10 @@
 'use client';
 
-import type { OptionsSnapshot, StrikeOpenInterest } from '@y0ngha/siglens-core';
+import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 import { aggregateOpenInterest, calculateMaxPain } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { pickActiveChain } from './utils/pickActiveChain';
+import { findNearestStrikeIndex } from '@/components/options/utils/findNearestStrike';
+import { pickActiveChain } from '@/components/options/utils/pickActiveChain';
 
 interface OpenInterestChartProps {
     expirationDate: string | 'all';
@@ -22,13 +23,14 @@ const CHART_HEIGHT = SVG_HEIGHT - PAD_TOP - PAD_BOTTOM;
 const MIDLINE_Y = PAD_TOP + CHART_HEIGHT / 2;
 const HALF_HEIGHT = CHART_HEIGHT / 2;
 
-// Semantic chart tokens defined in globals.css. SVG attributes (`fill`,
-// `stroke`) cannot consume Tailwind classes that target inherited `color`,
-// so we reference the CSS custom properties directly.
+// Semantic chart tokens — referenced directly because SVG attributes
+// (`fill`, `stroke`) don't consume Tailwind classes targeting `color`.
+// Max Pain and the current-price line intentionally share `ui-warning`
+// since both communicate "pivot levels worth watching"; the dashed vs
+// solid stroke pattern differentiates them visually.
 const COLOR_CALL = 'var(--color-chart-bullish)';
 const COLOR_PUT = 'var(--color-chart-bearish)';
-const COLOR_MAX_PAIN = 'var(--color-ui-warning)';
-const COLOR_CURRENT = 'var(--color-ui-warning)';
+const COLOR_GUIDE_LINE = 'var(--color-ui-warning)';
 const COLOR_MIDLINE = 'var(--color-secondary-600)';
 const COLOR_LABEL = 'var(--color-secondary-500)';
 
@@ -47,23 +49,6 @@ function barWidth(count: number): number {
 function barPixelHeight(oi: number, maxOi: number): number {
     if (maxOi === 0) return 0;
     return Math.min((oi / maxOi) * HALF_HEIGHT, HALF_HEIGHT);
-}
-
-function closestStrikeIndex(
-    strikes: ReadonlyArray<StrikeOpenInterest>,
-    target: number
-): number {
-    if (strikes.length === 0) return -1;
-    let best = 0;
-    let bestDist = Math.abs(strikes[0].strike - target);
-    for (let i = 1; i < strikes.length; i++) {
-        const d = Math.abs(strikes[i].strike - target);
-        if (d < bestDist) {
-            bestDist = d;
-            best = i;
-        }
-    }
-    return best;
 }
 
 function fmtOi(value: number): string {
@@ -121,8 +106,8 @@ export function OpenInterestChart({
 
     const maxPainIdx = isNaN(maxPain)
         ? -1
-        : closestStrikeIndex(oiByStrike, maxPain);
-    const currentPriceIdx = closestStrikeIndex(oiByStrike, underlyingPrice);
+        : findNearestStrikeIndex(oiByStrike.map(s => s.strike),maxPain);
+    const currentPriceIdx = findNearestStrikeIndex(oiByStrike.map(s => s.strike),underlyingPrice);
 
     const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =
@@ -243,7 +228,7 @@ export function OpenInterestChart({
                         y1={PAD_TOP}
                         x2={maxPainX}
                         y2={SVG_HEIGHT - PAD_BOTTOM}
-                        stroke={COLOR_MAX_PAIN}
+                        stroke={COLOR_GUIDE_LINE}
                         strokeWidth={1.5}
                         strokeDasharray="4 4"
                     />
@@ -255,7 +240,7 @@ export function OpenInterestChart({
                         y1={PAD_TOP}
                         x2={currentPriceX}
                         y2={SVG_HEIGHT - PAD_BOTTOM}
-                        stroke={COLOR_CURRENT}
+                        stroke={COLOR_GUIDE_LINE}
                         strokeWidth={1.5}
                     />
                 )}
@@ -298,38 +283,28 @@ export function OpenInterestChart({
             <div className="text-secondary-500 mt-2 flex flex-wrap items-center gap-3 text-[10px]">
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm"
-                        style={{ background: COLOR_CALL }}
+                        className="bg-chart-bullish inline-block h-2.5 w-2.5 rounded-sm"
                         aria-hidden="true"
                     />
                     Call OI
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block h-2.5 w-2.5 rounded-sm"
-                        style={{ background: COLOR_PUT }}
+                        className="bg-chart-bearish inline-block h-2.5 w-2.5 rounded-sm"
                         aria-hidden="true"
                     />
                     Put OI
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block"
-                        style={{
-                            borderTop: `1.5px dashed ${COLOR_MAX_PAIN}`,
-                            width: '14px',
-                        }}
+                        className="border-ui-warning inline-block w-[14px] border-t-[1.5px] border-dashed"
                         aria-hidden="true"
                     />
                     Max Pain
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block"
-                        style={{
-                            borderTop: `1.5px solid ${COLOR_CURRENT}`,
-                            width: '14px',
-                        }}
+                        className="border-ui-warning inline-block w-[14px] border-t-[1.5px] border-solid"
                         aria-hidden="true"
                     />
                     현재가

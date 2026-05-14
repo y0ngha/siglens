@@ -27,23 +27,28 @@ const nextConfig: NextConfig = {
     // 옵션 분석용 cacheLife profile — 미국 동부 시간대(ET) 기준으로
     // 옵션 시장이 열려있을 때(빠른 변동), 마감 후(거의 정지),
     // 주말/공휴일(완전 정지) 캐시 동작이 달라야 한다.
-    cacheLife: {
-        'options-market-open': {
-            stale: 60,
-            revalidate: 300,
-            expire: 1800,
-        },
-        'options-market-closed': {
-            stale: 300,
-            revalidate: 1800,
-            expire: 7200,
-        },
-        'options-weekend': {
-            stale: 3600,
-            revalidate: 21600,
-            expire: 86400,
-        },
-    },
+    cacheLife: (() => {
+        const SECONDS_PER_MINUTE = 60;
+        const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
+        const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
+        return {
+            'options-market-open': {
+                stale: 1 * SECONDS_PER_MINUTE,
+                revalidate: 5 * SECONDS_PER_MINUTE,
+                expire: 30 * SECONDS_PER_MINUTE,
+            },
+            'options-market-closed': {
+                stale: 5 * SECONDS_PER_MINUTE,
+                revalidate: 30 * SECONDS_PER_MINUTE,
+                expire: 2 * SECONDS_PER_HOUR,
+            },
+            'options-weekend': {
+                stale: 1 * SECONDS_PER_HOUR,
+                revalidate: 6 * SECONDS_PER_HOUR,
+                expire: 1 * SECONDS_PER_DAY,
+            },
+        };
+    })(),
 
     // Turbopack (Next.js 16 기본값이나 명시)
     turbopack: {

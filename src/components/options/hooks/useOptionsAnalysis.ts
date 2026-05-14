@@ -104,8 +104,8 @@ export function useOptionsAnalysis({
     expirationDate,
     modelId,
 }: UseOptionsAnalysisInput): OptionsAnalysisState {
-    const queryClient = useQueryClient();
     const currentJobIdRef = useRef<string | null>(null);
+    const queryClient = useQueryClient();
     const queryKey = useMemo(
         () => QUERY_KEYS.optionsAnalysis(symbol, expirationDate, modelId),
         [symbol, expirationDate, modelId]

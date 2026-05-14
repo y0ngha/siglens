@@ -20,8 +20,7 @@ interface OptionsPageClientProps {
 }
 
 /**
- * `/[symbol]/options` 페이지의 클라이언트 컨테이너. Layout A (AI-first):
- *  만기 chip → AI 분석 카드 → 핵심 지표 4개 → OI 차트 → chain 테이블.
+ * `/[symbol]/options` 페이지의 클라이언트 컨테이너.
  *
  * AI 분석 카드만 ErrorBoundary로 격리한다. yfinance 데이터 fetch는 RSC에서
  * 끝난 상태이므로 metrics/chart/table은 별도 fallback이 필요 없다.

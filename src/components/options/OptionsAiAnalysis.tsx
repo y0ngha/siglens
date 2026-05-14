@@ -8,9 +8,9 @@ import type {
 } from '@y0ngha/siglens-core';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
 import { cn } from '@/lib/cn';
-import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
-import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
-import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
+import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';
+import { OptionsAiAnalysisSkeleton } from '@/components/options/OptionsAiAnalysisSkeleton';
+import { useOptionsAnalysis } from '@/components/options/hooks/useOptionsAnalysis';
 
 const TONE_LABEL: Record<OptionsTone, string> = {
     bullish: '강세',

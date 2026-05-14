@@ -8,7 +8,7 @@ import { mapExpirationsToSlots } from '@y0ngha/siglens-core';
 import {
     fetchOptionsSnapshot,
     hasOptionsMarket,
-} from '@/app/[symbol]/options/optionsData';
+} from '@/infrastructure/options/optionsDataCache';
 import { QUERY_KEYS, QUERY_STALE_TIME_MS } from '@/lib/queryConfig';
 import {
     buildBreadcrumbJsonLd,

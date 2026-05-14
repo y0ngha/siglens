@@ -10,48 +10,23 @@ import {
     type PollOptionsAnalysisResult,
     cancelJob,
 } from '@y0ngha/siglens-core';
-import {
-    fetchOptionsChain as fetchOptionsChainCached,
-    fetchOptionsSnapshot,
-} from '@/app/[symbol]/options/optionsData';
+import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import {
     resolveTierAndByok,
     buildGateError,
 } from '@/infrastructure/market/byokGate';
 import { isBot } from '@/infrastructure/http/isBot';
-import type { AnalysisGateBlockedResult } from '@/domain/types';
-import type { OptionsChain, ModelId } from '@y0ngha/siglens-core';
+import type {
+    AnalysisGateBlockedResult,
+    OptionsSignalsResult,
+} from '@/domain/types';
+import type { ModelId } from '@y0ngha/siglens-core';
 
 /** Final return type — core's options result + our siglens-side gate errors. */
 export type SubmitOptionsAnalysisActionResult =
     | SubmitOptionsAnalysisResult
     | AnalysisGateBlockedResult;
-
-/**
- * Server Action: fetch a single expiration's options chain from the PPR cache.
- * Used by the chain chip tabs to refetch per-expiration data without re-fetching
- * the entire snapshot.
- */
-export async function getOptionsChainAction(
-    symbol: string,
-    expirationDate: string
-): Promise<OptionsChain | null> {
-    try {
-        return await fetchOptionsChainCached(symbol, expirationDate);
-    } catch (error) {
-        console.error('[getOptionsChainAction] fetch failed:', error);
-        return null;
-    }
-}
-
-/** Shape of the pre-computed signals for the nearest expiration. */
-export interface OptionsSignalsResult {
-    atmIv: number | null;
-    putCallRatio: number;
-    maxPain: number;
-    expirationDate: string;
-}
 
 /**
  * Server Action: compute ATM IV, put/call ratio, and max pain for the nearest

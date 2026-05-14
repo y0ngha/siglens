@@ -1,10 +1,8 @@
 'use client';
 
 import { useQuery, type UseQueryResult } from '@tanstack/react-query';
-import {
-    getOptionsSignalsAction,
-    type OptionsSignalsResult,
-} from '@/infrastructure/options/optionsActions';
+import { getOptionsSignalsAction } from '@/infrastructure/options/optionsActions';
+import type { OptionsSignalsResult } from '@/domain/types';
 import { QUERY_KEYS } from '@/lib/queryConfig';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
 

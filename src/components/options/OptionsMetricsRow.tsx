@@ -3,7 +3,7 @@
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 import { summarizeChainForLlm } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { pickActiveChain } from './utils/pickActiveChain';
+import { pickActiveChain } from '@/components/options/utils/pickActiveChain';
 
 interface OptionsMetricsRowProps {
     /** 'YYYY-MM-DD' or 'all'. */

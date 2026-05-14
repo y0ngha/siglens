@@ -14,9 +14,8 @@ jest.mock('@y0ngha/siglens-core', () => ({
     cancelJob: jest.fn(),
 }));
 
-jest.mock('@/app/[symbol]/options/optionsData', () => ({
+jest.mock('@/infrastructure/options/optionsDataCache', () => ({
     fetchOptionsSnapshot: jest.fn(),
-    fetchOptionsChain: jest.fn(),
 }));
 
 jest.mock('@/infrastructure/auth/getCurrentUser', () => ({
@@ -41,17 +40,13 @@ import {
     type OptionsChain,
     type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
-import {
-    fetchOptionsSnapshot,
-    fetchOptionsChain,
-} from '@/app/[symbol]/options/optionsData';
+import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
 import type { AnalysisGateError } from '@/domain/types';
 import {
     submitOptionsAnalysisAction,
     pollOptionsAnalysisAction,
-    getOptionsChainAction,
     getOptionsSignalsAction,
 } from '@/infrastructure/options/optionsActions';
 
@@ -66,9 +61,6 @@ const mockSummarizeChainForLlm = summarizeChainForLlm as jest.MockedFunction<
 >;
 const mockFetchOptionsSnapshot = fetchOptionsSnapshot as jest.MockedFunction<
     typeof fetchOptionsSnapshot
->;
-const mockFetchOptionsChain = fetchOptionsChain as jest.MockedFunction<
-    typeof fetchOptionsChain
 >;
 const mockGetCurrentUser = getCurrentUser as jest.MockedFunction<
     typeof getCurrentUser
@@ -112,24 +104,6 @@ const SUBMITTED_RESULT: SubmitOptionsAnalysisResult = {
     status: 'submitted',
     jobId: 'job-options-001',
 };
-
-describe('getOptionsChainAction', () => {
-    it('delegates to fetchOptionsChain and returns result', async () => {
-        mockFetchOptionsChain.mockResolvedValueOnce(MOCK_CHAIN);
-        const result = await getOptionsChainAction('AAPL', '2026-06-20');
-        expect(mockFetchOptionsChain).toHaveBeenCalledWith(
-            'AAPL',
-            '2026-06-20'
-        );
-        expect(result).toBe(MOCK_CHAIN);
-    });
-
-    it('returns null when chain is not found', async () => {
-        mockFetchOptionsChain.mockResolvedValueOnce(null);
-        const result = await getOptionsChainAction('AAPL', '2026-06-20');
-        expect(result).toBeNull();
-    });
-});
 
 describe('getOptionsSignalsAction', () => {
     it('returns signals for the nearest expiration', async () => {

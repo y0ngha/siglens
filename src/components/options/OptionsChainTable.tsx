@@ -4,7 +4,8 @@ import { useState } from 'react';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 import { aggregateOpenInterest, calculateMaxPain } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { pickActiveChain } from './utils/pickActiveChain';
+import { findNearestStrikeIndex } from '@/components/options/utils/findNearestStrike';
+import { pickActiveChain } from '@/components/options/utils/pickActiveChain';
 
 interface OptionsChainTableProps {
     symbol: string;
@@ -34,27 +35,6 @@ function formatBidAsk(bid: number | null, ask: number | null): string {
 function formatStrike(strike: number): string {
     const isInteger = Number.isInteger(strike);
     return `$${isInteger ? strike.toString() : strike.toFixed(1)}`;
-}
-
-/**
- * Finds the strike index closest to the underlying price.
- * Returns the strike value (not index).
- */
-function findNearestStrike(
-    strikes: number[],
-    underlyingPrice: number
-): number | null {
-    if (strikes.length === 0) return null;
-    let nearest = strikes[0];
-    let minDist = Math.abs(strikes[0] - underlyingPrice);
-    for (const strike of strikes) {
-        const dist = Math.abs(strike - underlyingPrice);
-        if (dist < minDist) {
-            minDist = dist;
-            nearest = strike;
-        }
-    }
-    return nearest;
 }
 
 const StrikeTooltip = (
@@ -126,10 +106,11 @@ export function OptionsChainTable({
     }));
 
     const allStrikes = aggregatedStrikes.map(s => s.strike);
-    const nearestStrike = findNearestStrike(
+    const nearestStrikeIdx = findNearestStrikeIndex(
         allStrikes,
         snapshot.underlyingPrice
     );
+    const nearestStrike = nearestStrikeIdx >= 0 ? allStrikes[nearestStrikeIdx] : null;
     const maxPainStrike = calculateMaxPain(selectedChain);
 
     return (

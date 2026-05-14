@@ -3,7 +3,7 @@ import { PRIVACY_PATH, TERMS_PATH } from '@/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
-import { hasOptionsMarket } from '@/app/[symbol]/options/optionsData';
+import { hasOptionsMarket } from '@/infrastructure/options/optionsDataCache';
 
 // 미국 주식 시장 마감 시각(UTC). 16:00 ET = 20:00 UTC (DST 미고려, 신호 용도라 충분).
 const US_MARKET_CLOSE_UTC_HOUR = 20;

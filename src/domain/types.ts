@@ -197,3 +197,14 @@ export interface CancelJobEntry {
 export interface CancelJobsBody {
     jobs: CancelJobEntry[];
 }
+
+/**
+ * Pre-computed option signals shown on the chart page card row (ATM IV,
+ * Put/Call, Max Pain). Anchored on the nearest expiration.
+ */
+export interface OptionsSignalsResult {
+    atmIv: number | null;
+    putCallRatio: number;
+    maxPain: number;
+    expirationDate: string;
+}
