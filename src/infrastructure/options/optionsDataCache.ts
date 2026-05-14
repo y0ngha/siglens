@@ -2,11 +2,8 @@ import 'server-only';
 import { cacheLife, cacheTag } from 'next/cache';
 import { YahooOptionsAdapter } from '@/infrastructure/options/YahooOptionsAdapter';
 import { getOptionsCacheLifeProfile } from '@/infrastructure/options/optionsCacheLife';
-import {
-    optionsExpirationTag,
-    optionsSymbolTag,
-} from '@/infrastructure/options/optionsCacheTags';
-import type { OptionsChain, OptionsSnapshot } from '@y0ngha/siglens-core';
+import { optionsSymbolTag } from '@/infrastructure/options/optionsCacheTags';
+import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 
 const adapter = new YahooOptionsAdapter();
 
@@ -40,16 +37,3 @@ export async function fetchOptionsSnapshot(
     return adapter.fetchSnapshot(symbol);
 }
 
-/**
- * 특정 만기일에 대한 옵션 chain만 받는다. 만기 chip 전환 시 단일 만기만
- * 갱신할 수 있도록 만기별 캐시 태그를 분리한다.
- */
-export async function fetchOptionsChain(
-    symbol: string,
-    expirationDate: string
-): Promise<OptionsChain | null> {
-    'use cache';
-    cacheLife(getOptionsCacheLifeProfile());
-    cacheTag(optionsExpirationTag(symbol, expirationDate));
-    return adapter.fetchChain(symbol, expirationDate);
-}

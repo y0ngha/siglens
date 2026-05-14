@@ -84,7 +84,7 @@ export async function submitOptionsAnalysisAction(
         const snapshot = await fetchOptionsSnapshot(symbol);
         if (snapshot === null) {
             return {
-                status: 'error',
+                status: 'no_chains_error',
                 code: 'no_options_chains',
                 error: '옵션 데이터를 가져올 수 없어요.',
             };

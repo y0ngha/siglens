@@ -13,10 +13,9 @@ import type {
     OptionsSnapshot,
 } from '@y0ngha/siglens-core';
 import {
-    normalizeYahooExpiration,
     normalizeYahooSnapshot,
     type YahooOptionsResult,
-} from './yahooNormalize';
+} from '@/infrastructure/options/yahooNormalize';
 
 const yahooFinance = new YahooFinance();
 
@@ -56,35 +55,6 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
             return { ...raw, chains: sanitizedChains };
         } catch (err) {
             console.error('[YahooOptionsAdapter] fetchSnapshot failed', err);
-            return null;
-        }
-    }
-
-    /**
-     * Fetch a single expiration's chain for a symbol.
-     *
-     * Passes `{ date }` to yahoo-finance2 to filter to the requested expiration
-     * date server-side. Takes the first entry in `options[]` from the response.
-     * Returns null if the expiration is unavailable or rejected by sanitization.
-     */
-    async fetchChain(
-        symbol: string,
-        expirationDate: string
-    ): Promise<OptionsChain | null> {
-        try {
-            const response = await yahooFinance.options(symbol, {
-                date: new Date(`${expirationDate}T00:00:00Z`),
-            });
-
-            const first = response.options?.[0];
-            if (!first) {
-                return null;
-            }
-
-            const normalized = normalizeYahooExpiration(first, new Date());
-            return sanitizeOptionsChain(normalized);
-        } catch (err) {
-            console.error('[YahooOptionsAdapter] fetchChain failed', err);
             return null;
         }
     }

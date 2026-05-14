@@ -44,13 +44,23 @@ async function buildEntries(): Promise<SitemapEntry[]> {
 
     // 옵션 페이지는 옵션 시장이 형성된 종목만 sitemap에 포함한다 — 옵션
     // 없는 종목은 페이지 자체가 noindex로 처리되므로 sitemap에 두면
-    // Google이 품질 신호를 약하게 본다. `hasOptionsMarket`은 1일 캐시라
-    // 두 번째 sitemap 빌드부터는 fetch 없이 메모리에서 해결된다.
-    const tickerHasOptions = await Promise.all(
-        POPULAR_TICKERS.map(ticker =>
-            hasOptionsMarket(ticker).catch(() => false)
-        )
-    );
+    // Google이 품질 신호를 약하게 본다. 캐시 미스 시 Yahoo Finance를
+    // 무제한 동시 호출하지 않도록 5개씩 청크로 처리해 rate-limit 위험을
+    // 방어한다. `hasOptionsMarket`은 1일 캐시라 두 번째 sitemap
+    // 빌드부터는 fetch 없이 메모리에서 해결된다.
+    const OPTIONS_PROBE_CONCURRENCY = 5;
+    const tickerHasOptions: boolean[] = [];
+    for (
+        let i = 0;
+        i < POPULAR_TICKERS.length;
+        i += OPTIONS_PROBE_CONCURRENCY
+    ) {
+        const chunk = POPULAR_TICKERS.slice(i, i + OPTIONS_PROBE_CONCURRENCY);
+        const chunkResults = await Promise.all(
+            chunk.map(ticker => hasOptionsMarket(ticker).catch(() => false))
+        );
+        tickerHasOptions.push(...chunkResults);
+    }
     const tickersWithOptions = new Set(
         POPULAR_TICKERS.filter((_, i) => tickerHasOptions[i])
     );

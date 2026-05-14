@@ -1,5 +1,6 @@
 'use client';
 
+import { useMemo } from 'react';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 import { summarizeChainForLlm } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
@@ -105,9 +106,18 @@ export function OptionsMetricsRow({
     expirationDate,
     snapshot,
 }: OptionsMetricsRowProps) {
-    const selectedChain = pickActiveChain(snapshot, expirationDate);
+    const selectedChain = useMemo(
+        () => pickActiveChain(snapshot, expirationDate),
+        [snapshot, expirationDate]
+    );
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
-    const metrics = selectedChain ? summarizeChainForLlm(selectedChain) : null;
+    const metrics = useMemo(
+        () =>
+            selectedChain
+                ? summarizeChainForLlm(selectedChain, snapshot.underlyingPrice)
+                : null,
+        [selectedChain, snapshot.underlyingPrice]
+    );
 
     const maxPainValue = formatMaxPain(metrics?.maxPain ?? NaN);
     const pcRatioValue = formatPutCallRatio(metrics?.putCallRatio ?? NaN);

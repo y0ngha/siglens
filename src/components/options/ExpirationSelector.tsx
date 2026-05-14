@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type KeyboardEvent } from 'react';
+import { useMemo, useRef, type KeyboardEvent } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { cn } from '@/lib/cn';
 import type { SlotMapping } from '@y0ngha/siglens-core';
@@ -41,22 +41,25 @@ export function ExpirationSelector({
 }: ExpirationSelectorProps) {
     const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
-    const tabs: TabDescriptor[] = [
-        ...slots.map(({ slot, expirationDate }) => ({
-            key: slot.key,
-            label: slot.label,
-            value: expirationDate as string | 'all',
-            sub: expirationDate.slice(5),
-        })),
-        { key: 'all', label: '종합', value: 'all' as const },
-    ];
-
-    const activeIndex = Math.max(
-        tabs.findIndex(t => t.value === value),
-        0
+    const tabs = useMemo<TabDescriptor[]>(
+        () => [
+            ...slots.map(({ slot, expirationDate }) => ({
+                key: slot.key,
+                label: slot.label,
+                value: expirationDate as string | 'all',
+                sub: expirationDate.slice(5),
+            })),
+            { key: 'all', label: '종합', value: 'all' as const },
+        ],
+        [slots]
     );
 
-    const focusTabAt = (index: number) => {
+    const activeIndex = useMemo(
+        () => Math.max(tabs.findIndex(t => t.value === value), 0),
+        [tabs, value]
+    );
+
+    const focusTabAt = (index: number): void => {
         const normalized = (index + tabs.length) % tabs.length;
         const next = tabs[normalized];
         if (next === undefined) return;
@@ -67,7 +70,7 @@ export function ExpirationSelector({
     const handleKeyDown = (
         event: KeyboardEvent<HTMLButtonElement>,
         index: number
-    ) => {
+    ): void => {
         switch (event.key) {
             case 'ArrowRight':
                 event.preventDefault();

@@ -182,7 +182,7 @@ describe('submitOptionsAnalysisAction', () => {
         );
 
         expect(result).toMatchObject({
-            status: 'error',
+            status: 'no_chains_error',
             code: 'no_options_chains',
         });
         expect(mockSubmitOptionsAnalysis).not.toHaveBeenCalled();

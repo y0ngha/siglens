@@ -47,19 +47,14 @@ async function fetchOptionsAnalysis(
     if (submitted.status === 'miss_no_trigger') {
         throw new BotBlockedError();
     }
-    if (submitted.status === 'error') {
-        if (isGateBlockedResult(submitted)) {
-            throw new Error(submitted.error.message);
-        }
-        if (submitted.code === 'no_options_chains') {
-            throw new Error(
-                submitted.error ?? '분석할 옵션 데이터가 없습니다.'
-            );
-        }
-        if (submitted.code === 'usage_limit_exceeded') {
-            throw new Error(submitted.error.message);
-        }
-        throw new Error('분석 중 오류가 발생했습니다.');
+    if (submitted.status === 'no_chains_error') {
+        throw new Error(submitted.error ?? '분석할 옵션 데이터가 없습니다.');
+    }
+    if (submitted.status === 'limit_error') {
+        throw new Error(submitted.error.message);
+    }
+    if (submitted.status === 'error' && isGateBlockedResult(submitted)) {
+        throw new Error(submitted.error.message);
     }
     if (submitted.status === 'key_error') {
         throw new Error(submitted.error);

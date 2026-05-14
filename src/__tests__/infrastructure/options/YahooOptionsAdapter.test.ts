@@ -93,23 +93,6 @@ const FULL_FIXTURE = {
     ],
 };
 
-/** Single-expiration response as returned when `date` is passed to the library. */
-const SINGLE_EXPIRY_FIXTURE = {
-    underlyingSymbol: 'AAPL',
-    expirationDates: [new Date('2026-05-22T00:00:00.000Z')],
-    strikes: [195, 205],
-    hasMiniOptions: false,
-    quote: { regularMarketPrice: 195 },
-    options: [
-        {
-            expirationDate: new Date('2026-05-22T00:00:00.000Z'),
-            hasMiniOptions: false,
-            calls: [makeContract(195, 'C'), makeContract(205, 'C')],
-            puts: [makeContract(195, 'P'), makeContract(205, 'P')],
-        },
-    ],
-};
-
 const EMPTY_OPTIONS_FIXTURE = {
     ...FULL_FIXTURE,
     options: [],
@@ -237,80 +220,6 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// fetchChain
-// ---------------------------------------------------------------------------
-
-describe('YahooOptionsAdapter.fetchChain', () => {
-    let consoleErrorSpy: jest.SpyInstance;
-
-    beforeEach(() => {
-        jest.clearAllMocks();
-        (sanitizeOptionsChain as jest.Mock).mockImplementation(c => c);
-        consoleErrorSpy = jest
-            .spyOn(console, 'error')
-            .mockImplementation(() => {});
-    });
-
-    afterEach(() => {
-        consoleErrorSpy.mockRestore();
-    });
-
-    it('calls yahooFinance.options with the correct date option', async () => {
-        mockOptionsMethod.mockResolvedValue(SINGLE_EXPIRY_FIXTURE);
-        const adapter = makeAdapter();
-
-        await adapter.fetchChain('AAPL', '2026-05-22');
-
-        expect(mockOptionsMethod).toHaveBeenCalledWith('AAPL', {
-            date: new Date('2026-05-22T00:00:00Z'),
-        });
-    });
-
-    it('returns the normalized chain for the first options[0] entry', async () => {
-        mockOptionsMethod.mockResolvedValue(SINGLE_EXPIRY_FIXTURE);
-        const adapter = makeAdapter();
-
-        const chain = await adapter.fetchChain('AAPL', '2026-05-22');
-
-        expect(chain).not.toBeNull();
-        expect(chain!.expirationDate).toBe('2026-05-22');
-        expect(chain!.calls).toHaveLength(2);
-        expect(chain!.puts).toHaveLength(2);
-    });
-
-    it('returns null when options array is empty', async () => {
-        mockOptionsMethod.mockResolvedValue(EMPTY_OPTIONS_FIXTURE);
-        const adapter = makeAdapter();
-
-        const result = await adapter.fetchChain('AAPL', '2026-05-22');
-
-        expect(result).toBeNull();
-    });
-
-    it('returns null when sanitizeOptionsChain rejects the chain', async () => {
-        mockOptionsMethod.mockResolvedValue(SINGLE_EXPIRY_FIXTURE);
-        (sanitizeOptionsChain as jest.Mock).mockReturnValue(null);
-        const adapter = makeAdapter();
-
-        const result = await adapter.fetchChain('AAPL', '2026-05-22');
-
-        expect(result).toBeNull();
-    });
-
-    it('catches library errors and returns null without throwing', async () => {
-        mockOptionsMethod.mockRejectedValue(new Error('not found'));
-        const adapter = makeAdapter();
-
-        const result = await adapter.fetchChain('AAPL', '2026-05-22');
-
-        expect(result).toBeNull();
-        expect(consoleErrorSpy).toHaveBeenCalledWith(
-            '[YahooOptionsAdapter] fetchChain failed',
-            expect.any(Error)
-        );
-    });
-});
 
 // ---------------------------------------------------------------------------
 // hasOptionsMarket

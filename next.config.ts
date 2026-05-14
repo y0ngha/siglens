@@ -1,5 +1,31 @@
 import type { NextConfig } from 'next';
 
+const SECONDS_PER_MINUTE = 60;
+const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
+const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
+
+/**
+ * Cache life profiles for options data. ET-anchored cadence chosen so the
+ * sweetest cache revalidation window matches active US options trading.
+ */
+const OPTIONS_CACHE_LIFE = {
+    'options-market-open': {
+        stale: 1 * SECONDS_PER_MINUTE,
+        revalidate: 5 * SECONDS_PER_MINUTE,
+        expire: 30 * SECONDS_PER_MINUTE,
+    },
+    'options-market-closed': {
+        stale: 5 * SECONDS_PER_MINUTE,
+        revalidate: 30 * SECONDS_PER_MINUTE,
+        expire: 2 * SECONDS_PER_HOUR,
+    },
+    'options-weekend': {
+        stale: 1 * SECONDS_PER_HOUR,
+        revalidate: 6 * SECONDS_PER_HOUR,
+        expire: 1 * SECONDS_PER_DAY,
+    },
+} as const;
+
 const nextConfig: NextConfig = {
     allowedDevOrigins: ['172.30.1.26'],
 
@@ -24,31 +50,7 @@ const nextConfig: NextConfig = {
     // 'use cache' 지시어 활성화 (Next.js 16)
     cacheComponents: true,
 
-    // 옵션 분석용 cacheLife profile — 미국 동부 시간대(ET) 기준으로
-    // 옵션 시장이 열려있을 때(빠른 변동), 마감 후(거의 정지),
-    // 주말/공휴일(완전 정지) 캐시 동작이 달라야 한다.
-    cacheLife: (() => {
-        const SECONDS_PER_MINUTE = 60;
-        const SECONDS_PER_HOUR = 60 * SECONDS_PER_MINUTE;
-        const SECONDS_PER_DAY = 24 * SECONDS_PER_HOUR;
-        return {
-            'options-market-open': {
-                stale: 1 * SECONDS_PER_MINUTE,
-                revalidate: 5 * SECONDS_PER_MINUTE,
-                expire: 30 * SECONDS_PER_MINUTE,
-            },
-            'options-market-closed': {
-                stale: 5 * SECONDS_PER_MINUTE,
-                revalidate: 30 * SECONDS_PER_MINUTE,
-                expire: 2 * SECONDS_PER_HOUR,
-            },
-            'options-weekend': {
-                stale: 1 * SECONDS_PER_HOUR,
-                revalidate: 6 * SECONDS_PER_HOUR,
-                expire: 1 * SECONDS_PER_DAY,
-            },
-        };
-    })(),
+    cacheLife: OPTIONS_CACHE_LIFE,
 
     // Turbopack (Next.js 16 기본값이나 명시)
     turbopack: {

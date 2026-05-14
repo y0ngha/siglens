@@ -1,7 +1,10 @@
 'use client';
 
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
-import { aggregateOpenInterest, calculateMaxPain } from '@y0ngha/siglens-core';
+import {
+    aggregateOpenInterest,
+    summarizeChainForLlm,
+} from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/components/options/utils/findNearestStrike';
 import { pickActiveChain } from '@/components/options/utils/pickActiveChain';
@@ -81,8 +84,8 @@ export function OpenInterestChart({
         );
     }
 
-    const maxPain = calculateMaxPain(selectedChain);
     const underlyingPrice = snapshot.underlyingPrice;
+    const maxPain = summarizeChainForLlm(selectedChain, underlyingPrice).maxPain;
 
     const top3Set = new Set<number>(
         oiByStrike

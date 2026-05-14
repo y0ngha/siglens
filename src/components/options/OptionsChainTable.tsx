@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
-import { aggregateOpenInterest, calculateMaxPain } from '@y0ngha/siglens-core';
+import {
+    aggregateOpenInterest,
+    summarizeChainForLlm,
+} from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/components/options/utils/findNearestStrike';
 import { pickActiveChain } from '@/components/options/utils/pickActiveChain';
@@ -71,7 +74,10 @@ export function OptionsChainTable({
 }: OptionsChainTableProps) {
     const [expanded, setExpanded] = useState(false);
 
-    const selectedChain = pickActiveChain(snapshot, expirationDate);
+    const selectedChain = useMemo(
+        () => pickActiveChain(snapshot, expirationDate),
+        [snapshot, expirationDate]
+    );
     const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
 
     const isEmpty =
@@ -86,6 +92,43 @@ export function OptionsChainTable({
         ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${selectedChain?.expirationDate ?? '—'})`
         : `▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`;
 
+    // Hooks must run unconditionally — compute derived data even when the
+    // chain is empty; only the render branches below short-circuit.
+    const tableData = useMemo(() => {
+        if (!selectedChain) {
+            return {
+                rows: [],
+                nearestStrike: null as number | null,
+                maxPainStrike: NaN,
+            };
+        }
+        const aggregatedStrikes = aggregateOpenInterest(selectedChain);
+        const callByStrike = new Map(
+            selectedChain.calls.map(c => [c.strike, c])
+        );
+        const putByStrike = new Map(
+            selectedChain.puts.map(p => [p.strike, p])
+        );
+        const allStrikes = aggregatedStrikes.map(s => s.strike);
+        const nearestStrikeIdx = findNearestStrikeIndex(
+            allStrikes,
+            snapshot.underlyingPrice
+        );
+        return {
+            rows: aggregatedStrikes.map(({ strike }) => ({
+                strike,
+                call: callByStrike.get(strike),
+                put: putByStrike.get(strike),
+            })),
+            nearestStrike:
+                nearestStrikeIdx >= 0 ? allStrikes[nearestStrikeIdx] : null,
+            maxPainStrike: summarizeChainForLlm(
+                selectedChain,
+                snapshot.underlyingPrice
+            ).maxPain,
+        };
+    }, [selectedChain, snapshot.underlyingPrice]);
+
     if (isEmpty || !selectedChain) {
         return (
             <div className="border-secondary-700 bg-secondary-800 flex w-full items-center justify-between rounded-xl border p-4">
@@ -96,23 +139,7 @@ export function OptionsChainTable({
         );
     }
 
-    const aggregatedStrikes = aggregateOpenInterest(selectedChain);
-    const callByStrike = new Map(selectedChain.calls.map(c => [c.strike, c]));
-    const putByStrike = new Map(selectedChain.puts.map(p => [p.strike, p]));
-    const rows = aggregatedStrikes.map(({ strike }) => ({
-        strike,
-        call: callByStrike.get(strike),
-        put: putByStrike.get(strike),
-    }));
-
-    const allStrikes = aggregatedStrikes.map(s => s.strike);
-    const nearestStrikeIdx = findNearestStrikeIndex(
-        allStrikes,
-        snapshot.underlyingPrice
-    );
-    const nearestStrike =
-        nearestStrikeIdx >= 0 ? allStrikes[nearestStrikeIdx] : null;
-    const maxPainStrike = calculateMaxPain(selectedChain);
+    const { rows, nearestStrike, maxPainStrike } = tableData;
 
     return (
         <div>
