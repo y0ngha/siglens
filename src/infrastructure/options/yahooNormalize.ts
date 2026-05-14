@@ -57,19 +57,35 @@ export interface YahooOptionsResult {
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 /**
- * Approximate ET-midnight reference for DTE calculation.
- * Uses a fixed -4h offset (EDT). This matches the plan verbatim.
+ * Returns an instant anchored at noon UTC on the same *calendar day in
+ * America/New_York* as `now`. Using noon avoids DST-transition windows
+ * (the few hours each spring/fall where a wall-clock value is ambiguous).
  *
- * NOTE: Does not account for EST/EDT switchover (Nov → Mar). For a
- * production-grade implementation, replace with a proper timezone library.
+ * The previous implementation hardcoded `-4h` (EDT), which off-by-one
+ * for ~5 months of the year (EST is `-5h`). DTE math rounds to days, so
+ * a 1h drift could still cross a midnight boundary — replaced with
+ * IANA-aware date-part extraction via `Intl.DateTimeFormat`.
  */
 function etMidnight(now: Date): Date {
-    const offset = -4 * 60; // EDT offset in minutes
-    const utcMidnight = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())
-    );
-    return new Date(utcMidnight.getTime() - offset * 60 * 1000);
+    const parts = ET_DATE_FORMATTER.formatToParts(now);
+    let year = 0;
+    let month = 0;
+    let day = 0;
+    for (const part of parts) {
+        if (part.type === 'year') year = Number.parseInt(part.value, 10);
+        else if (part.type === 'month')
+            month = Number.parseInt(part.value, 10);
+        else if (part.type === 'day') day = Number.parseInt(part.value, 10);
+    }
+    return new Date(Date.UTC(year, month - 1, day, 12));
 }
+
+const ET_DATE_FORMATTER = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+});
 
 /** Normalize a single call or put contract from yahoo-finance2 into an OptionsContract. */
 export function normalizeYahooContract(c: YahooCallOrPut): OptionsContract {
