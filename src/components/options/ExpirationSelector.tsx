@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, type KeyboardEvent } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import type { SlotMapping } from '@y0ngha/siglens-core';
 
@@ -11,16 +12,82 @@ interface ExpirationSelectorProps {
     onChange: (next: string | 'all') => void;
 }
 
+interface TabDescriptor {
+    key: string;
+    label: string;
+    /** Selection value forwarded to `onChange`. */
+    value: string | 'all';
+    /** Optional secondary label (e.g. month-day slice). */
+    sub?: string;
+}
+
+const ACTIVE_CHIP =
+    'border-primary-500 bg-primary-500/10 text-primary-400 focus-visible:ring-primary-500 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+const INACTIVE_CHIP =
+    'border-secondary-600 text-secondary-300 hover:border-primary-500 hover:text-primary-400 focus-visible:ring-primary-500 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
+
 /**
- * Tab-style expiration selector. Each chip is a `role="tab"` with
- * `aria-selected` for screen-reader friendliness. The trailing "종합" chip
- * always renders so users can request a cross-expiration aggregate.
+ * Tab-style expiration selector. Implements the WAI-ARIA tabs pattern:
+ * roving `tabIndex` (active tab is `0`, others `-1`) and Left/Right/Home/End
+ * key navigation. Selecting a chip immediately fires `onChange` (automatic
+ * activation, consistent with the existing SymbolTabs pattern in this app).
  */
 export function ExpirationSelector({
     slots,
     value,
     onChange,
 }: ExpirationSelectorProps) {
+    const buttonRefs = useRef<Array<HTMLButtonElement | null>>([]);
+
+    const tabs: TabDescriptor[] = [
+        ...slots.map(({ slot, expirationDate }) => ({
+            key: slot.key,
+            label: slot.label,
+            value: expirationDate as string | 'all',
+            sub: expirationDate.slice(5),
+        })),
+        { key: 'all', label: '종합', value: 'all' as const },
+    ];
+
+    const activeIndex = Math.max(
+        tabs.findIndex(t => t.value === value),
+        0
+    );
+
+    const focusTabAt = (index: number) => {
+        const normalized = (index + tabs.length) % tabs.length;
+        const next = tabs[normalized];
+        if (next === undefined) return;
+        onChange(next.value);
+        buttonRefs.current[normalized]?.focus();
+    };
+
+    const handleKeyDown = (
+        event: KeyboardEvent<HTMLButtonElement>,
+        index: number
+    ) => {
+        switch (event.key) {
+            case 'ArrowRight':
+                event.preventDefault();
+                focusTabAt(index + 1);
+                break;
+            case 'ArrowLeft':
+                event.preventDefault();
+                focusTabAt(index - 1);
+                break;
+            case 'Home':
+                event.preventDefault();
+                focusTabAt(0);
+                break;
+            case 'End':
+                event.preventDefault();
+                focusTabAt(tabs.length - 1);
+                break;
+            default:
+                break;
+        }
+    };
+
     return (
         <div
             className="border-secondary-700 bg-secondary-800 flex flex-wrap items-center gap-2 overflow-x-auto rounded-xl border p-3"
@@ -37,41 +104,31 @@ export function ExpirationSelector({
                     </p>
                 </InfoTooltip>
             </span>
-            {slots.map(({ slot, expirationDate }) => {
-                const active = value === expirationDate;
+            {tabs.map((tab, index) => {
+                const active = index === activeIndex;
                 return (
                     <button
-                        key={slot.key}
+                        key={tab.key}
+                        ref={el => {
+                            buttonRefs.current[index] = el;
+                        }}
                         role="tab"
                         type="button"
                         aria-selected={active}
-                        onClick={() => onChange(expirationDate)}
-                        className={
-                            active
-                                ? 'border-primary-500 bg-primary-500/10 text-primary-400 focus-visible:ring-primary-500 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
-                                : 'border-secondary-600 text-secondary-300 hover:border-primary-500 hover:text-primary-400 focus-visible:ring-primary-500 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
-                        }
+                        tabIndex={active ? 0 : -1}
+                        onClick={() => onChange(tab.value)}
+                        onKeyDown={e => handleKeyDown(e, index)}
+                        className={active ? ACTIVE_CHIP : INACTIVE_CHIP}
                     >
-                        <span>{slot.label}</span>
-                        <span className="text-secondary-500 font-mono text-[10px]">
-                            {expirationDate.slice(5)}
-                        </span>
+                        <span>{tab.label}</span>
+                        {tab.sub !== undefined && (
+                            <span className="text-secondary-500 font-mono text-[10px]">
+                                {tab.sub}
+                            </span>
+                        )}
                     </button>
                 );
             })}
-            <button
-                role="tab"
-                type="button"
-                aria-selected={value === 'all'}
-                onClick={() => onChange('all')}
-                className={
-                    value === 'all'
-                        ? 'border-primary-500 bg-primary-500/10 text-primary-400 focus-visible:ring-primary-500 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
-                        : 'border-secondary-600 text-secondary-300 hover:border-primary-500 hover:text-primary-400 focus-visible:ring-primary-500 inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none'
-                }
-            >
-                종합
-            </button>
         </div>
     );
 }
