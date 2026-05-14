@@ -37,7 +37,12 @@ export async function getOptionsChainAction(
     symbol: string,
     expirationDate: string
 ): Promise<OptionsChain | null> {
-    return fetchOptionsChainCached(symbol, expirationDate);
+    try {
+        return await fetchOptionsChainCached(symbol, expirationDate);
+    } catch (error) {
+        console.error('[getOptionsChainAction] fetch failed:', error);
+        return null;
+    }
 }
 
 /** Shape of the pre-computed signals for the nearest expiration. */
@@ -58,20 +63,27 @@ export interface OptionsSignalsResult {
 export async function getOptionsSignalsAction(
     symbol: string
 ): Promise<OptionsSignalsResult | null> {
-    const snapshot = await fetchOptionsSnapshot(symbol);
-    if (snapshot === null || snapshot.chains.length === 0) return null;
+    try {
+        const snapshot = await fetchOptionsSnapshot(symbol);
+        if (snapshot === null || snapshot.chains.length === 0) return null;
 
-    // Adapter returns chains sorted ascending by expirationDate; nearest is first.
-    const nearest = snapshot.chains[0];
-    if (!nearest) return null;
+        const nearest = snapshot.chains[0];
+        if (!nearest) return null;
 
-    const summary = summarizeChainForLlm(nearest);
-    return {
-        atmIv: summary.atmImpliedVolatility,
-        putCallRatio: summary.putCallRatio,
-        maxPain: summary.maxPain,
-        expirationDate: nearest.expirationDate,
-    };
+        const summary = summarizeChainForLlm(
+            nearest,
+            snapshot.underlyingPrice
+        );
+        return {
+            atmIv: summary.atmImpliedVolatility,
+            putCallRatio: summary.putCallRatio,
+            maxPain: summary.maxPain,
+            expirationDate: nearest.expirationDate,
+        };
+    } catch (error) {
+        console.error('[getOptionsSignalsAction] fetch failed:', error);
+        return null;
+    }
 }
 
 /**
@@ -132,7 +144,16 @@ export async function submitOptionsAnalysisAction(
 export async function pollOptionsAnalysisAction(
     jobId: string
 ): Promise<PollOptionsAnalysisResult> {
-    return pollOptionsAnalysis(jobId);
+    try {
+        return await pollOptionsAnalysis(jobId);
+    } catch (error) {
+        console.error(
+            '[pollOptionsAnalysisAction] poll failed:',
+            jobId,
+            error
+        );
+        return { status: 'error', error: 'unexpected_error' };
+    }
 }
 
 /**

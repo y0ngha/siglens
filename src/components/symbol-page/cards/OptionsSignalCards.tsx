@@ -1,9 +1,7 @@
 'use client';
 
-import { useQuery } from '@tanstack/react-query';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { getOptionsSignalsAction } from '@/infrastructure/options/optionsActions';
-import { QUERY_KEYS } from '@/lib/queryConfig';
+import { useOptionsSignals } from '@/components/symbol-page/hooks/useOptionsSignals';
 
 interface OptionsSignalCardsProps {
     symbol: string;
@@ -19,12 +17,7 @@ interface OptionsSignalCardsProps {
  * 별도 옵션 탭에서 다루므로 차트 페이지에서는 단순화된 단일 시점만 표시한다.
  */
 export function OptionsSignalCards({ symbol }: OptionsSignalCardsProps) {
-    const { data, isLoading } = useQuery({
-        queryKey: QUERY_KEYS.optionsSignals(symbol),
-        queryFn: () => getOptionsSignalsAction(symbol),
-        retry: 1,
-        staleTime: 5 * 60 * 1000,
-    });
+    const { data, isLoading } = useOptionsSignals(symbol);
 
     if (isLoading) return <OptionsSignalCardsSkeleton />;
     if (!data) return null;
