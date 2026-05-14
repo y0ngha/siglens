@@ -1,3 +1,4 @@
+import { OptionsSignalCards } from '@/components/symbol-page/cards/OptionsSignalCards';
 import { SymbolPageClient } from '@/components/symbol-page/SymbolPageClient';
 import { JsonLd } from '@/components/ui/JsonLd';
 import { FALLBACK_ANALYSIS } from '@/domain/chat/fallbackAnalysis';
@@ -180,10 +181,7 @@ export default async function SymbolPage({ params, searchParams }: Props) {
                     // 마운트 시 useAnalysis가 자동으로 재분석을 트리거하도록 true로 설정한다.
                     initialAnalysisFailed={true}
                     indicatorCount={skillCounts.indicators}
-                    bottomSlot={
-                        // <CrossLinkCards symbol={ticker} current="chart" />
-                        null
-                    }
+                    bottomSlot={<OptionsSignalCards symbol={ticker} />}
                 />
             </HydrationBoundary>
         </>
