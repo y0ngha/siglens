@@ -70,10 +70,7 @@ export async function getOptionsSignalsAction(
         const nearest = snapshot.chains[0];
         if (!nearest) return null;
 
-        const summary = summarizeChainForLlm(
-            nearest,
-            snapshot.underlyingPrice
-        );
+        const summary = summarizeChainForLlm(nearest, snapshot.underlyingPrice);
         return {
             atmIv: summary.atmImpliedVolatility,
             putCallRatio: summary.putCallRatio,
@@ -147,11 +144,7 @@ export async function pollOptionsAnalysisAction(
     try {
         return await pollOptionsAnalysis(jobId);
     } catch (error) {
-        console.error(
-            '[pollOptionsAnalysisAction] poll failed:',
-            jobId,
-            error
-        );
+        console.error('[pollOptionsAnalysisAction] poll failed:', jobId, error);
         return { status: 'error', error: 'unexpected_error' };
     }
 }

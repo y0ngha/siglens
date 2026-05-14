@@ -205,7 +205,11 @@ describe('normalizeYahooExpiration', () => {
         const exp = makeYahooExpiration(
             new Date('2026-05-15T00:00:00.000Z'),
             // Intentionally out of order
-            [makeYahooContract(210), makeYahooContract(190), makeYahooContract(200)],
+            [
+                makeYahooContract(210),
+                makeYahooContract(190),
+                makeYahooContract(200),
+            ],
             []
         );
         const result = normalizeYahooExpiration(exp, NOW);
@@ -217,7 +221,11 @@ describe('normalizeYahooExpiration', () => {
         const exp = makeYahooExpiration(
             new Date('2026-05-15T00:00:00.000Z'),
             [],
-            [makeYahooContract(210), makeYahooContract(190), makeYahooContract(200)]
+            [
+                makeYahooContract(210),
+                makeYahooContract(190),
+                makeYahooContract(200),
+            ]
         );
         const result = normalizeYahooExpiration(exp, NOW);
         const strikes = result.puts.map(c => c.strike);
@@ -254,7 +262,9 @@ describe('normalizeYahooExpiration', () => {
 describe('normalizeYahooSnapshot', () => {
     const NOW = new Date('2026-05-14T16:00:00Z');
 
-    function makeResponse(overrides: Partial<YahooOptionsResult> = {}): YahooOptionsResult {
+    function makeResponse(
+        overrides: Partial<YahooOptionsResult> = {}
+    ): YahooOptionsResult {
         return {
             underlyingSymbol: 'AAPL',
             expirationDates: [
