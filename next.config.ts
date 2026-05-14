@@ -24,6 +24,27 @@ const nextConfig: NextConfig = {
     // 'use cache' 지시어 활성화 (Next.js 16)
     cacheComponents: true,
 
+    // 옵션 분석용 cacheLife profile — 미국 동부 시간대(ET) 기준으로
+    // 옵션 시장이 열려있을 때(빠른 변동), 마감 후(거의 정지),
+    // 주말/공휴일(완전 정지) 캐시 동작이 달라야 한다.
+    cacheLife: {
+        'options-market-open': {
+            stale: 60,
+            revalidate: 300,
+            expire: 1800,
+        },
+        'options-market-closed': {
+            stale: 300,
+            revalidate: 1800,
+            expire: 7200,
+        },
+        'options-weekend': {
+            stale: 3600,
+            revalidate: 21600,
+            expire: 86400,
+        },
+    },
+
     // Turbopack (Next.js 16 기본값이나 명시)
     turbopack: {
         root: import.meta.dirname,
