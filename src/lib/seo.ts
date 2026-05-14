@@ -257,6 +257,65 @@ function buildSymbolFundamentalKeywords(
     ];
 }
 
+export interface BuildSymbolOptionsSeoOptions extends BuildSymbolSeoOptions {
+    /**
+     * `false`일 때 옵션 시장이 없는 종목으로 안내한다. metadata에서 robots를
+     * noindex로 떨어뜨리는 신호로도 사용된다.
+     */
+    hasOptions?: boolean;
+}
+
+/** Build SEO metadata for the `/[symbol]/options` page. */
+export function buildSymbolOptionsSeoContent(
+    symbol: string,
+    opts: BuildSymbolOptionsSeoOptions = {}
+): SymbolSeoContent {
+    const upper = symbol.toUpperCase();
+    const subject = opts.displayName ?? upper;
+    const hasOptions = opts.hasOptions ?? true;
+    const title = hasOptions
+        ? `${upper} 옵션 분석 — Max Pain · OI · Put/Call · ATM IV`
+        : `${upper} 옵션 분석`;
+    const fullTitle = `${title} | ${SITE_NAME}`;
+    return {
+        ticker: upper,
+        title,
+        fullTitle,
+        description: hasOptions
+            ? `${subject}의 옵션 시장을 AI가 한국어로 해석합니다. 만기별 Max Pain, Put/Call Ratio, ATM IV, Implied Move 같은 핵심 지표와 Strike별 Open Interest 분포로 시장이 어디에 베팅하고 있는지 살펴봅니다.`
+            : `${subject}는 현재 옵션 시장이 형성되어 있지 않습니다. 차트, 펀더멘털, 뉴스 분석으로 종목을 살펴보세요.`,
+        url: `${SITE_URL}/${upper}/options`,
+        keywords: buildSymbolOptionsKeywords(upper, opts.koreanName),
+    };
+}
+
+function buildSymbolOptionsKeywords(
+    ticker: string,
+    koreanName?: string
+): string[] {
+    return [
+        `${ticker} 옵션`,
+        `${ticker} 옵션 분석`,
+        `${ticker} Max Pain`,
+        `${ticker} Put Call Ratio`,
+        `${ticker} Open Interest`,
+        `${ticker} Implied Volatility`,
+        ...(koreanName
+            ? [
+                  `${koreanName} 옵션`,
+                  `${koreanName} 옵션 시장`,
+                  `${koreanName} 옵션 분석`,
+              ]
+            : []),
+        '옵션 분석',
+        '옵션 시장',
+        'Max Pain',
+        'Put/Call Ratio',
+        'Implied Volatility',
+        'Open Interest',
+    ];
+}
+
 /** Build SEO metadata for the `/[symbol]/news` page. */
 export function buildSymbolNewsSeoContent(
     symbol: string,
