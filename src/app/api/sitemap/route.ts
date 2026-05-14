@@ -92,6 +92,12 @@ function buildEntries(): SitemapEntry[] {
                 priority: 0.75,
             },
             {
+                url: `${SITE_URL}/${ticker}/options`,
+                lastModified: TODAY_AT_MARKET_CLOSE,
+                changeFrequency: 'daily',
+                priority: 0.75,
+            },
+            {
                 url: `${SITE_URL}/${ticker}/overall`,
                 lastModified: TODAY_AT_MARKET_CLOSE,
                 changeFrequency: 'weekly',
