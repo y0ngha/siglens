@@ -1,13 +1,10 @@
 'use client';
 
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import type { OptionsChain, OptionsSnapshot } from '@y0ngha/siglens-core';
-import { aggregateOpenInterest, calculateMaxPain } from '@y0ngha/siglens-core';
 import { useState } from 'react';
-
-// ---------------------------------------------------------------------------
-// Props
-// ---------------------------------------------------------------------------
+import type { OptionsSnapshot } from '@y0ngha/siglens-core';
+import { aggregateOpenInterest, calculateMaxPain } from '@y0ngha/siglens-core';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { pickActiveChain } from './utils/pickActiveChain';
 
 interface OptionsChainTableProps {
     symbol: string;
@@ -15,10 +12,6 @@ interface OptionsChainTableProps {
     expirationDate: string | 'all';
     snapshot: OptionsSnapshot;
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 const numberFormatter = new Intl.NumberFormat('en-US');
 
@@ -64,10 +57,6 @@ function findNearestStrike(
     return nearest;
 }
 
-// ---------------------------------------------------------------------------
-// Tooltip content nodes (spec-exact copy — do NOT paraphrase)
-// ---------------------------------------------------------------------------
-
 const StrikeTooltip = (
     <>
         <p>옵션 계약에 정해진 매수/매도 가격이에요.</p>
@@ -95,10 +84,6 @@ const ImpliedVolatilityTooltip = (
     </>
 );
 
-// ---------------------------------------------------------------------------
-// OptionsChainTable
-// ---------------------------------------------------------------------------
-
 export function OptionsChainTable({
     symbol,
     expirationDate,
@@ -106,17 +91,9 @@ export function OptionsChainTable({
 }: OptionsChainTableProps) {
     const [expanded, setExpanded] = useState(false);
 
-    // ---- chain selection (same logic as OptionsMetricsRow / OpenInterestChart) ----
-    const nearestChain = snapshot.chains[0] ?? null;
-    const selectedChain: OptionsChain | null =
-        expirationDate === 'all'
-            ? nearestChain
-            : (snapshot.chains.find(c => c.expirationDate === expirationDate) ??
-              nearestChain);
+    const selectedChain = pickActiveChain(snapshot, expirationDate);
+    const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
 
-    const nearestExpiry = nearestChain?.expirationDate ?? '';
-
-    // ---- empty state ----
     const isEmpty =
         !selectedChain ||
         (selectedChain.calls.length === 0 && selectedChain.puts.length === 0);
@@ -125,12 +102,11 @@ export function OptionsChainTable({
         ? selectedChain.calls.length + selectedChain.puts.length
         : 0;
 
-    // ---- collapsed toggle button ----
     const headerLabel = expanded
         ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${selectedChain?.expirationDate ?? '—'})`
         : `▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`;
 
-    if (isEmpty) {
+    if (isEmpty || !selectedChain) {
         return (
             <div className="border-secondary-700 bg-secondary-800 flex w-full items-center justify-between rounded-xl border p-4">
                 <span className="text-secondary-400 text-sm">
@@ -140,27 +116,24 @@ export function OptionsChainTable({
         );
     }
 
-    // ---- build rows ----
-    const aggregatedStrikes = aggregateOpenInterest(selectedChain!);
-    const callByStrike = new Map(selectedChain!.calls.map(c => [c.strike, c]));
-    const putByStrike = new Map(selectedChain!.puts.map(p => [p.strike, p]));
+    const aggregatedStrikes = aggregateOpenInterest(selectedChain);
+    const callByStrike = new Map(selectedChain.calls.map(c => [c.strike, c]));
+    const putByStrike = new Map(selectedChain.puts.map(p => [p.strike, p]));
     const rows = aggregatedStrikes.map(({ strike }) => ({
         strike,
         call: callByStrike.get(strike),
         put: putByStrike.get(strike),
     }));
 
-    // ---- ATM / Max Pain ----
     const allStrikes = aggregatedStrikes.map(s => s.strike);
     const nearestStrike = findNearestStrike(
         allStrikes,
         snapshot.underlyingPrice
     );
-    const maxPainStrike = calculateMaxPain(selectedChain!);
+    const maxPainStrike = calculateMaxPain(selectedChain);
 
     return (
         <div>
-            {/* Toggle button */}
             <button
                 type="button"
                 aria-expanded={expanded}
@@ -174,9 +147,7 @@ export function OptionsChainTable({
                 </span>
             </button>
 
-            {/* Expanded table */}
             <div id="options-chain-table" hidden={!expanded}>
-                {/* "all" expiration note */}
                 {expirationDate === 'all' && nearestExpiry && (
                     <p className="text-secondary-500 mt-2 px-1 text-[10px]">
                         종합 만기 — 가장 가까운 만기를 표시합니다 (
@@ -259,7 +230,6 @@ export function OptionsChainTable({
                                                 : undefined
                                         }
                                     >
-                                        {/* Strike cell */}
                                         <td className="text-secondary-200 px-3 py-1.5 text-left font-mono whitespace-nowrap tabular-nums">
                                             {formatStrike(strike)}
                                             {isMaxPain && (
@@ -275,7 +245,6 @@ export function OptionsChainTable({
                                             )}
                                         </td>
 
-                                        {/* Call Bid/Ask */}
                                         <td className="text-secondary-300 px-3 py-1.5 text-right font-mono tabular-nums">
                                             {call
                                                 ? formatBidAsk(
@@ -285,14 +254,12 @@ export function OptionsChainTable({
                                                 : '—'}
                                         </td>
 
-                                        {/* Call OI */}
                                         <td className="text-secondary-300 px-3 py-1.5 text-right">
                                             {call
                                                 ? formatOi(call.openInterest)
                                                 : '—'}
                                         </td>
 
-                                        {/* Call IV */}
                                         <td className="text-secondary-300 px-3 py-1.5 text-right">
                                             {call
                                                 ? formatIv(
@@ -301,21 +268,18 @@ export function OptionsChainTable({
                                                 : '—'}
                                         </td>
 
-                                        {/* Put Bid/Ask */}
                                         <td className="text-secondary-300 px-3 py-1.5 text-right font-mono tabular-nums">
                                             {put
                                                 ? formatBidAsk(put.bid, put.ask)
                                                 : '—'}
                                         </td>
 
-                                        {/* Put OI */}
                                         <td className="text-secondary-300 px-3 py-1.5 text-right">
                                             {put
                                                 ? formatOi(put.openInterest)
                                                 : '—'}
                                         </td>
 
-                                        {/* Put IV */}
                                         <td className="text-secondary-300 px-3 py-1.5 text-right">
                                             {put
                                                 ? formatIv(

@@ -1,8 +1,9 @@
 'use client';
 
-import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 import { summarizeChainForLlm } from '@y0ngha/siglens-core';
+import { InfoTooltip } from '@/components/ui/InfoTooltip';
+import { pickActiveChain } from './utils/pickActiveChain';
 
 interface OptionsMetricsRowProps {
     /** 'YYYY-MM-DD' or 'all'. */
@@ -10,10 +11,6 @@ interface OptionsMetricsRowProps {
     /** Pre-fetched snapshot from the parent (HydrationBoundary-prefilled). */
     snapshot: OptionsSnapshot;
 }
-
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
 
 function formatMaxPain(value: number): string {
     if (isNaN(value)) return '—';
@@ -35,10 +32,6 @@ function formatImpliedMove(value: number | null): string {
     if (value === null || isNaN(value)) return '—';
     return `±${value.toFixed(1)}%`;
 }
-
-// ---------------------------------------------------------------------------
-// Tooltip content nodes (spec-exact copy — do NOT paraphrase)
-// ---------------------------------------------------------------------------
 
 const MaxPainTooltip = (
     <>
@@ -86,10 +79,6 @@ const ImpliedMoveTooltip = (
     </>
 );
 
-// ---------------------------------------------------------------------------
-// MetricCard
-// ---------------------------------------------------------------------------
-
 interface MetricCardProps {
     label: string;
     value: string;
@@ -112,27 +101,12 @@ function MetricCard({ label, value, tooltip }: MetricCardProps) {
     );
 }
 
-// ---------------------------------------------------------------------------
-// OptionsMetricsRow
-// ---------------------------------------------------------------------------
-
 export function OptionsMetricsRow({
     expirationDate,
     snapshot,
 }: OptionsMetricsRowProps) {
-    const chains = snapshot.chains;
-
-    // Select the relevant chain
-    const nearestChain = chains[0] ?? null;
-    const selectedChain =
-        expirationDate === 'all'
-            ? nearestChain
-            : (chains.find(c => c.expirationDate === expirationDate) ??
-              nearestChain);
-
-    const nearestExpiry = nearestChain?.expirationDate ?? '';
-
-    // Derive metrics — render '—' guard when chain is missing
+    const selectedChain = pickActiveChain(snapshot, expirationDate);
+    const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
     const metrics = selectedChain ? summarizeChainForLlm(selectedChain) : null;
 
     const maxPainValue = formatMaxPain(metrics?.maxPain ?? NaN);

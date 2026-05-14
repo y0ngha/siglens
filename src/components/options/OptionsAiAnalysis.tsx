@@ -1,13 +1,16 @@
 'use client';
 
-import type { OptionsTone, OptionsSignalKind } from '@y0ngha/siglens-core';
-import { cn } from '@/lib/cn';
-import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
-import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
-import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
+import type {
+    ModelId,
+    OptionsAnalysisResponse,
+    OptionsSignalKind,
+    OptionsTone,
+} from '@y0ngha/siglens-core';
 import { BotBlockedNotice } from '@/components/symbol-page/BotBlockedNotice';
-
-// ─── tone / kind ─────────────────────────────────────────────────────────────
+import { cn } from '@/lib/cn';
+import { OptionsAiAnalysisError } from './OptionsAiAnalysisError';
+import { OptionsAiAnalysisSkeleton } from './OptionsAiAnalysisSkeleton';
+import { useOptionsAnalysis } from './hooks/useOptionsAnalysis';
 
 const TONE_LABEL: Record<OptionsTone, string> = {
     bullish: '강세',
@@ -21,19 +24,19 @@ const TONE_CLASS: Record<
     { text: string; bg: string; border: string }
 > = {
     bullish: {
-        text: 'text-emerald-400',
-        bg: 'bg-emerald-500/10',
-        border: 'border-emerald-500/30',
+        text: 'text-chart-bullish',
+        bg: 'bg-chart-bullish/10',
+        border: 'border-chart-bullish/30',
     },
     bearish: {
-        text: 'text-red-400',
-        bg: 'bg-red-500/10',
-        border: 'border-red-500/30',
+        text: 'text-chart-bearish',
+        bg: 'bg-chart-bearish/10',
+        border: 'border-chart-bearish/30',
     },
     cautious: {
-        text: 'text-amber-400',
-        bg: 'bg-amber-500/10',
-        border: 'border-amber-500/30',
+        text: 'text-ui-warning',
+        bg: 'bg-ui-warning/10',
+        border: 'border-ui-warning/30',
     },
     neutral: {
         text: 'text-secondary-300',
@@ -42,8 +45,6 @@ const TONE_CLASS: Record<
     },
 };
 
-// OptionsSignalKind uses the same four-value colour pattern; `volatility` maps
-// to amber (same as `cautious` in the tone table).
 const SIGNAL_KIND_CLASS: Record<
     OptionsSignalKind,
     { text: string; bg: string; border: string }
@@ -61,22 +62,14 @@ const SIGNAL_KIND_LABEL: Record<OptionsSignalKind, string> = {
     neutral: '중립',
 };
 
-// ─── helpers ─────────────────────────────────────────────────────────────────
-
 /**
- * Format an ISO datetime string as "YYYY-MM-DD HH:mm" (no timezone conversion
- * — the value from the server is already in an appropriate zone for display).
- *
- * No third-party dependency needed; the ISO string is sliced to the minute
- * boundary. Example: "2026-05-14T09:35:11.000Z" → "2026-05-14 09:35".
+ * Format an ISO datetime string as "YYYY-MM-DD HH:mm". The server-side
+ * timestamp is treated as already-displayable (no zone math); only the
+ * minute-precision slice is shown to keep the header compact.
  */
 function formatAnalyzedAt(iso: string): string {
-    // ISO strings have the shape "YYYY-MM-DDTHH:mm:ss…"
-    const withoutTz = iso.replace('T', ' ').slice(0, 16);
-    return withoutTz;
+    return iso.replace('T', ' ').slice(0, 16);
 }
-
-// ─── sub-components ──────────────────────────────────────────────────────────
 
 interface ToneBadgeProps {
     tone: OptionsTone;
@@ -118,10 +111,6 @@ function SignalBadge({ kind }: SignalBadgeProps) {
     );
 }
 
-// ─── view ─────────────────────────────────────────────────────────────────────
-
-import type { OptionsAnalysisResponse } from '@y0ngha/siglens-core';
-
 interface OptionsAiAnalysisViewProps {
     result: OptionsAnalysisResponse;
 }
@@ -141,7 +130,6 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
             aria-labelledby="options-ai-analysis-heading"
             className="border-primary-500/30 from-secondary-800 to-secondary-900 ring-primary-500/10 shadow-primary-500/5 rounded-xl border bg-gradient-to-br p-6 shadow-lg ring-1"
         >
-            {/* Header */}
             <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <h2
                     id="options-ai-analysis-heading"
@@ -159,14 +147,12 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                 ) : null}
             </div>
 
-            {/* Summary */}
             {result.summary ? (
                 <p className="text-secondary-300 mb-5 text-sm leading-relaxed">
                     {result.summary}
                 </p>
             ) : null}
 
-            {/* Per-expiration commentary */}
             {result.perExpiration.length > 0 && (
                 <div className="mb-5">
                     <h3 className="text-secondary-200 mb-3 text-xs font-semibold tracking-wider uppercase">
@@ -193,7 +179,6 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                 </div>
             )}
 
-            {/* Signals */}
             {result.signals.length > 0 && (
                 <div>
                     <h3 className="text-secondary-200 mb-3 text-xs font-semibold tracking-wider uppercase">
@@ -226,14 +211,12 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
     );
 }
 
-// ─── public export ────────────────────────────────────────────────────────────
-
 export interface OptionsAiAnalysisProps {
     symbol: string;
     companyName: string;
     /** 'YYYY-MM-DD' or 'all'. */
     expirationDate: string | 'all';
-    modelId: string;
+    modelId: ModelId;
 }
 
 export function OptionsAiAnalysis({
@@ -246,7 +229,7 @@ export function OptionsAiAnalysis({
         symbol,
         companyName,
         expirationDate,
-        modelId: modelId as Parameters<typeof useOptionsAnalysis>[0]['modelId'],
+        modelId,
     });
 
     if (state.status === 'loading') {
