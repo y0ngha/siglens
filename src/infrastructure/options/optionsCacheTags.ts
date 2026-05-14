@@ -2,4 +2,3 @@
 export function optionsSymbolTag(symbol: string): string {
     return `options:${symbol}`;
 }
-

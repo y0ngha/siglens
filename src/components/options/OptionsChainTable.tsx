@@ -106,9 +106,7 @@ export function OptionsChainTable({
         const callByStrike = new Map(
             selectedChain.calls.map(c => [c.strike, c])
         );
-        const putByStrike = new Map(
-            selectedChain.puts.map(p => [p.strike, p])
-        );
+        const putByStrike = new Map(selectedChain.puts.map(p => [p.strike, p]));
         const allStrikes = aggregatedStrikes.map(s => s.strike);
         const nearestStrikeIdx = findNearestStrikeIndex(
             allStrikes,

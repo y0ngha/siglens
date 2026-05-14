@@ -36,4 +36,3 @@ export async function fetchOptionsSnapshot(
     cacheTag(optionsSymbolTag(symbol));
     return adapter.fetchSnapshot(symbol);
 }
-

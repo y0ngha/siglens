@@ -85,7 +85,10 @@ export function OpenInterestChart({
     }
 
     const underlyingPrice = snapshot.underlyingPrice;
-    const maxPain = summarizeChainForLlm(selectedChain, underlyingPrice).maxPain;
+    const maxPain = summarizeChainForLlm(
+        selectedChain,
+        underlyingPrice
+    ).maxPain;
 
     const top3Set = new Set<number>(
         oiByStrike

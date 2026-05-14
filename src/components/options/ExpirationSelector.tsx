@@ -55,7 +55,11 @@ export function ExpirationSelector({
     );
 
     const activeIndex = useMemo(
-        () => Math.max(tabs.findIndex(t => t.value === value), 0),
+        () =>
+            Math.max(
+                tabs.findIndex(t => t.value === value),
+                0
+            ),
         [tabs, value]
     );
 
