@@ -110,7 +110,8 @@ export function OptionsChainTable({
         allStrikes,
         snapshot.underlyingPrice
     );
-    const nearestStrike = nearestStrikeIdx >= 0 ? allStrikes[nearestStrikeIdx] : null;
+    const nearestStrike =
+        nearestStrikeIdx >= 0 ? allStrikes[nearestStrikeIdx] : null;
     const maxPainStrike = calculateMaxPain(selectedChain);
 
     return (

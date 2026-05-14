@@ -106,8 +106,14 @@ export function OpenInterestChart({
 
     const maxPainIdx = isNaN(maxPain)
         ? -1
-        : findNearestStrikeIndex(oiByStrike.map(s => s.strike),maxPain);
-    const currentPriceIdx = findNearestStrikeIndex(oiByStrike.map(s => s.strike),underlyingPrice);
+        : findNearestStrikeIndex(
+              oiByStrike.map(s => s.strike),
+              maxPain
+          );
+    const currentPriceIdx = findNearestStrikeIndex(
+        oiByStrike.map(s => s.strike),
+        underlyingPrice
+    );
 
     const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =

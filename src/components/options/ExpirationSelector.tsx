@@ -24,8 +24,7 @@ interface TabDescriptor {
 
 const CHIP_BASE =
     'focus-visible:ring-primary-500 inline-flex items-center gap-1 rounded-full border px-3 py-1 text-xs font-medium transition-colors focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none';
-const CHIP_ACTIVE =
-    'border-primary-500 bg-primary-500/10 text-primary-400';
+const CHIP_ACTIVE = 'border-primary-500 bg-primary-500/10 text-primary-400';
 const CHIP_INACTIVE =
     'border-secondary-600 text-secondary-300 hover:border-primary-500 hover:text-primary-400';
 
