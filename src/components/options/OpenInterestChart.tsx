@@ -2,10 +2,7 @@
 
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import type { OptionsSnapshot, StrikeOpenInterest } from '@y0ngha/siglens-core';
-import {
-    aggregateOpenInterest,
-    calculateMaxPain,
-} from '@y0ngha/siglens-core';
+import { aggregateOpenInterest, calculateMaxPain } from '@y0ngha/siglens-core';
 
 interface OpenInterestChartProps {
     symbol: string;
@@ -112,7 +109,7 @@ export function OpenInterestChart({
     // ---- empty state ----
     if (!selectedChain) {
         return (
-            <p className="text-secondary-500 text-sm py-4">
+            <p className="text-secondary-500 py-4 text-sm">
                 이 만기에는 OI 데이터가 없어요.
             </p>
         );
@@ -122,7 +119,7 @@ export function OpenInterestChart({
 
     if (oiByStrike.length === 0) {
         return (
-            <p className="text-secondary-500 text-sm py-4">
+            <p className="text-secondary-500 py-4 text-sm">
                 이 만기에는 OI 데이터가 없어요.
             </p>
         );
@@ -158,8 +155,7 @@ export function OpenInterestChart({
         : closestStrikeIndex(oiByStrike, maxPain);
     const currentPriceIdx = closestStrikeIndex(oiByStrike, underlyingPrice);
 
-    const maxPainX =
-        maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
+    const maxPainX = maxPainIdx >= 0 ? barCenterX(maxPainIdx, count) : null;
     const currentPriceX =
         currentPriceIdx >= 0 ? barCenterX(currentPriceIdx, count) : null;
 
@@ -171,17 +167,19 @@ export function OpenInterestChart({
     const peakOiLabel = fmtOi(globalMax);
 
     return (
-        <div className="border-secondary-700 bg-secondary-800 rounded-xl border p-4 space-y-2">
+        <div className="border-secondary-700 bg-secondary-800 space-y-2 rounded-xl border p-4">
             {/* Header */}
             <div className="flex items-center gap-1">
                 <span className="text-secondary-300 text-sm font-medium">
                     Open Interest 분포 (Strike별)
                 </span>
                 <InfoTooltip>
-                    <p>특정 옵션에 현재 살아있는(아직 청산 안 된) 계약 수예요.</p>
                     <p>
-                        한쪽 가격대에 OI가 두텁다는 건 그 가격에 많은 사람이 베팅했다는
-                        뜻이에요.
+                        특정 옵션에 현재 살아있는(아직 청산 안 된) 계약 수예요.
+                    </p>
+                    <p>
+                        한쪽 가격대에 OI가 두텁다는 건 그 가격에 많은 사람이
+                        베팅했다는 뜻이에요.
                     </p>
                 </InfoTooltip>
             </div>
@@ -196,8 +194,8 @@ export function OpenInterestChart({
             >
                 <title id="oi-chart-title">Strike별 Open Interest 분포</title>
                 <desc id="oi-chart-desc">
-                    Call과 Put의 만기별 OI를 strike 가격대별로 막대그래프로 표시합니다.
-                    Max Pain과 현재 주가는 세로선으로 강조됩니다.
+                    Call과 Put의 만기별 OI를 strike 가격대별로 막대그래프로
+                    표시합니다. Max Pain과 현재 주가는 세로선으로 강조됩니다.
                 </desc>
 
                 {/* Midline */}
@@ -248,7 +246,10 @@ export function OpenInterestChart({
                     const cx = barCenterX(i, count);
                     const isTop3 = top3Set.has(row.strike);
 
-                    const callH = barPixelHeight(row.callOpenInterest, globalMax);
+                    const callH = barPixelHeight(
+                        row.callOpenInterest,
+                        globalMax
+                    );
                     const putH = barPixelHeight(row.putOpenInterest, globalMax);
 
                     const callFill = isTop3 ? COLOR_CALL_TOP3 : COLOR_CALL;
@@ -344,10 +345,10 @@ export function OpenInterestChart({
             </svg>
 
             {/* Legend */}
-            <div className="flex flex-wrap items-center gap-3 text-[10px] text-secondary-500 mt-2">
+            <div className="text-secondary-500 mt-2 flex flex-wrap items-center gap-3 text-[10px]">
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block w-2.5 h-2.5 rounded-sm"
+                        className="inline-block h-2.5 w-2.5 rounded-sm"
                         style={{ background: COLOR_CALL }}
                         aria-hidden="true"
                     />
@@ -355,7 +356,7 @@ export function OpenInterestChart({
                 </span>
                 <span className="flex items-center gap-1">
                     <span
-                        className="inline-block w-2.5 h-2.5 rounded-sm"
+                        className="inline-block h-2.5 w-2.5 rounded-sm"
                         style={{ background: COLOR_PUT }}
                         aria-hidden="true"
                     />
@@ -364,7 +365,10 @@ export function OpenInterestChart({
                 <span className="flex items-center gap-1">
                     <span
                         className="inline-block"
-                        style={{ borderTop: `1.5px dashed ${COLOR_MAX_PAIN}`, width: '14px' }}
+                        style={{
+                            borderTop: `1.5px dashed ${COLOR_MAX_PAIN}`,
+                            width: '14px',
+                        }}
                         aria-hidden="true"
                     />
                     Max Pain
@@ -372,7 +376,10 @@ export function OpenInterestChart({
                 <span className="flex items-center gap-1">
                     <span
                         className="inline-block"
-                        style={{ borderTop: `1.5px solid ${COLOR_CURRENT}`, width: '14px' }}
+                        style={{
+                            borderTop: `1.5px solid ${COLOR_CURRENT}`,
+                            width: '14px',
+                        }}
                         aria-hidden="true"
                     />
                     현재가

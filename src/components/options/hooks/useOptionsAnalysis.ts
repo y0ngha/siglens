@@ -164,10 +164,7 @@ export function useOptionsAnalysis({
             if (jobId !== null) {
                 currentJobIdRef.current = null;
                 void cancelOptionsAnalysisJobAction(jobId).catch(error => {
-                    console.warn(
-                        '[useOptionsAnalysis] cancel failed',
-                        error
-                    );
+                    console.warn('[useOptionsAnalysis] cancel failed', error);
                 });
             }
         };

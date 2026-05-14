@@ -132,7 +132,7 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (sanitizeOptionsChain as jest.Mock).mockImplementation((c) => c);
+        (sanitizeOptionsChain as jest.Mock).mockImplementation(c => c);
         consoleErrorSpy = jest
             .spyOn(console, 'error')
             .mockImplementation(() => {});
@@ -246,7 +246,7 @@ describe('YahooOptionsAdapter.fetchChain', () => {
 
     beforeEach(() => {
         jest.clearAllMocks();
-        (sanitizeOptionsChain as jest.Mock).mockImplementation((c) => c);
+        (sanitizeOptionsChain as jest.Mock).mockImplementation(c => c);
         consoleErrorSpy = jest
             .spyOn(console, 'error')
             .mockImplementation(() => {});

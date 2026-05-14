@@ -16,7 +16,11 @@ import {
     buildSymbolSeoContent,
     SITE_NAME,
 } from '@/lib/seo';
-import { dehydrate, HydrationBoundary, QueryClient } from '@tanstack/react-query';
+import {
+    dehydrate,
+    HydrationBoundary,
+    QueryClient,
+} from '@tanstack/react-query';
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 
@@ -84,11 +88,14 @@ export default async function OptionsPage({ params }: Props) {
     });
     queryClient.setQueryData(QUERY_KEYS.optionsSnapshot(upper), snapshot);
 
-    const { fullTitle, description, url } = buildSymbolOptionsSeoContent(upper, {
-        displayName,
-        koreanName: assetInfo.koreanName,
-        hasOptions: true,
-    });
+    const { fullTitle, description, url } = buildSymbolOptionsSeoContent(
+        upper,
+        {
+            displayName,
+            koreanName: assetInfo.koreanName,
+            hasOptions: true,
+        }
+    );
 
     const jsonLd = {
         '@context': 'https://schema.org',
@@ -148,9 +155,10 @@ export default async function OptionsPage({ params }: Props) {
             <section className="sr-only">
                 <h2>{displayName} 옵션 시장 풍경</h2>
                 <p>
-                    {displayName} 옵션 시장을 AI가 한국어로 해석합니다. 만기별 Max
-                    Pain, Put/Call Ratio, ATM IV, Implied Move 등 핵심 지표와 Strike별
-                    Open Interest 분포를 함께 살펴볼 수 있습니다.
+                    {displayName} 옵션 시장을 AI가 한국어로 해석합니다. 만기별
+                    Max Pain, Put/Call Ratio, ATM IV, Implied Move 등 핵심
+                    지표와 Strike별 Open Interest 분포를 함께 살펴볼 수
+                    있습니다.
                 </p>
             </section>
             <HydrationBoundary state={dehydrate(queryClient)}>

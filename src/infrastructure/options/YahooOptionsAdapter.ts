@@ -46,7 +46,7 @@ export class YahooOptionsAdapter implements OptionsDataProvider {
             );
 
             const sanitizedChains = raw.chains
-                .map((chain) => sanitizeOptionsChain(chain))
+                .map(chain => sanitizeOptionsChain(chain))
                 .filter((chain): chain is OptionsChain => chain !== null);
 
             if (sanitizedChains.length === 0) {

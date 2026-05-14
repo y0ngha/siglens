@@ -63,8 +63,7 @@ export const QUERY_KEYS = {
         timeframe: Timeframe,
         modelId: ModelId
     ) => ['overall-analysis', symbol, companyName, timeframe, modelId] as const,
-    optionsSnapshot: (symbol: string) =>
-        ['options-snapshot', symbol] as const,
+    optionsSnapshot: (symbol: string) => ['options-snapshot', symbol] as const,
     optionsChain: (symbol: string, expirationDate: string) =>
         ['options-chain', symbol, expirationDate] as const,
     /**
@@ -82,6 +81,5 @@ export const QUERY_KEYS = {
         symbol: string,
         expirationDate: string | 'all',
         modelId: ModelId
-    ) =>
-        ['options-analysis', symbol, expirationDate, modelId] as const,
+    ) => ['options-analysis', symbol, expirationDate, modelId] as const,
 } as const;

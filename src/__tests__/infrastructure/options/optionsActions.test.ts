@@ -41,7 +41,10 @@ import {
     type OptionsChain,
     type OptionsExpirationMetrics,
 } from '@y0ngha/siglens-core';
-import { fetchOptionsSnapshot, fetchOptionsChain } from '@/app/[symbol]/options/optionsData';
+import {
+    fetchOptionsSnapshot,
+    fetchOptionsChain,
+} from '@/app/[symbol]/options/optionsData';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
 import { resolveTierAndByok } from '@/infrastructure/market/byokGate';
 import type { AnalysisGateError } from '@/domain/types';
@@ -114,7 +117,10 @@ describe('getOptionsChainAction', () => {
     it('delegates to fetchOptionsChain and returns result', async () => {
         mockFetchOptionsChain.mockResolvedValueOnce(MOCK_CHAIN);
         const result = await getOptionsChainAction('AAPL', '2026-06-20');
-        expect(mockFetchOptionsChain).toHaveBeenCalledWith('AAPL', '2026-06-20');
+        expect(mockFetchOptionsChain).toHaveBeenCalledWith(
+            'AAPL',
+            '2026-06-20'
+        );
         expect(result).toBe(MOCK_CHAIN);
     });
 
@@ -173,7 +179,12 @@ describe('submitOptionsAnalysisAction', () => {
     });
 
     it('forwards symbol, companyName, expirationDate, and modelId to siglens-core', async () => {
-        await submitOptionsAnalysisAction('AAPL', 'Apple Inc.', 'all', MODEL_ID);
+        await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            MODEL_ID
+        );
 
         expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({
@@ -189,7 +200,12 @@ describe('submitOptionsAnalysisAction', () => {
     it('returns no_options_chains error when snapshot is null', async () => {
         mockFetchOptionsSnapshot.mockResolvedValueOnce(null);
 
-        const result = await submitOptionsAnalysisAction('AAPL', 'Apple Inc.', 'all', MODEL_ID);
+        const result = await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            MODEL_ID
+        );
 
         expect(result).toMatchObject({
             status: 'error',
@@ -205,7 +221,12 @@ describe('submitOptionsAnalysisAction', () => {
             error: gateError,
         });
 
-        const result = await submitOptionsAnalysisAction('AAPL', 'Apple Inc.', 'all', PREMIUM_MODEL);
+        const result = await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            PREMIUM_MODEL
+        );
 
         expect(result).toEqual({ status: 'error', error: gateError });
         expect(mockSubmitOptionsAnalysis).not.toHaveBeenCalled();
@@ -218,7 +239,12 @@ describe('submitOptionsAnalysisAction', () => {
             tier: 'member' as never,
         });
 
-        await submitOptionsAnalysisAction('AAPL', 'Apple Inc.', '2026-06-20', MODEL_ID);
+        await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            '2026-06-20',
+            MODEL_ID
+        );
 
         expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ tier: 'member' })
@@ -233,7 +259,12 @@ describe('submitOptionsAnalysisAction', () => {
             userApiKey: 'usr-key',
         });
 
-        await submitOptionsAnalysisAction('AAPL', 'Apple Inc.', 'all', PREMIUM_MODEL);
+        await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            PREMIUM_MODEL
+        );
 
         expect(mockSubmitOptionsAnalysis).toHaveBeenCalledWith(
             expect.objectContaining({ userApiKey: 'usr-key' })
@@ -247,7 +278,12 @@ describe('submitOptionsAnalysisAction', () => {
             tier: 'pro' as never,
         });
 
-        await submitOptionsAnalysisAction('AAPL', 'Apple Inc.', 'all', MODEL_ID);
+        await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            MODEL_ID
+        );
 
         const callArg = mockSubmitOptionsAnalysis.mock.calls[0]?.[0];
         expect(callArg).toBeDefined();
@@ -256,9 +292,16 @@ describe('submitOptionsAnalysisAction', () => {
 
     it('returns unexpected_error result when an unexpected error is thrown', async () => {
         mockGetCurrentUser.mockResolvedValue({ id: 'u1' } as never);
-        mockResolveTierAndByok.mockRejectedValue(new Error('db connection failed'));
+        mockResolveTierAndByok.mockRejectedValue(
+            new Error('db connection failed')
+        );
 
-        const result = await submitOptionsAnalysisAction('AAPL', 'Apple Inc.', 'all', MODEL_ID);
+        const result = await submitOptionsAnalysisAction(
+            'AAPL',
+            'Apple Inc.',
+            'all',
+            MODEL_ID
+        );
 
         expect(result).toMatchObject({
             status: 'error',

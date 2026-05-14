@@ -91,7 +91,10 @@ export function normalizeYahooContract(c: YahooCallOrPut): OptionsContract {
  *
  * Contracts are sorted ascending by strike.
  */
-export function normalizeYahooExpiration(yexp: YahooOption, now: Date): OptionsChain {
+export function normalizeYahooExpiration(
+    yexp: YahooOption,
+    now: Date
+): OptionsChain {
     const expirationDate = yexp.expirationDate.toISOString().slice(0, 10);
 
     const expMidnight = new Date(`${expirationDate}T00:00:00.000Z`);
@@ -127,7 +130,7 @@ export function normalizeYahooSnapshot(
     now: Date
 ): OptionsSnapshot {
     const chains = [...response.options]
-        .map((exp) => normalizeYahooExpiration(exp, now))
+        .map(exp => normalizeYahooExpiration(exp, now))
         .sort((a, b) => a.expirationDate.localeCompare(b.expirationDate));
 
     return {

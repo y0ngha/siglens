@@ -133,11 +133,7 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
         result.signals.length === 0;
 
     if (isEmpty) {
-        return (
-            <OptionsAiAnalysisError
-                resetErrorBoundary={undefined}
-            />
-        );
+        return <OptionsAiAnalysisError resetErrorBoundary={undefined} />;
     }
 
     return (
@@ -176,10 +172,7 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                     <h3 className="text-secondary-200 mb-3 text-xs font-semibold tracking-wider uppercase">
                         ▸ 만기별 해석
                     </h3>
-                    <ul
-                        className="space-y-3"
-                        aria-label="만기별 옵션 해석"
-                    >
+                    <ul className="space-y-3" aria-label="만기별 옵션 해석">
                         {result.perExpiration.map(item => (
                             <li
                                 key={item.expirationDate}
@@ -206,10 +199,7 @@ function OptionsAiAnalysisView({ result }: OptionsAiAnalysisViewProps) {
                     <h3 className="text-secondary-200 mb-3 text-xs font-semibold tracking-wider uppercase">
                         ▸ 시그널
                     </h3>
-                    <ul
-                        className="space-y-2"
-                        aria-label="옵션 시그널 목록"
-                    >
+                    <ul className="space-y-2" aria-label="옵션 시그널 목록">
                         {result.signals.map((signal, i) => (
                             <li
                                 key={i}
@@ -281,11 +271,7 @@ export function OptionsAiAnalysis({
     }
 
     if (state.status === 'error') {
-        return (
-            <OptionsAiAnalysisError
-                resetErrorBoundary={state.retry}
-            />
-        );
+        return <OptionsAiAnalysisError resetErrorBoundary={state.retry} />;
     }
 
     return <OptionsAiAnalysisView result={state.result} />;
