@@ -3,6 +3,7 @@ import { PRIVACY_PATH, TERMS_PATH } from '@/lib/legal';
 import { SITE_BUILD_DATE, SITE_URL } from '@/lib/seo';
 import { POPULAR_TICKERS } from '@/domain/constants/popular-tickers';
 import { MS_PER_DAY, MS_PER_HOUR } from '@/domain/constants/time';
+import { hasOptionsMarket } from '@/app/[symbol]/options/optionsData';
 
 // 미국 주식 시장 마감 시각(UTC). 16:00 ET = 20:00 UTC (DST 미고려, 신호 용도라 충분).
 const US_MARKET_CLOSE_UTC_HOUR = 20;
@@ -14,7 +15,7 @@ interface SitemapEntry {
     priority: number;
 }
 
-function buildEntries(): SitemapEntry[] {
+async function buildEntries(): Promise<SitemapEntry[]> {
     // Per-axis lastModified timestamps. These are signals to Google about
     // change frequency, not exact change times. We avoid per-ticker DB
     // lookups (would block sitemap generation on N queries) and instead
@@ -40,6 +41,19 @@ function buildEntries(): SitemapEntry[] {
             : new Date(todayCloseCandidate.getTime() - MS_PER_DAY);
 
     const ONE_HOUR_AGO = new Date(NOW.getTime() - MS_PER_HOUR);
+
+    // 옵션 페이지는 옵션 시장이 형성된 종목만 sitemap에 포함한다 — 옵션
+    // 없는 종목은 페이지 자체가 noindex로 처리되므로 sitemap에 두면
+    // Google이 품질 신호를 약하게 본다. `hasOptionsMarket`은 1일 캐시라
+    // 두 번째 sitemap 빌드부터는 fetch 없이 메모리에서 해결된다.
+    const tickerHasOptions = await Promise.all(
+        POPULAR_TICKERS.map(ticker =>
+            hasOptionsMarket(ticker).catch(() => false)
+        )
+    );
+    const tickersWithOptions = new Set(
+        POPULAR_TICKERS.filter((_, i) => tickerHasOptions[i])
+    );
 
     return [
         {
@@ -91,12 +105,16 @@ function buildEntries(): SitemapEntry[] {
                 changeFrequency: 'weekly',
                 priority: 0.75,
             },
-            {
-                url: `${SITE_URL}/${ticker}/options`,
-                lastModified: TODAY_AT_MARKET_CLOSE,
-                changeFrequency: 'daily',
-                priority: 0.75,
-            },
+            ...(tickersWithOptions.has(ticker)
+                ? [
+                      {
+                          url: `${SITE_URL}/${ticker}/options`,
+                          lastModified: TODAY_AT_MARKET_CLOSE,
+                          changeFrequency: 'daily',
+                          priority: 0.75,
+                      },
+                  ]
+                : []),
             {
                 url: `${SITE_URL}/${ticker}/overall`,
                 lastModified: TODAY_AT_MARKET_CLOSE,
@@ -130,7 +148,7 @@ function toXml(entries: SitemapEntry[]): string {
 }
 
 export async function GET(): Promise<Response> {
-    const xml = toXml(buildEntries());
+    const xml = toXml(await buildEntries());
     return new NextResponse(xml, {
         headers: {
             'Content-Type': 'application/xml; charset=utf-8',

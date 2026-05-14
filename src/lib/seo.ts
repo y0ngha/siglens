@@ -282,7 +282,7 @@ export function buildSymbolOptionsSeoContent(
         title,
         fullTitle,
         description: hasOptions
-            ? `${subject}의 옵션 시장을 AI가 한국어로 해석합니다. 만기별 Max Pain, Put/Call Ratio, ATM IV, Implied Move 같은 핵심 지표와 Strike별 Open Interest 분포로 시장이 어디에 베팅하고 있는지 살펴봅니다.`
+            ? `${subject} 옵션 시장을 AI가 한국어로 해석합니다. 만기별 Max Pain, Put/Call, ATM IV, Implied Move와 Strike별 OI로 시장이 어디에 베팅하는지 살펴봅니다.`
             : `${subject}는 현재 옵션 시장이 형성되어 있지 않습니다. 차트, 펀더멘털, 뉴스 분석으로 종목을 살펴보세요.`,
         url: `${SITE_URL}/${upper}/options`,
         keywords: buildSymbolOptionsKeywords(upper, opts.koreanName),
