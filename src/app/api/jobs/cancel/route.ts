@@ -2,6 +2,7 @@ import { constants } from 'node:http2';
 import {
     cancelAnalysisJob,
     cancelFundamentalAnalysisJob,
+    cancelJob,
     cancelNewsAnalysisJob,
     cancelOverallAnalysisJob,
 } from '@y0ngha/siglens-core';
@@ -13,6 +14,7 @@ const VALID_JOB_TYPES = new Set<JobType>([
     'analysis',
     'fundamental',
     'news',
+    'options',
     'overall',
 ]);
 
@@ -47,6 +49,8 @@ export async function POST(request: Request): Promise<Response> {
                     return cancelFundamentalAnalysisJob(jobId);
                 case 'news':
                     return cancelNewsAnalysisJob(jobId);
+                case 'options':
+                    return cancelJob(jobId);
                 case 'overall':
                     return cancelOverallAnalysisJob(jobId);
                 default:

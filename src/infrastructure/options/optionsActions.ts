@@ -1,0 +1,155 @@
+'use server';
+
+import { waitUntil } from '@vercel/functions';
+import { headers } from 'next/headers';
+import {
+    submitOptionsAnalysis,
+    pollOptionsAnalysis,
+    summarizeChainForLlm,
+    type SubmitOptionsAnalysisResult,
+    type PollOptionsAnalysisResult,
+    cancelJob,
+} from '@y0ngha/siglens-core';
+import {
+    fetchOptionsChain as fetchOptionsChainCached,
+    fetchOptionsSnapshot,
+} from '@/app/[symbol]/options/optionsData';
+import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
+import {
+    resolveTierAndByok,
+    buildGateError,
+} from '@/infrastructure/market/byokGate';
+import { isBot } from '@/infrastructure/http/isBot';
+import type { AnalysisGateBlockedResult } from '@/domain/types';
+import type { OptionsChain, ModelId } from '@y0ngha/siglens-core';
+
+/** Final return type — core's options result + our siglens-side gate errors. */
+export type SubmitOptionsAnalysisActionResult =
+    | SubmitOptionsAnalysisResult
+    | AnalysisGateBlockedResult;
+
+/**
+ * Server Action: fetch a single expiration's options chain from the PPR cache.
+ * Used by the chain chip tabs to refetch per-expiration data without re-fetching
+ * the entire snapshot.
+ */
+export async function getOptionsChainAction(
+    symbol: string,
+    expirationDate: string
+): Promise<OptionsChain | null> {
+    return fetchOptionsChainCached(symbol, expirationDate);
+}
+
+/** Shape of the pre-computed signals for the nearest expiration. */
+export interface OptionsSignalsResult {
+    atmIv: number | null;
+    putCallRatio: number;
+    maxPain: number;
+    expirationDate: string;
+}
+
+/**
+ * Server Action: compute ATM IV, put/call ratio, and max pain for the nearest
+ * expiration from the cached snapshot. Returns null when no snapshot exists.
+ *
+ * The result is intentionally minimal — callers that need per-expiration metrics
+ * for all expirations should use `fetchOptionsSnapshot` directly.
+ */
+export async function getOptionsSignalsAction(
+    symbol: string
+): Promise<OptionsSignalsResult | null> {
+    const snapshot = await fetchOptionsSnapshot(symbol);
+    if (snapshot === null || snapshot.chains.length === 0) return null;
+
+    // Adapter returns chains sorted ascending by expirationDate; nearest is first.
+    const nearest = snapshot.chains[0];
+    if (!nearest) return null;
+
+    const summary = summarizeChainForLlm(nearest);
+    return {
+        atmIv: summary.atmImpliedVolatility,
+        putCallRatio: summary.putCallRatio,
+        maxPain: summary.maxPain,
+        expirationDate: nearest.expirationDate,
+    };
+}
+
+/**
+ * Server Action: tier + BYOK gate, then submit options analysis via siglens-core
+ * with the Yahoo snapshot pre-fetched. Returns `cached | submitted | miss_no_trigger
+ * | error` variants from siglens-core, or a gate-blocked error from siglens.
+ */
+export async function submitOptionsAnalysisAction(
+    symbol: string,
+    companyName: string,
+    expirationDate: string | 'all',
+    modelId: ModelId
+): Promise<SubmitOptionsAnalysisActionResult> {
+    try {
+        const requestHeaders = await headers();
+        const skipEnqueueIfMiss = isBot(requestHeaders);
+
+        const user = await getCurrentUser();
+        const userId = user?.id ?? null;
+
+        const gate = await resolveTierAndByok(userId, modelId);
+        if (gate.kind === 'blocked') {
+            return { status: 'error', error: gate.error };
+        }
+
+        const snapshot = await fetchOptionsSnapshot(symbol);
+        if (snapshot === null) {
+            return {
+                status: 'error',
+                code: 'no_options_chains',
+                error: '옵션 데이터를 가져올 수 없어요.',
+            };
+        }
+
+        return await submitOptionsAnalysis({
+            symbol,
+            companyName,
+            expirationDate,
+            modelId,
+            snapshot,
+            waitUntil,
+            tier: gate.tier,
+            skipEnqueueIfMiss,
+            ...(gate.userApiKey !== undefined
+                ? { userApiKey: gate.userApiKey }
+                : {}),
+        });
+    } catch (err) {
+        console.error('[submitOptionsAnalysisAction] unexpected error:', err);
+        return { status: 'error', error: buildGateError('unexpected_error') };
+    }
+}
+
+/**
+ * Server Action: poll a previously submitted options analysis job.
+ * Returns `processing`, `done`, or `error`.
+ */
+export async function pollOptionsAnalysisAction(
+    jobId: string
+): Promise<PollOptionsAnalysisResult> {
+    return pollOptionsAnalysis(jobId);
+}
+
+/**
+ * Server Action: best-effort cancel for a running options analysis job.
+ * Uses the generic queue cancelJob since siglens-core does not expose a
+ * dedicated cancelOptionsAnalysisJob helper. Errors are swallowed.
+ */
+export async function cancelOptionsAnalysisJobAction(
+    jobId: string
+): Promise<void> {
+    try {
+        return await cancelJob(jobId);
+    } catch (error) {
+        console.warn(
+            '[cancelOptionsAnalysisJobAction] 취소 신호 전송 실패:',
+            jobId,
+            error
+        );
+    }
+}
