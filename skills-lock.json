@@ -7,11 +7,6 @@
             "skillPath": "skills/brainstorming/SKILL.md",
             "computedHash": "8df9b47092524833138b58682d03f2e153a242e550d1693657afdbee0cc9cdb0"
         },
-        "domain-driven-design": {
-            "source": "wondelai/skills",
-            "sourceType": "github",
-            "computedHash": "01ae2a9d33c87237a174a36e2b9d2f34f796398a2b6ff6ea9d08076417c83545"
-        },
         "executing-plans": {
             "source": "obra/superpowers",
             "sourceType": "github",
