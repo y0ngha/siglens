@@ -2,6 +2,11 @@
 
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { useOptionsSignals } from '@/components/symbol-page/hooks/useOptionsSignals';
+import {
+    formatAtmIv,
+    formatMaxPain,
+    formatPutCallRatio,
+} from '@/components/options/utils/optionsFormatters';
 
 interface OptionsSignalCardsProps {
     symbol: string;
@@ -22,15 +27,9 @@ export function OptionsSignalCards({ symbol }: OptionsSignalCardsProps) {
     if (isLoading) return <OptionsSignalCardsSkeleton />;
     if (!data) return null;
 
-    const atmIvDisplay =
-        data.atmIv !== null ? `${(data.atmIv * 100).toFixed(1)}%` : '—';
-    const pcDisplay =
-        data.putCallRatio === Number.POSITIVE_INFINITY
-            ? '∞'
-            : data.putCallRatio.toFixed(2);
-    const maxPainDisplay = Number.isNaN(data.maxPain)
-        ? '—'
-        : `$${Math.round(data.maxPain)}`;
+    const atmIvDisplay = formatAtmIv(data.atmIv);
+    const pcDisplay = formatPutCallRatio(data.putCallRatio);
+    const maxPainDisplay = formatMaxPain(data.maxPain);
 
     return (
         <section

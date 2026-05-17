@@ -1,7 +1,7 @@
 'use client';
 
-import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 import {
+    type OptionsSnapshot,
     aggregateOpenInterest,
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';

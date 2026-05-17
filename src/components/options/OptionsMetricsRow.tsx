@@ -1,37 +1,24 @@
 'use client';
 
 import { useMemo } from 'react';
-import type { OptionsSnapshot } from '@y0ngha/siglens-core';
-import { summarizeChainForLlm } from '@y0ngha/siglens-core';
+import {
+    type OptionsSnapshot,
+    summarizeChainForLlm,
+} from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { pickActiveChain } from '@/components/options/utils/pickActiveChain';
+import {
+    formatAtmIv,
+    formatImpliedMove,
+    formatMaxPain,
+    formatPutCallRatio,
+} from '@/components/options/utils/optionsFormatters';
 
 interface OptionsMetricsRowProps {
     /** 'YYYY-MM-DD' or 'all'. */
     expirationDate: string | 'all';
     /** Pre-fetched snapshot from the parent (HydrationBoundary-prefilled). */
     snapshot: OptionsSnapshot;
-}
-
-function formatMaxPain(value: number): string {
-    if (isNaN(value)) return '—';
-    return `$${Math.round(value).toLocaleString()}`;
-}
-
-function formatPutCallRatio(value: number): string {
-    if (!isFinite(value) && value > 0) return '∞';
-    if (isNaN(value)) return '—';
-    return value.toFixed(2);
-}
-
-function formatAtmIv(value: number | null): string {
-    if (value === null || isNaN(value)) return '—';
-    return `${(value * 100).toFixed(1)}%`;
-}
-
-function formatImpliedMove(value: number | null): string {
-    if (value === null || isNaN(value)) return '—';
-    return `±${value.toFixed(1)}%`;
 }
 
 const MaxPainTooltip = (

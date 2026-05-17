@@ -1,14 +1,15 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import type { OptionsSnapshot } from '@y0ngha/siglens-core';
 import {
+    type OptionsSnapshot,
     aggregateOpenInterest,
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/components/options/utils/findNearestStrike';
 import { pickActiveChain } from '@/components/options/utils/pickActiveChain';
+import { cn } from '@/lib/cn';
 
 interface OptionsChainTableProps {
     symbol: string;
@@ -231,11 +232,9 @@ export function OptionsChainTable({
                                 return (
                                     <tr
                                         key={strike}
-                                        className={
-                                            isAtm
-                                                ? 'bg-primary-500/10'
-                                                : undefined
-                                        }
+                                        className={cn(
+                                            isAtm && 'bg-primary-500/10'
+                                        )}
                                     >
                                         <td className="text-secondary-200 px-3 py-1.5 text-left font-mono whitespace-nowrap tabular-nums">
                                             {formatStrike(strike)}

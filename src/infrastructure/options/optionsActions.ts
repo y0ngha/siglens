@@ -6,9 +6,10 @@ import {
     submitOptionsAnalysis,
     pollOptionsAnalysis,
     summarizeChainForLlm,
+    cancelJob,
     type SubmitOptionsAnalysisResult,
     type PollOptionsAnalysisResult,
-    cancelJob,
+    type ModelId,
 } from '@y0ngha/siglens-core';
 import { fetchOptionsSnapshot } from '@/infrastructure/options/optionsDataCache';
 import { getCurrentUser } from '@/infrastructure/auth/getCurrentUser';
@@ -21,7 +22,6 @@ import type {
     AnalysisGateBlockedResult,
     OptionsSignalsResult,
 } from '@/domain/types';
-import type { ModelId } from '@y0ngha/siglens-core';
 
 /** Final return type — core's options result + our siglens-side gate errors. */
 export type SubmitOptionsAnalysisActionResult =
