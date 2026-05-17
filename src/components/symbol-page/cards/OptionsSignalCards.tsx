@@ -6,7 +6,8 @@ import {
     formatAtmIv,
     formatMaxPain,
     formatPutCallRatio,
-} from '@/components/options/utils/optionsFormatters';
+} from '@/lib/options/optionsFormatters';
+import { MaxPainTooltip } from '@/lib/options/optionsTooltips';
 
 interface OptionsSignalCardsProps {
     symbol: string;
@@ -71,19 +72,7 @@ export function OptionsSignalCards({ symbol }: OptionsSignalCardsProps) {
             <SignalCard
                 label="Max Pain"
                 value={maxPainDisplay}
-                tooltip={
-                    <>
-                        <p>
-                            옵션 만기일이 가까워질수록 주가가 끌리는 가격이에요.
-                        </p>
-                        <p>
-                            옵션을 판 쪽(주로 기관)의 손실이 가장 적어지는
-                            가격이라, 만기일 부근에는 주가가 이쪽으로 움직이는
-                            경향이 있어요.
-                        </p>
-                        <p>절대 법칙은 아니고 참고용 가격으로 보세요.</p>
-                    </>
-                }
+                tooltip={MaxPainTooltip}
             />
         </section>
     );

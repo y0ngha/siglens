@@ -7,8 +7,8 @@ import {
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { findNearestStrikeIndex } from '@/components/options/utils/findNearestStrike';
-import { pickActiveChain } from '@/components/options/utils/pickActiveChain';
+import { findNearestStrikeIndex } from '@/lib/options/findNearestStrike';
+import { pickActiveChain } from '@/lib/options/pickActiveChain';
 import { cn } from '@/lib/cn';
 
 interface OptionsChainTableProps {
@@ -79,19 +79,6 @@ export function OptionsChainTable({
         () => pickActiveChain(snapshot, expirationDate),
         [snapshot, expirationDate]
     );
-    const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
-
-    const isEmpty =
-        !selectedChain ||
-        (selectedChain.calls.length === 0 && selectedChain.puts.length === 0);
-
-    const totalContracts = selectedChain
-        ? selectedChain.calls.length + selectedChain.puts.length
-        : 0;
-
-    const headerLabel = expanded
-        ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${selectedChain?.expirationDate ?? '—'})`
-        : `▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`;
 
     // Hooks must run unconditionally — compute derived data even when the
     // chain is empty; only the render branches below short-circuit.
@@ -127,6 +114,20 @@ export function OptionsChainTable({
             ).maxPain,
         };
     }, [selectedChain, snapshot.underlyingPrice]);
+
+    const nearestExpiry = snapshot.chains[0]?.expirationDate ?? '';
+
+    const isEmpty =
+        !selectedChain ||
+        (selectedChain.calls.length === 0 && selectedChain.puts.length === 0);
+
+    const totalContracts = selectedChain
+        ? selectedChain.calls.length + selectedChain.puts.length
+        : 0;
+
+    const headerLabel = expanded
+        ? `▾ 전체 옵션 chain 테이블 (선택된 만기: ${selectedChain?.expirationDate ?? '—'})`
+        : `▸ 전체 옵션 chain 테이블 보기 (${numberFormatter.format(totalContracts)} contracts)`;
 
     if (isEmpty || !selectedChain) {
         return (

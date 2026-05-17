@@ -6,8 +6,8 @@ import {
     summarizeChainForLlm,
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
-import { findNearestStrikeIndex } from '@/components/options/utils/findNearestStrike';
-import { pickActiveChain } from '@/components/options/utils/pickActiveChain';
+import { findNearestStrikeIndex } from '@/lib/options/findNearestStrike';
+import { pickActiveChain } from '@/lib/options/pickActiveChain';
 
 interface OpenInterestChartProps {
     expirationDate: string | 'all';
