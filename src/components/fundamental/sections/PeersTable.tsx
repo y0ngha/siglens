@@ -6,7 +6,24 @@ interface PeersTableProps {
 }
 
 export function PeersTable({ peers }: PeersTableProps) {
-    if (peers.length === 0) return null;
+    if (peers.length === 0) {
+        return (
+            <section
+                aria-labelledby="peers-heading"
+                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            >
+                <h2
+                    id="peers-heading"
+                    className="mb-4 text-lg font-semibold tracking-tight"
+                >
+                    동종업계 비교
+                </h2>
+                <p className="text-secondary-400 text-sm">
+                    데이터를 불러올 수 없습니다.
+                </p>
+            </section>
+        );
+    }
 
     return (
         <section
