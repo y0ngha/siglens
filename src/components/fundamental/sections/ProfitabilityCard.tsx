@@ -3,7 +3,7 @@ import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 import type { CSSProperties, ReactNode } from 'react';
 
 interface ProfitabilityCardProps {
-    ratios: FundamentalRatiosInput;
+    ratios: FundamentalRatiosInput | null;
 }
 
 interface MetricBarProps {
@@ -57,6 +57,22 @@ function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
 }
 
 export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
+    if (ratios === null) {
+        return (
+            <section
+                aria-labelledby="profitability-heading"
+                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            >
+                <h2 id="profitability-heading" className="mb-2 text-lg font-semibold tracking-tight">
+                    수익성
+                </h2>
+                <p className="text-secondary-400 text-sm">
+                    데이터를 불러올 수 없습니다.
+                </p>
+            </section>
+        );
+    }
+
     return (
         <section
             aria-labelledby="profitability-heading"
