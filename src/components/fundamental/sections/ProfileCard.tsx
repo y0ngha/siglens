@@ -2,11 +2,31 @@ import type { ReactNode } from 'react';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 
 interface ProfileCardProps {
-    profile: FundamentalProfile;
-    descriptionSlot?: ReactNode;
+    profile: FundamentalProfile | null;
+    descriptionSlot: ReactNode;
 }
 
 export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
+    if (profile === null) {
+        return (
+            <section
+                aria-labelledby="profile-heading"
+                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            >
+                <h2
+                    id="profile-heading"
+                    className="text-xl font-semibold tracking-tight"
+                >
+                    회사 프로필
+                </h2>
+                <p className="text-secondary-400 mt-2 text-sm">
+                    데이터를 불러올 수 없습니다.
+                </p>
+                {descriptionSlot}
+            </section>
+        );
+    }
+
     const formattedMarketCap = new Intl.NumberFormat('ko-KR', {
         notation: 'compact',
         maximumFractionDigits: 1,
