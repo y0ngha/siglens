@@ -2,7 +2,7 @@ import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 import { cn } from '@/lib/cn';
 
 interface GrowthChartProps {
-    growth: FundamentalGrowthInput;
+    growth: FundamentalGrowthInput | null;
 }
 
 interface GrowthBarProps {
@@ -88,6 +88,22 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
 
 /** RSC section: YoY revenue and EPS growth bars (inline SVG). */
 export function GrowthChart({ growth }: GrowthChartProps) {
+    if (growth === null) {
+        return (
+            <section
+                aria-labelledby="growth-heading"
+                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            >
+                <h2 id="growth-heading" className="mb-2 text-lg font-semibold tracking-tight">
+                    성장성
+                </h2>
+                <p className="text-secondary-400 text-sm">
+                    데이터를 불러올 수 없습니다.
+                </p>
+            </section>
+        );
+    }
+
     return (
         <section
             aria-labelledby="growth-heading"
