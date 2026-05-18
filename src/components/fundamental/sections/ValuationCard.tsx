@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
+import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
 interface ValuationCardProps {
@@ -49,20 +50,11 @@ function MetricRow({
 export function ValuationCard({ metrics }: ValuationCardProps) {
     if (metrics === null) {
         return (
-            <section
-                aria-labelledby="valuation-heading"
-                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
-            >
-                <h2
-                    id="valuation-heading"
-                    className="mb-4 text-lg font-semibold tracking-tight"
-                >
-                    밸류에이션
-                </h2>
-                <p className="text-secondary-400 text-sm">
-                    데이터를 불러올 수 없습니다.
-                </p>
-            </section>
+            <EmptySectionCard
+                headingId="valuation-heading"
+                title="밸류에이션"
+                headingClassName="mb-4 text-lg font-semibold tracking-tight"
+            />
         );
     }
 
