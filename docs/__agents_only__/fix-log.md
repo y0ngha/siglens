@@ -258,3 +258,9 @@
 - Violation: New dependency passed to a function is not asserted in the test call chain
 - Rule: Tests — when an Action gains a new parameter forwarded to a dependency, the test must explicitly assert that the parameter is received and that both true/false branches are covered
 - Context: Blocker 2 — 4 Server Actions started passing `skipEnqueueIfMiss` to siglens-core submit functions, but no test asserted it. Added bot-UA and non-bot-UA cases (2 each × 4 Actions = 8 new tests) using `mockHeaders.mockResolvedValueOnce(new Headers({...}))` to control isBot, and `expect.objectContaining({ skipEnqueueIfMiss: <bool> })` on the submit mock.
+
+
+## [PR #436 | fix/ppr-resumable-slots | 2026-05-18]
+- Violation: `'데이터를 불러올 수 없습니다.'` 문자열 리터럴이 7개 카드 컴포넌트(`ProfileCard`, `ValuationCard`, `PeersTable`, `ProfitabilityCard`, `GrowthChart`, `FinancialHealthCard`, `FutureDirectionCard`)에 중복 — 동시에 빈 상태 `<section>` JSX 골격도 7회 중복
+- Rule: MISTAKES.md Coding Paradigm #15 (string literals must be extracted to constants, not duplicated across files) + Design & Cohesion #9 (repeated literal values across multiple locations → extract to named constant) + FF §4-C (3회 이상 반복되는 패턴은 추상화 권장)
+- Context: PPR resumable slots fix 의 일환으로 7개 카드에 빈 상태 UI 를 동시 추가하면서 동일 마크업·메시지가 인라인 중복. Blocker review 후 공통 컴포넌트 `EmptySectionCard` 를 `src/components/fundamental/sections/` 에 신규 추출, `EMPTY_MESSAGE` 를 내부 const 로 단일화. 7개 카드는 headingId/title/headingClassName prop 만 전달.
