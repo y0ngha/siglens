@@ -89,7 +89,21 @@ export function FinancialHealthCard({
     scores,
     cashFlow,
 }: FinancialHealthCardProps) {
-    if (ratios === null && scores === null && cashFlow === null) return null;
+    if (ratios === null && scores === null && cashFlow === null) {
+        return (
+            <section
+                aria-labelledby="health-heading"
+                className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
+            >
+                <h2 id="health-heading" className="mb-4 text-lg font-semibold tracking-tight">
+                    재무 건전성
+                </h2>
+                <p className="text-secondary-400 text-sm">
+                    데이터를 불러올 수 없습니다.
+                </p>
+            </section>
+        );
+    }
 
     const ocf = cashFlow?.operatingCashFlow ?? null;
     const formattedOcf =
