@@ -4,6 +4,7 @@
 
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { EMPTY_MESSAGE } from '@/components/fundamental/sections/EmptySectionCard';
 import { FutureDirectionCard } from '@/components/fundamental/sections/FutureDirectionCard';
 import type {
     FundamentalAnalystEstimateInput,
@@ -60,7 +61,7 @@ describe('FutureDirectionCard', () => {
             screen.getByRole('heading', { name: '미래 방향' })
         ).toBeInTheDocument();
         expect(
-            screen.getByText('데이터를 불러올 수 없습니다.')
+            screen.getByText(EMPTY_MESSAGE)
         ).toBeInTheDocument();
     });
 

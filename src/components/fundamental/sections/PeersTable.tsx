@@ -2,6 +2,9 @@ import Link from 'next/link';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
 
+const HEADING_ID = 'peers-heading';
+const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+
 interface PeersTableProps {
     peers: FundamentalPeerInput[];
 }
@@ -10,21 +13,21 @@ export function PeersTable({ peers }: PeersTableProps) {
     if (peers.length === 0) {
         return (
             <EmptySectionCard
-                headingId="peers-heading"
+                headingId={HEADING_ID}
                 title="동종업계 비교"
-                headingClassName="mb-4 text-lg font-semibold tracking-tight"
+                headingClassName={HEADING_CLASS_NAME}
             />
         );
     }
 
     return (
         <section
-            aria-labelledby="peers-heading"
+            aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
-                id="peers-heading"
-                className="mb-4 text-lg font-semibold tracking-tight"
+                id={HEADING_ID}
+                className={HEADING_CLASS_NAME}
             >
                 동종업계 비교
             </h2>

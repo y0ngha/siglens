@@ -4,6 +4,7 @@
 
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { EMPTY_MESSAGE } from '@/components/fundamental/sections/EmptySectionCard';
 import { ProfitabilityCard } from '@/components/fundamental/sections/ProfitabilityCard';
 import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 
@@ -32,7 +33,7 @@ describe('ProfitabilityCard', () => {
             screen.getByRole('heading', { name: '수익성' })
         ).toBeInTheDocument();
         expect(
-            screen.getByText('데이터를 불러올 수 없습니다.')
+            screen.getByText(EMPTY_MESSAGE)
         ).toBeInTheDocument();
     });
 });

@@ -4,6 +4,7 @@
 
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { EMPTY_MESSAGE } from '@/components/fundamental/sections/EmptySectionCard';
 import { ValuationCard } from '@/components/fundamental/sections/ValuationCard';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
 
@@ -31,7 +32,7 @@ describe('ValuationCard', () => {
             screen.getByRole('heading', { name: '밸류에이션' })
         ).toBeInTheDocument();
         expect(
-            screen.getByText('데이터를 불러올 수 없습니다.')
+            screen.getByText(EMPTY_MESSAGE)
         ).toBeInTheDocument();
     });
 });

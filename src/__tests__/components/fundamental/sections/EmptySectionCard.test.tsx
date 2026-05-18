@@ -4,7 +4,10 @@
 
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
-import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
+import {
+    EMPTY_MESSAGE,
+    EmptySectionCard,
+} from '@/components/fundamental/sections/EmptySectionCard';
 
 describe('EmptySectionCard', () => {
     it('renders title with provided headingClassName and the shared empty message', () => {
@@ -24,9 +27,7 @@ describe('EmptySectionCard', () => {
             'font-semibold',
             'tracking-tight'
         );
-        expect(
-            screen.getByText('데이터를 불러올 수 없습니다.')
-        ).toBeInTheDocument();
+        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
 
     it('links section aria-labelledby to the heading id', () => {

@@ -4,6 +4,7 @@
 
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { EMPTY_MESSAGE } from '@/components/fundamental/sections/EmptySectionCard';
 import { PeersTable } from '@/components/fundamental/sections/PeersTable';
 import type { FundamentalPeerInput } from '@y0ngha/siglens-core';
 
@@ -36,7 +37,7 @@ describe('PeersTable', () => {
             screen.getByRole('heading', { name: '동종업계 비교' })
         ).toBeInTheDocument();
         expect(
-            screen.getByText('데이터를 불러올 수 없습니다.')
+            screen.getByText(EMPTY_MESSAGE)
         ).toBeInTheDocument();
     });
 });

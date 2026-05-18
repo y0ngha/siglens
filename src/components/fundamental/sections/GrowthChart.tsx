@@ -2,6 +2,9 @@ import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
 import { cn } from '@/lib/cn';
 
+const HEADING_ID = 'growth-heading';
+const HEADING_CLASS_NAME = 'mb-2 text-lg font-semibold tracking-tight';
+
 interface GrowthChartProps {
     growth: FundamentalGrowthInput | null;
 }
@@ -92,21 +95,21 @@ export function GrowthChart({ growth }: GrowthChartProps) {
     if (growth === null) {
         return (
             <EmptySectionCard
-                headingId="growth-heading"
+                headingId={HEADING_ID}
                 title="성장성"
-                headingClassName="mb-2 text-lg font-semibold tracking-tight"
+                headingClassName={HEADING_CLASS_NAME}
             />
         );
     }
 
     return (
         <section
-            aria-labelledby="growth-heading"
+            aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
-                id="growth-heading"
-                className="mb-2 text-lg font-semibold tracking-tight"
+                id={HEADING_ID}
+                className={HEADING_CLASS_NAME}
             >
                 성장성
             </h2>

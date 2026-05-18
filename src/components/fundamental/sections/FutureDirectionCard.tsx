@@ -8,6 +8,9 @@ import type {
 } from '@y0ngha/siglens-core';
 import type { CSSProperties, ReactNode } from 'react';
 
+const HEADING_ID = 'future-heading';
+const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+
 interface FutureDirectionCardProps {
     estimates: FundamentalAnalystEstimateInput | null;
     grades: FundamentalGradesConsensusInput | null;
@@ -166,21 +169,21 @@ export function FutureDirectionCard({
     if (estimates === null && grades === null && ptConsensus === null) {
         return (
             <EmptySectionCard
-                headingId="future-heading"
+                headingId={HEADING_ID}
                 title="미래 방향"
-                headingClassName="mb-4 text-lg font-semibold tracking-tight"
+                headingClassName={HEADING_CLASS_NAME}
             />
         );
     }
 
     return (
         <section
-            aria-labelledby="future-heading"
+            aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
-                id="future-heading"
-                className="mb-4 text-lg font-semibold tracking-tight"
+                id={HEADING_ID}
+                className={HEADING_CLASS_NAME}
             >
                 미래 방향
             </h2>

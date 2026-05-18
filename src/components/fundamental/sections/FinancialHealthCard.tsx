@@ -8,6 +8,9 @@ import { EmptySectionCard } from '@/components/fundamental/sections/EmptySection
 import { cn } from '@/lib/cn';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
+const HEADING_ID = 'health-heading';
+const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+
 interface FinancialHealthCardProps {
     ratios: FundamentalRatiosInput | null;
     scores: FundamentalFinancialScoresInput | null;
@@ -93,9 +96,9 @@ export function FinancialHealthCard({
     if (ratios === null && scores === null && cashFlow === null) {
         return (
             <EmptySectionCard
-                headingId="health-heading"
+                headingId={HEADING_ID}
                 title="재무 건전성"
-                headingClassName="mb-4 text-lg font-semibold tracking-tight"
+                headingClassName={HEADING_CLASS_NAME}
             />
         );
     }
@@ -113,12 +116,12 @@ export function FinancialHealthCard({
 
     return (
         <section
-            aria-labelledby="health-heading"
+            aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <h2
-                id="health-heading"
-                className="mb-4 text-lg font-semibold tracking-tight"
+                id={HEADING_ID}
+                className={HEADING_CLASS_NAME}
             >
                 재무 건전성
             </h2>

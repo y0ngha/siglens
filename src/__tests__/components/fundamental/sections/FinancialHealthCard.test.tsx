@@ -4,6 +4,7 @@
 
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { EMPTY_MESSAGE } from '@/components/fundamental/sections/EmptySectionCard';
 import { FinancialHealthCard } from '@/components/fundamental/sections/FinancialHealthCard';
 import type {
     FundamentalRatiosInput,
@@ -52,7 +53,7 @@ describe('FinancialHealthCard', () => {
             screen.getByRole('heading', { name: '재무 건전성' })
         ).toBeInTheDocument();
         expect(
-            screen.getByText('데이터를 불러올 수 없습니다.')
+            screen.getByText(EMPTY_MESSAGE)
         ).toBeInTheDocument();
     });
 

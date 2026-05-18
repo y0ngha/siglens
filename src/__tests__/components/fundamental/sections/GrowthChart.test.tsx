@@ -4,6 +4,7 @@
 
 import '@testing-library/jest-dom';
 import { render, screen } from '@testing-library/react';
+import { EMPTY_MESSAGE } from '@/components/fundamental/sections/EmptySectionCard';
 import { GrowthChart } from '@/components/fundamental/sections/GrowthChart';
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
 
@@ -27,7 +28,7 @@ describe('GrowthChart', () => {
             screen.getByRole('heading', { name: '성장성' })
         ).toBeInTheDocument();
         expect(
-            screen.getByText('데이터를 불러올 수 없습니다.')
+            screen.getByText(EMPTY_MESSAGE)
         ).toBeInTheDocument();
     });
 });

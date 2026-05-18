@@ -2,6 +2,9 @@ import type { ReactNode } from 'react';
 import type { FundamentalProfile } from '@y0ngha/siglens-core';
 import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
 
+const HEADING_ID = 'profile-heading';
+const HEADING_CLASS_NAME = 'text-xl font-semibold tracking-tight';
+
 interface ProfileCardProps {
     profile: FundamentalProfile | null;
     descriptionSlot: ReactNode;
@@ -11,9 +14,9 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
     if (profile === null) {
         return (
             <EmptySectionCard
-                headingId="profile-heading"
+                headingId={HEADING_ID}
                 title="회사 프로필"
-                headingClassName="text-xl font-semibold tracking-tight"
+                headingClassName={HEADING_CLASS_NAME}
             >
                 {descriptionSlot}
             </EmptySectionCard>
@@ -29,14 +32,14 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
 
     return (
         <section
-            aria-labelledby="profile-heading"
+            aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                     <h2
-                        id="profile-heading"
-                        className="text-xl font-semibold tracking-tight"
+                        id={HEADING_ID}
+                        className={HEADING_CLASS_NAME}
                     >
                         {profile.companyName}
                         <span className="text-secondary-400 ml-2 text-base font-normal">
