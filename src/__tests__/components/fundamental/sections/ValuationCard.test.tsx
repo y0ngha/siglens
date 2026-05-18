@@ -19,13 +19,19 @@ const SAMPLE_METRICS: FundamentalValuationMetrics = {
 describe('ValuationCard', () => {
     it('renders metric values when metrics provided', () => {
         render(<ValuationCard metrics={SAMPLE_METRICS} />);
-        expect(screen.getByRole('heading', { name: '밸류에이션' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '밸류에이션' })
+        ).toBeInTheDocument();
         expect(screen.getByText('PER')).toBeInTheDocument();
     });
 
     it('renders empty state with heading when metrics is null', () => {
         render(<ValuationCard metrics={null} />);
-        expect(screen.getByRole('heading', { name: '밸류에이션' })).toBeInTheDocument();
-        expect(screen.getByText('데이터를 불러올 수 없습니다.')).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '밸류에이션' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('데이터를 불러올 수 없습니다.')
+        ).toBeInTheDocument();
     });
 });

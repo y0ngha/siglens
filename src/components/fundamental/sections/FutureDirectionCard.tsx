@@ -168,7 +168,10 @@ export function FutureDirectionCard({
                 aria-labelledby="future-heading"
                 className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
             >
-                <h2 id="future-heading" className="mb-4 text-lg font-semibold tracking-tight">
+                <h2
+                    id="future-heading"
+                    className="mb-4 text-lg font-semibold tracking-tight"
+                >
                     미래 방향
                 </h2>
                 <p className="text-secondary-400 text-sm">

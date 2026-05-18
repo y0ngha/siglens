@@ -38,8 +38,12 @@ describe('ProfileCard', () => {
                 descriptionSlot={<p data-testid="slot">slot</p>}
             />
         );
-        expect(screen.getByRole('heading', { name: '회사 프로필' })).toBeInTheDocument();
-        expect(screen.getByText('데이터를 불러올 수 없습니다.')).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '회사 프로필' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('데이터를 불러올 수 없습니다.')
+        ).toBeInTheDocument();
     });
 
     it('still renders descriptionSlot in empty state (tree shape stability)', () => {

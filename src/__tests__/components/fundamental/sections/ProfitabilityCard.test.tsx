@@ -20,13 +20,19 @@ const SAMPLE_RATIOS = {
 describe('ProfitabilityCard', () => {
     it('renders metric labels when ratios provided', () => {
         render(<ProfitabilityCard ratios={SAMPLE_RATIOS} />);
-        expect(screen.getByRole('heading', { name: '수익성' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '수익성' })
+        ).toBeInTheDocument();
         expect(screen.getByText('ROE')).toBeInTheDocument();
     });
 
     it('renders empty state with heading when ratios is null', () => {
         render(<ProfitabilityCard ratios={null} />);
-        expect(screen.getByRole('heading', { name: '수익성' })).toBeInTheDocument();
-        expect(screen.getByText('데이터를 불러올 수 없습니다.')).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '수익성' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('데이터를 불러올 수 없습니다.')
+        ).toBeInTheDocument();
     });
 });

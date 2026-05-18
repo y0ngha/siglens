@@ -38,21 +38,35 @@ describe('FinancialHealthCard', () => {
                 cashFlow={SAMPLE_CASHFLOW}
             />
         );
-        expect(screen.getByRole('heading', { name: '재무 건전성' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '재무 건전성' })
+        ).toBeInTheDocument();
         expect(screen.getByText('부채 비율')).toBeInTheDocument();
     });
 
     it('renders empty state when all data is null', () => {
-        render(<FinancialHealthCard ratios={null} scores={null} cashFlow={null} />);
-        expect(screen.getByRole('heading', { name: '재무 건전성' })).toBeInTheDocument();
-        expect(screen.getByText('데이터를 불러올 수 없습니다.')).toBeInTheDocument();
+        render(
+            <FinancialHealthCard ratios={null} scores={null} cashFlow={null} />
+        );
+        expect(
+            screen.getByRole('heading', { name: '재무 건전성' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('데이터를 불러올 수 없습니다.')
+        ).toBeInTheDocument();
     });
 
     it('renders metrics when only some data provided (partial null tolerated)', () => {
         render(
-            <FinancialHealthCard ratios={SAMPLE_RATIOS} scores={null} cashFlow={null} />
+            <FinancialHealthCard
+                ratios={SAMPLE_RATIOS}
+                scores={null}
+                cashFlow={null}
+            />
         );
-        expect(screen.getByRole('heading', { name: '재무 건전성' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '재무 건전성' })
+        ).toBeInTheDocument();
         expect(screen.getByText('부채 비율')).toBeInTheDocument();
     });
 });

@@ -41,16 +41,27 @@ describe('FutureDirectionCard', () => {
                 ptSummary={null}
             />
         );
-        expect(screen.getByRole('heading', { name: '미래 방향' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '미래 방향' })
+        ).toBeInTheDocument();
         expect(screen.getByText('애널리스트 추정')).toBeInTheDocument();
     });
 
     it('renders empty state when estimates/grades/ptConsensus all null', () => {
         render(
-            <FutureDirectionCard estimates={null} grades={null} ptConsensus={null} ptSummary={null} />
+            <FutureDirectionCard
+                estimates={null}
+                grades={null}
+                ptConsensus={null}
+                ptSummary={null}
+            />
         );
-        expect(screen.getByRole('heading', { name: '미래 방향' })).toBeInTheDocument();
-        expect(screen.getByText('데이터를 불러올 수 없습니다.')).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '미래 방향' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('데이터를 불러올 수 없습니다.')
+        ).toBeInTheDocument();
     });
 
     it('renders only available sections when partial null', () => {
@@ -62,7 +73,9 @@ describe('FutureDirectionCard', () => {
                 ptSummary={null}
             />
         );
-        expect(screen.getByRole('heading', { name: '미래 방향' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '미래 방향' })
+        ).toBeInTheDocument();
         expect(screen.getByText('애널리스트 추정')).toBeInTheDocument();
     });
 });

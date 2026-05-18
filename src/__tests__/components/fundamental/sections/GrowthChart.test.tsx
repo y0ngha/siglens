@@ -15,13 +15,19 @@ const SAMPLE_GROWTH = {
 describe('GrowthChart', () => {
     it('renders growth bars when growth provided', () => {
         render(<GrowthChart growth={SAMPLE_GROWTH} />);
-        expect(screen.getByRole('heading', { name: '성장성' })).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '성장성' })
+        ).toBeInTheDocument();
         expect(screen.getByText('매출 성장률')).toBeInTheDocument();
     });
 
     it('renders empty state with heading when growth is null', () => {
         render(<GrowthChart growth={null} />);
-        expect(screen.getByRole('heading', { name: '성장성' })).toBeInTheDocument();
-        expect(screen.getByText('데이터를 불러올 수 없습니다.')).toBeInTheDocument();
+        expect(
+            screen.getByRole('heading', { name: '성장성' })
+        ).toBeInTheDocument();
+        expect(
+            screen.getByText('데이터를 불러올 수 없습니다.')
+        ).toBeInTheDocument();
     });
 });
