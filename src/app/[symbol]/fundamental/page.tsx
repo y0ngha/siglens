@@ -177,42 +177,36 @@ async function ProfileDescriptionSection({
 
 async function ProfileSection({ symbol }: SymbolSectionProps) {
     const profile = await getProfile(symbol);
-    if (profile === null) return null;
 
-    const descriptionSlot =
-        profile.description !== null ? (
-            <Suspense fallback={<ProfileDescriptionSkeleton />}>
-                <ProfileDescriptionSection
-                    symbol={symbol}
-                    fallback={profile.description}
-                />
-            </Suspense>
-        ) : undefined;
+    const descriptionSlot = (
+        <Suspense fallback={<ProfileDescriptionSkeleton />}>
+            <ProfileDescriptionSection
+                symbol={symbol}
+                fallback={profile?.description ?? ''}
+            />
+        </Suspense>
+    );
 
     return <ProfileCard profile={profile} descriptionSlot={descriptionSlot} />;
 }
 
 async function ValuationSection({ symbol }: SymbolSectionProps) {
     const metrics = await getKeyMetricsTtm(symbol);
-    if (metrics === null) return null;
     return <ValuationCard metrics={metrics} />;
 }
 
 async function PeersSection({ symbol }: SymbolSectionProps) {
     const peers = await getStockPeers(symbol);
-    if (peers.length === 0) return null;
     return <PeersTable peers={peers} />;
 }
 
 async function ProfitabilitySection({ symbol }: SymbolSectionProps) {
     const ratios = await getRatiosTtm(symbol);
-    if (ratios === null) return null;
     return <ProfitabilityCard ratios={ratios} />;
 }
 
 async function GrowthSection({ symbol }: SymbolSectionProps) {
     const growth = await getIncomeStatementGrowth(symbol);
-    if (growth === null) return null;
     return <GrowthChart growth={growth} />;
 }
 
@@ -222,7 +216,6 @@ async function FinancialHealthSection({ symbol }: SymbolSectionProps) {
         getFinancialScores(symbol),
         getCashFlowStatement(symbol),
     ]);
-    if (ratios === null && scores === null) return null;
     return (
         <FinancialHealthCard
             ratios={ratios}
@@ -239,8 +232,6 @@ async function FutureDirectionSection({ symbol }: SymbolSectionProps) {
         getPriceTargetConsensus(symbol),
         getPriceTargetSummary(symbol),
     ]);
-    if (estimates === null && grades === null && ptConsensus === null)
-        return null;
     return (
         <FutureDirectionCard
             estimates={estimates}
