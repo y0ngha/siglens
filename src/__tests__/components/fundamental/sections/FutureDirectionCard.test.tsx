@@ -60,9 +60,7 @@ describe('FutureDirectionCard', () => {
         expect(
             screen.getByRole('heading', { name: '미래 방향' })
         ).toBeInTheDocument();
-        expect(
-            screen.getByText(EMPTY_MESSAGE)
-        ).toBeInTheDocument();
+        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
 
     it('renders only available sections when partial null', () => {

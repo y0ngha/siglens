@@ -52,9 +52,7 @@ describe('FinancialHealthCard', () => {
         expect(
             screen.getByRole('heading', { name: '재무 건전성' })
         ).toBeInTheDocument();
-        expect(
-            screen.getByText(EMPTY_MESSAGE)
-        ).toBeInTheDocument();
+        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
 
     it('renders metrics when only some data provided (partial null tolerated)', () => {

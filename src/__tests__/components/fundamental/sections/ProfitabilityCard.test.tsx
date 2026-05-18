@@ -32,8 +32,6 @@ describe('ProfitabilityCard', () => {
         expect(
             screen.getByRole('heading', { name: '수익성' })
         ).toBeInTheDocument();
-        expect(
-            screen.getByText(EMPTY_MESSAGE)
-        ).toBeInTheDocument();
+        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
 });

@@ -31,8 +31,6 @@ describe('ValuationCard', () => {
         expect(
             screen.getByRole('heading', { name: '밸류에이션' })
         ).toBeInTheDocument();
-        expect(
-            screen.getByText(EMPTY_MESSAGE)
-        ).toBeInTheDocument();
+        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
 });

@@ -25,10 +25,7 @@ export function PeersTable({ peers }: PeersTableProps) {
             aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
-            <h2
-                id={HEADING_ID}
-                className={HEADING_CLASS_NAME}
-            >
+            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 동종업계 비교
             </h2>
             <div className="overflow-x-auto">

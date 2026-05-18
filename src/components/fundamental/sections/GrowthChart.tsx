@@ -107,10 +107,7 @@ export function GrowthChart({ growth }: GrowthChartProps) {
             aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
-            <h2
-                id={HEADING_ID}
-                className={HEADING_CLASS_NAME}
-            >
+            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 성장성
             </h2>
             <p className="text-secondary-400 mb-4 text-xs">

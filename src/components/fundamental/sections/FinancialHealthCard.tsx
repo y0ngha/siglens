@@ -119,10 +119,7 @@ export function FinancialHealthCard({
             aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
-            <h2
-                id={HEADING_ID}
-                className={HEADING_CLASS_NAME}
-            >
+            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 재무 건전성
             </h2>
             <div>

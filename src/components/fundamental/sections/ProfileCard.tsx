@@ -37,10 +37,7 @@ export function ProfileCard({ profile, descriptionSlot }: ProfileCardProps) {
         >
             <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                    <h2
-                        id={HEADING_ID}
-                        className={HEADING_CLASS_NAME}
-                    >
+                    <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                         {profile.companyName}
                         <span className="text-secondary-400 ml-2 text-base font-normal">
                             ({profile.symbol})

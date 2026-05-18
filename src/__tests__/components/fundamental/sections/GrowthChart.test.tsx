@@ -27,8 +27,6 @@ describe('GrowthChart', () => {
         expect(
             screen.getByRole('heading', { name: '성장성' })
         ).toBeInTheDocument();
-        expect(
-            screen.getByText(EMPTY_MESSAGE)
-        ).toBeInTheDocument();
+        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
 });

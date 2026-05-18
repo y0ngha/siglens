@@ -36,8 +36,6 @@ describe('PeersTable', () => {
         expect(
             screen.getByRole('heading', { name: '동종업계 비교' })
         ).toBeInTheDocument();
-        expect(
-            screen.getByText(EMPTY_MESSAGE)
-        ).toBeInTheDocument();
+        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
 });

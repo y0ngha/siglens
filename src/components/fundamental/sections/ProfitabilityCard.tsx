@@ -76,10 +76,7 @@ export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
             aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
-            <h2
-                id={HEADING_ID}
-                className={HEADING_CLASS_NAME}
-            >
+            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 수익성
             </h2>
             <div className="divide-secondary-700/50 divide-y">

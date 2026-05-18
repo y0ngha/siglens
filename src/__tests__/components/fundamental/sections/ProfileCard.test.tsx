@@ -42,9 +42,7 @@ describe('ProfileCard', () => {
         expect(
             screen.getByRole('heading', { name: '회사 프로필' })
         ).toBeInTheDocument();
-        expect(
-            screen.getByText(EMPTY_MESSAGE)
-        ).toBeInTheDocument();
+        expect(screen.getByText(EMPTY_MESSAGE)).toBeInTheDocument();
     });
 
     it('still renders descriptionSlot in empty state (tree shape stability)', () => {
