@@ -1,9 +1,13 @@
 import type { ReactNode } from 'react';
 import type { FundamentalValuationMetrics } from '@y0ngha/siglens-core';
+import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 
+const HEADING_ID = 'valuation-heading';
+const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
+
 interface ValuationCardProps {
-    metrics: FundamentalValuationMetrics;
+    metrics: FundamentalValuationMetrics | null;
 }
 
 interface MetricRowProps {
@@ -47,15 +51,22 @@ function MetricRow({
 }
 
 export function ValuationCard({ metrics }: ValuationCardProps) {
+    if (metrics === null) {
+        return (
+            <EmptySectionCard
+                headingId={HEADING_ID}
+                title="밸류에이션"
+                headingClassName={HEADING_CLASS_NAME}
+            />
+        );
+    }
+
     return (
         <section
-            aria-labelledby="valuation-heading"
+            aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
-            <h2
-                id="valuation-heading"
-                className="mb-4 text-lg font-semibold tracking-tight"
-            >
+            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 밸류에이션
             </h2>
             <div>

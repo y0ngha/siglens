@@ -1,9 +1,13 @@
+import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import type { FundamentalRatiosInput } from '@y0ngha/siglens-core';
 import type { CSSProperties, ReactNode } from 'react';
 
+const HEADING_ID = 'profitability-heading';
+const HEADING_CLASS_NAME = 'mb-2 text-lg font-semibold tracking-tight';
+
 interface ProfitabilityCardProps {
-    ratios: FundamentalRatiosInput;
+    ratios: FundamentalRatiosInput | null;
 }
 
 interface MetricBarProps {
@@ -57,15 +61,22 @@ function MetricBar({ label, value, description, tooltip }: MetricBarProps) {
 }
 
 export function ProfitabilityCard({ ratios }: ProfitabilityCardProps) {
+    if (ratios === null) {
+        return (
+            <EmptySectionCard
+                headingId={HEADING_ID}
+                title="수익성"
+                headingClassName={HEADING_CLASS_NAME}
+            />
+        );
+    }
+
     return (
         <section
-            aria-labelledby="profitability-heading"
+            aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
-            <h2
-                id="profitability-heading"
-                className="mb-2 text-lg font-semibold tracking-tight"
-            >
+            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 수익성
             </h2>
             <div className="divide-secondary-700/50 divide-y">

@@ -1,8 +1,12 @@
 import type { FundamentalGrowthInput } from '@y0ngha/siglens-core';
+import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
 import { cn } from '@/lib/cn';
 
+const HEADING_ID = 'growth-heading';
+const HEADING_CLASS_NAME = 'mb-2 text-lg font-semibold tracking-tight';
+
 interface GrowthChartProps {
-    growth: FundamentalGrowthInput;
+    growth: FundamentalGrowthInput | null;
 }
 
 interface GrowthBarProps {
@@ -88,15 +92,22 @@ function GrowthBar({ label, value, description }: GrowthBarProps) {
 
 /** RSC section: YoY revenue and EPS growth bars (inline SVG). */
 export function GrowthChart({ growth }: GrowthChartProps) {
+    if (growth === null) {
+        return (
+            <EmptySectionCard
+                headingId={HEADING_ID}
+                title="성장성"
+                headingClassName={HEADING_CLASS_NAME}
+            />
+        );
+    }
+
     return (
         <section
-            aria-labelledby="growth-heading"
+            aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
-            <h2
-                id="growth-heading"
-                className="mb-2 text-lg font-semibold tracking-tight"
-            >
+            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 성장성
             </h2>
             <p className="text-secondary-400 mb-4 text-xs">

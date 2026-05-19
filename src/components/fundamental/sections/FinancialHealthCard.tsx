@@ -4,8 +4,12 @@ import type {
     FundamentalFinancialScoresInput,
     FundamentalCashFlowInput,
 } from '@y0ngha/siglens-core';
+import { EmptySectionCard } from '@/components/fundamental/sections/EmptySectionCard';
 import { cn } from '@/lib/cn';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
+
+const HEADING_ID = 'health-heading';
+const HEADING_CLASS_NAME = 'mb-4 text-lg font-semibold tracking-tight';
 
 interface FinancialHealthCardProps {
     ratios: FundamentalRatiosInput | null;
@@ -89,7 +93,15 @@ export function FinancialHealthCard({
     scores,
     cashFlow,
 }: FinancialHealthCardProps) {
-    if (ratios === null && scores === null && cashFlow === null) return null;
+    if (ratios === null && scores === null && cashFlow === null) {
+        return (
+            <EmptySectionCard
+                headingId={HEADING_ID}
+                title="재무 건전성"
+                headingClassName={HEADING_CLASS_NAME}
+            />
+        );
+    }
 
     const ocf = cashFlow?.operatingCashFlow ?? null;
     const formattedOcf =
@@ -104,13 +116,10 @@ export function FinancialHealthCard({
 
     return (
         <section
-            aria-labelledby="health-heading"
+            aria-labelledby={HEADING_ID}
             className="border-secondary-700 bg-secondary-800 rounded-xl border p-6"
         >
-            <h2
-                id="health-heading"
-                className="mb-4 text-lg font-semibold tracking-tight"
-            >
+            <h2 id={HEADING_ID} className={HEADING_CLASS_NAME}>
                 재무 건전성
             </h2>
             <div>
