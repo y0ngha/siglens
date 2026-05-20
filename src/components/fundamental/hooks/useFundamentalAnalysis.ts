@@ -12,7 +12,7 @@ import { pollFundamentalAnalysisAction } from '@/infrastructure/market/pollFunda
 import { cancelFundamentalAnalysisJobAction } from '@/infrastructure/market/cancelFundamentalAnalysisJobAction';
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import { ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
 import type { CancelJobEntry } from '@/domain/types';
@@ -58,7 +58,7 @@ async function fetchFundamentalAnalysis(
     try {
         const { jobId } = submitted;
         while (!signal.aborted) {
-            await sleep(FUNDAMENTAL_NEWS_POLL_INTERVAL_MS);
+            await sleep(ANALYSIS_POLL_INTERVAL_MS);
             if (signal.aborted) break;
             const polled = await pollFundamentalAnalysisAction(jobId);
             if (polled.status === 'done') return polled.result;

@@ -12,10 +12,6 @@
 
 import { getOptionsCacheLifeProfile } from '@/infrastructure/options/optionsCacheLife';
 
-// ---------------------------------------------------------------------------
-// Weekend
-// ---------------------------------------------------------------------------
-
 describe('getOptionsCacheLifeProfile — weekend', () => {
     it('returns options-weekend for Saturday (EDT)', () => {
         // 2026-05-16 is a Saturday. 10:00 EDT = 14:00 UTC.
@@ -42,10 +38,6 @@ describe('getOptionsCacheLifeProfile — weekend', () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// Market open — EDT examples (UTC-4)
-// ---------------------------------------------------------------------------
-
 describe('getOptionsCacheLifeProfile — market open (EDT)', () => {
     it('returns options-market-open at 09:30 ET (opening boundary, EDT)', () => {
         // 2026-05-14 Thu. 09:30 EDT = 13:30 UTC.
@@ -66,10 +58,6 @@ describe('getOptionsCacheLifeProfile — market open (EDT)', () => {
     });
 });
 
-// ---------------------------------------------------------------------------
-// Market open — EST examples (UTC-5)
-// ---------------------------------------------------------------------------
-
 describe('getOptionsCacheLifeProfile — market open (EST)', () => {
     it('returns options-market-open at 09:30 ET (opening boundary, EST)', () => {
         // 2026-01-14 Wed. 09:30 EST = 14:30 UTC.
@@ -89,10 +77,6 @@ describe('getOptionsCacheLifeProfile — market open (EST)', () => {
         expect(getOptionsCacheLifeProfile(date)).toBe('options-market-open');
     });
 });
-
-// ---------------------------------------------------------------------------
-// Market closed — weekday off-hours
-// ---------------------------------------------------------------------------
 
 describe('getOptionsCacheLifeProfile — market closed', () => {
     it('returns options-market-closed at 09:29 ET (just before open, EDT)', () => {
@@ -131,10 +115,6 @@ describe('getOptionsCacheLifeProfile — market closed', () => {
         expect(getOptionsCacheLifeProfile(date)).toBe('options-market-closed');
     });
 });
-
-// ---------------------------------------------------------------------------
-// Default parameter
-// ---------------------------------------------------------------------------
 
 describe('getOptionsCacheLifeProfile — default parameter', () => {
     it('returns a valid profile string when called with no arguments', () => {

@@ -9,9 +9,10 @@ import {
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 import { pickActiveChain } from '@/domain/options/pickActiveChain';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 
 interface OpenInterestChartProps {
-    expirationDate: string | 'all';
+    expirationDate: OptionsExpirationSelector;
     snapshot: OptionsSnapshot;
 }
 
@@ -40,6 +41,10 @@ const COLOR_LABEL = 'var(--color-secondary-500)';
 
 const BAR_OPACITY_DEFAULT = 0.7;
 const BAR_OPACITY_TOP3 = 1;
+
+// 모든 strike의 OI가 0일 때 globalMax 가 0이 되어 barPixelHeight에서
+// 0으로 나누는 경로를 막기 위한 하한값.
+const MIN_OI_SCALE_FLOOR = 1;
 
 function barCenterX(index: number, count: number): number {
     const slotWidth = CHART_WIDTH / count;
@@ -91,8 +96,14 @@ export function OpenInterestChart({
         );
 
         const globalMax = Math.max(
-            Math.max(...oiByStrike.map(s => s.callOpenInterest), 1),
-            Math.max(...oiByStrike.map(s => s.putOpenInterest), 1)
+            Math.max(
+                ...oiByStrike.map(s => s.callOpenInterest),
+                MIN_OI_SCALE_FLOOR
+            ),
+            Math.max(
+                ...oiByStrike.map(s => s.putOpenInterest),
+                MIN_OI_SCALE_FLOOR
+            )
         );
 
         const strikes = oiByStrike.map(s => s.strike);

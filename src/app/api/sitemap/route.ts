@@ -61,15 +61,16 @@ async function buildEntries(): Promise<SitemapEntry[]> {
                 (i + 1) * OPTIONS_PROBE_CONCURRENCY
             )
     );
-    // 청크 단위 await로 동시 호출 수를 OPTIONS_PROBE_CONCURRENCY로
-    // 상한 유지. spread 누적으로 in-place mutation 없이 결합한다.
-    let tickerHasOptions: boolean[] = [];
-    for (const chunk of allChunks) {
+    // 청크 단위 await로 동시 호출 수를 OPTIONS_PROBE_CONCURRENCY로 상한 유지.
+    const tickerHasOptions: boolean[] = await allChunks.reduce<
+        Promise<boolean[]>
+    >(async (accP, chunk) => {
+        const acc = await accP;
         const results = await Promise.all(
             chunk.map(ticker => hasOptionsMarket(ticker).catch(() => false))
         );
-        tickerHasOptions = [...tickerHasOptions, ...results];
-    }
+        return [...acc, ...results];
+    }, Promise.resolve([]));
     const tickersWithOptions = new Set(
         POPULAR_TICKERS.filter((_, i) => tickerHasOptions[i])
     );

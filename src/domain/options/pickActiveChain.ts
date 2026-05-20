@@ -1,4 +1,5 @@
 import type { OptionsChain, OptionsSnapshot } from '@y0ngha/siglens-core';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 
 /**
  * Pick the chain to display for a given selector value.
@@ -14,7 +15,7 @@ import type { OptionsChain, OptionsSnapshot } from '@y0ngha/siglens-core';
  */
 export function pickActiveChain(
     snapshot: OptionsSnapshot,
-    expirationDate: string | 'all'
+    expirationDate: OptionsExpirationSelector
 ): OptionsChain | null {
     const chains = snapshot.chains;
     if (chains.length === 0) return null;

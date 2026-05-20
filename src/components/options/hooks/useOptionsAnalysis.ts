@@ -11,10 +11,11 @@ import {
 import { isGateBlockedResult } from '@/domain/analysis/gate';
 import { sleep } from '@/lib/sleep';
 import { QUERY_KEYS } from '@/lib/queryConfig';
-import { FUNDAMENTAL_NEWS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
+import { ANALYSIS_POLL_INTERVAL_MS } from '@/lib/pollingConfig';
 import { usePageHideCancel } from '@/components/hooks/usePageHideCancel';
 import { BotBlockedError } from '@/components/symbol-page/exceptions/BotBlockedError';
 import type { CancelJobEntry } from '@/domain/types';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 
 export type OptionsAnalysisState =
     | { status: 'loading' }
@@ -29,7 +30,7 @@ export type OptionsAnalysisState =
 async function fetchOptionsAnalysis(
     symbol: string,
     companyName: string,
-    expirationDate: string | 'all',
+    expirationDate: OptionsExpirationSelector,
     modelId: ModelId,
     signal: AbortSignal,
     onJobId: (jobId: string | null, expectedCurrent?: string | null) => void
@@ -64,7 +65,7 @@ async function fetchOptionsAnalysis(
     try {
         const { jobId } = submitted;
         while (!signal.aborted) {
-            await sleep(FUNDAMENTAL_NEWS_POLL_INTERVAL_MS);
+            await sleep(ANALYSIS_POLL_INTERVAL_MS);
             if (signal.aborted) break;
             const polled = await pollOptionsAnalysisAction(jobId);
             if (polled.status === 'done') return polled.result;
@@ -82,7 +83,7 @@ async function fetchOptionsAnalysis(
 interface UseOptionsAnalysisInput {
     symbol: string;
     companyName: string;
-    expirationDate: string | 'all';
+    expirationDate: OptionsExpirationSelector;
     modelId: ModelId;
 }
 
@@ -130,11 +131,9 @@ export function useOptionsAnalysis({
         staleTime: Infinity,
     });
 
-    const { refetch } = query;
-
     const retry = useCallback(() => {
-        void refetch();
-    }, [refetch]);
+        void query.refetch();
+    }, [query]);
 
     // ref를 null로 초기화해 unmount cleanup과의 이중 cancel을 방지한다.
     const getPageHideJobs = useCallback((): CancelJobEntry[] | null => {
@@ -147,9 +146,9 @@ export function useOptionsAnalysis({
 
     useEffect(() => {
         if (queryClient.getQueryData(queryKey) === undefined) {
-            void refetch();
+            void query.refetch();
         }
-    }, [queryClient, queryKey, refetch]);
+    }, [queryClient, queryKey, query]);
 
     // symbol, expirationDate, 또는 modelId 변경(queryKey 교체) 시, unmount 시
     // 진행 중인 job을 cancel한다. fire-and-forget이므로 useMutation 없이 직접 호출한다.

@@ -9,12 +9,13 @@ import {
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { findNearestStrikeIndex } from '@/domain/options/findNearestStrike';
 import { pickActiveChain } from '@/domain/options/pickActiveChain';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 import { cn } from '@/lib/cn';
 
 interface OptionsChainTableProps {
     symbol: string;
     /** 'YYYY-MM-DD' or 'all'. Maps to the appropriate chain via the same rule as Metrics/Chart. */
-    expirationDate: string | 'all';
+    expirationDate: OptionsExpirationSelector;
     snapshot: OptionsSnapshot;
 }
 

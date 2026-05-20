@@ -7,6 +7,7 @@ import {
 } from '@y0ngha/siglens-core';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { pickActiveChain } from '@/domain/options/pickActiveChain';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 import {
     formatAtmIv,
     formatImpliedMove,
@@ -22,7 +23,7 @@ import {
 
 interface OptionsMetricsRowProps {
     /** 'YYYY-MM-DD' or 'all'. */
-    expirationDate: string | 'all';
+    expirationDate: OptionsExpirationSelector;
     /** Pre-fetched snapshot from the parent (HydrationBoundary-prefilled). */
     snapshot: OptionsSnapshot;
 }

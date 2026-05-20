@@ -16,10 +16,6 @@ import type {
     YahooOptionsResult,
 } from '@/infrastructure/options/yahooNormalize';
 
-// ---------------------------------------------------------------------------
-// Fixture helpers
-// ---------------------------------------------------------------------------
-
 function makeYahooContract(
     strike: number,
     overrides: Partial<YahooCallOrPut> = {}
@@ -55,10 +51,6 @@ function makeYahooExpiration(
         puts,
     };
 }
-
-// ---------------------------------------------------------------------------
-// normalizeYahooContract
-// ---------------------------------------------------------------------------
 
 describe('normalizeYahooContract', () => {
     it('maps all fields from a fully-populated contract', () => {
@@ -128,10 +120,6 @@ describe('normalizeYahooContract', () => {
         expect(normalizeYahooContract(raw).inTheMoney).toBe(false);
     });
 });
-
-// ---------------------------------------------------------------------------
-// normalizeYahooExpiration
-// ---------------------------------------------------------------------------
 
 describe('normalizeYahooExpiration', () => {
     /**
@@ -254,10 +242,6 @@ describe('normalizeYahooExpiration', () => {
         expect(result.puts).toHaveLength(0);
     });
 });
-
-// ---------------------------------------------------------------------------
-// normalizeYahooSnapshot
-// ---------------------------------------------------------------------------
 
 describe('normalizeYahooSnapshot', () => {
     const NOW = new Date('2026-05-14T16:00:00Z');

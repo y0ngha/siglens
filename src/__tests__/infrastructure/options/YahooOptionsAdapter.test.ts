@@ -31,10 +31,6 @@ jest.mock('@y0ngha/siglens-core', () => {
 import { sanitizeOptionsChain } from '@y0ngha/siglens-core';
 import { YahooOptionsAdapter } from '@/infrastructure/options/YahooOptionsAdapter';
 
-// ---------------------------------------------------------------------------
-// Fixtures
-// ---------------------------------------------------------------------------
-
 /** A minimal but complete CallOrPut fixture matching the live API shape. */
 const makeContract = (
     strike: number,
@@ -98,17 +94,9 @@ const EMPTY_OPTIONS_FIXTURE = {
     options: [],
 };
 
-// ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
 function makeAdapter(): YahooOptionsAdapter {
     return new YahooOptionsAdapter();
 }
-
-// ---------------------------------------------------------------------------
-// fetchSnapshot
-// ---------------------------------------------------------------------------
 
 describe('YahooOptionsAdapter.fetchSnapshot', () => {
     let consoleErrorSpy: jest.SpyInstance;
@@ -219,10 +207,6 @@ describe('YahooOptionsAdapter.fetchSnapshot', () => {
         expect(sanitizeOptionsChain).toHaveBeenCalledTimes(2);
     });
 });
-
-// ---------------------------------------------------------------------------
-// hasOptionsMarket
-// ---------------------------------------------------------------------------
 
 describe('YahooOptionsAdapter.hasOptionsMarket', () => {
     beforeEach(() => {

@@ -4,20 +4,21 @@ import { useMemo, useRef, type KeyboardEvent } from 'react';
 import { InfoTooltip } from '@/components/ui/InfoTooltip';
 import { cn } from '@/lib/cn';
 import type { SlotMapping } from '@y0ngha/siglens-core';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 
 interface ExpirationSelectorProps {
     /** Slot mappings filtered to non-null entries (`OptionsPageClient` filters before passing). */
     slots: ReadonlyArray<SlotMapping>;
     /** Current selection — an ISO 'YYYY-MM-DD' string or `'all'`. */
-    value: string | 'all';
-    onChange: (next: string | 'all') => void;
+    value: OptionsExpirationSelector;
+    onChange: (next: OptionsExpirationSelector) => void;
 }
 
 interface TabDescriptor {
     key: string;
     label: string;
     /** Selection value forwarded to `onChange`. */
-    value: string | 'all';
+    value: OptionsExpirationSelector;
     /** Optional secondary label (e.g. month-day slice). */
     sub?: string;
 }
@@ -46,7 +47,7 @@ export function ExpirationSelector({
             ...slots.map(({ slot, expirationDate }) => ({
                 key: slot.key,
                 label: slot.label,
-                value: expirationDate as string | 'all',
+                value: expirationDate,
                 sub: expirationDate.slice(5),
             })),
             { key: 'all', label: '종합', value: 'all' as const },

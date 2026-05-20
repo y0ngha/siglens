@@ -22,6 +22,7 @@ import type {
     AnalysisGateBlockedResult,
     OptionsSignalsResult,
 } from '@/domain/types';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 
 /** Final return type — core's options result + our siglens-side gate errors. */
 export type SubmitOptionsAnalysisActionResult =
@@ -66,7 +67,7 @@ export async function getOptionsSignalsAction(
 export async function submitOptionsAnalysisAction(
     symbol: string,
     companyName: string,
-    expirationDate: string | 'all',
+    expirationDate: OptionsExpirationSelector,
     modelId: ModelId
 ): Promise<SubmitOptionsAnalysisActionResult> {
     try {

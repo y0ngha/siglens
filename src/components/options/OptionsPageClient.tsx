@@ -11,6 +11,7 @@ import { OptionsChainTable } from '@/components/options/OptionsChainTable';
 import { OpenInterestChart } from '@/components/options/OpenInterestChart';
 import { OptionsMetricsRow } from '@/components/options/OptionsMetricsRow';
 import type { OptionsSnapshot, SlotMapping } from '@y0ngha/siglens-core';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 
 interface OptionsPageClientProps {
     symbol: string;
@@ -18,6 +19,8 @@ interface OptionsPageClientProps {
     snapshot: OptionsSnapshot;
     slots: ReadonlyArray<SlotMapping | null>;
 }
+
+const isSlotMapping = (s: SlotMapping | null): s is SlotMapping => s !== null;
 
 /**
  * `/[symbol]/options` 페이지의 클라이언트 컨테이너.
@@ -31,16 +34,12 @@ export function OptionsPageClient({
     snapshot,
     slots,
 }: OptionsPageClientProps) {
-    const [expirationDate, setExpirationDate] = useState<string | 'all'>(
-        () =>
-            slots.filter((s): s is SlotMapping => s !== null)[0]
-                ?.expirationDate ?? 'all'
-    );
+    const [expirationDate, setExpirationDate] =
+        useState<OptionsExpirationSelector>(
+            () => slots.filter(isSlotMapping)[0]?.expirationDate ?? 'all'
+        );
     const { modelId } = useSymbolModel();
-    const validSlots = useMemo(
-        () => slots.filter((s): s is SlotMapping => s !== null),
-        [slots]
-    );
+    const validSlots = useMemo(() => slots.filter(isSlotMapping), [slots]);
 
     return (
         <main className="mx-auto max-w-5xl space-y-6 px-4 py-6">

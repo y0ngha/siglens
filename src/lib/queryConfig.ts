@@ -1,5 +1,6 @@
 import type { ModelId, Timeframe } from '@y0ngha/siglens-core';
 import { MS_PER_MINUTE } from '@/domain/constants/time';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 
 /** Default cache freshness for queries without a domain-specific cadence. */
 export const QUERY_STALE_TIME_MS = MS_PER_MINUTE;
@@ -77,7 +78,7 @@ export const QUERY_KEYS = {
      */
     optionsAnalysis: (
         symbol: string,
-        expirationDate: string | 'all',
+        expirationDate: OptionsExpirationSelector,
         modelId: ModelId
     ) => ['options-analysis', symbol, expirationDate, modelId] as const,
 } as const;

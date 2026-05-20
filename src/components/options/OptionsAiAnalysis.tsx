@@ -11,6 +11,7 @@ import { cn } from '@/lib/cn';
 import { OptionsAiAnalysisError } from '@/components/options/OptionsAiAnalysisError';
 import { OptionsAiAnalysisSkeleton } from '@/components/options/OptionsAiAnalysisSkeleton';
 import { useOptionsAnalysis } from '@/components/options/hooks/useOptionsAnalysis';
+import type { OptionsExpirationSelector } from '@/domain/options/types';
 
 const TONE_LABEL: Record<OptionsTone, string> = {
     bullish: '강세',
@@ -219,7 +220,7 @@ export interface OptionsAiAnalysisProps {
     symbol: string;
     companyName: string;
     /** 'YYYY-MM-DD' or 'all'. */
-    expirationDate: string | 'all';
+    expirationDate: OptionsExpirationSelector;
     modelId: ModelId;
 }
 
