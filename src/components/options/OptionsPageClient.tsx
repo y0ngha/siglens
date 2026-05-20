@@ -32,8 +32,9 @@ export function OptionsPageClient({
     slots,
 }: OptionsPageClientProps) {
     const [expirationDate, setExpirationDate] = useState<string | 'all'>(
-        () => slots.filter((s): s is SlotMapping => s !== null)[0]
-            ?.expirationDate ?? 'all'
+        () =>
+            slots.filter((s): s is SlotMapping => s !== null)[0]
+                ?.expirationDate ?? 'all'
     );
     const { modelId } = useSymbolModel();
     const validSlots = useMemo(
